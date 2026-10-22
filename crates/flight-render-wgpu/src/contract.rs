@@ -1,0 +1,35 @@
+//! The full contract lane, mirroring TS `contract.ts`: every public free function and type.
+
+pub use crate::enable_wgpu_texture_resolver_guards::*;
+pub use crate::explain_wgpu_texture_resolution::*;
+pub use crate::explain_wgpu_uniform_endianness::*;
+pub use crate::types::*;
+pub use crate::wgpu_adapter_capabilities::*;
+pub use crate::wgpu_canvas_context::*;
+pub use crate::wgpu_command_observer::*;
+pub use crate::wgpu_compressed_texture::*;
+pub use crate::wgpu_device_loss::*;
+pub use crate::wgpu_draw::*;
+pub use crate::wgpu_external_image_source::*;
+pub use crate::wgpu_external_texture::*;
+pub use crate::wgpu_frame::*;
+pub use crate::wgpu_fullscreen_pass::*;
+pub use crate::wgpu_mipmap::*;
+pub use crate::wgpu_quad_material_registry::*;
+pub use crate::wgpu_render_pass::*;
+pub use crate::wgpu_render_state::*;
+pub use crate::wgpu_render_target::*;
+pub use crate::wgpu_render_target_pool::*;
+pub use crate::wgpu_render_texture::*;
+pub use crate::wgpu_render_texture_pool::*;
+pub use crate::wgpu_scissor::*;
+pub use crate::wgpu_screen_antialias::*;
+pub use crate::wgpu_screen_capture::*;
+pub use crate::wgpu_screen_render_target::*;
+pub use crate::wgpu_shader::*;
+pub use crate::wgpu_shader_binding::*;
+pub use crate::wgpu_shader_registry::*;
+pub use crate::wgpu_texture_format::*;
+pub use crate::wgpu_texture_render_target::*;
+pub use crate::wgpu_texture_resolver::*;
+pub use crate::wgpu_texture_upload::*;

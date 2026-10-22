@@ -1,0 +1,40 @@
+[package]
+name = "flight-render-wgpu"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "WebGPU render backend over host-supplied native wgpu devices: device tiers, frames, passes, targets, texture realization and capture"
+autotests = false
+
+[lib]
+doctest = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-bitmap = { workspace = true }
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-host = { workspace = true }
+flight-image = { workspace = true }
+flight-log = { workspace = true }
+flight-materials = { workspace = true }
+flight-node = { path = "../flight-node" }
+flight-platform = { workspace = true }
+flight-registry = { workspace = true }
+flight-render = { workspace = true }
+flight-signals = { workspace = true }
+flight-stream = { workspace = true }
+flight-surface = { workspace = true }
+flight-texture = { workspace = true }
+flight-texture-formats = { workspace = true }
+futures = "0.3"
+wgpu = { version = "30.0.1", default-features = false, features = ["std", "wgsl"] }
+
+[dev-dependencies]
+wgpu = { version = "30.0.1", default-features = false, features = ["std", "wgsl", "noop"] }
+
+[lints]
+workspace = true

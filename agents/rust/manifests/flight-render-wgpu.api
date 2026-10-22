@@ -1,0 +1,341 @@
+src/contract.rs: pub use crate::enable_wgpu_texture_resolver_guards::*;
+src/contract.rs: pub use crate::explain_wgpu_texture_resolution::*;
+src/contract.rs: pub use crate::explain_wgpu_uniform_endianness::*;
+src/contract.rs: pub use crate::types::*;
+src/contract.rs: pub use crate::wgpu_adapter_capabilities::*;
+src/contract.rs: pub use crate::wgpu_canvas_context::*;
+src/contract.rs: pub use crate::wgpu_command_observer::*;
+src/contract.rs: pub use crate::wgpu_compressed_texture::*;
+src/contract.rs: pub use crate::wgpu_device_loss::*;
+src/contract.rs: pub use crate::wgpu_draw::*;
+src/contract.rs: pub use crate::wgpu_external_image_source::*;
+src/contract.rs: pub use crate::wgpu_external_texture::*;
+src/contract.rs: pub use crate::wgpu_frame::*;
+src/contract.rs: pub use crate::wgpu_fullscreen_pass::*;
+src/contract.rs: pub use crate::wgpu_mipmap::*;
+src/contract.rs: pub use crate::wgpu_quad_material_registry::*;
+src/contract.rs: pub use crate::wgpu_render_pass::*;
+src/contract.rs: pub use crate::wgpu_render_state::*;
+src/contract.rs: pub use crate::wgpu_render_target::*;
+src/contract.rs: pub use crate::wgpu_render_target_pool::*;
+src/contract.rs: pub use crate::wgpu_render_texture::*;
+src/contract.rs: pub use crate::wgpu_render_texture_pool::*;
+src/contract.rs: pub use crate::wgpu_scissor::*;
+src/contract.rs: pub use crate::wgpu_screen_antialias::*;
+src/contract.rs: pub use crate::wgpu_screen_capture::*;
+src/contract.rs: pub use crate::wgpu_screen_render_target::*;
+src/contract.rs: pub use crate::wgpu_shader::*;
+src/contract.rs: pub use crate::wgpu_shader_binding::*;
+src/contract.rs: pub use crate::wgpu_shader_registry::*;
+src/contract.rs: pub use crate::wgpu_texture_format::*;
+src/contract.rs: pub use crate::wgpu_texture_render_target::*;
+src/contract.rs: pub use crate::wgpu_texture_resolver::*;
+src/contract.rs: pub use crate::wgpu_texture_upload::*;
+src/enable_wgpu_texture_resolver_guards.rs: pub fn are_wgpu_texture_resolver_guards_enabled(state: &WgpuRenderState) -> bool
+src/enable_wgpu_texture_resolver_guards.rs: pub fn enable_wgpu_texture_resolver_guards(state: &mut WgpuRenderState, log_state: Option<LogStateRef>,)
+src/explain_wgpu_texture_resolution.rs: pub fn explain_wgpu_texture_resolution(state: &WgpuRenderState, texture: &dyn TextureVariant,) -> TextureResolutionExplanation
+src/explain_wgpu_uniform_endianness.rs: pub fn explain_wgpu_uniform_endianness() -> WgpuUniformEndiannessExplanation
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::*;
+src/types.rs: #[derive(Clone)] pub enum WgpuMaterialRenderer { Mesh(UnknownValue), Quad(WgpuQuadMaterialRenderer), }
+src/types.rs: #[derive(Clone)] pub enum WgpuRenderTarget { Screen(Ref<WgpuScreenRenderTarget>), Texture(Ref<WgpuTextureRenderTarget>), }
+src/types.rs: #[derive(Clone)] pub struct WgpuApplyBlendModeParent { pub apply_blend_mode: WgpuApplyBlendModeSlot, pub parent: WgpuApplyBlendModeParentSlot, }
+src/types.rs: #[derive(Clone)] pub struct WgpuBitmapShader { pub pipeline: wgpu::RenderPipeline, pub bind: fn(&mut WgpuRenderState, f32), }
+src/types.rs: #[derive(Clone)] pub struct WgpuDeviceLossHook { pub(crate) inner: Arc<Mutex<WgpuDeviceLossHookState>>, }
+src/types.rs: #[derive(Clone)] pub struct WgpuDeviceSignals { pub on_device_lost: Signal<WgpuDeviceLostInfo>, }
+src/types.rs: #[derive(Clone)] pub struct WgpuDeviceState { pub(crate) runtime: EntityRuntimeSlot, pub device: WgpuDevice, pub(crate) context: Option<WgpuDeviceRuntimeRef>, }
+src/types.rs: #[derive(Clone)] pub struct WgpuNativeDevice { pub device: wgpu::Device, pub queue: wgpu::Queue, pub(crate) lost: SharedFuture<WgpuDeviceLostInfo>, pub(crate) host_spawn: HostSpawnCapability, pub(crate) command_observer: Arc<RwLock<Option<crate::wgpu_command_observer::WgpuCommandObserver>>>, }
+src/types.rs: #[derive(Clone)] pub struct WgpuQuadMaterialRenderer { pub instance_float_count: u32, pub get_shader_module: fn(&mut WgpuRenderState) -> wgpu::ShaderModule, pub pack_instance: Option<fn(&mut WgpuRenderState, Option<&Ref<dyn Material2D>>, Option<&Ref<dyn MaterialData>>, &mut [f32], usize,),>, }
+src/types.rs: #[derive(Clone)] pub struct WgpuRenderPassRecord { pub(crate) runtime: EntityRuntimeSlot, pub color_view: wgpu::TextureView, pub has_encoder: bool, pub owns_frame: bool, pub saved: WgpuSavedPassState, pub target: WgpuRenderTarget, pub viewport: WgpuRenderPassViewport, }
+src/types.rs: #[derive(Clone)] pub struct WgpuRenderRegistries { pub color_adjustment_feature: Option<UnknownValue>, pub color_adjustment_feature_guard: Option<UnknownValue>, pub compressed_texture_decoder: Option<WgpuCompressedTextureDecoder>, pub compressed_texture_upload: Option<WgpuCompressedTextureUploader>, pub custom_material_shaders: Arc<KindMap<WgpuCustomMaterialShaderSource>>, pub effects: Arc<KindMap<UnknownValue>>, pub gpu_skinning: Option<UnknownValue>, pub material_renderers: Arc<KindMap<WgpuMaterialRenderer>>, pub modifier_snippets: Arc<KindMap<UnknownValue>>, pub passes: Option<Arc<Vec<UnknownValue>>>, pub shape_rasterizer: Option<UnknownValue>, pub texture_resolvers: Arc<KindMap<WgpuTextureResolver>>, pub velocity_writers: Arc<KindMap<UnknownValue>>, }
+src/types.rs: #[derive(Clone)] pub struct WgpuRenderTextureEntry { pub status: WgpuRenderTextureStatus, pub target: Ref<WgpuTextureRenderTarget>, pub(crate) sampled: Option<Ref<WgpuTextureEntry>>, }
+src/types.rs: #[derive(Clone)] pub struct WgpuSavedPassState { pub clip_forms: Vec<WgpuClipForm>, pub color_format: Option<wgpu::TextureFormat>, pub current_mask_depth: u32, pub current_scissor_rect: Option<WgpuScissorRect>, pub mask_write_mode: bool, pub render_target: Option<WgpuRenderTarget>, pub render_target_viewport: Option<WgpuRenderPassViewport>, pub scissor_stack: Vec<WgpuScissorRect>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct WgpuRenderPassViewport { pub height: f32, pub width: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct WgpuScissorRect { pub height: f32, pub width: f32, pub x: f32, pub y: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct WgpuScreenRenderTargetOptions { pub alpha_mode: Option<flight_surface::GpuCanvasAlphaMode>, pub color_space: Option<RenderTargetColorSpace>, pub format: Option<wgpu::TextureFormat>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct WgpuCompressedTextureSupport { pub astc: bool, pub bc: bool, pub etc2: bool, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum TextureResolutionStatus { MissingKind, MissingResolver, Registered, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum WgpuClipForm { Contour, Rect, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum WgpuDeviceLostReason { Destroyed, Unknown, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum WgpuRenderTextureStatus { Ready, Released, Unrendered, Writing, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum WgpuUniformEndiannessStatus { Unvalidated, Validated, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct WgpuAdapterCapabilities { pub max_sample_count: u32, pub max_texture_dimension_2d: u32, pub supports_float32_filterable: bool, pub supports_timestamp_query: bool, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct WgpuRenderTextureExplanation { pub height: u32, pub status: WgpuRenderTextureStatus, pub width: u32, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct WgpuUniformEndiannessExplanation { pub endianness: PlatformEndianness, pub status: WgpuUniformEndiannessStatus, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct WgpuVideoTextureState { pub height: u32, pub uploaded_version: i64, pub width: u32, }
+src/types.rs: #[derive(Clone, Debug)] pub enum WgpuColorAdjustmentFlushData { F32(WgpuColorAdjustmentFlushF32), U32(WgpuColorAdjustmentFlushU32), }
+src/types.rs: #[derive(Clone, Debug)] pub enum WgpuColorScaleBiasInput { ColorScaleBias(ColorScaleBias), Values(WgpuColorScaleBiasValues), }
+src/types.rs: #[derive(Clone, Debug)] pub struct WgpuClipContourEntry { pub vertex_buffer: wgpu::Buffer, pub vertex_count: u32, pub uniform_buffer: wgpu::Buffer, pub bind_group: wgpu::BindGroup, pub depth: u32, }
+src/types.rs: #[derive(Clone, Debug)] pub struct WgpuClipContourPipelines { pub write: wgpu::RenderPipeline, pub erase: wgpu::RenderPipeline, pub bind_group_layout: wgpu::BindGroupLayout, }
+src/types.rs: #[derive(Clone, Debug)] pub struct WgpuColorAdjustmentFlush { pub data: WgpuColorAdjustmentFlushData, pub floats: u32, pub module: wgpu::ShaderModule, }
+src/types.rs: #[derive(Clone, Debug)] pub struct WgpuColorAdjustmentFlushF32 { pub data: Vec<f32>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct WgpuColorAdjustmentFlushU32 { pub data: Vec<u32>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct WgpuColorScaleBiasValues { pub values: Vec<f32>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct WgpuDeviceRuntimeResources { pub linear_sampler: wgpu::Sampler, pub nearest_sampler: wgpu::Sampler, pub texture_bind_group_layout: wgpu::BindGroupLayout, pub uniform_bind_group_layout: wgpu::BindGroupLayout, }
+src/types.rs: #[derive(Clone, Debug)] pub struct WgpuMipmapPipeline { pub bind_group_layout: wgpu::BindGroupLayout, pub pipeline: wgpu::RenderPipeline, }
+src/types.rs: #[derive(Clone, Debug)] pub struct WgpuParticleResources { pub instance_bind_group_layout: wgpu::BindGroupLayout, pub module: wgpu::ShaderModule, pub pipeline_layout: wgpu::PipelineLayout, pub pipelines: HashMap<wgpu::TextureFormat, wgpu::RenderPipeline>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct WgpuQuadBatchResources { pub instance_bind_group_layout: wgpu::BindGroupLayout, pub material_bind_group_layout: wgpu::BindGroupLayout, pub base_pipeline_layout: wgpu::PipelineLayout, pub material_pipeline_layout: wgpu::PipelineLayout, pub pipelines: HashMap<wgpu::ShaderModule, HashMap<String, wgpu::RenderPipeline>>, }
+src/types.rs: #[derive(Clone, Debug)] pub struct WgpuShapeMeshPipeline { pub pipeline: wgpu::RenderPipeline, pub bind_group_layout: wgpu::BindGroupLayout, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct WgpuMeshInstanceBufferSlot { pub buffer: Option<wgpu::Buffer>, pub capacity: u64, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct WgpuQuadBatchWriterBufferSlot { pub instance_buffer: Option<wgpu::Buffer>, pub instance_capacity: u64, pub material_buffer: Option<wgpu::Buffer>, pub material_capacity: u64, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct WgpuShapeMeshBuffers { pub vertex_buffers: Vec<wgpu::Buffer>, pub vertex_capacities: Vec<u64>, pub index_buffers: Vec<wgpu::Buffer>, pub index_capacities: Vec<u64>, pub uniform_buffers: Vec<wgpu::Buffer>, pub bind_groups: Vec<wgpu::BindGroup>, pub color_scale_bias_uniform_buffers: Vec<wgpu::Buffer>, pub color_scale_bias_bind_groups: Vec<wgpu::BindGroup>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct RenderTargetClear { pub color: Option<[f64; 4]>, pub colors: Option<Vec<[f64; 4]>>, pub depth: Option<f32>, pub stencil: Option<u32>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct TextureResolutionExplanation { pub kind: Option<Kind>, pub status: TextureResolutionStatus, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct WgpuDeviceLostInfo { pub message: String, pub reason: WgpuDeviceLostReason, }
+src/types.rs: #[derive(Clone, Default)] pub struct WgpuRenderStateOptions { pub color_adjustment_feature: Option<UnknownValue>, pub color_adjustment_feature_guard: Option<UnknownValue>, pub compressed_texture_decoder: Option<WgpuCompressedTextureDecoder>, pub compressed_texture_upload: Option<WgpuCompressedTextureUploader>, pub custom_material_shaders: Option<KindMap<WgpuCustomMaterialShaderSource>>, pub effects: Option<KindMap<UnknownValue>>, pub format: Option<wgpu::TextureFormat>, pub gpu_skinning: Option<UnknownValue>, pub image_smoothing_enabled: Option<bool>, pub material_renderers: Option<KindMap<WgpuMaterialRenderer>>, pub modifier_snippets: Option<KindMap<UnknownValue>>, pub passes: Option<Vec<UnknownValue>>, pub pixel_ratio: Option<f32>, pub round_pixels: Option<bool>, pub scene_graph_sync_policy: Option<flight_render::Scene3DGraphSyncPolicy>, pub shape_rasterizer: Option<UnknownValue>, pub texture_resolvers: Option<KindMap<WgpuTextureResolver>>, pub velocity_writers: Option<KindMap<UnknownValue>>, }
+src/types.rs: impl Entity for WgpuBindGroupLayouts
+src/types.rs: impl Entity for WgpuBindGroupLayouts :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuBindGroupLayouts :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuDeviceState
+src/types.rs: impl Entity for WgpuDeviceState :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuDeviceState :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuFullscreenPipeline
+src/types.rs: impl Entity for WgpuFullscreenPipeline :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuFullscreenPipeline :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuOffscreenRenderStateDeviceLost
+src/types.rs: impl Entity for WgpuOffscreenRenderStateDeviceLost :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuOffscreenRenderStateDeviceLost :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuOffscreenRenderStateOk
+src/types.rs: impl Entity for WgpuOffscreenRenderStateOk :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuOffscreenRenderStateOk :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuRenderPassRecord
+src/types.rs: impl Entity for WgpuRenderPassRecord :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuRenderPassRecord :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuRenderState
+src/types.rs: impl Entity for WgpuRenderState :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuRenderState :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuRenderTargetPool
+src/types.rs: impl Entity for WgpuRenderTargetPool :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuRenderTargetPool :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuRenderTexturePool
+src/types.rs: impl Entity for WgpuRenderTexturePool :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuRenderTexturePool :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuScreenRenderTarget
+src/types.rs: impl Entity for WgpuScreenRenderTarget :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuScreenRenderTarget :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuTextureEntry
+src/types.rs: impl Entity for WgpuTextureEntry :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuTextureEntry :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuTextureRenderTarget
+src/types.rs: impl Entity for WgpuTextureRenderTarget :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuTextureRenderTarget :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl RenderState for WgpuRenderState
+src/types.rs: impl RenderState for WgpuRenderState :: fn render_backend(&self) -> RenderStateBackend
+src/types.rs: impl RenderState for WgpuRenderState :: fn render_registries(&self) -> &RenderRegistries<Self>
+src/types.rs: impl RenderState for WgpuRenderState :: fn render_registries_mut(&mut self) -> &mut RenderRegistries<Self>
+src/types.rs: impl RenderState for WgpuRenderState :: fn render_runtime(&self) -> &RenderStateRuntime<Self>
+src/types.rs: impl RenderState for WgpuRenderState :: fn render_runtime_mut(&mut self) -> &mut RenderStateRuntime<Self>
+src/types.rs: impl RenderState for WgpuRenderState :: fn render_state(&self) -> &RenderStateFields
+src/types.rs: impl RenderState for WgpuRenderState :: fn render_state_mut(&mut self) -> &mut RenderStateFields
+src/types.rs: impl std::fmt::Debug for WgpuNativeDevice
+src/types.rs: impl std::fmt::Debug for WgpuNativeDevice :: fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+src/types.rs: pub enum WgpuOffscreenRenderStateResult { DeviceLost(WgpuOffscreenRenderStateDeviceLost), Ok(WgpuOffscreenRenderStateOk), }
+src/types.rs: pub struct WgpuBindGroupLayouts { pub(crate) runtime: EntityRuntimeSlot, pub texture_bind_group_layout: wgpu::BindGroupLayout, pub uniform_bind_group_layout: wgpu::BindGroupLayout, }
+src/types.rs: pub struct WgpuDeviceRuntime { pub native: WgpuNativeDevice, pub references: u32, pub teardowns: Vec<WgpuDeviceTeardown>, pub lost: Option<WgpuDeviceLostInfo>, pub signals: Option<WgpuDeviceSignals>, pub resources: Option<WgpuDeviceRuntimeResources>, pub pipeline_cache: HashMap<String, wgpu::RenderPipeline>, pub sampler_cache: HashMap<u32, wgpu::Sampler>, pub mipmap_pipeline_cache: HashMap<wgpu::TextureFormat, WgpuMipmapPipeline>, pub texture_cache: Vec<(Weak<HostImageSource>, Ref<WgpuTextureEntry>)>, pub texture_source_premultiplied_texture_cache: HashMap<u64, Ref<WgpuTextureEntry>>, pub texture_source_premultiplied_srgb_texture_cache: HashMap<u64, Ref<WgpuTextureEntry>>, pub texture_source_straight_texture_cache: HashMap<u64, Ref<WgpuTextureEntry>>, pub texture_source_straight_srgb_texture_cache: HashMap<u64, Ref<WgpuTextureEntry>>, pub video_texture_cache: Option<HashMap<u64, Ref<WgpuTextureEntry>>>, pub video_srgb_texture_cache: Option<HashMap<u64, Ref<WgpuTextureEntry>>>, pub wgpu_external_texture_cache: Option<HashMap<u64, Ref<WgpuTextureEntry>>>, pub wgpu_render_texture_cache: Option<HashMap<u64, WgpuRenderTextureEntry>>, pub scene_mesh_upload_cache: Option<HashMap<u64, UnknownValue>>, pub standard_material_module: Option<wgpu::ShaderModule>, pub color_scale_bias_module: Option<wgpu::ShaderModule>, pub packed_tint_module: Option<wgpu::ShaderModule>, pub color_matrix_module: Option<wgpu::ShaderModule>, pub shape_mesh_color_scale_bias_pipelines: Option<HashMap<String, WgpuShapeMeshPipeline>>, pub particle_resources: Option<WgpuParticleResources>, pub quad_batch_resources: Option<WgpuQuadBatchResources>, }
+src/types.rs: pub struct WgpuFullscreenPipeline { pub(crate) runtime: EntityRuntimeSlot, pub pipeline: wgpu::RenderPipeline, pub pipeline_layout: wgpu::PipelineLayout, pub(crate) placeholder_uniform_bind_group: wgpu::BindGroup, pub uniform_bind_group_layout: wgpu::BindGroupLayout, pub texture_bind_group_layouts: Vec<wgpu::BindGroupLayout>, }
+src/types.rs: pub struct WgpuOffscreenRenderStateDeviceLost { pub(crate) runtime: EntityRuntimeSlot, pub info: WgpuDeviceLostInfo, }
+src/types.rs: pub struct WgpuOffscreenRenderStateOk { pub(crate) runtime: EntityRuntimeSlot, pub state: WgpuRenderState, }
+src/types.rs: pub struct WgpuRenderPass<'a> { pub state: &'a mut WgpuRenderState, pub(crate) index: usize, }
+src/types.rs: pub struct WgpuRenderState { pub(crate) render: RenderStateFields, pub(crate) render_runtime: RenderStateRuntime<WgpuRenderState>, pub(crate) render_registries: RenderRegistries<WgpuRenderState>, pub apply_blend_mode: WgpuApplyBlendModeSlot, pub device_state: WgpuDeviceState, pub device: WgpuDevice, pub format: wgpu::TextureFormat, pub(crate) runtime: WgpuRenderStateRuntime, }
+src/types.rs: pub struct WgpuRenderStateRuntime { pub context: WgpuDeviceRuntimeRef, pub registries: WgpuRenderRegistries, pub modifier_snippet_revision: u32, pub apply_blend_mode_parent: WgpuApplyBlendModeParentSlot, pub current_blend_mode: Option<BlendMode>, pub teardowns: Vec<WgpuRenderStateTeardown>, pub borrowed_surface_extent: Option<WgpuRenderPassViewport>, pub uniform_buffer: wgpu::Buffer, pub uniform_data: Vec<f32>, pub uniform_offset: u32, pub uniform_stride: u32, pub uniform_bind_group: wgpu::BindGroup, pub matrix_array: [f32; 9], pub mipmap_degraded_guard: Option<WgpuMipmapDegradedGuard>, pub mipmap_generator: Option<WgpuMipmapGenerator>, pub wgpu_render_texture_guard: Option<WgpuRenderTextureGuard>, pub default_bitmap_shader: Option<WgpuBitmapShader>, pub webgpu_shader_binding_resolver: Option<fn(&WgpuRenderState, u64) -> Option<WgpuBitmapShader>>, pub shader_bindings: HashMap<u64, WgpuBitmapShader>, pub particle_instance_buffer: Option<wgpu::Buffer>, pub particle_instance_data: Option<Vec<f32>>, pub particle_instance_capacity: u32, pub quad_batch_writer_blend_mode: Option<BlendMode>, pub quad_batch_writer_material: Option<Ref<dyn Material2D>>, pub quad_batch_writer_material_renderer: Option<WgpuQuadMaterialRenderer>, pub quad_batch_writer_material_floats: u32, pub quad_batch_writer_count: u32, pub quad_batch_writer_instance_data: Vec<f32>, pub quad_batch_writer_material_data: Vec<f32>, pub quad_batch_writer_texture: Option<Ref<WgpuTextureEntry>>, pub quad_batch_writer_sampler: Option<WgpuSamplerLike>, pub quad_batch_writer_smoothing: Option<bool>, pub quad_batch_writer_color_scale_bias_mode: Option<u32>, pub quad_batch_writer_uniform_color_scale_bias: Option<WgpuColorScaleBiasInput>, pub quad_batch_writer_color_scale_bias_data: Option<Vec<f32>>, pub quad_batch_writer_color_matrix_data: Option<Vec<f32>>, pub quad_batch_writer_color_tint_data: Option<Vec<u32>>, pub quad_batch_writer_buffer_pool: Vec<WgpuQuadBatchWriterBufferSlot>, pub quad_batch_writer_buffer_cursor: u32, pub mesh_instance_buffer_pool: Vec<WgpuMeshInstanceBufferSlot>, pub mesh_instance_buffer_cursor: u32, pub command_encoder: Option<wgpu::CommandEncoder>, pub render_pass: Option<wgpu::RenderPass<'static>>, pub frame_screen_target: Option<Ref<WgpuScreenRenderTarget>>, pub surface_antialias_resolve_bind_group_layout: Option<wgpu::BindGroupLayout>, pub surface_antialias_resolve_pipeline: Option<wgpu::RenderPipeline>, pub clip_forms: Vec<WgpuClipForm>, pub current_mask_depth: u32, pub mask_write_mode: bool, pub clip_contour_pipelines: Option<HashMap<wgpu::TextureFormat, WgpuClipContourPipelines>>, pub clip_contour_stack: Vec<WgpuClipContourEntry>, pub retired_buffers: Option<Vec<wgpu::Buffer>>, pub retired_textures: Option<Vec<wgpu::Texture>>, pub shape_mesh_pipelines: Option<HashMap<String, WgpuShapeMeshPipeline>>, pub scissor_stack: Vec<WgpuScissorRect>, pub current_scissor_rect: Option<WgpuScissorRect>, pub render_target_viewport: Option<WgpuRenderPassViewport>, pub current_color_format: Option<wgpu::TextureFormat>, pub current_render_target: Option<WgpuRenderTarget>, pub pass_stack: Vec<WgpuRenderPassRecord>, pub destroyed: bool, }
+src/types.rs: pub struct WgpuRenderTargetPool { pub(crate) runtime: EntityRuntimeSlot, pub free: Vec<Ref<WgpuTextureRenderTarget>>, }
+src/types.rs: pub struct WgpuRenderTexturePool { pub(crate) runtime: EntityRuntimeSlot, pub device: Option<WgpuDevice>, pub destroyed: bool, pub effect_targets: WgpuRenderTargetPool, pub free: Vec<Ref<RenderTexture>>, pub leased: Vec<Ref<RenderTexture>>, }
+src/types.rs: pub struct WgpuScreenRenderTarget { pub(crate) runtime: EntityRuntimeSlot, pub antialias: bool, pub antialias_resolve_bind_group: Option<wgpu::BindGroup>, pub antialias_texture: Option<wgpu::Texture>, pub antialias_view: Option<wgpu::TextureView>, pub acquire_antialias_view: Option<fn(&mut WgpuRenderState, &mut WgpuScreenRenderTarget) -> wgpu::TextureView>, pub encode_antialias_resolve: Option<fn(&WgpuRenderState, &WgpuScreenRenderTarget, &mut wgpu::CommandEncoder)>, pub capture_buffer: Option<wgpu::Buffer>, pub capture_bytes_per_row: u32, pub capture_enabled: bool, pub capture_height: u32, pub capture_texture: Option<wgpu::Texture>, pub capture_width: u32, pub acquire_capture_texture: Option<fn(&mut WgpuScreenRenderTarget) -> wgpu::Texture>, pub encode_capture: Option<fn(&mut WgpuScreenRenderTarget, &mut wgpu::CommandEncoder)>, pub color_attachments: u32, pub color_space: RenderTargetColorSpace, pub context: WgpuSurfaceContext, pub depth_stencil_texture: wgpu::Texture, pub depth_stencil_view: wgpu::TextureView, pub device: WgpuNativeDevice, pub format: wgpu::TextureFormat, pub height: u32, pub presentation_view: Option<wgpu::TextureView>, pub sample_count: u32, pub surface: WgpuPresentationSurface, pub width: u32, pub(crate) configuration: WgpuCanvasConfiguration, pub(crate) frame: Option<WgpuCanvasFrame>, pub(crate) reconfigure_pending: bool, pub(crate) skipped_frame_texture: Option<wgpu::Texture>, pub(crate) capture_map_pending: bool, }
+src/types.rs: pub struct WgpuTextureEntry { pub(crate) runtime: EntityRuntimeSlot, pub bindings: WgpuTextureBindings, pub mip_level_count: u32, pub sampler: Option<wgpu::Sampler>, pub straight_alpha: Option<bool>, pub texture: wgpu::Texture, pub view: wgpu::TextureView, pub version: Option<u32>, pub video: Option<WgpuVideoTextureState>, }
+src/types.rs: pub struct WgpuTextureRenderTarget { pub(crate) runtime: EntityRuntimeSlot, pub bindings: WgpuTextureBindings, pub color_attachments: u32, pub color_space: RenderTargetColorSpace, pub depth_stencil_texture: wgpu::Texture, pub depth_stencil_view: wgpu::TextureView, pub format: wgpu::TextureFormat, pub height: u32, pub mip_level_count: u32, pub sample_count: u32, pub texture: wgpu::Texture, pub view: wgpu::TextureView, pub width: u32, }
+src/types.rs: pub type WgpuApplyBlendMode = fn(&mut WgpuRenderState, Option<&BlendMode>);
+src/types.rs: pub type WgpuApplyBlendModeParentSlot = Arc<RwLock<Option<WgpuApplyBlendModeParent>>>;
+src/types.rs: pub type WgpuApplyBlendModeSlot = Arc<RwLock<Option<WgpuApplyBlendMode>>>;
+src/types.rs: pub type WgpuCompressedTextureDecoder = Arc<dyn Fn(TextureContainerFormat, u32, u32, &[u8]) -> Option<Vec<u8>> + Send + Sync>;
+src/types.rs: pub type WgpuCompressedTextureUploader = fn(&mut WgpuRenderState, &CompressedImageResource, Option<&WgpuCompressedTextureDecoder>, Option<TextureColorSpace>,) -> Option<Ref<WgpuTextureEntry>>;
+src/types.rs: pub type WgpuCustomMaterialShaderSource = String;
+src/types.rs: pub type WgpuDeviceRuntimeRef = Ref<WgpuDeviceRuntime>;
+src/types.rs: pub type WgpuDeviceTeardown = Arc<dyn Fn(&WgpuNativeDevice) + Send + Sync>;
+src/types.rs: pub type WgpuMipmapDegradedGuard = Arc<dyn Fn(&WgpuRenderState) + Send + Sync>;
+src/types.rs: pub type WgpuMipmapGenerator = fn(&mut WgpuRenderState, &wgpu::Texture, u32, u32, wgpu::TextureFormat);
+src/types.rs: pub type WgpuRenderStateTeardown = Arc<dyn Fn(&mut WgpuRenderState) + Send + Sync>;
+src/types.rs: pub type WgpuRenderTextureGuard = Arc<dyn Fn(&mut WgpuRenderState, &dyn TextureVariant, &WgpuRenderTextureExplanation) + Send + Sync,>;
+src/types.rs: pub type WgpuSamplerLike = Sampler;
+src/types.rs: pub type WgpuTextureBindings = HashMap<wgpu::Sampler, wgpu::BindGroup>;
+src/types.rs: pub type WgpuTextureResolver = fn(&mut WgpuRenderState, &dyn TextureVariant, bool, TextureColorSpace,) -> Option<Ref<WgpuTextureEntry>>;
+src/wgpu_adapter_capabilities.rs: pub fn get_wgpu_adapter_capabilities(adapter: &wgpu::Adapter) -> WgpuAdapterCapabilities
+src/wgpu_canvas_context.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum WgpuCanvasFrameError { Lost, Other, OutOfMemory, Outdated, Timeout, }
+src/wgpu_canvas_context.rs: #[derive(Clone, Debug)] pub struct WgpuCanvasConfiguration { pub alpha_mode: wgpu::CompositeAlphaMode, pub device: WgpuNativeDevice, pub format: wgpu::TextureFormat, pub height: u32, pub usage: wgpu::TextureUsages, pub width: u32, }
+src/wgpu_canvas_context.rs: impl WgpuCanvasContext for wgpu::Surface<'static>
+src/wgpu_canvas_context.rs: impl WgpuCanvasContext for wgpu::Surface<'static> :: fn configure(&self, configuration: &WgpuCanvasConfiguration)
+src/wgpu_canvas_context.rs: impl WgpuCanvasContext for wgpu::Surface<'static> :: fn get_current_texture(&self) -> Result<WgpuCanvasFrame, WgpuCanvasFrameError>
+src/wgpu_canvas_context.rs: impl WgpuCanvasContext for wgpu::Surface<'static> :: fn present(&self, device: &WgpuNativeDevice, frame: WgpuCanvasFrame)
+src/wgpu_canvas_context.rs: impl WgpuCanvasContext for wgpu::Surface<'static> :: fn unconfigure(&self)
+src/wgpu_canvas_context.rs: pub fn create_wgpu_canvas_frame(texture: wgpu::Texture) -> WgpuCanvasFrame
+src/wgpu_canvas_context.rs: pub fn create_wgpu_surface_context(provider: flight_host::ProviderRef, context: Arc<dyn WgpuCanvasContext>,) -> WgpuSurfaceContext
+src/wgpu_canvas_context.rs: pub struct WgpuCanvasFrame { pub texture: wgpu::Texture, pub(crate) surface_texture: Option<wgpu::SurfaceTexture>, }
+src/wgpu_canvas_context.rs: pub trait WgpuCanvasContext: Send + Sync { fn configure(&self, configuration: &WgpuCanvasConfiguration); fn get_current_texture(&self) -> Result<WgpuCanvasFrame, WgpuCanvasFrameError>; fn present(&self, device: &WgpuNativeDevice, frame: WgpuCanvasFrame); fn unconfigure(&self); }
+src/wgpu_command_observer.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub enum WgpuColorLoadRecord { Clear(WgpuClearColorRecord), Load, }
+src/wgpu_command_observer.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct WgpuClearColorRecord { pub a: f64, pub b: f64, pub g: f64, pub r: f64, }
+src/wgpu_command_observer.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct WgpuScissorRectRecord { pub height: u32, pub width: u32, pub x: u32, pub y: u32, }
+src/wgpu_command_observer.rs: #[derive(Clone, Debug)] pub enum WgpuCommandRecord { BeginRenderPass(WgpuRenderPassBeginRecord), CreateRenderPipeline(WgpuRenderPipelineRecord), SetScissorRect(WgpuScissorRectRecord), WriteBuffer(WgpuBufferWriteRecord), WriteTexture(WgpuTextureWriteRecord), }
+src/wgpu_command_observer.rs: #[derive(Clone, Debug, PartialEq)] pub struct WgpuBufferWriteRecord { pub buffer: wgpu::Buffer, pub data: Vec<u8>, pub offset: u64, }
+src/wgpu_command_observer.rs: #[derive(Clone, Debug, PartialEq)] pub struct WgpuRenderPassBeginRecord { pub color: WgpuColorLoadRecord, pub color_view: wgpu::TextureView, pub depth_clear: Option<f32>, pub stencil_clear: u32, }
+src/wgpu_command_observer.rs: #[derive(Clone, Debug, PartialEq)] pub struct WgpuRenderPipelineRecord { pub depth_stencil: Option<wgpu::DepthStencilState>, pub pipeline: wgpu::RenderPipeline, pub targets: Vec<Option<wgpu::ColorTargetState>>, }
+src/wgpu_command_observer.rs: #[derive(Clone, Debug, PartialEq)] pub struct WgpuTextureWriteRecord { pub bytes_per_row: Option<u32>, pub data: Vec<u8>, pub mip_level: u32, pub origin: [u32; 3], pub rows_per_image: Option<u32>, pub size: [u32; 3], pub texture: wgpu::Texture, }
+src/wgpu_command_observer.rs: pub fn set_wgpu_native_device_command_observer(device: &WgpuNativeDevice, observer: Option<WgpuCommandObserver>,)
+src/wgpu_command_observer.rs: pub type WgpuCommandObserver = Arc<dyn Fn(&WgpuCommandRecord) + Send + Sync>;
+src/wgpu_compressed_texture.rs: pub fn detect_wgpu_compressed_texture_support(device: &wgpu::Device,) -> WgpuCompressedTextureSupport
+src/wgpu_compressed_texture.rs: pub fn get_wgpu_compressed_texture_format(device: &wgpu::Device, format: TextureContainerFormat,) -> Option<wgpu::TextureFormat>
+src/wgpu_compressed_texture.rs: pub fn has_wgpu_compressed_texture_format(support: &WgpuCompressedTextureSupport, format: TextureContainerFormat,) -> bool
+src/wgpu_compressed_texture.rs: pub fn register_wgpu_compressed_texture_decoder(state: &mut WgpuRenderState, decode: Option<WgpuCompressedTextureDecoder>,)
+src/wgpu_compressed_texture.rs: pub fn register_wgpu_compressed_texture_upload(state: &mut WgpuRenderState, enabled: bool)
+src/wgpu_compressed_texture.rs: pub fn upload_wgpu_compressed_texture_container(state: &WgpuRenderState, container: &TextureContainer, payload: &Uint8Array, decode: Option<&WgpuCompressedTextureDecoder>, color_space: Option<TextureColorSpace>,) -> Option<wgpu::Texture>
+src/wgpu_device_loss.rs: pub fn create_wgpu_native_device(device: wgpu::Device, queue: wgpu::Queue, host_spawn: HostSpawnCapability,) -> WgpuNativeDevice
+src/wgpu_device_loss.rs: pub fn create_wgpu_native_device_with_loss_hook(device: wgpu::Device, queue: wgpu::Queue, host_spawn: HostSpawnCapability,) ->(WgpuNativeDevice, WgpuDeviceLossHook)
+src/wgpu_device_loss.rs: pub fn dispose_wgpu_device_signals(state: &WgpuRenderState)
+src/wgpu_device_loss.rs: pub fn enable_wgpu_device_signals(state: &WgpuRenderState) -> WgpuDeviceSignals
+src/wgpu_device_loss.rs: pub fn get_wgpu_device_loss(state: &WgpuRenderState) -> Option<WgpuDeviceLostInfo>
+src/wgpu_device_loss.rs: pub fn get_wgpu_native_device_lost(device: &WgpuNativeDevice) -> SharedFuture<WgpuDeviceLostInfo>
+src/wgpu_device_loss.rs: pub fn is_wgpu_device_lost(state: &WgpuRenderState) -> bool
+src/wgpu_device_loss.rs: pub fn observe_wgpu_device_loss(device_runtime: &WgpuDeviceRuntimeRef)
+src/wgpu_device_loss.rs: pub fn resolve_wgpu_device_loss(hook: &WgpuDeviceLossHook, info: WgpuDeviceLostInfo)
+src/wgpu_draw.rs: pub fn apply_wgpu_blend_mode(state: &mut WgpuRenderState, blend_mode: Option<&BlendMode>)
+src/wgpu_draw.rs: pub fn bind_wgpu_bitmap_texture(state: &mut WgpuRenderState, bitmap: &Bitmap, generate_mips: Option<bool>, premultiply: Option<bool>, color_space: Option<TextureColorSpace>,) -> Ref<WgpuTextureEntry>
+src/wgpu_draw.rs: pub fn bind_wgpu_compressed_image_texture(state: &mut WgpuRenderState, image: &CompressedImageResource, color_space: Option<TextureColorSpace>,) -> Option<Ref<WgpuTextureEntry>>
+src/wgpu_draw.rs: pub fn bind_wgpu_image_resource_texture(state: &mut WgpuRenderState, image: &ImageResource, generate_mips: Option<bool>, premultiply: Option<bool>, color_space: Option<TextureColorSpace>,) -> Option<Ref<WgpuTextureEntry>>
+src/wgpu_draw.rs: pub fn bind_wgpu_texture(state: &mut WgpuRenderState, image_source: &Arc<HostImageSource>, generate_mips: Option<bool>,) -> Option<Ref<WgpuTextureEntry>>
+src/wgpu_draw.rs: pub fn bind_wgpu_video_texture(state: &mut WgpuRenderState, video_texture: &dyn TextureVariant,) -> Option<Ref<WgpuTextureEntry>>
+src/wgpu_draw.rs: pub fn create_wgpu_texture_entry(state: &WgpuRenderState, width: u32, height: u32, canvas: &HostImageSource,) -> Option<Ref<WgpuTextureEntry>>
+src/wgpu_draw.rs: pub fn destroy_wgpu_video_texture(state: &mut WgpuRenderState, video_texture: &dyn TextureVariant,) -> bool
+src/wgpu_draw.rs: pub fn draw_wgpu_quad(state: &mut WgpuRenderState, render_proxy: &RenderProxy2D<WgpuRenderState>, texture_entry: &Ref<WgpuTextureEntry>, x0: f32, y0: f32, x1: f32, y1: f32, u0: f32, v0: f32, u1: f32, v1: f32,)
+src/wgpu_draw.rs: pub fn draw_wgpu_quad_with_transform(state: &mut WgpuRenderState, alpha: f32, color_scale_bias: Option<&ColorScaleBias>, transform: &Matrix, texture_entry: &Ref<WgpuTextureEntry>, x0: f32, y0: f32, x1: f32, y1: f32, u0: f32, v0: f32, u1: f32, v1: f32,)
+src/wgpu_draw.rs: pub fn enable_wgpu_blend_mode_support(state: &mut WgpuRenderState)
+src/wgpu_draw.rs: pub fn get_wgpu_render_proxy_color_scale_bias(render_proxy: &RenderProxy2D<WgpuRenderState>,) -> Option<ColorScaleBias>
+src/wgpu_draw.rs: pub fn initialize_wgpu_texture_entry(out: &mut WgpuTextureEntry, texture: wgpu::Texture, view: wgpu::TextureView,)
+src/wgpu_draw.rs: pub fn resolve_wgpu_smoothing_bind_group(state: &WgpuRenderState, entry: &Ref<WgpuTextureEntry>, smoothing: Option<bool>,) -> wgpu::BindGroup
+src/wgpu_draw.rs: pub fn submit_wgpu_quad_draw(state: &mut WgpuRenderState, uniform_offset: u32, texture_bind_group: &wgpu::BindGroup,)
+src/wgpu_draw.rs: pub fn update_wgpu_texture_entry(state: &WgpuRenderState, entry: &Ref<WgpuTextureEntry>, canvas: &HostImageSource,)
+src/wgpu_draw.rs: pub fn warm_wgpu_pipelines(state: &mut WgpuRenderState)
+src/wgpu_external_image_source.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub enum WgpuExternalCopyError { CopyFailed, Invalid(String), NotReady, }
+src/wgpu_external_image_source.rs: pub fn create_wgpu_external_host_image_source(provider: ProviderRef, source: Arc<dyn WgpuExternalImageSource>,) -> HostImageSource
+src/wgpu_external_image_source.rs: pub fn is_wgpu_external_image_source_ready(source: &dyn WgpuExternalImageSource, width: u32, height: u32,) -> bool
+src/wgpu_external_image_source.rs: pub fn try_copy_wgpu_external_image_to_texture(queue: &wgpu::Queue, source: &dyn WgpuExternalImageSource, texture: &wgpu::Texture, origin: wgpu::Origin3d, premultiplied_alpha: bool, width: u32, height: u32,) -> bool
+src/wgpu_external_image_source.rs: pub trait WgpuExternalImageSource: Send + Sync { fn copy_to_texture(&self, queue: &wgpu::Queue, texture: &wgpu::Texture, origin: wgpu::Origin3d, premultiplied_alpha: bool, width: u32, height: u32,) -> Result<(), WgpuExternalCopyError>; fn height(&self) -> u32; fn is_ready(&self, width: u32, height: u32) -> bool; fn width(&self) -> u32; }
+src/wgpu_external_texture.rs: pub fn create_external_wgpu_texture(state: &mut WgpuRenderState, handle: wgpu::Texture, options: &CreateExternalTextureOptions,) -> Texture2D
+src/wgpu_external_texture.rs: pub fn dispose_external_wgpu_texture(state: &mut WgpuRenderState, texture: &dyn TextureVariant,) -> bool
+src/wgpu_external_texture.rs: pub fn initialize_external_wgpu_texture_entry(out: &mut WgpuTextureEntry, sampler: wgpu::Sampler, texture: wgpu::Texture, view: wgpu::TextureView,)
+src/wgpu_external_texture.rs: pub fn initialize_external_wgpu_texture_source(out: &mut ExternalTexture, options: &CreateExternalTextureOptions,)
+src/wgpu_frame.rs: pub fn begin_wgpu_frame(state: &mut WgpuRenderState)
+src/wgpu_frame.rs: pub fn retire_wgpu_buffer(state: &mut WgpuRenderState, buffer: wgpu::Buffer)
+src/wgpu_frame.rs: pub fn retire_wgpu_texture(state: &mut WgpuRenderState, texture: wgpu::Texture)
+src/wgpu_frame.rs: pub fn submit_wgpu_frame(state: &mut WgpuRenderState)
+src/wgpu_frame.rs: pub fn with_wgpu_frame_borrow<T>(owner_state: &mut WgpuRenderState, borrower_state: &mut WgpuRenderState, callback: impl FnOnce(&mut WgpuRenderState) -> T,) -> T
+src/wgpu_fullscreen_pass.rs: pub fn create_wgpu_fullscreen_pipeline(state: &WgpuRenderState, fragment_wgsl: &str, texture_input_count: Option<u32>, format: Option<wgpu::TextureFormat>,) -> WgpuFullscreenPipeline
+src/wgpu_fullscreen_pass.rs: pub fn destroy_wgpu_fullscreen_pipeline(_state: &WgpuRenderState, _pipeline: &WgpuFullscreenPipeline,)
+src/wgpu_fullscreen_pass.rs: pub fn draw_wgpu_fullscreen_pass(state: &mut WgpuRenderState, wgpu_pipeline: &WgpuFullscreenPipeline, inputs: &[&WgpuTextureRenderTarget], set_uniforms: Option<WgpuFullscreenUniforms>,)
+src/wgpu_fullscreen_pass.rs: pub fn initialize_wgpu_fullscreen_pipeline(out: &mut WgpuFullscreenPipeline, state: &WgpuRenderState, fragment_wgsl: &str, texture_input_count: Option<u32>, format: Option<wgpu::TextureFormat>,)
+src/wgpu_fullscreen_pass.rs: pub type WgpuFullscreenUniforms = fn(&mut WgpuRenderState, &wgpu::BindGroupLayout) -> wgpu::BindGroup;
+src/wgpu_mipmap.rs: pub fn generate_wgpu_mipmaps(state: &mut WgpuRenderState, texture: &wgpu::Texture, width: u32, height: u32, format: wgpu::TextureFormat,)
+src/wgpu_mipmap.rs: pub fn get_wgpu_mip_level_count(width: u32, height: u32) -> u32
+src/wgpu_mipmap.rs: pub fn register_wgpu_mipmap_generation(state: &mut WgpuRenderState)
+src/wgpu_quad_material_registry.rs: pub fn get_wgpu_quad_material_renderer(state: &WgpuRenderState, kind: &Kind,) -> Option<WgpuQuadMaterialRenderer>
+src/wgpu_quad_material_registry.rs: pub fn register_wgpu_quad_material_renderer(state: &mut WgpuRenderState, kind: Kind, renderer: WgpuQuadMaterialRenderer,)
+src/wgpu_quad_material_registry.rs: pub fn resolve_wgpu_quad_material_renderer(state: &mut WgpuRenderState, material: Option<&dyn Material>,) -> Option<WgpuQuadMaterialRenderer>
+src/wgpu_render_pass.rs: pub fn begin_wgpu_render_pass<'a>(state: &'a mut WgpuRenderState, target: &WgpuRenderTarget, clear: Option<&RenderTargetClear>,) -> WgpuRenderPass<'a>
+src/wgpu_render_pass.rs: pub fn end_wgpu_render_pass(pass: WgpuRenderPass<'_>)
+src/wgpu_render_pass.rs: pub fn get_wgpu_active_render_pass(state: &WgpuRenderState) -> Option<&WgpuRenderPassRecord>
+src/wgpu_render_pass.rs: pub fn get_wgpu_render_pass_viewport(state: &WgpuRenderState) -> WgpuRenderPassViewport
+src/wgpu_render_pass.rs: pub fn resume_wgpu_render_pass(pass: &mut WgpuRenderPass<'_>)
+src/wgpu_render_pass.rs: pub fn suspend_wgpu_render_pass(pass: &mut WgpuRenderPass<'_>)
+src/wgpu_render_state.rs: pub async fn create_wgpu_acquisition(host_wgpu: &HostWgpuCapability, surface: &SurfaceRef, options: Option<&WgpuHostAcquisitionOptions>,) -> Option<WgpuHostAcquisition>
+src/wgpu_render_state.rs: pub fn build_wgpu_render_registries(options: &WgpuRenderStateOptions) -> WgpuRenderRegistries
+src/wgpu_render_state.rs: pub fn create_wgpu_device_state(device: &WgpuDevice) -> WgpuDeviceState
+src/wgpu_render_state.rs: pub fn create_wgpu_offscreen_render_state(source: &WgpuRenderState,) -> WgpuOffscreenRenderStateResult
+src/wgpu_render_state.rs: pub fn create_wgpu_offscreen_render_state_from_device_state(device_state: &WgpuDeviceState, options: Option<&WgpuRenderStateOptions>,) -> WgpuRenderState
+src/wgpu_render_state.rs: pub fn create_wgpu_render_state(device: &WgpuDevice, options: Option<&WgpuRenderStateOptions>,) -> WgpuRenderState
+src/wgpu_render_state.rs: pub fn create_wgpu_render_state_runtime(device_state: &WgpuDeviceState, options: Option<&WgpuRenderStateOptions>,) -> WgpuRenderStateRuntime
+src/wgpu_render_state.rs: pub fn destroy_wgpu_render_state(state: &mut WgpuRenderState, proxies: &mut RenderProxies2D<WgpuRenderState>,)
+src/wgpu_render_state.rs: pub fn get_wgpu_color_adjustment_material_feature(state: &WgpuRenderState,) -> Option<flight_entity::UnknownValue>
+src/wgpu_render_state.rs: pub fn get_wgpu_color_adjustment_material_feature_guard(state: &WgpuRenderState,) -> Option<flight_entity::UnknownValue>
+src/wgpu_render_state.rs: pub fn get_wgpu_device_runtime(device_state: &WgpuDeviceState) -> WgpuDeviceRuntimeRef
+src/wgpu_render_state.rs: pub fn get_wgpu_render_state_device_resources(state: &WgpuRenderState,) -> WgpuDeviceRuntimeResources
+src/wgpu_render_state.rs: pub fn get_wgpu_render_state_native_device(state: &WgpuRenderState) -> WgpuNativeDevice
+src/wgpu_render_state.rs: pub fn get_wgpu_render_state_runtime(state: &WgpuRenderState) -> &WgpuRenderStateRuntime
+src/wgpu_render_state.rs: pub fn get_wgpu_render_state_runtime_mut(state: &mut WgpuRenderState,) -> &mut WgpuRenderStateRuntime
+src/wgpu_render_state.rs: pub fn get_wgpu_sampler(state: &WgpuRenderState, min_filter: wgpu::FilterMode, mag_filter: wgpu::FilterMode, wrap_u: TextureWrap, wrap_v: TextureWrap, mipmap_filter: Option<wgpu::MipmapFilterMode>, max_anisotropy: Option<f32>,) -> wgpu::Sampler
+src/wgpu_render_state.rs: pub fn initialize_wgpu_device_state(out: &mut WgpuDeviceState, device: &WgpuDevice)
+src/wgpu_render_state.rs: pub fn initialize_wgpu_host_acquisition(out: &mut WgpuHostAcquisition, acquired: WgpuHostAcquisition, ownership: WgpuHostAcquisitionOwnership,)
+src/wgpu_render_state.rs: pub fn initialize_wgpu_offscreen_render_state_device_lost_result(out: &mut WgpuOffscreenRenderStateDeviceLost, info: WgpuDeviceLostInfo,)
+src/wgpu_render_state.rs: pub fn initialize_wgpu_offscreen_render_state_ok_result(out: &mut WgpuOffscreenRenderStateOk, state: WgpuRenderState,)
+src/wgpu_render_state.rs: pub fn is_wgpu_supported(host_wgpu: &HostWgpuCapability) -> bool
+src/wgpu_render_state.rs: pub fn register_wgpu_device_teardown(state: &WgpuRenderState, teardown: WgpuDeviceTeardown)
+src/wgpu_render_state.rs: pub fn register_wgpu_render_state_teardown(state: &mut WgpuRenderState, teardown: WgpuRenderStateTeardown,)
+src/wgpu_render_state.rs: pub fn release_wgpu_acquisition(host_wgpu: &HostWgpuCapability, acquisition: &WgpuHostAcquisition)
+src/wgpu_render_state.rs: pub fn resolve_wgpu_apply_blend_mode(state: &WgpuRenderState) -> Option<WgpuApplyBlendMode>
+src/wgpu_render_target.rs: pub fn declare_wgpu_render_target_color_space(state: &mut WgpuRenderState, color_space: RenderTargetColorSpace,) -> bool
+src/wgpu_render_target.rs: pub fn get_wgpu_render_target_supersample_scale(target: &WgpuRenderTarget) -> u32
+src/wgpu_render_target_pool.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct WgpuTextureRenderTargetDescriptor { pub color_space: Option<RenderTargetColorSpace>, pub format: Option<wgpu::TextureFormat>, pub height: f32, pub sample_count: Option<u32>, pub width: f32, }
+src/wgpu_render_target_pool.rs: pub fn acquire_wgpu_texture_render_target(state: &WgpuRenderState, pool: &mut WgpuRenderTargetPool, descriptor: &WgpuTextureRenderTargetDescriptor,) -> Ref<WgpuTextureRenderTarget>
+src/wgpu_render_target_pool.rs: pub fn create_wgpu_render_target_pool() -> WgpuRenderTargetPool
+src/wgpu_render_target_pool.rs: pub fn destroy_wgpu_render_target_pool(pool: &mut WgpuRenderTargetPool)
+src/wgpu_render_target_pool.rs: pub fn initialize_wgpu_render_target_pool(out: &mut WgpuRenderTargetPool)
+src/wgpu_render_target_pool.rs: pub fn release_wgpu_texture_render_target(pool: &mut WgpuRenderTargetPool, target: Ref<WgpuTextureRenderTarget>,)
+src/wgpu_render_texture.rs: pub fn bind_wgpu_render_texture(state: &mut WgpuRenderState, render_texture: &RenderTexture,) -> Option<Ref<WgpuTextureEntry>>
+src/wgpu_render_texture.rs: pub fn destroy_wgpu_render_texture(state: &mut WgpuRenderState, render_texture: &RenderTexture)
+src/wgpu_render_texture.rs: pub fn explain_wgpu_render_texture(state: &WgpuRenderState, render_texture: &RenderTexture,) -> WgpuRenderTextureExplanation
+src/wgpu_render_texture.rs: pub fn get_wgpu_render_texture_target(state: &mut WgpuRenderState, render_texture: &RenderTexture,) -> Option<Ref<WgpuTextureRenderTarget>>
+src/wgpu_render_texture.rs: pub fn invalidate_wgpu_render_texture(state: &WgpuRenderState, render_texture: &RenderTexture, status: Option<WgpuRenderTextureStatus>,)
+src/wgpu_render_texture.rs: pub fn is_wgpu_render_texture_ready(state: &mut WgpuRenderState, render_texture: &RenderTexture,) -> bool
+src/wgpu_render_texture.rs: pub fn render_into_wgpu_render_texture(state: &mut WgpuRenderState, render_texture: &mut RenderTexture, callback: impl FnOnce(&mut WgpuRenderPass<'_>), clear: &RenderTargetClear,)
+src/wgpu_render_texture.rs: pub fn set_wgpu_render_texture_guard(state: &mut WgpuRenderState, guard: Option<WgpuRenderTextureGuard>,)
+src/wgpu_render_texture.rs: pub fn write_wgpu_render_texture_target<T>(state: &mut WgpuRenderState, render_texture: &mut RenderTexture, callback: impl FnOnce(&mut WgpuRenderState, &Ref<WgpuTextureRenderTarget>) -> T,) -> T
+src/wgpu_render_texture_pool.rs: pub fn acquire_wgpu_render_texture(state: &WgpuRenderState, pool: &mut WgpuRenderTexturePool, descriptor: &RenderTargetDescriptor,) -> Ref<RenderTexture>
+src/wgpu_render_texture_pool.rs: pub fn create_wgpu_render_texture_pool() -> WgpuRenderTexturePool
+src/wgpu_render_texture_pool.rs: pub fn destroy_wgpu_render_texture_pool(state: &mut WgpuRenderState, pool: &mut WgpuRenderTexturePool,)
+src/wgpu_render_texture_pool.rs: pub fn initialize_wgpu_render_texture_pool(out: &mut WgpuRenderTexturePool)
+src/wgpu_render_texture_pool.rs: pub fn release_wgpu_render_texture(state: &WgpuRenderState, pool: &mut WgpuRenderTexturePool, render_texture: &Ref<RenderTexture>,)
+src/wgpu_render_texture_pool.rs: pub fn with_wgpu_render_textures<T>(state: &mut WgpuRenderState, pool: &mut WgpuRenderTexturePool, descriptors: &[RenderTargetDescriptor], callback: impl FnOnce(&mut WgpuRenderState, &mut WgpuRenderTexturePool, &[Ref<RenderTexture>]) -> T,) -> T
+src/wgpu_scissor.rs: pub fn apply_wgpu_scissor_rect(state: &mut WgpuRenderState)
+src/wgpu_scissor.rs: pub fn pop_wgpu_scissor_rect(state: &mut WgpuRenderState)
+src/wgpu_scissor.rs: pub fn push_wgpu_scissor_rect(state: &mut WgpuRenderState, rect: &WgpuScissorRect)
+src/wgpu_scissor.rs: pub fn set_wgpu_render_pass_scissor_rect(state: &mut WgpuRenderState, x: u32, y: u32, width: u32, height: u32,)
+src/wgpu_screen_antialias.rs: pub fn enable_wgpu_screen_render_target_antialias(target: &mut WgpuScreenRenderTarget)
+src/wgpu_screen_capture.rs: pub async fn create_bitmap_from_wgpu_screen_render_target(target: &Ref<WgpuScreenRenderTarget>, timeout_ms: Option<u32>,) -> Result<Bitmap, FlightError>
+src/wgpu_screen_capture.rs: pub fn enable_wgpu_screen_render_target_capture(target: &mut WgpuScreenRenderTarget)
+src/wgpu_screen_capture.rs: pub fn encode_wgpu_screen_render_target_capture(target: &mut WgpuScreenRenderTarget, encoder: &mut wgpu::CommandEncoder,)
+src/wgpu_screen_render_target.rs: pub fn bind_wgpu_screen_render_target(state: &mut WgpuRenderState, target: &mut WgpuScreenRenderTarget,) -> wgpu::TextureView
+src/wgpu_screen_render_target.rs: pub fn create_wgpu_screen_render_target(wgpu_host: &HostWgpuCapability, device: &WgpuDevice, drawable: &SurfaceRef, options: Option<&WgpuScreenRenderTargetOptions>,) -> WgpuScreenRenderTarget
+src/wgpu_screen_render_target.rs: pub fn destroy_wgpu_screen_render_target(target: &mut WgpuScreenRenderTarget)
+src/wgpu_screen_render_target.rs: pub fn end_wgpu_screen_render_target_frame(target: &mut WgpuScreenRenderTarget)
+src/wgpu_screen_render_target.rs: pub fn initialize_wgpu_screen_render_target(out: &mut WgpuScreenRenderTarget, wgpu_host: &HostWgpuCapability, device: &WgpuDevice, drawable: &SurfaceRef, options: Option<&WgpuScreenRenderTargetOptions>,)
+src/wgpu_screen_render_target.rs: pub fn is_wgpu_screen_render_target(target: &WgpuRenderTarget) -> bool
+src/wgpu_screen_render_target.rs: pub fn sync_wgpu_screen_render_target_extent(target: &mut WgpuScreenRenderTarget)
+src/wgpu_shader.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum WgpuStencilMode { Masked, MaskWrite, Normal, }
+src/wgpu_shader.rs: pub const UNIFORM_BYTE_SIZE: u32
+src/wgpu_shader.rs: pub fn create_wgpu_bind_group_layouts(device: &WgpuNativeDevice) -> WgpuBindGroupLayouts
+src/wgpu_shader.rs: pub fn create_wgpu_pipeline_layout(device: &WgpuNativeDevice, uniform_bind_group_layout: &wgpu::BindGroupLayout, texture_bind_group_layout: &wgpu::BindGroupLayout,) -> wgpu::PipelineLayout
+src/wgpu_shader.rs: pub fn get_active_wgpu_pipeline(state: &mut WgpuRenderState) -> wgpu::RenderPipeline
+src/wgpu_shader.rs: pub fn get_wgpu_blend_state(blend_mode: Option<&BlendMode>) -> wgpu::BlendState
+src/wgpu_shader.rs: pub fn get_wgpu_pipeline(state: &mut WgpuRenderState, blend_mode: Option<&BlendMode>, stencil_mode: WgpuStencilMode,) -> wgpu::RenderPipeline
+src/wgpu_shader.rs: pub fn initialize_wgpu_bind_group_layouts(out: &mut WgpuBindGroupLayouts, device: &WgpuNativeDevice,)
+src/wgpu_shader.rs: pub fn set_wgpu_matrix_from_transform(matrix_array: &mut [f32; 9], t: &Matrix, viewport: &WgpuRenderPassViewport,)
+src/wgpu_shader.rs: pub fn write_wgpu_matrix_only_uniforms(state: &mut WgpuRenderState, alpha: f32, transform: &Matrix, x0: f32, y0: f32, x1: f32, y1: f32, u0: f32, v0: f32, u1: f32, v1: f32,) -> u32
+src/wgpu_shader.rs: pub fn write_wgpu_quad_uniforms(state: &mut WgpuRenderState, alpha: f32, transform: &Matrix, color_scale_bias: Option<&ColorScaleBias>, x0: f32, y0: f32, x1: f32, y1: f32, u0: f32, v0: f32, u1: f32, v1: f32, straight_texture_alpha: bool,) -> u32
+src/wgpu_shader_binding.rs: pub fn get_wgpu_shader(state: &WgpuRenderState, render_proxy: &RenderProxy2D<WgpuRenderState>,) -> Option<WgpuBitmapShader>
+src/wgpu_shader_binding.rs: pub fn resolve_wgpu_shader(state: &WgpuRenderState, render_proxy: &RenderProxy2D<WgpuRenderState>,) -> Option<WgpuBitmapShader>
+src/wgpu_shader_binding.rs: pub fn set_wgpu_shader(state: &mut WgpuRenderState, proxies: &mut RenderProxies2D<WgpuRenderState>, node: &NodeRef, shader: Option<WgpuBitmapShader>,)
+src/wgpu_shader_registry.rs: pub fn register_wgpu_bitmap_shader(state: &mut WgpuRenderState, shader: WgpuBitmapShader)
+src/wgpu_texture_format.rs: pub fn get_wgpu_texture_format(name: &str) -> Option<wgpu::TextureFormat>
+src/wgpu_texture_format.rs: pub fn get_wgpu_texture_format_name(format: wgpu::TextureFormat) -> &'static str
+src/wgpu_texture_render_target.rs: pub fn create_wgpu_texture_render_target(state: &WgpuRenderState, width: f32, height: f32, format: Option<wgpu::TextureFormat>, color_space: Option<RenderTargetColorSpace>, sample_count: Option<u32>,) -> WgpuTextureRenderTarget
+src/wgpu_texture_render_target.rs: pub fn destroy_wgpu_texture_render_target(target: &WgpuTextureRenderTarget)
+src/wgpu_texture_render_target.rs: pub fn draw_wgpu_texture_render_target_result(state: &mut WgpuRenderState, alpha: f32, color_scale_bias: Option<&ColorScaleBias>, transform_2d: &Matrix, target: &mut WgpuTextureRenderTarget, transform: &Matrix,)
+src/wgpu_texture_render_target.rs: pub fn initialize_wgpu_texture_render_target(out: &mut WgpuTextureRenderTarget, state: &WgpuRenderState, width: f32, height: f32, format: Option<wgpu::TextureFormat>, color_space: Option<RenderTargetColorSpace>, sample_count: Option<u32>,)
+src/wgpu_texture_render_target.rs: pub fn resize_wgpu_texture_render_target(state: &WgpuRenderState, target: &mut WgpuTextureRenderTarget, width: f32, height: f32, sample_count: Option<u32>,)
+src/wgpu_texture_resolver.rs: pub fn register_standard_wgpu_texture_resolvers(state: &mut WgpuRenderState)
+src/wgpu_texture_resolver.rs: pub fn register_wgpu_bitmap_texture_resolver(state: &mut WgpuRenderState)
+src/wgpu_texture_resolver.rs: pub fn register_wgpu_compressed_image_texture_resolver(state: &mut WgpuRenderState)
+src/wgpu_texture_resolver.rs: pub fn register_wgpu_image_texture_resolver(state: &mut WgpuRenderState)
+src/wgpu_texture_resolver.rs: pub fn register_wgpu_render_texture_resolver(state: &mut WgpuRenderState)
+src/wgpu_texture_resolver.rs: pub fn register_wgpu_texture_resolver(state: &mut WgpuRenderState, source_kind: TextureSourceKind, resolver: Option<WgpuTextureResolver>,)
+src/wgpu_texture_resolver.rs: pub fn resolve_wgpu_texture(state: &mut WgpuRenderState, texture: &dyn TextureVariant, premultiply: Option<bool>, working_color_space: Option<RenderTargetColorSpace>,) -> Option<Ref<WgpuTextureEntry>>
+src/wgpu_texture_resolver.rs: pub static STANDARD_WGPU_TEXTURE_RESOLVERS: LazyLock<KindMap<WgpuTextureResolver>>
+src/wgpu_texture_upload.rs: pub fn upload_wgpu_texture_data(device: &WgpuNativeDevice, texture: &wgpu::Texture, origin: wgpu::Origin3d, width: u32, height: u32, data: &[u8],)
+src/wgpu_texture_upload.rs: pub fn upload_wgpu_texture_element(device: &WgpuNativeDevice, texture: &wgpu::Texture, origin: wgpu::Origin3d, width: u32, height: u32, source: &HostImageSource,)
+src/wgpu_texture_upload.rs: pub fn upload_wgpu_texture_image_resource(device: &WgpuNativeDevice, texture: &wgpu::Texture, origin: wgpu::Origin3d, image: &ImageResource,)
