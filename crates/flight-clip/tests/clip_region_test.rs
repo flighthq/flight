@@ -332,7 +332,7 @@ mod initialize_clip_region_from_contours {
     fn initializes_preallocated_entity_storage() {
         let state = create_clip_region_state();
         let mut out: ClipRegion = allocate_entity();
-        initialize_clip_region_from_contours(&state, &mut out, &triangle(), PathWinding::EvenOdd);
+        initialize_clip_region_from_contours(&mut out, &state, &triangle(), PathWinding::EvenOdd);
         assert_eq!(out.contours, Some(triangle()));
         assert_eq!(out.winding, PathWinding::EvenOdd);
     }

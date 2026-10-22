@@ -17,7 +17,7 @@ src/clip_region.rs: pub fn equals_clip_region(state: &ClipRegionState, a: &Ref<C
 src/clip_region.rs: pub fn explain_clip_region(state: &ClipRegionState, clip: &Ref<ClipRegion>,) -> ClipRegionExplanation
 src/clip_region.rs: pub fn explain_clip_region_contours(contours: &[Vec<f64>],) -> Option<ClipRegionContoursExplanation>
 src/clip_region.rs: pub fn get_clip_region_bounds(state: &ClipRegionState, out: &mut Rectangle, clip: &Ref<ClipRegion>,)
-src/clip_region.rs: pub fn initialize_clip_region_from_contours(state: &ClipRegionState, out: &mut ClipRegion, contours: &[Vec<f64>], winding: PathWinding,)
+src/clip_region.rs: pub fn initialize_clip_region_from_contours(out: &mut ClipRegion, state: &ClipRegionState, contours: &[Vec<f64>], winding: PathWinding,)
 src/clip_region.rs: pub fn initialize_clip_region_from_path(out: &mut ClipRegion, path: &Path, tolerance: Option<f64>)
 src/clip_region.rs: pub fn initialize_clip_region_from_rectangle(out: &mut ClipRegion, rectangle: &Rectangle)
 src/clip_region.rs: pub fn intersect_clip_regions(state: &ClipRegionState, out: &Ref<ClipRegion>, a: &Ref<ClipRegion>, b: &Ref<ClipRegion>,)

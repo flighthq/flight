@@ -36,7 +36,7 @@ pub fn create_clip_region_from_contours(
     winding: PathWinding,
 ) -> Ref<ClipRegion> {
     let mut out: ClipRegion = allocate_entity();
-    initialize_clip_region_from_contours(state, &mut out, contours, winding);
+    initialize_clip_region_from_contours(&mut out, state, contours, winding);
     return Arc::new(RwLock::new(out));
 }
 
@@ -96,10 +96,10 @@ pub fn create_clip_region_state() -> ClipRegionState {
 }
 
 // flight-lint: allow(f64) clip contours preserve the source Path.data coordinate precision
-// flight-lint: allow(conform-params) D5: caller-owned state replaces the hidden contour guard slot
+// flight-lint: allow(conform-params) D5/D24: caller-owned output precedes explicit guard state
 pub fn initialize_clip_region_from_contours(
-    state: &ClipRegionState,
     out: &mut ClipRegion,
+    state: &ClipRegionState,
     contours: &[Vec<f64>],
     winding: PathWinding,
 ) {
