@@ -76,6 +76,7 @@ mod sugar_tests {
 
 /// Allocates a reusable key-repeat timer from the supplied timings (TS
 /// `createInputKeyRepeatTimer`). Timing is caller-driven; no real timer is created.
+// flight-lint: allow(conform-params) D23 B: InputKeyRepeatOptions removed; timings assigned after create
 pub fn create_input_key_repeat_timer() -> Ref<InputKeyRepeatTimer> {
     let mut out: InputKeyRepeatTimer = allocate_entity();
     initialize_input_key_repeat_timer(&mut out);
