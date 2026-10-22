@@ -80,9 +80,6 @@ pub enum EmitterShape {
     Line = 2,
     Rect = 3,
     Ring = 4,
-    Box = 5,
-    Sphere = 6,
-    Cone3D = 7,
 }
 
 // ---------------------------------------------------------------------------
@@ -262,7 +259,6 @@ pub struct ParticleEmitterData {
     pub particle_count: usize,
     pub positions_z: Vec<f32>,
     pub transforms: Vec<f32>,
-    pub velocities: Vec<f32>,
     pub world_space: bool,
 }
 

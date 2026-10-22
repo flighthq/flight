@@ -60,7 +60,6 @@ flight-bitmaptext = { path = "crates/flight-bitmaptext" }
 flight-buffer = { path = "crates/flight-buffer" }
 flight-layout = { path = "crates/flight-layout" }
 flight-lifecycle = { path = "crates/flight-lifecycle" }
-flight-particleemitter = { path = "crates/flight-particleemitter" }
 flight-particles = { path = "crates/flight-particles" }
 flight-share = { path = "crates/flight-share" }
 flight-platform = { path = "crates/flight-platform" }
