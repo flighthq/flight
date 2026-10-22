@@ -1,0 +1,445 @@
+src/auto_exposure_effect.rs: #[derive(Clone, Debug, Default)] pub struct AutoExposureEffect { fields: crate::contract::EffectFields, pub adaptation_speed: Option<f32>, pub exposure_compensation: Option<f32>, pub max_exposure: Option<f32>, pub min_exposure: Option<f32>, }
+src/auto_exposure_effect.rs: pub fn create_auto_exposure_effect() -> Ref<AutoExposureEffect>
+src/auto_exposure_effect.rs: pub fn initialize_auto_exposure_effect(out: &mut AutoExposureEffect)
+src/barrel_distortion_effect.rs: #[derive(Clone, Debug, Default)] pub struct BarrelDistortionEffect { fields: crate::contract::EffectFields, pub amount: Option<f32>, pub scale: Option<f32>, }
+src/barrel_distortion_effect.rs: pub fn create_barrel_distortion_effect() -> Ref<BarrelDistortionEffect>
+src/barrel_distortion_effect.rs: pub fn initialize_barrel_distortion_effect(out: &mut BarrelDistortionEffect)
+src/bevel_effect.rs: #[derive(Clone, Debug, Default)] pub struct BevelEffect { fields: crate::contract::EffectFields, pub angle: Option<f32>, pub bevel_type: Option<BevelType>, pub blur_x: Option<f32>, pub blur_y: Option<f32>, pub distance: Option<f32>, pub highlight_alpha: Option<f32>, pub highlight_color: Option<u32>, pub quality: Option<f32>, pub shadow_alpha: Option<f32>, pub shadow_color: Option<u32>, pub source_mode: Option<EffectSourceMode>, pub strength: Option<f32>, }
+src/bevel_effect.rs: pub fn create_bevel_effect() -> Ref<BevelEffect>
+src/bevel_effect.rs: pub fn get_bevel_effect_padding(out: &mut EffectPadding, effect: &BevelEffect)
+src/bevel_effect.rs: pub fn initialize_bevel_effect(out: &mut BevelEffect)
+src/bevel_effect.rs: pub fn register_bevel_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/bitmap_displacement_effect.rs: #[derive(Clone, Debug, Default)] pub struct BitmapDisplacementEffect { fields: crate::contract::EffectFields, pub map: Option<Ref<Texture2D>>, pub component_x: Option<ImageChannel>, pub component_y: Option<ImageChannel>, pub scale_x: Option<f32>, pub scale_y: Option<f32>, pub edge_mode: Option<BitmapDisplacementEffectEdgeMode>, }
+src/bitmap_displacement_effect.rs: pub fn create_bitmap_displacement_effect() -> Ref<BitmapDisplacementEffect>
+src/bitmap_displacement_effect.rs: pub fn get_bitmap_displacement_effect_padding(out: &mut EffectPadding, effect: &BitmapDisplacementEffect,)
+src/bitmap_displacement_effect.rs: pub fn initialize_bitmap_displacement_effect(out: &mut BitmapDisplacementEffect)
+src/bitmap_displacement_effect.rs: pub fn register_bitmap_displacement_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/blend_effect.rs: #[derive(Clone, Debug, Default)] pub struct BlendEffect { fields: crate::contract::EffectFields, pub mode: String, pub backdrop_key: Option<String>, pub opacity: Option<f32>, }
+src/blend_effect.rs: pub fn create_blend_effect() -> Ref<BlendEffect>
+src/blend_effect.rs: pub fn initialize_blend_effect(out: &mut BlendEffect)
+src/blend_mode_math.rs: pub fn blend_non_separable_rgb(out: &mut [f32], mode: &str, cb_r: f32, cb_g: f32, cb_b: f32, cs_r: f32, cs_g: f32, cs_b: f32,)
+src/blend_mode_math.rs: pub fn get_advanced_blend_rgb(out: &mut [f32], mode: &str, cb_r: f32, cb_g: f32, cb_b: f32, cs_r: f32, cs_g: f32, cs_b: f32,)
+src/blend_mode_math.rs: pub fn get_separable_blend_channel(mode: &str, cb: f32, cs: f32) -> f32
+src/blend_mode_math.rs: pub fn is_non_separable_blend_mode(mode: &str) -> bool
+src/bloom_effect.rs: #[derive(Clone, Debug, Default)] pub struct BloomEffect { fields: crate::contract::EffectFields, pub threshold: Option<f32>, pub intensity: Option<f32>, pub radius: Option<f32>, pub passes: Option<f32>, }
+src/bloom_effect.rs: pub fn compute_bloom_blur_radius(effect: &BloomEffect) -> f32
+src/bloom_effect.rs: pub fn compute_bloom_intensity(effect: &BloomEffect) -> f32
+src/bloom_effect.rs: pub fn compute_bloom_threshold(effect: &BloomEffect) -> f32
+src/bloom_effect.rs: pub fn create_bloom_effect() -> Ref<BloomEffect>
+src/bloom_effect.rs: pub fn get_bloom_effect_padding(out: &mut EffectPadding, effect: &BloomEffect)
+src/bloom_effect.rs: pub fn initialize_bloom_effect(out: &mut BloomEffect)
+src/bloom_effect.rs: pub fn register_bloom_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/blur_downsample.rs: pub fn get_blur_downsample_level(sigma: f32) -> u32
+src/blur_downsample.rs: pub fn get_blur_residual_sigma(sigma: f32, level: u32) -> f32
+src/blur_effect.rs: #[derive(Clone, Debug, Default)] pub struct BlurEffect { fields: crate::contract::EffectFields, pub blur_x: Option<f32>, pub blur_y: Option<f32>, }
+src/blur_effect.rs: pub fn create_blur_effect() -> Ref<BlurEffect>
+src/blur_effect.rs: pub fn get_blur_effect_padding(out: &mut EffectPadding, effect: &BlurEffect)
+src/blur_effect.rs: pub fn initialize_blur_effect(out: &mut BlurEffect)
+src/blur_effect.rs: pub fn register_blur_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/bokeh_depth_of_field_effect.rs: #[derive(Clone, Debug, Default)] pub struct BokehDepthOfFieldEffect { fields: crate::contract::EffectFields, pub focus_distance: Option<f32>, pub focus_range: Option<f32>, pub max_blur: Option<f32>, }
+src/bokeh_depth_of_field_effect.rs: pub fn create_bokeh_depth_of_field_effect() -> Ref<BokehDepthOfFieldEffect>
+src/bokeh_depth_of_field_effect.rs: pub fn get_bokeh_depth_of_field_effect_padding(out: &mut EffectPadding, effect: &BokehDepthOfFieldEffect,)
+src/bokeh_depth_of_field_effect.rs: pub fn initialize_bokeh_depth_of_field_effect(out: &mut BokehDepthOfFieldEffect)
+src/bokeh_depth_of_field_effect.rs: pub fn register_bokeh_depth_of_field_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/box_blur_math.rs: pub fn compute_box_blur_pass_radius(sigma: f32, passes: f32, pass: f32) -> f32
+src/box_blur_math.rs: pub fn compute_box_blur_radius(sigma: f32, passes: f32) -> f32
+src/box_blur_math.rs: pub fn compute_gaussian_sigma_for_blur_radius(radius: f32, passes: f32) -> f32
+src/camera_motion_blur_effect.rs: #[derive(Clone, Debug, Default)] pub struct CameraMotionBlurEffect { fields: crate::contract::EffectFields, pub intensity: Option<f32>, pub samples: Option<f32>, }
+src/camera_motion_blur_effect.rs: pub fn create_camera_motion_blur_effect() -> Ref<CameraMotionBlurEffect>
+src/camera_motion_blur_effect.rs: pub fn initialize_camera_motion_blur_effect(out: &mut CameraMotionBlurEffect)
+src/chromatic_aberration_effect.rs: #[derive(Clone, Debug, Default)] pub struct ChromaticAberrationEffect { fields: crate::contract::EffectFields, pub intensity: Option<f32>, pub radial: Option<bool>, }
+src/chromatic_aberration_effect.rs: pub fn create_chromatic_aberration_effect() -> Ref<ChromaticAberrationEffect>
+src/chromatic_aberration_effect.rs: pub fn initialize_chromatic_aberration_effect(out: &mut ChromaticAberrationEffect)
+src/color_temperature_math.rs: pub fn compute_color_temperature_rgb(out: &mut [f32; 3], kelvin: f32)
+src/color_temperature_math.rs: pub fn compute_white_balance_multipliers(out: &mut [f32; 3], temperature: f32, tint: f32)
+src/composite_effect.rs: #[derive(Clone, Debug, Default)] pub struct CompositeEffect { fields: crate::contract::EffectFields, pub operator: String, pub backdrop_key: Option<String>, }
+src/composite_effect.rs: pub fn create_composite_effect() -> Ref<CompositeEffect>
+src/composite_effect.rs: pub fn initialize_composite_effect(out: &mut CompositeEffect)
+src/composite_operator_math.rs: pub fn get_composite_operator_factors(out: &mut [f32], operator: &str, source_alpha: f32, backdrop_alpha: f32,)
+src/contact_shadows_effect.rs: #[derive(Clone, Debug, Default)] pub struct ContactShadowsEffect { fields: crate::contract::EffectFields, pub distance: Option<f32>, pub opacity: Option<f32>, pub samples: Option<f32>, pub smoothness: Option<f32>, }
+src/contact_shadows_effect.rs: pub fn create_contact_shadows_effect() -> Ref<ContactShadowsEffect>
+src/contact_shadows_effect.rs: pub fn get_contact_shadows_effect_padding(out: &mut EffectPadding, _effect: &ContactShadowsEffect)
+src/contact_shadows_effect.rs: pub fn initialize_contact_shadows_effect(out: &mut ContactShadowsEffect)
+src/contact_shadows_effect.rs: pub fn register_contact_shadows_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/contract.rs: pub use super::auto_exposure_effect::*;
+src/contract.rs: pub use super::barrel_distortion_effect::*;
+src/contract.rs: pub use super::bevel_effect::*;
+src/contract.rs: pub use super::bitmap_displacement_effect::*;
+src/contract.rs: pub use super::blend_effect::*;
+src/contract.rs: pub use super::blend_mode_math::*;
+src/contract.rs: pub use super::bloom_effect::*;
+src/contract.rs: pub use super::blur_downsample::*;
+src/contract.rs: pub use super::blur_effect::*;
+src/contract.rs: pub use super::bokeh_depth_of_field_effect::*;
+src/contract.rs: pub use super::box_blur_math::*;
+src/contract.rs: pub use super::camera_motion_blur_effect::*;
+src/contract.rs: pub use super::chromatic_aberration_effect::*;
+src/contract.rs: pub use super::color_temperature_math::*;
+src/contract.rs: pub use super::composite_effect::*;
+src/contract.rs: pub use super::composite_operator_math::*;
+src/contract.rs: pub use super::contact_shadows_effect::*;
+src/contract.rs: pub use super::convolution_effect::*;
+src/contract.rs: pub use super::crt_effect::*;
+src/contract.rs: pub use super::custom_shader_effect::*;
+src/contract.rs: pub use super::depth_math::*;
+src/contract.rs: pub use super::directional_blur_effect::*;
+src/contract.rs: pub use super::displacement_effect::*;
+src/contract.rs: pub use super::dither_effect::*;
+src/contract.rs: pub use super::drop_shadow_effect::*;
+src/contract.rs: pub use super::edge_detect_math::*;
+src/contract.rs: pub use super::effect::*;
+src/contract.rs: pub use super::effect_capture_geometry::*;
+src/contract.rs: pub use super::effect_defaults::*;
+src/contract.rs: pub use super::effect_inputs::*;
+src/contract.rs: pub use super::effect_interpolation::*;
+src/contract.rs: pub use super::effect_padding::*;
+src/contract.rs: pub use super::effect_validation::*;
+src/contract.rs: pub use super::enums::*;
+src/contract.rs: pub use super::film_emulation_effect::*;
+src/contract.rs: pub use super::film_grain_effect::*;
+src/contract.rs: pub use super::fxaa_effect::*;
+src/contract.rs: pub use super::gaussian_kernel::*;
+src/contract.rs: pub use super::gaussian_math::*;
+src/contract.rs: pub use super::glitch_effect::*;
+src/contract.rs: pub use super::god_rays_effect::*;
+src/contract.rs: pub use super::god_rays_math::*;
+src/contract.rs: pub use super::gradient_bevel_effect::*;
+src/contract.rs: pub use super::gradient_glow_effect::*;
+src/contract.rs: pub use super::halftone_effect::*;
+src/contract.rs: pub use super::inner_glow_effect::*;
+src/contract.rs: pub use super::inner_shadow_effect::*;
+src/contract.rs: pub use super::kuwahara_effect::*;
+src/contract.rs: pub use super::kuwahara_math::*;
+src/contract.rs: pub use super::lens_dirt_effect::*;
+src/contract.rs: pub use super::lens_distortion_effect::*;
+src/contract.rs: pub use super::lens_flare_effect::*;
+src/contract.rs: pub use super::linear_sampled_gaussian::*;
+src/contract.rs: pub use super::median_effect::*;
+src/contract.rs: pub use super::motion_blur_effect::*;
+src/contract.rs: pub use super::outer_glow_effect::*;
+src/contract.rs: pub use super::outline_effect::*;
+src/contract.rs: pub use super::pannini_projection_effect::*;
+src/contract.rs: pub use super::pixelate_effect::*;
+src/contract.rs: pub use super::posterize_effect::*;
+src/contract.rs: pub use super::radial_blur_effect::*;
+src/contract.rs: pub use super::scanlines_effect::*;
+src/contract.rs: pub use super::screen_space_fog_effect::*;
+src/contract.rs: pub use super::sharpen_effect::*;
+src/contract.rs: pub use super::sketch_effect::*;
+src/contract.rs: pub use super::smaa_effect::*;
+src/contract.rs: pub use super::ssao_effect::*;
+src/contract.rs: pub use super::ssr_effect::*;
+src/contract.rs: pub use super::stylize_math::*;
+src/contract.rs: pub use super::taa_effect::*;
+src/contract.rs: pub use super::tilt_shift_effect::*;
+src/contract.rs: pub use super::tone_map_effect::*;
+src/contract.rs: pub use super::tone_map_math::*;
+src/contract.rs: pub use super::vignette_effect::*;
+src/contract.rs: pub use super::volumetric_light_effect::*;
+src/contract.rs: pub use super::white_balance_effect::*;
+src/convolution_effect.rs: #[derive(Clone, Debug, Default)] pub struct ConvolutionEffect { fields: crate::contract::EffectFields, pub matrix: Vec<f32>, pub matrix_x: f32, pub matrix_y: f32, pub bias: Option<f32>, pub clamp: Option<bool>, pub color: Option<u32>, pub divisor: Option<f32>, pub preserve_alpha: Option<bool>, }
+src/convolution_effect.rs: pub fn create_convolution_effect() -> Ref<ConvolutionEffect>
+src/convolution_effect.rs: pub fn get_convolution_effect_padding(out: &mut EffectPadding, effect: &ConvolutionEffect)
+src/convolution_effect.rs: pub fn initialize_convolution_effect(out: &mut ConvolutionEffect)
+src/convolution_effect.rs: pub fn register_convolution_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/crt_effect.rs: #[derive(Clone, Debug, Default)] pub struct CrtEffect { fields: crate::contract::EffectFields, pub curvature: Option<f32>, pub scanline_intensity: Option<f32>, pub vignette: Option<f32>, pub aberration: Option<f32>, }
+src/crt_effect.rs: pub fn create_crt_effect() -> Ref<CrtEffect>
+src/crt_effect.rs: pub fn initialize_crt_effect(out: &mut CrtEffect)
+src/custom_shader_effect.rs: #[derive(Clone, Debug, Default)] pub struct CustomShaderEffect { fields: crate::contract::EffectFields, pub shader_key: String, pub uniforms: Option<HashMap<String, CustomShaderUniformValue>>, }
+src/custom_shader_effect.rs: pub fn create_custom_shader_effect() -> Ref<CustomShaderEffect>
+src/custom_shader_effect.rs: pub fn initialize_custom_shader_effect(out: &mut CustomShaderEffect)
+src/depth_math.rs: pub fn compute_depth_of_field_coc(depth: f32, focus_distance: f32, aperture: f32, focal_length: f32,) -> f32
+src/depth_math.rs: pub fn compute_linear_depth_from_nonlinear(depth: f32, near: f32, far: f32) -> f32
+src/depth_math.rs: pub fn compute_ssao_sample_kernel(out: &mut [f32], samples: f32) -> usize
+src/directional_blur_effect.rs: #[derive(Clone, Debug, Default)] pub struct DirectionalBlurEffect { fields: crate::contract::EffectFields, pub angle: Option<f32>, pub length: Option<f32>, pub samples: Option<f32>, }
+src/directional_blur_effect.rs: pub fn create_directional_blur_effect() -> Ref<DirectionalBlurEffect>
+src/directional_blur_effect.rs: pub fn get_directional_blur_effect_padding(out: &mut EffectPadding, effect: &DirectionalBlurEffect,)
+src/directional_blur_effect.rs: pub fn initialize_directional_blur_effect(out: &mut DirectionalBlurEffect)
+src/directional_blur_effect.rs: pub fn register_directional_blur_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/displacement_effect.rs: #[derive(Clone, Debug, Default)] pub struct DisplacementEffect { fields: crate::contract::EffectFields, pub intensity: Option<f32>, pub frequency: Option<f32>, pub seed: Option<f32>, }
+src/displacement_effect.rs: pub fn create_displacement_effect() -> Ref<DisplacementEffect>
+src/displacement_effect.rs: pub fn get_displacement_effect_padding(out: &mut EffectPadding, effect: &DisplacementEffect)
+src/displacement_effect.rs: pub fn initialize_displacement_effect(out: &mut DisplacementEffect)
+src/displacement_effect.rs: pub fn register_displacement_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/dither_effect.rs: #[derive(Clone, Debug, Default)] pub struct DitherEffect { fields: crate::contract::EffectFields, pub levels: Option<f32>, }
+src/dither_effect.rs: pub fn create_dither_effect() -> Ref<DitherEffect>
+src/dither_effect.rs: pub fn initialize_dither_effect(out: &mut DitherEffect)
+src/drop_shadow_effect.rs: #[derive(Clone, Debug, Default)] pub struct DropShadowEffect { fields: crate::contract::EffectFields, pub alpha: Option<f32>, pub angle: Option<f32>, pub blur_x: Option<f32>, pub blur_y: Option<f32>, pub color: Option<u32>, pub distance: Option<f32>, pub quality: Option<f32>, pub source_mode: Option<EffectSourceMode>, pub strength: Option<f32>, }
+src/drop_shadow_effect.rs: pub fn create_drop_shadow_effect() -> Ref<DropShadowEffect>
+src/drop_shadow_effect.rs: pub fn get_drop_shadow_effect_padding(out: &mut EffectPadding, effect: &DropShadowEffect)
+src/drop_shadow_effect.rs: pub fn initialize_drop_shadow_effect(out: &mut DropShadowEffect)
+src/drop_shadow_effect.rs: pub fn register_drop_shadow_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/edge_detect_math.rs: pub fn compute_outline_edge_params(out: &mut [f32; 6], effect: &OutlineEffect)
+src/edge_detect_math.rs: pub fn compute_outline_thickness_px(effect: &OutlineEffect) -> f32
+src/edge_detect_math.rs: pub fn compute_sketch_edge_params(out: &mut [f32; 2], effect: &SketchEffect)
+src/edge_detect_math.rs: pub fn get_sobel_kernel_coefficients(out: &mut [f32])
+src/effect.rs: #[derive(Clone, Debug)] pub enum EffectValue { Boolean(bool), Color(u32), ColorList(Vec<u32>), ImageChannel(ImageChannel), Number(f32), NumberList(Vec<f32>), Text(String), Texture2D(Option<Ref<Texture2D>>), Uniforms(HashMap<String, CustomShaderUniformValue>), }
+src/effect.rs: #[derive(Clone, Debug, Default)] pub struct EffectFields { runtime: EntityRuntimeSlot, pub kind: Kind, pub extra_fields: HashMap<String, EffectValue>, }
+src/effect.rs: #[derive(Clone, Debug, PartialEq)] pub enum CustomShaderUniformValue { Number(f32), NumberList(Vec<f32>), }
+src/effect.rs: impl EffectProperty for Option<HashMap<String, CustomShaderUniformValue>>
+src/effect.rs: impl EffectProperty for Option<HashMap<String, CustomShaderUniformValue>> :: fn clear_effect_property(&mut self) -> bool
+src/effect.rs: impl EffectProperty for Option<HashMap<String, CustomShaderUniformValue>> :: fn get_effect_property(&self) -> Option<EffectValue>
+src/effect.rs: impl EffectProperty for Option<HashMap<String, CustomShaderUniformValue>> :: fn set_effect_property(&mut self, value: EffectValue) -> bool
+src/effect.rs: impl EffectProperty for Option<ImageChannel>
+src/effect.rs: impl EffectProperty for Option<ImageChannel> :: fn clear_effect_property(&mut self) -> bool
+src/effect.rs: impl EffectProperty for Option<ImageChannel> :: fn get_effect_property(&self) -> Option<EffectValue>
+src/effect.rs: impl EffectProperty for Option<ImageChannel> :: fn set_effect_property(&mut self, value: EffectValue) -> bool
+src/effect.rs: impl EffectProperty for Option<Ref<Texture2D>>
+src/effect.rs: impl EffectProperty for Option<Ref<Texture2D>> :: fn clear_effect_property(&mut self) -> bool
+src/effect.rs: impl EffectProperty for Option<Ref<Texture2D>> :: fn get_effect_property(&self) -> Option<EffectValue>
+src/effect.rs: impl EffectProperty for Option<Ref<Texture2D>> :: fn set_effect_property(&mut self, value: EffectValue) -> bool
+src/effect.rs: impl EffectProperty for Option<String>
+src/effect.rs: impl EffectProperty for Option<String> :: fn clear_effect_property(&mut self) -> bool
+src/effect.rs: impl EffectProperty for Option<String> :: fn get_effect_property(&self) -> Option<EffectValue>
+src/effect.rs: impl EffectProperty for Option<String> :: fn set_effect_property(&mut self, value: EffectValue) -> bool
+src/effect.rs: impl EffectProperty for Option<bool>
+src/effect.rs: impl EffectProperty for Option<bool> :: fn clear_effect_property(&mut self) -> bool
+src/effect.rs: impl EffectProperty for Option<bool> :: fn get_effect_property(&self) -> Option<EffectValue>
+src/effect.rs: impl EffectProperty for Option<bool> :: fn set_effect_property(&mut self, value: EffectValue) -> bool
+src/effect.rs: impl EffectProperty for Option<f32>
+src/effect.rs: impl EffectProperty for Option<f32> :: fn clear_effect_property(&mut self) -> bool
+src/effect.rs: impl EffectProperty for Option<f32> :: fn get_effect_property(&self) -> Option<EffectValue>
+src/effect.rs: impl EffectProperty for Option<f32> :: fn set_effect_property(&mut self, value: EffectValue) -> bool
+src/effect.rs: impl EffectProperty for Option<u32>
+src/effect.rs: impl EffectProperty for Option<u32> :: fn clear_effect_property(&mut self) -> bool
+src/effect.rs: impl EffectProperty for Option<u32> :: fn get_effect_property(&self) -> Option<EffectValue>
+src/effect.rs: impl EffectProperty for Option<u32> :: fn set_effect_property(&mut self, value: EffectValue) -> bool
+src/effect.rs: impl EffectProperty for String
+src/effect.rs: impl EffectProperty for String :: fn clear_effect_property(&mut self) -> bool
+src/effect.rs: impl EffectProperty for String :: fn get_effect_property(&self) -> Option<EffectValue>
+src/effect.rs: impl EffectProperty for String :: fn set_effect_property(&mut self, value: EffectValue) -> bool
+src/effect.rs: impl EffectProperty for Vec<f32>
+src/effect.rs: impl EffectProperty for Vec<f32> :: fn clear_effect_property(&mut self) -> bool
+src/effect.rs: impl EffectProperty for Vec<f32> :: fn get_effect_property(&self) -> Option<EffectValue>
+src/effect.rs: impl EffectProperty for Vec<f32> :: fn set_effect_property(&mut self, value: EffectValue) -> bool
+src/effect.rs: impl EffectProperty for Vec<u32>
+src/effect.rs: impl EffectProperty for Vec<u32> :: fn clear_effect_property(&mut self) -> bool
+src/effect.rs: impl EffectProperty for Vec<u32> :: fn get_effect_property(&self) -> Option<EffectValue>
+src/effect.rs: impl EffectProperty for Vec<u32> :: fn set_effect_property(&mut self, value: EffectValue) -> bool
+src/effect.rs: impl EffectProperty for f32
+src/effect.rs: impl EffectProperty for f32 :: fn clear_effect_property(&mut self) -> bool
+src/effect.rs: impl EffectProperty for f32 :: fn get_effect_property(&self) -> Option<EffectValue>
+src/effect.rs: impl EffectProperty for f32 :: fn set_effect_property(&mut self, value: EffectValue) -> bool
+src/effect.rs: impl Entity for EffectFields
+src/effect.rs: impl Entity for EffectFields :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/effect.rs: impl Entity for EffectFields :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/effect.rs: impl PartialEq for EffectValue
+src/effect.rs: impl PartialEq for EffectValue :: fn eq(&self, other: &Self) -> bool
+src/effect.rs: pub fn initialize_effect<T: Effect + ? Sized>(out: &mut T, kind: &str)
+src/effect.rs: pub trait Effect: flight_entity::Entity + Any + Send + Sync { fn as_any(&self) -> &dyn Any; fn as_any_mut(&mut self) -> &mut dyn Any; fn effect_fields(&self) -> &EffectFields; fn effect_fields_mut(&mut self) -> &mut EffectFields; fn effect_field_names(&self) -> &'static [&'static str]; fn clear_effect_field(&mut self, key: &str) -> bool; fn get_effect_field(&self, key: &str) -> Option<EffectValue>; fn set_effect_field(&mut self, key: &str, value: EffectValue) -> bool; }
+src/effect.rs: pub trait EffectProperty { fn clear_effect_property(&mut self) -> bool; fn get_effect_property(&self) -> Option<EffectValue>; fn set_effect_property(&mut self, value: EffectValue) -> bool; }
+src/effect.rs: pub type EffectRef = Ref<dyn Effect>;
+src/effect_capture_geometry.rs: #[derive(Clone, Debug, PartialEq)] pub struct EffectCaptureGeometry { pub bounds: Rectangle, pub capture_transform: Matrix, pub padding: EffectPadding, pub target_height: f32, pub target_width: f32, }
+src/effect_capture_geometry.rs: impl Default for EffectCaptureGeometry
+src/effect_capture_geometry.rs: impl Default for EffectCaptureGeometry :: fn default() -> Self
+src/effect_capture_geometry.rs: pub fn compute_effect_capture_geometry<S: RenderState>(out: &mut EffectCaptureGeometry, state: &mut S, source: &NodeRef, effects: &[EffectRef],) -> bool
+src/effect_defaults.rs: pub fn get_effect_defaults(out: &mut EffectDefaults, kind: &str)
+src/effect_defaults.rs: pub fn normalize_effect(effect: &EffectRef, out: &EffectRef) -> bool
+src/effect_defaults.rs: pub type EffectDefaults = HashMap<String, EffectValue>;
+src/effect_inputs.rs: pub fn get_effect_inputs(effect: &EffectRef) -> &'static [EffectInput]
+src/effect_inputs.rs: pub fn get_effect_kinds() -> &'static [&'static str]
+src/effect_inputs.rs: pub static EFFECT_KINDS: &[&str]
+src/effect_interpolation.rs: pub const EFFECT_FIELD_ROLES: &[EffectKindFieldRoles]
+src/effect_interpolation.rs: pub fn can_lerp_effects(a: &EffectRef, b: &EffectRef) -> bool
+src/effect_interpolation.rs: pub fn lerp_effect(a: &EffectRef, b: &EffectRef, t: f32, out: &EffectRef, roles: Option<&EffectFieldRoles>,) -> bool
+src/effect_padding.rs: #[derive(Clone, Debug, PartialEq)] pub struct EffectPaddingExplanation { pub missing_kinds: Vec<Kind>, pub padding: EffectPadding, pub status: EffectPaddingStatus, }
+src/effect_padding.rs: impl Default for EffectPaddingExplanation
+src/effect_padding.rs: impl Default for EffectPaddingExplanation :: fn default() -> Self
+src/effect_padding.rs: pub fn compute_effect_padding<S: RenderState>(out: &mut EffectPadding, state: &mut S, effects: &[EffectRef],)
+src/effect_padding.rs: pub fn explain_effect_padding<S: RenderState>(out: &mut EffectPaddingExplanation, state: &mut S, effects: &[EffectRef],)
+src/effect_padding.rs: pub fn get_directional_effect_padding(out: &mut EffectPadding, blur_x: f32, blur_y: f32, offset_x: f32, offset_y: f32,)
+src/effect_padding.rs: pub fn get_gaussian_effect_padding(out: &mut EffectPadding, blur_x: f32, blur_y: f32)
+src/effect_padding.rs: pub fn register_effect_padding_resolver<S: RenderState>(state: &mut S, kind: &str, resolver: Option<EffectPaddingResolver>,)
+src/effect_validation.rs: pub fn validate_effect_list(effects: &[EffectRef], available: &[EffectInput],) -> Option<EffectInput>
+src/enums.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum BevelType { Full, #[default] Inner, Outer, }
+src/enums.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum BitmapDisplacementEffectEdgeMode { Clamp, #[default] Wrap, }
+src/enums.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum EffectPaddingStatus { #[default] Complete, MissingResolver, }
+src/enums.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum EffectSourceMode { #[default] Draw, Hide, Knockout, }
+src/enums.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum InnerEffectSourceMode { #[default] Draw, Hide, }
+src/enums.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum ToneMapOperator { Reinhard, #[default] Aces, Filmic, Agx, Uncharted2, }
+src/enums.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum EffectFieldRole { PackedColor, }
+src/enums.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum EffectInput { Hdr, Depth, Motion, Temporal, }
+src/enums.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct EffectKindFieldRoles { pub kind: &'static str, pub fields: &'static [(&'static str, EffectFieldRole)], }
+src/enums.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct AgxToneMapOptions { pub min_ev: Option<f32>, pub max_ev: Option<f32>, }
+src/enums.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct FilmicToneMapOptions { pub max_brightness: Option<f32>, pub contrast: Option<f32>, pub linear_start: Option<f32>, pub linear_length: Option<f32>, pub black_tighten: Option<f32>, pub pedestal: Option<f32>, }
+src/enums.rs: pub const ADVANCED_BLEND_MODE_COLOR: &str
+src/enums.rs: pub const ADVANCED_BLEND_MODE_COLOR_BURN: &str
+src/enums.rs: pub const ADVANCED_BLEND_MODE_COLOR_DODGE: &str
+src/enums.rs: pub const ADVANCED_BLEND_MODE_DARKEN: &str
+src/enums.rs: pub const ADVANCED_BLEND_MODE_DIFFERENCE: &str
+src/enums.rs: pub const ADVANCED_BLEND_MODE_EXCLUSION: &str
+src/enums.rs: pub const ADVANCED_BLEND_MODE_HARD_LIGHT: &str
+src/enums.rs: pub const ADVANCED_BLEND_MODE_HUE: &str
+src/enums.rs: pub const ADVANCED_BLEND_MODE_LIGHTEN: &str
+src/enums.rs: pub const ADVANCED_BLEND_MODE_LUMINOSITY: &str
+src/enums.rs: pub const ADVANCED_BLEND_MODE_OVERLAY: &str
+src/enums.rs: pub const ADVANCED_BLEND_MODE_SATURATION: &str
+src/enums.rs: pub const ADVANCED_BLEND_MODE_SOFT_LIGHT: &str
+src/enums.rs: pub const COMPOSITE_OPERATOR_CLEAR: &str
+src/enums.rs: pub const COMPOSITE_OPERATOR_COPY: &str
+src/enums.rs: pub const COMPOSITE_OPERATOR_DESTINATION_ATOP: &str
+src/enums.rs: pub const COMPOSITE_OPERATOR_DESTINATION_IN: &str
+src/enums.rs: pub const COMPOSITE_OPERATOR_DESTINATION_OUT: &str
+src/enums.rs: pub const COMPOSITE_OPERATOR_DESTINATION_OVER: &str
+src/enums.rs: pub const COMPOSITE_OPERATOR_SOURCE_ATOP: &str
+src/enums.rs: pub const COMPOSITE_OPERATOR_SOURCE_IN: &str
+src/enums.rs: pub const COMPOSITE_OPERATOR_SOURCE_OUT: &str
+src/enums.rs: pub const COMPOSITE_OPERATOR_SOURCE_OVER: &str
+src/enums.rs: pub const COMPOSITE_OPERATOR_XOR: &str
+src/enums.rs: pub type AdvancedBlendMode = String;
+src/enums.rs: pub type CompositeOperator = String;
+src/enums.rs: pub type EffectFieldRoles = [EffectKindFieldRoles];
+src/film_emulation_effect.rs: #[derive(Clone, Debug, Default)] pub struct FilmEmulationEffect { fields: crate::contract::EffectFields, pub gate_weave: Option<f32>, pub grain_intensity: Option<f32>, pub halation_radius: Option<f32>, pub halation_strength: Option<f32>, }
+src/film_emulation_effect.rs: pub fn create_film_emulation_effect() -> Ref<FilmEmulationEffect>
+src/film_emulation_effect.rs: pub fn initialize_film_emulation_effect(out: &mut FilmEmulationEffect)
+src/film_grain_effect.rs: #[derive(Clone, Debug, Default)] pub struct FilmGrainEffect { fields: crate::contract::EffectFields, pub intensity: Option<f32>, pub size: Option<f32>, pub seed: Option<f32>, }
+src/film_grain_effect.rs: pub fn create_film_grain_effect() -> Ref<FilmGrainEffect>
+src/film_grain_effect.rs: pub fn initialize_film_grain_effect(out: &mut FilmGrainEffect)
+src/fxaa_effect.rs: #[derive(Clone, Debug, Default)] pub struct FxaaEffect { fields: crate::contract::EffectFields, pub edge_threshold: Option<f32>, pub subpixel: Option<f32>, }
+src/fxaa_effect.rs: pub fn create_fxaa_effect() -> Ref<FxaaEffect>
+src/fxaa_effect.rs: pub fn initialize_fxaa_effect(out: &mut FxaaEffect)
+src/gaussian_kernel.rs: pub fn compute_gaussian_kernel_weights(out: &mut Vec<f32>, sigma: f32)
+src/gaussian_kernel.rs: pub fn get_gaussian_kernel_size(sigma: f32) -> usize
+src/gaussian_math.rs: pub fn compute_gaussian_radius_from_sigma(sigma: f32) -> f32
+src/gaussian_math.rs: pub fn compute_gaussian_sigma_from_radius(radius: f32) -> f32
+src/gaussian_math.rs: pub fn compute_separable_blur_pass_count(samples: Option<f32>) -> f32
+src/gaussian_math.rs: pub fn create_gaussian_kernel_weights(out: &mut [f32], radius: f32, sigma: f32) -> usize
+src/glitch_effect.rs: #[derive(Clone, Debug, Default)] pub struct GlitchEffect { fields: crate::contract::EffectFields, pub intensity: Option<f32>, pub block_size: Option<f32>, pub color_shift: Option<f32>, pub seed: Option<f32>, }
+src/glitch_effect.rs: pub fn create_glitch_effect() -> Ref<GlitchEffect>
+src/glitch_effect.rs: pub fn get_glitch_effect_padding(out: &mut EffectPadding, effect: &GlitchEffect)
+src/glitch_effect.rs: pub fn initialize_glitch_effect(out: &mut GlitchEffect)
+src/glitch_effect.rs: pub fn register_glitch_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/god_rays_effect.rs: #[derive(Clone, Debug, Default)] pub struct GodRaysEffect { fields: crate::contract::EffectFields, pub center_x: Option<f32>, pub center_y: Option<f32>, pub density: Option<f32>, pub decay: Option<f32>, pub weight: Option<f32>, pub exposure: Option<f32>, pub samples: Option<f32>, }
+src/god_rays_effect.rs: pub fn create_god_rays_effect() -> Ref<GodRaysEffect>
+src/god_rays_effect.rs: pub fn initialize_god_rays_effect(out: &mut GodRaysEffect)
+src/god_rays_math.rs: pub fn compute_god_rays_accumulation_scale(effect: &GodRaysEffect) -> f32
+src/god_rays_math.rs: pub fn compute_god_rays_light_center(out: &mut [f32; 2], effect: &GodRaysEffect)
+src/god_rays_math.rs: pub fn compute_god_rays_sample_weight(effect: &GodRaysEffect, sample_index: f32) -> f32
+src/god_rays_math.rs: pub fn compute_god_rays_step_size(out: &mut [f32; 2], effect: &GodRaysEffect, px: f32, py: f32)
+src/gradient_bevel_effect.rs: #[derive(Clone, Debug, Default)] pub struct GradientBevelEffect { fields: crate::contract::EffectFields, pub alphas: Vec<f32>, pub angle: Option<f32>, pub bevel_type: Option<BevelType>, pub blur_x: Option<f32>, pub blur_y: Option<f32>, pub colors: Vec<u32>, pub distance: Option<f32>, pub quality: Option<f32>, pub ratios: Vec<f32>, pub source_mode: Option<EffectSourceMode>, pub strength: Option<f32>, }
+src/gradient_bevel_effect.rs: pub fn create_gradient_bevel_effect() -> Ref<GradientBevelEffect>
+src/gradient_bevel_effect.rs: pub fn get_gradient_bevel_effect_padding(out: &mut EffectPadding, effect: &GradientBevelEffect)
+src/gradient_bevel_effect.rs: pub fn initialize_gradient_bevel_effect(out: &mut GradientBevelEffect)
+src/gradient_bevel_effect.rs: pub fn register_gradient_bevel_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/gradient_glow_effect.rs: #[derive(Clone, Debug, Default)] pub struct GradientGlowEffect { fields: crate::contract::EffectFields, pub alphas: Vec<f32>, pub blur_x: Option<f32>, pub blur_y: Option<f32>, pub colors: Vec<u32>, pub quality: Option<f32>, pub ratios: Vec<f32>, pub source_mode: Option<EffectSourceMode>, pub strength: Option<f32>, }
+src/gradient_glow_effect.rs: pub fn create_gradient_glow_effect() -> Ref<GradientGlowEffect>
+src/gradient_glow_effect.rs: pub fn get_gradient_glow_effect_padding(out: &mut EffectPadding, effect: &GradientGlowEffect)
+src/gradient_glow_effect.rs: pub fn initialize_gradient_glow_effect(out: &mut GradientGlowEffect)
+src/gradient_glow_effect.rs: pub fn register_gradient_glow_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/halftone_effect.rs: #[derive(Clone, Debug, Default)] pub struct HalftoneEffect { fields: crate::contract::EffectFields, pub scale: Option<f32>, pub angle: Option<f32>, }
+src/halftone_effect.rs: pub fn create_halftone_effect() -> Ref<HalftoneEffect>
+src/halftone_effect.rs: pub fn initialize_halftone_effect(out: &mut HalftoneEffect)
+src/inner_glow_effect.rs: #[derive(Clone, Debug, Default)] pub struct InnerGlowEffect { fields: crate::contract::EffectFields, pub alpha: Option<f32>, pub blur_x: Option<f32>, pub blur_y: Option<f32>, pub color: Option<u32>, pub quality: Option<f32>, pub source_mode: Option<InnerEffectSourceMode>, pub strength: Option<f32>, }
+src/inner_glow_effect.rs: pub fn create_inner_glow_effect() -> Ref<InnerGlowEffect>
+src/inner_glow_effect.rs: pub fn get_inner_glow_effect_padding(out: &mut EffectPadding, effect: &InnerGlowEffect)
+src/inner_glow_effect.rs: pub fn initialize_inner_glow_effect(out: &mut InnerGlowEffect)
+src/inner_glow_effect.rs: pub fn register_inner_glow_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/inner_shadow_effect.rs: #[derive(Clone, Debug, Default)] pub struct InnerShadowEffect { fields: crate::contract::EffectFields, pub alpha: Option<f32>, pub angle: Option<f32>, pub blur_x: Option<f32>, pub blur_y: Option<f32>, pub color: Option<u32>, pub distance: Option<f32>, pub quality: Option<f32>, pub source_mode: Option<InnerEffectSourceMode>, pub strength: Option<f32>, }
+src/inner_shadow_effect.rs: pub fn create_inner_shadow_effect() -> Ref<InnerShadowEffect>
+src/inner_shadow_effect.rs: pub fn get_inner_shadow_effect_padding(out: &mut EffectPadding, effect: &InnerShadowEffect)
+src/inner_shadow_effect.rs: pub fn initialize_inner_shadow_effect(out: &mut InnerShadowEffect)
+src/inner_shadow_effect.rs: pub fn register_inner_shadow_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/kuwahara_effect.rs: #[derive(Clone, Debug, Default)] pub struct KuwaharaEffect { fields: crate::contract::EffectFields, pub radius: Option<f32>, }
+src/kuwahara_effect.rs: pub fn create_kuwahara_effect() -> Ref<KuwaharaEffect>
+src/kuwahara_effect.rs: pub fn initialize_kuwahara_effect(out: &mut KuwaharaEffect)
+src/kuwahara_math.rs: pub fn compute_kuwahara_gaussian_weights(out: &mut [f32], radius: f32) -> usize
+src/kuwahara_math.rs: pub fn compute_kuwahara_sector_offsets(out: &mut [f32; 8], radius: f32)
+src/kuwahara_math.rs: pub fn compute_kuwahara_sector_pixel_count(effect: &KuwaharaEffect) -> usize
+src/kuwahara_math.rs: pub fn compute_kuwahara_sector_size(effect: &KuwaharaEffect) -> usize
+src/lens_dirt_effect.rs: #[derive(Clone, Debug, Default)] pub struct LensDirtEffect { fields: crate::contract::EffectFields, pub intensity: Option<f32>, pub threshold: Option<f32>, pub seed: Option<f32>, }
+src/lens_dirt_effect.rs: pub fn create_lens_dirt_effect() -> Ref<LensDirtEffect>
+src/lens_dirt_effect.rs: pub fn initialize_lens_dirt_effect(out: &mut LensDirtEffect)
+src/lens_distortion_effect.rs: #[derive(Clone, Debug, Default)] pub struct LensDistortionEffect { fields: crate::contract::EffectFields, pub amount: Option<f32>, pub scale: Option<f32>, }
+src/lens_distortion_effect.rs: pub fn create_lens_distortion_effect() -> Ref<LensDistortionEffect>
+src/lens_distortion_effect.rs: pub fn initialize_lens_distortion_effect(out: &mut LensDistortionEffect)
+src/lens_flare_effect.rs: #[derive(Clone, Debug, Default)] pub struct LensFlareEffect { fields: crate::contract::EffectFields, pub threshold: Option<f32>, pub intensity: Option<f32>, pub ghosts: Option<f32>, pub halo: Option<f32>, }
+src/lens_flare_effect.rs: pub fn create_lens_flare_effect() -> Ref<LensFlareEffect>
+src/lens_flare_effect.rs: pub fn initialize_lens_flare_effect(out: &mut LensFlareEffect)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::*;
+src/linear_sampled_gaussian.rs: pub fn compute_linear_sampled_gaussian(out_weights: &mut Vec<f32>, out_offsets: &mut Vec<f32>, sigma: f32,)
+src/linear_sampled_gaussian.rs: pub fn get_linear_sampled_gaussian_tap_count(sigma: f32) -> usize
+src/median_effect.rs: #[derive(Clone, Debug, Default)] pub struct MedianEffect { fields: crate::contract::EffectFields, pub radius: Option<f32>, }
+src/median_effect.rs: pub fn create_median_effect() -> Ref<MedianEffect>
+src/median_effect.rs: pub fn get_median_effect_padding(out: &mut EffectPadding, effect: &MedianEffect)
+src/median_effect.rs: pub fn initialize_median_effect(out: &mut MedianEffect)
+src/median_effect.rs: pub fn register_median_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/motion_blur_effect.rs: #[derive(Clone, Debug, Default)] pub struct MotionBlurEffect { fields: crate::contract::EffectFields, pub intensity: Option<f32>, pub samples: Option<f32>, }
+src/motion_blur_effect.rs: pub fn create_motion_blur_effect() -> Ref<MotionBlurEffect>
+src/motion_blur_effect.rs: pub fn initialize_motion_blur_effect(out: &mut MotionBlurEffect)
+src/outer_glow_effect.rs: #[derive(Clone, Debug, Default)] pub struct OuterGlowEffect { fields: crate::contract::EffectFields, pub alpha: Option<f32>, pub blur_x: Option<f32>, pub blur_y: Option<f32>, pub color: Option<u32>, pub quality: Option<f32>, pub source_mode: Option<EffectSourceMode>, pub strength: Option<f32>, }
+src/outer_glow_effect.rs: pub fn create_outer_glow_effect() -> Ref<OuterGlowEffect>
+src/outer_glow_effect.rs: pub fn get_outer_glow_effect_padding(out: &mut EffectPadding, effect: &OuterGlowEffect)
+src/outer_glow_effect.rs: pub fn initialize_outer_glow_effect(out: &mut OuterGlowEffect)
+src/outer_glow_effect.rs: pub fn register_outer_glow_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/outline_effect.rs: #[derive(Clone, Debug, Default)] pub struct OutlineEffect { fields: crate::contract::EffectFields, pub threshold: Option<f32>, pub thickness: Option<f32>, pub color: Option<u32>, }
+src/outline_effect.rs: pub fn create_outline_effect() -> Ref<OutlineEffect>
+src/outline_effect.rs: pub fn get_outline_effect_padding(out: &mut EffectPadding, effect: &OutlineEffect)
+src/outline_effect.rs: pub fn initialize_outline_effect(out: &mut OutlineEffect)
+src/outline_effect.rs: pub fn register_outline_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/pannini_projection_effect.rs: #[derive(Clone, Debug, Default)] pub struct PanniniProjectionEffect { fields: crate::contract::EffectFields, pub compression: Option<f32>, pub crop: Option<f32>, }
+src/pannini_projection_effect.rs: pub fn create_pannini_projection_effect() -> Ref<PanniniProjectionEffect>
+src/pannini_projection_effect.rs: pub fn initialize_pannini_projection_effect(out: &mut PanniniProjectionEffect)
+src/pixelate_effect.rs: #[derive(Clone, Debug, Default)] pub struct PixelateEffect { fields: crate::contract::EffectFields, pub size: Option<f32>, }
+src/pixelate_effect.rs: pub fn create_pixelate_effect() -> Ref<PixelateEffect>
+src/pixelate_effect.rs: pub fn initialize_pixelate_effect(out: &mut PixelateEffect)
+src/posterize_effect.rs: #[derive(Clone, Debug, Default)] pub struct PosterizeEffect { fields: crate::contract::EffectFields, pub levels: Option<f32>, }
+src/posterize_effect.rs: pub fn create_posterize_effect() -> Ref<PosterizeEffect>
+src/posterize_effect.rs: pub fn initialize_posterize_effect(out: &mut PosterizeEffect)
+src/radial_blur_effect.rs: #[derive(Clone, Debug, Default)] pub struct RadialBlurEffect { fields: crate::contract::EffectFields, pub center_x: Option<f32>, pub center_y: Option<f32>, pub strength: Option<f32>, pub samples: Option<f32>, }
+src/radial_blur_effect.rs: pub fn create_radial_blur_effect() -> Ref<RadialBlurEffect>
+src/radial_blur_effect.rs: pub fn initialize_radial_blur_effect(out: &mut RadialBlurEffect)
+src/scanlines_effect.rs: #[derive(Clone, Debug, Default)] pub struct ScanlinesEffect { fields: crate::contract::EffectFields, pub count: Option<f32>, pub intensity: Option<f32>, }
+src/scanlines_effect.rs: pub fn create_scanlines_effect() -> Ref<ScanlinesEffect>
+src/scanlines_effect.rs: pub fn initialize_scanlines_effect(out: &mut ScanlinesEffect)
+src/screen_space_fog_effect.rs: #[derive(Clone, Debug, Default)] pub struct ScreenSpaceFogEffect { fields: crate::contract::EffectFields, pub color: Option<u32>, pub near: Option<f32>, pub far: Option<f32>, pub density: Option<f32>, }
+src/screen_space_fog_effect.rs: pub fn create_screen_space_fog_effect() -> Ref<ScreenSpaceFogEffect>
+src/screen_space_fog_effect.rs: pub fn initialize_screen_space_fog_effect(out: &mut ScreenSpaceFogEffect)
+src/sharpen_effect.rs: #[derive(Clone, Debug, Default)] pub struct SharpenEffect { fields: crate::contract::EffectFields, pub amount: Option<f32>, }
+src/sharpen_effect.rs: pub fn create_sharpen_effect() -> Ref<SharpenEffect>
+src/sharpen_effect.rs: pub fn initialize_sharpen_effect(out: &mut SharpenEffect)
+src/sketch_effect.rs: #[derive(Clone, Debug, Default)] pub struct SketchEffect { fields: crate::contract::EffectFields, pub strength: Option<f32>, }
+src/sketch_effect.rs: pub fn create_sketch_effect() -> Ref<SketchEffect>
+src/sketch_effect.rs: pub fn initialize_sketch_effect(out: &mut SketchEffect)
+src/smaa_effect.rs: #[derive(Clone, Debug, Default)] pub struct SmaaEffect { fields: crate::contract::EffectFields, pub threshold: Option<f32>, }
+src/smaa_effect.rs: pub fn create_smaa_effect() -> Ref<SmaaEffect>
+src/smaa_effect.rs: pub fn initialize_smaa_effect(out: &mut SmaaEffect)
+src/ssao_effect.rs: #[derive(Clone, Debug, Default)] pub struct SsaoEffect { fields: crate::contract::EffectFields, pub radius: Option<f32>, pub intensity: Option<f32>, pub bias: Option<f32>, pub samples: Option<f32>, }
+src/ssao_effect.rs: pub fn create_ssao_effect() -> Ref<SsaoEffect>
+src/ssao_effect.rs: pub fn initialize_ssao_effect(out: &mut SsaoEffect)
+src/ssr_effect.rs: #[derive(Clone, Debug, Default)] pub struct SsrEffect { fields: crate::contract::EffectFields, pub max_distance: Option<f32>, pub resolution: Option<f32>, pub steps: Option<f32>, }
+src/ssr_effect.rs: pub fn create_ssr_effect() -> Ref<SsrEffect>
+src/ssr_effect.rs: pub fn initialize_ssr_effect(out: &mut SsrEffect)
+src/stylize_math.rs: pub fn compute_crt_mask_params(out: &mut [f32; 2], resolution: f32, curvature: f32)
+src/stylize_math.rs: pub fn compute_halftone_cell_params(out: &mut [f32; 3], frequency: f32, angle: f32)
+src/stylize_math.rs: pub fn compute_scanline_params(out: &mut [f32; 2], resolution: f32, intensity: f32)
+src/stylize_math.rs: pub fn create_bayer_matrix(out: &mut [f32], order: f32) -> usize
+src/taa_effect.rs: #[derive(Clone, Debug, Default)] pub struct TaaEffect { fields: crate::contract::EffectFields, pub feedback: Option<f32>, }
+src/taa_effect.rs: pub fn create_taa_effect() -> Ref<TaaEffect>
+src/taa_effect.rs: pub fn initialize_taa_effect(out: &mut TaaEffect)
+src/tilt_shift_effect.rs: #[derive(Clone, Debug, Default)] pub struct TiltShiftEffect { fields: crate::contract::EffectFields, pub center: Option<f32>, pub width: Option<f32>, pub blur: Option<f32>, }
+src/tilt_shift_effect.rs: pub fn create_tilt_shift_effect() -> Ref<TiltShiftEffect>
+src/tilt_shift_effect.rs: pub fn get_tilt_shift_effect_padding(out: &mut EffectPadding, effect: &TiltShiftEffect)
+src/tilt_shift_effect.rs: pub fn initialize_tilt_shift_effect(out: &mut TiltShiftEffect)
+src/tilt_shift_effect.rs: pub fn register_tilt_shift_effect_padding_resolver<S: RenderState>(state: &mut S)
+src/tone_map_effect.rs: #[derive(Clone, Debug, Default)] pub struct ToneMapEffect { fields: crate::contract::EffectFields, pub operator: Option<ToneMapOperator>, pub exposure: Option<f32>, pub white: Option<f32>, }
+src/tone_map_effect.rs: pub fn create_tone_map_effect() -> Ref<ToneMapEffect>
+src/tone_map_effect.rs: pub fn initialize_tone_map_effect(out: &mut ToneMapEffect)
+src/tone_map_math.rs: pub fn compute_aces_tone_map(x: f32) -> f32
+src/tone_map_math.rs: pub fn compute_agx_tone_map(x: f32, options: Option<&AgxToneMapOptions>) -> f32
+src/tone_map_math.rs: pub fn compute_exposure_scale(exposure: f32) -> f32
+src/tone_map_math.rs: pub fn compute_filmic_tone_map(x: f32, options: Option<&FilmicToneMapOptions>) -> f32
+src/tone_map_math.rs: pub fn compute_reinhard_extended_tone_map(x: f32, white: f32) -> f32
+src/tone_map_math.rs: pub fn compute_reinhard_tone_map(x: f32) -> f32
+src/tone_map_math.rs: pub fn compute_uncharted_2_tone_map(x: f32) -> f32
+src/tone_map_math.rs: pub fn get_aces_input_matrix(out: &mut [f32])
+src/tone_map_math.rs: pub fn get_aces_output_matrix(out: &mut [f32])
+src/vignette_effect.rs: #[derive(Clone, Debug, Default)] pub struct VignetteEffect { fields: crate::contract::EffectFields, pub intensity: Option<f32>, pub radius: Option<f32>, pub softness: Option<f32>, pub color: Option<u32>, }
+src/vignette_effect.rs: pub fn create_vignette_effect() -> Ref<VignetteEffect>
+src/vignette_effect.rs: pub fn initialize_vignette_effect(out: &mut VignetteEffect)
+src/volumetric_light_effect.rs: #[derive(Clone, Debug, Default)] pub struct VolumetricLightEffect { fields: crate::contract::EffectFields, pub density: Option<f32>, pub light_color: Option<u32>, pub light_x: Option<f32>, pub light_y: Option<f32>, pub samples: Option<f32>, pub scattering: Option<f32>, }
+src/volumetric_light_effect.rs: pub fn create_volumetric_light_effect() -> Ref<VolumetricLightEffect>
+src/volumetric_light_effect.rs: pub fn initialize_volumetric_light_effect(out: &mut VolumetricLightEffect)
+src/white_balance_effect.rs: #[derive(Clone, Debug, Default)] pub struct WhiteBalanceEffect { fields: crate::contract::EffectFields, pub temperature: Option<f32>, pub tint: Option<f32>, }
+src/white_balance_effect.rs: pub fn create_white_balance_effect() -> Ref<WhiteBalanceEffect>
+src/white_balance_effect.rs: pub fn initialize_white_balance_effect(out: &mut WhiteBalanceEffect)

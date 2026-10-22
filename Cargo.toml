@@ -24,6 +24,7 @@ flight-clip = { path = "crates/flight-clip" }
 flight-color = { path = "crates/flight-color" }
 flight-easing = { path = "crates/flight-easing" }
 flight-encoding = { path = "crates/flight-encoding" }
+flight-effects = { path = "crates/flight-effects" }
 flight-geometry = { path = "crates/flight-geometry" }
 flight-haptics = { path = "crates/flight-haptics" }
 flight-importdiagnostics = { path = "crates/flight-importdiagnostics" }

@@ -316,6 +316,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-effects"
+version = "0.6.0"
+dependencies = [
+ "flight-bitmap",
+ "flight-color",
+ "flight-entity",
+ "flight-geometry",
+ "flight-node",
+ "flight-registry",
+ "flight-render",
+ "flight-signals",
+ "flight-texture",
+]
+
+[[package]]
 name = "flight-encoding"
 version = "0.6.0"
 dependencies = [

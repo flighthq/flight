@@ -1,0 +1,25 @@
+[package]
+name = "flight-effects"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Backend-neutral render effect intents, recipes, padding, and diagnostics"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-bitmap = { workspace = true }
+flight-color = { workspace = true }
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-node = { path = "../flight-node" }
+flight-registry = { workspace = true }
+flight-render = { workspace = true }
+flight-signals = { workspace = true }
+flight-texture = { workspace = true }
+
+[lints]
+workspace = true
