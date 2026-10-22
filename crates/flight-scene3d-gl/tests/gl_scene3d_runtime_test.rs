@@ -97,13 +97,9 @@ mod destroy_gl_scene3d_runtime {
     fn frees_the_cached_programs_the_ibl_set_the_environment_cube_and_the_shadow_target_then_clears_the_slots() {
         let mut state = make_gl_scene3d_state();
         // SAFETY: the mock context allocates names on the test thread.
-        let (program_a, program_b, bake_framebuffer) = unsafe {
-            (
-                state.gl.create_program().unwrap(),
-                state.gl.create_program().unwrap(),
-                state.gl.create_framebuffer().unwrap(),
-            )
-        };
+        let bake_framebuffer = unsafe { state.gl.create_framebuffer().unwrap() };
+        let program_a = crate::gl_test_helper::make_test_mesh_program(&state);
+        let program_b = crate::gl_test_helper::make_test_mesh_program(&state);
         let (brdf, irradiance, prefiltered, cube) =
             (texture(&state), texture(&state), texture(&state), texture(&state));
         let shadow_target = create_gl_texture_render_target(
@@ -126,8 +122,8 @@ mod destroy_gl_scene3d_runtime {
         let palette = flight_render_gl::create_gl_skin_palette_texture(&state).unwrap();
         {
             let mut scene = get_gl_scene3d_runtime(&state);
-            let a: GlMeshProgramRef = Rc::new(mesh_program(program_a));
-            let b: GlMeshProgramRef = Rc::new(mesh_program(program_b));
+            let a: GlMeshProgramRef = Rc::new(program_a);
+            let b: GlMeshProgramRef = Rc::new(program_b);
             scene.program_cache.insert("a".to_string(), a.clone());
             scene.program_cache.insert("b".to_string(), b);
             scene.active_mesh_program = Some(a);
@@ -179,29 +175,6 @@ mod destroy_gl_scene3d_runtime {
         assert!(scene.shadow_target.is_none());
         assert!(scene.shadow.is_none());
         assert!(scene.skin_palette.is_none());
-    }
-
-    fn mesh_program(program: glow::NativeProgram) -> GlMeshProgram {
-        return GlMeshProgram {
-            loc_color_scale: GlLazyUniformLocation::default(),
-            loc_color_bias: GlLazyUniformLocation::default(),
-            loc_color_matrix0: GlLazyUniformLocation::default(),
-            loc_color_matrix1: GlLazyUniformLocation::default(),
-            loc_color_matrix2: GlLazyUniformLocation::default(),
-            loc_color_matrix3: GlLazyUniformLocation::default(),
-            loc_color_matrix_offset: GlLazyUniformLocation::default(),
-            loc_object_alpha: GlLazyUniformLocation::default(),
-            loc_alpha_is_coverage: GlLazyUniformLocation::default(),
-            loc_joint_texture: GlLazyUniformLocation::default(),
-            loc_instance_palette: GlLazyUniformLocation::default(),
-            loc_instance_color_palette: GlLazyUniformLocation::default(),
-            loc_joint_normal_texture: GlLazyUniformLocation::default(),
-            loc_model: None,
-            loc_normal_matrix: None,
-            loc_uv_transform: GlLazyUniformLocation::default(),
-            loc_view_projection: None,
-            program,
-        };
     }
 }
 
