@@ -518,8 +518,8 @@ mod create_console_log_sink {
         );
     }
 
-    // log.test.ts: "uses a level-prefixed text formatter by default" and "does nothing when the console
-    // is unavailable": an installed default sink writes every level without throwing.
+    // log.test.ts: "uses a level-prefixed text formatter by default", installed: the default sink
+    // writes every level through the console (the unavailable-console case is TS-only).
     #[test]
     fn writes_every_level_through_an_installed_default_sink_without_throwing() {
         let state = test_state();

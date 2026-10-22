@@ -21,10 +21,15 @@ mod console_tests {
         };
     }
 
+    // The test hook (Principal 2d987bb9): the sink's console write is captured here instead of on
+    // the real stdout and stderr, as the console method it routes to.
     fn written(entry: &LogEntry, formatter: &LogFormatter) -> Vec<(ConsoleMethod, String)> {
         let lines = Mutex::new(Vec::new());
-        write_console_log_entry(entry, formatter, &|method, line| {
-            lines.lock().unwrap().push((method, line.to_string()));
+        write_console_log_entry(entry, formatter, &|level, text| {
+            lines
+                .lock()
+                .unwrap()
+                .push((console_method(level), text.to_string()));
         });
         return lines.into_inner().unwrap();
     }
@@ -62,22 +67,6 @@ mod console_tests {
         assert_eq!(console_method(LogLevel::Info), ConsoleMethod::Info);
         assert_eq!(console_method(LogLevel::Debug), ConsoleMethod::Debug);
         assert_eq!(console_method(LogLevel::Verbose), ConsoleMethod::Log);
-    }
-
-    // log.test.ts: "does nothing when the console is unavailable". An unwritable stream stands in for
-    // the absent console: the write fails silently and nothing throws.
-    #[test]
-    fn does_nothing_when_the_console_is_unavailable() {
-        struct Unavailable;
-        impl Write for Unavailable {
-            fn write(&mut self, _buf: &[u8]) -> io::Result<usize> {
-                return Err(io::Error::other("console unavailable"));
-            }
-            fn flush(&mut self) -> io::Result<()> {
-                return Err(io::Error::other("console unavailable"));
-            }
-        }
-        write_console_line_to(&mut Unavailable, "text");
     }
 }
 
@@ -334,10 +323,9 @@ pub fn create_child_log_context(
 
 /// Creates a sink that writes each entry, formatted, to the console method matching its level (TS
 /// `createConsoleLogSink`): Error to `error`, Warn to `warn`, Info to `info`, Debug to `debug`, and
-/// None and Verbose to `log`. The default formatter is the level-prefixed text formatter. Natively
-/// the console is the process's standard streams (`log`, `info` and `debug` on stdout, `warn` and
-/// `error` on stderr); an unavailable stream is a silent no-op, as an absent `console` is in the
-/// source. There is no console-level threshold here; that belongs to the capture sink.
+/// None and Verbose to `log`. The default formatter is the level-prefixed text formatter. The console
+/// is a language-runtime built-in (Principal 2d987bb9), written through `write_console`. There is no
+/// console-level threshold here; that belongs to the capture sink.
 // flight-lint: allow(conform-params) D5: caller-owned LogState for the default text formatter replaces the hidden singleton
 pub fn create_console_log_sink(
     state: &LogStateRef,
@@ -347,7 +335,7 @@ pub fn create_console_log_sink(
         .and_then(|options| options.formatter.clone())
         .unwrap_or_else(|| default_console_log_formatter(state));
     return Arc::new(move |entry: &LogEntry| {
-        write_console_log_entry(entry, &formatter, &write_console_line);
+        write_console_log_entry(entry, &formatter, &write_console);
     });
 }
 
@@ -1392,33 +1380,29 @@ pub fn start_log_timer(label: &str, channel: Option<String>, now_ms: f64) -> Log
     };
 }
 
-// Writes one formatted line to the native console stream for `method` (`log`, `info` and `debug` on
-// stdout; `warn` and `error` on stderr).
-fn write_console_line(method: ConsoleMethod, line: &str) {
-    match method {
-        ConsoleMethod::Error | ConsoleMethod::Warn => {
-            write_console_line_to(&mut io::stderr().lock(), line)
-        }
+// The console vocabulary operation `write_console(level, text)` (ir-vocabulary; Principal 2d987bb9):
+// the console is a language-runtime built-in, and this is the SDK's single sanctioned print site.
+// Natively the `log`, `info` and `debug` methods write stdout and `warn` and `error` write stderr; TS
+// lowers it to `console[method](text)`. An I/O error on the stream is ignored, as any native console
+// write's would be.
+fn write_console(level: LogLevel, text: &str) {
+    let _ = match console_method(level) {
+        ConsoleMethod::Error | ConsoleMethod::Warn => writeln!(io::stderr().lock(), "{}", text),
         ConsoleMethod::Debug | ConsoleMethod::Info | ConsoleMethod::Log => {
-            write_console_line_to(&mut io::stdout().lock(), line)
+            writeln!(io::stdout().lock(), "{}", text)
         }
-    }
+    };
 }
 
-// Writes one line; a stream that cannot be written is the source's absent `console`, a silent no-op.
-fn write_console_line_to(out: &mut dyn Write, line: &str) {
-    let _ = writeln!(out, "{}", line);
-}
-
-// The source `_writeConsoleLogEntry`: formats the entry, then writes it with its level's method. No
-// lock is held while the formatter or the writer runs.
+// The source `_writeConsoleLogEntry`: formats the entry, then writes it at its level. `write` is
+// `write_console`, or the test hook. No lock is held while the formatter or the write runs.
 fn write_console_log_entry(
     entry: &LogEntry,
     formatter: &LogFormatter,
-    write: &dyn Fn(ConsoleMethod, &str),
+    write: &dyn Fn(LogLevel, &str),
 ) {
     let line = formatter(entry);
-    write(console_method(entry.level), &line);
+    write(entry.level, &line);
 }
 
 impl fmt::Debug for LogValue {
