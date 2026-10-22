@@ -527,6 +527,26 @@ pub struct Scene3DRenderList {
     pub visible_meshes: Vec<NodeRef>,
 }
 
+/// The per-draw resolved record a backend's 3D draw hands one mesh-material renderer for a single
+/// Mesh subset (TS `Scene3DRenderProxy`, plain data). A reused scratch record owned by the backend
+/// draw, valid only for the duration of the draw call it is passed to. `joint_matrices` /
+/// `normal_matrices` share the skinned mesh's skeleton palettes; `instance_*` carry the flattened
+/// per-instance matrices (16 floats each) and linear colours (4 floats each) for an instanced draw.
+pub struct Scene3DRenderProxy {
+    pub alpha: Option<f32>,
+    pub color_scale_bias: Option<ColorScaleBias>,
+    pub color_matrix: Option<[f32; 20]>,
+    pub instance_count: Option<usize>,
+    pub instance_matrices: Option<Vec<f32>>,
+    pub instance_colors: Option<Vec<f32>>,
+    pub joint_matrices: Option<Ref<Box<flight_entity::Float32Array>>>,
+    pub normal_matrices: Option<Ref<Box<flight_entity::Float32Array>>>,
+    pub material: flight_materials::Material3DRef,
+    pub normal_matrix: flight_geometry::Matrix3,
+    pub subset: flight_meshgeometry::MeshSubset,
+    pub world_matrix: Matrix4,
+}
+
 pub struct PreparedScene3D {
     pub frustum: Frustum,
     pub list: Scene3DRenderList,
