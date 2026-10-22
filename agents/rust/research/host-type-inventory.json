@@ -1,0 +1,730 @@
+{
+  "schema": "flight-d26-host-type-inventory/v1",
+  "author": "builder4",
+  "research_only": true,
+  "source_snapshot": {
+    "description": "Foreman-supplied pinned Flight TypeScript source archive",
+    "root": "flight-pinned-source/packages",
+    "types_source_file_count": 1073,
+    "rust_snapshot_head": "75362add"
+  },
+  "decision_basis": {
+    "include": "An opaque platform object or provider-owned identity that the SDK retains and passes without portable code interpreting the platform representation.",
+    "exclude": "SDK-defined descriptive/value records, language/IR vocabulary, and GPU resources created and consumed wholly inside a rendering backend.",
+    "required_rust_representation_if_approved": "{ provider: ProviderRef, handle: Arc<dyn Any + Send + Sync> }; Arc identity is platform-object identity",
+    "ownership_rule": "Capability contracts remain with the feature that names their SDK types (D8); only the leaf host-vocabulary types move to flight-hostcapability.",
+    "coverage_method": [
+      "Enumerated every one of the 1,073 files in packages/types/src.",
+      "Scanned the complete declaration surface for host/capability contracts, external platform type identifiers, unknown/object seams, handle/subscription declarations, and comments that declare host/provider/native identity.",
+      "Read each candidate definition and its capability contract, then traced non-test TypeScript consumers/providers across the pinned packages tree and corresponding Rust definitions/consumers across repo/crates.",
+      "Classified backend-created WebGL/WebGPU resources and SDK-defined descriptive records separately so token matches are not treated as host-vocabulary conclusions."
+    ]
+  },
+  "inventory": [
+    {
+      "ts_typename": "NativeWindowHandle",
+      "classification": "strong_candidate_explicit_D26_example",
+      "ts_evidence": [
+        {
+          "file": "packages/types/src/AppWindow.ts",
+          "lines": "84-87",
+          "evidence": "Declared as host-defined native window identity; Electron BrowserWindow, Tauri Window, integer, or opaque object; representation deliberately unknown."
+        },
+        {
+          "file": "packages/types/src/AppWindow.ts",
+          "lines": "103-105",
+          "evidence": "HostWindowAttachCapability consumes the handle."
+        }
+      ],
+      "current_rust": {
+        "status": "present_wrong_home_and_representation",
+        "location": "crates/flight-app/src/window_types.rs:142-144",
+        "representation": "type NativeWindowHandle = flight_entity::Unknown = Option<Arc<dyn Any + Send + Sync>>; nullable and has no ProviderRef"
+      },
+      "actual_consumers": {
+        "typescript": ["app", "host-electron", "host-tauri", "host-web"],
+        "rust": ["flight-app (window_types.rs:193-200; app_window.rs:790,1695)"]
+      },
+      "narrowing_backend": {
+        "existing": ["host-electron -> ElectronBrowserWindow", "host-tauri -> TauriWindow", "host-web -> Window"],
+        "planned": ["native host window backend"]
+      },
+      "providing_capability": ["Caller supplies the existing native window to HostWindowAttachCapability.attach; window host adapters create or obtain the platform window."],
+      "proposed_leaf_vocabulary_name": "NativeWindowHandle",
+      "cross_language": {"typescript": "NativeWindowHandle", "cpp": null, "haxe": null, "source": null},
+      "review_notes": ["D26 requires the provider token to be carried with the handle; current Unknown cannot record provider origin."]
+    },
+    {
+      "ts_typename": "NativeSurfaceHandle",
+      "classification": "approved_seed_row",
+      "ts_evidence": [
+        {
+          "file": "packages/types/src/Surface.ts",
+          "lines": "3-18",
+          "evidence": "Host-defined native drawable identity (HTMLCanvasElement, SDL_Window, EGLSurface, or integer), stored in SurfaceRuntime without narrowing."
+        },
+        {
+          "file": "packages/types/src/HostCanvas.ts",
+          "lines": "16-21",
+          "evidence": "HostCanvasCapability.create returns it."
+        },
+        {
+          "file": "packages/types/src/HostGl.ts",
+          "lines": "14-19",
+          "evidence": "HostGlCapability.create returns it."
+        },
+        {
+          "file": "packages/types/src/WgpuHost.ts",
+          "lines": "41-54",
+          "evidence": "HostWgpuCapability.create returns it and attachSurface consumes its Surface carrier."
+        }
+      ],
+      "current_rust": {
+        "status": "present_wrong_home_and_representation",
+        "location": "crates/flight-surface/src/types.rs:14-16",
+        "representation": "type NativeSurfaceHandle = flight_entity::Unknown; stored at types.rs:39-42; nullable and has no ProviderRef"
+      },
+      "actual_consumers": {
+        "typescript": ["surface", "host-web", "scene2d-canvas", "render-wgpu"],
+        "rust": ["flight-surface (surface.rs:30-38; canvas_surface.rs:28; types.rs:123-135)"]
+      },
+      "narrowing_backend": {
+        "existing": ["host-web narrows to HTMLCanvasElement/HTMLElement"],
+        "planned": ["host-cpp SDL/EGL/native drawable adapters", "render-gl/render-wgpu only after host/surface resolution"]
+      },
+      "providing_capability": ["HostCanvasCapability.create", "HostGlCapability.create", "HostWgpuCapability.create"],
+      "proposed_leaf_vocabulary_name": "NativeSurfaceHandle",
+      "cross_language": {
+        "typescript": "NativeSurfaceHandle",
+        "cpp": "window / drawable handle",
+        "haxe": null,
+        "source": "D26 host-vocabulary skeleton"
+      },
+      "review_notes": []
+    },
+    {
+      "ts_typename": "CanvasRenderingContext2D",
+      "classification": "approved_seed_row",
+      "ts_evidence": [
+        {
+          "file": "packages/types/src/HostCanvas.ts",
+          "lines": "11-24",
+          "evidence": "HostCanvasCapability.acquire returns the platform context."
+        },
+        {
+          "file": "packages/types/src/CanvasSurface.ts",
+          "lines": "3-9",
+          "evidence": "CanvasSurface explicitly calls the context a deliberate host-type residue."
+        },
+        {
+          "file": "packages/types/src/CanvasRenderTarget.ts",
+          "lines": "5-17",
+          "evidence": "Canvas renderer retains and passes it on render targets."
+        }
+      ],
+      "current_rust": {
+        "status": "correct_shape_wrong_home",
+        "location": "crates/flight-surface/src/types.rs:50-57",
+        "representation": "struct { provider: ProviderRef, handle: Arc<dyn Any + Send + Sync> }"
+      },
+      "actual_consumers": {
+        "typescript": ["surface", "scene2d-canvas", "effects-canvas", "scene2d-dom", "scene2d-gl", "scene2d-wgpu", "host-web"],
+        "rust": ["flight-surface only so far (types.rs:75-80,111-135); canvas renderer crates are not yet ported"]
+      },
+      "narrowing_backend": {
+        "existing": ["scene2d-canvas/effects-canvas use DOM CanvasRenderingContext2D directly"],
+        "planned": ["native Canvas provider narrows to tiny-skia/Cairo/Direct2D equivalent"]
+      },
+      "providing_capability": ["HostCanvasCapability.acquire", "HostCanvasCapability.createSurface"],
+      "proposed_leaf_vocabulary_name": "CanvasRenderingContext2D",
+      "cross_language": {
+        "typescript": "CanvasRenderingContext2D",
+        "cpp": "TS-only path; native tiny-skia / Cairo surface (D19)",
+        "haxe": "js.html.CanvasRenderingContext2D",
+        "source": "D26 host-vocabulary skeleton"
+      },
+      "review_notes": []
+    },
+    {
+      "ts_typename": "GlContext (structural projection of WebGL2RenderingContext)",
+      "classification": "approved_seed_row",
+      "ts_evidence": [
+        {
+          "file": "packages/types/src/GlContext.ts",
+          "lines": "1-4,250",
+          "evidence": "Flight structural interface projects the exact WebGL2 members used; WebGL2RenderingContext satisfies it directly."
+        },
+        {
+          "file": "packages/types/src/HostGl.ts",
+          "lines": "12-21",
+          "evidence": "HostGlCapability.acquire returns GlContext."
+        }
+      ],
+      "current_rust": {
+        "status": "absent",
+        "location": null,
+        "representation": "No Rust GlContext definition; flight-surface/src/lib.rs:14 only records an obsolete ownership comment."
+      },
+      "actual_consumers": {
+        "typescript": ["surface", "host-web", "render-gl", "scene2d-gl", "scene3d-gl", "effects-gl"],
+        "rust": ["none yet; render-gl and GL consumers are unported"]
+      },
+      "narrowing_backend": {
+        "existing": ["render-gl consumes the WebGL structural context"],
+        "planned": ["flight-render-gl builds/narrows a thread-bound glow::Context from the Send handle under D17"]
+      },
+      "providing_capability": ["HostGlCapability.acquire"],
+      "proposed_leaf_vocabulary_name": "GlContext",
+      "cross_language": {
+        "typescript": "WebGL2RenderingContext",
+        "cpp": "EGL / SDL GL context + loader",
+        "haxe": "js.html.webgl.GL2",
+        "source": "D26 host-vocabulary skeleton"
+      },
+      "review_notes": ["The TS name is Flight-defined but its value is host-provided; D26 explicitly places the Rust leaf in flight-hostcapability."]
+    },
+    {
+      "ts_typename": "GPUDevice",
+      "classification": "approved_seed_row",
+      "ts_evidence": [
+        {"file": "packages/types/src/WgpuHost.ts", "lines": "20-29,64-69", "evidence": "Host acquisition returns a GPUDevice; surface attachment consumes it."},
+        {"file": "packages/types/src/WgpuRenderState.ts", "lines": "34-40", "evidence": "Render state retains the exact device."},
+        {"file": "packages/types/src/WgpuRenderTarget.ts", "lines": "90-97", "evidence": "Screen render target retains the exact device."}
+      ],
+      "current_rust": {"status": "absent", "location": null, "representation": "No WgpuDevice/GPUDevice Rust definition; render-wgpu is unported."},
+      "actual_consumers": {
+        "typescript": ["host-web", "render-wgpu", "scene2d-wgpu", "scene3d-wgpu", "effects-wgpu"],
+        "rust": ["none yet"]
+      },
+      "narrowing_backend": {"existing": ["render-wgpu uses GPUDevice"], "planned": ["flight-render-wgpu -> wgpu::Device"]},
+      "providing_capability": ["HostWgpuCapability.acquire"],
+      "proposed_leaf_vocabulary_name": "WgpuDevice",
+      "cross_language": {"typescript": "GPUDevice", "cpp": "wgpu::Device / WGPUDevice (Dawn or wgpu-native)", "haxe": null, "source": "D26 host-vocabulary skeleton"},
+      "review_notes": []
+    },
+    {
+      "ts_typename": "GPUCanvasContext",
+      "classification": "approved_seed_row",
+      "ts_evidence": [
+        {"file": "packages/types/src/WgpuHost.ts", "lines": "20-29,47-61", "evidence": "Host acquisition and surface attachment return the configured presentation context."},
+        {"file": "packages/types/src/WgpuRenderTarget.ts", "lines": "18-30,90-97", "evidence": "Screen target retains it; offscreen target uses null."}
+      ],
+      "current_rust": {"status": "absent", "location": null, "representation": "No WgpuSurfaceContext/GPUCanvasContext Rust definition."},
+      "actual_consumers": {"typescript": ["host-web", "render-wgpu", "scene2d-wgpu"], "rust": ["none yet"]},
+      "narrowing_backend": {"existing": ["render-wgpu uses GPUCanvasContext"], "planned": ["flight-render-wgpu -> configured wgpu::Surface/context state"]},
+      "providing_capability": ["HostWgpuCapability.acquire", "HostWgpuCapability.attachSurface"],
+      "proposed_leaf_vocabulary_name": "WgpuSurfaceContext",
+      "cross_language": {"typescript": "GPUCanvasContext", "cpp": "wgpu surface/context (Dawn or wgpu-native)", "haxe": null, "source": "D26 host-vocabulary skeleton"},
+      "review_notes": ["The leaf must represent the configured context without importing wgpu into flight-hostcapability."]
+    },
+    {
+      "ts_typename": "GPUQueue",
+      "classification": "documented_D26_row_but_absent_from_pinned_TS",
+      "ts_evidence": [
+        {"file": "packages/types/src", "lines": "complete tree", "evidence": "No GPUQueue token occurs in any of the 1,073 pinned types source files."},
+        {"file": "packages/types/src/WgpuHost.ts", "lines": "20-29", "evidence": "WgpuHostAcquisition contains context, device, format, ownership, and surface only; it does not carry queue."}
+      ],
+      "current_rust": {"status": "absent", "location": null, "representation": "No WgpuQueue Rust definition."},
+      "actual_consumers": {"typescript": [], "rust": []},
+      "narrowing_backend": {"existing": [], "planned": ["D26 skeleton says render-wgpu -> wgpu::Queue"]},
+      "providing_capability": ["D26 skeleton associates it with HostWgpuCapability, but the pinned contract does not return it."],
+      "proposed_leaf_vocabulary_name": "WgpuQueue",
+      "cross_language": {"typescript": "GPUQueue", "cpp": "wgpu queue (Dawn or wgpu-native)", "haxe": null, "source": "D26 host-vocabulary skeleton only"},
+      "review_notes": ["Do not add or move this during the port without Principal deciding whether the skeleton is prospective or the pinned HostWgpu contract is incomplete."]
+    },
+    {
+      "ts_typename": "HostImageSource",
+      "classification": "strong_candidate_explicit_D26_example",
+      "ts_evidence": [
+        {"file": "packages/types/src/HostImageSource.ts", "lines": "1-4", "evidence": "Explicit opaque host-side borrowed image handle; web aliases CanvasImageSource and native replaces it."},
+        {"file": "packages/types/src/HostImageDimensions.ts", "lines": "3-13", "evidence": "Host that produced the handle is the only layer allowed to interpret and measure it."},
+        {"file": "packages/types/src/HostVideo.ts", "lines": "4-29", "evidence": "Host video creates, loads, retains, and operates on the handle."}
+      ],
+      "current_rust": {
+        "status": "correct_shape_wrong_home",
+        "location": "crates/flight-bitmap/src/types.rs:421-430",
+        "representation": "struct { provider: ProviderRef, handle: Arc<dyn Any + Send + Sync> }; shared as Arc<HostImageSource>"
+      },
+      "actual_consumers": {
+        "typescript": ["bitmap", "host-web", "image", "media", "texture", "video"],
+        "rust": ["flight-bitmap", "flight-image", "flight-video", "flight-media", "flight-textureatlas", "flight-interaction", "flight-scene2d-formats"]
+      },
+      "narrowing_backend": {"existing": ["host-web video/image/readback adapters -> HTML image/video/canvas/ImageBitmap union"], "planned": ["native image/video/readback providers"]},
+      "providing_capability": ["HostVideoCapability.createVideoElement/loadUrl/attachStream", "host image creation helpers; HostBitmapReadbackCapability and HostImageDimensionResolver consume it"],
+      "proposed_leaf_vocabulary_name": "HostImageSource",
+      "cross_language": {"typescript": "HostImageSource = CanvasImageSource", "cpp": null, "haxe": null, "source": null},
+      "review_notes": ["Direct CanvasImageSource residues listed in the next entry should converge on this approved leaf rather than form a second identity type."]
+    },
+    {
+      "ts_typename": "CanvasImageSource (direct residues outside HostImageSource alias)",
+      "classification": "same_platform_identity_as_HostImageSource_requires_consumer_update",
+      "ts_evidence": [
+        {"file": "packages/types/src/GlContextRuntime.ts", "lines": "32-45", "evidence": "Direct CanvasImageSource key in the GL texture cache."},
+        {"file": "packages/types/src/WgpuDeviceRuntime.ts", "lines": "14-29", "evidence": "Direct CanvasImageSource key in the WGPU texture cache."},
+        {"file": "packages/types/src/CanvasTextureResolver.ts", "lines": "1-43", "evidence": "Canvas texture resolvers return and retain direct CanvasImageSource."},
+        {"file": "packages/types/src/DomTextureResolver.ts", "lines": "1-4", "evidence": "DOM texture resolver returns direct CanvasImageSource."},
+        {"file": "packages/types/src/CanvasShapeDrawState.ts", "lines": "5-25", "evidence": "Canvas shape replay retains a direct CanvasImageSource."}
+      ],
+      "current_rust": {"status": "partially_represented_by_HostImageSource", "location": "crates/flight-bitmap/src/types.rs:421-430", "representation": "No separate CanvasImageSource; HostImageSource already has the D26 shape."},
+      "actual_consumers": {"typescript": ["render-gl", "render-wgpu", "scene2d-canvas", "scene2d-dom", "scene2d-gl", "scene2d-wgpu", "scene3d-gl", "effects-canvas"], "rust": ["future render/scene backend ports"]},
+      "narrowing_backend": {"existing": ["canvas, DOM, GL and WGPU texture resolvers"], "planned": ["corresponding Rust renderer backends"]},
+      "providing_capability": ["Same producers as HostImageSource; resolver registries pass it onward."],
+      "proposed_leaf_vocabulary_name": "HostImageSource",
+      "cross_language": {"typescript": "CanvasImageSource", "cpp": null, "haxe": null, "source": null},
+      "review_notes": ["This is an alias-cleanup/migration row, not a proposal for a second leaf."]
+    },
+    {
+      "ts_typename": "AudioBuffer",
+      "classification": "candidate_requires_principal_decision",
+      "ts_evidence": [
+        {"file": "packages/types/src/HostAudioDecode.ts", "lines": "8-14", "evidence": "Host decoder returns the platform AudioBuffer."},
+        {"file": "packages/types/src/AudioResource.ts", "lines": "34-36", "evidence": "AudioResource retains the platform object."},
+        {"file": "packages/audio/src/audioResourceFrom.ts", "lines": "17-23", "evidence": "SDK also directly constructs new AudioBuffer for PCM bytes, outside a Host capability."}
+      ],
+      "current_rust": {
+        "status": "present_as_descriptive_record_not_D26_handle",
+        "location": "crates/flight-audio/src/types.rs:92-105",
+        "representation": "Clone record { sample_rate, length, channels }; AudioResource holds Ref<AudioBuffer>"
+      },
+      "actual_consumers": {"typescript": ["audio", "media", "scene2d-resources", "host-web"], "rust": ["flight-audio", "flight-media"]},
+      "narrowing_backend": {"existing": ["host-web decoder and media/WebAudio device"], "planned": ["native audio decoder/device backend"]},
+      "providing_capability": ["HostAudioDecodeFormatCapability.decode", "also the TS AudioBuffer constructor, which currently bypasses a host seam"],
+      "proposed_leaf_vocabulary_name": null,
+      "cross_language": {"typescript": "AudioBuffer", "cpp": null, "haxe": null, "source": null},
+      "review_notes": ["Exact question: is AudioBuffer host vocabulary, requiring an opaque HostAudioBuffer plus capability operations, or approved IR/descriptive PCM vocabulary? Moving it blindly would remove channel-data semantics the audio package currently uses."]
+    },
+    {
+      "ts_typename": "AudioBufferHandle",
+      "classification": "strong_candidate_explicit_audio_handle_family",
+      "ts_evidence": [
+        {"file": "packages/types/src/AudioDeviceHandle.ts", "lines": "1-1", "evidence": "Branded numeric identity returned and consumed only by the host audio device seam."},
+        {"file": "packages/types/src/HostAudioDevice.ts", "lines": "4-16", "evidence": "HostAudioDeviceCapability creates/destroys it and uses it to create a source."}
+      ],
+      "current_rust": {"status": "present_wrong_home_and_representation", "location": "crates/flight-media/src/types.rs:10-12", "representation": "Copy newtype i32; zero invalid; no ProviderRef or Arc identity"},
+      "actual_consumers": {"typescript": ["host-web", "media"], "rust": ["flight-media"]},
+      "narrowing_backend": {"existing": ["host-web WebAudio device registry"], "planned": ["native audio device backend"]},
+      "providing_capability": ["HostAudioDeviceCapability.createBuffer"],
+      "proposed_leaf_vocabulary_name": "AudioBufferHandle",
+      "cross_language": {"typescript": "AudioBufferHandle", "cpp": null, "haxe": null, "source": null},
+      "review_notes": ["D26 opaque Arc identity conflicts with current numeric Copy/sentinel semantics; migration must decide how invalid/absent is represented."]
+    },
+    {
+      "ts_typename": "AudioDeviceHandle",
+      "classification": "strong_candidate_explicit_D26_example",
+      "ts_evidence": [
+        {"file": "packages/types/src/AudioDeviceHandle.ts", "lines": "3-3", "evidence": "Branded numeric host audio device identity."},
+        {"file": "packages/types/src/HostAudioDevice.ts", "lines": "4-16,27-29", "evidence": "Created, consumed, resumed, queried, and destroyed only through HostAudioDeviceCapability."}
+      ],
+      "current_rust": {"status": "present_wrong_home_and_representation", "location": "crates/flight-media/src/types.rs:14-16", "representation": "Copy newtype i32; no ProviderRef or Arc identity"},
+      "actual_consumers": {"typescript": ["host-web", "media"], "rust": ["flight-media"]},
+      "narrowing_backend": {"existing": ["host-web WebAudio AudioContext registry"], "planned": ["native audio device backend"]},
+      "providing_capability": ["HostAudioDeviceCapability.createDevice"],
+      "proposed_leaf_vocabulary_name": "AudioDeviceHandle",
+      "cross_language": {"typescript": "AudioDeviceHandle", "cpp": null, "haxe": null, "source": null},
+      "review_notes": []
+    },
+    {
+      "ts_typename": "AudioSourceHandle",
+      "classification": "strong_candidate_explicit_audio_handle_family",
+      "ts_evidence": [
+        {"file": "packages/types/src/AudioDeviceHandle.ts", "lines": "5-5", "evidence": "Branded numeric host audio source identity."},
+        {"file": "packages/types/src/HostAudioDevice.ts", "lines": "13-39", "evidence": "HostAudioDeviceCapability creates and performs all playback operations on the source."}
+      ],
+      "current_rust": {"status": "present_wrong_home_and_representation", "location": "crates/flight-media/src/types.rs:18-20", "representation": "Copy newtype i32; zero invalid; no ProviderRef or Arc identity"},
+      "actual_consumers": {"typescript": ["host-web", "media"], "rust": ["flight-media"]},
+      "narrowing_backend": {"existing": ["host-web WebAudio source-node registry"], "planned": ["native audio device backend"]},
+      "providing_capability": ["HostAudioDeviceCapability.createSource"],
+      "proposed_leaf_vocabulary_name": "AudioSourceHandle",
+      "cross_language": {"typescript": "AudioSourceHandle", "cpp": null, "haxe": null, "source": null},
+      "review_notes": []
+    },
+    {
+      "ts_typename": "AudioBusNodeHandle",
+      "classification": "strong_candidate_explicit_audio_handle_family",
+      "ts_evidence": [
+        {"file": "packages/types/src/HostAudioMixer.ts", "lines": "3-3,7-18", "evidence": "Branded numeric mixer bus identity created and interpreted only by HostAudioMixerCapability."}
+      ],
+      "current_rust": {"status": "present_wrong_home_and_representation", "location": "crates/flight-media/src/types.rs:22-24", "representation": "Copy newtype i32; no ProviderRef or Arc identity"},
+      "actual_consumers": {"typescript": ["host-web", "media"], "rust": ["flight-media"]},
+      "narrowing_backend": {"existing": ["host-web WebAudio mixer registry"], "planned": ["native audio mixer backend"]},
+      "providing_capability": ["HostAudioMixerCapability.createBusNode"],
+      "proposed_leaf_vocabulary_name": "AudioBusNodeHandle",
+      "cross_language": {"typescript": "AudioBusNodeHandle", "cpp": null, "haxe": null, "source": null},
+      "review_notes": []
+    },
+    {
+      "ts_typename": "AudioMixerGraphHandle",
+      "classification": "strong_candidate_explicit_audio_handle_family",
+      "ts_evidence": [
+        {"file": "packages/types/src/HostAudioMixer.ts", "lines": "5-18", "evidence": "Branded numeric mixer graph identity created and interpreted only by HostAudioMixerCapability."}
+      ],
+      "current_rust": {"status": "present_wrong_home_and_representation", "location": "crates/flight-media/src/types.rs:26-28", "representation": "Copy newtype i32; no ProviderRef or Arc identity"},
+      "actual_consumers": {"typescript": ["host-web", "media"], "rust": ["flight-media"]},
+      "narrowing_backend": {"existing": ["host-web WebAudio mixer registry"], "planned": ["native audio mixer backend"]},
+      "providing_capability": ["HostAudioMixerCapability.createMixerGraph"],
+      "proposed_leaf_vocabulary_name": "AudioMixerGraphHandle",
+      "cross_language": {"typescript": "AudioMixerGraphHandle", "cpp": null, "haxe": null, "source": null},
+      "review_notes": []
+    },
+    {
+      "ts_typename": "FontFace",
+      "classification": "strong_candidate_explicit_D26_example",
+      "ts_evidence": [
+        {"file": "packages/types/src/FontResource.ts", "lines": "3-6", "evidence": "FontResource retains a platform FontFace."},
+        {"file": "packages/types/src/HostFontLoading.ts", "lines": "1-5", "evidence": "Host loading seam consumes and returns FontFace objects."},
+        {"file": "packages/font/src/_fontFaceLoad.ts", "lines": "40-50", "evidence": "SDK currently also calls the global FontFace constructor before handing the object to the host loader."}
+      ],
+      "current_rust": {"status": "correct_shape_wrong_home_with_extra_metadata", "location": "crates/flight-font/src/types.rs:86-93", "representation": "struct { provider, handle: Arc<dyn Any + Send + Sync>, family: String }; shared as Arc<FontFace>"},
+      "actual_consumers": {"typescript": ["font", "host-web"], "rust": ["flight-font"]},
+      "narrowing_backend": {"existing": ["host-web CSS Font Loading API"], "planned": ["native font loader"]},
+      "providing_capability": ["HostFontLoadingCapability.loadFontFaces/addFontFace", "Rust adds create_font_face/load_font_face callbacks at crates/flight-font/src/types.rs:239-249"],
+      "proposed_leaf_vocabulary_name": "FontFace",
+      "cross_language": {"typescript": "FontFace", "cpp": null, "haxe": null, "source": null},
+      "review_notes": ["Exact question: does family remain SDK descriptive data outside the leaf, or is it permitted on the opaque host-vocabulary wrapper? The mandated D26 shape names only provider and handle."]
+    },
+    {
+      "ts_typename": "HostAppLoopCapability requestFrame/cancelFrame handle (currently unnamed unknown)",
+      "classification": "strong_candidate_unnamed_timer_or_frame_handle",
+      "ts_evidence": [
+        {"file": "packages/types/src/HostAppLoop.ts", "lines": "1-5", "evidence": "requestFrame returns an opaque unknown and cancelFrame consumes the same handle."},
+        {"file": "packages/app/src/appLoop.ts", "lines": "215-249", "evidence": "App loop retains and passes the exact handle solely for cancellation."},
+        {"file": "packages/host-web/src/webLoop.ts", "lines": "3-12", "evidence": "Web provider narrows it to the numeric requestAnimationFrame id."}
+      ],
+      "current_rust": {"status": "present_as_unnamed_Unknown", "location": "crates/flight-app/src/loop_types.rs:55-64,102-110", "representation": "AppLoopState.frame_handle and capability callbacks use flight_entity::Unknown; no ProviderRef"},
+      "actual_consumers": {"typescript": ["app", "host-web"], "rust": ["flight-app"]},
+      "narrowing_backend": {"existing": ["host-web -> requestAnimationFrame numeric id"], "planned": ["native app loop backend"]},
+      "providing_capability": ["HostAppLoopCapability.requestFrame"],
+      "proposed_leaf_vocabulary_name": "AppFrameHandle",
+      "cross_language": {"typescript": "unnamed unknown returned by requestFrame", "cpp": null, "haxe": null, "source": null},
+      "review_notes": ["Name is proposed, not source-derived. Decide whether this is the D26 'timer handle' example or whether frame and general timers require distinct leaves."]
+    },
+    {
+      "ts_typename": "HostVideoCapability.attachStream stream parameter (currently unnamed unknown)",
+      "classification": "strong_candidate_unnamed_host_media_handle",
+      "ts_evidence": [
+        {"file": "packages/types/src/HostVideo.ts", "lines": "4-9", "evidence": "attachStream accepts an opaque unknown and returns a HostImageSource."},
+        {"file": "packages/host-web/src/webVideoCapability.ts", "lines": "4-15", "evidence": "Web provider assigns the value to HTMLVideoElement.srcObject."},
+        {"file": "packages/host-web/src/webVideoCapability.test.ts", "lines": "105-118", "evidence": "Tests identify the web value as MediaStream."}
+      ],
+      "current_rust": {"status": "present_as_unnamed_Unknown", "location": "crates/flight-video/src/types.rs:103-108", "representation": "attach_stream: Fn(&Unknown) -> Option<Arc<HostImageSource>>; no ProviderRef on stream"},
+      "actual_consumers": {"typescript": ["host-web"], "rust": ["flight-video capability shape; no non-test Rust call site found"]},
+      "narrowing_backend": {"existing": ["host-web -> MediaStream/srcObject"], "planned": ["native video capture/playback backend"]},
+      "providing_capability": ["No producer appears in packages/types; the caller supplies the stream and HostVideoCapability.attachStream consumes it."],
+      "proposed_leaf_vocabulary_name": "HostVideoStreamHandle",
+      "cross_language": {"typescript": "unknown (MediaStream on web)", "cpp": null, "haxe": null, "source": null},
+      "review_notes": ["Name and provider seam are unresolved because the pinned SDK has no typed stream producer."]
+    },
+    {
+      "ts_typename": "InputIngressSource",
+      "classification": "strong_candidate_host_identity",
+      "ts_evidence": [
+        {"file": "packages/types/src/HostInputIngress.ts", "lines": "7-12", "evidence": "Host-neutral identity whose exact object identity is interpreted by the installed ingress backend."},
+        {"file": "packages/types/src/HostInputIngress.ts", "lines": "33-51", "evidence": "Every HostInputIngressCapability attachment consumes it."}
+      ],
+      "current_rust": {"status": "present_wrong_representation", "location": "crates/flight-input/src/types.rs:205-208", "representation": "Empty struct shared by Ref; no provider or opaque handle"},
+      "actual_consumers": {"typescript": ["input", "host-web"], "rust": ["flight-input (input_binding.rs throughout)"]},
+      "narrowing_backend": {"existing": ["host-web input ingress"], "planned": ["native input ingress backend"]},
+      "providing_capability": ["Caller/provider creates source identity; HostInputIngressCapability consumes it."],
+      "proposed_leaf_vocabulary_name": "InputIngressSource",
+      "cross_language": {"typescript": "InputIngressSource = object", "cpp": null, "haxe": null, "source": null},
+      "review_notes": []
+    },
+    {
+      "ts_typename": "InputTargetHandle",
+      "classification": "candidate_provider_bound_identity",
+      "ts_evidence": [
+        {"file": "packages/types/src/HostInputTarget.ts", "lines": "3-15", "evidence": "Provider-bound identity; web maps it to HTMLElement while neutral contracts must not name DOM."},
+        {"file": "packages/types/src/HostInput.ts", "lines": "1-31", "evidence": "Drop-file, focus, and pointer-lock capabilities consume it."}
+      ],
+      "current_rust": {"status": "present_as_SDK_Entity_not_D26_handle", "location": "crates/flight-input/src/types.rs:323-328", "representation": "EntityRuntimeSlot-only struct; flight-input/src/input_target.rs:20-31 provides SDK factory"},
+      "actual_consumers": {"typescript": ["app", "host-web"], "rust": ["flight-input", "flight-app"]},
+      "narrowing_backend": {"existing": ["host-web WeakMap -> HTMLElement"], "planned": ["native input target provider"]},
+      "providing_capability": ["host-web createWebInputTargetHandle helper; HostInputTargetCapability.prepare and HostInput capabilities consume it"],
+      "proposed_leaf_vocabulary_name": "InputTargetHandle",
+      "cross_language": {"typescript": "InputTargetHandle", "cpp": null, "haxe": null, "source": null},
+      "review_notes": ["Principal must decide whether provider-side-map Entity identities are D26 leaves even though the SDK defines their public Entity wrapper."]
+    },
+    {
+      "ts_typename": "WindowResizeTargetHandle",
+      "classification": "candidate_provider_bound_identity",
+      "ts_evidence": [
+        {"file": "packages/types/src/AppWindow.ts", "lines": "93-95,124-133", "evidence": "Provider-bound Element identity consumed by HostWindowGeometryCapability.subscribeResize."}
+      ],
+      "current_rust": {"status": "present_as_SDK_Entity_not_D26_handle", "location": "crates/flight-app/src/window_types.rs:154-160", "representation": "EntityRuntimeSlot-only struct"},
+      "actual_consumers": {"typescript": ["app", "host-web"], "rust": ["flight-app"]},
+      "narrowing_backend": {"existing": ["host-web -> Element/ResizeObserver target"], "planned": ["native window resize backend"]},
+      "providing_capability": ["HostWindowGeometryCapability.subscribeResize consumes it; source has no generic producer capability."],
+      "proposed_leaf_vocabulary_name": "WindowResizeTargetHandle",
+      "cross_language": {"typescript": "WindowResizeTargetHandle", "cpp": null, "haxe": null, "source": null},
+      "review_notes": ["Same Entity-side-map question as InputTargetHandle."]
+    },
+    {
+      "ts_typename": "FullscreenTargetHandle",
+      "classification": "candidate_provider_bound_identity",
+      "ts_evidence": [
+        {"file": "packages/types/src/HostFullscreen.ts", "lines": "1-8", "evidence": "Branded Entity target consumed by the element fullscreen provider."}
+      ],
+      "current_rust": {"status": "present_as_SDK_Entity_not_D26_handle", "location": "crates/flight-app/src/window_types.rs:119-133", "representation": "EntityRuntimeSlot-only struct"},
+      "actual_consumers": {"typescript": ["app", "host-web"], "rust": ["flight-app"]},
+      "narrowing_backend": {"existing": ["host-web -> fullscreen-capable Element"], "planned": ["native element/fullscreen backend if applicable"]},
+      "providing_capability": ["HostElementFullscreenCapability.request consumes it; source has no generic producer capability."],
+      "proposed_leaf_vocabulary_name": "FullscreenTargetHandle",
+      "cross_language": {"typescript": "FullscreenTargetHandle", "cpp": null, "haxe": null, "source": null},
+      "review_notes": ["Same Entity-side-map question as InputTargetHandle."]
+    },
+    {
+      "ts_typename": "HTMLElement",
+      "classification": "candidate_platform_object_directly_exposed_in_portable_types",
+      "ts_evidence": [
+        {"file": "packages/types/src/HtmlView.ts", "lines": "3-12", "evidence": "Portable HtmlViewData stores HTMLElement even though scene2d itself does not inspect it."},
+        {"file": "packages/types/src/NativeText.ts", "lines": "40-49", "evidence": "NativeText runtime stores a platform-renderer-owned HTMLElement."},
+        {"file": "packages/types/src/DomRenderState.ts", "lines": "11-17,26-45", "evidence": "DOM backend state and caches pass HTMLElement identities."}
+      ],
+      "current_rust": {"status": "partially_present_as_Unknown", "location": "crates/flight-scene2d/src/types.rs:231-253", "representation": "HtmlViewData.element uses flight_entity::Unknown; no ProviderRef; DOM render backend unported"},
+      "actual_consumers": {"typescript": ["scene2d-dom", "host-web", "tool-capture"], "rust": ["flight-scene2d retains only HtmlViewData.element"]},
+      "narrowing_backend": {"existing": ["scene2d-dom"], "planned": ["future Rust DOM/web backend only"]},
+      "providing_capability": ["Caller supplies HtmlView element; scene2d-dom creates NativeText and renderer elements. No generic Host capability provides it."],
+      "proposed_leaf_vocabulary_name": "HostElementHandle",
+      "cross_language": {"typescript": "HTMLElement", "cpp": null, "haxe": null, "source": null},
+      "review_notes": ["Exact question: include as host vocabulary because portable scene2d passes it opaquely, or keep it DOM-backend-local because no Host capability crosses the value? Proposed name is not approved."]
+    },
+    {
+      "ts_typename": "HTMLCanvasElement",
+      "classification": "candidate_platform_object_directly_exposed_in_renderer_types",
+      "ts_evidence": [
+        {"file": "packages/types/src/CanvasRenderTarget.ts", "lines": "5-17", "evidence": "Canvas render target retains the exact platform canvas beside its context."},
+        {"file": "packages/types/src/CanvasRenderState.ts", "lines": "20-24", "evidence": "Canvas render state retains platform canvas and context."},
+        {"file": "packages/types/src/CanvasRenderPass.ts", "lines": "25-33", "evidence": "Canvas pass retains nullable platform canvas/context."},
+        {"file": "packages/types/src/DomRenderState.ts", "lines": "40-45", "evidence": "DOM renderer caches bitmap materializations as HTMLCanvasElement."}
+      ],
+      "current_rust": {"status": "absent_as_named_type", "location": "crates/flight-surface/src/types.rs:14-16", "representation": "Web canvas is currently representable only inside NativeSurfaceHandle/Unknown; canvas renderer types are unported"},
+      "actual_consumers": {"typescript": ["scene2d-canvas", "scene2d-dom", "host-web", "bitmap", "render-gl", "render-wgpu", "effects-canvas", "tool-capture"], "rust": ["future canvas/DOM renderer ports"]},
+      "narrowing_backend": {"existing": ["scene2d-canvas", "scene2d-dom", "host-web"], "planned": ["Rust web/canvas backend only"]},
+      "providing_capability": ["HostCanvasCapability.create returns it erased as NativeSurfaceHandle; CanvasRenderingContext2D.canvas also exposes it; renderer may create detached canvases."],
+      "proposed_leaf_vocabulary_name": "HostCanvasElementHandle",
+      "cross_language": {"typescript": "HTMLCanvasElement", "cpp": null, "haxe": null, "source": null},
+      "review_notes": ["Exact question: should all direct canvas-element fields become NativeSurfaceHandle, a new leaf, or backend-private state? Proposed name is not approved."]
+    },
+    {
+      "ts_typename": "TimerHandle (Rust host timer vocabulary; no pinned TS declaration)",
+      "classification": "documented_D26_example_with_Rust_only_current_contract",
+      "ts_evidence": [
+        {"file": "packages/types/src", "lines": "complete tree", "evidence": "No TimerHandle or HostTimerCapability declaration exists in pinned packages/types."},
+        {"file": "packages/types/src/HostAppLoop.ts", "lines": "1-5", "evidence": "The only exported scheduling handle is the unnamed requestFrame unknown listed separately."},
+        {"file": "packages/gui/src/tooltipController.ts", "lines": "19,45", "evidence": "Ordinary setTimeout handles are package-private ReturnType<typeof setTimeout>, not SDK contract types."}
+      ],
+      "current_rust": {"status": "present_correct_home_different_representation", "location": "crates/flight-hostcapability/src/host_timer_capability.rs:5-22", "representation": "TimerHandle { cancel: Arc<dyn Fn()> }; HostTimerCapability returns it; no raw id/provider field"},
+      "actual_consumers": {"typescript": ["no exported type; package-private timers throughout GUI, tray, loader, log, input, signals, render-wgpu and host-web"], "rust": ["flight-loader; flight-hostcapability tests"]},
+      "narrowing_backend": {"existing": ["none: cancellation closure intentionally hides provider id"], "planned": []},
+      "providing_capability": ["Rust HostTimerCapability.set_timeout/set_interval"],
+      "proposed_leaf_vocabulary_name": "TimerHandle",
+      "cross_language": {"typescript": "owned closure calling clearTimeout or clearInterval", "cpp": "owned cancellation callback", "haxe": "owned cancellation callback", "source": "existing cargo-flight-lint IR vocabulary row at crates/cargo-flight-lint/src/vocabulary.rs:64"},
+      "review_notes": ["Exact question: does D26 supersede the established cancellation-closure representation, or is this an IR capability-owned teardown token rather than a raw host object? Do not rewrite without that ruling."]
+    }
+  ],
+  "borderline_or_excluded": [
+    {
+      "ts_typename": "CanvasRenderingContext2DSettings",
+      "ts_evidence": "packages/types/src/HostCanvas.ts:12-21",
+      "current_rust": "crates/flight-surface/src/types.rs:59-73, descriptive optional-field record",
+      "reason": "SDK-defined descriptive options record; it describes context creation but is not platform-object identity. Keep with HostCanvas contract owner, not host vocabulary."
+    },
+    {
+      "ts_typename": "GlContextOptions / WebGLContextAttributes / WebGLPowerPreference",
+      "ts_evidence": "packages/types/src/GlContext.ts:252-270",
+      "current_rust": "absent with unported GL backend",
+      "reason": "Descriptive scalar/options vocabulary, not an opaque object."
+    },
+    {
+      "ts_typename": "WgpuPresentationSurface",
+      "ts_evidence": "packages/types/src/WgpuHost.ts:1-18",
+      "current_rust": "absent",
+      "reason": "SDK-defined two-field live width/height facade. It describes a host surface but is intentionally structural data/access, not an opaque handle."
+    },
+    {
+      "ts_typename": "WgpuHostAcquisition / WgpuSurfaceAttachment / WgpuSurfaceAttachResult",
+      "ts_evidence": "packages/types/src/WgpuHost.ts:20-69",
+      "current_rust": "absent",
+      "reason": "SDK-defined aggregate/result records. Their GPUDevice and GPUCanvasContext members are host leaves; the containing records stay with flight-surface under D8."
+    },
+    {
+      "ts_typename": "WebGLBuffer / WebGLFramebuffer / WebGLProgram / WebGLRenderbuffer / WebGLTexture / WebGLUniformLocation / WebGLVertexArrayObject",
+      "ts_evidence": "examples packages/types/src/GlContextRuntime.ts:32-45, GlRenderTarget.ts:12-55, GlRenderState.ts:179-251",
+      "current_rust": "absent; render-gl unported",
+      "reason": "Platform resource handles, but created, retained, and consumed entirely after GlContext is narrowed inside render-gl/scene GL backends. They do not cross a Host capability seam; classify as backend vocabulary unless Principal deliberately broadens D26."
+    },
+    {
+      "ts_typename": "GPUBuffer / GPUTexture / GPUTextureView / GPUBindGroup / GPUBindGroupLayout / GPUPipelineLayout / GPURenderPipeline / GPUSampler / GPUShaderModule / GPUCommandEncoder / GPURenderPassEncoder",
+      "ts_evidence": "examples packages/types/src/WgpuRenderTarget.ts:25-30,61-94,118-119 and WgpuScene3DRuntime.ts throughout",
+      "current_rust": "absent; render-wgpu unported",
+      "reason": "Backend-created WGPU resources used after WgpuDevice is narrowed. No Host capability produces them, so they are renderer vocabulary rather than D26 leaf host handles."
+    },
+    {
+      "ts_typename": "GPUTextureFormat / GPUCanvasAlphaMode / GPUPowerPreference / GPUDeviceLostInfo / GPUVertexBufferLayout / GPUVertexAttribute / GPUIndexFormat",
+      "ts_evidence": "packages/types/src/WgpuHost.ts:23,33-35,64-69; WgpuRenderState.ts:38,52; WgpuRenderTarget.ts:100-106",
+      "current_rust": "absent",
+      "reason": "Descriptive enums/records or diagnostic values, not opaque object identity. They stay with the feature/backend contract unless separately entered in IR vocabulary."
+    },
+    {
+      "ts_typename": "CanvasPattern / CanvasGradient",
+      "ts_evidence": "packages/types/src/CanvasShapeDrawState.ts:5-25",
+      "current_rust": "absent; canvas renderer unported",
+      "reason": "Opaque DOM objects, but created and consumed wholly inside the canvas renderer from a narrowed CanvasRenderingContext2D. No Host capability seam; backend vocabulary unless D26 is broadened."
+    },
+    {
+      "ts_typename": "CanvasFillRule / ImageSmoothingQuality",
+      "ts_evidence": "packages/types/src/CanvasShapeDrawState.ts:24; CanvasRenderState.ts:66",
+      "current_rust": "absent",
+      "reason": "Platform string-enum/value vocabulary, not object identity."
+    },
+    {
+      "ts_typename": "FileDialogHandle",
+      "ts_evidence": "packages/types/src/Dialog.ts:11-30,49-65",
+      "current_rust": "crates/flight-dialog/src/types.rs:30-68; SDK Entity with public kind/name/path and private provider-neutral operations",
+      "reason": "SDK-defined resource record with descriptive fields and explicit provider-neutral operations, not an unexamined platform object. D23 separately approved its private provider construction seam."
+    },
+    {
+      "ts_typename": "ShortcutTriggerSubscription",
+      "ts_evidence": "packages/types/src/Shortcut.ts:13-15,39-53",
+      "current_rust": "crates/flight-shortcut/src/types.rs:473-477; empty Entity token",
+      "reason": "Borderline provider-owned exact teardown token. Native registration is kept out-of-band keyed by SDK Entity identity, so Principal must decide whether such side-map identities are D26 handles or SDK resource entities."
+    },
+    {
+      "ts_typename": "MidiAccess / MidiInputPort / MidiOutputPort / MidiEventAttachment / Midi*Subscription",
+      "ts_evidence": "packages/types/src/Midi.ts:5-28,100-106,128-168",
+      "current_rust": "crates/flight-midi/src/types.rs:143 onward; SDK entities plus explicit resource-operation state",
+      "reason": "Source explicitly says providers keep native handles out-of-band keyed by exact SDK Entity objects. These are defined SDK resource entities with metadata/signals/operations, not raw native objects."
+    },
+    {
+      "ts_typename": "Notification / ScheduledNotification / NotificationEventAttachment / Notification*Subscription",
+      "ts_evidence": "packages/types/src/Notification.ts:37-49,112-162",
+      "current_rust": "flight-notification SDK entities and provider operation records",
+      "reason": "SDK resource/event entities; provider native keys remain out-of-band. Descriptive fields and Signals make these more than host-object leaves."
+    },
+    {
+      "ts_typename": "SoftKeyboardChangeSubscription",
+      "ts_evidence": "packages/types/src/Keyboard.ts:40-47",
+      "current_rust": "crates/flight-keyboard/src/types.rs:78 onward",
+      "reason": "SDK-defined result record containing result plus unsubscribe closure; not opaque identity."
+    },
+    {
+      "ts_typename": "StatusBarStyleEntryHandle",
+      "ts_evidence": "packages/types/src/StatusBar.ts:13-15",
+      "current_rust": "crates/flight-statusbar/src/types.rs:26-28; i32",
+      "reason": "Opaque number, but it identifies an SDK-owned status-style stack entry (statusbar.rs), not a host platform object or Host capability resource."
+    },
+    {
+      "ts_typename": "CapacitorPluginListenerHandle",
+      "ts_evidence": "packages/types/src/CapacitorApi.ts:50-66",
+      "current_rust": "absent; host-capacitor not ported",
+      "reason": "Adapter-facing structural facade with a declared remove method. It is not passed through portable SDK contracts; adapters immediately convert it to an unsubscribe closure."
+    },
+    {
+      "ts_typename": "ElectronBrowserWindow / ElectronMenu / ElectronTray / ElectronNotification / ElectronNativeImage / ElectronIpcTarget",
+      "ts_evidence": "packages/types/src/ElectronApi.ts:255-284,294-378,438-487",
+      "current_rust": "absent; host-electron not ported",
+      "reason": "SDK-defined structural facades local to the Electron adapter. They describe platform objects rather than serving as portable opaque types; NativeWindowHandle is the portable leaf that crosses the app contract."
+    },
+    {
+      "ts_typename": "TauriMenuItemHandle / TauriMenu / TauriTrayIcon / TauriWindow / TauriUnlisten",
+      "ts_evidence": "packages/types/src/TauriApi.ts:155-215,214-253,256-314",
+      "current_rust": "absent; host-tauri not ported",
+      "reason": "SDK-defined adapter-local facades or unsubscribe callback. NativeWindowHandle is the portable window leaf; menu/tray facades never cross their adapter into generic Host contracts."
+    },
+    {
+      "ts_typename": "ShellProcess",
+      "ts_evidence": "packages/types/src/Shell.ts:43-54",
+      "current_rust": "crates/flight-shell/src/types.rs:160-175; SDK Entity with streams, exit future, and terminate callback",
+      "reason": "Live provider-owned resource, but SDK defines its portable operations and stream members. D23 already classifies spawning as a provider seam; this is not an opaque raw process handle."
+    },
+    {
+      "ts_typename": "Blob / ArrayBuffer / typed arrays",
+      "ts_evidence": "packages/types/src/Net.ts:17-36; HostVideo.ts:8; CapacitorApi.ts:188",
+      "current_rust": "flight-buffer and flight-entity IR types; cargo-flight-lint/src/vocabulary.rs:67 and adjacent established rows",
+      "reason": "Already-approved language/IR vocabulary with portable byte/value semantics, not D26 platform-object vocabulary."
+    },
+    {
+      "ts_typename": "AbortSignal / AbortController",
+      "ts_evidence": "used throughout packages/types/src, including HostAudioDecode.ts:13 and Dialog.ts:23-46",
+      "current_rust": "flight-stream/src/abort.rs:145 onward; established IR row at cargo-flight-lint/src/vocabulary.rs:89",
+      "reason": "Portable cancellation primitive already defined as IR vocabulary; SDK interprets its operations rather than merely retaining an opaque host object."
+    },
+    {
+      "ts_typename": "ReadableStream<Uint8Array> / WritableStream<Uint8Array>",
+      "ts_evidence": "packages/types/src/FileSystem.ts:65-66; Shell.ts:43-50; Socket.ts:82-83",
+      "current_rust": "flight-stream/src/stream.rs:38-50; established D20 IR rows at cargo-flight-lint/src/vocabulary.rs:85-86",
+      "reason": "Already-approved portable stream vocabulary over AsyncRead/AsyncWrite, not opaque host-object identity."
+    },
+    {
+      "ts_typename": "Physics2DAbiWorldHandle / Physics3DAbiWorldHandle",
+      "ts_evidence": "packages/types/src/Physics2DAbi.ts:10-13; Physics3DAbi.ts:10-13",
+      "current_rust": "physics ABI crates use numeric backend handles",
+      "reason": "Backend ABI allocation ids with specified non-zero u32 semantics. They identify SDK physics worlds, not host platform objects, and must retain their ABI representation."
+    },
+    {
+      "ts_typename": "ResourceLoadHandle / log sink tokens / selection and text-shaper opaque state",
+      "ts_evidence": "packages/types/src/ResourceLoadHandle.ts:1-4; BufferedLogSink.ts:4; MemoryLogSink.ts:4; LassoSelection.ts:3; TextShaperCache.ts:3",
+      "current_rust": "feature-owned SDK records/tokens",
+      "reason": "Opaque SDK implementation state created and interpreted by its owning feature, not by a host provider."
+    }
+  ],
+  "unresolved_questions": [
+    {
+      "id": "D26-Q1",
+      "question": "Is the D26 GPUQueue skeleton row prospective, or is HostWgpuCapability missing a queue field in the pinned TS contract?",
+      "evidence": ["No GPUQueue token in packages/types/src", "WgpuHostAcquisition at WgpuHost.ts:20-29 has no queue"],
+      "blocked_action": "Do not invent a WgpuQueue field during the port."
+    },
+    {
+      "id": "D26-Q2",
+      "question": "Does the mandated opaque-handle representation supersede numeric Copy/sentinel semantics for AudioBufferHandle and AudioSourceHandle?",
+      "evidence": ["TS types are branded number at AudioDeviceHandle.ts:1-5", "Rust uses i32 newtypes and zero sentinels at flight-media/src/types.rs:10-20"],
+      "blocked_action": "Principal must specify invalid/absent representation before migration."
+    },
+    {
+      "id": "D26-Q3",
+      "question": "Is Web Audio AudioBuffer a D26 host handle or approved descriptive PCM vocabulary?",
+      "evidence": ["HostAudioDecode returns AudioBuffer", "TS audio package directly constructs AudioBuffer", "Rust stores sample_rate/length/channels as a record"],
+      "blocked_action": "Do not replace the current Rust record without an operation/narrowing design."
+    },
+    {
+      "id": "D26-Q4",
+      "question": "Should provider-side-map SDK Entities (InputTargetHandle, WindowResizeTargetHandle, FullscreenTargetHandle, ShortcutTriggerSubscription) become D26 leaves?",
+      "evidence": ["They carry exact provider identity but SDK declares Entity wrappers and host-web/native adapters retain platform objects out-of-band."],
+      "blocked_action": "Classify consistently before moving only some of the family."
+    },
+    {
+      "id": "D26-Q5",
+      "question": "Should direct HTMLElement and HTMLCanvasElement residues become named host-vocabulary leaves, reuse NativeSurfaceHandle/HostImageSource, or remain backend-local?",
+      "evidence": ["HtmlViewData passes HTMLElement opaquely in portable scene2d", "CanvasRenderTarget exposes HTMLCanvasElement", "neither crosses a named Host capability as that exact type"],
+      "blocked_action": "No proposed HostElementHandle/HostCanvasElementHandle name should be installed without review."
+    },
+    {
+      "id": "D26-Q6",
+      "question": "Does D26's timer-handle example refer to the unnamed HostAppLoop frame handle, the Rust-only HostTimer TimerHandle, or both?",
+      "evidence": ["Pinned TS exports only requestFrame unknown", "Rust TimerHandle is an established cancellation closure with no TS HostTimer declaration"],
+      "blocked_action": "Do not erase the established cancellation-closure vocabulary without a superseding ruling."
+    },
+    {
+      "id": "D26-Q7",
+      "question": "What typed producer owns the HostVideo attachStream input?",
+      "evidence": ["HostVideo.ts:6 accepts unknown", "web provider narrows it to MediaStream", "no packages/types producer contract names a stream handle"],
+      "blocked_action": "HostVideoStreamHandle is only a proposed leaf name."
+    },
+    {
+      "id": "D26-Q8",
+      "question": "Does FontFace.family remain on the host-vocabulary wrapper or move to feature-owned metadata?",
+      "evidence": ["D26 shape specifies only provider and handle", "current flight-font FontFace adds family at types.rs:89-93"],
+      "blocked_action": "Preserve behavior until Principal settles wrapper fields."
+    }
+  ],
+  "known_cross_language_rows_only": [
+    "CanvasRenderingContext2D",
+    "GlContext",
+    "WgpuDevice",
+    "WgpuQueue (prospective/absent in pinned TS)",
+    "WgpuSurfaceContext",
+    "NativeSurfaceHandle"
+  ],
+  "cross_language_note": "All other C++/Haxe cells are null because no supplied D26 document established them. No provider/backend mapping was inferred from product names alone."
+}
