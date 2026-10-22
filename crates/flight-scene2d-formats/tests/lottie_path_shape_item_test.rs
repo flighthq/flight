@@ -59,7 +59,7 @@ mod lottie_path_shape_item_handler {
             painters: Arc::new(RwLock::new(Vec::new())),
             paths: paths.clone(),
             rerender: Arc::new(|| {}),
-            shape: create_shape(None),
+            shape: create_shape(),
         };
 
         lottie_path_shape_item_handler(&mut context);

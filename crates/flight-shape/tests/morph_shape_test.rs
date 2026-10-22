@@ -22,7 +22,7 @@ mod create_morph_shape {
     fn carries_the_morph_shape_kind_and_a_runtime() {
         let shape = morph();
         let path = shape.read().unwrap().data.morph.clone();
-        let created = create_morph_shape(&path, None);
+        let created = create_morph_shape(&path);
         assert_eq!(created.read().unwrap().data.progress, 0.0);
     }
 }
@@ -34,7 +34,7 @@ mod create_morph_shape_data {
     fn starts_unresolved_with_an_empty_progress() {
         let shape = morph();
         let morph_ref = shape.read().unwrap().data.morph.clone();
-        let data = create_morph_shape_data(&morph_ref, None);
+        let data = create_morph_shape_data(&morph_ref);
         assert!(data.commands.is_empty());
         assert_eq!(data.progress, 0.0);
     }
@@ -60,24 +60,39 @@ mod get_morph_shape_runtime {
     }
 }
 
+mod initialize_morph_shape {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_seam_of_create_morph_shape() {
+        let shape = morph();
+        let morph_ref = shape.read().unwrap().data.morph.clone();
+        let created = create_morph_shape(&morph_ref);
+        let guard = created.read().unwrap();
+        assert_eq!(guard.data.progress, 0.0);
+        assert!(get_morph_shape_runtime(&*guard).is_some());
+    }
+
+    #[test]
+    fn reinitializes_data_and_runtime() {
+        let shape = morph();
+        let morph_ref = shape.read().unwrap().data.morph.clone();
+        initialize_morph_shape(&mut *shape.write().unwrap(), &morph_ref);
+        assert_eq!(shape.read().unwrap().data.progress, 0.0);
+        assert!(get_morph_shape_runtime(&*shape.read().unwrap()).is_some());
+    }
+}
+
 mod initialize_morph_shape_data {
     use super::*;
 
     #[test]
-    fn applies_the_supplied_progress() {
+    fn is_the_construction_initializer_of_create_morph_shape_data() {
         let shape = morph();
         let morph_ref = shape.read().unwrap().data.morph.clone();
-        let partial = PartialMorphShapeData {
-            bounds_state: None,
-            commands: None,
-            paint_bindings: None,
-            path: None,
-            path_bindings: None,
-            progress: Some(0.5),
-        };
-        let mut data = create_morph_shape_data(&morph_ref, None);
-        initialize_morph_shape_data(&mut data, &morph_ref, Some(&partial));
-        assert_eq!(data.progress, 0.5);
+        let mut data = create_morph_shape_data(&morph_ref);
+        initialize_morph_shape_data(&mut data, &morph_ref);
+        assert_eq!(data.progress, 0.0);
     }
 }
 
@@ -138,7 +153,7 @@ mod morph_shape_source_parity {
     #[test]
     fn create_creates_a_distinct_shape_over_the_prepared_start_sample() {
         let morph_ref = test_path_morph(0.0);
-        let shape = create_morph_shape(&morph_ref, None);
+        let shape = create_morph_shape(&morph_ref);
         let guard = shape.read().unwrap();
         assert_eq!(guard.data.commands.len(), 0);
         assert!(std::sync::Arc::ptr_eq(&guard.data.morph, &morph_ref));
@@ -159,25 +174,19 @@ mod morph_shape_source_parity {
     }
 
     #[test]
-    fn create_uses_initial_progress_and_a_provided_command_buffer() {
+    fn create_assigns_commands_and_progress_after_construction() {
         let commands = vec![
             string("beginFill"),
             number(2.0),
             number(0xff0000ffu32 as f64),
             number(1.0),
         ];
-        let partial = PartialMorphShape {
-            data: Some(PartialMorphShapeData {
-                bounds_state: None,
-                commands: Some(commands.clone()),
-                paint_bindings: None,
-                path: None,
-                path_bindings: None,
-                progress: Some(0.5),
-            }),
-            node: partial_node(),
-        };
-        let shape = create_morph_shape(&test_path_morph(0.0), Some(&partial));
+        let shape = create_morph_shape(&test_path_morph(0.0));
+        {
+            let mut g = shape.write().unwrap();
+            g.data.commands = commands.clone();
+        }
+        set_morph_shape_progress(&shape, 0.5);
         let guard = shape.read().unwrap();
         assert_eq!(
             format!("{:?}", guard.data.commands),
@@ -193,8 +202,8 @@ mod morph_shape_source_parity {
     #[test]
     fn create_owns_a_distinct_sampled_path_for_each_retained_shape() {
         let morph_ref = test_path_morph(0.0);
-        let first = create_morph_shape(&morph_ref, None);
-        let second = create_morph_shape(&morph_ref, None);
+        let first = create_morph_shape(&morph_ref);
+        let second = create_morph_shape(&morph_ref);
         assert!(!std::sync::Arc::ptr_eq(&first, &second));
         let first_path = first.read().unwrap().data.path.clone();
         let second_path = second.read().unwrap().data.path.clone();
@@ -209,17 +218,7 @@ mod morph_shape_source_parity {
     #[test]
     fn create_data_owns_its_mutable_binding_registries_without_replacing_retained_values() {
         let morph_ref = test_path_morph(0.0);
-        let paint = Vec::new();
-        let paths = Vec::new();
-        let partial = PartialMorphShapeData {
-            bounds_state: None,
-            commands: None,
-            paint_bindings: Some(paint.clone()),
-            path: None,
-            path_bindings: Some(paths.clone()),
-            progress: None,
-        };
-        let data = create_morph_shape_data(&morph_ref, Some(&partial));
+        let data = create_morph_shape_data(&morph_ref);
         assert!(data.paint_bindings.is_empty());
         assert_eq!(data.path_bindings.len(), 1);
         assert!(std::sync::Arc::ptr_eq(
@@ -229,20 +228,12 @@ mod morph_shape_source_parity {
     }
 
     #[test]
-    fn create_data_samples_the_requested_initial_endpoint_exactly() {
+    fn create_data_starts_at_the_start_endpoint() {
         let morph_ref = test_path_morph(0.0);
-        let partial = PartialMorphShapeData {
-            bounds_state: None,
-            commands: None,
-            paint_bindings: None,
-            path: None,
-            path_bindings: None,
-            progress: Some(1.0),
-        };
-        let data = create_morph_shape_data(&morph_ref, Some(&partial));
+        let data = create_morph_shape_data(&morph_ref);
         assert_eq!(
             data.path.read().unwrap().data,
-            morph_ref.read().unwrap().end_data
+            morph_ref.read().unwrap().start_data
         );
     }
 

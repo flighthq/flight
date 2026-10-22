@@ -10,7 +10,7 @@ mod append_lottie_dashed_shape_paths {
 
     #[test]
     fn appends_the_path_untouched_when_the_dash_list_is_empty() {
-        let dashed = create_shape(None);
+        let dashed = create_shape();
         append_lottie_dashed_shape_paths(
             &[square()],
             &dashed,
@@ -18,16 +18,16 @@ mod append_lottie_dashed_shape_paths {
             &[],
             0.0,
         );
-        let plain = create_shape(None);
+        let plain = create_shape();
         append_lottie_shape_paths(&[square()], &plain, Some(PathWinding::EvenOdd));
         assert_eq!(tokens(&dashed), tokens(&plain));
     }
 
     #[test]
     fn cuts_each_path_into_dash_segments() {
-        let dashed = create_shape(None);
+        let dashed = create_shape();
         append_lottie_dashed_shape_paths(&[square()], &dashed, None, &[4.0, 4.0], 0.0);
-        let plain = create_shape(None);
+        let plain = create_shape();
         append_lottie_shape_paths(&[square()], &plain, None);
         assert!(path_command_count(&dashed) > path_command_count(&plain));
     }
@@ -38,7 +38,7 @@ mod append_lottie_shape_paths {
 
     #[test]
     fn appends_every_path_and_lets_the_paint_override_the_winding() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_lottie_shape_paths(&[square(), square()], &shape, Some(PathWinding::EvenOdd));
         let shape = shape.read().unwrap();
         assert_eq!(
@@ -66,7 +66,7 @@ mod append_lottie_shape_paths {
 
     #[test]
     fn falls_back_to_the_path_own_winding_when_the_paint_names_none() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_lottie_shape_paths(&[square()], &shape, None);
         assert!(
             shape.read().unwrap().data.commands.iter().any(

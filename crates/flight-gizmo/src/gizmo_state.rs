@@ -15,10 +15,10 @@ use flight_node::{
     NodeRef, add_node_child, get_node_parent, invalidate_node_appearance,
     invalidate_node_local_transform, remove_node_child,
 };
-use flight_scene2d::{Node2DRef, PartialNode2D, Scene2D, create_display_object};
+use flight_scene2d::{Node2DRef, Scene2D, create_display_object};
 use flight_selection::{get_active_node, get_selected_nodes};
 use flight_shape::{
-    CapsStyle, LineScaleMode, PartialShape, Shape, append_shape_begin_fill, append_shape_circle,
+    CapsStyle, LineScaleMode, Shape, append_shape_begin_fill, append_shape_circle,
     append_shape_end_fill, append_shape_line_style, append_shape_line_to, append_shape_move_to,
     append_shape_polygon, append_shape_rectangle, clear_shape_commands, create_shape,
 };
@@ -118,6 +118,15 @@ enum GizmoEmission {
     Translate(Signal<(f32, f32)>, (f32, f32)),
 }
 
+fn create_gizmo_named_shape(name: &str) -> Ref<Shape> {
+    let shape = create_shape();
+    {
+        use flight_node::contract::Node;
+        shape.write().unwrap().node_fields_mut().name = Some(name.to_string());
+    }
+    return shape;
+}
+
 /// Creates the complete overlay assembly and connects its twelve semantic handles (TS
 /// `createGizmoState`). The supplied camera and selection remain live shared identities.
 pub fn create_gizmo_state(options: &GizmoCreateOptions) -> GizmoState {
@@ -130,10 +139,7 @@ fn create_gizmo_state_handle(
     kind: GizmoHandleKind,
     placement: GizmoHandlePlacement,
 ) -> GizmoHandle {
-    let node = create_shape(Some(&PartialShape {
-        data: None,
-        node: gizmo_named_node(&format!("Gizmo{}Handle", get_gizmo_handle_name(placement))),
-    }));
+    let node = create_gizmo_named_shape(&format!("Gizmo{}Handle", get_gizmo_handle_name(placement)));
     let node_ref: NodeRef = node.clone();
     set_node_hit_test_enabled(&node_ref, true);
     set_node_cursor(&node_ref, Some(get_gizmo_handle_cursor(kind)));
@@ -195,10 +201,7 @@ fn create_gizmo_state_handles(handle_root: &Node2DRef) -> Vec<GizmoHandle> {
 pub fn initialize_gizmo_state(out: &mut GizmoState, options: &GizmoCreateOptions) {
     let overlay_root = create_display_object();
     overlay_root.write().unwrap().name = Some("GizmoRoot".to_string());
-    let outline = create_shape(Some(&PartialShape {
-        data: None,
-        node: gizmo_named_node("GizmoSelectionOutline"),
-    }));
+    let outline = create_gizmo_named_shape("GizmoSelectionOutline");
     let handle_root = create_display_object();
     handle_root.write().unwrap().name = Some("GizmoHandleRoot".to_string());
     let handle_root_ref: Node2DRef = handle_root.clone();
@@ -638,13 +641,6 @@ fn get_gizmo_transform_mode(kind: GizmoHandleKind) -> GizmoTransformMode {
         GizmoHandleKind::TranslateX
         | GizmoHandleKind::TranslateXy
         | GizmoHandleKind::TranslateY => GizmoTransformMode::Translate,
-    };
-}
-
-fn gizmo_named_node(name: &str) -> PartialNode2D {
-    return PartialNode2D {
-        name: Some(name.to_string()),
-        ..PartialNode2D::default()
     };
 }
 

@@ -2,9 +2,9 @@ use flight_camera::create_camera_2d;
 use flight_geometry::{create_rectangle, create_vector2};
 use flight_gizmo::*;
 use flight_node::contract::{NodeRef, add_node_child};
-use flight_scene2d::contract::{PartialNode2D, create_display_object, create_scene2d};
+use flight_scene2d::contract::{create_display_object, create_scene2d};
 use flight_shape::contract::{
-    PartialShape, PartialShapeData, append_shape_begin_fill, append_shape_end_fill,
+    append_shape_begin_fill, append_shape_end_fill,
     append_shape_rectangle, create_shape, create_shape_bounds_state,
     register_default_shape_bounds_commands,
 };
@@ -24,20 +24,18 @@ mod create_node2d_gizmo_features {
             p.x = 10.0;
             p.y = 20.0;
         }
-        let node = create_shape(Some(&PartialShape {
-            data: Some(PartialShapeData {
-                bounds_state: Some(bounds_state),
-                commands: None,
-            }),
-            node: PartialNode2D {
-                pivot_x: Some(2.0),
-                pivot_y: Some(3.0),
-                rotation: Some(30.0),
-                x: Some(8.0),
-                y: Some(9.0),
-                ..empty_node_options()
-            },
-        }));
+        let node = create_shape();
+        {
+            use flight_scene2d::contract::Node2D;
+            let mut g = node.write().unwrap();
+            g.data.bounds_state = bounds_state;
+            let n2d = g.node2d_fields_mut();
+            n2d.pivot_x = 2.0;
+            n2d.pivot_y = 3.0;
+            n2d.rotation = 30.0;
+            n2d.x = 8.0;
+            n2d.y = 9.0;
+        }
         append_shape_begin_fill(&node, 0xffffff, None);
         append_shape_rectangle(&node, 0.0, 0.0, 10.0, 20.0);
         append_shape_end_fill(&node);
@@ -86,24 +84,3 @@ fn assert_f32_close(actual: f32, expected: f32) {
     );
 }
 
-fn empty_node_options() -> PartialNode2D {
-    return PartialNode2D {
-        alpha: None,
-        blend_mode: None,
-        clip: None,
-        enabled: None,
-        material: None,
-        material_data: None,
-        name: None,
-        pivot_x: None,
-        pivot_y: None,
-        rotation: None,
-        scale_x: None,
-        scale_y: None,
-        skew_x: None,
-        skew_y: None,
-        visible: None,
-        x: None,
-        y: None,
-    };
-}

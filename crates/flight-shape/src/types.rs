@@ -79,7 +79,7 @@ use flight_node::Node;
 
 use flight_path::{Path, PathMorph, PathWinding};
 
-use flight_scene2d::contract::{Node2DFields, Node2DShapeCommandStream, PartialNode2D};
+use flight_scene2d::contract::{Node2DFields, Node2DShapeCommandStream};
 
 use flight_texture::contract::Texture;
 
@@ -174,7 +174,7 @@ pub enum ShapeCommandToken {
 pub struct ShapeData {
     runtime: EntityRuntimeSlot,
     pub commands: Vec<ShapeCommandToken>,
-    pub(crate) bounds_state: ShapeBoundsStateRef,
+    pub bounds_state: ShapeBoundsStateRef,
 }
 
 /// The kind runtime extra every shape carries (TS `ShapeRuntime`): the bounds-registry revision the
@@ -205,7 +205,7 @@ pub struct MorphShapeData {
     pub path: Ref<Path>,
     pub path_bindings: Vec<MorphShapePathBinding>,
     pub progress: f64,
-    pub(crate) bounds_state: ShapeBoundsStateRef,
+    pub bounds_state: ShapeBoundsStateRef,
 }
 
 /// One retained path binding: the prepared morph and the live sampled path.
@@ -310,7 +310,7 @@ pub struct Scale9ShapeData {
     runtime: EntityRuntimeSlot,
     pub commands: Vec<ShapeCommandToken>,
     pub scale9_grid: ShapeScale9Grid,
-    pub(crate) bounds_state: ShapeBoundsStateRef,
+    pub bounds_state: ShapeBoundsStateRef,
 }
 
 /// A scale9 shape (TS `Scale9Shape`).
@@ -336,52 +336,6 @@ pub type Scale9Mapper = Arc<dyn Fn(f32) -> f32 + Send + Sync>;
 pub struct ShapeScale9Mapper {
     pub map_x: Scale9Mapper,
     pub map_y: Scale9Mapper,
-}
-
-/// Partial shape data (TS `Partial<ShapeData>`), plus the Rust-only shared bounds-state handle.
-#[derive(Clone, Default)]
-pub struct PartialShapeData {
-    pub bounds_state: Option<ShapeBoundsStateRef>,
-    pub commands: Option<Vec<ShapeCommandToken>>,
-}
-
-/// Construction options for a shape (TS `PartialNode<Shape>`).
-#[derive(Clone, Default)]
-pub struct PartialShape {
-    pub data: Option<PartialShapeData>,
-    pub node: PartialNode2D,
-}
-
-/// Partial morph shape data (TS `Partial<MorphShapeData>`).
-#[derive(Clone, Default)]
-pub struct PartialMorphShapeData {
-    pub bounds_state: Option<ShapeBoundsStateRef>,
-    pub commands: Option<Vec<ShapeCommandToken>>,
-    pub paint_bindings: Option<Vec<MorphShapePaintBinding>>,
-    pub path: Option<Ref<Path>>,
-    pub path_bindings: Option<Vec<MorphShapePathBinding>>,
-    pub progress: Option<f64>,
-}
-
-/// Construction options for a morph shape (TS `PartialNode<MorphShape>`).
-#[derive(Clone, Default)]
-pub struct PartialMorphShape {
-    pub data: Option<PartialMorphShapeData>,
-    pub node: PartialNode2D,
-}
-
-/// Partial scale9 shape data (TS `Partial<Scale9ShapeData>`).
-#[derive(Clone, Default)]
-pub struct PartialScale9ShapeData {
-    pub bounds_state: Option<ShapeBoundsStateRef>,
-    pub commands: Option<Vec<ShapeCommandToken>>,
-}
-
-/// Construction options for a scale9 shape (TS `PartialNode<Scale9Shape>`).
-#[derive(Clone, Default)]
-pub struct PartialScale9Shape {
-    pub data: Option<PartialScale9ShapeData>,
-    pub node: PartialNode2D,
 }
 
 /// The bounds-contribution cursor (TS `ShapeCommandArgumentCursor`).

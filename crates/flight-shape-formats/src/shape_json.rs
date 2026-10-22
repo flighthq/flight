@@ -600,7 +600,7 @@ pub fn parse_shape_json(text: &str, options: Option<&ShapeJsonParseOptions>) -> 
         return None;
     }
     let raw_commands = root.get("commands")?.as_array()?;
-    let shape = create_shape(None);
+    let shape = create_shape();
     for raw_entry in raw_commands {
         let entry = raw_entry.as_object()?;
         let key = entry.get("key")?.as_str()?;

@@ -11,11 +11,9 @@ use flight_interaction::register_default_hit_tests::register_default_hit_tests;
 use flight_interaction::register_shape_hit_test::register_shape_hit_test;
 use flight_node::NodeRef;
 use flight_path::{append_path_circle, append_path_rectangle, create_path, create_path_morph};
-use flight_scene2d::PartialNode2D;
 use flight_shape::contract::{ShapeCommandToken, create_shape_bounds_state};
 use flight_shape::{
-    MorphShape, PartialMorphShape, PartialMorphShapeData, PartialShapeData, PartialShape,
-    ShapeBoundsStateRef, append_morph_shape_path, append_shape_begin_fill,
+    MorphShape, ShapeBoundsStateRef, append_morph_shape_path, append_shape_begin_fill,
     append_shape_end_fill, create_morph_shape, create_shape,
     register_default_shape_bounds_commands, set_morph_shape_progress,
 };
@@ -59,52 +57,30 @@ fn circle_fill_commands(cx: f64, cy: f64, r: f64) -> Vec<ShapeCommandToken> {
     ];
 }
 
-fn empty_partial_node2d() -> PartialNode2D {
-    return PartialNode2D {
-        alpha: None,
-        blend_mode: None,
-        clip: None,
-        enabled: None,
-        material: None,
-        material_data: None,
-        name: None,
-        pivot_x: None,
-        pivot_y: None,
-        rotation: None,
-        scale_x: None,
-        scale_y: None,
-        skew_x: None,
-        skew_y: None,
-        visible: None,
-        x: None,
-        y: None,
-    };
-}
-
 fn shape_node_with_fill(x: f64, y: f64, w: f64, h: f64) -> NodeRef {
-    let shape: NodeRef = create_shape(Some(&PartialShape {
-        data: Some(PartialShapeData {
-            bounds_state: Some(bounds_state()),
-            commands: Some(rectangle_fill_commands(x, y, w, h)),
-        }),
-        node: empty_partial_node2d(),
-    }));
-    enable_node_interaction_state(&shape);
-    set_node_hit_test_enabled(&shape, true);
-    return shape;
+    let shape = create_shape();
+    {
+        let mut g = shape.write().unwrap();
+        g.data.bounds_state = bounds_state();
+        g.data.commands = rectangle_fill_commands(x, y, w, h);
+    }
+    let node: NodeRef = shape;
+    enable_node_interaction_state(&node);
+    set_node_hit_test_enabled(&node, true);
+    return node;
 }
 
 fn shape_node_with_circle(cx: f64, cy: f64, r: f64) -> NodeRef {
-    let shape: NodeRef = create_shape(Some(&PartialShape {
-        data: Some(PartialShapeData {
-            bounds_state: Some(bounds_state()),
-            commands: Some(circle_fill_commands(cx, cy, r)),
-        }),
-        node: empty_partial_node2d(),
-    }));
-    enable_node_interaction_state(&shape);
-    set_node_hit_test_enabled(&shape, true);
-    return shape;
+    let shape = create_shape();
+    {
+        let mut g = shape.write().unwrap();
+        g.data.bounds_state = bounds_state();
+        g.data.commands = circle_fill_commands(cx, cy, r);
+    }
+    let node: NodeRef = shape;
+    enable_node_interaction_state(&node);
+    set_node_hit_test_enabled(&node, true);
+    return node;
 }
 
 mod register_shape_hit_test {
@@ -141,7 +117,7 @@ mod register_shape_hit_test {
     fn shape_with_no_commands_misses() {
         let mut ctx = HitTestContext::new();
         register_shape_hit_test(&mut ctx);
-        let shape: NodeRef = create_shape(None);
+        let shape: NodeRef = create_shape();
         enable_node_interaction_state(&shape);
         set_node_hit_test_enabled(&shape, true);
         let result = find_graph_hit_target_precise(&ctx, &shape, 0.0, 0.0);
@@ -200,20 +176,11 @@ mod register_shape_hit_test {
             create_path_morph(&start2, &end2).expect("circle-to-rect morph"),
         ));
 
-        let shape: flight_entity::Ref<MorphShape> = create_morph_shape(
-            &morph1,
-            Some(&PartialMorphShape {
-                data: Some(PartialMorphShapeData {
-                    bounds_state: Some(state),
-                    commands: None,
-                    paint_bindings: None,
-                    path: None,
-                    path_bindings: None,
-                    progress: None,
-                }),
-                node: empty_partial_node2d(),
-            }),
-        );
+        let shape: flight_entity::Ref<MorphShape> = create_morph_shape(&morph1);
+        {
+            let mut g = shape.write().unwrap();
+            g.data.bounds_state = state;
+        }
         {
             let node: NodeRef = shape.clone();
             set_node_hit_test_enabled(&node, true);

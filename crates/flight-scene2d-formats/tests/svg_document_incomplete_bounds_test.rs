@@ -19,7 +19,7 @@ mod create_scene2d_from_svg_document_incomplete_bounds {
                 },
                 SvgElementHandlerEntry {
                     handle: Arc::new(|_| {
-                        let node: Node2DRef = create_shape(None);
+                        let node: Node2DRef = create_shape();
                         Some(node)
                     }),
                     kind: SVG_ELEMENT_KIND_GEOMETRY.to_string(),

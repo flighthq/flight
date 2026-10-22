@@ -214,7 +214,7 @@ pub fn svg_geometry_element_handler(context: &mut SvgElementContext<'_, '_>) -> 
         context.import,
     );
     let path = create_svg_geometry_path(&context.element.read().unwrap(), style.fill_rule)?;
-    let shape = create_shape(None);
+    let shape = create_shape();
     let bounds_state = get_shape_runtime(&*shape.read().unwrap())?
         .read()
         .unwrap()

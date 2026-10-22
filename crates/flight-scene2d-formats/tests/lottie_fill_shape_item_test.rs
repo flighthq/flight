@@ -43,7 +43,7 @@ mod lottie_fill_shape_item_handler {
                 .clone(),
         );
         let painters = Arc::new(RwLock::new(Vec::new()));
-        let shape = create_shape(None);
+        let shape = create_shape();
         let mut context = LottieShapeItemContext {
             claims: Arc::new(RwLock::new(HashSet::new())),
             import: &mut import,

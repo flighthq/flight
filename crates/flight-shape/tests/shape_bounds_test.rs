@@ -288,25 +288,23 @@ mod bounds_source_parity {
                 stroke_bounds: None,
             },
         );
-        let partial = PartialShape {
-            data: Some(PartialShapeData {
-                bounds_state: Some(state),
-                commands: Some(vec![
-                    string(key),
-                    number(2.0),
-                    number(7.0),
-                    number(9.0),
-                    string("drawRectangle"),
-                    number(4.0),
-                    number(0.0),
-                    number(0.0),
-                    number(1.0),
-                    number(1.0),
-                ]),
-            }),
-            node: partial_node(),
-        };
-        let shape = create_shape(Some(&partial));
+        let shape = create_shape();
+        {
+            let mut g = shape.write().unwrap();
+            g.data.bounds_state = state;
+            g.data.commands = vec![
+                string(key),
+                number(2.0),
+                number(7.0),
+                number(9.0),
+                string("drawRectangle"),
+                number(4.0),
+                number(0.0),
+                number(0.0),
+                number(1.0),
+                number(1.0),
+            ];
+        }
         let mut out = empty_rect();
         assert!(compute_shape_bounds_rectangle(
             &mut out,
@@ -322,20 +320,18 @@ mod bounds_source_parity {
 
     #[test]
     fn explains_each_missing_key_once_without_diagnostic_prose_in_the_core_traversal() {
-        let shape = create_shape(Some(&PartialShape {
-            data: Some(PartialShapeData {
-                bounds_state: None,
-                commands: Some(vec![
-                    string("__test.a__"),
-                    number(0.0),
-                    string("__test.b__"),
-                    number(0.0),
-                    string("__test.a__"),
-                    number(0.0),
-                ]),
-            }),
-            node: partial_node(),
-        }));
+        let shape = create_shape();
+        {
+            let mut g = shape.write().unwrap();
+            g.data.commands = vec![
+                string("__test.a__"),
+                number(0.0),
+                string("__test.b__"),
+                number(0.0),
+                string("__test.a__"),
+                number(0.0),
+            ];
+        }
         let explanation =
             explain_shape_bounds(&*shape.read().unwrap(), Some(ShapeBoundsMode::Fill));
         assert_eq!(
@@ -378,13 +374,12 @@ mod bounds_source_parity {
                 recorder.lock().unwrap().push(String::from(key));
             })),
         );
-        let shape = create_shape(Some(&PartialShape {
-            data: Some(PartialShapeData {
-                bounds_state: Some(state),
-                commands: Some(vec![string("__test.guard-callback__"), number(0.0)]),
-            }),
-            node: partial_node(),
-        }));
+        let shape = create_shape();
+        {
+            let mut g = shape.write().unwrap();
+            g.data.bounds_state = state;
+            g.data.commands = vec![string("__test.guard-callback__"), number(0.0)];
+        }
         assert!(!compute_shape_bounds_rectangle(
             &mut empty_rect(),
             &*shape.read().unwrap(),
@@ -468,7 +463,7 @@ mod compute_shape_bounds_rectangle {
 
     #[test]
     fn reports_complete_with_zero_bounds_for_an_empty_shape() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
         assert!(compute_shape_bounds_rectangle(
             &mut out,
@@ -662,7 +657,7 @@ mod explain_shape_bounds {
 
     #[test]
     fn reports_an_empty_shape_as_complete() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         let explanation = explain_shape_bounds(&*shape.read().unwrap(), None);
         assert!(explanation.complete);
         assert!(explanation.missing_command_keys.is_empty());

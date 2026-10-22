@@ -13,7 +13,7 @@ fn lottie_layer_number(value: Option<&Value>) -> f64 {
 }
 
 pub fn lottie_solid_layer_handler(context: &mut LottieLayerContext<'_, '_>) {
-    let shape = create_shape(None);
+    let shape = create_shape();
     let color = context
         .layer
         .get("sc")

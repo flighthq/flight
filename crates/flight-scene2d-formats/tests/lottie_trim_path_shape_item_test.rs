@@ -188,7 +188,7 @@ fn shape_context<'a, 'b>(
         painters: Arc::new(RwLock::new(Vec::new())),
         paths: paths.clone(),
         rerender: Arc::new(|| {}),
-        shape: create_shape(None),
+        shape: create_shape(),
     };
 }
 

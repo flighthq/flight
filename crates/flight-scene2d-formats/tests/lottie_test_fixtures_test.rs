@@ -66,7 +66,7 @@ mod find_lottie_test_node_by_kind {
     fn searches_the_whole_subtree_and_returns_none_for_an_absent_kind() {
         let root: Node2DRef = create_display_object();
         let branch: Node2DRef = create_display_object();
-        let shape: Node2DRef = create_shape(None);
+        let shape: Node2DRef = create_shape();
         add(&root, &branch);
         add(&branch, &shape);
         assert!(find_lottie_test_node_by_kind(&root, flight_shape::contract::SHAPE_KIND).is_some());

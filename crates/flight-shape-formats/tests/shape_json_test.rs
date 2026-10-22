@@ -23,7 +23,7 @@ fn command_count(shape: &Ref<Shape>) -> usize {
 }
 
 fn create_every_non_texture_command_shape() -> Ref<Shape> {
-    let shape = create_shape(None);
+    let shape = create_shape();
     append_shape_begin_fill(&shape, 0xff0000ff, Some(1.0));
     let matrix = create_matrix(1.0, 0.0, 0.0, 1.0, 10.0, 20.0);
     append_shape_begin_gradient_fill(
@@ -121,7 +121,7 @@ mod format_shape_json {
 
     #[test]
     fn honors_the_space_option_for_pretty_printing() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_shape_end_fill(&shape);
         let shape = shape.read().unwrap();
         assert_eq!(
@@ -155,7 +155,7 @@ mod format_shape_json {
 
     #[test]
     fn serializes_a_matrix_argument_as_its_fields() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         let matrix = create_matrix(2.0, 0.0, 0.0, 3.0, 5.0, 7.0);
         append_shape_begin_gradient_fill(
             &shape,
@@ -173,7 +173,7 @@ mod format_shape_json {
         ));
 
         for field in ["a", "b", "c", "d", "tx", "ty"] {
-            let shape = create_shape(None);
+            let shape = create_shape();
             let mut matrix = create_matrix(2.0, 0.0, 0.0, 3.0, 5.0, 7.0);
             set_matrix_field(&mut matrix, field, f32::MAX);
             append_shape_begin_gradient_fill(
@@ -191,7 +191,7 @@ mod format_shape_json {
             let restored = parse_shape_json(&text, None).unwrap();
             assert_eq!(format_ref(&restored), text, "{field}");
 
-            let invalid = create_shape(None);
+            let invalid = create_shape();
             set_matrix_field(&mut matrix, field, f32::INFINITY);
             append_shape_begin_gradient_fill(
                 &invalid,
@@ -213,7 +213,7 @@ mod format_shape_json {
             );
         }
 
-        let invalid_scalar = create_shape(None);
+        let invalid_scalar = create_shape();
         append_shape_begin_fill(&invalid_scalar, 0, Some(1.0));
         invalid_scalar.write().unwrap().data.commands[2] = ShapeCommandToken::Number(f64::NAN);
         let thrown = catch_unwind(AssertUnwindSafe(|| format_ref(&invalid_scalar))).unwrap_err();
@@ -224,7 +224,7 @@ mod format_shape_json {
             "Shape command \"beginFill\" cannot be represented as shape JSON"
         );
 
-        let invalid_array = create_shape(None);
+        let invalid_array = create_shape();
         append_shape_path(
             &invalid_array,
             &[1],
@@ -245,7 +245,7 @@ mod format_shape_json {
 
     #[test]
     fn serializes_a_texture_as_an_ordinal_reference_never_the_texture() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_shape_begin_texture_fill(&shape, &create_fake_texture(), None);
         append_shape_line_texture_style(&shape, &create_fake_texture(), None);
         assert_eq!(
@@ -256,7 +256,7 @@ mod format_shape_json {
 
     #[test]
     fn wraps_the_command_stream_in_a_versioned_top_level_object() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_shape_begin_fill(&shape, 0x112233ff, Some(1.0));
         assert_eq!(
             format_ref(&shape),
@@ -270,7 +270,7 @@ mod format_shape_json {
             (1e21, "1e+21"),
             (-0.0, "0"),
         ] {
-            let shape = create_shape(None);
+            let shape = create_shape();
             append_shape_begin_fill(&shape, 0, Some(value));
             assert_eq!(
                 format_ref(&shape),
@@ -315,7 +315,7 @@ mod parse_shape_json {
 
     #[test]
     fn drops_a_bitmap_fill_when_no_resolver_is_supplied_and_keeps_the_rest_intact() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_shape_begin_fill(&shape, 0xffffffff, Some(1.0));
         append_shape_begin_texture_fill(&shape, &create_fake_texture(), None);
         append_shape_line_to(&shape, 9.0, 9.0);
@@ -328,7 +328,7 @@ mod parse_shape_json {
 
     #[test]
     fn drops_a_bitmap_fill_when_the_resolver_returns_null() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_shape_begin_texture_fill(&shape, &create_fake_texture(), None);
         append_shape_end_fill(&shape);
         let restored = parse_shape_json(
@@ -347,7 +347,7 @@ mod parse_shape_json {
 
     #[test]
     fn drops_rather_than_rejects_a_texture_command_whose_reference_does_not_resolve() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_shape_begin_texture_fill(&shape, &create_fake_texture(), None);
         append_shape_end_fill(&shape);
         let restored = parse_shape_json(
@@ -534,7 +534,7 @@ mod parse_shape_json {
     #[test]
     fn round_trips_a_bitmap_fill_through_the_texture_resolver() {
         let texture = create_fake_texture();
-        let shape = create_shape(None);
+        let shape = create_shape();
         let matrix = create_matrix(1.0, 0.0, 0.0, 1.0, 3.0, 4.0);
         append_shape_begin_texture_fill(&shape, &texture, Some(&matrix));
         append_shape_line_texture_style(&shape, &texture, None);

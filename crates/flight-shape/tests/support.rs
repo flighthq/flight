@@ -6,19 +6,18 @@ use flight_geometry::create_matrix;
 use flight_path::{
     Path, StrokeCap, StrokeJoin, StrokeStyle, create_path, create_path_morph,
 };
-use flight_scene2d::contract::PartialNode2D;
 use flight_shape::contract::*;
 use flight_texture::contract::{Texture, create_texture};
 
 pub fn shape() -> Ref<Shape> {
-    return create_shape(None);
+    return create_shape();
 }
 
 pub fn morph() -> Ref<MorphShape> {
     let start: Path = create_path();
     let end: Path = create_path();
     let morph = create_path_morph(&start, &end).expect("morph");
-    return create_morph_shape(&Arc::new(RwLock::new(morph)), None);
+    return create_morph_shape(&Arc::new(RwLock::new(morph)));
 }
 
 pub fn scale9_grid() -> ShapeScale9Grid {
@@ -31,7 +30,7 @@ pub fn scale9_grid() -> ShapeScale9Grid {
 }
 
 pub fn scale9() -> Ref<Scale9Shape> {
-    return create_scale9_shape(&scale9_grid(), None);
+    return create_scale9_shape(&scale9_grid());
 }
 
 pub fn texture() -> Ref<Texture> {
@@ -235,21 +234,18 @@ pub fn token_texture(token: &ShapeCommandToken) -> Option<&Ref<Texture>> {
     };
 }
 
-pub fn partial_node() -> PartialNode2D {
-    return Default::default();
-}
-
 pub fn registered_shape(commands: Option<Vec<ShapeCommandToken>>) -> Ref<Shape> {
     let state = create_shape_bounds_state();
     register_default_shape_bounds_commands(&state);
-    let partial = PartialShape {
-        data: Some(PartialShapeData {
-            bounds_state: Some(state),
-            commands,
-        }),
-        node: partial_node(),
-    };
-    return create_shape(Some(&partial));
+    let shape = create_shape();
+    {
+        let mut g = shape.write().unwrap();
+        g.data.bounds_state = state;
+        if let Some(cmds) = commands {
+            g.data.commands = cmds;
+        }
+    }
+    return shape;
 }
 
 pub fn empty_rect() -> flight_geometry::Rectangle {
@@ -269,14 +265,13 @@ pub fn shape_with_state(
     state: ShapeBoundsStateRef,
     commands: Vec<ShapeCommandToken>,
 ) -> Ref<Shape> {
-    let partial = PartialShape {
-        data: Some(PartialShapeData {
-            bounds_state: Some(state),
-            commands: Some(commands),
-        }),
-        node: partial_node(),
-    };
-    return create_shape(Some(&partial));
+    let shape = create_shape();
+    {
+        let mut g = shape.write().unwrap();
+        g.data.bounds_state = state;
+        g.data.commands = commands;
+    }
+    return shape;
 }
 
 pub fn test_path_morph(offset: f64) -> Ref<flight_path::PathMorph> {
@@ -291,22 +286,13 @@ pub fn test_path_morph(offset: f64) -> Ref<flight_path::PathMorph> {
 }
 
 pub fn test_morph_shape(offset: f64) -> Ref<MorphShape> {
-    return create_morph_shape(&test_path_morph(offset), None);
+    return create_morph_shape(&test_path_morph(offset));
 }
 
 pub fn test_morph_shape_with_progress(offset: f64, progress: f64) -> Ref<MorphShape> {
-    let partial = PartialMorphShape {
-        data: Some(PartialMorphShapeData {
-            bounds_state: None,
-            commands: None,
-            paint_bindings: None,
-            path: None,
-            path_bindings: None,
-            progress: Some(progress),
-        }),
-        node: partial_node(),
-    };
-    return create_morph_shape(&test_path_morph(offset), Some(&partial));
+    let ms = create_morph_shape(&test_path_morph(offset));
+    set_morph_shape_progress(&ms, progress);
+    return ms;
 }
 
 pub fn test_morph_shape_for_animation() -> Ref<MorphShape> {
@@ -317,7 +303,7 @@ pub fn test_morph_shape_for_animation() -> Ref<MorphShape> {
     flight_path::append_path_move_to(&mut end, 20.0, 30.0);
     flight_path::append_path_line_to(&mut end, 40.0, 30.0);
     let morph = flight_path::create_path_morph(&start, &end).expect("morph");
-    return create_morph_shape(&Arc::new(RwLock::new(morph)), None);
+    return create_morph_shape(&Arc::new(RwLock::new(morph)));
 }
 
 pub fn test_animation_path_morph(offset: f64) -> Ref<flight_path::PathMorph> {

@@ -15,23 +15,23 @@ use crate::shape_bounds::{compute_shape_bounds_rectangle, shape_bounds_state_of}
 use crate::shape_bounds_registry::get_shape_bounds_command_registry_revision;
 use crate::types::*;
 
-/// The construction options for a shape (TS `createShape`).
-pub fn create_shape(obj: Option<&PartialShape>) -> Ref<Shape> {
+/// Creates a shape (TS `createShape`).
+// flight-lint: allow(conform-params) D23 B: authored options removed; kind assigns fields after create
+pub fn create_shape() -> Ref<Shape> {
     let mut out: Shape = create_node2d(
         SHAPE_KIND.to_string(),
-        obj.map(|obj| &obj.node),
+        None,
         Some(create_shape_runtime),
     );
-    out.data = create_shape_data(obj.and_then(|obj| obj.data.as_ref()));
-    let state = out.data.bounds_state.clone();
-    set_shape_runtime_for_shape(&mut out, create_shape_runtime_extra(&state));
+    initialize_shape(&mut out);
     return flight_scene2d::publish_node2d(out);
 }
 
 /// Allocates shape kind data (TS `createShapeData`).
-pub fn create_shape_data(data: Option<&PartialShapeData>) -> ShapeData {
+// flight-lint: allow(conform-params) D23 B: authored options removed
+pub fn create_shape_data() -> ShapeData {
     let mut out: ShapeData = allocate_entity();
-    initialize_shape_data(&mut out, data);
+    initialize_shape_data(&mut out);
     return out;
 }
 
@@ -57,16 +57,19 @@ pub(crate) fn create_shape_runtime_extra(state: &ShapeBoundsStateRef) -> ShapeRu
     }));
 }
 
+/// The public initialize seam for a shape (TS `initializeShape`).
+// flight-lint: allow(conform-extra) D23 I: public initialize seam extracted from create_shape
+pub fn initialize_shape(out: &mut Shape) {
+    out.data = create_shape_data();
+    let state = out.data.bounds_state.clone();
+    set_shape_runtime_for_shape(out, create_shape_runtime_extra(&state));
+}
+
 /// The construction initializer of `create_shape_data`.
-pub fn initialize_shape_data(out: &mut ShapeData, data: Option<&PartialShapeData>) {
-    out.commands = match data.and_then(|data| data.commands.as_ref()) {
-        Some(commands) => commands.clone(),
-        None => Vec::new(),
-    };
-    out.bounds_state = match data.and_then(|data| data.bounds_state.as_ref()) {
-        Some(state) => state.clone(),
-        None => new_shape_bounds_state(),
-    };
+// flight-lint: allow(conform-params) D23 B: TS data param removed; Rust out-parameter IS the data
+pub fn initialize_shape_data(out: &mut ShapeData) {
+    out.commands = Vec::new();
+    out.bounds_state = new_shape_bounds_state();
 }
 
 /// Clears the retained command stream (TS `clearShapeCommands`).

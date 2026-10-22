@@ -7,7 +7,7 @@ mod create_scale9_shape {
 
     #[test]
     fn carries_the_grid_and_the_nine_slice_kind() {
-        let shape = create_scale9_shape(&scale9_grid(), None);
+        let shape = create_scale9_shape(&scale9_grid());
         assert_eq!(shape.read().unwrap().data.scale9_grid.width, 9.0);
     }
 }
@@ -17,7 +17,7 @@ mod create_scale9_shape_data {
 
     #[test]
     fn starts_with_an_empty_stream_and_the_supplied_grid() {
-        let data = create_scale9_shape_data(&scale9_grid(), None);
+        let data = create_scale9_shape_data(&scale9_grid());
         assert!(data.commands.is_empty());
         assert_eq!(data.scale9_grid.height, 18.0);
     }
@@ -43,18 +43,36 @@ mod get_scale9_shape_runtime {
     }
 }
 
+mod initialize_scale9_shape {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_seam_of_create_scale9_shape() {
+        let shape = scale9();
+        let guard = shape.read().unwrap();
+        assert_eq!(guard.data.scale9_grid, scale9_grid());
+        assert!(get_scale9_shape_runtime(&*guard).is_some());
+    }
+
+    #[test]
+    fn reinitializes_data_and_runtime() {
+        let shape = scale9();
+        initialize_scale9_shape(&mut *shape.write().unwrap(), &scale9_grid());
+        let guard = shape.read().unwrap();
+        assert_eq!(guard.data.scale9_grid, scale9_grid());
+        assert!(get_scale9_shape_runtime(&*guard).is_some());
+    }
+}
+
 mod initialize_scale9_shape_data {
     use super::*;
 
     #[test]
-    fn applies_the_grid_and_supplied_commands() {
-        let partial = PartialScale9ShapeData {
-            commands: Some(vec![ShapeCommandToken::String(String::from("moveTo"))]),
-            bounds_state: None,
-        };
-        let mut data = create_scale9_shape_data(&scale9_grid(), None);
-        initialize_scale9_shape_data(&mut data, &scale9_grid(), Some(&partial));
-        assert_eq!(data.commands.len(), 1);
+    fn is_the_construction_initializer_of_create_scale9_shape_data() {
+        let mut data = create_scale9_shape_data(&scale9_grid());
+        initialize_scale9_shape_data(&mut data, &scale9_grid());
+        assert!(data.commands.is_empty());
+        assert_eq!(data.scale9_grid, scale9_grid());
     }
 }
 
@@ -64,7 +82,7 @@ mod scale9_shape_source_parity {
 
     #[test]
     fn create_returns_a_shape_with_the_given_grid_on_its_data() {
-        let shape = create_scale9_shape(&scale9_grid(), None);
+        let shape = create_scale9_shape(&scale9_grid());
         let guard = shape.read().unwrap();
         assert_eq!(guard.data.scale9_grid, scale9_grid());
         assert!(guard.data.commands.is_empty());
@@ -73,28 +91,24 @@ mod scale9_shape_source_parity {
 
     #[test]
     fn create_returns_a_new_object_each_call() {
-        let first = create_scale9_shape(&scale9_grid(), None);
-        let second = create_scale9_shape(&scale9_grid(), None);
+        let first = create_scale9_shape(&scale9_grid());
+        let second = create_scale9_shape(&scale9_grid());
         assert!(!std::sync::Arc::ptr_eq(&first, &second));
     }
 
     #[test]
     fn create_data_stores_the_grid_and_an_empty_commands_array() {
-        let first = create_scale9_shape_data(&scale9_grid(), None);
-        let second = create_scale9_shape_data(&scale9_grid(), None);
+        let first = create_scale9_shape_data(&scale9_grid());
+        let second = create_scale9_shape_data(&scale9_grid());
         assert_eq!(first.scale9_grid, scale9_grid());
         assert!(first.commands.is_empty());
         assert!(second.commands.is_empty());
     }
 
     #[test]
-    fn create_data_uses_provided_commands_when_given() {
-        let partial = PartialScale9ShapeData {
-            bounds_state: None,
-            commands: Some(vec![string("endFill"), number(0.0)]),
-        };
-        let data = create_scale9_shape_data(&scale9_grid(), Some(&partial));
-        assert_eq!(data.commands.len(), 2);
+    fn create_data_starts_with_empty_commands() {
+        let data = create_scale9_shape_data(&scale9_grid());
+        assert!(data.commands.is_empty());
     }
 
     #[test]

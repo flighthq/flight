@@ -5,8 +5,8 @@ use flight_importdiagnostics::{
     report_import_diagnostic, ImportDiagnostic, ImportDiagnosticDetailValue,
     ImportDiagnosticSeverity,
 };
-use flight_scene2d::{create_display_object, Node2D, Node2DRef, PartialNode2D};
-use flight_shape::{clear_shape_commands, create_shape, PartialShape, Shape};
+use flight_scene2d::{create_display_object, Node2D, Node2DRef};
+use flight_shape::{clear_shape_commands, create_shape, Shape};
 
 use crate::rive_import_registry::{
     get_rive_core_object_handler, register_rive_core_object_handler,
@@ -55,13 +55,11 @@ pub fn import_rive_shape_component(
     index: usize,
 ) -> Option<Node2DRef> {
     let source = context.artboard.objects.get(index)?;
-    let shape = create_shape(Some(&PartialShape {
-        data: None,
-        node: PartialNode2D {
-            name: Some(read_rive_shape_name(source)),
-            ..PartialNode2D::default()
-        },
-    }));
+    let shape = create_shape();
+    {
+        use flight_node::contract::Node;
+        shape.write().unwrap().node_fields_mut().name = Some(read_rive_shape_name(source));
+    }
     let node: Node2DRef = shape.clone();
     let mut bindings = RIVE_SHAPE_BINDINGS.lock().unwrap();
     remove_expired_rive_shape_bindings(&mut bindings);

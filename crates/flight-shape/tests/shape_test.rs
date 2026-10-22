@@ -6,7 +6,7 @@ mod clear_shape_commands {
 
     #[test]
     fn empties_the_stream() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_shape_begin_fill(&shape, 0xff0000ff, None);
         clear_shape_commands(&shape);
         let guard = shape.read().unwrap();
@@ -19,7 +19,7 @@ mod compute_shape_local_bounds_rectangle {
 
     #[test]
     fn writes_an_empty_rectangle_for_an_empty_shape() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         let mut out = flight_geometry::create_rectangle(0.0, 0.0, 1.0, 1.0);
         compute_shape_local_bounds_rectangle(&mut out, &*shape.read().unwrap());
         assert_eq!(out.width, 0.0);
@@ -32,9 +32,9 @@ mod copy_shape_commands {
 
     #[test]
     fn copies_the_source_stream_onto_the_target() {
-        let source = create_shape(None);
+        let source = create_shape();
         append_shape_move_to(&source, 3.0, 4.0);
-        let target = create_shape(None);
+        let target = create_shape();
         copy_shape_commands(&target, &*source.read().unwrap());
         assert_eq!(get_shape_command_count(&*target.read().unwrap()), 1);
     }
@@ -45,7 +45,7 @@ mod create_shape {
 
     #[test]
     fn defaults_to_the_plain_shape_kind_with_an_empty_stream() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         let guard = shape.read().unwrap();
         assert_eq!(Node::node_fields(&*guard).kind, SHAPE_KIND);
         assert!(is_shape_empty(&*guard));
@@ -57,7 +57,7 @@ mod create_shape_data {
 
     #[test]
     fn copies_supplied_commands() {
-        let data = create_shape_data(None);
+        let data = create_shape_data();
         assert!(data.commands.is_empty());
     }
 }
@@ -68,7 +68,7 @@ mod create_shape_runtime {
     #[test]
     fn carries_a_bounds_computer_and_a_fresh_registry() {
         let runtime = create_shape_runtime();
-        let shape = create_shape_data(None);
+        let shape = create_shape_data();
         let node = flight_node::contract::create_node::<flight_scene2d::contract::DisplayObject>(
             String::from(SHAPE_KIND),
         );
@@ -86,7 +86,7 @@ mod get_shape_bounds {
 
     #[test]
     fn reports_incomplete_without_registered_bounds_commands() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_shape_move_to(&shape, 0.0, 0.0);
         let mut out = flight_geometry::create_rectangle(0.0, 0.0, 0.0, 0.0);
         assert!(!get_shape_bounds(&mut out, &*shape.read().unwrap(), None));
@@ -98,7 +98,7 @@ mod get_shape_command_count {
 
     #[test]
     fn counts_one_command() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_shape_begin_fill(&shape, 0xff0000ff, None);
         let guard = shape.read().unwrap();
         assert_eq!(get_shape_command_count(&*guard), 1);
@@ -110,8 +110,30 @@ mod get_shape_runtime {
 
     #[test]
     fn returns_the_kind_runtime_extra() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         assert!(get_shape_runtime(&*shape.read().unwrap()).is_some());
+    }
+}
+
+mod initialize_shape {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_seam_of_create_shape() {
+        let shape = create_shape();
+        let guard = shape.read().unwrap();
+        assert!(is_shape_empty(&*guard));
+        assert!(guard.data.commands.is_empty());
+        assert!(get_shape_runtime(&*guard).is_some());
+    }
+
+    #[test]
+    fn reinitializes_data_and_runtime() {
+        let shape = create_shape();
+        initialize_shape(&mut *shape.write().unwrap());
+        let guard = shape.read().unwrap();
+        assert!(is_shape_empty(&*guard));
+        assert!(get_shape_runtime(&*guard).is_some());
     }
 }
 
@@ -119,18 +141,10 @@ mod initialize_shape_data {
     use super::*;
 
     #[test]
-    fn copies_supplied_commands_and_keeps_a_bounds_state() {
-        let partial = PartialShapeData {
-            commands: Some(vec![
-                ShapeCommandToken::String(String::from("moveTo")),
-                ShapeCommandToken::Number(0.0),
-                ShapeCommandToken::Number(0.0),
-            ]),
-            bounds_state: None,
-        };
-        let mut data = create_shape_data(None);
-        initialize_shape_data(&mut data, Some(&partial));
-        assert_eq!(data.commands.len(), 3);
+    fn is_the_construction_initializer_of_create_shape_data() {
+        let mut data = create_shape_data();
+        initialize_shape_data(&mut data);
+        assert!(data.commands.is_empty());
     }
 }
 
@@ -139,7 +153,7 @@ mod is_shape_empty {
 
     #[test]
     fn is_true_before_any_command() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         let guard = shape.read().unwrap();
         assert!(is_shape_empty(&*guard));
     }
@@ -157,7 +171,7 @@ mod shape_source_parity {
 
     #[test]
     fn clear_empties_the_commands_array_and_bumps_the_content_revision() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         shape
             .write()
             .unwrap()
@@ -174,7 +188,7 @@ mod shape_source_parity {
 
     #[test]
     fn local_bounds_are_zero_for_an_empty_shape() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         let mut out = flight_geometry::create_rectangle(1.0, 2.0, 3.0, 4.0);
         compute_shape_local_bounds_rectangle(&mut out, &*shape.read().unwrap());
         assert_eq!(rect_values(&out), (0.0, 0.0, 0.0, 0.0));
@@ -329,7 +343,7 @@ mod shape_source_parity {
         let start = flight_path::create_path();
         let end = flight_path::create_path();
         let morph = flight_path::create_path_morph(&start, &end).expect("morph");
-        let target = create_morph_shape(&std::sync::Arc::new(std::sync::RwLock::new(morph)), None);
+        let target = create_morph_shape(&std::sync::Arc::new(std::sync::RwLock::new(morph)));
         append_morph_shape_begin_fill(
             &target,
             &MorphShapeColorEndpoint {
@@ -357,13 +371,13 @@ mod shape_source_parity {
 
     #[test]
     fn copy_copies_commands_from_source_to_target() {
-        let source = create_shape(None);
+        let source = create_shape();
         source
             .write()
             .unwrap()
             .shape_commands_mut()
             .extend([string("endFill"), number(0.0)]);
-        let target = create_shape(None);
+        let target = create_shape();
         let source_node: NodeRef = source.clone();
         copy_shape_commands(&target, &*source_node.read().unwrap());
         assert_eq!(tokens(&target).len(), 2);
@@ -371,7 +385,7 @@ mod shape_source_parity {
 
     #[test]
     fn copy_handles_a_command_stream_longer_than_the_engine_argument_limit() {
-        let source = create_shape(None);
+        let source = create_shape();
         {
             let mut guard = source.write().unwrap();
             let commands = guard.shape_commands_mut();
@@ -383,7 +397,7 @@ mod shape_source_parity {
                 commands.push(number(index as f64));
             }
         }
-        let target = create_shape(None);
+        let target = create_shape();
         let source_node: NodeRef = source.clone();
         copy_shape_commands(&target, &*source_node.read().unwrap());
         let copied = tokens(&target);
@@ -395,13 +409,13 @@ mod shape_source_parity {
 
     #[test]
     fn copy_replaces_existing_target_commands_and_bumps_the_content_revision() {
-        let source = create_shape(None);
+        let source = create_shape();
         source
             .write()
             .unwrap()
             .shape_commands_mut()
             .extend([string("endFill"), number(0.0)]);
-        let target = create_shape(None);
+        let target = create_shape();
         target.write().unwrap().shape_commands_mut().extend([
             string("beginFill"),
             number(2.0),
@@ -420,13 +434,13 @@ mod shape_source_parity {
 
     #[test]
     fn copy_does_not_share_the_same_array_reference() {
-        let source = create_shape(None);
+        let source = create_shape();
         source
             .write()
             .unwrap()
             .shape_commands_mut()
             .extend([string("endFill"), number(0.0)]);
-        let target = create_shape(None);
+        let target = create_shape();
         let source_node: NodeRef = source.clone();
         copy_shape_commands(&target, &*source_node.read().unwrap());
         source
@@ -439,7 +453,7 @@ mod shape_source_parity {
 
     #[test]
     fn create_shape_initializes_with_an_empty_commands_array_and_the_shape_kind() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         assert!(is_shape_empty(&*shape.read().unwrap()));
         assert_eq!(Node::node_fields(&*shape.read().unwrap()).kind, SHAPE_KIND);
     }
@@ -452,15 +466,15 @@ mod shape_source_parity {
 
     #[test]
     fn create_shape_returns_a_new_object_each_call() {
-        let first = create_shape(None);
-        let second = create_shape(None);
+        let first = create_shape();
+        let second = create_shape();
         assert!(!std::sync::Arc::ptr_eq(&first, &second));
     }
 
     #[test]
     fn create_shape_data_returns_empty_commands_and_a_new_object_each_call() {
-        let first = create_shape_data(None);
-        let second = create_shape_data(None);
+        let first = create_shape_data();
+        let second = create_shape_data();
         assert!(first.commands.is_empty());
         assert!(second.commands.is_empty());
     }
@@ -468,7 +482,7 @@ mod shape_source_parity {
     #[test]
     fn create_shape_runtime_returns_a_non_null_runtime() {
         let runtime = create_shape_runtime();
-        let shape = create_shape_data(None);
+        let shape = create_shape_data();
         assert!(
             runtime.bounds.is_local_bounds_rectangle_valid.is_some() || shape.commands.is_empty()
         );
@@ -493,7 +507,7 @@ mod shape_source_parity {
 
     #[test]
     fn get_shape_bounds_returns_zero_bounds_for_an_empty_shape() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         let mut out = flight_geometry::create_rectangle(1.0, 2.0, 3.0, 4.0);
         get_shape_bounds(&mut out, &*shape.read().unwrap(), None);
         assert_eq!(rect_values(&out), (0.0, 0.0, 0.0, 0.0));
@@ -518,9 +532,9 @@ mod shape_source_parity {
 
     #[test]
     fn get_shape_command_count_counts_entries_not_flat_elements() {
-        let empty = create_shape(None);
+        let empty = create_shape();
         assert_eq!(get_shape_command_count(&*empty.read().unwrap()), 0);
-        let shape = create_shape(None);
+        let shape = create_shape();
         {
             let mut guard = shape.write().unwrap();
             let commands = guard.shape_commands_mut();
@@ -545,13 +559,13 @@ mod shape_source_parity {
 
     #[test]
     fn get_shape_runtime_returns_the_runtime_for_a_shape() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         assert!(get_shape_runtime(&*shape.read().unwrap()).is_some());
     }
 
     #[test]
     fn is_shape_empty_tracks_append_and_clear() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         assert!(is_shape_empty(&*shape.read().unwrap()));
         shape
             .write()

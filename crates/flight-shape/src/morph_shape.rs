@@ -15,28 +15,22 @@ use crate::shape_commands::append_shape_path;
 use crate::types::*;
 
 /// Creates a retained morph shape around a prepared path morph (TS `createMorphShape`).
-pub fn create_morph_shape(
-    morph: &Ref<PathMorph>,
-    obj: Option<&PartialMorphShape>,
-) -> Ref<MorphShape> {
+// flight-lint: allow(conform-params) D23 B: authored options removed; morph is required defining ref
+pub fn create_morph_shape(morph: &Ref<PathMorph>) -> Ref<MorphShape> {
     let mut out: MorphShape = create_node2d(
         MORPH_SHAPE_KIND.to_string(),
-        obj.map(|obj| &obj.node),
+        None,
         Some(create_morph_shape_runtime),
     );
-    out.data = create_morph_shape_data(morph, obj.and_then(|obj| obj.data.as_ref()));
-    let state = out.data.bounds_state.clone();
-    crate::shape::set_shape_runtime_for_morph_shape(&mut out, create_shape_runtime_extra(&state));
+    initialize_morph_shape(&mut out, morph);
     return flight_scene2d::publish_node2d(out);
 }
 
 /// Allocates morph shape data (TS `createMorphShapeData`).
-pub fn create_morph_shape_data(
-    morph: &Ref<PathMorph>,
-    data: Option<&PartialMorphShapeData>,
-) -> MorphShapeData {
+// flight-lint: allow(conform-params) D23 B: authored options removed; morph is required defining ref
+pub fn create_morph_shape_data(morph: &Ref<PathMorph>) -> MorphShapeData {
     let mut out: MorphShapeData = allocate_entity();
-    initialize_morph_shape_data(&mut out, morph, data);
+    initialize_morph_shape_data(&mut out, morph);
     return out;
 }
 
@@ -45,34 +39,30 @@ pub fn create_morph_shape_runtime() -> Node2DRuntime {
     return create_shape_runtime();
 }
 
+/// The public initialize seam for a morph shape (TS `initializeMorphShape`).
+// flight-lint: allow(conform-extra) D23 I: public initialize seam extracted from create_morph_shape
+pub fn initialize_morph_shape(out: &mut MorphShape, morph: &Ref<PathMorph>) {
+    out.data = create_morph_shape_data(morph);
+    let state = out.data.bounds_state.clone();
+    crate::shape::set_shape_runtime_for_morph_shape(out, create_shape_runtime_extra(&state));
+}
+
 /// The construction initializer of `create_morph_shape_data`.
+// flight-lint: allow(conform-params) D23 B: TS data param removed; Rust out-parameter IS the data
 pub fn initialize_morph_shape_data(
     out: &mut MorphShapeData,
     morph: &Ref<PathMorph>,
-    data: Option<&PartialMorphShapeData>,
 ) {
-    let progress = data.and_then(|data| data.progress).unwrap_or(0.0);
+    let progress = 0.0;
     let winding = morph.read().unwrap().winding;
-    let path = match data.and_then(|data| data.path.as_ref()) {
-        Some(path) => path.clone(),
-        None => {
-            let mut path = create_path();
-            path.winding = winding;
-            Arc::new(RwLock::new(path))
-        }
-    };
-    let mut path_bindings: Vec<MorphShapePathBinding> = vec![MorphShapePathBinding {
+    let mut path_value = create_path();
+    path_value.winding = winding;
+    let path: Ref<Path> = Arc::new(RwLock::new(path_value));
+    let path_bindings: Vec<MorphShapePathBinding> = vec![MorphShapePathBinding {
         command_index: 0,
         morph: morph.clone(),
         path: path.clone(),
     }];
-    if let Some(input) = data.and_then(|data| data.path_bindings.as_ref()) {
-        for binding in input {
-            if !Arc::ptr_eq(&binding.morph, morph) && !Arc::ptr_eq(&binding.path, &path) {
-                path_bindings.push(binding.clone());
-            }
-        }
-    }
     for binding in &path_bindings {
         sample_path_morph(
             &mut binding.path.write().unwrap(),
@@ -80,19 +70,13 @@ pub fn initialize_morph_shape_data(
             progress,
         );
     }
-    out.commands = data
-        .and_then(|data| data.commands.clone())
-        .unwrap_or_default();
+    out.commands = Vec::new();
     out.morph = morph.clone();
-    out.paint_bindings = data
-        .and_then(|data| data.paint_bindings.clone())
-        .unwrap_or_default();
+    out.paint_bindings = Vec::new();
     out.path = path;
     out.path_bindings = path_bindings;
     out.progress = progress;
-    out.bounds_state = data
-        .and_then(|data| data.bounds_state.clone())
-        .unwrap_or_else(new_shape_bounds_state);
+    out.bounds_state = new_shape_bounds_state();
     sample_morph_shape_paint_bindings(out, progress);
 }
 

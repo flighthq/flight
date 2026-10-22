@@ -44,12 +44,6 @@ src/lib.rs: pub use contract::MorphShapeLinePaintBinding;
 src/lib.rs: pub use contract::MorphShapePaintBinding;
 src/lib.rs: pub use contract::MorphShapePathBinding;
 src/lib.rs: pub use contract::MorphShapeTexturePaintBinding;
-src/lib.rs: pub use contract::PartialMorphShape;
-src/lib.rs: pub use contract::PartialMorphShapeData;
-src/lib.rs: pub use contract::PartialScale9Shape;
-src/lib.rs: pub use contract::PartialScale9ShapeData;
-src/lib.rs: pub use contract::PartialShape;
-src/lib.rs: pub use contract::PartialShapeData;
 src/lib.rs: pub use contract::Scale9Shape;
 src/lib.rs: pub use contract::Scale9ShapeData;
 src/lib.rs: pub use contract::Shape;
@@ -139,6 +133,12 @@ src/lib.rs: pub use contract::get_shape_stroke_regions;
 src/lib.rs: pub use contract::has_non_solid_shape_fill;
 src/lib.rs: pub use contract::has_non_solid_shape_stroke;
 src/lib.rs: pub use contract::has_shape_fill;
+src/lib.rs: pub use contract::initialize_morph_shape;
+src/lib.rs: pub use contract::initialize_morph_shape_data;
+src/lib.rs: pub use contract::initialize_scale9_shape;
+src/lib.rs: pub use contract::initialize_scale9_shape_data;
+src/lib.rs: pub use contract::initialize_shape;
+src/lib.rs: pub use contract::initialize_shape_data;
 src/lib.rs: pub use contract::is_shape_empty;
 src/lib.rs: pub use contract::map_scale9_shape_commands;
 src/lib.rs: pub use contract::normalize_shape_stroke_miter_limit;
@@ -147,11 +147,12 @@ src/lib.rs: pub use contract::register_default_shape_bounds_commands;
 src/lib.rs: pub use contract::set_morph_shape_progress;
 src/lib.rs: pub use contract::write_shape_geometry_command_end;
 src/morph_shape.rs: pub fn append_morph_shape_path(shape: &Ref<MorphShape>, morph: &Ref<PathMorph>) -> Ref<Path>
-src/morph_shape.rs: pub fn create_morph_shape(morph: &Ref<PathMorph>, obj: Option<&PartialMorphShape>,) -> Ref<MorphShape>
-src/morph_shape.rs: pub fn create_morph_shape_data(morph: &Ref<PathMorph>, data: Option<&PartialMorphShapeData>,) -> MorphShapeData
+src/morph_shape.rs: pub fn create_morph_shape(morph: &Ref<PathMorph>) -> Ref<MorphShape>
+src/morph_shape.rs: pub fn create_morph_shape_data(morph: &Ref<PathMorph>) -> MorphShapeData
 src/morph_shape.rs: pub fn create_morph_shape_runtime() -> Node2DRuntime
 src/morph_shape.rs: pub fn get_morph_shape_runtime(source: &dyn flight_node::contract::Node,) -> Option<ShapeRuntimeRef>
-src/morph_shape.rs: pub fn initialize_morph_shape_data(out: &mut MorphShapeData, morph: &Ref<PathMorph>, data: Option<&PartialMorphShapeData>,)
+src/morph_shape.rs: pub fn initialize_morph_shape(out: &mut MorphShape, morph: &Ref<PathMorph>)
+src/morph_shape.rs: pub fn initialize_morph_shape_data(out: &mut MorphShapeData, morph: &Ref<PathMorph>,)
 src/morph_shape.rs: pub fn set_morph_shape_progress(shape: &Ref<MorphShape>, progress: f64)
 src/morph_shape_animation.rs: pub fn apply_animation_clip_to_morph_shape(clip: &AnimationClip, time: f32)
 src/morph_shape_animation.rs: pub fn apply_morph_shape_animation_sample(sampled: &[f32], channel: &AnimationChannel) -> bool
@@ -165,22 +166,24 @@ src/morph_shape_paint.rs: pub fn append_morph_shape_line_style(shape: &Ref<Morph
 src/morph_shape_paint.rs: pub fn append_morph_shape_line_texture_style(shape: &Ref<MorphShape>, texture: &Ref<Texture>, start_matrix: Option<&Matrix>, end_matrix: Option<&Matrix>,)
 src/morph_shape_paint.rs: pub fn sample_morph_shape_paint_bindings(data: &mut MorphShapeData, progress: f64)
 src/register_default_shape_bounds_commands.rs: pub fn register_default_shape_bounds_commands(state: &ShapeBoundsStateRef)
-src/scale9_shape.rs: pub fn create_scale9_shape(scale9_grid: &ShapeScale9Grid, obj: Option<&PartialScale9Shape>,) -> Ref<Scale9Shape>
-src/scale9_shape.rs: pub fn create_scale9_shape_data(scale9_grid: &ShapeScale9Grid, data: Option<&PartialScale9ShapeData>,) -> Scale9ShapeData
+src/scale9_shape.rs: pub fn create_scale9_shape(scale9_grid: &ShapeScale9Grid) -> Ref<Scale9Shape>
+src/scale9_shape.rs: pub fn create_scale9_shape_data(scale9_grid: &ShapeScale9Grid) -> Scale9ShapeData
 src/scale9_shape.rs: pub fn create_scale9_shape_runtime() -> Node2DRuntime
 src/scale9_shape.rs: pub fn get_scale9_shape_runtime(source: &dyn flight_node::contract::Node,) -> Option<ShapeRuntimeRef>
-src/scale9_shape.rs: pub fn initialize_scale9_shape_data(out: &mut Scale9ShapeData, scale9_grid: &ShapeScale9Grid, data: Option<&PartialScale9ShapeData>,)
+src/scale9_shape.rs: pub fn initialize_scale9_shape(out: &mut Scale9Shape, scale9_grid: &ShapeScale9Grid)
+src/scale9_shape.rs: pub fn initialize_scale9_shape_data(out: &mut Scale9ShapeData, scale9_grid: &ShapeScale9Grid,)
 src/scale9_shape_commands.rs: pub fn map_scale9_shape_commands(out: &mut Vec<ShapeCommandToken>, source: &[ShapeCommandToken], mapper: &ShapeScale9Mapper,)
 src/shape.rs: pub fn clear_shape_commands<T: ShapeNode + 'static>(shape: &Ref<T>)
 src/shape.rs: pub fn compute_shape_local_bounds_rectangle(out: &mut Rectangle, source: &dyn Node)
 src/shape.rs: pub fn copy_shape_commands<T: ShapeNode + 'static>(out: &Ref<T>, source: &dyn Node)
-src/shape.rs: pub fn create_shape(obj: Option<&PartialShape>) -> Ref<Shape>
-src/shape.rs: pub fn create_shape_data(data: Option<&PartialShapeData>) -> ShapeData
+src/shape.rs: pub fn create_shape() -> Ref<Shape>
+src/shape.rs: pub fn create_shape_data() -> ShapeData
 src/shape.rs: pub fn create_shape_runtime() -> Node2DRuntime
 src/shape.rs: pub fn get_shape_bounds(out: &mut Rectangle, source: &dyn Node, mode: Option<ShapeBoundsMode>,) -> bool
 src/shape.rs: pub fn get_shape_command_count(source: &dyn Node) -> usize
 src/shape.rs: pub fn get_shape_runtime(source: &dyn Node) -> Option<ShapeRuntimeRef>
-src/shape.rs: pub fn initialize_shape_data(out: &mut ShapeData, data: Option<&PartialShapeData>)
+src/shape.rs: pub fn initialize_shape(out: &mut Shape)
+src/shape.rs: pub fn initialize_shape_data(out: &mut ShapeData)
 src/shape.rs: pub fn is_shape_empty(source: &dyn Node) -> bool
 src/shape_bounds.rs: impl ShapeBoundsContext for ShapeBoundsContextImpl<'_>
 src/shape_bounds.rs: impl ShapeBoundsContext for ShapeBoundsContextImpl<'_> :: fn close_path(&mut self)
@@ -285,12 +288,6 @@ src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct MorphShapeLinePaintB
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct MorphShapeTexturePaintBinding { pub command_index: usize, pub command_key: String, pub end_matrix: Matrix, pub start_matrix: Matrix, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct ShapeCommandNumbers { pub values: Vec<f64>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct ShapeBoundsExplanation { pub complete: bool, pub missing_command_keys: Vec<String>, pub mode: ShapeBoundsMode, }
-src/types.rs: #[derive(Clone, Default)] pub struct PartialMorphShape { pub data: Option<PartialMorphShapeData>, pub node: PartialNode2D, }
-src/types.rs: #[derive(Clone, Default)] pub struct PartialMorphShapeData { pub bounds_state: Option<ShapeBoundsStateRef>, pub commands: Option<Vec<ShapeCommandToken>>, pub paint_bindings: Option<Vec<MorphShapePaintBinding>>, pub path: Option<Ref<Path>>, pub path_bindings: Option<Vec<MorphShapePathBinding>>, pub progress: Option<f64>, }
-src/types.rs: #[derive(Clone, Default)] pub struct PartialScale9Shape { pub data: Option<PartialScale9ShapeData>, pub node: PartialNode2D, }
-src/types.rs: #[derive(Clone, Default)] pub struct PartialScale9ShapeData { pub bounds_state: Option<ShapeBoundsStateRef>, pub commands: Option<Vec<ShapeCommandToken>>, }
-src/types.rs: #[derive(Clone, Default)] pub struct PartialShape { pub data: Option<PartialShapeData>, pub node: PartialNode2D, }
-src/types.rs: #[derive(Clone, Default)] pub struct PartialShapeData { pub bounds_state: Option<ShapeBoundsStateRef>, pub commands: Option<Vec<ShapeCommandToken>>, }
 src/types.rs: #[derive(Default)] pub struct ShapeBoundsState { pub(crate) commands: Vec<(String, ShapeBoundsCommand)>, pub(crate) defaults: Option<Vec<ShapeBoundsCommand>>, pub(crate) guard: Option<ShapeBoundsGuard>, pub(crate) revision: u32, }
 src/types.rs: impl Default for MorphShape
 src/types.rs: impl Default for MorphShape :: fn default() -> Self
@@ -340,11 +337,11 @@ src/types.rs: pub const SCALE9_SHAPE_KIND: &str
 src/types.rs: pub const SHAPE_KIND: &str
 src/types.rs: pub struct MorphShape { node: Node2DFields, pub data: MorphShapeData, pub(crate) shape_runtime: ShapeRuntimeRef, }
 src/types.rs: pub struct MorphShapeAnimationTarget { runtime: EntityRuntimeSlot, pub shape: Ref<MorphShape>, }
-src/types.rs: pub struct MorphShapeData { runtime: EntityRuntimeSlot, pub commands: Vec<ShapeCommandToken>, pub morph: Ref<PathMorph>, pub paint_bindings: Vec<MorphShapePaintBinding>, pub path: Ref<Path>, pub path_bindings: Vec<MorphShapePathBinding>, pub progress: f64, pub(crate) bounds_state: ShapeBoundsStateRef, }
+src/types.rs: pub struct MorphShapeData { runtime: EntityRuntimeSlot, pub commands: Vec<ShapeCommandToken>, pub morph: Ref<PathMorph>, pub paint_bindings: Vec<MorphShapePaintBinding>, pub path: Ref<Path>, pub path_bindings: Vec<MorphShapePathBinding>, pub progress: f64, pub bounds_state: ShapeBoundsStateRef, }
 src/types.rs: pub struct Scale9Shape { node: Node2DFields, pub data: Scale9ShapeData, pub(crate) shape_runtime: ShapeRuntimeRef, }
-src/types.rs: pub struct Scale9ShapeData { runtime: EntityRuntimeSlot, pub commands: Vec<ShapeCommandToken>, pub scale9_grid: ShapeScale9Grid, pub(crate) bounds_state: ShapeBoundsStateRef, }
+src/types.rs: pub struct Scale9ShapeData { runtime: EntityRuntimeSlot, pub commands: Vec<ShapeCommandToken>, pub scale9_grid: ShapeScale9Grid, pub bounds_state: ShapeBoundsStateRef, }
 src/types.rs: pub struct Shape { node: Node2DFields, pub data: ShapeData, pub(crate) shape_runtime: ShapeRuntimeRef, }
-src/types.rs: pub struct ShapeData { runtime: EntityRuntimeSlot, pub commands: Vec<ShapeCommandToken>, pub(crate) bounds_state: ShapeBoundsStateRef, }
+src/types.rs: pub struct ShapeData { runtime: EntityRuntimeSlot, pub commands: Vec<ShapeCommandToken>, pub bounds_state: ShapeBoundsStateRef, }
 src/types.rs: pub struct ShapeRuntime { pub shape_bounds_command_registry_revision: i64, pub bounds_state: ShapeBoundsStateRef, }
 src/types.rs: pub struct ShapeScale9Mapper { pub map_x: Scale9Mapper, pub map_y: Scale9Mapper, }
 src/types.rs: pub trait ShapeBoundsContext { fn close_path(&mut self); fn cubic_curve_to(&mut self, control_x1: f64, control_y1: f64, control_x2: f64, control_y2: f64, x: f64, y: f64,); fn draw_circle(&mut self, center_x: f64, center_y: f64, radius: f64); fn draw_ellipse(&mut self, center_x: f64, center_y: f64, radius_x: f64, radius_y: f64); fn draw_rectangle(&mut self, x: f64, y: f64, width: f64, height: f64); fn draw_rounded_rectangle(&mut self, x: f64, y: f64, width: f64, height: f64, radius: f64); fn expand_point(&mut self, x: f64, y: f64); fn flush_path(&mut self); fn line_to(&mut self, x: f64, y: f64); fn move_to(&mut self, x: f64, y: f64); fn quadratic_curve_to(&mut self, control_x: f64, control_y: f64, x: f64, y: f64); fn set_stroke_style(&mut self, width: f64, caps: CapsStyle, joints: JointStyle, miter_limit: f64,); }

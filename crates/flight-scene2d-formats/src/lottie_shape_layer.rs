@@ -33,7 +33,7 @@ fn append_lottie_shape_items(
         let transform = record_value(transform);
         apply_lottie_transform(&group_node, Some(&transform), context, Some(true), None);
     }
-    let shape = create_shape(None);
+    let shape = create_shape();
     let claims = Arc::new(RwLock::new(HashSet::new()));
     let modifiers = Arc::new(RwLock::new(Vec::<LottieShapeModifier>::new()));
     let painters = Arc::new(RwLock::new(Vec::<LottieShapePainter>::new()));

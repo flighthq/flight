@@ -77,7 +77,7 @@ fn assert_gradient_paint(stroke: bool, expected_command: &str) {
         .clone(),
     );
     let painters = Arc::new(RwLock::new(Vec::new()));
-    let shape = create_shape(None);
+    let shape = create_shape();
     let paths = Arc::new(RwLock::new(vec![square()]));
     let mut context = LottieShapeItemContext {
         claims: Arc::new(RwLock::new(HashSet::new())),

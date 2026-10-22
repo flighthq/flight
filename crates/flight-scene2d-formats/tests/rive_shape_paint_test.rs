@@ -22,7 +22,7 @@ mod append_rive_shape_geometry {
 
     #[test]
     fn draws_the_paths_with_no_paint_around_them() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_geometry(&shape, &[square_path()]);
         assert!(paint_tokens(&shape).is_empty());
         assert_eq!(draw_count(&shape), 1);
@@ -30,7 +30,7 @@ mod append_rive_shape_geometry {
 
     #[test]
     fn keeps_each_path_own_winding_so_a_hole_stays_a_hole() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         let mut hole = square_path();
         hole.winding = PathWinding::EvenOdd;
         append_rive_shape_geometry(&shape, &[hole]);
@@ -39,7 +39,7 @@ mod append_rive_shape_geometry {
 
     #[test]
     fn draws_nothing_for_an_empty_path_list() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_geometry(&shape, &[]);
         assert!(shape_commands(&shape).is_empty());
     }
@@ -50,14 +50,14 @@ mod append_rive_shape_paint {
 
     #[test]
     fn draws_nothing_when_the_shape_has_no_paths() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(&shape, &graph(vec![object(SHAPE, &[])], None), 0, &[], None);
         assert!(shape_commands(&shape).is_empty());
     }
 
     #[test]
     fn emits_the_geometry_even_when_the_shape_states_no_paint() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(
             &shape,
             &graph(vec![object(SHAPE, &[])], None),
@@ -71,7 +71,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn unpacks_a_solid_colour_from_the_argb_the_format_states() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(
             &shape,
             &graph(
@@ -94,7 +94,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn falls_back_to_the_colour_the_format_states_when_a_solid_colour_omits_it() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(
             &shape,
             &graph(
@@ -116,7 +116,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn keeps_every_paint_a_shape_states_in_the_order_it_states_them() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(
             &shape,
             &graph(
@@ -144,7 +144,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn restates_every_path_under_every_paint() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(
             &shape,
             &graph(
@@ -166,7 +166,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn skips_a_paint_the_file_marks_invisible() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(
             &shape,
             &graph(
@@ -186,8 +186,8 @@ mod append_rive_shape_paint {
 
     #[test]
     fn reads_a_fill_rule_of_one_as_even_odd() {
-        let non_zero = create_shape(None);
-        let even_odd = create_shape(None);
+        let non_zero = create_shape();
+        let even_odd = create_shape();
         append_rive_shape_paint(
             &non_zero,
             &graph(
@@ -214,7 +214,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn reports_a_stroke_cap_it_does_not_know() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         let mut diagnostics = Vec::new();
         append_rive_shape_paint(
             &shape,
@@ -244,8 +244,8 @@ mod append_rive_shape_paint {
 
     #[test]
     fn stays_silent_for_a_stroke_cap_the_format_states() {
-        let butt = create_shape(None);
-        let square_shape = create_shape(None);
+        let butt = create_shape();
+        let square_shape = create_shape();
         let mut diagnostics = Vec::new();
         append_rive_shape_paint(
             &butt,
@@ -268,7 +268,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn reports_a_stroke_join_it_does_not_know() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         let mut diagnostics = Vec::new();
         append_rive_shape_paint(
             &shape,
@@ -298,8 +298,8 @@ mod append_rive_shape_paint {
 
     #[test]
     fn stays_silent_for_a_stroke_join_the_format_states() {
-        let miter = create_shape(None);
-        let bevel = create_shape(None);
+        let miter = create_shape();
+        let bevel = create_shape();
         let mut diagnostics = Vec::new();
         append_rive_shape_paint(
             &miter,
@@ -322,7 +322,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn builds_a_gradient_from_its_stops_scaling_each_stop_alpha_by_the_gradient_opacity() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(
             &shape,
             &graph(
@@ -357,7 +357,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn marks_a_radial_gradient_as_radial() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(
             &shape,
             &graph(
@@ -386,7 +386,7 @@ mod append_rive_shape_paint {
             (0.25, 0.75, 0.5),
             (0.0, 0.25, 0.25),
         ] {
-            let shape = create_shape(None);
+            let shape = create_shape();
             append_rive_shape_paint(
                 &shape,
                 &trimmed_stroke(start, end, 2.0),
@@ -400,7 +400,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn consumes_a_sequential_trim_in_run_order_leaving_later_paths_empty() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(
             &shape,
             &trimmed_stroke(0.0, 0.5, 1.0),
@@ -419,7 +419,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn takes_the_same_proportion_out_of_every_path_when_synchronized() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(
             &shape,
             &trimmed_stroke(0.0, 0.5, 2.0),
@@ -439,7 +439,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn wraps_a_span_that_runs_past_the_end_back_to_the_front() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(
             &shape,
             &trimmed_stroke(0.8, 1.1, 2.0),
@@ -459,7 +459,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn drops_the_stroke_entirely_when_the_trim_span_is_empty() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(
             &shape,
             &trimmed_stroke(0.5, 0.5, 2.0),
@@ -472,7 +472,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn leaves_a_fill_untouched_by_a_trim_that_belongs_to_a_stroke() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         let graph_with_both = graph(
             vec![
                 object(SHAPE, &[]),
@@ -489,7 +489,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn alternates_every_static_dash_length_using_the_published_type_and_property_keys() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(
             &shape,
             &dashed_stroke(&[(10.0, false), (5.0, false)], 0.0, false),
@@ -502,7 +502,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn resolves_percentage_dash_lengths_against_each_path_length() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(
             &shape,
             &dashed_stroke(&[(0.1, true), (0.05, true)], 0.0, false),
@@ -516,7 +516,7 @@ mod append_rive_shape_paint {
     #[test]
     fn starts_the_pattern_at_an_absolute_or_percentage_offset() {
         for (offset, percentage) in [(5.0, false), (0.125, true)] {
-            let shape = create_shape(None);
+            let shape = create_shape();
             append_rive_shape_paint(
                 &shape,
                 &dashed_stroke(&[(10.0, false), (10.0, false)], offset, percentage),
@@ -530,7 +530,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn keeps_alternating_when_a_dash_pattern_has_an_odd_number_of_entries() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(
             &shape,
             &dashed_stroke(&[(10.0, false)], 0.0, false),
@@ -543,7 +543,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn emits_no_stroke_geometry_when_every_stated_dash_length_is_zero() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(
             &shape,
             &dashed_stroke(&[(0.0, false), (0.0, false)], 0.0, false),
@@ -556,7 +556,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn leaves_a_fill_untouched_by_a_dash_effect() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(
             &shape,
             &graph(
@@ -578,7 +578,7 @@ mod append_rive_shape_paint {
 
     #[test]
     fn carries_stroke_thickness_cap_and_join() {
-        let shape = create_shape(None);
+        let shape = create_shape();
         append_rive_shape_paint(
             &shape,
             &graph(
