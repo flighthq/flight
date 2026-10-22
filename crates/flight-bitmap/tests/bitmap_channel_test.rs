@@ -1,5 +1,5 @@
 use flight_bitmap::contract::*;
-use flight_entity::allocate_entity;
+use flight_entity::{allocate_entity, get_entity_uid, set_entity_uid};
 use flight_texture::{AlphaType, PixelFormat, TextureGamut};
 
 fn region(bmp: Bitmap) -> BitmapRegion {
@@ -30,7 +30,9 @@ mod initialize_bitmap {
     #[test]
     fn writes_every_bitmap_field_and_the_bitmap_kind() {
         let mut out: Bitmap = allocate_entity();
+        set_entity_uid(&mut out, "bitmap".to_string());
         let data: Box<[u8]> = vec![1, 2, 3, 4].into_boxed_slice();
+        let data_pointer = data.as_ptr();
         initialize_bitmap(
             &mut out,
             AlphaType::Premultiplied,
@@ -48,6 +50,8 @@ mod initialize_bitmap {
         assert_eq!(out.width, 1);
         assert_eq!(out.kind, BITMAP_TEXTURE_SOURCE_KIND);
         assert_eq!(out.version, 0);
+        assert_eq!(get_entity_uid(&mut out), "bitmap");
+        assert_eq!(out.data.as_ptr(), data_pointer);
     }
 }
 

@@ -51,12 +51,14 @@ mod sugar_tests {
 
 /// Creates a new Bitmap filled with a packed RGBA color (0xRRGGBBAA). `color` defaults to 0
 /// (transparent black).
+// D23 (KEEP; Principal c0f9227c): dimensions and color derive the owned pixel buffer.
 pub fn create_bitmap(width: u32, height: u32, color: Option<u32>) -> Bitmap {
     let mut out: Bitmap = allocate_entity();
     initialize_bitmap(&mut out, width, height, color.unwrap_or(0));
     return out;
 }
 
+// D23 (KEEP; Principal c0f9227c): construction allocates and fills storage from these inputs.
 fn initialize_bitmap(out: &mut Bitmap, width: u32, height: u32, color: u32) {
     let len = (width as usize) * (height as usize) * 4;
     let mut data = vec![0u8; len];

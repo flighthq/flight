@@ -49,6 +49,7 @@ mod sugar_tests {
 }
 
 /// Initializes a bitmap's fields from raw components.
+// D23 (KEEP; Principal c0f9227c): the required raw payload and its format and dimensions define the bitmap.
 pub fn initialize_bitmap(
     out: &mut Bitmap,
     alpha_type: AlphaType,

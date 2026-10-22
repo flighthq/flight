@@ -155,6 +155,17 @@ mod create_bitmap {
         assert_eq!(img.data[2], 0x33);
         assert_eq!(img.data[3], 0xff);
     }
+
+    #[test]
+    fn derives_owned_pixel_storage_from_dimensions_and_color() {
+        let img = create_bitmap(3, 2, Some(0x10203040));
+        assert_eq!(img.data.len(), 3 * 2 * 4);
+        assert!(
+            img.data
+                .chunks_exact(4)
+                .all(|pixel| pixel == [0x10, 0x20, 0x30, 0x40])
+        );
+    }
 }
 
 mod invalidate_bitmap {

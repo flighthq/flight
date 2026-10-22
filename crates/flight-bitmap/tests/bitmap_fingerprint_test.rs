@@ -1,5 +1,5 @@
 use flight_bitmap::contract::*;
-use flight_entity::allocate_entity;
+use flight_entity::{allocate_entity, get_entity_uid, set_entity_uid};
 
 mod bitmap_fingerprint_computation_id {
     use super::*;
@@ -80,6 +80,16 @@ mod create_bitmap_fingerprint {
         let fp = create_bitmap_fingerprint(&create_bitmap(0, 0, None), 2);
         assert!(fp.cells.iter().all(|&v| v == 0));
     }
+
+    #[test]
+    fn derives_owned_cells_from_source_pixels_and_grid_size() {
+        let mut bitmap = create_bitmap(2, 1, None);
+        set_bitmap_pixel(&mut bitmap, 0, 0, 0xff0000ff);
+        set_bitmap_pixel(&mut bitmap, 1, 0, 0x0000ffff);
+        let fingerprint = create_bitmap_fingerprint(&bitmap, 1);
+        assert_eq!(fingerprint.grid_size, 1);
+        assert_eq!(fingerprint.cells, vec![128, 0, 128]);
+    }
 }
 
 mod format_bitmap_fingerprint {
@@ -110,9 +120,14 @@ mod initialize_bitmap_fingerprint {
     #[test]
     fn sets_grid_size_and_cells() {
         let mut fp: BitmapFingerprint = allocate_entity();
-        initialize_bitmap_fingerprint(&mut fp, 3, vec![1, 2, 3]);
+        set_entity_uid(&mut fp, "fingerprint".to_string());
+        let cells = vec![1, 2, 3];
+        let cells_pointer = cells.as_ptr();
+        initialize_bitmap_fingerprint(&mut fp, 3, cells);
         assert_eq!(fp.grid_size, 3);
         assert_eq!(fp.cells, vec![1, 2, 3]);
+        assert_eq!(get_entity_uid(&mut fp), "fingerprint");
+        assert_eq!(fp.cells.as_ptr(), cells_pointer);
     }
 }
 
