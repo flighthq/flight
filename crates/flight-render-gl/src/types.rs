@@ -13,9 +13,9 @@ use flight_materials::{BlendMode, Material2D, MaterialData};
 use flight_node::NodeRef;
 use flight_registry::KindMap;
 use flight_render::{
-    CanvasHostSurfaces, RenderProxies2D, RenderRegistries, RenderState, RenderStateBackend,
-    RenderStateFields, RenderStateOptions, RenderStateRuntime, RenderTargetAxes,
-    RenderTargetAxisDifference, ShapeRasterizer,
+    CanvasHostSurfaces, RenderProxies2D, RenderProxy2D, RenderRegistries, RenderState,
+    RenderStateBackend, RenderStateFields, RenderStateOptions, RenderStateRuntime,
+    RenderTargetAxes, RenderTargetAxisDifference, ShapeRasterizer,
 };
 use flight_signals::Signal;
 use flight_surface::HostCanvasCapability;
@@ -127,10 +127,32 @@ pub struct GlCompressedTextureSupport {
 pub type GlCompressedTextureDecoder =
     fn(TextureContainerFormat, u32, u32, &[u8]) -> Option<Vec<u8>>;
 
-/// Opaque opt-in color-adjustment capability. The implementation lives in the color-adjustment
-/// package; render-gl retains it by shared identity without importing that optional feature.
-pub type GlColorAdjustmentMaterialFeature = Arc<dyn std::any::Any + Send + Sync>;
+/// The opt-in inline color-adjustment fold for the GL sprite/quad batch (TS
+/// `GlColorAdjustmentMaterialFeature`). Registered as persistent per-state policy by scene2d-gl's
+/// `register_gl_color_adjustment_material_feature`; absent on a state that never opted in. The
+/// shader chunks are the backend-authored pointwise color remap that material-family compilers
+/// splice into promoted variants; `draw_shape_meshes` is the tessellated solid-fill hook; `record`
+/// folds one instance's adjustment into the active batch; `flush` draws a folded batch, returning
+/// `false` when the batch had no adjustment so the caller runs the lean material path.
+pub struct GlColorAdjustmentMaterialFeature {
+    pub fragment_shader_chunk: &'static str,
+    pub matrix_fragment_shader_chunk: &'static str,
+    pub draw_shape_meshes: fn(&mut GlRenderState, &RenderProxy2D<GlRenderState>, &[GlShapeMesh]),
+    pub flush: fn(&mut GlRenderState, usize) -> bool,
+    pub record: fn(&mut GlRenderStateRuntime, Option<&GlColorAdjustmentData>, usize),
+}
 pub type GlColorAdjustmentMaterialFeatureGuard = fn(&mut GlRenderState, &GlColorAdjustmentData);
+
+/// One tessellated solid-fill region of a Shape, ready for the flat-color mesh path (TS
+/// `GlShapeMesh`): interleaved xy `vertices`, triangle `indices`, a packed `0xRRGGBBAA` fill
+/// `color`, and the region `alpha`.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct GlShapeMesh {
+    pub vertices: Vec<f32>,
+    pub indices: Vec<u16>,
+    pub color: u32,
+    pub alpha: f32,
+}
 
 /// A color adjustment folded into the quad batch (TS `ColorScaleBias | TintMaterialData | readonly
 /// number[]`). Plain values: the eight scale/bias floats in channel order, the packed `0xRRGGBBAA`
@@ -380,7 +402,7 @@ pub type GlCompressedTextureUploader = fn(
 #[derive(Clone)]
 pub struct GlRenderRegistries {
     pub blend_realizations: Arc<KindMap<GlBlendRealization>>,
-    pub color_adjustment_feature: Option<GlColorAdjustmentMaterialFeature>,
+    pub color_adjustment_feature: Option<&'static GlColorAdjustmentMaterialFeature>,
     pub color_adjustment_feature_guard: Option<GlColorAdjustmentMaterialFeatureGuard>,
     pub compressed_texture_decoder: Option<GlCompressedTextureDecoder>,
     pub compressed_texture_upload: Option<GlCompressedTextureUploader>,

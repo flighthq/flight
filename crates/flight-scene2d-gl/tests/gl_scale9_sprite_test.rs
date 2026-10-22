@@ -11,8 +11,9 @@ use flight_render::{
     prepare_scene_2d_render, register_node_renderer,
 };
 use flight_render_gl::{
-    GlColorAdjustmentData, GlQuadMaterialRenderer, GlRenderState, GlRenderStateRuntime,
-    register_gl_bitmap_texture_resolver, register_gl_quad_material_renderer,
+    GlColorAdjustmentData, GlColorAdjustmentMaterialFeature, GlQuadMaterialRenderer, GlRenderState,
+    GlRenderStateRuntime, GlShapeMesh, register_gl_bitmap_texture_resolver,
+    register_gl_quad_material_renderer,
 };
 use flight_scene2d::{SCALE9_SPRITE_KIND, Scale9Sprite, create_scale9_sprite};
 use flight_scene2d_gl::contract::*;
@@ -214,8 +215,7 @@ mod draw_gl_scale9_sprite {
             "flight.test.Scale9Material".to_string(),
             &RECORDING_MATERIAL_RENDERER,
         );
-        let feature: &'static GlColorAdjustmentMaterialFeature = &RECORDING_FEATURE;
-        state.gl_registries.color_adjustment_feature = Some(Arc::new(feature));
+        state.gl_registries.color_adjustment_feature = Some(&RECORDING_FEATURE);
         let mut material = create_standard_material();
         material.material_fields_mut().kind = "flight.test.Scale9Material".to_string();
         let material: Ref<dyn Material2D> = Arc::new(RwLock::new(material));

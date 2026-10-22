@@ -1,5 +1,4 @@
 use std::num::NonZeroU32;
-use std::sync::Arc;
 
 use flight_render::are_color_adjustments_enabled;
 use flight_render_gl::{
@@ -107,19 +106,11 @@ mod register_gl_color_adjustment_material_feature {
     fn is_idempotent() {
         let mut state = create_gl_state();
         register_gl_color_adjustment_material_feature(&mut state);
-        let table = state
-            .gl_registries
-            .color_adjustment_feature
-            .clone()
-            .unwrap();
+        let table = state.gl_registries.color_adjustment_feature.unwrap();
         register_gl_color_adjustment_material_feature(&mut state);
-        assert!(Arc::ptr_eq(
-            state
-                .gl_registries
-                .color_adjustment_feature
-                .as_ref()
-                .unwrap(),
-            &table
+        assert!(std::ptr::eq(
+            state.gl_registries.color_adjustment_feature.unwrap(),
+            table
         ));
     }
 

@@ -3,14 +3,14 @@
 use flight_entity::throw_error;
 use flight_render::RenderProxy2D;
 use flight_render_gl::{
-    GlBoundShader, GlRenderState, GlShapeMeshBinding, GlShapeMeshResources, create_gl_program,
+    GlBoundShader, GlRenderState, GlShapeMesh, GlShapeMeshBinding, GlShapeMeshResources,
+    create_gl_program, get_gl_color_adjustment_material_feature,
 };
 use glow::HasContext;
 
 use crate::gl_quad_batch_writer::{
     flush_gl_quad_batch_writer, get_gl_viewport_size, gl_f32_bytes, gl_u16_bytes,
 };
-use crate::types::{GlShapeMesh, resolve_gl_color_adjustment_material_feature};
 
 // GPU tessellated solid-fill path for Shape — the replacement for the canvas-raster-to-texture
 // shortcut (which is resolution-bound, so circles go jagged when scaled up). Each fill region is
@@ -123,7 +123,7 @@ pub fn draw_gl_shape_meshes(
     if meshes.is_empty() {
         return;
     }
-    if let Some(fold) = resolve_gl_color_adjustment_material_feature(state)
+    if let Some(fold) = get_gl_color_adjustment_material_feature(state)
         && (render_proxy.color_matrix.is_some() || render_proxy.color_scale_bias.is_some())
     {
         (fold.draw_shape_meshes)(state, render_proxy, meshes);

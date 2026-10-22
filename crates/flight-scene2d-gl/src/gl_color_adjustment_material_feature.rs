@@ -1,14 +1,13 @@
 // flight-lint: allow-file(contract-vocabulary) D17 the color-adjustment fold drives glow native handles over thread-bound render-gl state
 
-use std::sync::Arc;
-
 use flight_entity::throw_error;
 use flight_materials::{ColorScaleBias, MaterialData, TintMaterialData};
 use flight_render::{RenderProxy2D, enable_color_adjustments};
 use flight_render_gl::{
-    GlColorAdjustmentData, GlColorAdjustmentResources, GlColorScaleBiasInstancedShader,
-    GlRenderState, GlRenderStateRuntime, GlShapeMeshBinding, GlShapeMeshColorScaleBiasShader,
-    GlUniformColorScaleBiasShader, create_gl_program,
+    GlColorAdjustmentData, GlColorAdjustmentMaterialFeature, GlColorAdjustmentResources,
+    GlColorScaleBiasInstancedShader, GlRenderState, GlRenderStateRuntime, GlShapeMesh,
+    GlShapeMeshBinding, GlShapeMeshColorScaleBiasShader, GlUniformColorScaleBiasShader,
+    create_gl_program, get_gl_color_adjustment_material_feature,
 };
 use glow::{HasContext, NativeBuffer};
 
@@ -17,7 +16,6 @@ use crate::gl_quad_batch_writer::{
     set_gl_quad_batch_world_and_texture, use_gl_quad_batch_program,
 };
 use crate::gl_shape_mesh::{draw_gl_shape_mesh_batch, ensure_gl_shape_mesh_program};
-use crate::types::{GlColorAdjustmentMaterialFeature, GlShapeMesh};
 
 macro_rules! gl_color_adjustment_fragment_chunk {
     () => {
@@ -1170,12 +1168,10 @@ fn record_gl_color_adjustment(
 // without ever splitting the batch. Idempotent; safe to call per state.
 pub fn register_gl_color_adjustment_material_feature(state: &mut GlRenderState) {
     enable_color_adjustments(state);
-    let installed = crate::types::resolve_gl_color_adjustment_material_feature(state)
+    let installed = get_gl_color_adjustment_material_feature(state)
         .is_some_and(|feature| std::ptr::eq(feature, &GL_COLOR_ADJUSTMENT_MATERIAL_FEATURE));
     if !installed {
-        let feature: &'static GlColorAdjustmentMaterialFeature =
-            &GL_COLOR_ADJUSTMENT_MATERIAL_FEATURE;
-        state.gl_registries.color_adjustment_feature = Some(Arc::new(feature));
+        state.gl_registries.color_adjustment_feature = Some(&GL_COLOR_ADJUSTMENT_MATERIAL_FEATURE);
     }
     let mut runtime = state.gl_runtime.borrow_mut();
     if runtime.quad_batch_writer_color_scale_bias_mode.is_none() {

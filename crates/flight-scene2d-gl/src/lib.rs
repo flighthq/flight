@@ -79,7 +79,5 @@ pub use contract::GL_SHAPE_RENDERER;
 pub use contract::GL_SPRITE_RENDERER;
 pub use contract::GL_TEXT_LABEL_RENDERER;
 
-pub use contract::GlColorAdjustmentMaterialFeature;
 pub use contract::GlRichTextOverlay;
-pub use contract::GlShapeMesh;
 pub use contract::GlShapeRendererData;

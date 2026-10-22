@@ -8,7 +8,8 @@ use std::sync::Arc;
 use std::sync::RwLock;
 
 use flight_render_gl::{
-    create_gl_context_state, create_gl_render_state, GlContextState, GlRenderState,
+    create_gl_context_state, create_gl_render_state, GlColorAdjustmentMaterialFeature,
+    GlContextState, GlRenderState,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -292,6 +293,10 @@ pub fn make_external_options(
     };
 }
 
+pub fn make_color_adjustment_feature() -> &'static GlColorAdjustmentMaterialFeature {
+    return &TEST_COLOR_ADJUSTMENT_FEATURE;
+}
+
 pub fn make_compressed_support() -> flight_render_gl::GlCompressedTextureSupport {
     return flight_render_gl::GlCompressedTextureSupport::default();
 }
@@ -473,6 +478,15 @@ fn load(name: &str) -> *const c_void {
     };
     return pointer.cast();
 }
+
+static TEST_COLOR_ADJUSTMENT_FEATURE: GlColorAdjustmentMaterialFeature =
+    GlColorAdjustmentMaterialFeature {
+        fragment_shader_chunk: "",
+        matrix_fragment_shader_chunk: "",
+        draw_shape_meshes: |_, _, _| {},
+        flush: |_, _| false,
+        record: |_, _, _| {},
+    };
 
 static VERSION: &[u8] = b"4.6 MockGL\0";
 

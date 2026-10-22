@@ -6,12 +6,11 @@ use flight_materials::{BlendMode, Material2D, MaterialData};
 use flight_render_gl::{
     GlColorAdjustmentData, GlQuadBatchResources, GlQuadBatchShader, GlQuadMaterialRenderer,
     GlRenderState, GlTextureRealization, apply_gl_sampler_state, bind_gl_texture_realization,
-    create_gl_program, get_gl_color_adjustment_material_feature_guard,
+    create_gl_program, get_gl_color_adjustment_material_feature,
+    get_gl_color_adjustment_material_feature_guard,
 };
 use flight_texture::Sampler;
 use glow::{HasContext, NativeProgram, NativeTexture, NativeUniformLocation};
-
-use crate::types::resolve_gl_color_adjustment_material_feature;
 
 // Base per-instance layout (13 floats = 52 bytes, world-space axes + affine UVs + alpha):
 // [0-1]  axisUX/Y     — world-space horizontal quad axis, already multiplied by width
@@ -279,7 +278,7 @@ pub fn flush_gl_quad_batch_writer(state: &mut GlRenderState) {
     // The color-adjustment fold is opt-in (register_gl_color_adjustment_material_feature): when
     // installed it selects and binds its program for a tinted batch, returning true; when absent, or
     // for an untinted batch, the lean material path runs.
-    let ct_handled = match resolve_gl_color_adjustment_material_feature(state) {
+    let ct_handled = match get_gl_color_adjustment_material_feature(state) {
         Some(feature) => (feature.flush)(state, count),
         None => false,
     };
@@ -504,7 +503,7 @@ pub fn record_gl_quad_batch_color_scale_bias(
     color_scale_bias: Option<&GlColorAdjustmentData>,
     instance_index: usize,
 ) {
-    if let Some(feature) = resolve_gl_color_adjustment_material_feature(state) {
+    if let Some(feature) = get_gl_color_adjustment_material_feature(state) {
         (feature.record)(
             &mut state.gl_runtime.borrow_mut(),
             color_scale_bias,

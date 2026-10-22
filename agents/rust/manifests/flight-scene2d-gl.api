@@ -137,9 +137,7 @@ src/lib.rs: pub use contract::GL_SCENE2D_RENDERER;
 src/lib.rs: pub use contract::GL_SHAPE_RENDERER;
 src/lib.rs: pub use contract::GL_SPRITE_RENDERER;
 src/lib.rs: pub use contract::GL_TEXT_LABEL_RENDERER;
-src/lib.rs: pub use contract::GlColorAdjustmentMaterialFeature;
 src/lib.rs: pub use contract::GlRichTextOverlay;
-src/lib.rs: pub use contract::GlShapeMesh;
 src/lib.rs: pub use contract::GlShapeRendererData;
 src/lib.rs: pub use contract::create_gl_cache_state;
 src/lib.rs: pub use contract::create_gl_velocity_target;
@@ -164,10 +162,8 @@ src/lib.rs: pub use crate::gl_tilemap::*;
 src/lib.rs: pub use crate::scene2d_gl_pipeline::*;
 src/scene2d_gl_pipeline.rs: pub fn gl_render_infrastructure() -> GlRenderStateOptions
 src/scene2d_gl_pipeline.rs: pub fn gl_scene2d_render_preset() -> GlRenderStateOptions
-src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct GlShapeMesh { pub vertices: Vec<f32>, pub indices: Vec<u16>, pub color: u32, pub alpha: f32, }
 src/types.rs: #[derive(Default)] pub struct GlRichTextData { pub(crate) renderer_data: RendererDataFields, pub alloc_h: f32, pub alloc_w: f32, pub image: Option<Ref<ImageResource>>, pub surface: Option<Ref<CanvasSurface>>, }
 src/types.rs: #[derive(Default)] pub struct GlScale9ShapeData { pub(crate) renderer_data: RendererDataFields, pub image: Option<Ref<ImageResource>>, pub last_h: f32, pub last_scale_x: f32, pub last_scale_y: f32, pub last_content_id: i64, pub last_pixel_ratio: f32, pub last_w: f32, pub surface: Option<Ref<CanvasSurface>>, }
 src/types.rs: #[derive(Default)] pub struct GlShapeRendererData { pub(crate) renderer_data: RendererDataFields, pub image: Option<Ref<ImageResource>>, pub last_content_id: i64, pub last_h: f32, pub last_pixel_ratio: f32, pub last_w: f32, pub mesh_version: i64, pub meshes: Option<Vec<GlShapeMesh>>, pub surface: Option<Ref<CanvasSurface>>, }
 src/types.rs: #[derive(Default)] pub struct GlTextLabelData { pub(crate) renderer_data: RendererDataFields, pub alloc_h: f32, pub alloc_w: f32, pub image: Option<Ref<ImageResource>>, pub last_content_id: i64, pub last_pixel_ratio: f32, pub log_h: f32, pub log_w: f32, pub surface: Option<Ref<CanvasSurface>>, }
-src/types.rs: pub struct GlColorAdjustmentMaterialFeature { pub fragment_shader_chunk: &'static str, pub matrix_fragment_shader_chunk: &'static str, pub draw_shape_meshes: fn(&mut GlRenderState, &RenderProxy2D<GlRenderState>, &[GlShapeMesh]), pub flush: fn(&mut GlRenderState, usize) -> bool, pub record: fn(&mut GlRenderStateRuntime, Option<&GlColorAdjustmentData>, usize), }
 src/types.rs: pub type GlRichTextOverlay = fn(&CanvasRenderingContext2D, &Ref<flight_text::RichText>, &flight_textlayout::TextLayoutResult, f32, f32, &str,);

@@ -308,7 +308,8 @@ mod create_gl_render_state_context_sharing {
     use flight_texture::{TextureColorSpace, TextureVariant};
 
     use crate::gl_test_helper::{
-        calls_named, clear_calls, make_context_state, make_proxies, make_state_options,
+        calls_named, clear_calls, make_color_adjustment_feature, make_context_state, make_proxies,
+        make_state_options,
     };
 
     #[derive(Default)]
@@ -386,8 +387,8 @@ mod create_gl_render_state_context_sharing {
             },
         );
         register_gl_texture_resolver(&mut screen, "acme.Texture".to_string(), Some(resolver));
-        let feature: Arc<dyn std::any::Any + Send + Sync> = Arc::new("feature".to_string());
-        screen.gl_registries.color_adjustment_feature = Some(feature.clone());
+        let feature = make_color_adjustment_feature();
+        screen.gl_registries.color_adjustment_feature = Some(feature);
         let options = options_from_state(&screen);
         let mut offscreen = create_gl_render_state(context, Some(&options));
 
@@ -420,13 +421,9 @@ mod create_gl_render_state_context_sharing {
             &offscreen.gl_registries.blend_realizations,
             &screen.gl_registries.blend_realizations
         ));
-        assert!(Arc::ptr_eq(
-            offscreen
-                .gl_registries
-                .color_adjustment_feature
-                .as_ref()
-                .unwrap(),
-            &feature
+        assert!(std::ptr::eq(
+            offscreen.gl_registries.color_adjustment_feature.unwrap(),
+            feature
         ));
 
         register_gl_texture_resolver(&mut screen, "acme.Texture".to_string(), None);
@@ -737,20 +734,20 @@ mod flush_gl_delete_queue {
 }
 
 mod get_gl_color_adjustment_material_feature {
-    use std::sync::Arc;
-
     use flight_render_gl::{create_gl_render_state, get_gl_color_adjustment_material_feature};
 
-    use crate::gl_test_helper::{make_context_state, make_state_options};
+    use crate::gl_test_helper::{
+        make_color_adjustment_feature, make_context_state, make_state_options,
+    };
 
     #[test]
     fn resolves_only_a_bound_feature_entry() {
-        let feature: Arc<dyn std::any::Any + Send + Sync> = Arc::new(String::from("feature"));
+        let feature = make_color_adjustment_feature();
         let mut state = create_gl_render_state(make_context_state(), Some(&make_state_options()));
         assert!(get_gl_color_adjustment_material_feature(&state).is_none());
-        state.gl_registries.color_adjustment_feature = Some(feature.clone());
+        state.gl_registries.color_adjustment_feature = Some(feature);
         let actual = get_gl_color_adjustment_material_feature(&state).unwrap();
-        assert!(Arc::ptr_eq(&feature, &actual));
+        assert!(std::ptr::eq(feature, actual));
         state.gl_registries.color_adjustment_feature = None;
         assert!(get_gl_color_adjustment_material_feature(&state).is_none());
     }

@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 
 use flight_render::RenderProxy2D;
-use flight_render_gl::GlRenderState;
+use flight_render_gl::{GlRenderState, GlShapeMesh};
 use flight_scene2d_gl::contract::*;
 
 use crate::gl_test_helper::{

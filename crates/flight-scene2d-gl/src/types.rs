@@ -1,26 +1,14 @@
 // flight-lint: allow-file(contract-vocabulary, file-structure) D17 GL renderer contracts carry thread-bound render-gl state, opaque host handles and backend-typed callbacks
-//! The types scene2d-gl owns (TS `GlShapeMesh.ts`, `GlShapeRendererData.ts`,
-//! `GlRichTextOverlay.ts`, and the concrete `GlColorAdjustmentMaterialFeature` contract whose
-//! registry slot render-gl holds erased).
+//! The types scene2d-gl owns (TS `GlShapeRendererData.ts`, `GlRichTextOverlay.ts` and the
+//! renderer-private scratch records). The color-adjustment feature contract and `GlShapeMesh` live
+//! in render-gl, which types the registry slot (D8 lowest namer).
 
 use flight_entity::Ref;
 use flight_host::CanvasRenderingContext2D;
 use flight_image::ImageResource;
 use flight_node::RendererDataFields;
-use flight_render::RenderProxy2D;
-use flight_render_gl::{GlColorAdjustmentData, GlRenderState, GlRenderStateRuntime};
+use flight_render_gl::GlShapeMesh;
 use flight_surface::CanvasSurface;
-
-/// One tessellated solid-fill region of a Shape, ready for the flat-color mesh path (TS
-/// `GlShapeMesh`): interleaved xy `vertices`, triangle `indices`, a packed `0xRRGGBBAA` fill
-/// `color`, and the region `alpha`.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct GlShapeMesh {
-    pub vertices: Vec<f32>,
-    pub indices: Vec<u16>,
-    pub color: u32,
-    pub alpha: f32,
-}
 
 /// NodeRenderer-private scratch for a Shape node on the GL backend (TS `GlShapeRendererData`). The
 /// two halves are independent: `meshes` caches the tessellated form (`None` when some region has
@@ -36,17 +24,6 @@ pub struct GlShapeRendererData {
     pub mesh_version: i64,
     pub meshes: Option<Vec<GlShapeMesh>>,
     pub surface: Option<Ref<CanvasSurface>>,
-}
-
-/// The opt-in inline color-adjustment fold for the GL sprite/quad batch (TS
-/// `GlColorAdjustmentMaterialFeature`). Registered as persistent per-state policy by
-/// `register_gl_color_adjustment_material_feature` into render-gl's erased registry slot.
-pub struct GlColorAdjustmentMaterialFeature {
-    pub fragment_shader_chunk: &'static str,
-    pub matrix_fragment_shader_chunk: &'static str,
-    pub draw_shape_meshes: fn(&mut GlRenderState, &RenderProxy2D<GlRenderState>, &[GlShapeMesh]),
-    pub flush: fn(&mut GlRenderState, usize) -> bool,
-    pub record: fn(&mut GlRenderStateRuntime, Option<&GlColorAdjustmentData>, usize),
 }
 
 /// NodeRenderer-private scratch for a Scale9Shape node (TS `GlScale9ShapeData`): the device-pixel
@@ -141,16 +118,6 @@ pub(crate) struct GlVelocityProgram {
 pub(crate) struct GlRenderCacheTargetEntry {
     pub(crate) cache: u64,
     pub(crate) target: std::rc::Rc<std::cell::RefCell<flight_render_gl::GlTextureRenderTarget>>,
-}
-
-/// Resolves render-gl's erased color-adjustment slot to this package's concrete feature contract.
-pub(crate) fn resolve_gl_color_adjustment_material_feature(
-    state: &GlRenderState,
-) -> Option<&'static GlColorAdjustmentMaterialFeature> {
-    let slot = state.gl_registries.color_adjustment_feature.as_ref()?;
-    return slot
-        .downcast_ref::<&'static GlColorAdjustmentMaterialFeature>()
-        .copied();
 }
 
 flight_node::impl_renderer_data!(GlRichTextData);

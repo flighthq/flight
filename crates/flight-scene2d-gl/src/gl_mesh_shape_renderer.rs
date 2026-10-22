@@ -5,7 +5,7 @@ use flight_path::tessellate_path;
 use flight_render::{
     BatchFormat, NodeRenderer, RenderProxy2D, RenderRegistryTable, emit_render_registry_miss,
 };
-use flight_render_gl::GlRenderState;
+use flight_render_gl::{GlRenderState, GlShapeMesh};
 use flight_shape::contract::{
     SHAPE_KIND, ShapeCommandToken, ShapeFillRegion, ShapeStrokeRegion, get_shape_fill_regions,
     get_shape_stroke_outline_regions, get_shape_stroke_regions,
@@ -14,7 +14,6 @@ use flight_shape::contract::{
 use crate::gl_shape_commands::get_gl_shape_commands;
 use crate::gl_shape_data::{create_gl_shape_data, destroy_gl_shape_data, get_gl_shape_data};
 use crate::gl_shape_mesh::draw_gl_shape_meshes;
-use crate::types::GlShapeMesh;
 
 /// One fill or stroke region of the fill-before-stroke source list (TS
 /// `ShapeFillRegion | ShapeStrokeRegion`).

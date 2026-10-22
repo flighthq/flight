@@ -375,8 +375,8 @@ pub fn flush_gl_delete_queue(context_state: &GlContextState) {
 
 pub fn get_gl_color_adjustment_material_feature(
     state: &GlRenderState,
-) -> Option<crate::GlColorAdjustmentMaterialFeature> {
-    return state.gl_registries.color_adjustment_feature.clone();
+) -> Option<&'static crate::GlColorAdjustmentMaterialFeature> {
+    return state.gl_registries.color_adjustment_feature;
 }
 
 pub fn get_gl_color_adjustment_material_feature_guard(
