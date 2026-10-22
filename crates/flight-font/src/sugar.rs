@@ -77,8 +77,10 @@ mod sugar_tests {
     #[test]
     fn hostfontloadingcapability_load_resource_from_bytes_matches_the_free_function() {
         let host = backend(Arc::new(Mutex::new(Vec::new())));
-        let mut method = crate::font_resource::create_font_resource("Family");
-        let mut free = crate::font_resource::create_font_resource("Family");
+        let mut method = crate::font_resource::create_font_resource();
+        method.family = "Family".to_string();
+        let mut free = crate::font_resource::create_font_resource();
+        free.family = "Family".to_string();
         assert!(block_on(host.load_resource_from_bytes(&mut method, &bytes())).is_ok());
         assert!(block_on(load_font_resource_from_bytes(&host, &mut free, &bytes())).is_ok());
         assert_eq!(method.face.unwrap().family, free.face.unwrap().family);
@@ -87,8 +89,10 @@ mod sugar_tests {
     #[test]
     fn hostfontloadingcapability_load_resource_from_name_matches_the_free_function() {
         let host = backend(Arc::new(Mutex::new(Vec::new())));
-        let mut method = crate::font_resource::create_font_resource("Family");
-        let mut free = crate::font_resource::create_font_resource("Family");
+        let mut method = crate::font_resource::create_font_resource();
+        method.family = "Family".to_string();
+        let mut free = crate::font_resource::create_font_resource();
+        free.family = "Family".to_string();
         assert!(block_on(host.load_resource_from_name(&mut method)).is_ok());
         assert!(block_on(load_font_resource_from_name(&host, &mut free)).is_ok());
         assert!(method.face.is_none());
@@ -98,8 +102,10 @@ mod sugar_tests {
     #[test]
     fn hostfontloadingcapability_load_resource_from_url_matches_the_free_function() {
         let host = backend(Arc::new(Mutex::new(Vec::new())));
-        let mut method = crate::font_resource::create_font_resource("Family");
-        let mut free = crate::font_resource::create_font_resource("Family");
+        let mut method = crate::font_resource::create_font_resource();
+        method.family = "Family".to_string();
+        let mut free = crate::font_resource::create_font_resource();
+        free.family = "Family".to_string();
         assert!(block_on(host.load_resource_from_url(&mut method, "font.woff2")).is_ok());
         assert!(block_on(load_font_resource_from_url(&host, &mut free, "font.woff2")).is_ok());
         assert_eq!(method.face.unwrap().family, free.face.unwrap().family);
@@ -108,8 +114,10 @@ mod sugar_tests {
     #[test]
     fn hostfontloadingcapability_load_resource_from_urls_matches_the_free_function() {
         let host = backend(Arc::new(Mutex::new(Vec::new())));
-        let mut method = crate::font_resource::create_font_resource("Family");
-        let mut free = crate::font_resource::create_font_resource("Family");
+        let mut method = crate::font_resource::create_font_resource();
+        method.family = "Family".to_string();
+        let mut free = crate::font_resource::create_font_resource();
+        free.family = "Family".to_string();
         let sources = [FontUrl {
             format: None,
             url: "font.woff2".to_string(),

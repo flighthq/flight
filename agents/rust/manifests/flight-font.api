@@ -14,9 +14,9 @@ src/contract.rs: pub use crate::types::*;
 src/font_format.rs: impl FontFormatData<'_> :: fn detect_font_format(self) -> Option<&'static str>
 src/font_format.rs: pub fn detect_font_format(bytes: FontFormatData<'_>) -> Option<&'static str>
 src/font_format.rs: pub fn infer_font_format_from_url(url: &str) -> Option<&'static str>
-src/font_resource.rs: impl FontResource :: fn new(family: &str) -> Self
-src/font_resource.rs: pub fn create_font_resource(family: &str) -> FontResource
-src/font_resource.rs: pub fn initialize_font_resource(out: &mut FontResource, family: &str)
+src/font_resource.rs: impl FontResource :: fn new() -> Self
+src/font_resource.rs: pub fn create_font_resource() -> FontResource
+src/font_resource.rs: pub fn initialize_font_resource(out: &mut FontResource)
 src/font_resource_from.rs: pub async fn load_font_resource_from_bytes(host_font_loading: &HostFontLoadingCapability, out: &mut FontResource, bytes: &ArrayBufferView,) -> Result<(), Unknown>
 src/font_resource_from.rs: pub async fn load_font_resource_from_name(host_font_loading: &HostFontLoadingCapability, out: &mut FontResource,) -> Result<(), Unknown>
 src/font_resource_from.rs: pub async fn load_font_resource_from_url(host_font_loading: &HostFontLoadingCapability, out: &mut FontResource, url: &str,) -> Result<(), Unknown>

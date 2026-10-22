@@ -20,7 +20,8 @@ mod load_font_resource_from_bytes {
     #[test]
     fn constructs_loads_registers_and_attaches_under_the_resource_family() {
         let (backend, record) = backend();
-        let mut resource = create_font_resource("TestFont");
+        let mut resource = create_font_resource();
+        resource.family = "TestFont".to_string();
         block_on(load_font_resource_from_bytes(
             &backend,
             &mut resource,
@@ -42,9 +43,11 @@ mod load_font_resource_from_bytes {
         let backing = create_array_buffer_from_bytes(Box::new([1, 2, 3, 4, 5, 6, 7, 8]));
         let view =
             create_array_buffer_view(&backing, 2, 4, ArrayBufferViewKind::Uint8Array).unwrap();
+        let mut resource = create_font_resource();
+        resource.family = "TestFont".to_string();
         block_on(load_font_resource_from_bytes(
             &backend,
-            &mut create_font_resource("TestFont"),
+            &mut resource,
             &view,
         ))
         .unwrap();
@@ -60,7 +63,8 @@ mod load_font_resource_from_bytes {
     fn propagates_rejection_without_registering_or_attaching() {
         let (backend, record) = backend();
         *record.load_error.lock().unwrap() = Some(rejection("bad font"));
-        let mut resource = create_font_resource("TestFont");
+        let mut resource = create_font_resource();
+        resource.family = "TestFont".to_string();
         let error = block_on(load_font_resource_from_bytes(
             &backend,
             &mut resource,
@@ -76,7 +80,8 @@ mod load_font_resource_from_bytes {
     #[test]
     fn leaves_a_previously_loaded_face_attached_when_reload_fails() {
         let (backend, record) = backend();
-        let mut resource = create_font_resource("TestFont");
+        let mut resource = create_font_resource();
+        resource.family = "TestFont".to_string();
         block_on(load_font_resource_from_bytes(
             &backend,
             &mut resource,
@@ -104,11 +109,9 @@ mod load_font_resource_from_name {
     #[test]
     fn queries_the_family_via_the_escaped_font_shorthand() {
         let (backend, record) = backend();
-        block_on(load_font_resource_from_name(
-            &backend,
-            &mut create_font_resource("Josh's Font"),
-        ))
-        .unwrap();
+        let mut resource = create_font_resource();
+        resource.family = "Josh's Font".to_string();
+        block_on(load_font_resource_from_name(&backend, &mut resource)).unwrap();
         assert_eq!(&*record.lookups.lock().unwrap(), &["1em 'Josh\\'s Font'"]);
     }
 
@@ -122,7 +125,8 @@ mod load_font_resource_from_name {
             .lock()
             .unwrap()
             .extend([first.clone(), second]);
-        let mut resource = create_font_resource("TestFont");
+        let mut resource = create_font_resource();
+        resource.family = "TestFont".to_string();
         block_on(load_font_resource_from_name(&backend, &mut resource)).unwrap();
         assert!(Arc::ptr_eq(resource.face.as_ref().unwrap(), &first));
     }
@@ -130,7 +134,8 @@ mod load_font_resource_from_name {
     #[test]
     fn leaves_the_face_absent_when_no_registered_faces_are_found() {
         let (backend, _record) = backend();
-        let mut resource = create_font_resource("UnknownFont");
+        let mut resource = create_font_resource();
+        resource.family = "UnknownFont".to_string();
         block_on(load_font_resource_from_name(&backend, &mut resource)).unwrap();
         assert!(resource.face.is_none());
     }
@@ -139,11 +144,9 @@ mod load_font_resource_from_name {
     fn registers_and_constructs_nothing_for_a_name_lookup() {
         let (backend, record) = backend();
         record.existing.lock().unwrap().push(face("existing"));
-        block_on(load_font_resource_from_name(
-            &backend,
-            &mut create_font_resource("TestFont"),
-        ))
-        .unwrap();
+        let mut resource = create_font_resource();
+        resource.family = "TestFont".to_string();
+        block_on(load_font_resource_from_name(&backend, &mut resource)).unwrap();
         assert!(record.added.lock().unwrap().is_empty());
         assert!(record.constructions.lock().unwrap().is_empty());
     }
@@ -152,7 +155,8 @@ mod load_font_resource_from_name {
     fn propagates_a_lookup_failure_without_replacing_the_face() {
         let (backend, record) = backend();
         let existing = face("existing");
-        let mut resource = create_font_resource("MyFont");
+        let mut resource = create_font_resource();
+        resource.family = "MyFont".to_string();
         resource.face = Some(existing.clone());
         *record.lookup_error.lock().unwrap() = Some(rejection("no such font"));
         let error = block_on(load_font_resource_from_name(&backend, &mut resource))
@@ -169,7 +173,8 @@ mod load_font_resource_from_url {
     #[test]
     fn builds_loads_registers_and_attaches_one_url_source() {
         let (backend, record) = backend();
-        let mut resource = create_font_resource("MyFont");
+        let mut resource = create_font_resource();
+        resource.family = "MyFont".to_string();
         block_on(load_font_resource_from_url(
             &backend,
             &mut resource,
@@ -191,9 +196,11 @@ mod load_font_resource_from_url {
     #[test]
     fn adds_no_format_hint_to_the_single_url_form() {
         let (backend, record) = backend();
+        let mut resource = create_font_resource();
+        resource.family = "MyFont".to_string();
         block_on(load_font_resource_from_url(
             &backend,
-            &mut create_font_resource("MyFont"),
+            &mut resource,
             "font.woff2",
         ))
         .unwrap();
@@ -208,7 +215,8 @@ mod load_font_resource_from_url {
     fn propagates_rejection_without_registering_or_attaching() {
         let (backend, record) = backend();
         *record.load_error.lock().unwrap() = Some(rejection("bad url"));
-        let mut resource = create_font_resource("MyFont");
+        let mut resource = create_font_resource();
+        resource.family = "MyFont".to_string();
         assert!(
             block_on(load_font_resource_from_url(
                 &backend,
@@ -236,7 +244,8 @@ mod load_font_resource_from_urls {
     #[test]
     fn composes_and_attaches_a_comma_joined_source_with_format_hints() {
         let (backend, record) = backend();
-        let mut resource = create_font_resource("MyFont");
+        let mut resource = create_font_resource();
+        resource.family = "MyFont".to_string();
         block_on(load_font_resource_from_urls(
             &backend,
             &mut resource,
@@ -262,9 +271,11 @@ mod load_font_resource_from_urls {
     #[test]
     fn infers_the_format_from_the_extension() {
         let (backend, record) = backend();
+        let mut resource = create_font_resource();
+        resource.family = "MyFont".to_string();
         block_on(load_font_resource_from_urls(
             &backend,
-            &mut create_font_resource("MyFont"),
+            &mut resource,
             &[FontUrl {
                 format: None,
                 url: "font.otf".to_string(),
@@ -280,9 +291,11 @@ mod load_font_resource_from_urls {
     #[test]
     fn omits_the_format_hint_when_none_can_be_inferred() {
         let (backend, record) = backend();
+        let mut resource = create_font_resource();
+        resource.family = "MyFont".to_string();
         block_on(load_font_resource_from_urls(
             &backend,
-            &mut create_font_resource("MyFont"),
+            &mut resource,
             &[FontUrl {
                 format: None,
                 url: "font.bin".to_string(),
@@ -295,9 +308,11 @@ mod load_font_resource_from_urls {
     #[test]
     fn mixes_explicit_inferred_and_absent_hints() {
         let (backend, record) = backend();
+        let mut resource = create_font_resource();
+        resource.family = "MyFont".to_string();
         block_on(load_font_resource_from_urls(
             &backend,
-            &mut create_font_resource("MyFont"),
+            &mut resource,
             &[
                 FontUrl {
                     format: Some("woff2".to_string()),
@@ -323,12 +338,9 @@ mod load_font_resource_from_urls {
     #[test]
     fn builds_an_empty_source_for_an_empty_list() {
         let (backend, record) = backend();
-        block_on(load_font_resource_from_urls(
-            &backend,
-            &mut create_font_resource("MyFont"),
-            &[],
-        ))
-        .unwrap();
+        let mut resource = create_font_resource();
+        resource.family = "MyFont".to_string();
+        block_on(load_font_resource_from_urls(&backend, &mut resource, &[])).unwrap();
         assert_eq!(recorded_url_source(&record), "");
     }
 
@@ -336,7 +348,8 @@ mod load_font_resource_from_urls {
     fn propagates_rejection_without_registering_or_attaching() {
         let (backend, record) = backend();
         *record.load_error.lock().unwrap() = Some(rejection("bad url"));
-        let mut resource = create_font_resource("MyFont");
+        let mut resource = create_font_resource();
+        resource.family = "MyFont".to_string();
         assert!(
             block_on(load_font_resource_from_urls(
                 &backend,
