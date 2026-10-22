@@ -31,33 +31,27 @@ pub struct VertexDisplaceModifierOptions {
     pub direction: Option<Vector3>,
 }
 
-pub fn create_vertex_displace_modifier(
-    options: &VertexDisplaceModifierOptions,
-) -> VertexDisplaceModifier {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): callers assign authored modifier fields after construction
+pub fn create_vertex_displace_modifier() -> VertexDisplaceModifier {
     let mut out: VertexDisplaceModifier = allocate_entity();
-    initialize_vertex_displace_modifier(&mut out, options);
+    initialize_vertex_displace_modifier(&mut out);
     return out;
 }
 
-pub fn initialize_vertex_displace_modifier(
-    out: &mut VertexDisplaceModifier,
-    options: &VertexDisplaceModifierOptions,
-) {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): initialization restores canonical defaults before authored assignment
+pub fn initialize_vertex_displace_modifier(out: &mut VertexDisplaceModifier) {
     initialize_modifier(
         out,
         VERTEX_DISPLACE_MODIFIER_KIND.to_string(),
         MODIFIER_SLOT_VERTEX.to_string(),
     );
-    out.source = options.source;
-    out.amplitude = options.amplitude;
-    out.axis = options.axis.clone();
-    out.map = options.map.clone();
-    out.frequency = options.frequency.unwrap_or(1.0);
-    out.speed = options.speed.unwrap_or(1.0);
-    out.direction = options
-        .direction
-        .clone()
-        .unwrap_or_else(|| create_vector3(1.0, 0.0, 0.0));
+    out.source = VertexDisplaceModifierSource::Sine;
+    out.amplitude = 0.0;
+    out.axis = None;
+    out.map = None;
+    out.frequency = 1.0;
+    out.speed = 1.0;
+    out.direction = create_vector3(1.0, 0.0, 0.0);
     return;
 }
 

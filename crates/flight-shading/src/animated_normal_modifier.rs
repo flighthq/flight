@@ -25,28 +25,25 @@ pub struct AnimatedNormalModifierOptions {
     pub secondary_scroll: Option<Vector2>,
 }
 
-pub fn create_animated_normal_modifier(
-    options: &AnimatedNormalModifierOptions,
-) -> AnimatedNormalModifier {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): callers assign authored modifier fields after construction
+pub fn create_animated_normal_modifier() -> AnimatedNormalModifier {
     let mut out: AnimatedNormalModifier = allocate_entity();
-    initialize_animated_normal_modifier(&mut out, options);
+    initialize_animated_normal_modifier(&mut out);
     return out;
 }
 
-pub fn initialize_animated_normal_modifier(
-    out: &mut AnimatedNormalModifier,
-    options: &AnimatedNormalModifierOptions,
-) {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): initialization restores canonical defaults before authored assignment
+pub fn initialize_animated_normal_modifier(out: &mut AnimatedNormalModifier) {
     initialize_modifier(
         out,
         ANIMATED_NORMAL_MODIFIER_KIND.to_string(),
         MODIFIER_SLOT_NORMAL.to_string(),
     );
-    out.map = options.map.clone();
-    out.scroll = options.scroll.clone();
-    out.strength = options.strength.unwrap_or(1.0);
-    out.secondary_map = options.secondary_map.clone();
-    out.secondary_scroll = options.secondary_scroll.clone();
+    out.map = None;
+    out.scroll = create_vector2(0.0, 0.0);
+    out.strength = 1.0;
+    out.secondary_map = None;
+    out.secondary_scroll = None;
     return;
 }
 

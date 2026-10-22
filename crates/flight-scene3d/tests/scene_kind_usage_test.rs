@@ -121,14 +121,12 @@ mod get_scene3d_kind_usage {
     }
     #[test]
     fn reads_actual_shaded_and_custom_stacks_without_replacing_modifier_entity_refs() {
-        let rim: Ref<dyn Modifier> =
-            Arc::new(RwLock::new(create_rim_modifier(&RimModifierOptions {
-                color: 0x49d8ffff,
-                intensity: Some(0.72),
-                power: Some(2.4),
-                bias: None,
-            })));
-        let mut shaded = create_shaded_material(None);
+        let mut rim_modifier = create_rim_modifier();
+        rim_modifier.color = 0x49d8ffff;
+        rim_modifier.intensity = 0.72;
+        rim_modifier.power = 2.4;
+        let rim: Ref<dyn Modifier> = Arc::new(RwLock::new(rim_modifier));
+        let mut shaded = create_shaded_material();
         shaded.modifiers = vec![rim.clone()];
         let scene = create_scene3d(None);
         attach(&scene, vec![Some(Arc::new(RwLock::new(shaded)))]);

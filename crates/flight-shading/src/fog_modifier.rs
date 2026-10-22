@@ -23,23 +23,25 @@ pub struct FogModifierOptions {
     pub density: Option<f32>,
 }
 
-pub fn create_fog_modifier(options: &FogModifierOptions) -> FogModifier {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): callers assign authored modifier fields after construction
+pub fn create_fog_modifier() -> FogModifier {
     let mut out: FogModifier = allocate_entity();
-    initialize_fog_modifier(&mut out, options);
+    initialize_fog_modifier(&mut out);
     return out;
 }
 
-pub fn initialize_fog_modifier(out: &mut FogModifier, options: &FogModifierOptions) {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): initialization restores canonical defaults before authored assignment
+pub fn initialize_fog_modifier(out: &mut FogModifier) {
     initialize_modifier(
         out,
         FOG_MODIFIER_KIND.to_string(),
         MODIFIER_SLOT_EFFECT.to_string(),
     );
-    out.color = options.color;
-    out.mode = options.mode.unwrap_or(FogModifierMode::Linear);
-    out.near = options.near.unwrap_or(0.0);
-    out.far = options.far.unwrap_or(1.0);
-    out.density = options.density.unwrap_or(1.0);
+    out.color = 0;
+    out.mode = FogModifierMode::Linear;
+    out.near = 0.0;
+    out.far = 1.0;
+    out.density = 1.0;
     return;
 }
 

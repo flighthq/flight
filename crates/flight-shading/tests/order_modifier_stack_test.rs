@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use flight_entity::{Ref, allocate_entity};
-use flight_geometry::create_vector2;
 use flight_shading::contract::*;
 
 #[derive(Clone, Debug, Default)]
@@ -18,34 +17,19 @@ fn custom(kind: &str, slot: &str) -> Ref<dyn Modifier> {
 }
 
 fn emissive(color: u32) -> Ref<dyn Modifier> {
-    return crate::modifier_ref(create_emissive_modifier(&EmissiveModifierOptions {
-        color,
-        strength: None,
-        mask: None,
-        facing: None,
-        facing_softness: None,
-    }));
+    let mut modifier = create_emissive_modifier();
+    modifier.color = color;
+    return crate::modifier_ref(modifier);
 }
 
 fn normal() -> Ref<dyn Modifier> {
-    return crate::modifier_ref(create_animated_normal_modifier(
-        &AnimatedNormalModifierOptions {
-            map: None,
-            scroll: create_vector2(0.0, 0.0),
-            strength: None,
-            secondary_map: None,
-            secondary_scroll: None,
-        },
-    ));
+    return crate::modifier_ref(create_animated_normal_modifier());
 }
 
 fn rim(color: u32) -> Ref<dyn Modifier> {
-    return crate::modifier_ref(create_rim_modifier(&RimModifierOptions {
-        color,
-        power: None,
-        intensity: None,
-        bias: None,
-    }));
+    let mut modifier = create_rim_modifier();
+    modifier.color = color;
+    return crate::modifier_ref(modifier);
 }
 
 mod order_modifier_stack {

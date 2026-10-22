@@ -21,27 +21,24 @@ pub struct EnvReflectModifierOptions {
     pub roughness: Option<f32>,
 }
 
-pub fn create_env_reflect_modifier(
-    options: Option<&EnvReflectModifierOptions>,
-) -> EnvReflectModifier {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): callers assign authored modifier fields after construction
+pub fn create_env_reflect_modifier() -> EnvReflectModifier {
     let mut out: EnvReflectModifier = allocate_entity();
-    initialize_env_reflect_modifier(&mut out, options);
+    initialize_env_reflect_modifier(&mut out);
     return out;
 }
 
-pub fn initialize_env_reflect_modifier(
-    out: &mut EnvReflectModifier,
-    options: Option<&EnvReflectModifierOptions>,
-) {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): initialization restores canonical defaults before authored assignment
+pub fn initialize_env_reflect_modifier(out: &mut EnvReflectModifier) {
     initialize_modifier(
         out,
         ENV_REFLECT_MODIFIER_KIND.to_string(),
         MODIFIER_SLOT_EFFECT.to_string(),
     );
-    out.tint = options.and_then(|value| value.tint).unwrap_or(0xffff_ffff);
-    out.intensity = options.and_then(|value| value.intensity).unwrap_or(1.0);
-    out.fresnel_bias = options.and_then(|value| value.fresnel_bias).unwrap_or(0.04);
-    out.roughness = options.and_then(|value| value.roughness).unwrap_or(0.0);
+    out.tint = 0xffff_ffff;
+    out.intensity = 1.0;
+    out.fresnel_bias = 0.04;
+    out.roughness = 0.0;
     return;
 }
 

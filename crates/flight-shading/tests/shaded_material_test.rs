@@ -1,29 +1,12 @@
 use std::sync::{Arc, PoisonError};
 
-use flight_entity::Entity;
+use flight_entity::{Entity, get_entity_uid, set_entity_uid};
 use flight_materials::classic_materials::create_blinn_phong_material;
 use flight_materials::material3d::is_material3d_masked;
 use flight_materials::{BLEND_MODE_ADD, BLEND_MODE_NORMAL, Material3DRef, MaterialAlphaMode};
 use flight_shading::*;
 
 use crate::{modifier_ref, texture_ref};
-
-fn options() -> ShadedMaterialOptions {
-    return ShadedMaterialOptions {
-        alpha_cutoff: None,
-        alpha_mode: None,
-        blend_mode: None,
-        double_sided: None,
-        diffuse: None,
-        diffuse_map: None,
-        modifiers: None,
-        normal_map: None,
-        normal_scale: None,
-        shininess: None,
-        specular: None,
-        specular_map: None,
-    };
-}
 
 mod create_shaded_material {
     use super::*;
@@ -33,34 +16,22 @@ mod create_shaded_material {
         let diffuse_map = texture_ref();
         let normal_map = texture_ref();
         let specular_map = texture_ref();
-        let emissive = modifier_ref(create_emissive_modifier(&EmissiveModifierOptions {
-            color: 0xffaa_00ff,
-            strength: None,
-            mask: None,
-            facing: None,
-            facing_softness: None,
-        }));
-        let rim = modifier_ref(create_rim_modifier(&RimModifierOptions {
-            color: 0x88bb_ffff,
-            power: None,
-            intensity: None,
-            bias: None,
-        }));
+        let mut emissive = create_emissive_modifier();
+        emissive.color = 0xffaa_00ff;
+        let emissive = modifier_ref(emissive);
+        let mut rim = create_rim_modifier();
+        rim.color = 0x88bb_ffff;
+        let rim = modifier_ref(rim);
         let modifiers = vec![emissive.clone(), rim.clone()];
-        let material = create_shaded_material(Some(&ShadedMaterialOptions {
-            alpha_cutoff: None,
-            alpha_mode: None,
-            blend_mode: None,
-            double_sided: None,
-            diffuse: Some(0x1020_30ff),
-            diffuse_map: Some(diffuse_map.clone()),
-            modifiers: Some(modifiers),
-            normal_map: Some(normal_map.clone()),
-            normal_scale: Some(0.75),
-            shininess: Some(8.0),
-            specular: Some(0xaabb_ccff),
-            specular_map: Some(specular_map.clone()),
-        }));
+        let mut material = create_shaded_material();
+        material.diffuse = 0x1020_30ff;
+        material.diffuse_map = Some(diffuse_map.clone());
+        material.modifiers = modifiers;
+        material.normal_map = Some(normal_map.clone());
+        material.normal_scale = 0.75;
+        material.shininess = 8.0;
+        material.specular = 0xaabb_ccff;
+        material.specular_map = Some(specular_map.clone());
 
         assert_eq!(material.diffuse, 0x1020_30ff);
         assert_eq!(material.normal_scale, 0.75);
@@ -95,14 +66,14 @@ mod create_shaded_material {
     fn builds_an_entity_with_the_canonical_kind() {
         fn assert_entity<T: Entity>(_value: &T) {}
 
-        let material = create_shaded_material(None);
+        let material = create_shaded_material();
         assert_eq!(material.kind, SHADED_MATERIAL_KIND);
         assert_entity(&material);
     }
 
     #[test]
     fn defaults_the_lit_base_and_modifier_stack() {
-        let material = create_shaded_material(None);
+        let material = create_shaded_material();
         assert_eq!(material.diffuse, 0xffff_ffff);
         assert_eq!(material.specular, 0xffff_ffff);
         assert_eq!(material.shininess, 32.0);
@@ -115,7 +86,7 @@ mod create_shaded_material {
 
     #[test]
     fn defaults_the_material3d_trailer() {
-        let material = create_shaded_material(None);
+        let material = create_shaded_material();
         assert_eq!(material.name, None);
         assert_eq!(material.alpha_mode, MaterialAlphaMode::Opaque);
         assert_eq!(material.alpha_cutoff, 0.5);
@@ -125,12 +96,11 @@ mod create_shaded_material {
 
     #[test]
     fn forwards_the_material3d_trailer() {
-        let mut provided = options();
-        provided.alpha_cutoff = Some(0.25);
-        provided.alpha_mode = Some(MaterialAlphaMode::Mask);
-        provided.blend_mode = Some(BLEND_MODE_ADD.to_string());
-        provided.double_sided = Some(true);
-        let material = create_shaded_material(Some(&provided));
+        let mut material = create_shaded_material();
+        material.alpha_cutoff = 0.25;
+        material.alpha_mode = MaterialAlphaMode::Mask;
+        material.blend_mode = BLEND_MODE_ADD.to_string();
+        material.double_sided = true;
 
         assert_eq!(material.alpha_cutoff, 0.25);
         assert_eq!(material.alpha_mode, MaterialAlphaMode::Mask);
@@ -143,21 +113,42 @@ mod initialize_shaded_material {
     use super::*;
 
     #[test]
-    fn resets_a_preallocated_material() {
-        let mut material = create_shaded_material(None);
+    fn restores_defaults_without_replacing_entity_identity() {
+        let mut material = create_shaded_material();
         material.diffuse = 0;
-        material.modifiers = vec![modifier_ref(create_toon_modifier(&ToonModifierOptions {
-            steps: 4.0,
-            smoothness: None,
-        }))];
+        material.diffuse_map = Some(texture_ref());
+        let mut toon = create_toon_modifier();
+        toon.steps = 4.0;
+        material.modifiers = vec![modifier_ref(toon)];
+        material.normal_map = Some(texture_ref());
+        material.normal_scale = 2.0;
+        material.shininess = 2.0;
+        material.specular = 0;
+        material.specular_map = Some(texture_ref());
+        material.alpha_cutoff = 0.25;
         material.alpha_mode = MaterialAlphaMode::Blend;
+        material.blend_mode = BLEND_MODE_ADD.to_string();
+        material.double_sided = true;
+        material.name = Some("changed".to_string());
+        set_entity_uid(&mut material, "shaded-material".to_string());
 
-        initialize_shaded_material(&mut material, &options());
+        initialize_shaded_material(&mut material);
 
         assert_eq!(material.kind, SHADED_MATERIAL_KIND);
         assert_eq!(material.diffuse, 0xffff_ffff);
+        assert!(material.diffuse_map.is_none());
         assert!(material.modifiers.is_empty());
+        assert!(material.normal_map.is_none());
+        assert_eq!(material.normal_scale, 1.0);
+        assert_eq!(material.shininess, 32.0);
+        assert_eq!(material.specular, 0xffff_ffff);
+        assert!(material.specular_map.is_none());
+        assert_eq!(material.name, None);
+        assert_eq!(material.alpha_cutoff, 0.5);
         assert_eq!(material.alpha_mode, MaterialAlphaMode::Opaque);
+        assert_eq!(material.blend_mode, BLEND_MODE_NORMAL);
+        assert!(!material.double_sided);
+        assert_eq!(get_entity_uid(&mut material), "shaded-material");
     }
 }
 
@@ -166,19 +157,14 @@ mod shaded_material_family {
 
     #[test]
     fn joins_a_heterogeneous_material3d_list_as_its_original_allocation() {
-        let modifier = modifier_ref(create_rim_modifier(&RimModifierOptions {
-            color: 0x88bb_ffff,
-            power: None,
-            intensity: None,
-            bias: None,
-        }));
-        let shaded: Arc<std::sync::RwLock<ShadedMaterial>> = Arc::new(std::sync::RwLock::new(
-            create_shaded_material(Some(&ShadedMaterialOptions {
-                alpha_mode: Some(MaterialAlphaMode::Mask),
-                modifiers: Some(vec![modifier.clone()]),
-                ..options()
-            })),
-        ));
+        let mut rim = create_rim_modifier();
+        rim.color = 0x88bb_ffff;
+        let modifier = modifier_ref(rim);
+        let mut material = create_shaded_material();
+        material.alpha_mode = MaterialAlphaMode::Mask;
+        material.modifiers = vec![modifier.clone()];
+        let shaded: Arc<std::sync::RwLock<ShadedMaterial>> =
+            Arc::new(std::sync::RwLock::new(material));
         let phong: Material3DRef = Arc::new(std::sync::RwLock::new(create_blinn_phong_material()));
         let as_family: Material3DRef = shaded.clone();
         let list = vec![phong.clone(), as_family.clone()];
@@ -200,7 +186,7 @@ mod shaded_material_family {
 
     #[test]
     fn keeps_one_entity_runtime_through_its_base_fields() {
-        let material = create_shaded_material(None);
+        let material = create_shaded_material();
         let fields: &flight_materials::Material3DFields = &material;
         assert!(std::ptr::eq(
             material.entity_runtime(),
@@ -210,25 +196,15 @@ mod shaded_material_family {
 
     #[test]
     fn reads_its_modifier_stack_through_the_family_stream() {
-        let rim = modifier_ref(create_rim_modifier(&RimModifierOptions {
-            color: 0x88bb_ffff,
-            power: None,
-            intensity: None,
-            bias: None,
-        }));
-        let emissive = modifier_ref(create_emissive_modifier(&EmissiveModifierOptions {
-            color: 0xffaa_00ff,
-            strength: None,
-            mask: None,
-            facing: None,
-            facing_softness: None,
-        }));
-        let shaded: Material3DRef = Arc::new(std::sync::RwLock::new(create_shaded_material(Some(
-            &ShadedMaterialOptions {
-                modifiers: Some(vec![rim, emissive]),
-                ..options()
-            },
-        ))));
+        let mut rim = create_rim_modifier();
+        rim.color = 0x88bb_ffff;
+        let rim = modifier_ref(rim);
+        let mut emissive = create_emissive_modifier();
+        emissive.color = 0xffaa_00ff;
+        let emissive = modifier_ref(emissive);
+        let mut material = create_shaded_material();
+        material.modifiers = vec![rim, emissive];
+        let shaded: Material3DRef = Arc::new(std::sync::RwLock::new(material));
         let guard = shaded.read().unwrap();
         let stream = guard.modifier_stream().unwrap();
         assert_eq!(stream.len(), 2);
@@ -237,7 +213,7 @@ mod shaded_material_family {
         assert_eq!(stream.kind_at(1).as_deref(), Some(EMISSIVE_MODIFIER_KIND));
         assert_eq!(stream.kind_at(2), None);
 
-        let empty = create_shaded_material(None);
+        let empty = create_shaded_material();
         let stream = flight_materials::Material::modifier_stream(&empty).unwrap();
         assert!(stream.is_empty());
         assert_eq!(stream.kind_at(0), None);

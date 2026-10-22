@@ -1,21 +1,13 @@
 use std::sync::{Arc, RwLock};
 
 use flight_entity::get_record_keys;
-use flight_geometry::{create_vector2, create_vector3};
 
 use super::*;
 
 #[test]
 fn animated_normal_modifier_new_matches_create() {
-    let options = AnimatedNormalModifierOptions {
-        map: None,
-        scroll: create_vector2(0.1, 0.2),
-        strength: Some(0.5),
-        secondary_map: None,
-        secondary_scroll: None,
-    };
-    let method = AnimatedNormalModifier::new(&options);
-    let free = create_animated_normal_modifier(&options);
+    let method = AnimatedNormalModifier::new();
+    let free = create_animated_normal_modifier();
     assert_eq!(method.kind, free.kind);
     assert_eq!(method.scroll, free.scroll);
     assert_eq!(method.strength, free.strength);
@@ -23,15 +15,8 @@ fn animated_normal_modifier_new_matches_create() {
 
 #[test]
 fn dissolve_modifier_new_matches_create() {
-    let options = DissolveModifierOptions {
-        threshold: 0.4,
-        edge_color: None,
-        edge_width: None,
-        map: None,
-        scale: None,
-    };
-    let method = DissolveModifier::new(&options);
-    let free = create_dissolve_modifier(&options);
+    let method = DissolveModifier::new();
+    let free = create_dissolve_modifier();
     assert_eq!(method.kind, free.kind);
     assert_eq!(method.threshold, free.threshold);
     assert_eq!(method.edge_color, free.edge_color);
@@ -39,15 +24,8 @@ fn dissolve_modifier_new_matches_create() {
 
 #[test]
 fn emissive_modifier_new_matches_create() {
-    let options = EmissiveModifierOptions {
-        color: 0xffaa_00ff,
-        strength: Some(2.0),
-        mask: None,
-        facing: Some(EmissiveModifierFacing::AwayFromLight),
-        facing_softness: None,
-    };
-    let method = EmissiveModifier::new(&options);
-    let free = create_emissive_modifier(&options);
+    let method = EmissiveModifier::new();
+    let free = create_emissive_modifier();
     assert_eq!(method.kind, free.kind);
     assert_eq!(method.color, free.color);
     assert_eq!(method.facing, free.facing);
@@ -55,29 +33,16 @@ fn emissive_modifier_new_matches_create() {
 
 #[test]
 fn env_reflect_modifier_new_matches_create() {
-    let options = EnvReflectModifierOptions {
-        tint: None,
-        intensity: Some(0.5),
-        fresnel_bias: None,
-        roughness: None,
-    };
-    let method = EnvReflectModifier::new(Some(&options));
-    let free = create_env_reflect_modifier(Some(&options));
+    let method = EnvReflectModifier::new();
+    let free = create_env_reflect_modifier();
     assert_eq!(method.kind, free.kind);
     assert_eq!(method.intensity, free.intensity);
 }
 
 #[test]
 fn fog_modifier_new_matches_create() {
-    let options = FogModifierOptions {
-        color: 0xaabb_ccff,
-        mode: Some(FogModifierMode::Exponential2),
-        near: None,
-        far: None,
-        density: Some(0.1),
-    };
-    let method = FogModifier::new(&options);
-    let free = create_fog_modifier(&options);
+    let method = FogModifier::new();
+    let free = create_fog_modifier();
     assert_eq!(method.kind, free.kind);
     assert_eq!(method.mode, free.mode);
     assert_eq!(method.density, free.density);
@@ -135,14 +100,8 @@ fn modifier_registry_methods_match_free_functions() {
 
 #[test]
 fn rim_modifier_new_matches_create() {
-    let options = RimModifierOptions {
-        color: 0x88cc_ffff,
-        power: Some(4.0),
-        intensity: None,
-        bias: None,
-    };
-    let method = RimModifier::new(&options);
-    let free = create_rim_modifier(&options);
+    let method = RimModifier::new();
+    let free = create_rim_modifier();
     assert_eq!(method.kind, free.kind);
     assert_eq!(method.color, free.color);
     assert_eq!(method.power, free.power);
@@ -150,22 +109,8 @@ fn rim_modifier_new_matches_create() {
 
 #[test]
 fn shaded_material_new_matches_create() {
-    let options = ShadedMaterialOptions {
-        alpha_cutoff: Some(0.25),
-        alpha_mode: None,
-        blend_mode: None,
-        double_sided: Some(true),
-        diffuse: Some(0x1020_30ff),
-        diffuse_map: None,
-        modifiers: None,
-        normal_map: None,
-        normal_scale: None,
-        shininess: Some(8.0),
-        specular: None,
-        specular_map: None,
-    };
-    let method = ShadedMaterial::new(Some(&options));
-    let free = create_shaded_material(Some(&options));
+    let method = ShadedMaterial::new();
+    let free = create_shaded_material();
     assert_eq!(method.kind, free.kind);
     assert_eq!(method.alpha_cutoff, free.alpha_cutoff);
     assert_eq!(method.double_sided, free.double_sided);
@@ -175,12 +120,8 @@ fn shaded_material_new_matches_create() {
 
 #[test]
 fn toon_modifier_new_matches_create() {
-    let options = ToonModifierOptions {
-        steps: 4.0,
-        smoothness: Some(0.2),
-    };
-    let method = ToonModifier::new(&options);
-    let free = create_toon_modifier(&options);
+    let method = ToonModifier::new();
+    let free = create_toon_modifier();
     assert_eq!(method.kind, free.kind);
     assert_eq!(method.steps, free.steps);
     assert_eq!(method.smoothness, free.smoothness);
@@ -188,17 +129,8 @@ fn toon_modifier_new_matches_create() {
 
 #[test]
 fn vertex_displace_modifier_new_matches_create() {
-    let options = VertexDisplaceModifierOptions {
-        source: VertexDisplaceModifierSource::Sine,
-        amplitude: 0.5,
-        axis: Some(create_vector3(0.0, 1.0, 0.0)),
-        map: None,
-        frequency: None,
-        speed: None,
-        direction: None,
-    };
-    let method = VertexDisplaceModifier::new(&options);
-    let free = create_vertex_displace_modifier(&options);
+    let method = VertexDisplaceModifier::new();
+    let free = create_vertex_displace_modifier();
     assert_eq!(method.kind, free.kind);
     assert_eq!(method.amplitude, free.amplitude);
     assert_eq!(method.axis, free.axis);

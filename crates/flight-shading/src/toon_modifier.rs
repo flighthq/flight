@@ -17,20 +17,22 @@ pub struct ToonModifierOptions {
     pub smoothness: Option<f32>,
 }
 
-pub fn create_toon_modifier(options: &ToonModifierOptions) -> ToonModifier {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): callers assign authored modifier fields after construction
+pub fn create_toon_modifier() -> ToonModifier {
     let mut out: ToonModifier = allocate_entity();
-    initialize_toon_modifier(&mut out, options);
+    initialize_toon_modifier(&mut out);
     return out;
 }
 
-pub fn initialize_toon_modifier(out: &mut ToonModifier, options: &ToonModifierOptions) {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): initialization restores canonical defaults before authored assignment
+pub fn initialize_toon_modifier(out: &mut ToonModifier) {
     initialize_modifier(
         out,
         TOON_MODIFIER_KIND.to_string(),
         MODIFIER_SLOT_EFFECT.to_string(),
     );
-    out.steps = options.steps;
-    out.smoothness = options.smoothness.unwrap_or(0.0);
+    out.steps = 0.0;
+    out.smoothness = 0.0;
     return;
 }
 

@@ -8,32 +8,32 @@ use crate::contract::*;
 mod sugar_tests;
 
 impl AnimatedNormalModifier {
-    pub fn new(options: &AnimatedNormalModifierOptions) -> Self {
-        return create_animated_normal_modifier(options);
+    pub fn new() -> Self {
+        return create_animated_normal_modifier();
     }
 }
 
 impl DissolveModifier {
-    pub fn new(options: &DissolveModifierOptions) -> Self {
-        return create_dissolve_modifier(options);
+    pub fn new() -> Self {
+        return create_dissolve_modifier();
     }
 }
 
 impl EmissiveModifier {
-    pub fn new(options: &EmissiveModifierOptions) -> Self {
-        return create_emissive_modifier(options);
+    pub fn new() -> Self {
+        return create_emissive_modifier();
     }
 }
 
 impl EnvReflectModifier {
-    pub fn new(options: Option<&EnvReflectModifierOptions>) -> Self {
-        return create_env_reflect_modifier(options);
+    pub fn new() -> Self {
+        return create_env_reflect_modifier();
     }
 }
 
 impl FogModifier {
-    pub fn new(options: &FogModifierOptions) -> Self {
-        return create_fog_modifier(options);
+    pub fn new() -> Self {
+        return create_fog_modifier();
     }
 }
 
@@ -70,25 +70,25 @@ impl ModifierRegistry {
 }
 
 impl RimModifier {
-    pub fn new(options: &RimModifierOptions) -> Self {
-        return create_rim_modifier(options);
+    pub fn new() -> Self {
+        return create_rim_modifier();
     }
 }
 
 impl ShadedMaterial {
-    pub fn new(options: Option<&ShadedMaterialOptions>) -> Self {
-        return create_shaded_material(options);
+    pub fn new() -> Self {
+        return create_shaded_material();
     }
 }
 
 impl ToonModifier {
-    pub fn new(options: &ToonModifierOptions) -> Self {
-        return create_toon_modifier(options);
+    pub fn new() -> Self {
+        return create_toon_modifier();
     }
 }
 
 impl VertexDisplaceModifier {
-    pub fn new(options: &VertexDisplaceModifierOptions) -> Self {
-        return create_vertex_displace_modifier(options);
+    pub fn new() -> Self {
+        return create_vertex_displace_modifier();
     }
 }

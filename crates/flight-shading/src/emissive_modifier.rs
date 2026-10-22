@@ -26,23 +26,25 @@ pub struct EmissiveModifierOptions {
     pub facing_softness: Option<f32>,
 }
 
-pub fn create_emissive_modifier(options: &EmissiveModifierOptions) -> EmissiveModifier {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): callers assign authored modifier fields after construction
+pub fn create_emissive_modifier() -> EmissiveModifier {
     let mut out: EmissiveModifier = allocate_entity();
-    initialize_emissive_modifier(&mut out, options);
+    initialize_emissive_modifier(&mut out);
     return out;
 }
 
-pub fn initialize_emissive_modifier(out: &mut EmissiveModifier, options: &EmissiveModifierOptions) {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): initialization restores canonical defaults before authored assignment
+pub fn initialize_emissive_modifier(out: &mut EmissiveModifier) {
     initialize_modifier(
         out,
         EMISSIVE_MODIFIER_KIND.to_string(),
         MODIFIER_SLOT_EMISSIVE.to_string(),
     );
-    out.color = options.color;
-    out.strength = options.strength.unwrap_or(1.0);
-    out.mask = options.mask.clone();
-    out.facing = options.facing.unwrap_or(EmissiveModifierFacing::Ignore);
-    out.facing_softness = options.facing_softness.unwrap_or(0.0);
+    out.color = 0;
+    out.strength = 1.0;
+    out.mask = None;
+    out.facing = EmissiveModifierFacing::Ignore;
+    out.facing_softness = 0.0;
     return;
 }
 

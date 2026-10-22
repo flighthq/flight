@@ -15,13 +15,9 @@ fn custom(kind: &str, slot: &str) -> Ref<dyn Modifier> {
 }
 
 fn emissive() -> Ref<dyn Modifier> {
-    return crate::modifier_ref(create_emissive_modifier(&EmissiveModifierOptions {
-        color: 0xffff_ffff,
-        strength: None,
-        mask: None,
-        facing: None,
-        facing_softness: None,
-    }));
+    let mut modifier = create_emissive_modifier();
+    modifier.color = 0xffff_ffff;
+    return crate::modifier_ref(modifier);
 }
 
 mod get_unregistered_modifier_kinds {

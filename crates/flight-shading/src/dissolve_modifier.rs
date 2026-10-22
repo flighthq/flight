@@ -24,23 +24,25 @@ pub struct DissolveModifierOptions {
     pub scale: Option<f32>,
 }
 
-pub fn create_dissolve_modifier(options: &DissolveModifierOptions) -> DissolveModifier {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): callers assign authored modifier fields after construction
+pub fn create_dissolve_modifier() -> DissolveModifier {
     let mut out: DissolveModifier = allocate_entity();
-    initialize_dissolve_modifier(&mut out, options);
+    initialize_dissolve_modifier(&mut out);
     return out;
 }
 
-pub fn initialize_dissolve_modifier(out: &mut DissolveModifier, options: &DissolveModifierOptions) {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): initialization restores canonical defaults before authored assignment
+pub fn initialize_dissolve_modifier(out: &mut DissolveModifier) {
     initialize_modifier(
         out,
         DISSOLVE_MODIFIER_KIND.to_string(),
         MODIFIER_SLOT_EFFECT.to_string(),
     );
-    out.threshold = options.threshold;
-    out.edge_color = options.edge_color.unwrap_or(0xff66_00ff);
-    out.edge_width = options.edge_width.unwrap_or(0.05);
-    out.map = options.map.clone();
-    out.scale = options.scale.unwrap_or(8.0);
+    out.threshold = 0.0;
+    out.edge_color = 0xff66_00ff;
+    out.edge_width = 0.05;
+    out.map = None;
+    out.scale = 8.0;
     return;
 }
 

@@ -21,22 +21,24 @@ pub struct RimModifierOptions {
     pub bias: Option<f32>,
 }
 
-pub fn create_rim_modifier(options: &RimModifierOptions) -> RimModifier {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): callers assign authored modifier fields after construction
+pub fn create_rim_modifier() -> RimModifier {
     let mut out: RimModifier = allocate_entity();
-    initialize_rim_modifier(&mut out, options);
+    initialize_rim_modifier(&mut out);
     return out;
 }
 
-pub fn initialize_rim_modifier(out: &mut RimModifier, options: &RimModifierOptions) {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): initialization restores canonical defaults before authored assignment
+pub fn initialize_rim_modifier(out: &mut RimModifier) {
     initialize_modifier(
         out,
         RIM_MODIFIER_KIND.to_string(),
         MODIFIER_SLOT_EFFECT.to_string(),
     );
-    out.color = options.color;
-    out.power = options.power.unwrap_or(3.0);
-    out.intensity = options.intensity.unwrap_or(1.0);
-    out.bias = options.bias.unwrap_or(0.0);
+    out.color = 0;
+    out.power = 3.0;
+    out.intensity = 1.0;
+    out.bias = 0.0;
     return;
 }
 

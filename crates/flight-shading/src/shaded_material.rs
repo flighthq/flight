@@ -1,10 +1,8 @@
 // flight-lint: allow-file(contract-vocabulary) D16 ShadedMaterial owns an ordered heterogeneous Ref<dyn Modifier> stack
 
 use flight_entity::{Ref, allocate_entity};
-use flight_materials::material3d::create_material3d;
-use flight_materials::{
-    BLEND_MODE_NORMAL, BlendMode, Material3DFields, MaterialAlphaMode, TextureSlot,
-};
+use flight_materials::material3d::{create_material3d, initialize_material3d};
+use flight_materials::{BlendMode, Material3DFields, MaterialAlphaMode, TextureSlot};
 
 use crate::contract::Modifier;
 
@@ -41,31 +39,24 @@ pub struct ShadedMaterialOptions {
     pub specular_map: TextureSlot,
 }
 
-pub fn create_shaded_material(options: Option<&ShadedMaterialOptions>) -> ShadedMaterial {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): callers assign authored material fields after construction
+pub fn create_shaded_material() -> ShadedMaterial {
     let mut out: ShadedMaterial = allocate_entity();
-    let default_options = ShadedMaterialOptions::default();
-    initialize_shaded_material(&mut out, options.unwrap_or(&default_options));
+    initialize_shaded_material(&mut out);
     return out;
 }
 
-pub fn initialize_shaded_material(out: &mut ShadedMaterial, options: &ShadedMaterialOptions) {
-    out.kind = SHADED_MATERIAL_KIND.to_string();
-    out.name = None;
-    out.alpha_cutoff = options.alpha_cutoff.unwrap_or(0.5);
-    out.alpha_mode = options.alpha_mode.unwrap_or(MaterialAlphaMode::Opaque);
-    out.blend_mode = options
-        .blend_mode
-        .clone()
-        .unwrap_or_else(|| BLEND_MODE_NORMAL.to_string());
-    out.double_sided = options.double_sided.unwrap_or(false);
-    out.diffuse = options.diffuse.unwrap_or(0xffff_ffff);
-    out.diffuse_map = options.diffuse_map.clone();
-    out.modifiers = options.modifiers.clone().unwrap_or_default();
-    out.normal_map = options.normal_map.clone();
-    out.normal_scale = options.normal_scale.unwrap_or(1.0);
-    out.shininess = options.shininess.unwrap_or(32.0);
-    out.specular = options.specular.unwrap_or(0xffff_ffff);
-    out.specular_map = options.specular_map.clone();
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): initialization restores canonical defaults before authored assignment
+pub fn initialize_shaded_material(out: &mut ShadedMaterial) {
+    initialize_material3d(&mut out.fields, SHADED_MATERIAL_KIND.to_string());
+    out.diffuse = 0xffff_ffff;
+    out.diffuse_map = None;
+    out.modifiers.clear();
+    out.normal_map = None;
+    out.normal_scale = 1.0;
+    out.shininess = 32.0;
+    out.specular = 0xffff_ffff;
+    out.specular_map = None;
     return;
 }
 

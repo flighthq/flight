@@ -1,20 +1,14 @@
 use flight_entity::Ref;
-use flight_geometry::create_vector2;
 use flight_shading::contract::*;
 
 fn animated(
     map: Option<flight_entity::Ref<flight_texture::Texture>>,
     secondary_map: Option<flight_entity::Ref<flight_texture::Texture>>,
 ) -> Ref<dyn Modifier> {
-    return crate::modifier_ref(create_animated_normal_modifier(
-        &AnimatedNormalModifierOptions {
-            map,
-            scroll: create_vector2(0.0, 0.0),
-            strength: None,
-            secondary_map,
-            secondary_scroll: None,
-        },
-    ));
+    let mut modifier = create_animated_normal_modifier();
+    modifier.map = map;
+    modifier.secondary_map = secondary_map;
+    return crate::modifier_ref(modifier);
 }
 
 fn emissive(
@@ -23,22 +17,22 @@ fn emissive(
     mask: Option<flight_entity::Ref<flight_texture::Texture>>,
     facing: Option<EmissiveModifierFacing>,
 ) -> Ref<dyn Modifier> {
-    return crate::modifier_ref(create_emissive_modifier(&EmissiveModifierOptions {
-        color,
-        strength,
-        mask,
-        facing,
-        facing_softness: None,
-    }));
+    let mut modifier = create_emissive_modifier();
+    modifier.color = color;
+    if let Some(strength) = strength {
+        modifier.strength = strength;
+    }
+    modifier.mask = mask;
+    if let Some(facing) = facing {
+        modifier.facing = facing;
+    }
+    return crate::modifier_ref(modifier);
 }
 
 fn rim(color: u32) -> Ref<dyn Modifier> {
-    return crate::modifier_ref(create_rim_modifier(&RimModifierOptions {
-        color,
-        power: None,
-        intensity: None,
-        bias: None,
-    }));
+    let mut modifier = create_rim_modifier();
+    modifier.color = color;
+    return crate::modifier_ref(modifier);
 }
 
 fn registry() -> ModifierRegistry {

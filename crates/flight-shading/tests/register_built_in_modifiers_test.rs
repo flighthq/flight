@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use flight_geometry::{create_vector2, create_vector3};
+use flight_geometry::create_vector3;
 use flight_shading::contract::*;
 
 fn signature(registry: &ModifierRegistry, kind: &str, modifier: &dyn Modifier) -> Option<String> {
@@ -82,27 +82,12 @@ mod register_built_in_modifiers {
     fn signals_animated_normal_layer_count_structurally() {
         let mut registry = create_modifier_registry();
         register_built_in_modifiers(&mut registry);
-        let disabled = create_animated_normal_modifier(&AnimatedNormalModifierOptions {
-            map: None,
-            scroll: create_vector2(0.0, 0.0),
-            strength: None,
-            secondary_map: None,
-            secondary_scroll: None,
-        });
-        let single = create_animated_normal_modifier(&AnimatedNormalModifierOptions {
-            map: Some(crate::texture_ref()),
-            scroll: create_vector2(0.0, 0.0),
-            strength: None,
-            secondary_map: None,
-            secondary_scroll: None,
-        });
-        let dual = create_animated_normal_modifier(&AnimatedNormalModifierOptions {
-            map: Some(crate::texture_ref()),
-            scroll: create_vector2(0.0, 0.0),
-            strength: None,
-            secondary_map: Some(crate::texture_ref()),
-            secondary_scroll: None,
-        });
+        let disabled = create_animated_normal_modifier();
+        let mut single = create_animated_normal_modifier();
+        single.map = Some(crate::texture_ref());
+        let mut dual = create_animated_normal_modifier();
+        dual.map = Some(crate::texture_ref());
+        dual.secondary_map = Some(crate::texture_ref());
         assert_eq!(
             signature(&registry, ANIMATED_NORMAL_MODIFIER_KIND, &disabled),
             Some("0".to_string())
@@ -121,20 +106,11 @@ mod register_built_in_modifiers {
     fn signals_dissolve_mask_presence_structurally() {
         let mut registry = create_modifier_registry();
         register_built_in_modifiers(&mut registry);
-        let procedural = create_dissolve_modifier(&DissolveModifierOptions {
-            threshold: 0.5,
-            edge_color: None,
-            edge_width: None,
-            map: None,
-            scale: None,
-        });
-        let mapped = create_dissolve_modifier(&DissolveModifierOptions {
-            threshold: 0.5,
-            edge_color: None,
-            edge_width: None,
-            map: Some(crate::texture_ref()),
-            scale: None,
-        });
+        let mut procedural = create_dissolve_modifier();
+        procedural.threshold = 0.5;
+        let mut mapped = create_dissolve_modifier();
+        mapped.threshold = 0.5;
+        mapped.map = Some(crate::texture_ref());
         assert_eq!(
             signature(&registry, DISSOLVE_MODIFIER_KIND, &procedural),
             Some(String::new())
@@ -149,27 +125,14 @@ mod register_built_in_modifiers {
     fn signals_emissive_mask_and_facing_structurally() {
         let mut registry = create_modifier_registry();
         register_built_in_modifiers(&mut registry);
-        let plain = create_emissive_modifier(&EmissiveModifierOptions {
-            color: 0xffff_ffff,
-            strength: None,
-            mask: None,
-            facing: None,
-            facing_softness: None,
-        });
-        let masked = create_emissive_modifier(&EmissiveModifierOptions {
-            color: 0xffff_ffff,
-            strength: None,
-            mask: Some(crate::texture_ref()),
-            facing: None,
-            facing_softness: None,
-        });
-        let gated = create_emissive_modifier(&EmissiveModifierOptions {
-            color: 0xffff_ffff,
-            strength: None,
-            mask: None,
-            facing: Some(EmissiveModifierFacing::AwayFromLight),
-            facing_softness: None,
-        });
+        let mut plain = create_emissive_modifier();
+        plain.color = 0xffff_ffff;
+        let mut masked = create_emissive_modifier();
+        masked.color = 0xffff_ffff;
+        masked.mask = Some(crate::texture_ref());
+        let mut gated = create_emissive_modifier();
+        gated.color = 0xffff_ffff;
+        gated.facing = EmissiveModifierFacing::AwayFromLight;
         assert_eq!(
             signature(&registry, EMISSIVE_MODIFIER_KIND, &plain),
             Some(String::new())
@@ -193,13 +156,9 @@ mod register_built_in_modifiers {
             (FogModifierMode::Exponential, "e"),
             (FogModifierMode::Exponential2, "x"),
         ] {
-            let modifier = create_fog_modifier(&FogModifierOptions {
-                color: 0xffff_ffff,
-                mode: Some(mode),
-                near: None,
-                far: None,
-                density: None,
-            });
+            let mut modifier = create_fog_modifier();
+            modifier.color = 0xffff_ffff;
+            modifier.mode = mode;
             assert_eq!(
                 signature(&registry, FOG_MODIFIER_KIND, &modifier),
                 Some(expected.to_string())
@@ -211,33 +170,14 @@ mod register_built_in_modifiers {
     fn signals_vertex_source_and_fixed_axis_structurally() {
         let mut registry = create_modifier_registry();
         register_built_in_modifiers(&mut registry);
-        let sine = create_vertex_displace_modifier(&VertexDisplaceModifierOptions {
-            source: VertexDisplaceModifierSource::Sine,
-            amplitude: 1.0,
-            axis: None,
-            map: None,
-            frequency: None,
-            speed: None,
-            direction: None,
-        });
-        let height = create_vertex_displace_modifier(&VertexDisplaceModifierOptions {
-            source: VertexDisplaceModifierSource::HeightMap,
-            amplitude: 1.0,
-            axis: None,
-            map: None,
-            frequency: None,
-            speed: None,
-            direction: None,
-        });
-        let axis = create_vertex_displace_modifier(&VertexDisplaceModifierOptions {
-            source: VertexDisplaceModifierSource::Sine,
-            amplitude: 1.0,
-            axis: Some(create_vector3(0.0, 1.0, 0.0)),
-            map: None,
-            frequency: None,
-            speed: None,
-            direction: None,
-        });
+        let mut sine = create_vertex_displace_modifier();
+        sine.amplitude = 1.0;
+        let mut height = create_vertex_displace_modifier();
+        height.source = VertexDisplaceModifierSource::HeightMap;
+        height.amplitude = 1.0;
+        let mut axis = create_vertex_displace_modifier();
+        axis.amplitude = 1.0;
+        axis.axis = Some(create_vector3(0.0, 1.0, 0.0));
         assert_eq!(
             signature(&registry, VERTEX_DISPLACE_MODIFIER_KIND, &sine),
             Some("s".to_string())
