@@ -92,7 +92,7 @@ src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct Scene2D
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct Scene2DResourceFailureNotice { pub operation: Scene2DResourceFailureOperation, pub reason: Scene2DResourceFailureReason, pub total: usize, pub unresolved: usize, pub url: Option<String>, }
 src/types.rs: #[derive(Clone, Default)] pub struct LoadScene2DAudioResourcesOptions { pub audio_decode: Option<HostAudioDecodeCapabilities>, pub decoders: Option<AudioDecoderRegistry>, pub fetch: Option<AudioResourceFetch>, pub progress: Option<Signal<Scene2DAudioResourceLoadProgress>>, pub select: Option<Arc<dyn Fn(&AudioResourceReference) -> bool + Send + Sync>>, pub signal: Option<AbortSignal>, }
 src/types.rs: #[derive(Clone, Default)] pub struct LoadScene2DImageResourcesOptions { pub decode: Option<ImageDecodeFallback>, pub fetch: Option<ImageResourceFetch>, pub progress: Option<Signal<Scene2DImageResourceLoadProgress>>, pub select: Option<Arc<dyn Fn(&ImageResourceReference) -> bool + Send + Sync>>, pub signal: Option<AbortSignal>, }
-src/types.rs: #[derive(Clone, Default)] pub struct ResolveScene2DResourcesOptions { pub resolve_slot_content: Option<Scene2DSlotContentResolver>, pub select: Option<Arc<dyn Fn(&Scene2DSlotReference) -> bool + Send + Sync>>, }
+src/types.rs: #[derive(Clone, Default)] pub struct ResolveScene2DResourcesOptions { pub resolve_slot_content: Option<Scene2DSlotContentResolver>, pub select: Option<Arc<dyn Fn(&Ref<Scene2DSlotReference>) -> bool + Send + Sync>>, }
 src/types.rs: #[derive(Clone, Default)] pub struct Scene2DDocumentImporterRegistry { pub entries: Vec<Scene2DDocumentImporterEntry>, }
 src/types.rs: #[derive(Clone, Default)] pub struct Scene2DDocumentLoadOptions { pub mime_type: Option<String>, pub progress: Option<Signal<Scene2DDocumentFetchProgress>>, pub signal: Option<AbortSignal>, }
 src/types.rs: #[derive(Clone, Default)] pub struct Scene2DResourceFailureGuardState { pub enabled: bool, pub guard: Option<Scene2DResourceFailureGuard>, }
@@ -112,4 +112,4 @@ src/types.rs: pub type Scene2DDocumentImporterMatcher = Arc<dyn Fn(&Uint8Array, 
 src/types.rs: pub type Scene2DResourceFailureClock = Arc<dyn Fn() -> f64 + Send + Sync>;
 src/types.rs: pub type Scene2DResourceFailureGuard = Arc<dyn Fn(&Scene2DResourceFailureNotice) + Send + Sync>;
 src/types.rs: pub type Scene2DResourceFailureGuardStateRef = Ref<Scene2DResourceFailureGuardState>;
-src/types.rs: pub type Scene2DSlotContentResolver = Arc<dyn Fn(&Scene2DSlotReference) -> Option<Node2DRef> + Send + Sync>;
+src/types.rs: pub type Scene2DSlotContentResolver = Arc<dyn Fn(&Ref<Scene2DSlotReference>) -> Option<Node2DRef> + Send + Sync>;
