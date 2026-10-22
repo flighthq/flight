@@ -265,15 +265,15 @@ pub fn get_skeleton_2d_animation_target_binder(
     return registry.entries.get(kind).cloned();
 }
 
-/// A sorted snapshot of every target kind with a binder
+/// Writes a sorted snapshot of every target kind with a binder into the caller's reusable output
 /// (TS `getSkeleton2DAnimationTargetBinderKinds`).
-// flight-lint: allow(conform-params) D5: caller-owned binder registry replaces the source module-global map
+// flight-lint: allow(conform-params) D5 caller-owned registry replaces the source global; Principal3139d09f D24 requires first caller-owned output, cleared/filled with retained capacity and original UTF16 ordering
 pub fn get_skeleton_2d_animation_target_binder_kinds(
+    out: &mut Vec<Kind>,
     registry: &Skeleton2DAnimationTargetBinderRegistry,
-) -> Vec<Kind> {
-    let mut kinds = Vec::new();
-    flight_registry::contract::get_kind_map_keys(&mut kinds, registry);
-    return kinds;
+) {
+    flight_registry::contract::get_kind_map_keys(out, registry);
+    return;
 }
 
 fn interpolation_name(value: AnimationInterpolation) -> &'static str {

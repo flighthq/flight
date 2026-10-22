@@ -143,7 +143,7 @@ src/skeleton2d_animation_target.rs: pub fn create_skeleton_2d_bone_animation_tar
 src/skeleton2d_animation_target.rs: pub fn create_skeleton_2d_slot_animation_target(slot_index: i32, path: &str, attachments: Option<Arc<Vec<Option<Attachment2DRef>>>>,) -> Skeleton2DSlotAnimationTarget
 src/skeleton2d_animation_target.rs: pub fn find_skeleton_2d_step_keyframe(times: &[f32], time: f32) -> i32
 src/skeleton2d_animation_target.rs: pub fn get_skeleton_2d_animation_target_binder(registry: &Skeleton2DAnimationTargetBinderRegistry, kind: &str,) -> Option<Skeleton2DAnimationTargetBinder>
-src/skeleton2d_animation_target.rs: pub fn get_skeleton_2d_animation_target_binder_kinds(registry: &Skeleton2DAnimationTargetBinderRegistry,) -> Vec<Kind>
+src/skeleton2d_animation_target.rs: pub fn get_skeleton_2d_animation_target_binder_kinds(out: &mut Vec<Kind>, registry: &Skeleton2DAnimationTargetBinderRegistry,)
 src/skeleton2d_animation_target.rs: pub fn initialize_skeleton_2d_bone_animation_target(out: &mut Skeleton2DAnimationTarget, bone_index: i32, path: &str,)
 src/skeleton2d_animation_target.rs: pub fn initialize_skeleton_2d_slot_animation_target(out: &mut Skeleton2DSlotAnimationTarget, slot_index: i32, path: &str, attachments: Option<Arc<Vec<Option<Attachment2DRef>>>>,)
 src/skeleton2d_animation_target.rs: pub fn register_skeleton_2d_animation_target_binder(registry: &mut Skeleton2DAnimationTargetBinderRegistry, kind: &str, bind: Skeleton2DAnimationTargetBinder,)

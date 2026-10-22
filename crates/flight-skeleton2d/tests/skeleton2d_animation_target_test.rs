@@ -168,6 +168,69 @@ mod get_skeleton_2d_animation_target_binder_kinds {
     use super::*;
 
     #[test]
+    fn reuses_detached_snapshot_storage_through_sorted_smaller_and_empty_registries() {
+        let mut registry = create_skeleton_2d_animation_target_registry();
+        let binder: Skeleton2DAnimationTargetBinder = Arc::new(|_, _, _, _, _, _| {
+            panic!("a kind snapshot must not invoke a binder");
+        });
+        for kind in ["vendor.\u{e000}", "vendor.\u{10000}"] {
+            register_skeleton_2d_animation_target_binder(&mut registry, kind, binder.clone());
+        }
+        let mut out = Vec::with_capacity(8);
+        out.push("stale".to_string());
+        let pointer = out.as_ptr();
+        let capacity = out.capacity();
+        get_skeleton_2d_animation_target_binder_kinds(&mut out, &registry);
+        assert_eq!(
+            out,
+            vec![
+                String::from(SKELETON_2D_ANIMATION_TARGET_KIND_BONE),
+                String::from(SKELETON_2D_ANIMATION_TARGET_KIND_SLOT),
+                "vendor.\u{10000}".to_string(),
+                "vendor.\u{e000}".to_string(),
+            ]
+        );
+        assert_eq!(out.as_ptr(), pointer);
+        assert_eq!(out.capacity(), capacity);
+        out[0].push_str(" mutated snapshot");
+        assert!(
+            get_skeleton_2d_animation_target_binder(
+                &registry,
+                SKELETON_2D_ANIMATION_TARGET_KIND_BONE,
+            )
+            .is_some()
+        );
+        assert!(Arc::ptr_eq(
+            &get_skeleton_2d_animation_target_binder(&registry, "vendor.\u{e000}").unwrap(),
+            &binder,
+        ));
+
+        unregister_skeleton_2d_animation_target_binder(&mut registry, "vendor.\u{10000}");
+        get_skeleton_2d_animation_target_binder_kinds(&mut out, &registry);
+        assert_eq!(
+            out,
+            vec![
+                String::from(SKELETON_2D_ANIMATION_TARGET_KIND_BONE),
+                String::from(SKELETON_2D_ANIMATION_TARGET_KIND_SLOT),
+                "vendor.\u{e000}".to_string(),
+            ]
+        );
+        assert_eq!(out.as_ptr(), pointer);
+        assert_eq!(out.capacity(), capacity);
+        for kind in [
+            SKELETON_2D_ANIMATION_TARGET_KIND_BONE,
+            SKELETON_2D_ANIMATION_TARGET_KIND_SLOT,
+            "vendor.\u{e000}",
+        ] {
+            unregister_skeleton_2d_animation_target_binder(&mut registry, kind);
+        }
+        get_skeleton_2d_animation_target_binder_kinds(&mut out, &registry);
+        assert!(out.is_empty());
+        assert_eq!(out.as_ptr(), pointer);
+        assert_eq!(out.capacity(), capacity);
+    }
+
+    #[test]
     fn enumerates_sorted_bound_kinds_and_stops_naming_an_unregistered_one() {
         let mut registry = create_skeleton_2d_animation_target_registry();
         register_skeleton_2d_animation_target_binder(
@@ -175,8 +238,10 @@ mod get_skeleton_2d_animation_target_binder_kinds {
             "acme.RopeTarget",
             Arc::new(|_channel, _setup, _pose, _target, _time, _guards| {}),
         );
+        let mut kinds = Vec::new();
+        get_skeleton_2d_animation_target_binder_kinds(&mut kinds, &registry);
         assert_eq!(
-            get_skeleton_2d_animation_target_binder_kinds(&registry),
+            kinds,
             vec![
                 String::from(SKELETON_2D_ANIMATION_TARGET_KIND_BONE),
                 String::from(SKELETON_2D_ANIMATION_TARGET_KIND_SLOT),
@@ -184,8 +249,9 @@ mod get_skeleton_2d_animation_target_binder_kinds {
             ]
         );
         unregister_skeleton_2d_animation_target_binder(&mut registry, "acme.RopeTarget");
+        get_skeleton_2d_animation_target_binder_kinds(&mut kinds, &registry);
         assert_eq!(
-            get_skeleton_2d_animation_target_binder_kinds(&registry),
+            kinds,
             vec![
                 String::from(SKELETON_2D_ANIMATION_TARGET_KIND_BONE),
                 String::from(SKELETON_2D_ANIMATION_TARGET_KIND_SLOT),
