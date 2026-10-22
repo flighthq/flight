@@ -1,427 +1,573 @@
+// flight-lint: allow-file(contract-vocabulary, file-structure, sugar-delegates) D17 scene3d-gl records hold glow native handles, thread-bound render-gl state and composed program families
+
 use std::any::Any;
+use std::cell::Cell;
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::ops::Deref;
+use std::rc::Rc;
 
-use flight_camera::Camera3D;
-use flight_entity::Kind;
+use flight_entity::{Kind, Ref};
 use flight_geometry::Matrix4;
-use flight_materials::{Material3DRef, PbrExtension};
-use flight_meshgeometry::{MeshGeometry, MeshSubset, VertexAttributeLayout};
-use flight_render::RenderProxy;
+use flight_lighting::{Scene3DLightBlock, Scene3DLightsLike};
+use flight_materials::{Material3DRef, PbrExtension, PbrUvSet};
+use flight_meshgeometry::MeshSubset;
+use flight_node::NodeRef;
+use flight_render::Scene3DRenderProxy;
 use flight_render_gl::{
-    GlRenderState, GlSkinPaletteTexture, GlTextureRenderTarget,
+    GlMeshMaterialRenderer, GlRenderState, GlSkinPaletteTexture, GlTextureRenderTarget,
 };
-use flight_scene3d::Mesh;
-use flight_shading::ModifierKind;
-use glow::{NativeBuffer, NativeFramebuffer, NativeProgram, NativeTexture, NativeUniformLocation, NativeVertexArray};
+use flight_scene3d::{Mesh, Scene3DAppearanceState};
+use flight_texture::TextureColorSpace;
+use glow::{
+    NativeBuffer, NativeFramebuffer, NativeProgram, NativeTexture, NativeUniformLocation,
+    NativeVertexArray,
+};
 
-pub type GlScene3DColorSpaceGuard = Arc<dyn Fn() + Send + Sync>;
-pub type GlScene3DCustomShaderGuard = Arc<dyn Fn(&GlRenderState, NativeProgram, &str) + Send + Sync>;
-pub type GlScene3DDeformGuard = Arc<dyn Fn(&Mesh) + Send + Sync>;
-pub type GlScene3DForwardLightSelectionGuard = Arc<dyn Fn(&Scene3DLightsLike) + Send + Sync>;
-pub type GlScene3DPbrExtensionGuard = Arc<dyn Fn(&[PbrExtension]) + Send + Sync>;
+/// A lazily resolved uniform location cached on a program (TS `loc?: WebGLUniformLocation | null`):
+/// `None` = not yet resolved, `Some(None)` = the program omits the uniform, `Some(Some(loc))` =
+/// present.
+pub type GlLazyUniformLocation = Cell<Option<Option<NativeUniformLocation>>>;
 
-pub struct GlScene3DRuntime {
-    pub active_blended_run: bool,
-    pub active_color_adjustment_run: bool,
-    pub active_color_matrix_run: bool,
-    pub active_instanced_run: bool,
-    pub active_mesh_program: Option<NativeProgram>,
-    pub active_skinned_run: bool,
-    pub blended_draw_list: Vec<GlScene3DDrawEntry>,
-    pub blended_pool: Vec<GlScene3DDrawEntry>,
-    pub color_space_guard: Option<GlScene3DColorSpaceGuard>,
-    pub custom_shader_guard: Option<GlScene3DCustomShaderGuard>,
-    pub deform_guard: Option<GlScene3DDeformGuard>,
-    pub environment_source_cube: Option<NativeTexture>,
-    pub environment_source_cube_color_space: String,
-    pub environment_source_cube_face_versions: Vec<i32>,
-    pub environment_source_revision: i32,
-    pub environment_source_texture: Option<u64>,
-    pub environment_source_texture_version: i32,
-    pub forward_light_selection_guard: Option<GlScene3DForwardLightSelectionGuard>,
-    pub ibl: Option<GlScene3DIbl>,
-    pub ibl_bake_framebuffer: Option<NativeFramebuffer>,
-    pub mesh_skin_feature: Option<GlMeshSkinFeature>,
-    pub opaque_draw_list: Vec<GlScene3DDrawEntry>,
-    pub opaque_pool: Vec<GlScene3DDrawEntry>,
-    pub pbr_extension_guard: Option<GlScene3DPbrExtensionGuard>,
-    pub pbr_transmission_scene_color: Option<GlPbrTransmissionSceneColor>,
-    pub program_cache: HashMap<String, Box<dyn Any>>,
-    pub resource_cleanups: Option<Vec<fn(&GlRenderState)>>,
-    pub shadow: Option<GlScene3DShadow>,
-    pub shadow_target: Option<GlTextureRenderTarget>,
-    pub instance_color_palette: Option<GlSkinPaletteTexture>,
-    pub instance_palette: Option<GlSkinPaletteTexture>,
-    pub skin_normal_palette: Option<GlSkinPaletteTexture>,
-    pub skin_palette: Option<GlSkinPaletteTexture>,
-    pub time: f32,
-    pub upload_cache: HashMap<u64, GlMeshUpload>,
-    pub material_renderers: HashMap<Kind, Arc<dyn GlMeshMaterialRenderer>>,
-    pub modifier_snippets: HashMap<Kind, GlModifierSnippet>,
-    pub pbr_extension_registrations: HashMap<Kind, GlPbrExtensionRegistration>,
-}
-
-#[derive(Clone)]
-pub struct GlScene3DIbl {
-    pub brdf_lut: NativeTexture,
-    pub irradiance_cube: NativeTexture,
-    pub prefiltered_cube: NativeTexture,
-}
-
-#[derive(Clone)]
-pub struct GlScene3DShadow {
-    pub depth_texture: NativeTexture,
-    pub light_view_projection: Matrix4,
-    pub shadow_bias: f32,
-    pub shadow_map_size: u32,
-}
-
-pub struct GlPbrTransmissionSceneColor {
-    pub target: GlTextureRenderTarget,
-}
-
-#[derive(Clone)]
+/// The minimal bind→draw handoff every mesh-material family shares (TS `GlMeshProgram`). A family
+/// program composes it (TS `extends GlMeshProgram`) and adds its own material uniform locations.
+#[derive(Debug)]
 pub struct GlMeshProgram {
+    pub loc_color_scale: GlLazyUniformLocation,
+    pub loc_color_bias: GlLazyUniformLocation,
+    pub loc_color_matrix0: GlLazyUniformLocation,
+    pub loc_color_matrix1: GlLazyUniformLocation,
+    pub loc_color_matrix2: GlLazyUniformLocation,
+    pub loc_color_matrix3: GlLazyUniformLocation,
+    pub loc_color_matrix_offset: GlLazyUniformLocation,
+    pub loc_object_alpha: GlLazyUniformLocation,
+    pub loc_alpha_is_coverage: GlLazyUniformLocation,
+    pub loc_joint_texture: GlLazyUniformLocation,
+    pub loc_instance_palette: GlLazyUniformLocation,
+    pub loc_instance_color_palette: GlLazyUniformLocation,
+    pub loc_joint_normal_texture: GlLazyUniformLocation,
+    pub loc_model: Option<NativeUniformLocation>,
+    pub loc_normal_matrix: Option<NativeUniformLocation>,
+    pub loc_uv_transform: GlLazyUniformLocation,
+    pub loc_view_projection: Option<NativeUniformLocation>,
     pub program: NativeProgram,
-    pub model_location: Option<NativeUniformLocation>,
-    pub view_projection_location: Option<NativeUniformLocation>,
-    pub normal_matrix_location: Option<NativeUniformLocation>,
-    pub camera_position_location: Option<NativeUniformLocation>,
-    pub object_alpha_location: Option<NativeUniformLocation>,
-    pub alpha_is_coverage_location: Option<NativeUniformLocation>,
 }
 
-#[derive(Clone)]
+/// Any compiled mesh-material family program (TS: an interface extending `GlMeshProgram`). The
+/// program cache and the active bind→draw slot hold families behind this seam; a family narrows
+/// back to its concrete record through `Any`.
+pub trait GlMeshProgramFamily: Any {
+    fn mesh_program(&self) -> &GlMeshProgram;
+}
+
+/// A shared compiled family program (TS `GlMeshProgram` object identity).
+pub type GlMeshProgramRef = Rc<dyn GlMeshProgramFamily>;
+
+/// The shared base for every lit family (TS `GlLitProgram extends GlMeshProgram`): the packed
+/// forward-light, camera, shadow and IBL uniform locations.
+#[derive(Debug)]
 pub struct GlLitProgram {
-    pub base: GlMeshProgram,
-    pub ambient_color_location: Option<NativeUniformLocation>,
-    pub ambient_count_location: Option<NativeUniformLocation>,
-    pub directional_color_location: Option<NativeUniformLocation>,
-    pub directional_direction_location: Option<NativeUniformLocation>,
-    pub directional_count_location: Option<NativeUniformLocation>,
-    pub point_light_colors_location: Option<NativeUniformLocation>,
-    pub point_light_positions_location: Option<NativeUniformLocation>,
-    pub point_light_ranges_location: Option<NativeUniformLocation>,
-    pub point_light_count_location: Option<NativeUniformLocation>,
-    pub spot_light_colors_location: Option<NativeUniformLocation>,
-    pub spot_light_positions_location: Option<NativeUniformLocation>,
-    pub spot_light_directions_location: Option<NativeUniformLocation>,
-    pub spot_light_ranges_location: Option<NativeUniformLocation>,
-    pub spot_light_angles_location: Option<NativeUniformLocation>,
-    pub spot_light_count_location: Option<NativeUniformLocation>,
-    pub hemisphere_light_location: Option<NativeUniformLocation>,
-    pub hemisphere_count_location: Option<NativeUniformLocation>,
-    pub shadow_map_location: Option<NativeUniformLocation>,
-    pub shadow_matrix_location: Option<NativeUniformLocation>,
-    pub shadow_enabled_location: Option<NativeUniformLocation>,
-    pub shadow_bias_location: Option<NativeUniformLocation>,
-    pub shadow_normal_bias_world_location: Option<NativeUniformLocation>,
-    pub shadow_pcf_radius_location: Option<NativeUniformLocation>,
-    pub ibl_irradiance_location: Option<NativeUniformLocation>,
-    pub ibl_prefiltered_location: Option<NativeUniformLocation>,
-    pub ibl_brdf_location: Option<NativeUniformLocation>,
-    pub ibl_enabled_location: Option<NativeUniformLocation>,
-    pub ibl_intensity_location: Option<NativeUniformLocation>,
-    pub ibl_max_mip_location: Option<NativeUniformLocation>,
+    pub mesh: GlMeshProgram,
+    pub loc_ambient_count: Option<NativeUniformLocation>,
+    pub loc_ambient_radiance: Option<NativeUniformLocation>,
+    pub loc_camera_position: Option<NativeUniformLocation>,
+    pub loc_directional: Option<NativeUniformLocation>,
+    pub loc_directional_count: Option<NativeUniformLocation>,
+    pub loc_directional_radiance: Option<NativeUniformLocation>,
+    pub loc_hemisphere_count: Option<NativeUniformLocation>,
+    pub loc_hemisphere_lights: Option<NativeUniformLocation>,
+    pub loc_ibl_brdf: Option<NativeUniformLocation>,
+    pub loc_ibl_enabled: Option<NativeUniformLocation>,
+    pub loc_ibl_intensity: Option<NativeUniformLocation>,
+    pub loc_ibl_irradiance: Option<NativeUniformLocation>,
+    pub loc_ibl_max_mip: Option<NativeUniformLocation>,
+    pub loc_ibl_prefiltered: Option<NativeUniformLocation>,
+    pub loc_point_count: Option<NativeUniformLocation>,
+    pub loc_point_lights: Option<NativeUniformLocation>,
+    pub loc_shadow_bias: Option<NativeUniformLocation>,
+    pub loc_shadow_enabled: Option<NativeUniformLocation>,
+    pub loc_shadow_map: Option<NativeUniformLocation>,
+    pub loc_shadow_matrix: Option<NativeUniformLocation>,
+    pub loc_shadow_normal_bias_world: Option<NativeUniformLocation>,
+    pub loc_shadow_pcf_radius: Option<NativeUniformLocation>,
+    pub loc_spot_count: Option<NativeUniformLocation>,
+    pub loc_spot_lights: Option<NativeUniformLocation>,
 }
 
-#[derive(Clone)]
-pub struct GlClassicProgram {
-    pub lit: GlLitProgram,
-    pub alpha_cutoff_location: Option<NativeUniformLocation>,
-    pub alpha_map_location: Option<NativeUniformLocation>,
-    pub diffuse_color_location: Option<NativeUniformLocation>,
-    pub diffuse_map_location: Option<NativeUniformLocation>,
-    pub normal_map_location: Option<NativeUniformLocation>,
-    pub normal_scale_location: Option<NativeUniformLocation>,
-    pub shininess_location: Option<NativeUniformLocation>,
-    pub specular_color_location: Option<NativeUniformLocation>,
-    pub specular_map_location: Option<NativeUniformLocation>,
+/// TS `GlClassicLightingModel`.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum GlClassicLightingModel {
+    BlinnPhong,
+    #[default]
+    Lambert,
+    Phong,
 }
 
-#[derive(Clone)]
-pub struct GlDebugProgram {
-    pub base: GlMeshProgram,
-    pub far_location: Option<NativeUniformLocation>,
-    pub near_location: Option<NativeUniformLocation>,
-    pub normal_map_location: Option<NativeUniformLocation>,
-    pub normal_scale_location: Option<NativeUniformLocation>,
-    pub view_location: Option<NativeUniformLocation>,
-}
-
-#[derive(Clone)]
-pub struct GlMatcapProgram {
-    pub base: GlMeshProgram,
-    pub alpha_cutoff_location: Option<NativeUniformLocation>,
-    pub matcap_location: Option<NativeUniformLocation>,
-    pub tint_location: Option<NativeUniformLocation>,
-    pub view_location: Option<NativeUniformLocation>,
-}
-
-#[derive(Clone)]
-pub struct GlToonProgram {
-    pub lit: GlLitProgram,
-    pub alpha_cutoff_location: Option<NativeUniformLocation>,
-    pub base_color_location: Option<NativeUniformLocation>,
-    pub base_color_map_location: Option<NativeUniformLocation>,
-    pub ramp_location: Option<NativeUniformLocation>,
-    pub steps_location: Option<NativeUniformLocation>,
-}
-
-#[derive(Clone)]
-pub struct GlUnlitProgram {
-    pub base: GlMeshProgram,
-    pub alpha_cutoff_location: Option<NativeUniformLocation>,
-    pub color_location: Option<NativeUniformLocation>,
-    pub color_map_location: Option<NativeUniformLocation>,
-    pub intensity_location: Option<NativeUniformLocation>,
-}
-
-#[derive(Clone)]
-pub struct GlWireframeProgram {
-    pub base: GlMeshProgram,
-    pub alpha_cutoff_location: Option<NativeUniformLocation>,
-    pub color_location: Option<NativeUniformLocation>,
-}
-
-#[derive(Clone)]
-pub struct GlMeshUpload {
-    pub vertex_array: NativeVertexArray,
-    pub vertex_buffer: NativeBuffer,
-    pub index_buffer: NativeBuffer,
-    pub vertex_count: u32,
-    pub index_count: u32,
-    pub index_type: u32,
-    pub primitive_mode: u32,
-    pub layout: VertexAttributeLayout,
-    pub version: u32,
-    pub skin_bind_uploaded: bool,
-}
-
-#[derive(Clone)]
-pub struct GlWireframeUpload {
-    pub vertex_array: NativeVertexArray,
-    pub vertex_buffer: NativeBuffer,
-    pub index_buffer: NativeBuffer,
-    pub index_type: u32,
-    pub line_count: u32,
-    pub version: u32,
-}
-
-#[derive(Clone)]
-pub struct GlMeshSkinFeature {
-    pub skin_declarations_glsl: String,
-}
-
-pub struct GlScene3DDrawEntry {
-    pub alpha: f32,
-    pub color_matrix: Option<Vec<f32>>,
-    pub color_scale_bias: Option<ColorScaleBias>,
-    pub depth: f32,
-    pub light_block: Scene3DLightBlock,
-    pub material: Material3DRef,
-    pub mesh_id: u64,
-    pub renderer_id: u64,
-    pub sort_key: i32,
-    pub subset: MeshSubset,
-    pub world_matrix: Matrix4,
-}
-
-pub struct ColorScaleBias {
-    pub r_scale: f32,
-    pub g_scale: f32,
-    pub b_scale: f32,
-    pub a_scale: f32,
-    pub r_bias: f32,
-    pub g_bias: f32,
-    pub b_bias: f32,
-    pub a_bias: f32,
-}
-
-#[derive(Clone)]
-pub struct Scene3DLightBlock {
-    pub ambient_color: [f32; 3],
-    pub directional_color: [f32; 3],
-    pub directional_direction: [f32; 3],
-    pub point_light_count: u32,
-    pub point_light_colors: Vec<f32>,
-    pub point_light_positions: Vec<f32>,
-    pub point_light_ranges: Vec<f32>,
-    pub spot_light_count: u32,
-    pub spot_light_colors: Vec<f32>,
-    pub spot_light_positions: Vec<f32>,
-    pub spot_light_directions: Vec<f32>,
-    pub spot_light_ranges: Vec<f32>,
-    pub spot_light_angles: Vec<f32>,
-}
-
-pub struct Scene3DLightsLike {
-    pub ambient: Vec<AmbientLight>,
-    pub directional: Vec<DirectionalLight>,
-    pub point: Vec<PointLight>,
-    pub spot: Vec<SpotLight>,
-}
-
-pub struct AmbientLight {
-    pub color: [f32; 3],
-    pub intensity: f32,
-}
-
-pub struct DirectionalLight {
-    pub color: [f32; 3],
-    pub intensity: f32,
-    pub direction: [f32; 3],
-}
-
-pub struct PointLight {
-    pub color: [f32; 3],
-    pub intensity: f32,
-    pub position: [f32; 3],
-    pub range: f32,
-}
-
-pub struct SpotLight {
-    pub color: [f32; 3],
-    pub intensity: f32,
-    pub position: [f32; 3],
-    pub direction: [f32; 3],
-    pub range: f32,
-    pub inner_cone_angle: f32,
-    pub outer_cone_angle: f32,
-}
-
-pub struct GlScene3DForwardLightList {
-    pub mesh_count: usize,
-    pub mesh_light_blocks: Vec<Scene3DLightBlock>,
-}
-
-pub trait GlMeshMaterialRenderer: Send + Sync {
-    fn bind(
-        &self,
-        state: &GlRenderState,
-        material: &dyn flight_materials::Material3D,
-        light_block: &Scene3DLightBlock,
-        camera: &Camera3D,
-    );
-    fn draw(
-        &self,
-        state: &GlRenderState,
-        proxy: &RenderProxy<GlRenderState>,
-        geometry: &MeshGeometry,
-    );
-}
-
-pub struct GlModifierSnippet {
-    pub kind: ModifierKind,
-    pub vertex_preamble: String,
-    pub vertex_body: String,
-    pub fragment_preamble: String,
-    pub fragment_body: String,
-    pub define_key_fn: Option<Arc<dyn Fn(&dyn flight_shading::Modifier) -> String + Send + Sync>>,
-}
-
-pub struct GlPbrExtensionRegistration {
-    pub kind: Kind,
-    pub supported: bool,
-    pub texture_unit_cost: u32,
-    pub fragment_preamble: String,
-    pub fragment_body: String,
-    pub define_key_fn: Option<Arc<dyn Fn(&PbrExtension) -> String + Send + Sync>>,
-    pub bind_fn: Option<Arc<dyn Fn(&GlRenderState, &PbrExtension, u32) + Send + Sync>>,
-}
-
-pub struct GlPbrExtensionIssue {
-    pub code: String,
-    pub kind: Kind,
-}
-
+/// TS `GlClassicDefineKey`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GlClassicDefineKey {
     pub alpha_mask_enabled: bool,
+    pub has_color_adjustment: Option<bool>,
+    pub has_color_matrix: Option<bool>,
     pub has_alpha_map: bool,
-    pub has_color_adjustment: bool,
-    pub has_color_matrix: bool,
     pub has_diffuse_map: bool,
-    pub has_instanced: bool,
+    pub has_instances: Option<bool>,
     pub has_normal_map: bool,
-    pub has_skin: bool,
+    pub has_skin: Option<bool>,
     pub has_specular_map: bool,
     pub has_uv_transform: bool,
     pub lighting_model: GlClassicLightingModel,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum GlClassicLightingModel {
-    Lambert,
-    Phong,
-    BlinnPhong,
+/// TS `GlClassicProgram extends GlLitProgram`.
+#[derive(Debug)]
+pub struct GlClassicProgram {
+    pub lit: GlLitProgram,
+    pub loc_alpha_cutoff: Option<NativeUniformLocation>,
+    pub loc_alpha_map: Option<NativeUniformLocation>,
+    pub loc_diffuse: Option<NativeUniformLocation>,
+    pub loc_diffuse_map: Option<NativeUniformLocation>,
+    pub loc_normal_map: Option<NativeUniformLocation>,
+    pub loc_normal_scale: Option<NativeUniformLocation>,
+    pub loc_shininess: Option<NativeUniformLocation>,
+    pub loc_specular: Option<NativeUniformLocation>,
+    pub loc_specular_map: Option<NativeUniformLocation>,
 }
 
-pub struct GlDebugDefineKey {
-    pub has_instanced: bool,
-    pub has_normal_map: bool,
-    pub has_skin: bool,
-    pub mode: GlDebugMode,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// TS `GlDebugDefineKey.mode`.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum GlDebugMode {
+    #[default]
     Depth,
     Normal,
 }
 
-pub struct GlMatcapDefineKey {
-    pub alpha_mask_enabled: bool,
-    pub has_instanced: bool,
-    pub has_matcap: bool,
-    pub has_skin: bool,
+/// TS `GlDebugDefineKey`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GlDebugDefineKey {
+    pub has_instances: Option<bool>,
+    pub has_normal_map: bool,
+    pub has_skin: Option<bool>,
+    pub mode: GlDebugMode,
 }
 
+/// TS `GlDebugProgram extends GlMeshProgram`.
+#[derive(Debug)]
+pub struct GlDebugProgram {
+    pub mesh: GlMeshProgram,
+    pub loc_far: Option<NativeUniformLocation>,
+    pub loc_near: Option<NativeUniformLocation>,
+    pub loc_normal_map: Option<NativeUniformLocation>,
+    pub loc_normal_scale: Option<NativeUniformLocation>,
+    pub loc_view: Option<NativeUniformLocation>,
+}
+
+/// TS `GlMatcapDefineKey`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GlMatcapDefineKey {
+    pub alpha_mask_enabled: bool,
+    pub has_instances: Option<bool>,
+    pub has_matcap: bool,
+    pub has_skin: Option<bool>,
+}
+
+/// TS `GlMatcapProgram extends GlMeshProgram`.
+#[derive(Debug)]
+pub struct GlMatcapProgram {
+    pub mesh: GlMeshProgram,
+    pub loc_alpha_cutoff: Option<NativeUniformLocation>,
+    pub loc_matcap: Option<NativeUniformLocation>,
+    pub loc_tint: Option<NativeUniformLocation>,
+    pub loc_view: Option<NativeUniformLocation>,
+}
+
+/// TS `GlPbrDefineKey`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GlPbrDefineKey {
     pub alpha_mask_enabled: bool,
     pub has_alpha_map: bool,
     pub has_base_color_map: bool,
-    pub has_color_adjustment: bool,
-    pub has_color_matrix: bool,
+    pub has_color_adjustment: Option<bool>,
+    pub has_color_matrix: Option<bool>,
     pub has_emissive_map: bool,
-    pub has_instanced: bool,
+    pub has_instances: Option<bool>,
     pub has_metallic_roughness_map: bool,
     pub has_normal_map: bool,
     pub has_occlusion_map: bool,
-    pub has_skin: bool,
+    pub has_skin: Option<bool>,
     pub has_uv_transform: bool,
-    pub has_ibl: bool,
-    pub has_shadow: bool,
-    pub extension_define_key: String,
-    pub modifier_define_key: String,
 }
 
+/// TS `GlPbrProgram extends GlLitProgram`.
+#[derive(Debug)]
+pub struct GlPbrProgram {
+    pub lit: GlLitProgram,
+    pub loc_alpha_cutoff: Option<NativeUniformLocation>,
+    pub loc_alpha_map: Option<NativeUniformLocation>,
+    pub loc_base_color: Option<NativeUniformLocation>,
+    pub loc_base_color_map: Option<NativeUniformLocation>,
+    pub loc_emissive: Option<NativeUniformLocation>,
+    pub loc_emissive_map: Option<NativeUniformLocation>,
+    pub loc_emissive_strength: Option<NativeUniformLocation>,
+    pub loc_metallic: Option<NativeUniformLocation>,
+    pub loc_metallic_roughness_map: Option<NativeUniformLocation>,
+    pub loc_normal_map: Option<NativeUniformLocation>,
+    pub loc_normal_scale: Option<NativeUniformLocation>,
+    pub loc_occlusion_map: Option<NativeUniformLocation>,
+    pub loc_occlusion_strength: Option<NativeUniformLocation>,
+    pub loc_roughness: Option<NativeUniformLocation>,
+}
+
+/// TS `GlShadedDefineKey`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GlShadedDefineKey {
+    pub alpha_mask_enabled: bool,
+    pub has_color_adjustment: Option<bool>,
+    pub has_color_matrix: Option<bool>,
+    pub has_diffuse_map: bool,
+    pub has_instances: Option<bool>,
+    pub has_normal_map: bool,
+    pub has_skin: Option<bool>,
+    pub has_specular_map: bool,
+    pub has_uv_transform: bool,
+}
+
+/// TS `GlShadedProgram extends GlLitProgram`.
+#[derive(Debug)]
+pub struct GlShadedProgram {
+    pub lit: GlLitProgram,
+    pub loc_alpha_cutoff: Option<NativeUniformLocation>,
+    pub loc_diffuse: Option<NativeUniformLocation>,
+    pub loc_diffuse_map: Option<NativeUniformLocation>,
+    pub loc_normal_map: Option<NativeUniformLocation>,
+    pub loc_normal_scale: Option<NativeUniformLocation>,
+    pub loc_shininess: Option<NativeUniformLocation>,
+    pub loc_specular: Option<NativeUniformLocation>,
+    pub loc_specular_map: Option<NativeUniformLocation>,
+    pub loc_time: Option<NativeUniformLocation>,
+}
+
+/// TS `GlToonDefineKey`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GlToonDefineKey {
     pub alpha_mask_enabled: bool,
     pub has_base_color_map: bool,
-    pub has_instanced: bool,
+    pub has_instances: Option<bool>,
     pub has_ramp: bool,
-    pub has_skin: bool,
+    pub has_skin: Option<bool>,
     pub has_uv_transform: bool,
 }
 
+/// TS `GlToonProgram extends GlLitProgram`.
+#[derive(Debug)]
+pub struct GlToonProgram {
+    pub lit: GlLitProgram,
+    pub loc_alpha_cutoff: Option<NativeUniformLocation>,
+    pub loc_base_color: Option<NativeUniformLocation>,
+    pub loc_base_color_map: Option<NativeUniformLocation>,
+    pub loc_ramp: Option<NativeUniformLocation>,
+    pub loc_steps: Option<NativeUniformLocation>,
+}
+
+/// TS `GlUnlitDefineKey`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GlUnlitDefineKey {
     pub alpha_mask_enabled: bool,
     pub has_color_map: bool,
-    pub has_instanced: bool,
-    pub has_skin: bool,
+    pub has_instances: Option<bool>,
+    pub has_skin: Option<bool>,
     pub has_uv_transform: bool,
     pub vertex_color: bool,
 }
 
-pub struct GlShadedDefineKey {
-    pub base_flags: u32,
-    pub modifier_define_key: String,
+/// TS `GlUnlitProgram extends GlMeshProgram`.
+#[derive(Debug)]
+pub struct GlUnlitProgram {
+    pub mesh: GlMeshProgram,
+    pub loc_alpha_cutoff: Option<NativeUniformLocation>,
+    pub loc_color: Option<NativeUniformLocation>,
+    pub loc_color_map: Option<NativeUniformLocation>,
+    pub loc_intensity: Option<NativeUniformLocation>,
 }
 
-#[derive(Clone)]
-pub struct GlCustomMaterialShaderSource {
-    pub key: String,
-    pub vertex_source: String,
-    pub fragment_source: String,
+/// TS `GlWireframeProgram extends GlMeshProgram`.
+#[derive(Debug)]
+pub struct GlWireframeProgram {
+    pub mesh: GlMeshProgram,
+    pub loc_alpha_cutoff: Option<NativeUniformLocation>,
+    pub loc_color: Option<NativeUniformLocation>,
 }
+
+/// The line-index upload of one geometry for the wireframe family (TS `GlWireframeUpload`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GlWireframeUpload {
+    pub index_type: u32,
+    pub line_index_buffer: NativeBuffer,
+    pub vao: NativeVertexArray,
+    pub version: i64,
+}
+
+/// The GPU upload of one MeshGeometry (TS `GlMeshUpload`): a VAO over the interleaved vertex buffer
+/// and optional index buffer, the element type/count, the effective primitive mode, and the geometry
+/// `version` uploaded (-1 before the first upload).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GlMeshUpload {
+    pub index_buffer: Option<NativeBuffer>,
+    pub index_count: u32,
+    pub index_type: u32,
+    pub primitive_mode: u32,
+    pub skin_bind_uploaded: Option<bool>,
+    pub vao: NativeVertexArray,
+    pub version: i64,
+    pub vertex_buffer: NativeBuffer,
+}
+
+/// The directional shadow resource for a state (TS `GlScene3DShadow`).
+#[derive(Clone, Debug, PartialEq)]
+pub struct GlScene3DShadow {
+    pub enabled: bool,
+    pub matrix: Matrix4,
+    pub normal_bias_world: f32,
+    pub pcf_radius: f32,
+    pub shadow_bias: f32,
+    pub texture: NativeTexture,
+}
+
+/// The baked image-based-lighting set for a state (TS `GlScene3DIbl`).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct GlScene3DIbl {
+    pub brdf_lut: NativeTexture,
+    pub environment_source_revision: u32,
+    pub intensity: f32,
+    pub irradiance_cube: NativeTexture,
+    pub prefiltered_cube: NativeTexture,
+    pub prefiltered_mip_count: u32,
+}
+
+/// Caller-owned, resolved opaque-scene color sampled by GL transmission (TS
+/// `GlPbrTransmissionSceneColor`); scene3d-gl retains only this non-owning view.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GlPbrTransmissionSceneColor {
+    pub height: u32,
+    pub mip_level_count: u32,
+    pub texture: NativeTexture,
+    pub width: u32,
+}
+
+/// The opt-in GPU mesh-skinning capability (TS `GlMeshSkinFeature`), installed by
+/// `register_gl_mesh_skinning`: the forward and shadow palette binders plus the vertex GLSL the
+/// HAS_SKIN variant needs.
+pub struct GlMeshSkinFeature {
+    pub bind_mesh_skin_palette: fn(&mut GlRenderState, &GlMeshProgram, &Scene3DRenderProxy) -> bool,
+    pub bind_shadow_skin_palette: fn(&mut GlRenderState, &[f32]),
+    pub vertex_declarations_glsl: &'static str,
+}
+
+/// The prepared per-visible-mesh forward-light blocks (TS `GlScene3DForwardLightList`).
+/// `mesh_light_blocks[i]` belongs to the render list's `visible_meshes[i]`; identical selected-light
+/// tuples share one block instance so material binds stay batchable.
+#[derive(Clone, Debug, Default)]
+pub struct GlScene3DForwardLightList {
+    pub mesh_count: usize,
+    pub mesh_light_blocks: Vec<Rc<Scene3DLightBlock>>,
+}
+
+/// One per-subset draw record in the two-pass draw lists (TS `GlScene3DDrawEntry`), pooled on the
+/// scene runtime.
+#[derive(Clone)]
+pub struct GlScene3DDrawEntry {
+    pub alpha: f32,
+    pub color_matrix: Option<[f32; 20]>,
+    pub color_scale_bias: Option<flight_materials::ColorScaleBias>,
+    pub depth: f32,
+    pub light_block: Option<Rc<Scene3DLightBlock>>,
+    pub material: Option<Material3DRef>,
+    pub mesh: Option<NodeRef>,
+    pub renderer: Option<&'static GlMeshMaterialRenderer>,
+    pub sort_key: u32,
+    pub subset: MeshSubset,
+    pub world_matrix: Matrix4,
+}
+
+/// TS `GlEnvironmentCaptureOptions`.
+#[derive(Clone, Default)]
+pub struct GlEnvironmentCaptureOptions {
+    pub environment: Option<Ref<flight_lighting::Environment>>,
+    pub exclude_node: Option<NodeRef>,
+    pub far: Option<f32>,
+    pub near: Option<f32>,
+}
+
+/// TS `GlPbrExtensionIssueCode`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GlPbrExtensionIssueCode {
+    DuplicateKind,
+    FramebufferFeedback,
+    MissingRegistration,
+    TextureUnitExhaustion,
+    UnsupportedExtension,
+}
+
+/// Plain-data explanation for a silent Extended PBR skip (TS `GlPbrExtensionIssue`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GlPbrExtensionIssue {
+    pub code: GlPbrExtensionIssueCode,
+    pub kind: Kind,
+}
+
+/// What a geometry's vertex layout can serve when a material's maps ask for a UV set (TS
+/// `MeshGeometryUvSetExplanation`).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct MeshGeometryUvSetExplanation {
+    pub available_uv_sets: Vec<PbrUvSet>,
+    pub requested_uv_sets: Vec<PbrUvSet>,
+    pub samples_at_origin: bool,
+    pub unserved_uv_sets: Vec<PbrUvSet>,
+}
+
+/// Opt-in scene guard slots (TS optional `GlScene3DRuntime` callbacks). Each receives the state so
+/// it can reach the state's guard log (D5: no logging singleton).
+pub type GlScene3DColorSpaceGuard = fn(&GlRenderState);
+pub type GlScene3DCustomShaderGuard = fn(&GlRenderState, NativeProgram, &str);
+pub type GlScene3DDeformGuard = fn(&GlRenderState, &Mesh);
+pub type GlScene3DForwardLightSelectionGuard = fn(&GlRenderState, &Scene3DLightsLike);
+pub type GlScene3DPbrExtensionGuard = fn(&GlRenderState, &[Ref<PbrExtension>]);
+
+/// A teardown a lazily created optional resource registers (TS `resourceCleanups` entry).
+pub type GlScene3DResourceCleanup = fn(&mut GlRenderState);
+
+/// scene3d-gl's per-`GlRenderState` private state (TS `GlScene3DRuntime`), held in render-gl's
+/// opaque `scene3d_runtime` slot (D5). The geometry upload caches live on the context tier
+/// (`GlScene3DContextRuntime`) so derived states share them, as TS `sceneMeshUploadCache` does.
+pub struct GlScene3DRuntime {
+    pub active_blended_run: bool,
+    pub active_color_adjustment_run: bool,
+    pub active_color_matrix_run: bool,
+    pub active_instanced_run: bool,
+    pub active_mesh_program: Option<GlMeshProgramRef>,
+    pub active_skinned_run: bool,
+    /// The explicit world-alpha revision source `get_node3d_world_alpha` advances (D5; TS module
+    /// counter in scene3d).
+    pub appearance: Scene3DAppearanceState,
+    pub blended_draw_list: Vec<GlScene3DDrawEntry>,
+    pub blended_pool: Vec<GlScene3DDrawEntry>,
+    pub color_space_guard: Option<GlScene3DColorSpaceGuard>,
+    pub custom_shader_guard: Option<GlScene3DCustomShaderGuard>,
+    /// The placeholder material a subset with no concrete material draws with (TS module const
+    /// `DEFAULT_MATERIAL`: StandardMaterialKind with createMaterial3D defaults), one identity per
+    /// state so it batches across frames.
+    pub default_material: Material3DRef,
+    pub deform_guard: Option<GlScene3DDeformGuard>,
+    pub environment_source_cube: Option<NativeTexture>,
+    pub environment_source_cube_color_space: TextureColorSpace,
+    pub environment_source_cube_face_versions: Vec<u32>,
+    pub environment_source_revision: u32,
+    /// Entity id of the source Texture the cached GL cubemap was derived from (D15 identity key).
+    pub environment_source_texture: Option<u64>,
+    pub environment_source_texture_version: i64,
+    pub forward_light_selection_guard: Option<GlScene3DForwardLightSelectionGuard>,
+    pub ibl: Option<GlScene3DIbl>,
+    pub ibl_bake_framebuffer: Option<NativeFramebuffer>,
+    /// The 1x1 placeholder cube + 2D textures bound to the IBL units when no environment is baked (TS
+    /// module WeakMap `_iblPlaceholders` keyed by state).
+    pub ibl_placeholders: Option<GlIblPlaceholders>,
+    pub instance_color_palette: Option<GlSkinPaletteTexture>,
+    pub instance_palette: Option<GlSkinPaletteTexture>,
+    /// The prepared list's light block for the current frame, kept while unchanged (TS: the reused
+    /// render-list block identity).
+    pub list_light_block: Option<Rc<Scene3DLightBlock>>,
+    pub mesh_skin_feature: Option<&'static GlMeshSkinFeature>,
+    pub opaque_draw_list: Vec<GlScene3DDrawEntry>,
+    pub opaque_pool: Vec<GlScene3DDrawEntry>,
+    pub pbr_extension_guard: Option<GlScene3DPbrExtensionGuard>,
+    pub pbr_transmission_scene_color: Option<GlPbrTransmissionSceneColor>,
+    pub program_cache: HashMap<String, GlMeshProgramRef>,
+    pub resource_cleanups: Option<Vec<GlScene3DResourceCleanup>>,
+    pub shadow: Option<GlScene3DShadow>,
+    pub shadow_target: Option<GlTextureRenderTarget>,
+    pub skin_normal_palette: Option<GlSkinPaletteTexture>,
+    pub skin_palette: Option<GlSkinPaletteTexture>,
+    pub time: f32,
+    /// The light block identity (address) and version last uploaded into each lit program's default
+    /// uniforms (TS module WeakMaps `_uploadedLightBlock` / `_uploadedLightVersion` keyed by program).
+    pub uploaded_light_blocks: HashMap<NativeProgram, (usize, u32)>,
+}
+
+/// TS `GlIblPlaceholders`: the correctly-typed placeholder textures for the PBR IBL samplers.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GlIblPlaceholders {
+    pub cube: NativeTexture,
+    pub lut: NativeTexture,
+}
+
+/// scene3d-gl's per-context record (TS `GlContextRuntime.sceneMeshUploadCache` and the wireframe
+/// upload WeakMap), keyed by geometry entity id (D15) and shared by every state on the context.
+#[derive(Default)]
+pub struct GlScene3DContextRuntime {
+    pub upload_cache: HashMap<u64, GlMeshUpload>,
+    pub wireframe_upload_cache: HashMap<u64, GlWireframeUpload>,
+}
+
+impl GlMeshProgramFamily for GlMeshProgram {
+    fn mesh_program(&self) -> &GlMeshProgram {
+        return self;
+    }
+}
+
+impl GlMeshProgramFamily for GlLitProgram {
+    fn mesh_program(&self) -> &GlMeshProgram {
+        return &self.mesh;
+    }
+}
+
+impl Deref for GlLitProgram {
+    type Target = GlMeshProgram;
+
+    fn deref(&self) -> &GlMeshProgram {
+        return &self.mesh;
+    }
+}
+
+macro_rules! impl_gl_lit_family {
+    ($t:ty) => {
+        impl GlMeshProgramFamily for $t {
+            fn mesh_program(&self) -> &GlMeshProgram {
+                return &self.lit.mesh;
+            }
+        }
+
+        impl Deref for $t {
+            type Target = GlLitProgram;
+
+            fn deref(&self) -> &GlLitProgram {
+                return &self.lit;
+            }
+        }
+    };
+}
+
+macro_rules! impl_gl_mesh_family {
+    ($t:ty) => {
+        impl GlMeshProgramFamily for $t {
+            fn mesh_program(&self) -> &GlMeshProgram {
+                return &self.mesh;
+            }
+        }
+
+        impl Deref for $t {
+            type Target = GlMeshProgram;
+
+            fn deref(&self) -> &GlMeshProgram {
+                return &self.mesh;
+            }
+        }
+    };
+}
+
+impl_gl_lit_family!(GlClassicProgram);
+impl_gl_lit_family!(GlPbrProgram);
+impl_gl_lit_family!(GlShadedProgram);
+impl_gl_lit_family!(GlToonProgram);
+impl_gl_mesh_family!(GlDebugProgram);
+impl_gl_mesh_family!(GlMatcapProgram);
+impl_gl_mesh_family!(GlUnlitProgram);
+impl_gl_mesh_family!(GlWireframeProgram);
