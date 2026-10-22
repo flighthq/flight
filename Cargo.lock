@@ -1481,7 +1481,6 @@ name = "flight-unhomed"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-host",
 ]
 
 [[package]]
@@ -1489,6 +1488,7 @@ name = "flight-updater"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
+ "flight-host",
 ]
 
 [[package]]
