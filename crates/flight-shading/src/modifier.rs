@@ -16,7 +16,9 @@ pub struct ModifierFields {
 
 /// The open shading-modifier family. Custom kinds compose `ModifierFields` and implement this trait
 /// through `impl_modifier!`; mixed stacks retain entity identity as `Ref<dyn Modifier>`.
-pub trait Modifier: flight_entity::Entity + fmt::Debug + Send + Sync {
+/// `Any` is a supertrait so a backend snippet can narrow a `&dyn Modifier` to its concrete kind
+/// (TS casts the base `Modifier` to the registered kind it was looked up by).
+pub trait Modifier: flight_entity::Entity + std::any::Any + fmt::Debug + Send + Sync {
     fn modifier_fields(&self) -> &ModifierFields;
     fn modifier_fields_mut(&mut self) -> &mut ModifierFields;
     fn modifier_define_signature(&self) -> String;
