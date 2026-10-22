@@ -532,4 +532,27 @@ mod wgpu_pbr_prelude_shadow_sampling {
         assert!(code.contains("textureSampleCompareLevel(shadowMap, shadowSampler"));
         assert!(code.contains("direct * sampleDirectionalShadow(in.worldPosition, geometricNormal)"));
     }
+
+    #[test]
+    fn classic_prelude_samples_the_shadow_map_on_the_directional_term_mirrors_scene_gl_classic() {
+        let code = get_wgpu_classic_module_source_for_key(
+            &WgpuClassicDefineKey {
+                alpha_mask_enabled: false,
+                double_sided: false,
+                has_color_adjustment: None,
+                has_color_matrix: None,
+                has_alpha_map: Some(false),
+                has_diffuse_map: false,
+                has_normal_map: false,
+                has_specular_map: false,
+                lighting_model: WgpuClassicLightingModel::Lambert,
+            },
+            None,
+            None,
+            None,
+        );
+        assert!(code.contains("@group(3) @binding(1) var shadowMap : texture_depth_2d"));
+        assert!(code.contains("fn sampleDirectionalShadow"));
+        assert!(code.contains("direct * sampleDirectionalShadow(in.worldPosition, geometricNormal)"));
+    }
 }

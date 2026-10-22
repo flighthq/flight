@@ -345,6 +345,22 @@ mod render_wgpu_scene3d {
         assert!(runtime.blended_pool.is_empty());
     }
 
+    #[test]
+    fn draws_a_particle_emitter3d_node_in_the_scene_via_the_single_render_wgpu_scene3d_call() {
+        let mut test = make_wgpu_scene3d_state(None);
+        register_wgpu_particle_emitter3d_pass(&mut test.state);
+        let scene = create_test_scene_root();
+        add_test_child(&scene, &make_particle_emitter(3));
+
+        render(&mut test, &scene, &make_camera());
+
+        let draws = test.draws_indexed();
+        assert!(!draws.is_empty());
+        assert_eq!(draws[0].index_count, 6);
+        assert_eq!(draws[0].instance_count, 3);
+        submit_test_frame(&mut test);
+    }
+
     // The instance record is matrix-then-linear-RGBA; an uncoloured instance uploads opaque white.
     #[test]
     fn packs_each_instance_colour_into_the_tail_of_its_instance_record() {
@@ -403,4 +419,29 @@ mod render_wgpu_scene3d {
         assert_eq!(bound.len(), 2);
         assert_ne!(bound[0], bound[1]);
     }
+}
+
+fn make_particle_emitter(count: usize) -> Ref<flight_particleemitter::ParticleEmitter3D> {
+    let emitter = flight_particleemitter::create_particle_emitter_3d();
+    flight_particleemitter::reserve_particle_emitter_3d(&emitter, count);
+    {
+        let mut guard = emitter.write().unwrap();
+        let data = &mut guard.data;
+        data.particle_count = count;
+        for index in 0..count {
+            let tt = index * 4;
+            data.transforms[tt] = index as f32;
+            data.transforms[tt + 1] = index as f32;
+            data.transforms[tt + 2] = 0.0;
+            data.transforms[tt + 3] = 1.0;
+            data.positions_z[index] = 0.0;
+            data.alphas[index] = 1.0;
+            let ct = index * 3;
+            data.colors[ct] = 1.0;
+            data.colors[ct + 1] = 1.0;
+            data.colors[ct + 2] = 1.0;
+            data.ids[index] = 0;
+        }
+    }
+    return emitter;
 }
