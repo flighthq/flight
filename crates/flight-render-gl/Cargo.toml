@@ -1,0 +1,38 @@
+[package]
+name = "flight-render-gl"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Native glow-backed GL render state, targets, shaders, textures, passes, and surface integration"
+autotests = false
+
+[lib]
+doctest = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-app = { path = "../flight-app" }
+flight-bitmap = { workspace = true }
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-host = { workspace = true }
+flight-image = { workspace = true }
+flight-log = { workspace = true }
+flight-materials = { workspace = true }
+flight-node = { path = "../flight-node" }
+flight-registry = { workspace = true }
+flight-render = { workspace = true }
+flight-signals = { workspace = true }
+flight-surface = { workspace = true }
+flight-texture = { workspace = true }
+flight-texture-formats = { workspace = true }
+glow = "0.18.0"
+
+[dev-dependencies]
+flight-scene2d = { path = "../flight-scene2d" }
+
+[lints]
+workspace = true

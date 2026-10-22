@@ -1,0 +1,939 @@
+// flight-lint: allow-file(contract-vocabulary, enum-payload-named, file-structure, sugar-delegates) GL backend contracts mirror the pinned structural WebGL types and D17 ownership model
+
+use std::cell::RefCell;
+use std::collections::{HashMap, HashSet};
+use std::rc::{Rc, Weak};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
+
+use flight_entity::{Entity, EntityRuntimeSlot, Kind};
+use flight_log::LogStateRef;
+use flight_materials::{BlendMode, Material2D, MaterialData};
+use flight_registry::KindMap;
+use flight_render::{
+    RenderProxies2D, RenderRegistries, RenderState, RenderStateBackend, RenderStateFields,
+    RenderStateOptions, RenderStateRuntime, RenderTargetAxes, RenderTargetAxisDifference,
+};
+use flight_signals::Signal;
+use flight_texture::{RenderTargetColorSpace, TextureColorSpace, TextureVariant};
+use flight_texture_formats::TextureContainerFormat;
+use glow::{
+    NativeBuffer, NativeFramebuffer, NativeProgram, NativeRenderbuffer, NativeShader,
+    NativeTexture, NativeUniformLocation, NativeVertexArray,
+};
+
+/// A provider-reported snapshot used by diagnostics and target policy.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct GlCapabilities {
+    pub max_texture_size: u32,
+    pub max_texture_units: u32,
+    pub max_samples: u32,
+    pub max_draw_buffers: u32,
+    pub max_color_attachments: u32,
+    pub max_renderbuffer_size: u32,
+    pub supports_color_buffer_float: bool,
+    pub supports_float_linear: bool,
+    pub supports_srgb: bool,
+    pub max_anisotropy: f32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GlCullFaceKind {
+    Back,
+    Front,
+    FrontAndBack,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GlDepthFuncKind {
+    Always,
+    Equal,
+    Greater,
+    GreaterEqual,
+    Less,
+    LessEqual,
+    Never,
+    NotEqual,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GlFramebufferStatusKind {
+    Complete,
+    IncompleteAttachment,
+    IncompleteDimensions,
+    IncompleteMissingAttachment,
+    IncompleteMultisample,
+    Unsupported,
+    Unknown,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GlTextureFilterKind {
+    Linear,
+    LinearMipmapLinear,
+    LinearMipmapNearest,
+    Nearest,
+    NearestMipmapLinear,
+    NearestMipmapNearest,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GlTextureWrapKind {
+    ClampToEdge,
+    MirroredRepeat,
+    Repeat,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GlTextureInternalFormat {
+    R8,
+    R16F,
+    R32F,
+    Rg8,
+    Rg16F,
+    Rgba8,
+    Rgba16F,
+    Rgba32F,
+    Srgb8Alpha8,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct GlTextureDescriptor {
+    pub wrap_s: Option<GlTextureWrapKind>,
+    pub wrap_t: Option<GlTextureWrapKind>,
+    pub min_filter: Option<GlTextureFilterKind>,
+    pub mag_filter: Option<GlTextureFilterKind>,
+    pub mipmaps: Option<bool>,
+    pub anisotropy: Option<f32>,
+    pub premultiply_alpha: Option<bool>,
+    pub format: Option<GlTextureInternalFormat>,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct GlCompressedTextureSupport {
+    pub astc: bool,
+    pub bptc: bool,
+    pub etc: bool,
+    pub pvrtc: bool,
+    pub rgtc: bool,
+    pub s3tc: bool,
+}
+
+pub type GlCompressedTextureDecoder =
+    fn(TextureContainerFormat, u32, u32, &[u8]) -> Option<Vec<u8>>;
+
+/// Opaque opt-in color-adjustment capability. The implementation lives in the color-adjustment
+/// package; render-gl retains it by shared identity without importing that optional feature.
+pub type GlColorAdjustmentMaterialFeature = Arc<dyn std::any::Any + Send + Sync>;
+pub type GlColorAdjustmentMaterialFeatureGuard =
+    fn(&mut GlRenderState, &flight_materials::ColorScaleBias);
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GlBlendFactor {
+    DstColor,
+    One,
+    OneMinusSrcAlpha,
+    OneMinusSrcColor,
+    Zero,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum GlBlendEquation {
+    #[default]
+    FuncAdd,
+    FuncReverseSubtract,
+    Max,
+    Min,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GlBlendRealization {
+    pub src: GlBlendFactor,
+    pub dst: GlBlendFactor,
+    pub equation: Option<GlBlendEquation>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GlBlendSignature {
+    pub dst: u32,
+    pub equation: u32,
+    pub src: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GlBoundShader {
+    pub locations: Option<GlShaderLocations>,
+    pub program: NativeProgram,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GlShaderLocations {
+    pub program: NativeProgram,
+    pub loc_position: u32,
+    pub loc_tex_coord: u32,
+    pub loc_matrix: Option<NativeUniformLocation>,
+    pub loc_alpha: Option<NativeUniformLocation>,
+    pub loc_color_scale: Option<NativeUniformLocation>,
+    pub loc_color_bias: Option<NativeUniformLocation>,
+    pub loc_has_color_scale_bias: Option<NativeUniformLocation>,
+    pub loc_texture: Option<NativeUniformLocation>,
+}
+
+pub type GlShaderBind =
+    Arc<dyn Fn(&glow::Context, &mut GlRenderState, &flight_render::RenderProxy2D<GlRenderState>)>;
+
+pub struct GlBitmapShader {
+    pub(crate) runtime: EntityRuntimeSlot,
+    pub locations: GlShaderLocations,
+    pub program: NativeProgram,
+    pub bind: GlShaderBind,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GlFullscreenProgram {
+    pub program: NativeProgram,
+    pub loc_position: u32,
+    pub loc_tex_coord: u32,
+    pub texture: Option<NativeUniformLocation>,
+    pub textures: Vec<Option<NativeUniformLocation>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GlFillProgram {
+    pub fullscreen: GlFullscreenProgram,
+    pub program: NativeProgram,
+    pub loc_color: Option<NativeUniformLocation>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GlTextureRealization {
+    pub straight_alpha: bool,
+    pub texture: NativeTexture,
+}
+
+pub type GlTextureResolver = fn(
+    &mut GlRenderState,
+    &dyn TextureVariant,
+    bool,
+    TextureColorSpace,
+) -> Option<GlTextureRealization>;
+
+pub trait GlQuadMaterialRenderer {
+    fn instance_float_count(&self) -> usize;
+    fn bind(&self, state: &mut GlRenderState, material: Option<&dyn Material2D>);
+    fn pack_instance(
+        &self,
+        _state: &mut GlRenderState,
+        _material_data: Option<&dyn MaterialData>,
+        _out: &mut [f32],
+        _offset: usize,
+    ) {
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GlCustomMaterialShaderSource {
+    pub fragment: String,
+    pub vertex: String,
+}
+
+pub type GlCompressedTextureUploader = fn(
+    &glow::Context,
+    &flight_image::CompressedImageResource,
+    Option<GlCompressedTextureDecoder>,
+    TextureColorSpace,
+) -> bool;
+
+/// Backend-only persistent registration policy. Every table is an immutable `Arc` snapshot; a
+/// register operation replaces exactly one table through `Arc::make_mut`.
+#[derive(Clone)]
+pub struct GlRenderRegistries {
+    pub blend_realizations: Arc<KindMap<GlBlendRealization>>,
+    pub color_adjustment_feature: Option<GlColorAdjustmentMaterialFeature>,
+    pub color_adjustment_feature_guard: Option<GlColorAdjustmentMaterialFeatureGuard>,
+    pub compressed_texture_decoder: Option<GlCompressedTextureDecoder>,
+    pub compressed_texture_upload: Option<GlCompressedTextureUploader>,
+    pub custom_effect_shaders: Arc<KindMap<String>>,
+    pub custom_material_shaders: Arc<KindMap<GlCustomMaterialShaderSource>>,
+    pub material_renderers: Arc<KindMap<&'static dyn GlQuadMaterialRenderer>>,
+    pub modifier_snippets: Arc<KindMap<String>>,
+    pub pbr_extensions: Arc<KindMap<String>>,
+    pub texture_resolvers: Arc<KindMap<GlTextureResolver>>,
+    pub velocity_writers: Arc<KindMap<fn(&mut GlRenderState, &dyn std::any::Any)>>,
+}
+
+pub struct GlRenderStateOptions {
+    pub render_registries: RenderStateOptions<GlRenderState>,
+    pub gl_registries: GlRenderRegistries,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct GlScissorRect {
+    pub height: i32,
+    pub width: i32,
+    pub x: i32,
+    pub y: i32,
+}
+
+pub type GlViewportRect = GlScissorRect;
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct GlRenderStats {
+    pub draw_calls: u32,
+    pub triangles: u32,
+    pub texture_binds: u32,
+    pub program_switches: u32,
+    pub framebuffer_binds: u32,
+    pub uniform_uploads: u32,
+}
+
+/// A deletion request contains no context owner. It is safe to enqueue from a resource destructor;
+/// only `flush_gl_delete_queue` interprets it on the GL thread.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GlDeletion {
+    Buffer(NativeBuffer),
+    Framebuffer(NativeFramebuffer),
+    Program(NativeProgram),
+    Renderbuffer(NativeRenderbuffer),
+    Shader(NativeShader),
+    Texture(NativeTexture),
+    VertexArray(NativeVertexArray),
+    TextureEntity(u64),
+}
+
+#[derive(Clone)]
+pub struct GlDeleteQueue(pub Arc<Mutex<Vec<GlDeletion>>>, pub Arc<AtomicBool>);
+
+#[derive(Default)]
+pub struct GlTextureCaches {
+    pub by_texture_entity: HashMap<(u64, bool, bool), GlTextureCacheEntry>,
+    pub external_by_source_entity: HashMap<u64, NativeTexture>,
+    pub mipmapped: HashSet<NativeTexture>,
+    pub render_target_by_source_entity: HashMap<u64, Rc<RefCell<GlRenderTextureEntry>>>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GlTextureCacheEntry {
+    pub texture: NativeTexture,
+    pub version: u32,
+    pub straight_alpha: bool,
+}
+
+pub struct GlContextRuntime {
+    pub binding: Option<GlBoundShader>,
+    pub current_blend_signature: Option<GlBlendSignature>,
+    pub current_texture_realization: Option<GlTextureRealization>,
+    pub quad_index_buffer: Option<NativeBuffer>,
+    pub quad_vertex_buffer: Option<NativeBuffer>,
+    pub references: usize,
+    pub teardowns: Vec<Box<dyn FnOnce(&glow::Context)>>,
+    pub texture_caches: GlTextureCaches,
+    pub delete_queue: GlDeleteQueue,
+    pub context_lost: bool,
+    pub anisotropy_extension: Option<bool>,
+    pub max_anisotropy: f32,
+    /// Native OpenGL has no `UNPACK_PREMULTIPLY_ALPHA_WEBGL` parameter. Upload helpers apply the
+    /// conversion to CPU pixels while this shadow preserves the renderer's bracket semantics.
+    pub unpack_premultiply_alpha: bool,
+    pub fill_program: Option<GlFillProgram>,
+    pub fullscreen_programs: HashMap<String, GlFullscreenProgram>,
+    pub quad_vertex_array: Option<NativeVertexArray>,
+    pub(crate) pass_handle_pool: Vec<GlRenderPass>,
+    pub(crate) pass_stack: Vec<GlPassStackEntry>,
+    pub state_runtimes: HashMap<u64, Weak<RefCell<GlRenderStateRuntime>>>,
+}
+
+pub struct GlContextState {
+    pub(crate) runtime: EntityRuntimeSlot,
+    pub gl: Rc<glow::Context>,
+    pub runtime_state: RefCell<GlContextRuntime>,
+}
+
+pub struct GlRenderStateRuntime {
+    pub current_framebuffer: Option<NativeFramebuffer>,
+    pub current_mask_depth: u32,
+    pub current_scissor_rect: Option<GlScissorRect>,
+    pub current_target_id: Option<u64>,
+    pub render_target_viewport: Option<GlViewportRect>,
+    pub scissor_stack: Vec<GlScissorRect>,
+    pub clip_forms: Vec<GlClipForm>,
+    pub(crate) cube_face_stack: Vec<SavedGlCubeFaceState>,
+    pub(crate) render_state_stack: Vec<SavedGlRenderState>,
+    pub matrix_array: [f32; 9],
+    pub quad_vertex_data: [f32; 16],
+    pub current_pass: Option<GlRenderPass>,
+    pub current_target: Option<GlRenderTargetSnapshot>,
+    pub default_bitmap_shader: Option<Arc<GlBitmapShader>>,
+    pub material_bitmap_shader_map: HashMap<Kind, Arc<GlBitmapShader>>,
+    pub shader_bindings: HashMap<u64, Arc<GlBitmapShader>>,
+    pub render_texture_guard: Option<GlRenderTextureGuard>,
+    pub binding_cache_guard: Option<fn(&GlRenderState, NativeProgram)>,
+    pub guard_log: Option<LogStateRef>,
+    pub first_render_root_id: Option<u64>,
+    pub flush_pending_draws: Option<fn(&mut GlRenderState)>,
+    pub destroyed: bool,
+    pub stats: GlRenderStats,
+    pub teardowns: Vec<fn(&mut GlRenderState)>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GlClipForm {
+    Rect,
+    Contour,
+}
+
+pub struct GlRenderState {
+    pub render: RenderStateFields,
+    pub runtime: RenderStateRuntime<GlRenderState>,
+    pub registries: RenderRegistries<GlRenderState>,
+    pub gl: Rc<glow::Context>,
+    pub context_state: Rc<GlContextState>,
+    pub gl_runtime: Rc<RefCell<GlRenderStateRuntime>>,
+    pub gl_registries: GlRenderRegistries,
+    pub apply_blend_mode: Option<fn(&mut GlRenderState, Option<&BlendMode>)>,
+}
+
+pub struct GlContextLossSignals {
+    pub on_gl_context_lost: Signal<()>,
+    pub on_gl_context_restored: Signal<()>,
+}
+
+pub trait GlRenderTarget: Entity {
+    fn gl(&self) -> &Rc<glow::Context>;
+    fn framebuffer(&self) -> Option<NativeFramebuffer>;
+    fn width(&self) -> u32;
+    fn height(&self) -> u32;
+    fn color_attachments(&self) -> u32;
+    fn color_space(&self) -> RenderTargetColorSpace;
+    fn set_color_space(&mut self, color_space: RenderTargetColorSpace);
+    fn resolve_framebuffer(&self) -> Option<NativeFramebuffer> {
+        return None;
+    }
+    fn sample_count(&self) -> u32 {
+        return 1;
+    }
+}
+
+pub struct GlScreenRenderTarget {
+    pub(crate) runtime: EntityRuntimeSlot,
+    pub gl: Rc<glow::Context>,
+    pub width: u32,
+    pub height: u32,
+    pub color_space: RenderTargetColorSpace,
+}
+
+pub struct GlTextureRenderTarget {
+    pub(crate) runtime: EntityRuntimeSlot,
+    pub gl: Rc<glow::Context>,
+    pub requested_axes: RenderTargetAxes,
+    pub axes: RenderTargetAxes,
+    pub framebuffer: NativeFramebuffer,
+    pub resolve_framebuffer: Option<NativeFramebuffer>,
+    pub textures: Vec<NativeTexture>,
+    pub texture: NativeTexture,
+    pub depth_texture: Option<NativeTexture>,
+    pub color_renderbuffers: Vec<NativeRenderbuffer>,
+    pub depth_stencil_renderbuffer: Option<NativeRenderbuffer>,
+    pub delete_queue: GlDeleteQueue,
+    pub destroyed: bool,
+}
+
+pub struct GlTextureRenderTargetStorage {
+    pub axes: RenderTargetAxes,
+    pub framebuffer: NativeFramebuffer,
+    pub resolve_framebuffer: Option<NativeFramebuffer>,
+    pub textures: Vec<NativeTexture>,
+    pub depth_texture: Option<NativeTexture>,
+    pub color_renderbuffers: Vec<NativeRenderbuffer>,
+    pub depth_stencil_renderbuffer: Option<NativeRenderbuffer>,
+}
+
+#[derive(Default)]
+pub struct GlTextureRenderTargetPool {
+    pub(crate) runtime: EntityRuntimeSlot,
+    pub free: Vec<GlTextureRenderTarget>,
+}
+
+pub struct GlCubeRenderTarget {
+    pub(crate) runtime: EntityRuntimeSlot,
+    pub gl: Rc<glow::Context>,
+    pub color_space: RenderTargetColorSpace,
+    pub depth_stencil_renderbuffer: Option<NativeRenderbuffer>,
+    pub framebuffer: NativeFramebuffer,
+    pub size: u32,
+    pub texture: NativeTexture,
+    pub delete_queue: GlDeleteQueue,
+    pub destroyed: bool,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct GlCubeRenderTargetOptions {
+    pub depth: Option<bool>,
+}
+
+pub struct GlSkinPaletteTexture {
+    pub(crate) runtime: EntityRuntimeSlot,
+    pub joint_capacity: usize,
+    pub texture: NativeTexture,
+    pub delete_queue: GlDeleteQueue,
+    pub destroyed: bool,
+}
+
+pub struct GlRenderViewResources {
+    pub(crate) runtime: EntityRuntimeSlot,
+    pub render_state: GlRenderState,
+    pub render_target: GlTextureRenderTarget,
+    pub viewport: flight_node::Viewport,
+    pub proxies: RenderProxies2D<GlRenderState>,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum GlRenderTextureStatus {
+    Ready,
+    Released,
+    #[default]
+    Unrendered,
+    Writing,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct GlRenderTextureExplanation {
+    pub height: u32,
+    pub status: GlRenderTextureStatus,
+    pub width: u32,
+}
+
+pub struct GlRenderTextureEntry {
+    pub status: GlRenderTextureStatus,
+    pub target: GlTextureRenderTarget,
+}
+
+pub type GlRenderTextureGuard =
+    fn(&mut GlRenderState, &dyn TextureVariant, &GlRenderTextureExplanation);
+
+pub struct GlRenderTexturePool {
+    pub(crate) runtime: EntityRuntimeSlot,
+    pub context_id: Option<usize>,
+    pub destroyed: bool,
+    pub effect_targets: GlTextureRenderTargetPool,
+    pub free: Vec<flight_render::RenderTexture>,
+    pub leased: HashSet<u64>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TextureResolutionStatus {
+    MissingKind,
+    MissingResolver,
+    Registered,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TextureResolutionExplanation {
+    pub kind: Option<Kind>,
+    pub status: TextureResolutionStatus,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RenderTargetExplanation {
+    pub differences: Vec<RenderTargetAxisDifference>,
+    pub effective: RenderTargetAxes,
+    pub requested: RenderTargetAxes,
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct RenderTargetClear {
+    pub color: Option<[f32; 4]>,
+    pub colors: Option<Vec<Option<[f32; 4]>>>,
+    pub depth: Option<f32>,
+    pub stencil: Option<i32>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GlRenderTargetSnapshot {
+    pub color_attachments: u32,
+    pub framebuffer: Option<NativeFramebuffer>,
+    pub height: u32,
+    pub id: u64,
+    pub resolve_framebuffer: Option<NativeFramebuffer>,
+    pub sample_count: u32,
+    pub width: u32,
+}
+
+#[derive(Clone)]
+pub struct GlRenderPass(pub Rc<RefCell<GlRenderPassHandle>>);
+
+pub struct GlRenderPassHandle {
+    pub(crate) runtime: EntityRuntimeSlot,
+    pub gl: Rc<glow::Context>,
+    pub owner_id: u64,
+    pub target: GlRenderTargetSnapshot,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct SavedGlPassState {
+    pub clip_forms: Vec<GlClipForm>,
+    pub current_mask_depth: u32,
+    pub framebuffer: Option<NativeFramebuffer>,
+    pub render_target: Option<GlRenderTargetSnapshot>,
+    pub render_target_viewport: Option<GlViewportRect>,
+    pub scissor_rect: Option<GlScissorRect>,
+    pub scissor_stack: Vec<GlScissorRect>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct SavedGlStencil {
+    pub fail: u32,
+    pub function: u32,
+    pub pass_depth_fail: u32,
+    pub pass_depth_pass: u32,
+    pub reference: i32,
+    pub value_mask: u32,
+    pub write_mask: u32,
+}
+
+pub(crate) struct GlPassStackEntry {
+    pub depth_mask: bool,
+    pub fallback_viewport: [i32; 4],
+    pub owner_id: u64,
+    pub owner_state: SavedGlPassState,
+    pub previous_state: SavedGlPassState,
+    pub stencil: Option<SavedGlStencil>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct SavedGlCubeFaceState {
+    pub clip_forms: Vec<GlClipForm>,
+    pub current_framebuffer: Option<NativeFramebuffer>,
+    pub current_mask_depth: u32,
+    pub current_render_target: Option<GlRenderTargetSnapshot>,
+    pub current_scissor_rect: Option<GlScissorRect>,
+    pub depth_mask: bool,
+    pub framebuffer: Option<NativeFramebuffer>,
+    pub render_target_viewport: Option<GlViewportRect>,
+    pub scissor_box: [i32; 4],
+    pub scissor_stack: Vec<GlScissorRect>,
+    pub scissor_test: bool,
+    pub stencil_test: bool,
+    pub viewport: [i32; 4],
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct SavedGlRenderState {
+    pub active_texture: u32,
+    pub blend: bool,
+    pub blend_dst_alpha: u32,
+    pub blend_dst_rgb: u32,
+    pub blend_equation_alpha: u32,
+    pub blend_equation_rgb: u32,
+    pub blend_src_alpha: u32,
+    pub blend_src_rgb: u32,
+    pub clear_color: [f32; 4],
+    pub color_mask: [bool; 4],
+    pub cull_face: bool,
+    pub cull_face_mode: u32,
+    pub current_blend_signature: Option<GlBlendSignature>,
+    pub current_framebuffer: Option<NativeFramebuffer>,
+    pub current_render_target: Option<GlRenderTargetSnapshot>,
+    pub current_scissor_rect: Option<GlScissorRect>,
+    pub current_shader: Option<GlBoundShader>,
+    pub current_texture_realization: Option<GlTextureRealization>,
+    pub depth_func: u32,
+    pub depth_mask: bool,
+    pub depth_test: bool,
+    pub framebuffer: Option<NativeFramebuffer>,
+    pub front_face: u32,
+    pub program: Option<NativeProgram>,
+    pub render_target_viewport: Option<GlViewportRect>,
+    pub scissor_box: [i32; 4],
+    pub scissor_test: bool,
+    pub stencil_back_fail: u32,
+    pub stencil_back_function: u32,
+    pub stencil_back_pass_depth_fail: u32,
+    pub stencil_back_pass_depth_pass: u32,
+    pub stencil_back_reference: i32,
+    pub stencil_back_value_mask: u32,
+    pub stencil_back_write_mask: u32,
+    pub stencil_fail: u32,
+    pub stencil_function: u32,
+    pub stencil_pass_depth_fail: u32,
+    pub stencil_pass_depth_pass: u32,
+    pub stencil_reference: i32,
+    pub stencil_test: bool,
+    pub stencil_value_mask: u32,
+    pub stencil_write_mask: u32,
+    pub texture_2d_by_unit: Vec<Option<NativeTexture>>,
+    pub unpack_premultiply_alpha: bool,
+    pub vertex_array: Option<NativeVertexArray>,
+    pub viewport: [i32; 4],
+}
+
+fn empty_kind_map<T>() -> KindMap<T> {
+    return KindMap {
+        entries: HashMap::new(),
+        key_order: Vec::new(),
+    };
+}
+
+impl Default for GlDeleteQueue {
+    fn default() -> Self {
+        return GlDeleteQueue(
+            Arc::new(Mutex::new(Vec::new())),
+            Arc::new(AtomicBool::new(true)),
+        );
+    }
+}
+
+impl Default for GlRenderRegistries {
+    fn default() -> Self {
+        return GlRenderRegistries {
+            blend_realizations: Arc::new(empty_kind_map()),
+            color_adjustment_feature: None,
+            color_adjustment_feature_guard: None,
+            compressed_texture_decoder: None,
+            compressed_texture_upload: None,
+            custom_effect_shaders: Arc::new(empty_kind_map()),
+            custom_material_shaders: Arc::new(empty_kind_map()),
+            material_renderers: Arc::new(empty_kind_map()),
+            modifier_snippets: Arc::new(empty_kind_map()),
+            pbr_extensions: Arc::new(empty_kind_map()),
+            texture_resolvers: Arc::new(empty_kind_map()),
+            velocity_writers: Arc::new(empty_kind_map()),
+        };
+    }
+}
+
+impl Default for GlRenderStateOptions {
+    fn default() -> Self {
+        return GlRenderStateOptions {
+            render_registries: RenderStateOptions::default(),
+            gl_registries: GlRenderRegistries::default(),
+        };
+    }
+}
+
+impl Default for GlRenderStateRuntime {
+    fn default() -> Self {
+        return GlRenderStateRuntime {
+            current_framebuffer: None,
+            current_mask_depth: 0,
+            current_scissor_rect: None,
+            current_target_id: None,
+            render_target_viewport: None,
+            scissor_stack: Vec::new(),
+            clip_forms: Vec::new(),
+            cube_face_stack: Vec::new(),
+            render_state_stack: Vec::new(),
+            matrix_array: [0.0; 9],
+            quad_vertex_data: [0.0; 16],
+            current_pass: None,
+            current_target: None,
+            default_bitmap_shader: None,
+            material_bitmap_shader_map: HashMap::new(),
+            shader_bindings: HashMap::new(),
+            render_texture_guard: None,
+            binding_cache_guard: None,
+            guard_log: None,
+            first_render_root_id: None,
+            flush_pending_draws: None,
+            destroyed: false,
+            stats: GlRenderStats::default(),
+            teardowns: Vec::new(),
+        };
+    }
+}
+
+impl Entity for GlRenderState {
+    fn entity_runtime(&self) -> &EntityRuntimeSlot {
+        return self.render.entity_runtime();
+    }
+
+    fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
+        return self.render.entity_runtime_mut();
+    }
+}
+
+impl RenderState for GlRenderState {
+    fn render_backend(&self) -> RenderStateBackend {
+        return RenderStateBackend::Gl;
+    }
+
+    fn render_registries(&self) -> &RenderRegistries<Self> {
+        return &self.registries;
+    }
+
+    fn render_registries_mut(&mut self) -> &mut RenderRegistries<Self> {
+        return &mut self.registries;
+    }
+
+    fn render_runtime(&self) -> &RenderStateRuntime<Self> {
+        return &self.runtime;
+    }
+
+    fn render_runtime_mut(&mut self) -> &mut RenderStateRuntime<Self> {
+        return &mut self.runtime;
+    }
+
+    fn render_state(&self) -> &RenderStateFields {
+        return &self.render;
+    }
+
+    fn render_state_mut(&mut self) -> &mut RenderStateFields {
+        return &mut self.render;
+    }
+}
+
+flight_entity::impl_entity!(GlBitmapShader);
+flight_entity::impl_entity!(GlContextState);
+flight_entity::impl_entity!(GlCubeRenderTarget);
+flight_entity::impl_entity!(GlRenderPassHandle);
+flight_entity::impl_entity!(GlRenderViewResources);
+flight_entity::impl_entity!(GlRenderTexturePool);
+flight_entity::impl_entity!(GlScreenRenderTarget);
+flight_entity::impl_entity!(GlSkinPaletteTexture);
+flight_entity::impl_entity!(GlTextureRenderTarget);
+flight_entity::impl_entity!(GlTextureRenderTargetPool);
+
+impl GlRenderTarget for GlScreenRenderTarget {
+    fn color_attachments(&self) -> u32 {
+        return 1;
+    }
+    fn color_space(&self) -> RenderTargetColorSpace {
+        return self.color_space;
+    }
+    fn framebuffer(&self) -> Option<NativeFramebuffer> {
+        return None;
+    }
+    fn gl(&self) -> &Rc<glow::Context> {
+        return &self.gl;
+    }
+    fn height(&self) -> u32 {
+        return self.height;
+    }
+    fn set_color_space(&mut self, color_space: RenderTargetColorSpace) {
+        self.color_space = color_space;
+    }
+    fn width(&self) -> u32 {
+        return self.width;
+    }
+}
+
+impl GlRenderTarget for GlTextureRenderTarget {
+    fn color_attachments(&self) -> u32 {
+        return self.axes.color_attachments;
+    }
+    fn color_space(&self) -> RenderTargetColorSpace {
+        return self.axes.color_space;
+    }
+    fn framebuffer(&self) -> Option<NativeFramebuffer> {
+        return Some(self.framebuffer);
+    }
+    fn gl(&self) -> &Rc<glow::Context> {
+        return &self.gl;
+    }
+    fn height(&self) -> u32 {
+        return self.axes.height;
+    }
+    fn resolve_framebuffer(&self) -> Option<NativeFramebuffer> {
+        return self.resolve_framebuffer;
+    }
+    fn sample_count(&self) -> u32 {
+        return self.axes.sample_count;
+    }
+    fn set_color_space(&mut self, color_space: RenderTargetColorSpace) {
+        self.axes.color_space = color_space;
+        self.requested_axes.color_space = color_space;
+    }
+    fn width(&self) -> u32 {
+        return self.axes.width;
+    }
+}
+
+impl GlRenderTarget for GlCubeRenderTarget {
+    fn color_attachments(&self) -> u32 {
+        return 1;
+    }
+
+    fn color_space(&self) -> RenderTargetColorSpace {
+        return self.color_space;
+    }
+
+    fn framebuffer(&self) -> Option<NativeFramebuffer> {
+        return Some(self.framebuffer);
+    }
+
+    fn gl(&self) -> &Rc<glow::Context> {
+        return &self.gl;
+    }
+
+    fn height(&self) -> u32 {
+        return self.size;
+    }
+
+    fn set_color_space(&mut self, color_space: RenderTargetColorSpace) {
+        self.color_space = color_space;
+    }
+
+    fn width(&self) -> u32 {
+        return self.size;
+    }
+}
+
+impl PartialEq for GlRenderPass {
+    fn eq(&self, other: &Self) -> bool {
+        return Rc::ptr_eq(&self.0, &other.0);
+    }
+}
+
+impl Eq for GlRenderPass {}
+
+impl Drop for GlTextureRenderTarget {
+    fn drop(&mut self) {
+        if self.destroyed || !self.delete_queue.1.load(Ordering::Acquire) {
+            return;
+        }
+        let mut queue = self.delete_queue.0.lock().unwrap();
+        queue.push(GlDeletion::Framebuffer(self.framebuffer));
+        if let Some(framebuffer) = self.resolve_framebuffer {
+            queue.push(GlDeletion::Framebuffer(framebuffer));
+        }
+        queue.extend(self.textures.iter().copied().map(GlDeletion::Texture));
+        if let Some(texture) = self.depth_texture {
+            queue.push(GlDeletion::Texture(texture));
+        }
+        queue.extend(
+            self.color_renderbuffers
+                .iter()
+                .copied()
+                .map(GlDeletion::Renderbuffer),
+        );
+        if let Some(renderbuffer) = self.depth_stencil_renderbuffer {
+            queue.push(GlDeletion::Renderbuffer(renderbuffer));
+        }
+    }
+}
+
+impl Drop for GlCubeRenderTarget {
+    fn drop(&mut self) {
+        if self.destroyed || !self.delete_queue.1.load(Ordering::Acquire) {
+            return;
+        }
+        let mut queue = self.delete_queue.0.lock().unwrap();
+        queue.push(GlDeletion::Framebuffer(self.framebuffer));
+        queue.push(GlDeletion::Texture(self.texture));
+        if let Some(renderbuffer) = self.depth_stencil_renderbuffer {
+            queue.push(GlDeletion::Renderbuffer(renderbuffer));
+        }
+    }
+}
+
+impl Drop for GlSkinPaletteTexture {
+    fn drop(&mut self) {
+        if !self.destroyed && self.delete_queue.1.load(Ordering::Acquire) {
+            self.delete_queue
+                .0
+                .lock()
+                .unwrap()
+                .push(GlDeletion::Texture(self.texture));
+        }
+    }
+}
