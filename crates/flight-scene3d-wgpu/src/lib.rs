@@ -9,6 +9,7 @@ mod explain_wgpu_scene3d_forward_light_selection;
 mod prepare_wgpu_scene3d_forward_lights;
 mod register_wgpu_standard_pbr_material;
 mod render_wgpu_scene3d;
+mod scene3d_wgpu_pipeline;
 mod types;
 mod wgpu_blinn_phong_mesh_material_renderer;
 mod wgpu_classic_prelude;

@@ -14,6 +14,8 @@ mod flight_scene3d_wgpu_prepare_wgpu_scene3d_forward_lights_test;
 mod flight_scene3d_wgpu_register_wgpu_standard_pbr_material_test;
 #[path = "render_wgpu_scene3d_test.rs"]
 mod flight_scene3d_wgpu_render_wgpu_scene3d_test;
+#[path = "scene3d_wgpu_pipeline_test.rs"]
+mod flight_scene3d_wgpu_scene3d_wgpu_pipeline_test;
 #[path = "support_test.rs"]
 mod flight_scene3d_wgpu_support_test;
 #[path = "wgpu_blinn_phong_mesh_material_renderer_test.rs"]

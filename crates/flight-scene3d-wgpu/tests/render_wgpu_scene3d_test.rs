@@ -361,6 +361,63 @@ mod render_wgpu_scene3d {
         submit_test_frame(&mut test);
     }
 
+    // Not a source case: every preset mesh family drawn through one frame the device validates at
+    // submit, opaque and blended, rigid, mirrored and skinned-capable, with a shadow and modifiers.
+    #[test]
+    fn draws_every_preset_material_family_in_one_device_validated_frame() {
+        use flight_materials::contract::*;
+        let registries = &WGPU_SCENE3D_RENDER_PRESET.registries;
+        let mut test = make_wgpu_scene3d_state(Some(WgpuRenderStateOptions {
+            gpu_skinning: registries.gpu_skinning,
+            material_renderers: Some((*registries.material_renderers).clone()),
+            modifier_snippets: Some((*registries.modifier_snippets).clone()),
+            texture_resolvers: Some((*registries.texture_resolvers).clone()),
+            ..test_default()
+        }));
+        let mut rim = flight_shading::contract::create_rim_modifier();
+        rim.intensity = 0.7;
+        let rim: Ref<dyn flight_shading::contract::Modifier> = Arc::new(RwLock::new(rim));
+        let mut shaded = flight_shading::contract::create_shaded_material();
+        shaded.modifiers = vec![rim];
+        let mut materials: Vec<Material3DRef> = vec![
+            share_test_material(create_blinn_phong_material()),
+            share_test_material(create_depth_material()),
+            share_test_material(create_emissive_material()),
+            share_test_material(create_lambert_material()),
+            share_test_material(create_matcap_material()),
+            share_test_material(create_normal_material()),
+            share_test_material(create_phong_material()),
+            share_test_material(shaded),
+            share_test_material(create_specular_glossiness_pbr_material()),
+            share_test_material(create_standard_pbr_material()),
+            share_test_material(create_toon_material()),
+            share_test_material(create_unlit_material()),
+            share_test_material(create_vertex_color_material()),
+            share_test_material(create_wireframe_material()),
+        ];
+        let mut blended = create_unlit_material();
+        blended.alpha_mode = MaterialAlphaMode::Blend;
+        materials.push(share_test_material(blended));
+        let scene = create_test_scene_root();
+        for (index, material) in materials.into_iter().enumerate() {
+            let mesh = create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(material)]);
+            {
+                let mut mesh = mesh.write().unwrap();
+                mesh.position.x = index as f32 * 0.1 - 0.7;
+                if index % 3 == 0 {
+                    mesh.scale.x = -1.0;
+                }
+            }
+            let node = add_test_child(&scene, &mesh);
+            invalidate_node_local_transform(&node);
+        }
+
+        render(&mut test, &scene, &make_camera());
+
+        assert_eq!(test.count("drawIndexed") + test.count("draw"), 15);
+        submit_test_frame(&mut test);
+    }
+
     // The instance record is matrix-then-linear-RGBA; an uncoloured instance uploads opaque white.
     #[test]
     fn packs_each_instance_colour_into_the_tail_of_its_instance_record() {

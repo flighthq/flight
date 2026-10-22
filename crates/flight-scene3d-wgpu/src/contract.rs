@@ -7,6 +7,7 @@ pub use crate::explain_wgpu_scene3d_forward_light_selection::*;
 pub use crate::prepare_wgpu_scene3d_forward_lights::*;
 pub use crate::register_wgpu_standard_pbr_material::*;
 pub use crate::render_wgpu_scene3d::*;
+pub use crate::scene3d_wgpu_pipeline::*;
 pub use crate::types::*;
 pub use crate::wgpu_blinn_phong_mesh_material_renderer::*;
 pub use crate::wgpu_classic_prelude::*;
