@@ -91,7 +91,7 @@ pub fn create_rive_skeleton_2d(artboard: &RiveArtboardGraph) -> Option<RiveSkele
         })
         .collect();
     let mut out: RiveSkeleton2DImport = allocate_entity();
-    initialize_rive_skeleton_2d_import(&mut out, bone_indices, create_skeleton_2d(bones, None));
+    initialize_rive_skeleton_2d_import(&mut out, bone_indices, create_skeleton_2d(bones));
     return Some(out);
 }
 

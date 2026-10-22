@@ -6,6 +6,7 @@ use crate::types::*;
 
 /// Allocates a weight binding over the two streams the caller owns (TS `createSkin2D`). The arrays
 /// are adopted, not copied, so an importer's final-length buffers are what the deformers read.
+/// Both required defining buffers remain positional under D23 (Principal c0f9227c).
 // flight-lint: allow(conform-array) Rust adopts owned Vec streams where TS passes shared typed-array references
 pub fn create_skin_2d(influence_counts: Vec<u16>, influences: Vec<f32>) -> Skin2D {
     let mut out: Skin2D = allocate_entity();

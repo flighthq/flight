@@ -100,11 +100,13 @@ mod create_skeleton_2d_slot_animation_target {
 
     #[test]
     fn stamps_the_slot_kind_and_leaves_the_table_null_for_a_colour_channel() {
-        let target = create_skeleton_2d_slot_animation_target(
-            2,
-            SKELETON_2D_SLOT_ANIMATION_PATH_COLOR,
-            None,
-        );
+        let mut target = create_skeleton_2d_slot_animation_target();
+        assert_eq!(target.slot_index, 0);
+        assert!(target.path.is_empty());
+        assert!(target.attachments.is_none());
+        target.slot_index = 2;
+        target.path = String::from(SKELETON_2D_SLOT_ANIMATION_PATH_COLOR);
+        target.attachments = None;
         assert!(target.attachments.is_none());
         assert_eq!(target.kind, SKELETON_2D_ANIMATION_TARGET_KIND_SLOT);
         assert_eq!(target.path, SKELETON_2D_SLOT_ANIMATION_PATH_COLOR);
@@ -116,11 +118,10 @@ mod create_skeleton_2d_slot_animation_target {
         let art = region(1.0, 1.0);
         let art_ref = region_ref(art);
         let table = Arc::new(vec![Some(art_ref.clone())]);
-        let target = create_skeleton_2d_slot_animation_target(
-            0,
-            SKELETON_2D_SLOT_ANIMATION_PATH_ATTACHMENT,
-            Some(table.clone()),
-        );
+        let mut target = create_skeleton_2d_slot_animation_target();
+        target.slot_index = 0;
+        target.path = String::from(SKELETON_2D_SLOT_ANIMATION_PATH_ATTACHMENT);
+        target.attachments = Some(table.clone());
         let stored = target.attachments.expect("attachments");
         assert!(Arc::ptr_eq(&stored, &table));
         assert!(Arc::ptr_eq(stored[0].as_ref().expect("entry"), &art_ref));
@@ -290,17 +291,19 @@ mod initialize_skeleton_2d_slot_animation_target {
     #[test]
     fn is_the_construction_initializer_of_the_slot_constructor() {
         let mut out: Skeleton2DSlotAnimationTarget = allocate_entity();
-        initialize_skeleton_2d_slot_animation_target(
-            &mut out,
-            2,
-            SKELETON_2D_SLOT_ANIMATION_PATH_COLOR,
-            None,
-        );
-        let created = create_skeleton_2d_slot_animation_target(
-            2,
-            SKELETON_2D_SLOT_ANIMATION_PATH_COLOR,
-            None,
-        );
+        let id = flight_entity::get_entity_id(&out);
+        flight_entity::set_entity_uid(&mut out, String::from("slot-under-construction"));
+        let runtime = flight_entity::get_entity_runtime(&out).unwrap() as *const _;
+        initialize_skeleton_2d_slot_animation_target(&mut out);
+        assert_eq!(out.slot_index, 0);
+        assert!(out.path.is_empty());
+        assert!(out.attachments.is_none());
+        out.slot_index = 2;
+        out.path = String::from(SKELETON_2D_SLOT_ANIMATION_PATH_COLOR);
+        let mut created = create_skeleton_2d_slot_animation_target();
+        created.slot_index = 2;
+        created.path = String::from(SKELETON_2D_SLOT_ANIMATION_PATH_COLOR);
+        created.attachments = None;
         assert_eq!(
             (out.slot_index, out.kind.as_str(), out.path.as_str()),
             (
@@ -310,6 +313,15 @@ mod initialize_skeleton_2d_slot_animation_target {
             )
         );
         assert!(out.attachments.is_none());
+        assert_eq!(flight_entity::get_entity_id(&out), id);
+        assert_eq!(
+            flight_entity::get_entity_uid(&mut out),
+            "slot-under-construction"
+        );
+        assert_eq!(
+            flight_entity::get_entity_runtime(&out).unwrap() as *const _,
+            runtime
+        );
     }
 }
 

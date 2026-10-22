@@ -10,22 +10,19 @@ fn constraint(kind: &str, mix: f32) -> Skeleton2DConstraintRef {
 }
 
 fn rig() -> Skeleton2D {
-    return create_skeleton_2d(
-        vec![Bone2D {
-            length: 0.0,
-            name: None,
-            parent_index: -1,
-            rotation: 0.0,
-            scale_x: 1.0,
-            scale_y: 1.0,
-            shear_x: 0.0,
-            shear_y: 0.0,
-            transform_mode: TRANSFORM_MODE_2D_NORMAL,
-            x: 0.0,
-            y: 0.0,
-        }],
-        None,
-    );
+    return create_skeleton_2d(vec![Bone2D {
+        length: 0.0,
+        name: None,
+        parent_index: -1,
+        rotation: 0.0,
+        scale_x: 1.0,
+        scale_y: 1.0,
+        shear_x: 0.0,
+        shear_y: 0.0,
+        transform_mode: TRANSFORM_MODE_2D_NORMAL,
+        x: 0.0,
+        y: 0.0,
+    }]);
 }
 
 mod create_skeleton_2d_constraint_registry {

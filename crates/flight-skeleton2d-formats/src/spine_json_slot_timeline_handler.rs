@@ -131,7 +131,10 @@ fn push_slot_channel(
     attachments: Option<Arc<Vec<Option<Attachment2DRef>>>>,
 ) {
     let track = Arc::new(RwLock::new(track));
-    let target = create_skeleton_2d_slot_animation_target(slot_index, path, attachments);
+    let mut target = create_skeleton_2d_slot_animation_target();
+    target.slot_index = slot_index;
+    target.path = String::from(path);
+    target.attachments = attachments;
     let handle = create_skeleton_2d_animation_target_handle(
         SKELETON_2D_ANIMATION_TARGET_KIND_SLOT,
         Some(Arc::new(target)),

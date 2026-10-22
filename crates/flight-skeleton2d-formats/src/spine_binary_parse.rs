@@ -195,7 +195,8 @@ pub fn parse_spine_skeleton_binary_with_registry(
             Some(detail),
         );
     }
-    let mut skeleton = create_skeleton_2d(context.bones, Some(context.slots));
+    let mut skeleton = create_skeleton_2d(context.bones);
+    skeleton.slots = Some(context.slots);
     if !context.skins.is_empty() {
         skeleton.skins = Some(context.skins);
     }

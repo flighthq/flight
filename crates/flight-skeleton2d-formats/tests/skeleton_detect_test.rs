@@ -43,7 +43,7 @@ mod register_skeleton_2d_format {
             Arc::new(|_, _| {
                 Some(Skeleton2DImport {
                     animations: Vec::new(),
-                    skeleton: create_skeleton_2d(Vec::new(), None),
+                    skeleton: create_skeleton_2d(Vec::new()),
                 })
             }),
         );

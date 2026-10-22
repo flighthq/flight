@@ -36,7 +36,7 @@ mod register_spine_skeleton_binary_parser {
             Arc::new(|_, _| {
                 Some(Skeleton2DImport {
                     animations: Vec::new(),
-                    skeleton: flight_skeleton2d::contract::create_skeleton_2d(Vec::new(), None),
+                    skeleton: flight_skeleton2d::contract::create_skeleton_2d(Vec::new()),
                 })
             }),
         );

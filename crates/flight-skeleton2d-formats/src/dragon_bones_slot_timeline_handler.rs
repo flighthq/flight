@@ -133,8 +133,10 @@ fn push_slot_channel(
         track.segment_easings = segment_easings;
         track
     }));
-    let target =
-        create_skeleton_2d_slot_animation_target(slot_index, path, attachments.map(Arc::new));
+    let mut target = create_skeleton_2d_slot_animation_target();
+    target.slot_index = slot_index;
+    target.path = String::from(path);
+    target.attachments = attachments.map(Arc::new);
     let handle = create_skeleton_2d_animation_target_handle(
         SKELETON_2D_ANIMATION_TARGET_KIND_SLOT,
         Some(Arc::new(target)),

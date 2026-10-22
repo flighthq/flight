@@ -8,7 +8,9 @@ use flight_math::DEG_TO_RAD;
 use crate::types::*;
 
 /// Allocates a Skeleton2D from a parent-before-child ordered bone array (TS `createSkeleton2D`).
-pub fn create_skeleton_2d(bones: Vec<Bone2D>, slots: Option<Vec<Slot2D>>) -> Skeleton2D {
+/// Bones determine all three matrix-buffer sizes; assign authored slots and skins after construction.
+// flight-lint: allow(conform-params) D23 (Principal c0f9227c): bones derive the buffers; optional slots are assigned after create
+pub fn create_skeleton_2d(bones: Vec<Bone2D>) -> Skeleton2D {
     let count = bones.len();
     let mut out: Skeleton2D = allocate_entity();
     initialize_skeleton_2d(
@@ -16,8 +18,6 @@ pub fn create_skeleton_2d(bones: Vec<Bone2D>, slots: Option<Vec<Slot2D>>) -> Ske
         vec![0.0; count * SKELETON_2D_MATRIX_STRIDE],
         bones,
         vec![0.0; count * SKELETON_2D_MATRIX_STRIDE],
-        None,
-        slots,
         vec![0.0; count * SKELETON_2D_MATRIX_STRIDE],
     );
     return out;
@@ -25,20 +25,19 @@ pub fn create_skeleton_2d(bones: Vec<Bone2D>, slots: Option<Vec<Slot2D>>) -> Ske
 
 /// The construction initializer of `create_skeleton_2d` (TS `initializeSkeleton2D`).
 // flight-lint: allow(conform-array) Rust adopts an owned Vec<f32> where TS passes a shared Float32Array reference
+// flight-lint: allow(conform-params) D23 (Principal c0f9227c): required defining buffers and bones stay positional; skins and slots are assigned afterward
 pub fn initialize_skeleton_2d(
     out: &mut Skeleton2D,
     bone_matrices: Vec<f32>,
     bones: Vec<Bone2D>,
     inverse_bind_matrices: Vec<f32>,
-    skins: Option<Vec<AttachmentSkin2D>>,
-    slots: Option<Vec<Slot2D>>,
     world_matrices: Vec<f32>,
 ) {
     out.bone_matrices = bone_matrices;
     out.bones = bones;
     out.inverse_bind_matrices = inverse_bind_matrices;
-    out.skins = skins;
-    out.slots = slots;
+    out.skins = None;
+    out.slots = None;
     out.world_matrices = world_matrices;
 }
 
@@ -46,15 +45,21 @@ pub fn initialize_skeleton_2d(
 /// Slots and attachments keep their shared identities.
 pub fn clone_skeleton_2d(skeleton: &Skeleton2D) -> Skeleton2D {
     let mut out: Skeleton2D = allocate_entity();
+    let bone_matrices = skeleton.bone_matrices.clone();
+    let bones = skeleton.bones.clone();
+    let inverse_bind_matrices = skeleton.inverse_bind_matrices.clone();
+    let skins = skeleton.skins.clone();
+    let slots = skeleton.slots.clone();
+    let world_matrices = skeleton.world_matrices.clone();
     initialize_skeleton_2d(
         &mut out,
-        skeleton.bone_matrices.clone(),
-        skeleton.bones.clone(),
-        skeleton.inverse_bind_matrices.clone(),
-        skeleton.skins.clone(),
-        skeleton.slots.clone(),
-        skeleton.world_matrices.clone(),
+        bone_matrices,
+        bones,
+        inverse_bind_matrices,
+        world_matrices,
     );
+    out.skins = skins;
+    out.slots = slots;
     return out;
 }
 

@@ -41,7 +41,7 @@ mod sugar_tests {
     }
 
     fn skeleton() -> Skeleton2D {
-        return create_skeleton_2d(vec![bone()], None);
+        return create_skeleton_2d(vec![bone()]);
     }
 
     fn region() -> RegionAttachment2D {

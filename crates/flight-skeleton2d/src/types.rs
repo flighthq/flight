@@ -9,7 +9,6 @@ use std::sync::Arc;
 
 use flight_animation::contract::AnimationChannel;
 use flight_entity::{Entity, EntityRuntimeSlot, Kind, Ref, Unknown};
-use flight_node::contract::{NodeOrderList, NodeRef};
 use flight_path::PathWinding;
 use flight_registry::KindMap;
 
@@ -444,15 +443,6 @@ pub struct Skeleton2DDeformAnimationTarget {
     pub slot_index: i32,
 }
 
-/// A draw-order animation target (TS `Skeleton2DDrawOrderAnimationTarget`). Ordering is caller-owned:
-/// the target carries the shared `NodeOrderList` the binder fills.
-pub struct Skeleton2DDrawOrderAnimationTarget {
-    runtime: EntityRuntimeSlot,
-    pub kind: Kind,
-    pub nodes: Vec<Option<NodeRef>>,
-    pub order_list: Ref<NodeOrderList>,
-}
-
 /// A rig's draw-order timeline as the file states it (TS `Skeleton2DDrawOrderTimeline`).
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Skeleton2DDrawOrderTimeline {
@@ -530,21 +520,6 @@ flight_entity::impl_entity!(Skeleton2DPathConstraint);
 flight_entity::impl_entity!(Skeleton2DTransformConstraint);
 flight_entity::impl_entity!(Skeleton2DAnimationTarget);
 flight_entity::impl_entity!(Skeleton2DSlotAnimationTarget);
-flight_entity::impl_entity!(Skeleton2DDrawOrderAnimationTarget);
-
-impl Default for Skeleton2DDrawOrderAnimationTarget {
-    fn default() -> Self {
-        return Skeleton2DDrawOrderAnimationTarget {
-            runtime: EntityRuntimeSlot::default(),
-            kind: String::new(),
-            nodes: Vec::new(),
-            order_list: Arc::new(std::sync::RwLock::new(
-                flight_node::contract::create_node_order_list(),
-            )),
-        };
-    }
-}
-
 macro_rules! impl_attachment {
     ($t:ty, $default_kind:expr) => {
         impl Attachment2D for $t {

@@ -126,13 +126,13 @@ src/skeleton2d.rs: pub fn clone_skeleton_2d(skeleton: &Skeleton2D) -> Skeleton2D
 src/skeleton2d.rs: pub fn compute_skeleton_2d_bone_matrices(skeleton: &mut Skeleton2D)
 src/skeleton2d.rs: pub fn compute_skeleton_2d_bone_world_transform(skeleton: &mut Skeleton2D, bone_index: i32)
 src/skeleton2d.rs: pub fn compute_skeleton_2d_world_transforms(skeleton: &mut Skeleton2D)
-src/skeleton2d.rs: pub fn create_skeleton_2d(bones: Vec<Bone2D>, slots: Option<Vec<Slot2D>>) -> Skeleton2D
+src/skeleton2d.rs: pub fn create_skeleton_2d(bones: Vec<Bone2D>) -> Skeleton2D
 src/skeleton2d.rs: pub fn dispose_skeleton_2d(skeleton: &mut Skeleton2D)
 src/skeleton2d.rs: pub fn equals_skeleton_2d(a: &Skeleton2D, b: &Skeleton2D) -> bool
 src/skeleton2d.rs: pub fn get_skeleton_2d_bone_index_by_name(skeleton: &Skeleton2D, name: &str) -> i32
 src/skeleton2d.rs: pub fn get_skeleton_2d_bone_world_matrix(out: &mut Matrix, skeleton: &Skeleton2D, bone_index: i32,) -> bool
 src/skeleton2d.rs: pub fn get_skeleton_2d_skin<'a>(skeleton: &'a Skeleton2D, name: &str,) -> Option<&'a AttachmentSkin2D>
-src/skeleton2d.rs: pub fn initialize_skeleton_2d(out: &mut Skeleton2D, bone_matrices: Vec<f32>, bones: Vec<Bone2D>, inverse_bind_matrices: Vec<f32>, skins: Option<Vec<AttachmentSkin2D>>, slots: Option<Vec<Slot2D>>, world_matrices: Vec<f32>,)
+src/skeleton2d.rs: pub fn initialize_skeleton_2d(out: &mut Skeleton2D, bone_matrices: Vec<f32>, bones: Vec<Bone2D>, inverse_bind_matrices: Vec<f32>, world_matrices: Vec<f32>,)
 src/skeleton2d.rs: pub fn reset_skeleton_2d_to_setup(setup: &Skeleton2D, pose: &mut Skeleton2D)
 src/skeleton2d.rs: pub fn set_skeleton_2d_bind_pose(skeleton: &mut Skeleton2D)
 src/skeleton2d.rs: pub fn set_skeleton_2d_skin(skeleton: &mut Skeleton2D, skin: &AttachmentSkin2D)
@@ -140,12 +140,12 @@ src/skeleton2d.rs: pub fn validate_skeleton_2d(skeleton: &Skeleton2D) -> Option<
 src/skeleton2d_animation_target.rs: pub fn create_skeleton_2d_animation_target_handle(kind: &str, target: Unknown,) -> Skeleton2DAnimationTargetHandle
 src/skeleton2d_animation_target.rs: pub fn create_skeleton_2d_animation_target_registry() -> Skeleton2DAnimationTargetBinderRegistry
 src/skeleton2d_animation_target.rs: pub fn create_skeleton_2d_bone_animation_target(bone_index: i32, path: &str,) -> Skeleton2DAnimationTarget
-src/skeleton2d_animation_target.rs: pub fn create_skeleton_2d_slot_animation_target(slot_index: i32, path: &str, attachments: Option<Arc<Vec<Option<Attachment2DRef>>>>,) -> Skeleton2DSlotAnimationTarget
+src/skeleton2d_animation_target.rs: pub fn create_skeleton_2d_slot_animation_target() -> Skeleton2DSlotAnimationTarget
 src/skeleton2d_animation_target.rs: pub fn find_skeleton_2d_step_keyframe(times: &[f32], time: f32) -> i32
 src/skeleton2d_animation_target.rs: pub fn get_skeleton_2d_animation_target_binder(registry: &Skeleton2DAnimationTargetBinderRegistry, kind: &str,) -> Option<Skeleton2DAnimationTargetBinder>
 src/skeleton2d_animation_target.rs: pub fn get_skeleton_2d_animation_target_binder_kinds(out: &mut Vec<Kind>, registry: &Skeleton2DAnimationTargetBinderRegistry,)
 src/skeleton2d_animation_target.rs: pub fn initialize_skeleton_2d_bone_animation_target(out: &mut Skeleton2DAnimationTarget, bone_index: i32, path: &str,)
-src/skeleton2d_animation_target.rs: pub fn initialize_skeleton_2d_slot_animation_target(out: &mut Skeleton2DSlotAnimationTarget, slot_index: i32, path: &str, attachments: Option<Arc<Vec<Option<Attachment2DRef>>>>,)
+src/skeleton2d_animation_target.rs: pub fn initialize_skeleton_2d_slot_animation_target(out: &mut Skeleton2DSlotAnimationTarget)
 src/skeleton2d_animation_target.rs: pub fn register_skeleton_2d_animation_target_binder(registry: &mut Skeleton2DAnimationTargetBinderRegistry, kind: &str, bind: Skeleton2DAnimationTargetBinder,)
 src/skeleton2d_animation_target.rs: pub fn unregister_skeleton_2d_animation_target_binder(registry: &mut Skeleton2DAnimationTargetBinderRegistry, kind: &str,)
 src/skeleton2d_constraint.rs: #[derive(Clone, Default)] pub struct Skeleton2DConstraintRegistry { pub entries: Vec<(String, Skeleton2DConstraintSolver)>, }
@@ -154,11 +154,17 @@ src/skeleton2d_constraint.rs: pub fn get_skeleton_2d_constraint_solver(registry:
 src/skeleton2d_constraint.rs: pub fn register_skeleton_2d_constraint_solver(registry: &mut Skeleton2DConstraintRegistry, kind: &str, solve: Skeleton2DConstraintSolver,)
 src/skeleton2d_constraint.rs: pub fn solve_skeleton_2d_constraints(registry: &Skeleton2DConstraintRegistry, skeleton: &mut Skeleton2D, constraints: &[Skeleton2DConstraintRef],)
 src/skeleton2d_constraint.rs: pub fn unregister_skeleton_2d_constraint_solver(registry: &mut Skeleton2DConstraintRegistry, kind: &str,)
-src/skeleton2d_draw_order_target.rs: pub fn create_skeleton_2d_draw_order_animation_target(nodes: &[Option<NodeRef>], order_list: &Ref<NodeOrderList>,) -> Skeleton2DDrawOrderAnimationTarget
-src/skeleton2d_draw_order_target.rs: pub fn create_skeleton_2d_draw_order_channel(timeline: &Skeleton2DDrawOrderTimeline, nodes: &[Option<NodeRef>], order_list: &Ref<NodeOrderList>,) -> Option<AnimationChannel>
-src/skeleton2d_draw_order_target.rs: pub fn initialize_skeleton_2d_draw_order_animation_target(out: &mut Skeleton2DDrawOrderAnimationTarget, nodes: &[Option<NodeRef>], order_list: &Ref<NodeOrderList>,)
+src/skeleton2d_draw_order_target.rs: impl Default for Skeleton2DDrawOrderAnimationTarget
+src/skeleton2d_draw_order_target.rs: impl Default for Skeleton2DDrawOrderAnimationTarget :: fn default() -> Self
+src/skeleton2d_draw_order_target.rs: impl Entity for Skeleton2DDrawOrderAnimationTarget
+src/skeleton2d_draw_order_target.rs: impl Entity for Skeleton2DDrawOrderAnimationTarget :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/skeleton2d_draw_order_target.rs: impl Entity for Skeleton2DDrawOrderAnimationTarget :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/skeleton2d_draw_order_target.rs: pub fn create_skeleton_2d_draw_order_animation_target(nodes: &Ref<Vec<Option<NodeRef>>>, order_list: &Ref<NodeOrderList>,) -> Skeleton2DDrawOrderAnimationTarget
+src/skeleton2d_draw_order_target.rs: pub fn create_skeleton_2d_draw_order_channel(timeline: &Skeleton2DDrawOrderTimeline, nodes: &Ref<Vec<Option<NodeRef>>>, order_list: &Ref<NodeOrderList>,) -> Option<AnimationChannel>
+src/skeleton2d_draw_order_target.rs: pub fn initialize_skeleton_2d_draw_order_animation_target(out: &mut Skeleton2DDrawOrderAnimationTarget, nodes: &Ref<Vec<Option<NodeRef>>>, order_list: &Ref<NodeOrderList>,)
 src/skeleton2d_draw_order_target.rs: pub fn register_skeleton_2d_draw_order_animation_binder(registry: &mut Skeleton2DAnimationTargetBinderRegistry,)
 src/skeleton2d_draw_order_target.rs: pub fn unregister_skeleton_2d_draw_order_animation_binder(registry: &mut Skeleton2DAnimationTargetBinderRegistry,)
+src/skeleton2d_draw_order_target.rs: pub struct Skeleton2DDrawOrderAnimationTarget { runtime: EntityRuntimeSlot, pub kind: Kind, pub nodes: Ref<Vec<Option<NodeRef>>>, pub order_list: Ref<NodeOrderList>, }
 src/skeleton2d_guards.rs: #[derive(Clone, Default)] pub struct Skeleton2DGuardState { pub coerced_interpolation: Option<Skeleton2DCoercedInterpolationGuard>, pub deform_length: Option<Skeleton2DDeformLengthGuard>, }
 src/skeleton2d_guards.rs: pub fn report_skeleton_2d_coerced_interpolation(state: &Skeleton2DGuardState, subject: &str, stated: &str, applied: &str,)
 src/skeleton2d_guards.rs: pub fn report_skeleton_2d_deform_length_mismatch(state: &Skeleton2DGuardState, subject: &str, offsets: usize, addressed: usize,)
@@ -221,8 +227,6 @@ src/types.rs: #[derive(Default)] pub struct Skeleton2DSlotAnimationTarget { runt
 src/types.rs: #[derive(Default)] pub struct Skin2D { runtime: EntityRuntimeSlot, pub influence_counts: Vec<u16>, pub influences: Vec<f32>, }
 src/types.rs: impl Default for Bone2D
 src/types.rs: impl Default for Bone2D :: fn default() -> Self
-src/types.rs: impl Default for Skeleton2DDrawOrderAnimationTarget
-src/types.rs: impl Default for Skeleton2DDrawOrderAnimationTarget :: fn default() -> Self
 src/types.rs: impl Default for Skeleton2DIkConstraint
 src/types.rs: impl Default for Skeleton2DIkConstraint :: fn default() -> Self
 src/types.rs: impl Default for Skeleton2DPathConstraint
@@ -253,9 +257,6 @@ src/types.rs: impl Entity for Skeleton2D :: fn entity_runtime_mut(&mut self) -> 
 src/types.rs: impl Entity for Skeleton2DAnimationTarget
 src/types.rs: impl Entity for Skeleton2DAnimationTarget :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for Skeleton2DAnimationTarget :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
-src/types.rs: impl Entity for Skeleton2DDrawOrderAnimationTarget
-src/types.rs: impl Entity for Skeleton2DDrawOrderAnimationTarget :: fn entity_runtime(&self) -> &EntityRuntimeSlot
-src/types.rs: impl Entity for Skeleton2DDrawOrderAnimationTarget :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/types.rs: impl Entity for Skeleton2DIkConstraint
 src/types.rs: impl Entity for Skeleton2DIkConstraint :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for Skeleton2DIkConstraint :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
@@ -323,7 +324,6 @@ src/types.rs: pub const TRANSFORM_MODE_2D_NO_ROTATION_OR_REFLECTION: TransformIn
 src/types.rs: pub const TRANSFORM_MODE_2D_NO_SCALE: TransformInherit2D
 src/types.rs: pub const TRANSFORM_MODE_2D_NO_SCALE_OR_REFLECTION: TransformInherit2D
 src/types.rs: pub const TRANSFORM_MODE_2D_ONLY_TRANSLATION: TransformInherit2D
-src/types.rs: pub struct Skeleton2DDrawOrderAnimationTarget { runtime: EntityRuntimeSlot, pub kind: Kind, pub nodes: Vec<Option<NodeRef>>, pub order_list: Ref<NodeOrderList>, }
 src/types.rs: pub trait Attachment2D: Entity + Any + Send + Sync { fn kind(&self) -> &str; fn name(&self) -> Option<&str>; fn name_mut(&mut self) -> &mut Option<String>; fn as_any(&self) -> &dyn Any; }
 src/types.rs: pub trait Skeleton2DConstraint: Entity + Any + Send + Sync { fn kind(&self) -> &str; fn mix(&self) -> f32; fn as_any(&self) -> &dyn Any; }
 src/types.rs: pub type Attachment2DRef = Ref<dyn Attachment2D>;

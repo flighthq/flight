@@ -60,9 +60,10 @@ fn slot_channel(
     components: usize,
     interpolation: AnimationInterpolation,
 ) -> AnimationChannel {
-    let target: Unknown = Some(Arc::new(create_skeleton_2d_slot_animation_target(
-        slot_index, path, None,
-    )));
+    let mut slot_target = create_skeleton_2d_slot_animation_target();
+    slot_target.slot_index = slot_index;
+    slot_target.path = String::from(path);
+    let target: Unknown = Some(Arc::new(slot_target));
     return target_channel(
         SKELETON_2D_ANIMATION_TARGET_KIND_SLOT,
         target,
@@ -117,7 +118,7 @@ mod apply_animation_clip_to_skeleton_2d {
 
     #[test]
     fn composes_a_rotation_delta_onto_the_setup_pose_leaving_setup_untouched() {
-        let setup = create_skeleton_2d(vec![bone_with(10.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0)], None);
+        let setup = create_skeleton_2d(vec![bone_with(10.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0)]);
         let mut pose = clone_skeleton_2d(&setup);
         let clip = create_animation_clip(
             vec![bone_channel(
@@ -138,7 +139,7 @@ mod apply_animation_clip_to_skeleton_2d {
 
     #[test]
     fn adds_translation_and_shear_deltas_and_multiplies_scale_deltas_onto_setup() {
-        let setup = create_skeleton_2d(vec![bone_with(0.0, 5.0, -2.0, 2.0, 3.0, 1.0, 4.0)], None);
+        let setup = create_skeleton_2d(vec![bone_with(0.0, 5.0, -2.0, 2.0, 3.0, 1.0, 4.0)]);
         let mut pose = clone_skeleton_2d(&setup);
         let clip = create_animation_clip(
             vec![
@@ -232,8 +233,7 @@ mod apply_animation_clip_to_skeleton_2d {
             ),
         ];
         for (path, sample, expected_field, expected, sibling, sibling_value) in cases {
-            let setup =
-                create_skeleton_2d(vec![bone_with(0.0, 3.0, 5.0, 2.0, 4.0, 7.0, 9.0)], None);
+            let setup = create_skeleton_2d(vec![bone_with(0.0, 3.0, 5.0, 2.0, 4.0, 7.0, 9.0)]);
             let mut pose = clone_skeleton_2d(&setup);
             let clip = create_animation_clip(
                 vec![bone_channel(
@@ -261,7 +261,7 @@ mod apply_animation_clip_to_skeleton_2d {
 
     #[test]
     fn re_applies_from_setup_each_frame_with_no_accumulation() {
-        let setup = create_skeleton_2d(vec![bone_with(10.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0)], None);
+        let setup = create_skeleton_2d(vec![bone_with(10.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0)]);
         let mut pose = clone_skeleton_2d(&setup);
         let clip = create_animation_clip(
             vec![bone_channel(
@@ -282,7 +282,7 @@ mod apply_animation_clip_to_skeleton_2d {
 
     #[test]
     fn skips_a_channel_with_a_foreign_target_or_an_out_of_range_bone_without_mutation() {
-        let setup = create_skeleton_2d(vec![bone_with(7.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0)], None);
+        let setup = create_skeleton_2d(vec![bone_with(7.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0)]);
         let mut pose = clone_skeleton_2d(&setup);
         let clip = create_animation_clip(
             vec![
@@ -314,7 +314,7 @@ mod apply_animation_clip_to_skeleton_2d {
 
     #[test]
     fn keeps_both_axes_when_a_bone_carries_independently_timed_axis_channels() {
-        let setup = create_skeleton_2d(vec![bone()], None);
+        let setup = create_skeleton_2d(vec![bone()]);
         let mut pose = clone_skeleton_2d(&setup);
         let clip = create_animation_clip(
             vec![
@@ -345,7 +345,7 @@ mod apply_animation_clip_to_skeleton_2d {
 
     #[test]
     fn leaves_the_untouched_axis_at_its_setup_value() {
-        let setup = create_skeleton_2d(vec![bone_with(0.0, 3.0, 11.0, 1.0, 1.0, 0.0, 0.0)], None);
+        let setup = create_skeleton_2d(vec![bone_with(0.0, 3.0, 11.0, 1.0, 1.0, 0.0, 0.0)]);
         let mut pose = clone_skeleton_2d(&setup);
         let clip = create_animation_clip(
             vec![target_channel(
@@ -366,7 +366,7 @@ mod apply_animation_clip_to_skeleton_2d {
 
     #[test]
     fn composes_scale_per_axis_by_multiplying() {
-        let setup = create_skeleton_2d(vec![bone_with(0.0, 0.0, 0.0, 2.0, 3.0, 0.0, 0.0)], None);
+        let setup = create_skeleton_2d(vec![bone_with(0.0, 0.0, 0.0, 2.0, 3.0, 0.0, 0.0)]);
         let mut pose = clone_skeleton_2d(&setup);
         let clip = create_animation_clip(
             vec![target_channel(
@@ -387,7 +387,7 @@ mod apply_animation_clip_to_skeleton_2d {
 
     #[test]
     fn composes_shear_per_axis_by_adding() {
-        let setup = create_skeleton_2d(vec![bone_with(0.0, 0.0, 0.0, 1.0, 1.0, 5.0, 6.0)], None);
+        let setup = create_skeleton_2d(vec![bone_with(0.0, 0.0, 0.0, 1.0, 1.0, 5.0, 6.0)]);
         let mut pose = clone_skeleton_2d(&setup);
         let clip = create_animation_clip(
             vec![target_channel(
@@ -408,16 +408,14 @@ mod apply_animation_clip_to_skeleton_2d {
 
     #[test]
     fn writes_an_absolute_slot_colour_rather_than_composing_it_onto_setup() {
-        let setup = create_skeleton_2d(
-            vec![bone()],
-            Some(vec![Slot2D {
-                attachment: None,
-                deform: None,
-                bone_index: 0,
-                color: Some(0x112233ff),
-                name: Some(String::from("s")),
-            }]),
-        );
+        let mut setup = create_skeleton_2d(vec![bone()]);
+        setup.slots = Some(vec![Slot2D {
+            attachment: None,
+            deform: None,
+            bone_index: 0,
+            color: Some(0x112233ff),
+            name: Some(String::from("s")),
+        }]);
         let mut pose = clone_skeleton_2d(&setup);
         let clip = create_animation_clip(
             vec![slot_channel(
@@ -449,16 +447,14 @@ mod apply_animation_clip_to_skeleton_2d {
 
     #[test]
     fn interpolates_colour_channels_between_keyframes() {
-        let setup = create_skeleton_2d(
-            vec![bone()],
-            Some(vec![Slot2D {
-                attachment: None,
-                deform: None,
-                bone_index: 0,
-                color: Some(0),
-                name: Some(String::from("s")),
-            }]),
-        );
+        let mut setup = create_skeleton_2d(vec![bone()]);
+        setup.slots = Some(vec![Slot2D {
+            attachment: None,
+            deform: None,
+            bone_index: 0,
+            color: Some(0),
+            name: Some(String::from("s")),
+        }]);
         let mut pose = clone_skeleton_2d(&setup);
         let clip = create_animation_clip(
             vec![slot_channel(
@@ -481,16 +477,14 @@ mod apply_animation_clip_to_skeleton_2d {
 
     #[test]
     fn clamps_an_overshooting_sample_instead_of_wrapping_the_packed_colour() {
-        let setup = create_skeleton_2d(
-            vec![bone()],
-            Some(vec![Slot2D {
-                attachment: None,
-                deform: None,
-                bone_index: 0,
-                color: Some(0),
-                name: Some(String::from("s")),
-            }]),
-        );
+        let mut setup = create_skeleton_2d(vec![bone()]);
+        setup.slots = Some(vec![Slot2D {
+            attachment: None,
+            deform: None,
+            bone_index: 0,
+            color: Some(0),
+            name: Some(String::from("s")),
+        }]);
         let mut pose = clone_skeleton_2d(&setup);
         let clip = create_animation_clip(
             vec![slot_channel(
@@ -513,16 +507,14 @@ mod apply_animation_clip_to_skeleton_2d {
 
     #[test]
     fn ignores_a_slot_channel_whose_index_is_out_of_range_or_a_skeleton_with_no_slots() {
-        let setup = create_skeleton_2d(
-            vec![bone()],
-            Some(vec![Slot2D {
-                attachment: None,
-                deform: None,
-                bone_index: 0,
-                color: Some(0x010203ff),
-                name: Some(String::from("s")),
-            }]),
-        );
+        let mut setup = create_skeleton_2d(vec![bone()]);
+        setup.slots = Some(vec![Slot2D {
+            attachment: None,
+            deform: None,
+            bone_index: 0,
+            color: Some(0x010203ff),
+            name: Some(String::from("s")),
+        }]);
         let mut pose = clone_skeleton_2d(&setup);
         let clip = create_animation_clip(
             vec![slot_channel(
@@ -541,23 +533,21 @@ mod apply_animation_clip_to_skeleton_2d {
             pose.slots.as_ref().expect("slots")[0].color,
             Some(0x010203ff)
         );
-        let bone_only = create_skeleton_2d(vec![bone()], None);
+        let bone_only = create_skeleton_2d(vec![bone()]);
         let mut bone_pose = clone_skeleton_2d(&bone_only);
         apply(&clip, &bone_only, &mut bone_pose, 0.0);
     }
 
     #[test]
     fn drives_bone_and_slot_channels_from_one_clip_dispatching_on_target_kind() {
-        let setup = create_skeleton_2d(
-            vec![bone_with(10.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0)],
-            Some(vec![Slot2D {
-                attachment: None,
-                deform: None,
-                bone_index: 0,
-                color: Some(0),
-                name: Some(String::from("s")),
-            }]),
-        );
+        let mut setup = create_skeleton_2d(vec![bone_with(10.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0)]);
+        setup.slots = Some(vec![Slot2D {
+            attachment: None,
+            deform: None,
+            bone_index: 0,
+            color: Some(0),
+            name: Some(String::from("s")),
+        }]);
         let mut pose = clone_skeleton_2d(&setup);
         let clip = create_animation_clip(
             vec![

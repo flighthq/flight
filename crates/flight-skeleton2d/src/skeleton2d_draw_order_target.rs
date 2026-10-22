@@ -5,7 +5,7 @@ use std::sync::{Arc, RwLock};
 use flight_animation::contract::{
     AnimationChannel, AnimationInterpolation, create_animation_channel, create_animation_track,
 };
-use flight_entity::{Ref, Unknown, allocate_entity};
+use flight_entity::{EntityRuntimeSlot, Kind, Ref, Unknown};
 use flight_node::contract::{
     NodeOrderList, NodeRef, add_node_order_list_entry, clear_node_order_list,
 };
@@ -18,12 +18,28 @@ use crate::skeleton2d_guards::Skeleton2DGuardState;
 use crate::skeleton2d_guards::report_skeleton_2d_coerced_interpolation;
 use crate::types::*;
 
+/// A draw-order animation target (TS `Skeleton2DDrawOrderAnimationTarget`). Both the slot-to-node
+/// array and the order list retain the caller's identity; the binder fills the caller's list.
+pub struct Skeleton2DDrawOrderAnimationTarget {
+    runtime: EntityRuntimeSlot,
+    pub kind: Kind,
+    pub nodes: Ref<Vec<Option<NodeRef>>>,
+    pub order_list: Ref<NodeOrderList>,
+}
+
 /// The binding target for a draw-order channel (TS `createSkeleton2DDrawOrderAnimationTarget`).
+/// D23: both arguments are required defining references. Construct directly so adopting the real
+/// order list never allocates and discards a placeholder NodeOrderList Entity.
 pub fn create_skeleton_2d_draw_order_animation_target(
-    nodes: &[Option<NodeRef>],
+    nodes: &Ref<Vec<Option<NodeRef>>>,
     order_list: &Ref<NodeOrderList>,
 ) -> Skeleton2DDrawOrderAnimationTarget {
-    let mut out: Skeleton2DDrawOrderAnimationTarget = allocate_entity();
+    let mut out = Skeleton2DDrawOrderAnimationTarget {
+        runtime: EntityRuntimeSlot::default(),
+        kind: String::new(),
+        nodes: nodes.clone(),
+        order_list: order_list.clone(),
+    };
     initialize_skeleton_2d_draw_order_animation_target(&mut out, nodes, order_list);
     return out;
 }
@@ -33,7 +49,7 @@ pub fn create_skeleton_2d_draw_order_animation_target(
 /// (TS `createSkeleton2DDrawOrderChannel`).
 pub fn create_skeleton_2d_draw_order_channel(
     timeline: &Skeleton2DDrawOrderTimeline,
-    nodes: &[Option<NodeRef>],
+    nodes: &Ref<Vec<Option<NodeRef>>>,
     order_list: &Ref<NodeOrderList>,
 ) -> Option<AnimationChannel> {
     let keyframes = timeline.times.len();
@@ -64,11 +80,11 @@ pub fn create_skeleton_2d_draw_order_channel(
 /// The construction initializer of `create_skeleton_2d_draw_order_animation_target`.
 pub fn initialize_skeleton_2d_draw_order_animation_target(
     out: &mut Skeleton2DDrawOrderAnimationTarget,
-    nodes: &[Option<NodeRef>],
+    nodes: &Ref<Vec<Option<NodeRef>>>,
     order_list: &Ref<NodeOrderList>,
 ) {
     out.kind = String::from(SKELETON_2D_ANIMATION_TARGET_KIND_DRAW_ORDER);
-    out.nodes = nodes.to_vec();
+    out.nodes = nodes.clone();
     out.order_list = order_list.clone();
 }
 
@@ -87,16 +103,23 @@ fn bind_skeleton_2d_draw_order_channel(
     else {
         return;
     };
-    let track = channel.track.read().unwrap();
-    let components = track.components;
-    if components == 0 {
-        return;
-    }
-    let keyframe = find_skeleton_2d_step_keyframe(&track.times, time);
-    if keyframe < 0 {
-        return;
-    }
-    let interpolation = track.interpolation;
+    let nodes = target.nodes.clone();
+    let order_list = target.order_list.clone();
+    let track = channel.track.clone();
+    let (components, keyframe, interpolation) = {
+        let track = track.read().unwrap();
+        let components = track.components;
+        if components == 0 {
+            return;
+        }
+        let keyframe = find_skeleton_2d_step_keyframe(&track.times, time);
+        if keyframe < 0 {
+            return;
+        }
+        (components, keyframe, track.interpolation)
+    };
+    // Source guards run before clearing the list and reading live nodes/values. No borrowed track,
+    // node-array or list lock may cross this caller callback.
     if interpolation != AnimationInterpolation::Step {
         report_skeleton_2d_coerced_interpolation(
             guards,
@@ -105,15 +128,16 @@ fn bind_skeleton_2d_draw_order_channel(
             SKELETON_2D_STEP_INTERPOLATION,
         );
     }
-    let base = keyframe as usize * components;
-    let count = components.min(target.nodes.len());
-    let mut list = target.order_list.write().unwrap();
+    let mut list = order_list.write().unwrap();
     clear_node_order_list(&mut list);
+    let base = keyframe as usize * components;
+    let count = components.min(nodes.read().unwrap().len());
     for slot in 0..count {
-        let Some(node) = target.nodes[slot].as_ref() else {
+        let Some(node) = nodes.read().unwrap()[slot].clone() else {
             continue;
         };
-        add_node_order_list_entry(&mut list, node, track.values[base + slot] as f64);
+        let sort_key = track.read().unwrap().values[base + slot] as f64;
+        add_node_order_list_entry(&mut list, &node, sort_key);
     }
 }
 
@@ -148,3 +172,16 @@ pub fn unregister_skeleton_2d_draw_order_animation_binder(
         SKELETON_2D_ANIMATION_TARGET_KIND_DRAW_ORDER,
     );
 }
+
+impl Default for Skeleton2DDrawOrderAnimationTarget {
+    fn default() -> Self {
+        return Skeleton2DDrawOrderAnimationTarget {
+            runtime: EntityRuntimeSlot::default(),
+            kind: String::new(),
+            nodes: Arc::new(RwLock::new(Vec::new())),
+            order_list: Arc::new(RwLock::new(flight_node::contract::create_node_order_list())),
+        };
+    }
+}
+
+flight_entity::impl_entity!(Skeleton2DDrawOrderAnimationTarget);

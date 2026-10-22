@@ -22,7 +22,9 @@ pub fn bone() -> Bone2D {
 }
 
 pub fn skeleton(bones: Vec<Bone2D>, slots: Option<Vec<Slot2D>>) -> Skeleton2D {
-    return create_skeleton_2d(bones, slots);
+    let mut out = create_skeleton_2d(bones);
+    out.slots = slots;
+    return out;
 }
 
 pub fn slot(bone_index: i32) -> Slot2D {

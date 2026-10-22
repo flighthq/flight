@@ -169,11 +169,7 @@ mod initialize_rive_skeleton_2d_import {
             vec![-1, 0],
         ))
         .unwrap();
-        initialize_rive_skeleton_2d_import(
-            &mut out,
-            vec![-1, 0],
-            create_skeleton_2d(Vec::new(), None),
-        );
+        initialize_rive_skeleton_2d_import(&mut out, vec![-1, 0], create_skeleton_2d(Vec::new()));
         assert_eq!(out.bone_indices, [-1, 0]);
     }
 }

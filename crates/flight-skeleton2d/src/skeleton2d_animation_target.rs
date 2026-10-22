@@ -57,13 +57,11 @@ pub fn create_skeleton_2d_bone_animation_target(
 }
 
 /// The binding target for a slot appearance channel (TS `createSkeleton2DSlotAnimationTarget`).
-pub fn create_skeleton_2d_slot_animation_target(
-    slot_index: i32,
-    path: &str,
-    attachments: Option<Arc<Vec<Option<Attachment2DRef>>>>,
-) -> Skeleton2DSlotAnimationTarget {
+/// Assign the authored slot, path and optional lookup table after construction.
+// flight-lint: allow(conform-params) D23 (Principal c0f9227c): authored slot fields are assigned after create
+pub fn create_skeleton_2d_slot_animation_target() -> Skeleton2DSlotAnimationTarget {
     let mut out: Skeleton2DSlotAnimationTarget = allocate_entity();
-    initialize_skeleton_2d_slot_animation_target(&mut out, slot_index, path, attachments);
+    initialize_skeleton_2d_slot_animation_target(&mut out);
     return out;
 }
 
@@ -79,16 +77,12 @@ pub fn initialize_skeleton_2d_bone_animation_target(
 }
 
 /// The construction initializer of `create_skeleton_2d_slot_animation_target`.
-pub fn initialize_skeleton_2d_slot_animation_target(
-    out: &mut Skeleton2DSlotAnimationTarget,
-    slot_index: i32,
-    path: &str,
-    attachments: Option<Arc<Vec<Option<Attachment2DRef>>>>,
-) {
-    out.attachments = attachments;
+// flight-lint: allow(conform-params) D23 (Principal c0f9227c): authored slot fields are assigned after initialization
+pub fn initialize_skeleton_2d_slot_animation_target(out: &mut Skeleton2DSlotAnimationTarget) {
+    out.attachments = None;
     out.kind = String::from(SKELETON_2D_ANIMATION_TARGET_KIND_SLOT);
-    out.path = String::from(path);
-    out.slot_index = slot_index;
+    out.path = String::new();
+    out.slot_index = 0;
 }
 
 fn bind_skeleton_2d_bone_channel(

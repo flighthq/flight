@@ -19,7 +19,8 @@ fn slot_with(attachment: Option<Attachment2DRef>) -> Slot2D {
 }
 
 fn rig(attachment: Option<Attachment2DRef>) -> (Skeleton2D, Skeleton2D) {
-    let setup = create_skeleton_2d(vec![bone()], Some(vec![slot_with(attachment)]));
+    let mut setup = create_skeleton_2d(vec![bone()]);
+    setup.slots = Some(vec![slot_with(attachment)]);
     let pose = clone_skeleton_2d(&setup);
     return (setup, pose);
 }

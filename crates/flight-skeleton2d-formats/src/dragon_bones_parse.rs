@@ -113,7 +113,8 @@ pub fn parse_dragon_bones_skeleton_with_registry(
     for entry in &registry.section_handlers {
         (entry.handle)(&mut context);
     }
-    let mut skeleton = create_skeleton_2d(context.bones, Some(context.slots));
+    let mut skeleton = create_skeleton_2d(context.bones);
+    skeleton.slots = Some(context.slots);
     if !context.skins.is_empty() {
         skeleton.skins = Some(context.skins);
     }

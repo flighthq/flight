@@ -153,7 +153,7 @@ mod create_skeleton_2d {
 
     #[test]
     fn sizes_the_flat_buffers_to_six_floats_per_bone() {
-        let value = create_skeleton_2d(vec![bone(), bone()], None);
+        let value = create_skeleton_2d(vec![bone(), bone()]);
         assert_eq!(value.world_matrices.len(), 2 * SKELETON_2D_MATRIX_STRIDE);
         assert_eq!(
             value.inverse_bind_matrices.len(),
@@ -239,6 +239,51 @@ mod initialize_skeleton_2d {
     use super::*;
 
     #[test]
+    fn adopts_required_buffers_and_preserves_runtime_before_authored_fields_are_assigned() {
+        let mut value: Skeleton2D = flight_entity::allocate_entity();
+        let id = flight_entity::get_entity_id(&value);
+        flight_entity::set_entity_uid(&mut value, String::from("rig-under-construction"));
+        let runtime = flight_entity::get_entity_runtime(&value).unwrap() as *const _;
+        let bones = vec![bone()];
+        let palette = vec![1.0; 6];
+        let inverse = vec![2.0; 6];
+        let world = vec![3.0; 6];
+        let pointers = (
+            bones.as_ptr(),
+            palette.as_ptr(),
+            inverse.as_ptr(),
+            world.as_ptr(),
+        );
+        initialize_skeleton_2d(&mut value, palette, bones, inverse, world);
+        assert_eq!(value.bones.as_ptr(), pointers.0);
+        assert_eq!(value.bone_matrices.as_ptr(), pointers.1);
+        assert_eq!(value.inverse_bind_matrices.as_ptr(), pointers.2);
+        assert_eq!(value.world_matrices.as_ptr(), pointers.3);
+        assert!(value.skins.is_none());
+        assert!(value.slots.is_none());
+        value.slots = Some(vec![slot(0)]);
+        value.skins = Some(vec![AttachmentSkin2D {
+            attachments: Vec::new(),
+            name: String::from("authored"),
+        }]);
+        assert_eq!(value.slots.as_ref().unwrap()[0].bone_index, 0);
+        assert_eq!(
+            get_skeleton_2d_skin(&value, "authored").unwrap().name,
+            "authored"
+        );
+        assert!(validate_skeleton_2d(&value).is_none());
+        assert_eq!(flight_entity::get_entity_id(&value), id);
+        assert_eq!(
+            flight_entity::get_entity_uid(&mut value),
+            "rig-under-construction"
+        );
+        assert_eq!(
+            flight_entity::get_entity_runtime(&value).unwrap() as *const _,
+            runtime
+        );
+    }
+
+    #[test]
     fn is_the_construction_initializer_of_create() {
         let mut value = skeleton(vec![bone()], None);
         initialize_skeleton_2d(
@@ -246,8 +291,6 @@ mod initialize_skeleton_2d {
             vec![1.0; 6],
             vec![bone()],
             vec![2.0; 6],
-            None,
-            None,
             vec![3.0; 6],
         );
         assert_eq!(value.bone_matrices[0], 1.0);
@@ -597,7 +640,7 @@ mod source_formula_parity {
 
     #[test]
     fn create_leaves_slots_null() {
-        let value = create_skeleton_2d(vec![bone(), bone()], None);
+        let value = create_skeleton_2d(vec![bone(), bone()]);
         assert!(value.slots.is_none());
     }
 

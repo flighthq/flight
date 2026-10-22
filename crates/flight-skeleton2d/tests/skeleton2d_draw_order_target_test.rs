@@ -41,7 +41,8 @@ fn bind(
 ) {
     let mut registry = create_skeleton_2d_animation_target_registry();
     register_skeleton_2d_draw_order_animation_binder(&mut registry);
-    let target = create_skeleton_2d_draw_order_animation_target(nodes, list);
+    let nodes = Arc::new(RwLock::new(nodes.to_vec()));
+    let target = create_skeleton_2d_draw_order_animation_target(&nodes, list);
     let target_unknown: Unknown = Some(Arc::new(target));
     let track = {
         let mut track = create_animation_track();
@@ -73,9 +74,17 @@ mod create_skeleton_2d_draw_order_animation_target {
     #[test]
     fn stamps_the_kind_the_binder_dispatches_on() {
         let (_, nodes, list) = rig(0);
-        let options: Vec<Option<NodeRef>> = nodes.into_iter().map(Some).collect();
+        let options = Arc::new(RwLock::new(nodes.into_iter().map(Some).collect()));
         let target = create_skeleton_2d_draw_order_animation_target(&options, &list);
         assert_eq!(target.kind, SKELETON_2D_ANIMATION_TARGET_KIND_DRAW_ORDER);
+        assert!(Arc::ptr_eq(&target.nodes, &options));
+        assert!(Arc::ptr_eq(&target.order_list, &list));
+        let node = test_node();
+        options.write().unwrap().push(Some(node.clone()));
+        assert!(Arc::ptr_eq(
+            target.nodes.read().unwrap()[0].as_ref().unwrap(),
+            &node
+        ));
     }
 }
 
@@ -87,7 +96,8 @@ mod create_skeleton_2d_draw_order_channel {
         nodes: &[Option<NodeRef>],
         list: &RefOrderList,
     ) -> AnimationChannel {
-        return create_skeleton_2d_draw_order_channel(timeline, nodes, list).expect("channel");
+        let nodes = Arc::new(RwLock::new(nodes.to_vec()));
+        return create_skeleton_2d_draw_order_channel(timeline, &nodes, list).expect("channel");
     }
 
     fn target_handle(channel: &AnimationChannel) -> &Skeleton2DAnimationTargetHandle {
@@ -161,6 +171,7 @@ mod create_skeleton_2d_draw_order_channel {
             orderings: Vec::new(),
             times: Vec::new(),
         };
+        let options = Arc::new(RwLock::new(options));
         assert!(create_skeleton_2d_draw_order_channel(&timeline, &options, &list).is_none());
     }
 
@@ -172,6 +183,7 @@ mod create_skeleton_2d_draw_order_channel {
             orderings: vec![0.0, 1.0, 1.0],
             times: vec![0.0, 1.0],
         };
+        let options = Arc::new(RwLock::new(options));
         assert!(create_skeleton_2d_draw_order_channel(&timeline, &options, &list).is_none());
     }
 }
@@ -183,17 +195,98 @@ mod initialize_skeleton_2d_draw_order_animation_target {
     fn is_the_construction_initializer_of_the_constructor() {
         let (_, nodes, list) = rig(1);
         let options: Vec<Option<NodeRef>> = nodes.into_iter().map(Some).collect();
+        let options = Arc::new(RwLock::new(options));
         let mut out: Skeleton2DDrawOrderAnimationTarget = flight_entity::allocate_entity();
+        let id = flight_entity::get_entity_id(&out);
+        flight_entity::set_entity_uid(&mut out, String::from("draw-order-under-construction"));
+        let runtime = flight_entity::get_entity_runtime(&out).unwrap() as *const _;
         initialize_skeleton_2d_draw_order_animation_target(&mut out, &options, &list);
         let created = create_skeleton_2d_draw_order_animation_target(&options, &list);
         assert_eq!(out.kind, created.kind);
-        assert_eq!(out.nodes.len(), created.nodes.len());
+        assert_eq!(
+            out.nodes.read().unwrap().len(),
+            created.nodes.read().unwrap().len()
+        );
         assert!(Arc::ptr_eq(&out.order_list, &created.order_list));
+        assert!(Arc::ptr_eq(&out.nodes, &options));
+        assert!(Arc::ptr_eq(&created.nodes, &options));
+        assert_eq!(flight_entity::get_entity_id(&out), id);
+        assert_eq!(
+            flight_entity::get_entity_uid(&mut out),
+            "draw-order-under-construction"
+        );
+        assert_eq!(
+            flight_entity::get_entity_runtime(&out).unwrap() as *const _,
+            runtime
+        );
     }
 }
 
 mod register_skeleton_2d_draw_order_animation_binder {
     use super::*;
+
+    #[test]
+    fn reads_shared_nodes_and_track_values_after_the_coercion_callback() {
+        let first = test_node();
+        let replacement = test_node();
+        let nodes = Arc::new(RwLock::new(vec![Some(first.clone())]));
+        let list = order_list();
+        flight_node::contract::add_node_order_list_entry(&mut list.write().unwrap(), &first, 9.0);
+        let timeline = Skeleton2DDrawOrderTimeline {
+            orderings: vec![1.0],
+            times: vec![0.0],
+        };
+        let channel = create_skeleton_2d_draw_order_channel(&timeline, &nodes, &list).unwrap();
+        channel.track.write().unwrap().interpolation = AnimationInterpolation::Linear;
+        let target = channel
+            .target_ref
+            .as_ref()
+            .unwrap()
+            .downcast_ref::<Skeleton2DAnimationTargetHandle>()
+            .unwrap();
+        let draw_target = target
+            .target
+            .as_ref()
+            .unwrap()
+            .downcast_ref::<Skeleton2DDrawOrderAnimationTarget>()
+            .unwrap();
+        assert!(Arc::ptr_eq(&draw_target.nodes, &nodes));
+        assert!(Arc::ptr_eq(&draw_target.order_list, &list));
+        // A caller mutation after channel creation must be visible to the retained target.
+        nodes.write().unwrap()[0] = None;
+        let mut guards = empty_guards();
+        let callback_nodes = nodes.clone();
+        let callback_track = channel.track.clone();
+        let callback_list = list.clone();
+        let expected_node = replacement.clone();
+        set_skeleton_2d_coerced_interpolation_guard(
+            &mut guards,
+            Some(Arc::new(move |report| {
+                assert_eq!(report.subject, "DrawOrder");
+                assert_eq!(report.stated, "Linear");
+                assert_eq!(report.applied, "Step");
+                assert_eq!(callback_list.read().unwrap().entry_count, 1);
+                assert_eq!(callback_list.read().unwrap().sort_keys[0], 9.0);
+                assert!(callback_nodes.read().unwrap()[0].is_none());
+                callback_nodes.write().unwrap()[0] = Some(expected_node.clone());
+                callback_track.write().unwrap().values[0] = 7.0;
+            })),
+        );
+        let mut registry = create_skeleton_2d_animation_target_registry();
+        register_skeleton_2d_draw_order_animation_binder(&mut registry);
+        let binder = get_skeleton_2d_animation_target_binder(
+            &registry,
+            SKELETON_2D_ANIMATION_TARGET_KIND_DRAW_ORDER,
+        )
+        .unwrap();
+        let setup = skeleton(vec![bone()], None);
+        let mut pose = clone_skeleton_2d(&setup);
+        binder(&channel, &setup, &mut pose, &target.target, 0.0, &guards);
+        let list = list.read().unwrap();
+        assert_eq!(list.entry_count, 1);
+        assert!(Arc::ptr_eq(&list.nodes[0], &replacement));
+        assert_eq!(list.sort_keys[0], 7.0);
+    }
 
     #[test]
     fn claims_nothing_until_called_so_an_unused_family_shakes_out() {
