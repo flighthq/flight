@@ -254,7 +254,6 @@ src/types.rs: #[derive(Clone)] pub struct SpineBinarySectionHandlerEntry { pub h
 src/types.rs: #[derive(Clone)] pub struct SpineBinaryTimelineHandlerEntry { pub handle: SpineBinaryTimelineHandler, pub kind: String, }
 src/types.rs: #[derive(Clone)] pub struct SpineJsonSectionHandlerEntry { pub handle: SpineJsonSectionHandler, pub kind: String, }
 src/types.rs: #[derive(Clone)] pub struct SpineJsonTimelineHandlerEntry { pub handle: SpineJsonTimelineHandler, pub kind: String, }
-src/types.rs: #[derive(Clone, Copy)] pub struct ByteReader<'a> { pub view: &'a Uint8Array, pub offset: usize, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SpineBinaryVersionFailureReason { NoStrategyMatched, StrategiesDisagree, TooShort, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct JsonRecord(Map<String, Value>);
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct Skeleton2DJsonAnalysis { pub counts: HashMap<String, usize>, pub format: String, }

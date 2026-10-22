@@ -76,6 +76,7 @@ src/texture_level_layout.rs: impl TextureContainerFormat :: fn compute_levels(se
 src/texture_level_layout.rs: impl TextureContainerFormat :: fn level_byte_length(self, width: usize, height: usize) -> i64
 src/texture_level_layout.rs: pub fn compute_texture_container_levels(format: TextureContainerFormat, base_width: usize, base_height: usize, mip_levels: usize, layers: usize, faces: usize, start_offset: usize,) -> Option<TextureContainerLevels>
 src/texture_level_layout.rs: pub fn get_texture_container_level_byte_length(format: TextureContainerFormat, width: usize, height: usize,) -> i64
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct ByteReader<'a> { pub view: &'a Uint8Array, pub offset: usize, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct TextureContainerLevel { pub byte_offset: usize, pub byte_length: usize, pub width: usize, pub height: usize, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct TextureContainerParseExplanation { pub container: Option<TextureContainerKind>, pub reason: TextureContainerParseFailureReason, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] pub enum TextureContainerFormat { Rgba8Unorm, Rgba8Srgb, Bgra8Unorm, Bgra8Srgb, R8Unorm, Rg8Unorm, Rgba16f, Rgba32f, Bc1, Bc1Srgb, Bc2, Bc2Srgb, Bc3, Bc3Srgb, Bc4, Bc4Snorm, Bc5, Bc5Snorm, Bc6hUfloat, Bc6hSfloat, Bc7, Bc7Srgb, Etc1, Etc2Rgb, Etc2RgbSrgb, Etc2Rgba, Etc2RgbaSrgb, Etc2RgbA1, Etc2RgbA1Srgb, EacR11, EacR11Snorm, EacRg11, EacRg11Snorm, Pvrtc2bppRgb, Pvrtc2bppRgba, Pvrtc4bppRgb, Pvrtc4bppRgba, Astc4x4, Astc5x4, Astc5x5, Astc6x5, Astc6x6, Astc8x5, Astc8x6, Astc8x8, Astc10x5, Astc10x6, Astc10x8, Astc10x10, Astc12x10, Astc12x12, Etc1s, Uastc, }
@@ -84,7 +85,6 @@ src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] pub enum Textur
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] pub enum TextureContainerSupercompression { None, BasisLz, Zstd, Zlib, }
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct TextureContainer { pub format: TextureContainerFormat, pub width: usize, pub height: usize, pub depth: usize, pub mip_levels: usize, pub layers: usize, pub faces: usize, pub supercompression: TextureContainerSupercompression, pub levels: Vec<TextureContainerLevel>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct TextureContainerLevels { pub levels: Vec<TextureContainerLevel>, pub end_offset: usize, }
-src/types.rs: #[derive(Debug, PartialEq, Eq)] pub struct ByteReader<'a> { pub view: &'a Uint8Array, pub offset: usize, }
 src/types.rs: pub fn get_texture_container_format_string(value: TextureContainerFormat) -> &'static str
 src/types.rs: pub fn get_texture_container_kind_string(value: TextureContainerKind) -> &'static str
 src/types.rs: pub fn get_texture_container_parse_failure_reason_string(value: TextureContainerParseFailureReason,) -> &'static str

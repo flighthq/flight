@@ -35,8 +35,6 @@ tests/text_bounds_test.rs: compute_text_bounds_width::uses_spec_width_when_word_
 tests/text_bounds_test.rs: compute_text_bounds_width::uses_text_width_plus_gutters_when_auto_size_is_enabled
 tests/text_bounds_test.rs: text_bounds_gutter::equals_text_layout_gutter
 tests/text_bounds_test.rs: text_bounds_gutter::is_a_positive_number
-tests/text_format_range_test.rs: create_text_format_range::creates_a_range_with_the_given_fields
-tests/text_format_range_test.rs: initialize_text_format_range::is_the_construction_initializer_of_create_text_format_range
 tests/text_format_test.rs: get_text_format_ascent::returns_12_when_size_is_absent
 tests/text_format_test.rs: get_text_format_ascent::returns_size_when_specified
 tests/text_format_test.rs: get_text_format_descent::returns_18_5_percent_of_size

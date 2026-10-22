@@ -2,14 +2,14 @@ src/contract.rs: pub use crate::rich_text_content::*;
 src/contract.rs: pub use crate::rich_text_query::*;
 src/contract.rs: pub use crate::text_bounds::*;
 src/contract.rs: pub use crate::text_format::*;
-src/contract.rs: pub use crate::text_format_range::*;
 src/contract.rs: pub use crate::text_layout::*;
 src/contract.rs: pub use crate::text_layout_group::*;
 src/contract.rs: pub use crate::text_layout_measure::*;
 src/contract.rs: pub use crate::text_line_breaks::*;
 src/contract.rs: pub use crate::text_metrics::*;
 src/contract.rs: pub use crate::types::*;
-src/contract.rs: pub use flight_textformat::{ TextFormat, TextFormatAlign, TextFormatListMarker, TextFormatRange };
+src/contract.rs: pub use flight_textformat::contract::initialize_text_format_range;
+src/contract.rs: pub use flight_textformat::{ TextFormat, TextFormatAlign, TextFormatListMarker, TextFormatRange, create_text_format_range, };
 src/contract.rs: pub use flight_textshaper::{ HostTextShaperCapability, TextDirection, TextMeasureFunction, measure_text, };
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::RichTextContent;
@@ -101,8 +101,6 @@ src/text_format.rs: pub fn get_text_format_descent(format: &TextFormat) -> f32
 src/text_format.rs: pub fn get_text_format_height(format: &TextFormat) -> f32
 src/text_format.rs: pub fn get_text_format_leading(format: &TextFormat) -> f32
 src/text_format.rs: pub fn merge_text_format(base: &TextFormat, r#override: &TextFormat) -> TextFormat
-src/text_format_range.rs: pub fn create_text_format_range(format: Ref<TextFormat>, start: usize, end: usize,) -> TextFormatRange
-src/text_format_range.rs: pub fn initialize_text_format_range(out: &mut TextFormatRange, format: Ref<TextFormat>, start: usize, end: usize,)
 src/text_layout.rs: pub const TEXT_LAYOUT_GUTTER: f32
 src/text_layout.rs: pub fn compute_text_layout(out: &mut TextLayoutResult, params: &TextLayoutParams)
 src/text_layout.rs: pub fn create_text_layout_result() -> TextLayoutResult
