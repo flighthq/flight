@@ -7,18 +7,23 @@ use flight_materials::{Material, STANDARD_MATERIAL_KIND};
 use flight_registry::with_kind_map_entry;
 use flight_render::{RenderRegistryTable, emit_render_registry_miss};
 
-use crate::{GlQuadMaterialRenderer, GlRenderState};
+use crate::{GlMaterialRenderer, GlQuadMaterialRenderer, GlRenderState};
+
+// Narrows a shared material-renderer table entry to the 2D quad seam; a mesh (3D) entry is not one.
+fn as_gl_quad_material_renderer(
+    entry: Option<&GlMaterialRenderer>,
+) -> Option<&'static dyn GlQuadMaterialRenderer> {
+    return match entry {
+        Some(GlMaterialRenderer::Quad(renderer)) => Some(*renderer),
+        _ => None,
+    };
+}
 
 pub fn get_gl_quad_material_renderer(
     state: &GlRenderState,
     kind: &Kind,
 ) -> Option<&'static dyn GlQuadMaterialRenderer> {
-    return state
-        .gl_registries
-        .material_renderers
-        .entries
-        .get(kind)
-        .copied();
+    return as_gl_quad_material_renderer(state.gl_registries.material_renderers.entries.get(kind));
 }
 
 pub fn register_gl_quad_material_renderer(
@@ -29,7 +34,7 @@ pub fn register_gl_quad_material_renderer(
     state.gl_registries.material_renderers = Arc::new(with_kind_map_entry(
         &state.gl_registries.material_renderers,
         kind,
-        renderer,
+        GlMaterialRenderer::Quad(renderer),
     ));
 }
 
@@ -40,12 +45,8 @@ pub fn resolve_gl_quad_material_renderer(
     let kind = material.map_or(STANDARD_MATERIAL_KIND, |value| {
         value.material_fields().kind.as_str()
     });
-    if let Some(renderer) = state
-        .gl_registries
-        .material_renderers
-        .entries
-        .get(kind)
-        .copied()
+    if let Some(renderer) =
+        as_gl_quad_material_renderer(state.gl_registries.material_renderers.entries.get(kind))
     {
         return Some(renderer);
     }
@@ -57,10 +58,11 @@ pub fn resolve_gl_quad_material_renderer(
     if kind == STANDARD_MATERIAL_KIND {
         return None;
     }
-    return state
-        .gl_registries
-        .material_renderers
-        .entries
-        .get(STANDARD_MATERIAL_KIND)
-        .copied();
+    return as_gl_quad_material_renderer(
+        state
+            .gl_registries
+            .material_renderers
+            .entries
+            .get(STANDARD_MATERIAL_KIND),
+    );
 }

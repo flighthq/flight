@@ -72,9 +72,13 @@ mod register_gl_quad_material_renderer {
             get_gl_quad_material_renderer(&state, &"custom".into()).unwrap(),
             &REPLACEMENT,
         ));
+        let flight_render_gl::GlMaterialRenderer::Quad(entry) = *earlier.entries.get("custom").unwrap()
+        else {
+            panic!("expected a quad material renderer entry");
+        };
         assert!(std::ptr::eq(
-            *earlier.entries.get("custom").unwrap(),
-            &RENDERER,
+            entry as *const dyn flight_render_gl::GlQuadMaterialRenderer as *const (),
+            &RENDERER as *const _ as *const (),
         ));
     }
 }

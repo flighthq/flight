@@ -9,17 +9,21 @@ use std::sync::{Arc, Mutex};
 use flight_entity::{AnySlot, Entity, EntityRuntimeSlot, Kind, Ref, UnknownValue};
 use flight_image::{HostImageCapability, ImageResolverState};
 use flight_log::LogStateRef;
-use flight_materials::{BlendMode, Material2D, MaterialData};
+use flight_camera::Camera3D;
+use flight_lighting::{Scene3DLightBlock, Scene3DLightsLike};
+use flight_materials::{BlendMode, Material2D, Material3D, MaterialData, PbrExtension, PbrUvSet};
+use flight_meshgeometry::MeshGeometry;
+use flight_shading::Modifier;
 use flight_node::NodeRef;
 use flight_registry::KindMap;
 use flight_render::{
     CanvasHostSurfaces, RenderProxies2D, RenderProxy2D, RenderRegistries, RenderState,
     RenderStateBackend, RenderStateFields, RenderStateOptions, RenderStateRuntime,
-    RenderTargetAxes, RenderTargetAxisDifference, ShapeRasterizer,
+    RenderTargetAxes, RenderTargetAxisDifference, Scene3DRenderProxy, ShapeRasterizer,
 };
 use flight_signals::Signal;
 use flight_surface::HostCanvasCapability;
-use flight_texture::{RenderTargetColorSpace, TextureColorSpace, TextureVariant};
+use flight_texture::{RenderTargetColorSpace, Texture, TextureColorSpace, TextureVariant};
 use flight_texture_formats::TextureContainerFormat;
 use flight_velocity::VelocityField;
 use glow::{
@@ -384,6 +388,95 @@ pub trait GlQuadMaterialRenderer {
     }
 }
 
+/// Per-backend 3D draw behavior for a mesh-material kind (TS `GlMeshMaterialRenderer`), registered
+/// against the kind through scene3d-gl's `register_gl_mesh_material_renderer`. `bind` selects the
+/// family program and uploads the per-run camera, light block and material state once per contiguous
+/// run; `draw` uploads geometry lazily and issues one subset draw from the reused proxy.
+pub struct GlMeshMaterialRenderer {
+    pub bind: fn(&mut GlRenderState, Option<&dyn Material3D>, &Scene3DLightBlock, &Camera3D),
+    pub draw: fn(&mut GlRenderState, &Scene3DRenderProxy, &MeshGeometry),
+}
+
+/// One `materialRenderers` table entry (TS `GlMeshMaterialRenderer | GlQuadMaterialRenderer`): a
+/// material kind is either 2D or 3D, never both, so one table holds both without collision.
+#[derive(Clone, Copy)]
+pub enum GlMaterialRenderer {
+    Mesh(&'static GlMeshMaterialRenderer),
+    Quad(&'static dyn GlQuadMaterialRenderer),
+}
+
+/// The per-modifier binding context a ShadedMaterial renderer hands each snippet's `bind` (TS
+/// `GlModifierBindContext`): the live state, the linked program, the modifier's stack `index` (the
+/// uniform-name suffix) and a texture-unit allocator that returns -1 once exhausted.
+pub struct GlModifierBindContext<'a> {
+    pub acquire_modifier_texture_unit: &'a mut dyn FnMut() -> i32,
+    pub index: usize,
+    pub program: NativeProgram,
+    pub state: &'a mut GlRenderState,
+}
+
+/// The GL registration record for one modifier kind (TS `GlModifierSnippet extends
+/// ModifierDefinition`): the shading definition's kind/slot/define signature, the GLSL a ShadedMaterial
+/// program injects for it (names suffixed by the stack index) and its optional per-draw uniform upload.
+pub struct GlModifierSnippet {
+    pub kind: &'static str,
+    pub slot: &'static str,
+    pub get_define_signature: Option<fn(&dyn Modifier) -> String>,
+    pub bind: Option<fn(&dyn Modifier, &mut GlModifierBindContext<'_>)>,
+    pub contribution: fn(&dyn Modifier, usize) -> String,
+    pub declarations: Option<fn(&dyn Modifier, usize) -> String>,
+}
+
+/// Backend-safe operations exposed to a PBR extension binder (TS `GlPbrExtensionBindContext`).
+/// Extensions name their own uniforms but never receive the private program record.
+pub trait GlPbrExtensionBindContext {
+    fn bind_transmission_scene_color(&mut self, sampler_uniform: &str, max_lod_uniform: &str) -> bool;
+    fn bind_texture(
+        &mut self,
+        sampler_uniform: &str,
+        uv_set_uniform: &str,
+        uv_transform_uniform: &str,
+        texture: Option<&Ref<Texture>>,
+        uv_set: PbrUvSet,
+    ) -> bool;
+    fn set_linear_color(&mut self, uniform: &str, color: u32);
+    fn set_float(&mut self, uniform: &str, value: f32);
+}
+
+/// Read-only facts available while a registered extension selects its shader contribution (TS
+/// `GlPbrExtensionShaderContext`).
+pub trait GlPbrExtensionShaderContext {
+    fn has_transmission_scene_color(&self) -> bool;
+    fn is_texture_ready(&self, texture: Option<&Ref<Texture>>) -> bool;
+}
+
+/// GLSL contributed by one registered PBR extension (TS `GlPbrExtensionShaderContribution`), composed
+/// by the core PBR shader in descriptor order.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GlPbrExtensionShaderContribution {
+    pub apply_surface: String,
+    pub contribute_ibl: String,
+    pub contribute_punctual: String,
+    pub finalize: String,
+    pub fragment_declarations: String,
+    pub fragment_functions: String,
+    pub key: String,
+    pub samples_transmission_scene_color: Option<bool>,
+    pub texture_count: u32,
+}
+
+/// The GL realization of one open PbrExtension kind (TS `GlPbrExtensionRegistration`).
+pub struct GlPbrExtensionRegistration {
+    pub bind: fn(&mut dyn GlPbrExtensionBindContext, &PbrExtension),
+    pub create_shader_contribution:
+        fn(&dyn GlPbrExtensionShaderContext, &PbrExtension) -> GlPbrExtensionShaderContribution,
+    pub is_supported: fn(&PbrExtension) -> bool,
+}
+
+/// A draw pass run after the 3D mesh passes (TS `GlScene3DPass`), installed by a register function
+/// such as scene3d-gl's `register_gl_particle_emitter3d_pass`.
+pub type GlScene3DPass = fn(&mut GlRenderState, &NodeRef, &Camera3D, &Scene3DLightsLike);
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GlCustomMaterialShaderSource {
     pub fragment: String,
@@ -412,9 +505,10 @@ pub struct GlRenderRegistries {
     /// type belongs to that package, which depends on render-gl, so render-gl holds each
     /// registration opaquely by identity and never invokes it (D8 slot pattern).
     pub effects: Arc<KindMap<UnknownValue>>,
-    pub material_renderers: Arc<KindMap<&'static dyn GlQuadMaterialRenderer>>,
-    pub modifier_snippets: Arc<KindMap<String>>,
-    pub pbr_extensions: Arc<KindMap<String>>,
+    pub material_renderers: Arc<KindMap<GlMaterialRenderer>>,
+    pub modifier_snippets: Arc<KindMap<&'static GlModifierSnippet>>,
+    pub passes: Option<Arc<Vec<GlScene3DPass>>>,
+    pub pbr_extensions: Arc<KindMap<&'static GlPbrExtensionRegistration>>,
     pub shape_rasterizer: Option<ShapeRasterizer<GlRenderState>>,
     pub texture_resolvers: Arc<KindMap<GlTextureResolver>>,
     pub velocity_writers: Arc<KindMap<GlVelocityWriter>>,
@@ -509,6 +603,9 @@ pub struct GlContextRuntime {
     /// Opaque per-context record of scene2d-gl (TS module WeakMaps keyed by `GlContext`, e.g. the
     /// clip-contour and velocity programs); render-gl only retains it.
     pub scene2d_context_runtime: Option<Box<dyn std::any::Any>>,
+    /// Opaque per-context record of scene3d-gl (TS `GlContextRuntime.sceneMeshUploadCache`, the
+    /// geometry upload cache derived states share); render-gl only retains it.
+    pub scene3d_context_runtime: Option<Box<dyn std::any::Any>>,
     pub(crate) pass_handle_pool: Vec<GlRenderPass>,
     pub(crate) pass_stack: Vec<GlPassStackEntry>,
     pub state_runtimes: HashMap<u64, Weak<RefCell<GlRenderStateRuntime>>>,
@@ -572,6 +669,9 @@ pub struct GlRenderStateRuntime {
     /// Opaque per-state record of scene2d-gl (TS module WeakMaps keyed by `GlRenderState`, e.g. the
     /// render-cache targets); render-gl only retains it.
     pub scene2d_runtime: Option<Box<dyn std::any::Any>>,
+    /// Opaque per-state record of scene3d-gl (TS module WeakMap keyed by `GlRenderState`, the
+    /// `GlScene3DRuntime`); render-gl only retains it.
+    pub scene3d_runtime: Option<Box<dyn std::any::Any>>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -900,6 +1000,7 @@ impl Default for GlRenderRegistries {
             effects: Arc::new(empty_kind_map()),
             material_renderers: Arc::new(empty_kind_map()),
             modifier_snippets: Arc::new(empty_kind_map()),
+            passes: None,
             pbr_extensions: Arc::new(empty_kind_map()),
             shape_rasterizer: None,
             texture_resolvers: Arc::new(empty_kind_map()),
@@ -967,6 +1068,7 @@ impl Default for GlRenderStateRuntime {
             quad_batch_writer_color_matrix_data: None,
             quad_batch_writer_color_tint_data: None,
             scene2d_runtime: None,
+            scene3d_runtime: None,
         };
     }
 }

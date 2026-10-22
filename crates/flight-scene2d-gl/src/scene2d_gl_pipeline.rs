@@ -10,7 +10,7 @@ use flight_quadbatch::QUAD_BATCH_KIND;
 use flight_registry::{KindMap, with_kind_map_entry};
 use flight_render::{NodeRenderer, RENDER_CACHE_KIND, RenderStateOptions};
 use flight_render_gl::{
-    GlQuadMaterialRenderer, GlRenderRegistries, GlRenderState, GlRenderStateOptions,
+    GlMaterialRenderer, GlQuadMaterialRenderer, GlRenderRegistries, GlRenderState, GlRenderStateOptions,
     standard_gl_blend_realizations, standard_gl_texture_resolvers,
 };
 use flight_scene2d::{DISPLAY_OBJECT_KIND, SCALE9_SPRITE_KIND, SPRITE_KIND};
@@ -99,7 +99,7 @@ pub fn gl_render_infrastructure() -> GlRenderStateOptions {
         material_renderers: Arc::new(with_kind_map_entry(
             &empty_kind_map(),
             STANDARD_MATERIAL_KIND.to_string(),
-            material,
+            GlMaterialRenderer::Quad(material),
         )),
         texture_resolvers: Arc::new(standard_gl_texture_resolvers()),
         ..GlRenderRegistries::default()
