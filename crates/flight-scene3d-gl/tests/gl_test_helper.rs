@@ -2246,3 +2246,70 @@ pub fn thrown_message(f: impl FnOnce()) -> String {
     }
     return String::new();
 }
+
+/// TS `createNode3D(Node3DKind)`: an empty scene root.
+pub fn make_test_scene() -> flight_node::NodeRef {
+    return flight_scene3d::publish_node3d(flight_scene3d::create_node3d::<flight_scene3d::Node3DFields>(None));
+}
+
+/// TS `addNodeChild(scene, createMesh(geometry, materials))`; returns the mesh handle.
+pub fn add_test_mesh(
+    scene: &flight_node::NodeRef,
+    geometry: flight_meshgeometry::MeshGeometry,
+    materials: Vec<Option<flight_materials::Material3DRef>>,
+) -> flight_entity::Ref<flight_scene3d::Mesh> {
+    let mesh = flight_scene3d::create_mesh(
+        std::sync::Arc::new(std::sync::RwLock::new(geometry)),
+        std::sync::Arc::new(std::sync::RwLock::new(materials)),
+    );
+    let node: flight_node::NodeRef = mesh.clone();
+    flight_node::add_node_child(scene, &node);
+    return mesh;
+}
+
+/// TS `LIGHTS`: a 0.2 white ambient plus a unit white directional light travelling (0, -1, -1).
+pub fn make_test_lights() -> flight_lighting::Scene3DLightsLike {
+    let mut lights = flight_lighting::create_scene_3d_lights();
+    let mut ambient = flight_lighting::create_ambient_light();
+    ambient.color = 0xffff_ffff;
+    ambient.intensity = 0.2;
+    lights.ambient = Some(std::sync::Arc::new(std::sync::RwLock::new(ambient)));
+    let directional = flight_lighting::create_directional_light(Some(&flight_lighting::DirectionalLightOptions {
+        color: Some(0xffff_ffff),
+        direction: Some(flight_geometry::create_vector3(0.0, -1.0, -1.0)),
+        intensity: Some(1.0),
+        ..test_default()
+    }));
+    lights.directional = Some(std::sync::Arc::new(std::sync::RwLock::new(directional)));
+    return lights;
+}
+
+/// TS `mockPass(state)`: a pass handle over the state's default framebuffer (the canvas).
+pub fn make_test_pass(state: &GlRenderState) -> flight_render_gl::GlRenderPass {
+    let target = flight_render_gl::create_gl_screen_render_target(state.gl.clone(), 256, 256);
+    return flight_render_gl::acquire_gl_render_pass_handle(state, &target);
+}
+
+/// A guard log state with a memory sink attached (TS `createMemoryLogSink` + `addLogSink`).
+pub fn make_test_log() -> (flight_log::LogStateRef, flight_log::MemoryLogSink) {
+    let log_state = std::sync::Arc::new(std::sync::RwLock::new(flight_log::create_log_state()));
+    let sink = flight_log::create_memory_log_sink(8);
+    flight_log::add_log_sink(&log_state, sink.sink.clone());
+    return (log_state, sink);
+}
+
+/// The `message` field of every entry the memory sink captured.
+pub fn log_messages(sink: &flight_log::MemoryLogSink) -> Vec<String> {
+    let mut entries = Vec::new();
+    flight_log::get_memory_log_sink_entries(&mut entries, sink);
+    return entries
+        .iter()
+        .map(|entry| match &entry.data {
+            flight_log::LogData::Message(message) => message.clone(),
+            flight_log::LogData::Record(data) => match data.get("message") {
+                Some(flight_log::LogValue::Str(message)) => message.clone(),
+                _ => String::new(),
+            },
+        })
+        .collect();
+}
