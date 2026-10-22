@@ -10,6 +10,8 @@ mod flight_scene3d_wgpu_explain_wgpu_scene3d_forward_light_selection_test;
 mod flight_scene3d_wgpu_prepare_wgpu_scene3d_forward_lights_test;
 #[path = "register_wgpu_standard_pbr_material_test.rs"]
 mod flight_scene3d_wgpu_register_wgpu_standard_pbr_material_test;
+#[path = "render_wgpu_scene3d_test.rs"]
+mod flight_scene3d_wgpu_render_wgpu_scene3d_test;
 #[path = "support_test.rs"]
 mod flight_scene3d_wgpu_support_test;
 #[path = "wgpu_mesh_fragment_tail_test.rs"]

@@ -646,3 +646,14 @@ pub fn make_wgpu_skinning_adapter() -> &'static WgpuSkinningAdapter {
     flight_scene3d_wgpu::register_wgpu_gpu_skinning(&mut test.state);
     return flight_scene3d_wgpu::get_wgpu_skinning_adapter(&mut test.state).unwrap();
 }
+
+/// Ends the test pass and submits the frame, so the device validates every recorded pass command
+/// (pipeline/bind-group compatibility, vertex and index buffers, dynamic offsets).
+pub fn submit_test_frame(test: &mut WgpuScene3DTestState) {
+    if let Some(pass) = get_wgpu_active_render_pass_handle(&mut test.state) {
+        end_wgpu_render_pass(pass);
+    }
+    submit_wgpu_frame(&mut test.state);
+    let native = get_wgpu_render_state_native_device(&test.state);
+    let _ = native.device.poll(wgpu::PollType::wait_indefinitely());
+}
