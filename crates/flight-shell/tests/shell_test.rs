@@ -563,6 +563,7 @@ mod shell_process_streams {
     use std::collections::VecDeque;
     use std::io;
 
+    #[allow(dead_code)]
     enum ReadStep {
         Bytes(Vec<u8>),
         Error(String),

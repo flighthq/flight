@@ -19,7 +19,8 @@ fn box3(min_x: f32, min_y: f32, min_z: f32, size: f32) -> SpatialAabb3D {
     return SpatialAabb3D { min_x, min_y, min_z, max_x: min_x + size, max_y: min_y + size, max_z: min_z + size };
 }
 
-fn sorted_ids(ids: &[SpatialObjectId]) -> Vec<SpatialObjectId> {
+#[allow(dead_code)]
+fn _sorted_ids(ids: &[SpatialObjectId]) -> Vec<SpatialObjectId> {
     let mut v: Vec<SpatialObjectId> = ids.to_vec();
     v.sort();
     return v;
@@ -57,6 +58,7 @@ mod create_uniform_grid_spatial_backend_3d {
     }
 
     #[test]
+    #[allow(unused_assignments)]
     fn copies_the_bounds_so_caller_may_reuse() {
         let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(10.0)));
         let mut bounds = box3(1.0, 1.0, 1.0, 4.0);
