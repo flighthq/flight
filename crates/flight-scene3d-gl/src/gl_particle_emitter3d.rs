@@ -392,6 +392,8 @@ pub fn destroy_gl_particle_emitter3d_shader(state: &GlRenderState) {
         gl.delete_buffer(shader.corner_buffer);
         gl.delete_buffer(shader.index_buffer);
         gl.delete_buffer(shader.instance_buffer);
+        // TS bug fix: the source frees the buffers but leaks the VAO that records their bindings.
+        gl.delete_vertex_array(shader.vao);
     }
 }
 

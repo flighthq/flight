@@ -153,6 +153,18 @@ mod destroy_gl_particle_emitter3d_shader {
         assert!(count_calls("delete_program") > 0);
         assert!(count_calls("delete_buffers") >= 3);
     }
+
+    // Rust-side fix of a TS leak: the particle VAO is created with the shader and must die with it.
+    #[test]
+    fn deletes_the_particle_vertex_array_with_the_shader() {
+        let mut state = make_gl_scene3d_state();
+        let scene = make_test_scene();
+        add_emitter(&scene, &make_emitter_with_particles(1));
+        draw(&mut state, &scene);
+        let before = count_calls("delete_vertex_arrays");
+        destroy_gl_particle_emitter3d_shader(&state);
+        assert_eq!(count_calls("delete_vertex_arrays"), before + 1);
+    }
 }
 
 mod draw_gl_scene3d_particle_emitter3_ds {
