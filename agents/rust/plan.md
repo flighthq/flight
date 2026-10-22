@@ -8,6 +8,7 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
 
 1. **Translate, don't rewrite (D0).** Do not fix existing drift, in either direction, without a ruling. If a test or a TS signature looks wrong, escalate it rather than editing it.
 2. **Gates.** Every parcel must pass:
+   - `RUSTFLAGS="-D warnings" cargo build --workspace --tests --locked` (no compiler warnings)
    - `cargo test --workspace --features flight-physics3d/stress-tests` (the full run; plain `cargo test --workspace` is the fast default and skips the 11 long Physics3D stress simulations, user 2026-10-22)
    - `cargo run -p cargo-flight-lint -- check --baseline agents/baselines/check.txt`, with no new violations
    - `cargo run -p cargo-flight-lint -- conform <ts-packages> --baseline agents/baselines/conform.txt`, with no new violations
@@ -76,8 +77,8 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
   - platform feature packages carry capability contracts only.
 
 - **D26 host layering work (user, 2026-10-22):** (1) fold `flight-hostcapability` into `flight-host` and make it the bottom crate, moving the reviewed host-vocabulary types in (`agents/research/host-type-inventory-review.md`); (2) redistribute the landed aggregate's explain / guard code to the feature crates that own each group, and remove the aggregate `Host`, its queries and `create_host`; (3) `HostGlCapability` / `HostWgpuCapability` contracts go in flight-surface; (4) fill `agents/host-vocabulary.md`. TS mirrors via transpile. Host-* providers compose their own hosts when they are built (host-web TS-only; native hosts D19).
-- **Final step (D21): `flight-sdk` created (2026-10-22).** One glob per crate's public lane (TS `sdk/src/index.ts`), a module per crate mirroring the `@flighthq/sdk/<name>` subpaths, `gl` / `wgpu` features (default on) for the native backends, and `SDK_HOST` (TS `sdkHost`: the SDK's own portable compress / decompress provider, D26). Open: duplicate public names across crates make some globs ambiguous (being removed, D8 one owner); then `flight-sdk` builds warning-free.
-- **Compiler warnings gate (2026-10-22):** once the cleanup lands, qualification also builds lib and tests with `RUSTFLAGS="-D warnings"`.
+- **Final step (D21): `flight-sdk` created (2026-10-22).** One glob per crate's public lane (TS `sdk/src/index.ts`), a module per crate mirroring the `@flighthq/sdk/<name>` subpaths, `gl` / `wgpu` features (default on) for the native backends, and `SDK_HOST` (TS `sdkHost`: the SDK's own portable compress / decompress provider, D26). Duplicate public names were removed (D8 one owner); `flight-sdk` builds warning-free.
+- **Compiler warnings gate (2026-10-22, in force):** qualification also builds lib and tests with `RUSTFLAGS="-D warnings" cargo build --workspace --tests --locked`.
 
 ## Post-port design backlog (user, 2026-10-21; not in scope for this pass)
 - **Buffer writers: position / length / stride.** Whether `write_*` / `*_from_*_array` functions take `offset`, `length`, `stride`.
