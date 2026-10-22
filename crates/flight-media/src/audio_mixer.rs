@@ -22,24 +22,8 @@ pub fn create_audio_mixer(
     device: AudioDeviceHandle,
     options: Option<&AudioMixerOptions>,
 ) -> Ref<AudioMixer> {
-    let master_gain = options
-        .and_then(|options| options.master_gain)
-        .unwrap_or(1.0);
-    let master_muted = options
-        .and_then(|options| options.master_muted)
-        .unwrap_or(false);
-    let graph =
-        (host_audio_mixer.create_mixer_graph)(device, if master_muted { 0.0 } else { master_gain });
     let mut mixer: AudioMixer = allocate_entity();
-    mixer.master_gain = master_gain;
-    mixer.master_muted = master_muted;
-    mixer.mixer_runtime = Some(AudioMixerRuntime {
-        active_channels: Vec::new(),
-        buses: Vec::new(),
-        channels_paused_by_mixer: Vec::new(),
-        channel_to_bus: Vec::new(),
-        graph,
-    });
+    initialize_audio_mixer(&mut mixer, host_audio_mixer, device, options);
     return Arc::new(RwLock::new(mixer));
 }
 
@@ -49,6 +33,32 @@ pub fn initialize_audio_bus(out: &mut AudioBus) {
     out.muted = false;
     out.name = String::new();
     out.pan = 0.0;
+}
+
+// flight-lint: allow(conform-extra, conform-params) Principal c0f9227c D23 keeps host, device and options because construction derives the host mixer graph and its initial gain
+pub fn initialize_audio_mixer(
+    out: &mut AudioMixer,
+    host_audio_mixer: &HostAudioMixerCapability,
+    device: AudioDeviceHandle,
+    options: Option<&AudioMixerOptions>,
+) {
+    let master_gain = options
+        .and_then(|options| options.master_gain)
+        .unwrap_or(1.0);
+    let master_muted = options
+        .and_then(|options| options.master_muted)
+        .unwrap_or(false);
+    let graph =
+        (host_audio_mixer.create_mixer_graph)(device, if master_muted { 0.0 } else { master_gain });
+    out.master_gain = master_gain;
+    out.master_muted = master_muted;
+    out.mixer_runtime = Some(AudioMixerRuntime {
+        active_channels: Vec::new(),
+        buses: Vec::new(),
+        channels_paused_by_mixer: Vec::new(),
+        channel_to_bus: Vec::new(),
+        graph,
+    });
 }
 
 pub fn add_audio_bus_to_mixer(

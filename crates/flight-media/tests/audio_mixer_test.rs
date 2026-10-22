@@ -260,6 +260,31 @@ mod initialize_audio_bus {
     }
 }
 
+mod initialize_audio_mixer {
+    use super::*;
+
+    #[test]
+    fn derives_host_graph_and_source_fields_without_replacing_entity_identity() {
+        let (state, host) = mixer_host();
+        let options = AudioMixerOptions {
+            master_gain: Some(0.25),
+            master_muted: Some(true),
+        };
+        let mut mixer: AudioMixer = flight_entity::allocate_entity();
+        flight_entity::set_entity_uid(&mut mixer, "mixer".to_string());
+        initialize_audio_mixer(&mut mixer, &host, AudioDeviceHandle(7), Some(&options));
+        assert_eq!(flight_entity::get_entity_uid(&mut mixer), "mixer");
+        assert_eq!((mixer.master_gain, mixer.master_muted), (0.25, true));
+        assert!(
+            state
+                .lock()
+                .unwrap()
+                .events
+                .contains(&"create-graph:7:0".to_string())
+        );
+    }
+}
+
 mod pause_all_audio_mixer_channels {
     use super::*;
 

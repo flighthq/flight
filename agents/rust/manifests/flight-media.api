@@ -25,6 +25,7 @@ src/audio_mixer.rs: pub fn destroy_audio_mixer(host_audio_mixer: &HostAudioMixer
 src/audio_mixer.rs: pub fn fade_audio_bus_gain(host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>, bus: &Ref<AudioBus>, target_gain: f32, duration_ms: f32,)
 src/audio_mixer.rs: pub fn get_audio_mixer_active_channels(out: &mut Vec<Ref<AudioChannel>>, mixer: &Ref<AudioMixer>)
 src/audio_mixer.rs: pub fn initialize_audio_bus(out: &mut AudioBus)
+src/audio_mixer.rs: pub fn initialize_audio_mixer(out: &mut AudioMixer, host_audio_mixer: &HostAudioMixerCapability, device: AudioDeviceHandle, options: Option<&AudioMixerOptions>,)
 src/audio_mixer.rs: pub fn pause_all_audio_mixer_channels(mixer: &Ref<AudioMixer>)
 src/audio_mixer.rs: pub fn resume_all_audio_mixer_channels(mixer: &Ref<AudioMixer>)
 src/audio_mixer.rs: pub fn route_audio_channel_to_mixer_bus(host_audio_mixer: &HostAudioMixerCapability, mixer: &Ref<AudioMixer>, channel: &Ref<AudioChannel>, bus: &Ref<AudioBus>,)
