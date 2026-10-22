@@ -96,7 +96,11 @@ fn bitmap_font_methods_match_their_free_functions() {
         &font.get_page(None).unwrap(),
         &get_bitmap_font_page(&font, None).unwrap()
     ));
-    assert_eq!(font.get_pages().len(), get_bitmap_font_pages(&font).len());
+    let mut method_pages = Vec::new();
+    let mut free_pages = Vec::new();
+    font.get_pages(&mut method_pages);
+    get_bitmap_font_pages(&mut free_pages, &font);
+    assert_eq!(method_pages.len(), free_pages.len());
     assert_eq!(font.has_glyph(65), has_bitmap_font_glyph(&font, 65));
     assert_eq!(font.explain_glyph(65), explain_bitmap_font_glyph(&font, 65));
     assert_eq!(font.summarize(), summarize_bitmap_font(&font));

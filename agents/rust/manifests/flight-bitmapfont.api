@@ -4,7 +4,7 @@ src/bitmap_font.rs: pub fn get_bitmap_font_glyph(font: &Ref<BitmapFont>, codepoi
 src/bitmap_font.rs: pub fn get_bitmap_font_kerning(font: &Ref<BitmapFont>, left: u32, right: u32) -> f32
 src/bitmap_font.rs: pub fn get_bitmap_font_metrics(font: &Ref<BitmapFont>) -> Arc<GlyphMetrics>
 src/bitmap_font.rs: pub fn get_bitmap_font_page(font: &Ref<BitmapFont>, page: Option<i32>,) -> Option<Ref<TextureAtlas>>
-src/bitmap_font.rs: pub fn get_bitmap_font_pages(font: &Ref<BitmapFont>) -> Vec<Option<Ref<TextureAtlas>>>
+src/bitmap_font.rs: pub fn get_bitmap_font_pages(out: &mut Vec<Option<Ref<TextureAtlas>>>, font: &Ref<BitmapFont>)
 src/bitmap_font.rs: pub fn has_bitmap_font_glyph(font: &Ref<BitmapFont>, codepoint: u32) -> bool
 src/bitmap_font.rs: pub fn initialize_bitmap_font(out: &mut BitmapFont, guard_state: &BitmapFontGuardStateRef, data: &BitmapFontData,)
 src/bitmap_font.rs: pub fn pack_bitmap_font_kerning_key(left: u32, right: u32) -> u64
@@ -98,14 +98,14 @@ src/sugar.rs: impl BitmapFontMethods for Ref<BitmapFont> :: fn get_glyph(&self, 
 src/sugar.rs: impl BitmapFontMethods for Ref<BitmapFont> :: fn get_kerning(&self, left: u32, right: u32) -> f32
 src/sugar.rs: impl BitmapFontMethods for Ref<BitmapFont> :: fn get_metrics(&self) -> std::sync::Arc<GlyphMetrics>
 src/sugar.rs: impl BitmapFontMethods for Ref<BitmapFont> :: fn get_page(&self, page: Option<i32>) -> Option<Ref<TextureAtlas>>
-src/sugar.rs: impl BitmapFontMethods for Ref<BitmapFont> :: fn get_pages(&self) -> Vec<Option<Ref<TextureAtlas>>>
+src/sugar.rs: impl BitmapFontMethods for Ref<BitmapFont> :: fn get_pages(&self, out: &mut Vec<Option<Ref<TextureAtlas>>>)
 src/sugar.rs: impl BitmapFontMethods for Ref<BitmapFont> :: fn has_glyph(&self, codepoint: u32) -> bool
 src/sugar.rs: impl BitmapFontMethods for Ref<BitmapFont> :: fn summarize(&self) -> BitmapFontSummary
 src/sugar.rs: impl GlyphAtlasBitmapFontMethods for Ref<GlyphAtlas>
 src/sugar.rs: impl GlyphAtlasBitmapFontMethods for Ref<GlyphAtlas> :: fn create_bitmap_font(&self, guard_state: &BitmapFontGuardStateRef) -> Ref<BitmapFont>
 src/sugar.rs: pub trait BitmapFontGlyphSourceMethods { fn initialize_from_bitmap_font(&mut self, font: &Ref<BitmapFont>); }
 src/sugar.rs: pub trait BitmapFontGuardStateMethods { fn disable(&self); fn enable(&self, log_state: &LogStateRef, clock: BitmapFontClock); fn set_guard(&self, guard: Option<BitmapFontGuard>); }
-src/sugar.rs: pub trait BitmapFontMethods { fn create_glyph_source(&self) -> Ref<GlyphSource>; fn explain_glyph(&self, codepoint: u32) -> BitmapFontGlyphExplanation; fn get_glyph(&self, codepoint: u32) -> Option<Ref<GlyphEntry>>; fn get_kerning(&self, left: u32, right: u32) -> f32; fn get_metrics(&self) -> std::sync::Arc<GlyphMetrics>; fn get_page(&self, page: Option<i32>) -> Option<Ref<TextureAtlas>>; fn get_pages(&self) -> Vec<Option<Ref<TextureAtlas>>>; fn has_glyph(&self, codepoint: u32) -> bool; fn summarize(&self) -> BitmapFontSummary; }
+src/sugar.rs: pub trait BitmapFontMethods { fn create_glyph_source(&self) -> Ref<GlyphSource>; fn explain_glyph(&self, codepoint: u32) -> BitmapFontGlyphExplanation; fn get_glyph(&self, codepoint: u32) -> Option<Ref<GlyphEntry>>; fn get_kerning(&self, left: u32, right: u32) -> f32; fn get_metrics(&self) -> std::sync::Arc<GlyphMetrics>; fn get_page(&self, page: Option<i32>) -> Option<Ref<TextureAtlas>>; fn get_pages(&self, out: &mut Vec<Option<Ref<TextureAtlas>>>); fn has_glyph(&self, codepoint: u32) -> bool; fn summarize(&self) -> BitmapFontSummary; }
 src/sugar.rs: pub trait GlyphAtlasBitmapFontMethods { fn create_bitmap_font(&self, guard_state: &BitmapFontGuardStateRef) -> Ref<BitmapFont>; }
 src/summarize_bitmap_font.rs: pub fn summarize_bitmap_font(font: &Ref<BitmapFont>) -> BitmapFontSummary
 src/types.rs: #[derive(Clone)] pub struct BitmapFontData { pub encoding: Option<BitmapFontEncoding>, pub glyphs: Vec<BitmapFontGlyphData>, pub kerning: Option<Vec<BitmapFontKerningData>>, pub metrics: GlyphMetrics, pub pages: Vec<Option<Ref<TextureAtlas>>>, }

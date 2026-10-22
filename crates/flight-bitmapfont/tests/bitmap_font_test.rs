@@ -289,16 +289,29 @@ mod get_bitmap_font_pages {
     use super::*;
 
     #[test]
-    fn returns_a_detached_list_with_the_authored_page_identities() {
+    fn clears_and_fills_in_authored_order_with_the_same_page_identities() {
         let first = page();
         let second = page();
         let mut data = font_data();
         data.pages = vec![Some(first.clone()), Some(second.clone())];
         let font = create_bitmap_font(&guard_state(), &data);
-        let pages = get_bitmap_font_pages(&font);
+        let mut pages = vec![None];
+        get_bitmap_font_pages(&mut pages, &font);
         assert_eq!(pages.len(), 2);
         assert!(Arc::ptr_eq(pages[0].as_ref().unwrap(), &first));
         assert!(Arc::ptr_eq(pages[1].as_ref().unwrap(), &second));
+    }
+
+    #[test]
+    fn reuses_caller_capacity_across_calls() {
+        let font = create_bitmap_font(&guard_state(), &font_data());
+        let mut pages = Vec::with_capacity(8);
+        pages.push(None);
+        let allocation = pages.as_ptr();
+        get_bitmap_font_pages(&mut pages, &font);
+        assert_eq!(pages.as_ptr(), allocation);
+        get_bitmap_font_pages(&mut pages, &font);
+        assert_eq!(pages.as_ptr(), allocation);
     }
 }
 

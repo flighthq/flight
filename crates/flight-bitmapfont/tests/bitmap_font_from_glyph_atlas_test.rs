@@ -94,7 +94,9 @@ mod create_bitmap_font_from_glyph_atlas {
         let page = get_bitmap_font_page(&font, None).unwrap();
         let texture = page.read().unwrap().texture.clone().unwrap();
         let source = texture.read().unwrap().source.clone().unwrap();
-        assert_eq!(get_bitmap_font_pages(&font).len(), 1);
+        let mut pages = Vec::new();
+        get_bitmap_font_pages(&mut pages, &font);
+        assert_eq!(pages.len(), 1);
         assert!(Arc::ptr_eq(&source, &expected));
     }
 
@@ -111,6 +113,8 @@ mod create_bitmap_font_from_glyph_atlas {
         let atlas = atlas();
         let font = create_bitmap_font_from_glyph_atlas(&guard_state(), &atlas);
         assert!(get_bitmap_font_glyph(&font, 65).is_none());
-        assert_eq!(get_bitmap_font_pages(&font).len(), 1);
+        let mut pages = Vec::new();
+        get_bitmap_font_pages(&mut pages, &font);
+        assert_eq!(pages.len(), 1);
     }
 }

@@ -176,7 +176,8 @@ fn build_preserves_an_unresolved_lower_page_as_an_indexed_hole() {
     assert_eq!(raw_pages.len(), 2);
     assert!(raw_pages[0].is_none());
     assert!(Arc::ptr_eq(raw_pages[1].as_ref().unwrap(), &expected));
-    let pages = get_bitmap_font_pages(&font);
+    let mut pages = Vec::new();
+    get_bitmap_font_pages(&mut pages, &font);
     assert!(pages[0].is_none());
     assert!(Arc::ptr_eq(pages[1].as_ref().unwrap(), &expected));
     assert!(get_bitmap_font_page(&font, Some(0)).is_none());
@@ -209,7 +210,8 @@ fn build_preserves_an_unresolved_lower_page_as_an_indexed_hole() {
         None,
     )
     .unwrap();
-    let pages = get_bitmap_font_pages(&reparsed);
+    let mut pages = Vec::new();
+    get_bitmap_font_pages(&mut pages, &reparsed);
     assert_eq!(pages.len(), 2);
     assert!(pages[0].is_none());
     assert!(Arc::ptr_eq(pages[1].as_ref().unwrap(), &expected));

@@ -114,8 +114,10 @@ pub fn get_bitmap_font_page(
         .and_then(Option::clone);
 }
 
-pub fn get_bitmap_font_pages(font: &Ref<BitmapFont>) -> Vec<Option<Ref<TextureAtlas>>> {
-    return font.read().unwrap().pages.clone();
+// flight-lint: allow(conform-params) D24: computed page collection fills and reuses caller-owned storage
+pub fn get_bitmap_font_pages(out: &mut Vec<Option<Ref<TextureAtlas>>>, font: &Ref<BitmapFont>) {
+    out.clear();
+    out.extend(font.read().unwrap().pages.iter().cloned());
 }
 
 pub fn has_bitmap_font_glyph(font: &Ref<BitmapFont>, codepoint: u32) -> bool {
