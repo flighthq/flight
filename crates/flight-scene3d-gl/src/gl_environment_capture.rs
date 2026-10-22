@@ -24,7 +24,7 @@ pub fn get_gl_environment_capture_texture(target: &GlCubeRenderTarget) -> Native
 pub fn render_gl_environment_capture(
     state: &mut GlRenderState,
     position: &Vector3,
-    scene: &Node3D,
+    scene: &dyn Node3D,
     lights: &Scene3DLightsLike,
     cube_target: &GlCubeRenderTarget,
     options: Option<&GlEnvironmentCaptureOptions>,

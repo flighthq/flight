@@ -1,25 +1,17 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-
 use flight_camera::Camera3D;
-use flight_entity::Ref;
-use flight_geometry::{create_matrix3, create_matrix4, set_matrix3_normal_from_matrix4};
-use flight_lighting::{MAX_FORWARD_LIGHTS, Scene3DLightBlock, Scene3DLightsLike};
-use flight_materials::{Material3D, MaterialAlphaMode};
+use flight_geometry::{create_matrix3, set_matrix3_normal_from_matrix4};
+use flight_lighting::MAX_FORWARD_LIGHTS;
 use flight_meshgeometry::has_mesh_geometry_skin;
-use flight_node::NodeRef;
 use flight_render_gl::{
-    GlRenderState, declare_gl_render_target_color_space,
-    get_gl_color_adjustment_material_feature, invalidate_gl_render_state_cache,
+    GlRenderState, get_gl_color_adjustment_material_feature, invalidate_gl_render_state_cache,
 };
 use flight_scene3d::Mesh;
 use glow::HasContext;
 
-use crate::gl_mesh_material_registry::resolve_gl_mesh_material_renderer;
 use crate::gl_scene3d_runtime::{get_gl_scene3d_runtime, get_gl_scene3d_runtime_mut};
 use crate::gl_viewport_aspect::get_gl_scene3d_viewport_aspect;
 use crate::types::{
-    GlMeshMaterialRenderer, GlScene3DDrawEntry, GlScene3DForwardLightList,
+    GlScene3DDrawEntry, GlScene3DForwardLightList, Scene3DLightsLike,
 };
 
 fn is_gpu_skinned_draw(state: &GlRenderState, mesh: &Mesh) -> bool {

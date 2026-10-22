@@ -11,7 +11,7 @@ use crate::types::Scene3DLightsLike;
 pub fn present_gl_scene3d(
     state: &mut GlRenderState,
     target: &GlTextureRenderTarget,
-    scene: &Node3D,
+    scene: &dyn Node3D,
     camera: &Camera3D,
     lights: &Scene3DLightsLike,
 ) {
