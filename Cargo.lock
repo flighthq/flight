@@ -1235,18 +1235,32 @@ dependencies = [
 name = "flight-scene2d-gl"
 version = "0.6.0"
 dependencies = [
+ "flight-bitmap",
+ "flight-bitmaptext",
+ "flight-clip",
+ "flight-color",
  "flight-entity",
  "flight-geometry",
+ "flight-glyphatlas",
  "flight-host",
  "flight-image",
  "flight-materials",
  "flight-node",
+ "flight-particleemitter",
+ "flight-path",
+ "flight-quadbatch",
  "flight-render",
  "flight-render-gl",
  "flight-scene2d",
  "flight-shape",
  "flight-surface",
+ "flight-text",
+ "flight-textformat",
+ "flight-textinput",
+ "flight-textlayout",
  "flight-texture",
+ "flight-textureatlas",
+ "flight-tilemap",
  "glow",
 ]
 
@@ -1273,6 +1287,40 @@ dependencies = [
  "futures",
  "regex",
  "serde_json",
+]
+
+[[package]]
+name = "flight-scene2d-wgpu"
+version = "0.6.0"
+dependencies = [
+ "flight-bitmaptext",
+ "flight-color",
+ "flight-entity",
+ "flight-geometry",
+ "flight-host",
+ "flight-image",
+ "flight-log",
+ "flight-materials",
+ "flight-node",
+ "flight-particleemitter",
+ "flight-path",
+ "flight-quadbatch",
+ "flight-registry",
+ "flight-render",
+ "flight-render-wgpu",
+ "flight-scene2d",
+ "flight-shape",
+ "flight-signals",
+ "flight-surface",
+ "flight-text",
+ "flight-textformat",
+ "flight-textinput",
+ "flight-textlayout",
+ "flight-texture",
+ "flight-textureatlas",
+ "flight-tilemap",
+ "flight-velocity",
+ "wgpu",
 ]
 
 [[package]]

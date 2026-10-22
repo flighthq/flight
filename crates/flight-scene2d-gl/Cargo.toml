@@ -16,12 +16,14 @@ path = "tests/main.rs"
 [dependencies]
 flight-bitmaptext = { path = "../flight-bitmaptext" }
 flight-clip = { path = "../flight-clip" }
+flight-color = { path = "../flight-color" }
 flight-entity = { path = "../flight-entity" }
 flight-geometry = { path = "../flight-geometry" }
 flight-host = { path = "../flight-host" }
 flight-image = { path = "../flight-image" }
 flight-materials = { path = "../flight-materials" }
 flight-node = { path = "../flight-node" }
+flight-particleemitter = { path = "../flight-particleemitter" }
 flight-path = { path = "../flight-path" }
 flight-quadbatch = { path = "../flight-quadbatch" }
 flight-render = { path = "../flight-render" }
@@ -29,6 +31,10 @@ flight-render-gl = { path = "../flight-render-gl" }
 flight-scene2d = { path = "../flight-scene2d" }
 flight-shape = { path = "../flight-shape" }
 flight-surface = { path = "../flight-surface" }
+flight-text = { path = "../flight-text" }
+flight-textformat = { path = "../flight-textformat" }
+flight-textinput = { path = "../flight-textinput" }
+flight-textlayout = { path = "../flight-textlayout" }
 flight-texture = { path = "../flight-texture" }
 flight-textureatlas = { path = "../flight-textureatlas" }
 flight-tilemap = { path = "../flight-tilemap" }

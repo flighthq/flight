@@ -378,6 +378,16 @@ pub fn display_node() -> flight_node::NodeRef {
     return flight_scene2d::create_display_object();
 }
 
+/// TS `createGlState` + `setTestHosts`: a state whose canvas and image hosts allocate recording
+/// surfaces wrapped as GL-uploadable images.
+pub fn create_gl_state_with_hosts() -> (GlRenderState, TestCanvasHost) {
+    let mut state = create_gl_state();
+    let canvas_host = create_test_canvas_host();
+    state.canvas_host = Some(canvas_host.host.clone());
+    state.image_host = Some(create_test_image_host());
+    return (state, canvas_host);
+}
+
 pub fn set_viewport(x: i32, y: i32, width: i32, height: i32) {
     MOCK.with(|state| state.borrow_mut().viewport = [x, y, width, height]);
 }
@@ -436,13 +446,116 @@ pub fn make_tint_material_data(tint: u32) -> flight_materials::TintMaterialData 
     return out;
 }
 
+/// A fake host 2D context recording every drawing call as `name(args)` (TS jsdom canvas + vi spies).
+/// `measure_text` reports `char_width` per character.
+pub struct RecordingCanvas2D {
+    pub calls: std::sync::Mutex<Vec<String>>,
+    pub char_width: f32,
+    pub height: f32,
+    pub width: f32,
+}
+
+impl RecordingCanvas2D {
+    fn push(&self, call: String) {
+        self.calls.lock().unwrap().push(call);
+    }
+}
+
+impl flight_scene2d_gl::Canvas2DContext for RecordingCanvas2D {
+    fn begin_path(&self) {
+        self.push("beginPath()".to_string());
+    }
+    fn clear_rect(&self, x: f32, y: f32, width: f32, height: f32) {
+        self.push(format!("clearRect({x},{y},{width},{height})"));
+    }
+    fn clip(&self) {
+        self.push("clip()".to_string());
+    }
+    fn fill_rect(&self, x: f32, y: f32, width: f32, height: f32) {
+        self.push(format!("fillRect({x},{y},{width},{height})"));
+    }
+    fn fill_text(&self, text: &str, x: f32, y: f32) {
+        self.push(format!("fillText({text},{x},{y})"));
+    }
+    fn line_to(&self, x: f32, y: f32) {
+        self.push(format!("lineTo({x},{y})"));
+    }
+    fn measure_text(&self, text: &str) -> f32 {
+        return text.chars().count() as f32 * self.char_width;
+    }
+    fn move_to(&self, x: f32, y: f32) {
+        self.push(format!("moveTo({x},{y})"));
+    }
+    fn rect(&self, x: f32, y: f32, width: f32, height: f32) {
+        self.push(format!("rect({x},{y},{width},{height})"));
+    }
+    fn restore(&self) {
+        self.push("restore()".to_string());
+    }
+    fn save(&self) {
+        self.push("save()".to_string());
+    }
+    fn set_fill_style(&self, style: &str) {
+        self.push(format!("fillStyle={style}"));
+    }
+    fn set_font(&self, font: &str) {
+        self.push(format!("font={font}"));
+    }
+    fn set_global_alpha(&self, alpha: f32) {
+        self.push(format!("globalAlpha={alpha}"));
+    }
+    fn set_line_width(&self, width: f32) {
+        self.push(format!("lineWidth={width}"));
+    }
+    fn set_stroke_style(&self, style: &str) {
+        self.push(format!("strokeStyle={style}"));
+    }
+    fn set_text_align(&self, align: &str) {
+        self.push(format!("textAlign={align}"));
+    }
+    fn set_text_baseline(&self, baseline: &str) {
+        self.push(format!("textBaseline={baseline}"));
+    }
+    fn set_transform(&self, a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) {
+        self.push(format!("setTransform({a},{b},{c},{d},{e},{f})"));
+    }
+    fn stroke(&self) {
+        self.push("stroke()".to_string());
+    }
+    fn stroke_rect(&self, x: f32, y: f32, width: f32, height: f32) {
+        self.push(format!("strokeRect({x},{y},{width},{height})"));
+    }
+}
+
+/// The recording context behind a surface made by `make_canvas_surface`.
+pub fn surface_canvas(surface: &flight_entity::Ref<flight_surface::CanvasSurface>) -> Arc<RecordingCanvas2D> {
+    let id = flight_entity::get_entity_id(&*surface.read().unwrap());
+    return CANVASES.with(|canvases| canvases.borrow().get(&id).cloned().expect("recording canvas"));
+}
+
+/// Every recorded call on a surface's context.
+pub fn surface_calls(surface: &flight_entity::Ref<flight_surface::CanvasSurface>) -> Vec<String> {
+    return surface_canvas(surface).calls.lock().unwrap().clone();
+}
+
+thread_local! {
+    static CANVASES: RefCell<HashMap<u64, Arc<RecordingCanvas2D>>> = RefCell::new(HashMap::new());
+}
+
 pub fn make_canvas_surface(width: f32, height: f32) -> flight_entity::Ref<flight_surface::CanvasSurface> {
     let surface: flight_entity::Ref<flight_surface::CanvasSurface> =
         flight_surface::allocate_surface(None);
-    surface.write().unwrap().context = flight_host::CanvasRenderingContext2D {
-        provider: Arc::new(()),
-        handle: Arc::new((width, height)),
-    };
+    let canvas = Arc::new(RecordingCanvas2D {
+        calls: std::sync::Mutex::new(Vec::new()),
+        char_width: 6.0,
+        height,
+        width,
+    });
+    let context: Arc<dyn flight_scene2d_gl::Canvas2DContext> = canvas.clone();
+    surface.write().unwrap().context =
+        flight_scene2d_gl::create_canvas_2d_context_handle(Arc::new(()), context);
+    let id = flight_entity::get_entity_id(&*surface.read().unwrap());
+    CANVASES.with(|canvases| canvases.borrow_mut().insert(id, canvas));
     return surface;
 }
 
@@ -490,13 +603,13 @@ pub fn create_test_image_host() -> flight_image::HostImageCapability {
     return flight_image::HostImageCapability {
         create_image_from_bitmap: None,
         create_image_from_surface: Some(Arc::new(|surface: &flight_surface::SurfaceRef| {
-            let (width, height) = surface
-                .read()
-                .unwrap()
-                .as_any()
-                .downcast_ref::<flight_surface::CanvasSurface>()
-                .and_then(|canvas| canvas.context.handle.downcast_ref::<(f32, f32)>().copied())
-                .unwrap_or((1.0, 1.0));
+            let id = flight_entity::get_entity_id(&*surface.read().unwrap());
+            let (width, height) = CANVASES.with(|canvases| {
+                canvases
+                    .borrow()
+                    .get(&id)
+                    .map_or((1.0, 1.0), |canvas| (canvas.width, canvas.height))
+            });
             let width = width.max(1.0) as u32;
             let height = height.max(1.0) as u32;
             let source = Arc::new(flight_host::HostImageSource {
