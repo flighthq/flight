@@ -1,0 +1,73 @@
+src/contract.rs: pub use super::velocity_field::*;
+src/contract.rs: pub use super::velocity_sample::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::SourceId;
+src/lib.rs: pub use contract::Velocity2D;
+src/lib.rs: pub use contract::VelocityExplanation;
+src/lib.rs: pub use contract::VelocityField;
+src/lib.rs: pub use contract::VelocityReason;
+src/lib.rs: pub use contract::VelocitySample;
+src/lib.rs: pub use contract::add_velocity;
+src/lib.rs: pub use contract::begin_velocity_frame;
+src/lib.rs: pub use contract::clamp_velocity;
+src/lib.rs: pub use contract::contribute_velocity;
+src/lib.rs: pub use contract::copy_velocity;
+src/lib.rs: pub use contract::create_velocity_field;
+src/lib.rs: pub use contract::damp_velocity;
+src/lib.rs: pub use contract::explain_velocity;
+src/lib.rs: pub use contract::get_velocity;
+src/lib.rs: pub use contract::get_velocity_sample_at;
+src/lib.rs: pub use contract::has_velocity;
+src/lib.rs: pub use contract::is_velocity_zero;
+src/lib.rs: pub use contract::length_of_velocity;
+src/lib.rs: pub use contract::lerp_velocity;
+src/lib.rs: pub use contract::normalize_velocity;
+src/lib.rs: pub use contract::scale_velocity;
+src/lib.rs: pub use contract::subtract_velocity;
+src/lib.rs: pub use contract::suppress_velocity;
+src/lib.rs: pub use contract::zero_velocity;
+src/velocity_field.rs: #[derive(Debug, Clone, Copy, PartialEq)] pub enum VelocityReason { NoSample, Stale, ExplicitZero, DerivedZero, Ok, }
+src/velocity_field.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct Velocity2D { pub x: f32, pub y: f32, }
+src/velocity_field.rs: #[derive(Debug, Clone, Copy, PartialEq, Default)] pub struct VelocityExplanation { pub current_frame_id: i32, pub explicit: bool, pub last_frame_id: i32, pub reason: VelocityReason, pub x: f32, pub y: f32, }
+src/velocity_field.rs: #[derive(Debug, Clone, Default, PartialEq)] pub struct VelocityField { pub frame_id: i32, pub samples: HashMap<SourceId, VelocitySample>, runtime: EntityRuntimeSlot, }
+src/velocity_field.rs: #[derive(Debug, Clone, PartialEq, Default)] pub struct VelocitySample { pub previous_world_transform: Option<Matrix>, pub velocity: Velocity2D, pub last_frame_id: i32, pub explicit_frame_id: i32, }
+src/velocity_field.rs: impl Default for VelocityReason
+src/velocity_field.rs: impl Default for VelocityReason :: fn default() -> Self
+src/velocity_field.rs: impl Entity for VelocityField
+src/velocity_field.rs: impl Entity for VelocityField :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/velocity_field.rs: impl Entity for VelocityField :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/velocity_field.rs: impl Velocity2D :: fn add(&self, other: &Self) -> Self
+src/velocity_field.rs: impl Velocity2D :: fn clamped(&self, max_length: f32) -> Self
+src/velocity_field.rs: impl Velocity2D :: fn damped(&self, previous: &Self, factor: f32) -> Self
+src/velocity_field.rs: impl Velocity2D :: fn is_zero(&self, epsilon: Option<f32>) -> bool
+src/velocity_field.rs: impl Velocity2D :: fn length(&self) -> f32
+src/velocity_field.rs: impl Velocity2D :: fn lerp(&self, other: &Self, t: f32) -> Self
+src/velocity_field.rs: impl Velocity2D :: fn normalized(&self) -> Self
+src/velocity_field.rs: impl Velocity2D :: fn scaled(&self, scale: f32) -> Self
+src/velocity_field.rs: impl Velocity2D :: fn subtracted(&self, other: &Self) -> Self
+src/velocity_field.rs: impl VelocityField :: fn new() -> Self
+src/velocity_field.rs: pub fn add_velocity(out: &mut Velocity2D, a: &Velocity2D, b: &Velocity2D)
+src/velocity_field.rs: pub fn begin_velocity_frame(field: &mut VelocityField)
+src/velocity_field.rs: pub fn clamp_velocity(out: &mut Velocity2D, velocity: &Velocity2D, max_length: f32)
+src/velocity_field.rs: pub fn clone_velocity2d(source: &Velocity2D) -> Velocity2D
+src/velocity_field.rs: pub fn contribute_velocity(field: &mut VelocityField, source: SourceId, x: f32, y: f32)
+src/velocity_field.rs: pub fn copy_velocity(out: &mut Velocity2D, source: &Velocity2D)
+src/velocity_field.rs: pub fn create_velocity_field() -> VelocityField
+src/velocity_field.rs: pub fn damp_velocity(out: &mut Velocity2D, current: &Velocity2D, previous: &Velocity2D, factor: f32,)
+src/velocity_field.rs: pub fn ensure_velocity_sample(field: &mut VelocityField, source: SourceId) -> &mut VelocitySample
+src/velocity_field.rs: pub fn explain_velocity(field: &VelocityField, source: SourceId) -> VelocityExplanation
+src/velocity_field.rs: pub fn get_velocity(field: &VelocityField, source: SourceId, out: &mut Velocity2D)
+src/velocity_field.rs: pub fn get_velocity_reason_string(value: VelocityReason) -> &'static str
+src/velocity_field.rs: pub fn has_velocity(field: &VelocityField, source: SourceId) -> bool
+src/velocity_field.rs: pub fn initialize_velocity_field(out: &mut VelocityField)
+src/velocity_field.rs: pub fn is_velocity_zero(velocity: &Velocity2D, epsilon: Option<f32>) -> bool
+src/velocity_field.rs: pub fn length_of_velocity(velocity: &Velocity2D) -> f32
+src/velocity_field.rs: pub fn lerp_velocity(out: &mut Velocity2D, a: &Velocity2D, b: &Velocity2D, t: f32)
+src/velocity_field.rs: pub fn normalize_velocity(out: &mut Velocity2D, source: &Velocity2D)
+src/velocity_field.rs: pub fn parse_velocity_reason(value: &str) -> Option<VelocityReason>
+src/velocity_field.rs: pub fn scale_velocity(out: &mut Velocity2D, velocity: &Velocity2D, scale: f32)
+src/velocity_field.rs: pub fn subtract_velocity(out: &mut Velocity2D, a: &Velocity2D, b: &Velocity2D)
+src/velocity_field.rs: pub fn suppress_velocity(field: &mut VelocityField, source: SourceId)
+src/velocity_field.rs: pub fn zero_velocity(out: &mut Velocity2D)
+src/velocity_field.rs: pub type SourceId = u64;
+src/velocity_sample.rs: pub fn get_velocity_sample_at(sample: &VelocitySample, current_world_transform: &Matrix, point_x: f32, point_y: f32, out: &mut Velocity2D,)

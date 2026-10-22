@@ -1,0 +1,6 @@
+src/contract.rs: pub use super::utf8::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::decode_utf8;
+src/lib.rs: pub use contract::encode_utf8;
+src/utf8.rs: pub fn decode_utf8(bytes: &Uint8Array, offset: Option<usize>, length: Option<usize>) -> String
+src/utf8.rs: pub fn encode_utf8(text: &str) -> Box<Uint8Array>

@@ -1,0 +1,13 @@
+tests/contract_test.rs: contract_decode_utf8
+tests/contract_test.rs: contract_encode_utf8
+tests/utf8_test.rs: decode_utf8::decodes_empty_and_ascii_input
+tests/utf8_test.rs: decode_utf8::decodes_two_three_and_four_byte_sequences
+tests/utf8_test.rs: decode_utf8::honors_offset_and_length_windows_without_reading_adjacent_bytes
+tests/utf8_test.rs: decode_utf8::rejects_huge_length_that_overflows_usize
+tests/utf8_test.rs: decode_utf8::rejects_offset_beyond_end_with_explicit_length
+tests/utf8_test.rs: decode_utf8::rejects_offset_beyond_end_with_omitted_length
+tests/utf8_test.rs: decode_utf8::rejects_windows_outside_the_byte_array
+tests/utf8_test.rs: decode_utf8::replaces_malformed_and_incomplete_sequences_without_consuming_the_next_valid_byte
+tests/utf8_test.rs: encode_utf8::encodes_empty_and_ascii_input
+tests/utf8_test.rs: encode_utf8::encodes_the_replacement_character
+tests/utf8_test.rs: encode_utf8::encodes_two_three_and_four_byte_sequences
