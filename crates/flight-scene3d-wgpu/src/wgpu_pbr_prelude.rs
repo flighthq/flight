@@ -1,0 +1,575 @@
+// flight-lint: allow-file(contract-vocabulary) D17: the module source builders take render-wgpu's skinning and color-adjustment seams
+//! The shared PBR prelude (TS `wgpuPbrPrelude.ts`): the WGSL Cook-Torrance uber-shader for the
+//! StandardPbr forward-lit path and every PBR-extension variant, specialized per material by a
+//! leading const-flag block (WGSL has no preprocessor). Bind groups: group(0) Frame, group(1) Draw,
+//! group(2) the 48-float MaterialBlock + six samplers + six maps, group(3) the directional shadow and
+//! image-based-lighting samples (one group, so PBR fits WebGPU's maxBindGroups minimum of 4).
+
+use flight_render_wgpu::{WgpuColorAdjustmentMaterialFeature, WgpuSkinningAdapter};
+
+use crate::types::WgpuPbrDefineKey;
+use crate::wgpu_mesh_fragment_tail::WGPU_MESH_FRAGMENT_TAIL;
+use crate::wgpu_mesh_pipeline::{WGPU_DIRECTIONAL_SHADOW_WGSL, splice_wgpu_color_adjustment_prelude};
+
+/// A short, stable string identity for a define key (TS `buildWgpuPbrDefineKey`): the standard
+/// map/alpha/double-sided flags, then one slot per extension lobe past the `:`, then the promoted
+/// color-adjustment suffix.
+pub fn build_wgpu_pbr_define_key(key: &WgpuPbrDefineKey) -> String {
+    let flag = |value: bool, on: &'static str| if value { on } else { "-" };
+    let suffix = if key.has_color_matrix == Some(true) {
+        "x"
+    } else if key.has_color_adjustment == Some(true) {
+        "c"
+    } else {
+        ""
+    };
+    return format!(
+        "{}{}{}{}{}{}{}{}:{}{}{}{}{}{}{}{}",
+        flag(key.alpha_mask_enabled, "m"),
+        flag(key.double_sided, "d"),
+        flag(key.has_base_color_map, "b"),
+        flag(key.has_normal_map, "n"),
+        flag(key.has_metallic_roughness_map, "r"),
+        flag(key.has_occlusion_map, "o"),
+        flag(key.has_emissive_map, "e"),
+        flag(key.has_alpha_map, "a"),
+        flag(key.clearcoat_enabled, "C"),
+        flag(key.sheen_enabled, "S"),
+        flag(key.anisotropy_enabled, "A"),
+        flag(key.iridescence_enabled, "I"),
+        flag(key.specular_enabled, "P"),
+        flag(key.subsurface_enabled, "U"),
+        flag(key.transmission_enabled, "T"),
+        suffix
+    );
+}
+
+/// The leading `const FLAG : bool = …;` block for a define key (TS `buildWgpuPbrDefineSource`).
+pub fn build_wgpu_pbr_define_source(key: &WgpuPbrDefineKey) -> String {
+    let flags: [(&str, bool); 15] = [
+        ("ALPHA_MASK", key.alpha_mask_enabled),
+        ("DOUBLE_SIDED", key.double_sided),
+        ("HAS_BASE_COLOR_MAP", key.has_base_color_map),
+        ("HAS_NORMAL_MAP", key.has_normal_map),
+        ("HAS_METALLIC_ROUGHNESS_MAP", key.has_metallic_roughness_map),
+        ("HAS_OCCLUSION_MAP", key.has_occlusion_map),
+        ("HAS_EMISSIVE_MAP", key.has_emissive_map),
+        ("HAS_ALPHA_MAP", key.has_alpha_map),
+        ("CLEARCOAT", key.clearcoat_enabled),
+        ("SHEEN", key.sheen_enabled),
+        ("ANISOTROPY", key.anisotropy_enabled),
+        ("IRIDESCENCE", key.iridescence_enabled),
+        ("SPECULAR_EXT", key.specular_enabled),
+        ("SUBSURFACE", key.subsurface_enabled),
+        ("TRANSMISSION", key.transmission_enabled),
+    ];
+    let mut out = String::new();
+    for (name, value) in flags {
+        out.push_str(&format!(
+            "const {} : bool = {};\n",
+            name,
+            if value { "true" } else { "false" }
+        ));
+    }
+    return out;
+}
+
+/// The static WGSL module body after the const-flag block (TS `getWgpuPbrModuleBody`).
+pub fn get_wgpu_pbr_module_body() -> String {
+    return format!(
+        "{}{}{}{}",
+        WGPU_MESH_FRAGMENT_TAIL, PBR_WGSL_HEAD, WGPU_DIRECTIONAL_SHADOW_WGSL, PBR_WGSL_REST
+    );
+}
+
+/// The full WGSL module for a define key (TS `getWgpuPbrModuleSourceForKey`): the flag block plus
+/// the body (skinned through the adapter's prelude extension), with the registered color-adjustment
+/// chunk spliced into a promoted variant.
+pub fn get_wgpu_pbr_module_source_for_key(
+    key: &WgpuPbrDefineKey,
+    skinned: Option<bool>,
+    skinning: Option<&WgpuSkinningAdapter>,
+    color_adjustment_feature: Option<&WgpuColorAdjustmentMaterialFeature>,
+) -> String {
+    let body = get_wgpu_pbr_module_body();
+    let mut source = build_wgpu_pbr_define_source(key)
+        + &match (skinned == Some(true), skinning) {
+            (true, Some(skinning)) => (skinning.extend_mesh_prelude)(&body),
+            _ => body,
+        };
+    let has_color_matrix = key.has_color_matrix == Some(true);
+    if (key.has_color_adjustment == Some(true) || has_color_matrix)
+        && let Some(feature) = color_adjustment_feature
+    {
+        let apply = if has_color_matrix {
+            "applyFlightColorMatrix(flightColor, draw.flightColorMatrix0, draw.flightColorMatrix1, draw.flightColorMatrix2, draw.flightColorMatrix3, draw.flightColorMatrixOffset)"
+        } else {
+            "applyFlightColorAdjustment(flightColor, draw.flightColorScale, draw.flightColorBias)"
+        };
+        source = splice_wgpu_color_adjustment_prelude(&source, feature, Some(has_color_matrix)).replacen(
+            "  return flightPremultipliedOutput(vec4f(radiance, flightMeshCoverage(alpha, in.objectAlpha, draw.params.y)));",
+            &format!(
+                "  var flightColor = vec4f(radiance, alpha);\n  flightColor = {};\n  flightColor.a = flightMeshCoverage(flightColor.a, in.objectAlpha, draw.params.y);\n  return flightPremultipliedOutput(flightColor);",
+                apply
+            ),
+            1,
+        );
+    }
+    return source;
+}
+
+// The body up to the shared directional-shadow block. Two deliberate departures from the source text
+// (TS bugs, see the module tests): the Draw `params` comment carries the color-adjustment splice
+// anchor so a promoted variant actually declares its fields, and vs_main keeps its locals in the
+// shared-prelude form so the skinning extension can splice the skin matrix in.
+const PBR_WGSL_HEAD: &str = r#"
+const PI : f32 = 3.14159265359;
+const MAX_FORWARD_LIGHTS : u32 = 4u;
+
+struct Frame {
+  viewProjection : mat4x4f,
+  cameraPosition : vec4f,
+  lightDirection : vec4f,       // xyz = directional light travel direction; w = directionalCount
+  directionalRadiance : vec4f,  // rgb = linear premultiplied radiance
+  ambientRadiance : vec4f,      // rgb = linear premultiplied radiance; w = ambientCount
+  view : mat4x4f,               // camera view matrix (unused by PBR, but keeps struct in lockstep)
+  // Punctual light arrays — layout mirrors Scene3DLightBlock.data (packScene3DLightBlock).
+  //   point[i]      = pointLights[i*2+0]={pos.xyz,range}, [i*2+1]={radiance.rgb,invSqrRange}
+  //   spot[i]       = spotLights[i*4+0..1] as point, [i*4+2]={dir.xyz,_}, [i*4+3]={cosInner,cosOuter,_,_}
+  //   hemisphere[i] = hemisphereLights[i*3+0]={sky.rgb,_}, [i*3+1]={ground.rgb,_}, [i*3+2]={up.xyz,_}
+  pointLights : array<vec4f, 8>,       // MAX_FORWARD_LIGHTS * 2
+  spotLights : array<vec4f, 16>,       // MAX_FORWARD_LIGHTS * 4
+  hemisphereLights : array<vec4f, 12>, // MAX_FORWARD_LIGHTS * 3
+  punctualCounts : vec4f,              // x = pointCount, y = spotCount, z = hemisphereCount
+};
+
+struct Draw {
+  world : mat4x4f,
+  normalMatrix : mat3x3f,
+  uvTransform : mat3x3f,   // KHR_texture_transform of the base-color map (identity when unused)
+  params : vec4f,          // x = resolved object alpha, y = alpha-is-coverage flag
+};
+
+// The 48-float MaterialBlock: the base StandardPbr block (vec4 0..3) plus one vec4 slot per extension
+// lobe (matching the CPU packers in wgpuStandardPbrMeshMaterialRenderer + the extension renderers).
+//   base0 : baseColor.rgba (linear)
+//   base1 : emissive.rgb * strength; w unused
+//   base2 : metallic, roughness, normalScale, occlusionStrength
+//   base3 : alphaCutoff, _, _, _
+//   clearcoat   : clearcoat, clearcoatRoughness, _, _
+//   sheen       : sheenColor.rgb, sheenRoughness
+//   anisotropy  : anisotropyStrength, anisotropyRotation, _, _
+//   iridescence : iridescence, iridescenceIor, iridescenceThickness (nm), _
+//   specular    : specular, specularColor.rgb
+//   subsurface  : subsurface, subsurfaceColor.rgb
+//   thickness   : thickness, _, _, _
+//   transmission: transmission, attenuationColor.rgb
+struct MaterialBlock {
+  baseColor : vec4f,
+  emissive : vec4f,
+  factors : vec4f,
+  flags : vec4f,
+  clearcoat : vec4f,
+  sheen : vec4f,
+  anisotropy : vec4f,
+  iridescence : vec4f,
+  specular : vec4f,
+  subsurface : vec4f,
+  thickness : vec4f,
+  transmission : vec4f,
+};
+
+@group(0) @binding(0) var<uniform> frame : Frame;
+@group(1) @binding(0) var<uniform> draw : Draw;
+@group(2) @binding(0) var<uniform> material : MaterialBlock;
+@group(2) @binding(1) var baseColorSampler : sampler;
+@group(2) @binding(2) var metallicRoughnessSampler : sampler;
+@group(2) @binding(3) var normalSampler : sampler;
+@group(2) @binding(4) var occlusionSampler : sampler;
+@group(2) @binding(5) var emissiveSampler : sampler;
+@group(2) @binding(6) var alphaSampler : sampler;
+@group(2) @binding(7) var baseColorTexture : texture_2d<f32>;
+@group(2) @binding(8) var metallicRoughnessTexture : texture_2d<f32>;
+@group(2) @binding(9) var normalTexture : texture_2d<f32>;
+@group(2) @binding(10) var occlusionTexture : texture_2d<f32>;
+@group(2) @binding(11) var emissiveTexture : texture_2d<f32>;
+@group(2) @binding(12) var alphaTexture : texture_2d<f32>;
+
+"#;
+
+// The body after the shared directional-shadow block: the IBL group(3) bindings, the vertex stage
+// and the Cook-Torrance fragment stage with its extension lobes.
+const PBR_WGSL_REST: &str = r#"
+
+// The image-based-lighting inputs share group 3 with shadow so PBR fits WebGPU's maxBindGroups minimum.
+// params.x is the enabled flag (0 or 1), params.y the environment intensity, params.z the highest
+// prefiltered mip index (roughness 1.0). The split-sum set: a diffuse irradiance cube, a roughness-mipped
+// prefiltered specular cube, and the 2D BRDF LUT, sampled through one filtering sampler.
+struct Ibl {
+  params : vec4f,   // x = enabled, y = intensity, z = maxMip
+};
+
+@group(3) @binding(3) var<uniform> ibl : Ibl;
+@group(3) @binding(4) var iblIrradiance : texture_cube<f32>;
+@group(3) @binding(5) var iblPrefiltered : texture_cube<f32>;
+@group(3) @binding(6) var iblBrdf : texture_2d<f32>;
+@group(3) @binding(7) var iblSampler : sampler;
+
+struct VertexOutput {
+  @builtin(position) clipPosition : vec4f,
+  @location(0) worldPosition : vec3f,
+  @location(1) worldNormal : vec3f,
+  @location(2) worldTangent : vec4f,
+  @location(3) uv : vec2f,
+  @location(4) @interpolate(flat) objectAlpha : f32,
+  @location(5) @interpolate(flat) instanceColor : vec4f,
+};
+
+@vertex fn vs_main(
+  @location(0) position : vec3f,
+  @location(1) normal : vec3f,
+  @location(2) tangent : vec4f,
+  @location(3) uv : vec2f,
+  @location(6) instanceModel0 : vec4f,
+  @location(7) instanceModel1 : vec4f,
+  @location(8) instanceModel2 : vec4f,
+  @location(9) instanceModel3 : vec4f,
+  @location(10) instanceTint : vec4f,
+) -> VertexOutput {
+  var out : VertexOutput;
+  // The per-instance model matrix, mirroring scene-gl's HAS_INSTANCES PBR path. Applied unconditionally:
+  // a non-instanced draw binds the identity instance buffer (ensureWgpuInstanceBuffer's fallback), so this
+  // is a no-op there and the family needs no second pipeline variant. Without it an InstancedMesh drawn
+  // with a PBR material renders every instance stacked at the node origin — the geometry is placed by the
+  // vertex stage, so a shader that ignores these attributes ignores the whole batch's placement.
+  var localPosition = vec4f(position, 1.0);
+  var localNormal = normal;
+  var localTangent = tangent.xyz;
+  let instanceModel = mat4x4f(instanceModel0, instanceModel1, instanceModel2, instanceModel3);
+  // The instance rotation/scale also carries the normal and tangent, or a rotated instance would light as
+  // though it were still in the batch's bind orientation.
+  let instanceBasis = mat3x3f(instanceModel[0].xyz, instanceModel[1].xyz, instanceModel[2].xyz);
+  localPosition = instanceModel * localPosition;
+  localNormal = instanceBasis * localNormal;
+  localTangent = instanceBasis * localTangent;
+  let world = draw.world * localPosition;
+  out.worldPosition = world.xyz;
+  out.clipPosition = frame.viewProjection * world;
+  out.worldNormal = draw.normalMatrix * localNormal;
+  // tangent.w is HANDEDNESS, and a model transform that mirrors reverses it: the fragment stage rebuilds
+  // the bitangent as w * cross(N, T), so a mirrored instance shades with a flipped frame unless w flips
+  // too. normalMatrix is the inverse transpose of the model's upper 3x3, so its determinant is 1/det and
+  // carries the same sign. Compared rather than sign()-ed: sign() yields 0 for a singular matrix, and a
+  // zero w collapses the bitangent entirely, which is worse than keeping the original hand.
+  let tangentHandedness = tangent.w * select(1.0, -1.0, determinant(draw.normalMatrix) < 0.0);
+  out.worldTangent = vec4f(draw.normalMatrix * localTangent, tangentHandedness);
+  // draw.uvTransform is identity for an untiled material, so this reproduces the raw uv; see the shared
+  // vs_main in wgpuMeshPipeline for why the KHR transform is applied unconditionally rather than gated.
+  out.uv = (draw.uvTransform * vec3f(uv, 1.0)).xy;
+  out.objectAlpha = draw.params.x;
+  out.instanceColor = instanceTint;
+  return out;
+}
+
+fn distributionGgx(nDotH : f32, roughness : f32) -> f32 {
+  let a = roughness * roughness;
+  let a2 = a * a;
+  let d = nDotH * nDotH * (a2 - 1.0) + 1.0;
+  return a2 / max(PI * d * d, 1e-7);
+}
+
+fn visibilitySmith(nDotV : f32, nDotL : f32, roughness : f32) -> f32 {
+  let a = roughness * roughness;
+  let k = a * 0.5;
+  let gv = nDotV / (nDotV * (1.0 - k) + k);
+  let gl = nDotL / (nDotL * (1.0 - k) + k);
+  return gv * gl;
+}
+
+fn fresnelSchlick(cosTheta : f32, f0 : vec3f) -> vec3f {
+  return f0 + (vec3f(1.0) - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+// Roughness-aware Fresnel for the IBL specular term (Sébastien Lagarde): rougher surfaces reflect less at
+// grazing angles than the smooth Schlick approximation. The WGSL mirror of scene-gl's fresnelSchlickRoughness.
+fn fresnelSchlickRoughness(cosTheta : f32, f0 : vec3f, roughness : f32) -> vec3f {
+  let fMax = max(vec3f(1.0 - roughness), f0);
+  return f0 + (fMax - f0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
+// Image-based ambient via the split-sum approximation: diffuse irradiance over the albedo plus prefiltered
+// specular weighted by the BRDF LUT, scaled by the environment intensity and AO. Replaces the flat ambient
+// term when an environment is baked (bakeWgpuEnvironmentIbl). The cube/LUT samples are already linear
+// (baked from sRGB-decoded sources), so no decode here. The WGSL mirror of scene-gl's sampleIblAmbient.
+// textureSampleLevel is used throughout (the irradiance/LUT at level 0, the prefiltered cube at the
+// roughness-scaled mip) so the sample never needs screen-space derivatives — safe under any control flow.
+fn sampleIblAmbient(N : vec3f, V : vec3f, rough : f32, f0 : vec3f, diffuseColor : vec3f, occ : f32) -> vec3f {
+  let nv = max(dot(N, V), 1e-4);
+  let F = fresnelSchlickRoughness(nv, f0, rough);
+  let diffuse = textureSampleLevel(iblIrradiance, iblSampler, N, 0.0).rgb * diffuseColor;
+  let R = reflect(-V, N);
+  let prefiltered = textureSampleLevel(iblPrefiltered, iblSampler, R, rough * ibl.params.z).rgb;
+  let brdf = textureSampleLevel(iblBrdf, iblSampler, vec2f(nv, rough), 0.0).rg;
+  let specular = prefiltered * (F * brdf.x + brdf.y);
+  return ((vec3f(1.0) - F) * diffuse + specular) * occ * ibl.params.y;
+}
+
+// Anisotropic GGX distribution (Burley): an elliptical lobe along the tangent (at) vs bitangent (ab)
+// roughness axes. tDotH/bDotH are the half-vector projections onto the rotated tangent frame.
+fn distributionGgxAnisotropic(nDotH : f32, tDotH : f32, bDotH : f32, at : f32, ab : f32) -> f32 {
+  let d = tDotH * tDotH / (at * at) + bDotH * bDotH / (ab * ab) + nDotH * nDotH;
+  return 1.0 / max(PI * at * ab * d * d, 1e-7);
+}
+
+// Charlie ("inverted GGX") sheen distribution from Estevez & Kulla — a soft retroreflective lobe for
+// cloth. Approximated visibility keeps the lobe energy-plausible without a lookup table.
+fn distributionCharlie(nDotH : f32, roughness : f32) -> f32 {
+  let r = clamp(roughness, 0.07, 1.0);
+  let invR = 1.0 / r;
+  let cos2h = nDotH * nDotH;
+  let sin2h = max(1.0 - cos2h, 1e-4);
+  return (2.0 + invR) * pow(sin2h, invR * 0.5) / (2.0 * PI);
+}
+
+fn visibilitySheen(nDotV : f32, nDotL : f32) -> f32 {
+  return 1.0 / max(4.0 * (nDotL + nDotV - nDotL * nDotV), 1e-4);
+}
+
+// Thin-film interference: shift F0 toward a view-/thickness-dependent hue. A compact sinusoidal
+// approximation of the optical-path-difference phase per RGB band (sample-viewer style), enough to
+// produce a plausible soap-bubble rainbow without the full Airy summation.
+fn iridescentFresnel(cosTheta : f32, f0 : vec3f, thicknessNm : f32, filmIor : f32) -> vec3f {
+  let opd = 2.0 * filmIor * thicknessNm * cosTheta;
+  let bands = vec3f(580.0, 540.0, 460.0); // approximate R/G/B wavelengths (nm)
+  let phase = 2.0 * PI * opd / bands;
+  let shift = vec3f(0.5) + vec3f(0.5) * cos(phase);
+  let base = fresnelSchlick(cosTheta, f0);
+  return mix(base, shift, clamp(thicknessNm / 1000.0, 0.0, 1.0));
+}
+
+// Smooth inverse-square range window (glTF/UE4): 1 near the light, eased to 0 at the range.
+// invSqrRange is 1/range^2 (0 = infinite range, no cutoff); dist2 is the squared surface->light
+// distance. The WGSL mirror of scene-gl's rangeWindow.
+fn rangeWindow(dist2 : f32, invSqrRange : f32) -> f32 {
+  let factor = dist2 * invSqrRange;
+  let windowed = clamp(1.0 - factor * factor, 0.0, 1.0);
+  return windowed * windowed;
+}
+
+// The full Cook-Torrance shading (plus every enabled extension lobe) for ONE light. Directional,
+// point, and spot lights all route through this one BRDF so punctual lights never fork the shading
+// model — the caller passes the surface->light direction L and that light's (attenuated, cone-scaled)
+// radiance. The anisotropic tangent frame is rebuilt here per light from the surface tangent frame so
+// the function stays self-contained; f0/diffuseColor/roughness/metallic are the finalized surface
+// values from main. Returns the light's linear radiance contribution (shadowing applied by the caller).
+// The WGSL mirror of scene-gl's shadePbrPunctual.
+fn shadePbrPunctual(N : vec3f, V : vec3f, tangentDir : vec3f, bitangentDir : vec3f, L : vec3f,
+                    lightColor : vec3f, f0 : vec3f, diffuseColor : vec3f, roughness : f32,
+                    metallic : f32, anisoT : vec3f, anisoB : vec3f, at : f32, ab : f32) -> vec3f {
+  let nDotV = max(dot(N, V), 1e-4);
+  let halfVec = normalize(V + L);
+  let nDotL = max(dot(N, L), 0.0);
+  let nDotH = max(dot(N, halfVec), 0.0);
+  let vDotH = max(dot(V, halfVec), 0.0);
+
+  var d = distributionGgx(nDotH, roughness);
+  if (ANISOTROPY) {
+    let tDotH = dot(anisoT, halfVec);
+    let bDotH = dot(anisoB, halfVec);
+    d = distributionGgxAnisotropic(nDotH, tDotH, bDotH, at, ab);
+  }
+  let vis = visibilitySmith(nDotV, nDotL, roughness);
+  let fresnel = fresnelSchlick(vDotH, f0);
+
+  let specular = d * vis * fresnel;
+  let kd = (vec3f(1.0) - fresnel) * (1.0 - metallic);
+  let brdf = kd * diffuseColor / PI + specular;
+  var direct = brdf * lightColor * nDotL;
+
+  if (SUBSURFACE) {
+    let wrap = clamp((dot(N, L) + 0.5) / 2.25, 0.0, 1.0);
+    let translucency = material.subsurface.x / (1.0 + material.thickness.x);
+    direct = direct + translucency * wrap * material.subsurface.yzw * diffuseColor * lightColor;
+  }
+
+  if (SHEEN) {
+    let sheenD = distributionCharlie(nDotH, material.sheen.w);
+    let sheenV = visibilitySheen(nDotV, nDotL);
+    direct = direct + material.sheen.rgb * sheenD * sheenV * lightColor * nDotL;
+  }
+
+  if (CLEARCOAT) {
+    let ccRough = clamp(material.clearcoat.y, 0.04, 1.0);
+    let ccD = distributionGgx(nDotH, ccRough);
+    let ccVis = visibilitySmith(nDotV, nDotL, ccRough);
+    let ccF = fresnelSchlick(vDotH, vec3f(0.04)) * material.clearcoat.x;
+    let ccSpec = ccD * ccVis * ccF * lightColor * nDotL;
+    direct = direct * (vec3f(1.0) - ccF) + ccSpec;
+  }
+
+  return direct;
+}
+
+@fragment fn fs_main(in : VertexOutput, @builtin(front_facing) isFront : bool) -> @location(0) vec4f {
+  var baseColor = material.baseColor * in.instanceColor;
+  if (HAS_BASE_COLOR_MAP) {
+    let sampled = textureSample(baseColorTexture, baseColorSampler, in.uv);
+    baseColor = vec4f(baseColor.rgb * sampled.rgb, baseColor.a * sampled.a);
+  }
+
+  // Dedicated coverage (opacity) map: its green channel is linear data, multiplied into alpha before
+  // the alpha-mask cutoff so 'mask' cutout and 'blend' transparency both see the combined coverage.
+  if (HAS_ALPHA_MAP) {
+    baseColor.a = baseColor.a * textureSample(alphaTexture, alphaSampler, in.uv).g;
+  }
+
+  if (ALPHA_MASK && baseColor.a < material.flags.x) {
+    discard;
+  }
+  if (ALPHA_MASK) {
+    baseColor.a = 1.0;
+  }
+
+  var geometricNormal = normalize(in.worldNormal);
+  // Double-sided materials flip the normal for back faces so both sides shade correctly.
+  if (DOUBLE_SIDED && !isFront) {
+    geometricNormal = -geometricNormal;
+  }
+
+  let tangent = normalize(in.worldTangent.xyz - geometricNormal * dot(in.worldTangent.xyz, geometricNormal));
+  let bitangent = cross(geometricNormal, tangent) * in.worldTangent.w;
+
+  var normal = geometricNormal;
+  if (HAS_NORMAL_MAP) {
+    var tangentNormal = textureSample(normalTexture, normalSampler, in.uv).xyz * 2.0 - vec3f(1.0);
+    tangentNormal = vec3f(tangentNormal.xy * material.factors.z, tangentNormal.z);
+    let tbn = mat3x3f(tangent, bitangent, geometricNormal);
+    normal = normalize(tbn * tangentNormal);
+  }
+
+  let viewDir = normalize(frame.cameraPosition.xyz - in.worldPosition);
+  let nDotV = max(dot(normal, viewDir), 1e-4);
+
+  var roughness = clamp(material.factors.y, 0.04, 1.0);
+  var metallic = clamp(material.factors.x, 0.0, 1.0);
+  if (HAS_METALLIC_ROUGHNESS_MAP) {
+    // glTF packing: roughness in G, metallic in B (R is occlusion if combined, ignored here).
+    let mr = textureSample(metallicRoughnessTexture, metallicRoughnessSampler, in.uv);
+    roughness = clamp(roughness * mr.g, 0.04, 1.0);
+    metallic = clamp(metallic * mr.b, 0.0, 1.0);
+  }
+
+  // Occlusion defaults to full ambient; the map (R channel) attenuates it, lerped by occlusionStrength
+  // (factors.w). Without a map the ambient term is unattenuated, matching the GL path.
+  var occlusion = 1.0;
+  if (HAS_OCCLUSION_MAP) {
+    let ao = textureSample(occlusionTexture, occlusionSampler, in.uv).r;
+    occlusion = mix(1.0, ao, clamp(material.factors.w, 0.0, 1.0));
+  }
+
+  let albedo = baseColor.rgb;
+  var f0 = mix(vec3f(0.04), albedo, metallic);
+
+  if (SPECULAR_EXT) {
+    // KHR_materials_specular: scale and tint the dielectric F0 (metals keep their albedo F0).
+    let dielectricF0 = min(0.04 * material.specular.yzw, vec3f(1.0)) * material.specular.x;
+    f0 = mix(dielectricF0, albedo, metallic);
+  }
+
+  if (IRIDESCENCE) {
+    let irid = iridescentFresnel(nDotV, f0, material.iridescence.z, material.iridescence.y);
+    f0 = mix(f0, irid, material.iridescence.x);
+  }
+
+  let diffuseColor = albedo * (1.0 - metallic);
+
+  // Anisotropy: rotate the tangent frame, then split roughness into along-/across-tangent axes
+  // (Burley). Higher strength stretches the highlight along the tangent direction.
+  let anisoStrength = clamp(material.anisotropy.x, 0.0, 1.0);
+  let cosR = cos(material.anisotropy.y);
+  let sinR = sin(material.anisotropy.y);
+  let anisoT = normalize(cosR * tangent + sinR * bitangent);
+  let anisoB = normalize(cross(normal, anisoT));
+  let at = max(roughness * roughness * (1.0 + anisoStrength), 1e-3);
+  let ab = max(roughness * roughness * (1.0 - anisoStrength), 1e-3);
+
+  var radiance = vec3f(0.0);
+
+  // Directional light: -direction is the surface-to-light vector (light travels along direction).
+  // Routed through shadePbrPunctual so the BRDF is identical for all light types.
+  if (frame.lightDirection.w > 0.5) {
+    let lightDir = normalize(-frame.lightDirection.xyz);
+    let direct = shadePbrPunctual(normal, viewDir, tangent, bitangent, lightDir,
+                                  frame.directionalRadiance.rgb, f0, diffuseColor, roughness,
+                                  metallic, anisoT, anisoB, at, ab);
+    // Attenuate only the directional term by the PCF shadow factor (mirrors scene-gl's PBR path).
+    radiance = radiance + direct * sampleDirectionalShadow(in.worldPosition, geometricNormal);
+  }
+
+  // Point lights: surface->light direction with a smooth inverse-square range falloff, same BRDF.
+  let pointCount = u32(frame.punctualCounts.x);
+  for (var i = 0u; i < MAX_FORWARD_LIGHTS; i++) {
+    if (i >= pointCount) { break; }
+    let toLight = frame.pointLights[i * 2u + 0u].xyz - in.worldPosition;
+    let dist2 = dot(toLight, toLight);
+    let lightDir = toLight * inverseSqrt(max(dist2, 1e-8));
+    let atten = rangeWindow(dist2, frame.pointLights[i * 2u + 1u].w) / max(dist2, 1e-4);
+    radiance = radiance + shadePbrPunctual(normal, viewDir, tangent, bitangent, lightDir,
+                                           frame.pointLights[i * 2u + 1u].xyz * atten, f0,
+                                           diffuseColor, roughness, metallic,
+                                           anisoT, anisoB, at, ab);
+  }
+
+  // Spot lights: point attenuation times a smooth cone falloff between the inner/outer cosines.
+  let spotCount = u32(frame.punctualCounts.y);
+  for (var j = 0u; j < MAX_FORWARD_LIGHTS; j++) {
+    if (j >= spotCount) { break; }
+    let toLight = frame.spotLights[j * 4u + 0u].xyz - in.worldPosition;
+    let dist2 = dot(toLight, toLight);
+    let lightDir = toLight * inverseSqrt(max(dist2, 1e-8));
+    let atten = rangeWindow(dist2, frame.spotLights[j * 4u + 1u].w) / max(dist2, 1e-4);
+    let cone = smoothstep(frame.spotLights[j * 4u + 3u].y, frame.spotLights[j * 4u + 3u].x,
+                          dot(normalize(frame.spotLights[j * 4u + 2u].xyz), -lightDir));
+    radiance = radiance + shadePbrPunctual(normal, viewDir, tangent, bitangent, lightDir,
+                                           frame.spotLights[j * 4u + 1u].xyz * atten * cone, f0,
+                                           diffuseColor, roughness, metallic,
+                                           anisoT, anisoB, at, ab);
+  }
+
+  // Ambient term: image-based lighting (diffuse irradiance + prefiltered specular) when an environment is
+  // baked, else the flat ambient irradiance over the diffuse albedo. Both are AO-attenuated. Mirrors
+  // scene-gl's ambient branch (u_iblEnabled ? sampleIblAmbient : flat ambient).
+  if (ibl.params.x > 0.5) {
+    radiance = radiance + sampleIblAmbient(normal, viewDir, roughness, f0, diffuseColor, occlusion);
+  } else if (frame.ambientRadiance.w > 0.5) {
+    radiance = radiance + diffuseColor * frame.ambientRadiance.rgb * occlusion;
+  }
+
+  // Hemisphere fill: sky/ground gradient blended by the normal's vertical component, AO-attenuated.
+  let hemisphereCount = u32(frame.punctualCounts.z);
+  for (var k = 0u; k < MAX_FORWARD_LIGHTS; k++) {
+    if (k >= hemisphereCount) { break; }
+    let hf = 0.5 + 0.5 * dot(normal, frame.hemisphereLights[k * 3u + 2u].xyz);
+    radiance = radiance + mix(frame.hemisphereLights[k * 3u + 1u].xyz,
+                              frame.hemisphereLights[k * 3u + 0u].xyz, hf)
+                          * diffuseColor * occlusion;
+  }
+
+  var emissive = material.emissive.rgb;
+  if (HAS_EMISSIVE_MAP) {
+    emissive = emissive * textureSample(emissiveTexture, emissiveSampler, in.uv).rgb;
+  }
+  radiance = radiance + emissive;
+
+  var alpha = baseColor.a;
+  if (TRANSMISSION) {
+    // Phase-5 approximation: a true refractive path needs the opaque-scene-color capture pass to
+    // sample what lies behind the surface. Until then, model transmission as added translucency —
+    // attenuate coverage by the transmission factor and tint the surface by the attenuation color.
+    radiance = radiance * mix(vec3f(1.0), material.transmission.yzw, material.transmission.x);
+    alpha = alpha * (1.0 - material.transmission.x);
+  }
+
+  return flightPremultipliedOutput(vec4f(radiance, flightMeshCoverage(alpha, in.objectAlpha, draw.params.y)));
+}
+"#;
