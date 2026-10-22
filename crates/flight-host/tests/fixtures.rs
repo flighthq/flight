@@ -29,6 +29,7 @@ use flight_preferences::HostPreferencesCapability;
 use flight_screen::HostScreenQueryCapability;
 use flight_sensors::HostSensorsCapability;
 use flight_socket::HostSocketCapability;
+use flight_surface::HostWgpuCapability;
 use flight_textsegment::HostTextSegmenterCapability;
 use flight_textshaper::HostTextShaperCapability;
 use flight_video::HostVideoCapability;
@@ -89,6 +90,7 @@ pub fn fill_slot(host: &mut Host, group: &str, slot: &str) {
             host.text_shaper.shaper = Some(fixture_host_text_shaper_capability())
         }
         ("video", "playback") => host.video.playback = Some(fixture_host_video_capability()),
+        ("wgpu", "context") => host.wgpu.context = Some(fixture_host_wgpu_capability()),
         _ => panic!("no covered slot {}.{}", group, slot),
     }
 }
@@ -453,5 +455,16 @@ pub fn fixture_host_window_lifecycle_capability() -> HostWindowLifecycleCapabili
         close: Arc::new(|_| unreachable!("fixture")),
         open: Arc::new(|_, _| unreachable!("fixture")),
         subscribe_close: None,
+    };
+}
+
+pub fn fixture_host_wgpu_capability() -> HostWgpuCapability {
+    return HostWgpuCapability {
+        provider: Arc::new(()),
+        acquire: Arc::new(|_, _| unreachable!("fixture")),
+        attach_surface: Arc::new(|_, _| unreachable!("fixture")),
+        create: Arc::new(|_, _, _| unreachable!("fixture")),
+        is_supported: Arc::new(|| unreachable!("fixture")),
+        release: Arc::new(|_| unreachable!("fixture")),
     };
 }

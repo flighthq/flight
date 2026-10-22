@@ -41,7 +41,9 @@ use flight_shell::HostShellCapabilities;
 use flight_shortcut::HostShortcutCapabilities;
 use flight_socket::HostSocketCapabilities;
 use flight_statusbar::HostStatusBarCapabilities;
-use flight_surface::{HostCanvasCapabilities, HostSurfaceCapabilities};
+use flight_surface::{
+    HostCanvasCapabilities, HostGlCapabilities, HostSurfaceCapabilities, HostWgpuCapabilities,
+};
 use flight_textsegment::HostTextSegmentCapabilities;
 use flight_textshaper::HostTextShaperCapabilities;
 use flight_tray::HostTrayCapabilities;
@@ -76,6 +78,7 @@ pub fn initialize_host(out: &mut Host) {
     out.font = HostFontCapabilities::default();
     out.fullscreen = HostFullscreenCapabilities::default();
     out.geolocation = HostGeolocationCapabilities::default();
+    out.gl = HostGlCapabilities::default();
     out.glyph = HostGlyphCapabilities::default();
     out.haptics = HostHapticsCapabilities::default();
     out.image = HostImageCapabilities::default();
@@ -108,5 +111,6 @@ pub fn initialize_host(out: &mut Host) {
     out.tray = HostTrayCapabilities::default();
     out.updater = HostUpdaterCapabilities::default();
     out.video = HostVideoCapabilities::default();
+    out.wgpu = HostWgpuCapabilities::default();
     out.window = HostWindowCapabilities::default();
 }

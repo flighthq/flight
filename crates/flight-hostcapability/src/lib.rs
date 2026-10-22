@@ -7,6 +7,7 @@ mod backend_explanation;
 mod backend_operation_explanation;
 mod host_spawn_capability;
 mod host_timer_capability;
+mod platform_handles;
 mod provider_ref;
 
 pub mod contract;
@@ -18,6 +19,9 @@ pub use contract::BackendExplanationLayer;
 pub use contract::BackendExplanationViability;
 pub use contract::BackendOperationExplanation;
 pub use contract::BackendOperationExplanationLayer;
+pub use contract::GlContext;
+pub use contract::GpuCanvasContext;
+pub use contract::GpuDevice;
 pub use contract::HostSpawnCapability;
 pub use contract::HostTimerCapability;
 pub use contract::ProviderRef;

@@ -6,11 +6,11 @@ use crate::fixtures::fill_slot;
 // asserts is independent of the field access the accessor compiles to. The decoy case is what the flat
 // group structure makes necessary: slot names collide across groups (`device.info`, `platform.info`,
 // `softKeyboard.info`), so each accessor is also handed a host with EVERY other covered slot filled
-// and its own empty, and must still return None. The `wgpu.context` cases are pending its owner.
+// and its own empty, and must still return None.
 
 // The (group, slot) path of every accessor, written out rather than read from the coverage table: the
 // decoys only test the accessors if their ground truth comes from somewhere the accessors do not.
-const COVERED_SLOTS: [(&str, &str); 27] = [
+const COVERED_SLOTS: [(&str, &str); 28] = [
     ("audio", "device"),
     ("audio", "mixer"),
     ("bitmap", "encode"),
@@ -38,6 +38,7 @@ const COVERED_SLOTS: [(&str, &str); 27] = [
     ("textSegment", "segmenter"),
     ("textShaper", "shaper"),
     ("video", "playback"),
+    ("wgpu", "context"),
 ];
 
 fn host_with_slot(group: &str, slot: &str) -> Host {
@@ -761,6 +762,29 @@ mod get_host_video {
     }
 }
 
+mod get_host_wgpu {
+    use super::*;
+
+    #[test]
+    fn returns_the_capability_held_in_host_wgpu_context() {
+        let host = host_with_slot("wgpu", "context");
+        assert!(std::ptr::eq(
+            get_host_wgpu(&host).unwrap(),
+            host.wgpu.context.as_ref().unwrap()
+        ));
+    }
+
+    #[test]
+    fn returns_null_when_the_slot_is_empty() {
+        assert!(get_host_wgpu(&create_host()).is_none());
+    }
+
+    #[test]
+    fn returns_null_when_every_other_covered_slot_is_filled_and_this_one_is_not() {
+        assert!(get_host_wgpu(&host_with_every_covered_slot_except("wgpu", "context")).is_none());
+    }
+}
+
 mod has_host_audio_device {
     use super::*;
 
@@ -1150,5 +1174,18 @@ mod has_host_video {
             "video", "playback"
         )));
         assert!(!has_host_video(&create_host()));
+    }
+}
+
+mod has_host_wgpu {
+    use super::*;
+
+    #[test]
+    fn is_true_only_when_host_wgpu_context_holds_a_capability() {
+        assert!(has_host_wgpu(&host_with_slot("wgpu", "context")));
+        assert!(!has_host_wgpu(&host_with_every_covered_slot_except(
+            "wgpu", "context"
+        )));
+        assert!(!has_host_wgpu(&create_host()));
     }
 }

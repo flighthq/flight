@@ -21,6 +21,7 @@ use flight_preferences::HostPreferencesCapability;
 use flight_screen::HostScreenQueryCapability;
 use flight_sensors::HostSensorsCapability;
 use flight_socket::HostSocketCapability;
+use flight_surface::HostWgpuCapability;
 use flight_textsegment::HostTextSegmenterCapability;
 use flight_textshaper::HostTextShaperCapability;
 use flight_video::HostVideoCapability;
@@ -359,6 +360,13 @@ mod sugar_tests {
         assert_eq!(host.video().is_some(), get_host_video(&host).is_some());
         assert_eq!(host.has_video(), has_host_video(&host));
     }
+
+    #[test]
+    fn host_wgpu_matches_get_host_wgpu() {
+        let host = create_host();
+        assert_eq!(host.wgpu().is_some(), get_host_wgpu(&host).is_some());
+        assert_eq!(host.has_wgpu(), has_host_wgpu(&host));
+    }
 }
 
 impl Host {
@@ -550,6 +558,10 @@ impl Host {
         return has_host_video(self);
     }
 
+    pub fn has_wgpu(&self) -> bool {
+        return has_host_wgpu(self);
+    }
+
     pub fn image(&self) -> Option<&HostImageCapability> {
         return get_host_image(self);
     }
@@ -614,5 +626,9 @@ impl Host {
 
     pub fn video(&self) -> Option<&HostVideoCapability> {
         return get_host_video(self);
+    }
+
+    pub fn wgpu(&self) -> Option<&HostWgpuCapability> {
+        return get_host_wgpu(self);
     }
 }

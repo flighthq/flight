@@ -1,7 +1,5 @@
-// Every capability group a host carries, in source order. `gl` and `wgpu` are a tracked pending
-// delta (Principal 6f61648b) until their render-backend owners land; the source list carries them
-// between `geolocation`/`glyph` and `video`/`window`.
-pub const HOST_GROUPS: [&str; 49] = [
+// Every capability group a host carries, in source order.
+pub const HOST_GROUPS: [&str; 51] = [
     "accessibility",
     "app",
     "audio",
@@ -18,6 +16,7 @@ pub const HOST_GROUPS: [&str; 49] = [
     "font",
     "fullscreen",
     "geolocation",
+    "gl",
     "glyph",
     "haptics",
     "image",
@@ -50,5 +49,6 @@ pub const HOST_GROUPS: [&str; 49] = [
     "tray",
     "updater",
     "video",
+    "wgpu",
     "window",
 ];

@@ -15,7 +15,4 @@ The portable host interface (TS `@flighthq/host`): the capability-group aggregat
 - The source walks `Object.entries(host)`. Rust has no reflection, so the group and slot enumeration is written out, in the source property order.
 - The app group's `loop` slot is the field `loop_`; the slot name reported is `loop`.
 - The IPC group uses its default target (`IpcTargetNever`).
-
-## Tracked pending delta (Principal 6f61648b)
-
-- flight-host lands without the `gl` and `wgpu` capability groups, `get_host_wgpu` / `has_host_wgpu` and the `wgpu.context` coverage row. This is a tracked pending delta, not a waiver. Those exact surfaces and their source cases are added when render-gl / render-wgpu land, as part of those packages' acceptance. Ownership of `HostGlCapability` / `HostWgpuCapability` is decided then (D8).
+- The `gl` and `wgpu` groups hold flight-surface's `HostGlCapability` / `HostWgpuCapability`, whose contexts and devices are the opaque host-vocabulary handles of flight-hostcapability (D26). Host never depends on a renderer.

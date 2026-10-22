@@ -1,4 +1,3 @@
-// flight-lint: conform-skip(getHostWgpu, hasHostWgpu) Principal 6f61648b tracked pending Host wgpu surface is restored with render-wgpu acceptance; see agents/plan.md
 //! The portable host interface (TS `@flighthq/host`): the capability-group aggregate, typed
 //! capability queries, and host diagnostics. The groups are owned by their feature crates (D8) and
 //! aggregated here.
@@ -57,6 +56,7 @@ pub use contract::get_host_soft_keyboard_info;
 pub use contract::get_host_text_segmenter;
 pub use contract::get_host_text_shaper;
 pub use contract::get_host_video;
+pub use contract::get_host_wgpu;
 pub use contract::has_host_audio_device;
 pub use contract::has_host_audio_mixer;
 pub use contract::has_host_bitmap_encode;
@@ -84,3 +84,4 @@ pub use contract::has_host_soft_keyboard_info;
 pub use contract::has_host_text_segmenter;
 pub use contract::has_host_text_shaper;
 pub use contract::has_host_video;
+pub use contract::has_host_wgpu;

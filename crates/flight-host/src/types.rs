@@ -39,7 +39,9 @@ use flight_shell::HostShellCapabilities;
 use flight_shortcut::HostShortcutCapabilities;
 use flight_socket::HostSocketCapabilities;
 use flight_statusbar::HostStatusBarCapabilities;
-use flight_surface::{HostCanvasCapabilities, HostSurfaceCapabilities};
+use flight_surface::{
+    HostCanvasCapabilities, HostGlCapabilities, HostSurfaceCapabilities, HostWgpuCapabilities,
+};
 use flight_textsegment::HostTextSegmentCapabilities;
 use flight_textshaper::HostTextShaperCapabilities;
 use flight_tray::HostTrayCapabilities;
@@ -48,8 +50,7 @@ use flight_video::HostVideoCapabilities;
 
 /// Every capability group a host carries (TS `Host`, an Entity). Each group is the owning feature's
 /// struct of optional slots; an omitted slot is capability absence. A host is built once and handed
-/// to the packages that read it. The `gl` and `wgpu` groups are a tracked pending delta (Principal
-/// 6f61648b) until their render-backend owners land.
+/// to the packages that read it.
 #[derive(Default)]
 pub struct Host {
     runtime: EntityRuntimeSlot,
@@ -69,6 +70,7 @@ pub struct Host {
     pub font: HostFontCapabilities,
     pub fullscreen: HostFullscreenCapabilities,
     pub geolocation: HostGeolocationCapabilities,
+    pub gl: HostGlCapabilities,
     pub glyph: HostGlyphCapabilities,
     pub haptics: HostHapticsCapabilities,
     pub image: HostImageCapabilities,
@@ -101,6 +103,7 @@ pub struct Host {
     pub tray: HostTrayCapabilities,
     pub updater: HostUpdaterCapabilities,
     pub video: HostVideoCapabilities,
+    pub wgpu: HostWgpuCapabilities,
     pub window: HostWindowCapabilities,
 }
 

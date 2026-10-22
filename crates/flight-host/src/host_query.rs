@@ -27,6 +27,8 @@ use flight_textsegment::HostTextSegmenterCapability;
 use flight_textshaper::HostTextShaperCapability;
 use flight_video::HostVideoCapability;
 
+use flight_surface::HostWgpuCapability;
+
 use crate::types::Host;
 
 /// The `HostAudioDeviceCapability` held in `host.audio.device`, or `None` (TS `getHostAudioDevice`).
@@ -168,6 +170,11 @@ pub fn get_host_video(host: &Host) -> Option<&HostVideoCapability> {
     return host.video.playback.as_ref();
 }
 
+/// The `HostWgpuCapability` held in `host.wgpu.context`, or `None` (TS `getHostWgpu`).
+pub fn get_host_wgpu(host: &Host) -> Option<&HostWgpuCapability> {
+    return host.wgpu.context.as_ref();
+}
+
 /// Whether `host.audio.device` holds a capability (TS `hasHostAudioDevice`).
 pub fn has_host_audio_device(host: &Host) -> bool {
     return get_host_audio_device(host).is_some();
@@ -301,4 +308,9 @@ pub fn has_host_text_shaper(host: &Host) -> bool {
 /// Whether `host.video.playback` holds a capability (TS `hasHostVideo`).
 pub fn has_host_video(host: &Host) -> bool {
     return get_host_video(host).is_some();
+}
+
+/// Whether `host.wgpu.context` holds a capability (TS `hasHostWgpu`).
+pub fn has_host_wgpu(host: &Host) -> bool {
+    return get_host_wgpu(host).is_some();
 }

@@ -6,8 +6,8 @@ use crate::host_groups::HOST_GROUPS;
 type Accessor = (&'static str, fn(&Host) -> bool, fn(&Host) -> bool);
 
 // The query lane's accessors (source name, get-is-some, has), written out: the source reads them by
-// reflecting over the module's exports, which Rust has no runtime form of. `getHostWgpu` is pending.
-const ACCESSORS: [Accessor; 27] = [
+// reflecting over the module's exports, which Rust has no runtime form of.
+const ACCESSORS: [Accessor; 28] = [
     (
         "getHostAudioDevice",
         |host| get_host_audio_device(host).is_some(),
@@ -142,6 +142,11 @@ const ACCESSORS: [Accessor; 27] = [
         "getHostVideo",
         |host| get_host_video(host).is_some(),
         has_host_video,
+    ),
+    (
+        "getHostWgpu",
+        |host| get_host_wgpu(host).is_some(),
+        has_host_wgpu,
     ),
 ];
 

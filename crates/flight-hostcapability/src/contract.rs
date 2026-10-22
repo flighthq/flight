@@ -5,4 +5,5 @@ pub use super::backend_explanation::*;
 pub use super::backend_operation_explanation::*;
 pub use super::host_spawn_capability::*;
 pub use super::host_timer_capability::*;
+pub use super::platform_handles::*;
 pub use super::provider_ref::*;

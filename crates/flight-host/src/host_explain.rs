@@ -31,7 +31,6 @@ struct RemedyRow {
     key: &'static str,
 }
 
-// The pending `wgpu.context` row arrives with its render-backend owner (Principal 6f61648b tracked delta).
 const COVERAGE: &[CoverageRow] = &[
     CoverageRow {
         capability: "HostAudioDeviceCapability",
@@ -167,6 +166,11 @@ const COVERAGE: &[CoverageRow] = &[
         capability: "HostVideoCapability",
         group: "video",
         slot: "playback",
+    },
+    CoverageRow {
+        capability: "HostWgpuCapability",
+        group: "wgpu",
+        slot: "context",
     },
 ];
 
@@ -408,6 +412,7 @@ fn is_slot_present(host: &Host, group: &str, slot: &str) -> bool {
         ("font", "loader") => host.font.loader.is_some(),
         ("fullscreen", "element") => host.fullscreen.element.is_some(),
         ("geolocation", "position") => host.geolocation.position.is_some(),
+        ("gl", "context") => host.gl.context.is_some(),
         ("glyph", "rasterizer") => host.glyph.rasterizer.is_some(),
         ("haptics", "engine") => host.haptics.engine.is_some(),
         ("image", "loader") => host.image.loader.is_some(),
@@ -522,6 +527,7 @@ fn is_slot_present(host: &Host, group: &str, slot: &str) -> bool {
         ("tray", "tooltip") => host.tray.tooltip.is_some(),
         ("updater", "command") => host.updater.command.is_some(),
         ("video", "playback") => host.video.playback.is_some(),
+        ("wgpu", "context") => host.wgpu.context.is_some(),
         ("window", "appearance") => host.window.appearance.is_some(),
         ("window", "attach") => host.window.attach.is_some(),
         ("window", "attention") => host.window.attention.is_some(),
@@ -819,6 +825,14 @@ fn read_host_groups(out: &mut Vec<HostCapabilityGroupExplanation>, host: &Host) 
     }
     out.push(HostCapabilityGroupExplanation {
         group: "geolocation".to_string(),
+        slots,
+    });
+    let mut slots = Vec::new();
+    if host.gl.context.is_some() {
+        slots.push("context".to_string());
+    }
+    out.push(HostCapabilityGroupExplanation {
+        group: "gl".to_string(),
         slots,
     });
     let mut slots = Vec::new();
@@ -1321,6 +1335,14 @@ fn read_host_groups(out: &mut Vec<HostCapabilityGroupExplanation>, host: &Host) 
     }
     out.push(HostCapabilityGroupExplanation {
         group: "video".to_string(),
+        slots,
+    });
+    let mut slots = Vec::new();
+    if host.wgpu.context.is_some() {
+        slots.push("context".to_string());
+    }
+    out.push(HostCapabilityGroupExplanation {
+        group: "wgpu".to_string(),
         slots,
     });
     let mut slots = Vec::new();
