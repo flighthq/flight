@@ -1,3 +1,4 @@
+use std::any::Any;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -46,7 +47,7 @@ pub struct GlScene3DRuntime {
     pub opaque_pool: Vec<GlScene3DDrawEntry>,
     pub pbr_extension_guard: Option<GlScene3DPbrExtensionGuard>,
     pub pbr_transmission_scene_color: Option<GlPbrTransmissionSceneColor>,
-    pub program_cache: HashMap<String, GlMeshProgram>,
+    pub program_cache: HashMap<String, Box<dyn Any>>,
     pub resource_cleanups: Option<Vec<fn(&GlRenderState)>>,
     pub shadow: Option<GlScene3DShadow>,
     pub shadow_target: Option<GlTextureRenderTarget>,
