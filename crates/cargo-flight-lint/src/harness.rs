@@ -111,9 +111,11 @@ fn rust_files(dir: &Path) -> Vec<PathBuf> {
     return files;
 }
 
-/// The test-file module name: crate plus file stem (`flight_physics3d` + `stress_test`).
+/// The test-file module name: crate plus file stem (`flight_physics3d` + `stress_test`). Leading
+/// underscores of a private-module stem (`_font_face_load_test.rs`) are dropped so the name stays
+/// snake case.
 fn module_name(crate_ident: &str, stem: &str) -> String {
-    return format!("{}_{}", crate_ident, stem);
+    return format!("{}_{}", crate_ident, stem.trim_start_matches('_'));
 }
 
 /// Regenerates `main.rs`: removes every test-file module declaration (plain `mod x_test;`, the
@@ -296,6 +298,12 @@ mod tests {
             "use flight_x::contract::*;\n\nmod support;\n\nuse support::*;\n\n#[path = \"aabb_test.rs\"]\nmod flight_x_aabb_test;\n#[path = \"type_test.rs\"]\nmod flight_x_type_test;\n"
         );
         assert_eq!(fix_main(&fixed, "flight_x", &stems).unwrap(), fixed);
+    }
+
+    #[test]
+    fn main_drops_leading_underscores_from_private_module_stems() {
+        let fixed = fix_main("", "flight_x", &["_load_test".to_string()]).unwrap();
+        assert_eq!(fixed, "#[path = \"_load_test.rs\"]\nmod flight_x_load_test;\n");
     }
 
     #[test]

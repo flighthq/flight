@@ -1,7 +1,7 @@
 mod support;
 
 #[path = "_font_face_load_test.rs"]
-mod flight_font__font_face_load_test;
+mod flight_font_font_face_load_test;
 #[path = "font_format_test.rs"]
 mod flight_font_font_format_test;
 #[path = "font_resource_from_test.rs"]
