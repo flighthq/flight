@@ -174,6 +174,23 @@ mod lerp_effect {
     }
 
     #[test]
+    fn writes_a_separate_output_when_both_inputs_share_identity() {
+        let source = bloom(0.75, 9.0);
+        let source_ref = effect_ref(source.clone());
+        let out = bloom(0.0, 0.0);
+        assert!(lerp_effect(
+            &source_ref,
+            &source_ref,
+            0.5,
+            &effect_ref(out.clone()),
+            None,
+        ));
+        assert_eq!(out.read().unwrap().threshold, Some(0.75));
+        assert_eq!(out.read().unwrap().radius, Some(9.0));
+        assert_eq!(source.read().unwrap().threshold, Some(0.75));
+    }
+
+    #[test]
     fn keeps_equal_packed_colors_bit_identical() {
         let a = vignette(0x3366ccff, None);
         let b = vignette(0x3366ccff, None);

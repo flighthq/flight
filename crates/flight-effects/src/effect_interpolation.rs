@@ -164,71 +164,35 @@ pub fn lerp_effect(
         return false;
     }
     let tc = t.clamp(0.0, 1.0);
-    if Arc::ptr_eq(a, b) {
-        return true;
-    }
-    if Arc::ptr_eq(a, out) {
-        let mut a_guard = a.write().unwrap();
-        let b_guard = b.read().unwrap();
-        lerp_locked(
-            &mut *a_guard,
-            &*b_guard,
-            tc,
-            &a_kind,
-            roles.unwrap_or(EFFECT_FIELD_ROLES),
-        );
-        return true;
-    }
-    if Arc::ptr_eq(b, out) {
+    // Snapshot both inputs before locking the output, including when the inputs share identity.
+    let values = {
         let a_guard = a.read().unwrap();
-        let mut b_guard = b.write().unwrap();
-        let mut keys = collect_keys(&*a_guard, &*b_guard);
+        let b_guard = if Arc::ptr_eq(a, b) {
+            None
+        } else {
+            Some(b.read().unwrap())
+        };
+        let b_source: &dyn Effect = b_guard.as_deref().unwrap_or(&*a_guard);
+        let mut keys = collect_keys(&*a_guard, b_source);
+        let mut values = Vec::new();
         for key in keys.drain() {
             let value = interpolate_value(
                 a_guard.get_effect_field(&key),
-                b_guard.get_effect_field(&key),
+                b_source.get_effect_field(&key),
                 tc,
                 is_packed_color(roles.unwrap_or(EFFECT_FIELD_ROLES), &a_kind, &key),
             );
-            if let InterpolatedEffectValue::Write(value) = value {
-                write_value(&mut *b_guard, &key, value);
-            }
+            values.push((key, value));
         }
-        return true;
-    }
-    let a_guard = a.read().unwrap();
-    let b_guard = b.read().unwrap();
+        values
+    };
     let mut out_guard = out.write().unwrap();
-    let mut keys = collect_keys(&*a_guard, &*b_guard);
-    for key in keys.drain() {
-        let value = interpolate_value(
-            a_guard.get_effect_field(&key),
-            b_guard.get_effect_field(&key),
-            tc,
-            is_packed_color(roles.unwrap_or(EFFECT_FIELD_ROLES), &a_kind, &key),
-        );
+    for (key, value) in values {
         if let InterpolatedEffectValue::Write(value) = value {
             write_value(&mut *out_guard, &key, value);
         }
     }
     return true;
-}
-
-// flight-lint: allow(hashmap-iteration) Every unique field is written once and field writes have
-// no callback or ordering side effect.
-fn lerp_locked(a: &mut dyn Effect, b: &dyn Effect, t: f32, kind: &str, roles: &EffectFieldRoles) {
-    let mut keys = collect_keys(a, b);
-    for key in keys.drain() {
-        let value = interpolate_value(
-            a.get_effect_field(&key),
-            b.get_effect_field(&key),
-            t,
-            is_packed_color(roles, kind, &key),
-        );
-        if let InterpolatedEffectValue::Write(value) = value {
-            write_value(a, &key, value);
-        }
-    }
 }
 
 fn write_value(out: &mut dyn Effect, key: &str, value: Option<EffectValue>) {
