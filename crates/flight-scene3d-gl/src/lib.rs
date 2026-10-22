@@ -1,3 +1,4 @@
+// flight-lint: conform-skip(makeFakeGl2, makeGlScene3DState) source-only fake WebGL2 test helpers are implemented in the native integration-test harness (tests/gl_test_helper.rs) rather than exported from production
 //! GL 3D scene rendering (TS `@flighthq/scene3d-gl`): mesh-material renderers, shader program
 //! families, environment maps, shadow maps and particle emitters for the glow backend. The GL path is
 //! thread-bound (D17): every renderer receives the backend-typed `GlRenderState`.
