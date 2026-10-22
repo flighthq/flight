@@ -194,12 +194,13 @@ pub fn random_weighted(random: &dyn Fn() -> f32, weights: &[f32]) -> i32 {
     return (weights.len() - 1) as i32;
 }
 
-/// Return a new Vec with the elements of `items` shuffled in a random order
-/// (Fisher-Yates / Knuth shuffle). Allocates a copy; does not mutate `items`.
-pub fn shuffle<T: Clone>(random: &dyn Fn() -> f32, items: &[T]) -> Vec<T> {
-    let mut copy = items.to_vec();
-    shuffle_in_place(random, &mut copy);
-    return copy;
+/// Clear and fill `out` with the elements of `items` shuffled in a random order
+/// (Fisher-Yates / Knuth shuffle). Reuses the caller's allocation and does not mutate `items`.
+// flight-lint: allow(conform-params) D24: computed collections use a first required caller-owned output in the TS target
+pub fn shuffle<T: Clone>(out: &mut Vec<T>, random: &dyn Fn() -> f32, items: &[T]) {
+    out.clear();
+    out.extend_from_slice(items);
+    shuffle_in_place(random, out);
 }
 
 /// Shuffle `items` in place using the Fisher-Yates algorithm.

@@ -16,6 +16,7 @@ pub use contract::find_gizmo_smart_guides;
 pub use contract::get_gizmo_mode;
 pub use contract::get_gizmo_signals;
 pub use contract::get_gizmo_space;
+pub use contract::initialize_gizmo_state;
 pub use contract::set_gizmo_custom_pivot;
 pub use contract::set_gizmo_mode;
 pub use contract::set_gizmo_pivot;

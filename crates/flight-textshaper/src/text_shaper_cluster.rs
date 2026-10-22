@@ -2,15 +2,16 @@ use crate::types::*;
 
 /// The run's caret x-positions in pixels, `glyph_count + 1` entries from 0 to the total advance: the
 /// pen before each glyph. Drawing offsets do not move the caret; advances do.
-pub fn get_caret_positions_for_run(run: &ShapedRun) -> Vec<f32> {
-    let mut positions = Vec::with_capacity(run.glyph_count + 1);
-    positions.push(0.0);
+// flight-lint: allow(conform-params) Principal3139d09f D24: required first caller-owned caret buffer clears/fills retained capacity with the original f32 advance calculation
+pub fn get_caret_positions_for_run(out: &mut Vec<f32>, run: &ShapedRun) {
+    out.clear();
+    out.push(0.0);
     let mut x = 0.0;
     for glyph in &run.glyphs[..run.glyph_count] {
         x += glyph.x_advance;
-        positions.push(x);
+        out.push(x);
     }
-    return positions;
+    return;
 }
 
 /// The cluster (a UTF-16 code-unit offset) of the last glyph whose cluster is at or before

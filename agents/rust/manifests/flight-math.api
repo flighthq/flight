@@ -142,7 +142,7 @@ src/random_distributions.rs: pub fn random_on_unit_circle(out: &mut [f32; 2], ra
 src/random_distributions.rs: pub fn random_on_unit_sphere(out: &mut [f32; 3], random: &dyn Fn() -> f32)
 src/random_distributions.rs: pub fn random_poisson(random: &dyn Fn() -> f32, lambda: Option<f32>) -> i32
 src/random_distributions.rs: pub fn random_weighted(random: &dyn Fn() -> f32, weights: &[f32]) -> i32
-src/random_distributions.rs: pub fn shuffle<T: Clone>(random: &dyn Fn() -> f32, items: &[T]) -> Vec<T>
+src/random_distributions.rs: pub fn shuffle<T: Clone>(out: &mut Vec<T>, random: &dyn Fn() -> f32, items: &[T])
 src/random_distributions.rs: pub fn shuffle_in_place<T>(random: &dyn Fn() -> f32, items: &mut [T])
 src/random_range.rs: pub fn random_bool(random: &dyn Fn() -> f32, probability: Option<f32>) -> bool
 src/random_range.rs: pub fn random_int(random: &dyn Fn() -> f32, min: i32, max: i32) -> i32

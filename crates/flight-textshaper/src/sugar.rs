@@ -279,10 +279,16 @@ mod sugar_tests {
     #[test]
     fn shapedrun_get_caret_positions_for_run_matches_get_caret_positions_for_run() {
         let s = shaped();
-        assert_eq!(
-            s.get_caret_positions_for_run(),
-            get_caret_positions_for_run(&s)
-        );
+        let mut method = Vec::with_capacity(16);
+        method.push(-1.0);
+        let pointer = method.as_ptr();
+        let capacity = method.capacity();
+        let mut free = Vec::new();
+        s.get_caret_positions_for_run(&mut method);
+        get_caret_positions_for_run(&mut free, &s);
+        assert_eq!(method, free);
+        assert_eq!(method.as_ptr(), pointer);
+        assert_eq!(method.capacity(), capacity);
     }
 
     #[test]
@@ -550,8 +556,8 @@ impl ShapedRun {
         clear_shaped_run(self);
     }
 
-    pub fn get_caret_positions_for_run(&self) -> Vec<f32> {
-        return get_caret_positions_for_run(self);
+    pub fn get_caret_positions_for_run(&self, out: &mut Vec<f32>) {
+        return get_caret_positions_for_run(out, self);
     }
 
     pub fn get_cluster_for_index(&self, string_index: i32) -> i32 {

@@ -234,6 +234,11 @@ fn check_ordering(items: &[&NamedRange], rule: &str, path: &Path, out: &mut Vec<
     }
 }
 
+fn owned_sort_key(name: &str) -> (u8, String) {
+    let (rank, name) = sort_key(name);
+    return (rank, name.to_string());
+}
+
 fn sort_key(name: &str) -> (u8, &str) {
     if name == "new" || name.starts_with("create_") || name.starts_with("initialize_") {
         return (0, name);
@@ -246,6 +251,11 @@ fn sort_key(name: &str) -> (u8, &str) {
 // ---------------------------------------------------------------------------
 
 pub fn fix_file(source: &str) -> Option<String> {
+    let restructured = fix_structure(source)?;
+    return fix_ordering(&restructured);
+}
+
+fn fix_ordering(source: &str) -> Option<String> {
     let items = parse_items(source).ok()?;
     let lines: Vec<&str> = source.lines().collect();
     let trailing_newline = source.ends_with('\n');
@@ -265,7 +275,7 @@ pub fn fix_file(source: &str) -> Option<String> {
         })
         .collect();
 
-    if let Some(r) = sort_group(&free_fns, &lines, "\n\n") {
+    if let Some(r) = sort_group(&free_fns, &lines, "\n\n", owned_sort_key) {
         replacements.push(r);
     }
 
@@ -279,7 +289,7 @@ pub fn fix_file(source: &str) -> Option<String> {
             } else {
                 "\n"
             };
-            if let Some(r) = sort_group(&refs, &lines, sep) {
+            if let Some(r) = sort_group(&refs, &lines, sep, owned_sort_key) {
                 replacements.push(r);
             }
         }
@@ -307,10 +317,97 @@ pub fn fix_file(source: &str) -> Option<String> {
     return Some(result);
 }
 
+/// Reorders top-level sections into use/mod, struct, fn, impl (`file-structure`). Each item moves
+/// with its attached comments, docs and attributes. Items the rule does not track (enums, consts,
+/// type aliases, traits, other macros) travel with the item before them, so their position relative
+/// to their neighbors is kept. The sort is stable: order within a section is untouched (`fn-order` and
+/// `impl-order` handle that). Returns the source unchanged when it is already in order, and also when
+/// it cannot be reordered safely: an unattached comment between items, or two items on one line.
+pub fn fix_structure(source: &str) -> Option<String> {
+    let file = syn::parse_file(source).ok()?;
+    let lines: Vec<&str> = source.lines().collect();
+    let trailing_newline = source.ends_with('\n');
+
+    // (start_line, end_line, section) per top-level item; 1-indexed, inclusive.
+    let mut blocks: Vec<(usize, usize, Option<u8>)> = Vec::new();
+    for item in &file.items {
+        let span = item.span();
+        let start = attached_start(&lines, span.start().line);
+        let end = span.end().line;
+        let section = match item {
+            Item::Use(_) | Item::Mod(_) => Some(0),
+            Item::Struct(_) => Some(1),
+            Item::Fn(_) => Some(2),
+            Item::Impl(_) => Some(3),
+            Item::Macro(m) if is_impl_entity_macro(&m.mac) => Some(3),
+            _ => None,
+        };
+        blocks.push((start, end, section));
+    }
+    if blocks.len() <= 1 {
+        return Some(source.to_string());
+    }
+
+    for i in 1..blocks.len() {
+        let (prev_end, start) = (blocks[i - 1].1, blocks[i].0);
+        if start <= prev_end {
+            return Some(source.to_string());
+        }
+        if lines[prev_end..start - 1].iter().any(|line| !line.trim().is_empty()) {
+            return Some(source.to_string());
+        }
+    }
+
+    let mut current = 0u8;
+    let sections: Vec<u8> = blocks
+        .iter()
+        .map(|(_, _, section)| {
+            if let Some(s) = section {
+                current = *s;
+            }
+            return current;
+        })
+        .collect();
+    if sections.windows(2).all(|w| w[0] <= w[1]) {
+        return Some(source.to_string());
+    }
+
+    let mut order: Vec<usize> = (0..blocks.len()).collect();
+    order.sort_by_key(|&i| sections[i]);
+
+    let mut text = String::new();
+    for (position, &i) in order.iter().enumerate() {
+        if position > 0 {
+            let prev = order[position - 1];
+            // Keep a run of `use` / `mod` lines tight when it was tight before; otherwise one blank line.
+            let tight = sections[prev] == 0 && sections[i] == 0 && i == prev + 1 && blocks[i].0 == blocks[prev].1 + 1;
+            text.push_str(if tight { "\n" } else { "\n\n" });
+        }
+        text.push_str(&lines[blocks[i].0 - 1..blocks[i].1].join("\n"));
+    }
+
+    let first = blocks[0].0;
+    let last = blocks[blocks.len() - 1].1;
+    let mut result = String::new();
+    for line in &lines[..first - 1] {
+        result.push_str(line);
+        result.push('\n');
+    }
+    result.push_str(&text);
+    for line in &lines[last..] {
+        result.push('\n');
+        result.push_str(line);
+    }
+    if trailing_newline && !result.ends_with('\n') {
+        result.push('\n');
+    }
+    return Some(result);
+}
+
 /// The first line (1-indexed) of the comment block attached to an item starting at `start_line`:
 /// contiguous plain `//` comment lines directly above it, with no blank line in between. Inner docs
 /// (`//!`) belong to the enclosing module and are never attached.
-fn attached_start(lines: &[&str], start_line: usize) -> usize {
+pub fn attached_start(lines: &[&str], start_line: usize) -> usize {
     let mut start = start_line;
     while start > 1 {
         let prev = lines[start - 2].trim_start();
@@ -323,18 +420,20 @@ fn attached_start(lines: &[&str], start_line: usize) -> usize {
     return start;
 }
 
-fn sort_group(
+/// Sorts a run of named items by `key`, moving each item together with its attached comment block.
+/// Returns the replacement `(start_line, end_line, text)`, or `None` when already sorted or when an
+/// unattached comment sits between two items (it has no owner to move with).
+pub fn sort_group<K: Ord>(
     items: &[&NamedRange],
     lines: &[&str],
     separator: &str,
+    key: impl Fn(&str) -> K,
 ) -> Option<(usize, usize, String)> {
     if items.len() <= 1 {
         return None;
     }
 
-    let is_sorted = items
-        .windows(2)
-        .all(|w| sort_key(&w[0].name) <= sort_key(&w[1].name));
+    let is_sorted = items.windows(2).all(|w| key(&w[0].name) <= key(&w[1].name));
     if is_sorted {
         return None;
     }
@@ -364,7 +463,7 @@ fn sort_group(
         })
         .collect();
 
-    blocks.sort_by_key(|(name, _)| sort_key(name));
+    blocks.sort_by_key(|(name, _)| key(name));
 
     let new_text = blocks
         .iter()
@@ -481,6 +580,37 @@ pub fn b() -> u32 {
         let fixed = fix_file(src).unwrap();
         assert!(fixed.contains("// --- section divider ---"));
         assert_eq!(fixed.matches("pub fn").count(), 2);
+    }
+
+    #[test]
+    fn fix_reorders_sections_and_keeps_attached_comments() {
+        let src = "use std::fmt;\n\nimpl V {\n    pub fn new() -> Self {\n        return V;\n    }\n}\n\n// flight-lint: allow(f64) b keeps double\npub fn b() -> f64 {\n    return 0.0;\n}\n\n/// The value.\n#[derive(Debug)]\npub struct V;\n\npub const LIMIT: u32 = 3;\n\npub fn a() {}\n";
+        assert!(rules(src).contains(&"file-structure".to_string()));
+        let fixed = fix_file(src).unwrap();
+        assert!(rules(&fixed).is_empty(), "{:?}\n{}", rules(&fixed), fixed);
+        let at = |needle: &str| fixed.find(needle).unwrap_or_else(|| panic!("{} missing", needle));
+        assert!(at("use std::fmt;") < at("pub struct V;"));
+        assert!(at("pub struct V;") < at("pub fn a("));
+        assert!(at("pub fn a(") < at("pub fn b("));
+        assert!(at("pub fn b(") < at("impl V {"));
+        // The untracked const stays with the struct before it.
+        assert!(at("pub struct V;") < at("pub const LIMIT") && at("pub const LIMIT") < at("pub fn a("));
+        assert_eq!(header_of(&fixed, "b"), vec!["// flight-lint: allow(f64) b keeps double"]);
+        assert!(fixed.contains("/// The value.\n#[derive(Debug)]\npub struct V;"));
+        assert_eq!(fix_file(&fixed).unwrap(), fixed);
+    }
+
+    #[test]
+    fn fix_structure_leaves_files_with_unattached_comments_alone() {
+        let src = "pub fn b() {}\n\n// --- divider ---\n\npub struct V;\n";
+        assert_eq!(fix_structure(src).unwrap(), src);
+    }
+
+    #[test]
+    fn fix_structure_keeps_the_file_header_and_inner_docs() {
+        let src = "//! Crate docs.\n\npub fn a() {}\n\npub struct V;\n";
+        let fixed = fix_structure(src).unwrap();
+        assert!(fixed.starts_with("//! Crate docs.\n\npub struct V;\n\npub fn a() {}"), "{}", fixed);
     }
 
     #[test]

@@ -29,7 +29,9 @@ fn items(
     text: &str,
     options: Option<&TextShaperOptions>,
 ) -> Vec<(TextDirection, usize, String, usize)> {
-    return itemize_text(text, &format(), options)
+    let mut out = Vec::new();
+    itemize_text(&mut out, text, &format(), options);
+    return out
         .into_iter()
         .map(|item| (item.direction, item.start, item.script, item.end))
         .collect();
@@ -46,8 +48,72 @@ mod itemize_text {
     use super::*;
 
     #[test]
+    fn clears_stale_items_and_reuses_storage_across_scripts_and_empty_input() {
+        let mut out = Vec::with_capacity(8);
+        out.push(TextItem {
+            direction: TextDirection::TopToBottom,
+            end: 99,
+            script: "stale".to_string(),
+            start: 99,
+        });
+        let pointer = out.as_ptr();
+        let capacity = out.capacity();
+        itemize_text(&mut out, "a😀سلامz", &format(), None);
+        assert_eq!(
+            out,
+            vec![
+                TextItem {
+                    direction: TextDirection::LeftToRight,
+                    end: 3,
+                    script: "Latn".to_string(),
+                    start: 0,
+                },
+                TextItem {
+                    direction: TextDirection::RightToLeft,
+                    end: 7,
+                    script: "Arab".to_string(),
+                    start: 3,
+                },
+                TextItem {
+                    direction: TextDirection::LeftToRight,
+                    end: 8,
+                    script: "Latn".to_string(),
+                    start: 7,
+                },
+            ]
+        );
+        assert_eq!(out.as_ptr(), pointer);
+        assert_eq!(out.capacity(), capacity);
+
+        itemize_text(
+            &mut out,
+            "..",
+            &format(),
+            Some(&base(TextDirection::TopToBottom)),
+        );
+        assert_eq!(
+            out,
+            vec![TextItem {
+                direction: TextDirection::TopToBottom,
+                end: 2,
+                script: "Latn".to_string(),
+                start: 0,
+            }]
+        );
+        assert_eq!(out.as_ptr(), pointer);
+        assert_eq!(out.capacity(), capacity);
+
+        itemize_text(&mut out, "", &format(), None);
+        assert!(out.is_empty());
+        assert_eq!(out.as_ptr(), pointer);
+        assert_eq!(out.capacity(), capacity);
+    }
+
+    #[test]
     fn returns_empty_for_an_empty_string() {
-        assert!(itemize_text("", &format(), None).is_empty());
+        let mut out = Vec::new();
+        itemize_text(&mut out, "", &format(), None);
+        assert!(out.is_empty());
     }
 
     #[test]
@@ -101,7 +167,8 @@ mod itemize_text {
     #[test]
     fn covers_the_entire_string_with_no_gaps() {
         let text = format!("Hi {ARABIC} end");
-        let found = itemize_text(&text, &format(), None);
+        let mut found = Vec::new();
+        itemize_text(&mut found, &text, &format(), None);
         let covered: usize = found.iter().map(|item| item.end - item.start).sum();
         assert_eq!(covered, text.encode_utf16().count());
         for pair in found.windows(2) {

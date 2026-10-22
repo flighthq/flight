@@ -9,6 +9,7 @@ src/gizmo_state.rs: pub fn dispose_gizmo_state(state: &GizmoState)
 src/gizmo_state.rs: pub fn get_gizmo_mode(state: &GizmoState) -> GizmoMode
 src/gizmo_state.rs: pub fn get_gizmo_signals(state: &GizmoState) -> GizmoSignals
 src/gizmo_state.rs: pub fn get_gizmo_space(state: &GizmoState) -> GizmoSpace
+src/gizmo_state.rs: pub fn initialize_gizmo_state(out: &mut GizmoState, options: &GizmoCreateOptions)
 src/gizmo_state.rs: pub fn set_gizmo_custom_pivot(state: &GizmoState, x: f32, y: f32)
 src/gizmo_state.rs: pub fn set_gizmo_mode(state: &GizmoState, mode: GizmoMode)
 src/gizmo_state.rs: pub fn set_gizmo_pivot(state: &GizmoState, pivot: GizmoPivot)
@@ -39,6 +40,7 @@ src/lib.rs: pub use contract::find_gizmo_smart_guides;
 src/lib.rs: pub use contract::get_gizmo_mode;
 src/lib.rs: pub use contract::get_gizmo_signals;
 src/lib.rs: pub use contract::get_gizmo_space;
+src/lib.rs: pub use contract::initialize_gizmo_state;
 src/lib.rs: pub use contract::set_gizmo_custom_pivot;
 src/lib.rs: pub use contract::set_gizmo_mode;
 src/lib.rs: pub use contract::set_gizmo_pivot;

@@ -101,19 +101,21 @@ fn get_code_point_script(code_point: u32) -> &'static str {
 /// A built-in Unicode-property fallback (Latin/RTL detection and major script splits, not the full
 /// bidi algorithm): neutral characters inherit the current run's direction and common-script
 /// characters its script; `options.direction` is the base direction.
+// flight-lint: allow(conform-params) Principal3139d09f D24: required first caller-owned item collection clears/fills retained capacity in original logical order
 pub fn itemize_text(
+    out: &mut Vec<TextItem>,
     text: &str,
     _format: &TextFormat,
     options: Option<&TextShaperOptions>,
-) -> Vec<TextItem> {
+) {
+    out.clear();
     let units: Vec<u16> = text.encode_utf16().collect();
     if units.is_empty() {
-        return Vec::new();
+        return;
     }
     let base_direction = options
         .and_then(|options| options.direction)
         .unwrap_or(TextDirection::LeftToRight);
-    let mut items = Vec::new();
     let mut run_start = 0;
     let mut run_script = String::new();
     let mut run_direction = base_direction;
@@ -141,7 +143,7 @@ pub fn itemize_text(
             run_direction = char_direction;
         } else if effective_script != run_script || char_direction != run_direction {
             if i > run_start {
-                items.push(TextItem {
+                out.push(TextItem {
                     direction: run_direction,
                     end: i,
                     script: run_script.clone(),
@@ -155,14 +157,14 @@ pub fn itemize_text(
         i += char_len;
     }
     if units.len() > run_start {
-        items.push(TextItem {
+        out.push(TextItem {
             direction: run_direction,
             end: units.len(),
             script: run_script,
             start: run_start,
         });
     }
-    return items;
+    return;
 }
 
 /// Itemizes `text` and shapes each item through the host with the item's direction (unspecified for
@@ -179,7 +181,9 @@ pub fn shape_text_runs(
     }
     let units: Vec<u16> = text.encode_utf16().collect();
     let mut result = Vec::new();
-    for item in itemize_text(text, format, options) {
+    let mut items = Vec::new();
+    itemize_text(&mut items, text, format, options);
+    for item in items {
         let sub = String::from_utf16_lossy(&units[item.start..item.end]);
         let run_options = ShapeRunOptions {
             direction: if item.direction == TextDirection::TopToBottom {

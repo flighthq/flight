@@ -121,66 +121,9 @@ enum GizmoEmission {
 /// Creates the complete overlay assembly and connects its twelve semantic handles (TS
 /// `createGizmoState`). The supplied camera and selection remain live shared identities.
 pub fn create_gizmo_state(options: &GizmoCreateOptions) -> GizmoState {
-    let overlay_root = create_display_object(Some(&gizmo_named_node("GizmoRoot")));
-    let outline = create_shape(Some(&PartialShape {
-        data: None,
-        node: gizmo_named_node("GizmoSelectionOutline"),
-    }));
-    let handle_root = create_display_object(Some(&gizmo_named_node("GizmoHandleRoot")));
-    let handle_root_ref: Node2DRef = handle_root.clone();
-    let handles = create_gizmo_state_handles(&handle_root_ref);
-    let mut state: GizmoState = allocate_entity();
-    let runtime = Arc::new(std::sync::RwLock::new(GizmoRuntime {
-        bounds: create_rectangle(0.0, 0.0, 0.0, 0.0),
-        camera: Some(options.camera.clone()),
-        connections: Vec::new(),
-        custom_pivot_x: 0.0,
-        custom_pivot_y: 0.0,
-        disposed: false,
-        drag: None,
-        features: Some(options.features.clone()),
-        handle_root: handle_root.clone(),
-        handles,
-        mode: GizmoMode::Translate,
-        node_bounds: create_rectangle(0.0, 0.0, 0.0, 0.0),
-        outline: outline.clone(),
-        outline_color: DEFAULT_OUTLINE_COLOR,
-        outline_enabled: true,
-        outline_points: [f32::NAN; 8],
-        overlay: Some(options.overlay_scene.clone()),
-        overlay_root: overlay_root.clone(),
-        pivot: GizmoPivot::Center,
-        pivot_screen: create_vector2(0.0, 0.0),
-        pivot_world: create_vector2(0.0, 0.0),
-        scratch_point: create_vector2(0.0, 0.0),
-        selected_nodes: Vec::new(),
-        selection: Some(options.selection.clone()),
-        signals: GizmoSignals {
-            on_rotate: create_signal(),
-            on_scale: create_signal(),
-            on_transform_begin: create_signal(),
-            on_transform_end: create_signal(),
-            on_translate: create_signal(),
-        },
-        snap_rotation: 0.0,
-        snap_scale: 0.0,
-        snap_translate: 0.0,
-        space: GizmoSpace::World,
-        viewport_height: options.viewport_height,
-        viewport_width: options.viewport_width,
-    }));
-    state.state = Some(runtime.clone());
-
-    let overlay_root_node: NodeRef = overlay_root.clone();
-    let outline_node: NodeRef = outline;
-    let handle_root_node: NodeRef = handle_root;
-    add_node_child(&overlay_root_node, &outline_node);
-    add_node_child(&overlay_root_node, &handle_root_node);
-    let scene_root: NodeRef = options.overlay_scene.read().unwrap().root.clone();
-    add_node_child(&scene_root, &overlay_root_node);
-    connect_gizmo_handles(&runtime);
-    update_gizmo(&state);
-    return state;
+    let mut out: GizmoState = allocate_entity();
+    initialize_gizmo_state(&mut out, options);
+    return out;
 }
 
 fn create_gizmo_state_handle(
@@ -244,6 +187,70 @@ fn create_gizmo_state_handles(handle_root: &Node2DRef) -> Vec<GizmoHandle> {
         add_node_child(&root, &node);
     }
     return handles;
+}
+
+/// Builds the complete gizmo overlay into caller-allocated entity storage while preserving its
+/// runtime identity.
+// flight-lint: allow(conform-extra) Principal c0f9227c: public per-layer construction seam added to TS target
+pub fn initialize_gizmo_state(out: &mut GizmoState, options: &GizmoCreateOptions) {
+    let overlay_root = create_display_object(Some(&gizmo_named_node("GizmoRoot")));
+    let outline = create_shape(Some(&PartialShape {
+        data: None,
+        node: gizmo_named_node("GizmoSelectionOutline"),
+    }));
+    let handle_root = create_display_object(Some(&gizmo_named_node("GizmoHandleRoot")));
+    let handle_root_ref: Node2DRef = handle_root.clone();
+    let handles = create_gizmo_state_handles(&handle_root_ref);
+    let runtime = Arc::new(std::sync::RwLock::new(GizmoRuntime {
+        bounds: create_rectangle(0.0, 0.0, 0.0, 0.0),
+        camera: Some(options.camera.clone()),
+        connections: Vec::new(),
+        custom_pivot_x: 0.0,
+        custom_pivot_y: 0.0,
+        disposed: false,
+        drag: None,
+        features: Some(options.features.clone()),
+        handle_root: handle_root.clone(),
+        handles,
+        mode: GizmoMode::Translate,
+        node_bounds: create_rectangle(0.0, 0.0, 0.0, 0.0),
+        outline: outline.clone(),
+        outline_color: DEFAULT_OUTLINE_COLOR,
+        outline_enabled: true,
+        outline_points: [f32::NAN; 8],
+        overlay: Some(options.overlay_scene.clone()),
+        overlay_root: overlay_root.clone(),
+        pivot: GizmoPivot::Center,
+        pivot_screen: create_vector2(0.0, 0.0),
+        pivot_world: create_vector2(0.0, 0.0),
+        scratch_point: create_vector2(0.0, 0.0),
+        selected_nodes: Vec::new(),
+        selection: Some(options.selection.clone()),
+        signals: GizmoSignals {
+            on_rotate: create_signal(),
+            on_scale: create_signal(),
+            on_transform_begin: create_signal(),
+            on_transform_end: create_signal(),
+            on_translate: create_signal(),
+        },
+        snap_rotation: 0.0,
+        snap_scale: 0.0,
+        snap_translate: 0.0,
+        space: GizmoSpace::World,
+        viewport_height: options.viewport_height,
+        viewport_width: options.viewport_width,
+    }));
+    out.state = Some(runtime.clone());
+
+    let overlay_root_node: NodeRef = overlay_root.clone();
+    let outline_node: NodeRef = outline;
+    let handle_root_node: NodeRef = handle_root;
+    add_node_child(&overlay_root_node, &outline_node);
+    add_node_child(&overlay_root_node, &handle_root_node);
+    let scene_root: NodeRef = options.overlay_scene.read().unwrap().root.clone();
+    add_node_child(&scene_root, &overlay_root_node);
+    connect_gizmo_handles(&runtime);
+    update_gizmo(out);
 }
 
 fn compute_gizmo_bounds(runtime: &mut GizmoRuntime, selected: &[NodeRef]) -> bool {

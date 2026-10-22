@@ -21,7 +21,7 @@ Usage: cargo flight-lint <command> [options]
 
 Commands:
   check     [--crate C]... [--baseline F] [--write-baseline F] [--deny-warnings]
-  fix       [--crate C]...
+  fix       [--crate C]...                                  reorder: sections, fns, impl methods, test modules
   conform   <ts-packages-dir> [--crate C]... [--baseline F] [--write-baseline F]
   manifest  (--write | --check) [--crate C]... [--dir D]     (default dir: agents/manifests)
   allows    [--crate C]... [--rule R]                         list allow markers and reasons
@@ -267,6 +267,16 @@ fn cmd_fix(opts: &Options) {
                 }
             }
             Err(e) => eprintln!("warning: {}: {}", file.display(), e),
+        }
+        // The paired test file: test modules in alphabetical order (`test-module-order`).
+        if let Some(test_file) = tests_rules::paired_test_path(file)
+            && let Ok(source) = fs::read_to_string(&test_file)
+            && let Some(fixed) = tests_rules::fix_test_module_order(&source)
+            && fixed != source
+        {
+            fs::write(&test_file, &fixed).expect("write failed");
+            println!("Fixed: {}", test_file.display());
+            count += 1;
         }
     }
     if count == 0 {

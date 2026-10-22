@@ -7,7 +7,7 @@ Rust-canonical IR for the Flight SDK. Rust is the authoritative source for trans
 - **Build**: `cargo check -p flight-geometry`
 - **Test**: `cargo test -p flight-geometry`
 - **Lint**: `cargo run -p cargo-flight-lint -- check` (from workspace root)
-- **Lint fix**: `cargo run -p cargo-flight-lint -- fix`
+- **Lint fix**: `cargo run -p cargo-flight-lint -- fix` (reorders file sections, free functions, impl methods and test modules; run it instead of sorting by hand)
 - **Conformance**: `cargo run -p cargo-flight-lint -- conform <ts-src-dir>`
 - **TS reference**: `C:\Development\flight\packages\geometry\src\`
 

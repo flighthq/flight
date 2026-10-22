@@ -624,38 +624,46 @@ mod shuffle {
     use super::*;
 
     #[test]
-    fn returns_a_vec_of_the_same_length() {
+    fn clears_stale_output_and_fills_the_same_length() {
         let items = [1, 2, 3, 4, 5];
-        assert_eq!(
-            shuffle(create_random_source(0xabcdef).as_ref(), &items).len(),
-            items.len()
-        );
+        let mut out = vec![99, 98, 97, 96, 95, 94];
+        shuffle(&mut out, create_random_source(0xabcdef).as_ref(), &items);
+        assert_eq!(out.len(), items.len());
+        assert!(!out.contains(&99));
     }
 
     #[test]
-    fn contains_all_original_elements() {
+    fn contains_all_original_elements_and_reuses_caller_capacity() {
         let items = [1, 2, 3, 4, 5];
-        let mut result = shuffle(create_random_source(0xabcdef).as_ref(), &items);
-        result.sort();
+        let mut out = Vec::with_capacity(16);
+        let capacity = out.capacity();
+        shuffle(&mut out, create_random_source(0xabcdef).as_ref(), &items);
+        assert_eq!(out.capacity(), capacity);
+        out.sort();
         let mut expected = items.to_vec();
         expected.sort();
-        assert_eq!(result, expected);
+        assert_eq!(out, expected);
     }
 
     #[test]
     fn is_deterministic_for_the_same_seed() {
         let items = [1, 2, 3, 4, 5, 6, 7, 8];
-        assert_eq!(
-            shuffle(create_random_source(0xabcdef).as_ref(), &items),
-            shuffle(create_random_source(0xabcdef).as_ref(), &items)
-        );
+        let mut a = Vec::new();
+        let mut b = Vec::new();
+        shuffle(&mut a, create_random_source(0xabcdef).as_ref(), &items);
+        shuffle(&mut b, create_random_source(0xabcdef).as_ref(), &items);
+        assert_eq!(a, b);
     }
 
     #[test]
     fn does_not_mutate_the_original_array() {
         let items = [1, 2, 3, 4, 5];
         let original = items;
-        shuffle(create_random_source(0xabcdef).as_ref(), &items);
+        shuffle(
+            &mut Vec::new(),
+            create_random_source(0xabcdef).as_ref(),
+            &items,
+        );
         assert_eq!(items, original);
     }
 }

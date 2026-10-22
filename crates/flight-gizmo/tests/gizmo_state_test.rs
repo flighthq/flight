@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_camera::{Camera2D, create_camera_2d, project_camera_2d_point};
-use flight_entity::Ref;
+use flight_entity::{Ref, allocate_entity, get_entity_uid, set_entity_uid};
 use flight_geometry::{Rectangle, Vector2, create_rectangle};
 use flight_gizmo::*;
 use flight_interaction::contract::{PointerEventData, PointerType, enable_interaction_signals};
@@ -180,6 +180,37 @@ mod get_gizmo_space {
         let context = create_test_context(&[create_test_node()]);
         set_gizmo_space(&context.state, GizmoSpace::Local);
         assert_eq!(get_gizmo_space(&context.state), GizmoSpace::Local);
+    }
+}
+
+mod initialize_gizmo_state {
+    use super::*;
+
+    #[test]
+    fn preserves_the_caller_entity_identity_and_builds_the_overlay() {
+        let camera = Arc::new(RwLock::new(create_camera_2d()));
+        let overlay = create_scene2d(None);
+        let selection = Arc::new(RwLock::new(create_selection_state()));
+        let mut state: GizmoState = allocate_entity();
+        set_entity_uid(&mut state, "caller-gizmo".to_string());
+
+        initialize_gizmo_state(
+            &mut state,
+            &GizmoCreateOptions {
+                camera,
+                features: create_node2d_gizmo_features(),
+                overlay_scene: overlay.clone(),
+                selection,
+                viewport_height: 100.0,
+                viewport_width: 200.0,
+            },
+        );
+
+        assert_eq!(get_entity_uid(&mut state), "caller-gizmo");
+        assert_eq!(get_gizmo_mode(&state), GizmoMode::Translate);
+        let root = get_gizmo_root(&overlay);
+        assert!(get_node_child_by_name(&root, "GizmoHandleRoot").is_some());
+        dispose_gizmo_state(&state);
     }
 }
 

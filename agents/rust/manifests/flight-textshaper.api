@@ -92,7 +92,7 @@ src/sugar.rs: impl HostTextShaperCapability :: fn shape_text_run_cached(&self, c
 src/sugar.rs: impl HostTextShaperCapability :: fn shape_text_run_into(&self, out: &mut ShapedRun, text: &str, format: &TextFormat, options: Option<&ShapeRunOptions>,) -> bool
 src/sugar.rs: impl HostTextShaperCapability :: fn shape_text_runs(&self, text: &str, format: &TextFormat, options: Option<&TextShaperOptions>,) -> Vec<Ref<ShapedRun>>
 src/sugar.rs: impl ShapedRun :: fn clear_shaped_run(&mut self)
-src/sugar.rs: impl ShapedRun :: fn get_caret_positions_for_run(&self) -> Vec<f32>
+src/sugar.rs: impl ShapedRun :: fn get_caret_positions_for_run(&self, out: &mut Vec<f32>)
 src/sugar.rs: impl ShapedRun :: fn get_cluster_for_index(&self, string_index: i32) -> i32
 src/sugar.rs: impl ShapedRun :: fn get_index_range_for_cluster(&self, cluster: i32, string_length: Option<i32>,) -> Option<(i32, i32)>
 src/sugar.rs: impl ShapedRun :: fn initialize_shaped_run(&mut self)
@@ -120,10 +120,10 @@ src/text_shaper_cache.rs: pub fn create_text_shaper_cache() -> TextShaperCache
 src/text_shaper_cache.rs: pub fn dispose_text_shaper_cache(cache: &mut TextShaperCache)
 src/text_shaper_cache.rs: pub fn initialize_text_shaper_cache(out: &mut TextShaperCache)
 src/text_shaper_cache.rs: pub fn shape_text_run_cached(host_text_shaper: &HostTextShaperCapability, cache: &mut TextShaperCache, text: &str, format: &TextFormat, options: Option<&ShapeRunOptions>,) -> Option<Ref<ShapedRun>>
-src/text_shaper_cluster.rs: pub fn get_caret_positions_for_run(run: &ShapedRun) -> Vec<f32>
+src/text_shaper_cluster.rs: pub fn get_caret_positions_for_run(out: &mut Vec<f32>, run: &ShapedRun)
 src/text_shaper_cluster.rs: pub fn get_cluster_for_index(run: &ShapedRun, string_index: i32) -> i32
 src/text_shaper_cluster.rs: pub fn get_index_range_for_cluster(run: &ShapedRun, cluster: i32, string_length: Option<i32>,) -> Option<(i32, i32)>
-src/text_shaper_itemize.rs: pub fn itemize_text(text: &str, _format: &TextFormat, options: Option<&TextShaperOptions>,) -> Vec<TextItem>
+src/text_shaper_itemize.rs: pub fn itemize_text(out: &mut Vec<TextItem>, text: &str, _format: &TextFormat, options: Option<&TextShaperOptions>,)
 src/text_shaper_itemize.rs: pub fn shape_text_runs(host_text_shaper: &HostTextShaperCapability, text: &str, format: &TextFormat, options: Option<&TextShaperOptions>,) -> Vec<Ref<ShapedRun>>
 src/text_shaper_pool.rs: pub fn acquire_shaped_run(pool: &mut ShapedRunPool) -> Ref<ShapedRun>
 src/text_shaper_pool.rs: pub fn release_shaped_run(pool: &mut ShapedRunPool, run: &Ref<ShapedRun>)

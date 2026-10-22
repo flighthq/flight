@@ -20,49 +20,65 @@ mod get_caret_positions_for_run {
     use super::*;
 
     #[test]
+    fn clears_stale_positions_and_reuses_storage_for_shorter_and_empty_runs() {
+        let run = make_run(&[(0, 8.0, 3.0), (2, 7.0, -2.0), (4, 9.0, 0.0)]);
+        let mut out = Vec::with_capacity(8);
+        out.push(99.0);
+        let pointer = out.as_ptr();
+        let capacity = out.capacity();
+        for (glyph_count, expected) in [
+            (3, vec![0.0, 8.0, 15.0, 24.0]),
+            (1, vec![0.0, 8.0]),
+            (0, vec![0.0]),
+        ] {
+            run.write().unwrap().glyph_count = glyph_count;
+            get_caret_positions_for_run(&mut out, &run.read().unwrap());
+            assert_eq!(out, expected);
+            assert_eq!(out.as_ptr(), pointer);
+            assert_eq!(out.capacity(), capacity);
+            assert_eq!(run.read().unwrap().glyphs.len(), 3);
+        }
+    }
+
+    #[test]
     fn returns_zero_for_an_empty_run() {
-        assert_eq!(
-            get_caret_positions_for_run(&make_run(&[]).read().unwrap()),
-            vec![0.0]
-        );
+        let mut positions = Vec::new();
+        get_caret_positions_for_run(&mut positions, &make_run(&[]).read().unwrap());
+        assert_eq!(positions, vec![0.0]);
     }
 
     #[test]
     fn returns_glyph_count_plus_one_positions_starting_at_0() {
         let run = make_run(&[(0, 8.0, 0.0), (1, 7.0, 0.0), (2, 9.0, 0.0)]);
-        assert_eq!(
-            get_caret_positions_for_run(&run.read().unwrap()),
-            vec![0.0, 8.0, 15.0, 24.0]
-        );
+        let mut positions = Vec::new();
+        get_caret_positions_for_run(&mut positions, &run.read().unwrap());
+        assert_eq!(positions, vec![0.0, 8.0, 15.0, 24.0]);
     }
 
     #[test]
     fn last_position_equals_the_run_advance_width() {
         let run = make_run(&[(0, 5.0, 0.0), (1, 3.0, 0.0)]);
         let run = run.read().unwrap();
-        assert_eq!(
-            *get_caret_positions_for_run(&run).last().unwrap(),
-            run.advance_width
-        );
+        let mut positions = Vec::new();
+        get_caret_positions_for_run(&mut positions, &run);
+        assert_eq!(*positions.last().unwrap(), run.advance_width);
     }
 
     #[test]
     fn uses_pen_advances_rather_than_glyph_drawing_offsets() {
         let run = make_run(&[(0, 8.0, 3.0), (1, 7.0, -2.0)]);
-        assert_eq!(
-            get_caret_positions_for_run(&run.read().unwrap()),
-            vec![0.0, 8.0, 15.0]
-        );
+        let mut positions = Vec::new();
+        get_caret_positions_for_run(&mut positions, &run.read().unwrap());
+        assert_eq!(positions, vec![0.0, 8.0, 15.0]);
     }
 
     #[test]
     fn reads_only_the_valid_glyph_count_of_an_over_allocated_buffer() {
         let run = make_run(&[(0, 8.0, 0.0), (1, 7.0, 0.0)]);
         run.write().unwrap().glyph_count = 1;
-        assert_eq!(
-            get_caret_positions_for_run(&run.read().unwrap()),
-            vec![0.0, 8.0]
-        );
+        let mut positions = Vec::new();
+        get_caret_positions_for_run(&mut positions, &run.read().unwrap());
+        assert_eq!(positions, vec![0.0, 8.0]);
     }
 }
 

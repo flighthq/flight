@@ -5,7 +5,8 @@ use std::path::PathBuf;
 use syn::Item;
 
 use crate::model::Violation;
-use crate::structure::{FileItem, parse_items};
+use crate::structure::{FileItem, NamedRange, parse_items, sort_group};
+use syn::spanned::Spanned;
 
 // ---------------------------------------------------------------------------
 // Test module parsing
@@ -49,6 +50,53 @@ fn parse_test_modules(source: &str) -> Vec<TestModule> {
     }
 
     return modules;
+}
+
+/// Sorts the top-level inline test modules of a test file alphabetically (`test-module-order`), moving
+/// each module with its attached comments and attributes. Returns the source unchanged when already
+/// sorted or when something unattached sits between two modules.
+pub fn fix_test_module_order(source: &str) -> Option<String> {
+    let file = syn::parse_file(source).ok()?;
+    let lines: Vec<&str> = source.lines().collect();
+    let modules: Vec<NamedRange> = file
+        .items
+        .iter()
+        .filter_map(|item| {
+            if let Item::Mod(m) = item
+                && m.content.is_some()
+            {
+                return Some(NamedRange {
+                    name: m.ident.to_string(),
+                    is_pub: false,
+                    start_line: m.span().start().line,
+                    end_line: m.span().end().line,
+                });
+            }
+            return None;
+        })
+        .collect();
+    let refs: Vec<&NamedRange> = modules.iter().collect();
+    let Some((start, end, text)) = sort_group(&refs, &lines, "\n\n", |name: &str| name.to_string()) else {
+        return Some(source.to_string());
+    };
+    let mut result: Vec<String> = lines.iter().map(|s| s.to_string()).collect();
+    result.splice((start - 1)..end, text.lines().map(|s| s.to_string()));
+    let mut joined = result.join("\n");
+    if source.ends_with('\n') {
+        joined.push('\n');
+    }
+    return Some(joined);
+}
+
+/// The paired test file of a source file (`tests/{stem}_test.rs`), when the source is a module that
+/// the test rules cover.
+pub fn paired_test_path(src_path: &std::path::Path) -> Option<PathBuf> {
+    let stem = src_path.file_stem()?.to_str()?;
+    if stem == "lib" || stem == "mod" {
+        return None;
+    }
+    let crate_dir = src_path.parent()?.parent()?;
+    return Some(crate_dir.join("tests").join(format!("{}_test.rs", stem)));
 }
 
 // ---------------------------------------------------------------------------
@@ -222,4 +270,25 @@ pub fn check_all_tests(src_files: &[PathBuf]) -> Vec<Violation> {
     }
 
     return violations;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn fix_sorts_test_modules_with_their_attributes() {
+        let src = "use flight_x::*;\n\n// flight-lint: allow(f64) z keeps double\nmod z {\n    #[test]\n    fn t() {}\n}\n\nmod a {\n    use super::*;\n\n    #[test]\n    fn t() {}\n}\n";
+        let fixed = fix_test_module_order(src).unwrap();
+        assert!(fixed.find("mod a {").unwrap() < fixed.find("mod z {").unwrap(), "{}", fixed);
+        assert!(fixed.contains("// flight-lint: allow(f64) z keeps double\nmod z {"));
+        assert!(fixed.starts_with("use flight_x::*;\n\n"));
+        assert_eq!(fix_test_module_order(&fixed).unwrap(), fixed);
+    }
+
+    #[test]
+    fn fix_leaves_test_modules_with_unattached_comments_alone() {
+        let src = "mod z {\n    #[test]\n    fn t() {}\n}\n\n// divider\n\nmod a {\n    #[test]\n    fn t() {}\n}\n";
+        assert_eq!(fix_test_module_order(src).unwrap(), src);
+    }
 }
