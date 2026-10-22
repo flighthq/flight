@@ -30,7 +30,7 @@ C++ and Haxe columns are filled when those targets are designed; `(open)` means 
 |---|---|---|---|
 | `AudioBufferHandle(i32)`, `AudioSourceHandle(i32)` | `number` | 0 = invalid | audio device / mixer capabilities (media) |
 | `AudioDeviceHandle(i32)`, `AudioBusNodeHandle(i32)`, `AudioMixerGraphHandle(i32)` | `number` | as TS | audio device / mixer capabilities (media) |
-| `FrameRequestHandle(i32)` | `number` from `requestAnimationFrame` | 0 = no request (TS `null`) | `HostAppLoopCapability.requestFrame` (app) |
+| `FrameRequestHandle(i32)` | `number` from `requestAnimationFrame` | none reserved; "no request" (TS `null`) is `Option::None` | `HostAppLoopCapability.requestFrame` (app) |
 
 ## Seam vocabulary (also in flight-host)
 
