@@ -233,6 +233,10 @@ pub(crate) fn get_gl_scene3d_context_runtime(
 // design: the draw path writes the caches every frame. Hold the returned borrow only briefly — any
 // call that re-enters the runtime while it is held panics (RefCell discipline).
 pub fn get_gl_scene3d_runtime(state: &GlRenderState) -> RefMut<'_, GlScene3DRuntime> {
+    if !has_gl_scene3d_runtime(state) {
+        // Wire the context-tier upload cache on first use; a derived state reuses its primary's.
+        drop(get_gl_scene3d_context_runtime(state));
+    }
     let runtime = state.gl_runtime.borrow_mut();
     return RefMut::map(runtime, |runtime| {
         let slot = &mut runtime.scene3d_runtime;
