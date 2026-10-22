@@ -24,8 +24,6 @@ const IBL_BRDF_TEXTURE_UNIT: u32 = 11;
 // (bind_gl_mesh_light_block). A lit family that wants shadows multiplies its directional contribution
 // by sampleDirectionalShadow(worldPos, geometricNormal). The PCF cap is MAX_DIRECTIONAL_SHADOW_PCF_RADIUS
 // (2), spelled as a literal so the source stays a compile-time constant.
-#[macro_export]
-#[doc(hidden)]
 macro_rules! gl_directional_shadow_glsl {
     () => {
         concat!(r#"
@@ -77,11 +75,11 @@ float sampleDirectionalShadow(vec3 worldPos, vec3 geometricNormal) {
 "#)
     };
 }
+#[allow(unused_imports)]
+pub(crate) use gl_directional_shadow_glsl;
 
 pub const GL_DIRECTIONAL_SHADOW_GLSL: &str = gl_directional_shadow_glsl!();
 
-#[macro_export]
-#[doc(hidden)]
 macro_rules! gl_mesh_light_block_glsl {
     () => {
         concat!(r#"
@@ -115,6 +113,8 @@ float rangeWindow(float dist2, float invSqrRange) {
 "#)
     };
 }
+#[allow(unused_imports)]
+pub(crate) use gl_mesh_light_block_glsl;
 
 pub const GL_MESH_LIGHT_BLOCK_GLSL: &str = gl_mesh_light_block_glsl!();
 

@@ -2117,3 +2117,30 @@ pub fn bytes_as_f32(bytes: &[u8]) -> Vec<f32> {
 pub fn test_default<T: Default>() -> T {
     return T::default();
 }
+
+/// TS `makeGlScene3DState()`: a GlRenderState over a fresh mock WebGL2 context whose default
+/// framebuffer (the canvas) is 256x256. scene3d-gl's own per-state runtime is created lazily on first
+/// `get_gl_scene3d_runtime`, exactly as in production. Every call resets the thread's mock GL.
+pub fn make_gl_scene3d_state() -> GlRenderState {
+    let state = create_gl_render_state(make_context_state(), None);
+    set_viewport(0, 0, 256, 256);
+    clear_calls();
+    return state;
+}
+
+/// TS `makeGlScene3DState(undefined, registry)`: the same mock state built with explicit options.
+pub fn make_gl_scene3d_state_with(options: &flight_render_gl::GlRenderStateOptions) -> GlRenderState {
+    let state = create_gl_render_state(make_context_state(), Some(options));
+    set_viewport(0, 0, 256, 256);
+    clear_calls();
+    return state;
+}
+
+/// A second state on the SAME mock context as `state` (TS `createGlRenderState(state.gl, …)`), for
+/// derived-state sharing tests.
+pub fn make_derived_gl_scene3d_state(
+    state: &GlRenderState,
+    options: Option<&flight_render_gl::GlRenderStateOptions>,
+) -> GlRenderState {
+    return create_gl_render_state(state.context_state.clone(), options);
+}
