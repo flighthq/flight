@@ -6,18 +6,19 @@ use flight_entity::Ref;
 
 use crate::contract::{Modifier, ModifierKind, ModifierRegistry, resolve_modifier};
 
+// flight-lint: allow(conform-params) D24 caller-owned computed output: out is first, required, cleared and refilled in first-seen order
 pub fn get_unregistered_modifier_kinds(
+    out: &mut Vec<ModifierKind>,
     registry: &ModifierRegistry,
     stack: &[Ref<dyn Modifier>],
-) -> Vec<ModifierKind> {
-    let mut unregistered = Vec::new();
+) {
+    out.clear();
     for modifier in stack {
         let modifier = modifier.read().unwrap_or_else(PoisonError::into_inner);
         let kind = &modifier.modifier_fields().kind;
-        if resolve_modifier(registry, kind).is_some() || unregistered.contains(kind) {
+        if resolve_modifier(registry, kind).is_some() || out.contains(kind) {
             continue;
         }
-        unregistered.push(kind.clone());
+        out.push(kind.clone());
     }
-    return unregistered;
 }

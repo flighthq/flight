@@ -1,0 +1,214 @@
+src/contract.rs: pub use crate::enable_color_adjustment_guards::*;
+src/contract.rs: pub use crate::enable_color_adjustments::*;
+src/contract.rs: pub use crate::enable_scene_render_guards::*;
+src/contract.rs: pub use crate::explain_scene2d_coverage::*;
+src/contract.rs: pub use crate::explain_scene2d_pipeline_coverage::*;
+src/contract.rs: pub use crate::explain_scene2d_render::*;
+src/contract.rs: pub use crate::explain_scene3d_pipeline_coverage::*;
+src/contract.rs: pub use crate::image_surface::*;
+src/contract.rs: pub use crate::merge_render_options::*;
+src/contract.rs: pub use crate::render_appearance::*;
+src/contract.rs: pub use crate::render_cache::*;
+src/contract.rs: pub use crate::render_material::*;
+src/contract.rs: pub use crate::render_proxy::*;
+src/contract.rs: pub use crate::render_proxy_adapter::*;
+src/contract.rs: pub use crate::render_queue::*;
+src/contract.rs: pub use crate::render_registry_guards::*;
+src/contract.rs: pub use crate::render_registry_signals::*;
+src/contract.rs: pub use crate::render_state::*;
+src/contract.rs: pub use crate::render_target::*;
+src/contract.rs: pub use crate::render_transform2d::*;
+src/contract.rs: pub use crate::render_viewport::*;
+src/contract.rs: pub use crate::renderer::*;
+src/contract.rs: pub use crate::scene2d_working_color_space::*;
+src/contract.rs: pub use crate::scene_render::*;
+src/contract.rs: pub use crate::types::*;
+src/enable_color_adjustment_guards.rs: pub fn are_color_adjustment_guards_enabled<S: RenderState>(state: &S) -> bool
+src/enable_color_adjustment_guards.rs: pub fn enable_color_adjustment_guards<S: RenderState>(state: &mut S, log_state: Option<LogStateRef>,)
+src/enable_color_adjustments.rs: pub fn are_color_adjustments_enabled<S: RenderState>(state: &S) -> bool
+src/enable_color_adjustments.rs: pub fn enable_color_adjustments<S: RenderState>(state: &mut S)
+src/enable_scene_render_guards.rs: pub fn disable_scene_render_guards<S: RenderState>(state: &mut S)
+src/enable_scene_render_guards.rs: pub fn enable_scene_render_guards<S: RenderState>(state: &mut S, log_state: Option<LogStateRef>)
+src/enable_scene_render_guards.rs: pub fn set_skinned_mesh_bounds_guard<S: RenderState>(state: &mut S, guard: Option<fn(&mut S, &Mesh)>,)
+src/explain_scene2d_coverage.rs: pub fn explain_scene_2d_coverage<S: RenderState>(out: &mut Vec<SceneCoverageEntry>, state: &S, usage: &Scene2DKindUsage, catalog: &SceneCoverageCatalog,)
+src/explain_scene2d_coverage.rs: pub fn has_scene_2d_coverage<S: RenderState>(state: &S, usage: &Scene2DKindUsage) -> bool
+src/explain_scene2d_pipeline_coverage.rs: pub fn explain_scene_2d_pipeline_coverage<S: RenderState>(state: &S, scene: &NodeRef,) -> Scene2DPipelineCoverageExplanation
+src/explain_scene2d_render.rs: pub fn explain_scene_2d_render<S: RenderState>(state: &S, proxies: &RenderProxies2D<S>, source: &NodeRef,) -> Scene2DRenderExplanation
+src/explain_scene3d_pipeline_coverage.rs: pub fn explain_scene_3d_pipeline_coverage<S: RenderState, T>(state: &S, scene: &NodeRef, material_renderers: Option<&KindMap<T>>,) -> Scene3DPipelineCoverageExplanation
+src/image_surface.rs: pub fn create_canvas_host_surface(surfaces: &mut CanvasHostSurfaces, host: &HostCanvasCapability, width: f32, height: f32,) -> Option<Ref<CanvasSurface>>
+src/image_surface.rs: pub fn destroy_canvas_host_surface(surfaces: &mut CanvasHostSurfaces, surface: &Ref<CanvasSurface>,)
+src/image_surface.rs: pub fn get_canvas_host_surface(surfaces: &CanvasHostSurfaces, surface: &Ref<CanvasSurface>,) -> Option<HostCanvasCapability>
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::*;
+src/merge_render_options.rs: pub fn merge_render_options<S: RenderState>(options: &[&RenderStateOptions<S>],) -> RenderStateOptions<S>
+src/render_appearance.rs: pub fn update_render_proxy_appearance<S: RenderState>(state: &S, data: &mut RenderProxy<S>, parent_data: Option<&RenderProxy<S>>,) -> bool
+src/render_cache.rs: pub fn create_render_cache() -> RenderCache
+src/render_cache.rs: pub fn create_render_cache_adapter<S: RenderState>(cache: Option<Ref<RenderCache>>,) -> Ref<RenderProxyAdapter<S>>
+src/render_cache.rs: pub fn enable_render_cache_adapter_signals<S: RenderState>(adapter: &Ref<RenderProxyAdapter<S>>)
+src/render_cache.rs: pub fn get_render_proxy_cache<S: RenderState>(state: &S, source: &NodeRef,) -> Option<Ref<RenderCache>>
+src/render_cache.rs: pub fn initialize_render_cache(out: &mut RenderCache)
+src/render_cache.rs: pub fn initialize_render_cache_adapter<S: RenderState>(adapter: &mut RenderProxyAdapter<S>, cache: Option<Ref<RenderCache>>,)
+src/render_cache.rs: pub fn is_render_cache(source: &RenderCache) -> bool
+src/render_cache.rs: pub fn is_render_cache_adapter<S: RenderState>(value: &RenderProxyAdapter<S>) -> bool
+src/render_cache.rs: pub fn register_render_cache_node_renderer<S: RenderState>(state: &mut S, renderer: &'static NodeRenderer<S>,)
+src/render_cache.rs: pub fn use_render_cache<S: RenderState>(state: &mut S, source: &NodeRef, cache: Ref<RenderCache>,) -> Ref<RenderProxyAdapter<S>>
+src/render_cache.rs: pub use crate::RENDER_CACHE_KIND as RenderCacheKind;
+src/render_material.rs: pub fn update_render_proxy_material<S: RenderState>(_state: &S, data: &mut RenderProxy<S>, _parent_data: Option<&RenderProxy<S>>,)
+src/render_proxy.rs: pub fn create_render_proxy<S: RenderState>(state: &mut S, source: &NodeRef) -> RenderProxy<S>
+src/render_proxy.rs: pub fn create_render_proxy_2d<S: RenderState>(state: &mut S, source: &NodeRef) -> RenderProxy2D<S>
+src/render_proxy.rs: pub fn dispose_render_proxy<S: RenderState>(state: &mut S, proxies: &mut RenderProxies2D<S>, source: &NodeRef,)
+src/render_proxy.rs: pub fn dispose_scene_2d_render<S: RenderState>(state: &mut S, proxies: &mut RenderProxies2D<S>, root: &NodeRef,)
+src/render_proxy.rs: pub fn get_or_create_render_proxy_2d<'a, S: RenderState>(state: &mut S, proxies: &'a mut RenderProxies2D<S>, source: &NodeRef,) -> &'a mut RenderProxy2D<S>
+src/render_proxy.rs: pub fn get_render_proxy_2d<'a, S: RenderState>(proxies: &'a RenderProxies2D<S>, source: &NodeRef,) -> Option<&'a RenderProxy2D<S>>
+src/render_proxy.rs: pub fn initialize_render_proxy<S: RenderState>(out: &mut RenderProxy<S>, state: &mut S, source: &NodeRef,)
+src/render_proxy.rs: pub fn install_render_adapt_hook<S: RenderState>(state: &mut S, function: fn(&mut S, &NodeRef, &mut RenderProxy2D<S>),)
+src/render_proxy.rs: pub fn is_render_proxy_dirty<S: RenderState>(state: &S, source: &NodeRef, data: &RenderProxy<S>, parent_data: Option<&RenderProxy<S>>,) -> bool
+src/render_proxy.rs: pub fn is_render_proxy_visible<S: RenderState>(data: &RenderProxy2D<S>) -> bool
+src/render_proxy.rs: pub fn prepare_scene_2d_render<S: RenderState>(state: &mut S, proxies: &mut RenderProxies2D<S>, source: &NodeRef,) -> bool
+src/render_proxy.rs: pub fn update_node_clip<S: RenderState>(_state: &mut S, source: &NodeRef, data: &mut RenderProxy2D<S>, parent_data: Option<&RenderProxy2D<S>>,)
+src/render_proxy.rs: pub fn update_render_proxy_2d<S: RenderState>(state: &mut S, source: &NodeRef, data: &mut RenderProxy2D<S>, parent_data: Option<&RenderProxy2D<S>>,)
+src/render_proxy.rs: pub fn update_render_proxy_renderer<S: RenderState>(state: &mut S, node: &mut RenderProxy<S>)
+src/render_proxy.rs: pub fn walk_node<S: RenderState>(state: &mut S, proxies: &mut RenderProxies2D<S>, root: &NodeRef, visit: RenderProxyVisit<S>,) -> bool
+src/render_proxy_adapter.rs: pub fn apply_render_proxy_adapter<S: RenderState>(state: &mut S, source: &NodeRef, data: &mut RenderProxy2D<S>,)
+src/render_proxy_adapter.rs: pub fn get_render_proxy_adapter<S: RenderState>(state: &S, source: &NodeRef,) -> Option<flight_entity::Ref<RenderProxyAdapter<S>>>
+src/render_proxy_adapter.rs: pub fn set_render_proxy_adapter<S: RenderState>(state: &mut S, source: &NodeRef, adapter: Option<flight_entity::Ref<RenderProxyAdapter<S>>>,)
+src/render_queue.rs: pub fn build_render_queue<S: RenderState>(_state: &S, proxies: &RenderProxies2D<S>, source: &NodeRef, out: &mut RenderQueue,)
+src/render_queue.rs: pub fn clear_render_queue(queue: &mut RenderQueue)
+src/render_queue.rs: pub fn compare_render_queue_entries(a: &RenderQueueEntry, b: &RenderQueueEntry) -> i32
+src/render_queue.rs: pub fn create_render_queue() -> RenderQueue
+src/render_queue.rs: pub fn initialize_render_queue(out: &mut RenderQueue)
+src/render_queue.rs: pub fn pack_render_sort_key(layer: i32, depth: f32, is_transparent: bool) -> RenderSortKey
+src/render_queue.rs: pub fn push_render_queue_entry<S: RenderState>(queue: &mut RenderQueue, proxy: &RenderProxy<S>, sort_key: RenderSortKey,)
+src/render_queue.rs: pub fn sort_render_queue(queue: &mut RenderQueue, compare: Option<fn(&RenderQueueEntry, &RenderQueueEntry) -> i32>,)
+src/render_registry_guards.rs: pub fn are_render_registries_guards_enabled<S: RenderState>(state: &S) -> bool
+src/render_registry_guards.rs: pub fn enable_render_registries_guards<S: RenderState>(state: &mut S, log_state: Option<LogStateRef>,)
+src/render_registry_guards.rs: pub fn explain_render_registries_misses<S: RenderState>(state: &S,) -> RenderRegistriesMissExplanation
+src/render_registry_guards.rs: pub fn record_render_registries_miss<S: RenderState>(state: &mut S, registry: RenderRegistryTable, kind: Kind,)
+src/render_registry_signals.rs: pub fn emit_render_registry_miss<S: RenderState>(state: &mut S, registry: RenderRegistryTable, kind: Kind,)
+src/render_registry_signals.rs: pub fn enable_render_registry_signals<S: RenderState>(state: &mut S) -> RenderRegistrySignals
+src/render_state.rs: pub fn create_render_state(obj: Option<&RenderStateInit>) -> BaseRenderState
+src/render_state.rs: pub fn create_render_state_runtime<S: RenderState>() -> RenderStateRuntime<S>
+src/render_state.rs: pub fn destroy_render_state<S: RenderState>(state: &mut S, proxies: &mut RenderProxies2D<S>)
+src/render_state.rs: pub fn get_color_adjustment_unsupported_guard<S: RenderState>(state: &S,) -> Option<ColorAdjustmentUnsupportedGuard<S>>
+src/render_state.rs: pub fn get_render_state_runtime<S: RenderState>(state: &S) -> &RenderStateRuntime<S>
+src/render_state.rs: pub fn get_render_state_runtime_mut<S: RenderState>(state: &mut S) -> &mut RenderStateRuntime<S>
+src/render_state.rs: pub fn initialize_render_state(state: &mut BaseRenderState, obj: Option<&RenderStateInit>)
+src/render_target.rs: pub fn compute_render_cache_transform(out_cache_transform: &mut Matrix, bounds: &Rectangle, content_x: Option<f32>, content_y: Option<f32>,)
+src/render_target.rs: pub fn compute_render_target_size<'a>(out: &'a mut RenderTargetSize, bounds: &Rectangle, padding: Option<RenderTargetPadding>, min_width: Option<f32>, min_height: Option<f32>,) -> &'a mut RenderTargetSize
+src/render_target.rs: pub fn compute_scene_2d_render_target_transform(out_render_transform: &mut Matrix, source: &NodeRef, bounds: &Rectangle, content_x: Option<f32>, content_y: Option<f32>,)
+src/render_target.rs: pub fn explain_render_target_axes(requested: &RenderTargetAxes, effective: &RenderTargetAxes,) -> Vec<RenderTargetAxisDifference>
+src/render_target.rs: pub fn resolve_render_target_descriptor(descriptor: &RenderTargetDescriptor,) -> ResolvedRenderTargetDescriptor
+src/render_transform2d.rs: pub fn update_render_proxy_2d_transform<S: RenderState>(state: &S, data: &mut RenderProxy2D<S>, parent_data: Option<&RenderProxy2D<S>>,) -> bool
+src/render_viewport.rs: pub fn compute_render_proxy_world_bounds(out: &mut Rectangle, source: &NodeRef, revisions: &mut NodeRevisionState,)
+src/render_viewport.rs: pub fn is_render_proxy_in_viewport<S: RenderState>(proxy: &RenderProxy2D<S>, viewport: &Viewport, render_transform_2d: Option<&Matrix>, revisions: &mut NodeRevisionState,) -> bool
+src/render_viewport.rs: pub fn is_renderable_in_viewport(source: &NodeRef, viewport: &Viewport, render_transform_2d: Option<&Matrix>, revisions: &mut NodeRevisionState,) -> bool
+src/renderer.rs: pub fn copy_all_renderers_from_render_state<S: RenderState>(target: &mut S, source: &S)
+src/renderer.rs: pub fn copy_render_state_registrations<S: RenderState>(target: &mut S, source: &S)
+src/renderer.rs: pub fn copy_renderers_from_render_state<S: RenderState>(target: &mut S, source: &S)
+src/renderer.rs: pub fn noop_renderer_data<S: RenderState>(_state: &mut S, _source: &NodeRef,) -> Option<RendererDataRef>
+src/renderer.rs: pub fn register_node_renderer<S: RenderState>(state: &mut S, kind: Kind, renderer: &'static NodeRenderer<S>,)
+src/renderer.rs: pub fn register_node_renderers<S: RenderState>(state: &mut S, entries: &[(Kind, &'static NodeRenderer<S>)],)
+src/scene2d_working_color_space.rs: pub const SCENE2D_WORKING_COLOR_SPACE: RenderTargetColorSpace
+src/scene_render.rs: pub fn pack_scene_3d_light_block(out: &mut Scene3DLightBlock, lights: &Scene3DLightsLike)
+src/scene_render.rs: pub fn prepare_scene_3d_render<'a, S: RenderState>(state: &'a mut S, scene: &NodeRef, camera: &Camera3D, lights: &Scene3DLightsLike, viewport_aspect: Option<f32>,) -> &'a Scene3DRenderList
+src/types.rs: #[derive(Clone)] pub struct RenderCacheAdapterSignals { pub on_prepare: Signal<()>, }
+src/types.rs: #[derive(Clone)] pub struct RenderRegistrySignals { pub on_registry_miss: Signal<(RenderRegistryTable, Kind)>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct RenderTargetSize { pub width: f32, pub height: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum Scene3DGraphSyncPolicy { #[default] RefreshDerivedState, RequiresInvalidation, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub enum RenderTargetPadding { Uniform(f32), Edges(EffectPadding), }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct EffectPadding { pub bottom: f32, pub left: f32, pub right: f32, pub top: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum BatchFormat { Quad, VertexStream, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum RenderRegistriesMissStatus { Complete, MissesRecorded, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum RenderTargetAxis { Width, Height, Format, ColorAttachments, ColorFormats, SampleCount, Depth, ColorSpace, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum RenderTargetDepth { None, DepthStencil, DepthStencilSampled, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum RenderTargetFormat { Rgba8, Rgba16F, Rgba32F, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum RenderTargetFormatPolicy { Preferred, Required, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Scene2DRenderBlankReason { NoRenderer, NotPrepared, NotVisible, ZeroAlpha, Ok, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SceneCoverage { FallbackRemediable, FallbackUnavailable, Satisfied, Unavailable, Unregistered, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct RenderStateStats { pub draw_call_count: u32, pub flush_count: u32, pub proxy_visited_count: u32, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] #[repr(u8)] pub enum RenderRegistryTable { BlendRealization, EffectPaddingResolver, MaterialRenderer, MaterialTextureLister, ModifierSnippet, NodeRenderer, ShapeCommandHandler, ShapeRasterizer, TextureResolver, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct RenderStateInit { pub allow_smoothing: Option<bool>, pub current_clip_depth: Option<u32>, pub pixel_ratio: Option<f32>, pub render_alpha: Option<f32>, pub render_blend_mode: Option<Option<BlendMode>>, pub round_pixels: Option<bool>, pub scene_graph_sync_policy: Option<Scene3DGraphSyncPolicy>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct Scene2DPipelineCoverageExplanation { pub registered_kinds: Vec<Kind>, pub uncovered_kinds: Vec<Kind>, pub unused_registrations: Vec<Kind>, pub used_kinds: Vec<Kind>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct Scene3DPipelineCoverageExplanation { pub registered_kinds: Vec<Kind>, pub registered_material_kinds: Vec<Kind>, pub uncovered_kinds: Vec<Kind>, pub uncovered_material_kinds: Vec<Kind>, pub unused_material_registrations: Vec<Kind>, pub unused_registrations: Vec<Kind>, pub used_kinds: Vec<Kind>, pub used_material_kinds: Vec<Kind>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct RenderTargetDescriptor { pub width: f32, pub height: f32, pub format: Option<RenderTargetFormat>, pub color_attachments: Option<f32>, pub color_formats: Option<Vec<RenderTargetFormat>>, pub sample_count: Option<f32>, pub depth: Option<RenderTargetDepth>, pub color_space: Option<RenderTargetColorSpace>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct Scene2DRenderExplanation { pub kind: Kind, pub has_renderer: bool, pub prepared: bool, pub visible: bool, pub effective_alpha: f32, pub reason: Scene2DRenderBlankReason, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub enum RenderTargetAxisValue { Count(u32), Format(RenderTargetFormat), Formats(Vec<RenderTargetFormat>), Depth(RenderTargetDepth), ColorSpace(RenderTargetColorSpace), }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct CatalogEntry { pub kind: Kind, pub registrations: Vec<CatalogRegistration>, pub registry: RenderRegistryTable, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct CatalogRegistration { pub module: String, pub registrar: String, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct RenderQueueEntry { pub proxy: u64, pub sort_key: RenderSortKey, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct RenderRegistriesMiss { pub kind: Kind, pub registry: RenderRegistryTable, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct RenderRegistriesMissExplanation { pub misses: Vec<RenderRegistriesMiss>, pub status: RenderRegistriesMissStatus, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct RenderTargetAxes { pub width: u32, pub height: u32, pub format: RenderTargetFormat, pub color_attachments: u32, pub color_formats: Vec<RenderTargetFormat>, pub sample_count: u32, pub depth: RenderTargetDepth, pub color_space: RenderTargetColorSpace, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct RenderTargetAxisDifference { pub axis: RenderTargetAxis, pub effective: RenderTargetAxisValue, pub requested: RenderTargetAxisValue, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct SceneCoverageEntry { pub coverage: SceneCoverage, pub facet: RequirementFacet, pub kind: Kind, pub registry: RenderRegistryTable, pub module: Option<String>, pub registrar: Option<String>, }
+src/types.rs: #[derive(Default)] pub struct CanvasHostSurfaces { pub hosts: HashMap<u64, HostCanvasCapability>, }
+src/types.rs: impl Default for RenderCache
+src/types.rs: impl Default for RenderCache :: fn default() -> Self
+src/types.rs: impl Default for RenderProxies2D<S>
+src/types.rs: impl Default for RenderProxies2D<S> :: fn default() -> Self
+src/types.rs: impl Default for RenderQueue
+src/types.rs: impl Default for RenderQueue :: fn default() -> Self
+src/types.rs: impl Default for RenderRegistries<S>
+src/types.rs: impl Default for RenderRegistries<S> :: fn default() -> Self
+src/types.rs: impl Default for RenderStateFields
+src/types.rs: impl Default for RenderStateFields :: fn default() -> Self
+src/types.rs: impl Default for RenderStateOptions<S>
+src/types.rs: impl Default for RenderStateOptions<S> :: fn default() -> Self
+src/types.rs: impl Default for RenderStateRuntime<S>
+src/types.rs: impl Default for RenderStateRuntime<S> :: fn default() -> Self
+src/types.rs: impl Entity for BaseRenderState
+src/types.rs: impl Entity for BaseRenderState :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for BaseRenderState :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for RenderCache
+src/types.rs: impl Entity for RenderCache :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RenderCache :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for RenderProxy<S>
+src/types.rs: impl Entity for RenderProxy<S> :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RenderProxy<S> :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for RenderProxyAdapter<S>
+src/types.rs: impl Entity for RenderProxyAdapter<S> :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RenderProxyAdapter<S> :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for RenderQueue
+src/types.rs: impl Entity for RenderQueue :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RenderQueue :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for RenderStateFields
+src/types.rs: impl Entity for RenderStateFields :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RenderStateFields :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl RenderState for BaseRenderState
+src/types.rs: impl RenderState for BaseRenderState :: fn render_registries(&self) -> &RenderRegistries<Self>
+src/types.rs: impl RenderState for BaseRenderState :: fn render_registries_mut(&mut self) -> &mut RenderRegistries<Self>
+src/types.rs: impl RenderState for BaseRenderState :: fn render_runtime(&self) -> &RenderStateRuntime<Self>
+src/types.rs: impl RenderState for BaseRenderState :: fn render_runtime_mut(&mut self) -> &mut RenderStateRuntime<Self>
+src/types.rs: impl RenderState for BaseRenderState :: fn render_state(&self) -> &RenderStateFields
+src/types.rs: impl RenderState for BaseRenderState :: fn render_state_mut(&mut self) -> &mut RenderStateFields
+src/types.rs: impl std::ops::Deref for RenderProxy2D<S>
+src/types.rs: impl std::ops::Deref for RenderProxy2D<S> :: fn deref(&self) -> &Self::Target
+src/types.rs: impl std::ops::DerefMut for RenderProxy2D<S>
+src/types.rs: impl std::ops::DerefMut for RenderProxy2D<S> :: fn deref_mut(&mut self) -> &mut Self::Target
+src/types.rs: pub const RENDER_CACHE_KIND: &str
+src/types.rs: pub struct BaseRenderState { pub render: RenderStateFields, pub runtime: RenderStateRuntime<BaseRenderState>, pub registries: RenderRegistries<BaseRenderState>, }
+src/types.rs: pub struct CanvasHostSurfaceEntry { pub surface: Ref<CanvasSurface>, pub host: HostCanvasCapability, }
+src/types.rs: pub struct NodeRenderer<S: RenderState> { pub format: Option<BatchFormat>, pub create_data: fn(&mut S, &NodeRef) -> Option<RendererDataRef>, pub destroy_data: Option<fn(&mut S, RendererDataRef)>, pub is_dirty: Option<fn(&S, &NodeRef, Option<&RendererDataRef>) -> bool>, pub submit: fn(&mut S, &RenderProxy2D<S>), }
+src/types.rs: pub struct PreparedScene3D { pub frustum: Frustum, pub list: Scene3DRenderList, pub world_bounds: Aabb, }
+src/types.rs: pub struct RenderCache { runtime: EntityRuntimeSlot, pub kind: Kind, pub transform: Matrix, }
+src/types.rs: pub struct RenderProxies2D<S: RenderState> { pub entries: Vec<Option<RenderProxy2D<S>>>, pub by_uid: HashMap<u64, usize>, pub temp_stack: Vec<NodeRef>, }
+src/types.rs: pub struct RenderProxy2D<S: RenderState> { pub proxy: RenderProxy<S>, pub transform_2d: Matrix, pub traverse_children: bool, pub clip_depth: u32, }
+src/types.rs: pub struct RenderProxy<S: RenderState> { pub(crate) runtime: EntityRuntimeSlot, pub source: NodeRef, pub kind: Kind, pub next: Option<u64>, pub alpha: f32, pub appearance_frame_id: i64, pub blend_mode: Option<BlendMode>, pub color_scale_bias: Option<ColorScaleBias>, pub color_matrix: Option<[f32; 20]>, pub material: Option<Ref<dyn Material2D>>, pub material_data: Option<Ref<dyn MaterialData>>, pub last_appearance_id: i64, pub last_children_id: i64, pub last_local_content_id: i64, pub last_local_transform_id: i64, pub last_parent_reference_id: i64, pub name: Option<String>, pub renderer: Option<&'static NodeRenderer<S>>, pub renderer_data: Option<RendererDataRef>, pub renderer_data_source_id: u64, pub renderer_map_id: u32, pub transform_frame_id: i64, pub visible: bool, }
+src/types.rs: pub struct RenderProxyAdapter<S: RenderState> { pub(crate) runtime: EntityRuntimeSlot, pub adapt: fn(&mut RenderProxyAdapter<S>, &mut S, &NodeRef, &mut RenderProxy2D<S>) -> Option<bool>, pub cache: Option<Ref<RenderCache>>, pub signals: Option<RenderCacheAdapterSignals>, pub is_cache_adapter: bool, }
+src/types.rs: pub struct RenderQueue { runtime: EntityRuntimeSlot, pub entries: Vec<RenderQueueEntry>, pub entry_count: usize, }
+src/types.rs: pub struct RenderRegistries<S: RenderState> { pub canvas_shape_commands: Option<Arc<KindMap<UnknownValue>>>, pub clip_hooks: Option<&'static Scene2DClipHooks<S>>, pub color_adjustments: Option<ColorAdjustmentResolver<S>>, pub color_adjustment_unsupported_guard: Option<ColorAdjustmentUnsupportedGuard<S>>, pub effect_padding_resolvers: Option<Arc<KindMap<EffectPaddingResolver>>>, pub node_renderers: Arc<KindMap<&'static NodeRenderer<S>>>, pub render_root_guard: Option<RenderRootGuard<S>>, pub skinned_mesh_bounds_guard: Option<fn(&mut S, &flight_scene3d::Mesh)>, pub stroke_tessellator: Option<StrokeTessellator>, }
+src/types.rs: pub struct RenderStateFields { runtime: EntityRuntimeSlot, pub allow_smoothing: bool, pub current_clip_depth: u32, pub pixel_ratio: f32, pub render_alpha: f32, pub render_blend_mode: Option<BlendMode>, pub round_pixels: bool, pub scene_graph_sync_policy: Scene3DGraphSyncPolicy, }
+src/types.rs: pub struct RenderStateOptions<S: RenderState> { pub canvas_shape_commands: Option<KindMap<UnknownValue>>, pub clip_hooks: Option<&'static Scene2DClipHooks<S>>, pub color_adjustments: Option<Option<ColorAdjustmentResolver<S>>>, pub color_adjustment_unsupported_guard: Option<Option<ColorAdjustmentUnsupportedGuard<S>>>, pub effect_padding_resolvers: Option<KindMap<EffectPaddingResolver>>, pub node_renderers: Option<KindMap<&'static NodeRenderer<S>>>, pub render_root_guard: Option<Option<RenderRootGuard<S>>>, pub stroke_tessellator: Option<Option<StrokeTessellator>>, }
+src/types.rs: pub struct RenderStateRuntime<S: RenderState> { pub current_frame_id: u32, pub render_adapt_hook: Option<fn(&mut S, &NodeRef, &mut RenderProxy2D<S>)>, pub render_proxy_adapter_map: HashMap<u64, Ref<RenderProxyAdapter<S>>>, pub registry_signals: Option<RenderRegistrySignals>, pub registry_guard_enabled: bool, pub registry_misses: Ref<Vec<RenderRegistriesMiss>>, pub registry_guard_log: Option<LogStateRef>, pub renderer_map_id: u32, pub node_revisions: NodeRevisionState, pub prepared_scene3d: Option<PreparedScene3D>, }
+src/types.rs: pub struct Scene2DClipHooks<S: RenderState> { pub finalize: fn(&mut S), pub pop_clip: fn(&mut S, &RenderProxy2D<S>, &NodeRef), pub push_clip: fn(&mut S, &RenderProxy2D<S>, &NodeRef), }
+src/types.rs: pub struct Scene3DRenderList { pub instanced_mesh_count: usize, pub lights: Scene3DLightBlock, pub mesh_count: usize, pub view_projection: Matrix4, pub visible_instanced_meshes: Vec<NodeRef>, pub visible_meshes: Vec<NodeRef>, }
+src/types.rs: pub trait RenderState: Entity + Sized + 'static { fn render_state(&self) -> &RenderStateFields; fn render_state_mut(&mut self) -> &mut RenderStateFields; fn render_runtime(&self) -> &RenderStateRuntime<Self>; fn render_runtime_mut(&mut self) -> &mut RenderStateRuntime<Self>; fn render_registries(&self) -> &RenderRegistries<Self>; fn render_registries_mut(&mut self) -> &mut RenderRegistries<Self>; }
+src/types.rs: pub type ColorAdjustmentResolver<S> = fn(&mut S, &mut RenderProxy<S>, Option<&RenderProxy<S>>);
+src/types.rs: pub type ColorAdjustmentUnsupportedGuard<S> = fn(&mut S, &NodeRef);
+src/types.rs: pub type EffectPaddingResolver = fn(&UnknownValue) -> EffectPadding;
+src/types.rs: pub type RenderProxyVisit<S> = fn(&mut S, &NodeRef, &mut RenderProxy2D<S>, Option<&RenderProxy2D<S>>);
+src/types.rs: pub type RenderRootGuard<S> = fn(&mut S, &NodeRef);
+src/types.rs: pub type RenderSortKey = i32;
+src/types.rs: pub type ResolvedRenderTargetDescriptor = RenderTargetAxes;
+src/types.rs: pub type SceneCoverageCatalog = Vec<CatalogEntry>;
+src/types.rs: pub type StrokeTessellator = fn(&Path, &StrokeStyle, Option<f32>) -> Option<PathMesh>;

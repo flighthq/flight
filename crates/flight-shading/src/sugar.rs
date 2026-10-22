@@ -44,9 +44,10 @@ impl ModifierRegistry {
 
     pub fn get_unregistered_modifier_kinds(
         &self,
+        out: &mut Vec<ModifierKind>,
         stack: &[Ref<dyn Modifier>],
-    ) -> Vec<ModifierKind> {
-        return get_unregistered_modifier_kinds(self, stack);
+    ) {
+        get_unregistered_modifier_kinds(out, self, stack);
     }
 
     pub fn is_modifier_stack_valid(&self, stack: &[Ref<dyn Modifier>]) -> bool {

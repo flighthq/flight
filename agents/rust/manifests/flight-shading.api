@@ -69,7 +69,7 @@ src/fog_modifier.rs: pub const FOG_MODIFIER_KIND: &str
 src/fog_modifier.rs: pub fn create_fog_modifier(options: &FogModifierOptions) -> FogModifier
 src/fog_modifier.rs: pub fn initialize_fog_modifier(out: &mut FogModifier, options: &FogModifierOptions)
 src/get_modifier_define_key.rs: pub fn get_modifier_define_key(stack: &[Ref<dyn Modifier>], registry: Option<&ModifierRegistry>,) -> String
-src/get_unregistered_modifier_kinds.rs: pub fn get_unregistered_modifier_kinds(registry: &ModifierRegistry, stack: &[Ref<dyn Modifier>],) -> Vec<ModifierKind>
+src/get_unregistered_modifier_kinds.rs: pub fn get_unregistered_modifier_kinds(out: &mut Vec<ModifierKind>, registry: &ModifierRegistry, stack: &[Ref<dyn Modifier>],)
 src/is_built_in_modifier_slot.rs: pub fn is_built_in_modifier_slot(value: &str) -> bool
 src/is_modifier_stack_valid.rs: pub fn is_modifier_stack_valid(registry: &ModifierRegistry, stack: &[Ref<dyn Modifier>]) -> bool
 src/lib.rs: pub mod contract
@@ -174,7 +174,7 @@ src/modifier_registry.rs: pub fn create_modifier_registry() -> NonEntityCreateRe
 src/modifier_registry.rs: pub fn register_modifier(registry: &mut ModifierRegistry, definition: Ref<ModifierDefinition>)
 src/modifier_registry.rs: pub fn resolve_modifier(registry: &ModifierRegistry, kind: &str,) -> Option<Ref<ModifierDefinition>>
 src/modifier_registry.rs: pub type ModifierDefineSignature = Arc<dyn Fn(&dyn Modifier) -> String + Send + Sync>;
-src/order_modifier_stack.rs: pub fn order_modifier_stack(stack: &[Ref<dyn Modifier>]) -> Vec<Ref<dyn Modifier>>
+src/order_modifier_stack.rs: pub fn order_modifier_stack(out: &mut Vec<Ref<dyn Modifier>>, stack: &[Ref<dyn Modifier>])
 src/register_built_in_modifiers.rs: pub fn register_built_in_modifiers(registry: &mut ModifierRegistry)
 src/register_built_in_modifiers.rs: pub static ANIMATED_NORMAL_MODIFIER_DEFINITION: LazyLock<Ref<ModifierDefinition>>
 src/register_built_in_modifiers.rs: pub static DISSOLVE_MODIFIER_DEFINITION: LazyLock<Ref<ModifierDefinition>>
@@ -212,7 +212,7 @@ src/sugar.rs: impl DissolveModifier :: fn new(options: &DissolveModifierOptions)
 src/sugar.rs: impl EmissiveModifier :: fn new(options: &EmissiveModifierOptions) -> Self
 src/sugar.rs: impl EnvReflectModifier :: fn new(options: Option<&EnvReflectModifierOptions>) -> Self
 src/sugar.rs: impl FogModifier :: fn new(options: &FogModifierOptions) -> Self
-src/sugar.rs: impl ModifierRegistry :: fn get_unregistered_modifier_kinds(&self, stack: &[Ref<dyn Modifier>],) -> Vec<ModifierKind>
+src/sugar.rs: impl ModifierRegistry :: fn get_unregistered_modifier_kinds(&self, out: &mut Vec<ModifierKind>, stack: &[Ref<dyn Modifier>],)
 src/sugar.rs: impl ModifierRegistry :: fn is_modifier_stack_valid(&self, stack: &[Ref<dyn Modifier>]) -> bool
 src/sugar.rs: impl ModifierRegistry :: fn new() -> Self
 src/sugar.rs: impl ModifierRegistry :: fn register_built_in_modifiers(&mut self)

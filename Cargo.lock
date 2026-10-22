@@ -899,6 +899,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-render"
+version = "0.6.0"
+dependencies = [
+ "flight-adjustments",
+ "flight-camera",
+ "flight-clip",
+ "flight-color",
+ "flight-entity",
+ "flight-geometry",
+ "flight-lighting",
+ "flight-log",
+ "flight-materials",
+ "flight-meshgeometry",
+ "flight-node",
+ "flight-path",
+ "flight-registry",
+ "flight-requirement",
+ "flight-scene2d",
+ "flight-scene3d",
+ "flight-signals",
+ "flight-surface",
+ "flight-texture",
+]
+
+[[package]]
 name = "flight-requirement"
 version = "0.6.0"
 dependencies = [

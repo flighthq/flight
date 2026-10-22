@@ -94,6 +94,7 @@ flight-log = { path = "crates/flight-log" }
 flight-materials = { path = "crates/flight-materials" }
 flight-regexp = { path = "crates/flight-regexp" }
 flight-registry = { path = "crates/flight-registry" }
+flight-render = { path = "crates/flight-render" }
 flight-screen = { path = "crates/flight-screen" }
 flight-scene2d-resources = { path = "crates/flight-scene2d-resources" }
 flight-scene3d = { path = "crates/flight-scene3d" }

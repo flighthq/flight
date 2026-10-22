@@ -56,7 +56,8 @@ mod order_modifier_stack {
         let normal = normal();
         let emissive = emissive(0xffff_ffff);
         let rim = rim(0xffff_ffff);
-        let ordered = order_modifier_stack(&[rim, emissive, normal]);
+        let mut ordered = Vec::new();
+        order_modifier_stack(&mut ordered, &[rim, emissive, normal]);
         let slots: Vec<String> = ordered
             .iter()
             .map(|item| item.read().unwrap().modifier_fields().slot.clone())
@@ -76,8 +77,10 @@ mod order_modifier_stack {
         let normal = normal();
         let emissive = emissive(0xffff_ffff);
         let rim = rim(0xffff_ffff);
-        let first = order_modifier_stack(&[normal.clone(), emissive.clone(), rim.clone()]);
-        let second = order_modifier_stack(&[rim, normal, emissive]);
+        let mut first = Vec::new();
+        order_modifier_stack(&mut first, &[normal.clone(), emissive.clone(), rim.clone()]);
+        let mut second = Vec::new();
+        order_modifier_stack(&mut second, &[rim, normal, emissive]);
         for (a, b) in first.iter().zip(&second) {
             assert!(Arc::ptr_eq(a, b));
         }
@@ -87,7 +90,8 @@ mod order_modifier_stack {
     fn preserves_authoring_order_within_one_slot() {
         let first = rim(0x1111_11ff);
         let second = rim(0x2222_22ff);
-        let ordered = order_modifier_stack(&[second.clone(), first.clone()]);
+        let mut ordered = Vec::new();
+        order_modifier_stack(&mut ordered, &[second.clone(), first.clone()]);
         assert!(Arc::ptr_eq(&ordered[0], &second));
         assert!(Arc::ptr_eq(&ordered[1], &first));
     }
@@ -97,15 +101,25 @@ mod order_modifier_stack {
         let rim = rim(0xffff_ffff);
         let normal = normal();
         let input = vec![rim.clone(), normal.clone()];
-        let ordered = order_modifier_stack(&input);
+        let mut ordered = Vec::with_capacity(4);
+        ordered.push(rim.clone());
+        let capacity = ordered.capacity();
+        order_modifier_stack(&mut ordered, &input);
         assert!(Arc::ptr_eq(&input[0], &rim));
         assert!(Arc::ptr_eq(&input[1], &normal));
         assert!(Arc::ptr_eq(&ordered[0], &normal));
+        assert!(Arc::ptr_eq(&ordered[1], &rim));
+        assert_eq!(ordered.capacity(), capacity);
     }
 
     #[test]
     fn returns_an_empty_vector_for_an_empty_stack() {
-        assert!(order_modifier_stack(&[]).is_empty());
+        let mut ordered = Vec::with_capacity(2);
+        ordered.push(rim(0xffff_ffff));
+        let capacity = ordered.capacity();
+        order_modifier_stack(&mut ordered, &[]);
+        assert!(ordered.is_empty());
+        assert_eq!(ordered.capacity(), capacity);
     }
 
     #[test]
@@ -114,8 +128,11 @@ mod order_modifier_stack {
         let vendor = custom("acme.Custom", "acme.Weird");
         let rim = rim(0xffff_ffff);
         let normal = normal();
-        let ordered =
-            order_modifier_stack(&[ambient.clone(), rim.clone(), vendor.clone(), normal.clone()]);
+        let mut ordered = Vec::new();
+        order_modifier_stack(
+            &mut ordered,
+            &[ambient.clone(), rim.clone(), vendor.clone(), normal.clone()],
+        );
         assert!(Arc::ptr_eq(&ordered[0], &normal));
         assert!(Arc::ptr_eq(&ordered[1], &rim));
         assert!(Arc::ptr_eq(&ordered[2], &ambient));

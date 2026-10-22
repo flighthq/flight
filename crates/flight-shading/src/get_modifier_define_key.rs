@@ -24,7 +24,8 @@ pub fn get_modifier_define_key(
     stack: &[Ref<dyn Modifier>],
     registry: Option<&ModifierRegistry>,
 ) -> String {
-    let ordered = order_modifier_stack(stack);
+    let mut ordered = Vec::new();
+    order_modifier_stack(&mut ordered, stack);
     let mut key = String::new();
     for modifier in ordered {
         let modifier = modifier.read().unwrap_or_else(PoisonError::into_inner);

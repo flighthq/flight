@@ -21,7 +21,9 @@ fn get_modifier_slot_rank(slot: &str) -> usize {
     };
 }
 
-pub fn order_modifier_stack(stack: &[Ref<dyn Modifier>]) -> Vec<Ref<dyn Modifier>> {
+// flight-lint: allow(conform-params) D24 caller-owned computed output: out is first, required, cleared and refilled with the same modifier handles
+pub fn order_modifier_stack(out: &mut Vec<Ref<dyn Modifier>>, stack: &[Ref<dyn Modifier>]) {
+    out.clear();
     let mut indexed: Vec<(usize, Ref<dyn Modifier>)> = stack.iter().cloned().enumerate().collect();
     indexed.sort_by_key(|(index, modifier)| {
         let modifier = modifier.read().unwrap_or_else(PoisonError::into_inner);
@@ -30,5 +32,5 @@ pub fn order_modifier_stack(stack: &[Ref<dyn Modifier>]) -> Vec<Ref<dyn Modifier
             *index,
         );
     });
-    return indexed.into_iter().map(|(_, modifier)| modifier).collect();
+    out.extend(indexed.into_iter().map(|(_, modifier)| modifier));
 }

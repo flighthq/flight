@@ -122,10 +122,11 @@ fn modifier_registry_methods_match_free_functions() {
             .unwrap()
             .slot
     );
-    assert_eq!(
-        method.get_unregistered_modifier_kinds(&[]),
-        get_unregistered_modifier_kinds(&free, &[])
-    );
+    let mut method_unregistered = vec!["stale".to_string()];
+    method.get_unregistered_modifier_kinds(&mut method_unregistered, &[]);
+    let mut free_unregistered = vec!["stale".to_string()];
+    get_unregistered_modifier_kinds(&mut free_unregistered, &free, &[]);
+    assert_eq!(method_unregistered, free_unregistered);
     assert_eq!(
         method.is_modifier_stack_valid(&[]),
         is_modifier_stack_valid(&free, &[])

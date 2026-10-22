@@ -37,29 +37,41 @@ mod get_unregistered_modifier_kinds {
             custom("acme.Other", MODIFIER_SLOT_NORMAL),
             custom("acme.Missing", MODIFIER_SLOT_EFFECT),
         ];
-        assert_eq!(
-            get_unregistered_modifier_kinds(&registry, &stack),
-            vec!["acme.Missing", "acme.Other"]
-        );
+        let mut unregistered = Vec::with_capacity(4);
+        unregistered.push("stale.Kind".to_string());
+        let capacity = unregistered.capacity();
+        get_unregistered_modifier_kinds(&mut unregistered, &registry, &stack);
+        assert_eq!(unregistered, vec!["acme.Missing", "acme.Other"]);
+        assert_eq!(unregistered.capacity(), capacity);
     }
 
     #[test]
     fn reports_a_built_in_kind_until_built_ins_are_installed() {
-        assert_eq!(
-            get_unregistered_modifier_kinds(&create_modifier_registry(), &[emissive()]),
-            vec![EMISSIVE_MODIFIER_KIND]
+        let mut unregistered = Vec::new();
+        get_unregistered_modifier_kinds(
+            &mut unregistered,
+            &create_modifier_registry(),
+            &[emissive()],
         );
+        assert_eq!(unregistered, vec![EMISSIVE_MODIFIER_KIND]);
     }
 
     #[test]
     fn returns_empty_for_an_empty_stack() {
-        assert!(get_unregistered_modifier_kinds(&create_modifier_registry(), &[]).is_empty());
+        let mut unregistered = Vec::with_capacity(2);
+        unregistered.push("stale.Kind".to_string());
+        let capacity = unregistered.capacity();
+        get_unregistered_modifier_kinds(&mut unregistered, &create_modifier_registry(), &[]);
+        assert!(unregistered.is_empty());
+        assert_eq!(unregistered.capacity(), capacity);
     }
 
     #[test]
     fn returns_empty_when_every_kind_is_registered() {
         let mut registry = create_modifier_registry();
         register_built_in_modifiers(&mut registry);
-        assert!(get_unregistered_modifier_kinds(&registry, &[emissive()]).is_empty());
+        let mut unregistered = vec!["stale.Kind".to_string()];
+        get_unregistered_modifier_kinds(&mut unregistered, &registry, &[emissive()]);
+        assert!(unregistered.is_empty());
     }
 }
