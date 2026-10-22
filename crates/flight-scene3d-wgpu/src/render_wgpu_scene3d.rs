@@ -15,7 +15,7 @@ pub fn is_wgpu_mesh_gpu_skinned(state: &WgpuRenderState, mesh: &dyn std::any::An
 
 pub fn render_wgpu_scene3d(
     state: &WgpuRenderState,
-    scene: &Node3D,
+    scene: &dyn Node3D,
     camera: &Camera3D,
     lights: &Scene3DLightBlock,
 ) {

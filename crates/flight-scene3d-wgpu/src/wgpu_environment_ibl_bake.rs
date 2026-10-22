@@ -157,13 +157,13 @@ fn create_bake_programs(device: &wgpu::Device) -> BakePrograms {
     let cube_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("ibl_bake_cube"),
         bind_group_layouts: &[&uniform_bind_group_layout, &source_bind_group_layout],
-        push_constant_ranges: &[],
+        immediate_size: 0,
     });
 
     let brdf_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("ibl_bake_brdf"),
         bind_group_layouts: &[],
-        push_constant_ranges: &[],
+        immediate_size: 0,
     });
 
     let irradiance_source = format!("{}{}", BAKE_VERTEX_WGSL, IRRADIANCE_FRAGMENT_WGSL);
@@ -226,7 +226,7 @@ fn create_bake_programs(device: &wgpu::Device) -> BakePrograms {
         },
         depth_stencil: None,
         multisample: Default::default(),
-        multiview: None,
+        multiview_mask: None,
         cache: None,
     });
 
@@ -251,7 +251,7 @@ fn create_bake_programs(device: &wgpu::Device) -> BakePrograms {
         },
         depth_stencil: None,
         multisample: Default::default(),
-        multiview: None,
+        multiview_mask: None,
         cache: None,
     });
 
@@ -276,7 +276,7 @@ fn create_bake_programs(device: &wgpu::Device) -> BakePrograms {
         },
         depth_stencil: None,
         multisample: Default::default(),
-        multiview: None,
+        multiview_mask: None,
         cache: None,
     });
 
@@ -429,7 +429,7 @@ fn render_bake_cube_faces(
         queue.write_buffer(
             &programs.uniform_buffer,
             0,
-            bytemuck::cast_slice(&uniform_data),
+            unsafe { std::slice::from_raw_parts(uniform_data.as_ptr() as *const u8, std::mem::size_of_val(&uniform_data)) },
         );
 
         let view = cube.create_view(&wgpu::TextureViewDescriptor {

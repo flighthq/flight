@@ -1,8 +1,6 @@
 use flight_render_wgpu::{
-    get_wgpu_render_state_native_device, retire_wgpu_texture, WgpuRenderState,
+    get_wgpu_render_state_native_device, WgpuRenderState,
 };
-
-use crate::types::WgpuSkinningAdapter;
 use crate::wgpu_scene3d_runtime::{get_wgpu_scene3d_runtime, get_wgpu_scene3d_runtime_mut};
 
 const WGPU_SKIN_ARENA_WIDTH: u32 = 256;
@@ -186,7 +184,7 @@ pub fn write_wgpu_skin_arena_region(
                 },
                 aspect: wgpu::TextureAspect::All,
             },
-            bytemuck::cast_slice(palette),
+            unsafe { std::slice::from_raw_parts(palette.as_ptr() as *const u8, std::mem::size_of_val(palette)) },
             wgpu::TexelCopyBufferLayout {
                 offset: 0,
                 bytes_per_row: Some(WGPU_SKIN_ARENA_WIDTH * 16),
@@ -213,7 +211,7 @@ pub fn write_wgpu_skin_arena_region(
                 },
                 aspect: wgpu::TextureAspect::All,
             },
-            bytemuck::cast_slice(&palette[byte_offset / 4..]),
+            unsafe { let s = &palette[byte_offset / 4..]; std::slice::from_raw_parts(s.as_ptr() as *const u8, std::mem::size_of_val(s)) },
             wgpu::TexelCopyBufferLayout {
                 offset: 0,
                 bytes_per_row: Some(remainder * 16),

@@ -72,7 +72,7 @@ pub fn ensure_wgpu_skybox_pipeline(
     let layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("skybox"),
         bind_group_layouts: &[&uniform_bind_group_layout, &cube_bind_group_layout],
-        push_constant_ranges: &[],
+        immediate_size: 0,
     });
 
     let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -106,7 +106,7 @@ pub fn ensure_wgpu_skybox_pipeline(
             bias: Default::default(),
         }),
         multisample: Default::default(),
-        multiview: None,
+        multiview_mask: None,
         cache: None,
     });
 

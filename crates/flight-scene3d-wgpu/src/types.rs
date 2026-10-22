@@ -80,7 +80,7 @@ pub struct WgpuScene3DRuntime {
     pub skin_palette_arena_rows: u32,
     pub skin_palette_texture: Option<wgpu::Texture>,
     pub skin_palette_view: Option<wgpu::TextureView>,
-    pub skinning_adapter: Option<Box<dyn WgpuSkinningAdapter>>,
+    pub skinning_adapter: Option<std::sync::Arc<dyn WgpuSkinningAdapter>>,
     pub time: f32,
     pub upload_cache: HashMap<u64, WgpuMeshUpload>,
 }
@@ -289,12 +289,22 @@ pub struct WgpuPbrDefineKey {
     pub has_normal_map: bool,
     pub has_occlusion_map: bool,
     pub has_emissive_map: bool,
+    pub has_alpha_map: bool,
     pub has_skin: bool,
     pub has_color_adjustment: bool,
     pub has_color_matrix: bool,
     pub has_alpha_mask: bool,
+    pub alpha_mask_enabled: bool,
+    pub double_sided: bool,
     pub has_ibl: bool,
     pub has_shadow: bool,
+    pub anisotropy_enabled: bool,
+    pub clearcoat_enabled: bool,
+    pub iridescence_enabled: bool,
+    pub sheen_enabled: bool,
+    pub specular_enabled: bool,
+    pub subsurface_enabled: bool,
+    pub transmission_enabled: bool,
     pub modifier_define_key: String,
 }
 
@@ -316,6 +326,13 @@ pub struct WgpuUnlitDefineKey {
 
 pub struct WgpuShadedDefineKey {
     pub base_flags: u32,
+    pub double_sided: bool,
+    pub has_diffuse_map: bool,
+    pub has_normal_map: bool,
+    pub has_specular_map: bool,
+    pub has_color_adjustment: bool,
+    pub has_color_matrix: bool,
+    pub alpha_mask_enabled: bool,
     pub modifier_define_key: String,
 }
 

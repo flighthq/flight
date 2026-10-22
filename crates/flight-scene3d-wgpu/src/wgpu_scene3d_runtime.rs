@@ -1,10 +1,11 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 use flight_entity::get_entity_id;
 use flight_render_wgpu::WgpuRenderState;
 
-use crate::types::WgpuScene3DRuntime;
+use crate::types::{WgpuScene3DRuntime, WgpuSkinningAdapter};
 
 thread_local! {
     static SCENE_RUNTIMES: RefCell<HashMap<u64, WgpuScene3DRuntime>> = RefCell::new(HashMap::new());
@@ -111,4 +112,8 @@ pub fn get_wgpu_scene3d_runtime_mut<R>(state: &WgpuRenderState, f: impl FnOnce(&
         let scene = map.entry(id).or_insert_with(create_default_runtime);
         f(scene)
     })
+}
+
+pub fn get_wgpu_skinning_adapter(state: &WgpuRenderState) -> Option<Arc<dyn WgpuSkinningAdapter>> {
+    return get_wgpu_scene3d_runtime(state, |rt| rt.skinning_adapter.clone());
 }

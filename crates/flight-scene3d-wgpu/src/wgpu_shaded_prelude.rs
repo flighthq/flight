@@ -257,17 +257,18 @@ pub fn compile_wgpu_shaded_pipeline(
     let shadow_layout = ensure_wgpu_shadow_sample_layout(state);
     return create_wgpu_mesh_pipeline(
         state,
-        CreateWgpuMeshPipelineOptions {
+        &CreateWgpuMeshPipelineOptions {
+            extra_bind_group_layout: None,
             blended,
             double_sided: key.double_sided,
             format,
-            material_bind_group_layout,
-            module,
+            material_bind_group_layout: &material_bind_group_layout,
+            module: &module,
             shadow_bind_group_layout: Some(shadow_layout),
             pbr_sample_bind_group_layout: None,
             ibl_bind_group_layout: None,
             skinned,
-            topology: wgpu::PrimitiveTopology::TriangleList,
+            topology: Some(wgpu::PrimitiveTopology::TriangleList),
         },
     );
 }

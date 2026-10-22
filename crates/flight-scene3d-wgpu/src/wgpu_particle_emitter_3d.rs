@@ -31,7 +31,7 @@ pub fn create_wgpu_particle_3d_resources(state: &WgpuRenderState) -> WgpuParticl
         mapped_at_creation: false,
     });
     let corner_data: [f32; 8] = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
-    queue.write_buffer(&corner_buffer, 0, bytemuck::cast_slice(&corner_data));
+    queue.write_buffer(&corner_buffer, 0, unsafe { std::slice::from_raw_parts(corner_data.as_ptr() as *const u8, std::mem::size_of_val(&corner_data)) });
 
     let index_buffer = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("particle_index"),
@@ -40,7 +40,7 @@ pub fn create_wgpu_particle_3d_resources(state: &WgpuRenderState) -> WgpuParticl
         mapped_at_creation: false,
     });
     let index_data: [u16; 6] = [0, 1, 2, 0, 2, 3];
-    queue.write_buffer(&index_buffer, 0, bytemuck::cast_slice(&index_data));
+    queue.write_buffer(&index_buffer, 0, unsafe { std::slice::from_raw_parts(index_data.as_ptr() as *const u8, std::mem::size_of_val(&index_data)) });
 
     let frame_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("particle_frame"),
@@ -79,7 +79,7 @@ pub fn create_wgpu_particle_3d_resources(state: &WgpuRenderState) -> WgpuParticl
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("particle"),
         bind_group_layouts: &[&frame_layout, &texture_layout],
-        push_constant_ranges: &[],
+        immediate_size: 0,
     });
 
     let frame_buffer = device.create_buffer(&wgpu::BufferDescriptor {
@@ -164,7 +164,7 @@ pub fn ensure_wgpu_particle_3d_pipeline(
                 bias: Default::default(),
             }),
             multisample: Default::default(),
-            multiview: None,
+            multiview_mask: None,
             cache: None,
         });
         resources.pipelines.insert(key.clone(), pipeline);

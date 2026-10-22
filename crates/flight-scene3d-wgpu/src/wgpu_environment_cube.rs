@@ -79,7 +79,7 @@ pub fn ensure_wgpu_environment_source_cube(
 pub fn update_wgpu_environment_cube_face(
     state: &WgpuRenderState,
     face: u32,
-    image: &TextureSource,
+    image: &dyn TextureSource,
 ) -> bool {
     let has_cube = get_wgpu_scene3d_runtime(state, |rt| {
         rt.environment_source_cube.is_some()
@@ -109,7 +109,7 @@ fn upload_wgpu_environment_image(
     queue: &wgpu::Queue,
     texture: &wgpu::Texture,
     face: u32,
-    source: &TextureSource,
+    source: &dyn TextureSource,
 ) {
     if let Some(data) = &source.data {
         let bytes_per_row = source.width * 4;
