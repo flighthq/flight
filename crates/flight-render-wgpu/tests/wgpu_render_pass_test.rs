@@ -108,9 +108,8 @@ mod begin_wgpu_render_pass {
         end_wgpu_render_pass(outer);
     }
 
-    // TS spied on beginRenderPass for loadOp 'clear' and the clear value. The noop device neither
-    // exposes a recorded pass descriptor nor executes clears, so this asserts the observable part:
-    // the cleared pass opens recording into the texture and the whole frame validates.
+    // TS spied on beginRenderPass for loadOp 'clear' and the clear value: the recorded pass begin
+    // carries exactly that clear, and the whole frame validates.
     #[test]
     fn passes_float_rgba_clear_values_through_to_the_gpu_color_attachment() {
         let mut state = create_wgpu_render_state_for_test(None);

@@ -127,8 +127,8 @@ mod apply_wgpu_blend_mode {
 mod bind_wgpu_bitmap_texture {
     use super::*;
 
-    // The source spies on writeTexture; a real device validates the upload instead, so the 4x4
-    // allocation accepting the bitmap's bytes without a validation error is the observable.
+    // The source spies on writeTexture: the recorded write targets the entry's texture with the
+    // bitmap's layout, and the real device accepts it without a validation error.
     #[test]
     fn uploads_cpu_readable_pixels_via_write_texture() {
         let mut state = create_wgpu_render_state_for_test(None);
@@ -343,13 +343,33 @@ mod bind_wgpu_texture {
         assert_eq!(entry.read().unwrap().texture.mip_level_count(), 1);
     }
 
-    // The submit spy becomes the downsample pipeline the generator caches when it runs.
+    // The submit spy is the recorded queue submit; before it, one cleared pass per lower level.
     #[test]
     fn allocates_a_full_mip_chain_and_generates_it_when_generate_mips_is_true() {
         let mut state = create_wgpu_render_state_for_test(None);
         register_wgpu_mipmap_generation(&mut state);
+        let records = record_test_commands(&get_wgpu_render_state_native_device(&state));
         let (canvas, _) = create_test_image(8, 8, true);
         let entry = bind_wgpu_texture(&mut state, &canvas, Some(true)).unwrap();
+        let transparent = WgpuColorLoadRecord::Clear(WgpuClearColorRecord {
+            a: 0.0,
+            b: 0.0,
+            g: 0.0,
+            r: 0.0,
+        });
+        let commands = records.lock().unwrap().clone();
+        let passes: Vec<_> = commands
+            .iter()
+            .filter_map(|record| match record {
+                WgpuCommandRecord::BeginRenderPass(begin) => Some(begin.color),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(passes, vec![transparent; 3]);
+        assert!(matches!(
+            commands.last(),
+            Some(WgpuCommandRecord::Submit(1))
+        ));
         // 8x8 -> 4 mip levels; the lower 3 are rendered via generate_wgpu_mipmaps.
         assert_eq!(entry.read().unwrap().texture.mip_level_count(), 4);
         assert!(

@@ -6,7 +6,7 @@ use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 use std::sync::Arc;
 
 use crate::types::*;
-use crate::wgpu_command_observer::write_wgpu_buffer;
+use crate::wgpu_command_observer::{WgpuCommandRecord, record_wgpu_command, write_wgpu_buffer};
 use crate::wgpu_render_state::get_wgpu_render_state_native_device;
 use crate::wgpu_screen_render_target::end_wgpu_screen_render_target_frame;
 
@@ -145,6 +145,7 @@ pub fn submit_wgpu_frame(state: &mut WgpuRenderState) {
                 encode_capture(&mut target, &mut encoder);
             }
         }
+        record_wgpu_command(&native, || WgpuCommandRecord::Submit(1));
         native.queue.submit([encoder.finish()]);
 
         // Now that the frame is submitted, free the resources retired mid-frame; they were kept alive

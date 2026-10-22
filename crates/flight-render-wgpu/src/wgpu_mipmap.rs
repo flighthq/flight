@@ -4,6 +4,10 @@
 //! pipeline. The WGSL is the source text verbatim.
 
 use crate::types::*;
+use crate::wgpu_command_observer::{
+    WgpuClearColorRecord, WgpuColorLoadRecord, WgpuCommandRecord, WgpuRenderPassBeginRecord,
+    record_wgpu_command,
+};
 use crate::wgpu_render_state::{
     get_wgpu_render_state_device_resources, get_wgpu_render_state_native_device,
 };
@@ -121,6 +125,19 @@ pub fn generate_wgpu_mipmaps(
                 },
             ],
         });
+        record_wgpu_command(&native, || {
+            return WgpuCommandRecord::BeginRenderPass(WgpuRenderPassBeginRecord {
+                color: WgpuColorLoadRecord::Clear(WgpuClearColorRecord {
+                    a: 0.0,
+                    b: 0.0,
+                    g: 0.0,
+                    r: 0.0,
+                }),
+                color_view: dst_view.clone(),
+                depth_clear: None,
+                stencil_clear: 0,
+            });
+        });
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: None,
             color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -141,6 +158,7 @@ pub fn generate_wgpu_mipmaps(
         pass.set_bind_group(0, &bind_group, &[]);
         pass.draw(0..3, 0..1);
     }
+    record_wgpu_command(&native, || WgpuCommandRecord::Submit(1));
     native.queue.submit([encoder.finish()]);
 }
 

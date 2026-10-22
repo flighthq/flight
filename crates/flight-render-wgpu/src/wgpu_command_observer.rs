@@ -2,7 +2,7 @@
 //! Exact command recording for the device's queue writes and render-pass attachments (Principal
 //! cafc5d6b, item D). A noop or headless device validates every call but keeps no texture
 //! contents and runs no clears, so the values the source's tests read off GPU call arguments
-//! (clear colors, load choices, written bytes and layouts, scissor rects) are reported here, at the
+//! (clear colors, load choices, written bytes and layouts, scissor rects, submits) are reported here, at the
 //! real call sites, to an observer installed on the device. With no observer installed nothing is
 //! recorded or copied.
 
@@ -15,7 +15,10 @@ use crate::types::*;
 pub enum WgpuCommandRecord {
     BeginRenderPass(WgpuRenderPassBeginRecord),
     CreateRenderPipeline(WgpuRenderPipelineRecord),
+    CreateSampler(WgpuSamplerRecord),
     SetScissorRect(WgpuScissorRectRecord),
+    // One queue submit, with the number of command buffers it carried.
+    Submit(usize),
     WriteBuffer(WgpuBufferWriteRecord),
     WriteTexture(WgpuTextureWriteRecord),
 }
@@ -44,6 +47,18 @@ pub struct WgpuRenderPassBeginRecord {
     pub color_view: wgpu::TextureView,
     pub depth_clear: Option<f32>,
     pub stencil_clear: u32,
+}
+
+/// A sampler the backend created, with the descriptor it was built from.
+#[derive(Clone, Debug, PartialEq)]
+pub struct WgpuSamplerRecord {
+    pub address_mode_u: wgpu::AddressMode,
+    pub address_mode_v: wgpu::AddressMode,
+    pub anisotropy_clamp: u16,
+    pub mag_filter: wgpu::FilterMode,
+    pub min_filter: wgpu::FilterMode,
+    pub mipmap_filter: wgpu::MipmapFilterMode,
+    pub sampler: wgpu::Sampler,
 }
 
 /// A render pipeline the backend created, with the attachment state it was built for.

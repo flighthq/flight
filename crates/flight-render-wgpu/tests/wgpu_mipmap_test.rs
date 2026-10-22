@@ -28,6 +28,22 @@ fn create_mip_texture(
     });
 }
 
+// (render-pass begins, submits) among the recorded commands.
+fn pass_and_submit_counts(
+    records: &std::sync::Arc<std::sync::Mutex<Vec<WgpuCommandRecord>>>,
+) -> (usize, usize) {
+    let records = records.lock().unwrap();
+    let passes = records
+        .iter()
+        .filter(|record| matches!(record, WgpuCommandRecord::BeginRenderPass(_)))
+        .count();
+    let submits = records
+        .iter()
+        .filter(|record| matches!(record, WgpuCommandRecord::Submit(_)))
+        .count();
+    return (passes, submits);
+}
+
 fn mipmap_pipeline(
     state: &WgpuRenderState,
     format: wgpu::TextureFormat,
@@ -44,28 +60,30 @@ fn mipmap_pipeline(
 mod generate_wgpu_mipmaps {
     use super::*;
 
-    // The source counts beginRenderPass/submit on a spied encoder. A real device instead validates
-    // every pass: a 4x4 texture has exactly 3 levels, so passes into levels 1 and 2 succeed and any
-    // pass beyond the chain would fail view creation; the cached pipeline shows the work was encoded.
+    // A 4x4 texture has 3 levels: one downsample pass into each of levels 1 and 2, then one submit
+    // (the source's beginRenderPass and submit spies), all valid on the real device.
     #[test]
     fn renders_one_downsample_pass_per_generated_mip_level_for_a_multi_level_texture() {
         let mut state = create_wgpu_render_state_for_test(None);
         let texture = create_mip_texture(&state, 4, 4, wgpu::TextureFormat::Rgba8Unorm);
         assert_eq!(texture.mip_level_count(), 3);
         let native = get_wgpu_render_state_native_device(&state);
+        let records = record_test_commands(&native);
         let ((), error) = capture_wgpu_validation_error(&native, || {
             generate_wgpu_mipmaps(&mut state, &texture, 4, 4, wgpu::TextureFormat::Rgba8Unorm);
         });
         assert!(error.is_none(), "{error:?}");
+        assert_eq!(pass_and_submit_counts(&records), (2, 1));
         assert!(mipmap_pipeline(&state, wgpu::TextureFormat::Rgba8Unorm).is_some());
     }
 
-    // No pass and no submit are observable as no pipeline ever being built for the format.
     #[test]
     fn is_a_no_op_for_a_single_level_1x1_texture() {
         let mut state = create_wgpu_render_state_for_test(None);
         let texture = create_mip_texture(&state, 1, 1, wgpu::TextureFormat::Rgba8Unorm);
+        let records = record_test_commands(&get_wgpu_render_state_native_device(&state));
         generate_wgpu_mipmaps(&mut state, &texture, 1, 1, wgpu::TextureFormat::Rgba8Unorm);
+        assert_eq!(pass_and_submit_counts(&records), (0, 0));
         assert!(
             get_wgpu_render_state_runtime(&state)
                 .context

@@ -722,9 +722,8 @@ mod create_wgpu_offscreen_render_state {
         assert_eq!(encoder_identity(&screen), screen_encoder);
     }
 
-    // The source spies on `queue.writeBuffer`/`queue.submit`. Observed here: the borrower's ring write
-    // passes real validation, the owner's encoder survives the borrow (no submit closed it), and the
-    // owner's ring offset is untouched.
+    // The source spies on `queue.writeBuffer`/`queue.submit`: the recorded writes are exactly the
+    // borrower's ring span from offset 0, never the owner's ring, and nothing is submitted.
     #[test]
     fn borrows_only_the_live_frame_while_retaining_its_own_uniform_ring_and_presentation_extent() {
         let mut screen = create_wgpu_render_state_for_test(None);
@@ -787,14 +786,23 @@ mod create_wgpu_offscreen_render_state {
                 .iter()
                 .all(|write| write.buffer != get_wgpu_render_state_runtime(&screen).uniform_buffer)
         );
+        // The borrow joined the owner's open frame, so nothing was submitted.
+        assert!(
+            !records
+                .lock()
+                .unwrap()
+                .iter()
+                .any(|record| matches!(record, WgpuCommandRecord::Submit(_)))
+        );
     }
 
-    // The source spies on `queue.submit`; the observable submit is that the standalone frame the
-    // borrow opened is closed (no encoder left on either state) even though the callback panicked.
+    // The standalone frame the borrow opened is submitted exactly once even though the callback
+    // panicked, and neither state keeps an encoder.
     #[test]
     fn submits_a_standalone_borrow_and_restores_both_states_when_the_callback_throws() {
         let mut screen = create_wgpu_render_state_for_test(None);
         let mut offscreen = derive_offscreen(&screen);
+        let records = record_test_commands(&native(&screen));
 
         let result = catch_unwind(AssertUnwindSafe(|| {
             with_wgpu_frame_borrow(&mut screen, &mut offscreen, |_| {
@@ -803,6 +811,13 @@ mod create_wgpu_offscreen_render_state {
         }));
 
         assert!(panic_message(result.unwrap_err()).contains("bake failed"));
+        let submits = records
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|record| matches!(record, WgpuCommandRecord::Submit(_)))
+            .count();
+        assert_eq!(submits, 1);
         assert!(
             get_wgpu_render_state_runtime(&screen)
                 .command_encoder
@@ -1629,6 +1644,7 @@ mod get_wgpu_sampler {
     #[test]
     fn keeps_independent_minification_and_magnification_filters() {
         let state = create_wgpu_render_state_for_test(None);
+        let records = record_test_commands(&native(&state));
         let mut samplers = Vec::new();
         for (min, mag) in [
             (Nearest, Linear),
@@ -1651,6 +1667,31 @@ mod get_wgpu_sampler {
             for other in &samplers[index + 1..] {
                 assert_ne!(sampler, other);
             }
+        }
+        // The source's createSampler spy: each descriptor keeps its own min and mag filter.
+        let created: Vec<(wgpu::FilterMode, wgpu::FilterMode, wgpu::Sampler)> = records
+            .lock()
+            .unwrap()
+            .iter()
+            .filter_map(|record| match record {
+                WgpuCommandRecord::CreateSampler(created) => Some((
+                    created.min_filter,
+                    created.mag_filter,
+                    created.sampler.clone(),
+                )),
+                _ => None,
+            })
+            .collect();
+        let expected = [
+            (wgpu::FilterMode::Nearest, wgpu::FilterMode::Linear),
+            (wgpu::FilterMode::Linear, wgpu::FilterMode::Nearest),
+            (wgpu::FilterMode::Nearest, wgpu::FilterMode::Nearest),
+            (wgpu::FilterMode::Linear, wgpu::FilterMode::Linear),
+        ];
+        assert_eq!(created.len(), 4);
+        for (index, (min, mag, sampler)) in created.iter().enumerate() {
+            assert_eq!((*min, *mag), expected[index]);
+            assert_eq!(*sampler, samplers[index]);
         }
     }
 }

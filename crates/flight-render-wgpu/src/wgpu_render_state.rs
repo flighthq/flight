@@ -18,6 +18,7 @@ use flight_surface::{
 use flight_texture::TextureWrap;
 
 use crate::types::*;
+use crate::wgpu_command_observer::{WgpuCommandRecord, WgpuSamplerRecord, record_wgpu_command};
 use crate::wgpu_device_loss::observe_wgpu_device_loss;
 use crate::wgpu_draw::warm_wgpu_pipelines;
 use crate::wgpu_shader::{UNIFORM_BYTE_SIZE, create_wgpu_bind_group_layouts};
@@ -583,7 +584,7 @@ pub fn get_wgpu_sampler(
         return sampler.clone();
     }
     let native = context.read().unwrap().native.clone();
-    let sampler = native.device.create_sampler(&wgpu::SamplerDescriptor {
+    let descriptor = wgpu::SamplerDescriptor {
         min_filter: effective_min_filter,
         mag_filter: effective_mag_filter,
         address_mode_u: wgpu_address_mode(wrap_u),
@@ -591,6 +592,18 @@ pub fn get_wgpu_sampler(
         mipmap_filter: effective_mipmap_filter.unwrap_or(wgpu::MipmapFilterMode::Nearest),
         anisotropy_clamp: anisotropy as u16,
         ..wgpu::SamplerDescriptor::default()
+    };
+    let sampler = native.device.create_sampler(&descriptor);
+    record_wgpu_command(&native, || {
+        return WgpuCommandRecord::CreateSampler(WgpuSamplerRecord {
+            address_mode_u: descriptor.address_mode_u,
+            address_mode_v: descriptor.address_mode_v,
+            anisotropy_clamp: descriptor.anisotropy_clamp,
+            mag_filter: descriptor.mag_filter,
+            min_filter: descriptor.min_filter,
+            mipmap_filter: descriptor.mipmap_filter,
+            sampler: sampler.clone(),
+        });
     });
     context
         .write()
