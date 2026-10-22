@@ -9,6 +9,7 @@ use flight_signals::Signal;
 pub type EasingFunction = fn(f32) -> f32;
 
 // flight-lint: allow(conform-extra) D22 Rust fn-pointer property accessor replacing TS NumericProps<T>
+// flight-lint: allow(contract-vocabulary) D22 native fn-pointer property accessors support Ref<dyn Trait> targets through relaxed generic bounds
 pub struct TweenProp<T: ?Sized> {
     pub get: fn(&mut T) -> &mut f32,
     pub key: &'static str,
@@ -201,6 +202,7 @@ pub(crate) fn target_key_from_ref<T: ?Sized>(target: &Ref<T>) -> usize {
 }
 
 // flight-lint: allow(conform-extra) D22 escape hatch for nested/computed property paths
+// flight-lint: allow(contract-vocabulary) D22 native fn-pointer property accessors support Ref<dyn Trait> targets through relaxed generic bounds
 pub fn tween_with<T: ?Sized>(get: fn(&mut T) -> &mut f32, key: &'static str, to: f32) -> TweenProp<T> {
     return TweenProp { get, key, to };
 }
