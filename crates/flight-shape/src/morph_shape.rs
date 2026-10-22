@@ -137,13 +137,6 @@ pub fn append_morph_shape_path(shape: &Ref<MorphShape>, morph: &Ref<PathMorph>) 
     return path;
 }
 
-/// The retained primary path (TS `shape.data.path`); a crate-internal accessor the paint and
-/// parity passes read, kept rather than inlined so the source accessor has one home.
-#[allow(dead_code)]
-pub(crate) fn get_morph_shape_path(source: &MorphShape) -> Ref<Path> {
-    return source.data.path.clone();
-}
-
 /// Reads the morph shape runtime (TS `getMorphShapeRuntime`).
 pub fn get_morph_shape_runtime(
     source: &dyn flight_node::contract::Node,

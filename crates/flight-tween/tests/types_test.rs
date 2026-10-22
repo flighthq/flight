@@ -5,7 +5,6 @@ use flight_tween::*;
 
 struct Obj {
     x: f32,
-    #[allow(dead_code)]
     y: f32,
 }
 
