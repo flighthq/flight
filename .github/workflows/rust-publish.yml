@@ -1,12 +1,26 @@
 name: Rust Publish
 
-# Manual trigger for publishing all Flight crates to crates.io.
-# Designed for the initial name-parking publish and subsequent releases.
-# Requires a CARGO_REGISTRY_TOKEN secret with crates.io API token.
+# Reusable workflow for publishing all Flight crates to crates.io.
+# Called by tests.yml (develop → next), edge-publish.yml (main → edge),
+# and release.yml (tag → stable). Also dispatchable manually.
 
 on:
+  workflow_call:
+    inputs:
+      version:
+        description: The version to stamp and publish (e.g. 0.7.0 or 0.7.0-next.42.gabc1234)
+        required: true
+        type: string
+    secrets:
+      CARGO_REGISTRY_TOKEN:
+        required: true
+
   workflow_dispatch:
     inputs:
+      version:
+        description: 'Version to publish (e.g. 0.7.0 or 0.7.0-next.42.gabc1234). Leave empty to compute from edge-version.ts.'
+        required: false
+        type: string
       dry-run:
         description: 'Dry run (validate without publishing)'
         required: false
@@ -23,12 +37,58 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: dtolnay/rust-toolchain@stable
 
       - uses: Swatinem/rust-cache@v2
 
-      # Verify the workspace compiles before attempting any publish
+      # Resolve the version: prefer the explicit input, fall back to edge-version.ts for manual dispatch
+      - name: Resolve version
+        id: version
+        run: |
+          version="${{ inputs.version }}"
+          if [ -z "$version" ]; then
+            # Manual dispatch without a version — compute from edge-version.ts
+            echo "No version input; computing from edge-version.ts..."
+          else
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compute version from edge-version.ts (if needed)
+        if: ${{ steps.version.outputs.version == '' }}
+        id: edge
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - name: Install npm deps and compute version
+        if: ${{ steps.version.outputs.version == '' }}
+        run: |
+          npm ci --ignore-scripts
+          npx tsx scripts/edge-version.ts >> "$GITHUB_OUTPUT"
+        id: computed
+
+      - name: Set final version
+        id: final
+        run: |
+          version="${{ steps.version.outputs.version }}"
+          if [ -z "$version" ]; then
+            version="${{ steps.computed.outputs.version }}"
+          fi
+          if [ -z "$version" ]; then
+            echo "::error::Could not determine version to publish"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Publishing version: $version"
+
+      - name: Stamp workspace to version
+        env:
+          VERSION: ${{ steps.final.outputs.version }}
+        run: bash scripts/version-crates.sh "$VERSION"
+
       - name: Verify workspace builds
         run: cargo check --workspace
 

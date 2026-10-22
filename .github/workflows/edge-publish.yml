@@ -84,6 +84,8 @@ jobs:
   publish:
     name: Publish edge snapshot for ${{ inputs.sha }}
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.edge.outputs.version }}
     permissions:
       contents: read
       actions: read # read tests.yml run conclusions for the dispatched sha
@@ -244,3 +246,13 @@ jobs:
             echo "| dist-tag | \`${EDGE_TAG}\` |"
             echo "| dispatched by | promote run \`${PROMOTE_RUN_ID}\` |"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  rust-edge-publish:
+    name: Publish · Rust · edge snapshot
+    needs: [publish]
+    if: ${{ needs.publish.outputs.version != '' }}
+    uses: ./.github/workflows/rust-publish.yml
+    with:
+      version: ${{ needs.publish.outputs.version }}
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

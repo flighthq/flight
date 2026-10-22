@@ -173,3 +173,15 @@ jobs:
             gh release create "${GITHUB_REF_NAME}" "examples-dist-${GITHUB_REF_NAME}.tgz" \
               --title "${GITHUB_REF_NAME}" --notes-file "${RUNNER_TEMP}/release-notes.md"
           fi
+
+  rust-publish:
+    # Publishes the Rust crate graph to crates.io at the tagged stable version. Runs after the npm
+    # publish job succeeds so that the release is coordinated, but the two registries are independent —
+    # Rust does not depend on npm being live.
+    name: Publish · Rust · ${{ github.ref_name }}
+    needs: [publish]
+    uses: ./.github/workflows/rust-publish.yml
+    with:
+      version: ${{ github.ref_name }}
+    secrets:
+      CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

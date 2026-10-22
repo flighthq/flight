@@ -2,7 +2,9 @@
 set -euo pipefail
 
 # Publishes all workspace crates to crates.io in topological dependency order.
-# Skips crates marked `publish = false`.
+# Skips crates marked `publish = false`. Retries on rate-limit (HTTP 429) with
+# exponential backoff. Treats "already uploaded" as success for idempotent re-runs.
+#
 # Usage: scripts/publish-crates.sh [--dry-run]
 
 DRY_RUN=""
@@ -11,9 +13,11 @@ if [[ "${1:-}" == "--dry-run" ]]; then
   echo "=== DRY RUN ==="
 fi
 
-# Extract the topological publish order from cargo metadata.
-# cargo metadata lists workspace packages and their path-dependencies;
-# we build the DAG and emit a topological sort (leaves first).
+MAX_RETRIES=5
+BASE_DELAY=2
+
+# Topological sort via cargo metadata + python: leaves (no workspace deps) first,
+# umbrella crates (flight-sdk) last.
 ORDER=$(cargo metadata --format-version 1 --no-deps | python3 -c '
 import json, sys
 from collections import defaultdict, deque
@@ -21,29 +25,22 @@ from collections import defaultdict, deque
 meta = json.load(sys.stdin)
 workspace_members = set(meta.get("workspace_members", []))
 
-# Index packages by name
 pkgs = {}
 for p in meta["packages"]:
     if p["id"] not in workspace_members:
         continue
-    # Skip publish = false (null means publishable, [] means publishable,
-    # but an explicit publish = false renders as an empty list in some cargo versions
-    # or is absent). cargo metadata: publish is null (default) or a list of registries.
     pub = p.get("publish")
     if pub is not None and len(pub) == 0:
         continue
     pkgs[p["name"]] = p
 
-# Build adjacency: edges from dependency -> dependent
-# (we need reverse: dependents wait for dependencies)
-deps = defaultdict(set)  # crate -> set of workspace crates it depends on
+deps = defaultdict(set)
 for name, p in pkgs.items():
     for d in p.get("dependencies", []):
         dep_name = d["name"]
         if dep_name in pkgs:
             deps[name].add(dep_name)
 
-# Kahn topological sort
 in_degree = {name: len(deps[name]) for name in pkgs}
 queue = deque(name for name, deg in in_degree.items() if deg == 0)
 order = []
@@ -74,40 +71,78 @@ fi
 TOTAL=$(echo "$ORDER" | wc -l)
 CURRENT=0
 FAILED=()
+SKIPPED=0
 
 echo "Publishing $TOTAL crates in dependency order..."
 echo ""
 
+publish_one() {
+  local crate="$1"
+  local attempt=0
+  local delay=$BASE_DELAY
+
+  while (( attempt < MAX_RETRIES )); do
+    OUTPUT=$(cargo publish -p "$crate" $DRY_RUN --no-verify 2>&1) && RC=0 || RC=$?
+
+    if [ $RC -eq 0 ]; then
+      return 0
+    fi
+
+    if echo "$OUTPUT" | grep -q "already uploaded"; then
+      echo "  (already published)"
+      SKIPPED=$((SKIPPED + 1))
+      return 0
+    fi
+
+    # Retry on rate limit or transient server errors
+    if echo "$OUTPUT" | grep -qiE "429|rate limit|try again|503|504"; then
+      attempt=$((attempt + 1))
+      if (( attempt < MAX_RETRIES )); then
+        echo "  rate-limited, retry $attempt/$MAX_RETRIES in ${delay}s..."
+        sleep "$delay"
+        delay=$((delay * 2))
+        continue
+      fi
+    fi
+
+    # Non-retryable error
+    echo "$OUTPUT"
+    return $RC
+  done
+
+  echo "$OUTPUT"
+  return 1
+}
+
 for CRATE in $ORDER; do
   CURRENT=$((CURRENT + 1))
-  echo "[$CURRENT/$TOTAL] Publishing $CRATE..."
+  echo "[$CURRENT/$TOTAL] $CRATE"
 
-  OUTPUT=$(cargo publish -p "$CRATE" $DRY_RUN --no-verify 2>&1) && RC=0 || RC=$?
-
-  if [ $RC -eq 0 ]; then
-    echo "  ok $CRATE"
-  elif echo "$OUTPUT" | grep -q "already uploaded"; then
-    echo "  ok $CRATE (already published)"
+  if publish_one "$CRATE"; then
+    echo "  ok"
   else
-    echo "$OUTPUT"
-    echo "  FAIL $CRATE (exit $RC)"
+    echo "  FAIL"
     FAILED+=("$CRATE")
   fi
 
-  # crates.io rate-limits publishes; pause between them
-  if [ -z "$DRY_RUN" ] && [ $RC -eq 0 ]; then
-    sleep 3
+  # Brief pause between publishes to stay under rate limits
+  if [ -z "$DRY_RUN" ]; then
+    sleep 1
   fi
 done
 
 echo ""
 echo "=== Summary ==="
-echo "Published: $((TOTAL - ${#FAILED[@]}))/$TOTAL"
+echo "Total: $TOTAL"
+echo "Published: $((TOTAL - ${#FAILED[@]} - SKIPPED))"
+echo "Already published: $SKIPPED"
 
 if [ ${#FAILED[@]} -gt 0 ]; then
-  echo "Failed:"
+  echo "Failed (${#FAILED[@]}):"
   for f in "${FAILED[@]}"; do
     echo "  - $f"
   done
   exit 1
+else
+  echo "All crates published successfully."
 fi
