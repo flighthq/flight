@@ -20,6 +20,17 @@ mod register_wgpu_phong_material {
 mod wgpu_phong_mesh_material_renderer {
     use super::*;
 
+    // Ruling 5: each renderer's material-less fallback caches under its own entity id, so the
+    // classic families sharing the binding cache never alias one another's fallback binding.
+    #[test]
+    fn caches_the_fallback_bind_under_an_identity_distinct_from_the_other_classic_families() {
+        let mut test = make_wgpu_scene3d_state(None);
+        bind_test_renderer(&mut test.state, &WGPU_PHONG_MESH_MATERIAL_RENDERER, None);
+        bind_test_renderer(&mut test.state, &WGPU_LAMBERT_MESH_MATERIAL_RENDERER, None);
+        bind_test_renderer(&mut test.state, &WGPU_BLINN_PHONG_MESH_MATERIAL_RENDERER, None);
+        assert_eq!(get_wgpu_scene3d_runtime(&mut test.state).material_bind_groups.len(), 3);
+    }
+
     #[test]
     fn bind_selects_a_phong_pipeline_and_binds_frame_and_material_groups_and_uploads_uniforms() {
         let mut test = make_wgpu_scene3d_state(None);

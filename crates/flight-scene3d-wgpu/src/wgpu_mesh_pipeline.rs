@@ -4,6 +4,10 @@
 //! cache, the per-draw tail, material bindings and texture views, the shadow/IBL sample groups and
 //! the shared WGSL prelude.
 
+use std::collections::HashMap;
+use std::sync::{Arc, RwLock, Weak};
+
+use flight_entity::Ref;
 use flight_camera::{Camera3D, Projection, get_camera_3d_position, get_camera_3d_view_projection_matrix4};
 use flight_entity::Float32Array;
 use flight_geometry::{create_matrix3, create_matrix4, create_vector3};
@@ -405,14 +409,8 @@ pub fn draw_wgpu_mesh_subset(
         skinning,
     ) {
         (true, Some(joint_matrices), Some(normal_matrices), Some(skinning)) => {
-            // The palettes are passed borrowed so their arena identity is the skeleton's storage.
-            let joint_matrices = joint_matrices.read().unwrap();
-            let normal_matrices = normal_matrices.read().unwrap();
-            Some((skinning.get_mesh_draw_bind_group)(
-                state,
-                &joint_matrices,
-                &normal_matrices,
-            ))
+            // The palettes are passed as their shared handles, whose identity keys the arena region.
+            Some((skinning.get_mesh_draw_bind_group)(state, joint_matrices, normal_matrices))
         }
         _ => None,
     };
@@ -1446,6 +1444,14 @@ pub fn write_wgpu_draw_uniform(
     return draw_bind_group;
 }
 
+// Drops the Frame bindings whose light block is gone (TS: the WeakMap releases them with the block).
+// flight-lint: allow(hashmap-iteration) retain visits every entry once and keeps or drops each independently, so order is unobservable
+fn prune_wgpu_frame_bindings(
+    bindings: &mut HashMap<usize, (Weak<RwLock<Scene3DLightBlock>>, WgpuScene3DFrameBinding)>,
+) {
+    bindings.retain(|_, (block, _)| block.strong_count() > 0);
+}
+
 /// Writes the per-light-block Frame uniform (WebGPU-depth view-projection, camera position, the
 /// directional and ambient lanes, the view matrix and the punctual light arrays) and makes its
 /// binding the current Frame alias (TS `writeWgpuFrameUniform`). Distinct light blocks keep distinct
@@ -1453,16 +1459,25 @@ pub fn write_wgpu_draw_uniform(
 pub fn write_wgpu_frame_uniform(
     state: &mut WgpuRenderState,
     camera: &Camera3D,
-    lights: &Scene3DLightBlock,
+    lights: &Ref<Scene3DLightBlock>,
 ) {
     let native = get_wgpu_render_state_native_device(state);
     let layouts = ensure_wgpu_scene3d_layouts(state);
-    // The light block's identity is its packed data allocation (TS: the block object itself).
-    let key = lights.data.as_ptr() as usize;
+    // The light block's identity is its shared handle (TS: the WeakMap keyed by the block object).
+    // Each entry holds a Weak to its block: the Weak keeps the allocation reserved, so the address key
+    // cannot be reused by another block while the entry exists, and a lookup also requires the Weak
+    // to still point at this block. Entries whose block was dropped are pruned on the next miss.
+    let key = Arc::as_ptr(lights) as usize;
     let scene = get_wgpu_scene3d_runtime(state);
-    let binding = match scene.frame_bindings.get(&key) {
-        Some(binding) => binding.clone(),
+    let cached = scene
+        .frame_bindings
+        .get(&key)
+        .filter(|(block, _)| block.upgrade().is_some_and(|block| Arc::ptr_eq(&block, lights)))
+        .map(|(_, binding)| binding.clone());
+    let binding = match cached {
+        Some(binding) => binding,
         None => {
+            prune_wgpu_frame_bindings(&mut scene.frame_bindings);
             let buffer = create_wgpu_buffer(
                 &native,
                 FRAME_UNIFORM_BYTES,
@@ -1477,10 +1492,13 @@ pub fn write_wgpu_frame_uniform(
                 }],
             );
             let binding = WgpuScene3DFrameBinding { bind_group, buffer };
-            scene.frame_bindings.insert(key, binding.clone());
+            scene
+                .frame_bindings
+                .insert(key, (Arc::downgrade(lights), binding.clone()));
             binding
         }
     };
+    let lights = lights.read().unwrap();
     scene.frame_buffer = Some(binding.buffer.clone());
     scene.frame_bind_group = Some(binding.bind_group.clone());
 

@@ -224,10 +224,14 @@ pub fn compile_gl_program(
 }
 
 // Frees the linked GL program backing a mesh-material family program. Frees only the shader program;
-// the caller drops it from its cache separately.
+// the caller drops it from its cache separately. The per-program upload records are dropped here,
+// because the driver may recycle the program's name for a later program.
 pub fn destroy_gl_mesh_program(state: &GlRenderState, program: &GlMeshProgram) {
     // SAFETY: the program belongs to this state's context.
     unsafe { state.gl.delete_program(program.program) };
+    let mut scene = get_gl_scene3d_runtime(state);
+    scene.uploaded_light_blocks.remove(&program.program);
+    scene.custom_shader_checked_programs.remove(&program.program);
 }
 
 // The shared per-draw tail for every mesh-material family: uploads the model + normal matrices from the

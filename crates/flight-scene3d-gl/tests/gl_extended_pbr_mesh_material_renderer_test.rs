@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use std::sync::{Arc, RwLock};
 
 use flight_camera::{Camera3D, Projection, create_camera_3d, create_perspective_projection};
@@ -28,8 +29,8 @@ fn make_camera() -> Camera3D {
 
 // An empty light block, sized to the full packed layout (TS used 12 floats; its typed-array subarray
 // clamps the light ranges).
-fn make_lights() -> Scene3DLightBlock {
-    return Scene3DLightBlock {
+fn make_lights() -> Rc<Scene3DLightBlock> {
+    return Rc::new(Scene3DLightBlock {
         ambient_count: 0,
         data: vec![0.0_f32; SCENE_LIGHT_BLOCK_FLOATS].into_boxed_slice(),
         directional_count: 0,
@@ -37,7 +38,7 @@ fn make_lights() -> Scene3DLightBlock {
         point_count: 0,
         spot_count: 0,
         version: 1,
-    };
+    });
 }
 
 fn has_uniform_1_f32(name: &str, value: f32) -> bool {

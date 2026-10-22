@@ -412,8 +412,7 @@ pub fn render_wgpu_scene3d_shadow_map(
         // The palette is claimed before the Draw uniform is written: its arena base rides in it.
         let skin_draw_bind_group = match (&joint_matrices, skinning) {
             (Some(joint_matrices), Some(skinning)) => {
-                let joint_matrices = joint_matrices.read().unwrap();
-                Some((skinning.get_draw_bind_group)(state, &joint_matrices))
+                Some((skinning.get_draw_bind_group)(state, joint_matrices))
             }
             _ => None,
         };

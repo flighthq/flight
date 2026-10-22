@@ -216,6 +216,36 @@ mod destroy_gl_mesh_program {
         assert_eq!(deletes.len(), 1);
         assert_eq!(deletes[0].integers[0], i64::from(program.program.0.get()));
     }
+
+    // The driver may recycle a deleted program's name, so its upload records go with it.
+    #[test]
+    fn drops_the_programs_upload_records_so_a_recycled_name_starts_clean() {
+        let state = make_gl_scene3d_state();
+        let program = make_test_mesh_program(&state);
+        {
+            let mut scene = get_gl_scene3d_runtime(&state);
+            scene.uploaded_light_blocks.insert(
+                program.program,
+                (
+                    Rc::new(flight_lighting::Scene3DLightBlock {
+                        ambient_count: 0,
+                        data: vec![0.0_f32; 4].into_boxed_slice(),
+                        directional_count: 0,
+                        hemisphere_count: 0,
+                        point_count: 0,
+                        spot_count: 0,
+                        version: 1,
+                    }),
+                    1,
+                ),
+            );
+            scene.custom_shader_checked_programs.insert(program.program);
+        }
+        destroy_gl_mesh_program(&state, &program);
+        let scene = get_gl_scene3d_runtime(&state);
+        assert!(!scene.uploaded_light_blocks.contains_key(&program.program));
+        assert!(!scene.custom_shader_checked_programs.contains(&program.program));
+    }
 }
 
 mod draw_gl_mesh_subset {

@@ -3,6 +3,9 @@
 //! `wgpuStandardPbrMeshMaterialRenderer.ts`) and the shared standard-block helpers every PBR
 //! extension renderer routes through.
 
+use std::sync::LazyLock;
+
+use flight_entity::Ref;
 use std::sync::RwLockReadGuard;
 
 use flight_camera::Camera3D;
@@ -42,13 +45,15 @@ pub static WGPU_STANDARD_PBR_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer =
         draw: draw_wgpu_standard_pbr_subset,
     };
 
-// The material-binding cache key for a bind with no material (TS `FALLBACK_MATERIAL`'s identity).
-const FALLBACK_MATERIAL_KEY: u64 = u64::MAX;
+// The identity the material-less fallback bind caches its binding under (TS: a module-level `{}`
+// object). A real entity, so its key is a numeric entity id (D12/D15): unique to this renderer and
+// never reused, so it cannot alias a material's binding or another renderer's fallback.
+static FALLBACK_MATERIAL: LazyLock<StandardPbrMaterial> = LazyLock::new(flight_materials::contract::create_standard_pbr_material);
 
 fn bind_wgpu_standard_pbr_material(
     state: &mut WgpuRenderState,
     material: Option<&dyn Material>,
-    lights: &Scene3DLightBlock,
+    lights: &Ref<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
     let runtime = get_wgpu_render_state_runtime(state);
@@ -68,7 +73,7 @@ fn bind_wgpu_standard_pbr_material(
     write_wgpu_frame_uniform(state, camera, lights);
     let key = match pbr {
         Some(pbr) => flight_entity::get_entity_id(pbr),
-        None => FALLBACK_MATERIAL_KEY,
+        None => flight_entity::get_entity_id(&*FALLBACK_MATERIAL),
     };
     let binding = ensure_wgpu_pbr_material_bind_group(state, &pipeline, key, standard.as_ref());
     let alpha_cutoff = pbr.map_or(0.5, |pbr| pbr.material3d_fields().alpha_cutoff);

@@ -1,5 +1,6 @@
 // flight-lint: allow-file(contract-vocabulary) D17 lit-program helpers drive glow native handles over thread-bound render-gl state
 
+use std::rc::Rc;
 use flight_lighting::{
     MAX_FORWARD_LIGHTS, SCENE_LIGHT_HEMISPHERE_OFFSET, SCENE_LIGHT_HEMISPHERE_STRIDE,
     SCENE_LIGHT_POINT_OFFSET, SCENE_LIGHT_POINT_STRIDE, SCENE_LIGHT_SPOT_OFFSET,
@@ -123,14 +124,15 @@ pub const GL_MESH_LIGHT_BLOCK_GLSL: &str = gl_mesh_light_block_glsl!();
 // and the baked IBL set or its placeholders. The light uniforms persist on the program across frames,
 // so an unchanged block (same identity and version) is not re-uploaded; the shadow and IBL binds run
 // every draw.
-pub fn bind_gl_mesh_light_block(state: &GlRenderState, program: &GlLitProgram, lights: &Scene3DLightBlock) {
+pub fn bind_gl_mesh_light_block(state: &GlRenderState, program: &GlLitProgram, lights: &Rc<Scene3DLightBlock>) {
     let gl = &state.gl;
-    let identity = lights as *const Scene3DLightBlock as usize;
-    let uploaded = get_gl_scene3d_runtime(state)
+    // The cache holds the uploaded block's handle, so the identity it compares cannot be reused by
+    // another block while the entry exists (TS: the WeakMap value is the block object itself).
+    let current = get_gl_scene3d_runtime(state)
         .uploaded_light_blocks
         .get(&program.program)
-        .copied();
-    if uploaded != Some((identity, lights.version)) {
+        .is_some_and(|(block, version)| Rc::ptr_eq(block, lights) && *version == lights.version);
+    if !current {
         let data = &lights.data;
         // SAFETY: the program is bound on the owning GL thread.
         unsafe {
@@ -160,7 +162,7 @@ pub fn bind_gl_mesh_light_block(state: &GlRenderState, program: &GlLitProgram, l
         }
         get_gl_scene3d_runtime(state)
             .uploaded_light_blocks
-            .insert(program.program, (identity, lights.version));
+            .insert(program.program, (lights.clone(), lights.version));
     }
 
     let (shadow, ibl) = {

@@ -13,8 +13,8 @@ static SKIN_GROUP_CALLS: AtomicU32 = AtomicU32::new(0);
 
 fn counting_mesh_draw_bind_group(
     state: &mut WgpuRenderState,
-    joint_matrices: &[f32],
-    normal_matrices: &[f32],
+    joint_matrices: &flight_entity::Ref<Box<flight_entity::Float32Array>>,
+    normal_matrices: &flight_entity::Ref<Box<flight_entity::Float32Array>>,
 ) -> wgpu::BindGroup {
     SKIN_GROUP_CALLS.fetch_add(1, Ordering::SeqCst);
     return ensure_wgpu_skin_mesh_draw_bind_group(state, joint_matrices, normal_matrices);

@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -35,8 +36,8 @@ fn make_camera() -> Camera3D {
     return camera;
 }
 
-fn no_lights() -> Scene3DLightBlock {
-    return Scene3DLightBlock {
+fn no_lights() -> Rc<Scene3DLightBlock> {
+    return Rc::new(Scene3DLightBlock {
         ambient_count: 0,
         data: vec![0.0_f32; 12].into_boxed_slice(),
         directional_count: 0,
@@ -44,7 +45,7 @@ fn no_lights() -> Scene3DLightBlock {
         point_count: 0,
         spot_count: 0,
         version: 1,
-    };
+    });
 }
 
 fn make_geometry() -> MeshGeometry {

@@ -1,5 +1,6 @@
 // flight-lint: allow-file(contract-vocabulary) D17 mesh-material renderers are backend-typed dispatch records over thread-bound render-gl state
 
+use std::rc::Rc;
 use flight_camera::Camera3D;
 use flight_color::{LinearColor, allocate_linear_color, unpack_color_to_linear};
 use flight_lighting::Scene3DLightBlock;
@@ -29,7 +30,7 @@ pub static GL_MATCAP_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer = GlMeshMate
 fn bind_gl_matcap_mesh_material(
     state: &mut GlRenderState,
     material: Option<&dyn Material3D>,
-    _lights: &Scene3DLightBlock,
+    _lights: &Rc<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
     let gl = state.gl.clone();

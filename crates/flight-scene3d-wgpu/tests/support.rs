@@ -457,15 +457,15 @@ pub fn make_test_scene_lights() -> flight_lighting::Scene3DLights {
     return lights;
 }
 
-/// A light block with one directional and one ambient light (TS `makeLights`).
-pub fn make_test_lights() -> flight_lighting::Scene3DLightBlock {
+/// A shared light block with one directional and one ambient light (TS `makeLights`).
+pub fn make_test_lights() -> flight_entity::Ref<flight_lighting::Scene3DLightBlock> {
     let mut data = vec![0.0_f32; flight_lighting::SCENE_LIGHT_BLOCK_FLOATS];
     data[1] = -1.0;
     data[4] = 1.0;
     data[5] = 1.0;
     data[6] = 1.0;
     data[8] = 0.1;
-    return flight_lighting::Scene3DLightBlock {
+    return Arc::new(std::sync::RwLock::new(flight_lighting::Scene3DLightBlock {
         ambient_count: 1,
         data: data.into_boxed_slice(),
         directional_count: 1,
@@ -473,7 +473,7 @@ pub fn make_test_lights() -> flight_lighting::Scene3DLightBlock {
         point_count: 0,
         spot_count: 0,
         version: 1,
-    };
+    }));
 }
 
 /// A shared material handle over `material`.
@@ -662,8 +662,8 @@ pub fn submit_test_frame(test: &mut WgpuScene3DTestState) {
 
 /// An all-zero light block (the source's `NO_LIGHTS`, sized to the full packed layout because the
 /// Frame uniform write reads every punctual slot).
-pub fn make_test_no_lights() -> flight_lighting::Scene3DLightBlock {
-    return flight_lighting::Scene3DLightBlock {
+pub fn make_test_no_lights() -> flight_entity::Ref<flight_lighting::Scene3DLightBlock> {
+    return Arc::new(std::sync::RwLock::new(flight_lighting::Scene3DLightBlock {
         ambient_count: 0,
         data: vec![0.0_f32; flight_lighting::SCENE_LIGHT_BLOCK_FLOATS].into_boxed_slice(),
         directional_count: 0,
@@ -671,7 +671,7 @@ pub fn make_test_no_lights() -> flight_lighting::Scene3DLightBlock {
         point_count: 0,
         spot_count: 0,
         version: 1,
-    };
+    }));
 }
 
 /// Runs a mesh-material renderer's bind for `material` with no lights and the test camera (the

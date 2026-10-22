@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use flight_geometry::create_matrix4;
 use flight_lighting::{SCENE_LIGHT_BLOCK_FLOATS, Scene3DLightBlock};
 use flight_render_gl::GlRenderState;
@@ -15,6 +16,24 @@ fn make_lit_program(state: &GlRenderState) -> GlLitProgram {
 }
 
 fn block(
+    ambient_count: usize,
+    directional_count: usize,
+    hemisphere_count: usize,
+    point_count: usize,
+    spot_count: usize,
+    version: u32,
+) -> Rc<Scene3DLightBlock> {
+    return Rc::new(make_block(
+        ambient_count,
+        directional_count,
+        hemisphere_count,
+        point_count,
+        spot_count,
+        version,
+    ));
+}
+
+fn make_block(
     ambient_count: usize,
     directional_count: usize,
     hemisphere_count: usize,
@@ -95,7 +114,7 @@ mod bind_gl_mesh_light_block {
     #[test]
     fn uploads_the_directional_ambient_count_shadow_gate_and_ibl_gate_uniforms_from_the_packed_block() {
         let state = make_gl_scene3d_state();
-        let mut lights = block(1, 1, 0, 0, 0, 1);
+        let mut lights = make_block(1, 1, 0, 0, 0, 1);
         lights.data[0] = 0.0;
         lights.data[1] = -1.0;
         lights.data[4] = 1.0;
@@ -103,7 +122,7 @@ mod bind_gl_mesh_light_block {
         lights.data[6] = 1.0;
         lights.data[8] = 0.2;
         let program = make_lit_program(&state);
-        bind_gl_mesh_light_block(&state, &program, &lights);
+        bind_gl_mesh_light_block(&state, &program, &Rc::new(lights));
         assert_eq!(calls_with("uniform_4_f32").len(), 2);
         assert_eq!(calls_with("uniform_3_f32").len(), 1);
         // directionalCount + ambientCount + shadowEnabled (0, no active shadow) + iblEnabled (0, no IBL).
@@ -126,10 +145,28 @@ mod bind_gl_mesh_light_block {
     fn re_uploads_the_light_uniforms_when_the_block_version_changes() {
         let state = make_gl_scene3d_state();
         let program = make_lit_program(&state);
-        let mut lights = block(1, 1, 0, 0, 0, 1);
+        let lights = block(1, 1, 0, 0, 0, 1);
         bind_gl_mesh_light_block(&state, &program, &lights);
-        lights.version = 2;
-        bind_gl_mesh_light_block(&state, &program, &lights);
+        // A held block is immutable in Rust, so a repack arrives as a new handle carrying the
+        // advanced version (prepare_gl_scene3d_forward_lights replaces a changed block the same way).
+        let mut repacked = (*lights).clone();
+        repacked.version = 2;
+        bind_gl_mesh_light_block(&state, &program, &Rc::new(repacked));
+        assert_eq!(calls_with("uniform_4_f32").len(), 4);
+    }
+
+    // Ruling 5: the cache holds the uploaded block, so a dropped caller handle cannot free the
+    // allocation and let a later block alias it; a fresh block always re-uploads.
+    #[test]
+    fn holds_the_uploaded_block_so_a_later_block_cannot_alias_its_identity() {
+        let state = make_gl_scene3d_state();
+        let program = make_lit_program(&state);
+        let first = block(0, 0, 0, 1, 0, 1);
+        bind_gl_mesh_light_block(&state, &program, &first);
+        assert_eq!(Rc::strong_count(&first), 2);
+        drop(first);
+        let second = block(0, 0, 0, 1, 0, 1);
+        bind_gl_mesh_light_block(&state, &program, &second);
         assert_eq!(calls_with("uniform_4_f32").len(), 4);
     }
 

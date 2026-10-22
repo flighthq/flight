@@ -2,10 +2,10 @@
 
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::sync::Arc;
 
 use flight_camera::Camera3D;
 use flight_color::{LinearColor, allocate_linear_color, unpack_color_to_linear};
+use flight_entity::get_entity_id;
 use flight_geometry::{Matrix4, create_matrix3, create_matrix4, set_matrix3_normal_from_matrix4};
 use flight_lighting::{MAX_FORWARD_LIGHTS, Scene3DLightBlock, Scene3DLightsLike};
 use flight_materials::{BLEND_MODE_NORMAL, Material, Material3D, Material3DRef, MaterialAlphaMode};
@@ -52,21 +52,27 @@ fn acquire_draw_entry(pool: &mut Vec<GlScene3DDrawEntry>) -> GlScene3DDrawEntry 
 }
 
 // Assigns a stable integer to each unique (renderer, material) identity within one frame so entries
-// sharing both sort together and the opaque pass minimizes bind() calls.
+// sharing both sort together and the opaque pass minimizes bind() calls. Renderers are `&'static`
+// tables, compared by reference (a static is never freed, so it cannot alias another); materials key
+// by their numeric entity id (D12/D15), never by address.
 fn acquire_sort_key(
-    keys: &mut HashMap<usize, u32>,
+    renderer_keys: &mut Vec<(&'static GlMeshMaterialRenderer, u32)>,
+    material_keys: &mut HashMap<u64, u32>,
     counter: &mut u32,
     renderer: &'static GlMeshMaterialRenderer,
     material: &Material3DRef,
 ) -> u32 {
-    let renderer_key = renderer as *const GlMeshMaterialRenderer as usize;
-    let material_key = Arc::as_ptr(material) as *const () as usize;
-    let rk = *keys.entry(renderer_key).or_insert_with(|| {
-        let value = *counter;
-        *counter += 1;
-        value
-    });
-    let mk = *keys.entry(material_key).or_insert_with(|| {
+    let rk = match renderer_keys.iter().find(|(seen, _)| std::ptr::eq(*seen, renderer)) {
+        Some((_, value)) => *value,
+        None => {
+            let value = *counter;
+            *counter += 1;
+            renderer_keys.push((renderer, value));
+            value
+        }
+    };
+    let material_id = get_entity_id(&*material.read().unwrap());
+    let mk = *material_keys.entry(material_id).or_insert_with(|| {
         let value = *counter;
         *counter += 1;
         value
@@ -110,9 +116,9 @@ fn draw_gl_scene3d_entries(
     color_adjustment_feature_enabled: bool,
     blended: bool,
 ) {
-    let mut bound_material: Option<usize> = None;
-    let mut bound_light_block: Option<usize> = None;
-    let mut bound_renderer: Option<usize> = None;
+    let mut bound_material: Option<u64> = None;
+    let mut bound_light_block: Option<Rc<Scene3DLightBlock>> = None;
+    let mut bound_renderer: Option<&'static GlMeshMaterialRenderer> = None;
     let mut bound_skinned: Option<bool> = None;
     let mut bound_color_adjustment: Option<bool> = None;
     let mut bound_color_matrix: Option<bool> = None;
@@ -138,12 +144,14 @@ fn draw_gl_scene3d_entries(
         let color_adjusted = color_adjustment_feature_enabled
             && (entry.color_matrix.is_some() || entry.color_scale_bias.is_some());
         let color_matrix = color_adjusted && entry.color_matrix.is_some();
-        let renderer_key = renderer as *const GlMeshMaterialRenderer as usize;
-        let material_key = Arc::as_ptr(material) as *const () as usize;
-        let light_block_key = Rc::as_ptr(light_block) as usize;
-        if Some(renderer_key) != bound_renderer
-            || Some(material_key) != bound_material
-            || Some(light_block_key) != bound_light_block
+        let material_id = get_entity_id(&*material.read().unwrap());
+        let same_renderer = bound_renderer.is_some_and(|bound| std::ptr::eq(bound, renderer));
+        let same_light_block = bound_light_block
+            .as_ref()
+            .is_some_and(|bound| Rc::ptr_eq(bound, light_block));
+        if !same_renderer
+            || Some(material_id) != bound_material
+            || !same_light_block
             || Some(skinned) != bound_skinned
             || Some(color_adjusted) != bound_color_adjustment
             || Some(color_matrix) != bound_color_matrix
@@ -159,9 +167,9 @@ fn draw_gl_scene3d_entries(
                 runtime.active_skinned_run = skinned;
             }
             (renderer.bind)(state, Some(&*material_guard), light_block, camera);
-            bound_renderer = Some(renderer_key);
-            bound_material = Some(material_key);
-            bound_light_block = Some(light_block_key);
+            bound_renderer = Some(renderer);
+            bound_material = Some(material_id);
+            bound_light_block = Some(light_block.clone());
             bound_skinned = Some(skinned);
             bound_color_adjustment = Some(color_adjusted);
             bound_color_matrix = Some(color_matrix);
@@ -321,7 +329,8 @@ pub fn render_gl_scene3d(
     };
     recycle_draw_entries(&mut opaque_draw_list, &mut opaque_pool);
     recycle_draw_entries(&mut blended_draw_list, &mut blended_pool);
-    let mut sort_keys: HashMap<usize, u32> = HashMap::new();
+    let mut renderer_sort_keys: Vec<(&'static GlMeshMaterialRenderer, u32)> = Vec::new();
+    let mut material_sort_keys: HashMap<u64, u32> = HashMap::new();
     let mut sort_key_counter = 0_u32;
     let default_material = get_gl_scene3d_runtime(state).default_material.clone();
 
@@ -389,8 +398,13 @@ pub fn render_gl_scene3d(
                 None => light_block.clone(),
             });
             entry.mesh = Some(mesh_node.clone());
-            entry.sort_key =
-                acquire_sort_key(&mut sort_keys, &mut sort_key_counter, renderer, &resolved_material);
+            entry.sort_key = acquire_sort_key(
+                &mut renderer_sort_keys,
+                &mut material_sort_keys,
+                &mut sort_key_counter,
+                renderer,
+                &resolved_material,
+            );
             entry.material = Some(resolved_material);
             entry.renderer = Some(renderer);
             entry.subset = *subset;

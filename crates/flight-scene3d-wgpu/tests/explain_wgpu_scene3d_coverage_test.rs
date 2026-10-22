@@ -20,7 +20,7 @@ use crate::support::*;
 fn bind_nothing(
     _state: &mut WgpuRenderState,
     _material: Option<&dyn Material>,
-    _lights: &Scene3DLightBlock,
+    _lights: &Ref<Scene3DLightBlock>,
     _camera: &Camera3D,
 ) {
 }

@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use std::cell::RefCell;
 
 use flight_camera::{Camera3D, Projection};
@@ -54,7 +55,7 @@ fn record_camera(camera: &Camera3D) {
 fn bind_capture(
     _state: &mut GlRenderState,
     _material: Option<&dyn Material3D>,
-    _lights: &Scene3DLightBlock,
+    _lights: &Rc<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
     record_camera(camera);
@@ -63,7 +64,7 @@ fn bind_capture(
 fn bind_capture_throwing(
     _state: &mut GlRenderState,
     _material: Option<&dyn Material3D>,
-    _lights: &Scene3DLightBlock,
+    _lights: &Rc<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
     record_camera(camera);

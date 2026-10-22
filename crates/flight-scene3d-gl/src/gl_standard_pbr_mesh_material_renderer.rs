@@ -1,5 +1,6 @@
 // flight-lint: allow-file(contract-vocabulary) D17 mesh-material renderers are backend-typed dispatch records over thread-bound render-gl state
 
+use std::rc::Rc;
 use flight_camera::Camera3D;
 use flight_lighting::Scene3DLightBlock;
 use flight_materials::{Material3D, StandardPbrMaterial, StandardPbrMaterialProperties};
@@ -36,7 +37,7 @@ pub static GL_STANDARD_PBR_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer =
 fn bind_gl_standard_pbr_mesh_material(
     state: &mut GlRenderState,
     material: Option<&dyn Material3D>,
-    lights: &Scene3DLightBlock,
+    lights: &Rc<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
     let pbr = material.and_then(|material| material.as_any().downcast_ref::<StandardPbrMaterial>());

@@ -1,3 +1,4 @@
+use flight_entity::Ref;
 use flight_camera::Camera3D;
 use flight_lighting::Scene3DLightBlock;
 use flight_materials::contract::create_standard_pbr_material;
@@ -12,7 +13,7 @@ use crate::support::*;
 fn bind_nothing(
     _state: &mut WgpuRenderState,
     _material: Option<&dyn Material>,
-    _lights: &Scene3DLightBlock,
+    _lights: &Ref<Scene3DLightBlock>,
     _camera: &Camera3D,
 ) {
 }

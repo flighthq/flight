@@ -34,7 +34,7 @@ pub static WGPU_SHADED_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer = WgpuMe
 fn bind_wgpu_shaded_material(
     state: &mut WgpuRenderState,
     material: Option<&dyn Material>,
-    lights: &Scene3DLightBlock,
+    lights: &Ref<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
     if get_wgpu_render_state_runtime(state).render_pass.is_none() {

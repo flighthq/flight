@@ -390,12 +390,7 @@ pub fn bind_wgpu_shaded_surface(
     specular: &LinearColor,
 ) -> wgpu::BindGroup {
     let registry = get_modifier_snippet_table(state);
-    let plan = get_cached_modifier_plan(
-        state,
-        material,
-        WgpuModifierSnippetSource::Snippets(&registry),
-        None,
-    );
+    let plan = get_cached_modifier_plan(state, material, &registry, None);
     let float_length = 12 + plan.uniform_float_count as usize;
     let slot_count = plan.texture_count as usize + 3;
     let key = get_entity_id(material);
@@ -658,12 +653,7 @@ pub fn ensure_wgpu_shaded_pipeline(
     let registry = get_modifier_snippet_table(state);
     let define_key =
         build_wgpu_shaded_cache_key(material, Some(WgpuModifierSnippetSource::Snippets(&registry)));
-    let plan = get_cached_modifier_plan(
-        state,
-        material,
-        WgpuModifierSnippetSource::Snippets(&registry),
-        Some(&define_key),
-    );
+    let plan = get_cached_modifier_plan(state, material, &registry, Some(&define_key));
     let color_adjusted = get_wgpu_scene3d_runtime(state).active_color_adjustment_run;
     let color_matrix = get_wgpu_scene3d_runtime(state).active_color_matrix_run;
     let revision = get_wgpu_render_state_runtime(state).modifier_snippet_revision;
@@ -813,20 +803,22 @@ fn get_animated_normal_textures(
 }
 
 // The cached plan for a material, rebuilt when its modifier stack, snippet source, define key or
-// any resolved snippet changes (TS `getCachedModifierPlan`).
+// any resolved snippet changes (TS `getCachedModifierPlan`). Every caller resolves against the
+// state's snippet table, so the source is that table's shared handle: the cache entry holds it, so
+// the identity it compares cannot be reused by another table while the entry exists.
 fn get_cached_modifier_plan(
     state: &mut WgpuRenderState,
     material: &ShadedMaterial,
-    registry: WgpuModifierSnippetSource<'_>,
+    snippets: &Arc<KindMap<&'static WgpuModifierSnippet>>,
     define_key: Option<&str>,
 ) -> WgpuShadedModifierPlan {
     let key = get_entity_id(material);
-    let registry_identity = get_wgpu_modifier_snippet_source_identity(registry);
+    let registry = WgpuModifierSnippetSource::Snippets(snippets);
     if let Some(cached) = get_wgpu_scene3d_runtime(state)
         .shaded_material_plan_cache
         .get(&key)
         && is_same_modifier_stack(&cached.modifiers, &material.modifiers)
-        && cached.registry == registry_identity
+        && Arc::ptr_eq(&cached.registry, snippets)
         && define_key.is_none_or(|define_key| cached.define_key == define_key)
         && has_current_snippets(&cached.plan, registry)
     {
@@ -840,7 +832,7 @@ fn get_cached_modifier_plan(
         },
         modifiers: material.modifiers.clone(),
         plan: plan.clone(),
-        registry: registry_identity,
+        registry: snippets.clone(),
     };
     get_wgpu_scene3d_runtime(state)
         .shaded_material_plan_cache
@@ -1152,18 +1144,6 @@ fn get_wgpu_modifier_define_key(
         key.push_str(&token);
     }
     return key;
-}
-
-// The identity of a snippet source (TS: the registry object's identity).
-fn get_wgpu_modifier_snippet_source_identity(registry: WgpuModifierSnippetSource<'_>) -> usize {
-    return match registry {
-        WgpuModifierSnippetSource::Registry(registry) => {
-            registry as *const flight_shading::ModifierRegistry as usize
-        }
-        WgpuModifierSnippetSource::Snippets(table) => {
-            table as *const KindMap<&'static WgpuModifierSnippet> as usize
-        }
-    };
 }
 
 /// The WGSL module for a ShadedMaterial variant (TS `getWgpuShadedModuleSource`): the classic

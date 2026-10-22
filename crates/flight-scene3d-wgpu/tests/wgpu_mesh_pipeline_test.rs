@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use flight_geometry::create_matrix4;
 use flight_meshgeometry::{
     MeshGeometryOptions, VertexAttribute, VertexAttributeLayout, VertexFormat,
@@ -1462,6 +1463,26 @@ mod write_wgpu_frame_uniform {
             get_wgpu_scene3d_runtime(&mut test.state).frame_buffer,
             first_buffer
         );
+    }
+
+    // Ruling 5: the binding cache holds a Weak to each block, so a dropped block's address stays
+    // reserved until its entry is pruned; a later block never inherits the dropped block's binding.
+    #[test]
+    fn never_hands_a_dropped_blocks_binding_to_a_later_block_and_prunes_dead_entries() {
+        let mut test = make_wgpu_scene3d_state(None);
+        let camera = make_test_camera();
+        let first_lights = make_test_lights();
+        write_wgpu_frame_uniform(&mut test.state, &camera, &first_lights);
+        let first_buffer = get_wgpu_scene3d_runtime(&mut test.state).frame_buffer.clone();
+        assert_eq!(Arc::strong_count(&first_lights), 1);
+        assert_eq!(Arc::weak_count(&first_lights), 1);
+        drop(first_lights);
+
+        let second_lights = make_test_lights();
+        write_wgpu_frame_uniform(&mut test.state, &camera, &second_lights);
+        let runtime = get_wgpu_scene3d_runtime(&mut test.state);
+        assert_ne!(runtime.frame_buffer, first_buffer);
+        assert_eq!(runtime.frame_bindings.len(), 1);
     }
 
     #[test]

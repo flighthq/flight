@@ -1,7 +1,7 @@
 //! Draws a prepared 3D scene on the wgpu backend (TS `renderWgpuScene3D.ts`), the WGSL mirror of
 //! scene3d-gl's `render_gl_scene3d`.
 
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use flight_camera::Camera3D;
 use flight_color::{allocate_linear_color, unpack_color_to_linear};
@@ -55,29 +55,34 @@ fn acquire_draw_entry(pool: &mut Vec<WgpuScene3DDrawEntry>) -> WgpuScene3DDrawEn
 }
 
 // A run sort key: the renderer's first-seen ordinal in the high bits, the material's in the low.
+// Renderers are `&'static` tables compared by reference (a static is never freed, so it cannot alias
+// another); materials key by their numeric entity id (D12/D15), never by address.
 fn acquire_sort_key(
     state: &mut WgpuRenderState,
     renderer: &'static WgpuMeshMaterialRenderer,
     material: &Material3DRef,
 ) -> u32 {
-    let renderer_key = renderer as *const WgpuMeshMaterialRenderer as usize;
-    let material_key = Arc::as_ptr(material) as *const () as usize;
+    let material_id = get_entity_id(&*material.read().unwrap());
     let runtime = get_wgpu_scene3d_runtime(state);
-    let renderer_ordinal = match runtime.sort_keys.get(&renderer_key) {
-        Some(ordinal) => *ordinal,
+    let renderer_ordinal = match runtime
+        .renderer_sort_keys
+        .iter()
+        .find(|(seen, _)| std::ptr::eq(*seen, renderer))
+    {
+        Some((_, ordinal)) => *ordinal,
         None => {
             let ordinal = runtime.sort_key_counter;
             runtime.sort_key_counter += 1;
-            runtime.sort_keys.insert(renderer_key, ordinal);
+            runtime.renderer_sort_keys.push((renderer, ordinal));
             ordinal
         }
     };
-    let material_ordinal = match runtime.sort_keys.get(&material_key) {
+    let material_ordinal = match runtime.material_sort_keys.get(&material_id) {
         Some(ordinal) => *ordinal,
         None => {
             let ordinal = runtime.sort_key_counter;
             runtime.sort_key_counter += 1;
-            runtime.sort_keys.insert(material_key, ordinal);
+            runtime.material_sort_keys.insert(material_id, ordinal);
             ordinal
         }
     };
@@ -87,7 +92,7 @@ fn acquire_sort_key(
 fn draw_entries(
     state: &mut WgpuRenderState,
     entries: &[WgpuScene3DDrawEntry],
-    shared_light_block: &Scene3DLightBlock,
+    shared_light_block: &Ref<Scene3DLightBlock>,
     camera: &Camera3D,
     blended: bool,
 ) {
@@ -154,13 +159,8 @@ fn draw_entries(
             }
             let guard = material.read().unwrap();
             let material_ref = &*guard as &dyn flight_materials::Material;
-            match &entry.light_block {
-                Some(block) => {
-                    let block = block.read().unwrap();
-                    (renderer.bind)(state, Some(material_ref), &block, camera);
-                }
-                None => (renderer.bind)(state, Some(material_ref), shared_light_block, camera),
-            }
+            let block = entry.light_block.as_ref().unwrap_or(shared_light_block);
+            (renderer.bind)(state, Some(material_ref), block, camera);
             bound_renderer = Some(renderer);
             bound_material = Some(material_id);
             bound_light_block = Some(entry.light_block.clone());
@@ -210,6 +210,25 @@ fn draw_entries(
     }
 }
 
+// The frame's shared light block as a stable handle (TS: the prepared list's block object, reused
+// state-owned scratch). Its content is refreshed in place, so the handle keeps its identity and the
+// Frame binding keyed by it stays put across frames.
+fn resolve_wgpu_scene3d_list_light_block(
+    state: &mut WgpuRenderState,
+    lights: &Scene3DLightBlock,
+) -> Ref<Scene3DLightBlock> {
+    let runtime = get_wgpu_scene3d_runtime(state);
+    if let Some(existing) = &runtime.list_light_block {
+        if *existing.read().unwrap() != *lights {
+            existing.write().unwrap().clone_from(lights);
+        }
+        return existing.clone();
+    }
+    let block = Arc::new(RwLock::new(lights.clone()));
+    runtime.list_light_block = Some(block.clone());
+    return block;
+}
+
 fn draw_wgpu_scene3d_prepared(
     state: &mut WgpuRenderState,
     prepared: &PreparedScene3D,
@@ -218,7 +237,7 @@ fn draw_wgpu_scene3d_prepared(
     forward_lights: Option<&WgpuScene3DForwardLightList>,
 ) {
     let list = &prepared.list;
-    let light_block = &list.lights;
+    let light_block = &resolve_wgpu_scene3d_list_light_block(state, &list.lights);
     let view_projection = &list.view_projection;
     declare_wgpu_render_target_color_space(state, RenderTargetColorSpace::Linear);
     let has_prepared_forward_lights =
@@ -234,7 +253,8 @@ fn draw_wgpu_scene3d_prepared(
         recycle_draw_entries(&mut runtime.opaque_draw_list, &mut runtime.opaque_pool);
         recycle_draw_entries(&mut runtime.blended_draw_list, &mut runtime.blended_pool);
         runtime.sort_key_counter = 0;
-        runtime.sort_keys.clear();
+        runtime.renderer_sort_keys.clear();
+        runtime.material_sort_keys.clear();
     }
 
     for (mesh_index, mesh_node) in list.visible_meshes.iter().take(list.mesh_count).enumerate() {

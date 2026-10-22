@@ -5,7 +5,9 @@
 
 use std::collections::HashMap;
 
-use flight_entity::Float32Array;
+use std::sync::Arc;
+
+use flight_entity::{Float32Array, Ref};
 use flight_meshgeometry::{
     MeshGeometry, MeshSkinBindPose, VertexSemantic, get_mesh_geometry_morph_bind_pose,
     get_mesh_geometry_skin_bind_pose,
@@ -156,6 +158,7 @@ pub fn destroy_wgpu_skin_palette(state: &mut WgpuRenderState) {
     runtime.skin_palette_arena_cursor = 0;
     runtime.skin_palette_arena_rows = 0;
     runtime.skin_palette_arena_bases = None;
+    runtime.skin_palette_arena_replays.clear();
     runtime.skin_arena_frame = None;
     runtime.skin_draw_bind_group = None;
     // The mesh path's own texture and bind group, freed here too.
@@ -166,6 +169,7 @@ pub fn destroy_wgpu_skin_palette(state: &mut WgpuRenderState) {
     runtime.skin_normal_palette_arena_cursor = 0;
     runtime.skin_normal_palette_arena_rows = 0;
     runtime.skin_normal_palette_arena_bases = None;
+    runtime.skin_normal_palette_arena_replays.clear();
     runtime.skin_mesh_draw_bind_group = None;
 }
 
@@ -188,7 +192,7 @@ fn draw_uniform_layout_entry() -> wgpu::BindGroupLayoutEntry {
 /// binding 0 and the pose palette at binding 1 (TS `ensureWgpuSkinDrawBindGroup`).
 pub fn ensure_wgpu_skin_draw_bind_group(
     state: &mut WgpuRenderState,
-    joint_matrices: &Float32Array,
+    joint_matrices: &Ref<Box<Float32Array>>,
 ) -> wgpu::BindGroup {
     upload_wgpu_skin_palette(state, joint_matrices);
     let layout = ensure_wgpu_skin_draw_layout(state);
@@ -238,8 +242,8 @@ pub fn ensure_wgpu_skin_draw_layout(state: &mut WgpuRenderState) -> wgpu::BindGr
 /// Separate from the shadow path's group so the shadow pipeline never declares a normal palette.
 pub fn ensure_wgpu_skin_mesh_draw_bind_group(
     state: &mut WgpuRenderState,
-    joint_matrices: &Float32Array,
-    normal_matrices: &Float32Array,
+    joint_matrices: &Ref<Box<Float32Array>>,
+    normal_matrices: &Ref<Box<Float32Array>>,
 ) -> wgpu::BindGroup {
     upload_wgpu_skin_palette(state, joint_matrices);
     upload_wgpu_skin_normal_palette(state, normal_matrices);
@@ -477,18 +481,25 @@ fn row_aligned_wgpu_skin_arena_texels(texels: u32) -> u32 {
 /// Uploads the per-joint normal palette (three texels per joint: a 3x3 as three padded columns)
 /// into its arena and returns the base texel its region starts at (TS
 /// `uploadWgpuSkinNormalPalette`). The joint count divides by 12, not 16.
-pub fn upload_wgpu_skin_normal_palette(state: &mut WgpuRenderState, normal_matrices: &Float32Array) -> u32 {
+pub fn upload_wgpu_skin_normal_palette(
+    state: &mut WgpuRenderState,
+    normal_matrices: &Ref<Box<Float32Array>>,
+) -> u32 {
     begin_wgpu_skin_arena_frame(state);
-    let key = normal_matrices.as_ptr() as usize;
+    // The arena holds every palette handle it keys for the frame, so the address key cannot be reused
+    // by another palette before the bases reset; the handle is still compared on lookup.
+    let key = Arc::as_ptr(normal_matrices) as usize;
     if let Some(existing) = get_wgpu_scene3d_runtime(state)
         .skin_normal_palette_arena_bases
         .as_ref()
-        .and_then(|bases| bases.get(&key).copied())
+        .and_then(|bases| bases.get(&key))
+        .filter(|(palette, _)| Arc::ptr_eq(palette, normal_matrices))
+        .map(|(_, base)| *base)
     {
         return existing;
     }
 
-    let texels = (normal_matrices.len() as u32 / 12) * 3;
+    let texels = (normal_matrices.read().unwrap().len() as u32 / 12) * 3;
     let base = get_wgpu_scene3d_runtime(state).skin_normal_palette_arena_cursor;
     let rows = get_wgpu_skin_arena_row_count(base + texels);
     if rows > get_wgpu_scene3d_runtime(state).skin_normal_palette_arena_rows {
@@ -507,23 +518,23 @@ pub fn upload_wgpu_skin_normal_palette(state: &mut WgpuRenderState, normal_matri
             .skin_normal_palette_arena_replays
             .clone();
         for (palette, replay_base) in replays {
-            write_wgpu_skin_arena_region(state, &texture, &palette, replay_base);
+            write_wgpu_skin_arena_region(state, &texture, &palette.read().unwrap(), replay_base);
         }
     }
     let texture = get_wgpu_scene3d_runtime(state)
         .skin_normal_palette_texture
         .clone()
         .unwrap();
-    write_wgpu_skin_arena_region(state, &texture, normal_matrices, base);
+    write_wgpu_skin_arena_region(state, &texture, &normal_matrices.read().unwrap(), base);
     let scene = get_wgpu_scene3d_runtime(state);
     scene.skin_normal_palette_arena_cursor = base + row_aligned_wgpu_skin_arena_texels(texels);
     scene
         .skin_normal_palette_arena_bases
         .get_or_insert_with(HashMap::new)
-        .insert(key, base);
+        .insert(key, (normal_matrices.clone(), base));
     scene
         .skin_normal_palette_arena_replays
-        .push((normal_matrices.to_vec(), base));
+        .push((normal_matrices.clone(), base));
     scene.pending_skin_normal_palette_base = base;
     return base;
 }
@@ -531,19 +542,26 @@ pub fn upload_wgpu_skin_normal_palette(state: &mut WgpuRenderState, normal_matri
 /// Uploads one flat column-major joint palette (four texels per mat4) into the per-frame arena and
 /// returns the base texel its region starts at (TS `uploadWgpuSkinPalette`). A palette already
 /// resident this frame (the shadow and mesh passes of one skeleton) shares its region.
-pub fn upload_wgpu_skin_palette(state: &mut WgpuRenderState, joint_matrices: &Float32Array) -> u32 {
+pub fn upload_wgpu_skin_palette(
+    state: &mut WgpuRenderState,
+    joint_matrices: &Ref<Box<Float32Array>>,
+) -> u32 {
     begin_wgpu_skin_arena_frame(state);
-    let key = joint_matrices.as_ptr() as usize;
+    // The arena holds every palette handle it keys for the frame, so the address key cannot be reused
+    // by another palette before the bases reset; the handle is still compared on lookup.
+    let key = Arc::as_ptr(joint_matrices) as usize;
     if let Some(existing) = get_wgpu_scene3d_runtime(state)
         .skin_palette_arena_bases
         .as_ref()
-        .and_then(|bases| bases.get(&key).copied())
+        .and_then(|bases| bases.get(&key))
+        .filter(|(palette, _)| Arc::ptr_eq(palette, joint_matrices))
+        .map(|(_, base)| *base)
     {
         get_wgpu_scene3d_runtime(state).pending_skin_palette_base = existing;
         return existing;
     }
 
-    let texels = (joint_matrices.len() as u32 / 16) * 4;
+    let texels = (joint_matrices.read().unwrap().len() as u32 / 16) * 4;
     let base = get_wgpu_scene3d_runtime(state).skin_palette_arena_cursor;
     let rows = get_wgpu_skin_arena_row_count(base + texels);
     if rows > get_wgpu_scene3d_runtime(state).skin_palette_arena_rows {
@@ -559,23 +577,23 @@ pub fn upload_wgpu_skin_palette(state: &mut WgpuRenderState, joint_matrices: &Fl
         scene.skin_mesh_draw_bind_group = None;
         let replays = scene.skin_palette_arena_replays.clone();
         for (palette, replay_base) in replays {
-            write_wgpu_skin_arena_region(state, &texture, &palette, replay_base);
+            write_wgpu_skin_arena_region(state, &texture, &palette.read().unwrap(), replay_base);
         }
     }
     let texture = get_wgpu_scene3d_runtime(state)
         .skin_palette_texture
         .clone()
         .unwrap();
-    write_wgpu_skin_arena_region(state, &texture, joint_matrices, base);
+    write_wgpu_skin_arena_region(state, &texture, &joint_matrices.read().unwrap(), base);
     let scene = get_wgpu_scene3d_runtime(state);
     scene.skin_palette_arena_cursor = base + row_aligned_wgpu_skin_arena_texels(texels);
     scene
         .skin_palette_arena_bases
         .get_or_insert_with(HashMap::new)
-        .insert(key, base);
+        .insert(key, (joint_matrices.clone(), base));
     scene
         .skin_palette_arena_replays
-        .push((joint_matrices.to_vec(), base));
+        .push((joint_matrices.clone(), base));
     scene.pending_skin_palette_base = base;
     return base;
 }

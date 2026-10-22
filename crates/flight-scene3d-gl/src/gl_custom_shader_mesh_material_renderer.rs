@@ -44,7 +44,7 @@ pub static GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer = GlM
 fn bind_gl_custom_shader_mesh_material(
     state: &mut GlRenderState,
     material: Option<&dyn Material3D>,
-    _lights: &Scene3DLightBlock,
+    _lights: &Rc<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
     let custom = material.and_then(|material| material.as_any().downcast_ref::<CustomShaderMaterial>());

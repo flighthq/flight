@@ -40,14 +40,36 @@ mod register_wgpu_shaded_material {
 mod wgpu_shaded_mesh_material_renderer {
     use super::*;
 
+    // Ruling 5: the plan cache holds the snippet table it resolved against and compares that handle,
+    // so a replaced table can never alias the cached one.
+    #[test]
+    fn caches_the_modifier_plan_against_the_held_snippet_table_handle() {
+        let mut test = make_wgpu_scene3d_state(None);
+        let material = create_shaded_material();
+        bind_test_renderer(&mut test.state, &WGPU_SHADED_MESH_MATERIAL_RENDERER, Some(&material as &dyn Material));
+        let table = flight_render_wgpu::get_wgpu_render_state_runtime(&test.state)
+            .registries
+            .modifier_snippets
+            .clone();
+        let runtime = get_wgpu_scene3d_runtime(&mut test.state);
+        let cached = runtime
+            .shaded_material_plan_cache
+            .get(&flight_entity::get_entity_id(&material))
+            .unwrap();
+        assert!(std::sync::Arc::ptr_eq(&cached.registry, &table));
+    }
+
     #[test]
     fn bind_compiles_a_shaded_module_and_binds_frame_material_and_sample_groups() {
         let mut test = make_wgpu_scene3d_state(None);
         let material = create_shaded_material();
-        let mut lights = make_test_lights();
-        lights.ambient_count = 0;
-        lights.directional_count = 0;
-        lights.data.fill(0.0);
+        let lights = make_test_lights();
+        {
+            let mut block = lights.write().unwrap();
+            block.ambient_count = 0;
+            block.directional_count = 0;
+            block.data.fill(0.0);
+        }
         (WGPU_SHADED_MESH_MATERIAL_RENDERER.bind)(
             &mut test.state,
             Some(&material as &dyn Material),

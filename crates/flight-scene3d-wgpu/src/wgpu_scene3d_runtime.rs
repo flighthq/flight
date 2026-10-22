@@ -97,9 +97,11 @@ fn create_wgpu_scene3d_runtime_record(
         default_material: None,
         pbr_material_scratch: [0.0; 48],
         forward_lights: None,
+        list_light_block: None,
         instance_scratch: Vec::new(),
         sort_key_counter: 0,
-        sort_keys: HashMap::new(),
+        material_sort_keys: HashMap::new(),
+        renderer_sort_keys: Vec::new(),
         time: 0.0,
         wireframe_uploads: HashMap::new(),
 

@@ -4,6 +4,9 @@
 //! derived line-index buffer and draws the subset's line range itself. `thickness` above 1 is not
 //! honored (WebGPU has no line-width control).
 
+use std::sync::LazyLock;
+
+use flight_entity::Ref;
 use flight_camera::Camera3D;
 use flight_color::{LinearColor, allocate_linear_color, unpack_color_to_linear};
 use flight_entity::get_entity_id;
@@ -26,8 +29,10 @@ use crate::wgpu_scene3d_runtime::get_wgpu_scene3d_runtime;
 use crate::wgpu_wireframe_prelude::{bind_wgpu_wireframe_color, ensure_wgpu_wireframe_pipeline};
 use crate::wgpu_wireframe_upload::ensure_wgpu_wireframe_upload;
 
-// The material key the material-less fallback bind caches under (TS: a module-level `{}` object).
-const FALLBACK_MATERIAL_KEY: u64 = u64::MAX - 7;
+// The identity the material-less fallback bind caches its binding under (TS: a module-level `{}`
+// object). A real entity, so its key is a numeric entity id (D12/D15): unique to this renderer and
+// never reused, so it cannot alias a material's binding or another renderer's fallback.
+static FALLBACK_MATERIAL: LazyLock<WireframeMaterial> = LazyLock::new(flight_materials::contract::create_wireframe_material);
 
 /// The Wireframe mesh-material renderer for `WIREFRAME_MATERIAL_KIND` (TS
 /// `wgpuWireframeMeshMaterialRenderer`).
@@ -40,7 +45,7 @@ pub static WGPU_WIREFRAME_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer =
 fn bind_wireframe_material(
     state: &mut WgpuRenderState,
     material: Option<&dyn Material>,
-    lights: &Scene3DLightBlock,
+    lights: &Ref<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
     if get_wgpu_render_state_runtime(state).render_pass.is_none() {
@@ -60,7 +65,7 @@ fn bind_wireframe_material(
         None => bind_wgpu_wireframe_color(
             state,
             &pipeline,
-            FALLBACK_MATERIAL_KEY,
+            flight_entity::get_entity_id(&*FALLBACK_MATERIAL),
             &white_linear_color(),
             None,
         ),
@@ -111,13 +116,7 @@ fn draw_wireframe_material(
         skinning,
     ) {
         (true, Some(joint_matrices), Some(normal_matrices), Some(skinning)) => {
-            let joint_matrices = joint_matrices.read().unwrap();
-            let normal_matrices = normal_matrices.read().unwrap();
-            Some((skinning.get_mesh_draw_bind_group)(
-                state,
-                &joint_matrices,
-                &normal_matrices,
-            ))
+            Some((skinning.get_mesh_draw_bind_group)(state, joint_matrices, normal_matrices))
         }
         _ => None,
     };

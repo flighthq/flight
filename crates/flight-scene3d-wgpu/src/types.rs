@@ -6,8 +6,9 @@
 //! and mesh-upload contracts live in render-wgpu, which types the registry slots (D8 lowest namer).
 
 use std::collections::HashMap;
+use std::sync::{Arc, RwLock, Weak};
 
-use flight_entity::{EntityRuntimeSlot, Ref};
+use flight_entity::{EntityRuntimeSlot, Float32Array, Ref};
 use flight_geometry::Matrix4;
 use flight_lighting::{Scene3DForwardLightSelection, Scene3DLightBlock, Scene3DLightsLike};
 use flight_materials::{BlendMode, ColorScaleBias, CustomShaderMaterial, Material3DRef};
@@ -284,7 +285,8 @@ pub struct WgpuShadedMaterialPlan {
     pub define_key: String,
     pub modifiers: Vec<Ref<dyn flight_shading::Modifier>>,
     pub plan: WgpuShadedModifierPlan,
-    pub registry: usize,
+    /// The snippet table the plan resolved against, held so its identity cannot be reused.
+    pub registry: Arc<flight_registry::KindMap<&'static flight_render_wgpu::WgpuModifierSnippet>>,
 }
 
 /// Where the shaded family resolves modifier compilers (TS `WgpuModifierSnippetSource`): the
@@ -343,7 +345,9 @@ pub struct WgpuScene3DRuntime {
     pub frame_bind_group: Option<wgpu::BindGroup>,
     pub frame_bind_group_layout: Option<wgpu::BindGroupLayout>,
     pub frame_buffer: Option<wgpu::Buffer>,
-    pub frame_bindings: HashMap<usize, WgpuScene3DFrameBinding>,
+    /// Frame bindings keyed by their light block's handle address (TS WeakMap keyed by the block).
+    /// Each entry holds a Weak to its block, which keeps the address reserved for the entry's life.
+    pub frame_bindings: HashMap<usize, (Weak<RwLock<Scene3DLightBlock>>, WgpuScene3DFrameBinding)>,
     pub custom_shader_guard: Option<WgpuScene3DCustomShaderGuard>,
     pub forward_light_selection_guard: Option<WgpuScene3DForwardLightSelectionGuard>,
     pub environment_source_cube: Option<wgpu::Texture>,
@@ -387,17 +391,21 @@ pub struct WgpuScene3DRuntime {
     pub skin_mesh_draw_bind_group: Option<wgpu::BindGroup>,
     pub skin_mesh_draw_bind_group_layout: Option<wgpu::BindGroupLayout>,
     pub skin_arena_frame: Option<u64>,
-    pub skin_normal_palette_arena_bases: Option<HashMap<usize, u32>>,
+    /// This frame's normal-palette regions keyed by the palette handle's address (TS Map keyed by the
+    /// Float32Array). Each entry holds its handle, so the address cannot be reused while it exists.
+    pub skin_normal_palette_arena_bases: Option<HashMap<usize, (Ref<Box<Float32Array>>, u32)>>,
     pub skin_normal_palette_arena_cursor: u32,
-    // The palettes written this frame and their bases, replayed into a grown arena (TS: iterating
-    // the bases map, whose keys are the palette arrays themselves).
-    pub skin_normal_palette_arena_replays: Vec<(Vec<f32>, u32)>,
+    // The palettes written this frame and their bases in write order, replayed into a grown arena
+    // (TS: iterating the bases map, whose keys are the palette arrays themselves).
+    pub skin_normal_palette_arena_replays: Vec<(Ref<Box<Float32Array>>, u32)>,
     pub skin_normal_palette_arena_rows: u32,
     pub skin_normal_palette_texture: Option<wgpu::Texture>,
     pub skin_normal_palette_view: Option<wgpu::TextureView>,
-    pub skin_palette_arena_bases: Option<HashMap<usize, u32>>,
+    /// This frame's pose-palette regions keyed by the palette handle's address; each entry holds its
+    /// handle (see `skin_normal_palette_arena_bases`).
+    pub skin_palette_arena_bases: Option<HashMap<usize, (Ref<Box<Float32Array>>, u32)>>,
     pub skin_palette_arena_cursor: u32,
-    pub skin_palette_arena_replays: Vec<(Vec<f32>, u32)>,
+    pub skin_palette_arena_replays: Vec<(Ref<Box<Float32Array>>, u32)>,
     pub skin_palette_arena_rows: u32,
     pub skin_palette_texture: Option<wgpu::Texture>,
     pub skin_palette_view: Option<wgpu::TextureView>,
@@ -413,9 +421,15 @@ pub struct WgpuScene3DRuntime {
     // (TS module `_materialScratch` in wgpuStandardPbrMeshMaterialRenderer).
     pub pbr_material_scratch: [f32; 48],
     pub forward_lights: Option<WgpuScene3DForwardLightPrepared>,
+    /// The frame's shared light block as a stable handle, refreshed in place from the prepared list
+    /// (TS: the list's own block object), so the Frame binding keyed by it is reused across frames.
+    pub list_light_block: Option<Ref<Scene3DLightBlock>>,
     pub instance_scratch: Vec<f32>,
     pub sort_key_counter: u32,
-    pub sort_keys: HashMap<usize, u32>,
+    /// The run sort ordinals of this frame's materials, keyed by entity id (D12/D15).
+    pub material_sort_keys: HashMap<u64, u32>,
+    /// The run sort ordinals of this frame's renderers: `&'static` tables compared by reference.
+    pub renderer_sort_keys: Vec<(&'static WgpuMeshMaterialRenderer, u32)>,
     pub time: f32,
     // The wireframe family's per-state line-index uploads keyed by geometry entity id (TS: the
     // module `wireframeUploads` WeakMap keyed by state).

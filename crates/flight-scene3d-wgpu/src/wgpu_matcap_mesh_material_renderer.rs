@@ -2,6 +2,9 @@
 //! The built-in Matcap forward renderer (TS `wgpuMatcapMeshMaterialRenderer.ts`): lighting-independent
 //! material-capture shading binding the linear tint; the matcap texture is not sampled on wgpu yet.
 
+use std::sync::LazyLock;
+
+use flight_entity::Ref;
 use flight_camera::Camera3D;
 use flight_color::{LinearColor, allocate_linear_color, unpack_color_to_linear};
 use flight_entity::get_entity_id;
@@ -22,8 +25,10 @@ use crate::wgpu_mesh_pipeline::{
     begin_wgpu_mesh_draw, draw_wgpu_mesh_subset, write_wgpu_frame_uniform,
 };
 
-// The material key the material-less fallback bind caches under (TS: a module-level `{}` object).
-const FALLBACK_MATERIAL_KEY: u64 = u64::MAX - 3;
+// The identity the material-less fallback bind caches its binding under (TS: a module-level `{}`
+// object). A real entity, so its key is a numeric entity id (D12/D15): unique to this renderer and
+// never reused, so it cannot alias a material's binding or another renderer's fallback.
+static FALLBACK_MATERIAL: LazyLock<MatcapMaterial> = LazyLock::new(flight_materials::contract::create_matcap_material);
 
 /// The Matcap mesh-material renderer for `MATCAP_MATERIAL_KIND` (TS `wgpuMatcapMeshMaterialRenderer`).
 pub static WGPU_MATCAP_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer =
@@ -35,7 +40,7 @@ pub static WGPU_MATCAP_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer =
 fn bind_matcap_material(
     state: &mut WgpuRenderState,
     material: Option<&dyn Material>,
-    lights: &Scene3DLightBlock,
+    lights: &Ref<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
     if get_wgpu_render_state_runtime(state).render_pass.is_none() {
@@ -52,7 +57,7 @@ fn bind_matcap_material(
         None => bind_wgpu_matcap_surface(
             state,
             &pipeline,
-            FALLBACK_MATERIAL_KEY,
+            flight_entity::get_entity_id(&*FALLBACK_MATERIAL),
             &white_linear_color(),
             0.5,
         ),

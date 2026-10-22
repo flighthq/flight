@@ -1,5 +1,6 @@
 // flight-lint: allow-file(contract-vocabulary) D17 mesh-material renderers are backend-typed dispatch records over thread-bound render-gl state
 
+use std::rc::Rc;
 use flight_camera::Camera3D;
 use flight_color::{allocate_linear_color, unpack_color_to_linear};
 use flight_lighting::Scene3DLightBlock;
@@ -57,7 +58,7 @@ pub static GL_SPECULAR_GLOSSINESS_PBR_MESH_MATERIAL_RENDERER: GlMeshMaterialRend
 fn bind_gl_specular_glossiness_pbr_mesh_material(
     state: &mut GlRenderState,
     material: Option<&dyn Material3D>,
-    lights: &Scene3DLightBlock,
+    lights: &Rc<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
     let spec_gloss = material.and_then(|material| {

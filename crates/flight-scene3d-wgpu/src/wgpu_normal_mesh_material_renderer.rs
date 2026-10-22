@@ -3,6 +3,9 @@
 //! normal mode, encoding the world-space normal as `n * 0.5 + 0.5`. The tangent-space normal map is not
 //! sampled on wgpu yet, so the map variant is never selected.
 
+use std::sync::LazyLock;
+
+use flight_entity::Ref;
 use flight_camera::Camera3D;
 use flight_entity::get_entity_id;
 use flight_lighting::Scene3DLightBlock;
@@ -22,8 +25,10 @@ use crate::wgpu_mesh_pipeline::{
     begin_wgpu_mesh_draw, draw_wgpu_mesh_subset, write_wgpu_frame_uniform,
 };
 
-// The material key the material-less fallback bind caches under (TS: a module-level `{}` object).
-const FALLBACK_MATERIAL_KEY: u64 = u64::MAX - 5;
+// The identity the material-less fallback bind caches its binding under (TS: a module-level `{}`
+// object). A real entity, so its key is a numeric entity id (D12/D15): unique to this renderer and
+// never reused, so it cannot alias a material's binding or another renderer's fallback.
+static FALLBACK_MATERIAL: LazyLock<NormalMaterial> = LazyLock::new(flight_materials::contract::create_normal_material);
 
 /// The Normal mesh-material renderer for `NORMAL_MATERIAL_KIND` (TS `wgpuNormalMeshMaterialRenderer`).
 pub static WGPU_NORMAL_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer =
@@ -35,7 +40,7 @@ pub static WGPU_NORMAL_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer =
 fn bind_normal_material(
     state: &mut WgpuRenderState,
     material: Option<&dyn Material>,
-    lights: &Scene3DLightBlock,
+    lights: &Ref<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
     if get_wgpu_render_state_runtime(state).render_pass.is_none() {
@@ -57,7 +62,7 @@ fn bind_normal_material(
     write_wgpu_frame_uniform(state, camera, lights);
 
     let group = match normal {
-        None => bind_wgpu_debug_surface(state, &pipeline, FALLBACK_MATERIAL_KEY, 0.0, 1.0, 1.0),
+        None => bind_wgpu_debug_surface(state, &pipeline, flight_entity::get_entity_id(&*FALLBACK_MATERIAL), 0.0, 1.0, 1.0),
         Some(normal) => bind_wgpu_debug_surface(
             state,
             &pipeline,

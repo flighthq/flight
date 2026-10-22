@@ -391,9 +391,11 @@ pub trait GlQuadMaterialRenderer {
 /// Per-backend 3D draw behavior for a mesh-material kind (TS `GlMeshMaterialRenderer`), registered
 /// against the kind through scene3d-gl's `register_gl_mesh_material_renderer`. `bind` selects the
 /// family program and uploads the per-run camera, light block and material state once per contiguous
-/// run; `draw` uploads geometry lazily and issues one subset draw from the reused proxy.
+/// run; `draw` uploads geometry lazily and issues one subset draw from the reused proxy. The light
+/// block arrives as its shared handle: its identity keys the per-program upload cache (TS: the block
+/// object), and a cache that keys by it also holds it, so the identity cannot be reused.
 pub struct GlMeshMaterialRenderer {
-    pub bind: fn(&mut GlRenderState, Option<&dyn Material3D>, &Scene3DLightBlock, &Camera3D),
+    pub bind: fn(&mut GlRenderState, Option<&dyn Material3D>, &Rc<Scene3DLightBlock>, &Camera3D),
     pub draw: fn(&mut GlRenderState, &Scene3DRenderProxy, &MeshGeometry),
 }
 

@@ -1,3 +1,4 @@
+use flight_entity::Ref;
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
@@ -21,8 +22,8 @@ const SOURCE: &str = "
 @fragment fn fs_main() -> @location(0) vec4f { return user; }
 ";
 
-fn no_lights() -> Scene3DLightBlock {
-    return Scene3DLightBlock {
+fn no_lights() -> Ref<Scene3DLightBlock> {
+    return Arc::new(RwLock::new(Scene3DLightBlock {
         ambient_count: 0,
         data: vec![0.0; SCENE_LIGHT_BLOCK_FLOATS].into_boxed_slice(),
         directional_count: 0,
@@ -30,7 +31,7 @@ fn no_lights() -> Scene3DLightBlock {
         point_count: 0,
         spot_count: 0,
         version: 1,
-    };
+    }));
 }
 
 fn make_material(shader_key: &str) -> CustomShaderMaterial {
@@ -39,7 +40,7 @@ fn make_material(shader_key: &str) -> CustomShaderMaterial {
     return material;
 }
 
-fn bind(test: &mut WgpuScene3DTestState, material: &CustomShaderMaterial, lights: &Scene3DLightBlock) {
+fn bind(test: &mut WgpuScene3DTestState, material: &CustomShaderMaterial, lights: &Ref<Scene3DLightBlock>) {
     (WGPU_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(
         &mut test.state,
         Some(material),

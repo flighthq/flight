@@ -505,9 +505,11 @@ pub struct GlScene3DRuntime {
     pub skin_normal_palette: Option<GlSkinPaletteTexture>,
     pub skin_palette: Option<GlSkinPaletteTexture>,
     pub time: f32,
-    /// The light block identity (address) and version last uploaded into each lit program's default
-    /// uniforms (TS module WeakMaps `_uploadedLightBlock` / `_uploadedLightVersion` keyed by program).
-    pub uploaded_light_blocks: HashMap<NativeProgram, (usize, u32)>,
+    /// The light block (held, so its identity cannot be reused) and version last uploaded into each
+    /// lit program's default uniforms (TS module WeakMaps `_uploadedLightBlock` /
+    /// `_uploadedLightVersion` keyed by program). An entry is dropped when its program is deleted, so a
+    /// recycled GL program name never inherits a stale upload.
+    pub uploaded_light_blocks: HashMap<NativeProgram, (Rc<Scene3DLightBlock>, u32)>,
 }
 
 /// One packed punctual-light block and the stable light-index tuple it was packed from (TS

@@ -15,7 +15,7 @@ const TEST_KIND: &str = "TestMeshMaterial";
 fn noop_bind(
     _state: &mut GlRenderState,
     _material: Option<&dyn flight_materials::Material3D>,
-    _lights: &flight_lighting::Scene3DLightBlock,
+    _lights: &std::rc::Rc<flight_lighting::Scene3DLightBlock>,
     _camera: &flight_camera::Camera3D,
 ) {
 }

@@ -114,6 +114,9 @@ pub fn destroy_gl_scene3d_runtime(state: &mut GlRenderState) {
             }
         }
         scene.program_cache.clear();
+        // The deleted programs' names may be recycled by the driver; drop every cache keyed by them.
+        scene.uploaded_light_blocks.clear();
+        scene.custom_shader_checked_programs.clear();
         scene.active_mesh_program = None;
 
         if let Some(ibl) = scene.ibl.take() {

@@ -2,6 +2,9 @@
 //! `wgpuPhongMeshMaterialRenderer.ts`), the WGSL mirror of scene3d-gl's Phong renderer: Lambert diffuse plus a reflection-vector
 //! specular lobe; the material binds its linear diffuse and specular colors and shininess.
 
+use std::sync::LazyLock;
+
+use flight_entity::Ref;
 use flight_camera::Camera3D;
 use flight_color::{allocate_linear_color, unpack_color_to_linear};
 use flight_entity::get_entity_id;
@@ -23,8 +26,10 @@ use crate::wgpu_mesh_pipeline::{
     begin_wgpu_mesh_draw, draw_wgpu_mesh_subset, is_wgpu_texture_ready, write_wgpu_frame_uniform,
 };
 
-// The shared binding key of the untextured default-material bind (TS `FALLBACK_MATERIAL`).
-const FALLBACK_MATERIAL_KEY: u64 = u64::MAX;
+// The identity the material-less fallback bind caches its binding under (TS: a module-level `{}`
+// object). A real entity, so its key is a numeric entity id (D12/D15): unique to this renderer and
+// never reused, so it cannot alias a material's binding or another renderer's fallback.
+static FALLBACK_MATERIAL: LazyLock<PhongMaterial> = LazyLock::new(flight_materials::contract::create_phong_material);
 
 /// The built-in Phong renderer for `PHONG_MATERIAL_KIND` (TS `wgpuPhongMeshMaterialRenderer`).
 pub static WGPU_PHONG_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer = WgpuMeshMaterialRenderer {
@@ -37,7 +42,7 @@ pub static WGPU_PHONG_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer = WgpuMes
 fn bind_wgpu_phong_material(
     state: &mut WgpuRenderState,
     material: Option<&dyn Material>,
-    lights: &Scene3DLightBlock,
+    lights: &Ref<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
     if get_wgpu_render_state_runtime(state).render_pass.is_none() {
@@ -55,7 +60,7 @@ fn bind_wgpu_phong_material(
         None => bind_wgpu_classic_surface(
             state,
             &pipeline,
-            FALLBACK_MATERIAL_KEY,
+            flight_entity::get_entity_id(&*FALLBACK_MATERIAL),
             &white,
             &white,
             32.0,

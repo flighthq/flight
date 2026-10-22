@@ -1,5 +1,6 @@
 // flight-lint: allow-file(contract-vocabulary) D17 mesh-material renderers are backend-typed dispatch records over thread-bound render-gl state
 
+use std::rc::Rc;
 use flight_camera::Camera3D;
 use flight_color::{LinearColor, allocate_linear_color, unpack_color_to_linear};
 use flight_lighting::Scene3DLightBlock;
@@ -96,7 +97,7 @@ fn bind_gl_toon_material_uniforms(
 fn bind_gl_toon_mesh_material(
     state: &mut GlRenderState,
     material: Option<&dyn Material3D>,
-    lights: &Scene3DLightBlock,
+    lights: &Rc<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
     let toon = material.and_then(|material| material.as_any().downcast_ref::<ToonMaterial>());

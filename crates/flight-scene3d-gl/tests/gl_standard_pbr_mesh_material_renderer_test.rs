@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use std::sync::{Arc, RwLock};
 
 use flight_camera::{Camera3D, Projection, create_camera_3d, create_perspective_projection};
@@ -25,7 +26,7 @@ fn make_camera() -> Camera3D {
     return camera;
 }
 
-fn make_lights() -> Scene3DLightBlock {
+fn make_lights() -> Rc<Scene3DLightBlock> {
     // Directional { dir.xyz @0, _pad, radiance.rgb @4, _pad } + ambient { radiance.rgb @8 }. Sized to
     // the full packed block (TS used 12 floats; its typed-array subarray clamps the light ranges).
     let mut data = vec![0.0_f32; SCENE_LIGHT_BLOCK_FLOATS];
@@ -36,7 +37,7 @@ fn make_lights() -> Scene3DLightBlock {
     data[8] = 0.1;
     data[9] = 0.1;
     data[10] = 0.1;
-    return Scene3DLightBlock {
+    return Rc::new(Scene3DLightBlock {
         ambient_count: 1,
         data: data.into_boxed_slice(),
         directional_count: 1,
@@ -44,7 +45,7 @@ fn make_lights() -> Scene3DLightBlock {
         point_count: 0,
         spot_count: 0,
         version: 1,
-    };
+    });
 }
 
 fn make_proxy() -> Scene3DRenderProxy {

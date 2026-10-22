@@ -81,6 +81,38 @@ mod destroy_gl_scene3d_runtime {
     }
 
     #[test]
+    fn drops_the_program_keyed_upload_records_with_the_deleted_programs() {
+        let mut state = make_gl_scene3d_state();
+        {
+            // SAFETY: the mock context allocates names on the test thread.
+            let program = unsafe { state.gl.create_program() }.unwrap();
+            let mut scene = get_gl_scene3d_runtime(&state);
+            scene.uploaded_light_blocks.insert(
+                program,
+                (
+                    Rc::new(flight_lighting::Scene3DLightBlock {
+                        ambient_count: 0,
+                        data: vec![0.0_f32; 4].into_boxed_slice(),
+                        directional_count: 0,
+                        hemisphere_count: 0,
+                        point_count: 0,
+                        spot_count: 0,
+                        version: 1,
+                    }),
+                    1,
+                ),
+            );
+            scene.custom_shader_checked_programs.insert(program);
+        }
+
+        destroy_gl_scene3d_runtime(&mut state);
+
+        let scene = get_gl_scene3d_runtime(&state);
+        assert!(scene.uploaded_light_blocks.is_empty());
+        assert!(scene.custom_shader_checked_programs.is_empty());
+    }
+
+    #[test]
     fn clears_an_allocated_runtime_with_no_optional_gpu_resources() {
         let mut state = make_gl_scene3d_state();
         drop(get_gl_scene3d_runtime(&state));

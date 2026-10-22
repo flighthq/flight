@@ -9,7 +9,7 @@ use std::sync::{Arc, Mutex, RwLock, Weak};
 
 use flight_effects::Effect;
 use flight_camera::Camera3D;
-use flight_entity::{AnySlot, Entity, EntityRuntimeSlot, Kind, Ref};
+use flight_entity::{AnySlot, Entity, EntityRuntimeSlot, Float32Array, Kind, Ref};
 use flight_host::{HostImageSource, HostSpawnCapability, WgpuDevice, WgpuSurfaceContext};
 use flight_image::{HostImageCapability, ImageResolverState};
 use flight_lighting::{Scene3DLightBlock, Scene3DLightsLike};
@@ -379,9 +379,10 @@ pub enum WgpuMaterialRenderer {
 /// against the kind in the shared material-renderer table and filled by scene3d-wgpu. `bind` binds
 /// the pipeline and uploads the per-run camera, light block and material once per contiguous run
 /// (`None` only for the default material); `draw` uploads geometry lazily and issues one subset's
-/// draw.
+/// draw. The light block arrives as its shared handle: its identity keys the per-block Frame
+/// binding (TS: the block object), and that cache holds the handle, so the identity cannot be reused.
 pub struct WgpuMeshMaterialRenderer {
-    pub bind: fn(&mut WgpuRenderState, Option<&dyn Material>, &Scene3DLightBlock, &Camera3D),
+    pub bind: fn(&mut WgpuRenderState, Option<&dyn Material>, &Ref<Scene3DLightBlock>, &Camera3D),
     pub draw: fn(&mut WgpuRenderState, &Scene3DRenderProxy, &MeshGeometry),
 }
 
@@ -391,13 +392,16 @@ pub type WgpuScene3DPass = fn(&mut WgpuRenderState, &NodeRef, &Camera3D, &Scene3
 
 /// The GPU skinning seam (TS `WgpuSkinningAdapter`), filled by scene3d-wgpu's adapter: the skinned
 /// WGSL prelude extensions, the palette bind groups and layouts for the shadow and mesh paths, the
-/// skinned upload and the skinned vertex layouts.
+/// skinned upload and the skinned vertex layouts. The palettes arrive as their shared handles: a
+/// palette's identity keys its per-frame arena region (TS: the Float32Array object), and the arena
+/// holds the handle for the frame, so that identity cannot be reused.
 pub struct WgpuSkinningAdapter {
     pub extend_mesh_prelude: fn(&str) -> String,
     pub extend_shadow_depth_prelude: fn(&str) -> String,
-    pub get_draw_bind_group: fn(&mut WgpuRenderState, &[f32]) -> wgpu::BindGroup,
+    pub get_draw_bind_group: fn(&mut WgpuRenderState, &Ref<Box<Float32Array>>) -> wgpu::BindGroup,
     pub get_draw_layout: fn(&mut WgpuRenderState) -> wgpu::BindGroupLayout,
-    pub get_mesh_draw_bind_group: fn(&mut WgpuRenderState, &[f32], &[f32]) -> wgpu::BindGroup,
+    pub get_mesh_draw_bind_group:
+        fn(&mut WgpuRenderState, &Ref<Box<Float32Array>>, &Ref<Box<Float32Array>>) -> wgpu::BindGroup,
     pub get_mesh_draw_layout: fn(&mut WgpuRenderState) -> wgpu::BindGroupLayout,
     pub get_upload_vertices: fn(&MeshGeometry) -> Option<Vec<f32>>,
     pub has_bind_pose: fn(&MeshGeometry) -> bool,

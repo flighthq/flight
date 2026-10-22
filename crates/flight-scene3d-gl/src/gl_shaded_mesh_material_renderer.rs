@@ -1,5 +1,6 @@
 // flight-lint: allow-file(contract-vocabulary) D17 mesh-material renderers are backend-typed dispatch records over thread-bound render-gl state; D16 heterogeneous Ref<dyn Modifier> stacks
 
+use std::rc::Rc;
 use std::sync::PoisonError;
 
 use flight_camera::Camera3D;
@@ -123,7 +124,7 @@ fn bind_gl_shaded_material_uniforms(
 fn bind_gl_shaded_mesh_material(
     state: &mut GlRenderState,
     material: Option<&dyn Material3D>,
-    lights: &Scene3DLightBlock,
+    lights: &Rc<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
     let shaded = material.and_then(|material| material.as_any().downcast_ref::<ShadedMaterial>());

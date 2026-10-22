@@ -3,13 +3,18 @@ use flight_scene3d_wgpu::contract::*;
 
 use crate::support::*;
 
+// A shared palette handle (TS: a skeleton's Float32Array), whose identity keys its arena region.
+fn make_palette(length: usize) -> flight_entity::Ref<Box<flight_entity::Float32Array>> {
+    return std::sync::Arc::new(std::sync::RwLock::new(vec![0.0_f32; length].into_boxed_slice()));
+}
+
 mod destroy_wgpu_skin_palette {
     use super::*;
 
     #[test]
     fn clears_every_palette_and_draw_group_cache_slot() {
         let mut test = make_wgpu_scene3d_state(None);
-        let palette = vec![0.0_f32; 16];
+        let palette = make_palette(16);
         ensure_wgpu_skin_draw_bind_group(&mut test.state, &palette);
         assert!(get_wgpu_scene3d_runtime(&mut test.state).skin_draw_bind_group.is_some());
 
@@ -31,7 +36,7 @@ mod ensure_wgpu_skin_draw_bind_group {
     #[test]
     fn caches_the_group_and_rebuilds_it_only_when_palette_growth_replaces_its_view() {
         let mut test = make_wgpu_scene3d_state(None);
-        let palette = vec![0.0_f32; 16];
+        let palette = make_palette(16);
         let first = ensure_wgpu_skin_draw_bind_group(&mut test.state, &palette);
         let group_count = test.count("createBindGroup");
         // The same skeleton keeps its region, so nothing is reallocated and nothing is rebuilt.
@@ -39,7 +44,7 @@ mod ensure_wgpu_skin_draw_bind_group {
         assert_eq!(test.count("createBindGroup"), group_count);
 
         // A second skeleton claims the next row, which outgrows the arena and replaces its view.
-        let second = vec![0.0_f32; 16];
+        let second = make_palette(16);
         ensure_wgpu_skin_draw_bind_group(&mut test.state, &second);
         assert_eq!(test.count("createBindGroup"), group_count + 1);
         assert_eq!(test.count("createTexture"), 2);
@@ -64,8 +69,8 @@ mod ensure_wgpu_skin_mesh_draw_bind_group {
     #[test]
     fn binds_both_palettes_so_no_binding_its_layout_declares_is_left_unsupplied() {
         let mut test = make_wgpu_scene3d_state(None);
-        let joints = vec![0.0_f32; 16 * 2];
-        let normals = vec![0.0_f32; 12 * 2];
+        let joints = make_palette(16 * 2);
+        let normals = make_palette(12 * 2);
         ensure_wgpu_skin_mesh_draw_bind_group(&mut test.state, &joints, &normals);
         let group = test.bind_groups().last().cloned().unwrap();
         let bindings: Vec<u32> = group.entries.iter().map(|entry| entry.binding).collect();
@@ -130,7 +135,7 @@ mod upload_wgpu_skin_normal_palette {
     #[test]
     fn packs_three_texels_per_joint_not_four() {
         let mut test = make_wgpu_scene3d_state(None);
-        let normals = vec![0.0_f32; 12 * 2];
+        let normals = make_palette(12 * 2);
         let base = upload_wgpu_skin_normal_palette(&mut test.state, &normals);
         let texture = test.textures()[0].clone();
         let write = test.texture_writes()[0].clone();
@@ -144,8 +149,8 @@ mod upload_wgpu_skin_normal_palette {
     #[test]
     fn uses_a_texture_distinct_from_the_pose_palette() {
         let mut test = make_wgpu_scene3d_state(None);
-        let joints = vec![0.0_f32; 16];
-        let normals = vec![0.0_f32; 12];
+        let joints = make_palette(16);
+        let normals = make_palette(12);
         upload_wgpu_skin_palette(&mut test.state, &joints);
         upload_wgpu_skin_normal_palette(&mut test.state, &normals);
         let runtime = get_wgpu_scene3d_runtime(&mut test.state);
@@ -159,7 +164,7 @@ mod upload_wgpu_skin_palette {
     #[test]
     fn packs_four_rgba32float_texels_per_joint_into_a_fixed_width_arena_row() {
         let mut test = make_wgpu_scene3d_state(None);
-        let joints = vec![0.0_f32; 32];
+        let joints = make_palette(32);
         let base = upload_wgpu_skin_palette(&mut test.state, &joints);
         let texture = test.textures()[0].clone();
         let write = test.texture_writes()[0].clone();
@@ -175,8 +180,8 @@ mod upload_wgpu_skin_palette {
     #[test]
     fn gives_two_skeletons_in_one_frame_distinct_regions() {
         let mut test = make_wgpu_scene3d_state(None);
-        let first_joints = vec![0.0_f32; 16 * 2];
-        let second_joints = vec![0.0_f32; 16 * 2];
+        let first_joints = make_palette(16 * 2);
+        let second_joints = make_palette(16 * 2);
         let first = upload_wgpu_skin_palette(&mut test.state, &first_joints);
         let second = upload_wgpu_skin_palette(&mut test.state, &second_joints);
 
@@ -187,7 +192,7 @@ mod upload_wgpu_skin_palette {
     #[test]
     fn gives_one_skeleton_one_region_however_many_passes_ask_for_it() {
         let mut test = make_wgpu_scene3d_state(None);
-        let palette = vec![0.0_f32; 16 * 2];
+        let palette = make_palette(16 * 2);
         let shadow_pass = upload_wgpu_skin_palette(&mut test.state, &palette);
         let writes = test.count("writeTexture");
         let mesh_pass = upload_wgpu_skin_palette(&mut test.state, &palette);
@@ -197,10 +202,22 @@ mod upload_wgpu_skin_palette {
     }
 
     // 100 joints is 400 texels against a 256-texel row: one full row and 144 left over.
+    // Ruling 5: the arena keys a region by the palette handle and holds that handle for the frame,
+    // so the address cannot be reused by another palette before the bases reset.
+    #[test]
+    fn holds_each_keyed_palette_handle_until_the_arena_resets() {
+        let mut test = make_wgpu_scene3d_state(None);
+        let palette = make_palette(16 * 2);
+        upload_wgpu_skin_palette(&mut test.state, &palette);
+        assert_eq!(std::sync::Arc::strong_count(&palette), 3);
+        destroy_wgpu_skin_palette(&mut test.state);
+        assert_eq!(std::sync::Arc::strong_count(&palette), 1);
+    }
+
     #[test]
     fn spans_rows_for_a_skeleton_wider_than_one_row_as_whole_rows_plus_the_remainder() {
         let mut test = make_wgpu_scene3d_state(None);
-        let joints = vec![0.0_f32; 16 * 100];
+        let joints = make_palette(16 * 100);
         upload_wgpu_skin_palette(&mut test.state, &joints);
         let writes = test.texture_writes();
 
@@ -220,8 +237,8 @@ mod upload_wgpu_skin_palette {
     #[test]
     fn starts_the_next_region_on_a_row_boundary_so_every_write_stays_a_rectangle() {
         let mut test = make_wgpu_scene3d_state(None);
-        let first = vec![0.0_f32; 16 * 100];
-        let second = vec![0.0_f32; 16 * 2];
+        let first = make_palette(16 * 100);
+        let second = make_palette(16 * 2);
         upload_wgpu_skin_palette(&mut test.state, &first);
         assert_eq!(upload_wgpu_skin_palette(&mut test.state, &second), 512);
     }
@@ -230,8 +247,8 @@ mod upload_wgpu_skin_palette {
     #[test]
     fn replays_regions_already_handed_out_when_growth_replaces_the_arena_texture() {
         let mut test = make_wgpu_scene3d_state(None);
-        let first = vec![0.0_f32; 16 * 2];
-        let second = vec![0.0_f32; 16 * 2];
+        let first = make_palette(16 * 2);
+        let second = make_palette(16 * 2);
         upload_wgpu_skin_palette(&mut test.state, &first);
         let before = test.count("writeTexture");
 

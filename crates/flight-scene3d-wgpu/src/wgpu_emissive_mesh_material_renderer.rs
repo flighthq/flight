@@ -2,6 +2,9 @@
 //! The built-in Emissive forward renderer (TS `wgpuEmissiveMeshMaterialRenderer.ts`): the linear emissive
 //! color scaled by `emissive_strength` through the shared unlit pipeline (values above 1 drive bloom).
 
+use std::sync::LazyLock;
+
+use flight_entity::Ref;
 use flight_camera::Camera3D;
 use flight_color::{LinearColor, allocate_linear_color, unpack_color_to_linear};
 use flight_entity::get_entity_id;
@@ -22,8 +25,10 @@ use crate::wgpu_mesh_pipeline::{
 };
 use crate::wgpu_unlit_prelude::{bind_wgpu_unlit_surface, ensure_wgpu_unlit_pipeline};
 
-// The material key the material-less fallback bind caches under (TS: a module-level `{}` object).
-const FALLBACK_MATERIAL_KEY: u64 = u64::MAX - 1;
+// The identity the material-less fallback bind caches its binding under (TS: a module-level `{}`
+// object). A real entity, so its key is a numeric entity id (D12/D15): unique to this renderer and
+// never reused, so it cannot alias a material's binding or another renderer's fallback.
+static FALLBACK_MATERIAL: LazyLock<EmissiveMaterial> = LazyLock::new(flight_materials::contract::create_emissive_material);
 
 /// The Emissive mesh-material renderer for `EMISSIVE_MATERIAL_KIND` (TS `wgpuEmissiveMeshMaterialRenderer`).
 pub static WGPU_EMISSIVE_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer =
@@ -35,7 +40,7 @@ pub static WGPU_EMISSIVE_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer =
 fn bind_emissive_material(
     state: &mut WgpuRenderState,
     material: Option<&dyn Material>,
-    lights: &Scene3DLightBlock,
+    lights: &Ref<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
     if get_wgpu_render_state_runtime(state).render_pass.is_none() {
@@ -53,7 +58,7 @@ fn bind_emissive_material(
         None => bind_wgpu_unlit_surface(
             state,
             &pipeline,
-            FALLBACK_MATERIAL_KEY,
+            flight_entity::get_entity_id(&*FALLBACK_MATERIAL),
             &white_linear_color(),
             1.0,
             0.5,

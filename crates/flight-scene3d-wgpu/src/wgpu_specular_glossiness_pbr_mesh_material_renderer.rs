@@ -4,6 +4,9 @@
 //! the CPU at bind time (Khronos reference conversion) into a StandardPbr block that drives the same
 //! base PBR program with no extension flag.
 
+use std::sync::LazyLock;
+
+use flight_entity::Ref;
 use flight_camera::Camera3D;
 use flight_color::{LinearColor, allocate_linear_color, unpack_color_to_linear};
 use flight_lighting::Scene3DLightBlock;
@@ -36,14 +39,15 @@ pub static WGPU_SPECULAR_GLOSSINESS_PBR_MESH_MATERIAL_RENDERER: WgpuMeshMaterial
 
 const DIELECTRIC_SPECULAR: f32 = 0.04;
 
-// The material-binding cache key for a bind with no material (TS `FALLBACK_MATERIAL`'s identity),
-// distinct from the StandardPbr renderer's.
-const FALLBACK_MATERIAL_KEY: u64 = u64::MAX - 1;
+// The identity the material-less fallback bind caches its binding under (TS: a module-level `{}`
+// object). A real entity, so its key is a numeric entity id (D12/D15): unique to this renderer and
+// never reused, so it cannot alias a material's binding or another renderer's fallback.
+static FALLBACK_MATERIAL: LazyLock<SpecularGlossinessPbrMaterial> = LazyLock::new(flight_materials::contract::create_specular_glossiness_pbr_material);
 
 fn bind_wgpu_specular_glossiness_pbr_material(
     state: &mut WgpuRenderState,
     material: Option<&dyn Material>,
-    lights: &Scene3DLightBlock,
+    lights: &Ref<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
     let runtime = get_wgpu_render_state_runtime(state);
@@ -63,7 +67,7 @@ fn bind_wgpu_specular_glossiness_pbr_material(
     write_wgpu_frame_uniform(state, camera, lights);
     let cache_key = match spec_gloss {
         Some(material) => flight_entity::get_entity_id(material),
-        None => FALLBACK_MATERIAL_KEY,
+        None => flight_entity::get_entity_id(&*FALLBACK_MATERIAL),
     };
     let binding = ensure_wgpu_pbr_material_bind_group(state, &pipeline, cache_key, standard.as_ref());
     let alpha_cutoff = spec_gloss.map_or(0.5, |material| material.material3d_fields().alpha_cutoff);

@@ -4,6 +4,7 @@
 //! group(1) every built-in family uses, user values in group(2) and sampler/texture pairs in
 //! group(3).
 
+use flight_entity::Ref;
 use std::sync::Arc;
 
 use flight_camera::Camera3D;
@@ -46,7 +47,7 @@ pub static WGPU_CUSTOM_SHADER_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer =
 fn bind_wgpu_custom_shader_material(
     state: &mut WgpuRenderState,
     material: Option<&dyn Material>,
-    lights: &Scene3DLightBlock,
+    lights: &Ref<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
     let custom = material.and_then(|material| material.as_any().downcast_ref::<CustomShaderMaterial>());
