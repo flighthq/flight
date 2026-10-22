@@ -430,7 +430,7 @@ pub type GlScene3DColorSpaceGuard = fn(&GlRenderState);
 pub type GlScene3DCustomShaderGuard = fn(&GlRenderState, NativeProgram, &str);
 pub type GlScene3DDeformGuard = fn(&GlRenderState, &Mesh);
 pub type GlScene3DForwardLightSelectionGuard = fn(&GlRenderState, &Scene3DLightsLike);
-pub type GlScene3DPbrExtensionGuard = fn(&GlRenderState, &[Ref<PbrExtension>]);
+pub type GlScene3DPbrExtensionGuard = fn(&mut GlRenderState, &[Ref<PbrExtension>]);
 
 /// A teardown a lazily created optional resource registers (TS `resourceCleanups` entry).
 pub type GlScene3DResourceCleanup = fn(&mut GlRenderState);
@@ -492,6 +492,9 @@ pub struct GlScene3DRuntime {
     pub(crate) particle_emitter3d_shader: Option<crate::gl_particle_emitter3d::GlParticle3DShader>,
     pub opaque_pool: Vec<GlScene3DDrawEntry>,
     pub pbr_extension_guard: Option<GlScene3DPbrExtensionGuard>,
+    /// prepare_gl_scene3d_forward_lights's state-owned scratch (TS module WeakMap
+    /// `preparedGlScene3DForwardLights` keyed by state).
+    pub prepared_forward_lights: Option<PreparedGlScene3DForwardLights>,
     pub pbr_transmission_scene_color: Option<GlPbrTransmissionSceneColor>,
     pub program_cache: HashMap<String, GlMeshProgramRef>,
     pub resource_cleanups: Option<Vec<GlScene3DResourceCleanup>>,
@@ -503,6 +506,23 @@ pub struct GlScene3DRuntime {
     /// The light block identity (address) and version last uploaded into each lit program's default
     /// uniforms (TS module WeakMaps `_uploadedLightBlock` / `_uploadedLightVersion` keyed by program).
     pub uploaded_light_blocks: HashMap<NativeProgram, (usize, u32)>,
+}
+
+/// One packed punctual-light block and the stable light-index tuple it was packed from (TS
+/// `PreparedForwardLightBlock`).
+#[derive(Clone, Debug, Default)]
+pub struct PreparedForwardLightBlock {
+    pub indices: Vec<i32>,
+    pub lights: Rc<Scene3DLightBlock>,
+}
+
+/// prepare_gl_scene3d_forward_lights's reusable per-state scratch (TS `PreparedGlScene3DForwardLights`).
+#[derive(Clone, Debug, Default)]
+pub struct PreparedGlScene3DForwardLights {
+    pub block_count: usize,
+    pub blocks: Vec<PreparedForwardLightBlock>,
+    pub list: GlScene3DForwardLightList,
+    pub selection: flight_lighting::Scene3DForwardLightSelection,
 }
 
 /// TS `GlIblPlaceholders`: the correctly-typed placeholder textures for the PBR IBL samplers.

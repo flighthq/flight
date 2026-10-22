@@ -62,6 +62,7 @@ fn create_gl_scene3d_runtime_record() -> GlScene3DRuntime {
         opaque_pool: Vec::new(),
         pbr_extension_guard: None,
         pbr_transmission_scene_color: None,
+        prepared_forward_lights: None,
         program_cache: HashMap::new(),
         resource_cleanups: None,
         shadow: None,
