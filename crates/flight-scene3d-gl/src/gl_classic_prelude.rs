@@ -51,6 +51,49 @@ pub fn build_gl_classic_define_key(key: &GlClassicDefineKey) -> String {
     );
 }
 
+// Builds the leading "#version 300 es\n#define ..." block for a classic define key, to be prepended
+// to the vertex and fragment prelude bodies before compile. Pure string assembly; the same key always
+// yields the same source, which is what makes the program cache by define key sound.
+fn build_gl_classic_define_source(key: &GlClassicDefineKey) -> String {
+    let mut defines = format!("#version 300 es\n#define MAX_FORWARD_LIGHTS {MAX_FORWARD_LIGHTS}\n");
+    if key.lighting_model == GlClassicLightingModel::Phong {
+        defines += "#define LIGHTING_PHONG\n";
+    }
+    if key.lighting_model == GlClassicLightingModel::BlinnPhong {
+        defines += "#define LIGHTING_BLINNPHONG\n";
+    }
+    if key.alpha_mask_enabled {
+        defines += "#define ALPHA_MASK\n";
+    }
+    if key.has_diffuse_map {
+        defines += "#define HAS_DIFFUSE_MAP\n";
+    }
+    if key.has_specular_map {
+        defines += "#define HAS_SPECULAR_MAP\n";
+    }
+    if key.has_normal_map {
+        defines += "#define HAS_NORMAL_MAP\n";
+    }
+    if key.has_alpha_map {
+        defines += "#define HAS_ALPHA_MAP\n";
+    }
+    if key.has_uv_transform {
+        defines += "#define HAS_UV_TRANSFORM\n";
+    }
+    if key.has_skin == Some(true) {
+        defines += "#define HAS_SKIN\n";
+    }
+    if key.has_instances == Some(true) {
+        defines += "#define HAS_INSTANCES\n";
+    }
+    if key.has_color_matrix == Some(true) {
+        defines += "#define HAS_COLOR_MATRIX\n";
+    } else if key.has_color_adjustment == Some(true) {
+        defines += "#define HAS_COLOR_ADJUSTMENT\n";
+    }
+    return defines;
+}
+
 // Compiles the classic uber-shader for a define key, links it, and resolves its uniform locations.
 // Pure GL work — no caching — used by ensure_gl_classic_program. Panics (TS throws) on a compile/link
 // failure, which is a programmer error (a malformed prelude), not an expected runtime condition.
@@ -179,49 +222,6 @@ pub fn get_gl_classic_vertex_source_for_key(
         ""
     };
     return build_gl_classic_define_source(key) + skin + instances + CLASSIC_VERTEX_BODY;
-}
-
-// Builds the leading "#version 300 es\n#define ..." block for a classic define key, to be prepended
-// to the vertex and fragment prelude bodies before compile. Pure string assembly; the same key always
-// yields the same source, which is what makes the program cache by define key sound.
-fn build_gl_classic_define_source(key: &GlClassicDefineKey) -> String {
-    let mut defines = format!("#version 300 es\n#define MAX_FORWARD_LIGHTS {MAX_FORWARD_LIGHTS}\n");
-    if key.lighting_model == GlClassicLightingModel::Phong {
-        defines += "#define LIGHTING_PHONG\n";
-    }
-    if key.lighting_model == GlClassicLightingModel::BlinnPhong {
-        defines += "#define LIGHTING_BLINNPHONG\n";
-    }
-    if key.alpha_mask_enabled {
-        defines += "#define ALPHA_MASK\n";
-    }
-    if key.has_diffuse_map {
-        defines += "#define HAS_DIFFUSE_MAP\n";
-    }
-    if key.has_specular_map {
-        defines += "#define HAS_SPECULAR_MAP\n";
-    }
-    if key.has_normal_map {
-        defines += "#define HAS_NORMAL_MAP\n";
-    }
-    if key.has_alpha_map {
-        defines += "#define HAS_ALPHA_MAP\n";
-    }
-    if key.has_uv_transform {
-        defines += "#define HAS_UV_TRANSFORM\n";
-    }
-    if key.has_skin == Some(true) {
-        defines += "#define HAS_SKIN\n";
-    }
-    if key.has_instances == Some(true) {
-        defines += "#define HAS_INSTANCES\n";
-    }
-    if key.has_color_matrix == Some(true) {
-        defines += "#define HAS_COLOR_MATRIX\n";
-    } else if key.has_color_adjustment == Some(true) {
-        defines += "#define HAS_COLOR_ADJUSTMENT\n";
-    }
-    return defines;
 }
 
 macro_rules! classic_vertex_body_glsl {
@@ -465,4 +465,3 @@ void main() {
     };
 }
 const CLASSIC_FRAGMENT_BODY: &str = classic_fragment_body_glsl!();
-

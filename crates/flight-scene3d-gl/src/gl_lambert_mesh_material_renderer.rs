@@ -31,33 +31,6 @@ pub static GL_LAMBERT_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer = GlMeshMat
     draw: draw_gl_lambert_mesh_material,
 };
 
-// Registers the built-in Lambert renderer for LambertMaterialKind on this state. Opt-in (no top-level
-// side effect); call once per GlRenderState before drawScene3D so meshes with LambertMaterials draw.
-pub fn register_gl_lambert_material(state: &mut GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        LAMBERT_MATERIAL_KIND.to_string(),
-        &GL_LAMBERT_MESH_MATERIAL_RENDERER,
-    );
-}
-
-fn bind_gl_lambert_mesh_material(
-    state: &mut GlRenderState,
-    material: Option<&dyn Material3D>,
-    lights: &Scene3DLightBlock,
-    camera: &Camera3D,
-) {
-    let lambert = material.and_then(|material| material.as_any().downcast_ref::<LambertMaterial>());
-    let key = define_key_for_material(state, lambert);
-    let program = ensure_gl_classic_program(state, &key);
-    let active: GlMeshProgramRef = program.clone();
-    begin_gl_mesh_draw(state, &active, lambert.is_some_and(|lambert| lambert.double_sided));
-
-    set_gl_mesh_view_projection(state, program.loc_view_projection, camera);
-    bind_gl_mesh_light_block(state, &program, lights);
-    bind_gl_lambert_material_uniforms(state, &program, lambert);
-}
-
 fn bind_gl_lambert_material_uniforms(
     state: &mut GlRenderState,
     program: &GlClassicProgram,
@@ -102,6 +75,23 @@ fn bind_gl_lambert_material_uniforms(
     );
 }
 
+fn bind_gl_lambert_mesh_material(
+    state: &mut GlRenderState,
+    material: Option<&dyn Material3D>,
+    lights: &Scene3DLightBlock,
+    camera: &Camera3D,
+) {
+    let lambert = material.and_then(|material| material.as_any().downcast_ref::<LambertMaterial>());
+    let key = define_key_for_material(state, lambert);
+    let program = ensure_gl_classic_program(state, &key);
+    let active: GlMeshProgramRef = program.clone();
+    begin_gl_mesh_draw(state, &active, lambert.is_some_and(|lambert| lambert.double_sided));
+
+    set_gl_mesh_view_projection(state, program.loc_view_projection, camera);
+    bind_gl_mesh_light_block(state, &program, lights);
+    bind_gl_lambert_material_uniforms(state, &program, lambert);
+}
+
 // The feature define key for a Lambert material: the fixed `lambert` lighting model plus which optional
 // maps are present and whether alpha-mask cutoff is active. Lambert never has specular or normal maps.
 fn define_key_for_material(state: &mut GlRenderState, material: Option<&LambertMaterial>) -> GlClassicDefineKey {
@@ -135,4 +125,14 @@ fn draw_gl_lambert_mesh_material(
         return;
     };
     draw_gl_mesh_subset(state, program.mesh_program(), proxy, geometry);
+}
+
+// Registers the built-in Lambert renderer for LambertMaterialKind on this state. Opt-in (no top-level
+// side effect); call once per GlRenderState before drawScene3D so meshes with LambertMaterials draw.
+pub fn register_gl_lambert_material(state: &mut GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        LAMBERT_MATERIAL_KIND.to_string(),
+        &GL_LAMBERT_MESH_MATERIAL_RENDERER,
+    );
 }
