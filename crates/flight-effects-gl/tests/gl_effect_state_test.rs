@@ -50,7 +50,8 @@ mod begin_gl_effect_pass {
 }
 
 mod create_gl_effect_state {
-    use flight_effects_gl::contract::{EffectStateOptions, create_gl_effect_state};
+    use flight_effects::EffectStateOptions;
+    use flight_effects_gl::contract::create_gl_effect_state;
     use flight_render::RenderTargetFormat;
 
     use crate::gl_test_helper::make_state;

@@ -11,6 +11,7 @@ use flight_adjustments::{
     get_adjustment_color_matrix, is_color_lut_adjustment,
 };
 use flight_color::srgb_channel_to_linear;
+use flight_effects::EffectStateOptions;
 use flight_entity::Ref;
 use flight_render::{RenderTargetDescriptor, RenderTargetFormat};
 use flight_render_gl::{
@@ -24,7 +25,7 @@ use flight_texture::RenderTargetColorSpace;
 use glow::{HasContext, NativeTexture};
 
 use crate::contract::{
-    EffectOperation, EffectStateOptions, GlColorLutTextureCache, GlEffectContext, GlEffectState,
+    EffectOperation, GlColorLutTextureCache, GlEffectContext, GlEffectState,
     GlEffectStateSkipGuard, apply_color_lut_pass_to_gl, apply_color_matrix_pass_to_gl,
     get_gl_effect_runner,
 };
@@ -85,7 +86,7 @@ pub fn begin_gl_effect_pass(
     }
     let w = viewport[2].max(0) as f32;
     let h = viewport[3].max(0) as f32;
-    let options = pipeline.options.clone();
+    let options = pipeline.options;
 
     match pipeline.scene_target.as_mut() {
         None => {

@@ -3,9 +3,8 @@
 use std::sync::Arc;
 
 use flight_adjustments::{Adjustment, ColorLut, ColorLutCache};
-use flight_effects::{Effect, EffectRef};
+use flight_effects::{Effect, EffectRef, EffectStateOptions};
 use flight_entity::{Kind, Ref};
-use flight_render::{RenderTargetDepth, RenderTargetFormat};
 use flight_render_gl::{GlRenderState, GlTextureRenderTarget, GlTextureRenderTargetPool};
 use glow::NativeTexture;
 
@@ -75,17 +74,6 @@ pub type GlEffectStateSkipGuard = Arc<dyn Fn(&GlRenderState, &str) + Send + Sync
 /// Observed when a render-texture application ends in one of the sentinel statuses.
 pub type GlEffectApplicationGuard =
     Arc<dyn Fn(&GlRenderState, &GlEffectApplicationExplanation) + Send + Sync>;
-
-/// Scene-target configuration for an effect pass (TS `EffectStateOptions`).
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct EffectStateOptions {
-    /// Depth attachment for depth-dependent effects (SSAO, DoF, fog). Default `None` depth.
-    pub depth: Option<RenderTargetDepth>,
-    /// `Rgba16F` gives bloom/tone-mapping HDR headroom. Default `Rgba8`.
-    pub format: Option<RenderTargetFormat>,
-    /// MSAA on the scene target so going offscreen for effects keeps edge AA. Default 1.
-    pub sample_count: Option<f32>,
-}
 
 /// GPU-upload memo for the fused color LUT: the uploaded `size³` 3D texture and the ColorLut last
 /// written into it (both `None` before the first upload). `texture` is a GPU resource; destroy it

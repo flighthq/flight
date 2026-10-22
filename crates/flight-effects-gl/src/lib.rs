@@ -69,7 +69,6 @@ pub mod contract;
 // signatures require. Shared recipe helpers, per-kind apply_* functions, shader consts and the GLSL
 // test helper stay in `contract`.
 pub use contract::EffectOperation;
-pub use contract::EffectStateOptions;
 pub use contract::GlColorLutTextureCache;
 pub use contract::GlCustomShaderSourceGuard;
 pub use contract::GlEffectApplicationExplanation;
