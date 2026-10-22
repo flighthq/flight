@@ -7,7 +7,7 @@ use flight_importdiagnostics::ImportDiagnostic;
 use flight_skeleton2d::contract::{
     Attachment2DRef, AttachmentSkin2D, Bone2D, Skeleton2D, Skeleton2DDrawOrderTimeline, Slot2D,
 };
-use flight_texture_formats::ByteReader;
+use flight_buffer::ByteReader;
 use serde_json::{Map, Value};
 
 pub const DRAGON_BONES_SECTION_KIND_ANIMATIONS: &str = "animations";

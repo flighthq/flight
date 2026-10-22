@@ -1,4 +1,4 @@
-use flight_texture_formats::*;
+use flight_buffer::*;
 
 mod create_byte_reader {
     use super::*;

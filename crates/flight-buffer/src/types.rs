@@ -3,13 +3,21 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::{Arc, RwLock};
 
-use flight_entity::{FlightError, FlightErrorKind, Ref, Unknown};
+use flight_entity::{FlightError, FlightErrorKind, Ref, Uint8Array, Unknown};
 
 /// The exact optional `Blob.arrayBuffer()` provider callback. Its returned future retains the
 /// provider's ArrayBuffer allocation or canonical Unknown rejection value without conversion.
 pub type BlobArrayBufferReader = Arc<
     dyn Fn() -> Pin<Box<dyn Future<Output = Result<ArrayBuffer, Unknown>> + Send>> + Send + Sync,
 >;
+
+/// A forward-only little/big-endian cursor over a byte view (TS `ByteReader`), shared by the
+/// binary format parsers.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ByteReader<'a> {
+    pub view: &'a Uint8Array,
+    pub offset: usize,
+}
 
 /// JavaScript `ArrayBuffer`: one fixed-length byte allocation shared by identity. Cloning never
 /// copies or flattens the bytes; views and clones retain the same storage allocation.

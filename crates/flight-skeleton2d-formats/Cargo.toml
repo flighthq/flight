@@ -20,7 +20,7 @@ flight-entity = { workspace = true }
 flight-importdiagnostics = { workspace = true }
 flight-requirement = { workspace = true }
 flight-skeleton2d = { path = "../flight-skeleton2d" }
-flight-texture-formats = { workspace = true }
+flight-buffer = { workspace = true }
 regex = "1"
 serde = "1"
 serde_json = { version = "1", default-features = false, features = ["std", "preserve_order"] }

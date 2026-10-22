@@ -1,6 +1,6 @@
 use flight_entity::Uint8Array;
 
-use crate::byte_reader::{
+use flight_buffer::{
     create_byte_reader, has_byte_reader_bytes, read_byte_reader_u8, read_byte_reader_u16,
     read_byte_reader_u24, read_byte_reader_u32,
 };

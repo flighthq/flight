@@ -21,5 +21,7 @@ fn block_on<F: Future>(future: F) -> F::Output {
     }
 }
 
+#[path = "byte_reader_test.rs"]
+mod flight_buffer_byte_reader_test;
 #[path = "types_test.rs"]
 mod flight_buffer_types_test;

@@ -1,5 +1,3 @@
-#[path = "byte_reader_test.rs"]
-mod flight_texture_formats_byte_reader_test;
 #[path = "detect_texture_container_test.rs"]
 mod flight_texture_formats_detect_texture_container_test;
 #[path = "explain_texture_container_parse_test.rs"]

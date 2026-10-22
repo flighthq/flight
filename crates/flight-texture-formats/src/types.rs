@@ -1,11 +1,3 @@
-use flight_entity::Uint8Array;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct ByteReader<'a> {
-    pub view: &'a Uint8Array,
-    pub offset: usize,
-}
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TextureContainer {
     pub format: TextureContainerFormat,

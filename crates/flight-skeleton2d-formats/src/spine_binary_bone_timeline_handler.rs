@@ -22,7 +22,7 @@ use crate::spine_binary_parse_helpers::{
     skip_spine_binary_curve_frames, tally,
 };
 use crate::spine_binary_reader::*;
-use flight_texture_formats::ByteReader;
+use flight_buffer::ByteReader;
 
 use crate::types::{SPINE_TIMELINE_KIND_BONE, SpineBinaryTimelineContext};
 

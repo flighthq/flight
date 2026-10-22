@@ -12,7 +12,7 @@ use flight_skeleton2d::contract::{
 
 use crate::spine_binary_parse_helpers::*;
 use crate::spine_binary_reader::*;
-use flight_texture_formats::ByteReader;
+use flight_buffer::ByteReader;
 
 use crate::types::{SPINE_TIMELINE_KIND_SLOT, SpineBinaryTimelineContext};
 

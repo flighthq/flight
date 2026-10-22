@@ -1775,12 +1775,12 @@ name = "flight-skeleton2d-formats"
 version = "0.6.0"
 dependencies = [
  "flight-animation",
+ "flight-buffer",
  "flight-easing",
  "flight-entity",
  "flight-importdiagnostics",
  "flight-requirement",
  "flight-skeleton2d",
- "flight-texture-formats",
  "regex",
  "serde",
  "serde_json",
@@ -2036,6 +2036,7 @@ dependencies = [
 name = "flight-texture-formats"
 version = "0.6.0"
 dependencies = [
+ "flight-buffer",
  "flight-entity",
 ]
 

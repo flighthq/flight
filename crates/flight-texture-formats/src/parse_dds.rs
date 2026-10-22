@@ -1,6 +1,6 @@
 use flight_entity::Uint8Array;
 
-use crate::byte_reader::{
+use flight_buffer::{
     create_byte_reader, has_byte_reader_bytes, read_byte_reader_u32, skip_byte_reader,
 };
 use crate::texture_level_layout::compute_texture_container_levels;
