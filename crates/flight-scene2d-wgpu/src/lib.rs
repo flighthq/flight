@@ -7,18 +7,28 @@ mod enable_wgpu_color_adjustment_guards;
 mod enable_wgpu_stroke_path_tessellation;
 mod scene2d_wgpu_runtime;
 mod types;
+mod wgpu_bitmap_text;
+mod wgpu_clip;
+mod wgpu_clip_contours;
+mod wgpu_clip_rectangle;
 mod wgpu_color_adjustment_material_feature;
 mod wgpu_mesh_shape_renderer;
+mod wgpu_node2d;
+mod wgpu_particle_emitter2d;
+mod wgpu_quad_batch;
 mod wgpu_quad_batch_writer;
 mod wgpu_raster_shape_renderer;
 mod wgpu_render_stats;
 mod wgpu_renderer_data;
 mod wgpu_scale9_mapper;
+mod wgpu_scale9_sprite;
 mod wgpu_shape;
 mod wgpu_shape_data;
 mod wgpu_shape_mesh;
 mod wgpu_shape_rasterizer;
+mod wgpu_sprite;
 mod wgpu_standard_material;
+mod wgpu_tilemap;
 
 pub mod contract;
 

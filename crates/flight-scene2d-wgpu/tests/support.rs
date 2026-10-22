@@ -1172,3 +1172,96 @@ pub fn set_test_hosts_with_unready_images(
     state.image_host = Some(image_host);
     return record;
 }
+
+// ── textured nodes ───────────────────────────────────────────────────────────────────────────
+
+/// A 2D texture over a ready `width`x`height` host image.
+pub fn create_test_texture(width: u32, height: u32) -> Ref<flight_texture::Texture> {
+    let (image, _) = create_test_image_resource(width, height, true);
+    let source: flight_texture::TextureSourceRef = image;
+    let mut texture = flight_texture::create_texture_2d();
+    texture.source = Some(source);
+    return Arc::new(std::sync::RwLock::new(flight_texture::Texture::Texture2D(
+        texture,
+    )));
+}
+
+/// A sprite showing a ready `width`x`height` image, with the image texture resolver registered on
+/// `state` so the sprite resolves.
+pub fn create_test_sprite(
+    state: &mut WgpuRenderState,
+    width: u32,
+    height: u32,
+) -> Ref<flight_scene2d::Sprite> {
+    register_wgpu_image_texture_resolver(state);
+    let sprite = flight_scene2d::create_sprite();
+    sprite.write().unwrap().data.texture = Some(create_test_texture(width, height));
+    return sprite;
+}
+
+/// A bare 2D texture over a ready `width`x`height` host image.
+pub fn create_test_texture_2d(width: u32, height: u32) -> Ref<flight_texture::Texture2D> {
+    let (image, _) = create_test_image_resource(width, height, true);
+    let source: flight_texture::TextureSourceRef = image;
+    let mut texture = flight_texture::create_texture_2d();
+    texture.source = Some(source);
+    return Arc::new(std::sync::RwLock::new(texture));
+}
+
+/// An atlas over a ready `width`x`height` image with one region per `(x, y, w, h, rotation)`.
+pub fn create_test_atlas(
+    width: u32,
+    height: u32,
+    regions: &[(
+        f32,
+        f32,
+        f32,
+        f32,
+        flight_textureatlas::TextureAtlasRotation,
+    )],
+) -> Ref<flight_textureatlas::TextureAtlas> {
+    let atlas = flight_textureatlas::create_texture_atlas();
+    {
+        let mut atlas = atlas.write().unwrap();
+        atlas.texture = Some(create_test_texture_2d(width, height));
+        for (index, (x, y, w, h, rotation)) in regions.iter().enumerate() {
+            let region = flight_textureatlas::create_texture_atlas_region();
+            {
+                let mut region = region.write().unwrap();
+                region.id = index as i32;
+                region.x = *x;
+                region.y = *y;
+                region.width = *w;
+                region.height = *h;
+                region.rotation = *rotation;
+            }
+            atlas.regions.push(region);
+        }
+    }
+    return atlas;
+}
+
+/// Prepares `node`'s subtree on `state` and returns the proxy store (TS `prepareScene2DRender`).
+pub fn prepare_test_scene(
+    state: &mut WgpuRenderState,
+    node: &flight_node::NodeRef,
+) -> flight_render::RenderProxies2D<WgpuRenderState> {
+    let mut proxies: flight_render::RenderProxies2D<WgpuRenderState> = test_default();
+    flight_render::prepare_scene_2d_render(state, &mut proxies, node);
+    return proxies;
+}
+
+/// An owned proxy for `node` from a prepared store, so a test can redraw it while mutating state.
+pub fn get_wgpu_render_proxy_for_test(
+    state: &mut WgpuRenderState,
+    proxies: &mut flight_render::RenderProxies2D<WgpuRenderState>,
+    node: &flight_node::NodeRef,
+) -> flight_render::RenderProxy2D<WgpuRenderState> {
+    let prepared = flight_render::get_or_create_render_proxy_2d(state, proxies, node);
+    let transform = prepared.transform_2d.clone();
+    let alpha = prepared.alpha;
+    let mut proxy = flight_render::create_render_proxy_2d(state, node);
+    proxy.transform_2d = transform;
+    proxy.alpha = alpha;
+    return proxy;
+}

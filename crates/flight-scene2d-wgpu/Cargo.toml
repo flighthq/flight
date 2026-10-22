@@ -15,6 +15,7 @@ path = "tests/main.rs"
 
 [dependencies]
 flight-bitmaptext = { path = "../flight-bitmaptext" }
+flight-clip = { path = "../flight-clip" }
 flight-color = { path = "../flight-color" }
 flight-entity = { path = "../flight-entity" }
 flight-geometry = { path = "../flight-geometry" }

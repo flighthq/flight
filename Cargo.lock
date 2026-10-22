@@ -1294,6 +1294,7 @@ name = "flight-scene2d-wgpu"
 version = "0.6.0"
 dependencies = [
  "flight-bitmaptext",
+ "flight-clip",
  "flight-color",
  "flight-entity",
  "flight-geometry",
