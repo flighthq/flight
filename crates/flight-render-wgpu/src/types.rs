@@ -10,7 +10,8 @@ use std::sync::{Arc, Mutex, RwLock, Weak};
 use flight_effects::Effect;
 use flight_entity::{AnySlot, Entity, EntityRuntimeSlot, Kind, Ref, UnknownValue};
 use flight_host::{HostImageSource, HostSpawnCapability, WgpuDevice, WgpuSurfaceContext};
-use flight_materials::{BlendMode, ColorScaleBias, Material2D, MaterialData};
+use flight_image::HostImageCapability;
+use flight_materials::{BlendMode, ColorScaleBias, Material2D, MaterialData, TintMaterialData};
 use flight_platform::PlatformEndianness;
 use flight_registry::KindMap;
 use flight_render::{
@@ -19,7 +20,7 @@ use flight_render::{
 };
 use flight_signals::Signal;
 use flight_stream::SharedFuture;
-use flight_surface::WgpuPresentationSurface;
+use flight_surface::{HostCanvasCapability, WgpuPresentationSurface};
 use flight_texture::{RenderTargetColorSpace, Sampler, TextureColorSpace, TextureVariant};
 use flight_texture_formats::TextureContainerFormat;
 
@@ -174,6 +175,10 @@ pub struct WgpuRenderState {
     pub device_state: WgpuDeviceState,
     pub device: WgpuDevice,
     pub format: wgpu::TextureFormat,
+    // The host capabilities the raster paths (text, rasterized shapes) allocate surfaces and images
+    // through (TS `RenderState.canvasHost` / `imageHost`, backend fields per D17).
+    pub canvas_host: Option<HostCanvasCapability>,
+    pub image_host: Option<HostImageCapability>,
     pub(crate) runtime: WgpuRenderStateRuntime,
 }
 
@@ -205,8 +210,27 @@ pub struct WgpuOffscreenRenderStateOk {
 #[derive(Clone, Debug)]
 pub enum WgpuColorScaleBiasInput {
     ColorScaleBias(ColorScaleBias),
+    TintMaterialData(TintMaterialData),
     Values(WgpuColorScaleBiasValues),
 }
+
+/// The opaque opt-in color-adjustment feature slot (TS `WgpuColorAdjustmentMaterialFeature`). The
+/// concrete feature contract lives in scene2d-wgpu, which fills and reads it; render-wgpu only
+/// retains it by shared identity.
+pub type WgpuColorAdjustmentMaterialFeatureSlot = Arc<dyn std::any::Any + Send + Sync>;
+
+/// Reports a color adjustment recorded while no feature is registered (TS
+/// `WgpuColorAdjustmentMaterialFeatureGuard`).
+pub type WgpuColorAdjustmentMaterialFeatureGuard =
+    fn(&mut WgpuRenderState, &WgpuColorScaleBiasInput);
+
+/// The opaque shape-rasterizer slot (TS `ShapeRasterizer`). The concrete callback contract lives in
+/// scene2d-wgpu, which fills and reads it; render-wgpu only retains it.
+pub type WgpuShapeRasterizerSlot = Arc<dyn std::any::Any + Send + Sync>;
+
+/// The opaque velocity-writer slot (TS `WgpuVelocityWriter`). scene2d-wgpu owns the concrete writer
+/// contract and its velocity-field context; render-wgpu only retains the registration.
+pub type WgpuVelocityWriterSlot = Arc<dyn std::any::Any + Send + Sync>;
 
 /// Raw color-adjustment numbers (TS `readonly number[]`).
 #[derive(Clone, Debug)]
@@ -250,8 +274,8 @@ pub struct WgpuColorAdjustmentFlushU32 {
 /// opaquely.
 #[derive(Clone)]
 pub struct WgpuRenderRegistries {
-    pub color_adjustment_feature: Option<UnknownValue>,
-    pub color_adjustment_feature_guard: Option<UnknownValue>,
+    pub color_adjustment_feature: Option<WgpuColorAdjustmentMaterialFeatureSlot>,
+    pub color_adjustment_feature_guard: Option<WgpuColorAdjustmentMaterialFeatureGuard>,
     pub compressed_texture_decoder: Option<WgpuCompressedTextureDecoder>,
     pub compressed_texture_upload: Option<WgpuCompressedTextureUploader>,
     pub custom_material_shaders: Arc<KindMap<WgpuCustomMaterialShaderSource>>,
@@ -260,9 +284,9 @@ pub struct WgpuRenderRegistries {
     pub material_renderers: Arc<KindMap<WgpuMaterialRenderer>>,
     pub modifier_snippets: Arc<KindMap<UnknownValue>>,
     pub passes: Option<Arc<Vec<UnknownValue>>>,
-    pub shape_rasterizer: Option<UnknownValue>,
+    pub shape_rasterizer: Option<WgpuShapeRasterizerSlot>,
     pub texture_resolvers: Arc<KindMap<WgpuTextureResolver>>,
-    pub velocity_writers: Arc<KindMap<UnknownValue>>,
+    pub velocity_writers: Arc<KindMap<WgpuVelocityWriterSlot>>,
 }
 
 /// What a WebGPU effect runner is handed (TS `WgpuEffectContext`): the state, the input it reads,
@@ -715,14 +739,16 @@ pub struct TextureResolutionExplanation {
 /// WGPU registries). `None` keeps each default.
 #[derive(Clone, Default)]
 pub struct WgpuRenderStateOptions {
-    pub color_adjustment_feature: Option<UnknownValue>,
-    pub color_adjustment_feature_guard: Option<UnknownValue>,
+    pub canvas_host: Option<HostCanvasCapability>,
+    pub color_adjustment_feature: Option<WgpuColorAdjustmentMaterialFeatureSlot>,
+    pub color_adjustment_feature_guard: Option<WgpuColorAdjustmentMaterialFeatureGuard>,
     pub compressed_texture_decoder: Option<WgpuCompressedTextureDecoder>,
     pub compressed_texture_upload: Option<WgpuCompressedTextureUploader>,
     pub custom_material_shaders: Option<KindMap<WgpuCustomMaterialShaderSource>>,
     pub effects: Option<KindMap<WgpuEffectRegistration>>,
     pub format: Option<wgpu::TextureFormat>,
     pub gpu_skinning: Option<UnknownValue>,
+    pub image_host: Option<HostImageCapability>,
     pub image_smoothing_enabled: Option<bool>,
     pub material_renderers: Option<KindMap<WgpuMaterialRenderer>>,
     pub modifier_snippets: Option<KindMap<UnknownValue>>,
@@ -730,9 +756,9 @@ pub struct WgpuRenderStateOptions {
     pub pixel_ratio: Option<f32>,
     pub round_pixels: Option<bool>,
     pub scene_graph_sync_policy: Option<flight_render::Scene3DGraphSyncPolicy>,
-    pub shape_rasterizer: Option<UnknownValue>,
+    pub shape_rasterizer: Option<WgpuShapeRasterizerSlot>,
     pub texture_resolvers: Option<KindMap<WgpuTextureResolver>>,
-    pub velocity_writers: Option<KindMap<UnknownValue>>,
+    pub velocity_writers: Option<KindMap<WgpuVelocityWriterSlot>>,
 }
 
 /// The texture-sampling descriptor the quad-batch writer resolves per flush (TS `SamplerLike`).
@@ -808,6 +834,10 @@ pub struct WgpuRenderStateRuntime {
     /// effect-pass infrastructure, pipeline caches, gradient ramps, blend backdrops and effect
     /// guards). Opaque here; only effects-wgpu reads it (D15 slot).
     pub effect_runtime: AnySlot,
+    // The per-state record of the scene2d-wgpu package (its TS module WeakMaps keyed by state: cache
+    // targets, velocity pipeline and pass, canvas surface ownership, the text-input overlay), held
+    // opaquely and owned by that package (D5: state-owned, never module-global).
+    pub scene2d_runtime: Option<Box<dyn std::any::Any + Send + Sync>>,
 }
 
 /// Reports a mipmapped upload degraded to one level (TS `mipmapDegradedGuard`).

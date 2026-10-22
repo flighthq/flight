@@ -1,0 +1,50 @@
+[package]
+name = "flight-scene2d-wgpu"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Native wgpu-backed WebGPU display-object renderers (bitmap, shape, sprite, text, tilemap, particles)"
+autotests = false
+
+[lib]
+doctest = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-bitmaptext = { path = "../flight-bitmaptext" }
+flight-color = { path = "../flight-color" }
+flight-entity = { path = "../flight-entity" }
+flight-geometry = { path = "../flight-geometry" }
+flight-host = { path = "../flight-host" }
+flight-image = { path = "../flight-image" }
+flight-log = { path = "../flight-log" }
+flight-materials = { path = "../flight-materials" }
+flight-node = { path = "../flight-node" }
+flight-particleemitter = { path = "../flight-particleemitter" }
+flight-path = { path = "../flight-path" }
+flight-quadbatch = { path = "../flight-quadbatch" }
+flight-registry = { path = "../flight-registry" }
+flight-render = { path = "../flight-render" }
+flight-render-wgpu = { path = "../flight-render-wgpu" }
+flight-scene2d = { path = "../flight-scene2d" }
+flight-shape = { path = "../flight-shape" }
+flight-surface = { path = "../flight-surface" }
+flight-text = { path = "../flight-text" }
+flight-textformat = { path = "../flight-textformat" }
+flight-textinput = { path = "../flight-textinput" }
+flight-textlayout = { path = "../flight-textlayout" }
+flight-texture = { path = "../flight-texture" }
+flight-textureatlas = { path = "../flight-textureatlas" }
+flight-tilemap = { path = "../flight-tilemap" }
+flight-velocity = { path = "../flight-velocity" }
+wgpu = { version = "30.0.1", default-features = false, features = ["std", "wgsl"] }
+
+[dev-dependencies]
+flight-signals = { path = "../flight-signals" }
+wgpu = { version = "30.0.1", default-features = false, features = ["std", "wgsl", "noop"] }
+
+[lints]
+workspace = true

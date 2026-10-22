@@ -128,6 +128,8 @@ fn null_texture_resolver(
     return None;
 }
 
+fn acme_color_feature_guard(_state: &mut WgpuRenderState, _value: &WgpuColorScaleBiasInput) {}
+
 fn padding_one(_effect: &UnknownValue) -> EffectPadding {
     return EffectPadding {
         bottom: 1.0,
@@ -452,7 +454,8 @@ mod create_wgpu_offscreen_render_state {
     fn shares_device_resources_while_snapshotting_independent_registration_policy() {
         let mut screen = create_wgpu_render_state_for_test(None);
         let color_adjustment_feature: UnknownValue = Arc::new("acme.ColorFeature");
-        let color_adjustment_feature_guard: UnknownValue = Arc::new("acme.ColorFeatureGuard");
+        let color_adjustment_feature_guard: WgpuColorAdjustmentMaterialFeatureGuard =
+            acme_color_feature_guard;
         let effect = WgpuEffectRegistration {
             is_resolvable: None,
             runner: acme_effect_runner,
@@ -474,8 +477,7 @@ mod create_wgpu_offscreen_render_state {
         {
             let registries = &mut get_wgpu_render_state_runtime_mut(&mut screen).registries;
             registries.color_adjustment_feature = Some(color_adjustment_feature.clone());
-            registries.color_adjustment_feature_guard =
-                Some(color_adjustment_feature_guard.clone());
+            registries.color_adjustment_feature_guard = Some(color_adjustment_feature_guard);
             registries.effects = Arc::new(with_kind_map_entry(
                 &registries.effects,
                 "acme.Effect".to_string(),
@@ -512,6 +514,10 @@ mod create_wgpu_offscreen_render_state {
         let same_value = |a: &Option<UnknownValue>, b: &UnknownValue| {
             return a.as_ref().is_some_and(|a| Arc::ptr_eq(a, b));
         };
+        let same_guard = |a: &Option<WgpuColorAdjustmentMaterialFeatureGuard>,
+                          b: &WgpuColorAdjustmentMaterialFeatureGuard| {
+            return a.is_some_and(|a| std::ptr::fn_addr_eq(a, *b));
+        };
         assert!(same_value(
             &get_wgpu_render_state_runtime(&offscreen)
                 .registries
@@ -522,7 +528,7 @@ mod create_wgpu_offscreen_render_state {
             &get_wgpu_color_adjustment_material_feature(&offscreen),
             &color_adjustment_feature
         ));
-        assert!(same_value(
+        assert!(same_guard(
             &get_wgpu_color_adjustment_material_feature_guard(&offscreen),
             &color_adjustment_feature_guard
         ));
@@ -530,7 +536,7 @@ mod create_wgpu_offscreen_render_state {
             .registries
             .color_adjustment_feature_guard = None;
         assert!(get_wgpu_color_adjustment_material_feature_guard(&screen).is_none());
-        assert!(same_value(
+        assert!(same_guard(
             &get_wgpu_color_adjustment_material_feature_guard(&offscreen),
             &color_adjustment_feature_guard
         ));
@@ -1376,15 +1382,15 @@ mod get_wgpu_color_adjustment_material_feature_guard {
     #[test]
     fn resolves_only_a_bound_guard_entry() {
         let mut state = create_wgpu_render_state_for_test(None);
-        let guard: UnknownValue = Arc::new("acme.ColorFeatureGuard");
+        let guard: WgpuColorAdjustmentMaterialFeatureGuard = acme_color_feature_guard;
 
         assert!(get_wgpu_color_adjustment_material_feature_guard(&state).is_none());
         get_wgpu_render_state_runtime_mut(&mut state)
             .registries
-            .color_adjustment_feature_guard = Some(guard.clone());
+            .color_adjustment_feature_guard = Some(guard);
         assert!(
             get_wgpu_color_adjustment_material_feature_guard(&state)
-                .is_some_and(|value| Arc::ptr_eq(&value, &guard))
+                .is_some_and(|value| std::ptr::fn_addr_eq(value, guard))
         );
         get_wgpu_render_state_runtime_mut(&mut state)
             .registries

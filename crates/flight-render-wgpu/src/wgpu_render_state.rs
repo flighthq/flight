@@ -258,6 +258,7 @@ fn create_wgpu_render_state_runtime_internal(
         pass_stack: Vec::new(),
         destroyed: false,
         effect_runtime: None,
+        scene2d_runtime: None,
     };
 }
 
@@ -285,6 +286,8 @@ fn initialize_wgpu_device_render_state(
         device_state: device_state.clone(),
         device: device_state.device.clone(),
         format,
+        canvas_host: options.canvas_host.clone(),
+        image_host: options.image_host.clone(),
         runtime,
     };
     warm_wgpu_pipelines(&mut state);
@@ -331,7 +334,7 @@ pub fn initialize_wgpu_offscreen_render_state_ok_result(
 pub fn build_wgpu_render_registries(options: &WgpuRenderStateOptions) -> WgpuRenderRegistries {
     return WgpuRenderRegistries {
         color_adjustment_feature: options.color_adjustment_feature.clone(),
-        color_adjustment_feature_guard: options.color_adjustment_feature_guard.clone(),
+        color_adjustment_feature_guard: options.color_adjustment_feature_guard,
         compressed_texture_decoder: options.compressed_texture_decoder.clone(),
         compressed_texture_upload: options.compressed_texture_upload,
         custom_material_shaders: Arc::new(
@@ -490,7 +493,7 @@ fn ensure_wgpu_device_runtime_resources(
 /// `getWgpuColorAdjustmentMaterialFeature`).
 pub fn get_wgpu_color_adjustment_material_feature(
     state: &WgpuRenderState,
-) -> Option<flight_entity::UnknownValue> {
+) -> Option<WgpuColorAdjustmentMaterialFeatureSlot> {
     return state.runtime.registries.color_adjustment_feature.clone();
 }
 
@@ -498,12 +501,8 @@ pub fn get_wgpu_color_adjustment_material_feature(
 /// `getWgpuColorAdjustmentMaterialFeatureGuard`).
 pub fn get_wgpu_color_adjustment_material_feature_guard(
     state: &WgpuRenderState,
-) -> Option<flight_entity::UnknownValue> {
-    return state
-        .runtime
-        .registries
-        .color_adjustment_feature_guard
-        .clone();
+) -> Option<WgpuColorAdjustmentMaterialFeatureGuard> {
+    return state.runtime.registries.color_adjustment_feature_guard;
 }
 
 /// The device tier behind a device state (TS `getWgpuDeviceRuntime`).

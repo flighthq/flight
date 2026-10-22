@@ -1276,6 +1276,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-scene2d-wgpu"
+version = "0.6.0"
+dependencies = [
+ "flight-bitmaptext",
+ "flight-color",
+ "flight-entity",
+ "flight-geometry",
+ "flight-host",
+ "flight-image",
+ "flight-log",
+ "flight-materials",
+ "flight-node",
+ "flight-particleemitter",
+ "flight-path",
+ "flight-quadbatch",
+ "flight-registry",
+ "flight-render",
+ "flight-render-wgpu",
+ "flight-scene2d",
+ "flight-shape",
+ "flight-signals",
+ "flight-surface",
+ "flight-text",
+ "flight-textformat",
+ "flight-textinput",
+ "flight-textlayout",
+ "flight-texture",
+ "flight-textureatlas",
+ "flight-tilemap",
+ "flight-velocity",
+ "wgpu",
+]
+
+[[package]]
 name = "flight-scene3d"
 version = "0.6.0"
 dependencies = [
