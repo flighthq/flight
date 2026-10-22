@@ -23,10 +23,7 @@
 //                      order (a numeric prerelease identifier). Falls back to the total commit count
 //                      when no version tag is reachable. It is the real sort key, so the sha needs no
 //                      ordering of its own.
-//             <sha>    "g" + short commit sha (git-describe convention), disambiguating the rare
-//                      builds that share a <count>. The "g" prefix ensures the identifier is always
-//                      alphanumeric, so an all-digit hex sha with a leading zero is valid semver on
-//                      both npm and crates.io.
+//             <sha>    short commit sha, disambiguating the rare builds that share a <count>.
 //
 // Prints `version=<v>` and `tag=<channel>` on stdout in GitHub Actions `$GITHUB_OUTPUT` key=value
 // form, so the workflow captures them with `>> "$GITHUB_OUTPUT"`.
@@ -126,5 +123,5 @@ function readSdkVersion(): string {
 }
 
 function shortSha(): string {
-  return `g${git('rev-parse', '--short=7', 'HEAD')}`;
+  return git('rev-parse', '--short=7', 'HEAD');
 }
