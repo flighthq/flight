@@ -20,6 +20,7 @@ mod render_registry_guards;
 mod render_registry_signals;
 mod render_state;
 mod render_target;
+mod render_texture;
 mod render_transform2d;
 mod render_viewport;
 mod renderer;

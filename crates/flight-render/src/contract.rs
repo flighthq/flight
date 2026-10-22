@@ -19,6 +19,7 @@ pub use crate::render_registry_guards::*;
 pub use crate::render_registry_signals::*;
 pub use crate::render_state::*;
 pub use crate::render_target::*;
+pub use crate::render_texture::*;
 pub use crate::render_transform2d::*;
 pub use crate::render_viewport::*;
 pub use crate::renderer::*;

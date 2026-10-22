@@ -17,6 +17,7 @@ mod render_registry_guards_test;
 mod render_registry_signals_test;
 mod render_state_test;
 mod render_target_test;
+mod render_texture_test;
 mod render_transform2d_test;
 mod render_viewport_test;
 mod renderer_test;

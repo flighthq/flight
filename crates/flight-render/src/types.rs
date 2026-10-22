@@ -1,6 +1,7 @@
 // flight-lint: allow-file(contract-vocabulary, enum-payload-named, file-structure, sugar-delegates) D12/D17 generic dispatch types, scalar-array unions, and required trait implementations form one backend-neutral contract module
 
 use std::collections::HashMap;
+use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
 use flight_entity::{Entity, EntityRuntimeSlot, Kind, Ref, UnknownValue};
@@ -15,9 +16,14 @@ use flight_registry::KindMap;
 use flight_requirement::RequirementFacet;
 use flight_signals::Signal;
 use flight_surface::{CanvasSurface, HostCanvasCapability};
-use flight_texture::RenderTargetColorSpace;
+use flight_texture::{
+    RenderTargetColorSpace, Sampler, Texture2D, TextureColorSpace, TextureSource,
+    TextureSourceFields,
+};
 
 pub const RENDER_CACHE_KIND: &str = "RenderCache";
+pub const EXTERNAL_TEXTURE_SOURCE_KIND: &str = "external";
+pub const RENDER_TARGET_TEXTURE_SOURCE_KIND: &str = "renderTarget";
 
 /// Geometry accumulator selected by a node renderer (TS `BatchFormat`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -409,6 +415,55 @@ pub struct RenderTargetDescriptor {
     pub color_space: Option<RenderTargetColorSpace>,
 }
 
+/// A backend-neutral, lazily realized render-target texture source. Native GPU handles remain in
+/// the consuming backend's identity-keyed cache rather than in this shared descriptor.
+#[derive(Clone, Debug)]
+pub struct RenderTarget {
+    fields: TextureSourceFields,
+    pub color_attachments: Option<f32>,
+    pub color_formats: Option<Vec<RenderTargetFormat>>,
+    pub color_space: RenderTargetColorSpace,
+    pub depth: Option<RenderTargetDepth>,
+    pub format: Option<RenderTargetFormat>,
+    pub sample_count: Option<f32>,
+}
+
+/// A foreign GPU texture source. Its native handle is borrowed and retained only by a backend.
+#[derive(Clone, Debug)]
+pub struct ExternalTexture {
+    fields: TextureSourceFields,
+}
+
+/// TS `RenderTexture extends Texture2D`: the constructor guarantees a `RenderTarget` source while
+/// the Rust texture family continues to use its canonical structural 2D representation.
+pub type RenderTexture = Texture2D;
+
+#[derive(Clone, Debug, Default)]
+pub struct CreateRenderTextureOptions {
+    pub color_space: Option<TextureColorSpace>,
+    pub color_attachments: Option<f32>,
+    pub color_formats: Option<Vec<RenderTargetFormat>>,
+    pub depth: Option<RenderTargetDepth>,
+    pub flip_x: Option<bool>,
+    pub flip_y: Option<bool>,
+    pub format: Option<RenderTargetFormat>,
+    pub height: u32,
+    pub sample_count: Option<f32>,
+    pub sampler: Option<Sampler>,
+    pub uv_offset: Option<flight_geometry::Vector2>,
+    pub uv_rotation: Option<f32>,
+    pub uv_scale: Option<flight_geometry::Vector2>,
+    pub width: u32,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct CreateExternalTextureOptions {
+    pub color_space: Option<TextureColorSpace>,
+    pub height: u32,
+    pub sampler: Option<Sampler>,
+    pub width: u32,
+}
+
 pub type ResolvedRenderTargetDescriptor = RenderTargetAxes;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -456,6 +511,106 @@ pub struct PreparedScene3D {
 pub struct CanvasHostSurfaceEntry {
     pub surface: Ref<CanvasSurface>,
     pub host: HostCanvasCapability,
+}
+
+impl Default for RenderTarget {
+    fn default() -> Self {
+        let mut fields = TextureSourceFields::default();
+        fields.kind = RENDER_TARGET_TEXTURE_SOURCE_KIND.to_string();
+        return RenderTarget {
+            fields,
+            color_attachments: None,
+            color_formats: None,
+            color_space: RenderTargetColorSpace::default(),
+            depth: None,
+            format: None,
+            sample_count: None,
+        };
+    }
+}
+
+impl Default for ExternalTexture {
+    fn default() -> Self {
+        let mut fields = TextureSourceFields::default();
+        fields.kind = EXTERNAL_TEXTURE_SOURCE_KIND.to_string();
+        return ExternalTexture { fields };
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 field composition exposes TextureSourceFields directly
+impl Deref for RenderTarget {
+    type Target = TextureSourceFields;
+
+    fn deref(&self) -> &TextureSourceFields {
+        return &self.fields;
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 field composition exposes TextureSourceFields directly
+impl DerefMut for RenderTarget {
+    fn deref_mut(&mut self) -> &mut TextureSourceFields {
+        return &mut self.fields;
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D12 entity identity lives in composed source fields
+impl Entity for RenderTarget {
+    fn entity_runtime(&self) -> &EntityRuntimeSlot {
+        return self.fields.entity_runtime();
+    }
+
+    fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
+        return self.fields.entity_runtime_mut();
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open texture-source family uses composed fields
+impl TextureSource for RenderTarget {
+    fn texture_source_fields(&self) -> &TextureSourceFields {
+        return &self.fields;
+    }
+
+    fn texture_source_fields_mut(&mut self) -> &mut TextureSourceFields {
+        return &mut self.fields;
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 field composition exposes TextureSourceFields directly
+impl Deref for ExternalTexture {
+    type Target = TextureSourceFields;
+
+    fn deref(&self) -> &TextureSourceFields {
+        return &self.fields;
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 field composition exposes TextureSourceFields directly
+impl DerefMut for ExternalTexture {
+    fn deref_mut(&mut self) -> &mut TextureSourceFields {
+        return &mut self.fields;
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D12 entity identity lives in composed source fields
+impl Entity for ExternalTexture {
+    fn entity_runtime(&self) -> &EntityRuntimeSlot {
+        return self.fields.entity_runtime();
+    }
+
+    fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
+        return self.fields.entity_runtime_mut();
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open texture-source family uses composed fields
+impl TextureSource for ExternalTexture {
+    fn texture_source_fields(&self) -> &TextureSourceFields {
+        return &self.fields;
+    }
+
+    fn texture_source_fields_mut(&mut self) -> &mut TextureSourceFields {
+        return &mut self.fields;
+    }
 }
 
 impl Default for RenderStateFields {

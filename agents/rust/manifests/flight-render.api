@@ -17,6 +17,7 @@ src/contract.rs: pub use crate::render_registry_guards::*;
 src/contract.rs: pub use crate::render_registry_signals::*;
 src/contract.rs: pub use crate::render_state::*;
 src/contract.rs: pub use crate::render_target::*;
+src/contract.rs: pub use crate::render_texture::*;
 src/contract.rs: pub use crate::render_transform2d::*;
 src/contract.rs: pub use crate::render_viewport::*;
 src/contract.rs: pub use crate::renderer::*;
@@ -98,6 +99,8 @@ src/render_target.rs: pub fn compute_render_target_size<'a>(out: &'a mut RenderT
 src/render_target.rs: pub fn compute_scene_2d_render_target_transform(out_render_transform: &mut Matrix, source: &NodeRef, bounds: &Rectangle, content_x: Option<f32>, content_y: Option<f32>,)
 src/render_target.rs: pub fn explain_render_target_axes(requested: &RenderTargetAxes, effective: &RenderTargetAxes,) -> Vec<RenderTargetAxisDifference>
 src/render_target.rs: pub fn resolve_render_target_descriptor(descriptor: &RenderTargetDescriptor,) -> ResolvedRenderTargetDescriptor
+src/render_texture.rs: pub fn create_render_texture(options: &CreateRenderTextureOptions) -> RenderTexture
+src/render_texture.rs: pub fn initialize_render_texture_target(out: &mut RenderTarget, options: &CreateRenderTextureOptions, color_space: RenderTargetColorSpace,)
 src/render_transform2d.rs: pub fn update_render_proxy_2d_transform<S: RenderState>(state: &S, data: &mut RenderProxy2D<S>, parent_data: Option<&RenderProxy2D<S>>,) -> bool
 src/render_viewport.rs: pub fn compute_render_proxy_world_bounds(out: &mut Rectangle, source: &NodeRef, revisions: &mut NodeRevisionState,)
 src/render_viewport.rs: pub fn is_render_proxy_in_viewport<S: RenderState>(proxy: &RenderProxy2D<S>, viewport: &Viewport, render_transform_2d: Option<&Matrix>, revisions: &mut NodeRevisionState,) -> bool
@@ -127,6 +130,10 @@ src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Scene2DRende
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SceneCoverage { FallbackRemediable, FallbackUnavailable, Satisfied, Unavailable, Unregistered, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct RenderStateStats { pub draw_call_count: u32, pub flush_count: u32, pub proxy_visited_count: u32, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)] #[repr(u8)] pub enum RenderRegistryTable { BlendRealization, EffectPaddingResolver, MaterialRenderer, MaterialTextureLister, ModifierSnippet, NodeRenderer, ShapeCommandHandler, ShapeRasterizer, TextureResolver, }
+src/types.rs: #[derive(Clone, Debug)] pub struct ExternalTexture { fields: TextureSourceFields, }
+src/types.rs: #[derive(Clone, Debug)] pub struct RenderTarget { fields: TextureSourceFields, pub color_attachments: Option<f32>, pub color_formats: Option<Vec<RenderTargetFormat>>, pub color_space: RenderTargetColorSpace, pub depth: Option<RenderTargetDepth>, pub format: Option<RenderTargetFormat>, pub sample_count: Option<f32>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct CreateExternalTextureOptions { pub color_space: Option<TextureColorSpace>, pub height: u32, pub sampler: Option<Sampler>, pub width: u32, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct CreateRenderTextureOptions { pub color_space: Option<TextureColorSpace>, pub color_attachments: Option<f32>, pub color_formats: Option<Vec<RenderTargetFormat>>, pub depth: Option<RenderTargetDepth>, pub flip_x: Option<bool>, pub flip_y: Option<bool>, pub format: Option<RenderTargetFormat>, pub height: u32, pub sample_count: Option<f32>, pub sampler: Option<Sampler>, pub uv_offset: Option<flight_geometry::Vector2>, pub uv_rotation: Option<f32>, pub uv_scale: Option<flight_geometry::Vector2>, pub width: u32, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct RenderStateInit { pub allow_smoothing: Option<bool>, pub current_clip_depth: Option<u32>, pub pixel_ratio: Option<f32>, pub render_alpha: Option<f32>, pub render_blend_mode: Option<Option<BlendMode>>, pub round_pixels: Option<bool>, pub scene_graph_sync_policy: Option<Scene3DGraphSyncPolicy>, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct Scene2DPipelineCoverageExplanation { pub registered_kinds: Vec<Kind>, pub uncovered_kinds: Vec<Kind>, pub unused_registrations: Vec<Kind>, pub used_kinds: Vec<Kind>, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct Scene3DPipelineCoverageExplanation { pub registered_kinds: Vec<Kind>, pub registered_material_kinds: Vec<Kind>, pub uncovered_kinds: Vec<Kind>, pub uncovered_material_kinds: Vec<Kind>, pub unused_material_registrations: Vec<Kind>, pub unused_registrations: Vec<Kind>, pub used_kinds: Vec<Kind>, pub used_material_kinds: Vec<Kind>, }
@@ -142,6 +149,8 @@ src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct RenderTargetAxes
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct RenderTargetAxisDifference { pub axis: RenderTargetAxis, pub effective: RenderTargetAxisValue, pub requested: RenderTargetAxisValue, }
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct SceneCoverageEntry { pub coverage: SceneCoverage, pub facet: RequirementFacet, pub kind: Kind, pub registry: RenderRegistryTable, pub module: Option<String>, pub registrar: Option<String>, }
 src/types.rs: #[derive(Default)] pub struct CanvasHostSurfaces { pub hosts: HashMap<u64, HostCanvasCapability>, }
+src/types.rs: impl Default for ExternalTexture
+src/types.rs: impl Default for ExternalTexture :: fn default() -> Self
 src/types.rs: impl Default for RenderCache
 src/types.rs: impl Default for RenderCache :: fn default() -> Self
 src/types.rs: impl Default for RenderProxies2D<S>
@@ -156,9 +165,22 @@ src/types.rs: impl Default for RenderStateOptions<S>
 src/types.rs: impl Default for RenderStateOptions<S> :: fn default() -> Self
 src/types.rs: impl Default for RenderStateRuntime<S>
 src/types.rs: impl Default for RenderStateRuntime<S> :: fn default() -> Self
+src/types.rs: impl Default for RenderTarget
+src/types.rs: impl Default for RenderTarget :: fn default() -> Self
+src/types.rs: impl Deref for ExternalTexture
+src/types.rs: impl Deref for ExternalTexture :: fn deref(&self) -> &TextureSourceFields
+src/types.rs: impl Deref for RenderTarget
+src/types.rs: impl Deref for RenderTarget :: fn deref(&self) -> &TextureSourceFields
+src/types.rs: impl DerefMut for ExternalTexture
+src/types.rs: impl DerefMut for ExternalTexture :: fn deref_mut(&mut self) -> &mut TextureSourceFields
+src/types.rs: impl DerefMut for RenderTarget
+src/types.rs: impl DerefMut for RenderTarget :: fn deref_mut(&mut self) -> &mut TextureSourceFields
 src/types.rs: impl Entity for BaseRenderState
 src/types.rs: impl Entity for BaseRenderState :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for BaseRenderState :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for ExternalTexture
+src/types.rs: impl Entity for ExternalTexture :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for ExternalTexture :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/types.rs: impl Entity for RenderCache
 src/types.rs: impl Entity for RenderCache :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for RenderCache :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
@@ -174,6 +196,9 @@ src/types.rs: impl Entity for RenderQueue :: fn entity_runtime_mut(&mut self) ->
 src/types.rs: impl Entity for RenderStateFields
 src/types.rs: impl Entity for RenderStateFields :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for RenderStateFields :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for RenderTarget
+src/types.rs: impl Entity for RenderTarget :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for RenderTarget :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
 src/types.rs: impl RenderState for BaseRenderState
 src/types.rs: impl RenderState for BaseRenderState :: fn render_registries(&self) -> &RenderRegistries<Self>
 src/types.rs: impl RenderState for BaseRenderState :: fn render_registries_mut(&mut self) -> &mut RenderRegistries<Self>
@@ -181,11 +206,19 @@ src/types.rs: impl RenderState for BaseRenderState :: fn render_runtime(&self) -
 src/types.rs: impl RenderState for BaseRenderState :: fn render_runtime_mut(&mut self) -> &mut RenderStateRuntime<Self>
 src/types.rs: impl RenderState for BaseRenderState :: fn render_state(&self) -> &RenderStateFields
 src/types.rs: impl RenderState for BaseRenderState :: fn render_state_mut(&mut self) -> &mut RenderStateFields
+src/types.rs: impl TextureSource for ExternalTexture
+src/types.rs: impl TextureSource for ExternalTexture :: fn texture_source_fields(&self) -> &TextureSourceFields
+src/types.rs: impl TextureSource for ExternalTexture :: fn texture_source_fields_mut(&mut self) -> &mut TextureSourceFields
+src/types.rs: impl TextureSource for RenderTarget
+src/types.rs: impl TextureSource for RenderTarget :: fn texture_source_fields(&self) -> &TextureSourceFields
+src/types.rs: impl TextureSource for RenderTarget :: fn texture_source_fields_mut(&mut self) -> &mut TextureSourceFields
 src/types.rs: impl std::ops::Deref for RenderProxy2D<S>
 src/types.rs: impl std::ops::Deref for RenderProxy2D<S> :: fn deref(&self) -> &Self::Target
 src/types.rs: impl std::ops::DerefMut for RenderProxy2D<S>
 src/types.rs: impl std::ops::DerefMut for RenderProxy2D<S> :: fn deref_mut(&mut self) -> &mut Self::Target
+src/types.rs: pub const EXTERNAL_TEXTURE_SOURCE_KIND: &str
 src/types.rs: pub const RENDER_CACHE_KIND: &str
+src/types.rs: pub const RENDER_TARGET_TEXTURE_SOURCE_KIND: &str
 src/types.rs: pub struct BaseRenderState { pub render: RenderStateFields, pub runtime: RenderStateRuntime<BaseRenderState>, pub registries: RenderRegistries<BaseRenderState>, }
 src/types.rs: pub struct CanvasHostSurfaceEntry { pub surface: Ref<CanvasSurface>, pub host: HostCanvasCapability, }
 src/types.rs: pub struct NodeRenderer<S: RenderState> { pub format: Option<BatchFormat>, pub create_data: fn(&mut S, &NodeRef) -> Option<RendererDataRef>, pub destroy_data: Option<fn(&mut S, RendererDataRef)>, pub is_dirty: Option<fn(&S, &NodeRef, Option<&RendererDataRef>) -> bool>, pub submit: fn(&mut S, &RenderProxy2D<S>), }
@@ -209,6 +242,7 @@ src/types.rs: pub type EffectPaddingResolver = fn(&UnknownValue) -> EffectPaddin
 src/types.rs: pub type RenderProxyVisit<S> = fn(&mut S, &NodeRef, &mut RenderProxy2D<S>, Option<&RenderProxy2D<S>>);
 src/types.rs: pub type RenderRootGuard<S> = fn(&mut S, &NodeRef);
 src/types.rs: pub type RenderSortKey = i32;
+src/types.rs: pub type RenderTexture = Texture2D;
 src/types.rs: pub type ResolvedRenderTargetDescriptor = RenderTargetAxes;
 src/types.rs: pub type SceneCoverageCatalog = Vec<CatalogEntry>;
 src/types.rs: pub type StrokeTessellator = fn(&Path, &StrokeStyle, Option<f32>) -> Option<PathMesh>;
