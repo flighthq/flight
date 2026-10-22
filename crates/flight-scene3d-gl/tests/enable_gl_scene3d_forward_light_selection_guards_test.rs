@@ -85,7 +85,11 @@ mod enable_gl_scene3d_forward_light_selection_guards {
         let lights = excess_lights();
         prepare_scene_3d_render(&mut state, &scene, &view, &lights, None);
         let prepared = state.runtime.prepared_scene3d.take().unwrap();
-        let selected = prepare_gl_scene3d_forward_lights(&mut state, &prepared.list, &lights);
+        let mut selected = GlScene3DForwardLightList {
+            mesh_count: 0,
+            mesh_light_blocks: Vec::new(),
+        };
+        prepare_gl_scene3d_forward_lights(&mut selected, &mut state, &prepared.list, &lights);
         state.runtime.prepared_scene3d = Some(prepared);
         let pass = make_test_pass(&state);
 

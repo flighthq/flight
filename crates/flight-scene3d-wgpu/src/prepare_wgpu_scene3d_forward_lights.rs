@@ -52,20 +52,23 @@ fn find_prepared_block(prepared: &WgpuScene3DForwardLightPrepared, indices: &[i3
 
 /// Ranks point and spot lights at each visible mesh's world bounding sphere, packs the strongest
 /// four of each family, and deduplicates identical selected index tuples so coherent meshes share a
-/// block and keep their material bind runs (TS `prepareWgpuScene3DForwardLights`). The list and its
-/// blocks are state-owned scratch reused across calls; the result shares those blocks.
+/// block and keep their material bind runs (TS `prepareWgpuScene3DForwardLights`). The blocks are
+/// state-owned scratch reused across calls. `out` (D24: required, first) is cleared then filled and
+/// shares those blocks.
+// flight-lint: allow(conform-params) D24 (principal): the computed list fills a required first caller-owned out, cleared then filled
 pub fn prepare_wgpu_scene3d_forward_lights(
+    out: &mut WgpuScene3DForwardLightList,
     state: &mut WgpuRenderState,
     scene_render_list: &Scene3DRenderList,
     lights: &Scene3DLightsLike,
-) -> WgpuScene3DForwardLightList {
+) {
     let mut prepared = get_wgpu_scene3d_runtime(state)
         .forward_lights
         .take()
         .unwrap_or_default();
     prepared.block_count = 0;
-    prepared.list.mesh_light_blocks.clear();
-    prepared.list.mesh_count = scene_render_list.mesh_count;
+    out.mesh_light_blocks.clear();
+    out.mesh_count = scene_render_list.mesh_count;
     let mut bounds = create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     let mut sphere = create_bounding_sphere(0.0, 0.0, 0.0, 0.0);
 
@@ -101,9 +104,7 @@ pub fn prepare_wgpu_scene3d_forward_lights(
             }
         };
         let block = prepared.blocks[block_index].lights.clone();
-        prepared.list.mesh_light_blocks.push(block);
+        out.mesh_light_blocks.push(block);
     }
-    let out = prepared.list.clone();
     get_wgpu_scene3d_runtime(state).forward_lights = Some(prepared);
-    return out;
 }

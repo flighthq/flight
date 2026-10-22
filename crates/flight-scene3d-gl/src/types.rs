@@ -519,11 +519,11 @@ pub struct PreparedForwardLightBlock {
 }
 
 /// prepare_gl_scene3d_forward_lights's reusable per-state scratch (TS `PreparedGlScene3DForwardLights`).
+/// The source's `list` field is the caller-owned out (D24), so it is not held here.
 #[derive(Clone, Debug, Default)]
 pub struct PreparedGlScene3DForwardLights {
     pub block_count: usize,
     pub blocks: Vec<PreparedForwardLightBlock>,
-    pub list: GlScene3DForwardLightList,
     pub selection: flight_lighting::Scene3DForwardLightSelection,
 }
 

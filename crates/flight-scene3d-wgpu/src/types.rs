@@ -227,8 +227,9 @@ pub struct WgpuMaterialBinding {
     pub views: Option<Vec<wgpu::TextureView>>,
 }
 
-/// State-owned per-visible-mesh light blocks (TS `WgpuScene3DForwardLightList`). The index contract
-/// matches `Scene3DRenderList.visible_meshes`; identical selected tuples share a block.
+/// Per-visible-mesh light blocks (TS `WgpuScene3DForwardLightList`), a caller-owned out that shares
+/// the state-owned packed blocks. The index contract matches `Scene3DRenderList.visible_meshes`;
+/// identical selected tuples share a block.
 #[derive(Clone, Debug, Default)]
 pub struct WgpuScene3DForwardLightList {
     pub mesh_count: usize,
@@ -306,12 +307,12 @@ pub struct WgpuShadedBaseFlags {
     pub has_specular_map: bool,
 }
 
-/// The forward-light preparation scratch (the source's `preparedByState` WeakMap value).
+/// The forward-light preparation scratch (the source's `preparedByState` WeakMap value). The source's
+/// `list` field is the caller-owned out (D24), so it is not held here.
 #[derive(Clone, Debug, Default)]
 pub struct WgpuScene3DForwardLightPrepared {
     pub block_count: usize,
     pub blocks: Vec<WgpuScene3DForwardLightPreparedBlock>,
-    pub list: WgpuScene3DForwardLightList,
     pub selection: Scene3DForwardLightSelection,
 }
 

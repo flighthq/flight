@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use flight_geometry::create_vector3;
 use flight_lighting::{
-    SCENE_LIGHT_POINT_OFFSET, SpotLightOptions, create_point_light, create_scene_3d_lights,
+    SCENE_LIGHT_POINT_OFFSET, Scene3DLightBlock, SpotLightOptions, create_point_light, create_scene_3d_lights,
     create_spot_light,
 };
 use flight_meshgeometry::create_box_mesh_geometry;
@@ -61,7 +61,8 @@ mod prepare_wgpu_scene3d_forward_lights {
             clone_render_list(list)
         };
 
-        let prepared = prepare_wgpu_scene3d_forward_lights(&mut test.state, &list, &lights);
+        let mut prepared = empty_list();
+        prepare_wgpu_scene3d_forward_lights(&mut prepared, &mut test.state, &list, &lights);
 
         let block = prepared.mesh_light_blocks[0].read().unwrap();
         assert_eq!(block.point_count, 4);
@@ -88,7 +89,8 @@ mod prepare_wgpu_scene3d_forward_lights {
             let list = prepare_scene_3d_render(&mut test.state, &scene, &camera, &lights, None);
             clone_render_list(list)
         };
-        let first = prepare_wgpu_scene3d_forward_lights(&mut test.state, &list, &lights);
+        let mut first = empty_list();
+        prepare_wgpu_scene3d_forward_lights(&mut first, &mut test.state, &list, &lights);
         let blocks = first.mesh_light_blocks.clone();
 
         assert_eq!(first.mesh_count, 3);
@@ -97,11 +99,63 @@ mod prepare_wgpu_scene3d_forward_lights {
         assert_eq!(blocks[0].read().unwrap().data[SCENE_LIGHT_POINT_OFFSET], 0.0);
         assert_eq!(blocks[2].read().unwrap().data[SCENE_LIGHT_POINT_OFFSET], 8.0);
         // The state-owned scratch is reused: a second preparation hands back the same blocks.
-        let second = prepare_wgpu_scene3d_forward_lights(&mut test.state, &list, &lights);
+        let mut second = empty_list();
+        prepare_wgpu_scene3d_forward_lights(&mut second, &mut test.state, &list, &lights);
         for (index, block) in second.mesh_light_blocks.iter().enumerate() {
             assert!(Arc::ptr_eq(block, &blocks[index]));
         }
     }
+
+    // D24: one caller-owned out is cleared, then filled, on every call; stale entries never survive.
+    #[test]
+    fn clears_then_fills_one_caller_owned_out_across_two_calls() {
+        let mut test = make_wgpu_scene3d_state(None);
+        let scene = create_test_scene_root();
+        let near = create_test_mesh(create_box_mesh_geometry(None, None, None), Vec::new());
+        let far = create_test_mesh(create_box_mesh_geometry(None, None, None), Vec::new());
+        far.write().unwrap().position.x = 8.0;
+        add_test_child(&scene, &near);
+        let far_node = add_test_child(&scene, &far);
+        invalidate_node_local_transform(&far_node);
+        let lights = clustered_lights();
+        let camera = camera();
+        let list = {
+            let list = prepare_scene_3d_render(&mut test.state, &scene, &camera, &lights, None);
+            clone_render_list(list)
+        };
+        let mut out = empty_list();
+        out.mesh_count = 99;
+        out.mesh_light_blocks.push(Arc::new(RwLock::new(Scene3DLightBlock {
+            ambient_count: 0,
+            data: vec![0.0_f32; 4].into_boxed_slice(),
+            directional_count: 0,
+            hemisphere_count: 0,
+            point_count: 0,
+            spot_count: 0,
+            version: 0,
+        })));
+
+        prepare_wgpu_scene3d_forward_lights(&mut out, &mut test.state, &list, &lights);
+        assert_eq!(out.mesh_count, 2);
+        assert_eq!(out.mesh_light_blocks.len(), 2);
+        let first = out.mesh_light_blocks.clone();
+        let blocks_ptr = out.mesh_light_blocks.as_ptr();
+
+        prepare_wgpu_scene3d_forward_lights(&mut out, &mut test.state, &list, &lights);
+        assert_eq!(out.mesh_count, 2);
+        assert_eq!(out.mesh_light_blocks.len(), 2);
+        assert_eq!(out.mesh_light_blocks.as_ptr(), blocks_ptr);
+        assert!(Arc::ptr_eq(&out.mesh_light_blocks[0], &first[0]));
+        assert!(Arc::ptr_eq(&out.mesh_light_blocks[1], &first[1]));
+        assert!(!Arc::ptr_eq(&out.mesh_light_blocks[0], &out.mesh_light_blocks[1]));
+    }
+}
+
+fn empty_list() -> WgpuScene3DForwardLightList {
+    return WgpuScene3DForwardLightList {
+        mesh_count: 0,
+        mesh_light_blocks: Vec::new(),
+    };
 }
 
 fn clone_render_list(list: &flight_render::Scene3DRenderList) -> flight_render::Scene3DRenderList {

@@ -35,20 +35,22 @@ fn find_prepared_block(prepared: &PreparedGlScene3DForwardLights, indices: &[i32
 //
 // Identical stable light-index tuples reuse the same packed block, so spatially coherent meshes keep
 // material bind runs. The packed blocks and selection scratch are state-owned and reused across frames:
-// a block whose packed content is unchanged keeps its identity. The returned list shares those blocks
-// and must not be retained past the draw.
+// a block whose packed content is unchanged keeps its identity. `out` (D24: required, first) is cleared
+// then filled; it shares those blocks and must not be retained past the draw.
+// flight-lint: allow(conform-params) D24 (principal): the computed list fills a required first caller-owned out, cleared then filled
 pub fn prepare_gl_scene3d_forward_lights(
+    out: &mut GlScene3DForwardLightList,
     state: &mut GlRenderState,
     scene_render_list: &Scene3DRenderList,
     lights: &Scene3DLightsLike,
-) -> GlScene3DForwardLightList {
+) {
     let mut prepared = get_gl_scene3d_runtime(state)
         .prepared_forward_lights
         .take()
         .unwrap_or_default();
     prepared.block_count = 0;
-    prepared.list.mesh_light_blocks.clear();
-    prepared.list.mesh_count = scene_render_list.mesh_count;
+    out.mesh_light_blocks.clear();
+    out.mesh_count = scene_render_list.mesh_count;
     let mut world_sphere = create_bounding_sphere(0.0, 0.0, 0.0, 0.0);
     let mut selected_lights = create_scene_3d_lights();
 
@@ -86,12 +88,10 @@ pub fn prepare_gl_scene3d_forward_lights(
             }
         };
         let block = prepared.blocks[block_index].lights.clone();
-        prepared.list.mesh_light_blocks.push(block);
+        out.mesh_light_blocks.push(block);
     }
 
-    let out = prepared.list.clone();
     get_gl_scene3d_runtime(state).prepared_forward_lights = Some(prepared);
-    return out;
 }
 
 fn set_mesh_world_bounding_sphere(
