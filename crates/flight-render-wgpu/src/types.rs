@@ -406,7 +406,8 @@ pub struct WgpuSkinningAdapter {
 }
 
 /// What a modifier snippet compiles against (TS `WgpuModifierCompileContext`): the texture slot
-/// allocator and the byte base of the modifier's reserved uniform record.
+/// allocator and the float offset of the modifier's reserved three-vec4 uniform record (a snippet
+/// divides it by 4 for the vec4 index).
 pub struct WgpuModifierCompileContext<'a> {
     pub acquire_texture: &'a mut dyn FnMut(Option<&Ref<Texture>>) -> u32,
     pub uniform_base: u32,
