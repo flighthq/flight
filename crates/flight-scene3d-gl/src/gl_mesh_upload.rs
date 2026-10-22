@@ -12,23 +12,26 @@ use glow::HasContext;
 use crate::gl_scene3d_runtime::get_gl_scene3d_context_runtime;
 use crate::types::GlMeshUpload;
 
-// Vertex attribute locations the mesh vertex shaders fix with layout(location = …); the upload's VAO
-// wires the interleaved buffer to these by semantic. Locations 0–3 are the canonical PBR record
-// (position/normal/tangent/uv0); `color0` (4) is bound only when a layout carries it; `uv1` (5) is the
-// second UV set; `joints0`/`weights0` (6–7) are the skinning channels. Semantics absent from a layout
-// are left unbound, and GL reads an unbound float attribute as zero: a deliberate fallback that
-// `explain_gl_mesh_geometry_uv_sets` names.
-fn get_attribute_location(semantic: VertexSemantic) -> Option<u32> {
-    return match semantic {
-        VertexSemantic::Color0 => Some(4),
-        VertexSemantic::Joints0 => Some(6),
-        VertexSemantic::Normal => Some(1),
-        VertexSemantic::Position => Some(0),
-        VertexSemantic::Tangent => Some(2),
-        VertexSemantic::Uv0 => Some(3),
-        VertexSemantic::Uv1 => Some(5),
-        VertexSemantic::Weights0 => Some(7),
+// Enables and points one interleaved vertex attribute at its fixed shader location. Every built-in
+// mesh shader declares these locations as float/vec inputs, so integer storage still uses
+// vertexAttribPointer (GL converts uint joints to float and normalizes unorm weights/colors).
+pub fn bind_gl_vertex_attribute(gl: &glow::Context, attribute: &VertexAttribute, stride: i32) {
+    let Some(location) = get_attribute_location(attribute.semantic) else {
+        return;
     };
+    let (size, kind, normalized) = resolve_gl_vertex_format(attribute.format);
+    // SAFETY: attribute setup runs on the owning GL thread against the bound VAO and buffer.
+    unsafe {
+        gl.enable_vertex_attrib_array(location);
+        gl.vertex_attrib_pointer_f32(
+            location,
+            size,
+            kind,
+            normalized,
+            stride,
+            attribute.byte_offset as i32,
+        );
+    }
 }
 
 // Builds the STATIC bind-pose vertex buffer a GPU-skinned mesh uploads: a copy of the interleaved
@@ -58,85 +61,6 @@ fn build_skin_bind_vertices(geometry: &MeshGeometry, bind_pose: &MeshSkinBindPos
         }
     }
     return out;
-}
-
-// The float offset (byteOffset / 4) of a semantic within an interleaved vertex record, or None when
-// the layout does not carry it (TS -1).
-fn float_offset_for_semantic(
-    attributes: &[VertexAttribute],
-    semantic: VertexSemantic,
-) -> Option<usize> {
-    for attribute in attributes {
-        if attribute.semantic == semantic {
-            return Some((attribute.byte_offset / 4) as usize);
-        }
-    }
-    return None;
-}
-
-fn get_gl_primitive_mode(topology: PrimitiveTopology) -> u32 {
-    return match topology {
-        PrimitiveTopology::LineList => glow::LINES,
-        PrimitiveTopology::LineStrip => glow::LINE_STRIP,
-        PrimitiveTopology::PointList => glow::POINTS,
-        PrimitiveTopology::TriangleStrip => glow::TRIANGLE_STRIP,
-        PrimitiveTopology::TriangleList => glow::TRIANGLES,
-    };
-}
-
-// Maps a VertexFormat to its (componentCount, glType, normalized) tuple.
-fn resolve_gl_vertex_format(format: VertexFormat) -> (i32, u32, bool) {
-    return match format {
-        VertexFormat::Float32x2 => (2, glow::FLOAT, false),
-        VertexFormat::Float32x3 => (3, glow::FLOAT, false),
-        VertexFormat::Float32x4 => (4, glow::FLOAT, false),
-        VertexFormat::Uint8x4 => (4, glow::UNSIGNED_BYTE, false),
-        VertexFormat::Unorm8x4 => (4, glow::UNSIGNED_BYTE, true),
-        VertexFormat::Uint16x4 => (4, glow::UNSIGNED_SHORT, false),
-    };
-}
-
-fn f32_bytes(values: &[f32]) -> &[u8] {
-    // SAFETY: u8 has alignment one and the view has the same lifetime as the input slice.
-    return unsafe {
-        std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), std::mem::size_of_val(values))
-    };
-}
-
-fn u16_bytes(values: &[u16]) -> &[u8] {
-    // SAFETY: u8 has alignment one and the view has the same lifetime as the input slice.
-    return unsafe {
-        std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), std::mem::size_of_val(values))
-    };
-}
-
-fn u32_bytes(values: &[u32]) -> &[u8] {
-    // SAFETY: u8 has alignment one and the view has the same lifetime as the input slice.
-    return unsafe {
-        std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), std::mem::size_of_val(values))
-    };
-}
-
-// Enables and points one interleaved vertex attribute at its fixed shader location. Every built-in
-// mesh shader declares these locations as float/vec inputs, so integer storage still uses
-// vertexAttribPointer (GL converts uint joints to float and normalizes unorm weights/colors).
-pub fn bind_gl_vertex_attribute(gl: &glow::Context, attribute: &VertexAttribute, stride: i32) {
-    let Some(location) = get_attribute_location(attribute.semantic) else {
-        return;
-    };
-    let (size, kind, normalized) = resolve_gl_vertex_format(attribute.format);
-    // SAFETY: attribute setup runs on the owning GL thread against the bound VAO and buffer.
-    unsafe {
-        gl.enable_vertex_attrib_array(location);
-        gl.vertex_attrib_pointer_f32(
-            location,
-            size,
-            kind,
-            normalized,
-            stride,
-            attribute.byte_offset as i32,
-        );
-    }
 }
 
 // Frees the GL objects owned by a mesh upload — the VAO and the vertex/index buffers. The upload must
@@ -311,4 +235,80 @@ pub fn ensure_gl_mesh_upload(
         .upload_cache
         .insert(key, upload);
     return upload;
+}
+
+fn f32_bytes(values: &[f32]) -> &[u8] {
+    // SAFETY: u8 has alignment one and the view has the same lifetime as the input slice.
+    return unsafe {
+        std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), std::mem::size_of_val(values))
+    };
+}
+
+// The float offset (byteOffset / 4) of a semantic within an interleaved vertex record, or None when
+// the layout does not carry it (TS -1).
+fn float_offset_for_semantic(
+    attributes: &[VertexAttribute],
+    semantic: VertexSemantic,
+) -> Option<usize> {
+    for attribute in attributes {
+        if attribute.semantic == semantic {
+            return Some((attribute.byte_offset / 4) as usize);
+        }
+    }
+    return None;
+}
+
+// Vertex attribute locations the mesh vertex shaders fix with layout(location = …); the upload's VAO
+// wires the interleaved buffer to these by semantic. Locations 0–3 are the canonical PBR record
+// (position/normal/tangent/uv0); `color0` (4) is bound only when a layout carries it; `uv1` (5) is the
+// second UV set; `joints0`/`weights0` (6–7) are the skinning channels. Semantics absent from a layout
+// are left unbound, and GL reads an unbound float attribute as zero: a deliberate fallback that
+// `explain_gl_mesh_geometry_uv_sets` names.
+fn get_attribute_location(semantic: VertexSemantic) -> Option<u32> {
+    return match semantic {
+        VertexSemantic::Color0 => Some(4),
+        VertexSemantic::Joints0 => Some(6),
+        VertexSemantic::Normal => Some(1),
+        VertexSemantic::Position => Some(0),
+        VertexSemantic::Tangent => Some(2),
+        VertexSemantic::Uv0 => Some(3),
+        VertexSemantic::Uv1 => Some(5),
+        VertexSemantic::Weights0 => Some(7),
+    };
+}
+
+fn get_gl_primitive_mode(topology: PrimitiveTopology) -> u32 {
+    return match topology {
+        PrimitiveTopology::LineList => glow::LINES,
+        PrimitiveTopology::LineStrip => glow::LINE_STRIP,
+        PrimitiveTopology::PointList => glow::POINTS,
+        PrimitiveTopology::TriangleStrip => glow::TRIANGLE_STRIP,
+        PrimitiveTopology::TriangleList => glow::TRIANGLES,
+    };
+}
+
+// Maps a VertexFormat to its (componentCount, glType, normalized) tuple.
+fn resolve_gl_vertex_format(format: VertexFormat) -> (i32, u32, bool) {
+    return match format {
+        VertexFormat::Float32x2 => (2, glow::FLOAT, false),
+        VertexFormat::Float32x3 => (3, glow::FLOAT, false),
+        VertexFormat::Float32x4 => (4, glow::FLOAT, false),
+        VertexFormat::Uint8x4 => (4, glow::UNSIGNED_BYTE, false),
+        VertexFormat::Unorm8x4 => (4, glow::UNSIGNED_BYTE, true),
+        VertexFormat::Uint16x4 => (4, glow::UNSIGNED_SHORT, false),
+    };
+}
+
+fn u16_bytes(values: &[u16]) -> &[u8] {
+    // SAFETY: u8 has alignment one and the view has the same lifetime as the input slice.
+    return unsafe {
+        std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), std::mem::size_of_val(values))
+    };
+}
+
+fn u32_bytes(values: &[u32]) -> &[u8] {
+    // SAFETY: u8 has alignment one and the view has the same lifetime as the input slice.
+    return unsafe {
+        std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), std::mem::size_of_val(values))
+    };
 }

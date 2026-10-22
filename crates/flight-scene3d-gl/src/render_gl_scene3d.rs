@@ -27,6 +27,30 @@ use crate::gl_scene3d_runtime::get_gl_scene3d_runtime;
 use crate::gl_viewport_aspect::get_gl_scene3d_viewport_aspect;
 use crate::types::{GlScene3DDrawEntry, GlScene3DForwardLightList};
 
+fn create_draw_entry() -> GlScene3DDrawEntry {
+    return GlScene3DDrawEntry {
+        alpha: 1.0,
+        color_matrix: None,
+        color_scale_bias: None,
+        depth: 0.0,
+        light_block: None,
+        material: None,
+        mesh: None,
+        renderer: None,
+        sort_key: 0,
+        subset: MeshSubset {
+            index_count: 0,
+            index_offset: 0,
+        },
+        world_matrix: create_matrix4(),
+    };
+}
+
+// Takes from the per-runtime pool or allocates a fresh entry.
+fn acquire_draw_entry(pool: &mut Vec<GlScene3DDrawEntry>) -> GlScene3DDrawEntry {
+    return pool.pop().unwrap_or_else(create_draw_entry);
+}
+
 // Assigns a stable integer to each unique (renderer, material) identity within one frame so entries
 // sharing both sort together and the opaque pass minimizes bind() calls.
 fn acquire_sort_key(
@@ -50,11 +74,6 @@ fn acquire_sort_key(
     return rk * 65536 + mk;
 }
 
-// Takes from the per-runtime pool or allocates a fresh entry.
-fn acquire_draw_entry(pool: &mut Vec<GlScene3DDrawEntry>) -> GlScene3DDrawEntry {
-    return pool.pop().unwrap_or_else(create_draw_entry);
-}
-
 // Applies a material's fixed-function blend equation at the same run boundary as its renderer bind,
 // through render-gl's canonical, overridable blend registry (enabled lazily). A faded opaque/masked
 // material uses Normal because blendMode is only meaningful for alphaMode 'blend'.
@@ -73,23 +92,12 @@ fn apply_gl_surface_blend_mode(state: &mut GlRenderState, material: &dyn Materia
     }
 }
 
-fn create_draw_entry() -> GlScene3DDrawEntry {
-    return GlScene3DDrawEntry {
-        alpha: 1.0,
-        color_matrix: None,
-        color_scale_bias: None,
-        depth: 0.0,
-        light_block: None,
-        material: None,
-        mesh: None,
-        renderer: None,
-        sort_key: 0,
-        subset: MeshSubset {
-            index_count: 0,
-            index_offset: 0,
-        },
-        world_matrix: create_matrix4(),
-    };
+fn as_mesh(node: &dyn flight_node::Node) -> Option<&Mesh> {
+    let any = node.as_any();
+    if let Some(mesh) = any.downcast_ref::<Mesh>() {
+        return Some(mesh);
+    }
+    return any.downcast_ref::<InstancedMesh>().map(|mesh| &**mesh);
 }
 
 // Draws one pass's entries: binds once per contiguous run sharing renderer, material, light block,
@@ -219,14 +227,6 @@ fn flatten_instanced_mesh_matrices(out: &mut Vec<f32>, mesh: &InstancedMesh) {
     for i in 0..count {
         out[i * 16..i * 16 + 16].copy_from_slice(&mesh.instance_matrices[i].read().unwrap().m);
     }
-}
-
-fn as_mesh(node: &dyn flight_node::Node) -> Option<&Mesh> {
-    let any = node.as_any();
-    if let Some(mesh) = any.downcast_ref::<Mesh>() {
-        return Some(mesh);
-    }
-    return any.downcast_ref::<InstancedMesh>().map(|mesh| &**mesh);
 }
 
 fn has_excess_forward_lights(lights: &Scene3DLightsLike) -> bool {

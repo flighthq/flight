@@ -108,23 +108,6 @@ pub(crate) fn create_gl_mesh_program_record(program: NativeProgram) -> GlMeshPro
     };
 }
 
-// Resolves a lazily cached uniform location: looks it up once and caches the result (present or
-// absent) on the program.
-pub(crate) fn resolve_gl_lazy_uniform_location(
-    gl: &glow::Context,
-    program: NativeProgram,
-    cache: &GlLazyUniformLocation,
-    name: &str,
-) -> Option<NativeUniformLocation> {
-    if let Some(location) = cache.get() {
-        return location;
-    }
-    // SAFETY: the lookup runs on the owning GL thread.
-    let location = unsafe { gl.get_uniform_location(program, name) };
-    cache.set(Some(location));
-    return location;
-}
-
 // The shared per-bind head for every mesh-material family: stores the family's program as the active
 // bind→draw handoff, selects it, and sets the depth + face-cull state a forward 3D draw needs (depth
 // test LESS; depth write off for blended runs and on otherwise; back-face cull unless the material is
@@ -473,6 +456,23 @@ fn is_mirroring_world_matrix(m: &[f32; 16]) -> bool {
     return m[0] * (m[5] * m[10] - m[6] * m[9]) - m[4] * (m[1] * m[10] - m[2] * m[9])
         + m[8] * (m[1] * m[6] - m[2] * m[5])
         < 0.0;
+}
+
+// Resolves a lazily cached uniform location: looks it up once and caches the result (present or
+// absent) on the program.
+pub(crate) fn resolve_gl_lazy_uniform_location(
+    gl: &glow::Context,
+    program: NativeProgram,
+    cache: &GlLazyUniformLocation,
+    name: &str,
+) -> Option<NativeUniformLocation> {
+    if let Some(location) = cache.get() {
+        return location;
+    }
+    // SAFETY: the lookup runs on the owning GL thread.
+    let location = unsafe { gl.get_uniform_location(program, name) };
+    cache.set(Some(location));
+    return location;
 }
 
 // Uploads the camera world position (the translation of the inverse view matrix) to a lit family's

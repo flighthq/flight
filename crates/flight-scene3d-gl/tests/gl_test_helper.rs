@@ -2144,3 +2144,105 @@ pub fn make_derived_gl_scene3d_state(
 ) -> GlRenderState {
     return create_gl_render_state(state.context_state.clone(), options);
 }
+
+/// TS `makeProgram()` in the mesh-program tests: a bare GlMeshProgram over a freshly created mock program,
+/// with the model / normal-matrix / view-projection locations resolved and every lazy location unresolved.
+pub fn make_test_mesh_program(state: &GlRenderState) -> flight_scene3d_gl::GlMeshProgram {
+    use glow::HasContext;
+    // SAFETY: the mock context allocates names on the test thread.
+    let program = unsafe { state.gl.create_program() }.unwrap();
+    let lazy = flight_scene3d_gl::GlLazyUniformLocation::default;
+    return flight_scene3d_gl::GlMeshProgram {
+        loc_color_scale: lazy(),
+        loc_color_bias: lazy(),
+        loc_color_matrix0: lazy(),
+        loc_color_matrix1: lazy(),
+        loc_color_matrix2: lazy(),
+        loc_color_matrix3: lazy(),
+        loc_color_matrix_offset: lazy(),
+        loc_object_alpha: lazy(),
+        loc_alpha_is_coverage: lazy(),
+        loc_joint_texture: lazy(),
+        loc_instance_palette: lazy(),
+        loc_instance_color_palette: lazy(),
+        loc_joint_normal_texture: lazy(),
+        loc_model: Some(uniform_location("u_model")),
+        loc_normal_matrix: Some(uniform_location("u_normalMatrix")),
+        loc_uv_transform: lazy(),
+        loc_view_projection: Some(uniform_location("u_viewProjection")),
+        program,
+    };
+}
+
+/// TS `makeCamera()`: a perspective camera (fovY π/3, aspect 1, near 0.1, far 100) at the identity view.
+pub fn make_test_camera() -> flight_camera::Camera3D {
+    let mut camera = flight_camera::create_camera_3d();
+    camera.far = 100.0;
+    camera.near = 0.1;
+    let projection = flight_camera::create_perspective_projection();
+    {
+        let mut value = projection.write().unwrap();
+        value.aspect = 1.0;
+        value.fov_y = std::f32::consts::PI / 3.0;
+    }
+    camera.projection = flight_camera::Projection::Perspective(projection);
+    return camera;
+}
+
+/// TS `makeCamera()` + `setCamera3DViewMatrix4FromLookAt(camera, {0,0,5}, {0,0,0}, {0,1,0})`.
+pub fn make_test_look_at_camera() -> flight_camera::Camera3D {
+    let mut camera = make_test_camera();
+    flight_camera::set_camera_3d_view_matrix4_from_look_at(
+        &mut camera,
+        &flight_geometry::create_vector3(0.0, 0.0, 5.0),
+        &flight_geometry::create_vector3(0.0, 0.0, 0.0),
+        &flight_geometry::create_vector3(0.0, 1.0, 0.0),
+    );
+    return camera;
+}
+
+/// A scene3d render proxy over `subset` with identity matrices and `material` (TS proxy literal
+/// `{ material, normalMatrix: createMatrix3(), subset, worldMatrix: createMatrix4() }`).
+pub fn make_test_proxy(
+    material: flight_materials::Material3DRef,
+    subset: flight_meshgeometry::MeshSubset,
+) -> flight_render::Scene3DRenderProxy {
+    return flight_render::Scene3DRenderProxy {
+        alpha: None,
+        color_scale_bias: None,
+        color_matrix: None,
+        instance_count: None,
+        instance_matrices: None,
+        instance_colors: None,
+        joint_matrices: None,
+        normal_matrices: None,
+        material,
+        normal_matrix: flight_geometry::create_matrix3(),
+        subset,
+        world_matrix: flight_geometry::create_matrix4(),
+    };
+}
+
+/// A shared material handle (TS passes the material object itself).
+pub fn material_ref<T: flight_materials::Material3D>(material: T) -> flight_materials::Material3DRef {
+    return std::sync::Arc::new(std::sync::RwLock::new(material));
+}
+
+/// Runs `f`, expecting it to throw (TS `expect(() => f()).toThrow(...)`), and returns the thrown
+/// FlightError message (or the panic string).
+pub fn thrown_message(f: impl FnOnce()) -> String {
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(f));
+    let Err(payload) = result else {
+        panic!("expected the call to throw");
+    };
+    if let Some(error) = payload.downcast_ref::<flight_entity::FlightError>() {
+        return error.message.clone();
+    }
+    if let Some(message) = payload.downcast_ref::<String>() {
+        return message.clone();
+    }
+    if let Some(message) = payload.downcast_ref::<&str>() {
+        return message.to_string();
+    }
+    return String::new();
+}
