@@ -38,7 +38,7 @@ fn linear_ease(t: f32) -> f32 {
 }
 
 fn setup() -> TweenManager {
-    let manager = create_tween_manager();
+    let manager = create_tween_manager(None);
     manager.data.write().unwrap().default_ease = linear_ease;
     return manager;
 }
