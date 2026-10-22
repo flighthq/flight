@@ -9,7 +9,7 @@ use crate::spine_binary_reader::{
     is_spine_binary_reader_overrun, read_spine_binary_byte, read_spine_binary_varint,
     skip_spine_binary_bytes,
 };
-use crate::types::ByteReader;
+use flight_texture_formats::ByteReader;
 
 pub const SPINE_BINARY_ATTACHMENT_SEQUENCE: u8 = 1;
 pub const SPINE_BINARY_ATTACHMENT_TYPES: [&str; 7] = [

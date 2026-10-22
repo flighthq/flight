@@ -1,6 +1,6 @@
 use flight_entity::Uint8Array;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ByteReader<'a> {
     pub view: &'a Uint8Array,
     pub offset: usize,

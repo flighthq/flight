@@ -22,7 +22,9 @@ use crate::spine_binary_parse_helpers::{
     skip_spine_binary_curve_frames, tally,
 };
 use crate::spine_binary_reader::*;
-use crate::types::{ByteReader, SPINE_TIMELINE_KIND_BONE, SpineBinaryTimelineContext};
+use flight_texture_formats::ByteReader;
+
+use crate::types::{SPINE_TIMELINE_KIND_BONE, SpineBinaryTimelineContext};
 
 pub struct SpineBinaryValueTimeline {
     pub curves: Vec<Option<Vec<f32>>>,

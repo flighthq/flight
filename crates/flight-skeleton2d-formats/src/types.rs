@@ -7,6 +7,7 @@ use flight_importdiagnostics::ImportDiagnostic;
 use flight_skeleton2d::contract::{
     Attachment2DRef, AttachmentSkin2D, Bone2D, Skeleton2D, Skeleton2DDrawOrderTimeline, Slot2D,
 };
+use flight_texture_formats::ByteReader;
 use serde_json::{Map, Value};
 
 pub const DRAGON_BONES_SECTION_KIND_ANIMATIONS: &str = "animations";
@@ -70,12 +71,6 @@ pub struct SpineBinaryVersionFailure {
     pub reason: SpineBinaryVersionFailureReason,
     pub v3_candidate: Option<String>,
     pub v4_candidate: Option<String>,
-}
-
-#[derive(Clone, Copy)]
-pub struct ByteReader<'a> {
-    pub view: &'a Uint8Array,
-    pub offset: usize,
 }
 
 pub type SpineBinaryParser = Arc<

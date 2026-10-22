@@ -1,6 +1,8 @@
 use crate::spine_binary_parse_helpers::report_spine_binary_crumb;
 use crate::spine_binary_reader::*;
-use crate::types::{ByteReader, SpineBinarySectionContext};
+use flight_texture_formats::ByteReader;
+
+use crate::types::SpineBinarySectionContext;
 
 enum ConstraintKind {
     Ik,

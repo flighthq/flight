@@ -12,7 +12,9 @@ use flight_skeleton2d::contract::{
 
 use crate::spine_binary_parse_helpers::*;
 use crate::spine_binary_reader::*;
-use crate::types::{ByteReader, SpineBinarySectionContext, sorted_count_entries};
+use flight_texture_formats::ByteReader;
+
+use crate::types::{SpineBinarySectionContext, sorted_count_entries};
 
 pub const SKIP_SPINE_BINARY_SKINS_SECTION: for<'a> fn(&mut SpineBinarySectionContext<'a>) =
     skip_spine_binary_skins_section;

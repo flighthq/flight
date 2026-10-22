@@ -1,6 +1,6 @@
 use flight_entity::Uint8Array;
 
-use crate::types::ByteReader;
+use flight_texture_formats::ByteReader;
 
 pub fn create_spine_binary_reader(bytes: &Uint8Array) -> ByteReader<'_> {
     return ByteReader {

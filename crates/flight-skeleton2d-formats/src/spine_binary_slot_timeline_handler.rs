@@ -12,7 +12,9 @@ use flight_skeleton2d::contract::{
 
 use crate::spine_binary_parse_helpers::*;
 use crate::spine_binary_reader::*;
-use crate::types::{ByteReader, SPINE_TIMELINE_KIND_SLOT, SpineBinaryTimelineContext};
+use flight_texture_formats::ByteReader;
+
+use crate::types::{SPINE_TIMELINE_KIND_SLOT, SpineBinaryTimelineContext};
 
 fn add_attachment_channel(
     reader: &mut ByteReader<'_>,
