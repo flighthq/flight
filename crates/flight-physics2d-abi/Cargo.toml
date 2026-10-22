@@ -6,6 +6,9 @@ license.workspace = true
 description = "The target-neutral Physics2D execution boundary: a little-endian command stream, packed readback buffers and an executable reference backend over flight-physics2d"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

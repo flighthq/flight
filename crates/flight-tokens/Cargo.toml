@@ -6,6 +6,9 @@ license.workspace = true
 description = "Explicit mode resolution and substitution for flight document scene tokens"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

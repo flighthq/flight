@@ -6,6 +6,9 @@ license.workspace = true
 description = "Hierarchical state machine: Harel statecharts with guards, transitions, and signal integration"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

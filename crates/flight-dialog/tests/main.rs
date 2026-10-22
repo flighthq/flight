@@ -16,7 +16,11 @@ pub(crate) fn ok<T: Send + 'static>(value: T) -> flight_dialog::contract::Dialog
     return Box::pin(std::future::ready(Ok(value)));
 }
 
-mod dialog_test;
-mod file_dialog_test;
-mod host_explain_test;
-mod media_dialog_test;
+#[path = "dialog_test.rs"]
+mod flight_dialog_dialog_test;
+#[path = "file_dialog_test.rs"]
+mod flight_dialog_file_dialog_test;
+#[path = "host_explain_test.rs"]
+mod flight_dialog_host_explain_test;
+#[path = "media_dialog_test.rs"]
+mod flight_dialog_media_dialog_test;

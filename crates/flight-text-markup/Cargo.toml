@@ -6,6 +6,9 @@ license.workspace = true
 description = "htmlText-subset markup: the open tag registry, standard dialect, named colors, class styles and opt-in parse guards"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

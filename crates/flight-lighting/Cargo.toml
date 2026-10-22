@@ -6,6 +6,9 @@ license.workspace = true
 description = "Light descriptors, photometric conversion, probes, influence analysis, and forward-light selection"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

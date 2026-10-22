@@ -6,6 +6,9 @@ license.workspace = true
 description = "Hierarchical, pausable, scalable time primitive for time-driven systems"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

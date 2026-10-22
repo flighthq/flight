@@ -7,6 +7,9 @@ description = "Holding crate for types with no home yet; depends only on the fou
 
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

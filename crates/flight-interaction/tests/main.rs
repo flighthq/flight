@@ -2,21 +2,39 @@
 
 mod interaction_fixture;
 
-mod display_hit_tests_test;
-mod display_object_overlap_test;
-mod enable_interaction_guards_test;
-mod focus_manager_test;
-mod hit_tests_test;
-mod interaction_manager_test;
-mod interaction_spatial_index_test;
-mod node_interaction_state_test;
-mod node_interactive_state_binding_test;
-mod register_default_hit_tests_test;
-mod register_quad_batch_hit_test_test;
-mod register_shape_hit_test_test;
-mod register_sprite_hit_test_test;
-mod register_text_hit_test_test;
-mod register_tilemap_hit_test_test;
-mod spatial_query_test;
-mod sprite_hit_tests_test;
-mod types_test;
+#[path = "display_hit_tests_test.rs"]
+mod flight_interaction_display_hit_tests_test;
+#[path = "display_object_overlap_test.rs"]
+mod flight_interaction_display_object_overlap_test;
+#[path = "enable_interaction_guards_test.rs"]
+mod flight_interaction_enable_interaction_guards_test;
+#[path = "focus_manager_test.rs"]
+mod flight_interaction_focus_manager_test;
+#[path = "hit_tests_test.rs"]
+mod flight_interaction_hit_tests_test;
+#[path = "interaction_manager_test.rs"]
+mod flight_interaction_interaction_manager_test;
+#[path = "interaction_spatial_index_test.rs"]
+mod flight_interaction_interaction_spatial_index_test;
+#[path = "node_interaction_state_test.rs"]
+mod flight_interaction_node_interaction_state_test;
+#[path = "node_interactive_state_binding_test.rs"]
+mod flight_interaction_node_interactive_state_binding_test;
+#[path = "register_default_hit_tests_test.rs"]
+mod flight_interaction_register_default_hit_tests_test;
+#[path = "register_quad_batch_hit_test_test.rs"]
+mod flight_interaction_register_quad_batch_hit_test_test;
+#[path = "register_shape_hit_test_test.rs"]
+mod flight_interaction_register_shape_hit_test_test;
+#[path = "register_sprite_hit_test_test.rs"]
+mod flight_interaction_register_sprite_hit_test_test;
+#[path = "register_text_hit_test_test.rs"]
+mod flight_interaction_register_text_hit_test_test;
+#[path = "register_tilemap_hit_test_test.rs"]
+mod flight_interaction_register_tilemap_hit_test_test;
+#[path = "spatial_query_test.rs"]
+mod flight_interaction_spatial_query_test;
+#[path = "sprite_hit_tests_test.rs"]
+mod flight_interaction_sprite_hit_tests_test;
+#[path = "types_test.rs"]
+mod flight_interaction_types_test;

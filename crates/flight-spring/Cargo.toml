@@ -6,6 +6,9 @@ license.workspace = true
 description = "Spring physics simulation: 1D, 2D, and 3D springs with configurable frequency and damping"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

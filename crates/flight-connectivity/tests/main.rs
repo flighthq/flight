@@ -12,5 +12,7 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
     }
 }
 
-mod connectivity_test;
-mod host_explain_test;
+#[path = "connectivity_test.rs"]
+mod flight_connectivity_connectivity_test;
+#[path = "host_explain_test.rs"]
+mod flight_connectivity_host_explain_test;

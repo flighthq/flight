@@ -1,19 +1,3 @@
-mod ambient_light_test;
-mod area_light_test;
-mod directional_light_test;
-mod enums_test;
-mod environment_test;
-mod hemisphere_light_test;
-mod light_analysis_test;
-mod light_intensity_test;
-mod light_probe_test;
-mod lighting_test;
-mod point_light_test;
-mod scene_forward_lights_test;
-mod scene_lights_test;
-mod spot_light_test;
-mod sugar_test;
-
 use flight_lighting::contract::*;
 
 fn directional_options() -> DirectionalLightOptions {
@@ -69,3 +53,34 @@ fn spot_options() -> SpotLightOptions {
         spot_blend: None,
     };
 }
+
+#[path = "ambient_light_test.rs"]
+mod flight_lighting_ambient_light_test;
+#[path = "area_light_test.rs"]
+mod flight_lighting_area_light_test;
+#[path = "directional_light_test.rs"]
+mod flight_lighting_directional_light_test;
+#[path = "enums_test.rs"]
+mod flight_lighting_enums_test;
+#[path = "environment_test.rs"]
+mod flight_lighting_environment_test;
+#[path = "hemisphere_light_test.rs"]
+mod flight_lighting_hemisphere_light_test;
+#[path = "light_analysis_test.rs"]
+mod flight_lighting_light_analysis_test;
+#[path = "light_intensity_test.rs"]
+mod flight_lighting_light_intensity_test;
+#[path = "light_probe_test.rs"]
+mod flight_lighting_light_probe_test;
+#[path = "lighting_test.rs"]
+mod flight_lighting_lighting_test;
+#[path = "point_light_test.rs"]
+mod flight_lighting_point_light_test;
+#[path = "scene_forward_lights_test.rs"]
+mod flight_lighting_scene_forward_lights_test;
+#[path = "scene_lights_test.rs"]
+mod flight_lighting_scene_lights_test;
+#[path = "spot_light_test.rs"]
+mod flight_lighting_spot_light_test;
+#[path = "sugar_test.rs"]
+mod flight_lighting_sugar_test;

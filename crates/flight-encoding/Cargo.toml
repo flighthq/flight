@@ -6,6 +6,9 @@ license.workspace = true
 description = "Text encoding utilities: UTF-8 encode/decode"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

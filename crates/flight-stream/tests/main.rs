@@ -12,5 +12,7 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
     }
 }
 
-mod abort_test;
-mod stream_test;
+#[path = "abort_test.rs"]
+mod flight_stream_abort_test;
+#[path = "stream_test.rs"]
+mod flight_stream_stream_test;

@@ -12,7 +12,11 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
     }
 }
 
-mod geolocation_access_test;
-mod geolocation_test;
-mod host_explain_test;
-mod types_test;
+#[path = "geolocation_access_test.rs"]
+mod flight_geolocation_geolocation_access_test;
+#[path = "geolocation_test.rs"]
+mod flight_geolocation_geolocation_test;
+#[path = "host_explain_test.rs"]
+mod flight_geolocation_host_explain_test;
+#[path = "types_test.rs"]
+mod flight_geolocation_types_test;

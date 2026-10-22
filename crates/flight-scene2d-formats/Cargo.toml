@@ -6,6 +6,9 @@ license.workspace = true
 description = "SVG, Lottie, and Rive document importers with caller-owned format registries"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

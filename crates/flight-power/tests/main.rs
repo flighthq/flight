@@ -12,6 +12,9 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
     }
 }
 
-mod host_explain_test;
-mod power_test;
-mod types_test;
+#[path = "host_explain_test.rs"]
+mod flight_power_host_explain_test;
+#[path = "power_test.rs"]
+mod flight_power_power_test;
+#[path = "types_test.rs"]
+mod flight_power_types_test;

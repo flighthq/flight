@@ -6,6 +6,9 @@ license.workspace = true
 description = "Soft-keyboard signals and commands over explicit host capabilities"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

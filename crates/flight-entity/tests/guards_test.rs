@@ -34,6 +34,17 @@ mod are_entity_runtime_guards_enabled {
     }
 }
 
+mod create_guarded_entity_runtime_tests {
+    use super::*;
+
+    #[test]
+    fn returns_the_runtime_when_guards_are_not_enabled() {
+        let runtime = create_entity_runtime();
+        let guarded = create_guarded_entity_runtime(runtime);
+        assert!(guarded.binding.is_none());
+    }
+}
+
 mod create_guarded_entity_tests {
     use super::*;
 
@@ -44,17 +55,6 @@ mod create_guarded_entity_tests {
         // since there is no Proxy mechanism.
         let guarded = create_guarded_entity(entity);
         assert!(guarded.entity_runtime().data.is_none());
-    }
-}
-
-mod create_guarded_entity_runtime_tests {
-    use super::*;
-
-    #[test]
-    fn returns_the_runtime_when_guards_are_not_enabled() {
-        let runtime = create_entity_runtime();
-        let guarded = create_guarded_entity_runtime(runtime);
-        assert!(guarded.binding.is_none());
     }
 }
 

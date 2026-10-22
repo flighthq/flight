@@ -12,6 +12,9 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
     }
 }
 
-mod enable_tray_guards_test;
-mod host_explain_test;
-mod tray_test;
+#[path = "enable_tray_guards_test.rs"]
+mod flight_tray_enable_tray_guards_test;
+#[path = "host_explain_test.rs"]
+mod flight_tray_host_explain_test;
+#[path = "tray_test.rs"]
+mod flight_tray_tray_test;

@@ -6,6 +6,9 @@ license.workspace = true
 description = "Clipboard capability seam: text, HTML, RTF, image, bookmark and generic format reads/writes plus change watches routed through explicit host capabilities"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

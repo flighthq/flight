@@ -6,6 +6,9 @@ license.workspace = true
 description = "Scene node graph: D16 node fields/feature groups, private runtime tiers, hierarchy, traversal, transforms and revision in"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

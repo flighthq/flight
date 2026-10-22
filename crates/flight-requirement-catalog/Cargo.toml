@@ -6,6 +6,9 @@ license.workspace = true
 description = "Caller-owned requirement catalog data and deterministic built-in ownership rows"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

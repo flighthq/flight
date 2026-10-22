@@ -2,6 +2,7 @@ mod allow;
 mod baseline;
 mod conform;
 mod contract;
+mod harness;
 mod manifest;
 mod model;
 mod structure;
@@ -21,7 +22,7 @@ Usage: cargo flight-lint <command> [options]
 
 Commands:
   check     [--crate C]... [--baseline F] [--write-baseline F] [--deny-warnings]
-  fix       [--crate C]...                                  reorder: sections, fns, impl methods, test modules
+  fix       [--crate C]...                                  reorder sections, fns, impl methods, test modules; regenerate tests/main.rs
   conform   <ts-packages-dir> [--crate C]... [--baseline F] [--write-baseline F]
   manifest  (--write | --check) [--crate C]... [--dir D]     (default dir: agents/manifests)
   allows    [--crate C]... [--rule R]                         list allow markers and reasons
@@ -276,6 +277,17 @@ fn cmd_fix(opts: &Options) {
         {
             fs::write(&test_file, &fixed).expect("write failed");
             println!("Fixed: {}", test_file.display());
+            count += 1;
+        }
+    }
+    // Each crate's test harness: one binary and one wrapper module named after the crate.
+    for name in discover_crates(&opts.crates) {
+        let crate_dir = Path::new("crates").join(&name);
+        if !crate_dir.join("tests").join("main.rs").exists() {
+            continue;
+        }
+        for path in harness::fix_harness(&crate_dir) {
+            println!("Fixed: {}", path.display());
             count += 1;
         }
     }

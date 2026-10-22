@@ -6,6 +6,9 @@ license.workspace = true
 description = "Arc-length motion-path markers: position, heading, progress, direction and clamp/loop/pingpong stepping over a Path"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

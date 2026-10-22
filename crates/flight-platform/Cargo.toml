@@ -6,6 +6,9 @@ license.workspace = true
 description = "Platform identity (name, kind, runtime, engine, version) read through an explicit host capability"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

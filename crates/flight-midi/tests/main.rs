@@ -1,12 +1,3 @@
-mod host_explain_test;
-mod midi_access_test;
-mod midi_operations_test;
-mod midi_permission_test;
-mod midi_port_test;
-mod midi_resource_test;
-mod midi_subscription_test;
-mod types_test;
-
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::{Arc, Mutex};
@@ -143,3 +134,20 @@ impl<T> DeferredResolver<T> {
         *self.value.lock().unwrap() = Some(value);
     }
 }
+
+#[path = "host_explain_test.rs"]
+mod flight_midi_host_explain_test;
+#[path = "midi_access_test.rs"]
+mod flight_midi_midi_access_test;
+#[path = "midi_operations_test.rs"]
+mod flight_midi_midi_operations_test;
+#[path = "midi_permission_test.rs"]
+mod flight_midi_midi_permission_test;
+#[path = "midi_port_test.rs"]
+mod flight_midi_midi_port_test;
+#[path = "midi_resource_test.rs"]
+mod flight_midi_midi_resource_test;
+#[path = "midi_subscription_test.rs"]
+mod flight_midi_midi_subscription_test;
+#[path = "types_test.rs"]
+mod flight_midi_types_test;

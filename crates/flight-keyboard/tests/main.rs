@@ -12,5 +12,7 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
     }
 }
 
-mod host_explain_test;
-mod keyboard_test;
+#[path = "host_explain_test.rs"]
+mod flight_keyboard_host_explain_test;
+#[path = "keyboard_test.rs"]
+mod flight_keyboard_keyboard_test;

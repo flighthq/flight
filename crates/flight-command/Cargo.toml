@@ -6,6 +6,9 @@ license.workspace = true
 description = "Reversible command history: D16 kind-tagged commands, kind-registry bindings, undo/redo stacks and transactions over the node graph"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

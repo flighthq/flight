@@ -1,9 +1,18 @@
-mod color_tween_test;
-mod internal_test;
-mod timer_test;
-mod tween_manager_test;
-mod tween_progress_test;
-mod tween_stagger_test;
-mod tween_test;
-mod types_test;
-mod update_tweens_test;
+#[path = "color_tween_test.rs"]
+mod flight_tween_color_tween_test;
+#[path = "internal_test.rs"]
+mod flight_tween_internal_test;
+#[path = "timer_test.rs"]
+mod flight_tween_timer_test;
+#[path = "tween_manager_test.rs"]
+mod flight_tween_tween_manager_test;
+#[path = "tween_progress_test.rs"]
+mod flight_tween_tween_progress_test;
+#[path = "tween_stagger_test.rs"]
+mod flight_tween_tween_stagger_test;
+#[path = "tween_test.rs"]
+mod flight_tween_tween_test;
+#[path = "types_test.rs"]
+mod flight_tween_types_test;
+#[path = "update_tweens_test.rs"]
+mod flight_tween_update_tweens_test;

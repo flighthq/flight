@@ -6,6 +6,9 @@ license.workspace = true
 description = "Geolocation capability seam: position reads, watches and access prompts routed through a host provider"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

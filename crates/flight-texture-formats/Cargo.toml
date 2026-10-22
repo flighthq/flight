@@ -9,6 +9,9 @@ autotests = false
 [dependencies]
 flight-entity.workspace = true
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

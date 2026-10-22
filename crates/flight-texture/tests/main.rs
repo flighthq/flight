@@ -1,10 +1,3 @@
-mod cube_texture_test;
-mod enums_test;
-mod sampler_test;
-mod texture_color_space_test;
-mod texture_test;
-mod voxel_grid_test;
-
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, allocate_entity};
@@ -25,3 +18,16 @@ fn voxel_grid(width: u32, height: u32, depth: u32) -> Ref<VoxelGrid> {
     value.depth = depth;
     return Arc::new(RwLock::new(value));
 }
+
+#[path = "cube_texture_test.rs"]
+mod flight_texture_cube_texture_test;
+#[path = "enums_test.rs"]
+mod flight_texture_enums_test;
+#[path = "sampler_test.rs"]
+mod flight_texture_sampler_test;
+#[path = "texture_color_space_test.rs"]
+mod flight_texture_texture_color_space_test;
+#[path = "texture_test.rs"]
+mod flight_texture_texture_test;
+#[path = "voxel_grid_test.rs"]
+mod flight_texture_voxel_grid_test;

@@ -6,6 +6,9 @@ license.workspace = true
 description = "Signal-slot event system: signals, connections, scopes, emitters, and throttling"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

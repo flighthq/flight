@@ -2,6 +2,7 @@
 name = "flight-tilemap-formats"
 version = "0.1.0"
 edition = "2024"
+autotests = false
 
 [dependencies]
 flight-entity = { path = "../flight-entity" }
@@ -13,3 +14,10 @@ flight-tilemap = { path = "../flight-tilemap" }
 flight-textureatlas = { path = "../flight-textureatlas" }
 flight-xml = { path = "../flight-xml" }
 serde_json = { version = "1", default-features = false, features = ["std"] }
+
+[lib]
+doctest = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"

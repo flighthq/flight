@@ -6,6 +6,9 @@ license.workspace = true
 description = "Hit testing, pointer/keyboard dispatch, focus management, and interactive state binding"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

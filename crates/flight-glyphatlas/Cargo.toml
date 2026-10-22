@@ -6,6 +6,9 @@ license.workspace = true
 description = "Dynamic rasterized glyph atlases with bounded caching and dirty-region tracking"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

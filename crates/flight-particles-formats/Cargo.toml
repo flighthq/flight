@@ -6,6 +6,9 @@ license.workspace = true
 description = "Particle format detection, parsing and serialization (Pixi, Particle Designer, Spine, Unity, libGDX, Starling PEX)"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

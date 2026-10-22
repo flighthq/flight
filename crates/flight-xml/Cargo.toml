@@ -6,6 +6,9 @@ license.workspace = true
 description = "XML parsing and querying: DOM-style element tree with attribute and child access"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

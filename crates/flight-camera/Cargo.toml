@@ -6,6 +6,9 @@ license.workspace = true
 description = "Mathematical 2D/3D cameras: projection descriptors, view matrices, culling, picking, reflection and shadow fit helpers"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

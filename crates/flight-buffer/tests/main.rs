@@ -3,8 +3,6 @@ use std::pin::Pin;
 use std::sync::Arc;
 use std::task::{Context, Poll, Wake, Waker};
 
-mod types_test;
-
 struct NoopWake;
 
 impl Wake for NoopWake {
@@ -22,3 +20,6 @@ fn block_on<F: Future>(future: F) -> F::Output {
         std::thread::yield_now();
     }
 }
+
+#[path = "types_test.rs"]
+mod flight_buffer_types_test;

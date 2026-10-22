@@ -1,4 +1,8 @@
 mod common;
-mod font_variation_test;
-mod text_format_range_test;
-mod text_format_test;
+
+#[path = "font_variation_test.rs"]
+mod flight_textformat_font_variation_test;
+#[path = "text_format_range_test.rs"]
+mod flight_textformat_text_format_range_test;
+#[path = "text_format_test.rs"]
+mod flight_textformat_text_format_test;

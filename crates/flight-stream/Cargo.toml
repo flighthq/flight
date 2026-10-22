@@ -6,6 +6,9 @@ license.workspace = true
 description = "D20 shared-future and byte-stream vocabulary: cloneable stored promises and AsyncRead/AsyncWrite-backed ReadableStream/WritableStream"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

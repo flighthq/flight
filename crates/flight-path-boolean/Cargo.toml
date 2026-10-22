@@ -6,6 +6,9 @@ license.workspace = true
 description = "Boolean path operations: union, intersect, difference, XOR, offset, simplify"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

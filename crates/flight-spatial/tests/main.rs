@@ -1,14 +1,3 @@
-mod bvh_3d_test;
-mod explain_spatial_indexing_2d_test;
-mod explain_spatial_indexing_3d_test;
-mod format_spatial_indexing_notice_test;
-mod spatial_index_3d_test;
-mod spatial_index_test;
-mod spatial_indexing_guard_test;
-mod uniform_grid_3d_test;
-mod uniform_grid_test;
-
-
 static SPATIAL_GUARD_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 struct SpatialGuardTestScope {
@@ -27,7 +16,6 @@ impl Drop for SpatialGuardTestScope {
     }
 }
 
-
 // Other tests may index objects while the shared diagnostic is installed. Capture only
 // this test's operations so a worker thread cannot inherit another test's notices.
 fn spatial_guard_for_current_test(callback: fn(&flight_spatial::SpatialIndexingNotice)) -> flight_spatial::SpatialIndexingGuard {
@@ -36,3 +24,22 @@ fn spatial_guard_for_current_test(callback: fn(&flight_spatial::SpatialIndexingN
         if std::thread::current().id() == owner { callback(notice); }
     });
 }
+
+#[path = "bvh_3d_test.rs"]
+mod flight_spatial_bvh_3d_test;
+#[path = "explain_spatial_indexing_2d_test.rs"]
+mod flight_spatial_explain_spatial_indexing_2d_test;
+#[path = "explain_spatial_indexing_3d_test.rs"]
+mod flight_spatial_explain_spatial_indexing_3d_test;
+#[path = "format_spatial_indexing_notice_test.rs"]
+mod flight_spatial_format_spatial_indexing_notice_test;
+#[path = "spatial_index_3d_test.rs"]
+mod flight_spatial_spatial_index_3d_test;
+#[path = "spatial_index_test.rs"]
+mod flight_spatial_spatial_index_test;
+#[path = "spatial_indexing_guard_test.rs"]
+mod flight_spatial_spatial_indexing_guard_test;
+#[path = "uniform_grid_3d_test.rs"]
+mod flight_spatial_uniform_grid_3d_test;
+#[path = "uniform_grid_test.rs"]
+mod flight_spatial_uniform_grid_test;

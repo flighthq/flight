@@ -6,6 +6,9 @@ license.workspace = true
 description = "AngelCode bitmap-font codecs, diagnostics, detection, and caller-owned registration"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

@@ -94,6 +94,29 @@ mod power_idle_state_string_table {
     }
 }
 
+mod power_keep_awake_acquire_reason_string_table {
+    use super::*;
+
+    #[test]
+    fn round_trips_all_variants() {
+        let variants = [
+            (PowerKeepAwakeAcquireReason::Ok, "ok"),
+            (PowerKeepAwakeAcquireReason::Unavailable, "unavailable"),
+            (PowerKeepAwakeAcquireReason::Denied, "denied"),
+            (PowerKeepAwakeAcquireReason::Failed, "failed"),
+        ];
+        for (variant, expected) in &variants {
+            assert_eq!(get_power_keep_awake_acquire_reason_string(*variant), *expected);
+            assert_eq!(parse_power_keep_awake_acquire_reason(expected), Some(*variant));
+        }
+    }
+
+    #[test]
+    fn rejects_unknown_string() {
+        assert_eq!(parse_power_keep_awake_acquire_reason("bogus"), None);
+    }
+}
+
 mod power_keep_awake_mode_string_table {
     use super::*;
 
@@ -112,6 +135,28 @@ mod power_keep_awake_mode_string_table {
     #[test]
     fn rejects_unknown_string() {
         assert_eq!(parse_power_keep_awake_mode("bogus"), None);
+    }
+}
+
+mod power_keep_awake_release_reason_string_table {
+    use super::*;
+
+    #[test]
+    fn round_trips_all_variants() {
+        let variants = [
+            (PowerKeepAwakeReleaseReason::Ok, "ok"),
+            (PowerKeepAwakeReleaseReason::Inactive, "inactive"),
+            (PowerKeepAwakeReleaseReason::Failed, "failed"),
+        ];
+        for (variant, expected) in &variants {
+            assert_eq!(get_power_keep_awake_release_reason_string(*variant), *expected);
+            assert_eq!(parse_power_keep_awake_release_reason(expected), Some(*variant));
+        }
+    }
+
+    #[test]
+    fn rejects_unknown_string() {
+        assert_eq!(parse_power_keep_awake_release_reason("bogus"), None);
     }
 }
 
@@ -136,50 +181,5 @@ mod power_thermal_state_string_table {
     #[test]
     fn rejects_unknown_string() {
         assert_eq!(parse_power_thermal_state("bogus"), None);
-    }
-}
-
-mod power_keep_awake_acquire_reason_string_table {
-    use super::*;
-
-    #[test]
-    fn round_trips_all_variants() {
-        let variants = [
-            (PowerKeepAwakeAcquireReason::Ok, "ok"),
-            (PowerKeepAwakeAcquireReason::Unavailable, "unavailable"),
-            (PowerKeepAwakeAcquireReason::Denied, "denied"),
-            (PowerKeepAwakeAcquireReason::Failed, "failed"),
-        ];
-        for (variant, expected) in &variants {
-            assert_eq!(get_power_keep_awake_acquire_reason_string(*variant), *expected);
-            assert_eq!(parse_power_keep_awake_acquire_reason(expected), Some(*variant));
-        }
-    }
-
-    #[test]
-    fn rejects_unknown_string() {
-        assert_eq!(parse_power_keep_awake_acquire_reason("bogus"), None);
-    }
-}
-
-mod power_keep_awake_release_reason_string_table {
-    use super::*;
-
-    #[test]
-    fn round_trips_all_variants() {
-        let variants = [
-            (PowerKeepAwakeReleaseReason::Ok, "ok"),
-            (PowerKeepAwakeReleaseReason::Inactive, "inactive"),
-            (PowerKeepAwakeReleaseReason::Failed, "failed"),
-        ];
-        for (variant, expected) in &variants {
-            assert_eq!(get_power_keep_awake_release_reason_string(*variant), *expected);
-            assert_eq!(parse_power_keep_awake_release_reason(expected), Some(*variant));
-        }
-    }
-
-    #[test]
-    fn rejects_unknown_string() {
-        assert_eq!(parse_power_keep_awake_release_reason("bogus"), None);
     }
 }

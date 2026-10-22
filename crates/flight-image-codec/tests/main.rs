@@ -12,7 +12,11 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
     }
 }
 
-mod decode_image_test;
-mod detect_image_mime_type_test;
-mod encode_image_test;
-mod host_explain_test;
+#[path = "decode_image_test.rs"]
+mod flight_image_codec_decode_image_test;
+#[path = "detect_image_mime_type_test.rs"]
+mod flight_image_codec_detect_image_mime_type_test;
+#[path = "encode_image_test.rs"]
+mod flight_image_codec_encode_image_test;
+#[path = "host_explain_test.rs"]
+mod flight_image_codec_host_explain_test;

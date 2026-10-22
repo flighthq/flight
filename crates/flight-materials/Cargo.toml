@@ -6,6 +6,9 @@ license.workspace = true
 description = "Material types, constructors, validation, conversion, presets and ColorScaleBias for the Flight SDK"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

@@ -6,6 +6,9 @@ license.workspace = true
 description = "Texture sampling views, open pixel-source identities, cube faces, UV transforms, color-space policy and voxel sources"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

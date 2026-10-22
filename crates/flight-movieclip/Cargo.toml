@@ -6,6 +6,9 @@ license.workspace = true
 description = "MovieClip display node: a Node2D whose frames are driven by a timeline, with spritesheet timeline sources and opt-in guards"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

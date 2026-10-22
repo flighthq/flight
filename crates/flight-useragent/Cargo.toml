@@ -6,6 +6,9 @@ license.workspace = true
 description = "Pure user-agent string parsing to device and platform identity tokens"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

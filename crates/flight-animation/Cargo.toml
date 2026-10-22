@@ -6,6 +6,9 @@ license.workspace = true
 description = "Animation system: clips, keyframes, sampling, blending, and animation state management"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

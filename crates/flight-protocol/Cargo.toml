@@ -6,6 +6,9 @@ license.workspace = true
 description = "Custom protocol URL parsing, registration and open-event delivery over host capabilities"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

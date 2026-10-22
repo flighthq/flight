@@ -6,6 +6,9 @@ license.workspace = true
 description = "ECMAScript regular expressions with shared lastIndex state and UTF-16 match indices"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

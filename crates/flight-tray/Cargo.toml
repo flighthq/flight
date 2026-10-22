@@ -6,6 +6,9 @@ license.workspace = true
 description = "System tray icons over explicit host capabilities: lifecycle, image/title/tooltip/menu, balloons and events"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

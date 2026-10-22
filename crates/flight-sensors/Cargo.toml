@@ -6,6 +6,9 @@ license.workspace = true
 description = "Device sensor event seam with reusable readings, conversion helpers and explicit host subscriptions"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

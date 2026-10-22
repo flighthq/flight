@@ -6,6 +6,9 @@ license.workspace = true
 description = "Composable shading modifier descriptors, registries, ordering, and define keys"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

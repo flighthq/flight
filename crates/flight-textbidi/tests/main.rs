@@ -1,14 +1,5 @@
 use std::sync::{Mutex, MutexGuard, PoisonError};
 
-mod bidi_class_kernel_test;
-mod bidi_conformance_test;
-mod enable_text_bidi_guards_test;
-mod get_bidi_runs_test;
-mod reorder_bidi_line_test;
-mod resolve_bidi_levels_test;
-mod text_bidi_guards_test;
-mod types_test;
-
 pub(crate) static GUARD_TEST_LOCK: Mutex<()> = Mutex::new(());
 
 pub(crate) struct TextBidiGuardTestLock {
@@ -30,3 +21,20 @@ impl Drop for TextBidiGuardTestLock {
         flight_textbidi::set_text_bidi_guard(None);
     }
 }
+
+#[path = "bidi_class_kernel_test.rs"]
+mod flight_textbidi_bidi_class_kernel_test;
+#[path = "bidi_conformance_test.rs"]
+mod flight_textbidi_bidi_conformance_test;
+#[path = "enable_text_bidi_guards_test.rs"]
+mod flight_textbidi_enable_text_bidi_guards_test;
+#[path = "get_bidi_runs_test.rs"]
+mod flight_textbidi_get_bidi_runs_test;
+#[path = "reorder_bidi_line_test.rs"]
+mod flight_textbidi_reorder_bidi_line_test;
+#[path = "resolve_bidi_levels_test.rs"]
+mod flight_textbidi_resolve_bidi_levels_test;
+#[path = "text_bidi_guards_test.rs"]
+mod flight_textbidi_text_bidi_guards_test;
+#[path = "types_test.rs"]
+mod flight_textbidi_types_test;

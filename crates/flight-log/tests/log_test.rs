@@ -1032,6 +1032,69 @@ mod create_text_log_formatter_tests {
     }
 }
 
+mod enable_log_signals_tests {
+    use super::*;
+
+    #[test]
+    fn returns_a_log_signals_entity() {
+        let state = test_state();
+        reset_log_state(&state);
+        let signals = enable_log_signals(&state);
+        // Verify the signals exist (they are Signal structs)
+        let _ = &signals.on_log_entry;
+        let _ = &signals.on_log_error;
+    }
+
+    #[test]
+    fn on_log_entry_fires_for_every_emitted_entry() {
+        let state = test_state();
+        reset_log_state(&state);
+        let signals = enable_log_signals(&state);
+        let received: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
+        let received_clone = received.clone();
+        connect_signal(
+            &signals.on_log_entry,
+            Arc::new(move |entry: &LogEntry| {
+                received_clone.lock().unwrap().push(entry.clone());
+            }),
+            None,
+        );
+        log(&state, 0.0, LogLevel::Info, "via-signal".into(), None);
+        assert_eq!(received.lock().unwrap().len(), 1);
+        assert_eq!(data_as_str(&received.lock().unwrap()[0].data), Some("via-signal"));
+    }
+
+    #[test]
+    fn on_log_error_fires_only_for_error_level_entries() {
+        let state = test_state();
+        reset_log_state(&state);
+        let signals = enable_log_signals(&state);
+        let errors: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
+        let errors_clone = errors.clone();
+        connect_signal(
+            &signals.on_log_error,
+            Arc::new(move |entry: &LogEntry| {
+                errors_clone.lock().unwrap().push(entry.clone());
+            }),
+            None,
+        );
+        log(&state, 0.0, LogLevel::Info, "not-error".into(), None);
+        log(&state, 0.0, LogLevel::Error, "is-error".into(), None);
+        assert_eq!(errors.lock().unwrap().len(), 1);
+        assert_eq!(errors.lock().unwrap()[0].level, LogLevel::Error);
+    }
+
+    #[test]
+    fn returns_the_same_object_on_subsequent_calls() {
+        let state = test_state();
+        reset_log_state(&state);
+        let a = enable_log_signals(&state);
+        let b = enable_log_signals(&state);
+        assert!(Arc::ptr_eq(&a.on_log_entry.data, &b.on_log_entry.data));
+        assert!(Arc::ptr_eq(&a.on_log_error.data, &b.on_log_error.data));
+    }
+}
+
 mod end_log_group {
     use super::*;
 
@@ -1468,107 +1531,6 @@ mod initialize_rate_limited_log_sink {
     }
 }
 
-mod log_tests {
-    use super::*;
-
-    #[test]
-    fn forwards_level_channel_and_data_to_all_sinks() {
-        let state = test_state();
-        reset_log_state(&state);
-        let (entries, _sink) = recording_sink(&state);
-        let mut data = HashMap::new();
-        data.insert("k".to_string(), LogValue::Int(1));
-        log(&state, 0.0, LogLevel::Warn, LogData::Record(data).into(), Some("shader".to_string()));
-        let e = entries.lock().unwrap();
-        assert_eq!(e[0].level, LogLevel::Warn);
-        assert_eq!(e[0].channel, Some("shader".to_string()));
-        assert_eq!(record_int(&e[0].data, "k"), Some(1));
-    }
-
-    #[test]
-    fn forwards_retained_objects_to_structured_sinks_without_cloning_the_object() {
-        let state = test_state();
-        reset_log_state(&state);
-        let (entries, _sink) = recording_sink(&state);
-        let object: Arc<dyn std::any::Any + Send + Sync> = Arc::new(vec![1_u8]);
-        let mut data = HashMap::new();
-        data.insert("object".to_string(), LogValue::Object(object.clone()));
-        log(&state, 0.0, LogLevel::Info, LogData::Record(data).into(), None);
-        let entries = entries.lock().unwrap();
-        let LogData::Record(record) = &entries[0].data else {
-            panic!("a record");
-        };
-        let Some(LogValue::Object(retained)) = record.get("object") else {
-            panic!("an object");
-        };
-        assert!(Arc::ptr_eq(&object, retained));
-    }
-
-    #[test]
-    fn defaults_the_channel_to_none() {
-        let state = test_state();
-        reset_log_state(&state);
-        let (entries, _sink) = recording_sink(&state);
-        log(&state, 0.0, LogLevel::Info, "x".into(), None);
-        assert_eq!(entries.lock().unwrap()[0].channel, None);
-    }
-
-    #[test]
-    fn does_nothing_when_no_sink_is_installed() {
-        let state = test_state();
-        reset_log_state(&state);
-        // Should not panic
-        log(&state, 0.0, LogLevel::Info, "x".into(), None);
-    }
-
-    #[test]
-    fn accepts_a_lazy_data_provider() {
-        let state = test_state();
-        reset_log_state(&state);
-        let (entries, _sink) = recording_sink(&state);
-        let called: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
-        let called_clone = called.clone();
-        let provider: LogDataProvider = Arc::new(move || {
-            *called_clone.lock().unwrap() = true;
-            return LogData::Message("lazy-value".to_string());
-        });
-        log(&state, 0.0, LogLevel::Info, LogDataOrProvider::Provider(provider), None);
-        assert!(*called.lock().unwrap());
-        assert_eq!(data_as_str(&entries.lock().unwrap()[0].data), Some("lazy-value"));
-    }
-
-    #[test]
-    fn does_not_call_the_thunk_when_the_level_is_suppressed() {
-        let state = test_state();
-        reset_log_state(&state);
-        let (_entries, _sink) = recording_sink(&state);
-        set_log_level(&state, LogLevel::Error);
-        let called: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
-        let called_clone = called.clone();
-        let provider: LogDataProvider = Arc::new(move || {
-            *called_clone.lock().unwrap() = true;
-            return LogData::Message("should-not-be-called".to_string());
-        });
-        log(&state, 0.0, LogLevel::Verbose, LogDataOrProvider::Provider(provider), None);
-        assert!(!*called.lock().unwrap());
-    }
-
-    #[test]
-    fn fans_out_to_multiple_sinks() {
-        let state = test_state();
-        reset_log_state(&state);
-        let a: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
-        let b: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
-        let a_clone = a.clone();
-        let b_clone = b.clone();
-        add_log_sink(&state, Arc::new(move |e: &LogEntry| a_clone.lock().unwrap().push(e.clone())));
-        add_log_sink(&state, Arc::new(move |e: &LogEntry| b_clone.lock().unwrap().push(e.clone())));
-        log(&state, 0.0, LogLevel::Info, "multi".into(), None);
-        assert_eq!(a.lock().unwrap().len(), 1);
-        assert_eq!(b.lock().unwrap().len(), 1);
-    }
-}
-
 mod log_assert_tests {
     use super::*;
 
@@ -1738,6 +1700,107 @@ mod log_once_tests {
         let (_entries, _sink) = recording_sink(&state);
         assert!(log_once(&state, 0.0, "key3", LogLevel::Info, "x".into(), None));
         assert!(!log_once(&state, 0.0, "key3", LogLevel::Info, "x".into(), None));
+    }
+}
+
+mod log_tests {
+    use super::*;
+
+    #[test]
+    fn forwards_level_channel_and_data_to_all_sinks() {
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        let mut data = HashMap::new();
+        data.insert("k".to_string(), LogValue::Int(1));
+        log(&state, 0.0, LogLevel::Warn, LogData::Record(data).into(), Some("shader".to_string()));
+        let e = entries.lock().unwrap();
+        assert_eq!(e[0].level, LogLevel::Warn);
+        assert_eq!(e[0].channel, Some("shader".to_string()));
+        assert_eq!(record_int(&e[0].data, "k"), Some(1));
+    }
+
+    #[test]
+    fn forwards_retained_objects_to_structured_sinks_without_cloning_the_object() {
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        let object: Arc<dyn std::any::Any + Send + Sync> = Arc::new(vec![1_u8]);
+        let mut data = HashMap::new();
+        data.insert("object".to_string(), LogValue::Object(object.clone()));
+        log(&state, 0.0, LogLevel::Info, LogData::Record(data).into(), None);
+        let entries = entries.lock().unwrap();
+        let LogData::Record(record) = &entries[0].data else {
+            panic!("a record");
+        };
+        let Some(LogValue::Object(retained)) = record.get("object") else {
+            panic!("an object");
+        };
+        assert!(Arc::ptr_eq(&object, retained));
+    }
+
+    #[test]
+    fn defaults_the_channel_to_none() {
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        log(&state, 0.0, LogLevel::Info, "x".into(), None);
+        assert_eq!(entries.lock().unwrap()[0].channel, None);
+    }
+
+    #[test]
+    fn does_nothing_when_no_sink_is_installed() {
+        let state = test_state();
+        reset_log_state(&state);
+        // Should not panic
+        log(&state, 0.0, LogLevel::Info, "x".into(), None);
+    }
+
+    #[test]
+    fn accepts_a_lazy_data_provider() {
+        let state = test_state();
+        reset_log_state(&state);
+        let (entries, _sink) = recording_sink(&state);
+        let called: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
+        let called_clone = called.clone();
+        let provider: LogDataProvider = Arc::new(move || {
+            *called_clone.lock().unwrap() = true;
+            return LogData::Message("lazy-value".to_string());
+        });
+        log(&state, 0.0, LogLevel::Info, LogDataOrProvider::Provider(provider), None);
+        assert!(*called.lock().unwrap());
+        assert_eq!(data_as_str(&entries.lock().unwrap()[0].data), Some("lazy-value"));
+    }
+
+    #[test]
+    fn does_not_call_the_thunk_when_the_level_is_suppressed() {
+        let state = test_state();
+        reset_log_state(&state);
+        let (_entries, _sink) = recording_sink(&state);
+        set_log_level(&state, LogLevel::Error);
+        let called: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
+        let called_clone = called.clone();
+        let provider: LogDataProvider = Arc::new(move || {
+            *called_clone.lock().unwrap() = true;
+            return LogData::Message("should-not-be-called".to_string());
+        });
+        log(&state, 0.0, LogLevel::Verbose, LogDataOrProvider::Provider(provider), None);
+        assert!(!*called.lock().unwrap());
+    }
+
+    #[test]
+    fn fans_out_to_multiple_sinks() {
+        let state = test_state();
+        reset_log_state(&state);
+        let a: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
+        let b: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
+        let a_clone = a.clone();
+        let b_clone = b.clone();
+        add_log_sink(&state, Arc::new(move |e: &LogEntry| a_clone.lock().unwrap().push(e.clone())));
+        add_log_sink(&state, Arc::new(move |e: &LogEntry| b_clone.lock().unwrap().push(e.clone())));
+        log(&state, 0.0, LogLevel::Info, "multi".into(), None);
+        assert_eq!(a.lock().unwrap().len(), 1);
+        assert_eq!(b.lock().unwrap().len(), 1);
     }
 }
 
@@ -2174,83 +2237,6 @@ mod set_log_sink_tests {
     }
 }
 
-mod start_log_timer_tests {
-    use super::*;
-
-    #[test]
-    fn returns_a_log_timer_with_the_given_label_and_channel() {
-        let state = test_state();
-        reset_log_state(&state);
-        let timer = start_log_timer("render", Some("perf".to_string()), 0.0);
-        assert_eq!(timer.label, "render");
-        assert_eq!(timer.channel, Some("perf".to_string()));
-        assert!(timer.started_at >= 0.0);
-    }
-}
-
-mod enable_log_signals_tests {
-    use super::*;
-
-    #[test]
-    fn returns_a_log_signals_entity() {
-        let state = test_state();
-        reset_log_state(&state);
-        let signals = enable_log_signals(&state);
-        // Verify the signals exist (they are Signal structs)
-        let _ = &signals.on_log_entry;
-        let _ = &signals.on_log_error;
-    }
-
-    #[test]
-    fn on_log_entry_fires_for_every_emitted_entry() {
-        let state = test_state();
-        reset_log_state(&state);
-        let signals = enable_log_signals(&state);
-        let received: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
-        let received_clone = received.clone();
-        connect_signal(
-            &signals.on_log_entry,
-            Arc::new(move |entry: &LogEntry| {
-                received_clone.lock().unwrap().push(entry.clone());
-            }),
-            None,
-        );
-        log(&state, 0.0, LogLevel::Info, "via-signal".into(), None);
-        assert_eq!(received.lock().unwrap().len(), 1);
-        assert_eq!(data_as_str(&received.lock().unwrap()[0].data), Some("via-signal"));
-    }
-
-    #[test]
-    fn on_log_error_fires_only_for_error_level_entries() {
-        let state = test_state();
-        reset_log_state(&state);
-        let signals = enable_log_signals(&state);
-        let errors: Arc<Mutex<Vec<LogEntry>>> = Arc::new(Mutex::new(Vec::new()));
-        let errors_clone = errors.clone();
-        connect_signal(
-            &signals.on_log_error,
-            Arc::new(move |entry: &LogEntry| {
-                errors_clone.lock().unwrap().push(entry.clone());
-            }),
-            None,
-        );
-        log(&state, 0.0, LogLevel::Info, "not-error".into(), None);
-        log(&state, 0.0, LogLevel::Error, "is-error".into(), None);
-        assert_eq!(errors.lock().unwrap().len(), 1);
-        assert_eq!(errors.lock().unwrap()[0].level, LogLevel::Error);
-    }
-
-    #[test]
-    fn returns_the_same_object_on_subsequent_calls() {
-        let state = test_state();
-        reset_log_state(&state);
-        let a = enable_log_signals(&state);
-        let b = enable_log_signals(&state);
-        assert!(Arc::ptr_eq(&a.on_log_entry.data, &b.on_log_entry.data));
-        assert!(Arc::ptr_eq(&a.on_log_error.data, &b.on_log_error.data));
-    }
-}
-
 mod severity_wrapper_providers_and_gates {
     use super::*;
 
@@ -2316,5 +2302,19 @@ mod severity_wrapper_providers_and_gates {
             assert!(*flag.lock().unwrap(), "provider {} was not called when level was active", i);
         }
         assert_eq!(entries.lock().unwrap().len(), 10);
+    }
+}
+
+mod start_log_timer_tests {
+    use super::*;
+
+    #[test]
+    fn returns_a_log_timer_with_the_given_label_and_channel() {
+        let state = test_state();
+        reset_log_state(&state);
+        let timer = start_log_timer("render", Some("perf".to_string()), 0.0);
+        assert_eq!(timer.label, "render");
+        assert_eq!(timer.channel, Some("perf".to_string()));
+        assert!(timer.started_at >= 0.0);
     }
 }

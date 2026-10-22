@@ -1,7 +1,3 @@
-mod enable_statechart_guards_test;
-mod statechart_signals_test;
-mod statechart_test;
-
 pub(crate) fn log_state() -> flight_log::LogStateRef {
     return std::sync::Arc::new(std::sync::RwLock::new(flight_log::create_log_state()));
 }
@@ -18,3 +14,9 @@ pub(crate) fn guard_state() -> flight_statechart::StatechartGuardStateRef {
     }));
 }
 
+#[path = "enable_statechart_guards_test.rs"]
+mod flight_statechart_enable_statechart_guards_test;
+#[path = "statechart_signals_test.rs"]
+mod flight_statechart_statechart_signals_test;
+#[path = "statechart_test.rs"]
+mod flight_statechart_statechart_test;

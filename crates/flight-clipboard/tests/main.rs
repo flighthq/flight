@@ -12,6 +12,9 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
     }
 }
 
-mod clipboard_test;
-mod clipboard_watch_test;
-mod host_explain_test;
+#[path = "clipboard_test.rs"]
+mod flight_clipboard_clipboard_test;
+#[path = "clipboard_watch_test.rs"]
+mod flight_clipboard_clipboard_watch_test;
+#[path = "host_explain_test.rs"]
+mod flight_clipboard_host_explain_test;

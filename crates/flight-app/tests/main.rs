@@ -14,9 +14,14 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
     }
 }
 
-mod app_loop_test;
-mod app_test;
-mod app_window_test;
 mod fixture;
-mod host_explain_test;
 mod window_fixture;
+
+#[path = "app_loop_test.rs"]
+mod flight_app_app_loop_test;
+#[path = "app_test.rs"]
+mod flight_app_app_test;
+#[path = "app_window_test.rs"]
+mod flight_app_app_window_test;
+#[path = "host_explain_test.rs"]
+mod flight_app_host_explain_test;

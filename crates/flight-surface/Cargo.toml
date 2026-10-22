@@ -6,6 +6,9 @@ license.workspace = true
 description = "Drawable surface entity: opaque host handle on the private runtime, canvas context seam and display/resize capabilities"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

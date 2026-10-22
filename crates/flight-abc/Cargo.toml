@@ -6,6 +6,9 @@ license.workspace = true
 description = "Reader and instruction decoder for ActionScript byte code containers"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

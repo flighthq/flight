@@ -6,6 +6,9 @@ license.workspace = true
 description = "Rectangle bin packing algorithm"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

@@ -6,6 +6,9 @@ license.workspace = true
 description = "Capture verification: tolerant fingerprint parity/regression checks and the canonical committed baseline record"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

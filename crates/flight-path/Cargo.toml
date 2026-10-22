@@ -6,6 +6,9 @@ license.workspace = true
 description = "2D path geometry: creation, tessellation, stroke, morph, bounds, arc lengths, curvature"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

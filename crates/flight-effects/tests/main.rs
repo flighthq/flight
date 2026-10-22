@@ -4,82 +4,6 @@ use flight_effects::contract::*;
 use flight_entity::Ref;
 use flight_render::{BaseRenderState, EffectPadding, RenderState, create_render_state};
 
-mod auto_exposure_effect_test;
-mod barrel_distortion_effect_test;
-mod bevel_effect_test;
-mod bitmap_displacement_effect_test;
-mod blend_effect_test;
-mod blend_mode_math_test;
-mod bloom_effect_test;
-mod blur_downsample_test;
-mod blur_effect_test;
-mod bokeh_depth_of_field_effect_test;
-mod box_blur_math_test;
-mod camera_motion_blur_effect_test;
-mod chromatic_aberration_effect_test;
-mod color_temperature_math_test;
-mod composite_effect_test;
-mod composite_operator_math_test;
-mod contact_shadows_effect_test;
-mod convolution_effect_test;
-mod crt_effect_test;
-mod custom_shader_effect_test;
-mod depth_math_test;
-mod directional_blur_effect_test;
-mod displacement_effect_test;
-mod dither_effect_test;
-mod drop_shadow_effect_test;
-mod edge_detect_math_test;
-mod effect_capture_geometry_test;
-mod effect_defaults_test;
-mod effect_inputs_test;
-mod effect_interpolation_test;
-mod effect_padding_test;
-mod effect_test;
-mod effect_validation_test;
-mod film_emulation_effect_test;
-mod film_grain_effect_test;
-mod fxaa_effect_test;
-mod gaussian_kernel_test;
-mod gaussian_math_test;
-mod glitch_effect_test;
-mod god_rays_effect_test;
-mod god_rays_math_test;
-mod gradient_bevel_effect_test;
-mod gradient_glow_effect_test;
-mod halftone_effect_test;
-mod inner_glow_effect_test;
-mod inner_shadow_effect_test;
-mod kuwahara_effect_test;
-mod kuwahara_math_test;
-mod lens_dirt_effect_test;
-mod lens_distortion_effect_test;
-mod lens_flare_effect_test;
-mod linear_sampled_gaussian_test;
-mod median_effect_test;
-mod motion_blur_effect_test;
-mod outer_glow_effect_test;
-mod outline_effect_test;
-mod pannini_projection_effect_test;
-mod pixelate_effect_test;
-mod posterize_effect_test;
-mod radial_blur_effect_test;
-mod scanlines_effect_test;
-mod screen_space_fog_effect_test;
-mod sharpen_effect_test;
-mod sketch_effect_test;
-mod smaa_effect_test;
-mod ssao_effect_test;
-mod ssr_effect_test;
-mod stylize_math_test;
-mod taa_effect_test;
-mod tilt_shift_effect_test;
-mod tone_map_effect_test;
-mod tone_map_math_test;
-mod vignette_effect_test;
-mod volumetric_light_effect_test;
-mod white_balance_effect_test;
-
 pub(crate) fn effect_ref<T: Effect + 'static>(effect: Ref<T>) -> EffectRef {
     return effect;
 }
@@ -130,3 +54,154 @@ pub(crate) fn zero_padding() -> EffectPadding {
         top: 0.0,
     };
 }
+
+#[path = "auto_exposure_effect_test.rs"]
+mod flight_effects_auto_exposure_effect_test;
+#[path = "barrel_distortion_effect_test.rs"]
+mod flight_effects_barrel_distortion_effect_test;
+#[path = "bevel_effect_test.rs"]
+mod flight_effects_bevel_effect_test;
+#[path = "bitmap_displacement_effect_test.rs"]
+mod flight_effects_bitmap_displacement_effect_test;
+#[path = "blend_effect_test.rs"]
+mod flight_effects_blend_effect_test;
+#[path = "blend_mode_math_test.rs"]
+mod flight_effects_blend_mode_math_test;
+#[path = "bloom_effect_test.rs"]
+mod flight_effects_bloom_effect_test;
+#[path = "blur_downsample_test.rs"]
+mod flight_effects_blur_downsample_test;
+#[path = "blur_effect_test.rs"]
+mod flight_effects_blur_effect_test;
+#[path = "bokeh_depth_of_field_effect_test.rs"]
+mod flight_effects_bokeh_depth_of_field_effect_test;
+#[path = "box_blur_math_test.rs"]
+mod flight_effects_box_blur_math_test;
+#[path = "camera_motion_blur_effect_test.rs"]
+mod flight_effects_camera_motion_blur_effect_test;
+#[path = "chromatic_aberration_effect_test.rs"]
+mod flight_effects_chromatic_aberration_effect_test;
+#[path = "color_temperature_math_test.rs"]
+mod flight_effects_color_temperature_math_test;
+#[path = "composite_effect_test.rs"]
+mod flight_effects_composite_effect_test;
+#[path = "composite_operator_math_test.rs"]
+mod flight_effects_composite_operator_math_test;
+#[path = "contact_shadows_effect_test.rs"]
+mod flight_effects_contact_shadows_effect_test;
+#[path = "convolution_effect_test.rs"]
+mod flight_effects_convolution_effect_test;
+#[path = "crt_effect_test.rs"]
+mod flight_effects_crt_effect_test;
+#[path = "custom_shader_effect_test.rs"]
+mod flight_effects_custom_shader_effect_test;
+#[path = "depth_math_test.rs"]
+mod flight_effects_depth_math_test;
+#[path = "directional_blur_effect_test.rs"]
+mod flight_effects_directional_blur_effect_test;
+#[path = "displacement_effect_test.rs"]
+mod flight_effects_displacement_effect_test;
+#[path = "dither_effect_test.rs"]
+mod flight_effects_dither_effect_test;
+#[path = "drop_shadow_effect_test.rs"]
+mod flight_effects_drop_shadow_effect_test;
+#[path = "edge_detect_math_test.rs"]
+mod flight_effects_edge_detect_math_test;
+#[path = "effect_capture_geometry_test.rs"]
+mod flight_effects_effect_capture_geometry_test;
+#[path = "effect_defaults_test.rs"]
+mod flight_effects_effect_defaults_test;
+#[path = "effect_inputs_test.rs"]
+mod flight_effects_effect_inputs_test;
+#[path = "effect_interpolation_test.rs"]
+mod flight_effects_effect_interpolation_test;
+#[path = "effect_padding_test.rs"]
+mod flight_effects_effect_padding_test;
+#[path = "effect_test.rs"]
+mod flight_effects_effect_test;
+#[path = "effect_validation_test.rs"]
+mod flight_effects_effect_validation_test;
+#[path = "film_emulation_effect_test.rs"]
+mod flight_effects_film_emulation_effect_test;
+#[path = "film_grain_effect_test.rs"]
+mod flight_effects_film_grain_effect_test;
+#[path = "fxaa_effect_test.rs"]
+mod flight_effects_fxaa_effect_test;
+#[path = "gaussian_kernel_test.rs"]
+mod flight_effects_gaussian_kernel_test;
+#[path = "gaussian_math_test.rs"]
+mod flight_effects_gaussian_math_test;
+#[path = "glitch_effect_test.rs"]
+mod flight_effects_glitch_effect_test;
+#[path = "god_rays_effect_test.rs"]
+mod flight_effects_god_rays_effect_test;
+#[path = "god_rays_math_test.rs"]
+mod flight_effects_god_rays_math_test;
+#[path = "gradient_bevel_effect_test.rs"]
+mod flight_effects_gradient_bevel_effect_test;
+#[path = "gradient_glow_effect_test.rs"]
+mod flight_effects_gradient_glow_effect_test;
+#[path = "halftone_effect_test.rs"]
+mod flight_effects_halftone_effect_test;
+#[path = "inner_glow_effect_test.rs"]
+mod flight_effects_inner_glow_effect_test;
+#[path = "inner_shadow_effect_test.rs"]
+mod flight_effects_inner_shadow_effect_test;
+#[path = "kuwahara_effect_test.rs"]
+mod flight_effects_kuwahara_effect_test;
+#[path = "kuwahara_math_test.rs"]
+mod flight_effects_kuwahara_math_test;
+#[path = "lens_dirt_effect_test.rs"]
+mod flight_effects_lens_dirt_effect_test;
+#[path = "lens_distortion_effect_test.rs"]
+mod flight_effects_lens_distortion_effect_test;
+#[path = "lens_flare_effect_test.rs"]
+mod flight_effects_lens_flare_effect_test;
+#[path = "linear_sampled_gaussian_test.rs"]
+mod flight_effects_linear_sampled_gaussian_test;
+#[path = "median_effect_test.rs"]
+mod flight_effects_median_effect_test;
+#[path = "motion_blur_effect_test.rs"]
+mod flight_effects_motion_blur_effect_test;
+#[path = "outer_glow_effect_test.rs"]
+mod flight_effects_outer_glow_effect_test;
+#[path = "outline_effect_test.rs"]
+mod flight_effects_outline_effect_test;
+#[path = "pannini_projection_effect_test.rs"]
+mod flight_effects_pannini_projection_effect_test;
+#[path = "pixelate_effect_test.rs"]
+mod flight_effects_pixelate_effect_test;
+#[path = "posterize_effect_test.rs"]
+mod flight_effects_posterize_effect_test;
+#[path = "radial_blur_effect_test.rs"]
+mod flight_effects_radial_blur_effect_test;
+#[path = "scanlines_effect_test.rs"]
+mod flight_effects_scanlines_effect_test;
+#[path = "screen_space_fog_effect_test.rs"]
+mod flight_effects_screen_space_fog_effect_test;
+#[path = "sharpen_effect_test.rs"]
+mod flight_effects_sharpen_effect_test;
+#[path = "sketch_effect_test.rs"]
+mod flight_effects_sketch_effect_test;
+#[path = "smaa_effect_test.rs"]
+mod flight_effects_smaa_effect_test;
+#[path = "ssao_effect_test.rs"]
+mod flight_effects_ssao_effect_test;
+#[path = "ssr_effect_test.rs"]
+mod flight_effects_ssr_effect_test;
+#[path = "stylize_math_test.rs"]
+mod flight_effects_stylize_math_test;
+#[path = "taa_effect_test.rs"]
+mod flight_effects_taa_effect_test;
+#[path = "tilt_shift_effect_test.rs"]
+mod flight_effects_tilt_shift_effect_test;
+#[path = "tone_map_effect_test.rs"]
+mod flight_effects_tone_map_effect_test;
+#[path = "tone_map_math_test.rs"]
+mod flight_effects_tone_map_math_test;
+#[path = "vignette_effect_test.rs"]
+mod flight_effects_vignette_effect_test;
+#[path = "volumetric_light_effect_test.rs"]
+mod flight_effects_volumetric_light_effect_test;
+#[path = "white_balance_effect_test.rs"]
+mod flight_effects_white_balance_effect_test;

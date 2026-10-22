@@ -6,6 +6,9 @@ license.workspace = true
 description = "Power status, keep-awake, battery health, thermal state and idle monitoring over host capabilities"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

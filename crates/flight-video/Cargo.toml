@@ -6,6 +6,9 @@ license.workspace = true
 description = "Video resources, URL loaders and video format detection over an explicit host video capability"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

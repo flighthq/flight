@@ -12,6 +12,9 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
     }
 }
 
-mod host_explain_test;
-mod notification_test;
-mod types_test;
+#[path = "host_explain_test.rs"]
+mod flight_notification_host_explain_test;
+#[path = "notification_test.rs"]
+mod flight_notification_notification_test;
+#[path = "types_test.rs"]
+mod flight_notification_types_test;

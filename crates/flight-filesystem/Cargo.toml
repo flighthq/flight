@@ -6,6 +6,9 @@ license.workspace = true
 description = "Path utilities and file operations over an explicit host file-system capability"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

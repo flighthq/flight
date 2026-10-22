@@ -6,6 +6,9 @@ license.workspace = true
 description = "Layout algorithms: anchor, flex, and grid layout resolution with tree-shaking support"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

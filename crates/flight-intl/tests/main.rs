@@ -1,10 +1,19 @@
-mod cache_test;
-mod collator_test;
-mod datetime_test;
-mod list_test;
-mod number_test;
-mod plural_test;
 mod provider_conformance;
-mod relative_time_test;
 mod test_support;
-mod types_test;
+
+#[path = "cache_test.rs"]
+mod flight_intl_cache_test;
+#[path = "collator_test.rs"]
+mod flight_intl_collator_test;
+#[path = "datetime_test.rs"]
+mod flight_intl_datetime_test;
+#[path = "list_test.rs"]
+mod flight_intl_list_test;
+#[path = "number_test.rs"]
+mod flight_intl_number_test;
+#[path = "plural_test.rs"]
+mod flight_intl_plural_test;
+#[path = "relative_time_test.rs"]
+mod flight_intl_relative_time_test;
+#[path = "types_test.rs"]
+mod flight_intl_types_test;

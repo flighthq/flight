@@ -6,6 +6,9 @@ license.workspace = true
 description = "Stateful camera controllers: orbit and fly intents with damping, 2D follow, sphere framing, and deterministic trauma-based shake"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

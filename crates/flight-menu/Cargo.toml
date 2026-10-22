@@ -6,6 +6,9 @@ license.workspace = true
 description = "Menu capability seam: application menu installation, context-menu popups, highlight/select event entities and default menu templates routed through explicit host providers"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

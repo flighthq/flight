@@ -6,6 +6,9 @@ license.workspace = true
 description = "Canonical requirement collection, set comparison, and merging"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

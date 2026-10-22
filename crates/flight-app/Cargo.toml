@@ -6,6 +6,9 @@ license.workspace = true
 description = "Application identity, lifecycle control, events and windows over explicit host capabilities"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

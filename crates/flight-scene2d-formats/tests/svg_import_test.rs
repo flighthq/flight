@@ -13,7 +13,7 @@ use flight_shape::contract::{Shape, ShapeCommandToken, get_shape_bounds};
 use flight_text::contract::{RICH_TEXT_KIND, RichText, TEXT_LABEL_KIND, TextLabel};
 use flight_texture::contract::{TextureSourceRef, get_texture_source};
 
-use crate::svg_document_conformance_test::{
+use crate::flight_scene2d_formats_svg_document_conformance_test::{
     assert_f32_eq, assert_rectangle, child, clip, clip_rect, has_diagnostic, image_options,
     node_appearance, node_fields, shape_commands, shape_fill_color, shape_local_x, shape_winding,
 };

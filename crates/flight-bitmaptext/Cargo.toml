@@ -6,6 +6,9 @@ license.workspace = true
 description = "Glyph-source-backed bitmap text layout and scene node"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

@@ -1,43 +1,4 @@
 // Integration tests for flight-collision.
-mod capsule_contact2d_test;
-mod collide_contact_manifold2d_test;
-mod collide_contact_manifold3d_test;
-mod collision_face3d_test;
-mod collision_shape_validation2d_test;
-mod collision_shape_validation3d_test;
-mod collision_support2d_test;
-mod collision_support3d_test;
-mod contact_feature_id_test;
-mod contact_manifold2d_test;
-mod contact_manifold3d_test;
-mod convex_hull3d_test;
-mod convex_vertices2d_test;
-mod cylinder_cone3d_test;
-mod enable_collision_guards_test;
-mod explain_collision_test2d_test;
-mod explain_collision_test3d_test;
-mod gjk2d_test;
-mod gjk3d_test;
-mod gjk_distance3d_test;
-mod manifold2d_test;
-mod manifold3d_test;
-mod point_containment2d_test;
-mod point_containment3d_test;
-mod precision_test;
-mod raycast_collision_shape2d_test;
-mod raycast_collision_shape3d_test;
-mod register_built_in_collision_pair_tests2d_test;
-mod register_built_in_collision_pair_tests3d_test;
-mod segment_collision2d_test;
-mod shape_collision2d_test;
-mod shape_collision3d_test;
-mod shape_contact2d_test;
-mod sweep_collision_shape2d_test;
-mod sweep_collision_shape3d_test;
-mod test_collision2d_test;
-mod test_collision3d_test;
-mod triangle_mesh3d_test;
-mod types_test;
 
 fn collision_registry2d() -> flight_collision::CollisionRegistry2D {
     return flight_collision::CollisionRegistry2D {
@@ -82,3 +43,82 @@ fn collision_registry3d_with_supports() -> flight_collision::CollisionRegistry3D
     flight_collision::register_built_in_collision_supports3d(&mut registry);
     return registry;
 }
+
+#[path = "capsule_contact2d_test.rs"]
+mod flight_collision_capsule_contact2d_test;
+#[path = "collide_contact_manifold2d_test.rs"]
+mod flight_collision_collide_contact_manifold2d_test;
+#[path = "collide_contact_manifold3d_test.rs"]
+mod flight_collision_collide_contact_manifold3d_test;
+#[path = "collision_face3d_test.rs"]
+mod flight_collision_collision_face3d_test;
+#[path = "collision_shape_validation2d_test.rs"]
+mod flight_collision_collision_shape_validation2d_test;
+#[path = "collision_shape_validation3d_test.rs"]
+mod flight_collision_collision_shape_validation3d_test;
+#[path = "collision_support2d_test.rs"]
+mod flight_collision_collision_support2d_test;
+#[path = "collision_support3d_test.rs"]
+mod flight_collision_collision_support3d_test;
+#[path = "contact_feature_id_test.rs"]
+mod flight_collision_contact_feature_id_test;
+#[path = "contact_manifold2d_test.rs"]
+mod flight_collision_contact_manifold2d_test;
+#[path = "contact_manifold3d_test.rs"]
+mod flight_collision_contact_manifold3d_test;
+#[path = "convex_hull3d_test.rs"]
+mod flight_collision_convex_hull3d_test;
+#[path = "convex_vertices2d_test.rs"]
+mod flight_collision_convex_vertices2d_test;
+#[path = "cylinder_cone3d_test.rs"]
+mod flight_collision_cylinder_cone3d_test;
+#[path = "enable_collision_guards_test.rs"]
+mod flight_collision_enable_collision_guards_test;
+#[path = "explain_collision_test2d_test.rs"]
+mod flight_collision_explain_collision_test2d_test;
+#[path = "explain_collision_test3d_test.rs"]
+mod flight_collision_explain_collision_test3d_test;
+#[path = "gjk2d_test.rs"]
+mod flight_collision_gjk2d_test;
+#[path = "gjk3d_test.rs"]
+mod flight_collision_gjk3d_test;
+#[path = "gjk_distance3d_test.rs"]
+mod flight_collision_gjk_distance3d_test;
+#[path = "manifold2d_test.rs"]
+mod flight_collision_manifold2d_test;
+#[path = "manifold3d_test.rs"]
+mod flight_collision_manifold3d_test;
+#[path = "point_containment2d_test.rs"]
+mod flight_collision_point_containment2d_test;
+#[path = "point_containment3d_test.rs"]
+mod flight_collision_point_containment3d_test;
+#[path = "precision_test.rs"]
+mod flight_collision_precision_test;
+#[path = "raycast_collision_shape2d_test.rs"]
+mod flight_collision_raycast_collision_shape2d_test;
+#[path = "raycast_collision_shape3d_test.rs"]
+mod flight_collision_raycast_collision_shape3d_test;
+#[path = "register_built_in_collision_pair_tests2d_test.rs"]
+mod flight_collision_register_built_in_collision_pair_tests2d_test;
+#[path = "register_built_in_collision_pair_tests3d_test.rs"]
+mod flight_collision_register_built_in_collision_pair_tests3d_test;
+#[path = "segment_collision2d_test.rs"]
+mod flight_collision_segment_collision2d_test;
+#[path = "shape_collision2d_test.rs"]
+mod flight_collision_shape_collision2d_test;
+#[path = "shape_collision3d_test.rs"]
+mod flight_collision_shape_collision3d_test;
+#[path = "shape_contact2d_test.rs"]
+mod flight_collision_shape_contact2d_test;
+#[path = "sweep_collision_shape2d_test.rs"]
+mod flight_collision_sweep_collision_shape2d_test;
+#[path = "sweep_collision_shape3d_test.rs"]
+mod flight_collision_sweep_collision_shape3d_test;
+#[path = "test_collision2d_test.rs"]
+mod flight_collision_test_collision2d_test;
+#[path = "test_collision3d_test.rs"]
+mod flight_collision_test_collision3d_test;
+#[path = "triangle_mesh3d_test.rs"]
+mod flight_collision_triangle_mesh3d_test;
+#[path = "types_test.rs"]
+mod flight_collision_types_test;

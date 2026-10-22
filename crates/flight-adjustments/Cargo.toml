@@ -6,6 +6,9 @@ license.workspace = true
 description = "Color adjustment math: color matrices, brightness, contrast, hue, saturation, LUT, grading"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

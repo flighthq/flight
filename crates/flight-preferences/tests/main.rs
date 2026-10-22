@@ -12,7 +12,11 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
     }
 }
 
-mod host_explain_test;
-mod storage_persistence_test;
-mod storage_test;
-mod types_test;
+#[path = "host_explain_test.rs"]
+mod flight_preferences_host_explain_test;
+#[path = "storage_persistence_test.rs"]
+mod flight_preferences_storage_persistence_test;
+#[path = "storage_test.rs"]
+mod flight_preferences_storage_test;
+#[path = "types_test.rs"]
+mod flight_preferences_types_test;

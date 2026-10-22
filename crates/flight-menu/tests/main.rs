@@ -12,8 +12,13 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
     }
 }
 
-mod host_explain_test;
-mod menu_templates_test;
-mod menu_test;
-mod menu_watch_test;
-mod types_test;
+#[path = "host_explain_test.rs"]
+mod flight_menu_host_explain_test;
+#[path = "menu_templates_test.rs"]
+mod flight_menu_menu_templates_test;
+#[path = "menu_test.rs"]
+mod flight_menu_menu_test;
+#[path = "menu_watch_test.rs"]
+mod flight_menu_menu_watch_test;
+#[path = "types_test.rs"]
+mod flight_menu_types_test;

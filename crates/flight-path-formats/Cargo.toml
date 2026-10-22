@@ -6,6 +6,9 @@ license.workspace = true
 description = "Path serialization codecs for flight-path (SVG path data)"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

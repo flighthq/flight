@@ -6,6 +6,9 @@ license.workspace = true
 description = "Connectivity status, change diff signals and reachability over host capabilities"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

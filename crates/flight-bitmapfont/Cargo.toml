@@ -6,6 +6,9 @@ license.workspace = true
 description = "Static bitmap fonts, glyph-source adapters, diagnostics, and atlas snapshots"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

@@ -6,6 +6,9 @@ license.workspace = true
 description = "Key/value storage, namespaced access, boolean/number/JSON parsing, batch mutations, migration and change signals over host capabilities"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

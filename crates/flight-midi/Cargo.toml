@@ -6,6 +6,9 @@ license.workspace = true
 description = "Origin-pinned MIDI access, port resources, permission queries and subscriptions over caller-supplied providers"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

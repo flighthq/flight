@@ -125,6 +125,3 @@ test-module-coverage	crates/flight-statechart/tests/statechart_test.rs	`initiali
 test-module-coverage	crates/flight-statechart/tests/statechart_test.rs	`set_statechart_boolean_input` has no test module (expected `mod set_statechart_boolean_input { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_test.rs	`set_statechart_number_input` has no test module (expected `mod set_statechart_number_input { ... }`)
 test-module-coverage	crates/flight-statechart/tests/statechart_test.rs	`set_statechart_region_duration` has no test module (expected `mod set_statechart_region_duration { ... }`)
-test-module-order	crates/flight-entity/tests/guards_test.rs	`create_guarded_entity_runtime_tests` should come before `create_guarded_entity_tests`
-test-module-order	crates/flight-log/tests/log_test.rs	`enable_log_signals_tests` should come before `start_log_timer_tests`
-test-module-order	crates/flight-log/tests/log_test.rs	`log_assert_tests` should come before `log_tests`

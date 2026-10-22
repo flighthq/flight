@@ -6,6 +6,9 @@ license.workspace = true
 description = "Scene2D document import, slot resolution, and image/audio resource loading"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"

@@ -1,10 +1,3 @@
-mod canvas_surface_test;
-mod host_explain_test;
-mod surface_display_test;
-mod surface_test;
-mod wgpu_host_acquisition_test;
-mod window_render_state_test;
-
 // Drives a provider future to completion on the test thread.
 pub fn block_on<F: std::future::Future>(future: F) -> F::Output {
     let mut future = Box::pin(future);
@@ -15,3 +8,16 @@ pub fn block_on<F: std::future::Future>(future: F) -> F::Output {
         }
     }
 }
+
+#[path = "canvas_surface_test.rs"]
+mod flight_surface_canvas_surface_test;
+#[path = "host_explain_test.rs"]
+mod flight_surface_host_explain_test;
+#[path = "surface_display_test.rs"]
+mod flight_surface_surface_display_test;
+#[path = "surface_test.rs"]
+mod flight_surface_surface_test;
+#[path = "wgpu_host_acquisition_test.rs"]
+mod flight_surface_wgpu_host_acquisition_test;
+#[path = "window_render_state_test.rs"]
+mod flight_surface_window_render_state_test;

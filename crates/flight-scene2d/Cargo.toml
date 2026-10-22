@@ -6,6 +6,9 @@ license.workspace = true
 description = "Display object tree for composited 2D rendering: the Node2D family, sprites, nine-slice sprites, html views and the Scene2D presentation context"
 autotests = false
 
+[lib]
+doctest = false
+
 [[test]]
 name = "tests"
 path = "tests/main.rs"
