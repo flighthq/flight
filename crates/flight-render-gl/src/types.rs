@@ -6,8 +6,8 @@ use std::rc::{Rc, Weak};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
-use flight_entity::{AnySlot, Entity, EntityRuntimeSlot, Kind, UnknownValue};
-use flight_image::HostImageCapability;
+use flight_entity::{AnySlot, Entity, EntityRuntimeSlot, Kind, Ref, UnknownValue};
+use flight_image::{HostImageCapability, ImageResolverState};
 use flight_log::LogStateRef;
 use flight_materials::{BlendMode, Material2D, MaterialData};
 use flight_node::NodeRef;
@@ -403,6 +403,10 @@ pub struct GlRenderStateOptions {
     pub gl_registries: GlRenderRegistries,
     pub canvas_host: Option<HostCanvasCapability>,
     pub image_host: Option<HostImageCapability>,
+    // The host image measurer invalidation re-measures surface images through (TS module-global
+    // `registerHostImageDimensionResolver`; D5 caller-owned and shared). `None` keeps the size the
+    // image host measured, as TS does with no resolver registered.
+    pub image_resolver: Option<Ref<ImageResolverState>>,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -565,6 +569,10 @@ pub struct GlRenderState {
     pub apply_blend_mode: Option<fn(&mut GlRenderState, Option<&BlendMode>)>,
     pub canvas_host: Option<HostCanvasCapability>,
     pub image_host: Option<HostImageCapability>,
+    // The host image measurer invalidation re-measures surface images through (TS module-global
+    // `registerHostImageDimensionResolver`; D5 caller-owned and shared). `None` keeps the size the
+    // image host measured, as TS does with no resolver registered.
+    pub image_resolver: Option<Ref<ImageResolverState>>,
 }
 
 pub struct GlContextLossSignals {
@@ -885,6 +893,7 @@ impl Default for GlRenderStateOptions {
             gl_registries: GlRenderRegistries::default(),
             canvas_host: None,
             image_host: None,
+            image_resolver: None,
         };
     }
 }

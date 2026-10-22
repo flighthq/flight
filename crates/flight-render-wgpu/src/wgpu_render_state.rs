@@ -288,6 +288,7 @@ fn initialize_wgpu_device_render_state(
         format,
         canvas_host: options.canvas_host.clone(),
         image_host: options.image_host.clone(),
+        image_resolver: options.image_resolver.clone(),
         runtime,
     };
     warm_wgpu_pipelines(&mut state);

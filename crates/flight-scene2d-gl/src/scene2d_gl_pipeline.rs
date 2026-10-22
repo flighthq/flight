@@ -109,6 +109,7 @@ pub fn gl_render_infrastructure() -> GlRenderStateOptions {
         gl_registries,
         canvas_host: None,
         image_host: None,
+        image_resolver: None,
     };
 }
 

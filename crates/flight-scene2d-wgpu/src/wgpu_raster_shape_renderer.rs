@@ -4,7 +4,6 @@
 //! draws as one textured quad. Mirrors scene2d-gl's raster shape renderer.
 
 use flight_geometry::create_matrix;
-use flight_image::invalidate_image_resource;
 use flight_node::{get_node_local_bounds_rectangle, get_node_local_content_revision};
 use flight_render::{
     BatchFormat, NodeRenderer, RenderProxy2D, RenderRegistryTable, RenderState,
@@ -16,7 +15,7 @@ use flight_render_wgpu::{
 };
 use flight_shape::contract::SHAPE_KIND;
 
-use crate::scene2d_wgpu_runtime::ensure_scene2d_wgpu_runtime;
+use crate::scene2d_wgpu_runtime::{ensure_scene2d_wgpu_runtime, invalidate_wgpu_surface_image};
 use crate::wgpu_mesh_shape_renderer::get_wgpu_shape_commands;
 use crate::wgpu_quad_batch_writer::{
     QUAD_BATCH_INSTANCE_FLOATS, ensure_wgpu_quad_batch_resources,
@@ -152,10 +151,7 @@ pub fn draw_wgpu_raster_shape(
         rasterizer(&context_handle, &commands, state);
         context.set_transform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         if let Some(image) = &shape_data.image {
-            invalidate_image_resource(
-                image,
-                &ensure_scene2d_wgpu_runtime(state).image_resolver_state,
-            );
+            invalidate_wgpu_surface_image(state, image);
         }
         shape_data.last_content_id = version;
         shape_data.last_pixel_ratio = pixel_ratio;

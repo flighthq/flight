@@ -4,7 +4,7 @@ use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, allocate_entity};
 use flight_geometry::create_rectangle;
-use flight_image::{HostImageCapability, create_image_resolver_state, invalidate_image_resource};
+use flight_image::HostImageCapability;
 use flight_node::{
     NodeRef, RendererData, RendererDataRef, get_node_local_bounds_rectangle,
     get_node_local_content_revision,
@@ -27,6 +27,7 @@ use crate::gl_scale9_mapper::build_gl_scale9_mapper;
 use crate::gl_shape::draw_gl_shape;
 use crate::gl_shape_data::delete_gl_premultiplied_image_texture;
 use crate::gl_shape_rasterizer::get_gl_shape_rasterizer;
+use crate::scene2d_gl_runtime::invalidate_gl_surface_image;
 use crate::types::GlScale9ShapeData;
 
 pub static GL_SCALE9_SHAPE_RENDERER: NodeRenderer<GlRenderState> = NodeRenderer {
@@ -232,7 +233,7 @@ pub fn draw_gl_scale9_shape(
         rasterizer(&context, &remapped_commands, state);
         canvas.set_transform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         if let Some(image) = &shape_data.image {
-            invalidate_image_resource(image, &create_image_resolver_state());
+            invalidate_gl_surface_image(state, image);
         }
         shape_data.last_h = h;
         shape_data.last_scale_x = source.scale_x;

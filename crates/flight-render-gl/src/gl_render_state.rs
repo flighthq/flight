@@ -45,6 +45,7 @@ pub fn create_gl_render_state(
         apply_blend_mode: None,
         canvas_host: options.canvas_host.clone(),
         image_host: options.image_host.clone(),
+        image_resolver: options.image_resolver.clone(),
     };
     let state_id = get_entity_id(&state);
     {

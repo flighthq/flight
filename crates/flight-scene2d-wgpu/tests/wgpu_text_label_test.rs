@@ -129,6 +129,53 @@ mod draw_wgpu_text_label {
         submit_wgpu_frame(&mut state);
     }
 
+    // TS `invalidateImageResource` re-measures through the registered host resolver (module-global
+    // in TS; the state's `image_resolver` here, D5). With none, the image keeps its measured size.
+    #[test]
+    fn re_measures_the_rasterized_image_through_the_states_image_resolver() {
+        let mut state = create_test_state_in_pass();
+        set_test_hosts(&mut state);
+        register_wgpu_standard_material(&mut state);
+        let mut resolver = flight_image::contract::create_image_resolver_state();
+        flight_image::contract::register_host_image_dimension_resolver(
+            &mut resolver,
+            Arc::new(|_source, out| {
+                out.width = 7;
+                out.height = 9;
+                return true;
+            }),
+        );
+        state.image_resolver = Some(Arc::new(RwLock::new(resolver)));
+        let proxy = text_proxy(&mut state, "hello", None);
+
+        draw_wgpu_text_label(&mut state, &proxy);
+
+        let data = proxy.renderer_data.clone().unwrap();
+        let image = label_data(&data, |data| data.image.clone().unwrap());
+        let image = image.read().unwrap();
+        assert_eq!((image.width, image.height), (7, 9));
+        drop(image);
+        submit_wgpu_frame(&mut state);
+    }
+
+    #[test]
+    fn keeps_the_host_measured_image_size_without_an_image_resolver() {
+        let mut state = create_test_state_in_pass();
+        set_test_hosts(&mut state);
+        register_wgpu_standard_material(&mut state);
+        let proxy = text_proxy(&mut state, "hello", None);
+
+        draw_wgpu_text_label(&mut state, &proxy);
+
+        let data = proxy.renderer_data.clone().unwrap();
+        let image = label_data(&data, |data| data.image.clone().unwrap());
+        let image = image.read().unwrap();
+        assert_ne!((image.width, image.height), (7, 9));
+        assert!(image.version > 0);
+        drop(image);
+        submit_wgpu_frame(&mut state);
+    }
+
     #[test]
     fn does_not_re_rasterize_when_only_alpha_changes() {
         let mut state = create_test_state_in_pass();

@@ -8,7 +8,7 @@ use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, allocate_entity};
 use flight_geometry::{create_matrix, create_rectangle};
-use flight_image::{HostImageCapability, invalidate_image_resource};
+use flight_image::HostImageCapability;
 use flight_node::{
     NodeRef, RendererData, RendererDataRef, get_node_local_bounds_rectangle,
     get_node_local_content_revision,
@@ -25,7 +25,7 @@ use flight_shape::contract::SCALE9_SHAPE_KIND;
 use flight_shape::{Scale9Shape, ShapeCommandToken, map_scale9_shape_commands};
 use flight_surface::{CanvasSurface, HostCanvasCapability};
 
-use crate::scene2d_wgpu_runtime::ensure_scene2d_wgpu_runtime;
+use crate::scene2d_wgpu_runtime::{ensure_scene2d_wgpu_runtime, invalidate_wgpu_surface_image};
 use crate::types::*;
 use crate::wgpu_quad_batch_writer::flush_wgpu_quad_batch_writer;
 use crate::wgpu_scale9_mapper::build_wgpu_scale9_mapper;
@@ -216,10 +216,7 @@ pub fn draw_wgpu_scale9_shape(
         rasterizer(&context_handle, &remapped_commands, state);
         context.set_transform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         if let Some(image) = &shape_data.image {
-            invalidate_image_resource(
-                image,
-                &ensure_scene2d_wgpu_runtime(state).image_resolver_state,
-            );
+            invalidate_wgpu_surface_image(state, image);
         }
 
         shape_data.last_h = h;

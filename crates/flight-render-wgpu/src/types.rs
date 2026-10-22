@@ -10,7 +10,7 @@ use std::sync::{Arc, Mutex, RwLock, Weak};
 use flight_effects::Effect;
 use flight_entity::{AnySlot, Entity, EntityRuntimeSlot, Kind, Ref, UnknownValue};
 use flight_host::{HostImageSource, HostSpawnCapability, WgpuDevice, WgpuSurfaceContext};
-use flight_image::HostImageCapability;
+use flight_image::{HostImageCapability, ImageResolverState};
 use flight_materials::{BlendMode, ColorScaleBias, Material2D, MaterialData, TintMaterialData};
 use flight_node::NodeRef;
 use flight_platform::PlatformEndianness;
@@ -181,6 +181,10 @@ pub struct WgpuRenderState {
     // through (TS `RenderState.canvasHost` / `imageHost`, backend fields per D17).
     pub canvas_host: Option<HostCanvasCapability>,
     pub image_host: Option<HostImageCapability>,
+    // The host image measurer invalidation re-measures surface images through (TS module-global
+    // `registerHostImageDimensionResolver`; D5 caller-owned and shared). `None` keeps the size the
+    // image host measured, as TS does with no resolver registered.
+    pub image_resolver: Option<Ref<ImageResolverState>>,
     pub(crate) runtime: WgpuRenderStateRuntime,
 }
 
@@ -757,6 +761,7 @@ pub struct WgpuRenderStateOptions {
     pub format: Option<wgpu::TextureFormat>,
     pub gpu_skinning: Option<UnknownValue>,
     pub image_host: Option<HostImageCapability>,
+    pub image_resolver: Option<Ref<ImageResolverState>>,
     pub image_smoothing_enabled: Option<bool>,
     pub material_renderers: Option<KindMap<WgpuMaterialRenderer>>,
     pub modifier_snippets: Option<KindMap<UnknownValue>>,

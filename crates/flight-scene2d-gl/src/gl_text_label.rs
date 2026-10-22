@@ -5,7 +5,6 @@ use std::sync::{Arc, RwLock};
 use flight_color::compute_rgba_css_string;
 use flight_entity::{Ref, allocate_entity};
 use flight_geometry::create_matrix;
-use flight_image::{create_image_resolver_state, invalidate_image_resource};
 use flight_node::{NodeRef, RendererData, RendererDataRef, get_node_local_content_revision};
 use flight_render::{
     BatchFormat, NodeRenderer, RenderProxy2D, create_canvas_host_surface,
@@ -32,6 +31,7 @@ use crate::gl_quad_batch_writer::{
     record_gl_quad_batch_color_scale_bias, write_gl_quad_batch_instance,
 };
 use crate::gl_shape_data::delete_gl_premultiplied_image_texture;
+use crate::scene2d_gl_runtime::invalidate_gl_surface_image;
 use crate::types::GlTextLabelData;
 
 pub static GL_TEXT_LABEL_RENDERER: NodeRenderer<GlRenderState> = NodeRenderer {
@@ -223,7 +223,7 @@ pub fn draw_gl_text_label(state: &mut GlRenderState, render_proxy: &RenderProxy2
         }
 
         if let Some(image) = &text_data.image {
-            invalidate_image_resource(image, &create_image_resolver_state());
+            invalidate_gl_surface_image(state, image);
         }
         text_data.log_w = w;
         text_data.log_h = h;

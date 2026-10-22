@@ -11,7 +11,6 @@ use std::sync::{Arc, RwLock};
 use flight_color::compute_rgba_css_string;
 use flight_entity::allocate_entity;
 use flight_host::CanvasRenderingContext2D;
-use flight_image::invalidate_image_resource;
 use flight_node::{NodeRef, RendererDataRef, downcast_node_ref};
 use flight_render::{
     NodeRenderer, RenderProxy2D, RenderState, create_canvas_host_surface,
@@ -34,7 +33,9 @@ use flight_textlayout::contract::{
     compute_text_bounds_width, compute_text_layout,
 };
 
-use crate::scene2d_wgpu_runtime::{ensure_scene2d_wgpu_runtime, get_scene2d_wgpu_runtime};
+use crate::scene2d_wgpu_runtime::{
+    ensure_scene2d_wgpu_runtime, get_scene2d_wgpu_runtime, invalidate_wgpu_surface_image,
+};
 use crate::types::*;
 use crate::wgpu_quad_batch_writer::flush_wgpu_quad_batch_writer;
 use crate::wgpu_renderer_data::get_wgpu_renderer_data_mut;
@@ -301,10 +302,7 @@ pub fn draw_wgpu_rich_text_with_overlay(
     }
     drop(result);
     if let Some(image) = &rich_data.image {
-        invalidate_image_resource(
-            image,
-            &ensure_scene2d_wgpu_runtime(state).image_resolver_state,
-        );
+        invalidate_wgpu_surface_image(state, image);
     }
 
     if let Some(apply_blend_mode) = resolve_wgpu_apply_blend_mode(state) {

@@ -4,7 +4,6 @@ use std::sync::{Arc, RwLock};
 
 use flight_color::compute_rgba_css_string;
 use flight_entity::{Ref, allocate_entity};
-use flight_image::{create_image_resolver_state, invalidate_image_resource};
 use flight_node::{NodeRef, RendererDataRef, downcast_node_ref};
 use flight_render::{
     NodeRenderer, RenderProxy2D, create_canvas_host_surface, destroy_canvas_host_surface,
@@ -28,7 +27,7 @@ use flight_texture::TextureColorSpace;
 
 use crate::gl_quad_batch_writer::flush_gl_quad_batch_writer;
 use crate::gl_shape_data::delete_gl_premultiplied_image_texture;
-use crate::scene2d_gl_runtime::ensure_scene2d_gl_runtime;
+use crate::scene2d_gl_runtime::{ensure_scene2d_gl_runtime, invalidate_gl_surface_image};
 use crate::types::{GlRichTextData, GlRichTextOverlay, Scene2DGlRuntime};
 use flight_host::Canvas2DContext;
 
@@ -212,7 +211,7 @@ pub fn draw_gl_rich_text_with_overlay(
     }
     drop(result_guard);
     if let Some(image) = &image {
-        invalidate_image_resource(image, &create_image_resolver_state());
+        invalidate_gl_surface_image(state, image);
     }
 
     let Ok(shader) = resolve_gl_shader(state, render_proxy) else {

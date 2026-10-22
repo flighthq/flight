@@ -1,6 +1,8 @@
 //! Access to this package's per-state record (the source's module WeakMaps keyed by state), held in
 //! render-wgpu's opaque `scene2d_runtime` slot (D5).
 
+use flight_entity::Ref;
+use flight_image::{ImageResource, create_image_resolver_state, invalidate_image_resource};
 use flight_render_wgpu::{
     WgpuRenderState, get_wgpu_render_state_runtime, get_wgpu_render_state_runtime_mut,
 };
@@ -38,4 +40,14 @@ pub(crate) fn get_scene2d_wgpu_runtime_mut(
         .scene2d_runtime
         .as_mut()
         .and_then(|value| value.downcast_mut::<Scene2DWgpuRuntime>());
+}
+
+// Invalidates a raster surface image (TS `invalidateImageResource`), re-measuring it through the
+// state's image resolver, the explicit form of the source's module-global resolver (D5). With none
+// configured the image keeps the size its host measured, as TS does with no resolver registered.
+pub(crate) fn invalidate_wgpu_surface_image(state: &WgpuRenderState, image: &Ref<ImageResource>) {
+    match &state.image_resolver {
+        Some(resolver) => invalidate_image_resource(image, &resolver.read().unwrap()),
+        None => invalidate_image_resource(image, &create_image_resolver_state()),
+    }
 }

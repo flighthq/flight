@@ -226,6 +226,47 @@ mod draw_gl_text_label {
         );
     }
 
+    // TS `invalidateImageResource` re-measures through the registered host resolver (module-global
+    // in TS; the state's `image_resolver` here, D5). With none, the image keeps its measured size.
+    #[test]
+    fn re_measures_the_rasterized_image_through_the_states_image_resolver() {
+        let (mut state, _host) = create_gl_state_with_hosts();
+        register_gl_standard_material(&mut state);
+        let mut resolver = flight_image::contract::create_image_resolver_state();
+        flight_image::contract::register_host_image_dimension_resolver(
+            &mut resolver,
+            Arc::new(|_source, out| {
+                out.width = 7;
+                out.height = 9;
+                return true;
+            }),
+        );
+        state.image_resolver = Some(Arc::new(RwLock::new(resolver)));
+        let data = create_data(&mut state);
+        let proxy = make_text_proxy(&mut state, &make_text_node("hello"), Some(data.clone()));
+
+        draw_gl_text_label(&mut state, &proxy);
+
+        let image = with_data(&data, |data| data.image.clone().unwrap());
+        let image = image.read().unwrap();
+        assert_eq!((image.width, image.height), (7, 9));
+    }
+
+    #[test]
+    fn keeps_the_host_measured_image_size_without_an_image_resolver() {
+        let (mut state, _host) = create_gl_state_with_hosts();
+        register_gl_standard_material(&mut state);
+        let data = create_data(&mut state);
+        let proxy = make_text_proxy(&mut state, &make_text_node("hello"), Some(data.clone()));
+
+        draw_gl_text_label(&mut state, &proxy);
+
+        let image = with_data(&data, |data| data.image.clone().unwrap());
+        let image = image.read().unwrap();
+        assert_ne!((image.width, image.height), (7, 9));
+        assert!(image.version > 0);
+    }
+
     #[test]
     fn does_not_re_rasterize_when_only_alpha_changes_version_unchanged() {
         let (mut state, host) = create_gl_state_with_hosts();

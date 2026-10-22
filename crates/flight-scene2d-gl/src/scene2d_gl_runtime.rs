@@ -2,6 +2,8 @@
 //! `GlRenderState` / `GlContext`), held in render-gl's opaque `scene2d_runtime` /
 //! `scene2d_context_runtime` slots (D5: explicit state, no hidden globals).
 
+use flight_entity::Ref;
+use flight_image::{ImageResource, create_image_resolver_state, invalidate_image_resource};
 use std::cell::RefMut;
 
 use flight_render_gl::GlRenderState;
@@ -44,4 +46,14 @@ pub(crate) fn ensure_scene2d_gl_runtime(state: &GlRenderState) -> RefMut<'_, Sce
             .and_then(|value| value.downcast_mut::<Scene2DGlRuntime>())
             .expect("the scene2d-gl state slot holds a Scene2DGlRuntime");
     });
+}
+
+// Invalidates a raster surface image (TS `invalidateImageResource`), re-measuring it through the
+// state's image resolver, the explicit form of the source's module-global resolver (D5). With none
+// configured the image keeps the size its host measured, as TS does with no resolver registered.
+pub(crate) fn invalidate_gl_surface_image(state: &GlRenderState, image: &Ref<ImageResource>) {
+    match &state.image_resolver {
+        Some(resolver) => invalidate_image_resource(image, &resolver.read().unwrap()),
+        None => invalidate_image_resource(image, &create_image_resolver_state()),
+    }
 }

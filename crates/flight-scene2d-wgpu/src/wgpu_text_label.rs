@@ -7,7 +7,6 @@ use std::sync::{Arc, RwLock};
 
 use flight_color::compute_rgba_css_string;
 use flight_entity::allocate_entity;
-use flight_image::invalidate_image_resource;
 use flight_node::{NodeRef, RendererDataRef, get_node_local_content_revision};
 use flight_render::{
     BatchFormat, NodeRenderer, RenderProxy2D, RenderState, create_canvas_host_surface,
@@ -26,7 +25,7 @@ use flight_textlayout::contract::{
     create_text_format_range,
 };
 
-use crate::scene2d_wgpu_runtime::ensure_scene2d_wgpu_runtime;
+use crate::scene2d_wgpu_runtime::{ensure_scene2d_wgpu_runtime, invalidate_wgpu_surface_image};
 use crate::types::*;
 use crate::wgpu_quad_batch_writer::{
     QUAD_BATCH_INSTANCE_FLOATS, ensure_wgpu_quad_batch_resources,
@@ -225,10 +224,7 @@ pub fn draw_wgpu_text_label(
         }
 
         if let Some(image) = &text_data.image {
-            invalidate_image_resource(
-                image,
-                &ensure_scene2d_wgpu_runtime(state).image_resolver_state,
-            );
+            invalidate_wgpu_surface_image(state, image);
         }
 
         text_data.log_w = w;

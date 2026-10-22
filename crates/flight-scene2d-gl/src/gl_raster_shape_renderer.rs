@@ -1,7 +1,6 @@
 // flight-lint: allow-file(contract-vocabulary) D17 node renderers are backend-typed dispatch tables over thread-bound render-gl state
 
 use flight_geometry::create_matrix;
-use flight_image::{create_image_resolver_state, invalidate_image_resource};
 use flight_node::{get_node_local_bounds_rectangle, get_node_local_content_revision};
 use flight_render::{
     BatchFormat, NodeRenderer, RenderProxy2D, RenderRegistryTable, create_canvas_host_surface,
@@ -26,6 +25,7 @@ use crate::gl_shape_data::{
     destroy_gl_shape_data, get_gl_shape_data,
 };
 use crate::gl_shape_rasterizer::get_gl_shape_rasterizer;
+use crate::scene2d_gl_runtime::invalidate_gl_surface_image;
 
 // The canvas-only shape strategy: every shape rasterizes through the registered rasterizer, and this
 // module never references the tessellator. Choosing it means the full canvas command vocabulary must
@@ -160,7 +160,7 @@ pub fn draw_gl_raster_shape(
         // Re-reads the surface dimensions and bumps the resource version so the batch's
         // version-aware cache re-uploads from the updated backing store.
         if let Some(image) = &shape_data.image {
-            invalidate_image_resource(image, &create_image_resolver_state());
+            invalidate_gl_surface_image(state, image);
         }
         shape_data.last_content_id = version;
         shape_data.last_pixel_ratio = pixel_ratio;

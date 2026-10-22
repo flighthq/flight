@@ -6,7 +6,7 @@
 
 use flight_entity::Ref;
 use flight_host::CanvasRenderingContext2D;
-use flight_image::{ImageResolverState, ImageResource};
+use flight_image::ImageResource;
 use flight_node::RendererDataFields;
 use flight_registry::KindMap;
 use flight_render::{CanvasHostSurfaces, NodeRenderer, RenderProxy2D};
@@ -151,9 +151,6 @@ pub(crate) struct WgpuVelocityPipeline {
 #[derive(Default)]
 pub(crate) struct Scene2DWgpuRuntime {
     pub(crate) canvas_host_surfaces: CanvasHostSurfaces,
-    // The dimension hooks raster images re-measure through on invalidation (D5: the source's
-    // module-global resolver); empty, so an invalidation keeps the size the image host measured.
-    pub(crate) image_resolver_state: ImageResolverState,
     pub(crate) render_cache_targets: Option<Vec<WgpuRenderCacheTargetEntry>>,
     pub(crate) stats: Option<WgpuRenderStats>,
     pub(crate) text_input_overlay: Option<WgpuRichTextOverlay>,
