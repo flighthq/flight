@@ -211,6 +211,8 @@ pub fn validate_particle_emitter_config(
     out: &mut Vec<ParticleConfigIssue>,
     config: &ParticleEmitterConfig,
 ) {
+    out.clear();
+
     // Check all numeric fields for finiteness.
     check_finite(out, "alpha_end", config.alpha_end);
     check_finite(out, "alpha_start", config.alpha_start);

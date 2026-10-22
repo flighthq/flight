@@ -640,4 +640,345 @@ mod validate_particle_emitter_config {
         validate_particle_emitter_config(&mut issues, &config);
         assert!(issues.is_empty());
     }
+
+    #[test]
+    fn clears_prefilled_sentinel_issues_before_validating() {
+        let config = create_particle_emitter_config(None);
+        let mut issues = vec![
+            ParticleConfigIssue {
+                field: "sentinel".to_string(),
+                message: "leftover from previous call".to_string(),
+                severity: "error".to_string(),
+            },
+        ];
+        validate_particle_emitter_config(&mut issues, &config);
+        assert!(issues.is_empty());
+        assert!(!issues.iter().any(|i| i.field == "sentinel"));
+    }
+
+    #[test]
+    fn repeated_invalid_call_does_not_duplicate_issues() {
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            gravity_y: f32::NAN,
+            spawn_rate: -5.0,
+            alpha_curve: None,
+            alpha_end: 0.0,
+            alpha_start: 1.0,
+            blend_mode: None,
+            burst_count: 0.0,
+            burst_interval: 0.0,
+            color_curve: None,
+            color_end_b: 1.0,
+            color_end_g: 1.0,
+            color_end_r: 1.0,
+            color_end_variance_b: 0.0,
+            color_end_variance_g: 0.0,
+            color_end_variance_r: 0.0,
+            color_start_b: 1.0,
+            color_start_g: 1.0,
+            color_start_r: 1.0,
+            color_start_variance_b: 0.0,
+            color_start_variance_g: 0.0,
+            color_start_variance_r: 0.0,
+            direction_x: 0.0,
+            direction_y: -1.0,
+            direction_z: 0.0,
+            duration: 0.0,
+            emitter_cone_angle: 0.0,
+            emitter_depth: 0.0,
+            emitter_height: 0.0,
+            emitter_radius: 0.0,
+            emitter_shape: EmitterShape::Point,
+            emitter_width: 0.0,
+            frame_count: 1.0,
+            frame_rate: 12.0,
+            gravity_x: 0.0,
+            gravity_z: 0.0,
+            lifetime_max: 1.0,
+            lifetime_min: 0.5,
+            looping: true,
+            max_particles: 1000.0,
+            region_id_max: 1.0,
+            region_id_min: 0.0,
+            rotation_speed_max: 0.0,
+            rotation_speed_min: 0.0,
+            scale_curve: None,
+            scale_end: 1.0,
+            scale_max: 1.0,
+            scale_min: 1.0,
+            speed_max: 100.0,
+            speed_min: 50.0,
+            spread: std::f32::consts::PI,
+            velocity_inheritance: 0.0,
+            world_space: false,
+        }));
+        let mut issues = Vec::new();
+        validate_particle_emitter_config(&mut issues, &config);
+        let first_count = issues.len();
+        assert!(first_count > 0);
+        validate_particle_emitter_config(&mut issues, &config);
+        assert_eq!(issues.len(), first_count);
+    }
+
+    #[test]
+    fn invalid_then_valid_clears_previous_issues() {
+        let invalid = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            gravity_y: f32::NAN,
+            alpha_curve: None,
+            alpha_end: 0.0,
+            alpha_start: 1.0,
+            blend_mode: None,
+            burst_count: 0.0,
+            burst_interval: 0.0,
+            color_curve: None,
+            color_end_b: 1.0,
+            color_end_g: 1.0,
+            color_end_r: 1.0,
+            color_end_variance_b: 0.0,
+            color_end_variance_g: 0.0,
+            color_end_variance_r: 0.0,
+            color_start_b: 1.0,
+            color_start_g: 1.0,
+            color_start_r: 1.0,
+            color_start_variance_b: 0.0,
+            color_start_variance_g: 0.0,
+            color_start_variance_r: 0.0,
+            direction_x: 0.0,
+            direction_y: -1.0,
+            direction_z: 0.0,
+            duration: 0.0,
+            emitter_cone_angle: 0.0,
+            emitter_depth: 0.0,
+            emitter_height: 0.0,
+            emitter_radius: 0.0,
+            emitter_shape: EmitterShape::Point,
+            emitter_width: 0.0,
+            frame_count: 1.0,
+            frame_rate: 12.0,
+            gravity_x: 0.0,
+            gravity_z: 0.0,
+            lifetime_max: 1.0,
+            lifetime_min: 0.5,
+            looping: true,
+            max_particles: 1000.0,
+            region_id_max: 1.0,
+            region_id_min: 0.0,
+            rotation_speed_max: 0.0,
+            rotation_speed_min: 0.0,
+            scale_curve: None,
+            scale_end: 1.0,
+            scale_max: 1.0,
+            scale_min: 1.0,
+            spawn_rate: 10.0,
+            speed_max: 100.0,
+            speed_min: 50.0,
+            spread: std::f32::consts::PI,
+            velocity_inheritance: 0.0,
+            world_space: false,
+        }));
+        let valid = create_particle_emitter_config(None);
+        let mut issues = Vec::new();
+        validate_particle_emitter_config(&mut issues, &invalid);
+        assert!(!issues.is_empty());
+        validate_particle_emitter_config(&mut issues, &valid);
+        assert!(issues.is_empty());
+    }
+
+    #[test]
+    fn multiple_issues_appear_in_source_order() {
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            alpha_start: 2.0,
+            lifetime_min: 5.0,
+            lifetime_max: 1.0,
+            spawn_rate: -5.0,
+            alpha_curve: None,
+            alpha_end: 0.0,
+            blend_mode: None,
+            burst_count: 0.0,
+            burst_interval: 0.0,
+            color_curve: None,
+            color_end_b: 1.0,
+            color_end_g: 1.0,
+            color_end_r: 1.0,
+            color_end_variance_b: 0.0,
+            color_end_variance_g: 0.0,
+            color_end_variance_r: 0.0,
+            color_start_b: 1.0,
+            color_start_g: 1.0,
+            color_start_r: 1.0,
+            color_start_variance_b: 0.0,
+            color_start_variance_g: 0.0,
+            color_start_variance_r: 0.0,
+            direction_x: 0.0,
+            direction_y: -1.0,
+            direction_z: 0.0,
+            duration: 0.0,
+            emitter_cone_angle: 0.0,
+            emitter_depth: 0.0,
+            emitter_height: 0.0,
+            emitter_radius: 0.0,
+            emitter_shape: EmitterShape::Point,
+            emitter_width: 0.0,
+            frame_count: 1.0,
+            frame_rate: 12.0,
+            gravity_x: 0.0,
+            gravity_y: 0.0,
+            gravity_z: 0.0,
+            looping: true,
+            max_particles: 1000.0,
+            region_id_max: 1.0,
+            region_id_min: 0.0,
+            rotation_speed_max: 0.0,
+            rotation_speed_min: 0.0,
+            scale_curve: None,
+            scale_end: 1.0,
+            scale_max: 1.0,
+            scale_min: 1.0,
+            speed_max: 100.0,
+            speed_min: 50.0,
+            spread: std::f32::consts::PI,
+            velocity_inheritance: 0.0,
+            world_space: false,
+        }));
+        let mut issues = Vec::new();
+        validate_particle_emitter_config(&mut issues, &config);
+        assert!(issues.len() >= 3);
+        let fields: Vec<&str> = issues.iter().map(|i| i.field.as_str()).collect();
+        let spawn_idx = fields.iter().position(|f| *f == "spawn_rate").unwrap();
+        let lifetime_idx = fields.iter().position(|f| *f == "lifetime_min").unwrap();
+        let alpha_idx = fields.iter().position(|f| *f == "alpha_start").unwrap();
+        assert!(spawn_idx < lifetime_idx);
+        assert!(lifetime_idx < alpha_idx);
+    }
+
+    #[test]
+    fn retains_vec_capacity_after_clear() {
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            gravity_y: f32::NAN,
+            spawn_rate: f32::INFINITY,
+            alpha_curve: None,
+            alpha_end: 0.0,
+            alpha_start: 1.0,
+            blend_mode: None,
+            burst_count: 0.0,
+            burst_interval: 0.0,
+            color_curve: None,
+            color_end_b: 1.0,
+            color_end_g: 1.0,
+            color_end_r: 1.0,
+            color_end_variance_b: 0.0,
+            color_end_variance_g: 0.0,
+            color_end_variance_r: 0.0,
+            color_start_b: 1.0,
+            color_start_g: 1.0,
+            color_start_r: 1.0,
+            color_start_variance_b: 0.0,
+            color_start_variance_g: 0.0,
+            color_start_variance_r: 0.0,
+            direction_x: 0.0,
+            direction_y: -1.0,
+            direction_z: 0.0,
+            duration: 0.0,
+            emitter_cone_angle: 0.0,
+            emitter_depth: 0.0,
+            emitter_height: 0.0,
+            emitter_radius: 0.0,
+            emitter_shape: EmitterShape::Point,
+            emitter_width: 0.0,
+            frame_count: 1.0,
+            frame_rate: 12.0,
+            gravity_x: 0.0,
+            gravity_z: 0.0,
+            lifetime_max: 1.0,
+            lifetime_min: 0.5,
+            looping: true,
+            max_particles: 1000.0,
+            region_id_max: 1.0,
+            region_id_min: 0.0,
+            rotation_speed_max: 0.0,
+            rotation_speed_min: 0.0,
+            scale_curve: None,
+            scale_end: 1.0,
+            scale_max: 1.0,
+            scale_min: 1.0,
+            speed_max: 100.0,
+            speed_min: 50.0,
+            spread: std::f32::consts::PI,
+            velocity_inheritance: 0.0,
+            world_space: false,
+        }));
+        let mut issues = Vec::new();
+        validate_particle_emitter_config(&mut issues, &config);
+        let cap_after_first = issues.capacity();
+        assert!(cap_after_first > 0);
+        let valid = create_particle_emitter_config(None);
+        validate_particle_emitter_config(&mut issues, &valid);
+        assert!(issues.is_empty());
+        assert!(issues.capacity() >= cap_after_first);
+    }
+
+    #[test]
+    fn does_not_mutate_the_input_config() {
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
+            gravity_y: f32::NAN,
+            spawn_rate: -5.0,
+            alpha_start: 2.0,
+            alpha_curve: None,
+            alpha_end: 0.0,
+            blend_mode: None,
+            burst_count: 0.0,
+            burst_interval: 0.0,
+            color_curve: None,
+            color_end_b: 1.0,
+            color_end_g: 1.0,
+            color_end_r: 1.0,
+            color_end_variance_b: 0.0,
+            color_end_variance_g: 0.0,
+            color_end_variance_r: 0.0,
+            color_start_b: 1.0,
+            color_start_g: 1.0,
+            color_start_r: 1.0,
+            color_start_variance_b: 0.0,
+            color_start_variance_g: 0.0,
+            color_start_variance_r: 0.0,
+            direction_x: 0.0,
+            direction_y: -1.0,
+            direction_z: 0.0,
+            duration: 0.0,
+            emitter_cone_angle: 0.0,
+            emitter_depth: 0.0,
+            emitter_height: 0.0,
+            emitter_radius: 0.0,
+            emitter_shape: EmitterShape::Point,
+            emitter_width: 0.0,
+            frame_count: 1.0,
+            frame_rate: 12.0,
+            gravity_x: 0.0,
+            gravity_z: 0.0,
+            lifetime_max: 1.0,
+            lifetime_min: 0.5,
+            looping: true,
+            max_particles: 1000.0,
+            region_id_max: 1.0,
+            region_id_min: 0.0,
+            rotation_speed_max: 0.0,
+            rotation_speed_min: 0.0,
+            scale_curve: None,
+            scale_end: 1.0,
+            scale_max: 1.0,
+            scale_min: 1.0,
+            speed_max: 100.0,
+            speed_min: 50.0,
+            spread: std::f32::consts::PI,
+            velocity_inheritance: 0.0,
+            world_space: false,
+        }));
+        let spawn_before = config.spawn_rate;
+        let alpha_before = config.alpha_start;
+        let mut issues = Vec::new();
+        validate_particle_emitter_config(&mut issues, &config);
+        assert_eq!(config.spawn_rate, spawn_before);
+        assert_eq!(config.alpha_start, alpha_before);
+        assert!(config.gravity_y.is_nan());
+    }
 }
