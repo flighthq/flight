@@ -100,7 +100,7 @@ fn clip() -> flight_entity::Ref<flight_clip::ClipRegion> {
 }
 
 fn clipped_display() -> NodeRef {
-    let typed = flight_scene2d::create_display_object(None);
+    let typed = flight_scene2d::create_display_object();
     let family: Node2DRef = typed.clone();
     set_node2d_clip(&family, Some(clip()));
     return typed;
@@ -235,7 +235,7 @@ mod create_render_proxy_2d {
 
     #[test]
     fn create_proxy_2d_accepts_concrete_node2d_family_sources() {
-        let typed = flight_scene2d::create_display_object(None);
+        let typed = flight_scene2d::create_display_object();
         let family: Node2DRef = typed.clone();
         let source: NodeRef = family;
         let mut state = create_render_state();
@@ -541,7 +541,7 @@ mod is_render_proxy_dirty {
     #[test]
     fn dirty_check_detects_transform_change() {
         let state = requires_invalidation_state();
-        let typed = flight_scene2d::create_display_object(None);
+        let typed = flight_scene2d::create_display_object();
         let source: NodeRef = typed.clone();
         let mut local_state = create_render_state();
         let mut data = create_render_proxy_2d(&mut local_state, &source);
@@ -648,9 +648,9 @@ mod prepare_scene_2d_render {
         let mut state = requires_invalidation_state();
         let mut proxies = crate::support::test_default::<RenderProxies2D<BaseRenderState>>();
         let root = display_node();
-        let typed_a = flight_scene2d::create_display_object(None);
-        let typed_b = flight_scene2d::create_display_object(None);
-        let typed_child = flight_scene2d::create_display_object(None);
+        let typed_a = flight_scene2d::create_display_object();
+        let typed_b = flight_scene2d::create_display_object();
+        let typed_child = flight_scene2d::create_display_object();
         {
             let mut a = typed_a.write().unwrap();
             a.x = 10.0;
@@ -845,7 +845,7 @@ mod update_render_proxy_2d {
     #[test]
     fn optional_color_resolver_runs_after_material_before_revision_bookkeeping() {
         COLOR_CALLS.store(0, Ordering::SeqCst);
-        let typed = flight_scene2d::create_display_object(None);
+        let typed = flight_scene2d::create_display_object();
         let material: flight_entity::Ref<dyn Material2D> = Arc::new(RwLock::new(
             crate::support::test_default::<Material2DFields>(),
         ));

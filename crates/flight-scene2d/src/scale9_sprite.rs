@@ -10,27 +10,22 @@ use crate::sprite::create_sprite_runtime;
 use crate::types::*;
 
 /// Allocates a nine-slice sprite over `scale9_grid` (TS `createScale9Sprite`).
-pub fn create_scale9_sprite(
-    scale9_grid: &Rectangle,
-    obj: Option<&PartialScale9Sprite>,
-) -> Ref<Scale9Sprite> {
+// flight-lint: allow(conform-params) D23 B: authored options removed; scale9_grid is required defining ref
+pub fn create_scale9_sprite(scale9_grid: &Rectangle) -> Ref<Scale9Sprite> {
     let mut out: Scale9Sprite = create_node2d(
         SCALE9_SPRITE_KIND.to_string(),
-        obj.map(|obj| &obj.node),
+        None,
         Some(create_scale9_sprite_runtime),
     );
-    out.data = create_scale9_sprite_data(scale9_grid, obj.and_then(|obj| obj.data.as_ref()));
-    out.sprite_runtime = Arc::new(RwLock::new(SpriteRuntime::default()));
+    initialize_scale9_sprite(&mut out, scale9_grid);
     return crate::display_object::publish_node2d(out);
 }
 
 /// Allocates nine-slice kind data (TS `createScale9SpriteData`).
-pub fn create_scale9_sprite_data(
-    scale9_grid: &Rectangle,
-    data: Option<&Scale9SpriteDataOptions>,
-) -> Scale9SpriteData {
+// flight-lint: allow(conform-params) D23 B: authored options removed; scale9_grid is required defining ref
+pub fn create_scale9_sprite_data(scale9_grid: &Rectangle) -> Scale9SpriteData {
     let mut out: Scale9SpriteData = allocate_entity();
-    initialize_scale9_sprite_data(&mut out, scale9_grid, data);
+    initialize_scale9_sprite_data(&mut out, scale9_grid);
     return out;
 }
 
@@ -39,14 +34,18 @@ pub fn create_scale9_sprite_runtime() -> Node2DRuntime {
     return create_sprite_runtime();
 }
 
+/// The construction initializer of `create_scale9_sprite` (TS `initializeScale9Sprite`).
+// flight-lint: allow(conform-extra) D23 I: public initialize seam extracted from create_scale9_sprite
+pub fn initialize_scale9_sprite(out: &mut Scale9Sprite, scale9_grid: &Rectangle) {
+    out.data = create_scale9_sprite_data(scale9_grid);
+    out.sprite_runtime = Arc::new(RwLock::new(SpriteRuntime::default()));
+}
+
 /// The construction initializer of `create_scale9_sprite_data` (TS `initializeScale9SpriteData`).
-pub fn initialize_scale9_sprite_data(
-    out: &mut Scale9SpriteData,
-    scale9_grid: &Rectangle,
-    data: Option<&Scale9SpriteDataOptions>,
-) {
+// flight-lint: allow(conform-params) Principal c0f9227c D23: restore defaults before authored field assignment
+pub fn initialize_scale9_sprite_data(out: &mut Scale9SpriteData, scale9_grid: &Rectangle) {
     out.scale9_grid = scale9_grid.clone();
-    out.texture = data.and_then(|data| data.texture.clone());
+    out.texture = None;
 }
 
 /// The nine-slice sprite's own runtime fields (TS `getScale9SpriteRuntime`).

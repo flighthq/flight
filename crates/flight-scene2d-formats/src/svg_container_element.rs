@@ -8,7 +8,7 @@ use crate::svg_xml::svg_local_name;
 use crate::types::SvgElementContext;
 
 pub fn svg_container_element_handler(context: &mut SvgElementContext<'_, '_>) -> Option<Node2DRef> {
-    let container = create_display_object(None);
+    let container = create_display_object();
     let name = svg_local_name(&context.element.read().unwrap().name).to_string();
     let viewport = if name == "svg" {
         create_svg_viewport_matrix(&context.element.read().unwrap(), None)

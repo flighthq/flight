@@ -49,14 +49,14 @@ mod update_render_proxy_2d_transform {
     #[test]
     fn transform_update_multiplies_parent_transform() {
         let mut state = create_render_state();
-        let typed_parent = flight_scene2d::create_display_object(None);
+        let typed_parent = flight_scene2d::create_display_object();
         typed_parent.write().unwrap().x = 10.0;
         let parent_source: NodeRef = typed_parent;
         let mut parent = create_render_proxy_2d(&mut state, &parent_source);
         update_render_proxy_2d_transform(&state, &mut parent, None);
         parent.transform_frame_id = state.runtime.current_frame_id as i64;
 
-        let typed_child = flight_scene2d::create_display_object(None);
+        let typed_child = flight_scene2d::create_display_object();
         typed_child.write().unwrap().x = 5.0;
         let child_source: NodeRef = typed_child;
         let mut child = create_render_proxy_2d(&mut state, &child_source);

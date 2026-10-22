@@ -212,7 +212,7 @@ mod initialize_rive_scene2d_document_result {
             &build_rive(vec![artboard("New")]),
             None,
         );
-        let root: Node2DRef = create_display_object(None);
+        let root: Node2DRef = create_display_object();
         initialize_rive_scene2d_document_result(
             &mut result,
             root.clone(),

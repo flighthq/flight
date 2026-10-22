@@ -1,9 +1,7 @@
 use std::sync::{Arc, LazyLock, Mutex, RwLock, Weak};
 
 use flight_entity::Ref;
-use flight_scene2d::{
-    Node2D, Node2DRef, PartialNode2D, PartialSprite, SpriteDataOptions, create_sprite,
-};
+use flight_scene2d::{Node2D, Node2DRef, create_sprite};
 use flight_texture::{CreateTexture2DOptions, Texture, create_texture_2d};
 
 struct RiveAssetBinding {
@@ -21,15 +19,13 @@ pub fn create_rive_image_sprite(name: &str, asset_index: i32) -> Node2DRef {
     let texture = Arc::new(RwLock::new(Texture::Texture2D(create_texture_2d(Some(
         &CreateTexture2DOptions::default(),
     )))));
-    let sprite: Node2DRef = create_sprite(Some(&PartialSprite {
-        data: Some(SpriteDataOptions {
-            texture: Some(texture.clone()),
-        }),
-        node: PartialNode2D {
-            name: Some(name.to_string()),
-            ..PartialNode2D::default()
-        },
-    }));
+    let sprite = create_sprite();
+    {
+        let mut s = sprite.write().unwrap();
+        s.data.texture = Some(texture.clone());
+        s.name = Some(name.to_string());
+    }
+    let sprite: Node2DRef = sprite;
     let mut bindings = RIVE_ASSET_BINDINGS.lock().unwrap();
     remove_expired_bindings(&mut bindings);
     bindings.push(RiveAssetBinding {

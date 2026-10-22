@@ -170,7 +170,7 @@ fn display_object_schema(
     return FlightDocumentNodeSchema {
         create_node: Arc::new(move |_, resources| {
             on_create(resources);
-            return Some(create_display_object(None));
+            return Some(create_display_object());
         }),
         fields: Vec::new(),
         kind: DISPLAY_OBJECT_KIND.to_string(),

@@ -37,13 +37,9 @@ mod sugar_tests {
     }
 
     fn sprite() -> Ref<Sprite> {
-        let obj = PartialSprite {
-            data: Some(SpriteDataOptions {
-                texture: Some(texture()),
-            }),
-            ..PartialSprite::default()
-        };
-        return create_sprite(Some(&obj));
+        let sprite = create_sprite();
+        sprite.write().unwrap().data.texture = Some(texture());
+        return sprite;
     }
 
     fn show<T: std::fmt::Debug>(value: &T) -> String {
@@ -52,7 +48,7 @@ mod sugar_tests {
 
     #[test]
     fn displayobject_get_display_object_runtime_matches_get_display_object_runtime() {
-        let shared = create_display_object(None);
+        let shared = create_display_object();
         let obj = shared.read().unwrap();
         assert!(std::ptr::eq(
             obj.get_display_object_runtime(),
@@ -72,7 +68,7 @@ mod sugar_tests {
 
     #[test]
     fn htmlview_get_html_view_runtime_matches_get_html_view_runtime() {
-        let shared = create_html_view(None);
+        let shared = create_html_view();
         let view = shared.read().unwrap();
         assert!(std::ptr::eq(
             view.get_html_view_runtime(),
@@ -82,28 +78,15 @@ mod sugar_tests {
 
     #[test]
     fn htmlviewdata_initialize_html_view_data_matches_initialize_html_view_data() {
-        let element = flight_host::NativeViewHandle {
-            provider: Arc::new(()),
-            handle: Arc::new(1_u8),
-        };
-        let options = HtmlViewDataOptions {
-            element: Some(element),
-            height: Some(7.0),
-            width: Some(9.0),
-        };
-        let (mut a, mut b) = (create_html_view_data(None), create_html_view_data(None));
-        a.initialize_html_view_data(Some(&options));
-        initialize_html_view_data(&mut b, Some(&options));
+        let (mut a, mut b) = (create_html_view_data(), create_html_view_data());
+        a.initialize_html_view_data();
+        initialize_html_view_data(&mut b);
         assert_eq!(show(&a), show(&b));
-        assert!(Arc::ptr_eq(
-            &a.element.as_ref().unwrap().handle,
-            &b.element.as_ref().unwrap().handle
-        ));
     }
 
     #[test]
     fn htmlviewref_set_html_view_size_matches_set_html_view_size() {
-        let (a, b) = (create_html_view(None), create_html_view(None));
+        let (a, b) = (create_html_view(), create_html_view());
         a.set_html_view_size(30.0, 40.0);
         set_html_view_size(&b, 30.0, 40.0);
         assert_eq!(show(&*a.read().unwrap()), show(&*b.read().unwrap()));
@@ -130,8 +113,8 @@ mod sugar_tests {
 
     #[test]
     fn node2dref_get_scene2d_root_matches_get_scene2d_root() {
-        let scene2d = create_scene2d(None);
-        let child: Node2DRef = create_display_object(None);
+        let scene2d = create_scene2d();
+        let child: Node2DRef = create_display_object();
         let root: NodeRef = scene2d.read().unwrap().root.clone();
         add_node_child(&root, &(child.clone() as NodeRef));
         let a = child.get_scene2d_root().unwrap();
@@ -144,7 +127,7 @@ mod sugar_tests {
         let clip =
             flight_clip::create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 2.0, 2.0));
         let (a, b): (Node2DRef, Node2DRef) =
-            (create_display_object(None), create_display_object(None));
+            (create_display_object(), create_display_object());
         a.set_node2d_clip(Some(clip.clone()));
         set_node2d_clip(&b, Some(clip.clone()));
         let (a, b) = (a.read().unwrap(), b.read().unwrap());
@@ -158,7 +141,7 @@ mod sugar_tests {
 
     #[test]
     fn scale9sprite_get_scale9_sprite_runtime_matches_get_scale9_sprite_runtime() {
-        let shared = create_scale9_sprite(&create_rectangle(1.0, 1.0, 2.0, 2.0), None);
+        let shared = create_scale9_sprite(&create_rectangle(1.0, 1.0, 2.0, 2.0));
         let sprite = shared.read().unwrap();
         assert!(Arc::ptr_eq(
             &sprite.get_scale9_sprite_runtime(),
@@ -169,23 +152,17 @@ mod sugar_tests {
     #[test]
     fn scale9spritedata_initialize_scale9_sprite_data_matches_initialize_scale9_sprite_data() {
         let grid = create_rectangle(1.0, 2.0, 3.0, 4.0);
-        let options = Scale9SpriteDataOptions {
-            texture: Some(texture()),
-        };
-        let mut a = create_scale9_sprite_data(&grid, None);
-        let mut b = create_scale9_sprite_data(&grid, None);
-        a.initialize_scale9_sprite_data(&grid, Some(&options));
-        initialize_scale9_sprite_data(&mut b, &grid, Some(&options));
+        let mut a = create_scale9_sprite_data(&grid);
+        let mut b = create_scale9_sprite_data(&grid);
+        a.initialize_scale9_sprite_data(&grid);
+        initialize_scale9_sprite_data(&mut b, &grid);
         assert_eq!(a.scale9_grid, b.scale9_grid);
-        assert!(Arc::ptr_eq(
-            a.texture.as_ref().unwrap(),
-            b.texture.as_ref().unwrap()
-        ));
+        assert!(a.texture.is_none() && b.texture.is_none());
     }
 
     #[test]
     fn scene2d_enable_scene2d_signals_matches_enable_scene2d_signals() {
-        let scene2d = create_scene2d(None);
+        let scene2d = create_scene2d();
         let a = scene2d.write().unwrap().enable_scene2d_signals();
         let b = enable_scene2d_signals(&mut scene2d.write().unwrap());
         assert!(Arc::ptr_eq(&a, &b));
@@ -193,7 +170,7 @@ mod sugar_tests {
 
     #[test]
     fn scene2d_get_scene2d_runtime_matches_get_scene2d_runtime() {
-        let (a, b) = (create_scene2d(None), create_scene2d(None));
+        let (a, b) = (create_scene2d(), create_scene2d());
         let a_signals = a
             .write()
             .unwrap()
@@ -208,7 +185,7 @@ mod sugar_tests {
 
     #[test]
     fn scene2d_get_scene2d_signals_matches_get_scene2d_signals() {
-        let scene2d = create_scene2d(None);
+        let scene2d = create_scene2d();
         assert!(scene2d.read().unwrap().get_scene2d_signals().is_none());
         enable_scene2d_signals(&mut scene2d.write().unwrap());
         let guard = scene2d.read().unwrap();
@@ -220,14 +197,10 @@ mod sugar_tests {
 
     #[test]
     fn scene2d_initialize_scene2d_matches_initialize_scene2d() {
-        let root: Node2DRef = create_display_object(None);
-        let options = Scene2DOptions {
-            color: Some(5),
-            ..Scene2DOptions::default()
-        };
+        let root: Node2DRef = create_display_object();
         let (mut a, mut b) = (Scene2D::default(), Scene2D::default());
-        a.initialize_scene2d(root.clone(), Some(&options));
-        initialize_scene2d(&mut b, root.clone(), Some(&options));
+        a.initialize_scene2d(root.clone());
+        initialize_scene2d(&mut b, root.clone());
         assert_eq!(show(&a), show(&b));
         assert!(Arc::ptr_eq(&a.root, &b.root));
     }
@@ -264,7 +237,7 @@ mod sugar_tests {
 
     #[test]
     fn scene2dref_set_scene2d_size_matches_set_scene2d_size() {
-        let (a, b) = (create_scene2d(None), create_scene2d(None));
+        let (a, b) = (create_scene2d(), create_scene2d());
         a.set_scene2d_size(800.0, 600.0);
         set_scene2d_size(&b, 800.0, 600.0);
         assert_eq!(show(&*a.read().unwrap()), show(&*b.read().unwrap()));
@@ -316,16 +289,10 @@ mod sugar_tests {
 
     #[test]
     fn spritedata_initialize_sprite_data_matches_initialize_sprite_data() {
-        let options = SpriteDataOptions {
-            texture: Some(texture()),
-        };
-        let (mut a, mut b) = (create_sprite_data(None), create_sprite_data(None));
-        a.initialize_sprite_data(Some(&options));
-        initialize_sprite_data(&mut b, Some(&options));
-        assert!(Arc::ptr_eq(
-            a.texture.as_ref().unwrap(),
-            b.texture.as_ref().unwrap()
-        ));
+        let (mut a, mut b) = (create_sprite_data(), create_sprite_data());
+        a.initialize_sprite_data();
+        initialize_sprite_data(&mut b);
+        assert!(a.texture.is_none() && b.texture.is_none());
     }
 }
 
@@ -391,8 +358,8 @@ impl HtmlView {
 }
 
 impl HtmlViewData {
-    pub fn initialize_html_view_data(&mut self, data: Option<&HtmlViewDataOptions>) {
-        initialize_html_view_data(self, data);
+    pub fn initialize_html_view_data(&mut self) {
+        initialize_html_view_data(self);
     }
 }
 
@@ -412,15 +379,14 @@ impl Scale9SpriteData {
     pub fn initialize_scale9_sprite_data(
         &mut self,
         scale9_grid: &flight_geometry::Rectangle,
-        data: Option<&Scale9SpriteDataOptions>,
     ) {
-        initialize_scale9_sprite_data(self, scale9_grid, data);
+        initialize_scale9_sprite_data(self, scale9_grid);
     }
 }
 
 impl Scene2D {
-    pub fn initialize_scene2d(&mut self, root: Node2DRef, obj: Option<&Scene2DOptions>) {
-        initialize_scene2d(self, root, obj);
+    pub fn initialize_scene2d(&mut self, root: Node2DRef) {
+        initialize_scene2d(self, root);
     }
 
     pub fn enable_scene2d_signals(&mut self) -> Ref<Scene2DSignals> {
@@ -483,7 +449,7 @@ impl Sprite {
 }
 
 impl SpriteData {
-    pub fn initialize_sprite_data(&mut self, data: Option<&SpriteDataOptions>) {
-        initialize_sprite_data(self, data);
+    pub fn initialize_sprite_data(&mut self) {
+        initialize_sprite_data(self);
     }
 }

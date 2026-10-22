@@ -23,7 +23,7 @@ pub static SECOND_RENDERER: NodeRenderer<BaseRenderState> = NodeRenderer {
 };
 
 pub fn display_node() -> NodeRef {
-    return flight_scene2d::create_display_object(None);
+    return flight_scene2d::create_display_object();
 }
 
 pub fn node_with_kind(kind: &str) -> NodeRef {
@@ -33,7 +33,7 @@ pub fn node_with_kind(kind: &str) -> NodeRef {
 }
 
 pub fn sprite_node() -> NodeRef {
-    return flight_scene2d::create_sprite(None);
+    return flight_scene2d::create_sprite();
 }
 
 fn create_no_data(_state: &mut BaseRenderState, _source: &NodeRef) -> Option<RendererDataRef> {

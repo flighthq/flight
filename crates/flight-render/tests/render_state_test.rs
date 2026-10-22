@@ -100,7 +100,7 @@ mod destroy_render_state {
             entries: HashMap::new(),
             key_order: Vec::new(),
         }));
-        let node: NodeRef = flight_scene2d::create_display_object(None);
+        let node: NodeRef = flight_scene2d::create_display_object();
         proxies.temp_stack.push(node);
         destroy_render_state(&mut state, &mut proxies);
         assert!(proxies.temp_stack.is_empty());

@@ -27,7 +27,7 @@ fn stub_readback() -> Arc<HostBitmapReadbackCapability> {
 }
 
 fn sprite_node_with_bounds(x: f32, y: f32, w: f32, h: f32) -> NodeRef {
-    let sprite: NodeRef = create_sprite(None);
+    let sprite: NodeRef = create_sprite();
     {
         let mut guard = sprite.write().unwrap();
         let bounds = guard

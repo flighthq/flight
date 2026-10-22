@@ -165,7 +165,7 @@ mod compute_scene_2d_render_target_transform {
 
     #[test]
     fn scene2d_target_transform_cancels_detached_root_transform() {
-        let typed = flight_scene2d::create_display_object(None);
+        let typed = flight_scene2d::create_display_object();
         {
             let mut source = typed.write().unwrap();
             source.x = 50.0;

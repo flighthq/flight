@@ -39,7 +39,7 @@ mod explain_scene2d_resource_coverage {
         let filled = create_scene2d_slot_reference();
         {
             let mut filled = filled.write().unwrap();
-            filled.content = Some(create_display_object(None));
+            filled.content = Some(create_display_object());
             filled.required = true;
         }
         let missing = create_scene2d_slot_reference();

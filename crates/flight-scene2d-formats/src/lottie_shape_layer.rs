@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 
 use flight_importdiagnostics::contract::ImportDiagnosticDetailValue;
 use flight_node::contract::{NodeRef, add_node_child};
-use flight_scene2d::contract::{Node2DRef, PartialNode2D, create_display_object};
+use flight_scene2d::contract::{Node2DRef, create_display_object};
 use flight_shape::contract::{Shape, clear_shape_commands, create_shape};
 use serde_json::Value;
 
@@ -23,10 +23,8 @@ fn append_lottie_shape_items(
     context: &mut LottieImportContext<'_>,
     name: Option<String>,
 ) {
-    let group = create_display_object(Some(&PartialNode2D {
-        name,
-        ..PartialNode2D::default()
-    }));
+    let group = create_display_object();
+    group.write().unwrap().name = name;
     let group_node: Node2DRef = group.clone();
     if let Some(transform) = items
         .iter()

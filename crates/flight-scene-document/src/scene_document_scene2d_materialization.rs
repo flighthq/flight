@@ -12,7 +12,7 @@ use flight_entity::{
     Ref, allocate_entity, delete_record_value, get_record_value, set_record_value,
 };
 use flight_node::{NodeRef, add_node_child, get_node_children};
-use flight_scene2d::{Scene2D, Scene2DOptions, as_node2d_ref, create_scene2d, is_node2d};
+use flight_scene2d::{Scene2D, as_node2d_ref, create_scene2d, is_node2d};
 
 use crate::flight_document_light::to_uint32;
 use crate::flight_document_text::{explain_flight_document_text, parse_flight_document_text};
@@ -100,10 +100,8 @@ pub fn create_flight_document_scene2d_materialization(
     {
         return None;
     }
-    let scene = create_scene2d(Some(&Scene2DOptions {
-        color: document_scene.background_color.map(to_uint32),
-        ..Default::default()
-    }));
+    let scene = create_scene2d();
+    scene.write().unwrap().color = document_scene.background_color.map(to_uint32);
     let resources = resolve_flight_document_resources(&document.resources, resolvers);
     // The authored root carries a kind and fields like any other node; materializing only its
     // children would discard both, so the root is adopted from its own schema.

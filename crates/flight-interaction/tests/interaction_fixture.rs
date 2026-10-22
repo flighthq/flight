@@ -19,11 +19,11 @@ use flight_interaction::types::{
 };
 
 pub fn node() -> NodeRef {
-    return create_display_object(None);
+    return create_display_object();
 }
 
 pub fn sprite_node() -> NodeRef {
-    return create_display_object(None);
+    return create_display_object();
 }
 
 pub fn interactive_node() -> NodeRef {

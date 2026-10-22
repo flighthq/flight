@@ -5,7 +5,7 @@ use flight_geometry::{create_matrix, create_rectangle};
 use flight_importdiagnostics::{
     ImportDiagnosticDetailValue, ImportDiagnosticSeverity, report_import_diagnostic,
 };
-use flight_scene2d::contract::{Node2DRef, PartialSprite, SpriteDataOptions, create_sprite};
+use flight_scene2d::contract::{Node2DRef, create_sprite};
 use flight_texture::contract::{
     CreateTexture2DOptions, CreateTextureOptions, TextureSourceRef, create_texture,
 };
@@ -75,12 +75,8 @@ fn create_svg_image_node(context: &mut SvgElementContext<'_, '_>) -> Option<Node
             ..CreateTexture2DOptions::default()
         }),
     ))));
-    let sprite = create_sprite(Some(&PartialSprite {
-        data: Some(SpriteDataOptions {
-            texture: Some(texture),
-        }),
-        ..PartialSprite::default()
-    }));
+    let sprite = create_sprite();
+    sprite.write().unwrap().data.texture = Some(texture);
     let geometry = if image_width > 0.0 && image_height > 0.0 && width >= 0.0 && height >= 0.0 {
         create_svg_view_box_matrix(
             &[0.0, 0.0, image_width, image_height],

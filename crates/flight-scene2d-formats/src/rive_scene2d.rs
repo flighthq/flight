@@ -11,7 +11,7 @@ use flight_materials::{
 };
 use flight_math::RAD_TO_DEG;
 use flight_node::{NodeRef, add_node_child};
-use flight_scene2d::{Node2DRef, PartialNode2D, create_display_object};
+use flight_scene2d::{Node2DRef, create_display_object};
 
 use crate::rive_core_types::is_rive_core_type_derived_from;
 use crate::rive_document::parse_rive_document;
@@ -34,10 +34,9 @@ fn create_rive_artboard_import(
     let width = read_rive_number(source, RIVE_WIDTH, 0.0);
     let height = read_rive_number(source, RIVE_HEIGHT, 0.0);
     let name = read_rive_text(source, RIVE_NAME, "");
-    let root: Node2DRef = create_display_object(Some(&PartialNode2D {
-        name: Some(name.clone()),
-        ..Default::default()
-    }));
+    let root = create_display_object();
+    root.write().unwrap().name = Some(name.clone());
+    let root: Node2DRef = root;
     apply_rive_transform(&root, source);
     {
         let mut root = root.write().unwrap();
@@ -138,10 +137,9 @@ fn create_rive_unregistered_node(
             )])),
         );
     }
-    return Some(create_display_object(Some(&PartialNode2D {
-        name: Some(read_rive_text(object, RIVE_NAME, "")),
-        ..Default::default()
-    })));
+    let node = create_display_object();
+    node.write().unwrap().name = Some(read_rive_text(object, RIVE_NAME, ""));
+    return Some(node);
 }
 
 pub fn initialize_rive_document_import_result(

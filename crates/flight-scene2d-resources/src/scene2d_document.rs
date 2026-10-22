@@ -27,7 +27,7 @@ pub fn initialize_scene2d_document(out: &mut Scene2DDocument) {
     out.audio_resources.clear();
     out.background_color = None;
     out.image_resources.clear();
-    out.root = create_display_object(None);
+    out.root = create_display_object();
     out.slots.clear();
     out.source_kind = None;
 }
@@ -39,5 +39,5 @@ pub fn initialize_scene2d_slot_reference(out: &mut Scene2DSlotReference) {
     out.linkage = None;
     out.name.clear();
     out.required = false;
-    out.target = create_display_object(None);
+    out.target = create_display_object();
 }

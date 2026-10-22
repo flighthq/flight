@@ -477,7 +477,7 @@ mod import_rive_layout_component {
             stream_end: 1,
             stream_start: 0,
         }));
-        let root: Node2DRef = create_display_object(None);
+        let root: Node2DRef = create_display_object();
         let mut context =
             create_rive_artboard_import_context(registry, graph, &graph.objects, root, &[], None);
 
@@ -574,7 +574,7 @@ fn build(objects: Vec<RiveCoreObject>, parent_indices: Vec<i32>) -> TestScene {
         .iter()
         .map(|source| {
             matches!(source.type_key, ARTBOARD | SHAPE | LAYOUT_COMPONENT)
-                .then(|| -> Node2DRef { create_display_object(None) })
+                .then(|| -> Node2DRef { create_display_object() })
         })
         .collect();
     return TestScene {

@@ -20,7 +20,7 @@ fn add(parent: &Node2DRef, child: &Node2DRef) {
 }
 
 fn usage_of(build: impl FnOnce(&Node2DRef)) -> Scene2DKindUsage {
-    let scene2d = create_scene2d(None);
+    let scene2d = create_scene2d();
     let root = scene2d.read().unwrap().root.clone();
     build(&root);
     let mut usage = create_scene2d_kind_usage();
@@ -29,7 +29,7 @@ fn usage_of(build: impl FnOnce(&Node2DRef)) -> Scene2DKindUsage {
 }
 
 fn html_view() -> Node2DRef {
-    return create_html_view(None);
+    return create_html_view();
 }
 
 mod create_scene2d_kind_usage {
@@ -234,7 +234,7 @@ mod get_scene2d_kind_usage {
 
     #[test]
     fn clears_every_list_so_a_reused_record_does_not_accumulate() {
-        let scene2d = create_scene2d(None);
+        let scene2d = create_scene2d();
         add(&scene2d.read().unwrap().root.clone(), &html_view());
         let mut usage = create_scene2d_kind_usage();
         usage.shape_command_keys.push("stale".to_string());
@@ -273,7 +273,7 @@ mod node2d_shape_command_stream {
                 .is_none()
         );
         assert!(
-            create_html_view(None)
+            create_html_view()
                 .read()
                 .unwrap()
                 .shape_command_stream()

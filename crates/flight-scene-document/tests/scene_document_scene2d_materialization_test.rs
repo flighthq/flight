@@ -6,7 +6,7 @@ use flight_node::{Node, NodeRef, add_node_child, get_node_children};
 use flight_registry::with_kind_map_entry;
 use flight_scene_document::contract::*;
 use flight_scene2d::{
-    DISPLAY_OBJECT_KIND, Node2DRef, PartialNode2D, SPRITE_KIND, Scene2DOptions, as_node2d_ref,
+    DISPLAY_OBJECT_KIND, Node2DRef, SPRITE_KIND, as_node2d_ref,
     create_display_object, create_scene2d, create_sprite,
 };
 use flight_scene3d::{NODE3D_KIND, Node3DFields, create_node3d};
@@ -120,12 +120,12 @@ fn create_test_schemas() -> FlightDocumentSchemaRegistry {
     schemas.node_schemas = with_kind_map_entry(
         &schemas.node_schemas,
         DISPLAY_OBJECT_KIND.to_string(),
-        schema_for(DISPLAY_OBJECT_KIND, || create_display_object(None)),
+        schema_for(DISPLAY_OBJECT_KIND, || create_display_object()),
     );
     schemas.node_schemas = with_kind_map_entry(
         &schemas.node_schemas,
         SPRITE_KIND.to_string(),
-        schema_for(SPRITE_KIND, || create_sprite(None)),
+        schema_for(SPRITE_KIND, || create_sprite()),
     );
     return schemas;
 }
@@ -240,7 +240,7 @@ mod create_flight_document_from_scene2d {
 
     #[test]
     fn creates_a_model_from_an_empty_scene2d() {
-        let scene = create_scene2d(None);
+        let scene = create_scene2d();
         let mut document = create_flight_document_from_scene2d(
             &scene.read().unwrap(),
             &create_test_schemas(),
@@ -256,7 +256,7 @@ mod create_flight_document_from_scene2d {
 
     #[test]
     fn elides_default_valued_fields() {
-        let scene = create_scene2d(None);
+        let scene = create_scene2d();
         let root: NodeRef = scene.read().unwrap().root.clone();
         add_node_child(&root, &display_object(Some("default")));
         let document = create_flight_document_from_scene2d(
@@ -273,14 +273,12 @@ mod create_flight_document_from_scene2d {
 
     #[test]
     fn preserves_transform_fields() {
-        let scene = create_scene2d(None);
+        let scene = create_scene2d();
         let root: NodeRef = scene.read().unwrap().root.clone();
-        let obj = create_display_object(Some(&PartialNode2D {
-            name: Some("moved".to_string()),
-            ..defaults()
-        }));
+        let obj = create_display_object();
         {
             let mut obj = obj.write().unwrap();
+            obj.name = Some("moved".to_string());
             obj.x = 100.0;
             obj.y = 200.0;
             obj.scale_x = 2.0;
@@ -314,7 +312,7 @@ mod create_flight_document_from_scene2d {
 
     #[test]
     fn writes_interactive_metadata_only_from_explicit_bindings() {
-        let scene = create_scene2d(None);
+        let scene = create_scene2d();
         let states = hover_alpha(0.75);
         let root: NodeRef = scene.read().unwrap().root.clone();
         let without = create_flight_document_from_scene2d(
@@ -342,7 +340,7 @@ mod create_flight_document_from_scene2d {
 
     #[test]
     fn rejects_duplicate_and_foreign_explicit_bindings() {
-        let scene = create_scene2d(None);
+        let scene = create_scene2d();
         let root: NodeRef = scene.read().unwrap().root.clone();
         let binding = FlightDocumentInteractiveStateBinding {
             interactive_states: hover_alpha(0.75),
@@ -379,9 +377,9 @@ mod create_flight_document_from_scene2d {
 
     #[test]
     fn serializes_children_into_nested_nodes() {
-        let scene = create_scene2d(None);
+        let scene = create_scene2d();
         let root: NodeRef = scene.read().unwrap().root.clone();
-        let sprite: NodeRef = create_sprite(None);
+        let sprite: NodeRef = create_sprite();
         sprite.write().unwrap().node_fields_mut().name = Some("hero".to_string());
         add_node_child(&root, &sprite);
         let document = create_flight_document_from_scene2d(
@@ -396,7 +394,7 @@ mod create_flight_document_from_scene2d {
 
     #[test]
     fn writes_layouts_only_from_explicit_inert_bindings_and_preserves_unknown_kinds_and_styles() {
-        let scene = create_scene2d(None);
+        let scene = create_scene2d();
         let root: NodeRef = scene.read().unwrap().root.clone();
         root.write().unwrap().node_fields_mut().name = Some("root".to_string());
         let child = display_object(Some("child"));
@@ -459,7 +457,7 @@ mod create_flight_document_from_scene2d {
 
     #[test]
     fn rejects_foreign_unnamed_ambiguous_and_structurally_invalid_explicit_layout_bindings() {
-        let scene = create_scene2d(None);
+        let scene = create_scene2d();
         let root: NodeRef = scene.read().unwrap().root.clone();
         root.write().unwrap().node_fields_mut().name = Some("root".to_string());
         add_node_child(&root, &display_object(Some("root")));
@@ -1291,7 +1289,7 @@ mod explain_flight_document_refusal {
     #[test]
     fn round_trips_a_root_with_authored_fields_without_losing_them() {
         let schemas = create_test_schemas();
-        let scene = create_scene2d(None);
+        let scene = create_scene2d();
         {
             let guard = scene.read().unwrap();
             let mut root = guard.root.write().unwrap();
@@ -1472,7 +1470,7 @@ mod explain_flight_document_refusal_from_text {
 
     #[test]
     fn round_trips_a_minimal_scene2d_through_model_and_text() {
-        let scene = create_scene2d(None);
+        let scene = create_scene2d();
         let written = create_flight_document_from_scene2d(
             &scene.read().unwrap(),
             &create_test_schemas(),
@@ -1486,9 +1484,9 @@ mod explain_flight_document_refusal_from_text {
 
     #[test]
     fn round_trips_a_scene2d_with_children_through_text() {
-        let scene = create_scene2d(Some(&defaults()));
+        let scene = create_scene2d();
         let root: NodeRef = scene.read().unwrap().root.clone();
-        let sprite = create_sprite(None);
+        let sprite = create_sprite();
         {
             let mut sprite = sprite.write().unwrap();
             sprite.node_fields_mut().name = Some("hero".to_string());
@@ -1513,10 +1511,8 @@ mod initialize_flight_document_from_scene2d {
 
     #[test]
     fn is_the_construction_initializer_of_create_flight_document_from_scene2d() {
-        let scene = create_scene2d(Some(&Scene2DOptions {
-            color: Some(0x10203040),
-            ..defaults()
-        }));
+        let scene = create_scene2d();
+        scene.write().unwrap().color = Some(0x10203040);
         let mut out: FlightDocumentScene2D = allocate_entity();
         initialize_flight_document_from_scene2d(
             &mut out,
@@ -1536,7 +1532,7 @@ mod initialize_flight_document_scene2d_materialization {
 
     #[test]
     fn is_the_construction_initializer_of_create_flight_document_scene2d_materialization() {
-        let scene = create_scene2d(None);
+        let scene = create_scene2d();
         let mut out: FlightDocumentScene2DMaterialization = allocate_entity();
         initialize_flight_document_scene2d_materialization(
             &mut out,

@@ -61,7 +61,7 @@ fn source_options() -> TimelineSourceOptions {
 }
 
 fn target() -> Node2DRef {
-    return create_display_object(None);
+    return create_display_object();
 }
 
 fn make(options: MakeOptions) -> TimelineRef {

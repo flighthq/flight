@@ -9,9 +9,9 @@ mod set_scene2d_slot_reference_content {
 
     #[test]
     fn keeps_child_order_stable_when_a_pass_retains_the_same_content() {
-        let target = create_display_object(None);
-        let content = create_display_object(None);
-        let overlay = create_display_object(None);
+        let target = create_display_object();
+        let content = create_display_object();
+        let overlay = create_display_object();
         let reference = create_scene2d_slot_reference();
         reference.write().unwrap().target = target.clone();
         set_scene2d_slot_reference_content(&mut reference.write().unwrap(), Some(content.clone()));
@@ -32,10 +32,10 @@ mod set_scene2d_slot_reference_content {
 
     #[test]
     fn replaces_only_the_content_retained_by_the_manifest_reference() {
-        let target = create_display_object(None);
-        let authored = create_display_object(None);
-        let first = create_display_object(None);
-        let second: Node2DRef = create_display_object(None);
+        let target = create_display_object();
+        let authored = create_display_object();
+        let first = create_display_object();
+        let second: Node2DRef = create_display_object();
         let target_node: NodeRef = target.clone();
         let authored_node: NodeRef = authored.clone();
         add_node_child(&target_node, &authored_node);

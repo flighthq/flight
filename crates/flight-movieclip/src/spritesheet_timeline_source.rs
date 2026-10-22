@@ -192,7 +192,7 @@ fn get_or_create_bitmap(
             }
         }
     }
-    let bitmap = create_sprite(None);
+    let bitmap = create_sprite();
     let node_ref = bitmap_node_ref(&bitmap);
     let target_node_ref = target_node_ref(target);
     add_node_child(&target_node_ref, &node_ref);

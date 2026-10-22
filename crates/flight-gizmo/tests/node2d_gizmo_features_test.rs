@@ -16,13 +16,14 @@ mod create_node2d_gizmo_features {
     fn adapts_node2d_world_bounds_pivot_origin_and_composed_rotation_in_degrees() {
         let bounds_state = create_shape_bounds_state();
         register_default_shape_bounds_commands(&bounds_state);
-        let scene = create_scene2d(None);
-        let parent = create_display_object(Some(&PartialNode2D {
-            rotation: Some(15.0),
-            x: Some(10.0),
-            y: Some(20.0),
-            ..empty_node_options()
-        }));
+        let scene = create_scene2d();
+        let parent = create_display_object();
+        {
+            let mut p = parent.write().unwrap();
+            p.rotation = 15.0;
+            p.x = 10.0;
+            p.y = 20.0;
+        }
         let node = create_shape(Some(&PartialShape {
             data: Some(PartialShapeData {
                 bounds_state: Some(bounds_state),

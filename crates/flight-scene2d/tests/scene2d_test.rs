@@ -9,10 +9,6 @@ use flight_signals::connect_signal;
 
 use crate::scene2d_fixture::*;
 
-fn scene_options() -> Scene2DOptions {
-    let make: fn() -> Scene2DOptions = Scene2DOptions::default;
-    return make();
-}
 
 fn resize_count(scene2d: &Ref<Scene2D>) -> Arc<AtomicUsize> {
     let count = Arc::new(AtomicUsize::new(0));
@@ -37,7 +33,7 @@ mod create_scene2d {
 
     #[test]
     fn initializes_default_values() {
-        let scene2d = create_scene2d(None);
+        let scene2d = create_scene2d();
         let scene2d = scene2d.read().unwrap();
         assert_eq!(scene2d.color, None);
         assert_eq!(
@@ -52,7 +48,7 @@ mod create_scene2d {
 
     #[test]
     fn allocates_a_display_object_root_the_scene2d_points_back_to() {
-        let scene2d = create_scene2d(None);
+        let scene2d = create_scene2d();
         let root = scene2d.read().unwrap().root.clone();
         assert_eq!(
             root.read().unwrap().node2d_fields().kind,
@@ -62,15 +58,16 @@ mod create_scene2d {
     }
 
     #[test]
-    fn allows_pre_defined_values() {
-        let obj = Scene2DOptions {
-            color: Some(0xff0000ff),
-            scene2d_height: Some(1000.0),
-            scene2d_width: Some(2000.0),
-            align: Some(ViewportAlign::BottomRight),
-            scale_mode: Some(ViewportScaleMode::ShowAll),
-        };
-        let scene2d = create_scene2d(Some(&obj));
+    fn fields_can_be_assigned_after_creation() {
+        let scene2d = create_scene2d();
+        {
+            let mut s = scene2d.write().unwrap();
+            s.color = Some(0xff0000ff);
+            s.scene2d_height = 1000.0;
+            s.scene2d_width = 2000.0;
+            s.align = ViewportAlign::BottomRight;
+            s.scale_mode = ViewportScaleMode::ShowAll;
+        }
         let scene2d = scene2d.read().unwrap();
         assert_eq!(
             (scene2d.color, scene2d.scene2d_height, scene2d.scene2d_width),
@@ -84,7 +81,7 @@ mod create_scene2d {
 
     #[test]
     fn starts_unbound_with_no_runtime() {
-        let scene2d = create_scene2d(None);
+        let scene2d = create_scene2d();
         assert!(get_scene2d_signals(&scene2d.read().unwrap()).is_none());
         assert!(flight_entity::get_entity_runtime(&*scene2d.read().unwrap()).is_none());
     }
@@ -122,7 +119,7 @@ mod enable_scene2d_signals {
 
     #[test]
     fn returns_the_same_object_on_subsequent_calls() {
-        let scene2d = create_scene2d(None);
+        let scene2d = create_scene2d();
         let first = enable_scene2d_signals(&mut scene2d.write().unwrap());
         let second = enable_scene2d_signals(&mut scene2d.write().unwrap());
         assert!(Arc::ptr_eq(&first, &second));
@@ -130,7 +127,7 @@ mod enable_scene2d_signals {
 
     #[test]
     fn makes_get_scene2d_signals_return_the_enabled_object() {
-        let scene2d = create_scene2d(None);
+        let scene2d = create_scene2d();
         let signals = enable_scene2d_signals(&mut scene2d.write().unwrap());
         assert!(Arc::ptr_eq(
             &get_scene2d_signals(&scene2d.read().unwrap()).unwrap(),
@@ -213,7 +210,7 @@ mod get_scene2d_root {
 
     #[test]
     fn returns_the_scene2d_when_a_child_is_added_under_its_root() {
-        let scene2d = create_scene2d(None);
+        let scene2d = create_scene2d();
         let child = display_object();
         add_node_child(&as_node(&scene2d.read().unwrap().root), &as_node(&child));
         assert!(is_scene(get_scene2d_root(&child), &scene2d));
@@ -221,9 +218,9 @@ mod get_scene2d_root {
 
     #[test]
     fn returns_the_scene2d_from_a_deeply_nested_node_of_any_kind() {
-        let scene2d = create_scene2d(None);
+        let scene2d = create_scene2d();
         let mid = display_object();
-        let leaf: Node2DRef = create_sprite(None);
+        let leaf: Node2DRef = create_sprite();
         add_node_child(&as_node(&scene2d.read().unwrap().root), &as_node(&mid));
         add_node_child(&as_node(&mid), &as_node(&leaf));
         assert!(is_scene(get_scene2d_root(&leaf), &scene2d));
@@ -234,7 +231,7 @@ mod get_scene2d_root {
         let make: fn() -> Scene2D = Scene2D::default;
         let mut scene2d = make();
         let root = display_object();
-        initialize_scene2d(&mut scene2d, root.clone(), None);
+        initialize_scene2d(&mut scene2d, root.clone());
         assert!(Arc::ptr_eq(&scene2d.root, &root));
         assert!(get_scene2d_root(&root).is_none());
     }
@@ -245,7 +242,7 @@ mod get_scene2d_runtime {
 
     #[test]
     fn allocates_the_runtime_on_first_access_without_signals() {
-        let scene2d = create_scene2d(None);
+        let scene2d = create_scene2d();
         assert!(
             get_scene2d_runtime(&mut scene2d.write().unwrap())
                 .scene2d_signals
@@ -277,7 +274,7 @@ mod get_scene2d_signals {
 
     #[test]
     fn returns_null_before_signals_are_enabled_and_the_signals_after() {
-        let scene2d = create_scene2d(None);
+        let scene2d = create_scene2d();
         assert!(get_scene2d_signals(&scene2d.read().unwrap()).is_none());
         let signals = enable_scene2d_signals(&mut scene2d.write().unwrap());
         assert!(Arc::ptr_eq(
@@ -294,11 +291,8 @@ mod initialize_scene2d {
     fn is_the_construction_initializer_of_create_scene2d() {
         let make: fn() -> Scene2D = Scene2D::default;
         let mut scene2d = make();
-        let obj = Scene2DOptions {
-            scene2d_width: Some(9.0),
-            ..scene_options()
-        };
-        initialize_scene2d(&mut scene2d, display_object(), Some(&obj));
+        initialize_scene2d(&mut scene2d, display_object());
+        scene2d.scene2d_width = 9.0;
         assert_eq!(
             (scene2d.scene2d_width, scene2d.scene2d_height, scene2d.color),
             (9.0, 550.0, None)
@@ -365,7 +359,7 @@ mod set_scene2d_size {
 
     #[test]
     fn updates_scene2d_width_and_scene2d_height() {
-        let scene2d = create_scene2d(None);
+        let scene2d = create_scene2d();
         set_scene2d_size(&scene2d, 1920.0, 1080.0);
         assert_eq!(
             (
@@ -378,7 +372,7 @@ mod set_scene2d_size {
 
     #[test]
     fn emits_on_resize_once_when_dimensions_change() {
-        let scene2d = create_scene2d(None);
+        let scene2d = create_scene2d();
         let count = resize_count(&scene2d);
         set_scene2d_size(&scene2d, 1280.0, 720.0);
         assert_eq!(count.load(Ordering::SeqCst), 1);
@@ -386,7 +380,7 @@ mod set_scene2d_size {
 
     #[test]
     fn emits_when_only_one_dimension_changes() {
-        let scene2d = create_scene2d(None);
+        let scene2d = create_scene2d();
         let count = resize_count(&scene2d);
         set_scene2d_size(&scene2d, 400.0, 551.0);
         assert_eq!(count.load(Ordering::SeqCst), 1);
@@ -394,11 +388,12 @@ mod set_scene2d_size {
 
     #[test]
     fn does_not_emit_on_resize_when_dimensions_are_unchanged() {
-        let scene2d = create_scene2d(Some(&Scene2DOptions {
-            scene2d_width: Some(400.0),
-            scene2d_height: Some(300.0),
-            ..scene_options()
-        }));
+        let scene2d = create_scene2d();
+        {
+            let mut s = scene2d.write().unwrap();
+            s.scene2d_width = 400.0;
+            s.scene2d_height = 300.0;
+        }
         let count = resize_count(&scene2d);
         set_scene2d_size(&scene2d, 400.0, 300.0);
         assert_eq!(count.load(Ordering::SeqCst), 0);
@@ -406,14 +401,14 @@ mod set_scene2d_size {
 
     #[test]
     fn does_not_emit_or_allocate_when_no_one_has_subscribed() {
-        let scene2d = create_scene2d(None);
+        let scene2d = create_scene2d();
         set_scene2d_size(&scene2d, 1280.0, 720.0);
         assert!(get_scene2d_signals(&scene2d.read().unwrap()).is_none());
     }
 
     #[test]
     fn releases_the_scene_before_emitting_so_listeners_can_read_it() {
-        let scene2d = create_scene2d(None);
+        let scene2d = create_scene2d();
         let signals = enable_scene2d_signals(&mut scene2d.write().unwrap());
         let seen = Arc::new(std::sync::Mutex::new(0.0));
         let (reader, record) = (scene2d.clone(), seen.clone());

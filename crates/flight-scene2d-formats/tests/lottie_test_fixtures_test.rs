@@ -64,8 +64,8 @@ mod find_lottie_test_node_by_kind {
 
     #[test]
     fn searches_the_whole_subtree_and_returns_none_for_an_absent_kind() {
-        let root: Node2DRef = create_display_object(None);
-        let branch: Node2DRef = create_display_object(None);
+        let root: Node2DRef = create_display_object();
+        let branch: Node2DRef = create_display_object();
         let shape: Node2DRef = create_shape(None);
         add(&root, &branch);
         add(&branch, &shape);
@@ -79,8 +79,8 @@ mod find_lottie_test_node_by_name {
 
     #[test]
     fn searches_the_whole_subtree_and_returns_none_for_an_absent_name() {
-        let root: Node2DRef = create_display_object(None);
-        let child: Node2DRef = create_display_object(None);
+        let root: Node2DRef = create_display_object();
+        let child: Node2DRef = create_display_object();
         child.write().unwrap().node_fields_mut().name = Some("named".to_string());
         add(&root, &child);
         assert!(find_lottie_test_node_by_name(&root, "named").is_some());

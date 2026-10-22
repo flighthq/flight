@@ -103,7 +103,7 @@ mod as_node3d_ref {
 
     #[test]
     fn rejects_the_other_dimension_family() {
-        let scene2d = flight_scene2d::create_scene2d(None);
+        let scene2d = flight_scene2d::create_scene2d();
         let two_d: NodeRef = scene2d.read().unwrap().root.clone();
         assert!(as_node3d_ref(&two_d).is_none());
     }
@@ -272,7 +272,7 @@ mod is_node3d {
     #[test]
     fn distinguishes_actual_scene2d_and_scene3d_families() {
         let a = node3d();
-        let b = flight_scene2d::create_display_object(None);
+        let b = flight_scene2d::create_display_object();
         assert!(is_node3d(&*a.read().unwrap()));
         assert!(!is_node3d(&*b.read().unwrap()));
     }

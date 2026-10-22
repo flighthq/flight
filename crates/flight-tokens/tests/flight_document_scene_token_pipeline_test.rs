@@ -94,14 +94,14 @@ fn create_test_schemas() -> FlightDocumentSchemaRegistry {
     node_schemas = with_kind_map_entry(
         &node_schemas,
         DISPLAY_OBJECT_KIND.to_string(),
-        schema(DISPLAY_OBJECT_KIND, || create_display_object(None), vec![]),
+        schema(DISPLAY_OBJECT_KIND, || create_display_object(), vec![]),
     );
     node_schemas = with_kind_map_entry(
         &node_schemas,
         SPRITE_KIND.to_string(),
         schema(
             SPRITE_KIND,
-            || create_sprite(None),
+            || create_sprite(),
             vec![number_field("alpha", 1.0), number_field("x", 0.0)],
         ),
     );

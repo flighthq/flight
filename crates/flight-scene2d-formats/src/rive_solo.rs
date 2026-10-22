@@ -3,7 +3,7 @@ use std::sync::Arc;
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticSeverity, report_import_diagnostic,
 };
-use flight_scene2d::{Node2DRef, PartialNode2D, create_display_object};
+use flight_scene2d::{Node2DRef, create_display_object};
 
 use crate::rive_import_registry::register_rive_core_object_handler;
 use crate::types::*;
@@ -46,11 +46,9 @@ pub fn import_rive_solo_component(
     context: &mut RiveArtboardImportContext<'_>,
     index: usize,
 ) -> Option<Node2DRef> {
-    let options = PartialNode2D {
-        name: Some(read_rive_solo_name(&context.artboard.objects[index])),
-        ..Default::default()
-    };
-    return Some(create_display_object(Some(&options)));
+    let node = create_display_object();
+    node.write().unwrap().name = Some(read_rive_solo_name(&context.artboard.objects[index]));
+    return Some(node);
 }
 
 fn read_rive_solo_active_index(object: &RiveCoreObject) -> Option<usize> {

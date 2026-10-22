@@ -11,7 +11,7 @@ use flight_layout::{
     GridLayoutContainerStyle, GridLayoutItemStyle, GridLayoutTrack, ItemStyle, LayoutNode,
     LayoutTree, FLEX_LAYOUT_KIND, GRID_LAYOUT_KIND,
 };
-use flight_scene2d::{create_display_object, Node2DRef, PartialNode2D};
+use flight_scene2d::{Node2DRef, create_display_object};
 
 use crate::rive_core_types::is_rive_core_type_derived_from;
 use crate::rive_import_registry::{
@@ -676,10 +676,9 @@ pub fn import_rive_layout_component(
     index: usize,
 ) -> Option<Node2DRef> {
     let source = context.artboard.objects.get(index)?;
-    return Some(create_display_object(Some(&PartialNode2D {
-        name: Some(read_rive_layout_name(source)),
-        ..PartialNode2D::default()
-    })));
+    let node = create_display_object();
+    node.write().unwrap().name = Some(read_rive_layout_name(source));
+    return Some(node);
 }
 
 fn map_rive_alignment_axis(value: i32) -> FlexLayoutAlign {

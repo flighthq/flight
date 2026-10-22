@@ -154,7 +154,7 @@ fn context_for(
         stream_start: 0,
         objects,
     }));
-    let root: Node2DRef = create_display_object(None);
+    let root: Node2DRef = create_display_object();
     return create_rive_artboard_import_context(
         registry,
         graph,

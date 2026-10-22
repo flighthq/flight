@@ -535,7 +535,7 @@ fn context_of(
         parent_indices,
     }));
     let registry = Box::leak(Box::new(create_rive_import_registry()));
-    let root: Node2DRef = create_display_object(None);
+    let root: Node2DRef = create_display_object();
     return create_rive_artboard_import_context(
         registry,
         graph,

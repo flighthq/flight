@@ -465,7 +465,7 @@ mod import_rive_text_component {
         register_rive_text_handlers(&mut registry);
         let graph = Box::leak(Box::new(graph(vec![object(TEXT, &[])], vec![-1])));
         let registry = Box::leak(Box::new(registry));
-        let root = create_display_object(None);
+        let root = create_display_object();
         let mut context =
             create_rive_artboard_import_context(registry, graph, &graph.objects, root, &[], None);
         let handler = get_rive_core_object_handler(registry, TEXT as i32).unwrap();

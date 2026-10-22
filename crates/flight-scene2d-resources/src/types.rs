@@ -232,7 +232,7 @@ impl Default for Scene2DDocument {
             audio_resources: Vec::new(),
             background_color: None,
             image_resources: Vec::new(),
-            root: create_display_object(None),
+            root: create_display_object(),
             runtime: EntityRuntimeSlot::default(),
             slots: Vec::new(),
             source_kind: None,

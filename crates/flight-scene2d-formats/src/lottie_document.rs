@@ -18,7 +18,7 @@ use flight_materials::contract::{
 };
 use flight_node::contract::{NodeRef, add_node_child, invalidate_node_local_transform};
 use flight_scene2d::contract::{
-    DisplayObject, Node2DAnimationPath, Node2DAnimationTarget, Node2DRef, PartialNode2D,
+    DisplayObject, Node2DAnimationPath, Node2DAnimationTarget, Node2DRef,
     apply_animation_clip_to_node2d, create_display_object,
 };
 use serde_json::Value;
@@ -39,11 +39,8 @@ fn create_lottie_layer_node(
     layer: &LottieLayer,
     context: &mut LottieImportContext<'_>,
 ) -> Ref<DisplayObject> {
-    let options = PartialNode2D {
-        name: layer.get("nm").and_then(Value::as_str).map(str::to_string),
-        ..PartialNode2D::default()
-    };
-    let container = create_display_object(Some(&options));
+    let container = create_display_object();
+    container.write().unwrap().name = layer.get("nm").and_then(Value::as_str).map(str::to_string);
     let node: Node2DRef = container.clone();
     let hidden = layer.get("hd").and_then(Value::as_bool).unwrap_or(false);
     apply_lottie_transform(
@@ -374,7 +371,7 @@ pub fn create_scene2d_from_lottie_document_with_registry(
     mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,
     options: Option<&LottieDocumentImportOptions>,
 ) -> LottieDocumentImportResult {
-    let root = create_display_object(None);
+    let root = create_display_object();
     let document = parse_lottie_document(source);
     if document
         .as_ref()

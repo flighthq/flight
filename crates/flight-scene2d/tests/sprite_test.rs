@@ -13,12 +13,9 @@ use crate::scene2d_fixture::*;
 fn sprite_with(
     texture: Option<flight_entity::Ref<flight_texture::Texture>>,
 ) -> flight_entity::Ref<Sprite> {
-    let make: fn() -> PartialSprite = PartialSprite::default;
-    let obj = PartialSprite {
-        data: Some(SpriteDataOptions { texture }),
-        ..make()
-    };
-    return create_sprite(Some(&obj));
+    let sprite = create_sprite();
+    sprite.write().unwrap().data.texture = texture;
+    return sprite;
 }
 
 fn local_size(node: &NodeRef) -> (f32, f32) {
@@ -71,7 +68,7 @@ mod compute_sprite_local_bounds_rectangle {
 
     #[test]
     fn sets_an_empty_size_when_texture_is_null() {
-        let sprite = create_sprite(None);
+        let sprite = create_sprite();
         let mut out = create_rectangle(0.0, 0.0, 50.0, 60.0);
         compute_sprite_local_bounds_rectangle(&mut out, &*sprite.read().unwrap());
         assert_eq!((out.width, out.height), (0.0, 0.0));
@@ -115,7 +112,7 @@ mod create_sprite {
 
     #[test]
     fn initializes_default_values() {
-        let sprite = create_sprite(None);
+        let sprite = create_sprite();
         assert!(sprite.read().unwrap().data.texture.is_none());
         assert_eq!(sprite.read().unwrap().kind, SPRITE_KIND);
     }
@@ -132,21 +129,17 @@ mod create_sprite {
 
     #[test]
     fn returns_a_new_object_each_call() {
-        assert!(!Arc::ptr_eq(&create_sprite(None), &create_sprite(None)));
+        assert!(!Arc::ptr_eq(&create_sprite(), &create_sprite()));
     }
 
     #[test]
-    fn applies_the_base_node_options() {
-        let make: fn() -> PartialSprite = PartialSprite::default;
-        let obj = PartialSprite {
-            node: PartialNode2D {
-                x: Some(7.0),
-                alpha: Some(0.5),
-                ..node2d_options()
-            },
-            ..make()
-        };
-        let sprite = create_sprite(Some(&obj));
+    fn fields_can_be_assigned_after_creation() {
+        let sprite = create_sprite();
+        {
+            let mut s = sprite.write().unwrap();
+            s.node2d_fields_mut().x = 7.0;
+            s.node2d_fields_mut().alpha = 0.5;
+        }
         assert_eq!(
             (sprite.read().unwrap().x, sprite.read().unwrap().alpha),
             (7.0, 0.5)
@@ -159,15 +152,14 @@ mod create_sprite_data {
 
     #[test]
     fn returns_default_values() {
-        assert!(create_sprite_data(None).texture.is_none());
+        assert!(create_sprite_data().texture.is_none());
     }
 
     #[test]
-    fn allows_pre_defined_values() {
+    fn texture_can_be_assigned_after_creation() {
         let image = texture(10, 10);
-        let data = create_sprite_data(Some(&SpriteDataOptions {
-            texture: Some(image.clone()),
-        }));
+        let mut data = create_sprite_data();
+        data.texture = Some(image.clone());
         assert!(Arc::ptr_eq(data.texture.as_ref().unwrap(), &image));
     }
 }
@@ -192,7 +184,7 @@ mod create_sprite_renderer_data {
 
     #[test]
     fn stamps_no_texture_as_version_minus_one() {
-        let data = create_sprite_renderer_data(&*create_sprite(None).read().unwrap());
+        let data = create_sprite_renderer_data(&*create_sprite().read().unwrap());
         assert!(data.texture_identity.is_none());
         assert_eq!(data.texture_version, -1);
     }
@@ -217,7 +209,7 @@ mod create_sprite_runtime {
     fn installs_the_texture_aware_local_bounds_validity_hook() {
         let runtime = create_sprite_runtime();
         assert!(runtime.bounds.is_local_bounds_rectangle_valid.is_some());
-        let sprite = create_sprite(None);
+        let sprite = create_sprite();
         let guard = sprite.read().unwrap();
         let own = get_sprite_runtime(&guard);
         let own = own.read().unwrap();
@@ -245,15 +237,27 @@ mod get_sprite_runtime {
     }
 }
 
+mod initialize_sprite {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_initializer_of_create_sprite() {
+        let sprite = create_sprite();
+        let mut guard = sprite.write().unwrap();
+        guard.data.texture = Some(texture(10, 10));
+        initialize_sprite(&mut *guard);
+        assert!(guard.data.texture.is_none());
+    }
+}
+
 mod initialize_sprite_data {
     use super::*;
 
     #[test]
     fn is_the_construction_initializer_of_create_sprite_data() {
-        let mut data = create_sprite_data(Some(&SpriteDataOptions {
-            texture: Some(texture(1, 1)),
-        }));
-        initialize_sprite_data(&mut data, None);
+        let mut data = create_sprite_data();
+        data.texture = Some(texture(1, 1));
+        initialize_sprite_data(&mut data);
         assert!(data.texture.is_none());
     }
 }
@@ -350,16 +354,8 @@ mod is_sprite_renderer_dirty {
     #[test]
     fn stamps_a_nine_slice_sprites_texture_too() {
         let grid = create_rectangle(0.0, 0.0, 1.0, 1.0);
-        let make: fn() -> PartialScale9Sprite = PartialScale9Sprite::default;
-        let sprite = create_scale9_sprite(
-            &grid,
-            Some(&PartialScale9Sprite {
-                data: Some(Scale9SpriteDataOptions {
-                    texture: Some(texture(2, 2)),
-                }),
-                ..make()
-            }),
-        );
+        let sprite = create_scale9_sprite(&grid);
+        sprite.write().unwrap().data.texture = Some(texture(2, 2));
         let mut data = create_sprite_renderer_data(&*sprite.read().unwrap());
         assert_eq!(data.texture_version, 0);
         sprite.write().unwrap().data.texture = Some(texture(2, 2));

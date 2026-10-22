@@ -65,7 +65,7 @@ mod update_render_proxy_appearance {
     fn appearance_update_multiplies_parent_alpha() {
         let mut state = create_render_state();
         state.runtime.current_frame_id = 1;
-        let typed = flight_scene2d::create_display_object(None);
+        let typed = flight_scene2d::create_display_object();
         typed.write().unwrap().alpha = 0.5;
         let source: NodeRef = typed;
         let mut data = create_render_proxy(&mut state, &source);
@@ -81,7 +81,7 @@ mod update_render_proxy_appearance {
     fn appearance_update_uses_state_alpha_without_parent() {
         let mut state = create_render_state();
         state.render.render_alpha = 0.5;
-        let typed = flight_scene2d::create_display_object(None);
+        let typed = flight_scene2d::create_display_object();
         typed.write().unwrap().alpha = 0.6;
         let source: NodeRef = typed;
         let mut data = create_render_proxy(&mut state, &source);
@@ -102,7 +102,7 @@ mod update_render_proxy_appearance {
     fn appearance_update_uses_own_blend_mode_not_parent() {
         let mut state = create_render_state();
         state.runtime.current_frame_id = 1;
-        let typed = flight_scene2d::create_display_object(None);
+        let typed = flight_scene2d::create_display_object();
         typed.write().unwrap().blend_mode = Some(BLEND_MODE_SCREEN.to_string());
         let source: NodeRef = typed;
         let mut data = create_render_proxy(&mut state, &source);

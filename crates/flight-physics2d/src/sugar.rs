@@ -433,8 +433,8 @@ mod sugar_tests {
         a.assert_not_stepping();
         assert_physics2d_body_not_stepping(&b);
 
-        let node: Node2DRef = flight_scene2d::create_display_object(None);
-        let free_node: Node2DRef = flight_scene2d::create_display_object(None);
+        let node: Node2DRef = flight_scene2d::create_display_object();
+        let free_node: Node2DRef = flight_scene2d::create_display_object();
         a.sync_to_node2d(&node);
         sync_physics2d_body_to_node2d(&b, &free_node);
         let (node, free_node) = (node.read().unwrap(), free_node.read().unwrap());

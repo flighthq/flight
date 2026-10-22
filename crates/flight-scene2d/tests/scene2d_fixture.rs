@@ -34,7 +34,7 @@ pub fn as_node(source: &Node2DRef) -> NodeRef {
 }
 
 pub fn display_object() -> Node2DRef {
-    return create_display_object(None);
+    return create_display_object();
 }
 
 /// A caller-declared 2D kind with its own data (the source tests' `Node2DTest`).

@@ -32,18 +32,13 @@ fn custom_node(x: f32) -> Node2DRef {
 }
 
 fn sprite_node(width: u32, height: u32, x: f32) -> Node2DRef {
-    let make: fn() -> PartialSprite = PartialSprite::default;
-    let obj = PartialSprite {
-        data: Some(SpriteDataOptions {
-            texture: Some(texture(width, height)),
-        }),
-        node: PartialNode2D {
-            x: Some(x),
-            ..node2d_options()
-        },
-        ..make()
-    };
-    return create_sprite(Some(&obj));
+    let sprite = create_sprite();
+    {
+        let mut s = sprite.write().unwrap();
+        s.data.texture = Some(texture(width, height));
+        s.node2d_fields_mut().x = x;
+    }
+    return sprite;
 }
 
 mod get_node_local_matrix {
@@ -51,14 +46,15 @@ mod get_node_local_matrix {
 
     #[test]
     fn composes_the_flat_transform_fields() {
-        let base = PartialNode2D {
-            x: Some(10.0),
-            y: Some(20.0),
-            scale_x: Some(2.0),
-            scale_y: Some(3.0),
-            ..node2d_options()
-        };
-        let node: NodeRef = create_display_object(Some(&base));
+        let node = create_display_object();
+        {
+            let mut n = node.write().unwrap();
+            n.node2d_fields_mut().x = 10.0;
+            n.node2d_fields_mut().y = 20.0;
+            n.node2d_fields_mut().scale_x = 2.0;
+            n.node2d_fields_mut().scale_y = 3.0;
+        }
+        let node: NodeRef = node;
         let matrix = get_node_local_matrix(&node);
         assert_eq!(
             (matrix.a, matrix.d, matrix.tx, matrix.ty),
@@ -153,7 +149,7 @@ mod node2d_feature_views {
         for node in [
             sprite_node(1, 1, 0.0),
             custom_node(0.0),
-            create_html_view(None) as Node2DRef,
+            create_html_view() as Node2DRef,
         ] {
             let mut guard = node.write().unwrap();
             assert!(guard.as_transform2d_node().is_some() && guard.as_bounds_node().is_some());

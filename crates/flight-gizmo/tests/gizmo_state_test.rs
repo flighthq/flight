@@ -7,7 +7,7 @@ use flight_gizmo::*;
 use flight_interaction::contract::{PointerEventData, PointerType, enable_interaction_signals};
 use flight_node::{NodeRef, get_node_child_by_name, get_node_parent, remove_node_child};
 use flight_scene2d::{
-    Node2DRef, PartialNode2D, Scene2D, as_node2d_ref, create_display_object, create_scene2d,
+    Node2DRef, Scene2D, as_node2d_ref, create_display_object, create_scene2d,
 };
 use flight_selection::{SelectionState, create_selection_state, select_all_nodes};
 use flight_shape::{Shape, ShapeCommandToken};
@@ -189,7 +189,7 @@ mod initialize_gizmo_state {
     #[test]
     fn preserves_the_caller_entity_identity_and_builds_the_overlay() {
         let camera = Arc::new(RwLock::new(create_camera_2d()));
-        let overlay = create_scene2d(None);
+        let overlay = create_scene2d();
         let selection = Arc::new(RwLock::new(create_selection_state()));
         let mut state: GizmoState = allocate_entity();
         set_entity_uid(&mut state, "caller-gizmo".to_string());
@@ -1048,7 +1048,7 @@ fn connect_values(signal: &Signal<f32>, values: &Arc<Mutex<Vec<f32>>>) {
 
 fn create_test_context(nodes: &[NodeRef]) -> TestContext {
     let camera = Arc::new(RwLock::new(create_camera_2d()));
-    let overlay = create_scene2d(None);
+    let overlay = create_scene2d();
     let selection = Arc::new(RwLock::new(create_selection_state()));
     select_all_nodes(&selection.read().unwrap(), nodes);
     let features_by_node: FeatureMap = Arc::new(RwLock::new(
@@ -1111,10 +1111,9 @@ fn create_test_context(nodes: &[NodeRef]) -> TestContext {
 }
 
 fn create_test_node() -> NodeRef {
-    return create_display_object(Some(&PartialNode2D {
-        name: Some("GizmoTestNode".to_string()),
-        ..empty_node_options()
-    }));
+    let node = create_display_object();
+    node.write().unwrap().name = Some("GizmoTestNode".to_string());
+    return node;
 }
 
 fn emit_pointer(node: &NodeRef, signal: PointerSignal, data: PointerEventData) {
@@ -1128,28 +1127,6 @@ fn emit_pointer(node: &NodeRef, signal: PointerSignal, data: PointerEventData) {
         }
     };
     emit_signal(&signal, &data);
-}
-
-fn empty_node_options() -> PartialNode2D {
-    return PartialNode2D {
-        alpha: None,
-        blend_mode: None,
-        clip: None,
-        enabled: None,
-        material: None,
-        material_data: None,
-        name: None,
-        pivot_x: None,
-        pivot_y: None,
-        rotation: None,
-        scale_x: None,
-        scale_y: None,
-        skew_x: None,
-        skew_y: None,
-        visible: None,
-        x: None,
-        y: None,
-    };
 }
 
 fn features(x: f32, y: f32, width: f32, height: f32) -> TestNodeFeatures {

@@ -44,7 +44,7 @@ fn create_test_schemas(seen_resources: &SeenResources) -> FlightDocumentSchemaRe
     let entries = [
         create_schema(
             DISPLAY_OBJECT_KIND,
-            Arc::new(|_| create_display_object(None)),
+            Arc::new(|_| create_display_object()),
         ),
         create_schema(
             TEST_SCENE2D_NODE_KIND,
@@ -53,7 +53,7 @@ fn create_test_schemas(seen_resources: &SeenResources) -> FlightDocumentSchemaRe
                     .lock()
                     .unwrap()
                     .push(get_record_value(resources, "shared").cloned());
-                return create_display_object(None);
+                return create_display_object();
             }),
         ),
         create_schema(NODE3D_KIND, Arc::new(|_| create_node3d_ref())),

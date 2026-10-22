@@ -6,7 +6,7 @@ use flight_importdiagnostics::{
     ImportDiagnosticDetailValue, ImportDiagnosticSeverity, report_import_diagnostic,
 };
 use flight_node::contract::{NodeRef, add_node_child};
-use flight_scene2d::contract::{DisplayObject, Node2DRef, PartialNode2D, create_display_object};
+use flight_scene2d::contract::{DisplayObject, Node2DRef, create_display_object};
 use flight_xml::contract::XmlElement;
 
 use crate::svg_document::{
@@ -25,11 +25,8 @@ fn create_svg_symbol_node(
     parent_style: &SvgStyle,
     context: &mut SvgImportContext<'_>,
 ) -> Ref<DisplayObject> {
-    let name = svg_attribute(&element.read().unwrap(), "id").map(str::to_string);
-    let container = create_display_object(Some(&PartialNode2D {
-        name,
-        ..PartialNode2D::default()
-    }));
+    let container = create_display_object();
+    container.write().unwrap().name = svg_attribute(&element.read().unwrap(), "id").map(str::to_string);
     let (width, height) = {
         let use_element = use_element.read().unwrap();
         (
@@ -110,7 +107,7 @@ fn create_svg_use_node(context: &mut SvgElementContext<'_, '_>) -> Option<Node2D
 
     context.import.resolving_uses.push(id.to_string());
     report_remaining_unsupported_svg_elements(&referenced, context.import, false);
-    let container = create_display_object(None);
+    let container = create_display_object();
     let placement = {
         let element = context.element.read().unwrap();
         create_matrix(

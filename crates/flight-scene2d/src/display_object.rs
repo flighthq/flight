@@ -20,12 +20,14 @@ pub static NODE2D_TRAITS_KEY: LazyLock<Arc<NodeTraitsKey>> =
     LazyLock::new(|| Arc::new(NodeTraitsKey));
 
 /// Allocates a plain display object (TS `createDisplayObject`).
-pub fn create_display_object(obj: Option<&PartialNode2D>) -> Ref<DisplayObject> {
-    let out: DisplayObject = create_node2d(
+// flight-lint: allow(conform-params) D23 B: authored options removed; kind assigns fields after create
+pub fn create_display_object() -> Ref<DisplayObject> {
+    let mut out: DisplayObject = create_node2d(
         DISPLAY_OBJECT_KIND.to_string(),
-        obj,
+        None,
         Some(create_display_object_runtime),
     );
+    initialize_display_object(&mut out);
     return publish_node2d(out);
 }
 
@@ -99,6 +101,10 @@ pub fn create_node2d_runtime(methods: Option<&Node2DRuntimeMethods>) -> Node2DRu
     init_appearance_runtime_trait(&mut out.appearance);
     return out;
 }
+
+/// The construction initializer of `create_display_object` (TS `initializeDisplayObject`).
+// flight-lint: allow(conform-extra) D23 I: public initialize seam extracted from create_display_object
+pub fn initialize_display_object(_out: &mut DisplayObject) {}
 
 /// Narrows any node to the 2D family through its runtime's family key, or `None` for other
 /// families.

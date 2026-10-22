@@ -12,10 +12,11 @@ use crate::types::*;
 
 /// Allocates a scene with a fresh display-object root that points back to it (TS `createScene2D`).
 /// The scene stays unbound; its runtime is allocated on first access.
-pub fn create_scene2d(obj: Option<&Scene2DOptions>) -> Ref<Scene2D> {
-    let root = create_display_object(None);
+// flight-lint: allow(conform-params) D23 B: authored options removed; root is required defining ref
+pub fn create_scene2d() -> Ref<Scene2D> {
+    let root = create_display_object();
     let mut scene2d: Scene2D = allocate_entity();
-    initialize_scene2d(&mut scene2d, root.clone(), obj);
+    initialize_scene2d(&mut scene2d, root.clone());
     let scene2d = Arc::new(RwLock::new(scene2d));
     root.write().unwrap().node2d_runtime_mut().scene2d = Some(Arc::downgrade(&scene2d));
     return scene2d;
@@ -36,17 +37,14 @@ pub fn create_scene2d_signals() -> Ref<Scene2DSignals> {
 }
 
 /// The construction initializer of `create_scene2d` (TS `initializeScene2D`).
-pub fn initialize_scene2d(out: &mut Scene2D, root: Node2DRef, obj: Option<&Scene2DOptions>) {
-    out.align = obj
-        .and_then(|obj| obj.align)
-        .unwrap_or(flight_layout::ViewportAlign::TopLeft);
-    out.color = obj.and_then(|obj| obj.color);
+// flight-lint: allow(conform-params) D23 B: authored options removed; root is required defining ref
+pub fn initialize_scene2d(out: &mut Scene2D, root: Node2DRef) {
+    out.align = flight_layout::ViewportAlign::TopLeft;
+    out.color = None;
     out.root = root;
-    out.scale_mode = obj
-        .and_then(|obj| obj.scale_mode)
-        .unwrap_or(flight_node::ViewportScaleMode::NoScale);
-    out.scene2d_height = obj.and_then(|obj| obj.scene2d_height).unwrap_or(550.0);
-    out.scene2d_width = obj.and_then(|obj| obj.scene2d_width).unwrap_or(400.0);
+    out.scale_mode = flight_node::ViewportScaleMode::NoScale;
+    out.scene2d_height = 550.0;
+    out.scene2d_width = 400.0;
 }
 
 /// The construction initializer of `create_scene2d_signals` (TS `initializeScene2DSignals`).

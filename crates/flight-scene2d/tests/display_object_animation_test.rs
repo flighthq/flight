@@ -207,7 +207,7 @@ mod apply_animation_clip_to_node2d {
 
     #[test]
     fn drives_the_target_node_by_identity_for_any_2d_kind() {
-        let sprite: Node2DRef = create_sprite(None);
+        let sprite: Node2DRef = create_sprite();
         apply_animation_clip_to_node2d(
             &clip(vec![channel(
                 &sprite,

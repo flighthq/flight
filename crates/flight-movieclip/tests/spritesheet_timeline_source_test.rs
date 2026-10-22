@@ -55,7 +55,7 @@ mod create_spritesheet_timeline_source {
             spritesheet_timeline_source_guard: None,
         };
         let source = create_spritesheet_timeline_source(&guards, &sheet, &animation);
-        let target = create_display_object(None);
+        let target = create_display_object();
         let target_ref: Node2DRef = target.clone();
         let construct = construct(&source);
         construct(&target_ref, 1);
@@ -93,7 +93,7 @@ mod create_spritesheet_timeline_source {
             spritesheet_timeline_source_guard: None,
         };
         let source = create_spritesheet_timeline_source(&guards, &sheet, &animation);
-        let target = create_display_object(None);
+        let target = create_display_object();
         let target_ref: Node2DRef = target.clone();
         let construct = construct(&source);
         construct(&target_ref, 1);
@@ -127,7 +127,7 @@ mod create_spritesheet_timeline_source {
             spritesheet_timeline_source_guard: None,
         };
         let source = create_spritesheet_timeline_source(&guards, &sheet, &animation);
-        let target = create_display_object(None);
+        let target = create_display_object();
         let target_ref: Node2DRef = target.clone();
         construct(&source)(&target_ref, 1);
         with_sprite(&target_ref, |sprite| {
@@ -145,7 +145,7 @@ mod create_spritesheet_timeline_source {
             spritesheet_timeline_source_guard: None,
         };
         let source = create_spritesheet_timeline_source(&guards, &sheet, &animation);
-        let target = create_display_object(None);
+        let target = create_display_object();
         let target_ref: Node2DRef = target.clone();
         construct(&source)(&target_ref, 1);
         assert!(
@@ -196,7 +196,7 @@ mod create_spritesheet_timeline_source {
             spritesheet_timeline_source_guard: None,
         };
         let source = create_spritesheet_timeline_source(&guards, &sheet, &animation);
-        let target = create_display_object(None);
+        let target = create_display_object();
         let target_ref: Node2DRef = target.clone();
         let frame_construct = construct(&source);
         let atlas = sheet.read().unwrap().atlas.clone().unwrap();

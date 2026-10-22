@@ -179,19 +179,6 @@ pub struct SpriteData {
     pub texture: Option<Ref<Texture>>,
 }
 
-/// Options for `create_sprite_data` (TS `Partial<SpriteData>`).
-#[derive(Clone, Debug, Default)]
-pub struct SpriteDataOptions {
-    pub texture: Option<Ref<Texture>>,
-}
-
-/// Options for `create_sprite` (TS `PartialNode<Sprite>`).
-#[derive(Clone, Default)]
-pub struct PartialSprite {
-    pub data: Option<SpriteDataOptions>,
-    pub node: PartialNode2D,
-}
-
 /// Sprite's own runtime fields (TS `SpriteRuntime` minus the inherited `Node2DRuntime` tier): the
 /// texture identity and version the cached local bounds were computed from. `-1` means none. A
 /// shared handle because bounds computation stamps it while the node is only read-borrowed.
@@ -216,19 +203,6 @@ pub struct Scale9SpriteData {
     pub texture: Option<Ref<Texture>>,
 }
 
-/// Options for `create_scale9_sprite_data` (TS `Partial<Scale9SpriteData>` past the grid argument).
-#[derive(Clone, Debug, Default)]
-pub struct Scale9SpriteDataOptions {
-    pub texture: Option<Ref<Texture>>,
-}
-
-/// Options for `create_scale9_sprite` (TS `PartialNode<Scale9Sprite>`).
-#[derive(Clone, Default)]
-pub struct PartialScale9Sprite {
-    pub data: Option<Scale9SpriteDataOptions>,
-    pub node: PartialNode2D,
-}
-
 /// A 2D node standing in for a host element (TS `HtmlView`).
 #[derive(Default)]
 pub struct HtmlView {
@@ -247,22 +221,6 @@ pub struct HtmlViewData {
     pub width: f64,
 }
 
-/// Options for `create_html_view_data` (TS `Partial<HtmlViewData>`).
-// flight-lint: allow(f64) D1: the element size is a JS number
-#[derive(Clone, Default)]
-pub struct HtmlViewDataOptions {
-    pub element: Option<NativeViewHandle>,
-    pub height: Option<f64>,
-    pub width: Option<f64>,
-}
-
-/// Options for `create_html_view` (TS `PartialNode<HtmlView>`).
-#[derive(Clone, Default)]
-pub struct PartialHtmlView {
-    pub data: Option<HtmlViewDataOptions>,
-    pub node: PartialNode2D,
-}
-
 /// The presentation context of a 2D display tree (TS `Scene2D`): not a node, but an entity that
 /// owns its display root, the fit context mapping that root into the view, the logical view size
 /// and the background color. The runtime (signals) is allocated on first access.
@@ -277,18 +235,6 @@ pub struct Scene2D {
     pub scale_mode: ViewportScaleMode,
     pub scene2d_height: f64,
     pub scene2d_width: f64,
-}
-
-/// Options for `create_scene2d` (TS `Partial<Pick<Scene2D, 'align' | 'color' | 'scaleMode' |
-/// 'scene2dHeight' | 'scene2dWidth'>>`).
-// flight-lint: allow(f64) D1: the view size is a JS number
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct Scene2DOptions {
-    pub align: Option<ViewportAlign>,
-    pub color: Option<u32>,
-    pub scale_mode: Option<ViewportScaleMode>,
-    pub scene2d_height: Option<f64>,
-    pub scene2d_width: Option<f64>,
 }
 
 /// The scene's lazily allocated runtime (TS `Scene2DRuntime`, past the entity binding): its signal
@@ -883,7 +829,7 @@ impl Default for Scene2DSlotReference {
             name: String::new(),
             required: false,
             runtime: EntityRuntimeSlot::default(),
-            target: crate::display_object::create_display_object(None),
+            target: crate::display_object::create_display_object(),
         };
     }
 }

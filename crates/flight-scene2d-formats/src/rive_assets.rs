@@ -5,7 +5,7 @@ use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
     report_import_diagnostic,
 };
-use flight_scene2d::{Node2DRef, PartialNode2D, create_display_object};
+use flight_scene2d::{Node2DRef, create_display_object};
 
 use crate::rive_asset_binding::{create_rive_image_sprite, mark_rive_nested_artboard};
 use crate::rive_core_types::{get_rive_core_type_name, is_rive_core_type_derived_from};
@@ -75,10 +75,9 @@ pub fn import_rive_nested_artboard_component(
     index: usize,
 ) -> Option<Node2DRef> {
     let object = context.artboard.objects.get(index)?;
-    let node: Node2DRef = create_display_object(Some(&PartialNode2D {
-        name: Some(read_rive_text(object, RIVE_NAME, "")),
-        ..PartialNode2D::default()
-    }));
+    let node = create_display_object();
+    node.write().unwrap().name = Some(read_rive_text(object, RIVE_NAME, ""));
+    let node: Node2DRef = node;
     mark_rive_nested_artboard(
         &node,
         read_rive_number(object, RIVE_NESTED_ARTBOARD_ID, -1.0) as i32,

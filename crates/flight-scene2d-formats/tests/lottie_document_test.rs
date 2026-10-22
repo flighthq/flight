@@ -34,7 +34,7 @@ mod append_lottie_layers {
         let document = test_document();
         let registry = create_lottie_registry();
         let mut context = import_context(&document, &registry, None);
-        let root = create_display_object(None);
+        let root = create_display_object();
         let root_node: Node2DRef = root.clone();
         append_lottie_layers(&root_node, layers, &mut context);
         return root;
@@ -87,7 +87,7 @@ mod apply_lottie_mask_family {
             }),
         );
         let mut context = import_context(&document, &registry, None);
-        let target: Node2DRef = create_display_object(None);
+        let target: Node2DRef = create_display_object();
         let masks = [
             record(json!({ "mode": "n" })),
             record(json!({ "mode": "a" })),
@@ -115,7 +115,7 @@ mod apply_lottie_mask_family {
             }),
         );
         let mut context = import_context(&document, &registry, None);
-        let target: Node2DRef = create_display_object(None);
+        let target: Node2DRef = create_display_object();
         apply_lottie_mask_family(&target, &[record(json!({ "mode": "n" }))], &mut context);
         assert_eq!(calls.load(Ordering::SeqCst), 0);
     }
@@ -129,7 +129,7 @@ mod apply_lottie_transform {
         let document = test_document();
         let registry = create_lottie_registry();
         let mut context = import_context(&document, &registry, None);
-        let target: Node2DRef = create_display_object(None);
+        let target: Node2DRef = create_display_object();
         let transform = json!({
             "p": { "a": 0, "k": [12, 34] },
             "r": { "a": 0, "k": 90 }
@@ -146,7 +146,7 @@ mod apply_lottie_transform {
         let document = test_document();
         let registry = create_lottie_registry();
         let mut context = import_context(&document, &registry, None);
-        let target: Node2DRef = create_display_object(None);
+        let target: Node2DRef = create_display_object();
         let transform = json!({ "p": { "a": 0, "k": [12, null] } });
         apply_lottie_transform(&target, Some(&transform), &mut context, None, None);
         let target = target.read().unwrap();
@@ -159,7 +159,7 @@ mod apply_lottie_transform {
         let document = test_document();
         let registry = create_lottie_registry();
         let mut context = import_context(&document, &registry, None);
-        let target: Node2DRef = create_display_object(None);
+        let target: Node2DRef = create_display_object();
         let transform = json!({
             "p": animated_vector([0, 0], [10, 10]),
             "r": { "a": 0, "k": 5 }
@@ -330,7 +330,7 @@ mod initialize_lottie_document_import_result {
 
     #[test]
     fn initializes_every_public_result_field() {
-        let root = create_display_object(None);
+        let root = create_display_object();
         let clip = create_animation_clip(Vec::new(), Some(2.0), &[]);
         let mut result: LottieDocumentImportResult = allocate_entity();
         initialize_lottie_document_import_result(

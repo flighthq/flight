@@ -193,12 +193,14 @@ fn create_gizmo_state_handles(handle_root: &Node2DRef) -> Vec<GizmoHandle> {
 /// runtime identity.
 // flight-lint: allow(conform-extra) Principal c0f9227c: public per-layer construction seam added to TS target
 pub fn initialize_gizmo_state(out: &mut GizmoState, options: &GizmoCreateOptions) {
-    let overlay_root = create_display_object(Some(&gizmo_named_node("GizmoRoot")));
+    let overlay_root = create_display_object();
+    overlay_root.write().unwrap().name = Some("GizmoRoot".to_string());
     let outline = create_shape(Some(&PartialShape {
         data: None,
         node: gizmo_named_node("GizmoSelectionOutline"),
     }));
-    let handle_root = create_display_object(Some(&gizmo_named_node("GizmoHandleRoot")));
+    let handle_root = create_display_object();
+    handle_root.write().unwrap().name = Some("GizmoHandleRoot".to_string());
     let handle_root_ref: Node2DRef = handle_root.clone();
     let handles = create_gizmo_state_handles(&handle_root_ref);
     let runtime = Arc::new(std::sync::RwLock::new(GizmoRuntime {

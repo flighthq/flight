@@ -13,7 +13,7 @@ use flight_importdiagnostics::{
 use flight_node::{NodeRef, add_node_child, get_node_child_at, get_node_child_count};
 use flight_path_boolean::PathBooleanKernel;
 use flight_scene2d::{
-    Node2DRef, PartialNode2D, Scene2DSlotReference, as_node2d_ref, create_display_object,
+    Node2DRef, Scene2DSlotReference, as_node2d_ref, create_display_object,
 };
 use flight_texture::Texture;
 
@@ -70,10 +70,9 @@ pub fn create_scene2d_document_from_rive_document(
     if imported.artboards.is_empty() {
         return None;
     }
-    let root: Node2DRef = create_display_object(Some(&PartialNode2D {
-        name: Some("Rive".to_string()),
-        ..Default::default()
-    }));
+    let root = create_display_object();
+    root.write().unwrap().name = Some("Rive".to_string());
+    let root: Node2DRef = root;
     for artboard in &imported.artboards {
         let root_ref: NodeRef = root.clone();
         let artboard_ref: NodeRef = artboard.root.clone();

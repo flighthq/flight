@@ -11,21 +11,22 @@ use crate::display_object::{create_node2d, create_node2d_runtime};
 use crate::types::*;
 
 /// Allocates a sprite (TS `createSprite`).
-pub fn create_sprite(obj: Option<&PartialSprite>) -> Ref<Sprite> {
+// flight-lint: allow(conform-params) D23 B: authored options removed; kind assigns fields after create
+pub fn create_sprite() -> Ref<Sprite> {
     let mut out: Sprite = create_node2d(
         SPRITE_KIND.to_string(),
-        obj.map(|obj| &obj.node),
+        None,
         Some(create_sprite_runtime),
     );
-    out.data = create_sprite_data(obj.and_then(|obj| obj.data.as_ref()));
-    out.sprite_runtime = Arc::new(RwLock::new(SpriteRuntime::default()));
+    initialize_sprite(&mut out);
     return crate::display_object::publish_node2d(out);
 }
 
 /// Allocates sprite kind data (TS `createSpriteData`).
-pub fn create_sprite_data(data: Option<&SpriteDataOptions>) -> SpriteData {
+// flight-lint: allow(conform-params) D23 B: authored options removed
+pub fn create_sprite_data() -> SpriteData {
     let mut out: SpriteData = allocate_entity();
-    initialize_sprite_data(&mut out, data);
+    initialize_sprite_data(&mut out);
     return out;
 }
 
@@ -50,9 +51,17 @@ pub fn create_sprite_runtime() -> Node2DRuntime {
     return create_node2d_runtime(Some(&methods));
 }
 
+/// The construction initializer of `create_sprite` (TS `initializeSprite`).
+// flight-lint: allow(conform-extra) D23 I: public initialize seam extracted from create_sprite
+pub fn initialize_sprite(out: &mut Sprite) {
+    out.data = create_sprite_data();
+    out.sprite_runtime = Arc::new(RwLock::new(SpriteRuntime::default()));
+}
+
 /// The construction initializer of `create_sprite_data` (TS `initializeSpriteData`).
-pub fn initialize_sprite_data(out: &mut SpriteData, data: Option<&SpriteDataOptions>) {
-    out.texture = data.and_then(|data| data.texture.clone());
+// flight-lint: allow(conform-params) Principal c0f9227c D23: restore defaults before authored field assignment
+pub fn initialize_sprite_data(out: &mut SpriteData) {
+    out.texture = None;
 }
 
 /// The construction initializer of `create_sprite_renderer_data`: stamps the sprite's current
@@ -66,13 +75,9 @@ pub fn initialize_sprite_renderer_data(out: &mut SpriteIdentityRendererData, sou
 
 /// A fresh sprite sharing the source's texture (TS `cloneSprite`).
 pub fn clone_sprite(source: &Sprite) -> Ref<Sprite> {
-    let obj = PartialSprite {
-        data: Some(SpriteDataOptions {
-            texture: source.data.texture.clone(),
-        }),
-        ..PartialSprite::default()
-    };
-    return create_sprite(Some(&obj));
+    let out = create_sprite();
+    out.write().unwrap().data.texture = source.data.texture.clone();
+    return out;
 }
 
 /// Sizes the local bounds from the texture's view size, or zero without a texture, and stamps the

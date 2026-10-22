@@ -51,7 +51,7 @@ mod build_render_queue {
     #[test]
     fn build_render_queue_skips_invisible_proxies() {
         let mut state = create_render_state();
-        let typed = flight_scene2d::create_display_object(None);
+        let typed = flight_scene2d::create_display_object();
         typed.write().unwrap().visible = false;
         let root: NodeRef = typed;
         register_node_renderer(

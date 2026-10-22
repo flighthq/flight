@@ -16,7 +16,7 @@ mod update_render_proxy_material {
         let material_data: Ref<dyn MaterialData> = Arc::new(RwLock::new(
             crate::support::test_default::<TintMaterialData>(),
         ));
-        let typed = flight_scene2d::create_display_object(None);
+        let typed = flight_scene2d::create_display_object();
         {
             let mut source = typed.write().unwrap();
             source.material = Some(material.clone());

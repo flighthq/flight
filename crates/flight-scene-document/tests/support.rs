@@ -111,10 +111,9 @@ pub fn empty_kind_map<T>() -> flight_registry::KindMap<T> {
 }
 
 pub fn display_object(name: Option<&str>) -> flight_node::NodeRef {
-    return flight_scene2d::create_display_object(Some(&flight_scene2d::PartialNode2D {
-        name: name.map(str::to_string),
-        ..Default::default()
-    }));
+    let node = flight_scene2d::create_display_object();
+    node.write().unwrap().name = name.map(str::to_string);
+    return node;
 }
 
 pub fn document_node(

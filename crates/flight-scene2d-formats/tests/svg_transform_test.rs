@@ -8,7 +8,7 @@ mod apply_svg_transform {
 
     #[test]
     fn lands_an_element_transform_on_the_imported_node() {
-        let target = create_display_object(None);
+        let target = create_display_object();
         let matrix = parse_svg_transform(Some("translate(5,7)")).expect("transform matrix");
         apply_svg_transform(&mut *target.write().unwrap(), Some(&matrix));
         let target = target.read().unwrap();
@@ -22,7 +22,7 @@ mod assign_svg_transform {
 
     #[test]
     fn lands_a_rotation_as_the_node_rotation_rather_than_as_a_position() {
-        let target = create_display_object(None);
+        let target = create_display_object();
         let transform = create_transform2d(0.0, 0.0, 90.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
         assign_svg_transform(&mut *target.write().unwrap(), &transform);
         let target = target.read().unwrap();

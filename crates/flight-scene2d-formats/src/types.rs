@@ -649,7 +649,7 @@ impl Default for LottieDocumentImportResult {
             clip: AnimationClip::default(),
             duration: 0.0,
             frame_rate: 0.0,
-            root: create_display_object(None),
+            root: create_display_object(),
             runtime: EntityRuntimeSlot::default(),
         };
     }
@@ -670,7 +670,7 @@ impl Default for RiveScene2DDocumentResult {
         return RiveScene2DDocumentResult {
             image_resources: Vec::new(),
             imported: RiveDocumentImportResult::default(),
-            root: create_display_object(None),
+            root: create_display_object(),
             runtime: EntityRuntimeSlot::default(),
             slots: Vec::new(),
         };

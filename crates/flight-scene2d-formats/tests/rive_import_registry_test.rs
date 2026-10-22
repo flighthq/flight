@@ -26,7 +26,7 @@ mod apply_rive_artboard_handlers {
         register_rive_core_object_handler(&mut registry, PATH, shared.clone());
         register_rive_core_object_handler(&mut registry, SHAPE_PAINT, shared);
         let artboard = artboard();
-        let root: Node2DRef = create_display_object(None);
+        let root: Node2DRef = create_display_object();
         let mut context =
             create_rive_artboard_import_context(&registry, &artboard, &[], root, &[], None);
         apply_rive_artboard_handlers(&mut context);
@@ -48,7 +48,7 @@ mod apply_rive_artboard_handlers {
             artboard_handler(order.clone(), "paint"),
         );
         let artboard = artboard();
-        let root: Node2DRef = create_display_object(None);
+        let root: Node2DRef = create_display_object();
         let mut context =
             create_rive_artboard_import_context(&registry, &artboard, &[], root, &[], None);
         apply_rive_artboard_handlers(&mut context);
@@ -68,7 +68,7 @@ mod apply_rive_artboard_handlers {
             }),
         );
         let artboard = artboard();
-        let root: Node2DRef = create_display_object(None);
+        let root: Node2DRef = create_display_object();
         let mut context =
             create_rive_artboard_import_context(&registry, &artboard, &[], root, &[], None);
         apply_rive_artboard_handlers(&mut context);
@@ -112,7 +112,7 @@ mod create_rive_artboard_import_context {
     #[test]
     fn numbers_the_root_as_component_zero_so_nodes_stay_index_for_index_with_the_artboard() {
         let registry = create_rive_import_registry();
-        let root: Node2DRef = create_display_object(None);
+        let root: Node2DRef = create_display_object();
         let artboard = artboard();
         let context =
             create_rive_artboard_import_context(&registry, &artboard, &[], root.clone(), &[], None);
@@ -124,7 +124,7 @@ mod create_rive_artboard_import_context {
     #[test]
     fn starts_every_collected_output_empty() {
         let registry = create_rive_import_registry();
-        let root: Node2DRef = create_display_object(None);
+        let root: Node2DRef = create_display_object();
         let artboard = artboard();
         let font_names = ["Inter".to_string()];
         let context =
@@ -233,7 +233,7 @@ mod initialize_rive_artboard_import_context {
     fn fills_every_field_of_a_freshly_allocated_context() {
         let registry = create_rive_import_registry();
         let artboard = artboard();
-        let root: Node2DRef = create_display_object(None);
+        let root: Node2DRef = create_display_object();
         let mut diagnostics = Vec::new();
         let mut context =
             create_rive_artboard_import_context(&registry, &artboard, &[], root.clone(), &[], None);
@@ -288,7 +288,7 @@ mod register_rive_core_object_handler {
             artboard_handler(order.clone(), "replaced"),
         );
         let artboard = artboard();
-        let root: Node2DRef = create_display_object(None);
+        let root: Node2DRef = create_display_object();
         let mut context =
             create_rive_artboard_import_context(&registry, &artboard, &[], root, &[], None);
         apply_rive_artboard_handlers(&mut context);

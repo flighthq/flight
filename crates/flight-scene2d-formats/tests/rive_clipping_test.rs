@@ -287,7 +287,7 @@ mod register_rive_clipping_handlers {
         assert!(handler.apply_artboard.is_some());
         assert!(handler.import_component.is_some());
         let artboard = graph(vec![object(CLIPPING_SHAPE, &[])], vec![-1]);
-        let root: Node2DRef = create_display_object(None);
+        let root: Node2DRef = create_display_object();
         let mut context = create_rive_artboard_import_context(
             &registry,
             &artboard,
@@ -330,7 +330,7 @@ fn run(
         .enumerate()
         .map(|(index, object)| {
             if index == 0 || object.type_key == SHAPE || object.type_key == NODE {
-                Some(create_display_object(None) as Node2DRef)
+                Some(create_display_object() as Node2DRef)
             } else {
                 None
             }

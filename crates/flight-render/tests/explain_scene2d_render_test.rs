@@ -56,7 +56,7 @@ mod explain_scene_2d_render {
     #[test]
     fn render_explanation_reports_hidden_node() {
         let mut state = create_render_state();
-        let typed = flight_scene2d::create_display_object(None);
+        let typed = flight_scene2d::create_display_object();
         typed.write().unwrap().visible = false;
         let source: NodeRef = typed;
         register_node_renderer(&mut state, "DisplayObject".to_string(), &NOOP_RENDERER);
@@ -70,7 +70,7 @@ mod explain_scene_2d_render {
     #[test]
     fn render_explanation_reports_zero_effective_alpha() {
         let mut state = create_render_state();
-        let typed = flight_scene2d::create_display_object(None);
+        let typed = flight_scene2d::create_display_object();
         typed.write().unwrap().alpha = 0.0;
         let source: NodeRef = typed;
         register_node_renderer(&mut state, "DisplayObject".to_string(), &NOOP_RENDERER);
@@ -85,7 +85,7 @@ mod explain_scene_2d_render {
     #[test]
     fn render_explanation_reports_hidden_descendant_not_prepared() {
         let mut state = create_render_state();
-        let typed_parent = flight_scene2d::create_display_object(None);
+        let typed_parent = flight_scene2d::create_display_object();
         typed_parent.write().unwrap().visible = false;
         let parent: NodeRef = typed_parent;
         let child = display_node();
@@ -102,8 +102,8 @@ mod explain_scene_2d_render {
     #[test]
     fn render_explanation_folds_ancestor_alpha() {
         let mut state = create_render_state();
-        let typed_parent = flight_scene2d::create_display_object(None);
-        let typed_child = flight_scene2d::create_display_object(None);
+        let typed_parent = flight_scene2d::create_display_object();
+        let typed_child = flight_scene2d::create_display_object();
         typed_parent.write().unwrap().alpha = 0.5;
         typed_child.write().unwrap().alpha = 0.5;
         let parent: NodeRef = typed_parent;

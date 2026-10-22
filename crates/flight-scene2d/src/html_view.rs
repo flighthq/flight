@@ -11,20 +11,22 @@ use crate::display_object::{create_node2d, create_node2d_runtime, get_node2d_run
 use crate::types::*;
 
 /// Allocates an html view (TS `createHtmlView`).
-pub fn create_html_view(obj: Option<&PartialHtmlView>) -> Ref<HtmlView> {
+// flight-lint: allow(conform-params) D23 B: authored options removed; kind assigns fields after create
+pub fn create_html_view() -> Ref<HtmlView> {
     let mut out: HtmlView = create_node2d(
         HTML_VIEW_KIND.to_string(),
-        obj.map(|obj| &obj.node),
+        None,
         Some(create_html_view_runtime),
     );
-    out.data = create_html_view_data(obj.and_then(|obj| obj.data.as_ref()));
+    initialize_html_view(&mut out);
     return crate::display_object::publish_node2d(out);
 }
 
 /// Allocates html view kind data (TS `createHtmlViewData`).
-pub fn create_html_view_data(data: Option<&HtmlViewDataOptions>) -> HtmlViewData {
+// flight-lint: allow(conform-params) D23 B: authored options removed
+pub fn create_html_view_data() -> HtmlViewData {
     let mut out: HtmlViewData = allocate_entity();
-    initialize_html_view_data(&mut out, data);
+    initialize_html_view_data(&mut out);
     return out;
 }
 
@@ -38,11 +40,18 @@ pub fn create_html_view_runtime() -> HtmlViewRuntime {
     return create_node2d_runtime(Some(&methods));
 }
 
+/// The construction initializer of `create_html_view` (TS `initializeHtmlView`).
+// flight-lint: allow(conform-extra) D23 I: public initialize seam extracted from create_html_view
+pub fn initialize_html_view(out: &mut HtmlView) {
+    out.data = create_html_view_data();
+}
+
 /// The construction initializer of `create_html_view_data` (TS `initializeHtmlViewData`).
-pub fn initialize_html_view_data(out: &mut HtmlViewData, data: Option<&HtmlViewDataOptions>) {
-    out.element = data.and_then(|data| data.element.clone());
-    out.height = data.and_then(|data| data.height).unwrap_or(100.0);
-    out.width = data.and_then(|data| data.width).unwrap_or(100.0);
+// flight-lint: allow(conform-params) Principal c0f9227c D23: restore defaults before authored field assignment
+pub fn initialize_html_view_data(out: &mut HtmlViewData) {
+    out.element = None;
+    out.height = 100.0;
+    out.width = 100.0;
 }
 
 /// Sizes the local bounds from the view's data width and height (TS

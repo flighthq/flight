@@ -73,7 +73,7 @@ mod apply_animation_clip_to_rive_document {
             (18, Node2DAnimationPath::Alpha, 1.0, 0.5, 0.75),
         ];
         for (key, path, from, to, expected) in cases {
-            let node: Node2DRef = create_display_object(None);
+            let node: Node2DRef = create_display_object();
             let clips = build(
                 1.0,
                 key,
@@ -427,7 +427,7 @@ mod create_rive_animation_clips {
 
     #[test]
     fn binds_each_keyed_property_to_the_named_node_and_shared_path() {
-        let node: Node2DRef = create_display_object(None);
+        let node: Node2DRef = create_display_object();
         let result = build(
             30.0,
             13,
@@ -575,7 +575,7 @@ mod create_rive_animation_clips {
                 end: objects.len(),
                 start: 0,
             },
-            &[None, Some(create_display_object(None))],
+            &[None, Some(create_display_object())],
             &artboard,
             &rebuilds,
             None,
@@ -891,7 +891,7 @@ fn object(type_key: u64, properties: Vec<RiveProperty>) -> RiveCoreObject {
 }
 
 fn one_node() -> Vec<Option<Node2DRef>> {
-    return vec![Some(create_display_object(None))];
+    return vec![Some(create_display_object())];
 }
 
 fn sampled(clip: &RiveAnimationClip, time: f32) -> f32 {

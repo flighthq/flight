@@ -39,7 +39,7 @@ mod lottie_solid_layer_handler {
             resolve_image_resource: None,
             resolving_precompositions: HashSet::new(),
         };
-        let container: flight_scene2d::Node2DRef = create_display_object(None);
+        let container: flight_scene2d::Node2DRef = create_display_object();
         let mut context = LottieLayerContext {
             container: container.clone(),
             import: &mut import,

@@ -14,7 +14,7 @@ mod svg_path_clip_handler {
     fn leaves_an_element_with_no_clip_path_unclipped() {
         let registry = create_svg_registry();
         let mut import = import_context(&registry, None);
-        let target: Node2DRef = create_display_object(None);
+        let target: Node2DRef = create_display_object();
         let mut context = SvgClipContext {
             element: element("<g/>"),
             import: &mut import,

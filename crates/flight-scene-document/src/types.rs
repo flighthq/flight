@@ -616,7 +616,7 @@ impl Default for FlightDocumentScene2DMaterialization {
             runtime: EntityRuntimeSlot::default(),
             interactive_state_bindings: Vec::new(),
             layout_bindings: Vec::new(),
-            scene: flight_scene2d::create_scene2d(None),
+            scene: flight_scene2d::create_scene2d(),
         };
     }
 }

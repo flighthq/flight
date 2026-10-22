@@ -20,7 +20,7 @@ mod append_svg_children {
             Arc::new(svg_geometry_element_handler),
         );
         let mut context = import_context(&registry, None);
-        let root = create_display_object(None);
+        let root = create_display_object();
         append_svg_children(&root, &document, &DEFAULT_SVG_STYLE, &mut context);
         assert_eq!(child_kinds(&root), ["Shape", "Shape"]);
     }
@@ -34,7 +34,7 @@ mod apply_svg_element_appearance {
         let element = element("<g id=\"group\" opacity=\"0.5\"/>");
         let registry = create_svg_registry();
         let mut context = import_context(&registry, None);
-        let target: Node2DRef = create_display_object(None);
+        let target: Node2DRef = create_display_object();
         apply_svg_element_appearance(
             &target,
             &element,
@@ -58,7 +58,7 @@ mod apply_svg_element_clip_family {
         let registry = create_svg_registry();
         let mut diagnostics = Vec::new();
         let mut context = import_context(&registry, Some(&mut diagnostics));
-        let target: Node2DRef = create_display_object(None);
+        let target: Node2DRef = create_display_object();
         apply_svg_element_clip_family(&target, &element, &mut context);
         assert!(target.read().unwrap().node2d_fields().clip.is_none());
         assert!(diagnostics.is_empty());

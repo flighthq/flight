@@ -13,8 +13,8 @@ mod create_svg_node2d_bounds {
     fn measures_a_group_from_recorded_geometry_only_child_bounds() {
         let registry = create_svg_registry();
         let mut context = import_context(&registry);
-        let root: Node2DRef = create_display_object(None);
-        let child: Node2DRef = create_display_object(None);
+        let root: Node2DRef = create_display_object();
+        let child: Node2DRef = create_display_object();
         apply_svg_transform(
             &mut *child.write().unwrap(),
             Some(&create_matrix(1.0, 0.0, 0.0, 1.0, 5.0, 0.0)),
@@ -36,8 +36,8 @@ mod has_unmeasurable_svg_text {
 
     #[test]
     fn finds_text_at_any_depth_and_leaves_geometry_only_trees_measurable() {
-        let root: Node2DRef = create_display_object(None);
-        let branch: Node2DRef = create_display_object(None);
+        let root: Node2DRef = create_display_object();
+        let branch: Node2DRef = create_display_object();
         add(&root, &branch);
         assert!(!has_unmeasurable_svg_text(&root));
         let text: Node2DRef = create_text_label(None);

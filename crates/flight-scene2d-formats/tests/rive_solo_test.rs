@@ -118,7 +118,7 @@ mod import_rive_solo_component {
     fn imports_the_solo_as_an_ordinary_container_carrying_its_name() {
         let registry = create_rive_import_registry();
         let artboard = graph(vec![object(SOLO, &[], Some("variants"))], vec![-1]);
-        let root: Node2DRef = create_display_object(None);
+        let root: Node2DRef = create_display_object();
         let mut context = create_rive_artboard_import_context(
             &registry,
             &artboard,
@@ -169,7 +169,7 @@ fn named_nodes<const N: usize>(names: [&str; N]) -> Vec<Option<Node2DRef>> {
     return names
         .iter()
         .map(|name| {
-            let node: Node2DRef = create_display_object(None);
+            let node: Node2DRef = create_display_object();
             node.write().unwrap().node2d_fields_mut().name = Some((*name).to_string());
             return Some(node);
         })

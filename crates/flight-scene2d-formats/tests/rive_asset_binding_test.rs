@@ -46,7 +46,7 @@ mod get_rive_image_asset_index {
 
     #[test]
     fn reports_negative_one_for_a_node_that_is_not_an_image_sprite() {
-        let node: Node2DRef = create_display_object(None);
+        let node: Node2DRef = create_display_object();
         assert_eq!(get_rive_image_asset_index(&node), -1);
     }
 }
@@ -61,7 +61,7 @@ mod get_rive_image_texture {
 
     #[test]
     fn returns_none_for_a_node_that_is_not_an_image_sprite() {
-        let node: Node2DRef = create_display_object(None);
+        let node: Node2DRef = create_display_object();
         assert!(get_rive_image_texture(&node).is_none());
     }
 }
@@ -71,14 +71,14 @@ mod get_rive_nested_artboard_index {
 
     #[test]
     fn returns_the_artboard_a_marked_site_names() {
-        let node: Node2DRef = create_display_object(None);
+        let node: Node2DRef = create_display_object();
         mark_rive_nested_artboard(&node, 4);
         assert_eq!(get_rive_nested_artboard_index(&node), 4);
     }
 
     #[test]
     fn returns_negative_one_for_a_node_that_names_no_nested_artboard() {
-        let node: Node2DRef = create_display_object(None);
+        let node: Node2DRef = create_display_object();
         assert_eq!(get_rive_nested_artboard_index(&node), -1);
     }
 
@@ -96,14 +96,14 @@ mod mark_rive_nested_artboard {
 
     #[test]
     fn records_a_slot_site_without_putting_format_knowledge_on_the_node() {
-        let node: Node2DRef = create_display_object(None);
+        let node: Node2DRef = create_display_object();
         mark_rive_nested_artboard(&node, 0);
         assert_eq!(get_rive_nested_artboard_index(&node), 0);
     }
 
     #[test]
     fn replaces_an_earlier_mark_rather_than_keeping_both() {
-        let node: Node2DRef = create_display_object(None);
+        let node: Node2DRef = create_display_object();
         mark_rive_nested_artboard(&node, 1);
         mark_rive_nested_artboard(&node, 2);
         assert_eq!(get_rive_nested_artboard_index(&node), 2);

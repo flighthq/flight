@@ -21,8 +21,8 @@ mod resolve_scene2d_resources {
 
     #[test]
     fn clears_stale_managed_content_when_a_selected_reference_is_unresolved() {
-        let target = create_display_object(None);
-        let stale = create_display_object(None);
+        let target = create_display_object();
+        let stale = create_display_object();
         let reference = create_scene2d_slot_reference();
         {
             let mut reference = reference.write().unwrap();
@@ -46,8 +46,8 @@ mod resolve_scene2d_resources {
 
     #[test]
     fn leaves_references_outside_the_selected_working_set_untouched() {
-        let target = create_display_object(None);
-        let existing: Node2DRef = create_display_object(None);
+        let target = create_display_object();
+        let existing: Node2DRef = create_display_object();
         let reference = create_scene2d_slot_reference();
         {
             let mut reference = reference.write().unwrap();
@@ -73,9 +73,9 @@ mod resolve_scene2d_resources {
 
     #[test]
     fn reconciles_application_slot_content_synchronously() {
-        let root = create_display_object(None);
-        let target = create_display_object(None);
-        let content: Node2DRef = create_display_object(None);
+        let root = create_display_object();
+        let target = create_display_object();
+        let content: Node2DRef = create_display_object();
         let reference = create_scene2d_slot_reference();
         {
             let mut reference = reference.write().unwrap();
@@ -118,8 +118,8 @@ mod resolve_scene2d_resources {
 
     #[test]
     fn releases_slot_guards_before_select_and_resolve_while_preserving_handle_identity() {
-        let target = create_display_object(None);
-        let content: Node2DRef = create_display_object(None);
+        let target = create_display_object();
+        let content: Node2DRef = create_display_object();
         let reference = create_scene2d_slot_reference();
         {
             let mut reference = reference.write().unwrap();

@@ -45,10 +45,9 @@ pub fn import_rive_n_sliced_node_component(
             ),
         ])),
     );
-    return Some(create_display_object(Some(&PartialNode2D {
-        name: Some(read_rive_shape_name(object)),
-        ..PartialNode2D::default()
-    })));
+    let node = create_display_object();
+    node.write().unwrap().name = Some(read_rive_shape_name(object));
+    return Some(node);
 }
 
 pub fn import_rive_shape_component(

@@ -61,7 +61,7 @@ mod as_node2d_ref {
 
     #[test]
     fn recovers_the_same_published_handle_of_a_built_in_kind() {
-        let sprite = create_sprite(None);
+        let sprite = create_sprite();
         let erased: flight_node::NodeRef = sprite.clone();
         let recovered = as_node2d_ref(&erased).expect("a published 2D node");
         assert!(std::ptr::addr_eq(
@@ -110,7 +110,7 @@ mod create_display_object {
 
     #[test]
     fn initializes_default_values() {
-        let shared = create_display_object(None);
+        let shared = create_display_object();
         let obj = shared.read().unwrap();
         assert_eq!((obj.alpha, obj.visible), (1.0, true));
         assert!(obj.blend_mode.is_none() && obj.name.is_none());
@@ -127,19 +127,19 @@ mod create_display_object {
 
     #[test]
     fn allows_pre_defined_values() {
-        let base = PartialNode2D {
-            alpha: Some(2.0),
-            blend_mode: Some(BLEND_MODE_DARKEN.to_string()),
-            name: Some("foo".to_string()),
-            rotation: Some(45.0),
-            scale_x: Some(2.0),
-            scale_y: Some(3.0),
-            visible: Some(false),
-            x: Some(100.0),
-            y: Some(200.0),
-            ..node2d_options()
-        };
-        let shared = create_display_object(Some(&base));
+        let shared = create_display_object();
+        {
+            let mut obj = shared.write().unwrap();
+            obj.node2d_fields_mut().alpha = 2.0;
+            obj.node2d_fields_mut().blend_mode = Some(BLEND_MODE_DARKEN.to_string());
+            obj.name = Some("foo".to_string());
+            obj.node2d_fields_mut().rotation = 45.0;
+            obj.node2d_fields_mut().scale_x = 2.0;
+            obj.node2d_fields_mut().scale_y = 3.0;
+            obj.node2d_fields_mut().visible = false;
+            obj.node2d_fields_mut().x = 100.0;
+            obj.node2d_fields_mut().y = 200.0;
+        }
         let obj = shared.read().unwrap();
         assert_eq!(obj.alpha, 2.0);
         assert_eq!(obj.blend_mode.as_deref(), Some(BLEND_MODE_DARKEN));
@@ -154,16 +154,15 @@ mod create_display_object {
 
     #[test]
     fn returns_a_new_object_each_call() {
-        let base = node2d_options();
         assert!(!Arc::ptr_eq(
-            &create_display_object(Some(&base)),
-            &create_display_object(Some(&base))
+            &create_display_object(),
+            &create_display_object()
         ));
     }
 
     #[test]
     fn installs_the_default_runtime_tier() {
-        let shared = create_display_object(None);
+        let shared = create_display_object();
         let obj = shared.read().unwrap();
         let runtime = get_display_object_runtime(&obj);
         assert!(
@@ -181,7 +180,7 @@ mod create_display_object_runtime {
         let runtime = create_display_object_runtime();
         assert!(runtime.scene2d.is_none() && runtime.bounds.local_bounds_rectangle.is_none());
         let mut out = create_rectangle(1.0, 2.0, 3.0, 4.0);
-        let probe = create_display_object(None);
+        let probe = create_display_object();
         (runtime.bounds.compute_local_bounds_rectangle)(&mut out, &*probe.read().unwrap());
         assert_eq!(
             out,
@@ -280,7 +279,7 @@ mod get_display_object_runtime {
 
     #[test]
     fn returns_the_runtime_tier_of_the_display_object() {
-        let shared = create_display_object(None);
+        let shared = create_display_object();
         let obj = shared.read().unwrap();
         assert!(std::ptr::eq(
             get_display_object_runtime(&obj),
@@ -312,14 +311,26 @@ mod get_node_color_adjustments {
     }
 }
 
+mod initialize_display_object {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_initializer_of_create_display_object() {
+        let obj = create_display_object();
+        let mut guard = obj.write().unwrap();
+        initialize_display_object(&mut *guard);
+        assert!(is_node2d(&*guard));
+    }
+}
+
 mod is_node2d {
     use super::*;
 
     #[test]
     fn returns_true_for_display_objects_and_every_2d_kind() {
         assert!(is_node2d(&*display_object().read().unwrap()));
-        assert!(is_node2d(&*create_sprite(None).read().unwrap()));
-        assert!(is_node2d(&*create_html_view(None).read().unwrap()));
+        assert!(is_node2d(&*create_sprite().read().unwrap()));
+        assert!(is_node2d(&*create_html_view().read().unwrap()));
         let custom: Node2DTest = create_node2d("Custom".to_string(), None, None);
         assert!(is_node2d(&custom));
     }
@@ -351,7 +362,7 @@ mod publish_node2d {
 
     #[test]
     fn binds_a_weak_self_handle_that_never_keeps_its_node_alive() {
-        let sprite = create_sprite(None);
+        let sprite = create_sprite();
         let weak = Arc::downgrade(&sprite);
         let erased: flight_node::NodeRef = sprite.clone();
         assert!(as_node2d_ref(&erased).is_some());

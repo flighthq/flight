@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 
 use flight_importdiagnostics::contract::ImportDiagnosticDetailValue;
 use flight_node::contract::{NodeRef, add_node_child};
-use flight_scene2d::contract::{PartialSprite, SpriteDataOptions, create_sprite};
+use flight_scene2d::contract::create_sprite;
 use flight_texture::contract::{
     CreateTexture2DOptions, CreateTextureOptions, TextureSourceRef, create_texture,
 };
@@ -63,12 +63,8 @@ pub fn lottie_image_layer_handler(context: &mut LottieLayerContext<'_, '_>) {
             ..CreateTexture2DOptions::default()
         }),
     ))));
-    let sprite = create_sprite(Some(&PartialSprite {
-        data: Some(SpriteDataOptions {
-            texture: Some(texture),
-        }),
-        ..PartialSprite::default()
-    }));
+    let sprite = create_sprite();
+    sprite.write().unwrap().data.texture = Some(texture);
     let parent: NodeRef = context.container.clone();
     let child: NodeRef = sprite;
     add_node_child(&parent, &child);

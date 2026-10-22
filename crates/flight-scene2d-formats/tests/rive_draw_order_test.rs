@@ -192,7 +192,7 @@ fn graph(objects: Vec<RiveCoreObject>, parent_indices: Vec<i32>) -> RiveArtboard
 }
 
 fn named_node(name: &str) -> Node2DRef {
-    let node: Node2DRef = create_display_object(None);
+    let node: Node2DRef = create_display_object();
     node.write().unwrap().node2d_fields_mut().name = Some(name.to_string());
     return node;
 }

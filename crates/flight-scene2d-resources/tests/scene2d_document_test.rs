@@ -31,7 +31,7 @@ mod create_scene2d_document {
 
     #[test]
     fn retains_fields_assigned_after_canonical_construction() {
-        let root: Node2DRef = create_display_object(None);
+        let root: Node2DRef = create_display_object();
         let slot = create_scene2d_slot_reference();
         let image = create_embedded_image_resource_reference(bytes(1));
         image.write().unwrap().mime_type = Some("image/png".to_string());

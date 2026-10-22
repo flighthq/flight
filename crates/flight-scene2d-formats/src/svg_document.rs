@@ -126,7 +126,7 @@ fn import_svg_document_with_registry(
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
     options: Option<&SvgDocumentImportOptions>,
 ) -> Ref<DisplayObject> {
-    let out = create_display_object(None);
+    let out = create_display_object();
     let Some(document) = parse_xml_document(source) else {
         report_import_diagnostic(
             diagnostics,

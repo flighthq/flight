@@ -9,7 +9,7 @@ use flight_node::{
 use flight_render::*;
 
 fn object_with_bounds(x: f32, y: f32, width: f32, height: f32) -> NodeRef {
-    let typed = flight_scene2d::create_display_object(None);
+    let typed = flight_scene2d::create_display_object();
     {
         let mut source = typed.write().unwrap();
         source.x = x;
@@ -74,7 +74,7 @@ mod compute_render_proxy_world_bounds {
 
     #[test]
     fn world_bounds_include_ancestor_transforms() {
-        let typed_parent = flight_scene2d::create_display_object(None);
+        let typed_parent = flight_scene2d::create_display_object();
         typed_parent.write().unwrap().x = 100.0;
         let parent: NodeRef = typed_parent;
         invalidate_node_local_transform(&parent);
@@ -148,7 +148,7 @@ mod is_renderable_in_viewport {
 
     #[test]
     fn nested_object_culling_uses_world_bounds() {
-        let typed_parent = flight_scene2d::create_display_object(None);
+        let typed_parent = flight_scene2d::create_display_object();
         {
             let mut parent = typed_parent.write().unwrap();
             parent.x = 500.0;
@@ -235,7 +235,7 @@ mod is_renderable_in_viewport {
 
     #[test]
     fn scaled_parent_affects_world_bounds_culling() {
-        let typed_parent = flight_scene2d::create_display_object(None);
+        let typed_parent = flight_scene2d::create_display_object();
         {
             let mut parent = typed_parent.write().unwrap();
             parent.scale_x = 2.0;
