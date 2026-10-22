@@ -67,14 +67,6 @@ static COLOR_FEATURE: GlColorAdjustmentMaterialFeature = GlColorAdjustmentMateri
     record: record_nothing,
 };
 
-// SWAP-PENDING: replace with the crate's GL_SKIN_VERTEX_DECLARATIONS_GLSL once gl_mesh_skinning lands.
-const GL_SKIN_VERTEX_DECLARATIONS_GLSL: &str = "
-layout(location = 6) in vec4 a_joints0;
-layout(location = 7) in vec4 a_weights0;
-uniform highp sampler2D u_jointTexture;
-mat4 skinMatrix() { return mat4(texelFetch(u_jointTexture, ivec2(0, 0), 0), vec4(0.0), vec4(0.0), vec4(0.0)); }
-";
-
 fn program_cache_keys(state: &GlRenderState) -> Vec<String> {
     return get_gl_scene3d_runtime(state).program_cache.keys().cloned().collect();
 }
