@@ -29,6 +29,7 @@ flight-particleemitter = { path = "../flight-particleemitter" }
 flight-registry = { workspace = true }
 flight-render = { workspace = true }
 flight-render-gl = { path = "../flight-render-gl" }
+flight-requirement = { workspace = true }
 flight-scene3d = { path = "../flight-scene3d" }
 flight-shading = { workspace = true }
 flight-signals = { workspace = true }
@@ -37,6 +38,9 @@ flight-texture = { workspace = true }
 flight-textureatlas = { workspace = true }
 flight-video = { workspace = true }
 glow = "0.18.0"
+
+[dev-dependencies]
+flight-host = { workspace = true }
 
 [lints]
 workspace = true
