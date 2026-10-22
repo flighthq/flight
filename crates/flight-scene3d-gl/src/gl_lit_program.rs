@@ -109,7 +109,7 @@ float rangeWindow(float dist2, float invSqrRange) {
   float windowed = clamp(1.0 - factor * factor, 0.0, 1.0);
   return windowed * windowed;
 }
-"#, gl_directional_shadow_glsl!(), r#"
+"#, $crate::gl_lit_program::gl_directional_shadow_glsl!(), r#"
 "#)
     };
 }
