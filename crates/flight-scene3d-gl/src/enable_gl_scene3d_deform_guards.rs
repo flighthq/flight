@@ -4,7 +4,7 @@ use std::sync::Arc;
 use flight_log::{LogData, LogLevel, LogStateRef, LogValue, log_once};
 use flight_meshgeometry::{get_mesh_geometry_morph_bind_pose, has_mesh_geometry_skin};
 use flight_render_gl::GlRenderState;
-use flight_scene3d::Mesh;
+use flight_scene3d::{Mesh, get_mesh_runtime};
 
 use crate::gl_scene3d_runtime::{get_gl_scene3d_runtime, get_gl_scene3d_runtime_mut};
 
@@ -57,7 +57,8 @@ fn warn_gl_scene3d_mesh_drawn_undeformed(
 
     if mesh.skin.is_some() {
         let geometry = mesh.geometry.read().unwrap();
-        if has_mesh_geometry_skin(&geometry) && mesh.state.deformed_local_bounds.is_none() {
+        let runtime = get_mesh_runtime(mesh);
+        if has_mesh_geometry_skin(&geometry) && runtime.deformed_local_bounds.is_none() {
             let mut data = HashMap::new();
             data.insert(
                 "message".to_string(),

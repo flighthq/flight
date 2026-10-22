@@ -42,11 +42,11 @@ fn warn_gl_scene3d_forward_light_selection_required(
     );
     data.insert(
         "pointLightCount".to_string(),
-        LogValue::Float(lights.point.as_ref().map_or(0, |v| v.len()) as f64),
+        LogValue::Float(lights.point.len() as f64),
     );
     data.insert(
         "spotLightCount".to_string(),
-        LogValue::Float(lights.spot.as_ref().map_or(0, |v| v.len()) as f64),
+        LogValue::Float(lights.spot.len() as f64),
     );
     let _ = log_once(
         log_state,
