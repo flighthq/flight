@@ -118,6 +118,14 @@ Baseline: 29 crates, `cargo test --workspace` 4525 pass / 0 fail, `cargo-flight-
 - Optional Cargo features for heavy subsystems (`gl`, `wgpu`, `skia`, …) save compile time.
 - **Built at the end,** after the porting waves, to avoid merge conflicts. Not before.
 
+## D26 Host vocabulary — APPROVED (user, 2026-10-22)
+
+- **One home for "doesn't live here."** Every type the SDK uses but does not define, because a host provides it, lives in `flight-hostcapability`: Canvas 2D context, GL context, wgpu device / queue / configured context, native window and drawable handles, host image source, audio device handle, font face, timer handle, and the like. The crate depends on nothing else in the SDK, so these types thread through every layer, the way `int` and `bool` come from the language.
+- **Representation:** an opaque platform handle, `{ provider: ProviderRef, handle: Arc<dyn Any + Send + Sync> }`, whose `Arc` identity is the platform object's identity. The SDK retains and passes it; the consuming backend narrows it (render-gl → `glow::Context`, render-wgpu → `wgpu::Device`, …). A thread-bound native object (GL) is built by its backend on its own thread from the Send handle (D17).
+- **It is the other half of the transpiler vocabulary.** `agents/ir-vocabulary.md` maps language constructs (`Vec`, `HashMap`, `Option`); the **host vocabulary** maps platform objects. Each host type gets one row: Rust type ↔ TS type (e.g. `CanvasRenderingContext2D`, `WebGL2RenderingContext`, `GPUDevice`) ↔ C++ (e.g. EGL / SDL context, `WGPUDevice`) ↔ Haxe, plus the provider crates that supply it. The table lives in `agents/host-vocabulary.md`.
+- **Host seams are the providers.** Capability contracts (the function records, e.g. `HostGlCapability`, `HostCanvasCapability`) stay with the feature that names their SDK types (D8: surface owns the drawable/context capabilities). They are written in terms of host-vocabulary types. `flight-host` aggregates the contracts; `host-*` crates (D19) implement them. Renderers depend on the host vocabulary and on surface, never on host.
+- **Not decided:** whether contracts should later take only host handles (e.g. `acquire(native_surface_handle)` instead of `acquire(surface)`), which would let them all move down too. Post-port backlog.
+
 ## D25 Geometry pools — APPROVED (user, 2026-10-21)
 
 **Pools are an explicit scratch bank, not hidden behavior.** Every use is an `acquire_*` / `release_*` bracket at the call site, which documents intent better than per-function scratch statics would. Rust gains little from them, since `create_*` is stack-only, but the transpiled TS gets real GC wins. So the API stays in the IR.
