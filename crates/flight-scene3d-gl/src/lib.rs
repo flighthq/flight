@@ -9,6 +9,8 @@ mod enable_gl_deform_guards;
 mod enable_gl_forward_light_selection_guards;
 mod enable_gl_pbr_extension_guards;
 mod enable_gl_scene3d_color_space_guards;
+mod enable_gl_scene3d_custom_shader_guards;
+mod enable_gl_scene3d_custom_shader_guards;
 mod enable_gl_scene3d_deform_guards;
 mod enable_gl_scene3d_forward_light_selection_guards;
 mod explain_gl_mesh_geometry_uv_sets;

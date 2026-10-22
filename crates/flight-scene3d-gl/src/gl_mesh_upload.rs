@@ -179,7 +179,8 @@ pub fn ensure_gl_mesh_upload<R>(
     }
 
     let vertices_data: Vec<f32> = if let Some(ref bp) = bind_pose {
-        build_skin_bind_vertices(geometry, bp)
+        let bp_guard = bp.read().unwrap();
+        build_skin_bind_vertices(geometry, &bp_guard)
     } else {
         geometry.vertices.to_vec()
     };
