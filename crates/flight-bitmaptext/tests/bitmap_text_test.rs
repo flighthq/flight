@@ -6,7 +6,7 @@ use flight_node::Node;
 use super::*;
 
 fn text_with(value: &str) -> flight_entity::Ref<BitmapText> {
-    return create_bitmap_text(
+    return create_test_bitmap_text(
         Some(create_test_glyph_source_without_kerning()),
         Some(&bitmap_text_options(value)),
     );
@@ -47,7 +47,7 @@ mod create_bitmap_text {
 
     #[test]
     fn creates_a_leaf_with_one_empty_page() {
-        let text = create_bitmap_text(Some(create_test_glyph_source_without_kerning()), None);
+        let text = create_bitmap_text(Some(create_test_glyph_source_without_kerning()));
         let text = text.read().unwrap();
         assert_eq!(text.node_fields().kind, BITMAP_TEXT_KIND);
         assert_eq!(get_bitmap_text_pages(&text).len(), 1);
@@ -55,18 +55,16 @@ mod create_bitmap_text {
     }
 
     #[test]
-    fn applies_construction_options() {
-        let text = create_bitmap_text(
-            Some(create_test_glyph_source_without_kerning()),
-            Some(&BitmapTextOptions {
-                align: Some(BitmapTextAlign::Center),
-                letter_spacing: Some(2.0),
-                line_height: Some(1.5),
-                text: Some("Hi".to_string()),
-                wrap_width: Some(Some(120.0)),
-                ..empty_bitmap_text_options()
-            }),
-        );
+    fn callers_assign_authored_fields_after_construction() {
+        let text = create_bitmap_text(Some(create_test_glyph_source_without_kerning()));
+        {
+            let mut text = text.write().unwrap();
+            set_bitmap_text_align(&mut text, BitmapTextAlign::Center);
+            set_bitmap_text_letter_spacing(&mut text, 2.0);
+            set_bitmap_text_line_height(&mut text, 1.5);
+            set_bitmap_text_text(&mut text, "Hi");
+            set_bitmap_text_wrap_width(&mut text, Some(120.0));
+        }
         let text = text.read().unwrap();
         assert_eq!(text.data.align, BitmapTextAlign::Center);
         assert_eq!(text.data.letter_spacing, 2.0);
@@ -78,7 +76,7 @@ mod create_bitmap_text {
     #[test]
     fn binds_the_supplied_glyph_source() {
         let source = create_test_glyph_source_without_kerning();
-        let text = create_bitmap_text(Some(source.clone()), None);
+        let text = create_bitmap_text(Some(source.clone()));
         let bound = text.read().unwrap().data.glyph_source.clone().unwrap();
         assert!(Arc::ptr_eq(&source, &bound));
     }
@@ -89,7 +87,7 @@ mod create_bitmap_text_data {
 
     #[test]
     fn defaults_to_left_aligned_empty_unwrapped_text() {
-        let data = create_bitmap_text_data(None);
+        let data = create_bitmap_text_data();
         assert_eq!(data.align, BitmapTextAlign::Left);
         assert_eq!(data.ellipsis, "");
         assert!(data.glyph_source.is_none());
@@ -101,15 +99,13 @@ mod create_bitmap_text_data {
     }
 
     #[test]
-    fn honors_provided_overrides() {
-        let data = create_bitmap_text_data(Some(&BitmapTextDataOptions {
-            align: Some(BitmapTextAlign::Right),
-            ellipsis: Some("...".to_string()),
-            max_lines: Some(2),
-            text: Some("x".to_string()),
-            wrap_width: Some(50.0),
-            ..empty_bitmap_text_data_options()
-        }));
+    fn callers_assign_authored_fields_after_construction() {
+        let mut data = create_bitmap_text_data();
+        data.align = BitmapTextAlign::Right;
+        data.ellipsis = "...".to_string();
+        data.max_lines = Some(2);
+        data.text = "x".to_string();
+        data.wrap_width = Some(50.0);
         assert_eq!(data.align, BitmapTextAlign::Right);
         assert_eq!(data.ellipsis, "...");
         assert_eq!(data.max_lines, Some(2));
@@ -179,7 +175,7 @@ mod get_bitmap_text_line_count {
             wrap_width: Some(Some(30.0)),
             ..empty_bitmap_text_options()
         };
-        let text = create_bitmap_text(
+        let text = create_test_bitmap_text(
             Some(create_test_glyph_source_without_kerning()),
             Some(&options),
         );
@@ -201,20 +197,50 @@ mod get_bitmap_text_pages {
     }
 }
 
+mod initialize_bitmap_text {
+    use super::*;
+
+    #[test]
+    fn keeps_the_defining_source_and_preserves_node_identity() {
+        let source = create_test_glyph_source_without_kerning();
+        let text = create_bitmap_text(None);
+        let mut text = text.write().unwrap();
+        flight_entity::set_entity_uid(&mut *text, "text".to_string());
+        initialize_bitmap_text(&mut text, Some(source.clone()));
+        assert_eq!(flight_entity::get_entity_uid(&mut *text), "text");
+        assert!(Arc::ptr_eq(
+            text.data.glyph_source.as_ref().unwrap(),
+            &source
+        ));
+        assert_eq!(get_bitmap_text_pages(&text).len(), 1);
+        assert_eq!(get_bitmap_text_line_count(&text), 0);
+        assert!(is_bitmap_text_glyph_layout_stale(&text));
+    }
+}
+
 mod initialize_bitmap_text_data {
     use super::*;
 
     #[test]
-    fn is_the_create_data_initializer() {
-        let mut data = create_bitmap_text_data(None);
-        initialize_bitmap_text_data(
-            &mut data,
-            Some(&BitmapTextDataOptions {
-                text: Some("initialized".to_string()),
-                ..empty_bitmap_text_data_options()
-            }),
-        );
-        assert_eq!(data.text, "initialized");
+    fn restores_defaults_without_replacing_entity_identity() {
+        let mut data = create_bitmap_text_data();
+        flight_entity::set_entity_uid(&mut data, "data".to_string());
+        data.align = BitmapTextAlign::Right;
+        data.ellipsis = "...".to_string();
+        data.glyph_source = Some(create_test_glyph_source_without_kerning());
+        data.letter_spacing = 2.0;
+        data.line_height = 3.0;
+        data.max_lines = Some(4);
+        data.text = "dirty".to_string();
+        data.wrap_width = Some(5.0);
+        initialize_bitmap_text_data(&mut data);
+        assert_eq!(flight_entity::get_entity_uid(&mut data), "data");
+        assert_eq!(data.align, BitmapTextAlign::Left);
+        assert_eq!(data.ellipsis, "");
+        assert!(data.glyph_source.is_none());
+        assert_eq!((data.letter_spacing, data.line_height), (0.0, 1.0));
+        assert_eq!((data.max_lines, data.wrap_width), (None, None));
+        assert_eq!(data.text, "");
     }
 }
 
@@ -231,7 +257,7 @@ mod is_bitmap_text_glyph_layout_stale {
 
     #[test]
     fn is_settled_without_a_glyph_source() {
-        let text = create_bitmap_text(None, Some(&bitmap_text_options("AB")));
+        let text = create_test_bitmap_text(None, Some(&bitmap_text_options("AB")));
         assert!(!is_bitmap_text_glyph_layout_stale(&text.read().unwrap()));
     }
 
@@ -269,7 +295,7 @@ mod is_bitmap_text_truncated {
             text: Some("A\nB\nA".to_string()),
             ..empty_bitmap_text_options()
         };
-        let text = create_bitmap_text(Some(create_test_glyph_source()), Some(&options));
+        let text = create_test_bitmap_text(Some(create_test_glyph_source()), Some(&options));
         layout(&text, &guard_state());
         assert!(is_bitmap_text_truncated(&text.read().unwrap()));
     }
@@ -281,7 +307,7 @@ mod is_bitmap_text_truncated {
             text: Some("A\nB".to_string()),
             ..empty_bitmap_text_options()
         };
-        let text = create_bitmap_text(Some(create_test_glyph_source()), Some(&options));
+        let text = create_test_bitmap_text(Some(create_test_glyph_source()), Some(&options));
         layout(&text, &guard_state());
         assert!(!is_bitmap_text_truncated(&text.read().unwrap()));
     }

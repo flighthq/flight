@@ -25,7 +25,7 @@ fn lookup(source: &flight_entity::Ref<flight_glyphatlas::GlyphSource>, codepoint
 }
 
 fn text_with_options(options: BitmapTextOptions) -> flight_entity::Ref<BitmapText> {
-    return create_bitmap_text(Some(create_test_glyph_source()), Some(&options));
+    return create_test_bitmap_text(Some(create_test_glyph_source()), Some(&options));
 }
 
 mod refresh_bitmap_text_glyph_layout {
@@ -35,7 +35,7 @@ mod refresh_bitmap_text_glyph_layout {
     fn rebakes_regions_after_repack_reuses_their_pixels() {
         let atlas = create_repacking_glyph_atlas();
         let source = create_glyph_source_from_glyph_atlas(&atlas);
-        let text = create_bitmap_text(Some(source.clone()), Some(&bitmap_text_options("A")));
+        let text = create_test_bitmap_text(Some(source.clone()), Some(&bitmap_text_options("A")));
         layout(&text, &guard_state());
 
         let baked = atlas_regions(&text.read().unwrap(), 0)[0].clone();
@@ -69,7 +69,7 @@ mod refresh_bitmap_text_glyph_layout {
     fn does_nothing_when_placement_has_not_moved() {
         let atlas = create_repacking_glyph_atlas();
         let source = create_glyph_source_from_glyph_atlas(&atlas);
-        let text = create_bitmap_text(Some(source), Some(&bitmap_text_options("A")));
+        let text = create_test_bitmap_text(Some(source), Some(&bitmap_text_options("A")));
         layout(&text, &guard_state());
         let before = atlas_regions(&text.read().unwrap(), 0)[0].clone();
         assert!(!refresh_bitmap_text_glyph_layout(
@@ -83,7 +83,7 @@ mod refresh_bitmap_text_glyph_layout {
     fn lays_out_a_never_laid_out_node() {
         let atlas = create_repacking_glyph_atlas();
         let source = create_glyph_source_from_glyph_atlas(&atlas);
-        let text = create_bitmap_text(Some(source), Some(&bitmap_text_options("A")));
+        let text = create_test_bitmap_text(Some(source), Some(&bitmap_text_options("A")));
         assert!(refresh_bitmap_text_glyph_layout(
             &mut text.write().unwrap(),
             &guard_state(),
@@ -98,9 +98,9 @@ mod refresh_bitmap_text_glyph_layout {
     fn repairs_every_node_sharing_the_atlas() {
         let atlas = create_repacking_glyph_atlas();
         let source = create_glyph_source_from_glyph_atlas(&atlas);
-        let first = create_bitmap_text(Some(source.clone()), Some(&bitmap_text_options("A")));
+        let first = create_test_bitmap_text(Some(source.clone()), Some(&bitmap_text_options("A")));
         layout(&first, &guard_state());
-        let second = create_bitmap_text(
+        let second = create_test_bitmap_text(
             Some(source),
             Some(&bitmap_text_options("BCDEFGHIJKLMNOPQRSTUVWXYZ")),
         );
@@ -133,7 +133,7 @@ mod set_bitmap_text_layout_guard {
             })),
         );
         let source = create_glyph_source_from_glyph_atlas(&create_repacking_glyph_atlas());
-        let text = create_bitmap_text(
+        let text = create_test_bitmap_text(
             Some(source),
             Some(&bitmap_text_options("ABCDEFGHIJKLMNOPQRSTUVWXYZ")),
         );
@@ -157,7 +157,7 @@ mod set_bitmap_text_layout_guard {
         );
         let source = create_glyph_source_from_glyph_atlas(&create_repacking_glyph_atlas());
         layout(
-            &create_bitmap_text(Some(source), Some(&bitmap_text_options("AB"))),
+            &create_test_bitmap_text(Some(source), Some(&bitmap_text_options("AB"))),
             &guards,
         );
         assert!(seen.lock().unwrap().is_empty());
@@ -176,7 +176,7 @@ mod set_bitmap_text_layout_guard {
         );
         let source = create_glyph_source_from_glyph_atlas(&create_repacking_glyph_atlas());
         layout(
-            &create_bitmap_text(
+            &create_test_bitmap_text(
                 Some(source.clone()),
                 Some(&bitmap_text_options("ABCDEFGHIJKLMNOPQRSTUVWXYZ")),
             ),
@@ -184,7 +184,7 @@ mod set_bitmap_text_layout_guard {
         );
         set_bitmap_text_layout_guard(&mut guards, None);
         layout(
-            &create_bitmap_text(
+            &create_test_bitmap_text(
                 Some(source),
                 Some(&bitmap_text_options("ABCDEFGHIJKLMNOPQRSTUVWXYZ")),
             ),
@@ -234,7 +234,7 @@ mod update_bitmap_text {
     #[test]
     fn reruns_when_glyph_placement_moves_mid_layout() {
         let source = create_mid_layout_relocating_glyph_source(2);
-        let text = create_bitmap_text(Some(source), Some(&bitmap_text_options("ABC")));
+        let text = create_test_bitmap_text(Some(source), Some(&bitmap_text_options("ABC")));
         update_bitmap_text(&mut text.write().unwrap(), &guard_state());
         assert_eq!(
             atlas_regions(&text.read().unwrap(), 0)[0].x,
@@ -246,7 +246,7 @@ mod update_bitmap_text {
     #[test]
     fn does_not_rerun_when_placement_holds_still() {
         let source = create_mid_layout_relocating_glyph_source(0);
-        let text = create_bitmap_text(Some(source), Some(&bitmap_text_options("ABC")));
+        let text = create_test_bitmap_text(Some(source), Some(&bitmap_text_options("ABC")));
         let seen = Arc::new(Mutex::new(Vec::new()));
         let guard_seen = seen.clone();
         let guards = BitmapTextGuardState {
@@ -267,7 +267,7 @@ mod update_bitmap_text {
         for codepoint in 0x61..=0x66 {
             lookup(&source, codepoint);
         }
-        let text = create_bitmap_text(Some(source), Some(&bitmap_text_options("ABCDEF")));
+        let text = create_test_bitmap_text(Some(source), Some(&bitmap_text_options("ABCDEF")));
         layout(&text, &guard_state());
         let bitmap = get_glyph_atlas_bitmap(&atlas);
         let text = text.read().unwrap();
@@ -306,7 +306,7 @@ mod update_bitmap_text {
             width: 256,
         });
         let source = create_glyph_source_from_glyph_atlas(&atlas);
-        let text = create_bitmap_text(Some(source), Some(&bitmap_text_options("Hi")));
+        let text = create_test_bitmap_text(Some(source), Some(&bitmap_text_options("Hi")));
         layout(&text, &guard_state());
         let text = text.read().unwrap();
         assert!(!get_bitmap_text_pages(&text).is_empty());
@@ -514,7 +514,7 @@ mod update_bitmap_text {
             let callback = source.read().unwrap().get_glyph_atlas_image.clone();
             callback(Some(0)).unwrap()
         };
-        let text = create_bitmap_text(Some(source), Some(&bitmap_text_options("AB")));
+        let text = create_test_bitmap_text(Some(source), Some(&bitmap_text_options("AB")));
         layout(&text, &guard_state());
         let text = text.read().unwrap();
         let pages = get_bitmap_text_pages(&text);
@@ -531,7 +531,7 @@ mod update_bitmap_text {
     #[test]
     fn partitions_glyphs_into_distinct_source_pages() {
         let (source, page_zero_image, page_one_image) = create_two_page_glyph_source();
-        let text = create_bitmap_text(Some(source), Some(&bitmap_text_options("AB")));
+        let text = create_test_bitmap_text(Some(source), Some(&bitmap_text_options("AB")));
         layout(&text, &guard_state());
         let text = text.read().unwrap();
         let pages = get_bitmap_text_pages(&text);
@@ -564,7 +564,7 @@ mod update_bitmap_text {
     #[test]
     fn spans_all_pages_when_computing_bounds() {
         let (source, _page_zero, _page_one) = create_two_page_glyph_source();
-        let text = create_bitmap_text(Some(source), Some(&bitmap_text_options("AB")));
+        let text = create_test_bitmap_text(Some(source), Some(&bitmap_text_options("AB")));
         layout(&text, &guard_state());
         let bounds = get_bitmap_text_bounds(&text.read().unwrap());
         assert_eq!((bounds.x, bounds.width, bounds.height), (0.0, 16.0, 8.0));

@@ -8,12 +8,8 @@ use crate::contract::*;
 
 #[test]
 fn bitmap_text_methods_match_free_functions() {
-    let options = BitmapTextOptions {
-        text: Some("AB".to_string()),
-        ..options()
-    };
-    let method = BitmapText::new(None, Some(&options));
-    let function = create_bitmap_text(None, Some(&options));
+    let method = BitmapText::new(None);
+    let function = create_bitmap_text(None);
     {
         let mut method = method.write().unwrap();
         let mut function = function.write().unwrap();
@@ -99,10 +95,6 @@ fn guard_state_methods_match_free_functions() {
         method.layout_guard.is_some(),
         function.layout_guard.is_some()
     );
-}
-
-fn options() -> BitmapTextOptions {
-    return BitmapTextOptions::default();
 }
 
 fn source() -> Ref<GlyphSource> {

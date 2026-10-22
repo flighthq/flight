@@ -42,21 +42,8 @@ pub struct BitmapTextData {
     pub wrap_width: Option<f32>,
 }
 
-/// Rust representation of `Partial<BitmapTextData>` accepted by the data initializer.
-#[derive(Clone, Default)]
-pub struct BitmapTextDataOptions {
-    pub align: Option<BitmapTextAlign>,
-    pub ellipsis: Option<String>,
-    pub glyph_source: Option<Ref<GlyphSource>>,
-    pub letter_spacing: Option<f32>,
-    pub line_height: Option<f32>,
-    pub max_lines: Option<usize>,
-    pub text: Option<String>,
-    pub wrap_width: Option<f32>,
-}
-
-/// Construction/mutation options for a bitmap-text node (TS `BitmapTextOptions`). Nested options
-/// preserve the difference between an omitted nullable option and an explicit null.
+/// Authored bitmap-text fields (TS `BitmapTextOptions`). Nested options preserve the difference
+/// between an omitted nullable option and an explicit null.
 #[derive(Clone, Default)]
 pub struct BitmapTextOptions {
     pub align: Option<BitmapTextAlign>,

@@ -59,7 +59,7 @@ mod disable_bitmap_text_guards {
         enable_bitmap_text_guards(&mut guards, &log_state, Arc::new(|| 0.0));
         disable_bitmap_text_guards(&mut guards);
         let source = create_glyph_source_from_glyph_atlas(&create_tiny_glyph_atlas());
-        let text = create_bitmap_text(
+        let text = create_test_bitmap_text(
             Some(source),
             Some(&bitmap_text_options("ABCDEFGHIJKLMNOPQRSTUVWXYZ")),
         );
@@ -73,7 +73,7 @@ mod disable_bitmap_text_guards {
         let mut guards = guard_state();
         enable_bitmap_text_guards(&mut guards, &log_state, Arc::new(|| 0.0));
         disable_bitmap_text_guards(&mut guards);
-        let text = create_bitmap_text(
+        let text = create_test_bitmap_text(
             Some(create_limited_glyph_source(&[0x41])),
             Some(&bitmap_text_options("AB")),
         );
@@ -91,7 +91,7 @@ mod enable_bitmap_text_guards {
         let mut guards = guard_state();
         enable_bitmap_text_guards(&mut guards, &log_state, Arc::new(|| 0.0));
         let source = create_glyph_source_from_glyph_atlas(&create_tiny_glyph_atlas());
-        let text = create_bitmap_text(Some(source), Some(&bitmap_text_options("ABC")));
+        let text = create_test_bitmap_text(Some(source), Some(&bitmap_text_options("ABC")));
         layout(&text, &guards);
         assert_eq!(messages(&sink), "");
     }
@@ -102,7 +102,7 @@ mod enable_bitmap_text_guards {
         let mut guards = guard_state();
         enable_bitmap_text_guards(&mut guards, &log_state, Arc::new(|| 0.0));
         let source = create_glyph_source_from_glyph_atlas(&create_tiny_glyph_atlas());
-        let text = create_bitmap_text(
+        let text = create_test_bitmap_text(
             Some(source),
             Some(&bitmap_text_options("ABCDEFGHIJKLMNOPQRSTUVWXYZ")),
         );
@@ -117,7 +117,7 @@ mod enable_bitmap_text_guards {
         let (log_state, sink) = log_fixture();
         let mut guards = guard_state();
         enable_bitmap_text_guards(&mut guards, &log_state, Arc::new(|| 0.0));
-        let text = create_bitmap_text(
+        let text = create_test_bitmap_text(
             Some(create_limited_glyph_source(&[0x41])),
             Some(&bitmap_text_options("AB")),
         );
@@ -132,7 +132,7 @@ mod enable_bitmap_text_guards {
         let (log_state, sink) = log_fixture();
         let mut guards = guard_state();
         enable_bitmap_text_guards(&mut guards, &log_state, Arc::new(|| 0.0));
-        let text = create_bitmap_text(
+        let text = create_test_bitmap_text(
             Some(create_limited_glyph_source(&[0x41, 0x42])),
             Some(&bitmap_text_options("AB")),
         );

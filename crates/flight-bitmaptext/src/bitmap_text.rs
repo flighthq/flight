@@ -15,31 +15,22 @@ use crate::update_bitmap_text::call_glyph_source_get_layout_version;
 const BITMAP_TEXT_TRANSFORM_STRIDE: usize = 2;
 
 /// Allocates a BitmapText display node bound to one live glyph source (TS `createBitmapText`).
-pub fn create_bitmap_text(
-    glyph_source: Option<Ref<GlyphSource>>,
-    options: Option<&BitmapTextOptions>,
-) -> Ref<BitmapText> {
+// flight-lint: allow(conform-params) Principal c0f9227c D23 keeps the required nullable glyph source while callers assign authored options after construction
+pub fn create_bitmap_text(glyph_source: Option<Ref<GlyphSource>>) -> Ref<BitmapText> {
     let mut out: BitmapText = create_node2d(
         BITMAP_TEXT_KIND.to_string(),
         None,
         Some(create_bitmap_text_node2d_runtime),
     );
-    out.data = create_bitmap_text_data(None);
-    out.data.glyph_source = glyph_source;
-    if let Some(options) = options {
-        apply_bitmap_text_options(&mut out.data, options);
-    }
-    out.bitmap_text_runtime = create_bitmap_text_runtime();
-    out.bitmap_text_runtime
-        .pages
-        .push(create_bitmap_text_page());
+    initialize_bitmap_text(&mut out, glyph_source);
     return flight_scene2d::publish_node2d(out);
 }
 
 /// Allocates BitmapText kind data (TS `createBitmapTextData`).
-pub fn create_bitmap_text_data(data: Option<&BitmapTextDataOptions>) -> BitmapTextData {
+// flight-lint: allow(conform-params) Principal c0f9227c D23 callers assign authored data fields after canonical construction
+pub fn create_bitmap_text_data() -> BitmapTextData {
     let mut out: BitmapTextData = allocate_entity();
-    initialize_bitmap_text_data(&mut out, data);
+    initialize_bitmap_text_data(&mut out);
     return out;
 }
 
@@ -65,45 +56,28 @@ pub fn create_bitmap_text_runtime() -> BitmapTextRuntime {
     return BitmapTextRuntime::default();
 }
 
-/// Initializes BitmapText kind data from its optional partial record (TS
-/// `initializeBitmapTextData`).
-pub fn initialize_bitmap_text_data(out: &mut BitmapTextData, data: Option<&BitmapTextDataOptions>) {
-    out.align = data
-        .and_then(|data| data.align)
-        .unwrap_or(BitmapTextAlign::Left);
-    out.ellipsis = data
-        .and_then(|data| data.ellipsis.clone())
-        .unwrap_or_default();
-    out.glyph_source = data.and_then(|data| data.glyph_source.clone());
-    out.letter_spacing = data.and_then(|data| data.letter_spacing).unwrap_or(0.0);
-    out.line_height = data.and_then(|data| data.line_height).unwrap_or(1.0);
-    out.max_lines = data.and_then(|data| data.max_lines);
-    out.text = data.and_then(|data| data.text.clone()).unwrap_or_default();
-    out.wrap_width = data.and_then(|data| data.wrap_width);
+/// Initializes the BitmapText-owned construction tiers after the Node2D base has been allocated.
+// flight-lint: allow(conform-extra, conform-params) Principal c0f9227c D23 keeps the required nullable glyph source in the missing canonical construction initializer
+pub fn initialize_bitmap_text(out: &mut BitmapText, glyph_source: Option<Ref<GlyphSource>>) {
+    out.data = create_bitmap_text_data();
+    out.data.glyph_source = glyph_source;
+    out.bitmap_text_runtime = create_bitmap_text_runtime();
+    out.bitmap_text_runtime
+        .pages
+        .push(create_bitmap_text_page());
 }
 
-fn apply_bitmap_text_options(data: &mut BitmapTextData, options: &BitmapTextOptions) {
-    if let Some(align) = options.align {
-        data.align = align;
-    }
-    if let Some(ellipsis) = &options.ellipsis {
-        data.ellipsis = ellipsis.clone();
-    }
-    if let Some(letter_spacing) = options.letter_spacing {
-        data.letter_spacing = letter_spacing;
-    }
-    if let Some(line_height) = options.line_height {
-        data.line_height = line_height;
-    }
-    if let Some(max_lines) = options.max_lines {
-        data.max_lines = max_lines;
-    }
-    if let Some(text) = &options.text {
-        data.text = text.clone();
-    }
-    if let Some(wrap_width) = options.wrap_width {
-        data.wrap_width = wrap_width;
-    }
+/// Restores the canonical BitmapText kind-data defaults (TS `initializeBitmapTextData`).
+// flight-lint: allow(conform-params) Principal c0f9227c D23 initialization restores defaults before caller-authored assignment
+pub fn initialize_bitmap_text_data(out: &mut BitmapTextData) {
+    out.align = BitmapTextAlign::Left;
+    out.ellipsis = String::new();
+    out.glyph_source = None;
+    out.letter_spacing = 0.0;
+    out.line_height = 1.0;
+    out.max_lines = None;
+    out.text = String::new();
+    out.wrap_width = None;
 }
 
 /// Writes the cached laid-out extent or a zero rectangle before first layout (TS

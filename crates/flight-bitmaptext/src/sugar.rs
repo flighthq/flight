@@ -25,11 +25,8 @@ impl GlyphSourceBitmapTextMethods for Ref<GlyphSource> {
 }
 
 impl BitmapText {
-    pub fn new(
-        glyph_source: Option<Ref<GlyphSource>>,
-        options: Option<&BitmapTextOptions>,
-    ) -> Ref<Self> {
-        return create_bitmap_text(glyph_source, options);
+    pub fn new(glyph_source: Option<Ref<GlyphSource>>) -> Ref<Self> {
+        return create_bitmap_text(glyph_source);
     }
 
     pub fn compute_local_bounds_rectangle(&self, out: &mut Rectangle) {

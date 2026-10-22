@@ -21,12 +21,40 @@ pub(crate) fn bitmap_text_options(text: &str) -> BitmapTextOptions {
     };
 }
 
-pub(crate) fn empty_bitmap_text_data_options() -> BitmapTextDataOptions {
-    return BitmapTextDataOptions::default();
-}
-
 pub(crate) fn empty_bitmap_text_options() -> BitmapTextOptions {
     return BitmapTextOptions::default();
+}
+
+pub(crate) fn create_test_bitmap_text(
+    glyph_source: Option<Ref<GlyphSource>>,
+    options: Option<&BitmapTextOptions>,
+) -> Ref<BitmapText> {
+    let text = create_bitmap_text(glyph_source);
+    if let Some(options) = options {
+        let mut text = text.write().unwrap();
+        if let Some(align) = options.align {
+            set_bitmap_text_align(&mut text, align);
+        }
+        if let Some(ellipsis) = &options.ellipsis {
+            set_bitmap_text_ellipsis(&mut text, ellipsis);
+        }
+        if let Some(letter_spacing) = options.letter_spacing {
+            set_bitmap_text_letter_spacing(&mut text, letter_spacing);
+        }
+        if let Some(line_height) = options.line_height {
+            set_bitmap_text_line_height(&mut text, line_height);
+        }
+        if let Some(max_lines) = options.max_lines {
+            set_bitmap_text_max_lines(&mut text, max_lines);
+        }
+        if let Some(value) = &options.text {
+            set_bitmap_text_text(&mut text, value);
+        }
+        if let Some(wrap_width) = options.wrap_width {
+            set_bitmap_text_wrap_width(&mut text, wrap_width);
+        }
+    }
+    return text;
 }
 
 pub(crate) fn create_codepoint_color_rasterizer_backend(

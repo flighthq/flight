@@ -1,11 +1,12 @@
 src/bitmap_text.rs: pub fn compute_bitmap_text_local_bounds_rectangle(out: &mut Rectangle, source: &BitmapText)
-src/bitmap_text.rs: pub fn create_bitmap_text(glyph_source: Option<Ref<GlyphSource>>, options: Option<&BitmapTextOptions>,) -> Ref<BitmapText>
-src/bitmap_text.rs: pub fn create_bitmap_text_data(data: Option<&BitmapTextDataOptions>) -> BitmapTextData
+src/bitmap_text.rs: pub fn create_bitmap_text(glyph_source: Option<Ref<GlyphSource>>) -> Ref<BitmapText>
+src/bitmap_text.rs: pub fn create_bitmap_text_data() -> BitmapTextData
 src/bitmap_text.rs: pub fn create_bitmap_text_runtime() -> BitmapTextRuntime
 src/bitmap_text.rs: pub fn get_bitmap_text_bounds(source: &BitmapText) -> Rectangle
 src/bitmap_text.rs: pub fn get_bitmap_text_line_count(source: &BitmapText) -> usize
 src/bitmap_text.rs: pub fn get_bitmap_text_pages(source: &BitmapText) -> &[BitmapTextPage]
-src/bitmap_text.rs: pub fn initialize_bitmap_text_data(out: &mut BitmapTextData, data: Option<&BitmapTextDataOptions>)
+src/bitmap_text.rs: pub fn initialize_bitmap_text(out: &mut BitmapText, glyph_source: Option<Ref<GlyphSource>>)
+src/bitmap_text.rs: pub fn initialize_bitmap_text_data(out: &mut BitmapTextData)
 src/bitmap_text.rs: pub fn is_bitmap_text_glyph_layout_stale(source: &BitmapText) -> bool
 src/bitmap_text.rs: pub fn is_bitmap_text_truncated(source: &BitmapText) -> bool
 src/bitmap_text.rs: pub fn reserve_bitmap_text(target: &mut BitmapText, glyph_capacity: usize)
@@ -73,7 +74,7 @@ src/sugar.rs: impl BitmapText :: fn get_line_count(&self) -> usize
 src/sugar.rs: impl BitmapText :: fn get_pages(&self) -> &[BitmapTextPage]
 src/sugar.rs: impl BitmapText :: fn is_glyph_layout_stale(&self) -> bool
 src/sugar.rs: impl BitmapText :: fn is_truncated(&self) -> bool
-src/sugar.rs: impl BitmapText :: fn new(glyph_source: Option<Ref<GlyphSource>>, options: Option<&BitmapTextOptions>,) -> Ref<Self>
+src/sugar.rs: impl BitmapText :: fn new(glyph_source: Option<Ref<GlyphSource>>) -> Ref<Self>
 src/sugar.rs: impl BitmapText :: fn refresh_glyph_layout(&mut self, guard_state: &BitmapTextGuardState) -> bool
 src/sugar.rs: impl BitmapText :: fn reserve(&mut self, glyph_capacity: usize)
 src/sugar.rs: impl BitmapText :: fn set_align(&mut self, align: BitmapTextAlign)
@@ -94,7 +95,6 @@ src/sugar.rs: impl GlyphSourceBitmapTextMethods for Ref<GlyphSource> :: fn expla
 src/sugar.rs: pub trait GlyphSourceBitmapTextMethods { fn explain_bitmap_text_missing_glyphs(&self, text: &str) -> BitmapTextMissingGlyphs; }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum BitmapTextAlign { Center, Justify, #[default] Left, Right, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct BitmapTextMissingGlyphs { pub missing_codepoints: Vec<u32>, pub total_codepoints: usize, }
-src/types.rs: #[derive(Clone, Default)] pub struct BitmapTextDataOptions { pub align: Option<BitmapTextAlign>, pub ellipsis: Option<String>, pub glyph_source: Option<Ref<GlyphSource>>, pub letter_spacing: Option<f32>, pub line_height: Option<f32>, pub max_lines: Option<usize>, pub text: Option<String>, pub wrap_width: Option<f32>, }
 src/types.rs: #[derive(Clone, Default)] pub struct BitmapTextGuardState { pub layout_guard: Option<BitmapTextLayoutGuard>, pub missing_glyph_guard: Option<BitmapTextMissingGlyphGuard>, }
 src/types.rs: #[derive(Clone, Default)] pub struct BitmapTextOptions { pub align: Option<BitmapTextAlign>, pub ellipsis: Option<String>, pub letter_spacing: Option<f32>, pub line_height: Option<f32>, pub max_lines: Option<Option<usize>>, pub text: Option<String>, pub wrap_width: Option<Option<f32>>, }
 src/types.rs: impl Default for BitmapText
