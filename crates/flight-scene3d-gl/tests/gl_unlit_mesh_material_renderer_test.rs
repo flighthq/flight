@@ -6,12 +6,15 @@ use flight_lighting::Scene3DLightBlock;
 use flight_meshgeometry::{MeshGeometry, create_box_mesh_geometry};
 use flight_render::Scene3DRenderProxy;
 use flight_scene3d_gl::*;
-use flight_bitmap::create_bitmap;
+use flight_host::HostImageSource;
 use flight_materials::UNLIT_MATERIAL_KIND;
 use flight_materials::unlit_materials::create_unlit_material;
 use flight_render::{CreateRenderTextureOptions, create_render_texture};
-use flight_render_gl::{register_gl_bitmap_texture_resolver, register_gl_render_texture_resolver};
-use flight_texture::{Texture, TextureSourceRef, TextureUvTransform, create_texture_2d};
+use flight_render_gl::{
+    GlImageSourceToken, register_gl_image_texture_resolver, register_gl_render_texture_resolver,
+};
+use flight_texture::{Texture, TextureUvTransform};
+use flight_video::{HostVideoCapability, advance_video_texture, create_video_resource, create_video_texture};
 
 use crate::gl_test_helper::{calls_with, count_calls, make_gl_scene3d_state, test_default};
 
@@ -69,13 +72,61 @@ fn has_call(name: &str, argument: u32) -> bool {
         .any(|call| call.integers.first() == Some(&i64::from(argument)));
 }
 
-// A bitmap-backed map (the Rust stand-in for TS's host video resource, which needs a host capability
-// scene3d-gl does not depend on).
-fn make_bitmap_texture(width: u32, height: u32) -> Arc<RwLock<Texture>> {
-    let source: TextureSourceRef = Arc::new(RwLock::new(create_bitmap(width, height, None)));
-    let mut texture = create_texture_2d();
-    texture.source = Some(source);
+// A host image the GL image resolver can upload (TS `createImageResource(img)` measured through the
+// test dimension resolver): the handle is render-gl's mock image token.
+fn make_host_image_source(width: u32, height: u32) -> Arc<HostImageSource> {
+    return Arc::new(HostImageSource {
+        provider: Arc::new(()),
+        handle: Arc::new(GlImageSourceToken {
+            height,
+            pixels: Arc::new(vec![255; width as usize * height as usize * 4]),
+            ready: true,
+            width,
+        }),
+    });
+}
+
+// TS `testVideoHost`: reports the element's frame size and readiness.
+fn make_test_video_host(width: f32, height: f32) -> HostVideoCapability {
+    return HostVideoCapability {
+        provider: Arc::new(()),
+        add_ended_listener: None,
+        attach_stream: None,
+        can_play_type: Arc::new(|_mime| true),
+        create_object_url: None,
+        create_video_element: None,
+        get_current_time: None,
+        get_duration: None,
+        get_height: Some(Arc::new(move |_element| height)),
+        get_loop: None,
+        get_muted: None,
+        get_playback_rate: None,
+        get_volume: None,
+        get_width: Some(Arc::new(move |_element| width)),
+        is_ready: Some(Arc::new(|_element| true)),
+        load_url: None,
+        pause: None,
+        play: None,
+        release_element: None,
+        remove_ended_listener: None,
+        revoke_object_url: None,
+        set_current_time: None,
+        set_loop: None,
+        set_muted: None,
+        set_playback_rate: None,
+        set_volume: None,
+    };
+}
+
+// TS `createVideoTexture(testVideoHost, createVideoResource({ readyState: 4, ... }))` with mipmaps off,
+// advanced to its first frame.
+fn make_video_texture(width: u32, height: u32) -> Arc<RwLock<Texture>> {
+    let host = make_test_video_host(width as f32, height as f32);
+    let mut resource = create_video_resource();
+    resource.element = Some(make_host_image_source(width, height));
+    let mut texture = create_video_texture(&host, &resource, None);
     texture.texture_fields_mut().sampler.mipmaps = false;
+    advance_video_texture(&host, &mut texture);
     return Arc::new(RwLock::new(Texture::Texture2D(texture)));
 }
 
@@ -97,9 +148,9 @@ mod gl_unlit_mesh_material_renderer {
     fn binds_a_ready_dynamic_video_map_into_the_color_map_slot() {
         let mut state = make_gl_scene3d_state();
         let mut material = create_unlit_material();
-        material.base_color_map = Some(make_bitmap_texture(160, 120));
+        material.base_color_map = Some(make_video_texture(160, 120));
         register_gl_unlit_material(&mut state);
-        register_gl_bitmap_texture_resolver(&mut state);
+        register_gl_image_texture_resolver(&mut state);
         (GL_UNLIT_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &no_lights(), &make_camera());
         assert!(count_calls("tex_image_2d") > 0);
     }
