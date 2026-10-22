@@ -90,9 +90,13 @@ pub struct BaseRenderState {
 }
 
 pub type ColorAdjustmentResolver<S> = fn(&mut S, &mut RenderProxy<S>, Option<&RenderProxy<S>>);
+
 pub type ColorAdjustmentUnsupportedGuard<S> = fn(&mut S, &NodeRef);
+
 pub type RenderRootGuard<S> = fn(&mut S, &NodeRef);
+
 pub type StrokeTessellator = fn(&Path, &StrokeStyle, Option<f32>) -> Option<PathMesh>;
+
 pub type EffectPaddingResolver = fn(&UnknownValue) -> EffectPadding;
 
 /// Backend-specific renderer callbacks, statically typed to the state they can receive.
@@ -571,6 +575,14 @@ pub struct CanvasHostSurfaceEntry {
     pub host: HostCanvasCapability,
 }
 
+/// A texture-resolution diagnostic (TS `TextureResolutionExplanation`): resolver availability only;
+/// a registered resolver may still return its own null sentinel while a resource is not ready.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TextureResolutionExplanation {
+    pub kind: Option<Kind>,
+    pub status: TextureResolutionStatus,
+}
+
 impl Default for RenderTarget {
     fn default() -> Self {
         let mut fields = TextureSourceFields::default();
@@ -850,12 +862,4 @@ pub enum TextureResolutionStatus {
     MissingKind,
     MissingResolver,
     Registered,
-}
-
-/// A texture-resolution diagnostic (TS `TextureResolutionExplanation`): resolver availability only;
-/// a registered resolver may still return its own null sentinel while a resource is not ready.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct TextureResolutionExplanation {
-    pub kind: Option<Kind>,
-    pub status: TextureResolutionStatus,
 }

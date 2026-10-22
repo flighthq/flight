@@ -1192,6 +1192,14 @@ pub fn is_wgpu_texture_ready(texture: Option<&Texture>) -> bool {
     return texture.is_some_and(|texture| has_texture_source(texture));
 }
 
+// Drops the Frame bindings whose light block is gone (TS: the WeakMap releases them with the block).
+// flight-lint: allow(hashmap-iteration) retain visits every entry once and keeps or drops each independently, so order is unobservable
+fn prune_wgpu_frame_bindings(
+    bindings: &mut HashMap<usize, (Weak<RwLock<Scene3DLightBlock>>, WgpuScene3DFrameBinding)>,
+) {
+    bindings.retain(|_, (block, _)| block.strong_count() > 0);
+}
+
 fn record_wgpu_sampler(
     native: &WgpuNativeDevice,
     sampler: &wgpu::Sampler,
@@ -1442,14 +1450,6 @@ pub fn write_wgpu_draw_uniform(
     state_runtime.uniform_offset += state_runtime.uniform_stride;
     get_wgpu_scene3d_runtime(state).pending_draw_offset = offset;
     return draw_bind_group;
-}
-
-// Drops the Frame bindings whose light block is gone (TS: the WeakMap releases them with the block).
-// flight-lint: allow(hashmap-iteration) retain visits every entry once and keeps or drops each independently, so order is unobservable
-fn prune_wgpu_frame_bindings(
-    bindings: &mut HashMap<usize, (Weak<RwLock<Scene3DLightBlock>>, WgpuScene3DFrameBinding)>,
-) {
-    bindings.retain(|_, (block, _)| block.strong_count() > 0);
 }
 
 /// Writes the per-light-block Frame uniform (WebGPU-depth view-projection, camera position, the

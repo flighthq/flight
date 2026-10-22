@@ -237,6 +237,7 @@ fn record_wgpu_render_pass_encoder(
 
 // One color broadcasts to every attachment; `colors` selects per attachment. Only attachment 0 is
 // expressible through the load operation, so both resolve to the same value here.
+// flight-lint: allow(f64) wgpu::Color carries doubles; the f32 clear widens exactly
 fn resolve_wgpu_clear_color(clear: Option<&RenderTargetClear>) -> wgpu::Color {
     // TS `clear?.colors?.[0] ?? clear?.color`: an omitted first entry falls back to the broadcast color.
     let rgba = clear.and_then(|clear| {

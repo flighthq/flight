@@ -210,25 +210,6 @@ fn draw_entries(
     }
 }
 
-// The frame's shared light block as a stable handle (TS: the prepared list's block object, reused
-// state-owned scratch). Its content is refreshed in place, so the handle keeps its identity and the
-// Frame binding keyed by it stays put across frames.
-fn resolve_wgpu_scene3d_list_light_block(
-    state: &mut WgpuRenderState,
-    lights: &Scene3DLightBlock,
-) -> Ref<Scene3DLightBlock> {
-    let runtime = get_wgpu_scene3d_runtime(state);
-    if let Some(existing) = &runtime.list_light_block {
-        if *existing.read().unwrap() != *lights {
-            existing.write().unwrap().clone_from(lights);
-        }
-        return existing.clone();
-    }
-    let block = Arc::new(RwLock::new(lights.clone()));
-    runtime.list_light_block = Some(block.clone());
-    return block;
-}
-
 fn draw_wgpu_scene3d_prepared(
     state: &mut WgpuRenderState,
     prepared: &PreparedScene3D,
@@ -524,4 +505,23 @@ fn resolve_subset_material(
     subset_index: usize,
 ) -> Option<Material3DRef> {
     return materials.get(subset_index).cloned().flatten();
+}
+
+// The frame's shared light block as a stable handle (TS: the prepared list's block object, reused
+// state-owned scratch). Its content is refreshed in place, so the handle keeps its identity and the
+// Frame binding keyed by it stays put across frames.
+fn resolve_wgpu_scene3d_list_light_block(
+    state: &mut WgpuRenderState,
+    lights: &Scene3DLightBlock,
+) -> Ref<Scene3DLightBlock> {
+    let runtime = get_wgpu_scene3d_runtime(state);
+    if let Some(existing) = &runtime.list_light_block {
+        if *existing.read().unwrap() != *lights {
+            existing.write().unwrap().clone_from(lights);
+        }
+        return existing.clone();
+    }
+    let block = Arc::new(RwLock::new(lights.clone()));
+    runtime.list_light_block = Some(block.clone());
+    return block;
 }

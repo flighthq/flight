@@ -1185,13 +1185,13 @@ impl GlRenderTarget for GlCubeRenderTarget {
         return 1;
     }
 
+    fn color_space(&self) -> RenderTargetColorSpace {
+        return self.color_space;
+    }
+
     // TS `GlCubeRenderTarget.textures`: its sole entry is the cubemap texture.
     fn color_textures(&self) -> Vec<NativeTexture> {
         return vec![self.texture];
-    }
-
-    fn color_space(&self) -> RenderTargetColorSpace {
-        return self.color_space;
     }
 
     fn framebuffer(&self) -> Option<NativeFramebuffer> {
