@@ -1,0 +1,391 @@
+src/contract.rs: pub use crate::enable_wgpu_effect_guards::*;
+src/contract.rs: pub use crate::types::*;
+src/contract.rs: pub use crate::wgpu_bevel_effect::*;
+src/contract.rs: pub use crate::wgpu_bitmap_displacement_effect::*;
+src/contract.rs: pub use crate::wgpu_blend_effect::*;
+src/contract.rs: pub use crate::wgpu_bloom_effect::*;
+src/contract.rs: pub use crate::wgpu_blur_effect::*;
+src/contract.rs: pub use crate::wgpu_camera_motion_blur_effect::*;
+src/contract.rs: pub use crate::wgpu_chromatic_aberration_effect::*;
+src/contract.rs: pub use crate::wgpu_color_lut_pass::*;
+src/contract.rs: pub use crate::wgpu_color_matrix_pass::*;
+src/contract.rs: pub use crate::wgpu_composite_effect::*;
+src/contract.rs: pub use crate::wgpu_contact_shadows_effect::*;
+src/contract.rs: pub use crate::wgpu_convolution_effect::*;
+src/contract.rs: pub use crate::wgpu_crt_effect::*;
+src/contract.rs: pub use crate::wgpu_directional_blur_effect::*;
+src/contract.rs: pub use crate::wgpu_displacement_effect::*;
+src/contract.rs: pub use crate::wgpu_dither_effect::*;
+src/contract.rs: pub use crate::wgpu_drop_shadow_effect::*;
+src/contract.rs: pub use crate::wgpu_effect_blit_shader::*;
+src/contract.rs: pub use crate::wgpu_effect_box_blur::*;
+src/contract.rs: pub use crate::wgpu_effect_gradient_ramp::*;
+src/contract.rs: pub use crate::wgpu_effect_pass::*;
+src/contract.rs: pub use crate::wgpu_effect_program_cache::*;
+src/contract.rs: pub use crate::wgpu_effect_registry::*;
+src/contract.rs: pub use crate::wgpu_effect_state::*;
+src/contract.rs: pub use crate::wgpu_effect_texel_scale::*;
+src/contract.rs: pub use crate::wgpu_effect_tint_shader::*;
+src/contract.rs: pub use crate::wgpu_film_grain_effect::*;
+src/contract.rs: pub use crate::wgpu_fxaa_effect::*;
+src/contract.rs: pub use crate::wgpu_glitch_effect::*;
+src/contract.rs: pub use crate::wgpu_god_rays_effect::*;
+src/contract.rs: pub use crate::wgpu_gradient_bevel_effect::*;
+src/contract.rs: pub use crate::wgpu_gradient_glow_effect::*;
+src/contract.rs: pub use crate::wgpu_halftone_effect::*;
+src/contract.rs: pub use crate::wgpu_inner_glow_effect::*;
+src/contract.rs: pub use crate::wgpu_inner_shadow_effect::*;
+src/contract.rs: pub use crate::wgpu_kuwahara_effect::*;
+src/contract.rs: pub use crate::wgpu_lens_dirt_effect::*;
+src/contract.rs: pub use crate::wgpu_lens_distortion_effect::*;
+src/contract.rs: pub use crate::wgpu_lens_flare_effect::*;
+src/contract.rs: pub use crate::wgpu_median_effect::*;
+src/contract.rs: pub use crate::wgpu_motion_blur_effect::*;
+src/contract.rs: pub use crate::wgpu_outer_glow_effect::*;
+src/contract.rs: pub use crate::wgpu_outline_effect::*;
+src/contract.rs: pub use crate::wgpu_pixelate_effect::*;
+src/contract.rs: pub use crate::wgpu_posterize_effect::*;
+src/contract.rs: pub use crate::wgpu_radial_blur_effect::*;
+src/contract.rs: pub use crate::wgpu_render_texture_effect::*;
+src/contract.rs: pub use crate::wgpu_scanlines_effect::*;
+src/contract.rs: pub use crate::wgpu_screen_space_fog_effect::*;
+src/contract.rs: pub use crate::wgpu_sharpen_effect::*;
+src/contract.rs: pub use crate::wgpu_sketch_effect::*;
+src/contract.rs: pub use crate::wgpu_smaa_effect::*;
+src/contract.rs: pub use crate::wgpu_ssao_effect::*;
+src/contract.rs: pub use crate::wgpu_tilt_shift_effect::*;
+src/contract.rs: pub use crate::wgpu_tone_map_effect::*;
+src/contract.rs: pub use crate::wgpu_vignette_effect::*;
+src/contract.rs: pub use crate::wgpu_white_balance_effect::*;
+src/enable_wgpu_effect_guards.rs: pub fn are_wgpu_effect_guards_enabled(state: &WgpuRenderState) -> bool
+src/enable_wgpu_effect_guards.rs: pub fn disable_wgpu_effect_guards(state: &mut WgpuRenderState)
+src/enable_wgpu_effect_guards.rs: pub fn enable_wgpu_effect_guards(state: &mut WgpuRenderState, log_state: Option<LogStateRef>)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::WgpuColorLutTextureCache;
+src/lib.rs: pub use contract::WgpuEffectApplicationExplanation;
+src/lib.rs: pub use contract::WgpuEffectApplicationGuard;
+src/lib.rs: pub use contract::WgpuEffectApplicationStatus;
+src/lib.rs: pub use contract::WgpuEffectOperation;
+src/lib.rs: pub use contract::WgpuEffectState;
+src/lib.rs: pub use contract::WgpuEffectStateSampleCountGuard;
+src/lib.rs: pub use contract::WgpuEffectStateSkipGuard;
+src/lib.rs: pub use contract::apply_wgpu_effects_to_render_texture;
+src/lib.rs: pub use contract::are_wgpu_effect_guards_enabled;
+src/lib.rs: pub use contract::begin_wgpu_effect_pass;
+src/lib.rs: pub use contract::create_wgpu_effect_state;
+src/lib.rs: pub use contract::destroy_wgpu_effect_state;
+src/lib.rs: pub use contract::disable_wgpu_effect_guards;
+src/lib.rs: pub use contract::enable_wgpu_effect_guards;
+src/lib.rs: pub use contract::end_wgpu_effect_pass;
+src/lib.rs: pub use contract::explain_wgpu_effect_application;
+src/lib.rs: pub use contract::get_wgpu_effect_application_status_string;
+src/lib.rs: pub use contract::get_wgpu_effect_runner;
+src/lib.rs: pub use contract::has_wgpu_effect_runner;
+src/lib.rs: pub use contract::is_wgpu_bitmap_displacement_effect_resolvable;
+src/lib.rs: pub use contract::is_wgpu_effect_resolvable;
+src/lib.rs: pub use contract::parse_wgpu_effect_application_status;
+src/lib.rs: pub use contract::register_wgpu_bevel_effect;
+src/lib.rs: pub use contract::register_wgpu_bitmap_displacement_effect;
+src/lib.rs: pub use contract::register_wgpu_blend_effect;
+src/lib.rs: pub use contract::register_wgpu_blend_effect_backdrop;
+src/lib.rs: pub use contract::register_wgpu_bloom_effect;
+src/lib.rs: pub use contract::register_wgpu_blur_effect;
+src/lib.rs: pub use contract::register_wgpu_camera_motion_blur_effect;
+src/lib.rs: pub use contract::register_wgpu_chromatic_aberration_effect;
+src/lib.rs: pub use contract::register_wgpu_composite_effect;
+src/lib.rs: pub use contract::register_wgpu_contact_shadows_effect;
+src/lib.rs: pub use contract::register_wgpu_convolution_effect;
+src/lib.rs: pub use contract::register_wgpu_crt_effect;
+src/lib.rs: pub use contract::register_wgpu_directional_blur_effect;
+src/lib.rs: pub use contract::register_wgpu_displacement_effect;
+src/lib.rs: pub use contract::register_wgpu_dither_effect;
+src/lib.rs: pub use contract::register_wgpu_drop_shadow_effect;
+src/lib.rs: pub use contract::register_wgpu_effect;
+src/lib.rs: pub use contract::register_wgpu_film_grain_effect;
+src/lib.rs: pub use contract::register_wgpu_fxaa_effect;
+src/lib.rs: pub use contract::register_wgpu_glitch_effect;
+src/lib.rs: pub use contract::register_wgpu_god_rays_effect;
+src/lib.rs: pub use contract::register_wgpu_gradient_bevel_effect;
+src/lib.rs: pub use contract::register_wgpu_gradient_glow_effect;
+src/lib.rs: pub use contract::register_wgpu_halftone_effect;
+src/lib.rs: pub use contract::register_wgpu_inner_glow_effect;
+src/lib.rs: pub use contract::register_wgpu_inner_shadow_effect;
+src/lib.rs: pub use contract::register_wgpu_kuwahara_effect;
+src/lib.rs: pub use contract::register_wgpu_lens_dirt_effect;
+src/lib.rs: pub use contract::register_wgpu_lens_distortion_effect;
+src/lib.rs: pub use contract::register_wgpu_lens_flare_effect;
+src/lib.rs: pub use contract::register_wgpu_median_effect;
+src/lib.rs: pub use contract::register_wgpu_motion_blur_effect;
+src/lib.rs: pub use contract::register_wgpu_outer_glow_effect;
+src/lib.rs: pub use contract::register_wgpu_outline_effect;
+src/lib.rs: pub use contract::register_wgpu_pixelate_effect;
+src/lib.rs: pub use contract::register_wgpu_posterize_effect;
+src/lib.rs: pub use contract::register_wgpu_radial_blur_effect;
+src/lib.rs: pub use contract::register_wgpu_scanlines_effect;
+src/lib.rs: pub use contract::register_wgpu_screen_space_fog_effect;
+src/lib.rs: pub use contract::register_wgpu_sharpen_effect;
+src/lib.rs: pub use contract::register_wgpu_sketch_effect;
+src/lib.rs: pub use contract::register_wgpu_smaa_effect;
+src/lib.rs: pub use contract::register_wgpu_ssao_effect;
+src/lib.rs: pub use contract::register_wgpu_tilt_shift_effect;
+src/lib.rs: pub use contract::register_wgpu_tone_map_effect;
+src/lib.rs: pub use contract::register_wgpu_vignette_effect;
+src/lib.rs: pub use contract::register_wgpu_white_balance_effect;
+src/lib.rs: pub use contract::set_wgpu_effect_application_guard;
+src/lib.rs: pub use contract::set_wgpu_effect_state_sample_count_guard;
+src/lib.rs: pub use contract::set_wgpu_effect_state_skip_guard;
+src/lib.rs: pub use contract::set_wgpu_effect_velocity_texture;
+src/lib.rs: pub use contract::wgpu_bevel_effect_runner;
+src/lib.rs: pub use contract::wgpu_bitmap_displacement_effect_runner;
+src/lib.rs: pub use contract::wgpu_blend_effect_runner;
+src/lib.rs: pub use contract::wgpu_bloom_effect_runner;
+src/lib.rs: pub use contract::wgpu_blur_effect_runner;
+src/lib.rs: pub use contract::wgpu_camera_motion_blur_effect_runner;
+src/lib.rs: pub use contract::wgpu_chromatic_aberration_effect_runner;
+src/lib.rs: pub use contract::wgpu_composite_effect_runner;
+src/lib.rs: pub use contract::wgpu_contact_shadows_effect_runner;
+src/lib.rs: pub use contract::wgpu_convolution_effect_runner;
+src/lib.rs: pub use contract::wgpu_crt_effect_runner;
+src/lib.rs: pub use contract::wgpu_directional_blur_effect_runner;
+src/lib.rs: pub use contract::wgpu_displacement_effect_runner;
+src/lib.rs: pub use contract::wgpu_dither_effect_runner;
+src/lib.rs: pub use contract::wgpu_drop_shadow_effect_runner;
+src/lib.rs: pub use contract::wgpu_film_grain_effect_runner;
+src/lib.rs: pub use contract::wgpu_fxaa_effect_runner;
+src/lib.rs: pub use contract::wgpu_glitch_effect_runner;
+src/lib.rs: pub use contract::wgpu_god_rays_effect_runner;
+src/lib.rs: pub use contract::wgpu_gradient_bevel_effect_runner;
+src/lib.rs: pub use contract::wgpu_gradient_glow_effect_runner;
+src/lib.rs: pub use contract::wgpu_halftone_effect_runner;
+src/lib.rs: pub use contract::wgpu_inner_glow_effect_runner;
+src/lib.rs: pub use contract::wgpu_inner_shadow_effect_runner;
+src/lib.rs: pub use contract::wgpu_kuwahara_effect_runner;
+src/lib.rs: pub use contract::wgpu_lens_dirt_effect_runner;
+src/lib.rs: pub use contract::wgpu_lens_distortion_effect_runner;
+src/lib.rs: pub use contract::wgpu_lens_flare_effect_runner;
+src/lib.rs: pub use contract::wgpu_median_effect_runner;
+src/lib.rs: pub use contract::wgpu_motion_blur_effect_runner;
+src/lib.rs: pub use contract::wgpu_outer_glow_effect_runner;
+src/lib.rs: pub use contract::wgpu_outline_effect_runner;
+src/lib.rs: pub use contract::wgpu_pixelate_effect_runner;
+src/lib.rs: pub use contract::wgpu_posterize_effect_runner;
+src/lib.rs: pub use contract::wgpu_radial_blur_effect_runner;
+src/lib.rs: pub use contract::wgpu_scanlines_effect_runner;
+src/lib.rs: pub use contract::wgpu_screen_space_fog_effect_runner;
+src/lib.rs: pub use contract::wgpu_sharpen_effect_runner;
+src/lib.rs: pub use contract::wgpu_sketch_effect_runner;
+src/lib.rs: pub use contract::wgpu_smaa_effect_runner;
+src/lib.rs: pub use contract::wgpu_ssao_effect_runner;
+src/lib.rs: pub use contract::wgpu_tilt_shift_effect_runner;
+src/lib.rs: pub use contract::wgpu_tone_map_effect_runner;
+src/lib.rs: pub use contract::wgpu_vignette_effect_runner;
+src/lib.rs: pub use contract::wgpu_white_balance_effect_runner;
+src/types.rs: #[derive(Clone)] pub enum WgpuEffectOperation { Adjustment(Ref<dyn Adjustment>), Effect(EffectRef), }
+src/types.rs: #[derive(Clone)] pub struct WgpuEffectPassStateView { pub uniform_bind_group: wgpu::BindGroup, pub texture_bind_group_layout: wgpu::BindGroupLayout, pub uniform_bind_group_layout: wgpu::BindGroupLayout, pub sampler: wgpu::Sampler, pub acquire_slot: fn(&mut WgpuRenderState) -> u32, pub write_slot: fn(&mut WgpuRenderState, u32, &mut dyn FnMut(&mut [f32], &mut [i32])), pub begin_pass: fn(&mut WgpuRenderState, Option<&WgpuTextureRenderTarget>, wgpu::LoadOp<wgpu::Color>,) -> wgpu::RenderPass<'static>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct WgpuEffectBoxBlurOptions { pub blur_x: Option<f32>, pub blur_y: Option<f32>, pub passes: Option<f32>, pub edge_color: Option<[f32; 4]>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct WgpuEffectLogicalResolution { pub height: f32, pub texels_per_logical_pixel: f32, pub width: f32, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct WgpuGaussianBlurOptions { pub blur_x: Option<f32>, pub blur_y: Option<f32>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub enum WgpuEffectBlendMode { Erase, #[default] Premul, Replace, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum WgpuEffectApplicationStatus { Complete, NoEffects, PartialRegistration, PartialResolution, SourceUnavailable, StaleDestination, UnregisteredEffects, UnresolvedEffects, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct WgpuColorLutTextureCache { pub texture: Option<wgpu::Texture>, pub size: u32, pub lut: Option<ColorLut>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct WgpuEffectApplicationExplanation { pub registered_count: usize, pub requested_count: usize, pub status: WgpuEffectApplicationStatus, pub unregistered_kinds: Vec<Kind>, pub unresolved_indexes: Vec<usize>, }
+src/types.rs: impl Entity for WgpuEffectPipeline
+src/types.rs: impl Entity for WgpuEffectPipeline :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for WgpuEffectPipeline :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub struct WgpuEffectPipeline { pub(crate) runtime: EntityRuntimeSlot, pub pipeline: wgpu::RenderPipeline, pub blend_mode: WgpuEffectBlendMode, pub compile_for_format: Option<WgpuEffectPipelineCompiler>, pub variants: Option<HashMap<wgpu::TextureFormat, wgpu::RenderPipeline>>, }
+src/types.rs: pub struct WgpuEffectState { pub options: EffectStateOptions, pub scene_target: Option<Ref<WgpuTextureRenderTarget>>, pub pool: WgpuRenderTargetPool, pub lut_cache: ColorLutCache, pub lut_texture: WgpuColorLutTextureCache, pub velocity_texture: Option<wgpu::Texture>, }
+src/types.rs: pub type WgpuDualSourceEffectPipeline = WgpuEffectPipeline;
+src/types.rs: pub type WgpuEffectApplicationGuard = Arc<dyn Fn(&WgpuRenderState, &WgpuEffectApplicationExplanation) + Send + Sync>;
+src/types.rs: pub type WgpuEffectPipelineCompiler = Arc<dyn Fn(wgpu::TextureFormat) -> wgpu::RenderPipeline + Send + Sync>;
+src/types.rs: pub type WgpuEffectStateSampleCountGuard = Arc<dyn Fn(&WgpuRenderState, f32, f32) + Send + Sync>;
+src/types.rs: pub type WgpuEffectStateSkipGuard = Arc<dyn Fn(&WgpuRenderState, &str) + Send + Sync>;
+src/types.rs: pub type WgpuEffectUniformWriter<'a> = &'a mut dyn FnMut(&mut [f32], &mut [i32]);
+src/wgpu_bevel_effect.rs: pub fn apply_bevel_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, pool: &mut WgpuRenderTargetPool, effect: &BevelEffect,)
+src/wgpu_bevel_effect.rs: pub fn register_wgpu_bevel_effect(state: &mut WgpuRenderState)
+src/wgpu_bevel_effect.rs: pub fn wgpu_bevel_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_bitmap_displacement_effect.rs: pub const BITMAP_DISPLACEMENT_FRAGMENT_WGSL: &str
+src/wgpu_bitmap_displacement_effect.rs: pub fn apply_bitmap_displacement_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &BitmapDisplacementEffect,)
+src/wgpu_bitmap_displacement_effect.rs: pub fn initialize_wgpu_effect_pipeline(out: &mut WgpuEffectPipeline, blend_mode: WgpuEffectBlendMode, pipeline: wgpu::RenderPipeline,)
+src/wgpu_bitmap_displacement_effect.rs: pub fn is_wgpu_bitmap_displacement_effect_resolvable(state: &mut WgpuRenderState, effect: &dyn Effect,) -> bool
+src/wgpu_bitmap_displacement_effect.rs: pub fn register_wgpu_bitmap_displacement_effect(state: &mut WgpuRenderState)
+src/wgpu_bitmap_displacement_effect.rs: pub fn wgpu_bitmap_displacement_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect,)
+src/wgpu_blend_effect.rs: pub const WGPU_BLEND_FRAGMENT_WGSL: &str
+src/wgpu_blend_effect.rs: pub fn apply_blend_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &BlendEffect,)
+src/wgpu_blend_effect.rs: pub fn get_wgpu_blend_effect_backdrop(state: &WgpuRenderState, backdrop_key: Option<&str>,) -> Option<Ref<WgpuTextureRenderTarget>>
+src/wgpu_blend_effect.rs: pub fn get_wgpu_blend_effect_mode_index(mode: &str) -> i32
+src/wgpu_blend_effect.rs: pub fn register_wgpu_blend_effect(state: &mut WgpuRenderState)
+src/wgpu_blend_effect.rs: pub fn register_wgpu_blend_effect_backdrop(state: &mut WgpuRenderState, backdrop_key: &str, target: Ref<WgpuTextureRenderTarget>,)
+src/wgpu_blend_effect.rs: pub fn unregister_wgpu_blend_effect_backdrop(state: &mut WgpuRenderState, backdrop_key: &str) -> bool
+src/wgpu_blend_effect.rs: pub fn wgpu_blend_effect_runner(context: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_bloom_effect.rs: pub fn apply_bloom_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, pool: &mut WgpuRenderTargetPool, effect: &BloomEffect,)
+src/wgpu_bloom_effect.rs: pub fn register_wgpu_bloom_effect(state: &mut WgpuRenderState)
+src/wgpu_bloom_effect.rs: pub fn wgpu_bloom_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_blur_effect.rs: pub fn apply_blur_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, temp: &WgpuTextureRenderTarget, effect: &BlurEffect,)
+src/wgpu_blur_effect.rs: pub fn apply_gaussian_blur_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, temp: &WgpuTextureRenderTarget, options: &WgpuGaussianBlurOptions,)
+src/wgpu_blur_effect.rs: pub fn register_wgpu_blur_effect(state: &mut WgpuRenderState)
+src/wgpu_blur_effect.rs: pub fn wgpu_blur_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_camera_motion_blur_effect.rs: pub fn apply_camera_motion_blur_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &CameraMotionBlurEffect,)
+src/wgpu_camera_motion_blur_effect.rs: pub fn register_wgpu_camera_motion_blur_effect(state: &mut WgpuRenderState)
+src/wgpu_camera_motion_blur_effect.rs: pub fn wgpu_camera_motion_blur_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_chromatic_aberration_effect.rs: pub fn apply_chromatic_aberration_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &ChromaticAberrationEffect,)
+src/wgpu_chromatic_aberration_effect.rs: pub fn register_wgpu_chromatic_aberration_effect(state: &mut WgpuRenderState)
+src/wgpu_chromatic_aberration_effect.rs: pub fn wgpu_chromatic_aberration_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_color_lut_pass.rs: pub fn apply_color_lut_pass_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, lut: &ColorLut, cache: &mut WgpuColorLutTextureCache,)
+src/wgpu_color_matrix_pass.rs: pub fn apply_color_matrix_pass_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, matrix: &Vec<f32>,)
+src/wgpu_composite_effect.rs: pub const WGPU_COMPOSITE_FRAGMENT_WGSL: &str
+src/wgpu_composite_effect.rs: pub fn apply_composite_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &CompositeEffect,)
+src/wgpu_composite_effect.rs: pub fn get_wgpu_composite_effect_operator_index(operator: &str) -> i32
+src/wgpu_composite_effect.rs: pub fn register_wgpu_composite_effect(state: &mut WgpuRenderState)
+src/wgpu_composite_effect.rs: pub fn wgpu_composite_effect_runner(context: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_contact_shadows_effect.rs: pub fn apply_contact_shadows_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &ContactShadowsEffect,)
+src/wgpu_contact_shadows_effect.rs: pub fn register_wgpu_contact_shadows_effect(state: &mut WgpuRenderState)
+src/wgpu_contact_shadows_effect.rs: pub fn wgpu_contact_shadows_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_convolution_effect.rs: pub const MAX_CONVOLUTION_EFFECT_WGPU_KERNEL_SIZE: u32
+src/wgpu_convolution_effect.rs: pub fn apply_convolution_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &ConvolutionEffect,)
+src/wgpu_convolution_effect.rs: pub fn register_wgpu_convolution_effect(state: &mut WgpuRenderState)
+src/wgpu_convolution_effect.rs: pub fn wgpu_convolution_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_crt_effect.rs: pub fn apply_crt_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &CrtEffect,)
+src/wgpu_crt_effect.rs: pub fn register_wgpu_crt_effect(state: &mut WgpuRenderState)
+src/wgpu_crt_effect.rs: pub fn wgpu_crt_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_directional_blur_effect.rs: pub fn apply_directional_blur_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &DirectionalBlurEffect,)
+src/wgpu_directional_blur_effect.rs: pub fn register_wgpu_directional_blur_effect(state: &mut WgpuRenderState)
+src/wgpu_directional_blur_effect.rs: pub fn wgpu_directional_blur_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_displacement_effect.rs: pub fn apply_displacement_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &DisplacementEffect,)
+src/wgpu_displacement_effect.rs: pub fn register_wgpu_displacement_effect(state: &mut WgpuRenderState)
+src/wgpu_displacement_effect.rs: pub fn wgpu_displacement_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_dither_effect.rs: pub fn apply_dither_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &DitherEffect,)
+src/wgpu_dither_effect.rs: pub fn register_wgpu_dither_effect(state: &mut WgpuRenderState)
+src/wgpu_dither_effect.rs: pub fn wgpu_dither_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_drop_shadow_effect.rs: pub fn apply_drop_shadow_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, pool: &mut WgpuRenderTargetPool, effect: &DropShadowEffect,)
+src/wgpu_drop_shadow_effect.rs: pub fn register_wgpu_drop_shadow_effect(state: &mut WgpuRenderState)
+src/wgpu_drop_shadow_effect.rs: pub fn wgpu_drop_shadow_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_effect_blit_shader.rs: pub fn apply_wgpu_effect_blit_offset_pass(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, dx: f32, dy: f32,)
+src/wgpu_effect_blit_shader.rs: pub fn apply_wgpu_effect_blit_pass(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget,)
+src/wgpu_effect_blit_shader.rs: pub fn apply_wgpu_effect_erase_pass(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget,)
+src/wgpu_effect_box_blur.rs: pub fn apply_wgpu_effect_box_blur(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, temp: &WgpuTextureRenderTarget, options: &WgpuEffectBoxBlurOptions,)
+src/wgpu_effect_gradient_ramp.rs: pub fn get_wgpu_effect_gradient_ramp_texture(state: &mut WgpuRenderState, colors: &Vec<u32>, alphas: &Vec<f32>, ratios: &Vec<f32>,) -> wgpu::Texture
+src/wgpu_effect_pass.rs: pub const EFFECT_VERTEX_WGSL: &str
+src/wgpu_effect_pass.rs: pub fn clear_wgpu_effect_target(state: &mut WgpuRenderState, target: &WgpuTextureRenderTarget)
+src/wgpu_effect_pass.rs: pub fn create_wgpu_dual_source_effect_pipeline(state: &mut WgpuRenderState, fragment_wgsl: &str, blend: Option<WgpuEffectBlendMode>,) -> WgpuDualSourceEffectPipeline
+src/wgpu_effect_pass.rs: pub fn create_wgpu_effect_pipeline(state: &mut WgpuRenderState, fragment_wgsl: &str, blend: Option<WgpuEffectBlendMode>,) -> WgpuEffectPipeline
+src/wgpu_effect_pass.rs: pub fn draw_wgpu_dual_source_effect_pass(state: &mut WgpuRenderState, source0: &WgpuTextureRenderTarget, source1: &WgpuTextureRenderTarget, dest: Option<&WgpuTextureRenderTarget>, pipeline: &mut WgpuDualSourceEffectPipeline, set_uniforms: WgpuEffectUniformWriter<'_>,)
+src/wgpu_effect_pass.rs: pub fn draw_wgpu_effect_pass(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: Option<&WgpuTextureRenderTarget>, pipeline: &mut WgpuEffectPipeline, set_uniforms: WgpuEffectUniformWriter<'_>,)
+src/wgpu_effect_pass.rs: pub fn get_wgpu_effect_blend_mode_string(value: WgpuEffectBlendMode) -> &'static str
+src/wgpu_effect_pass.rs: pub fn get_wgpu_effect_pass_state(state: &mut WgpuRenderState) -> WgpuEffectPassStateView
+src/wgpu_effect_pass.rs: pub fn initialize_wgpu_dual_source_effect_pipeline(out: &mut WgpuDualSourceEffectPipeline, state: &mut WgpuRenderState, fragment_wgsl: &str, blend: Option<WgpuEffectBlendMode>,)
+src/wgpu_effect_pass.rs: pub fn parse_wgpu_effect_blend_mode(value: &str) -> Option<WgpuEffectBlendMode>
+src/wgpu_effect_program_cache.rs: pub fn get_wgpu_effect_pipeline(state: &mut WgpuRenderState, key: &str, fragment_wgsl: &str, blend: Option<WgpuEffectBlendMode>,) -> Ref<WgpuEffectPipeline>
+src/wgpu_effect_registry.rs: pub fn get_wgpu_effect_runner(state: &WgpuRenderState, kind: &str) -> Option<WgpuEffectRunner>
+src/wgpu_effect_registry.rs: pub fn has_wgpu_effect_runner(state: &WgpuRenderState, kind: &str) -> bool
+src/wgpu_effect_registry.rs: pub fn is_wgpu_effect_resolvable(state: &mut WgpuRenderState, effect: &dyn Effect) -> bool
+src/wgpu_effect_registry.rs: pub fn register_wgpu_effect(state: &mut WgpuRenderState, kind: &str, runner: WgpuEffectRunner, is_resolvable: Option<WgpuEffectResolver>,)
+src/wgpu_effect_state.rs: pub fn begin_wgpu_effect_pass<'a>(pass: &'a mut WgpuRenderPass<'_>, pipeline: &mut WgpuEffectState, clear: Option<&RenderTargetClear>, color_space: Option<RenderTargetColorSpace>,) -> WgpuRenderPass<'a>
+src/wgpu_effect_state.rs: pub fn create_wgpu_effect_state(state: &WgpuRenderState, options: Option<&EffectStateOptions>,) -> WgpuEffectState
+src/wgpu_effect_state.rs: pub fn destroy_wgpu_effect_state(_state: &WgpuRenderState, pipeline: &mut WgpuEffectState)
+src/wgpu_effect_state.rs: pub fn end_wgpu_effect_pass(scene_pass: WgpuRenderPass<'_>, pipeline: &mut WgpuEffectState, operations: &[WgpuEffectOperation],)
+src/wgpu_effect_state.rs: pub fn set_wgpu_effect_state_sample_count_guard(state: &mut WgpuRenderState, guard: Option<WgpuEffectStateSampleCountGuard>,)
+src/wgpu_effect_state.rs: pub fn set_wgpu_effect_state_skip_guard(state: &mut WgpuRenderState, guard: Option<WgpuEffectStateSkipGuard>,)
+src/wgpu_effect_state.rs: pub fn set_wgpu_effect_velocity_texture(pipeline: &mut WgpuEffectState, texture: Option<wgpu::Texture>,)
+src/wgpu_effect_texel_scale.rs: pub fn get_wgpu_effect_logical_resolution(state: &WgpuRenderState, target: &WgpuTextureRenderTarget,) -> WgpuEffectLogicalResolution
+src/wgpu_effect_texel_scale.rs: pub fn get_wgpu_effect_logical_width(state: &WgpuRenderState, target: &WgpuTextureRenderTarget,) -> f32
+src/wgpu_effect_texel_scale.rs: pub fn get_wgpu_render_target_texel_scale(target_width: f32, canvas_width: f32) -> f32
+src/wgpu_effect_tint_shader.rs: pub fn apply_wgpu_effect_inner_clip_pass(state: &mut WgpuRenderState, glow: &WgpuTextureRenderTarget, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget,)
+src/wgpu_effect_tint_shader.rs: pub fn apply_wgpu_effect_invert_tint_pass(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, color: u32, alpha: f32, strength: f32,)
+src/wgpu_effect_tint_shader.rs: pub fn apply_wgpu_effect_tint_pass(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, color: u32, alpha: f32, strength: f32,)
+src/wgpu_film_grain_effect.rs: pub fn apply_film_grain_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &FilmGrainEffect,)
+src/wgpu_film_grain_effect.rs: pub fn register_wgpu_film_grain_effect(state: &mut WgpuRenderState)
+src/wgpu_film_grain_effect.rs: pub fn wgpu_film_grain_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_fxaa_effect.rs: pub fn apply_fxaa_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &FxaaEffect,)
+src/wgpu_fxaa_effect.rs: pub fn register_wgpu_fxaa_effect(state: &mut WgpuRenderState)
+src/wgpu_fxaa_effect.rs: pub fn wgpu_fxaa_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_glitch_effect.rs: pub fn apply_glitch_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &GlitchEffect,)
+src/wgpu_glitch_effect.rs: pub fn register_wgpu_glitch_effect(state: &mut WgpuRenderState)
+src/wgpu_glitch_effect.rs: pub fn wgpu_glitch_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_god_rays_effect.rs: pub fn apply_god_rays_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &GodRaysEffect,)
+src/wgpu_god_rays_effect.rs: pub fn register_wgpu_god_rays_effect(state: &mut WgpuRenderState)
+src/wgpu_god_rays_effect.rs: pub fn wgpu_god_rays_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_gradient_bevel_effect.rs: pub fn apply_gradient_bevel_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, pool: &mut WgpuRenderTargetPool, effect: &GradientBevelEffect,)
+src/wgpu_gradient_bevel_effect.rs: pub fn register_wgpu_gradient_bevel_effect(state: &mut WgpuRenderState)
+src/wgpu_gradient_bevel_effect.rs: pub fn wgpu_gradient_bevel_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_gradient_glow_effect.rs: pub fn apply_gradient_glow_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, pool: &mut WgpuRenderTargetPool, effect: &GradientGlowEffect,)
+src/wgpu_gradient_glow_effect.rs: pub fn register_wgpu_gradient_glow_effect(state: &mut WgpuRenderState)
+src/wgpu_gradient_glow_effect.rs: pub fn wgpu_gradient_glow_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_halftone_effect.rs: pub const HALFTONE_FRAGMENT_WGSL: &str
+src/wgpu_halftone_effect.rs: pub fn apply_halftone_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &HalftoneEffect,)
+src/wgpu_halftone_effect.rs: pub fn register_wgpu_halftone_effect(state: &mut WgpuRenderState)
+src/wgpu_halftone_effect.rs: pub fn wgpu_halftone_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_inner_glow_effect.rs: pub fn apply_inner_glow_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, pool: &mut WgpuRenderTargetPool, effect: &InnerGlowEffect,)
+src/wgpu_inner_glow_effect.rs: pub fn register_wgpu_inner_glow_effect(state: &mut WgpuRenderState)
+src/wgpu_inner_glow_effect.rs: pub fn wgpu_inner_glow_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_inner_shadow_effect.rs: pub fn apply_inner_shadow_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, pool: &mut WgpuRenderTargetPool, effect: &InnerShadowEffect,)
+src/wgpu_inner_shadow_effect.rs: pub fn register_wgpu_inner_shadow_effect(state: &mut WgpuRenderState)
+src/wgpu_inner_shadow_effect.rs: pub fn wgpu_inner_shadow_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_kuwahara_effect.rs: pub fn apply_kuwahara_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &KuwaharaEffect,)
+src/wgpu_kuwahara_effect.rs: pub fn register_wgpu_kuwahara_effect(state: &mut WgpuRenderState)
+src/wgpu_kuwahara_effect.rs: pub fn wgpu_kuwahara_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_lens_dirt_effect.rs: pub fn apply_lens_dirt_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, pool: &mut WgpuRenderTargetPool, effect: &LensDirtEffect,)
+src/wgpu_lens_dirt_effect.rs: pub fn register_wgpu_lens_dirt_effect(state: &mut WgpuRenderState)
+src/wgpu_lens_dirt_effect.rs: pub fn wgpu_lens_dirt_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_lens_distortion_effect.rs: pub fn apply_lens_distortion_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &LensDistortionEffect,)
+src/wgpu_lens_distortion_effect.rs: pub fn register_wgpu_lens_distortion_effect(state: &mut WgpuRenderState)
+src/wgpu_lens_distortion_effect.rs: pub fn wgpu_lens_distortion_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_lens_flare_effect.rs: pub fn apply_lens_flare_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &LensFlareEffect,)
+src/wgpu_lens_flare_effect.rs: pub fn register_wgpu_lens_flare_effect(state: &mut WgpuRenderState)
+src/wgpu_lens_flare_effect.rs: pub fn wgpu_lens_flare_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_median_effect.rs: pub const MAX_MEDIAN_EFFECT_WGPU_RADIUS: u32
+src/wgpu_median_effect.rs: pub fn apply_median_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &MedianEffect,)
+src/wgpu_median_effect.rs: pub fn register_wgpu_median_effect(state: &mut WgpuRenderState)
+src/wgpu_median_effect.rs: pub fn wgpu_median_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_motion_blur_effect.rs: pub fn apply_motion_blur_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, velocity_texture: Option<&wgpu::Texture>, effect: &MotionBlurEffect,)
+src/wgpu_motion_blur_effect.rs: pub fn register_wgpu_motion_blur_effect(state: &mut WgpuRenderState)
+src/wgpu_motion_blur_effect.rs: pub fn wgpu_motion_blur_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_outer_glow_effect.rs: pub fn apply_outer_glow_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, pool: &mut WgpuRenderTargetPool, effect: &OuterGlowEffect,)
+src/wgpu_outer_glow_effect.rs: pub fn register_wgpu_outer_glow_effect(state: &mut WgpuRenderState)
+src/wgpu_outer_glow_effect.rs: pub fn wgpu_outer_glow_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_outline_effect.rs: pub fn apply_outline_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &OutlineEffect,)
+src/wgpu_outline_effect.rs: pub fn register_wgpu_outline_effect(state: &mut WgpuRenderState)
+src/wgpu_outline_effect.rs: pub fn wgpu_outline_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_pixelate_effect.rs: pub fn apply_pixelate_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &PixelateEffect,)
+src/wgpu_pixelate_effect.rs: pub fn register_wgpu_pixelate_effect(state: &mut WgpuRenderState)
+src/wgpu_pixelate_effect.rs: pub fn wgpu_pixelate_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_posterize_effect.rs: pub fn apply_posterize_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &PosterizeEffect,)
+src/wgpu_posterize_effect.rs: pub fn register_wgpu_posterize_effect(state: &mut WgpuRenderState)
+src/wgpu_posterize_effect.rs: pub fn wgpu_posterize_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_radial_blur_effect.rs: pub fn apply_radial_blur_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &RadialBlurEffect,)
+src/wgpu_radial_blur_effect.rs: pub fn register_wgpu_radial_blur_effect(state: &mut WgpuRenderState)
+src/wgpu_radial_blur_effect.rs: pub fn wgpu_radial_blur_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_render_texture_effect.rs: pub fn apply_wgpu_effects_to_render_texture(state: &mut WgpuRenderState, pool: &mut WgpuRenderTexturePool, source: &RenderTexture, dest: &mut RenderTexture, scratch: &mut RenderTexture, effects: &[EffectRef],) -> bool
+src/wgpu_render_texture_effect.rs: pub fn explain_wgpu_effect_application(state: &mut WgpuRenderState, source: &RenderTexture, dest: &RenderTexture, effects: &[EffectRef],) -> WgpuEffectApplicationExplanation
+src/wgpu_render_texture_effect.rs: pub fn get_wgpu_effect_application_status_string(value: WgpuEffectApplicationStatus) -> &'static str
+src/wgpu_render_texture_effect.rs: pub fn parse_wgpu_effect_application_status(value: &str) -> Option<WgpuEffectApplicationStatus>
+src/wgpu_render_texture_effect.rs: pub fn set_wgpu_effect_application_guard(state: &mut WgpuRenderState, guard: Option<WgpuEffectApplicationGuard>,)
+src/wgpu_scanlines_effect.rs: pub fn apply_scanlines_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &ScanlinesEffect,)
+src/wgpu_scanlines_effect.rs: pub fn register_wgpu_scanlines_effect(state: &mut WgpuRenderState)
+src/wgpu_scanlines_effect.rs: pub fn wgpu_scanlines_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_screen_space_fog_effect.rs: pub fn apply_screen_space_fog_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &ScreenSpaceFogEffect,)
+src/wgpu_screen_space_fog_effect.rs: pub fn register_wgpu_screen_space_fog_effect(state: &mut WgpuRenderState)
+src/wgpu_screen_space_fog_effect.rs: pub fn wgpu_screen_space_fog_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_sharpen_effect.rs: pub fn apply_sharpen_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &SharpenEffect,)
+src/wgpu_sharpen_effect.rs: pub fn register_wgpu_sharpen_effect(state: &mut WgpuRenderState)
+src/wgpu_sharpen_effect.rs: pub fn wgpu_sharpen_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_sketch_effect.rs: pub fn apply_sketch_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &SketchEffect,)
+src/wgpu_sketch_effect.rs: pub fn register_wgpu_sketch_effect(state: &mut WgpuRenderState)
+src/wgpu_sketch_effect.rs: pub fn wgpu_sketch_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_smaa_effect.rs: pub fn apply_smaa_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &SmaaEffect,)
+src/wgpu_smaa_effect.rs: pub fn register_wgpu_smaa_effect(state: &mut WgpuRenderState)
+src/wgpu_smaa_effect.rs: pub fn wgpu_smaa_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_ssao_effect.rs: pub fn apply_ssao_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &SsaoEffect,)
+src/wgpu_ssao_effect.rs: pub fn register_wgpu_ssao_effect(state: &mut WgpuRenderState)
+src/wgpu_ssao_effect.rs: pub fn wgpu_ssao_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_tilt_shift_effect.rs: pub fn apply_tilt_shift_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &TiltShiftEffect,)
+src/wgpu_tilt_shift_effect.rs: pub fn register_wgpu_tilt_shift_effect(state: &mut WgpuRenderState)
+src/wgpu_tilt_shift_effect.rs: pub fn wgpu_tilt_shift_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_tone_map_effect.rs: pub fn apply_tone_map_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &ToneMapEffect,)
+src/wgpu_tone_map_effect.rs: pub fn register_wgpu_tone_map_effect(state: &mut WgpuRenderState)
+src/wgpu_tone_map_effect.rs: pub fn wgpu_tone_map_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_vignette_effect.rs: pub fn apply_vignette_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &VignetteEffect,)
+src/wgpu_vignette_effect.rs: pub fn register_wgpu_vignette_effect(state: &mut WgpuRenderState)
+src/wgpu_vignette_effect.rs: pub fn wgpu_vignette_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)
+src/wgpu_white_balance_effect.rs: pub fn apply_white_balance_effect_to_wgpu(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget, dest: &WgpuTextureRenderTarget, effect: &WhiteBalanceEffect,)
+src/wgpu_white_balance_effect.rs: pub fn register_wgpu_white_balance_effect(state: &mut WgpuRenderState)
+src/wgpu_white_balance_effect.rs: pub fn wgpu_white_balance_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect)

@@ -93,6 +93,7 @@ src/contract.rs: pub use super::effect_defaults::*;
 src/contract.rs: pub use super::effect_inputs::*;
 src/contract.rs: pub use super::effect_interpolation::*;
 src/contract.rs: pub use super::effect_padding::*;
+src/contract.rs: pub use super::effect_state_options::*;
 src/contract.rs: pub use super::effect_validation::*;
 src/contract.rs: pub use super::enums::*;
 src/contract.rs: pub use super::film_emulation_effect::*;
@@ -250,6 +251,7 @@ src/effect_padding.rs: pub fn explain_effect_padding<S: RenderState>(out: &mut E
 src/effect_padding.rs: pub fn get_directional_effect_padding(out: &mut EffectPadding, blur_x: f32, blur_y: f32, offset_x: f32, offset_y: f32,)
 src/effect_padding.rs: pub fn get_gaussian_effect_padding(out: &mut EffectPadding, blur_x: f32, blur_y: f32)
 src/effect_padding.rs: pub fn register_effect_padding_resolver<S: RenderState>(state: &mut S, kind: &str, resolver: Option<EffectPaddingResolver>,)
+src/effect_state_options.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct EffectStateOptions { pub depth: Option<RenderTargetDepth>, pub format: Option<RenderTargetFormat>, pub sample_count: Option<f32>, }
 src/effect_validation.rs: pub fn validate_effect_list(effects: &[EffectRef], available: &[EffectInput],) -> Option<EffectInput>
 src/enums.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum BevelType { Full, #[default] Inner, Outer, }
 src/enums.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum BitmapDisplacementEffectEdgeMode { Clamp, #[default] Wrap, }

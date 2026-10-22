@@ -1,0 +1,571 @@
+src/contract.rs: pub use super::physics3d_abi::*;
+src/contract.rs: pub use super::physics3d_abi_buffer::*;
+src/contract.rs: pub use super::physics3d_abi_command::*;
+src/contract.rs: pub use super::physics3d_abi_layout::*;
+src/contract.rs: pub use super::physics3d_abi_query::*;
+src/contract.rs: pub use super::physics3d_abi_strings::*;
+src/contract.rs: pub use super::reference_physics3d_abi::*;
+src/contract.rs: pub use super::types::*;
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_FLAG_BULLET;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_FLAG_FIXED_ROTATION;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_FLAG_SLEEPING;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_FLAG_SLEEP_ENABLED;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_FLAG_TYPE_MASK;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_TYPE_DYNAMIC;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_TYPE_KINEMATIC;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_TYPE_STATIC;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_ANGULAR_DAMPING;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_ANGULAR_VELOCITY_X;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_ANGULAR_VELOCITY_Y;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_ANGULAR_VELOCITY_Z;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_CENTER_X;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_CENTER_Y;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_CENTER_Z;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_FORCE_X;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_FORCE_Y;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_FORCE_Z;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_GRAVITY_SCALE;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_INERTIA_XX;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_INERTIA_XY;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_INERTIA_XZ;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_INERTIA_YY;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_INERTIA_YZ;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_INERTIA_ZZ;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_LINEAR_DAMPING;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_MASS;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_ORIENTATION_W;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_ORIENTATION_X;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_ORIENTATION_Y;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_ORIENTATION_Z;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_SLEEP_TIMER;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_STRIDE;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_TORQUE_X;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_TORQUE_Y;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_TORQUE_Z;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_VELOCITY_X;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_VELOCITY_Y;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_VELOCITY_Z;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_X;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_Y;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_BODY_VALUE_Z;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CAPABILITY_CONTACT_HOOKS;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CAPABILITY_PERSISTENT_WORLDS;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CAPABILITY_QUERIES;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CAPABILITY_SELECTIVE_READBACK;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_BODY_ACTION;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_DESTROY_BODY;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_DESTROY_COLLIDER;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_DESTROY_JOINT;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_SET_BODY;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_SET_COLLIDER_MINIMUM;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_SET_GRAVITY;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_SET_JOINT;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_SET_SOLVER_CONFIG;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_WAKE_BODY;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_HEADER_BYTE_LENGTH;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_HEADER_OFFSET_BYTE_LENGTH;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_HEADER_OFFSET_COMMAND_COUNT;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_HEADER_OFFSET_MAGIC;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_HEADER_OFFSET_VERSION;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_KIND_APPLY_FORCE;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_KIND_APPLY_FORCE_AT_POINT;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_KIND_APPLY_LINEAR_IMPULSE;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_KIND_APPLY_LINEAR_IMPULSE_AT_POINT;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_KIND_APPLY_TORQUE;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_KIND_DESTROY_BODY;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_KIND_DESTROY_COLLIDER;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_KIND_DESTROY_JOINT;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_KIND_SET_BODY;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_KIND_SET_COLLIDER;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_KIND_SET_GRAVITY;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_KIND_SET_JOINT;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_KIND_SET_SOLVER_CONFIG;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_KIND_WAKE_BODY;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_MAGIC;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_RECORD_HEADER_BYTE_LENGTH;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_RECORD_OFFSET_BYTE_LENGTH;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_RECORD_OFFSET_KIND;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_RECORD_OFFSET_OBJECT_ID;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_COMMAND_RECORD_OFFSET_RELATED_ID;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_FLAG_ENABLED;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_FLAG_SENSOR;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_FLAG_TOUCHING;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_ID_BODY_A;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_ID_BODY_B;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_ID_COLLIDER_A;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_ID_COLLIDER_B;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_ID_STRIDE;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_POINT_VALUE_DEPTH;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_POINT_VALUE_RELATIVE_AX;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_POINT_VALUE_RELATIVE_AY;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_POINT_VALUE_RELATIVE_AZ;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_POINT_VALUE_RELATIVE_BX;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_POINT_VALUE_RELATIVE_BY;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_POINT_VALUE_RELATIVE_BZ;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_POINT_VALUE_STRIDE;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_POINT_VALUE_X;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_POINT_VALUE_Y;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_POINT_VALUE_Z;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_VALUE_FRICTION;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_VALUE_NORMAL_X;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_VALUE_NORMAL_Y;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_VALUE_NORMAL_Z;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_VALUE_RESTITUTION;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_VALUE_STRIDE;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_FLAG_BROKEN;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_KIND_BALL_AND_SOCKET;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_KIND_CONE_TWIST;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_KIND_DISTANCE;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_KIND_FIXED;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_KIND_GENERIC_6_DOF;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_KIND_HINGE;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_KIND_SLIDER;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_VALUE_FORCE_X;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_VALUE_FORCE_Y;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_VALUE_FORCE_Z;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_VALUE_STRIDE;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_VALUE_TORQUE_X;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_VALUE_TORQUE_Y;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_VALUE_TORQUE_Z;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_MAX_CONTACT_POINTS;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_QUERY_VALUE_FRACTION;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_QUERY_VALUE_NORMAL_X;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_QUERY_VALUE_NORMAL_Y;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_QUERY_VALUE_NORMAL_Z;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_QUERY_VALUE_STRIDE;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_QUERY_VALUE_X;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_QUERY_VALUE_Y;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_QUERY_VALUE_Z;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_BODY_PAYLOAD_OFFSET_FLAGS;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_BODY_PAYLOAD_OFFSET_RESERVED;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_BODY_PAYLOAD_OFFSET_VALUES;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_CATEGORY_BITS;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_DENSITY;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_FLAGS;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_FRICTION;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_GROUP_INDEX;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_MASK_BITS;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_RESTITUTION;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_SHAPE;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_BODY_A;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_BODY_B;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_COMMON_VALUES;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_FLAGS;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_KIND;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_KIND_VALUES;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_FLAGS;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_MAX_CCD_ROTATION_SUBSTEPS;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_MAX_CCD_SUBSTEPS;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_POSITION_ITERATIONS;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_RESERVED0;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_RESERVED1;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_SUBSTEPS;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_VALUES;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_VELOCITY_ITERATIONS;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SHAPE_HEADER_BYTE_LENGTH;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SHAPE_HEADER_OFFSET_INTEGER_COUNT;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SHAPE_HEADER_OFFSET_KIND;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SHAPE_HEADER_OFFSET_SCALARS;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SHAPE_HEADER_OFFSET_SCALAR_COUNT;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SHAPE_HEADER_OFFSET_VERSION;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SHAPE_KIND_AABB;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SHAPE_KIND_BOX;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SHAPE_KIND_CAPSULE;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SHAPE_KIND_CONE;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SHAPE_KIND_CONVEX;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SHAPE_KIND_CYLINDER;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SHAPE_KIND_HEIGHTFIELD;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SHAPE_KIND_SPHERE;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_SHAPE_KIND_TRIANGLE_MESH;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_VERSION;
+src/lib.rs: pub use contract::Physics3DAbi;
+src/lib.rs: pub use contract::Physics3DAbiBodyBuffer;
+src/lib.rs: pub use contract::Physics3DAbiCommandBuffer;
+src/lib.rs: pub use contract::Physics3DAbiContactBuffer;
+src/lib.rs: pub use contract::Physics3DAbiContactHook;
+src/lib.rs: pub use contract::Physics3DAbiContactHooks;
+src/lib.rs: pub use contract::Physics3DAbiContactSelection;
+src/lib.rs: pub use contract::Physics3DAbiCreateWorld;
+src/lib.rs: pub use contract::Physics3DAbiDestroyWorld;
+src/lib.rs: pub use contract::Physics3DAbiExecute;
+src/lib.rs: pub use contract::Physics3DAbiExecutionResult;
+src/lib.rs: pub use contract::Physics3DAbiExecutionStatus;
+src/lib.rs: pub use contract::Physics3DAbiGetWorldStatus;
+src/lib.rs: pub use contract::Physics3DAbiJointBuffer;
+src/lib.rs: pub use contract::Physics3DAbiObjectId;
+src/lib.rs: pub use contract::Physics3DAbiQueryBuffer;
+src/lib.rs: pub use contract::Physics3DAbiQueryPoint;
+src/lib.rs: pub use contract::Physics3DAbiQueryRay;
+src/lib.rs: pub use contract::Physics3DAbiQueryRegion;
+src/lib.rs: pub use contract::Physics3DAbiQueryShapeCast;
+src/lib.rs: pub use contract::Physics3DAbiReadBodies;
+src/lib.rs: pub use contract::Physics3DAbiReadContacts;
+src/lib.rs: pub use contract::Physics3DAbiReadJoints;
+src/lib.rs: pub use contract::Physics3DAbiStep;
+src/lib.rs: pub use contract::Physics3DAbiStepStatus;
+src/lib.rs: pub use contract::Physics3DAbiWorldHandle;
+src/lib.rs: pub use contract::Physics3DAbiWorldStatus;
+src/lib.rs: pub use contract::clear_physics3d_abi_command_buffer;
+src/lib.rs: pub use contract::create_physics3d_abi;
+src/lib.rs: pub use contract::create_physics3d_abi_body_buffer;
+src/lib.rs: pub use contract::create_physics3d_abi_command_buffer;
+src/lib.rs: pub use contract::create_physics3d_abi_contact_buffer;
+src/lib.rs: pub use contract::create_physics3d_abi_execution_result;
+src/lib.rs: pub use contract::create_physics3d_abi_joint_buffer;
+src/lib.rs: pub use contract::create_physics3d_abi_query_buffer;
+src/lib.rs: pub use contract::create_physics3d_abi_world;
+src/lib.rs: pub use contract::create_reference_physics3d_abi;
+src/lib.rs: pub use contract::destroy_physics3d_abi_world;
+src/lib.rs: pub use contract::execute_physics3d_abi_commands;
+src/lib.rs: pub use contract::get_physics3d_abi_command_buffer_remaining_byte_length;
+src/lib.rs: pub use contract::get_physics3d_abi_set_collider_command_byte_length;
+src/lib.rs: pub use contract::get_physics3d_abi_world_status;
+src/lib.rs: pub use contract::query_physics3d_abi_point;
+src/lib.rs: pub use contract::query_physics3d_abi_ray;
+src/lib.rs: pub use contract::query_physics3d_abi_ray_closest;
+src/lib.rs: pub use contract::query_physics3d_abi_region;
+src/lib.rs: pub use contract::query_physics3d_abi_shape_cast;
+src/lib.rs: pub use contract::read_physics3d_abi_bodies;
+src/lib.rs: pub use contract::read_physics3d_abi_contacts;
+src/lib.rs: pub use contract::read_physics3d_abi_joints;
+src/lib.rs: pub use contract::step_physics3d_abi_world;
+src/lib.rs: pub use contract::write_physics3d_abi_apply_force_at_point_command;
+src/lib.rs: pub use contract::write_physics3d_abi_apply_force_command;
+src/lib.rs: pub use contract::write_physics3d_abi_apply_linear_impulse_at_point_command;
+src/lib.rs: pub use contract::write_physics3d_abi_apply_linear_impulse_command;
+src/lib.rs: pub use contract::write_physics3d_abi_apply_torque_command;
+src/lib.rs: pub use contract::write_physics3d_abi_destroy_body_command;
+src/lib.rs: pub use contract::write_physics3d_abi_destroy_collider_command;
+src/lib.rs: pub use contract::write_physics3d_abi_destroy_joint_command;
+src/lib.rs: pub use contract::write_physics3d_abi_set_body_command;
+src/lib.rs: pub use contract::write_physics3d_abi_set_collider_command;
+src/lib.rs: pub use contract::write_physics3d_abi_set_gravity_command;
+src/lib.rs: pub use contract::write_physics3d_abi_set_joint_command;
+src/lib.rs: pub use contract::write_physics3d_abi_set_solver_config_command;
+src/lib.rs: pub use contract::write_physics3d_abi_wake_body_command;
+src/physics3d_abi.rs: pub fn create_physics3d_abi() -> Physics3DAbi
+src/physics3d_abi.rs: pub fn create_physics3d_abi_world(abi: &Physics3DAbi) -> Physics3DAbiWorldHandle
+src/physics3d_abi.rs: pub fn destroy_physics3d_abi_world(abi: &Physics3DAbi, world: Physics3DAbiWorldHandle) -> bool
+src/physics3d_abi.rs: pub fn execute_physics3d_abi_commands(out: &mut Physics3DAbiExecutionResult, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, commands: &Physics3DAbiCommandBuffer,) -> bool
+src/physics3d_abi.rs: pub fn get_physics3d_abi_world_status(abi: &Physics3DAbi, world: Physics3DAbiWorldHandle,) -> Physics3DAbiWorldStatus
+src/physics3d_abi.rs: pub fn initialize_physics3d_abi(out: &mut Physics3DAbi)
+src/physics3d_abi.rs: pub fn read_physics3d_abi_bodies(out: &mut Physics3DAbiBodyBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, body_ids: Option<&Uint32Array>,) -> bool
+src/physics3d_abi.rs: pub fn read_physics3d_abi_contacts(out: &mut Physics3DAbiContactBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, selection: Physics3DAbiContactSelection,) -> bool
+src/physics3d_abi.rs: pub fn read_physics3d_abi_joints(out: &mut Physics3DAbiJointBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle,) -> bool
+src/physics3d_abi.rs: pub fn step_physics3d_abi_world(abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, dt: f32, hooks: Option<&Physics3DAbiContactHooks>,) -> Physics3DAbiStepStatus
+src/physics3d_abi_buffer.rs: pub fn clear_physics3d_abi_command_buffer(out: &mut Physics3DAbiCommandBuffer)
+src/physics3d_abi_buffer.rs: pub fn create_physics3d_abi_body_buffer(capacity: usize) -> Physics3DAbiBodyBuffer
+src/physics3d_abi_buffer.rs: pub fn create_physics3d_abi_command_buffer(byte_capacity: Option<usize>,) -> Physics3DAbiCommandBuffer
+src/physics3d_abi_buffer.rs: pub fn create_physics3d_abi_contact_buffer(contact_capacity: usize, point_capacity: usize,) -> Physics3DAbiContactBuffer
+src/physics3d_abi_buffer.rs: pub fn create_physics3d_abi_execution_result() -> Physics3DAbiExecutionResult
+src/physics3d_abi_buffer.rs: pub fn create_physics3d_abi_joint_buffer(capacity: usize) -> Physics3DAbiJointBuffer
+src/physics3d_abi_buffer.rs: pub fn create_physics3d_abi_query_buffer(capacity: usize) -> Physics3DAbiQueryBuffer
+src/physics3d_abi_buffer.rs: pub fn get_physics3d_abi_command_buffer_remaining_byte_length(buffer: &Physics3DAbiCommandBuffer,) -> usize
+src/physics3d_abi_buffer.rs: pub fn initialize_physics3d_abi_body_buffer(out: &mut Physics3DAbiBodyBuffer, capacity: usize)
+src/physics3d_abi_buffer.rs: pub fn initialize_physics3d_abi_command_buffer(out: &mut Physics3DAbiCommandBuffer, byte_capacity: Option<usize>,)
+src/physics3d_abi_buffer.rs: pub fn initialize_physics3d_abi_contact_buffer(out: &mut Physics3DAbiContactBuffer, contact_capacity: usize, point_capacity: usize,)
+src/physics3d_abi_buffer.rs: pub fn initialize_physics3d_abi_execution_result(out: &mut Physics3DAbiExecutionResult)
+src/physics3d_abi_buffer.rs: pub fn initialize_physics3d_abi_joint_buffer(out: &mut Physics3DAbiJointBuffer, capacity: usize)
+src/physics3d_abi_buffer.rs: pub fn initialize_physics3d_abi_query_buffer(out: &mut Physics3DAbiQueryBuffer, capacity: usize)
+src/physics3d_abi_command.rs: pub fn get_physics3d_abi_set_collider_command_byte_length(collider: &Physics3DCollider) -> i64
+src/physics3d_abi_command.rs: pub fn write_physics3d_abi_apply_force_at_point_command(out: &mut Physics3DAbiCommandBuffer, body_id: Physics3DAbiObjectId, x: f64, y: f64, z: f64, point_x: f64, point_y: f64, point_z: f64,) -> bool
+src/physics3d_abi_command.rs: pub fn write_physics3d_abi_apply_force_command(out: &mut Physics3DAbiCommandBuffer, body_id: Physics3DAbiObjectId, x: f64, y: f64, z: f64,) -> bool
+src/physics3d_abi_command.rs: pub fn write_physics3d_abi_apply_linear_impulse_at_point_command(out: &mut Physics3DAbiCommandBuffer, body_id: Physics3DAbiObjectId, x: f64, y: f64, z: f64, point_x: f64, point_y: f64, point_z: f64,) -> bool
+src/physics3d_abi_command.rs: pub fn write_physics3d_abi_apply_linear_impulse_command(out: &mut Physics3DAbiCommandBuffer, body_id: Physics3DAbiObjectId, x: f64, y: f64, z: f64,) -> bool
+src/physics3d_abi_command.rs: pub fn write_physics3d_abi_apply_torque_command(out: &mut Physics3DAbiCommandBuffer, body_id: Physics3DAbiObjectId, x: f64, y: f64, z: f64,) -> bool
+src/physics3d_abi_command.rs: pub fn write_physics3d_abi_destroy_body_command(out: &mut Physics3DAbiCommandBuffer, body_id: Physics3DAbiObjectId,) -> bool
+src/physics3d_abi_command.rs: pub fn write_physics3d_abi_destroy_collider_command(out: &mut Physics3DAbiCommandBuffer, collider_id: Physics3DAbiObjectId,) -> bool
+src/physics3d_abi_command.rs: pub fn write_physics3d_abi_destroy_joint_command(out: &mut Physics3DAbiCommandBuffer, joint_id: Physics3DAbiObjectId,) -> bool
+src/physics3d_abi_command.rs: pub fn write_physics3d_abi_set_body_command(out: &mut Physics3DAbiCommandBuffer, body_id: Physics3DAbiObjectId, body: &RigidBody3D,) -> bool
+src/physics3d_abi_command.rs: pub fn write_physics3d_abi_set_collider_command(out: &mut Physics3DAbiCommandBuffer, collider_id: Physics3DAbiObjectId, body_id: Physics3DAbiObjectId, collider: &Physics3DCollider,) -> bool
+src/physics3d_abi_command.rs: pub fn write_physics3d_abi_set_gravity_command(out: &mut Physics3DAbiCommandBuffer, x: f64, y: f64, z: f64,) -> bool
+src/physics3d_abi_command.rs: pub fn write_physics3d_abi_set_joint_command(out: &mut Physics3DAbiCommandBuffer, joint_id: Physics3DAbiObjectId, joint: &dyn Physics3DJoint,) -> bool
+src/physics3d_abi_command.rs: pub fn write_physics3d_abi_set_solver_config_command(out: &mut Physics3DAbiCommandBuffer, config: &Physics3DSolverConfig,) -> bool
+src/physics3d_abi_command.rs: pub fn write_physics3d_abi_wake_body_command(out: &mut Physics3DAbiCommandBuffer, body_id: Physics3DAbiObjectId,) -> bool
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_FLAG_BULLET: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_FLAG_FIXED_ROTATION: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_FLAG_SLEEPING: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_FLAG_SLEEP_ENABLED: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_FLAG_TYPE_MASK: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_TYPE_DYNAMIC: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_TYPE_KINEMATIC: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_TYPE_STATIC: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_ANGULAR_DAMPING: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_ANGULAR_VELOCITY_X: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_ANGULAR_VELOCITY_Y: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_ANGULAR_VELOCITY_Z: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_CENTER_X: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_CENTER_Y: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_CENTER_Z: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_FORCE_X: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_FORCE_Y: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_FORCE_Z: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_GRAVITY_SCALE: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_INERTIA_XX: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_INERTIA_XY: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_INERTIA_XZ: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_INERTIA_YY: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_INERTIA_YZ: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_INERTIA_ZZ: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_LINEAR_DAMPING: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_MASS: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_ORIENTATION_W: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_ORIENTATION_X: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_ORIENTATION_Y: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_ORIENTATION_Z: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_SLEEP_TIMER: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_STRIDE: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_TORQUE_X: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_TORQUE_Y: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_TORQUE_Z: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_VELOCITY_X: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_VELOCITY_Y: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_VELOCITY_Z: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_X: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_Y: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_BODY_VALUE_Z: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CAPABILITY_CONTACT_HOOKS: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CAPABILITY_PERSISTENT_WORLDS: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CAPABILITY_QUERIES: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CAPABILITY_SELECTIVE_READBACK: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_BODY_ACTION: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_DESTROY_BODY: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_DESTROY_COLLIDER: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_DESTROY_JOINT: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_SET_BODY: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_SET_COLLIDER_MINIMUM: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_SET_GRAVITY: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_SET_JOINT: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_SET_SOLVER_CONFIG: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_BYTE_LENGTH_WAKE_BODY: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_HEADER_BYTE_LENGTH: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_HEADER_OFFSET_BYTE_LENGTH: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_HEADER_OFFSET_COMMAND_COUNT: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_HEADER_OFFSET_MAGIC: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_HEADER_OFFSET_VERSION: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_KIND_APPLY_FORCE: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_KIND_APPLY_FORCE_AT_POINT: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_KIND_APPLY_LINEAR_IMPULSE: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_KIND_APPLY_LINEAR_IMPULSE_AT_POINT: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_KIND_APPLY_TORQUE: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_KIND_DESTROY_BODY: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_KIND_DESTROY_COLLIDER: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_KIND_DESTROY_JOINT: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_KIND_SET_BODY: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_KIND_SET_COLLIDER: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_KIND_SET_GRAVITY: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_KIND_SET_JOINT: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_KIND_SET_SOLVER_CONFIG: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_KIND_WAKE_BODY: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_MAGIC: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_RECORD_HEADER_BYTE_LENGTH: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_RECORD_OFFSET_BYTE_LENGTH: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_RECORD_OFFSET_KIND: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_RECORD_OFFSET_OBJECT_ID: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_COMMAND_RECORD_OFFSET_RELATED_ID: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_FLAG_ENABLED: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_FLAG_SENSOR: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_FLAG_TOUCHING: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_ID_BODY_A: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_ID_BODY_B: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_ID_COLLIDER_A: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_ID_COLLIDER_B: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_ID_STRIDE: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_DEPTH: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_RELATIVE_AX: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_RELATIVE_AY: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_RELATIVE_AZ: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_RELATIVE_BX: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_RELATIVE_BY: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_RELATIVE_BZ: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_STRIDE: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_X: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_Y: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_POINT_VALUE_Z: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_VALUE_FRICTION: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_VALUE_NORMAL_X: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_VALUE_NORMAL_Y: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_VALUE_NORMAL_Z: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_VALUE_RESTITUTION: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_VALUE_STRIDE: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_FLAG_BROKEN: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_KIND_BALL_AND_SOCKET: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_KIND_CONE_TWIST: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_KIND_DISTANCE: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_KIND_FIXED: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_KIND_GENERIC_6_DOF: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_KIND_HINGE: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_KIND_SLIDER: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_VALUE_FORCE_X: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_VALUE_FORCE_Y: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_VALUE_FORCE_Z: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_VALUE_STRIDE: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_VALUE_TORQUE_X: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_VALUE_TORQUE_Y: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_VALUE_TORQUE_Z: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_MAX_CONTACT_POINTS: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_QUERY_VALUE_FRACTION: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_QUERY_VALUE_NORMAL_X: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_QUERY_VALUE_NORMAL_Y: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_QUERY_VALUE_NORMAL_Z: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_QUERY_VALUE_STRIDE: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_QUERY_VALUE_X: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_QUERY_VALUE_Y: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_QUERY_VALUE_Z: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_BODY_PAYLOAD_OFFSET_FLAGS: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_BODY_PAYLOAD_OFFSET_RESERVED: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_BODY_PAYLOAD_OFFSET_VALUES: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_CATEGORY_BITS: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_DENSITY: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_FLAGS: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_FRICTION: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_GROUP_INDEX: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_MASK_BITS: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_RESTITUTION: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_COLLIDER_PAYLOAD_OFFSET_SHAPE: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_BODY_A: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_BODY_B: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_COMMON_VALUES: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_FLAGS: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_KIND: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_JOINT_PAYLOAD_OFFSET_KIND_VALUES: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_FLAGS: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_MAX_CCD_ROTATION_SUBSTEPS: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_MAX_CCD_SUBSTEPS: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_POSITION_ITERATIONS: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_RESERVED0: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_RESERVED1: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_SUBSTEPS: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_VALUES: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SET_SOLVER_CONFIG_PAYLOAD_OFFSET_VELOCITY_ITERATIONS: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SHAPE_HEADER_BYTE_LENGTH: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SHAPE_HEADER_OFFSET_INTEGER_COUNT: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SHAPE_HEADER_OFFSET_KIND: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SHAPE_HEADER_OFFSET_SCALARS: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SHAPE_HEADER_OFFSET_SCALAR_COUNT: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SHAPE_HEADER_OFFSET_VERSION: usize
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SHAPE_KIND_AABB: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SHAPE_KIND_BOX: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SHAPE_KIND_CAPSULE: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SHAPE_KIND_CONE: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SHAPE_KIND_CONVEX: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SHAPE_KIND_CYLINDER: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SHAPE_KIND_HEIGHTFIELD: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SHAPE_KIND_SPHERE: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_SHAPE_KIND_TRIANGLE_MESH: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_VERSION: u32
+src/physics3d_abi_query.rs: pub fn query_physics3d_abi_point(out: &mut Physics3DAbiQueryBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, x: f32, y: f32, z: f32, filter: Option<&Physics3DQueryFilter>,) -> bool
+src/physics3d_abi_query.rs: pub fn query_physics3d_abi_ray(out: &mut Physics3DAbiQueryBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, origin_x: f32, origin_y: f32, origin_z: f32, direction_x: f32, direction_y: f32, direction_z: f32, max_fraction: Option<f32>, filter: Option<&Physics3DQueryFilter>,) -> bool
+src/physics3d_abi_query.rs: pub fn query_physics3d_abi_ray_closest(out: &mut Physics3DAbiQueryBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, origin_x: f32, origin_y: f32, origin_z: f32, direction_x: f32, direction_y: f32, direction_z: f32, max_fraction: Option<f32>, filter: Option<&Physics3DQueryFilter>,) -> bool
+src/physics3d_abi_query.rs: pub fn query_physics3d_abi_region(out: &mut Physics3DAbiQueryBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, region: &SpatialAabb3D, filter: Option<&Physics3DQueryFilter>,) -> bool
+src/physics3d_abi_query.rs: pub fn query_physics3d_abi_shape_cast(out: &mut Physics3DAbiQueryBuffer, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, shape: &CollisionShape3D, dx: f32, dy: f32, dz: f32, max_fraction: Option<f32>, filter: Option<&Physics3DQueryFilter>,) -> bool
+src/physics3d_abi_strings.rs: pub fn get_physics3d_abi_contact_selection_string(value: Physics3DAbiContactSelection,) -> &'static str
+src/physics3d_abi_strings.rs: pub fn get_physics3d_abi_execution_status_string(value: Physics3DAbiExecutionStatus,) -> &'static str
+src/physics3d_abi_strings.rs: pub fn get_physics3d_abi_step_status_string(value: Physics3DAbiStepStatus) -> &'static str
+src/physics3d_abi_strings.rs: pub fn get_physics3d_abi_world_status_string(value: Physics3DAbiWorldStatus) -> &'static str
+src/physics3d_abi_strings.rs: pub fn parse_physics3d_abi_contact_selection(value: &str) -> Option<Physics3DAbiContactSelection>
+src/physics3d_abi_strings.rs: pub fn parse_physics3d_abi_execution_status(value: &str) -> Option<Physics3DAbiExecutionStatus>
+src/physics3d_abi_strings.rs: pub fn parse_physics3d_abi_step_status(value: &str) -> Option<Physics3DAbiStepStatus>
+src/physics3d_abi_strings.rs: pub fn parse_physics3d_abi_world_status(value: &str) -> Option<Physics3DAbiWorldStatus>
+src/reference_physics3d_abi.rs: pub fn create_reference_physics3d_abi() -> Physics3DAbi
+src/reference_physics3d_abi.rs: pub fn initialize_reference_physics3d_abi(out: &mut Physics3DAbi)
+src/sugar.rs: impl Physics3DAbi :: fn create_world(&self) -> Physics3DAbiWorldHandle
+src/sugar.rs: impl Physics3DAbi :: fn destroy_world(&self, world: Physics3DAbiWorldHandle) -> bool
+src/sugar.rs: impl Physics3DAbi :: fn get_world_status(&self, world: Physics3DAbiWorldHandle) -> Physics3DAbiWorldStatus
+src/sugar.rs: impl Physics3DAbi :: fn new() -> Physics3DAbi
+src/sugar.rs: impl Physics3DAbi :: fn new_reference() -> Physics3DAbi
+src/sugar.rs: impl Physics3DAbi :: fn step_world(&self, world: Physics3DAbiWorldHandle, dt: f32, hooks: Option<&Physics3DAbiContactHooks>,) -> Physics3DAbiStepStatus
+src/sugar.rs: impl Physics3DAbiBodyBuffer :: fn new(capacity: usize) -> Physics3DAbiBodyBuffer
+src/sugar.rs: impl Physics3DAbiBodyBuffer :: fn read_bodies(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, body_ids: Option<&Uint32Array>,) -> bool
+src/sugar.rs: impl Physics3DAbiCommandBuffer :: fn clear(&mut self)
+src/sugar.rs: impl Physics3DAbiCommandBuffer :: fn new(byte_capacity: Option<usize>) -> Physics3DAbiCommandBuffer
+src/sugar.rs: impl Physics3DAbiCommandBuffer :: fn remaining_byte_length(&self) -> usize
+src/sugar.rs: impl Physics3DAbiCommandBuffer :: fn write_apply_force_at_point_command(&mut self, body_id: Physics3DAbiObjectId, x: f64, y: f64, z: f64, point_x: f64, point_y: f64, point_z: f64,) -> bool
+src/sugar.rs: impl Physics3DAbiCommandBuffer :: fn write_apply_force_command(&mut self, body_id: Physics3DAbiObjectId, x: f64, y: f64, z: f64,) -> bool
+src/sugar.rs: impl Physics3DAbiCommandBuffer :: fn write_apply_linear_impulse_at_point_command(&mut self, body_id: Physics3DAbiObjectId, x: f64, y: f64, z: f64, point_x: f64, point_y: f64, point_z: f64,) -> bool
+src/sugar.rs: impl Physics3DAbiCommandBuffer :: fn write_apply_linear_impulse_command(&mut self, body_id: Physics3DAbiObjectId, x: f64, y: f64, z: f64,) -> bool
+src/sugar.rs: impl Physics3DAbiCommandBuffer :: fn write_apply_torque_command(&mut self, body_id: Physics3DAbiObjectId, x: f64, y: f64, z: f64,) -> bool
+src/sugar.rs: impl Physics3DAbiCommandBuffer :: fn write_destroy_body_command(&mut self, body_id: Physics3DAbiObjectId) -> bool
+src/sugar.rs: impl Physics3DAbiCommandBuffer :: fn write_destroy_collider_command(&mut self, collider_id: Physics3DAbiObjectId) -> bool
+src/sugar.rs: impl Physics3DAbiCommandBuffer :: fn write_destroy_joint_command(&mut self, joint_id: Physics3DAbiObjectId) -> bool
+src/sugar.rs: impl Physics3DAbiCommandBuffer :: fn write_set_body_command(&mut self, body_id: Physics3DAbiObjectId, body: &RigidBody3D,) -> bool
+src/sugar.rs: impl Physics3DAbiCommandBuffer :: fn write_set_collider_command(&mut self, collider_id: Physics3DAbiObjectId, body_id: Physics3DAbiObjectId, collider: &Physics3DCollider,) -> bool
+src/sugar.rs: impl Physics3DAbiCommandBuffer :: fn write_set_gravity_command(&mut self, x: f64, y: f64, z: f64) -> bool
+src/sugar.rs: impl Physics3DAbiCommandBuffer :: fn write_set_joint_command(&mut self, joint_id: Physics3DAbiObjectId, joint: &dyn Physics3DJoint,) -> bool
+src/sugar.rs: impl Physics3DAbiCommandBuffer :: fn write_set_solver_config_command(&mut self, config: &Physics3DSolverConfig) -> bool
+src/sugar.rs: impl Physics3DAbiCommandBuffer :: fn write_wake_body_command(&mut self, body_id: Physics3DAbiObjectId) -> bool
+src/sugar.rs: impl Physics3DAbiContactBuffer :: fn new(contact_capacity: usize, point_capacity: usize) -> Physics3DAbiContactBuffer
+src/sugar.rs: impl Physics3DAbiContactBuffer :: fn read_contacts(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, selection: Physics3DAbiContactSelection,) -> bool
+src/sugar.rs: impl Physics3DAbiExecutionResult :: fn execute_commands(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, commands: &Physics3DAbiCommandBuffer,) -> bool
+src/sugar.rs: impl Physics3DAbiExecutionResult :: fn new() -> Physics3DAbiExecutionResult
+src/sugar.rs: impl Physics3DAbiJointBuffer :: fn new(capacity: usize) -> Physics3DAbiJointBuffer
+src/sugar.rs: impl Physics3DAbiJointBuffer :: fn read_joints(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle) -> bool
+src/sugar.rs: impl Physics3DAbiQueryBuffer :: fn new(capacity: usize) -> Physics3DAbiQueryBuffer
+src/sugar.rs: impl Physics3DAbiQueryBuffer :: fn query_point(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, x: f32, y: f32, z: f32, filter: Option<&Physics3DQueryFilter>,) -> bool
+src/sugar.rs: impl Physics3DAbiQueryBuffer :: fn query_ray(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, origin_x: f32, origin_y: f32, origin_z: f32, direction_x: f32, direction_y: f32, direction_z: f32, max_fraction: Option<f32>, filter: Option<&Physics3DQueryFilter>,) -> bool
+src/sugar.rs: impl Physics3DAbiQueryBuffer :: fn query_ray_closest(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, origin_x: f32, origin_y: f32, origin_z: f32, direction_x: f32, direction_y: f32, direction_z: f32, max_fraction: Option<f32>, filter: Option<&Physics3DQueryFilter>,) -> bool
+src/sugar.rs: impl Physics3DAbiQueryBuffer :: fn query_region(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, region: &SpatialAabb3D, filter: Option<&Physics3DQueryFilter>,) -> bool
+src/sugar.rs: impl Physics3DAbiQueryBuffer :: fn query_shape_cast(&mut self, abi: &Physics3DAbi, world: Physics3DAbiWorldHandle, shape: &CollisionShape3D, dx: f32, dy: f32, dz: f32, max_fraction: Option<f32>, filter: Option<&Physics3DQueryFilter>,) -> bool
+src/types.rs: #[derive(Clone)] pub struct Physics3DAbiContactHooks { pub buffer: Ref<Physics3DAbiContactBuffer>, pub post_solve: Option<Physics3DAbiContactHook>, pub pre_solve: Option<Physics3DAbiContactHook>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Physics3DAbiContactSelection { All, Began, Ended, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Physics3DAbiExecutionStatus { BusyWorld, Complete, InvalidBuffer, InvalidCommand, MissingBody, MissingCollider, MissingJoint, RejectedMutation, StaleWorld, UnsupportedJoint, UnsupportedShape, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Physics3DAbiStepStatus { BusyWorld, Complete, Declined, InsufficientHookBuffer, StaleWorld, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum Physics3DAbiWorldStatus { Busy, Ready, Stale, }
+src/types.rs: impl Default for Physics3DAbi
+src/types.rs: impl Default for Physics3DAbi :: fn default() -> Self
+src/types.rs: impl Default for Physics3DAbiBodyBuffer
+src/types.rs: impl Default for Physics3DAbiBodyBuffer :: fn default() -> Self
+src/types.rs: impl Default for Physics3DAbiCommandBuffer
+src/types.rs: impl Default for Physics3DAbiCommandBuffer :: fn default() -> Self
+src/types.rs: impl Default for Physics3DAbiContactBuffer
+src/types.rs: impl Default for Physics3DAbiContactBuffer :: fn default() -> Self
+src/types.rs: impl Default for Physics3DAbiExecutionResult
+src/types.rs: impl Default for Physics3DAbiExecutionResult :: fn default() -> Self
+src/types.rs: impl Default for Physics3DAbiJointBuffer
+src/types.rs: impl Default for Physics3DAbiJointBuffer :: fn default() -> Self
+src/types.rs: impl Default for Physics3DAbiQueryBuffer
+src/types.rs: impl Default for Physics3DAbiQueryBuffer :: fn default() -> Self
+src/types.rs: impl Entity for Physics3DAbi
+src/types.rs: impl Entity for Physics3DAbi :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Physics3DAbi :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Physics3DAbiBodyBuffer
+src/types.rs: impl Entity for Physics3DAbiBodyBuffer :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Physics3DAbiBodyBuffer :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Physics3DAbiCommandBuffer
+src/types.rs: impl Entity for Physics3DAbiCommandBuffer :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Physics3DAbiCommandBuffer :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Physics3DAbiContactBuffer
+src/types.rs: impl Entity for Physics3DAbiContactBuffer :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Physics3DAbiContactBuffer :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Physics3DAbiExecutionResult
+src/types.rs: impl Entity for Physics3DAbiExecutionResult :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Physics3DAbiExecutionResult :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Physics3DAbiJointBuffer
+src/types.rs: impl Entity for Physics3DAbiJointBuffer :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Physics3DAbiJointBuffer :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Physics3DAbiQueryBuffer
+src/types.rs: impl Entity for Physics3DAbiQueryBuffer :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Physics3DAbiQueryBuffer :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub struct Physics3DAbi { runtime: EntityRuntimeSlot, pub capabilities: u32, pub create_world: Physics3DAbiCreateWorld, pub destroy_world: Physics3DAbiDestroyWorld, pub execute: Physics3DAbiExecute, pub get_world_status: Physics3DAbiGetWorldStatus, pub query_point: Physics3DAbiQueryPoint, pub query_ray: Physics3DAbiQueryRay, pub query_region: Physics3DAbiQueryRegion, pub query_shape_cast: Physics3DAbiQueryShapeCast, pub read_bodies: Physics3DAbiReadBodies, pub read_contacts: Physics3DAbiReadContacts, pub read_joints: Physics3DAbiReadJoints, pub step: Physics3DAbiStep, pub version: u32, }
+src/types.rs: pub struct Physics3DAbiBodyBuffer { runtime: EntityRuntimeSlot, pub count: usize, pub flags: Box<Uint32Array>, pub ids: Box<Uint32Array>, pub required_count: usize, pub values: Box<Float64Array>, }
+src/types.rs: pub struct Physics3DAbiCommandBuffer { runtime: EntityRuntimeSlot, pub byte_length: usize, pub command_count: u32, pub data: Box<Uint8Array>, }
+src/types.rs: pub struct Physics3DAbiContactBuffer { runtime: EntityRuntimeSlot, pub count: usize, pub flags: Box<Uint32Array>, pub ids: Box<Uint32Array>, pub point_count: usize, pub point_counts: Box<Uint32Array>, pub point_feature_ids: Box<Uint32Array>, pub point_starts: Box<Uint32Array>, pub point_values: Box<Float64Array>, pub required_count: usize, pub required_point_count: usize, pub values: Box<Float64Array>, }
+src/types.rs: pub struct Physics3DAbiExecutionResult { runtime: EntityRuntimeSlot, pub byte_offset: usize, pub command_index: u32, pub command_kind: u32, pub status: Physics3DAbiExecutionStatus, }
+src/types.rs: pub struct Physics3DAbiJointBuffer { runtime: EntityRuntimeSlot, pub count: usize, pub flags: Box<Uint32Array>, pub ids: Box<Uint32Array>, pub required_count: usize, pub values: Box<Float64Array>, }
+src/types.rs: pub struct Physics3DAbiQueryBuffer { runtime: EntityRuntimeSlot, pub body_ids: Box<Uint32Array>, pub collider_ids: Box<Uint32Array>, pub count: usize, pub required_count: usize, pub values: Box<Float64Array>, }
+src/types.rs: pub type Physics3DAbiContactHook = Arc<dyn Fn(&mut Physics3DAbiContactBuffer) + Send + Sync>;
+src/types.rs: pub type Physics3DAbiCreateWorld = Arc<dyn Fn() -> Physics3DAbiWorldHandle + Send + Sync>;
+src/types.rs: pub type Physics3DAbiDestroyWorld = Arc<dyn Fn(Physics3DAbiWorldHandle) -> bool + Send + Sync>;
+src/types.rs: pub type Physics3DAbiExecute = Arc<dyn Fn(Physics3DAbiWorldHandle, &Physics3DAbiCommandBuffer, &mut Physics3DAbiExecutionResult,) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics3DAbiGetWorldStatus = Arc<dyn Fn(Physics3DAbiWorldHandle) -> Physics3DAbiWorldStatus + Send + Sync>;
+src/types.rs: pub type Physics3DAbiObjectId = u32;
+src/types.rs: pub type Physics3DAbiQueryPoint = Arc<dyn Fn(Physics3DAbiWorldHandle, f32, f32, f32, Option<&Physics3DQueryFilter>, &mut Physics3DAbiQueryBuffer,) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics3DAbiQueryRay = Arc<dyn Fn(Physics3DAbiWorldHandle, f32, f32, f32, f32, f32, f32, f32, bool, Option<&Physics3DQueryFilter>, &mut Physics3DAbiQueryBuffer,) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics3DAbiQueryRegion = Arc<dyn Fn(Physics3DAbiWorldHandle, &SpatialAabb3D, Option<&Physics3DQueryFilter>, &mut Physics3DAbiQueryBuffer,) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics3DAbiQueryShapeCast = Arc<dyn Fn(Physics3DAbiWorldHandle, &CollisionShape3D, f32, f32, f32, f32, Option<&Physics3DQueryFilter>, &mut Physics3DAbiQueryBuffer,) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics3DAbiReadBodies = Arc<dyn Fn(Physics3DAbiWorldHandle, Option<&Uint32Array>, &mut Physics3DAbiBodyBuffer) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics3DAbiReadContacts = Arc<dyn Fn(Physics3DAbiWorldHandle, Physics3DAbiContactSelection, &mut Physics3DAbiContactBuffer,) -> bool + Send + Sync,>;
+src/types.rs: pub type Physics3DAbiReadJoints = Arc<dyn Fn(Physics3DAbiWorldHandle, &mut Physics3DAbiJointBuffer) -> bool + Send + Sync>;
+src/types.rs: pub type Physics3DAbiStep = Arc<dyn Fn(Physics3DAbiWorldHandle, f32, Option<&Physics3DAbiContactHooks>,) -> Physics3DAbiStepStatus + Send + Sync,>;
+src/types.rs: pub type Physics3DAbiWorldHandle = u32;

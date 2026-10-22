@@ -1,0 +1,397 @@
+src/contract.rs: pub use crate::enable_gl_effect_guards::*;
+src/contract.rs: pub use crate::gl_bevel_effect::*;
+src/contract.rs: pub use crate::gl_bitmap_displacement_effect::*;
+src/contract.rs: pub use crate::gl_blend_effect::*;
+src/contract.rs: pub use crate::gl_bloom_effect::*;
+src/contract.rs: pub use crate::gl_blur_effect::*;
+src/contract.rs: pub use crate::gl_bokeh_depth_of_field_effect::*;
+src/contract.rs: pub use crate::gl_camera_motion_blur_effect::*;
+src/contract.rs: pub use crate::gl_chromatic_aberration_effect::*;
+src/contract.rs: pub use crate::gl_color_lut_pass::*;
+src/contract.rs: pub use crate::gl_color_matrix_pass::*;
+src/contract.rs: pub use crate::gl_composite_effect::*;
+src/contract.rs: pub use crate::gl_contact_shadows_effect::*;
+src/contract.rs: pub use crate::gl_convolution_effect::*;
+src/contract.rs: pub use crate::gl_crt_effect::*;
+src/contract.rs: pub use crate::gl_custom_shader_effect::*;
+src/contract.rs: pub use crate::gl_directional_blur_effect::*;
+src/contract.rs: pub use crate::gl_displacement_effect::*;
+src/contract.rs: pub use crate::gl_dither_effect::*;
+src/contract.rs: pub use crate::gl_drop_shadow_effect::*;
+src/contract.rs: pub use crate::gl_effect_blit_shader::*;
+src/contract.rs: pub use crate::gl_effect_box_blur::*;
+src/contract.rs: pub use crate::gl_effect_gradient_ramp::*;
+src/contract.rs: pub use crate::gl_effect_program_cache::*;
+src/contract.rs: pub use crate::gl_effect_registry::*;
+src/contract.rs: pub use crate::gl_effect_state::*;
+src/contract.rs: pub use crate::gl_effect_tint_shader::*;
+src/contract.rs: pub use crate::gl_film_grain_effect::*;
+src/contract.rs: pub use crate::gl_fxaa_effect::*;
+src/contract.rs: pub use crate::gl_glitch_effect::*;
+src/contract.rs: pub use crate::gl_god_rays_effect::*;
+src/contract.rs: pub use crate::gl_gradient_bevel_effect::*;
+src/contract.rs: pub use crate::gl_gradient_glow_effect::*;
+src/contract.rs: pub use crate::gl_halftone_effect::*;
+src/contract.rs: pub use crate::gl_inner_glow_effect::*;
+src/contract.rs: pub use crate::gl_inner_shadow_effect::*;
+src/contract.rs: pub use crate::gl_kuwahara_effect::*;
+src/contract.rs: pub use crate::gl_lens_dirt_effect::*;
+src/contract.rs: pub use crate::gl_lens_distortion_effect::*;
+src/contract.rs: pub use crate::gl_lens_flare_effect::*;
+src/contract.rs: pub use crate::gl_median_effect::*;
+src/contract.rs: pub use crate::gl_motion_blur_effect::*;
+src/contract.rs: pub use crate::gl_outer_glow_effect::*;
+src/contract.rs: pub use crate::gl_outline_effect::*;
+src/contract.rs: pub use crate::gl_pixelate_effect::*;
+src/contract.rs: pub use crate::gl_posterize_effect::*;
+src/contract.rs: pub use crate::gl_radial_blur_effect::*;
+src/contract.rs: pub use crate::gl_render_texture_effect::*;
+src/contract.rs: pub use crate::gl_scanlines_effect::*;
+src/contract.rs: pub use crate::gl_screen_space_fog_effect::*;
+src/contract.rs: pub use crate::gl_shader_test_helper::*;
+src/contract.rs: pub use crate::gl_sharpen_effect::*;
+src/contract.rs: pub use crate::gl_sketch_effect::*;
+src/contract.rs: pub use crate::gl_smaa_effect::*;
+src/contract.rs: pub use crate::gl_ssao_effect::*;
+src/contract.rs: pub use crate::gl_tilt_shift_effect::*;
+src/contract.rs: pub use crate::gl_tone_map_effect::*;
+src/contract.rs: pub use crate::gl_vignette_effect::*;
+src/contract.rs: pub use crate::gl_white_balance_effect::*;
+src/contract.rs: pub use crate::types::*;
+src/enable_gl_effect_guards.rs: pub fn are_gl_effect_guards_enabled(state: &GlRenderState) -> bool
+src/enable_gl_effect_guards.rs: pub fn disable_gl_effect_guards(state: &GlRenderState)
+src/enable_gl_effect_guards.rs: pub fn enable_gl_effect_guards(state: &GlRenderState, log_state: Option<LogStateRef>)
+src/gl_bevel_effect.rs: pub fn apply_bevel_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, pool: &mut GlTextureRenderTargetPool, effect: &BevelEffect,) -> Result<(), String>
+src/gl_bevel_effect.rs: pub fn gl_bevel_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_bevel_effect.rs: pub fn register_gl_bevel_effect(state: &mut GlRenderState)
+src/gl_bitmap_displacement_effect.rs: pub const BITMAP_DISPLACEMENT_FRAGMENT_SRC: &str
+src/gl_bitmap_displacement_effect.rs: pub fn apply_bitmap_displacement_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &BitmapDisplacementEffect,) -> Result<(), String>
+src/gl_bitmap_displacement_effect.rs: pub fn gl_bitmap_displacement_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_bitmap_displacement_effect.rs: pub fn is_gl_bitmap_displacement_effect_resolvable(state: &mut GlRenderState, effect: &dyn Effect,) -> bool
+src/gl_bitmap_displacement_effect.rs: pub fn register_gl_bitmap_displacement_effect(state: &mut GlRenderState)
+src/gl_blend_effect.rs: pub const BLEND_FRAGMENT_SRC: &str
+src/gl_blend_effect.rs: pub fn apply_blend_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &BlendEffect,) -> Result<(), String>
+src/gl_blend_effect.rs: pub fn get_blend_effect_mode_index(mode: &str) -> i32
+src/gl_blend_effect.rs: pub fn get_gl_blend_effect_backdrop(state: &GlRenderState, backdrop_key: Option<&str>,) -> Option<NativeTexture>
+src/gl_blend_effect.rs: pub fn gl_blend_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_blend_effect.rs: pub fn register_gl_blend_effect(state: &mut GlRenderState)
+src/gl_blend_effect.rs: pub fn register_gl_blend_effect_backdrop(state: &GlRenderState, backdrop_key: &str, texture: NativeTexture,)
+src/gl_blend_effect.rs: pub fn unregister_gl_blend_effect_backdrop(state: &GlRenderState, backdrop_key: &str) -> bool
+src/gl_bloom_effect.rs: pub fn apply_bloom_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, pool: &mut GlTextureRenderTargetPool, effect: &BloomEffect,) -> Result<(), String>
+src/gl_bloom_effect.rs: pub fn gl_bloom_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_bloom_effect.rs: pub fn register_gl_bloom_effect(state: &mut GlRenderState)
+src/gl_blur_effect.rs: pub fn apply_blur_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, temp: &GlTextureRenderTarget, effect: &BlurEffect,) -> Result<(), String>
+src/gl_blur_effect.rs: pub fn apply_blur_effect_to_gl_render_textures(state: &mut GlRenderState, source: &RenderTexture, dest: &mut RenderTexture, temp: &mut RenderTexture, effect: &BlurEffect,) -> Result<bool, String>
+src/gl_blur_effect.rs: pub fn apply_gaussian_blur_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, temp: &GlTextureRenderTarget, options: &GlGaussianBlurOptions,) -> Result<(), String>
+src/gl_blur_effect.rs: pub fn apply_gaussian_blur_to_gl_render_textures(state: &mut GlRenderState, source: &RenderTexture, dest: &mut RenderTexture, temp: &mut RenderTexture, options: &GlGaussianBlurOptions,) -> Result<bool, String>
+src/gl_blur_effect.rs: pub fn gl_blur_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_blur_effect.rs: pub fn register_gl_blur_effect(state: &mut GlRenderState)
+src/gl_bokeh_depth_of_field_effect.rs: pub fn apply_bokeh_depth_of_field_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, depth_texture: Option<NativeTexture>, effect: &BokehDepthOfFieldEffect,) -> Result<(), String>
+src/gl_bokeh_depth_of_field_effect.rs: pub fn gl_bokeh_depth_of_field_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_bokeh_depth_of_field_effect.rs: pub fn register_gl_bokeh_depth_of_field_effect(state: &mut GlRenderState)
+src/gl_camera_motion_blur_effect.rs: pub fn apply_camera_motion_blur_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &CameraMotionBlurEffect,) -> Result<(), String>
+src/gl_camera_motion_blur_effect.rs: pub fn gl_camera_motion_blur_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_camera_motion_blur_effect.rs: pub fn register_gl_camera_motion_blur_effect(state: &mut GlRenderState)
+src/gl_chromatic_aberration_effect.rs: pub fn apply_chromatic_aberration_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &ChromaticAberrationEffect,) -> Result<(), String>
+src/gl_chromatic_aberration_effect.rs: pub fn gl_chromatic_aberration_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_chromatic_aberration_effect.rs: pub fn register_gl_chromatic_aberration_effect(state: &mut GlRenderState)
+src/gl_color_lut_pass.rs: pub fn apply_color_lut_pass_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, lut: &ColorLut, cache: &mut GlColorLutTextureCache,) -> Result<(), String>
+src/gl_color_matrix_pass.rs: pub fn apply_color_matrix_pass_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, matrix: &Vec<f32>,) -> Result<(), String>
+src/gl_composite_effect.rs: pub fn apply_composite_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &CompositeEffect,) -> Result<(), String>
+src/gl_composite_effect.rs: pub fn get_composite_effect_operator_index(operator: &str) -> i32
+src/gl_composite_effect.rs: pub fn gl_composite_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_composite_effect.rs: pub fn register_gl_composite_effect(state: &mut GlRenderState)
+src/gl_contact_shadows_effect.rs: pub fn apply_contact_shadows_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &ContactShadowsEffect,) -> Result<(), String>
+src/gl_contact_shadows_effect.rs: pub fn gl_contact_shadows_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_contact_shadows_effect.rs: pub fn register_gl_contact_shadows_effect(state: &mut GlRenderState)
+src/gl_convolution_effect.rs: pub const MAX_CONVOLUTION_EFFECT_GL_KERNEL_SIZE: usize
+src/gl_convolution_effect.rs: pub fn apply_convolution_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &ConvolutionEffect,) -> Result<(), String>
+src/gl_convolution_effect.rs: pub fn gl_convolution_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_convolution_effect.rs: pub fn register_gl_convolution_effect(state: &mut GlRenderState)
+src/gl_crt_effect.rs: pub fn apply_crt_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &CrtEffect,) -> Result<(), String>
+src/gl_crt_effect.rs: pub fn gl_crt_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_crt_effect.rs: pub fn register_gl_crt_effect(state: &mut GlRenderState)
+src/gl_custom_shader_effect.rs: pub fn apply_custom_shader_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &CustomShaderEffect,) -> Result<(), String>
+src/gl_custom_shader_effect.rs: pub fn get_gl_custom_shader_source(state: &GlRenderState, shader_key: &str) -> Option<String>
+src/gl_custom_shader_effect.rs: pub fn gl_custom_shader_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_custom_shader_effect.rs: pub fn is_gl_custom_shader_effect_resolvable(state: &mut GlRenderState, effect: &dyn Effect,) -> bool
+src/gl_custom_shader_effect.rs: pub fn register_gl_custom_shader_effect(state: &mut GlRenderState)
+src/gl_custom_shader_effect.rs: pub fn register_gl_custom_shader_source(state: &mut GlRenderState, shader_key: &str, fragment_source: &str,)
+src/gl_custom_shader_effect.rs: pub fn set_gl_custom_shader_source_guard(state: &GlRenderState, guard: Option<GlCustomShaderSourceGuard>,)
+src/gl_directional_blur_effect.rs: pub fn apply_directional_blur_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &DirectionalBlurEffect,) -> Result<(), String>
+src/gl_directional_blur_effect.rs: pub fn gl_directional_blur_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_directional_blur_effect.rs: pub fn register_gl_directional_blur_effect(state: &mut GlRenderState)
+src/gl_displacement_effect.rs: pub fn apply_displacement_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &DisplacementEffect,) -> Result<(), String>
+src/gl_displacement_effect.rs: pub fn gl_displacement_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_displacement_effect.rs: pub fn register_gl_displacement_effect(state: &mut GlRenderState)
+src/gl_dither_effect.rs: pub fn apply_dither_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &DitherEffect,) -> Result<(), String>
+src/gl_dither_effect.rs: pub fn gl_dither_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_dither_effect.rs: pub fn register_gl_dither_effect(state: &mut GlRenderState)
+src/gl_drop_shadow_effect.rs: pub fn apply_drop_shadow_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, pool: &mut GlTextureRenderTargetPool, effect: &DropShadowEffect,) -> Result<(), String>
+src/gl_drop_shadow_effect.rs: pub fn gl_drop_shadow_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_drop_shadow_effect.rs: pub fn register_gl_drop_shadow_effect(state: &mut GlRenderState)
+src/gl_effect_blit_shader.rs: pub fn apply_gl_effect_blit_offset_pass(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, dx: f32, dy: f32,) -> Result<(), String>
+src/gl_effect_blit_shader.rs: pub fn apply_gl_effect_blit_pass(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget,) -> Result<(), String>
+src/gl_effect_blit_shader.rs: pub fn apply_gl_effect_erase_pass(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget,) -> Result<(), String>
+src/gl_effect_box_blur.rs: pub fn apply_gl_effect_box_blur(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, temp: &GlTextureRenderTarget, options: &GlEffectBoxBlurOptions,) -> Result<(), String>
+src/gl_effect_gradient_ramp.rs: pub fn create_gl_effect_gradient_ramp_texture(gl: &glow::Context, colors: &Vec<u32>, alphas: &Vec<f32>, ratios: &Vec<f32>,) -> Result<NativeTexture, String>
+src/gl_effect_program_cache.rs: pub fn get_gl_effect_program(state: &GlRenderState, key: &str, fragment_source: &str,) -> Result<GlFullscreenProgram, String>
+src/gl_effect_program_cache.rs: pub fn get_gl_effect_uniform_location(state: &GlRenderState, program: &GlFullscreenProgram, name: &str,) -> Option<NativeUniformLocation>
+src/gl_effect_registry.rs: pub fn get_gl_effect_runner(state: &GlRenderState, kind: &str) -> Option<GlEffectRunner>
+src/gl_effect_registry.rs: pub fn has_gl_effect_runner(state: &GlRenderState, kind: &str) -> bool
+src/gl_effect_registry.rs: pub fn is_gl_effect_resolvable(state: &mut GlRenderState, effect: &dyn Effect) -> bool
+src/gl_effect_registry.rs: pub fn register_gl_effect(state: &mut GlRenderState, kind: &str, runner: GlEffectRunner, is_resolvable: Option<GlEffectResolver>,)
+src/gl_effect_state.rs: pub fn begin_gl_effect_pass(state: &mut GlRenderState, pipeline: &mut GlEffectState, clear: Option<&RenderTargetClear>, color_space: Option<RenderTargetColorSpace>,) -> Result<GlRenderPass, String>
+src/gl_effect_state.rs: pub fn create_gl_effect_state(_state: &GlRenderState, options: Option<&EffectStateOptions>,) -> GlEffectState
+src/gl_effect_state.rs: pub fn destroy_gl_effect_state(state: &GlRenderState, pipeline: &mut GlEffectState)
+src/gl_effect_state.rs: pub fn end_gl_effect_pass(state: &mut GlRenderState, pass: &GlRenderPass, pipeline: &mut GlEffectState, operations: &[EffectOperation],) -> Result<(), String>
+src/gl_effect_state.rs: pub fn set_gl_effect_state_skip_guard(state: &GlRenderState, guard: Option<GlEffectStateSkipGuard>,)
+src/gl_effect_state.rs: pub fn set_gl_effect_velocity_texture(pipeline: &mut GlEffectState, texture: Option<NativeTexture>,)
+src/gl_effect_tint_shader.rs: pub fn apply_gl_effect_invert_tint_pass(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, color: u32, alpha: f32, strength: f32,) -> Result<(), String>
+src/gl_effect_tint_shader.rs: pub fn apply_gl_effect_tint_pass(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, color: u32, alpha: f32, strength: f32,) -> Result<(), String>
+src/gl_film_grain_effect.rs: pub fn apply_film_grain_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &FilmGrainEffect,) -> Result<(), String>
+src/gl_film_grain_effect.rs: pub fn gl_film_grain_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_film_grain_effect.rs: pub fn register_gl_film_grain_effect(state: &mut GlRenderState)
+src/gl_fxaa_effect.rs: pub fn apply_fxaa_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &FxaaEffect,) -> Result<(), String>
+src/gl_fxaa_effect.rs: pub fn gl_fxaa_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_fxaa_effect.rs: pub fn register_gl_fxaa_effect(state: &mut GlRenderState)
+src/gl_glitch_effect.rs: pub fn apply_glitch_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &GlitchEffect,) -> Result<(), String>
+src/gl_glitch_effect.rs: pub fn gl_glitch_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_glitch_effect.rs: pub fn register_gl_glitch_effect(state: &mut GlRenderState)
+src/gl_god_rays_effect.rs: pub fn apply_god_rays_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &GodRaysEffect,) -> Result<(), String>
+src/gl_god_rays_effect.rs: pub fn gl_god_rays_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_god_rays_effect.rs: pub fn register_gl_god_rays_effect(state: &mut GlRenderState)
+src/gl_gradient_bevel_effect.rs: pub fn apply_gradient_bevel_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, pool: &mut GlTextureRenderTargetPool, effect: &GradientBevelEffect,) -> Result<(), String>
+src/gl_gradient_bevel_effect.rs: pub fn gl_gradient_bevel_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_gradient_bevel_effect.rs: pub fn register_gl_gradient_bevel_effect(state: &mut GlRenderState)
+src/gl_gradient_glow_effect.rs: pub fn apply_gradient_glow_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, pool: &mut GlTextureRenderTargetPool, effect: &GradientGlowEffect,) -> Result<(), String>
+src/gl_gradient_glow_effect.rs: pub fn gl_gradient_glow_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_gradient_glow_effect.rs: pub fn register_gl_gradient_glow_effect(state: &mut GlRenderState)
+src/gl_halftone_effect.rs: pub fn apply_halftone_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &HalftoneEffect,) -> Result<(), String>
+src/gl_halftone_effect.rs: pub fn gl_halftone_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_halftone_effect.rs: pub fn register_gl_halftone_effect(state: &mut GlRenderState)
+src/gl_inner_glow_effect.rs: pub fn apply_inner_glow_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, pool: &mut GlTextureRenderTargetPool, effect: &InnerGlowEffect,) -> Result<(), String>
+src/gl_inner_glow_effect.rs: pub fn gl_inner_glow_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_inner_glow_effect.rs: pub fn register_gl_inner_glow_effect(state: &mut GlRenderState)
+src/gl_inner_shadow_effect.rs: pub fn apply_inner_shadow_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, pool: &mut GlTextureRenderTargetPool, effect: &InnerShadowEffect,) -> Result<(), String>
+src/gl_inner_shadow_effect.rs: pub fn gl_inner_shadow_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_inner_shadow_effect.rs: pub fn register_gl_inner_shadow_effect(state: &mut GlRenderState)
+src/gl_kuwahara_effect.rs: pub fn apply_kuwahara_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &KuwaharaEffect,) -> Result<(), String>
+src/gl_kuwahara_effect.rs: pub fn gl_kuwahara_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_kuwahara_effect.rs: pub fn register_gl_kuwahara_effect(state: &mut GlRenderState)
+src/gl_lens_dirt_effect.rs: pub fn apply_lens_dirt_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, pool: &mut GlTextureRenderTargetPool, effect: &LensDirtEffect,) -> Result<(), String>
+src/gl_lens_dirt_effect.rs: pub fn gl_lens_dirt_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_lens_dirt_effect.rs: pub fn register_gl_lens_dirt_effect(state: &mut GlRenderState)
+src/gl_lens_distortion_effect.rs: pub fn apply_lens_distortion_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &LensDistortionEffect,) -> Result<(), String>
+src/gl_lens_distortion_effect.rs: pub fn gl_lens_distortion_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_lens_distortion_effect.rs: pub fn register_gl_lens_distortion_effect(state: &mut GlRenderState)
+src/gl_lens_flare_effect.rs: pub fn apply_lens_flare_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &LensFlareEffect,) -> Result<(), String>
+src/gl_lens_flare_effect.rs: pub fn gl_lens_flare_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_lens_flare_effect.rs: pub fn register_gl_lens_flare_effect(state: &mut GlRenderState)
+src/gl_median_effect.rs: pub const MAX_MEDIAN_EFFECT_GL_RADIUS: i32
+src/gl_median_effect.rs: pub fn apply_median_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &MedianEffect,) -> Result<(), String>
+src/gl_median_effect.rs: pub fn gl_median_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_median_effect.rs: pub fn register_gl_median_effect(state: &mut GlRenderState)
+src/gl_motion_blur_effect.rs: pub fn apply_motion_blur_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, velocity_texture: Option<NativeTexture>, effect: &MotionBlurEffect,) -> Result<(), String>
+src/gl_motion_blur_effect.rs: pub fn gl_motion_blur_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_motion_blur_effect.rs: pub fn register_gl_motion_blur_effect(state: &mut GlRenderState)
+src/gl_outer_glow_effect.rs: pub fn apply_outer_glow_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, pool: &mut GlTextureRenderTargetPool, effect: &OuterGlowEffect,) -> Result<(), String>
+src/gl_outer_glow_effect.rs: pub fn gl_outer_glow_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_outer_glow_effect.rs: pub fn register_gl_outer_glow_effect(state: &mut GlRenderState)
+src/gl_outline_effect.rs: pub fn apply_outline_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &OutlineEffect,) -> Result<(), String>
+src/gl_outline_effect.rs: pub fn gl_outline_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_outline_effect.rs: pub fn register_gl_outline_effect(state: &mut GlRenderState)
+src/gl_pixelate_effect.rs: pub fn apply_pixelate_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &PixelateEffect,) -> Result<(), String>
+src/gl_pixelate_effect.rs: pub fn gl_pixelate_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_pixelate_effect.rs: pub fn register_gl_pixelate_effect(state: &mut GlRenderState)
+src/gl_posterize_effect.rs: pub fn apply_posterize_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &PosterizeEffect,) -> Result<(), String>
+src/gl_posterize_effect.rs: pub fn gl_posterize_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_posterize_effect.rs: pub fn register_gl_posterize_effect(state: &mut GlRenderState)
+src/gl_radial_blur_effect.rs: pub fn apply_radial_blur_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &RadialBlurEffect,) -> Result<(), String>
+src/gl_radial_blur_effect.rs: pub fn gl_radial_blur_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_radial_blur_effect.rs: pub fn register_gl_radial_blur_effect(state: &mut GlRenderState)
+src/gl_render_texture_effect.rs: pub fn apply_gl_effects_to_render_texture(state: &mut GlRenderState, pool: &mut GlRenderTexturePool, source: &RenderTexture, dest: &mut RenderTexture, scratch: &mut RenderTexture, effects: &[EffectRef],) -> Result<bool, String>
+src/gl_render_texture_effect.rs: pub fn explain_gl_effect_application(state: &mut GlRenderState, effects: &[EffectRef], source_available: bool, destination_available: Option<bool>,) -> GlEffectApplicationExplanation
+src/gl_render_texture_effect.rs: pub fn get_gl_effect_application_status_string(value: GlEffectApplicationStatus) -> &'static str
+src/gl_render_texture_effect.rs: pub fn parse_gl_effect_application_status(value: &str) -> Option<GlEffectApplicationStatus>
+src/gl_render_texture_effect.rs: pub fn set_gl_effect_application_guard(state: &GlRenderState, guard: Option<GlEffectApplicationGuard>,)
+src/gl_scanlines_effect.rs: pub fn apply_scanlines_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &ScanlinesEffect,) -> Result<(), String>
+src/gl_scanlines_effect.rs: pub fn gl_scanlines_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_scanlines_effect.rs: pub fn register_gl_scanlines_effect(state: &mut GlRenderState)
+src/gl_screen_space_fog_effect.rs: pub fn apply_screen_space_fog_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, depth_texture: Option<NativeTexture>, effect: &ScreenSpaceFogEffect,) -> Result<(), String>
+src/gl_screen_space_fog_effect.rs: pub fn gl_screen_space_fog_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_screen_space_fog_effect.rs: pub fn register_gl_screen_space_fog_effect(state: &mut GlRenderState)
+src/gl_shader_test_helper.rs: pub fn evaluate_glsl_scalar_expression(expression: &str, bindings: &Record<f32>) -> f32
+src/gl_shader_test_helper.rs: pub fn extract_glsl_expression(source: &str, pattern: &Ref<RegExp>) -> String
+src/gl_sharpen_effect.rs: pub fn apply_sharpen_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &SharpenEffect,) -> Result<(), String>
+src/gl_sharpen_effect.rs: pub fn gl_sharpen_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_sharpen_effect.rs: pub fn register_gl_sharpen_effect(state: &mut GlRenderState)
+src/gl_sketch_effect.rs: pub fn apply_sketch_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &SketchEffect,) -> Result<(), String>
+src/gl_sketch_effect.rs: pub fn gl_sketch_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_sketch_effect.rs: pub fn register_gl_sketch_effect(state: &mut GlRenderState)
+src/gl_smaa_effect.rs: pub fn apply_smaa_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &SmaaEffect,) -> Result<(), String>
+src/gl_smaa_effect.rs: pub fn gl_smaa_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_smaa_effect.rs: pub fn register_gl_smaa_effect(state: &mut GlRenderState)
+src/gl_ssao_effect.rs: pub fn apply_ssao_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &SsaoEffect,) -> Result<(), String>
+src/gl_ssao_effect.rs: pub fn gl_ssao_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_ssao_effect.rs: pub fn register_gl_ssao_effect(state: &mut GlRenderState)
+src/gl_tilt_shift_effect.rs: pub fn apply_tilt_shift_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &TiltShiftEffect,) -> Result<(), String>
+src/gl_tilt_shift_effect.rs: pub fn gl_tilt_shift_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_tilt_shift_effect.rs: pub fn register_gl_tilt_shift_effect(state: &mut GlRenderState)
+src/gl_tone_map_effect.rs: pub fn apply_tone_map_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &ToneMapEffect,) -> Result<(), String>
+src/gl_tone_map_effect.rs: pub fn gl_tone_map_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_tone_map_effect.rs: pub fn register_gl_tone_map_effect(state: &mut GlRenderState)
+src/gl_vignette_effect.rs: pub fn apply_vignette_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &VignetteEffect,) -> Result<(), String>
+src/gl_vignette_effect.rs: pub fn gl_vignette_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_vignette_effect.rs: pub fn register_gl_vignette_effect(state: &mut GlRenderState)
+src/gl_white_balance_effect.rs: pub fn apply_white_balance_effect_to_gl(state: &mut GlRenderState, source: &GlTextureRenderTarget, dest: &GlTextureRenderTarget, effect: &WhiteBalanceEffect,) -> Result<(), String>
+src/gl_white_balance_effect.rs: pub fn gl_white_balance_effect_runner(ctx: &mut GlEffectContext<'_>, effect: &dyn Effect,) -> Result<(), String>
+src/gl_white_balance_effect.rs: pub fn register_gl_white_balance_effect(state: &mut GlRenderState)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::EffectOperation;
+src/lib.rs: pub use contract::GlColorLutTextureCache;
+src/lib.rs: pub use contract::GlCustomShaderSourceGuard;
+src/lib.rs: pub use contract::GlEffectApplicationExplanation;
+src/lib.rs: pub use contract::GlEffectApplicationGuard;
+src/lib.rs: pub use contract::GlEffectApplicationStatus;
+src/lib.rs: pub use contract::GlEffectContext;
+src/lib.rs: pub use contract::GlEffectRegistration;
+src/lib.rs: pub use contract::GlEffectResolver;
+src/lib.rs: pub use contract::GlEffectRunner;
+src/lib.rs: pub use contract::GlEffectState;
+src/lib.rs: pub use contract::GlEffectStateSkipGuard;
+src/lib.rs: pub use contract::GlGaussianBlurOptions;
+src/lib.rs: pub use contract::apply_blur_effect_to_gl_render_textures;
+src/lib.rs: pub use contract::apply_gaussian_blur_to_gl_render_textures;
+src/lib.rs: pub use contract::apply_gl_effects_to_render_texture;
+src/lib.rs: pub use contract::are_gl_effect_guards_enabled;
+src/lib.rs: pub use contract::begin_gl_effect_pass;
+src/lib.rs: pub use contract::create_gl_effect_state;
+src/lib.rs: pub use contract::destroy_gl_effect_state;
+src/lib.rs: pub use contract::disable_gl_effect_guards;
+src/lib.rs: pub use contract::enable_gl_effect_guards;
+src/lib.rs: pub use contract::end_gl_effect_pass;
+src/lib.rs: pub use contract::explain_gl_effect_application;
+src/lib.rs: pub use contract::get_gl_custom_shader_source;
+src/lib.rs: pub use contract::get_gl_effect_application_status_string;
+src/lib.rs: pub use contract::get_gl_effect_runner;
+src/lib.rs: pub use contract::gl_bevel_effect_runner;
+src/lib.rs: pub use contract::gl_bitmap_displacement_effect_runner;
+src/lib.rs: pub use contract::gl_blend_effect_runner;
+src/lib.rs: pub use contract::gl_bloom_effect_runner;
+src/lib.rs: pub use contract::gl_blur_effect_runner;
+src/lib.rs: pub use contract::gl_bokeh_depth_of_field_effect_runner;
+src/lib.rs: pub use contract::gl_camera_motion_blur_effect_runner;
+src/lib.rs: pub use contract::gl_chromatic_aberration_effect_runner;
+src/lib.rs: pub use contract::gl_composite_effect_runner;
+src/lib.rs: pub use contract::gl_contact_shadows_effect_runner;
+src/lib.rs: pub use contract::gl_convolution_effect_runner;
+src/lib.rs: pub use contract::gl_crt_effect_runner;
+src/lib.rs: pub use contract::gl_custom_shader_effect_runner;
+src/lib.rs: pub use contract::gl_directional_blur_effect_runner;
+src/lib.rs: pub use contract::gl_displacement_effect_runner;
+src/lib.rs: pub use contract::gl_dither_effect_runner;
+src/lib.rs: pub use contract::gl_drop_shadow_effect_runner;
+src/lib.rs: pub use contract::gl_film_grain_effect_runner;
+src/lib.rs: pub use contract::gl_fxaa_effect_runner;
+src/lib.rs: pub use contract::gl_glitch_effect_runner;
+src/lib.rs: pub use contract::gl_god_rays_effect_runner;
+src/lib.rs: pub use contract::gl_gradient_bevel_effect_runner;
+src/lib.rs: pub use contract::gl_gradient_glow_effect_runner;
+src/lib.rs: pub use contract::gl_halftone_effect_runner;
+src/lib.rs: pub use contract::gl_inner_glow_effect_runner;
+src/lib.rs: pub use contract::gl_inner_shadow_effect_runner;
+src/lib.rs: pub use contract::gl_kuwahara_effect_runner;
+src/lib.rs: pub use contract::gl_lens_dirt_effect_runner;
+src/lib.rs: pub use contract::gl_lens_distortion_effect_runner;
+src/lib.rs: pub use contract::gl_lens_flare_effect_runner;
+src/lib.rs: pub use contract::gl_median_effect_runner;
+src/lib.rs: pub use contract::gl_motion_blur_effect_runner;
+src/lib.rs: pub use contract::gl_outer_glow_effect_runner;
+src/lib.rs: pub use contract::gl_outline_effect_runner;
+src/lib.rs: pub use contract::gl_pixelate_effect_runner;
+src/lib.rs: pub use contract::gl_posterize_effect_runner;
+src/lib.rs: pub use contract::gl_radial_blur_effect_runner;
+src/lib.rs: pub use contract::gl_scanlines_effect_runner;
+src/lib.rs: pub use contract::gl_screen_space_fog_effect_runner;
+src/lib.rs: pub use contract::gl_sharpen_effect_runner;
+src/lib.rs: pub use contract::gl_sketch_effect_runner;
+src/lib.rs: pub use contract::gl_smaa_effect_runner;
+src/lib.rs: pub use contract::gl_ssao_effect_runner;
+src/lib.rs: pub use contract::gl_tilt_shift_effect_runner;
+src/lib.rs: pub use contract::gl_tone_map_effect_runner;
+src/lib.rs: pub use contract::gl_vignette_effect_runner;
+src/lib.rs: pub use contract::gl_white_balance_effect_runner;
+src/lib.rs: pub use contract::has_gl_effect_runner;
+src/lib.rs: pub use contract::is_gl_bitmap_displacement_effect_resolvable;
+src/lib.rs: pub use contract::is_gl_custom_shader_effect_resolvable;
+src/lib.rs: pub use contract::is_gl_effect_resolvable;
+src/lib.rs: pub use contract::parse_gl_effect_application_status;
+src/lib.rs: pub use contract::register_gl_bevel_effect;
+src/lib.rs: pub use contract::register_gl_bitmap_displacement_effect;
+src/lib.rs: pub use contract::register_gl_blend_effect;
+src/lib.rs: pub use contract::register_gl_blend_effect_backdrop;
+src/lib.rs: pub use contract::register_gl_bloom_effect;
+src/lib.rs: pub use contract::register_gl_blur_effect;
+src/lib.rs: pub use contract::register_gl_bokeh_depth_of_field_effect;
+src/lib.rs: pub use contract::register_gl_camera_motion_blur_effect;
+src/lib.rs: pub use contract::register_gl_chromatic_aberration_effect;
+src/lib.rs: pub use contract::register_gl_composite_effect;
+src/lib.rs: pub use contract::register_gl_contact_shadows_effect;
+src/lib.rs: pub use contract::register_gl_convolution_effect;
+src/lib.rs: pub use contract::register_gl_crt_effect;
+src/lib.rs: pub use contract::register_gl_custom_shader_effect;
+src/lib.rs: pub use contract::register_gl_custom_shader_source;
+src/lib.rs: pub use contract::register_gl_directional_blur_effect;
+src/lib.rs: pub use contract::register_gl_displacement_effect;
+src/lib.rs: pub use contract::register_gl_dither_effect;
+src/lib.rs: pub use contract::register_gl_drop_shadow_effect;
+src/lib.rs: pub use contract::register_gl_effect;
+src/lib.rs: pub use contract::register_gl_film_grain_effect;
+src/lib.rs: pub use contract::register_gl_fxaa_effect;
+src/lib.rs: pub use contract::register_gl_glitch_effect;
+src/lib.rs: pub use contract::register_gl_god_rays_effect;
+src/lib.rs: pub use contract::register_gl_gradient_bevel_effect;
+src/lib.rs: pub use contract::register_gl_gradient_glow_effect;
+src/lib.rs: pub use contract::register_gl_halftone_effect;
+src/lib.rs: pub use contract::register_gl_inner_glow_effect;
+src/lib.rs: pub use contract::register_gl_inner_shadow_effect;
+src/lib.rs: pub use contract::register_gl_kuwahara_effect;
+src/lib.rs: pub use contract::register_gl_lens_dirt_effect;
+src/lib.rs: pub use contract::register_gl_lens_distortion_effect;
+src/lib.rs: pub use contract::register_gl_lens_flare_effect;
+src/lib.rs: pub use contract::register_gl_median_effect;
+src/lib.rs: pub use contract::register_gl_motion_blur_effect;
+src/lib.rs: pub use contract::register_gl_outer_glow_effect;
+src/lib.rs: pub use contract::register_gl_outline_effect;
+src/lib.rs: pub use contract::register_gl_pixelate_effect;
+src/lib.rs: pub use contract::register_gl_posterize_effect;
+src/lib.rs: pub use contract::register_gl_radial_blur_effect;
+src/lib.rs: pub use contract::register_gl_scanlines_effect;
+src/lib.rs: pub use contract::register_gl_screen_space_fog_effect;
+src/lib.rs: pub use contract::register_gl_sharpen_effect;
+src/lib.rs: pub use contract::register_gl_sketch_effect;
+src/lib.rs: pub use contract::register_gl_smaa_effect;
+src/lib.rs: pub use contract::register_gl_ssao_effect;
+src/lib.rs: pub use contract::register_gl_tilt_shift_effect;
+src/lib.rs: pub use contract::register_gl_tone_map_effect;
+src/lib.rs: pub use contract::register_gl_vignette_effect;
+src/lib.rs: pub use contract::register_gl_white_balance_effect;
+src/lib.rs: pub use contract::set_gl_custom_shader_source_guard;
+src/lib.rs: pub use contract::set_gl_effect_application_guard;
+src/lib.rs: pub use contract::set_gl_effect_state_skip_guard;
+src/lib.rs: pub use contract::set_gl_effect_velocity_texture;
+src/types.rs: #[derive(Clone)] pub enum EffectOperation { Adjustment(Ref<dyn Adjustment>), Effect(EffectRef), }
+src/types.rs: #[derive(Clone, Copy, Debug)] pub struct GlEffectRegistration { pub is_resolvable: Option<GlEffectResolver>, pub runner: GlEffectRunner, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct GlEffectBoxBlurOptions { pub blur_x: Option<f32>, pub blur_y: Option<f32>, pub passes: Option<f32>, pub edge_color: Option<[f32; 4]>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct GlGaussianBlurOptions { pub blur_x: Option<f32>, pub blur_y: Option<f32>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GlEffectApplicationStatus { Complete, NoEffects, PartialRegistration, PartialResolution, SourceUnavailable, StaleDestination, UnregisteredEffects, UnresolvedEffects, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct GlColorLutTextureCache { pub texture: Option<NativeTexture>, pub lut: Option<ColorLut>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct GlEffectApplicationExplanation { pub registered_count: usize, pub requested_count: usize, pub status: GlEffectApplicationStatus, pub unregistered_kinds: Vec<Kind>, pub unresolved_indexes: Vec<usize>, }
+src/types.rs: pub struct GlEffectContext<'a> { pub state: &'a mut GlRenderState, pub source: &'a GlTextureRenderTarget, pub dest: &'a GlTextureRenderTarget, pub pool: &'a mut GlTextureRenderTargetPool, pub scene_depth_texture: Option<NativeTexture>, pub scene_velocity_texture: Option<NativeTexture>, }
+src/types.rs: pub struct GlEffectState { pub options: EffectStateOptions, pub scene_target: Option<GlTextureRenderTarget>, pub pool: GlTextureRenderTargetPool, pub lut_cache: ColorLutCache, pub lut_texture: GlColorLutTextureCache, pub velocity_texture: Option<NativeTexture>, }
+src/types.rs: pub type GlCustomShaderSourceGuard = Arc<dyn Fn(&GlRenderState, &str, &str, &str) + Send + Sync>;
+src/types.rs: pub type GlEffectApplicationGuard = Arc<dyn Fn(&GlRenderState, &GlEffectApplicationExplanation) + Send + Sync>;
+src/types.rs: pub type GlEffectResolver = fn(&mut GlRenderState, &dyn Effect) -> bool;
+src/types.rs: pub type GlEffectRunner = fn(&mut GlEffectContext<'_>, &dyn Effect) -> Result<(), String>;
+src/types.rs: pub type GlEffectStateSkipGuard = Arc<dyn Fn(&GlRenderState, &str) + Send + Sync>;
