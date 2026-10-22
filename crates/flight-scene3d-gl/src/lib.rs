@@ -1,6 +1,8 @@
 //! GL 3D scene rendering: material renderers, shader programs, environment maps, shadow maps,
 //! and particle emitters for the glow backend.
 
+mod anisotropy_pbr_gl_extension;
+mod clearcoat_pbr_gl_extension;
 mod enable_gl_color_space_guards;
 mod enable_gl_custom_shader_guards;
 mod enable_gl_deform_guards;
@@ -13,7 +15,12 @@ mod gl_pbr_extension_registry;
 mod gl_scene3d_runtime;
 mod gl_scene3d_time;
 mod gl_viewport_aspect;
+mod iridescence_pbr_gl_extension;
+mod sheen_pbr_gl_extension;
+mod specular_pbr_gl_extension;
+mod transmission_volume_pbr_gl_extension;
 mod types;
+mod wrapped_diffuse_pbr_gl_extension;
 
 pub mod contract;
 
