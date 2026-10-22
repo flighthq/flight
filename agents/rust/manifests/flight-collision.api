@@ -367,7 +367,7 @@ src/sugar.rs: impl CollisionConvex3D :: fn support(&self, direction_x: f32, dire
 src/sugar.rs: impl CollisionCylinder3D :: fn support(&self, direction_x: f32, direction_y: f32, direction_z: f32, out: &mut [f32; 3],)
 src/sugar.rs: impl CollisionDistance3D :: fn new() -> Self
 src/sugar.rs: impl CollisionHeightfield3D :: fn invalidate(&mut self)
-src/sugar.rs: impl CollisionHeightfield3D :: fn new(columns: usize, rows: usize, heights: Vec<f32>, cell_size_x: f32, cell_size_z: f32,) -> Self
+src/sugar.rs: impl CollisionHeightfield3D :: fn new() -> Self
 src/sugar.rs: impl CollisionHeightfield3D :: fn raycast(&self, out: &mut CollisionRaycastHit3D, origin_x: f32, origin_y: f32, origin_z: f32, direction_x: f32, direction_y: f32, direction_z: f32, max_fraction: Option<f32>,) -> bool
 src/sugar.rs: impl CollisionHeightfield3D :: fn validation_status(&self) -> Option<CollisionTestStatus>
 src/sugar.rs: impl CollisionHeightfield3D :: fn write_bounds(&self, out: &mut CollisionAabb3D)
@@ -427,7 +427,7 @@ src/sugar.rs: impl CollisionSphere3D :: fn test_sphere(&self, other: &CollisionS
 src/sugar.rs: impl CollisionTimeOfImpact2D :: fn new() -> Self
 src/sugar.rs: impl CollisionTimeOfImpact3D :: fn new() -> Self
 src/sugar.rs: impl CollisionTriangleMesh3D :: fn invalidate(&mut self)
-src/sugar.rs: impl CollisionTriangleMesh3D :: fn new(points: Vec<f32>, indices: Vec<usize>) -> Self
+src/sugar.rs: impl CollisionTriangleMesh3D :: fn new() -> Self
 src/sugar.rs: impl CollisionTriangleMesh3D :: fn raycast(&self, out: &mut CollisionRaycastHit3D, origin_x: f32, origin_y: f32, origin_z: f32, direction_x: f32, direction_y: f32, direction_z: f32, max_fraction: Option<f32>,) -> bool
 src/sugar.rs: impl CollisionTriangleMesh3D :: fn validation_status(&self) -> Option<CollisionTestStatus>
 src/sugar.rs: impl CollisionTriangleMesh3D :: fn write_bounds(&self, out: &mut CollisionAabb3D)
@@ -443,12 +443,12 @@ src/test_collision3d.rs: pub fn set_collision_test_guard3d(registry: &mut Collis
 src/test_collision3d.rs: pub fn test_collision3d(registry: &CollisionRegistry3D, a: &CollisionShape3D, b: &CollisionShape3D, out: &mut CollisionManifold3D,) -> bool
 src/triangle_mesh3d.rs: pub fn collide_collision_heightfield3d(out: &mut CollisionContactManifold3D, registry: &CollisionRegistry3D, convex: &CollisionShape3D, heightfield: &CollisionHeightfield3D,) -> bool
 src/triangle_mesh3d.rs: pub fn collide_collision_triangle_mesh3d(out: &mut CollisionContactManifold3D, registry: &CollisionRegistry3D, convex: &CollisionShape3D, mesh: &CollisionTriangleMesh3D,) -> bool
-src/triangle_mesh3d.rs: pub fn create_collision_heightfield3d(columns: usize, rows: usize, heights: Vec<f32>, cell_size_x: f32, cell_size_z: f32,) -> CollisionHeightfield3D
-src/triangle_mesh3d.rs: pub fn create_collision_triangle_mesh3d(points: Vec<f32>, indices: Vec<usize>,) -> CollisionTriangleMesh3D
+src/triangle_mesh3d.rs: pub fn create_collision_heightfield3d() -> CollisionHeightfield3D
+src/triangle_mesh3d.rs: pub fn create_collision_triangle_mesh3d() -> CollisionTriangleMesh3D
 src/triangle_mesh3d.rs: pub fn get_collision_heightfield_validation_status3d(heightfield: &CollisionHeightfield3D,) -> Option<CollisionTestStatus>
 src/triangle_mesh3d.rs: pub fn get_collision_triangle_mesh_validation_status3d(mesh: &CollisionTriangleMesh3D,) -> Option<CollisionTestStatus>
-src/triangle_mesh3d.rs: pub fn initialize_collision_heightfield3d(out: &mut CollisionHeightfield3D, columns: usize, rows: usize, heights: Vec<f32>, cell_size_x: f32, cell_size_z: f32,)
-src/triangle_mesh3d.rs: pub fn initialize_collision_triangle_mesh3d(out: &mut CollisionTriangleMesh3D, points: Vec<f32>, indices: Vec<usize>,)
+src/triangle_mesh3d.rs: pub fn initialize_collision_heightfield3d(out: &mut CollisionHeightfield3D)
+src/triangle_mesh3d.rs: pub fn initialize_collision_triangle_mesh3d(out: &mut CollisionTriangleMesh3D)
 src/triangle_mesh3d.rs: pub fn invalidate_collision_heightfield3d(heightfield: &mut CollisionHeightfield3D)
 src/triangle_mesh3d.rs: pub fn invalidate_collision_triangle_mesh3d(mesh: &mut CollisionTriangleMesh3D)
 src/triangle_mesh3d.rs: pub fn raycast_collision_heightfield3d(out: &mut CollisionRaycastHit3D, heightfield: &CollisionHeightfield3D, origin_x: f32, origin_y: f32, origin_z: f32, direction_x: f32, direction_y: f32, direction_z: f32, max_fraction: Option<f32>,) -> bool

@@ -100,14 +100,18 @@ mod sugar_tests {
     }
 
     fn heightfield3() -> CollisionHeightfield3D {
-        return create_collision_heightfield3d(2, 2, vec![0.0; 4], 1.0, 1.0);
+        let mut out = create_collision_heightfield3d();
+        out.columns = 2;
+        out.rows = 2;
+        out.heights = vec![0.0; 4];
+        return out;
     }
 
     fn mesh3() -> CollisionTriangleMesh3D {
-        return create_collision_triangle_mesh3d(
-            vec![-1.0, 0.0, -1.0, 1.0, 0.0, -1.0, 0.0, 0.0, 1.0],
-            vec![0, 1, 2],
-        );
+        let mut out = create_collision_triangle_mesh3d();
+        out.points = vec![-1.0, 0.0, -1.0, 1.0, 0.0, -1.0, 0.0, 0.0, 1.0];
+        out.indices = vec![0, 1, 2];
+        return out;
     }
 
     fn obb2() -> CollisionObb2D {
@@ -1086,8 +1090,8 @@ mod sugar_tests {
 
     #[test]
     fn heightfield3_new_delegates() {
-        let actual = CollisionHeightfield3D::new(2, 2, vec![0.0; 4], 1.0, 1.0);
-        let expected = create_collision_heightfield3d(2, 2, vec![0.0; 4], 1.0, 1.0);
+        let actual = CollisionHeightfield3D::new();
+        let expected = create_collision_heightfield3d();
         assert_eq!(actual, expected);
     }
 
@@ -1142,11 +1146,9 @@ mod sugar_tests {
 
     #[test]
     fn triangle_mesh3_new_delegates() {
-        let points = vec![-1.0, 0.0, -1.0, 1.0, 0.0, -1.0, 0.0, 0.0, 1.0];
-        let indices = vec![0, 1, 2];
         assert_eq!(
-            CollisionTriangleMesh3D::new(points.clone(), indices.clone()),
-            create_collision_triangle_mesh3d(points, indices)
+            CollisionTriangleMesh3D::new(),
+            create_collision_triangle_mesh3d()
         );
     }
 
@@ -1456,14 +1458,8 @@ impl CollisionDistance3D {
 }
 
 impl CollisionHeightfield3D {
-    pub fn new(
-        columns: usize,
-        rows: usize,
-        heights: Vec<f32>,
-        cell_size_x: f32,
-        cell_size_z: f32,
-    ) -> Self {
-        return create_collision_heightfield3d(columns, rows, heights, cell_size_x, cell_size_z);
+    pub fn new() -> Self {
+        return create_collision_heightfield3d();
     }
 
     pub fn invalidate(&mut self) {
@@ -1972,8 +1968,8 @@ impl CollisionTimeOfImpact3D {
 }
 
 impl CollisionTriangleMesh3D {
-    pub fn new(points: Vec<f32>, indices: Vec<usize>) -> Self {
-        return create_collision_triangle_mesh3d(points, indices);
+    pub fn new() -> Self {
+        return create_collision_triangle_mesh3d();
     }
 
     pub fn invalidate(&mut self) {

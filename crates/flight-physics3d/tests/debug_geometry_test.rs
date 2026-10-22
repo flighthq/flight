@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use flight_collision::{
     CollisionAabb3D, CollisionCapsule3D, CollisionColliderShape3D, CollisionConvex3D,
-    CollisionShape3D, create_collision_heightfield3d, create_collision_triangle_mesh3d,
+    CollisionShape3D,
 };
 
 use super::*;
@@ -112,14 +112,14 @@ mod write_physics_3d_debug_geometry {
     fn draws_explicit_mesh_triangles_and_heightfield_grid_edges() {
         let mut world = world();
         let mesh = CollisionColliderShape3D::TriangleMesh(Arc::new(RwLock::new(
-            create_collision_triangle_mesh3d(
+            collision_triangle_mesh3d(
                 vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0],
                 vec![0, 1, 2],
             ),
         )));
         add_shaped_body_of_type(&mut world, mesh, 0.0, Physics3DBodyType::Static);
         let heightfield = CollisionColliderShape3D::Heightfield(Arc::new(RwLock::new(
-            create_collision_heightfield3d(2, 2, vec![0.0; 4], 1.0, 1.0),
+            collision_heightfield3d(2, 2, vec![0.0; 4], 1.0, 1.0),
         )));
         add_shaped_body_of_type(&mut world, heightfield, 0.0, Physics3DBodyType::Static);
         let mut out = create_physics_3d_debug_geometry();

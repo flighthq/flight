@@ -2,9 +2,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use flight_collision::{
-    CollisionColliderShape3D, CollisionRegistry3D, CollisionShape3D, CollisionSphere3D,
+    create_collision_heightfield3d, create_collision_triangle_mesh3d,
     register_built_in_collision_face_queries3d, register_built_in_collision_pair_tests3d,
-    register_built_in_collision_supports3d,
+    register_built_in_collision_supports3d, CollisionColliderShape3D, CollisionHeightfield3D,
+    CollisionRegistry3D, CollisionShape3D, CollisionSphere3D, CollisionTriangleMesh3D,
 };
 use flight_entity::Ref;
 use flight_physics3d::contract::*;
@@ -13,6 +14,29 @@ pub fn add_body(world: &mut Physics3DWorld, body_type: Physics3DBodyType) -> Rig
     let body = rigid_body(body_type);
     add_physics_3d_body(world, &body);
     body
+}
+
+pub fn collision_heightfield3d(
+    columns: usize,
+    rows: usize,
+    heights: Vec<f32>,
+    cell_size_x: f32,
+    cell_size_z: f32,
+) -> CollisionHeightfield3D {
+    let mut out = create_collision_heightfield3d();
+    out.columns = columns;
+    out.rows = rows;
+    out.heights = heights;
+    out.cell_size_x = cell_size_x;
+    out.cell_size_z = cell_size_z;
+    return out;
+}
+
+pub fn collision_triangle_mesh3d(points: Vec<f32>, indices: Vec<usize>) -> CollisionTriangleMesh3D {
+    let mut out = create_collision_triangle_mesh3d();
+    out.points = points;
+    out.indices = indices;
+    return out;
 }
 
 pub fn rigid_body(body_type: Physics3DBodyType) -> RigidBody3DRef {

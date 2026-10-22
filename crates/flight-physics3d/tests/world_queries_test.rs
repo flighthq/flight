@@ -4,7 +4,6 @@ use super::*;
 use crate::common::*;
 use flight_collision::{
     CollisionAabb3D, CollisionColliderShape3D, CollisionShape3D, CollisionSphere3D,
-    create_collision_triangle_mesh3d,
 };
 use flight_spatial::SpatialAabb3D;
 
@@ -53,12 +52,11 @@ fn region(min_x: f32, min_y: f32, min_z: f32, max_x: f32, max_y: f32, max_z: f32
 }
 
 fn triangle_mesh_collider() -> Physics3DColliderRef {
-    let shape = CollisionColliderShape3D::TriangleMesh(Arc::new(RwLock::new(
-        create_collision_triangle_mesh3d(
+    let shape =
+        CollisionColliderShape3D::TriangleMesh(Arc::new(RwLock::new(collision_triangle_mesh3d(
             vec![-5.0, 0.0, -5.0, 5.0, 0.0, -5.0, 0.0, 0.0, 5.0],
             vec![0, 1, 2],
-        ),
-    )));
+        ))));
     physics_3d_collider(&shape, None, None, None)
 }
 

@@ -3,6 +3,29 @@ mod collision_collider_shape3d {
 
     use super::*;
 
+    fn collision_heightfield3d(
+        columns: usize,
+        rows: usize,
+        heights: Vec<f32>,
+        cell_size_x: f32,
+        cell_size_z: f32,
+    ) -> CollisionHeightfield3D {
+        let mut out = create_collision_heightfield3d();
+        out.columns = columns;
+        out.rows = rows;
+        out.heights = heights;
+        out.cell_size_x = cell_size_x;
+        out.cell_size_z = cell_size_z;
+        return out;
+    }
+
+    fn collision_triangle_mesh3d(points: Vec<f32>, indices: Vec<usize>) -> CollisionTriangleMesh3D {
+        let mut out = create_collision_triangle_mesh3d();
+        out.points = points;
+        out.indices = indices;
+        return out;
+    }
+
     #[test]
     fn carries_the_existing_builtin_enum_by_value() {
         let collider =
@@ -28,11 +51,11 @@ mod collision_collider_shape3d {
 
     #[test]
     fn static_descriptors_keep_their_shared_entity_identity() {
-        let mesh = Arc::new(RwLock::new(create_collision_triangle_mesh3d(
+        let mesh = Arc::new(RwLock::new(collision_triangle_mesh3d(
             vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0],
             vec![0, 1, 2],
         )));
-        let heightfield = Arc::new(RwLock::new(create_collision_heightfield3d(
+        let heightfield = Arc::new(RwLock::new(collision_heightfield3d(
             2,
             2,
             vec![0.0; 4],

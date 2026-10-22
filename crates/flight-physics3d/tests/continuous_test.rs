@@ -1,12 +1,10 @@
 use std::any::Any;
-use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::{Arc, Mutex, RwLock};
 
 use super::*;
 use crate::common::*;
-use flight_collision::{
-    CollisionAabb3D, CollisionColliderShape3D, CollisionShape3D, create_collision_triangle_mesh3d,
-};
+use flight_collision::{CollisionAabb3D, CollisionColliderShape3D, CollisionShape3D};
 
 fn continuous_world() -> Physics3DWorld {
     let mut world = world();
@@ -155,7 +153,7 @@ mod integrate_physics_3d_continuous {
         let mut world = continuous_world();
         let wall = add_body(&mut world, Physics3DBodyType::Static);
         let shape = CollisionColliderShape3D::TriangleMesh(Arc::new(RwLock::new(
-            create_collision_triangle_mesh3d(
+            collision_triangle_mesh3d(
                 vec![
                     0.0, -5.0, -5.0, 0.0, 5.0, -5.0, 0.0, 5.0, 5.0, 0.0, -5.0, 5.0,
                 ],
@@ -517,19 +515,15 @@ mod integrate_physics_3d_continuous {
         step_physics_3d(&mut world, &registered_registry(), 1.0 / 60.0, None);
 
         assert!(bullet.read().unwrap().x < 0.0);
-        assert!(
-            world
-                .events
-                .began
-                .iter()
-                .all(|contact| !contact.read().unwrap().sensor)
-        );
-        assert!(
-            world
-                .contacts
-                .iter()
-                .all(|contact| !contact.read().unwrap().sensor)
-        );
+        assert!(world
+            .events
+            .began
+            .iter()
+            .all(|contact| !contact.read().unwrap().sensor));
+        assert!(world
+            .contacts
+            .iter()
+            .all(|contact| !contact.read().unwrap().sensor));
     }
 
     #[test]

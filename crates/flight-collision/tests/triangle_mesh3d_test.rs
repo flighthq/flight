@@ -7,6 +7,32 @@ fn collision_registry3d_with_supports_and_faces() -> CollisionRegistry3D {
     return registry;
 }
 
+fn create_collision_heightfield3d(
+    columns: usize,
+    rows: usize,
+    heights: Vec<f32>,
+    cell_size_x: f32,
+    cell_size_z: f32,
+) -> CollisionHeightfield3D {
+    let mut out = flight_collision::create_collision_heightfield3d();
+    out.columns = columns;
+    out.rows = rows;
+    out.heights = heights;
+    out.cell_size_x = cell_size_x;
+    out.cell_size_z = cell_size_z;
+    return out;
+}
+
+fn create_collision_triangle_mesh3d(
+    points: Vec<f32>,
+    indices: Vec<usize>,
+) -> CollisionTriangleMesh3D {
+    let mut out = flight_collision::create_collision_triangle_mesh3d();
+    out.points = points;
+    out.indices = indices;
+    return out;
+}
+
 fn create_floor_mesh() -> CollisionTriangleMesh3D {
     create_collision_triangle_mesh3d(
         vec![
@@ -187,11 +213,14 @@ mod create_collision_heightfield3d {
     use super::*;
 
     #[test]
-    fn copies_the_height_payload_and_starts_with_an_identity_pose() {
-        let heightfield = create_collision_heightfield3d(2, 2, vec![0.0, 1.0, 2.0, 3.0], 2.0, 3.0);
-        assert_eq!(heightfield.heights, vec![0.0, 1.0, 2.0, 3.0]);
-        assert_eq!(heightfield.cell_size_x, 2.0);
-        assert_eq!(heightfield.cell_size_z, 3.0);
+    fn creates_the_canonical_zero_field_entity() {
+        let heightfield = flight_collision::create_collision_heightfield3d();
+        assert_eq!(heightfield.columns, 0);
+        assert_eq!(heightfield.rows, 0);
+        assert!(heightfield.heights.is_empty());
+        assert_eq!(heightfield.cell_size_x, 1.0);
+        assert_eq!(heightfield.cell_size_z, 1.0);
+        assert_eq!(heightfield.version, 0);
         assert_eq!(heightfield.rotation_w, 1.0);
     }
 }
@@ -200,13 +229,11 @@ mod create_collision_triangle_mesh3d {
     use super::*;
 
     #[test]
-    fn copies_both_payload_arrays_and_starts_with_an_identity_pose() {
-        let mesh = create_collision_triangle_mesh3d(
-            vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0],
-            vec![0, 1, 2],
-        );
-        assert_eq!(mesh.points[0], 0.0);
-        assert_eq!(mesh.indices, vec![0, 1, 2]);
+    fn creates_the_canonical_zero_field_entity() {
+        let mesh = flight_collision::create_collision_triangle_mesh3d();
+        assert!(mesh.points.is_empty());
+        assert!(mesh.indices.is_empty());
+        assert_eq!(mesh.version, 0);
         assert_eq!(mesh.rotation_w, 1.0);
     }
 }
@@ -292,16 +319,16 @@ mod initialize_collision_heightfield3d {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_collision_heightfield3d() {
-        let mut heightfield = create_collision_heightfield3d(2, 2, vec![0.0; 4], 2.0, 3.0);
-        heightfield.version = 5;
-        heightfield.x = 1.0;
-        initialize_collision_heightfield3d(&mut heightfield, 3, 4, vec![1.0; 12], 0.5, 0.25);
-        assert_eq!(heightfield.columns, 3);
-        assert_eq!(heightfield.rows, 4);
-        assert_eq!(heightfield.heights.len(), 12);
-        assert_eq!(heightfield.cell_size_x, 0.5);
-        assert_eq!(heightfield.cell_size_z, 0.25);
+    fn initializes_the_canonical_fields_without_replacing_entity_identity() {
+        let mut heightfield: CollisionHeightfield3D = flight_entity::allocate_entity();
+        let entity_id = flight_entity::get_entity_id(&heightfield);
+        initialize_collision_heightfield3d(&mut heightfield);
+        assert_eq!(flight_entity::get_entity_id(&heightfield), entity_id);
+        assert_eq!(heightfield.columns, 0);
+        assert_eq!(heightfield.rows, 0);
+        assert!(heightfield.heights.is_empty());
+        assert_eq!(heightfield.cell_size_x, 1.0);
+        assert_eq!(heightfield.cell_size_z, 1.0);
         assert_eq!(heightfield.version, 0);
         assert_eq!(heightfield.x, 0.0);
         assert_eq!(heightfield.rotation_w, 1.0);
@@ -312,13 +339,13 @@ mod initialize_collision_triangle_mesh3d {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_collision_triangle_mesh3d() {
-        let mut mesh = create_collision_triangle_mesh3d(vec![0.0; 9], vec![0, 1, 2]);
-        mesh.version = 7;
-        mesh.y = 2.0;
-        initialize_collision_triangle_mesh3d(&mut mesh, vec![1.0; 12], vec![0, 2, 1, 0, 3, 2]);
-        assert_eq!(mesh.points.len(), 12);
-        assert_eq!(mesh.indices, vec![0, 2, 1, 0, 3, 2]);
+    fn initializes_the_canonical_fields_without_replacing_entity_identity() {
+        let mut mesh: CollisionTriangleMesh3D = flight_entity::allocate_entity();
+        let entity_id = flight_entity::get_entity_id(&mesh);
+        initialize_collision_triangle_mesh3d(&mut mesh);
+        assert_eq!(flight_entity::get_entity_id(&mesh), entity_id);
+        assert!(mesh.points.is_empty());
+        assert!(mesh.indices.is_empty());
         assert_eq!(mesh.version, 0);
         assert_eq!(mesh.y, 0.0);
         assert_eq!(mesh.rotation_w, 1.0);

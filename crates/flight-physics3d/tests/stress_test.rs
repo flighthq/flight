@@ -1,9 +1,8 @@
 use std::sync::{Arc, RwLock};
 
 use flight_collision::{
-    CollisionAabb3D, CollisionColliderShape3D, CollisionShape3D, create_collision_heightfield3d,
-    create_collision_triangle_mesh3d, register_built_in_collision_face_queries3d,
-    register_built_in_collision_supports3d,
+    register_built_in_collision_face_queries3d, register_built_in_collision_supports3d,
+    CollisionAabb3D, CollisionColliderShape3D, CollisionShape3D,
 };
 
 use super::*;
@@ -133,7 +132,7 @@ fn grid_triangle_mesh(columns: usize, rows: usize) -> CollisionColliderShape3D {
             ]);
         }
     }
-    CollisionColliderShape3D::TriangleMesh(Arc::new(RwLock::new(create_collision_triangle_mesh3d(
+    CollisionColliderShape3D::TriangleMesh(Arc::new(RwLock::new(collision_triangle_mesh3d(
         points, indices,
     ))))
 }
@@ -228,9 +227,13 @@ fn angular_momentum_magnitude(body: &RigidBody3D) -> f32 {
 fn settles_a_distributed_load_across_mesh_and_heightfield_terrain() {
     let surfaces = [
         grid_triangle_mesh(17, 17),
-        CollisionColliderShape3D::Heightfield(Arc::new(RwLock::new(
-            create_collision_heightfield3d(17, 17, vec![0.0; 17 * 17], 1.0, 1.0),
-        ))),
+        CollisionColliderShape3D::Heightfield(Arc::new(RwLock::new(collision_heightfield3d(
+            17,
+            17,
+            vec![0.0; 17 * 17],
+            1.0,
+            1.0,
+        )))),
     ];
     for (surface_index, surface) in surfaces.into_iter().enumerate() {
         let mut world = world();
