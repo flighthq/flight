@@ -757,14 +757,14 @@ mod get_gl_color_adjustment_material_feature {
 }
 
 mod get_gl_color_adjustment_material_feature_guard {
-    use flight_materials::ColorScaleBias;
     use flight_render_gl::{
-        create_gl_render_state, get_gl_color_adjustment_material_feature_guard, GlRenderState,
+        create_gl_render_state, get_gl_color_adjustment_material_feature_guard,
+        GlColorAdjustmentData, GlRenderState,
     };
 
     use crate::gl_test_helper::{make_context_state, make_state_options};
 
-    fn guard(_state: &mut GlRenderState, _value: &ColorScaleBias) {}
+    fn guard(_state: &mut GlRenderState, _value: &GlColorAdjustmentData) {}
 
     #[test]
     fn resolves_only_a_bound_guard_entry() {

@@ -1232,6 +1232,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-scene2d-gl"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-geometry",
+ "flight-host",
+ "flight-image",
+ "flight-materials",
+ "flight-node",
+ "flight-render",
+ "flight-render-gl",
+ "flight-scene2d",
+ "flight-shape",
+ "flight-surface",
+ "flight-texture",
+ "glow",
+]
+
+[[package]]
 name = "flight-scene2d-resources"
 version = "0.6.0"
 dependencies = [

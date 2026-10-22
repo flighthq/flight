@@ -10,11 +10,13 @@ use flight_entity::{AnySlot, Entity, EntityRuntimeSlot, Kind, UnknownValue};
 use flight_log::LogStateRef;
 use flight_materials::{BlendMode, Material2D, MaterialData};
 use flight_registry::KindMap;
+use flight_image::HostImageCapability;
 use flight_render::{
-    RenderProxies2D, RenderRegistries, RenderState, RenderStateBackend, RenderStateFields,
+    CanvasHostSurfaces, RenderProxies2D, RenderRegistries, RenderState, RenderStateBackend, RenderStateFields,
     RenderStateOptions, RenderStateRuntime, RenderTargetAxes, RenderTargetAxisDifference,
 };
 use flight_signals::Signal;
+use flight_surface::HostCanvasCapability;
 use flight_texture::{RenderTargetColorSpace, TextureColorSpace, TextureVariant};
 use flight_texture_formats::TextureContainerFormat;
 use glow::{
@@ -125,8 +127,128 @@ pub type GlCompressedTextureDecoder =
 /// Opaque opt-in color-adjustment capability. The implementation lives in the color-adjustment
 /// package; render-gl retains it by shared identity without importing that optional feature.
 pub type GlColorAdjustmentMaterialFeature = Arc<dyn std::any::Any + Send + Sync>;
-pub type GlColorAdjustmentMaterialFeatureGuard =
-    fn(&mut GlRenderState, &flight_materials::ColorScaleBias);
+pub type GlColorAdjustmentMaterialFeatureGuard = fn(&mut GlRenderState, &GlColorAdjustmentData);
+
+/// A color adjustment folded into the quad batch (TS `ColorScaleBias | TintMaterialData | readonly
+/// number[]`). Plain values: the eight scale/bias floats in channel order, the packed `0xRRGGBBAA`
+/// tint, or the 4x5 row-major color matrix.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum GlColorAdjustmentData {
+    ColorScaleBias([f32; 8]),
+    TintMaterialData(u32),
+    ColorMatrix([f32; 20]),
+}
+
+/// The opaque shape-rasterizer slot (TS `ShapeRasterizer`). The concrete callback contract lives in
+/// scene2d-gl, which fills and reads it; render-gl only retains it.
+pub type GlShapeRasterizerSlot = Arc<dyn std::any::Any + Send + Sync>;
+
+/// The opaque velocity-writer slot (TS `GlVelocityWriter`). scene2d-gl owns the concrete writer
+/// contract and its velocity-field context; render-gl only retains the registration.
+pub type GlVelocityWriterSlot = Arc<dyn std::any::Any + Send + Sync>;
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GlQuadBatchShader {
+    pub program: NativeProgram,
+    pub loc_corner: u32,
+    pub loc_mat_ab: u32,
+    pub loc_mat_cd: u32,
+    pub loc_mat_txty: u32,
+    pub loc_uv_origin_axis_u: u32,
+    pub loc_uv_axis_v: u32,
+    pub loc_alpha: u32,
+    pub loc_world_matrix: Option<NativeUniformLocation>,
+    pub loc_texture: Option<NativeUniformLocation>,
+    pub loc_straight_texture_alpha: Option<NativeUniformLocation>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GlParticleShader {
+    pub program: NativeProgram,
+    pub loc_corner: u32,
+    pub loc_pos: u32,
+    pub loc_cos_scale: u32,
+    pub loc_sin_scale: u32,
+    pub loc_color: u32,
+    pub loc_uv_rect: u32,
+    pub loc_size: u32,
+    pub loc_world_matrix: Option<NativeUniformLocation>,
+    pub loc_texture: Option<NativeUniformLocation>,
+    pub loc_straight_texture_alpha: Option<NativeUniformLocation>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GlColorScaleBiasInstancedShader {
+    pub program: NativeProgram,
+    pub loc_corner: u32,
+    pub loc_world_matrix: Option<NativeUniformLocation>,
+    pub loc_texture: Option<NativeUniformLocation>,
+    pub loc_straight_texture_alpha: Option<NativeUniformLocation>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GlUniformColorScaleBiasShader {
+    pub program: NativeProgram,
+    pub loc_corner: u32,
+    pub loc_world_matrix: Option<NativeUniformLocation>,
+    pub loc_texture: Option<NativeUniformLocation>,
+    pub loc_straight_texture_alpha: Option<NativeUniformLocation>,
+    pub loc_color_scale: Option<NativeUniformLocation>,
+    pub loc_color_bias: Option<NativeUniformLocation>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GlShapeMeshColorScaleBiasShader {
+    pub program: NativeProgram,
+    pub position_location: u32,
+    pub matrix_location: Option<NativeUniformLocation>,
+    pub color_location: Option<NativeUniformLocation>,
+    pub color_scale_location: Option<NativeUniformLocation>,
+    pub color_bias_location: Option<NativeUniformLocation>,
+    pub color_matrix_locations: Option<Vec<Option<NativeUniformLocation>>>,
+}
+
+/// The GL resources for one solid-fill mesh draw (TS `GlShapeMeshBinding`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GlShapeMeshBinding {
+    pub program: NativeProgram,
+    pub vertex_buffer: NativeBuffer,
+    pub index_buffer: NativeBuffer,
+    pub position_location: u32,
+    pub matrix_location: Option<NativeUniformLocation>,
+    pub color_location: Option<NativeUniformLocation>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GlColorAdjustmentResources {
+    pub matrix_instanced_shader: GlColorScaleBiasInstancedShader,
+    pub scale_bias_instanced_shader: GlColorScaleBiasInstancedShader,
+    pub tint_instanced_shader: GlColorScaleBiasInstancedShader,
+    pub uniform_scale_bias_shader: GlUniformColorScaleBiasShader,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GlParticleResources {
+    pub corner_buffer: NativeBuffer,
+    pub instance_buffer: NativeBuffer,
+    pub shader: GlParticleShader,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GlQuadBatchResources {
+    pub corner_buffer: NativeBuffer,
+    pub shader: GlQuadBatchShader,
+    pub writer_color_scale_bias_buffer: Option<NativeBuffer>,
+    pub writer_instance_buffer: Option<NativeBuffer>,
+    pub writer_material_buffer: Option<NativeBuffer>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GlShapeMeshResources {
+    pub binding: GlShapeMeshBinding,
+    pub color_matrix_shader: Option<GlShapeMeshColorScaleBiasShader>,
+    pub color_scale_bias_shader: Option<GlShapeMeshColorScaleBiasShader>,
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GlBlendFactor {
@@ -262,13 +384,16 @@ pub struct GlRenderRegistries {
     pub material_renderers: Arc<KindMap<&'static dyn GlQuadMaterialRenderer>>,
     pub modifier_snippets: Arc<KindMap<String>>,
     pub pbr_extensions: Arc<KindMap<String>>,
+    pub shape_rasterizer: Option<GlShapeRasterizerSlot>,
     pub texture_resolvers: Arc<KindMap<GlTextureResolver>>,
-    pub velocity_writers: Arc<KindMap<fn(&mut GlRenderState, &dyn std::any::Any)>>,
+    pub velocity_writers: Arc<KindMap<GlVelocityWriterSlot>>,
 }
 
 pub struct GlRenderStateOptions {
     pub render_registries: RenderStateOptions<GlRenderState>,
     pub gl_registries: GlRenderRegistries,
+    pub canvas_host: Option<HostCanvasCapability>,
+    pub image_host: Option<HostImageCapability>,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -342,6 +467,10 @@ pub struct GlContextRuntime {
     pub fill_program: Option<GlFillProgram>,
     pub fullscreen_programs: HashMap<String, GlFullscreenProgram>,
     pub quad_vertex_array: Option<NativeVertexArray>,
+    pub color_adjustment_resources: Option<GlColorAdjustmentResources>,
+    pub particle_resources: Option<GlParticleResources>,
+    pub quad_batch_resources: Option<GlQuadBatchResources>,
+    pub shape_mesh_resources: Option<GlShapeMeshResources>,
     pub(crate) pass_handle_pool: Vec<GlRenderPass>,
     pub(crate) pass_stack: Vec<GlPassStackEntry>,
     pub state_runtimes: HashMap<u64, Weak<RefCell<GlRenderStateRuntime>>>,
@@ -384,6 +513,24 @@ pub struct GlRenderStateRuntime {
     /// Per-state runtime owned by effects-gl (TS module WeakMaps keyed by the render state: effect
     /// guards and blend backdrops). Opaque here; only effects-gl reads it (D15 slot).
     pub effect_runtime: AnySlot,
+    pub canvas_host_surfaces: CanvasHostSurfaces,
+    pub particle_instance_data: Option<Vec<f32>>,
+    pub quad_batch_writer_blend_mode: Option<BlendMode>,
+    pub quad_batch_writer_material: Option<flight_entity::Ref<dyn Material2D>>,
+    pub quad_batch_writer_material_renderer: Option<&'static dyn GlQuadMaterialRenderer>,
+    pub quad_batch_writer_material_floats: usize,
+    pub quad_batch_writer_material_data: Vec<f32>,
+    pub quad_batch_writer_count: usize,
+    pub quad_batch_writer_instance_data: Vec<f32>,
+    pub quad_batch_writer_texture: Option<NativeTexture>,
+    pub quad_batch_writer_sampler: Option<flight_texture::Sampler>,
+    pub quad_batch_writer_straight_alpha: bool,
+    pub quad_batch_writer_smoothing: Option<bool>,
+    pub quad_batch_writer_color_scale_bias_mode: Option<u32>,
+    pub quad_batch_writer_uniform_color_scale_bias: Option<GlColorAdjustmentData>,
+    pub quad_batch_writer_color_scale_bias_data: Option<Vec<f32>>,
+    pub quad_batch_writer_color_matrix_data: Option<Vec<f32>>,
+    pub quad_batch_writer_color_tint_data: Option<Vec<u32>>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -401,6 +548,8 @@ pub struct GlRenderState {
     pub gl_runtime: Rc<RefCell<GlRenderStateRuntime>>,
     pub gl_registries: GlRenderRegistries,
     pub apply_blend_mode: Option<fn(&mut GlRenderState, Option<&BlendMode>)>,
+    pub canvas_host: Option<HostCanvasCapability>,
+    pub image_host: Option<HostImageCapability>,
 }
 
 pub struct GlContextLossSignals {
@@ -707,6 +856,7 @@ impl Default for GlRenderRegistries {
             material_renderers: Arc::new(empty_kind_map()),
             modifier_snippets: Arc::new(empty_kind_map()),
             pbr_extensions: Arc::new(empty_kind_map()),
+            shape_rasterizer: None,
             texture_resolvers: Arc::new(empty_kind_map()),
             velocity_writers: Arc::new(empty_kind_map()),
         };
@@ -718,6 +868,8 @@ impl Default for GlRenderStateOptions {
         return GlRenderStateOptions {
             render_registries: RenderStateOptions::default(),
             gl_registries: GlRenderRegistries::default(),
+            canvas_host: None,
+            image_host: None,
         };
     }
 }
@@ -750,6 +902,24 @@ impl Default for GlRenderStateRuntime {
             stats: GlRenderStats::default(),
             teardowns: Vec::new(),
             effect_runtime: None,
+            canvas_host_surfaces: CanvasHostSurfaces::default(),
+            particle_instance_data: None,
+            quad_batch_writer_blend_mode: None,
+            quad_batch_writer_material: None,
+            quad_batch_writer_material_renderer: None,
+            quad_batch_writer_material_floats: 0,
+            quad_batch_writer_material_data: vec![0.0; 8 * 256],
+            quad_batch_writer_count: 0,
+            quad_batch_writer_instance_data: vec![0.0; 13 * 256],
+            quad_batch_writer_texture: None,
+            quad_batch_writer_sampler: None,
+            quad_batch_writer_straight_alpha: false,
+            quad_batch_writer_smoothing: None,
+            quad_batch_writer_color_scale_bias_mode: None,
+            quad_batch_writer_uniform_color_scale_bias: None,
+            quad_batch_writer_color_scale_bias_data: None,
+            quad_batch_writer_color_matrix_data: None,
+            quad_batch_writer_color_tint_data: None,
         };
     }
 }

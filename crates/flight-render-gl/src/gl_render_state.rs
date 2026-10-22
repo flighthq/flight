@@ -43,6 +43,8 @@ pub fn create_gl_render_state(
         gl_runtime: Rc::clone(&gl_runtime),
         gl_registries,
         apply_blend_mode: None,
+        canvas_host: options.canvas_host.clone(),
+        image_host: options.image_host.clone(),
     };
     let state_id = get_entity_id(&state);
     {
@@ -120,6 +122,10 @@ pub fn initialize_gl_context_state(gl: Rc<glow::Context>) -> Result<GlContextSta
             fill_program: None,
             fullscreen_programs: HashMap::new(),
             quad_vertex_array: None,
+            color_adjustment_resources: None,
+            particle_resources: None,
+            quad_batch_resources: None,
+            shape_mesh_resources: None,
             pass_handle_pool: Vec::new(),
             pass_stack: Vec::new(),
             state_runtimes: HashMap::new(),
@@ -201,6 +207,7 @@ pub fn destroy_gl_render_state(
     let (
         owned_textures,
         render_targets,
+        resource_buffers,
         quad_index_buffer,
         quad_vertex_array,
         quad_vertex_buffer,
@@ -215,6 +222,37 @@ pub fn destroy_gl_render_state(
         );
         if let Some(program) = &context.fill_program {
             programs.insert(program.program);
+        }
+        if let Some(resources) = &context.particle_resources {
+            programs.insert(resources.shader.program);
+        }
+        if let Some(resources) = &context.quad_batch_resources {
+            programs.insert(resources.shader.program);
+        }
+        if let Some(resources) = &context.color_adjustment_resources {
+            programs.insert(resources.scale_bias_instanced_shader.program);
+            programs.insert(resources.matrix_instanced_shader.program);
+            programs.insert(resources.tint_instanced_shader.program);
+            programs.insert(resources.uniform_scale_bias_shader.program);
+        }
+        if let Some(resources) = &context.shape_mesh_resources {
+            if let Some(shader) = &resources.color_scale_bias_shader {
+                programs.insert(shader.program);
+            }
+            if let Some(shader) = &resources.color_matrix_shader {
+                programs.insert(shader.program);
+            }
+        }
+        let mut resource_buffers = Vec::new();
+        if let Some(resources) = context.particle_resources.take() {
+            resource_buffers.push(resources.corner_buffer);
+            resource_buffers.push(resources.instance_buffer);
+        }
+        if let Some(resources) = context.quad_batch_resources.take() {
+            resource_buffers.push(resources.corner_buffer);
+            resource_buffers.extend(resources.writer_instance_buffer);
+            resource_buffers.extend(resources.writer_material_buffer);
+            resource_buffers.extend(resources.writer_color_scale_bias_buffer);
         }
         let owned_textures = context
             .texture_caches
@@ -232,6 +270,7 @@ pub fn destroy_gl_render_state(
         (
             owned_textures,
             render_targets,
+            resource_buffers,
             context.quad_index_buffer.take(),
             context.quad_vertex_array.take(),
             context.quad_vertex_buffer.take(),
@@ -264,6 +303,9 @@ pub fn destroy_gl_render_state(
         }
         if let Some(vertex_array) = quad_vertex_array {
             state.gl.delete_vertex_array(vertex_array);
+        }
+        for buffer in resource_buffers {
+            state.gl.delete_buffer(buffer);
         }
     }
 }
