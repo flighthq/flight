@@ -1,23 +1,26 @@
-use flight_camera::{get_camera_3d_position, get_camera_3d_view_projection_matrix4, Camera3D, Projection};
-use flight_geometry::{create_matrix3, create_matrix4, Vector3};
-use flight_lighting::{
-    Scene3DLightBlock, MAX_DIRECTIONAL_SHADOW_PCF_RADIUS, MAX_FORWARD_LIGHTS,
-    SCENE_LIGHT_HEMISPHERE_OFFSET, SCENE_LIGHT_HEMISPHERE_STRIDE, SCENE_LIGHT_POINT_OFFSET,
-    SCENE_LIGHT_POINT_STRIDE, SCENE_LIGHT_SPOT_OFFSET, SCENE_LIGHT_SPOT_STRIDE,
+use flight_camera::{
+    get_camera_3d_position, get_camera_3d_view_projection_matrix4, Camera3D, Projection,
 };
-use flight_materials::BlendMode;
+use flight_geometry::{create_matrix3, create_matrix4, create_vector3};
+use flight_lighting::{
+    Scene3DLightBlock, MAX_FORWARD_LIGHTS, SCENE_LIGHT_HEMISPHERE_OFFSET,
+    SCENE_LIGHT_HEMISPHERE_STRIDE, SCENE_LIGHT_POINT_OFFSET, SCENE_LIGHT_POINT_STRIDE,
+    SCENE_LIGHT_SPOT_OFFSET, SCENE_LIGHT_SPOT_STRIDE,
+};
+use flight_materials::{is_material3d_blended, BLEND_MODE_NORMAL};
 use flight_render_wgpu::{
-    get_wgpu_blend_state, get_wgpu_render_state_device_resources, get_wgpu_render_state_native_device,
-    get_wgpu_render_state_runtime, get_wgpu_render_state_runtime_mut, get_wgpu_sampler,
-    resolve_wgpu_texture, WgpuRenderState,
+    get_wgpu_blend_state, get_wgpu_render_state_device_resources,
+    get_wgpu_render_state_native_device, get_wgpu_render_state_runtime,
+    get_wgpu_render_state_runtime_mut, get_wgpu_sampler, resolve_wgpu_texture, WgpuRenderState,
 };
 use flight_texture::{
-    get_texture_uv_matrix, has_texture_source, has_texture_uv_transform, TextureFilter, TextureVariant,
+    get_texture_uv_matrix, has_texture_source, has_texture_uv_transform, TextureFilter,
+    TextureVariant,
 };
 
 use crate::types::{
-    WgpuColorAdjustmentMaterialFeature, WgpuMaterialBinding, WgpuMeshInstanceBufferSlot,
-    WgpuMeshPipeline, WgpuScene3DLayouts, WgpuScene3DRenderProxy, WgpuSkinningAdapter,
+    WgpuColorAdjustmentMaterialFeature, WgpuMaterialBinding, WgpuMeshPipeline,
+    WgpuScene3DLayouts, WgpuScene3DRenderProxy, WgpuSkinningAdapter,
 };
 use crate::wgpu_mesh_upload::ensure_wgpu_mesh_upload;
 use crate::wgpu_scene3d_runtime::{get_wgpu_scene3d_runtime, get_wgpu_scene3d_runtime_mut};
@@ -51,9 +54,18 @@ const IDENTITY_INSTANCE: [f32; INSTANCE_RECORD_FLOATS] = [
     1.0, 1.0, 1.0, 1.0,
 ];
 
+fn f32_as_bytes(data: &[f32]) -> &[u8] {
+    return unsafe {
+        std::slice::from_raw_parts(data.as_ptr().cast::<u8>(), std::mem::size_of_val(data))
+    };
+}
+
 pub fn begin_wgpu_mesh_draw(state: &mut WgpuRenderState, pipeline: &WgpuMeshPipeline) {
-    if state.runtime.render_pass.is_none() {
-        return;
+    {
+        let rt = get_wgpu_render_state_runtime(state);
+        if rt.render_pass.is_none() {
+            return;
+        }
     }
 
     get_wgpu_scene3d_runtime_mut(state, |scene| {
@@ -62,27 +74,33 @@ pub fn begin_wgpu_mesh_draw(state: &mut WgpuRenderState, pipeline: &WgpuMeshPipe
 
     let frame_bg = get_wgpu_scene3d_runtime(state, |scene| scene.frame_bind_group.clone());
 
-    let pass = state.runtime.render_pass.as_mut().unwrap();
-    pass.set_pipeline(&pipeline.pipeline);
-    if let Some(ref bg) = frame_bg {
-        pass.set_bind_group(0, bg, &[]);
+    {
+        let rt = get_wgpu_render_state_runtime_mut(state);
+        let pass = rt.render_pass.as_mut().unwrap();
+        pass.set_pipeline(&pipeline.pipeline);
+        if let Some(ref bg) = frame_bg {
+            pass.set_bind_group(0, bg, &[]);
+        }
     }
 
     if pipeline.has_pbr_sample_group {
         let bg = ensure_wgpu_pbr_sample_bind_group(state);
-        if let Some(ref mut pass) = state.runtime.render_pass {
+        let rt = get_wgpu_render_state_runtime_mut(state);
+        if let Some(ref mut pass) = rt.render_pass {
             pass.set_bind_group(3, &bg, &[]);
         }
     } else if pipeline.has_shadow_group {
         let bg = ensure_wgpu_shadow_sample_bind_group(state);
-        if let Some(ref mut pass) = state.runtime.render_pass {
+        let rt = get_wgpu_render_state_runtime_mut(state);
+        if let Some(ref mut pass) = rt.render_pass {
             pass.set_bind_group(3, &bg, &[]);
         }
     }
 
     if pipeline.has_ibl_group {
         let bg = ensure_wgpu_ibl_sample_bind_group(state);
-        if let Some(ref mut pass) = state.runtime.render_pass {
+        let rt = get_wgpu_render_state_runtime_mut(state);
+        if let Some(ref mut pass) = rt.render_pass {
             pass.set_bind_group(4, &bg, &[]);
         }
     }
@@ -174,7 +192,12 @@ pub fn create_wgpu_mesh_pipeline(
 
     let (blend_mode, active_mirrored) = get_wgpu_scene3d_runtime(state, |scene| {
         let bm = if options.blended {
-            Some(scene.active_blend_mode.clone().unwrap_or(BlendMode::Normal))
+            Some(
+                scene
+                    .active_blend_mode
+                    .clone()
+                    .unwrap_or_else(|| BLEND_MODE_NORMAL.to_string()),
+            )
         } else {
             None
         };
@@ -192,45 +215,48 @@ pub fn create_wgpu_mesh_pipeline(
         None
     };
 
-    let mut bind_group_layouts: Vec<&wgpu::BindGroupLayout> = vec![
-        &layouts.frame_bind_group_layout,
-        skinning_draw_layout
-            .as_ref()
-            .unwrap_or(&layouts.draw_bind_group_layout),
-        options.material_bind_group_layout,
+    let mut bind_group_layouts: Vec<Option<&wgpu::BindGroupLayout>> = vec![
+        Some(&layouts.frame_bind_group_layout),
+        Some(
+            skinning_draw_layout
+                .as_ref()
+                .unwrap_or(&layouts.draw_bind_group_layout),
+        ),
+        Some(options.material_bind_group_layout),
     ];
     if let Some(extra) = options.extra_bind_group_layout {
-        bind_group_layouts.push(extra);
+        bind_group_layouts.push(Some(extra));
     } else if let Some(pbr) = options.pbr_sample_bind_group_layout {
-        bind_group_layouts.push(pbr);
+        bind_group_layouts.push(Some(pbr));
     } else {
         if let Some(shadow) = options.shadow_bind_group_layout {
-            bind_group_layouts.push(shadow);
+            bind_group_layouts.push(Some(shadow));
         }
         if let Some(ibl) = options.ibl_bind_group_layout {
-            bind_group_layouts.push(ibl);
+            bind_group_layouts.push(Some(ibl));
         }
     }
 
-    let pipeline_layout = native
-        .device
-        .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-            label: None,
-            bind_group_layouts: &bind_group_layouts,
-            push_constant_ranges: &[],
-        });
+    let pipeline_layout =
+        native
+            .device
+            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+                label: None,
+                bind_group_layouts: &bind_group_layouts,
+                immediate_size: 0,
+            });
 
-    let skinning_vertex_buffers: Option<Vec<wgpu::VertexBufferLayout<'static>>> = if options.skinned
-    {
-        get_wgpu_scene3d_runtime(state, |scene| {
-            scene
-                .skinning_adapter
-                .as_ref()
-                .map(|s| s.vertex_buffer_layouts())
-        })
-    } else {
-        None
-    };
+    let skinning_vertex_buffers: Option<Vec<wgpu::VertexBufferLayout<'static>>> =
+        if options.skinned {
+            get_wgpu_scene3d_runtime(state, |scene| {
+                scene
+                    .skinning_adapter
+                    .as_ref()
+                    .map(|s| s.vertex_buffer_layouts())
+            })
+        } else {
+            None
+        };
 
     let mut vertex_buffers: Vec<wgpu::VertexBufferLayout<'static>> =
         skinning_vertex_buffers.unwrap_or_else(vertex_buffer_layouts);
@@ -286,7 +312,7 @@ pub fn create_wgpu_mesh_pipeline(
                     bias: wgpu::DepthBiasState::default(),
                 }),
                 multisample: wgpu::MultisampleState::default(),
-                multiview: None,
+                multiview_mask: None,
                 cache: None,
             });
 
@@ -305,11 +331,15 @@ pub fn draw_wgpu_mesh_subset(
     proxy: &WgpuScene3DRenderProxy,
     geometry: &flight_meshgeometry::MeshGeometry,
 ) {
-    if state.runtime.render_pass.is_none() {
-        return;
+    {
+        let rt = get_wgpu_render_state_runtime(state);
+        if rt.render_pass.is_none() {
+            return;
+        }
     }
 
-    let active_pipeline = get_wgpu_scene3d_runtime(state, |scene| scene.active_mesh_pipeline.clone());
+    let active_pipeline =
+        get_wgpu_scene3d_runtime(state, |scene| scene.active_mesh_pipeline.clone());
     let active_pipeline = match active_pipeline {
         Some(p) => p,
         None => return,
@@ -320,11 +350,15 @@ pub fn draw_wgpu_mesh_subset(
         return;
     }
 
-    let upload = ensure_wgpu_mesh_upload(state, geometry, active_pipeline.skinned);
-    let upload = match upload {
-        Some(u) => u,
-        None => return,
-    };
+    let upload_data = ensure_wgpu_mesh_upload(state, geometry, |upload| {
+        (
+            upload.vertex_buffer.clone(),
+            upload.index_buffer.clone(),
+            upload.index_format,
+        )
+    });
+
+    let (vertex_buffer, index_buffer, index_format) = upload_data;
 
     let skin_draw_bg = if active_pipeline.skinned
         && proxy.joint_matrices.is_some()
@@ -366,34 +400,27 @@ pub fn draw_wgpu_mesh_subset(
     };
     let instance_buffer = ensure_wgpu_instance_buffer(state, instance_source, instance_count);
 
-    let pass = state.runtime.render_pass.as_mut().unwrap();
+    let rt = get_wgpu_render_state_runtime_mut(state);
+    let pass = rt.render_pass.as_mut().unwrap();
     pass.set_bind_group(1, bound_draw_group, &[pending_offset]);
-    pass.set_vertex_buffer(0, upload.vertex_buffer.slice(..));
-
+    pass.set_vertex_buffer(0, vertex_buffer.slice(..));
     pass.set_vertex_buffer(1, instance_buffer.slice(..));
 
-    if upload.index_buffer.is_none() {
+    if index_buffer.is_none() {
         pass.draw(
             subset.index_offset..(subset.index_offset + subset.index_count),
             0..instance_count,
         );
     } else {
         pass.set_index_buffer(
-            upload.index_buffer.as_ref().unwrap().slice(..),
-            upload.index_format.unwrap_or(wgpu::IndexFormat::Uint16),
+            index_buffer.as_ref().unwrap().slice(..),
+            index_format.unwrap_or(wgpu::IndexFormat::Uint16),
         );
         pass.draw_indexed(
             subset.index_offset..(subset.index_offset + subset.index_count),
             0,
             0..instance_count,
         );
-    }
-}
-
-fn is_wgpu_mesh_alpha_coverage(material: Option<&dyn flight_materials::Material3D>) -> bool {
-    match material {
-        Some(m) => m.alpha_mode() == "blend",
-        None => false,
     }
 }
 
@@ -430,62 +457,7 @@ pub fn ensure_wgpu_ibl_sample_bind_group(state: &WgpuRenderState) -> wgpu::BindG
     let native = get_wgpu_render_state_native_device(state);
 
     return get_wgpu_scene3d_runtime_mut(state, |scene| {
-        if scene.ibl_uniform_buffer.is_none() {
-            scene.ibl_uniform_buffer =
-                Some(native.device.create_buffer(&wgpu::BufferDescriptor {
-                    label: Some("scene3d_ibl"),
-                    size: IBL_SAMPLE_UNIFORM_BYTES as u64,
-                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                    mapped_at_creation: false,
-                }));
-        }
-        if scene.ibl_sampler.is_none() {
-            scene.ibl_sampler = Some(native.device.create_sampler(&wgpu::SamplerDescriptor {
-                mag_filter: wgpu::FilterMode::Linear,
-                min_filter: wgpu::FilterMode::Linear,
-                mipmap_filter: wgpu::MipmapFilterMode::Linear,
-                ..wgpu::SamplerDescriptor::default()
-            }));
-        }
-        if scene.ibl_dummy_cube_view.is_none() {
-            let cube_tex = native.device.create_texture(&wgpu::TextureDescriptor {
-                label: Some("ibl_dummy_cube"),
-                size: wgpu::Extent3d {
-                    width: 1,
-                    height: 1,
-                    depth_or_array_layers: 6,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: IBL_DUMMY_FORMAT,
-                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-                view_formats: &[],
-            });
-            scene.ibl_dummy_cube_view = Some(cube_tex.create_view(&wgpu::TextureViewDescriptor {
-                dimension: Some(wgpu::TextureViewDimension::Cube),
-                ..wgpu::TextureViewDescriptor::default()
-            }));
-            scene.ibl_dummy_cube_texture = Some(cube_tex);
-
-            let lut_tex = native.device.create_texture(&wgpu::TextureDescriptor {
-                label: Some("ibl_dummy_lut"),
-                size: wgpu::Extent3d {
-                    width: 1,
-                    height: 1,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: IBL_DUMMY_FORMAT,
-                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-                view_formats: &[],
-            });
-            scene.ibl_dummy_lut_view =
-                Some(lut_tex.create_view(&wgpu::TextureViewDescriptor::default()));
-            scene.ibl_dummy_lut_texture = Some(lut_tex);
-        }
+        ensure_ibl_resources_inner(scene, &native);
 
         let mut u = [0.0f32; 4];
         if let Some(ref ibl) = scene.ibl {
@@ -497,7 +469,7 @@ pub fn ensure_wgpu_ibl_sample_bind_group(state: &WgpuRenderState) -> wgpu::BindG
         native.queue.write_buffer(
             scene.ibl_uniform_buffer.as_ref().unwrap(),
             0,
-            bytemuck::cast_slice(&u),
+            f32_as_bytes(&u),
         );
 
         let irradiance_view = scene
@@ -632,19 +604,14 @@ fn ensure_wgpu_instance_buffer(
     let source = matrices.unwrap_or(&IDENTITY_INSTANCE);
     let required = (1.max(instance_count) as u64) * INSTANCE_RECORD_BYTES;
 
-    let cursor = state.runtime.mesh_instance_buffer_cursor as usize;
-    if cursor >= state.runtime.mesh_instance_buffer_pool.len() {
-        state
-            .runtime
-            .mesh_instance_buffer_pool
-            .push(WgpuMeshInstanceBufferSlot {
-                buffer: None,
-                capacity: 0,
-            });
+    let rt = get_wgpu_render_state_runtime_mut(state);
+    let cursor = rt.mesh_instance_buffer_cursor as usize;
+    if cursor >= rt.mesh_instance_buffer_pool.len() {
+        rt.mesh_instance_buffer_pool.push(Default::default());
     }
-    state.runtime.mesh_instance_buffer_cursor += 1;
+    rt.mesh_instance_buffer_cursor += 1;
 
-    let slot = &mut state.runtime.mesh_instance_buffer_pool[cursor];
+    let slot = &mut rt.mesh_instance_buffer_pool[cursor];
     if slot.buffer.is_none() || slot.capacity < required {
         let capacity = required.max(slot.capacity * 2).max(INSTANCE_RECORD_BYTES * 64);
         let native = get_wgpu_render_state_native_device(state);
@@ -662,7 +629,7 @@ fn ensure_wgpu_instance_buffer(
     native.queue.write_buffer(
         slot.buffer.as_ref().unwrap(),
         0,
-        &bytemuck::cast_slice(source)[..byte_len as usize],
+        &f32_as_bytes(source)[..byte_len as usize],
     );
     return slot.buffer.as_ref().unwrap().clone();
 }
@@ -827,63 +794,7 @@ pub fn ensure_wgpu_pbr_sample_bind_group(state: &WgpuRenderState) -> wgpu::BindG
             scene.shadow_dummy_texture = Some(tex);
         }
 
-        if scene.ibl_uniform_buffer.is_none() {
-            scene.ibl_uniform_buffer =
-                Some(native.device.create_buffer(&wgpu::BufferDescriptor {
-                    label: Some("scene3d_ibl"),
-                    size: IBL_SAMPLE_UNIFORM_BYTES as u64,
-                    usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-                    mapped_at_creation: false,
-                }));
-        }
-        if scene.ibl_sampler.is_none() {
-            scene.ibl_sampler = Some(native.device.create_sampler(&wgpu::SamplerDescriptor {
-                mag_filter: wgpu::FilterMode::Linear,
-                min_filter: wgpu::FilterMode::Linear,
-                mipmap_filter: wgpu::MipmapFilterMode::Linear,
-                ..wgpu::SamplerDescriptor::default()
-            }));
-        }
-        if scene.ibl_dummy_cube_view.is_none() {
-            let cube_tex = native.device.create_texture(&wgpu::TextureDescriptor {
-                label: Some("ibl_dummy_cube"),
-                size: wgpu::Extent3d {
-                    width: 1,
-                    height: 1,
-                    depth_or_array_layers: 6,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: IBL_DUMMY_FORMAT,
-                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-                view_formats: &[],
-            });
-            scene.ibl_dummy_cube_view = Some(cube_tex.create_view(&wgpu::TextureViewDescriptor {
-                dimension: Some(wgpu::TextureViewDimension::Cube),
-                ..wgpu::TextureViewDescriptor::default()
-            }));
-            scene.ibl_dummy_cube_texture = Some(cube_tex);
-
-            let lut_tex = native.device.create_texture(&wgpu::TextureDescriptor {
-                label: Some("ibl_dummy_lut"),
-                size: wgpu::Extent3d {
-                    width: 1,
-                    height: 1,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: IBL_DUMMY_FORMAT,
-                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-                view_formats: &[],
-            });
-            scene.ibl_dummy_lut_view =
-                Some(lut_tex.create_view(&wgpu::TextureViewDescriptor::default()));
-            scene.ibl_dummy_lut_texture = Some(lut_tex);
-        }
-
+        ensure_ibl_resources_inner(scene, &native);
         write_wgpu_shadow_sample_uniform_inner(scene, &native);
 
         let mut ibl_u = [0.0f32; 4];
@@ -896,7 +807,7 @@ pub fn ensure_wgpu_pbr_sample_bind_group(state: &WgpuRenderState) -> wgpu::BindG
         native.queue.write_buffer(
             scene.ibl_uniform_buffer.as_ref().unwrap(),
             0,
-            bytemuck::cast_slice(&ibl_u),
+            f32_as_bytes(&ibl_u),
         );
 
         let shadow_view = scene
@@ -985,6 +896,68 @@ pub fn ensure_wgpu_pbr_sample_bind_group(state: &WgpuRenderState) -> wgpu::BindG
         }
         return scene.pbr_sample_bind_group.clone().unwrap();
     });
+}
+
+fn ensure_ibl_resources_inner(
+    scene: &mut crate::types::WgpuScene3DRuntime,
+    native: &flight_render_wgpu::WgpuNativeDevice,
+) {
+    if scene.ibl_uniform_buffer.is_none() {
+        scene.ibl_uniform_buffer =
+            Some(native.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("scene3d_ibl"),
+                size: IBL_SAMPLE_UNIFORM_BYTES as u64,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            }));
+    }
+    if scene.ibl_sampler.is_none() {
+        scene.ibl_sampler = Some(native.device.create_sampler(&wgpu::SamplerDescriptor {
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::MipmapFilterMode::Linear,
+            ..wgpu::SamplerDescriptor::default()
+        }));
+    }
+    if scene.ibl_dummy_cube_view.is_none() {
+        let cube_tex = native.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("ibl_dummy_cube"),
+            size: wgpu::Extent3d {
+                width: 1,
+                height: 1,
+                depth_or_array_layers: 6,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: IBL_DUMMY_FORMAT,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        scene.ibl_dummy_cube_view = Some(cube_tex.create_view(&wgpu::TextureViewDescriptor {
+            dimension: Some(wgpu::TextureViewDimension::Cube),
+            ..wgpu::TextureViewDescriptor::default()
+        }));
+        scene.ibl_dummy_cube_texture = Some(cube_tex);
+
+        let lut_tex = native.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("ibl_dummy_lut"),
+            size: wgpu::Extent3d {
+                width: 1,
+                height: 1,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: IBL_DUMMY_FORMAT,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        scene.ibl_dummy_lut_view =
+            Some(lut_tex.create_view(&wgpu::TextureViewDescriptor::default()));
+        scene.ibl_dummy_lut_texture = Some(lut_tex);
+    }
 }
 
 pub fn ensure_wgpu_pbr_sample_layout(state: &WgpuRenderState) -> wgpu::BindGroupLayout {
@@ -1170,7 +1143,11 @@ pub fn ensure_wgpu_scene3d_pipeline(
         (
             rt.active_blended_run,
             if rt.active_blended_run {
-                Some(rt.active_blend_mode.clone().unwrap_or(BlendMode::Normal))
+                Some(
+                    rt.active_blend_mode
+                        .clone()
+                        .unwrap_or_else(|| BLEND_MODE_NORMAL.to_string()),
+                )
             } else {
                 None
             },
@@ -1181,7 +1158,7 @@ pub fn ensure_wgpu_scene3d_pipeline(
 
     let blend_label = match blend_mode {
         None => "opaque".to_string(),
-        Some(ref bm) => format!("blend:{:?}", bm),
+        Some(ref bm) => format!("blend:{}", bm),
     };
     let variant_key = format!(
         "{}|{}|{}|{}",
@@ -1355,7 +1332,7 @@ fn write_wgpu_shadow_sample_uniform_inner(
     native.queue.write_buffer(
         scene.shadow_uniform_buffer.as_ref().unwrap(),
         0,
-        bytemuck::cast_slice(&values),
+        f32_as_bytes(&values),
     );
 }
 
@@ -1365,7 +1342,7 @@ pub fn get_wgpu_material_sampler(
 ) -> wgpu::Sampler {
     let texture = match texture {
         Some(t) => t,
-        None => return get_wgpu_render_state_device_resources(state).linear_sampler,
+        None => return get_wgpu_render_state_device_resources(state).linear_sampler.clone(),
     };
     let sampler = &texture.texture_fields().sampler;
     let min_filter = match sampler.min_filter {
@@ -1485,10 +1462,7 @@ pub fn splice_wgpu_color_adjustment_prelude(
     return format!("{}{}", chunk, replaced);
 }
 
-pub fn stash_wgpu_uv_transform(
-    state: &WgpuRenderState,
-    texture: Option<&dyn TextureVariant>,
-) {
+pub fn stash_wgpu_uv_transform(state: &WgpuRenderState, texture: Option<&dyn TextureVariant>) {
     get_wgpu_scene3d_runtime_mut(state, |scene| {
         let out = &mut scene.pending_uv_transform;
         match texture {
@@ -1519,9 +1493,6 @@ pub fn wgpu_per_map_material_bind_group_needs_rebuild(
     samplers: &[&wgpu::Sampler],
     views: &[&wgpu::TextureView],
 ) -> bool {
-    if samplers.len() != views.len() {
-        return true;
-    }
     let cached_samplers = match &binding.samplers {
         Some(s) => s,
         None => return true,
@@ -1550,6 +1521,7 @@ pub fn write_wgpu_draw_uniform(
 
     let draw_bg = get_wgpu_scene3d_runtime_mut(state, |scene| {
         if scene.draw_bind_group.is_none() {
+            let rt = get_wgpu_render_state_runtime(state);
             scene.draw_bind_group =
                 Some(native.device.create_bind_group(&wgpu::BindGroupDescriptor {
                     label: None,
@@ -1557,7 +1529,7 @@ pub fn write_wgpu_draw_uniform(
                     entries: &[wgpu::BindGroupEntry {
                         binding: 0,
                         resource: wgpu::BindingResource::Buffer(wgpu::BufferBinding {
-                            buffer: &state.runtime.uniform_buffer,
+                            buffer: &rt.uniform_buffer,
                             offset: 0,
                             size: std::num::NonZero::new(DRAW_UNIFORM_BYTES),
                         }),
@@ -1567,65 +1539,68 @@ pub fn write_wgpu_draw_uniform(
         return scene.draw_bind_group.clone().unwrap();
     });
 
-    let offset = state.runtime.uniform_offset;
+    let rt = get_wgpu_render_state_runtime_mut(state);
+    let offset = rt.uniform_offset;
     let float_offset = (offset / 4) as usize;
-    let u = &mut state.runtime.uniform_data;
 
     let world = &proxy.world_matrix.m;
     for i in 0..16 {
-        u[float_offset + i] = world[i];
+        rt.uniform_data[float_offset + i] = world[i];
     }
 
     let n = &proxy.normal_matrix.m;
-    u[float_offset + 16] = n[0];
-    u[float_offset + 17] = n[1];
-    u[float_offset + 18] = n[2];
-    u[float_offset + 19] = 0.0;
-    u[float_offset + 20] = n[3];
-    u[float_offset + 21] = n[4];
-    u[float_offset + 22] = n[5];
-    u[float_offset + 23] = 0.0;
-    u[float_offset + 24] = n[6];
-    u[float_offset + 25] = n[7];
-    u[float_offset + 26] = n[8];
-    u[float_offset + 27] = 0.0;
+    rt.uniform_data[float_offset + 16] = n[0];
+    rt.uniform_data[float_offset + 17] = n[1];
+    rt.uniform_data[float_offset + 18] = n[2];
+    rt.uniform_data[float_offset + 19] = 0.0;
+    rt.uniform_data[float_offset + 20] = n[3];
+    rt.uniform_data[float_offset + 21] = n[4];
+    rt.uniform_data[float_offset + 22] = n[5];
+    rt.uniform_data[float_offset + 23] = 0.0;
+    rt.uniform_data[float_offset + 24] = n[6];
+    rt.uniform_data[float_offset + 25] = n[7];
+    rt.uniform_data[float_offset + 26] = n[8];
+    rt.uniform_data[float_offset + 27] = 0.0;
 
     let uv = get_wgpu_scene3d_runtime(state, |scene| scene.pending_uv_transform.clone());
+    let rt = get_wgpu_render_state_runtime_mut(state);
     if uv.len() >= 9 {
-        u[float_offset + 28] = uv[0];
-        u[float_offset + 29] = uv[1];
-        u[float_offset + 30] = uv[2];
-        u[float_offset + 31] = 0.0;
-        u[float_offset + 32] = uv[3];
-        u[float_offset + 33] = uv[4];
-        u[float_offset + 34] = uv[5];
-        u[float_offset + 35] = 0.0;
-        u[float_offset + 36] = uv[6];
-        u[float_offset + 37] = uv[7];
-        u[float_offset + 38] = uv[8];
-        u[float_offset + 39] = 0.0;
+        rt.uniform_data[float_offset + 28] = uv[0];
+        rt.uniform_data[float_offset + 29] = uv[1];
+        rt.uniform_data[float_offset + 30] = uv[2];
+        rt.uniform_data[float_offset + 31] = 0.0;
+        rt.uniform_data[float_offset + 32] = uv[3];
+        rt.uniform_data[float_offset + 33] = uv[4];
+        rt.uniform_data[float_offset + 34] = uv[5];
+        rt.uniform_data[float_offset + 35] = 0.0;
+        rt.uniform_data[float_offset + 36] = uv[6];
+        rt.uniform_data[float_offset + 37] = uv[7];
+        rt.uniform_data[float_offset + 38] = uv[8];
+        rt.uniform_data[float_offset + 39] = 0.0;
     } else {
-        u[float_offset + 28] = 1.0;
-        u[float_offset + 29] = 0.0;
-        u[float_offset + 30] = 0.0;
-        u[float_offset + 31] = 0.0;
-        u[float_offset + 32] = 0.0;
-        u[float_offset + 33] = 1.0;
-        u[float_offset + 34] = 0.0;
-        u[float_offset + 35] = 0.0;
-        u[float_offset + 36] = 0.0;
-        u[float_offset + 37] = 0.0;
-        u[float_offset + 38] = 1.0;
-        u[float_offset + 39] = 0.0;
+        rt.uniform_data[float_offset + 28] = 1.0;
+        rt.uniform_data[float_offset + 29] = 0.0;
+        rt.uniform_data[float_offset + 30] = 0.0;
+        rt.uniform_data[float_offset + 31] = 0.0;
+        rt.uniform_data[float_offset + 32] = 0.0;
+        rt.uniform_data[float_offset + 33] = 1.0;
+        rt.uniform_data[float_offset + 34] = 0.0;
+        rt.uniform_data[float_offset + 35] = 0.0;
+        rt.uniform_data[float_offset + 36] = 0.0;
+        rt.uniform_data[float_offset + 37] = 0.0;
+        rt.uniform_data[float_offset + 38] = 1.0;
+        rt.uniform_data[float_offset + 39] = 0.0;
     }
 
-    u[float_offset + 40] = proxy.alpha.unwrap_or(1.0);
-    u[float_offset + 41] = if proxy
+    rt.uniform_data[float_offset + 40] = proxy.alpha.unwrap_or(1.0);
+    rt.uniform_data[float_offset + 41] = if proxy
         .material
         .as_ref()
-        .map(|m| m.read().unwrap())
-        .as_ref()
-        .map_or(false, |m| m.alpha_mode() == "blend")
+        .map(|m| {
+            let guard = m.read().unwrap();
+            is_material3d_blended(&*guard)
+        })
+        .unwrap_or(false)
     {
         1.0
     } else {
@@ -1639,34 +1614,37 @@ pub fn write_wgpu_draw_uniform(
         scene.pending_skin_normal_palette_base = 0;
         (sb, snb)
     });
-    u[float_offset + 42] = skin_base as f32;
-    u[float_offset + 43] = skin_normal_base as f32;
+
+    let rt = get_wgpu_render_state_runtime_mut(state);
+    rt.uniform_data[float_offset + 42] = skin_base as f32;
+    rt.uniform_data[float_offset + 43] = skin_normal_base as f32;
 
     if let Some(ref cm) = proxy.color_matrix {
         for row in 0..4 {
-            let source = row * 5;
+            let source_idx = row * 5;
             let target = float_offset + 44 + row * 4;
-            u[target] = cm[source];
-            u[target + 1] = cm[source + 1];
-            u[target + 2] = cm[source + 2];
-            u[target + 3] = cm[source + 3];
-            u[float_offset + 60 + row] = cm[source + 4];
+            rt.uniform_data[target] = cm[source_idx];
+            rt.uniform_data[target + 1] = cm[source_idx + 1];
+            rt.uniform_data[target + 2] = cm[source_idx + 2];
+            rt.uniform_data[target + 3] = cm[source_idx + 3];
+            rt.uniform_data[float_offset + 60 + row] = cm[source_idx + 4];
         }
     } else if let Some(ref csb) = proxy.color_scale_bias {
-        u[float_offset + 44] = csb.red_scale;
-        u[float_offset + 45] = csb.green_scale;
-        u[float_offset + 46] = csb.blue_scale;
-        u[float_offset + 47] = csb.alpha_scale;
-        u[float_offset + 48] = csb.red_bias;
-        u[float_offset + 49] = csb.green_bias;
-        u[float_offset + 50] = csb.blue_bias;
-        u[float_offset + 51] = csb.alpha_bias;
+        rt.uniform_data[float_offset + 44] = csb.red_scale;
+        rt.uniform_data[float_offset + 45] = csb.green_scale;
+        rt.uniform_data[float_offset + 46] = csb.blue_scale;
+        rt.uniform_data[float_offset + 47] = csb.alpha_scale;
+        rt.uniform_data[float_offset + 48] = csb.red_bias;
+        rt.uniform_data[float_offset + 49] = csb.green_bias;
+        rt.uniform_data[float_offset + 50] = csb.blue_bias;
+        rt.uniform_data[float_offset + 51] = csb.alpha_bias;
     }
 
     get_wgpu_scene3d_runtime_mut(state, |scene| {
         scene.pending_draw_offset = offset as u64;
     });
-    state.runtime.uniform_offset += state.runtime.uniform_stride;
+    let rt = get_wgpu_render_state_runtime_mut(state);
+    rt.uniform_offset += rt.uniform_stride;
 
     return draw_bg;
 }
@@ -1701,11 +1679,7 @@ pub fn write_wgpu_frame_uniform(
         f[i] = webgpu_vp[i];
     }
 
-    let mut cam_pos = Vector3 {
-        x: 0.0,
-        y: 0.0,
-        z: 0.0,
-    };
+    let mut cam_pos = create_vector3(0.0, 0.0, 0.0);
     get_camera_3d_position(&mut cam_pos, camera);
     f[16] = cam_pos.x;
     f[17] = cam_pos.y;
@@ -1755,9 +1729,7 @@ pub fn write_wgpu_frame_uniform(
     let native = get_wgpu_render_state_native_device(state);
     get_wgpu_scene3d_runtime(state, |scene| {
         if let Some(ref buffer) = scene.frame_buffer {
-            native
-                .queue
-                .write_buffer(buffer, 0, bytemuck::cast_slice(&f));
+            native.queue.write_buffer(buffer, 0, f32_as_bytes(&f));
         }
     });
 }
