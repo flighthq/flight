@@ -259,6 +259,7 @@ fn create_wgpu_render_state_runtime_internal(
         destroyed: false,
         effect_runtime: None,
         scene2d_runtime: None,
+        scene3d_runtime: None,
     };
 }
 

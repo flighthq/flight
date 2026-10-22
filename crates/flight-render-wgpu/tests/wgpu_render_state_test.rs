@@ -132,6 +132,34 @@ fn null_texture_resolver(
 
 fn acme_color_feature_guard(_state: &mut WgpuRenderState, _value: &WgpuColorScaleBiasInput) {}
 
+fn acme_scene3d_pass(
+    _state: &mut WgpuRenderState,
+    _scene: &NodeRef,
+    _camera: &flight_camera::Camera3D,
+    _lights: &flight_lighting::Scene3DLightsLike,
+) {
+}
+
+fn acme_modifier_contribution(
+    _modifier: &dyn flight_shading::Modifier,
+    _index: usize,
+    _context: &mut WgpuModifierCompileContext<'_>,
+) -> WgpuModifierContribution {
+    return WgpuModifierContribution {
+        declarations: None,
+        source: String::new(),
+    };
+}
+
+static ACME_MODIFIER_SNIPPET: WgpuModifierSnippet = WgpuModifierSnippet {
+    kind: "acme.OnlyOffscreen",
+    slot: "effect",
+    get_define_signature: None,
+    bind: None,
+    contribution: acme_modifier_contribution,
+    textures: None,
+};
+
 fn padding_one(_effect: &UnknownValue) -> EffectPadding {
     return EffectPadding {
         bottom: 1.0,
@@ -300,8 +328,7 @@ mod build_wgpu_render_registries {
             late.clone(),
             WgpuMaterialRenderer::Quad(quad_renderer(1)),
         ));
-        let pass: UnknownValue = Arc::new("acme.Pass");
-        options.passes.as_mut().unwrap().push(pass);
+        options.passes.as_mut().unwrap().push(acme_scene3d_pass);
 
         assert!(!registries.material_renderers.entries.contains_key(&late));
         assert_eq!(
@@ -656,7 +683,6 @@ mod create_wgpu_offscreen_render_state {
         register_padding_resolver(&mut offscreen, "acme.OnlyOffscreen", padding_two);
         {
             let registries = &mut get_wgpu_render_state_runtime_mut(&mut offscreen).registries;
-            let only: UnknownValue = Arc::new("acme.OnlyOffscreen");
             registries.effects = Arc::new(with_kind_map_entry(
                 &registries.effects,
                 "acme.OnlyOffscreen".to_string(),
@@ -668,7 +694,7 @@ mod create_wgpu_offscreen_render_state {
             registries.modifier_snippets = Arc::new(with_kind_map_entry(
                 &registries.modifier_snippets,
                 "acme.OnlyOffscreen".to_string(),
-                only,
+                &ACME_MODIFIER_SNIPPET,
             ));
             registries.velocity_writers = Arc::new(with_kind_map_entry(
                 &registries.velocity_writers,

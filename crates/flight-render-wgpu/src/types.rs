@@ -8,21 +8,28 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock, Weak};
 
 use flight_effects::Effect;
-use flight_entity::{AnySlot, Entity, EntityRuntimeSlot, Kind, Ref, UnknownValue};
+use flight_camera::Camera3D;
+use flight_entity::{AnySlot, Entity, EntityRuntimeSlot, Kind, Ref};
 use flight_host::{HostImageSource, HostSpawnCapability, WgpuDevice, WgpuSurfaceContext};
 use flight_image::{HostImageCapability, ImageResolverState};
-use flight_materials::{BlendMode, ColorScaleBias, Material2D, MaterialData, TintMaterialData};
+use flight_lighting::{Scene3DLightBlock, Scene3DLightsLike};
+use flight_materials::{
+    BlendMode, ColorScaleBias, Material, Material2D, MaterialData, TintMaterialData,
+};
+use flight_meshgeometry::MeshGeometry;
 use flight_node::NodeRef;
 use flight_platform::PlatformEndianness;
 use flight_registry::KindMap;
 use flight_render::{
     RenderProxy2D, RenderRegistries, RenderState, RenderStateBackend, RenderStateFields,
-    RenderStateRuntime, RenderTexture, ShapeRasterizer,
+    RenderStateRuntime, RenderTexture, Scene3DRenderProxy, ShapeRasterizer,
 };
+use flight_scene3d::Mesh;
+use flight_shading::Modifier;
 use flight_signals::Signal;
 use flight_stream::SharedFuture;
 use flight_surface::{HostCanvasCapability, WgpuPresentationSurface};
-use flight_texture::{RenderTargetColorSpace, Sampler, TextureColorSpace, TextureVariant};
+use flight_texture::{RenderTargetColorSpace, Sampler, Texture, TextureColorSpace, TextureVariant};
 use flight_texture_formats::TextureContainerFormat;
 use flight_velocity::VelocityField;
 
@@ -123,7 +130,7 @@ pub struct WgpuDeviceRuntime {
     pub video_srgb_texture_cache: Option<HashMap<u64, Ref<WgpuTextureEntry>>>,
     pub wgpu_external_texture_cache: Option<HashMap<u64, Ref<WgpuTextureEntry>>>,
     pub wgpu_render_texture_cache: Option<HashMap<u64, WgpuRenderTextureEntry>>,
-    pub scene_mesh_upload_cache: Option<HashMap<u64, UnknownValue>>,
+    pub scene_mesh_upload_cache: Option<HashMap<u64, WgpuMeshUpload>>,
     pub standard_material_module: Option<wgpu::ShaderModule>,
     pub color_scale_bias_module: Option<wgpu::ShaderModule>,
     pub packed_tint_module: Option<wgpu::ShaderModule>,
@@ -309,10 +316,9 @@ pub struct WgpuColorAdjustmentFlushU32 {
 /// backend-neutral tables live in the state's `RenderRegistries`). Tables are persistent snapshots
 /// shared through `Arc`. Effect registrations are typed (`WgpuEffectRegistration`, the plugin
 /// interface this crate owns), as are the shape rasterizer (render's `ShapeRasterizer`) and the
-/// velocity writers this crate owns, and the color-adjustment feature contract (filled by
-/// scene2d-wgpu). Slots whose value types belong to backend packages that consume them
-/// (scene3d-wgpu's passes and mesh renderers, modifiers, skinning) hold those packages' values
-/// opaquely.
+/// velocity writers this crate owns, the color-adjustment feature contract (filled by
+/// scene2d-wgpu), and the 3D seams scene3d-wgpu fills: passes, mesh-material renderers, modifier
+/// snippets and the GPU skinning adapter, each a typed `&'static` table or fn type (D17).
 #[derive(Clone)]
 pub struct WgpuRenderRegistries {
     pub color_adjustment_feature: Option<&'static WgpuColorAdjustmentMaterialFeature>,
@@ -321,10 +327,10 @@ pub struct WgpuRenderRegistries {
     pub compressed_texture_upload: Option<WgpuCompressedTextureUploader>,
     pub custom_material_shaders: Arc<KindMap<WgpuCustomMaterialShaderSource>>,
     pub effects: Arc<KindMap<WgpuEffectRegistration>>,
-    pub gpu_skinning: Option<UnknownValue>,
+    pub gpu_skinning: Option<&'static WgpuSkinningAdapter>,
     pub material_renderers: Arc<KindMap<WgpuMaterialRenderer>>,
-    pub modifier_snippets: Arc<KindMap<UnknownValue>>,
-    pub passes: Option<Arc<Vec<UnknownValue>>>,
+    pub modifier_snippets: Arc<KindMap<&'static WgpuModifierSnippet>>,
+    pub passes: Option<Arc<Vec<WgpuScene3DPass>>>,
     pub shape_rasterizer: Option<ShapeRasterizer<WgpuRenderState>>,
     pub texture_resolvers: Arc<KindMap<WgpuTextureResolver>>,
     pub velocity_writers: Arc<KindMap<WgpuVelocityWriter>>,
@@ -364,8 +370,79 @@ pub struct WgpuEffectRegistration {
 /// material kind is either 2D or 3D, never both.
 #[derive(Clone)]
 pub enum WgpuMaterialRenderer {
-    Mesh(UnknownValue),
+    Mesh(&'static WgpuMeshMaterialRenderer),
     Quad(WgpuQuadMaterialRenderer),
+}
+
+/// Per-backend 3D draw behavior for a material kind (TS `WgpuMeshMaterialRenderer`), registered
+/// against the kind in the shared material-renderer table and filled by scene3d-wgpu. `bind` binds
+/// the pipeline and uploads the per-run camera, light block and material once per contiguous run
+/// (`None` only for the default material); `draw` uploads geometry lazily and issues one subset's
+/// draw.
+pub struct WgpuMeshMaterialRenderer {
+    pub bind: fn(&mut WgpuRenderState, Option<&dyn Material>, &Scene3DLightBlock, &Camera3D),
+    pub draw: fn(&mut WgpuRenderState, &Scene3DRenderProxy, &MeshGeometry),
+}
+
+/// One 3D pass run after the scene's mesh draws (TS `WgpuScene3DPass`), e.g. the 3D particle
+/// emitter pass.
+pub type WgpuScene3DPass = fn(&mut WgpuRenderState, &NodeRef, &Camera3D, &Scene3DLightsLike);
+
+/// The GPU skinning seam (TS `WgpuSkinningAdapter`), filled by scene3d-wgpu's adapter: the skinned
+/// WGSL prelude extensions, the palette bind groups and layouts for the shadow and mesh paths, the
+/// skinned upload and the skinned vertex layouts.
+pub struct WgpuSkinningAdapter {
+    pub extend_mesh_prelude: fn(&str) -> String,
+    pub extend_shadow_depth_prelude: fn(&str) -> String,
+    pub get_draw_bind_group: fn(&mut WgpuRenderState, &[f32]) -> wgpu::BindGroup,
+    pub get_draw_layout: fn(&mut WgpuRenderState) -> wgpu::BindGroupLayout,
+    pub get_mesh_draw_bind_group: fn(&mut WgpuRenderState, &[f32], &[f32]) -> wgpu::BindGroup,
+    pub get_mesh_draw_layout: fn(&mut WgpuRenderState) -> wgpu::BindGroupLayout,
+    pub get_upload_vertices: fn(&MeshGeometry) -> Option<Vec<f32>>,
+    pub has_bind_pose: fn(&MeshGeometry) -> bool,
+    pub is_gpu_skinned: fn(&Mesh) -> bool,
+    pub vertex_buffer_layouts: &'static [wgpu::VertexBufferLayout<'static>],
+}
+
+/// What a modifier snippet compiles against (TS `WgpuModifierCompileContext`): the texture slot
+/// allocator and the byte base of the modifier's reserved uniform record.
+pub struct WgpuModifierCompileContext<'a> {
+    pub acquire_texture: &'a mut dyn FnMut(Option<&Ref<Texture>>) -> u32,
+    pub uniform_base: u32,
+}
+
+/// The WGSL one modifier contributes (TS `WgpuModifierContribution`).
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct WgpuModifierContribution {
+    pub declarations: Option<String>,
+    pub source: String,
+}
+
+/// The backend-side WGSL compiler for one open modifier kind (TS `WgpuModifierSnippet extends
+/// ModifierDefinition`): the definition's kind, slot and define signature, plus `contribution`
+/// emitting WGSL, the optional `bind` writing the modifier's three-vec4 uniform record and the
+/// optional `textures` writing its texture references in acquisition order.
+pub struct WgpuModifierSnippet {
+    pub kind: &'static str,
+    pub slot: &'static str,
+    pub get_define_signature: Option<fn(&dyn Modifier) -> String>,
+    pub bind: Option<fn(&dyn Modifier, &mut [f32], usize)>,
+    pub contribution:
+        fn(&dyn Modifier, usize, &mut WgpuModifierCompileContext<'_>) -> WgpuModifierContribution,
+    pub textures: Option<fn(&dyn Modifier, &mut Vec<Option<Ref<Texture>>>, usize) -> usize>,
+}
+
+/// The GPU upload of one mesh geometry on one device (TS `WgpuMeshUpload`), cached in the device
+/// tier's scene-mesh upload cache keyed by the geometry's entity id. Non-indexed geometry has no
+/// index buffer or format, and `index_count` then carries the vertex count.
+#[derive(Clone, Debug)]
+pub struct WgpuMeshUpload {
+    pub index_buffer: Option<wgpu::Buffer>,
+    pub index_count: u32,
+    pub index_format: Option<wgpu::IndexFormat>,
+    pub skin_bind_uploaded: Option<bool>,
+    pub version: u32,
+    pub vertex_buffer: wgpu::Buffer,
 }
 
 /// Per-backend behavior for a quad-batch material kind (TS `WgpuQuadMaterialRenderer`).
@@ -788,13 +865,13 @@ pub struct WgpuRenderStateOptions {
     pub custom_material_shaders: Option<KindMap<WgpuCustomMaterialShaderSource>>,
     pub effects: Option<KindMap<WgpuEffectRegistration>>,
     pub format: Option<wgpu::TextureFormat>,
-    pub gpu_skinning: Option<UnknownValue>,
+    pub gpu_skinning: Option<&'static WgpuSkinningAdapter>,
     pub image_host: Option<HostImageCapability>,
     pub image_resolver: Option<Ref<ImageResolverState>>,
     pub image_smoothing_enabled: Option<bool>,
     pub material_renderers: Option<KindMap<WgpuMaterialRenderer>>,
-    pub modifier_snippets: Option<KindMap<UnknownValue>>,
-    pub passes: Option<Vec<UnknownValue>>,
+    pub modifier_snippets: Option<KindMap<&'static WgpuModifierSnippet>>,
+    pub passes: Option<Vec<WgpuScene3DPass>>,
     pub pixel_ratio: Option<f32>,
     pub round_pixels: Option<bool>,
     pub scene_graph_sync_policy: Option<flight_render::Scene3DGraphSyncPolicy>,
@@ -880,6 +957,9 @@ pub struct WgpuRenderStateRuntime {
     // targets, velocity pipeline and pass, canvas surface ownership, the text-input overlay), held
     // opaquely and owned by that package (D5: state-owned, never module-global).
     pub scene2d_runtime: Option<Box<dyn std::any::Any + Send + Sync>>,
+    // The per-state record of the scene3d-wgpu package (TS `getWgpuScene3DRuntime`'s module WeakMap
+    // keyed by state), held opaquely and owned by that package (D5).
+    pub scene3d_runtime: Option<Box<dyn std::any::Any + Send + Sync>>,
 }
 
 /// Reports a mipmapped upload degraded to one level (TS `mipmapDegradedGuard`).
