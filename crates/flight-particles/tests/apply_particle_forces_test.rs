@@ -10,6 +10,7 @@ fn create_emitter_fixture(capacity: usize) -> ParticleEmitter2D {
             particle_count: 0,
             positions_z: vec![0.0; capacity],
             transforms: vec![0.0; capacity * 4],
+            velocities: vec![0.0; capacity * 2],
             world_space: false,
         },
         x: 0.0,

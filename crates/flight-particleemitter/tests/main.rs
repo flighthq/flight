@@ -1,0 +1,12 @@
+mod deterministic_test;
+mod emit_particle_burst_2d_test;
+mod emit_particle_burst_3d_test;
+mod particle_emitter_3d_test;
+mod particle_emitter_test;
+mod prewarm_particle_emitter_2d_test;
+mod prewarm_particle_emitter_3d_test;
+mod step_particle_emitter_2d_test;
+mod step_particle_emitter_3d_test;
+mod update_particle_emitter_2d_integration_test;
+mod update_particle_emitter_2d_test;
+mod update_particle_emitter_3d_test;
