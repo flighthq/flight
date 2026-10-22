@@ -2,16 +2,18 @@ use flight_entity::allocate_entity;
 
 use crate::types::*;
 
-pub fn create_environment(options: Option<&EnvironmentOptions>) -> Environment {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): callers assign authored environment fields after construction
+pub fn create_environment() -> Environment {
     let mut out: Environment = allocate_entity();
-    initialize_environment(&mut out, options);
+    initialize_environment(&mut out);
     return out;
 }
 
-pub fn initialize_environment(out: &mut Environment, options: Option<&EnvironmentOptions>) {
-    out.enabled = options.and_then(|value| value.enabled).unwrap_or(true);
-    out.environment = options.and_then(|value| value.environment.clone());
-    out.intensity = options.and_then(|value| value.intensity).unwrap_or(1.0);
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): initialization restores canonical defaults before authored assignment
+pub fn initialize_environment(out: &mut Environment) {
+    out.enabled = true;
+    out.environment = None;
+    out.intensity = 1.0;
     out.kind = ENVIRONMENT_KIND.to_string();
 }
 

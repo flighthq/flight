@@ -33,12 +33,12 @@ fn crate_contract_is_available() {
 
 #[test]
 fn erased_descriptors_retain_their_actual_type_and_original_allocation() {
-    let ambient = create_ambient_light(None);
+    let ambient = create_ambient_light();
     let directional = create_directional_light(None);
-    let hemisphere = create_hemisphere_light(None);
-    let point = create_point_light(None);
+    let hemisphere = create_hemisphere_light();
+    let point = create_point_light();
     let spot = create_spot_light(None);
-    let area = create_area_light(None);
+    let area = create_area_light();
     let sources: [&dyn Light; 6] = [&ambient, &directional, &hemisphere, &point, &spot, &area];
     let any: &dyn std::any::Any = sources[0];
     let actual = any.downcast_ref::<AmbientLight>().unwrap();

@@ -9,9 +9,9 @@ use flight_geometry::{
     Transform3D, create_transform3d, create_vector3, set_quaternion_from_axis_angle,
 };
 use flight_lighting::{
-    AMBIENT_LIGHT_KIND, AmbientLightOptions, DirectionalLightOptions, LightRef, PointLightOptions,
-    Scene3DLights, SpotLightOptions, create_ambient_light, create_directional_light,
-    create_hemisphere_light, create_point_light, create_spot_light,
+    AMBIENT_LIGHT_KIND, AmbientLightOptions, DirectionalLightOptions, LightRef, Scene3DLights,
+    SpotLightOptions, create_ambient_light, create_directional_light, create_hemisphere_light,
+    create_point_light, create_spot_light,
 };
 use flight_node::contract::NodeRevisionState;
 use flight_node::{NodeRef, PartialNode, get_node_children, invalidate_node_local_transform};
@@ -260,7 +260,22 @@ fn document_light(
 }
 
 fn ambient(options: Option<&AmbientLightOptions>) -> LightRef {
-    return Arc::new(RwLock::new(create_ambient_light(options)));
+    let mut light = create_ambient_light();
+    if let Some(options) = options {
+        if let Some(color) = options.color {
+            light.color = color;
+        }
+        if let Some(enabled) = options.enabled {
+            light.enabled = enabled;
+        }
+        if let Some(intensity) = options.intensity {
+            light.intensity = intensity;
+        }
+        if let Some(intensity_unit) = options.intensity_unit {
+            light.intensity_unit = intensity_unit;
+        }
+    }
+    return Arc::new(RwLock::new(light));
 }
 
 fn directional(options: Option<&DirectionalLightOptions>) -> LightRef {
@@ -631,17 +646,16 @@ mod create_flight_document_scene3d_materialization {
             &create_vector3(0.0, 1.0, 0.0),
             std::f32::consts::FRAC_PI_2,
         );
+        let mut authored_point = create_point_light();
+        authored_point.position = create_vector3(1.0, 0.0, 0.0);
         let authored: Vec<LightRef> = vec![
             ambient(None),
             directional(Some(&DirectionalLightOptions {
                 direction: Some(create_vector3(0.0, 0.0, -1.0)),
                 ..defaults()
             })),
-            Arc::new(RwLock::new(create_hemisphere_light(None))),
-            Arc::new(RwLock::new(create_point_light(Some(&PointLightOptions {
-                position: Some(create_vector3(1.0, 0.0, 0.0)),
-                ..defaults()
-            })))),
+            Arc::new(RwLock::new(create_hemisphere_light())),
+            Arc::new(RwLock::new(authored_point)),
             Arc::new(RwLock::new(create_spot_light(Some(&SpotLightOptions {
                 direction: Some(create_vector3(0.0, 0.0, -1.0)),
                 position: Some(create_vector3(1.0, 0.0, 0.0)),
@@ -686,7 +700,7 @@ mod create_flight_document_scene3d_materialization {
     fn applies_a_bound_depth_first_node_placement_to_a_punctual_light() {
         let mut transform = create_transform3d();
         transform.position.x = 7.0;
-        let point: LightRef = Arc::new(RwLock::new(create_point_light(None)));
+        let point: LightRef = Arc::new(RwLock::new(create_point_light()));
         let document = create_test_document(scene3d(
             nested_positioned_scene(),
             vec![],
@@ -999,7 +1013,7 @@ mod create_flight_document_scene3d_materialization_from_text {
                 None,
                 create_transform3d(),
             ),
-            document_light(Arc::new(RwLock::new(create_point_light(None))), None, point),
+            document_light(Arc::new(RwLock::new(create_point_light())), None, point),
         ]));
         let document = parse_flight_document_text(&yaml).expect("a document");
 

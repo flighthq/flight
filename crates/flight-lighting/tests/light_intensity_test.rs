@@ -79,10 +79,8 @@ mod get_light_photometric_intensity {
             ..crate::directional_options()
         }));
         close(get_light_photometric_intensity(&sun), 100_000.0, 0.01);
-        let plain = create_ambient_light(Some(&AmbientLightOptions {
-            intensity: Some(2.5),
-            ..crate::ambient_options()
-        }));
+        let mut plain = create_ambient_light();
+        plain.intensity = 2.5;
         assert_eq!(get_light_photometric_intensity(&plain), 2.5);
     }
 }
@@ -98,11 +96,9 @@ mod set_light_photometric_intensity {
             LightUnit::Candela,
             LightUnit::Lumen,
         ] {
-            let mut light = create_point_light(Some(&PointLightOptions {
-                intensity: Some(0.0),
-                intensity_unit: Some(unit),
-                ..crate::point_options()
-            }));
+            let mut light = create_point_light();
+            light.intensity = 0.0;
+            light.intensity_unit = unit;
             set_light_photometric_intensity(&mut light, 1234.5);
             close(get_light_photometric_intensity(&light), 1234.5, 0.001);
             assert_eq!(light.intensity_unit, unit);

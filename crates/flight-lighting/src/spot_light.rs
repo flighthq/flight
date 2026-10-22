@@ -3,12 +3,14 @@ use flight_geometry::{clone_vector3, create_vector3, set_vector3};
 
 use crate::types::*;
 
+// D23 (KEEP; Principal c0f9227c): construction derives cone cosines, clamps blend, and owns vectors.
 pub fn create_spot_light(options: Option<&SpotLightOptions>) -> SpotLight {
     let mut light: SpotLight = allocate_entity();
     initialize_spot_light(&mut light, options);
     return light;
 }
 
+// D23 (KEEP; Principal c0f9227c): initialization computes cone and blend invariants from options.
 pub fn initialize_spot_light(light: &mut SpotLight, options: Option<&SpotLightOptions>) {
     light.casts_shadow = options
         .and_then(|value| value.casts_shadow)

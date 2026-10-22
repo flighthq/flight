@@ -3,52 +3,34 @@ use flight_geometry::{Vector3, clone_vector3, create_vector3, set_vector3};
 
 use crate::types::*;
 
-pub fn create_area_light(options: Option<&AreaLightOptions>) -> AreaLight {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): callers assign authored light fields after construction
+pub fn create_area_light() -> AreaLight {
     let mut out: AreaLight = allocate_entity();
-    initialize_area_light(&mut out, options);
+    initialize_area_light(&mut out);
     return out;
 }
 
-pub fn initialize_area_light(out: &mut AreaLight, options: Option<&AreaLightOptions>) {
-    out.casts_shadow = options
-        .and_then(|value| value.casts_shadow)
-        .unwrap_or(false);
-    out.color = options.and_then(|value| value.color).unwrap_or(0xffff_ffff);
-    out.decay = options.and_then(|value| value.decay).unwrap_or(2.0);
-    out.direction = options
-        .and_then(|value| value.direction.as_ref())
-        .map(clone_vector3)
-        .unwrap_or_else(|| create_vector3(0.0, -1.0, 0.0));
-    out.enabled = options.and_then(|value| value.enabled).unwrap_or(true);
-    out.intensity = options.and_then(|value| value.intensity).unwrap_or(1.0);
-    out.intensity_unit = options
-        .and_then(|value| value.intensity_unit)
-        .unwrap_or(UNITLESS_LIGHT_UNIT);
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): initialization restores canonical defaults before authored assignment
+pub fn initialize_area_light(out: &mut AreaLight) {
+    out.casts_shadow = false;
+    out.color = 0xffff_ffff;
+    out.decay = 2.0;
+    out.direction = create_vector3(0.0, -1.0, 0.0);
+    out.enabled = true;
+    out.intensity = 1.0;
+    out.intensity_unit = UNITLESS_LIGHT_UNIT;
     out.kind = AREA_LIGHT_KIND.to_string();
-    out.normal_bias = options.and_then(|value| value.normal_bias).unwrap_or(0.0);
-    out.pcf_radius = options.and_then(|value| value.pcf_radius).unwrap_or(0.0);
-    out.position = options
-        .and_then(|value| value.position.as_ref())
-        .map(clone_vector3)
-        .unwrap_or_else(|| create_vector3(0.0, 0.0, 0.0));
-    out.range = options.and_then(|value| value.range).unwrap_or(-1.0);
-    out.right = options
-        .and_then(|value| value.right.as_ref())
-        .map(clone_vector3)
-        .unwrap_or_else(|| create_vector3(1.0, 0.0, 0.0));
-    out.shadow_bias = options.and_then(|value| value.shadow_bias).unwrap_or(0.0);
-    out.shadow_far = options.and_then(|value| value.shadow_far).unwrap_or(500.0);
-    out.shadow_map_size = options
-        .and_then(|value| value.shadow_map_size)
-        .unwrap_or(1024);
-    out.shadow_near = options.and_then(|value| value.shadow_near).unwrap_or(0.5);
-    out.shadow_strength = options
-        .and_then(|value| value.shadow_strength)
-        .unwrap_or(1.0);
-    out.up = options
-        .and_then(|value| value.up.as_ref())
-        .map(clone_vector3)
-        .unwrap_or_else(|| create_vector3(0.0, 0.0, 1.0));
+    out.normal_bias = 0.0;
+    out.pcf_radius = 0.0;
+    out.position = create_vector3(0.0, 0.0, 0.0);
+    out.range = -1.0;
+    out.right = create_vector3(1.0, 0.0, 0.0);
+    out.shadow_bias = 0.0;
+    out.shadow_far = 500.0;
+    out.shadow_map_size = 1024;
+    out.shadow_near = 0.5;
+    out.shadow_strength = 1.0;
+    out.up = create_vector3(0.0, 0.0, 1.0);
 }
 
 pub fn clone_area_light(source: &AreaLight) -> AreaLight {

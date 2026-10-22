@@ -9,11 +9,9 @@ fn bounds() -> BoundingSphere {
 }
 
 fn point(x: f32) -> Ref<PointLight> {
-    return Arc::new(RwLock::new(create_point_light(Some(&PointLightOptions {
-        position: Some(create_vector3(x, 0.0, 0.0)),
-        range: Some(-1.0),
-        ..crate::point_options()
-    }))));
+    let mut light = create_point_light();
+    light.position = create_vector3(x, 0.0, 0.0);
+    return Arc::new(RwLock::new(light));
 }
 
 fn spot(x: f32) -> Ref<SpotLight> {
@@ -28,11 +26,10 @@ fn spot(x: f32) -> Ref<SpotLight> {
 }
 
 fn scene(points: Vec<Ref<PointLight>>, spots: Vec<Ref<SpotLight>>) -> Scene3DLights {
-    return create_scene_3d_lights(Some(&Scene3DLightsOptions {
-        point: Some(points),
-        spot: Some(spots),
-        ..crate::scene_options()
-    }));
+    let mut out = create_scene_3d_lights();
+    out.point = points;
+    out.spot = spots;
+    return out;
 }
 
 mod select_scene_3d_forward_lights {
@@ -74,34 +71,30 @@ mod select_scene_3d_forward_lights {
     fn ranks_linear_luminance_decay_and_priority() {
         let gray: Vec<_> = (0..4)
             .map(|_| {
-                Arc::new(RwLock::new(create_point_light(Some(&PointLightOptions {
-                    color: Some(0x8080_80ff),
-                    position: Some(create_vector3(2.0, 0.0, 0.0)),
-                    ..crate::point_options()
-                }))))
+                let mut light = create_point_light();
+                light.color = 0x8080_80ff;
+                light.position = create_vector3(2.0, 0.0, 0.0);
+                Arc::new(RwLock::new(light))
             })
             .collect();
-        let white = Arc::new(RwLock::new(create_point_light(Some(&PointLightOptions {
-            color: Some(0xffff_ffff),
-            intensity: Some(0.3),
-            position: Some(create_vector3(2.0, 0.0, 0.0)),
-            ..crate::point_options()
-        }))));
+        let mut white_value = create_point_light();
+        white_value.color = 0xffff_ffff;
+        white_value.intensity = 0.3;
+        white_value.position = create_vector3(2.0, 0.0, 0.0);
+        let white = Arc::new(RwLock::new(white_value));
         let mut points = gray;
         points.push(white.clone());
         let mut out = crate::selection();
         select_scene_3d_forward_lights(&mut out, &scene(points, vec![]), &bounds(), None);
         assert!(out.point.iter().any(|item| Arc::ptr_eq(item, &white)));
 
-        let key = Arc::new(RwLock::new(create_point_light(Some(&PointLightOptions {
-            intensity: Some(1.0),
-            priority: Some(1.0),
-            ..crate::point_options()
-        }))));
-        let bright = Arc::new(RwLock::new(create_point_light(Some(&PointLightOptions {
-            intensity: Some(50.0),
-            ..crate::point_options()
-        }))));
+        let mut key_value = create_point_light();
+        key_value.intensity = 1.0;
+        key_value.priority = 1.0;
+        let key = Arc::new(RwLock::new(key_value));
+        let mut bright_value = create_point_light();
+        bright_value.intensity = 50.0;
+        let bright = Arc::new(RwLock::new(bright_value));
         select_scene_3d_forward_lights(
             &mut out,
             &scene(vec![bright, key.clone()], vec![]),
@@ -110,16 +103,14 @@ mod select_scene_3d_forward_lights {
         );
         assert!(Arc::ptr_eq(&out.point[0], &key));
 
-        let inverse_square = Arc::new(RwLock::new(create_point_light(Some(&PointLightOptions {
-            decay: Some(2.0),
-            position: Some(create_vector3(4.0, 0.0, 0.0)),
-            ..crate::point_options()
-        }))));
-        let linear = Arc::new(RwLock::new(create_point_light(Some(&PointLightOptions {
-            decay: Some(1.0),
-            position: Some(create_vector3(4.0, 0.0, 0.0)),
-            ..crate::point_options()
-        }))));
+        let mut inverse_square_value = create_point_light();
+        inverse_square_value.decay = 2.0;
+        inverse_square_value.position = create_vector3(4.0, 0.0, 0.0);
+        let inverse_square = Arc::new(RwLock::new(inverse_square_value));
+        let mut linear_value = create_point_light();
+        linear_value.decay = 1.0;
+        linear_value.position = create_vector3(4.0, 0.0, 0.0);
+        let linear = Arc::new(RwLock::new(linear_value));
         select_scene_3d_forward_lights(
             &mut out,
             &scene(
@@ -145,33 +136,27 @@ mod select_scene_3d_forward_lights {
 
     #[test]
     fn filters_layers_disabled_zero_negative_and_nan_contributions_before_ranking() {
-        let hidden = Arc::new(RwLock::new(create_point_light(Some(&PointLightOptions {
-            intensity: Some(100.0),
-            layer_mask: Some(0b10),
-            ..crate::point_options()
-        }))));
-        let visible = Arc::new(RwLock::new(create_point_light(Some(&PointLightOptions {
-            layer_mask: Some(0b01),
-            ..crate::point_options()
-        }))));
-        let disabled = Arc::new(RwLock::new(create_point_light(Some(&PointLightOptions {
-            enabled: Some(false),
-            intensity: Some(100.0),
-            ..crate::point_options()
-        }))));
-        let negative = Arc::new(RwLock::new(create_point_light(Some(&PointLightOptions {
-            intensity: Some(-1.0),
-            ..crate::point_options()
-        }))));
-        let nan = Arc::new(RwLock::new(create_point_light(Some(&PointLightOptions {
-            intensity: Some(f32::NAN),
-            ..crate::point_options()
-        }))));
-        let outside = Arc::new(RwLock::new(create_point_light(Some(&PointLightOptions {
-            position: Some(create_vector3(10.0, 0.0, 0.0)),
-            range: Some(2.0),
-            ..crate::point_options()
-        }))));
+        let mut hidden_value = create_point_light();
+        hidden_value.intensity = 100.0;
+        hidden_value.layer_mask = 0b10;
+        let hidden = Arc::new(RwLock::new(hidden_value));
+        let mut visible_value = create_point_light();
+        visible_value.layer_mask = 0b01;
+        let visible = Arc::new(RwLock::new(visible_value));
+        let mut disabled_value = create_point_light();
+        disabled_value.enabled = false;
+        disabled_value.intensity = 100.0;
+        let disabled = Arc::new(RwLock::new(disabled_value));
+        let mut negative_value = create_point_light();
+        negative_value.intensity = -1.0;
+        let negative = Arc::new(RwLock::new(negative_value));
+        let mut nan_value = create_point_light();
+        nan_value.intensity = f32::NAN;
+        let nan = Arc::new(RwLock::new(nan_value));
+        let mut outside_value = create_point_light();
+        outside_value.position = create_vector3(10.0, 0.0, 0.0);
+        outside_value.range = 2.0;
+        let outside = Arc::new(RwLock::new(outside_value));
         let lights = scene(
             vec![hidden, visible.clone(), disabled, negative, nan, outside],
             vec![],

@@ -6,12 +6,11 @@ mod clone_ambient_light {
 
     #[test]
     fn copies_fields_into_a_fresh_entity_identity() {
-        let mut source = create_ambient_light(Some(&AmbientLightOptions {
-            color: Some(0x1122_33ff),
-            enabled: Some(false),
-            intensity: Some(0.5),
-            intensity_unit: Some(LUX_LIGHT_UNIT),
-        }));
+        let mut source = create_ambient_light();
+        source.color = 0x1122_33ff;
+        source.enabled = false;
+        source.intensity = 0.5;
+        source.intensity_unit = LUX_LIGHT_UNIT;
         set_entity_uid(&mut source, "source".to_string());
         let mut copy = clone_ambient_light(&source);
         assert_eq!(copy.color, 0x1122_33ff);
@@ -28,7 +27,7 @@ mod create_ambient_light {
 
     #[test]
     fn applies_source_defaults() {
-        let light = create_ambient_light(None);
+        let light = create_ambient_light();
         assert_eq!(light.color, 0xffff_ffff);
         assert!(light.enabled);
         assert_eq!(light.intensity, 1.0);
@@ -41,20 +40,18 @@ mod initialize_ambient_light {
     use super::*;
 
     #[test]
-    fn overwrites_all_descriptor_fields() {
-        let mut out = create_ambient_light(None);
-        initialize_ambient_light(
-            &mut out,
-            Some(&AmbientLightOptions {
-                color: Some(0x00ff_00ff),
-                enabled: Some(false),
-                intensity: Some(2.0),
-                intensity_unit: Some(LUX_LIGHT_UNIT),
-            }),
-        );
+    fn restores_defaults_without_replacing_entity_identity() {
+        let mut out = create_ambient_light();
+        out.color = 0x00ff_00ff;
+        out.enabled = false;
+        out.intensity = 2.0;
+        out.intensity_unit = LUX_LIGHT_UNIT;
+        set_entity_uid(&mut out, "ambient".to_string());
+        initialize_ambient_light(&mut out);
         assert_eq!(
-            (out.color, out.enabled, out.intensity),
-            (0x00ff_00ff, false, 2.0)
+            (out.color, out.enabled, out.intensity, out.intensity_unit),
+            (0xffff_ffff, true, 1.0, UNITLESS_LIGHT_UNIT)
         );
+        assert_eq!(get_entity_uid(&mut out), "ambient");
     }
 }

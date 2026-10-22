@@ -4,7 +4,7 @@ use std::sync::{Arc, RwLock};
 use flight_camera::contract::{Projection, create_perspective_projection};
 use flight_entity::{allocate_entity, get_record_value};
 use flight_geometry::create_transform3d;
-use flight_lighting::contract::{AmbientLightOptions, create_ambient_light};
+use flight_lighting::contract::create_ambient_light;
 use flight_scene_document::contract::*;
 use flight_scene3d::{Scene3DDocumentCamera, Scene3DDocumentLight};
 
@@ -381,13 +381,10 @@ mod format_flight_document_text {
             projection: Projection::Perspective(projection),
             transform: camera_transform,
         }];
+        let mut ambient = create_ambient_light();
+        ambient.intensity = 0.4;
         scene3d.lights = vec![Scene3DDocumentLight {
-            descriptor: Arc::new(RwLock::new(create_ambient_light(Some(
-                &AmbientLightOptions {
-                    intensity: Some(0.4),
-                    ..defaults()
-                },
-            )))),
+            descriptor: Arc::new(RwLock::new(ambient)),
             name: None,
             node: None,
             transform: light_transform,

@@ -6,25 +6,24 @@ mod clone_point_light {
 
     #[test]
     fn copies_all_authoring_fields() {
-        let source = create_point_light(Some(&PointLightOptions {
-            casts_shadow: Some(true),
-            color: Some(0x1122_33ff),
-            decay: Some(1.5),
-            enabled: Some(false),
-            intensity: Some(0.5),
-            intensity_unit: Some(CANDELA_LIGHT_UNIT),
-            layer_mask: Some(3),
-            priority: Some(7.0),
-            normal_bias: Some(0.1),
-            pcf_radius: Some(2.0),
-            position: Some(create_vector3(3.0, 4.0, 5.0)),
-            range: Some(10.0),
-            shadow_bias: Some(0.01),
-            shadow_far: Some(300.0),
-            shadow_map_size: Some(2048),
-            shadow_near: Some(0.25),
-            shadow_strength: Some(0.75),
-        }));
+        let mut source = create_point_light();
+        source.casts_shadow = true;
+        source.color = 0x1122_33ff;
+        source.decay = 1.5;
+        source.enabled = false;
+        source.intensity = 0.5;
+        source.intensity_unit = CANDELA_LIGHT_UNIT;
+        source.layer_mask = 3;
+        source.priority = 7.0;
+        source.normal_bias = 0.1;
+        source.pcf_radius = 2.0;
+        source.position = create_vector3(3.0, 4.0, 5.0);
+        source.range = 10.0;
+        source.shadow_bias = 0.01;
+        source.shadow_far = 300.0;
+        source.shadow_map_size = 2048;
+        source.shadow_near = 0.25;
+        source.shadow_strength = 0.75;
         let copy = clone_point_light(&source);
         assert_eq!(copy.position, source.position);
         assert_eq!(copy.layer_mask, 3);
@@ -39,7 +38,7 @@ mod create_point_light {
 
     #[test]
     fn applies_punctual_defaults_and_copies_position() {
-        let light = create_point_light(None);
+        let light = create_point_light();
         assert_eq!(light.color, 0xffff_ffff);
         assert_eq!(light.decay, 2.0);
         assert_eq!(light.layer_mask, ALL_LIGHT_LAYERS);
@@ -54,17 +53,14 @@ mod initialize_point_light {
     use super::*;
 
     #[test]
-    fn writes_options_without_runtime_on_the_options_value() {
-        let mut light = create_point_light(None);
-        initialize_point_light(
-            &mut light,
-            Some(&PointLightOptions {
-                enabled: Some(false),
-                range: Some(8.0),
-                ..crate::point_options()
-            }),
-        );
-        assert!(!light.enabled);
-        assert_eq!(light.range, 8.0);
+    fn restores_punctual_defaults() {
+        let mut light = create_point_light();
+        light.enabled = false;
+        light.position = create_vector3(1.0, 2.0, 3.0);
+        light.range = 8.0;
+        initialize_point_light(&mut light);
+        assert!(light.enabled);
+        assert_eq!(light.position, create_vector3(0.0, 0.0, 0.0));
+        assert_eq!(light.range, -1.0);
     }
 }

@@ -5,13 +5,12 @@ mod clone_hemisphere_light {
 
     #[test]
     fn copies_both_colors_and_intensity() {
-        let source = create_hemisphere_light(Some(&HemisphereLightOptions {
-            enabled: Some(false),
-            ground_color: Some(0x2233_44ff),
-            intensity: Some(0.5),
-            intensity_unit: Some(LUX_LIGHT_UNIT),
-            sky_color: Some(0x8899_aaff),
-        }));
+        let mut source = create_hemisphere_light();
+        source.enabled = false;
+        source.ground_color = 0x2233_44ff;
+        source.intensity = 0.5;
+        source.intensity_unit = LUX_LIGHT_UNIT;
+        source.sky_color = 0x8899_aaff;
         let copy = clone_hemisphere_light(&source);
         assert_eq!(copy.ground_color, 0x2233_44ff);
         assert_eq!(copy.sky_color, 0x8899_aaff);
@@ -24,7 +23,7 @@ mod create_hemisphere_light {
 
     #[test]
     fn defaults_both_colors_to_opaque_white() {
-        let light = create_hemisphere_light(None);
+        let light = create_hemisphere_light();
         assert_eq!(light.ground_color, 0xffff_ffff);
         assert_eq!(light.sky_color, 0xffff_ffff);
         assert_eq!(light.intensity, 1.0);
@@ -36,16 +35,18 @@ mod initialize_hemisphere_light {
     use super::*;
 
     #[test]
-    fn overwrites_previous_colors() {
-        let mut light = create_hemisphere_light(None);
-        initialize_hemisphere_light(
-            &mut light,
-            Some(&HemisphereLightOptions {
-                ground_color: Some(1),
-                sky_color: Some(2),
-                ..crate::hemisphere_options()
-            }),
+    fn restores_default_colors_and_intensity() {
+        let mut light = create_hemisphere_light();
+        light.enabled = false;
+        light.ground_color = 1;
+        light.intensity = 2.0;
+        light.sky_color = 2;
+        initialize_hemisphere_light(&mut light);
+        assert!(light.enabled);
+        assert_eq!(light.intensity, 1.0);
+        assert_eq!(
+            (light.ground_color, light.sky_color),
+            (0xffff_ffff, 0xffff_ffff)
         );
-        assert_eq!((light.ground_color, light.sky_color), (1, 2));
     }
 }

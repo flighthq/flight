@@ -54,7 +54,7 @@ mod create_scene3d_lights_from_document {
         assert!(empty.point.is_empty());
         assert!(empty.spot.is_empty());
         doc.lights
-            .push(placed(Arc::new(RwLock::new(create_area_light(None)))));
+            .push(placed(Arc::new(RwLock::new(create_area_light()))));
         let empty = create_scene3d_lights_from_document(&doc);
         assert!(empty.ambient.is_none());
         assert!(empty.directional.is_none());
@@ -64,13 +64,13 @@ mod create_scene3d_lights_from_document {
     }
     #[test]
     fn clones_each_representable_descriptor_and_first_single_slots_win() {
-        let a = Arc::new(RwLock::new(create_ambient_light(None)));
+        let a = Arc::new(RwLock::new(create_ambient_light()));
         a.write().unwrap().intensity = 0.25;
         let d = Arc::new(RwLock::new(create_directional_light(None)));
         d.write().unwrap().intensity = 2.0;
-        let h = Arc::new(RwLock::new(create_hemisphere_light(None)));
+        let h = Arc::new(RwLock::new(create_hemisphere_light()));
         h.write().unwrap().intensity = 0.5;
-        let second_a = Arc::new(RwLock::new(create_ambient_light(None)));
+        let second_a = Arc::new(RwLock::new(create_ambient_light()));
         second_a.write().unwrap().intensity = 4.0;
         let second_d = Arc::new(RwLock::new(create_directional_light(None)));
         second_d.write().unwrap().intensity = 8.0;
@@ -106,7 +106,7 @@ mod create_scene3d_lights_from_document {
     fn composes_scale_rotation_and_translation_without_mutating_document_lights() {
         let d = Arc::new(RwLock::new(create_directional_light(None)));
         d.write().unwrap().direction = create_vector3(0.0, 0.0, -1.0);
-        let p = Arc::new(RwLock::new(create_point_light(None)));
+        let p = Arc::new(RwLock::new(create_point_light()));
         p.write().unwrap().position = create_vector3(1.0, 0.0, 0.0);
         let s = Arc::new(RwLock::new(create_spot_light(None)));
         s.write().unwrap().position = create_vector3(1.0, 0.0, 0.0);

@@ -62,11 +62,7 @@ mod get_light_contribution_at_bounding_sphere {
 
     #[test]
     fn applies_decay_radius_slack_range_window_and_disable_gate() {
-        let inverse_square = create_point_light(Some(&PointLightOptions {
-            position: Some(create_vector3(0.0, 0.0, 0.0)),
-            range: Some(-1.0),
-            ..crate::point_options()
-        }));
+        let inverse_square = create_point_light();
         close(
             get_light_contribution_at_bounding_sphere(&inverse_square, &sphere(2.0, 0.0, 0.0, 0.0)),
             0.25,
@@ -75,26 +71,20 @@ mod get_light_contribution_at_bounding_sphere {
             get_light_contribution_at_bounding_sphere(&inverse_square, &sphere(4.0, 0.0, 0.0, 2.0)),
             0.25,
         );
-        let linear = create_point_light(Some(&PointLightOptions {
-            decay: Some(1.0),
-            ..crate::point_options()
-        }));
+        let mut linear = create_point_light();
+        linear.decay = 1.0;
         close(
             get_light_contribution_at_bounding_sphere(&linear, &sphere(4.0, 0.0, 0.0, 0.0)),
             0.25,
         );
-        let finite = create_point_light(Some(&PointLightOptions {
-            range: Some(4.0),
-            ..crate::point_options()
-        }));
+        let mut finite = create_point_light();
+        finite.range = 4.0;
         assert_eq!(
             get_light_contribution_at_bounding_sphere(&finite, &sphere(4.0, 0.0, 0.0, 0.0)),
             0.0
         );
-        let disabled = create_point_light(Some(&PointLightOptions {
-            enabled: Some(false),
-            ..crate::point_options()
-        }));
+        let mut disabled = create_point_light();
+        disabled.enabled = false;
         assert_eq!(
             get_light_contribution_at_bounding_sphere(&disabled, &sphere(0.0, 0.0, 0.0, 0.0)),
             0.0
@@ -136,27 +126,19 @@ mod get_light_influence_bounds {
     #[test]
     fn emits_disabled_unlimited_and_finite_sentinels() {
         let mut out = sphere(9.0, 8.0, 7.0, -1.0);
-        get_light_influence_bounds(
-            &mut out,
-            &create_point_light(Some(&PointLightOptions {
-                enabled: Some(false),
-                ..crate::point_options()
-            })),
-        );
+        let mut disabled = create_point_light();
+        disabled.enabled = false;
+        get_light_influence_bounds(&mut out, &disabled);
         assert_eq!(
             (out.center.x, out.center.y, out.center.z, out.radius),
             (0.0, 0.0, 0.0, 0.0)
         );
-        get_light_influence_bounds(&mut out, &create_ambient_light(None));
+        get_light_influence_bounds(&mut out, &create_ambient_light());
         assert_eq!(out.radius, -1.0);
-        get_light_influence_bounds(
-            &mut out,
-            &create_area_light(Some(&AreaLightOptions {
-                position: Some(create_vector3(5.0, 2.0, 1.0)),
-                range: Some(3.0),
-                ..crate::area_options()
-            })),
-        );
+        let mut area = create_area_light();
+        area.position = create_vector3(5.0, 2.0, 1.0);
+        area.range = 3.0;
+        get_light_influence_bounds(&mut out, &area);
         assert_eq!(
             (out.center.x, out.center.y, out.center.z, out.radius),
             (5.0, 2.0, 1.0, 3.0)
@@ -169,30 +151,18 @@ mod get_light_luminance {
 
     #[test]
     fn dispatches_builtins_in_linear_light_and_rejects_custom_kinds() {
-        assert_eq!(
-            get_light_luminance(&create_ambient_light(Some(&AmbientLightOptions {
-                color: Some(0x0000_00ff),
-                ..crate::ambient_options()
-            }))),
-            0.0
-        );
-        close(
-            get_light_luminance(&create_ambient_light(Some(&AmbientLightOptions {
-                color: Some(0x8080_80ff),
-                ..crate::ambient_options()
-            }))),
-            0.215_86,
-        );
-        close(
-            get_light_luminance(&create_hemisphere_light(Some(&HemisphereLightOptions {
-                ground_color: Some(0x0000_00ff),
-                intensity: Some(2.0),
-                sky_color: Some(0xffff_ffff),
-                ..crate::hemisphere_options()
-            }))),
-            1.0,
-        );
-        assert_eq!(get_light_luminance(&create_environment(None)), 0.0);
+        let mut black = create_ambient_light();
+        black.color = 0x0000_00ff;
+        assert_eq!(get_light_luminance(&black), 0.0);
+        let mut gray = create_ambient_light();
+        gray.color = 0x8080_80ff;
+        close(get_light_luminance(&gray), 0.215_86);
+        let mut hemisphere = create_hemisphere_light();
+        hemisphere.ground_color = 0x0000_00ff;
+        hemisphere.intensity = 2.0;
+        hemisphere.sky_color = 0xffff_ffff;
+        close(get_light_luminance(&hemisphere), 1.0);
+        assert_eq!(get_light_luminance(&create_environment()), 0.0);
         let custom = CustomLight {
             enabled: Some(true),
             color: 0xffff_ffff,
@@ -210,28 +180,20 @@ mod has_light_influence_on_bounds {
     fn handles_unlimited_overlap_empty_and_open_kinds() {
         let bounds = sphere(20.0, 0.0, 0.0, 1.0);
         assert!(has_light_influence_on_bounds(
-            &create_ambient_light(None),
+            &create_ambient_light(),
             &bounds
         ));
-        assert!(!has_light_influence_on_bounds(
-            &create_point_light(Some(&PointLightOptions {
-                range: Some(5.0),
-                ..crate::point_options()
-            })),
-            &bounds
-        ));
+        let mut finite = create_point_light();
+        finite.range = 5.0;
+        assert!(!has_light_influence_on_bounds(&finite, &bounds));
         assert!(has_light_influence_on_bounds(
-            &create_point_light(Some(&PointLightOptions {
-                range: Some(-1.0),
-                ..crate::point_options()
-            })),
+            &create_point_light(),
             &bounds
         ));
+        let mut empty_bounds_light = create_point_light();
+        empty_bounds_light.range = 10.0;
         assert!(!has_light_influence_on_bounds(
-            &create_point_light(Some(&PointLightOptions {
-                range: Some(10.0),
-                ..crate::point_options()
-            })),
+            &empty_bounds_light,
             &sphere(0.0, 0.0, 0.0, -1.0)
         ));
         let custom = custom_light("acme:GlowLight");
@@ -244,7 +206,7 @@ mod is_light_casting_shadow {
 
     #[test]
     fn returns_strict_booleans_for_builtin_and_open_kinds() {
-        assert!(!is_light_casting_shadow(&create_ambient_light(None)));
+        assert!(!is_light_casting_shadow(&create_ambient_light()));
         assert!(is_light_casting_shadow(&create_directional_light(Some(
             &DirectionalLightOptions {
                 casts_shadow: Some(true),

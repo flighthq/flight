@@ -3,8 +3,8 @@ use flight_geometry::{Transform3D, Vector3, rotate_vector3_by_quaternion};
 use flight_lighting::{
     AMBIENT_LIGHT_KIND, AmbientLight, DIRECTIONAL_LIGHT_KIND, DirectionalLight,
     HEMISPHERE_LIGHT_KIND, HemisphereLight, POINT_LIGHT_KIND, PointLight, SPOT_LIGHT_KIND,
-    Scene3DLights, Scene3DLightsOptions, SpotLight, clone_ambient_light, clone_directional_light,
-    clone_hemisphere_light, clone_point_light, clone_spot_light, create_scene_3d_lights,
+    Scene3DLights, SpotLight, clone_ambient_light, clone_directional_light, clone_hemisphere_light,
+    clone_point_light, clone_spot_light, create_scene_3d_lights,
 };
 use std::any::Any;
 use std::sync::{Arc, RwLock};
@@ -68,13 +68,13 @@ pub fn create_scene3d_lights_from_document(document: &Scene3DDocument) -> Scene3
             _ => {}
         }
     }
-    return create_scene_3d_lights(Some(&Scene3DLightsOptions {
-        ambient,
-        directional,
-        hemisphere: Some(hemisphere),
-        point: Some(point),
-        spot: Some(spot),
-    }));
+    let mut out = create_scene_3d_lights();
+    out.ambient = ambient;
+    out.directional = directional;
+    out.hemisphere = hemisphere;
+    out.point = point;
+    out.spot = spot;
+    return out;
 }
 fn transform_document_light_position(out: &mut Vector3, transform: &Transform3D) {
     out.x *= transform.scale.x;

@@ -8,12 +8,11 @@ use flight_camera::{
 use flight_entity::{Ref, allocate_entity, get_entity_id};
 use flight_geometry::{Matrix4, create_matrix4, create_vector3};
 use flight_lighting::{
-    AmbientLightOptions, DirectionalLightOptions, HemisphereLightOptions, MAX_FORWARD_LIGHTS,
-    PointLightOptions, SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET, SCENE_LIGHT_BLOCK_FLOATS,
-    SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET, SCENE_LIGHT_HEMISPHERE_OFFSET,
-    SCENE_LIGHT_POINT_OFFSET, SCENE_LIGHT_SPOT_OFFSET, Scene3DLightBlock, Scene3DLights,
-    SpotLightOptions, create_ambient_light, create_directional_light, create_hemisphere_light,
-    create_point_light, create_spot_light,
+    DirectionalLightOptions, MAX_FORWARD_LIGHTS, SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET,
+    SCENE_LIGHT_BLOCK_FLOATS, SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET,
+    SCENE_LIGHT_HEMISPHERE_OFFSET, SCENE_LIGHT_POINT_OFFSET, SCENE_LIGHT_SPOT_OFFSET,
+    Scene3DLightBlock, Scene3DLights, SpotLightOptions, create_ambient_light,
+    create_directional_light, create_hemisphere_light, create_point_light, create_spot_light,
 };
 use flight_materials::{Material3D, Material3DFields};
 use flight_meshgeometry::{
@@ -201,11 +200,10 @@ mod pack_scene_3d_light_block {
     #[test]
     fn ambient_light_packs_radiance_in_ambient_slot() {
         let mut block = new_light_block();
-        let ambient = light_ref(create_ambient_light(Some(&AmbientLightOptions {
-            color: Some(0xffff_ffff),
-            intensity: Some(0.5),
-            ..crate::support::test_default()
-        })));
+        let mut ambient_value = create_ambient_light();
+        ambient_value.color = 0xffff_ffff;
+        ambient_value.intensity = 0.5;
+        let ambient = light_ref(ambient_value);
         pack_scene_3d_light_block(&mut block, &ambient_lights(ambient));
         assert_eq!(block.ambient_count, 1);
         assert_eq!(
@@ -220,10 +218,9 @@ mod pack_scene_3d_light_block {
         let mut block = new_light_block();
         pack_scene_3d_light_block(&mut block, &empty_lights());
         let version = block.version;
-        let ambient = light_ref(create_ambient_light(Some(&AmbientLightOptions {
-            intensity: Some(0.5),
-            ..crate::support::test_default()
-        })));
+        let mut ambient_value = create_ambient_light();
+        ambient_value.intensity = 0.5;
+        let ambient = light_ref(ambient_value);
         pack_scene_3d_light_block(&mut block, &ambient_lights(ambient));
         assert_eq!(block.version, version + 1);
     }
@@ -231,12 +228,9 @@ mod pack_scene_3d_light_block {
     #[test]
     fn packing_identical_lights_does_not_bump_version() {
         let mut block = new_light_block();
-        let lights = ambient_lights(light_ref(create_ambient_light(Some(
-            &AmbientLightOptions {
-                intensity: Some(0.5),
-                ..crate::support::test_default()
-            },
-        ))));
+        let mut ambient = create_ambient_light();
+        ambient.intensity = 0.5;
+        let lights = ambient_lights(light_ref(ambient));
         pack_scene_3d_light_block(&mut block, &lights);
         let version = block.version;
         pack_scene_3d_light_block(&mut block, &lights);
@@ -246,15 +240,9 @@ mod pack_scene_3d_light_block {
     #[test]
     fn srgb_midgray_decodes_to_darker_linear_value() {
         let mut block = new_light_block();
-        pack_scene_3d_light_block(
-            &mut block,
-            &ambient_lights(light_ref(create_ambient_light(Some(
-                &AmbientLightOptions {
-                    color: Some(0x8080_80ff),
-                    ..crate::support::test_default()
-                },
-            )))),
-        );
+        let mut ambient = create_ambient_light();
+        ambient.color = 0x8080_80ff;
+        pack_scene_3d_light_block(&mut block, &ambient_lights(light_ref(ambient)));
         let value = block.data[SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET];
         assert!(value > 0.0);
         assert!(value < 0x80 as f32 / 0xff as f32);
@@ -263,13 +251,12 @@ mod pack_scene_3d_light_block {
     #[test]
     fn point_light_packs_position_range_radiance_and_inverse_square_range() {
         let mut block = new_light_block();
-        let point = light_ref(create_point_light(Some(&PointLightOptions {
-            color: Some(0xffff_ffff),
-            intensity: Some(3.0),
-            position: Some(create_vector3(1.0, 2.0, 3.0)),
-            range: Some(10.0),
-            ..crate::support::test_default()
-        })));
+        let mut point_value = create_point_light();
+        point_value.color = 0xffff_ffff;
+        point_value.intensity = 3.0;
+        point_value.position = create_vector3(1.0, 2.0, 3.0);
+        point_value.range = 10.0;
+        let point = light_ref(point_value);
         pack_scene_3d_light_block(&mut block, &point_lights(vec![point]));
         let offset = SCENE_LIGHT_POINT_OFFSET;
         assert_eq!(block.point_count, 1);
@@ -281,10 +268,7 @@ mod pack_scene_3d_light_block {
     #[test]
     fn infinite_range_point_light_has_zero_inverse_square_cutoff() {
         let mut block = new_light_block();
-        let point = light_ref(create_point_light(Some(&PointLightOptions {
-            range: Some(-1.0),
-            ..crate::support::test_default()
-        })));
+        let point = light_ref(create_point_light());
         pack_scene_3d_light_block(&mut block, &point_lights(vec![point]));
         assert_eq!(block.data[SCENE_LIGHT_POINT_OFFSET + 3], -1.0);
         assert_eq!(block.data[SCENE_LIGHT_POINT_OFFSET + 7], 0.0);
@@ -315,12 +299,11 @@ mod pack_scene_3d_light_block {
     #[test]
     fn hemisphere_light_packs_sky_ground_and_world_up() {
         let mut block = new_light_block();
-        let hemisphere = light_ref(create_hemisphere_light(Some(&HemisphereLightOptions {
-            ground_color: Some(0x0000_00ff),
-            intensity: Some(2.0),
-            sky_color: Some(0xffff_ffff),
-            ..crate::support::test_default()
-        })));
+        let mut hemisphere_value = create_hemisphere_light();
+        hemisphere_value.ground_color = 0x0000_00ff;
+        hemisphere_value.intensity = 2.0;
+        hemisphere_value.sky_color = 0xffff_ffff;
+        let hemisphere = light_ref(hemisphere_value);
         pack_scene_3d_light_block(&mut block, &hemisphere_lights(vec![hemisphere]));
         let offset = SCENE_LIGHT_HEMISPHERE_OFFSET;
         assert_eq!(block.hemisphere_count, 1);
@@ -332,9 +315,7 @@ mod pack_scene_3d_light_block {
     #[test]
     fn each_punctual_array_is_capped_at_forward_light_limit() {
         let mut block = new_light_block();
-        let point = (0..9)
-            .map(|_| light_ref(create_point_light(None)))
-            .collect();
+        let point = (0..9).map(|_| light_ref(create_point_light())).collect();
         pack_scene_3d_light_block(&mut block, &point_lights(point));
         assert_eq!(block.point_count, MAX_FORWARD_LIGHTS);
     }
@@ -351,12 +332,9 @@ mod pack_scene_3d_light_block {
     #[test]
     fn identical_punctual_lights_do_not_bump_version() {
         let mut block = new_light_block();
-        let lights = point_lights(vec![light_ref(create_point_light(Some(
-            &PointLightOptions {
-                range: Some(5.0),
-                ..crate::support::test_default()
-            },
-        )))]);
+        let mut point = create_point_light();
+        point.range = 5.0;
+        let lights = point_lights(vec![light_ref(point)]);
         pack_scene_3d_light_block(&mut block, &lights);
         let version = block.version;
         pack_scene_3d_light_block(&mut block, &lights);
@@ -375,7 +353,7 @@ mod prepare_scene_3d_render {
         let mesh_node: NodeRef = mesh.clone();
         add_node_child(&scene, &mesh_node);
         let mut lights = empty_lights();
-        lights.ambient = Some(light_ref(create_ambient_light(None)));
+        lights.ambient = Some(light_ref(create_ambient_light()));
         lights.directional = Some(light_ref(create_directional_light(None)));
         let list = prepare_scene_3d_render(&mut state, &scene, &front_camera(), &lights, None);
         assert_eq!(list.mesh_count, 1);

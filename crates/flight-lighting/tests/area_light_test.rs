@@ -10,26 +10,25 @@ mod clone_area_light {
 
     #[test]
     fn copies_all_vectors_and_shadow_intent() {
-        let source = create_area_light(Some(&AreaLightOptions {
-            casts_shadow: Some(true),
-            color: Some(0x1122_33ff),
-            decay: Some(1.5),
-            direction: Some(create_vector3(0.0, 0.0, -1.0)),
-            enabled: Some(false),
-            intensity: Some(0.5),
-            intensity_unit: Some(LUMEN_LIGHT_UNIT),
-            normal_bias: Some(0.1),
-            pcf_radius: Some(2.0),
-            position: Some(create_vector3(1.0, 2.0, 3.0)),
-            range: Some(8.0),
-            right: Some(create_vector3(2.0, 0.0, 0.0)),
-            shadow_bias: Some(0.01),
-            shadow_far: Some(300.0),
-            shadow_map_size: Some(2048),
-            shadow_near: Some(0.25),
-            shadow_strength: Some(0.75),
-            up: Some(create_vector3(0.0, 3.0, 0.0)),
-        }));
+        let mut source = create_area_light();
+        source.casts_shadow = true;
+        source.color = 0x1122_33ff;
+        source.decay = 1.5;
+        source.direction = create_vector3(0.0, 0.0, -1.0);
+        source.enabled = false;
+        source.intensity = 0.5;
+        source.intensity_unit = LUMEN_LIGHT_UNIT;
+        source.normal_bias = 0.1;
+        source.pcf_radius = 2.0;
+        source.position = create_vector3(1.0, 2.0, 3.0);
+        source.range = 8.0;
+        source.right = create_vector3(2.0, 0.0, 0.0);
+        source.shadow_bias = 0.01;
+        source.shadow_far = 300.0;
+        source.shadow_map_size = 2048;
+        source.shadow_near = 0.25;
+        source.shadow_strength = 0.75;
+        source.up = create_vector3(0.0, 3.0, 0.0);
         let copy = clone_area_light(&source);
         assert_eq!(copy.position, source.position);
         assert_eq!(copy.direction, source.direction);
@@ -46,7 +45,7 @@ mod create_area_light {
 
     #[test]
     fn applies_rectangular_light_defaults() {
-        let light = create_area_light(None);
+        let light = create_area_light();
         assert_eq!(light.direction, create_vector3(0.0, -1.0, 0.0));
         assert_eq!(light.position, create_vector3(0.0, 0.0, 0.0));
         assert_eq!(light.right, create_vector3(1.0, 0.0, 0.0));
@@ -60,18 +59,17 @@ mod initialize_area_light {
     use super::*;
 
     #[test]
-    fn copies_supplied_vectors() {
-        let direction = create_vector3(1.0, 2.0, 3.0);
-        let mut light = create_area_light(None);
-        initialize_area_light(
-            &mut light,
-            Some(&AreaLightOptions {
-                direction: Some(direction.clone()),
-                ..crate::area_options()
-            }),
-        );
-        assert_eq!(light.direction, direction);
-        assert!(!std::ptr::eq(&light.direction, &direction));
+    fn restores_default_vectors_and_authored_fields() {
+        let mut light = create_area_light();
+        light.casts_shadow = true;
+        light.direction = create_vector3(1.0, 2.0, 3.0);
+        light.right = create_vector3(2.0, 0.0, 0.0);
+        light.up = create_vector3(0.0, 3.0, 0.0);
+        initialize_area_light(&mut light);
+        assert!(!light.casts_shadow);
+        assert_eq!(light.direction, create_vector3(0.0, -1.0, 0.0));
+        assert_eq!(light.right, create_vector3(1.0, 0.0, 0.0));
+        assert_eq!(light.up, create_vector3(0.0, 0.0, 1.0));
     }
 }
 
@@ -80,11 +78,9 @@ mod set_area_light_orientation {
 
     #[test]
     fn normalizes_axes_while_preserving_existing_half_extents() {
-        let mut light = create_area_light(Some(&AreaLightOptions {
-            right: Some(create_vector3(3.0, 0.0, 0.0)),
-            up: Some(create_vector3(0.0, 0.0, 4.0)),
-            ..crate::area_options()
-        }));
+        let mut light = create_area_light();
+        light.right = create_vector3(3.0, 0.0, 0.0);
+        light.up = create_vector3(0.0, 0.0, 4.0);
         set_area_light_orientation(
             &mut light,
             &create_vector3(0.0, 0.0, -2.0),
@@ -98,7 +94,7 @@ mod set_area_light_orientation {
 
     #[test]
     fn ignores_zero_and_nan_inputs_without_partial_writes() {
-        let mut light = create_area_light(None);
+        let mut light = create_area_light();
         let original = (
             light.direction.clone(),
             light.right.clone(),

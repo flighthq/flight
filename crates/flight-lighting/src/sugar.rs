@@ -23,8 +23,8 @@ impl Scene3DForwardLightSelectionReason {
 }
 
 impl AmbientLight {
-    pub fn new(options: Option<&AmbientLightOptions>) -> Self {
-        return create_ambient_light(options);
+    pub fn new() -> Self {
+        return create_ambient_light();
     }
 
     pub fn clone_ambient_light(&self) -> Self {
@@ -59,8 +59,8 @@ impl DirectionalLight {
 }
 
 impl PointLight {
-    pub fn new(options: Option<&PointLightOptions>) -> Self {
-        return create_point_light(options);
+    pub fn new() -> Self {
+        return create_point_light();
     }
 
     pub fn clone_point_light(&self) -> Self {
@@ -99,8 +99,8 @@ impl SpotLight {
 }
 
 impl HemisphereLight {
-    pub fn new(options: Option<&HemisphereLightOptions>) -> Self {
-        return create_hemisphere_light(options);
+    pub fn new() -> Self {
+        return create_hemisphere_light();
     }
 
     pub fn clone_hemisphere_light(&self) -> Self {
@@ -109,8 +109,8 @@ impl HemisphereLight {
 }
 
 impl AreaLight {
-    pub fn new(options: Option<&AreaLightOptions>) -> Self {
-        return create_area_light(options);
+    pub fn new() -> Self {
+        return create_area_light();
     }
 
     pub fn clone_area_light(&self) -> Self {
@@ -128,8 +128,8 @@ impl AreaLight {
 }
 
 impl Environment {
-    pub fn new(options: Option<&EnvironmentOptions>) -> Self {
-        return create_environment(options);
+    pub fn new() -> Self {
+        return create_environment();
     }
 
     pub fn clone_environment(&self) -> Self {
@@ -181,7 +181,7 @@ impl LightProbeGrid {
 }
 
 impl Scene3DLights {
-    pub fn new(options: Option<&Scene3DLightsOptions>) -> Self {
-        return create_scene_3d_lights(options);
+    pub fn new() -> Self {
+        return create_scene_3d_lights();
     }
 }

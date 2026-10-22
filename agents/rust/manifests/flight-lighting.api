@@ -1,9 +1,9 @@
 src/ambient_light.rs: pub fn clone_ambient_light(source: &AmbientLight) -> AmbientLight
-src/ambient_light.rs: pub fn create_ambient_light(options: Option<&AmbientLightOptions>) -> AmbientLight
-src/ambient_light.rs: pub fn initialize_ambient_light(out: &mut AmbientLight, options: Option<&AmbientLightOptions>)
+src/ambient_light.rs: pub fn create_ambient_light() -> AmbientLight
+src/ambient_light.rs: pub fn initialize_ambient_light(out: &mut AmbientLight)
 src/area_light.rs: pub fn clone_area_light(source: &AreaLight) -> AreaLight
-src/area_light.rs: pub fn create_area_light(options: Option<&AreaLightOptions>) -> AreaLight
-src/area_light.rs: pub fn initialize_area_light(out: &mut AreaLight, options: Option<&AreaLightOptions>)
+src/area_light.rs: pub fn create_area_light() -> AreaLight
+src/area_light.rs: pub fn initialize_area_light(out: &mut AreaLight)
 src/area_light.rs: pub fn set_area_light_orientation(out: &mut AreaLight, direction: &Vector3, right: &Vector3, up: &Vector3,)
 src/contract.rs: pub use super::ambient_light::*;
 src/contract.rs: pub use super::area_light::*;
@@ -29,11 +29,11 @@ src/enums.rs: pub fn get_scene_3d_forward_light_selection_reason_string(value: S
 src/enums.rs: pub fn parse_light_unit(value: &str) -> Option<LightUnit>
 src/enums.rs: pub fn parse_scene_3d_forward_light_selection_reason(value: &str,) -> Option<Scene3DForwardLightSelectionReason>
 src/environment.rs: pub fn clone_environment(source: &Environment) -> Environment
-src/environment.rs: pub fn create_environment(options: Option<&EnvironmentOptions>) -> Environment
-src/environment.rs: pub fn initialize_environment(out: &mut Environment, options: Option<&EnvironmentOptions>)
+src/environment.rs: pub fn create_environment() -> Environment
+src/environment.rs: pub fn initialize_environment(out: &mut Environment)
 src/hemisphere_light.rs: pub fn clone_hemisphere_light(source: &HemisphereLight) -> HemisphereLight
-src/hemisphere_light.rs: pub fn create_hemisphere_light(options: Option<&HemisphereLightOptions>) -> HemisphereLight
-src/hemisphere_light.rs: pub fn initialize_hemisphere_light(out: &mut HemisphereLight, options: Option<&HemisphereLightOptions>,)
+src/hemisphere_light.rs: pub fn create_hemisphere_light() -> HemisphereLight
+src/hemisphere_light.rs: pub fn initialize_hemisphere_light(out: &mut HemisphereLight)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::ALL_LIGHT_LAYERS;
 src/lib.rs: pub use contract::AMBIENT_LIGHT_KIND;
@@ -148,11 +148,11 @@ src/light_probe.rs: pub fn initialize_light_probe_grid(out: &mut LightProbeGrid,
 src/light_probe.rs: pub fn sample_light_probe_grid(out: &mut Float32Array, position: &Vector3, grid: &LightProbeGrid,) -> bool
 src/light_probe.rs: pub fn set_light_probe_sh_from_colors(target: &mut LightProbe, colors: &Float32Array, directions: &Float32Array,)
 src/point_light.rs: pub fn clone_point_light(source: &PointLight) -> PointLight
-src/point_light.rs: pub fn create_point_light(options: Option<&PointLightOptions>) -> PointLight
-src/point_light.rs: pub fn initialize_point_light(out: &mut PointLight, options: Option<&PointLightOptions>)
+src/point_light.rs: pub fn create_point_light() -> PointLight
+src/point_light.rs: pub fn initialize_point_light(out: &mut PointLight)
 src/scene_forward_lights.rs: pub fn select_scene_3d_forward_lights(out: &mut Scene3DForwardLightSelection, lights: &Scene3DLightsLike, bounds: &BoundingSphere, receiver_layer_mask: Option<i32>,)
-src/scene_lights.rs: pub fn create_scene_3d_lights(options: Option<&Scene3DLightsOptions>) -> Scene3DLights
-src/scene_lights.rs: pub fn initialize_scene_3d_lights(out: &mut Scene3DLights, options: Option<&Scene3DLightsOptions>)
+src/scene_lights.rs: pub fn create_scene_3d_lights() -> Scene3DLights
+src/scene_lights.rs: pub fn initialize_scene_3d_lights(out: &mut Scene3DLights)
 src/spot_light.rs: pub fn clone_spot_light(source: &SpotLight) -> SpotLight
 src/spot_light.rs: pub fn create_spot_light(options: Option<&SpotLightOptions>) -> SpotLight
 src/spot_light.rs: pub fn get_spot_light_cone_degrees(out: &mut SpotLightConeAngles, source: &SpotLight)
@@ -162,18 +162,18 @@ src/spot_light.rs: pub fn set_spot_light_cone(out: &mut SpotLight, inner_degrees
 src/spot_light.rs: pub fn set_spot_light_direction(out: &mut SpotLight, x: f32, y: f32, z: f32)
 src/spot_light.rs: pub fn set_spot_light_target(out: &mut SpotLight, target_x: f32, target_y: f32, target_z: f32)
 src/sugar.rs: impl AmbientLight :: fn clone_ambient_light(&self) -> Self
-src/sugar.rs: impl AmbientLight :: fn new(options: Option<&AmbientLightOptions>) -> Self
+src/sugar.rs: impl AmbientLight :: fn new() -> Self
 src/sugar.rs: impl AreaLight :: fn clone_area_light(&self) -> Self
-src/sugar.rs: impl AreaLight :: fn new(options: Option<&AreaLightOptions>) -> Self
+src/sugar.rs: impl AreaLight :: fn new() -> Self
 src/sugar.rs: impl AreaLight :: fn set_orientation(&mut self, direction: &flight_geometry::Vector3, right: &flight_geometry::Vector3, up: &flight_geometry::Vector3,)
 src/sugar.rs: impl DirectionalLight :: fn clone_directional_light(&self) -> Self
 src/sugar.rs: impl DirectionalLight :: fn new(options: Option<&DirectionalLightOptions>) -> Self
 src/sugar.rs: impl DirectionalLight :: fn set_direction(&mut self, x: f32, y: f32, z: f32)
 src/sugar.rs: impl DirectionalLight :: fn set_target(&mut self, from_x: f32, from_y: f32, from_z: f32, to_x: f32, to_y: f32, to_z: f32,)
 src/sugar.rs: impl Environment :: fn clone_environment(&self) -> Self
-src/sugar.rs: impl Environment :: fn new(options: Option<&EnvironmentOptions>) -> Self
+src/sugar.rs: impl Environment :: fn new() -> Self
 src/sugar.rs: impl HemisphereLight :: fn clone_hemisphere_light(&self) -> Self
-src/sugar.rs: impl HemisphereLight :: fn new(options: Option<&HemisphereLightOptions>) -> Self
+src/sugar.rs: impl HemisphereLight :: fn new() -> Self
 src/sugar.rs: impl LightProbe :: fn evaluate(&self, out: &mut flight_entity::Float32Array, normal: &flight_geometry::Vector3,)
 src/sugar.rs: impl LightProbe :: fn new(position: &flight_geometry::Vector3, sh_coefficients: Option<&flight_entity::Float32Array>,) -> Self
 src/sugar.rs: impl LightProbe :: fn set_sh_from_colors(&mut self, colors: &flight_entity::Float32Array, directions: &flight_entity::Float32Array,)
@@ -182,10 +182,10 @@ src/sugar.rs: impl LightProbeGrid :: fn sample(&self, out: &mut flight_entity::F
 src/sugar.rs: impl LightUnit :: fn parse(value: &str) -> Option<Self>
 src/sugar.rs: impl LightUnit :: fn to_str(self) -> &'static str
 src/sugar.rs: impl PointLight :: fn clone_point_light(&self) -> Self
-src/sugar.rs: impl PointLight :: fn new(options: Option<&PointLightOptions>) -> Self
+src/sugar.rs: impl PointLight :: fn new() -> Self
 src/sugar.rs: impl Scene3DForwardLightSelectionReason :: fn parse(value: &str) -> Option<Self>
 src/sugar.rs: impl Scene3DForwardLightSelectionReason :: fn to_str(self) -> &'static str
-src/sugar.rs: impl Scene3DLights :: fn new(options: Option<&Scene3DLightsOptions>) -> Self
+src/sugar.rs: impl Scene3DLights :: fn new() -> Self
 src/sugar.rs: impl SpotLight :: fn clone_spot_light(&self) -> Self
 src/sugar.rs: impl SpotLight :: fn cone_degrees(&self, out: &mut SpotLightConeAngles)
 src/sugar.rs: impl SpotLight :: fn new(options: Option<&SpotLightOptions>) -> Self

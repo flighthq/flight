@@ -5,6 +5,7 @@ use crate::types::{LIGHT_PROBE_SH_FLOATS, LightProbe, LightProbeGrid};
 
 const SH_COEFFICIENT_COUNT: usize = 9;
 
+// D23 (KEEP; Principal c0f9227c): position and coefficients define the probe's owned validated buffers.
 pub fn create_light_probe(
     position: &Vector3,
     sh_coefficients: Option<&Float32Array>,
@@ -14,6 +15,7 @@ pub fn create_light_probe(
     return out;
 }
 
+// D23 (KEEP; Principal c0f9227c): probes and grid geometry define validated construction state.
 pub fn create_light_probe_grid(
     probes: &[Ref<LightProbe>],
     bounds: &Aabb,
@@ -24,6 +26,7 @@ pub fn create_light_probe_grid(
     return out;
 }
 
+// D23 (KEEP; Principal c0f9227c): initialization validates and copies the defining coefficient buffer.
 pub fn initialize_light_probe(
     out: &mut LightProbe,
     position: &Vector3,
@@ -45,6 +48,7 @@ pub fn initialize_light_probe(
     }
 }
 
+// D23 (KEEP; Principal c0f9227c): initialization validates the probe topology and copies grid geometry.
 pub fn initialize_light_probe_grid(
     out: &mut LightProbeGrid,
     probes: &[Ref<LightProbe>],

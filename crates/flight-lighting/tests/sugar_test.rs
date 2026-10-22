@@ -37,15 +37,12 @@ fn selection_reason_to_str_matches_free_function() {
 
 #[test]
 fn ambient_new_matches_free_function() {
-    assert_eq!(
-        AmbientLight::new(None).color,
-        create_ambient_light(None).color
-    );
+    assert_eq!(AmbientLight::new().color, create_ambient_light().color);
 }
 
 #[test]
 fn area_new_matches_free_function() {
-    assert_eq!(AreaLight::new(None).right, create_area_light(None).right);
+    assert_eq!(AreaLight::new().right, create_area_light().right);
 }
 
 #[test]
@@ -58,26 +55,20 @@ fn directional_new_matches_free_function() {
 
 #[test]
 fn environment_new_matches_free_function() {
-    assert_eq!(
-        Environment::new(None).intensity,
-        create_environment(None).intensity
-    );
+    assert_eq!(Environment::new().intensity, create_environment().intensity);
 }
 
 #[test]
 fn hemisphere_new_matches_free_function() {
     assert_eq!(
-        HemisphereLight::new(None).sky_color,
-        create_hemisphere_light(None).sky_color
+        HemisphereLight::new().sky_color,
+        create_hemisphere_light().sky_color
     );
 }
 
 #[test]
 fn point_new_matches_free_function() {
-    assert_eq!(
-        PointLight::new(None).position,
-        create_point_light(None).position
-    );
+    assert_eq!(PointLight::new().position, create_point_light().position);
 }
 
 #[test]
@@ -90,7 +81,7 @@ fn spot_new_matches_free_function() {
 
 #[test]
 fn ambient_clone_matches_free_function() {
-    let source = create_ambient_light(None);
+    let source = create_ambient_light();
     assert_eq!(
         source.clone_ambient_light().color,
         clone_ambient_light(&source).color
@@ -99,7 +90,7 @@ fn ambient_clone_matches_free_function() {
 
 #[test]
 fn area_clone_matches_free_function() {
-    let source = create_area_light(None);
+    let source = create_area_light();
     assert_eq!(source.clone_area_light().up, clone_area_light(&source).up);
 }
 
@@ -114,7 +105,7 @@ fn directional_clone_matches_free_function() {
 
 #[test]
 fn environment_clone_matches_free_function() {
-    let source = create_environment(None);
+    let source = create_environment();
     assert_eq!(
         source.clone_environment().intensity,
         clone_environment(&source).intensity
@@ -123,7 +114,7 @@ fn environment_clone_matches_free_function() {
 
 #[test]
 fn hemisphere_clone_matches_free_function() {
-    let source = create_hemisphere_light(None);
+    let source = create_hemisphere_light();
     assert_eq!(
         source.clone_hemisphere_light().ground_color,
         clone_hemisphere_light(&source).ground_color
@@ -132,7 +123,7 @@ fn hemisphere_clone_matches_free_function() {
 
 #[test]
 fn point_clone_matches_free_function() {
-    let source = create_point_light(None);
+    let source = create_point_light();
     assert_eq!(
         source.clone_point_light().range,
         clone_point_light(&source).range
@@ -171,8 +162,8 @@ fn area_set_orientation_matches_free_function() {
     let direction = create_vector3(0.0, 0.0, -1.0);
     let right = create_vector3(0.0, 1.0, 0.0);
     let up = create_vector3(1.0, 0.0, 0.0);
-    let mut method = create_area_light(None);
-    let mut free = create_area_light(None);
+    let mut method = create_area_light();
+    let mut free = create_area_light();
     method.set_orientation(&direction, &right, &up);
     set_area_light_orientation(&mut free, &direction, &right, &up);
     assert_eq!(
@@ -308,7 +299,7 @@ fn light_probe_grid_sample_matches_free_function() {
 #[test]
 fn scene_lights_new_matches_free_function() {
     assert_eq!(
-        Scene3DLights::new(None).point.len(),
-        create_scene_3d_lights(None).point.len()
+        Scene3DLights::new().point.len(),
+        create_scene_3d_lights().point.len()
     );
 }

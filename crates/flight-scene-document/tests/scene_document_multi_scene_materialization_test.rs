@@ -338,7 +338,7 @@ mod multi_scene_materialization_selection {
         scene.scene.children = Vec::new();
         scene.lights = (0..2)
             .map(|_| Scene3DDocumentLight {
-                descriptor: Arc::new(RwLock::new(create_ambient_light(None))),
+                descriptor: Arc::new(RwLock::new(create_ambient_light())),
                 name: None,
                 node: None,
                 transform: create_transform3d(),

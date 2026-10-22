@@ -2,28 +2,21 @@ use flight_entity::allocate_entity;
 
 use crate::types::*;
 
-pub fn create_hemisphere_light(options: Option<&HemisphereLightOptions>) -> HemisphereLight {
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): callers assign authored light fields after construction
+pub fn create_hemisphere_light() -> HemisphereLight {
     let mut out: HemisphereLight = allocate_entity();
-    initialize_hemisphere_light(&mut out, options);
+    initialize_hemisphere_light(&mut out);
     return out;
 }
 
-pub fn initialize_hemisphere_light(
-    out: &mut HemisphereLight,
-    options: Option<&HemisphereLightOptions>,
-) {
-    out.enabled = options.and_then(|value| value.enabled).unwrap_or(true);
-    out.ground_color = options
-        .and_then(|value| value.ground_color)
-        .unwrap_or(0xffff_ffff);
-    out.intensity = options.and_then(|value| value.intensity).unwrap_or(1.0);
-    out.intensity_unit = options
-        .and_then(|value| value.intensity_unit)
-        .unwrap_or(UNITLESS_LIGHT_UNIT);
+// flight-lint: allow(conform-params) Principalc0f9227c D23 (B): initialization restores canonical defaults before authored assignment
+pub fn initialize_hemisphere_light(out: &mut HemisphereLight) {
+    out.enabled = true;
+    out.ground_color = 0xffff_ffff;
+    out.intensity = 1.0;
+    out.intensity_unit = UNITLESS_LIGHT_UNIT;
     out.kind = HEMISPHERE_LIGHT_KIND.to_string();
-    out.sky_color = options
-        .and_then(|value| value.sky_color)
-        .unwrap_or(0xffff_ffff);
+    out.sky_color = 0xffff_ffff;
 }
 
 pub fn clone_hemisphere_light(source: &HemisphereLight) -> HemisphereLight {

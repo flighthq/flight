@@ -3,12 +3,14 @@ use flight_geometry::{clone_vector3, create_vector3, set_vector3};
 
 use crate::types::*;
 
+// D23 (KEEP; Principal c0f9227c): construction normalizes direction and owns cascade splits.
 pub fn create_directional_light(options: Option<&DirectionalLightOptions>) -> DirectionalLight {
     let mut light: DirectionalLight = allocate_entity();
     initialize_directional_light(&mut light, options);
     return light;
 }
 
+// D23 (KEEP; Principal c0f9227c): initialization derives normalized direction and copied splits.
 pub fn initialize_directional_light(
     light: &mut DirectionalLight,
     options: Option<&DirectionalLightOptions>,

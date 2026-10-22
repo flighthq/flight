@@ -32,7 +32,7 @@ fn decode_built_in_descriptor(descriptor: &FlightDocumentLightDescriptor) -> Opt
     let fields = &descriptor.fields;
     return match descriptor.kind.as_str() {
         AMBIENT_LIGHT_KIND => {
-            let mut light = create_ambient_light(None);
+            let mut light = create_ambient_light();
             take_unsigned(fields, "color", &mut light.color);
             take_boolean(fields, "enabled", &mut light.enabled);
             take_number(fields, "intensity", &mut light.intensity);
@@ -69,7 +69,7 @@ fn decode_built_in_descriptor(descriptor: &FlightDocumentLightDescriptor) -> Opt
             Some(Arc::new(RwLock::new(light)))
         }
         HEMISPHERE_LIGHT_KIND => {
-            let mut light = create_hemisphere_light(None);
+            let mut light = create_hemisphere_light();
             take_boolean(fields, "enabled", &mut light.enabled);
             take_unsigned(fields, "groundColor", &mut light.ground_color);
             take_number(fields, "intensity", &mut light.intensity);
@@ -78,7 +78,7 @@ fn decode_built_in_descriptor(descriptor: &FlightDocumentLightDescriptor) -> Opt
             Some(Arc::new(RwLock::new(light)))
         }
         POINT_LIGHT_KIND => {
-            let mut light = create_point_light(None);
+            let mut light = create_point_light();
             take_boolean(fields, "castsShadow", &mut light.casts_shadow);
             take_unsigned(fields, "color", &mut light.color);
             take_number(fields, "decay", &mut light.decay);
