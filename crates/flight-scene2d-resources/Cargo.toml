@@ -1,0 +1,36 @@
+[package]
+name = "flight-scene2d-resources"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Scene2D document import, slot resolution, and image/audio resource loading"
+autotests = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-audio = { workspace = true }
+flight-entity = { workspace = true }
+flight-image = { workspace = true }
+flight-image-codec = { workspace = true }
+flight-importdiagnostics = { workspace = true }
+flight-log = { workspace = true }
+flight-node = { path = "../flight-node" }
+flight-path-boolean = { workspace = true }
+flight-resource = { workspace = true }
+flight-scene2d = { path = "../flight-scene2d" }
+flight-scene2d-formats = { path = "../flight-scene2d-formats" }
+flight-signals = { workspace = true }
+flight-stream = { workspace = true }
+flight-texture = { workspace = true }
+futures = "0.3"
+regex = "1"
+serde_json = { version = "1", default-features = false, features = ["std"] }
+
+[dev-dependencies]
+flight-bitmap = { workspace = true }
+
+[lints]
+workspace = true

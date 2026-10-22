@@ -95,6 +95,7 @@ flight-materials = { path = "crates/flight-materials" }
 flight-regexp = { path = "crates/flight-regexp" }
 flight-registry = { path = "crates/flight-registry" }
 flight-screen = { path = "crates/flight-screen" }
+flight-scene2d-resources = { path = "crates/flight-scene2d-resources" }
 flight-scene3d = { path = "crates/flight-scene3d" }
 flight-selection = { path = "crates/flight-selection" }
 flight-shading = { path = "crates/flight-shading" }

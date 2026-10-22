@@ -991,6 +991,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-scene2d-resources"
+version = "0.6.0"
+dependencies = [
+ "flight-audio",
+ "flight-bitmap",
+ "flight-entity",
+ "flight-image",
+ "flight-image-codec",
+ "flight-importdiagnostics",
+ "flight-log",
+ "flight-node",
+ "flight-path-boolean",
+ "flight-resource",
+ "flight-scene2d",
+ "flight-scene2d-formats",
+ "flight-signals",
+ "flight-stream",
+ "flight-texture",
+ "futures",
+ "regex",
+ "serde_json",
+]
+
+[[package]]
 name = "flight-scene3d"
 version = "0.6.0"
 dependencies = [
