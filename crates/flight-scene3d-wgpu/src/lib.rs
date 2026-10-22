@@ -15,6 +15,7 @@ mod wgpu_mesh_pipeline;
 mod wgpu_mesh_upload;
 mod wgpu_scene3d_runtime;
 mod wgpu_scene3d_time;
+mod wgpu_shadow_map;
 mod wgpu_skin_palette;
 
 pub mod contract;

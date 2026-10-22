@@ -14,6 +14,8 @@ use crate::types::*;
 /// One command the device recorded, with the exact values it was given.
 #[derive(Clone, Debug)]
 pub enum WgpuCommandRecord {
+    // A depth-only render pass (no color attachment) a backend opened on the frame's encoder.
+    BeginDepthRenderPass(WgpuDepthRenderPassBeginRecord),
     BeginRenderPass(WgpuRenderPassBeginRecord),
     CreateBindGroup(WgpuBindGroupRecord),
     // A bind group created through `create_wgpu_bind_group`, with every entry it was given.
@@ -29,6 +31,8 @@ pub enum WgpuCommandRecord {
     CreateTexture(WgpuTextureRecord),
     Draw(WgpuDrawRecord),
     DrawIndexed(WgpuDrawIndexedRecord),
+    // A backend-opened pass ended (TS `GPURenderPassEncoder.end`).
+    EndRenderPass,
     SetBindGroup(WgpuSetBindGroupRecord),
     SetIndexBuffer(WgpuSetIndexBufferRecord),
     SetPipeline(wgpu::RenderPipeline),
@@ -64,6 +68,13 @@ pub struct WgpuRenderPassBeginRecord {
     pub color_view: wgpu::TextureView,
     pub depth_clear: Option<f32>,
     pub stencil_clear: u32,
+}
+
+/// The depth attachment a depth-only pass began with.
+#[derive(Clone, Debug, PartialEq)]
+pub struct WgpuDepthRenderPassBeginRecord {
+    pub depth_clear: Option<f32>,
+    pub depth_view: wgpu::TextureView,
 }
 
 /// A bind group the backend created, with the texture views it binds, in entry order.

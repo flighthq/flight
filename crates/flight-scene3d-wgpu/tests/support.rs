@@ -325,7 +325,9 @@ impl WgpuScene3DTestState {
 /// The source call name a recorded command stands for.
 pub fn get_test_call_name(record: &WgpuCommandRecord) -> &'static str {
     return match record {
-        WgpuCommandRecord::BeginRenderPass(_) => "beginRenderPass",
+        WgpuCommandRecord::BeginDepthRenderPass(_) | WgpuCommandRecord::BeginRenderPass(_) => {
+            "beginRenderPass"
+        }
         WgpuCommandRecord::CreateBindGroup(_) | WgpuCommandRecord::CreateBindGroupEntries(_) => {
             "createBindGroup"
         }
@@ -339,6 +341,7 @@ pub fn get_test_call_name(record: &WgpuCommandRecord) -> &'static str {
         WgpuCommandRecord::CreateTexture(_) => "createTexture",
         WgpuCommandRecord::Draw(_) => "draw",
         WgpuCommandRecord::DrawIndexed(_) => "drawIndexed",
+        WgpuCommandRecord::EndRenderPass => "end",
         WgpuCommandRecord::SetBindGroup(_) => "setBindGroup",
         WgpuCommandRecord::SetIndexBuffer(_) => "setIndexBuffer",
         WgpuCommandRecord::SetPipeline(_) => "setPipeline",

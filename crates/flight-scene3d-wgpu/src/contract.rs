@@ -13,4 +13,5 @@ pub use crate::wgpu_mesh_pipeline::*;
 pub use crate::wgpu_mesh_upload::*;
 pub use crate::wgpu_scene3d_runtime::*;
 pub use crate::wgpu_scene3d_time::*;
+pub use crate::wgpu_shadow_map::*;
 pub use crate::wgpu_skin_palette::*;
