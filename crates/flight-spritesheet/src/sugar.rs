@@ -132,8 +132,11 @@ mod sugar_tests {
     #[test]
     fn spritesheet_validate_spritesheet_matches_validate_spritesheet() {
         let s = sheet();
-        assert_eq!(s.validate_spritesheet(), validate_spritesheet(&s));
-        assert!(s.validate_spritesheet().is_some());
+        let (mut method_out, mut free_out) = (Vec::new(), Vec::new());
+        let method = s.validate_spritesheet(&mut method_out);
+        assert_eq!(method, validate_spritesheet(&mut free_out, &s));
+        assert!(method);
+        assert_eq!(method_out, free_out);
     }
 
     #[test]
@@ -174,8 +177,11 @@ mod sugar_tests {
     #[test]
     fn spritesheetdata_validate_spritesheet_data_matches_validate_spritesheet_data() {
         let s = data();
-        assert_eq!(s.validate_spritesheet_data(), validate_spritesheet_data(&s));
-        assert!(s.validate_spritesheet_data().is_some());
+        let (mut method_out, mut free_out) = (Vec::new(), Vec::new());
+        let method = s.validate_spritesheet_data(&mut method_out);
+        assert_eq!(method, validate_spritesheet_data(&mut free_out, &s));
+        assert!(method);
+        assert_eq!(method_out, free_out);
     }
 
     #[test]
@@ -356,8 +362,8 @@ impl Spritesheet {
         return get_spritesheet_animation(self, label);
     }
 
-    pub fn validate_spritesheet(&self) -> Option<Vec<SpritesheetValidationDiagnostic>> {
-        return validate_spritesheet(self);
+    pub fn validate_spritesheet(&self, out: &mut Vec<SpritesheetValidationDiagnostic>) -> bool {
+        return validate_spritesheet(out, self);
     }
 }
 
@@ -382,8 +388,11 @@ impl SpritesheetData {
         initialize_spritesheet_data(self);
     }
 
-    pub fn validate_spritesheet_data(&self) -> Option<Vec<SpritesheetValidationDiagnostic>> {
-        return validate_spritesheet_data(self);
+    pub fn validate_spritesheet_data(
+        &self,
+        out: &mut Vec<SpritesheetValidationDiagnostic>,
+    ) -> bool {
+        return validate_spritesheet_data(out, self);
     }
 }
 

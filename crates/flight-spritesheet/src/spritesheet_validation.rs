@@ -45,14 +45,18 @@ pub fn parse_spritesheet_validation_severity(value: &str) -> Option<SpritesheetV
     };
 }
 
-/// Structural issues in a runtime sheet, or `None` when there are none: frames naming an atlas region
+/// Writes a runtime sheet's structural issues into `out`, cleared first: frames naming an atlas region
 /// id the atlas lacks (errors, frame order), then per animation in property order an empty frame list
-/// (a warning) and each frame reference outside the sheet's frames (errors).
+/// (a warning) and each frame reference outside the sheet's frames (errors). Returns whether any were
+/// found: the source (TS `validateSpritesheet`) returns the diagnostics, or `null` when there are none.
 // flight-lint: allow(f64) D1: animation frame references are JS numbers, printed with JS number formatting
+// flight-lint: allow(conform-params) D24: required first caller-owned diagnostics out, cleared then filled retaining capacity; the bool keeps the source's null-for-valid meaning
 pub fn validate_spritesheet(
+    out: &mut Vec<SpritesheetValidationDiagnostic>,
     spritesheet: &Spritesheet,
-) -> Option<Vec<SpritesheetValidationDiagnostic>> {
-    let mut diagnostics = Vec::new();
+) -> bool {
+    out.clear();
+    let diagnostics = out;
     if let Some(atlas) = &spritesheet.atlas {
         let region_ids: HashSet<i32> = atlas
             .read()
@@ -100,20 +104,20 @@ pub fn validate_spritesheet(
             }
         }
     }
-    return if diagnostics.is_empty() {
-        None
-    } else {
-        Some(diagnostics)
-    };
+    return !diagnostics.is_empty();
 }
 
-/// Structural issues in a sheet descriptor, or `None`: per animation, an empty frame-name list (a
-/// warning), else each unknown frame name (errors) then a per-frame duration count differing from the
-/// frame-name count (a warning).
+/// Writes a sheet descriptor's structural issues into `out`, cleared first: per animation, an empty
+/// frame-name list (a warning), else each unknown frame name (errors) then a per-frame duration count
+/// differing from the frame-name count (a warning). Returns whether any were found: the source (TS
+/// `validateSpritesheetData`) returns the diagnostics, or `null` when there are none.
+// flight-lint: allow(conform-params) D24: required first caller-owned diagnostics out, cleared then filled retaining capacity; the bool keeps the source's null-for-valid meaning
 pub fn validate_spritesheet_data(
+    out: &mut Vec<SpritesheetValidationDiagnostic>,
     data: &SpritesheetData,
-) -> Option<Vec<SpritesheetValidationDiagnostic>> {
-    let mut diagnostics = Vec::new();
+) -> bool {
+    out.clear();
+    let diagnostics = out;
     let known_frame_names: HashSet<&str> = data
         .frames
         .iter()
@@ -159,9 +163,5 @@ pub fn validate_spritesheet_data(
             }
         }
     }
-    return if diagnostics.is_empty() {
-        None
-    } else {
-        Some(diagnostics)
-    };
+    return !diagnostics.is_empty();
 }

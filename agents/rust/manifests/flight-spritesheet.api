@@ -95,18 +95,18 @@ src/spritesheet_validation.rs: pub fn get_spritesheet_parse_diagnostic_severity_
 src/spritesheet_validation.rs: pub fn get_spritesheet_validation_severity_string(value: SpritesheetValidationSeverity,) -> &'static str
 src/spritesheet_validation.rs: pub fn parse_spritesheet_parse_diagnostic_severity(value: &str,) -> Option<SpritesheetParseDiagnosticSeverity>
 src/spritesheet_validation.rs: pub fn parse_spritesheet_validation_severity(value: &str) -> Option<SpritesheetValidationSeverity>
-src/spritesheet_validation.rs: pub fn validate_spritesheet(spritesheet: &Spritesheet,) -> Option<Vec<SpritesheetValidationDiagnostic>>
-src/spritesheet_validation.rs: pub fn validate_spritesheet_data(data: &SpritesheetData,) -> Option<Vec<SpritesheetValidationDiagnostic>>
+src/spritesheet_validation.rs: pub fn validate_spritesheet(out: &mut Vec<SpritesheetValidationDiagnostic>, spritesheet: &Spritesheet,) -> bool
+src/spritesheet_validation.rs: pub fn validate_spritesheet_data(out: &mut Vec<SpritesheetValidationDiagnostic>, data: &SpritesheetData,) -> bool
 src/sugar.rs: impl Spritesheet :: fn clone_spritesheet(&self) -> Spritesheet
 src/sugar.rs: impl Spritesheet :: fn create_spritesheet_animation_from_frame_names(&self, pattern: &SpritesheetFramePattern, options: Option<&SpritesheetAnimationFrameNameOptions>,) -> Option<Ref<SpritesheetAnimation>>
 src/sugar.rs: impl Spritesheet :: fn get_spritesheet_animation(&self, label: &str) -> Option<Ref<SpritesheetAnimation>>
 src/sugar.rs: impl Spritesheet :: fn initialize_spritesheet(&mut self)
-src/sugar.rs: impl Spritesheet :: fn validate_spritesheet(&self) -> Option<Vec<SpritesheetValidationDiagnostic>>
+src/sugar.rs: impl Spritesheet :: fn validate_spritesheet(&self, out: &mut Vec<SpritesheetValidationDiagnostic>) -> bool
 src/sugar.rs: impl SpritesheetAnimation :: fn initialize_spritesheet_animation(&mut self)
 src/sugar.rs: impl SpritesheetAnimationData :: fn initialize_spritesheet_animation_data(&mut self)
 src/sugar.rs: impl SpritesheetData :: fn create_spritesheet_from_data(&self, atlas: &Ref<TextureAtlas>) -> Spritesheet
 src/sugar.rs: impl SpritesheetData :: fn initialize_spritesheet_data(&mut self)
-src/sugar.rs: impl SpritesheetData :: fn validate_spritesheet_data(&self) -> Option<Vec<SpritesheetValidationDiagnostic>>
+src/sugar.rs: impl SpritesheetData :: fn validate_spritesheet_data(&self, out: &mut Vec<SpritesheetValidationDiagnostic>,) -> bool
 src/sugar.rs: impl SpritesheetFrame :: fn initialize_spritesheet_frame(&mut self)
 src/sugar.rs: impl SpritesheetFrameData :: fn initialize_spritesheet_frame_data(&mut self)
 src/sugar.rs: impl SpritesheetPlayer :: fn clone_spritesheet_player(&self) -> Ref<SpritesheetPlayer>
