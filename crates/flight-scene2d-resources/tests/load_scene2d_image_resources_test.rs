@@ -17,11 +17,10 @@ use flight_texture::{Texture, create_texture, get_texture_source};
 use crate::guard_state;
 
 fn embedded_png() -> ImageResourceReference {
-    let reference = create_embedded_image_resource_reference(
-        Arc::new(RwLock::new(vec![0x89, 0x50, 0x4e, 0x47].into_boxed_slice())),
-        Some("image/png".to_string()),
-        None,
-    );
+    let reference = create_embedded_image_resource_reference(Arc::new(RwLock::new(
+        vec![0x89, 0x50, 0x4e, 0x47].into_boxed_slice(),
+    )));
+    reference.write().unwrap().mime_type = Some("image/png".to_string());
     return ImageResourceReference::Embedded(EmbeddedImageResourceReferenceValue { reference });
 }
 
@@ -36,7 +35,7 @@ fn empty_options() -> LoadScene2DImageResourcesOptions {
 }
 
 fn external(uri: &str) -> ImageResourceReference {
-    let reference = create_external_image_resource_reference(uri.to_string(), None);
+    let reference = create_external_image_resource_reference(uri.to_string());
     return ImageResourceReference::External(ExternalImageResourceReferenceValue { reference });
 }
 

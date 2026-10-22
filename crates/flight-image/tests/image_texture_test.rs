@@ -1,13 +1,12 @@
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, Uint8Array};
-use flight_host::HostImageSource;
 use flight_image::contract::*;
 
 fn embedded() -> ImageResourceReference {
     let bytes: Ref<Box<Uint8Array>> = Arc::new(RwLock::new(vec![1].into_boxed_slice()));
     return ImageResourceReference::Embedded(EmbeddedImageResourceReferenceValue {
-        reference: create_embedded_image_resource_reference(bytes, None, None),
+        reference: create_embedded_image_resource_reference(bytes),
     });
 }
 
@@ -76,7 +75,7 @@ mod create_texture_from_image_resource {
     #[test]
     fn external_resolution_source_bound_to_subscriber_updates_original_material_texture() {
         let reference = ImageResourceReference::External(ExternalImageResourceReferenceValue {
-            reference: create_external_image_resource_reference("model.png".to_string(), None),
+            reference: create_external_image_resource_reference("model.png".to_string()),
         });
         let texture = create_texture_from_image_resource(&reference, None);
         let mut material = flight_materials::contract::create_blinn_phong_material();

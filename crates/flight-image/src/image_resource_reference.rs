@@ -21,27 +21,59 @@ use crate::types::{
     ImageResourceReferenceResolutionExplanation,
 };
 
+// flight-lint: allow(conform-params) Principal c0f9227c D23 keeps defining bytes while authored MIME and alpha fields are assigned after create
 pub fn create_embedded_image_resource_reference(
     bytes: Ref<Box<Uint8Array>>,
-    mime_type: Option<String>,
-    alpha_type: Option<AlphaType>,
 ) -> Ref<EmbeddedImageResourceReference> {
     let mut out: EmbeddedImageResourceReference = allocate_entity();
-    initialize_embedded_image_resource_reference(&mut out, bytes, mime_type, alpha_type);
+    initialize_embedded_image_resource_reference(&mut out, bytes);
     return Arc::new(RwLock::new(out));
 }
 
+// flight-lint: allow(conform-params) Principal c0f9227c D23 keeps the defining URI while authored basePath is assigned after create
 pub fn create_external_image_resource_reference(
     uri: String,
-    base_path: Option<String>,
 ) -> Ref<ExternalImageResourceReference> {
     let mut out: ExternalImageResourceReference = allocate_entity();
-    initialize_external_image_resource_reference(&mut out, uri, base_path);
+    initialize_external_image_resource_reference(&mut out, uri);
     return Arc::new(RwLock::new(out));
 }
 
 pub fn create_image_resource_failure(cause: &Unknown) -> Ref<ImageResourceFailure> {
     let mut out: ImageResourceFailure = allocate_entity();
+    initialize_image_resource_failure(&mut out, cause);
+    return Arc::new(RwLock::new(out));
+}
+
+// flight-lint: allow(conform-params) Principal c0f9227c D23 keeps defining bytes while authored MIME and alpha fields are assigned after initialize
+pub fn initialize_embedded_image_resource_reference(
+    out: &mut EmbeddedImageResourceReference,
+    bytes: Ref<Box<Uint8Array>>,
+) {
+    out.alpha_type = AlphaType::Straight;
+    out.bitmap_composition = None;
+    out.bytes = bytes;
+    out.failure = None;
+    out.mime_type = None;
+    out.state = ResourceResolutionState::Unresolved;
+    out.textures = Vec::new();
+}
+
+// flight-lint: allow(conform-params) Principal c0f9227c D23 keeps the defining URI while authored basePath is assigned after initialize
+pub fn initialize_external_image_resource_reference(
+    out: &mut ExternalImageResourceReference,
+    uri: String,
+) {
+    out.base_path = None;
+    out.failure = None;
+    out.mime_type = None;
+    out.state = ResourceResolutionState::Unresolved;
+    out.textures = Vec::new();
+    out.uri = uri;
+}
+
+// flight-lint: allow(conform-extra, conform-params) Principal c0f9227c D23 keeps the defining cause in the receiver-only canonical initializer
+pub fn initialize_image_resource_failure(out: &mut ImageResourceFailure, cause: &Unknown) {
     out.kind = ImageResourceFailureKind::Error;
     if let Some(error) = cause
         .as_ref()
@@ -53,35 +85,6 @@ pub fn create_image_resource_failure(cause: &Unknown) -> Ref<ImageResourceFailur
         out.message = unknown_to_js_string(cause);
         out.name = None;
     }
-    return Arc::new(RwLock::new(out));
-}
-
-pub fn initialize_embedded_image_resource_reference(
-    out: &mut EmbeddedImageResourceReference,
-    bytes: Ref<Box<Uint8Array>>,
-    mime_type: Option<String>,
-    alpha_type: Option<AlphaType>,
-) {
-    out.alpha_type = alpha_type.unwrap_or(AlphaType::Straight);
-    out.bitmap_composition = None;
-    out.bytes = bytes;
-    out.failure = None;
-    out.mime_type = mime_type;
-    out.state = ResourceResolutionState::Unresolved;
-    out.textures = Vec::new();
-}
-
-pub fn initialize_external_image_resource_reference(
-    out: &mut ExternalImageResourceReference,
-    uri: String,
-    base_path: Option<String>,
-) {
-    out.base_path = base_path;
-    out.failure = None;
-    out.mime_type = None;
-    out.state = ResourceResolutionState::Unresolved;
-    out.textures = Vec::new();
-    out.uri = uri;
 }
 
 async fn decode_embedded_image_resource_reference(

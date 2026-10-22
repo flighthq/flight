@@ -14,6 +14,7 @@ src/image_resource.rs: pub fn clone_image_resource(resource: &Ref<ImageResource>
 src/image_resource.rs: pub fn create_compressed_image_resource(compressed: Arc<CompressedImageData>,) -> Ref<CompressedImageResource>
 src/image_resource.rs: pub fn create_image_resource(image: Arc<HostImageSource>, state: &ImageResolverState,) -> Ref<ImageResource>
 src/image_resource.rs: pub fn initialize_compressed_image_resource(out: &mut CompressedImageResource, compressed: Arc<CompressedImageData>,)
+src/image_resource.rs: pub fn initialize_image_resource(out: &mut ImageResource, image: Arc<HostImageSource>, state: &ImageResolverState,)
 src/image_resource.rs: pub fn invalidate_image_resource(resource: &Ref<ImageResource>, state: &ImageResolverState)
 src/image_resource.rs: pub fn is_image_resource_empty(resource: &Ref<ImageResource>) -> bool
 src/image_resource_from.rs: pub async fn load_image_resource_from_base64(host_image: &HostImageCapability, base64: &str, mime_type: &str, signal: Option<&AbortSignal>,) -> Ref<ImageResource>
@@ -25,12 +26,13 @@ src/image_resource_from.rs: pub fn create_image_resource_from_bitmap(host_image:
 src/image_resource_from.rs: pub fn create_image_resource_from_surface(host_image: &HostImageCapability, surface: &SurfaceRef,) -> Option<Ref<ImageResource>>
 src/image_resource_from.rs: pub fn is_image_url_same_origin(url: &str, context: &ImageUrlOriginContext) -> bool
 src/image_resource_reference.rs: pub async fn resolve_image_resource_reference(image_decode: &HostImageDecodeCapabilities, reference: &ImageResourceReference, fetch: &ImageResourceFetch, signal: &AbortSignal, fallback_decode: Option<&ImageDecodeFallback>, state: &ImageResolverState,) -> Option<TextureSourceRef>
-src/image_resource_reference.rs: pub fn create_embedded_image_resource_reference(bytes: Ref<Box<Uint8Array>>, mime_type: Option<String>, alpha_type: Option<AlphaType>,) -> Ref<EmbeddedImageResourceReference>
-src/image_resource_reference.rs: pub fn create_external_image_resource_reference(uri: String, base_path: Option<String>,) -> Ref<ExternalImageResourceReference>
+src/image_resource_reference.rs: pub fn create_embedded_image_resource_reference(bytes: Ref<Box<Uint8Array>>,) -> Ref<EmbeddedImageResourceReference>
+src/image_resource_reference.rs: pub fn create_external_image_resource_reference(uri: String,) -> Ref<ExternalImageResourceReference>
 src/image_resource_reference.rs: pub fn create_image_resource_failure(cause: &Unknown) -> Ref<ImageResourceFailure>
 src/image_resource_reference.rs: pub fn explain_image_resource_reference_resolution(reference: &ImageResourceReference,) -> ImageResourceReferenceResolutionExplanation
-src/image_resource_reference.rs: pub fn initialize_embedded_image_resource_reference(out: &mut EmbeddedImageResourceReference, bytes: Ref<Box<Uint8Array>>, mime_type: Option<String>, alpha_type: Option<AlphaType>,)
-src/image_resource_reference.rs: pub fn initialize_external_image_resource_reference(out: &mut ExternalImageResourceReference, uri: String, base_path: Option<String>,)
+src/image_resource_reference.rs: pub fn initialize_embedded_image_resource_reference(out: &mut EmbeddedImageResourceReference, bytes: Ref<Box<Uint8Array>>,)
+src/image_resource_reference.rs: pub fn initialize_external_image_resource_reference(out: &mut ExternalImageResourceReference, uri: String,)
+src/image_resource_reference.rs: pub fn initialize_image_resource_failure(out: &mut ImageResourceFailure, cause: &Unknown)
 src/image_resource_reference.rs: pub fn register_image_bitmap_composition_resolver(state: &mut ImageResolverState, resolver: Option<ImageBitmapCompositionResolver>,)
 src/image_resource_reference.rs: pub fn reset_failed_image_resource_reference(reference: &ImageResourceReference) -> bool
 src/image_source_dimensions.rs: pub fn create_image_resolver_state() -> ImageResolverState
@@ -106,8 +108,8 @@ src/lib.rs: pub use contract::test_image_dimension_resolver;
 src/lib.rs: pub use contract::unregister_test_image_dimension_resolver;
 src/lib.rs: pub use sugar::*;
 src/sugar.rs: impl CompressedImageResource :: fn new(compressed: Arc<CompressedImageData>) -> Ref<Self>
-src/sugar.rs: impl EmbeddedImageResourceReference :: fn new(bytes: Ref<Box<Uint8Array>>, mime_type: Option<String>, alpha_type: Option<AlphaType>,) -> Ref<Self>
-src/sugar.rs: impl ExternalImageResourceReference :: fn new(uri: String, base_path: Option<String>) -> Ref<Self>
+src/sugar.rs: impl EmbeddedImageResourceReference :: fn new(bytes: Ref<Box<Uint8Array>>) -> Ref<Self>
+src/sugar.rs: impl ExternalImageResourceReference :: fn new(uri: String) -> Ref<Self>
 src/sugar.rs: impl HostImageCapability :: async fn load_resource_from_base64(&self, base64: &str, mime_type: &str, signal: Option<&AbortSignal>,) -> Ref<ImageResource>
 src/sugar.rs: impl HostImageCapability :: async fn load_resource_from_blob(&self, blob: &Blob, signal: Option<&AbortSignal>,) -> Ref<ImageResource>
 src/sugar.rs: impl HostImageCapability :: async fn load_resource_from_bytes(&self, bytes: &Uint8Array, mime_type: Option<&str>, signal: Option<&AbortSignal>,) -> Ref<ImageResource>

@@ -10,7 +10,7 @@ use flight_host::HostImageSource;
 use flight_image_codec::HostImageDecodeCapabilities;
 use flight_stream::AbortSignal;
 use flight_surface::SurfaceRef;
-use flight_texture::{AlphaType, CreateTexture2DOptions, Texture, TextureSourceRef};
+use flight_texture::{CreateTexture2DOptions, Texture, TextureSourceRef};
 
 use crate::contract::*;
 
@@ -31,7 +31,7 @@ mod sugar_tests {
 
     fn reference() -> ImageResourceReference {
         return ImageResourceReference::Embedded(EmbeddedImageResourceReferenceValue {
-            reference: create_embedded_image_resource_reference(bytes(&[1]), None, None),
+            reference: create_embedded_image_resource_reference(bytes(&[1])),
         });
     }
 
@@ -63,30 +63,18 @@ mod sugar_tests {
     #[test]
     fn embedded_image_resource_reference_new_delegates() {
         let payload = bytes(&[1, 2]);
-        let method = EmbeddedImageResourceReference::new(
-            payload.clone(),
-            Some("image/png".to_string()),
-            Some(AlphaType::Premultiplied),
-        );
-        let function = create_embedded_image_resource_reference(
-            payload,
-            Some("image/png".to_string()),
-            Some(AlphaType::Premultiplied),
-        );
-        assert_eq!(
-            method.read().unwrap().alpha_type,
-            function.read().unwrap().alpha_type
-        );
+        let method = EmbeddedImageResourceReference::new(payload.clone());
+        let function = create_embedded_image_resource_reference(payload);
+        assert!(Arc::ptr_eq(
+            &method.read().unwrap().bytes,
+            &function.read().unwrap().bytes
+        ));
     }
 
     #[test]
     fn external_image_resource_reference_new_delegates() {
-        let method =
-            ExternalImageResourceReference::new("a.png".to_string(), Some("/base".to_string()));
-        let function = create_external_image_resource_reference(
-            "a.png".to_string(),
-            Some("/base".to_string()),
-        );
+        let method = ExternalImageResourceReference::new("a.png".to_string());
+        let function = create_external_image_resource_reference("a.png".to_string());
         assert_eq!(method.read().unwrap().uri, function.read().unwrap().uri);
     }
 
@@ -252,18 +240,14 @@ impl CompressedImageResource {
 }
 
 impl EmbeddedImageResourceReference {
-    pub fn new(
-        bytes: Ref<Box<Uint8Array>>,
-        mime_type: Option<String>,
-        alpha_type: Option<AlphaType>,
-    ) -> Ref<Self> {
-        return create_embedded_image_resource_reference(bytes, mime_type, alpha_type);
+    pub fn new(bytes: Ref<Box<Uint8Array>>) -> Ref<Self> {
+        return create_embedded_image_resource_reference(bytes);
     }
 }
 
 impl ExternalImageResourceReference {
-    pub fn new(uri: String, base_path: Option<String>) -> Ref<Self> {
-        return create_external_image_resource_reference(uri, base_path);
+    pub fn new(uri: String) -> Ref<Self> {
+        return create_external_image_resource_reference(uri);
     }
 }
 

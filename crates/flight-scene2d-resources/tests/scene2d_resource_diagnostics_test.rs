@@ -30,9 +30,8 @@ mod explain_scene2d_resource_coverage {
 
     #[test]
     fn counts_every_asset_reference_and_only_required_slots() {
-        let resolved_image =
-            create_external_image_resource_reference("resolved.png".to_string(), None);
-        let failed_image = create_external_image_resource_reference("failed.png".to_string(), None);
+        let resolved_image = create_external_image_resource_reference("resolved.png".to_string());
+        let failed_image = create_external_image_resource_reference("failed.png".to_string());
         resolved_image.write().unwrap().state = ResourceResolutionState::Resolved;
         failed_image.write().unwrap().state = ResourceResolutionState::Failed;
         let audio = create_external_audio_resource_reference("sound.mp3".to_string());
@@ -186,7 +185,7 @@ mod set_scene2d_resource_failure_guard {
         };
         resolve_scene2d_resources(&mut resolved, &slot_document, None, &state);
 
-        let image = create_external_image_resource_reference("missing.png".to_string(), None);
+        let image = create_external_image_resource_reference("missing.png".to_string());
         let image_document = create_scene2d_document();
         image_document.write().unwrap().image_resources = vec![ImageResourceReference::External(
             ExternalImageResourceReferenceValue { reference: image },

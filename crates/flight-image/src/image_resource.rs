@@ -27,15 +27,9 @@ pub fn create_image_resource(
     let mut resource = ImageResource {
         fields: TextureSourceFields::default(),
         self_handle: Weak::new(),
-        source: image,
+        source: image.clone(),
     };
-    resource.fields.alpha_type = AlphaType::Straight;
-    resource.fields.gamut = TextureGamut::Srgb;
-    resource.fields.height = 0;
-    resource.fields.kind = IMAGE_TEXTURE_SOURCE_KIND.to_string();
-    resource.fields.version = 0;
-    resource.fields.width = 0;
-    update_image_resource_size(&mut resource, state);
+    initialize_image_resource(&mut resource, image, state);
     let resource = Arc::new(RwLock::new(resource));
     resource.write().unwrap().self_handle = Arc::downgrade(&resource);
     return resource;
@@ -52,6 +46,22 @@ pub fn initialize_compressed_image_resource(
     out.fields.kind = COMPRESSED_IMAGE_TEXTURE_SOURCE_KIND.to_string();
     out.fields.version = 0;
     out.fields.width = out.compressed.container.width as u32;
+}
+
+// flight-lint: allow(conform-extra, conform-params) Principal c0f9227c D23 keeps the defining host source and D5 resolver state in the receiver-only canonical initializer
+pub fn initialize_image_resource(
+    out: &mut ImageResource,
+    image: Arc<HostImageSource>,
+    state: &ImageResolverState,
+) {
+    out.fields.alpha_type = AlphaType::Straight;
+    out.fields.gamut = TextureGamut::Srgb;
+    out.fields.height = 0;
+    out.fields.kind = IMAGE_TEXTURE_SOURCE_KIND.to_string();
+    out.source = image;
+    out.fields.version = 0;
+    out.fields.width = 0;
+    update_image_resource_size(out, state);
 }
 
 // flight-lint: allow(conform-extra) D16 typed recovery retains the same ImageResource allocation after TextureSource family erasure

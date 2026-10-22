@@ -1,7 +1,9 @@
 use std::sync::{Arc, Mutex, RwLock};
 
-use flight_entity::{FlightError, FlightErrorKind, Ref, Uint8Array, Unknown, allocate_entity};
-use flight_host::HostImageSource;
+use flight_entity::{
+    FlightError, FlightErrorKind, Ref, Uint8Array, Unknown, allocate_entity, get_entity_uid,
+    set_entity_uid,
+};
 use flight_image::contract::*;
 use flight_image_codec::{
     DecodedImage, HostImageDecodeCapabilities, HostImageDecodeFormatCapability, ImageDecodeOptions,
@@ -57,7 +59,7 @@ mod create_embedded_image_resource_reference {
     #[test]
     fn borrows_bytes_and_applies_source_defaults() {
         let payload = bytes(&[1, 2, 3, 4]);
-        let reference = create_embedded_image_resource_reference(payload.clone(), None, None);
+        let reference = create_embedded_image_resource_reference(payload.clone());
         let reference = reference.read().unwrap();
         assert!(Arc::ptr_eq(&reference.bytes, &payload));
         assert_eq!(reference.alpha_type, AlphaType::Straight);
@@ -68,12 +70,13 @@ mod create_embedded_image_resource_reference {
     }
 
     #[test]
-    fn retains_explicit_mime_and_alpha_type() {
-        let reference = create_embedded_image_resource_reference(
-            bytes(&[1]),
-            Some("image/png".to_string()),
-            Some(AlphaType::Premultiplied),
-        );
+    fn accepts_authored_mime_and_alpha_fields_after_construction() {
+        let reference = create_embedded_image_resource_reference(bytes(&[1]));
+        {
+            let mut reference = reference.write().unwrap();
+            reference.alpha_type = AlphaType::Premultiplied;
+            reference.mime_type = Some("image/png".to_string());
+        }
         let reference = reference.read().unwrap();
         assert_eq!(reference.alpha_type, AlphaType::Premultiplied);
         assert_eq!(reference.mime_type.as_deref(), Some("image/png"));
@@ -84,11 +87,9 @@ mod create_external_image_resource_reference {
     use super::*;
 
     #[test]
-    fn retains_uri_and_optional_base_path() {
-        let reference = create_external_image_resource_reference(
-            "atlas.png".to_string(),
-            Some("/assets".to_string()),
-        );
+    fn retains_uri_and_accepts_authored_base_path_after_construction() {
+        let reference = create_external_image_resource_reference("atlas.png".to_string());
+        reference.write().unwrap().base_path = Some("/assets".to_string());
         let reference = reference.read().unwrap();
         assert_eq!(reference.uri, "atlas.png");
         assert_eq!(reference.base_path.as_deref(), Some("/assets"));
@@ -130,7 +131,7 @@ mod explain_image_resource_reference_resolution {
 
     #[test]
     fn detaches_failure_and_marks_only_failed_as_retryable() {
-        let reference = create_embedded_image_resource_reference(bytes(&[1]), None, None);
+        let reference = create_embedded_image_resource_reference(bytes(&[1]));
         let failure = {
             let mut value: ImageResourceFailure = allocate_entity();
             value.kind = ImageResourceFailureKind::Unavailable;
@@ -157,21 +158,22 @@ mod initialize_embedded_image_resource_reference {
     use super::*;
 
     #[test]
-    fn resets_all_reference_lifecycle_fields() {
+    fn resets_all_reference_fields_without_replacing_entity_identity() {
         let payload = bytes(&[9]);
         let mut out: EmbeddedImageResourceReference = allocate_entity();
+        out.alpha_type = AlphaType::Premultiplied;
+        out.mime_type = Some("image/webp".to_string());
         out.state = ResourceResolutionState::Failed;
-        initialize_embedded_image_resource_reference(
-            &mut out,
-            payload.clone(),
-            Some("image/webp".to_string()),
-            Some(AlphaType::Premultiplied),
-        );
+        set_entity_uid(&mut out, "embedded".to_string());
+        initialize_embedded_image_resource_reference(&mut out, payload.clone());
         assert!(Arc::ptr_eq(&out.bytes, &payload));
+        assert_eq!(out.alpha_type, AlphaType::Straight);
+        assert_eq!(out.mime_type, None);
         assert_eq!(out.state, ResourceResolutionState::Unresolved);
         assert!(out.failure.is_none());
         assert!(out.bitmap_composition.is_none());
         assert!(out.textures.is_empty());
+        assert_eq!(get_entity_uid(&mut out), "embedded");
     }
 }
 
@@ -179,19 +181,38 @@ mod initialize_external_image_resource_reference {
     use super::*;
 
     #[test]
-    fn resets_all_reference_lifecycle_fields() {
+    fn resets_all_reference_fields_without_replacing_entity_identity() {
         let mut out: ExternalImageResourceReference = allocate_entity();
+        out.base_path = Some("/base".to_string());
         out.state = ResourceResolutionState::Failed;
-        initialize_external_image_resource_reference(
-            &mut out,
-            "image.png".to_string(),
-            Some("/base".to_string()),
-        );
+        set_entity_uid(&mut out, "external".to_string());
+        initialize_external_image_resource_reference(&mut out, "image.png".to_string());
         assert_eq!(out.uri, "image.png");
-        assert_eq!(out.base_path.as_deref(), Some("/base"));
+        assert_eq!(out.base_path, None);
         assert_eq!(out.state, ResourceResolutionState::Unresolved);
         assert!(out.failure.is_none());
         assert!(out.textures.is_empty());
+        assert_eq!(get_entity_uid(&mut out), "external");
+    }
+}
+
+mod initialize_image_resource_failure {
+    use super::*;
+
+    #[test]
+    fn derives_serializable_fields_without_replacing_entity_identity() {
+        let cause: Unknown = Some(Arc::new(FlightError {
+            kind: FlightErrorKind::RangeError,
+            message: "outside".to_string(),
+        }));
+        let mut out: ImageResourceFailure = allocate_entity();
+        out.kind = ImageResourceFailureKind::Unavailable;
+        set_entity_uid(&mut out, "failure".to_string());
+        initialize_image_resource_failure(&mut out, &cause);
+        assert_eq!(out.kind, ImageResourceFailureKind::Error);
+        assert_eq!(out.message, "outside");
+        assert_eq!(out.name.as_deref(), Some("RangeError"));
+        assert_eq!(get_entity_uid(&mut out), "failure");
     }
 }
 
@@ -223,7 +244,7 @@ mod reset_failed_image_resource_reference {
 
     #[test]
     fn clears_a_failed_reference_back_to_unresolved() {
-        let reference = create_external_image_resource_reference("a.png".to_string(), None);
+        let reference = create_external_image_resource_reference("a.png".to_string());
         reference.write().unwrap().state = ResourceResolutionState::Failed;
         let reference = external_reference(reference);
         assert!(reset_failed_image_resource_reference(&reference));
@@ -235,7 +256,7 @@ mod reset_failed_image_resource_reference {
 
     #[test]
     fn leaves_a_resolved_reference_untouched() {
-        let reference = create_external_image_resource_reference("a.png".to_string(), None);
+        let reference = create_external_image_resource_reference("a.png".to_string());
         reference.write().unwrap().state = ResourceResolutionState::Resolved;
         let reference = external_reference(reference);
         assert!(!reset_failed_image_resource_reference(&reference));
@@ -277,7 +298,7 @@ mod resolve_image_resource_reference {
 
     #[test]
     fn clears_a_prior_failure_when_a_reference_is_retried() {
-        let reference = create_external_image_resource_reference("flaky.png".to_string(), None);
+        let reference = create_external_image_resource_reference("flaky.png".to_string());
         {
             let mut reference = reference.write().unwrap();
             reference.failure = Some(create_image_resource_failure(&Some(Arc::new(
@@ -321,11 +342,8 @@ mod resolve_image_resource_reference {
             }),
             webp: None,
         };
-        let reference = create_embedded_image_resource_reference(
-            bytes(&[0x89, 0x50, 0x4e, 0x47]),
-            Some("image/png".to_string()),
-            None,
-        );
+        let reference = create_embedded_image_resource_reference(bytes(&[0x89, 0x50, 0x4e, 0x47]));
+        reference.write().unwrap().mime_type = Some("image/png".to_string());
         let result = futures::executor::block_on(resolve_image_resource_reference(
             &capabilities,
             &embedded_reference(reference.clone()),
@@ -345,11 +363,8 @@ mod resolve_image_resource_reference {
     fn decodes_embedded_bytes_and_marks_the_reference_resolved() {
         let calls = Arc::new(Mutex::new(Vec::new()));
         let capabilities = png_capabilities(calls.clone());
-        let reference = create_embedded_image_resource_reference(
-            bytes(&[0x89, 0x50, 0x4e, 0x47]),
-            Some("image/png".to_string()),
-            None,
-        );
+        let reference = create_embedded_image_resource_reference(bytes(&[0x89, 0x50, 0x4e, 0x47]));
+        reference.write().unwrap().mime_type = Some("image/png".to_string());
         let result = futures::executor::block_on(resolve_image_resource_reference(
             &capabilities,
             &embedded_reference(reference.clone()),
@@ -379,7 +394,7 @@ mod resolve_image_resource_reference {
 
     #[test]
     fn records_an_unavailable_failure_for_an_expected_miss() {
-        let reference = create_external_image_resource_reference("missing.png".to_string(), None);
+        let reference = create_external_image_resource_reference("missing.png".to_string());
         let result = futures::executor::block_on(resolve_image_resource_reference(
             &empty_capabilities(),
             &external_reference(reference.clone()),
@@ -399,7 +414,7 @@ mod resolve_image_resource_reference {
 
     #[test]
     fn records_a_thrown_cause_instead_of_rethrowing_it() {
-        let reference = create_external_image_resource_reference("boom.png".to_string(), None);
+        let reference = create_external_image_resource_reference("boom.png".to_string());
         let fetch: ImageResourceFetch = Arc::new(|_, _| {
             return Box::pin(async {
                 std::panic::panic_any(FlightError {
@@ -429,11 +444,12 @@ mod resolve_image_resource_reference {
     fn requests_and_declares_premultiplied_output() {
         let calls = Arc::new(Mutex::new(Vec::new()));
         let capabilities = png_capabilities(calls.clone());
-        let reference = create_embedded_image_resource_reference(
-            bytes(&[1]),
-            Some("image/png".to_string()),
-            Some(AlphaType::Premultiplied),
-        );
+        let reference = create_embedded_image_resource_reference(bytes(&[1]));
+        {
+            let mut reference = reference.write().unwrap();
+            reference.alpha_type = AlphaType::Premultiplied;
+            reference.mime_type = Some("image/png".to_string());
+        }
         let result = futures::executor::block_on(resolve_image_resource_reference(
             &capabilities,
             &embedded_reference(reference),
@@ -460,15 +476,15 @@ mod resolve_image_resource_reference {
         let expected: Ref<flight_bitmap::Bitmap> =
             Arc::new(RwLock::new(flight_bitmap::create_bitmap(1, 1, None)));
         let captured_expected = expected.clone();
-        let reference = create_embedded_image_resource_reference(
-            bytes(&[1]),
-            Some("image/png".to_string()),
-            None,
-        );
-        reference.write().unwrap().bitmap_composition = Some(ImageBitmapComposition {
-            kind: "acme/alpha-plane".to_string(),
-            payload: bytes(&[7]),
-        });
+        let reference = create_embedded_image_resource_reference(bytes(&[1]));
+        {
+            let mut reference = reference.write().unwrap();
+            reference.bitmap_composition = Some(ImageBitmapComposition {
+                kind: "acme/alpha-plane".to_string(),
+                payload: bytes(&[7]),
+            });
+            reference.mime_type = Some("image/png".to_string());
+        }
         let captured_reference = reference.clone();
         let mut state = create_image_resolver_state();
         register_image_bitmap_composition_resolver(
@@ -493,10 +509,8 @@ mod resolve_image_resource_reference {
 
     #[test]
     fn routes_an_external_reference_through_fetch_with_exact_identity() {
-        let reference = create_external_image_resource_reference(
-            "atlas.png".to_string(),
-            Some("/assets".to_string()),
-        );
+        let reference = create_external_image_resource_reference("atlas.png".to_string());
+        reference.write().unwrap().base_path = Some("/assets".to_string());
         let expected_reference = reference.clone();
         let resource = create_image_resource(image_source(), &create_image_resolver_state());
         let expected_resource = resource.clone();
@@ -536,11 +550,12 @@ mod resolve_image_resource_reference {
             captured_calls.lock().unwrap().push((mime_type, options));
             return Box::pin(async { Some(decoded(1, 1)) });
         });
-        let reference = create_embedded_image_resource_reference(
-            payload,
-            Some("image/custom".to_string()),
-            Some(AlphaType::Premultiplied),
-        );
+        let reference = create_embedded_image_resource_reference(payload);
+        {
+            let mut reference = reference.write().unwrap();
+            reference.alpha_type = AlphaType::Premultiplied;
+            reference.mime_type = Some("image/custom".to_string());
+        }
         let result = futures::executor::block_on(resolve_image_resource_reference(
             &empty_capabilities(),
             &embedded_reference(reference),
@@ -561,7 +576,7 @@ mod resolve_image_resource_reference {
 
     #[test]
     fn treats_abort_as_cancellation_and_rethrows_the_exact_reason() {
-        let reference = create_external_image_resource_reference("slow.png".to_string(), None);
+        let reference = create_external_image_resource_reference("slow.png".to_string());
         let controller = Arc::new(create_abort_controller());
         let reason: Unknown = Some(Arc::new("stop".to_string()));
         let fetch: ImageResourceFetch = Arc::new({

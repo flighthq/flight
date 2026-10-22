@@ -1,7 +1,7 @@
 use std::any::Any;
 use std::sync::{Arc, RwLock};
 
-use flight_entity::{Entity, allocate_entity};
+use flight_entity::{Entity, allocate_entity, get_entity_uid, set_entity_uid};
 use flight_host::HostImageSource;
 use flight_image::contract::*;
 use flight_texture::{AlphaType, TextureGamut, TextureSource, TextureSourceRef};
@@ -190,12 +190,51 @@ mod initialize_compressed_image_resource {
     use super::*;
 
     #[test]
-    fn initializes_an_existing_entity() {
+    fn initializes_an_existing_entity_without_replacing_its_identity() {
         let compressed = compressed();
         let mut resource: CompressedImageResource = allocate_entity();
+        set_entity_uid(&mut resource, "compressed".to_string());
         initialize_compressed_image_resource(&mut resource, compressed.clone());
         assert!(Arc::ptr_eq(&resource.compressed, &compressed));
         assert_eq!(resource.kind, COMPRESSED_IMAGE_TEXTURE_SOURCE_KIND);
+        assert_eq!(get_entity_uid(&mut resource), "compressed");
+    }
+}
+
+mod initialize_image_resource {
+    use super::*;
+
+    #[test]
+    fn replaces_the_defining_source_and_resets_fields_without_replacing_identity() {
+        let original_source = source();
+        let resource = create_image_resource(
+            original_source.clone(),
+            &measured_state(&original_source, 2, 3),
+        );
+        let replacement_source = source();
+        {
+            let mut resource = resource.write().unwrap();
+            resource.alpha_type = AlphaType::Premultiplied;
+            resource.gamut = TextureGamut::DisplayP3;
+            resource.version = 7;
+            set_entity_uid(&mut *resource, "image".to_string());
+            initialize_image_resource(
+                &mut resource,
+                replacement_source.clone(),
+                &measured_state(&replacement_source, 8, 6),
+            );
+            assert!(Arc::ptr_eq(&resource.source, &replacement_source));
+            assert_eq!(resource.alpha_type, AlphaType::Straight);
+            assert_eq!(resource.gamut, TextureGamut::Srgb);
+            assert_eq!((resource.width, resource.height), (8, 6));
+            assert_eq!(resource.version, 0);
+            assert_eq!(get_entity_uid(&mut *resource), "image");
+        }
+        let erased: TextureSourceRef = resource.clone();
+        assert!(Arc::ptr_eq(
+            &as_image_resource_ref(&erased).unwrap(),
+            &resource
+        ));
     }
 }
 

@@ -36,12 +36,14 @@ fn create_rive_image_resources(
         let Some(bytes) = &asset.bytes else {
             continue;
         };
-        let reference = create_embedded_image_resource_reference(
-            Arc::new(RwLock::new(bytes.clone())),
-            to_rive_mime_type(bytes, index, diagnostics.as_deref_mut()),
-            None,
-        );
-        reference.write().unwrap().textures = collect_rive_textures_for_asset(imported, index);
+        let mime_type = to_rive_mime_type(bytes, index, diagnostics.as_deref_mut());
+        let reference =
+            create_embedded_image_resource_reference(Arc::new(RwLock::new(bytes.clone())));
+        {
+            let mut reference = reference.write().unwrap();
+            reference.mime_type = mime_type;
+            reference.textures = collect_rive_textures_for_asset(imported, index);
+        }
         references.push(ImageResourceReference::Embedded(
             EmbeddedImageResourceReferenceValue { reference },
         ));

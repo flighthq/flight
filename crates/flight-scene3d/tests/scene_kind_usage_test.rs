@@ -71,11 +71,10 @@ mod get_scene3d_kind_usage {
         );
     }
     fn image_reference(mime: Option<&str>) -> flight_image::ImageResourceReference {
-        let r = flight_image::create_embedded_image_resource_reference(
-            Arc::new(RwLock::new(vec![1, 2, 3].into_boxed_slice())),
-            mime.map(str::to_string),
-            None,
-        );
+        let r = flight_image::create_embedded_image_resource_reference(Arc::new(RwLock::new(
+            vec![1, 2, 3].into_boxed_slice(),
+        )));
+        r.write().unwrap().mime_type = mime.map(str::to_string);
         return flight_image::ImageResourceReference::Embedded(
             flight_image::EmbeddedImageResourceReferenceValue { reference: r },
         );

@@ -33,8 +33,8 @@ mod create_scene2d_document {
     fn retains_fields_assigned_after_canonical_construction() {
         let root: Node2DRef = create_display_object(None);
         let slot = create_scene2d_slot_reference();
-        let image =
-            create_embedded_image_resource_reference(bytes(1), Some("image/png".to_string()), None);
+        let image = create_embedded_image_resource_reference(bytes(1));
+        image.write().unwrap().mime_type = Some("image/png".to_string());
         let audio = create_embedded_audio_resource_reference(bytes(2));
         audio.write().unwrap().mime_type = Some("audio/mpeg".to_string());
         let document = create_scene2d_document();
