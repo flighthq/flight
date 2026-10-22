@@ -63,6 +63,7 @@ pub fn create_particle_emitter_config(
     };
 }
 
+// flight-lint: allow(conform-extra) D23 C: native all-omitted options record for the approved independently optional TS Partial input
 pub fn create_particle_emitter_config_options() -> ParticleEmitterConfigOptions {
     return ParticleEmitterConfigOptions {
         alpha_curve: None,
