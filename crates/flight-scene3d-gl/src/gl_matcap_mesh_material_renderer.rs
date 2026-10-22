@@ -26,16 +26,6 @@ pub static GL_MATCAP_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer = GlMeshMate
     draw: draw_gl_matcap_mesh_material,
 };
 
-// Registers the built-in Matcap renderer for MatcapMaterialKind on this state. Opt-in (no top-level
-// side effect); call once per GlRenderState before drawScene3D so meshes with MatcapMaterials draw.
-pub fn register_gl_matcap_material(state: &mut GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        MATCAP_MATERIAL_KIND.to_string(),
-        &GL_MATCAP_MESH_MATERIAL_RENDERER,
-    );
-}
-
 fn bind_gl_matcap_mesh_material(
     state: &mut GlRenderState,
     material: Option<&dyn Material3D>,
@@ -91,6 +81,16 @@ fn draw_gl_matcap_mesh_material(state: &mut GlRenderState, proxy: &Scene3DRender
         return;
     };
     draw_gl_mesh_subset(state, program.mesh_program(), proxy, geometry);
+}
+
+// Registers the built-in Matcap renderer for MatcapMaterialKind on this state. Opt-in (no top-level
+// side effect); call once per GlRenderState before drawScene3D so meshes with MatcapMaterials draw.
+pub fn register_gl_matcap_material(state: &mut GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        MATCAP_MATERIAL_KIND.to_string(),
+        &GL_MATCAP_MESH_MATERIAL_RENDERER,
+    );
 }
 
 fn white() -> LinearColor {

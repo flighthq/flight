@@ -17,50 +17,6 @@ pub static TRANSMISSION_VOLUME_PBR_GL_EXTENSION: GlPbrExtensionRegistration =
         is_supported: is_transmission_volume_pbr_gl_extension_supported,
     };
 
-// Registers the transmission volume GL realization for TRANSMISSION_VOLUME_PBR_EXTENSION_KIND on this state.
-pub fn register_gl_transmission_volume_pbr_extension(state: &mut GlRenderState) {
-    register_gl_pbr_extension(
-        state,
-        TRANSMISSION_VOLUME_PBR_EXTENSION_KIND.to_string(),
-        &TRANSMISSION_VOLUME_PBR_GL_EXTENSION,
-    );
-}
-
-fn bind_transmission_volume_pbr_gl_extension(
-    context: &mut dyn GlPbrExtensionBindContext,
-    value: &PbrExtension,
-) {
-    let PbrExtension::TransmissionVolume(extension) = value else {
-        return;
-    };
-    context.set_float("u_flightTransmission", extension.transmission);
-    context.set_float("u_flightTransmissionThickness", extension.thickness);
-    context.set_float("u_flightTransmissionIor", extension.ior);
-    context.set_float(
-        "u_flightAttenuationDistance",
-        extension.attenuation_distance,
-    );
-    context.set_linear_color("u_flightAttenuationColor", extension.attenuation_color);
-    context.bind_texture(
-        "u_flightTransmissionMap",
-        "u_flightTransmissionMapUvSet",
-        "u_flightTransmissionMapTransform",
-        extension.transmission_map.as_ref(),
-        extension.transmission_map_uv_set,
-    );
-    context.bind_texture(
-        "u_flightTransmissionThicknessMap",
-        "u_flightTransmissionThicknessMapUvSet",
-        "u_flightTransmissionThicknessMapTransform",
-        extension.thickness_map.as_ref(),
-        extension.thickness_map_uv_set,
-    );
-    context.bind_transmission_scene_color(
-        "u_flightTransmissionSceneColor",
-        "u_flightTransmissionMaxLod",
-    );
-}
-
 fn create_transmission_volume_pbr_gl_extension_shader_contribution(
     context: &dyn GlPbrExtensionShaderContext,
     value: &PbrExtension,
@@ -171,8 +127,52 @@ uniform vec3 u_flightAttenuationColor;
     };
 }
 
+fn bind_transmission_volume_pbr_gl_extension(
+    context: &mut dyn GlPbrExtensionBindContext,
+    value: &PbrExtension,
+) {
+    let PbrExtension::TransmissionVolume(extension) = value else {
+        return;
+    };
+    context.set_float("u_flightTransmission", extension.transmission);
+    context.set_float("u_flightTransmissionThickness", extension.thickness);
+    context.set_float("u_flightTransmissionIor", extension.ior);
+    context.set_float(
+        "u_flightAttenuationDistance",
+        extension.attenuation_distance,
+    );
+    context.set_linear_color("u_flightAttenuationColor", extension.attenuation_color);
+    context.bind_texture(
+        "u_flightTransmissionMap",
+        "u_flightTransmissionMapUvSet",
+        "u_flightTransmissionMapTransform",
+        extension.transmission_map.as_ref(),
+        extension.transmission_map_uv_set,
+    );
+    context.bind_texture(
+        "u_flightTransmissionThicknessMap",
+        "u_flightTransmissionThicknessMapUvSet",
+        "u_flightTransmissionThicknessMapTransform",
+        extension.thickness_map.as_ref(),
+        extension.thickness_map_uv_set,
+    );
+    context.bind_transmission_scene_color(
+        "u_flightTransmissionSceneColor",
+        "u_flightTransmissionMaxLod",
+    );
+}
+
 // Every transmission volume extension value is supported; the variant check keeps a kind registered against the
 // wrong closed variant a plain-data unsupported-extension issue instead of a mis-bound draw.
 fn is_transmission_volume_pbr_gl_extension_supported(value: &PbrExtension) -> bool {
     return matches!(value, PbrExtension::TransmissionVolume(_));
+}
+
+// Registers the transmission volume GL realization for TRANSMISSION_VOLUME_PBR_EXTENSION_KIND on this state.
+pub fn register_gl_transmission_volume_pbr_extension(state: &mut GlRenderState) {
+    register_gl_pbr_extension(
+        state,
+        TRANSMISSION_VOLUME_PBR_EXTENSION_KIND.to_string(),
+        &TRANSMISSION_VOLUME_PBR_GL_EXTENSION,
+    );
 }

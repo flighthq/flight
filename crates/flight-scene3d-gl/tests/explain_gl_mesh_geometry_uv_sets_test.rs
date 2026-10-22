@@ -5,7 +5,7 @@ use flight_meshgeometry::{
     MeshGeometry, MeshGeometryOptions, VertexAttribute, VertexAttributeLayout, VertexFormat,
     VertexSemantic, create_mesh_geometry,
 };
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 
 // One float32x2 per named semantic, which is all this query reads.
 fn geometry_with(semantics: &[VertexSemantic]) -> MeshGeometry {

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use flight_render_gl::GlModifierSnippet;
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use flight_shading::MODIFIER_SLOT_EFFECT;
 use flight_shading::Modifier;
 

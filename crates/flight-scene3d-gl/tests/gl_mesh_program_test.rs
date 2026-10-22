@@ -11,7 +11,7 @@ use flight_meshgeometry::{
 };
 use flight_render::{CreateRenderTextureOptions, create_render_texture};
 use flight_render_gl::GlViewportRect;
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use flight_texture::{Texture, create_texture, set_texture_uv_offset, set_texture_uv_scale};
 
 use crate::gl_test_helper::{

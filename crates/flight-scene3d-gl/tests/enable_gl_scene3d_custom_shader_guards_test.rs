@@ -8,7 +8,7 @@ use flight_log::{
 };
 use flight_materials::custom_shader_material::create_custom_shader_material;
 use flight_render_gl::GlCustomMaterialShaderSource;
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 
 use crate::gl_test_helper::{make_gl_scene3d_state, set_active_uniforms};
 

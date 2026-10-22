@@ -73,4 +73,63 @@ mod types;
 
 pub mod contract;
 
-pub use contract::*;
+// Public lane: what pinned TS `index.ts` exports (whole modules where it uses `export *`, named items
+// otherwise), plus the locally owned records those signatures use. Program-family internals, uploads,
+// preludes and the remaining environment / particle entry points stay contract-only.
+pub use crate::anisotropy_pbr_gl_extension::*;
+pub use crate::clearcoat_pbr_gl_extension::*;
+pub use crate::enable_gl_pbr_extension_guards::*;
+pub use crate::enable_gl_scene3d_color_space_guards::*;
+pub use crate::enable_gl_scene3d_custom_shader_guards::*;
+pub use crate::enable_gl_scene3d_deform_guards::*;
+pub use crate::enable_gl_scene3d_forward_light_selection_guards::*;
+pub use crate::explain_gl_mesh_geometry_uv_sets::*;
+pub use crate::explain_gl_scene3d_coverage::*;
+pub use crate::explain_gl_scene3d_forward_light_selection::*;
+pub use crate::gl_blinn_phong_mesh_material_renderer::*;
+pub use crate::gl_custom_shader_mesh_material_renderer::*;
+pub use crate::gl_depth_mesh_material_renderer::*;
+pub use crate::gl_emissive_mesh_material_renderer::*;
+pub use crate::gl_environment_capture::*;
+pub use crate::gl_extended_pbr_mesh_material_renderer::*;
+pub use crate::gl_lambert_mesh_material_renderer::*;
+pub use crate::gl_matcap_mesh_material_renderer::*;
+pub use crate::gl_mesh_material_registry::*;
+pub use crate::gl_normal_mesh_material_renderer::*;
+pub use crate::gl_pbr_transmission_scene_color::*;
+pub use crate::gl_phong_mesh_material_renderer::*;
+pub use crate::gl_scene3d_time::*;
+pub use crate::gl_shaded_built_in_modifiers::*;
+pub use crate::gl_shaded_mesh_material_renderer::*;
+pub use crate::gl_shaded_modifier_snippet::*;
+pub use crate::gl_shadow_map::*;
+pub use crate::gl_specular_glossiness_pbr_mesh_material_renderer::*;
+pub use crate::gl_standard_pbr_mesh_material_renderer::*;
+pub use crate::gl_toon_mesh_material_renderer::*;
+pub use crate::gl_unlit_mesh_material_renderer::*;
+pub use crate::gl_vertex_color_mesh_material_renderer::*;
+pub use crate::gl_wireframe_mesh_material_renderer::*;
+pub use crate::iridescence_pbr_gl_extension::*;
+pub use crate::prepare_gl_scene3d_forward_lights::*;
+pub use crate::present_gl_scene3d::*;
+pub use crate::register_gl_standard_pbr_material::*;
+pub use crate::render_gl_scene3d::*;
+pub use crate::scene3d_gl_pipeline::*;
+pub use crate::sheen_pbr_gl_extension::*;
+pub use crate::specular_pbr_gl_extension::*;
+pub use crate::transmission_volume_pbr_gl_extension::*;
+pub use crate::wrapped_diffuse_pbr_gl_extension::*;
+
+pub use contract::bake_gl_environment_capture_ibl;
+pub use contract::bake_gl_environment_ibl;
+pub use contract::explain_gl_pbr_extensions;
+pub use contract::get_gl_pbr_extension_registration;
+pub use contract::register_gl_mesh_skinning;
+pub use contract::register_gl_particle_emitter3d_pass;
+pub use contract::register_gl_pbr_extension;
+pub use contract::render_gl_environment_skybox;
+
+pub use crate::types::{
+    GlEnvironmentCaptureOptions, GlPbrExtensionIssue, GlPbrExtensionIssueCode, GlPbrTransmissionSceneColor,
+    GlScene3DForwardLightList, MeshGeometryUvSetExplanation,
+};

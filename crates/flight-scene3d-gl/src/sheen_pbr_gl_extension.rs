@@ -16,37 +16,6 @@ pub static SHEEN_PBR_GL_EXTENSION: GlPbrExtensionRegistration = GlPbrExtensionRe
     is_supported: is_sheen_pbr_gl_extension_supported,
 };
 
-// Registers the sheen GL realization for SHEEN_PBR_EXTENSION_KIND on this state.
-pub fn register_gl_sheen_pbr_extension(state: &mut GlRenderState) {
-    register_gl_pbr_extension(
-        state,
-        SHEEN_PBR_EXTENSION_KIND.to_string(),
-        &SHEEN_PBR_GL_EXTENSION,
-    );
-}
-
-fn bind_sheen_pbr_gl_extension(context: &mut dyn GlPbrExtensionBindContext, value: &PbrExtension) {
-    let PbrExtension::Sheen(extension) = value else {
-        return;
-    };
-    context.set_linear_color("u_flightSheenColor", extension.sheen_color);
-    context.set_float("u_flightSheenRoughness", extension.sheen_roughness);
-    context.bind_texture(
-        "u_flightSheenColorMap",
-        "u_flightSheenColorMapUvSet",
-        "u_flightSheenColorMapTransform",
-        extension.sheen_color_map.as_ref(),
-        extension.sheen_color_map_uv_set,
-    );
-    context.bind_texture(
-        "u_flightSheenRoughnessMap",
-        "u_flightSheenRoughnessMapUvSet",
-        "u_flightSheenRoughnessMapTransform",
-        extension.sheen_roughness_map.as_ref(),
-        extension.sheen_roughness_map_uv_set,
-    );
-}
-
 fn create_sheen_pbr_gl_extension_shader_contribution(
     context: &dyn GlPbrExtensionShaderContext,
     value: &PbrExtension,
@@ -141,8 +110,39 @@ float flightDistributionCharlie(float nDotH, float roughnessValue) {{
     };
 }
 
+fn bind_sheen_pbr_gl_extension(context: &mut dyn GlPbrExtensionBindContext, value: &PbrExtension) {
+    let PbrExtension::Sheen(extension) = value else {
+        return;
+    };
+    context.set_linear_color("u_flightSheenColor", extension.sheen_color);
+    context.set_float("u_flightSheenRoughness", extension.sheen_roughness);
+    context.bind_texture(
+        "u_flightSheenColorMap",
+        "u_flightSheenColorMapUvSet",
+        "u_flightSheenColorMapTransform",
+        extension.sheen_color_map.as_ref(),
+        extension.sheen_color_map_uv_set,
+    );
+    context.bind_texture(
+        "u_flightSheenRoughnessMap",
+        "u_flightSheenRoughnessMapUvSet",
+        "u_flightSheenRoughnessMapTransform",
+        extension.sheen_roughness_map.as_ref(),
+        extension.sheen_roughness_map_uv_set,
+    );
+}
+
 // Every sheen extension value is supported; the variant check keeps a kind registered against the
 // wrong closed variant a plain-data unsupported-extension issue instead of a mis-bound draw.
 fn is_sheen_pbr_gl_extension_supported(value: &PbrExtension) -> bool {
     return matches!(value, PbrExtension::Sheen(_));
+}
+
+// Registers the sheen GL realization for SHEEN_PBR_EXTENSION_KIND on this state.
+pub fn register_gl_sheen_pbr_extension(state: &mut GlRenderState) {
+    register_gl_pbr_extension(
+        state,
+        SHEEN_PBR_EXTENSION_KIND.to_string(),
+        &SHEEN_PBR_GL_EXTENSION,
+    );
 }

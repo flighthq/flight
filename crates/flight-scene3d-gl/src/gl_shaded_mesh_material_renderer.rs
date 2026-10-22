@@ -47,43 +47,6 @@ pub static GL_SHADED_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer = GlMeshMate
     draw: draw_gl_shaded_mesh_material,
 };
 
-// Registers the built-in ShadedMaterial renderer for ShadedMaterialKind on this state. Opt-in (no
-// top-level side effect); call once per GlRenderState before drawScene3D so meshes with ShadedMaterials
-// draw. Enable the built-in modifiers separately with register_built_in_gl_modifier_snippets — a plain
-// ShadedMaterial needs only this registration.
-pub fn register_gl_shaded_material(state: &mut GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        SHADED_MATERIAL_KIND.to_string(),
-        &GL_SHADED_MESH_MATERIAL_RENDERER,
-    );
-}
-
-fn bind_gl_shaded_mesh_material(
-    state: &mut GlRenderState,
-    material: Option<&dyn Material3D>,
-    lights: &Scene3DLightBlock,
-    camera: &Camera3D,
-) {
-    let shaded = material.and_then(|material| material.as_any().downcast_ref::<ShadedMaterial>());
-    let modifiers: &[Ref<dyn Modifier>] = shaded.map_or(&[], |shaded| shaded.modifiers.as_slice());
-    let key = define_key_for_material(state, shaded);
-    let program = ensure_gl_shaded_program(state, &key, modifiers);
-    let active: GlMeshProgramRef = program.clone();
-    begin_gl_mesh_draw(state, &active, shaded.is_some_and(|shaded| shaded.double_sided));
-
-    set_gl_mesh_view_projection(state, program.loc_view_projection, camera);
-    set_gl_mesh_camera_position(&state.gl, program.loc_camera_position, camera);
-    bind_gl_mesh_light_block(state, &program, lights);
-    bind_gl_shaded_material_uniforms(state, &program, shaded);
-    let time = get_gl_scene3d_time(state);
-    // SAFETY: the program is bound on the owning GL thread.
-    unsafe { state.gl.uniform_1_f32(program.loc_time.as_ref(), time) };
-    if !modifiers.is_empty() {
-        bind_gl_shaded_modifiers(state, &program, modifiers);
-    }
-}
-
 // Selects a texture unit and, when the slot's texture resolves, points the sampler uniform at it.
 fn bind_gl_shaded_material_map(
     state: &mut GlRenderState,
@@ -155,6 +118,31 @@ fn bind_gl_shaded_material_uniforms(
         program,
         diffuse_map.as_deref().map(|texture| texture as &dyn TextureVariant),
     );
+}
+
+fn bind_gl_shaded_mesh_material(
+    state: &mut GlRenderState,
+    material: Option<&dyn Material3D>,
+    lights: &Scene3DLightBlock,
+    camera: &Camera3D,
+) {
+    let shaded = material.and_then(|material| material.as_any().downcast_ref::<ShadedMaterial>());
+    let modifiers: &[Ref<dyn Modifier>] = shaded.map_or(&[], |shaded| shaded.modifiers.as_slice());
+    let key = define_key_for_material(state, shaded);
+    let program = ensure_gl_shaded_program(state, &key, modifiers);
+    let active: GlMeshProgramRef = program.clone();
+    begin_gl_mesh_draw(state, &active, shaded.is_some_and(|shaded| shaded.double_sided));
+
+    set_gl_mesh_view_projection(state, program.loc_view_projection, camera);
+    set_gl_mesh_camera_position(&state.gl, program.loc_camera_position, camera);
+    bind_gl_mesh_light_block(state, &program, lights);
+    bind_gl_shaded_material_uniforms(state, &program, shaded);
+    let time = get_gl_scene3d_time(state);
+    // SAFETY: the program is bound on the owning GL thread.
+    unsafe { state.gl.uniform_1_f32(program.loc_time.as_ref(), time) };
+    if !modifiers.is_empty() {
+        bind_gl_shaded_modifiers(state, &program, modifiers);
+    }
 }
 
 // Iterates the ordered modifier stack and uploads each modifier's uniforms through its registered GL
@@ -235,4 +223,16 @@ fn draw_gl_shaded_mesh_material(state: &mut GlRenderState, proxy: &Scene3DRender
         return;
     };
     draw_gl_mesh_subset(state, program.mesh_program(), proxy, geometry);
+}
+
+// Registers the built-in ShadedMaterial renderer for ShadedMaterialKind on this state. Opt-in (no
+// top-level side effect); call once per GlRenderState before drawScene3D so meshes with ShadedMaterials
+// draw. Enable the built-in modifiers separately with register_built_in_gl_modifier_snippets — a plain
+// ShadedMaterial needs only this registration.
+pub fn register_gl_shaded_material(state: &mut GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        SHADED_MATERIAL_KIND.to_string(),
+        &GL_SHADED_MESH_MATERIAL_RENDERER,
+    );
 }

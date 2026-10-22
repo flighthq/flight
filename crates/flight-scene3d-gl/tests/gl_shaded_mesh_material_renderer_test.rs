@@ -7,7 +7,7 @@ use flight_geometry::{create_matrix3, create_matrix4};
 use flight_lighting::{SCENE_LIGHT_BLOCK_FLOATS, Scene3DLightBlock};
 use flight_meshgeometry::{MeshGeometry, create_box_mesh_geometry};
 use flight_render::Scene3DRenderProxy;
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use flight_shading::{
     Modifier, SHADED_MATERIAL_KIND, create_emissive_modifier, create_rim_modifier, create_shaded_material,
 };

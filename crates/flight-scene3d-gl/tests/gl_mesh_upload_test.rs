@@ -8,7 +8,7 @@ use flight_meshgeometry::{
     set_mesh_geometry_skin_bind_pose,
 };
 use flight_scene3d::{create_mesh, update_mesh_morph};
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use glow::HasContext;
 
 use crate::gl_test_helper::{bytes_as_f32, calls_with, make_gl_scene3d_state};

@@ -33,6 +33,32 @@ pub fn build_gl_toon_define_key(key: &GlToonDefineKey) -> String {
     );
 }
 
+// Builds the leading "#version 300 es\n#define ..." block for a define key, to be prepended to the
+// vertex and fragment prelude bodies before compile. Pure string assembly; the same key always
+// yields the same source, which is what makes the program cache by define key sound.
+fn build_gl_toon_define_source(key: &GlToonDefineKey) -> String {
+    let mut defines = format!("#version 300 es\n#define MAX_FORWARD_LIGHTS {MAX_FORWARD_LIGHTS}\n");
+    if key.alpha_mask_enabled {
+        defines += "#define ALPHA_MASK\n";
+    }
+    if key.has_base_color_map {
+        defines += "#define HAS_BASE_COLOR_MAP\n";
+    }
+    if key.has_ramp {
+        defines += "#define HAS_RAMP\n";
+    }
+    if key.has_uv_transform {
+        defines += "#define HAS_UV_TRANSFORM\n";
+    }
+    if key.has_skin == Some(true) {
+        defines += "#define HAS_SKIN\n";
+    }
+    if key.has_instances == Some(true) {
+        defines += "#define HAS_INSTANCES\n";
+    }
+    return defines;
+}
+
 // Compiles the Toon uber-shader for a define key, links it, and resolves its uniform locations.
 // Composes the standard lit locations (resolve_gl_lit_locations) then adds the Toon material uniforms
 // plus the shared model/normal/view-projection vertex transforms. Pure GL work — no caching — used
@@ -113,32 +139,6 @@ pub fn get_gl_toon_vertex_source_for_key(key: &GlToonDefineKey, skin_declaration
         ""
     };
     return build_gl_toon_define_source(key) + skin + instances + TOON_VERTEX_BODY;
-}
-
-// Builds the leading "#version 300 es\n#define ..." block for a define key, to be prepended to the
-// vertex and fragment prelude bodies before compile. Pure string assembly; the same key always
-// yields the same source, which is what makes the program cache by define key sound.
-fn build_gl_toon_define_source(key: &GlToonDefineKey) -> String {
-    let mut defines = format!("#version 300 es\n#define MAX_FORWARD_LIGHTS {MAX_FORWARD_LIGHTS}\n");
-    if key.alpha_mask_enabled {
-        defines += "#define ALPHA_MASK\n";
-    }
-    if key.has_base_color_map {
-        defines += "#define HAS_BASE_COLOR_MAP\n";
-    }
-    if key.has_ramp {
-        defines += "#define HAS_RAMP\n";
-    }
-    if key.has_uv_transform {
-        defines += "#define HAS_UV_TRANSFORM\n";
-    }
-    if key.has_skin == Some(true) {
-        defines += "#define HAS_SKIN\n";
-    }
-    if key.has_instances == Some(true) {
-        defines += "#define HAS_INSTANCES\n";
-    }
-    return defines;
 }
 
 macro_rules! toon_vertex_body_glsl {
@@ -268,4 +268,3 @@ void main() {
     };
 }
 const TOON_FRAGMENT_BODY: &str = toon_fragment_body_glsl!();
-

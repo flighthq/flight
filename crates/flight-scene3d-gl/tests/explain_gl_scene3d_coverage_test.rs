@@ -6,7 +6,7 @@ use flight_render::{
 use flight_render_gl::{GlMeshMaterialRenderer, GlRenderState};
 use flight_requirement::RequirementFacet;
 use flight_scene3d::{Scene3DKindUsage, create_scene3d_kind_usage};
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 
 use crate::gl_test_helper::make_gl_scene3d_state;
 

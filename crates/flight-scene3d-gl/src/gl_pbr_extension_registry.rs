@@ -20,6 +20,42 @@ use crate::gl_pbr_standard_block::is_gl_texture_ready;
 use crate::gl_scene3d_runtime::get_gl_scene3d_runtime;
 use crate::types::{GlPbrExtensionIssue, GlPbrExtensionIssueCode};
 
+// The read-only facts a registration sees while selecting its shader contribution. The texture
+// readiness probe realizes the texture (render-gl's resolver needs the mutable state), hence the cell.
+struct GlPbrExtensionShaderContextRecord<'a> {
+    state: RefCell<&'a mut GlRenderState>,
+}
+
+// The backend-safe operations a registration's binder sees: each texture claims the next free
+// extension texture unit; uniforms are looked up by the extension's own names on the active program.
+struct GlPbrExtensionBindContextRecord<'a> {
+    program: NativeProgram,
+    state: &'a mut GlRenderState,
+    texture_index: usize,
+    texture_units: Vec<u32>,
+}
+
+fn create_gl_pbr_extension_bind_context(
+    state: &mut GlRenderState,
+    program: NativeProgram,
+) -> GlPbrExtensionBindContextRecord<'_> {
+    let texture_units = get_gl_pbr_extension_texture_units(&state.gl);
+    return GlPbrExtensionBindContextRecord {
+        program,
+        state,
+        texture_index: 0,
+        texture_units,
+    };
+}
+
+fn create_gl_pbr_extension_shader_context(
+    state: &mut GlRenderState,
+) -> GlPbrExtensionShaderContextRecord<'_> {
+    return GlPbrExtensionShaderContextRecord {
+        state: RefCell::new(state),
+    };
+}
+
 // Binds every extension's uniforms and maps through its registration, in descriptor order, against
 // the program the extended renderer just selected. False when an extension kind has no registration.
 pub fn bind_gl_pbr_extensions(
@@ -106,6 +142,19 @@ pub fn explain_gl_pbr_extensions(
     return issues;
 }
 
+// The open kind of a closed PbrExtension variant (its authored `kind` field).
+fn get_gl_pbr_extension_kind(extension: &PbrExtension) -> &Kind {
+    return match extension {
+        PbrExtension::Anisotropy(value) => &value.kind,
+        PbrExtension::Clearcoat(value) => &value.kind,
+        PbrExtension::Iridescence(value) => &value.kind,
+        PbrExtension::Sheen(value) => &value.kind,
+        PbrExtension::Specular(value) => &value.kind,
+        PbrExtension::TransmissionVolume(value) => &value.kind,
+        PbrExtension::WrappedDiffuse(value) => &value.kind,
+    };
+}
+
 // Returns the GL realization registered for a PbrExtension kind on this state, or None.
 pub fn get_gl_pbr_extension_registration(
     state: &GlRenderState,
@@ -117,6 +166,20 @@ pub fn get_gl_pbr_extension_registration(
         .entries
         .get(kind)
         .copied();
+}
+
+// The fragment texture units free for extension maps: from 6 (past the six standard-block units) to
+// the context's limit, skipping 8–12 (the shadow, IBL and skin-palette units).
+fn get_gl_pbr_extension_texture_units(gl: &glow::Context) -> Vec<u32> {
+    // SAFETY: the query runs on the owning GL thread.
+    let count = unsafe { gl.get_parameter_i32(glow::MAX_TEXTURE_IMAGE_UNITS) }.max(0) as u32;
+    let mut units: Vec<u32> = Vec::new();
+    for unit in 6..count {
+        if !(8..=12).contains(&unit) {
+            units.push(unit);
+        }
+    }
+    return units;
 }
 
 // Registers the GL realization of a PbrExtension kind on this state, replacing the persistent table
@@ -155,12 +218,6 @@ pub fn resolve_gl_pbr_extension_contributions(
     return Some(contributions);
 }
 
-// The read-only facts a registration sees while selecting its shader contribution. The texture
-// readiness probe realizes the texture (render-gl's resolver needs the mutable state), hence the cell.
-struct GlPbrExtensionShaderContextRecord<'a> {
-    state: RefCell<&'a mut GlRenderState>,
-}
-
 impl GlPbrExtensionShaderContext for GlPbrExtensionShaderContextRecord<'_> {
     fn has_transmission_scene_color(&self) -> bool {
         return get_gl_scene3d_runtime(&self.state.borrow())
@@ -173,57 +230,7 @@ impl GlPbrExtensionShaderContext for GlPbrExtensionShaderContextRecord<'_> {
     }
 }
 
-fn create_gl_pbr_extension_shader_context(
-    state: &mut GlRenderState,
-) -> GlPbrExtensionShaderContextRecord<'_> {
-    return GlPbrExtensionShaderContextRecord {
-        state: RefCell::new(state),
-    };
-}
-
-// The backend-safe operations a registration's binder sees: each texture claims the next free
-// extension texture unit; uniforms are looked up by the extension's own names on the active program.
-struct GlPbrExtensionBindContextRecord<'a> {
-    program: NativeProgram,
-    state: &'a mut GlRenderState,
-    texture_index: usize,
-    texture_units: Vec<u32>,
-}
-
 impl GlPbrExtensionBindContext for GlPbrExtensionBindContextRecord<'_> {
-    fn bind_transmission_scene_color(
-        &mut self,
-        sampler_uniform: &str,
-        max_lod_uniform: &str,
-    ) -> bool {
-        let Some(scene_color) = get_gl_scene3d_runtime(self.state).pbr_transmission_scene_color
-        else {
-            return false;
-        };
-        let unit = self.texture_units.get(self.texture_index).copied();
-        self.texture_index += 1;
-        let Some(unit) = unit else {
-            return false;
-        };
-        let gl = &self.state.gl;
-        // SAFETY: binds and uniform uploads run on the owning GL thread against the active program.
-        unsafe {
-            gl.active_texture(glow::TEXTURE0 + unit);
-            gl.bind_texture(glow::TEXTURE_2D, Some(scene_color.texture));
-            gl.uniform_1_i32(
-                gl.get_uniform_location(self.program, sampler_uniform)
-                    .as_ref(),
-                unit as i32,
-            );
-            gl.uniform_1_f32(
-                gl.get_uniform_location(self.program, max_lod_uniform)
-                    .as_ref(),
-                scene_color.mip_level_count.saturating_sub(1) as f32,
-            );
-        }
-        return true;
-    }
-
     fn bind_texture(
         &mut self,
         sampler_uniform: &str,
@@ -271,6 +278,39 @@ impl GlPbrExtensionBindContext for GlPbrExtensionBindContextRecord<'_> {
         return true;
     }
 
+    fn bind_transmission_scene_color(
+        &mut self,
+        sampler_uniform: &str,
+        max_lod_uniform: &str,
+    ) -> bool {
+        let Some(scene_color) = get_gl_scene3d_runtime(self.state).pbr_transmission_scene_color
+        else {
+            return false;
+        };
+        let unit = self.texture_units.get(self.texture_index).copied();
+        self.texture_index += 1;
+        let Some(unit) = unit else {
+            return false;
+        };
+        let gl = &self.state.gl;
+        // SAFETY: binds and uniform uploads run on the owning GL thread against the active program.
+        unsafe {
+            gl.active_texture(glow::TEXTURE0 + unit);
+            gl.bind_texture(glow::TEXTURE_2D, Some(scene_color.texture));
+            gl.uniform_1_i32(
+                gl.get_uniform_location(self.program, sampler_uniform)
+                    .as_ref(),
+                unit as i32,
+            );
+            gl.uniform_1_f32(
+                gl.get_uniform_location(self.program, max_lod_uniform)
+                    .as_ref(),
+                scene_color.mip_level_count.saturating_sub(1) as f32,
+            );
+        }
+        return true;
+    }
+
     fn set_float(&mut self, uniform: &str, value: f32) {
         let gl = &self.state.gl;
         // SAFETY: the uniform upload runs on the owning GL thread against the active program.
@@ -296,44 +336,4 @@ impl GlPbrExtensionBindContext for GlPbrExtensionBindContextRecord<'_> {
             );
         }
     }
-}
-
-fn create_gl_pbr_extension_bind_context(
-    state: &mut GlRenderState,
-    program: NativeProgram,
-) -> GlPbrExtensionBindContextRecord<'_> {
-    let texture_units = get_gl_pbr_extension_texture_units(&state.gl);
-    return GlPbrExtensionBindContextRecord {
-        program,
-        state,
-        texture_index: 0,
-        texture_units,
-    };
-}
-
-// The open kind of a closed PbrExtension variant (its authored `kind` field).
-fn get_gl_pbr_extension_kind(extension: &PbrExtension) -> &Kind {
-    return match extension {
-        PbrExtension::Anisotropy(value) => &value.kind,
-        PbrExtension::Clearcoat(value) => &value.kind,
-        PbrExtension::Iridescence(value) => &value.kind,
-        PbrExtension::Sheen(value) => &value.kind,
-        PbrExtension::Specular(value) => &value.kind,
-        PbrExtension::TransmissionVolume(value) => &value.kind,
-        PbrExtension::WrappedDiffuse(value) => &value.kind,
-    };
-}
-
-// The fragment texture units free for extension maps: from 6 (past the six standard-block units) to
-// the context's limit, skipping 8–12 (the shadow, IBL and skin-palette units).
-fn get_gl_pbr_extension_texture_units(gl: &glow::Context) -> Vec<u32> {
-    // SAFETY: the query runs on the owning GL thread.
-    let count = unsafe { gl.get_parameter_i32(glow::MAX_TEXTURE_IMAGE_UNITS) }.max(0) as u32;
-    let mut units: Vec<u32> = Vec::new();
-    for unit in 6..count {
-        if !(8..=12).contains(&unit) {
-            units.push(unit);
-        }
-    }
-    return units;
 }

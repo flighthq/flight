@@ -41,55 +41,6 @@ pub static GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer = GlM
     draw: draw_gl_custom_shader_mesh_material,
 };
 
-// Returns the vertex+fragment source pair registered under `shader_key` for this state, or None when no
-// source is registered. The None sentinel drives the skip-draw path in bind.
-pub fn get_gl_custom_material_shader_source<'a>(
-    state: &'a GlRenderState,
-    shader_key: &str,
-) -> Option<&'a GlCustomMaterialShaderSource> {
-    return state.gl_registries.custom_material_shaders.entries.get(shader_key);
-}
-
-// Registers a vertex + fragment shader source pair under `shader_key` for this state, so a
-// CustomShaderMaterial naming that key compiles and runs it. The vertex stage receives the standard
-// mesh attributes (a_position loc 0, a_normal loc 1, a_tangent loc 2, a_uv0 loc 3) and must declare the
-// four built-in uniforms with these exact types: `mat4 u_viewProjection`, `mat4 u_model`, `mat3
-// u_normalMatrix` (NOT mat4 — the renderer uploads it with uniformMatrix3fv, so a mat4 declaration
-// raises a silent GL_INVALID_OPERATION and the mesh draws nothing; enable_gl_scene3d_custom_shader_guards
-// catches this), and `vec3 u_cameraPosition`. When the material's alphaMode is 'blend', the fragment
-// shader must output PREMULTIPLIED linear scene color (rgb already scaled by the coverage it writes to
-// a) — every blend equation is premultiplied, and Flight compiles caller-authored source verbatim, so
-// it cannot append the fixup the built-in tails get from GL_MESH_FRAGMENT_TAIL. End your main with
-// `fragColor.rgb *= fragColor.a;`. Texture uniforms sample according to each Texture.colorSpace GPU
-// realization; do not decode an sRGB texture again in caller-authored GLSL. For alphaMode 'mask', the
-// native shader owns the cutoff discard (pass alphaCutoff through the custom uniforms bag when needed);
-// the fixed ABI cannot inject a discard into caller-authored source. Last write wins for the source
-// lookup, but the compiled program is cached by shader_key, so re-registering a different source under
-// the same key keeps running the already-compiled program. Register edited source under a new key to
-// force a recompile.
-pub fn register_gl_custom_material_shader(
-    state: &mut GlRenderState,
-    shader_key: &str,
-    source: &GlCustomMaterialShaderSource,
-) {
-    state.gl_registries.custom_material_shaders = Arc::new(with_kind_map_entry(
-        &state.gl_registries.custom_material_shaders,
-        shader_key.to_string(),
-        source.clone(),
-    ));
-}
-
-// Registers the built-in CustomShaderMaterial renderer for CustomShaderMaterialKind on this state.
-// Opt-in (no top-level side effect); call once per GlRenderState before drawScene3D so meshes carrying
-// CustomShaderMaterials draw.
-pub fn register_gl_custom_shader_material(state: &mut GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        CUSTOM_SHADER_MATERIAL_KIND.to_string(),
-        &GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER,
-    );
-}
-
 fn bind_gl_custom_shader_mesh_material(
     state: &mut GlRenderState,
     material: Option<&dyn Material3D>,
@@ -160,6 +111,55 @@ fn ensure_gl_custom_shader_program(
     return ensure_gl_scene3d_program(state, &format!("custom:{shader_key}"), |gl| {
         return compile_gl_custom_shader_program(gl, source);
     });
+}
+
+// Returns the vertex+fragment source pair registered under `shader_key` for this state, or None when no
+// source is registered. The None sentinel drives the skip-draw path in bind.
+pub fn get_gl_custom_material_shader_source<'a>(
+    state: &'a GlRenderState,
+    shader_key: &str,
+) -> Option<&'a GlCustomMaterialShaderSource> {
+    return state.gl_registries.custom_material_shaders.entries.get(shader_key);
+}
+
+// Registers a vertex + fragment shader source pair under `shader_key` for this state, so a
+// CustomShaderMaterial naming that key compiles and runs it. The vertex stage receives the standard
+// mesh attributes (a_position loc 0, a_normal loc 1, a_tangent loc 2, a_uv0 loc 3) and must declare the
+// four built-in uniforms with these exact types: `mat4 u_viewProjection`, `mat4 u_model`, `mat3
+// u_normalMatrix` (NOT mat4 — the renderer uploads it with uniformMatrix3fv, so a mat4 declaration
+// raises a silent GL_INVALID_OPERATION and the mesh draws nothing; enable_gl_scene3d_custom_shader_guards
+// catches this), and `vec3 u_cameraPosition`. When the material's alphaMode is 'blend', the fragment
+// shader must output PREMULTIPLIED linear scene color (rgb already scaled by the coverage it writes to
+// a) — every blend equation is premultiplied, and Flight compiles caller-authored source verbatim, so
+// it cannot append the fixup the built-in tails get from GL_MESH_FRAGMENT_TAIL. End your main with
+// `fragColor.rgb *= fragColor.a;`. Texture uniforms sample according to each Texture.colorSpace GPU
+// realization; do not decode an sRGB texture again in caller-authored GLSL. For alphaMode 'mask', the
+// native shader owns the cutoff discard (pass alphaCutoff through the custom uniforms bag when needed);
+// the fixed ABI cannot inject a discard into caller-authored source. Last write wins for the source
+// lookup, but the compiled program is cached by shader_key, so re-registering a different source under
+// the same key keeps running the already-compiled program. Register edited source under a new key to
+// force a recompile.
+pub fn register_gl_custom_material_shader(
+    state: &mut GlRenderState,
+    shader_key: &str,
+    source: &GlCustomMaterialShaderSource,
+) {
+    state.gl_registries.custom_material_shaders = Arc::new(with_kind_map_entry(
+        &state.gl_registries.custom_material_shaders,
+        shader_key.to_string(),
+        source.clone(),
+    ));
+}
+
+// Registers the built-in CustomShaderMaterial renderer for CustomShaderMaterialKind on this state.
+// Opt-in (no top-level side effect); call once per GlRenderState before drawScene3D so meshes carrying
+// CustomShaderMaterials draw.
+pub fn register_gl_custom_shader_material(state: &mut GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        CUSTOM_SHADER_MATERIAL_KIND.to_string(),
+        &GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER,
+    );
 }
 
 // The material's named bindings in a stable order. TS walks an object's insertion order; a Rust

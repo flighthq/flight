@@ -67,6 +67,44 @@ pub(crate) struct GlParticle3DShader {
     pub(crate) vao: NativeVertexArray,
 }
 
+// ParticleBlendMode uses serialized lowercase spellings; translate them to the canonical fixed-function
+// BlendMode family so particles and surface meshes share render-gl's one overridable realization table.
+// Assumes BLEND is already enabled.
+fn apply_gl_particle_blend_mode(state: &mut GlRenderState, mode: Option<&str>) {
+    if state.apply_blend_mode.is_none() {
+        enable_gl_blend_mode_support(state);
+    }
+    let Some(apply) = state.apply_blend_mode else {
+        return;
+    };
+    let blend_mode = match mode {
+        Some("add") => BLEND_MODE_ADD,
+        Some("multiply") => BLEND_MODE_MULTIPLY,
+        Some("screen") => BLEND_MODE_SCREEN,
+        _ => BLEND_MODE_NORMAL,
+    };
+    apply(state, Some(&blend_mode.to_string()));
+}
+
+fn collect_particle_emitter_3d_nodes(node: &NodeRef, out: &mut Vec<NodeRef>) {
+    let children = {
+        let guard = node.read().unwrap();
+        let fields = guard.node_fields();
+        if !fields.enabled {
+            return;
+        }
+        if fields.kind == PARTICLE_EMITTER_3D_KIND {
+            out.push(node.clone());
+        }
+        get_node_runtime(&*guard).children.clone()
+    };
+    if let Some(children) = children {
+        for child in &children {
+            collect_particle_emitter_3d_nodes(child, out);
+        }
+    }
+}
+
 fn compile_particle_3d_shader(gl: &glow::Context) -> GlParticle3DShader {
     let program = create_gl_program(gl, PARTICLE_3D_VS, PARTICLE_3D_FS, Some("ParticleEmitter3D"))
         .unwrap_or_else(|error| throw_error(&error));
@@ -121,64 +159,78 @@ fn compile_particle_3d_shader(gl: &glow::Context) -> GlParticle3DShader {
     }
 }
 
-// The state's shader, lent out of its runtime slot for one pass (TS: the module WeakMap entry).
-fn ensure_particle_3d_shader(state: &GlRenderState) -> GlParticle3DShader {
-    if let Some(shader) = get_gl_scene3d_runtime(state).particle_emitter3d_shader.take() {
-        return shader;
-    }
-    return compile_particle_3d_shader(&state.gl);
-}
-
-fn ensure_instance_capacity(shader: &mut GlParticle3DShader, gl: &glow::Context, count: usize) {
-    let needed = count * INSTANCE_FLOATS;
-    if shader.instance_data.len() >= needed {
+pub fn destroy_gl_particle_emitter3d_shader(state: &GlRenderState) {
+    let Some(shader) = get_gl_scene3d_runtime(state).particle_emitter3d_shader.take() else {
         return;
-    }
-    let new_size = needed.max(shader.instance_data.len() * 2);
-    shader.instance_data = vec![0.0; new_size];
-    // SAFETY: the instance buffer belongs to this context.
+    };
+    let gl = &state.gl;
+    // SAFETY: the shader objects belong to this state's context.
     unsafe {
-        gl.bind_buffer(glow::ARRAY_BUFFER, Some(shader.instance_buffer));
-        gl.buffer_data_size(glow::ARRAY_BUFFER, (new_size * 4) as i32, glow::DYNAMIC_DRAW);
+        gl.delete_program(shader.program);
+        gl.delete_buffer(shader.corner_buffer);
+        gl.delete_buffer(shader.index_buffer);
+        gl.delete_buffer(shader.instance_buffer);
+        // TS bug fix: the source frees the buffers but leaks the VAO that records their bindings.
+        gl.delete_vertex_array(shader.vao);
     }
 }
 
-fn collect_particle_emitter_3d_nodes(node: &NodeRef, out: &mut Vec<NodeRef>) {
-    let children = {
-        let guard = node.read().unwrap();
-        let fields = guard.node_fields();
-        if !fields.enabled {
-            return;
-        }
-        if fields.kind == PARTICLE_EMITTER_3D_KIND {
-            out.push(node.clone());
-        }
-        get_node_runtime(&*guard).children.clone()
-    };
-    if let Some(children) = children {
-        for child in &children {
-            collect_particle_emitter_3d_nodes(child, out);
-        }
-    }
-}
-
-// ParticleBlendMode uses serialized lowercase spellings; translate them to the canonical fixed-function
-// BlendMode family so particles and surface meshes share render-gl's one overridable realization table.
-// Assumes BLEND is already enabled.
-fn apply_gl_particle_blend_mode(state: &mut GlRenderState, mode: Option<&str>) {
-    if state.apply_blend_mode.is_none() {
-        enable_gl_blend_mode_support(state);
-    }
-    let Some(apply) = state.apply_blend_mode else {
+pub fn draw_gl_scene3d_particle_emitter3_ds(
+    state: &mut GlRenderState,
+    scene: &NodeRef,
+    camera: &Camera3D,
+    lights: &Scene3DLightsLike,
+) {
+    let mut emitter_scratch: Vec<NodeRef> = Vec::new();
+    collect_particle_emitter_3d_nodes(scene, &mut emitter_scratch);
+    if emitter_scratch.is_empty() {
         return;
-    };
-    let blend_mode = match mode {
-        Some("add") => BLEND_MODE_ADD,
-        Some("multiply") => BLEND_MODE_MULTIPLY,
-        Some("screen") => BLEND_MODE_SCREEN,
-        _ => BLEND_MODE_NORMAL,
-    };
-    apply(state, Some(&blend_mode.to_string()));
+    }
+
+    let aspect = get_gl_scene3d_viewport_aspect(state);
+    let view_projection = prepare_scene_3d_render(state, scene, camera, lights, Some(aspect))
+        .view_projection
+        .m;
+
+    let mut shader = ensure_particle_3d_shader(state);
+    let gl = state.gl.clone();
+
+    // Camera3D right and up from the view matrix rows (column-major storage).
+    let vm = camera.view.read().unwrap().m;
+    // SAFETY: the particle program belongs to this context; state changes on its owning thread.
+    unsafe {
+        gl.use_program(Some(shader.program));
+        gl.uniform_matrix_4_f32_slice(shader.loc_view_projection.as_ref(), false, &view_projection);
+        gl.uniform_3_f32(shader.loc_camera_right.as_ref(), vm[0], vm[4], vm[8]);
+        gl.uniform_3_f32(shader.loc_camera_up.as_ref(), vm[1], vm[5], vm[9]);
+
+        gl.enable(glow::DEPTH_TEST);
+        gl.depth_mask(false);
+        gl.enable(glow::BLEND);
+    }
+
+    for emitter in &emitter_scratch {
+        // Each emitter picks its own blend func: 'add' is the canonical fire/glow mode (the fragment
+        // shader premultiplies rgb by alpha, so ONE/ONE brightens and a black sprite background adds
+        // nothing). A hardcoded SRC_ALPHA over-blend instead makes an additive sprite darken the scene.
+        let blend_mode = emitter
+            .read()
+            .unwrap()
+            .as_any()
+            .downcast_ref::<ParticleEmitter3D>()
+            .and_then(|emitter| emitter.blend_mode.clone());
+        apply_gl_particle_blend_mode(state, blend_mode.as_deref());
+        draw_particle_emitter_3d_node(state, &mut shader, emitter);
+    }
+
+    // SAFETY: restoring fixed-function state on the same context.
+    unsafe {
+        gl.depth_mask(true);
+        gl.disable(glow::BLEND);
+    }
+    get_gl_scene3d_runtime(state).particle_emitter3d_shader = Some(shader);
+
+    invalidate_gl_render_state_cache(state);
 }
 
 fn draw_particle_emitter_3d_node(
@@ -381,78 +433,31 @@ fn draw_particle_emitter_3d_node(
     }
 }
 
-pub fn destroy_gl_particle_emitter3d_shader(state: &GlRenderState) {
-    let Some(shader) = get_gl_scene3d_runtime(state).particle_emitter3d_shader.take() else {
+fn ensure_instance_capacity(shader: &mut GlParticle3DShader, gl: &glow::Context, count: usize) {
+    let needed = count * INSTANCE_FLOATS;
+    if shader.instance_data.len() >= needed {
         return;
-    };
-    let gl = &state.gl;
-    // SAFETY: the shader objects belong to this state's context.
+    }
+    let new_size = needed.max(shader.instance_data.len() * 2);
+    shader.instance_data = vec![0.0; new_size];
+    // SAFETY: the instance buffer belongs to this context.
     unsafe {
-        gl.delete_program(shader.program);
-        gl.delete_buffer(shader.corner_buffer);
-        gl.delete_buffer(shader.index_buffer);
-        gl.delete_buffer(shader.instance_buffer);
-        // TS bug fix: the source frees the buffers but leaks the VAO that records their bindings.
-        gl.delete_vertex_array(shader.vao);
+        gl.bind_buffer(glow::ARRAY_BUFFER, Some(shader.instance_buffer));
+        gl.buffer_data_size(glow::ARRAY_BUFFER, (new_size * 4) as i32, glow::DYNAMIC_DRAW);
     }
 }
 
-pub fn draw_gl_scene3d_particle_emitter3_ds(
-    state: &mut GlRenderState,
-    scene: &NodeRef,
-    camera: &Camera3D,
-    lights: &Scene3DLightsLike,
-) {
-    let mut emitter_scratch: Vec<NodeRef> = Vec::new();
-    collect_particle_emitter_3d_nodes(scene, &mut emitter_scratch);
-    if emitter_scratch.is_empty() {
-        return;
+// The state's shader, lent out of its runtime slot for one pass (TS: the module WeakMap entry).
+fn ensure_particle_3d_shader(state: &GlRenderState) -> GlParticle3DShader {
+    if let Some(shader) = get_gl_scene3d_runtime(state).particle_emitter3d_shader.take() {
+        return shader;
     }
+    return compile_particle_3d_shader(&state.gl);
+}
 
-    let aspect = get_gl_scene3d_viewport_aspect(state);
-    let view_projection = prepare_scene_3d_render(state, scene, camera, lights, Some(aspect))
-        .view_projection
-        .m;
-
-    let mut shader = ensure_particle_3d_shader(state);
-    let gl = state.gl.clone();
-
-    // Camera3D right and up from the view matrix rows (column-major storage).
-    let vm = camera.view.read().unwrap().m;
-    // SAFETY: the particle program belongs to this context; state changes on its owning thread.
-    unsafe {
-        gl.use_program(Some(shader.program));
-        gl.uniform_matrix_4_f32_slice(shader.loc_view_projection.as_ref(), false, &view_projection);
-        gl.uniform_3_f32(shader.loc_camera_right.as_ref(), vm[0], vm[4], vm[8]);
-        gl.uniform_3_f32(shader.loc_camera_up.as_ref(), vm[1], vm[5], vm[9]);
-
-        gl.enable(glow::DEPTH_TEST);
-        gl.depth_mask(false);
-        gl.enable(glow::BLEND);
-    }
-
-    for emitter in &emitter_scratch {
-        // Each emitter picks its own blend func: 'add' is the canonical fire/glow mode (the fragment
-        // shader premultiplies rgb by alpha, so ONE/ONE brightens and a black sprite background adds
-        // nothing). A hardcoded SRC_ALPHA over-blend instead makes an additive sprite darken the scene.
-        let blend_mode = emitter
-            .read()
-            .unwrap()
-            .as_any()
-            .downcast_ref::<ParticleEmitter3D>()
-            .and_then(|emitter| emitter.blend_mode.clone());
-        apply_gl_particle_blend_mode(state, blend_mode.as_deref());
-        draw_particle_emitter_3d_node(state, &mut shader, emitter);
-    }
-
-    // SAFETY: restoring fixed-function state on the same context.
-    unsafe {
-        gl.depth_mask(true);
-        gl.disable(glow::BLEND);
-    }
-    get_gl_scene3d_runtime(state).particle_emitter3d_shader = Some(shader);
-
-    invalidate_gl_render_state_cache(state);
+fn f32_bytes(values: &[f32]) -> &[u8] {
+    // SAFETY: f32 has no padding and u8 has alignment 1, so the view covers exactly the same bytes.
+    return unsafe { std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), std::mem::size_of_val(values)) };
 }
 
 pub fn register_gl_particle_emitter3d_pass(state: &mut GlRenderState) {
@@ -466,11 +471,6 @@ pub fn register_gl_particle_emitter3d_pass(state: &mut GlRenderState) {
     let mut next = registries.passes.as_ref().map_or_else(Vec::new, |passes| passes.to_vec());
     next.push(pass);
     registries.passes = Some(Arc::new(next));
-}
-
-fn f32_bytes(values: &[f32]) -> &[u8] {
-    // SAFETY: f32 has no padding and u8 has alignment 1, so the view covers exactly the same bytes.
-    return unsafe { std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), std::mem::size_of_val(values)) };
 }
 
 macro_rules! particle_3d_vs_glsl {
@@ -546,4 +546,3 @@ void main() {
 }
 
 const PARTICLE_3D_FS: &str = particle_3d_fs_glsl!();
-

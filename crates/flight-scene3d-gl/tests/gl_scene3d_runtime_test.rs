@@ -5,7 +5,7 @@ use std::sync::Arc;
 use flight_geometry::create_matrix4;
 use flight_render::{RenderTargetDepth, RenderTargetDescriptor};
 use flight_render_gl::{GlRenderState, create_gl_texture_render_target};
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use glow::HasContext;
 
 use crate::gl_test_helper::{calls_with, call_names, make_gl_scene3d_state};

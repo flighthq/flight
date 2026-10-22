@@ -6,7 +6,7 @@ use flight_render_gl::{
     GlMaterialRenderer, GlMeshMaterialRenderer, GlQuadMaterialRenderer, GlRenderState,
     register_gl_quad_material_renderer, resolve_gl_quad_material_renderer,
 };
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 
 use crate::gl_test_helper::{make_gl_scene3d_state, make_gl_scene3d_state_with, make_state_options};
 

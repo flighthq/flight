@@ -6,7 +6,7 @@ use flight_render_gl::{
     GlColorAdjustmentData, GlColorAdjustmentMaterialFeature, GlRenderState, GlRenderStateRuntime,
     GlShapeMesh,
 };
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 
 use crate::gl_test_helper::{calls_named, make_gl, make_gl_scene3d_state};
 

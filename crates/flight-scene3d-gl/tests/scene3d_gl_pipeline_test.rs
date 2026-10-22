@@ -1,7 +1,7 @@
 use flight_entity::Kind;
 use flight_registry::{KindMap, get_kind_map_keys};
 use flight_scene2d_gl::gl_scene2d_render_preset;
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 
 fn expect_exact_keys<T>(table: &KindMap<T>, expected: &[&str]) {
     let mut actual: Vec<Kind> = Vec::new();

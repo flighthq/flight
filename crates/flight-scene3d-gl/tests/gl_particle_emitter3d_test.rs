@@ -12,7 +12,7 @@ use flight_particleemitter::{
     ParticleEmitter3D, create_particle_emitter_3d, reserve_particle_emitter_3d,
 };
 use flight_render_gl::{GlImageSourceToken, GlRenderState, GlScene3DPass, register_gl_image_texture_resolver};
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use flight_texture::{TextureSourceRef, create_texture_2d};
 use flight_textureatlas::{TextureAtlasRotation, add_texture_atlas_region, create_texture_atlas};
 

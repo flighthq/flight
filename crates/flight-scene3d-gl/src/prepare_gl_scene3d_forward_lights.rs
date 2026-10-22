@@ -28,23 +28,6 @@ fn find_prepared_block(prepared: &PreparedGlScene3DForwardLights, indices: &[i32
     return None;
 }
 
-fn set_mesh_world_bounding_sphere(
-    out: &mut BoundingSphere,
-    mesh: &NodeRef,
-    revisions: &mut NodeRevisionState,
-) {
-    let mut world_bounds = create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-    get_node3d_world_bounds(&mut world_bounds, mesh, revisions);
-    set_bounding_sphere_from_aabb(out, &world_bounds);
-    if out.radius < 0.0 {
-        let world = get_node_world_matrix4(mesh, revisions).m;
-        out.center.x = world[12];
-        out.center.y = world[13];
-        out.center.z = world[14];
-        out.radius = 0.0;
-    }
-}
-
 // Prepares one punctual-light block for each visible mesh after prepare_scene_3d_render. The selection
 // is opt-in and explicit: scenes within each family's forward budget need not run it. Point and spot
 // lights are independently ranked by estimated contribution at each mesh's world bounding sphere;
@@ -109,4 +92,21 @@ pub fn prepare_gl_scene3d_forward_lights(
     let out = prepared.list.clone();
     get_gl_scene3d_runtime(state).prepared_forward_lights = Some(prepared);
     return out;
+}
+
+fn set_mesh_world_bounding_sphere(
+    out: &mut BoundingSphere,
+    mesh: &NodeRef,
+    revisions: &mut NodeRevisionState,
+) {
+    let mut world_bounds = create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    get_node3d_world_bounds(&mut world_bounds, mesh, revisions);
+    set_bounding_sphere_from_aabb(out, &world_bounds);
+    if out.radius < 0.0 {
+        let world = get_node_world_matrix4(mesh, revisions).m;
+        out.center.x = world[12];
+        out.center.y = world[13];
+        out.center.z = world[14];
+        out.radius = 0.0;
+    }
 }

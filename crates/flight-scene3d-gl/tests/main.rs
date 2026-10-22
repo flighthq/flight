@@ -1,6 +1,7 @@
 // flight-lint: tests-main
 
 mod gl_test_helper;
+
 #[path = "anisotropy_pbr_gl_extension_test.rs"]
 mod flight_scene3d_gl_anisotropy_pbr_gl_extension_test;
 #[path = "clearcoat_pbr_gl_extension_test.rs"]

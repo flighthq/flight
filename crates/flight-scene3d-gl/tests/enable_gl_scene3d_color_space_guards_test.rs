@@ -1,6 +1,6 @@
 use flight_materials::contract::create_standard_pbr_material;
 use flight_meshgeometry::create_box_mesh_geometry;
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 
 use crate::gl_test_helper::{
     add_test_mesh, log_messages, make_gl_scene3d_state, make_test_lights, make_test_log,

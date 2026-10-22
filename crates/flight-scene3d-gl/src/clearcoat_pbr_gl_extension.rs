@@ -18,48 +18,6 @@ pub static CLEARCOAT_PBR_GL_EXTENSION: GlPbrExtensionRegistration = GlPbrExtensi
     is_supported: is_clearcoat_pbr_gl_extension_supported,
 };
 
-// Registers the clearcoat GL realization for CLEARCOAT_PBR_EXTENSION_KIND on this state.
-pub fn register_gl_clearcoat_pbr_extension(state: &mut GlRenderState) {
-    register_gl_pbr_extension(
-        state,
-        CLEARCOAT_PBR_EXTENSION_KIND.to_string(),
-        &CLEARCOAT_PBR_GL_EXTENSION,
-    );
-}
-
-fn bind_clearcoat_pbr_gl_extension(
-    context: &mut dyn GlPbrExtensionBindContext,
-    value: &PbrExtension,
-) {
-    let PbrExtension::Clearcoat(extension) = value else {
-        return;
-    };
-    context.set_float("u_flightClearcoat", extension.clearcoat);
-    context.set_float("u_flightClearcoatRoughness", extension.clearcoat_roughness);
-    context.set_float(
-        "u_flightClearcoatNormalScale",
-        extension.clearcoat_normal_scale,
-    );
-    bind_map(
-        context,
-        "Clearcoat",
-        extension.clearcoat_map.as_ref(),
-        extension.clearcoat_map_uv_set,
-    );
-    bind_map(
-        context,
-        "ClearcoatRoughness",
-        extension.clearcoat_roughness_map.as_ref(),
-        extension.clearcoat_roughness_map_uv_set,
-    );
-    bind_map(
-        context,
-        "ClearcoatNormal",
-        extension.clearcoat_normal_map.as_ref(),
-        extension.clearcoat_normal_map_uv_set,
-    );
-}
-
 fn create_clearcoat_pbr_gl_extension_shader_contribution(
     context: &dyn GlPbrExtensionShaderContext,
     value: &PbrExtension,
@@ -123,10 +81,37 @@ vec3 flightClearcoatNormal(vec3 N, vec3 tangentDir, vec3 bitangentDir) {{
     };
 }
 
-// Every clearcoat extension value is supported; the variant check keeps a kind registered against the
-// wrong closed variant a plain-data unsupported-extension issue instead of a mis-bound draw.
-fn is_clearcoat_pbr_gl_extension_supported(value: &PbrExtension) -> bool {
-    return matches!(value, PbrExtension::Clearcoat(_));
+fn bind_clearcoat_pbr_gl_extension(
+    context: &mut dyn GlPbrExtensionBindContext,
+    value: &PbrExtension,
+) {
+    let PbrExtension::Clearcoat(extension) = value else {
+        return;
+    };
+    context.set_float("u_flightClearcoat", extension.clearcoat);
+    context.set_float("u_flightClearcoatRoughness", extension.clearcoat_roughness);
+    context.set_float(
+        "u_flightClearcoatNormalScale",
+        extension.clearcoat_normal_scale,
+    );
+    bind_map(
+        context,
+        "Clearcoat",
+        extension.clearcoat_map.as_ref(),
+        extension.clearcoat_map_uv_set,
+    );
+    bind_map(
+        context,
+        "ClearcoatRoughness",
+        extension.clearcoat_roughness_map.as_ref(),
+        extension.clearcoat_roughness_map_uv_set,
+    );
+    bind_map(
+        context,
+        "ClearcoatNormal",
+        extension.clearcoat_normal_map.as_ref(),
+        extension.clearcoat_normal_map_uv_set,
+    );
 }
 
 // Binds one clearcoat map through the shared u_flight<name>Map / UvSet / Transform uniform triple.
@@ -143,6 +128,12 @@ fn bind_map(
         texture,
         uv_set,
     );
+}
+
+// Every clearcoat extension value is supported; the variant check keeps a kind registered against the
+// wrong closed variant a plain-data unsupported-extension issue instead of a mis-bound draw.
+fn is_clearcoat_pbr_gl_extension_supported(value: &PbrExtension) -> bool {
+    return matches!(value, PbrExtension::Clearcoat(_));
 }
 
 // The sampler / uv-set / transform declarations for one enabled clearcoat map (empty when disabled).
@@ -167,4 +158,13 @@ fn map_uv_function(name: &str, enabled: bool) -> String {
     } else {
         "".to_string()
     };
+}
+
+// Registers the clearcoat GL realization for CLEARCOAT_PBR_EXTENSION_KIND on this state.
+pub fn register_gl_clearcoat_pbr_extension(state: &mut GlRenderState) {
+    register_gl_pbr_extension(
+        state,
+        CLEARCOAT_PBR_EXTENSION_KIND.to_string(),
+        &CLEARCOAT_PBR_GL_EXTENSION,
+    );
 }

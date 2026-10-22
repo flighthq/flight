@@ -4,7 +4,7 @@ use flight_lighting::{
     Scene3DForwardLightSelectionExplanation, Scene3DForwardLightSelectionReason, Scene3DLightsLike,
     create_point_light, create_scene_3d_lights,
 };
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 
 fn lights(count: usize) -> Scene3DLightsLike {
     let mut out = create_scene_3d_lights();

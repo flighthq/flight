@@ -1,4 +1,4 @@
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use glow::HasContext;
 
 use crate::gl_test_helper::make_gl_scene3d_state;

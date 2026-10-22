@@ -7,7 +7,7 @@ use flight_materials::pbr_materials::{
 use flight_materials::{MaterialAlphaMode, StandardPbrMaterialPropertiesOptions};
 use flight_render::ExternalTexture;
 use flight_render_gl::{GlRenderState, GlTextureRealization, register_gl_texture_resolver};
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use flight_texture::{
     Texture, TextureColorSpace, TextureSourceRef, TextureVariant, create_texture_2d,
 };

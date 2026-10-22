@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use flight_bitmap::create_bitmap;
 use flight_entity::Ref;
 use flight_lighting::{Environment, create_environment};
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use flight_texture::{
     Texture, TextureColorSpace, TextureSourceRef, TextureUvTransform, create_cube_texture,
 };

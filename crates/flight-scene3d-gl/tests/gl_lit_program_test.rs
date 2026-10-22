@@ -1,7 +1,7 @@
 use flight_geometry::create_matrix4;
 use flight_lighting::{SCENE_LIGHT_BLOCK_FLOATS, Scene3DLightBlock};
 use flight_render_gl::GlRenderState;
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use glow::HasContext;
 
 use crate::gl_test_helper::{calls_with, clear_calls, make_gl_scene3d_state, uniform_location_of};

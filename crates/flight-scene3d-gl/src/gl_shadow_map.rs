@@ -27,6 +27,103 @@ use crate::gl_mesh_upload::ensure_gl_mesh_upload;
 use crate::gl_scene3d_runtime::get_gl_scene3d_runtime;
 use crate::types::{GlMeshProgram, GlScene3DShadow};
 
+// The skin declarations (joints0/weights0 attributes, the palette texture, and skinMatrix()) are spliced
+// ahead of the body exactly as the family vertex shaders splice them; model * skinMatrix() matches the
+// forward path's `worldPosition = u_model * (skin * position)`.
+fn build_shadow_depth_skinned_vertex(skin_declarations_glsl: &str) -> String {
+    return format!(
+        "#version 300 es
+{skin_declarations_glsl}
+layout(location = 0) in vec3 a_position;
+uniform mat4 u_viewProjection;
+uniform mat4 u_model;
+void main() {{
+  gl_Position = u_viewProjection * u_model * skinMatrix() * vec4(a_position, 1.0);
+}}
+"
+    );
+}
+
+// The HAS_INSTANCES depth variant: the same depth pass with the instance palette declarations spliced
+// in, so `u_model * instanceModelMatrix()` reproduces the forward pass's per-instance placement exactly
+// and a batch records one depth silhouette per live instance.
+fn compile_shadow_depth_instanced_program(gl: &glow::Context) -> GlMeshProgram {
+    let program = compile_gl_program(gl, SHADOW_DEPTH_INSTANCED_VERTEX, SHADOW_DEPTH_FRAGMENT);
+    let mut record = create_gl_mesh_program_record(program);
+    // SAFETY: location queries on the freshly linked program.
+    unsafe {
+        record
+            .loc_instance_palette
+            .set(Some(gl.get_uniform_location(program, "u_instancePalette")));
+        record.loc_model = gl.get_uniform_location(program, "u_model");
+        record.loc_view_projection = gl.get_uniform_location(program, "u_viewProjection");
+    }
+    return record;
+}
+
+fn compile_shadow_depth_program(gl: &glow::Context) -> GlMeshProgram {
+    let program = compile_gl_program(gl, SHADOW_DEPTH_VERTEX, SHADOW_DEPTH_FRAGMENT);
+    let mut record = create_gl_mesh_program_record(program);
+    // SAFETY: location queries on the freshly linked program.
+    unsafe {
+        record.loc_model = gl.get_uniform_location(program, "u_model");
+        record.loc_view_projection = gl.get_uniform_location(program, "u_viewProjection");
+    }
+    return record;
+}
+
+// The HAS_SKIN depth variant: the same depth pass, but the vertex is deformed by the bone palette via
+// skinMatrix() before the model/view-projection transform — the exact deformation the forward HAS_SKIN
+// vertex shader applies, so a skinned caster's recorded depth matches its shaded silhouette.
+fn compile_shadow_depth_skinned_program(gl: &glow::Context, skin_declarations_glsl: &str) -> GlMeshProgram {
+    let program = compile_gl_program(
+        gl,
+        &build_shadow_depth_skinned_vertex(skin_declarations_glsl),
+        SHADOW_DEPTH_FRAGMENT,
+    );
+    let mut record = create_gl_mesh_program_record(program);
+    // SAFETY: location queries on the freshly linked program.
+    unsafe {
+        record
+            .loc_joint_normal_texture
+            .set(Some(gl.get_uniform_location(program, "u_jointNormalTexture")));
+        record
+            .loc_joint_texture
+            .set(Some(gl.get_uniform_location(program, "u_jointTexture")));
+        record.loc_model = gl.get_uniform_location(program, "u_model");
+        record.loc_view_projection = gl.get_uniform_location(program, "u_viewProjection");
+    }
+    return record;
+}
+
+// Packs the live instance matrices into the flat array bind_gl_instance_palette uploads. The depth pass
+// keeps its own scratch buffer rather than sharing the forward pass's: the two passes run at different
+// points in a frame and a shared buffer would couple their growth.
+fn flatten_shadow_instance_matrices(out: &mut Vec<f32>, mesh: &InstancedMesh) {
+    let count = mesh.instance_count.max(0) as usize;
+    let needed = count * 16;
+    if out.len() < needed {
+        out.resize(needed, 0.0);
+    }
+    for i in 0..count {
+        out[i * 16..i * 16 + 16].copy_from_slice(&mesh.instance_matrices[i].read().unwrap().m);
+    }
+}
+
+// Structural, matching prepare_scene_3d_render's own instanced test, so the depth pass and the forward
+// pass agree on what an instanced caster is (TS `'instanceMatrices' in mesh`): only an InstancedMesh
+// carries an instance count.
+fn is_shadow_instanced_mesh(instance_count: Option<i32>) -> bool {
+    return instance_count.is_some();
+}
+
+fn normalize_directional_shadow_pcf_radius(radius: f32) -> f32 {
+    if !radius.is_finite() {
+        return 0.0;
+    }
+    return (MAX_DIRECTIONAL_SHADOW_PCF_RADIUS as f32).min(radius.floor().max(0.0));
+}
+
 // The directional shadow recipe's first pass: render scene depth from the light's point of view into a
 // sampleable depth render target (the shadow map), and record it + the light view-projection on the
 // scene runtime. The subsequent render_gl_scene3d's lit binds (bind_gl_mesh_light_block) read that to
@@ -266,103 +363,6 @@ pub fn render_gl_scene3d_shadow_map(
     });
 }
 
-fn normalize_directional_shadow_pcf_radius(radius: f32) -> f32 {
-    if !radius.is_finite() {
-        return 0.0;
-    }
-    return (MAX_DIRECTIONAL_SHADOW_PCF_RADIUS as f32).min(radius.floor().max(0.0));
-}
-
-fn compile_shadow_depth_program(gl: &glow::Context) -> GlMeshProgram {
-    let program = compile_gl_program(gl, SHADOW_DEPTH_VERTEX, SHADOW_DEPTH_FRAGMENT);
-    let mut record = create_gl_mesh_program_record(program);
-    // SAFETY: location queries on the freshly linked program.
-    unsafe {
-        record.loc_model = gl.get_uniform_location(program, "u_model");
-        record.loc_view_projection = gl.get_uniform_location(program, "u_viewProjection");
-    }
-    return record;
-}
-
-// The HAS_SKIN depth variant: the same depth pass, but the vertex is deformed by the bone palette via
-// skinMatrix() before the model/view-projection transform — the exact deformation the forward HAS_SKIN
-// vertex shader applies, so a skinned caster's recorded depth matches its shaded silhouette.
-fn compile_shadow_depth_skinned_program(gl: &glow::Context, skin_declarations_glsl: &str) -> GlMeshProgram {
-    let program = compile_gl_program(
-        gl,
-        &build_shadow_depth_skinned_vertex(skin_declarations_glsl),
-        SHADOW_DEPTH_FRAGMENT,
-    );
-    let mut record = create_gl_mesh_program_record(program);
-    // SAFETY: location queries on the freshly linked program.
-    unsafe {
-        record
-            .loc_joint_normal_texture
-            .set(Some(gl.get_uniform_location(program, "u_jointNormalTexture")));
-        record
-            .loc_joint_texture
-            .set(Some(gl.get_uniform_location(program, "u_jointTexture")));
-        record.loc_model = gl.get_uniform_location(program, "u_model");
-        record.loc_view_projection = gl.get_uniform_location(program, "u_viewProjection");
-    }
-    return record;
-}
-
-// The HAS_INSTANCES depth variant: the same depth pass with the instance palette declarations spliced
-// in, so `u_model * instanceModelMatrix()` reproduces the forward pass's per-instance placement exactly
-// and a batch records one depth silhouette per live instance.
-fn compile_shadow_depth_instanced_program(gl: &glow::Context) -> GlMeshProgram {
-    let program = compile_gl_program(gl, SHADOW_DEPTH_INSTANCED_VERTEX, SHADOW_DEPTH_FRAGMENT);
-    let mut record = create_gl_mesh_program_record(program);
-    // SAFETY: location queries on the freshly linked program.
-    unsafe {
-        record
-            .loc_instance_palette
-            .set(Some(gl.get_uniform_location(program, "u_instancePalette")));
-        record.loc_model = gl.get_uniform_location(program, "u_model");
-        record.loc_view_projection = gl.get_uniform_location(program, "u_viewProjection");
-    }
-    return record;
-}
-
-// Structural, matching prepare_scene_3d_render's own instanced test, so the depth pass and the forward
-// pass agree on what an instanced caster is (TS `'instanceMatrices' in mesh`): only an InstancedMesh
-// carries an instance count.
-fn is_shadow_instanced_mesh(instance_count: Option<i32>) -> bool {
-    return instance_count.is_some();
-}
-
-// Packs the live instance matrices into the flat array bind_gl_instance_palette uploads. The depth pass
-// keeps its own scratch buffer rather than sharing the forward pass's: the two passes run at different
-// points in a frame and a shared buffer would couple their growth.
-fn flatten_shadow_instance_matrices(out: &mut Vec<f32>, mesh: &InstancedMesh) {
-    let count = mesh.instance_count.max(0) as usize;
-    let needed = count * 16;
-    if out.len() < needed {
-        out.resize(needed, 0.0);
-    }
-    for i in 0..count {
-        out[i * 16..i * 16 + 16].copy_from_slice(&mesh.instance_matrices[i].read().unwrap().m);
-    }
-}
-
-// The skin declarations (joints0/weights0 attributes, the palette texture, and skinMatrix()) are spliced
-// ahead of the body exactly as the family vertex shaders splice them; model * skinMatrix() matches the
-// forward path's `worldPosition = u_model * (skin * position)`.
-fn build_shadow_depth_skinned_vertex(skin_declarations_glsl: &str) -> String {
-    return format!(
-        "#version 300 es
-{skin_declarations_glsl}
-layout(location = 0) in vec3 a_position;
-uniform mat4 u_viewProjection;
-uniform mat4 u_model;
-void main() {{
-  gl_Position = u_viewProjection * u_model * skinMatrix() * vec4(a_position, 1.0);
-}}
-"
-    );
-}
-
 macro_rules! shadow_depth_instanced_vertex_glsl {
     () => {
         concat!(r#"#version 300 es
@@ -407,4 +407,3 @@ void main() {
 }
 
 const SHADOW_DEPTH_FRAGMENT: &str = shadow_depth_fragment_glsl!();
-

@@ -10,7 +10,7 @@ use flight_lighting::{
 use flight_meshgeometry::create_box_mesh_geometry;
 use flight_render::prepare_scene_3d_render;
 use flight_render_gl::GlRenderState;
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 
 use crate::gl_test_helper::{add_test_mesh, make_gl_scene3d_state, make_test_camera, make_test_scene, test_default};
 

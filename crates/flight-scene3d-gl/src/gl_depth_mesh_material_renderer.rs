@@ -25,16 +25,6 @@ pub static GL_DEPTH_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer = GlMeshMater
     draw: draw_gl_depth_mesh_material,
 };
 
-// Registers the built-in Depth renderer for DepthMaterialKind on this state. Opt-in (no top-level side
-// effect); call once per GlRenderState before drawScene3D so meshes with DepthMaterials draw.
-pub fn register_gl_depth_material(state: &mut GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        DEPTH_MATERIAL_KIND.to_string(),
-        &GL_DEPTH_MESH_MATERIAL_RENDERER,
-    );
-}
-
 fn bind_gl_depth_mesh_material(
     state: &mut GlRenderState,
     material: Option<&dyn Material3D>,
@@ -76,4 +66,14 @@ fn draw_gl_depth_mesh_material(state: &mut GlRenderState, proxy: &Scene3DRenderP
         return;
     };
     draw_gl_mesh_subset(state, program.mesh_program(), proxy, geometry);
+}
+
+// Registers the built-in Depth renderer for DepthMaterialKind on this state. Opt-in (no top-level side
+// effect); call once per GlRenderState before drawScene3D so meshes with DepthMaterials draw.
+pub fn register_gl_depth_material(state: &mut GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        DEPTH_MATERIAL_KIND.to_string(),
+        &GL_DEPTH_MESH_MATERIAL_RENDERER,
+    );
 }

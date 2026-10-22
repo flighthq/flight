@@ -54,17 +54,6 @@ pub static GL_SPECULAR_GLOSSINESS_PBR_MESH_MATERIAL_RENDERER: GlMeshMaterialRend
         draw: draw_gl_specular_glossiness_pbr_mesh_material,
     };
 
-// Installs the built-in SpecularGlossiness renderer for SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND on this
-// state. Opt-in (no implicit side effect): the scene draw only draws SpecularGlossiness subsets once
-// this is called.
-pub fn register_gl_specular_glossiness_pbr_material(state: &mut GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND.to_string(),
-        &GL_SPECULAR_GLOSSINESS_PBR_MESH_MATERIAL_RENDERER,
-    );
-}
-
 fn bind_gl_specular_glossiness_pbr_mesh_material(
     state: &mut GlRenderState,
     material: Option<&dyn Material3D>,
@@ -189,6 +178,17 @@ fn pack_linear_rgba(r: f32, g: f32, b: f32, a: f32) -> u32 {
     };
     let alpha = ((a.clamp(0.0, 1.0) * 255.0).round() as u32) & 0xff;
     return (to_byte(r) << 24) | (to_byte(g) << 16) | (to_byte(b) << 8) | alpha;
+}
+
+// Installs the built-in SpecularGlossiness renderer for SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND on this
+// state. Opt-in (no implicit side effect): the scene draw only draws SpecularGlossiness subsets once
+// this is called.
+pub fn register_gl_specular_glossiness_pbr_material(state: &mut GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND.to_string(),
+        &GL_SPECULAR_GLOSSINESS_PBR_MESH_MATERIAL_RENDERER,
+    );
 }
 
 // The Khronos spec-gloss → metallic solver: recovers the metallic factor from the diffuse and

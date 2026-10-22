@@ -49,6 +49,25 @@ pub fn bind_gl_debug_range(state: &GlRenderState, program: &GlDebugProgram, near
     }
 }
 
+fn build_define_source(key: &GlDebugDefineKey) -> String {
+    let mut defines = String::from("#version 300 es\n");
+    if key.mode == GlDebugMode::Depth {
+        defines += "#define DEPTH_MODE\n";
+    } else {
+        defines += "#define NORMAL_MODE\n";
+    }
+    if key.has_normal_map {
+        defines += "#define HAS_NORMAL_MAP\n";
+    }
+    if key.has_skin == Some(true) {
+        defines += "#define HAS_SKIN\n";
+    }
+    if key.has_instances == Some(true) {
+        defines += "#define HAS_INSTANCES\n";
+    }
+    return defines;
+}
+
 // A short, stable, order-independent string identity for a debug define key, used as the program-
 // cache key. Two keys with the same flags produce the same string and so share a compiled program.
 pub fn build_gl_debug_define_key(key: &GlDebugDefineKey) -> String {
@@ -145,25 +164,6 @@ pub fn get_gl_debug_vertex_source_for_key(
         ""
     };
     return build_define_source(key) + skin + instances + DEBUG_VERTEX_BODY;
-}
-
-fn build_define_source(key: &GlDebugDefineKey) -> String {
-    let mut defines = String::from("#version 300 es\n");
-    if key.mode == GlDebugMode::Depth {
-        defines += "#define DEPTH_MODE\n";
-    } else {
-        defines += "#define NORMAL_MODE\n";
-    }
-    if key.has_normal_map {
-        defines += "#define HAS_NORMAL_MAP\n";
-    }
-    if key.has_skin == Some(true) {
-        defines += "#define HAS_SKIN\n";
-    }
-    if key.has_instances == Some(true) {
-        defines += "#define HAS_INSTANCES\n";
-    }
-    return defines;
 }
 
 macro_rules! debug_vertex_body_glsl {
@@ -289,4 +289,3 @@ void main() {
     };
 }
 const DEBUG_FRAGMENT_BODY: &str = debug_fragment_body_glsl!();
-

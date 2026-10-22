@@ -27,157 +27,6 @@ use crate::gl_mesh_program::{
 use crate::gl_scene3d_runtime::get_gl_scene3d_runtime;
 use crate::types::{GlShadedDefineKey, GlShadedProgram};
 
-// The stable program-cache key for a ShadedMaterial variant: the base feature flags joined with the
-// modifier stack's define-key. Two materials sharing both the same base flags AND the same modifier
-// feature-set produce the same key and share one compiled program (and batch together); a different
-// map set OR a different modifier feature-set breaks the batch. `modifier_define_key` follows
-// flight_shading's get_modifier_define_key, so cross-slot authoring order never changes it.
-pub fn build_gl_shaded_cache_key(key: &GlShadedDefineKey, modifier_define_key: &str) -> String {
-    let flag = |on: bool, mark: &'static str| -> &'static str {
-        return if on { mark } else { "-" };
-    };
-    let color = if key.has_color_matrix == Some(true) {
-        "x"
-    } else if key.has_color_adjustment == Some(true) {
-        "c"
-    } else {
-        ""
-    };
-    let base = format!(
-        "{}{}{}{}{}{}{}{color}",
-        flag(key.alpha_mask_enabled, "m"),
-        flag(key.has_diffuse_map, "d"),
-        flag(key.has_specular_map, "s"),
-        flag(key.has_normal_map, "n"),
-        flag(key.has_uv_transform, "u"),
-        flag(key.has_skin == Some(true), "k"),
-        flag(key.has_instances == Some(true), "i"),
-    );
-    return format!("shaded:{base}|{modifier_define_key}");
-}
-
-// Compiles the ShadedMaterial uber-shader for a base key and an ORDERED modifier stack: assembles the
-// base lit source (reusing GL_MESH_LIGHT_BLOCK_GLSL for lighting — no second light loop) with each
-// modifier's GLSL injected at its slot hook, links it, and resolves the base + time uniform
-// locations. Pure GL work — no caching — used by ensure_gl_shaded_program. Panics (TS throws) on a
-// compile/link failure (a programmer error: a malformed base or modifier snippet), not an expected
-// runtime case. `skin_declarations_glsl` is the HAS_SKIN vertex declarations supplied by the
-// registered skinning capability; empty when skinning is not registered, which is also when
-// key.has_skin is false.
-// flight-lint: allow(conform-params) TS also accepts a shading ModifierRegistry whose entries are GL snippets; Rust's ModifierRegistry stores GLSL-free ModifierDefinitions, so only the GL snippet table is representable
-pub fn compile_gl_shaded_program(
-    gl: &glow::Context,
-    key: &GlShadedDefineKey,
-    ordered_modifiers: &[Ref<dyn Modifier>],
-    registry: &KindMap<&'static GlModifierSnippet>,
-    color_adjustment_feature: Option<&GlColorAdjustmentMaterialFeature>,
-    skin_declarations_glsl: Option<&str>,
-) -> GlShadedProgram {
-    let define_source = build_gl_shaded_define_source(key);
-    // The skin GLSL is vertex-only (its `in` attributes are illegal in a fragment shader), so it is
-    // spliced into the vertex source alone, never the fragment. The Vertex-slot modifiers are likewise
-    // vertex-only — they deform the geometry — so they inject into the vertex body, not the fragment.
-    let skin = if key.has_skin == Some(true) {
-        skin_declarations_glsl.unwrap_or("")
-    } else {
-        ""
-    };
-    let instances = if key.has_instances == Some(true) {
-        GL_INSTANCE_VERTEX_DECLARATIONS_GLSL
-    } else {
-        ""
-    };
-    let vertex_source = define_source.clone()
-        + skin
-        + instances
-        + &assemble_gl_shaded_vertex_body(ordered_modifiers, registry);
-    let mut fragment_body = assemble_gl_shaded_fragment_body(ordered_modifiers, registry);
-    let has_color_matrix = key.has_color_matrix == Some(true);
-    if (key.has_color_adjustment == Some(true) || has_color_matrix)
-        && let Some(feature) = color_adjustment_feature
-    {
-        let chunk = if has_color_matrix {
-            feature.matrix_fragment_shader_chunk
-        } else {
-            feature.fragment_shader_chunk
-        };
-        fragment_body = fragment_body.replacen(
-            "precision highp float;",
-            &format!("precision highp float;\n{chunk}"),
-            1,
-        );
-    }
-    let fragment_source = define_source + &fragment_body;
-    let program = compile_gl_program(gl, &vertex_source, &fragment_source);
-    let mut lit = resolve_gl_lit_locations(gl, program);
-    // SAFETY: lookups run on the owning GL thread.
-    unsafe {
-        lit.mesh.loc_joint_normal_texture =
-            Cell::new(Some(gl.get_uniform_location(program, "u_jointNormalTexture")));
-        lit.mesh.loc_joint_texture = Cell::new(Some(gl.get_uniform_location(program, "u_jointTexture")));
-        lit.mesh.loc_model = gl.get_uniform_location(program, "u_model");
-        lit.mesh.loc_normal_matrix = gl.get_uniform_location(program, "u_normalMatrix");
-        lit.mesh.loc_view_projection = gl.get_uniform_location(program, "u_viewProjection");
-        return GlShadedProgram {
-            lit,
-            loc_alpha_cutoff: gl.get_uniform_location(program, "u_alphaCutoff"),
-            loc_diffuse: gl.get_uniform_location(program, "u_diffuse"),
-            loc_diffuse_map: gl.get_uniform_location(program, "u_diffuseMap"),
-            loc_normal_map: gl.get_uniform_location(program, "u_normalMap"),
-            loc_normal_scale: gl.get_uniform_location(program, "u_normalScale"),
-            loc_shininess: gl.get_uniform_location(program, "u_shininess"),
-            loc_specular: gl.get_uniform_location(program, "u_specular"),
-            loc_specular_map: gl.get_uniform_location(program, "u_specularMap"),
-            loc_time: gl.get_uniform_location(program, "u_time"),
-        };
-    }
-}
-
-// Resolves the ShadedMaterial program for a base key and modifier stack, compiling and caching it on
-// first use under the `shaded:` family namespace. Orders the stack and computes its define-key from
-// this state's modifier-snippet registry (so the cache key captures every compile-time modifier
-// variant), then keys the shared scene program cache by base-key + modifier-define-key — each variant
-// compiles at most once per state and reused every frame.
-pub fn ensure_gl_shaded_program(
-    state: &GlRenderState,
-    key: &GlShadedDefineKey,
-    modifiers: &[Ref<dyn Modifier>],
-) -> Rc<GlShadedProgram> {
-    let registry = state.gl_registries.modifier_snippets.clone();
-    let revision = state.gl_runtime.borrow().modifier_snippet_revision;
-    let mut ordered = Vec::new();
-    order_modifier_stack(&mut ordered, modifiers);
-    // Fold the render-state skinned-run flag into the variant so a skinned draw of an otherwise-identical
-    // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
-    let (full_key, skin_declarations_glsl) = {
-        let runtime = get_gl_scene3d_runtime(state);
-        let mut full_key = key.clone();
-        full_key.has_color_adjustment = Some(runtime.active_color_adjustment_run);
-        full_key.has_color_matrix = Some(runtime.active_color_matrix_run);
-        full_key.has_instances = Some(runtime.active_instanced_run);
-        full_key.has_skin = Some(runtime.active_skinned_run);
-        let skin = runtime
-            .mesh_skin_feature
-            .map_or("", |feature| feature.vertex_declarations_glsl);
-        (full_key, skin)
-    };
-    let cache_key = format!(
-        "{}|registry:{revision}",
-        build_gl_shaded_cache_key(&full_key, &get_gl_modifier_define_key(modifiers, &registry))
-    );
-    let color_adjustment_feature = get_gl_color_adjustment_material_feature(state);
-    return ensure_gl_scene3d_program(state, &cache_key, |gl| {
-        return compile_gl_shaded_program(
-            gl,
-            &full_key,
-            &ordered,
-            &registry,
-            color_adjustment_feature,
-            Some(skin_declarations_glsl),
-        );
-    });
-}
-
 // Assembles the ShadedMaterial fragment body for an ordered modifier stack: each FRAGMENT-slot
 // modifier's declarations are collected at the top, and each contribution is injected at the hook for
 // its slot (Normal perturbs the normal before lighting, Diffuse/Specular adjust the surface terms,
@@ -260,6 +109,35 @@ fn assemble_gl_shaded_vertex_body(
         .replacen("//@VERTEX", &vertex, 1);
 }
 
+// The stable program-cache key for a ShadedMaterial variant: the base feature flags joined with the
+// modifier stack's define-key. Two materials sharing both the same base flags AND the same modifier
+// feature-set produce the same key and share one compiled program (and batch together); a different
+// map set OR a different modifier feature-set breaks the batch. `modifier_define_key` follows
+// flight_shading's get_modifier_define_key, so cross-slot authoring order never changes it.
+pub fn build_gl_shaded_cache_key(key: &GlShadedDefineKey, modifier_define_key: &str) -> String {
+    let flag = |on: bool, mark: &'static str| -> &'static str {
+        return if on { mark } else { "-" };
+    };
+    let color = if key.has_color_matrix == Some(true) {
+        "x"
+    } else if key.has_color_adjustment == Some(true) {
+        "c"
+    } else {
+        ""
+    };
+    let base = format!(
+        "{}{}{}{}{}{}{}{color}",
+        flag(key.alpha_mask_enabled, "m"),
+        flag(key.has_diffuse_map, "d"),
+        flag(key.has_specular_map, "s"),
+        flag(key.has_normal_map, "n"),
+        flag(key.has_uv_transform, "u"),
+        flag(key.has_skin == Some(true), "k"),
+        flag(key.has_instances == Some(true), "i"),
+    );
+    return format!("shaded:{base}|{modifier_define_key}");
+}
+
 // Builds the leading "#version 300 es\n#define ..." block shared by the vertex and fragment stages
 // for a base key. Modifier variants are NOT #defines — they are injected as GLSL by
 // assemble_gl_shaded_fragment_body — so only the base map/alpha flags appear here.
@@ -294,6 +172,83 @@ fn build_gl_shaded_define_source(key: &GlShadedDefineKey) -> String {
     return defines;
 }
 
+// Compiles the ShadedMaterial uber-shader for a base key and an ORDERED modifier stack: assembles the
+// base lit source (reusing GL_MESH_LIGHT_BLOCK_GLSL for lighting — no second light loop) with each
+// modifier's GLSL injected at its slot hook, links it, and resolves the base + time uniform
+// locations. Pure GL work — no caching — used by ensure_gl_shaded_program. Panics (TS throws) on a
+// compile/link failure (a programmer error: a malformed base or modifier snippet), not an expected
+// runtime case. `skin_declarations_glsl` is the HAS_SKIN vertex declarations supplied by the
+// registered skinning capability; empty when skinning is not registered, which is also when
+// key.has_skin is false.
+// flight-lint: allow(conform-params) TS also accepts a shading ModifierRegistry whose entries are GL snippets; Rust's ModifierRegistry stores GLSL-free ModifierDefinitions, so only the GL snippet table is representable
+pub fn compile_gl_shaded_program(
+    gl: &glow::Context,
+    key: &GlShadedDefineKey,
+    ordered_modifiers: &[Ref<dyn Modifier>],
+    registry: &KindMap<&'static GlModifierSnippet>,
+    color_adjustment_feature: Option<&GlColorAdjustmentMaterialFeature>,
+    skin_declarations_glsl: Option<&str>,
+) -> GlShadedProgram {
+    let define_source = build_gl_shaded_define_source(key);
+    // The skin GLSL is vertex-only (its `in` attributes are illegal in a fragment shader), so it is
+    // spliced into the vertex source alone, never the fragment. The Vertex-slot modifiers are likewise
+    // vertex-only — they deform the geometry — so they inject into the vertex body, not the fragment.
+    let skin = if key.has_skin == Some(true) {
+        skin_declarations_glsl.unwrap_or("")
+    } else {
+        ""
+    };
+    let instances = if key.has_instances == Some(true) {
+        GL_INSTANCE_VERTEX_DECLARATIONS_GLSL
+    } else {
+        ""
+    };
+    let vertex_source = define_source.clone()
+        + skin
+        + instances
+        + &assemble_gl_shaded_vertex_body(ordered_modifiers, registry);
+    let mut fragment_body = assemble_gl_shaded_fragment_body(ordered_modifiers, registry);
+    let has_color_matrix = key.has_color_matrix == Some(true);
+    if (key.has_color_adjustment == Some(true) || has_color_matrix)
+        && let Some(feature) = color_adjustment_feature
+    {
+        let chunk = if has_color_matrix {
+            feature.matrix_fragment_shader_chunk
+        } else {
+            feature.fragment_shader_chunk
+        };
+        fragment_body = fragment_body.replacen(
+            "precision highp float;",
+            &format!("precision highp float;\n{chunk}"),
+            1,
+        );
+    }
+    let fragment_source = define_source + &fragment_body;
+    let program = compile_gl_program(gl, &vertex_source, &fragment_source);
+    let mut lit = resolve_gl_lit_locations(gl, program);
+    // SAFETY: lookups run on the owning GL thread.
+    unsafe {
+        lit.mesh.loc_joint_normal_texture =
+            Cell::new(Some(gl.get_uniform_location(program, "u_jointNormalTexture")));
+        lit.mesh.loc_joint_texture = Cell::new(Some(gl.get_uniform_location(program, "u_jointTexture")));
+        lit.mesh.loc_model = gl.get_uniform_location(program, "u_model");
+        lit.mesh.loc_normal_matrix = gl.get_uniform_location(program, "u_normalMatrix");
+        lit.mesh.loc_view_projection = gl.get_uniform_location(program, "u_viewProjection");
+        return GlShadedProgram {
+            lit,
+            loc_alpha_cutoff: gl.get_uniform_location(program, "u_alphaCutoff"),
+            loc_diffuse: gl.get_uniform_location(program, "u_diffuse"),
+            loc_diffuse_map: gl.get_uniform_location(program, "u_diffuseMap"),
+            loc_normal_map: gl.get_uniform_location(program, "u_normalMap"),
+            loc_normal_scale: gl.get_uniform_location(program, "u_normalScale"),
+            loc_shininess: gl.get_uniform_location(program, "u_shininess"),
+            loc_specular: gl.get_uniform_location(program, "u_specular"),
+            loc_specular_map: gl.get_uniform_location(program, "u_specularMap"),
+            loc_time: gl.get_uniform_location(program, "u_time"),
+        };
+    }
+}
+
 // Collapses duplicate declaration lines in an assembled modifier declaration block, preserving the
 // order of first appearance and dropping later exact repeats. Per-instance uniforms are unique (each
 // name carries its stack-index suffix, e.g. `u_fogColor_2`), so they always survive; the SHARED
@@ -317,6 +272,51 @@ fn dedupe_gl_shaded_declarations(declarations: &str) -> String {
         result += "\n";
     }
     return result;
+}
+
+// Resolves the ShadedMaterial program for a base key and modifier stack, compiling and caching it on
+// first use under the `shaded:` family namespace. Orders the stack and computes its define-key from
+// this state's modifier-snippet registry (so the cache key captures every compile-time modifier
+// variant), then keys the shared scene program cache by base-key + modifier-define-key — each variant
+// compiles at most once per state and reused every frame.
+pub fn ensure_gl_shaded_program(
+    state: &GlRenderState,
+    key: &GlShadedDefineKey,
+    modifiers: &[Ref<dyn Modifier>],
+) -> Rc<GlShadedProgram> {
+    let registry = state.gl_registries.modifier_snippets.clone();
+    let revision = state.gl_runtime.borrow().modifier_snippet_revision;
+    let mut ordered = Vec::new();
+    order_modifier_stack(&mut ordered, modifiers);
+    // Fold the render-state skinned-run flag into the variant so a skinned draw of an otherwise-identical
+    // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
+    let (full_key, skin_declarations_glsl) = {
+        let runtime = get_gl_scene3d_runtime(state);
+        let mut full_key = key.clone();
+        full_key.has_color_adjustment = Some(runtime.active_color_adjustment_run);
+        full_key.has_color_matrix = Some(runtime.active_color_matrix_run);
+        full_key.has_instances = Some(runtime.active_instanced_run);
+        full_key.has_skin = Some(runtime.active_skinned_run);
+        let skin = runtime
+            .mesh_skin_feature
+            .map_or("", |feature| feature.vertex_declarations_glsl);
+        (full_key, skin)
+    };
+    let cache_key = format!(
+        "{}|registry:{revision}",
+        build_gl_shaded_cache_key(&full_key, &get_gl_modifier_define_key(modifiers, &registry))
+    );
+    let color_adjustment_feature = get_gl_color_adjustment_material_feature(state);
+    return ensure_gl_scene3d_program(state, &cache_key, |gl| {
+        return compile_gl_shaded_program(
+            gl,
+            &full_key,
+            &ordered,
+            &registry,
+            color_adjustment_feature,
+            Some(skin_declarations_glsl),
+        );
+    });
 }
 
 // TS getGlModifierDefineKey over the GL snippet table: the ordered stack's kinds, each followed by its
@@ -645,4 +645,3 @@ void main() {
     };
 }
 const SHADED_FRAGMENT_TEMPLATE: &str = shaded_fragment_template_glsl!();
-

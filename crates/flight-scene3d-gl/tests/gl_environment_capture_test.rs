@@ -13,7 +13,7 @@ use flight_render_gl::{
     GlMeshMaterialRenderer, GlRenderState, create_gl_cube_render_target, destroy_gl_cube_render_target,
 };
 use flight_scene3d::{Mesh, Node3DFields, create_node3d, publish_node3d};
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use glow::{HasContext, NativeFramebuffer};
 
 use crate::gl_test_helper::{

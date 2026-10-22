@@ -16,33 +16,6 @@ pub static ANISOTROPY_PBR_GL_EXTENSION: GlPbrExtensionRegistration = GlPbrExtens
     is_supported: is_anisotropy_pbr_gl_extension_supported,
 };
 
-// Registers the anisotropy GL realization for ANISOTROPY_PBR_EXTENSION_KIND on this state.
-pub fn register_gl_anisotropy_pbr_extension(state: &mut GlRenderState) {
-    register_gl_pbr_extension(
-        state,
-        ANISOTROPY_PBR_EXTENSION_KIND.to_string(),
-        &ANISOTROPY_PBR_GL_EXTENSION,
-    );
-}
-
-fn bind_anisotropy_pbr_gl_extension(
-    context: &mut dyn GlPbrExtensionBindContext,
-    value: &PbrExtension,
-) {
-    let PbrExtension::Anisotropy(extension) = value else {
-        return;
-    };
-    context.set_float("u_flightAnisotropyStrength", extension.anisotropy_strength);
-    context.set_float("u_flightAnisotropyRotation", extension.anisotropy_rotation);
-    context.bind_texture(
-        "u_flightAnisotropyMap",
-        "u_flightAnisotropyMapUvSet",
-        "u_flightAnisotropyMapTransform",
-        extension.anisotropy_map.as_ref(),
-        extension.anisotropy_map_uv_set,
-    );
-}
-
 fn create_anisotropy_pbr_gl_extension_shader_contribution(
     context: &dyn GlPbrExtensionShaderContext,
     value: &PbrExtension,
@@ -111,8 +84,35 @@ float flightVisibilitySmithGgxAnisotropic(
     };
 }
 
+fn bind_anisotropy_pbr_gl_extension(
+    context: &mut dyn GlPbrExtensionBindContext,
+    value: &PbrExtension,
+) {
+    let PbrExtension::Anisotropy(extension) = value else {
+        return;
+    };
+    context.set_float("u_flightAnisotropyStrength", extension.anisotropy_strength);
+    context.set_float("u_flightAnisotropyRotation", extension.anisotropy_rotation);
+    context.bind_texture(
+        "u_flightAnisotropyMap",
+        "u_flightAnisotropyMapUvSet",
+        "u_flightAnisotropyMapTransform",
+        extension.anisotropy_map.as_ref(),
+        extension.anisotropy_map_uv_set,
+    );
+}
+
 // Every anisotropy extension value is supported; the variant check keeps a kind registered against the
 // wrong closed variant a plain-data unsupported-extension issue instead of a mis-bound draw.
 fn is_anisotropy_pbr_gl_extension_supported(value: &PbrExtension) -> bool {
     return matches!(value, PbrExtension::Anisotropy(_));
+}
+
+// Registers the anisotropy GL realization for ANISOTROPY_PBR_EXTENSION_KIND on this state.
+pub fn register_gl_anisotropy_pbr_extension(state: &mut GlRenderState) {
+    register_gl_pbr_extension(
+        state,
+        ANISOTROPY_PBR_EXTENSION_KIND.to_string(),
+        &ANISOTROPY_PBR_GL_EXTENSION,
+    );
 }

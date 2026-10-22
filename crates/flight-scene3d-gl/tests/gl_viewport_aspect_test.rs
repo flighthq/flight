@@ -1,5 +1,5 @@
 use flight_render_gl::GlViewportRect;
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 
 use crate::gl_test_helper::make_gl_scene3d_state;
 

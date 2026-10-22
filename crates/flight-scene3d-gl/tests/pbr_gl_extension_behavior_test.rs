@@ -13,7 +13,7 @@ use flight_materials::{PbrExtension, PbrUvSet};
 use flight_render_gl::{
     GlPbrExtensionBindContext, GlPbrExtensionRegistration, GlPbrExtensionShaderContext,
 };
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use flight_texture::{Texture, create_texture_2d};
 
 struct ExpectedMap {

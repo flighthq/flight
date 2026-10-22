@@ -17,47 +17,6 @@ pub static WRAPPED_DIFFUSE_PBR_GL_EXTENSION: GlPbrExtensionRegistration =
         is_supported: is_wrapped_diffuse_pbr_gl_extension_supported,
     };
 
-// Registers the wrapped diffuse GL realization for WRAPPED_DIFFUSE_PBR_EXTENSION_KIND on this state.
-pub fn register_gl_wrapped_diffuse_pbr_extension(state: &mut GlRenderState) {
-    register_gl_pbr_extension(
-        state,
-        WRAPPED_DIFFUSE_PBR_EXTENSION_KIND.to_string(),
-        &WRAPPED_DIFFUSE_PBR_GL_EXTENSION,
-    );
-}
-
-fn bind_wrapped_diffuse_pbr_gl_extension(
-    context: &mut dyn GlPbrExtensionBindContext,
-    value: &PbrExtension,
-) {
-    let PbrExtension::WrappedDiffuse(extension) = value else {
-        return;
-    };
-    context.set_float(
-        "u_flightWrappedDiffuseStrength",
-        extension.wrapped_diffuse_strength,
-    );
-    context.set_float("u_flightWrappedDiffuseThickness", extension.thickness);
-    context.set_linear_color(
-        "u_flightWrappedDiffuseColor",
-        extension.wrapped_diffuse_color,
-    );
-    context.bind_texture(
-        "u_flightWrappedDiffuseMap",
-        "u_flightWrappedDiffuseMapUvSet",
-        "u_flightWrappedDiffuseMapTransform",
-        extension.wrapped_diffuse_map.as_ref(),
-        extension.wrapped_diffuse_map_uv_set,
-    );
-    context.bind_texture(
-        "u_flightWrappedDiffuseThicknessMap",
-        "u_flightWrappedDiffuseThicknessMapUvSet",
-        "u_flightWrappedDiffuseThicknessMapTransform",
-        extension.thickness_map.as_ref(),
-        extension.thickness_map_uv_set,
-    );
-}
-
 fn create_wrapped_diffuse_pbr_gl_extension_shader_contribution(
     context: &dyn GlPbrExtensionShaderContext,
     value: &PbrExtension,
@@ -140,8 +99,49 @@ uniform vec3 u_flightWrappedDiffuseColor;
     };
 }
 
+fn bind_wrapped_diffuse_pbr_gl_extension(
+    context: &mut dyn GlPbrExtensionBindContext,
+    value: &PbrExtension,
+) {
+    let PbrExtension::WrappedDiffuse(extension) = value else {
+        return;
+    };
+    context.set_float(
+        "u_flightWrappedDiffuseStrength",
+        extension.wrapped_diffuse_strength,
+    );
+    context.set_float("u_flightWrappedDiffuseThickness", extension.thickness);
+    context.set_linear_color(
+        "u_flightWrappedDiffuseColor",
+        extension.wrapped_diffuse_color,
+    );
+    context.bind_texture(
+        "u_flightWrappedDiffuseMap",
+        "u_flightWrappedDiffuseMapUvSet",
+        "u_flightWrappedDiffuseMapTransform",
+        extension.wrapped_diffuse_map.as_ref(),
+        extension.wrapped_diffuse_map_uv_set,
+    );
+    context.bind_texture(
+        "u_flightWrappedDiffuseThicknessMap",
+        "u_flightWrappedDiffuseThicknessMapUvSet",
+        "u_flightWrappedDiffuseThicknessMapTransform",
+        extension.thickness_map.as_ref(),
+        extension.thickness_map_uv_set,
+    );
+}
+
 // Every wrapped diffuse extension value is supported; the variant check keeps a kind registered against the
 // wrong closed variant a plain-data unsupported-extension issue instead of a mis-bound draw.
 fn is_wrapped_diffuse_pbr_gl_extension_supported(value: &PbrExtension) -> bool {
     return matches!(value, PbrExtension::WrappedDiffuse(_));
+}
+
+// Registers the wrapped diffuse GL realization for WRAPPED_DIFFUSE_PBR_EXTENSION_KIND on this state.
+pub fn register_gl_wrapped_diffuse_pbr_extension(state: &mut GlRenderState) {
+    register_gl_pbr_extension(
+        state,
+        WRAPPED_DIFFUSE_PBR_EXTENSION_KIND.to_string(),
+        &WRAPPED_DIFFUSE_PBR_GL_EXTENSION,
+    );
 }

@@ -33,15 +33,6 @@ pub static GL_EXTENDED_PBR_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer =
         draw: draw_gl_extended_pbr_mesh_material,
     };
 
-// Installs the Extended PBR renderer for EXTENDED_PBR_MATERIAL_KIND on this state.
-pub fn register_gl_extended_pbr_material(state: &mut GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        EXTENDED_PBR_MATERIAL_KIND.to_string(),
-        &GL_EXTENDED_PBR_MESH_MATERIAL_RENDERER,
-    );
-}
-
 fn bind_gl_extended_pbr_mesh_material(
     state: &mut GlRenderState,
     material: Option<&dyn Material3D>,
@@ -92,4 +83,13 @@ fn draw_gl_extended_pbr_mesh_material(
         return;
     };
     draw_gl_mesh_subset(state, program.mesh_program(), proxy, geometry);
+}
+
+// Installs the Extended PBR renderer for EXTENDED_PBR_MATERIAL_KIND on this state.
+pub fn register_gl_extended_pbr_material(state: &mut GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        EXTENDED_PBR_MATERIAL_KIND.to_string(),
+        &GL_EXTENDED_PBR_MESH_MATERIAL_RENDERER,
+    );
 }

@@ -4,7 +4,7 @@ use std::sync::{Arc, RwLock};
 use flight_entity::Ref;
 use flight_geometry::{create_vector2, create_vector3};
 use flight_render_gl::{GlModifierBindContext, GlModifierSnippet, GlRenderState};
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use flight_shading::{
     ANIMATED_NORMAL_MODIFIER_KIND, AnimatedNormalModifier, DISSOLVE_MODIFIER_KIND, DissolveModifier,
     EMISSIVE_MODIFIER_KIND, ENV_REFLECT_MODIFIER_KIND, EmissiveModifier, EmissiveModifierFacing,

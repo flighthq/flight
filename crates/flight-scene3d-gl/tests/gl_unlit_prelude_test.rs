@@ -8,7 +8,7 @@ use flight_render::{CreateRenderTextureOptions, create_render_texture};
 use flight_render_gl::{
     GlImageSourceToken, register_gl_image_texture_resolver, register_gl_render_texture_resolver,
 };
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use flight_texture::{Texture, TextureSourceRef, TextureUvTransform, create_texture_2d};
 use flight_video::{HostVideoCapability, advance_video_texture, create_video_resource, create_video_texture};
 

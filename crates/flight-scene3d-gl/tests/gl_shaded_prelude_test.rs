@@ -9,7 +9,7 @@ use flight_render_gl::{
     GlColorAdjustmentData, GlColorAdjustmentMaterialFeature, GlModifierSnippet, GlRenderState,
     GlRenderStateRuntime, GlShapeMesh,
 };
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use flight_shading::{
     MODIFIER_SLOT_EFFECT, Modifier, VertexDisplaceModifierSource, create_emissive_modifier,
     create_env_reflect_modifier, create_rim_modifier, create_vertex_displace_modifier,

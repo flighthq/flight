@@ -7,7 +7,7 @@ use flight_meshgeometry::{
 use flight_node::NodeRef;
 use flight_node::contract::NodeRevisionState;
 use flight_scene3d::{Mesh, Node3DFields, Skin, create_node3d, prepare_scene3d_morph, publish_node3d};
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use flight_skeleton3d::{Skeleton3DGuardState, create_skeleton3d, prepare_scene3d_skinning};
 
 use crate::gl_test_helper::{

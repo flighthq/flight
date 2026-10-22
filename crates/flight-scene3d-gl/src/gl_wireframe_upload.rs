@@ -15,6 +15,54 @@ enum GlWireframeLineIndices {
     U32(Vec<u32>),
 }
 
+// Builds the line-list index array (two indices per triangle edge, three edges per triangle) from a
+// geometry's triangle indices, or from a sequential range when the geometry is non-indexed. Promotes to
+// u32 when any index exceeds the u16 range.
+fn build_line_indices(geometry: &MeshGeometry) -> GlWireframeLineIndices {
+    let triangle_indices: Option<Vec<u32>> = match &geometry.indices {
+        IndexBuffer::U16(value) => {
+            let indices = value.data.read().unwrap();
+            Some(indices.iter().map(|index| u32::from(*index)).collect())
+        }
+        IndexBuffer::U32(value) => Some(value.data.read().unwrap().to_vec()),
+        IndexBuffer::None => None,
+    };
+    let triangle_count = match &triangle_indices {
+        Some(indices) => indices.len() / 3,
+        None => {
+            let stride = geometry.layout.read().unwrap().stride as usize;
+            if stride > 0 {
+                (geometry.vertices.len() * 4) / stride / 3
+            } else {
+                0
+            }
+        }
+    };
+
+    let line_count = triangle_count * 6;
+    let use_uint32 = matches!(geometry.indices, IndexBuffer::U32(_)) || line_count > 65535;
+    let mut lines = vec![0_u32; line_count];
+
+    for t in 0..triangle_count {
+        let base = t * 3;
+        let (i0, i1, i2) = match &triangle_indices {
+            Some(indices) => (indices[base], indices[base + 1], indices[base + 2]),
+            None => (base as u32, base as u32 + 1, base as u32 + 2),
+        };
+        let out = t * 6;
+        lines[out] = i0;
+        lines[out + 1] = i1;
+        lines[out + 2] = i1;
+        lines[out + 3] = i2;
+        lines[out + 4] = i2;
+        lines[out + 5] = i0;
+    }
+    if use_uint32 {
+        return GlWireframeLineIndices::U32(lines);
+    }
+    return GlWireframeLineIndices::U16(lines.iter().map(|index| *index as u16).collect());
+}
+
 // Frees the GL objects owned by a wireframe upload — the VAO and the line-index buffer. It does NOT
 // delete the vertex buffer: that is the shared triangle upload's buffer (see ensure_gl_wireframe_upload),
 // freed by destroy_gl_mesh_upload for that geometry, not here. Deleting an already-deleted GL object is
@@ -118,52 +166,4 @@ pub fn ensure_gl_wireframe_upload(
         .wireframe_upload_cache
         .insert(key, upload);
     return upload;
-}
-
-// Builds the line-list index array (two indices per triangle edge, three edges per triangle) from a
-// geometry's triangle indices, or from a sequential range when the geometry is non-indexed. Promotes to
-// u32 when any index exceeds the u16 range.
-fn build_line_indices(geometry: &MeshGeometry) -> GlWireframeLineIndices {
-    let triangle_indices: Option<Vec<u32>> = match &geometry.indices {
-        IndexBuffer::U16(value) => {
-            let indices = value.data.read().unwrap();
-            Some(indices.iter().map(|index| u32::from(*index)).collect())
-        }
-        IndexBuffer::U32(value) => Some(value.data.read().unwrap().to_vec()),
-        IndexBuffer::None => None,
-    };
-    let triangle_count = match &triangle_indices {
-        Some(indices) => indices.len() / 3,
-        None => {
-            let stride = geometry.layout.read().unwrap().stride as usize;
-            if stride > 0 {
-                (geometry.vertices.len() * 4) / stride / 3
-            } else {
-                0
-            }
-        }
-    };
-
-    let line_count = triangle_count * 6;
-    let use_uint32 = matches!(geometry.indices, IndexBuffer::U32(_)) || line_count > 65535;
-    let mut lines = vec![0_u32; line_count];
-
-    for t in 0..triangle_count {
-        let base = t * 3;
-        let (i0, i1, i2) = match &triangle_indices {
-            Some(indices) => (indices[base], indices[base + 1], indices[base + 2]),
-            None => (base as u32, base as u32 + 1, base as u32 + 2),
-        };
-        let out = t * 6;
-        lines[out] = i0;
-        lines[out + 1] = i1;
-        lines[out + 2] = i1;
-        lines[out + 3] = i2;
-        lines[out + 4] = i2;
-        lines[out + 5] = i0;
-    }
-    if use_uint32 {
-        return GlWireframeLineIndices::U32(lines);
-    }
-    return GlWireframeLineIndices::U16(lines.iter().map(|index| *index as u16).collect());
 }

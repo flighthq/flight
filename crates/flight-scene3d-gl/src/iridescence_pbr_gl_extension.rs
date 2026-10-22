@@ -16,48 +16,6 @@ pub static IRIDESCENCE_PBR_GL_EXTENSION: GlPbrExtensionRegistration = GlPbrExten
     is_supported: is_iridescence_pbr_gl_extension_supported,
 };
 
-// Registers the iridescence GL realization for IRIDESCENCE_PBR_EXTENSION_KIND on this state.
-pub fn register_gl_iridescence_pbr_extension(state: &mut GlRenderState) {
-    register_gl_pbr_extension(
-        state,
-        IRIDESCENCE_PBR_EXTENSION_KIND.to_string(),
-        &IRIDESCENCE_PBR_GL_EXTENSION,
-    );
-}
-
-fn bind_iridescence_pbr_gl_extension(
-    context: &mut dyn GlPbrExtensionBindContext,
-    value: &PbrExtension,
-) {
-    let PbrExtension::Iridescence(extension) = value else {
-        return;
-    };
-    context.set_float("u_flightIridescence", extension.iridescence);
-    context.set_float("u_flightIridescenceIor", extension.iridescence_ior);
-    context.set_float(
-        "u_flightIridescenceThicknessMin",
-        extension.iridescence_thickness_min,
-    );
-    context.set_float(
-        "u_flightIridescenceThicknessMax",
-        extension.iridescence_thickness_max,
-    );
-    context.bind_texture(
-        "u_flightIridescenceMap",
-        "u_flightIridescenceMapUvSet",
-        "u_flightIridescenceMapTransform",
-        extension.iridescence_map.as_ref(),
-        extension.iridescence_map_uv_set,
-    );
-    context.bind_texture(
-        "u_flightIridescenceThicknessMap",
-        "u_flightIridescenceThicknessMapUvSet",
-        "u_flightIridescenceThicknessMapTransform",
-        extension.iridescence_thickness_map.as_ref(),
-        extension.iridescence_thickness_map_uv_set,
-    );
-}
-
 fn create_iridescence_pbr_gl_extension_shader_contribution(
     context: &dyn GlPbrExtensionShaderContext,
     value: &PbrExtension,
@@ -99,8 +57,50 @@ vec3 flightIridescentFresnel(float cosTheta, vec3 baseF0, float thicknessNm, flo
     };
 }
 
+fn bind_iridescence_pbr_gl_extension(
+    context: &mut dyn GlPbrExtensionBindContext,
+    value: &PbrExtension,
+) {
+    let PbrExtension::Iridescence(extension) = value else {
+        return;
+    };
+    context.set_float("u_flightIridescence", extension.iridescence);
+    context.set_float("u_flightIridescenceIor", extension.iridescence_ior);
+    context.set_float(
+        "u_flightIridescenceThicknessMin",
+        extension.iridescence_thickness_min,
+    );
+    context.set_float(
+        "u_flightIridescenceThicknessMax",
+        extension.iridescence_thickness_max,
+    );
+    context.bind_texture(
+        "u_flightIridescenceMap",
+        "u_flightIridescenceMapUvSet",
+        "u_flightIridescenceMapTransform",
+        extension.iridescence_map.as_ref(),
+        extension.iridescence_map_uv_set,
+    );
+    context.bind_texture(
+        "u_flightIridescenceThicknessMap",
+        "u_flightIridescenceThicknessMapUvSet",
+        "u_flightIridescenceThicknessMapTransform",
+        extension.iridescence_thickness_map.as_ref(),
+        extension.iridescence_thickness_map_uv_set,
+    );
+}
+
 // Every iridescence extension value is supported; the variant check keeps a kind registered against the
 // wrong closed variant a plain-data unsupported-extension issue instead of a mis-bound draw.
 fn is_iridescence_pbr_gl_extension_supported(value: &PbrExtension) -> bool {
     return matches!(value, PbrExtension::Iridescence(_));
+}
+
+// Registers the iridescence GL realization for IRIDESCENCE_PBR_EXTENSION_KIND on this state.
+pub fn register_gl_iridescence_pbr_extension(state: &mut GlRenderState) {
+    register_gl_pbr_extension(
+        state,
+        IRIDESCENCE_PBR_EXTENSION_KIND.to_string(),
+        &IRIDESCENCE_PBR_GL_EXTENSION,
+    );
 }

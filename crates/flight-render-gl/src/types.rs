@@ -1167,11 +1167,11 @@ impl GlRenderTarget for GlTextureRenderTarget {
     fn color_attachments(&self) -> u32 {
         return self.axes.color_attachments;
     }
-    fn color_texture(&self) -> Option<NativeTexture> {
-        return Some(self.texture);
-    }
     fn color_space(&self) -> RenderTargetColorSpace {
         return self.axes.color_space;
+    }
+    fn color_texture(&self) -> Option<NativeTexture> {
+        return Some(self.texture);
     }
     fn framebuffer(&self) -> Option<NativeFramebuffer> {
         return Some(self.framebuffer);

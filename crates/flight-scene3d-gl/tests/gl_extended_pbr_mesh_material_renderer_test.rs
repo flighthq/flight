@@ -6,7 +6,7 @@ use flight_materials::anisotropy_pbr_extension::create_anisotropy_pbr_extension;
 use flight_materials::clearcoat_pbr_extension::create_clearcoat_pbr_extension;
 use flight_materials::extended_pbr_material::create_extended_pbr_material;
 use flight_materials::{EXTENDED_PBR_MATERIAL_KIND, PbrExtension};
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 
 use crate::gl_test_helper::{
     calls_with, count_calls, make_gl_scene3d_state, shader_sources, uniform_location_of,

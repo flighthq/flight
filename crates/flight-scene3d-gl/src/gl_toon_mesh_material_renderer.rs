@@ -35,54 +35,6 @@ pub static GL_TOON_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer = GlMeshMateri
     draw: draw_gl_toon_mesh_material,
 };
 
-// Registers the built-in Toon renderer for ToonMaterialKind on this state. Opt-in (no top-level side
-// effect); call once per GlRenderState before drawScene3D so meshes with ToonMaterials draw.
-pub fn register_gl_toon_material(state: &mut GlRenderState) {
-    register_gl_mesh_material_renderer(state, TOON_MATERIAL_KIND.to_string(), &GL_TOON_MESH_MATERIAL_RENDERER);
-}
-
-fn bind_gl_toon_mesh_material(
-    state: &mut GlRenderState,
-    material: Option<&dyn Material3D>,
-    lights: &Scene3DLightBlock,
-    camera: &Camera3D,
-) {
-    let toon = material.and_then(|material| material.as_any().downcast_ref::<ToonMaterial>());
-    let key = define_key_for_material(state, toon);
-    let program = ensure_gl_toon_program(state, &key);
-    let active: GlMeshProgramRef = program.clone();
-    begin_gl_mesh_draw(state, &active, toon.is_some_and(|toon| toon.double_sided));
-
-    set_gl_mesh_view_projection(state, program.loc_view_projection, camera);
-    set_gl_mesh_camera_position(&state.gl, program.loc_camera_position, camera);
-    bind_gl_mesh_light_block(state, &program, lights);
-    bind_gl_toon_material_uniforms(state, &program, toon);
-}
-
-// The feature define key for a Toon material: which optional textures are present and whether alpha-
-// mask cutoff is active. Drives both the program-cache variant and the bound textures. The ramp
-// switches the fragment quantizer from a stepped floor to a 1D ramp lookup.
-fn define_key_for_material(state: &mut GlRenderState, material: Option<&ToonMaterial>) -> GlToonDefineKey {
-    let mut resolves = |slot: Option<&TextureSlot>| -> bool {
-        return slot
-            .and_then(|slot| slot.as_ref())
-            .is_some_and(|texture| resolve_gl_texture(state, &*texture.read().unwrap(), None, None).is_some());
-    };
-    let has_base_color_map = resolves(material.map(|material| &material.base_color_map));
-    let has_ramp = resolves(material.map(|material| &material.ramp));
-    let base_color_map = material
-        .and_then(|material| material.base_color_map.as_ref())
-        .map(|texture| texture.read().unwrap());
-    return GlToonDefineKey {
-        alpha_mask_enabled: material.is_some_and(|material| material.alpha_mode == MaterialAlphaMode::Mask),
-        has_base_color_map,
-        has_instances: None,
-        has_ramp,
-        has_skin: None,
-        has_uv_transform: has_gl_uv_transform(base_color_map.as_deref().map(|texture| texture as &dyn TextureVariant)),
-    };
-}
-
 fn bind_gl_toon_material_uniforms(
     state: &mut GlRenderState,
     program: &GlToonProgram,
@@ -141,9 +93,57 @@ fn bind_gl_toon_material_uniforms(
     );
 }
 
+fn bind_gl_toon_mesh_material(
+    state: &mut GlRenderState,
+    material: Option<&dyn Material3D>,
+    lights: &Scene3DLightBlock,
+    camera: &Camera3D,
+) {
+    let toon = material.and_then(|material| material.as_any().downcast_ref::<ToonMaterial>());
+    let key = define_key_for_material(state, toon);
+    let program = ensure_gl_toon_program(state, &key);
+    let active: GlMeshProgramRef = program.clone();
+    begin_gl_mesh_draw(state, &active, toon.is_some_and(|toon| toon.double_sided));
+
+    set_gl_mesh_view_projection(state, program.loc_view_projection, camera);
+    set_gl_mesh_camera_position(&state.gl, program.loc_camera_position, camera);
+    bind_gl_mesh_light_block(state, &program, lights);
+    bind_gl_toon_material_uniforms(state, &program, toon);
+}
+
+// The feature define key for a Toon material: which optional textures are present and whether alpha-
+// mask cutoff is active. Drives both the program-cache variant and the bound textures. The ramp
+// switches the fragment quantizer from a stepped floor to a 1D ramp lookup.
+fn define_key_for_material(state: &mut GlRenderState, material: Option<&ToonMaterial>) -> GlToonDefineKey {
+    let mut resolves = |slot: Option<&TextureSlot>| -> bool {
+        return slot
+            .and_then(|slot| slot.as_ref())
+            .is_some_and(|texture| resolve_gl_texture(state, &*texture.read().unwrap(), None, None).is_some());
+    };
+    let has_base_color_map = resolves(material.map(|material| &material.base_color_map));
+    let has_ramp = resolves(material.map(|material| &material.ramp));
+    let base_color_map = material
+        .and_then(|material| material.base_color_map.as_ref())
+        .map(|texture| texture.read().unwrap());
+    return GlToonDefineKey {
+        alpha_mask_enabled: material.is_some_and(|material| material.alpha_mode == MaterialAlphaMode::Mask),
+        has_base_color_map,
+        has_instances: None,
+        has_ramp,
+        has_skin: None,
+        has_uv_transform: has_gl_uv_transform(base_color_map.as_deref().map(|texture| texture as &dyn TextureVariant)),
+    };
+}
+
 fn draw_gl_toon_mesh_material(state: &mut GlRenderState, proxy: &Scene3DRenderProxy, geometry: &MeshGeometry) {
     let Some(program) = get_gl_scene3d_runtime(state).active_mesh_program.clone() else {
         return;
     };
     draw_gl_mesh_subset(state, program.mesh_program(), proxy, geometry);
+}
+
+// Registers the built-in Toon renderer for ToonMaterialKind on this state. Opt-in (no top-level side
+// effect); call once per GlRenderState before drawScene3D so meshes with ToonMaterials draw.
+pub fn register_gl_toon_material(state: &mut GlRenderState) {
+    register_gl_mesh_material_renderer(state, TOON_MATERIAL_KIND.to_string(), &GL_TOON_MESH_MATERIAL_RENDERER);
 }

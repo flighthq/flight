@@ -43,6 +43,23 @@ pub fn bind_gl_matcap_surface(
     }
 }
 
+fn build_define_source(key: &GlMatcapDefineKey) -> String {
+    let mut defines = String::from("#version 300 es\n");
+    if key.alpha_mask_enabled {
+        defines += "#define ALPHA_MASK\n";
+    }
+    if key.has_matcap {
+        defines += "#define HAS_MATCAP\n";
+    }
+    if key.has_skin == Some(true) {
+        defines += "#define HAS_SKIN\n";
+    }
+    if key.has_instances == Some(true) {
+        defines += "#define HAS_INSTANCES\n";
+    }
+    return defines;
+}
+
 // A short, stable, order-independent string identity for a matcap define key, used as the program-
 // cache key. Two keys with the same flags produce the same string and so share a compiled program.
 pub fn build_gl_matcap_define_key(key: &GlMatcapDefineKey) -> String {
@@ -137,23 +154,6 @@ pub fn get_gl_matcap_vertex_source_for_key(
         ""
     };
     return build_define_source(key) + skin + instances + MATCAP_VERTEX_BODY;
-}
-
-fn build_define_source(key: &GlMatcapDefineKey) -> String {
-    let mut defines = String::from("#version 300 es\n");
-    if key.alpha_mask_enabled {
-        defines += "#define ALPHA_MASK\n";
-    }
-    if key.has_matcap {
-        defines += "#define HAS_MATCAP\n";
-    }
-    if key.has_skin == Some(true) {
-        defines += "#define HAS_SKIN\n";
-    }
-    if key.has_instances == Some(true) {
-        defines += "#define HAS_INSTANCES\n";
-    }
-    return defines;
 }
 
 macro_rules! matcap_vertex_body_glsl {
@@ -252,4 +252,3 @@ void main() {
     };
 }
 const MATCAP_FRAGMENT_BODY: &str = matcap_fragment_body_glsl!();
-

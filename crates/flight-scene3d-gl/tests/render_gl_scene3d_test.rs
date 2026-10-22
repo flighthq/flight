@@ -17,7 +17,7 @@ use flight_scene3d::{
     create_instanced_mesh, set_instanced_mesh_instance_color, set_instanced_mesh_instance_count,
     set_instanced_mesh_instance_matrix,
 };
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use flight_texture::RenderTargetColorSpace;
 use glow::HasContext;
 

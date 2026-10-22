@@ -7,7 +7,7 @@ use flight_materials::pbr_materials::create_specular_glossiness_pbr_material;
 use flight_materials::{Material3DRef, SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND};
 use flight_meshgeometry::create_box_mesh_geometry;
 use flight_render::Scene3DRenderProxy;
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 
 use crate::gl_test_helper::{count_calls, make_gl_scene3d_state};
 

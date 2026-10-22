@@ -8,6 +8,41 @@ use flight_render_gl::GlRenderState;
 use flight_requirement::RequirementFacet;
 use flight_scene3d::Scene3DKindUsage;
 
+fn create_shortfall_entry(
+    catalog: Option<&SceneCoverageCatalog>,
+    fallback: bool,
+    facet: RequirementFacet,
+    kind: &Kind,
+    registry: RenderRegistryTable,
+) -> SceneCoverageEntry {
+    let Some(registration) = find_catalog_registration(catalog, kind, registry) else {
+        return SceneCoverageEntry {
+            coverage: if fallback {
+                SceneCoverage::FallbackUnavailable
+            } else {
+                SceneCoverage::Unavailable
+            },
+            facet,
+            kind: kind.clone(),
+            registry,
+            module: None,
+            registrar: None,
+        };
+    };
+    return SceneCoverageEntry {
+        coverage: if fallback {
+            SceneCoverage::FallbackRemediable
+        } else {
+            SceneCoverage::Unregistered
+        },
+        facet,
+        kind: kind.clone(),
+        registry,
+        module: Some(registration.module.clone()),
+        registrar: Some(registration.registrar.clone()),
+    };
+}
+
 // The single implementation both tiers read, so the boolean can never disagree with the explanation.
 // `found` counts only real shortfalls, so appending satisfied entries to `out` never flips the
 // predicate. Appends to `out` when it is present; returns whether any shortfall was found.
@@ -112,41 +147,6 @@ fn collect_gl_scene3d_coverage_gaps(
     // usage.node_kinds is deliberately NOT checked: the 3D pipeline collects meshes structurally rather
     // than through the node-renderer registry, so no 3D node kind is registered against anything.
     return found;
-}
-
-fn create_shortfall_entry(
-    catalog: Option<&SceneCoverageCatalog>,
-    fallback: bool,
-    facet: RequirementFacet,
-    kind: &Kind,
-    registry: RenderRegistryTable,
-) -> SceneCoverageEntry {
-    let Some(registration) = find_catalog_registration(catalog, kind, registry) else {
-        return SceneCoverageEntry {
-            coverage: if fallback {
-                SceneCoverage::FallbackUnavailable
-            } else {
-                SceneCoverage::Unavailable
-            },
-            facet,
-            kind: kind.clone(),
-            registry,
-            module: None,
-            registrar: None,
-        };
-    };
-    return SceneCoverageEntry {
-        coverage: if fallback {
-            SceneCoverage::FallbackRemediable
-        } else {
-            SceneCoverage::Unregistered
-        },
-        facet,
-        kind: kind.clone(),
-        registry,
-        module: Some(registration.module.clone()),
-        registrar: Some(registration.registrar.clone()),
-    };
 }
 
 // Clears `out`, then reports EVERY kind in `usage` with how well this state is wired for it —

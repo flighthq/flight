@@ -16,40 +16,6 @@ pub static SPECULAR_PBR_GL_EXTENSION: GlPbrExtensionRegistration = GlPbrExtensio
     is_supported: is_specular_pbr_gl_extension_supported,
 };
 
-// Registers the specular GL realization for SPECULAR_PBR_EXTENSION_KIND on this state.
-pub fn register_gl_specular_pbr_extension(state: &mut GlRenderState) {
-    register_gl_pbr_extension(
-        state,
-        SPECULAR_PBR_EXTENSION_KIND.to_string(),
-        &SPECULAR_PBR_GL_EXTENSION,
-    );
-}
-
-fn bind_specular_pbr_gl_extension(
-    context: &mut dyn GlPbrExtensionBindContext,
-    value: &PbrExtension,
-) {
-    let PbrExtension::Specular(extension) = value else {
-        return;
-    };
-    context.set_float("u_flightSpecular", extension.specular);
-    context.set_linear_color("u_flightSpecularColor", extension.specular_color);
-    context.bind_texture(
-        "u_flightSpecularMap",
-        "u_flightSpecularMapUvSet",
-        "u_flightSpecularMapTransform",
-        extension.specular_map.as_ref(),
-        extension.specular_map_uv_set,
-    );
-    context.bind_texture(
-        "u_flightSpecularColorMap",
-        "u_flightSpecularColorMapUvSet",
-        "u_flightSpecularColorMapTransform",
-        extension.specular_color_map.as_ref(),
-        extension.specular_color_map_uv_set,
-    );
-}
-
 fn create_specular_pbr_gl_extension_shader_contribution(
     context: &dyn GlPbrExtensionShaderContext,
     value: &PbrExtension,
@@ -121,8 +87,42 @@ uniform vec3 u_flightSpecularColor;
     };
 }
 
+fn bind_specular_pbr_gl_extension(
+    context: &mut dyn GlPbrExtensionBindContext,
+    value: &PbrExtension,
+) {
+    let PbrExtension::Specular(extension) = value else {
+        return;
+    };
+    context.set_float("u_flightSpecular", extension.specular);
+    context.set_linear_color("u_flightSpecularColor", extension.specular_color);
+    context.bind_texture(
+        "u_flightSpecularMap",
+        "u_flightSpecularMapUvSet",
+        "u_flightSpecularMapTransform",
+        extension.specular_map.as_ref(),
+        extension.specular_map_uv_set,
+    );
+    context.bind_texture(
+        "u_flightSpecularColorMap",
+        "u_flightSpecularColorMapUvSet",
+        "u_flightSpecularColorMapTransform",
+        extension.specular_color_map.as_ref(),
+        extension.specular_color_map_uv_set,
+    );
+}
+
 // Every specular extension value is supported; the variant check keeps a kind registered against the
 // wrong closed variant a plain-data unsupported-extension issue instead of a mis-bound draw.
 fn is_specular_pbr_gl_extension_supported(value: &PbrExtension) -> bool {
     return matches!(value, PbrExtension::Specular(_));
+}
+
+// Registers the specular GL realization for SPECULAR_PBR_EXTENSION_KIND on this state.
+pub fn register_gl_specular_pbr_extension(state: &mut GlRenderState) {
+    register_gl_pbr_extension(
+        state,
+        SPECULAR_PBR_EXTENSION_KIND.to_string(),
+        &SPECULAR_PBR_GL_EXTENSION,
+    );
 }

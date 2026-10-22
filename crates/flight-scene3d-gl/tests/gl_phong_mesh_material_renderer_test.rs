@@ -7,7 +7,7 @@ use flight_materials::PHONG_MATERIAL_KIND;
 use flight_materials::classic_materials::create_phong_material;
 use flight_meshgeometry::{MeshGeometry, create_box_mesh_geometry};
 use flight_render::Scene3DRenderProxy;
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 
 use crate::gl_test_helper::{calls_with, count_calls, make_gl_scene3d_state};
 

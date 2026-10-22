@@ -5,7 +5,7 @@ use flight_render::{RenderTargetDepth, RenderTargetDescriptor, Scene3DRenderProx
 use flight_render_gl::{
     GlMeshMaterialRenderer, GlRenderState, GlTextureRenderTarget, create_gl_texture_render_target,
 };
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use flight_texture::RenderTargetColorSpace;
 
 use crate::gl_test_helper::{

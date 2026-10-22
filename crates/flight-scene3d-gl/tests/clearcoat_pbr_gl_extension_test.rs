@@ -4,7 +4,7 @@ use flight_entity::Ref;
 use flight_materials::clearcoat_pbr_extension::create_clearcoat_pbr_extension;
 use flight_materials::{CLEARCOAT_PBR_EXTENSION_KIND, PbrExtension};
 use flight_render_gl::GlPbrExtensionShaderContext;
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use flight_texture::{Texture, create_texture_2d};
 
 use crate::gl_test_helper::make_gl_scene3d_state;

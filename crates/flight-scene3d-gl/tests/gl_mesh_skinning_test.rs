@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use flight_materials::contract::create_standard_pbr_material;
 use flight_meshgeometry::create_box_mesh_geometry;
 use flight_render::Scene3DRenderProxy;
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 
 use crate::gl_test_helper::{
     calls_with, make_gl_scene3d_state, make_test_mesh_program, make_test_proxy, material_ref,

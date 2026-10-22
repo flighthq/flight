@@ -3,7 +3,7 @@ use flight_render_gl::{
     GlColorAdjustmentData, GlColorAdjustmentMaterialFeature, GlPbrExtensionShaderContribution,
     GlRenderState, GlRenderStateRuntime, GlShapeMesh,
 };
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 
 use crate::gl_test_helper::test_default;
 

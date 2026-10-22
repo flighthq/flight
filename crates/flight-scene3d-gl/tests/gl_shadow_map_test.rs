@@ -20,7 +20,7 @@ use flight_scene3d::{
     Skin, create_instanced_mesh, set_instanced_mesh_instance_count,
     set_instanced_mesh_instance_matrix, update_mesh_morph,
 };
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use flight_skeleton3d::{Skeleton3DGuardState, create_skeleton3d};
 
 use crate::gl_test_helper::{

@@ -27,17 +27,6 @@ pub static GL_WIREFRAME_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer = GlMeshM
     draw: draw_gl_wireframe_mesh_material,
 };
 
-// Registers the built-in Wireframe renderer for WireframeMaterialKind on this state. Opt-in (no
-// top-level side effect); call once per GlRenderState before drawScene3D so meshes with
-// WireframeMaterials draw.
-pub fn register_gl_wireframe_material(state: &mut GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        WIREFRAME_MATERIAL_KIND.to_string(),
-        &GL_WIREFRAME_MESH_MATERIAL_RENDERER,
-    );
-}
-
 fn bind_gl_wireframe_mesh_material(
     state: &mut GlRenderState,
     material: Option<&dyn Material3D>,
@@ -108,4 +97,15 @@ fn draw_gl_wireframe_mesh_material(state: &mut GlRenderState, proxy: &Scene3DRen
             (subset.index_offset * 2 * element_size) as i32,
         );
     }
+}
+
+// Registers the built-in Wireframe renderer for WireframeMaterialKind on this state. Opt-in (no
+// top-level side effect); call once per GlRenderState before drawScene3D so meshes with
+// WireframeMaterials draw.
+pub fn register_gl_wireframe_material(state: &mut GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        WIREFRAME_MATERIAL_KIND.to_string(),
+        &GL_WIREFRAME_MESH_MATERIAL_RENDERER,
+    );
 }

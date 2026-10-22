@@ -5,7 +5,7 @@ use flight_geometry::{create_matrix3, create_matrix4};
 use flight_lighting::Scene3DLightBlock;
 use flight_meshgeometry::{MeshGeometry, create_box_mesh_geometry};
 use flight_render::Scene3DRenderProxy;
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use flight_materials::DEPTH_MATERIAL_KIND;
 use flight_materials::unlit_materials::create_depth_material;
 

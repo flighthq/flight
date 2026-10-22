@@ -11,7 +11,7 @@ use flight_render_gl::{
     GlPbrExtensionShaderContribution, GlRenderState, GlRenderTargetSnapshot, GlTextureRealization,
     register_gl_texture_resolver,
 };
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 use flight_texture::{
     Texture, TextureColorSpace, TextureSourceRef, TextureVariant, create_texture_2d,
     get_texture_uv_matrix,

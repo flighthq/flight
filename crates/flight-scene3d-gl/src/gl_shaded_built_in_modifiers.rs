@@ -121,21 +121,6 @@ pub static VERTEX_DISPLACE_GL_MODIFIER_SNIPPET: GlModifierSnippet = GlModifierSn
     declarations: Some(declare_vertex_displace_gl_modifier),
 };
 
-// Registers the built-in GL modifier snippets on this state. Opt-in (no top-level side effect) and
-// separate from register_gl_shaded_material so a plain ShadedMaterial pays nothing for modifier
-// snippets it does not use — a caller registers this once alongside any vendor-prefixed snippets
-// before drawing a ShadedMaterial that carries modifiers.
-pub fn register_built_in_gl_modifier_snippets(state: &mut GlRenderState) {
-    register_gl_modifier_snippet(state, &ANIMATED_NORMAL_GL_MODIFIER_SNIPPET);
-    register_gl_modifier_snippet(state, &DISSOLVE_GL_MODIFIER_SNIPPET);
-    register_gl_modifier_snippet(state, &EMISSIVE_GL_MODIFIER_SNIPPET);
-    register_gl_modifier_snippet(state, &ENV_REFLECT_GL_MODIFIER_SNIPPET);
-    register_gl_modifier_snippet(state, &FOG_GL_MODIFIER_SNIPPET);
-    register_gl_modifier_snippet(state, &RIM_GL_MODIFIER_SNIPPET);
-    register_gl_modifier_snippet(state, &TOON_GL_MODIFIER_SNIPPET);
-    register_gl_modifier_snippet(state, &VERTEX_DISPLACE_GL_MODIFIER_SNIPPET);
-}
-
 fn bind_animated_normal_gl_modifier(modifier: &dyn Modifier, context: &mut GlModifierBindContext<'_>) {
     let Some(animated) = (modifier as &dyn Any).downcast_ref::<AnimatedNormalModifier>() else {
         return;
@@ -636,4 +621,19 @@ fn get_gl_modifier_uniform_location(
 
 fn is_emissive_gated(modifier: &EmissiveModifier) -> bool {
     return modifier.facing != EmissiveModifierFacing::Ignore;
+}
+
+// Registers the built-in GL modifier snippets on this state. Opt-in (no top-level side effect) and
+// separate from register_gl_shaded_material so a plain ShadedMaterial pays nothing for modifier
+// snippets it does not use — a caller registers this once alongside any vendor-prefixed snippets
+// before drawing a ShadedMaterial that carries modifiers.
+pub fn register_built_in_gl_modifier_snippets(state: &mut GlRenderState) {
+    register_gl_modifier_snippet(state, &ANIMATED_NORMAL_GL_MODIFIER_SNIPPET);
+    register_gl_modifier_snippet(state, &DISSOLVE_GL_MODIFIER_SNIPPET);
+    register_gl_modifier_snippet(state, &EMISSIVE_GL_MODIFIER_SNIPPET);
+    register_gl_modifier_snippet(state, &ENV_REFLECT_GL_MODIFIER_SNIPPET);
+    register_gl_modifier_snippet(state, &FOG_GL_MODIFIER_SNIPPET);
+    register_gl_modifier_snippet(state, &RIM_GL_MODIFIER_SNIPPET);
+    register_gl_modifier_snippet(state, &TOON_GL_MODIFIER_SNIPPET);
+    register_gl_modifier_snippet(state, &VERTEX_DISPLACE_GL_MODIFIER_SNIPPET);
 }

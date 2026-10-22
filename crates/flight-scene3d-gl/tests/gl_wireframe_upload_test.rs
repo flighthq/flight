@@ -4,7 +4,7 @@ use flight_meshgeometry::{
     IndexBuffer, IndexBufferU16, MeshGeometryOptions, VertexAttribute, VertexAttributeLayout,
     VertexFormat, VertexSemantic, create_box_mesh_geometry, create_mesh_geometry,
 };
-use flight_scene3d_gl::*;
+use flight_scene3d_gl::contract::*;
 
 use crate::gl_test_helper::{calls_with, count_calls, make_gl_scene3d_state};
 

@@ -2218,12 +2218,12 @@ pub fn make_derived_gl_scene3d_state(
 
 /// TS `makeProgram()` in the mesh-program tests: a bare GlMeshProgram over a freshly created mock program,
 /// with the model / normal-matrix / view-projection locations resolved and every lazy location unresolved.
-pub fn make_test_mesh_program(state: &GlRenderState) -> flight_scene3d_gl::GlMeshProgram {
+pub fn make_test_mesh_program(state: &GlRenderState) -> flight_scene3d_gl::contract::GlMeshProgram {
     use glow::HasContext;
     // SAFETY: the mock context allocates names on the test thread.
     let program = unsafe { state.gl.create_program() }.unwrap();
-    let lazy = flight_scene3d_gl::GlLazyUniformLocation::default;
-    return flight_scene3d_gl::GlMeshProgram {
+    let lazy = flight_scene3d_gl::contract::GlLazyUniformLocation::default;
+    return flight_scene3d_gl::contract::GlMeshProgram {
         loc_color_scale: lazy(),
         loc_color_bias: lazy(),
         loc_color_matrix0: lazy(),
