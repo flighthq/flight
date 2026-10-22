@@ -257,6 +257,7 @@ fn create_wgpu_render_state_runtime_internal(
         current_render_target: None,
         pass_stack: Vec::new(),
         destroyed: false,
+        effect_runtime: None,
     };
 }
 

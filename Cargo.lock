@@ -426,6 +426,46 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-effects-gl"
+version = "0.6.0"
+dependencies = [
+ "flight-adjustments",
+ "flight-bitmap",
+ "flight-color",
+ "flight-effects",
+ "flight-entity",
+ "flight-host",
+ "flight-image",
+ "flight-log",
+ "flight-regexp",
+ "flight-registry",
+ "flight-render",
+ "flight-render-gl",
+ "flight-texture",
+ "flight-texture-formats",
+ "glow",
+]
+
+[[package]]
+name = "flight-effects-wgpu"
+version = "0.6.0"
+dependencies = [
+ "flight-adjustments",
+ "flight-bitmap",
+ "flight-color",
+ "flight-effects",
+ "flight-entity",
+ "flight-host",
+ "flight-log",
+ "flight-registry",
+ "flight-render",
+ "flight-render-wgpu",
+ "flight-surface",
+ "flight-texture",
+ "wgpu",
+]
+
+[[package]]
 name = "flight-encoding"
 version = "0.6.0"
 dependencies = [
@@ -935,6 +975,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-physics3d-abi"
+version = "0.6.0"
+dependencies = [
+ "flight-collision",
+ "flight-entity",
+ "flight-physics3d",
+ "flight-spatial",
+]
+
+[[package]]
 name = "flight-picking"
 version = "0.6.0"
 dependencies = [
@@ -1067,6 +1117,7 @@ name = "flight-render-wgpu"
 version = "0.6.0"
 dependencies = [
  "flight-bitmap",
+ "flight-effects",
  "flight-entity",
  "flight-geometry",
  "flight-host",

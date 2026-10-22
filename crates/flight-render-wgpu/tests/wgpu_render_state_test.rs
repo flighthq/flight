@@ -35,6 +35,8 @@ fn empty_map<T>() -> KindMap<T> {
     };
 }
 
+fn acme_effect_runner(_context: &mut WgpuEffectContext<'_>, _effect: &dyn flight_effects::Effect) {}
+
 fn create_test_device() -> flight_host::WgpuDevice {
     return create_test_wgpu_device(create_test_native_device());
 }
@@ -451,7 +453,10 @@ mod create_wgpu_offscreen_render_state {
         let mut screen = create_wgpu_render_state_for_test(None);
         let color_adjustment_feature: UnknownValue = Arc::new("acme.ColorFeature");
         let color_adjustment_feature_guard: UnknownValue = Arc::new("acme.ColorFeatureGuard");
-        let effect: UnknownValue = Arc::new("acme.EffectRunner");
+        let effect = WgpuEffectRegistration {
+            is_resolvable: None,
+            runner: acme_effect_runner,
+        };
         register_node_renderer(&mut screen, "acme.Node".to_string(), &NODE_RENDERER);
         register_wgpu_quad_material_renderer(
             &mut screen,
@@ -474,7 +479,7 @@ mod create_wgpu_offscreen_render_state {
             registries.effects = Arc::new(with_kind_map_entry(
                 &registries.effects,
                 "acme.Effect".to_string(),
-                effect.clone(),
+                effect,
             ));
         }
         screen.render_registries_mut().render_root_guard = Some(root_guard);
@@ -607,7 +612,7 @@ mod create_wgpu_offscreen_render_state {
                 .effects
                 .entries
                 .get("acme.Effect")
-                .is_some_and(|value| Arc::ptr_eq(value, &effect))
+                .is_some_and(|value| std::ptr::fn_addr_eq(value.runner, effect.runner))
         );
         assert!(
             get_padding_resolver(&offscreen, "acme.Effect").is_some_and(|resolver| {
@@ -635,7 +640,10 @@ mod create_wgpu_offscreen_render_state {
             registries.effects = Arc::new(with_kind_map_entry(
                 &registries.effects,
                 "acme.OnlyOffscreen".to_string(),
-                only.clone(),
+                WgpuEffectRegistration {
+                    is_resolvable: None,
+                    runner: acme_effect_runner,
+                },
             ));
             registries.modifier_snippets = Arc::new(with_kind_map_entry(
                 &registries.modifier_snippets,

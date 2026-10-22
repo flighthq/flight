@@ -30,6 +30,7 @@ mod effect_defaults;
 mod effect_inputs;
 mod effect_interpolation;
 mod effect_padding;
+mod effect_state_options;
 mod effect_validation;
 mod enums;
 mod film_emulation_effect;

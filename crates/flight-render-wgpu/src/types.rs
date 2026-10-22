@@ -7,7 +7,8 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock, Weak};
 
-use flight_entity::{Entity, EntityRuntimeSlot, Kind, Ref, UnknownValue};
+use flight_effects::Effect;
+use flight_entity::{AnySlot, Entity, EntityRuntimeSlot, Kind, Ref, UnknownValue};
 use flight_host::{HostImageSource, HostSpawnCapability, WgpuDevice, WgpuSurfaceContext};
 use flight_materials::{BlendMode, ColorScaleBias, Material2D, MaterialData};
 use flight_platform::PlatformEndianness;
@@ -179,6 +180,9 @@ pub struct WgpuRenderState {
 /// The outcome of deriving an offscreen state from an existing one (TS
 /// `WgpuOffscreenRenderStateResult`): a dead device is an expected outcome, reported rather than
 /// thrown.
+// The ok arm carries the whole derived state by value, as the source returns it; boxing it would
+// change the result shape.
+#[allow(clippy::large_enum_variant)]
 pub enum WgpuOffscreenRenderStateResult {
     DeviceLost(WgpuOffscreenRenderStateDeviceLost),
     Ok(WgpuOffscreenRenderStateOk),
@@ -239,9 +243,11 @@ pub struct WgpuColorAdjustmentFlushU32 {
 
 /// Pure registration policy owned by one WebGPU render pipeline (TS `WgpuRenderRegistries`; the
 /// backend-neutral tables live in the state's `RenderRegistries`). Tables are persistent snapshots
-/// shared through `Arc`. Slots whose value types belong to backend packages that consume them
-/// (scene2d-wgpu's color-adjustment feature, scene3d-wgpu's passes and mesh renderers, effects,
-/// modifiers, skinning, velocity, the shape rasterizer) hold those packages' values opaquely.
+/// shared through `Arc`. Effect registrations are typed (`WgpuEffectRegistration`, the plugin
+/// interface this crate owns). Slots whose value types belong to backend packages that consume them
+/// and are not yet ported (scene2d-wgpu's color-adjustment feature, scene3d-wgpu's passes and mesh
+/// renderers, modifiers, skinning, velocity, the shape rasterizer) hold those packages' values
+/// opaquely.
 #[derive(Clone)]
 pub struct WgpuRenderRegistries {
     pub color_adjustment_feature: Option<UnknownValue>,
@@ -249,7 +255,7 @@ pub struct WgpuRenderRegistries {
     pub compressed_texture_decoder: Option<WgpuCompressedTextureDecoder>,
     pub compressed_texture_upload: Option<WgpuCompressedTextureUploader>,
     pub custom_material_shaders: Arc<KindMap<WgpuCustomMaterialShaderSource>>,
-    pub effects: Arc<KindMap<UnknownValue>>,
+    pub effects: Arc<KindMap<WgpuEffectRegistration>>,
     pub gpu_skinning: Option<UnknownValue>,
     pub material_renderers: Arc<KindMap<WgpuMaterialRenderer>>,
     pub modifier_snippets: Arc<KindMap<UnknownValue>>,
@@ -257,6 +263,36 @@ pub struct WgpuRenderRegistries {
     pub shape_rasterizer: Option<UnknownValue>,
     pub texture_resolvers: Arc<KindMap<WgpuTextureResolver>>,
     pub velocity_writers: Arc<KindMap<UnknownValue>>,
+}
+
+/// What a WebGPU effect runner is handed (TS `WgpuEffectContext`): the state, the input it reads,
+/// the output it writes, the pool it borrows intermediate targets from, and the scene G-buffer
+/// attachments (`None` when the scene did not produce them; depth- and velocity-dependent recipes
+/// then fall back to color-only paths). `source` and `dest` are distinct targets the pipeline
+/// ping-pongs between stages.
+pub struct WgpuEffectContext<'a> {
+    pub state: &'a mut WgpuRenderState,
+    pub source: Ref<WgpuTextureRenderTarget>,
+    pub dest: Ref<WgpuTextureRenderTarget>,
+    pub pool: &'a mut WgpuRenderTargetPool,
+    pub scene_depth_texture: Option<wgpu::Texture>,
+    pub scene_velocity_texture: Option<wgpu::Texture>,
+}
+
+/// The per-backend realization registered against an effect kind (TS `WgpuEffectRunner`): one
+/// function over targets.
+pub type WgpuEffectRunner = fn(&mut WgpuEffectContext<'_>, &dyn Effect);
+
+/// Whether one effect instance can resolve the external resources it names (TS
+/// `WgpuEffectResolver`).
+pub type WgpuEffectResolver = fn(&mut WgpuRenderState, &dyn Effect) -> bool;
+
+/// One effect-registry entry (TS `WgpuEffectRegistration`): the runner and its optional
+/// per-instance resolver.
+#[derive(Clone, Copy)]
+pub struct WgpuEffectRegistration {
+    pub is_resolvable: Option<WgpuEffectResolver>,
+    pub runner: WgpuEffectRunner,
 }
 
 /// One material-renderer table entry (TS `WgpuMeshMaterialRenderer | WgpuQuadMaterialRenderer`): a
@@ -577,7 +613,7 @@ pub struct WgpuRenderPassRecord {
 /// and the pass it is bound to.
 pub struct WgpuRenderPass<'a> {
     pub state: &'a mut WgpuRenderState,
-    pub(crate) index: usize,
+    pub index: usize,
 }
 
 // flight-lint: allow(f64) clear colors are wgpu::Color doubles
@@ -684,7 +720,7 @@ pub struct WgpuRenderStateOptions {
     pub compressed_texture_decoder: Option<WgpuCompressedTextureDecoder>,
     pub compressed_texture_upload: Option<WgpuCompressedTextureUploader>,
     pub custom_material_shaders: Option<KindMap<WgpuCustomMaterialShaderSource>>,
-    pub effects: Option<KindMap<UnknownValue>>,
+    pub effects: Option<KindMap<WgpuEffectRegistration>>,
     pub format: Option<wgpu::TextureFormat>,
     pub gpu_skinning: Option<UnknownValue>,
     pub image_smoothing_enabled: Option<bool>,
@@ -768,6 +804,10 @@ pub struct WgpuRenderStateRuntime {
     pub current_render_target: Option<WgpuRenderTarget>,
     pub pass_stack: Vec<WgpuRenderPassRecord>,
     pub destroyed: bool,
+    /// Per-state runtime owned by effects-wgpu (TS module WeakMaps keyed by the render state:
+    /// effect-pass infrastructure, pipeline caches, gradient ramps, blend backdrops and effect
+    /// guards). Opaque here; only effects-wgpu reads it (D15 slot).
+    pub effect_runtime: AnySlot,
 }
 
 /// Reports a mipmapped upload degraded to one level (TS `mipmapDegradedGuard`).

@@ -2,9 +2,10 @@
 //! Exact command recording for the device's queue writes and render-pass attachments (Principal
 //! cafc5d6b, item D). A noop or headless device validates every call but keeps no texture
 //! contents and runs no clears, so the values the source's tests read off GPU call arguments
-//! (clear colors, load choices, written bytes and layouts, scissor rects, submits) are reported here, at the
-//! real call sites, to an observer installed on the device. With no observer installed nothing is
-//! recorded or copied.
+//! (clear colors, load choices, written bytes and layouts, scissor rects, submits, and the bind
+//! groups, pipelines and draws the effect passes record) are reported here, at the real call sites,
+//! to an observer installed on the device. With no observer installed nothing is recorded or
+//! copied. Backend packages layered on this crate (effects-wgpu) report through the same hook.
 
 use std::sync::Arc;
 
@@ -14,8 +15,12 @@ use crate::types::*;
 #[derive(Clone, Debug)]
 pub enum WgpuCommandRecord {
     BeginRenderPass(WgpuRenderPassBeginRecord),
+    CreateBindGroup(WgpuBindGroupRecord),
     CreateRenderPipeline(WgpuRenderPipelineRecord),
     CreateSampler(WgpuSamplerRecord),
+    Draw(WgpuDrawRecord),
+    SetBindGroup(WgpuSetBindGroupRecord),
+    SetPipeline(wgpu::RenderPipeline),
     SetScissorRect(WgpuScissorRectRecord),
     // One queue submit, with the number of command buffers it carried.
     Submit(usize),
@@ -47,6 +52,28 @@ pub struct WgpuRenderPassBeginRecord {
     pub color_view: wgpu::TextureView,
     pub depth_clear: Option<f32>,
     pub stencil_clear: u32,
+}
+
+/// A bind group the backend created, with the texture views it binds, in entry order.
+#[derive(Clone, Debug, PartialEq)]
+pub struct WgpuBindGroupRecord {
+    pub bind_group: wgpu::BindGroup,
+    pub views: Vec<wgpu::TextureView>,
+}
+
+/// One draw recorded on an open pass.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct WgpuDrawRecord {
+    pub instance_count: u32,
+    pub vertex_count: u32,
+}
+
+/// A bind group set on an open pass at `index`, with its dynamic offsets.
+#[derive(Clone, Debug, PartialEq)]
+pub struct WgpuSetBindGroupRecord {
+    pub bind_group: wgpu::BindGroup,
+    pub index: u32,
+    pub offsets: Vec<u32>,
 }
 
 /// A sampler the backend created, with the descriptor it was built from.
@@ -101,8 +128,9 @@ pub struct WgpuTextureWriteRecord {
 /// Receives every command the device records while installed.
 pub type WgpuCommandObserver = Arc<dyn Fn(&WgpuCommandRecord) + Send + Sync>;
 
-// Reports a command to the installed observer, building the record only when one is installed.
-pub(crate) fn record_wgpu_command(
+/// Reports a command to the installed observer, building the record only when one is installed.
+// flight-lint: allow(conform-extra) Principal cafc5d6b (item D): backend packages layered on render-wgpu report their GPU calls through the same exact-recording hook
+pub fn record_wgpu_command(
     device: &WgpuNativeDevice,
     record: impl FnOnce() -> WgpuCommandRecord,
 ) {
@@ -121,8 +149,9 @@ pub fn set_wgpu_native_device_command_observer(
     *device.command_observer.write().unwrap() = observer;
 }
 
-// Writes bytes into a buffer through the queue and records the exact call.
-pub(crate) fn write_wgpu_buffer(
+/// Writes bytes into a buffer through the queue and records the exact call.
+// flight-lint: allow(conform-extra) Principal cafc5d6b (item D): the recorded queue write backend packages layered on render-wgpu share
+pub fn write_wgpu_buffer(
     device: &WgpuNativeDevice,
     buffer: &wgpu::Buffer,
     offset: u64,
@@ -138,8 +167,9 @@ pub(crate) fn write_wgpu_buffer(
     device.queue.write_buffer(buffer, offset, data);
 }
 
-// Writes texels through the queue and records the exact call.
-pub(crate) fn write_wgpu_texture(
+/// Writes texels through the queue and records the exact call.
+// flight-lint: allow(conform-extra) Principal cafc5d6b (item D): the recorded queue write backend packages layered on render-wgpu share
+pub fn write_wgpu_texture(
     device: &WgpuNativeDevice,
     destination: wgpu::TexelCopyTextureInfo<'_>,
     data: &[u8],

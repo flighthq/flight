@@ -41,11 +41,9 @@ pub async fn create_bitmap_from_wgpu_screen_render_target(
     };
 
     let mapped = map_wgpu_capture_buffer(&device, &buffer, timeout_ms);
-    if let Err(error) = mapped {
-        // A late resolution after the deadline leaves the buffer mapped; the timeout ends this
-        // capture rather than retrying against the same buffer.
-        return Err(error);
-    }
+    // A late resolution after the deadline leaves the buffer mapped; the timeout ends this
+    // capture rather than retrying against the same buffer.
+    mapped?;
 
     let mut bitmap = create_bitmap(width, height, None);
     {

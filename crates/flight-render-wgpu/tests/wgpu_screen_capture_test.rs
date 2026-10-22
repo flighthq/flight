@@ -84,8 +84,7 @@ mod create_bitmap_from_wgpu_screen_render_target {
         let state = create_wgpu_render_state_for_test(None);
         let screen = create_wgpu_screen_render_target_for_test(&state, None, false, 800, 600);
         let error = block_on(create_bitmap_from_wgpu_screen_render_target(&screen, None))
-            .err()
-            .expect("a rejection");
+            .expect_err("a rejection");
         assert!(
             error
                 .message
@@ -182,8 +181,7 @@ mod create_bitmap_from_wgpu_screen_render_target {
             &screen,
             Some(25),
         ))
-        .err()
-        .expect("a rejection");
+        .expect_err("a rejection");
         assert!(error.message.contains("did not map within 25ms"));
     }
 

@@ -122,9 +122,8 @@ mod submit_wgpu_frame {
     fn closes_a_pass_the_caller_left_open_rather_than_carrying_its_encoder_into_the_next_frame() {
         let mut state = create_wgpu_render_state_for_test(None);
         begin_wgpu_frame(&mut state);
-        let pass = begin_wgpu_screen_render_pass_for_test(&mut state, None, None, false);
         // The handle is abandoned without ending: the frame submit closes what it left open.
-        std::mem::forget(pass);
+        let _ = begin_wgpu_screen_render_pass_for_test(&mut state, None, None, false);
         assert!(get_wgpu_render_state_runtime(&state).render_pass.is_some());
 
         submit_wgpu_frame(&mut state);

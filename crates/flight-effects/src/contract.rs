@@ -32,6 +32,7 @@ pub use super::effect_defaults::*;
 pub use super::effect_inputs::*;
 pub use super::effect_interpolation::*;
 pub use super::effect_padding::*;
+pub use super::effect_state_options::*;
 pub use super::effect_validation::*;
 pub use super::enums::*;
 pub use super::film_emulation_effect::*;

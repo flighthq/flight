@@ -15,6 +15,7 @@ path = "tests/main.rs"
 
 [dependencies]
 flight-bitmap = { workspace = true }
+flight-effects = { workspace = true }
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
 flight-host = { workspace = true }
