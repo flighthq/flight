@@ -284,6 +284,8 @@ fn create_delay(
     });
 }
 
+// D23 KEEP: the optional seed derives a token bucket from its byte rate and the D5 clock;
+// initialization also retains the original options Ref for live per-item defaults.
 // flight-lint: allow(conform-params) D5 explicit host spawn/timer context replaces ambient Promise execution, Date.now and timers
 pub fn create_resource_loader(
     options: Option<&Ref<ResourceLoaderOptions>>,

@@ -12,6 +12,18 @@ Queue factories return generic `ResourceLoadResult<T>` values. `T` must be clone
 
 The curated root exposes the source public functions and types plus native method delegates. Initialization and eight exact closed-union string-table helpers are available through `contract` only. Sixteen inline tests compare every native constructor, initializer, and method with its free function. Deterministic host-driven tests cover all 91 source cases and additional identity, ordering, race, panic, and reentry boundaries. No source assertion is omitted.
 
+## Constructor decision (D23)
+
+`ResourceLoader` keeps its source optional options reference on `create_resource_loader` and
+`initialize_resource_loader`: initialization derives a token bucket from a positive byte rate, with
+initial tokens equal to its capacity and the initial refill instant read from the injected clock.
+It also snapshots concurrency, error policy and streaming state, while retaining the same options
+reference for live per-item defaults such as deduplication, retries and timeouts. This is derived
+construction; assigning fields after creating a default loader cannot reproduce that state or its
+clock read. The optional seed, source defaults, and required D5 executor/timer context remain unchanged.
+The initializer preserves the preallocated Entity's identity and private runtime; it is a construction
+seam, and the existing reset verb keeps its source semantics.
+
 ## Precision and lint inventory
 
 Source scalar bytes, weights, priorities, retry counts, and concurrency use `f32`, preserving negative, fractional, NaN, and infinite behavior. Actual item counts use `usize`. Host clock instants and scheduling durations retain the approved `f64` milliseconds. Ten item-scoped precision markers cover four public records, two private state records, and four scheduling helpers.

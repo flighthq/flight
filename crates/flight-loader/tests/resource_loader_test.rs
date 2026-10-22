@@ -543,6 +543,57 @@ mod get_resource_load_progress {
 mod initialize_resource_loader {
     use super::*;
     #[test]
+    fn derives_the_initial_budget_and_keeps_live_options_without_replacing_entity_runtime() {
+        let host = MockHost::new();
+        let mut context = context(&host);
+        let clock_reads = Arc::new(AtomicUsize::new(0));
+        let captured = clock_reads.clone();
+        let original_clock = context.timers.now_ms.clone();
+        context.timers.now_ms = Arc::new(move || {
+            captured.fetch_add(1, Ordering::SeqCst);
+            return original_clock();
+        });
+        let mut settings = options();
+        settings.dedupe = Some(true);
+        settings.max_bytes_per_second = Some(500.0);
+        settings.max_concurrent = Some(1.0);
+        let settings = Arc::new(RwLock::new(settings));
+        let mut out: ResourceLoader = flight_entity::allocate_entity();
+        let id = flight_entity::get_entity_id(&out);
+        flight_entity::set_entity_uid(&mut out, "loader-under-construction".to_string());
+        let runtime = flight_entity::get_entity_runtime(&out).unwrap() as *const _;
+        initialize_resource_loader(&mut out, Some(&settings), &context);
+        assert_eq!(clock_reads.load(Ordering::SeqCst), 1);
+        assert_eq!(flight_entity::get_entity_id(&out), id);
+        assert_eq!(
+            flight_entity::get_entity_uid(&mut out),
+            "loader-under-construction"
+        );
+        assert_eq!(
+            flight_entity::get_entity_runtime(&out).unwrap() as *const _,
+            runtime
+        );
+        let loader = Arc::new(RwLock::new(out));
+        settings.write().unwrap().dedupe = Some(false);
+        settings.write().unwrap().max_bytes_per_second = Some(0.0);
+        let mut first = descriptor("same", Arc::new(|_, _| Box::pin(async { Ok(1) })));
+        first.bytes_hint = Some(500.0);
+        let mut second = descriptor("same", Arc::new(|_, _| Box::pin(async { Ok(2) })));
+        second.bytes_hint = Some(500.0);
+        let first = queue_resource_load(&loader, ResourceLoadInput::Item(first));
+        let second = queue_resource_load(&loader, ResourceLoadInput::Item(second));
+        assert!(!Arc::ptr_eq(&first, &second));
+        assert_eq!(get_resource_load_counts(&loader).total_items, 2);
+        start_resource_load(&loader);
+        host.run_ready();
+        assert_eq!(handle_result(&first).unwrap().unwrap(), 1);
+        assert!(handle_result(&second).is_none());
+        host.advance(999.0);
+        assert!(handle_result(&second).is_none());
+        host.advance(1.0);
+        assert_eq!(handle_result(&second).unwrap().unwrap(), 2);
+    }
+    #[test]
     fn is_the_real_construction_initializer_and_reinitializes_existing_storage() {
         let host = MockHost::new();
         let mut out: ResourceLoader = flight_entity::allocate_entity();
