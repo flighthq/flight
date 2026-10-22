@@ -101,6 +101,7 @@ fn create_wgpu_scene3d_runtime_record(
         sort_key_counter: 0,
         sort_keys: HashMap::new(),
         time: 0.0,
+        wireframe_uploads: HashMap::new(),
     };
 }
 

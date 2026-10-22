@@ -416,6 +416,9 @@ pub struct WgpuScene3DRuntime {
     pub sort_key_counter: u32,
     pub sort_keys: HashMap<usize, u32>,
     pub time: f32,
+    // The wireframe family's per-state line-index uploads keyed by geometry entity id (TS: the
+    // module `wireframeUploads` WeakMap keyed by state).
+    pub wireframe_uploads: HashMap<u64, WgpuWireframeUpload>,
 }
 
 flight_entity::impl_entity!(WgpuMeshPipeline);
