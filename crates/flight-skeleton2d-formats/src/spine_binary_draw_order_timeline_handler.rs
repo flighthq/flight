@@ -35,9 +35,8 @@ fn consume_draw_order(context: &mut SpineBinaryTimelineContext<'_, '_>, retain: 
         if !retain {
             continue;
         }
-        if let Some(ordering) =
-            resolve_spine_draw_ordering(&moves, context.section.slots.len() as i32)
-        {
+        let mut ordering = Vec::new();
+        if resolve_spine_draw_ordering(&mut ordering, &moves, context.section.slots.len() as i32) {
             times.push(time);
             orderings.extend(ordering);
         } else {

@@ -29,7 +29,8 @@ fn add_rotate_channels(
     if frames.is_empty() {
         return;
     }
-    let times = dragon_bones_frame_times(&frames, frame_rate);
+    let mut times = Vec::new();
+    dragon_bones_frame_times(&mut times, &frames, frame_rate);
     let interpolation = dragon_bones_interpolation(&frames, diagnostics);
     let mut rotations = Vec::new();
     let mut shears = Vec::new();
@@ -106,7 +107,8 @@ fn add_vector_channel(
             ]
         })
         .collect();
-    let times = dragon_bones_frame_times(&frames, frame_rate);
+    let mut times = Vec::new();
+    dragon_bones_frame_times(&mut times, &frames, frame_rate);
     let interpolation = dragon_bones_interpolation(&frames, diagnostics);
     let segment_easings = build_dragon_bones_segment_easings(&frames);
     push_bone_channel(

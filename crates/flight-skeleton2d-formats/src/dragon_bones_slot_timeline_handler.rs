@@ -62,9 +62,11 @@ pub fn dragon_bones_slot_timeline_handler(
                     }
                 })
                 .collect();
+            let mut times = Vec::new();
+            dragon_bones_frame_times(&mut times, &display_frames, context.section.frame_rate);
             push_slot_channel(
                 &mut context.channels,
-                dragon_bones_frame_times(&display_frames, context.section.frame_rate),
+                times,
                 values,
                 1,
                 AnimationInterpolation::Step,
@@ -94,9 +96,11 @@ pub fn dragon_bones_slot_timeline_handler(
                 .collect();
             let interpolation = dragon_bones_interpolation(&color_frames, None);
             let segment_easings = build_dragon_bones_segment_easings(&color_frames);
+            let mut times = Vec::new();
+            dragon_bones_frame_times(&mut times, &color_frames, context.section.frame_rate);
             push_slot_channel(
                 &mut context.channels,
-                dragon_bones_frame_times(&color_frames, context.section.frame_rate),
+                times,
                 values,
                 4,
                 interpolation,

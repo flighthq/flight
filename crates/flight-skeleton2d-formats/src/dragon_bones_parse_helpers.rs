@@ -54,14 +54,16 @@ fn clamp_dragon_bones_unit(value: f32) -> f32 {
     return value.clamp(0.0, 1.0);
 }
 
-pub fn dragon_bones_frame_times(frames: &[JsonRecord], frame_rate: f32) -> Vec<f32> {
-    let mut times = Vec::with_capacity(frames.len());
+/// Writes frame times into reusable storage using the original elapsed-duration calculation.
+// flight-lint: allow(conform-params) Principal3139d09f D24: required first caller-owned frame-time output clears/fills retained capacity with original f32 evaluation order
+pub fn dragon_bones_frame_times(out: &mut Vec<f32>, frames: &[JsonRecord], frame_rate: f32) {
+    out.clear();
     let mut elapsed = 0.0;
     for frame in frames {
-        times.push(elapsed / frame_rate);
+        out.push(elapsed / frame_rate);
         elapsed += number_or(frame.get("duration"), 1.0).max(0.0);
     }
-    return times;
+    return;
 }
 
 pub fn dragon_bones_frames<T: Serialize>(

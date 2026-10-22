@@ -64,7 +64,7 @@ src/dragon_bones_handlers.rs: pub fn register_all_dragon_bones_handlers(registry
 src/dragon_bones_parse.rs: pub fn parse_dragon_bones_skeleton_with_registry(json: &str, registry: &DragonBonesRegistry, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Skeleton2DImport>
 src/dragon_bones_parse_helpers.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct DragonBonesBoneTransform { pub rotation: f32, pub scale_x: f32, pub scale_y: f32, pub shear_y: f32, pub x: f32, pub y: f32, }
 src/dragon_bones_parse_helpers.rs: pub fn build_dragon_bones_segment_easings(frames: &[JsonRecord],) -> Option<Vec<Option<flight_animation::EasingFn>>>
-src/dragon_bones_parse_helpers.rs: pub fn dragon_bones_frame_times(frames: &[JsonRecord], frame_rate: f32) -> Vec<f32>
+src/dragon_bones_parse_helpers.rs: pub fn dragon_bones_frame_times(out: &mut Vec<f32>, frames: &[JsonRecord], frame_rate: f32)
 src/dragon_bones_parse_helpers.rs: pub fn dragon_bones_frames<T: Serialize>(raw: Option<&T>, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Vec<JsonRecord>
 src/dragon_bones_parse_helpers.rs: pub fn dragon_bones_interpolation(frames: &[JsonRecord], diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> AnimationInterpolation
 src/dragon_bones_parse_helpers.rs: pub fn number_or<T: Serialize>(value: Option<&T>, fallback: f32) -> f32
@@ -201,7 +201,7 @@ src/spine_binary_versioned.rs: pub fn parse_spine_skeleton_binary_versioned(byte
 src/spine_binary_versioned.rs: pub fn register_spine_skeleton_binary_parser(version: &str, parser: SpineBinaryParser)
 src/spine_binary_versioned.rs: pub fn to_spine_binary_layout_key(version: &str) -> String
 src/spine_draw_order.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct SpineDrawOrderMove { pub offset: i32, pub slot_index: i32, }
-src/spine_draw_order.rs: pub fn resolve_spine_draw_ordering(moves: &[SpineDrawOrderMove], slot_count: i32,) -> Option<Vec<f32>>
+src/spine_draw_order.rs: pub fn resolve_spine_draw_ordering(out: &mut Vec<f32>, moves: &[SpineDrawOrderMove], slot_count: i32,) -> bool
 src/spine_json_animations_handler.rs: pub fn spine_json_animations_section_handler(context: &mut SpineJsonSectionContext<'_>)
 src/spine_json_bone_timeline_handler.rs: pub fn spine_json_bone_timeline_handler(context: &mut SpineJsonTimelineContext<'_, '_>, _anim_name: &str, anim_entry: &JsonRecord,)
 src/spine_json_bones_handler.rs: pub const SPINE_JSON_BONES_SECTION_READER: for<'a> fn(&mut SpineJsonSectionContext<'a>)

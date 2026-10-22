@@ -105,7 +105,11 @@ fn resolve_spine_draw_order(raw: Option<&Value>, slots: &[Slot2D]) -> Option<Vec
             });
         }
     }
-    return resolve_spine_draw_ordering(&moves, slots.len() as i32);
+    let mut ordering = Vec::new();
+    if !resolve_spine_draw_ordering(&mut ordering, &moves, slots.len() as i32) {
+        return None;
+    }
+    return Some(ordering);
 }
 
 fn resolve_spine_setup_attachments(

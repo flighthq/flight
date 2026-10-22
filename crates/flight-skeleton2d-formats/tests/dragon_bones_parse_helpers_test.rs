@@ -33,7 +33,41 @@ mod dragon_bones_frame_times {
     #[test]
     fn accumulates_frame_durations_on_the_fps_axis() {
         let frames = dragon_bones_frames(Some(&json!([{"duration":2},{"duration":3},{}])), None);
-        assert_eq!(dragon_bones_frame_times(&frames, 10.0), [0.0, 0.2, 0.5]);
+        let mut out = Vec::new();
+        dragon_bones_frame_times(&mut out, &frames, 10.0);
+        assert_eq!(out, [0.0, 0.2, 0.5]);
+    }
+
+    #[test]
+    fn clears_and_reuses_storage_without_changing_duration_or_zero_rate_semantics() {
+        let frames = dragon_bones_frames(
+            Some(&json!([{"duration":2},{"duration":-3},{},{"duration":0}])),
+            None,
+        );
+        let mut out = Vec::with_capacity(8);
+        out.push(99.0);
+        let pointer = out.as_ptr();
+        let capacity = out.capacity();
+        dragon_bones_frame_times(&mut out, &frames, 2.0);
+        assert_eq!(out, [0.0, 1.0, 1.0, 1.5]);
+        assert_eq!(out.as_ptr(), pointer);
+        assert_eq!(out.capacity(), capacity);
+
+        dragon_bones_frame_times(&mut out, &frames[..1], 4.0);
+        assert_eq!(out, [0.0]);
+        assert_eq!(out.as_ptr(), pointer);
+        assert_eq!(out.capacity(), capacity);
+        dragon_bones_frame_times(&mut out, &[], 4.0);
+        assert!(out.is_empty());
+        assert_eq!(out.as_ptr(), pointer);
+        assert_eq!(out.capacity(), capacity);
+
+        dragon_bones_frame_times(&mut out, &frames[..2], 0.0);
+        assert_eq!(out.len(), 2);
+        assert!(out[0].is_nan());
+        assert_eq!(out[1], f32::INFINITY);
+        assert_eq!(out.as_ptr(), pointer);
+        assert_eq!(out.capacity(), capacity);
     }
 }
 
