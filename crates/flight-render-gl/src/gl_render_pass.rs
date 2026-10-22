@@ -445,6 +445,7 @@ fn restore_gl_stencil(gl: &glow::Context, saved: Option<SavedGlStencil>) {
 fn snapshot_gl_render_target(target: &dyn GlRenderTarget) -> GlRenderTargetSnapshot {
     return GlRenderTargetSnapshot {
         color_attachments: target.color_attachments(),
+        color_texture: target.color_texture(),
         framebuffer: target.framebuffer(),
         height: target.height(),
         id: get_entity_id(target),

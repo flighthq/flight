@@ -69,6 +69,7 @@ mod pop_gl_render_state {
         };
         let target = GlRenderTargetSnapshot {
             color_attachments: 1,
+            color_texture: None,
             framebuffer: Some(framebuffer),
             height: 220,
             id: 91,

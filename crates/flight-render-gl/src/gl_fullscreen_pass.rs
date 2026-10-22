@@ -64,6 +64,7 @@ fn bind_gl_render_target(state: &GlRenderState, target: Option<&dyn GlRenderTarg
     });
     runtime.current_target = target.map(|target| GlRenderTargetSnapshot {
         color_attachments: target.color_attachments(),
+        color_texture: target.color_texture(),
         framebuffer,
         height: target.height(),
         id: flight_entity::get_entity_id(target),

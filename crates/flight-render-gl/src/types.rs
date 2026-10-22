@@ -719,6 +719,9 @@ pub trait GlRenderTarget: Entity {
     fn sample_count(&self) -> u32 {
         return 1;
     }
+    fn color_texture(&self) -> Option<NativeTexture> {
+        return None;
+    }
 }
 
 pub struct GlScreenRenderTarget {
@@ -858,6 +861,9 @@ pub struct RenderTargetClear {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct GlRenderTargetSnapshot {
     pub color_attachments: u32,
+    /// The target's primary color texture (TS `GlTextureRenderTarget.textures[0]`), so a sampler can
+    /// detect framebuffer feedback against the active draw attachment; None for screen/cube targets.
+    pub color_texture: Option<NativeTexture>,
     pub framebuffer: Option<NativeFramebuffer>,
     pub height: u32,
     pub id: u64,
@@ -1155,6 +1161,9 @@ impl GlRenderTarget for GlScreenRenderTarget {
 impl GlRenderTarget for GlTextureRenderTarget {
     fn color_attachments(&self) -> u32 {
         return self.axes.color_attachments;
+    }
+    fn color_texture(&self) -> Option<NativeTexture> {
+        return Some(self.texture);
     }
     fn color_space(&self) -> RenderTargetColorSpace {
         return self.axes.color_space;

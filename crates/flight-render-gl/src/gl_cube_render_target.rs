@@ -259,6 +259,7 @@ pub fn begin_gl_cube_render_face(
         runtime.current_framebuffer = Some(target.framebuffer);
         runtime.current_target = Some(GlRenderTargetSnapshot {
             color_attachments: 1,
+            color_texture: None,
             framebuffer: Some(target.framebuffer),
             height: target.size,
             id: flight_entity::get_entity_id(target),

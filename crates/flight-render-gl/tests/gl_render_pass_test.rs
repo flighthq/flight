@@ -153,6 +153,7 @@ mod resolve_gl_pass_viewport {
     fn target() -> GlRenderTargetSnapshot {
         return GlRenderTargetSnapshot {
             color_attachments: 1,
+            color_texture: None,
             framebuffer: None,
             height: 80,
             id: 1,
