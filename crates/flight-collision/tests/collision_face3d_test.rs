@@ -1,5 +1,4 @@
 use flight_collision::contract::*;
-use flight_collision::*;
 use std::sync::Arc;
 
 /// Every vertex of a face must share one coordinate along the face's axis.

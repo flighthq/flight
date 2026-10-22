@@ -1,4 +1,3 @@
-use std::sync::Arc;
 
 use flight_skeleton2d::contract::*;
 

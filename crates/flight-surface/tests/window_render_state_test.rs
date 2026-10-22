@@ -69,7 +69,7 @@ mod attach_window_render_state {
         let origin_calls = Arc::new(Mutex::new(Vec::new()));
         let active_calls = Arc::new(Mutex::new(Vec::new()));
         let origin = resize_capability(origin_calls.clone());
-        let active = resize_capability(active_calls.clone());
+        let _active = resize_capability(active_calls.clone());
         let win = create_app_window();
         {
             let mut guard = win.write().unwrap();

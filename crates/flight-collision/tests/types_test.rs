@@ -78,7 +78,6 @@ mod collision_collider_shape3d {
 }
 
 use flight_collision::contract::*;
-use flight_collision::*;
 
 mod get_collision_shape2d_kind {
     use super::*;

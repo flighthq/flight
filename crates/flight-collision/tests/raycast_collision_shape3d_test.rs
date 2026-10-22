@@ -1,5 +1,4 @@
 use flight_collision::contract::*;
-use flight_collision::*;
 
 mod create_collision_raycast_hit3d {
     use super::*;

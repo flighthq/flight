@@ -1,5 +1,4 @@
 use flight_collision::contract::*;
-use flight_collision::*;
 use std::collections::HashMap;
 
 mod pack_contact_feature_id {

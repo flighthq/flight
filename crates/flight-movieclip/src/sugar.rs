@@ -8,7 +8,7 @@ use crate::types::*;
 
 #[cfg(test)]
 mod sugar_tests {
-    use std::sync::{Arc, RwLock};
+    use std::sync::Arc;
 
     use flight_timeline::contract::{TimelineSourceRef, create_timeline, create_timeline_source};
 

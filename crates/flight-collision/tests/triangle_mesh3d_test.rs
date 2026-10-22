@@ -1,5 +1,4 @@
 use flight_collision::contract::*;
-use flight_collision::*;
 
 fn collision_registry3d_with_supports_and_faces() -> CollisionRegistry3D {
     let mut registry = crate::collision_registry3d_with_supports();
@@ -210,7 +209,6 @@ mod collide_collision_triangle_mesh3d {
 }
 
 mod create_collision_heightfield3d {
-    use super::*;
 
     #[test]
     fn creates_the_canonical_zero_field_entity() {
@@ -226,7 +224,6 @@ mod create_collision_heightfield3d {
 }
 
 mod create_collision_triangle_mesh3d {
-    use super::*;
 
     #[test]
     fn creates_the_canonical_zero_field_entity() {

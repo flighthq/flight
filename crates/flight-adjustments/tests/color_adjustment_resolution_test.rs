@@ -2,7 +2,6 @@ use std::sync::{Arc, RwLock};
 
 use flight_adjustments::contract::*;
 use flight_entity::Ref;
-use flight_materials::*;
 use flight_materials::color_scale_bias::create_color_scale_bias;
 
 fn to_adjustment_ref<T: Adjustment + 'static>(adjustment: T) -> Ref<dyn Adjustment> {

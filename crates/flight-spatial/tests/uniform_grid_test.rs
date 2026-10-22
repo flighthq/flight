@@ -116,7 +116,7 @@ mod brute_force_property_coverage {
             let mut grid = create_spatial_index_2d(Some(create_uniform_grid_spatial_backend_2d(cell_size)));
             let mut objects: HashMap<SpatialObjectId, SpatialAabb2D> = HashMap::new();
 
-            let mut random_bounds = |random: &mut dyn FnMut() -> f32, overflow: bool| -> SpatialAabb2D {
+            let random_bounds = |random: &mut dyn FnMut() -> f32, overflow: bool| -> SpatialAabb2D {
                 let min_x = (random() * 160.0).floor() - 80.0 + random();
                 let min_y = (random() * 160.0).floor() - 80.0 + random();
                 let width = if overflow {

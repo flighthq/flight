@@ -279,7 +279,7 @@ mod sugar_tests {
     fn host_element_fullscreen_capability_exit_app_window_fullscreen_matches_exit_app_window_fullscreen()
      {
         let (ba, bb) = (fullscreen_backend(), fullscreen_backend());
-        let (wa, wb) = (create_app_window(), create_app_window());
+        let (_wa, _wb) = (create_app_window(), create_app_window());
         assert_eq!(
             block_on(ba.capability.exit_app_window_fullscreen()).unwrap(),
             block_on(exit_app_window_fullscreen(&bb.capability)).unwrap()
@@ -291,7 +291,7 @@ mod sugar_tests {
     fn host_element_fullscreen_capability_request_app_window_fullscreen_matches_request_app_window_fullscreen()
      {
         let (ba, bb) = (fullscreen_backend(), fullscreen_backend());
-        let (wa, wb) = (create_app_window(), create_app_window());
+        let (_wa, _wb) = (create_app_window(), create_app_window());
         assert_eq!(
             block_on(
                 ba.capability

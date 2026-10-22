@@ -1,4 +1,3 @@
-use std::sync::Arc;
 
 use crate::types::*;
 
@@ -45,7 +44,6 @@ mod sugar_tests {
     }
 }
 
-
 /// Encode a decoded image through the matching host capability slot. Returns None when the MIME
 /// type has no registered encoder slot.
 pub async fn encode_image(
@@ -80,5 +78,4 @@ impl HostImageEncodeCapabilities {
         return encode_image(self, image, mime_type, options).await;
     }
 }
-
 

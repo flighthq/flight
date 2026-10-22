@@ -1,5 +1,4 @@
 use flight_collision::contract::*;
-use flight_collision::*;
 
 const CUBE: [f32; 24] = [
     -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, 1.0, -1.0,

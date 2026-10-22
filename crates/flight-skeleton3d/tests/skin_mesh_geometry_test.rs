@@ -83,7 +83,7 @@ mod capture_mesh_skin_bind_pose {
             }],
             stride: 16,
         };
-        let mut g = create_mesh_geometry(MeshGeometryOptions {
+        let g = create_mesh_geometry(MeshGeometryOptions {
             vertices: vec![99.0, 1.0, 2.0, 3.0].into_boxed_slice(),
             layout: Arc::new(RwLock::new(layout)),
             indices: None,

@@ -177,7 +177,7 @@ mod color_matrix_bitmap {
 
     #[test]
     fn is_safe_when_out_aliases_source_bitmap_data() {
-        let mut bitmap = create_bitmap(1, 1, Some(0x010203ff));
+        let bitmap = create_bitmap(1, 1, Some(0x010203ff));
         let m: [f32; 20] = [
             1.0, 0.0, 0.0, 0.0, 10.0, 0.0, 1.0, 0.0, 0.0, 20.0, 0.0, 0.0, 1.0, 0.0, 30.0, 0.0, 0.0,
             0.0, 1.0, 0.0,

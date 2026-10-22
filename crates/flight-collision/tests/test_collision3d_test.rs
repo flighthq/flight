@@ -1,5 +1,4 @@
 use flight_collision::contract::*;
-use flight_collision::*;
 use std::sync::Arc;
 
 fn sphere(x: f32, radius: f32) -> CollisionShape3D {

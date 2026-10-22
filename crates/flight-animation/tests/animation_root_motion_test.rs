@@ -1,7 +1,6 @@
 use std::sync::{Arc, RwLock};
 
 use flight_animation::contract::*;
-use flight_animation::*;
 
 fn test_target() -> TargetRef {
     return Some(Arc::new(0_usize));

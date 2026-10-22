@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use flight_animation::contract::*;
-use flight_animation::*;
 
 mod clone_animation_track {
     use super::*;

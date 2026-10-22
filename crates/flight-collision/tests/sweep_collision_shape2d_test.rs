@@ -1,5 +1,4 @@
 use flight_collision::contract::*;
-use flight_collision::*;
 
 mod create_collision_time_of_impact2d {
     use super::*;

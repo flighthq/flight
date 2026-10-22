@@ -1,5 +1,4 @@
 use flight_collision::contract::*;
-use flight_collision::*;
 
 fn circle() -> CollisionShape2D {
     CollisionShape2D::Circle(CollisionCircle2D {

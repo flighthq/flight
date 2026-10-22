@@ -1,5 +1,4 @@
 use flight_collision::contract::*;
-use flight_collision::*;
 
 mod explain_collision_test2d {
     use super::*;

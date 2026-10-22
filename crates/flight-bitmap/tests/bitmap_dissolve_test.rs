@@ -25,7 +25,7 @@ mod dissolve_bitmap_pixels {
     fn eventually_covers_every_pixel_exactly_once() {
         let mut source = create_bitmap(5, 3, None);
         for i in 0..(5 * 3) {
-            set_bitmap_pixel(&mut source, i % 5, i / 5, ((0x01010100u32).wrapping_mul((i + 1) as u32)));
+            set_bitmap_pixel(&mut source, i % 5, i / 5, (0x01010100u32).wrapping_mul((i + 1) as u32));
         }
         let dest = create_bitmap(5, 3, None);
         let mut dr = region(dest);

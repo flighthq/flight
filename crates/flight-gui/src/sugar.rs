@@ -1554,7 +1554,7 @@ mod sugar_tests {
     fn gui_dialog_remove_entry_matches_free() {
         let method = gui_dialog();
         let free = gui_dialog();
-        let entry = dialog_entry();
+        let _entry = dialog_entry();
         assert_eq!(
             method.remove_entry("entry"),
             remove_gui_dialog_entry(&free, "entry")

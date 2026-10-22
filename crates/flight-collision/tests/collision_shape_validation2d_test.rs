@@ -1,5 +1,4 @@
 use flight_collision::contract::*;
-use flight_collision::*;
 
 mod get_collision_polygon_validation_status2d {
     use super::*;

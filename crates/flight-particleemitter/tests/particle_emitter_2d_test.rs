@@ -1,5 +1,5 @@
 // flight-lint: allow(test-default-call) ParticleEmitterConfigOptions is an input option bag with no create function
-use flight_geometry::{Vector2, create_rectangle, create_vector2};
+use flight_geometry::{create_rectangle, create_vector2};
 use flight_node::{Node, NodeRef, get_node_local_bounds_rectangle, get_node_local_bounds_revision};
 use flight_particles::contract::{create_particle_emitter_config, create_particle_emitter_state};
 use flight_particles::{ParticleEmitterConfigOptions, create_particle_emitter_config_options};

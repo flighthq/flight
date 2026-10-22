@@ -1936,7 +1936,7 @@ mod parse_log_level_tests {
 
     #[test]
     fn returns_none_for_unknown_names() {
-        let state = test_state();
+        let _state = test_state();
         assert_eq!(parse_log_level("unknown"), None);
         assert_eq!(parse_log_level(""), None);
     }
@@ -2047,7 +2047,7 @@ mod serialize_log_error_tests {
 
     #[test]
     fn wraps_a_string_value() {
-        let state = test_state();
+        let _state = test_state();
         let result = serialize_log_error("oops");
         if let Some(LogValue::Str(v)) = result.get("value") {
             assert_eq!(v, "oops");

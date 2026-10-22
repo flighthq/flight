@@ -208,11 +208,11 @@ fn document_to_plist(document: &ParticleDesignerDocument) -> String {
         String::from("<plist version=\"1.0\">"),
         String::from("<dict>"),
     ];
-    let mut push_integer = |lines: &mut Vec<String>, key: &str, value: f32| {
+    let push_integer = |lines: &mut Vec<String>, key: &str, value: f32| {
         lines.push(format!("\t<key>{}</key>", key));
         lines.push(format!("\t<integer>{}</integer>", format_js_number(value)));
     };
-    let mut push_real = |lines: &mut Vec<String>, key: &str, value: f32| {
+    let push_real = |lines: &mut Vec<String>, key: &str, value: f32| {
         lines.push(format!("\t<key>{}</key>", key));
         lines.push(format!("\t<real>{}</real>", format_js_number(value)));
     };

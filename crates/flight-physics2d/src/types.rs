@@ -11,7 +11,7 @@
 use std::any::Any;
 use std::collections::HashMap;
 use std::sync::atomic::AtomicBool;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 use flight_collision::CollisionShape2D;
 use flight_entity::{EntityRuntimeSlot, Kind, Ref};

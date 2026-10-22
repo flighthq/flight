@@ -2,7 +2,6 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, OnceLock, RwLock};
 
 use flight_animation::contract::*;
-use flight_animation::*;
 use flight_entity::Ref;
 
 fn track(times: Vec<f32>) -> Ref<AnimationTrack> {

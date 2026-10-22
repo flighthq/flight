@@ -1,5 +1,4 @@
 // flight-lint: allow-file(f64) D1: log timestamps, timer instants and throttle intervals are millisecond durations
-use std::any::Any;
 use std::collections::{HashMap, HashSet};
 use std::fmt;
 use std::io::{self, Write};
@@ -145,7 +144,6 @@ pub struct LogTimer {
     pub channel: Option<String>,
     pub started_at: f64,
 }
-
 
 /// Options for create_buffered_log_sink.
 #[derive(Clone, Debug, Default)]

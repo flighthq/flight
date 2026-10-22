@@ -1,5 +1,4 @@
 use flight_collision::contract::*;
-use flight_collision::*;
 
 fn d1_single_evaluation_bound(expected: f32, ts_bound: f32) -> f32 {
     ts_bound.max(4.0 * f32::EPSILON * expected.abs().max(1.0))

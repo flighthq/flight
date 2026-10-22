@@ -1,6 +1,5 @@
 use std::sync::{Arc, RwLock};
 
-use flight_entity::Ref;
 use flight_skeleton2d::contract::*;
 
 use crate::support::*;

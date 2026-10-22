@@ -1,5 +1,4 @@
 use flight_collision::contract::*;
-use flight_collision::*;
 use std::sync::Arc;
 
 mod get_collision_pair_test2d {

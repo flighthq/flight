@@ -1,5 +1,4 @@
 use flight_collision::contract::*;
-use flight_collision::*;
 
 const CLOSE_TO_SIX_DIGITS: f32 = 5e-7;
 const CLOSE_TO_NINE_DIGITS: f32 = 5e-10;

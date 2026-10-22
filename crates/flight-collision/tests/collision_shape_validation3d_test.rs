@@ -1,5 +1,4 @@
 use flight_collision::contract::*;
-use flight_collision::*;
 
 mod get_collision_convex_validation_status3d {
     use super::*;
