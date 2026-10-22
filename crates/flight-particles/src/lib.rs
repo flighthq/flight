@@ -27,6 +27,7 @@ pub use contract::ForceFalloff;
 pub use contract::ParticleBlendMode;
 pub use contract::ParticleCollider;
 pub use contract::ParticleConfigIssue;
+pub use contract::ParticleDeathEvent;
 pub use contract::ParticleEmitterCallbacks;
 pub use contract::ParticleEmitterConfig;
 pub use contract::ParticleEmitterConfigOptions;
@@ -37,8 +38,7 @@ pub use contract::ParticleObject;
 pub use contract::ParticleObjectCallbacks;
 pub use contract::ParticleObjectsState;
 pub use contract::ParticleObjectsUpdateOptions;
-pub use contract::Signal;
-pub use contract::create_signal;
+pub use contract::ParticleSpawnEvent;
 
 // particleBlendMode — export *
 pub use contract::particle_blend_mode_as_str;

@@ -1,5 +1,6 @@
 use flight_entity::EntityRuntimeSlot;
 use flight_math::{RandomSource, create_random_source};
+use flight_signals::Signal;
 
 // ---------------------------------------------------------------------------
 // Curve types
@@ -144,21 +145,41 @@ pub enum ParticleForce {
 }
 
 // ---------------------------------------------------------------------------
-// Signal (placeholder -- flight-signals crate is empty in the IR)
+// Signal payloads (D4: TS `(x, y, z, ...) => void` signal args become named event structs)
 // ---------------------------------------------------------------------------
 
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct Signal {}
+/// Payload of `on_particle_death` (TS `(x, y, z) => void`): last-known particle position.
+/// 2D emitters pass `z = 0`.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct ParticleDeathEvent {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+
+/// Payload of `on_particle_spawn` (TS `(x, y, z, vx, vy, vz) => void`): spawn position and
+/// initial velocity. 2D emitters pass `z = vz = 0`.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub struct ParticleSpawnEvent {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+    pub vx: f32,
+    pub vy: f32,
+    pub vz: f32,
+}
 
 // ---------------------------------------------------------------------------
 // ParticleEmitterSignals (Entity)
 // ---------------------------------------------------------------------------
 
-#[derive(Clone, Debug, Default, PartialEq)]
+/// Opt-in signals for a particle emitter. A clone shares each signal's slots (flight-signals
+/// `Signal` clones share their data), so every handle returned for one state is the same group.
+#[derive(Clone, Debug, Default)]
 pub struct ParticleEmitterSignals {
-    pub on_emitter_complete: Signal,
-    pub on_particle_death: Signal,
-    pub on_particle_spawn: Signal,
+    pub on_emitter_complete: Signal<()>,
+    pub on_particle_death: Signal<ParticleDeathEvent>,
+    pub on_particle_spawn: Signal<ParticleSpawnEvent>,
     runtime: EntityRuntimeSlot,
 }
 
@@ -378,11 +399,6 @@ pub struct ParticleObjectsUpdateOptions {
 // ---------------------------------------------------------------------------
 // Free functions
 // ---------------------------------------------------------------------------
-
-// flight-lint: allow(conform-extra) Rust-only constructor for Signal; TS uses object literals
-pub fn create_signal() -> Signal {
-    return Signal {};
-}
 
 // flight-lint: allow(conform-extra) Rust-native projection for closed ParticleBlendMode enum; TS uses union literal type
 pub fn particle_blend_mode_as_str(mode: ParticleBlendMode) -> &'static str {

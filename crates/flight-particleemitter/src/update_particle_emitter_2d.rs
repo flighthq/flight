@@ -2,13 +2,14 @@ use flight_entity::Ref;
 use flight_node::NodeRef;
 use flight_node::contract::{NodeRevisionState, get_node_world_matrix, invalidate_node_local_bounds};
 use flight_particles::{
-    EmitterShape, PARTICLE_VELOCITY_STRIDE, ParticleEmitterConfig,
-    ParticleEmitterState, sample_particle_color_curve, sample_particle_curve,
+    EmitterShape, PARTICLE_VELOCITY_STRIDE, ParticleDeathEvent, ParticleEmitterConfig,
+    ParticleEmitterState, ParticleSpawnEvent, sample_particle_color_curve, sample_particle_curve,
 };
 use flight_particles::contract::{
     ensure_particle_emitter_state_capacity, get_particle_emitter_signals,
     write_particle_spawn_offset,
 };
+use flight_signals::emit_signal;
 
 use crate::particle_emitter::reserve_particle_emitter_2d_impl as reserve_particle_emitter_2d;
 use crate::types::{
@@ -97,6 +98,8 @@ pub fn update_particle_emitter_2d(
 
     let on_death = callbacks.and_then(|c| c.on_death.as_ref());
     let on_spawn = callbacks.and_then(|c| c.on_spawn.as_ref());
+    // Opt-in signals: None when enable_particle_emitter_signals has not been called on this state.
+    let signals = get_particle_emitter_signals(state);
     let (death_events, spawn_events) = {
         let mut guard = emitter.write().unwrap();
         update_particle_emitter_2d_impl(
@@ -104,21 +107,38 @@ pub fn update_particle_emitter_2d(
             state,
             config,
             delta_time,
-            on_death.is_some(),
-            on_spawn.is_some(),
+            on_death.is_some() || signals.is_some(),
+            on_spawn.is_some() || signals.is_some(),
             world_transform.as_ref(),
             local_x,
             local_y,
         )
     };
-    if let Some(cb) = on_death {
-        for (x, y, z) in &death_events {
-            cb(*x, *y, *z);
+    // Events are collected while the emitter is locked and delivered here, in TS order: each
+    // death (callback, then signal), then each spawn (callback, then signal), then completion.
+    for event in &death_events {
+        if let Some(cb) = on_death {
+            cb(event.x, event.y, event.z);
+        }
+        if let Some(signals) = &signals {
+            emit_signal(&signals.on_particle_death, event);
         }
     }
-    if let Some(cb) = on_spawn {
-        for (x, y, z) in &spawn_events {
-            cb(*x, *y, *z);
+    for event in &spawn_events {
+        if let Some(cb) = on_spawn {
+            cb(event.x, event.y, event.z);
+        }
+        if let Some(signals) = &signals {
+            emit_signal(&signals.on_particle_spawn, event);
+        }
+    }
+    // Fire on_emitter_complete when a finite emitter has finished and all particles are gone
+    // (TS returns before this point on a non-positive delta time).
+    if delta_time > 0.0 && let Some(signals) = &signals {
+        // Release the read guard before emitting so a slot may lock the emitter.
+        let complete = is_particle_emitter_2d_complete(&emitter.read().unwrap(), state, config);
+        if complete {
+            emit_signal(&signals.on_emitter_complete, &());
         }
     }
     let node_ref: NodeRef = emitter.clone();
@@ -135,11 +155,11 @@ fn update_particle_emitter_2d_impl(
     world_transform: Option<&[f32; 6]>,
     local_x: f32,
     local_y: f32,
-) -> (Vec<(f32, f32, f32)>, Vec<(f32, f32, f32)>) {
+) -> (Vec<ParticleDeathEvent>, Vec<ParticleSpawnEvent>) {
     data.world_space = world_transform.is_some();
 
-    let mut death_events: Vec<(f32, f32, f32)> = Vec::new();
-    let mut spawn_events: Vec<(f32, f32, f32)> = Vec::new();
+    let mut death_events: Vec<ParticleDeathEvent> = Vec::new();
+    let mut spawn_events: Vec<ParticleSpawnEvent> = Vec::new();
 
     if delta_time <= 0.0 {
         return (death_events, spawn_events);
@@ -186,7 +206,6 @@ fn update_particle_emitter_2d_impl(
     let has_color_work = has_color_curve || has_color_gradient;
     let has_rotation_speed = config.rotation_speed_min != 0.0 || config.rotation_speed_max != 0.0;
     let has_flipbook = config.frame_count > 1.0;
-    let signals = get_particle_emitter_signals(state);
 
     let mut live_count = data.particle_count;
     let mut i = 0usize;
@@ -194,11 +213,11 @@ fn update_particle_emitter_2d_impl(
         let lt = i * 2;
         state.lifetimes[lt] += delta_time;
         if state.lifetimes[lt] >= state.lifetimes[lt + 1] {
-            if collect_deaths || signals.is_some() {
+            if collect_deaths {
                 let tt = i * PARTICLE_TRANSFORM_STRIDE;
                 let dx = data.transforms[tt];
                 let dy = data.transforms[tt + 1];
-                death_events.push((dx, dy, 0.0));
+                death_events.push(ParticleDeathEvent { x: dx, y: dy, z: 0.0 });
             }
             live_count -= 1;
             if i < live_count {
@@ -570,8 +589,15 @@ fn update_particle_emitter_2d_impl(
                 0.0
             };
 
-            if collect_spawns || signals.is_some() {
-                spawn_events.push((spawn_x, spawn_y, 0.0));
+            if collect_spawns {
+                spawn_events.push(ParticleSpawnEvent {
+                    x: spawn_x,
+                    y: spawn_y,
+                    z: 0.0,
+                    vx: state.velocities[vt],
+                    vy: state.velocities[vt + 1],
+                    vz: 0.0,
+                });
             }
         }
         data.particle_count = new_count;

@@ -55,7 +55,9 @@ mod sugar_tests {
         let mut free_state = create_particle_emitter_state();
         let method = method_state.enable_signals();
         let free = enable_particle_emitter_signals(&mut free_state);
-        assert_eq!(method, free);
+        assert!(method_state.signals.is_some());
+        assert!(free_state.signals.is_some());
+        let _ = (&method.on_particle_spawn, &free.on_particle_spawn);
     }
 
     #[test]
@@ -63,7 +65,7 @@ mod sugar_tests {
         let state = create_particle_emitter_state();
         let method = state.get_signals();
         let free = get_particle_emitter_signals(&state);
-        assert_eq!(method, free);
+        assert_eq!(method.is_none(), free.is_none());
     }
 
     #[test]

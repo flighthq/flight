@@ -1,6 +1,8 @@
 use flight_math::create_random_source;
 use flight_particles::contract::{create_particle_emitter_config, create_particle_emitter_state};
-use flight_particles::EmitterShape;
+use flight_particles::{EmitterShape, ParticleDeathEvent, ParticleSpawnEvent, enable_particle_emitter_signals};
+use flight_signals::connect_signal;
+use std::sync::{Arc, Mutex};
 
 use flight_particleemitter::*;
 
@@ -544,5 +546,115 @@ mod update_particle_emitter_2d {
         let second = run();
         assert!(first.4 > 0);
         assert_eq!(first, second);
+    }
+
+    // TS updateParticleEmitter2DIntegration.test.ts: the TS cases replace `signal.emit`; the
+    // returned handle here is a clone with its own emit cell, so the slots are connected instead.
+
+    #[test]
+    fn on_emitter_complete_fires_once_when_a_finite_non_looping_emitter_completes() {
+        let emitter = create_particle_emitter_2d();
+        let mut state = create_particle_emitter_state();
+        let mut config = create_particle_emitter_config(None);
+        config.duration = 0.5;
+        config.looping = false;
+        config.spawn_rate = 1.0;
+        config.lifetime_min = 0.1;
+        config.lifetime_max = 0.1;
+        config.speed_min = 0.0;
+        config.speed_max = 0.0;
+        let signals = enable_particle_emitter_signals(&mut state);
+        let completes = Arc::new(Mutex::new(Vec::<i32>::new()));
+        let sink = completes.clone();
+        connect_signal(
+            &signals.on_emitter_complete,
+            Arc::new(move |_: &()| sink.lock().unwrap().push(1)),
+            None,
+        );
+        update_particle_emitter_2d(&emitter, &mut state, &config, 1.0, None); // spawn + age past duration
+        update_particle_emitter_2d(&emitter, &mut state, &config, 1.0, None); // particles die -> complete
+        assert!(!completes.lock().unwrap().is_empty());
+    }
+
+    #[test]
+    fn on_emitter_complete_does_not_fire_for_infinite_emitters() {
+        let emitter = create_particle_emitter_2d();
+        let mut state = create_particle_emitter_state();
+        let mut config = create_particle_emitter_config(None);
+        config.duration = 0.0;
+        config.looping = true;
+        config.spawn_rate = 1.0;
+        config.lifetime_min = 1.0;
+        config.lifetime_max = 1.0;
+        config.speed_min = 0.0;
+        config.speed_max = 0.0;
+        let signals = enable_particle_emitter_signals(&mut state);
+        let completes = Arc::new(Mutex::new(Vec::<i32>::new()));
+        let sink = completes.clone();
+        connect_signal(
+            &signals.on_emitter_complete,
+            Arc::new(move |_: &()| sink.lock().unwrap().push(1)),
+            None,
+        );
+        for _i in 0..10 {
+            update_particle_emitter_2d(&emitter, &mut state, &config, 1.0, None);
+        }
+        assert_eq!(completes.lock().unwrap().len(), 0);
+    }
+
+    #[test]
+    fn on_particle_death_fires_with_the_particle_position_when_a_particle_dies() {
+        let emitter = create_particle_emitter_2d();
+        let mut state = create_particle_emitter_state();
+        let mut config = create_particle_emitter_config(None);
+        config.spawn_rate = 1.0;
+        config.lifetime_min = 1.0;
+        config.lifetime_max = 1.0;
+        config.speed_min = 0.0;
+        config.speed_max = 0.0;
+        let signals = enable_particle_emitter_signals(&mut state);
+        let deaths = Arc::new(Mutex::new(Vec::<ParticleDeathEvent>::new()));
+        let sink = deaths.clone();
+        connect_signal(
+            &signals.on_particle_death,
+            Arc::new(move |event: &ParticleDeathEvent| sink.lock().unwrap().push(*event)),
+            None,
+        );
+        update_particle_emitter_2d(&emitter, &mut state, &config, 1.0, None); // spawn
+        update_particle_emitter_2d(&emitter, &mut state, &config, 1.1, None); // age past lifetime -> death
+        let deaths = deaths.lock().unwrap();
+        assert_eq!(deaths.len(), 1);
+        assert!(deaths[0].x.is_finite());
+        // 2D emitters carry a zero z in the shared 3D-capable signal payload.
+        assert_eq!(deaths[0].z, 0.0);
+    }
+
+    #[test]
+    fn on_particle_spawn_fires_with_spawn_position_and_velocity_when_a_particle_is_spawned() {
+        let emitter = create_particle_emitter_2d();
+        let mut state = create_particle_emitter_state();
+        let mut config = create_particle_emitter_config(None);
+        config.spawn_rate = 1.0;
+        config.lifetime_min = 1.0;
+        config.lifetime_max = 1.0;
+        config.speed_min = 50.0;
+        config.speed_max = 50.0;
+        let signals = enable_particle_emitter_signals(&mut state);
+        let spawns = Arc::new(Mutex::new(Vec::<ParticleSpawnEvent>::new()));
+        let sink = spawns.clone();
+        connect_signal(
+            &signals.on_particle_spawn,
+            Arc::new(move |event: &ParticleSpawnEvent| sink.lock().unwrap().push(*event)),
+            None,
+        );
+        update_particle_emitter_2d(&emitter, &mut state, &config, 1.0, None);
+        let spawns = spawns.lock().unwrap();
+        assert_eq!(spawns.len(), 1);
+        let event = spawns[0];
+        // Speed must match config (allow sign variations by checking magnitude).
+        assert!(((event.vx * event.vx + event.vy * event.vy).sqrt() - 50.0).abs() < 0.5);
+        // 2D emitters carry zero on the z axis of the shared 3D-capable signal payload.
+        assert_eq!(event.z, 0.0);
+        assert_eq!(event.vz, 0.0);
     }
 }

@@ -1,5 +1,8 @@
 use flight_particles::*;
 use flight_particles::contract::*;
+use flight_signals::{connect_signal, emit_signal};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 mod create_particle_emitter_signals {
     use super::*;
@@ -23,7 +26,21 @@ mod enable_particle_emitter_signals {
         let mut state = create_particle_emitter_state();
         let a = enable_particle_emitter_signals(&mut state);
         let b = enable_particle_emitter_signals(&mut state);
-        assert_eq!(a, b);
+        // Each handle is a clone; identity means both share the same signal data.
+        assert!(Arc::ptr_eq(&a.on_particle_spawn.data, &b.on_particle_spawn.data));
+        assert!(Arc::ptr_eq(&a.on_particle_death.data, &b.on_particle_death.data));
+        assert!(Arc::ptr_eq(&a.on_emitter_complete.data, &b.on_emitter_complete.data));
+        let fired = Arc::new(AtomicUsize::new(0));
+        let counter = fired.clone();
+        connect_signal(
+            &a.on_emitter_complete,
+            Arc::new(move |_: &()| {
+                counter.fetch_add(1, Ordering::Relaxed);
+            }),
+            None,
+        );
+        emit_signal(&b.on_emitter_complete, &());
+        assert_eq!(fired.load(Ordering::Relaxed), 1);
     }
 
     #[test]

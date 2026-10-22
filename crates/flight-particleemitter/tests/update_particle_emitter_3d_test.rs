@@ -1,6 +1,8 @@
 use flight_math::create_random_source;
 use flight_particles::contract::{create_particle_emitter_config, create_particle_emitter_state};
-use flight_particles::EmitterShape;
+use flight_particles::{EmitterShape, ParticleSpawnEvent, enable_particle_emitter_signals};
+use flight_signals::connect_signal;
+use std::sync::{Arc, Mutex};
 
 use flight_particleemitter::*;
 
@@ -297,14 +299,44 @@ mod update_particle_emitter_3d {
     }
 
     #[test]
-    fn invokes_on_spawn_and_on_death_callbacks() {
+    fn emits_the_spawn_signal_with_the_full_3d_position_and_velocity() {
         let emitter = create_particle_emitter_3d();
         let mut state = create_particle_emitter_state();
         state.random = create_random_source(42);
-        let spawn_count = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
-        let death_count = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
-        let spawn_clone = spawn_count.clone();
-        let death_clone = death_count.clone();
+        let signals = enable_particle_emitter_signals(&mut state);
+        let spawns = Arc::new(Mutex::new(Vec::<ParticleSpawnEvent>::new()));
+        let sink = spawns.clone();
+        connect_signal(
+            &signals.on_particle_spawn,
+            Arc::new(move |event: &ParticleSpawnEvent| sink.lock().unwrap().push(*event)),
+            None,
+        );
+        let mut config = create_particle_emitter_config(None);
+        config.burst_count = 1.0;
+        config.burst_interval = 0.0;
+        config.emitter_shape = EmitterShape::Sphere;
+        config.max_particles = 10.0;
+        config.spawn_rate = 0.0;
+        config.speed_max = 10.0;
+        config.speed_min = 10.0;
+        update_particle_emitter_3d(&emitter, &mut state, &config, 0.1, None);
+        let spawns = spawns.lock().unwrap();
+        assert_eq!(spawns.len(), 1);
+        let event = spawns[0];
+        // A sphere direction distributes speed across all three axes -- the signal must carry vz.
+        let speed = (event.vx * event.vx + event.vy * event.vy + event.vz * event.vz).sqrt();
+        assert!((speed - 10.0).abs() < 1e-3);
+    }
+
+    #[test]
+    fn invokes_on_spawn_and_on_death_callbacks_carrying_the_particle_z() {
+        let emitter = create_particle_emitter_3d();
+        let mut state = create_particle_emitter_state();
+        state.random = create_random_source(42);
+        let spawns = Arc::new(Mutex::new(Vec::<[f32; 3]>::new()));
+        let deaths = Arc::new(Mutex::new(Vec::<[f32; 3]>::new()));
+        let spawn_sink = spawns.clone();
+        let death_sink = deaths.clone();
         let mut config = create_particle_emitter_config(None);
         config.burst_count = 1.0;
         config.burst_interval = 0.0;
@@ -317,17 +349,22 @@ mod update_particle_emitter_3d {
         config.speed_min = 0.0;
         config.speed_max = 0.0;
         let callbacks = ParticleEmitterCallbacks {
-            on_spawn: Some(Box::new(move |_x, _y, _z| {
-                spawn_clone.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            on_spawn: Some(Box::new(move |x, y, z| {
+                spawn_sink.lock().unwrap().push([x, y, z]);
             })),
-            on_death: Some(Box::new(move |_x, _y, _z| {
-                death_clone.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            on_death: Some(Box::new(move |x, y, z| {
+                death_sink.lock().unwrap().push([x, y, z]);
             })),
         };
         update_particle_emitter_3d(&emitter, &mut state, &config, 0.1, Some(&callbacks));
         update_particle_emitter_3d(&emitter, &mut state, &config, 1.0, Some(&callbacks));
-        assert_eq!(spawn_count.load(std::sync::atomic::Ordering::Relaxed), 1);
-        assert_eq!(death_count.load(std::sync::atomic::Ordering::Relaxed), 1);
+        let spawns = spawns.lock().unwrap();
+        let deaths = deaths.lock().unwrap();
+        assert_eq!(spawns.len(), 1);
+        assert_eq!(deaths.len(), 1);
+        // The box depth gives a non-trivial z that both callbacks report, and it survives to death.
+        assert!(spawns[0][2].is_finite());
+        assert!((deaths[0][2] - spawns[0][2]).abs() < 1e-4);
     }
 
     #[test]
