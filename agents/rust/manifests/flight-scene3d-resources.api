@@ -1,0 +1,174 @@
+src/anisotropy_pbr_scene3d_material_textures.rs: pub fn register_anisotropy_pbr_scene3d_material_textures(registry: &Scene3DMaterialTextureRegistry)
+src/awd2_load.rs: pub async fn load_scene3d_document_from_awd2_url(host_net: &HostNetCapability, url: &str, parse: &Awd2ParseOptions, options: Option<&Scene3DDocumentLoadOptions>, net_state: &NetState,) -> Option<Ref<Scene3DDocument>>
+src/clearcoat_pbr_scene3d_material_textures.rs: pub fn register_clearcoat_pbr_scene3d_material_textures(registry: &Scene3DMaterialTextureRegistry)
+src/contract.rs: pub use crate::anisotropy_pbr_scene3d_material_textures::*;
+src/contract.rs: pub use crate::awd2_load::*;
+src/contract.rs: pub use crate::clearcoat_pbr_scene3d_material_textures::*;
+src/contract.rs: pub use crate::enable_scene3d_resource_failure_guards::*;
+src/contract.rs: pub use crate::explain_scene3d_resource_coverage::*;
+src/contract.rs: pub use crate::get_scene3d_resource_textures::*;
+src/contract.rs: pub use crate::gltf_load::*;
+src/contract.rs: pub use crate::gltf_load_import::*;
+src/contract.rs: pub use crate::image_resource_fetch::*;
+src/contract.rs: pub use crate::iridescence_pbr_scene3d_material_textures::*;
+src/contract.rs: pub use crate::load_scene3d_resources::*;
+src/contract.rs: pub use crate::md2_load::*;
+src/contract.rs: pub use crate::md5_load::*;
+src/contract.rs: pub use crate::obj_load::*;
+src/contract.rs: pub use crate::resolve_scene3d_resources::*;
+src/contract.rs: pub use crate::reveal_scene3d_resources_on_resolve::*;
+src/contract.rs: pub use crate::scene_document_source::*;
+src/contract.rs: pub use crate::scene_material_texture_registry::*;
+src/contract.rs: pub use crate::scene_resource_recovery::*;
+src/contract.rs: pub use crate::scene_resource_resolver::*;
+src/contract.rs: pub use crate::scene_resource_signals::*;
+src/contract.rs: pub use crate::shaded_scene3d_material_textures::*;
+src/contract.rs: pub use crate::sheen_pbr_scene3d_material_textures::*;
+src/contract.rs: pub use crate::specular_pbr_scene3d_material_textures::*;
+src/contract.rs: pub use crate::three_ds_load::*;
+src/contract.rs: pub use crate::transmission_volume_pbr_scene3d_material_textures::*;
+src/contract.rs: pub use crate::types::*;
+src/contract.rs: pub use crate::wrapped_diffuse_pbr_scene3d_material_textures::*;
+src/enable_scene3d_resource_failure_guards.rs: pub fn are_scene3d_resource_failure_guards_enabled(resolver: &Ref<Scene3DResourceResolver>) -> bool
+src/enable_scene3d_resource_failure_guards.rs: pub fn disable_scene3d_resource_failure_guards(resolver: &Ref<Scene3DResourceResolver>)
+src/enable_scene3d_resource_failure_guards.rs: pub fn enable_scene3d_resource_failure_guards(resolver: &Ref<Scene3DResourceResolver>, log_state: &LogStateRef, clock: Scene3DResourceFailureClock,) -> Arc<dyn Fn() + Send + Sync>
+src/explain_scene3d_resource_coverage.rs: pub fn explain_scene3d_resource_coverage(out: &mut Vec<SceneCoverageEntry>, resolver: &Ref<Scene3DResourceResolver>, usage: &Scene3DKindUsage, catalog: &SceneCoverageCatalog,)
+src/explain_scene3d_resource_coverage.rs: pub fn has_scene3d_resource_coverage(resolver: &Ref<Scene3DResourceResolver>, usage: &Scene3DKindUsage,) -> bool
+src/get_scene3d_resource_textures.rs: pub fn get_scene3d_resource_textures(out: &mut Vec<Ref<Texture>>, scene: &Scene3D)
+src/get_scene3d_resource_textures.rs: pub fn get_scene3d_texture_resource_reference(scene: &Scene3D, texture: &Ref<Texture>,) -> Option<ImageResourceReference>
+src/gltf_load.rs: pub async fn load_scene3d_document_from_glb_url_with_core_feature_handlers(host_net: &HostNetCapability, url: &str, core_feature_handlers: &[Ref<GltfCoreFeatureHandler>], options: Option<&GltfScene3DDocumentLoadOptions>, net_state: &NetState,) -> Option<Ref<Scene3DDocument>>
+src/gltf_load.rs: pub async fn load_scene3d_document_from_gltf_url_with_core_feature_handlers(host_net: &HostNetCapability, url: &str, core_feature_handlers: &[Ref<GltfCoreFeatureHandler>], options: Option<&GltfScene3DDocumentLoadOptions>, net_state: &NetState,) -> Option<Ref<Scene3DDocument>>
+src/gltf_load_import.rs: pub async fn load_scene3d_document_from_glb_url(host_net: &HostNetCapability, url: &str, options: Option<&GltfScene3DDocumentLoadOptions>, net_state: &NetState,) -> Option<Ref<Scene3DDocument>>
+src/gltf_load_import.rs: pub async fn load_scene3d_document_from_gltf_url(host_net: &HostNetCapability, url: &str, options: Option<&GltfScene3DDocumentLoadOptions>, net_state: &NetState,) -> Option<Ref<Scene3DDocument>>
+src/image_resource_fetch.rs: pub fn create_web_image_resource_fetch(host_image: &HostImageCapability) -> ImageResourceFetch
+src/image_resource_fetch.rs: pub fn resolve_image_resource_uri(uri: &str, base_path: Option<&str>) -> String
+src/iridescence_pbr_scene3d_material_textures.rs: pub fn register_iridescence_pbr_scene3d_material_textures(registry: &Scene3DMaterialTextureRegistry)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::GltfScene3DDocumentLoadOptions;
+src/lib.rs: pub use contract::LoadScene3DResourcesOptions;
+src/lib.rs: pub use contract::ResolveScene3DResourcesOptions;
+src/lib.rs: pub use contract::Scene3DDocumentLoadOptions;
+src/lib.rs: pub use contract::Scene3DDocumentLoadProgress;
+src/lib.rs: pub use contract::Scene3DMaterialTextureLister;
+src/lib.rs: pub use contract::Scene3DMaterialTextureRegistry;
+src/lib.rs: pub use contract::Scene3DPbrExtensionTextureLister;
+src/lib.rs: pub use contract::Scene3DResourceEvent;
+src/lib.rs: pub use contract::Scene3DResourceFailureClock;
+src/lib.rs: pub use contract::Scene3DResourceInFlight;
+src/lib.rs: pub use contract::Scene3DResourceLoadProgress;
+src/lib.rs: pub use contract::Scene3DResourcePriority;
+src/lib.rs: pub use contract::Scene3DResourceResolution;
+src/lib.rs: pub use contract::Scene3DResourceResolver;
+src/lib.rs: pub use contract::Scene3DResourceResolverContext;
+src/lib.rs: pub use contract::Scene3DResourceResolverOptions;
+src/lib.rs: pub use contract::Scene3DResourceResolverRuntime;
+src/lib.rs: pub use contract::Scene3DResourceResolverWithRuntime;
+src/lib.rs: pub use contract::Scene3DResourceRevealOptions;
+src/lib.rs: pub use contract::Scene3DResourceSelect;
+src/lib.rs: pub use contract::Scene3DResourceSignals;
+src/lib.rs: pub use contract::Scene3DResourceWorkingSet;
+src/lib.rs: pub use contract::Scene3DResources;
+src/lib.rs: pub use contract::UpdateScene3DResourceStreamingOptions;
+src/lib.rs: pub use contract::are_scene3d_resource_failure_guards_enabled;
+src/lib.rs: pub use contract::create_built_in_scene3d_resource_resolver;
+src/lib.rs: pub use contract::create_scene3d_resource_resolver;
+src/lib.rs: pub use contract::create_web_image_resource_fetch;
+src/lib.rs: pub use contract::disable_scene3d_resource_failure_guards;
+src/lib.rs: pub use contract::dispose_scene3d_resource_resolver;
+src/lib.rs: pub use contract::enable_scene3d_resource_failure_guards;
+src/lib.rs: pub use contract::enable_scene3d_resource_signals;
+src/lib.rs: pub use contract::explain_scene3d_resource_coverage;
+src/lib.rs: pub use contract::get_scene3d_document_base_path_from_url;
+src/lib.rs: pub use contract::get_scene3d_resource_signals;
+src/lib.rs: pub use contract::get_scene3d_resource_textures;
+src/lib.rs: pub use contract::load_scene3d_document_bytes_from_url;
+src/lib.rs: pub use contract::load_scene3d_document_from_3ds_url;
+src/lib.rs: pub use contract::load_scene3d_document_from_awd2_url;
+src/lib.rs: pub use contract::load_scene3d_document_from_glb_url;
+src/lib.rs: pub use contract::load_scene3d_document_from_glb_url_with_core_feature_handlers;
+src/lib.rs: pub use contract::load_scene3d_document_from_gltf_url;
+src/lib.rs: pub use contract::load_scene3d_document_from_gltf_url_with_core_feature_handlers;
+src/lib.rs: pub use contract::load_scene3d_document_from_md2_url;
+src/lib.rs: pub use contract::load_scene3d_document_from_md5_mesh_url;
+src/lib.rs: pub use contract::load_scene3d_document_from_obj_url;
+src/lib.rs: pub use contract::load_scene3d_document_text_from_url;
+src/lib.rs: pub use contract::load_scene3d_resources;
+src/lib.rs: pub use contract::resolve_image_resource_uri;
+src/lib.rs: pub use contract::resolve_one_scene3d_resource_texture;
+src/lib.rs: pub use contract::resolve_scene3d_resources;
+src/lib.rs: pub use contract::retry_failed_scene3d_resources;
+src/lib.rs: pub use contract::reveal_scene3d_resources_on_resolve;
+src/lib.rs: pub use contract::set_scene3d_document_resource_base_path_from_url;
+src/lib.rs: pub use contract::update_scene3d_resource_streaming;
+src/lib.rs: pub use contract::wait_for_scene3d_resource_resolver;
+src/load_scene3d_resources.rs: pub async fn load_scene3d_resources(scene: &Ref<Scene3D>, resolver: &Ref<Scene3DResourceResolver>, options: Option<&LoadScene3DResourcesOptions>,)
+src/load_scene3d_resources.rs: pub async fn wait_for_scene3d_resource_resolver(resolver: &Ref<Scene3DResourceResolver>)
+src/md2_load.rs: pub async fn load_scene3d_document_from_md2_url(host_net: &HostNetCapability, url: &str, options: Option<&Scene3DDocumentLoadOptions>, net_state: &NetState,) -> Option<Scene3DDocument>
+src/md5_load.rs: pub async fn load_scene3d_document_from_md5_mesh_url(host_net: &HostNetCapability, url: &str, options: Option<&Scene3DDocumentLoadOptions>, net_state: &NetState,) -> Option<Scene3DDocument>
+src/obj_load.rs: pub async fn load_scene3d_document_from_obj_url(host_net: &HostNetCapability, url: &str, materials: Option<&ObjMaterialLibrary>, options: Option<&Scene3DDocumentLoadOptions>, net_state: &NetState,) -> Option<Scene3DDocument>
+src/resolve_scene3d_resources.rs: pub async fn resolve_one_scene3d_resource_texture(resolver: &Ref<Scene3DResourceResolver>, reference: &ImageResourceReference, signal: &AbortSignal,) -> Option<TextureSourceRef>
+src/resolve_scene3d_resources.rs: pub fn initialize_image_resource_failure(out: &mut ImageResourceFailure, kind: ImageResourceFailureKind, message: String, name: Option<String>,)
+src/resolve_scene3d_resources.rs: pub fn resolve_scene3d_resources(scene: &Ref<Scene3D>, resolver: &Ref<Scene3DResourceResolver>, options: Option<&ResolveScene3DResourcesOptions>,) -> Scene3DResources
+src/resolve_scene3d_resources.rs: pub fn update_scene3d_resource_streaming(scene: &Ref<Scene3D>, resolver: &Ref<Scene3DResourceResolver>, options: Option<&UpdateScene3DResourceStreamingOptions>,) -> Scene3DResources
+src/reveal_scene3d_resources_on_resolve.rs: pub fn reveal_scene3d_resources_on_resolve(resolver: &Ref<Scene3DResourceResolver>, scene: &Scene3D, tween_manager: &TweenManager, options: Option<&Scene3DResourceRevealOptions>,) -> Arc<dyn Fn() + Send + Sync>
+src/scene_document_source.rs: pub async fn load_scene3d_document_bytes_from_url(host_net: &HostNetCapability, url: &str, options: Option<&Scene3DDocumentLoadOptions>, net_state: &NetState,) -> Option<ArrayBufferView>
+src/scene_document_source.rs: pub async fn load_scene3d_document_text_from_url(host_net: &HostNetCapability, url: &str, options: Option<&Scene3DDocumentLoadOptions>, net_state: &NetState,) -> Option<String>
+src/scene_document_source.rs: pub fn get_scene3d_document_base_path_from_url(url: &str) -> Option<String>
+src/scene_document_source.rs: pub fn set_scene3d_document_resource_base_path_from_url(document: &Scene3DDocument, url: &str)
+src/scene_material_texture_registry.rs: pub fn create_scene3d_material_texture_registry() -> Scene3DMaterialTextureRegistry
+src/scene_material_texture_registry.rs: pub fn get_scene3d_material_textures(registry: &Scene3DMaterialTextureRegistry, material: &dyn Material, out: &mut Vec<Ref<Texture>>,)
+src/scene_material_texture_registry.rs: pub fn has_scene3d_material_texture_lister(registry: &Scene3DMaterialTextureRegistry, kind: &str,) -> bool
+src/scene_material_texture_registry.rs: pub fn register_extended_pbr_scene3d_material_textures(registry: &Scene3DMaterialTextureRegistry)
+src/scene_material_texture_registry.rs: pub fn register_scene3d_material_textures(registry: &Scene3DMaterialTextureRegistry, kind: Kind, lister: Scene3DMaterialTextureLister,)
+src/scene_material_texture_registry.rs: pub fn register_scene3d_pbr_extension_textures(registry: &Scene3DMaterialTextureRegistry, kind: Kind, lister: Scene3DPbrExtensionTextureLister,)
+src/scene_material_texture_registry.rs: pub fn register_standard_pbr_scene3d_material_textures(registry: &Scene3DMaterialTextureRegistry)
+src/scene_material_texture_registry.rs: pub fn register_unlit_scene3d_material_textures(registry: &Scene3DMaterialTextureRegistry)
+src/scene_resource_recovery.rs: pub fn retry_failed_scene3d_resources(scene: &Ref<Scene3D>, resolver: &Ref<Scene3DResourceResolver>, options: Option<&UpdateScene3DResourceStreamingOptions>,) -> usize
+src/scene_resource_resolver.rs: pub fn create_built_in_scene3d_resource_resolver(host_image: &HostImageCapability, options: Option<&Scene3DResourceResolverOptions>, context: &Scene3DResourceResolverContext,) -> Ref<Scene3DResourceResolver>
+src/scene_resource_resolver.rs: pub fn create_scene3d_resource_resolver(host_image: &HostImageCapability, options: Option<&Scene3DResourceResolverOptions>, context: &Scene3DResourceResolverContext,) -> Ref<Scene3DResourceResolver>
+src/scene_resource_resolver.rs: pub fn dispose_scene3d_resource_resolver(resolver: &Ref<Scene3DResourceResolver>)
+src/scene_resource_resolver.rs: pub fn get_scene3d_resource_resolver_runtime(resolver: &Ref<Scene3DResourceResolver>,) -> Ref<Scene3DResourceResolverRuntime>
+src/scene_resource_resolver.rs: pub fn initialize_scene3d_resource_resolver(out: &mut Scene3DResourceResolver, host_image: &HostImageCapability, options: Option<&Scene3DResourceResolverOptions>, context: &Scene3DResourceResolverContext,)
+src/scene_resource_signals.rs: pub fn create_scene3d_resource_signals() -> Ref<Scene3DResourceSignals>
+src/scene_resource_signals.rs: pub fn enable_scene3d_resource_signals(resolver: &Ref<Scene3DResourceResolver>,) -> Ref<Scene3DResourceSignals>
+src/scene_resource_signals.rs: pub fn get_scene3d_resource_signals(resolver: &Ref<Scene3DResourceResolver>,) -> Option<Ref<Scene3DResourceSignals>>
+src/scene_resource_signals.rs: pub fn initialize_scene3d_resource_signals(out: &mut Scene3DResourceSignals)
+src/shaded_scene3d_material_textures.rs: pub fn register_shaded_scene3d_material_textures(registry: &Scene3DMaterialTextureRegistry)
+src/sheen_pbr_scene3d_material_textures.rs: pub fn register_sheen_pbr_scene3d_material_textures(registry: &Scene3DMaterialTextureRegistry)
+src/specular_pbr_scene3d_material_textures.rs: pub fn register_specular_pbr_scene3d_material_textures(registry: &Scene3DMaterialTextureRegistry)
+src/three_ds_load.rs: pub async fn load_scene3d_document_from_3ds_url(host_net: &HostNetCapability, url: &str, options: Option<&Scene3DDocumentLoadOptions>, net_state: &NetState,) -> Option<Scene3DDocument>
+src/transmission_volume_pbr_scene3d_material_textures.rs: pub fn register_transmission_volume_pbr_scene3d_material_textures(registry: &Scene3DMaterialTextureRegistry)
+src/types.rs: #[derive(Clone)] pub struct Scene3DResourceEvent { pub reference: ImageResourceReference, pub texture: Ref<Texture>, }
+src/types.rs: #[derive(Clone)] pub struct Scene3DResourceResolution { pub reference: ImageResourceReference, pub source: TextureSourceRef, pub textures: Vec<Ref<Texture>>, }
+src/types.rs: #[derive(Clone)] pub struct Scene3DResourceResolverContext { pub image_resolver: Ref<ImageResolverState>, pub loader: ResourceLoaderContext, }
+src/types.rs: #[derive(Clone)] pub struct Scene3DResourceWorkingSet { pub reference: ImageResourceReference, pub textures: Vec<Ref<Texture>>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct Scene3DResourceLoadProgress { pub loaded: usize, pub total: usize, }
+src/types.rs: #[derive(Clone, Default)] pub struct GltfScene3DDocumentLoadOptions { pub core_feature_handlers: Option<Vec<Ref<GltfCoreFeatureHandler>>>, pub diagnostics: Option<Ref<Vec<ImportDiagnostic>>>, pub extension_handlers: Option<Vec<Ref<GltfExtensionHandler>>>, pub progress: Option<Ref<Signal<Ref<Scene3DDocumentLoadProgress>>>>, pub signal: Option<AbortSignal>, }
+src/types.rs: #[derive(Clone, Default)] pub struct LoadScene3DResourcesOptions { pub priority: Option<Scene3DResourcePriority>, pub progress: Option<Signal<Scene3DResourceLoadProgress>>, pub select: Option<Scene3DResourceSelect>, }
+src/types.rs: #[derive(Clone, Default)] pub struct ResolveScene3DResourcesOptions { pub select: Option<Scene3DResourceSelect>, }
+src/types.rs: #[derive(Clone, Default)] pub struct Scene3DDocumentLoadOptions { pub progress: Option<Ref<Signal<Ref<Scene3DDocumentLoadProgress>>>>, pub signal: Option<AbortSignal>, }
+src/types.rs: #[derive(Clone, Default)] pub struct Scene3DMaterialTextureRegistry { pub extension_listers: Ref<HashMap<Kind, Scene3DPbrExtensionTextureLister>>, pub listers: Ref<HashMap<Kind, Scene3DMaterialTextureLister>>, }
+src/types.rs: #[derive(Clone, Default)] pub struct Scene3DResourceResolverOptions { pub fetch: Option<ImageResourceFetch>, pub image_decode: Option<Arc<HostImageDecodeCapabilities>>, pub max_concurrent: Option<f32>, pub registry: Option<Scene3DMaterialTextureRegistry>, }
+src/types.rs: #[derive(Clone, Default)] pub struct Scene3DResourceRevealOptions { pub ease: Option<EasingFunction>, pub fade_seconds: Option<f32>, pub from: Option<f32>, }
+src/types.rs: #[derive(Clone, Default)] pub struct Scene3DResourceSignals { pub on_resource_failed: Signal<Scene3DResourceEvent>, pub on_resource_resolved: Signal<Scene3DResourceEvent>, runtime: EntityRuntimeSlot, }
+src/types.rs: #[derive(Clone, Default)] pub struct UpdateScene3DResourceStreamingOptions { pub priority: Option<Scene3DResourcePriority>, pub select: Option<Scene3DResourceSelect>, }
+src/types.rs: #[derive(Default)] pub struct Scene3DResourceResolverRuntime { pub in_flight: Vec<(ImageResourceReference, Ref<Scene3DResourceInFlight>)>, pub loader: Ref<ResourceLoader>, pub resolved: HashMap<usize,(ImageResourceReference, TextureSourceRef)>, pub signals: Option<Ref<Scene3DResourceSignals>>, pub(crate) context: Option<Scene3DResourceResolverContext>, pub(crate) failure_guard: Option<Scene3DResourceFailureGuardSlots>, pub(crate) failure_attempt: u64, }
+src/types.rs: impl Default for Scene3DResourceResolver
+src/types.rs: impl Default for Scene3DResourceResolver :: fn default() -> Self
+src/types.rs: impl Entity for Scene3DResourceResolver
+src/types.rs: impl Entity for Scene3DResourceResolver :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Scene3DResourceResolver :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: impl Entity for Scene3DResourceSignals
+src/types.rs: impl Entity for Scene3DResourceSignals :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for Scene3DResourceSignals :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub struct Scene3DResourceInFlight { pub controller: AbortController, pub promise: SharedFuture<()>, pub subscribers: Vec<Ref<Texture>>, }
+src/types.rs: pub struct Scene3DResourceResolver { pub fetch: ImageResourceFetch, pub image_decode: Option<Arc<HostImageDecodeCapabilities>>, pub registry: Scene3DMaterialTextureRegistry, pub(crate) state: Ref<Scene3DResourceResolverRuntime>, runtime: EntityRuntimeSlot, }
+src/types.rs: pub struct Scene3DResources { pub resolved: Vec<Scene3DResourceResolution>, pub scene: Ref<Scene3D>, pub unresolved: Vec<Scene3DResourceWorkingSet>, }
+src/types.rs: pub type Scene3DDocumentLoadProgress = LoadProgress;
+src/types.rs: pub type Scene3DMaterialTextureLister = Arc<dyn Fn(&dyn Material, &mut Vec<Ref<Texture>>) + Send + Sync>;
+src/types.rs: pub type Scene3DPbrExtensionTextureLister = Arc<dyn Fn(&PbrExtension, &mut Vec<Ref<Texture>>) + Send + Sync>;
+src/types.rs: pub type Scene3DResourceFailureClock = Arc<dyn Fn() -> f64 + Send + Sync>;
+src/types.rs: pub type Scene3DResourcePriority = Arc<dyn Fn(&Ref<Texture>, &ImageResourceReference) -> f32 + Send + Sync>;
+src/types.rs: pub type Scene3DResourceResolverWithRuntime = Scene3DResourceResolver;
+src/types.rs: pub type Scene3DResourceSelect = Arc<dyn Fn(&Ref<Texture>, &ImageResourceReference) -> bool + Send + Sync>;
+src/wrapped_diffuse_pbr_scene3d_material_textures.rs: pub fn register_wrapped_diffuse_pbr_scene3d_material_textures(registry: &Scene3DMaterialTextureRegistry)

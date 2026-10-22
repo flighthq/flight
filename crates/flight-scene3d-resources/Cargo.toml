@@ -1,0 +1,45 @@
+[package]
+name = "flight-scene3d-resources"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Renderer-neutral scene-document URL acquisition and caller-driven resolution of scene texture references into live ImageResources"
+autotests = false
+
+[lib]
+doctest = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-buffer = { workspace = true }
+flight-entity = { workspace = true }
+flight-image = { workspace = true }
+flight-image-codec = { workspace = true }
+flight-importdiagnostics = { workspace = true }
+flight-loader = { workspace = true }
+flight-log = { workspace = true }
+flight-materials = { workspace = true }
+flight-net = { workspace = true }
+flight-node = { path = "../flight-node" }
+flight-render = { workspace = true }
+flight-requirement = { workspace = true }
+flight-resource = { workspace = true }
+flight-scene3d = { workspace = true }
+flight-scene3d-formats = { path = "../flight-scene3d-formats" }
+flight-shading = { workspace = true }
+flight-signals = { workspace = true }
+flight-stream = { workspace = true }
+flight-texture = { workspace = true }
+flight-tween = { workspace = true }
+futures = "0.3"
+serde_json = { version = "1", default-features = false, features = ["std"] }
+
+[dev-dependencies]
+flight-host = { workspace = true }
+flight-meshgeometry = { workspace = true }
+
+[lints]
+workspace = true
