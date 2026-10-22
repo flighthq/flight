@@ -1,4 +1,4 @@
-use flight_path::{flatten_path, Path, PathWinding};
+use flight_path::{Path, PathWinding, flatten_path};
 
 use crate::boolean_paths::{PathBooleanOptions, get_path_boolean_fill_rule_for_winding};
 use crate::martinez_kernel::{PathBooleanKernel, PathBooleanOperation};
@@ -6,7 +6,7 @@ use crate::write_path_boolean_contours::write_path_boolean_contours;
 
 #[cfg(test)]
 mod sugar_tests {
-    use flight_path::{append_path_rectangle, create_path, Path, PathWinding};
+    use flight_path::{Path, PathWinding, append_path_rectangle, create_path};
 
     use crate::contract::*;
 
@@ -21,8 +21,23 @@ mod sugar_tests {
         let k = create_martinez_path_boolean_kernel();
         let mut oa = create_path();
         let mut ob = create_path();
-        k.union_all_paths(&mut oa, &[&square(0.0, 0.0, 10.0), &square(5.0, 5.0, 10.0)], Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
-        union_all_paths(&mut ob, &k, &[&square(0.0, 0.0, 10.0), &square(5.0, 5.0, 10.0)], Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
+        k.union_all_paths(
+            &mut oa,
+            &[&square(0.0, 0.0, 10.0), &square(5.0, 5.0, 10.0)],
+            Some(&PathBooleanOptions {
+                fill_rule: Some(PathWinding::EvenOdd),
+                tolerance: Some(0.5),
+            }),
+        );
+        union_all_paths(
+            &mut ob,
+            &k,
+            &[&square(0.0, 0.0, 10.0), &square(5.0, 5.0, 10.0)],
+            Some(&PathBooleanOptions {
+                fill_rule: Some(PathWinding::EvenOdd),
+                tolerance: Some(0.5),
+            }),
+        );
         assert_eq!(oa, ob);
         assert!(!oa.commands.is_empty());
     }
@@ -43,7 +58,9 @@ pub fn union_all_paths(
     options: Option<&PathBooleanOptions>,
 ) {
     let fill_rule = get_path_boolean_fill_rule_for_winding(
-        options.and_then(|o| o.fill_rule).unwrap_or(PathWinding::NonZero),
+        options
+            .and_then(|o| o.fill_rule)
+            .unwrap_or(PathWinding::NonZero),
     );
     let tolerance = options
         .and_then(|o| o.tolerance)
@@ -70,7 +87,12 @@ pub fn union_all_paths(
 }
 
 impl PathBooleanKernel {
-    pub fn union_all_paths(&self, out: &mut Path, paths: &[&Path], options: Option<&PathBooleanOptions>) {
+    pub fn union_all_paths(
+        &self,
+        out: &mut Path,
+        paths: &[&Path],
+        options: Option<&PathBooleanOptions>,
+    ) {
         return union_all_paths(out, self, paths, options);
     }
 }

@@ -20,9 +20,7 @@ pub const PHYSICS_3D_WORLD_VERSION: usize = 4;
 /// Creates a collider from an authored local-space shape, owning its geometry and deriving the
 /// world-space shape storage. Callers assign material, filter and sensor fields afterwards.
 // flight-lint: allow(conform-params) D23 keeps only the local shape that derives the collider's owned world-shape storage
-pub fn create_physics_3d_collider(
-    local: &CollisionColliderShape3D,
-) -> Physics3DColliderRef {
+pub fn create_physics_3d_collider(local: &CollisionColliderShape3D) -> Physics3DColliderRef {
     let mut out: Physics3DCollider = allocate_entity();
     initialize_physics_3d_collider(&mut out, local);
     return Arc::new(RwLock::new(out));
@@ -456,9 +454,7 @@ fn clear_physics_3d_solve_workspace(world: &mut Physics3DWorld) {
     world.solve_island_cursors.clear();
 }
 
-fn clone_physics_3d_collider_shape(
-    shape: &CollisionColliderShape3D,
-) -> CollisionColliderShape3D {
+fn clone_physics_3d_collider_shape(shape: &CollisionColliderShape3D) -> CollisionColliderShape3D {
     return match shape {
         CollisionColliderShape3D::BuiltIn(shape) => {
             CollisionColliderShape3D::BuiltIn(shape.clone())

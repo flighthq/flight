@@ -3,7 +3,8 @@ use flight_effects_wgpu::contract::*;
 use crate::support::*;
 
 const IDENTITY: [f32; 20] = [
-    1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
+    1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+    0.0,
 ];
 
 fn packed(matrix: &[f32]) -> Vec<f32> {
@@ -12,7 +13,12 @@ fn packed(matrix: &[f32]) -> Vec<f32> {
     let dest = create_test_target(&state, 8, 8);
     let records = record_test_commands(&state);
     with_test_frame(&mut state, |state| {
-        apply_color_matrix_pass_to_wgpu(state, &source.read().unwrap(), &dest.read().unwrap(), &matrix.to_vec());
+        apply_color_matrix_pass_to_wgpu(
+            state,
+            &source.read().unwrap(),
+            &dest.read().unwrap(),
+            &matrix.to_vec(),
+        );
     });
     return recorded_effect_uniforms(&records)[0][0..20].to_vec();
 }
@@ -29,8 +35,8 @@ mod apply_color_matrix_pass_to_wgpu {
         assert_eq!(
             packed(&distinct),
             vec![
-                1.0, 2.0, 3.0, 4.0, 6.0, 7.0, 8.0, 9.0, 11.0, 12.0, 13.0, 14.0, 16.0, 17.0, 18.0, 19.0,
-                5.0, 10.0, 15.0, 20.0,
+                1.0, 2.0, 3.0, 4.0, 6.0, 7.0, 8.0, 9.0, 11.0, 12.0, 13.0, 14.0, 16.0, 17.0, 18.0,
+                19.0, 5.0, 10.0, 15.0, 20.0,
             ]
         );
     }
@@ -50,8 +56,8 @@ mod apply_color_matrix_pass_to_wgpu {
         assert_eq!(
             packed(&IDENTITY),
             vec![
-                1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-                0.0, 0.0,
+                1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+                0.0, 0.0, 0.0, 0.0,
             ]
         );
     }
@@ -82,8 +88,18 @@ mod apply_color_matrix_pass_to_wgpu {
         let records = record_test_commands(&state);
 
         with_test_frame(&mut state, |state| {
-            apply_color_matrix_pass_to_wgpu(state, &source.read().unwrap(), &dest.read().unwrap(), &IDENTITY.to_vec());
-            apply_color_matrix_pass_to_wgpu(state, &source.read().unwrap(), &dest.read().unwrap(), &vec![0.5; 20]);
+            apply_color_matrix_pass_to_wgpu(
+                state,
+                &source.read().unwrap(),
+                &dest.read().unwrap(),
+                &IDENTITY.to_vec(),
+            );
+            apply_color_matrix_pass_to_wgpu(
+                state,
+                &source.read().unwrap(),
+                &dest.read().unwrap(),
+                &vec![0.5; 20],
+            );
         });
 
         let pipelines = recorded_pipelines(&records);

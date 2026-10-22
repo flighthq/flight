@@ -63,7 +63,8 @@ mod get_entity_uid {
             all.extend(handle.join().unwrap());
         }
         assert!(all.iter().all(|uid| {
-            uid.strip_prefix("entity-").is_some_and(|n| n.parse::<u64>().is_ok())
+            uid.strip_prefix("entity-")
+                .is_some_and(|n| n.parse::<u64>().is_ok())
         }));
         let total = all.len();
         all.sort();

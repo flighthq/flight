@@ -42,10 +42,7 @@ pub fn initialize_scale9_shape(out: &mut Scale9Shape, scale9_grid: &ShapeScale9G
 
 /// The construction initializer of `create_scale9_shape_data`.
 // flight-lint: allow(conform-params) D23 B: TS data param removed; Rust out-parameter IS the data
-pub fn initialize_scale9_shape_data(
-    out: &mut Scale9ShapeData,
-    scale9_grid: &ShapeScale9Grid,
-) {
+pub fn initialize_scale9_shape_data(out: &mut Scale9ShapeData, scale9_grid: &ShapeScale9Grid) {
     out.commands = Vec::new();
     out.scale9_grid = *scale9_grid;
     out.bounds_state = new_shape_bounds_state();

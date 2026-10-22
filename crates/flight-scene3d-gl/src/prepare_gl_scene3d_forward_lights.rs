@@ -19,7 +19,10 @@ use crate::types::{
     GlScene3DForwardLightList, PreparedForwardLightBlock, PreparedGlScene3DForwardLights,
 };
 
-fn find_prepared_block(prepared: &PreparedGlScene3DForwardLights, indices: &[i32]) -> Option<usize> {
+fn find_prepared_block(
+    prepared: &PreparedGlScene3DForwardLights,
+    indices: &[i32],
+) -> Option<usize> {
     for block_index in 0..prepared.block_count {
         if prepared.blocks[block_index].indices == indices {
             return Some(block_index);

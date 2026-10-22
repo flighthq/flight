@@ -5,7 +5,9 @@ fn assert_approx(actual: f32, expected: f32) {
     assert!(
         diff < 1e-4,
         "expected {} to be approximately {}, diff = {}",
-        actual, expected, diff
+        actual,
+        expected,
+        diff
     );
 }
 
@@ -14,7 +16,9 @@ fn assert_approx_tight(actual: f32, expected: f32) {
     assert!(
         diff < 1e-6,
         "expected {} to be approximately {}, diff = {}",
-        actual, expected, diff
+        actual,
+        expected,
+        diff
     );
 }
 
@@ -108,12 +112,22 @@ mod get_closest_point_between_ray3ds {
         let mut pa = create_vector3(0.0, 0.0, 0.0);
         let mut pb = create_vector3(0.0, 0.0, 0.0);
 
-        get_closest_point_between_ray3ds(&mut pa, &mut pb, &create_ray3d(0.0, 0.0, 0.0, 1.0, 0.0, 0.0), &create_ray3d(5.0, 1.0, 0.0, 0.0, 0.0, 0.0));
+        get_closest_point_between_ray3ds(
+            &mut pa,
+            &mut pb,
+            &create_ray3d(0.0, 0.0, 0.0, 1.0, 0.0, 0.0),
+            &create_ray3d(5.0, 1.0, 0.0, 0.0, 0.0, 0.0),
+        );
         assert!(pa.x.is_finite() && pa.y.is_finite() && pa.z.is_finite());
         assert_eq!(pb.x, 5.0);
         assert_eq!(pb.y, 1.0);
 
-        get_closest_point_between_ray3ds(&mut pa, &mut pb, &create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0), &create_ray3d(0.0, 0.0, 5.0, 0.0, 0.0, 1.0));
+        get_closest_point_between_ray3ds(
+            &mut pa,
+            &mut pb,
+            &create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+            &create_ray3d(0.0, 0.0, 5.0, 0.0, 0.0, 1.0),
+        );
         assert_eq!(pa.x, 0.0);
         assert_eq!(pa.y, 0.0);
         assert_eq!(pa.z, 0.0);
@@ -266,16 +280,40 @@ mod intersect_ray3d_aabb {
 
     #[test]
     fn returns_negative_one_for_empty_aabb_on_each_axis() {
-        assert_eq!(intersect_ray3d_aabb(&create_ray3d(5.0, 1.5, 1.5, -1.0, 0.0, 0.0), &create_aabb(2.0, 1.0, 1.0, 1.0, 2.0, 2.0)), -1.0);
-        assert_eq!(intersect_ray3d_aabb(&create_ray3d(1.5, 5.0, 1.5, 0.0, -1.0, 0.0), &create_aabb(1.0, 2.0, 1.0, 2.0, 1.0, 2.0)), -1.0);
-        assert_eq!(intersect_ray3d_aabb(&create_ray3d(1.5, 1.5, 5.0, 0.0, 0.0, -1.0), &create_aabb(1.0, 1.0, 2.0, 2.0, 2.0, 1.0)), -1.0);
+        assert_eq!(
+            intersect_ray3d_aabb(
+                &create_ray3d(5.0, 1.5, 1.5, -1.0, 0.0, 0.0),
+                &create_aabb(2.0, 1.0, 1.0, 1.0, 2.0, 2.0)
+            ),
+            -1.0
+        );
+        assert_eq!(
+            intersect_ray3d_aabb(
+                &create_ray3d(1.5, 5.0, 1.5, 0.0, -1.0, 0.0),
+                &create_aabb(1.0, 2.0, 1.0, 2.0, 1.0, 2.0)
+            ),
+            -1.0
+        );
+        assert_eq!(
+            intersect_ray3d_aabb(
+                &create_ray3d(1.5, 1.5, 5.0, 0.0, 0.0, -1.0),
+                &create_aabb(1.0, 1.0, 2.0, 2.0, 2.0, 1.0)
+            ),
+            -1.0
+        );
     }
 
     #[test]
     fn returns_negative_one_for_no_direction() {
         let aabb = create_aabb(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0);
-        assert_eq!(intersect_ray3d_aabb(&create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0), &aabb), -1.0);
-        assert_eq!(intersect_ray3d_aabb(&create_ray3d(5.0, 0.0, 0.0, 0.0, 0.0, 0.0), &aabb), -1.0);
+        assert_eq!(
+            intersect_ray3d_aabb(&create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0), &aabb),
+            -1.0
+        );
+        assert_eq!(
+            intersect_ray3d_aabb(&create_ray3d(5.0, 0.0, 0.0, 0.0, 0.0, 0.0), &aabb),
+            -1.0
+        );
     }
 
     #[test]
@@ -290,7 +328,10 @@ mod intersect_ray3d_aabb {
             (0.0, 0.0, 10.0, 0.0, 0.0, -1.0, 5.0),
         ];
         for &(ox, oy, oz, dx, dy, dz, entry) in rays_into_lopsided_box {
-            assert_approx_tight(intersect_ray3d_aabb(&create_ray3d(ox, oy, oz, dx, dy, dz), &lopsided), entry);
+            assert_approx_tight(
+                intersect_ray3d_aabb(&create_ray3d(ox, oy, oz, dx, dy, dz), &lopsided),
+                entry,
+            );
         }
     }
 
@@ -306,16 +347,28 @@ mod intersect_ray3d_aabb {
             (0.0, 0.0, 10.0, 0.0, 0.0, -1.0),
         ];
         for &(ox, oy, oz, dx, dy, dz) in rays {
-            assert_eq!(intersect_ray3d_aabb(&create_ray3d(ox, oy, oz, -dx, -dy, -dz), &lopsided), -1.0);
+            assert_eq!(
+                intersect_ray3d_aabb(&create_ray3d(ox, oy, oz, -dx, -dy, -dz), &lopsided),
+                -1.0
+            );
         }
     }
 
     #[test]
     fn returns_negative_one_for_ray_running_alongside() {
         let lopsided = create_aabb(-1.0, -4.0, -6.0, 2.0, 3.0, 5.0);
-        assert_eq!(intersect_ray3d_aabb(&create_ray3d(10.0, 0.0, 0.0, 0.0, 1.0, 0.0), &lopsided), -1.0);
-        assert_eq!(intersect_ray3d_aabb(&create_ray3d(0.0, 10.0, 0.0, 0.0, 0.0, 1.0), &lopsided), -1.0);
-        assert_eq!(intersect_ray3d_aabb(&create_ray3d(0.0, 0.0, 10.0, 1.0, 0.0, 0.0), &lopsided), -1.0);
+        assert_eq!(
+            intersect_ray3d_aabb(&create_ray3d(10.0, 0.0, 0.0, 0.0, 1.0, 0.0), &lopsided),
+            -1.0
+        );
+        assert_eq!(
+            intersect_ray3d_aabb(&create_ray3d(0.0, 10.0, 0.0, 0.0, 0.0, 1.0), &lopsided),
+            -1.0
+        );
+        assert_eq!(
+            intersect_ray3d_aabb(&create_ray3d(0.0, 0.0, 10.0, 1.0, 0.0, 0.0), &lopsided),
+            -1.0
+        );
     }
 }
 
@@ -354,8 +407,20 @@ mod intersect_ray3d_plane {
 
     #[test]
     fn returns_negative_one_for_zero_normal_or_zero_direction() {
-        assert_eq!(intersect_ray3d_plane(&create_ray3d(0.0, 0.0, -3.0, 0.0, 0.0, 1.0), &create_plane(0.0, 0.0, 0.0, 0.0)), -1.0);
-        assert_eq!(intersect_ray3d_plane(&create_ray3d(0.0, 0.0, -3.0, 0.0, 0.0, 0.0), &create_plane(0.0, 0.0, 1.0, 0.0)), -1.0);
+        assert_eq!(
+            intersect_ray3d_plane(
+                &create_ray3d(0.0, 0.0, -3.0, 0.0, 0.0, 1.0),
+                &create_plane(0.0, 0.0, 0.0, 0.0)
+            ),
+            -1.0
+        );
+        assert_eq!(
+            intersect_ray3d_plane(
+                &create_ray3d(0.0, 0.0, -3.0, 0.0, 0.0, 0.0),
+                &create_plane(0.0, 0.0, 1.0, 0.0)
+            ),
+            -1.0
+        );
     }
 }
 
@@ -393,45 +458,69 @@ mod intersect_ray3d_sphere {
     #[test]
     fn returns_negative_one_when_sphere_behind() {
         let sphere = create_bounding_sphere(0.0, 0.0, 0.0, 1.0);
-        assert_eq!(intersect_ray3d_sphere(&create_ray3d(5.0, 0.0, 0.0, 1.0, 0.0, 0.0), &sphere), -1.0);
+        assert_eq!(
+            intersect_ray3d_sphere(&create_ray3d(5.0, 0.0, 0.0, 1.0, 0.0, 0.0), &sphere),
+            -1.0
+        );
     }
 
     #[test]
     fn returns_negative_one_for_no_direction() {
         let sphere = create_bounding_sphere(0.0, 0.0, 0.0, 1.0);
-        assert_eq!(intersect_ray3d_sphere(&create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0), &sphere), -1.0);
+        assert_eq!(
+            intersect_ray3d_sphere(&create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0), &sphere),
+            -1.0
+        );
     }
 }
 
 mod intersect_ray3d_triangle {
     use super::*;
 
-    fn tri_a() -> Vector3 { create_vector3(-1.0, 0.0, 0.0) }
-    fn tri_b() -> Vector3 { create_vector3(1.0, 0.0, 0.0) }
-    fn tri_c() -> Vector3 { create_vector3(0.0, 1.0, 0.0) }
+    fn tri_a() -> Vector3 {
+        create_vector3(-1.0, 0.0, 0.0)
+    }
+    fn tri_b() -> Vector3 {
+        create_vector3(1.0, 0.0, 0.0)
+    }
+    fn tri_c() -> Vector3 {
+        create_vector3(0.0, 1.0, 0.0)
+    }
 
     #[test]
     fn returns_t_for_hit() {
         let ray = create_ray3d(0.0, 0.3, -3.0, 0.0, 0.0, 1.0);
-        assert_approx(intersect_ray3d_triangle(&ray, &tri_a(), &tri_b(), &tri_c()), 3.0);
+        assert_approx(
+            intersect_ray3d_triangle(&ray, &tri_a(), &tri_b(), &tri_c()),
+            3.0,
+        );
     }
 
     #[test]
     fn returns_negative_one_when_miss() {
         let ray = create_ray3d(5.0, 5.0, -3.0, 0.0, 0.0, 1.0);
-        assert_eq!(intersect_ray3d_triangle(&ray, &tri_a(), &tri_b(), &tri_c()), -1.0);
+        assert_eq!(
+            intersect_ray3d_triangle(&ray, &tri_a(), &tri_b(), &tri_c()),
+            -1.0
+        );
     }
 
     #[test]
     fn returns_negative_one_when_behind_origin() {
         let ray = create_ray3d(0.0, 0.3, 3.0, 0.0, 0.0, 1.0);
-        assert_eq!(intersect_ray3d_triangle(&ray, &tri_a(), &tri_b(), &tri_c()), -1.0);
+        assert_eq!(
+            intersect_ray3d_triangle(&ray, &tri_a(), &tri_b(), &tri_c()),
+            -1.0
+        );
     }
 
     #[test]
     fn tests_both_sides_no_backface_culling() {
         let ray = create_ray3d(0.0, 0.3, 3.0, 0.0, 0.0, -1.0);
-        assert_approx(intersect_ray3d_triangle(&ray, &tri_a(), &tri_b(), &tri_c()), 3.0);
+        assert_approx(
+            intersect_ray3d_triangle(&ray, &tri_a(), &tri_b(), &tri_c()),
+            3.0,
+        );
     }
 
     #[test]
@@ -445,7 +534,10 @@ mod intersect_ray3d_triangle {
     fn accepts_non_normalized_direction() {
         for &scale in &[1.0_f32, 1e-6, 1e-12] {
             let ray = create_ray3d(0.0, 0.3, -3.0, 0.0, 0.0, scale);
-            assert_approx(intersect_ray3d_triangle(&ray, &tri_a(), &tri_b(), &tri_c()) * scale, 3.0);
+            assert_approx(
+                intersect_ray3d_triangle(&ray, &tri_a(), &tri_b(), &tri_c()) * scale,
+                3.0,
+            );
         }
     }
 
@@ -462,31 +554,64 @@ mod intersect_ray3d_triangle {
 
     #[test]
     fn returns_negative_one_for_zero_direction() {
-        assert_eq!(intersect_ray3d_triangle(&create_ray3d(0.0, 0.3, -3.0, 0.0, 0.0, 0.0), &tri_a(), &tri_b(), &tri_c()), -1.0);
+        assert_eq!(
+            intersect_ray3d_triangle(
+                &create_ray3d(0.0, 0.3, -3.0, 0.0, 0.0, 0.0),
+                &tri_a(),
+                &tri_b(),
+                &tri_c()
+            ),
+            -1.0
+        );
     }
 
     #[test]
     fn returns_negative_one_for_nearly_parallel() {
         let nearly_parallel = create_ray3d(-1.0, 0.3, -1e-12, 1.0, 0.0, 1e-12);
-        assert_eq!(intersect_ray3d_triangle(&nearly_parallel, &tri_a(), &tri_b(), &tri_c()), -1.0);
+        assert_eq!(
+            intersect_ray3d_triangle(&nearly_parallel, &tri_a(), &tri_b(), &tri_c()),
+            -1.0
+        );
     }
 
     #[test]
     fn returns_negative_one_past_far_edge() {
         let ray = create_ray3d(0.9, 0.9, -3.0, 0.0, 0.0, 1.0);
-        assert_eq!(intersect_ray3d_triangle(&ray, &tri_a(), &tri_b(), &tri_c()), -1.0);
+        assert_eq!(
+            intersect_ray3d_triangle(&ray, &tri_a(), &tri_b(), &tri_c()),
+            -1.0
+        );
     }
 
     #[test]
     fn returns_negative_one_on_far_side_of_base() {
         let ray = create_ray3d(0.0, -0.5, -3.0, 0.0, 0.0, 1.0);
-        assert_eq!(intersect_ray3d_triangle(&ray, &tri_a(), &tri_b(), &tri_c()), -1.0);
+        assert_eq!(
+            intersect_ray3d_triangle(&ray, &tri_a(), &tri_b(), &tri_c()),
+            -1.0
+        );
     }
 
     #[test]
     fn returns_negative_one_beyond_first_edge_ends() {
-        assert_eq!(intersect_ray3d_triangle(&create_ray3d(3.0, 0.0, -3.0, 0.0, 0.0, 1.0), &tri_a(), &tri_b(), &tri_c()), -1.0);
-        assert_eq!(intersect_ray3d_triangle(&create_ray3d(0.0, 3.0, -3.0, 0.0, 0.0, 1.0), &tri_a(), &tri_b(), &tri_c()), -1.0);
+        assert_eq!(
+            intersect_ray3d_triangle(
+                &create_ray3d(3.0, 0.0, -3.0, 0.0, 0.0, 1.0),
+                &tri_a(),
+                &tri_b(),
+                &tri_c()
+            ),
+            -1.0
+        );
+        assert_eq!(
+            intersect_ray3d_triangle(
+                &create_ray3d(0.0, 3.0, -3.0, 0.0, 0.0, 1.0),
+                &tri_a(),
+                &tri_b(),
+                &tri_c()
+            ),
+            -1.0
+        );
     }
 }
 
@@ -501,9 +626,17 @@ mod ray_shape_direction_scale_parity {
                 intersect_ray3d_aabb(&ray, &create_aabb(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0)),
                 intersect_ray3d_sphere(&ray, &create_bounding_sphere(0.0, 0.0, 0.0, 1.0)),
                 intersect_ray3d_capsule(&ray, &create_capsule(0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0)),
-                intersect_ray3d_obb(&ray, &create_obb(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0)),
+                intersect_ray3d_obb(
+                    &ray,
+                    &create_obb(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0),
+                ),
                 intersect_ray3d_plane(&ray, &create_plane(1.0, 0.0, 0.0, -1.0)),
-                intersect_ray3d_triangle(&ray, &create_vector3(1.0, -1.0, -1.0), &create_vector3(1.0, 1.0, -1.0), &create_vector3(1.0, 0.0, 1.0)),
+                intersect_ray3d_triangle(
+                    &ray,
+                    &create_vector3(1.0, -1.0, -1.0),
+                    &create_vector3(1.0, 1.0, -1.0),
+                    &create_vector3(1.0, 0.0, 1.0),
+                ),
             ];
             for t in &hits {
                 assert_approx(t * scale, 4.0);
@@ -559,9 +692,18 @@ mod transform_ray3d_by_matrix4 {
     use super::*;
 
     fn translate_matrix4(m: &mut Matrix4, tx: f32, ty: f32, tz: f32) {
-        let m00 = m.m[0]; let m01 = m.m[1]; let m02 = m.m[2]; let m03 = m.m[3];
-        let m10 = m.m[4]; let m11 = m.m[5]; let m12 = m.m[6]; let m13 = m.m[7];
-        let m20 = m.m[8]; let m21 = m.m[9]; let m22 = m.m[10]; let m23 = m.m[11];
+        let m00 = m.m[0];
+        let m01 = m.m[1];
+        let m02 = m.m[2];
+        let m03 = m.m[3];
+        let m10 = m.m[4];
+        let m11 = m.m[5];
+        let m12 = m.m[6];
+        let m13 = m.m[7];
+        let m20 = m.m[8];
+        let m21 = m.m[9];
+        let m22 = m.m[10];
+        let m23 = m.m[11];
         m.m[12] = m00 * tx + m10 * ty + m20 * tz + m.m[12];
         m.m[13] = m01 * tx + m11 * ty + m21 * tz + m.m[13];
         m.m[14] = m02 * tx + m12 * ty + m22 * tz + m.m[14];

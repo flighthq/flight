@@ -9,7 +9,7 @@ use flight_importdiagnostics::ImportDiagnostic;
 use flight_layout::LayoutTree;
 use flight_path::PathWinding;
 use flight_path_boolean::PathBooleanKernel;
-use flight_scene2d::{create_display_object, DisplayObject, Node2DRef, Scene2DSlotReference};
+use flight_scene2d::{DisplayObject, Node2DRef, Scene2DSlotReference, create_display_object};
 use flight_shape::contract::{Shape, SpreadMethod};
 use flight_skeleton2d::Skeleton2D;
 use flight_xml::XmlElement;

@@ -50,7 +50,10 @@ mod begin_gl_mesh_draw {
         begin_gl_mesh_draw(&state, &first, false);
         begin_gl_mesh_draw(&state, &second, false);
 
-        let masks: Vec<i64> = calls_with("depth_mask").iter().map(|call| call.integers[0]).collect();
+        let masks: Vec<i64> = calls_with("depth_mask")
+            .iter()
+            .map(|call| call.integers[0])
+            .collect();
         assert_eq!(masks, vec![0, 0]);
     }
 
@@ -70,9 +73,16 @@ mod begin_gl_mesh_draw {
                 .iter()
                 .any(|call| call.integers[0] == i64::from(glow::CULL_FACE))
         );
-        assert!(calls_with("depth_mask").iter().any(|call| call.integers[0] == 1));
+        assert!(
+            calls_with("depth_mask")
+                .iter()
+                .any(|call| call.integers[0] == 1)
+        );
         assert!(Rc::ptr_eq(
-            get_gl_scene3d_runtime(&state).active_mesh_program.as_ref().unwrap(),
+            get_gl_scene3d_runtime(&state)
+                .active_mesh_program
+                .as_ref()
+                .unwrap(),
             &program
         ));
     }
@@ -244,7 +254,11 @@ mod destroy_gl_mesh_program {
         destroy_gl_mesh_program(&state, &program);
         let scene = get_gl_scene3d_runtime(&state);
         assert!(!scene.uploaded_light_blocks.contains_key(&program.program));
-        assert!(!scene.custom_shader_checked_programs.contains(&program.program));
+        assert!(
+            !scene
+                .custom_shader_checked_programs
+                .contains(&program.program)
+        );
     }
 }
 
@@ -288,7 +302,7 @@ mod draw_gl_mesh_subset {
             geometry.topology = topology;
             let proxy = make_test_proxy(standard_material(), geometry.subsets[0]);
             let program = make_test_mesh_program(&state);
-        draw_gl_mesh_subset(&mut state, &program, &proxy, &geometry);
+            draw_gl_mesh_subset(&mut state, &program, &proxy, &geometry);
             let draw = calls_with("draw_elements").pop().unwrap();
             assert_eq!(draw.integers[0], i64::from(constant));
         }
@@ -322,24 +336,36 @@ mod draw_gl_mesh_subset {
     fn uploads_u_object_alpha_with_the_proxy_alpha_when_the_program_has_an_object_alpha_location() {
         let state = make_gl_scene3d_state();
         let program = make_test_mesh_program(&state);
-        program.loc_object_alpha.set(Some(Some(uniform_location("u_objectAlpha"))));
+        program
+            .loc_object_alpha
+            .set(Some(Some(uniform_location("u_objectAlpha"))));
         let mut state = state;
         let geometry = box_geometry();
         let mut proxy = make_test_proxy(standard_material(), geometry.subsets[0]);
         proxy.alpha = Some(0.25);
         draw_gl_mesh_subset(&mut state, &program, &proxy, &geometry);
-        assert!(calls_with("uniform_1_f32").iter().any(|call| call.floats[0] == 0.25));
+        assert!(
+            calls_with("uniform_1_f32")
+                .iter()
+                .any(|call| call.floats[0] == 0.25)
+        );
     }
 
     #[test]
     fn defaults_u_object_alpha_to_1_when_the_proxy_carries_no_alpha() {
         let mut state = make_gl_scene3d_state();
         let program = make_test_mesh_program(&state);
-        program.loc_object_alpha.set(Some(Some(uniform_location("u_objectAlpha"))));
+        program
+            .loc_object_alpha
+            .set(Some(Some(uniform_location("u_objectAlpha"))));
         let geometry = box_geometry();
         let proxy = make_test_proxy(standard_material(), geometry.subsets[0]);
         draw_gl_mesh_subset(&mut state, &program, &proxy, &geometry);
-        assert!(calls_with("uniform_1_f32").iter().any(|call| call.floats[0] == 1.0));
+        assert!(
+            calls_with("uniform_1_f32")
+                .iter()
+                .any(|call| call.floats[0] == 1.0)
+        );
     }
 
     #[test]
@@ -383,7 +409,9 @@ mod draw_gl_mesh_subset {
         let mut state = make_gl_scene3d_state();
         let geometry = box_geometry();
         let program = make_test_mesh_program(&state);
-        program.loc_joint_texture.set(Some(Some(uniform_location("u_jointTexture"))));
+        program
+            .loc_joint_texture
+            .set(Some(Some(uniform_location("u_jointTexture"))));
         let mut proxy = make_test_proxy(standard_material(), geometry.subsets[0]);
         proxy.joint_matrices = Some(Arc::new(RwLock::new(vec![0.0; 2 * 16].into_boxed_slice())));
 
@@ -402,15 +430,21 @@ mod draw_gl_mesh_subset {
         register_gl_mesh_skinning(&state);
         let geometry = box_geometry();
         let program = make_test_mesh_program(&state);
-        program.loc_joint_texture.set(Some(Some(uniform_location("u_jointTexture"))));
+        program
+            .loc_joint_texture
+            .set(Some(Some(uniform_location("u_jointTexture"))));
         // Two joints' palette (32 floats) → texture width = 2 joints * 4 = 8 texels.
         let mut proxy = make_test_proxy(standard_material(), geometry.subsets[0]);
         proxy.joint_matrices = Some(Arc::new(RwLock::new(vec![0.0; 2 * 16].into_boxed_slice())));
         draw_gl_mesh_subset(&mut state, &program, &proxy, &geometry);
 
         // The palette allocates RGBA32F storage on the skin-palette unit and the sampler is set to it.
-        assert!(calls_with("active_texture").iter().any(|call| call.integers[0]
-            == i64::from(glow::TEXTURE0 + SKIN_PALETTE_TEXTURE_UNIT)));
+        assert!(
+            calls_with("active_texture")
+                .iter()
+                .any(|call| call.integers[0]
+                    == i64::from(glow::TEXTURE0 + SKIN_PALETTE_TEXTURE_UNIT))
+        );
         let allocation = calls_with("tex_image_2d").into_iter().next().unwrap();
         assert_eq!(allocation.integers[3], 8); // width = 2 joints * 4 texels
         assert!(
@@ -436,7 +470,9 @@ mod draw_gl_mesh_subset {
         let mut state = make_gl_scene3d_state();
         let geometry = box_geometry();
         let program = make_test_mesh_program(&state);
-        program.loc_joint_texture.set(Some(Some(uniform_location("u_jointTexture"))));
+        program
+            .loc_joint_texture
+            .set(Some(Some(uniform_location("u_jointTexture"))));
         let proxy = make_test_proxy(standard_material(), geometry.subsets[0]);
         draw_gl_mesh_subset(&mut state, &program, &proxy, &geometry);
         assert!(calls_with("tex_image_2d").is_empty());
@@ -468,7 +504,8 @@ mod ensure_gl_scene3d_program {
         let a = ensure_gl_scene3d_program(&state, "fam:a", |_gl| make_test_mesh_program(&state));
         let b = ensure_gl_scene3d_program(&state, "fam:b", |_gl| make_test_mesh_program(&state));
         // Two distinct keys → two cached entries (the shared program_cache spans every family).
-        let again = ensure_gl_scene3d_program(&state, "fam:a", |_gl| make_test_mesh_program(&state));
+        let again =
+            ensure_gl_scene3d_program(&state, "fam:a", |_gl| make_test_mesh_program(&state));
         assert!(!Rc::ptr_eq(&a, &b));
         assert!(Rc::ptr_eq(&again, &a));
         assert_eq!(get_gl_scene3d_runtime(&state).program_cache.len(), 2);
@@ -489,7 +526,10 @@ mod front_face_selection_under_a_mirroring_world_matrix {
         proxy.world_matrix = world_matrix;
         let program = make_test_mesh_program(&state);
         draw_gl_mesh_subset(&mut state, &program, &proxy, &geometry);
-        return calls_with("front_face").iter().map(|call| call.integers[0]).collect();
+        return calls_with("front_face")
+            .iter()
+            .map(|call| call.integers[0])
+            .collect();
     }
 
     #[test]
@@ -563,7 +603,11 @@ mod set_gl_mesh_view_projection {
             y: 20,
         });
 
-        set_gl_mesh_view_projection(&state, Some(uniform_location("u_viewProjection")), &make_test_camera());
+        set_gl_mesh_view_projection(
+            &state,
+            Some(uniform_location("u_viewProjection")),
+            &make_test_camera(),
+        );
 
         let upload = calls_with("uniform_matrix_4_f32").pop().unwrap();
         let expected = 3.0_f32.sqrt() / 2.0;
@@ -581,8 +625,12 @@ mod upload_gl_mesh_draw_alpha {
     fn uploads_node_alpha_and_resolves_each_location_once_across_draws() {
         let state = make_gl_scene3d_state();
         let program = make_test_mesh_program(&state);
-        program.loc_object_alpha.set(Some(Some(uniform_location("u_objectAlpha"))));
-        program.loc_alpha_is_coverage.set(Some(Some(uniform_location("u_alphaIsCoverage"))));
+        program
+            .loc_object_alpha
+            .set(Some(Some(uniform_location("u_objectAlpha"))));
+        program
+            .loc_alpha_is_coverage
+            .set(Some(Some(uniform_location("u_alphaIsCoverage"))));
         crate::gl_test_helper::clear_calls();
 
         upload_gl_mesh_draw_alpha(&state.gl, &program, 0.25, None);
@@ -603,8 +651,12 @@ mod upload_gl_mesh_draw_alpha {
     fn flags_alpha_as_coverage_only_for_a_blended_material() {
         let state = make_gl_scene3d_state();
         let program = make_test_mesh_program(&state);
-        program.loc_object_alpha.set(Some(Some(uniform_location("u_objectAlpha"))));
-        program.loc_alpha_is_coverage.set(Some(Some(uniform_location("u_alphaIsCoverage"))));
+        program
+            .loc_object_alpha
+            .set(Some(Some(uniform_location("u_objectAlpha"))));
+        program
+            .loc_alpha_is_coverage
+            .set(Some(Some(uniform_location("u_alphaIsCoverage"))));
         let coverage_location = i64::from(uniform_location_of("u_alphaIsCoverage"));
 
         let coverage_of = |mode: Option<MaterialAlphaMode>| -> f32 {

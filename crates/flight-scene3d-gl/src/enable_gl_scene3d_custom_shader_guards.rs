@@ -21,7 +21,10 @@ pub fn are_gl_scene3d_custom_shader_guards_enabled(state: &GlRenderState) -> boo
 // nullable runtime slot, so the production draw path references no message and no log dependency.
 // Idempotent. The warnings go to `log_state`, kept as the state's guard log.
 // flight-lint: allow(conform-params) D5 caller-owned LogState replaces the TS logging singleton
-pub fn enable_gl_scene3d_custom_shader_guards(state: &GlRenderState, log_state: Option<LogStateRef>) {
+pub fn enable_gl_scene3d_custom_shader_guards(
+    state: &GlRenderState,
+    log_state: Option<LogStateRef>,
+) {
     state.gl_runtime.borrow_mut().guard_log = log_state;
     get_gl_scene3d_runtime(state).custom_shader_guard = Some(warn_gl_custom_shader_uniform_types);
 }
@@ -47,7 +50,11 @@ fn gl_uniform_type_name(kind: u32) -> String {
 // (used) uniforms are reported by get_active_uniform, so a declared-but-unused u_normalMatrix — which
 // the renderer skips anyway (its location resolves None) — never trips the guard. Programs are checked
 // once (recorded on the scene runtime) so repeated per-frame binds do not re-introspect.
-fn warn_gl_custom_shader_uniform_types(state: &GlRenderState, program: NativeProgram, shader_key: &str) {
+fn warn_gl_custom_shader_uniform_types(
+    state: &GlRenderState,
+    program: NativeProgram,
+    shader_key: &str,
+) {
     if !get_gl_scene3d_runtime(state)
         .custom_shader_checked_programs
         .insert(program)
@@ -65,7 +72,8 @@ fn warn_gl_custom_shader_uniform_types(state: &GlRenderState, program: NativePro
     let log_state = state.gl_runtime.borrow().guard_log.clone();
 
     // SAFETY: program introspection runs on the owning GL thread.
-    let count = unsafe { gl.get_program_parameter_i32(program, glow::ACTIVE_UNIFORMS) }.max(0) as u32;
+    let count =
+        unsafe { gl.get_program_parameter_i32(program, glow::ACTIVE_UNIFORMS) }.max(0) as u32;
     for i in 0..count {
         // SAFETY: program introspection runs on the owning GL thread.
         let Some(info) = (unsafe { gl.get_active_uniform(program, i) }) else {
@@ -95,7 +103,10 @@ fn warn_gl_custom_shader_uniform_types(state: &GlRenderState, program: NativePro
         log_once(
             log_state,
             0.0,
-            &format!("scene-gl:custom-shader-uniform-type:{shader_key}:{}", info.name),
+            &format!(
+                "scene-gl:custom-shader-uniform-type:{shader_key}:{}",
+                info.name
+            ),
             LogLevel::Warn,
             LogDataOrProvider::Data(LogData::Record(data)),
             Some("scene-gl".to_string()),

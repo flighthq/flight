@@ -16,19 +16,29 @@ pub struct Capsule {
 /// Creates a capsule from a start point, end point, and radius. A negative radius conventionally
 /// marks an empty capsule.
 pub fn create_capsule(
-    start_x: f32, start_y: f32, start_z: f32,
-    end_x: f32, end_y: f32, end_z: f32,
+    start_x: f32,
+    start_y: f32,
+    start_z: f32,
+    end_x: f32,
+    end_y: f32,
+    end_z: f32,
     radius: f32,
 ) -> Capsule {
     let mut out: Capsule = allocate_entity();
-    initialize_capsule(&mut out, start_x, start_y, start_z, end_x, end_y, end_z, radius);
+    initialize_capsule(
+        &mut out, start_x, start_y, start_z, end_x, end_y, end_z, radius,
+    );
     return out;
 }
 
 pub fn initialize_capsule(
     out: &mut Capsule,
-    start_x: f32, start_y: f32, start_z: f32,
-    end_x: f32, end_y: f32, end_z: f32,
+    start_x: f32,
+    start_y: f32,
+    start_z: f32,
+    end_x: f32,
+    end_y: f32,
+    end_z: f32,
     radius: f32,
 ) {
     out.start_x = start_x;
@@ -41,14 +51,28 @@ pub fn initialize_capsule(
 }
 
 fn axis_perpendicular(abx: f32, aby: f32, abz: f32, ab_len2: f32) -> (f32, f32, f32) {
-    if ab_len2 < 1e-20 { return (1.0, 0.0, 0.0); }
+    if ab_len2 < 1e-20 {
+        return (1.0, 0.0, 0.0);
+    }
 
     let abs_x = abx.abs();
     let abs_y = aby.abs();
     let abs_z = abz.abs();
-    let least_aligned_x: f32 = if abs_x <= abs_y && abs_x <= abs_z { 1.0 } else { 0.0 };
-    let least_aligned_y: f32 = if least_aligned_x == 0.0 && abs_y <= abs_z { 1.0 } else { 0.0 };
-    let least_aligned_z: f32 = if least_aligned_x == 0.0 && least_aligned_y == 0.0 { 1.0 } else { 0.0 };
+    let least_aligned_x: f32 = if abs_x <= abs_y && abs_x <= abs_z {
+        1.0
+    } else {
+        0.0
+    };
+    let least_aligned_y: f32 = if least_aligned_x == 0.0 && abs_y <= abs_z {
+        1.0
+    } else {
+        0.0
+    };
+    let least_aligned_z: f32 = if least_aligned_x == 0.0 && least_aligned_y == 0.0 {
+        1.0
+    } else {
+        0.0
+    };
 
     let px = aby * least_aligned_z - abz * least_aligned_y;
     let py = abz * least_aligned_x - abx * least_aligned_z;
@@ -127,9 +151,13 @@ pub fn intersect_ray3d_capsule(ray: &Ray3D, capsule: &Capsule) -> f32 {
     let by = capsule.end_y;
     let bz = capsule.end_z;
     let r = capsule.radius;
-    if r < 0.0 { return -1.0; }
+    if r < 0.0 {
+        return -1.0;
+    }
     let direction_length_sq = dx * dx + dy * dy + dz * dz;
-    if direction_length_sq == 0.0 { return -1.0; }
+    if direction_length_sq == 0.0 {
+        return -1.0;
+    }
 
     let abx = bx - ax;
     let aby = by - ay;
@@ -181,10 +209,14 @@ pub fn intersect_ray3d_capsule(ray: &Ray3D, capsule: &Capsule) -> f32 {
     }
 
     let t_a = ray_sphere_hit(ox, oy, oz, dx, dy, dz, r, direction_length_sq, ax, ay, az);
-    if t_a >= 0.0 && (t_best < 0.0 || t_a < t_best) { t_best = t_a; }
+    if t_a >= 0.0 && (t_best < 0.0 || t_a < t_best) {
+        t_best = t_a;
+    }
 
     let t_b = ray_sphere_hit(ox, oy, oz, dx, dy, dz, r, direction_length_sq, bx, by, bz);
-    if t_b >= 0.0 && (t_best < 0.0 || t_b < t_best) { t_best = t_b; }
+    if t_b >= 0.0 && (t_best < 0.0 || t_b < t_best) {
+        t_best = t_b;
+    }
 
     return t_best;
 }
@@ -192,27 +224,37 @@ pub fn intersect_ray3d_capsule(ray: &Ray3D, capsule: &Capsule) -> f32 {
 /// Returns whether a capsule overlaps an axis-aligned bounding box. An empty capsule (negative
 /// radius) or empty AABB (min > max on any axis) does not intersect.
 pub fn is_capsule_intersecting_aabb(capsule: &Capsule, aabb: &Aabb) -> bool {
-    if capsule.radius < 0.0 { return false; }
+    if capsule.radius < 0.0 {
+        return false;
+    }
     if aabb.min.x > aabb.max.x || aabb.min.y > aabb.max.y || aabb.min.z > aabb.max.z {
         return false;
     }
     let dist2 = segment_to_aabb_distance_sq(
-        capsule.start_x, capsule.start_y, capsule.start_z,
-        capsule.end_x, capsule.end_y, capsule.end_z,
-        aabb.min.x, aabb.min.y, aabb.min.z,
-        aabb.max.x, aabb.max.y, aabb.max.z,
+        capsule.start_x,
+        capsule.start_y,
+        capsule.start_z,
+        capsule.end_x,
+        capsule.end_y,
+        capsule.end_z,
+        aabb.min.x,
+        aabb.min.y,
+        aabb.min.z,
+        aabb.max.x,
+        aabb.max.y,
+        aabb.max.z,
     );
     return dist2 <= capsule.radius * capsule.radius;
 }
 
 /// Returns whether two capsules overlap. An empty capsule (negative radius) does not intersect.
 pub fn is_capsule_intersecting_capsule(a: &Capsule, b: &Capsule) -> bool {
-    if a.radius < 0.0 || b.radius < 0.0 { return false; }
+    if a.radius < 0.0 || b.radius < 0.0 {
+        return false;
+    }
     let dist = segment_to_segment_distance_sq(
-        a.start_x, a.start_y, a.start_z,
-        a.end_x, a.end_y, a.end_z,
-        b.start_x, b.start_y, b.start_z,
-        b.end_x, b.end_y, b.end_z,
+        a.start_x, a.start_y, a.start_z, a.end_x, a.end_y, a.end_z, b.start_x, b.start_y,
+        b.start_z, b.end_x, b.end_y, b.end_z,
     );
     let sum_r = a.radius + b.radius;
     return dist <= sum_r * sum_r;
@@ -221,20 +263,34 @@ pub fn is_capsule_intersecting_capsule(a: &Capsule, b: &Capsule) -> bool {
 /// Returns whether a capsule overlaps a bounding sphere. An empty capsule or empty sphere
 /// (negative radius) does not intersect.
 pub fn is_capsule_intersecting_sphere(capsule: &Capsule, sphere: &BoundingSphere) -> bool {
-    if capsule.radius < 0.0 || sphere.radius < 0.0 { return false; }
+    if capsule.radius < 0.0 || sphere.radius < 0.0 {
+        return false;
+    }
     let dist2 = point_to_segment_distance_sq(
-        sphere.center.x, sphere.center.y, sphere.center.z,
-        capsule.start_x, capsule.start_y, capsule.start_z,
-        capsule.end_x, capsule.end_y, capsule.end_z,
+        sphere.center.x,
+        sphere.center.y,
+        sphere.center.z,
+        capsule.start_x,
+        capsule.start_y,
+        capsule.start_z,
+        capsule.end_x,
+        capsule.end_y,
+        capsule.end_z,
     );
     let sum_r = capsule.radius + sphere.radius;
     return dist2 <= sum_r * sum_r;
 }
 
 fn point_to_segment_distance_sq(
-    px: f32, py: f32, pz: f32,
-    ax: f32, ay: f32, az: f32,
-    bx: f32, by: f32, bz: f32,
+    px: f32,
+    py: f32,
+    pz: f32,
+    ax: f32,
+    ay: f32,
+    az: f32,
+    bx: f32,
+    by: f32,
+    bz: f32,
 ) -> f32 {
     let abx = bx - ax;
     let aby = by - ay;
@@ -243,7 +299,11 @@ fn point_to_segment_distance_sq(
     let apy = py - ay;
     let apz = pz - az;
     let len2 = abx * abx + aby * aby + abz * abz;
-    let t = if len2 > 0.0 { ((apx * abx + apy * aby + apz * abz) / len2).clamp(0.0, 1.0) } else { 0.0 };
+    let t = if len2 > 0.0 {
+        ((apx * abx + apy * aby + apz * abz) / len2).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
     let cx = ax + t * abx - px;
     let cy = ay + t * aby - py;
     let cz = az + t * abz - pz;
@@ -251,10 +311,17 @@ fn point_to_segment_distance_sq(
 }
 
 fn ray_sphere_hit(
-    ox: f32, oy: f32, oz: f32,
-    dx: f32, dy: f32, dz: f32,
-    r: f32, direction_length_sq: f32,
-    cx: f32, cy: f32, cz: f32,
+    ox: f32,
+    oy: f32,
+    oz: f32,
+    dx: f32,
+    dy: f32,
+    dz: f32,
+    r: f32,
+    direction_length_sq: f32,
+    cx: f32,
+    cy: f32,
+    cz: f32,
 ) -> f32 {
     let mx = ox - cx;
     let my = oy - cy;
@@ -262,20 +329,34 @@ fn ray_sphere_hit(
     let b = mx * dx + my * dy + mz * dz;
     let c = mx * mx + my * my + mz * mz - r * r;
     let disc = b * b - direction_length_sq * c;
-    if disc < 0.0 { return -1.0; }
+    if disc < 0.0 {
+        return -1.0;
+    }
     let sqrt_d = disc.sqrt();
     let t1 = (-b - sqrt_d) / direction_length_sq;
-    if t1 >= 0.0 { return t1; }
+    if t1 >= 0.0 {
+        return t1;
+    }
     let t2 = (-b + sqrt_d) / direction_length_sq;
-    if t2 >= 0.0 { return 0.0; }
+    if t2 >= 0.0 {
+        return 0.0;
+    }
     return -1.0;
 }
 
 fn segment_to_aabb_distance_sq(
-    ax: f32, ay: f32, az: f32,
-    bx: f32, by: f32, bz: f32,
-    min_x: f32, min_y: f32, min_z: f32,
-    max_x: f32, max_y: f32, max_z: f32,
+    ax: f32,
+    ay: f32,
+    az: f32,
+    bx: f32,
+    by: f32,
+    bz: f32,
+    min_x: f32,
+    min_y: f32,
+    min_z: f32,
+    max_x: f32,
+    max_y: f32,
+    max_z: f32,
 ) -> f32 {
     let dx = bx - ax;
     let dy = by - ay;
@@ -321,13 +402,16 @@ fn segment_to_aabb_distance_sq(
         let ey = (min_y - py).max(0.0).max(py - max_y);
         let ez = (min_z - pz).max(0.0).max(pz - max_z);
         let d2 = ex * ex + ey * ey + ez * ez;
-        if d2 < best_dist2 { best_dist2 = d2; }
+        if d2 < best_dist2 {
+            best_dist2 = d2;
+        }
     }
 
     let center_x = (min_x + max_x) * 0.5;
     let center_y = (min_y + max_y) * 0.5;
     let center_z = (min_z + max_z) * 0.5;
-    let t_center = (((center_x - ax) * dx + (center_y - ay) * dy + (center_z - az) * dz) / len2).clamp(0.0, 1.0);
+    let t_center = (((center_x - ax) * dx + (center_y - ay) * dy + (center_z - az) * dz) / len2)
+        .clamp(0.0, 1.0);
     {
         let px = ax + t_center * dx;
         let py = ay + t_center * dy;
@@ -336,17 +420,27 @@ fn segment_to_aabb_distance_sq(
         let ey = (min_y - py).max(0.0).max(py - max_y);
         let ez = (min_z - pz).max(0.0).max(pz - max_z);
         let d2 = ex * ex + ey * ey + ez * ez;
-        if d2 < best_dist2 { best_dist2 = d2; }
+        if d2 < best_dist2 {
+            best_dist2 = d2;
+        }
     }
 
     return best_dist2;
 }
 
 fn segment_to_segment_distance_sq(
-    ax: f32, ay: f32, az: f32,
-    bx: f32, by: f32, bz: f32,
-    cx: f32, cy: f32, cz: f32,
-    dx: f32, dy: f32, dz: f32,
+    ax: f32,
+    ay: f32,
+    az: f32,
+    bx: f32,
+    by: f32,
+    bz: f32,
+    cx: f32,
+    cy: f32,
+    cz: f32,
+    dx: f32,
+    dy: f32,
+    dz: f32,
 ) -> f32 {
     let d1x = bx - ax;
     let d1y = by - ay;
@@ -399,8 +493,12 @@ fn segment_to_segment_distance_sq(
 /// Sets all fields of a capsule in place.
 pub fn set_capsule(
     out: &mut Capsule,
-    start_x: f32, start_y: f32, start_z: f32,
-    end_x: f32, end_y: f32, end_z: f32,
+    start_x: f32,
+    start_y: f32,
+    start_z: f32,
+    end_x: f32,
+    end_y: f32,
+    end_z: f32,
     radius: f32,
 ) {
     out.start_x = start_x;

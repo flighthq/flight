@@ -11,10 +11,7 @@ pub struct Aabb {
 }
 
 /// Creates an axis-aligned bounding box from explicit min/max corner components.
-pub fn create_aabb(
-    min_x: f32, min_y: f32, min_z: f32,
-    max_x: f32, max_y: f32, max_z: f32,
-) -> Aabb {
+pub fn create_aabb(min_x: f32, min_y: f32, min_z: f32, max_x: f32, max_y: f32, max_z: f32) -> Aabb {
     let mut out: Aabb = allocate_entity();
     initialize_aabb(
         &mut out,
@@ -38,8 +35,12 @@ pub fn initialize_aabb(out: &mut Aabb, min: &Vector3, max: &Vector3) {
 /// Creates an independent copy of an axis-aligned bounding box.
 pub fn clone_aabb(source: &Aabb) -> Aabb {
     return create_aabb(
-        source.min.x, source.min.y, source.min.z,
-        source.max.x, source.max.y, source.max.z,
+        source.min.x,
+        source.min.y,
+        source.min.z,
+        source.max.x,
+        source.max.y,
+        source.max.z,
     );
 }
 
@@ -97,11 +98,7 @@ pub fn expand_aabb_by_point(out: &mut Aabb, aabb: &Aabb, point: &Vector3) {
 /// its AABB first, then unioned with the existing box.
 ///
 /// Safe when `out` aliases `aabb`.
-pub fn expand_aabb_by_sphere(
-    out: &mut Aabb,
-    aabb: &Aabb,
-    sphere: &BoundingSphere,
-) {
+pub fn expand_aabb_by_sphere(out: &mut Aabb, aabb: &Aabb, sphere: &BoundingSphere) {
     let min_x = aabb.min.x;
     let min_y = aabb.min.y;
     let min_z = aabb.min.z;
@@ -246,8 +243,12 @@ pub fn is_aabb_intersecting_sphere(aabb: &Aabb, sphere: &BoundingSphere) -> bool
 /// Sets the min and max corners of an axis-aligned bounding box from explicit components.
 pub fn set_aabb(
     out: &mut Aabb,
-    min_x: f32, min_y: f32, min_z: f32,
-    max_x: f32, max_y: f32, max_z: f32,
+    min_x: f32,
+    min_y: f32,
+    min_z: f32,
+    max_x: f32,
+    max_y: f32,
+    max_z: f32,
 ) {
     out.min.x = min_x;
     out.min.y = min_y;
@@ -269,12 +270,24 @@ pub fn set_aabb_from_points(out: &mut Aabb, points: &[Vector3]) {
 
     for i in 0..points.len() {
         let p = &points[i];
-        if p.x < min_x { min_x = p.x; }
-        if p.y < min_y { min_y = p.y; }
-        if p.z < min_z { min_z = p.z; }
-        if p.x > max_x { max_x = p.x; }
-        if p.y > max_y { max_y = p.y; }
-        if p.z > max_z { max_z = p.z; }
+        if p.x < min_x {
+            min_x = p.x;
+        }
+        if p.y < min_y {
+            min_y = p.y;
+        }
+        if p.z < min_z {
+            min_z = p.z;
+        }
+        if p.x > max_x {
+            max_x = p.x;
+        }
+        if p.y > max_y {
+            max_y = p.y;
+        }
+        if p.z > max_z {
+            max_z = p.z;
+        }
     }
 
     out.min.x = min_x;
@@ -348,10 +361,7 @@ pub fn union_aabb(out: &mut Aabb, a: &Aabb, b: &Aabb) {
 }
 
 impl Aabb {
-    pub fn new(
-        min_x: f32, min_y: f32, min_z: f32,
-        max_x: f32, max_y: f32, max_z: f32,
-    ) -> Self {
+    pub fn new(min_x: f32, min_y: f32, min_z: f32, max_x: f32, max_y: f32, max_z: f32) -> Self {
         return create_aabb(min_x, min_y, min_z, max_x, max_y, max_z);
     }
 

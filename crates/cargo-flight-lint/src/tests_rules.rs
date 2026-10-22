@@ -76,7 +76,8 @@ pub fn fix_test_module_order(source: &str) -> Option<String> {
         })
         .collect();
     let refs: Vec<&NamedRange> = modules.iter().collect();
-    let Some((start, end, text)) = sort_group(&refs, &lines, "\n\n", |name: &str| name.to_string()) else {
+    let Some((start, end, text)) = sort_group(&refs, &lines, "\n\n", |name: &str| name.to_string())
+    else {
         return Some(source.to_string());
     };
     let mut result: Vec<String> = lines.iter().map(|s| s.to_string()).collect();
@@ -213,16 +214,14 @@ pub fn check_all_tests(src_files: &[PathBuf]) -> Vec<Violation> {
                     file: test_path.clone(),
                     line: line_idx + 1,
                     rule: "test-default-call".into(),
-                    message: "test calls `::default()` — use the `create_*` function"
-                        .into(),
+                    message: "test calls `::default()` — use the `create_*` function".into(),
                 });
             }
         }
 
         // Rule: test-module-coverage — each free fn must have a mod in the test file
         let test_modules = parse_test_modules(&test_source);
-        let test_mod_names: HashSet<&str> =
-            test_modules.iter().map(|m| m.name.as_str()).collect();
+        let test_mod_names: HashSet<&str> = test_modules.iter().map(|m| m.name.as_str()).collect();
 
         for name in &free_fns {
             if !test_mod_names.contains(name) {
@@ -245,10 +244,7 @@ pub fn check_all_tests(src_files: &[PathBuf]) -> Vec<Violation> {
                     file: test_path.clone(),
                     line: module.start_line,
                     rule: "test-module-empty".into(),
-                    message: format!(
-                        "module `{}` has no #[test] functions",
-                        module.name
-                    ),
+                    message: format!("module `{}` has no #[test] functions", module.name),
                 });
             }
         }
@@ -260,10 +256,7 @@ pub fn check_all_tests(src_files: &[PathBuf]) -> Vec<Violation> {
                     file: test_path.clone(),
                     line: pair[1].start_line,
                     rule: "test-module-order".into(),
-                    message: format!(
-                        "`{}` should come before `{}`",
-                        pair[1].name, pair[0].name
-                    ),
+                    message: format!("`{}` should come before `{}`", pair[1].name, pair[0].name),
                 });
             }
         }
@@ -280,7 +273,11 @@ mod tests {
     fn fix_sorts_test_modules_with_their_attributes() {
         let src = "use flight_x::*;\n\n// flight-lint: allow(f64) z keeps double\nmod z {\n    #[test]\n    fn t() {}\n}\n\nmod a {\n    use super::*;\n\n    #[test]\n    fn t() {}\n}\n";
         let fixed = fix_test_module_order(src).unwrap();
-        assert!(fixed.find("mod a {").unwrap() < fixed.find("mod z {").unwrap(), "{}", fixed);
+        assert!(
+            fixed.find("mod a {").unwrap() < fixed.find("mod z {").unwrap(),
+            "{}",
+            fixed
+        );
         assert!(fixed.contains("// flight-lint: allow(f64) z keeps double\nmod z {"));
         assert!(fixed.starts_with("use flight_x::*;\n\n"));
         assert_eq!(fix_test_module_order(&fixed).unwrap(), fixed);

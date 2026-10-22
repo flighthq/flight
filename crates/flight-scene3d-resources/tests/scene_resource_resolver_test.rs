@@ -8,7 +8,9 @@ use flight_scene3d_resources::contract::*;
 use flight_stream::{create_abort_controller, create_shared_future, is_abort_signal_aborted};
 
 use crate::mock_host::MockHost;
-use crate::support::{attach_texture, context, embedded_reference, host_image, set_reference_resolution};
+use crate::support::{
+    attach_texture, context, embedded_reference, host_image, set_reference_resolution,
+};
 
 mod create_built_in_scene3d_resource_resolver {
     use super::*;
@@ -16,7 +18,8 @@ mod create_built_in_scene3d_resource_resolver {
     #[test]
     fn assembles_standard_pbr_and_unlit_discovery_only_through_the_explicit_built_in_constructor() {
         let host = MockHost::new();
-        let resolver = create_built_in_scene3d_resource_resolver(&host_image(), None, &context(&host));
+        let resolver =
+            create_built_in_scene3d_resource_resolver(&host_image(), None, &context(&host));
         {
             let registry = resolver.read().unwrap().registry.clone();
             let listers = registry.listers.read().unwrap();
@@ -36,7 +39,16 @@ mod create_scene3d_resource_resolver {
         let resolver = create_scene3d_resource_resolver(&host_image(), None, &context(&host));
         let runtime = get_scene3d_resource_resolver_runtime(&resolver);
         assert!(!flight_entity::get_entity_uid(&mut *resolver.write().unwrap()).is_empty());
-        assert!(resolver.read().unwrap().registry.listers.read().unwrap().is_empty());
+        assert!(
+            resolver
+                .read()
+                .unwrap()
+                .registry
+                .listers
+                .read()
+                .unwrap()
+                .is_empty()
+        );
         {
             let runtime = runtime.read().unwrap();
             assert!(runtime.in_flight.is_empty());
@@ -62,12 +74,23 @@ mod create_scene3d_resource_resolver_options {
             image_decode: None,
             max_concurrent: None,
         };
-        let resolver = create_scene3d_resource_resolver(&host_image(), Some(&options), &context(&host));
+        let resolver =
+            create_scene3d_resource_resolver(&host_image(), Some(&options), &context(&host));
         {
             let resolver = resolver.read().unwrap();
             assert!(Arc::ptr_eq(&resolver.registry.listers, &registry.listers));
-            assert!(Arc::ptr_eq(&resolver.registry.extension_listers, &registry.extension_listers));
-            assert!(!resolver.registry.listers.read().unwrap().contains_key(UNLIT_MATERIAL_KIND));
+            assert!(Arc::ptr_eq(
+                &resolver.registry.extension_listers,
+                &registry.extension_listers
+            ));
+            assert!(
+                !resolver
+                    .registry
+                    .listers
+                    .read()
+                    .unwrap()
+                    .contains_key(UNLIT_MATERIAL_KIND)
+            );
             assert!(Arc::ptr_eq(&resolver.fetch, &fetch));
         }
         dispose_scene3d_resource_resolver(&resolver);
@@ -120,7 +143,8 @@ mod initialize_scene3d_resource_resolver {
     #[test]
     fn is_the_construction_initializer_of_create_scene3d_resource_resolver() {
         let host = MockHost::new();
-        let resolver = create_built_in_scene3d_resource_resolver(&host_image(), None, &context(&host));
+        let resolver =
+            create_built_in_scene3d_resource_resolver(&host_image(), None, &context(&host));
         let previous = get_scene3d_resource_resolver_runtime(&resolver);
         {
             let mut out = resolver.write().unwrap();

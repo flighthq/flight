@@ -36,6 +36,8 @@ pub mod contract;
 // Public lane: the names exported by the pinned TS `index.ts`, plus the Rust types and their
 // constructors that the public signatures require. Contract-only seams (initialize_*, the guard
 // setter, the D9e string conversions, the derivative epsilon constant) stay in `contract`.
+pub use contract::EasingSegment;
+pub use contract::StepPosition;
 pub use contract::disable_easing_guards;
 pub use contract::ease_clamp;
 pub use contract::ease_clamp_output;
@@ -89,5 +91,3 @@ pub use contract::ease_steps;
 pub use contract::enable_easing_guards;
 pub use contract::get_easing_derivative;
 pub use contract::write_easing_samples;
-pub use contract::EasingSegment;
-pub use contract::StepPosition;

@@ -27,10 +27,7 @@ pub fn initialize_particle_objects_state(
     out.velocities = vec![0.0; capacity * 2];
 }
 
-pub fn ensure_particle_objects_state_capacity(
-    state: &mut ParticleObjectsState,
-    capacity: usize,
-) {
+pub fn ensure_particle_objects_state_capacity(state: &mut ParticleObjectsState, capacity: usize) {
     if state.lifetimes.len() >= capacity * 2 {
         return;
     }

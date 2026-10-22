@@ -69,7 +69,10 @@ fn api_lines(item: &Item) -> Vec<String> {
     let mut out = Vec::new();
     match item {
         Item::Fn(f) if is_pub(&f.vis) => {
-            out.push(format!("pub {}", tidy(&f.sig.to_token_stream().to_string())));
+            out.push(format!(
+                "pub {}",
+                tidy(&f.sig.to_token_stream().to_string())
+            ));
         }
         Item::Struct(s) if is_pub(&s.vis) => {
             let mut s = s.clone();
@@ -146,7 +149,11 @@ fn api_lines(item: &Item) -> Vec<String> {
                 if let ImplItem::Fn(m) = ii
                     && (i.trait_.is_some() || is_pub(&m.vis))
                 {
-                    out.push(format!("{} :: {}", header, tidy(&m.sig.to_token_stream().to_string())));
+                    out.push(format!(
+                        "{} :: {}",
+                        header,
+                        tidy(&m.sig.to_token_stream().to_string())
+                    ));
                 }
             }
         }
@@ -173,7 +180,10 @@ fn api_lines(item: &Item) -> Vec<String> {
 /// Keeps attributes that change the API shape (derives, repr, defaults); drops docs.
 fn keep_attr(a: &syn::Attribute) -> bool {
     let p = a.path();
-    return p.is_ident("derive") || p.is_ident("repr") || p.is_ident("default") || p.is_ident("non_exhaustive");
+    return p.is_ident("derive")
+        || p.is_ident("repr")
+        || p.is_ident("default")
+        || p.is_ident("non_exhaustive");
 }
 
 fn collect_tests(items: &[Item], prefix: &str, out: &mut Vec<String>) {
@@ -236,7 +246,10 @@ fn tidy(s: &str) -> String {
 pub enum ManifestStatus {
     Same,
     Missing,
-    Differs { added: Vec<String>, removed: Vec<String> },
+    Differs {
+        added: Vec<String>,
+        removed: Vec<String>,
+    },
 }
 
 pub fn compare(expected_path: &Path, actual: &str) -> ManifestStatus {
@@ -250,8 +263,16 @@ pub fn compare(expected_path: &Path, actual: &str) -> ManifestStatus {
     let act: Vec<&str> = actual.lines().collect();
     let exp_set: std::collections::HashSet<&str> = exp.iter().copied().collect();
     let act_set: std::collections::HashSet<&str> = act.iter().copied().collect();
-    let added = act.iter().filter(|l| !exp_set.contains(*l)).map(|s| s.to_string()).collect();
-    let removed = exp.iter().filter(|l| !act_set.contains(*l)).map(|s| s.to_string()).collect();
+    let added = act
+        .iter()
+        .filter(|l| !exp_set.contains(*l))
+        .map(|s| s.to_string())
+        .collect();
+    let removed = exp
+        .iter()
+        .filter(|l| !act_set.contains(*l))
+        .map(|s| s.to_string())
+        .collect();
     return ManifestStatus::Differs { added, removed };
 }
 

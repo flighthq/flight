@@ -79,8 +79,14 @@ mod create_tween_stagger {
         get_tweens_of(&mut tweens_for_1, &manager, &targets[1]);
         assert_eq!(tweens_for_0.len(), 1);
         assert_eq!(tweens_for_1.len(), 1);
-        assert!(tweens[0].equals(&tweens_for_0[0]), "tweens[0] targets targets[0]");
-        assert!(tweens[1].equals(&tweens_for_1[0]), "tweens[1] targets targets[1]");
+        assert!(
+            tweens[0].equals(&tweens_for_0[0]),
+            "tweens[0] targets targets[0]"
+        );
+        assert!(
+            tweens[1].equals(&tweens_for_1[0]),
+            "tweens[1] targets targets[1]"
+        );
     }
 
     #[test]

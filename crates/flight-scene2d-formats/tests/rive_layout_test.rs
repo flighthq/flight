@@ -4,11 +4,11 @@ use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
 };
 use flight_layout::{
-    ContainerStyle, FlexAlignSelf, FlexBasis, FlexLayoutAlign, FlexLayoutDirection,
-    FlexLayoutJustify, FlexLayoutWrap, GridLayoutTrack, ItemStyle, FLEX_LAYOUT_KIND,
-    GRID_LAYOUT_KIND,
+    ContainerStyle, FLEX_LAYOUT_KIND, FlexAlignSelf, FlexBasis, FlexLayoutAlign,
+    FlexLayoutDirection, FlexLayoutJustify, FlexLayoutWrap, GRID_LAYOUT_KIND, GridLayoutTrack,
+    ItemStyle,
 };
-use flight_scene2d::{create_display_object, Node2DRef};
+use flight_scene2d::{Node2DRef, create_display_object};
 use flight_scene2d_formats::contract::*;
 
 const ARTBOARD: u64 = 1;

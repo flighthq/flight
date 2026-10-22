@@ -1,5 +1,5 @@
-use crate::path::Path;
 use crate::flatten_path::flatten_path;
+use crate::path::Path;
 
 #[cfg(test)]
 mod sugar_tests {

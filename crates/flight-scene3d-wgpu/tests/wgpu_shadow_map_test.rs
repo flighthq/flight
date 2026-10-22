@@ -7,7 +7,8 @@ use flight_camera::{
 use flight_entity::Ref;
 use flight_geometry::{Matrix4, create_aabb, create_matrix4, create_vector3};
 use flight_lighting::{
-    DIRECTIONAL_SHADOW_MAP_SIZE, DirectionalLight, DirectionalLightOptions, create_directional_light,
+    DIRECTIONAL_SHADOW_MAP_SIZE, DirectionalLight, DirectionalLightOptions,
+    create_directional_light,
 };
 use flight_materials::contract::create_standard_pbr_material;
 use flight_meshgeometry::{
@@ -66,7 +67,10 @@ fn shadow_translation(x: f32) -> Matrix4 {
 
 fn make_shadow_scene() -> NodeRef {
     let scene = create_test_scene_root();
-    add_test_child(&scene, &create_test_mesh(create_box_mesh_geometry(None, None, None), Vec::new()));
+    add_test_child(
+        &scene,
+        &create_test_mesh(create_box_mesh_geometry(None, None, None), Vec::new()),
+    );
     return scene;
 }
 
@@ -106,13 +110,22 @@ mod destroy_wgpu_scene3d_shadow {
     #[test]
     fn destroys_the_shadow_depth_texture_and_clears_the_slot() {
         let mut test = make_shadow_state();
-        render_wgpu_scene3d_shadow_map(&mut test.state, &make_shadow_scene(), &make_shadow_camera(), Some(&casting_light()));
+        render_wgpu_scene3d_shadow_map(
+            &mut test.state,
+            &make_shadow_scene(),
+            &make_shadow_camera(),
+            Some(&casting_light()),
+        );
         let texture = shadow(&mut test).unwrap().depth_texture;
 
         destroy_wgpu_scene3d_shadow(&mut test.state);
 
         assert!(shadow(&mut test).is_none());
-        assert!(get_wgpu_scene3d_runtime(&mut test.state).shadow_depth_pipeline.is_none());
+        assert!(
+            get_wgpu_scene3d_runtime(&mut test.state)
+                .shadow_depth_pipeline
+                .is_none()
+        );
         // A destroyed texture rejects a copy into it.
         assert!(test_panics(|| {
             let encoder = test.native.device.create_command_encoder(&test_default());
@@ -125,7 +138,9 @@ mod destroy_wgpu_scene3d_shadow {
     #[test]
     fn is_a_no_op_when_no_shadow_was_drawn() {
         let mut test = make_shadow_state();
-        assert!(!test_panics(|| destroy_wgpu_scene3d_shadow(&mut test.state)));
+        assert!(!test_panics(|| destroy_wgpu_scene3d_shadow(
+            &mut test.state
+        )));
     }
 }
 
@@ -136,7 +151,12 @@ mod render_wgpu_scene3d_shadow_map {
     fn does_not_allocate_or_render_when_the_directional_light_has_shadows_disabled() {
         let mut test = make_shadow_state();
 
-        render_wgpu_scene3d_shadow_map(&mut test.state, &make_shadow_scene(), &make_shadow_camera(), Some(&disabled_light()));
+        render_wgpu_scene3d_shadow_map(
+            &mut test.state,
+            &make_shadow_scene(),
+            &make_shadow_camera(),
+            Some(&disabled_light()),
+        );
 
         assert!(shadow(&mut test).is_none());
         assert_eq!(test.count("beginRenderPass"), 0);
@@ -160,7 +180,12 @@ mod render_wgpu_scene3d_shadow_map {
     #[test]
     fn creates_a_sampleable_depth32float_shadow_map_and_stores_it_on_the_runtime() {
         let mut test = make_shadow_state();
-        render_wgpu_scene3d_shadow_map(&mut test.state, &make_shadow_scene(), &make_shadow_camera(), Some(&casting_light()));
+        render_wgpu_scene3d_shadow_map(
+            &mut test.state,
+            &make_shadow_scene(),
+            &make_shadow_camera(),
+            Some(&casting_light()),
+        );
 
         assert_eq!(depth_creates(&test), 1);
         let shadow = shadow(&mut test).unwrap();
@@ -180,7 +205,12 @@ mod render_wgpu_scene3d_shadow_map {
         });
         let camera = make_shadow_camera();
 
-        render_wgpu_scene3d_shadow_map(&mut test.state, &make_shadow_scene(), &camera, Some(&light));
+        render_wgpu_scene3d_shadow_map(
+            &mut test.state,
+            &make_shadow_scene(),
+            &camera,
+            Some(&light),
+        );
 
         let Projection::Orthographic(projection) = &camera.projection else {
             panic!("test shadow camera must be orthographic");
@@ -217,8 +247,18 @@ mod render_wgpu_scene3d_shadow_map {
         let mut first = make_shadow_state();
         let mut second = make_shadow_state();
 
-        render_wgpu_scene3d_shadow_map(&mut first.state, &make_shadow_scene(), &camera, Some(&light));
-        render_wgpu_scene3d_shadow_map(&mut second.state, &make_shadow_scene(), &wide_camera, Some(&light));
+        render_wgpu_scene3d_shadow_map(
+            &mut first.state,
+            &make_shadow_scene(),
+            &camera,
+            Some(&light),
+        );
+        render_wgpu_scene3d_shadow_map(
+            &mut second.state,
+            &make_shadow_scene(),
+            &wide_camera,
+            Some(&light),
+        );
 
         let narrow = shadow(&mut first).unwrap().normal_bias_world;
         let wide = shadow(&mut second).unwrap().normal_bias_world;
@@ -231,7 +271,12 @@ mod render_wgpu_scene3d_shadow_map {
         let camera = make_test_camera();
 
         assert!(test_panics(|| {
-            render_wgpu_scene3d_shadow_map(&mut test.state, &make_shadow_scene(), &camera, Some(&casting_light()));
+            render_wgpu_scene3d_shadow_map(
+                &mut test.state,
+                &make_shadow_scene(),
+                &camera,
+                Some(&casting_light()),
+            );
         }));
         assert!(shadow(&mut test).is_none());
     }
@@ -280,7 +325,12 @@ mod render_wgpu_scene3d_shadow_map {
         });
         add_test_child(&scene, &create_test_mesh(geometry, Vec::new()));
 
-        render_wgpu_scene3d_shadow_map(&mut test.state, &scene, &make_shadow_camera(), Some(&casting_light()));
+        render_wgpu_scene3d_shadow_map(
+            &mut test.state,
+            &scene,
+            &make_shadow_camera(),
+            Some(&casting_light()),
+        );
 
         let draws = test.draws();
         assert_eq!(draws.len(), 1);
@@ -292,19 +342,28 @@ mod render_wgpu_scene3d_shadow_map {
     #[test]
     fn opens_a_depth_only_pass_and_renders_each_caster_mesh_depth() {
         let mut test = make_shadow_state();
-        render_wgpu_scene3d_shadow_map(&mut test.state, &make_shadow_scene(), &make_shadow_camera(), Some(&casting_light()));
+        render_wgpu_scene3d_shadow_map(
+            &mut test.state,
+            &make_shadow_scene(),
+            &make_shadow_camera(),
+            Some(&casting_light()),
+        );
 
         assert!(test.count("beginRenderPass") > 0);
         assert!(test.count("setPipeline") > 0);
         assert!(test.count("drawIndexed") > 0);
         assert!(test.count("end") > 0);
-        assert!(get_wgpu_scene3d_runtime(&mut test.state)
-            .shadow_depth_skinned_pipeline
-            .is_none());
-        assert!(!test
-            .textures()
-            .iter()
-            .any(|texture| texture.format == wgpu::TextureFormat::Rgba32Float));
+        assert!(
+            get_wgpu_scene3d_runtime(&mut test.state)
+                .shadow_depth_skinned_pipeline
+                .is_none()
+        );
+        assert!(
+            !test
+                .textures()
+                .iter()
+                .any(|texture| texture.format == wgpu::TextureFormat::Rgba32Float)
+        );
         submit_test_frame(&mut test);
     }
 
@@ -334,7 +393,12 @@ mod render_wgpu_scene3d_shadow_map {
         })));
         add_test_child(&scene, &mesh);
 
-        render_wgpu_scene3d_shadow_map(&mut test.state, &scene, &make_shadow_camera(), Some(&casting_light()));
+        render_wgpu_scene3d_shadow_map(
+            &mut test.state,
+            &scene,
+            &make_shadow_camera(),
+            Some(&casting_light()),
+        );
 
         let skinned_source = test
             .shader_sources()
@@ -342,13 +406,16 @@ mod render_wgpu_scene3d_shadow_map {
             .find(|source| source.contains("jointTexture"))
             .unwrap();
         assert!(skinned_source.contains("skinMatrix(joints0, weights0)"));
-        assert!(get_wgpu_scene3d_runtime(&mut test.state)
-            .shadow_depth_skinned_pipeline
-            .is_some());
-        assert!(test
-            .textures()
-            .iter()
-            .any(|texture| texture.format == wgpu::TextureFormat::Rgba32Float));
+        assert!(
+            get_wgpu_scene3d_runtime(&mut test.state)
+                .shadow_depth_skinned_pipeline
+                .is_some()
+        );
+        assert!(
+            test.textures()
+                .iter()
+                .any(|texture| texture.format == wgpu::TextureFormat::Rgba32Float)
+        );
         assert!(test.set_bind_groups().iter().any(|set| set.index == 0));
         submit_test_frame(&mut test);
     }
@@ -356,7 +423,12 @@ mod render_wgpu_scene3d_shadow_map {
     #[test]
     fn compiles_a_vertex_only_depth_module_with_the_gl_to_webgpu_depth_remap() {
         let mut test = make_shadow_state();
-        render_wgpu_scene3d_shadow_map(&mut test.state, &make_shadow_scene(), &make_shadow_camera(), Some(&casting_light()));
+        render_wgpu_scene3d_shadow_map(
+            &mut test.state,
+            &make_shadow_scene(),
+            &make_shadow_camera(),
+            Some(&casting_light()),
+        );
 
         let code = test
             .shader_sources()
@@ -381,7 +453,12 @@ mod render_wgpu_scene3d_shadow_map {
     fn is_a_no_op_when_no_command_encoder_is_active() {
         let mut test = make_shadow_state();
         get_wgpu_render_state_runtime_mut(&mut test.state).command_encoder = None;
-        render_wgpu_scene3d_shadow_map(&mut test.state, &make_shadow_scene(), &make_shadow_camera(), Some(&casting_light()));
+        render_wgpu_scene3d_shadow_map(
+            &mut test.state,
+            &make_shadow_scene(),
+            &make_shadow_camera(),
+            Some(&casting_light()),
+        );
         assert_eq!(test.count("beginRenderPass"), 0);
         assert!(shadow(&mut test).is_none());
     }
@@ -390,7 +467,12 @@ mod render_wgpu_scene3d_shadow_map {
     fn binds_a_group_3_shadow_group_on_the_lit_pbr_draw_that_follows() {
         let mut test = make_shadow_state();
         register_wgpu_standard_pbr_material(&mut test.state);
-        render_wgpu_scene3d_shadow_map(&mut test.state, &make_shadow_scene(), &make_shadow_camera(), Some(&casting_light()));
+        render_wgpu_scene3d_shadow_map(
+            &mut test.state,
+            &make_shadow_scene(),
+            &make_shadow_camera(),
+            Some(&casting_light()),
+        );
 
         let scene = create_test_scene_root();
         add_test_child(
@@ -402,7 +484,13 @@ mod render_wgpu_scene3d_shadow_map {
         );
         let mut pass = get_wgpu_active_render_pass_handle(&mut test.state).unwrap();
         resume_wgpu_render_pass(&mut pass);
-        render_wgpu_scene3d(&mut pass, &scene, &make_test_camera(), &make_test_scene_lights(), None);
+        render_wgpu_scene3d(
+            &mut pass,
+            &scene,
+            &make_test_camera(),
+            &make_test_scene_lights(),
+            None,
+        );
 
         assert!(test.set_bind_groups().iter().any(|set| set.index == 3));
         submit_test_frame(&mut test);
@@ -424,7 +512,12 @@ mod render_wgpu_scene3d_shadow_map {
         set_instanced_mesh_instance_matrix(&mesh, 2, &shadow_translation(-0.5));
         add_test_child(&scene, &mesh);
 
-        render_wgpu_scene3d_shadow_map(&mut test.state, &scene, &make_shadow_camera(), Some(&casting_light()));
+        render_wgpu_scene3d_shadow_map(
+            &mut test.state,
+            &scene,
+            &make_shadow_camera(),
+            Some(&casting_light()),
+        );
 
         let draws = test.draws_indexed();
         assert_eq!(draws.len(), 1);
@@ -446,7 +539,12 @@ mod render_wgpu_scene3d_shadow_map {
             ),
         );
 
-        render_wgpu_scene3d_shadow_map(&mut test.state, &scene, &make_shadow_camera(), Some(&casting_light()));
+        render_wgpu_scene3d_shadow_map(
+            &mut test.state,
+            &scene,
+            &make_shadow_camera(),
+            Some(&casting_light()),
+        );
 
         assert_eq!(test.count("drawIndexed"), 0);
     }
@@ -467,7 +565,12 @@ mod render_wgpu_scene3d_shadow_map {
             add_test_child(&scene, &mesh);
         }
 
-        render_wgpu_scene3d_shadow_map(&mut test.state, &scene, &make_shadow_camera(), Some(&casting_light()));
+        render_wgpu_scene3d_shadow_map(
+            &mut test.state,
+            &scene,
+            &make_shadow_camera(),
+            Some(&casting_light()),
+        );
 
         let bound: Vec<wgpu::Buffer> = test
             .set_vertex_buffers()
@@ -483,7 +586,12 @@ mod render_wgpu_scene3d_shadow_map {
     fn still_draws_an_ordinary_rigid_caster_with_a_single_non_instanced_draw() {
         let mut test = make_shadow_state();
 
-        render_wgpu_scene3d_shadow_map(&mut test.state, &make_shadow_scene(), &make_shadow_camera(), Some(&casting_light()));
+        render_wgpu_scene3d_shadow_map(
+            &mut test.state,
+            &make_shadow_scene(),
+            &make_shadow_camera(),
+            Some(&casting_light()),
+        );
 
         let draws = test.draws_indexed();
         assert_eq!(draws.len(), 1);
@@ -497,7 +605,9 @@ mod wgpu_directional_shadow_wgsl {
     #[test]
     fn uses_a_bounded_runtime_pcf_radius_and_configurable_receiver_biases() {
         let source = WGPU_DIRECTIONAL_SHADOW_WGSL;
-        assert!(source.contains("sampleDirectionalShadow(worldPos : vec3f, geometricNormal : vec3f)"));
+        assert!(
+            source.contains("sampleDirectionalShadow(worldPos : vec3f, geometricNormal : vec3f)")
+        );
         assert!(source.contains("geometricNormal * shadow.params.w"));
         assert!(source.contains("0.5 - shadow.params.z"));
         assert!(source.contains("if (radius == 0)"));
@@ -530,7 +640,9 @@ mod wgpu_pbr_prelude_shadow_sampling {
         assert!(code.contains("var shadowSampler : sampler_comparison"));
         assert!(code.contains("fn sampleDirectionalShadow"));
         assert!(code.contains("textureSampleCompareLevel(shadowMap, shadowSampler"));
-        assert!(code.contains("direct * sampleDirectionalShadow(in.worldPosition, geometricNormal)"));
+        assert!(
+            code.contains("direct * sampleDirectionalShadow(in.worldPosition, geometricNormal)")
+        );
     }
 
     #[test]
@@ -553,6 +665,8 @@ mod wgpu_pbr_prelude_shadow_sampling {
         );
         assert!(code.contains("@group(3) @binding(1) var shadowMap : texture_depth_2d"));
         assert!(code.contains("fn sampleDirectionalShadow"));
-        assert!(code.contains("direct * sampleDirectionalShadow(in.worldPosition, geometricNormal)"));
+        assert!(
+            code.contains("direct * sampleDirectionalShadow(in.worldPosition, geometricNormal)")
+        );
     }
 }

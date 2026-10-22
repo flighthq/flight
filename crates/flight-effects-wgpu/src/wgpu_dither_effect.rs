@@ -1,7 +1,7 @@
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Dither: quantizes each channel to `levels` steps with a 4x4 ordered Bayer threshold for a retro banded-but-textured look. (TS `wgpuDitherEffect.ts`).
 
-use flight_effects::{Effect, DitherEffect};
+use flight_effects::{DitherEffect, Effect};
 use flight_render_wgpu::{WgpuEffectContext, WgpuRenderState, WgpuTextureRenderTarget};
 
 use crate::types::*;

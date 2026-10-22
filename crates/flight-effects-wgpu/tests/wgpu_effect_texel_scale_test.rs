@@ -57,7 +57,10 @@ mod get_wgpu_effect_logical_width {
         let target = create_test_target(&state, 1600, 8);
         let pass = begin_wgpu_screen_render_pass_for_test(&mut state, 800, 600);
 
-        assert_eq!(get_wgpu_effect_logical_width(pass.state, &target.read().unwrap()), 800.0);
+        assert_eq!(
+            get_wgpu_effect_logical_width(pass.state, &target.read().unwrap()),
+            800.0
+        );
         end_wgpu_render_pass(pass);
     }
 
@@ -68,7 +71,10 @@ mod get_wgpu_effect_logical_width {
         let state = create_wgpu_render_state_for_test(None);
         let target = create_test_target(&state, 16, 8);
 
-        assert_eq!(get_wgpu_effect_logical_width(&state, &target.read().unwrap()), 16.0);
+        assert_eq!(
+            get_wgpu_effect_logical_width(&state, &target.read().unwrap()),
+            16.0
+        );
     }
 }
 

@@ -3,11 +3,23 @@ use flight_bitmap::contract::*;
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
-    return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
+    return BitmapRegion {
+        bitmap: bmp,
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+    };
 }
 
 fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegion {
-    return BitmapRegion { bitmap: bmp, x, y, width, height };
+    return BitmapRegion {
+        bitmap: bmp,
+        x,
+        y,
+        width,
+        height,
+    };
 }
 
 mod warp_bitmap {
@@ -19,7 +31,13 @@ mod warp_bitmap {
         let dest = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region(dest);
-        warp_bitmap(&mut dr, &sr, [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0], BitmapEdgeMode::Clamp, BitmapResizeMode::Nearest);
+        warp_bitmap(
+            &mut dr,
+            &sr,
+            [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+            BitmapEdgeMode::Clamp,
+            BitmapResizeMode::Nearest,
+        );
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0xff0000ff);
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 3, 3), 0xff0000ff);
     }
@@ -31,7 +49,13 @@ mod warp_bitmap {
         let dest = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region(dest);
-        warp_bitmap(&mut dr, &sr, [1.0, 0.0, -1.0, 0.0, 1.0, -1.0, 0.0, 0.0, 1.0], BitmapEdgeMode::Transparent, BitmapResizeMode::Nearest);
+        warp_bitmap(
+            &mut dr,
+            &sr,
+            [1.0, 0.0, -1.0, 0.0, 1.0, -1.0, 0.0, 0.0, 1.0],
+            BitmapEdgeMode::Transparent,
+            BitmapResizeMode::Nearest,
+        );
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 1, 1), 0xff0000ff);
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0x00000000);
     }
@@ -42,7 +66,13 @@ mod warp_bitmap {
         let dest = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region(dest);
-        warp_bitmap(&mut dr, &sr, [1.0, 0.0, 2.0, 0.0, 1.0, 2.0, 0.0, 0.0, 1.0], BitmapEdgeMode::Clamp, BitmapResizeMode::Nearest);
+        warp_bitmap(
+            &mut dr,
+            &sr,
+            [1.0, 0.0, 2.0, 0.0, 1.0, 2.0, 0.0, 0.0, 1.0],
+            BitmapEdgeMode::Clamp,
+            BitmapResizeMode::Nearest,
+        );
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0x00ff00ff);
     }
 
@@ -52,7 +82,13 @@ mod warp_bitmap {
         let dest = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region(dest);
-        warp_bitmap(&mut dr, &sr, [1.0, 0.0, 3.0, 0.0, 1.0, 3.0, 0.0, 0.0, 1.0], BitmapEdgeMode::Transparent, BitmapResizeMode::Nearest);
+        warp_bitmap(
+            &mut dr,
+            &sr,
+            [1.0, 0.0, 3.0, 0.0, 1.0, 3.0, 0.0, 0.0, 1.0],
+            BitmapEdgeMode::Transparent,
+            BitmapResizeMode::Nearest,
+        );
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0x00000000);
     }
 
@@ -62,7 +98,13 @@ mod warp_bitmap {
         let dest = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region_at(dest, 0, 0, 0, 4);
-        warp_bitmap(&mut dr, &sr, [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0], BitmapEdgeMode::Clamp, BitmapResizeMode::Nearest);
+        warp_bitmap(
+            &mut dr,
+            &sr,
+            [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
+            BitmapEdgeMode::Clamp,
+            BitmapResizeMode::Nearest,
+        );
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0x00000000);
     }
 
@@ -72,7 +114,13 @@ mod warp_bitmap {
         let dest = create_bitmap(2, 2, None);
         let sr = region(src);
         let mut dr = region(dest);
-        warp_bitmap(&mut dr, &sr, [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1e-15, 0.0, 0.0], BitmapEdgeMode::Clamp, BitmapResizeMode::Nearest);
+        warp_bitmap(
+            &mut dr,
+            &sr,
+            [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1e-15, 0.0, 0.0],
+            BitmapEdgeMode::Clamp,
+            BitmapResizeMode::Nearest,
+        );
         assert_eq!(dr.bitmap.data[3], 0);
     }
 }
@@ -86,7 +134,13 @@ mod warp_bitmap_quad {
         let dest = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region(dest);
-        warp_bitmap_quad(&mut dr, &sr, [0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0], BitmapEdgeMode::Transparent, BitmapResizeMode::Nearest);
+        warp_bitmap_quad(
+            &mut dr,
+            &sr,
+            [0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0],
+            BitmapEdgeMode::Transparent,
+            BitmapResizeMode::Nearest,
+        );
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 2, 2), 0x0000ffff);
     }
 
@@ -96,7 +150,13 @@ mod warp_bitmap_quad {
         let dest = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region(dest);
-        warp_bitmap_quad(&mut dr, &sr, [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], BitmapEdgeMode::Transparent, BitmapResizeMode::Nearest);
+        warp_bitmap_quad(
+            &mut dr,
+            &sr,
+            [2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0],
+            BitmapEdgeMode::Transparent,
+            BitmapResizeMode::Nearest,
+        );
     }
 
     #[test]
@@ -114,7 +174,13 @@ mod warp_bitmap_quad {
         let dest = create_bitmap(8, 8, None);
         let sr = region(src);
         let mut dr = region(dest);
-        warp_bitmap_quad(&mut dr, &sr, [0.0, 0.0, 8.0, 2.0, 8.0, 8.0, 0.0, 8.0], BitmapEdgeMode::Transparent, BitmapResizeMode::Nearest);
+        warp_bitmap_quad(
+            &mut dr,
+            &sr,
+            [0.0, 0.0, 8.0, 2.0, 8.0, 8.0, 0.0, 8.0],
+            BitmapEdgeMode::Transparent,
+            BitmapResizeMode::Nearest,
+        );
         let has_non_zero = dr.bitmap.data.iter().any(|&v| v != 0);
         assert!(has_non_zero);
     }
@@ -125,7 +191,13 @@ mod warp_bitmap_quad {
         let dest = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region_at(dest, 0, 0, 0, 0);
-        warp_bitmap_quad(&mut dr, &sr, [0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0], BitmapEdgeMode::Transparent, BitmapResizeMode::Nearest);
+        warp_bitmap_quad(
+            &mut dr,
+            &sr,
+            [0.0, 0.0, 4.0, 0.0, 4.0, 4.0, 0.0, 4.0],
+            BitmapEdgeMode::Transparent,
+            BitmapResizeMode::Nearest,
+        );
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0x00000000);
     }
 }

@@ -7,8 +7,7 @@ use flight_camera::Camera3D;
 use flight_color::{allocate_linear_color, unpack_color_to_linear};
 use flight_entity::{Ref, get_entity_id};
 use flight_geometry::{
-    create_matrix3, create_matrix4, get_matrix4_determinant,
-    set_matrix3_normal_from_matrix4,
+    create_matrix3, create_matrix4, get_matrix4_determinant, set_matrix3_normal_from_matrix4,
 };
 use flight_lighting::{MAX_FORWARD_LIGHTS, Scene3DLightBlock, Scene3DLightsLike};
 use flight_materials::{
@@ -104,7 +103,8 @@ fn draw_entries(
     let mut bound_skinned: Option<bool> = None;
     let mut bound_color_adjustment: Option<bool> = None;
     let mut bound_color_matrix: Option<bool> = None;
-    let color_adjustment_feature_enabled = get_wgpu_color_adjustment_material_feature(state).is_some();
+    let color_adjustment_feature_enabled =
+        get_wgpu_color_adjustment_material_feature(state).is_some();
 
     for entry in entries {
         let material = entry.material.clone().unwrap();
@@ -140,8 +140,7 @@ fn draw_entries(
             },
             None => false,
         };
-        let same_renderer =
-            bound_renderer.is_some_and(|bound| std::ptr::eq(bound, renderer));
+        let same_renderer = bound_renderer.is_some_and(|bound| std::ptr::eq(bound, renderer));
         if !same_renderer
             || bound_material != Some(material_id)
             || !same_light_block
@@ -194,7 +193,11 @@ fn draw_entries(
             } else {
                 None
             },
-            color_matrix: if color_adjusted { entry.color_matrix } else { None },
+            color_matrix: if color_adjusted {
+                entry.color_matrix
+            } else {
+                None
+            },
             instance_count: None,
             instance_matrices: None,
             instance_colors: None,
@@ -281,7 +284,8 @@ fn draw_wgpu_scene3d_prepared(
                 Some(material) => material,
                 None => get_wgpu_scene3d_default_material(state),
             };
-            let blended = is_blended_material(&*resolved_material.read().unwrap()) || object_alpha < 1.0;
+            let blended =
+                is_blended_material(&*resolved_material.read().unwrap()) || object_alpha < 1.0;
             let sort_key = acquire_sort_key(state, renderer, &resolved_material);
             let runtime = get_wgpu_scene3d_runtime(state);
             let mut entry = acquire_draw_entry(if blended {
@@ -332,7 +336,8 @@ fn draw_wgpu_scene3d_prepared(
         runtime.active_blended_run = false;
         runtime.active_skinned_run = false;
     }
-    let color_adjustment_feature_enabled = get_wgpu_color_adjustment_material_feature(state).is_some();
+    let color_adjustment_feature_enabled =
+        get_wgpu_color_adjustment_material_feature(state).is_some();
     for mesh_node in list
         .visible_instanced_meshes
         .iter()
@@ -381,11 +386,20 @@ fn draw_wgpu_scene3d_prepared(
             }
             {
                 let material = resolved_material.read().unwrap();
-                (renderer.bind)(state, Some(&*material as &dyn flight_materials::Material), light_block, camera);
+                (renderer.bind)(
+                    state,
+                    Some(&*material as &dyn flight_materials::Material),
+                    light_block,
+                    camera,
+                );
             }
             let proxy = Scene3DRenderProxy {
                 alpha: Some(object_alpha),
-                color_scale_bias: if color_adjusted { color_scale_bias.clone() } else { None },
+                color_scale_bias: if color_adjusted {
+                    color_scale_bias.clone()
+                } else {
+                    None
+                },
                 color_matrix: if color_adjusted { color_matrix } else { None },
                 instance_count: Some(mesh.instance_count.max(0) as usize),
                 instance_matrices: Some(flat_matrices.clone()),
@@ -412,7 +426,8 @@ fn flatten_instanced_mesh_matrices(state: &mut WgpuRenderState, mesh: &Instanced
     let mut color = allocate_linear_color();
     for index in 0..count {
         let offset = index * INSTANCE_RECORD_FLOATS;
-        scratch[offset..offset + 16].copy_from_slice(&mesh.instance_matrices[index].read().unwrap().m);
+        scratch[offset..offset + 16]
+            .copy_from_slice(&mesh.instance_matrices[index].read().unwrap().m);
         match &mesh.instance_colors {
             None => scratch[offset + 16..offset + 20].fill(1.0),
             Some(colors) => {
@@ -484,7 +499,10 @@ pub fn render_wgpu_scene3d(
     draw_wgpu_scene3d_prepared(state, &prepared, camera, lights, forward_lights);
     state.render_runtime_mut().prepared_scene3d = Some(prepared);
 
-    let passes = get_wgpu_render_state_runtime(state).registries.passes.clone();
+    let passes = get_wgpu_render_state_runtime(state)
+        .registries
+        .passes
+        .clone();
     if let Some(passes) = passes {
         for pass in passes.iter() {
             pass(state, scene, camera, lights);

@@ -34,20 +34,32 @@ mod contains_bounding_sphere_point {
     #[test]
     fn returns_true_inside_and_on_the_surface() {
         let s = create_bounding_sphere(0.0, 0.0, 0.0, 2.0);
-        assert!(contains_bounding_sphere_point(&s, &create_vector3(1.0, 0.0, 0.0)));
-        assert!(contains_bounding_sphere_point(&s, &create_vector3(2.0, 0.0, 0.0)));
+        assert!(contains_bounding_sphere_point(
+            &s,
+            &create_vector3(1.0, 0.0, 0.0)
+        ));
+        assert!(contains_bounding_sphere_point(
+            &s,
+            &create_vector3(2.0, 0.0, 0.0)
+        ));
     }
 
     #[test]
     fn returns_false_outside() {
         let s = create_bounding_sphere(0.0, 0.0, 0.0, 2.0);
-        assert!(!contains_bounding_sphere_point(&s, &create_vector3(3.0, 0.0, 0.0)));
+        assert!(!contains_bounding_sphere_point(
+            &s,
+            &create_vector3(3.0, 0.0, 0.0)
+        ));
     }
 
     #[test]
     fn an_empty_sphere_contains_no_points() {
         let s = create_bounding_sphere(0.0, 0.0, 0.0, -1.0);
-        assert!(!contains_bounding_sphere_point(&s, &create_vector3(0.0, 0.0, 0.0)));
+        assert!(!contains_bounding_sphere_point(
+            &s,
+            &create_vector3(0.0, 0.0, 0.0)
+        ));
     }
 }
 
@@ -200,8 +212,14 @@ mod merge_bounding_sphere {
         let b = create_bounding_sphere(1.0, 0.0, 0.0, 1.0);
         let mut out = create_bounding_sphere(0.0, 0.0, 0.0, -1.0);
         merge_bounding_sphere(&mut out, &a, &b);
-        assert!(contains_bounding_sphere_point(&out, &create_vector3(-2.0, 0.0, 0.0)));
-        assert!(contains_bounding_sphere_point(&out, &create_vector3(2.0, 0.0, 0.0)));
+        assert!(contains_bounding_sphere_point(
+            &out,
+            &create_vector3(-2.0, 0.0, 0.0)
+        ));
+        assert!(contains_bounding_sphere_point(
+            &out,
+            &create_vector3(2.0, 0.0, 0.0)
+        ));
     }
 
     #[test]
@@ -250,8 +268,14 @@ mod merge_bounding_sphere {
         let b = create_bounding_sphere(1.0, 0.0, 0.0, 1.0);
         let a_clone = clone_bounding_sphere(&a);
         merge_bounding_sphere(&mut a, &a_clone, &b);
-        assert!(contains_bounding_sphere_point(&a, &create_vector3(-2.0, 0.0, 0.0)));
-        assert!(contains_bounding_sphere_point(&a, &create_vector3(2.0, 0.0, 0.0)));
+        assert!(contains_bounding_sphere_point(
+            &a,
+            &create_vector3(-2.0, 0.0, 0.0)
+        ));
+        assert!(contains_bounding_sphere_point(
+            &a,
+            &create_vector3(2.0, 0.0, 0.0)
+        ));
     }
 
     #[test]
@@ -260,8 +284,14 @@ mod merge_bounding_sphere {
         let mut b = create_bounding_sphere(1.0, 0.0, 0.0, 1.0);
         let b_clone = clone_bounding_sphere(&b);
         merge_bounding_sphere(&mut b, &a, &b_clone);
-        assert!(contains_bounding_sphere_point(&b, &create_vector3(-2.0, 0.0, 0.0)));
-        assert!(contains_bounding_sphere_point(&b, &create_vector3(2.0, 0.0, 0.0)));
+        assert!(contains_bounding_sphere_point(
+            &b,
+            &create_vector3(-2.0, 0.0, 0.0)
+        ));
+        assert!(contains_bounding_sphere_point(
+            &b,
+            &create_vector3(2.0, 0.0, 0.0)
+        ));
     }
 }
 
@@ -294,8 +324,12 @@ mod set_bounding_sphere_from_aabb {
     #[test]
     fn an_empty_box_yields_an_empty_sphere() {
         let aabb = create_aabb(
-            f32::INFINITY, f32::INFINITY, f32::INFINITY,
-            f32::NEG_INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY,
+            f32::INFINITY,
+            f32::INFINITY,
+            f32::INFINITY,
+            f32::NEG_INFINITY,
+            f32::NEG_INFINITY,
+            f32::NEG_INFINITY,
         );
         let mut s = create_bounding_sphere(0.0, 0.0, 0.0, 5.0);
         set_bounding_sphere_from_aabb(&mut s, &aabb);
@@ -321,8 +355,7 @@ mod transform_bounding_sphere_by_matrix4 {
     fn scales_the_radius_by_the_largest_axis_scale() {
         let s = create_bounding_sphere(0.0, 0.0, 0.0, 1.0);
         let m = create_matrix4_from_values(
-            2.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0,
-            0.0, 0.0, 4.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+            2.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 4.0, 0.0, 0.0, 0.0, 0.0, 1.0,
         );
         let mut out = create_bounding_sphere(0.0, 0.0, 0.0, -1.0);
         transform_bounding_sphere_by_matrix4(&mut out, &s, &m);
@@ -345,8 +378,7 @@ mod transform_bounding_sphere_by_matrix4 {
     fn leaves_an_empty_sphere_empty_instead_of_scaling_its_negative_radius() {
         let empty = create_bounding_sphere(0.0, 0.0, 0.0, -1.0);
         let m = create_matrix4_from_values(
-            3.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0,
-            0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+            3.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 0.0, 1.0,
         );
         let mut out = create_bounding_sphere(0.0, 0.0, 0.0, -1.0);
         transform_bounding_sphere_by_matrix4(&mut out, &empty, &m);

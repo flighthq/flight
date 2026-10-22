@@ -1,9 +1,9 @@
-use flight_entity::{EntityRuntimeSlot, Float32Array, allocate_entity};
 use crate::Matrix3;
 use crate::Matrix4;
 use crate::Rectangle;
 use crate::Vector2;
 use crate::Vector3;
+use flight_entity::{EntityRuntimeSlot, Float32Array, allocate_entity};
 use std::sync::LazyLock;
 
 /// A Matrix object represents two-dimensional coordinate space.
@@ -174,11 +174,7 @@ pub fn copy_matrix_row_to_vector3(out: &mut Vector3, row: i32, source: &Matrix) 
     }
 }
 
-pub fn equals_matrix(
-    a: Option<&Matrix>,
-    b: Option<&Matrix>,
-    compare_translation: bool,
-) -> bool {
+pub fn equals_matrix(a: Option<&Matrix>, b: Option<&Matrix>, compare_translation: bool) -> bool {
     return match (a, b) {
         (Some(a), Some(b)) => {
             if std::ptr::eq(a, b) {
@@ -234,22 +230,13 @@ pub fn inverse_matrix(out: &mut Matrix, source: &Matrix) -> bool {
 
 /// Use an inverse of the source matrix to transform
 /// a given point, including translation.
-pub fn inverse_matrix_transform_point(
-    out: &mut Vector2,
-    matrix: &Matrix,
-    point: &Vector2,
-) {
+pub fn inverse_matrix_transform_point(out: &mut Vector2, matrix: &Matrix, point: &Vector2) {
     let px = point.x;
     let py = point.y;
     inverse_matrix_transform_point_xy(out, matrix, px, py);
 }
 
-pub fn inverse_matrix_transform_point_xy(
-    out: &mut Vector2,
-    source: &Matrix,
-    x: f32,
-    y: f32,
-) {
+pub fn inverse_matrix_transform_point_xy(out: &mut Vector2, source: &Matrix, x: f32, y: f32) {
     let a = source.a;
     let b = source.b;
     let c = source.c;
@@ -269,22 +256,13 @@ pub fn inverse_matrix_transform_point_xy(
 
 /// Use an inverse of the source matrix to transform
 /// a given point, excluding translation.
-pub fn inverse_matrix_transform_vector(
-    out: &mut Vector2,
-    matrix: &Matrix,
-    vector: &Vector2,
-) {
+pub fn inverse_matrix_transform_vector(out: &mut Vector2, matrix: &Matrix, vector: &Vector2) {
     let vx = vector.x;
     let vy = vector.y;
     inverse_matrix_transform_vector_xy(out, matrix, vx, vy);
 }
 
-pub fn inverse_matrix_transform_vector_xy(
-    out: &mut Vector2,
-    source: &Matrix,
-    x: f32,
-    y: f32,
-) {
+pub fn inverse_matrix_transform_vector_xy(out: &mut Vector2, source: &Matrix, x: f32, y: f32) {
     let a = source.a;
     let b = source.b;
     let c = source.c;
@@ -338,26 +316,50 @@ pub fn matrix_transform_bounds(
     let mut txv = a * bx + c * ay;
     let mut tyv = b * bx + d * ay;
 
-    if txv < tx0 { tx0 = txv; }
-    if tyv < ty0 { ty0 = tyv; }
-    if txv > tx1 { tx1 = txv; }
-    if tyv > ty1 { ty1 = tyv; }
+    if txv < tx0 {
+        tx0 = txv;
+    }
+    if tyv < ty0 {
+        ty0 = tyv;
+    }
+    if txv > tx1 {
+        tx1 = txv;
+    }
+    if tyv > ty1 {
+        ty1 = tyv;
+    }
 
     txv = a * bx + c * by;
     tyv = b * bx + d * by;
 
-    if txv < tx0 { tx0 = txv; }
-    if tyv < ty0 { ty0 = tyv; }
-    if txv > tx1 { tx1 = txv; }
-    if tyv > ty1 { ty1 = tyv; }
+    if txv < tx0 {
+        tx0 = txv;
+    }
+    if tyv < ty0 {
+        ty0 = tyv;
+    }
+    if txv > tx1 {
+        tx1 = txv;
+    }
+    if tyv > ty1 {
+        ty1 = tyv;
+    }
 
     txv = a * ax + c * by;
     tyv = b * ax + d * by;
 
-    if txv < tx0 { tx0 = txv; }
-    if tyv < ty0 { ty0 = tyv; }
-    if txv > tx1 { tx1 = txv; }
-    if tyv > ty1 { ty1 = tyv; }
+    if txv < tx0 {
+        tx0 = txv;
+    }
+    if tyv < ty0 {
+        ty0 = tyv;
+    }
+    if txv > tx1 {
+        tx1 = txv;
+    }
+    if tyv > ty1 {
+        ty1 = tyv;
+    }
 
     out.x = tx0 + source_tx;
     out.y = ty0 + source_ty;
@@ -379,11 +381,7 @@ pub fn matrix_transform_bounds_vector2(
 }
 
 /// Transforms a point using the given matrix.
-pub fn matrix_transform_point(
-    out: &mut Vector2,
-    matrix: &Matrix,
-    point: &Vector2,
-) {
+pub fn matrix_transform_point(out: &mut Vector2, matrix: &Matrix, point: &Vector2) {
     let px = point.x;
     let py = point.y;
     matrix_transform_point_xy(out, matrix, px, py);
@@ -406,11 +404,7 @@ pub fn matrix_transform_point_xy(out: &mut Vector2, source: &Matrix, x: f32, y: 
 ///
 /// This accounts for translation, rotation, scaling, and skew
 /// from the given matrix.
-pub fn matrix_transform_rectangle(
-    out: &mut Rectangle,
-    matrix: &Matrix,
-    source: &Rectangle,
-) {
+pub fn matrix_transform_rectangle(out: &mut Rectangle, matrix: &Matrix, source: &Rectangle) {
     let sx = source.x;
     let sy = source.y;
     let sw = source.width;
@@ -423,11 +417,7 @@ pub fn matrix_transform_rectangle(
 /// standard transformation applied using the `matrix_transform_point()`
 /// method, the `matrix_transform_vector()` method's transformation
 /// does not consider the translation parameters `tx` and `ty`.
-pub fn matrix_transform_vector(
-    out: &mut Vector2,
-    matrix: &Matrix,
-    vector: &Vector2,
-) {
+pub fn matrix_transform_vector(out: &mut Vector2, matrix: &Matrix, vector: &Vector2) {
     let vx = vector.x;
     let vy = vector.y;
     matrix_transform_vector_xy(out, matrix, vx, vy);
@@ -632,11 +622,7 @@ pub fn translate_matrix(out: &mut Matrix, source: &Matrix, dx: f32, dy: f32) {
 }
 
 /// Transforms a vector, then translates by the result.
-pub fn translate_matrix_by_vector(
-    out: &mut Matrix,
-    matrix: &Matrix,
-    vector: &Vector2,
-) {
+pub fn translate_matrix_by_vector(out: &mut Matrix, matrix: &Matrix, vector: &Vector2) {
     let vx = vector.x;
     let vy = vector.y;
     translate_matrix_by_vector_xy(out, matrix, vx, vy);

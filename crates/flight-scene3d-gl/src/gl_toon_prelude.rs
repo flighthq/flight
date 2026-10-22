@@ -8,7 +8,9 @@ use flight_render_gl::GlRenderState;
 use glow::HasContext;
 
 use crate::gl_lit_program::{gl_mesh_light_block_glsl, resolve_gl_lit_locations};
-use crate::gl_mesh_fragment_tail::{gl_mesh_fragment_tail_glsl, gl_mesh_fragment_tail_uniforms_glsl};
+use crate::gl_mesh_fragment_tail::{
+    gl_mesh_fragment_tail_glsl, gl_mesh_fragment_tail_uniforms_glsl,
+};
 use crate::gl_mesh_program::{
     GL_INSTANCE_VERTEX_DECLARATIONS_GLSL, compile_gl_program, ensure_gl_scene3d_program,
     gl_uv_transform_vertex_glsl,
@@ -79,9 +81,11 @@ pub fn compile_gl_toon_program(
     let mut lit = resolve_gl_lit_locations(gl, program);
     // SAFETY: lookups run on the owning GL thread.
     unsafe {
-        lit.mesh.loc_joint_normal_texture =
-            Cell::new(Some(gl.get_uniform_location(program, "u_jointNormalTexture")));
-        lit.mesh.loc_joint_texture = Cell::new(Some(gl.get_uniform_location(program, "u_jointTexture")));
+        lit.mesh.loc_joint_normal_texture = Cell::new(Some(
+            gl.get_uniform_location(program, "u_jointNormalTexture"),
+        ));
+        lit.mesh.loc_joint_texture =
+            Cell::new(Some(gl.get_uniform_location(program, "u_jointTexture")));
         lit.mesh.loc_model = gl.get_uniform_location(program, "u_model");
         lit.mesh.loc_normal_matrix = gl.get_uniform_location(program, "u_normalMatrix");
         lit.mesh.loc_view_projection = gl.get_uniform_location(program, "u_viewProjection");
@@ -127,7 +131,10 @@ pub fn get_gl_toon_fragment_source_for_key(key: &GlToonDefineKey) -> String {
 }
 
 // The full vertex source for a define key (define block + body), ready to hand to the GL compiler.
-pub fn get_gl_toon_vertex_source_for_key(key: &GlToonDefineKey, skin_declarations_glsl: Option<&str>) -> String {
+pub fn get_gl_toon_vertex_source_for_key(
+    key: &GlToonDefineKey,
+    skin_declarations_glsl: Option<&str>,
+) -> String {
     let skin = if key.has_skin == Some(true) {
         skin_declarations_glsl.unwrap_or("")
     } else {

@@ -234,7 +234,8 @@ pub struct InteractionManager {
     pub spatial_index: Option<Ref<flight_spatial::SpatialIndex2D>>,
     pub signal_subscriber_counts: HashMap<InteractionSignalName, u32>,
     pub suppress_touch_hover: bool,
-    pub tracked_signal_slots: HashMap<usize, HashMap<InteractionSignalName, HashMap<SlotId, SlotId>>>,
+    pub tracked_signal_slots:
+        HashMap<usize, HashMap<InteractionSignalName, HashMap<SlotId, SlotId>>>,
     pub tracked_subscribers_only: bool,
 }
 
@@ -267,8 +268,7 @@ pub struct InteractionPointerOptions {
 
 // ── InteractionConnectGuard ──
 
-pub type InteractionConnectGuard =
-    Arc<dyn Fn(&NodeRef, InteractionSignalName) + Send + Sync>;
+pub type InteractionConnectGuard = Arc<dyn Fn(&NodeRef, InteractionSignalName) + Send + Sync>;
 
 // ── FocusManager ──
 

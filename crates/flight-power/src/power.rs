@@ -36,7 +36,9 @@ pub fn acquire_power_keep_awake(
     host_power_keep_awake: &HostPowerKeepAwakeCapability,
     mode: Option<PowerKeepAwakeMode>,
 ) -> PowerKeepAwakeAcquireFuture {
-    return (host_power_keep_awake.acquire)(mode.unwrap_or(PowerKeepAwakeMode::PreventDisplaySleep));
+    return (host_power_keep_awake.acquire)(
+        mode.unwrap_or(PowerKeepAwakeMode::PreventDisplaySleep),
+    );
 }
 
 pub fn attach_power(
@@ -326,7 +328,9 @@ pub fn get_power_idle_state_string(value: PowerIdleState) -> &'static str {
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for PowerKeepAwakeAcquireReason
-pub fn get_power_keep_awake_acquire_reason_string(value: PowerKeepAwakeAcquireReason) -> &'static str {
+pub fn get_power_keep_awake_acquire_reason_string(
+    value: PowerKeepAwakeAcquireReason,
+) -> &'static str {
     return match value {
         PowerKeepAwakeAcquireReason::Ok => "ok",
         PowerKeepAwakeAcquireReason::Unavailable => "unavailable",
@@ -344,7 +348,9 @@ pub fn get_power_keep_awake_mode_string(value: PowerKeepAwakeMode) -> &'static s
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for PowerKeepAwakeReleaseReason
-pub fn get_power_keep_awake_release_reason_string(value: PowerKeepAwakeReleaseReason) -> &'static str {
+pub fn get_power_keep_awake_release_reason_string(
+    value: PowerKeepAwakeReleaseReason,
+) -> &'static str {
     return match value {
         PowerKeepAwakeReleaseReason::Ok => "ok",
         PowerKeepAwakeReleaseReason::Inactive => "inactive",
@@ -370,7 +376,9 @@ pub fn get_power_system_idle_time(host_power_idle: &HostPowerIdleCapability) -> 
     return (host_power_idle.get_idle_time_seconds)();
 }
 
-pub fn get_power_thermal_state(host_power_thermal: &HostPowerThermalCapability) -> PowerThermalState {
+pub fn get_power_thermal_state(
+    host_power_thermal: &HostPowerThermalCapability,
+) -> PowerThermalState {
     return (host_power_thermal.get_thermal_state)();
 }
 

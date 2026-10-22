@@ -21,10 +21,8 @@ pub const QUAD_BATCH_DELETED_ID: u16 = 0xffff;
 /// Allocates an atlas-backed batch node (TS `createQuadBatch`).
 // flight-lint: allow(conform-params) D23 B: authored options removed; kind assigns fields after create
 pub fn create_quad_batch() -> Ref<QuadBatch> {
-    let mut out: QuadBatch = create_node2d(
-        QUAD_BATCH_KIND.to_string(),
-        Some(create_quad_batch_runtime),
-    );
+    let mut out: QuadBatch =
+        create_node2d(QUAD_BATCH_KIND.to_string(), Some(create_quad_batch_runtime));
     initialize_quad_batch(&mut out);
     return flight_scene2d::publish_node2d(out);
 }

@@ -1,5 +1,5 @@
-use crate::path::{Path, PathMesh, StrokeStyle, StrokePathTessellationReason};
-use crate::stroke_path_geometry::{build_stroke_path_geometry, StrokePathPieceGeometry};
+use crate::path::{Path, PathMesh, StrokePathTessellationReason, StrokeStyle};
+use crate::stroke_path_geometry::{StrokePathPieceGeometry, build_stroke_path_geometry};
 
 #[cfg(test)]
 mod sugar_tests {
@@ -16,7 +16,14 @@ mod sugar_tests {
     }
 
     fn test_style() -> StrokeStyle {
-        return StrokeStyle { width: 2.0, cap: StrokeCap::Round, join: StrokeJoin::Round, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
+        return StrokeStyle {
+            width: 2.0,
+            cap: StrokeCap::Round,
+            join: StrokeJoin::Round,
+            miter_limit: 4.0,
+            dash: Vec::new(),
+            dash_offset: 0.0,
+        };
     }
 
     #[test]
@@ -60,7 +67,11 @@ fn append_stroke_piece_mesh(mesh: &mut PathMesh, piece: &StrokePathPieceGeometry
         mesh.vertices.push(piece.right[i * 2]);
         mesh.vertices.push(piece.right[i * 2 + 1]);
     }
-    let connection_count = if piece.closed { section_count } else { section_count - 1 };
+    let connection_count = if piece.closed {
+        section_count
+    } else {
+        section_count - 1
+    };
     for i in 0..connection_count {
         let next = ((i + 1) % section_count) as u32;
         let left = base + i as u32 * 2;
@@ -104,13 +115,17 @@ fn append_triangle(mesh: &mut PathMesh, a: u32, b: u32, c: u32) {
 pub fn tessellate_stroke_path(
     path: &Path,
     style: &StrokeStyle,
-    tolerance: Option<f64>) -> Option<PathMesh> {
+    tolerance: Option<f64>,
+) -> Option<PathMesh> {
     let tolerance = tolerance.unwrap_or(0.25);
     let geometry = build_stroke_path_geometry(path, style, tolerance);
     if geometry.issue != StrokePathTessellationReason::Ok {
         return None;
     }
-    let mut mesh = PathMesh { vertices: Vec::new(), indices: Vec::new() };
+    let mut mesh = PathMesh {
+        vertices: Vec::new(),
+        indices: Vec::new(),
+    };
     for i in 0..geometry.pieces.len() {
         append_stroke_piece_mesh(&mut mesh, &geometry.pieces[i]);
     }
@@ -122,7 +137,11 @@ pub fn tessellate_stroke_path(
 
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
-    pub fn tessellate_stroke(&self, style: &StrokeStyle, tolerance: Option<f64>) -> Option<PathMesh> {
+    pub fn tessellate_stroke(
+        &self,
+        style: &StrokeStyle,
+        tolerance: Option<f64>,
+    ) -> Option<PathMesh> {
         return tessellate_stroke_path(self, style, tolerance);
     }
 }

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use flight_geometry::{create_matrix, create_rectangle};
-use flight_node::contract::{add_node_child, NodeRef};
-use flight_scene2d::contract::{create_display_object, Node2DRef};
+use flight_node::contract::{NodeRef, add_node_child};
+use flight_scene2d::contract::{Node2DRef, create_display_object};
 use flight_scene2d_formats::contract::*;
 use flight_text::contract::create_text_label;
 

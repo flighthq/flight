@@ -5,7 +5,9 @@ fn assert_approx(actual: f32, expected: f32) {
     assert!(
         diff < 1e-4,
         "expected {} to be approximately {}, diff = {}",
-        actual, expected, diff
+        actual,
+        expected,
+        diff
     );
 }
 
@@ -26,7 +28,9 @@ fn measure_segment_distance(first: &[f32; 6], second: &[f32; 6]) -> f32 {
             let dy = py - qy;
             let dz = pz - qz;
             let distance = (dx * dx + dy * dy + dz * dz).sqrt();
-            if distance < smallest { smallest = distance; }
+            if distance < smallest {
+                smallest = distance;
+            }
         }
     }
     return smallest;
@@ -95,19 +99,35 @@ mod get_closest_point_on_capsule {
     fn answers_a_point_on_the_axis_with_a_surface_point() {
         let mut out = create_vector3(0.0, 0.0, 0.0);
 
-        get_closest_point_on_capsule(&mut out, &create_capsule(-5.0, 0.0, 0.0, 5.0, 0.0, 0.0, 1.0), &create_vector3(0.0, 0.0, 0.0));
+        get_closest_point_on_capsule(
+            &mut out,
+            &create_capsule(-5.0, 0.0, 0.0, 5.0, 0.0, 0.0, 1.0),
+            &create_vector3(0.0, 0.0, 0.0),
+        );
         assert_approx((out.x * out.x + out.y * out.y + out.z * out.z).sqrt(), 1.0);
         assert_approx(out.x, 0.0);
 
-        get_closest_point_on_capsule(&mut out, &create_capsule(0.0, -5.0, 0.0, 0.0, 5.0, 0.0, 1.0), &create_vector3(0.0, 0.0, 0.0));
+        get_closest_point_on_capsule(
+            &mut out,
+            &create_capsule(0.0, -5.0, 0.0, 0.0, 5.0, 0.0, 1.0),
+            &create_vector3(0.0, 0.0, 0.0),
+        );
         assert_approx((out.x * out.x + out.y * out.y + out.z * out.z).sqrt(), 1.0);
         assert_approx(out.y, 0.0);
 
-        get_closest_point_on_capsule(&mut out, &create_capsule(0.0, 0.0, -5.0, 0.0, 0.0, 5.0, 1.0), &create_vector3(0.0, 0.0, 0.0));
+        get_closest_point_on_capsule(
+            &mut out,
+            &create_capsule(0.0, 0.0, -5.0, 0.0, 0.0, 5.0, 1.0),
+            &create_vector3(0.0, 0.0, 0.0),
+        );
         assert_approx((out.x * out.x + out.y * out.y + out.z * out.z).sqrt(), 1.0);
         assert_approx(out.z, 0.0);
 
-        get_closest_point_on_capsule(&mut out, &create_capsule(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0), &create_vector3(0.0, 0.0, 0.0));
+        get_closest_point_on_capsule(
+            &mut out,
+            &create_capsule(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0),
+            &create_vector3(0.0, 0.0, 0.0),
+        );
         assert_approx((out.x * out.x + out.y * out.y + out.z * out.z).sqrt(), 1.0);
     }
 
@@ -162,46 +182,76 @@ mod intersect_ray3d_capsule {
     #[test]
     fn returns_negative_one_for_a_ray_with_no_direction() {
         let c = create_capsule(0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0);
-        assert_eq!(intersect_ray3d_capsule(&create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0), &c), -1.0);
-        assert_eq!(intersect_ray3d_capsule(&create_ray3d(9.0, 9.0, 9.0, 0.0, 0.0, 0.0), &c), -1.0);
+        assert_eq!(
+            intersect_ray3d_capsule(&create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0), &c),
+            -1.0
+        );
+        assert_eq!(
+            intersect_ray3d_capsule(&create_ray3d(9.0, 9.0, 9.0, 0.0, 0.0, 0.0), &c),
+            -1.0
+        );
     }
 
     #[test]
     fn returns_negative_one_for_an_empty_capsule() {
         let empty = create_capsule(0.0, -1.0, 0.0, 0.0, 1.0, 0.0, -1.0);
-        assert_eq!(intersect_ray3d_capsule(&create_ray3d(5.0, 0.0, 0.0, -1.0, 0.0, 0.0), &empty), -1.0);
+        assert_eq!(
+            intersect_ray3d_capsule(&create_ray3d(5.0, 0.0, 0.0, -1.0, 0.0, 0.0), &empty),
+            -1.0
+        );
     }
 
     #[test]
     fn returns_negative_one_for_a_ray_that_passes_wide() {
         let c = create_capsule(0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0);
-        assert_eq!(intersect_ray3d_capsule(&create_ray3d(5.0, 0.0, 5.0, -1.0, 0.0, 0.0), &c), -1.0);
+        assert_eq!(
+            intersect_ray3d_capsule(&create_ray3d(5.0, 0.0, 5.0, -1.0, 0.0, 0.0), &c),
+            -1.0
+        );
     }
 
     #[test]
     fn hits_a_cap_when_the_ray_runs_along_the_axis() {
         let c = create_capsule(0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0);
-        assert_approx(intersect_ray3d_capsule(&create_ray3d(0.0, 5.0, 0.0, 0.0, -1.0, 0.0), &c), 3.0);
+        assert_approx(
+            intersect_ray3d_capsule(&create_ray3d(0.0, 5.0, 0.0, 0.0, -1.0, 0.0), &c),
+            3.0,
+        );
     }
 
     #[test]
     fn returns_zero_for_a_ray_starting_inside_a_cap() {
         let c = create_capsule(0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0);
-        assert_eq!(intersect_ray3d_capsule(&create_ray3d(0.0, 1.5, 0.0, 0.0, 1.0, 0.0), &c), 0.0);
+        assert_eq!(
+            intersect_ray3d_capsule(&create_ray3d(0.0, 1.5, 0.0, 0.0, 1.0, 0.0), &c),
+            0.0
+        );
     }
 
     #[test]
     fn falls_back_to_a_cap_when_the_body_hit_lands_past_the_end() {
         let c = create_capsule(0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0);
-        assert_approx(intersect_ray3d_capsule(&create_ray3d(5.0, 1.8, 0.0, -1.0, 0.0, 0.0), &c), 4.4);
-        assert_approx(intersect_ray3d_capsule(&create_ray3d(5.0, -1.8, 0.0, -1.0, 0.0, 0.0), &c), 4.4);
-        assert_eq!(intersect_ray3d_capsule(&create_ray3d(5.0, 2.5, 0.0, -1.0, 0.0, 0.0), &c), -1.0);
+        assert_approx(
+            intersect_ray3d_capsule(&create_ray3d(5.0, 1.8, 0.0, -1.0, 0.0, 0.0), &c),
+            4.4,
+        );
+        assert_approx(
+            intersect_ray3d_capsule(&create_ray3d(5.0, -1.8, 0.0, -1.0, 0.0, 0.0), &c),
+            4.4,
+        );
+        assert_eq!(
+            intersect_ray3d_capsule(&create_ray3d(5.0, 2.5, 0.0, -1.0, 0.0, 0.0), &c),
+            -1.0
+        );
     }
 
     #[test]
     fn returns_negative_one_from_inside_the_infinite_cylinder_but_past_the_end_cap() {
         let c = create_capsule(0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 1.0);
-        assert_eq!(intersect_ray3d_capsule(&create_ray3d(0.0, 3.0, 0.0, 1.0, 1.0, 0.0), &c), -1.0);
+        assert_eq!(
+            intersect_ray3d_capsule(&create_ray3d(0.0, 3.0, 0.0, 1.0, 1.0, 0.0), &c),
+            -1.0
+        );
     }
 }
 
@@ -272,23 +322,83 @@ mod is_capsule_intersecting_capsule {
     #[test]
     fn switches_over_at_the_true_axis_distance_for_every_segment_arrangement() {
         let arrangements: &[(&str, [f32; 6], [f32; 6])] = &[
-            ("two points", [1.0, 2.0, 3.0, 1.0, 2.0, 3.0], [4.0, 6.0, 3.0, 4.0, 6.0, 3.0]),
-            ("point and segment", [0.0, 5.0, 0.0, 0.0, 5.0, 0.0], [-10.0, 0.0, 0.0, 10.0, 0.0, 0.0]),
-            ("segment and point", [-10.0, 0.0, 0.0, 10.0, 0.0, 0.0], [0.0, 5.0, 0.0, 0.0, 5.0, 0.0]),
-            ("parallel", [0.0, 0.0, 0.0, 0.0, 10.0, 0.0], [3.0, 0.0, 0.0, 3.0, 10.0, 0.0]),
-            ("skew nearest inside both", [-5.0, 0.0, 0.0, 5.0, 0.0, 0.0], [0.0, -5.0, 2.0, 0.0, 5.0, 2.0]),
-            ("nearest before second start", [0.0, 0.0, 0.0, 10.0, 0.0, 0.0], [5.0, 5.0, 3.0, 5.0, 15.0, 3.0]),
-            ("nearest past second end", [0.0, 0.0, 0.0, 10.0, 0.0, 0.0], [5.0, -15.0, 3.0, 5.0, -5.0, 3.0]),
+            (
+                "two points",
+                [1.0, 2.0, 3.0, 1.0, 2.0, 3.0],
+                [4.0, 6.0, 3.0, 4.0, 6.0, 3.0],
+            ),
+            (
+                "point and segment",
+                [0.0, 5.0, 0.0, 0.0, 5.0, 0.0],
+                [-10.0, 0.0, 0.0, 10.0, 0.0, 0.0],
+            ),
+            (
+                "segment and point",
+                [-10.0, 0.0, 0.0, 10.0, 0.0, 0.0],
+                [0.0, 5.0, 0.0, 0.0, 5.0, 0.0],
+            ),
+            (
+                "parallel",
+                [0.0, 0.0, 0.0, 0.0, 10.0, 0.0],
+                [3.0, 0.0, 0.0, 3.0, 10.0, 0.0],
+            ),
+            (
+                "skew nearest inside both",
+                [-5.0, 0.0, 0.0, 5.0, 0.0, 0.0],
+                [0.0, -5.0, 2.0, 0.0, 5.0, 2.0],
+            ),
+            (
+                "nearest before second start",
+                [0.0, 0.0, 0.0, 10.0, 0.0, 0.0],
+                [5.0, 5.0, 3.0, 5.0, 15.0, 3.0],
+            ),
+            (
+                "nearest past second end",
+                [0.0, 0.0, 0.0, 10.0, 0.0, 0.0],
+                [5.0, -15.0, 3.0, 5.0, -5.0, 3.0],
+            ),
         ];
 
         for (name, first, second) in arrangements {
             let gap = measure_segment_distance(first, second);
-            let too_short = create_capsule(first[0], first[1], first[2], first[3], first[4], first[5], gap * 0.45);
-            let long_enough = create_capsule(first[0], first[1], first[2], first[3], first[4], first[5], gap * 0.56);
-            let reach = create_capsule(second[0], second[1], second[2], second[3], second[4], second[5], gap * 0.45);
+            let too_short = create_capsule(
+                first[0],
+                first[1],
+                first[2],
+                first[3],
+                first[4],
+                first[5],
+                gap * 0.45,
+            );
+            let long_enough = create_capsule(
+                first[0],
+                first[1],
+                first[2],
+                first[3],
+                first[4],
+                first[5],
+                gap * 0.56,
+            );
+            let reach = create_capsule(
+                second[0],
+                second[1],
+                second[2],
+                second[3],
+                second[4],
+                second[5],
+                gap * 0.45,
+            );
 
-            assert!(!is_capsule_intersecting_capsule(&too_short, &reach), "{} should not intersect", name);
-            assert!(is_capsule_intersecting_capsule(&long_enough, &reach), "{} should intersect", name);
+            assert!(
+                !is_capsule_intersecting_capsule(&too_short, &reach),
+                "{} should not intersect",
+                name
+            );
+            assert!(
+                is_capsule_intersecting_capsule(&long_enough, &reach),
+                "{} should intersect",
+                name
+            );
         }
     }
 }
@@ -327,8 +437,14 @@ mod is_capsule_intersecting_sphere {
     #[test]
     fn treats_a_capsule_with_no_length_as_a_sphere() {
         let point = create_capsule(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
-        assert!(!is_capsule_intersecting_sphere(&point, &create_bounding_sphere(2.5, 0.0, 0.0, 1.0)));
-        assert!(is_capsule_intersecting_sphere(&point, &create_bounding_sphere(1.5, 0.0, 0.0, 1.0)));
+        assert!(!is_capsule_intersecting_sphere(
+            &point,
+            &create_bounding_sphere(2.5, 0.0, 0.0, 1.0)
+        ));
+        assert!(is_capsule_intersecting_sphere(
+            &point,
+            &create_bounding_sphere(1.5, 0.0, 0.0, 1.0)
+        ));
     }
 }
 

@@ -9,8 +9,12 @@ mod sugar_tests {
 
     #[test]
     fn new_matches_create_grayscale_adjustment() {
-        let a = GrayscaleAdjustment::new(Some(&GrayscaleAdjustmentOptions { intensity: Some(0.5) }));
-        let b = create_grayscale_adjustment(Some(&GrayscaleAdjustmentOptions { intensity: Some(0.5) }));
+        let a = GrayscaleAdjustment::new(Some(&GrayscaleAdjustmentOptions {
+            intensity: Some(0.5),
+        }));
+        let b = create_grayscale_adjustment(Some(&GrayscaleAdjustmentOptions {
+            intensity: Some(0.5),
+        }));
         assert_eq!(a.kind, b.kind);
         assert_eq!(a.color_matrix, b.color_matrix);
     }
@@ -31,14 +35,19 @@ pub struct GrayscaleAdjustmentOptions {
 }
 
 // flight-lint: allow(conform-params) D23 C: options derive the grayscale intensity matrix — KEEP under c0f9227c
-pub fn create_grayscale_adjustment(options: Option<&GrayscaleAdjustmentOptions>) -> GrayscaleAdjustment {
+pub fn create_grayscale_adjustment(
+    options: Option<&GrayscaleAdjustmentOptions>,
+) -> GrayscaleAdjustment {
     let mut out: GrayscaleAdjustment = allocate_entity();
     initialize_grayscale_adjustment(&mut out, options);
     return out;
 }
 
 // flight-lint: allow(conform-params) D23 C: options derive the grayscale intensity matrix — KEEP under c0f9227c
-pub fn initialize_grayscale_adjustment(out: &mut GrayscaleAdjustment, options: Option<&GrayscaleAdjustmentOptions>) {
+pub fn initialize_grayscale_adjustment(
+    out: &mut GrayscaleAdjustment,
+    options: Option<&GrayscaleAdjustmentOptions>,
+) {
     let intensity = options.and_then(|o| o.intensity).unwrap_or(1.0);
     let k = intensity;
     let j = 1.0 - intensity;
@@ -46,10 +55,26 @@ pub fn initialize_grayscale_adjustment(out: &mut GrayscaleAdjustment, options: O
     let lg = 0.7152 * k;
     let lb = 0.0722 * k;
     let color_matrix = [
-        j + lr, lg, lb, 0.0, 0.0,
-        lr, j + lg, lb, 0.0, 0.0,
-        lr, lg, j + lb, 0.0, 0.0,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        j + lr,
+        lg,
+        lb,
+        0.0,
+        0.0,
+        lr,
+        j + lg,
+        lb,
+        0.0,
+        0.0,
+        lr,
+        lg,
+        j + lb,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
     ];
     out.intensity = intensity;
     initialize_color_matrix_adjustment(out, "GrayscaleAdjustment", color_matrix);

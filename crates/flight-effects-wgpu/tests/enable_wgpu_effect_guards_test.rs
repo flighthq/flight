@@ -28,7 +28,8 @@ fn apply_chain(state: &mut WgpuRenderState, kinds: &[&str]) -> bool {
     let scratch = acquire_wgpu_render_texture(state, &mut pool, &descriptor());
     // Realize the source so `source-unavailable` is not what is being measured here.
     write_wgpu_render_texture_target(state, &mut source.write().unwrap(), |_, _| {});
-    let effects: Vec<flight_effects::EffectRef> = kinds.iter().map(|kind| create_test_effect(kind)).collect();
+    let effects: Vec<flight_effects::EffectRef> =
+        kinds.iter().map(|kind| create_test_effect(kind)).collect();
     return apply_wgpu_effects_to_render_texture(
         state,
         &mut pool,
@@ -131,7 +132,10 @@ mod enable_wgpu_effect_guards {
         enable_wgpu_effect_guards(&mut state, Some(log_state));
         register_wgpu_effect(&mut state, "test.wgpu-registered-b", noop_runner, None);
 
-        assert!(apply_chain(&mut state, &["test.wgpu-registered-b", "test.wgpu-unregistered-b"]));
+        assert!(apply_chain(
+            &mut state,
+            &["test.wgpu-registered-b", "test.wgpu-unregistered-b"]
+        ));
 
         let entries = test_log_entries(&sink);
         assert_eq!(entries.len(), 1);
@@ -177,7 +181,10 @@ mod enable_wgpu_effect_guards {
         assert!(message.contains("continuing with sampleCount 4"));
         assert!(!message.contains("multisampling was NOT applied"));
         assert_eq!(record_number(&entries[0], "appliedSampleCount"), Some(4.0));
-        assert_eq!(record_number(&entries[0], "requestedSampleCount"), Some(8.0));
+        assert_eq!(
+            record_number(&entries[0], "requestedSampleCount"),
+            Some(8.0)
+        );
     }
 
     #[test]
@@ -187,11 +194,15 @@ mod enable_wgpu_effect_guards {
         enable_wgpu_effect_guards(&mut state, Some(log_state));
 
         assert_eq!(
-            create_wgpu_effect_state(&state, Some(&with_sample_count(1.0))).options.sample_count,
+            create_wgpu_effect_state(&state, Some(&with_sample_count(1.0)))
+                .options
+                .sample_count,
             Some(1.0)
         );
         assert_eq!(
-            create_wgpu_effect_state(&state, Some(&with_sample_count(4.0))).options.sample_count,
+            create_wgpu_effect_state(&state, Some(&with_sample_count(4.0)))
+                .options
+                .sample_count,
             Some(4.0)
         );
 

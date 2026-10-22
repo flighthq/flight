@@ -78,7 +78,8 @@ fn has_doc_examples(src_dir: &Path) -> bool {
                 && let Ok(source) = fs::read_to_string(&path)
                 && source.lines().any(|line| {
                     let trimmed = line.trim_start();
-                    return (trimmed.starts_with("///") || trimmed.starts_with("//!")) && trimmed.contains("```");
+                    return (trimmed.starts_with("///") || trimmed.starts_with("//!"))
+                        && trimmed.contains("```");
                 })
             {
                 return true;
@@ -133,7 +134,9 @@ pub fn fix_main(source: &str, crate_ident: &str, stems: &[String]) -> Option<Str
         };
         let name = m.ident.to_string();
         if m.content.is_none() && name.ends_with("_test") {
-            let owned = m.attrs.is_empty() || (m.attrs.len() == 1 && path_attr(&m.attrs).is_some_and(|p| p.ends_with("_test.rs")));
+            let owned = m.attrs.is_empty()
+                || (m.attrs.len() == 1
+                    && path_attr(&m.attrs).is_some_and(|p| p.ends_with("_test.rs")));
             if !owned {
                 return None;
             }
@@ -146,7 +149,10 @@ pub fn fix_main(source: &str, crate_ident: &str, stems: &[String]) -> Option<Str
     let mut kept: Vec<&str> = Vec::new();
     for (index, line) in lines.iter().enumerate() {
         let number = index + 1;
-        if !removed.iter().any(|(start, end)| number >= *start && number <= *end) {
+        if !removed
+            .iter()
+            .any(|(start, end)| number >= *start && number <= *end)
+        {
             kept.push(line);
         }
     }
@@ -167,7 +173,11 @@ pub fn fix_main(source: &str, crate_ident: &str, stems: &[String]) -> Option<Str
         result.push_str("\n\n");
     }
     for stem in stems {
-        result.push_str(&format!("#[path = \"{}.rs\"]\nmod {};\n", stem, module_name(crate_ident, stem)));
+        result.push_str(&format!(
+            "#[path = \"{}.rs\"]\nmod {};\n",
+            stem,
+            module_name(crate_ident, stem)
+        ));
     }
     return Some(result);
 }
@@ -206,7 +216,10 @@ fn replace_whole_segment(source: &str, from: &str, to: &str) -> String {
     let mut result = String::with_capacity(source.len());
     let mut rest = source;
     while let Some(at) = rest.find(from) {
-        let boundary = rest[..at].chars().last().is_none_or(|c| !(c.is_ascii_alphanumeric() || c == '_'));
+        let boundary = rest[..at]
+            .chars()
+            .last()
+            .is_none_or(|c| !(c.is_ascii_alphanumeric() || c == '_'));
         result.push_str(&rest[..at]);
         result.push_str(if boundary { to } else { from });
         rest = &rest[at + from.len()..];
@@ -224,7 +237,9 @@ pub fn fix_manifest(manifest: &str, doctests: bool) -> Option<String> {
 
     // Remove this tool's `[lib]` block (and the blank line after it); re-added below when wanted.
     if let Some(at) = lines.iter().position(|l| l.trim() == "[lib]")
-        && lines.get(at + 1).is_some_and(|l| l.trim() == "doctest = false")
+        && lines
+            .get(at + 1)
+            .is_some_and(|l| l.trim() == "doctest = false")
         && lines.get(at + 2).is_none_or(|l| l.trim().is_empty())
     {
         let end = (at + 3).min(lines.len());
@@ -234,13 +249,22 @@ pub fn fix_manifest(manifest: &str, doctests: bool) -> Option<String> {
         return None;
     }
 
-    let targets: Vec<usize> = lines.iter().enumerate().filter(|(_, l)| l.trim() == "[[test]]").map(|(i, _)| i).collect();
+    let targets: Vec<usize> = lines
+        .iter()
+        .enumerate()
+        .filter(|(_, l)| l.trim() == "[[test]]")
+        .map(|(i, _)| i)
+        .collect();
     let target_at = match targets.as_slice() {
         [] => None,
         [at] => {
             let at = *at;
-            if !(lines.get(at + 1).is_some_and(|l| l.trim_start().starts_with("name"))
-                && lines.get(at + 2).is_some_and(|l| l.trim() == "path = \"tests/main.rs\""))
+            if !(lines
+                .get(at + 1)
+                .is_some_and(|l| l.trim_start().starts_with("name"))
+                && lines
+                    .get(at + 2)
+                    .is_some_and(|l| l.trim() == "path = \"tests/main.rs\""))
             {
                 return None;
             }
@@ -250,17 +274,26 @@ pub fn fix_manifest(manifest: &str, doctests: bool) -> Option<String> {
         _ => return None,
     };
 
-    if !lines.iter().any(|l| l.trim_start().starts_with("autotests")) {
+    if !lines
+        .iter()
+        .any(|l| l.trim_start().starts_with("autotests"))
+    {
         let package = lines.iter().position(|l| l.trim() == "[package]")?;
         let mut insert = package + 1;
-        while insert < lines.len() && !lines[insert].trim().is_empty() && !lines[insert].trim_start().starts_with('[') {
+        while insert < lines.len()
+            && !lines[insert].trim().is_empty()
+            && !lines[insert].trim_start().starts_with('[')
+        {
             insert += 1;
         }
         lines.insert(insert, "autotests = false".to_string());
     }
 
     let target_at = match target_at {
-        Some(at) => lines.iter().position(|l| l.trim() == "[[test]]").unwrap_or(at),
+        Some(at) => lines
+            .iter()
+            .position(|l| l.trim() == "[[test]]")
+            .unwrap_or(at),
         None => {
             while lines.last().is_some_and(|l| l.trim().is_empty()) {
                 lines.pop();
@@ -303,7 +336,10 @@ mod tests {
     #[test]
     fn main_drops_leading_underscores_from_private_module_stems() {
         let fixed = fix_main("", "flight_x", &["_load_test".to_string()]).unwrap();
-        assert_eq!(fixed, "#[path = \"_load_test.rs\"]\nmod flight_x_load_test;\n");
+        assert_eq!(
+            fixed,
+            "#[path = \"_load_test.rs\"]\nmod flight_x_load_test;\n"
+        );
     }
 
     #[test]
@@ -311,17 +347,30 @@ mod tests {
         let src = "#[path = \".\"]\nmod x {\n    #[allow(unused_imports)]\n    use super::*;\n\n    #[path = \"b_test.rs\"]\n    mod b;\n}\n";
         let stems = vec!["a_test".to_string(), "b_test".to_string()];
         let fixed = fix_main(src, "flight_x", &stems).unwrap();
-        assert_eq!(fixed, "#[path = \"a_test.rs\"]\nmod flight_x_a_test;\n#[path = \"b_test.rs\"]\nmod flight_x_b_test;\n");
+        assert_eq!(
+            fixed,
+            "#[path = \"a_test.rs\"]\nmod flight_x_a_test;\n#[path = \"b_test.rs\"]\nmod flight_x_b_test;\n"
+        );
     }
 
     #[test]
     fn main_leaves_foreign_test_modules_alone() {
-        assert!(fix_main("#[cfg(feature = \"x\")]\nmod a_test;\n", "flight_x", &["a_test".to_string()]).is_none());
+        assert!(
+            fix_main(
+                "#[cfg(feature = \"x\")]\nmod a_test;\n",
+                "flight_x",
+                &["a_test".to_string()]
+            )
+            .is_none()
+        );
     }
 
     #[test]
     fn cross_test_paths_follow_the_module_names() {
-        let stems = vec!["svg_document_conformance_test".to_string(), "a_test".to_string()];
+        let stems = vec![
+            "svg_document_conformance_test".to_string(),
+            "a_test".to_string(),
+        ];
         let src = "use crate::svg_document_conformance_test::{a, b};\nuse crate::x::svg_document_conformance::c;\nuse crate::b_a_test::d;\nuse crate::support::*;\n";
         assert_eq!(
             rewrite_test_module_paths(src, "flight_x", &stems),
@@ -341,20 +390,41 @@ mod tests {
     #[test]
     fn manifest_restores_a_crate_named_target() {
         let src = "[package]\nname = \"flight-x\"\nautotests = false\n\n[[test]]\nname = \"flight_x\"\npath = \"tests/main.rs\"\n";
-        assert!(fix_manifest(src, true).unwrap().ends_with("[[test]]\nname = \"tests\"\npath = \"tests/main.rs\"\n"));
+        assert!(
+            fix_manifest(src, true)
+                .unwrap()
+                .ends_with("[[test]]\nname = \"tests\"\npath = \"tests/main.rs\"\n")
+        );
     }
 
     #[test]
     fn manifest_without_a_target_gains_one() {
-        let src = "[package]\nname = \"flight-x\"\nedition = \"2024\"\n\n[dependencies]\nserde = \"1\"\n";
+        let src =
+            "[package]\nname = \"flight-x\"\nedition = \"2024\"\n\n[dependencies]\nserde = \"1\"\n";
         let fixed = fix_manifest(src, true).unwrap();
-        assert!(fixed.contains("edition = \"2024\"\nautotests = false\n"), "{}", fixed);
-        assert!(fixed.ends_with("serde = \"1\"\n\n[[test]]\nname = \"tests\"\npath = \"tests/main.rs\"\n"), "{}", fixed);
+        assert!(
+            fixed.contains("edition = \"2024\"\nautotests = false\n"),
+            "{}",
+            fixed
+        );
+        assert!(
+            fixed.ends_with(
+                "serde = \"1\"\n\n[[test]]\nname = \"tests\"\npath = \"tests/main.rs\"\n"
+            ),
+            "{}",
+            fixed
+        );
         assert_eq!(fix_manifest(&fixed, true).unwrap(), fixed);
     }
 
     #[test]
     fn manifest_leaves_foreign_lib_sections_alone() {
-        assert!(fix_manifest("[package]\nname = \"x\"\n\n[lib]\ncrate-type = [\"cdylib\"]\n", false).is_none());
+        assert!(
+            fix_manifest(
+                "[package]\nname = \"x\"\n\n[lib]\ncrate-type = [\"cdylib\"]\n",
+                false
+            )
+            .is_none()
+        );
     }
 }

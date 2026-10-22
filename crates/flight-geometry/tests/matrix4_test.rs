@@ -90,13 +90,7 @@ mod append_matrix4 {
     fn supports_out_equals_source() {
         let source = discriminating_matrix4();
         let mut other = create_matrix4();
-        scale_matrix4(
-            &mut other,
-            &create_matrix4(),
-            2.0,
-            3.0,
-            4.0,
-        );
+        scale_matrix4(&mut other, &create_matrix4(), 2.0, 3.0, 4.0);
         let mut expected = create_matrix4();
         append_matrix4(&mut expected, &source, &other);
 
@@ -196,7 +190,13 @@ mod append_rotation_matrix4 {
 
         append_rotation_matrix4(&mut distinct, &source, PI / 3.0, &z_axis_v4(), Some(&pivot));
         let aliased_copy = clone_matrix4(&aliased);
-        append_rotation_matrix4(&mut aliased, &aliased_copy, PI / 3.0, &z_axis_v4(), Some(&pivot));
+        append_rotation_matrix4(
+            &mut aliased,
+            &aliased_copy,
+            PI / 3.0,
+            &z_axis_v4(),
+            Some(&pivot),
+        );
 
         assert_eq!(aliased.m, distinct.m);
     }
@@ -315,7 +315,8 @@ mod clone_matrix4 {
     #[test]
     fn copies_all_values_from_the_source_matrix() {
         let source = create_matrix4_from_values(
-            2.0, 3.0, 5.0, 7.0, 11.0, 13.0, 17.0, 19.0, 23.0, 29.0, 31.0, 37.0, 41.0, 43.0, 47.0, 53.0,
+            2.0, 3.0, 5.0, 7.0, 11.0, 13.0, 17.0, 19.0, 23.0, 29.0, 31.0, 37.0, 41.0, 43.0, 47.0,
+            53.0,
         );
 
         let cloned = clone_matrix4(&source);
@@ -609,7 +610,12 @@ mod create_matrix4 {
     fn creates_an_identity_matrix_when_called_with_no_arguments() {
         let m = create_matrix4();
 
-        assert_eq!(m.m, [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]);
+        assert_eq!(
+            m.m,
+            [
+                1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0
+            ]
+        );
     }
 
     #[test]
@@ -620,7 +626,10 @@ mod create_matrix4 {
 
         assert_eq!(
             m.m,
-            [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]
+            [
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0,
+                16.0
+            ]
         );
     }
 }
@@ -632,7 +641,12 @@ mod create_matrix4_from_2d {
     fn initializes_the_matrix_using_set_2d_semantics() {
         let m = create_matrix4_from_2d(1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
 
-        assert_eq!(m.m, [1.0, 2.0, 0.0, 0.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 5.0, 6.0, 0.0, 1.0]);
+        assert_eq!(
+            m.m,
+            [
+                1.0, 2.0, 0.0, 0.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 5.0, 6.0, 0.0, 1.0
+            ]
+        );
     }
 }
 
@@ -668,7 +682,12 @@ mod decompose_matrix4 {
         let mut m = create_matrix4();
         let mut rotation = create_quaternion(0.0, 0.0, 0.0, 1.0);
         set_quaternion_from_axis_angle(&mut rotation, &create_vector3(0.0, 0.0, 1.0), PI / 2.0);
-        compose_matrix4(&mut m, &create_vector3(5.0, 6.0, 7.0), &rotation, &create_vector3(2.0, 3.0, 4.0));
+        compose_matrix4(
+            &mut m,
+            &create_vector3(5.0, 6.0, 7.0),
+            &rotation,
+            &create_vector3(2.0, 3.0, 4.0),
+        );
 
         let mut p = create_vector3(0.0, 0.0, 0.0);
         let mut r = create_quaternion(0.0, 0.0, 0.0, 1.0);
@@ -690,12 +709,7 @@ mod decompose_matrix4 {
         let mut p = create_vector3(0.0, 0.0, 0.0);
         let mut r = create_quaternion(0.0, 0.0, 0.0, 1.0);
         let mut s = create_vector3(0.0, 0.0, 0.0);
-        decompose_matrix4(
-            &mut p,
-            &mut r,
-            &mut s,
-            &create_matrix4(),
-        );
+        decompose_matrix4(&mut p, &mut r, &mut s, &create_matrix4());
 
         assert_approx_tight(p.x, 0.0);
         assert_approx_tight(p.y, 0.0);
@@ -988,10 +1002,7 @@ mod inverse_matrix4 {
         let m = create_matrix4();
         let mut inv = create_matrix4();
         inverse_matrix4(&mut inv, &m);
-        assert!(equals_matrix4(
-            Some(&inv),
-            Some(&create_matrix4())
-        ));
+        assert!(equals_matrix4(Some(&inv), Some(&create_matrix4())));
     }
 
     #[test]
@@ -1022,10 +1033,7 @@ mod inverse_matrix4 {
 
         let mut check = create_matrix4();
         multiply_matrix4(&mut check, &m, &inv);
-        assert_matrix4_close(
-            &check,
-            &create_matrix4(),
-        );
+        assert_matrix4_close(&check, &create_matrix4());
     }
 
     #[test]
@@ -1041,10 +1049,7 @@ mod inverse_matrix4 {
 
         let mut check = create_matrix4();
         multiply_matrix4(&mut check, &m, &inv);
-        assert_matrix4_close(
-            &check,
-            &create_matrix4(),
-        );
+        assert_matrix4_close(&check, &create_matrix4());
     }
 
     #[test]
@@ -1306,7 +1311,8 @@ mod multiply_matrix4 {
             1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
         );
         let b = create_matrix4_from_values(
-            17.0, 19.0, 23.0, 29.0, 31.0, 37.0, 41.0, 43.0, 47.0, 53.0, 59.0, 61.0, 67.0, 71.0, 73.0, 79.0,
+            17.0, 19.0, 23.0, 29.0, 31.0, 37.0, 41.0, 43.0, 47.0, 53.0, 59.0, 61.0, 67.0, 71.0,
+            73.0, 79.0,
         );
         let mut expected = create_matrix4();
         multiply_matrix4(&mut expected, &a, &b);
@@ -1323,7 +1329,8 @@ mod multiply_matrix4 {
             1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
         );
         let b = create_matrix4_from_values(
-            17.0, 19.0, 23.0, 29.0, 31.0, 37.0, 41.0, 43.0, 47.0, 53.0, 59.0, 61.0, 67.0, 71.0, 73.0, 79.0,
+            17.0, 19.0, 23.0, 29.0, 31.0, 37.0, 41.0, 43.0, 47.0, 53.0, 59.0, 61.0, 67.0, 71.0,
+            73.0, 79.0,
         );
         let mut expected = create_matrix4();
         multiply_matrix4(&mut expected, &a, &b);
@@ -1412,13 +1419,7 @@ mod prepend_matrix4 {
     fn supports_out_equals_source() {
         let source = discriminating_matrix4();
         let mut other = create_matrix4();
-        scale_matrix4(
-            &mut other,
-            &create_matrix4(),
-            2.0,
-            3.0,
-            4.0,
-        );
+        scale_matrix4(&mut other, &create_matrix4(), 2.0, 3.0, 4.0);
         let mut expected = create_matrix4();
         prepend_matrix4(&mut expected, &source, &other);
 
@@ -1478,7 +1479,11 @@ mod prepend_rotation_matrix4 {
         let source = discriminating_matrix4();
         let pivot = create_vector4(5.0, 0.0, 0.0, 1.0);
         let mut before = create_vector3(0.0, 0.0, 0.0);
-        matrix4_transform_point(&mut before, &source, &create_vector3(pivot.x, pivot.y, pivot.z));
+        matrix4_transform_point(
+            &mut before,
+            &source,
+            &create_vector3(pivot.x, pivot.y, pivot.z),
+        );
 
         let mut out = create_matrix4();
         prepend_rotation_matrix4(&mut out, &source, PI / 2.0, &z_axis_v4(), Some(&pivot));
@@ -1499,7 +1504,13 @@ mod prepend_rotation_matrix4 {
 
         prepend_rotation_matrix4(&mut distinct, &source, PI / 3.0, &z_axis_v4(), Some(&pivot));
         let aliased_copy = clone_matrix4(&aliased);
-        prepend_rotation_matrix4(&mut aliased, &aliased_copy, PI / 3.0, &z_axis_v4(), Some(&pivot));
+        prepend_rotation_matrix4(
+            &mut aliased,
+            &aliased_copy,
+            PI / 3.0,
+            &z_axis_v4(),
+            Some(&pivot),
+        );
 
         assert_eq!(aliased.m, distinct.m);
     }
@@ -1574,9 +1585,18 @@ mod prepend_translation_matrix4 {
 
         prepend_translation_matrix4(&mut out, &source, 1.0, 2.0, 3.0);
 
-        assert_eq!(out.m[12], source.m[0] * 1.0 + source.m[4] * 2.0 + source.m[8] * 3.0 + source.m[12]);
-        assert_eq!(out.m[13], source.m[1] * 1.0 + source.m[5] * 2.0 + source.m[9] * 3.0 + source.m[13]);
-        assert_eq!(out.m[14], source.m[2] * 1.0 + source.m[6] * 2.0 + source.m[10] * 3.0 + source.m[14]);
+        assert_eq!(
+            out.m[12],
+            source.m[0] * 1.0 + source.m[4] * 2.0 + source.m[8] * 3.0 + source.m[12]
+        );
+        assert_eq!(
+            out.m[13],
+            source.m[1] * 1.0 + source.m[5] * 2.0 + source.m[9] * 3.0 + source.m[13]
+        );
+        assert_eq!(
+            out.m[14],
+            source.m[2] * 1.0 + source.m[6] * 2.0 + source.m[10] * 3.0 + source.m[14]
+        );
     }
 
     #[test]
@@ -1688,9 +1708,19 @@ mod rotate_matrix4 {
         let mut distinct = create_matrix4();
         let mut aliased = clone_matrix4(&source);
 
-        rotate_matrix4(&mut distinct, &source, &create_vector3(0.0, 0.0, 1.0), PI / 3.0);
+        rotate_matrix4(
+            &mut distinct,
+            &source,
+            &create_vector3(0.0, 0.0, 1.0),
+            PI / 3.0,
+        );
         let aliased_copy = clone_matrix4(&aliased);
-        rotate_matrix4(&mut aliased, &aliased_copy, &create_vector3(0.0, 0.0, 1.0), PI / 3.0);
+        rotate_matrix4(
+            &mut aliased,
+            &aliased_copy,
+            &create_vector3(0.0, 0.0, 1.0),
+            PI / 3.0,
+        );
 
         assert_eq!(aliased.m, distinct.m);
     }
@@ -1865,7 +1895,12 @@ mod set_matrix4_from_2d {
         let mut m = create_matrix4();
         set_matrix4_from_2d(&mut m, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
 
-        assert_eq!(m.m, [1.0, 2.0, 0.0, 0.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 5.0, 6.0, 0.0, 1.0]);
+        assert_eq!(
+            m.m,
+            [
+                1.0, 2.0, 0.0, 0.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 5.0, 6.0, 0.0, 1.0
+            ]
+        );
     }
 
     #[test]
@@ -1937,7 +1972,9 @@ mod set_matrix4_from_matrix {
         let mat2d = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         let mut mat = create_matrix4();
         set_matrix4_from_matrix(&mut mat, &mat2d);
-        let expected: [f32; 16] = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0];
+        let expected: [f32; 16] = [
+            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        ];
         assert_eq!(mat.m, expected);
     }
 
@@ -1966,7 +2003,9 @@ mod set_matrix4_from_matrix3 {
         let mat3 = create_matrix3();
         let mut mat = create_matrix4();
         set_matrix4_from_matrix3(&mut mat, &mat3);
-        let expected: [f32; 16] = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0];
+        let expected: [f32; 16] = [
+            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        ];
         assert_eq!(mat.m, expected);
     }
 
@@ -1997,7 +2036,12 @@ mod set_matrix4_from_quaternion {
             2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
         );
         set_matrix4_from_quaternion(&mut m, &create_quaternion(0.0, 0.0, 0.0, 1.0));
-        assert_eq!(m.m, [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]);
+        assert_eq!(
+            m.m,
+            [
+                1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0
+            ]
+        );
     }
 
     #[test]
@@ -2023,7 +2067,12 @@ mod set_matrix4_identity {
             1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
         );
         set_matrix4_identity(&mut m);
-        assert_eq!(m.m, [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]);
+        assert_eq!(
+            m.m,
+            [
+                1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0
+            ]
+        );
     }
 }
 
@@ -2034,7 +2083,12 @@ mod set_matrix4_look_at {
     fn places_the_eye_at_the_origin_of_view_space() {
         let mut m = create_matrix4();
         let eye = create_vector3(0.0, 0.0, 5.0);
-        set_matrix4_look_at(&mut m, &eye, &create_vector3(0.0, 0.0, 0.0), &create_vector3(0.0, 1.0, 0.0));
+        set_matrix4_look_at(
+            &mut m,
+            &eye,
+            &create_vector3(0.0, 0.0, 0.0),
+            &create_vector3(0.0, 1.0, 0.0),
+        );
 
         let mut out = create_vector3(0.0, 0.0, 0.0);
         matrix4_transform_point(&mut out, &m, &eye);
@@ -2160,18 +2214,32 @@ mod set_matrix4_tests {
             15.0, 16.0,
         );
 
-        assert_eq!(m.m, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0]);
+        assert_eq!(
+            m.m,
+            [
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0,
+                16.0
+            ]
+        );
     }
 
     #[test]
     fn overwrites_existing_matrix_values_completely() {
         let mut m = create_matrix4_from_values(
-            99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0,
+            99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0,
+            99.0, 99.0,
         );
 
-        set_matrix4(&mut m, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+        set_matrix4(
+            &mut m, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        );
 
-        assert_eq!(m.m, [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]);
+        assert_eq!(
+            m.m,
+            [
+                1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0
+            ]
+        );
     }
 }
 
@@ -2295,7 +2363,12 @@ mod translate_matrix4 {
         translate_matrix4(&mut aliased, &aliased_copy, 1.0, 2.0, 3.0);
 
         assert_eq!(out.m, aliased.m);
-        assert_eq!(source.m, [0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 7.0, 8.0, 9.0, 1.0]);
+        assert_eq!(
+            source.m,
+            [
+                0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 7.0, 8.0, 9.0, 1.0
+            ]
+        );
     }
 }
 
@@ -2345,7 +2418,9 @@ mod transpose_matrix4 {
         );
         let mut t = create_matrix4();
         transpose_matrix4(&mut t, &m);
-        let expected = [1.0, 5.0, 9.0, 13.0, 2.0, 6.0, 10.0, 14.0, 3.0, 7.0, 11.0, 15.0, 4.0, 8.0, 12.0, 16.0];
+        let expected = [
+            1.0, 5.0, 9.0, 13.0, 2.0, 6.0, 10.0, 14.0, 3.0, 7.0, 11.0, 15.0, 4.0, 8.0, 12.0, 16.0,
+        ];
         for i in 0..16 {
             assert_eq!(t.m[i], expected[i]);
         }
@@ -2404,7 +2479,10 @@ mod transpose_matrix4 {
         );
         let m_copy = clone_matrix4(&m);
         transpose_matrix4(&mut m, &m_copy);
-        let expected = [2.0, 11.0, 23.0, 41.0, 3.0, 13.0, 29.0, 43.0, 5.0, 17.0, 31.0, 47.0, 7.0, 19.0, 37.0, 53.0];
+        let expected = [
+            2.0, 11.0, 23.0, 41.0, 3.0, 13.0, 29.0, 43.0, 5.0, 17.0, 31.0, 47.0, 7.0, 19.0, 37.0,
+            53.0,
+        ];
         for i in 0..16 {
             assert_eq!(m.m[i], expected[i]);
         }

@@ -588,7 +588,10 @@ mod read_physics3d_abi_joints {
         assert!(read_physics3d_abi_joints(&mut out, &abi, world));
         assert_eq!(&out.ids[..2], &[5, 6]);
         assert_eq!(
-            (PHYSICS3D_ABI_JOINT_FLAG_COLLIDE_CONNECTED, PHYSICS3D_ABI_JOINT_FLAG_BROKEN),
+            (
+                PHYSICS3D_ABI_JOINT_FLAG_COLLIDE_CONNECTED,
+                PHYSICS3D_ABI_JOINT_FLAG_BROKEN
+            ),
             (1, 2)
         );
         assert_eq!(out.flags[0], PHYSICS3D_ABI_JOINT_FLAG_BROKEN);

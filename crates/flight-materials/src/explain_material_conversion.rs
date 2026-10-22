@@ -1,6 +1,6 @@
 use crate::{
-    MaterialConversionDropReason, MaterialConversionExplanation,
-    PhongMaterial, SpecularGlossinessPbrMaterial,
+    MaterialConversionDropReason, MaterialConversionExplanation, PhongMaterial,
+    SpecularGlossinessPbrMaterial,
 };
 
 pub fn explain_phong_conversion(source: &PhongMaterial) -> MaterialConversionExplanation {

@@ -33,7 +33,10 @@ mod apply_blur_effect_to_wgpu {
 
         assert_eq!(
             recorded_pass_views(&records),
-            vec![temp.read().unwrap().view.clone(), dest.read().unwrap().view.clone()]
+            vec![
+                temp.read().unwrap().view.clone(),
+                dest.read().unwrap().view.clone()
+            ]
         );
         let uniforms = recorded_effect_uniforms(&records);
         // [texelSize.x, texelSize.y, dir.x, dir.y, radius, sigma]; no open pass, so sigma is the
@@ -97,7 +100,10 @@ mod get_wgpu_render_target_texel_scale {
     fn returns_1_for_a_zero_or_non_finite_width_instead_of_propagating_it() {
         assert_eq!(get_wgpu_render_target_texel_scale(800.0, 0.0), 1.0);
         assert_eq!(get_wgpu_render_target_texel_scale(f32::NAN, 800.0), 1.0);
-        assert_eq!(get_wgpu_render_target_texel_scale(800.0, f32::INFINITY), 1.0);
+        assert_eq!(
+            get_wgpu_render_target_texel_scale(800.0, f32::INFINITY),
+            1.0
+        );
     }
 }
 

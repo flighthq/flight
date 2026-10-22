@@ -290,7 +290,9 @@ mod sugar_tests {
         let captured = reports.clone();
         let owner = std::thread::current().id();
         set_spatial_indexing_guard(Some(std::sync::Arc::new(move |notice| {
-            if std::thread::current().id() == owner { captured.lock().unwrap().push(notice.clone()); }
+            if std::thread::current().id() == owner {
+                captured.lock().unwrap().push(notice.clone());
+            }
         })));
         let notice = notice();
         notice.report();
@@ -416,4 +418,3 @@ impl SpatialIndexingNotice {
         report_spatial_indexing(self);
     }
 }
-

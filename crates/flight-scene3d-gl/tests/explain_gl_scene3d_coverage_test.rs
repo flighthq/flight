@@ -72,7 +72,12 @@ fn shambler_like_usage(with_modifier: bool) -> Scene3DKindUsage {
 
 fn gaps(state: &GlRenderState, with_modifier: bool) -> Vec<SceneCoverageEntry> {
     let mut out = Vec::new();
-    explain_gl_scene3d_coverage(&mut out, state, &shambler_like_usage(with_modifier), &coverage_catalog());
+    explain_gl_scene3d_coverage(
+        &mut out,
+        state,
+        &shambler_like_usage(with_modifier),
+        &coverage_catalog(),
+    );
     return out;
 }
 
@@ -120,7 +125,11 @@ mod explain_gl_scene3d_coverage {
         // resolve_gl_mesh_material_renderer falls back to StandardMaterialKind, so the mesh still
         // draws — as the wrong material: a downgrade to report, not a silence.
         let mut state = make_gl_scene3d_state();
-        register_gl_mesh_material_renderer(&mut state, STANDARD_MATERIAL_KIND.to_string(), &RENDERER);
+        register_gl_mesh_material_renderer(
+            &mut state,
+            STANDARD_MATERIAL_KIND.to_string(),
+            &RENDERER,
+        );
         assert!(gaps(&state, false).contains(&remediable(
             SceneCoverage::FallbackRemediable,
             RequirementFacet::SceneMaterialKind,
@@ -142,8 +151,12 @@ mod explain_gl_scene3d_coverage {
             module: None,
             registrar: None,
         }));
-        assert!(!gaps(&state, false).iter().any(|gap| gap.coverage != SceneCoverage::Satisfied
-            && gap.registry == RenderRegistryTable::MaterialRenderer));
+        assert!(
+            !gaps(&state, false)
+                .iter()
+                .any(|gap| gap.coverage != SceneCoverage::Satisfied
+                    && gap.registry == RenderRegistryTable::MaterialRenderer)
+        );
     }
 
     #[test]
@@ -162,9 +175,11 @@ mod explain_gl_scene3d_coverage {
 
     #[test]
     fn never_reports_a_node_kind_gap_since_3d_collects_meshes_structurally() {
-        assert!(!gaps(&make_gl_scene3d_state(), false)
-            .iter()
-            .any(|gap| gap.registry == RenderRegistryTable::NodeRenderer));
+        assert!(
+            !gaps(&make_gl_scene3d_state(), false)
+                .iter()
+                .any(|gap| gap.registry == RenderRegistryTable::NodeRenderer)
+        );
     }
 
     #[test]
@@ -184,14 +199,25 @@ mod has_gl_scene3d_coverage {
 
     #[test]
     fn is_false_for_a_bare_state_and_stays_false_while_any_kind_is_unserved() {
-        assert!(!has_gl_scene3d_coverage(&make_gl_scene3d_state(), &shambler_like_usage(false)));
+        assert!(!has_gl_scene3d_coverage(
+            &make_gl_scene3d_state(),
+            &shambler_like_usage(false)
+        ));
     }
 
     #[test]
-    fn counts_a_standard_material_fallback_as_uncovered_since_the_authored_material_would_not_appear() {
+    fn counts_a_standard_material_fallback_as_uncovered_since_the_authored_material_would_not_appear()
+     {
         let mut state = make_gl_scene3d_state();
-        register_gl_mesh_material_renderer(&mut state, STANDARD_MATERIAL_KIND.to_string(), &RENDERER);
-        assert!(!has_gl_scene3d_coverage(&state, &shambler_like_usage(false)));
+        register_gl_mesh_material_renderer(
+            &mut state,
+            STANDARD_MATERIAL_KIND.to_string(),
+            &RENDERER,
+        );
+        assert!(!has_gl_scene3d_coverage(
+            &state,
+            &shambler_like_usage(false)
+        ));
     }
 
     #[test]

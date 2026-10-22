@@ -2,14 +2,14 @@ use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
 use flight_importdiagnostics::{
-    report_import_diagnostic, ImportDiagnostic, ImportDiagnosticDetailValue,
-    ImportDiagnosticSeverity,
+    ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
+    report_import_diagnostic,
 };
 use flight_layout::{
-    ContainerStyle, FlexAlignSelf, FlexBasis, FlexLayoutAlign, FlexLayoutContainerStyle,
-    FlexLayoutDirection, FlexLayoutItemStyle, FlexLayoutJustify, FlexLayoutWrap,
-    GridLayoutContainerStyle, GridLayoutItemStyle, GridLayoutTrack, ItemStyle, LayoutNode,
-    LayoutTree, FLEX_LAYOUT_KIND, GRID_LAYOUT_KIND,
+    ContainerStyle, FLEX_LAYOUT_KIND, FlexAlignSelf, FlexBasis, FlexLayoutAlign,
+    FlexLayoutContainerStyle, FlexLayoutDirection, FlexLayoutItemStyle, FlexLayoutJustify,
+    FlexLayoutWrap, GRID_LAYOUT_KIND, GridLayoutContainerStyle, GridLayoutItemStyle,
+    GridLayoutTrack, ItemStyle, LayoutNode, LayoutTree,
 };
 use flight_scene2d::{Node2DRef, create_display_object};
 

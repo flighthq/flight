@@ -1,12 +1,12 @@
 use flight_entity::Uint8Array;
 
-use flight_buffer::{
-    create_byte_reader, has_byte_reader_bytes, read_byte_reader_u8, read_byte_reader_u16,
-    read_byte_reader_u24, read_byte_reader_u32,
-};
 use crate::types::{
     TextureContainer, TextureContainerFormat, TextureContainerLevel,
     TextureContainerParseFailureReason, TextureContainerSupercompression,
+};
+use flight_buffer::{
+    create_byte_reader, has_byte_reader_bytes, read_byte_reader_u8, read_byte_reader_u16,
+    read_byte_reader_u24, read_byte_reader_u32,
 };
 
 #[derive(Clone, Copy)]

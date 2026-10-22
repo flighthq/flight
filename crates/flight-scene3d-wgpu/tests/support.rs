@@ -401,7 +401,11 @@ pub fn make_test_camera() -> flight_camera::Camera3D {
 
 /// A perspective camera (aspect 1, fovY `fov_y`, near 0.1, far 100) looking from `eye` at `target`
 /// with +Y up (TS `createCamera3D` + `setCamera3DViewMatrix4FromLookAt`).
-pub fn make_test_look_at_camera(fov_y: f32, eye: [f32; 3], target: [f32; 3]) -> flight_camera::Camera3D {
+pub fn make_test_look_at_camera(
+    fov_y: f32,
+    eye: [f32; 3],
+    target: [f32; 3],
+) -> flight_camera::Camera3D {
     let mut camera = make_test_camera();
     if let flight_camera::Projection::Perspective(projection) = &camera.projection {
         projection.write().unwrap().fov_y = fov_y;
@@ -417,7 +421,9 @@ pub fn make_test_look_at_camera(fov_y: f32, eye: [f32; 3], target: [f32; 3]) -> 
 
 /// A bare Node3D scene root (TS `createNode3D(Node3DKind)`).
 pub fn create_test_scene_root() -> flight_node::NodeRef {
-    return flight_scene3d::publish_node3d(flight_scene3d::create_node3d::<flight_scene3d::Node3DFields>(None));
+    return flight_scene3d::publish_node3d(flight_scene3d::create_node3d::<
+        flight_scene3d::Node3DFields,
+    >(None));
 }
 
 /// A mesh over `geometry` with one material slot per entry (TS `createMesh(geometry, materials)`).
@@ -448,12 +454,14 @@ pub fn make_test_scene_lights() -> flight_lighting::Scene3DLights {
     ambient.color = 0xffffffff;
     ambient.intensity = 0.2;
     lights.ambient = Some(Arc::new(std::sync::RwLock::new(ambient)));
-    let directional = flight_lighting::create_directional_light(Some(&flight_lighting::DirectionalLightOptions {
-        color: Some(0xffffffff),
-        direction: Some(flight_geometry::create_vector3(0.0, -1.0, -1.0)),
-        intensity: Some(1.0),
-        ..test_default()
-    }));
+    let directional = flight_lighting::create_directional_light(Some(
+        &flight_lighting::DirectionalLightOptions {
+            color: Some(0xffffffff),
+            direction: Some(flight_geometry::create_vector3(0.0, -1.0, -1.0)),
+            intensity: Some(1.0),
+            ..test_default()
+        },
+    ));
     lights.directional = Some(Arc::new(std::sync::RwLock::new(directional)));
     return lights;
 }
@@ -531,7 +539,10 @@ pub fn create_test_empty_layout(state: &WgpuRenderState) -> wgpu::BindGroupLayou
 }
 
 /// A material layout with the uniform at 0, one sampler at 1 and `view_count` views from 2.
-pub fn create_test_material_layout(state: &WgpuRenderState, view_count: u32) -> wgpu::BindGroupLayout {
+pub fn create_test_material_layout(
+    state: &WgpuRenderState,
+    view_count: u32,
+) -> wgpu::BindGroupLayout {
     let native = get_wgpu_render_state_native_device(state);
     let mut entries = vec![test_uniform_entry(0), test_sampler_entry(1)];
     for index in 0..view_count {
@@ -729,7 +740,9 @@ impl WgpuExternalImageSource for TestVideoElement {
     }
 }
 
-fn test_video_element_of(source: &Arc<flight_host::HostImageSource>) -> Arc<dyn WgpuExternalImageSource> {
+fn test_video_element_of(
+    source: &Arc<flight_host::HostImageSource>,
+) -> Arc<dyn WgpuExternalImageSource> {
     return source
         .handle
         .downcast_ref::<Arc<dyn WgpuExternalImageSource>>()
@@ -748,12 +761,16 @@ pub fn create_test_video_host() -> flight_video::HostVideoCapability {
         create_video_element: None,
         get_current_time: None,
         get_duration: None,
-        get_height: Some(Arc::new(|source| test_video_element_of(source).height() as f32)),
+        get_height: Some(Arc::new(|source| {
+            test_video_element_of(source).height() as f32
+        })),
         get_loop: None,
         get_muted: None,
         get_playback_rate: None,
         get_volume: None,
-        get_width: Some(Arc::new(|source| test_video_element_of(source).width() as f32)),
+        get_width: Some(Arc::new(|source| {
+            test_video_element_of(source).width() as f32
+        })),
         is_ready: Some(Arc::new(|_source| true)),
         load_url: None,
         pause: None,
@@ -781,13 +798,16 @@ pub fn create_test_video_texture(
         width,
     });
     let source: Arc<dyn WgpuExternalImageSource> = element.clone();
-    let host_source = Arc::new(create_wgpu_external_host_image_source(test_provider(), source));
+    let host_source = Arc::new(create_wgpu_external_host_image_source(
+        test_provider(),
+        source,
+    ));
     let host = create_test_video_host();
     let mut resource = flight_video::contract::create_video_resource();
     resource.element = Some(host_source);
-    let mut texture = flight_texture::Texture::Texture2D(flight_video::contract::create_video_texture(
-        &host, &resource, None,
-    ));
+    let mut texture = flight_texture::Texture::Texture2D(
+        flight_video::contract::create_video_texture(&host, &resource, None),
+    );
     flight_video::contract::advance_video_texture(&host, &mut texture);
     return (texture, element);
 }
@@ -892,7 +912,10 @@ pub fn create_test_image_resource(
         width: std::sync::atomic::AtomicU32::new(width),
     });
     let source: Arc<dyn WgpuExternalImageSource> = fake.clone();
-    let image = Arc::new(create_wgpu_external_host_image_source(test_provider(), source));
+    let image = Arc::new(create_wgpu_external_host_image_source(
+        test_provider(),
+        source,
+    ));
     let mut resolver = flight_image::contract::create_image_resolver_state();
     flight_image::contract::register_host_image_dimension_resolver(
         &mut resolver,
@@ -917,7 +940,11 @@ pub fn create_test_image_resource(
 
 /// A 4x4 rgba8 data-only bitmap face (the source's generated `Bitmap`).
 pub fn create_test_bitmap_face() -> flight_texture::TextureSourceRef {
-    return Arc::new(std::sync::RwLock::new(flight_bitmap::create_bitmap(4, 4, Some(0))));
+    return Arc::new(std::sync::RwLock::new(flight_bitmap::create_bitmap(
+        4,
+        4,
+        Some(0),
+    )));
 }
 
 /// An environment over a cube texture whose six faces are `faces`, in the color space given.

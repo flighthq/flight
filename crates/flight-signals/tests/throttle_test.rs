@@ -44,7 +44,11 @@ mod clear_signal_timeout {
         let state = timer_state();
         let fired = Arc::new(Mutex::new(0));
         let counter = fired.clone();
-        let id = set_signal_timeout(&state, 10.0, Arc::new(move || *counter.lock().unwrap() += 1));
+        let id = set_signal_timeout(
+            &state,
+            10.0,
+            Arc::new(move || *counter.lock().unwrap() += 1),
+        );
         clear_signal_timeout(&state, id);
         advance_signal_timers(&state, 100.0);
         assert_eq!(*fired.lock().unwrap(), 0);
@@ -385,7 +389,11 @@ mod set_signal_timeout {
         let fired = Arc::new(Mutex::new(0));
         let counter = fired.clone();
         advance_signal_timers(&state, 50.0);
-        set_signal_timeout(&state, 25.0, Arc::new(move || *counter.lock().unwrap() += 1));
+        set_signal_timeout(
+            &state,
+            25.0,
+            Arc::new(move || *counter.lock().unwrap() += 1),
+        );
         advance_signal_timers(&state, 74.0);
         assert_eq!(*fired.lock().unwrap(), 0);
         advance_signal_timers(&state, 75.0);

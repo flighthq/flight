@@ -44,19 +44,29 @@ mod load_scene3d_document_from_glb_url {
         ))
         .unwrap();
 
-        assert_eq!(*requests.lock().unwrap(), vec!["models/ship.glb".to_string()]);
+        assert_eq!(
+            *requests.lock().unwrap(),
+            vec!["models/ship.glb".to_string()]
+        );
         // The full animation/camera/skin handler set is the default: the camera is parsed.
         assert_eq!(loaded.read().unwrap().cameras.len(), 1);
         assert!(!diagnostics.read().unwrap().is_empty());
         assert_eq!(extension_calls.load(Ordering::SeqCst), 1);
-        assert_eq!(external_base_paths(&loaded.read().unwrap()), vec![Some("models".to_string())]);
+        assert_eq!(
+            external_base_paths(&loaded.read().unwrap()),
+            vec![Some("models".to_string())]
+        );
     }
 
     #[test]
     fn returns_none_rather_than_an_empty_document_on_transport_failure() {
         let (host, _) = net_host(Arc::new(|_| None));
-        let loaded =
-            block_on(load_scene3d_document_from_glb_url(&host, "missing.glb", None, &net_state()));
+        let loaded = block_on(load_scene3d_document_from_glb_url(
+            &host,
+            "missing.glb",
+            None,
+            &net_state(),
+        ));
         assert!(loaded.is_none());
     }
 }
@@ -95,13 +105,19 @@ mod load_scene3d_document_from_gltf_url {
 
         assert_eq!(
             *requests.lock().unwrap(),
-            vec!["models/ship.gltf".to_string(), "models/mesh.bin".to_string()]
+            vec![
+                "models/ship.gltf".to_string(),
+                "models/mesh.bin".to_string()
+            ]
         );
         let loaded = loaded.read().unwrap();
         assert_eq!(loaded.cameras.len(), 1);
         assert!(!diagnostics.read().unwrap().is_empty());
         assert_eq!(extension_calls.load(Ordering::SeqCst), 1);
-        assert_eq!(external_base_paths(&loaded), vec![Some("models".to_string())]);
+        assert_eq!(
+            external_base_paths(&loaded),
+            vec![Some("models".to_string())]
+        );
         let geometry = loaded.meshes[0].geometry.read().unwrap();
         assert_eq!(geometry.vertices[..3].to_vec(), vec![8.0, 9.0, 10.0]);
     }
@@ -109,8 +125,12 @@ mod load_scene3d_document_from_gltf_url {
     #[test]
     fn returns_none_when_json_or_a_required_external_buffer_cannot_load() {
         let (host, _) = net_host(Arc::new(|_| Some(text_body("{"))));
-        let loaded =
-            block_on(load_scene3d_document_from_gltf_url(&host, "broken.gltf", None, &net_state()));
+        let loaded = block_on(load_scene3d_document_from_gltf_url(
+            &host,
+            "broken.gltf",
+            None,
+            &net_state(),
+        ));
         assert!(loaded.is_none());
 
         let gltf = gltf_fixture(Some("missing.bin"));
@@ -126,7 +146,10 @@ mod load_scene3d_document_from_gltf_url {
         assert!(loaded.is_none());
         assert_eq!(
             *requests.lock().unwrap(),
-            vec!["models/ship.gltf".to_string(), "models/missing.bin".to_string()]
+            vec![
+                "models/ship.gltf".to_string(),
+                "models/missing.bin".to_string()
+            ]
         );
     }
 }

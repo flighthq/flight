@@ -45,10 +45,22 @@ mod get_bitmap_pixel_channel {
     #[test]
     fn reads_a_single_channel_by_index() {
         let bmp = create_bitmap(1, 1, Some(0xaabbccdd));
-        assert_eq!(get_bitmap_pixel_channel(&bmp, 0, 0, ImageChannel::Red), 0xaa);
-        assert_eq!(get_bitmap_pixel_channel(&bmp, 0, 0, ImageChannel::Green), 0xbb);
-        assert_eq!(get_bitmap_pixel_channel(&bmp, 0, 0, ImageChannel::Blue), 0xcc);
-        assert_eq!(get_bitmap_pixel_channel(&bmp, 0, 0, ImageChannel::Alpha), 0xdd);
+        assert_eq!(
+            get_bitmap_pixel_channel(&bmp, 0, 0, ImageChannel::Red),
+            0xaa
+        );
+        assert_eq!(
+            get_bitmap_pixel_channel(&bmp, 0, 0, ImageChannel::Green),
+            0xbb
+        );
+        assert_eq!(
+            get_bitmap_pixel_channel(&bmp, 0, 0, ImageChannel::Blue),
+            0xcc
+        );
+        assert_eq!(
+            get_bitmap_pixel_channel(&bmp, 0, 0, ImageChannel::Alpha),
+            0xdd
+        );
     }
 }
 

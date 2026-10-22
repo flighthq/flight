@@ -36,9 +36,13 @@ mod are_wgpu_scene3d_custom_shader_guards_enabled {
     #[test]
     fn reports_installation_state() {
         let mut test = make_wgpu_scene3d_state(None);
-        assert!(!are_wgpu_scene3d_custom_shader_guards_enabled(&mut test.state));
+        assert!(!are_wgpu_scene3d_custom_shader_guards_enabled(
+            &mut test.state
+        ));
         enable_wgpu_scene3d_custom_shader_guards(&mut test.state, None);
-        assert!(are_wgpu_scene3d_custom_shader_guards_enabled(&mut test.state));
+        assert!(are_wgpu_scene3d_custom_shader_guards_enabled(
+            &mut test.state
+        ));
     }
 }
 
@@ -50,7 +54,9 @@ mod enable_wgpu_scene3d_custom_shader_guards {
         let mut test = make_wgpu_scene3d_state(None);
         enable_wgpu_scene3d_custom_shader_guards(&mut test.state, None);
         enable_wgpu_scene3d_custom_shader_guards(&mut test.state, None);
-        assert!(are_wgpu_scene3d_custom_shader_guards_enabled(&mut test.state));
+        assert!(are_wgpu_scene3d_custom_shader_guards_enabled(
+            &mut test.state
+        ));
     }
 }
 
@@ -88,11 +94,27 @@ mod run_wgpu_custom_shader_guards {
         );
 
         let messages = messages(&sink);
-        assert!(messages.iter().any(|message| message.contains("1–4 components")));
+        assert!(
+            messages
+                .iter()
+                .any(|message| message.contains("1–4 components"))
+        );
         assert!(messages.iter().any(|message| message.contains("32-vec4")));
-        assert!(messages.iter().any(|message| message.contains("@group(1) @binding(0)")));
-        assert!(messages.iter().any(|message| message.contains("@group(3) @binding(1)")));
-        assert!(!messages.iter().any(|message| message.contains("@group(0) @binding(0)")));
+        assert!(
+            messages
+                .iter()
+                .any(|message| message.contains("@group(1) @binding(0)"))
+        );
+        assert!(
+            messages
+                .iter()
+                .any(|message| message.contains("@group(3) @binding(1)"))
+        );
+        assert!(
+            !messages
+                .iter()
+                .any(|message| message.contains("@group(0) @binding(0)"))
+        );
     }
 
     #[test]
@@ -101,7 +123,8 @@ mod run_wgpu_custom_shader_guards {
         let logs = log_state();
         let sink = create_memory_log_sink(2);
         add_log_sink(&logs, sink.sink.clone());
-        flight_render::RenderState::render_runtime_mut(&mut test.state).registry_guard_log = Some(logs);
+        flight_render::RenderState::render_runtime_mut(&mut test.state).registry_guard_log =
+            Some(logs);
         run_wgpu_custom_shader_guards(
             &mut test.state,
             "disabled-guard-test",

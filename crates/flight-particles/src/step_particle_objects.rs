@@ -1,7 +1,7 @@
 use crate::{
-    apply_particle_object_collisions, apply_particle_object_forces, update_particle_objects,
     ParticleCollider, ParticleEmitterConfig, ParticleForce, ParticleObject, ParticleObjectsState,
-    ParticleObjectsUpdateOptions,
+    ParticleObjectsUpdateOptions, apply_particle_object_collisions, apply_particle_object_forces,
+    update_particle_objects,
 };
 
 /// Convenience wrapper for the object-pool path that folds the canonical

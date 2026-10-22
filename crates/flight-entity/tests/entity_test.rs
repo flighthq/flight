@@ -80,7 +80,10 @@ mod impl_entity {
         let mut out = create_sprite(1.0);
         set_entity_uid(&mut out, "sprite-1".to_string());
         assert_eq!(get_entity_uid(&mut out), "sprite-1");
-        assert_eq!(get_entity_runtime(&out).unwrap().uid.as_deref(), Some("sprite-1"));
+        assert_eq!(
+            get_entity_runtime(&out).unwrap().uid.as_deref(),
+            Some("sprite-1")
+        );
     }
 
     #[test]

@@ -34,7 +34,9 @@ pub fn is_affine_color_matrix(matrix: &[f32; 20]) -> bool {
 /// Resolves a stack to its complete fused 4x5 matrix when every member is matrix-tier. Returns None
 /// for an empty stack or when a non-matrix operation prevents exact inline fusion.
 // flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
-pub fn resolve_color_adjustments_color_matrix(adjustments: Option<&[Ref<dyn Adjustment>]>) -> Option<[f32; 20]> {
+pub fn resolve_color_adjustments_color_matrix(
+    adjustments: Option<&[Ref<dyn Adjustment>]>,
+) -> Option<[f32; 20]> {
     let adjs = match adjustments {
         Some(a) if !a.is_empty() => a,
         _ => return None,

@@ -8,9 +8,7 @@ use std::path::Path;
 use proc_macro2::TokenTree;
 use syn::spanned::Spanned;
 use syn::visit::{self, Visit};
-use syn::{
-    Expr, Fields, GenericArgument, ImplItem, Item, PathArguments, Type, TypeParamBound,
-};
+use syn::{Expr, Fields, GenericArgument, ImplItem, Item, PathArguments, Type, TypeParamBound};
 
 use crate::allow::FileAllows;
 use crate::model::Violation;
@@ -47,7 +45,15 @@ const NON_NAMED_PAYLOAD: &[&str] = &[
 ];
 /// Trait impls whose bodies are boilerplate rather than sugar.
 const SUGAR_EXEMPT_TRAITS: &[&str] = &[
-    "Default", "Clone", "Copy", "Debug", "Display", "Eq", "Hash", "Ord", "PartialOrd",
+    "Default",
+    "Clone",
+    "Copy",
+    "Debug",
+    "Display",
+    "Eq",
+    "Hash",
+    "Ord",
+    "PartialOrd",
 ];
 
 /// Workspace-wide facts gathered before checking.
@@ -114,7 +120,15 @@ pub fn check_contract(
                     let lines = [m_line, line];
                     check_f64(&mut out, path, allows, &m_label, &lines, Node::Method(m));
                     check_clock(&mut out, path, allows, &m_label, &lines, Node::Method(m));
-                    check_iteration(&mut out, path, allows, &m_label, &lines, Node::Method(m), map_names);
+                    check_iteration(
+                        &mut out,
+                        path,
+                        allows,
+                        &m_label,
+                        &lines,
+                        Node::Method(m),
+                        map_names,
+                    );
                 }
             }
             check_sugar(&mut out, path, allows, &label, line, imp, &index.free_fns);
@@ -124,7 +138,15 @@ pub fn check_contract(
         let lines = [line];
         check_f64(&mut out, path, allows, &label, &lines, Node::Item(item));
         check_clock(&mut out, path, allows, &label, &lines, Node::Item(item));
-        check_iteration(&mut out, path, allows, &label, &lines, Node::Item(item), map_names);
+        check_iteration(
+            &mut out,
+            path,
+            allows,
+            &label,
+            &lines,
+            Node::Item(item),
+            map_names,
+        );
         check_statics(&mut out, path, allows, item);
         check_contract_types(&mut out, path, allows, &label, line, item, &index.types);
         if let Item::Enum(e) = item
@@ -139,14 +161,20 @@ pub fn check_contract(
 
 fn item_label(item: &Item) -> Option<(String, usize)> {
     return match item {
-        Item::Fn(f) => Some((format!("fn {}", f.sig.ident), f.sig.fn_token.span.start().line)),
+        Item::Fn(f) => Some((
+            format!("fn {}", f.sig.ident),
+            f.sig.fn_token.span.start().line,
+        )),
         Item::Struct(s) => Some((
             format!("struct {}", s.ident),
             s.struct_token.span.start().line,
         )),
         Item::Enum(e) => Some((format!("enum {}", e.ident), e.enum_token.span.start().line)),
         Item::Type(t) => Some((format!("type {}", t.ident), t.type_token.span.start().line)),
-        Item::Const(c) => Some((format!("const {}", c.ident), c.const_token.span.start().line)),
+        Item::Const(c) => Some((
+            format!("const {}", c.ident),
+            c.const_token.span.start().line,
+        )),
         Item::Static(s) => Some((
             format!("static {}", s.ident),
             s.static_token.span.start().line,
@@ -156,7 +184,10 @@ fn item_label(item: &Item) -> Option<(String, usize)> {
             let label = match &i.trait_ {
                 Some((_, p, _)) => format!(
                     "impl {} for {}",
-                    p.segments.last().map(|s| s.ident.to_string()).unwrap_or_default(),
+                    p.segments
+                        .last()
+                        .map(|s| s.ident.to_string())
+                        .unwrap_or_default(),
                     ty
                 ),
                 None => format!("impl {}", ty),
@@ -204,7 +235,10 @@ fn check_f64(
             path,
             line,
             "f64",
-            format!("`{}` uses f64 without an `allow(f64) <reason>` declaration", label),
+            format!(
+                "`{}` uses f64 without an `allow(f64) <reason>` declaration",
+                label
+            ),
         ));
     }
 }
@@ -334,7 +368,10 @@ fn check_clock(
             path,
             line,
             "hidden-state",
-            format!("`{}` reads the system clock; take the time as a parameter", label),
+            format!(
+                "`{}` reads the system clock; take the time as a parameter",
+                label
+            ),
         ));
     }
 }
@@ -346,10 +383,16 @@ pub struct ClockFinder {
 
 impl<'ast> Visit<'ast> for ClockFinder {
     fn visit_expr_path(&mut self, node: &'ast syn::ExprPath) {
-        let segs: Vec<String> = node.path.segments.iter().map(|s| s.ident.to_string()).collect();
+        let segs: Vec<String> = node
+            .path
+            .segments
+            .iter()
+            .map(|s| s.ident.to_string())
+            .collect();
         if segs.len() >= 2 {
             let n = segs.len();
-            let clock = segs[n - 1] == "now" && (segs[n - 2] == "SystemTime" || segs[n - 2] == "Instant");
+            let clock =
+                segs[n - 1] == "now" && (segs[n - 2] == "SystemTime" || segs[n - 2] == "Instant");
             if clock && self.first.is_none() {
                 self.first = Some(node.span().start().line);
             }
@@ -680,8 +723,17 @@ fn check_contract_types(
             );
             return;
         }
-        if ["AnySlot", "Unknown", "UnknownValue", "Callback", "Ref", "WeakRef", "Kind", "Handle"]
-            .contains(&t.ident.to_string().as_str())
+        if [
+            "AnySlot",
+            "Unknown",
+            "UnknownValue",
+            "Callback",
+            "Ref",
+            "WeakRef",
+            "Kind",
+            "Handle",
+        ]
+        .contains(&t.ident.to_string().as_str())
         {
             return;
         }
@@ -948,15 +1000,18 @@ fn is_named_struct_type(ty: &Type) -> bool {
         && let Some(last) = p.path.segments.last()
     {
         let name = last.ident.to_string();
-        let upper = name.chars().next().map(|c| c.is_uppercase()).unwrap_or(false);
+        let upper = name
+            .chars()
+            .next()
+            .map(|c| c.is_uppercase())
+            .unwrap_or(false);
         return upper && !NON_NAMED_PAYLOAD.contains(&name.as_str());
     }
     return false;
 }
 
 const SCALAR_PAYLOAD_TYPES: &[&str] = &[
-    "f32", "f64", "bool", "i8", "i16", "i32", "u8", "u16", "u32", "usize",
-    "i64", "u64", "String",
+    "f32", "f64", "bool", "i8", "i16", "i32", "u8", "u16", "u32", "usize", "i64", "u64", "String",
 ];
 
 fn is_scalar_payload_type(ty: &Type) -> bool {
@@ -990,17 +1045,21 @@ mod tests {
         let mut index = Index::default();
         index_file(&mut index, crate_name, &file);
         let allows = FileAllows::new(src);
-        let mut v: Vec<String> = check_contract(Path::new("a.rs"), crate_name, &file, &allows, &index)
-            .into_iter()
-            .map(|v| v.rule)
-            .collect();
+        let mut v: Vec<String> =
+            check_contract(Path::new("a.rs"), crate_name, &file, &allows, &index)
+                .into_iter()
+                .map(|v| v.rule)
+                .collect();
         v.sort();
         return v;
     }
 
     #[test]
     fn flags_undeclared_f64_and_honors_marker() {
-        assert_eq!(rules_for("pub fn f(x: f64) -> f64 { return x; }"), vec!["f64"]);
+        assert_eq!(
+            rules_for("pub fn f(x: f64) -> f64 { return x; }"),
+            vec!["f64"]
+        );
         assert!(rules_for("// flight-lint: allow(f64) precision\npub fn f(x: f64) {}").is_empty());
         assert!(rules_for("pub fn f(x: f32) -> f32 { return x; }").is_empty());
     }
@@ -1008,7 +1067,10 @@ mod tests {
     #[test]
     fn flags_hidden_state() {
         let src = "thread_local! { static A: Cell<u32> = Cell::new(0); }\nstatic B: Mutex<u8> = Mutex::new(0);\nstatic C: [f32; 2] = [0.0, 1.0];\nfn now() -> u64 { return Instant::now().elapsed().as_secs(); }";
-        assert_eq!(rules_for(src), vec!["hidden-state", "hidden-state", "hidden-state"]);
+        assert_eq!(
+            rules_for(src),
+            vec!["hidden-state", "hidden-state", "hidden-state"]
+        );
     }
 
     #[test]

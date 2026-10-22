@@ -266,10 +266,22 @@ mod equals_rectangle {
     #[test]
     fn compares_every_field_not_just_the_position() {
         let base = create_rectangle(1.0, 2.0, 3.0, 4.0);
-        assert!(!equals_rectangle(Some(&base), Some(&create_rectangle(9.0, 2.0, 3.0, 4.0))));
-        assert!(!equals_rectangle(Some(&base), Some(&create_rectangle(1.0, 9.0, 3.0, 4.0))));
-        assert!(!equals_rectangle(Some(&base), Some(&create_rectangle(1.0, 2.0, 9.0, 4.0))));
-        assert!(!equals_rectangle(Some(&base), Some(&create_rectangle(1.0, 2.0, 3.0, 9.0))));
+        assert!(!equals_rectangle(
+            Some(&base),
+            Some(&create_rectangle(9.0, 2.0, 3.0, 4.0))
+        ));
+        assert!(!equals_rectangle(
+            Some(&base),
+            Some(&create_rectangle(1.0, 9.0, 3.0, 4.0))
+        ));
+        assert!(!equals_rectangle(
+            Some(&base),
+            Some(&create_rectangle(1.0, 2.0, 9.0, 4.0))
+        ));
+        assert!(!equals_rectangle(
+            Some(&base),
+            Some(&create_rectangle(1.0, 2.0, 3.0, 9.0))
+        ));
     }
 
     #[test]
@@ -290,8 +302,14 @@ mod equals_rectangle {
 
     #[test]
     fn supports_partial_eq_trait() {
-        assert_eq!(create_rectangle(1.0, 2.0, 3.0, 4.0), create_rectangle(1.0, 2.0, 3.0, 4.0));
-        assert_ne!(create_rectangle(1.0, 2.0, 3.0, 4.0), create_rectangle(1.0, 2.0, 3.0, 5.0));
+        assert_eq!(
+            create_rectangle(1.0, 2.0, 3.0, 4.0),
+            create_rectangle(1.0, 2.0, 3.0, 4.0)
+        );
+        assert_ne!(
+            create_rectangle(1.0, 2.0, 3.0, 4.0),
+            create_rectangle(1.0, 2.0, 3.0, 5.0)
+        );
     }
 }
 
@@ -312,7 +330,11 @@ mod expand_rectangle_to_point {
     #[test]
     fn normalizes_flipped_bounds_while_expanding() {
         let mut result = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        expand_rectangle_to_point(&mut result, &create_rectangle(10.0, 10.0, -5.0, -5.0), &create_vector2(12.0, 4.0));
+        expand_rectangle_to_point(
+            &mut result,
+            &create_rectangle(10.0, 10.0, -5.0, -5.0),
+            &create_vector2(12.0, 4.0),
+        );
         assert_eq!(result, create_rectangle(5.0, 4.0, 7.0, 6.0));
     }
 
@@ -338,7 +360,11 @@ mod expand_rectangle_to_point {
     #[test]
     fn extends_in_negative_direction() {
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        expand_rectangle_to_point(&mut out, &create_rectangle(2.0, 3.0, 5.0, 4.0), &create_vector2(-1.0, 10.0));
+        expand_rectangle_to_point(
+            &mut out,
+            &create_rectangle(2.0, 3.0, 5.0, 4.0),
+            &create_vector2(-1.0, 10.0),
+        );
         assert_eq!(out, create_rectangle(-1.0, 3.0, 8.0, 7.0));
     }
 }
@@ -609,12 +635,16 @@ mod is_flipped_x_rectangle {
 
     #[test]
     fn returns_false_if_width_is_positive() {
-        assert!(!is_flipped_x_rectangle(&create_rectangle(0.0, 0.0, 10.0, 20.0)));
+        assert!(!is_flipped_x_rectangle(&create_rectangle(
+            0.0, 0.0, 10.0, 20.0
+        )));
     }
 
     #[test]
     fn returns_true_if_width_is_negative() {
-        assert!(is_flipped_x_rectangle(&create_rectangle(0.0, 0.0, -10.0, 20.0)));
+        assert!(is_flipped_x_rectangle(&create_rectangle(
+            0.0, 0.0, -10.0, 20.0
+        )));
     }
 }
 
@@ -623,12 +653,16 @@ mod is_flipped_y_rectangle {
 
     #[test]
     fn returns_false_if_height_is_positive() {
-        assert!(!is_flipped_y_rectangle(&create_rectangle(0.0, 0.0, 10.0, 20.0)));
+        assert!(!is_flipped_y_rectangle(&create_rectangle(
+            0.0, 0.0, 10.0, 20.0
+        )));
     }
 
     #[test]
     fn returns_true_if_height_is_negative() {
-        assert!(is_flipped_y_rectangle(&create_rectangle(0.0, 0.0, 10.0, -20.0)));
+        assert!(is_flipped_y_rectangle(&create_rectangle(
+            0.0, 0.0, 10.0, -20.0
+        )));
     }
 }
 
@@ -749,7 +783,11 @@ mod merge_rectangle {
     #[test]
     fn returns_union_of_non_overlapping_rectangles() {
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        merge_rectangle(&mut out, &create_rectangle(0.0, 0.0, 10.0, 10.0), &create_rectangle(20.0, 20.0, 5.0, 5.0));
+        merge_rectangle(
+            &mut out,
+            &create_rectangle(0.0, 0.0, 10.0, 10.0),
+            &create_rectangle(20.0, 20.0, 5.0, 5.0),
+        );
         assert_eq!(out, create_rectangle(0.0, 0.0, 25.0, 25.0));
     }
 }
@@ -800,7 +838,12 @@ mod offset_rectangle {
     #[test]
     fn moves_rectangle() {
         let mut result = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        offset_rectangle(&mut result, &create_rectangle(0.0, 0.0, 10.0, 20.0), 5.0, 10.0);
+        offset_rectangle(
+            &mut result,
+            &create_rectangle(0.0, 0.0, 10.0, 20.0),
+            5.0,
+            10.0,
+        );
         assert_eq!(result.x, 5.0);
         assert_eq!(result.y, 10.0);
     }
@@ -821,7 +864,11 @@ mod offset_rectangle_by_point {
     #[test]
     fn moves_rectangle_by_vector2() {
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        offset_rectangle_by_point(&mut out, &create_rectangle(0.0, 0.0, 10.0, 20.0), &create_vector2(3.0, 4.0));
+        offset_rectangle_by_point(
+            &mut out,
+            &create_rectangle(0.0, 0.0, 10.0, 20.0),
+            &create_vector2(3.0, 4.0),
+        );
         assert_eq!(out, create_rectangle(3.0, 4.0, 10.0, 20.0));
     }
 

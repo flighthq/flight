@@ -42,17 +42,26 @@ mod tessellate_path_typed_into {
     fn writes_into_an_existing_path_mesh_typed_with_the_same_values() {
         let path = rectangle_path(0.0, 0.0, 100.0, 100.0);
         let expected = tessellate_path(&path, None);
-        let mut out = PathMeshTyped { vertices: Vec::new().into_boxed_slice(), indices: Vec::new().into_boxed_slice() };
+        let mut out = PathMeshTyped {
+            vertices: Vec::new().into_boxed_slice(),
+            indices: Vec::new().into_boxed_slice(),
+        };
         tessellate_path_typed_into(&path, &mut out, None);
         let narrowed: Vec<f32> = expected.vertices.iter().map(|v| *v as f32).collect();
         assert_eq!(out.vertices[..narrowed.len()].to_vec(), narrowed);
-        assert_eq!(out.indices[..expected.indices.len()].to_vec(), expected.indices);
+        assert_eq!(
+            out.indices[..expected.indices.len()].to_vec(),
+            expected.indices
+        );
     }
 
     #[test]
     fn grows_typed_arrays_when_the_mesh_exceeds_capacity() {
         let path = rectangle_path(0.0, 0.0, 50.0, 50.0);
-        let mut out = PathMeshTyped { vertices: vec![0.0; 2].into_boxed_slice(), indices: vec![0; 1].into_boxed_slice() };
+        let mut out = PathMeshTyped {
+            vertices: vec![0.0; 2].into_boxed_slice(),
+            indices: vec![0; 1].into_boxed_slice(),
+        };
         tessellate_path_typed_into(&path, &mut out, None);
         assert!(out.vertices.len() >= 8);
         assert!(out.indices.len() >= 6);
@@ -61,7 +70,10 @@ mod tessellate_path_typed_into {
     #[test]
     fn reuses_typed_arrays_when_capacity_is_sufficient() {
         let path = rectangle_path(0.0, 0.0, 50.0, 50.0);
-        let mut big = PathMeshTyped { vertices: vec![0.0; 1000].into_boxed_slice(), indices: vec![0; 1000].into_boxed_slice() };
+        let mut big = PathMeshTyped {
+            vertices: vec![0.0; 1000].into_boxed_slice(),
+            indices: vec![0; 1000].into_boxed_slice(),
+        };
         let v_ref = big.vertices.as_ptr();
         let i_ref = big.indices.as_ptr();
         tessellate_path_typed_into(&path, &mut big, None);

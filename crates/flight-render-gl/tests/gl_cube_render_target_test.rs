@@ -1,8 +1,8 @@
 mod begin_gl_cube_render_face {
     use crate::gl_test_helper::{calls_with, clear_calls, make_state};
     use flight_render_gl::{
-        begin_gl_cube_render_face, create_gl_cube_render_target,
-        declare_gl_render_target_color_space, end_gl_cube_render_face, GlCubeRenderTargetOptions,
+        GlCubeRenderTargetOptions, begin_gl_cube_render_face, create_gl_cube_render_target,
+        declare_gl_render_target_color_space, end_gl_cube_render_face,
     };
     use flight_texture::RenderTargetColorSpace;
 
@@ -56,7 +56,7 @@ mod begin_gl_cube_render_face {
 }
 mod create_gl_cube_render_target {
     use crate::gl_test_helper::{calls_named, calls_with, clear_calls, make_state};
-    use flight_render_gl::{create_gl_cube_render_target, GlCubeRenderTargetOptions};
+    use flight_render_gl::{GlCubeRenderTargetOptions, create_gl_cube_render_target};
     use glow::HasContext;
 
     #[test]
@@ -155,7 +155,7 @@ mod create_gl_cube_render_target {
 mod destroy_gl_cube_render_target {
     use crate::gl_test_helper::{calls_named, make_state};
     use flight_render_gl::{
-        create_gl_cube_render_target, destroy_gl_cube_render_target, GlCubeRenderTargetOptions,
+        GlCubeRenderTargetOptions, create_gl_cube_render_target, destroy_gl_cube_render_target,
     };
     #[test]
     fn explicitly_deletes_owned_handles_once() {
@@ -175,8 +175,8 @@ mod destroy_gl_cube_render_target {
 mod end_gl_cube_render_face {
     use crate::gl_test_helper::{clear_calls, make_state, snapshot};
     use flight_render_gl::{
-        begin_gl_cube_render_face, create_gl_cube_render_target, end_gl_cube_render_face,
-        GlCubeRenderTargetOptions,
+        GlCubeRenderTargetOptions, begin_gl_cube_render_face, create_gl_cube_render_target,
+        end_gl_cube_render_face,
     };
     use glow::HasContext;
 
@@ -225,7 +225,13 @@ mod end_gl_cube_render_face {
         clear_calls();
         let pass = begin_gl_cube_render_face(&mut state, &target, 0).unwrap();
         assert_eq!(
-            state.gl_runtime.borrow().current_target.as_ref().unwrap().id,
+            state
+                .gl_runtime
+                .borrow()
+                .current_target
+                .as_ref()
+                .unwrap()
+                .id,
             flight_entity::get_entity_id(&target)
         );
         end_gl_cube_render_face(&state, &pass).unwrap();

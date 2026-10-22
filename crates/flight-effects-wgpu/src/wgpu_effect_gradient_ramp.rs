@@ -2,7 +2,9 @@
 //! Cached 256-entry gradient ramp textures for the gradient recipes (TS
 //! `wgpuEffectGradientRamp.ts`).
 
-use flight_render_wgpu::{WgpuRenderState, get_wgpu_render_state_native_device, write_wgpu_texture};
+use flight_render_wgpu::{
+    WgpuRenderState, get_wgpu_render_state_native_device, write_wgpu_texture,
+};
 
 use crate::wgpu_effect_runtime::get_wgpu_effect_runtime;
 
@@ -92,8 +94,14 @@ fn build_ramp_data(colors: &[u32], alphas: &[f32], ratios: &[f32]) -> Vec<u8> {
                     let blend = if r1 > r0 { (t - r0) / (r1 - r0) } else { 0.0 };
                     let c0 = color_at(colors, j);
                     let c1 = color_at(colors, j + 1);
-                    r = js_round(((c0 >> 16) & 0xff) as f32 * (1.0 - blend) + ((c1 >> 16) & 0xff) as f32 * blend);
-                    g = js_round(((c0 >> 8) & 0xff) as f32 * (1.0 - blend) + ((c1 >> 8) & 0xff) as f32 * blend);
+                    r = js_round(
+                        ((c0 >> 16) & 0xff) as f32 * (1.0 - blend)
+                            + ((c1 >> 16) & 0xff) as f32 * blend,
+                    );
+                    g = js_round(
+                        ((c0 >> 8) & 0xff) as f32 * (1.0 - blend)
+                            + ((c1 >> 8) & 0xff) as f32 * blend,
+                    );
                     b = js_round((c0 & 0xff) as f32 * (1.0 - blend) + (c1 & 0xff) as f32 * blend);
                     a = js_round(
                         alpha_at(alphas, j) * 255.0 * (1.0 - blend)

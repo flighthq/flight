@@ -48,7 +48,10 @@ mod explain_path_morph_creation {
         append_path_line_to(&mut end, 11.0, 10.0);
         let result = explain_path_morph_creation(&start, &end);
         assert!(!result.supported);
-        assert_eq!(result.reason, PathMorphCreationReason::ContourClosednessMismatch);
+        assert_eq!(
+            result.reason,
+            PathMorphCreationReason::ContourClosednessMismatch
+        );
         assert_eq!(result.contour, Some(1));
     }
 
@@ -78,7 +81,10 @@ mod explain_path_morph_creation {
         append_path_close(&mut end);
         let result = explain_path_morph_creation(&start, &end);
         assert!(!result.supported);
-        assert_eq!(result.reason, PathMorphCreationReason::ContourOrientationMismatch);
+        assert_eq!(
+            result.reason,
+            PathMorphCreationReason::ContourOrientationMismatch
+        );
         assert_eq!(result.contour, Some(1));
     }
 }

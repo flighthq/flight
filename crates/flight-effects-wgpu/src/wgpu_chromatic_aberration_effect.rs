@@ -1,7 +1,7 @@
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Chromatic aberration: samples the R/G/B channels at progressively larger offsets so colors fringe apart. When radial, the offset scales with distance from the optical center; otherwise it is a uniform horizontal split. (TS `wgpuChromaticAberrationEffect.ts`).
 
-use flight_effects::{Effect, ChromaticAberrationEffect};
+use flight_effects::{ChromaticAberrationEffect, Effect};
 use flight_render_wgpu::{WgpuEffectContext, WgpuRenderState, WgpuTextureRenderTarget};
 
 use crate::types::*;
@@ -61,12 +61,23 @@ pub fn apply_chromatic_aberration_effect_to_wgpu(
 
 /// Registers the default runner under `ChromaticAberrationEffect` (TS `registerWgpuChromaticAberrationEffect`).
 pub fn register_wgpu_chromatic_aberration_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "ChromaticAberrationEffect", wgpu_chromatic_aberration_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "ChromaticAberrationEffect",
+        wgpu_chromatic_aberration_effect_runner,
+        None,
+    );
 }
 
 /// The default `ChromaticAberrationEffect` runner (TS `wgpuChromaticAberrationEffectRunner`).
-pub fn wgpu_chromatic_aberration_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect) {
-    let effect = downcast_wgpu_effect::<ChromaticAberrationEffect>(effect, "wgpuChromaticAberrationEffectRunner");
+pub fn wgpu_chromatic_aberration_effect_runner(
+    ctx: &mut WgpuEffectContext<'_>,
+    effect: &dyn Effect,
+) {
+    let effect = downcast_wgpu_effect::<ChromaticAberrationEffect>(
+        effect,
+        "wgpuChromaticAberrationEffectRunner",
+    );
     let source = ctx.source.read().unwrap();
     let dest = ctx.dest.read().unwrap();
     apply_chromatic_aberration_effect_to_wgpu(ctx.state, &source, &dest, effect);

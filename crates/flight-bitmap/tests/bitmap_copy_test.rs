@@ -3,11 +3,23 @@ use flight_bitmap::contract::*;
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
-    return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
+    return BitmapRegion {
+        bitmap: bmp,
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+    };
 }
 
 fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegion {
-    return BitmapRegion { bitmap: bmp, x, y, width, height };
+    return BitmapRegion {
+        bitmap: bmp,
+        x,
+        y,
+        width,
+        height,
+    };
 }
 
 mod copy_bitmap_channel {
@@ -29,7 +41,12 @@ mod copy_bitmap_channel {
         set_bitmap_pixel(&mut src, 0, 0, 0x000000de);
         let dst = create_bitmap(1, 1, None);
         let mut dr = region(dst);
-        copy_bitmap_channel(&mut dr, ImageChannel::Alpha, &region(src), ImageChannel::Alpha);
+        copy_bitmap_channel(
+            &mut dr,
+            ImageChannel::Alpha,
+            &region(src),
+            ImageChannel::Alpha,
+        );
         assert_eq!(dr.bitmap.data[3], 0xde);
     }
 }

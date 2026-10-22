@@ -95,7 +95,9 @@ mod apply_radial_blur_effect_to_wgpu {
         let pipelines = recorded_pipelines(&records);
         assert_eq!(pipelines.len(), 1);
         assert_eq!(
-            pipelines[0].targets[0].as_ref().and_then(|target| target.blend),
+            pipelines[0].targets[0]
+                .as_ref()
+                .and_then(|target| target.blend),
             Some(wgpu::BlendState::REPLACE)
         );
         let (_, single) = apply(None, None, Some(8.0));

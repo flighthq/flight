@@ -23,7 +23,9 @@ pub struct BackendOperationExplanation {
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the inline TS BackendOperationExplanation.layer string union; TS exports no get_/parse_ free functions
-pub fn get_backend_operation_explanation_layer_string(value: BackendOperationExplanationLayer) -> &'static str {
+pub fn get_backend_operation_explanation_layer_string(
+    value: BackendOperationExplanationLayer,
+) -> &'static str {
     return match value {
         BackendOperationExplanationLayer::Custom => "custom",
         BackendOperationExplanationLayer::Host => "host",
@@ -33,7 +35,9 @@ pub fn get_backend_operation_explanation_layer_string(value: BackendOperationExp
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the inline TS BackendOperationExplanation.layer string union; TS exports no get_/parse_ free functions
-pub fn parse_backend_operation_explanation_layer(value: &str) -> Option<BackendOperationExplanationLayer> {
+pub fn parse_backend_operation_explanation_layer(
+    value: &str,
+) -> Option<BackendOperationExplanationLayer> {
     return match value {
         "custom" => Some(BackendOperationExplanationLayer::Custom),
         "host" => Some(BackendOperationExplanationLayer::Host),

@@ -1,6 +1,6 @@
 use crate::{
-    ForceFalloff, ParticleEmitterState, ParticleForce, ParticleObject,
-    ParticleObjectsState, PARTICLE_VELOCITY_STRIDE,
+    ForceFalloff, PARTICLE_VELOCITY_STRIDE, ParticleEmitterState, ParticleForce, ParticleObject,
+    ParticleObjectsState,
 };
 
 fn accumulate_forces(
@@ -159,11 +159,7 @@ pub fn apply_particle_object_forces(
     }
 }
 
-fn falloff_factor(
-    falloff: &Option<ForceFalloff>,
-    dist: f32,
-    radius: &Option<f32>,
-) -> f32 {
+fn falloff_factor(falloff: &Option<ForceFalloff>, dist: f32, radius: &Option<f32>) -> f32 {
     if let Some(r) = radius {
         if *r > 0.0 && dist > *r {
             return 0.0; // hard cutoff

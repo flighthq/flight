@@ -1,8 +1,10 @@
-use flight_node::{get_node_world_bounds_rectangle, NodeRef};
 use flight_node::contract::NodeRevisionState;
-use flight_spatial::{SpatialAabb2D, clear_spatial_index_2d, insert_spatial_object_2d, query_spatial_point_2d};
+use flight_node::{NodeRef, get_node_world_bounds_rectangle};
+use flight_spatial::{
+    SpatialAabb2D, clear_spatial_index_2d, insert_spatial_object_2d, query_spatial_point_2d,
+};
 
-use crate::hit_tests::{hit_test_node_region, HitTestContext};
+use crate::hit_tests::{HitTestContext, hit_test_node_region};
 use crate::node_interaction_state::get_node_interaction_state;
 use crate::types::InteractionManager;
 

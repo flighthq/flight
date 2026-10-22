@@ -238,8 +238,7 @@ pub struct WgpuScene3DForwardLightList {
 }
 
 /// The opt-in custom-shader ABI diagnostic (TS `customShaderGuard`).
-pub type WgpuScene3DCustomShaderGuard =
-    fn(&mut WgpuRenderState, &str, &str, &CustomShaderMaterial);
+pub type WgpuScene3DCustomShaderGuard = fn(&mut WgpuRenderState, &str, &str, &CustomShaderMaterial);
 
 /// The opt-in forward-light truncation diagnostic (TS `forwardLightSelectionGuard`).
 pub type WgpuScene3DForwardLightSelectionGuard = fn(&WgpuRenderState, &Scene3DLightsLike);

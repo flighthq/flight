@@ -9,7 +9,10 @@ use flight_render_gl::{GlModifierSnippet, GlRenderState};
 // and last-write-wins (a vendor-prefixed kind, or an override of a built-in, wins). Unregistered
 // kinds contribute no GLSL, so a ShadedMaterial whose modifier has no snippet renders as if that
 // modifier were absent. Register the built-ins with register_built_in_gl_modifier_snippets.
-pub fn register_gl_modifier_snippet(state: &mut GlRenderState, snippet: &'static GlModifierSnippet) {
+pub fn register_gl_modifier_snippet(
+    state: &mut GlRenderState,
+    snippet: &'static GlModifierSnippet,
+) {
     state.gl_registries.modifier_snippets = Arc::new(with_kind_map_entry(
         &state.gl_registries.modifier_snippets,
         snippet.kind.to_string(),
@@ -20,6 +23,14 @@ pub fn register_gl_modifier_snippet(state: &mut GlRenderState, snippet: &'static
 
 // Returns the GL snippet registered for a modifier kind on this state, or None when none is — the
 // expected-miss sentinel the compile path checks before injecting an unknown kind.
-pub fn resolve_gl_modifier_snippet(state: &GlRenderState, kind: &str) -> Option<&'static GlModifierSnippet> {
-    return state.gl_registries.modifier_snippets.entries.get(kind).copied();
+pub fn resolve_gl_modifier_snippet(
+    state: &GlRenderState,
+    kind: &str,
+) -> Option<&'static GlModifierSnippet> {
+    return state
+        .gl_registries
+        .modifier_snippets
+        .entries
+        .get(kind)
+        .copied();
 }

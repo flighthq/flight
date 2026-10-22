@@ -64,8 +64,14 @@ mod has_scene3d_material_texture_lister {
     fn separates_an_unregistered_kind_from_a_material_that_genuinely_has_no_maps() {
         let registry = create_scene3d_material_texture_registry();
         register_unlit_scene3d_material_textures(&registry);
-        assert!(has_scene3d_material_texture_lister(&registry, UNLIT_MATERIAL_KIND));
-        assert!(!has_scene3d_material_texture_lister(&registry, STANDARD_PBR_MATERIAL_KIND));
+        assert!(has_scene3d_material_texture_lister(
+            &registry,
+            UNLIT_MATERIAL_KIND
+        ));
+        assert!(!has_scene3d_material_texture_lister(
+            &registry,
+            STANDARD_PBR_MATERIAL_KIND
+        ));
     }
 }
 
@@ -114,7 +120,11 @@ mod register_scene3d_material_textures {
             Arc::new(move |_material, out| out.push(listed.clone())),
         );
         let mut out = Vec::new();
-        get_scene3d_material_textures(&registry, &create_material3d("acme.Custom".to_string()), &mut out);
+        get_scene3d_material_textures(
+            &registry,
+            &create_material3d("acme.Custom".to_string()),
+            &mut out,
+        );
         assert!(same_textures(&out, &[&custom]));
     }
 
@@ -169,7 +179,10 @@ mod register_scene3d_pbr_extension_textures {
             .get(ANISOTROPY_PBR_EXTENSION_KIND)
             .cloned()
             .unwrap();
-        lister(&PbrExtension::Anisotropy(create_anisotropy_pbr_extension()), &mut out);
+        lister(
+            &PbrExtension::Anisotropy(create_anisotropy_pbr_extension()),
+            &mut out,
+        );
         assert!(same_textures(&out, &[&second]));
     }
 }
@@ -196,7 +209,10 @@ mod register_standard_pbr_scene3d_material_textures {
         material.normal_map = Some(normal_map.clone());
         let mut out = Vec::new();
         get_scene3d_material_textures(&registry, &material, &mut out);
-        assert!(out.iter().any(|texture| Arc::ptr_eq(texture, &base_color_map)));
+        assert!(
+            out.iter()
+                .any(|texture| Arc::ptr_eq(texture, &base_color_map))
+        );
         assert!(out.iter().any(|texture| Arc::ptr_eq(texture, &normal_map)));
         assert_eq!(out.len(), 2);
     }

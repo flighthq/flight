@@ -26,12 +26,14 @@ mod present_gl_render_target {
             vec![0, 0, 640, 480]
         );
         assert_eq!(calls_named("draw_elements"), 1);
-        assert!(state
-            .context_state
-            .runtime_state
-            .borrow()
-            .fullscreen_programs
-            .contains_key("linear-to-srgb"));
+        assert!(
+            state
+                .context_state
+                .runtime_state
+                .borrow()
+                .fullscreen_programs
+                .contains_key("linear-to-srgb")
+        );
     }
 
     #[test]
@@ -77,8 +79,10 @@ mod present_gl_render_target {
                 i64::from(destination.framebuffer.0.get()),
             ]
         );
-        assert!(calls_with("viewport")
-            .iter()
-            .any(|call| call.integers == vec![0, 0, 23, 13]));
+        assert!(
+            calls_with("viewport")
+                .iter()
+                .any(|call| call.integers == vec![0, 0, 23, 13])
+        );
     }
 }

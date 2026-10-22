@@ -28,7 +28,10 @@ mod apply_sketch_effect_to_wgpu {
         let uniforms = recorded_effect_uniforms(&records);
         assert_eq!(uniforms[0][0], 3.0);
         assert_eq!(&uniforms[0][2..4], &[32.0, 16.0]);
-        assert_eq!(recorded_pass_views(&records), vec![dest.read().unwrap().view.clone()]);
+        assert_eq!(
+            recorded_pass_views(&records),
+            vec![dest.read().unwrap().view.clone()]
+        );
     }
 
     #[test]

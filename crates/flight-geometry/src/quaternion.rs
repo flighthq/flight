@@ -244,11 +244,7 @@ pub fn inverse_quaternion(out: &mut Quaternion, source: &Quaternion) {
 /// rotation `b` first, then rotation `a`.
 ///
 /// Safe when `out` aliases `a` and/or `b` (all inputs are read into locals first).
-pub fn multiply_quaternion(
-    out: &mut Quaternion,
-    a: &Quaternion,
-    b: &Quaternion,
-) {
+pub fn multiply_quaternion(out: &mut Quaternion, a: &Quaternion, b: &Quaternion) {
     let ax = a.x;
     let ay = a.y;
     let az = a.z;
@@ -341,13 +337,7 @@ pub fn set_quaternion_from_axis_angle(out: &mut Quaternion, axis: &Vector3, angl
 
 /// Builds a quaternion from Euler angles (in radians) applied in the given `order`.
 /// Intrinsic rotations -- each rotation is about the local, rotated axes.
-pub fn set_quaternion_from_euler(
-    out: &mut Quaternion,
-    x: f32,
-    y: f32,
-    z: f32,
-    order: EulerOrder,
-) {
+pub fn set_quaternion_from_euler(out: &mut Quaternion, x: f32, y: f32, z: f32, order: EulerOrder) {
     let c1 = (x / 2.0).cos();
     let s1 = (x / 2.0).sin();
     let c2 = (y / 2.0).cos();
@@ -445,11 +435,7 @@ pub fn set_quaternion_from_matrix4(out: &mut Quaternion, source: &Matrix4) {
 /// for a 180-degree rotation, so the result is always valid.
 ///
 /// Safe when `out` aliases `from` or `to`.
-pub fn set_quaternion_from_unit_vectors(
-    out: &mut Quaternion,
-    from: &Vector3,
-    to: &Vector3,
-) {
+pub fn set_quaternion_from_unit_vectors(out: &mut Quaternion, from: &Vector3, to: &Vector3) {
     let fx = from.x;
     let fy = from.y;
     let fz = from.z;
@@ -515,11 +501,7 @@ pub fn set_quaternion_identity(out: &mut Quaternion) {
 /// requested forward direction is preserved. A zero-length `forward` writes the identity.
 ///
 /// Safe when `out` aliases `forward` or `up`.
-pub fn set_quaternion_look_rotation(
-    out: &mut Quaternion,
-    forward: &Vector3,
-    up: &Vector3,
-) {
+pub fn set_quaternion_look_rotation(out: &mut Quaternion, forward: &Vector3, up: &Vector3) {
     let fx = forward.x;
     let fy = forward.y;
     let fz = forward.z;
@@ -602,12 +584,7 @@ pub fn set_quaternion_look_rotation(
 /// normalized linear interpolation when the inputs are nearly collinear.
 ///
 /// Safe when `out` aliases `a` and/or `b` (all inputs are read into locals first).
-pub fn slerp_quaternion(
-    out: &mut Quaternion,
-    a: &Quaternion,
-    b: &Quaternion,
-    t: f32,
-) {
+pub fn slerp_quaternion(out: &mut Quaternion, a: &Quaternion, b: &Quaternion, t: f32) {
     let ax = a.x;
     let ay = a.y;
     let az = a.z;

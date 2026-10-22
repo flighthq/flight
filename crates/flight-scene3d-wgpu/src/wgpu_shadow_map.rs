@@ -9,7 +9,9 @@ use flight_camera::{
 };
 use flight_entity::throw_error;
 use flight_geometry::{create_matrix3, create_matrix4, multiply_matrix4};
-use flight_lighting::{DIRECTIONAL_SHADOW_MAP_SIZE, DirectionalLight, MAX_DIRECTIONAL_SHADOW_PCF_RADIUS};
+use flight_lighting::{
+    DIRECTIONAL_SHADOW_MAP_SIZE, DirectionalLight, MAX_DIRECTIONAL_SHADOW_PCF_RADIUS,
+};
 use flight_meshgeometry::MeshSubset;
 use flight_node::NodeRef;
 use flight_node::contract::{for_each_node_descendant, get_node_world_matrix4};
@@ -152,7 +154,9 @@ pub fn destroy_wgpu_scene3d_shadow(state: &mut WgpuRenderState) {
 
 // The instanced depth pipeline: the rigid depth pass plus the instance-step matrix buffer, so a batch
 // records one silhouette per live instance.
-fn ensure_wgpu_shadow_depth_instanced_pipeline(state: &mut WgpuRenderState) -> wgpu::RenderPipeline {
+fn ensure_wgpu_shadow_depth_instanced_pipeline(
+    state: &mut WgpuRenderState,
+) -> wgpu::RenderPipeline {
     if let Some(pipeline) = &get_wgpu_scene3d_runtime(state).shadow_depth_instanced_pipeline {
         return pipeline.clone();
     }
@@ -160,10 +164,11 @@ fn ensure_wgpu_shadow_depth_instanced_pipeline(state: &mut WgpuRenderState) -> w
     let draw_layout = ensure_wgpu_scene3d_layouts(state).draw_bind_group_layout;
     let layout = create_wgpu_pipeline_layout_recorded(&native, &[draw_layout]);
     let module = create_wgpu_shader_module(&native, SHADOW_DEPTH_INSTANCED_WGSL);
-    let buffers: Vec<Option<wgpu::VertexBufferLayout<'static>>> = SHADOW_INSTANCED_VERTEX_BUFFER_LAYOUTS
-        .iter()
-        .map(|layout| Some(layout.clone()))
-        .collect();
+    let buffers: Vec<Option<wgpu::VertexBufferLayout<'static>>> =
+        SHADOW_INSTANCED_VERTEX_BUFFER_LAYOUTS
+            .iter()
+            .map(|layout| Some(layout.clone()))
+            .collect();
     let pipeline = create_wgpu_shadow_depth_pipeline(&native, &layout, &module, &buffers);
     get_wgpu_scene3d_runtime(state).shadow_depth_instanced_pipeline = Some(pipeline.clone());
     return pipeline;
@@ -172,7 +177,10 @@ fn ensure_wgpu_shadow_depth_instanced_pipeline(state: &mut WgpuRenderState) -> w
 // Resolves (once per state) the depth-only shadow pipeline: a vertex-only module (position to light
 // clip with the GL-to-WebGPU depth remap), depth32float, front-face culling, the shared Draw layout
 // (or the skinning adapter's palette layout) at group(0).
-fn ensure_wgpu_shadow_depth_pipeline(state: &mut WgpuRenderState, skinned: bool) -> wgpu::RenderPipeline {
+fn ensure_wgpu_shadow_depth_pipeline(
+    state: &mut WgpuRenderState,
+    skinned: bool,
+) -> wgpu::RenderPipeline {
     let cached = {
         let scene = get_wgpu_scene3d_runtime(state);
         if skinned {
@@ -202,7 +210,10 @@ fn ensure_wgpu_shadow_depth_pipeline(state: &mut WgpuRenderState, skinned: bool)
             .iter()
             .map(|layout| Some(layout.clone()))
             .collect(),
-        None => SHADOW_VERTEX_BUFFER_LAYOUTS.iter().map(|layout| Some(layout.clone())).collect(),
+        None => SHADOW_VERTEX_BUFFER_LAYOUTS
+            .iter()
+            .map(|layout| Some(layout.clone()))
+            .collect(),
     };
     let pipeline = create_wgpu_shadow_depth_pipeline(&native, &layout, &module, &buffers);
     let scene = get_wgpu_scene3d_runtime(state);
@@ -222,7 +233,8 @@ fn flatten_shadow_instance_matrices(mesh: &InstancedMesh) -> Vec<f32> {
     let mut records = vec![0.0_f32; count * INSTANCE_RECORD_FLOATS];
     for index in 0..count {
         let offset = index * INSTANCE_RECORD_FLOATS;
-        records[offset..offset + 16].copy_from_slice(&mesh.instance_matrices[index].read().unwrap().m);
+        records[offset..offset + 16]
+            .copy_from_slice(&mesh.instance_matrices[index].read().unwrap().m);
     }
     return records;
 }
@@ -252,7 +264,10 @@ pub fn render_wgpu_scene3d_shadow_map(
     let Some(directional_light) = directional_light.filter(|light| light.casts_shadow) else {
         return;
     };
-    if get_wgpu_render_state_runtime_mut(state).command_encoder.is_none() {
+    if get_wgpu_render_state_runtime_mut(state)
+        .command_encoder
+        .is_none()
+    {
         return;
     }
     let Projection::Orthographic(orthographic) = &shadow_camera.projection else {
@@ -293,7 +308,11 @@ pub fn render_wgpu_scene3d_shadow_map(
     }
     let (depth_view, map_width, map_height) = {
         let shadow = get_wgpu_scene3d_runtime(state).shadow.as_ref().unwrap();
-        (shadow.depth_view.clone(), shadow.map_width, shadow.map_height)
+        (
+            shadow.depth_view.clone(),
+            shadow.map_width,
+            shadow.map_height,
+        )
     };
     let normal_bias_world = directional_light.normal_bias
         * get_orthographic_projection_texel_size(
@@ -341,7 +360,10 @@ pub fn render_wgpu_scene3d_shadow_map(
             depth_view: depth_view.clone(),
         });
     });
-    if let Some(pass) = get_wgpu_render_state_runtime_mut(state).render_pass.as_mut() {
+    if let Some(pass) = get_wgpu_render_state_runtime_mut(state)
+        .render_pass
+        .as_mut()
+    {
         pass.set_viewport(0.0, 0.0, map_width as f32, map_height as f32, 0.0, 1.0);
     }
 

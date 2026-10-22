@@ -92,7 +92,12 @@ pub fn apply_drop_shadow_effect_to_wgpu(
 
 /// Registers the default runner under `DropShadowEffect` (TS `registerWgpuDropShadowEffect`).
 pub fn register_wgpu_drop_shadow_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "DropShadowEffect", wgpu_drop_shadow_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "DropShadowEffect",
+        wgpu_drop_shadow_effect_runner,
+        None,
+    );
 }
 
 /// The default `DropShadowEffect` runner (TS `wgpuDropShadowEffectRunner`).

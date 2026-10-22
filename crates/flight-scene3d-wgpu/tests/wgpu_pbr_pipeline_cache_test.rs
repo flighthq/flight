@@ -7,7 +7,12 @@ fn key() -> WgpuPbrDefineKey {
     return test_default();
 }
 
-fn record(_runtime: &mut WgpuRenderStateRuntime, _value: Option<&WgpuColorScaleBiasInput>, _index: u32) {}
+fn record(
+    _runtime: &mut WgpuRenderStateRuntime,
+    _value: Option<&WgpuColorScaleBiasInput>,
+    _index: u32,
+) {
+}
 
 fn resolve_flush(_state: &mut WgpuRenderState, _count: u32) -> Option<WgpuColorAdjustmentFlush> {
     return None;
@@ -48,7 +53,14 @@ mod compile_wgpu_pbr_pipeline {
     #[test]
     fn bakes_back_face_culling_unless_the_key_is_double_sided() {
         let mut test = make_wgpu_scene3d_state(None);
-        compile_wgpu_pbr_pipeline(&mut test.state, &key(), wgpu::TextureFormat::Bgra8Unorm, None, None, None);
+        compile_wgpu_pbr_pipeline(
+            &mut test.state,
+            &key(),
+            wgpu::TextureFormat::Bgra8Unorm,
+            None,
+            None,
+            None,
+        );
         compile_wgpu_pbr_pipeline(
             &mut test.state,
             &WgpuPbrDefineKey {
@@ -120,7 +132,12 @@ mod ensure_wgpu_pbr_pipeline {
         let a = ensure_wgpu_pbr_pipeline(&mut test.state, &key(), wgpu::TextureFormat::Rgba16Float);
         let b = ensure_wgpu_pbr_pipeline(&mut test.state, &key(), wgpu::TextureFormat::Rgba16Float);
         assert_eq!(a.pipeline, b.pipeline);
-        assert_eq!(get_wgpu_scene3d_runtime(&mut test.state).pipeline_cache.len(), 1);
+        assert_eq!(
+            get_wgpu_scene3d_runtime(&mut test.state)
+                .pipeline_cache
+                .len(),
+            1
+        );
     }
 
     #[test]
@@ -144,13 +161,21 @@ mod ensure_wgpu_pbr_pipeline {
             },
             wgpu::TextureFormat::Rgba16Float,
         );
-        assert_eq!(get_wgpu_scene3d_runtime(&mut test.state).pipeline_cache.len(), 4);
+        assert_eq!(
+            get_wgpu_scene3d_runtime(&mut test.state)
+                .pipeline_cache
+                .len(),
+            4
+        );
         let mut keys: Vec<String> = get_wgpu_scene3d_runtime(&mut test.state)
             .pipeline_cache
             .keys()
             .cloned()
             .collect();
         keys.sort();
-        assert_eq!(keys[0], "pbr:bgra8unorm|--------:-------|opaque|rigid|direct");
+        assert_eq!(
+            keys[0],
+            "pbr:bgra8unorm|--------:-------|opaque|rigid|direct"
+        );
     }
 }

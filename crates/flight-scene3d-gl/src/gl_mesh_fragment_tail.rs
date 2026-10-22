@@ -13,8 +13,10 @@
 
 macro_rules! gl_mesh_fragment_tail_uniforms_glsl {
     () => {
-        concat!(r#"uniform float u_objectAlpha;
-uniform float u_alphaIsCoverage;"#)
+        concat!(
+            r#"uniform float u_objectAlpha;
+uniform float u_alphaIsCoverage;"#
+        )
     };
 }
 #[allow(unused_imports)]
@@ -24,12 +26,13 @@ pub const GL_MESH_FRAGMENT_TAIL_UNIFORMS: &str = gl_mesh_fragment_tail_uniforms_
 
 macro_rules! gl_mesh_fragment_tail_glsl {
     () => {
-        concat!(r#"  fragColor.a = mix(1.0, fragColor.a, u_alphaIsCoverage) * u_objectAlpha;
-  fragColor.rgb *= fragColor.a;"#)
+        concat!(
+            r#"  fragColor.a = mix(1.0, fragColor.a, u_alphaIsCoverage) * u_objectAlpha;
+  fragColor.rgb *= fragColor.a;"#
+        )
     };
 }
 #[allow(unused_imports)]
 pub(crate) use gl_mesh_fragment_tail_glsl;
 
 pub const GL_MESH_FRAGMENT_TAIL: &str = gl_mesh_fragment_tail_glsl!();
-

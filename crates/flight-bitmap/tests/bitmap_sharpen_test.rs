@@ -3,7 +3,13 @@ use flight_bitmap::contract::*;
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
-    return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
+    return BitmapRegion {
+        bitmap: bmp,
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+    };
 }
 
 mod sharpen_bitmap {
@@ -12,7 +18,10 @@ mod sharpen_bitmap {
     #[test]
     fn amount_0_returns_the_source_rgb_and_preserves_alpha() {
         let mut src = create_bitmap(3, 1, None);
-        src.data[4] = 10; src.data[5] = 20; src.data[6] = 30; src.data[7] = 120;
+        src.data[4] = 10;
+        src.data[5] = 20;
+        src.data[6] = 30;
+        src.data[7] = 120;
         let sr = region(src);
         let mut out = vec![0u8; 3 * 4];
         let mut scratch = vec![0u8; 3 * 4];
@@ -78,10 +87,21 @@ mod sharpen_bitmap {
             bitmap.data[i * 4] = *v;
             bitmap.data[i * 4 + 3] = 255;
         }
-        let region = BitmapRegion { bitmap, x: 0, y: 0, width: w as i32, height: 1 };
+        let region = BitmapRegion {
+            bitmap,
+            x: 0,
+            y: 0,
+            width: w as i32,
+            height: 1,
+        };
         let mut out = vec![0u8; (w * 4) as usize];
         let mut scratch = vec![0u8; (w * 4) as usize];
-        let options = BitmapSharpenOptions { amount: Some(amount), radius_x: Some(1), radius_y: Some(0), passes: Some(1) };
+        let options = BitmapSharpenOptions {
+            amount: Some(amount),
+            radius_x: Some(1),
+            radius_y: Some(0),
+            passes: Some(1),
+        };
         sharpen_bitmap(&mut out, &mut scratch, &region, &options);
         return (0..w as usize).map(|i| out[i * 4]).collect();
     }

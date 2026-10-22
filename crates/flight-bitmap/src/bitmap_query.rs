@@ -44,10 +44,14 @@ pub fn get_bitmap_color_bounds_rectangle(
 
     for py in 0..source.height {
         let y = source.y + py;
-        if y < 0 || y >= source.bitmap.height as i32 { continue; }
+        if y < 0 || y >= source.bitmap.height as i32 {
+            continue;
+        }
         for px in 0..source.width {
             let x = source.x + px;
-            if x < 0 || x >= bitmap_width { continue; }
+            if x < 0 || x >= bitmap_width {
+                continue;
+            }
             let i = (y as usize * bitmap_width as usize + x as usize) * 4;
             let pixel = (((data[i] as u32) << 24)
                 | ((data[i + 1] as u32) << 16)
@@ -56,10 +60,18 @@ pub fn get_bitmap_color_bounds_rectangle(
                 & mask;
             let matches = pixel == masked_color;
             if matches == find_color {
-                if x < min_x { min_x = x; }
-                if x > max_x { max_x = x; }
-                if y < min_y { min_y = y; }
-                if y > max_y { max_y = y; }
+                if x < min_x {
+                    min_x = x;
+                }
+                if x > max_x {
+                    max_x = x;
+                }
+                if y < min_y {
+                    min_y = y;
+                }
+                if y > max_y {
+                    max_y = y;
+                }
             }
         }
     }
@@ -77,7 +89,12 @@ pub fn get_bitmap_color_bounds_rectangle(
 }
 
 impl BitmapRegion {
-    pub fn color_bounds_rectangle(&self, mask: u32, color: u32, find_color: bool) -> Option<RectangleLike> {
+    pub fn color_bounds_rectangle(
+        &self,
+        mask: u32,
+        color: u32,
+        find_color: bool,
+    ) -> Option<RectangleLike> {
         return get_bitmap_color_bounds_rectangle(self, mask, color, find_color);
     }
 }

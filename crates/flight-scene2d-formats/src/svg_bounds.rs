@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
-use flight_geometry::{create_rectangle, matrix_transform_rectangle, Rectangle};
+use flight_geometry::{Rectangle, create_rectangle, matrix_transform_rectangle};
 use flight_node::contract::{
-    get_node_child_at, get_node_child_count, get_node_local_bounds_rectangle,
-    get_node_local_matrix, NodeRef,
+    NodeRef, get_node_child_at, get_node_child_count, get_node_local_bounds_rectangle,
+    get_node_local_matrix,
 };
-use flight_scene2d::contract::{as_node2d_ref, Node2DRef};
-use flight_shape::contract::{get_shape_bounds, ShapeBoundsMode, SHAPE_KIND};
+use flight_scene2d::contract::{Node2DRef, as_node2d_ref};
+use flight_shape::contract::{SHAPE_KIND, ShapeBoundsMode, get_shape_bounds};
 use flight_text::contract::{RICH_TEXT_KIND, TEXT_LABEL_KIND};
 
 use crate::types::SvgImportContext;

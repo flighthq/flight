@@ -32,8 +32,11 @@ mod register_wgpu_shaded_material {
     fn installs_the_renderer_for_shaded_material_kind() {
         let mut test = make_wgpu_scene3d_state(None);
         register_wgpu_shaded_material(&mut test.state);
-        assert!(get_wgpu_mesh_material_renderer(&test.state, SHADED_MATERIAL_KIND)
-            .is_some_and(|renderer| std::ptr::eq(renderer, &WGPU_SHADED_MESH_MATERIAL_RENDERER)));
+        assert!(
+            get_wgpu_mesh_material_renderer(&test.state, SHADED_MATERIAL_KIND).is_some_and(
+                |renderer| std::ptr::eq(renderer, &WGPU_SHADED_MESH_MATERIAL_RENDERER)
+            )
+        );
     }
 }
 
@@ -46,7 +49,11 @@ mod wgpu_shaded_mesh_material_renderer {
     fn caches_the_modifier_plan_against_the_held_snippet_table_handle() {
         let mut test = make_wgpu_scene3d_state(None);
         let material = create_shaded_material();
-        bind_test_renderer(&mut test.state, &WGPU_SHADED_MESH_MATERIAL_RENDERER, Some(&material as &dyn Material));
+        bind_test_renderer(
+            &mut test.state,
+            &WGPU_SHADED_MESH_MATERIAL_RENDERER,
+            Some(&material as &dyn Material),
+        );
         let table = flight_render_wgpu::get_wgpu_render_state_runtime(&test.state)
             .registries
             .modifier_snippets

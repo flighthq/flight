@@ -49,7 +49,10 @@ mod is_wgpu_effect_resolvable {
         let mut state = create_wgpu_render_state_for_test(None);
         register_wgpu_effect(&mut state, "acme.Always", noop_runner, None);
         let effect = create_test_effect("acme.Always");
-        assert!(is_wgpu_effect_resolvable(&mut state, &*effect.read().unwrap()));
+        assert!(is_wgpu_effect_resolvable(
+            &mut state,
+            &*effect.read().unwrap()
+        ));
     }
 
     #[test]
@@ -58,15 +61,24 @@ mod is_wgpu_effect_resolvable {
         register_wgpu_effect(&mut state, "acme.Named", noop_runner, Some(has_key));
         let bare = create_test_effect("acme.Named");
         let keyed = create_test_effect_with_key("acme.Named", "ready");
-        assert!(!is_wgpu_effect_resolvable(&mut state, &*bare.read().unwrap()));
-        assert!(is_wgpu_effect_resolvable(&mut state, &*keyed.read().unwrap()));
+        assert!(!is_wgpu_effect_resolvable(
+            &mut state,
+            &*bare.read().unwrap()
+        ));
+        assert!(is_wgpu_effect_resolvable(
+            &mut state,
+            &*keyed.read().unwrap()
+        ));
     }
 
     #[test]
     fn returns_false_for_an_unregistered_kind() {
         let mut state = create_wgpu_render_state_for_test(None);
         let effect = create_test_effect("acme.Unregistered");
-        assert!(!is_wgpu_effect_resolvable(&mut state, &*effect.read().unwrap()));
+        assert!(!is_wgpu_effect_resolvable(
+            &mut state,
+            &*effect.read().unwrap()
+        ));
     }
 }
 
@@ -76,7 +88,10 @@ mod register_wgpu_effect {
     #[test]
     fn registers_a_runner_retrievable_by_its_kind() {
         let mut state = create_wgpu_render_state_for_test(None);
-        let before = get_wgpu_render_state_runtime(&state).registries.effects.clone();
+        let before = get_wgpu_render_state_runtime(&state)
+            .registries
+            .effects
+            .clone();
 
         register_wgpu_effect(&mut state, "VignetteEffect", noop_runner, None);
 
@@ -96,7 +111,10 @@ mod register_wgpu_effect {
     fn is_last_write_wins_without_mutating_the_earlier_snapshot() {
         let mut state = create_wgpu_render_state_for_test(None);
         register_wgpu_effect(&mut state, "TestEffect", noop_runner, None);
-        let before = get_wgpu_render_state_runtime(&state).registries.effects.clone();
+        let before = get_wgpu_render_state_runtime(&state)
+            .registries
+            .effects
+            .clone();
 
         register_wgpu_effect(&mut state, "TestEffect", other_runner, None);
 

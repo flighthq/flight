@@ -79,10 +79,16 @@ mod gl_toon_mesh_material_renderer {
     use super::*;
 
     #[test]
-    fn bind_selects_a_program_sets_depth_cull_state_and_uploads_camera_light_block_and_base_color() {
+    fn bind_selects_a_program_sets_depth_cull_state_and_uploads_camera_light_block_and_base_color()
+    {
         let mut state = make_gl_scene3d_state();
         let material = create_toon_material();
-        (GL_TOON_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &make_lights(), &make_camera());
+        (GL_TOON_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &make_lights(),
+            &make_camera(),
+        );
 
         assert!(count_calls("use_program") > 0);
         assert!(has_call("enable", glow::DEPTH_TEST));
@@ -101,7 +107,12 @@ mod gl_toon_mesh_material_renderer {
         let mut state = make_gl_scene3d_state();
         let mut material = create_toon_material();
         material.double_sided = true;
-        (GL_TOON_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &make_lights(), &make_camera());
+        (GL_TOON_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &make_lights(),
+            &make_camera(),
+        );
         assert!(has_call("disable", glow::CULL_FACE));
     }
 
@@ -111,7 +122,12 @@ mod gl_toon_mesh_material_renderer {
         let proxy = make_proxy();
         {
             let material = proxy.material.read().unwrap();
-            (GL_TOON_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&*material), &make_lights(), &make_camera());
+            (GL_TOON_MESH_MATERIAL_RENDERER.bind)(
+                &mut state,
+                Some(&*material),
+                &make_lights(),
+                &make_camera(),
+            );
         }
         (GL_TOON_MESH_MATERIAL_RENDERER.draw)(&mut state, &proxy, &make_geometry());
 

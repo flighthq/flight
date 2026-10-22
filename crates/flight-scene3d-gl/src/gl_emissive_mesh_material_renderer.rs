@@ -1,6 +1,5 @@
 // flight-lint: allow-file(contract-vocabulary) D17 mesh-material renderers are backend-typed dispatch records over thread-bound render-gl state
 
-use std::rc::Rc;
 use flight_camera::Camera3D;
 use flight_color::{LinearColor, allocate_linear_color, unpack_color_to_linear};
 use flight_lighting::Scene3DLightBlock;
@@ -8,6 +7,7 @@ use flight_materials::{EMISSIVE_MATERIAL_KIND, EmissiveMaterial, Material3D, Mat
 use flight_meshgeometry::MeshGeometry;
 use flight_render::Scene3DRenderProxy;
 use flight_render_gl::{GlMeshMaterialRenderer, GlRenderState, resolve_gl_texture};
+use std::rc::Rc;
 
 use crate::gl_mesh_material_registry::register_gl_mesh_material_renderer;
 use crate::gl_mesh_program::{
@@ -34,11 +34,16 @@ fn bind_gl_emissive_mesh_material(
     camera: &Camera3D,
 ) {
     let gl = state.gl.clone();
-    let emissive = material.and_then(|material| material.as_any().downcast_ref::<EmissiveMaterial>());
+    let emissive =
+        material.and_then(|material| material.as_any().downcast_ref::<EmissiveMaterial>());
     let key = define_key_for_material(state, emissive);
     let program = ensure_gl_unlit_program(state, &key);
     let family: GlMeshProgramRef = program.clone();
-    begin_gl_mesh_draw(state, &family, emissive.is_some_and(|emissive| emissive.double_sided));
+    begin_gl_mesh_draw(
+        state,
+        &family,
+        emissive.is_some_and(|emissive| emissive.double_sided),
+    );
     set_gl_mesh_view_projection(state, program.loc_view_projection, camera);
 
     let Some(emissive) = emissive else {
@@ -47,7 +52,10 @@ fn bind_gl_emissive_mesh_material(
     };
     let mut scratch_rgba = allocate_linear_color();
     unpack_color_to_linear(&mut scratch_rgba, emissive.emissive);
-    let emissive_map = emissive.emissive_map.as_ref().map(|map| map.read().unwrap());
+    let emissive_map = emissive
+        .emissive_map
+        .as_ref()
+        .map(|map| map.read().unwrap());
     bind_gl_unlit_surface(
         state,
         &program,
@@ -59,11 +67,15 @@ fn bind_gl_emissive_mesh_material(
     bind_gl_uv_transform(&gl, &program, emissive_map.as_deref().map(|map| map as _));
 }
 
-fn define_key_for_material(state: &mut GlRenderState, material: Option<&EmissiveMaterial>) -> GlUnlitDefineKey {
+fn define_key_for_material(
+    state: &mut GlRenderState,
+    material: Option<&EmissiveMaterial>,
+) -> GlUnlitDefineKey {
     let emissive_map = material.and_then(|material| material.emissive_map.as_ref());
     let emissive_map = emissive_map.map(|map| map.read().unwrap());
     return GlUnlitDefineKey {
-        alpha_mask_enabled: material.is_some_and(|material| material.alpha_mode == MaterialAlphaMode::Mask),
+        alpha_mask_enabled: material
+            .is_some_and(|material| material.alpha_mode == MaterialAlphaMode::Mask),
         has_color_map: emissive_map
             .as_deref()
             .is_some_and(|map| resolve_gl_texture(state, map, None, None).is_some()),

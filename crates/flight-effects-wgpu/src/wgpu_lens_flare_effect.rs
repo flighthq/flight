@@ -82,7 +82,12 @@ pub fn apply_lens_flare_effect_to_wgpu(
 
 /// Registers the default runner under `LensFlareEffect` (TS `registerWgpuLensFlareEffect`).
 pub fn register_wgpu_lens_flare_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "LensFlareEffect", wgpu_lens_flare_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "LensFlareEffect",
+        wgpu_lens_flare_effect_runner,
+        None,
+    );
 }
 
 /// The default `LensFlareEffect` runner (TS `wgpuLensFlareEffectRunner`).

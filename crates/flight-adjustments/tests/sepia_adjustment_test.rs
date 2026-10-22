@@ -16,8 +16,13 @@ mod create_sepia_adjustment {
 
     #[test]
     fn intensity_0_leaves_color_unchanged() {
-        let adjustment = create_sepia_adjustment(Some(&SepiaAdjustmentOptions { intensity: Some(0.0) }));
-        assert_eq!(apply_color_matrix_to_color(&adjustment.color_matrix.unwrap(), 0x3366ccff), 0x3366ccff);
+        let adjustment = create_sepia_adjustment(Some(&SepiaAdjustmentOptions {
+            intensity: Some(0.0),
+        }));
+        assert_eq!(
+            apply_color_matrix_to_color(&adjustment.color_matrix.unwrap(), 0x3366ccff),
+            0x3366ccff
+        );
     }
 }
 
@@ -27,7 +32,12 @@ mod initialize_sepia_adjustment {
     #[test]
     fn is_the_construction_initializer_of_create_sepia_adjustment() {
         let mut out: SepiaAdjustment = allocate_entity();
-        initialize_sepia_adjustment(&mut out, Some(&SepiaAdjustmentOptions { intensity: Some(1.0) }));
+        initialize_sepia_adjustment(
+            &mut out,
+            Some(&SepiaAdjustmentOptions {
+                intensity: Some(1.0),
+            }),
+        );
         let red = apply_color_matrix_to_color(&out.color_matrix.unwrap(), 0xff0000ff);
         assert_eq!((red >> 24) & 0xff, (0.393_f32 * 255.0).round() as u32);
     }

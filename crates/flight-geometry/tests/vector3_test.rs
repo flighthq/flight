@@ -412,9 +412,18 @@ mod equals_vector3 {
     #[test]
     fn compares_every_component_not_just_the_first() {
         let a = create_vector3(1.0, 2.0, 3.0);
-        assert!(!equals_vector3(Some(&a), Some(&create_vector3(9.0, 2.0, 3.0))));
-        assert!(!equals_vector3(Some(&a), Some(&create_vector3(1.0, 9.0, 3.0))));
-        assert!(!equals_vector3(Some(&a), Some(&create_vector3(1.0, 2.0, 9.0))));
+        assert!(!equals_vector3(
+            Some(&a),
+            Some(&create_vector3(9.0, 2.0, 3.0))
+        ));
+        assert!(!equals_vector3(
+            Some(&a),
+            Some(&create_vector3(1.0, 9.0, 3.0))
+        ));
+        assert!(!equals_vector3(
+            Some(&a),
+            Some(&create_vector3(1.0, 2.0, 9.0))
+        ));
     }
 
     #[test]
@@ -1144,9 +1153,7 @@ mod transform_vector3_by_matrix3 {
 
     #[test]
     fn transforms_by_a_scale_matrix() {
-        let scale = create_matrix3_from_values(
-            2.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 4.0,
-        );
+        let scale = create_matrix3_from_values(2.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.0, 0.0, 4.0);
         let mut out = create_vector3(0.0, 0.0, 0.0);
         transform_vector3_by_matrix3(&mut out, &create_vector3(1.0, 1.0, 1.0), &scale);
         assert_approx_tight(out.x, 2.0);

@@ -185,8 +185,7 @@ pub fn resolve_layout_tree(
                 );
             }
             Some(resolver_fn) => {
-                let failure =
-                    resolver_fn(out, tree, intrinsic_sizes, parent_index as usize, i);
+                let failure = resolver_fn(out, tree, intrinsic_sizes, parent_index as usize, i);
                 if let Some(failure_kind) = failure {
                     let failure_node_index =
                         if failure_kind == LayoutResolutionFailureKind::InvalidContainerStyle {

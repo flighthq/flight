@@ -1,7 +1,7 @@
-use flight_entity::{EntityRuntimeSlot, Float32Array, allocate_entity};
 use crate::Matrix;
 use crate::Matrix4;
 use crate::Vector3;
+use flight_entity::{EntityRuntimeSlot, Float32Array, allocate_entity};
 
 /// A 3x3 homogeneous matrix.
 ///
@@ -16,24 +16,25 @@ pub struct Matrix3 {
 // flight-lint: allow(conform-params) D24: matrix3/4 create returns identity; values via set_matrix3/4 (user-approved)
 pub fn create_matrix3() -> Matrix3 {
     let mut out: Matrix3 = allocate_entity();
-    out.m = [
-        1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 0.0, 1.0,
-    ];
+    out.m = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0];
     return out;
 }
 
 pub fn create_matrix3_from_values(
-    m00: f32, m01: f32, m02: f32,
-    m10: f32, m11: f32, m12: f32,
-    m20: f32, m21: f32, m22: f32,
+    m00: f32,
+    m01: f32,
+    m02: f32,
+    m10: f32,
+    m11: f32,
+    m12: f32,
+    m20: f32,
+    m21: f32,
+    m22: f32,
 ) -> Matrix3 {
     let mut out = create_matrix3();
     set_matrix3(&mut out, m00, m01, m02, m10, m11, m12, m20, m21, m22);
     return out;
 }
-
 
 /// Initializes a Matrix3 to identity during construction.
 pub fn initialize_matrix3(out: &mut Matrix3) {
@@ -130,9 +131,7 @@ pub fn equals_matrix3(a: Option<&Matrix3>, b: Option<&Matrix3>) -> bool {
 /// so this flat-index form is independent of row/column-major storage.
 pub fn get_matrix3_determinant(source: &Matrix3) -> f32 {
     let m = &source.m;
-    return m[0] * m[4] * m[8]
-        + m[1] * m[5] * m[6]
-        + m[2] * m[3] * m[7]
+    return m[0] * m[4] * m[8] + m[1] * m[5] * m[6] + m[2] * m[3] * m[7]
         - m[2] * m[4] * m[6]
         - m[1] * m[3] * m[8]
         - m[0] * m[5] * m[7];
@@ -184,8 +183,7 @@ pub fn inverse_matrix3(out: &mut Matrix3, source: &Matrix3) -> bool {
         return true;
     }
 
-    let det = a00 * (a11 * a22 - a12 * a21)
-        - a01 * (a10 * a22 - a12 * a20)
+    let det = a00 * (a11 * a22 - a12 * a21) - a01 * (a10 * a22 - a12 * a20)
         + a02 * (a10 * a21 - a11 * a20);
 
     if det == 0.0 {
@@ -325,9 +323,15 @@ pub fn scale_matrix3(out: &mut Matrix3, source: &Matrix3, sx: f32, sy: f32) {
 /// stored column-major at 3 * col + row.
 pub fn set_matrix3(
     out: &mut Matrix3,
-    m00: f32, m01: f32, m02: f32,
-    m10: f32, m11: f32, m12: f32,
-    m20: f32, m21: f32, m22: f32,
+    m00: f32,
+    m01: f32,
+    m02: f32,
+    m10: f32,
+    m11: f32,
+    m12: f32,
+    m20: f32,
+    m21: f32,
+    m22: f32,
 ) {
     out.m[0] = m00;
     out.m[3] = m01;
@@ -393,11 +397,7 @@ pub fn set_matrix3_from_matrix4(out: &mut Matrix3, source: &Matrix4) {
 }
 
 pub fn set_matrix3_identity(out: &mut Matrix3) {
-    out.m = [
-        1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 0.0, 1.0,
-    ];
+    out.m = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0];
 }
 
 /// Writes the normal matrix for a Matrix4 model transform: the inverse-transpose of its
@@ -472,11 +472,7 @@ impl Default for Matrix3 {
     fn default() -> Self {
         return Matrix3 {
             runtime: EntityRuntimeSlot::default(),
-            m: [
-                1.0, 0.0, 0.0,
-                0.0, 1.0, 0.0,
-                0.0, 0.0, 1.0,
-            ],
+            m: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0],
         };
     }
 }
@@ -491,9 +487,15 @@ impl Matrix3 {
     }
 
     pub fn from_values(
-        m00: f32, m01: f32, m02: f32,
-        m10: f32, m11: f32, m12: f32,
-        m20: f32, m21: f32, m22: f32,
+        m00: f32,
+        m01: f32,
+        m02: f32,
+        m10: f32,
+        m11: f32,
+        m12: f32,
+        m20: f32,
+        m21: f32,
+        m22: f32,
     ) -> Self {
         return create_matrix3_from_values(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }

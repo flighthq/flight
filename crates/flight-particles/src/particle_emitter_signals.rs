@@ -21,9 +21,7 @@ pub fn initialize_particle_emitter_signals(out: &mut ParticleEmitterSignals) {
 /// Returns a handle to the `ParticleEmitterSignals` attached to `state`, creating
 /// them on first call. The handle is a clone that shares every signal's slots with the
 /// group stored on `state`, so repeated calls return the same signals. The cost of signals is zero until this function is called.
-pub fn enable_particle_emitter_signals(
-    state: &mut ParticleEmitterState,
-) -> ParticleEmitterSignals {
+pub fn enable_particle_emitter_signals(state: &mut ParticleEmitterState) -> ParticleEmitterSignals {
     if state.signals.is_none() {
         state.signals = Some(create_particle_emitter_signals());
     }

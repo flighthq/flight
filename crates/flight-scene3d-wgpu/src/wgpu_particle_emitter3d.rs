@@ -134,8 +134,7 @@ pub fn destroy_wgpu_particle_emitter3d_resources(state: &mut WgpuRenderState) {
 }
 
 fn draw_particle_emitter3d_node(state: &mut WgpuRenderState, node: &NodeRef) {
-    let world_matrix =
-        get_node_world_matrix4(node, &mut state.render_runtime_mut().node_revisions);
+    let world_matrix = get_node_world_matrix4(node, &mut state.render_runtime_mut().node_revisions);
     let guard = node.read().unwrap();
     let Some(emitter) = guard.as_any().downcast_ref::<ParticleEmitter3D>() else {
         return;
@@ -148,7 +147,9 @@ fn draw_particle_emitter3d_node(state: &mut WgpuRenderState, node: &NodeRef) {
 
     let atlas = data.atlas.as_ref().map(|atlas| atlas.read().unwrap());
     let atlas_texture = atlas.as_ref().and_then(|atlas| atlas.texture.clone());
-    let texture_guard = atlas_texture.as_ref().map(|texture| texture.read().unwrap());
+    let texture_guard = atlas_texture
+        .as_ref()
+        .map(|texture| texture.read().unwrap());
     let texture_entry = match &texture_guard {
         Some(texture) if has_texture_source(&**texture) => {
             resolve_wgpu_texture(state, &**texture, Some(false), None)
@@ -197,9 +198,21 @@ fn draw_particle_emitter3d_node(state: &mut WgpuRenderState, node: &NodeRef) {
         let scale = data.transforms[tt + 3];
         let lz = data.positions_z[i];
 
-        let wx = if world_space { lx } else { wm[0] * lx + wm[4] * ly + wm[8] * lz + wm[12] };
-        let wy = if world_space { ly } else { wm[1] * lx + wm[5] * ly + wm[9] * lz + wm[13] };
-        let wz = if world_space { lz } else { wm[2] * lx + wm[6] * ly + wm[10] * lz + wm[14] };
+        let wx = if world_space {
+            lx
+        } else {
+            wm[0] * lx + wm[4] * ly + wm[8] * lz + wm[12]
+        };
+        let wy = if world_space {
+            ly
+        } else {
+            wm[1] * lx + wm[5] * ly + wm[9] * lz + wm[13]
+        };
+        let wz = if world_space {
+            lz
+        } else {
+            wm[2] * lx + wm[6] * ly + wm[10] * lz + wm[14]
+        };
 
         let cos_r = rotation.cos() * scale;
         let sin_r = rotation.sin() * scale;
@@ -253,11 +266,21 @@ fn draw_particle_emitter3d_node(state: &mut WgpuRenderState, node: &NodeRef) {
         instance_data[base + 12] = v1;
         // The region's pixel size sets the billboard aspect ratio, not its world size: normalize so
         // the larger axis is 1.
-        let max_dim = if region_w >= region_h { region_w } else { region_h };
-        instance_data[base + 13] =
-            (if rotated && !counterclockwise { -region_w } else { region_w }) / max_dim;
-        instance_data[base + 14] =
-            (if rotated && counterclockwise { -region_h } else { region_h }) / max_dim;
+        let max_dim = if region_w >= region_h {
+            region_w
+        } else {
+            region_h
+        };
+        instance_data[base + 13] = (if rotated && !counterclockwise {
+            -region_w
+        } else {
+            region_w
+        }) / max_dim;
+        instance_data[base + 14] = (if rotated && counterclockwise {
+            -region_h
+        } else {
+            region_h
+        }) / max_dim;
         instance_data[base + 15] = 0.0;
         base += INSTANCE_FLOATS;
         draw_count += 1;
@@ -367,7 +390,12 @@ pub fn draw_wgpu_scene3d_particle_emitter3_ds(
     f[21] = vm[5];
     f[22] = vm[9];
     let native = get_wgpu_render_state_native_device(state);
-    write_wgpu_buffer(&native, &resources.frame_buffer, 0, bytemuck::cast_slice(&f));
+    write_wgpu_buffer(
+        &native,
+        &resources.frame_buffer,
+        0,
+        bytemuck::cast_slice(&f),
+    );
 
     for emitter in &emitters {
         draw_particle_emitter3d_node(state, emitter);
@@ -658,7 +686,10 @@ pub fn register_wgpu_particle_emitter3d_pass(state: &mut WgpuRenderState) {
     let registries = &mut get_wgpu_render_state_runtime_mut(state).registries;
     let mut passes = match &registries.passes {
         Some(passes) => {
-            if passes.iter().any(|entry| std::ptr::fn_addr_eq(*entry, pass)) {
+            if passes
+                .iter()
+                .any(|entry| std::ptr::fn_addr_eq(*entry, pass))
+            {
                 return;
             }
             (**passes).clone()

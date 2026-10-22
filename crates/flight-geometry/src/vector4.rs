@@ -1,6 +1,6 @@
+use crate::Vector3;
 use flight_entity::{EntityRuntimeSlot, Float32Array, allocate_entity};
 use std::sync::LazyLock;
-use crate::Vector3;
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Vector4 {
@@ -64,10 +64,34 @@ pub fn clamp_vector4(out: &mut Vector4, value: &Vector4, min: &Vector4, max: &Ve
     let max_y = max.y;
     let max_z = max.z;
     let max_w = max.w;
-    out.x = if vx < min_x { min_x } else if vx > max_x { max_x } else { vx };
-    out.y = if vy < min_y { min_y } else if vy > max_y { max_y } else { vy };
-    out.z = if vz < min_z { min_z } else if vz > max_z { max_z } else { vz };
-    out.w = if vw < min_w { min_w } else if vw > max_w { max_w } else { vw };
+    out.x = if vx < min_x {
+        min_x
+    } else if vx > max_x {
+        max_x
+    } else {
+        vx
+    };
+    out.y = if vy < min_y {
+        min_y
+    } else if vy > max_y {
+        max_y
+    } else {
+        vy
+    };
+    out.z = if vz < min_z {
+        min_z
+    } else if vz > max_z {
+        max_z
+    } else {
+        vz
+    };
+    out.w = if vw < min_w {
+        min_w
+    } else if vw > max_w {
+        max_w
+    } else {
+        vw
+    };
 }
 
 pub fn clone_vector4(source: &Vector4) -> Vector4 {
@@ -159,7 +183,8 @@ pub fn get_vector4_dot(a: &Vector4, b: &Vector4) -> f32 {
 /// the object's x, y, z and w coordinates. A unit vector has
 /// a length or magnitude of one.
 pub fn get_vector4_length(source: &Vector4) -> f32 {
-    return (source.x * source.x + source.y * source.y + source.z * source.z + source.w * source.w).sqrt();
+    return (source.x * source.x + source.y * source.y + source.z * source.z + source.w * source.w)
+        .sqrt();
 }
 
 /// The square of the length of the current Vector4 object, calculated using the `x`,

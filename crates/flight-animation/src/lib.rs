@@ -19,6 +19,11 @@ mod sugar;
 // constructors, the D18 sugar backing functions, the advance controllers) stay in `contract`.
 
 // types — all public types are part of the public lane
+pub use contract::ANIMATION_INTERPOLATION_CUBIC;
+pub use contract::ANIMATION_INTERPOLATION_LINEAR;
+pub use contract::ANIMATION_INTERPOLATION_STEP;
+pub use contract::ANIMATION_LOOP_MODE_PING_PONG;
+pub use contract::ANIMATION_LOOP_MODE_REPEAT;
 pub use contract::AnimationBlendTree;
 pub use contract::AnimationBlendTreeChannel;
 pub use contract::AnimationBlendTreeChannelSource;
@@ -51,11 +56,6 @@ pub use contract::EasingFn;
 pub use contract::Payload;
 pub use contract::StateRef;
 pub use contract::TargetRef;
-pub use contract::ANIMATION_INTERPOLATION_CUBIC;
-pub use contract::ANIMATION_INTERPOLATION_LINEAR;
-pub use contract::ANIMATION_INTERPOLATION_STEP;
-pub use contract::ANIMATION_LOOP_MODE_PING_PONG;
-pub use contract::ANIMATION_LOOP_MODE_REPEAT;
 
 // animation_blend
 pub use contract::accumulate_animation_sample;

@@ -172,7 +172,11 @@ fn cmd_check(opts: &Options) {
 fn finish(violations: Vec<Violation>, opts: &Options, header: &str) {
     if let Some(path) = &opts.write_baseline {
         match baseline::write(path, &violations, header) {
-            Ok(()) => println!("Wrote {} entr(ies) to {}.", violations.len(), path.display()),
+            Ok(()) => println!(
+                "Wrote {} entr(ies) to {}.",
+                violations.len(),
+                path.display()
+            ),
             Err(e) => {
                 eprintln!("error: {}", e);
                 process::exit(2);
@@ -314,7 +318,11 @@ fn cmd_conform(opts: &Options) {
     for c in &crates {
         match conform::ts_src_for(ts_root, c, single) {
             Some(ts_src) => violations.extend(conform::conform_crate(c, &ts_src)),
-            None => eprintln!("note: no TS package for `{}` under {}", c, ts_root.display()),
+            None => eprintln!(
+                "note: no TS package for `{}` under {}",
+                c,
+                ts_root.display()
+            ),
         }
     }
     finish(violations, opts, "cargo flight-lint conform baseline");
@@ -326,15 +334,22 @@ fn cmd_conform(opts: &Options) {
 
 fn cmd_manifest(opts: &Options) {
     if opts.write == opts.check {
-        eprintln!("manifest needs exactly one of --write or --check\n\n{}", USAGE);
+        eprintln!(
+            "manifest needs exactly one of --write or --check\n\n{}",
+            USAGE
+        );
         process::exit(2);
     }
     let mut failed = false;
     for c in discover_crates(&opts.crates) {
-        for (ext, text) in [("api", manifest::api_manifest(&c)), ("tests", manifest::test_manifest(&c))] {
+        for (ext, text) in [
+            ("api", manifest::api_manifest(&c)),
+            ("tests", manifest::test_manifest(&c)),
+        ] {
             let path = opts.dir.join(format!("{}.{}", c, ext));
             if opts.write {
-                if let Err(e) = fs::create_dir_all(&opts.dir).and_then(|_| fs::write(&path, &text)) {
+                if let Err(e) = fs::create_dir_all(&opts.dir).and_then(|_| fs::write(&path, &text))
+                {
                     eprintln!("error: {}: {}", path.display(), e);
                     process::exit(2);
                 }
@@ -345,7 +360,11 @@ fn cmd_manifest(opts: &Options) {
                 manifest::ManifestStatus::Same => {}
                 manifest::ManifestStatus::Missing => {
                     failed = true;
-                    eprintln!("{}: missing (run `manifest --write --crate {}`)", display_path(&path), c);
+                    eprintln!(
+                        "{}: missing (run `manifest --write --crate {}`)",
+                        display_path(&path),
+                        c
+                    );
                 }
                 manifest::ManifestStatus::Differs { added, removed } => {
                     failed = true;
@@ -417,6 +436,9 @@ fn cmd_rules() {
             Level::Error => "error",
             Level::Warn => "warn",
         };
-        println!("| `{}` | {} | {} | {} |", r.name, level, r.scope, r.description);
+        println!(
+            "| `{}` | {} | {} | {} |",
+            r.name, level, r.scope, r.description
+        );
     }
 }

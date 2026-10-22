@@ -359,7 +359,10 @@ fn get_upload_vertices(geometry: &MeshGeometry) -> Option<Vec<f32>> {
         return None;
     }
     let bind_pose = get_mesh_geometry_skin_bind_pose(geometry)?;
-    return Some(build_skin_bind_vertices(geometry, &bind_pose.read().unwrap()));
+    return Some(build_skin_bind_vertices(
+        geometry,
+        &bind_pose.read().unwrap(),
+    ));
 }
 
 fn get_wgpu_skin_arena_row_count(texels: u32) -> u32 {
@@ -469,7 +472,9 @@ fn palette_layout_entry(binding: u32) -> wgpu::BindGroupLayoutEntry {
 /// Opts a state into GPU skinning (TS `registerWgpuGpuSkinning`): installs the adapter in the
 /// registry and on the scene runtime.
 pub fn register_wgpu_gpu_skinning(state: &mut WgpuRenderState) {
-    get_wgpu_render_state_runtime_mut(state).registries.gpu_skinning = Some(&WGPU_SKINNING_ADAPTER);
+    get_wgpu_render_state_runtime_mut(state)
+        .registries
+        .gpu_skinning = Some(&WGPU_SKINNING_ADAPTER);
     get_wgpu_scene3d_runtime(state).skinning_adapter = Some(&WGPU_SKINNING_ADAPTER);
 }
 
@@ -503,7 +508,10 @@ pub fn upload_wgpu_skin_normal_palette(
     let base = get_wgpu_scene3d_runtime(state).skin_normal_palette_arena_cursor;
     let rows = get_wgpu_skin_arena_row_count(base + texels);
     if rows > get_wgpu_scene3d_runtime(state).skin_normal_palette_arena_rows {
-        if let Some(texture) = get_wgpu_scene3d_runtime(state).skin_normal_palette_texture.take() {
+        if let Some(texture) = get_wgpu_scene3d_runtime(state)
+            .skin_normal_palette_texture
+            .take()
+        {
             retire_wgpu_texture(state, texture);
         }
         let texture = create_wgpu_skin_arena_texture(state, rows);
@@ -514,9 +522,7 @@ pub fn upload_wgpu_skin_normal_palette(
         scene.skin_normal_palette_arena_rows = rows;
         scene.skin_mesh_draw_bind_group = None;
         // A grown arena is a new texture: replay every region already handed out this frame.
-        let replays = scene
-            .skin_normal_palette_arena_replays
-            .clone();
+        let replays = scene.skin_normal_palette_arena_replays.clone();
         for (palette, replay_base) in replays {
             write_wgpu_skin_arena_region(state, &texture, &palette.read().unwrap(), replay_base);
         }
@@ -570,7 +576,8 @@ pub fn upload_wgpu_skin_palette(
         }
         let texture = create_wgpu_skin_arena_texture(state, rows);
         let scene = get_wgpu_scene3d_runtime(state);
-        scene.skin_palette_view = Some(texture.create_view(&wgpu::TextureViewDescriptor::default()));
+        scene.skin_palette_view =
+            Some(texture.create_view(&wgpu::TextureViewDescriptor::default()));
         scene.skin_palette_texture = Some(texture.clone());
         scene.skin_palette_arena_rows = rows;
         scene.skin_draw_bind_group = None;

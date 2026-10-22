@@ -1,6 +1,8 @@
 use std::sync::{Arc, RwLock};
 
-use flight_materials::contract::{PbrExtension, create_transmission_volume_pbr_extension, create_extended_pbr_material};
+use flight_materials::contract::{
+    PbrExtension, create_extended_pbr_material, create_transmission_volume_pbr_extension,
+};
 use flight_scene3d_resources::contract::*;
 
 use crate::support::{create_shared_texture, same_textures};
@@ -19,7 +21,9 @@ mod register_transmission_volume_pbr_scene3d_material_textures {
         extension.transmission_map = Some(factor.clone());
         extension.thickness_map = Some(thickness.clone());
         let mut material = create_extended_pbr_material();
-        material.extensions = vec![Arc::new(RwLock::new(PbrExtension::TransmissionVolume(extension)))];
+        material.extensions = vec![Arc::new(RwLock::new(PbrExtension::TransmissionVolume(
+            extension,
+        )))];
         let mut out = Vec::new();
         get_scene3d_material_textures(&registry, &material, &mut out);
         assert!(same_textures(&out, &[&factor, &thickness]));

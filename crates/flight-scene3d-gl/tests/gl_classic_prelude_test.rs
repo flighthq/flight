@@ -60,15 +60,18 @@ fn record_nothing(
 
 static COLOR_FEATURE: GlColorAdjustmentMaterialFeature = GlColorAdjustmentMaterialFeature {
     fragment_shader_chunk: "vec4 applyFlightColorAdjustment(vec4 c, vec4 m, vec4 o) { return c * m + o; }",
-    matrix_fragment_shader_chunk:
-        "vec4 applyFlightColorMatrix(vec4 c, vec4 a, vec4 b, vec4 d, vec4 e, vec4 o) { return c; }",
+    matrix_fragment_shader_chunk: "vec4 applyFlightColorMatrix(vec4 c, vec4 a, vec4 b, vec4 d, vec4 e, vec4 o) { return c; }",
     draw_shape_meshes: draw_no_meshes,
     flush: flush_unhandled,
     record: record_nothing,
 };
 
 fn program_cache_keys(state: &GlRenderState) -> Vec<String> {
-    return get_gl_scene3d_runtime(state).program_cache.keys().cloned().collect();
+    return get_gl_scene3d_runtime(state)
+        .program_cache
+        .keys()
+        .cloned()
+        .collect();
 }
 
 mod build_gl_classic_define_key {
@@ -101,7 +104,10 @@ mod build_gl_classic_define_key {
             ..lambert()
         };
         assert_eq!(build_gl_classic_define_key(&key), "l-----u--");
-        assert_ne!(build_gl_classic_define_key(&key), build_gl_classic_define_key(&lambert()));
+        assert_ne!(
+            build_gl_classic_define_key(&key),
+            build_gl_classic_define_key(&lambert())
+        );
     }
 
     #[test]
@@ -111,7 +117,10 @@ mod build_gl_classic_define_key {
             ..lambert()
         };
         assert_eq!(build_gl_classic_define_key(&key), "l------k-");
-        assert_ne!(build_gl_classic_define_key(&key), build_gl_classic_define_key(&lambert()));
+        assert_ne!(
+            build_gl_classic_define_key(&key),
+            build_gl_classic_define_key(&lambert())
+        );
     }
 
     #[test]
@@ -170,7 +179,11 @@ mod ensure_gl_classic_program {
         let second = ensure_gl_classic_program(&state, &lambert());
         assert!(Rc::ptr_eq(&first, &second));
         assert_eq!(calls_named("link_program"), links);
-        assert!(program_cache_keys(&state).iter().any(|key| key.starts_with("classic:")));
+        assert!(
+            program_cache_keys(&state)
+                .iter()
+                .any(|key| key.starts_with("classic:"))
+        );
     }
 
     #[test]
@@ -290,10 +303,14 @@ mod get_gl_classic_fragment_source_for_key {
     }
 
     #[test]
-    fn gates_the_alpha_map_define_off_the_key_and_always_carries_the_guarded_sampler_and_coverage_multiply() {
+    fn gates_the_alpha_map_define_off_the_key_and_always_carries_the_guarded_sampler_and_coverage_multiply()
+     {
         // The define is what varies by key; the #ifdef-guarded sampler and multiply are unconditional raw
         // text (same as the normal/specular maps), compiled out unless HAS_ALPHA_MAP is defined.
-        assert!(!get_gl_classic_fragment_source_for_key(&blinn_phong(), None).contains("#define HAS_ALPHA_MAP"));
+        assert!(
+            !get_gl_classic_fragment_source_for_key(&blinn_phong(), None)
+                .contains("#define HAS_ALPHA_MAP")
+        );
         let with_alpha = get_gl_classic_fragment_source_for_key(
             &GlClassicDefineKey {
                 has_alpha_map: true,
@@ -414,7 +431,9 @@ mod tangent_frame_under_a_model_transform {
         let vertex = get_gl_classic_vertex_source();
         assert!(vertex.contains("mat3 modelRotation = mat3(u_model);"));
         assert!(vertex.contains("determinant(modelRotation) < 0.0 ? -1.0 : 1.0"));
-        assert!(vertex.contains("v_tangent = vec4(modelRotation * localTangent, tangentHandedness);"));
+        assert!(
+            vertex.contains("v_tangent = vec4(modelRotation * localTangent, tangentHandedness);")
+        );
         assert!(vertex.contains("v_normal = u_normalMatrix * localNormal;"));
         assert!(!vertex.contains("u_normalMatrix * localTangent"));
     }

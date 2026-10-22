@@ -39,7 +39,13 @@ pub fn ease_piecewise(segments: &[EasingSegment]) -> Arc<dyn Fn(f32) -> f32 + Se
             if t <= *end || i == breakpoints.len() - 1 {
                 let span = *end - *start;
                 let local_t = if span > 0.0 { (t - *start) / span } else { 1.0 };
-                let clamped_t = if local_t < 0.0 { 0.0 } else if local_t > 1.0 { 1.0 } else { local_t };
+                let clamped_t = if local_t < 0.0 {
+                    0.0
+                } else if local_t > 1.0 {
+                    1.0
+                } else {
+                    local_t
+                };
                 return ease(clamped_t);
             }
         }

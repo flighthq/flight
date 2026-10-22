@@ -24,8 +24,14 @@ mod apply_glitch_effect_to_wgpu {
             );
         });
 
-        assert_eq!(recorded_pass_views(&records), vec![dest.read().unwrap().view.clone()]);
-        assert_eq!(recorded_draw_sources(&records), vec![source.read().unwrap().view.clone()]);
+        assert_eq!(
+            recorded_pass_views(&records),
+            vec![dest.read().unwrap().view.clone()]
+        );
+        assert_eq!(
+            recorded_draw_sources(&records),
+            vec![source.read().unwrap().view.clone()]
+        );
         let uniforms = recorded_effect_uniforms(&records);
         assert_eq!(uniforms[0][0], 0.5);
         assert_eq!(uniforms[0][1], 24.0);
@@ -80,7 +86,10 @@ mod wgpu_glitch_effect_runner {
             wgpu_glitch_effect_runner(&mut context, &*effect.read().unwrap());
         });
 
-        assert_eq!(recorded_pass_views(&records), vec![dest.read().unwrap().view.clone()]);
+        assert_eq!(
+            recorded_pass_views(&records),
+            vec![dest.read().unwrap().view.clone()]
+        );
         let uniforms = recorded_effect_uniforms(&records);
         assert_eq!(uniforms[0][0], 0.5);
         assert_eq!(uniforms[0][1], 24.0);

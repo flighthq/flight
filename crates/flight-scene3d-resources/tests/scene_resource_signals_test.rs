@@ -18,7 +18,11 @@ mod create_scene3d_resource_signals {
         let reference = embedded_reference(None);
         let texture = attach_texture(&reference);
         let signal = signals.read().unwrap().on_resource_resolved.clone();
-        connect_signal(&signal, Arc::new(move |_| *counter.lock().unwrap() += 1), None);
+        connect_signal(
+            &signal,
+            Arc::new(move |_| *counter.lock().unwrap() += 1),
+            None,
+        );
         emit_signal(&signal, &Scene3DResourceEvent { reference, texture });
         assert_eq!(*received.lock().unwrap(), 1);
     }
@@ -34,7 +38,10 @@ mod enable_scene3d_resource_signals {
         let first = enable_scene3d_resource_signals(&resolver);
         let second = enable_scene3d_resource_signals(&resolver);
         assert!(Arc::ptr_eq(&first, &second));
-        assert!(Arc::ptr_eq(&get_scene3d_resource_signals(&resolver).unwrap(), &first));
+        assert!(Arc::ptr_eq(
+            &get_scene3d_resource_signals(&resolver).unwrap(),
+            &first
+        ));
         dispose_scene3d_resource_resolver(&resolver);
     }
 }
@@ -48,7 +55,10 @@ mod get_scene3d_resource_signals {
         let resolver = create_scene3d_resource_resolver(&host_image(), None, &context(&host));
         assert!(get_scene3d_resource_signals(&resolver).is_none());
         let signals = enable_scene3d_resource_signals(&resolver);
-        assert!(Arc::ptr_eq(&get_scene3d_resource_signals(&resolver).unwrap(), &signals));
+        assert!(Arc::ptr_eq(
+            &get_scene3d_resource_signals(&resolver).unwrap(),
+            &signals
+        ));
         dispose_scene3d_resource_resolver(&resolver);
     }
 }
@@ -67,10 +77,17 @@ mod initialize_scene3d_resource_signals {
         // Fresh signals: a slot on the replaced one no longer hears the group's emissions.
         let heard = Arc::new(Mutex::new(0));
         let counter = heard.clone();
-        connect_signal(&stale, Arc::new(move |_| *counter.lock().unwrap() += 1), None);
+        connect_signal(
+            &stale,
+            Arc::new(move |_| *counter.lock().unwrap() += 1),
+            None,
+        );
         let reference = embedded_reference(None);
         let texture = attach_texture(&reference);
-        emit_signal(&out.on_resource_failed, &Scene3DResourceEvent { reference, texture });
+        emit_signal(
+            &out.on_resource_failed,
+            &Scene3DResourceEvent { reference, texture },
+        );
         assert_eq!(*heard.lock().unwrap(), 0);
     }
 }

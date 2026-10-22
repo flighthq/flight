@@ -4,8 +4,8 @@ use flight_entity::throw_error;
 use flight_lighting::Environment;
 use flight_render_gl::{GlCubeRenderTarget, GlRenderState, create_gl_program};
 use glow::{
-    HasContext, NativeBuffer, NativeFramebuffer, NativeProgram, NativeTexture, NativeUniformLocation,
-    NativeVertexArray,
+    HasContext, NativeBuffer, NativeFramebuffer, NativeProgram, NativeTexture,
+    NativeUniformLocation, NativeVertexArray,
 };
 
 use crate::gl_environment_cube::{ensure_gl_environment_source_cube, get_gl_cube_face_target};
@@ -29,7 +29,9 @@ pub(crate) struct GlBakeProgram {
 fn create_gl_bake_cube(gl: &glow::Context, size: u32, mipped: bool) -> NativeTexture {
     // SAFETY: texture creation and allocation on the owning GL thread.
     unsafe {
-        let texture = gl.create_texture().unwrap_or_else(|error| throw_error(&error));
+        let texture = gl
+            .create_texture()
+            .unwrap_or_else(|error| throw_error(&error));
         gl.bind_texture(glow::TEXTURE_CUBE_MAP, Some(texture));
         // Allocate the full mip chain up front: a cube with a mip-aware min filter is "incomplete"
         // (samples as black) until every level it can reach has storage, so each prefiltered roughness
@@ -51,14 +53,42 @@ fn create_gl_bake_cube(gl: &glow::Context, size: u32, mipped: bool) -> NativeTex
                 );
             }
         }
-        let min_filter = if mipped { glow::LINEAR_MIPMAP_LINEAR } else { glow::LINEAR };
-        gl.tex_parameter_i32(glow::TEXTURE_CUBE_MAP, glow::TEXTURE_MIN_FILTER, min_filter as i32);
-        gl.tex_parameter_i32(glow::TEXTURE_CUBE_MAP, glow::TEXTURE_MAG_FILTER, glow::LINEAR as i32);
-        gl.tex_parameter_i32(glow::TEXTURE_CUBE_MAP, glow::TEXTURE_WRAP_S, glow::CLAMP_TO_EDGE as i32);
-        gl.tex_parameter_i32(glow::TEXTURE_CUBE_MAP, glow::TEXTURE_WRAP_T, glow::CLAMP_TO_EDGE as i32);
-        gl.tex_parameter_i32(glow::TEXTURE_CUBE_MAP, glow::TEXTURE_WRAP_R, glow::CLAMP_TO_EDGE as i32);
+        let min_filter = if mipped {
+            glow::LINEAR_MIPMAP_LINEAR
+        } else {
+            glow::LINEAR
+        };
+        gl.tex_parameter_i32(
+            glow::TEXTURE_CUBE_MAP,
+            glow::TEXTURE_MIN_FILTER,
+            min_filter as i32,
+        );
+        gl.tex_parameter_i32(
+            glow::TEXTURE_CUBE_MAP,
+            glow::TEXTURE_MAG_FILTER,
+            glow::LINEAR as i32,
+        );
+        gl.tex_parameter_i32(
+            glow::TEXTURE_CUBE_MAP,
+            glow::TEXTURE_WRAP_S,
+            glow::CLAMP_TO_EDGE as i32,
+        );
+        gl.tex_parameter_i32(
+            glow::TEXTURE_CUBE_MAP,
+            glow::TEXTURE_WRAP_T,
+            glow::CLAMP_TO_EDGE as i32,
+        );
+        gl.tex_parameter_i32(
+            glow::TEXTURE_CUBE_MAP,
+            glow::TEXTURE_WRAP_R,
+            glow::CLAMP_TO_EDGE as i32,
+        );
         if mipped {
-            gl.tex_parameter_i32(glow::TEXTURE_CUBE_MAP, glow::TEXTURE_MAX_LEVEL, PREFILTERED_MIPS as i32 - 1);
+            gl.tex_parameter_i32(
+                glow::TEXTURE_CUBE_MAP,
+                glow::TEXTURE_MAX_LEVEL,
+                PREFILTERED_MIPS as i32 - 1,
+            );
         }
         return texture;
     }
@@ -68,7 +98,9 @@ fn bake_gl_brdf_lut(state: &GlRenderState, fbo: NativeFramebuffer) -> NativeText
     let gl = &state.gl;
     // SAFETY: texture creation and allocation on the state's owning GL thread.
     let texture = unsafe {
-        let texture = gl.create_texture().unwrap_or_else(|error| throw_error(&error));
+        let texture = gl
+            .create_texture()
+            .unwrap_or_else(|error| throw_error(&error));
         gl.bind_texture(glow::TEXTURE_2D, Some(texture));
         // RGBA16F (not RG16F): RG render targets are not reliably color-renderable across drivers
         // (notably headless SwiftShader); the LUT uses only R/G but stores them in a full RGBA target.
@@ -83,10 +115,26 @@ fn bake_gl_brdf_lut(state: &GlRenderState, fbo: NativeFramebuffer) -> NativeText
             glow::HALF_FLOAT,
             glow::PixelUnpackData::Slice(None),
         );
-        gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MIN_FILTER, glow::LINEAR as i32);
-        gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAG_FILTER, glow::LINEAR as i32);
-        gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_S, glow::CLAMP_TO_EDGE as i32);
-        gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_WRAP_T, glow::CLAMP_TO_EDGE as i32);
+        gl.tex_parameter_i32(
+            glow::TEXTURE_2D,
+            glow::TEXTURE_MIN_FILTER,
+            glow::LINEAR as i32,
+        );
+        gl.tex_parameter_i32(
+            glow::TEXTURE_2D,
+            glow::TEXTURE_MAG_FILTER,
+            glow::LINEAR as i32,
+        );
+        gl.tex_parameter_i32(
+            glow::TEXTURE_2D,
+            glow::TEXTURE_WRAP_S,
+            glow::CLAMP_TO_EDGE as i32,
+        );
+        gl.tex_parameter_i32(
+            glow::TEXTURE_2D,
+            glow::TEXTURE_WRAP_T,
+            glow::CLAMP_TO_EDGE as i32,
+        );
         texture
     };
 
@@ -94,7 +142,13 @@ fn bake_gl_brdf_lut(state: &GlRenderState, fbo: NativeFramebuffer) -> NativeText
     // SAFETY: attaching and drawing with objects of this context.
     unsafe {
         gl.bind_framebuffer(glow::FRAMEBUFFER, Some(fbo));
-        gl.framebuffer_texture_2d(glow::FRAMEBUFFER, glow::COLOR_ATTACHMENT0, glow::TEXTURE_2D, Some(texture), 0);
+        gl.framebuffer_texture_2d(
+            glow::FRAMEBUFFER,
+            glow::COLOR_ATTACHMENT0,
+            glow::TEXTURE_2D,
+            Some(texture),
+            0,
+        );
         gl.viewport(0, 0, BRDF_LUT_SIZE as i32, BRDF_LUT_SIZE as i32);
         gl.use_program(Some(program.program));
     }
@@ -143,7 +197,11 @@ pub fn bake_gl_environment_ibl(state: &GlRenderState, environment: &Environment)
     bake_gl_environment_ibl_from_source(state, source_cube, environment.intensity);
 }
 
-fn bake_gl_environment_ibl_from_source(state: &GlRenderState, source_cube: NativeTexture, intensity: f32) {
+fn bake_gl_environment_ibl_from_source(
+    state: &GlRenderState,
+    source_cube: NativeTexture,
+    intensity: f32,
+) {
     let gl = &state.gl;
     // WebGL's getExtension('EXT_color_buffer_float') / ('OES_texture_float_linear') only enables the
     // float render/filter paths; native GL exposes them without an enable call.
@@ -163,10 +221,13 @@ fn bake_gl_environment_ibl_from_source(state: &GlRenderState, source_cube: Nativ
         let mut runtime = get_gl_scene3d_runtime(state);
         if runtime.ibl_bake_framebuffer.is_none() {
             // SAFETY: framebuffer creation on the state's owning GL thread.
-            runtime.ibl_bake_framebuffer =
-                Some(unsafe { gl.create_framebuffer() }.unwrap_or_else(|error| throw_error(&error)));
+            runtime.ibl_bake_framebuffer = Some(
+                unsafe { gl.create_framebuffer() }.unwrap_or_else(|error| throw_error(&error)),
+            );
         }
-        runtime.ibl_bake_framebuffer.expect("bake framebuffer created above")
+        runtime
+            .ibl_bake_framebuffer
+            .expect("bake framebuffer created above")
     };
 
     let mut prev_viewport = [0_i32; 4];
@@ -200,7 +261,12 @@ fn bake_gl_environment_ibl_from_source(state: &GlRenderState, source_cube: Nativ
     // SAFETY: restoring the state captured above on the same context.
     unsafe {
         gl.bind_framebuffer(glow::FRAMEBUFFER, prev_framebuffer);
-        gl.viewport(prev_viewport[0], prev_viewport[1], prev_viewport[2], prev_viewport[3]);
+        gl.viewport(
+            prev_viewport[0],
+            prev_viewport[1],
+            prev_viewport[2],
+            prev_viewport[3],
+        );
         gl.bind_vertex_array(None);
         if prev_depth_test {
             gl.enable(glow::DEPTH_TEST);
@@ -236,7 +302,11 @@ fn bake_gl_environment_ibl_from_source(state: &GlRenderState, source_cube: Nativ
     });
 }
 
-fn bake_gl_irradiance(state: &GlRenderState, fbo: NativeFramebuffer, source_cube: NativeTexture) -> NativeTexture {
+fn bake_gl_irradiance(
+    state: &GlRenderState,
+    fbo: NativeFramebuffer,
+    source_cube: NativeTexture,
+) -> NativeTexture {
     let gl = &state.gl;
     let cube = create_gl_bake_cube(gl, IRRADIANCE_SIZE, false);
     let program = ensure_gl_bake_program(state, "irradiance", IRRADIANCE_FRAGMENT);
@@ -280,7 +350,11 @@ fn bake_gl_prefiltered(
     return (cube, mip_count);
 }
 
-fn bind_gl_bake_source_cube(gl: &glow::Context, program: &GlBakeProgram, source_cube: NativeTexture) {
+fn bind_gl_bake_source_cube(
+    gl: &glow::Context,
+    program: &GlBakeProgram,
+    source_cube: NativeTexture,
+) {
     // SAFETY: binding this context's source cube to unit 0 for the bound bake program.
     unsafe {
         gl.active_texture(glow::TEXTURE0);
@@ -337,9 +411,13 @@ fn ensure_gl_bake_program(state: &GlRenderState, key: &str, fragment: &str) -> G
     let program = link_gl_bake_program(gl, fragment);
     // SAFETY: resource creation and attribute setup on the state's owning GL thread.
     let baked = unsafe {
-        let vao = gl.create_vertex_array().unwrap_or_else(|error| throw_error(&error));
+        let vao = gl
+            .create_vertex_array()
+            .unwrap_or_else(|error| throw_error(&error));
         gl.bind_vertex_array(Some(vao));
-        let buffer = gl.create_buffer().unwrap_or_else(|error| throw_error(&error));
+        let buffer = gl
+            .create_buffer()
+            .unwrap_or_else(|error| throw_error(&error));
         gl.bind_buffer(glow::ARRAY_BUFFER, Some(buffer));
         gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, f32_bytes(&QUAD), glow::STATIC_DRAW);
         gl.enable_vertex_attrib_array(0);
@@ -366,7 +444,9 @@ fn ensure_gl_bake_program(state: &GlRenderState, key: &str, fragment: &str) -> G
 
 fn f32_bytes(values: &[f32]) -> &[u8] {
     // SAFETY: f32 has no padding and u8 has alignment 1, so the view covers exactly the same bytes.
-    return unsafe { std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), std::mem::size_of_val(values)) };
+    return unsafe {
+        std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), std::mem::size_of_val(values))
+    };
 }
 
 fn link_gl_bake_program(gl: &glow::Context, fragment: &str) -> NativeProgram {
@@ -419,11 +499,11 @@ const BRDF_LUT_SIZE: u32 = 128;
 // faces store top-left-origin). A fragment's world direction is
 // normalize(forward + uv.x*right + uv.y*up) with uv in [-1, 1].
 const CUBE_FACE_BASIS: [[f32; 9]; 6] = [
-    [1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0, 0.0],  // +X
-    [-1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -1.0, 0.0],  // -X
-    [0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0],    // +Y
-    [0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, -1.0],  // -Y
-    [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, -1.0, 0.0],   // +Z
+    [1.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, -1.0, 0.0], // +X
+    [-1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -1.0, 0.0], // -X
+    [0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0],   // +Y
+    [0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, -1.0], // -Y
+    [0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, -1.0, 0.0],  // +Z
     [0.0, 0.0, -1.0, -1.0, 0.0, 0.0, 0.0, -1.0, 0.0], // -Z
 ];
 
@@ -433,14 +513,16 @@ const QUAD: [f32; 8] = [-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0];
 // fragment can build its sampling direction from the per-face basis.
 macro_rules! bake_vertex_glsl {
     () => {
-        concat!(r#"#version 300 es
+        concat!(
+            r#"#version 300 es
 layout(location = 0) in vec2 a_position;
 out vec2 v_uv;
 void main() {
   v_uv = a_position;
   gl_Position = vec4(a_position, 0.0, 1.0);
 }
-"#)
+"#
+        )
     };
 }
 
@@ -448,7 +530,8 @@ const BAKE_VERTEX: &str = bake_vertex_glsl!();
 
 macro_rules! bake_common_glsl {
     () => {
-        concat!(r#"precision highp float;
+        concat!(
+            r#"precision highp float;
 in vec2 v_uv;
 uniform samplerCube u_envCube;
 uniform vec3 u_faceForward;
@@ -460,14 +543,18 @@ const float PI = 3.14159265359;
 vec3 faceDirection() {
   return normalize(u_faceForward + v_uv.x * u_faceRight + v_uv.y * u_faceUp);
 }
-"#)
+"#
+        )
     };
 }
 
 macro_rules! irradiance_fragment_glsl {
     () => {
-        concat!(r#"#version 300 es
-"#, bake_common_glsl!(), r#"
+        concat!(
+            r#"#version 300 es
+"#,
+            bake_common_glsl!(),
+            r#"
 void main() {
   vec3 N = faceDirection();
   vec3 up = abs(N.z) < 0.999 ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0);
@@ -487,7 +574,8 @@ void main() {
   }
   fragColor = vec4(PI * irradiance / samples, 1.0);
 }
-"#)
+"#
+        )
     };
 }
 

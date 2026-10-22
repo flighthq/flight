@@ -5,13 +5,17 @@
 use flight_bitmap::ImageChannel;
 use flight_effects::{BitmapDisplacementEffect, BitmapDisplacementEffectEdgeMode, Effect};
 use flight_render_wgpu::{
-    WgpuEffectContext, WgpuRenderState, WgpuTextureRenderTarget, get_wgpu_render_state_native_device,
-    get_wgpu_sampler, resolve_wgpu_texture,
+    WgpuEffectContext, WgpuRenderState, WgpuTextureRenderTarget,
+    get_wgpu_render_state_native_device, get_wgpu_sampler, resolve_wgpu_texture,
 };
-use flight_texture::{RenderTargetColorSpace, Sampler, TextureColorSpace, TextureFilter, TextureUvTransform};
+use flight_texture::{
+    RenderTargetColorSpace, Sampler, TextureColorSpace, TextureFilter, TextureUvTransform,
+};
 
 use crate::types::*;
-use crate::wgpu_effect_pass::{EFFECT_VERTEX_WGSL, draw_wgpu_effect_pass, get_wgpu_effect_pass_state};
+use crate::wgpu_effect_pass::{
+    EFFECT_VERTEX_WGSL, draw_wgpu_effect_pass, get_wgpu_effect_pass_state,
+};
 use crate::wgpu_effect_program_cache::get_wgpu_effect_pipeline;
 use crate::wgpu_effect_registry::register_wgpu_effect;
 use crate::wgpu_effect_runtime::{
@@ -93,7 +97,12 @@ pub fn apply_bitmap_displacement_effect_to_wgpu(
 ) {
     let map = effect.map.clone();
     let map_entry = map.as_ref().and_then(|map| {
-        return resolve_wgpu_texture(state, &*map.read().unwrap(), Some(false), Some(source.color_space));
+        return resolve_wgpu_texture(
+            state,
+            &*map.read().unwrap(),
+            Some(false),
+            Some(source.color_space),
+        );
     });
     let (Some(map), Some(map_entry)) = (map, map_entry) else {
         let pipeline = get_wgpu_effect_pipeline(
@@ -163,13 +172,22 @@ pub fn apply_bitmap_displacement_effect_to_wgpu(
     let pipeline = get_bitmap_displacement_pipeline(state, dest.format);
     let mut pass = (fs.begin_pass)(state, Some(dest), wgpu::LoadOp::Load);
     set_wgpu_effect_pass_pipeline(&native, &mut pass, &pipeline.read().unwrap().pipeline);
-    set_wgpu_effect_pass_bind_group(&native, &mut pass, 0, &fs.uniform_bind_group, &[slot_offset]);
+    set_wgpu_effect_pass_bind_group(
+        &native,
+        &mut pass,
+        0,
+        &fs.uniform_bind_group,
+        &[slot_offset],
+    );
     set_wgpu_effect_pass_bind_group(&native, &mut pass, 1, &source_bind_group, &[]);
     set_wgpu_effect_pass_bind_group(&native, &mut pass, 2, &map_bind_group, &[]);
     draw_wgpu_effect_fullscreen_quad(&native, pass);
 }
 
-fn get_bitmap_displacement_map_sampler(state: &WgpuRenderState, sampler: &Sampler) -> wgpu::Sampler {
+fn get_bitmap_displacement_map_sampler(
+    state: &WgpuRenderState,
+    sampler: &Sampler,
+) -> wgpu::Sampler {
     let mipmap_filter = get_mipmap_filter(sampler.min_filter, sampler.mipmaps);
     return get_wgpu_sampler(
         state,

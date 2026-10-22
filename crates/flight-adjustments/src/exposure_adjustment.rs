@@ -9,8 +9,12 @@ mod sugar_tests {
 
     #[test]
     fn new_matches_create_exposure_adjustment() {
-        let a = ExposureAdjustment::new(Some(&ExposureAdjustmentOptions { exposure: Some(1.0) }));
-        let b = create_exposure_adjustment(Some(&ExposureAdjustmentOptions { exposure: Some(1.0) }));
+        let a = ExposureAdjustment::new(Some(&ExposureAdjustmentOptions {
+            exposure: Some(1.0),
+        }));
+        let b = create_exposure_adjustment(Some(&ExposureAdjustmentOptions {
+            exposure: Some(1.0),
+        }));
         assert_eq!(a.kind, b.kind);
         assert_eq!(a.color_matrix, b.color_matrix);
     }
@@ -31,21 +35,24 @@ pub struct ExposureAdjustmentOptions {
 }
 
 // flight-lint: allow(conform-params) D23 C: options derive the exposure color matrix — KEEP under c0f9227c
-pub fn create_exposure_adjustment(options: Option<&ExposureAdjustmentOptions>) -> ExposureAdjustment {
+pub fn create_exposure_adjustment(
+    options: Option<&ExposureAdjustmentOptions>,
+) -> ExposureAdjustment {
     let mut out: ExposureAdjustment = allocate_entity();
     initialize_exposure_adjustment(&mut out, options);
     return out;
 }
 
 // flight-lint: allow(conform-params) D23 C: options derive the exposure color matrix — KEEP under c0f9227c
-pub fn initialize_exposure_adjustment(out: &mut ExposureAdjustment, options: Option<&ExposureAdjustmentOptions>) {
+pub fn initialize_exposure_adjustment(
+    out: &mut ExposureAdjustment,
+    options: Option<&ExposureAdjustmentOptions>,
+) {
     let exposure = options.and_then(|o| o.exposure).unwrap_or(0.0);
     let m = (2.0_f32).powf(exposure);
     let color_matrix = [
-        m, 0.0, 0.0, 0.0, 0.0,
-        0.0, m, 0.0, 0.0, 0.0,
-        0.0, 0.0, m, 0.0, 0.0,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        m, 0.0, 0.0, 0.0, 0.0, 0.0, m, 0.0, 0.0, 0.0, 0.0, 0.0, m, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        0.0,
     ];
     out.exposure = exposure;
     initialize_color_matrix_adjustment(out, "ExposureAdjustment", color_matrix);

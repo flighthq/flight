@@ -17,19 +17,20 @@ struct MemoryBackend {
 
 fn memory_backend(initial: &[(&str, &str)]) -> (HostPreferencesCapability, MemoryBackend) {
     let data: Arc<Mutex<HashMap<String, String>>> = Arc::new(Mutex::new(
-        initial.iter().map(|(k, v)| (k.to_string(), v.to_string())).collect(),
+        initial
+            .iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect(),
     ));
     let get_calls: Arc<Mutex<u32>> = Arc::new(Mutex::new(0));
     let get_failures: Arc<Mutex<HashMap<String, StorageGetItemFailureReason>>> =
         Arc::new(Mutex::new(HashMap::new()));
-    let keys_failure: Arc<Mutex<Option<StorageGetItemFailureReason>>> =
-        Arc::new(Mutex::new(None));
+    let keys_failure: Arc<Mutex<Option<StorageGetItemFailureReason>>> = Arc::new(Mutex::new(None));
     let remove_failures: Arc<Mutex<HashMap<String, StorageRemoveItemFailureReason>>> =
         Arc::new(Mutex::new(HashMap::new()));
     let set_failures: Arc<Mutex<HashMap<String, StorageSetItemFailureReason>>> =
         Arc::new(Mutex::new(HashMap::new()));
-    let clear_failure: Arc<Mutex<Option<StorageClearFailureReason>>> =
-        Arc::new(Mutex::new(None));
+    let clear_failure: Arc<Mutex<Option<StorageClearFailureReason>>> = Arc::new(Mutex::new(None));
 
     let state = MemoryBackend {
         data: data.clone(),
@@ -69,7 +70,9 @@ fn memory_backend(initial: &[(&str, &str)]) -> (HostPreferencesCapability, Memor
                 return StorageValueOutcome::Err(StorageValueErr { reason: *reason });
             }
             let map = d_get.lock().unwrap();
-            return StorageValueOutcome::Ok(StorageValueOk { value: map.get(key).cloned() });
+            return StorageValueOutcome::Ok(StorageValueOk {
+                value: map.get(key).cloned(),
+            });
         }),
         keys: Arc::new(move || {
             let failure = kf.lock().unwrap().clone();
@@ -97,7 +100,10 @@ fn memory_backend(initial: &[(&str, &str)]) -> (HostPreferencesCapability, Memor
                 return StorageMutationOutcome::Err(StorageMutationErr { reason: *reason });
             }
             drop(failures);
-            d_set.lock().unwrap().insert(key.to_string(), value.to_string());
+            d_set
+                .lock()
+                .unwrap()
+                .insert(key.to_string(), value.to_string());
             return StorageMutationOutcome::Ok;
         }),
     };
@@ -142,9 +148,13 @@ mod attach_storage {
         let signals = create_storage_signals();
         let changes: Arc<Mutex<Vec<StorageChange>>> = Arc::new(Mutex::new(Vec::new()));
         let c = changes.clone();
-        connect_signal(&signals.on_change, Arc::new(move |change: &StorageChange| {
-            c.lock().unwrap().push(change.clone());
-        }), None);
+        connect_signal(
+            &signals.on_change,
+            Arc::new(move |change: &StorageChange| {
+                c.lock().unwrap().push(change.clone());
+            }),
+            None,
+        );
 
         assert!(attach_storage(&a, &signals));
         {
@@ -164,7 +174,10 @@ mod attach_storage {
         assert_eq!(*released.lock().unwrap(), vec!["a".to_string()]);
 
         detach_storage(&signals);
-        assert_eq!(*released.lock().unwrap(), vec!["a".to_string(), "b".to_string()]);
+        assert_eq!(
+            *released.lock().unwrap(),
+            vec!["a".to_string(), "b".to_string()]
+        );
     }
 
     #[test]
@@ -189,13 +202,22 @@ mod clear_storage {
         let signals = create_storage_signals();
         let changes: Arc<Mutex<Vec<StorageChange>>> = Arc::new(Mutex::new(Vec::new()));
         let c = changes.clone();
-        connect_signal(&signals.on_change, Arc::new(move |change: &StorageChange| {
-            c.lock().unwrap().push(change.clone());
-        }), None);
+        connect_signal(
+            &signals.on_change,
+            Arc::new(move |change: &StorageChange| {
+                c.lock().unwrap().push(change.clone());
+            }),
+            None,
+        );
 
         *state.clear_failure.lock().unwrap() = Some(StorageClearFailureReason::SecurityDenied);
         let result = clear_storage(&backend, Some(&signals));
-        assert_eq!(result, StorageMutationOutcome::Err(StorageMutationErr { reason: StorageClearFailureReason::SecurityDenied }));
+        assert_eq!(
+            result,
+            StorageMutationOutcome::Err(StorageMutationErr {
+                reason: StorageClearFailureReason::SecurityDenied
+            })
+        );
         assert!(changes.lock().unwrap().is_empty());
 
         *state.clear_failure.lock().unwrap() = None;
@@ -203,7 +225,14 @@ mod clear_storage {
         assert_eq!(result, StorageMutationOutcome::Ok);
         let log = changes.lock().unwrap();
         assert_eq!(log.len(), 1);
-        assert_eq!(log[0], StorageChange { key: None, new_value: None, old_value: None });
+        assert_eq!(
+            log[0],
+            StorageChange {
+                key: None,
+                new_value: None,
+                old_value: None
+            }
+        );
     }
 }
 
@@ -213,9 +242,18 @@ mod clear_storage_namespace {
     #[test]
     fn stops_on_failure_and_exposes_completed() {
         let (backend, state) = memory_backend(&[("ns.a", "1"), ("ns.b", "2"), ("other", "3")]);
-        state.remove_failures.lock().unwrap().insert("ns.b".to_string(), StorageRemoveItemFailureReason::RemoveFailed);
+        state.remove_failures.lock().unwrap().insert(
+            "ns.b".to_string(),
+            StorageRemoveItemFailureReason::RemoveFailed,
+        );
 
-        let result = clear_storage_namespace(&backend, &StorageNamespace { prefix: "ns".to_string() }, None);
+        let result = clear_storage_namespace(
+            &backend,
+            &StorageNamespace {
+                prefix: "ns".to_string(),
+            },
+            None,
+        );
         assert_eq!(
             result,
             StorageBatchMutationOutcome::Err(StorageBatchMutationErr {
@@ -234,7 +272,13 @@ mod clear_storage_namespace {
     fn returns_no_partial_state_when_keys_fail() {
         let (backend, state) = memory_backend(&[("ns.a", "1")]);
         *state.keys_failure.lock().unwrap() = Some(StorageGetItemFailureReason::SecurityDenied);
-        let result = clear_storage_namespace(&backend, &StorageNamespace { prefix: "ns".to_string() }, None);
+        let result = clear_storage_namespace(
+            &backend,
+            &StorageNamespace {
+                prefix: "ns".to_string(),
+            },
+            None,
+        );
         assert_eq!(
             result,
             StorageBatchMutationOutcome::Err(StorageBatchMutationErr {
@@ -318,8 +362,18 @@ mod get_namespaced_storage_byte_size {
     #[test]
     fn computes_from_prefixed_keys() {
         let (backend, _) = memory_backend(&[("n.a", "xy"), ("other", "ignored")]);
-        let result = get_namespaced_storage_byte_size(&backend, &StorageNamespace { prefix: "n".to_string() });
-        assert_eq!(result, StorageQueryOutcome::Ok(StorageQueryOk { value: ("n.a".len() + "xy".len()) * 2 }));
+        let result = get_namespaced_storage_byte_size(
+            &backend,
+            &StorageNamespace {
+                prefix: "n".to_string(),
+            },
+        );
+        assert_eq!(
+            result,
+            StorageQueryOutcome::Ok(StorageQueryOk {
+                value: ("n.a".len() + "xy".len()) * 2
+            })
+        );
     }
 }
 
@@ -329,11 +383,19 @@ mod get_namespaced_storage_entries {
     #[test]
     fn filters_and_strips_prefix() {
         let (backend, _) = memory_backend(&[("app.a", "1"), ("app.b", "2"), ("other", "3")]);
-        let result = get_namespaced_storage_entries(&backend, &StorageNamespace { prefix: "app".to_string() });
+        let result = get_namespaced_storage_entries(
+            &backend,
+            &StorageNamespace {
+                prefix: "app".to_string(),
+            },
+        );
         assert_eq!(
             result,
             StorageQueryOutcome::Ok(StorageQueryOk {
-                value: vec![("a".to_string(), "1".to_string()), ("b".to_string(), "2".to_string())],
+                value: vec![
+                    ("a".to_string(), "1".to_string()),
+                    ("b".to_string(), "2".to_string())
+                ],
             }),
         );
     }
@@ -346,8 +408,16 @@ mod get_namespaced_storage_item {
     fn reads_prefixed_key() {
         let (backend, _) = memory_backend(&[("app.a", "1")]);
         assert_eq!(
-            get_namespaced_storage_item(&backend, &StorageNamespace { prefix: "app".to_string() }, "a"),
-            StorageValueOutcome::Ok(StorageValueOk { value: Some("1".to_string()) }),
+            get_namespaced_storage_item(
+                &backend,
+                &StorageNamespace {
+                    prefix: "app".to_string()
+                },
+                "a"
+            ),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: Some("1".to_string())
+            }),
         );
     }
 }
@@ -359,7 +429,13 @@ mod get_namespaced_storage_item_presence {
     fn reports_missing() {
         let (backend, _) = memory_backend(&[]);
         assert_eq!(
-            get_namespaced_storage_item_presence(&backend, &StorageNamespace { prefix: "app".to_string() }, "missing"),
+            get_namespaced_storage_item_presence(
+                &backend,
+                &StorageNamespace {
+                    prefix: "app".to_string()
+                },
+                "missing"
+            ),
             StorageValueOutcome::Ok(StorageValueOk { value: false }),
         );
     }
@@ -372,8 +448,15 @@ mod get_namespaced_storage_keys {
     fn filters_and_strips() {
         let (backend, _) = memory_backend(&[("app.a", "1"), ("app.b", "2"), ("other", "3")]);
         assert_eq!(
-            get_namespaced_storage_keys(&backend, &StorageNamespace { prefix: "app".to_string() }),
-            StorageValueOutcome::Ok(StorageValueOk { value: vec!["a".to_string(), "b".to_string()] }),
+            get_namespaced_storage_keys(
+                &backend,
+                &StorageNamespace {
+                    prefix: "app".to_string()
+                }
+            ),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: vec!["a".to_string(), "b".to_string()]
+            }),
         );
     }
 }
@@ -384,12 +467,23 @@ mod get_storage_boolean {
     #[test]
     fn distinguishes_miss_values_parse_failure() {
         let (backend, _) = memory_backend(&[("bad", "yes"), ("false", "false"), ("true", "true")]);
-        assert_eq!(get_storage_boolean(&backend, "true"), StorageValueOutcome::Ok(StorageValueOk { value: Some(true) }));
-        assert_eq!(get_storage_boolean(&backend, "false"), StorageValueOutcome::Ok(StorageValueOk { value: Some(false) }));
-        assert_eq!(get_storage_boolean(&backend, "missing"), StorageValueOutcome::Ok(StorageValueOk { value: None }));
+        assert_eq!(
+            get_storage_boolean(&backend, "true"),
+            StorageValueOutcome::Ok(StorageValueOk { value: Some(true) })
+        );
+        assert_eq!(
+            get_storage_boolean(&backend, "false"),
+            StorageValueOutcome::Ok(StorageValueOk { value: Some(false) })
+        );
+        assert_eq!(
+            get_storage_boolean(&backend, "missing"),
+            StorageValueOutcome::Ok(StorageValueOk { value: None })
+        );
         assert_eq!(
             get_storage_boolean(&backend, "bad"),
-            StorageValueOutcome::Err(StorageValueErr { reason: StorageReadFailureReason::ParseFailed }),
+            StorageValueOutcome::Err(StorageValueErr {
+                reason: StorageReadFailureReason::ParseFailed
+            }),
         );
     }
 }
@@ -404,10 +498,15 @@ mod get_storage_boolean_or {
             get_storage_boolean_or(&backend, "bad", true),
             StorageFallbackOutcome::ParseFailed(StorageFallbackParseFailed { value: true }),
         );
-        state.get_failures.lock().unwrap().insert("denied".to_string(), StorageGetItemFailureReason::SecurityDenied);
+        state.get_failures.lock().unwrap().insert(
+            "denied".to_string(),
+            StorageGetItemFailureReason::SecurityDenied,
+        );
         assert_eq!(
             get_storage_boolean_or(&backend, "denied", true),
-            StorageFallbackOutcome::ProviderError(StorageFallbackProviderError { reason: StorageGetItemFailureReason::SecurityDenied }),
+            StorageFallbackOutcome::ProviderError(StorageFallbackProviderError {
+                reason: StorageGetItemFailureReason::SecurityDenied
+            }),
         );
     }
 }
@@ -418,16 +517,26 @@ mod get_storage_byte_size {
     #[test]
     fn returns_empty_success_and_failures() {
         let (empty_backend, empty_state) = memory_backend(&[]);
-        assert_eq!(get_storage_byte_size(&empty_backend), StorageQueryOutcome::Ok(StorageQueryOk { value: 0 }));
+        assert_eq!(
+            get_storage_byte_size(&empty_backend),
+            StorageQueryOutcome::Ok(StorageQueryOk { value: 0 })
+        );
 
         *empty_state.keys_failure.lock().unwrap() = Some(StorageGetItemFailureReason::ReadFailed);
         assert_eq!(
             get_storage_byte_size(&empty_backend),
-            StorageQueryOutcome::Err(StorageQueryErr { failed_key: None, reason: StorageGetItemFailureReason::ReadFailed }),
+            StorageQueryOutcome::Err(StorageQueryErr {
+                failed_key: None,
+                reason: StorageGetItemFailureReason::ReadFailed
+            }),
         );
 
         let (val_backend, val_state) = memory_backend(&[("a", "1")]);
-        val_state.get_failures.lock().unwrap().insert("a".to_string(), StorageGetItemFailureReason::SecurityDenied);
+        val_state
+            .get_failures
+            .lock()
+            .unwrap()
+            .insert("a".to_string(), StorageGetItemFailureReason::SecurityDenied);
         assert_eq!(
             get_storage_byte_size(&val_backend),
             StorageQueryOutcome::Err(StorageQueryErr {
@@ -444,7 +553,11 @@ mod get_storage_entries {
     #[test]
     fn no_partial_payload_after_failure() {
         let (backend, state) = memory_backend(&[("a", "1"), ("b", "2")]);
-        state.get_failures.lock().unwrap().insert("b".to_string(), StorageGetItemFailureReason::ReadFailed);
+        state
+            .get_failures
+            .lock()
+            .unwrap()
+            .insert("b".to_string(), StorageGetItemFailureReason::ReadFailed);
         assert_eq!(
             get_storage_entries(&backend),
             StorageQueryOutcome::Err(StorageQueryErr {
@@ -461,8 +574,16 @@ mod get_storage_item {
     #[test]
     fn distinguishes_missing_empty_failed() {
         let (backend, _) = memory_backend(&[("empty", "")]);
-        assert_eq!(get_storage_item(&backend, "missing"), StorageValueOutcome::Ok(StorageValueOk { value: None }));
-        assert_eq!(get_storage_item(&backend, "empty"), StorageValueOutcome::Ok(StorageValueOk { value: Some("".to_string()) }));
+        assert_eq!(
+            get_storage_item(&backend, "missing"),
+            StorageValueOutcome::Ok(StorageValueOk { value: None })
+        );
+        assert_eq!(
+            get_storage_item(&backend, "empty"),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: Some("".to_string())
+            })
+        );
     }
 }
 
@@ -472,11 +593,16 @@ mod get_storage_item_count {
     #[test]
     fn distinguishes_empty_from_failed() {
         let (backend, state) = memory_backend(&[]);
-        assert_eq!(get_storage_item_count(&backend), StorageValueOutcome::Ok(StorageValueOk { value: 0 }));
+        assert_eq!(
+            get_storage_item_count(&backend),
+            StorageValueOutcome::Ok(StorageValueOk { value: 0 })
+        );
         *state.keys_failure.lock().unwrap() = Some(StorageGetItemFailureReason::RuntimeUnavailable);
         assert_eq!(
             get_storage_item_count(&backend),
-            StorageValueOutcome::Err(StorageValueErr { reason: StorageGetItemFailureReason::RuntimeUnavailable }),
+            StorageValueOutcome::Err(StorageValueErr {
+                reason: StorageGetItemFailureReason::RuntimeUnavailable
+            }),
         );
     }
 }
@@ -489,16 +615,25 @@ mod get_storage_item_or {
         let (backend, state) = memory_backend(&[("empty", "")]);
         assert_eq!(
             get_storage_item_or(&backend, "missing", "fallback"),
-            StorageValueOutcome::Ok(StorageValueOk { value: "fallback".to_string() }),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: "fallback".to_string()
+            }),
         );
         assert_eq!(
             get_storage_item_or(&backend, "empty", "fallback"),
-            StorageValueOutcome::Ok(StorageValueOk { value: "".to_string() }),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: "".to_string()
+            }),
         );
-        state.get_failures.lock().unwrap().insert("denied".to_string(), StorageGetItemFailureReason::SecurityDenied);
+        state.get_failures.lock().unwrap().insert(
+            "denied".to_string(),
+            StorageGetItemFailureReason::SecurityDenied,
+        );
         assert_eq!(
             get_storage_item_or(&backend, "denied", "fallback"),
-            StorageValueOutcome::Err(StorageValueErr { reason: StorageGetItemFailureReason::SecurityDenied }),
+            StorageValueOutcome::Err(StorageValueErr {
+                reason: StorageGetItemFailureReason::SecurityDenied
+            }),
         );
     }
 }
@@ -509,10 +644,16 @@ mod get_storage_item_presence {
     #[test]
     fn returns_err_on_failure() {
         let (backend, state) = memory_backend(&[]);
-        state.get_failures.lock().unwrap().insert("key".to_string(), StorageGetItemFailureReason::ReadFailed);
+        state
+            .get_failures
+            .lock()
+            .unwrap()
+            .insert("key".to_string(), StorageGetItemFailureReason::ReadFailed);
         assert_eq!(
             get_storage_item_presence(&backend, "key"),
-            StorageValueOutcome::Err(StorageValueErr { reason: StorageGetItemFailureReason::ReadFailed }),
+            StorageValueOutcome::Err(StorageValueErr {
+                reason: StorageGetItemFailureReason::ReadFailed
+            }),
         );
     }
 }
@@ -523,7 +664,11 @@ mod get_storage_items {
     #[test]
     fn stops_on_first_failure() {
         let (backend, state) = memory_backend(&[("a", "1"), ("c", "3")]);
-        state.get_failures.lock().unwrap().insert("b".to_string(), StorageGetItemFailureReason::ReadFailed);
+        state
+            .get_failures
+            .lock()
+            .unwrap()
+            .insert("b".to_string(), StorageGetItemFailureReason::ReadFailed);
         assert_eq!(
             get_storage_items(&backend, &["a", "b", "c"]),
             StorageQueryOutcome::Err(StorageQueryErr {
@@ -540,19 +685,29 @@ mod get_storage_json {
 
     #[test]
     fn distinguishes_miss_stored_null_and_malformed() {
-        let (backend, _) = memory_backend(&[("bad", "{"), ("null", "null"), ("value", r#"{"x":1}"#)]);
+        let (backend, _) =
+            memory_backend(&[("bad", "{"), ("null", "null"), ("value", r#"{"x":1}"#)]);
         assert_eq!(
             get_storage_json(&backend, "value"),
-            StorageValueOutcome::Ok(StorageValueOk { value: Some(serde_json::json!({"x": 1})) }),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: Some(serde_json::json!({"x": 1}))
+            }),
         );
-        assert_eq!(get_storage_json::<serde_json::Value>(&backend, "missing"), StorageValueOutcome::Ok(StorageValueOk { value: None }));
+        assert_eq!(
+            get_storage_json::<serde_json::Value>(&backend, "missing"),
+            StorageValueOutcome::Ok(StorageValueOk { value: None })
+        );
         assert_eq!(
             get_storage_json(&backend, "null"),
-            StorageValueOutcome::Ok(StorageValueOk { value: Some(serde_json::Value::Null) }),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: Some(serde_json::Value::Null)
+            }),
         );
         assert_eq!(
             get_storage_json::<serde_json::Value>(&backend, "bad"),
-            StorageValueOutcome::Err(StorageValueErr { reason: StorageReadFailureReason::ParseFailed }),
+            StorageValueOutcome::Err(StorageValueErr {
+                reason: StorageReadFailureReason::ParseFailed
+            }),
         );
     }
 }
@@ -566,11 +721,15 @@ mod get_storage_json_or {
         let fallback = serde_json::json!({"x": 2});
         assert_eq!(
             get_storage_json_or(&backend, "bad", fallback.clone()),
-            StorageFallbackOutcome::ParseFailed(StorageFallbackParseFailed { value: Some(fallback) }),
+            StorageFallbackOutcome::ParseFailed(StorageFallbackParseFailed {
+                value: Some(fallback)
+            }),
         );
         assert_eq!(
             get_storage_json_or(&backend, "null", serde_json::json!({"x": 2})),
-            StorageFallbackOutcome::Ok(StorageFallbackOk { value: Some(serde_json::Value::Null) }),
+            StorageFallbackOutcome::Ok(StorageFallbackOk {
+                value: Some(serde_json::Value::Null)
+            }),
         );
     }
 
@@ -581,7 +740,9 @@ mod get_storage_json_or {
         let fallback_ptr = &*fallback as *const serde_json::Value;
         let result = get_storage_json_or(&backend, "bad", fallback);
         match result {
-            StorageFallbackOutcome::ParseFailed(StorageFallbackParseFailed { value: Some(returned) }) => {
+            StorageFallbackOutcome::ParseFailed(StorageFallbackParseFailed {
+                value: Some(returned),
+            }) => {
                 let returned_ptr = &*returned as *const serde_json::Value;
                 assert_eq!(returned_ptr, fallback_ptr);
             }
@@ -596,7 +757,9 @@ mod get_storage_json_or {
         let fallback_ptr = &*fallback as *const serde_json::Value;
         let result = get_storage_json_or(&backend, "absent", fallback);
         match result {
-            StorageFallbackOutcome::Ok(StorageFallbackOk { value: Some(returned) }) => {
+            StorageFallbackOutcome::Ok(StorageFallbackOk {
+                value: Some(returned),
+            }) => {
                 let returned_ptr = &*returned as *const serde_json::Value;
                 assert_eq!(returned_ptr, fallback_ptr);
             }
@@ -611,11 +774,16 @@ mod get_storage_keys {
     #[test]
     fn distinguishes_empty_from_failure() {
         let (backend, state) = memory_backend(&[]);
-        assert_eq!(get_storage_keys(&backend), StorageValueOutcome::Ok(StorageValueOk { value: vec![] }));
+        assert_eq!(
+            get_storage_keys(&backend),
+            StorageValueOutcome::Ok(StorageValueOk { value: vec![] })
+        );
         *state.keys_failure.lock().unwrap() = Some(StorageGetItemFailureReason::RuntimeUnavailable);
         assert_eq!(
             get_storage_keys(&backend),
-            StorageValueOutcome::Err(StorageValueErr { reason: StorageGetItemFailureReason::RuntimeUnavailable }),
+            StorageValueOutcome::Err(StorageValueErr {
+                reason: StorageGetItemFailureReason::RuntimeUnavailable
+            }),
         );
     }
 }
@@ -630,10 +798,15 @@ mod get_storage_number {
             get_storage_number(&backend, "number"),
             StorageValueOutcome::Ok(StorageValueOk { value: Some(2.5) }),
         );
-        assert_eq!(get_storage_number(&backend, "missing"), StorageValueOutcome::Ok(StorageValueOk { value: None }));
+        assert_eq!(
+            get_storage_number(&backend, "missing"),
+            StorageValueOutcome::Ok(StorageValueOk { value: None })
+        );
         assert_eq!(
             get_storage_number(&backend, "bad"),
-            StorageValueOutcome::Err(StorageValueErr { reason: StorageReadFailureReason::ParseFailed }),
+            StorageValueOutcome::Err(StorageValueErr {
+                reason: StorageReadFailureReason::ParseFailed
+            }),
         );
     }
 }
@@ -674,7 +847,12 @@ mod migrate_storage {
         let m2 = StorageMigration {
             version: 2,
             migrate: Arc::new(move |_| {
-                let v = d.lock().unwrap().get("__flight_storage_version").cloned().unwrap_or_default();
+                let v = d
+                    .lock()
+                    .unwrap()
+                    .get("__flight_storage_version")
+                    .cloned()
+                    .unwrap_or_default();
                 s1.lock().unwrap().push(format!("two:{}", v));
             }),
         };
@@ -686,9 +864,23 @@ mod migrate_storage {
             }),
         };
         let result = migrate_storage(&backend, None, &[&m2, &m1], None);
-        assert_eq!(result, StorageMigrationOutcomeInner::Ok(StorageMigrationOk { version: 2 }));
-        assert_eq!(*seen.lock().unwrap(), vec!["one".to_string(), "two:1".to_string()]);
-        assert_eq!(state.data.lock().unwrap().get("__flight_storage_version").unwrap(), "2");
+        assert_eq!(
+            result,
+            StorageMigrationOutcomeInner::Ok(StorageMigrationOk { version: 2 })
+        );
+        assert_eq!(
+            *seen.lock().unwrap(),
+            vec!["one".to_string(), "two:1".to_string()]
+        );
+        assert_eq!(
+            state
+                .data
+                .lock()
+                .unwrap()
+                .get("__flight_storage_version")
+                .unwrap(),
+            "2"
+        );
     }
 
     #[test]
@@ -708,7 +900,10 @@ mod migrate_storage {
         let m1 = StorageMigration {
             version: 1,
             migrate: Arc::new(move |_| {
-                sf2.lock().unwrap().insert("__flight_storage_version".to_string(), StorageSetItemFailureReason::WriteFailed);
+                sf2.lock().unwrap().insert(
+                    "__flight_storage_version".to_string(),
+                    StorageSetItemFailureReason::WriteFailed,
+                );
             }),
         };
 
@@ -724,7 +919,10 @@ mod migrate_storage {
 
         state.set_failures.lock().unwrap().clear();
         let v2c3 = version_two_calls.clone();
-        let m1b = StorageMigration { version: 1, migrate: Arc::new(|_| {}) };
+        let m1b = StorageMigration {
+            version: 1,
+            migrate: Arc::new(|_| {}),
+        };
         let m2b = StorageMigration {
             version: 2,
             migrate: Arc::new(move |_| {
@@ -732,13 +930,19 @@ mod migrate_storage {
             }),
         };
         let result = migrate_storage(&backend, None, &[&m1b, &m2b], None);
-        assert_eq!(result, StorageMigrationOutcomeInner::Ok(StorageMigrationOk { version: 2 }));
+        assert_eq!(
+            result,
+            StorageMigrationOutcomeInner::Ok(StorageMigrationOk { version: 2 })
+        );
     }
 
     #[test]
     fn returns_read_version_failed_on_invalid_stored_version() {
         let (backend, _) = memory_backend(&[("__flight_storage_version", "not-a-version")]);
-        let m = StorageMigration { version: 1, migrate: Arc::new(|_| {}) };
+        let m = StorageMigration {
+            version: 1,
+            migrate: Arc::new(|_| {}),
+        };
         let result = migrate_storage(&backend, None, &[&m], None);
         assert_eq!(
             result,
@@ -755,7 +959,10 @@ mod migrate_storage {
             "__flight_storage_version".to_string(),
             StorageGetItemFailureReason::SecurityDenied,
         );
-        let m = StorageMigration { version: 1, migrate: Arc::new(|_| {}) };
+        let m = StorageMigration {
+            version: 1,
+            migrate: Arc::new(|_| {}),
+        };
         let result = migrate_storage(&backend, None, &[&m], None);
         assert_eq!(
             result,
@@ -769,8 +976,14 @@ mod migrate_storage {
     #[should_panic(expected = "is duplicated")]
     fn validates_duplicate_version() {
         let (backend, _) = memory_backend(&[]);
-        let m1 = StorageMigration { version: 1, migrate: Arc::new(|_| {}) };
-        let m2 = StorageMigration { version: 1, migrate: Arc::new(|_| {}) };
+        let m1 = StorageMigration {
+            version: 1,
+            migrate: Arc::new(|_| {}),
+        };
+        let m2 = StorageMigration {
+            version: 1,
+            migrate: Arc::new(|_| {}),
+        };
         migrate_storage(&backend, None, &[&m1, &m2], None);
     }
 
@@ -778,14 +991,19 @@ mod migrate_storage {
     #[should_panic(expected = "Storage migration versions must be positive integers")]
     fn validates_zero_version() {
         let (backend, _) = memory_backend(&[]);
-        let m = StorageMigration { version: 0, migrate: Arc::new(|_| {}) };
+        let m = StorageMigration {
+            version: 0,
+            migrate: Arc::new(|_| {}),
+        };
         migrate_storage(&backend, None, &[&m], None);
     }
 
     #[test]
     fn with_namespace() {
         let (backend, state) = memory_backend(&[]);
-        let ns = StorageNamespace { prefix: "app".to_string() };
+        let ns = StorageNamespace {
+            prefix: "app".to_string(),
+        };
         let seen = Arc::new(Mutex::new(Vec::new()));
         let s = seen.clone();
         let m = StorageMigration {
@@ -795,10 +1013,18 @@ mod migrate_storage {
             }),
         };
         let result = migrate_storage(&backend, Some(&ns), &[&m], None);
-        assert_eq!(result, StorageMigrationOutcomeInner::Ok(StorageMigrationOk { version: 1 }));
+        assert_eq!(
+            result,
+            StorageMigrationOutcomeInner::Ok(StorageMigrationOk { version: 1 })
+        );
         assert_eq!(*seen.lock().unwrap(), vec!["app".to_string()]);
         assert_eq!(
-            state.data.lock().unwrap().get("app.__flight_storage_version").unwrap(),
+            state
+                .data
+                .lock()
+                .unwrap()
+                .get("app.__flight_storage_version")
+                .unwrap(),
             "1",
         );
     }
@@ -813,12 +1039,18 @@ mod remove_namespaced_storage_item {
         let signals = create_storage_signals();
         let changes: Arc<Mutex<Vec<StorageChange>>> = Arc::new(Mutex::new(Vec::new()));
         let c = changes.clone();
-        connect_signal(&signals.on_change, Arc::new(move |change: &StorageChange| {
-            c.lock().unwrap().push(change.clone());
-        }), None);
+        connect_signal(
+            &signals.on_change,
+            Arc::new(move |change: &StorageChange| {
+                c.lock().unwrap().push(change.clone());
+            }),
+            None,
+        );
         let result = remove_namespaced_storage_item(
             &backend,
-            &StorageNamespace { prefix: "ns".to_string() },
+            &StorageNamespace {
+                prefix: "ns".to_string(),
+            },
             "a",
             Some(&signals),
         );
@@ -844,9 +1076,13 @@ mod remove_storage_item {
         let signals = create_storage_signals();
         let changes: Arc<Mutex<Vec<StorageChange>>> = Arc::new(Mutex::new(Vec::new()));
         let c = changes.clone();
-        connect_signal(&signals.on_change, Arc::new(move |change: &StorageChange| {
-            c.lock().unwrap().push(change.clone());
-        }), None);
+        connect_signal(
+            &signals.on_change,
+            Arc::new(move |change: &StorageChange| {
+                c.lock().unwrap().push(change.clone());
+            }),
+            None,
+        );
         let result = remove_storage_item(&backend, "missing", Some(&signals));
         assert!(result.is_ok());
         assert!(changes.lock().unwrap().is_empty());
@@ -859,7 +1095,10 @@ mod remove_storage_items {
     #[test]
     fn stops_at_first_failure() {
         let (backend, state) = memory_backend(&[("a", "1"), ("b", "2"), ("c", "3")]);
-        state.remove_failures.lock().unwrap().insert("b".to_string(), StorageRemoveItemFailureReason::SecurityDenied);
+        state.remove_failures.lock().unwrap().insert(
+            "b".to_string(),
+            StorageRemoveItemFailureReason::SecurityDenied,
+        );
         let result = remove_storage_items(&backend, &["a", "b", "c"], None);
         assert_eq!(
             result,
@@ -883,7 +1122,9 @@ mod set_namespaced_storage_item {
         let (backend, state) = memory_backend(&[]);
         let result = set_namespaced_storage_item(
             &backend,
-            &StorageNamespace { prefix: "app".to_string() },
+            &StorageNamespace {
+                prefix: "app".to_string(),
+            },
             "key",
             "value",
             None,
@@ -919,13 +1160,25 @@ mod set_storage_item {
 
         let changes: Arc<Mutex<Vec<StorageChange>>> = Arc::new(Mutex::new(Vec::new()));
         let c = changes.clone();
-        connect_signal(&signals.on_change, Arc::new(move |change: &StorageChange| {
-            c.lock().unwrap().push(change.clone());
-        }), None);
+        connect_signal(
+            &signals.on_change,
+            Arc::new(move |change: &StorageChange| {
+                c.lock().unwrap().push(change.clone());
+            }),
+            None,
+        );
 
-        state.set_failures.lock().unwrap().insert("key".to_string(), StorageSetItemFailureReason::QuotaExceeded);
+        state.set_failures.lock().unwrap().insert(
+            "key".to_string(),
+            StorageSetItemFailureReason::QuotaExceeded,
+        );
         let result = set_storage_item(&backend, "key", "failed", Some(&signals));
-        assert_eq!(result, StorageMutationOutcome::Err(StorageMutationErr { reason: StorageSetItemFailureReason::QuotaExceeded }));
+        assert_eq!(
+            result,
+            StorageMutationOutcome::Err(StorageMutationErr {
+                reason: StorageSetItemFailureReason::QuotaExceeded
+            })
+        );
         assert!(changes.lock().unwrap().is_empty());
 
         state.set_failures.lock().unwrap().clear();
@@ -949,7 +1202,11 @@ mod set_storage_items {
     #[test]
     fn stops_after_failed_write() {
         let (backend, state) = memory_backend(&[]);
-        state.set_failures.lock().unwrap().insert("b".to_string(), StorageSetItemFailureReason::QuotaExceeded);
+        state
+            .set_failures
+            .lock()
+            .unwrap()
+            .insert("b".to_string(), StorageSetItemFailureReason::QuotaExceeded);
         let result = set_storage_items(&backend, &[("a", "1"), ("b", "2"), ("c", "3")], None);
         assert_eq!(
             result,
@@ -973,7 +1230,10 @@ mod set_storage_json {
         let (backend, state) = memory_backend(&[]);
         let result = set_storage_json(&backend, "value", &serde_json::json!({"x": 1}), None);
         assert!(result.is_ok());
-        assert_eq!(state.data.lock().unwrap().get("value").unwrap(), r#"{"x":1}"#);
+        assert_eq!(
+            state.data.lock().unwrap().get("value").unwrap(),
+            r#"{"x":1}"#
+        );
     }
 
     // Source test case: storage.test.ts:649-651 — cyclic self-reference

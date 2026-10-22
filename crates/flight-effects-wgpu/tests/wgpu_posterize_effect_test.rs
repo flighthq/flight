@@ -28,7 +28,10 @@ mod apply_posterize_effect_to_wgpu {
             );
         });
 
-        assert_eq!(recorded_pass_views(&records), vec![dest.read().unwrap().view.clone()]);
+        assert_eq!(
+            recorded_pass_views(&records),
+            vec![dest.read().unwrap().view.clone()]
+        );
         let uniforms = recorded_effect_uniforms(&records);
         assert_eq!(uniforms[0][0], 2.0);
     }
@@ -57,7 +60,9 @@ mod apply_posterize_effect_to_wgpu {
         let pipelines = recorded_pipelines(&records);
         assert_eq!(pipelines.len(), 1);
         assert_eq!(
-            pipelines[0].targets[0].as_ref().and_then(|target| target.blend),
+            pipelines[0].targets[0]
+                .as_ref()
+                .and_then(|target| target.blend),
             Some(wgpu::BlendState::REPLACE)
         );
     }
@@ -103,7 +108,10 @@ mod wgpu_posterize_effect_runner {
             wgpu_posterize_effect_runner(&mut context, &*effect.read().unwrap());
         });
 
-        assert_eq!(recorded_pass_views(&records), vec![dest.read().unwrap().view.clone()]);
+        assert_eq!(
+            recorded_pass_views(&records),
+            vec![dest.read().unwrap().view.clone()]
+        );
         assert_eq!(recorded_effect_uniforms(&records).len(), 1);
     }
 }

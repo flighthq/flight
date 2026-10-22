@@ -181,8 +181,9 @@ mod sdk_host_compress_lzma {
     fn rejects_non_raw_framing() {
         let input = vec![1u8, 2, 3];
         let slot = &SDK_HOST_COMPRESS_LZMA;
-        let payload = std::panic::catch_unwind(|| (slot.compress)(&input, CompressionFraming::Rfc1950))
-            .expect_err("non-Raw framing must throw");
+        let payload =
+            std::panic::catch_unwind(|| (slot.compress)(&input, CompressionFraming::Rfc1950))
+                .expect_err("non-Raw framing must throw");
         let error = payload
             .downcast::<FlightError>()
             .expect("panic payload must be a FlightError");

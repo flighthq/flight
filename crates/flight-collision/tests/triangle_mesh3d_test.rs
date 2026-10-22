@@ -215,8 +215,8 @@ mod collide_collision_triangle_mesh3d_bvh_candidate_order {
     fn bvh_returns_same_contact_order_as_brute_force_on_multi_triangle_mesh() {
         let mesh = create_collision_triangle_mesh3d(
             vec![
-                -5.0, 0.0, -5.0, 5.0, 0.0, -5.0, 5.0, 0.0, 5.0, -5.0, 0.0, 5.0,
-                -5.0, -1.0, -5.0, 5.0, -1.0, -5.0, 5.0, -1.0, 5.0, -5.0, -1.0, 5.0,
+                -5.0, 0.0, -5.0, 5.0, 0.0, -5.0, 5.0, 0.0, 5.0, -5.0, 0.0, 5.0, -5.0, -1.0, -5.0,
+                5.0, -1.0, -5.0, 5.0, -1.0, 5.0, -5.0, -1.0, 5.0,
             ],
             vec![0, 2, 1, 0, 3, 2, 4, 6, 5, 4, 7, 6],
         );

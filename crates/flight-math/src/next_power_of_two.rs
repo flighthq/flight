@@ -13,7 +13,11 @@ pub fn next_multiple_of(value: f32, multiple: f32) -> f32 {
         return value;
     }
     let remainder = value % multiple;
-    return if remainder == 0.0 { value } else { value + multiple - remainder };
+    return if remainder == 0.0 {
+        value
+    } else {
+        value + multiple - remainder
+    };
 }
 
 /// Round `n` up to the next power of two.

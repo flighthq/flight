@@ -26,7 +26,8 @@ fn create_svg_symbol_node(
     context: &mut SvgImportContext<'_>,
 ) -> Ref<DisplayObject> {
     let container = create_display_object();
-    container.write().unwrap().name = svg_attribute(&element.read().unwrap(), "id").map(str::to_string);
+    container.write().unwrap().name =
+        svg_attribute(&element.read().unwrap(), "id").map(str::to_string);
     let (width, height) = {
         let use_element = use_element.read().unwrap();
         (

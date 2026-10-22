@@ -267,7 +267,9 @@ pub fn get_flex_layout_wrap_string(value: FlexLayoutWrap) -> &'static str {
 }
 
 // flight-lint: allow(conform-extra) D9 enum-string conversion for the TS LayoutResolutionFailureKind string union; TS exports no get_/parse_ free functions
-pub fn get_layout_resolution_failure_kind_string(value: LayoutResolutionFailureKind) -> &'static str {
+pub fn get_layout_resolution_failure_kind_string(
+    value: LayoutResolutionFailureKind,
+) -> &'static str {
     return match value {
         LayoutResolutionFailureKind::IntrinsicSizesTooSmall => "IntrinsicSizesTooSmall",
         LayoutResolutionFailureKind::InvalidContainerStyle => "InvalidContainerStyle",

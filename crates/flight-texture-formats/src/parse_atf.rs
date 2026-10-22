@@ -1,12 +1,12 @@
 use flight_entity::Uint8Array;
 
-use flight_buffer::{
-    create_byte_reader, has_byte_reader_bytes, read_byte_reader_u24_big_endian,
-    read_byte_reader_u32_big_endian,
-};
 use crate::types::{
     TextureContainer, TextureContainerFormat, TextureContainerLevel,
     TextureContainerParseFailureReason, TextureContainerSupercompression,
+};
+use flight_buffer::{
+    create_byte_reader, has_byte_reader_bytes, read_byte_reader_u24_big_endian,
+    read_byte_reader_u32_big_endian,
 };
 
 pub fn get_atf_parse_failure_reason(

@@ -74,7 +74,8 @@ pub type ConnectivityUnsubscribe = Arc<dyn Fn() + Send + Sync>;
 pub type ConnectivityReachabilityResult = Result<ConnectivityReachability, FlightError>;
 
 /// Boxed, Send future returned by a reachability provider (D15).
-pub type ConnectivityReachabilityFuture = Pin<Box<dyn Future<Output = ConnectivityReachabilityResult> + Send>>;
+pub type ConnectivityReachabilityFuture =
+    Pin<Box<dyn Future<Output = ConnectivityReachabilityResult> + Send>>;
 
 /// Snapshot query capability (TS `HostConnectivityStatusCapability`): writes the current status into
 /// `out`. Plain dispatch data.
@@ -89,7 +90,8 @@ pub struct HostConnectivityStatusCapability {
 #[derive(Clone)]
 pub struct HostConnectivityChangeCapability {
     pub destroy: Arc<dyn Fn() + Send + Sync>,
-    pub subscribe: Arc<dyn Fn(ConnectivityChangeListener) -> Option<ConnectivityUnsubscribe> + Send + Sync>,
+    pub subscribe:
+        Arc<dyn Fn(ConnectivityChangeListener) -> Option<ConnectivityUnsubscribe> + Send + Sync>,
 }
 
 /// Active reachability capability (TS `HostConnectivityReachabilityCapability`). The provider
@@ -98,7 +100,10 @@ pub struct HostConnectivityChangeCapability {
 #[derive(Clone)]
 pub struct HostConnectivityReachabilityCapability {
     pub detect_reachability: Arc<
-        dyn Fn(ConnectivityReachabilityOptions, ConnectivityReachability) -> ConnectivityReachabilityFuture
+        dyn Fn(
+                ConnectivityReachabilityOptions,
+                ConnectivityReachability,
+            ) -> ConnectivityReachabilityFuture
             + Send
             + Sync,
     >,
@@ -165,7 +170,10 @@ impl fmt::Debug for ConnectivityReachabilityOptions {
             .debug_struct("ConnectivityReachabilityOptions")
             .field("url", &self.url)
             .field("timeout", &self.timeout)
-            .field("signal_aborted", &self.signal.as_ref().map(is_abort_signal_aborted))
+            .field(
+                "signal_aborted",
+                &self.signal.as_ref().map(is_abort_signal_aborted),
+            )
             .finish();
     }
 }

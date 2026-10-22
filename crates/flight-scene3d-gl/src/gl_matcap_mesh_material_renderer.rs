@@ -1,6 +1,5 @@
 // flight-lint: allow-file(contract-vocabulary) D17 mesh-material renderers are backend-typed dispatch records over thread-bound render-gl state
 
-use std::rc::Rc;
 use flight_camera::Camera3D;
 use flight_color::{LinearColor, allocate_linear_color, unpack_color_to_linear};
 use flight_lighting::Scene3DLightBlock;
@@ -9,10 +8,13 @@ use flight_meshgeometry::MeshGeometry;
 use flight_render::Scene3DRenderProxy;
 use flight_render_gl::{GlMeshMaterialRenderer, GlRenderState, resolve_gl_texture};
 use glow::HasContext;
+use std::rc::Rc;
 
 use crate::gl_matcap_prelude::{bind_gl_matcap_surface, ensure_gl_matcap_program};
 use crate::gl_mesh_material_registry::register_gl_mesh_material_renderer;
-use crate::gl_mesh_program::{begin_gl_mesh_draw, draw_gl_mesh_subset, set_gl_mesh_view_projection};
+use crate::gl_mesh_program::{
+    begin_gl_mesh_draw, draw_gl_mesh_subset, set_gl_mesh_view_projection,
+};
 use crate::gl_scene3d_runtime::get_gl_scene3d_runtime;
 use crate::types::{GlMatcapDefineKey, GlMeshProgramRef};
 
@@ -38,12 +40,20 @@ fn bind_gl_matcap_mesh_material(
     let key = define_key_for_material(state, matcap);
     let program = ensure_gl_matcap_program(state, &key);
     let family: GlMeshProgramRef = program.clone();
-    begin_gl_mesh_draw(state, &family, matcap.is_some_and(|matcap| matcap.double_sided));
+    begin_gl_mesh_draw(
+        state,
+        &family,
+        matcap.is_some_and(|matcap| matcap.double_sided),
+    );
     set_gl_mesh_view_projection(state, program.loc_view_projection, camera);
     // u_view rotates the world-space normal into view space for the matcap lookup.
     // SAFETY: the program is bound on the owning GL thread.
     unsafe {
-        gl.uniform_matrix_4_f32_slice(program.loc_view.as_ref(), false, &camera.view.read().unwrap().m);
+        gl.uniform_matrix_4_f32_slice(
+            program.loc_view.as_ref(),
+            false,
+            &camera.view.read().unwrap().m,
+        );
     }
 
     let Some(matcap) = matcap else {
@@ -62,12 +72,16 @@ fn bind_gl_matcap_mesh_material(
     );
 }
 
-fn define_key_for_material(state: &mut GlRenderState, material: Option<&MatcapMaterial>) -> GlMatcapDefineKey {
+fn define_key_for_material(
+    state: &mut GlRenderState,
+    material: Option<&MatcapMaterial>,
+) -> GlMatcapDefineKey {
     let matcap = material
         .and_then(|material| material.matcap.as_ref())
         .map(|map| map.read().unwrap());
     return GlMatcapDefineKey {
-        alpha_mask_enabled: material.is_some_and(|material| material.alpha_mode == MaterialAlphaMode::Mask),
+        alpha_mask_enabled: material
+            .is_some_and(|material| material.alpha_mode == MaterialAlphaMode::Mask),
         has_instances: None,
         has_matcap: matcap
             .as_deref()
@@ -76,7 +90,11 @@ fn define_key_for_material(state: &mut GlRenderState, material: Option<&MatcapMa
     };
 }
 
-fn draw_gl_matcap_mesh_material(state: &mut GlRenderState, proxy: &Scene3DRenderProxy, geometry: &MeshGeometry) {
+fn draw_gl_matcap_mesh_material(
+    state: &mut GlRenderState,
+    proxy: &Scene3DRenderProxy,
+    geometry: &MeshGeometry,
+) {
     let program = get_gl_scene3d_runtime(state).active_mesh_program.clone();
     let Some(program) = program else {
         return;

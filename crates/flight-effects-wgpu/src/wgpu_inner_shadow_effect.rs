@@ -12,7 +12,9 @@ use flight_render_wgpu::{
 };
 
 use crate::types::*;
-use crate::wgpu_effect_blit_shader::{apply_wgpu_effect_blit_offset_pass, apply_wgpu_effect_blit_pass};
+use crate::wgpu_effect_blit_shader::{
+    apply_wgpu_effect_blit_offset_pass, apply_wgpu_effect_blit_pass,
+};
 use crate::wgpu_effect_box_blur::apply_wgpu_effect_box_blur;
 use crate::wgpu_effect_pass::clear_wgpu_effect_target;
 use crate::wgpu_effect_registry::register_wgpu_effect;
@@ -88,12 +90,22 @@ fn get_invert_tint_edge_color(color: u32, alpha: f32, strength: f32) -> [f32; 4]
     let mut edge = [0.0_f32; 4];
     unpack_color_rgba(&mut edge, color);
     let edge_alpha = 1.0_f32.min(alpha * edge[3] * strength);
-    return [edge[0] * edge_alpha, edge[1] * edge_alpha, edge[2] * edge_alpha, edge_alpha];
+    return [
+        edge[0] * edge_alpha,
+        edge[1] * edge_alpha,
+        edge[2] * edge_alpha,
+        edge_alpha,
+    ];
 }
 
 /// Registers the default runner under `InnerShadowEffect` (TS `registerWgpuInnerShadowEffect`).
 pub fn register_wgpu_inner_shadow_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "InnerShadowEffect", wgpu_inner_shadow_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "InnerShadowEffect",
+        wgpu_inner_shadow_effect_runner,
+        None,
+    );
 }
 
 /// The default `InnerShadowEffect` runner (TS `wgpuInnerShadowEffectRunner`).

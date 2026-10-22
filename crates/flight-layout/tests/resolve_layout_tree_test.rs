@@ -94,8 +94,7 @@ mod explain_layout_resolution {
             parent_index: 0,
             ..make_root()
         }]);
-        let exp2 =
-            super::explain_layout_resolution(&create_layout_state(), &self_ref, 0).unwrap();
+        let exp2 = super::explain_layout_resolution(&create_layout_state(), &self_ref, 0).unwrap();
         assert_eq!(exp2.kind, LayoutResolutionFailureKind::InvalidHierarchy);
         assert_eq!(exp2.node_index, 0);
         assert_eq!(exp2.parent_index, 0);
@@ -119,7 +118,14 @@ mod explain_layout_resolution {
         let input = tree(vec![make_root(), make_child()]);
         register_layout_resolver(&mut state, "acme.Root", Some(failing_resolver));
         assert_eq!(
-            resolve_layout_tree(&mut vec![0.0; 8], &mut state, &input, &[0.0; 4], 100.0, 100.0),
+            resolve_layout_tree(
+                &mut vec![0.0; 8],
+                &mut state,
+                &input,
+                &[0.0; 4],
+                100.0,
+                100.0
+            ),
             false
         );
         assert_eq!(
@@ -142,7 +148,14 @@ mod explain_layout_resolution {
         let mut state = create_layout_state();
         let input = tree(vec![make_root(), make_child()]);
         assert_eq!(
-            resolve_layout_tree(&mut vec![0.0; 8], &mut state, &input, &[0.0; 4], 100.0, 100.0),
+            resolve_layout_tree(
+                &mut vec![0.0; 8],
+                &mut state,
+                &input,
+                &[0.0; 4],
+                100.0,
+                100.0
+            ),
             false
         );
         assert!(super::explain_layout_resolution(&state, &input, 1).is_none());
@@ -153,7 +166,8 @@ mod resolve_layout_tree {
     use super::*;
 
     #[test]
-    fn consumes_an_inert_flight_document_binding_without_moving_kind_ownership_out_of_layout_state() {
+    fn consumes_an_inert_flight_document_binding_without_moving_kind_ownership_out_of_layout_state()
+    {
         let binding = FlightDocumentLayoutBinding {
             targets: vec![
                 NodeAny {
@@ -209,10 +223,7 @@ mod resolve_layout_tree {
             320.0,
             180.0,
         ));
-        assert_eq!(
-            &out,
-            &[0.0, 0.0, 320.0, 180.0, 0.0, 0.0, 320.0, 180.0]
-        );
+        assert_eq!(&out, &[0.0, 0.0, 320.0, 180.0, 0.0, 0.0, 320.0, 180.0]);
     }
 
     #[test]
@@ -260,12 +271,8 @@ mod resolve_layout_tree {
             ),
             false
         );
-        let exp = explain_layout_resolution(
-            &state,
-            &tree(vec![make_root(), make_child()]),
-            -1,
-        )
-        .unwrap();
+        let exp =
+            explain_layout_resolution(&state, &tree(vec![make_root(), make_child()]), -1).unwrap();
         assert_eq!(exp.actual_length, 7);
         assert_eq!(exp.kind, LayoutResolutionFailureKind::OutputTooSmall);
         assert_eq!(exp.node_index, -1);
@@ -287,13 +294,12 @@ mod resolve_layout_tree {
             ),
             false
         );
-        let exp = explain_layout_resolution(
-            &state,
-            &tree(vec![make_root(), make_child()]),
-            -1,
-        )
-        .unwrap();
-        assert_eq!(exp.kind, LayoutResolutionFailureKind::IntrinsicSizesTooSmall);
+        let exp =
+            explain_layout_resolution(&state, &tree(vec![make_root(), make_child()]), -1).unwrap();
+        assert_eq!(
+            exp.kind,
+            LayoutResolutionFailureKind::IntrinsicSizesTooSmall
+        );
         assert_eq!(exp.node_index, -1);
         assert_eq!(exp.parent_index, -1);
     }
@@ -392,6 +398,9 @@ mod resolve_layout_tree {
         assert_eq!(exp.kind, LayoutResolutionFailureKind::UnregisteredKind);
         assert_eq!(exp.parent_index, -1);
         assert_eq!(exp.resolver_kind, Some("acme.Root".to_string()));
-        assert!(explain_layout_resolution(&create_layout_state(), &tree(vec![make_root()]), 0).is_none());
+        assert!(
+            explain_layout_resolution(&create_layout_state(), &tree(vec![make_root()]), 0)
+                .is_none()
+        );
     }
 }

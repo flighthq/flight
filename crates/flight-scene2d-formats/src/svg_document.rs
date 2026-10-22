@@ -2,18 +2,18 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use flight_entity::Ref;
-use flight_geometry::{clone_matrix, create_matrix, Matrix};
+use flight_geometry::{Matrix, clone_matrix, create_matrix};
 use flight_importdiagnostics::{
-    report_import_diagnostic, ImportDiagnostic, ImportDiagnosticDetailValue,
-    ImportDiagnosticSeverity,
+    ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
+    report_import_diagnostic,
 };
-use flight_node::contract::{add_node_child, NodeRef};
-use flight_scene2d::contract::{create_display_object, DisplayObject, Node2DRef};
-use flight_xml::contract::{parse_xml_document, XmlElement};
+use flight_node::contract::{NodeRef, add_node_child};
+use flight_scene2d::contract::{DisplayObject, Node2DRef, create_display_object};
+use flight_xml::contract::{XmlElement, parse_xml_document};
 
 use crate::svg_gradient::parse_svg_gradient;
 use crate::svg_registry::{get_svg_clip_handler, get_svg_element_handler};
-use crate::svg_style::{collect_css_rules, resolve_svg_style, DEFAULT_SVG_STYLE};
+use crate::svg_style::{DEFAULT_SVG_STYLE, collect_css_rules, resolve_svg_style};
 use crate::svg_transform::{
     apply_svg_transform, create_svg_viewport_matrix, multiply_svg_matrices, parse_svg_transform,
 };

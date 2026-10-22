@@ -27,11 +27,23 @@ pub fn quantize(value: f32, steps: f32, min: f32, max: f32) -> f32 {
         return min;
     }
     let t = (value - min) / (max - min);
-    let clamped = if t < 0.0 { 0.0 } else if t > 1.0 { 1.0 } else { t };
+    let clamped = if t < 0.0 {
+        0.0
+    } else if t > 1.0 {
+        1.0
+    } else {
+        t
+    };
     return min + ((clamped * steps).round() / steps) * (max - min);
 }
 
 /// Zero-aware sign: returns `1` for positive, `-1` for negative, `0` for zero.
 pub fn sign(value: f32) -> f32 {
-    return if value > 0.0 { 1.0 } else if value < 0.0 { -1.0 } else { 0.0 };
+    return if value > 0.0 {
+        1.0
+    } else if value < 0.0 {
+        -1.0
+    } else {
+        0.0
+    };
 }

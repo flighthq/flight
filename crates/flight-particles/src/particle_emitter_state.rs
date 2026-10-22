@@ -13,10 +13,7 @@ pub fn create_particle_emitter_state() -> ParticleEmitterState {
     return out;
 }
 
-pub fn initialize_particle_emitter_state(
-    out: &mut ParticleEmitterState,
-    random: RandomSource,
-) {
+pub fn initialize_particle_emitter_state(out: &mut ParticleEmitterState, random: RandomSource) {
     out.burst_timer = 0.0;
     out.color_birth = Vec::new();
     out.color_death = Vec::new();
@@ -52,7 +49,9 @@ pub fn ensure_particle_emitter_state_capacity(
         state.lifetimes.resize(capacity * 2, 0.0);
     }
     if state.velocities.len() < capacity * PARTICLE_VELOCITY_STRIDE {
-        state.velocities.resize(capacity * PARTICLE_VELOCITY_STRIDE, 0.0);
+        state
+            .velocities
+            .resize(capacity * PARTICLE_VELOCITY_STRIDE, 0.0);
     }
     if state.scales.len() < capacity {
         state.scales.resize(capacity, 0.0);

@@ -31,20 +31,35 @@ mod get_wgpu_scene3d_runtime {
             .clone();
         let modifier_snippet_revision =
             get_wgpu_render_state_runtime(&test.state).modifier_snippet_revision;
-        assert!(get_wgpu_render_state_runtime(&test.state)
-            .context
-            .read()
-            .unwrap()
-            .scene_mesh_upload_cache
-            .is_none());
+        assert!(
+            get_wgpu_render_state_runtime(&test.state)
+                .context
+                .read()
+                .unwrap()
+                .scene_mesh_upload_cache
+                .is_none()
+        );
 
         get_wgpu_scene3d_runtime(&mut test.state);
 
         let runtime = get_wgpu_render_state_runtime(&test.state);
-        assert!(std::sync::Arc::ptr_eq(&runtime.registries.material_renderers, &materials));
-        assert!(std::sync::Arc::ptr_eq(&runtime.registries.modifier_snippets, &modifier_snippets));
+        assert!(std::sync::Arc::ptr_eq(
+            &runtime.registries.material_renderers,
+            &materials
+        ));
+        assert!(std::sync::Arc::ptr_eq(
+            &runtime.registries.modifier_snippets,
+            &modifier_snippets
+        ));
         assert_eq!(runtime.modifier_snippet_revision, modifier_snippet_revision);
-        assert!(runtime.context.read().unwrap().scene_mesh_upload_cache.is_some());
+        assert!(
+            runtime
+                .context
+                .read()
+                .unwrap()
+                .scene_mesh_upload_cache
+                .is_some()
+        );
     }
 }
 

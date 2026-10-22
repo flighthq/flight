@@ -632,13 +632,7 @@ mod set_quaternion_from_axis_angle {
     fn builds_a_half_angle_quaternion() {
         let mut q = create_quaternion(0.0, 0.0, 0.0, 1.0);
         set_quaternion_from_axis_angle(&mut q, &create_vector3(0.0, 1.0, 0.0), PI / 2.0);
-        assert_quaternion_close(
-            &q,
-            0.0,
-            (PI / 4.0).sin(),
-            0.0,
-            (PI / 4.0).cos(),
-        );
+        assert_quaternion_close(&q, 0.0, (PI / 4.0).sin(), 0.0, (PI / 4.0).cos());
     }
 
     #[test]
@@ -663,13 +657,7 @@ mod set_quaternion_from_euler {
     fn ninety_degrees_about_x_only() {
         let mut q = create_quaternion(0.0, 0.0, 0.0, 1.0);
         set_quaternion_from_euler(&mut q, PI / 2.0, 0.0, 0.0, EulerOrder::XYZ);
-        assert_quaternion_close(
-            &q,
-            (PI / 4.0).sin(),
-            0.0,
-            0.0,
-            (PI / 4.0).cos(),
-        );
+        assert_quaternion_close(&q, (PI / 4.0).sin(), 0.0, 0.0, (PI / 4.0).cos());
     }
 }
 
@@ -691,10 +679,7 @@ mod set_quaternion_from_matrix4 {
     #[test]
     fn identity_matrix_yields_identity_quaternion() {
         let mut back = create_quaternion(0.0, 0.0, 0.0, 1.0);
-        set_quaternion_from_matrix4(
-            &mut back,
-            &create_matrix4(),
-        );
+        set_quaternion_from_matrix4(&mut back, &create_matrix4());
         assert_quaternion_close(&back, 0.0, 0.0, 0.0, 1.0);
     }
 
@@ -1051,11 +1036,7 @@ mod slerp_quaternion {
     fn takes_the_shorter_arc_when_inputs_have_negative_dot_product() {
         let a = create_quaternion(0.0, 0.0, 0.0, 1.0);
         let mut quarter_turn = create_quaternion(0.0, 0.0, 0.0, 1.0);
-        set_quaternion_from_axis_angle(
-            &mut quarter_turn,
-            &create_vector3(0.0, 1.0, 0.0),
-            PI / 2.0,
-        );
+        set_quaternion_from_axis_angle(&mut quarter_turn, &create_vector3(0.0, 1.0, 0.0), PI / 2.0);
         let negated = create_quaternion(
             -quarter_turn.x,
             -quarter_turn.y,
@@ -1067,11 +1048,7 @@ mod slerp_quaternion {
         slerp_quaternion(&mut out, &a, &negated, 0.5);
 
         let mut eighth_turn = create_quaternion(0.0, 0.0, 0.0, 1.0);
-        set_quaternion_from_axis_angle(
-            &mut eighth_turn,
-            &create_vector3(0.0, 1.0, 0.0),
-            PI / 4.0,
-        );
+        set_quaternion_from_axis_angle(&mut eighth_turn, &create_vector3(0.0, 1.0, 0.0), PI / 4.0);
         assert_approx_tight(get_quaternion_dot(&out, &eighth_turn).abs(), 1.0);
     }
 

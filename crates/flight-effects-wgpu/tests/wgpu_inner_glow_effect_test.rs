@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use flight_effects::{EffectRef, InnerEffectSourceMode, create_inner_glow_effect};
-use flight_entity::Ref;
 use flight_effects_wgpu::contract::*;
+use flight_entity::Ref;
 use flight_render_wgpu::*;
 
 use crate::support::*;
@@ -64,7 +64,6 @@ fn draw_calls(records: &Arc<Mutex<Vec<WgpuCommandRecord>>>) -> Vec<DrawCall> {
     }
     return out;
 }
-
 
 fn view_of(target: &Ref<WgpuTextureRenderTarget>) -> wgpu::TextureView {
     return target.read().unwrap().view.clone();
@@ -157,12 +156,16 @@ mod apply_inner_glow_effect_to_wgpu {
         let source = view_of(&applied.source);
         let bind_groups = recorded_bind_groups(&applied.records);
 
-        assert!(recorded_set_bind_groups(&applied.records).iter().any(|set| {
-            return set.index == 2
-                && bind_groups
-                    .iter()
-                    .any(|created| created.bind_group == set.bind_group && created.views[0] == source);
-        }));
+        assert!(
+            recorded_set_bind_groups(&applied.records)
+                .iter()
+                .any(|set| {
+                    return set.index == 2
+                        && bind_groups.iter().any(|created| {
+                            created.bind_group == set.bind_group && created.views[0] == source
+                        });
+                })
+        );
     }
 
     #[test]
@@ -213,7 +216,11 @@ mod wgpu_inner_glow_effect_runner {
             wgpu_inner_glow_effect_runner(&mut context, &*effect.read().unwrap());
         });
 
-        assert!(draw_calls(&records).iter().any(|draw| draw.dest == view_of(&dest)));
+        assert!(
+            draw_calls(&records)
+                .iter()
+                .any(|draw| draw.dest == view_of(&dest))
+        );
         assert_eq!(pool.free.len(), 3);
     }
 }

@@ -166,11 +166,7 @@ impl ParticleObjectsState {
         ensure_particle_objects_state_capacity(self, capacity);
     }
 
-    pub fn is_complete(
-        &self,
-        objects: &[ParticleObject],
-        config: &ParticleEmitterConfig,
-    ) -> bool {
+    pub fn is_complete(&self, objects: &[ParticleObject], config: &ParticleEmitterConfig) -> bool {
         return is_particle_objects_complete(objects, self, config);
     }
 }

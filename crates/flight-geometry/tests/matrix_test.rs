@@ -502,7 +502,14 @@ mod matrix_transform_bounds {
     #[test]
     fn maps_coincident_corners_to_a_zero_size_rectangle_at_the_matrix_translation() {
         let mut out = create_rectangle(1.0, 2.0, 3.0, 4.0);
-        matrix_transform_bounds(&mut out, &create_matrix(2.0, 0.0, 0.0, 3.0, 7.0, 11.0), 5.0, 5.0, 5.0, 5.0);
+        matrix_transform_bounds(
+            &mut out,
+            &create_matrix(2.0, 0.0, 0.0, 3.0, 7.0, 11.0),
+            5.0,
+            5.0,
+            5.0,
+            5.0,
+        );
         assert_eq!(out.x, 7.0);
         assert_eq!(out.y, 11.0);
         assert_eq!(out.width, 0.0);
@@ -543,7 +550,14 @@ mod matrix_transform_bounds {
     #[test]
     fn tracks_the_fourth_corner_as_a_new_minimum_after_positive_skew() {
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        matrix_transform_bounds(&mut out, &create_matrix(1.0, 1.0, 1.0, 1.0, 0.0, 0.0), 0.0, 1.0, 1.0, 0.0);
+        matrix_transform_bounds(
+            &mut out,
+            &create_matrix(1.0, 1.0, 1.0, 1.0, 0.0, 0.0),
+            0.0,
+            1.0,
+            1.0,
+            0.0,
+        );
         assert_eq!(out.x, 0.0);
         assert_eq!(out.y, 0.0);
         assert_eq!(out.width, 2.0);
@@ -553,7 +567,14 @@ mod matrix_transform_bounds {
     #[test]
     fn tracks_the_second_and_fourth_corners_after_a_reflected_skew() {
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        matrix_transform_bounds(&mut out, &create_matrix(-1.0, -1.0, 1.0, 1.0, 0.0, 0.0), 0.0, 0.0, 1.0, 1.0);
+        matrix_transform_bounds(
+            &mut out,
+            &create_matrix(-1.0, -1.0, 1.0, 1.0, 0.0, 0.0),
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+        );
         assert_eq!(out.x, -1.0);
         assert_eq!(out.y, -1.0);
         assert_eq!(out.width, 2.0);
@@ -715,7 +736,14 @@ mod matrix_transform_rectangle {
     fn should_handle_rotation_correctly() {
         let rect = create_rectangle(0.0, 0.0, 10.0, 20.0);
         let angle = PI / 2.0;
-        let mat = create_matrix(angle.cos(), angle.sin(), -angle.sin(), angle.cos(), 0.0, 0.0);
+        let mat = create_matrix(
+            angle.cos(),
+            angle.sin(),
+            -angle.sin(),
+            angle.cos(),
+            0.0,
+            0.0,
+        );
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
         matrix_transform_rectangle(&mut out, &mat, &rect);
         assert_approx(out.width, 20.0);
@@ -857,7 +885,14 @@ mod multiply_matrix {
     #[test]
     fn should_handle_rotation_multiplication() {
         let angle = PI / 4.0;
-        let r = create_matrix(angle.cos(), angle.sin(), -angle.sin(), angle.cos(), 0.0, 0.0);
+        let r = create_matrix(
+            angle.cos(),
+            angle.sin(),
+            -angle.sin(),
+            angle.cos(),
+            0.0,
+            0.0,
+        );
         let mut out = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         multiply_matrix(&mut out, &r, &r);
         assert_approx(out.a, 0.0);
@@ -1065,8 +1100,7 @@ mod set_matrix_from_matrix4 {
     #[test]
     fn should_correctly_copy_the_2d_affine_part_from_a_column_major_matrix4() {
         let mat4 = create_matrix4_from_values(
-            1.0, 4.0, 0.0, 0.0, 2.0, 5.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0, 3.0, 6.0, 0.0, 1.0,
+            1.0, 4.0, 0.0, 0.0, 2.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 3.0, 6.0, 0.0, 1.0,
         );
         let mut mat2d = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         set_matrix_from_matrix4(&mut mat2d, &mat4);
@@ -1081,8 +1115,7 @@ mod set_matrix_from_matrix4 {
     #[test]
     fn should_not_affect_the_original_matrix4() {
         let mat4 = create_matrix4_from_values(
-            1.0, 4.0, 0.0, 0.0, 2.0, 5.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0, 3.0, 6.0, 0.0, 1.0,
+            1.0, 4.0, 0.0, 0.0, 2.0, 5.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 3.0, 6.0, 0.0, 1.0,
         );
         let original = mat4.m;
         let mut mat2d = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
@@ -1093,8 +1126,7 @@ mod set_matrix_from_matrix4 {
     #[test]
     fn should_handle_matrices_with_zero_values_correctly() {
         let zero_mat4 = create_matrix4_from_values(
-            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
         );
         let mut mat2d = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         set_matrix_from_matrix4(&mut mat2d, &zero_mat4);
@@ -1109,8 +1141,7 @@ mod set_matrix_from_matrix4 {
     #[test]
     fn should_correctly_handle_a_2d_identity_matrix_in_matrix4_format() {
         let identity_mat4 = create_matrix4_from_values(
-            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+            1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
         );
         let mut mat2d = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         set_matrix_from_matrix4(&mut mat2d, &identity_mat4);

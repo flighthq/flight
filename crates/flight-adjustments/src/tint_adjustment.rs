@@ -35,10 +35,26 @@ pub fn initialize_tint_adjustment(out: &mut TintAdjustment, rgba: u32) {
     let blue_scale = ((rgba >> 8) & 0xff) as f32 / 255.0;
     let alpha_scale = (rgba & 0xff) as f32 / 255.0;
     let color_matrix = [
-        red_scale, 0.0, 0.0, 0.0, 0.0,
-        0.0, green_scale, 0.0, 0.0, 0.0,
-        0.0, 0.0, blue_scale, 0.0, 0.0,
-        0.0, 0.0, 0.0, alpha_scale, 0.0,
+        red_scale,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        green_scale,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        blue_scale,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        alpha_scale,
+        0.0,
     ];
     initialize_color_matrix_adjustment(out, "TintAdjustment", color_matrix);
 }

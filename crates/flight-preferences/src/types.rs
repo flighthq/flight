@@ -150,7 +150,11 @@ pub struct HostPreferencesCapabilities {
 pub struct HostPreferencesChangeCapability {
     pub destroy: Arc<dyn Fn() + Send + Sync>,
     pub provider: ProviderRef,
-    pub subscribe: Arc<dyn Fn(Arc<dyn Fn(&StorageChange) + Send + Sync>) -> Option<Arc<dyn Fn() + Send + Sync>> + Send + Sync>,
+    pub subscribe: Arc<
+        dyn Fn(Arc<dyn Fn(&StorageChange) + Send + Sync>) -> Option<Arc<dyn Fn() + Send + Sync>>
+            + Send
+            + Sync,
+    >,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -253,7 +257,8 @@ pub type StorageBooleanResult = StorageValueOutcome<Option<bool>, StorageReadFai
 
 pub type StorageByteSizeResult = StorageQueryOutcome<usize>;
 
-pub type StorageClearNamespaceResult = StorageBatchMutationOutcome<StorageClearNamespaceFailureReason>;
+pub type StorageClearNamespaceResult =
+    StorageBatchMutationOutcome<StorageClearNamespaceFailureReason>;
 
 pub type StorageClearResult = StorageMutationOutcome<StorageClearFailureReason>;
 
@@ -384,9 +389,7 @@ pub fn get_storage_set_item_failure_reason_string(
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS StorageWriteFailureReason string union
-pub fn get_storage_write_failure_reason_string(
-    value: StorageWriteFailureReason,
-) -> &'static str {
+pub fn get_storage_write_failure_reason_string(value: StorageWriteFailureReason) -> &'static str {
     return match value {
         StorageWriteFailureReason::PersistenceInvalid => "persistence-invalid",
         StorageWriteFailureReason::QuotaExceeded => "quota-exceeded",
@@ -425,9 +428,7 @@ pub fn parse_storage_clear_namespace_failure_reason(
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust parser for the TS StorageGetItemFailureReason string union
-pub fn parse_storage_get_item_failure_reason(
-    value: &str,
-) -> Option<StorageGetItemFailureReason> {
+pub fn parse_storage_get_item_failure_reason(value: &str) -> Option<StorageGetItemFailureReason> {
     return match value {
         "persistence-invalid" => Some(StorageGetItemFailureReason::PersistenceInvalid),
         "read-failed" => Some(StorageGetItemFailureReason::ReadFailed),
@@ -479,9 +480,7 @@ pub fn parse_storage_remove_item_failure_reason(
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust parser for the TS StorageSetItemFailureReason string union
-pub fn parse_storage_set_item_failure_reason(
-    value: &str,
-) -> Option<StorageSetItemFailureReason> {
+pub fn parse_storage_set_item_failure_reason(value: &str) -> Option<StorageSetItemFailureReason> {
     return match value {
         "persistence-invalid" => Some(StorageSetItemFailureReason::PersistenceInvalid),
         "quota-exceeded" => Some(StorageSetItemFailureReason::QuotaExceeded),
@@ -514,7 +513,9 @@ pub fn storage_batch_mutation_outcome_is_ok<F>(outcome: &StorageBatchMutationOut
 
 // flight-lint: allow(conform-extra) D9e: Rust free-function form of TS method reason on StorageBatchMutationOutcome
 // flight-lint: allow(contract-vocabulary) Copy bound required to extract failure reason from outcome variant
-pub fn storage_batch_mutation_outcome_reason<F: Copy>(outcome: &StorageBatchMutationOutcome<F>) -> Option<F> {
+pub fn storage_batch_mutation_outcome_reason<F: Copy>(
+    outcome: &StorageBatchMutationOutcome<F>,
+) -> Option<F> {
     return match outcome {
         StorageBatchMutationOutcome::Ok(_) => None,
         StorageBatchMutationOutcome::Err(e) => Some(e.reason),
@@ -522,31 +523,53 @@ pub fn storage_batch_mutation_outcome_reason<F: Copy>(outcome: &StorageBatchMuta
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust free-function form of TS enum mapping for StorageGetItemFailureReason
-pub fn storage_get_item_failure_into_clear_namespace(value: StorageGetItemFailureReason) -> StorageClearNamespaceFailureReason {
+pub fn storage_get_item_failure_into_clear_namespace(
+    value: StorageGetItemFailureReason,
+) -> StorageClearNamespaceFailureReason {
     return match value {
-        StorageGetItemFailureReason::PersistenceInvalid => StorageClearNamespaceFailureReason::PersistenceInvalid,
+        StorageGetItemFailureReason::PersistenceInvalid => {
+            StorageClearNamespaceFailureReason::PersistenceInvalid
+        }
         StorageGetItemFailureReason::ReadFailed => StorageClearNamespaceFailureReason::ReadFailed,
-        StorageGetItemFailureReason::RuntimeUnavailable => StorageClearNamespaceFailureReason::RuntimeUnavailable,
-        StorageGetItemFailureReason::SecurityDenied => StorageClearNamespaceFailureReason::SecurityDenied,
+        StorageGetItemFailureReason::RuntimeUnavailable => {
+            StorageClearNamespaceFailureReason::RuntimeUnavailable
+        }
+        StorageGetItemFailureReason::SecurityDenied => {
+            StorageClearNamespaceFailureReason::SecurityDenied
+        }
     };
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust free-function form of TS enum mapping for StorageGetItemFailureReason
-pub fn storage_get_item_failure_into_migration_read(value: StorageGetItemFailureReason) -> StorageMigrationReadFailureReason {
+pub fn storage_get_item_failure_into_migration_read(
+    value: StorageGetItemFailureReason,
+) -> StorageMigrationReadFailureReason {
     return match value {
-        StorageGetItemFailureReason::PersistenceInvalid => StorageMigrationReadFailureReason::PersistenceInvalid,
+        StorageGetItemFailureReason::PersistenceInvalid => {
+            StorageMigrationReadFailureReason::PersistenceInvalid
+        }
         StorageGetItemFailureReason::ReadFailed => StorageMigrationReadFailureReason::ReadFailed,
-        StorageGetItemFailureReason::RuntimeUnavailable => StorageMigrationReadFailureReason::RuntimeUnavailable,
-        StorageGetItemFailureReason::SecurityDenied => StorageMigrationReadFailureReason::SecurityDenied,
+        StorageGetItemFailureReason::RuntimeUnavailable => {
+            StorageMigrationReadFailureReason::RuntimeUnavailable
+        }
+        StorageGetItemFailureReason::SecurityDenied => {
+            StorageMigrationReadFailureReason::SecurityDenied
+        }
     };
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust free-function form of TS enum mapping for StorageGetItemFailureReason
-pub fn storage_get_item_failure_into_read(value: StorageGetItemFailureReason) -> StorageReadFailureReason {
+pub fn storage_get_item_failure_into_read(
+    value: StorageGetItemFailureReason,
+) -> StorageReadFailureReason {
     return match value {
-        StorageGetItemFailureReason::PersistenceInvalid => StorageReadFailureReason::PersistenceInvalid,
+        StorageGetItemFailureReason::PersistenceInvalid => {
+            StorageReadFailureReason::PersistenceInvalid
+        }
         StorageGetItemFailureReason::ReadFailed => StorageReadFailureReason::ReadFailed,
-        StorageGetItemFailureReason::RuntimeUnavailable => StorageReadFailureReason::RuntimeUnavailable,
+        StorageGetItemFailureReason::RuntimeUnavailable => {
+            StorageReadFailureReason::RuntimeUnavailable
+        }
         StorageGetItemFailureReason::SecurityDenied => StorageReadFailureReason::SecurityDenied,
     };
 }
@@ -566,14 +589,28 @@ pub fn storage_mutation_outcome_reason<F: Copy>(outcome: &StorageMutationOutcome
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust free-function form of TS enum mapping for StorageRemoveItemFailureReason
-pub fn storage_remove_item_failure_into_clear_namespace(value: StorageRemoveItemFailureReason) -> StorageClearNamespaceFailureReason {
+pub fn storage_remove_item_failure_into_clear_namespace(
+    value: StorageRemoveItemFailureReason,
+) -> StorageClearNamespaceFailureReason {
     return match value {
-        StorageRemoveItemFailureReason::PersistenceInvalid => StorageClearNamespaceFailureReason::PersistenceInvalid,
-        StorageRemoveItemFailureReason::QuotaExceeded => StorageClearNamespaceFailureReason::QuotaExceeded,
-        StorageRemoveItemFailureReason::ReadFailed => StorageClearNamespaceFailureReason::ReadFailed,
-        StorageRemoveItemFailureReason::RemoveFailed => StorageClearNamespaceFailureReason::RemoveFailed,
-        StorageRemoveItemFailureReason::RuntimeUnavailable => StorageClearNamespaceFailureReason::RuntimeUnavailable,
-        StorageRemoveItemFailureReason::SecurityDenied => StorageClearNamespaceFailureReason::SecurityDenied,
+        StorageRemoveItemFailureReason::PersistenceInvalid => {
+            StorageClearNamespaceFailureReason::PersistenceInvalid
+        }
+        StorageRemoveItemFailureReason::QuotaExceeded => {
+            StorageClearNamespaceFailureReason::QuotaExceeded
+        }
+        StorageRemoveItemFailureReason::ReadFailed => {
+            StorageClearNamespaceFailureReason::ReadFailed
+        }
+        StorageRemoveItemFailureReason::RemoveFailed => {
+            StorageClearNamespaceFailureReason::RemoveFailed
+        }
+        StorageRemoveItemFailureReason::RuntimeUnavailable => {
+            StorageClearNamespaceFailureReason::RuntimeUnavailable
+        }
+        StorageRemoveItemFailureReason::SecurityDenied => {
+            StorageClearNamespaceFailureReason::SecurityDenied
+        }
     };
 }
 

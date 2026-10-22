@@ -3,7 +3,7 @@ use std::sync::Arc;
 use flight_scene2d::contract::Node2DRef;
 use flight_scene2d_formats::contract::*;
 use flight_shape::contract::SHAPE_KIND;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 mod lottie_shape_layer_handler {
     use super::*;
@@ -52,8 +52,10 @@ mod lottie_shape_layer_handler {
 }
 
 fn document_value(document: &LottieDocument) -> Value {
-    return json!(document
-        .iter()
-        .map(|(key, value)| (key.clone(), value.clone()))
-        .collect::<serde_json::Map<_, _>>());
+    return json!(
+        document
+            .iter()
+            .map(|(key, value)| (key.clone(), value.clone()))
+            .collect::<serde_json::Map<_, _>>()
+    );
 }

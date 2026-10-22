@@ -2,9 +2,7 @@
 
 use std::sync::Arc;
 
-use flight_animation::contract::{
-    AnimationChannel, clone_animation_track, sample_animation_track,
-};
+use flight_animation::contract::{AnimationChannel, clone_animation_track, sample_animation_track};
 use flight_entity::Unknown;
 
 use crate::skeleton2d_animation_target::register_skeleton_2d_animation_target_binder;

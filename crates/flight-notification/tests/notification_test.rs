@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
+use crate::block_on;
 use flight_entity::Entity;
 use flight_notification::*;
-use crate::block_on;
 
 fn scheduled_of(
     id: &str,
@@ -62,38 +62,44 @@ fn make_click_backend(
 ) -> HostNotificationClickCapability {
     let provider = make_provider();
     return HostNotificationClickCapability {
-        attach: Arc::new(move |_listener: NotificationClickListener| -> NotificationEventBackendAttachFuture {
-            let release_failure = release_failure;
-            let attach_failure = attach_failure;
-            return Box::pin(async move {
-                if attach_failure {
+        attach: Arc::new(
+            move |_listener: NotificationClickListener| -> NotificationEventBackendAttachFuture {
+                let release_failure = release_failure;
+                let attach_failure = attach_failure;
+                return Box::pin(async move {
+                    if attach_failure {
+                        return NotificationEventBackendAttachResult {
+                            reason: NotificationSubscriptionAttachReason::OperationFailed,
+                            attachment: None,
+                            release_failed: if release_failure {
+                                Some(true)
+                            } else {
+                                Some(false)
+                            },
+                        };
+                    }
                     return NotificationEventBackendAttachResult {
-                        reason: NotificationSubscriptionAttachReason::OperationFailed,
-                        attachment: None,
-                        release_failed: if release_failure { Some(true) } else { Some(false) },
-                    };
-                }
-                return NotificationEventBackendAttachResult {
-                    reason: NotificationSubscriptionAttachReason::Ok,
-                    attachment: Some(NotificationEventAttachment {
-                        release: Arc::new(move || -> NotificationEventReleaseFuture {
-                            let release_failure = release_failure;
-                            return Box::pin(async move {
-                                if release_failure {
+                        reason: NotificationSubscriptionAttachReason::Ok,
+                        attachment: Some(NotificationEventAttachment {
+                            release: Arc::new(move || -> NotificationEventReleaseFuture {
+                                let release_failure = release_failure;
+                                return Box::pin(async move {
+                                    if release_failure {
+                                        return NotificationEventReleaseOutcome {
+                                            reason: NotificationEventReleaseReason::OperationFailed,
+                                        };
+                                    }
                                     return NotificationEventReleaseOutcome {
-                                        reason: NotificationEventReleaseReason::OperationFailed,
+                                        reason: NotificationEventReleaseReason::Ok,
                                     };
-                                }
-                                return NotificationEventReleaseOutcome {
-                                    reason: NotificationEventReleaseReason::Ok,
-                                };
-                            });
+                                });
+                            }),
                         }),
-                    }),
-                    release_failed: None,
-                };
-            });
-        }),
+                        release_failed: None,
+                    };
+                });
+            },
+        ),
         provider,
     };
 }
@@ -135,10 +141,16 @@ mod attach_notification_click_subscription {
     fn routes_the_provider_entity_and_owns_only_its_acquired_release() {
         let backend = make_click_backend(false, false);
         let subscription = create_notification_click_subscription();
-        let outcome = block_on(attach_notification_click_subscription(&backend, &subscription));
+        let outcome = block_on(attach_notification_click_subscription(
+            &backend,
+            &subscription,
+        ));
         assert_eq!(outcome.reason, NotificationSubscriptionAttachReason::Ok);
         let detach_outcome = block_on(detach_notification_click_subscription(&subscription));
-        assert_eq!(detach_outcome.reason, NotificationSubscriptionDetachReason::Ok);
+        assert_eq!(
+            detach_outcome.reason,
+            NotificationSubscriptionDetachReason::Ok
+        );
     }
 }
 
@@ -167,10 +179,16 @@ mod attach_notification_dismiss_subscription {
             provider,
         };
         let subscription = create_notification_dismiss_subscription();
-        let outcome = block_on(attach_notification_dismiss_subscription(&cap, &subscription));
+        let outcome = block_on(attach_notification_dismiss_subscription(
+            &cap,
+            &subscription,
+        ));
         assert_eq!(outcome.reason, NotificationSubscriptionAttachReason::Ok);
         let detach_outcome = block_on(detach_notification_dismiss_subscription(&subscription));
-        assert_eq!(detach_outcome.reason, NotificationSubscriptionDetachReason::Ok);
+        assert_eq!(
+            detach_outcome.reason,
+            NotificationSubscriptionDetachReason::Ok
+        );
     }
 }
 
@@ -199,10 +217,16 @@ mod attach_notification_received_subscription {
             provider,
         };
         let subscription = create_notification_received_subscription();
-        let outcome = block_on(attach_notification_received_subscription(&cap, &subscription));
+        let outcome = block_on(attach_notification_received_subscription(
+            &cap,
+            &subscription,
+        ));
         assert_eq!(outcome.reason, NotificationSubscriptionAttachReason::Ok);
         let detach_outcome = block_on(detach_notification_received_subscription(&subscription));
-        assert_eq!(detach_outcome.reason, NotificationSubscriptionDetachReason::Ok);
+        assert_eq!(
+            detach_outcome.reason,
+            NotificationSubscriptionDetachReason::Ok
+        );
     }
 }
 
@@ -234,7 +258,10 @@ mod attach_notification_reply_subscription {
         let outcome = block_on(attach_notification_reply_subscription(&cap, &subscription));
         assert_eq!(outcome.reason, NotificationSubscriptionAttachReason::Ok);
         let detach_outcome = block_on(detach_notification_reply_subscription(&subscription));
-        assert_eq!(detach_outcome.reason, NotificationSubscriptionDetachReason::Ok);
+        assert_eq!(
+            detach_outcome.reason,
+            NotificationSubscriptionDetachReason::Ok
+        );
     }
 }
 
@@ -244,9 +271,16 @@ mod bind_notification_close {
     #[test]
     fn pins_the_provider_close_operation_to_its_notification_entity() {
         let notification = notification_of("bound", "Bound", "");
-        bind_notification_close(&notification, Arc::new(|| Box::pin(async {
-            return NotificationCloseOutcome { reason: NotificationCloseReason::Ok };
-        })));
+        bind_notification_close(
+            &notification,
+            Arc::new(|| {
+                Box::pin(async {
+                    return NotificationCloseOutcome {
+                        reason: NotificationCloseReason::Ok,
+                    };
+                })
+            }),
+        );
         let outcome = block_on(close_notification(&notification));
         assert_eq!(outcome.reason, NotificationCloseReason::Ok);
     }
@@ -260,9 +294,16 @@ mod bind_scheduled_notification_cancel {
         let request = make_request("Bound");
         let schedule = make_schedule(1.0);
         let scheduled = scheduled_of("bound", &request, &schedule);
-        bind_scheduled_notification_cancel(&scheduled, Arc::new(|| Box::pin(async {
-            return NotificationCancelOutcome { reason: NotificationCancelReason::Ok };
-        })));
+        bind_scheduled_notification_cancel(
+            &scheduled,
+            Arc::new(|| {
+                Box::pin(async {
+                    return NotificationCancelOutcome {
+                        reason: NotificationCancelReason::Ok,
+                    };
+                })
+            }),
+        );
         let outcome = block_on(cancel_scheduled_notification(&scheduled));
         assert_eq!(outcome.reason, NotificationCancelReason::Ok);
     }
@@ -278,10 +319,17 @@ mod cancel_scheduled_notification {
         let scheduled = scheduled_of("same", &request, &schedule);
         let cancels = Arc::new(std::sync::atomic::AtomicU32::new(0));
         let cancels_clone = cancels.clone();
-        bind_scheduled_notification_cancel(&scheduled, Arc::new(move || {
-            cancels_clone.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            return Box::pin(async { NotificationCancelOutcome { reason: NotificationCancelReason::Ok } });
-        }));
+        bind_scheduled_notification_cancel(
+            &scheduled,
+            Arc::new(move || {
+                cancels_clone.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                return Box::pin(async {
+                    NotificationCancelOutcome {
+                        reason: NotificationCancelReason::Ok,
+                    }
+                });
+            }),
+        );
         let outcome = block_on(cancel_scheduled_notification(&scheduled));
         assert_eq!(outcome.reason, NotificationCancelReason::Ok);
         let outcome2 = block_on(cancel_scheduled_notification(&scheduled));
@@ -297,12 +345,14 @@ mod close_all_notifications {
     fn dispatches_provider_wide_close_through_the_exact_host_trait() {
         let provider = make_provider();
         let cap = HostNotificationCloseCapability {
-            close_all_notifications: Arc::new(|| Box::pin(async {
-                return NotificationLifecycleOutcome {
-                    reason: NotificationLifecycleReason::Ok,
-                    failures: None,
-                };
-            })),
+            close_all_notifications: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationLifecycleOutcome {
+                        reason: NotificationLifecycleReason::Ok,
+                        failures: None,
+                    };
+                })
+            }),
             provider,
         };
         let outcome = block_on(close_all_notifications(&cap));
@@ -325,10 +375,17 @@ mod close_notification {
         let notification = notification_of("same", "A", "");
         let closes = Arc::new(std::sync::atomic::AtomicU32::new(0));
         let closes_clone = closes.clone();
-        bind_notification_close(&notification, Arc::new(move || {
-            closes_clone.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-            return Box::pin(async { NotificationCloseOutcome { reason: NotificationCloseReason::Ok } });
-        }));
+        bind_notification_close(
+            &notification,
+            Arc::new(move || {
+                closes_clone.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                return Box::pin(async {
+                    NotificationCloseOutcome {
+                        reason: NotificationCloseReason::Ok,
+                    }
+                });
+            }),
+        );
         let outcome = block_on(close_notification(&notification));
         assert_eq!(outcome.reason, NotificationCloseReason::Ok);
         let outcome2 = block_on(close_notification(&notification));
@@ -482,7 +539,10 @@ mod detach_notification_action_subscription {
     fn is_harmless_before_attach() {
         let subscription = create_notification_action_subscription();
         let outcome = block_on(detach_notification_action_subscription(&subscription));
-        assert_eq!(outcome.reason, NotificationSubscriptionDetachReason::NotAttached);
+        assert_eq!(
+            outcome.reason,
+            NotificationSubscriptionDetachReason::NotAttached
+        );
     }
 }
 
@@ -493,7 +553,10 @@ mod detach_notification_click_subscription {
     fn is_harmless_before_attach() {
         let subscription = create_notification_click_subscription();
         let outcome = block_on(detach_notification_click_subscription(&subscription));
-        assert_eq!(outcome.reason, NotificationSubscriptionDetachReason::NotAttached);
+        assert_eq!(
+            outcome.reason,
+            NotificationSubscriptionDetachReason::NotAttached
+        );
     }
 }
 
@@ -504,7 +567,10 @@ mod detach_notification_dismiss_subscription {
     fn is_harmless_before_attach() {
         let subscription = create_notification_dismiss_subscription();
         let outcome = block_on(detach_notification_dismiss_subscription(&subscription));
-        assert_eq!(outcome.reason, NotificationSubscriptionDetachReason::NotAttached);
+        assert_eq!(
+            outcome.reason,
+            NotificationSubscriptionDetachReason::NotAttached
+        );
     }
 }
 
@@ -515,7 +581,10 @@ mod detach_notification_received_subscription {
     fn is_harmless_before_attach() {
         let subscription = create_notification_received_subscription();
         let outcome = block_on(detach_notification_received_subscription(&subscription));
-        assert_eq!(outcome.reason, NotificationSubscriptionDetachReason::NotAttached);
+        assert_eq!(
+            outcome.reason,
+            NotificationSubscriptionDetachReason::NotAttached
+        );
     }
 }
 
@@ -526,7 +595,10 @@ mod detach_notification_reply_subscription {
     fn is_harmless_before_attach() {
         let subscription = create_notification_reply_subscription();
         let outcome = block_on(detach_notification_reply_subscription(&subscription));
-        assert_eq!(outcome.reason, NotificationSubscriptionDetachReason::NotAttached);
+        assert_eq!(
+            outcome.reason,
+            NotificationSubscriptionDetachReason::NotAttached
+        );
     }
 }
 
@@ -539,7 +611,10 @@ mod dispose_notification_action_subscription {
         let outcome = block_on(dispose_notification_action_subscription(&subscription));
         assert_eq!(outcome.reason, NotificationSubscriptionDisposeReason::Ok);
         let outcome2 = block_on(dispose_notification_action_subscription(&subscription));
-        assert_eq!(outcome2.reason, NotificationSubscriptionDisposeReason::AlreadyDisposed);
+        assert_eq!(
+            outcome2.reason,
+            NotificationSubscriptionDisposeReason::AlreadyDisposed
+        );
     }
 }
 
@@ -550,9 +625,15 @@ mod dispose_notification_click_subscription {
     fn keeps_a_failed_release_observable() {
         let backend = make_click_backend(false, true);
         let subscription = create_notification_click_subscription();
-        let _attach = block_on(attach_notification_click_subscription(&backend, &subscription));
+        let _attach = block_on(attach_notification_click_subscription(
+            &backend,
+            &subscription,
+        ));
         let outcome = block_on(dispose_notification_click_subscription(&subscription));
-        assert_eq!(outcome.reason, NotificationSubscriptionDisposeReason::OperationFailed);
+        assert_eq!(
+            outcome.reason,
+            NotificationSubscriptionDisposeReason::OperationFailed
+        );
         assert_eq!(outcome.release_failed, Some(true));
     }
 }
@@ -621,8 +702,14 @@ mod get_notification_cancel_reason_string {
     use super::*;
     #[test]
     fn round_trips() {
-        assert_eq!(get_notification_cancel_reason_string(NotificationCancelReason::Ok), "ok");
-        assert_eq!(parse_notification_cancel_reason("ok"), Some(NotificationCancelReason::Ok));
+        assert_eq!(
+            get_notification_cancel_reason_string(NotificationCancelReason::Ok),
+            "ok"
+        );
+        assert_eq!(
+            parse_notification_cancel_reason("ok"),
+            Some(NotificationCancelReason::Ok)
+        );
     }
 }
 
@@ -630,8 +717,14 @@ mod get_notification_close_reason_string {
     use super::*;
     #[test]
     fn round_trips() {
-        assert_eq!(get_notification_close_reason_string(NotificationCloseReason::Ok), "ok");
-        assert_eq!(parse_notification_close_reason("ok"), Some(NotificationCloseReason::Ok));
+        assert_eq!(
+            get_notification_close_reason_string(NotificationCloseReason::Ok),
+            "ok"
+        );
+        assert_eq!(
+            parse_notification_close_reason("ok"),
+            Some(NotificationCloseReason::Ok)
+        );
     }
 }
 
@@ -639,8 +732,14 @@ mod get_notification_delivery_reason_string {
     use super::*;
     #[test]
     fn round_trips() {
-        assert_eq!(get_notification_delivery_reason_string(NotificationDeliveryReason::Accepted), "accepted");
-        assert_eq!(parse_notification_delivery_reason("accepted"), Some(NotificationDeliveryReason::Accepted));
+        assert_eq!(
+            get_notification_delivery_reason_string(NotificationDeliveryReason::Accepted),
+            "accepted"
+        );
+        assert_eq!(
+            parse_notification_delivery_reason("accepted"),
+            Some(NotificationDeliveryReason::Accepted)
+        );
     }
 }
 
@@ -648,8 +747,14 @@ mod get_notification_direction_string {
     use super::*;
     #[test]
     fn round_trips() {
-        assert_eq!(get_notification_direction_string(NotificationDirection::Auto), "auto");
-        assert_eq!(parse_notification_direction("auto"), Some(NotificationDirection::Auto));
+        assert_eq!(
+            get_notification_direction_string(NotificationDirection::Auto),
+            "auto"
+        );
+        assert_eq!(
+            parse_notification_direction("auto"),
+            Some(NotificationDirection::Auto)
+        );
     }
 }
 
@@ -657,8 +762,14 @@ mod get_notification_event_release_reason_string {
     use super::*;
     #[test]
     fn round_trips() {
-        assert_eq!(get_notification_event_release_reason_string(NotificationEventReleaseReason::Ok), "ok");
-        assert_eq!(parse_notification_event_release_reason("ok"), Some(NotificationEventReleaseReason::Ok));
+        assert_eq!(
+            get_notification_event_release_reason_string(NotificationEventReleaseReason::Ok),
+            "ok"
+        );
+        assert_eq!(
+            parse_notification_event_release_reason("ok"),
+            Some(NotificationEventReleaseReason::Ok)
+        );
     }
 }
 
@@ -666,8 +777,16 @@ mod get_notification_lifecycle_failure_operation_string {
     use super::*;
     #[test]
     fn round_trips() {
-        assert_eq!(get_notification_lifecycle_failure_operation_string(NotificationLifecycleFailureOperation::Cancel), "cancel");
-        assert_eq!(parse_notification_lifecycle_failure_operation("cancel"), Some(NotificationLifecycleFailureOperation::Cancel));
+        assert_eq!(
+            get_notification_lifecycle_failure_operation_string(
+                NotificationLifecycleFailureOperation::Cancel
+            ),
+            "cancel"
+        );
+        assert_eq!(
+            parse_notification_lifecycle_failure_operation("cancel"),
+            Some(NotificationLifecycleFailureOperation::Cancel)
+        );
     }
 }
 
@@ -675,8 +794,14 @@ mod get_notification_lifecycle_reason_string {
     use super::*;
     #[test]
     fn round_trips() {
-        assert_eq!(get_notification_lifecycle_reason_string(NotificationLifecycleReason::Ok), "ok");
-        assert_eq!(parse_notification_lifecycle_reason("ok"), Some(NotificationLifecycleReason::Ok));
+        assert_eq!(
+            get_notification_lifecycle_reason_string(NotificationLifecycleReason::Ok),
+            "ok"
+        );
+        assert_eq!(
+            parse_notification_lifecycle_reason("ok"),
+            Some(NotificationLifecycleReason::Ok)
+        );
     }
 }
 
@@ -687,17 +812,21 @@ mod get_notification_permission {
     fn preserves_query_failure_instead_of_collapsing_it_to_denied() {
         let provider = make_provider();
         let cap = HostNotificationPermissionCapability {
-            get_permission: Arc::new(|| Box::pin(async {
-                return NotificationPermissionQueryOutcome {
-                    reason: NotificationLifecycleReason::OperationFailed,
-                    permission: None,
-                };
-            })),
-            request_permission: Arc::new(|| Box::pin(async {
-                return NotificationPermissionRequestOutcome {
-                    reason: NotificationPermissionRequestReason::OperationFailed,
-                };
-            })),
+            get_permission: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationPermissionQueryOutcome {
+                        reason: NotificationLifecycleReason::OperationFailed,
+                        permission: None,
+                    };
+                })
+            }),
+            request_permission: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationPermissionRequestOutcome {
+                        reason: NotificationPermissionRequestReason::OperationFailed,
+                    };
+                })
+            }),
             provider,
         };
         let outcome = block_on(get_notification_permission(&cap));
@@ -709,8 +838,16 @@ mod get_notification_permission_request_reason_string {
     use super::*;
     #[test]
     fn round_trips() {
-        assert_eq!(get_notification_permission_request_reason_string(NotificationPermissionRequestReason::Granted), "granted");
-        assert_eq!(parse_notification_permission_request_reason("granted"), Some(NotificationPermissionRequestReason::Granted));
+        assert_eq!(
+            get_notification_permission_request_reason_string(
+                NotificationPermissionRequestReason::Granted
+            ),
+            "granted"
+        );
+        assert_eq!(
+            parse_notification_permission_request_reason("granted"),
+            Some(NotificationPermissionRequestReason::Granted)
+        );
     }
 }
 
@@ -718,8 +855,14 @@ mod get_notification_permission_string {
     use super::*;
     #[test]
     fn round_trips() {
-        assert_eq!(get_notification_permission_string(NotificationPermission::Default), "default");
-        assert_eq!(parse_notification_permission("default"), Some(NotificationPermission::Default));
+        assert_eq!(
+            get_notification_permission_string(NotificationPermission::Default),
+            "default"
+        );
+        assert_eq!(
+            parse_notification_permission("default"),
+            Some(NotificationPermission::Default)
+        );
     }
 }
 
@@ -727,8 +870,14 @@ mod get_notification_schedule_precision_string {
     use super::*;
     #[test]
     fn round_trips() {
-        assert_eq!(get_notification_schedule_precision_string(NotificationSchedulePrecision::Exact), "exact");
-        assert_eq!(parse_notification_schedule_precision("exact"), Some(NotificationSchedulePrecision::Exact));
+        assert_eq!(
+            get_notification_schedule_precision_string(NotificationSchedulePrecision::Exact),
+            "exact"
+        );
+        assert_eq!(
+            parse_notification_schedule_precision("exact"),
+            Some(NotificationSchedulePrecision::Exact)
+        );
     }
 }
 
@@ -736,8 +885,14 @@ mod get_notification_schedule_reason_string {
     use super::*;
     #[test]
     fn round_trips() {
-        assert_eq!(get_notification_schedule_reason_string(NotificationScheduleReason::Scheduled), "scheduled");
-        assert_eq!(parse_notification_schedule_reason("scheduled"), Some(NotificationScheduleReason::Scheduled));
+        assert_eq!(
+            get_notification_schedule_reason_string(NotificationScheduleReason::Scheduled),
+            "scheduled"
+        );
+        assert_eq!(
+            parse_notification_schedule_reason("scheduled"),
+            Some(NotificationScheduleReason::Scheduled)
+        );
     }
 }
 
@@ -745,8 +900,14 @@ mod get_notification_schedule_repeat_string {
     use super::*;
     #[test]
     fn round_trips() {
-        assert_eq!(get_notification_schedule_repeat_string(NotificationScheduleRepeat::Day), "day");
-        assert_eq!(parse_notification_schedule_repeat("day"), Some(NotificationScheduleRepeat::Day));
+        assert_eq!(
+            get_notification_schedule_repeat_string(NotificationScheduleRepeat::Day),
+            "day"
+        );
+        assert_eq!(
+            parse_notification_schedule_repeat("day"),
+            Some(NotificationScheduleRepeat::Day)
+        );
     }
 }
 
@@ -754,8 +915,16 @@ mod get_notification_subscription_attach_reason_string {
     use super::*;
     #[test]
     fn round_trips() {
-        assert_eq!(get_notification_subscription_attach_reason_string(NotificationSubscriptionAttachReason::Ok), "ok");
-        assert_eq!(parse_notification_subscription_attach_reason("ok"), Some(NotificationSubscriptionAttachReason::Ok));
+        assert_eq!(
+            get_notification_subscription_attach_reason_string(
+                NotificationSubscriptionAttachReason::Ok
+            ),
+            "ok"
+        );
+        assert_eq!(
+            parse_notification_subscription_attach_reason("ok"),
+            Some(NotificationSubscriptionAttachReason::Ok)
+        );
     }
 }
 
@@ -763,8 +932,16 @@ mod get_notification_subscription_detach_reason_string {
     use super::*;
     #[test]
     fn round_trips() {
-        assert_eq!(get_notification_subscription_detach_reason_string(NotificationSubscriptionDetachReason::Ok), "ok");
-        assert_eq!(parse_notification_subscription_detach_reason("ok"), Some(NotificationSubscriptionDetachReason::Ok));
+        assert_eq!(
+            get_notification_subscription_detach_reason_string(
+                NotificationSubscriptionDetachReason::Ok
+            ),
+            "ok"
+        );
+        assert_eq!(
+            parse_notification_subscription_detach_reason("ok"),
+            Some(NotificationSubscriptionDetachReason::Ok)
+        );
     }
 }
 
@@ -772,8 +949,16 @@ mod get_notification_subscription_dispose_reason_string {
     use super::*;
     #[test]
     fn round_trips() {
-        assert_eq!(get_notification_subscription_dispose_reason_string(NotificationSubscriptionDisposeReason::Ok), "ok");
-        assert_eq!(parse_notification_subscription_dispose_reason("ok"), Some(NotificationSubscriptionDisposeReason::Ok));
+        assert_eq!(
+            get_notification_subscription_dispose_reason_string(
+                NotificationSubscriptionDisposeReason::Ok
+            ),
+            "ok"
+        );
+        assert_eq!(
+            parse_notification_subscription_dispose_reason("ok"),
+            Some(NotificationSubscriptionDisposeReason::Ok)
+        );
     }
 }
 
@@ -784,28 +969,36 @@ mod get_pending_notifications {
     fn preserves_provider_failure_instead_of_returning_an_empty_success() {
         let provider = make_provider();
         let cap = HostNotificationSchedulingCapability {
-            cancel_all_scheduled_notifications: Arc::new(|| Box::pin(async {
-                return NotificationLifecycleOutcome {
-                    reason: NotificationLifecycleReason::Ok,
-                    failures: None,
-                };
-            })),
-            get_pending_notifications: Arc::new(|| Box::pin(async {
-                return NotificationPendingListOutcome {
-                    reason: NotificationLifecycleReason::OperationFailed,
-                    notifications: None,
-                };
-            })),
-            schedule_notification: Arc::new(|_request: &NotificationRequest, _schedule: &NotificationSchedule| -> NotificationScheduleFuture {
-                return Box::pin(async {
-                    return NotificationScheduleOutcome {
-                        reason: NotificationScheduleReason::OperationFailed,
-                        precision: None,
-                        scheduled: None,
-                        fields: None,
+            cancel_all_scheduled_notifications: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationLifecycleOutcome {
+                        reason: NotificationLifecycleReason::Ok,
+                        failures: None,
                     };
-                });
+                })
             }),
+            get_pending_notifications: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationPendingListOutcome {
+                        reason: NotificationLifecycleReason::OperationFailed,
+                        notifications: None,
+                    };
+                })
+            }),
+            schedule_notification: Arc::new(
+                |_request: &NotificationRequest,
+                 _schedule: &NotificationSchedule|
+                 -> NotificationScheduleFuture {
+                    return Box::pin(async {
+                        return NotificationScheduleOutcome {
+                            reason: NotificationScheduleReason::OperationFailed,
+                            precision: None,
+                            scheduled: None,
+                            fields: None,
+                        };
+                    });
+                },
+            ),
             provider,
         };
         let outcome = block_on(get_pending_notifications(&cap));
@@ -986,7 +1179,10 @@ mod parse_notification_lifecycle_failure_operation {
     use super::*;
     #[test]
     fn returns_none_for_unknown() {
-        assert_eq!(parse_notification_lifecycle_failure_operation("bogus"), None);
+        assert_eq!(
+            parse_notification_lifecycle_failure_operation("bogus"),
+            None
+        );
     }
 }
 
@@ -1058,7 +1254,10 @@ mod parse_notification_subscription_dispose_reason {
     use super::*;
     #[test]
     fn returns_none_for_unknown() {
-        assert_eq!(parse_notification_subscription_dispose_reason("bogus"), None);
+        assert_eq!(
+            parse_notification_subscription_dispose_reason("bogus"),
+            None
+        );
     }
 }
 
@@ -1069,21 +1268,28 @@ mod request_notification_permission {
     fn preserves_the_provider_request_outcome() {
         let provider = make_provider();
         let cap = HostNotificationPermissionCapability {
-            get_permission: Arc::new(|| Box::pin(async {
-                return NotificationPermissionQueryOutcome {
-                    reason: NotificationLifecycleReason::Ok,
-                    permission: Some(NotificationPermission::Default),
-                };
-            })),
-            request_permission: Arc::new(|| Box::pin(async {
-                return NotificationPermissionRequestOutcome {
-                    reason: NotificationPermissionRequestReason::Dismissed,
-                };
-            })),
+            get_permission: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationPermissionQueryOutcome {
+                        reason: NotificationLifecycleReason::Ok,
+                        permission: Some(NotificationPermission::Default),
+                    };
+                })
+            }),
+            request_permission: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationPermissionRequestOutcome {
+                        reason: NotificationPermissionRequestReason::Dismissed,
+                    };
+                })
+            }),
             provider,
         };
         let outcome = block_on(request_notification_permission(&cap));
-        assert_eq!(outcome.reason, NotificationPermissionRequestReason::Dismissed);
+        assert_eq!(
+            outcome.reason,
+            NotificationPermissionRequestReason::Dismissed
+        );
     }
 }
 
@@ -1098,34 +1304,45 @@ mod schedule_notification {
         let scheduled_clone = scheduled.clone();
         let provider = make_provider();
         let cap = HostNotificationSchedulingCapability {
-            cancel_all_scheduled_notifications: Arc::new(|| Box::pin(async {
-                return NotificationLifecycleOutcome {
-                    reason: NotificationLifecycleReason::Ok,
-                    failures: None,
-                };
-            })),
-            get_pending_notifications: Arc::new(|| Box::pin(async {
-                return NotificationPendingListOutcome {
-                    reason: NotificationLifecycleReason::Ok,
-                    notifications: Some(vec![]),
-                };
-            })),
-            schedule_notification: Arc::new(move |_request: &NotificationRequest, _schedule: &NotificationSchedule| -> NotificationScheduleFuture {
-                let s = scheduled_clone.clone();
-                return Box::pin(async move {
-                    return NotificationScheduleOutcome {
-                        reason: NotificationScheduleReason::Scheduled,
-                        precision: Some(NotificationSchedulePrecision::Exact),
-                        scheduled: Some(s),
-                        fields: None,
+            cancel_all_scheduled_notifications: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationLifecycleOutcome {
+                        reason: NotificationLifecycleReason::Ok,
+                        failures: None,
                     };
-                });
+                })
             }),
+            get_pending_notifications: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationPendingListOutcome {
+                        reason: NotificationLifecycleReason::Ok,
+                        notifications: Some(vec![]),
+                    };
+                })
+            }),
+            schedule_notification: Arc::new(
+                move |_request: &NotificationRequest,
+                      _schedule: &NotificationSchedule|
+                      -> NotificationScheduleFuture {
+                    let s = scheduled_clone.clone();
+                    return Box::pin(async move {
+                        return NotificationScheduleOutcome {
+                            reason: NotificationScheduleReason::Scheduled,
+                            precision: Some(NotificationSchedulePrecision::Exact),
+                            scheduled: Some(s),
+                            fields: None,
+                        };
+                    });
+                },
+            ),
             provider,
         };
         let outcome = block_on(schedule_notification(&cap, &request, &schedule));
         assert_eq!(outcome.reason, NotificationScheduleReason::Scheduled);
-        assert_eq!(outcome.precision, Some(NotificationSchedulePrecision::Exact));
+        assert_eq!(
+            outcome.precision,
+            Some(NotificationSchedulePrecision::Exact)
+        );
         assert!(outcome.scheduled.is_some());
     }
 }
@@ -1139,16 +1356,18 @@ mod show_notification {
         let notification_clone = notification.clone();
         let provider = make_provider();
         let cap = HostNotificationDeliveryCapability {
-            notify: Arc::new(move |_request: &NotificationRequest| -> NotificationDeliveryFuture {
-                let n = notification_clone.clone();
-                return Box::pin(async move {
-                    return NotificationDeliveryOutcome {
-                        reason: NotificationDeliveryReason::Accepted,
-                        notification: Some(n),
-                        fields: None,
-                    };
-                });
-            }),
+            notify: Arc::new(
+                move |_request: &NotificationRequest| -> NotificationDeliveryFuture {
+                    let n = notification_clone.clone();
+                    return Box::pin(async move {
+                        return NotificationDeliveryOutcome {
+                            reason: NotificationDeliveryReason::Accepted,
+                            notification: Some(n),
+                            fields: None,
+                        };
+                    });
+                },
+            ),
             provider,
         };
         let request = make_request("Title");

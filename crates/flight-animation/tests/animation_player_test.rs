@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
-use flight_animation::*;
 use flight_animation::contract::*;
+use flight_animation::*;
 use flight_signals::connect_signal;
 
 // The source passes these as createAnimationPlayer options; D23 assigns them after create
@@ -45,14 +45,16 @@ fn player(duration: f32, opts: Option<PlayerFields>) -> AnimationPlayer {
     return out;
 }
 
-fn event_player(
-    duration: f32,
-    times: &[f32],
-    opts: Option<PlayerFields>,
-) -> AnimationPlayer {
+fn event_player(duration: f32, times: &[f32], opts: Option<PlayerFields>) -> AnimationPlayer {
     let events: Vec<AnimationClipEvent> = times
         .iter()
-        .map(|&time| { let mut event = create_animation_clip_event(); event.time = time; event.name = (&time.to_string()).to_string(); event.payload = time as usize; event })
+        .map(|&time| {
+            let mut event = create_animation_clip_event();
+            event.time = time;
+            event.name = (&time.to_string()).to_string();
+            event.payload = time as usize;
+            event
+        })
         .collect();
     let mut out = create_animation_player(create_animation_clip(vec![], Some(duration), &events));
     apply_player_fields(&mut out, opts);
@@ -373,7 +375,10 @@ mod advance_animation_player {
         });
         connect_signal(p.on_event.as_ref().unwrap(), slot, None);
         advance_animation_player(&mut p, 13.0);
-        assert_eq!(*crossed.lock().unwrap(), vec![10.0, 0.0, 2.0, 10.0, 0.0, 2.0]);
+        assert_eq!(
+            *crossed.lock().unwrap(),
+            vec![10.0, 0.0, 2.0, 10.0, 0.0, 2.0]
+        );
     }
 
     #[test]
@@ -508,10 +513,7 @@ mod enable_animation_player_signals {
             &p.on_looped.as_ref().unwrap().data,
             &looped.data
         ));
-        assert!(Arc::ptr_eq(
-            &p.on_event.as_ref().unwrap().data,
-            &event.data
-        ));
+        assert!(Arc::ptr_eq(&p.on_event.as_ref().unwrap().data, &event.data));
     }
 }
 

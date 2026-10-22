@@ -65,5 +65,5 @@ pub use crate::scene3d_gl_pipeline::*;
 pub use crate::sheen_pbr_gl_extension::*;
 pub use crate::specular_pbr_gl_extension::*;
 pub use crate::transmission_volume_pbr_gl_extension::*;
-pub use crate::wrapped_diffuse_pbr_gl_extension::*;
 pub use crate::types::*;
+pub use crate::wrapped_diffuse_pbr_gl_extension::*;

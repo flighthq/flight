@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use flight_effects::{EffectRef, EffectSourceMode, create_gradient_bevel_effect};
-use flight_entity::Ref;
 use flight_effects_wgpu::contract::*;
+use flight_entity::Ref;
 use flight_render_wgpu::*;
 
 use crate::support::*;
@@ -165,7 +165,10 @@ mod apply_gradient_bevel_effect_to_wgpu {
     fn builds_the_blur_basis_with_an_opaque_white_tint_in_packed_rgba() {
         let applied = apply(with_stops);
 
-        assert_eq!(&draw_calls(&applied.records)[0].uniforms[0..4], &[1.0, 1.0, 1.0, 1.0]);
+        assert_eq!(
+            &draw_calls(&applied.records)[0].uniforms[0..4],
+            &[1.0, 1.0, 1.0, 1.0]
+        );
     }
 
     #[test]
@@ -210,8 +213,14 @@ mod apply_gradient_bevel_effect_to_wgpu {
             effect.distance = Some(10.0);
         }));
 
-        assert!(close(offset[0], (std::f32::consts::PI / 6.0).cos() * 10.0 / SOURCE_WIDTH));
-        assert!(close(offset[1], (std::f32::consts::PI / 6.0).sin() * 10.0 / SOURCE_HEIGHT));
+        assert!(close(
+            offset[0],
+            (std::f32::consts::PI / 6.0).cos() * 10.0 / SOURCE_WIDTH
+        ));
+        assert!(close(
+            offset[1],
+            (std::f32::consts::PI / 6.0).sin() * 10.0 / SOURCE_HEIGHT
+        ));
     }
 
     // The ramp is cached per stop set, so asking for the descriptor's exact stops afterwards hits
@@ -317,7 +326,10 @@ mod apply_gradient_bevel_effect_to_wgpu {
             .into_iter()
             .find(|begin| begin.color_view == view_of(&knocked_out.dest))
             .unwrap();
-        assert!(matches!(first_into_dest.color, WgpuColorLoadRecord::Clear(_)));
+        assert!(matches!(
+            first_into_dest.color,
+            WgpuColorLoadRecord::Clear(_)
+        ));
     }
 
     #[test]
@@ -379,7 +391,11 @@ mod wgpu_gradient_bevel_effect_runner {
             wgpu_gradient_bevel_effect_runner(&mut context, &*effect.read().unwrap());
         });
 
-        assert!(draw_calls(&records).iter().any(|draw| draw.dest == view_of(&dest)));
+        assert!(
+            draw_calls(&records)
+                .iter()
+                .any(|draw| draw.dest == view_of(&dest))
+        );
         assert_eq!(pool.free.len(), 3);
     }
 }

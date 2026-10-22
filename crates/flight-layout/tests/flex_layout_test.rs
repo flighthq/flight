@@ -311,7 +311,12 @@ mod register_flex_layout_resolver {
                     shrink: Some(0.0),
                     align_self: None,
                 })),
-                child(Some(FlexLayoutItemStyle { align_self: None, basis: None, grow: None, shrink: None })),
+                child(Some(FlexLayoutItemStyle {
+                    align_self: None,
+                    basis: None,
+                    grow: None,
+                    shrink: None,
+                })),
             ],
             &[0.0, 0.0, 30.0, 10.0, 20.0, 17.0],
             100.0,
@@ -1128,7 +1133,14 @@ mod register_flex_layout_resolver {
         let mut state = create_layout_state();
         register_flex_layout_resolver(&mut state);
         assert_eq!(
-            resolve_layout_tree(&mut vec![0.0; 8], &mut state, &tree, &[0.0; 4], 100.0, 100.0),
+            resolve_layout_tree(
+                &mut vec![0.0; 8],
+                &mut state,
+                &tree,
+                &[0.0; 4],
+                100.0,
+                100.0
+            ),
             false
         );
         assert_eq!(
@@ -1152,7 +1164,14 @@ mod register_flex_layout_resolver {
         let mut state = create_layout_state();
         register_flex_layout_resolver(&mut state);
         assert_eq!(
-            resolve_layout_tree(&mut vec![0.0; 8], &mut state, &tree, &[0.0; 4], 100.0, 100.0),
+            resolve_layout_tree(
+                &mut vec![0.0; 8],
+                &mut state,
+                &tree,
+                &[0.0; 4],
+                100.0,
+                100.0
+            ),
             false
         );
         assert_eq!(

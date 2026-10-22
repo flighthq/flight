@@ -26,13 +26,13 @@ pub fn advance_animation_state_machine_with_scratch(
     }
 
     machine.transition_elapsed += dt;
-    machine.transition_weight = (machine.transition_curve)(
-        get_linear_animation_state_machine_transition_weight(
+    machine.transition_weight =
+        (machine.transition_curve)(get_linear_animation_state_machine_transition_weight(
             machine.transition_elapsed,
             machine.transition_duration,
-        ),
-    );
-    if machine.transition_duration <= 0.0 || machine.transition_elapsed >= machine.transition_duration
+        ));
+    if machine.transition_duration <= 0.0
+        || machine.transition_elapsed >= machine.transition_duration
     {
         machine.current_state_index = to_idx;
         machine.transition_from_state_index = None;

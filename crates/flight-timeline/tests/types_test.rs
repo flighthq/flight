@@ -143,8 +143,8 @@ mod get_timeline_play_mode_string {
 
 mod initialize_timeline_cue_registry {
     use super::*;
-    use std::sync::Arc;
     use flight_entity::get_entity_id;
+    use std::sync::Arc;
 
     #[test]
     fn reinitialize_clears_entries_and_preserves_id() {
@@ -169,13 +169,19 @@ mod initialize_timeline_cue_registry {
         }
         let guard = reg.read().unwrap();
         assert!(guard.entries.is_empty(), "entries cleared by reinitialize");
-        assert_eq!(get_entity_id(&*guard), id_before, "entity ID survives reinitialize");
+        assert_eq!(
+            get_entity_id(&*guard),
+            id_before,
+            "entity ID survives reinitialize"
+        );
     }
 }
 
 mod initialize_timeline_goto_cue {
     use super::*;
-    use flight_entity::{attach_entity_binding, get_entity_binding_as, get_entity_id, get_entity_uid, set_entity_uid};
+    use flight_entity::{
+        attach_entity_binding, get_entity_binding_as, get_entity_id, get_entity_uid, set_entity_uid,
+    };
 
     #[test]
     fn reinitialize_preserves_entity_id_binding_and_uid() {
@@ -195,8 +201,16 @@ mod initialize_timeline_goto_cue {
             initialize_timeline_goto_cue(&mut guard);
         }
         let mut guard = cue.write().unwrap();
-        assert_eq!(get_entity_id(&*guard), id_before, "entity ID survives reinitialize");
-        assert_eq!(get_entity_uid(&mut *guard), uid_before, "UID survives reinitialize");
+        assert_eq!(
+            get_entity_id(&*guard),
+            id_before,
+            "entity ID survives reinitialize"
+        );
+        assert_eq!(
+            get_entity_uid(&mut *guard),
+            uid_before,
+            "UID survives reinitialize"
+        );
         assert_eq!(
             get_entity_binding_as::<u32, _>(&*guard),
             Some(&42u32),
@@ -210,7 +224,9 @@ mod initialize_timeline_goto_cue {
 
 mod initialize_timeline_playback_cue {
     use super::*;
-    use flight_entity::{attach_entity_binding, get_entity_binding_as, get_entity_id, get_entity_uid, set_entity_uid};
+    use flight_entity::{
+        attach_entity_binding, get_entity_binding_as, get_entity_id, get_entity_uid, set_entity_uid,
+    };
 
     #[test]
     fn reinitialize_preserves_entity_id_binding_and_uid() {
@@ -230,8 +246,16 @@ mod initialize_timeline_playback_cue {
             initialize_timeline_playback_cue(&mut guard);
         }
         let mut guard = cue.write().unwrap();
-        assert_eq!(get_entity_id(&*guard), id_before, "entity ID survives reinitialize");
-        assert_eq!(get_entity_uid(&mut *guard), uid_before, "UID survives reinitialize");
+        assert_eq!(
+            get_entity_id(&*guard),
+            id_before,
+            "entity ID survives reinitialize"
+        );
+        assert_eq!(
+            get_entity_uid(&mut *guard),
+            uid_before,
+            "UID survives reinitialize"
+        );
         assert_eq!(
             get_entity_binding_as::<u32, _>(&*guard),
             Some(&99u32),

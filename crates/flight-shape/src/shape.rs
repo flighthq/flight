@@ -18,10 +18,7 @@ use crate::types::*;
 /// Creates a shape (TS `createShape`).
 // flight-lint: allow(conform-params) D23 B: authored options removed; kind assigns fields after create
 pub fn create_shape() -> Ref<Shape> {
-    let mut out: Shape = create_node2d(
-        SHAPE_KIND.to_string(),
-        Some(create_shape_runtime),
-    );
+    let mut out: Shape = create_node2d(SHAPE_KIND.to_string(), Some(create_shape_runtime));
     initialize_shape(&mut out);
     return flight_scene2d::publish_node2d(out);
 }

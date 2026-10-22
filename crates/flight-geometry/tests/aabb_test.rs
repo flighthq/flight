@@ -74,8 +74,12 @@ mod create_aabb {
     #[test]
     fn creates_an_empty_box_with_infinity_values() {
         let a = create_aabb(
-            f32::INFINITY, f32::INFINITY, f32::INFINITY,
-            f32::NEG_INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY,
+            f32::INFINITY,
+            f32::INFINITY,
+            f32::INFINITY,
+            f32::NEG_INFINITY,
+            f32::NEG_INFINITY,
+            f32::NEG_INFINITY,
         );
         assert_eq!(a.min.x, f32::INFINITY);
         assert_eq!(a.max.x, f32::NEG_INFINITY);
@@ -95,8 +99,12 @@ mod expand_aabb_by_point {
     #[test]
     fn an_empty_box_snaps_exactly_to_the_first_point() {
         let a = create_aabb(
-            f32::INFINITY, f32::INFINITY, f32::INFINITY,
-            f32::NEG_INFINITY, f32::NEG_INFINITY, f32::NEG_INFINITY,
+            f32::INFINITY,
+            f32::INFINITY,
+            f32::INFINITY,
+            f32::NEG_INFINITY,
+            f32::NEG_INFINITY,
+            f32::NEG_INFINITY,
         );
         let mut out = create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         expand_aabb_by_point(&mut out, &a, &create_vector3(2.0, 3.0, 4.0));
@@ -456,8 +464,7 @@ mod transform_aabb_by_matrix4 {
         let a = create_aabb(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0);
         let c = FRAC_1_SQRT_2;
         let m = create_matrix4_from_values(
-            c, c, 0.0, 0.0, -c, c, 0.0, 0.0,
-            0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+            c, c, 0.0, 0.0, -c, c, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
         );
         let mut out = create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         transform_aabb_by_matrix4(&mut out, &a, &m);

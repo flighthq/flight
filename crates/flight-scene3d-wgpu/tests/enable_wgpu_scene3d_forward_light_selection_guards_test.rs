@@ -15,9 +15,13 @@ mod are_wgpu_scene3d_forward_light_selection_guards_enabled {
     #[test]
     fn reports_false_before_installation_and_true_afterward() {
         let mut test = make_wgpu_scene3d_state(None);
-        assert!(!are_wgpu_scene3d_forward_light_selection_guards_enabled(&mut test.state));
+        assert!(!are_wgpu_scene3d_forward_light_selection_guards_enabled(
+            &mut test.state
+        ));
         enable_wgpu_scene3d_forward_light_selection_guards(&mut test.state, None);
-        assert!(are_wgpu_scene3d_forward_light_selection_guards_enabled(&mut test.state));
+        assert!(are_wgpu_scene3d_forward_light_selection_guards_enabled(
+            &mut test.state
+        ));
     }
 }
 

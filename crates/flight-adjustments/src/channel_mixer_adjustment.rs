@@ -1,8 +1,8 @@
 use flight_entity::allocate_entity;
 
 use crate::contract::AdjustmentFields;
-use crate::contract::initialize_color_matrix_adjustment;
 use crate::contract::create_channel_mixer_color_matrix;
+use crate::contract::initialize_color_matrix_adjustment;
 
 #[cfg(test)]
 mod sugar_tests {
@@ -10,8 +10,12 @@ mod sugar_tests {
 
     #[test]
     fn new_matches_create_channel_mixer_adjustment() {
-        let a = ChannelMixerAdjustment::new(Some(&ChannelMixerAdjustmentOptions { matrix: [0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0] }));
-        let b = create_channel_mixer_adjustment(Some(&ChannelMixerAdjustmentOptions { matrix: [0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0] }));
+        let a = ChannelMixerAdjustment::new(Some(&ChannelMixerAdjustmentOptions {
+            matrix: [0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+        }));
+        let b = create_channel_mixer_adjustment(Some(&ChannelMixerAdjustmentOptions {
+            matrix: [0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+        }));
         assert_eq!(a.kind, b.kind);
         assert_eq!(a.color_matrix, b.color_matrix);
     }
@@ -25,7 +29,8 @@ pub struct ChannelMixerAdjustment {
     pub matrix: [f32; 12],
 }
 
-pub const IDENTITY_CHANNEL_MIXER: [f32; 12] = [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0];
+pub const IDENTITY_CHANNEL_MIXER: [f32; 12] =
+    [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0];
 
 /// Options for `create_channel_mixer_adjustment` (TS: the options object). Omitted options mean the identity mix.
 #[derive(Debug, Clone, Default)]
@@ -34,14 +39,19 @@ pub struct ChannelMixerAdjustmentOptions {
 }
 
 // flight-lint: allow(conform-params) D23 C: options carry the channel mixer matrix — KEEP under c0f9227c
-pub fn create_channel_mixer_adjustment(options: Option<&ChannelMixerAdjustmentOptions>) -> ChannelMixerAdjustment {
+pub fn create_channel_mixer_adjustment(
+    options: Option<&ChannelMixerAdjustmentOptions>,
+) -> ChannelMixerAdjustment {
     let mut out: ChannelMixerAdjustment = allocate_entity();
     initialize_channel_mixer_adjustment(&mut out, options);
     return out;
 }
 
 // flight-lint: allow(conform-params) D23 C: options carry the channel mixer matrix — KEEP under c0f9227c
-pub fn initialize_channel_mixer_adjustment(out: &mut ChannelMixerAdjustment, options: Option<&ChannelMixerAdjustmentOptions>) {
+pub fn initialize_channel_mixer_adjustment(
+    out: &mut ChannelMixerAdjustment,
+    options: Option<&ChannelMixerAdjustmentOptions>,
+) {
     let matrix = options.map_or(IDENTITY_CHANNEL_MIXER, |o| o.matrix);
     let m = |i: usize| -> f32 { matrix[i] };
     let mut color_matrix = create_channel_mixer_color_matrix(

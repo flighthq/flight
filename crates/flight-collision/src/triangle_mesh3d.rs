@@ -53,7 +53,6 @@ struct TriangleAabb {
     cz: f32,
 }
 
-
 // --- Triangle Mesh functions ---
 
 // flight-lint: allow(conform-params) Principal D23 B: canonical Entity construction is zero-field; callers assign authored heightfield data after allocation
@@ -71,14 +70,12 @@ fn create_collision_triangle_contact_accumulator3d() -> CollisionTriangleContact
     }
 }
 
-
 // flight-lint: allow(conform-params) Principal D23 B: canonical Entity construction is zero-field; callers assign authored mesh data after allocation
 pub fn create_collision_triangle_mesh3d() -> CollisionTriangleMesh3D {
     let mut out: CollisionTriangleMesh3D = flight_entity::allocate_entity();
     initialize_collision_triangle_mesh3d(&mut out);
     return out;
 }
-
 
 // flight-lint: allow(conform-params) Principal D23 B: construction initialization owns only canonical zero-field defaults
 pub fn initialize_collision_heightfield3d(out: &mut CollisionHeightfield3D) {
@@ -97,7 +94,6 @@ pub fn initialize_collision_heightfield3d(out: &mut CollisionHeightfield3D) {
     out.rotation_w = 1.0;
     out.bvh_cache.clear();
 }
-
 
 // flight-lint: allow(conform-params) Principal D23 B: construction initialization owns only canonical zero-field defaults
 pub fn initialize_collision_triangle_mesh3d(out: &mut CollisionTriangleMesh3D) {
@@ -297,7 +293,6 @@ fn build_mesh_bvh(mesh: &CollisionTriangleMesh3D) -> Option<BvhNode> {
     return build_bvh(&mut aabbs);
 }
 
-
 // flight-lint: allow(conform-params) D5/D9: caller-owned output stays first and registry is explicit
 pub fn collide_collision_heightfield3d(
     out: &mut CollisionContactManifold3D,
@@ -332,7 +327,6 @@ pub fn collide_collision_heightfield3d(
     }
     return contacts.write_reduced(out);
 }
-
 
 // flight-lint: allow(conform-params) D5/D9: caller-owned output stays first and registry is explicit
 pub fn collide_collision_triangle_mesh3d(
@@ -509,7 +503,10 @@ fn get_or_build_mesh_bvh(mesh: &CollisionTriangleMesh3D) -> Option<BvhNode> {
     return bvh;
 }
 
-fn heightfield_candidate_triangles(heightfield: &CollisionHeightfield3D, convex: &CollisionShape3D) -> Vec<usize> {
+fn heightfield_candidate_triangles(
+    heightfield: &CollisionHeightfield3D,
+    convex: &CollisionShape3D,
+) -> Vec<usize> {
     let bvh = get_or_build_heightfield_bvh(heightfield);
     let bvh = match bvh {
         Some(ref b) => b,
@@ -518,11 +515,25 @@ fn heightfield_candidate_triangles(heightfield: &CollisionHeightfield3D, convex:
     let world_aabb = shape_aabb3d(convex);
     let local_aabb = inverse_transform_aabb_to_local(
         &world_aabb,
-        heightfield.x, heightfield.y, heightfield.z,
-        heightfield.rotation_x, heightfield.rotation_y, heightfield.rotation_z, heightfield.rotation_w,
+        heightfield.x,
+        heightfield.y,
+        heightfield.z,
+        heightfield.rotation_x,
+        heightfield.rotation_y,
+        heightfield.rotation_z,
+        heightfield.rotation_w,
     );
     let mut candidates = Vec::new();
-    query_bvh(bvh, local_aabb.min_x, local_aabb.min_y, local_aabb.min_z, local_aabb.max_x, local_aabb.max_y, local_aabb.max_z, &mut candidates);
+    query_bvh(
+        bvh,
+        local_aabb.min_x,
+        local_aabb.min_y,
+        local_aabb.min_z,
+        local_aabb.max_x,
+        local_aabb.max_y,
+        local_aabb.max_z,
+        &mut candidates,
+    );
     return candidates;
 }
 
@@ -571,14 +582,36 @@ fn heightfield_ray_candidate_triangles(
         query_bvh_all(bvh, &mut candidates);
         return candidates;
     }
-    let ray_box = ray_aabb(origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction);
+    let ray_box = ray_aabb(
+        origin_x,
+        origin_y,
+        origin_z,
+        direction_x,
+        direction_y,
+        direction_z,
+        max_fraction,
+    );
     let local_aabb = inverse_transform_aabb_to_local(
         &ray_box,
-        heightfield.x, heightfield.y, heightfield.z,
-        heightfield.rotation_x, heightfield.rotation_y, heightfield.rotation_z, heightfield.rotation_w,
+        heightfield.x,
+        heightfield.y,
+        heightfield.z,
+        heightfield.rotation_x,
+        heightfield.rotation_y,
+        heightfield.rotation_z,
+        heightfield.rotation_w,
     );
     let mut candidates = Vec::new();
-    query_bvh(bvh, local_aabb.min_x, local_aabb.min_y, local_aabb.min_z, local_aabb.max_x, local_aabb.max_y, local_aabb.max_z, &mut candidates);
+    query_bvh(
+        bvh,
+        local_aabb.min_x,
+        local_aabb.min_y,
+        local_aabb.min_z,
+        local_aabb.max_x,
+        local_aabb.max_y,
+        local_aabb.max_z,
+        &mut candidates,
+    );
     return candidates;
 }
 
@@ -606,15 +639,32 @@ fn heightfield_sweep_candidate_triangles(
     };
     let local_aabb = inverse_transform_aabb_to_local(
         &swept_aabb,
-        heightfield.x, heightfield.y, heightfield.z,
-        heightfield.rotation_x, heightfield.rotation_y, heightfield.rotation_z, heightfield.rotation_w,
+        heightfield.x,
+        heightfield.y,
+        heightfield.z,
+        heightfield.rotation_x,
+        heightfield.rotation_y,
+        heightfield.rotation_z,
+        heightfield.rotation_w,
     );
     let mut candidates = Vec::new();
-    query_bvh(bvh, local_aabb.min_x, local_aabb.min_y, local_aabb.min_z, local_aabb.max_x, local_aabb.max_y, local_aabb.max_z, &mut candidates);
+    query_bvh(
+        bvh,
+        local_aabb.min_x,
+        local_aabb.min_y,
+        local_aabb.min_z,
+        local_aabb.max_x,
+        local_aabb.max_y,
+        local_aabb.max_z,
+        &mut candidates,
+    );
     return candidates;
 }
 
-fn heightfield_triangle_to_cell(heightfield: &CollisionHeightfield3D, triangle: usize) -> (usize, usize, usize) {
+fn heightfield_triangle_to_cell(
+    heightfield: &CollisionHeightfield3D,
+    triangle: usize,
+) -> (usize, usize, usize) {
     let cols = heightfield.columns - 1;
     let cell = triangle / 2;
     let sub = triangle % 2;
@@ -709,12 +759,24 @@ fn inverse_transform_aabb_to_local(
         let dy = cy - ty;
         let dz = cz - tz;
         rotate_by_quat(dx, dy, dz, inv_qx, inv_qy, inv_qz, inv_qw, &mut out);
-        if out[0] < local_min_x { local_min_x = out[0]; }
-        if out[1] < local_min_y { local_min_y = out[1]; }
-        if out[2] < local_min_z { local_min_z = out[2]; }
-        if out[0] > local_max_x { local_max_x = out[0]; }
-        if out[1] > local_max_y { local_max_y = out[1]; }
-        if out[2] > local_max_z { local_max_z = out[2]; }
+        if out[0] < local_min_x {
+            local_min_x = out[0];
+        }
+        if out[1] < local_min_y {
+            local_min_y = out[1];
+        }
+        if out[2] < local_min_z {
+            local_min_z = out[2];
+        }
+        if out[0] > local_max_x {
+            local_max_x = out[0];
+        }
+        if out[1] > local_max_y {
+            local_max_y = out[1];
+        }
+        if out[2] > local_max_z {
+            local_max_z = out[2];
+        }
     }
     return CollisionAabb3D {
         min_x: local_min_x,
@@ -726,7 +788,10 @@ fn inverse_transform_aabb_to_local(
     };
 }
 
-fn mesh_candidate_triangles(mesh: &CollisionTriangleMesh3D, convex: &CollisionShape3D) -> Vec<usize> {
+fn mesh_candidate_triangles(
+    mesh: &CollisionTriangleMesh3D,
+    convex: &CollisionShape3D,
+) -> Vec<usize> {
     let bvh = get_or_build_mesh_bvh(mesh);
     let bvh = match bvh {
         Some(ref b) => b,
@@ -735,11 +800,25 @@ fn mesh_candidate_triangles(mesh: &CollisionTriangleMesh3D, convex: &CollisionSh
     let world_aabb = shape_aabb3d(convex);
     let local_aabb = inverse_transform_aabb_to_local(
         &world_aabb,
-        mesh.x, mesh.y, mesh.z,
-        mesh.rotation_x, mesh.rotation_y, mesh.rotation_z, mesh.rotation_w,
+        mesh.x,
+        mesh.y,
+        mesh.z,
+        mesh.rotation_x,
+        mesh.rotation_y,
+        mesh.rotation_z,
+        mesh.rotation_w,
     );
     let mut candidates = Vec::new();
-    query_bvh(bvh, local_aabb.min_x, local_aabb.min_y, local_aabb.min_z, local_aabb.max_x, local_aabb.max_y, local_aabb.max_z, &mut candidates);
+    query_bvh(
+        bvh,
+        local_aabb.min_x,
+        local_aabb.min_y,
+        local_aabb.min_z,
+        local_aabb.max_x,
+        local_aabb.max_y,
+        local_aabb.max_z,
+        &mut candidates,
+    );
     return candidates;
 }
 
@@ -763,14 +842,36 @@ fn mesh_ray_candidate_triangles(
         query_bvh_all(bvh, &mut candidates);
         return candidates;
     }
-    let ray_box = ray_aabb(origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction);
+    let ray_box = ray_aabb(
+        origin_x,
+        origin_y,
+        origin_z,
+        direction_x,
+        direction_y,
+        direction_z,
+        max_fraction,
+    );
     let local_aabb = inverse_transform_aabb_to_local(
         &ray_box,
-        mesh.x, mesh.y, mesh.z,
-        mesh.rotation_x, mesh.rotation_y, mesh.rotation_z, mesh.rotation_w,
+        mesh.x,
+        mesh.y,
+        mesh.z,
+        mesh.rotation_x,
+        mesh.rotation_y,
+        mesh.rotation_z,
+        mesh.rotation_w,
     );
     let mut candidates = Vec::new();
-    query_bvh(bvh, local_aabb.min_x, local_aabb.min_y, local_aabb.min_z, local_aabb.max_x, local_aabb.max_y, local_aabb.max_z, &mut candidates);
+    query_bvh(
+        bvh,
+        local_aabb.min_x,
+        local_aabb.min_y,
+        local_aabb.min_z,
+        local_aabb.max_x,
+        local_aabb.max_y,
+        local_aabb.max_z,
+        &mut candidates,
+    );
     return candidates;
 }
 
@@ -798,18 +899,44 @@ fn mesh_sweep_candidate_triangles(
     };
     let local_aabb = inverse_transform_aabb_to_local(
         &swept_aabb,
-        mesh.x, mesh.y, mesh.z,
-        mesh.rotation_x, mesh.rotation_y, mesh.rotation_z, mesh.rotation_w,
+        mesh.x,
+        mesh.y,
+        mesh.z,
+        mesh.rotation_x,
+        mesh.rotation_y,
+        mesh.rotation_z,
+        mesh.rotation_w,
     );
     let mut candidates = Vec::new();
-    query_bvh(bvh, local_aabb.min_x, local_aabb.min_y, local_aabb.min_z, local_aabb.max_x, local_aabb.max_y, local_aabb.max_z, &mut candidates);
+    query_bvh(
+        bvh,
+        local_aabb.min_x,
+        local_aabb.min_y,
+        local_aabb.min_z,
+        local_aabb.max_x,
+        local_aabb.max_y,
+        local_aabb.max_z,
+        &mut candidates,
+    );
     return candidates;
 }
 
-fn query_bvh(node: &BvhNode, qmin_x: f32, qmin_y: f32, qmin_z: f32, qmax_x: f32, qmax_y: f32, qmax_z: f32, out: &mut Vec<usize>) {
-    if qmax_x < node.min_x || qmin_x > node.max_x
-        || qmax_y < node.min_y || qmin_y > node.max_y
-        || qmax_z < node.min_z || qmin_z > node.max_z
+fn query_bvh(
+    node: &BvhNode,
+    qmin_x: f32,
+    qmin_y: f32,
+    qmin_z: f32,
+    qmax_x: f32,
+    qmax_y: f32,
+    qmax_z: f32,
+    out: &mut Vec<usize>,
+) {
+    if qmax_x < node.min_x
+        || qmin_x > node.max_x
+        || qmax_y < node.min_y
+        || qmin_y > node.max_y
+        || qmax_z < node.min_z
+        || qmin_z > node.max_z
     {
         return;
     }
@@ -859,7 +986,6 @@ fn ray_aabb(
         max_z: origin_z.max(end_z),
     };
 }
-
 
 /// Moller-Trumbore ray-triangle intersection.
 /// Returns Some((t, nx, ny, nz)) or None.
@@ -934,7 +1060,6 @@ fn ray_triangle_intersection(
     return Some((t, nx, ny, nz));
 }
 
-
 // flight-lint: allow(conform-params) D9 requires caller-owned outputs first; max_fraction remains optional after source inputs
 pub fn raycast_collision_heightfield3d(
     out: &mut CollisionRaycastHit3D,
@@ -955,7 +1080,16 @@ pub fn raycast_collision_heightfield3d(
     let mut best_t = max_fraction + 1.0;
     let mut hit = false;
 
-    let candidates = heightfield_ray_candidate_triangles(heightfield, origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction);
+    let candidates = heightfield_ray_candidate_triangles(
+        heightfield,
+        origin_x,
+        origin_y,
+        origin_z,
+        direction_x,
+        direction_y,
+        direction_z,
+        max_fraction,
+    );
 
     for &triangle in &candidates {
         let (col, row, sub) = heightfield_triangle_to_cell(heightfield, triangle);
@@ -1003,7 +1137,6 @@ pub fn raycast_collision_heightfield3d(
     return hit;
 }
 
-
 // flight-lint: allow(conform-params) D9 requires caller-owned outputs first; max_fraction remains optional after source inputs
 pub fn raycast_collision_triangle_mesh3d(
     out: &mut CollisionRaycastHit3D,
@@ -1024,7 +1157,16 @@ pub fn raycast_collision_triangle_mesh3d(
     let mut best_t = max_fraction + 1.0;
     let mut hit = false;
 
-    let candidates = mesh_ray_candidate_triangles(mesh, origin_x, origin_y, origin_z, direction_x, direction_y, direction_z, max_fraction);
+    let candidates = mesh_ray_candidate_triangles(
+        mesh,
+        origin_x,
+        origin_y,
+        origin_z,
+        direction_x,
+        direction_y,
+        direction_z,
+        max_fraction,
+    );
 
     for &ti in &candidates {
         let i0 = mesh.indices[ti * 3];
@@ -1130,7 +1272,14 @@ fn shape_aabb3d(shape: &CollisionShape3D) -> CollisionAabb3D {
             let max_x = c.x0.max(c.x1) + c.radius;
             let max_y = c.y0.max(c.y1) + c.radius;
             let max_z = c.z0.max(c.z1) + c.radius;
-            CollisionAabb3D { min_x, min_y, min_z, max_x, max_y, max_z }
+            CollisionAabb3D {
+                min_x,
+                min_y,
+                min_z,
+                max_x,
+                max_y,
+                max_z,
+            }
         }
         CollisionShape3D::Cylinder(c) => {
             let min_x = c.x0.min(c.x1) - c.radius;
@@ -1139,7 +1288,14 @@ fn shape_aabb3d(shape: &CollisionShape3D) -> CollisionAabb3D {
             let max_x = c.x0.max(c.x1) + c.radius;
             let max_y = c.y0.max(c.y1) + c.radius;
             let max_z = c.z0.max(c.z1) + c.radius;
-            CollisionAabb3D { min_x, min_y, min_z, max_x, max_y, max_z }
+            CollisionAabb3D {
+                min_x,
+                min_y,
+                min_z,
+                max_x,
+                max_y,
+                max_z,
+            }
         }
         CollisionShape3D::Cone(c) => {
             let min_x = c.x0.min(c.x1) - c.radius;
@@ -1148,7 +1304,14 @@ fn shape_aabb3d(shape: &CollisionShape3D) -> CollisionAabb3D {
             let max_x = c.x0.max(c.x1) + c.radius;
             let max_y = c.y0.max(c.y1) + c.radius;
             let max_z = c.z0.max(c.z1) + c.radius;
-            CollisionAabb3D { min_x, min_y, min_z, max_x, max_y, max_z }
+            CollisionAabb3D {
+                min_x,
+                min_y,
+                min_z,
+                max_x,
+                max_y,
+                max_z,
+            }
         }
         CollisionShape3D::Convex(c) => {
             let mut aabb = CollisionAabb3D {
@@ -1164,18 +1327,29 @@ fn shape_aabb3d(shape: &CollisionShape3D) -> CollisionAabb3D {
                 let px = c.points[i * 3];
                 let py = c.points[i * 3 + 1];
                 let pz = c.points[i * 3 + 2];
-                if px < aabb.min_x { aabb.min_x = px; }
-                if py < aabb.min_y { aabb.min_y = py; }
-                if pz < aabb.min_z { aabb.min_z = pz; }
-                if px > aabb.max_x { aabb.max_x = px; }
-                if py > aabb.max_y { aabb.max_y = py; }
-                if pz > aabb.max_z { aabb.max_z = pz; }
+                if px < aabb.min_x {
+                    aabb.min_x = px;
+                }
+                if py < aabb.min_y {
+                    aabb.min_y = py;
+                }
+                if pz < aabb.min_z {
+                    aabb.min_z = pz;
+                }
+                if px > aabb.max_x {
+                    aabb.max_x = px;
+                }
+                if py > aabb.max_y {
+                    aabb.max_y = py;
+                }
+                if pz > aabb.max_z {
+                    aabb.max_z = pz;
+                }
             }
             aabb
         }
     };
 }
-
 
 // flight-lint: allow(conform-params) D5/D9: caller-owned output stays first and registry is explicit
 pub fn sweep_collision_heightfield3d(
@@ -1197,7 +1371,14 @@ pub fn sweep_collision_heightfield3d(
     let mut best_t = max_fraction;
     let mut hit = false;
 
-    let candidates = heightfield_sweep_candidate_triangles(heightfield, convex, delta_x, delta_y, delta_z, max_fraction);
+    let candidates = heightfield_sweep_candidate_triangles(
+        heightfield,
+        convex,
+        delta_x,
+        delta_y,
+        delta_z,
+        max_fraction,
+    );
 
     for &triangle in &candidates {
         let (col, row, sub) = heightfield_triangle_to_cell(heightfield, triangle);
@@ -1230,7 +1411,6 @@ pub fn sweep_collision_heightfield3d(
     return hit;
 }
 
-
 // flight-lint: allow(conform-params) D5/D9: caller-owned output stays first and registry is explicit
 pub fn sweep_collision_triangle_mesh3d(
     out: &mut CollisionTimeOfImpact3D,
@@ -1251,7 +1431,8 @@ pub fn sweep_collision_triangle_mesh3d(
     let mut best_t = max_fraction;
     let mut hit = false;
 
-    let candidates = mesh_sweep_candidate_triangles(mesh, convex, delta_x, delta_y, delta_z, max_fraction);
+    let candidates =
+        mesh_sweep_candidate_triangles(mesh, convex, delta_x, delta_y, delta_z, max_fraction);
 
     for &ti in &candidates {
         let i0 = mesh.indices[ti * 3];

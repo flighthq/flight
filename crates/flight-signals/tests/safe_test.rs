@@ -22,7 +22,10 @@ mod emit_signal_safe {
             connect_signal(
                 &signal,
                 Arc::new(move |event: &ValueEvent| {
-                    received.lock().unwrap().push(format!("{}:{}", label, event.value));
+                    received
+                        .lock()
+                        .unwrap()
+                        .push(format!("{}:{}", label, event.value));
                 }),
                 Some(&options),
             );
@@ -30,7 +33,11 @@ mod emit_signal_safe {
         emit_signal_safe(&signal, &ValueEvent { value: 42 });
         assert_eq!(
             *received.lock().unwrap(),
-            vec!["high:42".to_string(), "normal:42".to_string(), "low:42".to_string()]
+            vec![
+                "high:42".to_string(),
+                "normal:42".to_string(),
+                "low:42".to_string()
+            ]
         );
     }
 
@@ -61,7 +68,11 @@ mod emit_signal_safe {
             None,
         );
         let b_calls = calls.clone();
-        connect_signal(&signal, Arc::new(move |_: &()| b_calls.lock().unwrap().push("b")), None);
+        connect_signal(
+            &signal,
+            Arc::new(move |_: &()| b_calls.lock().unwrap().push("b")),
+            None,
+        );
 
         emit_signal_safe(&signal, &());
         assert_eq!(*calls.lock().unwrap(), vec!["a", "b"]);
@@ -135,7 +146,9 @@ mod emit_signal_safe {
         let b_calls = calls.clone();
         connect_signal(
             &signal,
-            Arc::new(move |event: &TextEvent| b_calls.lock().unwrap().push(format!("b:{}", event.value))),
+            Arc::new(move |event: &TextEvent| {
+                b_calls.lock().unwrap().push(format!("b:{}", event.value))
+            }),
             None,
         );
 
@@ -171,7 +184,11 @@ mod emit_signal_safe {
             Some(&options),
         );
         let tail_calls = calls.clone();
-        connect_signal(&signal, Arc::new(move |_: &()| tail_calls.lock().unwrap().push("tail")), None);
+        connect_signal(
+            &signal,
+            Arc::new(move |_: &()| tail_calls.lock().unwrap().push("tail")),
+            None,
+        );
 
         emit_signal_safe(&signal, &());
         emit_signal_safe(&signal, &());
@@ -198,17 +215,18 @@ mod emit_signal_safe {
             None,
         );
         let second_calls = calls.clone();
-        connect_signal(&signal, Arc::new(move |_: &()| second_calls.lock().unwrap().push("second")), None);
+        connect_signal(
+            &signal,
+            Arc::new(move |_: &()| second_calls.lock().unwrap().push("second")),
+            None,
+        );
 
         emit_signal_safe(&signal, &());
         assert_eq!(*calls.lock().unwrap(), vec!["first"]);
 
         *cancel.lock().unwrap() = false;
         emit_signal_safe(&signal, &());
-        assert_eq!(
-            *calls.lock().unwrap(),
-            vec!["first", "first", "second"]
-        );
+        assert_eq!(*calls.lock().unwrap(), vec!["first", "first", "second"]);
     }
 
     #[test]

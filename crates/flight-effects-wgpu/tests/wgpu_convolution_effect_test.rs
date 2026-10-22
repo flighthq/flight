@@ -49,7 +49,10 @@ mod apply_convolution_effect_to_wgpu {
         assert_eq!(&floats[4..6], &[8.0, 2.0]);
         assert_eq!(&ints[6..8], &[1, 0]);
         assert_eq!(&floats[8..12], &[1.0, 0.0, 0.0, 0x80 as f32 / 255.0]);
-        assert_eq!(&floats[12..21], &[0.0, 1.0, 0.0, 1.0, 4.0, 1.0, 0.0, 1.0, 0.0]);
+        assert_eq!(
+            &floats[12..21],
+            &[0.0, 1.0, 0.0, 1.0, 4.0, 1.0, 0.0, 1.0, 0.0]
+        );
     }
 
     #[test]

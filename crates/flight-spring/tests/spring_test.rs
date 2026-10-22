@@ -183,12 +183,7 @@ mod update_spring {
 
         fn step(damping_ratio: f32) -> (f32, f32) {
             let mut spring = spring_with_state(4.0, -3.0);
-            update_spring(
-                &mut spring,
-                -2.0,
-                &spring_config(3.0, damping_ratio),
-                0.2,
-            );
+            update_spring(&mut spring, -2.0, &spring_config(3.0, damping_ratio), 0.2);
             (spring.value, spring.velocity)
         }
 
@@ -355,12 +350,7 @@ mod update_spring {
     #[test]
     fn is_inert_for_a_non_positive_frequency() {
         let mut spring = spring_with_state(4.0, 2.0);
-        update_spring(
-            &mut spring,
-            100.0,
-            &spring_config(0.0, 1.0),
-            1.0 / 60.0,
-        );
+        update_spring(&mut spring, 100.0, &spring_config(0.0, 1.0), 1.0 / 60.0);
         assert_eq!(spring.value, 4.0);
         assert_eq!(spring.velocity, 2.0);
     }

@@ -1,10 +1,11 @@
 use flight_entity::allocate_entity;
 
 use crate::{
-    DepthMaterial, EmissiveMaterial, MatcapMaterial, NormalMaterial, ToonMaterial, UnlitMaterial, VertexColorMaterial, WireframeMaterial, MaterialAlphaMode, BLEND_MODE_NORMAL,
-    DEPTH_MATERIAL_KIND, EMISSIVE_MATERIAL_KIND, MATCAP_MATERIAL_KIND,
-    NORMAL_MATERIAL_KIND, TOON_MATERIAL_KIND, UNLIT_MATERIAL_KIND,
-    VERTEX_COLOR_MATERIAL_KIND, WIREFRAME_MATERIAL_KIND,
+    BLEND_MODE_NORMAL, DEPTH_MATERIAL_KIND, DepthMaterial, EMISSIVE_MATERIAL_KIND,
+    EmissiveMaterial, MATCAP_MATERIAL_KIND, MatcapMaterial, MaterialAlphaMode,
+    NORMAL_MATERIAL_KIND, NormalMaterial, TOON_MATERIAL_KIND, ToonMaterial, UNLIT_MATERIAL_KIND,
+    UnlitMaterial, VERTEX_COLOR_MATERIAL_KIND, VertexColorMaterial, WIREFRAME_MATERIAL_KIND,
+    WireframeMaterial,
 };
 
 // flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 3139d09f): assign fields after create

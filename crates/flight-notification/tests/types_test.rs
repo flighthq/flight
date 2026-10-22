@@ -6,9 +6,15 @@ mod get_notification_cancel_reason_string {
     #[test]
     fn round_trips_every_variant() {
         let variants = [
-            (NotificationCancelReason::AlreadyCancelled, "already-cancelled"),
+            (
+                NotificationCancelReason::AlreadyCancelled,
+                "already-cancelled",
+            ),
             (NotificationCancelReason::Ok, "ok"),
-            (NotificationCancelReason::OperationFailed, "operation-failed"),
+            (
+                NotificationCancelReason::OperationFailed,
+                "operation-failed",
+            ),
         ];
         for (variant, expected) in variants {
             assert_eq!(get_notification_cancel_reason_string(variant), expected);
@@ -51,9 +57,18 @@ mod get_notification_delivery_reason_string {
     fn round_trips_every_variant() {
         let variants = [
             (NotificationDeliveryReason::Accepted, "accepted"),
-            (NotificationDeliveryReason::InvalidRequest, "invalid-request"),
-            (NotificationDeliveryReason::OperationFailed, "operation-failed"),
-            (NotificationDeliveryReason::PermissionDenied, "permission-denied"),
+            (
+                NotificationDeliveryReason::InvalidRequest,
+                "invalid-request",
+            ),
+            (
+                NotificationDeliveryReason::OperationFailed,
+                "operation-failed",
+            ),
+            (
+                NotificationDeliveryReason::PermissionDenied,
+                "permission-denied",
+            ),
         ];
         for (variant, expected) in variants {
             assert_eq!(get_notification_delivery_reason_string(variant), expected);
@@ -96,11 +111,20 @@ mod get_notification_event_release_reason_string {
     fn round_trips_every_variant() {
         let variants = [
             (NotificationEventReleaseReason::Ok, "ok"),
-            (NotificationEventReleaseReason::OperationFailed, "operation-failed"),
+            (
+                NotificationEventReleaseReason::OperationFailed,
+                "operation-failed",
+            ),
         ];
         for (variant, expected) in variants {
-            assert_eq!(get_notification_event_release_reason_string(variant), expected);
-            assert_eq!(parse_notification_event_release_reason(expected), Some(variant));
+            assert_eq!(
+                get_notification_event_release_reason_string(variant),
+                expected
+            );
+            assert_eq!(
+                parse_notification_event_release_reason(expected),
+                Some(variant)
+            );
         }
     }
 
@@ -121,14 +145,23 @@ mod get_notification_lifecycle_failure_operation_string {
             (NotificationLifecycleFailureOperation::Release, "release"),
         ];
         for (variant, expected) in variants {
-            assert_eq!(get_notification_lifecycle_failure_operation_string(variant), expected);
-            assert_eq!(parse_notification_lifecycle_failure_operation(expected), Some(variant));
+            assert_eq!(
+                get_notification_lifecycle_failure_operation_string(variant),
+                expected
+            );
+            assert_eq!(
+                parse_notification_lifecycle_failure_operation(expected),
+                Some(variant)
+            );
         }
     }
 
     #[test]
     fn returns_none_for_unknown_string() {
-        assert_eq!(parse_notification_lifecycle_failure_operation("bogus"), None);
+        assert_eq!(
+            parse_notification_lifecycle_failure_operation("bogus"),
+            None
+        );
     }
 }
 
@@ -138,9 +171,15 @@ mod get_notification_lifecycle_reason_string {
     #[test]
     fn round_trips_every_variant() {
         let variants = [
-            (NotificationLifecycleReason::AlreadyDestroyed, "already-destroyed"),
+            (
+                NotificationLifecycleReason::AlreadyDestroyed,
+                "already-destroyed",
+            ),
             (NotificationLifecycleReason::Ok, "ok"),
-            (NotificationLifecycleReason::OperationFailed, "operation-failed"),
+            (
+                NotificationLifecycleReason::OperationFailed,
+                "operation-failed",
+            ),
         ];
         for (variant, expected) in variants {
             assert_eq!(get_notification_lifecycle_reason_string(variant), expected);
@@ -163,11 +202,20 @@ mod get_notification_permission_request_reason_string {
             (NotificationPermissionRequestReason::Denied, "denied"),
             (NotificationPermissionRequestReason::Dismissed, "dismissed"),
             (NotificationPermissionRequestReason::Granted, "granted"),
-            (NotificationPermissionRequestReason::OperationFailed, "operation-failed"),
+            (
+                NotificationPermissionRequestReason::OperationFailed,
+                "operation-failed",
+            ),
         ];
         for (variant, expected) in variants {
-            assert_eq!(get_notification_permission_request_reason_string(variant), expected);
-            assert_eq!(parse_notification_permission_request_reason(expected), Some(variant));
+            assert_eq!(
+                get_notification_permission_request_reason_string(variant),
+                expected
+            );
+            assert_eq!(
+                parse_notification_permission_request_reason(expected),
+                Some(variant)
+            );
         }
     }
 
@@ -209,8 +257,14 @@ mod get_notification_schedule_precision_string {
             (NotificationSchedulePrecision::Inexact, "inexact"),
         ];
         for (variant, expected) in variants {
-            assert_eq!(get_notification_schedule_precision_string(variant), expected);
-            assert_eq!(parse_notification_schedule_precision(expected), Some(variant));
+            assert_eq!(
+                get_notification_schedule_precision_string(variant),
+                expected
+            );
+            assert_eq!(
+                parse_notification_schedule_precision(expected),
+                Some(variant)
+            );
         }
     }
 
@@ -226,9 +280,18 @@ mod get_notification_schedule_reason_string {
     #[test]
     fn round_trips_every_variant() {
         let variants = [
-            (NotificationScheduleReason::InvalidSchedule, "invalid-schedule"),
-            (NotificationScheduleReason::OperationFailed, "operation-failed"),
-            (NotificationScheduleReason::PermissionDenied, "permission-denied"),
+            (
+                NotificationScheduleReason::InvalidSchedule,
+                "invalid-schedule",
+            ),
+            (
+                NotificationScheduleReason::OperationFailed,
+                "operation-failed",
+            ),
+            (
+                NotificationScheduleReason::PermissionDenied,
+                "permission-denied",
+            ),
             (NotificationScheduleReason::Scheduled, "scheduled"),
         ];
         for (variant, expected) in variants {
@@ -275,11 +338,20 @@ mod get_notification_subscription_attach_reason_string {
     fn round_trips_every_variant() {
         let variants = [
             (NotificationSubscriptionAttachReason::Ok, "ok"),
-            (NotificationSubscriptionAttachReason::OperationFailed, "operation-failed"),
+            (
+                NotificationSubscriptionAttachReason::OperationFailed,
+                "operation-failed",
+            ),
         ];
         for (variant, expected) in variants {
-            assert_eq!(get_notification_subscription_attach_reason_string(variant), expected);
-            assert_eq!(parse_notification_subscription_attach_reason(expected), Some(variant));
+            assert_eq!(
+                get_notification_subscription_attach_reason_string(variant),
+                expected
+            );
+            assert_eq!(
+                parse_notification_subscription_attach_reason(expected),
+                Some(variant)
+            );
         }
     }
 
@@ -295,13 +367,25 @@ mod get_notification_subscription_detach_reason_string {
     #[test]
     fn round_trips_every_variant() {
         let variants = [
-            (NotificationSubscriptionDetachReason::NotAttached, "not-attached"),
+            (
+                NotificationSubscriptionDetachReason::NotAttached,
+                "not-attached",
+            ),
             (NotificationSubscriptionDetachReason::Ok, "ok"),
-            (NotificationSubscriptionDetachReason::OperationFailed, "operation-failed"),
+            (
+                NotificationSubscriptionDetachReason::OperationFailed,
+                "operation-failed",
+            ),
         ];
         for (variant, expected) in variants {
-            assert_eq!(get_notification_subscription_detach_reason_string(variant), expected);
-            assert_eq!(parse_notification_subscription_detach_reason(expected), Some(variant));
+            assert_eq!(
+                get_notification_subscription_detach_reason_string(variant),
+                expected
+            );
+            assert_eq!(
+                parse_notification_subscription_detach_reason(expected),
+                Some(variant)
+            );
         }
     }
 
@@ -317,19 +401,34 @@ mod get_notification_subscription_dispose_reason_string {
     #[test]
     fn round_trips_every_variant() {
         let variants = [
-            (NotificationSubscriptionDisposeReason::AlreadyDisposed, "already-disposed"),
+            (
+                NotificationSubscriptionDisposeReason::AlreadyDisposed,
+                "already-disposed",
+            ),
             (NotificationSubscriptionDisposeReason::Ok, "ok"),
-            (NotificationSubscriptionDisposeReason::OperationFailed, "operation-failed"),
+            (
+                NotificationSubscriptionDisposeReason::OperationFailed,
+                "operation-failed",
+            ),
         ];
         for (variant, expected) in variants {
-            assert_eq!(get_notification_subscription_dispose_reason_string(variant), expected);
-            assert_eq!(parse_notification_subscription_dispose_reason(expected), Some(variant));
+            assert_eq!(
+                get_notification_subscription_dispose_reason_string(variant),
+                expected
+            );
+            assert_eq!(
+                parse_notification_subscription_dispose_reason(expected),
+                Some(variant)
+            );
         }
     }
 
     #[test]
     fn returns_none_for_unknown_string() {
-        assert_eq!(parse_notification_subscription_dispose_reason("bogus"), None);
+        assert_eq!(
+            parse_notification_subscription_dispose_reason("bogus"),
+            None
+        );
     }
 }
 
@@ -383,7 +482,10 @@ mod parse_notification_lifecycle_failure_operation {
 
     #[test]
     fn returns_none_for_unknown_string() {
-        assert_eq!(parse_notification_lifecycle_failure_operation("unknown"), None);
+        assert_eq!(
+            parse_notification_lifecycle_failure_operation("unknown"),
+            None
+        );
     }
 }
 
@@ -410,7 +512,10 @@ mod parse_notification_permission_request_reason {
 
     #[test]
     fn returns_none_for_unknown_string() {
-        assert_eq!(parse_notification_permission_request_reason("unknown"), None);
+        assert_eq!(
+            parse_notification_permission_request_reason("unknown"),
+            None
+        );
     }
 }
 
@@ -446,7 +551,10 @@ mod parse_notification_subscription_attach_reason {
 
     #[test]
     fn returns_none_for_unknown_string() {
-        assert_eq!(parse_notification_subscription_attach_reason("unknown"), None);
+        assert_eq!(
+            parse_notification_subscription_attach_reason("unknown"),
+            None
+        );
     }
 }
 
@@ -455,7 +563,10 @@ mod parse_notification_subscription_detach_reason {
 
     #[test]
     fn returns_none_for_unknown_string() {
-        assert_eq!(parse_notification_subscription_detach_reason("unknown"), None);
+        assert_eq!(
+            parse_notification_subscription_detach_reason("unknown"),
+            None
+        );
     }
 }
 
@@ -464,6 +575,9 @@ mod parse_notification_subscription_dispose_reason {
 
     #[test]
     fn returns_none_for_unknown_string() {
-        assert_eq!(parse_notification_subscription_dispose_reason("unknown"), None);
+        assert_eq!(
+            parse_notification_subscription_dispose_reason("unknown"),
+            None
+        );
     }
 }

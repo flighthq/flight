@@ -50,7 +50,9 @@ fn tokenize(text: &str) -> Vec<String> {
         } else if c.is_ascii_alphanumeric() || c == '_' || c == '.' {
             let start = index;
             while index < chars.len()
-                && (chars[index].is_ascii_alphanumeric() || chars[index] == '_' || chars[index] == '.')
+                && (chars[index].is_ascii_alphanumeric()
+                    || chars[index] == '_'
+                    || chars[index] == '.')
             {
                 index += 1;
             }
@@ -115,7 +117,11 @@ fn wrap_expression() -> String {
         .find(|line| line.trim_start().starts_with("let wrapped = "))
         .expect("halftone shader lost its `wrapped` binding");
     let expression = line.trim_start().trim_start_matches("let wrapped = ");
-    return expression.trim_end().trim_end_matches(';').trim().to_string();
+    return expression
+        .trim_end()
+        .trim_end_matches(';')
+        .trim()
+        .to_string();
 }
 
 fn wrap_at(coordinate: f64, cell_size: f64) -> f64 {
@@ -153,8 +159,16 @@ mod apply_halftone_effect_to_wgpu {
 
     #[test]
     fn converts_the_descriptor_angle_from_degrees_into_shader_radians() {
-        assert!(is_close(apply(|effect| effect.angle = Some(90.0))[1], PI / 2.0, 6));
-        assert!(is_close(apply(|effect| effect.angle = Some(180.0))[1], PI, 6));
+        assert!(is_close(
+            apply(|effect| effect.angle = Some(90.0))[1],
+            PI / 2.0,
+            6
+        ));
+        assert!(is_close(
+            apply(|effect| effect.angle = Some(180.0))[1],
+            PI,
+            6
+        ));
         assert_eq!(apply(|effect| effect.angle = Some(0.0))[1], 0.0);
     }
 
@@ -204,7 +218,11 @@ mod apply_halftone_effect_to_wgpu {
         let cached = get_wgpu_effect_pipeline(&mut state, "stylization.halftone", "", None);
         let drawn = recorded_set_pipelines(&records);
         assert_eq!(drawn.len(), 2);
-        assert!(drawn.iter().all(|pipeline| *pipeline == cached.read().unwrap().pipeline));
+        assert!(
+            drawn
+                .iter()
+                .all(|pipeline| *pipeline == cached.read().unwrap().pipeline)
+        );
     }
 }
 
@@ -254,6 +272,10 @@ mod wgpu_halftone_effect_runner {
             wgpu_halftone_effect_runner(&mut context, &*effect.read().unwrap());
         });
 
-        assert!(is_close(recorded_effect_uniforms(&records)[0][1], PI / 2.0, 6));
+        assert!(is_close(
+            recorded_effect_uniforms(&records)[0][1],
+            PI / 2.0,
+            6
+        ));
     }
 }

@@ -14,13 +14,21 @@ mod load_scene3d_document_from_obj_url {
     fn fetches_text_and_returns_the_parsed_cpu_document_without_resolving_resources() {
         let (host, requests) = net_host(Arc::new(|_| Some(text_body("v 0 0 0"))));
 
-        let loaded =
-            block_on(load_scene3d_document_from_obj_url(&host, "model.obj", None, None, &net_state()))
-                .unwrap();
+        let loaded = block_on(load_scene3d_document_from_obj_url(
+            &host,
+            "model.obj",
+            None,
+            None,
+            &net_state(),
+        ))
+        .unwrap();
 
         assert_eq!(*requests.lock().unwrap(), vec!["model.obj".to_string()]);
         // The loader hands the fetched text and no material library to the real parser.
-        assert_eq!(document_shape(&loaded), document_shape(&parse_obj("v 0 0 0", None, None, None)));
+        assert_eq!(
+            document_shape(&loaded),
+            document_shape(&parse_obj("v 0 0 0", None, None, None))
+        );
     }
 
     #[test]
@@ -49,6 +57,10 @@ mod load_scene3d_document_from_obj_url {
             })
             .collect();
         assert!(!base_paths.is_empty());
-        assert!(base_paths.iter().all(|base_path| base_path.as_deref() == Some("models")));
+        assert!(
+            base_paths
+                .iter()
+                .all(|base_path| base_path.as_deref() == Some("models"))
+        );
     }
 }

@@ -25,8 +25,14 @@ mod sugar_tests {
 
     #[test]
     fn path_tessellate_typed_into_matches_tessellate_path_typed_into() {
-        let mut oa0 = PathMeshTyped { vertices: Vec::new().into_boxed_slice(), indices: Vec::new().into_boxed_slice() };
-        let mut ob0 = PathMeshTyped { vertices: Vec::new().into_boxed_slice(), indices: Vec::new().into_boxed_slice() };
+        let mut oa0 = PathMeshTyped {
+            vertices: Vec::new().into_boxed_slice(),
+            indices: Vec::new().into_boxed_slice(),
+        };
+        let mut ob0 = PathMeshTyped {
+            vertices: Vec::new().into_boxed_slice(),
+            indices: Vec::new().into_boxed_slice(),
+        };
         let s = test_path();
         s.tessellate_typed_into(&mut oa0, Some(0.5));
         tessellate_path_typed_into(&s, &mut ob0, Some(0.5));

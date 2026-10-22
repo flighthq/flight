@@ -1,21 +1,25 @@
-use flight_spatial::*;
 use flight_spatial::contract::{DEFAULT_SPATIAL_CELL_SIZE_3D, initialize_spatial_index_3d};
+use flight_spatial::*;
 
 fn box3(min_x: f32, min_y: f32, min_z: f32, size: f32) -> SpatialAabb3D {
-    return SpatialAabb3D { min_x, min_y, min_z, max_x: min_x + size, max_y: min_y + size, max_z: min_z + size };
+    return SpatialAabb3D {
+        min_x,
+        min_y,
+        min_z,
+        max_x: min_x + size,
+        max_y: min_y + size,
+        max_z: min_z + size,
+    };
 }
 
 fn view_frustum(near_half: f32, far_half: f32, far_z: f32) -> SpatialFrustum3D {
-    return SpatialFrustum3D { corners: [
-        -near_half, -near_half, 0.0,
-        near_half,  -near_half, 0.0,
-        near_half,   near_half, 0.0,
-        -near_half,  near_half, 0.0,
-        -far_half, -far_half, far_z,
-        far_half,  -far_half, far_z,
-        far_half,   far_half, far_z,
-        -far_half,  far_half, far_z,
-    ] };
+    return SpatialFrustum3D {
+        corners: [
+            -near_half, -near_half, 0.0, near_half, -near_half, 0.0, near_half, near_half, 0.0,
+            -near_half, near_half, 0.0, -far_half, -far_half, far_z, far_half, -far_half, far_z,
+            far_half, far_half, far_z, -far_half, far_half, far_z,
+        ],
+    };
 }
 
 mod clear_spatial_index_3d {
@@ -23,7 +27,9 @@ mod clear_spatial_index_3d {
 
     #[test]
     fn empties_the_index_while_keeping_it_reusable() {
-        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(DEFAULT_SPATIAL_CELL_SIZE_3D)));
+        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(
+            DEFAULT_SPATIAL_CELL_SIZE_3D,
+        )));
         insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 10.0));
         clear_spatial_index_3d(&mut index);
         let mut out: Vec<SpatialObjectId> = Vec::new();
@@ -54,7 +60,11 @@ mod create_spatial_index_3d {
     #[test]
     fn defaults_to_a_uniform_grid() {
         let mut index = create_spatial_index_3d(None);
-        assert!(insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 10.0)));
+        assert!(insert_spatial_object_3d(
+            &mut index,
+            1,
+            &box3(0.0, 0.0, 0.0, 10.0)
+        ));
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_point_3d(&mut out, &mut index, 5.0, 5.0, 5.0);
         assert_eq!(out, vec![1]);
@@ -71,8 +81,12 @@ mod create_spatial_index_3d {
 
     #[test]
     fn two_indexes_are_independent() {
-        let mut a = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(DEFAULT_SPATIAL_CELL_SIZE_3D)));
-        let b = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(DEFAULT_SPATIAL_CELL_SIZE_3D)));
+        let mut a = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(
+            DEFAULT_SPATIAL_CELL_SIZE_3D,
+        )));
+        let b = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(
+            DEFAULT_SPATIAL_CELL_SIZE_3D,
+        )));
         insert_spatial_object_3d(&mut a, 1, &box3(0.0, 0.0, 0.0, 10.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
         // b was not mutated, but query requires &mut for scratch buffers
@@ -101,11 +115,27 @@ mod insert_spatial_object_3d {
 
     #[test]
     fn returns_false_for_non_indexable_bounds() {
-        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(DEFAULT_SPATIAL_CELL_SIZE_3D)));
-        let inf_bounds = SpatialAabb3D { min_x: 0.0, min_y: 0.0, min_z: 0.0, max_x: 1.0, max_y: 1.0, max_z: f32::INFINITY };
+        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(
+            DEFAULT_SPATIAL_CELL_SIZE_3D,
+        )));
+        let inf_bounds = SpatialAabb3D {
+            min_x: 0.0,
+            min_y: 0.0,
+            min_z: 0.0,
+            max_x: 1.0,
+            max_y: 1.0,
+            max_z: f32::INFINITY,
+        };
         assert!(!insert_spatial_object_3d(&mut index, 1, &inf_bounds));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        let region = SpatialAabb3D { min_x: -1e9, min_y: -1e9, min_z: -1e9, max_x: 1e9, max_y: 1e9, max_z: 1e9 };
+        let region = SpatialAabb3D {
+            min_x: -1e9,
+            min_y: -1e9,
+            min_z: -1e9,
+            max_x: 1e9,
+            max_y: 1e9,
+            max_z: 1e9,
+        };
         query_spatial_region_3d(&mut out, &mut index, &region);
         assert!(out.is_empty());
     }
@@ -120,7 +150,12 @@ mod query_spatial_frustum_3d {
         insert_spatial_object_3d(&mut index, 1, &box3(-5.0, -5.0, 100.0, 10.0));
         insert_spatial_object_3d(&mut index, 2, &box3(900.0, 900.0, 100.0, 10.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_frustum_3d(&mut out, &mut index, &view_frustum(10.0, 200.0, 400.0), None);
+        query_spatial_frustum_3d(
+            &mut out,
+            &mut index,
+            &view_frustum(10.0, 200.0, 400.0),
+            None,
+        );
         assert!(out.contains(&1));
         assert!(!out.contains(&2));
     }
@@ -128,10 +163,22 @@ mod query_spatial_frustum_3d {
     #[test]
     fn reports_each_object_once_even_across_slices() {
         let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(32.0)));
-        let long_obj = SpatialAabb3D { min_x: -5.0, min_y: -5.0, min_z: 10.0, max_x: 5.0, max_y: 5.0, max_z: 380.0 };
+        let long_obj = SpatialAabb3D {
+            min_x: -5.0,
+            min_y: -5.0,
+            min_z: 10.0,
+            max_x: 5.0,
+            max_y: 5.0,
+            max_z: 380.0,
+        };
         insert_spatial_object_3d(&mut index, 7, &long_obj);
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_frustum_3d(&mut out, &mut index, &view_frustum(10.0, 200.0, 400.0), Some(8));
+        query_spatial_frustum_3d(
+            &mut out,
+            &mut index,
+            &view_frustum(10.0, 200.0, 400.0),
+            Some(8),
+        );
         assert_eq!(out.iter().filter(|&&id| id == 7).count(), 1);
     }
 
@@ -141,26 +188,50 @@ mod query_spatial_frustum_3d {
         insert_spatial_object_3d(&mut index, 3, &box3(180.0, 180.0, 20.0, 8.0));
         let mut coarse: Vec<SpatialObjectId> = Vec::new();
         let mut fine: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_frustum_3d(&mut coarse, &mut index, &view_frustum(10.0, 200.0, 400.0), Some(1));
-        query_spatial_frustum_3d(&mut fine, &mut index, &view_frustum(10.0, 200.0, 400.0), Some(16));
+        query_spatial_frustum_3d(
+            &mut coarse,
+            &mut index,
+            &view_frustum(10.0, 200.0, 400.0),
+            Some(1),
+        );
+        query_spatial_frustum_3d(
+            &mut fine,
+            &mut index,
+            &view_frustum(10.0, 200.0, 400.0),
+            Some(16),
+        );
         assert!(coarse.contains(&3));
         assert!(!fine.contains(&3));
     }
 
     #[test]
     fn returns_nothing_for_zero_slices() {
-        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(DEFAULT_SPATIAL_CELL_SIZE_3D)));
+        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(
+            DEFAULT_SPATIAL_CELL_SIZE_3D,
+        )));
         insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 10.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        query_spatial_frustum_3d(&mut out, &mut index, &view_frustum(10.0, 200.0, 400.0), Some(0));
+        query_spatial_frustum_3d(
+            &mut out,
+            &mut index,
+            &view_frustum(10.0, 200.0, 400.0),
+            Some(0),
+        );
         assert!(out.is_empty());
     }
 
     #[test]
     fn clears_output_before_filling() {
-        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(DEFAULT_SPATIAL_CELL_SIZE_3D)));
+        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(
+            DEFAULT_SPATIAL_CELL_SIZE_3D,
+        )));
         let mut out: Vec<SpatialObjectId> = vec![99];
-        query_spatial_frustum_3d(&mut out, &mut index, &view_frustum(10.0, 200.0, 400.0), None);
+        query_spatial_frustum_3d(
+            &mut out,
+            &mut index,
+            &view_frustum(10.0, 200.0, 400.0),
+            None,
+        );
         assert!(!out.contains(&99));
     }
 }
@@ -170,7 +241,9 @@ mod query_spatial_pairs_3d {
 
     #[test]
     fn reports_a_co_located_pair_once() {
-        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(DEFAULT_SPATIAL_CELL_SIZE_3D)));
+        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(
+            DEFAULT_SPATIAL_CELL_SIZE_3D,
+        )));
         insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 10.0));
         insert_spatial_object_3d(&mut index, 2, &box3(1.0, 1.0, 1.0, 10.0));
         let out = query_spatial_pairs_3d(&mut index);
@@ -185,8 +258,17 @@ mod query_spatial_point_3d {
 
     #[test]
     fn respects_the_third_axis() {
-        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(DEFAULT_SPATIAL_CELL_SIZE_3D)));
-        let bounds = SpatialAabb3D { min_x: 0.0, min_y: 0.0, min_z: 0.0, max_x: 100.0, max_y: 100.0, max_z: 10.0 };
+        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(
+            DEFAULT_SPATIAL_CELL_SIZE_3D,
+        )));
+        let bounds = SpatialAabb3D {
+            min_x: 0.0,
+            min_y: 0.0,
+            min_z: 0.0,
+            max_x: 100.0,
+            max_y: 100.0,
+            max_z: 10.0,
+        };
         insert_spatial_object_3d(&mut index, 1, &bounds);
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_point_3d(&mut out, &mut index, 50.0, 50.0, 5.0);
@@ -201,7 +283,9 @@ mod query_spatial_ray_3d {
 
     #[test]
     fn finds_an_object_along_a_z_directed_ray() {
-        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(DEFAULT_SPATIAL_CELL_SIZE_3D)));
+        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(
+            DEFAULT_SPATIAL_CELL_SIZE_3D,
+        )));
         insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 500.0, 10.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_ray_3d(&mut out, &mut index, 5.0, 5.0, 0.0, 0.0, 0.0, 1.0);
@@ -214,7 +298,9 @@ mod query_spatial_region_3d {
 
     #[test]
     fn returns_overlapping_and_excludes_disjoint() {
-        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(DEFAULT_SPATIAL_CELL_SIZE_3D)));
+        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(
+            DEFAULT_SPATIAL_CELL_SIZE_3D,
+        )));
         insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 10.0));
         insert_spatial_object_3d(&mut index, 2, &box3(1000.0, 1000.0, 1000.0, 10.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
@@ -249,7 +335,9 @@ mod query_spatial_sphere_3d {
 
     #[test]
     fn returns_nothing_for_non_finite_centre_or_negative_radius() {
-        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(DEFAULT_SPATIAL_CELL_SIZE_3D)));
+        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(
+            DEFAULT_SPATIAL_CELL_SIZE_3D,
+        )));
         insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 4.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_sphere_3d(&mut out, &mut index, f32::NAN, 0.0, 0.0, 10.0);
@@ -264,7 +352,9 @@ mod remove_spatial_object_3d {
 
     #[test]
     fn drops_object_and_is_no_op_for_unknown_id() {
-        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(DEFAULT_SPATIAL_CELL_SIZE_3D)));
+        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(
+            DEFAULT_SPATIAL_CELL_SIZE_3D,
+        )));
         insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 10.0));
         remove_spatial_object_3d(&mut index, 1);
         remove_spatial_object_3d(&mut index, 99);
@@ -279,8 +369,14 @@ mod update_spatial_object_3d {
 
     #[test]
     fn behaves_as_insert_for_not_yet_present_id() {
-        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(DEFAULT_SPATIAL_CELL_SIZE_3D)));
-        assert!(update_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 10.0)));
+        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(
+            DEFAULT_SPATIAL_CELL_SIZE_3D,
+        )));
+        assert!(update_spatial_object_3d(
+            &mut index,
+            1,
+            &box3(0.0, 0.0, 0.0, 10.0)
+        ));
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_point_3d(&mut out, &mut index, 5.0, 5.0, 5.0);
         assert_eq!(out, vec![1]);
@@ -288,7 +384,9 @@ mod update_spatial_object_3d {
 
     #[test]
     fn moves_an_object_so_old_position_stops_matching() {
-        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(DEFAULT_SPATIAL_CELL_SIZE_3D)));
+        let mut index = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(
+            DEFAULT_SPATIAL_CELL_SIZE_3D,
+        )));
         insert_spatial_object_3d(&mut index, 1, &box3(0.0, 0.0, 0.0, 10.0));
         update_spatial_object_3d(&mut index, 1, &box3(1000.0, 1000.0, 1000.0, 10.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();

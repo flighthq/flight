@@ -1,8 +1,10 @@
 use flight_entity::allocate_entity;
 
 use crate::{
-    IridescencePbrExtension, IRIDESCENCE_PBR_EXTENSION_KIND,
-    material_validation::{is_valid_material_ior, is_valid_material_iridescence_thickness, is_valid_material_weight},
+    IRIDESCENCE_PBR_EXTENSION_KIND, IridescencePbrExtension,
+    material_validation::{
+        is_valid_material_ior, is_valid_material_iridescence_thickness, is_valid_material_weight,
+    },
     pbr_extension::is_valid_pbr_uv_set,
 };
 

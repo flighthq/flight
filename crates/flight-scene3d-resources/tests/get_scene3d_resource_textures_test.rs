@@ -48,7 +48,10 @@ mod get_scene3d_resource_textures {
         unlit.base_color_map = Some(shared.clone());
         let mut standard = create_standard_pbr_material();
         standard.base_color_map = Some(shared.clone());
-        let a = mesh_of(vec![Arc::new(RwLock::new(unlit)), Arc::new(RwLock::new(standard))]);
+        let a = mesh_of(vec![
+            Arc::new(RwLock::new(unlit)),
+            Arc::new(RwLock::new(standard)),
+        ]);
         let b = unlit_mesh(&shared);
         add_scene_mesh(&scene, &a);
         add_scene_mesh(&scene, &b);
@@ -91,7 +94,8 @@ mod get_scene3d_resource_textures {
     }
 
     #[test]
-    fn returns_a_texture_whose_material_hangs_off_no_mesh_which_is_the_cost_of_dropping_the_registry() {
+    fn returns_a_texture_whose_material_hangs_off_no_mesh_which_is_the_cost_of_dropping_the_registry()
+     {
         let attached_reference = embedded_reference(Some("image/png"));
         let orphan_reference = embedded_reference(Some("image/png"));
         let attached = attach_texture(&attached_reference);

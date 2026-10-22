@@ -53,7 +53,10 @@ mod apply_composite_effect_to_wgpu {
 
         let ints = recorded_effect_uniform_ints(&records);
         assert_eq!(&ints[0][0..2], &[5, 1]);
-        assert_eq!(recorded_pass_views(&records), vec![dest.read().unwrap().view.clone()]);
+        assert_eq!(
+            recorded_pass_views(&records),
+            vec![dest.read().unwrap().view.clone()]
+        );
         let sets = recorded_set_bind_groups(&records);
         assert_ne!(sets[1].bind_group, sets[2].bind_group);
     }
@@ -93,9 +96,18 @@ mod get_wgpu_composite_effect_operator_index {
         indices.sort();
         indices.dedup();
         assert_eq!(indices.len(), COMPOSITE_OPERATORS.len());
-        assert_eq!(get_wgpu_composite_effect_operator_index(COMPOSITE_OPERATOR_SOURCE_OVER), 0);
-        assert_eq!(get_wgpu_composite_effect_operator_index(COMPOSITE_OPERATOR_DESTINATION_OUT), 5);
-        assert_eq!(get_wgpu_composite_effect_operator_index(COMPOSITE_OPERATOR_CLEAR), 10);
+        assert_eq!(
+            get_wgpu_composite_effect_operator_index(COMPOSITE_OPERATOR_SOURCE_OVER),
+            0
+        );
+        assert_eq!(
+            get_wgpu_composite_effect_operator_index(COMPOSITE_OPERATOR_DESTINATION_OUT),
+            5
+        );
+        assert_eq!(
+            get_wgpu_composite_effect_operator_index(COMPOSITE_OPERATOR_CLEAR),
+            10
+        );
         assert_eq!(get_wgpu_composite_effect_operator_index("acme.Custom"), 0);
     }
 }
@@ -139,7 +151,10 @@ mod wgpu_composite_effect_runner {
             wgpu_composite_effect_runner(&mut context, &*effect.read().unwrap());
         });
 
-        assert_eq!(recorded_pass_views(&records), vec![dest.read().unwrap().view.clone()]);
+        assert_eq!(
+            recorded_pass_views(&records),
+            vec![dest.read().unwrap().view.clone()]
+        );
     }
 }
 
@@ -151,6 +166,8 @@ mod wgpu_composite_fragment_wgsl {
         assert!(WGPU_COMPOSITE_FRAGMENT_WGSL.contains("@group(1) @binding(0) var layerTexture"));
         assert!(WGPU_COMPOSITE_FRAGMENT_WGSL.contains("@group(2) @binding(0) var backdropTexture"));
         assert!(WGPU_COMPOSITE_FRAGMENT_WGSL.contains("uni.operatorIndex == 10"));
-        assert!(WGPU_COMPOSITE_FRAGMENT_WGSL.contains("sourceFactor * layer + backdropFactor * back"));
+        assert!(
+            WGPU_COMPOSITE_FRAGMENT_WGSL.contains("sourceFactor * layer + backdropFactor * back")
+        );
     }
 }

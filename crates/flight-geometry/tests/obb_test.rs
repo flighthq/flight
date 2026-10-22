@@ -5,11 +5,18 @@ fn assert_approx(actual: f32, expected: f32) {
     assert!(
         diff < 1e-4,
         "expected {} to be approximately {}, diff = {}",
-        actual, expected, diff
+        actual,
+        expected,
+        diff
     );
 }
 
-fn orientation_from_axis_angle(axis_x: f32, axis_y: f32, axis_z: f32, radians: f32) -> (f32, f32, f32, f32) {
+fn orientation_from_axis_angle(
+    axis_x: f32,
+    axis_y: f32,
+    axis_z: f32,
+    radians: f32,
+) -> (f32, f32, f32, f32) {
     let length = (axis_x * axis_x + axis_y * axis_y + axis_z * axis_z).sqrt();
     let half = (radians / 2.0).sin();
     return (
@@ -66,17 +73,27 @@ fn create_unit_vector3(axis: usize) -> Vector3 {
 }
 
 fn create_rod_obb(
-    center_x: f32, center_y: f32, center_z: f32,
+    center_x: f32,
+    center_y: f32,
+    center_z: f32,
     long_axis: usize,
-    orientation_x: f32, orientation_y: f32, orientation_z: f32, orientation_w: f32,
+    orientation_x: f32,
+    orientation_y: f32,
+    orientation_z: f32,
+    orientation_w: f32,
 ) -> Obb {
     let thickness = 0.1;
     return create_obb(
-        center_x, center_y, center_z,
+        center_x,
+        center_y,
+        center_z,
         if long_axis == 0 { 3.0 } else { thickness },
         if long_axis == 1 { 3.0 } else { thickness },
         if long_axis == 2 { 3.0 } else { thickness },
-        orientation_x, orientation_y, orientation_z, orientation_w,
+        orientation_x,
+        orientation_y,
+        orientation_z,
+        orientation_w,
     );
 }
 
@@ -86,20 +103,30 @@ fn create_tilted_obb() -> Obb {
 }
 
 fn cross_vec3(out: &mut Vector3, a: &Vector3, b: &Vector3) {
-    let ax = a.x; let ay = a.y; let az = a.z;
-    let bx = b.x; let by = b.y; let bz = b.z;
+    let ax = a.x;
+    let ay = a.y;
+    let az = a.z;
+    let bx = b.x;
+    let by = b.y;
+    let bz = b.z;
     out.x = ay * bz - az * by;
     out.y = az * bx - ax * bz;
     out.z = ax * by - ay * bx;
 }
 
 fn normalize_vec3(out: &mut Vector3, source: &Vector3) {
-    let x = source.x; let y = source.y; let z = source.z;
+    let x = source.x;
+    let y = source.y;
+    let z = source.z;
     let l = (x * x + y * y + z * z).sqrt();
     if l != 0.0 {
-        out.x = x / l; out.y = y / l; out.z = z / l;
+        out.x = x / l;
+        out.y = y / l;
+        out.z = z / l;
     } else {
-        out.x = 0.0; out.y = 0.0; out.z = 0.0;
+        out.x = 0.0;
+        out.y = 0.0;
+        out.z = 0.0;
     }
 }
 
@@ -111,12 +138,42 @@ struct FaceAxisSeparation {
 }
 
 const FACE_AXIS_SEPARATIONS: &[FaceAxisSeparation] = &[
-    FaceAxisSeparation { axis: 0, clear: 3.8, extents: [2.5, 1.5, 0.5], of_turned_box: false },
-    FaceAxisSeparation { axis: 1, clear: 4.9, extents: [2.5, 1.5, 0.5], of_turned_box: false },
-    FaceAxisSeparation { axis: 2, clear: 5.9, extents: [0.5, 1.5, 2.5], of_turned_box: false },
-    FaceAxisSeparation { axis: 0, clear: 3.6, extents: [0.5, 1.5, 2.5], of_turned_box: true },
-    FaceAxisSeparation { axis: 1, clear: 4.7, extents: [0.5, 1.5, 2.5], of_turned_box: true },
-    FaceAxisSeparation { axis: 2, clear: 3.7, extents: [2.5, 1.5, 0.5], of_turned_box: true },
+    FaceAxisSeparation {
+        axis: 0,
+        clear: 3.8,
+        extents: [2.5, 1.5, 0.5],
+        of_turned_box: false,
+    },
+    FaceAxisSeparation {
+        axis: 1,
+        clear: 4.9,
+        extents: [2.5, 1.5, 0.5],
+        of_turned_box: false,
+    },
+    FaceAxisSeparation {
+        axis: 2,
+        clear: 5.9,
+        extents: [0.5, 1.5, 2.5],
+        of_turned_box: false,
+    },
+    FaceAxisSeparation {
+        axis: 0,
+        clear: 3.6,
+        extents: [0.5, 1.5, 2.5],
+        of_turned_box: true,
+    },
+    FaceAxisSeparation {
+        axis: 1,
+        clear: 4.7,
+        extents: [0.5, 1.5, 2.5],
+        of_turned_box: true,
+    },
+    FaceAxisSeparation {
+        axis: 2,
+        clear: 3.7,
+        extents: [2.5, 1.5, 0.5],
+        of_turned_box: true,
+    },
 ];
 
 fn expect_transformed_obb_matches_rotated_points(m: &Matrix4, obb: &Obb) {
@@ -247,15 +304,27 @@ mod intersect_ray3d_obb {
     #[test]
     fn returns_negative_one_for_no_direction() {
         let o = create_obb(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0);
-        assert_eq!(intersect_ray3d_obb(&create_ray3d(0.5, 0.5, 0.5, 0.0, 0.0, 0.0), &o), -1.0);
-        assert_eq!(intersect_ray3d_obb(&create_ray3d(5.0, 0.0, 0.0, 0.0, 0.0, 0.0), &o), -1.0);
+        assert_eq!(
+            intersect_ray3d_obb(&create_ray3d(0.5, 0.5, 0.5, 0.0, 0.0, 0.0), &o),
+            -1.0
+        );
+        assert_eq!(
+            intersect_ray3d_obb(&create_ray3d(5.0, 0.0, 0.0, 0.0, 0.0, 0.0), &o),
+            -1.0
+        );
     }
 
     #[test]
     fn hits_a_flat_obb() {
         let o = create_obb(0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0);
-        assert_approx(intersect_ray3d_obb(&create_ray3d(5.0, 0.0, 0.0, -1.0, 0.0, 0.0), &o), 5.0);
-        assert_eq!(intersect_ray3d_obb(&create_ray3d(5.0, 3.0, 0.0, -1.0, 0.0, 0.0), &o), -1.0);
+        assert_approx(
+            intersect_ray3d_obb(&create_ray3d(5.0, 0.0, 0.0, -1.0, 0.0, 0.0), &o),
+            5.0,
+        );
+        assert_eq!(
+            intersect_ray3d_obb(&create_ray3d(5.0, 3.0, 0.0, -1.0, 0.0, 0.0), &o),
+            -1.0
+        );
     }
 }
 
@@ -337,12 +406,28 @@ mod is_obb_intersecting_obb {
                 direction.x * case.clear,
                 direction.y * case.clear,
                 direction.z * case.clear,
-                case.extents[0], case.extents[1], case.extents[2],
-                tx, ty, tz, tw,
+                case.extents[0],
+                case.extents[1],
+                case.extents[2],
+                tx,
+                ty,
+                tz,
+                tw,
             );
             assert!(!is_obb_intersecting_obb(&first, &away));
 
-            let concentric = create_obb(0.0, 0.0, 0.0, case.extents[0], case.extents[1], case.extents[2], tx, ty, tz, tw);
+            let concentric = create_obb(
+                0.0,
+                0.0,
+                0.0,
+                case.extents[0],
+                case.extents[1],
+                case.extents[2],
+                tx,
+                ty,
+                tz,
+                tw,
+            );
             assert!(is_obb_intersecting_obb(&first, &concentric));
         }
     }
@@ -356,10 +441,18 @@ mod is_obb_intersecting_obb {
         for first_long_axis in 0..3_usize {
             for second_long_axis in 0..3_usize {
                 let first = create_rod_obb(0.0, 0.0, 0.0, first_long_axis, 0.0, 0.0, 0.0, 1.0);
-                matrix4_transform_point(&mut rod_long_direction, &tilt_as_matrix, &create_unit_vector3(second_long_axis));
+                matrix4_transform_point(
+                    &mut rod_long_direction,
+                    &tilt_as_matrix,
+                    &create_unit_vector3(second_long_axis),
+                );
 
                 let mut perpendicular = create_vector3(0.0, 0.0, 0.0);
-                cross_vec3(&mut perpendicular, &create_unit_vector3(first_long_axis), &rod_long_direction);
+                cross_vec3(
+                    &mut perpendicular,
+                    &create_unit_vector3(first_long_axis),
+                    &rod_long_direction,
+                );
                 let perp_copy = perpendicular.clone();
                 normalize_vec3(&mut perpendicular, &perp_copy);
 
@@ -369,7 +462,10 @@ mod is_obb_intersecting_obb {
                     perpendicular.y * clear,
                     perpendicular.z * clear,
                     second_long_axis,
-                    tx, ty, tz, tw,
+                    tx,
+                    ty,
+                    tz,
+                    tw,
                 );
                 assert!(!is_obb_intersecting_obb(&first, &separated));
 
@@ -474,16 +570,31 @@ mod transform_obb_by_matrix4 {
 
     #[test]
     fn rotates_correctly() {
-        expect_transformed_obb_matches_rotated_points(&rotation_matrix4(1.0, 0.0, 0.0, 0.7), &create_tilted_obb());
-        expect_transformed_obb_matches_rotated_points(&rotation_matrix4(1.0, 2.0, 3.0, 0.9), &create_tilted_obb());
+        expect_transformed_obb_matches_rotated_points(
+            &rotation_matrix4(1.0, 0.0, 0.0, 0.7),
+            &create_tilted_obb(),
+        );
+        expect_transformed_obb_matches_rotated_points(
+            &rotation_matrix4(1.0, 2.0, 3.0, 0.9),
+            &create_tilted_obb(),
+        );
     }
 
     #[test]
     fn rotates_correctly_near_half_turn() {
         let near_half_turn = std::f32::consts::PI - 0.01;
-        expect_transformed_obb_matches_rotated_points(&rotation_matrix4(1.0, 0.0, 0.0, near_half_turn), &create_tilted_obb());
-        expect_transformed_obb_matches_rotated_points(&rotation_matrix4(0.0, 1.0, 0.0, near_half_turn), &create_tilted_obb());
-        expect_transformed_obb_matches_rotated_points(&rotation_matrix4(0.0, 0.0, 1.0, near_half_turn), &create_tilted_obb());
+        expect_transformed_obb_matches_rotated_points(
+            &rotation_matrix4(1.0, 0.0, 0.0, near_half_turn),
+            &create_tilted_obb(),
+        );
+        expect_transformed_obb_matches_rotated_points(
+            &rotation_matrix4(0.0, 1.0, 0.0, near_half_turn),
+            &create_tilted_obb(),
+        );
+        expect_transformed_obb_matches_rotated_points(
+            &rotation_matrix4(0.0, 0.0, 1.0, near_half_turn),
+            &create_tilted_obb(),
+        );
     }
 
     #[test]

@@ -84,12 +84,7 @@ pub fn reset_spring(spring: &mut Spring, value: f32, velocity: Option<f32>) {
 /// `delta_time <= 0` is a no-op. A non-positive `frequency` is an inert spring (no force, no change);
 /// `damping_ratio` is clamped to `>= 0`. Inputs are read into locals before any write, so passing a
 /// `spring` that also appears elsewhere is safe.
-pub fn update_spring(
-    spring: &mut Spring,
-    target: f32,
-    config: &SpringConfig,
-    delta_time: f32,
-) {
+pub fn update_spring(spring: &mut Spring, target: f32, config: &SpringConfig, delta_time: f32) {
     if delta_time <= 0.0 {
         return;
     }
@@ -200,7 +195,12 @@ impl Spring {
         add_spring_impulse(self, velocity);
     }
 
-    pub fn is_settled(&self, target: f32, position_epsilon: Option<f32>, velocity_epsilon: Option<f32>) -> bool {
+    pub fn is_settled(
+        &self,
+        target: f32,
+        position_epsilon: Option<f32>,
+        velocity_epsilon: Option<f32>,
+    ) -> bool {
         return is_spring_settled(self, target, position_epsilon, velocity_epsilon);
     }
 

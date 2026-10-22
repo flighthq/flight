@@ -52,8 +52,7 @@ pub fn enable_node_interaction_state(source: &NodeRef) -> NodeInteractionStateRe
 }
 
 pub fn get_node_cursor(source: &NodeRef) -> Option<Cursor> {
-    return get_node_interaction_state(source)
-        .and_then(|s| s.read().unwrap().cursor.clone());
+    return get_node_interaction_state(source).and_then(|s| s.read().unwrap().cursor.clone());
 }
 
 pub fn get_node_hit_area(source: &NodeRef) -> Option<NodeInteractionStateRef> {
@@ -81,13 +80,11 @@ pub fn get_node_interaction_state(source: &NodeRef) -> Option<NodeInteractionSta
 }
 
 pub fn get_node_tab_index(source: &NodeRef) -> i32 {
-    return get_node_interaction_state(source)
-        .map_or(-1, |s| s.read().unwrap().tab_index);
+    return get_node_interaction_state(source).map_or(-1, |s| s.read().unwrap().tab_index);
 }
 
 pub fn is_node_focusable(source: &NodeRef) -> bool {
-    return get_node_interaction_state(source)
-        .map_or(false, |s| s.read().unwrap().focusable);
+    return get_node_interaction_state(source).map_or(false, |s| s.read().unwrap().focusable);
 }
 
 pub fn is_node_hit_test_enabled(source: &NodeRef) -> bool {

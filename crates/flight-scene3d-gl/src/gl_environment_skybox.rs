@@ -51,9 +51,13 @@ fn ensure_gl_skybox(state: &GlRenderState) -> GlSkybox {
     let program = link_gl_skybox_program(gl);
     // SAFETY: resource creation and attribute setup run on the state's owning GL thread.
     let sky = unsafe {
-        let vao = gl.create_vertex_array().unwrap_or_else(|error| throw_error(&error));
+        let vao = gl
+            .create_vertex_array()
+            .unwrap_or_else(|error| throw_error(&error));
         gl.bind_vertex_array(Some(vao));
-        let buffer = gl.create_buffer().unwrap_or_else(|error| throw_error(&error));
+        let buffer = gl
+            .create_buffer()
+            .unwrap_or_else(|error| throw_error(&error));
         gl.bind_buffer(glow::ARRAY_BUFFER, Some(buffer));
         gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, f32_bytes(&QUAD), glow::STATIC_DRAW);
         gl.enable_vertex_attrib_array(0);
@@ -62,7 +66,8 @@ fn ensure_gl_skybox(state: &GlRenderState) -> GlSkybox {
 
         GlSkybox {
             loc_env_cube: gl.get_uniform_location(program, "u_envCube"),
-            loc_inverse_view_projection: gl.get_uniform_location(program, "u_inverseViewProjection"),
+            loc_inverse_view_projection: gl
+                .get_uniform_location(program, "u_inverseViewProjection"),
             loc_intensity: gl.get_uniform_location(program, "u_intensity"),
             program,
             vao,
@@ -75,7 +80,9 @@ fn ensure_gl_skybox(state: &GlRenderState) -> GlSkybox {
 
 fn f32_bytes(values: &[f32]) -> &[u8] {
     // SAFETY: f32 has no padding and u8 has alignment 1, so the view covers exactly the same bytes.
-    return unsafe { std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), std::mem::size_of_val(values)) };
+    return unsafe {
+        std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), std::mem::size_of_val(values))
+    };
 }
 
 fn link_gl_skybox_program(gl: &glow::Context) -> NativeProgram {
@@ -147,7 +154,8 @@ const QUAD: [f32; 8] = [-1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0];
 
 macro_rules! skybox_vertex_glsl {
     () => {
-        concat!(r#"#version 300 es
+        concat!(
+            r#"#version 300 es
 layout(location = 0) in vec2 a_position;
 out vec2 v_ndc;
 void main() {
@@ -155,7 +163,8 @@ void main() {
   // Emit at the far plane (z = w) so the backdrop sits behind every drawn fragment.
   gl_Position = vec4(a_position, 1.0, 1.0);
 }
-"#)
+"#
+        )
     };
 }
 

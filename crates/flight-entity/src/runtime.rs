@@ -5,7 +5,10 @@ pub fn create_entity_runtime() -> EntityRuntime {
 }
 
 pub(crate) fn ensure_entity_runtime<T: Entity>(source: &mut T) -> &mut EntityRuntime {
-    return source.entity_runtime_mut().data.get_or_insert_with(|| Box::new(create_entity_runtime()));
+    return source
+        .entity_runtime_mut()
+        .data
+        .get_or_insert_with(|| Box::new(create_entity_runtime()));
 }
 
 pub fn get_entity_runtime<T: Entity>(source: &T) -> Option<&EntityRuntime> {

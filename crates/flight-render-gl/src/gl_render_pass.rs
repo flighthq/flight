@@ -10,7 +10,8 @@ use glow::HasContext;
 
 use crate::{
     GlPassStackEntry, GlRenderPass, GlRenderPassHandle, GlRenderState, GlRenderStateRuntime,
-    GlRenderTarget, GlRenderTargetSnapshot, GlScissorRect, GlViewportRect, SavedGlPassState, SavedGlStencil, flush_gl_delete_queue,
+    GlRenderTarget, GlRenderTargetSnapshot, GlScissorRect, GlViewportRect, SavedGlPassState,
+    SavedGlStencil, flush_gl_delete_queue,
 };
 
 // flight-lint: allow(conform-params) D17 generic render-state ownership replaces the source raw WebGL context parameter

@@ -1,6 +1,5 @@
 // flight-lint: allow-file(contract-vocabulary) D17 mesh-material renderers are backend-typed dispatch records over thread-bound render-gl state
 
-use std::rc::Rc;
 use flight_camera::Camera3D;
 use flight_lighting::Scene3DLightBlock;
 use flight_materials::{DEPTH_MATERIAL_KIND, DepthMaterial, Material3D};
@@ -8,10 +7,13 @@ use flight_meshgeometry::MeshGeometry;
 use flight_render::Scene3DRenderProxy;
 use flight_render_gl::{GlMeshMaterialRenderer, GlRenderState};
 use glow::HasContext;
+use std::rc::Rc;
 
 use crate::gl_debug_prelude::{bind_gl_debug_range, ensure_gl_debug_program};
 use crate::gl_mesh_material_registry::register_gl_mesh_material_renderer;
-use crate::gl_mesh_program::{begin_gl_mesh_draw, draw_gl_mesh_subset, set_gl_mesh_view_projection};
+use crate::gl_mesh_program::{
+    begin_gl_mesh_draw, draw_gl_mesh_subset, set_gl_mesh_view_projection,
+};
 use crate::gl_scene3d_runtime::get_gl_scene3d_runtime;
 use crate::types::{GlDebugDefineKey, GlDebugMode, GlMeshProgramRef};
 
@@ -43,7 +45,11 @@ fn bind_gl_depth_mesh_material(
         },
     );
     let family: GlMeshProgramRef = program.clone();
-    begin_gl_mesh_draw(state, &family, depth.is_some_and(|depth| depth.double_sided));
+    begin_gl_mesh_draw(
+        state,
+        &family,
+        depth.is_some_and(|depth| depth.double_sided),
+    );
     set_gl_mesh_view_projection(state, program.loc_view_projection, camera);
     // SAFETY: the program is bound on the owning GL thread.
     unsafe {
@@ -61,7 +67,11 @@ fn bind_gl_depth_mesh_material(
     bind_gl_debug_range(state, &program, depth.near, depth.far);
 }
 
-fn draw_gl_depth_mesh_material(state: &mut GlRenderState, proxy: &Scene3DRenderProxy, geometry: &MeshGeometry) {
+fn draw_gl_depth_mesh_material(
+    state: &mut GlRenderState,
+    proxy: &Scene3DRenderProxy,
+    geometry: &MeshGeometry,
+) {
     let program = get_gl_scene3d_runtime(state).active_mesh_program.clone();
     let Some(program) = program else {
         return;

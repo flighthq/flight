@@ -12,7 +12,10 @@ use flight_texture::RenderTargetColorSpace;
 use crate::support::*;
 
 fn scene_target(pipeline: &WgpuEffectState) -> Ref<WgpuTextureRenderTarget> {
-    return pipeline.scene_target.clone().expect("a begun pipeline has a scene target");
+    return pipeline
+        .scene_target
+        .clone()
+        .expect("a begun pipeline has a scene target");
 }
 
 fn run_empty_frame(state: &mut WgpuRenderState, pipeline: &mut WgpuEffectState) {
@@ -79,7 +82,12 @@ mod begin_wgpu_effect_pass {
         let mut screen = begin_wgpu_screen_render_pass_for_test(&mut state, 800, 600);
 
         let clear = RenderTargetClear {
-            color: Some([0x40 as f32 / 255.0, 0x80 as f32 / 255.0, 0xc0 as f32 / 255.0, 1.0]),
+            color: Some([
+                0x40 as f32 / 255.0,
+                0x80 as f32 / 255.0,
+                0xc0 as f32 / 255.0,
+                1.0,
+            ]),
             colors: None,
             depth: Some(1.0),
             stencil: None,
@@ -216,7 +224,10 @@ mod destroy_wgpu_effect_state {
         destroy_wgpu_effect_state(&state, &mut pipeline);
 
         assert!(pipeline.scene_target.is_none());
-        assert!(is_test_texture_destroyed(&state, &scene.read().unwrap().texture));
+        assert!(is_test_texture_destroyed(
+            &state,
+            &scene.read().unwrap().texture
+        ));
         assert!(pipeline.lut_texture.texture.is_none());
         assert_eq!(pipeline.lut_texture.size, 0);
         assert!(pipeline.lut_texture.lut.is_none());
@@ -285,7 +296,10 @@ mod end_wgpu_effect_pass {
         run_empty_frame(&mut state, &mut pipeline);
 
         let present = get_wgpu_effect_pipeline(&mut state, "effect.present", "", None);
-        assert_eq!(present.read().unwrap().blend_mode, WgpuEffectBlendMode::Replace);
+        assert_eq!(
+            present.read().unwrap().blend_mode,
+            WgpuEffectBlendMode::Replace
+        );
     }
 
     #[test]
@@ -299,7 +313,8 @@ mod end_wgpu_effect_pass {
     }
 
     #[test]
-    fn presents_the_final_result_with_replace_blend_so_transparent_pixels_overwrite_the_screen_clear() {
+    fn presents_the_final_result_with_replace_blend_so_transparent_pixels_overwrite_the_screen_clear()
+     {
         let mut state = create_wgpu_render_state_for_test(None);
         let mut pipeline = create_wgpu_effect_state(
             &state,
@@ -344,7 +359,13 @@ mod end_wgpu_effect_pass {
         end_wgpu_render_pass(screen);
 
         let scene = scene_target(&pipeline);
-        assert!(pipeline.pool.free.iter().all(|target| !Arc::ptr_eq(target, &scene)));
+        assert!(
+            pipeline
+                .pool
+                .free
+                .iter()
+                .all(|target| !Arc::ptr_eq(target, &scene))
+        );
     }
 
     // A maximal run of matrix-tier adjustments fuses into ONE color-matrix pass, and both scratch
@@ -380,7 +401,8 @@ mod end_wgpu_effect_pass {
         let mut state = create_wgpu_render_state_for_test(None);
         let mut pipeline = create_wgpu_effect_state(&state, None);
         let invert: Ref<dyn Adjustment> = Arc::new(RwLock::new(create_invert_adjustment(None)));
-        let hue: Ref<dyn Adjustment> = Arc::new(RwLock::new(create_hue_saturation_adjustment(None)));
+        let hue: Ref<dyn Adjustment> =
+            Arc::new(RwLock::new(create_hue_saturation_adjustment(None)));
         let chain = vec![
             WgpuEffectOperation::Adjustment(invert),
             WgpuEffectOperation::Adjustment(hue),
@@ -432,9 +454,11 @@ mod set_wgpu_effect_state_sample_count_guard {
         let sink = substitutions.clone();
         set_wgpu_effect_state_sample_count_guard(
             &mut state,
-            Some(Arc::new(move |_state: &WgpuRenderState, requested: f32, applied: f32| {
-                sink.lock().unwrap().push((requested, applied));
-            })),
+            Some(Arc::new(
+                move |_state: &WgpuRenderState, requested: f32, applied: f32| {
+                    sink.lock().unwrap().push((requested, applied));
+                },
+            )),
         );
 
         create_wgpu_effect_state(
@@ -484,7 +508,10 @@ mod set_wgpu_effect_state_skip_guard {
         end_wgpu_effect_pass(scene, &mut pipeline, &chain);
         end_wgpu_render_pass(guarded);
 
-        assert_eq!(*dropped.lock().unwrap(), vec!["test.wgpu-pipeline-skip-seam".to_string()]);
+        assert_eq!(
+            *dropped.lock().unwrap(),
+            vec!["test.wgpu-pipeline-skip-seam".to_string()]
+        );
 
         set_wgpu_effect_state_skip_guard(&mut state, None);
         let mut silent = begin_wgpu_screen_render_pass_for_test(&mut state, 800, 600);
@@ -492,7 +519,10 @@ mod set_wgpu_effect_state_skip_guard {
         end_wgpu_effect_pass(scene, &mut pipeline, &chain);
         end_wgpu_render_pass(silent);
 
-        assert_eq!(*dropped.lock().unwrap(), vec!["test.wgpu-pipeline-skip-seam".to_string()]);
+        assert_eq!(
+            *dropped.lock().unwrap(),
+            vec!["test.wgpu-pipeline-skip-seam".to_string()]
+        );
     }
 }
 
@@ -503,7 +533,11 @@ mod set_wgpu_effect_velocity_texture {
     fn sets_the_velocity_texture_on_the_pipeline() {
         let state = create_wgpu_render_state_for_test(None);
         let mut pipeline = create_wgpu_effect_state(&state, None);
-        let texture = create_test_target(&state, 4, 4).read().unwrap().texture.clone();
+        let texture = create_test_target(&state, 4, 4)
+            .read()
+            .unwrap()
+            .texture
+            .clone();
 
         set_wgpu_effect_velocity_texture(&mut pipeline, Some(texture.clone()));
 

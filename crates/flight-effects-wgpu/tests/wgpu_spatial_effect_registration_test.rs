@@ -13,8 +13,10 @@ fn registrations() -> Vec<Registration> {
         ),
         (
             "BitmapDisplacementEffect",
-            flight_effects_wgpu::register_wgpu_bitmap_displacement_effect as fn(&mut WgpuRenderState),
-            flight_effects_wgpu::contract::wgpu_bitmap_displacement_effect_runner as WgpuEffectRunner,
+            flight_effects_wgpu::register_wgpu_bitmap_displacement_effect
+                as fn(&mut WgpuRenderState),
+            flight_effects_wgpu::contract::wgpu_bitmap_displacement_effect_runner
+                as WgpuEffectRunner,
         ),
         (
             "BlendEffect",
@@ -33,13 +35,17 @@ fn registrations() -> Vec<Registration> {
         ),
         (
             "CameraMotionBlurEffect",
-            flight_effects_wgpu::register_wgpu_camera_motion_blur_effect as fn(&mut WgpuRenderState),
-            flight_effects_wgpu::contract::wgpu_camera_motion_blur_effect_runner as WgpuEffectRunner,
+            flight_effects_wgpu::register_wgpu_camera_motion_blur_effect
+                as fn(&mut WgpuRenderState),
+            flight_effects_wgpu::contract::wgpu_camera_motion_blur_effect_runner
+                as WgpuEffectRunner,
         ),
         (
             "ChromaticAberrationEffect",
-            flight_effects_wgpu::register_wgpu_chromatic_aberration_effect as fn(&mut WgpuRenderState),
-            flight_effects_wgpu::contract::wgpu_chromatic_aberration_effect_runner as WgpuEffectRunner,
+            flight_effects_wgpu::register_wgpu_chromatic_aberration_effect
+                as fn(&mut WgpuRenderState),
+            flight_effects_wgpu::contract::wgpu_chromatic_aberration_effect_runner
+                as WgpuEffectRunner,
         ),
         (
             "CompositeEffect",
@@ -252,7 +258,10 @@ mod wgpu_effect_registration {
                     .is_some_and(|registered| std::ptr::fn_addr_eq(registered, runner)),
                 "{kind}"
             );
-            assert!(flight_effects_wgpu::get_wgpu_effect_runner(&other, kind).is_none(), "{kind}");
+            assert!(
+                flight_effects_wgpu::get_wgpu_effect_runner(&other, kind).is_none(),
+                "{kind}"
+            );
         }
     }
 }

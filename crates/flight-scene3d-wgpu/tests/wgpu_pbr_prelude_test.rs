@@ -33,7 +33,12 @@ fn all() -> WgpuPbrDefineKey {
     };
 }
 
-fn record(_runtime: &mut WgpuRenderStateRuntime, _value: Option<&WgpuColorScaleBiasInput>, _index: u32) {}
+fn record(
+    _runtime: &mut WgpuRenderStateRuntime,
+    _value: Option<&WgpuColorScaleBiasInput>,
+    _index: u32,
+) {
+}
 
 fn resolve_flush(_state: &mut WgpuRenderState, _count: u32) -> Option<WgpuColorAdjustmentFlush> {
     return None;
@@ -53,24 +58,90 @@ mod build_wgpu_pbr_define_key {
     #[test]
     fn produces_a_stable_distinct_string_per_flag_set() {
         assert_eq!(build_wgpu_pbr_define_key(&key()), "--------:-------");
-        assert_eq!(build_wgpu_pbr_define_key(&standard_all()), "mdbnroe-:-------");
+        assert_eq!(
+            build_wgpu_pbr_define_key(&standard_all()),
+            "mdbnroe-:-------"
+        );
         assert_eq!(build_wgpu_pbr_define_key(&all()), "mdbnroe-:CSAIPUT");
         let single = |key: WgpuPbrDefineKey| build_wgpu_pbr_define_key(&key);
-        assert_eq!(single(WgpuPbrDefineKey { alpha_mask_enabled: true, ..key() }), "m-------:-------");
-        assert_eq!(single(WgpuPbrDefineKey { double_sided: true, ..key() }), "-d------:-------");
-        assert_eq!(single(WgpuPbrDefineKey { has_base_color_map: true, ..key() }), "--b-----:-------");
-        assert_eq!(single(WgpuPbrDefineKey { has_normal_map: true, ..key() }), "---n----:-------");
-        assert_eq!(single(WgpuPbrDefineKey { has_metallic_roughness_map: true, ..key() }), "----r---:-------");
-        assert_eq!(single(WgpuPbrDefineKey { has_occlusion_map: true, ..key() }), "-----o--:-------");
-        assert_eq!(single(WgpuPbrDefineKey { has_emissive_map: true, ..key() }), "------e-:-------");
-        assert_eq!(single(WgpuPbrDefineKey { has_alpha_map: true, ..key() }), "-------a:-------");
-        assert_eq!(single(WgpuPbrDefineKey { clearcoat_enabled: true, ..key() }), "--------:C------");
-        assert_eq!(single(WgpuPbrDefineKey { transmission_enabled: true, ..key() }), "--------:------T");
+        assert_eq!(
+            single(WgpuPbrDefineKey {
+                alpha_mask_enabled: true,
+                ..key()
+            }),
+            "m-------:-------"
+        );
+        assert_eq!(
+            single(WgpuPbrDefineKey {
+                double_sided: true,
+                ..key()
+            }),
+            "-d------:-------"
+        );
+        assert_eq!(
+            single(WgpuPbrDefineKey {
+                has_base_color_map: true,
+                ..key()
+            }),
+            "--b-----:-------"
+        );
+        assert_eq!(
+            single(WgpuPbrDefineKey {
+                has_normal_map: true,
+                ..key()
+            }),
+            "---n----:-------"
+        );
+        assert_eq!(
+            single(WgpuPbrDefineKey {
+                has_metallic_roughness_map: true,
+                ..key()
+            }),
+            "----r---:-------"
+        );
+        assert_eq!(
+            single(WgpuPbrDefineKey {
+                has_occlusion_map: true,
+                ..key()
+            }),
+            "-----o--:-------"
+        );
+        assert_eq!(
+            single(WgpuPbrDefineKey {
+                has_emissive_map: true,
+                ..key()
+            }),
+            "------e-:-------"
+        );
+        assert_eq!(
+            single(WgpuPbrDefineKey {
+                has_alpha_map: true,
+                ..key()
+            }),
+            "-------a:-------"
+        );
+        assert_eq!(
+            single(WgpuPbrDefineKey {
+                clearcoat_enabled: true,
+                ..key()
+            }),
+            "--------:C------"
+        );
+        assert_eq!(
+            single(WgpuPbrDefineKey {
+                transmission_enabled: true,
+                ..key()
+            }),
+            "--------:------T"
+        );
     }
 
     #[test]
     fn is_identical_for_identical_flags_cache_soundness() {
-        assert_eq!(build_wgpu_pbr_define_key(&all()), build_wgpu_pbr_define_key(&all()));
+        assert_eq!(
+            build_wgpu_pbr_define_key(&all()),
+            build_wgpu_pbr_define_key(&all())
+        );
     }
 
     #[test]
@@ -105,7 +176,15 @@ mod build_wgpu_pbr_define_source {
     #[test]
     fn emits_a_const_for_every_extension_lobe() {
         let all = build_wgpu_pbr_define_source(&all());
-        for flag in ["CLEARCOAT", "SHEEN", "ANISOTROPY", "IRIDESCENCE", "SPECULAR_EXT", "SUBSURFACE", "TRANSMISSION"] {
+        for flag in [
+            "CLEARCOAT",
+            "SHEEN",
+            "ANISOTROPY",
+            "IRIDESCENCE",
+            "SPECULAR_EXT",
+            "SUBSURFACE",
+            "TRANSMISSION",
+        ] {
             assert!(all.contains(&format!("const {} : bool = true;", flag)));
         }
         let none = build_wgpu_pbr_define_source(&key());
@@ -182,7 +261,8 @@ mod get_wgpu_pbr_module_source_for_key {
 
     #[test]
     fn splices_the_registered_post_shade_chunk_only_into_the_promoted_variant() {
-        let base = get_wgpu_pbr_module_source_for_key(&key(), Some(false), None, Some(&COLOR_FEATURE));
+        let base =
+            get_wgpu_pbr_module_source_for_key(&key(), Some(false), None, Some(&COLOR_FEATURE));
         let adjusted = get_wgpu_pbr_module_source_for_key(
             &WgpuPbrDefineKey {
                 has_color_adjustment: Some(true),
@@ -230,8 +310,15 @@ mod get_wgpu_pbr_module_source_for_key {
         assert!(source.contains("@interpolate(flat) objectAlpha : f32"));
         assert!(source.contains("flightMeshCoverage(alpha, in.objectAlpha, draw.params.y)"));
         assert!(!source.contains("jointTexture"));
-        assert!(get_wgpu_pbr_module_source_for_key(&k, Some(true), Some(make_wgpu_skinning_adapter()), None)
-            .contains("textureLoad(jointTexture"));
+        assert!(
+            get_wgpu_pbr_module_source_for_key(
+                &k,
+                Some(true),
+                Some(make_wgpu_skinning_adapter()),
+                None
+            )
+            .contains("textureLoad(jointTexture")
+        );
     }
 
     // TS bug: the PBR Draw struct lacked the splice anchor, so a promoted variant referenced
@@ -264,7 +351,12 @@ mod get_wgpu_pbr_module_source_for_key {
     // PBR variant never applied the skin matrix and drew in its bind pose.
     #[test]
     fn applies_the_skin_matrix_in_the_skinned_variant() {
-        let source = get_wgpu_pbr_module_source_for_key(&key(), Some(true), Some(make_wgpu_skinning_adapter()), None);
+        let source = get_wgpu_pbr_module_source_for_key(
+            &key(),
+            Some(true),
+            Some(make_wgpu_skinning_adapter()),
+            None,
+        );
         assert!(source.contains("localPosition = skin * localPosition"));
         assert!(source.contains("localNormal = skinNormalMatrix(joints0, weights0) * localNormal"));
     }

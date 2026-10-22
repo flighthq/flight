@@ -35,8 +35,10 @@ pub fn accumulate_animation_sample(
     let mut sign: f32 = 1.0;
     if accumulator.quaternion && components >= 4 && accumulator.weight > 0.0 {
         let values = &accumulator.values;
-        let dot =
-            values[0] * sample[0] + values[1] * sample[1] + values[2] * sample[2] + values[3] * sample[3];
+        let dot = values[0] * sample[0]
+            + values[1] * sample[1]
+            + values[2] * sample[2]
+            + values[3] * sample[3];
         if dot < 0.0 {
             sign = -1.0;
         }
@@ -105,10 +107,7 @@ pub fn blend_animation_samples(
     }
 }
 
-pub fn finish_animation_sample(
-    out: &mut [f32],
-    accumulator: &AnimationSampleAccumulator,
-) -> bool {
+pub fn finish_animation_sample(out: &mut [f32], accumulator: &AnimationSampleAccumulator) -> bool {
     if !(accumulator.weight > 0.0) {
         return false;
     }

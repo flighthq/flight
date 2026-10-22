@@ -77,13 +77,23 @@ mod clamp_vector4 {
         let max = create_vector4(10.0, 20.0, 30.0, 40.0);
         let mut out = create_vector4(0.0, 0.0, 0.0, 0.0);
 
-        clamp_vector4(&mut out, &create_vector4(-5.0, -6.0, -7.0, -8.0), &min, &max);
+        clamp_vector4(
+            &mut out,
+            &create_vector4(-5.0, -6.0, -7.0, -8.0),
+            &min,
+            &max,
+        );
         assert_eq!(out.x, -1.0);
         assert_eq!(out.y, -2.0);
         assert_eq!(out.z, -3.0);
         assert_eq!(out.w, -4.0);
 
-        clamp_vector4(&mut out, &create_vector4(100.0, 200.0, 300.0, 400.0), &min, &max);
+        clamp_vector4(
+            &mut out,
+            &create_vector4(100.0, 200.0, 300.0, 400.0),
+            &min,
+            &max,
+        );
         assert_eq!(out.x, 10.0);
         assert_eq!(out.y, 20.0);
         assert_eq!(out.z, 30.0);
@@ -328,7 +338,11 @@ mod divide_vector4 {
     fn supports_out_equals_source() {
         let mut source = create_vector4(6.0, 8.0, 9.0, 12.0);
         let source_clone = clone_vector4(&source);
-        divide_vector4(&mut source, &source_clone, &create_vector4(2.0, 4.0, 3.0, 6.0));
+        divide_vector4(
+            &mut source,
+            &source_clone,
+            &create_vector4(2.0, 4.0, 3.0, 6.0),
+        );
         assert_eq!(source.x, 3.0);
         assert_eq!(source.y, 2.0);
         assert_eq!(source.z, 3.0);
@@ -339,7 +353,11 @@ mod divide_vector4 {
     fn supports_out_equals_divisor() {
         let mut divisor = create_vector4(2.0, 4.0, 3.0, 6.0);
         let divisor_clone = clone_vector4(&divisor);
-        divide_vector4(&mut divisor, &create_vector4(6.0, 8.0, 9.0, 12.0), &divisor_clone);
+        divide_vector4(
+            &mut divisor,
+            &create_vector4(6.0, 8.0, 9.0, 12.0),
+            &divisor_clone,
+        );
         assert_eq!(divisor.x, 3.0);
         assert_eq!(divisor.y, 2.0);
         assert_eq!(divisor.z, 3.0);
@@ -407,10 +425,22 @@ mod equals_vector4 {
     #[test]
     fn compares_every_component_not_just_the_first() {
         let a = create_vector4(1.0, 2.0, 3.0, 4.0);
-        assert!(!equals_vector4(Some(&a), Some(&create_vector4(9.0, 2.0, 3.0, 4.0))));
-        assert!(!equals_vector4(Some(&a), Some(&create_vector4(1.0, 9.0, 3.0, 4.0))));
-        assert!(!equals_vector4(Some(&a), Some(&create_vector4(1.0, 2.0, 9.0, 4.0))));
-        assert!(!equals_vector4(Some(&a), Some(&create_vector4(1.0, 2.0, 3.0, 9.0))));
+        assert!(!equals_vector4(
+            Some(&a),
+            Some(&create_vector4(9.0, 2.0, 3.0, 4.0))
+        ));
+        assert!(!equals_vector4(
+            Some(&a),
+            Some(&create_vector4(1.0, 9.0, 3.0, 4.0))
+        ));
+        assert!(!equals_vector4(
+            Some(&a),
+            Some(&create_vector4(1.0, 2.0, 9.0, 4.0))
+        ));
+        assert!(!equals_vector4(
+            Some(&a),
+            Some(&create_vector4(1.0, 2.0, 3.0, 9.0))
+        ));
     }
 
     #[test]
@@ -483,7 +513,10 @@ mod get_vector4_dot {
     fn returns_the_dot_product_of_two_vectors() {
         let a = create_vector4(1.0, 2.0, 3.0, 4.0);
         let b = create_vector4(4.0, 5.0, 6.0, 7.0);
-        assert_eq!(get_vector4_dot(&a, &b), 1.0 * 4.0 + 2.0 * 5.0 + 3.0 * 6.0 + 4.0 * 7.0);
+        assert_eq!(
+            get_vector4_dot(&a, &b),
+            1.0 * 4.0 + 2.0 * 5.0 + 3.0 * 6.0 + 4.0 * 7.0
+        );
     }
 }
 
@@ -950,7 +983,11 @@ mod reflect_vector4 {
     fn supports_out_equals_normal() {
         let mut normal = create_vector4(1.0, 0.0, 0.0, 0.0);
         let normal_clone = clone_vector4(&normal);
-        reflect_vector4(&mut normal, &create_vector4(1.0, 0.0, 0.0, 0.0), &normal_clone);
+        reflect_vector4(
+            &mut normal,
+            &create_vector4(1.0, 0.0, 0.0, 0.0),
+            &normal_clone,
+        );
         assert_approx_tight(normal.x, -1.0);
         assert_approx_tight(normal.y, 0.0);
         assert_approx_tight(normal.z, 0.0);

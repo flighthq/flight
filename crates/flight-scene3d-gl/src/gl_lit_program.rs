@@ -1,6 +1,5 @@
 // flight-lint: allow-file(contract-vocabulary) D17 lit-program helpers drive glow native handles over thread-bound render-gl state
 
-use std::rc::Rc;
 use flight_lighting::{
     MAX_FORWARD_LIGHTS, SCENE_LIGHT_HEMISPHERE_OFFSET, SCENE_LIGHT_HEMISPHERE_STRIDE,
     SCENE_LIGHT_POINT_OFFSET, SCENE_LIGHT_POINT_STRIDE, SCENE_LIGHT_SPOT_OFFSET,
@@ -8,6 +7,7 @@ use flight_lighting::{
 };
 use flight_render_gl::GlRenderState;
 use glow::{HasContext, NativeProgram, PixelUnpackData};
+use std::rc::Rc;
 
 use crate::gl_mesh_program::create_gl_mesh_program_record;
 use crate::gl_scene3d_runtime::get_gl_scene3d_runtime;
@@ -124,7 +124,11 @@ pub const GL_MESH_LIGHT_BLOCK_GLSL: &str = gl_mesh_light_block_glsl!();
 // and the baked IBL set or its placeholders. The light uniforms persist on the program across frames,
 // so an unchanged block (same identity and version) is not re-uploaded; the shadow and IBL binds run
 // every draw.
-pub fn bind_gl_mesh_light_block(state: &GlRenderState, program: &GlLitProgram, lights: &Rc<Scene3DLightBlock>) {
+pub fn bind_gl_mesh_light_block(
+    state: &GlRenderState,
+    program: &GlLitProgram,
+    lights: &Rc<Scene3DLightBlock>,
+) {
     let gl = &state.gl;
     // The cache holds the uploaded block's handle, so the identity it compares cannot be reused by
     // another block while the entry exists (TS: the WeakMap value is the block object itself).
@@ -136,11 +140,34 @@ pub fn bind_gl_mesh_light_block(state: &GlRenderState, program: &GlLitProgram, l
         let data = &lights.data;
         // SAFETY: the program is bound on the owning GL thread.
         unsafe {
-            gl.uniform_4_f32(program.loc_directional.as_ref(), data[0], data[1], data[2], 0.0);
-            gl.uniform_4_f32(program.loc_directional_radiance.as_ref(), data[4], data[5], data[6], 0.0);
-            gl.uniform_3_f32(program.loc_ambient_radiance.as_ref(), data[8], data[9], data[10]);
-            gl.uniform_1_f32(program.loc_directional_count.as_ref(), lights.directional_count as f32);
-            gl.uniform_1_f32(program.loc_ambient_count.as_ref(), lights.ambient_count as f32);
+            gl.uniform_4_f32(
+                program.loc_directional.as_ref(),
+                data[0],
+                data[1],
+                data[2],
+                0.0,
+            );
+            gl.uniform_4_f32(
+                program.loc_directional_radiance.as_ref(),
+                data[4],
+                data[5],
+                data[6],
+                0.0,
+            );
+            gl.uniform_3_f32(
+                program.loc_ambient_radiance.as_ref(),
+                data[8],
+                data[9],
+                data[10],
+            );
+            gl.uniform_1_f32(
+                program.loc_directional_count.as_ref(),
+                lights.directional_count as f32,
+            );
+            gl.uniform_1_f32(
+                program.loc_ambient_count.as_ref(),
+                lights.ambient_count as f32,
+            );
             gl.uniform_4_f32_slice(
                 program.loc_point_lights.as_ref(),
                 &data[SCENE_LIGHT_POINT_OFFSET
@@ -154,11 +181,15 @@ pub fn bind_gl_mesh_light_block(state: &GlRenderState, program: &GlLitProgram, l
             gl.uniform_4_f32_slice(
                 program.loc_hemisphere_lights.as_ref(),
                 &data[SCENE_LIGHT_HEMISPHERE_OFFSET
-                    ..SCENE_LIGHT_HEMISPHERE_OFFSET + SCENE_LIGHT_HEMISPHERE_STRIDE * MAX_FORWARD_LIGHTS],
+                    ..SCENE_LIGHT_HEMISPHERE_OFFSET
+                        + SCENE_LIGHT_HEMISPHERE_STRIDE * MAX_FORWARD_LIGHTS],
             );
             gl.uniform_1_i32(program.loc_point_count.as_ref(), lights.point_count as i32);
             gl.uniform_1_i32(program.loc_spot_count.as_ref(), lights.spot_count as i32);
-            gl.uniform_1_i32(program.loc_hemisphere_count.as_ref(), lights.hemisphere_count as i32);
+            gl.uniform_1_i32(
+                program.loc_hemisphere_count.as_ref(),
+                lights.hemisphere_count as i32,
+            );
         }
         get_gl_scene3d_runtime(state)
             .uploaded_light_blocks
@@ -179,10 +210,23 @@ pub fn bind_gl_mesh_light_block(state: &GlRenderState, program: &GlLitProgram, l
                 gl.active_texture(glow::TEXTURE0 + SHADOW_MAP_TEXTURE_UNIT);
                 gl.bind_texture(glow::TEXTURE_2D, Some(shadow.texture));
                 gl.uniform_1_f32(program.loc_shadow_bias.as_ref(), shadow.shadow_bias);
-                gl.uniform_1_i32(program.loc_shadow_map.as_ref(), SHADOW_MAP_TEXTURE_UNIT as i32);
-                gl.uniform_matrix_4_f32_slice(program.loc_shadow_matrix.as_ref(), false, &shadow.matrix.m);
-                gl.uniform_1_f32(program.loc_shadow_normal_bias_world.as_ref(), shadow.normal_bias_world);
-                gl.uniform_1_i32(program.loc_shadow_pcf_radius.as_ref(), shadow.pcf_radius as i32);
+                gl.uniform_1_i32(
+                    program.loc_shadow_map.as_ref(),
+                    SHADOW_MAP_TEXTURE_UNIT as i32,
+                );
+                gl.uniform_matrix_4_f32_slice(
+                    program.loc_shadow_matrix.as_ref(),
+                    false,
+                    &shadow.matrix.m,
+                );
+                gl.uniform_1_f32(
+                    program.loc_shadow_normal_bias_world.as_ref(),
+                    shadow.normal_bias_world,
+                );
+                gl.uniform_1_i32(
+                    program.loc_shadow_pcf_radius.as_ref(),
+                    shadow.pcf_radius as i32,
+                );
                 gl.uniform_1_f32(program.loc_shadow_enabled.as_ref(), 1.0);
             }
             _ => {
@@ -197,16 +241,25 @@ pub fn bind_gl_mesh_light_block(state: &GlRenderState, program: &GlLitProgram, l
             unsafe {
                 gl.active_texture(glow::TEXTURE0 + IBL_IRRADIANCE_TEXTURE_UNIT);
                 gl.bind_texture(glow::TEXTURE_CUBE_MAP, Some(ibl.irradiance_cube));
-                gl.uniform_1_i32(program.loc_ibl_irradiance.as_ref(), IBL_IRRADIANCE_TEXTURE_UNIT as i32);
+                gl.uniform_1_i32(
+                    program.loc_ibl_irradiance.as_ref(),
+                    IBL_IRRADIANCE_TEXTURE_UNIT as i32,
+                );
                 gl.active_texture(glow::TEXTURE0 + IBL_PREFILTERED_TEXTURE_UNIT);
                 gl.bind_texture(glow::TEXTURE_CUBE_MAP, Some(ibl.prefiltered_cube));
-                gl.uniform_1_i32(program.loc_ibl_prefiltered.as_ref(), IBL_PREFILTERED_TEXTURE_UNIT as i32);
+                gl.uniform_1_i32(
+                    program.loc_ibl_prefiltered.as_ref(),
+                    IBL_PREFILTERED_TEXTURE_UNIT as i32,
+                );
                 gl.active_texture(glow::TEXTURE0 + IBL_BRDF_TEXTURE_UNIT);
                 gl.bind_texture(glow::TEXTURE_2D, Some(ibl.brdf_lut));
                 gl.uniform_1_i32(program.loc_ibl_brdf.as_ref(), IBL_BRDF_TEXTURE_UNIT as i32);
                 gl.uniform_1_f32(program.loc_ibl_enabled.as_ref(), 1.0);
                 gl.uniform_1_f32(program.loc_ibl_intensity.as_ref(), ibl.intensity);
-                gl.uniform_1_f32(program.loc_ibl_max_mip.as_ref(), ibl.prefiltered_mip_count as f32 - 1.0);
+                gl.uniform_1_f32(
+                    program.loc_ibl_max_mip.as_ref(),
+                    ibl.prefiltered_mip_count as f32 - 1.0,
+                );
                 gl.active_texture(glow::TEXTURE0);
             }
         }
@@ -219,10 +272,16 @@ pub fn bind_gl_mesh_light_block(state: &GlRenderState, program: &GlLitProgram, l
             unsafe {
                 gl.active_texture(glow::TEXTURE0 + IBL_IRRADIANCE_TEXTURE_UNIT);
                 gl.bind_texture(glow::TEXTURE_CUBE_MAP, Some(placeholders.cube));
-                gl.uniform_1_i32(program.loc_ibl_irradiance.as_ref(), IBL_IRRADIANCE_TEXTURE_UNIT as i32);
+                gl.uniform_1_i32(
+                    program.loc_ibl_irradiance.as_ref(),
+                    IBL_IRRADIANCE_TEXTURE_UNIT as i32,
+                );
                 gl.active_texture(glow::TEXTURE0 + IBL_PREFILTERED_TEXTURE_UNIT);
                 gl.bind_texture(glow::TEXTURE_CUBE_MAP, Some(placeholders.cube));
-                gl.uniform_1_i32(program.loc_ibl_prefiltered.as_ref(), IBL_PREFILTERED_TEXTURE_UNIT as i32);
+                gl.uniform_1_i32(
+                    program.loc_ibl_prefiltered.as_ref(),
+                    IBL_PREFILTERED_TEXTURE_UNIT as i32,
+                );
                 gl.active_texture(glow::TEXTURE0 + IBL_BRDF_TEXTURE_UNIT);
                 gl.bind_texture(glow::TEXTURE_2D, Some(placeholders.lut));
                 gl.uniform_1_i32(program.loc_ibl_brdf.as_ref(), IBL_BRDF_TEXTURE_UNIT as i32);
@@ -262,8 +321,16 @@ fn ensure_gl_ibl_placeholders(state: &GlRenderState) -> GlIblPlaceholders {
                 PixelUnpackData::Slice(Some(&black)),
             );
         }
-        gl.tex_parameter_i32(glow::TEXTURE_CUBE_MAP, glow::TEXTURE_MIN_FILTER, glow::LINEAR as i32);
-        gl.tex_parameter_i32(glow::TEXTURE_CUBE_MAP, glow::TEXTURE_MAG_FILTER, glow::LINEAR as i32);
+        gl.tex_parameter_i32(
+            glow::TEXTURE_CUBE_MAP,
+            glow::TEXTURE_MIN_FILTER,
+            glow::LINEAR as i32,
+        );
+        gl.tex_parameter_i32(
+            glow::TEXTURE_CUBE_MAP,
+            glow::TEXTURE_MAG_FILTER,
+            glow::LINEAR as i32,
+        );
 
         let lut = gl
             .create_texture()
@@ -280,8 +347,16 @@ fn ensure_gl_ibl_placeholders(state: &GlRenderState) -> GlIblPlaceholders {
             glow::UNSIGNED_BYTE,
             PixelUnpackData::Slice(Some(&black)),
         );
-        gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MIN_FILTER, glow::LINEAR as i32);
-        gl.tex_parameter_i32(glow::TEXTURE_2D, glow::TEXTURE_MAG_FILTER, glow::LINEAR as i32);
+        gl.tex_parameter_i32(
+            glow::TEXTURE_2D,
+            glow::TEXTURE_MIN_FILTER,
+            glow::LINEAR as i32,
+        );
+        gl.tex_parameter_i32(
+            glow::TEXTURE_2D,
+            glow::TEXTURE_MAG_FILTER,
+            glow::LINEAR as i32,
+        );
         GlIblPlaceholders { cube, lut }
     };
     get_gl_scene3d_runtime(state).ibl_placeholders = Some(placeholders);
@@ -317,7 +392,8 @@ pub fn resolve_gl_lit_locations(gl: &glow::Context, program: NativeProgram) -> G
             loc_shadow_enabled: gl.get_uniform_location(program, "u_shadowEnabled"),
             loc_shadow_map: gl.get_uniform_location(program, "u_shadowMap"),
             loc_shadow_matrix: gl.get_uniform_location(program, "u_shadowMatrix"),
-            loc_shadow_normal_bias_world: gl.get_uniform_location(program, "u_shadowNormalBiasWorld"),
+            loc_shadow_normal_bias_world: gl
+                .get_uniform_location(program, "u_shadowNormalBiasWorld"),
             loc_shadow_pcf_radius: gl.get_uniform_location(program, "u_shadowPcfRadius"),
             loc_spot_count: gl.get_uniform_location(program, "u_spotCount"),
             loc_spot_lights: gl.get_uniform_location(program, "u_spotLights"),

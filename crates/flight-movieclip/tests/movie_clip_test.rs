@@ -112,10 +112,7 @@ mod create_movie_clip {
 
     #[test]
     fn returns_a_new_object() {
-        assert!(!Arc::ptr_eq(
-            &create_movie_clip(),
-            &create_movie_clip()
-        ));
+        assert!(!Arc::ptr_eq(&create_movie_clip(), &create_movie_clip()));
     }
 }
 

@@ -53,10 +53,14 @@ fn ensure_contour(contours: &mut Vec<Vec<f64>>, contour: Option<usize>) -> Optio
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn flatten_cubic(
     out: &mut Vec<f64>,
-    x0: f64, y0: f64,
-    c1x: f64, c1y: f64,
-    c2x: f64, c2y: f64,
-    x1: f64, y1: f64,
+    x0: f64,
+    y0: f64,
+    c1x: f64,
+    c1y: f64,
+    c2x: f64,
+    c2y: f64,
+    x1: f64,
+    y1: f64,
     tolerance_sq: f64,
     depth: usize,
 ) {
@@ -79,8 +83,32 @@ fn flatten_cubic(
     let y123 = (y12 + y23) / 2.0;
     let xm = (x012 + x123) / 2.0;
     let ym = (y012 + y123) / 2.0;
-    flatten_cubic(out, x0, y0, x01, y01, x012, y012, xm, ym, tolerance_sq, depth + 1);
-    flatten_cubic(out, xm, ym, x123, y123, x23, y23, x1, y1, tolerance_sq, depth + 1);
+    flatten_cubic(
+        out,
+        x0,
+        y0,
+        x01,
+        y01,
+        x012,
+        y012,
+        xm,
+        ym,
+        tolerance_sq,
+        depth + 1,
+    );
+    flatten_cubic(
+        out,
+        xm,
+        ym,
+        x123,
+        y123,
+        x23,
+        y23,
+        x1,
+        y1,
+        tolerance_sq,
+        depth + 1,
+    );
 }
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
@@ -138,9 +166,15 @@ pub fn flatten_path(out: &mut Vec<Vec<f64>>, path: &Path, tolerance: Option<f64>
             contour = ensure_contour(out, contour);
             let ci_idx = contour.unwrap();
             flatten_quadratic(
-                &mut out[ci_idx], x, y,
-                data[di], data[di + 1], data[di + 2], data[di + 3],
-                tolerance_sq, 0,
+                &mut out[ci_idx],
+                x,
+                y,
+                data[di],
+                data[di + 1],
+                data[di + 2],
+                data[di + 3],
+                tolerance_sq,
+                0,
             );
             x = data[di + 2];
             y = data[di + 3];
@@ -149,10 +183,17 @@ pub fn flatten_path(out: &mut Vec<Vec<f64>>, path: &Path, tolerance: Option<f64>
             contour = ensure_contour(out, contour);
             let ci_idx = contour.unwrap();
             flatten_cubic(
-                &mut out[ci_idx], x, y,
-                data[di], data[di + 1], data[di + 2], data[di + 3],
-                data[di + 4], data[di + 5],
-                tolerance_sq, 0,
+                &mut out[ci_idx],
+                x,
+                y,
+                data[di],
+                data[di + 1],
+                data[di + 2],
+                data[di + 3],
+                data[di + 4],
+                data[di + 5],
+                tolerance_sq,
+                0,
             );
             x = data[di + 4];
             y = data[di + 5];
@@ -169,19 +210,23 @@ pub fn flatten_path(out: &mut Vec<Vec<f64>>, path: &Path, tolerance: Option<f64>
             contour = None;
         }
     }
-
 }
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn flatten_quadratic(
     out: &mut Vec<f64>,
-    x0: f64, y0: f64,
-    cx: f64, cy: f64,
-    x1: f64, y1: f64,
+    x0: f64,
+    y0: f64,
+    cx: f64,
+    cy: f64,
+    x1: f64,
+    y1: f64,
     tolerance_sq: f64,
     depth: usize,
 ) {
-    if depth >= MAX_SUBDIVISION_DEPTH || distance_to_chord_sq(cx, cy, x0, y0, x1, y1) <= tolerance_sq {
+    if depth >= MAX_SUBDIVISION_DEPTH
+        || distance_to_chord_sq(cx, cy, x0, y0, x1, y1) <= tolerance_sq
+    {
         out.push(x1);
         out.push(y1);
         return;

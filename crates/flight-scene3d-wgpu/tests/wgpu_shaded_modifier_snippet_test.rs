@@ -44,7 +44,10 @@ static OVERRIDE: WgpuModifierSnippet = WgpuModifierSnippet {
     textures: None,
 };
 
-fn is_snippet(value: Option<&'static WgpuModifierSnippet>, expected: &'static WgpuModifierSnippet) -> bool {
+fn is_snippet(
+    value: Option<&'static WgpuModifierSnippet>,
+    expected: &'static WgpuModifierSnippet,
+) -> bool {
     return value.is_some_and(|value| std::ptr::eq(value, expected));
 }
 
@@ -52,7 +55,8 @@ mod register_wgpu_modifier_snippet {
     use super::*;
 
     #[test]
-    fn replaces_the_table_while_an_explicit_pipeline_state_retains_its_snapshot_through_lazy_scene_init() {
+    fn replaces_the_table_while_an_explicit_pipeline_state_retains_its_snapshot_through_lazy_scene_init()
+     {
         let mut screen = make_wgpu_scene3d_state(None);
         register_wgpu_modifier_snippet(&mut screen.state, &INITIAL);
         let snapshot = get_wgpu_render_state_runtime(&screen.state)
@@ -68,14 +72,29 @@ mod register_wgpu_modifier_snippet {
         register_wgpu_modifier_snippet(&mut screen.state, &OVERRIDE);
 
         let derived_runtime = get_wgpu_render_state_runtime(&derived.state);
-        assert!(!std::sync::Arc::ptr_eq(&derived_runtime.registries.modifier_snippets, &snapshot));
+        assert!(!std::sync::Arc::ptr_eq(
+            &derived_runtime.registries.modifier_snippets,
+            &snapshot
+        ));
         assert_eq!(derived_runtime.modifier_snippet_revision, 0);
         let screen_runtime = get_wgpu_render_state_runtime(&screen.state);
-        assert!(!std::sync::Arc::ptr_eq(&screen_runtime.registries.modifier_snippets, &snapshot));
+        assert!(!std::sync::Arc::ptr_eq(
+            &screen_runtime.registries.modifier_snippets,
+            &snapshot
+        ));
         assert_eq!(screen_runtime.modifier_snippet_revision, 2);
-        assert!(is_snippet(snapshot.entries.get("acme.Test").copied(), &INITIAL));
-        assert!(is_snippet(resolve_wgpu_modifier_snippet(&derived.state, "acme.Test"), &INITIAL));
-        assert!(is_snippet(resolve_wgpu_modifier_snippet(&screen.state, "acme.Test"), &OVERRIDE));
+        assert!(is_snippet(
+            snapshot.entries.get("acme.Test").copied(),
+            &INITIAL
+        ));
+        assert!(is_snippet(
+            resolve_wgpu_modifier_snippet(&derived.state, "acme.Test"),
+            &INITIAL
+        ));
+        assert!(is_snippet(
+            resolve_wgpu_modifier_snippet(&screen.state, "acme.Test"),
+            &OVERRIDE
+        ));
     }
 }
 

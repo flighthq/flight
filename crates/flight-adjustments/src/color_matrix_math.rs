@@ -22,10 +22,8 @@ pub const COLOR_MATRIX_LENGTH: usize = 20;
 // flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_brightness_color_matrix(amount: f32) -> [f32; 20] {
     return [
-        1.0, 0.0, 0.0, 0.0, amount,
-        0.0, 1.0, 0.0, 0.0, amount,
-        0.0, 0.0, 1.0, 0.0, amount,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        1.0, 0.0, 0.0, 0.0, amount, 0.0, 1.0, 0.0, 0.0, amount, 0.0, 0.0, 1.0, 0.0, amount, 0.0,
+        0.0, 0.0, 1.0, 0.0,
     ];
 }
 
@@ -41,10 +39,26 @@ pub fn create_channel_mixer_color_matrix(
     blue_out: &[f32; 3],
 ) -> [f32; 20] {
     return [
-        red_out[0], red_out[1], red_out[2], 0.0, 0.0,
-        green_out[0], green_out[1], green_out[2], 0.0, 0.0,
-        blue_out[0], blue_out[1], blue_out[2], 0.0, 0.0,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        red_out[0],
+        red_out[1],
+        red_out[2],
+        0.0,
+        0.0,
+        green_out[0],
+        green_out[1],
+        green_out[2],
+        0.0,
+        0.0,
+        blue_out[0],
+        blue_out[1],
+        blue_out[2],
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
     ];
 }
 
@@ -62,10 +76,8 @@ pub fn create_color_balance_color_matrix(
     let g_off = (shadows[1] * 0.25 + midtones[1] * 0.5 + highlights[1] * 0.25) * scale;
     let b_off = (shadows[2] * 0.25 + midtones[2] * 0.5 + highlights[2] * 0.25) * scale;
     return [
-        1.0, 0.0, 0.0, 0.0, r_off,
-        0.0, 1.0, 0.0, 0.0, g_off,
-        0.0, 0.0, 1.0, 0.0, b_off,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        1.0, 0.0, 0.0, 0.0, r_off, 0.0, 1.0, 0.0, 0.0, g_off, 0.0, 0.0, 1.0, 0.0, b_off, 0.0, 0.0,
+        0.0, 1.0, 0.0,
     ];
 }
 
@@ -78,10 +90,8 @@ pub fn create_color_matrix_from_tint(packed_rgba: u32, amount: f32) -> [f32; 20]
     let tb = (((packed_rgba >> 8) & 0xff) as f32 / 255.0) * amount;
     let keep = 1.0 - amount;
     return [
-        keep, 0.0, 0.0, 0.0, tr,
-        0.0, keep, 0.0, 0.0, tg,
-        0.0, 0.0, keep, 0.0, tb,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        keep, 0.0, 0.0, 0.0, tr, 0.0, keep, 0.0, 0.0, tg, 0.0, 0.0, keep, 0.0, tb, 0.0, 0.0, 0.0,
+        1.0, 0.0,
     ];
 }
 
@@ -91,10 +101,8 @@ pub fn create_color_matrix_from_tint(packed_rgba: u32, amount: f32) -> [f32; 20]
 pub fn create_contrast_color_matrix(amount: f32) -> [f32; 20] {
     let offset = 0.5 * (1.0 - amount);
     return [
-        amount, 0.0, 0.0, 0.0, offset,
-        0.0, amount, 0.0, 0.0, offset,
-        0.0, 0.0, amount, 0.0, offset,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        amount, 0.0, 0.0, 0.0, offset, 0.0, amount, 0.0, 0.0, offset, 0.0, 0.0, amount, 0.0,
+        offset, 0.0, 0.0, 0.0, 1.0, 0.0,
     ];
 }
 
@@ -113,10 +121,7 @@ pub fn create_grayscale_color_matrix() -> [f32; 20] {
     let g = 0.587;
     let b = 0.114;
     return [
-        r, g, b, 0.0, 0.0,
-        r, g, b, 0.0, 0.0,
-        r, g, b, 0.0, 0.0,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        r, g, b, 0.0, 0.0, r, g, b, 0.0, 0.0, r, g, b, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
     ];
 }
 
@@ -130,10 +135,26 @@ pub fn create_hue_rotate_color_matrix(degrees: f32) -> [f32; 20] {
     let lum_g = 0.715;
     let lum_b = 0.072;
     return [
-        lum_r + cos * (1.0 - lum_r) + sin * -lum_r, lum_g + cos * -lum_g + sin * -lum_g, lum_b + cos * -lum_b + sin * (1.0 - lum_b), 0.0, 0.0,
-        lum_r + cos * -lum_r + sin * 0.143, lum_g + cos * (1.0 - lum_g) + sin * 0.140, lum_b + cos * -lum_b + sin * -0.283, 0.0, 0.0,
-        lum_r + cos * -lum_r + sin * -(1.0 - lum_r), lum_g + cos * -lum_g + sin * lum_g, lum_b + cos * (1.0 - lum_b) + sin * lum_b, 0.0, 0.0,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        lum_r + cos * (1.0 - lum_r) + sin * -lum_r,
+        lum_g + cos * -lum_g + sin * -lum_g,
+        lum_b + cos * -lum_b + sin * (1.0 - lum_b),
+        0.0,
+        0.0,
+        lum_r + cos * -lum_r + sin * 0.143,
+        lum_g + cos * (1.0 - lum_g) + sin * 0.140,
+        lum_b + cos * -lum_b + sin * -0.283,
+        0.0,
+        0.0,
+        lum_r + cos * -lum_r + sin * -(1.0 - lum_r),
+        lum_g + cos * -lum_g + sin * lum_g,
+        lum_b + cos * (1.0 - lum_b) + sin * lum_b,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
     ];
 }
 
@@ -141,10 +162,8 @@ pub fn create_hue_rotate_color_matrix(degrees: f32) -> [f32; 20] {
 // flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_identity_color_matrix() -> [f32; 20] {
     return [
-        1.0, 0.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        1.0, 0.0,
     ];
 }
 
@@ -153,10 +172,8 @@ pub fn create_identity_color_matrix() -> [f32; 20] {
 // flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_invert_color_matrix() -> [f32; 20] {
     return [
-        -1.0, 0.0, 0.0, 0.0, 1.0,
-        0.0, -1.0, 0.0, 0.0, 1.0,
-        0.0, 0.0, -1.0, 0.0, 1.0,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 1.0, 0.0, 0.0,
+        0.0, 1.0, 0.0,
     ];
 }
 
@@ -171,14 +188,39 @@ pub fn create_levels_color_matrix(
     gamma: f32,
 ) -> [f32; 20] {
     let in_range = in_white - in_black;
-    let scale = if in_range == 0.0 { 1.0 } else { (out_white - out_black) / in_range };
-    let gamma_corrected_scale = scale * (if gamma == 1.0 { 1.0 } else { (0.5_f32).powf(1.0 / gamma - 1.0) });
+    let scale = if in_range == 0.0 {
+        1.0
+    } else {
+        (out_white - out_black) / in_range
+    };
+    let gamma_corrected_scale = scale
+        * (if gamma == 1.0 {
+            1.0
+        } else {
+            (0.5_f32).powf(1.0 / gamma - 1.0)
+        });
     let offset = out_black - in_black * gamma_corrected_scale;
     return [
-        gamma_corrected_scale, 0.0, 0.0, 0.0, offset,
-        0.0, gamma_corrected_scale, 0.0, 0.0, offset,
-        0.0, 0.0, gamma_corrected_scale, 0.0, offset,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        gamma_corrected_scale,
+        0.0,
+        0.0,
+        0.0,
+        offset,
+        0.0,
+        gamma_corrected_scale,
+        0.0,
+        0.0,
+        offset,
+        0.0,
+        0.0,
+        gamma_corrected_scale,
+        0.0,
+        offset,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
     ];
 }
 
@@ -187,10 +229,8 @@ pub fn create_levels_color_matrix(
 // flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_opacity_color_matrix(alpha: f32) -> [f32; 20] {
     return [
-        1.0, 0.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 0.0, alpha, 0.0,
+        1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+        alpha, 0.0,
     ];
 }
 
@@ -198,10 +238,26 @@ pub fn create_opacity_color_matrix(alpha: f32) -> [f32; 20] {
 // flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_polaroid_color_matrix() -> [f32; 20] {
     return [
-        1.438, -0.062, -0.062, 0.0, -31.8 / 255.0,
-        -0.122, 1.378, -0.122, 0.0, 16.2 / 255.0,
-        -0.016, -0.016, 1.484, 0.0, -47.6 / 255.0,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        1.438,
+        -0.062,
+        -0.062,
+        0.0,
+        -31.8 / 255.0,
+        -0.122,
+        1.378,
+        -0.122,
+        0.0,
+        16.2 / 255.0,
+        -0.016,
+        -0.016,
+        1.484,
+        0.0,
+        -47.6 / 255.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
     ];
 }
 
@@ -213,10 +269,26 @@ pub fn create_saturation_color_matrix(amount: f32) -> [f32; 20] {
     let g = 0.587 * (1.0 - amount);
     let b = 0.114 * (1.0 - amount);
     return [
-        r + amount, g, b, 0.0, 0.0,
-        r, g + amount, b, 0.0, 0.0,
-        r, g, b + amount, 0.0, 0.0,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        r + amount,
+        g,
+        b,
+        0.0,
+        0.0,
+        r,
+        g + amount,
+        b,
+        0.0,
+        0.0,
+        r,
+        g,
+        b + amount,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
     ];
 }
 
@@ -224,10 +296,8 @@ pub fn create_saturation_color_matrix(amount: f32) -> [f32; 20] {
 // flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_sepia_color_matrix() -> [f32; 20] {
     return [
-        0.393, 0.769, 0.189, 0.0, 0.0,
-        0.349, 0.686, 0.168, 0.0, 0.0,
-        0.272, 0.534, 0.131, 0.0, 0.0,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        0.393, 0.769, 0.189, 0.0, 0.0, 0.349, 0.686, 0.168, 0.0, 0.0, 0.272, 0.534, 0.131, 0.0,
+        0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
     ];
 }
 
@@ -236,10 +306,26 @@ pub fn create_sepia_color_matrix() -> [f32; 20] {
 // flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_technicolor_color_matrix() -> [f32; 20] {
     return [
-        1.9126, -0.8, -0.09, 0.0, 11.79 / 255.0,
-        -0.2, 1.7, -0.27, 0.0, -14.69 / 255.0,
-        -0.14, -0.21, 1.62, 0.0, -3.38 / 255.0,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        1.9126,
+        -0.8,
+        -0.09,
+        0.0,
+        11.79 / 255.0,
+        -0.2,
+        1.7,
+        -0.27,
+        0.0,
+        -14.69 / 255.0,
+        -0.14,
+        -0.21,
+        1.62,
+        0.0,
+        -3.38 / 255.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
     ];
 }
 
@@ -247,10 +333,26 @@ pub fn create_technicolor_color_matrix() -> [f32; 20] {
 // flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
 pub fn create_vintage_color_matrix() -> [f32; 20] {
     return [
-        0.9, 0.05, 0.05, 0.0, 10.0 / 255.0,
-        0.0, 0.85, 0.0, 0.0, 5.0 / 255.0,
-        0.0, 0.0, 0.75, 0.0, 0.0,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        0.9,
+        0.05,
+        0.05,
+        0.0,
+        10.0 / 255.0,
+        0.0,
+        0.85,
+        0.0,
+        0.0,
+        5.0 / 255.0,
+        0.0,
+        0.0,
+        0.75,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
     ];
 }
 
@@ -265,10 +367,8 @@ pub fn create_white_balance_color_matrix(temperature: f32, tint: f32) -> [f32; 2
     let g_gain = 1.0 + tint_scale * 0.15;
     let b_gain = 1.0 - temp_scale * 0.3;
     return [
-        r_gain, 0.0, 0.0, 0.0, 0.0,
-        0.0, g_gain, 0.0, 0.0, 0.0,
-        0.0, 0.0, b_gain, 0.0, 0.0,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        r_gain, 0.0, 0.0, 0.0, 0.0, 0.0, g_gain, 0.0, 0.0, 0.0, 0.0, 0.0, b_gain, 0.0, 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
     ];
 }
 
@@ -280,15 +380,29 @@ pub fn apply_color_matrix_to_color(matrix: &[f32; 20], packed_rgba: u32) -> u32 
     let g = ((packed_rgba >> 16) & 0xff) as f32 / 255.0;
     let b = ((packed_rgba >> 8) & 0xff) as f32 / 255.0;
     let a = (packed_rgba & 0xff) as f32 / 255.0;
-    let r_out = clamp_normalized_byte(matrix[0] * r + matrix[1] * g + matrix[2] * b + matrix[3] * a + matrix[4]);
-    let g_out = clamp_normalized_byte(matrix[5] * r + matrix[6] * g + matrix[7] * b + matrix[8] * a + matrix[9]);
-    let b_out = clamp_normalized_byte(matrix[10] * r + matrix[11] * g + matrix[12] * b + matrix[13] * a + matrix[14]);
-    let a_out = clamp_normalized_byte(matrix[15] * r + matrix[16] * g + matrix[17] * b + matrix[18] * a + matrix[19]);
+    let r_out = clamp_normalized_byte(
+        matrix[0] * r + matrix[1] * g + matrix[2] * b + matrix[3] * a + matrix[4],
+    );
+    let g_out = clamp_normalized_byte(
+        matrix[5] * r + matrix[6] * g + matrix[7] * b + matrix[8] * a + matrix[9],
+    );
+    let b_out = clamp_normalized_byte(
+        matrix[10] * r + matrix[11] * g + matrix[12] * b + matrix[13] * a + matrix[14],
+    );
+    let a_out = clamp_normalized_byte(
+        matrix[15] * r + matrix[16] * g + matrix[17] * b + matrix[18] * a + matrix[19],
+    );
     return (r_out << 24) | (g_out << 16) | (b_out << 8) | a_out;
 }
 
 fn clamp_normalized_byte(v: f32) -> u32 {
-    let clamped = if v * 255.0 < 0.0 { 0.0 } else if v * 255.0 > 255.0 { 255.0 } else { v * 255.0 };
+    let clamped = if v * 255.0 < 0.0 {
+        0.0
+    } else if v * 255.0 > 255.0 {
+        255.0
+    } else {
+        v * 255.0
+    };
     return (clamped + 0.5) as u32;
 }
 
@@ -322,14 +436,46 @@ pub fn fuse_color_matrices(matrices: &[&[f32; 20]]) -> [f32; 20] {
 /// or `b`.
 // flight-lint: allow(conform-params) D24: user-approved required out-first writer returning unit; pinned TS multiplyColorMatrix(a, b, out?) may allocate
 pub fn multiply_color_matrix(out: &mut [f32; 20], a: &[f32; 20], b: &[f32; 20]) {
-    let a0 = a[0]; let a1 = a[1]; let a2 = a[2]; let a3 = a[3]; let a4 = a[4];
-    let a5 = a[5]; let a6 = a[6]; let a7 = a[7]; let a8 = a[8]; let a9 = a[9];
-    let a10 = a[10]; let a11 = a[11]; let a12 = a[12]; let a13 = a[13]; let a14 = a[14];
-    let a15 = a[15]; let a16 = a[16]; let a17 = a[17]; let a18 = a[18]; let a19 = a[19];
-    let b0 = b[0]; let b1 = b[1]; let b2 = b[2]; let b3 = b[3]; let b4 = b[4];
-    let b5 = b[5]; let b6 = b[6]; let b7 = b[7]; let b8 = b[8]; let b9 = b[9];
-    let b10 = b[10]; let b11 = b[11]; let b12 = b[12]; let b13 = b[13]; let b14 = b[14];
-    let b15 = b[15]; let b16 = b[16]; let b17 = b[17]; let b18 = b[18]; let b19 = b[19];
+    let a0 = a[0];
+    let a1 = a[1];
+    let a2 = a[2];
+    let a3 = a[3];
+    let a4 = a[4];
+    let a5 = a[5];
+    let a6 = a[6];
+    let a7 = a[7];
+    let a8 = a[8];
+    let a9 = a[9];
+    let a10 = a[10];
+    let a11 = a[11];
+    let a12 = a[12];
+    let a13 = a[13];
+    let a14 = a[14];
+    let a15 = a[15];
+    let a16 = a[16];
+    let a17 = a[17];
+    let a18 = a[18];
+    let a19 = a[19];
+    let b0 = b[0];
+    let b1 = b[1];
+    let b2 = b[2];
+    let b3 = b[3];
+    let b4 = b[4];
+    let b5 = b[5];
+    let b6 = b[6];
+    let b7 = b[7];
+    let b8 = b[8];
+    let b9 = b[9];
+    let b10 = b[10];
+    let b11 = b[11];
+    let b12 = b[12];
+    let b13 = b[13];
+    let b14 = b[14];
+    let b15 = b[15];
+    let b16 = b[16];
+    let b17 = b[17];
+    let b18 = b[18];
+    let b19 = b[19];
     // Row 0 (R output)
     out[0] = a0 * b0 + a1 * b5 + a2 * b10 + a3 * b15;
     out[1] = a0 * b1 + a1 * b6 + a2 * b11 + a3 * b16;

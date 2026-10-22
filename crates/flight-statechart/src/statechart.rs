@@ -1,4 +1,4 @@
-use flight_entity::{allocate_entity, throw_range_error, throw_type_error, Ref};
+use flight_entity::{Ref, allocate_entity, throw_range_error, throw_type_error};
 use flight_signals::emit_signal;
 use std::sync::RwLock;
 
@@ -69,8 +69,14 @@ mod sugar_tests {
     fn statechart_get_input_index_matches_the_free_function() {
         let chart = chart_ref();
         let chart = chart.read().unwrap();
-        assert_eq!(chart.get_input_index("speed"), get_statechart_input_index(&chart, "speed"));
-        assert_eq!(chart.get_input_index("missing"), get_statechart_input_index(&chart, "missing"));
+        assert_eq!(
+            chart.get_input_index("speed"),
+            get_statechart_input_index(&chart, "speed")
+        );
+        assert_eq!(
+            chart.get_input_index("missing"),
+            get_statechart_input_index(&chart, "missing")
+        );
     }
 
     #[test]
@@ -78,9 +84,18 @@ mod sugar_tests {
         let chart = chart_ref();
         let via_new = StatechartInstance::new(&chart);
         let via_free = create_statechart_instance(&chart);
-        assert!(std::sync::Arc::ptr_eq(&via_new.read().unwrap().chart, &via_free.read().unwrap().chart));
-        assert_eq!(&*via_new.read().unwrap().input_values, &*via_free.read().unwrap().input_values);
-        assert_eq!(&*via_new.read().unwrap().region_states, &*via_free.read().unwrap().region_states);
+        assert!(std::sync::Arc::ptr_eq(
+            &via_new.read().unwrap().chart,
+            &via_free.read().unwrap().chart
+        ));
+        assert_eq!(
+            &*via_new.read().unwrap().input_values,
+            &*via_free.read().unwrap().input_values
+        );
+        assert_eq!(
+            &*via_new.read().unwrap().region_states,
+            &*via_free.read().unwrap().region_states
+        );
     }
 
     #[test]
@@ -89,8 +104,14 @@ mod sugar_tests {
         let a = create_statechart_instance(&chart);
         let b = create_statechart_instance(&chart);
         assert_eq!(a.advance(0.0), advance_statechart_instance(&b, 0.0));
-        assert_eq!(&*a.read().unwrap().region_states, &*b.read().unwrap().region_states);
-        assert_eq!(&*a.read().unwrap().region_blend, &*b.read().unwrap().region_blend);
+        assert_eq!(
+            &*a.read().unwrap().region_states,
+            &*b.read().unwrap().region_states
+        );
+        assert_eq!(
+            &*a.read().unwrap().region_blend,
+            &*b.read().unwrap().region_blend
+        );
     }
 
     #[test]
@@ -108,7 +129,10 @@ mod sugar_tests {
             &log,
             Arc::new(|| 0.0),
         );
-        assert_eq!(a.guards_enabled(), crate::enable_statechart_guards::are_statechart_guards_enabled(&b));
+        assert_eq!(
+            a.guards_enabled(),
+            crate::enable_statechart_guards::are_statechart_guards_enabled(&b)
+        );
     }
 
     #[test]
@@ -122,7 +146,10 @@ mod sugar_tests {
         b.enable_guards(&guards, &log, Arc::new(|| 0.0));
         a.disable_guards();
         crate::enable_statechart_guards::disable_statechart_guards(&b);
-        assert_eq!(a.guards_enabled(), crate::enable_statechart_guards::are_statechart_guards_enabled(&b));
+        assert_eq!(
+            a.guards_enabled(),
+            crate::enable_statechart_guards::are_statechart_guards_enabled(&b)
+        );
     }
 
     #[test]
@@ -132,7 +159,10 @@ mod sugar_tests {
         let guards = guard_state();
         let log = log_state();
         a.enable_guards(&guards, &log, Arc::new(|| 0.0));
-        assert_eq!(a.guards_enabled(), crate::enable_statechart_guards::are_statechart_guards_enabled(&a));
+        assert_eq!(
+            a.guards_enabled(),
+            crate::enable_statechart_guards::are_statechart_guards_enabled(&a)
+        );
     }
 
     #[test]
@@ -141,7 +171,10 @@ mod sugar_tests {
         let a = create_statechart_instance(&chart);
         let via_method = a.enable_signals();
         let via_free = crate::statechart_signals::enable_statechart_signals(&a);
-        assert!(Arc::ptr_eq(&via_method.on_state_change.data, &via_free.on_state_change.data));
+        assert!(Arc::ptr_eq(
+            &via_method.on_state_change.data,
+            &via_free.on_state_change.data
+        ));
     }
 
     #[test]
@@ -151,7 +184,10 @@ mod sugar_tests {
         a.enable_signals();
         let via_method = a.get_signals().unwrap();
         let via_free = crate::statechart_signals::get_statechart_signals(&a).unwrap();
-        assert!(Arc::ptr_eq(&via_method.on_state_change.data, &via_free.on_state_change.data));
+        assert!(Arc::ptr_eq(
+            &via_method.on_state_change.data,
+            &via_free.on_state_change.data
+        ));
     }
 
     #[test]
@@ -159,7 +195,10 @@ mod sugar_tests {
         let chart = chart_ref();
         let a = create_statechart_instance(&chart);
         let b = create_statechart_instance(&chart);
-        assert_eq!(a.explain_transition(0), explain_statechart_transition(&b, 0));
+        assert_eq!(
+            a.explain_transition(0),
+            explain_statechart_transition(&b, 0)
+        );
     }
 
     #[test]
@@ -169,7 +208,10 @@ mod sugar_tests {
         let b = create_statechart_instance(&chart);
         a.fire_trigger(2);
         fire_statechart_trigger(&b, 2);
-        assert_eq!(&*a.read().unwrap().input_values, &*b.read().unwrap().input_values);
+        assert_eq!(
+            &*a.read().unwrap().input_values,
+            &*b.read().unwrap().input_values
+        );
     }
 
     #[test]
@@ -195,7 +237,10 @@ mod sugar_tests {
         let b = create_statechart_instance(&chart);
         a.set_boolean_input(0, true);
         set_statechart_boolean_input(&b, 0, true);
-        assert_eq!(&*a.read().unwrap().input_values, &*b.read().unwrap().input_values);
+        assert_eq!(
+            &*a.read().unwrap().input_values,
+            &*b.read().unwrap().input_values
+        );
     }
 
     #[test]
@@ -205,7 +250,10 @@ mod sugar_tests {
         let b = create_statechart_instance(&chart);
         a.set_number_input(1, 4.5);
         set_statechart_number_input(&b, 1, 4.5);
-        assert_eq!(&*a.read().unwrap().input_values, &*b.read().unwrap().input_values);
+        assert_eq!(
+            &*a.read().unwrap().input_values,
+            &*b.read().unwrap().input_values
+        );
     }
 
     #[test]
@@ -215,18 +263,21 @@ mod sugar_tests {
         let b = create_statechart_instance(&chart);
         a.set_region_duration(0, 100.0);
         set_statechart_region_duration(&b, 0, 100.0);
-        assert_eq!(&*a.read().unwrap().region_duration, &*b.read().unwrap().region_duration);
+        assert_eq!(
+            &*a.read().unwrap().region_duration,
+            &*b.read().unwrap().region_duration
+        );
     }
 
     #[test]
     fn statechart_instance_set_number_input_preserves_the_kind_guard() {
         let chart = chart_ref();
         let a = create_statechart_instance(&chart);
-        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| a.set_number_input(2, 1.0)));
+        let result =
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| a.set_number_input(2, 1.0)));
         assert!(result.is_err());
     }
 }
-
 
 // Advance every concurrent region, returning how many reached a new state. Triggers are cleared
 // before signals are emitted, and every lock is released before signal callbacks so listeners may
@@ -437,11 +488,7 @@ pub fn initialize_statechart_instance(out: &mut StatechartInstance, chart: &Ref<
         let chart_guard = chart.read().unwrap();
         let input = &chart_guard.inputs[input_index];
         input_values[input_index] = if input.kind == StatechartInputKind::Boolean {
-            if input.initial_value == 0.0 {
-                0.0
-            } else {
-                1.0
-            }
+            if input.initial_value == 0.0 { 0.0 } else { 1.0 }
         } else {
             input.initial_value
         };
@@ -449,7 +496,8 @@ pub fn initialize_statechart_instance(out: &mut StatechartInstance, chart: &Ref<
     let region_count = chart_region_count;
     let mut region_states: Vec<i32> = vec![0; region_count];
     for region_index in 0..region_count {
-        region_states[region_index] = chart.read().unwrap().regions[region_index].initial_state_index;
+        region_states[region_index] =
+            chart.read().unwrap().regions[region_index].initial_state_index;
     }
 
     out.chart = chart.clone();
@@ -464,22 +512,37 @@ pub fn initialize_statechart_instance(out: &mut StatechartInstance, chart: &Ref<
     out.signals = None;
 }
 
-pub fn set_statechart_boolean_input(instance: &Ref<StatechartInstance>, input_index: i32, value: bool) {
+pub fn set_statechart_boolean_input(
+    instance: &Ref<StatechartInstance>,
+    input_index: i32,
+    value: bool,
+) {
     assert_statechart_input_kind(instance, input_index, StatechartInputKind::Boolean);
     let mut current = instance.write().unwrap();
     current.input_values[input_index as usize] = if value { 1.0 } else { 0.0 };
 }
 
-pub fn set_statechart_number_input(instance: &Ref<StatechartInstance>, input_index: i32, value: f64) {
+pub fn set_statechart_number_input(
+    instance: &Ref<StatechartInstance>,
+    input_index: i32,
+    value: f64,
+) {
     assert_statechart_input_kind(instance, input_index, StatechartInputKind::Number);
     let mut current = instance.write().unwrap();
     current.input_values[input_index as usize] = value;
 }
 
-pub fn set_statechart_region_duration(instance: &Ref<StatechartInstance>, region_index: i32, duration: f64) {
+pub fn set_statechart_region_duration(
+    instance: &Ref<StatechartInstance>,
+    region_index: i32,
+    duration: f64,
+) {
     let len = instance.read().unwrap().region_duration.len();
     if region_index < 0 || region_index as usize >= len {
-        throw_range_error(&format!("Statechart region index {} is out of range", region_index));
+        throw_range_error(&format!(
+            "Statechart region index {} is out of range",
+            region_index
+        ));
     }
     if !duration.is_finite() || duration < 0.0 {
         throw_range_error("Statechart region duration must be finite and non-negative");
@@ -564,7 +627,11 @@ fn advance_statechart_region(
     return true;
 }
 
-fn assert_statechart_input_kind(instance: &Ref<StatechartInstance>, input_index: i32, expected_kind: StatechartInputKind) {
+fn assert_statechart_input_kind(
+    instance: &Ref<StatechartInstance>,
+    input_index: i32,
+    expected_kind: StatechartInputKind,
+) {
     let kind = {
         let chart = instance.read().unwrap().chart.clone();
         let chart = chart.read().unwrap();
@@ -645,7 +712,9 @@ fn get_ready_transition_index(
     let (source_state_index, transition_count) = {
         let chart = chart.read().unwrap();
         let state_index = instance.read().unwrap().region_states[ri];
-        let count = chart.regions[ri].states[state_index as usize].transitions.len();
+        let count = chart.regions[ri].states[state_index as usize]
+            .transitions
+            .len();
         (state_index, count)
     };
     for transition_index in 0..transition_count {
@@ -732,7 +801,9 @@ fn validate_statechart(chart: &Statechart) {
     }
     for region_index in 0..chart.regions.len() {
         let region = &chart.regions[region_index];
-        if region.initial_state_index < 0 || region.initial_state_index as usize >= region.states.len() {
+        if region.initial_state_index < 0
+            || region.initial_state_index as usize >= region.states.len()
+        {
             throw_range_error(&format!(
                 "Statechart region {} has an invalid initialStateIndex",
                 region_index
@@ -839,7 +910,12 @@ impl StatechartInstanceMethods for Ref<StatechartInstance> {
         log_state: &flight_log::LogStateRef,
         clock: std::sync::Arc<dyn Fn() -> f64 + Send + Sync>,
     ) {
-        crate::enable_statechart_guards::enable_statechart_guards(self, guard_state, log_state, clock);
+        crate::enable_statechart_guards::enable_statechart_guards(
+            self,
+            guard_state,
+            log_state,
+            clock,
+        );
     }
 
     fn enable_signals(&self) -> StatechartSignals {
@@ -890,5 +966,3 @@ impl StatechartInstance {
         return create_statechart_instance(chart);
     }
 }
-
-

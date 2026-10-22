@@ -316,7 +316,9 @@ mod get_particle_emitter_2d_particle_velocity {
     fn returns_false_for_out_of_range() {
         let emitter = create_particle_emitter_2d();
         let mut out = create_vector2(0.0, 0.0);
-        assert!(!get_particle_emitter_2d_particle_velocity(&mut out, &emitter, 0));
+        assert!(!get_particle_emitter_2d_particle_velocity(
+            &mut out, &emitter, 0
+        ));
     }
 }
 

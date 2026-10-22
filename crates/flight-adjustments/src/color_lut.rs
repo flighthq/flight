@@ -63,7 +63,13 @@ pub fn bake_color_lut(transforms: &[ColorTransformFunction], size: Option<u32>) 
 }
 
 fn clamp01(v: f32) -> f32 {
-    return if v < 0.0 { 0.0 } else if v > 1.0 { 1.0 } else { v };
+    return if v < 0.0 {
+        0.0
+    } else if v > 1.0 {
+        1.0
+    } else {
+        v
+    };
 }
 
 /// Trilinearly samples `lut` at normalized `(r, g, b)` (clamped to the cube) and writes the RGB result

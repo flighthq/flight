@@ -1,13 +1,12 @@
 // flight-lint: allow-file(contract-vocabulary) D17 fullscreen passes accept native targets, glow names, closures, and Result diagnostics
 
-use flight_render::RenderTargetClear;
 use flight_geometry::Rectangle;
+use flight_render::RenderTargetClear;
 use glow::HasContext;
 
 use crate::{
     GlBlendSignature, GlBoundShader, GlFillProgram, GlFullscreenProgram, GlRenderPass,
-    GlRenderState, GlRenderTarget, GlRenderTargetSnapshot, create_gl_program,
-    native_glsl_source,
+    GlRenderState, GlRenderTarget, GlRenderTargetSnapshot, create_gl_program, native_glsl_source,
 };
 
 pub const FULLSCREEN_GL_VERTEX_SOURCE: &str = "#version 300 es\nin vec2 a_position;\nin vec2 a_texCoord;\nout vec2 v_texCoord;\nvoid main() {\n  gl_Position = vec4(a_position, 0.0, 1.0);\n  v_texCoord = a_texCoord;\n}";

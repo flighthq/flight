@@ -19,16 +19,12 @@ pub enum StatechartComparison {
     NotEqual,
 }
 
-
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StatechartInputKind {
     Boolean,
     Number,
     Trigger,
 }
-
-
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum StatechartTransitionStatus {
@@ -40,8 +36,6 @@ pub enum StatechartTransitionStatus {
     Ready,
     Transitioning,
 }
-
-
 
 // Built-in state kinds. `StatechartState.kind` is an open string; custom states use
 // vendor-prefixed kinds and composition layers interpret those kinds.
@@ -67,16 +61,12 @@ pub struct StatechartTransition {
     pub target_state_index: i32,
 }
 
-
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct StatechartInput {
     pub initial_value: f64,
     pub kind: StatechartInputKind,
     pub name: Option<String>,
 }
-
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct StatechartState {
@@ -85,8 +75,6 @@ pub struct StatechartState {
     pub transitions: Vec<StatechartTransition>,
 }
 
-
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct StatechartRegion {
     pub initial_state_index: i32,
@@ -94,16 +82,12 @@ pub struct StatechartRegion {
     pub states: Vec<StatechartState>,
 }
 
-
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Statechart {
     pub inputs: Vec<StatechartInput>,
     pub name: Option<String>,
     pub regions: Vec<StatechartRegion>,
 }
-
-
 
 // ============================================================================
 // StatechartSignals (entity)
@@ -124,8 +108,6 @@ pub struct StatechartSignals {
     runtime: EntityRuntimeSlot,
 }
 
-
-
 // ============================================================================
 // StatechartTransitionExplanation
 // ============================================================================
@@ -141,15 +123,14 @@ pub struct StatechartTransitionExplanation {
     pub transition_index: i32,
 }
 
-
-
 // ============================================================================
 // Duration guard callback type
 // ============================================================================
 
 /// Stored, capturing callback (D9), source-shaped: `(instance, explanation) => void`.
-pub type StatechartDurationGuard =
-    Arc<dyn Fn(&flight_entity::Ref<StatechartInstance>, &StatechartTransitionExplanation) + Send + Sync>;
+pub type StatechartDurationGuard = Arc<
+    dyn Fn(&flight_entity::Ref<StatechartInstance>, &StatechartTransitionExplanation) + Send + Sync,
+>;
 
 /// Non-owning chart handle used by the diagnostic id map (D5 non-owning cache; D15 WeakMap analogue).
 // flight-lint: allow(contract-vocabulary) D5: non-owning diagnostics cache key (WeakRef vocabulary row)
@@ -187,8 +168,6 @@ pub struct StatechartInstance {
     pub(crate) builtin_guard: Option<StatechartDurationGuard>,
     runtime: EntityRuntimeSlot,
 }
-
-
 
 flight_entity::impl_entity!(StatechartInstance);
 flight_entity::impl_entity!(StatechartSignals);

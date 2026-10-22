@@ -1,7 +1,9 @@
 use flight_entity::allocate_entity;
 
-use crate::path::{Path, PathCommand, PathMorph, PathMorphCreationReason, PathWinding, PathSegment};
 use crate::for_each_path_segment::for_each_path_segment;
+use crate::path::{
+    Path, PathCommand, PathMorph, PathMorphCreationReason, PathSegment, PathWinding,
+};
 
 #[cfg(test)]
 mod sugar_tests {
@@ -32,7 +34,10 @@ mod sugar_tests {
         let s = test_path();
         let ra = s.build_morph(&other_path());
         let rb = build_path_morph(&s, &other_path());
-        assert_eq!(format!("{:?}", (ra.contour, ra.issue, ra.morph)), format!("{:?}", (rb.contour, rb.issue, rb.morph)));
+        assert_eq!(
+            format!("{:?}", (ra.contour, ra.issue, ra.morph)),
+            format!("{:?}", (rb.contour, rb.issue, rb.morph))
+        );
     }
 }
 
@@ -68,7 +73,14 @@ struct CubicContour {
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn create_cubic_contour(x: f64, y: f64) -> CubicContour {
-    return CubicContour { closed: false, current_x: x, current_y: y, segments: Vec::new(), x, y };
+    return CubicContour {
+        closed: false,
+        current_x: x,
+        current_y: y,
+        segments: Vec::new(),
+        x,
+        y,
+    };
 }
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
@@ -88,7 +100,9 @@ pub fn initialize_path_morph(
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn align_closed_cubic_contour(start: &CubicContour, end: &mut CubicContour) {
     let count = start.segments.len();
-    if !start.closed || count < 2 { return; }
+    if !start.closed || count < 2 {
+        return;
+    }
     let mut best_offset: usize = 0;
     let mut best_distance = f64::INFINITY;
     for offset in 0..count {
@@ -105,14 +119,21 @@ fn align_closed_cubic_contour(start: &CubicContour, end: &mut CubicContour) {
             best_offset = offset;
         }
     }
-    if best_offset == 0 { return; }
+    if best_offset == 0 {
+        return;
+    }
     let mut rotated: Vec<CubicSegment> = Vec::new();
     for i in 0..count {
         let src = &end.segments[(i + best_offset) % count];
         rotated.push(CubicSegment {
-            control_x1: src.control_x1, control_y1: src.control_y1,
-            control_x2: src.control_x2, control_y2: src.control_y2,
-            x0: src.x0, y0: src.y0, x1: src.x1, y1: src.y1,
+            control_x1: src.control_x1,
+            control_y1: src.control_y1,
+            control_x2: src.control_x2,
+            control_y2: src.control_y2,
+            x0: src.x0,
+            y0: src.y0,
+            x1: src.x1,
+            y1: src.y1,
         });
     }
     end.segments = rotated;
@@ -156,12 +177,24 @@ fn append_cubic_contour_pair(
 }
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
-fn append_cubic_segment(contour: &mut CubicContour, cx1: f64, cy1: f64, cx2: f64, cy2: f64, x: f64, y: f64) {
+fn append_cubic_segment(
+    contour: &mut CubicContour,
+    cx1: f64,
+    cy1: f64,
+    cx2: f64,
+    cy2: f64,
+    x: f64,
+    y: f64,
+) {
     contour.segments.push(CubicSegment {
-        control_x1: cx1, control_y1: cy1,
-        control_x2: cx2, control_y2: cy2,
-        x0: contour.current_x, y0: contour.current_y,
-        x1: x, y1: y,
+        control_x1: cx1,
+        control_y1: cy1,
+        control_x2: cx2,
+        control_y2: cy2,
+        x0: contour.current_x,
+        y0: contour.current_y,
+        x1: x,
+        y1: y,
     });
     contour.current_x = x;
     contour.current_y = y;
@@ -173,9 +206,12 @@ fn append_line_as_cubic(contour: &mut CubicContour, x: f64, y: f64) {
     let y0 = contour.current_y;
     append_cubic_segment(
         contour,
-        x0 + (x - x0) / 3.0, y0 + (y - y0) / 3.0,
-        x0 + (x - x0) * 2.0 / 3.0, y0 + (y - y0) * 2.0 / 3.0,
-        x, y,
+        x0 + (x - x0) / 3.0,
+        y0 + (y - y0) / 3.0,
+        x0 + (x - x0) * 2.0 / 3.0,
+        y0 + (y - y0) * 2.0 / 3.0,
+        x,
+        y,
     );
 }
 
@@ -185,9 +221,12 @@ fn append_quadratic_as_cubic(contour: &mut CubicContour, cx: f64, cy: f64, x: f6
     let y0 = contour.current_y;
     append_cubic_segment(
         contour,
-        x0 + (cx - x0) * 2.0 / 3.0, y0 + (cy - y0) * 2.0 / 3.0,
-        x + (cx - x) * 2.0 / 3.0, y + (cy - y) * 2.0 / 3.0,
-        x, y,
+        x0 + (cx - x0) * 2.0 / 3.0,
+        y0 + (cy - y0) * 2.0 / 3.0,
+        x + (cx - x) * 2.0 / 3.0,
+        y + (cy - y) * 2.0 / 3.0,
+        x,
+        y,
     );
 }
 
@@ -195,24 +234,41 @@ fn append_quadratic_as_cubic(contour: &mut CubicContour, cx: f64, cy: f64, x: f6
 /// Shared preparation used by the production constructor and its diagnostic.
 pub fn build_path_morph(start: &Path, end: &Path) -> PathMorphBuildResult {
     if start.winding != end.winding {
-        return PathMorphBuildResult { contour: None, issue: PathMorphCreationReason::WindingMismatch, morph: None };
+        return PathMorphBuildResult {
+            contour: None,
+            issue: PathMorphCreationReason::WindingMismatch,
+            morph: None,
+        };
     }
 
     let start_contours = decode_cubic_contours(start);
     let mut end_contours = decode_cubic_contours(end);
     if start_contours.len() != end_contours.len() {
-        return PathMorphBuildResult { contour: None, issue: PathMorphCreationReason::ContourCountMismatch, morph: None };
+        return PathMorphBuildResult {
+            contour: None,
+            issue: PathMorphCreationReason::ContourCountMismatch,
+            morph: None,
+        };
     }
 
     for i in 0..start_contours.len() {
         if start_contours[i].closed != end_contours[i].closed {
-            return PathMorphBuildResult { contour: Some(i), issue: PathMorphCreationReason::ContourClosednessMismatch, morph: None };
+            return PathMorphBuildResult {
+                contour: Some(i),
+                issue: PathMorphCreationReason::ContourClosednessMismatch,
+                morph: None,
+            };
         }
     }
 
-    let orientation_mismatch = normalize_cubic_contour_orientations(&start_contours, &mut end_contours, start.winding);
+    let orientation_mismatch =
+        normalize_cubic_contour_orientations(&start_contours, &mut end_contours, start.winding);
     if let Some(idx) = orientation_mismatch {
-        return PathMorphBuildResult { contour: Some(idx), issue: PathMorphCreationReason::ContourOrientationMismatch, morph: None };
+        return PathMorphBuildResult {
+            contour: Some(idx),
+            issue: PathMorphCreationReason::ContourOrientationMismatch,
+            morph: None,
+        };
     }
 
     for i in 0..start_contours.len() {
@@ -230,7 +286,13 @@ pub fn build_path_morph(start: &Path, end: &Path) -> PathMorphBuildResult {
     let mut start_data: Vec<f64> = Vec::new();
     let mut end_data: Vec<f64> = Vec::new();
     for i in 0..start_contours_mut.len() {
-        append_cubic_contour_pair(&mut commands, &mut start_data, &mut end_data, &start_contours_mut[i], &end_contours[i]);
+        append_cubic_contour_pair(
+            &mut commands,
+            &mut start_data,
+            &mut end_data,
+            &start_contours_mut[i],
+            &end_contours[i],
+        );
     }
 
     return PathMorphBuildResult {
@@ -253,9 +315,22 @@ fn close_cubic_contour(contour: &mut CubicContour) {
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn cubic_control_polygon_length(segment: &CubicSegment) -> f64 {
-    return point_distance(segment.x0, segment.y0, segment.control_x1, segment.control_y1)
-        + point_distance(segment.control_x1, segment.control_y1, segment.control_x2, segment.control_y2)
-        + point_distance(segment.control_x2, segment.control_y2, segment.x1, segment.y1);
+    return point_distance(
+        segment.x0,
+        segment.y0,
+        segment.control_x1,
+        segment.control_y1,
+    ) + point_distance(
+        segment.control_x1,
+        segment.control_y1,
+        segment.control_x2,
+        segment.control_y2,
+    ) + point_distance(
+        segment.control_x2,
+        segment.control_y2,
+        segment.x1,
+        segment.y1,
+    );
 }
 
 fn decode_cubic_contours(path: &Path) -> Vec<CubicContour> {
@@ -277,19 +352,45 @@ fn decode_cubic_contours(path: &Path) -> Vec<CubicContour> {
                 }
                 append_line_as_cubic(&mut contours[current.unwrap()], *x, *y);
             }
-            PathSegment::QuadraticCurveTo { control_x, control_y, x, y } => {
+            PathSegment::QuadraticCurveTo {
+                control_x,
+                control_y,
+                x,
+                y,
+            } => {
                 if current.is_none() {
                     contours.push(create_cubic_contour(0.0, 0.0));
                     current = Some(contours.len() - 1);
                 }
-                append_quadratic_as_cubic(&mut contours[current.unwrap()], *control_x, *control_y, *x, *y);
+                append_quadratic_as_cubic(
+                    &mut contours[current.unwrap()],
+                    *control_x,
+                    *control_y,
+                    *x,
+                    *y,
+                );
             }
-            PathSegment::CubicCurveTo { control_x1, control_y1, control_x2, control_y2, x, y } => {
+            PathSegment::CubicCurveTo {
+                control_x1,
+                control_y1,
+                control_x2,
+                control_y2,
+                x,
+                y,
+            } => {
                 if current.is_none() {
                     contours.push(create_cubic_contour(0.0, 0.0));
                     current = Some(contours.len() - 1);
                 }
-                append_cubic_segment(&mut contours[current.unwrap()], *control_x1, *control_y1, *control_x2, *control_y2, *x, *y);
+                append_cubic_segment(
+                    &mut contours[current.unwrap()],
+                    *control_x1,
+                    *control_y1,
+                    *control_x2,
+                    *control_y2,
+                    *x,
+                    *y,
+                );
             }
             PathSegment::Close => {
                 if let Some(idx) = current {
@@ -304,16 +405,24 @@ fn decode_cubic_contours(path: &Path) -> Vec<CubicContour> {
 
 fn equalize_cubic_contour_segments(start: &mut CubicContour, end: &mut CubicContour) {
     let target_count = start.segments.len().max(end.segments.len());
-    if target_count == 0 { return; }
+    if target_count == 0 {
+        return;
+    }
     start.segments = subdivide_cubic_segments(&start.segments, target_count, start.x, start.y);
     end.segments = subdivide_cubic_segments(&end.segments, target_count, end.x, end.y);
 }
 
 fn get_cubic_contour_orientation(contour: &CubicContour) -> i32 {
-    if !contour.closed { return 0; }
+    if !contour.closed {
+        return 0;
+    }
     let area = get_cubic_contour_signed_area(contour);
-    if area < 0.0 { return -1; }
-    if area > 0.0 { return 1; }
+    if area < 0.0 {
+        return -1;
+    }
+    if area > 0.0 {
+        return 1;
+    }
     return 0;
 }
 
@@ -332,25 +441,39 @@ fn get_cubic_contour_signed_area(contour: &CubicContour) -> f64 {
         let cy2 = segment.control_y2 - contour.y;
         let y1 = segment.y1 - contour.y;
         extent = extent
-            .max(x0.abs()).max(cx1.abs()).max(cx2.abs()).max(x1.abs())
-            .max(y0.abs()).max(cy1.abs()).max(cy2.abs()).max(y1.abs());
+            .max(x0.abs())
+            .max(cx1.abs())
+            .max(cx2.abs())
+            .max(x1.abs())
+            .max(y0.abs())
+            .max(cy1.abs())
+            .max(cy2.abs())
+            .max(y1.abs());
         let xc = get_cubic_power_coefficients(x0, cx1, cx2, x1);
         let yc = get_cubic_power_coefficients(y0, cy1, cy2, y1);
         for xi in 0..4usize {
             for yi in 1..4usize {
-                twice_area += (xc[xi] * yi as f64 * yc[yi] - yc[xi] * yi as f64 * xc[yi]) / (xi + yi) as f64;
+                twice_area +=
+                    (xc[xi] * yi as f64 * yc[yi] - yc[xi] * yi as f64 * xc[yi]) / (xi + yi) as f64;
             }
         }
     }
     let area = twice_area / 2.0;
     let area_epsilon = 1.0f64.max(extent * extent) * f64::EPSILON * 64.0;
-    if area.abs() <= area_epsilon { return 0.0; }
+    if area.abs() <= area_epsilon {
+        return 0.0;
+    }
     return area;
 }
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn get_cubic_power_coefficients(p0: f64, p1: f64, p2: f64, p3: f64) -> [f64; 4] {
-    return [p0, 3.0 * (p1 - p0), 3.0 * (p0 - 2.0 * p1 + p2), -p0 + 3.0 * p1 - 3.0 * p2 + p3];
+    return [
+        p0,
+        3.0 * (p1 - p0),
+        3.0 * (p0 - 2.0 * p1 + p2),
+        -p0 + 3.0 * p1 - 3.0 * p2 + p3,
+    ];
 }
 
 fn normalize_cubic_contour_orientations(
@@ -362,7 +485,10 @@ fn normalize_cubic_contour_orientations(
         for i in 0..start.len() {
             let start_orientation = get_cubic_contour_orientation(&start[i]);
             let end_orientation = get_cubic_contour_orientation(&end[i]);
-            if start_orientation != 0 && end_orientation != 0 && start_orientation != end_orientation {
+            if start_orientation != 0
+                && end_orientation != 0
+                && start_orientation != end_orientation
+            {
                 reverse_closed_cubic_contour(&mut end[i]);
             }
         }
@@ -373,10 +499,14 @@ fn normalize_cubic_contour_orientations(
     for i in 0..start.len() {
         let start_orientation = get_cubic_contour_orientation(&start[i]);
         let end_orientation = get_cubic_contour_orientation(&end[i]);
-        if start_orientation == 0 || end_orientation == 0 { continue; }
+        if start_orientation == 0 || end_orientation == 0 {
+            continue;
+        }
         let reversed = start_orientation != end_orientation;
         if let Some(rev) = reverse_end {
-            if rev != reversed { return Some(i); }
+            if rev != reversed {
+                return Some(i);
+            }
         } else {
             reverse_end = Some(reversed);
         }
@@ -438,16 +568,24 @@ fn split_cubic_segment(segment: &CubicSegment, t: f64) -> (CubicSegment, CubicSe
     let y = y012 + (y123 - y012) * t;
     return (
         CubicSegment {
-            control_x1: x01, control_y1: y01,
-            control_x2: x012, control_y2: y012,
-            x0: segment.x0, y0: segment.y0,
-            x1: x, y1: y,
+            control_x1: x01,
+            control_y1: y01,
+            control_x2: x012,
+            control_y2: y012,
+            x0: segment.x0,
+            y0: segment.y0,
+            x1: x,
+            y1: y,
         },
         CubicSegment {
-            control_x1: x123, control_y1: y123,
-            control_x2: x23, control_y2: y23,
-            x0: x, y0: y,
-            x1: segment.x1, y1: segment.y1,
+            control_x1: x123,
+            control_y1: y123,
+            control_x2: x23,
+            control_y2: y23,
+            x0: x,
+            y0: y,
+            x1: segment.x1,
+            y1: segment.y1,
         },
     );
 }
@@ -460,27 +598,42 @@ fn subdivide_cubic_segments(
     point_y: f64,
 ) -> Vec<CubicSegment> {
     if source.len() == target_count {
-        return source.iter().map(|s| CubicSegment {
-            control_x1: s.control_x1, control_y1: s.control_y1,
-            control_x2: s.control_x2, control_y2: s.control_y2,
-            x0: s.x0, y0: s.y0, x1: s.x1, y1: s.y1,
-        }).collect();
+        return source
+            .iter()
+            .map(|s| CubicSegment {
+                control_x1: s.control_x1,
+                control_y1: s.control_y1,
+                control_x2: s.control_x2,
+                control_y2: s.control_y2,
+                x0: s.x0,
+                y0: s.y0,
+                x1: s.x1,
+                y1: s.y1,
+            })
+            .collect();
     }
     if source.is_empty() {
         let mut segments: Vec<CubicSegment> = Vec::new();
         for _ in 0..target_count {
             segments.push(CubicSegment {
-                control_x1: point_x, control_y1: point_y,
-                control_x2: point_x, control_y2: point_y,
-                x0: point_x, y0: point_y,
-                x1: point_x, y1: point_y,
+                control_x1: point_x,
+                control_y1: point_y,
+                control_x2: point_x,
+                control_y2: point_y,
+                x0: point_x,
+                y0: point_y,
+                x1: point_x,
+                y1: point_y,
             });
         }
         return segments;
     }
 
     let mut part_counts: Vec<usize> = vec![1; source.len()];
-    let lengths: Vec<f64> = source.iter().map(|s| cubic_control_polygon_length(s)).collect();
+    let lengths: Vec<f64> = source
+        .iter()
+        .map(|s| cubic_control_polygon_length(s))
+        .collect();
     let mut total = source.len();
     while total < target_count {
         let mut best: usize = 0;
@@ -499,10 +652,14 @@ fn subdivide_cubic_segments(
     let mut segments: Vec<CubicSegment> = Vec::new();
     for i in 0..source.len() {
         let mut remainder = CubicSegment {
-            control_x1: source[i].control_x1, control_y1: source[i].control_y1,
-            control_x2: source[i].control_x2, control_y2: source[i].control_y2,
-            x0: source[i].x0, y0: source[i].y0,
-            x1: source[i].x1, y1: source[i].y1,
+            control_x1: source[i].control_x1,
+            control_y1: source[i].control_y1,
+            control_x2: source[i].control_x2,
+            control_y2: source[i].control_y2,
+            x0: source[i].x0,
+            y0: source[i].y0,
+            x1: source[i].x1,
+            y1: source[i].y1,
         };
         let mut parts = part_counts[i];
         while parts > 1 {

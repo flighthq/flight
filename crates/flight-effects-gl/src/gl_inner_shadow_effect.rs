@@ -7,11 +7,12 @@
 //! All passes use premultiplied blending and never implicitly clear their destination, so a
 //! reused scratch target is cleared before each reuse.
 
-use flight_render::RenderTargetClear;
 use flight_color::unpack_color_rgba;
 use flight_effects::{Effect, InnerEffectSourceMode, InnerShadowEffect};
+use flight_render::RenderTargetClear;
 use flight_render_gl::{
-    GlRenderState, GlTextureRenderTarget, GlTextureRenderTargetPool, clear_gl_render_target, draw_gl_fullscreen_pass, release_gl_texture_render_target,
+    GlRenderState, GlTextureRenderTarget, GlTextureRenderTargetPool, clear_gl_render_target,
+    draw_gl_fullscreen_pass, release_gl_texture_render_target,
 };
 
 use crate::contract::{

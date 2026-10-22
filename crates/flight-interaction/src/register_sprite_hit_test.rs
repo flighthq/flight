@@ -5,12 +5,12 @@ use flight_bitmap::{Bitmap, HostBitmapReadbackCapability, ImageChannel, get_bitm
 use flight_entity::get_entity_id;
 use flight_geometry::{create_vector2, inverse_matrix_transform_point_xy};
 use flight_image::{as_image_resource_ref, capture_bitmap_from_image_resource};
-use flight_node::{get_node_world_matrix, NodeRef};
 use flight_node::contract::NodeRevisionState;
+use flight_node::{NodeRef, get_node_world_matrix};
 use flight_scene2d::{SPRITE_KIND, Sprite};
 use flight_texture::{Texture, TextureSource, TextureSourceRef};
 
-use crate::hit_tests::{hit_test_graph_local_bounds, register_hit_test_precise, HitTestContext};
+use crate::hit_tests::{HitTestContext, hit_test_graph_local_bounds, register_hit_test_precise};
 
 struct CachedBitmapEntry {
     weak_source: Weak<std::sync::RwLock<dyn TextureSource>>,
@@ -38,11 +38,14 @@ fn bitmap_for_image(
     if kind == flight_bitmap::BITMAP_TEXTURE_SOURCE_KIND {
         let ts = image.read().unwrap();
         let any_ref: &dyn std::any::Any = &*ts;
-        return any_ref.downcast_ref::<Bitmap>().cloned().map(|b| BitmapCapture {
-            bitmap: b,
-            image_width: w,
-            image_height: h,
-        });
+        return any_ref
+            .downcast_ref::<Bitmap>()
+            .cloned()
+            .map(|b| BitmapCapture {
+                bitmap: b,
+                image_width: w,
+                image_height: h,
+            });
     }
     let image_ref = as_image_resource_ref(image)?;
 
@@ -66,10 +69,13 @@ fn bitmap_for_image(
     let bitmap = capture_bitmap_from_image_resource(host_bitmap_readback, &image_ref)?;
     {
         let mut guard = cache.lock().unwrap();
-        guard.insert(entity_id, CachedBitmapEntry {
-            weak_source: Arc::downgrade(image),
-            bitmap: bitmap.clone(),
-        });
+        guard.insert(
+            entity_id,
+            CachedBitmapEntry {
+                weak_source: Arc::downgrade(image),
+                bitmap: bitmap.clone(),
+            },
+        );
     }
     return Some(BitmapCapture {
         bitmap,
@@ -129,7 +135,9 @@ fn hit_test_sprite_alpha(
     if px < 0 || py < 0 || px >= bmp_fields.width as i32 || py >= bmp_fields.height as i32 {
         return -1;
     }
-    if get_bitmap_pixel_channel(&capture.bitmap, px as u32, py as u32, ImageChannel::Alpha) >= alpha_threshold {
+    if get_bitmap_pixel_channel(&capture.bitmap, px as u32, py as u32, ImageChannel::Alpha)
+        >= alpha_threshold
+    {
         return 0;
     }
     return -1;
@@ -146,6 +154,8 @@ pub fn register_sprite_hit_test(
     register_hit_test_precise(
         ctx,
         SPRITE_KIND.to_string(),
-        Arc::new(move |source, x, y| hit_test_sprite_alpha(&host_bitmap_readback, source, x, y, threshold, &cache)),
+        Arc::new(move |source, x, y| {
+            hit_test_sprite_alpha(&host_bitmap_readback, source, x, y, threshold, &cache)
+        }),
     );
 }

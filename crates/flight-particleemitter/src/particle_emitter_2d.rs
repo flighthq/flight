@@ -10,20 +10,13 @@ use flight_particles::{ParticleEmitterConfig, ParticleEmitterState};
 
 use crate::emit_particle_burst_2d::emit_particle_burst_2d_impl;
 use crate::particle_emitter::{
-    append_particle_emitter_2d_particle_impl,
-    clear_particle_emitter_2d_impl,
-    compact_particle_emitter_2d_impl,
-    create_particle_emitter_data,
-    get_particle_emitter_2d_capacity_impl,
-    get_particle_emitter_2d_particle_alpha_impl,
-    get_particle_emitter_2d_particle_id_impl,
-    get_particle_emitter_2d_particle_velocity_impl,
-    remove_particle_emitter_2d_particle_impl,
-    reserve_particle_emitter_2d_impl,
-    set_particle_emitter_2d_particle_impl,
-    set_particle_emitter_2d_particle_alpha_impl,
-    set_particle_emitter_2d_particle_color_impl,
-    set_particle_emitter_2d_particle_velocity_impl,
+    append_particle_emitter_2d_particle_impl, clear_particle_emitter_2d_impl,
+    compact_particle_emitter_2d_impl, create_particle_emitter_data,
+    get_particle_emitter_2d_capacity_impl, get_particle_emitter_2d_particle_alpha_impl,
+    get_particle_emitter_2d_particle_id_impl, get_particle_emitter_2d_particle_velocity_impl,
+    remove_particle_emitter_2d_particle_impl, reserve_particle_emitter_2d_impl,
+    set_particle_emitter_2d_particle_alpha_impl, set_particle_emitter_2d_particle_color_impl,
+    set_particle_emitter_2d_particle_impl, set_particle_emitter_2d_particle_velocity_impl,
 };
 use crate::types::*;
 
@@ -129,10 +122,7 @@ pub fn get_particle_emitter_2d_particle_alpha(
     return get_particle_emitter_2d_particle_alpha_impl(&guard.data, index);
 }
 
-pub fn get_particle_emitter_2d_particle_id(
-    source: &Ref<ParticleEmitter2D>,
-    index: usize,
-) -> i32 {
+pub fn get_particle_emitter_2d_particle_id(source: &Ref<ParticleEmitter2D>, index: usize) -> i32 {
     let guard = source.read().unwrap();
     return get_particle_emitter_2d_particle_id_impl(&guard.data, index);
 }
@@ -158,18 +148,12 @@ pub fn is_particle_emitter_3d(node: &dyn Node) -> bool {
     return node.node_fields().kind == PARTICLE_EMITTER_3D_KIND;
 }
 
-pub fn remove_particle_emitter_2d_particle(
-    target: &Ref<ParticleEmitter2D>,
-    index: usize,
-) {
+pub fn remove_particle_emitter_2d_particle(target: &Ref<ParticleEmitter2D>, index: usize) {
     let mut guard = target.write().unwrap();
     remove_particle_emitter_2d_particle_impl(&mut guard.data, index);
 }
 
-pub fn reserve_particle_emitter_2d(
-    target: &Ref<ParticleEmitter2D>,
-    capacity: usize,
-) {
+pub fn reserve_particle_emitter_2d(target: &Ref<ParticleEmitter2D>, capacity: usize) {
     let mut guard = target.write().unwrap();
     reserve_particle_emitter_2d_impl(&mut guard.data, capacity);
 }
@@ -180,12 +164,23 @@ pub fn set_particle_emitter_2d_local_bounds_rectangle(
     rect: &Rectangle,
 ) {
     let mut guard = target.write().unwrap();
-    let pe = guard.as_any_mut().downcast_mut::<ParticleEmitter2D>().unwrap();
-    if pe.particle_emitter_2d_runtime.local_bounds_rectangle.is_none() {
-        pe.particle_emitter_2d_runtime.local_bounds_rectangle = Some(create_rectangle(0.0, 0.0, 0.0, 0.0));
+    let pe = guard
+        .as_any_mut()
+        .downcast_mut::<ParticleEmitter2D>()
+        .unwrap();
+    if pe
+        .particle_emitter_2d_runtime
+        .local_bounds_rectangle
+        .is_none()
+    {
+        pe.particle_emitter_2d_runtime.local_bounds_rectangle =
+            Some(create_rectangle(0.0, 0.0, 0.0, 0.0));
     }
     copy_rectangle(
-        pe.particle_emitter_2d_runtime.local_bounds_rectangle.as_mut().unwrap(),
+        pe.particle_emitter_2d_runtime
+            .local_bounds_rectangle
+            .as_mut()
+            .unwrap(),
         rect,
     );
     let runtime = pe.node_runtime_mut();

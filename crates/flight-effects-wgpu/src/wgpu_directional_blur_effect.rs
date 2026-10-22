@@ -1,7 +1,7 @@
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Directional blur: accumulates samples stepped along `angle` (degrees) over `length` texels, normalized by the sample count; `u_resolution` converts the texel length into UV space. (TS `wgpuDirectionalBlurEffect.ts`).
 
-use flight_effects::{Effect, DirectionalBlurEffect};
+use flight_effects::{DirectionalBlurEffect, Effect};
 use flight_render_wgpu::{WgpuEffectContext, WgpuRenderState, WgpuTextureRenderTarget};
 
 use crate::types::*;
@@ -75,12 +75,18 @@ pub fn apply_directional_blur_effect_to_wgpu(
 
 /// Registers the default runner under `DirectionalBlurEffect` (TS `registerWgpuDirectionalBlurEffect`).
 pub fn register_wgpu_directional_blur_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "DirectionalBlurEffect", wgpu_directional_blur_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "DirectionalBlurEffect",
+        wgpu_directional_blur_effect_runner,
+        None,
+    );
 }
 
 /// The default `DirectionalBlurEffect` runner (TS `wgpuDirectionalBlurEffectRunner`).
 pub fn wgpu_directional_blur_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect) {
-    let effect = downcast_wgpu_effect::<DirectionalBlurEffect>(effect, "wgpuDirectionalBlurEffectRunner");
+    let effect =
+        downcast_wgpu_effect::<DirectionalBlurEffect>(effect, "wgpuDirectionalBlurEffectRunner");
     let source = ctx.source.read().unwrap();
     let dest = ctx.dest.read().unwrap();
     apply_directional_blur_effect_to_wgpu(ctx.state, &source, &dest, effect);

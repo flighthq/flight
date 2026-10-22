@@ -2,7 +2,7 @@
 //! Camera motion blur (TS `wgpuCameraMotionBlurEffect.ts`): a single-pass radial/zoom blur scaled by
 //! intensity that smears each sample toward the screen center, the mirror of the GL runner.
 
-use flight_effects::{Effect, CameraMotionBlurEffect};
+use flight_effects::{CameraMotionBlurEffect, Effect};
 use flight_render_wgpu::{WgpuEffectContext, WgpuRenderState, WgpuTextureRenderTarget};
 
 use crate::types::*;
@@ -69,12 +69,18 @@ pub fn apply_camera_motion_blur_effect_to_wgpu(
 
 /// Registers the default runner under `CameraMotionBlurEffect` (TS `registerWgpuCameraMotionBlurEffect`).
 pub fn register_wgpu_camera_motion_blur_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "CameraMotionBlurEffect", wgpu_camera_motion_blur_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "CameraMotionBlurEffect",
+        wgpu_camera_motion_blur_effect_runner,
+        None,
+    );
 }
 
 /// The default `CameraMotionBlurEffect` runner (TS `wgpuCameraMotionBlurEffectRunner`).
 pub fn wgpu_camera_motion_blur_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect) {
-    let effect = downcast_wgpu_effect::<CameraMotionBlurEffect>(effect, "wgpuCameraMotionBlurEffectRunner");
+    let effect =
+        downcast_wgpu_effect::<CameraMotionBlurEffect>(effect, "wgpuCameraMotionBlurEffectRunner");
     let source = ctx.source.read().unwrap();
     let dest = ctx.dest.read().unwrap();
     apply_camera_motion_blur_effect_to_wgpu(ctx.state, &source, &dest, effect);

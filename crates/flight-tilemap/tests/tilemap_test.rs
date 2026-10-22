@@ -142,7 +142,6 @@ mod create_tilemap_data {
         assert_eq!(tm.read().unwrap().data.tiles, vec![-1, -1, -1, -1, -1, -1]);
     }
 
-
     #[test]
     fn returns_default_values() {
         let data = create_tilemap_data();

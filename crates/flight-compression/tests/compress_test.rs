@@ -16,7 +16,9 @@ mod compress_deflate {
         let text = "raw means raw".repeat(20);
         let bytes = text.as_bytes();
         let compressed = compress_deflate(bytes);
-        assert!(decompress_deflate(&compressed, bytes.len(), CompressionFraming::Rfc1950).is_none());
+        assert!(
+            decompress_deflate(&compressed, bytes.len(), CompressionFraming::Rfc1950).is_none()
+        );
     }
 
     #[test]

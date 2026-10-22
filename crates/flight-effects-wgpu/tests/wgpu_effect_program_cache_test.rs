@@ -73,7 +73,10 @@ mod get_wgpu_effect_pipeline {
 
         let pipeline = get_wgpu_effect_pipeline(&mut state, "defaulted", WGSL_A, None);
 
-        assert_eq!(pipeline.read().unwrap().blend_mode, WgpuEffectBlendMode::Replace);
+        assert_eq!(
+            pipeline.read().unwrap().blend_mode,
+            WgpuEffectBlendMode::Replace
+        );
     }
 
     #[test]
@@ -87,7 +90,10 @@ mod get_wgpu_effect_pipeline {
             Some(WgpuEffectBlendMode::Premul),
         );
 
-        assert_eq!(pipeline.read().unwrap().blend_mode, WgpuEffectBlendMode::Premul);
+        assert_eq!(
+            pipeline.read().unwrap().blend_mode,
+            WgpuEffectBlendMode::Premul
+        );
     }
 
     // `blend` is NOT part of the cache key, so the first request under a key fixes the blend mode
@@ -97,7 +103,12 @@ mod get_wgpu_effect_pipeline {
         let mut state = create_wgpu_render_state_for_test(None);
         let records = record_test_commands(&state);
 
-        get_wgpu_effect_pipeline(&mut state, "sharedKey", WGSL_A, Some(WgpuEffectBlendMode::Replace));
+        get_wgpu_effect_pipeline(
+            &mut state,
+            "sharedKey",
+            WGSL_A,
+            Some(WgpuEffectBlendMode::Replace),
+        );
         let later = get_wgpu_effect_pipeline(
             &mut state,
             "sharedKey",
@@ -105,7 +116,10 @@ mod get_wgpu_effect_pipeline {
             Some(WgpuEffectBlendMode::Premul),
         );
 
-        assert_eq!(later.read().unwrap().blend_mode, WgpuEffectBlendMode::Replace);
+        assert_eq!(
+            later.read().unwrap().blend_mode,
+            WgpuEffectBlendMode::Replace
+        );
         assert_eq!(recorded_pipelines(&records).len(), 1);
     }
 

@@ -1,6 +1,6 @@
 use flight_math::create_random_source;
-use flight_particles::contract::{create_particle_emitter_config, create_particle_emitter_state};
 use flight_particleemitter::*;
+use flight_particles::contract::{create_particle_emitter_config, create_particle_emitter_state};
 
 mod emit_particle_burst_2d {
     use super::*;
@@ -69,7 +69,7 @@ mod emit_particle_burst_2d {
         let run = || -> Vec<f32> {
             let emitter = create_particle_emitter_2d();
             let mut state = create_particle_emitter_state();
-        state.random = create_random_source(99);
+            state.random = create_random_source(99);
             let mut config = create_particle_emitter_config(None);
             config.speed_min = 10.0;
             config.speed_max = 200.0;

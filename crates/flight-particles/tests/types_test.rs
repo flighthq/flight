@@ -11,17 +11,26 @@ mod particle_blend_mode_as_str {
 
     #[test]
     fn multiply_roundtrips_through_as_str() {
-        assert_eq!(particle_blend_mode_as_str(ParticleBlendMode::Multiply), "multiply");
+        assert_eq!(
+            particle_blend_mode_as_str(ParticleBlendMode::Multiply),
+            "multiply"
+        );
     }
 
     #[test]
     fn normal_roundtrips_through_as_str() {
-        assert_eq!(particle_blend_mode_as_str(ParticleBlendMode::Normal), "normal");
+        assert_eq!(
+            particle_blend_mode_as_str(ParticleBlendMode::Normal),
+            "normal"
+        );
     }
 
     #[test]
     fn screen_roundtrips_through_as_str() {
-        assert_eq!(particle_blend_mode_as_str(ParticleBlendMode::Screen), "screen");
+        assert_eq!(
+            particle_blend_mode_as_str(ParticleBlendMode::Screen),
+            "screen"
+        );
     }
 
     #[test]

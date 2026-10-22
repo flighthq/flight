@@ -69,14 +69,19 @@ struct ColorGradeTransform {
 }
 
 // flight-lint: allow(conform-params) D23 C: options derive captured transform from exposure/contrast/saturation/temperature/tint/lift/gamma/gain — KEEP under c0f9227c
-pub fn create_color_grade_adjustment(options: Option<&ColorGradeAdjustmentOptions>) -> ColorGradeAdjustment {
+pub fn create_color_grade_adjustment(
+    options: Option<&ColorGradeAdjustmentOptions>,
+) -> ColorGradeAdjustment {
     let mut out: ColorGradeAdjustment = allocate_entity();
     initialize_color_grade_adjustment(&mut out, options);
     return out;
 }
 
 // flight-lint: allow(conform-params) D23 C: options derive captured transform from exposure/contrast/saturation/temperature/tint/lift/gamma/gain — KEEP under c0f9227c
-pub fn initialize_color_grade_adjustment(out: &mut ColorGradeAdjustment, options: Option<&ColorGradeAdjustmentOptions>) {
+pub fn initialize_color_grade_adjustment(
+    out: &mut ColorGradeAdjustment,
+    options: Option<&ColorGradeAdjustmentOptions>,
+) {
     let exposure = options.and_then(|o| o.exposure).unwrap_or(0.0);
     let brightness = options.and_then(|o| o.brightness).unwrap_or(0.0);
     let contrast = options.and_then(|o| o.contrast).unwrap_or(1.0);
@@ -95,10 +100,21 @@ pub fn initialize_color_grade_adjustment(out: &mut ColorGradeAdjustment, options
         1.0 / (gamma_raw[1] * 2.0).max(1e-3),
         1.0 / (gamma_raw[2] * 2.0).max(1e-3),
     ];
-    let grade = ColorGradeTransform { exposure_scale, brightness, contrast, saturation, temperature, tint, lift: lift_rgb, gamma_exp, gain: gain_rgb };
-    let transform: crate::contract::ColorTransformFunction = Arc::new(move |o: &mut [f32; 3], r: f32, g: f32, b: f32| {
-        color_grade_transform(&grade, o, r, g, b);
-    });
+    let grade = ColorGradeTransform {
+        exposure_scale,
+        brightness,
+        contrast,
+        saturation,
+        temperature,
+        tint,
+        lift: lift_rgb,
+        gamma_exp,
+        gain: gain_rgb,
+    };
+    let transform: crate::contract::ColorTransformFunction =
+        Arc::new(move |o: &mut [f32; 3], r: f32, g: f32, b: f32| {
+            color_grade_transform(&grade, o, r, g, b);
+        });
     initialize_color_lut_adjustment(out, "ColorGradeAdjustment", transform);
     out.exposure = exposure;
     out.brightness = brightness;

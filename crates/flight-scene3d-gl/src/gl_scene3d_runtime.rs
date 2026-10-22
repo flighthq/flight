@@ -38,7 +38,9 @@ fn create_gl_scene3d_runtime_record() -> GlScene3DRuntime {
         color_space_guard: None,
         custom_shader_guard: None,
         custom_shader_checked_programs: std::collections::HashSet::new(),
-        default_material: Arc::new(RwLock::new(create_material3d(STANDARD_MATERIAL_KIND.to_string()))),
+        default_material: Arc::new(RwLock::new(create_material3d(
+            STANDARD_MATERIAL_KIND.to_string(),
+        ))),
         deform_guard: None,
         environment_capture_camera: None,
         environment_skybox: None,

@@ -7,7 +7,9 @@ use flight_render_gl::{GlRenderState, resolve_gl_texture};
 use flight_texture::Texture;
 use glow::HasContext;
 
-use crate::gl_mesh_fragment_tail::{gl_mesh_fragment_tail_glsl, gl_mesh_fragment_tail_uniforms_glsl};
+use crate::gl_mesh_fragment_tail::{
+    gl_mesh_fragment_tail_glsl, gl_mesh_fragment_tail_uniforms_glsl,
+};
 use crate::gl_mesh_program::{
     GL_INSTANCE_VERTEX_DECLARATIONS_GLSL, compile_gl_program, create_gl_mesh_program_record,
     ensure_gl_scene3d_program,
@@ -76,7 +78,11 @@ pub fn build_gl_debug_define_key(key: &GlDebugDefineKey) -> String {
     };
     return format!(
         "{}{}{}{}",
-        if key.mode == GlDebugMode::Depth { "d" } else { "n" },
+        if key.mode == GlDebugMode::Depth {
+            "d"
+        } else {
+            "n"
+        },
         flag(key.has_normal_map, "m"),
         flag(key.has_skin == Some(true), "k"),
         flag(key.has_instances == Some(true), "i"),
@@ -101,8 +107,11 @@ pub fn compile_gl_debug_program(
     // SAFETY: lookups run on the owning GL thread.
     unsafe {
         let loc_far = gl.get_uniform_location(program, "u_far");
-        mesh.loc_joint_normal_texture = Cell::new(Some(gl.get_uniform_location(program, "u_jointNormalTexture")));
-        mesh.loc_joint_texture = Cell::new(Some(gl.get_uniform_location(program, "u_jointTexture")));
+        mesh.loc_joint_normal_texture = Cell::new(Some(
+            gl.get_uniform_location(program, "u_jointNormalTexture"),
+        ));
+        mesh.loc_joint_texture =
+            Cell::new(Some(gl.get_uniform_location(program, "u_jointTexture")));
         mesh.loc_model = gl.get_uniform_location(program, "u_model");
         let loc_near = gl.get_uniform_location(program, "u_near");
         let loc_normal_map = gl.get_uniform_location(program, "u_normalMap");
@@ -123,7 +132,10 @@ pub fn compile_gl_debug_program(
 
 // Resolves the debug program for a define key, compiling and caching it on first use through the
 // shared scene program cache under the `debug:` family namespace.
-pub fn ensure_gl_debug_program(state: &GlRenderState, key: &GlDebugDefineKey) -> Rc<GlDebugProgram> {
+pub fn ensure_gl_debug_program(
+    state: &GlRenderState,
+    key: &GlDebugDefineKey,
+) -> Rc<GlDebugProgram> {
     let (full_key, skin_declarations_glsl) = {
         let runtime = get_gl_scene3d_runtime(state);
         let mut full_key = key.clone();

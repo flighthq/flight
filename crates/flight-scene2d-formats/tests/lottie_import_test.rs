@@ -1,5 +1,5 @@
-use flight_node::contract::{get_node_child_at, get_node_child_count, NodeRef};
-use flight_scene2d::contract::{as_node2d_ref, Node2DRef};
+use flight_node::contract::{NodeRef, get_node_child_at, get_node_child_count};
+use flight_scene2d::contract::{Node2DRef, as_node2d_ref};
 use flight_scene2d_formats::contract::*;
 use serde_json::{Map, Value};
 

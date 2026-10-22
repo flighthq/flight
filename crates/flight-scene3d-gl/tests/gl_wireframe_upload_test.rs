@@ -14,7 +14,8 @@ mod destroy_gl_wireframe_upload {
     #[test]
     fn deletes_the_vao_and_the_line_index_buffer_but_not_the_shared_vertex_buffer() {
         let state = make_gl_scene3d_state();
-        let upload = ensure_gl_wireframe_upload(&state, &create_box_mesh_geometry(None, None, None), None);
+        let upload =
+            ensure_gl_wireframe_upload(&state, &create_box_mesh_geometry(None, None, None), None);
         let deletes_before = count_calls("delete_buffers");
         destroy_gl_wireframe_upload(&state, &upload);
         // Exactly the line-index buffer is freed here; the interleaved vertex buffer belongs to the
@@ -22,7 +23,10 @@ mod destroy_gl_wireframe_upload {
         assert_eq!(count_calls("delete_buffers"), deletes_before + 1);
         assert_eq!(count_calls("delete_vertex_arrays"), 1);
         let deleted_buffer = &calls_with("delete_buffers")[0];
-        assert_eq!(deleted_buffer.integers[0], i64::from(upload.line_index_buffer.0.get()));
+        assert_eq!(
+            deleted_buffer.integers[0],
+            i64::from(upload.line_index_buffer.0.get())
+        );
     }
 }
 
@@ -43,7 +47,11 @@ mod ensure_gl_wireframe_upload {
             IndexBuffer::U32(value) => value.data.read().unwrap().len() / 3,
             IndexBuffer::None => 0,
         } as i64;
-        let element_size = if upload.index_type == glow::UNSIGNED_INT { 4 } else { 2 };
+        let element_size = if upload.index_type == glow::UNSIGNED_INT {
+            4
+        } else {
+            2
+        };
         let line_upload = calls_with("buffer_data").into_iter().find(|call| {
             call.integers[0] == i64::from(glow::ELEMENT_ARRAY_BUFFER)
                 && call.integers[1] == triangle_count * 6 * element_size

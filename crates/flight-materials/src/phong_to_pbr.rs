@@ -10,7 +10,11 @@ use crate::{
 };
 
 // flight-lint: allow(conform-params) D5: Rust passes caller-owned conversion context; TS uses module-scoped guard
-pub fn convert_phong_to_standard_pbr_material(phong: &PhongMaterial, opts: Option<&StandardPbrMaterialOptions>, ctx: Option<&MaterialConversionContext>) -> StandardPbrMaterial {
+pub fn convert_phong_to_standard_pbr_material(
+    phong: &PhongMaterial,
+    opts: Option<&StandardPbrMaterialOptions>,
+    ctx: Option<&MaterialConversionContext>,
+) -> StandardPbrMaterial {
     if phong.specular_map.is_some() {
         report_material_conversion_drop(
             ctx,

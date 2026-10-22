@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use flight_effects::{EffectRef, EffectSourceMode, create_drop_shadow_effect};
-use flight_entity::Ref;
 use flight_effects_wgpu::contract::*;
+use flight_entity::Ref;
 use flight_render_wgpu::*;
 
 use crate::support::*;
@@ -128,7 +128,11 @@ mod apply_drop_shadow_effect_to_wgpu {
         let source = view_of(&applied.source);
         let draws = draws_into_dest(&applied);
 
-        assert!(draws.iter().any(|draw| draw.source.as_ref() == Some(&source) && !is_erase_blend(draw.blend)));
+        assert!(
+            draws
+                .iter()
+                .any(|draw| draw.source.as_ref() == Some(&source) && !is_erase_blend(draw.blend))
+        );
         assert!(!draws.iter().any(|draw| is_erase_blend(draw.blend)));
     }
 
@@ -138,7 +142,11 @@ mod apply_drop_shadow_effect_to_wgpu {
         let source = view_of(&applied.source);
         let draws = draws_into_dest(&applied);
 
-        assert!(!draws.iter().any(|draw| draw.source.as_ref() == Some(&source)));
+        assert!(
+            !draws
+                .iter()
+                .any(|draw| draw.source.as_ref() == Some(&source))
+        );
         assert!(!draws.iter().any(|draw| is_erase_blend(draw.blend)));
     }
 
@@ -148,8 +156,16 @@ mod apply_drop_shadow_effect_to_wgpu {
         let source = view_of(&applied.source);
         let draws = draws_into_dest(&applied);
 
-        assert!(!draws.iter().any(|draw| draw.source.as_ref() == Some(&source) && !is_erase_blend(draw.blend)));
-        assert!(draws.iter().any(|draw| draw.source.as_ref() == Some(&source) && is_erase_blend(draw.blend)));
+        assert!(
+            !draws
+                .iter()
+                .any(|draw| draw.source.as_ref() == Some(&source) && !is_erase_blend(draw.blend))
+        );
+        assert!(
+            draws
+                .iter()
+                .any(|draw| draw.source.as_ref() == Some(&source) && is_erase_blend(draw.blend))
+        );
     }
 
     #[test]
@@ -161,7 +177,10 @@ mod apply_drop_shadow_effect_to_wgpu {
             .find(|begin| begin.color_view == view_of(&applied.dest))
             .unwrap();
 
-        assert!(matches!(first_into_dest.color, WgpuColorLoadRecord::Clear(_)));
+        assert!(matches!(
+            first_into_dest.color,
+            WgpuColorLoadRecord::Clear(_)
+        ));
         assert_eq!(applied.pool.free.len(), 3);
     }
 
@@ -222,7 +241,11 @@ mod wgpu_drop_shadow_effect_runner {
             wgpu_drop_shadow_effect_runner(&mut context, &*effect.read().unwrap());
         });
 
-        assert!(draw_calls(&records).iter().any(|draw| draw.dest == view_of(&dest)));
+        assert!(
+            draw_calls(&records)
+                .iter()
+                .any(|draw| draw.dest == view_of(&dest))
+        );
         assert_eq!(pool.free.len(), 3);
     }
 }

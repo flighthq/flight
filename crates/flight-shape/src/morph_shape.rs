@@ -48,10 +48,7 @@ pub fn initialize_morph_shape(out: &mut MorphShape, morph: &Ref<PathMorph>) {
 
 /// The construction initializer of `create_morph_shape_data`.
 // flight-lint: allow(conform-params) D23 B: TS data param removed; Rust out-parameter IS the data
-pub fn initialize_morph_shape_data(
-    out: &mut MorphShapeData,
-    morph: &Ref<PathMorph>,
-) {
+pub fn initialize_morph_shape_data(out: &mut MorphShapeData, morph: &Ref<PathMorph>) {
     let progress = 0.0;
     let winding = morph.read().unwrap().winding;
     let mut path_value = create_path();

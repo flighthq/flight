@@ -16,7 +16,10 @@ mod is_particle_emitter_3d_complete {
         let mut config = create_particle_emitter_config(None);
         config.duration = 0.0;
         config.looping = false;
-        assert_eq!(is_particle_emitter_3d_complete(&emitter.read().unwrap(), &state, &config), false);
+        assert_eq!(
+            is_particle_emitter_3d_complete(&emitter.read().unwrap(), &state, &config),
+            false
+        );
     }
 
     #[test]
@@ -27,7 +30,10 @@ mod is_particle_emitter_3d_complete {
         config.duration = 1.0;
         config.looping = true;
         state.emitter_age = 2.0;
-        assert_eq!(is_particle_emitter_3d_complete(&emitter.read().unwrap(), &state, &config), false);
+        assert_eq!(
+            is_particle_emitter_3d_complete(&emitter.read().unwrap(), &state, &config),
+            false
+        );
     }
 
     #[test]
@@ -38,7 +44,10 @@ mod is_particle_emitter_3d_complete {
         config.duration = 1.0;
         config.looping = false;
         state.emitter_age = 2.0;
-        assert_eq!(is_particle_emitter_3d_complete(&emitter.read().unwrap(), &state, &config), true);
+        assert_eq!(
+            is_particle_emitter_3d_complete(&emitter.read().unwrap(), &state, &config),
+            true
+        );
     }
 
     #[test]
@@ -50,7 +59,10 @@ mod is_particle_emitter_3d_complete {
         config.looping = false;
         state.emitter_age = 2.0;
         emitter.write().unwrap().data.particle_count = 3;
-        assert_eq!(is_particle_emitter_3d_complete(&emitter.read().unwrap(), &state, &config), false);
+        assert_eq!(
+            is_particle_emitter_3d_complete(&emitter.read().unwrap(), &state, &config),
+            false
+        );
     }
 }
 
@@ -122,7 +134,11 @@ mod update_particle_emitter_3d {
         assert_eq!(emitter.read().unwrap().data.particle_count, 1);
         let (x0, y0, z0) = {
             let guard = emitter.read().unwrap();
-            (guard.data.transforms[0], guard.data.transforms[1], guard.data.positions_z[0])
+            (
+                guard.data.transforms[0],
+                guard.data.transforms[1],
+                guard.data.positions_z[0],
+            )
         };
         update_particle_emitter_3d(&emitter, &mut state, &config, 0.1, None);
         let guard = emitter.read().unwrap();

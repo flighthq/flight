@@ -10,7 +10,8 @@ use flight_meshgeometry::{MeshGeometry, create_box_mesh_geometry};
 use flight_render::Scene3DRenderProxy;
 use flight_scene3d_gl::contract::*;
 use flight_shading::{
-    Modifier, SHADED_MATERIAL_KIND, create_emissive_modifier, create_rim_modifier, create_shaded_material,
+    Modifier, SHADED_MATERIAL_KIND, create_emissive_modifier, create_rim_modifier,
+    create_shaded_material,
 };
 
 use crate::gl_test_helper::{calls_with, count_calls, make_gl_scene3d_state};
@@ -89,7 +90,12 @@ mod gl_shaded_mesh_material_renderer {
     fn bind_selects_a_program_and_uploads_camera_light_block_base_colors_and_time() {
         let mut state = make_gl_scene3d_state();
         let material = create_shaded_material();
-        (GL_SHADED_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &make_lights(), &make_camera());
+        (GL_SHADED_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &make_lights(),
+            &make_camera(),
+        );
 
         assert!(count_calls("use_program") > 0);
         assert!(has_call("enable", glow::DEPTH_TEST));
@@ -103,8 +109,17 @@ mod gl_shaded_mesh_material_renderer {
     fn bind_caches_the_program_under_the_shaded_namespace() {
         let mut state = make_gl_scene3d_state();
         let material = create_shaded_material();
-        (GL_SHADED_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &make_lights(), &make_camera());
-        let keys: Vec<String> = get_gl_scene3d_runtime(&state).program_cache.keys().cloned().collect();
+        (GL_SHADED_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &make_lights(),
+            &make_camera(),
+        );
+        let keys: Vec<String> = get_gl_scene3d_runtime(&state)
+            .program_cache
+            .keys()
+            .cloned()
+            .collect();
         assert!(keys.iter().any(|key| key.starts_with("shaded:")));
     }
 
@@ -112,7 +127,12 @@ mod gl_shaded_mesh_material_renderer {
     fn a_plain_shaded_material_empty_stack_compiles_the_lean_base_variant() {
         let mut state = make_gl_scene3d_state();
         let material = create_shaded_material();
-        (GL_SHADED_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &make_lights(), &make_camera());
+        (GL_SHADED_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &make_lights(),
+            &make_camera(),
+        );
         // Empty modifier feature-set -> the define-key trails with an empty modifier segment. The last two
         // base flags are the (unset) uv-transform and skin flags.
         assert!(
@@ -133,7 +153,12 @@ mod gl_shaded_mesh_material_renderer {
         rim.color = 0x88ccffff;
         let mut material = create_shaded_material();
         material.modifiers = vec![share(emissive), share(rim)];
-        (GL_SHADED_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &make_lights(), &make_camera());
+        (GL_SHADED_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &make_lights(),
+            &make_camera(),
+        );
         // Emissive color + rim color each upload a uniform_3_f32 (vec3), on top of camera/ambient vec3s.
         assert!(count_calls("uniform_3_f32") >= 4);
     }
@@ -144,7 +169,12 @@ mod gl_shaded_mesh_material_renderer {
         let proxy = make_proxy();
         {
             let material = proxy.material.read().unwrap();
-            (GL_SHADED_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&*material), &make_lights(), &make_camera());
+            (GL_SHADED_MESH_MATERIAL_RENDERER.bind)(
+                &mut state,
+                Some(&*material),
+                &make_lights(),
+                &make_camera(),
+            );
         }
         (GL_SHADED_MESH_MATERIAL_RENDERER.draw)(&mut state, &proxy, &make_geometry());
 

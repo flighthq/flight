@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use flight_log::{log_once, LogData, LogLevel, LogValue};
+use flight_log::{LogData, LogLevel, LogValue, log_once};
 use std::collections::HashMap;
 
-use crate::types::{FlowGuardStateRef, FlowGuardKind};
+use crate::types::{FlowGuardKind, FlowGuardStateRef};
 
 #[cfg(test)]
 mod sugar_tests {
@@ -51,7 +51,6 @@ mod sugar_tests {
         );
     }
 }
-
 
 // flight-lint: allow(conform-params) D5: caller-owned guard state replaces the hidden module flag
 pub fn disable_flow_guards(state: &FlowGuardStateRef) {
@@ -132,7 +131,11 @@ pub trait FlowGuardStateMethods {
     fn disable_guards(&self);
     // flight-lint: allow(f64) D1: the injected clock returns millisecond operation time
     // flight-lint: allow(f64) D1: the injected clock returns millisecond operation time
-    fn enable_guards(&self, log_state: &flight_log::LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>);
+    fn enable_guards(
+        &self,
+        log_state: &flight_log::LogStateRef,
+        clock: Arc<dyn Fn() -> f64 + Send + Sync>,
+    );
 }
 
 impl FlowGuardStateMethods for FlowGuardStateRef {
@@ -141,9 +144,11 @@ impl FlowGuardStateMethods for FlowGuardStateRef {
     }
 
     // flight-lint: allow(f64) D1: the injected clock returns millisecond operation time
-    fn enable_guards(&self, log_state: &flight_log::LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>) {
+    fn enable_guards(
+        &self,
+        log_state: &flight_log::LogStateRef,
+        clock: Arc<dyn Fn() -> f64 + Send + Sync>,
+    ) {
         enable_flow_guards(self, log_state, clock);
     }
 }
-
-

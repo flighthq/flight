@@ -12,10 +12,17 @@ pub struct BoundingSphere {
 
 /// Creates a bounding sphere from an explicit center and radius.
 pub fn create_bounding_sphere(
-    center_x: f32, center_y: f32, center_z: f32, radius: f32,
+    center_x: f32,
+    center_y: f32,
+    center_z: f32,
+    radius: f32,
 ) -> BoundingSphere {
     let mut out: BoundingSphere = allocate_entity();
-    initialize_bounding_sphere(&mut out, &create_vector3(center_x, center_y, center_z), radius);
+    initialize_bounding_sphere(
+        &mut out,
+        &create_vector3(center_x, center_y, center_z),
+        radius,
+    );
     return out;
 }
 
@@ -30,15 +37,17 @@ pub fn initialize_bounding_sphere(out: &mut BoundingSphere, center: &Vector3, ra
 
 /// Creates an independent copy of a bounding sphere.
 pub fn clone_bounding_sphere(source: &BoundingSphere) -> BoundingSphere {
-    return create_bounding_sphere(source.center.x, source.center.y, source.center.z, source.radius);
+    return create_bounding_sphere(
+        source.center.x,
+        source.center.y,
+        source.center.z,
+        source.radius,
+    );
 }
 
 /// Returns whether a point lies inside (or on the surface of) a bounding sphere. An empty
 /// sphere (negative radius) contains no points.
-pub fn contains_bounding_sphere_point(
-    sphere: &BoundingSphere,
-    point: &Vector3,
-) -> bool {
+pub fn contains_bounding_sphere_point(sphere: &BoundingSphere, point: &Vector3) -> bool {
     if sphere.radius < 0.0 {
         return false;
     }
@@ -122,11 +131,7 @@ pub fn is_bounding_sphere_intersecting_bounding_sphere(
 /// non-empty sphere.
 ///
 /// Reads all inputs before writing, so it is safe when `out` aliases `a` or `b`.
-pub fn merge_bounding_sphere(
-    out: &mut BoundingSphere,
-    a: &BoundingSphere,
-    b: &BoundingSphere,
-) {
+pub fn merge_bounding_sphere(out: &mut BoundingSphere, a: &BoundingSphere, b: &BoundingSphere) {
     if a.radius < 0.0 {
         let cx = b.center.x;
         let cy = b.center.y;
@@ -190,7 +195,10 @@ pub fn merge_bounding_sphere(
 /// Sets the center and radius of a bounding sphere.
 pub fn set_bounding_sphere(
     out: &mut BoundingSphere,
-    center_x: f32, center_y: f32, center_z: f32, radius: f32,
+    center_x: f32,
+    center_y: f32,
+    center_z: f32,
+    radius: f32,
 ) {
     out.center.x = center_x;
     out.center.y = center_y;
@@ -260,7 +268,11 @@ pub fn transform_bounding_sphere_by_matrix4(
     out.center.x = tcx;
     out.center.y = tcy;
     out.center.z = tcz;
-    out.radius = if radius < 0.0 { radius } else { radius * max_scale };
+    out.radius = if radius < 0.0 {
+        radius
+    } else {
+        radius * max_scale
+    };
 }
 
 impl Default for BoundingSphere {

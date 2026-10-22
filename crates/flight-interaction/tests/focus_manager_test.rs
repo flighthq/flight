@@ -49,8 +49,15 @@ mod connect_focus_navigation {
         let input = FocusNavigationInput {
             on_key_down: flight_signals::create_signal(),
         };
-        let mgr = Arc::new(RwLock::new(create_focus_manager(root, &create_focus_manager_options())));
-        let _dispose = connect_focus_navigation(&input, mgr.clone(), &FocusNavigationOptions { arrow_keys: None });
+        let mgr = Arc::new(RwLock::new(create_focus_manager(
+            root,
+            &create_focus_manager_options(),
+        )));
+        let _dispose = connect_focus_navigation(
+            &input,
+            mgr.clone(),
+            &FocusNavigationOptions { arrow_keys: None },
+        );
         flight_signals::emit_signal(&input.on_key_down, &key_event("Tab", false));
         let focused = get_focused_node(&mgr.read().unwrap());
         assert!(focused.is_some());
@@ -67,8 +74,15 @@ mod connect_focus_navigation {
         let input = FocusNavigationInput {
             on_key_down: flight_signals::create_signal(),
         };
-        let mgr = Arc::new(RwLock::new(create_focus_manager(root, &create_focus_manager_options())));
-        let _dispose = connect_focus_navigation(&input, mgr.clone(), &FocusNavigationOptions { arrow_keys: None });
+        let mgr = Arc::new(RwLock::new(create_focus_manager(
+            root,
+            &create_focus_manager_options(),
+        )));
+        let _dispose = connect_focus_navigation(
+            &input,
+            mgr.clone(),
+            &FocusNavigationOptions { arrow_keys: None },
+        );
         flight_signals::emit_signal(&input.on_key_down, &key_event("Tab", true));
         let focused = get_focused_node(&mgr.read().unwrap());
         assert!(focused.is_some());
@@ -83,8 +97,15 @@ mod connect_focus_navigation {
         let input = FocusNavigationInput {
             on_key_down: flight_signals::create_signal(),
         };
-        let mgr = Arc::new(RwLock::new(create_focus_manager(root, &create_focus_manager_options())));
-        let dispose = connect_focus_navigation(&input, mgr.clone(), &FocusNavigationOptions { arrow_keys: None });
+        let mgr = Arc::new(RwLock::new(create_focus_manager(
+            root,
+            &create_focus_manager_options(),
+        )));
+        let dispose = connect_focus_navigation(
+            &input,
+            mgr.clone(),
+            &FocusNavigationOptions { arrow_keys: None },
+        );
         dispose();
         flight_signals::emit_signal(&input.on_key_down, &key_event("Tab", false));
         assert!(get_focused_node(&mgr.read().unwrap()).is_none());
@@ -98,8 +119,17 @@ mod connect_focus_navigation {
         let input = FocusNavigationInput {
             on_key_down: flight_signals::create_signal(),
         };
-        let mgr = Arc::new(RwLock::new(create_focus_manager(root, &create_focus_manager_options())));
-        let _dispose = connect_focus_navigation(&input, mgr.clone(), &FocusNavigationOptions { arrow_keys: Some(false) });
+        let mgr = Arc::new(RwLock::new(create_focus_manager(
+            root,
+            &create_focus_manager_options(),
+        )));
+        let _dispose = connect_focus_navigation(
+            &input,
+            mgr.clone(),
+            &FocusNavigationOptions {
+                arrow_keys: Some(false),
+            },
+        );
         flight_signals::emit_signal(&input.on_key_down, &key_event("Tab", false));
         flight_signals::emit_signal(&input.on_key_down, &key_event("ArrowDown", false));
         let focused = get_focused_node(&mgr.read().unwrap());

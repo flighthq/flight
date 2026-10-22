@@ -62,9 +62,11 @@ mod lottie_precomposition_layer_handler {
             Some(&mut diagnostics),
             None,
         );
-        assert!(diagnostics
-            .iter()
-            .any(|diagnostic| diagnostic.kind == "lottie.recursive-precomposition"));
+        assert!(
+            diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.kind == "lottie.recursive-precomposition")
+        );
     }
 
     fn registry() -> LottieRegistry {

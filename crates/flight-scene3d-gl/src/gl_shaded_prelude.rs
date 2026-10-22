@@ -19,7 +19,9 @@ use flight_shading::{
 use glow::HasContext;
 
 use crate::gl_lit_program::{gl_mesh_light_block_glsl, resolve_gl_lit_locations};
-use crate::gl_mesh_fragment_tail::{gl_mesh_fragment_tail_glsl, gl_mesh_fragment_tail_uniforms_glsl};
+use crate::gl_mesh_fragment_tail::{
+    gl_mesh_fragment_tail_glsl, gl_mesh_fragment_tail_uniforms_glsl,
+};
 use crate::gl_mesh_program::{
     GL_INSTANCE_VERTEX_DECLARATIONS_GLSL, compile_gl_program, ensure_gl_scene3d_program,
     gl_uv_transform_vertex_glsl,
@@ -46,7 +48,8 @@ fn assemble_gl_shaded_fragment_body(
     let mut effect = String::new();
     for (index, modifier) in ordered_modifiers.iter().enumerate() {
         let modifier = modifier.read().unwrap_or_else(PoisonError::into_inner);
-        let Some(snippet) = resolve_gl_modifier_snippet_source(registry, &modifier.modifier_fields().kind)
+        let Some(snippet) =
+            resolve_gl_modifier_snippet_source(registry, &modifier.modifier_fields().kind)
         else {
             continue;
         };
@@ -70,7 +73,11 @@ fn assemble_gl_shaded_fragment_body(
         }
     }
     return SHADED_FRAGMENT_TEMPLATE
-        .replacen("//@DECLARATIONS", &dedupe_gl_shaded_declarations(&declarations), 1)
+        .replacen(
+            "//@DECLARATIONS",
+            &dedupe_gl_shaded_declarations(&declarations),
+            1,
+        )
         .replacen("//@NORMAL", &normal, 1)
         .replacen("//@DIFFUSE", &diffuse, 1)
         .replacen("//@SPECULAR", &specular, 1)
@@ -92,7 +99,8 @@ fn assemble_gl_shaded_vertex_body(
     let mut vertex = String::new();
     for (index, modifier) in ordered_modifiers.iter().enumerate() {
         let modifier = modifier.read().unwrap_or_else(PoisonError::into_inner);
-        let Some(snippet) = resolve_gl_modifier_snippet_source(registry, &modifier.modifier_fields().kind)
+        let Some(snippet) =
+            resolve_gl_modifier_snippet_source(registry, &modifier.modifier_fields().kind)
         else {
             continue;
         };
@@ -105,7 +113,11 @@ fn assemble_gl_shaded_vertex_body(
         vertex += &format!("{}\n", (snippet.contribution)(&*modifier, index));
     }
     return SHADED_VERTEX_BODY
-        .replacen("//@VERTEX_DECLARATIONS", &dedupe_gl_shaded_declarations(&declarations), 1)
+        .replacen(
+            "//@VERTEX_DECLARATIONS",
+            &dedupe_gl_shaded_declarations(&declarations),
+            1,
+        )
         .replacen("//@VERTEX", &vertex, 1);
 }
 
@@ -228,9 +240,11 @@ pub fn compile_gl_shaded_program(
     let mut lit = resolve_gl_lit_locations(gl, program);
     // SAFETY: lookups run on the owning GL thread.
     unsafe {
-        lit.mesh.loc_joint_normal_texture =
-            Cell::new(Some(gl.get_uniform_location(program, "u_jointNormalTexture")));
-        lit.mesh.loc_joint_texture = Cell::new(Some(gl.get_uniform_location(program, "u_jointTexture")));
+        lit.mesh.loc_joint_normal_texture = Cell::new(Some(
+            gl.get_uniform_location(program, "u_jointNormalTexture"),
+        ));
+        lit.mesh.loc_joint_texture =
+            Cell::new(Some(gl.get_uniform_location(program, "u_jointTexture")));
         lit.mesh.loc_model = gl.get_uniform_location(program, "u_model");
         lit.mesh.loc_normal_matrix = gl.get_uniform_location(program, "u_normalMatrix");
         lit.mesh.loc_view_projection = gl.get_uniform_location(program, "u_viewProjection");
@@ -261,7 +275,8 @@ fn dedupe_gl_shaded_declarations(declarations: &str) -> String {
     let mut result = String::new();
     for line in declarations.split('\n') {
         let trimmed = line.trim();
-        let is_shared_declaration = trimmed.starts_with("uniform ") && !has_gl_stack_index_suffix(trimmed);
+        let is_shared_declaration =
+            trimmed.starts_with("uniform ") && !has_gl_stack_index_suffix(trimmed);
         if is_shared_declaration {
             if seen.contains(trimmed) {
                 continue;
@@ -334,13 +349,19 @@ fn get_gl_modifier_define_key(
         let snippet = resolve_gl_modifier_snippet_source(registry, kind);
         let signature = snippet
             .and_then(|snippet| snippet.get_define_signature)
-            .map_or(String::new(), |get_define_signature| get_define_signature(&*modifier));
+            .map_or(String::new(), |get_define_signature| {
+                get_define_signature(&*modifier)
+            });
         let token = if signature.is_empty() {
             kind.clone()
         } else {
             format!("{kind}:{signature}")
         };
-        key = if key.is_empty() { token } else { format!("{key}+{token}") };
+        key = if key.is_empty() {
+            token
+        } else {
+            format!("{key}+{token}")
+        };
     }
     return key;
 }
@@ -357,7 +378,8 @@ fn has_gl_stack_index_suffix(line: &str) -> bool {
         while end < bytes.len() && bytes[end].is_ascii_digit() {
             end += 1;
         }
-        let at_boundary = end == bytes.len() || !(bytes[end].is_ascii_alphanumeric() || bytes[end] == b'_');
+        let at_boundary =
+            end == bytes.len() || !(bytes[end].is_ascii_alphanumeric() || bytes[end] == b'_');
         if end > start + 1 && at_boundary {
             return true;
         }

@@ -14,14 +14,6 @@ mod update_particle_emitter_3d;
 pub mod contract;
 
 // types
-pub use contract::create_particle_emitter_data;
-pub use contract::initialize_particle_emitter_data;
-pub use contract::ParticleEmitter2D;
-pub use contract::ParticleEmitter2DRuntime;
-pub use contract::ParticleEmitter3D;
-pub use contract::ParticleEmitter3DRuntime;
-pub use contract::ParticleEmitterCallbacks;
-pub use contract::ParticleEmitterData;
 pub use contract::PARTICLE_COLOR_STRIDE;
 pub use contract::PARTICLE_EMITTER_2D_KIND;
 pub use contract::PARTICLE_EMITTER_3D_KIND;
@@ -29,6 +21,14 @@ pub use contract::PARTICLE_EMITTER_DELETED_ID;
 pub use contract::PARTICLE_TRANSFORM_STRIDE;
 pub use contract::PARTICLE_VELOCITY_STRIDE_2D;
 pub use contract::PARTICLE_VELOCITY_STRIDE_3D;
+pub use contract::ParticleEmitter2D;
+pub use contract::ParticleEmitter2DRuntime;
+pub use contract::ParticleEmitter3D;
+pub use contract::ParticleEmitter3DRuntime;
+pub use contract::ParticleEmitterCallbacks;
+pub use contract::ParticleEmitterData;
+pub use contract::create_particle_emitter_data;
+pub use contract::initialize_particle_emitter_data;
 
 // particleEmitter — 2D public API (wrappers take Ref<ParticleEmitter2D>)
 pub use contract::append_particle_emitter_2d_particle;

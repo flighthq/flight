@@ -5,7 +5,13 @@ pub fn ease_clamp(
     ease: Arc<dyn Fn(f32) -> f32 + Send + Sync>,
 ) -> Arc<dyn Fn(f32) -> f32 + Send + Sync> {
     return Arc::new(move |t: f32| -> f32 {
-        let clamped = if t < 0.0 { 0.0 } else if t > 1.0 { 1.0 } else { t };
+        let clamped = if t < 0.0 {
+            0.0
+        } else if t > 1.0 {
+            1.0
+        } else {
+            t
+        };
         return ease(clamped);
     });
 }
@@ -18,7 +24,13 @@ pub fn ease_clamp_output(
 ) -> Arc<dyn Fn(f32) -> f32 + Send + Sync> {
     return Arc::new(move |t: f32| -> f32 {
         let v = ease(t);
-        return if v < min { min } else if v > max { max } else { v };
+        return if v < min {
+            min
+        } else if v > max {
+            max
+        } else {
+            v
+        };
     });
 }
 

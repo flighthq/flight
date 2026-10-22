@@ -5,7 +5,9 @@ use crate::support::*;
 
 // A shared palette handle (TS: a skeleton's Float32Array), whose identity keys its arena region.
 fn make_palette(length: usize) -> flight_entity::Ref<Box<flight_entity::Float32Array>> {
-    return std::sync::Arc::new(std::sync::RwLock::new(vec![0.0_f32; length].into_boxed_slice()));
+    return std::sync::Arc::new(std::sync::RwLock::new(
+        vec![0.0_f32; length].into_boxed_slice(),
+    ));
 }
 
 mod destroy_wgpu_skin_palette {
@@ -16,7 +18,11 @@ mod destroy_wgpu_skin_palette {
         let mut test = make_wgpu_scene3d_state(None);
         let palette = make_palette(16);
         ensure_wgpu_skin_draw_bind_group(&mut test.state, &palette);
-        assert!(get_wgpu_scene3d_runtime(&mut test.state).skin_draw_bind_group.is_some());
+        assert!(
+            get_wgpu_scene3d_runtime(&mut test.state)
+                .skin_draw_bind_group
+                .is_some()
+        );
 
         destroy_wgpu_skin_palette(&mut test.state);
 
@@ -40,7 +46,10 @@ mod ensure_wgpu_skin_draw_bind_group {
         let first = ensure_wgpu_skin_draw_bind_group(&mut test.state, &palette);
         let group_count = test.count("createBindGroup");
         // The same skeleton keeps its region, so nothing is reallocated and nothing is rebuilt.
-        assert_eq!(ensure_wgpu_skin_draw_bind_group(&mut test.state, &palette), first);
+        assert_eq!(
+            ensure_wgpu_skin_draw_bind_group(&mut test.state, &palette),
+            first
+        );
         assert_eq!(test.count("createBindGroup"), group_count);
 
         // A second skeleton claims the next row, which outgrows the arena and replaces its view.
@@ -87,13 +96,20 @@ mod ensure_wgpu_skin_mesh_draw_layout {
         let mut test = make_wgpu_scene3d_state(None);
         ensure_wgpu_skin_mesh_draw_layout(&mut test.state);
         let mesh_layout = test.bind_group_layouts().last().cloned().unwrap();
-        let mesh_bindings: Vec<u32> = mesh_layout.entries.iter().map(|entry| entry.binding).collect();
+        let mesh_bindings: Vec<u32> = mesh_layout
+            .entries
+            .iter()
+            .map(|entry| entry.binding)
+            .collect();
         assert_eq!(mesh_bindings, vec![0, 1, 2]);
 
         ensure_wgpu_skin_draw_layout(&mut test.state);
         let shadow_layout = test.bind_group_layouts().last().cloned().unwrap();
-        let shadow_bindings: Vec<u32> =
-            shadow_layout.entries.iter().map(|entry| entry.binding).collect();
+        let shadow_bindings: Vec<u32> = shadow_layout
+            .entries
+            .iter()
+            .map(|entry| entry.binding)
+            .collect();
         assert_eq!(shadow_bindings, vec![0, 1]);
     }
 
@@ -115,16 +131,28 @@ mod register_wgpu_gpu_skinning {
     fn installs_the_opt_in_adapter_on_only_the_requested_render_state() {
         let mut test = make_wgpu_scene3d_state(None);
         let mut other = make_wgpu_scene3d_state(None);
-        assert!(get_wgpu_scene3d_runtime(&mut test.state).skinning_adapter.is_none());
+        assert!(
+            get_wgpu_scene3d_runtime(&mut test.state)
+                .skinning_adapter
+                .is_none()
+        );
         register_wgpu_gpu_skinning(&mut test.state);
-        assert!(get_wgpu_scene3d_runtime(&mut test.state)
-            .skinning_adapter
-            .is_some_and(|adapter| std::ptr::eq(adapter, &WGPU_SKINNING_ADAPTER)));
-        assert!(get_wgpu_render_state_runtime(&test.state)
-            .registries
-            .gpu_skinning
-            .is_some_and(|adapter| std::ptr::eq(adapter, &WGPU_SKINNING_ADAPTER)));
-        assert!(get_wgpu_scene3d_runtime(&mut other.state).skinning_adapter.is_none());
+        assert!(
+            get_wgpu_scene3d_runtime(&mut test.state)
+                .skinning_adapter
+                .is_some_and(|adapter| std::ptr::eq(adapter, &WGPU_SKINNING_ADAPTER))
+        );
+        assert!(
+            get_wgpu_render_state_runtime(&test.state)
+                .registries
+                .gpu_skinning
+                .is_some_and(|adapter| std::ptr::eq(adapter, &WGPU_SKINNING_ADAPTER))
+        );
+        assert!(
+            get_wgpu_scene3d_runtime(&mut other.state)
+                .skinning_adapter
+                .is_none()
+        );
     }
 }
 
@@ -154,7 +182,10 @@ mod upload_wgpu_skin_normal_palette {
         upload_wgpu_skin_palette(&mut test.state, &joints);
         upload_wgpu_skin_normal_palette(&mut test.state, &normals);
         let runtime = get_wgpu_scene3d_runtime(&mut test.state);
-        assert_ne!(runtime.skin_normal_palette_texture, runtime.skin_palette_texture);
+        assert_ne!(
+            runtime.skin_normal_palette_texture,
+            runtime.skin_palette_texture
+        );
     }
 }
 

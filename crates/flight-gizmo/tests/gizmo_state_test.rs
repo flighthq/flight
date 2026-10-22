@@ -6,9 +6,7 @@ use flight_geometry::{Rectangle, Vector2, create_rectangle};
 use flight_gizmo::*;
 use flight_interaction::contract::{PointerEventData, PointerType, enable_interaction_signals};
 use flight_node::{NodeRef, get_node_child_by_name, get_node_parent, remove_node_child};
-use flight_scene2d::{
-    Node2DRef, Scene2D, as_node2d_ref, create_display_object, create_scene2d,
-};
+use flight_scene2d::{Node2DRef, Scene2D, as_node2d_ref, create_display_object, create_scene2d};
 use flight_selection::{SelectionState, create_selection_state, select_all_nodes};
 use flight_shape::{Shape, ShapeCommandToken};
 use flight_signals::{Signal, connect_signal, emit_signal};

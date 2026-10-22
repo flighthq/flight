@@ -11,7 +11,12 @@ mod render_wgpu_environment_skybox {
         let mut test = make_wgpu_scene3d_state(None);
         let before = test.calls.lock().unwrap().len();
         let mut pass = get_wgpu_active_render_pass_handle(&mut test.state).unwrap();
-        render_wgpu_environment_skybox(&mut pass, &flight_lighting::create_environment(), &make_test_camera(), 1.0);
+        render_wgpu_environment_skybox(
+            &mut pass,
+            &flight_lighting::create_environment(),
+            &make_test_camera(),
+            1.0,
+        );
         assert_eq!(test.calls.lock().unwrap().len(), before);
     }
 

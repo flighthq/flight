@@ -7,8 +7,8 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, RwLock, Weak};
 
-use flight_effects::Effect;
 use flight_camera::Camera3D;
+use flight_effects::Effect;
 use flight_entity::{AnySlot, Entity, EntityRuntimeSlot, Float32Array, Ref};
 use flight_host::{HostImageSource, HostSpawnCapability, WgpuDevice, WgpuSurfaceContext};
 use flight_image::{HostImageCapability, ImageResolverState};
@@ -400,8 +400,11 @@ pub struct WgpuSkinningAdapter {
     pub extend_shadow_depth_prelude: fn(&str) -> String,
     pub get_draw_bind_group: fn(&mut WgpuRenderState, &Ref<Box<Float32Array>>) -> wgpu::BindGroup,
     pub get_draw_layout: fn(&mut WgpuRenderState) -> wgpu::BindGroupLayout,
-    pub get_mesh_draw_bind_group:
-        fn(&mut WgpuRenderState, &Ref<Box<Float32Array>>, &Ref<Box<Float32Array>>) -> wgpu::BindGroup,
+    pub get_mesh_draw_bind_group: fn(
+        &mut WgpuRenderState,
+        &Ref<Box<Float32Array>>,
+        &Ref<Box<Float32Array>>,
+    ) -> wgpu::BindGroup,
     pub get_mesh_draw_layout: fn(&mut WgpuRenderState) -> wgpu::BindGroupLayout,
     pub get_upload_vertices: fn(&MeshGeometry) -> Option<Vec<f32>>,
     pub has_bind_pose: fn(&MeshGeometry) -> bool,

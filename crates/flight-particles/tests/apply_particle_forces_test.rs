@@ -1,5 +1,5 @@
-use flight_particles::*;
 use flight_particles::contract::*;
+use flight_particles::*;
 
 struct BufferFixture {
     transforms: Vec<f32>,
@@ -133,7 +133,14 @@ mod apply_particle_forces {
     fn is_a_no_op_for_an_empty_force_list_or_zero_delta_time() {
         let (buf, mut state) = one_particle();
         state.velocities[0] = 42.0;
-        apply_particle_forces(&buf.transforms, &buf.positions_z, buf.particle_count, &mut state, &[], 1.0);
+        apply_particle_forces(
+            &buf.transforms,
+            &buf.positions_z,
+            buf.particle_count,
+            &mut state,
+            &[],
+            1.0,
+        );
         apply_particle_forces(
             &buf.transforms,
             &buf.positions_z,

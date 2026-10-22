@@ -15,8 +15,8 @@ mod for_each_path_segment {
         let path = ts_wire_path(
             vec![1, 0, 2, 3, 0, 6, 4, 5, 7],
             vec![
-                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, -1.0, -1.0, 15.0, 16.0,
-                -1.0, -1.0, 17.0, 18.0,
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, -1.0,
+                -1.0, 15.0, 16.0, -1.0, -1.0, 17.0, 18.0,
             ],
         );
         let mut segments: Vec<PathSegment> = Vec::new();
@@ -26,8 +26,20 @@ mod for_each_path_segment {
             vec![
                 PathSegment::MoveTo { x: 1.0, y: 2.0 },
                 PathSegment::LineTo { x: 3.0, y: 4.0 },
-                PathSegment::QuadraticCurveTo { control_x: 5.0, control_y: 6.0, x: 7.0, y: 8.0 },
-                PathSegment::CubicCurveTo { control_x1: 9.0, control_y1: 10.0, control_x2: 11.0, control_y2: 12.0, x: 13.0, y: 14.0 },
+                PathSegment::QuadraticCurveTo {
+                    control_x: 5.0,
+                    control_y: 6.0,
+                    x: 7.0,
+                    y: 8.0
+                },
+                PathSegment::CubicCurveTo {
+                    control_x1: 9.0,
+                    control_y1: 10.0,
+                    control_x2: 11.0,
+                    control_y2: 12.0,
+                    x: 13.0,
+                    y: 14.0
+                },
                 PathSegment::MoveTo { x: 15.0, y: 16.0 },
                 PathSegment::LineTo { x: 17.0, y: 18.0 },
                 PathSegment::Close,
@@ -62,9 +74,15 @@ mod for_each_path_segment {
         append_path_quadratic_curve_to(&mut path, 10.0, 20.0, 30.0, 0.0);
         let mut segments: Vec<PathSegment> = Vec::new();
         for_each_path_segment(&path, &mut |segment| segments.push(segment));
-        assert_eq!(segments[1], PathSegment::QuadraticCurveTo {
-            control_x: 10.0, control_y: 20.0, x: 30.0, y: 0.0,
-        });
+        assert_eq!(
+            segments[1],
+            PathSegment::QuadraticCurveTo {
+                control_x: 10.0,
+                control_y: 20.0,
+                x: 30.0,
+                y: 0.0,
+            }
+        );
     }
 
     #[test]
@@ -74,11 +92,17 @@ mod for_each_path_segment {
         append_path_cubic_curve_to(&mut path, 10.0, 20.0, 30.0, 40.0, 50.0, 0.0);
         let mut segments: Vec<PathSegment> = Vec::new();
         for_each_path_segment(&path, &mut |segment| segments.push(segment));
-        assert_eq!(segments[1], PathSegment::CubicCurveTo {
-            control_x1: 10.0, control_y1: 20.0,
-            control_x2: 30.0, control_y2: 40.0,
-            x: 50.0, y: 0.0,
-        });
+        assert_eq!(
+            segments[1],
+            PathSegment::CubicCurveTo {
+                control_x1: 10.0,
+                control_y1: 20.0,
+                control_x2: 30.0,
+                control_y2: 40.0,
+                x: 50.0,
+                y: 0.0,
+            }
+        );
     }
 
     #[test]

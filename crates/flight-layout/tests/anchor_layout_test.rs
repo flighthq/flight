@@ -47,7 +47,18 @@ mod register_anchor_layout_resolver {
             let out = resolve(
                 vec![
                     node(-1, None),
-                    node(0, Some(AnchorLayoutItemStyle { align: Some(align), bottom: None, height: None, left: None, right: None, top: None, width: None })),
+                    node(
+                        0,
+                        Some(AnchorLayoutItemStyle {
+                            align: Some(align),
+                            bottom: None,
+                            height: None,
+                            left: None,
+                            right: None,
+                            top: None,
+                            width: None,
+                        }),
+                    ),
                 ],
                 &[0.0, 0.0, 37.0, 19.0],
                 211.0,
@@ -195,7 +206,14 @@ mod register_anchor_layout_resolver {
         let mut state = create_layout_state();
         register_anchor_layout_resolver(&mut state);
         assert_eq!(
-            resolve_layout_tree(&mut vec![0.0; 8], &mut state, &tree, &[0.0; 4], 100.0, 100.0),
+            resolve_layout_tree(
+                &mut vec![0.0; 8],
+                &mut state,
+                &tree,
+                &[0.0; 4],
+                100.0,
+                100.0
+            ),
             false
         );
         assert_eq!(
@@ -220,7 +238,14 @@ mod register_anchor_layout_resolver {
         let mut state = create_layout_state();
         register_anchor_layout_resolver(&mut state);
         assert_eq!(
-            resolve_layout_tree(&mut vec![0.0; 8], &mut state, &tree, &[0.0; 4], 100.0, 100.0),
+            resolve_layout_tree(
+                &mut vec![0.0; 8],
+                &mut state,
+                &tree,
+                &[0.0; 4],
+                100.0,
+                100.0
+            ),
             false
         );
         assert_eq!(

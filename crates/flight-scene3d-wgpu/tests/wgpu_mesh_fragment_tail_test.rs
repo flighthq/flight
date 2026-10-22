@@ -6,7 +6,8 @@ mod wgpu_mesh_fragment_tail {
     #[test]
     fn declares_the_premultiply_helper_the_preludes_return_through() {
         assert!(
-            WGPU_MESH_FRAGMENT_TAIL.contains("fn flightPremultipliedOutput(color : vec4f) -> vec4f")
+            WGPU_MESH_FRAGMENT_TAIL
+                .contains("fn flightPremultipliedOutput(color : vec4f) -> vec4f")
         );
     }
 

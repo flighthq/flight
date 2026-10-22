@@ -5,7 +5,9 @@ use std::sync::Arc;
 
 use flight_camera::Camera3D;
 use flight_lighting::Scene3DLightBlock;
-use flight_materials::{CUSTOM_SHADER_MATERIAL_KIND, CustomShaderMaterial, Material3D, UniformValue};
+use flight_materials::{
+    CUSTOM_SHADER_MATERIAL_KIND, CustomShaderMaterial, Material3D, UniformValue,
+};
 use flight_meshgeometry::MeshGeometry;
 use flight_registry::with_kind_map_entry;
 use flight_render::Scene3DRenderProxy;
@@ -36,10 +38,11 @@ struct GlCustomShaderProgram {
 // u_cameraPosition), then iterates the material's custom uniforms and textures. A missing shader_key
 // silently skips (the active_mesh_program stays None and draw is a no-op), matching the sentinel
 // convention used elsewhere in the material registry.
-pub static GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer = GlMeshMaterialRenderer {
-    bind: bind_gl_custom_shader_mesh_material,
-    draw: draw_gl_custom_shader_mesh_material,
-};
+pub static GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer =
+    GlMeshMaterialRenderer {
+        bind: bind_gl_custom_shader_mesh_material,
+        draw: draw_gl_custom_shader_mesh_material,
+    };
 
 fn bind_gl_custom_shader_mesh_material(
     state: &mut GlRenderState,
@@ -47,13 +50,15 @@ fn bind_gl_custom_shader_mesh_material(
     _lights: &Rc<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
-    let custom = material.and_then(|material| material.as_any().downcast_ref::<CustomShaderMaterial>());
+    let custom =
+        material.and_then(|material| material.as_any().downcast_ref::<CustomShaderMaterial>());
     let Some(custom) = custom.filter(|custom| !custom.shader_key.is_empty()) else {
         get_gl_scene3d_runtime(state).active_mesh_program = None;
         return;
     };
 
-    let Some(source) = get_gl_custom_material_shader_source(state, &custom.shader_key).cloned() else {
+    let Some(source) = get_gl_custom_material_shader_source(state, &custom.shader_key).cloned()
+    else {
         get_gl_scene3d_runtime(state).active_mesh_program = None;
         return;
     };
@@ -119,7 +124,11 @@ pub fn get_gl_custom_material_shader_source<'a>(
     state: &'a GlRenderState,
     shader_key: &str,
 ) -> Option<&'a GlCustomMaterialShaderSource> {
-    return state.gl_registries.custom_material_shaders.entries.get(shader_key);
+    return state
+        .gl_registries
+        .custom_material_shaders
+        .entries
+        .get(shader_key);
 }
 
 // Registers a vertex + fragment shader source pair under `shader_key` for this state, so a

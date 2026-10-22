@@ -62,7 +62,10 @@ fn acquire_sort_key(
     renderer: &'static GlMeshMaterialRenderer,
     material: &Material3DRef,
 ) -> u32 {
-    let rk = match renderer_keys.iter().find(|(seen, _)| std::ptr::eq(*seen, renderer)) {
+    let rk = match renderer_keys
+        .iter()
+        .find(|(seen, _)| std::ptr::eq(*seen, renderer))
+    {
         Some((_, value)) => *value,
         None => {
             let value = *counter;
@@ -381,7 +384,11 @@ pub fn render_gl_scene3d(
                 continue;
             };
             let resolved_material = material.unwrap_or_else(|| default_material.clone());
-            let is_blended = resolved_material.read().unwrap().material3d_fields().alpha_mode
+            let is_blended = resolved_material
+                .read()
+                .unwrap()
+                .material3d_fields()
+                .alpha_mode
                 == MaterialAlphaMode::Blend
                 || object_alpha < 1.0;
             let mut entry = acquire_draw_entry(if is_blended {
@@ -422,7 +429,8 @@ pub fn render_gl_scene3d(
         opaque_draw_list.sort_by_key(|entry| entry.sort_key);
     }
 
-    let color_adjustment_feature_enabled = get_gl_color_adjustment_material_feature(state).is_some();
+    let color_adjustment_feature_enabled =
+        get_gl_color_adjustment_material_feature(state).is_some();
     let mut proxy = Scene3DRenderProxy {
         alpha: None,
         color_scale_bias: None,

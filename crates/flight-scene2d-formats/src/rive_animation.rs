@@ -2,25 +2,25 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use flight_animation::{
-    create_animation_channel, create_animation_clip, create_animation_track,
-    sample_animation_track, AnimationChannel, AnimationInterpolation, EasingFn,
+    AnimationChannel, AnimationInterpolation, EasingFn, create_animation_channel,
+    create_animation_clip, create_animation_track, sample_animation_track,
 };
 use flight_easing::{
     ease_cubic_bezier, ease_in_damped_sine, ease_in_out_damped_sine, ease_out_damped_sine,
 };
 use flight_importdiagnostics::{
-    report_import_diagnostic, ImportDiagnostic, ImportDiagnosticDetailValue,
-    ImportDiagnosticSeverity,
+    ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
+    report_import_diagnostic,
 };
 use flight_math::RAD_TO_DEG;
 use flight_scene2d::{
-    apply_animation_clip_to_node2d, Node2DAnimationPath, Node2DAnimationTarget, Node2DRef,
+    Node2DAnimationPath, Node2DAnimationTarget, Node2DRef, apply_animation_clip_to_node2d,
 };
 use flight_skeleton2d::contract::{
-    create_skeleton_2d_animation_target_handle, create_skeleton_2d_bone_animation_target, Bone2D,
-    SKELETON_2D_ANIMATION_PATH_ROTATION, SKELETON_2D_ANIMATION_PATH_SCALE_X,
+    Bone2D, SKELETON_2D_ANIMATION_PATH_ROTATION, SKELETON_2D_ANIMATION_PATH_SCALE_X,
     SKELETON_2D_ANIMATION_PATH_SCALE_Y, SKELETON_2D_ANIMATION_PATH_TRANSLATION_X,
     SKELETON_2D_ANIMATION_PATH_TRANSLATION_Y, SKELETON_2D_ANIMATION_TARGET_KIND_BONE,
+    create_skeleton_2d_animation_target_handle, create_skeleton_2d_bone_animation_target,
 };
 
 use crate::rive_core_types::is_rive_core_type_derived_from;
@@ -419,7 +419,15 @@ fn create_rive_typed_channel(
         return None;
     }
     segment_easings.pop();
-    let track = Arc::new(RwLock::new({ let mut track = create_animation_track(); track.components = components; track.interpolation = AnimationInterpolation::Linear; track.segment_easings = Some(segment_easings); track.times = times; track.values = values; track }));
+    let track = Arc::new(RwLock::new({
+        let mut track = create_animation_track();
+        track.components = components;
+        track.interpolation = AnimationInterpolation::Linear;
+        track.segment_easings = Some(segment_easings);
+        track.times = times;
+        track.values = values;
+        track
+    }));
     return Some(create_animation_channel(&track, target_ref));
 }
 

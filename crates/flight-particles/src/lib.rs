@@ -72,8 +72,8 @@ pub use contract::enable_particle_emitter_signals;
 pub use contract::get_particle_emitter_signals;
 
 // particleEmitterState — selective (index.ts exports only create)
-pub use contract::create_particle_emitter_state;
 pub use contract::PARTICLE_VELOCITY_STRIDE;
+pub use contract::create_particle_emitter_state;
 
 // particleObjectsState — selective (index.ts exports only create)
 pub use contract::create_particle_objects_state;

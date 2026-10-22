@@ -8,7 +8,9 @@ use flight_render_gl::{GlRenderState, resolve_gl_texture};
 use flight_texture::Texture;
 use glow::HasContext;
 
-use crate::gl_mesh_fragment_tail::{gl_mesh_fragment_tail_glsl, gl_mesh_fragment_tail_uniforms_glsl};
+use crate::gl_mesh_fragment_tail::{
+    gl_mesh_fragment_tail_glsl, gl_mesh_fragment_tail_uniforms_glsl,
+};
 use crate::gl_mesh_program::{
     GL_INSTANCE_VERTEX_DECLARATIONS_GLSL, compile_gl_program, create_gl_mesh_program_record,
     ensure_gl_scene3d_program,
@@ -93,8 +95,11 @@ pub fn compile_gl_matcap_program(
     // SAFETY: lookups run on the owning GL thread.
     unsafe {
         let loc_alpha_cutoff = gl.get_uniform_location(program, "u_alphaCutoff");
-        mesh.loc_joint_normal_texture = Cell::new(Some(gl.get_uniform_location(program, "u_jointNormalTexture")));
-        mesh.loc_joint_texture = Cell::new(Some(gl.get_uniform_location(program, "u_jointTexture")));
+        mesh.loc_joint_normal_texture = Cell::new(Some(
+            gl.get_uniform_location(program, "u_jointNormalTexture"),
+        ));
+        mesh.loc_joint_texture =
+            Cell::new(Some(gl.get_uniform_location(program, "u_jointTexture")));
         let loc_matcap = gl.get_uniform_location(program, "u_matcap");
         mesh.loc_model = gl.get_uniform_location(program, "u_model");
         mesh.loc_normal_matrix = gl.get_uniform_location(program, "u_normalMatrix");
@@ -113,7 +118,10 @@ pub fn compile_gl_matcap_program(
 
 // Resolves the matcap program for a define key, compiling and caching it on first use through the
 // shared scene program cache under the `matcap:` family namespace.
-pub fn ensure_gl_matcap_program(state: &GlRenderState, key: &GlMatcapDefineKey) -> Rc<GlMatcapProgram> {
+pub fn ensure_gl_matcap_program(
+    state: &GlRenderState,
+    key: &GlMatcapDefineKey,
+) -> Rc<GlMatcapProgram> {
     let (full_key, skin_declarations_glsl) = {
         let runtime = get_gl_scene3d_runtime(state);
         let mut full_key = key.clone();

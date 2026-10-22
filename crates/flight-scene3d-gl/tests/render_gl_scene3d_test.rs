@@ -23,8 +23,8 @@ use glow::HasContext;
 
 use crate::gl_test_helper::{
     add_test_mesh, bytes_as_f32, calls_with, make_derived_gl_scene3d_state, make_gl_scene3d_state,
-    make_test_lights, make_test_look_at_camera, make_test_pass, make_test_scene, material_ref,
-    make_state_options,
+    make_state_options, make_test_lights, make_test_look_at_camera, make_test_pass,
+    make_test_scene, material_ref,
 };
 
 fn standard(alpha_mode: MaterialAlphaMode) -> StandardPbrMaterial {
@@ -33,8 +33,15 @@ fn standard(alpha_mode: MaterialAlphaMode) -> StandardPbrMaterial {
     return material;
 }
 
-fn add_box(scene: &NodeRef, material: flight_materials::Material3DRef) -> flight_entity::Ref<flight_scene3d::Mesh> {
-    return add_test_mesh(scene, create_box_mesh_geometry(None, None, None), vec![Some(material)]);
+fn add_box(
+    scene: &NodeRef,
+    material: flight_materials::Material3DRef,
+) -> flight_entity::Ref<flight_scene3d::Mesh> {
+    return add_test_mesh(
+        scene,
+        create_box_mesh_geometry(None, None, None),
+        vec![Some(material)],
+    );
 }
 
 fn render(state: &mut flight_render_gl::GlRenderState, scene: &NodeRef) {
@@ -234,7 +241,10 @@ mod render_gl_scene3d {
         render(&mut state, &scene);
 
         assert_eq!(calls_with("use_program").len(), 2);
-        let masks: Vec<i64> = calls_with("depth_mask").iter().map(|call| call.integers[0]).collect();
+        let masks: Vec<i64> = calls_with("depth_mask")
+            .iter()
+            .map(|call| call.integers[0])
+            .collect();
         assert_eq!(masks, vec![0, 0, 1]);
         assert!(!get_gl_scene3d_runtime(&state).active_blended_run);
     }
@@ -250,9 +260,12 @@ mod render_gl_scene3d {
 
         render(&mut state, &scene);
 
-        assert!(calls_with("blend_func").iter().any(|call| call.integers[0]
-            == i64::from(glow::ONE)
-            && call.integers[1] == i64::from(glow::ONE)));
+        assert!(
+            calls_with("blend_func")
+                .iter()
+                .any(|call| call.integers[0] == i64::from(glow::ONE)
+                    && call.integers[1] == i64::from(glow::ONE))
+        );
     }
 
     // Normal resolves through the same premultiplied registry as every other mode; SRC_ALPHA
@@ -267,11 +280,17 @@ mod render_gl_scene3d {
         render(&mut state, &scene);
 
         let blends = calls_with("blend_func");
-        assert!(blends.iter().any(|call| call.integers[0] == i64::from(glow::ONE)
-            && call.integers[1] == i64::from(glow::ONE_MINUS_SRC_ALPHA)));
-        assert!(!blends
-            .iter()
-            .any(|call| call.integers[0] == i64::from(glow::SRC_ALPHA)));
+        assert!(
+            blends
+                .iter()
+                .any(|call| call.integers[0] == i64::from(glow::ONE)
+                    && call.integers[1] == i64::from(glow::ONE_MINUS_SRC_ALPHA))
+        );
+        assert!(
+            !blends
+                .iter()
+                .any(|call| call.integers[0] == i64::from(glow::SRC_ALPHA))
+        );
     }
 
     #[test]
@@ -291,7 +310,10 @@ mod render_gl_scene3d {
         // GL blending was enabled (the blended pass ran), and only after the opaque draw.
         assert!(enabled(glow::BLEND));
         let names = crate::gl_test_helper::call_names();
-        let first_draw = names.iter().position(|name| name == "draw_elements").unwrap();
+        let first_draw = names
+            .iter()
+            .position(|name| name == "draw_elements")
+            .unwrap();
         let details = crate::gl_test_helper::snapshot().call_details;
         let blend_enable = details
             .iter()
@@ -315,7 +337,8 @@ mod render_gl_scene3d {
     }
 
     #[test]
-    fn routes_a_mesh_with_node_alpha_below_1_through_the_blended_pass_even_with_an_opaque_material() {
+    fn routes_a_mesh_with_node_alpha_below_1_through_the_blended_pass_even_with_an_opaque_material()
+    {
         let mut state = make_gl_scene3d_state();
         register_gl_standard_pbr_material(&mut state);
         let scene = make_test_scene();
@@ -330,7 +353,11 @@ mod render_gl_scene3d {
         assert!(enabled(glow::BLEND));
         assert!(!calls_with("draw_elements").is_empty());
         // The resolved node opacity was uploaded to u_objectAlpha (a uniform1f of 0.5).
-        assert!(calls_with("uniform_1_f32").iter().any(|call| call.floats[0] == 0.5));
+        assert!(
+            calls_with("uniform_1_f32")
+                .iter()
+                .any(|call| call.floats[0] == 0.5)
+        );
     }
 
     #[test]
@@ -435,7 +462,15 @@ mod render_gl_scene3d {
         );
         let pass = make_test_pass(&state);
 
-        render_gl_scene3d(&mut state, &pass, None, &scene, &camera, &make_test_lights(), None);
+        render_gl_scene3d(
+            &mut state,
+            &pass,
+            None,
+            &scene,
+            &camera,
+            &make_test_lights(),
+            None,
+        );
 
         let order = blended_meshes(&state);
         assert!(Arc::ptr_eq(&order[0], &far));
@@ -493,7 +528,9 @@ mod render_gl_scene3d {
         let scene = make_test_scene();
         let mesh = create_instanced_mesh(
             Arc::new(RwLock::new(create_box_mesh_geometry(None, None, None))),
-            Arc::new(RwLock::new(vec![Some(material_ref(create_standard_pbr_material()))])),
+            Arc::new(RwLock::new(vec![Some(material_ref(
+                create_standard_pbr_material(),
+            ))])),
             Some(8),
         );
         set_instanced_mesh_instance_count(&mesh, 2);

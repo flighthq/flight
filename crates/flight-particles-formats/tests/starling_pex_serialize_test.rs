@@ -1,5 +1,5 @@
-use flight_particles::create_particle_emitter_config;
 use flight_particles::ParticleBlendMode;
+use flight_particles::create_particle_emitter_config;
 use flight_particles_formats::contract::*;
 
 const FIRE_PEX_ATTR: &str = r#"<?xml version="1.0" encoding="utf-8"?>

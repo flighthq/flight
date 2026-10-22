@@ -6,9 +6,9 @@
 
 use std::sync::LazyLock;
 
-use flight_entity::Ref;
 use flight_camera::Camera3D;
 use flight_color::{LinearColor, allocate_linear_color, unpack_color_to_linear};
+use flight_entity::Ref;
 use flight_entity::get_entity_id;
 use flight_lighting::Scene3DLightBlock;
 use flight_materials::{Material, MaterialAlphaMode, WIREFRAME_MATERIAL_KIND, WireframeMaterial};
@@ -32,7 +32,8 @@ use crate::wgpu_wireframe_upload::ensure_wgpu_wireframe_upload;
 // The identity the material-less fallback bind caches its binding under (TS: a module-level `{}`
 // object). A real entity, so its key is a numeric entity id (D12/D15): unique to this renderer and
 // never reused, so it cannot alias a material's binding or another renderer's fallback.
-static FALLBACK_MATERIAL: LazyLock<WireframeMaterial> = LazyLock::new(flight_materials::contract::create_wireframe_material);
+static FALLBACK_MATERIAL: LazyLock<WireframeMaterial> =
+    LazyLock::new(flight_materials::contract::create_wireframe_material);
 
 /// The Wireframe mesh-material renderer for `WIREFRAME_MATERIAL_KIND` (TS
 /// `wgpuWireframeMeshMaterialRenderer`).
@@ -115,9 +116,12 @@ fn draw_wireframe_material(
         &proxy.normal_matrices,
         skinning,
     ) {
-        (true, Some(joint_matrices), Some(normal_matrices), Some(skinning)) => {
-            Some((skinning.get_mesh_draw_bind_group)(state, joint_matrices, normal_matrices))
-        }
+        (true, Some(joint_matrices), Some(normal_matrices), Some(skinning)) => Some((skinning
+            .get_mesh_draw_bind_group)(
+            state,
+            joint_matrices,
+            normal_matrices,
+        )),
         _ => None,
     };
     let draw_bind_group = write_wgpu_draw_uniform(state, proxy);

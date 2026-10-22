@@ -7,7 +7,9 @@ use crate::scene_material_texture_registry::{
 };
 use crate::types::*;
 
-pub fn register_iridescence_pbr_scene3d_material_textures(registry: &Scene3DMaterialTextureRegistry) {
+pub fn register_iridescence_pbr_scene3d_material_textures(
+    registry: &Scene3DMaterialTextureRegistry,
+) {
     register_scene3d_pbr_extension_textures(
         registry,
         IRIDESCENCE_PBR_EXTENSION_KIND.to_string(),

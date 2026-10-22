@@ -80,7 +80,10 @@ mod get_frustum_corners {
                 assert!(
                     corners[i].z > corners[j].z,
                     "near corner {} z={} should be > far corner {} z={}",
-                    i, corners[i].z, j, corners[j].z
+                    i,
+                    corners[i].z,
+                    j,
+                    corners[j].z
                 );
             }
         }
@@ -91,10 +94,7 @@ mod get_frustum_corners {
         let vp = create_test_view_projection();
         let mut inv = create_matrix4();
         inverse_matrix4(&mut inv, &vp);
-        let mut corners = [
-            create_vector3(0.0, 0.0, 0.0),
-            create_vector3(0.0, 0.0, 0.0),
-        ];
+        let mut corners = [create_vector3(0.0, 0.0, 0.0), create_vector3(0.0, 0.0, 0.0)];
         get_frustum_corners(&mut corners, &inv);
         assert!(corners[0].x.is_finite());
         assert!(corners[1].x.is_finite());
@@ -221,10 +221,7 @@ mod is_frustum_intersecting_aabb {
     #[test]
     fn rejects_an_aabb_empty_on_x() {
         let mut f = create_frustum();
-        set_frustum_from_matrix4(
-            &mut f,
-            &create_matrix4(),
-        );
+        set_frustum_from_matrix4(&mut f, &create_matrix4());
         assert!(!is_frustum_intersecting_aabb(
             &f,
             &create_aabb(0.5, -0.5, -0.5, -0.5, 0.5, 0.5)
@@ -234,10 +231,7 @@ mod is_frustum_intersecting_aabb {
     #[test]
     fn rejects_an_aabb_empty_on_y() {
         let mut f = create_frustum();
-        set_frustum_from_matrix4(
-            &mut f,
-            &create_matrix4(),
-        );
+        set_frustum_from_matrix4(&mut f, &create_matrix4());
         assert!(!is_frustum_intersecting_aabb(
             &f,
             &create_aabb(-0.5, 0.5, -0.5, 0.5, -0.5, 0.5)
@@ -247,10 +241,7 @@ mod is_frustum_intersecting_aabb {
     #[test]
     fn rejects_an_aabb_empty_on_z() {
         let mut f = create_frustum();
-        set_frustum_from_matrix4(
-            &mut f,
-            &create_matrix4(),
-        );
+        set_frustum_from_matrix4(&mut f, &create_matrix4());
         assert!(!is_frustum_intersecting_aabb(
             &f,
             &create_aabb(-0.5, -0.5, 0.5, 0.5, 0.5, -0.5)

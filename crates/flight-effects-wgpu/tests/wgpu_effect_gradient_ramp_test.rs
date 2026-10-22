@@ -20,7 +20,12 @@ fn ramp_uploads(records: &Arc<Mutex<Vec<WgpuCommandRecord>>>) -> Vec<Vec<u8>> {
 fn ramp_for(colors: &[u32], alphas: &[f32], ratios: &[f32]) -> Vec<u8> {
     let mut state = create_wgpu_render_state_for_test(None);
     let records = record_test_commands(&state);
-    get_wgpu_effect_gradient_ramp_texture(&mut state, &colors.to_vec(), &alphas.to_vec(), &ratios.to_vec());
+    get_wgpu_effect_gradient_ramp_texture(
+        &mut state,
+        &colors.to_vec(),
+        &alphas.to_vec(),
+        &ratios.to_vec(),
+    );
     return ramp_uploads(&records)[0].clone();
 }
 
@@ -33,13 +38,20 @@ mod get_wgpu_effect_gradient_ramp_texture {
 
     #[test]
     fn builds_a_256_entry_rgba_table() {
-        assert_eq!(ramp_for(&[0x000000, 0xffffff], &[1.0, 1.0], &[0.0, 255.0]).len(), 256 * 4);
+        assert_eq!(
+            ramp_for(&[0x000000, 0xffffff], &[1.0, 1.0], &[0.0, 255.0]).len(),
+            256 * 4
+        );
     }
 
     // `ratios` are BYTE scale, 0..255, and index into the table directly.
     #[test]
     fn places_a_stop_at_its_byte_scale_ratio_not_at_a_normalised_one() {
-        let ramp = ramp_for(&[0x000000, 0xff0000, 0x000000], &[1.0, 1.0, 1.0], &[0.0, 64.0, 255.0]);
+        let ramp = ramp_for(
+            &[0x000000, 0xff0000, 0x000000],
+            &[1.0, 1.0, 1.0],
+            &[0.0, 64.0, 255.0],
+        );
 
         assert_eq!(entry_at(&ramp, 64), vec![255, 0, 0, 255]);
         assert!(entry_at(&ramp, 32)[0] < 255);
@@ -77,7 +89,10 @@ mod get_wgpu_effect_gradient_ramp_texture {
     // RGBA: read as RGBA, 0x112233 would be r=0x00 g=0x11 b=0x22.
     #[test]
     fn reads_a_colour_as_packed_rgb_with_the_alpha_supplied_separately() {
-        assert_eq!(entry_at(&ramp_for(&[0x112233], &[1.0], &[0.0]), 0), vec![0x11, 0x22, 0x33, 255]);
+        assert_eq!(
+            entry_at(&ramp_for(&[0x112233], &[1.0], &[0.0]), 0),
+            vec![0x11, 0x22, 0x33, 255]
+        );
     }
 
     #[test]
@@ -92,8 +107,18 @@ mod get_wgpu_effect_gradient_ramp_texture {
         let mut state = create_wgpu_render_state_for_test(None);
         let records = record_test_commands(&state);
 
-        let first = get_wgpu_effect_gradient_ramp_texture(&mut state, &vec![0x000000, 0xffffff], &vec![1.0, 1.0], &vec![0.0, 255.0]);
-        let second = get_wgpu_effect_gradient_ramp_texture(&mut state, &vec![0x000000, 0xffffff], &vec![1.0, 1.0], &vec![0.0, 255.0]);
+        let first = get_wgpu_effect_gradient_ramp_texture(
+            &mut state,
+            &vec![0x000000, 0xffffff],
+            &vec![1.0, 1.0],
+            &vec![0.0, 255.0],
+        );
+        let second = get_wgpu_effect_gradient_ramp_texture(
+            &mut state,
+            &vec![0x000000, 0xffffff],
+            &vec![1.0, 1.0],
+            &vec![0.0, 255.0],
+        );
 
         assert_eq!(first, second);
         assert_eq!(ramp_uploads(&records).len(), 1);
@@ -104,11 +129,40 @@ mod get_wgpu_effect_gradient_ramp_texture {
     fn gives_distinct_stops_distinct_textures_on_every_axis_of_the_key() {
         let mut state = create_wgpu_render_state_for_test(None);
         let records = record_test_commands(&state);
-        let base = get_wgpu_effect_gradient_ramp_texture(&mut state, &vec![0x000000, 0xffffff], &vec![1.0, 1.0], &vec![0.0, 255.0]);
+        let base = get_wgpu_effect_gradient_ramp_texture(
+            &mut state,
+            &vec![0x000000, 0xffffff],
+            &vec![1.0, 1.0],
+            &vec![0.0, 255.0],
+        );
 
-        assert_ne!(get_wgpu_effect_gradient_ramp_texture(&mut state, &vec![0xff0000, 0x0000ff], &vec![1.0, 1.0], &vec![0.0, 255.0]), base);
-        assert_ne!(get_wgpu_effect_gradient_ramp_texture(&mut state, &vec![0x000000, 0xffffff], &vec![0.0, 1.0], &vec![0.0, 255.0]), base);
-        assert_ne!(get_wgpu_effect_gradient_ramp_texture(&mut state, &vec![0x000000, 0xffffff], &vec![1.0, 1.0], &vec![0.0, 128.0]), base);
+        assert_ne!(
+            get_wgpu_effect_gradient_ramp_texture(
+                &mut state,
+                &vec![0xff0000, 0x0000ff],
+                &vec![1.0, 1.0],
+                &vec![0.0, 255.0]
+            ),
+            base
+        );
+        assert_ne!(
+            get_wgpu_effect_gradient_ramp_texture(
+                &mut state,
+                &vec![0x000000, 0xffffff],
+                &vec![0.0, 1.0],
+                &vec![0.0, 255.0]
+            ),
+            base
+        );
+        assert_ne!(
+            get_wgpu_effect_gradient_ramp_texture(
+                &mut state,
+                &vec![0x000000, 0xffffff],
+                &vec![1.0, 1.0],
+                &vec![0.0, 128.0]
+            ),
+            base
+        );
         assert_eq!(ramp_uploads(&records).len(), 4);
     }
 
@@ -118,11 +172,21 @@ mod get_wgpu_effect_gradient_ramp_texture {
         let mut first = create_wgpu_render_state_for_test(None);
         let mut second = create_wgpu_render_state_for_test(None);
 
-        get_wgpu_effect_gradient_ramp_texture(&mut first, &vec![0x000000, 0xffffff], &vec![1.0, 1.0], &vec![0.0, 255.0]);
+        get_wgpu_effect_gradient_ramp_texture(
+            &mut first,
+            &vec![0x000000, 0xffffff],
+            &vec![1.0, 1.0],
+            &vec![0.0, 255.0],
+        );
         // wgpu resource equality compares per-instance ids, so the second state's own upload is the
         // observable: it builds a texture of its own rather than reusing the first state's.
         let records = record_test_commands(&second);
-        get_wgpu_effect_gradient_ramp_texture(&mut second, &vec![0x000000, 0xffffff], &vec![1.0, 1.0], &vec![0.0, 255.0]);
+        get_wgpu_effect_gradient_ramp_texture(
+            &mut second,
+            &vec![0x000000, 0xffffff],
+            &vec![1.0, 1.0],
+            &vec![0.0, 255.0],
+        );
 
         assert_eq!(ramp_uploads(&records).len(), 1);
     }

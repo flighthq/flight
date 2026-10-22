@@ -1,13 +1,19 @@
 //! The full contract lane, mirroring TS `contract.ts`.
 
 pub use crate::anisotropy_pbr_scene3d_material_textures::*;
+pub use crate::awd2_load::*;
 pub use crate::clearcoat_pbr_scene3d_material_textures::*;
 pub use crate::enable_scene3d_resource_failure_guards::*;
 pub use crate::explain_scene3d_resource_coverage::*;
 pub use crate::get_scene3d_resource_textures::*;
+pub use crate::gltf_load::*;
+pub use crate::gltf_load_import::*;
 pub use crate::image_resource_fetch::*;
 pub use crate::iridescence_pbr_scene3d_material_textures::*;
 pub use crate::load_scene3d_resources::*;
+pub use crate::md2_load::*;
+pub use crate::md5_load::*;
+pub use crate::obj_load::*;
 pub use crate::resolve_scene3d_resources::*;
 pub use crate::reveal_scene3d_resources_on_resolve::*;
 pub use crate::scene_document_source::*;
@@ -18,13 +24,7 @@ pub use crate::scene_resource_signals::*;
 pub use crate::shaded_scene3d_material_textures::*;
 pub use crate::sheen_pbr_scene3d_material_textures::*;
 pub use crate::specular_pbr_scene3d_material_textures::*;
-pub use crate::transmission_volume_pbr_scene3d_material_textures::*;
-pub use crate::wrapped_diffuse_pbr_scene3d_material_textures::*;
-pub use crate::awd2_load::*;
-pub use crate::gltf_load::*;
-pub use crate::gltf_load_import::*;
-pub use crate::md2_load::*;
-pub use crate::md5_load::*;
-pub use crate::obj_load::*;
 pub use crate::three_ds_load::*;
+pub use crate::transmission_volume_pbr_scene3d_material_textures::*;
 pub use crate::types::*;
+pub use crate::wrapped_diffuse_pbr_scene3d_material_textures::*;

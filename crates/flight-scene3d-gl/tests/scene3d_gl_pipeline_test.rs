@@ -26,7 +26,10 @@ mod gl_scene3d_render_preset {
         // is checked by content: every unchanged table carries exactly the Scene2D preset's entries.
         let scene2d = gl_scene2d_render_preset();
         let scene3d = gl_scene3d_render_preset();
-        assert_eq!(keys(&*scene3d.gl_registries.blend_realizations), keys(&*scene2d.gl_registries.blend_realizations));
+        assert_eq!(
+            keys(&*scene3d.gl_registries.blend_realizations),
+            keys(&*scene2d.gl_registries.blend_realizations)
+        );
         assert_eq!(
             scene3d.gl_registries.compressed_texture_decoder.is_some(),
             scene2d.gl_registries.compressed_texture_decoder.is_some()
@@ -43,7 +46,10 @@ mod gl_scene3d_render_preset {
             keys(&*scene3d.gl_registries.custom_material_shaders),
             keys(&*scene2d.gl_registries.custom_material_shaders)
         );
-        assert_eq!(keys(&*scene3d.gl_registries.effects), keys(&*scene2d.gl_registries.effects));
+        assert_eq!(
+            keys(&*scene3d.gl_registries.effects),
+            keys(&*scene2d.gl_registries.effects)
+        );
         assert_eq!(
             keys(scene3d.render_registries.node_renderers.as_ref().unwrap()),
             keys(scene2d.render_registries.node_renderers.as_ref().unwrap())
@@ -53,11 +59,25 @@ mod gl_scene3d_render_preset {
             scene2d.gl_registries.shape_rasterizer.is_some()
         );
         assert_eq!(
-            scene3d.render_registries.stroke_tessellator.flatten().is_some(),
-            scene2d.render_registries.stroke_tessellator.flatten().is_some()
+            scene3d
+                .render_registries
+                .stroke_tessellator
+                .flatten()
+                .is_some(),
+            scene2d
+                .render_registries
+                .stroke_tessellator
+                .flatten()
+                .is_some()
         );
-        assert_eq!(keys(&*scene3d.gl_registries.texture_resolvers), keys(&*scene2d.gl_registries.texture_resolvers));
-        assert_eq!(keys(&*scene3d.gl_registries.velocity_writers), keys(&*scene2d.gl_registries.velocity_writers));
+        assert_eq!(
+            keys(&*scene3d.gl_registries.texture_resolvers),
+            keys(&*scene2d.gl_registries.texture_resolvers)
+        );
+        assert_eq!(
+            keys(&*scene3d.gl_registries.velocity_writers),
+            keys(&*scene2d.gl_registries.velocity_writers)
+        );
     }
 
     #[test]

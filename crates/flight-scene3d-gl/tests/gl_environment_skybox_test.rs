@@ -5,7 +5,9 @@ use flight_camera::{Camera3D, Projection, create_camera_3d, create_perspective_p
 use flight_lighting::{Environment, create_environment};
 use flight_render_gl::GlRenderState;
 use flight_scene3d_gl::contract::*;
-use flight_texture::{Texture, TextureColorSpace, TextureSourceRef, TextureUvTransform, create_cube_texture};
+use flight_texture::{
+    Texture, TextureColorSpace, TextureSourceRef, TextureUvTransform, create_cube_texture,
+};
 use glow::HasContext;
 
 use crate::gl_test_helper::{call_names, calls_with, count_calls, make_gl_scene3d_state};

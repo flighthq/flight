@@ -4,12 +4,12 @@
 
 use std::sync::LazyLock;
 
-use flight_entity::Ref;
 use flight_camera::Camera3D;
 use flight_color::{allocate_linear_color, unpack_color_to_linear};
+use flight_entity::Ref;
 use flight_entity::get_entity_id;
 use flight_lighting::Scene3DLightBlock;
-use flight_materials::{PhongMaterial, Material, PHONG_MATERIAL_KIND};
+use flight_materials::{Material, PHONG_MATERIAL_KIND, PhongMaterial};
 use flight_meshgeometry::MeshGeometry;
 use flight_render::Scene3DRenderProxy;
 use flight_render_wgpu::{
@@ -29,7 +29,8 @@ use crate::wgpu_mesh_pipeline::{
 // The identity the material-less fallback bind caches its binding under (TS: a module-level `{}`
 // object). A real entity, so its key is a numeric entity id (D12/D15): unique to this renderer and
 // never reused, so it cannot alias a material's binding or another renderer's fallback.
-static FALLBACK_MATERIAL: LazyLock<PhongMaterial> = LazyLock::new(flight_materials::contract::create_phong_material);
+static FALLBACK_MATERIAL: LazyLock<PhongMaterial> =
+    LazyLock::new(flight_materials::contract::create_phong_material);
 
 /// The built-in Phong renderer for `PHONG_MATERIAL_KIND` (TS `wgpuPhongMeshMaterialRenderer`).
 pub static WGPU_PHONG_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer = WgpuMeshMaterialRenderer {
@@ -102,15 +103,19 @@ fn bind_wgpu_phong_material(
 // double-sided flags and which optional maps are present.
 fn define_key_for_material(material: Option<&PhongMaterial>) -> WgpuClassicDefineKey {
     return WgpuClassicDefineKey {
-        alpha_mask_enabled: material
-            .is_some_and(|material| material.alpha_mode == flight_materials::MaterialAlphaMode::Mask),
+        alpha_mask_enabled: material.is_some_and(|material| {
+            material.alpha_mode == flight_materials::MaterialAlphaMode::Mask
+        }),
         double_sided: material.is_some_and(|material| material.double_sided),
         has_color_adjustment: None,
         has_color_matrix: None,
         has_alpha_map: Some(false),
-        has_diffuse_map: material.is_some_and(|material| is_texture_slot_ready(&material.diffuse_map)),
-        has_normal_map: material.is_some_and(|material| is_texture_slot_ready(&material.normal_map)),
-        has_specular_map: material.is_some_and(|material| is_texture_slot_ready(&material.specular_map)),
+        has_diffuse_map: material
+            .is_some_and(|material| is_texture_slot_ready(&material.diffuse_map)),
+        has_normal_map: material
+            .is_some_and(|material| is_texture_slot_ready(&material.normal_map)),
+        has_specular_map: material
+            .is_some_and(|material| is_texture_slot_ready(&material.specular_map)),
         lighting_model: WgpuClassicLightingModel::Phong,
     };
 }

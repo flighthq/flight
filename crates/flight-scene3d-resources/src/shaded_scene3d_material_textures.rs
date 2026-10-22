@@ -2,7 +2,9 @@ use std::sync::Arc;
 
 use flight_shading::{SHADED_MATERIAL_KIND, ShadedMaterial};
 
-use crate::scene_material_texture_registry::{push_texture_slot, register_scene3d_material_textures};
+use crate::scene_material_texture_registry::{
+    push_texture_slot, register_scene3d_material_textures,
+};
 use crate::types::*;
 
 /// Lists the ShadedMaterial base maps. Registered separately from the surface-material listers so an

@@ -70,10 +70,19 @@ fn build_scene3d_wgpu_mesh_material_renderers(
     base: &KindMap<WgpuMaterialRenderer>,
 ) -> KindMap<WgpuMaterialRenderer> {
     let entries: [(&str, &'static WgpuMeshMaterialRenderer); 15] = [
-        (BLINN_PHONG_MATERIAL_KIND, &WGPU_BLINN_PHONG_MESH_MATERIAL_RENDERER),
-        (CUSTOM_SHADER_MATERIAL_KIND, &WGPU_CUSTOM_SHADER_MESH_MATERIAL_RENDERER),
+        (
+            BLINN_PHONG_MATERIAL_KIND,
+            &WGPU_BLINN_PHONG_MESH_MATERIAL_RENDERER,
+        ),
+        (
+            CUSTOM_SHADER_MATERIAL_KIND,
+            &WGPU_CUSTOM_SHADER_MESH_MATERIAL_RENDERER,
+        ),
         (DEPTH_MATERIAL_KIND, &WGPU_DEPTH_MESH_MATERIAL_RENDERER),
-        (EMISSIVE_MATERIAL_KIND, &WGPU_EMISSIVE_MESH_MATERIAL_RENDERER),
+        (
+            EMISSIVE_MATERIAL_KIND,
+            &WGPU_EMISSIVE_MESH_MATERIAL_RENDERER,
+        ),
         (LAMBERT_MATERIAL_KIND, &WGPU_LAMBERT_MESH_MATERIAL_RENDERER),
         (MATCAP_MATERIAL_KIND, &WGPU_MATCAP_MESH_MATERIAL_RENDERER),
         (NORMAL_MATERIAL_KIND, &WGPU_NORMAL_MESH_MATERIAL_RENDERER),
@@ -83,15 +92,28 @@ fn build_scene3d_wgpu_mesh_material_renderers(
             SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND,
             &WGPU_SPECULAR_GLOSSINESS_PBR_MESH_MATERIAL_RENDERER,
         ),
-        (STANDARD_PBR_MATERIAL_KIND, &WGPU_STANDARD_PBR_MESH_MATERIAL_RENDERER),
+        (
+            STANDARD_PBR_MATERIAL_KIND,
+            &WGPU_STANDARD_PBR_MESH_MATERIAL_RENDERER,
+        ),
         (TOON_MATERIAL_KIND, &WGPU_TOON_MESH_MATERIAL_RENDERER),
         (UNLIT_MATERIAL_KIND, &WGPU_UNLIT_MESH_MATERIAL_RENDERER),
-        (VERTEX_COLOR_MATERIAL_KIND, &WGPU_VERTEX_COLOR_MESH_MATERIAL_RENDERER),
-        (WIREFRAME_MATERIAL_KIND, &WGPU_WIREFRAME_MESH_MATERIAL_RENDERER),
+        (
+            VERTEX_COLOR_MATERIAL_KIND,
+            &WGPU_VERTEX_COLOR_MESH_MATERIAL_RENDERER,
+        ),
+        (
+            WIREFRAME_MATERIAL_KIND,
+            &WGPU_WIREFRAME_MESH_MATERIAL_RENDERER,
+        ),
     ];
     let mut table = base.clone();
     for (kind, renderer) in entries {
-        table = with_kind_map_entry(&table, kind.to_string(), WgpuMaterialRenderer::Mesh(renderer));
+        table = with_kind_map_entry(
+            &table,
+            kind.to_string(),
+            WgpuMaterialRenderer::Mesh(renderer),
+        );
     }
     return table;
 }

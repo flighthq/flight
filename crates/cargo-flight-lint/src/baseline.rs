@@ -22,7 +22,10 @@ pub fn read(path: &Path) -> Result<HashMap<String, usize>, String> {
 pub fn write(path: &Path, violations: &[Violation], header: &str) -> Result<(), String> {
     let mut keys: Vec<String> = violations.iter().map(|v| v.key()).collect();
     keys.sort();
-    let mut text = format!("# {}\n# Regenerate with --write-baseline; entries are rule<TAB>file<TAB>message.\n", header);
+    let mut text = format!(
+        "# {}\n# Regenerate with --write-baseline; entries are rule<TAB>file<TAB>message.\n",
+        header
+    );
     for k in keys {
         text.push_str(&k);
         text.push('\n');
@@ -37,7 +40,10 @@ pub fn write(path: &Path, violations: &[Violation], header: &str) -> Result<(), 
 
 /// Splits violations into (new, baselined count). Also returns stale entries: baseline
 /// lines no longer produced, which the ratchet should drop.
-pub fn filter(violations: Vec<Violation>, baseline: &HashMap<String, usize>) -> (Vec<Violation>, usize, usize) {
+pub fn filter(
+    violations: Vec<Violation>,
+    baseline: &HashMap<String, usize>,
+) -> (Vec<Violation>, usize, usize) {
     let mut remaining = baseline.clone();
     let mut fresh = Vec::new();
     let mut known = 0;

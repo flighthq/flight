@@ -1,5 +1,5 @@
-use std::sync::Arc;
 use std::f32::consts::PI;
+use std::sync::Arc;
 
 /// The parameterized form of `ease_in_elastic`: a decaying sine that winds up
 /// before departing, with the overshoot and wavelength stated rather than fixed.
@@ -12,14 +12,19 @@ pub fn ease_in_damped_sine(amplitude: f32, period: f32) -> Arc<dyn Fn(f32) -> f3
             return t;
         }
         let time = t - 1.0;
-        return -(overshoot * 2.0_f32.powf(10.0 * time) * ((time - phase) * TAU / wavelength).sin());
+        return -(overshoot
+            * 2.0_f32.powf(10.0 * time)
+            * ((time - phase) * TAU / wavelength).sin());
     });
 }
 
 /// The parameterized form of `ease_in_out_elastic`: a decaying sine that winds
 /// up, crosses, and settles, with the overshoot and wavelength stated rather
 /// than fixed.
-pub fn ease_in_out_damped_sine(amplitude: f32, period: f32) -> Arc<dyn Fn(f32) -> f32 + Send + Sync> {
+pub fn ease_in_out_damped_sine(
+    amplitude: f32,
+    period: f32,
+) -> Arc<dyn Fn(f32) -> f32 + Send + Sync> {
     let wavelength = to_damped_sine_wavelength(period);
     let overshoot = to_damped_sine_overshoot(amplitude);
     let phase = to_damped_sine_phase(overshoot, wavelength);
@@ -29,9 +34,16 @@ pub fn ease_in_out_damped_sine(amplitude: f32, period: f32) -> Arc<dyn Fn(f32) -
         }
         let time = t * 2.0 - 1.0;
         if time < 0.0 {
-            return -0.5 * overshoot * 2.0_f32.powf(10.0 * time) * ((time - phase) * TAU / wavelength).sin();
+            return -0.5
+                * overshoot
+                * 2.0_f32.powf(10.0 * time)
+                * ((time - phase) * TAU / wavelength).sin();
         }
-        return 0.5 * overshoot * 2.0_f32.powf(-10.0 * time) * ((time - phase) * TAU / wavelength).sin() + 1.0;
+        return 0.5
+            * overshoot
+            * 2.0_f32.powf(-10.0 * time)
+            * ((time - phase) * TAU / wavelength).sin()
+            + 1.0;
     });
 }
 

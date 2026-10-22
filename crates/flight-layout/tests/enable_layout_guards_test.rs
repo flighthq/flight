@@ -24,18 +24,13 @@ mod enable_layout_guards {
             kind: "acme.Root".to_string(),
             parent_index: -1,
         };
-        let tree = LayoutTree {
-            nodes: vec![root],
-        };
+        let tree = LayoutTree { nodes: vec![root] };
         let mut out = vec![0.0_f32; 3];
         resolve_layout_tree(&mut out, &mut state, &tree, &[0.0_f32; 2], 100.0, 100.0);
         GUARD_CALLS.with(|c| {
             let calls = c.borrow();
             assert_eq!(calls.len(), 1);
-            assert_eq!(
-                calls[0].kind,
-                LayoutResolutionFailureKind::OutputTooSmall
-            );
+            assert_eq!(calls[0].kind, LayoutResolutionFailureKind::OutputTooSmall);
         });
     }
 }

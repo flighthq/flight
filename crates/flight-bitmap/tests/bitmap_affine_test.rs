@@ -3,7 +3,13 @@ use flight_bitmap::contract::*;
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
-    return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
+    return BitmapRegion {
+        bitmap: bmp,
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+    };
 }
 
 mod transform_bitmap {
@@ -16,7 +22,13 @@ mod transform_bitmap {
         let dst = create_bitmap(3, 3, None);
         let sr = region(src);
         let mut dr = region(dst);
-        transform_bitmap(&mut dr, &sr, &[1.0, 0.0, 0.0, 1.0, 0.0, 0.0], BitmapEdgeMode::Transparent, BitmapResizeMode::Bilinear);
+        transform_bitmap(
+            &mut dr,
+            &sr,
+            &[1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            BitmapEdgeMode::Transparent,
+            BitmapResizeMode::Bilinear,
+        );
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 1, 1), 0xff0000ff);
     }
 
@@ -27,7 +39,13 @@ mod transform_bitmap {
         let dst = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region(dst);
-        transform_bitmap(&mut dr, &sr, &[1.0, 0.0, 0.0, 1.0, -1.0, -1.0], BitmapEdgeMode::Transparent, BitmapResizeMode::Bilinear);
+        transform_bitmap(
+            &mut dr,
+            &sr,
+            &[1.0, 0.0, 0.0, 1.0, -1.0, -1.0],
+            BitmapEdgeMode::Transparent,
+            BitmapResizeMode::Bilinear,
+        );
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 1, 1), 0xaabbccff);
     }
 
@@ -37,7 +55,13 @@ mod transform_bitmap {
         let dst = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region(dst);
-        transform_bitmap(&mut dr, &sr, &[1.0, 0.0, 0.0, 1.0, 0.0, 0.0], BitmapEdgeMode::Transparent, BitmapResizeMode::Bilinear);
+        transform_bitmap(
+            &mut dr,
+            &sr,
+            &[1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            BitmapEdgeMode::Transparent,
+            BitmapResizeMode::Bilinear,
+        );
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 3, 3), 0x00000000);
     }
 
@@ -47,7 +71,13 @@ mod transform_bitmap {
         let dst = create_bitmap(4, 4, None);
         let sr = region(src);
         let mut dr = region(dst);
-        transform_bitmap(&mut dr, &sr, &[1.0, 0.0, 0.0, 1.0, 0.0, 0.0], BitmapEdgeMode::Clamp, BitmapResizeMode::Bilinear);
+        transform_bitmap(
+            &mut dr,
+            &sr,
+            &[1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            BitmapEdgeMode::Clamp,
+            BitmapResizeMode::Bilinear,
+        );
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 3, 3), 0x112233ff);
     }
 
@@ -58,7 +88,13 @@ mod transform_bitmap {
         let dst = create_bitmap(4, 2, None);
         let sr = region(src);
         let mut dr = region(dst);
-        transform_bitmap(&mut dr, &sr, &[1.0, 0.0, 0.0, 1.0, 0.0, 0.0], BitmapEdgeMode::Wrap, BitmapResizeMode::Bilinear);
+        transform_bitmap(
+            &mut dr,
+            &sr,
+            &[1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            BitmapEdgeMode::Wrap,
+            BitmapResizeMode::Bilinear,
+        );
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 2, 0), 0xffff00ff);
     }
 
@@ -71,7 +107,13 @@ mod transform_bitmap {
         let dst = create_bitmap(5, 1, None);
         let sr = region(src);
         let mut dr = region(dst);
-        transform_bitmap(&mut dr, &sr, &[1.0, 0.0, 0.0, 1.0, 0.0, 0.0], BitmapEdgeMode::Mirror, BitmapResizeMode::Bilinear);
+        transform_bitmap(
+            &mut dr,
+            &sr,
+            &[1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            BitmapEdgeMode::Mirror,
+            BitmapResizeMode::Bilinear,
+        );
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 3, 0), 0x0000ffff);
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 4, 0), 0x00ff00ff);
     }
@@ -84,7 +126,13 @@ mod transform_bitmap {
         let dst = create_bitmap(2, 1, None);
         let sr = region(src);
         let mut dr = region(dst);
-        transform_bitmap(&mut dr, &sr, &[1.0, 0.0, 0.0, 1.0, 0.0, 0.0], BitmapEdgeMode::Transparent, BitmapResizeMode::Nearest);
+        transform_bitmap(
+            &mut dr,
+            &sr,
+            &[1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            BitmapEdgeMode::Transparent,
+            BitmapResizeMode::Nearest,
+        );
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0xff0000ff);
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 1, 0), 0x0000ffff);
     }
@@ -94,8 +142,20 @@ mod transform_bitmap {
         let src = create_bitmap(2, 2, None);
         let dst = create_bitmap(2, 2, None);
         let sr = region(src);
-        let mut dr = BitmapRegion { bitmap: dst, x: 0, y: 0, width: 0, height: 0 };
-        transform_bitmap(&mut dr, &sr, &[1.0, 0.0, 0.0, 1.0, 0.0, 0.0], BitmapEdgeMode::Transparent, BitmapResizeMode::Bilinear);
+        let mut dr = BitmapRegion {
+            bitmap: dst,
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0,
+        };
+        transform_bitmap(
+            &mut dr,
+            &sr,
+            &[1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            BitmapEdgeMode::Transparent,
+            BitmapResizeMode::Bilinear,
+        );
     }
 
     #[test]
@@ -104,7 +164,13 @@ mod transform_bitmap {
         let dst = create_bitmap(2, 2, None);
         let sr = region(src);
         let mut dr = region(dst);
-        transform_bitmap(&mut dr, &sr, &[1.0, 0.0, 0.0, 1.0, 0.0, 0.0], BitmapEdgeMode::Transparent, BitmapResizeMode::Bilinear);
+        transform_bitmap(
+            &mut dr,
+            &sr,
+            &[1.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+            BitmapEdgeMode::Transparent,
+            BitmapResizeMode::Bilinear,
+        );
         assert_eq!(get_bitmap_pixel(&dr.bitmap, 0, 0), 0xabcdefff);
     }
 }

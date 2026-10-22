@@ -26,7 +26,10 @@ fn pending_reference() -> ImageResourceReference {
     return embedded_reference(Some("image/png"));
 }
 
-fn standard_pbr(base_color_map: Option<&Ref<Texture>>, normal_map: Option<&Ref<Texture>>) -> Ref<dyn Material3D> {
+fn standard_pbr(
+    base_color_map: Option<&Ref<Texture>>,
+    normal_map: Option<&Ref<Texture>>,
+) -> Ref<dyn Material3D> {
     let mut material = create_standard_pbr_material();
     material.base_color_map = base_color_map.cloned();
     material.normal_map = normal_map.cloned();
@@ -164,7 +167,12 @@ mod reveal_scene3d_resources_on_resolve {
         add_scene_mesh(&scene, &mesh);
         let resolver = resolver(&host);
         let manager = create_tween_manager(None);
-        reveal_scene3d_resources_on_resolve(&resolver, &scene.read().unwrap(), &manager, Some(&fade(0.5)));
+        reveal_scene3d_resources_on_resolve(
+            &resolver,
+            &scene.read().unwrap(),
+            &manager,
+            Some(&fade(0.5)),
+        );
 
         emit(&resolver, true, &base_reference, &base_color_map);
         assert!(!has_tweens_of(&manager, &mesh));
@@ -174,7 +182,8 @@ mod reveal_scene3d_resources_on_resolve {
     }
 
     #[test]
-    fn treats_failure_as_settled_and_reveals_the_fallback_only_after_the_remaining_resources_settle() {
+    fn treats_failure_as_settled_and_reveals_the_fallback_only_after_the_remaining_resources_settle()
+     {
         let host = MockHost::new();
         let base_reference = pending_reference();
         let normal_reference = pending_reference();
@@ -185,7 +194,12 @@ mod reveal_scene3d_resources_on_resolve {
         add_scene_mesh(&scene, &mesh);
         let resolver = resolver(&host);
         let manager = create_tween_manager(None);
-        reveal_scene3d_resources_on_resolve(&resolver, &scene.read().unwrap(), &manager, Some(&fade(0.5)));
+        reveal_scene3d_resources_on_resolve(
+            &resolver,
+            &scene.read().unwrap(),
+            &manager,
+            Some(&fade(0.5)),
+        );
 
         emit(&resolver, false, &normal_reference, &normal_map);
         assert!(!has_tweens_of(&manager, &mesh));
@@ -234,7 +248,12 @@ mod reveal_scene3d_resources_on_resolve {
         let resolver = resolver(&host);
         let manager = create_tween_manager(None);
 
-        reveal_scene3d_resources_on_resolve(&resolver, &scene.read().unwrap(), &manager, Some(&fade(0.5)));
+        reveal_scene3d_resources_on_resolve(
+            &resolver,
+            &scene.read().unwrap(),
+            &manager,
+            Some(&fade(0.5)),
+        );
         // D1 f32 bound (TS: toBeCloseTo(0.6), 0.005)
         assert!((alpha(&mesh) - 0.6).abs() <= 0.005);
 
@@ -243,19 +262,28 @@ mod reveal_scene3d_resources_on_resolve {
     }
 
     #[test]
-    fn reveals_a_mixed_mesh_after_its_listed_textures_settle_without_waiting_for_an_unlisted_sibling() {
+    fn reveals_a_mixed_mesh_after_its_listed_textures_settle_without_waiting_for_an_unlisted_sibling()
+     {
         let host = MockHost::new();
         let shaded_reference = pending_reference();
         let pbr_reference = pending_reference();
         let shaded_map = attach_texture(&shaded_reference);
         let pbr_map = attach_texture(&pbr_reference);
-        let mesh = mesh_of(vec![shaded(&shaded_map), standard_pbr(Some(&pbr_map), None)]);
+        let mesh = mesh_of(vec![
+            shaded(&shaded_map),
+            standard_pbr(Some(&pbr_map), None),
+        ]);
         let scene = scene_with(vec![shaded_reference.clone(), pbr_reference.clone()]);
         add_scene_mesh(&scene, &mesh);
         let resolver = resolver(&host);
         let manager = create_tween_manager(None);
 
-        reveal_scene3d_resources_on_resolve(&resolver, &scene.read().unwrap(), &manager, Some(&fade(0.5)));
+        reveal_scene3d_resources_on_resolve(
+            &resolver,
+            &scene.read().unwrap(),
+            &manager,
+            Some(&fade(0.5)),
+        );
         assert_eq!(alpha(&mesh), 0.0);
 
         emit(&resolver, true, &pbr_reference, &pbr_map);
@@ -263,7 +291,10 @@ mod reveal_scene3d_resources_on_resolve {
         update_tweens(&manager, 0.5);
         // D1 f32 bound (TS: toBeCloseTo(1), 0.005)
         assert!((alpha(&mesh) - 1.0).abs() <= 0.005);
-        assert_eq!(reference_state(&shaded_reference), ResourceResolutionState::Unresolved);
+        assert_eq!(
+            reference_state(&shaded_reference),
+            ResourceResolutionState::Unresolved
+        );
     }
 
     #[test]

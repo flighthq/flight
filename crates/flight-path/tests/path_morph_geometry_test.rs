@@ -57,7 +57,13 @@ mod initialize_path_morph {
     #[test]
     fn writes_commands_data_and_winding() {
         let mut out: PathMorph = flight_entity::allocate_entity();
-        initialize_path_morph(&mut out, vec![1, 6], vec![0.0, 1.0], vec![2.0, 3.0], PathWinding::EvenOdd);
+        initialize_path_morph(
+            &mut out,
+            vec![1, 6],
+            vec![0.0, 1.0],
+            vec![2.0, 3.0],
+            PathWinding::EvenOdd,
+        );
         assert_eq!(out.commands, vec![1, 6]);
         assert_eq!(out.end_data, vec![0.0, 1.0]);
         assert_eq!(out.start_data, vec![2.0, 3.0]);

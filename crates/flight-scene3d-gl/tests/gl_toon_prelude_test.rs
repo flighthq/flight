@@ -47,7 +47,10 @@ mod build_gl_toon_define_key {
             ..flat()
         };
         assert_eq!(build_gl_toon_define_key(&key), "---u--");
-        assert_ne!(build_gl_toon_define_key(&key), build_gl_toon_define_key(&flat()));
+        assert_ne!(
+            build_gl_toon_define_key(&key),
+            build_gl_toon_define_key(&flat())
+        );
     }
 
     #[test]
@@ -57,7 +60,10 @@ mod build_gl_toon_define_key {
             ..flat()
         };
         assert_eq!(build_gl_toon_define_key(&key), "----k-");
-        assert_ne!(build_gl_toon_define_key(&key), build_gl_toon_define_key(&flat()));
+        assert_ne!(
+            build_gl_toon_define_key(&key),
+            build_gl_toon_define_key(&flat())
+        );
     }
 }
 
@@ -112,8 +118,12 @@ mod get_gl_toon_fragment_source_for_key {
     #[test]
     fn includes_the_light_block_and_gates_feature_defines_on_their_flag() {
         assert!(get_gl_toon_fragment_source_for_key(&flat()).contains("u_directional"));
-        assert!(get_gl_toon_fragment_source_for_key(&flat()).contains("#define MAX_FORWARD_LIGHTS"));
-        assert!(!get_gl_toon_fragment_source_for_key(&flat()).contains("#define HAS_BASE_COLOR_MAP"));
+        assert!(
+            get_gl_toon_fragment_source_for_key(&flat()).contains("#define MAX_FORWARD_LIGHTS")
+        );
+        assert!(
+            !get_gl_toon_fragment_source_for_key(&flat()).contains("#define HAS_BASE_COLOR_MAP")
+        );
         assert!(!get_gl_toon_fragment_source_for_key(&flat()).contains("#define HAS_RAMP"));
         assert!(
             get_gl_toon_fragment_source_for_key(&GlToonDefineKey {
@@ -157,7 +167,12 @@ mod get_gl_toon_fragment_source_for_key {
                     .count(),
                 1
             );
-            assert_eq!(source.matches("sampleDirectionalShadow(v_worldPosition, normal)").count(), 1);
+            assert_eq!(
+                source
+                    .matches("sampleDirectionalShadow(v_worldPosition, normal)")
+                    .count(),
+                1
+            );
         }
     }
 }

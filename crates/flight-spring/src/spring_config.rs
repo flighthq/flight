@@ -31,11 +31,7 @@ pub fn create_spring_config(options: Option<&SpringConfigOptions>) -> SpringConf
 /// Converts to the mass-independent form via `frequency = sqrt(k / m) / TAU` and
 /// `damping_ratio = c / (2 * sqrt(k * m))`, the standard undamped-natural-frequency and
 /// damping-ratio identities. Expects positive `stiffness` and `mass`.
-pub fn create_spring_config_from_physical(
-    stiffness: f32,
-    damping: f32,
-    mass: f32,
-) -> SpringConfig {
+pub fn create_spring_config_from_physical(stiffness: f32, damping: f32, mass: f32) -> SpringConfig {
     let frequency = (stiffness / mass).sqrt() / std::f32::consts::TAU;
     let damping_ratio = damping / (2.0 * (stiffness * mass).sqrt());
     return create_spring_config(Some(&SpringConfigOptions {
@@ -47,9 +43,7 @@ pub fn create_spring_config_from_physical(
 /// The construction initializer of `create_spring_config`.
 // flight-lint: allow(conform-extra) D23 adds the public configuration initializer
 pub fn initialize_spring_config(out: &mut SpringConfig, options: Option<&SpringConfigOptions>) {
-    out.damping_ratio = options
-        .and_then(|value| value.damping_ratio)
-        .unwrap_or(0.0);
+    out.damping_ratio = options.and_then(|value| value.damping_ratio).unwrap_or(0.0);
     out.frequency = options.and_then(|value| value.frequency).unwrap_or(0.0);
 }
 

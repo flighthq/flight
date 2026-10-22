@@ -194,17 +194,27 @@ pub fn compute_particle_emitter_2d_local_bounds_rectangle(
 
 pub(crate) fn get_particle_emitter_2d_capacity_impl(data: &ParticleEmitterData) -> usize {
     let transform_capacity = data.transforms.len() / PARTICLE_TRANSFORM_STRIDE;
-    return data.ids.len().min(data.alphas.len()).min(transform_capacity);
+    return data
+        .ids
+        .len()
+        .min(data.alphas.len())
+        .min(transform_capacity);
 }
 
-pub(crate) fn get_particle_emitter_2d_particle_alpha_impl(data: &ParticleEmitterData, index: usize) -> f32 {
+pub(crate) fn get_particle_emitter_2d_particle_alpha_impl(
+    data: &ParticleEmitterData,
+    index: usize,
+) -> f32 {
     if index >= data.particle_count {
         return -1.0;
     }
     return data.alphas[index];
 }
 
-pub(crate) fn get_particle_emitter_2d_particle_id_impl(data: &ParticleEmitterData, index: usize) -> i32 {
+pub(crate) fn get_particle_emitter_2d_particle_id_impl(
+    data: &ParticleEmitterData,
+    index: usize,
+) -> i32 {
     if index >= data.particle_count {
         return -1;
     }
@@ -225,7 +235,10 @@ pub(crate) fn get_particle_emitter_2d_particle_velocity_impl(
     return true;
 }
 
-pub(crate) fn remove_particle_emitter_2d_particle_impl(data: &mut ParticleEmitterData, index: usize) {
+pub(crate) fn remove_particle_emitter_2d_particle_impl(
+    data: &mut ParticleEmitterData,
+    index: usize,
+) {
     if data.particle_count == 0 {
         return;
     }
@@ -264,8 +277,10 @@ pub(crate) fn reserve_particle_emitter_2d_impl(data: &mut ParticleEmitterData, c
     data.colors.resize(capacity * PARTICLE_COLOR_STRIDE, 0.0);
     data.ids.resize(capacity, 0);
     data.positions_z.resize(capacity, 0.0);
-    data.transforms.resize(capacity * PARTICLE_TRANSFORM_STRIDE, 0.0);
-    data.velocities.resize(capacity * PARTICLE_VELOCITY_STRIDE_2D, 0.0);
+    data.transforms
+        .resize(capacity * PARTICLE_TRANSFORM_STRIDE, 0.0);
+    data.velocities
+        .resize(capacity * PARTICLE_VELOCITY_STRIDE_2D, 0.0);
 }
 
 pub(crate) fn set_particle_emitter_2d_particle_alpha_impl(

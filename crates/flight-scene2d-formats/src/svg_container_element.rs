@@ -1,4 +1,4 @@
-use flight_scene2d::contract::{create_display_object, Node2DRef};
+use flight_scene2d::contract::{Node2DRef, create_display_object};
 
 use crate::svg_document::{
     append_svg_children, apply_svg_element_appearance, apply_svg_element_clip_family,

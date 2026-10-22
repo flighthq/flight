@@ -72,7 +72,8 @@ mod register_gl_quad_material_renderer {
             get_gl_quad_material_renderer(&state, &"custom".into()).unwrap(),
             &REPLACEMENT,
         ));
-        let flight_render_gl::GlMaterialRenderer::Quad(entry) = *earlier.entries.get("custom").unwrap()
+        let flight_render_gl::GlMaterialRenderer::Quad(entry) =
+            *earlier.entries.get("custom").unwrap()
         else {
             panic!("expected a quad material renderer entry");
         };
@@ -86,8 +87,8 @@ mod resolve_gl_quad_material_renderer {
     use super::RENDERER;
     use crate::gl_test_helper::make_state;
     use flight_render::{
-        enable_render_registries_guards, explain_render_registries_misses,
-        RenderRegistriesMissStatus, RenderRegistryTable,
+        RenderRegistriesMissStatus, RenderRegistryTable, enable_render_registries_guards,
+        explain_render_registries_misses,
     };
     use flight_render_gl::{register_gl_quad_material_renderer, resolve_gl_quad_material_renderer};
 

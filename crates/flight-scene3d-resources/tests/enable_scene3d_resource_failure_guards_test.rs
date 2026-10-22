@@ -1,7 +1,9 @@
 use std::sync::{Arc, RwLock};
 
 use flight_entity::allocate_entity;
-use flight_image::contract::{ImageResourceFailure, ImageResourceFailureKind, ImageResourceReference};
+use flight_image::contract::{
+    ImageResourceFailure, ImageResourceFailureKind, ImageResourceReference,
+};
 use flight_log::{
     LogData, LogEntry, LogLevel, LogStateRef, LogValue, add_log_sink, create_log_state,
     create_memory_log_sink, get_memory_log_sink_entries,
@@ -13,9 +15,18 @@ use flight_signals::emit_signal;
 use crate::mock_host::MockHost;
 use crate::support::*;
 
-fn failure(kind: ImageResourceFailureKind, message: &str, name: Option<&str>) -> ImageResourceFailure {
+fn failure(
+    kind: ImageResourceFailureKind,
+    message: &str,
+    name: Option<&str>,
+) -> ImageResourceFailure {
     let mut out: ImageResourceFailure = allocate_entity();
-    initialize_image_resource_failure(&mut out, kind, message.to_string(), name.map(str::to_string));
+    initialize_image_resource_failure(
+        &mut out,
+        kind,
+        message.to_string(),
+        name.map(str::to_string),
+    );
     return out;
 }
 
@@ -23,7 +34,11 @@ fn failed_reference() -> ImageResourceReference {
     let reference = external_reference("bad.png");
     set_reference_resolution(
         &reference,
-        Some(failure(ImageResourceFailureKind::Error, "bad image", Some("CodecError"))),
+        Some(failure(
+            ImageResourceFailureKind::Error,
+            "bad image",
+            Some("CodecError"),
+        )),
         ResourceResolutionState::Failed,
     );
     return reference;
@@ -89,7 +104,10 @@ mod enable_scene3d_resource_failure_guards {
         let signals = enable_scene3d_resource_signals(&resolver);
         let (failed, resolved) = {
             let signals = signals.read().unwrap();
-            (signals.on_resource_failed.clone(), signals.on_resource_resolved.clone())
+            (
+                signals.on_resource_failed.clone(),
+                signals.on_resource_resolved.clone(),
+            )
         };
         let reference = failed_reference();
         let texture = attach_texture(&reference);
@@ -106,9 +124,18 @@ mod enable_scene3d_resource_failure_guards {
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].channel, Some("scene-resources".to_string()));
         assert_eq!(entries[0].level, LogLevel::Warn);
-        assert_eq!(string_field(&entries[0], "failureKind"), Some("Error".to_string()));
-        assert_eq!(string_field(&entries[0], "failureMessage"), Some("bad image".to_string()));
-        assert_eq!(string_field(&entries[0], "failureName"), Some("CodecError".to_string()));
+        assert_eq!(
+            string_field(&entries[0], "failureKind"),
+            Some("Error".to_string())
+        );
+        assert_eq!(
+            string_field(&entries[0], "failureMessage"),
+            Some("bad image".to_string())
+        );
+        assert_eq!(
+            string_field(&entries[0], "failureName"),
+            Some("CodecError".to_string())
+        );
         assert_eq!(
             string_field(&entries[0], "message"),
             Some(
@@ -121,7 +148,11 @@ mod enable_scene3d_resource_failure_guards {
         emit_signal(&resolved, &event);
         set_reference_resolution(
             &reference,
-            Some(failure(ImageResourceFailureKind::Unavailable, "still unavailable", None)),
+            Some(failure(
+                ImageResourceFailureKind::Unavailable,
+                "still unavailable",
+                None,
+            )),
             ResourceResolutionState::Failed,
         );
         emit_signal(&failed, &event);

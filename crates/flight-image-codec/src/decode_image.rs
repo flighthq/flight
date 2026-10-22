@@ -22,11 +22,13 @@ mod sugar_tests {
     fn caps(seen: &Arc<Mutex<Vec<Option<ImageDecodeOptions>>>>) -> HostImageDecodeCapabilities {
         let captured = seen.clone();
         let slot = HostImageDecodeFormatCapability {
-            decode: Arc::new(move |_bytes: Vec<u8>, options: Option<ImageDecodeOptions>| {
-                captured.lock().unwrap().push(options);
-                let out = image();
-                return Box::pin(async move { out });
-            }),
+            decode: Arc::new(
+                move |_bytes: Vec<u8>, options: Option<ImageDecodeOptions>| {
+                    captured.lock().unwrap().push(options);
+                    let out = image();
+                    return Box::pin(async move { out });
+                },
+            ),
         };
         return HostImageDecodeCapabilities {
             png: Some(slot),
@@ -58,7 +60,6 @@ mod sugar_tests {
         assert_eq!(*method_seen.lock().unwrap(), *free_seen.lock().unwrap());
     }
 }
-
 
 /// Decode image bytes through the matching host capability slot. `mime_type` overrides detection
 /// when supplied. Returns None when the type is unknown or no slot is registered.
@@ -111,13 +112,16 @@ fn resolve_decode_slot<'a>(
     return get_image_decode_slot(image_decode, &mime);
 }
 
-
 // ============================================================================
 // D18 sugar: methods on the capability record delegate to the contract
 // ============================================================================
 
 impl HostImageDecodeCapabilities {
-    pub async fn decode_image(&self, bytes: &Uint8Array, mime_type: Option<&str>) -> Option<DecodedImage> {
+    pub async fn decode_image(
+        &self,
+        bytes: &Uint8Array,
+        mime_type: Option<&str>,
+    ) -> Option<DecodedImage> {
         return decode_image(self, bytes, mime_type).await;
     }
 
@@ -129,5 +133,3 @@ impl HostImageDecodeCapabilities {
         return decode_image_premultiplied(self, bytes, mime_type).await;
     }
 }
-
-

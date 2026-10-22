@@ -43,11 +43,17 @@ fn recorded_runner_dests() -> Arc<Mutex<Vec<Ref<WgpuTextureRenderTarget>>>> {
 }
 
 fn first_runner(context: &mut WgpuEffectContext<'_>, _effect: &dyn Effect) {
-    recorded_runner_dests().lock().unwrap().push(context.dest.clone());
+    recorded_runner_dests()
+        .lock()
+        .unwrap()
+        .push(context.dest.clone());
 }
 
 fn second_runner(context: &mut WgpuEffectContext<'_>, _effect: &dyn Effect) {
-    recorded_runner_dests().lock().unwrap().push(context.dest.clone());
+    recorded_runner_dests()
+        .lock()
+        .unwrap()
+        .push(context.dest.clone());
 }
 
 fn noop_runner(_context: &mut WgpuEffectContext<'_>, _effect: &dyn Effect) {}
@@ -77,17 +83,25 @@ mod apply_wgpu_effects_to_render_texture {
             &source.read().unwrap(),
             &mut dest.write().unwrap(),
             &mut scratch.write().unwrap(),
-            &[create_test_effect("acme.First"), create_test_effect("acme.Second")],
+            &[
+                create_test_effect("acme.First"),
+                create_test_effect("acme.Second"),
+            ],
         );
 
         assert!(applied);
         let dests = recorded_runner_dests().lock().unwrap().clone();
         assert_eq!(dests.len(), 2);
-        let scratch_target = get_wgpu_render_texture_target(&mut state, &scratch.read().unwrap()).unwrap();
-        let dest_target = get_wgpu_render_texture_target(&mut state, &dest.read().unwrap()).unwrap();
+        let scratch_target =
+            get_wgpu_render_texture_target(&mut state, &scratch.read().unwrap()).unwrap();
+        let dest_target =
+            get_wgpu_render_texture_target(&mut state, &dest.read().unwrap()).unwrap();
         assert!(Arc::ptr_eq(&dests[0], &scratch_target));
         assert!(Arc::ptr_eq(&dests[1], &dest_target));
-        assert!(is_wgpu_render_texture_ready(&mut state, &dest.read().unwrap()));
+        assert!(is_wgpu_render_texture_ready(
+            &mut state,
+            &dest.read().unwrap()
+        ));
     }
 
     #[test]
@@ -118,7 +132,10 @@ mod apply_wgpu_effects_to_render_texture {
         );
 
         assert!(applied);
-        assert!(is_wgpu_render_texture_ready(&mut state, &dest.read().unwrap()));
+        assert!(is_wgpu_render_texture_ready(
+            &mut state,
+            &dest.read().unwrap()
+        ));
         assert_eq!(pool.effect_targets.free.len(), 1);
         submit_wgpu_frame(&mut state);
     }
@@ -142,7 +159,10 @@ mod apply_wgpu_effects_to_render_texture {
         );
 
         assert!(!applied);
-        assert!(!is_wgpu_render_texture_ready(&mut state, &dest.read().unwrap()));
+        assert!(!is_wgpu_render_texture_ready(
+            &mut state,
+            &dest.read().unwrap()
+        ));
     }
 }
 
@@ -187,7 +207,12 @@ mod explain_wgpu_effect_application {
         let source = lease(&state, &mut pool, 8.0, 8.0);
         let dest = lease(&state, &mut pool, 8.0, 8.0);
         realize(&mut state, &source);
-        register_wgpu_effect(&mut state, "test.explain-unresolved", noop_runner, Some(never_resolvable));
+        register_wgpu_effect(
+            &mut state,
+            "test.explain-unresolved",
+            noop_runner,
+            Some(never_resolvable),
+        );
 
         let explanation = explain_wgpu_effect_application(
             &mut state,
@@ -214,30 +239,48 @@ mod get_wgpu_effect_application_status_string {
 
     #[test]
     fn returns_the_source_string_of_each_status() {
-        assert_eq!(get_wgpu_effect_application_status_string(WgpuEffectApplicationStatus::Complete), "complete");
-        assert_eq!(get_wgpu_effect_application_status_string(WgpuEffectApplicationStatus::NoEffects), "no-effects");
         assert_eq!(
-            get_wgpu_effect_application_status_string(WgpuEffectApplicationStatus::PartialRegistration),
+            get_wgpu_effect_application_status_string(WgpuEffectApplicationStatus::Complete),
+            "complete"
+        );
+        assert_eq!(
+            get_wgpu_effect_application_status_string(WgpuEffectApplicationStatus::NoEffects),
+            "no-effects"
+        );
+        assert_eq!(
+            get_wgpu_effect_application_status_string(
+                WgpuEffectApplicationStatus::PartialRegistration
+            ),
             "partial-registration"
         );
         assert_eq!(
-            get_wgpu_effect_application_status_string(WgpuEffectApplicationStatus::PartialResolution),
+            get_wgpu_effect_application_status_string(
+                WgpuEffectApplicationStatus::PartialResolution
+            ),
             "partial-resolution"
         );
         assert_eq!(
-            get_wgpu_effect_application_status_string(WgpuEffectApplicationStatus::SourceUnavailable),
+            get_wgpu_effect_application_status_string(
+                WgpuEffectApplicationStatus::SourceUnavailable
+            ),
             "source-unavailable"
         );
         assert_eq!(
-            get_wgpu_effect_application_status_string(WgpuEffectApplicationStatus::StaleDestination),
+            get_wgpu_effect_application_status_string(
+                WgpuEffectApplicationStatus::StaleDestination
+            ),
             "stale-destination"
         );
         assert_eq!(
-            get_wgpu_effect_application_status_string(WgpuEffectApplicationStatus::UnregisteredEffects),
+            get_wgpu_effect_application_status_string(
+                WgpuEffectApplicationStatus::UnregisteredEffects
+            ),
             "unregistered-effects"
         );
         assert_eq!(
-            get_wgpu_effect_application_status_string(WgpuEffectApplicationStatus::UnresolvedEffects),
+            get_wgpu_effect_application_status_string(
+                WgpuEffectApplicationStatus::UnresolvedEffects
+            ),
             "unresolved-effects"
         );
     }
@@ -256,7 +299,10 @@ mod offscreen_effect_pipeline_snapshots {
                 format: Some(screen.format),
                 ..test_default()
             };
-            return create_wgpu_offscreen_render_state_from_device_state(&screen.device_state, Some(&options));
+            return create_wgpu_offscreen_render_state_from_device_state(
+                &screen.device_state,
+                Some(&options),
+            );
         };
         let offscreen = snapshot(&screen);
         register_wgpu_effect(&mut screen, "acme.Later", second_runner, None);
@@ -290,7 +336,10 @@ mod parse_wgpu_effect_application_status {
             parse_wgpu_effect_application_status("unresolved-effects"),
             Some(WgpuEffectApplicationStatus::UnresolvedEffects)
         );
-        assert_eq!(parse_wgpu_effect_application_status("complete"), Some(WgpuEffectApplicationStatus::Complete));
+        assert_eq!(
+            parse_wgpu_effect_application_status("complete"),
+            Some(WgpuEffectApplicationStatus::Complete)
+        );
         assert_eq!(parse_wgpu_effect_application_status("missing"), None);
     }
 }
@@ -329,7 +378,10 @@ mod set_wgpu_effect_application_guard {
             &chain,
         );
 
-        assert_eq!(*seen.lock().unwrap(), vec![WgpuEffectApplicationStatus::UnregisteredEffects]);
+        assert_eq!(
+            *seen.lock().unwrap(),
+            vec![WgpuEffectApplicationStatus::UnregisteredEffects]
+        );
 
         set_wgpu_effect_application_guard(&mut state, None);
         apply_wgpu_effects_to_render_texture(
@@ -341,6 +393,9 @@ mod set_wgpu_effect_application_guard {
             &chain,
         );
 
-        assert_eq!(*seen.lock().unwrap(), vec![WgpuEffectApplicationStatus::UnregisteredEffects]);
+        assert_eq!(
+            *seen.lock().unwrap(),
+            vec![WgpuEffectApplicationStatus::UnregisteredEffects]
+        );
     }
 }

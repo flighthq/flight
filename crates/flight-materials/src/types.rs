@@ -2566,4 +2566,3 @@ impl Default for ColorScaleBias {
         };
     }
 }
-

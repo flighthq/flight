@@ -7,7 +7,8 @@ use flight_camera::{
 };
 use flight_geometry::{Matrix4, create_matrix4, create_vector3};
 use flight_lighting::{
-    DIRECTIONAL_SHADOW_MAP_SIZE, DirectionalLight, DirectionalLightOptions, create_directional_light,
+    DIRECTIONAL_SHADOW_MAP_SIZE, DirectionalLight, DirectionalLightOptions,
+    create_directional_light,
 };
 use flight_meshgeometry::{
     MeshGeometryOptions, MeshMorph, MeshMorphTarget, VertexAttribute, VertexAttributeLayout,
@@ -145,7 +146,12 @@ mod render_gl_scene3d_shadow_map {
     fn does_not_allocate_or_render_when_the_directional_light_has_shadows_disabled() {
         let mut state = make_gl_scene3d_state();
 
-        render_gl_scene3d_shadow_map(&mut state, &make_test_scene(), &make_shadow_camera(), Some(&disabled_light()));
+        render_gl_scene3d_shadow_map(
+            &mut state,
+            &make_test_scene(),
+            &make_shadow_camera(),
+            Some(&disabled_light()),
+        );
 
         let runtime = get_gl_scene3d_runtime(&state);
         assert!(runtime.shadow_target.is_none());
@@ -157,7 +163,12 @@ mod render_gl_scene3d_shadow_map {
     fn lazily_creates_the_shadow_target_on_the_first_call() {
         let mut state = make_gl_scene3d_state();
 
-        render_gl_scene3d_shadow_map(&mut state, &make_test_scene(), &make_shadow_camera(), Some(&shadow_light()));
+        render_gl_scene3d_shadow_map(
+            &mut state,
+            &make_test_scene(),
+            &make_shadow_camera(),
+            Some(&shadow_light()),
+        );
 
         assert!(get_gl_scene3d_runtime(&state).shadow_target.is_some());
     }
@@ -172,7 +183,13 @@ mod render_gl_scene3d_shadow_map {
 
         render_gl_scene3d_shadow_map(&mut state, &scene, &camera, None);
 
-        assert!(!get_gl_scene3d_runtime(&state).shadow.as_ref().unwrap().enabled);
+        assert!(
+            !get_gl_scene3d_runtime(&state)
+                .shadow
+                .as_ref()
+                .unwrap()
+                .enabled
+        );
         assert_eq!(count_calls("clear"), clear_count);
     }
 
@@ -196,7 +213,12 @@ mod render_gl_scene3d_shadow_map {
     fn records_the_light_space_matrix_on_the_runtime() {
         let mut state = make_gl_scene3d_state();
 
-        render_gl_scene3d_shadow_map(&mut state, &make_test_scene(), &make_shadow_camera(), Some(&shadow_light()));
+        render_gl_scene3d_shadow_map(
+            &mut state,
+            &make_test_scene(),
+            &make_shadow_camera(),
+            Some(&shadow_light()),
+        );
 
         let runtime = get_gl_scene3d_runtime(&state);
         let shadow = runtime.shadow.as_ref().expect("a recorded shadow");
@@ -248,10 +270,18 @@ mod render_gl_scene3d_shadow_map {
 
         let mut first = make_gl_scene3d_state();
         render_gl_scene3d_shadow_map(&mut first, &make_test_scene(), &camera, Some(&light));
-        let first_bias = get_gl_scene3d_runtime(&first).shadow.as_ref().unwrap().normal_bias_world;
+        let first_bias = get_gl_scene3d_runtime(&first)
+            .shadow
+            .as_ref()
+            .unwrap()
+            .normal_bias_world;
         let mut second = make_gl_scene3d_state();
         render_gl_scene3d_shadow_map(&mut second, &make_test_scene(), &wide_camera, Some(&light));
-        let second_bias = get_gl_scene3d_runtime(&second).shadow.as_ref().unwrap().normal_bias_world;
+        let second_bias = get_gl_scene3d_runtime(&second)
+            .shadow
+            .as_ref()
+            .unwrap()
+            .normal_bias_world;
 
         assert_close(second_bias, first_bias * 2.0);
     }
@@ -271,7 +301,12 @@ mod render_gl_scene3d_shadow_map {
         camera.projection = Projection::Perspective(projection);
 
         let message = thrown_message(|| {
-            render_gl_scene3d_shadow_map(&mut state, &make_test_scene(), &camera, Some(&shadow_light()));
+            render_gl_scene3d_shadow_map(
+                &mut state,
+                &make_test_scene(),
+                &camera,
+                Some(&shadow_light()),
+            );
         });
         assert!(message.contains("requires an orthographic shadow camera"));
         assert!(get_gl_scene3d_runtime(&state).shadow_target.is_none());
@@ -301,7 +336,13 @@ mod render_gl_scene3d_shadow_map {
         assert_eq!(retained.texture, shadow.texture);
         assert_eq!(retained.matrix, shadow.matrix);
         assert!(!retained.enabled);
-        assert_eq!(runtime.shadow_target.as_ref().map(|value| value.framebuffer), target);
+        assert_eq!(
+            runtime
+                .shadow_target
+                .as_ref()
+                .map(|value| value.framebuffer),
+            target
+        );
         assert_eq!(count_calls("clear"), clear_count);
     }
 
@@ -309,7 +350,12 @@ mod render_gl_scene3d_shadow_map {
     fn sets_up_the_depth_pass_with_front_face_culling() {
         let mut state = make_gl_scene3d_state();
 
-        render_gl_scene3d_shadow_map(&mut state, &make_test_scene(), &make_shadow_camera(), Some(&shadow_light()));
+        render_gl_scene3d_shadow_map(
+            &mut state,
+            &make_test_scene(),
+            &make_shadow_camera(),
+            Some(&shadow_light()),
+        );
 
         assert!(
             calls_with("cull_face")
@@ -347,7 +393,12 @@ mod render_gl_scene3d_shadow_map {
         })));
         update_mesh_morph(&mesh.read().unwrap());
 
-        render_gl_scene3d_shadow_map(&mut state, &scene, &make_shadow_camera(), Some(&shadow_light()));
+        render_gl_scene3d_shadow_map(
+            &mut state,
+            &scene,
+            &make_shadow_camera(),
+            Some(&shadow_light()),
+        );
 
         let uploaded = last_uploaded_vertices();
         assert_eq!(uploaded[1], 5.0);
@@ -360,7 +411,8 @@ mod render_gl_scene3d_shadow_map {
         register_gl_mesh_skinning(&state);
         let scene = make_test_scene();
         let geometry = create_mesh_geometry(MeshGeometryOptions {
-            vertices: vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0].into_boxed_slice(),
+            vertices: vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+                .into_boxed_slice(),
             layout: Arc::new(RwLock::new(skinned_layout())),
             indices: None,
             subsets: None,
@@ -385,7 +437,12 @@ mod render_gl_scene3d_shadow_map {
             skeleton_root: None,
         })));
 
-        render_gl_scene3d_shadow_map(&mut state, &scene, &make_shadow_camera(), Some(&shadow_light()));
+        render_gl_scene3d_shadow_map(
+            &mut state,
+            &scene,
+            &make_shadow_camera(),
+            Some(&shadow_light()),
+        );
 
         // A skinned caster compiles + uses the dedicated HAS_SKIN depth program rather than the rigid one.
         assert!(
@@ -399,9 +456,17 @@ mod render_gl_scene3d_shadow_map {
     fn restores_the_previous_framebuffer_after_the_depth_pass() {
         let mut state = make_gl_scene3d_state();
 
-        render_gl_scene3d_shadow_map(&mut state, &make_test_scene(), &make_shadow_camera(), Some(&shadow_light()));
+        render_gl_scene3d_shadow_map(
+            &mut state,
+            &make_test_scene(),
+            &make_shadow_camera(),
+            Some(&shadow_light()),
+        );
 
-        let last = calls_with("bind_framebuffer").last().cloned().expect("a framebuffer bind");
+        let last = calls_with("bind_framebuffer")
+            .last()
+            .cloned()
+            .expect("a framebuffer bind");
         assert_eq!(last.integers[0], i64::from(glow::FRAMEBUFFER));
         assert_eq!(last.integers[1], 0);
     }
@@ -424,7 +489,12 @@ mod render_gl_scene3d_shadow_map {
         set_instanced_mesh_instance_matrix(&mesh, 2, &shadow_translation(-4.0));
         add_node(&scene, mesh);
 
-        render_gl_scene3d_shadow_map(&mut state, &scene, &make_shadow_camera(), Some(&shadow_light()));
+        render_gl_scene3d_shadow_map(
+            &mut state,
+            &scene,
+            &make_shadow_camera(),
+            Some(&shadow_light()),
+        );
 
         assert_eq!(count_calls("draw_elements"), 0);
         let instanced = calls_with("draw_elements_instanced");
@@ -445,7 +515,12 @@ mod render_gl_scene3d_shadow_map {
             ),
         );
 
-        render_gl_scene3d_shadow_map(&mut state, &scene, &make_shadow_camera(), Some(&shadow_light()));
+        render_gl_scene3d_shadow_map(
+            &mut state,
+            &scene,
+            &make_shadow_camera(),
+            Some(&shadow_light()),
+        );
 
         assert_eq!(count_calls("draw_elements_instanced"), 0);
         assert_eq!(count_calls("draw_elements"), 0);
@@ -455,9 +530,18 @@ mod render_gl_scene3d_shadow_map {
     fn still_draws_an_ordinary_rigid_caster_with_a_non_instanced_draw() {
         let mut state = make_gl_scene3d_state();
         let scene = make_test_scene();
-        add_test_mesh(&scene, create_box_mesh_geometry(None, None, None), vec![None]);
+        add_test_mesh(
+            &scene,
+            create_box_mesh_geometry(None, None, None),
+            vec![None],
+        );
 
-        render_gl_scene3d_shadow_map(&mut state, &scene, &make_shadow_camera(), Some(&shadow_light()));
+        render_gl_scene3d_shadow_map(
+            &mut state,
+            &scene,
+            &make_shadow_camera(),
+            Some(&shadow_light()),
+        );
 
         assert_eq!(count_calls("draw_elements"), 1);
         assert_eq!(count_calls("draw_elements_instanced"), 0);

@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
 use flight_collision::{
-    create_collision_heightfield3d, create_collision_triangle_mesh3d,
-    register_built_in_collision_face_queries3d, register_built_in_collision_pair_tests3d,
-    register_built_in_collision_supports3d, CollisionColliderShape3D, CollisionHeightfield3D,
-    CollisionRegistry3D, CollisionShape3D, CollisionSphere3D, CollisionTriangleMesh3D,
+    CollisionColliderShape3D, CollisionHeightfield3D, CollisionRegistry3D, CollisionShape3D,
+    CollisionSphere3D, CollisionTriangleMesh3D, create_collision_heightfield3d,
+    create_collision_triangle_mesh3d, register_built_in_collision_face_queries3d,
+    register_built_in_collision_pair_tests3d, register_built_in_collision_supports3d,
 };
 use flight_entity::Ref;
 use flight_physics3d::contract::*;

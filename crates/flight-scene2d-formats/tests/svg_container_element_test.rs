@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
-use flight_node::contract::{get_node_child_count, NodeRef};
+use flight_node::contract::{NodeRef, get_node_child_count};
 use flight_scene2d_formats::contract::*;
 use flight_xml::contract::parse_xml_document;
 

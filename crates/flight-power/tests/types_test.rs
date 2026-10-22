@@ -106,8 +106,14 @@ mod power_keep_awake_acquire_reason_string_table {
             (PowerKeepAwakeAcquireReason::Failed, "failed"),
         ];
         for (variant, expected) in &variants {
-            assert_eq!(get_power_keep_awake_acquire_reason_string(*variant), *expected);
-            assert_eq!(parse_power_keep_awake_acquire_reason(expected), Some(*variant));
+            assert_eq!(
+                get_power_keep_awake_acquire_reason_string(*variant),
+                *expected
+            );
+            assert_eq!(
+                parse_power_keep_awake_acquire_reason(expected),
+                Some(*variant)
+            );
         }
     }
 
@@ -123,8 +129,14 @@ mod power_keep_awake_mode_string_table {
     #[test]
     fn round_trips_all_variants() {
         let variants = [
-            (PowerKeepAwakeMode::PreventDisplaySleep, "PreventDisplaySleep"),
-            (PowerKeepAwakeMode::PreventAppSuspension, "PreventAppSuspension"),
+            (
+                PowerKeepAwakeMode::PreventDisplaySleep,
+                "PreventDisplaySleep",
+            ),
+            (
+                PowerKeepAwakeMode::PreventAppSuspension,
+                "PreventAppSuspension",
+            ),
         ];
         for (variant, expected) in &variants {
             assert_eq!(get_power_keep_awake_mode_string(*variant), *expected);
@@ -149,8 +161,14 @@ mod power_keep_awake_release_reason_string_table {
             (PowerKeepAwakeReleaseReason::Failed, "failed"),
         ];
         for (variant, expected) in &variants {
-            assert_eq!(get_power_keep_awake_release_reason_string(*variant), *expected);
-            assert_eq!(parse_power_keep_awake_release_reason(expected), Some(*variant));
+            assert_eq!(
+                get_power_keep_awake_release_reason_string(*variant),
+                *expected
+            );
+            assert_eq!(
+                parse_power_keep_awake_release_reason(expected),
+                Some(*variant)
+            );
         }
     }
 

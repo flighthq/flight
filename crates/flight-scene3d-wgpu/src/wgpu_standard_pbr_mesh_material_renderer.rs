@@ -48,7 +48,8 @@ pub static WGPU_STANDARD_PBR_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer =
 // The identity the material-less fallback bind caches its binding under (TS: a module-level `{}`
 // object). A real entity, so its key is a numeric entity id (D12/D15): unique to this renderer and
 // never reused, so it cannot alias a material's binding or another renderer's fallback.
-static FALLBACK_MATERIAL: LazyLock<StandardPbrMaterial> = LazyLock::new(flight_materials::contract::create_standard_pbr_material);
+static FALLBACK_MATERIAL: LazyLock<StandardPbrMaterial> =
+    LazyLock::new(flight_materials::contract::create_standard_pbr_material);
 
 fn bind_wgpu_standard_pbr_material(
     state: &mut WgpuRenderState,
@@ -98,18 +99,22 @@ pub fn build_wgpu_pbr_standard_define_key(
         return is_wgpu_texture_ready(guard.as_deref());
     };
     return WgpuPbrDefineKey {
-        alpha_mask_enabled: surface.is_some_and(|surface| surface.alpha_mode == MaterialAlphaMode::Mask),
+        alpha_mask_enabled: surface
+            .is_some_and(|surface| surface.alpha_mode == MaterialAlphaMode::Mask),
         anisotropy_enabled: false,
         clearcoat_enabled: false,
         double_sided: surface.is_some_and(|surface| surface.double_sided),
         // Opaque materials ignore coverage: only 'mask' and 'blend' sample the alpha map.
-        has_alpha_map: surface.is_some_and(|surface| surface.alpha_mode != MaterialAlphaMode::Opaque)
+        has_alpha_map: surface
+            .is_some_and(|surface| surface.alpha_mode != MaterialAlphaMode::Opaque)
             && ready(standard.map(|standard| &standard.alpha_map)),
         has_base_color_map: ready(standard.map(|standard| &standard.base_color_map)),
         has_color_adjustment: None,
         has_color_matrix: None,
         has_emissive_map: ready(standard.map(|standard| &standard.emissive_map)),
-        has_metallic_roughness_map: ready(standard.map(|standard| &standard.metallic_roughness_map)),
+        has_metallic_roughness_map: ready(
+            standard.map(|standard| &standard.metallic_roughness_map),
+        ),
         has_normal_map: ready(standard.map(|standard| &standard.normal_map)),
         has_occlusion_map: ready(standard.map(|standard| &standard.occlusion_map)),
         iridescence_enabled: false,
@@ -168,7 +173,9 @@ pub fn ensure_wgpu_pbr_material_bind_group(
 
 // A StandardPbrMaterial is itself a StandardPbrMaterialProperties in the source; Rust flattens the
 // fields onto the material, so the block is read off it.
-fn get_standard_pbr_material_properties(material: &StandardPbrMaterial) -> StandardPbrMaterialProperties {
+fn get_standard_pbr_material_properties(
+    material: &StandardPbrMaterial,
+) -> StandardPbrMaterialProperties {
     return StandardPbrMaterialProperties {
         alpha_map: material.alpha_map.clone(),
         base_color: material.base_color,
@@ -215,7 +222,22 @@ pub fn write_wgpu_pbr_standard_block(
 ) {
     let Some(standard) = standard else {
         out[..16].copy_from_slice(&[
-            1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, alpha_cutoff, 0.0, 0.0, 0.0,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            1.0,
+            alpha_cutoff,
+            0.0,
+            0.0,
+            0.0,
         ]);
         return;
     };

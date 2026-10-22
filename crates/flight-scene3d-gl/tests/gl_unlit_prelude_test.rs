@@ -10,11 +10,11 @@ use flight_render_gl::{
 };
 use flight_scene3d_gl::contract::*;
 use flight_texture::{Texture, TextureSourceRef, TextureUvTransform, create_texture_2d};
-use flight_video::{HostVideoCapability, advance_video_texture, create_video_resource, create_video_texture};
-
-use crate::gl_test_helper::{
-    calls_with, count_calls, make_gl_scene3d_state, test_default,
+use flight_video::{
+    HostVideoCapability, advance_video_texture, create_video_resource, create_video_texture,
 };
+
+use crate::gl_test_helper::{calls_with, count_calls, make_gl_scene3d_state, test_default};
 
 fn flat() -> GlUnlitDefineKey {
     return GlUnlitDefineKey {
@@ -237,7 +237,10 @@ mod build_gl_unlit_define_key {
             ..flat()
         };
         assert_eq!(build_gl_unlit_define_key(&transformed), "---u--");
-        assert_ne!(build_gl_unlit_define_key(&transformed), build_gl_unlit_define_key(&flat()));
+        assert_ne!(
+            build_gl_unlit_define_key(&transformed),
+            build_gl_unlit_define_key(&flat())
+        );
     }
 
     #[test]
@@ -247,7 +250,10 @@ mod build_gl_unlit_define_key {
             ..flat()
         };
         assert_eq!(build_gl_unlit_define_key(&skinned), "----k-");
-        assert_ne!(build_gl_unlit_define_key(&skinned), build_gl_unlit_define_key(&flat()));
+        assert_ne!(
+            build_gl_unlit_define_key(&skinned),
+            build_gl_unlit_define_key(&flat())
+        );
     }
 }
 
@@ -290,9 +296,19 @@ mod ensure_gl_unlit_program {
         ensure_gl_unlit_program(&state, &flat());
         get_gl_scene3d_runtime(&state).active_skinned_run = true;
         ensure_gl_unlit_program(&state, &flat());
-        let keys: Vec<String> = get_gl_scene3d_runtime(&state).program_cache.keys().cloned().collect();
-        assert!(keys.iter().any(|key| key.starts_with("unlit:") && key.contains('k')));
-        assert_eq!(keys.iter().filter(|key| key.starts_with("unlit:")).count(), 2);
+        let keys: Vec<String> = get_gl_scene3d_runtime(&state)
+            .program_cache
+            .keys()
+            .cloned()
+            .collect();
+        assert!(
+            keys.iter()
+                .any(|key| key.starts_with("unlit:") && key.contains('k'))
+        );
+        assert_eq!(
+            keys.iter().filter(|key| key.starts_with("unlit:")).count(),
+            2
+        );
     }
 }
 
@@ -328,8 +344,13 @@ mod get_gl_unlit_vertex_source_for_key {
             vertex_color: true,
             ..flat()
         };
-        assert!(!get_gl_unlit_vertex_source_for_key(&flat(), None).contains("#define VERTEX_COLOR"));
-        assert!(get_gl_unlit_vertex_source_for_key(&vertex_color, None).contains("#define VERTEX_COLOR"));
+        assert!(
+            !get_gl_unlit_vertex_source_for_key(&flat(), None).contains("#define VERTEX_COLOR")
+        );
+        assert!(
+            get_gl_unlit_vertex_source_for_key(&vertex_color, None)
+                .contains("#define VERTEX_COLOR")
+        );
         // The color0 attribute lives behind the #ifdef, so it is present in the body string either way.
         assert!(get_gl_unlit_vertex_source_for_key(&vertex_color, None).contains("a_color0"));
     }
@@ -337,7 +358,9 @@ mod get_gl_unlit_vertex_source_for_key {
     #[test]
     fn defines_has_uv_transform_and_applies_the_transform_only_in_the_uv_transform_variant() {
         // applyUvTransform is always in the body (identity when undefined); the define + uniform are gated.
-        assert!(!get_gl_unlit_vertex_source_for_key(&flat(), None).contains("#define HAS_UV_TRANSFORM"));
+        assert!(
+            !get_gl_unlit_vertex_source_for_key(&flat(), None).contains("#define HAS_UV_TRANSFORM")
+        );
         let transformed = get_gl_unlit_vertex_source_for_key(
             &GlUnlitDefineKey {
                 has_color_map: true,

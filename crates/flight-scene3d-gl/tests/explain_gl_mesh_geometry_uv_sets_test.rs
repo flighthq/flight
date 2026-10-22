@@ -34,7 +34,11 @@ mod explain_gl_mesh_geometry_uv_sets {
     #[test]
     fn serves_a_uv1_request_when_the_layout_carries_uv1() {
         let explanation = explain_gl_mesh_geometry_uv_sets(
-            &geometry_with(&[VertexSemantic::Position, VertexSemantic::Uv0, VertexSemantic::Uv1]),
+            &geometry_with(&[
+                VertexSemantic::Position,
+                VertexSemantic::Uv0,
+                VertexSemantic::Uv1,
+            ]),
             &[0, 1],
         );
         assert_eq!(explanation.available_uv_sets, vec![0, 1]);

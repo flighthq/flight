@@ -1,17 +1,21 @@
 // flight-lint: allow-file(contract-vocabulary) D17 mesh-material renderers are backend-typed dispatch records over thread-bound render-gl state
 
-use std::rc::Rc;
 use flight_camera::Camera3D;
 use flight_color::{LinearColor, allocate_linear_color, unpack_color_to_linear};
 use flight_lighting::Scene3DLightBlock;
-use flight_materials::{Material3D, MaterialAlphaMode, VERTEX_COLOR_MATERIAL_KIND, VertexColorMaterial};
+use flight_materials::{
+    Material3D, MaterialAlphaMode, VERTEX_COLOR_MATERIAL_KIND, VertexColorMaterial,
+};
 use flight_meshgeometry::MeshGeometry;
 use flight_render::Scene3DRenderProxy;
 use flight_render_gl::{GlMeshMaterialRenderer, GlRenderState};
 use glow::HasContext;
+use std::rc::Rc;
 
 use crate::gl_mesh_material_registry::register_gl_mesh_material_renderer;
-use crate::gl_mesh_program::{begin_gl_mesh_draw, draw_gl_mesh_subset, set_gl_mesh_view_projection};
+use crate::gl_mesh_program::{
+    begin_gl_mesh_draw, draw_gl_mesh_subset, set_gl_mesh_view_projection,
+};
 use crate::gl_scene3d_runtime::get_gl_scene3d_runtime;
 use crate::gl_unlit_prelude::{bind_gl_unlit_surface, ensure_gl_unlit_program};
 use crate::types::{GlMeshProgramRef, GlUnlitDefineKey};
@@ -21,10 +25,11 @@ use crate::types::{GlMeshProgramRef, GlUnlitDefineKey};
 // color0 attribute by the linear tint. Geometry without a color0 attribute leaves the attribute
 // unbound (its default), so a tinted black surface results — author color0 (or import it via glTF) to
 // drive this material. Lights are ignored. See register_gl_vertex_color_material to install it.
-pub static GL_VERTEX_COLOR_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer = GlMeshMaterialRenderer {
-    bind: bind_gl_vertex_color_mesh_material,
-    draw: draw_gl_vertex_color_mesh_material,
-};
+pub static GL_VERTEX_COLOR_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer =
+    GlMeshMaterialRenderer {
+        bind: bind_gl_vertex_color_mesh_material,
+        draw: draw_gl_vertex_color_mesh_material,
+    };
 
 fn bind_gl_vertex_color_mesh_material(
     state: &mut GlRenderState,
@@ -56,12 +61,20 @@ fn bind_gl_vertex_color_mesh_material(
     };
     let mut scratch_rgba = allocate_linear_color();
     unpack_color_to_linear(&mut scratch_rgba, vertex_color.tint);
-    bind_gl_unlit_surface(state, &program, &scratch_rgba, 1.0, None, vertex_color.alpha_cutoff);
+    bind_gl_unlit_surface(
+        state,
+        &program,
+        &scratch_rgba,
+        1.0,
+        None,
+        vertex_color.alpha_cutoff,
+    );
 }
 
 fn define_key_for_material(material: Option<&VertexColorMaterial>) -> GlUnlitDefineKey {
     return GlUnlitDefineKey {
-        alpha_mask_enabled: material.is_some_and(|material| material.alpha_mode == MaterialAlphaMode::Mask),
+        alpha_mask_enabled: material
+            .is_some_and(|material| material.alpha_mode == MaterialAlphaMode::Mask),
         has_color_map: false,
         has_instances: None,
         has_skin: None,

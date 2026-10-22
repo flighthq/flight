@@ -406,10 +406,7 @@ mod is_node_local_matrix4_detached {
     fn reports_a_directly_set_matrix_until_trs_authoring_returns() {
         let node = create_test_node_3d("Test");
         assert!(!is_node_local_matrix4_detached(&node));
-        set_node_local_matrix4(
-            &node,
-            &flight_geometry::create_matrix4(),
-        );
+        set_node_local_matrix4(&node, &flight_geometry::create_matrix4());
         assert!(is_node_local_matrix4_detached(&node));
         edit(&node, |transform| transform.position.x = 1.0);
         assert!(!is_node_local_matrix4_detached(&node));

@@ -56,7 +56,14 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
         let command = commands[ci];
         if command == PathCommand::MoveTo as u8 {
             if has_contour {
-                winding_number += count_segment_crossings(px, py, last_x, last_y, contour_start_x, contour_start_y);
+                winding_number += count_segment_crossings(
+                    px,
+                    py,
+                    last_x,
+                    last_y,
+                    contour_start_x,
+                    contour_start_y,
+                );
             }
             contour_start_x = data[di];
             contour_start_y = data[di + 1];
@@ -66,7 +73,14 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
             has_contour = true;
         } else if command == PathCommand::WideMoveTo as u8 {
             if has_contour {
-                winding_number += count_segment_crossings(px, py, last_x, last_y, contour_start_x, contour_start_y);
+                winding_number += count_segment_crossings(
+                    px,
+                    py,
+                    last_x,
+                    last_y,
+                    contour_start_x,
+                    contour_start_y,
+                );
             }
             contour_start_x = data[di + 2];
             contour_start_y = data[di + 3];
@@ -99,7 +113,18 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
             let ay = data[di + 3];
             di += 4;
             if has_contour {
-                winding_number += flatten_quadratic_winding_number(px, py, last_x, last_y, cx, cy, ax, ay, tolerance_sq, 0);
+                winding_number += flatten_quadratic_winding_number(
+                    px,
+                    py,
+                    last_x,
+                    last_y,
+                    cx,
+                    cy,
+                    ax,
+                    ay,
+                    tolerance_sq,
+                    0,
+                );
             }
             last_x = ax;
             last_y = ay;
@@ -112,13 +137,33 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
             let ay = data[di + 5];
             di += 6;
             if has_contour {
-                winding_number += flatten_cubic_winding_number(px, py, last_x, last_y, c1x, c1y, c2x, c2y, ax, ay, tolerance_sq, 0);
+                winding_number += flatten_cubic_winding_number(
+                    px,
+                    py,
+                    last_x,
+                    last_y,
+                    c1x,
+                    c1y,
+                    c2x,
+                    c2y,
+                    ax,
+                    ay,
+                    tolerance_sq,
+                    0,
+                );
             }
             last_x = ax;
             last_y = ay;
         } else if command == PathCommand::Close as u8 {
             if has_contour {
-                winding_number += count_segment_crossings(px, py, last_x, last_y, contour_start_x, contour_start_y);
+                winding_number += count_segment_crossings(
+                    px,
+                    py,
+                    last_x,
+                    last_y,
+                    contour_start_x,
+                    contour_start_y,
+                );
                 last_x = contour_start_x;
                 last_y = contour_start_y;
                 has_contour = false;
@@ -126,7 +171,8 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
         }
     }
     if has_contour {
-        winding_number += count_segment_crossings(px, py, last_x, last_y, contour_start_x, contour_start_y);
+        winding_number +=
+            count_segment_crossings(px, py, last_x, last_y, contour_start_x, contour_start_y);
     }
     return winding_number.abs();
 }
@@ -156,11 +202,16 @@ fn count_segment_crossings(px: f64, py: f64, x0: f64, y0: f64, x1: f64, y1: f64)
 
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn flatten_cubic_winding_number(
-    px: f64, py: f64,
-    x0: f64, y0: f64,
-    c1x: f64, c1y: f64,
-    c2x: f64, c2y: f64,
-    x1: f64, y1: f64,
+    px: f64,
+    py: f64,
+    x0: f64,
+    y0: f64,
+    c1x: f64,
+    c1y: f64,
+    c2x: f64,
+    c2y: f64,
+    x1: f64,
+    y1: f64,
     tolerance_sq: f64,
     depth: usize,
 ) -> i32 {
@@ -181,16 +232,45 @@ fn flatten_cubic_winding_number(
     let y123 = (y12 + y23) / 2.0;
     let xm = (x012 + x123) / 2.0;
     let ym = (y012 + y123) / 2.0;
-    return flatten_cubic_winding_number(px, py, x0, y0, x01, y01, x012, y012, xm, ym, tolerance_sq, depth + 1)
-        + flatten_cubic_winding_number(px, py, xm, ym, x123, y123, x23, y23, x1, y1, tolerance_sq, depth + 1);
+    return flatten_cubic_winding_number(
+        px,
+        py,
+        x0,
+        y0,
+        x01,
+        y01,
+        x012,
+        y012,
+        xm,
+        ym,
+        tolerance_sq,
+        depth + 1,
+    ) + flatten_cubic_winding_number(
+        px,
+        py,
+        xm,
+        ym,
+        x123,
+        y123,
+        x23,
+        y23,
+        x1,
+        y1,
+        tolerance_sq,
+        depth + 1,
+    );
 }
 
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn flatten_quadratic_winding_number(
-    px: f64, py: f64,
-    x0: f64, y0: f64,
-    cx: f64, cy: f64,
-    x1: f64, y1: f64,
+    px: f64,
+    py: f64,
+    x0: f64,
+    y0: f64,
+    cx: f64,
+    cy: f64,
+    x1: f64,
+    y1: f64,
     tolerance_sq: f64,
     depth: usize,
 ) -> i32 {
@@ -203,8 +283,29 @@ fn flatten_quadratic_winding_number(
     let my12 = (cy + y1) / 2.0;
     let mx = (mx01 + mx12) / 2.0;
     let my = (my01 + my12) / 2.0;
-    return flatten_quadratic_winding_number(px, py, x0, y0, mx01, my01, mx, my, tolerance_sq, depth + 1)
-        + flatten_quadratic_winding_number(px, py, mx, my, mx12, my12, x1, y1, tolerance_sq, depth + 1);
+    return flatten_quadratic_winding_number(
+        px,
+        py,
+        x0,
+        y0,
+        mx01,
+        my01,
+        mx,
+        my,
+        tolerance_sq,
+        depth + 1,
+    ) + flatten_quadratic_winding_number(
+        px,
+        py,
+        mx,
+        my,
+        mx12,
+        my12,
+        x1,
+        y1,
+        tolerance_sq,
+        depth + 1,
+    );
 }
 
 impl Path {

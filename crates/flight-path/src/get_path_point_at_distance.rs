@@ -1,7 +1,7 @@
 use flight_geometry::Vector2;
 
-use crate::path::Path;
 use crate::flatten_path::flatten_path;
+use crate::path::Path;
 
 #[cfg(test)]
 mod sugar_tests {
@@ -63,7 +63,8 @@ pub fn get_path_point_at_distance(
     path: &Path,
     distance: f64,
     out: &mut Vector2,
-    tolerance: Option<f64>) -> bool {
+    tolerance: Option<f64>,
+) -> bool {
     let tolerance = tolerance.unwrap_or(0.25);
     let mut contours = Vec::new();
     flatten_path(&mut contours, path, Some(tolerance));
@@ -77,7 +78,8 @@ pub fn get_path_position_at_distance(
     distance: f64,
     point_out: &mut Vector2,
     tangent_out: &mut Vector2,
-    tolerance: Option<f64>) -> bool {
+    tolerance: Option<f64>,
+) -> bool {
     let tolerance = tolerance.unwrap_or(0.25);
     let mut contours = Vec::new();
     flatten_path(&mut contours, path, Some(tolerance));
@@ -92,7 +94,8 @@ pub fn get_path_tangent_at_distance(
     path: &Path,
     distance: f64,
     out: &mut Vector2,
-    tolerance: Option<f64>) -> bool {
+    tolerance: Option<f64>,
+) -> bool {
     let tolerance = tolerance.unwrap_or(0.25);
     let mut contours = Vec::new();
     flatten_path(&mut contours, path, Some(tolerance));
@@ -121,7 +124,11 @@ fn sample_path_point(contours: &[Vec<f64>], distance: f64, out: &mut Vector2) ->
             let dy = contour[i + 1] - contour[i - 1];
             let seg_len = (dx * dx + dy * dy).sqrt();
             if remaining <= seg_len {
-                let t = if seg_len > 0.0 { remaining / seg_len } else { 0.0 };
+                let t = if seg_len > 0.0 {
+                    remaining / seg_len
+                } else {
+                    0.0
+                };
                 out.x = (contour[i - 2] + t * dx) as f32;
                 out.y = (contour[i - 1] + t * dy) as f32;
                 return true;
@@ -177,17 +184,33 @@ fn sample_path_tangent(contours: &[Vec<f64>], distance: f64, out: &mut Vector2) 
 
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
-    pub fn point_at_distance(&self, distance: f64, out: &mut Vector2, tolerance: Option<f64>) -> bool {
+    pub fn point_at_distance(
+        &self,
+        distance: f64,
+        out: &mut Vector2,
+        tolerance: Option<f64>,
+    ) -> bool {
         return get_path_point_at_distance(self, distance, out, tolerance);
     }
 
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
-    pub fn position_at_distance(&self, distance: f64, point_out: &mut Vector2, tangent_out: &mut Vector2, tolerance: Option<f64>) -> bool {
+    pub fn position_at_distance(
+        &self,
+        distance: f64,
+        point_out: &mut Vector2,
+        tangent_out: &mut Vector2,
+        tolerance: Option<f64>,
+    ) -> bool {
         return get_path_position_at_distance(self, distance, point_out, tangent_out, tolerance);
     }
 
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
-    pub fn tangent_at_distance(&self, distance: f64, out: &mut Vector2, tolerance: Option<f64>) -> bool {
+    pub fn tangent_at_distance(
+        &self,
+        distance: f64,
+        out: &mut Vector2,
+        tolerance: Option<f64>,
+    ) -> bool {
         return get_path_tangent_at_distance(self, distance, out, tolerance);
     }
 }

@@ -5,19 +5,13 @@ mod compute_adler32 {
 
     #[test]
     fn is_order_sensitive_so_a_transposition_is_not_silently_equal() {
-        assert_ne!(
-            compute_adler32(&[1, 2]),
-            compute_adler32(&[2, 1])
-        );
+        assert_ne!(compute_adler32(&[1, 2]), compute_adler32(&[2, 1]));
     }
 
     #[test]
     fn matches_the_checksum_rfc_1950_defines_for_a_known_string() {
         // 'Wikipedia' is the worked example carried in the Adler-32 definition itself.
-        assert_eq!(
-            compute_adler32(b"Wikipedia"),
-            0x11e60398
-        );
+        assert_eq!(compute_adler32(b"Wikipedia"), 0x11e60398);
     }
 
     #[test]
@@ -43,10 +37,7 @@ mod deflate_format_tables {
         assert_eq!(DISTANCE_BASE.len(), DISTANCE_EXTRA.len());
         assert_eq!(DISTANCE_BASE[0], 1);
         let last = DISTANCE_BASE.len() - 1;
-        assert_eq!(
-            DISTANCE_BASE[last] + (1 << DISTANCE_EXTRA[last]) - 1,
-            32768
-        );
+        assert_eq!(DISTANCE_BASE[last] + (1 << DISTANCE_EXTRA[last]) - 1, 32768);
     }
 
     #[test]
@@ -70,10 +61,7 @@ mod deflate_format_tables {
     #[test]
     fn tiles_the_length_alphabet_except_for_the_final_pair_which_the_format_leaves_irregular() {
         for i in 0..LENGTH_BASE.len() - 2 {
-            assert_eq!(
-                LENGTH_BASE[i] + (1 << LENGTH_EXTRA[i]),
-                LENGTH_BASE[i + 1]
-            );
+            assert_eq!(LENGTH_BASE[i] + (1 << LENGTH_EXTRA[i]), LENGTH_BASE[i + 1]);
         }
         let penultimate = LENGTH_BASE.len() - 2;
         assert_eq!(

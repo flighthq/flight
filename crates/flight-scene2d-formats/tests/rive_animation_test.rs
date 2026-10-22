@@ -6,14 +6,14 @@ use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
 };
 use flight_scene2d::{
-    create_display_object, Node2DAnimationPath, Node2DAnimationTarget, Node2DRef,
+    Node2DAnimationPath, Node2DAnimationTarget, Node2DRef, create_display_object,
 };
 use flight_scene2d_formats::contract::*;
 use flight_skeleton2d::contract::{
-    Skeleton2DAnimationTarget, Skeleton2DAnimationTargetHandle,
     SKELETON_2D_ANIMATION_PATH_ROTATION, SKELETON_2D_ANIMATION_PATH_SCALE_X,
     SKELETON_2D_ANIMATION_PATH_SCALE_Y, SKELETON_2D_ANIMATION_PATH_TRANSLATION_X,
-    SKELETON_2D_ANIMATION_PATH_TRANSLATION_Y,
+    SKELETON_2D_ANIMATION_PATH_TRANSLATION_Y, Skeleton2DAnimationTarget,
+    Skeleton2DAnimationTargetHandle,
 };
 
 const ARTBOARD: u64 = 1;
@@ -103,16 +103,18 @@ mod create_rive_animation_clips {
 
     #[test]
     fn returns_nothing_when_the_range_holds_no_animation() {
-        assert!(create_rive_animation_clips(
-            &[object(KEYED_OBJECT, vec![])],
-            RiveObjectRange { end: 1, start: 0 },
-            &[],
-            &empty_artboard(),
-            &HashMap::new(),
-            None,
-            None,
-        )
-        .is_empty());
+        assert!(
+            create_rive_animation_clips(
+                &[object(KEYED_OBJECT, vec![])],
+                RiveObjectRange { end: 1, start: 0 },
+                &[],
+                &empty_artboard(),
+                &HashMap::new(),
+                None,
+                None,
+            )
+            .is_empty()
+        );
     }
 
     #[test]
@@ -468,10 +470,12 @@ mod create_rive_animation_clips {
                 .unwrap();
             assert_eq!(target.path, expected);
         }
-        assert!(build(30.0, 24, &[(0.0, 1.0, 1.0)], one_node(), 0, None)[0]
-            .clip
-            .channels
-            .is_empty());
+        assert!(
+            build(30.0, 24, &[(0.0, 1.0, 1.0)], one_node(), 0, None)[0]
+                .clip
+                .channels
+                .is_empty()
+        );
     }
 
     #[test]
@@ -596,9 +600,11 @@ mod create_rive_animation_clips {
         let mut diagnostics = Vec::new();
         let (clips, _) = build_bone_property(ROTATION, 0.5, 0.0, 0.0, 1.0, Some(&mut diagnostics));
         assert!(!clips[0].clip.channels.is_empty());
-        assert!(diagnostics
-            .iter()
-            .all(|entry| entry.kind != "rive.keyed-object-unbound"));
+        assert!(
+            diagnostics
+                .iter()
+                .all(|entry| entry.kind != "rive.keyed-object-unbound")
+        );
     }
 
     #[test]

@@ -11,14 +11,16 @@ use flight_node::{Node, NodeRef};
 use flight_particleemitter::{
     ParticleEmitter3D, create_particle_emitter_3d, reserve_particle_emitter_3d,
 };
-use flight_render_gl::{GlImageSourceToken, GlRenderState, GlScene3DPass, register_gl_image_texture_resolver};
+use flight_render_gl::{
+    GlImageSourceToken, GlRenderState, GlScene3DPass, register_gl_image_texture_resolver,
+};
 use flight_scene3d_gl::contract::*;
 use flight_texture::{TextureSourceRef, create_texture_2d};
 use flight_textureatlas::{TextureAtlasRotation, add_texture_atlas_region, create_texture_atlas};
 
 use crate::gl_test_helper::{
-    bytes_as_f32, calls_with, count_calls, make_gl_scene3d_state, make_test_camera, make_test_scene,
-    shader_sources, uniform_location_of,
+    bytes_as_f32, calls_with, count_calls, make_gl_scene3d_state, make_test_camera,
+    make_test_scene, shader_sources, uniform_location_of,
 };
 
 // The atlas image's straight-alpha pixel (alpha below 1, so a premultiplied upload would differ).
@@ -88,7 +90,16 @@ fn make_atlas_emitter(
     let atlas = create_texture_atlas();
     {
         let mut atlas = atlas.write().unwrap();
-        add_texture_atlas_region(&mut atlas, 0.0, 0.0, region_width, region_height, None, None, None);
+        add_texture_atlas_region(
+            &mut atlas,
+            0.0,
+            0.0,
+            region_width,
+            region_height,
+            None,
+            None,
+            None,
+        );
         atlas.regions[0].write().unwrap().rotation = rotation;
         atlas.texture = Some(Arc::new(RwLock::new(texture)));
     }
@@ -112,7 +123,10 @@ fn draw(state: &mut GlRenderState, scene: &NodeRef) {
 }
 
 fn first_instance_data() -> Vec<f32> {
-    let upload = calls_with("buffer_sub_data").into_iter().next().expect("an instance upload");
+    let upload = calls_with("buffer_sub_data")
+        .into_iter()
+        .next()
+        .expect("an instance upload");
     return bytes_as_f32(&upload.bytes);
 }
 
@@ -130,7 +144,11 @@ fn has_texture_uniform(value: i64) -> bool {
 }
 
 fn pass_list(state: &GlRenderState) -> Option<Vec<GlScene3DPass>> {
-    return state.gl_registries.passes.as_ref().map(|passes| passes.to_vec());
+    return state
+        .gl_registries
+        .passes
+        .as_ref()
+        .map(|passes| passes.to_vec());
 }
 
 mod destroy_gl_particle_emitter3d_shader {
@@ -221,7 +239,8 @@ mod draw_gl_scene3d_particle_emitter3_ds {
     }
 
     #[test]
-    fn skips_the_node_world_transform_for_world_space_particles_already_baked_into_world_coordinates() {
+    fn skips_the_node_world_transform_for_world_space_particles_already_baked_into_world_coordinates()
+     {
         let mut state = make_gl_scene3d_state();
         let scene = make_test_scene();
         let emitter = make_emitter_with_particles(1);
@@ -272,9 +291,21 @@ mod draw_gl_scene3d_particle_emitter3_ds {
         add_emitter(&scene, &make_emitter_with_particles(1));
         draw(&mut state, &scene);
         let enables = calls_with("enable");
-        assert!(enables.iter().any(|call| call.integers[0] == i64::from(glow::DEPTH_TEST)));
-        assert!(enables.iter().any(|call| call.integers[0] == i64::from(glow::BLEND)));
-        assert!(calls_with("depth_mask").iter().any(|call| call.integers[0] == 0));
+        assert!(
+            enables
+                .iter()
+                .any(|call| call.integers[0] == i64::from(glow::DEPTH_TEST))
+        );
+        assert!(
+            enables
+                .iter()
+                .any(|call| call.integers[0] == i64::from(glow::BLEND))
+        );
+        assert!(
+            calls_with("depth_mask")
+                .iter()
+                .any(|call| call.integers[0] == 0)
+        );
     }
 
     #[test]
@@ -290,7 +321,11 @@ mod draw_gl_scene3d_particle_emitter3_ds {
         let blend_funcs = calls_with("blend_func");
         let one = i64::from(glow::ONE);
         // add: straight ONE/ONE additive sum.
-        assert!(blend_funcs.iter().any(|call| call.integers == vec![one, one]));
+        assert!(
+            blend_funcs
+                .iter()
+                .any(|call| call.integers == vec![one, one])
+        );
         // normal: premultiplied over-blend (ONE, ONE_MINUS_SRC_ALPHA), NOT SRC_ALPHA — the fragment
         // shader emits premultiplied color, so SRC_ALPHA would double-apply alpha and darken.
         assert!(
@@ -298,14 +333,21 @@ mod draw_gl_scene3d_particle_emitter3_ds {
                 .iter()
                 .any(|call| call.integers == vec![one, i64::from(glow::ONE_MINUS_SRC_ALPHA)])
         );
-        assert!(!blend_funcs.iter().any(|call| call.integers[0] == i64::from(glow::SRC_ALPHA)));
+        assert!(
+            !blend_funcs
+                .iter()
+                .any(|call| call.integers[0] == i64::from(glow::SRC_ALPHA))
+        );
     }
 
     #[test]
     fn uploads_and_binds_the_atlas_image_never_a_null_texture_for_textured_particles() {
         let mut state = make_atlas_gl_scene3d_state();
         let scene = make_test_scene();
-        add_emitter(&scene, &make_atlas_emitter(64.0, 32.0, TextureAtlasRotation::None));
+        add_emitter(
+            &scene,
+            &make_atlas_emitter(64.0, 32.0, TextureAtlasRotation::None),
+        );
         draw(&mut state, &scene);
         // The atlas image is uploaded to a GL texture on first use.
         assert!(count_calls("tex_image_2d") > 0);
@@ -322,12 +364,24 @@ mod draw_gl_scene3d_particle_emitter3_ds {
     fn uploads_atlas_pixels_with_straight_alpha_for_post_decode_shader_premultiplication() {
         let mut state = make_atlas_gl_scene3d_state();
         let scene = make_test_scene();
-        add_emitter(&scene, &make_atlas_emitter(64.0, 32.0, TextureAtlasRotation::None));
+        add_emitter(
+            &scene,
+            &make_atlas_emitter(64.0, 32.0, TextureAtlasRotation::None),
+        );
         draw(&mut state, &scene);
         // Native GL has no UNPACK_PREMULTIPLY_ALPHA pixel-store flag; the realized upload records the
         // equivalent decision and the bytes themselves stay straight.
-        assert!(!state.context_state.runtime_state.borrow().unpack_premultiply_alpha);
-        let upload = calls_with("tex_image_2d").into_iter().last().expect("an atlas upload");
+        assert!(
+            !state
+                .context_state
+                .runtime_state
+                .borrow()
+                .unpack_premultiply_alpha
+        );
+        let upload = calls_with("tex_image_2d")
+            .into_iter()
+            .last()
+            .expect("an atlas upload");
         assert_eq!(&upload.bytes[..4], &ATLAS_PIXEL);
     }
 
@@ -335,7 +389,10 @@ mod draw_gl_scene3d_particle_emitter3_ds {
     fn premultiplies_sampled_atlas_color_after_decode_in_the_fragment_shader() {
         let mut state = make_atlas_gl_scene3d_state();
         let scene = make_test_scene();
-        add_emitter(&scene, &make_atlas_emitter(64.0, 32.0, TextureAtlasRotation::None));
+        add_emitter(
+            &scene,
+            &make_atlas_emitter(64.0, 32.0, TextureAtlasRotation::None),
+        );
         draw(&mut state, &scene);
         let fragment_source = shader_sources()
             .into_iter()
@@ -350,7 +407,10 @@ mod draw_gl_scene3d_particle_emitter3_ds {
         let mut state = make_atlas_gl_scene3d_state();
         let scene = make_test_scene();
         // A 64×32 region: the larger axis normalizes to 1, the shorter to its aspect ratio (0.5).
-        add_emitter(&scene, &make_atlas_emitter(64.0, 32.0, TextureAtlasRotation::None));
+        add_emitter(
+            &scene,
+            &make_atlas_emitter(64.0, 32.0, TextureAtlasRotation::None),
+        );
         draw(&mut state, &scene);
         let instance_data = first_instance_data();
         // a_size occupies instance floats [13] (width) and [14] (height) of the first particle.
@@ -362,7 +422,10 @@ mod draw_gl_scene3d_particle_emitter3_ds {
     fn unrotates_a_packed_region_while_preserving_its_logical_billboard_aspect_ratio() {
         let mut state = make_atlas_gl_scene3d_state();
         let scene = make_test_scene();
-        add_emitter(&scene, &make_atlas_emitter(32.0, 64.0, TextureAtlasRotation::Clockwise90));
+        add_emitter(
+            &scene,
+            &make_atlas_emitter(32.0, 64.0, TextureAtlasRotation::Clockwise90),
+        );
         draw(&mut state, &scene);
         let instance_data = first_instance_data();
         assert_close(instance_data[13], -1.0);

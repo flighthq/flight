@@ -8,8 +8,8 @@ use flight_geometry::{
 };
 use flight_node::contract::NodeRevisionState;
 use flight_node::{
-    get_node_local_bounds_rectangle, get_node_parent, get_node_world_bounds_rectangle,
-    get_node_world_matrix, NodeRef,
+    NodeRef, get_node_local_bounds_rectangle, get_node_parent, get_node_world_bounds_rectangle,
+    get_node_world_matrix,
 };
 use flight_path::contains_path_point;
 
@@ -30,13 +30,7 @@ pub fn create_hit_test_context() -> HitTestContext {
     };
 }
 
-fn any_hit(
-    ctx: &HitTestContext,
-    node: &NodeRef,
-    x: f32,
-    y: f32,
-    precise: bool,
-) -> bool {
+fn any_hit(ctx: &HitTestContext, node: &NodeRef, x: f32, y: f32, precise: bool) -> bool {
     {
         let n = node.read().unwrap();
         if !n.node_fields().enabled {
@@ -155,12 +149,7 @@ fn contains_node_clip_point(node: &NodeRef, x: f32, y: f32) -> bool {
     let mut scratch = create_vector2(0.0, 0.0);
     inverse_matrix_transform_point_xy(&mut scratch, &matrix, x, y);
     let clip_state = flight_clip::ClipRegionState::default();
-    return clip_region_contains_point(
-        &clip_state,
-        &clip,
-        scratch.x as f64,
-        scratch.y as f64,
-    );
+    return clip_region_contains_point(&clip_state, &clip, scratch.x as f64, scratch.y as f64);
 }
 
 // flight-lint: allow(conform-params) D5: caller-owned hit test context
@@ -289,12 +278,7 @@ pub fn find_graph_hit_targets_precise(
 }
 
 // flight-lint: allow(f64) D1: path containment API uses f64 coordinates
-fn hit_area_contains_point(
-    ctx: &HitTestContext,
-    node: &NodeRef,
-    x: f32,
-    y: f32,
-) -> bool {
+fn hit_area_contains_point(ctx: &HitTestContext, node: &NodeRef, x: f32, y: f32) -> bool {
     let state = get_node_interaction_state(node);
     let state = match state {
         Some(s) => s,
@@ -328,12 +312,7 @@ fn hit_area_contains_point(
             let mut scratch = create_vector2(0.0, 0.0);
             inverse_matrix_transform_point_xy(&mut scratch, &matrix, x, y);
             let path_guard = path_ref.read().unwrap();
-            return contains_path_point(
-                &path_guard,
-                scratch.x as f64,
-                scratch.y as f64,
-                None,
-            );
+            return contains_path_point(&path_guard, scratch.x as f64, scratch.y as f64, None);
         }
         HitArea::Rect(rect) => {
             let rect = rect.clone();
@@ -360,12 +339,7 @@ pub fn hit_test_graph_local_bounds(source: &NodeRef, x: f32, y: f32) -> bool {
 }
 
 // flight-lint: allow(conform-params) D5: caller-owned hit test context
-pub fn hit_test_graph_point(
-    ctx: &HitTestContext,
-    source: &NodeRef,
-    x: f32,
-    y: f32,
-) -> bool {
+pub fn hit_test_graph_point(ctx: &HitTestContext, source: &NodeRef, x: f32, y: f32) -> bool {
     return any_hit(ctx, source, x, y, false);
 }
 
@@ -414,21 +388,11 @@ pub fn register_hit_test(ctx: &mut HitTestContext, kind: Kind, f: HitTestFunctio
 }
 
 // flight-lint: allow(conform-params) D5: caller-owned hit test context
-pub fn register_hit_test_precise(
-    ctx: &mut HitTestContext,
-    kind: Kind,
-    f: HitTestPreciseFunction,
-) {
+pub fn register_hit_test_precise(ctx: &mut HitTestContext, kind: Kind, f: HitTestPreciseFunction) {
     ctx.exact_registry.insert(kind, f);
 }
 
-fn test_node_geometry(
-    ctx: &HitTestContext,
-    node: &NodeRef,
-    x: f32,
-    y: f32,
-    precise: bool,
-) -> bool {
+fn test_node_geometry(ctx: &HitTestContext, node: &NodeRef, x: f32, y: f32, precise: bool) -> bool {
     let kind = node.read().unwrap().node_fields().kind.clone();
     if precise {
         if let Some(exact) = ctx.exact_registry.get(&kind) {

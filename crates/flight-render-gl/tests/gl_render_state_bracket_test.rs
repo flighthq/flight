@@ -1,10 +1,10 @@
-use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use flight_render_gl::{
-    pop_gl_render_state, push_gl_render_state, with_gl_render_state, GlBlendSignature,
-    GlBoundShader, GlRenderState, GlRenderTargetSnapshot, GlScissorRect, GlTextureRealization,
-    GlViewportRect,
+    GlBlendSignature, GlBoundShader, GlRenderState, GlRenderTargetSnapshot, GlScissorRect,
+    GlTextureRealization, GlViewportRect, pop_gl_render_state, push_gl_render_state,
+    with_gl_render_state,
 };
 use glow::HasContext;
 

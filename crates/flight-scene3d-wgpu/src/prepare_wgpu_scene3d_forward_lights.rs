@@ -5,8 +5,7 @@ use std::sync::{Arc, RwLock};
 
 use flight_geometry::{create_aabb, create_bounding_sphere, set_bounding_sphere_from_aabb};
 use flight_lighting::{
-    SCENE_LIGHT_BLOCK_FLOATS, Scene3DLightBlock, Scene3DLightsLike,
-    select_scene_3d_forward_lights,
+    SCENE_LIGHT_BLOCK_FLOATS, Scene3DLightBlock, Scene3DLightsLike, select_scene_3d_forward_lights,
 };
 use flight_node::contract::get_node_world_matrix4;
 use flight_render::{RenderState, Scene3DRenderList, pack_scene_3d_light_block};
@@ -41,7 +40,10 @@ fn ensure_prepared_block(
     return &mut prepared.blocks[index];
 }
 
-fn find_prepared_block(prepared: &WgpuScene3DForwardLightPrepared, indices: &[i32]) -> Option<usize> {
+fn find_prepared_block(
+    prepared: &WgpuScene3DForwardLightPrepared,
+    indices: &[i32],
+) -> Option<usize> {
     for block_index in 0..prepared.block_count {
         if prepared.blocks[block_index].indices == indices {
             return Some(block_index);

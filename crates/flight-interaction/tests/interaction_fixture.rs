@@ -3,7 +3,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_node::contract::NodeRevisionState;
-use flight_node::{add_node_child, NodeRef};
+use flight_node::{NodeRef, add_node_child};
 use flight_scene2d::create_display_object;
 
 use flight_interaction::interaction_manager::{

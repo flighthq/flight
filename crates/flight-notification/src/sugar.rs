@@ -148,7 +148,9 @@ mod sugar_tests {
     #[test]
     fn notification_lifecycle_failure_operation_to_string_delegates() {
         let method = NotificationLifecycleFailureOperation::Close.to_str();
-        let free = get_notification_lifecycle_failure_operation_string(NotificationLifecycleFailureOperation::Close);
+        let free = get_notification_lifecycle_failure_operation_string(
+            NotificationLifecycleFailureOperation::Close,
+        );
         assert_eq!(method, free);
     }
 
@@ -183,7 +185,9 @@ mod sugar_tests {
     #[test]
     fn notification_permission_request_reason_to_string_delegates() {
         let method = NotificationPermissionRequestReason::Denied.to_str();
-        let free = get_notification_permission_request_reason_string(NotificationPermissionRequestReason::Denied);
+        let free = get_notification_permission_request_reason_string(
+            NotificationPermissionRequestReason::Denied,
+        );
         assert_eq!(method, free);
     }
 
@@ -246,7 +250,9 @@ mod sugar_tests {
     #[test]
     fn notification_subscription_attach_reason_to_string_delegates() {
         let method = NotificationSubscriptionAttachReason::Ok.to_str();
-        let free = get_notification_subscription_attach_reason_string(NotificationSubscriptionAttachReason::Ok);
+        let free = get_notification_subscription_attach_reason_string(
+            NotificationSubscriptionAttachReason::Ok,
+        );
         assert_eq!(method, free);
     }
 
@@ -260,7 +266,9 @@ mod sugar_tests {
     #[test]
     fn notification_subscription_detach_reason_to_string_delegates() {
         let method = NotificationSubscriptionDetachReason::Ok.to_str();
-        let free = get_notification_subscription_detach_reason_string(NotificationSubscriptionDetachReason::Ok);
+        let free = get_notification_subscription_detach_reason_string(
+            NotificationSubscriptionDetachReason::Ok,
+        );
         assert_eq!(method, free);
     }
 
@@ -274,7 +282,9 @@ mod sugar_tests {
     #[test]
     fn notification_subscription_dispose_reason_to_string_delegates() {
         let method = NotificationSubscriptionDisposeReason::Ok.to_str();
-        let free = get_notification_subscription_dispose_reason_string(NotificationSubscriptionDisposeReason::Ok);
+        let free = get_notification_subscription_dispose_reason_string(
+            NotificationSubscriptionDisposeReason::Ok,
+        );
         assert_eq!(method, free);
     }
 
@@ -301,9 +311,16 @@ mod sugar_tests {
     #[test]
     fn bind_notification_close_then_close_returns_ok() {
         let notification = notification_of("n1", "Title", "");
-        bind_notification_close(&notification, Arc::new(|| Box::pin(async {
-            return NotificationCloseOutcome { reason: NotificationCloseReason::Ok };
-        })));
+        bind_notification_close(
+            &notification,
+            Arc::new(|| {
+                Box::pin(async {
+                    return NotificationCloseOutcome {
+                        reason: NotificationCloseReason::Ok,
+                    };
+                })
+            }),
+        );
         let outcome = block_on(close_notification(&notification));
         assert_eq!(outcome.reason, NotificationCloseReason::Ok);
     }
@@ -318,9 +335,16 @@ mod sugar_tests {
     #[test]
     fn close_notification_is_idempotent_after_success() {
         let notification = notification_of("n1", "Title", "");
-        bind_notification_close(&notification, Arc::new(|| Box::pin(async {
-            return NotificationCloseOutcome { reason: NotificationCloseReason::Ok };
-        })));
+        bind_notification_close(
+            &notification,
+            Arc::new(|| {
+                Box::pin(async {
+                    return NotificationCloseOutcome {
+                        reason: NotificationCloseReason::Ok,
+                    };
+                })
+            }),
+        );
         let first = block_on(close_notification(&notification));
         assert_eq!(first.reason, NotificationCloseReason::Ok);
         let second = block_on(close_notification(&notification));
@@ -332,9 +356,16 @@ mod sugar_tests {
         let request = make_request("Later");
         let schedule = make_schedule(1.0);
         let scheduled = scheduled_of("s1", &request, &schedule);
-        bind_scheduled_notification_cancel(&scheduled, Arc::new(|| Box::pin(async {
-            return NotificationCancelOutcome { reason: NotificationCancelReason::Ok };
-        })));
+        bind_scheduled_notification_cancel(
+            &scheduled,
+            Arc::new(|| {
+                Box::pin(async {
+                    return NotificationCancelOutcome {
+                        reason: NotificationCancelReason::Ok,
+                    };
+                })
+            }),
+        );
         let outcome = block_on(cancel_scheduled_notification(&scheduled));
         assert_eq!(outcome.reason, NotificationCancelReason::Ok);
     }
@@ -353,9 +384,16 @@ mod sugar_tests {
         let request = make_request("Later");
         let schedule = make_schedule(1.0);
         let scheduled = scheduled_of("s1", &request, &schedule);
-        bind_scheduled_notification_cancel(&scheduled, Arc::new(|| Box::pin(async {
-            return NotificationCancelOutcome { reason: NotificationCancelReason::Ok };
-        })));
+        bind_scheduled_notification_cancel(
+            &scheduled,
+            Arc::new(|| {
+                Box::pin(async {
+                    return NotificationCancelOutcome {
+                        reason: NotificationCancelReason::Ok,
+                    };
+                })
+            }),
+        );
         let first = block_on(cancel_scheduled_notification(&scheduled));
         assert_eq!(first.reason, NotificationCancelReason::Ok);
         let second = block_on(cancel_scheduled_notification(&scheduled));
@@ -366,12 +404,14 @@ mod sugar_tests {
     fn close_all_notifications_delegates_to_host_capability() {
         let provider = make_provider();
         let cap = HostNotificationCloseCapability {
-            close_all_notifications: Arc::new(|| Box::pin(async {
-                return NotificationLifecycleOutcome {
-                    reason: NotificationLifecycleReason::Ok,
-                    failures: None,
-                };
-            })),
+            close_all_notifications: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationLifecycleOutcome {
+                        reason: NotificationLifecycleReason::Ok,
+                        failures: None,
+                    };
+                })
+            }),
             provider,
         };
         let outcome = block_on(close_all_notifications(&cap));
@@ -382,12 +422,14 @@ mod sugar_tests {
     fn destroy_notification_capabilities_delegates_to_host_capability() {
         let provider = make_provider();
         let cap = HostNotificationLifecycleCapability {
-            destroy: Arc::new(|| Box::pin(async {
-                return NotificationLifecycleOutcome {
-                    reason: NotificationLifecycleReason::Ok,
-                    failures: None,
-                };
-            })),
+            destroy: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationLifecycleOutcome {
+                        reason: NotificationLifecycleReason::Ok,
+                        failures: None,
+                    };
+                })
+            }),
             provider,
         };
         let outcome = block_on(destroy_notification_capabilities(&cap));
@@ -400,16 +442,18 @@ mod sugar_tests {
         let notification_clone = notification.clone();
         let provider = make_provider();
         let cap = HostNotificationDeliveryCapability {
-            notify: Arc::new(move |_request: &NotificationRequest| -> NotificationDeliveryFuture {
-                let n = notification_clone.clone();
-                return Box::pin(async move {
-                    return NotificationDeliveryOutcome {
-                        reason: NotificationDeliveryReason::Accepted,
-                        notification: Some(n),
-                        fields: None,
-                    };
-                });
-            }),
+            notify: Arc::new(
+                move |_request: &NotificationRequest| -> NotificationDeliveryFuture {
+                    let n = notification_clone.clone();
+                    return Box::pin(async move {
+                        return NotificationDeliveryOutcome {
+                            reason: NotificationDeliveryReason::Accepted,
+                            notification: Some(n),
+                            fields: None,
+                        };
+                    });
+                },
+            ),
             provider,
         };
         let request = make_request("Title");
@@ -426,23 +470,37 @@ mod sugar_tests {
         let scheduled_clone = scheduled.clone();
         let provider = make_provider();
         let cap = HostNotificationSchedulingCapability {
-            cancel_all_scheduled_notifications: Arc::new(|| Box::pin(async {
-                return NotificationLifecycleOutcome { reason: NotificationLifecycleReason::Ok, failures: None };
-            })),
-            get_pending_notifications: Arc::new(|| Box::pin(async {
-                return NotificationPendingListOutcome { reason: NotificationLifecycleReason::Ok, notifications: Some(vec![]) };
-            })),
-            schedule_notification: Arc::new(move |_request: &NotificationRequest, _schedule: &NotificationSchedule| -> NotificationScheduleFuture {
-                let s = scheduled_clone.clone();
-                return Box::pin(async move {
-                    return NotificationScheduleOutcome {
-                        reason: NotificationScheduleReason::Scheduled,
-                        precision: Some(NotificationSchedulePrecision::Exact),
-                        scheduled: Some(s),
-                        fields: None,
+            cancel_all_scheduled_notifications: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationLifecycleOutcome {
+                        reason: NotificationLifecycleReason::Ok,
+                        failures: None,
                     };
-                });
+                })
             }),
+            get_pending_notifications: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationPendingListOutcome {
+                        reason: NotificationLifecycleReason::Ok,
+                        notifications: Some(vec![]),
+                    };
+                })
+            }),
+            schedule_notification: Arc::new(
+                move |_request: &NotificationRequest,
+                      _schedule: &NotificationSchedule|
+                      -> NotificationScheduleFuture {
+                    let s = scheduled_clone.clone();
+                    return Box::pin(async move {
+                        return NotificationScheduleOutcome {
+                            reason: NotificationScheduleReason::Scheduled,
+                            precision: Some(NotificationSchedulePrecision::Exact),
+                            scheduled: Some(s),
+                            fields: None,
+                        };
+                    });
+                },
+            ),
             provider,
         };
         let outcome = block_on(schedule_notification(&cap, &request, &schedule));
@@ -453,17 +511,21 @@ mod sugar_tests {
     fn get_notification_permission_returns_provider_outcome() {
         let provider = make_provider();
         let cap = HostNotificationPermissionCapability {
-            get_permission: Arc::new(|| Box::pin(async {
-                return NotificationPermissionQueryOutcome {
-                    reason: NotificationLifecycleReason::Ok,
-                    permission: Some(NotificationPermission::Granted),
-                };
-            })),
-            request_permission: Arc::new(|| Box::pin(async {
-                return NotificationPermissionRequestOutcome {
-                    reason: NotificationPermissionRequestReason::Granted,
-                };
-            })),
+            get_permission: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationPermissionQueryOutcome {
+                        reason: NotificationLifecycleReason::Ok,
+                        permission: Some(NotificationPermission::Granted),
+                    };
+                })
+            }),
+            request_permission: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationPermissionRequestOutcome {
+                        reason: NotificationPermissionRequestReason::Granted,
+                    };
+                })
+            }),
             provider,
         };
         let outcome = block_on(get_notification_permission(&cap));
@@ -475,17 +537,21 @@ mod sugar_tests {
     fn request_notification_permission_returns_provider_outcome() {
         let provider = make_provider();
         let cap = HostNotificationPermissionCapability {
-            get_permission: Arc::new(|| Box::pin(async {
-                return NotificationPermissionQueryOutcome {
-                    reason: NotificationLifecycleReason::Ok,
-                    permission: Some(NotificationPermission::Default),
-                };
-            })),
-            request_permission: Arc::new(|| Box::pin(async {
-                return NotificationPermissionRequestOutcome {
-                    reason: NotificationPermissionRequestReason::Granted,
-                };
-            })),
+            get_permission: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationPermissionQueryOutcome {
+                        reason: NotificationLifecycleReason::Ok,
+                        permission: Some(NotificationPermission::Default),
+                    };
+                })
+            }),
+            request_permission: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationPermissionRequestOutcome {
+                        reason: NotificationPermissionRequestReason::Granted,
+                    };
+                })
+            }),
             provider,
         };
         let outcome = block_on(request_notification_permission(&cap));
@@ -496,12 +562,14 @@ mod sugar_tests {
     fn get_active_notifications_returns_provider_outcome() {
         let provider = make_provider();
         let cap = HostNotificationActiveListCapability {
-            get_active_notifications: Arc::new(|| Box::pin(async {
-                return NotificationActiveListOutcome {
-                    reason: NotificationLifecycleReason::Ok,
-                    notifications: Some(vec![]),
-                };
-            })),
+            get_active_notifications: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationActiveListOutcome {
+                        reason: NotificationLifecycleReason::Ok,
+                        notifications: Some(vec![]),
+                    };
+                })
+            }),
             provider,
         };
         let outcome = block_on(get_active_notifications(&cap));
@@ -513,20 +581,36 @@ mod sugar_tests {
     fn get_pending_notifications_returns_provider_outcome() {
         let provider = make_provider();
         let cap = HostNotificationSchedulingCapability {
-            cancel_all_scheduled_notifications: Arc::new(|| Box::pin(async {
-                return NotificationLifecycleOutcome { reason: NotificationLifecycleReason::Ok, failures: None };
-            })),
-            get_pending_notifications: Arc::new(|| Box::pin(async {
-                return NotificationPendingListOutcome {
-                    reason: NotificationLifecycleReason::Ok,
-                    notifications: Some(vec![]),
-                };
-            })),
-            schedule_notification: Arc::new(|_request: &NotificationRequest, _schedule: &NotificationSchedule| -> NotificationScheduleFuture {
-                return Box::pin(async {
-                    return NotificationScheduleOutcome { reason: NotificationScheduleReason::OperationFailed, precision: None, scheduled: None, fields: None };
-                });
+            cancel_all_scheduled_notifications: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationLifecycleOutcome {
+                        reason: NotificationLifecycleReason::Ok,
+                        failures: None,
+                    };
+                })
             }),
+            get_pending_notifications: Arc::new(|| {
+                Box::pin(async {
+                    return NotificationPendingListOutcome {
+                        reason: NotificationLifecycleReason::Ok,
+                        notifications: Some(vec![]),
+                    };
+                })
+            }),
+            schedule_notification: Arc::new(
+                |_request: &NotificationRequest,
+                 _schedule: &NotificationSchedule|
+                 -> NotificationScheduleFuture {
+                    return Box::pin(async {
+                        return NotificationScheduleOutcome {
+                            reason: NotificationScheduleReason::OperationFailed,
+                            precision: None,
+                            scheduled: None,
+                            fields: None,
+                        };
+                    });
+                },
+            ),
             provider,
         };
         let outcome = block_on(get_pending_notifications(&cap));
@@ -561,7 +645,10 @@ mod sugar_tests {
     fn detach_before_attach_returns_not_attached() {
         let subscription = create_notification_click_subscription();
         let outcome = block_on(detach_notification_click_subscription(&subscription));
-        assert_eq!(outcome.reason, NotificationSubscriptionDetachReason::NotAttached);
+        assert_eq!(
+            outcome.reason,
+            NotificationSubscriptionDetachReason::NotAttached
+        );
     }
 
     #[test]
@@ -570,7 +657,10 @@ mod sugar_tests {
         let first = block_on(dispose_notification_click_subscription(&subscription));
         assert_eq!(first.reason, NotificationSubscriptionDisposeReason::Ok);
         let second = block_on(dispose_notification_click_subscription(&subscription));
-        assert_eq!(second.reason, NotificationSubscriptionDisposeReason::AlreadyDisposed);
+        assert_eq!(
+            second.reason,
+            NotificationSubscriptionDisposeReason::AlreadyDisposed
+        );
     }
 
     #[test]
@@ -591,7 +681,10 @@ mod sugar_tests {
         let subscription = create_notification_click_subscription();
         let _dispose = block_on(dispose_notification_click_subscription(&subscription));
         let outcome = block_on(attach_notification_click_subscription(&cap, &subscription));
-        assert_eq!(outcome.reason, NotificationSubscriptionAttachReason::OperationFailed);
+        assert_eq!(
+            outcome.reason,
+            NotificationSubscriptionAttachReason::OperationFailed
+        );
     }
 
     #[test]

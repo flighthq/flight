@@ -1,13 +1,13 @@
 use std::collections::HashSet;
 
-use flight_path::{flatten_path, Path};
+use flight_path::{Path, flatten_path};
 
 use crate::martinez_kernel::{PathBooleanFillRule, PathBooleanKernel};
 use crate::resolve_path_regions::resolve_path_regions;
 
 #[cfg(test)]
 mod sugar_tests {
-    use flight_path::{append_path_rectangle, create_path, Path};
+    use flight_path::{Path, append_path_rectangle, create_path};
 
     use crate::contract::*;
 
@@ -22,8 +22,31 @@ mod sugar_tests {
         let k = create_martinez_path_boolean_kernel();
         let mut oa = create_path();
         let mut ob = create_path();
-        k.offset_path(&mut oa, &square(0.0, 0.0, 10.0), 2.0, Some(&PathOffsetOptions { join: Some(PathOffsetJoin::Round), end: None, miter_limit: None, tolerance: None, arc_tolerance: Some(0.5) }));
-        offset_path(&mut ob, &k, &square(0.0, 0.0, 10.0), 2.0, Some(&PathOffsetOptions { join: Some(PathOffsetJoin::Round), end: None, miter_limit: None, tolerance: None, arc_tolerance: Some(0.5) }));
+        k.offset_path(
+            &mut oa,
+            &square(0.0, 0.0, 10.0),
+            2.0,
+            Some(&PathOffsetOptions {
+                join: Some(PathOffsetJoin::Round),
+                end: None,
+                miter_limit: None,
+                tolerance: None,
+                arc_tolerance: Some(0.5),
+            }),
+        );
+        offset_path(
+            &mut ob,
+            &k,
+            &square(0.0, 0.0, 10.0),
+            2.0,
+            Some(&PathOffsetOptions {
+                join: Some(PathOffsetJoin::Round),
+                end: None,
+                miter_limit: None,
+                tolerance: None,
+                arc_tolerance: Some(0.5),
+            }),
+        );
         assert_eq!(oa, ob);
         assert!(!oa.commands.is_empty());
     }
@@ -177,8 +200,7 @@ fn emit_offset_end_cap(
             ring.push(this_start_y - radius * this_dir_y);
         }
         PathOffsetEnd::Round => {
-            let start_angle =
-                (previous_end_y - vy).atan2(previous_end_x - vx);
+            let start_angle = (previous_end_y - vy).atan2(previous_end_x - vx);
             let mid_x = (start_angle + HALF_PI).cos();
             let mid_y = (start_angle + HALF_PI).sin();
             let sweep = if mid_x * previous_dir_x + mid_y * previous_dir_y >= 0.0 {
@@ -250,10 +272,8 @@ fn emit_offset_join(
             }
             PathOffsetJoin::Round => {
                 let radius = signed_delta.abs();
-                let start_angle =
-                    (previous_end_y - vy).atan2(previous_end_x - vx);
-                let end_angle =
-                    (this_start_y - vy).atan2(this_start_x - vx);
+                let start_angle = (previous_end_y - vy).atan2(previous_end_x - vx);
+                let end_angle = (this_start_y - vy).atan2(this_start_x - vx);
                 push_offset_arc(
                     ring,
                     vx,
@@ -272,11 +292,7 @@ fn emit_offset_join(
 }
 
 // flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
-fn get_clean_contour_vertices(
-    contour: &[f64],
-    closed: bool,
-    point_eps_sq: f64,
-) -> Vec<f64> {
+fn get_clean_contour_vertices(contour: &[f64], closed: bool, point_eps_sq: f64) -> Vec<f64> {
     let mut out: Vec<f64> = Vec::new();
     let mut i = 0;
     while i < contour.len() {
@@ -315,15 +331,27 @@ fn get_contour_point_eps(contours: &[Vec<f64>]) -> f64 {
         while i < contour.len() {
             let x = contour[i];
             let y = contour[i + 1];
-            if x < min_x { min_x = x; }
-            if x > max_x { max_x = x; }
-            if y < min_y { min_y = y; }
-            if y > max_y { max_y = y; }
+            if x < min_x {
+                min_x = x;
+            }
+            if x > max_x {
+                max_x = x;
+            }
+            if y < min_y {
+                min_y = y;
+            }
+            if y > max_y {
+                max_y = y;
+            }
             i += 2;
         }
     }
     let extent = f64::max(max_x - min_x, max_y - min_y);
-    return if extent > 0.0 { extent * POINT_EPS_RELATIVE } else { POINT_EPS };
+    return if extent > 0.0 {
+        extent * POINT_EPS_RELATIVE
+    } else {
+        POINT_EPS
+    };
 }
 
 // flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
@@ -425,9 +453,7 @@ pub fn offset_path(
     let join = options
         .and_then(|o| o.join)
         .unwrap_or(PathOffsetJoin::Miter);
-    let end = options
-        .and_then(|o| o.end)
-        .unwrap_or(PathOffsetEnd::Butt);
+    let end = options.and_then(|o| o.end).unwrap_or(PathOffsetEnd::Butt);
     let miter_limit = options
         .and_then(|o| o.miter_limit)
         .unwrap_or(DEFAULT_MITER_LIMIT);
@@ -503,7 +529,12 @@ pub fn offset_path(
         }
     }
 
-    resolve_path_regions(out, path_boolean_kernel, &raw_rings, PathBooleanFillRule::Positive);
+    resolve_path_regions(
+        out,
+        path_boolean_kernel,
+        &raw_rings,
+        PathBooleanFillRule::Positive,
+    );
 }
 
 // flight-lint: allow(conform-extra) D9 enum-string conversion for the TS PathOffsetEnd string union; TS exports no get_/parse_ free functions
@@ -578,7 +609,13 @@ impl Default for PathOffsetOptions {
 
 impl PathBooleanKernel {
     // flight-lint: allow(f64) operates on f64 path/contour coordinates (flight-path Path.data and flatten_path contours, TS number); f32 sufficiency not measured
-    pub fn offset_path(&self, out: &mut Path, path: &Path, delta: f64, options: Option<&PathOffsetOptions>) {
+    pub fn offset_path(
+        &self,
+        out: &mut Path,
+        path: &Path,
+        delta: f64,
+        options: Option<&PathOffsetOptions>,
+    ) {
         return offset_path(out, self, path, delta, options);
     }
 }

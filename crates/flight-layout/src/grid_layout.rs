@@ -25,8 +25,7 @@ fn get_grid_auto_track_size(
     let mut size: f32 = 0.0;
     for i in 0..tree.nodes.len() {
         let node = &tree.nodes[i];
-        if node.parent_index != parent_index as i32 || !is_grid_item_style_valid(&node.item_style)
-        {
+        if node.parent_index != parent_index as i32 || !is_grid_item_style_valid(&node.item_style) {
             continue;
         }
         let item = match &node.item_style {
@@ -92,11 +91,7 @@ fn get_grid_column(
     return get_grid_ordinal(tree, parent_index, child_index) % column_count as i32;
 }
 
-fn get_grid_ordinal(
-    tree: &LayoutTree,
-    parent_index: usize,
-    child_index: usize,
-) -> i32 {
+fn get_grid_ordinal(tree: &LayoutTree, parent_index: usize, child_index: usize) -> i32 {
     let mut ordinal: i32 = 0;
     for i in 0..child_index {
         if tree.nodes[i].parent_index == parent_index as i32 {
@@ -152,8 +147,7 @@ fn get_grid_track_size(
             );
         }
         GridLayoutTrack::Fraction { fraction } => {
-            let mut occupied =
-                gap * f32::max(0.0, (tracks.len() as i32 - 1) as f32);
+            let mut occupied = gap * f32::max(0.0, (tracks.len() as i32 - 1) as f32);
             let mut total_fraction: f32 = 0.0;
             for i in 0..tracks.len() {
                 match &tracks[i] {
@@ -223,10 +217,8 @@ fn grid_layout_resolver(
     let padding_bottom = container.padding_bottom.unwrap_or(0.0);
     let column_gap = container.column_gap.unwrap_or(0.0);
     let row_gap = container.row_gap.unwrap_or(0.0);
-    let available_width =
-        f32::max(0.0, out[parent_offset + 2] - padding_left - padding_right);
-    let available_height =
-        f32::max(0.0, out[parent_offset + 3] - padding_top - padding_bottom);
+    let available_width = f32::max(0.0, out[parent_offset + 2] - padding_left - padding_right);
+    let available_height = f32::max(0.0, out[parent_offset + 3] - padding_top - padding_bottom);
 
     let mut x = out[parent_offset] + padding_left;
     for i in 0..(column as usize) {

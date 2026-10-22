@@ -68,8 +68,8 @@ mod scene3d_gl_pipeline;
 mod sheen_pbr_gl_extension;
 mod specular_pbr_gl_extension;
 mod transmission_volume_pbr_gl_extension;
-mod wrapped_diffuse_pbr_gl_extension;
 mod types;
+mod wrapped_diffuse_pbr_gl_extension;
 
 pub mod contract;
 
@@ -130,6 +130,6 @@ pub use contract::register_gl_pbr_extension;
 pub use contract::render_gl_environment_skybox;
 
 pub use crate::types::{
-    GlEnvironmentCaptureOptions, GlPbrExtensionIssue, GlPbrExtensionIssueCode, GlPbrTransmissionSceneColor,
-    GlScene3DForwardLightList, MeshGeometryUvSetExplanation,
+    GlEnvironmentCaptureOptions, GlPbrExtensionIssue, GlPbrExtensionIssueCode,
+    GlPbrTransmissionSceneColor, GlScene3DForwardLightList, MeshGeometryUvSetExplanation,
 };

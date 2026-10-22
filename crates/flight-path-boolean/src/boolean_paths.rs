@@ -1,13 +1,11 @@
-use flight_path::{flatten_path, Path, PathWinding};
+use flight_path::{Path, PathWinding, flatten_path};
 
-use crate::martinez_kernel::{
-    PathBooleanFillRule, PathBooleanKernel, PathBooleanOperation,
-};
+use crate::martinez_kernel::{PathBooleanFillRule, PathBooleanKernel, PathBooleanOperation};
 use crate::write_path_boolean_contours::write_path_boolean_contours;
 
 #[cfg(test)]
 mod sugar_tests {
-    use flight_path::{append_path_rectangle, create_path, Path, PathWinding};
+    use flight_path::{Path, PathWinding, append_path_rectangle, create_path};
 
     use crate::contract::*;
 
@@ -22,8 +20,27 @@ mod sugar_tests {
         let k = create_martinez_path_boolean_kernel();
         let mut oa = create_path();
         let mut ob = create_path();
-        k.boolean_paths(&mut oa, &square(0.0, 0.0, 10.0), &square(5.0, 5.0, 10.0), PathBooleanOperation::Xor, Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
-        boolean_paths(&mut ob, &k, &square(0.0, 0.0, 10.0), &square(5.0, 5.0, 10.0), PathBooleanOperation::Xor, Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
+        k.boolean_paths(
+            &mut oa,
+            &square(0.0, 0.0, 10.0),
+            &square(5.0, 5.0, 10.0),
+            PathBooleanOperation::Xor,
+            Some(&PathBooleanOptions {
+                fill_rule: Some(PathWinding::EvenOdd),
+                tolerance: Some(0.5),
+            }),
+        );
+        boolean_paths(
+            &mut ob,
+            &k,
+            &square(0.0, 0.0, 10.0),
+            &square(5.0, 5.0, 10.0),
+            PathBooleanOperation::Xor,
+            Some(&PathBooleanOptions {
+                fill_rule: Some(PathWinding::EvenOdd),
+                tolerance: Some(0.5),
+            }),
+        );
         assert_eq!(oa, ob);
         assert!(!oa.commands.is_empty());
     }
@@ -33,8 +50,25 @@ mod sugar_tests {
         let k = create_martinez_path_boolean_kernel();
         let mut oa = create_path();
         let mut ob = create_path();
-        k.difference_paths(&mut oa, &square(0.0, 0.0, 10.0), &square(5.0, 5.0, 10.0), Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
-        difference_paths(&mut ob, &k, &square(0.0, 0.0, 10.0), &square(5.0, 5.0, 10.0), Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
+        k.difference_paths(
+            &mut oa,
+            &square(0.0, 0.0, 10.0),
+            &square(5.0, 5.0, 10.0),
+            Some(&PathBooleanOptions {
+                fill_rule: Some(PathWinding::EvenOdd),
+                tolerance: Some(0.5),
+            }),
+        );
+        difference_paths(
+            &mut ob,
+            &k,
+            &square(0.0, 0.0, 10.0),
+            &square(5.0, 5.0, 10.0),
+            Some(&PathBooleanOptions {
+                fill_rule: Some(PathWinding::EvenOdd),
+                tolerance: Some(0.5),
+            }),
+        );
         assert_eq!(oa, ob);
         assert!(!oa.commands.is_empty());
     }
@@ -44,8 +78,25 @@ mod sugar_tests {
         let k = create_martinez_path_boolean_kernel();
         let mut oa = create_path();
         let mut ob = create_path();
-        k.intersect_paths(&mut oa, &square(0.0, 0.0, 10.0), &square(5.0, 5.0, 10.0), Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
-        intersect_paths(&mut ob, &k, &square(0.0, 0.0, 10.0), &square(5.0, 5.0, 10.0), Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
+        k.intersect_paths(
+            &mut oa,
+            &square(0.0, 0.0, 10.0),
+            &square(5.0, 5.0, 10.0),
+            Some(&PathBooleanOptions {
+                fill_rule: Some(PathWinding::EvenOdd),
+                tolerance: Some(0.5),
+            }),
+        );
+        intersect_paths(
+            &mut ob,
+            &k,
+            &square(0.0, 0.0, 10.0),
+            &square(5.0, 5.0, 10.0),
+            Some(&PathBooleanOptions {
+                fill_rule: Some(PathWinding::EvenOdd),
+                tolerance: Some(0.5),
+            }),
+        );
         assert_eq!(oa, ob);
         assert!(!oa.commands.is_empty());
     }
@@ -55,8 +106,25 @@ mod sugar_tests {
         let k = create_martinez_path_boolean_kernel();
         let mut oa = create_path();
         let mut ob = create_path();
-        k.union_paths(&mut oa, &square(0.0, 0.0, 10.0), &square(5.0, 5.0, 10.0), Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
-        union_paths(&mut ob, &k, &square(0.0, 0.0, 10.0), &square(5.0, 5.0, 10.0), Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
+        k.union_paths(
+            &mut oa,
+            &square(0.0, 0.0, 10.0),
+            &square(5.0, 5.0, 10.0),
+            Some(&PathBooleanOptions {
+                fill_rule: Some(PathWinding::EvenOdd),
+                tolerance: Some(0.5),
+            }),
+        );
+        union_paths(
+            &mut ob,
+            &k,
+            &square(0.0, 0.0, 10.0),
+            &square(5.0, 5.0, 10.0),
+            Some(&PathBooleanOptions {
+                fill_rule: Some(PathWinding::EvenOdd),
+                tolerance: Some(0.5),
+            }),
+        );
         assert_eq!(oa, ob);
         assert!(!oa.commands.is_empty());
     }
@@ -66,8 +134,25 @@ mod sugar_tests {
         let k = create_martinez_path_boolean_kernel();
         let mut oa = create_path();
         let mut ob = create_path();
-        k.xor_paths(&mut oa, &square(0.0, 0.0, 10.0), &square(5.0, 5.0, 10.0), Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
-        xor_paths(&mut ob, &k, &square(0.0, 0.0, 10.0), &square(5.0, 5.0, 10.0), Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
+        k.xor_paths(
+            &mut oa,
+            &square(0.0, 0.0, 10.0),
+            &square(5.0, 5.0, 10.0),
+            Some(&PathBooleanOptions {
+                fill_rule: Some(PathWinding::EvenOdd),
+                tolerance: Some(0.5),
+            }),
+        );
+        xor_paths(
+            &mut ob,
+            &k,
+            &square(0.0, 0.0, 10.0),
+            &square(5.0, 5.0, 10.0),
+            Some(&PathBooleanOptions {
+                fill_rule: Some(PathWinding::EvenOdd),
+                tolerance: Some(0.5),
+            }),
+        );
         assert_eq!(oa, ob);
         assert!(!oa.commands.is_empty());
     }
@@ -100,7 +185,9 @@ pub fn boolean_paths(
     options: Option<&PathBooleanOptions>,
 ) {
     let fill_rule = get_path_boolean_fill_rule_for_winding(
-        options.and_then(|o| o.fill_rule).unwrap_or(PathWinding::NonZero),
+        options
+            .and_then(|o| o.fill_rule)
+            .unwrap_or(PathWinding::NonZero),
     );
     let tolerance = options
         .and_then(|o| o.tolerance)
@@ -109,7 +196,12 @@ pub fn boolean_paths(
     let mut clip_contours = Vec::new();
     flatten_path(&mut subject_contours, subject, Some(tolerance));
     flatten_path(&mut clip_contours, clip, Some(tolerance));
-    let result = (path_boolean_kernel.compute_path_boolean)(&subject_contours, &clip_contours, operation, fill_rule);
+    let result = (path_boolean_kernel.compute_path_boolean)(
+        &subject_contours,
+        &clip_contours,
+        operation,
+        fill_rule,
+    );
     write_path_boolean_contours(out, &result);
 }
 
@@ -122,7 +214,14 @@ pub fn difference_paths(
     b: &Path,
     options: Option<&PathBooleanOptions>,
 ) {
-    boolean_paths(out, path_boolean_kernel, a, b, PathBooleanOperation::Difference, options);
+    boolean_paths(
+        out,
+        path_boolean_kernel,
+        a,
+        b,
+        PathBooleanOperation::Difference,
+        options,
+    );
 }
 
 /// The kernel fill rule for a public `PathWinding` option (TS passes the winding string straight
@@ -143,7 +242,14 @@ pub fn intersect_paths(
     b: &Path,
     options: Option<&PathBooleanOptions>,
 ) {
-    boolean_paths(out, path_boolean_kernel, a, b, PathBooleanOperation::Intersection, options);
+    boolean_paths(
+        out,
+        path_boolean_kernel,
+        a,
+        b,
+        PathBooleanOperation::Intersection,
+        options,
+    );
 }
 
 // flight-lint: allow(conform-params) D24: user-approved required out-first writer returning unit; pinned TS still takes optional trailing out and may allocate
@@ -155,7 +261,14 @@ pub fn union_paths(
     b: &Path,
     options: Option<&PathBooleanOptions>,
 ) {
-    boolean_paths(out, path_boolean_kernel, a, b, PathBooleanOperation::Union, options);
+    boolean_paths(
+        out,
+        path_boolean_kernel,
+        a,
+        b,
+        PathBooleanOperation::Union,
+        options,
+    );
 }
 
 // flight-lint: allow(conform-params) D24: user-approved required out-first writer returning unit; pinned TS still takes optional trailing out and may allocate
@@ -168,7 +281,14 @@ pub fn xor_paths(
     b: &Path,
     options: Option<&PathBooleanOptions>,
 ) {
-    boolean_paths(out, path_boolean_kernel, a, b, PathBooleanOperation::Xor, options);
+    boolean_paths(
+        out,
+        path_boolean_kernel,
+        a,
+        b,
+        PathBooleanOperation::Xor,
+        options,
+    );
 }
 
 impl Default for PathBooleanOptions {
@@ -181,23 +301,54 @@ impl Default for PathBooleanOptions {
 }
 
 impl PathBooleanKernel {
-    pub fn boolean_paths(&self, out: &mut Path, subject: &Path, clip: &Path, operation: PathBooleanOperation, options: Option<&PathBooleanOptions>) {
+    pub fn boolean_paths(
+        &self,
+        out: &mut Path,
+        subject: &Path,
+        clip: &Path,
+        operation: PathBooleanOperation,
+        options: Option<&PathBooleanOptions>,
+    ) {
         return boolean_paths(out, self, subject, clip, operation, options);
     }
 
-    pub fn difference_paths(&self, out: &mut Path, a: &Path, b: &Path, options: Option<&PathBooleanOptions>) {
+    pub fn difference_paths(
+        &self,
+        out: &mut Path,
+        a: &Path,
+        b: &Path,
+        options: Option<&PathBooleanOptions>,
+    ) {
         return difference_paths(out, self, a, b, options);
     }
 
-    pub fn intersect_paths(&self, out: &mut Path, a: &Path, b: &Path, options: Option<&PathBooleanOptions>) {
+    pub fn intersect_paths(
+        &self,
+        out: &mut Path,
+        a: &Path,
+        b: &Path,
+        options: Option<&PathBooleanOptions>,
+    ) {
         return intersect_paths(out, self, a, b, options);
     }
 
-    pub fn union_paths(&self, out: &mut Path, a: &Path, b: &Path, options: Option<&PathBooleanOptions>) {
+    pub fn union_paths(
+        &self,
+        out: &mut Path,
+        a: &Path,
+        b: &Path,
+        options: Option<&PathBooleanOptions>,
+    ) {
         return union_paths(out, self, a, b, options);
     }
 
-    pub fn xor_paths(&self, out: &mut Path, a: &Path, b: &Path, options: Option<&PathBooleanOptions>) {
+    pub fn xor_paths(
+        &self,
+        out: &mut Path,
+        a: &Path,
+        b: &Path,
+        options: Option<&PathBooleanOptions>,
+    ) {
         return xor_paths(out, self, a, b, options);
     }
 }

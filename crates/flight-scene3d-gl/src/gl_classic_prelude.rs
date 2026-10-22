@@ -10,7 +10,9 @@ use flight_render_gl::{
 use glow::HasContext;
 
 use crate::gl_lit_program::{gl_mesh_light_block_glsl, resolve_gl_lit_locations};
-use crate::gl_mesh_fragment_tail::{gl_mesh_fragment_tail_glsl, gl_mesh_fragment_tail_uniforms_glsl};
+use crate::gl_mesh_fragment_tail::{
+    gl_mesh_fragment_tail_glsl, gl_mesh_fragment_tail_uniforms_glsl,
+};
 use crate::gl_mesh_program::{
     GL_INSTANCE_VERTEX_DECLARATIONS_GLSL, compile_gl_program, ensure_gl_scene3d_program,
     gl_uv_transform_vertex_glsl,
@@ -111,9 +113,11 @@ pub fn compile_gl_classic_program(
     let mut lit = resolve_gl_lit_locations(gl, program);
     // SAFETY: lookups run on the owning GL thread.
     unsafe {
-        lit.mesh.loc_joint_normal_texture =
-            Cell::new(Some(gl.get_uniform_location(program, "u_jointNormalTexture")));
-        lit.mesh.loc_joint_texture = Cell::new(Some(gl.get_uniform_location(program, "u_jointTexture")));
+        lit.mesh.loc_joint_normal_texture = Cell::new(Some(
+            gl.get_uniform_location(program, "u_jointNormalTexture"),
+        ));
+        lit.mesh.loc_joint_texture =
+            Cell::new(Some(gl.get_uniform_location(program, "u_jointTexture")));
         lit.mesh.loc_model = gl.get_uniform_location(program, "u_model");
         lit.mesh.loc_normal_matrix = gl.get_uniform_location(program, "u_normalMatrix");
         lit.mesh.loc_view_projection = gl.get_uniform_location(program, "u_viewProjection");
@@ -135,7 +139,10 @@ pub fn compile_gl_classic_program(
 // Resolves the classic program for a define key, compiling and caching it on first use through the
 // shared scene program cache under the `classic:` family namespace, so each model + feature variant
 // is compiled at most once per state and reused every frame.
-pub fn ensure_gl_classic_program(state: &GlRenderState, key: &GlClassicDefineKey) -> Rc<GlClassicProgram> {
+pub fn ensure_gl_classic_program(
+    state: &GlRenderState,
+    key: &GlClassicDefineKey,
+) -> Rc<GlClassicProgram> {
     // Fold the render-state skinned-run flag into the variant so a skinned draw of an otherwise-identical
     // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
     let (full_key, skin_declarations_glsl) = {

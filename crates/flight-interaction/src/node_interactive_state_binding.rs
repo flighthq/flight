@@ -1,21 +1,20 @@
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use flight_entity::{
-    allocate_entity, attach_entity_binding, entries, get_record_keys, set_record_value, Entity,
+    Entity, allocate_entity, attach_entity_binding, entries, get_record_keys, set_record_value,
 };
-use flight_node::contract::{invalidate_node_appearance, invalidate_node_local_transform};
 use flight_node::NodeRef;
-use flight_scene2d::as_node2d_ref;
+use flight_node::contract::{invalidate_node_appearance, invalidate_node_local_transform};
 use flight_scene_document::{
-    FlightDocumentFields, FlightDocumentInteractiveState, FlightDocumentInteractiveStates,
-    FlightDocumentInteractiveStateTransitionDescriptor, FlightDocumentSchemaRegistry,
-    NodeInteractiveStateBinding, NodeInteractiveStateExplanation,
-    NodeInteractiveStateExtensionRuntime, NodeInteractiveStateFlags,
-    NodeInteractiveStateProperty, NodeInteractiveStateRefusalReason,
-    NodeInteractiveStateTransition, NodeInteractiveStateTransitionRequest,
-    NodeInteractiveStateTransitionValue,
+    FlightDocumentFields, FlightDocumentInteractiveState,
+    FlightDocumentInteractiveStateTransitionDescriptor, FlightDocumentInteractiveStates,
+    FlightDocumentSchemaRegistry, NodeInteractiveStateBinding, NodeInteractiveStateExplanation,
+    NodeInteractiveStateExtensionRuntime, NodeInteractiveStateFlags, NodeInteractiveStateProperty,
+    NodeInteractiveStateRefusalReason, NodeInteractiveStateTransition,
+    NodeInteractiveStateTransitionRequest, NodeInteractiveStateTransitionValue,
 };
+use flight_scene2d::as_node2d_ref;
 
 pub const INTERACTIVE_STATE_PROPERTIES: &[NodeInteractiveStateProperty] = &[
     NodeInteractiveStateProperty::Alpha,
@@ -46,7 +45,10 @@ struct InteractiveExtension {
 }
 
 struct InteractiveStateRuntime {
-    base: Vec<(NodeInteractiveStateProperty, NodeInteractiveStateTransitionValue)>,
+    base: Vec<(
+        NodeInteractiveStateProperty,
+        NodeInteractiveStateTransitionValue,
+    )>,
     disposed: Arc<AtomicBool>,
     extensions: Vec<InteractiveExtension>,
     flags: NodeInteractiveStateFlags,
@@ -300,7 +302,8 @@ fn build_interactive_state_runtime(
                                 explanation: Some(NodeInteractiveStateExplanation {
                                     kind: kind.clone(),
                                     property: None,
-                                    reason: NodeInteractiveStateRefusalReason::ExtensionCreationFailed,
+                                    reason:
+                                        NodeInteractiveStateRefusalReason::ExtensionCreationFailed,
                                 }),
                                 runtime: None,
                             };
@@ -437,10 +440,15 @@ fn get_phase<'a>(
     };
 }
 
-fn get_runtime_mut(binding: &mut NodeInteractiveStateBinding) -> Option<&mut InteractiveStateRuntime> {
+fn get_runtime_mut(
+    binding: &mut NodeInteractiveStateBinding,
+) -> Option<&mut InteractiveStateRuntime> {
     let slot = binding.entity_runtime_mut();
     let runtime = slot.data.as_mut()?;
-    return runtime.binding.as_mut()?.downcast_mut::<InteractiveStateRuntime>();
+    return runtime
+        .binding
+        .as_mut()?
+        .downcast_mut::<InteractiveStateRuntime>();
 }
 
 fn get_state_property(
@@ -451,21 +459,17 @@ fn get_state_property(
         NodeInteractiveStateProperty::Alpha => {
             state.alpha.map(NodeInteractiveStateTransitionValue::Number)
         }
-        NodeInteractiveStateProperty::ScaleX => {
-            state.scale_x.map(NodeInteractiveStateTransitionValue::Number)
-        }
-        NodeInteractiveStateProperty::ScaleY => {
-            state.scale_y.map(NodeInteractiveStateTransitionValue::Number)
-        }
-        NodeInteractiveStateProperty::Visible => {
-            state.visible.map(NodeInteractiveStateTransitionValue::Boolean)
-        }
-        NodeInteractiveStateProperty::X => {
-            state.x.map(NodeInteractiveStateTransitionValue::Number)
-        }
-        NodeInteractiveStateProperty::Y => {
-            state.y.map(NodeInteractiveStateTransitionValue::Number)
-        }
+        NodeInteractiveStateProperty::ScaleX => state
+            .scale_x
+            .map(NodeInteractiveStateTransitionValue::Number),
+        NodeInteractiveStateProperty::ScaleY => state
+            .scale_y
+            .map(NodeInteractiveStateTransitionValue::Number),
+        NodeInteractiveStateProperty::Visible => state
+            .visible
+            .map(NodeInteractiveStateTransitionValue::Boolean),
+        NodeInteractiveStateProperty::X => state.x.map(NodeInteractiveStateTransitionValue::Number),
+        NodeInteractiveStateProperty::Y => state.y.map(NodeInteractiveStateTransitionValue::Number),
     };
 }
 

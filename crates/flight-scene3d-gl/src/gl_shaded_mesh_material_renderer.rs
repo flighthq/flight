@@ -113,11 +113,16 @@ fn bind_gl_shaded_material_uniforms(
     bind_gl_shaded_material_map(state, &material.specular_map, 1, program.loc_specular_map);
     bind_gl_shaded_material_map(state, &material.normal_map, 2, program.loc_normal_map);
 
-    let diffuse_map = material.diffuse_map.as_ref().map(|texture| texture.read().unwrap());
+    let diffuse_map = material
+        .diffuse_map
+        .as_ref()
+        .map(|texture| texture.read().unwrap());
     bind_gl_uv_transform(
         &state.gl,
         program,
-        diffuse_map.as_deref().map(|texture| texture as &dyn TextureVariant),
+        diffuse_map
+            .as_deref()
+            .map(|texture| texture as &dyn TextureVariant),
     );
 }
 
@@ -132,7 +137,11 @@ fn bind_gl_shaded_mesh_material(
     let key = define_key_for_material(state, shaded);
     let program = ensure_gl_shaded_program(state, &key, modifiers);
     let active: GlMeshProgramRef = program.clone();
-    begin_gl_mesh_draw(state, &active, shaded.is_some_and(|shaded| shaded.double_sided));
+    begin_gl_mesh_draw(
+        state,
+        &active,
+        shaded.is_some_and(|shaded| shaded.double_sided),
+    );
 
     set_gl_mesh_view_projection(state, program.loc_view_projection, camera);
     set_gl_mesh_camera_position(&state.gl, program.loc_camera_position, camera);
@@ -194,11 +203,14 @@ fn bind_gl_shaded_modifiers(
 // The base-material feature flags for a ShadedMaterial: which optional maps are present and whether
 // alpha-mask cutoff is active. The modifier feature-set is keyed separately (in
 // ensure_gl_shaded_program) from the material's modifier stack.
-fn define_key_for_material(state: &mut GlRenderState, material: Option<&ShadedMaterial>) -> GlShadedDefineKey {
+fn define_key_for_material(
+    state: &mut GlRenderState,
+    material: Option<&ShadedMaterial>,
+) -> GlShadedDefineKey {
     let mut resolves = |slot: Option<&TextureSlot>| -> bool {
-        return slot
-            .and_then(|slot| slot.as_ref())
-            .is_some_and(|texture| resolve_gl_texture(state, &*texture.read().unwrap(), None, None).is_some());
+        return slot.and_then(|slot| slot.as_ref()).is_some_and(|texture| {
+            resolve_gl_texture(state, &*texture.read().unwrap(), None, None).is_some()
+        });
     };
     let has_diffuse_map = resolves(material.map(|material| &material.diffuse_map));
     let has_normal_map = resolves(material.map(|material| &material.normal_map));
@@ -207,7 +219,8 @@ fn define_key_for_material(state: &mut GlRenderState, material: Option<&ShadedMa
         .and_then(|material| material.diffuse_map.as_ref())
         .map(|texture| texture.read().unwrap());
     return GlShadedDefineKey {
-        alpha_mask_enabled: material.is_some_and(|material| material.alpha_mode == MaterialAlphaMode::Mask),
+        alpha_mask_enabled: material
+            .is_some_and(|material| material.alpha_mode == MaterialAlphaMode::Mask),
         has_color_adjustment: None,
         has_color_matrix: None,
         has_diffuse_map,
@@ -215,11 +228,19 @@ fn define_key_for_material(state: &mut GlRenderState, material: Option<&ShadedMa
         has_normal_map,
         has_skin: None,
         has_specular_map,
-        has_uv_transform: has_gl_uv_transform(diffuse_map.as_deref().map(|texture| texture as &dyn TextureVariant)),
+        has_uv_transform: has_gl_uv_transform(
+            diffuse_map
+                .as_deref()
+                .map(|texture| texture as &dyn TextureVariant),
+        ),
     };
 }
 
-fn draw_gl_shaded_mesh_material(state: &mut GlRenderState, proxy: &Scene3DRenderProxy, geometry: &MeshGeometry) {
+fn draw_gl_shaded_mesh_material(
+    state: &mut GlRenderState,
+    proxy: &Scene3DRenderProxy,
+    geometry: &MeshGeometry,
+) {
     let Some(program) = get_gl_scene3d_runtime(state).active_mesh_program.clone() else {
         return;
     };

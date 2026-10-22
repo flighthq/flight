@@ -101,8 +101,11 @@ pub fn decompose_matrix4_to_transform3d(out: &mut Transform3D, m: &Matrix4) {
     let sy = (m10 * m10 + m11 * m11 + m12 * m12).sqrt();
     let sz = (m20 * m20 + m21 * m21 + m22 * m22).sqrt();
 
-    let det = m00 * (m11 * m22 - m12 * m21) - m10 * (m01 * m22 - m02 * m21) + m20 * (m01 * m12 - m02 * m11);
-    if det < 0.0 { sx = -sx; }
+    let det = m00 * (m11 * m22 - m12 * m21) - m10 * (m01 * m22 - m02 * m21)
+        + m20 * (m01 * m12 - m02 * m11);
+    if det < 0.0 {
+        sx = -sx;
+    }
 
     out.position.x = tx;
     out.position.y = ty;
@@ -162,7 +165,12 @@ impl Default for Transform3D {
             rotation: Quaternion::default(),
             scale: Vector3::default(),
         };
-        initialize_transform3d(&mut out, &Vector3::default(), &Quaternion::default(), &create_vector3(1.0, 1.0, 1.0));
+        initialize_transform3d(
+            &mut out,
+            &Vector3::default(),
+            &Quaternion::default(),
+            &create_vector3(1.0, 1.0, 1.0),
+        );
         return out;
     }
 }

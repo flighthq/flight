@@ -9,8 +9,14 @@ mod sugar_tests {
 
     #[test]
     fn new_matches_create_brightness_contrast_adjustment() {
-        let a = BrightnessContrastAdjustment::new(Some(&BrightnessContrastAdjustmentOptions { brightness: Some(0.1), contrast: Some(1.2) }));
-        let b = create_brightness_contrast_adjustment(Some(&BrightnessContrastAdjustmentOptions { brightness: Some(0.1), contrast: Some(1.2) }));
+        let a = BrightnessContrastAdjustment::new(Some(&BrightnessContrastAdjustmentOptions {
+            brightness: Some(0.1),
+            contrast: Some(1.2),
+        }));
+        let b = create_brightness_contrast_adjustment(Some(&BrightnessContrastAdjustmentOptions {
+            brightness: Some(0.1),
+            contrast: Some(1.2),
+        }));
         assert_eq!(a.kind, b.kind);
         assert_eq!(a.color_matrix, b.color_matrix);
     }
@@ -33,23 +39,25 @@ pub struct BrightnessContrastAdjustmentOptions {
 }
 
 // flight-lint: allow(conform-params) D23 C: options derive the 4x5 color matrix from brightness+contrast — KEEP under c0f9227c
-pub fn create_brightness_contrast_adjustment(options: Option<&BrightnessContrastAdjustmentOptions>) -> BrightnessContrastAdjustment {
+pub fn create_brightness_contrast_adjustment(
+    options: Option<&BrightnessContrastAdjustmentOptions>,
+) -> BrightnessContrastAdjustment {
     let mut out: BrightnessContrastAdjustment = allocate_entity();
     initialize_brightness_contrast_adjustment(&mut out, options);
     return out;
 }
 
 // flight-lint: allow(conform-params) D23 C: options derive the 4x5 color matrix from brightness+contrast — KEEP under c0f9227c
-pub fn initialize_brightness_contrast_adjustment(out: &mut BrightnessContrastAdjustment, options: Option<&BrightnessContrastAdjustmentOptions>) {
+pub fn initialize_brightness_contrast_adjustment(
+    out: &mut BrightnessContrastAdjustment,
+    options: Option<&BrightnessContrastAdjustmentOptions>,
+) {
     let brightness = options.and_then(|o| o.brightness).unwrap_or(0.0);
     let contrast = options.and_then(|o| o.contrast).unwrap_or(1.0);
     let s = contrast;
     let o = brightness * contrast + 0.5 * (1.0 - contrast);
     let color_matrix = [
-        s, 0.0, 0.0, 0.0, o,
-        0.0, s, 0.0, 0.0, o,
-        0.0, 0.0, s, 0.0, o,
-        0.0, 0.0, 0.0, 1.0, 0.0,
+        s, 0.0, 0.0, 0.0, o, 0.0, s, 0.0, 0.0, o, 0.0, 0.0, s, 0.0, o, 0.0, 0.0, 0.0, 1.0, 0.0,
     ];
     out.brightness = brightness;
     out.contrast = contrast;

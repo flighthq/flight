@@ -8,7 +8,9 @@ use flight_render_gl::{GlRenderState, resolve_gl_texture};
 use flight_texture::Texture;
 use glow::HasContext;
 
-use crate::gl_mesh_fragment_tail::{gl_mesh_fragment_tail_glsl, gl_mesh_fragment_tail_uniforms_glsl};
+use crate::gl_mesh_fragment_tail::{
+    gl_mesh_fragment_tail_glsl, gl_mesh_fragment_tail_uniforms_glsl,
+};
 use crate::gl_mesh_program::{
     GL_INSTANCE_VERTEX_DECLARATIONS_GLSL, compile_gl_program, create_gl_mesh_program_record,
     ensure_gl_scene3d_program, gl_uv_transform_vertex_glsl,
@@ -31,7 +33,13 @@ pub fn bind_gl_unlit_surface(
     let gl = state.gl.clone();
     // SAFETY: the program is bound on the owning GL thread.
     unsafe {
-        gl.uniform_4_f32(program.loc_color.as_ref(), color.r, color.g, color.b, color.a);
+        gl.uniform_4_f32(
+            program.loc_color.as_ref(),
+            color.r,
+            color.g,
+            color.b,
+            color.a,
+        );
         gl.uniform_1_f32(program.loc_intensity.as_ref(), intensity);
         gl.uniform_1_f32(program.loc_alpha_cutoff.as_ref(), alpha_cutoff);
     }
@@ -107,8 +115,11 @@ pub fn compile_gl_unlit_program(
         let loc_color = gl.get_uniform_location(program, "u_color");
         let loc_color_map = gl.get_uniform_location(program, "u_colorMap");
         let loc_intensity = gl.get_uniform_location(program, "u_intensity");
-        mesh.loc_joint_normal_texture = Cell::new(Some(gl.get_uniform_location(program, "u_jointNormalTexture")));
-        mesh.loc_joint_texture = Cell::new(Some(gl.get_uniform_location(program, "u_jointTexture")));
+        mesh.loc_joint_normal_texture = Cell::new(Some(
+            gl.get_uniform_location(program, "u_jointNormalTexture"),
+        ));
+        mesh.loc_joint_texture =
+            Cell::new(Some(gl.get_uniform_location(program, "u_jointTexture")));
         mesh.loc_model = gl.get_uniform_location(program, "u_model");
         mesh.loc_normal_matrix = None;
         mesh.loc_view_projection = gl.get_uniform_location(program, "u_viewProjection");
@@ -124,7 +135,10 @@ pub fn compile_gl_unlit_program(
 
 // Resolves the unlit program for a define key, compiling and caching it on first use through the
 // shared scene program cache under the `unlit:` family namespace.
-pub fn ensure_gl_unlit_program(state: &GlRenderState, key: &GlUnlitDefineKey) -> Rc<GlUnlitProgram> {
+pub fn ensure_gl_unlit_program(
+    state: &GlRenderState,
+    key: &GlUnlitDefineKey,
+) -> Rc<GlUnlitProgram> {
     // Fold the render-state skinned-run flag into the variant so a skinned draw of an otherwise-identical
     // material compiles + caches its own HAS_SKIN program, without the material renderer knowing.
     let (full_key, skin_declarations_glsl) = {
@@ -211,7 +225,8 @@ const UNLIT_VERTEX_BODY: &str = unlit_vertex_body_glsl!();
 
 macro_rules! unlit_fragment_body_glsl {
     () => {
-        concat!(r#"
+        concat!(
+            r#"
 precision highp float;
 #ifdef HAS_INSTANCES
 flat in vec4 v_instanceColor;
@@ -231,7 +246,9 @@ uniform sampler2D u_colorMap;
 uniform float u_alphaCutoff;
 #endif
 
-"#, gl_mesh_fragment_tail_uniforms_glsl!(), r#"
+"#,
+            gl_mesh_fragment_tail_uniforms_glsl!(),
+            r#"
 
 out vec4 fragColor;
 
@@ -254,9 +271,12 @@ void main() {
   color.a = 1.0;
 #endif
   fragColor = vec4(color.rgb * u_intensity, color.a);
-"#, gl_mesh_fragment_tail_glsl!(), r#"
+"#,
+            gl_mesh_fragment_tail_glsl!(),
+            r#"
 }
-"#)
+"#
+        )
     };
 }
 const UNLIT_FRAGMENT_BODY: &str = unlit_fragment_body_glsl!();

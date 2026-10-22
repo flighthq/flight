@@ -3,7 +3,13 @@ use flight_bitmap::contract::*;
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
-    return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
+    return BitmapRegion {
+        bitmap: bmp,
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+    };
 }
 
 mod dilate_bitmap {
@@ -23,8 +29,14 @@ mod dilate_bitmap {
     #[test]
     fn with_radius_0_is_an_identity_copy() {
         let mut src = create_bitmap(3, 1, None);
-        src.data[0] = 10; src.data[1] = 20; src.data[2] = 30; src.data[3] = 100;
-        src.data[4] = 50; src.data[5] = 60; src.data[6] = 70; src.data[7] = 200;
+        src.data[0] = 10;
+        src.data[1] = 20;
+        src.data[2] = 30;
+        src.data[3] = 100;
+        src.data[4] = 50;
+        src.data[5] = 60;
+        src.data[6] = 70;
+        src.data[7] = 200;
         let mut out = vec![0u8; 3 * 4];
         dilate_bitmap(&mut out, &region(src), 0);
         assert_eq!(out[0], 10);
@@ -61,7 +73,8 @@ mod erode_bitmap {
     #[test]
     fn with_radius_0_is_an_identity_copy() {
         let mut src = create_bitmap(3, 1, None);
-        src.data[4] = 10; src.data[7] = 100;
+        src.data[4] = 10;
+        src.data[7] = 100;
         let mut out = vec![0u8; 3 * 4];
         erode_bitmap(&mut out, &region(src), 0);
         assert_eq!(out[4], 10);

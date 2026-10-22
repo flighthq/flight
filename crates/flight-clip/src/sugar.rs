@@ -189,290 +189,314 @@ impl ClipRegion {
 #[cfg(test)]
 macro_rules! sugar_tests_module {
     () => {
-mod sugar_tests {
-    use std::sync::RwLock;
+        mod sugar_tests {
+            use std::sync::RwLock;
 
-    use flight_geometry::{create_matrix, create_rectangle};
-    use flight_log::create_log_state;
-    use flight_path::{PathWinding, create_path};
+            use flight_geometry::{create_matrix, create_rectangle};
+            use flight_log::create_log_state;
+            use flight_path::{PathWinding, create_path};
 
-    use super::*;
+            use super::*;
 
-    fn same(a: &Ref<ClipRegion>, b: &Ref<ClipRegion>) -> bool {
-        let a = a.read().unwrap();
-        let b = b.read().unwrap();
-        return a.rect == b.rect
-            && a.contours == b.contours
-            && a.winding == b.winding
-            && a.version == b.version;
-    }
+            fn same(a: &Ref<ClipRegion>, b: &Ref<ClipRegion>) -> bool {
+                let a = a.read().unwrap();
+                let b = b.read().unwrap();
+                return a.rect == b.rect
+                    && a.contours == b.contours
+                    && a.winding == b.winding
+                    && a.version == b.version;
+            }
 
-    fn triangle() -> Vec<Vec<f64>> {
-        return vec![vec![0.0, 0.0, 10.0, 0.0, 5.0, 10.0]];
-    }
+            fn triangle() -> Vec<Vec<f64>> {
+                return vec![vec![0.0, 0.0, 10.0, 0.0, 5.0, 10.0]];
+            }
 
-    #[test]
-    fn clip_region_bounds_matches_get_clip_region_bounds() {
-        let state = create_clip_region_state();
-        let clip = create_clip_region_from_rectangle(&create_rectangle(1.0, 2.0, 3.0, 4.0));
-        let mut method = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        let mut function = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        clip.bounds(&state, &mut method);
-        get_clip_region_bounds(&state, &mut function, &clip);
-        assert_eq!(method, function);
-    }
+            #[test]
+            fn clip_region_bounds_matches_get_clip_region_bounds() {
+                let state = create_clip_region_state();
+                let clip = create_clip_region_from_rectangle(&create_rectangle(1.0, 2.0, 3.0, 4.0));
+                let mut method = create_rectangle(0.0, 0.0, 0.0, 0.0);
+                let mut function = create_rectangle(0.0, 0.0, 0.0, 0.0);
+                clip.bounds(&state, &mut method);
+                get_clip_region_bounds(&state, &mut function, &clip);
+                assert_eq!(method, function);
+            }
 
-    #[test]
-    fn clip_region_clone_matches_clone_clip_region() {
-        let state = create_clip_region_state();
-        let clip = create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
-        assert!(same(
-            &clip.clone_region(&state),
-            &clone_clip_region(&state, &clip)
-        ));
-    }
+            #[test]
+            fn clip_region_clone_matches_clone_clip_region() {
+                let state = create_clip_region_state();
+                let clip =
+                    create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
+                assert!(same(
+                    &clip.clone_region(&state),
+                    &clone_clip_region(&state, &clip)
+                ));
+            }
 
-    #[test]
-    fn clip_region_contains_clip_region_matches_free_function() {
-        let state = create_clip_region_state();
-        let a = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 10.0, 10.0));
-        let b = create_clip_region_from_rectangle(&create_rectangle(1.0, 1.0, 2.0, 2.0));
-        assert_eq!(
-            a.contains_clip_region(&state, &b),
-            clip_region_contains_clip_region(&state, &a, &b)
-        );
-    }
+            #[test]
+            fn clip_region_contains_clip_region_matches_free_function() {
+                let state = create_clip_region_state();
+                let a = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 10.0, 10.0));
+                let b = create_clip_region_from_rectangle(&create_rectangle(1.0, 1.0, 2.0, 2.0));
+                assert_eq!(
+                    a.contains_clip_region(&state, &b),
+                    clip_region_contains_clip_region(&state, &a, &b)
+                );
+            }
 
-    #[test]
-    fn clip_region_contains_point_matches_free_function() {
-        let state = create_clip_region_state();
-        let clip = create_clip_region_from_contours(&state, &triangle(), PathWinding::NonZero);
-        assert_eq!(
-            clip.contains_point(&state, 5.0, 5.0),
-            clip_region_contains_point(&state, &clip, 5.0, 5.0)
-        );
-    }
+            #[test]
+            fn clip_region_contains_point_matches_free_function() {
+                let state = create_clip_region_state();
+                let clip =
+                    create_clip_region_from_contours(&state, &triangle(), PathWinding::NonZero);
+                assert_eq!(
+                    clip.contains_point(&state, 5.0, 5.0),
+                    clip_region_contains_point(&state, &clip, 5.0, 5.0)
+                );
+            }
 
-    #[test]
-    fn clip_region_contains_rectangle_matches_free_function() {
-        let state = create_clip_region_state();
-        let clip = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 10.0, 10.0));
-        let rectangle = create_rectangle(1.0, 1.0, 2.0, 2.0);
-        assert_eq!(
-            clip.contains_rectangle(&state, &rectangle),
-            clip_region_contains_rectangle(&state, &clip, &rectangle)
-        );
-    }
+            #[test]
+            fn clip_region_contains_rectangle_matches_free_function() {
+                let state = create_clip_region_state();
+                let clip =
+                    create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 10.0, 10.0));
+                let rectangle = create_rectangle(1.0, 1.0, 2.0, 2.0);
+                assert_eq!(
+                    clip.contains_rectangle(&state, &rectangle),
+                    clip_region_contains_rectangle(&state, &clip, &rectangle)
+                );
+            }
 
-    #[test]
-    fn clip_region_copy_from_matches_copy_clip_region() {
-        let state = create_clip_region_state();
-        let source = create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
-        let method = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
-        let function = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
-        method.copy_from(&state, &source);
-        copy_clip_region(&state, &function, &source);
-        assert!(same(&method, &function));
-    }
+            #[test]
+            fn clip_region_copy_from_matches_copy_clip_region() {
+                let state = create_clip_region_state();
+                let source =
+                    create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
+                let method =
+                    create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
+                let function =
+                    create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
+                method.copy_from(&state, &source);
+                copy_clip_region(&state, &function, &source);
+                assert!(same(&method, &function));
+            }
 
-    #[test]
-    fn clip_region_equals_matches_equals_clip_region() {
-        let state = create_clip_region_state();
-        let a = create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
-        let b = create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
-        assert_eq!(
-            a.equals_region(&state, &b),
-            equals_clip_region(&state, &a, &b)
-        );
-    }
+            #[test]
+            fn clip_region_equals_matches_equals_clip_region() {
+                let state = create_clip_region_state();
+                let a = create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
+                let b = create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
+                assert_eq!(
+                    a.equals_region(&state, &b),
+                    equals_clip_region(&state, &a, &b)
+                );
+            }
 
-    #[test]
-    fn clip_region_explain_matches_explain_clip_region() {
-        let state = create_clip_region_state();
-        let clip = create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
-        assert_eq!(clip.explain(&state), explain_clip_region(&state, &clip));
-    }
+            #[test]
+            fn clip_region_explain_matches_explain_clip_region() {
+                let state = create_clip_region_state();
+                let clip =
+                    create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
+                assert_eq!(clip.explain(&state), explain_clip_region(&state, &clip));
+            }
 
-    #[test]
-    fn clip_region_intersect_from_matches_intersect_clip_regions() {
-        let state = create_clip_region_state();
-        let a = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 10.0, 10.0));
-        let b = create_clip_region_from_rectangle(&create_rectangle(5.0, 5.0, 10.0, 10.0));
-        let method = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
-        let function = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
-        method.intersect_from(&state, &a, &b);
-        intersect_clip_regions(&state, &function, &a, &b);
-        assert!(same(&method, &function));
-    }
+            #[test]
+            fn clip_region_intersect_from_matches_intersect_clip_regions() {
+                let state = create_clip_region_state();
+                let a = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 10.0, 10.0));
+                let b = create_clip_region_from_rectangle(&create_rectangle(5.0, 5.0, 10.0, 10.0));
+                let method =
+                    create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
+                let function =
+                    create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
+                method.intersect_from(&state, &a, &b);
+                intersect_clip_regions(&state, &function, &a, &b);
+                assert!(same(&method, &function));
+            }
 
-    #[test]
-    fn clip_region_intersects_clip_region_matches_free_function() {
-        let state = create_clip_region_state();
-        let a = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 10.0, 10.0));
-        let b = create_clip_region_from_rectangle(&create_rectangle(5.0, 5.0, 10.0, 10.0));
-        assert_eq!(
-            a.intersects_clip_region(&state, &b),
-            clip_region_intersects_clip_region(&state, &a, &b)
-        );
-    }
+            #[test]
+            fn clip_region_intersects_clip_region_matches_free_function() {
+                let state = create_clip_region_state();
+                let a = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 10.0, 10.0));
+                let b = create_clip_region_from_rectangle(&create_rectangle(5.0, 5.0, 10.0, 10.0));
+                assert_eq!(
+                    a.intersects_clip_region(&state, &b),
+                    clip_region_intersects_clip_region(&state, &a, &b)
+                );
+            }
 
-    #[test]
-    fn clip_region_intersects_rectangle_matches_free_function() {
-        let state = create_clip_region_state();
-        let clip = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 10.0, 10.0));
-        let rectangle = create_rectangle(5.0, 5.0, 10.0, 10.0);
-        assert_eq!(
-            clip.intersects_rectangle(&state, &rectangle),
-            clip_region_intersects_rectangle(&state, &clip, &rectangle)
-        );
-    }
+            #[test]
+            fn clip_region_intersects_rectangle_matches_free_function() {
+                let state = create_clip_region_state();
+                let clip =
+                    create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 10.0, 10.0));
+                let rectangle = create_rectangle(5.0, 5.0, 10.0, 10.0);
+                assert_eq!(
+                    clip.intersects_rectangle(&state, &rectangle),
+                    clip_region_intersects_rectangle(&state, &clip, &rectangle)
+                );
+            }
 
-    #[test]
-    fn clip_region_invalidate_matches_invalidate_clip_region() {
-        let state = create_clip_region_state();
-        let method = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
-        let function = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
-        method.invalidate(&state);
-        invalidate_clip_region(&state, &function);
-        assert!(same(&method, &function));
-    }
+            #[test]
+            fn clip_region_invalidate_matches_invalidate_clip_region() {
+                let state = create_clip_region_state();
+                let method =
+                    create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
+                let function =
+                    create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
+                method.invalidate(&state);
+                invalidate_clip_region(&state, &function);
+                assert!(same(&method, &function));
+            }
 
-    #[test]
-    fn clip_region_is_empty_matches_is_clip_region_empty() {
-        let state = create_clip_region_state();
-        let clip = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 0.0, 1.0));
-        assert_eq!(clip.is_empty(&state), is_clip_region_empty(&state, &clip));
-    }
+            #[test]
+            fn clip_region_is_empty_matches_is_clip_region_empty() {
+                let state = create_clip_region_state();
+                let clip = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 0.0, 1.0));
+                assert_eq!(clip.is_empty(&state), is_clip_region_empty(&state, &clip));
+            }
 
-    #[test]
-    fn clip_region_is_rectangular_matches_is_clip_region_rectangular() {
-        let state = create_clip_region_state();
-        let clip = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
-        assert_eq!(
-            clip.is_rectangular(&state),
-            is_clip_region_rectangular(&state, &clip)
-        );
-    }
+            #[test]
+            fn clip_region_is_rectangular_matches_is_clip_region_rectangular() {
+                let state = create_clip_region_state();
+                let clip = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
+                assert_eq!(
+                    clip.is_rectangular(&state),
+                    is_clip_region_rectangular(&state, &clip)
+                );
+            }
 
-    #[test]
-    fn clip_region_normalize_from_matches_normalize_clip_region() {
-        let state = create_clip_region_state();
-        let source = create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
-        let method = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
-        let function = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
-        method.normalize_from(&state, &source);
-        normalize_clip_region(&state, &function, &source);
-        assert!(same(&method, &function));
-    }
+            #[test]
+            fn clip_region_normalize_from_matches_normalize_clip_region() {
+                let state = create_clip_region_state();
+                let source =
+                    create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
+                let method =
+                    create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
+                let function =
+                    create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
+                method.normalize_from(&state, &source);
+                normalize_clip_region(&state, &function, &source);
+                assert!(same(&method, &function));
+            }
 
-    #[test]
-    fn clip_region_release_matches_release_clip_region() {
-        let mut method_state = create_clip_region_state();
-        let mut function_state = create_clip_region_state();
-        let method = method_state.acquire();
-        let function = acquire_clip_region(&mut function_state);
-        method.release(&mut method_state);
-        release_clip_region(&mut function_state, &function);
-        assert!(Arc::ptr_eq(&method_state.acquire(), &method));
-        assert!(Arc::ptr_eq(
-            &acquire_clip_region(&mut function_state),
-            &function
-        ));
-    }
+            #[test]
+            fn clip_region_release_matches_release_clip_region() {
+                let mut method_state = create_clip_region_state();
+                let mut function_state = create_clip_region_state();
+                let method = method_state.acquire();
+                let function = acquire_clip_region(&mut function_state);
+                method.release(&mut method_state);
+                release_clip_region(&mut function_state, &function);
+                assert!(Arc::ptr_eq(&method_state.acquire(), &method));
+                assert!(Arc::ptr_eq(
+                    &acquire_clip_region(&mut function_state),
+                    &function
+                ));
+            }
 
-    #[test]
-    fn clip_region_set_contours_matches_set_clip_region_to_contours() {
-        let state = create_clip_region_state();
-        let method = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
-        let function = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
-        method.set_contours(&state, &triangle(), PathWinding::EvenOdd);
-        set_clip_region_to_contours(&state, &function, &triangle(), PathWinding::EvenOdd);
-        assert!(same(&method, &function));
-    }
+            #[test]
+            fn clip_region_set_contours_matches_set_clip_region_to_contours() {
+                let state = create_clip_region_state();
+                let method =
+                    create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
+                let function =
+                    create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
+                method.set_contours(&state, &triangle(), PathWinding::EvenOdd);
+                set_clip_region_to_contours(&state, &function, &triangle(), PathWinding::EvenOdd);
+                assert!(same(&method, &function));
+            }
 
-    #[test]
-    fn clip_region_set_rectangle_matches_set_clip_region_to_rectangle() {
-        let state = create_clip_region_state();
-        let method = create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
-        let function = create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
-        let rectangle = create_rectangle(1.0, 2.0, 3.0, 4.0);
-        method.set_rectangle(&state, &rectangle);
-        set_clip_region_to_rectangle(&state, &function, &rectangle);
-        assert!(same(&method, &function));
-    }
+            #[test]
+            fn clip_region_set_rectangle_matches_set_clip_region_to_rectangle() {
+                let state = create_clip_region_state();
+                let method =
+                    create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
+                let function =
+                    create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
+                let rectangle = create_rectangle(1.0, 2.0, 3.0, 4.0);
+                method.set_rectangle(&state, &rectangle);
+                set_clip_region_to_rectangle(&state, &function, &rectangle);
+                assert!(same(&method, &function));
+            }
 
-    #[test]
-    fn clip_region_transform_from_matches_transform_clip_region() {
-        let state = create_clip_region_state();
-        let source = create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
-        let method = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
-        let function = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
-        let matrix = create_matrix(1.0, 0.0, 0.0, 1.0, 2.0, 3.0);
-        method.transform_from(&state, &source, &matrix);
-        transform_clip_region(&state, &function, &source, &matrix);
-        assert!(same(&method, &function));
-    }
+            #[test]
+            fn clip_region_transform_from_matches_transform_clip_region() {
+                let state = create_clip_region_state();
+                let source =
+                    create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd);
+                let method =
+                    create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
+                let function =
+                    create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
+                let matrix = create_matrix(1.0, 0.0, 0.0, 1.0, 2.0, 3.0);
+                method.transform_from(&state, &source, &matrix);
+                transform_clip_region(&state, &function, &source, &matrix);
+                assert!(same(&method, &function));
+            }
 
-    #[test]
-    fn clip_region_union_from_matches_union_clip_regions() {
-        let state = create_clip_region_state();
-        let a = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 10.0, 10.0));
-        let b = create_clip_region_from_rectangle(&create_rectangle(5.0, 5.0, 10.0, 10.0));
-        let method = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
-        let function = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
-        method.union_from(&state, &a, &b);
-        union_clip_regions(&state, &function, &a, &b);
-        assert!(same(&method, &function));
-    }
+            #[test]
+            fn clip_region_union_from_matches_union_clip_regions() {
+                let state = create_clip_region_state();
+                let a = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 10.0, 10.0));
+                let b = create_clip_region_from_rectangle(&create_rectangle(5.0, 5.0, 10.0, 10.0));
+                let method =
+                    create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
+                let function =
+                    create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 1.0, 1.0));
+                method.union_from(&state, &a, &b);
+                union_clip_regions(&state, &function, &a, &b);
+                assert!(same(&method, &function));
+            }
 
-    #[test]
-    fn clip_region_constructors_match_their_free_functions() {
-        let state = create_clip_region_state();
-        let rectangle = create_rectangle(0.0, 0.0, 10.0, 10.0);
-        assert!(same(
-            &ClipRegion::new_from_circle(5.0, 5.0, 5.0, None),
-            &create_clip_region_from_circle(5.0, 5.0, 5.0, None),
-        ));
-        assert!(same(
-            &ClipRegion::new_from_contours(&state, &triangle(), PathWinding::EvenOdd),
-            &create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd),
-        ));
-        assert!(same(
-            &ClipRegion::new_from_ellipse(&rectangle, None),
-            &create_clip_region_from_ellipse(&rectangle, None),
-        ));
-        let path = create_path();
-        assert!(same(
-            &ClipRegion::new_from_path(&path, None),
-            &create_clip_region_from_path(&path, None),
-        ));
-        assert!(same(
-            &ClipRegion::new_from_rectangle(&rectangle),
-            &create_clip_region_from_rectangle(&rectangle),
-        ));
-        assert!(same(
-            &ClipRegion::new_from_rounded_rectangle(&rectangle, 2.0, None),
-            &create_clip_region_from_rounded_rectangle(&rectangle, 2.0, None),
-        ));
-    }
+            #[test]
+            fn clip_region_constructors_match_their_free_functions() {
+                let state = create_clip_region_state();
+                let rectangle = create_rectangle(0.0, 0.0, 10.0, 10.0);
+                assert!(same(
+                    &ClipRegion::new_from_circle(5.0, 5.0, 5.0, None),
+                    &create_clip_region_from_circle(5.0, 5.0, 5.0, None),
+                ));
+                assert!(same(
+                    &ClipRegion::new_from_contours(&state, &triangle(), PathWinding::EvenOdd),
+                    &create_clip_region_from_contours(&state, &triangle(), PathWinding::EvenOdd),
+                ));
+                assert!(same(
+                    &ClipRegion::new_from_ellipse(&rectangle, None),
+                    &create_clip_region_from_ellipse(&rectangle, None),
+                ));
+                let path = create_path();
+                assert!(same(
+                    &ClipRegion::new_from_path(&path, None),
+                    &create_clip_region_from_path(&path, None),
+                ));
+                assert!(same(
+                    &ClipRegion::new_from_rectangle(&rectangle),
+                    &create_clip_region_from_rectangle(&rectangle),
+                ));
+                assert!(same(
+                    &ClipRegion::new_from_rounded_rectangle(&rectangle, 2.0, None),
+                    &create_clip_region_from_rounded_rectangle(&rectangle, 2.0, None),
+                ));
+            }
 
-    #[test]
-    fn clip_region_state_guard_methods_match_the_free_functions() {
-        let log_state = Arc::new(RwLock::new(create_log_state()));
-        let mut method = create_clip_region_state();
-        let mut function = create_clip_region_state();
-        method.enable_guards(&log_state, Arc::new(|| 0.0));
-        enable_clip_guards(&mut function, &log_state, Arc::new(|| 0.0));
-        let method_region = method.acquire();
-        let function_region = acquire_clip_region(&mut function);
-        method_region.release(&mut method);
-        function_region.release(&mut function);
-        method.disable_guards();
-        disable_clip_guards(&mut function);
-        method_region.release(&mut method);
-        function_region.release(&mut function);
-    }
-}
+            #[test]
+            fn clip_region_state_guard_methods_match_the_free_functions() {
+                let log_state = Arc::new(RwLock::new(create_log_state()));
+                let mut method = create_clip_region_state();
+                let mut function = create_clip_region_state();
+                method.enable_guards(&log_state, Arc::new(|| 0.0));
+                enable_clip_guards(&mut function, &log_state, Arc::new(|| 0.0));
+                let method_region = method.acquire();
+                let function_region = acquire_clip_region(&mut function);
+                method_region.release(&mut method);
+                function_region.release(&mut function);
+                method.disable_guards();
+                disable_clip_guards(&mut function);
+                method_region.release(&mut method);
+                function_region.release(&mut function);
+            }
+        }
     };
 }
 

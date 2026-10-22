@@ -47,7 +47,8 @@ mod bake_wgpu_environment_ibl {
     }
 
     #[test]
-    fn bakes_the_split_sum_set_rgba16float_irradiance_and_prefiltered_cubes_and_brdf_lut_with_the_mip_chain() {
+    fn bakes_the_split_sum_set_rgba16float_irradiance_and_prefiltered_cubes_and_brdf_lut_with_the_mip_chain()
+     {
         let mut test = make_wgpu_scene3d_state(None);
         let (environment, _fake) = create_test_image_environment();
         bake_wgpu_environment_ibl(&mut test.state, &environment);
@@ -64,11 +65,16 @@ mod bake_wgpu_environment_ibl {
             .collect();
         // irradiance cube + prefiltered cube + BRDF LUT.
         assert_eq!(bake_textures.len(), 3);
-        assert!(bake_textures.iter().any(|texture| texture.mip_level_count == 5));
-        assert!(test
-            .shader_sources()
-            .iter()
-            .any(|source| source.contains("importanceSampleGGX")));
+        assert!(
+            bake_textures
+                .iter()
+                .any(|texture| texture.mip_level_count == 5)
+        );
+        assert!(
+            test.shader_sources()
+                .iter()
+                .any(|source| source.contains("importanceSampleGGX"))
+        );
     }
 }
 
@@ -80,7 +86,10 @@ mod destroy_wgpu_scene3d_ibl {
         let mut test = make_wgpu_scene3d_state(None);
         let (environment, _fake) = create_test_image_environment();
         bake_wgpu_environment_ibl(&mut test.state, &environment);
-        let ibl = get_wgpu_scene3d_runtime(&mut test.state).ibl.clone().unwrap();
+        let ibl = get_wgpu_scene3d_runtime(&mut test.state)
+            .ibl
+            .clone()
+            .unwrap();
         let cube = wgpu::TextureViewDimension::Cube;
         let flat = wgpu::TextureViewDimension::D2;
         assert!(!is_view_destroyed(&test, &ibl.irradiance_cube_view, cube));

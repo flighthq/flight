@@ -10,8 +10,8 @@ use flight_quadbatch::QUAD_BATCH_KIND;
 use flight_registry::{KindMap, with_kind_map_entry};
 use flight_render::{NodeRenderer, RENDER_CACHE_KIND, RenderStateOptions};
 use flight_render_gl::{
-    GlMaterialRenderer, GlQuadMaterialRenderer, GlRenderRegistries, GlRenderState, GlRenderStateOptions,
-    standard_gl_blend_realizations, standard_gl_texture_resolvers,
+    GlMaterialRenderer, GlQuadMaterialRenderer, GlRenderRegistries, GlRenderState,
+    GlRenderStateOptions, standard_gl_blend_realizations, standard_gl_texture_resolvers,
 };
 use flight_scene2d::{DISPLAY_OBJECT_KIND, SCALE9_SPRITE_KIND, SPRITE_KIND};
 use flight_shape::contract::{MORPH_SHAPE_KIND, SCALE9_SHAPE_KIND, SHAPE_KIND};

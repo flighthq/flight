@@ -17,13 +17,15 @@ use crate::support::*;
 
 fn create_map() -> Ref<Texture2D> {
     let bitmap: TextureSourceRef = Arc::new(RwLock::new(create_bitmap(4, 4, Some(0x80ff40ff))));
-    let texture = create_texture(Some(&CreateTextureOptions::Texture2D(CreateTexture2DOptions {
-        common: CreateTextureCommonOptions {
-            color_space: Some(TextureColorSpace::Linear),
-            ..test_default()
+    let texture = create_texture(Some(&CreateTextureOptions::Texture2D(
+        CreateTexture2DOptions {
+            common: CreateTextureCommonOptions {
+                color_space: Some(TextureColorSpace::Linear),
+                ..test_default()
+            },
+            source: Some(bitmap),
         },
-        source: Some(bitmap),
-    })));
+    )));
     let Texture::Texture2D(texture) = texture else {
         panic!("a 2D texture");
     };
@@ -43,7 +45,10 @@ fn create_resolving_state() -> WgpuRenderState {
     return state;
 }
 
-fn apply(state: &mut WgpuRenderState, effect: &Ref<BitmapDisplacementEffect>) -> (Ref<WgpuTextureRenderTarget>, Ref<WgpuTextureRenderTarget>) {
+fn apply(
+    state: &mut WgpuRenderState,
+    effect: &Ref<BitmapDisplacementEffect>,
+) -> (Ref<WgpuTextureRenderTarget>, Ref<WgpuTextureRenderTarget>) {
     let source = create_test_target(state, 128, 64);
     let dest = create_test_target(state, 128, 64);
     with_test_frame(state, |state| {
@@ -69,7 +74,10 @@ mod apply_bitmap_displacement_effect_to_wgpu {
         let (source, _dest) = apply(&mut state, &effect);
 
         let sets = recorded_set_bind_groups(&records);
-        assert_eq!(sets.iter().map(|set| set.index).collect::<Vec<u32>>(), vec![0, 1, 2]);
+        assert_eq!(
+            sets.iter().map(|set| set.index).collect::<Vec<u32>>(),
+            vec![0, 1, 2]
+        );
         let created = recorded_bind_groups(&records);
         let source_group = created
             .iter()
@@ -101,17 +109,26 @@ mod apply_bitmap_displacement_effect_to_wgpu {
         let floats = recorded_effect_uniforms(&records);
         let ints = recorded_effect_uniform_ints(&records);
         assert_eq!(&floats[0][0..4], &[-14.0, 9.0, 128.0, 64.0]);
-        assert_eq!(&ints[0][4..7], &[ImageChannel::Alpha as i32, ImageChannel::Blue as i32, 0]);
+        assert_eq!(
+            &ints[0][4..7],
+            &[ImageChannel::Alpha as i32, ImageChannel::Blue as i32, 0]
+        );
         assert_eq!(ints[1][6], 1);
     }
 
     #[test]
     fn ships_channel_mapping_centred_offset_wrap_clamp_and_top_left_vertical_displacement() {
-        assert!(BITMAP_DISPLACEMENT_FRAGMENT_WGSL.contains("sampleChannel(mapSample, uni.componentX)"));
-        assert!(BITMAP_DISPLACEMENT_FRAGMENT_WGSL.contains("sampleChannel(mapSample, uni.componentY)"));
+        assert!(
+            BITMAP_DISPLACEMENT_FRAGMENT_WGSL.contains("sampleChannel(mapSample, uni.componentX)")
+        );
+        assert!(
+            BITMAP_DISPLACEMENT_FRAGMENT_WGSL.contains("sampleChannel(mapSample, uni.componentY)")
+        );
         assert!(BITMAP_DISPLACEMENT_FRAGMENT_WGSL.contains("(mapped - vec2f(0.5)) * uni.scale"));
         assert!(BITMAP_DISPLACEMENT_FRAGMENT_WGSL.contains("fract(displaced)"));
-        assert!(BITMAP_DISPLACEMENT_FRAGMENT_WGSL.contains("clamp(displaced, vec2f(0.0), vec2f(1.0))"));
+        assert!(
+            BITMAP_DISPLACEMENT_FRAGMENT_WGSL.contains("clamp(displaced, vec2f(0.0), vec2f(1.0))")
+        );
         assert!(BITMAP_DISPLACEMENT_FRAGMENT_WGSL.contains("uv.y + displacement.y"));
     }
 
@@ -148,9 +165,14 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
   return textureSampleLevel(tex, smp, uv, 0.0);
 }"#;
         let mut pipeline = create_wgpu_effect_pipeline(&mut state, fragment, None);
-        let other = create_wgpu_effect_pipeline(&mut state, fragment, Some(WgpuEffectBlendMode::Erase));
+        let other =
+            create_wgpu_effect_pipeline(&mut state, fragment, Some(WgpuEffectBlendMode::Erase));
 
-        initialize_wgpu_effect_pipeline(&mut pipeline, WgpuEffectBlendMode::Replace, other.pipeline.clone());
+        initialize_wgpu_effect_pipeline(
+            &mut pipeline,
+            WgpuEffectBlendMode::Replace,
+            other.pipeline.clone(),
+        );
 
         assert_eq!(pipeline.blend_mode, WgpuEffectBlendMode::Replace);
         assert_eq!(pipeline.pipeline, other.pipeline);
@@ -165,11 +187,20 @@ mod is_wgpu_bitmap_displacement_effect_resolvable {
         let mut resolving = create_resolving_state();
         let with_map: EffectRef = create_effect(Some(create_map()));
         let without_map: EffectRef = create_effect(None);
-        assert!(is_wgpu_bitmap_displacement_effect_resolvable(&mut resolving, &*with_map.read().unwrap()));
-        assert!(!is_wgpu_bitmap_displacement_effect_resolvable(&mut resolving, &*without_map.read().unwrap()));
+        assert!(is_wgpu_bitmap_displacement_effect_resolvable(
+            &mut resolving,
+            &*with_map.read().unwrap()
+        ));
+        assert!(!is_wgpu_bitmap_displacement_effect_resolvable(
+            &mut resolving,
+            &*without_map.read().unwrap()
+        ));
 
         let mut unresolving = create_wgpu_render_state_for_test(None);
-        assert!(!is_wgpu_bitmap_displacement_effect_resolvable(&mut unresolving, &*with_map.read().unwrap()));
+        assert!(!is_wgpu_bitmap_displacement_effect_resolvable(
+            &mut unresolving,
+            &*with_map.read().unwrap()
+        ));
     }
 }
 
@@ -188,7 +219,10 @@ mod register_wgpu_bitmap_displacement_effect {
                 .is_some_and(|runner| std::ptr::fn_addr_eq(runner, expected))
         );
         let without_map: EffectRef = create_effect(None);
-        assert!(!is_wgpu_effect_resolvable(&mut state, &*without_map.read().unwrap()));
+        assert!(!is_wgpu_effect_resolvable(
+            &mut state,
+            &*without_map.read().unwrap()
+        ));
     }
 }
 

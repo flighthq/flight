@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 
+use flight_spatial::contract::initialize_uniform_grid_spatial_backend_3d;
 use flight_spatial::*;
-use flight_spatial::contract::{initialize_uniform_grid_spatial_backend_3d};
 
 thread_local! {
     static NOTICES: RefCell<Vec<SpatialIndexingNotice>> = RefCell::new(Vec::new());
@@ -16,7 +16,14 @@ fn take_notices() -> Vec<SpatialIndexingNotice> {
 }
 
 fn box3(min_x: f32, min_y: f32, min_z: f32, size: f32) -> SpatialAabb3D {
-    return SpatialAabb3D { min_x, min_y, min_z, max_x: min_x + size, max_y: min_y + size, max_z: min_z + size };
+    return SpatialAabb3D {
+        min_x,
+        min_y,
+        min_z,
+        max_x: min_x + size,
+        max_y: min_y + size,
+        max_z: min_z + size,
+    };
 }
 
 mod create_uniform_grid_spatial_backend_3d {
@@ -24,26 +31,39 @@ mod create_uniform_grid_spatial_backend_3d {
 
     #[test]
     fn returns_an_entity() {
-        let mut backend=create_uniform_grid_spatial_backend_3d(10.0);
+        let mut backend = create_uniform_grid_spatial_backend_3d(10.0);
         assert!(!flight_entity::has_entity_runtime(&backend));
-        flight_entity::set_entity_uid(&mut backend,"grid3d".to_owned());
+        flight_entity::set_entity_uid(&mut backend, "grid3d".to_owned());
         assert!(flight_entity::has_entity_runtime(&backend));
-        assert_eq!(flight_entity::get_entity_uid(&mut backend),"grid3d");
+        assert_eq!(flight_entity::get_entity_uid(&mut backend), "grid3d");
     }
 
     #[test]
     fn clears_every_object_while_staying_reusable() {
         let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(10.0)));
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 5.0));
-        let huge = SpatialAabb3D { min_x: 0.0, min_y: 0.0, min_z: 0.0, max_x: 1e9, max_y: 1e9, max_z: 1e9 };
+        let huge = SpatialAabb3D {
+            min_x: 0.0,
+            min_y: 0.0,
+            min_z: 0.0,
+            max_x: 1e9,
+            max_y: 1e9,
+            max_z: 1e9,
+        };
         insert_spatial_object_3d(&mut grid, 2, &huge);
         clear_spatial_index_3d(&mut grid);
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_point_3d(&mut out, &mut grid, 1.0, 1.0, 1.0);
         assert!(out.is_empty());
-        assert_eq!(explain_spatial_indexing_3d(&grid, 1).mode, SpatialIndexingMode::Absent);
-        assert_eq!(explain_spatial_indexing_3d(&grid, 2).mode, SpatialIndexingMode::Absent);
+        assert_eq!(
+            explain_spatial_indexing_3d(&grid, 1).mode,
+            SpatialIndexingMode::Absent
+        );
+        assert_eq!(
+            explain_spatial_indexing_3d(&grid, 2).mode,
+            SpatialIndexingMode::Absent
+        );
 
         insert_spatial_object_3d(&mut grid, 3, &box3(0.0, 0.0, 0.0, 5.0));
         query_spatial_point_3d(&mut out, &mut grid, 1.0, 1.0, 1.0);
@@ -69,15 +89,42 @@ mod create_uniform_grid_spatial_backend_3d {
     #[test]
     fn declines_non_finite_and_inverted_bounds_along_z() {
         let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(10.0)));
-        let nan_z = SpatialAabb3D { min_x: 0.0, min_y: 0.0, min_z: f32::NAN, max_x: 1.0, max_y: 1.0, max_z: 1.0 };
+        let nan_z = SpatialAabb3D {
+            min_x: 0.0,
+            min_y: 0.0,
+            min_z: f32::NAN,
+            max_x: 1.0,
+            max_y: 1.0,
+            max_z: 1.0,
+        };
         assert!(!insert_spatial_object_3d(&mut grid, 1, &nan_z));
-        let inverted_z = SpatialAabb3D { min_x: 0.0, min_y: 0.0, min_z: 5.0, max_x: 1.0, max_y: 1.0, max_z: 0.0 };
+        let inverted_z = SpatialAabb3D {
+            min_x: 0.0,
+            min_y: 0.0,
+            min_z: 5.0,
+            max_x: 1.0,
+            max_y: 1.0,
+            max_z: 0.0,
+        };
         assert!(!insert_spatial_object_3d(&mut grid, 2, &inverted_z));
-        assert_eq!(explain_spatial_indexing_3d(&grid, 1).reason, Some(SpatialDeclineReason::NonFiniteBounds));
-        assert_eq!(explain_spatial_indexing_3d(&grid, 2).reason, Some(SpatialDeclineReason::InvertedBounds));
+        assert_eq!(
+            explain_spatial_indexing_3d(&grid, 1).reason,
+            Some(SpatialDeclineReason::NonFiniteBounds)
+        );
+        assert_eq!(
+            explain_spatial_indexing_3d(&grid, 2).reason,
+            Some(SpatialDeclineReason::InvertedBounds)
+        );
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        let region = SpatialAabb3D { min_x: -1e6, min_y: -1e6, min_z: -1e6, max_x: 1e6, max_y: 1e6, max_z: 1e6 };
+        let region = SpatialAabb3D {
+            min_x: -1e6,
+            min_y: -1e6,
+            min_z: -1e6,
+            max_x: 1e6,
+            max_y: 1e6,
+            max_z: 1e6,
+        };
         query_spatial_region_3d(&mut out, &mut grid, &region);
         assert!(out.is_empty());
     }
@@ -85,8 +132,15 @@ mod create_uniform_grid_spatial_backend_3d {
     #[test]
     fn routes_past_budget_to_overflow_and_keeps_queryable() {
         let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(1.0)));
-        assert!(insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 10.5)));
-        assert_eq!(explain_spatial_indexing_3d(&grid, 1).mode, SpatialIndexingMode::Overflow);
+        assert!(insert_spatial_object_3d(
+            &mut grid,
+            1,
+            &box3(0.0, 0.0, 0.0, 10.5)
+        ));
+        assert_eq!(
+            explain_spatial_indexing_3d(&grid, 1).mode,
+            SpatialIndexingMode::Overflow
+        );
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_point_3d(&mut out, &mut grid, 5.0, 5.0, 5.0);
@@ -129,13 +183,20 @@ mod create_uniform_grid_spatial_backend_3d {
         take_notices();
         let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(0.0)));
         set_spatial_indexing_guard(Some(crate::spatial_guard_for_current_test(test_guard)));
-        assert!(insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 10.0)));
+        assert!(insert_spatial_object_3d(
+            &mut grid,
+            1,
+            &box3(0.0, 0.0, 0.0, 10.0)
+        ));
         let explanation = explain_spatial_indexing_3d(&grid, 1);
         assert_eq!(explanation.bucket_count, 0.0);
         assert_eq!(explanation.mode, SpatialIndexingMode::Overflow);
         let captured = take_notices();
         assert_eq!(captured.len(), 1);
-        assert_eq!(captured[0].reason, Some(SpatialIndexingReason::InvalidCellSize));
+        assert_eq!(
+            captured[0].reason,
+            Some(SpatialIndexingReason::InvalidCellSize)
+        );
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_point_3d(&mut out, &mut grid, 5.0, 5.0, 5.0);
@@ -152,7 +213,10 @@ mod create_uniform_grid_spatial_backend_3d {
             query_spatial_point_3d(&mut out, &mut grid, c, c, c);
             assert!(out.is_empty());
         }
-        assert_eq!(explain_spatial_indexing_3d(&grid, 1).mode, SpatialIndexingMode::Absent);
+        assert_eq!(
+            explain_spatial_indexing_3d(&grid, 1).mode,
+            SpatialIndexingMode::Absent
+        );
     }
 }
 
@@ -222,7 +286,10 @@ mod query_spatial_pairs_3d {
     fn pairs_overflow_only_against_real_overlaps() {
         let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(1.0)));
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 40.0));
-        assert_eq!(explain_spatial_indexing_3d(&grid, 1).mode, SpatialIndexingMode::Overflow);
+        assert_eq!(
+            explain_spatial_indexing_3d(&grid, 1).mode,
+            SpatialIndexingMode::Overflow
+        );
         insert_spatial_object_3d(&mut grid, 2, &box3(5.0, 5.0, 5.0, 1.0));
         insert_spatial_object_3d(&mut grid, 3, &box3(500.0, 500.0, 500.0, 1.0));
         let out = query_spatial_pairs_3d(&mut grid);
@@ -263,7 +330,14 @@ mod query_spatial_point_3d {
     #[test]
     fn separates_points_differing_only_in_z() {
         let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(10.0)));
-        let bounds = SpatialAabb3D { min_x: 0.0, min_y: 0.0, min_z: 0.0, max_x: 100.0, max_y: 100.0, max_z: 5.0 };
+        let bounds = SpatialAabb3D {
+            min_x: 0.0,
+            min_y: 0.0,
+            min_z: 0.0,
+            max_x: 100.0,
+            max_y: 100.0,
+            max_z: 5.0,
+        };
         insert_spatial_object_3d(&mut grid, 1, &bounds);
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_point_3d(&mut out, &mut grid, 50.0, 50.0, 2.0);
@@ -366,7 +440,14 @@ mod query_spatial_region_3d {
         let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(10.0)));
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 5.0));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        let region = SpatialAabb3D { min_x: 5.0, min_y: 0.0, min_z: 0.0, max_x: 9.0, max_y: 5.0, max_z: 5.0 };
+        let region = SpatialAabb3D {
+            min_x: 5.0,
+            min_y: 0.0,
+            min_z: 0.0,
+            max_x: 9.0,
+            max_y: 5.0,
+            max_z: 5.0,
+        };
         query_spatial_region_3d(&mut out, &mut grid, &region);
         assert!(out.is_empty());
     }
@@ -376,7 +457,14 @@ mod query_spatial_region_3d {
         let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(1.0)));
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 0.5));
         let mut out: Vec<SpatialObjectId> = Vec::new();
-        let region = SpatialAabb3D { min_x: -1e6, min_y: -1e6, min_z: -1e6, max_x: 1e6, max_y: 1e6, max_z: 1e6 };
+        let region = SpatialAabb3D {
+            min_x: -1e6,
+            min_y: -1e6,
+            min_z: -1e6,
+            max_x: 1e6,
+            max_y: 1e6,
+            max_z: 1e6,
+        };
         query_spatial_region_3d(&mut out, &mut grid, &region);
         assert_eq!(out, vec![1]);
     }
@@ -415,7 +503,14 @@ mod update_spatial_object_3d {
     fn removes_rather_than_strands_on_decline() {
         let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(10.0)));
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 5.0));
-        let nan_bounds = SpatialAabb3D { min_x: 0.0, min_y: 0.0, min_z: f32::NAN, max_x: 5.0, max_y: 5.0, max_z: 5.0 };
+        let nan_bounds = SpatialAabb3D {
+            min_x: 0.0,
+            min_y: 0.0,
+            min_z: f32::NAN,
+            max_x: 5.0,
+            max_y: 5.0,
+            max_z: 5.0,
+        };
         assert!(!update_spatial_object_3d(&mut grid, 1, &nan_bounds));
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_point_3d(&mut out, &mut grid, 1.0, 1.0, 1.0);
@@ -426,11 +521,20 @@ mod update_spatial_object_3d {
     fn transitions_between_cells_and_overflow() {
         let mut grid = create_spatial_index_3d(Some(create_uniform_grid_spatial_backend_3d(1.0)));
         insert_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 2.0));
-        assert_eq!(explain_spatial_indexing_3d(&grid, 1).mode, SpatialIndexingMode::Cells);
+        assert_eq!(
+            explain_spatial_indexing_3d(&grid, 1).mode,
+            SpatialIndexingMode::Cells
+        );
         update_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 40.0));
-        assert_eq!(explain_spatial_indexing_3d(&grid, 1).mode, SpatialIndexingMode::Overflow);
+        assert_eq!(
+            explain_spatial_indexing_3d(&grid, 1).mode,
+            SpatialIndexingMode::Overflow
+        );
         update_spatial_object_3d(&mut grid, 1, &box3(0.0, 0.0, 0.0, 2.0));
-        assert_eq!(explain_spatial_indexing_3d(&grid, 1).mode, SpatialIndexingMode::Cells);
+        assert_eq!(
+            explain_spatial_indexing_3d(&grid, 1).mode,
+            SpatialIndexingMode::Cells
+        );
 
         let mut out: Vec<SpatialObjectId> = Vec::new();
         query_spatial_point_3d(&mut out, &mut grid, 1.0, 1.0, 1.0);

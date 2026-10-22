@@ -5,7 +5,8 @@
 //! Parameters come from the shared `compute_bloom_*` helpers, as on GL.
 
 use flight_effects::{
-    BloomEffect, Effect, compute_bloom_blur_radius, compute_bloom_intensity, compute_bloom_threshold,
+    BloomEffect, Effect, compute_bloom_blur_radius, compute_bloom_intensity,
+    compute_bloom_threshold,
 };
 use flight_entity::Ref;
 use flight_render_wgpu::{

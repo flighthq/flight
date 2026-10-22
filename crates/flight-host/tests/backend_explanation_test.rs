@@ -4,12 +4,18 @@ const LAYERS: [(BackendExplanationLayer, &str); 4] = [
     (BackendExplanationLayer::Custom, "custom"),
     (BackendExplanationLayer::Host, "host"),
     (BackendExplanationLayer::HostNotEnabled, "host-not-enabled"),
-    (BackendExplanationLayer::NoHostImplementation, "no-host-implementation"),
+    (
+        BackendExplanationLayer::NoHostImplementation,
+        "no-host-implementation",
+    ),
 ];
 
 const VIABILITIES: [(BackendExplanationViability, &str); 3] = [
     (BackendExplanationViability::Available, "available"),
-    (BackendExplanationViability::RuntimeApiUnavailable, "runtime-api-unavailable"),
+    (
+        BackendExplanationViability::RuntimeApiUnavailable,
+        "runtime-api-unavailable",
+    ),
     (BackendExplanationViability::Unobserved, "unobserved"),
 ];
 
@@ -25,7 +31,13 @@ mod backend_explanation {
             viability: BackendExplanationViability::Unobserved,
         };
         assert_eq!(explanation.clone(), explanation);
-        assert_ne!(explanation, BackendExplanation { operation: Some("read".to_string()), ..explanation.clone() });
+        assert_ne!(
+            explanation,
+            BackendExplanation {
+                operation: Some("read".to_string()),
+                ..explanation.clone()
+            }
+        );
     }
 }
 

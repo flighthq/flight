@@ -5,7 +5,7 @@ use std::io::{self, Write};
 use std::sync::{Arc, Mutex};
 
 use flight_entity::{EntityRuntimeSlot, Ref, unknown_to_js_string};
-use flight_signals::{create_signal, emit_signal, Signal};
+use flight_signals::{Signal, create_signal, emit_signal};
 
 #[cfg(test)]
 mod console_tests {
@@ -225,7 +225,8 @@ pub type LogDataProvider = Arc<dyn Fn() -> LogData + Send + Sync>;
 pub type LogPredicate = Arc<dyn Fn(&LogEntry) -> bool + Send + Sync>;
 
 /// Custom serializer for a named `__kind`.
-pub type LogSerializer = Arc<dyn Fn(&HashMap<String, LogValue>) -> HashMap<String, LogValue> + Send + Sync>;
+pub type LogSerializer =
+    Arc<dyn Fn(&HashMap<String, LogValue>) -> HashMap<String, LogValue> + Send + Sync>;
 
 /// Either direct data or a lazy provider.
 pub enum LogDataOrProvider {
@@ -605,7 +606,11 @@ pub fn initialize_rate_limited_log_sink(
                 None => s.window_start_ms = Some(now),
                 _ => {}
             }
-            let key = if s.per_channel { entry.channel.clone() } else { None };
+            let key = if s.per_channel {
+                entry.channel.clone()
+            } else {
+                None
+            };
             let current = s.counts.get(&key).copied().unwrap_or(0);
             if current >= s.max_per_interval {
                 false
@@ -658,7 +663,10 @@ pub fn advance_log_sink(handle: &BufferedLogSink, now_ms: f64) {
     }
 }
 
-fn apply_redaction(state: &LogStateRef, data: HashMap<String, LogValue>) -> HashMap<String, LogValue> {
+fn apply_redaction(
+    state: &LogStateRef,
+    data: HashMap<String, LogValue>,
+) -> HashMap<String, LogValue> {
     let paths = state.read().unwrap().redaction_paths.clone();
     if paths.is_empty() {
         return data;
@@ -671,7 +679,10 @@ fn apply_redaction(state: &LogStateRef, data: HashMap<String, LogValue>) -> Hash
     return result;
 }
 
-fn apply_serializers(state: &LogStateRef, data: HashMap<String, LogValue>) -> HashMap<String, LogValue> {
+fn apply_serializers(
+    state: &LogStateRef,
+    data: HashMap<String, LogValue>,
+) -> HashMap<String, LogValue> {
     let serializers = state.read().unwrap().serializers.clone();
     if serializers.is_empty() {
         return data;
@@ -901,7 +912,12 @@ pub fn end_log_timer(state: &LogStateRef, now_ms: f64, timer: &LogTimer) -> f64 
     let mut data = HashMap::new();
     data.insert("label".to_string(), LogValue::Str(timer.label.clone()));
     data.insert("elapsedMs".to_string(), LogValue::Float(elapsed));
-    log_debug(state, now_ms, LogData::Record(data).into(), timer.channel.clone());
+    log_debug(
+        state,
+        now_ms,
+        LogData::Record(data).into(),
+        timer.channel.clone(),
+    );
     return elapsed;
 }
 
@@ -1021,7 +1037,13 @@ fn level_name(level: LogLevel) -> &'static str {
 
 /// Emits a log entry at an explicit level.
 // flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
-pub fn log(state: &LogStateRef, now_ms: f64, level: LogLevel, data: LogDataOrProvider, channel: Option<String>) {
+pub fn log(
+    state: &LogStateRef,
+    now_ms: f64,
+    level: LogLevel,
+    data: LogDataOrProvider,
+    channel: Option<String>,
+) {
     if !passes_level_gate(state, level, &channel) {
         return;
     }
@@ -1040,7 +1062,13 @@ pub fn log(state: &LogStateRef, now_ms: f64, level: LogLevel, data: LogDataOrPro
 
 /// Emits an Error-level entry only when condition is false.
 // flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
-pub fn log_assert(state: &LogStateRef, now_ms: f64, condition: bool, data: LogDataOrProvider, channel: Option<String>) {
+pub fn log_assert(
+    state: &LogStateRef,
+    now_ms: f64,
+    condition: bool,
+    data: LogDataOrProvider,
+    channel: Option<String>,
+) {
     if condition {
         return;
     }
@@ -1062,37 +1090,67 @@ pub fn log_assert(state: &LogStateRef, now_ms: f64, condition: bool, data: LogDa
 
 /// Emits at Debug level.
 // flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
-pub fn log_debug(state: &LogStateRef, now_ms: f64, data: LogDataOrProvider, channel: Option<String>) {
+pub fn log_debug(
+    state: &LogStateRef,
+    now_ms: f64,
+    data: LogDataOrProvider,
+    channel: Option<String>,
+) {
     log(state, now_ms, LogLevel::Debug, data, channel);
 }
 
 /// Emits at Debug level with merged context fields.
 // flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
-pub fn log_debug_with(state: &LogStateRef, now_ms: f64, context: &LogContext, data: LogDataOrProvider) {
+pub fn log_debug_with(
+    state: &LogStateRef,
+    now_ms: f64,
+    context: &LogContext,
+    data: LogDataOrProvider,
+) {
     emit_level(state, now_ms, LogLevel::Debug, Some(context), data);
 }
 
 /// Emits at Error level.
 // flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
-pub fn log_error(state: &LogStateRef, now_ms: f64, data: LogDataOrProvider, channel: Option<String>) {
+pub fn log_error(
+    state: &LogStateRef,
+    now_ms: f64,
+    data: LogDataOrProvider,
+    channel: Option<String>,
+) {
     log(state, now_ms, LogLevel::Error, data, channel);
 }
 
 /// Emits at Error level with merged context fields.
 // flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
-pub fn log_error_with(state: &LogStateRef, now_ms: f64, context: &LogContext, data: LogDataOrProvider) {
+pub fn log_error_with(
+    state: &LogStateRef,
+    now_ms: f64,
+    context: &LogContext,
+    data: LogDataOrProvider,
+) {
     emit_level(state, now_ms, LogLevel::Error, Some(context), data);
 }
 
 /// Emits at Info level.
 // flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
-pub fn log_info(state: &LogStateRef, now_ms: f64, data: LogDataOrProvider, channel: Option<String>) {
+pub fn log_info(
+    state: &LogStateRef,
+    now_ms: f64,
+    data: LogDataOrProvider,
+    channel: Option<String>,
+) {
     log(state, now_ms, LogLevel::Info, data, channel);
 }
 
 /// Emits at Info level with merged context fields.
 // flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
-pub fn log_info_with(state: &LogStateRef, now_ms: f64, context: &LogContext, data: LogDataOrProvider) {
+pub fn log_info_with(
+    state: &LogStateRef,
+    now_ms: f64,
+    context: &LogContext,
+    data: LogDataOrProvider,
+) {
     emit_level(state, now_ms, LogLevel::Info, Some(context), data);
 }
 
@@ -1146,7 +1204,11 @@ fn log_value_to_json(value: &LogValue) -> String {
             let mut keys: Vec<&String> = map.keys().collect();
             keys.sort();
             for k in keys {
-                entries.push(format!("\"{}\":{}", escape_json_string(k), log_value_to_json(&map[k])));
+                entries.push(format!(
+                    "\"{}\":{}",
+                    escape_json_string(k),
+                    log_value_to_json(&map[k])
+                ));
             }
             format!("{{{}}}", entries.join(","))
         }
@@ -1163,31 +1225,57 @@ fn log_value_to_json(value: &LogValue) -> String {
 
 /// Emits at Verbose level.
 // flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
-pub fn log_verbose(state: &LogStateRef, now_ms: f64, data: LogDataOrProvider, channel: Option<String>) {
+pub fn log_verbose(
+    state: &LogStateRef,
+    now_ms: f64,
+    data: LogDataOrProvider,
+    channel: Option<String>,
+) {
     log(state, now_ms, LogLevel::Verbose, data, channel);
 }
 
 /// Emits at Verbose level with merged context fields.
 // flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
-pub fn log_verbose_with(state: &LogStateRef, now_ms: f64, context: &LogContext, data: LogDataOrProvider) {
+pub fn log_verbose_with(
+    state: &LogStateRef,
+    now_ms: f64,
+    context: &LogContext,
+    data: LogDataOrProvider,
+) {
     emit_level(state, now_ms, LogLevel::Verbose, Some(context), data);
 }
 
 /// Emits at Warn level.
 // flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
-pub fn log_warn(state: &LogStateRef, now_ms: f64, data: LogDataOrProvider, channel: Option<String>) {
+pub fn log_warn(
+    state: &LogStateRef,
+    now_ms: f64,
+    data: LogDataOrProvider,
+    channel: Option<String>,
+) {
     log(state, now_ms, LogLevel::Warn, data, channel);
 }
 
 /// Emits at Warn level with merged context fields.
 // flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
-pub fn log_warn_with(state: &LogStateRef, now_ms: f64, context: &LogContext, data: LogDataOrProvider) {
+pub fn log_warn_with(
+    state: &LogStateRef,
+    now_ms: f64,
+    context: &LogContext,
+    data: LogDataOrProvider,
+) {
     emit_level(state, now_ms, LogLevel::Warn, Some(context), data);
 }
 
 /// Emits a log entry using the bound channel and merged fields from a LogContext.
 // flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
-pub fn log_with(state: &LogStateRef, now_ms: f64, context: &LogContext, level: LogLevel, data: LogDataOrProvider) {
+pub fn log_with(
+    state: &LogStateRef,
+    now_ms: f64,
+    context: &LogContext,
+    level: LogLevel,
+    data: LogDataOrProvider,
+) {
     emit_level(state, now_ms, level, Some(context), data);
 }
 
@@ -1286,14 +1374,22 @@ fn redact_path(obj: &mut HashMap<String, LogValue>, parts: &[&str], idx: usize) 
 // flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
 // flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
 pub fn register_log_serializer(state: &LogStateRef, kind: &str, func: LogSerializer) {
-    state.write().unwrap().serializers.insert(kind.to_string(), func);
+    state
+        .write()
+        .unwrap()
+        .serializers
+        .insert(kind.to_string(), func);
 }
 
 /// Removes a sink from the fan-out list. Returns false if not present.
 // flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
 pub fn remove_log_sink(state: &LogStateRef, sink: &LogSink) -> bool {
     let mut current = state.write().unwrap();
-    if let Some(idx) = current.sinks.iter().position(|existing| Arc::ptr_eq(existing, sink)) {
+    if let Some(idx) = current
+        .sinks
+        .iter()
+        .position(|existing| Arc::ptr_eq(existing, sink))
+    {
         current.sinks.remove(idx);
         return true;
     }
@@ -1317,7 +1413,11 @@ pub fn serialize_log_error(value: &str) -> HashMap<String, LogValue> {
 /// Sets a per-channel minimum emit level.
 // flight-lint: allow(conform-params) D5: caller-owned LogState replaces the hidden singleton
 pub fn set_log_channel_level(state: &LogStateRef, channel: &str, level: LogLevel) {
-    state.write().unwrap().channel_levels.insert(channel.to_string(), level);
+    state
+        .write()
+        .unwrap()
+        .channel_levels
+        .insert(channel.to_string(), level);
 }
 
 /// Sets the console threshold level.

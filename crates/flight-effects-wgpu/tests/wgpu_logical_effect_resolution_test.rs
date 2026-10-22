@@ -9,7 +9,8 @@ use flight_render_wgpu::*;
 
 use crate::support::*;
 
-type ApplyEffect = fn(&mut WgpuRenderState, &WgpuTextureRenderTarget, &WgpuTextureRenderTarget, &wgpu::Texture);
+type ApplyEffect =
+    fn(&mut WgpuRenderState, &WgpuTextureRenderTarget, &WgpuTextureRenderTarget, &wgpu::Texture);
 
 fn apply_tilt_shift(
     state: &mut WgpuRenderState,
@@ -17,7 +18,12 @@ fn apply_tilt_shift(
     dest: &WgpuTextureRenderTarget,
     _velocity: &wgpu::Texture,
 ) {
-    apply_tilt_shift_effect_to_wgpu(state, source, dest, &create_tilt_shift_effect().read().unwrap());
+    apply_tilt_shift_effect_to_wgpu(
+        state,
+        source,
+        dest,
+        &create_tilt_shift_effect().read().unwrap(),
+    );
 }
 
 fn apply_displacement(
@@ -26,7 +32,12 @@ fn apply_displacement(
     dest: &WgpuTextureRenderTarget,
     _velocity: &wgpu::Texture,
 ) {
-    apply_displacement_effect_to_wgpu(state, source, dest, &create_displacement_effect().read().unwrap());
+    apply_displacement_effect_to_wgpu(
+        state,
+        source,
+        dest,
+        &create_displacement_effect().read().unwrap(),
+    );
 }
 
 fn apply_directional_blur(
@@ -35,7 +46,12 @@ fn apply_directional_blur(
     dest: &WgpuTextureRenderTarget,
     _velocity: &wgpu::Texture,
 ) {
-    apply_directional_blur_effect_to_wgpu(state, source, dest, &create_directional_blur_effect().read().unwrap());
+    apply_directional_blur_effect_to_wgpu(
+        state,
+        source,
+        dest,
+        &create_directional_blur_effect().read().unwrap(),
+    );
 }
 
 fn apply_kuwahara(
@@ -44,7 +60,12 @@ fn apply_kuwahara(
     dest: &WgpuTextureRenderTarget,
     _velocity: &wgpu::Texture,
 ) {
-    apply_kuwahara_effect_to_wgpu(state, source, dest, &create_kuwahara_effect().read().unwrap());
+    apply_kuwahara_effect_to_wgpu(
+        state,
+        source,
+        dest,
+        &create_kuwahara_effect().read().unwrap(),
+    );
 }
 
 fn apply_glitch(
@@ -62,7 +83,13 @@ fn apply_active_motion_blur(
     dest: &WgpuTextureRenderTarget,
     velocity: &wgpu::Texture,
 ) {
-    apply_motion_blur_effect_to_wgpu(state, source, dest, Some(velocity), &create_motion_blur_effect().read().unwrap());
+    apply_motion_blur_effect_to_wgpu(
+        state,
+        source,
+        dest,
+        Some(velocity),
+        &create_motion_blur_effect().read().unwrap(),
+    );
 }
 
 fn apply_ssao(
@@ -80,7 +107,12 @@ fn apply_pixelate(
     dest: &WgpuTextureRenderTarget,
     _velocity: &wgpu::Texture,
 ) {
-    apply_pixelate_effect_to_wgpu(state, source, dest, &create_pixelate_effect().read().unwrap());
+    apply_pixelate_effect_to_wgpu(
+        state,
+        source,
+        dest,
+        &create_pixelate_effect().read().unwrap(),
+    );
 }
 
 fn apply_dither(
@@ -107,7 +139,12 @@ fn apply_sharpen(
     dest: &WgpuTextureRenderTarget,
     _velocity: &wgpu::Texture,
 ) {
-    apply_sharpen_effect_to_wgpu(state, source, dest, &create_sharpen_effect().read().unwrap());
+    apply_sharpen_effect_to_wgpu(
+        state,
+        source,
+        dest,
+        &create_sharpen_effect().read().unwrap(),
+    );
 }
 
 fn apply_fxaa(
@@ -135,7 +172,11 @@ fn logical_effects() -> Vec<(&'static str, ApplyEffect, usize)> {
         ("directional blur", apply_directional_blur as ApplyEffect, 4),
         ("kuwahara", apply_kuwahara as ApplyEffect, 2),
         ("glitch", apply_glitch as ApplyEffect, 4),
-        ("active motion blur", apply_active_motion_blur as ApplyEffect, 2),
+        (
+            "active motion blur",
+            apply_active_motion_blur as ApplyEffect,
+            2,
+        ),
         ("SSAO", apply_ssao as ApplyEffect, 2),
         ("pixelate", apply_pixelate as ApplyEffect, 2),
         ("dither", apply_dither as ApplyEffect, 2),
@@ -178,8 +219,16 @@ mod logical_effect_resolution {
     #[test]
     fn keeps_descriptor_distances_stable_across_supersampled_scratch_targets() {
         for (name, apply, slot) in logical_effects() {
-            assert_eq!(&uploaded_by(apply, 800, 600)[slot..slot + 2], &[800.0, 600.0], "{name}");
-            assert_eq!(&uploaded_by(apply, 1600, 1200)[slot..slot + 2], &[800.0, 600.0], "{name}");
+            assert_eq!(
+                &uploaded_by(apply, 800, 600)[slot..slot + 2],
+                &[800.0, 600.0],
+                "{name}"
+            );
+            assert_eq!(
+                &uploaded_by(apply, 1600, 1200)[slot..slot + 2],
+                &[800.0, 600.0],
+                "{name}"
+            );
         }
     }
 
@@ -188,8 +237,16 @@ mod logical_effect_resolution {
     #[test]
     fn retains_physical_source_resolution() {
         for (name, apply) in physical_effects() {
-            assert_eq!(&uploaded_by(apply, 800, 600)[0..2], &[800.0, 600.0], "{name}");
-            assert_eq!(&uploaded_by(apply, 1600, 1200)[0..2], &[1600.0, 1200.0], "{name}");
+            assert_eq!(
+                &uploaded_by(apply, 800, 600)[0..2],
+                &[800.0, 600.0],
+                "{name}"
+            );
+            assert_eq!(
+                &uploaded_by(apply, 1600, 1200)[0..2],
+                &[1600.0, 1200.0],
+                "{name}"
+            );
         }
     }
 }

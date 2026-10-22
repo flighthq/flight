@@ -22,7 +22,10 @@ fn status_host(
     let listeners_for_subscribe = listeners.clone();
     let change_cap = HostPowerChangeCapability {
         subscribe: Arc::new(move |listener: PowerChangeListener| {
-            listeners_for_subscribe.lock().unwrap().push(listener.clone());
+            listeners_for_subscribe
+                .lock()
+                .unwrap()
+                .push(listener.clone());
             let listeners_for_unsub = listeners_for_subscribe.clone();
             let listener_for_unsub = listener;
             return Arc::new(move || {
@@ -59,7 +62,10 @@ fn charging_host() -> (
     let listeners_for_subscribe = listeners.clone();
     let change_cap = HostPowerChangeCapability {
         subscribe: Arc::new(move |listener: PowerChangeListener| {
-            listeners_for_subscribe.lock().unwrap().push(listener.clone());
+            listeners_for_subscribe
+                .lock()
+                .unwrap()
+                .push(listener.clone());
             let listeners_for_unsub = listeners_for_subscribe.clone();
             let listener_for_unsub = listener;
             return Arc::new(move || {
@@ -82,9 +88,7 @@ fn make_provider() -> ProviderRef {
     return Arc::new(()) as ProviderRef;
 }
 
-fn make_keep_awake_cap(
-    overrides: Option<KeepAwakeOverrides>,
-) -> HostPowerKeepAwakeCapability {
+fn make_keep_awake_cap(overrides: Option<KeepAwakeOverrides>) -> HostPowerKeepAwakeCapability {
     let o = overrides.unwrap_or_else(|| KeepAwakeOverrides {
         acquire: None,
         destroy: None,
@@ -93,15 +97,27 @@ fn make_keep_awake_cap(
         release: None,
     });
     return HostPowerKeepAwakeCapability {
-        acquire: o.acquire.unwrap_or_else(|| Arc::new(|_| {
-            Box::pin(async { PowerKeepAwakeAcquireResult { reason: PowerKeepAwakeAcquireReason::Ok } })
-        })),
+        acquire: o.acquire.unwrap_or_else(|| {
+            Arc::new(|_| {
+                Box::pin(async {
+                    PowerKeepAwakeAcquireResult {
+                        reason: PowerKeepAwakeAcquireReason::Ok,
+                    }
+                })
+            })
+        }),
         destroy: o.destroy,
         is_active: o.is_active.unwrap_or_else(|| Arc::new(|| false)),
         provider: o.provider.unwrap_or_else(make_provider),
-        release: o.release.unwrap_or_else(|| Arc::new(|| {
-            Box::pin(async { PowerKeepAwakeReleaseResult { reason: PowerKeepAwakeReleaseReason::Ok } })
-        })),
+        release: o.release.unwrap_or_else(|| {
+            Arc::new(|| {
+                Box::pin(async {
+                    PowerKeepAwakeReleaseResult {
+                        reason: PowerKeepAwakeReleaseReason::Ok,
+                    }
+                })
+            })
+        }),
     };
 }
 
@@ -123,13 +139,26 @@ mod acquire_power_keep_awake {
         let cap = make_keep_awake_cap(Some(KeepAwakeOverrides {
             acquire: Some(Arc::new(move |mode| {
                 *seen_for_cap.lock().unwrap() = mode;
-                Box::pin(async { PowerKeepAwakeAcquireResult { reason: PowerKeepAwakeAcquireReason::Denied } })
+                Box::pin(async {
+                    PowerKeepAwakeAcquireResult {
+                        reason: PowerKeepAwakeAcquireReason::Denied,
+                    }
+                })
             })),
-            destroy: None, is_active: None, provider: None, release: None,
+            destroy: None,
+            is_active: None,
+            provider: None,
+            release: None,
         }));
-        let result = crate::block_on(flight_power::acquire_power_keep_awake(&cap, Some(PowerKeepAwakeMode::PreventAppSuspension)));
+        let result = crate::block_on(flight_power::acquire_power_keep_awake(
+            &cap,
+            Some(PowerKeepAwakeMode::PreventAppSuspension),
+        ));
         assert_eq!(result.reason, PowerKeepAwakeAcquireReason::Denied);
-        assert_eq!(*seen.lock().unwrap(), PowerKeepAwakeMode::PreventAppSuspension);
+        assert_eq!(
+            *seen.lock().unwrap(),
+            PowerKeepAwakeMode::PreventAppSuspension
+        );
     }
 
     #[test]
@@ -139,12 +168,22 @@ mod acquire_power_keep_awake {
         let cap = make_keep_awake_cap(Some(KeepAwakeOverrides {
             acquire: Some(Arc::new(move |mode| {
                 *seen_for_cap.lock().unwrap() = mode;
-                Box::pin(async { PowerKeepAwakeAcquireResult { reason: PowerKeepAwakeAcquireReason::Ok } })
+                Box::pin(async {
+                    PowerKeepAwakeAcquireResult {
+                        reason: PowerKeepAwakeAcquireReason::Ok,
+                    }
+                })
             })),
-            destroy: None, is_active: None, provider: None, release: None,
+            destroy: None,
+            is_active: None,
+            provider: None,
+            release: None,
         }));
         crate::block_on(flight_power::acquire_power_keep_awake(&cap, None));
-        assert_eq!(*seen.lock().unwrap(), PowerKeepAwakeMode::PreventDisplaySleep);
+        assert_eq!(
+            *seen.lock().unwrap(),
+            PowerKeepAwakeMode::PreventDisplaySleep
+        );
     }
 }
 
@@ -166,9 +205,14 @@ mod attach_power {
             None,
         );
         flight_power::attach_power(
-            Some(&status_cap), Some(&change_cap),
-            None, None, None, None,
-            &mut power, None,
+            Some(&status_cap),
+            Some(&change_cap),
+            None,
+            None,
+            None,
+            None,
+            &mut power,
+            None,
         );
         emit();
         emit();
@@ -200,9 +244,14 @@ mod attach_power {
             None,
         );
         flight_power::attach_power(
-            Some(&status_cap), Some(&change_cap),
-            None, None, None, None,
-            &mut power, None,
+            Some(&status_cap),
+            Some(&change_cap),
+            None,
+            None,
+            None,
+            None,
+            &mut power,
+            None,
         );
         *charging.lock().unwrap() = true;
         emit();
@@ -214,7 +263,8 @@ mod attach_power {
 
     #[test]
     fn delivers_the_thermal_state_as_the_event_payload() {
-        let thermal_listeners: Arc<Mutex<Vec<PowerThermalListener>>> = Arc::new(Mutex::new(Vec::new()));
+        let thermal_listeners: Arc<Mutex<Vec<PowerThermalListener>>> =
+            Arc::new(Mutex::new(Vec::new()));
         let listeners_for_cap = thermal_listeners.clone();
         let thermal_cap = HostPowerThermalCapability {
             get_thermal_state: Arc::new(|| PowerThermalState::Serious),
@@ -240,9 +290,14 @@ mod attach_power {
             None,
         );
         flight_power::attach_power(
-            None, None, None, None,
-            Some(&thermal_cap), None,
-            &mut power, None,
+            None,
+            None,
+            None,
+            None,
+            Some(&thermal_cap),
+            None,
+            &mut power,
+            None,
         );
         let guard = thermal_listeners.lock().unwrap();
         for l in guard.iter() {
@@ -268,14 +323,24 @@ mod attach_power {
             None,
         );
         flight_power::attach_power(
-            Some(&status_cap), Some(&change_cap),
-            None, None, None, None,
-            &mut power, None,
+            Some(&status_cap),
+            Some(&change_cap),
+            None,
+            None,
+            None,
+            None,
+            &mut power,
+            None,
         );
         flight_power::attach_power(
-            Some(&status_cap), Some(&change_cap),
-            None, None, None, None,
-            &mut power, None,
+            Some(&status_cap),
+            Some(&change_cap),
+            None,
+            None,
+            None,
+            None,
+            &mut power,
+            None,
         );
         emit();
         assert_eq!(*count.lock().unwrap(), 1);
@@ -303,7 +368,10 @@ mod create_power_context {
             destroy: Some(Arc::new(move || {
                 *count.lock().unwrap() += 1;
             })),
-            acquire: None, is_active: None, provider: None, release: None,
+            acquire: None,
+            is_active: None,
+            provider: None,
+            release: None,
         }));
         let mut ctx = create_power_context();
         flight_power::destroy_power_keep_awake(&[&cap], &mut ctx);
@@ -322,7 +390,10 @@ mod destroy_power_keep_awake {
             destroy: Some(Arc::new(move || {
                 *destroyed_for_cap.lock().unwrap() += 1;
             })),
-            acquire: None, is_active: None, provider: None, release: None,
+            acquire: None,
+            is_active: None,
+            provider: None,
+            release: None,
         }));
         let mut ctx = create_power_context();
         flight_power::destroy_power_keep_awake(&[&shared, &shared], &mut ctx);
@@ -337,13 +408,19 @@ mod destroy_power_keep_awake {
             destroy: Some(Arc::new(|| {
                 panic!("first failed");
             })),
-            acquire: None, is_active: None, provider: None, release: None,
+            acquire: None,
+            is_active: None,
+            provider: None,
+            release: None,
         }));
         let healthy = make_keep_awake_cap(Some(KeepAwakeOverrides {
             destroy: Some(Arc::new(move || {
                 *second_for_cap.lock().unwrap() = true;
             })),
-            acquire: None, is_active: None, provider: None, release: None,
+            acquire: None,
+            is_active: None,
+            provider: None,
+            release: None,
         }));
         let mut ctx = create_power_context();
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -363,11 +440,16 @@ mod destroy_power_keep_awake {
                 *count_for_a.lock().unwrap() += 1;
             })),
             provider: Some(provider_ref.clone()),
-            acquire: None, is_active: None, release: None,
+            acquire: None,
+            is_active: None,
+            release: None,
         }));
         let b = make_keep_awake_cap(Some(KeepAwakeOverrides {
             provider: Some(make_provider()),
-            acquire: None, destroy: None, is_active: None, release: None,
+            acquire: None,
+            destroy: None,
+            is_active: None,
+            release: None,
         }));
         let mut ctx = create_power_context();
         flight_power::destroy_power_keep_awake(&[&a, &b], &mut ctx);
@@ -377,7 +459,9 @@ mod destroy_power_keep_awake {
                 panic!("should not be called — already destroyed");
             })),
             provider: Some(provider_ref.clone()),
-            acquire: None, is_active: None, release: None,
+            acquire: None,
+            is_active: None,
+            release: None,
         }));
         flight_power::destroy_power_keep_awake(&[&c], &mut ctx);
         assert_eq!(*destroyed_count.lock().unwrap(), 1);
@@ -397,7 +481,9 @@ mod destroy_power_keep_awake {
                 }
             })),
             provider: Some(provider_ref.clone()),
-            acquire: None, is_active: None, release: None,
+            acquire: None,
+            is_active: None,
+            release: None,
         }));
         let mut ctx = create_power_context();
         let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -420,12 +506,16 @@ mod destroy_power_keep_awake {
         let a = make_keep_awake_cap(Some(KeepAwakeOverrides {
             destroy: Some(shared_destroy.clone()),
             provider: Some(make_provider()),
-            acquire: None, is_active: None, release: None,
+            acquire: None,
+            is_active: None,
+            release: None,
         }));
         let b = make_keep_awake_cap(Some(KeepAwakeOverrides {
             destroy: Some(shared_destroy.clone()),
             provider: Some(make_provider()),
-            acquire: None, is_active: None, release: None,
+            acquire: None,
+            is_active: None,
+            release: None,
         }));
         let mut ctx = create_power_context();
         flight_power::destroy_power_keep_awake(&[&a, &b], &mut ctx);
@@ -442,7 +532,9 @@ mod destroy_power_keep_awake {
                 *count_for_a.lock().unwrap() += 1;
             })),
             provider: Some(provider_a.clone()),
-            acquire: None, is_active: None, release: None,
+            acquire: None,
+            is_active: None,
+            release: None,
         }));
         let mut ctx = create_power_context();
         flight_power::destroy_power_keep_awake(&[&a], &mut ctx);
@@ -455,7 +547,9 @@ mod destroy_power_keep_awake {
                 *count_for_b.lock().unwrap() += 1;
             })),
             provider: Some(make_provider()),
-            acquire: None, is_active: None, release: None,
+            acquire: None,
+            is_active: None,
+            release: None,
         }));
         flight_power::destroy_power_keep_awake(&[&b], &mut ctx);
         assert_eq!(*destroyed_count.lock().unwrap(), 2);
@@ -480,9 +574,14 @@ mod detach_power {
             None,
         );
         flight_power::attach_power(
-            Some(&status_cap), Some(&change_cap),
-            None, None, None, None,
-            &mut power, None,
+            Some(&status_cap),
+            Some(&change_cap),
+            None,
+            None,
+            None,
+            None,
+            &mut power,
+            None,
         );
         flight_power::detach_power(&mut power);
         emit();
@@ -510,10 +609,14 @@ mod detach_power {
         };
         let mut power = create_power();
         flight_power::attach_power(
-            None, None,
+            None,
+            None,
             Some(&session_lock_cap),
-            None, None, None,
-            &mut power, None,
+            None,
+            None,
+            None,
+            &mut power,
+            None,
         );
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             flight_power::detach_power(&mut power);
@@ -538,14 +641,24 @@ mod detach_power {
             None,
         );
         flight_power::attach_power(
-            Some(&status_cap), Some(&change_cap),
-            None, None, None, None,
-            &mut kept, None,
+            Some(&status_cap),
+            Some(&change_cap),
+            None,
+            None,
+            None,
+            None,
+            &mut kept,
+            None,
         );
         flight_power::attach_power(
-            Some(&status_cap), Some(&change_cap),
-            None, None, None, None,
-            &mut dropped, None,
+            Some(&status_cap),
+            Some(&change_cap),
+            None,
+            None,
+            None,
+            None,
+            &mut dropped,
+            None,
         );
         flight_power::detach_power(&mut dropped);
         emit();
@@ -571,9 +684,14 @@ mod dispose_power {
             None,
         );
         flight_power::attach_power(
-            Some(&status_cap), Some(&change_cap),
-            None, None, None, None,
-            &mut power, None,
+            Some(&status_cap),
+            Some(&change_cap),
+            None,
+            None,
+            None,
+            None,
+            &mut power,
+            None,
         );
         flight_power::dispose_power(&mut power);
         emit();
@@ -623,10 +741,22 @@ mod get_power_battery_health_state_string {
 
     #[test]
     fn round_trips_all_variants() {
-        assert_eq!(flight_power::get_power_battery_health_state_string(PowerBatteryHealthState::Good), "Good");
-        assert_eq!(flight_power::get_power_battery_health_state_string(PowerBatteryHealthState::Fair), "Fair");
-        assert_eq!(flight_power::get_power_battery_health_state_string(PowerBatteryHealthState::Poor), "Poor");
-        assert_eq!(flight_power::get_power_battery_health_state_string(PowerBatteryHealthState::Unknown), "Unknown");
+        assert_eq!(
+            flight_power::get_power_battery_health_state_string(PowerBatteryHealthState::Good),
+            "Good"
+        );
+        assert_eq!(
+            flight_power::get_power_battery_health_state_string(PowerBatteryHealthState::Fair),
+            "Fair"
+        );
+        assert_eq!(
+            flight_power::get_power_battery_health_state_string(PowerBatteryHealthState::Poor),
+            "Poor"
+        );
+        assert_eq!(
+            flight_power::get_power_battery_health_state_string(PowerBatteryHealthState::Unknown),
+            "Unknown"
+        );
     }
 }
 
@@ -636,9 +766,15 @@ mod get_power_idle_polling_interval_ms {
     #[test]
     fn reports_the_configured_interval() {
         let mut ctx = create_power_context();
-        assert_eq!(flight_power::get_power_idle_polling_interval_ms(&ctx), 5000.0);
+        assert_eq!(
+            flight_power::get_power_idle_polling_interval_ms(&ctx),
+            5000.0
+        );
         set_power_idle_polling_interval_ms(&mut ctx, 1234.0);
-        assert_eq!(flight_power::get_power_idle_polling_interval_ms(&ctx), 1234.0);
+        assert_eq!(
+            flight_power::get_power_idle_polling_interval_ms(&ctx),
+            1234.0
+        );
     }
 
     #[test]
@@ -646,8 +782,14 @@ mod get_power_idle_polling_interval_ms {
         let mut ctx_a = create_power_context();
         let ctx_b = create_power_context();
         set_power_idle_polling_interval_ms(&mut ctx_a, 9999.0);
-        assert_eq!(flight_power::get_power_idle_polling_interval_ms(&ctx_a), 9999.0);
-        assert_eq!(flight_power::get_power_idle_polling_interval_ms(&ctx_b), 5000.0);
+        assert_eq!(
+            flight_power::get_power_idle_polling_interval_ms(&ctx_a),
+            9999.0
+        );
+        assert_eq!(
+            flight_power::get_power_idle_polling_interval_ms(&ctx_b),
+            5000.0
+        );
     }
 }
 
@@ -656,9 +798,18 @@ mod get_power_idle_state_string {
 
     #[test]
     fn round_trips_all_variants() {
-        assert_eq!(flight_power::get_power_idle_state_string(PowerIdleState::Active), "Active");
-        assert_eq!(flight_power::get_power_idle_state_string(PowerIdleState::Idle), "Idle");
-        assert_eq!(flight_power::get_power_idle_state_string(PowerIdleState::Unknown), "Unknown");
+        assert_eq!(
+            flight_power::get_power_idle_state_string(PowerIdleState::Active),
+            "Active"
+        );
+        assert_eq!(
+            flight_power::get_power_idle_state_string(PowerIdleState::Idle),
+            "Idle"
+        );
+        assert_eq!(
+            flight_power::get_power_idle_state_string(PowerIdleState::Unknown),
+            "Unknown"
+        );
     }
 }
 
@@ -667,10 +818,30 @@ mod get_power_keep_awake_acquire_reason_string {
 
     #[test]
     fn round_trips_all_variants() {
-        assert_eq!(flight_power::get_power_keep_awake_acquire_reason_string(PowerKeepAwakeAcquireReason::Ok), "ok");
-        assert_eq!(flight_power::get_power_keep_awake_acquire_reason_string(PowerKeepAwakeAcquireReason::Unavailable), "unavailable");
-        assert_eq!(flight_power::get_power_keep_awake_acquire_reason_string(PowerKeepAwakeAcquireReason::Denied), "denied");
-        assert_eq!(flight_power::get_power_keep_awake_acquire_reason_string(PowerKeepAwakeAcquireReason::Failed), "failed");
+        assert_eq!(
+            flight_power::get_power_keep_awake_acquire_reason_string(
+                PowerKeepAwakeAcquireReason::Ok
+            ),
+            "ok"
+        );
+        assert_eq!(
+            flight_power::get_power_keep_awake_acquire_reason_string(
+                PowerKeepAwakeAcquireReason::Unavailable
+            ),
+            "unavailable"
+        );
+        assert_eq!(
+            flight_power::get_power_keep_awake_acquire_reason_string(
+                PowerKeepAwakeAcquireReason::Denied
+            ),
+            "denied"
+        );
+        assert_eq!(
+            flight_power::get_power_keep_awake_acquire_reason_string(
+                PowerKeepAwakeAcquireReason::Failed
+            ),
+            "failed"
+        );
     }
 }
 
@@ -679,8 +850,16 @@ mod get_power_keep_awake_mode_string {
 
     #[test]
     fn round_trips_all_variants() {
-        assert_eq!(flight_power::get_power_keep_awake_mode_string(PowerKeepAwakeMode::PreventDisplaySleep), "PreventDisplaySleep");
-        assert_eq!(flight_power::get_power_keep_awake_mode_string(PowerKeepAwakeMode::PreventAppSuspension), "PreventAppSuspension");
+        assert_eq!(
+            flight_power::get_power_keep_awake_mode_string(PowerKeepAwakeMode::PreventDisplaySleep),
+            "PreventDisplaySleep"
+        );
+        assert_eq!(
+            flight_power::get_power_keep_awake_mode_string(
+                PowerKeepAwakeMode::PreventAppSuspension
+            ),
+            "PreventAppSuspension"
+        );
     }
 }
 
@@ -689,9 +868,24 @@ mod get_power_keep_awake_release_reason_string {
 
     #[test]
     fn round_trips_all_variants() {
-        assert_eq!(flight_power::get_power_keep_awake_release_reason_string(PowerKeepAwakeReleaseReason::Ok), "ok");
-        assert_eq!(flight_power::get_power_keep_awake_release_reason_string(PowerKeepAwakeReleaseReason::Inactive), "inactive");
-        assert_eq!(flight_power::get_power_keep_awake_release_reason_string(PowerKeepAwakeReleaseReason::Failed), "failed");
+        assert_eq!(
+            flight_power::get_power_keep_awake_release_reason_string(
+                PowerKeepAwakeReleaseReason::Ok
+            ),
+            "ok"
+        );
+        assert_eq!(
+            flight_power::get_power_keep_awake_release_reason_string(
+                PowerKeepAwakeReleaseReason::Inactive
+            ),
+            "inactive"
+        );
+        assert_eq!(
+            flight_power::get_power_keep_awake_release_reason_string(
+                PowerKeepAwakeReleaseReason::Failed
+            ),
+            "failed"
+        );
     }
 }
 
@@ -727,7 +921,10 @@ mod get_power_system_idle_state {
             }),
             get_idle_time_seconds: Arc::new(|| 0.0),
         };
-        assert_eq!(flight_power::get_power_system_idle_state(&cap, 90.0), PowerIdleState::Idle);
+        assert_eq!(
+            flight_power::get_power_system_idle_state(&cap, 90.0),
+            PowerIdleState::Idle
+        );
         assert_eq!(*seen.lock().unwrap(), 90.0);
     }
 }
@@ -754,7 +951,10 @@ mod get_power_thermal_state {
             get_thermal_state: Arc::new(|| PowerThermalState::Fair),
             subscribe_thermal_state_change: Arc::new(|_| Arc::new(|| {})),
         };
-        assert_eq!(flight_power::get_power_thermal_state(&cap), PowerThermalState::Fair);
+        assert_eq!(
+            flight_power::get_power_thermal_state(&cap),
+            PowerThermalState::Fair
+        );
     }
 }
 
@@ -763,11 +963,26 @@ mod get_power_thermal_state_string {
 
     #[test]
     fn round_trips_all_variants() {
-        assert_eq!(flight_power::get_power_thermal_state_string(PowerThermalState::Nominal), "Nominal");
-        assert_eq!(flight_power::get_power_thermal_state_string(PowerThermalState::Fair), "Fair");
-        assert_eq!(flight_power::get_power_thermal_state_string(PowerThermalState::Serious), "Serious");
-        assert_eq!(flight_power::get_power_thermal_state_string(PowerThermalState::Critical), "Critical");
-        assert_eq!(flight_power::get_power_thermal_state_string(PowerThermalState::Unknown), "Unknown");
+        assert_eq!(
+            flight_power::get_power_thermal_state_string(PowerThermalState::Nominal),
+            "Nominal"
+        );
+        assert_eq!(
+            flight_power::get_power_thermal_state_string(PowerThermalState::Fair),
+            "Fair"
+        );
+        assert_eq!(
+            flight_power::get_power_thermal_state_string(PowerThermalState::Serious),
+            "Serious"
+        );
+        assert_eq!(
+            flight_power::get_power_thermal_state_string(PowerThermalState::Critical),
+            "Critical"
+        );
+        assert_eq!(
+            flight_power::get_power_thermal_state_string(PowerThermalState::Unknown),
+            "Unknown"
+        );
     }
 }
 
@@ -791,7 +1006,10 @@ mod is_power_keep_awake_active {
     fn reports_the_provider_state() {
         let cap = make_keep_awake_cap(Some(KeepAwakeOverrides {
             is_active: Some(Arc::new(|| true)),
-            acquire: None, destroy: None, provider: None, release: None,
+            acquire: None,
+            destroy: None,
+            provider: None,
+            release: None,
         }));
         assert!(flight_power::is_power_keep_awake_active(&cap));
     }
@@ -839,13 +1057,22 @@ mod parse_power_battery_health_state {
 
     #[test]
     fn round_trips_all_variants() {
-        assert_eq!(flight_power::parse_power_battery_health_state("Good"), Some(PowerBatteryHealthState::Good));
-        assert_eq!(flight_power::parse_power_battery_health_state("Unknown"), Some(PowerBatteryHealthState::Unknown));
+        assert_eq!(
+            flight_power::parse_power_battery_health_state("Good"),
+            Some(PowerBatteryHealthState::Good)
+        );
+        assert_eq!(
+            flight_power::parse_power_battery_health_state("Unknown"),
+            Some(PowerBatteryHealthState::Unknown)
+        );
     }
 
     #[test]
     fn rejects_unknown_string() {
-        assert_eq!(flight_power::parse_power_battery_health_state("bogus"), None);
+        assert_eq!(
+            flight_power::parse_power_battery_health_state("bogus"),
+            None
+        );
     }
 }
 
@@ -854,8 +1081,14 @@ mod parse_power_idle_state {
 
     #[test]
     fn round_trips_all_variants() {
-        assert_eq!(flight_power::parse_power_idle_state("Active"), Some(PowerIdleState::Active));
-        assert_eq!(flight_power::parse_power_idle_state("Idle"), Some(PowerIdleState::Idle));
+        assert_eq!(
+            flight_power::parse_power_idle_state("Active"),
+            Some(PowerIdleState::Active)
+        );
+        assert_eq!(
+            flight_power::parse_power_idle_state("Idle"),
+            Some(PowerIdleState::Idle)
+        );
     }
 
     #[test]
@@ -869,13 +1102,22 @@ mod parse_power_keep_awake_acquire_reason {
 
     #[test]
     fn round_trips_all_variants() {
-        assert_eq!(flight_power::parse_power_keep_awake_acquire_reason("ok"), Some(PowerKeepAwakeAcquireReason::Ok));
-        assert_eq!(flight_power::parse_power_keep_awake_acquire_reason("denied"), Some(PowerKeepAwakeAcquireReason::Denied));
+        assert_eq!(
+            flight_power::parse_power_keep_awake_acquire_reason("ok"),
+            Some(PowerKeepAwakeAcquireReason::Ok)
+        );
+        assert_eq!(
+            flight_power::parse_power_keep_awake_acquire_reason("denied"),
+            Some(PowerKeepAwakeAcquireReason::Denied)
+        );
     }
 
     #[test]
     fn rejects_unknown_string() {
-        assert_eq!(flight_power::parse_power_keep_awake_acquire_reason("bogus"), None);
+        assert_eq!(
+            flight_power::parse_power_keep_awake_acquire_reason("bogus"),
+            None
+        );
     }
 }
 
@@ -884,8 +1126,14 @@ mod parse_power_keep_awake_mode {
 
     #[test]
     fn round_trips_all_variants() {
-        assert_eq!(flight_power::parse_power_keep_awake_mode("PreventDisplaySleep"), Some(PowerKeepAwakeMode::PreventDisplaySleep));
-        assert_eq!(flight_power::parse_power_keep_awake_mode("PreventAppSuspension"), Some(PowerKeepAwakeMode::PreventAppSuspension));
+        assert_eq!(
+            flight_power::parse_power_keep_awake_mode("PreventDisplaySleep"),
+            Some(PowerKeepAwakeMode::PreventDisplaySleep)
+        );
+        assert_eq!(
+            flight_power::parse_power_keep_awake_mode("PreventAppSuspension"),
+            Some(PowerKeepAwakeMode::PreventAppSuspension)
+        );
     }
 
     #[test]
@@ -899,13 +1147,22 @@ mod parse_power_keep_awake_release_reason {
 
     #[test]
     fn round_trips_all_variants() {
-        assert_eq!(flight_power::parse_power_keep_awake_release_reason("ok"), Some(PowerKeepAwakeReleaseReason::Ok));
-        assert_eq!(flight_power::parse_power_keep_awake_release_reason("inactive"), Some(PowerKeepAwakeReleaseReason::Inactive));
+        assert_eq!(
+            flight_power::parse_power_keep_awake_release_reason("ok"),
+            Some(PowerKeepAwakeReleaseReason::Ok)
+        );
+        assert_eq!(
+            flight_power::parse_power_keep_awake_release_reason("inactive"),
+            Some(PowerKeepAwakeReleaseReason::Inactive)
+        );
     }
 
     #[test]
     fn rejects_unknown_string() {
-        assert_eq!(flight_power::parse_power_keep_awake_release_reason("bogus"), None);
+        assert_eq!(
+            flight_power::parse_power_keep_awake_release_reason("bogus"),
+            None
+        );
     }
 }
 
@@ -914,8 +1171,14 @@ mod parse_power_thermal_state {
 
     #[test]
     fn round_trips_all_variants() {
-        assert_eq!(flight_power::parse_power_thermal_state("Nominal"), Some(PowerThermalState::Nominal));
-        assert_eq!(flight_power::parse_power_thermal_state("Critical"), Some(PowerThermalState::Critical));
+        assert_eq!(
+            flight_power::parse_power_thermal_state("Nominal"),
+            Some(PowerThermalState::Nominal)
+        );
+        assert_eq!(
+            flight_power::parse_power_thermal_state("Critical"),
+            Some(PowerThermalState::Critical)
+        );
     }
 
     #[test]
@@ -931,9 +1194,16 @@ mod release_power_keep_awake {
     fn resolves_the_provider_outcome() {
         let cap = make_keep_awake_cap(Some(KeepAwakeOverrides {
             release: Some(Arc::new(|| {
-                Box::pin(async { PowerKeepAwakeReleaseResult { reason: PowerKeepAwakeReleaseReason::Inactive } })
+                Box::pin(async {
+                    PowerKeepAwakeReleaseResult {
+                        reason: PowerKeepAwakeReleaseReason::Inactive,
+                    }
+                })
             })),
-            acquire: None, destroy: None, is_active: None, provider: None,
+            acquire: None,
+            destroy: None,
+            is_active: None,
+            provider: None,
         }));
         let result = crate::block_on(flight_power::release_power_keep_awake(&cap));
         assert_eq!(result.reason, PowerKeepAwakeReleaseReason::Inactive);

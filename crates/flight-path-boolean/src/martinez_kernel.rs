@@ -30,8 +30,12 @@ pub enum PathBooleanFillRule {
 
 /// The strategy a `PathBooleanKernel` carries (TS `computePathBoolean`): the combined contour set of
 /// two operands under an operation and fill rule. A stateless function value (D9d).
-pub type ComputePathBooleanFunction =
-    fn(&[PathBooleanContour], &[PathBooleanContour], PathBooleanOperation, PathBooleanFillRule) -> Vec<PathBooleanContour>;
+pub type ComputePathBooleanFunction = fn(
+    &[PathBooleanContour],
+    &[PathBooleanContour],
+    PathBooleanOperation,
+    PathBooleanFillRule,
+) -> Vec<PathBooleanContour>;
 
 /// The boolean kernel (TS `PathBooleanKernel extends Entity`): a strategy entity whose
 /// `compute_path_boolean` computes the combined contour set of two operands. Callers may supply any
@@ -197,8 +201,16 @@ fn build_arrangement(
         let event = event_heap_pop(&mut heap, &events);
         if events[event].left {
             let index = insert_status(&mut status, &events, event);
-            let prev = if index > 0 { Some(status[index - 1]) } else { None };
-            let next = if index < status.len() - 1 { Some(status[index + 1]) } else { None };
+            let prev = if index > 0 {
+                Some(status[index - 1])
+            } else {
+                None
+            };
+            let next = if index < status.len() - 1 {
+                Some(status[index + 1])
+            } else {
+                None
+            };
             if let Some(next_ev) = next {
                 possible_intersection(&mut events, &mut heap, vertex_snap, event, next_ev);
             }
@@ -211,7 +223,11 @@ fn build_arrangement(
             if index >= 0 {
                 let idx = index as usize;
                 let prev = if idx > 0 { Some(status[idx - 1]) } else { None };
-                let next = if idx < status.len() - 1 { Some(status[idx + 1]) } else { None };
+                let next = if idx < status.len() - 1 {
+                    Some(status[idx + 1])
+                } else {
+                    None
+                };
                 status.remove(idx);
                 if let (Some(prev_ev), Some(next_ev)) = (prev, next) {
                     possible_intersection(&mut events, &mut heap, vertex_snap, prev_ev, next_ev);
@@ -288,12 +304,19 @@ fn compare_events(events: &[SweepEvent], e1: usize, e2: usize) -> i32 {
     let e1_other = get_other_event(events, e1);
     let e2_other = get_other_event(events, e2);
     let area = signed_area(
-        events[e1].x, events[e1].y,
-        events[e1_other].x, events[e1_other].y,
-        events[e2_other].x, events[e2_other].y,
+        events[e1].x,
+        events[e1].y,
+        events[e1_other].x,
+        events[e1_other].y,
+        events[e2_other].x,
+        events[e2_other].y,
     );
     if area != 0.0 {
-        return if is_below(events, e1, events[e2_other].x, events[e2_other].y) { -1 } else { 1 };
+        return if is_below(events, e1, events[e2_other].x, events[e2_other].y) {
+            -1
+        } else {
+            1
+        };
     }
     if events[e1].is_subject != events[e2].is_subject {
         return if events[e1].is_subject { -1 } else { 1 };
@@ -318,24 +341,44 @@ fn compare_segments(events: &[SweepEvent], le1: usize, le2: usize) -> i32 {
 
     if s1 != 0.0 || s2 != 0.0 {
         if a1x == events[le2].x && a1y == events[le2].y {
-            return if is_below(events, le1, events[le2_other].x, events[le2_other].y) { -1 } else { 1 };
+            return if is_below(events, le1, events[le2_other].x, events[le2_other].y) {
+                -1
+            } else {
+                1
+            };
         }
         if a1x == events[le2].x {
             return if a1y < events[le2].y { -1 } else { 1 };
         }
         if compare_events(events, le1, le2) == 1 {
-            return if is_below(events, le2, a1x, a1y) { 1 } else { -1 };
+            return if is_below(events, le2, a1x, a1y) {
+                1
+            } else {
+                -1
+            };
         }
-        return if is_below(events, le1, events[le2].x, events[le2].y) { -1 } else { 1 };
+        return if is_below(events, le1, events[le2].x, events[le2].y) {
+            -1
+        } else {
+            1
+        };
     }
 
     if events[le1].is_subject != events[le2].is_subject {
         return if events[le1].is_subject { -1 } else { 1 };
     }
     if a1x == events[le2].x && a1y == events[le2].y {
-        return if events[le1].id < events[le2].id { -1 } else { 1 };
+        return if events[le1].id < events[le2].id {
+            -1
+        } else {
+            1
+        };
     }
-    return if compare_events(events, le1, le2) == 1 { 1 } else { -1 };
+    return if compare_events(events, le1, le2) == 1 {
+        1
+    } else {
+        -1
+    };
 }
 
 /// Placeholder strategy of a default-constructed (not yet initialized) kernel: computes nothing.
@@ -380,16 +423,28 @@ fn compute_vertex_snap(subject: &[Vec<f64>], clip: &[Vec<f64>]) -> f64 {
             while i < contour.len() {
                 let x = contour[i];
                 let y = contour[i + 1];
-                if x < min_x { min_x = x; }
-                if x > max_x { max_x = x; }
-                if y < min_y { min_y = y; }
-                if y > max_y { max_y = y; }
+                if x < min_x {
+                    min_x = x;
+                }
+                if x > max_x {
+                    max_x = x;
+                }
+                if y < min_y {
+                    min_y = y;
+                }
+                if y > max_y {
+                    max_y = y;
+                }
                 i += 2;
             }
         }
     }
     let extent = f64::max(max_x - min_x, max_y - min_y);
-    return if extent > 0.0 { extent * VERTEX_SNAP_RELATIVE } else { VERTEX_SNAP_FALLBACK };
+    return if extent > 0.0 {
+        extent * VERTEX_SNAP_RELATIVE
+    } else {
+        VERTEX_SNAP_FALLBACK
+    };
 }
 
 // flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
@@ -429,7 +484,8 @@ fn directed_graph_new() -> DirectedGraph {
 /// At vertex `at`, arriving from `came_from`, pick the unused outgoing edge that
 /// turns most clockwise from the reversed incoming direction.
 fn directed_graph_next_edge(graph: &DirectedGraph, at: usize, came_from: usize) -> i32 {
-    let incoming_angle = (graph.ys[came_from] - graph.ys[at]).atan2(graph.xs[came_from] - graph.xs[at]);
+    let incoming_angle =
+        (graph.ys[came_from] - graph.ys[at]).atan2(graph.xs[came_from] - graph.xs[at]);
     let mut best: i32 = -1;
     let mut best_gap: f64 = f64::INFINITY;
     let two_pi = std::f64::consts::PI * 2.0;
@@ -472,12 +528,7 @@ fn directed_graph_trace_rings(graph: &mut DirectedGraph) -> Vec<Vec<f64>> {
 }
 
 // flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
-fn directed_graph_vertex(
-    graph: &mut DirectedGraph,
-    x: f64,
-    y: f64,
-    vertex_snap: f64,
-) -> usize {
+fn directed_graph_vertex(graph: &mut DirectedGraph, x: f64, y: f64, vertex_snap: f64) -> usize {
     let key = (snap(x, vertex_snap), snap(y, vertex_snap));
     if let Some(&existing) = graph.keys.get(&key) {
         return existing;
@@ -533,13 +584,7 @@ fn divide_if_interior(
 
 // flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// Splits `le` at interior point (x, y).
-fn divide_segment(
-    events: &mut Vec<SweepEvent>,
-    heap: &mut EventHeap,
-    le: usize,
-    x: f64,
-    y: f64,
-) {
+fn divide_segment(events: &mut Vec<SweepEvent>, heap: &mut EventHeap, le: usize, x: f64, y: f64) {
     let is_subject = events[le].is_subject;
     let winding_delta = events[le].winding_delta;
     let right = get_other_event(&*events, le);
@@ -653,7 +698,9 @@ fn find_status(status: &[usize], event: usize) -> i32 {
 fn get_other_event(events: &[SweepEvent], event: usize) -> usize {
     return match events[event].other_event {
         Some(other) => other,
-        None => throw_error("Sweep event entered the Martinez queue before its endpoint pair was linked"),
+        None => throw_error(
+            "Sweep event entered the Martinez queue before its endpoint pair was linked",
+        ),
     };
 }
 
@@ -697,9 +744,23 @@ fn insert_status(status: &mut Vec<usize>, events: &[SweepEvent], event: usize) -
 fn is_below(events: &[SweepEvent], le: usize, x: f64, y: f64) -> bool {
     let other = get_other_event(events, le);
     return if events[le].left {
-        signed_area(events[le].x, events[le].y, events[other].x, events[other].y, x, y) > 0.0
+        signed_area(
+            events[le].x,
+            events[le].y,
+            events[other].x,
+            events[other].y,
+            x,
+            y,
+        ) > 0.0
     } else {
-        signed_area(events[other].x, events[other].y, events[le].x, events[le].y, x, y) > 0.0
+        signed_area(
+            events[other].x,
+            events[other].y,
+            events[le].x,
+            events[le].y,
+            x,
+            y,
+        ) > 0.0
     };
 }
 
@@ -798,10 +859,18 @@ fn point_on_endpoint_coords(
 
 // flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 fn point_order(ax: f64, ay: f64, bx: f64, by: f64) -> i32 {
-    if ax < bx { return -1; }
-    if ax > bx { return 1; }
-    if ay < by { return -1; }
-    if ay > by { return 1; }
+    if ax < bx {
+        return -1;
+    }
+    if ax > bx {
+        return 1;
+    }
+    if ay < by {
+        return -1;
+    }
+    if ay > by {
+        return 1;
+    }
     return 0;
 }
 
@@ -852,8 +921,14 @@ fn possible_intersection(
     let le2_other_y = events[le2_other].y;
 
     let inter = segment_intersection(
-        le1_x, le1_y, le1_other_x, le1_other_y,
-        le2_x, le2_y, le2_other_x, le2_other_y,
+        le1_x,
+        le1_y,
+        le1_other_x,
+        le1_other_y,
+        le2_x,
+        le2_y,
+        le2_other_x,
+        le2_other_y,
     );
     if inter.is_none() {
         return;
@@ -863,11 +938,13 @@ fn possible_intersection(
     if inter.len() == 1 {
         let ix = inter[0].0;
         let iy = inter[0].1;
-        let on1 = point_on_endpoint_coords(le1_x, le1_y, le1_other_x, le1_other_y, ix, iy, vertex_snap);
+        let on1 =
+            point_on_endpoint_coords(le1_x, le1_y, le1_other_x, le1_other_y, ix, iy, vertex_snap);
         if !on1 {
             divide_segment(events, heap, le1, ix, iy);
         }
-        let on2 = point_on_endpoint_coords(le2_x, le2_y, le2_other_x, le2_other_y, ix, iy, vertex_snap);
+        let on2 =
+            point_on_endpoint_coords(le2_x, le2_y, le2_other_x, le2_other_y, ix, iy, vertex_snap);
         if !on2 {
             divide_segment(events, heap, le2, ix, iy);
         }
@@ -911,8 +988,14 @@ fn record_segment(
 /// Returns None, a single intersection point, or the two endpoints of a collinear
 /// overlap.
 fn segment_intersection(
-    a1x: f64, a1y: f64, a2x: f64, a2y: f64,
-    b1x: f64, b1y: f64, b2x: f64, b2y: f64,
+    a1x: f64,
+    a1y: f64,
+    a2x: f64,
+    a2y: f64,
+    b1x: f64,
+    b1y: f64,
+    b2x: f64,
+    b2y: f64,
 ) -> Option<Vec<(f64, f64)>> {
     let vax = a2x - a1x;
     let vay = a2y - a1y;
@@ -960,11 +1043,7 @@ fn segment_intersection(
 
 // flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// > 0 when (p0, p1, p2) turn counterclockwise.
-fn signed_area(
-    p0x: f64, p0y: f64,
-    p1x: f64, p1y: f64,
-    p2x: f64, p2y: f64,
-) -> f64 {
+fn signed_area(p0x: f64, p0y: f64, p1x: f64, p1y: f64, p2x: f64, p2y: f64) -> f64 {
     return (p0x - p2x) * (p1y - p2y) - (p1x - p2x) * (p0y - p2y);
 }
 
@@ -996,7 +1075,11 @@ fn winding_at(unique: &[UniqueSegment], px: f64, py: f64, subject: bool) -> i32 
         let t = (px - v.ax) / (v.bx - v.ax);
         let y_at = v.ay + t * (v.by - v.ay);
         if y_at < py {
-            winding += if subject { v.subject_delta } else { v.clip_delta };
+            winding += if subject {
+                v.subject_delta
+            } else {
+                v.clip_delta
+            };
         }
     }
     return winding;

@@ -21,15 +21,39 @@ mod create_tint_adjustment {
 
     #[test]
     fn multiplies_a_white_pixel_down_to_the_tint_color() {
-        assert_eq!(apply_color_matrix_to_color(&create_tint_adjustment(0x000000ff).color_matrix.unwrap(), 0xffffffff), 0x000000ff);
-        assert_eq!(apply_color_matrix_to_color(&create_tint_adjustment(0xff0000ff).color_matrix.unwrap(), 0xffffffff), 0xff0000ff);
-        assert_eq!(apply_color_matrix_to_color(&create_tint_adjustment(0x808080ff).color_matrix.unwrap(), 0xffffffff), 0x808080ff);
+        assert_eq!(
+            apply_color_matrix_to_color(
+                &create_tint_adjustment(0x000000ff).color_matrix.unwrap(),
+                0xffffffff
+            ),
+            0x000000ff
+        );
+        assert_eq!(
+            apply_color_matrix_to_color(
+                &create_tint_adjustment(0xff0000ff).color_matrix.unwrap(),
+                0xffffffff
+            ),
+            0xff0000ff
+        );
+        assert_eq!(
+            apply_color_matrix_to_color(
+                &create_tint_adjustment(0x808080ff).color_matrix.unwrap(),
+                0xffffffff
+            ),
+            0x808080ff
+        );
     }
 
     #[test]
     fn scales_an_arbitrary_pixel_per_channel() {
         // Half-tint on mid-grey halves each colour channel; full alpha leaves alpha unchanged.
-        assert_eq!(apply_color_matrix_to_color(&create_tint_adjustment(0x808080ff).color_matrix.unwrap(), 0x808080ff), 0x404040ff);
+        assert_eq!(
+            apply_color_matrix_to_color(
+                &create_tint_adjustment(0x808080ff).color_matrix.unwrap(),
+                0x808080ff
+            ),
+            0x404040ff
+        );
     }
 }
 

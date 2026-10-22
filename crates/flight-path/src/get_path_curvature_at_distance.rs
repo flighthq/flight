@@ -1,5 +1,5 @@
-use crate::path::Path;
 use crate::flatten_path::flatten_path;
+use crate::path::Path;
 
 #[cfg(test)]
 mod sugar_tests {
@@ -31,9 +31,12 @@ fn curvature_at_vertex(contour: &[f64], count: usize, vertex: usize) -> f64 {
     }
     let middle = 1.max(vertex.min(count - 2));
     return menger_curvature(
-        contour[(middle - 1) * 2], contour[(middle - 1) * 2 + 1],
-        contour[middle * 2], contour[middle * 2 + 1],
-        contour[(middle + 1) * 2], contour[(middle + 1) * 2 + 1],
+        contour[(middle - 1) * 2],
+        contour[(middle - 1) * 2 + 1],
+        contour[middle * 2],
+        contour[middle * 2 + 1],
+        contour[(middle + 1) * 2],
+        contour[(middle + 1) * 2 + 1],
     );
 }
 
@@ -91,7 +94,11 @@ fn sample_path_curvature(contours: &[Vec<f64>], distance: f64) -> f64 {
             let seg_len = (dx * dx + dy * dy).sqrt();
 
             if remaining <= seg_len {
-                let nearest = if seg_len == 0.0 || remaining * 2.0 >= seg_len { i } else { i - 1 };
+                let nearest = if seg_len == 0.0 || remaining * 2.0 >= seg_len {
+                    i
+                } else {
+                    i - 1
+                };
                 return curvature_at_vertex(contour, n, nearest);
             }
             remaining -= seg_len;
@@ -104,9 +111,12 @@ fn sample_path_curvature(contours: &[Vec<f64>], distance: f64) -> f64 {
         return 0.0;
     }
     return menger_curvature(
-        last[(n - 3) * 2], last[(n - 3) * 2 + 1],
-        last[(n - 2) * 2], last[(n - 2) * 2 + 1],
-        last[(n - 1) * 2], last[(n - 1) * 2 + 1],
+        last[(n - 3) * 2],
+        last[(n - 3) * 2 + 1],
+        last[(n - 2) * 2],
+        last[(n - 2) * 2 + 1],
+        last[(n - 1) * 2],
+        last[(n - 1) * 2 + 1],
     );
 }
 

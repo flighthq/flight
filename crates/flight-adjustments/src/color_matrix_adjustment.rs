@@ -33,7 +33,11 @@ pub fn create_color_matrix_adjustment(color_matrix: [f32; 20]) -> ColorMatrixAdj
 }
 
 // flight-lint: allow(conform-array) user-approved: fixed 4x5 color matrix buffer → Float32Array (D0 exception)
-pub fn initialize_color_matrix_adjustment<T: Adjustment>(out: &mut T, kind: &str, color_matrix: [f32; 20]) {
+pub fn initialize_color_matrix_adjustment<T: Adjustment>(
+    out: &mut T,
+    kind: &str,
+    color_matrix: [f32; 20],
+) {
     initialize_adjustment(out, kind);
     out.adjustment_fields_mut().color_matrix = Some(color_matrix);
 }

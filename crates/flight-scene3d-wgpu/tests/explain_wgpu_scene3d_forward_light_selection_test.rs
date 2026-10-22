@@ -1,6 +1,8 @@
 use std::sync::{Arc, RwLock};
 
-use flight_lighting::{Scene3DForwardLightSelectionReason, create_point_light, create_scene_3d_lights};
+use flight_lighting::{
+    Scene3DForwardLightSelectionReason, create_point_light, create_scene_3d_lights,
+};
 use flight_scene3d_wgpu::contract::*;
 
 mod explain_wgpu_scene3d_forward_light_selection {

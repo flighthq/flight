@@ -1,12 +1,12 @@
 use flight_entity::Uint8Array;
 
-use flight_buffer::{
-    create_byte_reader, has_byte_reader_bytes, read_byte_reader_u32, read_byte_reader_u64,
-    skip_byte_reader,
-};
 use crate::types::{
     TextureContainer, TextureContainerFormat, TextureContainerLevel,
     TextureContainerParseFailureReason, TextureContainerSupercompression,
+};
+use flight_buffer::{
+    create_byte_reader, has_byte_reader_bytes, read_byte_reader_u32, read_byte_reader_u64,
+    skip_byte_reader,
 };
 
 pub fn get_ktx2_parse_failure_reason(

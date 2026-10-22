@@ -31,7 +31,11 @@ mod connect_signal {
         let signal: Signal<()> = create_signal();
         let called = Arc::new(Mutex::new(false));
         let flag = called.clone();
-        connect_signal(&signal, Arc::new(move |_: &()| *flag.lock().unwrap() = true), None);
+        connect_signal(
+            &signal,
+            Arc::new(move |_: &()| *flag.lock().unwrap() = true),
+            None,
+        );
         emit_signal(&signal, &());
         assert!(*called.lock().unwrap());
     }
@@ -81,7 +85,11 @@ mod connect_signal {
             priority: None,
             once: Some(true),
         };
-        connect_signal(&signal, Arc::new(move |_: &()| *counter.lock().unwrap() += 1), Some(&options));
+        connect_signal(
+            &signal,
+            Arc::new(move |_: &()| *counter.lock().unwrap() += 1),
+            Some(&options),
+        );
         emit_signal(&signal, &());
         emit_signal(&signal, &());
         assert_eq!(*count.lock().unwrap(), 1);
@@ -92,7 +100,11 @@ mod connect_signal {
         let signal: Signal<()> = create_signal();
         let count = Arc::new(Mutex::new(0));
         let counter = count.clone();
-        connect_signal(&signal, Arc::new(move |_: &()| *counter.lock().unwrap() += 1), None);
+        connect_signal(
+            &signal,
+            Arc::new(move |_: &()| *counter.lock().unwrap() += 1),
+            None,
+        );
         emit_signal(&signal, &());
         emit_signal(&signal, &());
         assert_eq!(*count.lock().unwrap(), 2);
@@ -140,7 +152,11 @@ mod connect_signal {
             None,
         );
         let tail_calls = calls.clone();
-        connect_signal(&signal, Arc::new(move |_: &()| tail_calls.lock().unwrap().push("b")), None);
+        connect_signal(
+            &signal,
+            Arc::new(move |_: &()| tail_calls.lock().unwrap().push("b")),
+            None,
+        );
         emit_signal(&signal, &());
         let calls = calls.lock().unwrap();
         assert!(calls.contains(&"a"));
@@ -198,7 +214,11 @@ mod disconnect_signal {
         let signal: Signal<()> = create_signal();
         let count = Arc::new(Mutex::new(0));
         let counter = count.clone();
-        let id = connect_signal(&signal, Arc::new(move |_: &()| *counter.lock().unwrap() += 1), None);
+        let id = connect_signal(
+            &signal,
+            Arc::new(move |_: &()| *counter.lock().unwrap() += 1),
+            None,
+        );
         disconnect_signal(&signal, id);
         emit_signal(&signal, &());
         assert_eq!(*count.lock().unwrap(), 0);
@@ -211,8 +231,16 @@ mod disconnect_signal {
         let b = Arc::new(Mutex::new(0));
         let a_counter = a.clone();
         let b_counter = b.clone();
-        let slot_a = connect_signal(&signal, Arc::new(move |_: &()| *a_counter.lock().unwrap() += 1), None);
-        connect_signal(&signal, Arc::new(move |_: &()| *b_counter.lock().unwrap() += 1), None);
+        let slot_a = connect_signal(
+            &signal,
+            Arc::new(move |_: &()| *a_counter.lock().unwrap() += 1),
+            None,
+        );
+        connect_signal(
+            &signal,
+            Arc::new(move |_: &()| *b_counter.lock().unwrap() += 1),
+            None,
+        );
         disconnect_signal(&signal, slot_a);
         emit_signal(&signal, &());
         assert_eq!(*a.lock().unwrap(), 0);

@@ -1,32 +1,72 @@
-use flight_path::{create_path, flatten_path, Path};
+use flight_path::{Path, create_path, flatten_path};
 
 use crate::boolean_paths::PathBooleanOptions;
 use crate::martinez_kernel::PathBooleanKernel;
-use crate::offset_path::{offset_path, PathOffsetOptions};
+use crate::offset_path::{PathOffsetOptions, offset_path};
 use crate::simplify_path::simplify_path;
 
 #[cfg(test)]
 mod sugar_tests {
-    use flight_path::{create_path, PathWinding};
+    use flight_path::{PathWinding, create_path};
 
     use crate::contract::*;
 
     #[test]
     fn kernel_explain_offset_path_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
-        let ra = k.explain_offset_path(&create_path(), 2.0, Some(&PathOffsetOptions { join: Some(PathOffsetJoin::Round), end: None, miter_limit: None, tolerance: None, arc_tolerance: Some(0.5) }));
-        let rb = explain_offset_path(&k, &create_path(), 2.0, Some(&PathOffsetOptions { join: Some(PathOffsetJoin::Round), end: None, miter_limit: None, tolerance: None, arc_tolerance: Some(0.5) }));
+        let ra = k.explain_offset_path(
+            &create_path(),
+            2.0,
+            Some(&PathOffsetOptions {
+                join: Some(PathOffsetJoin::Round),
+                end: None,
+                miter_limit: None,
+                tolerance: None,
+                arc_tolerance: Some(0.5),
+            }),
+        );
+        let rb = explain_offset_path(
+            &k,
+            &create_path(),
+            2.0,
+            Some(&PathOffsetOptions {
+                join: Some(PathOffsetJoin::Round),
+                end: None,
+                miter_limit: None,
+                tolerance: None,
+                arc_tolerance: Some(0.5),
+            }),
+        );
         assert_eq!(ra, rb);
-        assert_eq!(ra.map(|e| e.reason), Some(PathBooleanExplanationReason::EmptyInput));
+        assert_eq!(
+            ra.map(|e| e.reason),
+            Some(PathBooleanExplanationReason::EmptyInput)
+        );
     }
 
     #[test]
     fn kernel_explain_simplify_path_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
-        let ra = k.explain_simplify_path(&create_path(), Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
-        let rb = explain_simplify_path(&k, &create_path(), Some(&PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: Some(0.5) }));
+        let ra = k.explain_simplify_path(
+            &create_path(),
+            Some(&PathBooleanOptions {
+                fill_rule: Some(PathWinding::EvenOdd),
+                tolerance: Some(0.5),
+            }),
+        );
+        let rb = explain_simplify_path(
+            &k,
+            &create_path(),
+            Some(&PathBooleanOptions {
+                fill_rule: Some(PathWinding::EvenOdd),
+                tolerance: Some(0.5),
+            }),
+        );
         assert_eq!(ra, rb);
-        assert_eq!(ra.map(|e| e.reason), Some(PathBooleanExplanationReason::EmptyInput));
+        assert_eq!(
+            ra.map(|e| e.reason),
+            Some(PathBooleanExplanationReason::EmptyInput)
+        );
     }
 }
 
@@ -114,10 +154,7 @@ pub fn explain_simplify_path(
         });
     }
     let mut result = create_path();
-    simplify_path(&mut result, path_boolean_kernel,
-        path,
-        options,
-    );
+    simplify_path(&mut result, path_boolean_kernel, path, options);
     if result.commands.is_empty() {
         return Some(PathBooleanExplanation {
             operation: PathBooleanExplanationOperation::Simplify,
@@ -128,7 +165,9 @@ pub fn explain_simplify_path(
 }
 
 // flight-lint: allow(conform-extra) D9 enum-string conversion for the inline TS PathBooleanExplanation.operation string union; TS exports no get_/parse_ free functions
-pub fn get_path_boolean_explanation_operation_string(value: PathBooleanExplanationOperation) -> &'static str {
+pub fn get_path_boolean_explanation_operation_string(
+    value: PathBooleanExplanationOperation,
+) -> &'static str {
     return match value {
         PathBooleanExplanationOperation::Offset => "offset",
         PathBooleanExplanationOperation::Simplify => "simplify",
@@ -136,7 +175,9 @@ pub fn get_path_boolean_explanation_operation_string(value: PathBooleanExplanati
 }
 
 // flight-lint: allow(conform-extra) D9 enum-string conversion for the inline TS PathBooleanExplanation.reason string union; TS exports no get_/parse_ free functions
-pub fn get_path_boolean_explanation_reason_string(value: PathBooleanExplanationReason) -> &'static str {
+pub fn get_path_boolean_explanation_reason_string(
+    value: PathBooleanExplanationReason,
+) -> &'static str {
     return match value {
         PathBooleanExplanationReason::CollapsedOrDegenerate => "collapsed-or-degenerate",
         PathBooleanExplanationReason::EmptyInput => "empty-input",
@@ -145,7 +186,9 @@ pub fn get_path_boolean_explanation_reason_string(value: PathBooleanExplanationR
 }
 
 // flight-lint: allow(conform-extra) D9 enum-string conversion for the inline TS PathBooleanExplanation.operation string union; TS exports no get_/parse_ free functions
-pub fn parse_path_boolean_explanation_operation(value: &str) -> Option<PathBooleanExplanationOperation> {
+pub fn parse_path_boolean_explanation_operation(
+    value: &str,
+) -> Option<PathBooleanExplanationOperation> {
     return match value {
         "offset" => Some(PathBooleanExplanationOperation::Offset),
         "simplify" => Some(PathBooleanExplanationOperation::Simplify),
@@ -165,11 +208,20 @@ pub fn parse_path_boolean_explanation_reason(value: &str) -> Option<PathBooleanE
 
 impl PathBooleanKernel {
     // flight-lint: allow(f64) operates on f64 path/contour coordinates (flight-path Path.data and flatten_path contours, TS number); f32 sufficiency not measured
-    pub fn explain_offset_path(&self, path: &Path, delta: f64, options: Option<&PathOffsetOptions>) -> Option<PathBooleanExplanation> {
+    pub fn explain_offset_path(
+        &self,
+        path: &Path,
+        delta: f64,
+        options: Option<&PathOffsetOptions>,
+    ) -> Option<PathBooleanExplanation> {
         return explain_offset_path(self, path, delta, options);
     }
 
-    pub fn explain_simplify_path(&self, path: &Path, options: Option<&PathBooleanOptions>) -> Option<PathBooleanExplanation> {
+    pub fn explain_simplify_path(
+        &self,
+        path: &Path,
+        options: Option<&PathBooleanOptions>,
+    ) -> Option<PathBooleanExplanation> {
         return explain_simplify_path(self, path, options);
     }
 }

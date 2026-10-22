@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use flight_materials::{SPECULAR_PBR_EXTENSION_KIND, PbrExtension};
+use flight_materials::{PbrExtension, SPECULAR_PBR_EXTENSION_KIND};
 
 use crate::scene_material_texture_registry::{
     push_texture_slot, register_scene3d_pbr_extension_textures,

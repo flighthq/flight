@@ -95,8 +95,8 @@ fn acquire_effect_pass_uniform_slot(state: &mut WgpuRenderState) -> u32 {
 fn acquire_uniform_slot(state: &mut WgpuRenderState) -> u32 {
     let pass_state = get_effect_pass_state(state);
     let offset = pass_state.uniform_offset;
-    pass_state.uniform_offset =
-        (offset + pass_state.uniform_stride) % (pass_state.uniform_slots * pass_state.uniform_stride);
+    pass_state.uniform_offset = (offset + pass_state.uniform_stride)
+        % (pass_state.uniform_slots * pass_state.uniform_stride);
     return offset;
 }
 
@@ -109,7 +109,10 @@ pub(crate) fn begin_effect_pass(
     dest: Option<&WgpuTextureRenderTarget>,
     load_op: wgpu::LoadOp<wgpu::Color>,
 ) -> wgpu::RenderPass<'static> {
-    if get_wgpu_render_state_runtime(state).command_encoder.is_none() {
+    if get_wgpu_render_state_runtime(state)
+        .command_encoder
+        .is_none()
+    {
         panic!("No active command encoder — open a frame with beginWgpuRenderPass first");
     }
     let stack_depth = get_wgpu_render_state_runtime(state).pass_stack.len();
@@ -193,10 +196,8 @@ fn build_wgpu_effect_pipeline(
     for _ in 0..texture_groups {
         layouts.push(&pass_state.texture_bind_group_layout);
     }
-    let shader_module = create_wgpu_effect_shader_module(
-        &native,
-        &format!("{EFFECT_VERTEX_WGSL}{fragment_wgsl}"),
-    );
+    let shader_module =
+        create_wgpu_effect_shader_module(&native, &format!("{EFFECT_VERTEX_WGSL}{fragment_wgsl}"));
     let pipeline_layout = create_wgpu_effect_pipeline_layout(&native, &layouts);
     let blend_state = get_wgpu_effect_blend_state(blend);
     let compile_native = native.clone();

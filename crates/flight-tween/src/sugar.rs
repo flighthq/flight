@@ -478,7 +478,11 @@ impl TweenManager {
         return get_active_tween_count(self);
     }
 
-    pub fn apply<T: ?Sized + Send + Sync + 'static>(&self, target: &Ref<T>, props: &[TweenProp<T>]) {
+    pub fn apply<T: ?Sized + Send + Sync + 'static>(
+        &self,
+        target: &Ref<T>,
+        props: &[TweenProp<T>],
+    ) {
         apply_tween(self, target, props);
     }
 
@@ -523,7 +527,11 @@ impl TweenManager {
         stop_tweens(self, target, props, options);
     }
 
-    pub fn tweens_of<T: ?Sized + Send + Sync + 'static>(&self, out: &mut Vec<Tween<T>>, target: &Ref<T>) {
+    pub fn tweens_of<T: ?Sized + Send + Sync + 'static>(
+        &self,
+        out: &mut Vec<Tween<T>>,
+        target: &Ref<T>,
+    ) {
         get_tweens_of(out, self, target);
     }
 

@@ -77,7 +77,12 @@ pub fn apply_radial_blur_effect_to_wgpu(
 
 /// Registers the default runner under `RadialBlurEffect` (TS `registerWgpuRadialBlurEffect`).
 pub fn register_wgpu_radial_blur_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "RadialBlurEffect", wgpu_radial_blur_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "RadialBlurEffect",
+        wgpu_radial_blur_effect_runner,
+        None,
+    );
 }
 
 /// The default `RadialBlurEffect` runner (TS `wgpuRadialBlurEffectRunner`).

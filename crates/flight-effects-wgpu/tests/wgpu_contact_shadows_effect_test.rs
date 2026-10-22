@@ -32,8 +32,14 @@ mod apply_contact_shadows_effect_to_wgpu {
             );
         });
 
-        assert_eq!(&recorded_effect_uniforms(&records)[0][0..4], &[3.0, 0.75, 32.0, 16.0]);
-        assert_eq!(recorded_pass_views(&records), vec![dest.read().unwrap().view.clone()]);
+        assert_eq!(
+            &recorded_effect_uniforms(&records)[0][0..4],
+            &[3.0, 0.75, 32.0, 16.0]
+        );
+        assert_eq!(
+            recorded_pass_views(&records),
+            vec![dest.read().unwrap().view.clone()]
+        );
     }
 
     #[test]
@@ -102,6 +108,9 @@ mod wgpu_contact_shadows_effect_runner {
             recorded_pass_views(&records).last(),
             Some(&dest.read().unwrap().view.clone())
         );
-        assert_eq!(recorded_draw_sources(&records)[0], source.read().unwrap().view.clone());
+        assert_eq!(
+            recorded_draw_sources(&records)[0],
+            source.read().unwrap().view.clone()
+        );
     }
 }

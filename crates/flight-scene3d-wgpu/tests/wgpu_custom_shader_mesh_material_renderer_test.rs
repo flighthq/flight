@@ -40,7 +40,11 @@ fn make_material(shader_key: &str) -> CustomShaderMaterial {
     return material;
 }
 
-fn bind(test: &mut WgpuScene3DTestState, material: &CustomShaderMaterial, lights: &Ref<Scene3DLightBlock>) {
+fn bind(
+    test: &mut WgpuScene3DTestState,
+    material: &CustomShaderMaterial,
+    lights: &Ref<Scene3DLightBlock>,
+) {
     (WGPU_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(
         &mut test.state,
         Some(material),
@@ -70,10 +74,16 @@ mod register_wgpu_custom_material_shader {
             get_wgpu_custom_material_shader_source(&test.state, "ripple").as_deref(),
             Some(SOURCE)
         );
-        register_wgpu_custom_material_shader(&mut test.state, "ripple", &format!("{}\n// edited", SOURCE));
-        assert!(get_wgpu_custom_material_shader_source(&test.state, "ripple")
-            .unwrap()
-            .contains("edited"));
+        register_wgpu_custom_material_shader(
+            &mut test.state,
+            "ripple",
+            &format!("{}\n// edited", SOURCE),
+        );
+        assert!(
+            get_wgpu_custom_material_shader_source(&test.state, "ripple")
+                .unwrap()
+                .contains("edited")
+        );
         assert!(get_wgpu_custom_material_shader_source(&test.state, "missing").is_none());
     }
 
@@ -95,14 +105,21 @@ mod register_wgpu_custom_material_shader {
         register_wgpu_custom_material_shader(&mut screen.state, "ripple", &replacement);
 
         assert!(!Arc::ptr_eq(
-            &get_wgpu_render_state_runtime(&derived.state).registries.custom_material_shaders,
+            &get_wgpu_render_state_runtime(&derived.state)
+                .registries
+                .custom_material_shaders,
             &snapshot
         ));
         assert!(!Arc::ptr_eq(
-            &get_wgpu_render_state_runtime(&screen.state).registries.custom_material_shaders,
+            &get_wgpu_render_state_runtime(&screen.state)
+                .registries
+                .custom_material_shaders,
             &snapshot
         ));
-        assert_eq!(snapshot.entries.get("ripple").map(String::as_str), Some(SOURCE));
+        assert_eq!(
+            snapshot.entries.get("ripple").map(String::as_str),
+            Some(SOURCE)
+        );
         assert_eq!(
             get_wgpu_custom_material_shader_source(&derived.state, "ripple").as_deref(),
             Some(SOURCE)
@@ -121,8 +138,11 @@ mod register_wgpu_custom_shader_material {
     fn installs_the_renderer_for_custom_shader_material_kind() {
         let mut test = make_wgpu_scene3d_state(None);
         register_wgpu_custom_shader_material(&mut test.state);
-        assert!(get_wgpu_mesh_material_renderer(&test.state, CUSTOM_SHADER_MATERIAL_KIND)
-            .is_some_and(|renderer| std::ptr::eq(renderer, &WGPU_CUSTOM_SHADER_MESH_MATERIAL_RENDERER)));
+        assert!(
+            get_wgpu_mesh_material_renderer(&test.state, CUSTOM_SHADER_MATERIAL_KIND).is_some_and(
+                |renderer| std::ptr::eq(renderer, &WGPU_CUSTOM_SHADER_MESH_MATERIAL_RENDERER)
+            )
+        );
     }
 }
 
@@ -190,7 +210,10 @@ mod wgpu_custom_shader_mesh_material_renderer {
         register_wgpu_custom_material_shader(&mut test.state, "test", SOURCE);
         register_wgpu_image_texture_resolver(&mut test.state);
         let lights = no_lights();
-        let bind_and_expect_rebuild = |test: &mut WgpuScene3DTestState, material: &CustomShaderMaterial, previous: usize| -> usize {
+        let bind_and_expect_rebuild = |test: &mut WgpuScene3DTestState,
+                                       material: &CustomShaderMaterial,
+                                       previous: usize|
+         -> usize {
             bind(test, material, &lights);
             let next = test.count("createBindGroup");
             assert!(next > previous);

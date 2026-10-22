@@ -79,7 +79,11 @@ fn collect_pending_texture_owners(
                     .clone();
                 {
                     let mut owner = owner.write().unwrap();
-                    if owner.pending.iter().any(|pending| Arc::ptr_eq(pending, texture)) {
+                    if owner
+                        .pending
+                        .iter()
+                        .any(|pending| Arc::ptr_eq(pending, texture))
+                    {
                         continue;
                     }
                     owner.pending.push(texture.clone());
@@ -112,7 +116,9 @@ pub fn reveal_scene3d_resources_on_resolve(
     tween_manager: &TweenManager,
     options: Option<&Scene3DResourceRevealOptions>,
 ) -> Arc<dyn Fn() + Send + Sync> {
-    let fade_seconds = options.and_then(|options| options.fade_seconds).unwrap_or(0.4);
+    let fade_seconds = options
+        .and_then(|options| options.fade_seconds)
+        .unwrap_or(0.4);
     let from = options.and_then(|options| options.from).unwrap_or(0.0);
     let tween_options = options
         .and_then(|options| options.ease)

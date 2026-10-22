@@ -97,19 +97,22 @@ mod create_channel_mixer_color_matrix {
 
     #[test]
     fn returns_a_20_element_array() {
-        let m = create_channel_mixer_color_matrix(&[1.0, 0.0, 0.0], &[0.0, 1.0, 0.0], &[0.0, 0.0, 1.0]);
+        let m =
+            create_channel_mixer_color_matrix(&[1.0, 0.0, 0.0], &[0.0, 1.0, 0.0], &[0.0, 0.0, 1.0]);
         assert_eq!(m.len(), COLOR_MATRIX_LENGTH);
     }
 
     #[test]
     fn identity_mix_leaves_color_unchanged() {
-        let m = create_channel_mixer_color_matrix(&[1.0, 0.0, 0.0], &[0.0, 1.0, 0.0], &[0.0, 0.0, 1.0]);
+        let m =
+            create_channel_mixer_color_matrix(&[1.0, 0.0, 0.0], &[0.0, 1.0, 0.0], &[0.0, 0.0, 1.0]);
         assert_eq!(m, create_identity_color_matrix());
     }
 
     #[test]
     fn swap_r_and_g_channels() {
-        let m = create_channel_mixer_color_matrix(&[0.0, 1.0, 0.0], &[1.0, 0.0, 0.0], &[0.0, 0.0, 1.0]);
+        let m =
+            create_channel_mixer_color_matrix(&[0.0, 1.0, 0.0], &[1.0, 0.0, 0.0], &[0.0, 0.0, 1.0]);
         let result = apply_color_matrix_to_color(&m, 0xff0000ff);
         let r = (result >> 24) & 0xff;
         let g = (result >> 16) & 0xff;
@@ -123,19 +126,25 @@ mod create_color_balance_color_matrix {
 
     #[test]
     fn returns_a_20_element_array() {
-        let m = create_color_balance_color_matrix(&[0.0, 0.0, 0.0], &[0.0, 0.0, 0.0], &[0.0, 0.0, 0.0]);
+        let m =
+            create_color_balance_color_matrix(&[0.0, 0.0, 0.0], &[0.0, 0.0, 0.0], &[0.0, 0.0, 0.0]);
         assert_eq!(m.len(), COLOR_MATRIX_LENGTH);
     }
 
     #[test]
     fn all_zero_offsets_is_identity() {
-        let m = create_color_balance_color_matrix(&[0.0, 0.0, 0.0], &[0.0, 0.0, 0.0], &[0.0, 0.0, 0.0]);
+        let m =
+            create_color_balance_color_matrix(&[0.0, 0.0, 0.0], &[0.0, 0.0, 0.0], &[0.0, 0.0, 0.0]);
         assert_eq!(m, create_identity_color_matrix());
     }
 
     #[test]
     fn positive_red_midtone_raises_red_channel_offset() {
-        let m = create_color_balance_color_matrix(&[0.0, 0.0, 0.0], &[100.0, 0.0, 0.0], &[0.0, 0.0, 0.0]);
+        let m = create_color_balance_color_matrix(
+            &[0.0, 0.0, 0.0],
+            &[100.0, 0.0, 0.0],
+            &[0.0, 0.0, 0.0],
+        );
         assert!((m[4] - 0.5).abs() < 0.005); // D1 f32 bound (TS: 0.005)
         assert!((m[9]).abs() < 0.000005); // D1 f32 bound (TS: 0.000005)
         assert!((m[14]).abs() < 0.000005); // D1 f32 bound (TS: 0.000005)
@@ -245,7 +254,10 @@ mod create_identity_color_matrix {
 
     #[test]
     fn leaves_red_unchanged() {
-        assert_eq!(apply_color_matrix_to_color(&create_identity_color_matrix(), RED), RED);
+        assert_eq!(
+            apply_color_matrix_to_color(&create_identity_color_matrix(), RED),
+            RED
+        );
     }
 }
 
@@ -472,8 +484,8 @@ mod multiply_color_matrix {
         multiply_color_matrix(&mut a, &a_snapshot, &b_snapshot);
         multiply_color_matrix(&mut b, &a_snapshot, &b_snapshot);
         let expected = [
-            2.0, 0.0, 0.0, 0.0, -0.25, 0.0, 2.0, 0.0, 0.0, -0.25, 0.0, 0.0, 2.0, 0.0, -0.25, 0.0, 0.0,
-            0.0, 1.0, 0.0,
+            2.0, 0.0, 0.0, 0.0, -0.25, 0.0, 2.0, 0.0, 0.0, -0.25, 0.0, 0.0, 2.0, 0.0, -0.25, 0.0,
+            0.0, 0.0, 1.0, 0.0,
         ];
         assert_eq!(a, expected);
         assert_eq!(b, expected);

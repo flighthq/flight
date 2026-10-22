@@ -27,7 +27,12 @@ fn color(r: f32, g: f32, b: f32, a: f32) -> LinearColor {
     return out;
 }
 
-fn record_nothing(_runtime: &mut WgpuRenderStateRuntime, _value: Option<&WgpuColorScaleBiasInput>, _index: u32) {}
+fn record_nothing(
+    _runtime: &mut WgpuRenderStateRuntime,
+    _value: Option<&WgpuColorScaleBiasInput>,
+    _index: u32,
+) {
+}
 
 fn resolve_nothing(_state: &mut WgpuRenderState, _count: u32) -> Option<WgpuColorAdjustmentFlush> {
     return None;
@@ -54,8 +59,32 @@ mod bind_wgpu_classic_surface {
         );
         test.clear();
         let white = color(1.0, 1.0, 1.0, 1.0);
-        bind_wgpu_classic_surface(&mut test.state, &pipeline, 1, &color(1.0, 0.0, 0.0, 1.0), &white, 32.0, 0.5, None, None, None, None);
-        bind_wgpu_classic_surface(&mut test.state, &pipeline, 1, &color(0.0, 1.0, 0.0, 1.0), &white, 64.0, 0.5, None, None, None, None);
+        bind_wgpu_classic_surface(
+            &mut test.state,
+            &pipeline,
+            1,
+            &color(1.0, 0.0, 0.0, 1.0),
+            &white,
+            32.0,
+            0.5,
+            None,
+            None,
+            None,
+            None,
+        );
+        bind_wgpu_classic_surface(
+            &mut test.state,
+            &pipeline,
+            1,
+            &color(0.0, 1.0, 0.0, 1.0),
+            &white,
+            64.0,
+            0.5,
+            None,
+            None,
+            None,
+            None,
+        );
 
         // The first bind also uploads the shared 1x1 placeholder texture; the uniform writes are two.
         assert_eq!(test.count("createBindGroup"), 1);
@@ -66,7 +95,8 @@ mod bind_wgpu_classic_surface {
     }
 
     #[test]
-    fn exercises_the_real_sampler_path_with_a_non_null_primary_texture_and_builds_nothing_new_in_steady_state() {
+    fn exercises_the_real_sampler_path_with_a_non_null_primary_texture_and_builds_nothing_new_in_steady_state()
+     {
         let mut test = make_wgpu_scene3d_state(None);
         let pipeline = ensure_wgpu_classic_pipeline(
             &mut test.state,
@@ -77,14 +107,50 @@ mod bind_wgpu_classic_surface {
         let red = color(1.0, 0.0, 0.0, 1.0);
         let white = color(1.0, 1.0, 1.0, 1.0);
         test.clear();
-        bind_wgpu_classic_surface(&mut test.state, &pipeline, 1, &red, &white, 32.0, 0.5, Some(&diffuse_map), None, None, None);
+        bind_wgpu_classic_surface(
+            &mut test.state,
+            &pipeline,
+            1,
+            &red,
+            &white,
+            32.0,
+            0.5,
+            Some(&diffuse_map),
+            None,
+            None,
+            None,
+        );
         let samplers = test.count("createSampler");
         let bind_groups = test.count("createBindGroup");
         let buffers = test.count("createBuffer");
         assert!(samplers >= 1);
 
-        bind_wgpu_classic_surface(&mut test.state, &pipeline, 1, &red, &white, 32.0, 0.5, Some(&diffuse_map), None, None, None);
-        bind_wgpu_classic_surface(&mut test.state, &pipeline, 1, &red, &white, 32.0, 0.5, Some(&diffuse_map), None, None, None);
+        bind_wgpu_classic_surface(
+            &mut test.state,
+            &pipeline,
+            1,
+            &red,
+            &white,
+            32.0,
+            0.5,
+            Some(&diffuse_map),
+            None,
+            None,
+            None,
+        );
+        bind_wgpu_classic_surface(
+            &mut test.state,
+            &pipeline,
+            1,
+            &red,
+            &white,
+            32.0,
+            0.5,
+            Some(&diffuse_map),
+            None,
+            None,
+            None,
+        );
         assert_eq!(test.count("createSampler"), samplers);
         assert_eq!(test.count("createBindGroup"), bind_groups);
         assert_eq!(test.count("createBuffer"), buffers);
@@ -163,11 +229,27 @@ mod ensure_wgpu_classic_pipeline {
     fn caches_under_the_classic_namespace_with_three_distinct_entries_for_the_three_models() {
         let mut test = make_wgpu_scene3d_state(None);
         let format = wgpu::TextureFormat::Bgra8Unorm;
-        ensure_wgpu_classic_pipeline(&mut test.state, &make_key(WgpuClassicLightingModel::Lambert), format);
-        ensure_wgpu_classic_pipeline(&mut test.state, &make_key(WgpuClassicLightingModel::Phong), format);
-        ensure_wgpu_classic_pipeline(&mut test.state, &make_key(WgpuClassicLightingModel::BlinnPhong), format);
+        ensure_wgpu_classic_pipeline(
+            &mut test.state,
+            &make_key(WgpuClassicLightingModel::Lambert),
+            format,
+        );
+        ensure_wgpu_classic_pipeline(
+            &mut test.state,
+            &make_key(WgpuClassicLightingModel::Phong),
+            format,
+        );
+        ensure_wgpu_classic_pipeline(
+            &mut test.state,
+            &make_key(WgpuClassicLightingModel::BlinnPhong),
+            format,
+        );
         // Re-ensuring an existing model must not add a new cache entry.
-        ensure_wgpu_classic_pipeline(&mut test.state, &make_key(WgpuClassicLightingModel::Phong), format);
+        ensure_wgpu_classic_pipeline(
+            &mut test.state,
+            &make_key(WgpuClassicLightingModel::Phong),
+            format,
+        );
 
         let classic_keys = get_wgpu_scene3d_runtime(&mut test.state)
             .pipeline_cache
@@ -191,7 +273,8 @@ mod get_wgpu_classic_module_source_for_key {
         );
         let mut key = make_key(WgpuClassicLightingModel::Phong);
         key.has_color_adjustment = Some(true);
-        let adjusted = get_wgpu_classic_module_source_for_key(&key, Some(false), None, Some(&COLOR_FEATURE));
+        let adjusted =
+            get_wgpu_classic_module_source_for_key(&key, Some(false), None, Some(&COLOR_FEATURE));
         assert!(!base.contains(COLOR_FEATURE.fragment_shader_chunk));
         assert!(adjusted.contains(COLOR_FEATURE.fragment_shader_chunk));
         assert!(adjusted.contains("draw.flightColorScale"));
@@ -201,10 +284,14 @@ mod get_wgpu_classic_module_source_for_key {
     fn selects_a_distinct_full_matrix_post_shade_variant() {
         let mut key = make_key(WgpuClassicLightingModel::Phong);
         key.has_color_matrix = Some(true);
-        let matrix = get_wgpu_classic_module_source_for_key(&key, Some(false), None, Some(&COLOR_FEATURE));
+        let matrix =
+            get_wgpu_classic_module_source_for_key(&key, Some(false), None, Some(&COLOR_FEATURE));
         assert_eq!(
             build_wgpu_classic_define_key(&key),
-            format!("{}x", build_wgpu_classic_define_key(&make_key(WgpuClassicLightingModel::Phong)))
+            format!(
+                "{}x",
+                build_wgpu_classic_define_key(&make_key(WgpuClassicLightingModel::Phong))
+            )
         );
         assert!(matrix.contains(COLOR_FEATURE.matrix_fragment_shader_chunk));
         assert!(matrix.contains("draw.flightColorMatrix0"));
@@ -213,7 +300,12 @@ mod get_wgpu_classic_module_source_for_key {
 
     #[test]
     fn gates_the_alpha_map_const_and_coverage_multiply_off_the_alpha_map_flag() {
-        let none = get_wgpu_classic_module_source_for_key(&make_key(WgpuClassicLightingModel::BlinnPhong), None, None, None);
+        let none = get_wgpu_classic_module_source_for_key(
+            &make_key(WgpuClassicLightingModel::BlinnPhong),
+            None,
+            None,
+            None,
+        );
         assert!(none.contains("const HAS_ALPHA_MAP : bool = false;"));
         let mut key = make_key(WgpuClassicLightingModel::BlinnPhong);
         key.has_alpha_map = Some(true);
@@ -225,15 +317,30 @@ mod get_wgpu_classic_module_source_for_key {
 
     #[test]
     fn emits_the_lighting_model_const_matching_the_model_and_folds_the_others_off() {
-        let phong = get_wgpu_classic_module_source_for_key(&make_key(WgpuClassicLightingModel::Phong), None, None, None);
+        let phong = get_wgpu_classic_module_source_for_key(
+            &make_key(WgpuClassicLightingModel::Phong),
+            None,
+            None,
+            None,
+        );
         assert!(phong.contains("const LIGHTING_PHONG : bool = true;"));
         assert!(phong.contains("const LIGHTING_BLINNPHONG : bool = false;"));
 
-        let blinn = get_wgpu_classic_module_source_for_key(&make_key(WgpuClassicLightingModel::BlinnPhong), None, None, None);
+        let blinn = get_wgpu_classic_module_source_for_key(
+            &make_key(WgpuClassicLightingModel::BlinnPhong),
+            None,
+            None,
+            None,
+        );
         assert!(blinn.contains("const LIGHTING_BLINNPHONG : bool = true;"));
         assert!(blinn.contains("const LIGHTING_PHONG : bool = false;"));
 
-        let lambert = get_wgpu_classic_module_source_for_key(&make_key(WgpuClassicLightingModel::Lambert), None, None, None);
+        let lambert = get_wgpu_classic_module_source_for_key(
+            &make_key(WgpuClassicLightingModel::Lambert),
+            None,
+            None,
+            None,
+        );
         assert!(lambert.contains("const LIGHTING_PHONG : bool = false;"));
         assert!(lambert.contains("const LIGHTING_BLINNPHONG : bool = false;"));
     }
@@ -241,16 +348,29 @@ mod get_wgpu_classic_module_source_for_key {
     #[test]
     fn emits_the_palette_and_skin_attributes_only_for_the_has_skin_variant() {
         let key = make_key(WgpuClassicLightingModel::BlinnPhong);
-        assert!(!get_wgpu_classic_module_source_for_key(&key, None, None, None).contains("jointTexture"));
         assert!(
-            get_wgpu_classic_module_source_for_key(&key, Some(true), Some(make_wgpu_skinning_adapter()), None)
-                .contains("@group(1) @binding(1) var jointTexture")
+            !get_wgpu_classic_module_source_for_key(&key, None, None, None)
+                .contains("jointTexture")
+        );
+        assert!(
+            get_wgpu_classic_module_source_for_key(
+                &key,
+                Some(true),
+                Some(make_wgpu_skinning_adapter()),
+                None
+            )
+            .contains("@group(1) @binding(1) var jointTexture")
         );
     }
 
     #[test]
     fn declares_the_group_3_shadow_bindings_and_shadow_maps_the_directional_term() {
-        let source = get_wgpu_classic_module_source_for_key(&make_key(WgpuClassicLightingModel::BlinnPhong), None, None, None);
+        let source = get_wgpu_classic_module_source_for_key(
+            &make_key(WgpuClassicLightingModel::BlinnPhong),
+            None,
+            None,
+            None,
+        );
         assert!(source.contains("@group(3) @binding(0) var<uniform> shadow : Shadow;"));
         assert!(source.contains("@group(3) @binding(1) var shadowMap : texture_depth_2d;"));
         assert!(source.contains("@group(3) @binding(2) var shadowSampler : sampler_comparison;"));
@@ -271,7 +391,12 @@ mod get_wgpu_classic_module_source_for_key {
 
     #[test]
     fn consumes_every_packed_punctual_light_family_through_the_shared_classic_brdf() {
-        let source = get_wgpu_classic_module_source_for_key(&make_key(WgpuClassicLightingModel::BlinnPhong), None, None, None);
+        let source = get_wgpu_classic_module_source_for_key(
+            &make_key(WgpuClassicLightingModel::BlinnPhong),
+            None,
+            None,
+            None,
+        );
         assert!(source.contains("let pointCount = u32(frame.punctualCounts.x);"));
         assert!(source.contains("frame.pointLights[point * 2u + 1u].xyz * atten"));
         assert!(source.contains("let spotCount = u32(frame.punctualCounts.y);"));

@@ -38,27 +38,60 @@ mod sugar_tests {
     fn pathmeshpool_new_matches_create_path_mesh_pool() {
         let ra = PathMeshPool::new();
         let rb = create_path_mesh_pool();
-        assert_eq!(format!("{:?}", (ra.meshes.len(), ra.typed_meshes.len())), format!("{:?}", (rb.meshes.len(), rb.typed_meshes.len())));
+        assert_eq!(
+            format!("{:?}", (ra.meshes.len(), ra.typed_meshes.len())),
+            format!("{:?}", (rb.meshes.len(), rb.typed_meshes.len()))
+        );
     }
 
     #[test]
     fn pathmeshpool_release_mesh_matches_release_path_mesh() {
         let mut a = create_path_mesh_pool();
         let mut b = create_path_mesh_pool();
-        a.release_mesh(PathMesh { vertices: vec![1.0], indices: vec![0] });
-        release_path_mesh(&mut b, PathMesh { vertices: vec![1.0], indices: vec![0] });
+        a.release_mesh(PathMesh {
+            vertices: vec![1.0],
+            indices: vec![0],
+        });
+        release_path_mesh(
+            &mut b,
+            PathMesh {
+                vertices: vec![1.0],
+                indices: vec![0],
+            },
+        );
         assert_eq!(a.meshes, b.meshes);
-        assert_eq!(a.meshes, vec![PathMesh { vertices: vec![1.0], indices: vec![0] }]);
+        assert_eq!(
+            a.meshes,
+            vec![PathMesh {
+                vertices: vec![1.0],
+                indices: vec![0]
+            }]
+        );
     }
 
     #[test]
     fn pathmeshpool_release_mesh_typed_matches_release_path_mesh_typed() {
         let mut a = create_path_mesh_pool();
         let mut b = create_path_mesh_pool();
-        a.release_mesh_typed(PathMeshTyped { vertices: vec![1.0].into_boxed_slice(), indices: vec![0].into_boxed_slice() });
-        release_path_mesh_typed(&mut b, PathMeshTyped { vertices: vec![1.0].into_boxed_slice(), indices: vec![0].into_boxed_slice() });
+        a.release_mesh_typed(PathMeshTyped {
+            vertices: vec![1.0].into_boxed_slice(),
+            indices: vec![0].into_boxed_slice(),
+        });
+        release_path_mesh_typed(
+            &mut b,
+            PathMeshTyped {
+                vertices: vec![1.0].into_boxed_slice(),
+                indices: vec![0].into_boxed_slice(),
+            },
+        );
         assert_eq!(a.typed_meshes, b.typed_meshes);
-        assert_eq!(a.typed_meshes, vec![PathMeshTyped { vertices: vec![1.0].into_boxed_slice(), indices: vec![0].into_boxed_slice() }]);
+        assert_eq!(
+            a.typed_meshes,
+            vec![PathMeshTyped {
+                vertices: vec![1.0].into_boxed_slice(),
+                indices: vec![0].into_boxed_slice()
+            }]
+        );
     }
 }
 
@@ -72,7 +105,10 @@ pub struct PathMeshPool {
 
 // flight-lint: allow(conform-extra) D5: TS keeps the mesh pool as module state; Rust callers own an explicit pool
 pub fn create_path_mesh_pool() -> PathMeshPool {
-    return PathMeshPool { meshes: Vec::new(), typed_meshes: Vec::new() };
+    return PathMeshPool {
+        meshes: Vec::new(),
+        typed_meshes: Vec::new(),
+    };
 }
 
 // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
@@ -83,7 +119,10 @@ pub fn acquire_path_mesh(pool: &mut PathMeshPool, path: &Path, tolerance: Option
     let mut mesh = if !pool.meshes.is_empty() {
         pool.meshes.pop().unwrap()
     } else {
-        PathMesh { vertices: Vec::new(), indices: Vec::new() }
+        PathMesh {
+            vertices: Vec::new(),
+            indices: Vec::new(),
+        }
     };
     tessellate_path_into(path, &mut mesh, Some(tolerance));
     return mesh;
@@ -93,10 +132,17 @@ pub fn acquire_path_mesh(pool: &mut PathMeshPool, path: &Path, tolerance: Option
 /// is the explicit `pool`, D5) and tessellates `path` into it. `tolerance` defaults to 0.25.
 // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 // flight-lint: allow(conform-params) D5: TS keeps the mesh pool as module state; Rust takes the explicit pool first
-pub fn acquire_path_mesh_typed(pool: &mut PathMeshPool, path: &Path, tolerance: Option<f64>) -> PathMeshTyped {
+pub fn acquire_path_mesh_typed(
+    pool: &mut PathMeshPool,
+    path: &Path,
+    tolerance: Option<f64>,
+) -> PathMeshTyped {
     let mut mesh = match pool.typed_meshes.pop() {
         Some(mesh) => mesh,
-        None => PathMeshTyped { vertices: Box::default(), indices: Box::default() },
+        None => PathMeshTyped {
+            vertices: Box::default(),
+            indices: Box::default(),
+        },
     };
     tessellate_path_typed_into(path, &mut mesh, tolerance);
     return mesh;

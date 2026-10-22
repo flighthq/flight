@@ -30,7 +30,10 @@ mod apply_wgpu_effect_box_blur {
 
         assert_eq!(
             recorded_pass_views(&records),
-            vec![temp.read().unwrap().view.clone(), dest.read().unwrap().view.clone()]
+            vec![
+                temp.read().unwrap().view.clone(),
+                dest.read().unwrap().view.clone()
+            ]
         );
     }
 
@@ -57,7 +60,11 @@ mod apply_wgpu_effect_box_blur {
             );
         });
 
-        let blend = recorded_pipelines(&records)[0].targets[0].as_ref().unwrap().blend.unwrap();
+        let blend = recorded_pipelines(&records)[0].targets[0]
+            .as_ref()
+            .unwrap()
+            .blend
+            .unwrap();
         assert_eq!(blend.color.dst_factor, wgpu::BlendFactor::Zero);
         let uniforms = recorded_effect_uniforms(&records);
         assert!(is_close(uniforms[0][4], 0.1, 2));
@@ -91,7 +98,10 @@ mod apply_wgpu_effect_box_blur {
         });
 
         assert_eq!(recorded_draws(&records).len(), 1);
-        assert_eq!(recorded_pass_views(&records), vec![dest.read().unwrap().view.clone()]);
+        assert_eq!(
+            recorded_pass_views(&records),
+            vec![dest.read().unwrap().view.clone()]
+        );
         let uniforms = recorded_effect_uniforms(&records);
         assert_eq!(uniforms[0][8], 0.0);
         assert_eq!(uniforms[0][9], 0.0);

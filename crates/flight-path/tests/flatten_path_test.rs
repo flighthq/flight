@@ -18,7 +18,10 @@ mod flatten_path {
 
     #[test]
     fn flattens_ts_serialized_bytes_like_the_writer_built_path() {
-        let raw = ts_wire_path(vec![1, 2, 0, 2, 2, 7], vec![0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0]);
+        let raw = ts_wire_path(
+            vec![1, 2, 0, 2, 2, 7],
+            vec![0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0],
+        );
         let mut built = create_path();
         append_path_move_to(&mut built, 0.0, 0.0);
         append_path_line_to(&mut built, 10.0, 0.0);
@@ -77,7 +80,10 @@ mod flatten_path {
         append_path_move_to(&mut path, 0.0, 10.0);
         append_path_line_to(&mut path, 10.0, 10.0);
         let contours = flattened_path(&path, Some(0.25));
-        assert_eq!(contours, vec![vec![0.0, 0.0, 10.0, 0.0], vec![0.0, 10.0, 10.0, 10.0]]);
+        assert_eq!(
+            contours,
+            vec![vec![0.0, 0.0, 10.0, 0.0], vec![0.0, 10.0, 10.0, 10.0]]
+        );
     }
 
     #[test]

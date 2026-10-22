@@ -7,7 +7,11 @@ use flight_render_wgpu::*;
 
 use crate::support::*;
 
-fn create_buffer(test: &WgpuScene3DTestState, size: u64, usage: wgpu::BufferUsages) -> wgpu::Buffer {
+fn create_buffer(
+    test: &WgpuScene3DTestState,
+    size: u64,
+    usage: wgpu::BufferUsages,
+) -> wgpu::Buffer {
     return create_wgpu_buffer(&test.native, size, usage | wgpu::BufferUsages::COPY_DST);
 }
 
@@ -126,7 +130,13 @@ mod make_wgpu_scene3d_state {
         }));
         assert_eq!(test.count("writeTexture"), 0);
 
-        write_wgpu_texture(&test.native, texture.as_image_copy(), &[0; 16], layout, size);
+        write_wgpu_texture(
+            &test.native,
+            texture.as_image_copy(),
+            &[0; 16],
+            layout,
+            size,
+        );
         assert_eq!(test.count("writeTexture"), 1);
     }
 }

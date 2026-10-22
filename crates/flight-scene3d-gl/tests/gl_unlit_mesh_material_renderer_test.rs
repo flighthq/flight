@@ -3,19 +3,21 @@ use std::sync::{Arc, RwLock};
 
 use flight_camera::{Camera3D, Projection, create_camera_3d, create_perspective_projection};
 use flight_geometry::{create_matrix3, create_matrix4};
-use flight_lighting::Scene3DLightBlock;
-use flight_meshgeometry::{MeshGeometry, create_box_mesh_geometry};
-use flight_render::Scene3DRenderProxy;
-use flight_scene3d_gl::contract::*;
 use flight_host::HostImageSource;
+use flight_lighting::Scene3DLightBlock;
 use flight_materials::UNLIT_MATERIAL_KIND;
 use flight_materials::unlit_materials::create_unlit_material;
+use flight_meshgeometry::{MeshGeometry, create_box_mesh_geometry};
+use flight_render::Scene3DRenderProxy;
 use flight_render::{CreateRenderTextureOptions, create_render_texture};
 use flight_render_gl::{
     GlImageSourceToken, register_gl_image_texture_resolver, register_gl_render_texture_resolver,
 };
+use flight_scene3d_gl::contract::*;
 use flight_texture::{Texture, TextureUvTransform};
-use flight_video::{HostVideoCapability, advance_video_texture, create_video_resource, create_video_texture};
+use flight_video::{
+    HostVideoCapability, advance_video_texture, create_video_resource, create_video_texture,
+};
 
 use crate::gl_test_helper::{calls_with, count_calls, make_gl_scene3d_state, test_default};
 
@@ -138,7 +140,12 @@ mod gl_unlit_mesh_material_renderer {
     fn bind_selects_a_program_sets_depth_cull_view_projection_and_the_color_uniform() {
         let mut state = make_gl_scene3d_state();
         let material = create_unlit_material();
-        (GL_UNLIT_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &no_lights(), &make_camera());
+        (GL_UNLIT_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &no_lights(),
+            &make_camera(),
+        );
         assert!(count_calls("use_program") > 0);
         assert!(has_call("enable", glow::DEPTH_TEST));
         assert!(count_calls("uniform_matrix_4_f32") > 0);
@@ -152,7 +159,12 @@ mod gl_unlit_mesh_material_renderer {
         material.base_color_map = Some(make_video_texture(160, 120));
         register_gl_unlit_material(&mut state);
         register_gl_image_texture_resolver(&mut state);
-        (GL_UNLIT_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &no_lights(), &make_camera());
+        (GL_UNLIT_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &no_lights(),
+            &make_camera(),
+        );
         assert!(count_calls("tex_image_2d") > 0);
     }
 
@@ -171,7 +183,12 @@ mod gl_unlit_mesh_material_renderer {
         register_gl_render_texture_resolver(&mut state);
         let uploads = count_calls("tex_image_2d");
 
-        (GL_UNLIT_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &no_lights(), &make_camera());
+        (GL_UNLIT_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &no_lights(),
+            &make_camera(),
+        );
 
         assert_eq!(count_calls("tex_image_2d"), uploads);
         assert!(
@@ -187,7 +204,12 @@ mod gl_unlit_mesh_material_renderer {
         let proxy = make_proxy();
         {
             let material = proxy.material.read().unwrap();
-            (GL_UNLIT_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&*material), &no_lights(), &make_camera());
+            (GL_UNLIT_MESH_MATERIAL_RENDERER.bind)(
+                &mut state,
+                Some(&*material),
+                &no_lights(),
+                &make_camera(),
+            );
         }
         (GL_UNLIT_MESH_MATERIAL_RENDERER.draw)(&mut state, &proxy, &make_geometry());
         let draws = calls_with("draw_elements");

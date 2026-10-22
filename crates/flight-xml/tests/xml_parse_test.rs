@@ -85,8 +85,7 @@ mod parse_xml_document {
 
     #[test]
     fn parses_multiple_attributes_on_a_single_element() {
-        let root =
-            parse_xml_document(r#"<sub x="10" y="20" width="32" height="64"/>"#).unwrap();
+        let root = parse_xml_document(r#"<sub x="10" y="20" width="32" height="64"/>"#).unwrap();
         assert_eq!(
             root.attributes,
             attrs_of(&[("x", "10"), ("y", "20"), ("width", "32"), ("height", "64")])
@@ -239,10 +238,9 @@ mod parse_xml_document {
 
     #[test]
     fn preserves_markup_and_comment_syntax_inside_cdata_as_text() {
-        let doc = parse_xml_document(
-            "<root><![CDATA[<tag>&amp;<!-- literal -->]]><child/>tail</root>",
-        )
-        .unwrap();
+        let doc =
+            parse_xml_document("<root><![CDATA[<tag>&amp;<!-- literal -->]]><child/>tail</root>")
+                .unwrap();
 
         let child_names: Vec<String> = doc
             .children
@@ -307,9 +305,7 @@ mod parse_xml_document_internal_dtd_entities {
     use super::*;
 
     fn doctype(subset: &str, body: &str) -> String {
-        format!(
-            r#"<?xml version="1.0"?><!DOCTYPE root [{subset}]><root>{body}</root>"#
-        )
+        format!(r#"<?xml version="1.0"?><!DOCTYPE root [{subset}]><root>{body}</root>"#)
     }
 
     #[test]

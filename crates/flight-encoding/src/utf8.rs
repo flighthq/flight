@@ -3,7 +3,10 @@ use flight_entity::Uint8Array;
 const UTF8_REPLACEMENT_CHARACTER: char = '\u{FFFD}';
 
 fn assert_utf8_window(byte_length: usize, offset: usize, length: usize) {
-    if offset.checked_add(length).map_or(true, |end| end > byte_length) {
+    if offset
+        .checked_add(length)
+        .map_or(true, |end| end > byte_length)
+    {
         flight_entity::throw_range_error("decodeUTF8 window is outside the byte array");
     }
 }
@@ -32,11 +35,8 @@ pub fn decode_utf8(bytes: &Uint8Array, offset: Option<usize>, length: Option<usi
                 let second = bytes[index];
                 if is_utf8_continuation(second) {
                     index += 1;
-                    let code_point =
-                        ((first as u32 & 0x1F) << 6) | (second as u32 & 0x3F);
-                    result.push(
-                        char::from_u32(code_point).unwrap_or(UTF8_REPLACEMENT_CHARACTER),
-                    );
+                    let code_point = ((first as u32 & 0x1F) << 6) | (second as u32 & 0x3F);
+                    result.push(char::from_u32(code_point).unwrap_or(UTF8_REPLACEMENT_CHARACTER));
                     continue;
                 }
             }
@@ -47,10 +47,7 @@ pub fn decode_utf8(bytes: &Uint8Array, offset: Option<usize>, length: Option<usi
         if first >= 0xE0 && first <= 0xEF {
             let second_minimum: u8 = if first == 0xE0 { 0xA0 } else { 0x80 };
             let second_maximum: u8 = if first == 0xED { 0x9F } else { 0xBF };
-            if index >= end
-                || bytes[index] < second_minimum
-                || bytes[index] > second_maximum
-            {
+            if index >= end || bytes[index] < second_minimum || bytes[index] > second_maximum {
                 result.push(UTF8_REPLACEMENT_CHARACTER);
                 continue;
             }
@@ -65,18 +62,14 @@ pub fn decode_utf8(bytes: &Uint8Array, offset: Option<usize>, length: Option<usi
             let code_point = ((first as u32 & 0x0F) << 12)
                 | ((second as u32 & 0x3F) << 6)
                 | (third as u32 & 0x3F);
-            result
-                .push(char::from_u32(code_point).unwrap_or(UTF8_REPLACEMENT_CHARACTER));
+            result.push(char::from_u32(code_point).unwrap_or(UTF8_REPLACEMENT_CHARACTER));
             continue;
         }
 
         if first >= 0xF0 && first <= 0xF4 {
             let second_minimum: u8 = if first == 0xF0 { 0x90 } else { 0x80 };
             let second_maximum: u8 = if first == 0xF4 { 0x8F } else { 0xBF };
-            if index >= end
-                || bytes[index] < second_minimum
-                || bytes[index] > second_maximum
-            {
+            if index >= end || bytes[index] < second_minimum || bytes[index] > second_maximum {
                 result.push(UTF8_REPLACEMENT_CHARACTER);
                 continue;
             }
@@ -98,8 +91,7 @@ pub fn decode_utf8(bytes: &Uint8Array, offset: Option<usize>, length: Option<usi
                 | ((second as u32 & 0x3F) << 12)
                 | ((third as u32 & 0x3F) << 6)
                 | (fourth as u32 & 0x3F);
-            result
-                .push(char::from_u32(code_point).unwrap_or(UTF8_REPLACEMENT_CHARACTER));
+            result.push(char::from_u32(code_point).unwrap_or(UTF8_REPLACEMENT_CHARACTER));
             continue;
         }
 

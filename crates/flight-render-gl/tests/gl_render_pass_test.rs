@@ -62,7 +62,10 @@ mod begin_gl_render_pass {
         assert_eq!(target.textures.len(), 2);
         let _pass = begin_gl_render_pass(&state, &target, None, None).unwrap();
         let runtime = state.gl_runtime.borrow();
-        assert_eq!(runtime.current_target.as_ref().unwrap().color_textures, target.textures);
+        assert_eq!(
+            runtime.current_target.as_ref().unwrap().color_textures,
+            target.textures
+        );
     }
 }
 

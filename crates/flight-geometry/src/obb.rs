@@ -17,25 +17,46 @@ pub struct Obb {
 }
 
 pub fn create_obb(
-    center_x: f32, center_y: f32, center_z: f32,
-    half_extent_x: f32, half_extent_y: f32, half_extent_z: f32,
-    orientation_x: f32, orientation_y: f32, orientation_z: f32, orientation_w: f32,
+    center_x: f32,
+    center_y: f32,
+    center_z: f32,
+    half_extent_x: f32,
+    half_extent_y: f32,
+    half_extent_z: f32,
+    orientation_x: f32,
+    orientation_y: f32,
+    orientation_z: f32,
+    orientation_w: f32,
 ) -> Obb {
     let mut out: Obb = allocate_entity();
     initialize_obb(
         &mut out,
-        center_x, center_y, center_z,
-        half_extent_x, half_extent_y, half_extent_z,
-        orientation_x, orientation_y, orientation_z, orientation_w,
+        center_x,
+        center_y,
+        center_z,
+        half_extent_x,
+        half_extent_y,
+        half_extent_z,
+        orientation_x,
+        orientation_y,
+        orientation_z,
+        orientation_w,
     );
     return out;
 }
 
 pub fn initialize_obb(
     out: &mut Obb,
-    center_x: f32, center_y: f32, center_z: f32,
-    half_extent_x: f32, half_extent_y: f32, half_extent_z: f32,
-    orientation_x: f32, orientation_y: f32, orientation_z: f32, orientation_w: f32,
+    center_x: f32,
+    center_y: f32,
+    center_z: f32,
+    half_extent_x: f32,
+    half_extent_y: f32,
+    half_extent_z: f32,
+    orientation_x: f32,
+    orientation_y: f32,
+    orientation_z: f32,
+    orientation_w: f32,
 ) {
     out.center_x = center_x;
     out.center_y = center_y;
@@ -108,7 +129,9 @@ pub fn intersect_ray3d_obb(ray: &Ray3D, obb: &Obb) -> f32 {
     let dy = ray.direction.y;
     let dz = ray.direction.z;
 
-    if dx * dx + dy * dy + dz * dz == 0.0 { return -1.0; }
+    if dx * dx + dy * dy + dz * dz == 0.0 {
+        return -1.0;
+    }
 
     let hx = obb.half_extent_x;
     let hy = obb.half_extent_y;
@@ -151,10 +174,16 @@ pub fn intersect_ray3d_obb(ray: &Ray3D, obb: &Obb) -> f32 {
         let inv_d = 1.0 / direction0;
         let mut t1 = (-hx - origin0) * inv_d;
         let mut t2 = (hx - origin0) * inv_d;
-        if t1 > t2 { let swap = t1; t1 = t2; t2 = swap; }
+        if t1 > t2 {
+            let swap = t1;
+            t1 = t2;
+            t2 = swap;
+        }
         t_min = t_min.max(t1);
         t_max = t_max.min(t2);
-        if t_min > t_max { return -1.0; }
+        if t_min > t_max {
+            return -1.0;
+        }
     } else if origin0 < -hx || origin0 > hx {
         return -1.0;
     }
@@ -163,10 +192,16 @@ pub fn intersect_ray3d_obb(ray: &Ray3D, obb: &Obb) -> f32 {
         let inv_d = 1.0 / direction1;
         let mut t1 = (-hy - origin1) * inv_d;
         let mut t2 = (hy - origin1) * inv_d;
-        if t1 > t2 { let swap = t1; t1 = t2; t2 = swap; }
+        if t1 > t2 {
+            let swap = t1;
+            t1 = t2;
+            t2 = swap;
+        }
         t_min = t_min.max(t1);
         t_max = t_max.min(t2);
-        if t_min > t_max { return -1.0; }
+        if t_min > t_max {
+            return -1.0;
+        }
     } else if origin1 < -hy || origin1 > hy {
         return -1.0;
     }
@@ -175,10 +210,16 @@ pub fn intersect_ray3d_obb(ray: &Ray3D, obb: &Obb) -> f32 {
         let inv_d = 1.0 / direction2;
         let mut t1 = (-hz - origin2) * inv_d;
         let mut t2 = (hz - origin2) * inv_d;
-        if t1 > t2 { let swap = t1; t1 = t2; t2 = swap; }
+        if t1 > t2 {
+            let swap = t1;
+            t1 = t2;
+            t2 = swap;
+        }
         t_min = t_min.max(t1);
         t_max = t_max.min(t2);
-        if t_min > t_max { return -1.0; }
+        if t_min > t_max {
+            return -1.0;
+        }
     } else if origin2 < -hz || origin2 > hz {
         return -1.0;
     }
@@ -227,11 +268,33 @@ pub fn is_obb_intersecting_aabb(obb: &Obb, aabb: &Aabb) -> bool {
     let tz = acz - obb.center_z;
 
     return !obb_sat_separated(
-        tx, ty, tz,
-        ax0, ay0, az0, ax1, ay1, az1, ax2, ay2, az2,
-        obb.half_extent_x, obb.half_extent_y, obb.half_extent_z,
-        1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0,
-        ahx, ahy, ahz,
+        tx,
+        ty,
+        tz,
+        ax0,
+        ay0,
+        az0,
+        ax1,
+        ay1,
+        az1,
+        ax2,
+        ay2,
+        az2,
+        obb.half_extent_x,
+        obb.half_extent_y,
+        obb.half_extent_z,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        ahx,
+        ahy,
+        ahz,
     );
 }
 
@@ -288,18 +351,42 @@ pub fn is_obb_intersecting_obb(a: &Obb, b: &Obb) -> bool {
     let tz = b.center_z - a.center_z;
 
     return !obb_sat_separated(
-        tx, ty, tz,
-        ax0, ay0, az0, ax1, ay1, az1, ax2, ay2, az2,
-        a.half_extent_x, a.half_extent_y, a.half_extent_z,
-        bx0, by0, bz0, bx1, by1, bz1, bx2, by2, bz2,
-        b.half_extent_x, b.half_extent_y, b.half_extent_z,
+        tx,
+        ty,
+        tz,
+        ax0,
+        ay0,
+        az0,
+        ax1,
+        ay1,
+        az1,
+        ax2,
+        ay2,
+        az2,
+        a.half_extent_x,
+        a.half_extent_y,
+        a.half_extent_z,
+        bx0,
+        by0,
+        bz0,
+        bx1,
+        by1,
+        bz1,
+        bx2,
+        by2,
+        bz2,
+        b.half_extent_x,
+        b.half_extent_y,
+        b.half_extent_z,
     );
 }
 
 /// Returns whether an OBB overlaps a bounding sphere. An empty sphere (negative radius) does
 /// not intersect.
 pub fn is_obb_intersecting_sphere(obb: &Obb, sphere: &BoundingSphere) -> bool {
-    if sphere.radius < 0.0 { return false; }
+    if sphere.radius < 0.0 {
+        return false;
+    }
     let qx = obb.orientation_x;
     let qy = obb.orientation_y;
     let qz = obb.orientation_z;
@@ -339,15 +426,33 @@ pub fn is_obb_intersecting_sphere(obb: &Obb, sphere: &BoundingSphere) -> bool {
 
 #[allow(clippy::too_many_arguments)]
 fn obb_sat_separated(
-    tx: f32, ty: f32, tz: f32,
-    ax0: f32, ay0: f32, az0: f32,
-    ax1: f32, ay1: f32, az1: f32,
-    ax2: f32, ay2: f32, az2: f32,
-    hax: f32, hay: f32, haz: f32,
-    bx0: f32, by0: f32, bz0: f32,
-    bx1: f32, by1: f32, bz1: f32,
-    bx2: f32, by2: f32, bz2: f32,
-    hbx: f32, hby: f32, hbz: f32,
+    tx: f32,
+    ty: f32,
+    tz: f32,
+    ax0: f32,
+    ay0: f32,
+    az0: f32,
+    ax1: f32,
+    ay1: f32,
+    az1: f32,
+    ax2: f32,
+    ay2: f32,
+    az2: f32,
+    hax: f32,
+    hay: f32,
+    haz: f32,
+    bx0: f32,
+    by0: f32,
+    bz0: f32,
+    bx1: f32,
+    by1: f32,
+    bz1: f32,
+    bx2: f32,
+    by2: f32,
+    bz2: f32,
+    hbx: f32,
+    hby: f32,
+    hbz: f32,
 ) -> bool {
     for axis in 0..15_u32 {
         let (lx, ly, lz) = match axis {
@@ -357,29 +462,67 @@ fn obb_sat_separated(
             3 => (bx0, by0, bz0),
             4 => (bx1, by1, bz1),
             5 => (bx2, by2, bz2),
-            6 => (ay0 * bz0 - az0 * by0, az0 * bx0 - ax0 * bz0, ax0 * by0 - ay0 * bx0),
-            7 => (ay0 * bz1 - az0 * by1, az0 * bx1 - ax0 * bz1, ax0 * by1 - ay0 * bx1),
-            8 => (ay0 * bz2 - az0 * by2, az0 * bx2 - ax0 * bz2, ax0 * by2 - ay0 * bx2),
-            9 => (ay1 * bz0 - az1 * by0, az1 * bx0 - ax1 * bz0, ax1 * by0 - ay1 * bx0),
-            10 => (ay1 * bz1 - az1 * by1, az1 * bx1 - ax1 * bz1, ax1 * by1 - ay1 * bx1),
-            11 => (ay1 * bz2 - az1 * by2, az1 * bx2 - ax1 * bz2, ax1 * by2 - ay1 * bx2),
-            12 => (ay2 * bz0 - az2 * by0, az2 * bx0 - ax2 * bz0, ax2 * by0 - ay2 * bx0),
-            13 => (ay2 * bz1 - az2 * by1, az2 * bx1 - ax2 * bz1, ax2 * by1 - ay2 * bx1),
-            _ => (ay2 * bz2 - az2 * by2, az2 * bx2 - ax2 * bz2, ax2 * by2 - ay2 * bx2),
+            6 => (
+                ay0 * bz0 - az0 * by0,
+                az0 * bx0 - ax0 * bz0,
+                ax0 * by0 - ay0 * bx0,
+            ),
+            7 => (
+                ay0 * bz1 - az0 * by1,
+                az0 * bx1 - ax0 * bz1,
+                ax0 * by1 - ay0 * bx1,
+            ),
+            8 => (
+                ay0 * bz2 - az0 * by2,
+                az0 * bx2 - ax0 * bz2,
+                ax0 * by2 - ay0 * bx2,
+            ),
+            9 => (
+                ay1 * bz0 - az1 * by0,
+                az1 * bx0 - ax1 * bz0,
+                ax1 * by0 - ay1 * bx0,
+            ),
+            10 => (
+                ay1 * bz1 - az1 * by1,
+                az1 * bx1 - ax1 * bz1,
+                ax1 * by1 - ay1 * bx1,
+            ),
+            11 => (
+                ay1 * bz2 - az1 * by2,
+                az1 * bx2 - ax1 * bz2,
+                ax1 * by2 - ay1 * bx2,
+            ),
+            12 => (
+                ay2 * bz0 - az2 * by0,
+                az2 * bx0 - ax2 * bz0,
+                ax2 * by0 - ay2 * bx0,
+            ),
+            13 => (
+                ay2 * bz1 - az2 * by1,
+                az2 * bx1 - ax2 * bz1,
+                ax2 * by1 - ay2 * bx1,
+            ),
+            _ => (
+                ay2 * bz2 - az2 * by2,
+                az2 * bx2 - ax2 * bz2,
+                ax2 * by2 - ay2 * bx2,
+            ),
         };
 
         let len_sq = lx * lx + ly * ly + lz * lz;
-        if len_sq < 1e-10 { continue; }
+        if len_sq < 1e-10 {
+            continue;
+        }
         let d = (tx * lx + ty * ly + tz * lz).abs();
-        let p_a =
-            (ax0 * lx + ay0 * ly + az0 * lz).abs() * hax +
-            (ax1 * lx + ay1 * ly + az1 * lz).abs() * hay +
-            (ax2 * lx + ay2 * ly + az2 * lz).abs() * haz;
-        let p_b =
-            (bx0 * lx + by0 * ly + bz0 * lz).abs() * hbx +
-            (bx1 * lx + by1 * ly + bz1 * lz).abs() * hby +
-            (bx2 * lx + by2 * ly + bz2 * lz).abs() * hbz;
-        if d > p_a + p_b { return true; }
+        let p_a = (ax0 * lx + ay0 * ly + az0 * lz).abs() * hax
+            + (ax1 * lx + ay1 * ly + az1 * lz).abs() * hay
+            + (ax2 * lx + ay2 * ly + az2 * lz).abs() * haz;
+        let p_b = (bx0 * lx + by0 * ly + bz0 * lz).abs() * hbx
+            + (bx1 * lx + by1 * ly + bz1 * lz).abs() * hby
+            + (bx2 * lx + by2 * ly + bz2 * lz).abs() * hbz;
+        if d > p_a + p_b {
+            return true;
+        }
     }
     return false;
 }
@@ -387,9 +530,16 @@ fn obb_sat_separated(
 /// Sets all fields of an oriented bounding box in place.
 pub fn set_obb(
     out: &mut Obb,
-    center_x: f32, center_y: f32, center_z: f32,
-    half_extent_x: f32, half_extent_y: f32, half_extent_z: f32,
-    orientation_x: f32, orientation_y: f32, orientation_z: f32, orientation_w: f32,
+    center_x: f32,
+    center_y: f32,
+    center_z: f32,
+    half_extent_x: f32,
+    half_extent_y: f32,
+    half_extent_z: f32,
+    orientation_x: f32,
+    orientation_y: f32,
+    orientation_z: f32,
+    orientation_w: f32,
 ) {
     out.center_x = center_x;
     out.center_y = center_y;

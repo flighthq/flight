@@ -79,7 +79,11 @@ fn contribution(source: &str, declarations: Option<&str>) -> WgpuModifierContrib
 fn vendor_snippet(
     kind: &'static str,
     slot: &'static str,
-    contribution: fn(&dyn Modifier, usize, &mut WgpuModifierCompileContext<'_>) -> WgpuModifierContribution,
+    contribution: fn(
+        &dyn Modifier,
+        usize,
+        &mut WgpuModifierCompileContext<'_>,
+    ) -> WgpuModifierContribution,
 ) -> &'static WgpuModifierSnippet {
     return Box::leak(Box::new(WgpuModifierSnippet {
         kind,
@@ -91,7 +95,12 @@ fn vendor_snippet(
     }));
 }
 
-fn record_nothing(_runtime: &mut WgpuRenderStateRuntime, _value: Option<&WgpuColorScaleBiasInput>, _index: u32) {}
+fn record_nothing(
+    _runtime: &mut WgpuRenderStateRuntime,
+    _value: Option<&WgpuColorScaleBiasInput>,
+    _index: u32,
+) {
+}
 
 fn resolve_nothing(_state: &mut WgpuRenderState, _count: u32) -> Option<WgpuColorAdjustmentFlush> {
     return None;
@@ -105,8 +114,13 @@ static COLOR_FEATURE: WgpuColorAdjustmentMaterialFeature = WgpuColorAdjustmentMa
     resolve_flush: resolve_nothing,
 };
 
-fn snippet_table(state: &WgpuRenderState) -> Arc<flight_registry::KindMap<&'static WgpuModifierSnippet>> {
-    return get_wgpu_render_state_runtime(state).registries.modifier_snippets.clone();
+fn snippet_table(
+    state: &WgpuRenderState,
+) -> Arc<flight_registry::KindMap<&'static WgpuModifierSnippet>> {
+    return get_wgpu_render_state_runtime(state)
+        .registries
+        .modifier_snippets
+        .clone();
 }
 
 mod bind_wgpu_shaded_surface {
@@ -118,7 +132,11 @@ mod bind_wgpu_shaded_surface {
         register_wgpu_image_texture_resolver(&mut test.state);
         register_built_in_wgpu_modifier_snippets(&mut test.state);
         let material = shaded_with(vec![rim(0xffffffff)]);
-        let pipeline = ensure_wgpu_shaded_pipeline(&mut test.state, &material, wgpu::TextureFormat::Bgra8Unorm);
+        let pipeline = ensure_wgpu_shaded_pipeline(
+            &mut test.state,
+            &material,
+            wgpu::TextureFormat::Bgra8Unorm,
+        );
         bind_wgpu_shaded_surface(&mut test.state, &pipeline, &material, &white(), &white());
         assert!(test.count("createBindGroup") > 0);
         let writes = test.buffer_writes();
@@ -138,7 +156,10 @@ mod build_wgpu_shaded_cache_key {
         let glow = share(emissive(0xffffffff, None, 1.0));
         let a = shaded_with(vec![rim.clone(), glow.clone()]);
         let b = shaded_with(vec![glow, rim]);
-        assert_eq!(build_wgpu_shaded_cache_key(&a, None), build_wgpu_shaded_cache_key(&b, None));
+        assert_eq!(
+            build_wgpu_shaded_cache_key(&a, None),
+            build_wgpu_shaded_cache_key(&b, None)
+        );
 
         let mut test = make_wgpu_scene3d_state(None);
         register_built_in_wgpu_modifier_snippets(&mut test.state);
@@ -157,7 +178,10 @@ mod build_wgpu_shaded_cache_key {
         let mut registry = flight_shading::create_modifier_registry();
         flight_shading::register_built_in_modifiers(&mut registry);
         assert_ne!(
-            build_wgpu_shaded_cache_key(&masked, Some(WgpuModifierSnippetSource::Registry(&registry))),
+            build_wgpu_shaded_cache_key(
+                &masked,
+                Some(WgpuModifierSnippetSource::Registry(&registry))
+            ),
             build_wgpu_shaded_cache_key(&a, Some(WgpuModifierSnippetSource::Registry(&registry)))
         );
     }
@@ -179,8 +203,15 @@ mod ensure_wgpu_shaded_pipeline {
             .keys()
             .cloned()
             .collect();
-        assert!(keys.iter().any(|key| key.starts_with("shaded:") && key.ends_with("|opaque|rigid|direct")));
-        assert!(keys.iter().any(|key| key.starts_with("shaded:") && key.ends_with("|blend:Normal|rigid|direct")));
+        assert!(
+            keys.iter()
+                .any(|key| key.starts_with("shaded:") && key.ends_with("|opaque|rigid|direct"))
+        );
+        assert!(
+            keys.iter().any(
+                |key| key.starts_with("shaded:") && key.ends_with("|blend:Normal|rigid|direct")
+            )
+        );
     }
 
     #[test]
@@ -200,11 +231,19 @@ mod ensure_wgpu_shaded_pipeline {
         assert_eq!(bindings, vec![0, 1, 2, 3, 4, 5, 6]);
     }
 
-    fn contribute_marker_a(_: &dyn Modifier, _: usize, _: &mut WgpuModifierCompileContext<'_>) -> WgpuModifierContribution {
+    fn contribute_marker_a(
+        _: &dyn Modifier,
+        _: usize,
+        _: &mut WgpuModifierCompileContext<'_>,
+    ) -> WgpuModifierContribution {
         return contribution("// compiler-marker-A", None);
     }
 
-    fn contribute_marker_b(_: &dyn Modifier, _: usize, _: &mut WgpuModifierCompileContext<'_>) -> WgpuModifierContribution {
+    fn contribute_marker_b(
+        _: &dyn Modifier,
+        _: usize,
+        _: &mut WgpuModifierCompileContext<'_>,
+    ) -> WgpuModifierContribution {
         return contribution("// compiler-marker-B", None);
     }
 
@@ -239,8 +278,14 @@ mod get_wgpu_shaded_module_source {
     fn splices_the_registered_feature_after_the_shaded_result_only_for_an_opted_in_variant() {
         let material = create_shaded_material();
         let base = get_wgpu_shaded_module_source(&material, None, None, None, None, None);
-        let adjusted =
-            get_wgpu_shaded_module_source(&material, None, Some(false), None, Some(&COLOR_FEATURE), None);
+        let adjusted = get_wgpu_shaded_module_source(
+            &material,
+            None,
+            Some(false),
+            None,
+            Some(&COLOR_FEATURE),
+            None,
+        );
         assert!(!base.contains(COLOR_FEATURE.fragment_shader_chunk));
         assert!(adjusted.contains(COLOR_FEATURE.fragment_shader_chunk));
         assert!(adjusted.contains("draw.flightColorScale"));
@@ -263,16 +308,21 @@ mod get_wgpu_shaded_module_source {
     #[test]
     fn threads_the_has_skin_palette_variant_through_the_composed_classic_base() {
         let material = create_shaded_material();
-        assert!(!get_wgpu_shaded_module_source(&material, None, None, None, None, None).contains("jointTexture"));
-        assert!(get_wgpu_shaded_module_source(
-            &material,
-            None,
-            Some(true),
-            Some(make_wgpu_skinning_adapter()),
-            None,
-            None
-        )
-        .contains("textureLoad(jointTexture"));
+        assert!(
+            !get_wgpu_shaded_module_source(&material, None, None, None, None, None)
+                .contains("jointTexture")
+        );
+        assert!(
+            get_wgpu_shaded_module_source(
+                &material,
+                None,
+                Some(true),
+                Some(make_wgpu_skinning_adapter()),
+                None,
+                None
+            )
+            .contains("textureLoad(jointTexture")
+        );
     }
 
     #[test]
@@ -339,13 +389,21 @@ mod get_wgpu_shaded_module_source {
             None,
         );
         assert!(
-            source.find("localPosition = vec4f(localPosition.xyz").unwrap()
-                < source.find("let world = draw.world * localPosition").unwrap()
+            source
+                .find("localPosition = vec4f(localPosition.xyz")
+                .unwrap()
+                < source
+                    .find("let world = draw.world * localPosition")
+                    .unwrap()
         );
         ensure_wgpu_shaded_pipeline(&mut test.state, &material, wgpu::TextureFormat::Bgra8Unorm);
     }
 
-    fn contribute_glow(_: &dyn Modifier, _: usize, _: &mut WgpuModifierCompileContext<'_>) -> WgpuModifierContribution {
+    fn contribute_glow(
+        _: &dyn Modifier,
+        _: usize,
+        _: &mut WgpuModifierCompileContext<'_>,
+    ) -> WgpuModifierContribution {
         return contribution("radiance = radiance + vec3f(0.125);\\n", None);
     }
 
@@ -368,36 +426,75 @@ mod get_wgpu_shaded_module_source {
             None,
         );
         assert!(source.contains("radiance = radiance + vec3f(0.125)"));
-        assert!(build_wgpu_shaded_cache_key(&material, Some(WgpuModifierSnippetSource::Snippets(&table)))
-            .contains("acme.Missing"));
-        assert!(resolve_wgpu_modifier_snippet(&test.state, "acme.Glow")
-            .is_some_and(|snippet| std::ptr::eq(snippet, vendor)));
+        assert!(
+            build_wgpu_shaded_cache_key(
+                &material,
+                Some(WgpuModifierSnippetSource::Snippets(&table))
+            )
+            .contains("acme.Missing")
+        );
+        assert!(
+            resolve_wgpu_modifier_snippet(&test.state, "acme.Glow")
+                .is_some_and(|snippet| std::ptr::eq(snippet, vendor))
+        );
         assert!(resolve_wgpu_modifier_snippet(&test.state, "acme.Missing").is_none());
     }
 
-    fn contribute_slot_0(_: &dyn Modifier, _: usize, _: &mut WgpuModifierCompileContext<'_>) -> WgpuModifierContribution {
+    fn contribute_slot_0(
+        _: &dyn Modifier,
+        _: usize,
+        _: &mut WgpuModifierCompileContext<'_>,
+    ) -> WgpuModifierContribution {
         return contribution("// slot_marker_0\nnormal = normal;", None);
     }
-    fn contribute_slot_1(_: &dyn Modifier, _: usize, _: &mut WgpuModifierCompileContext<'_>) -> WgpuModifierContribution {
+    fn contribute_slot_1(
+        _: &dyn Modifier,
+        _: usize,
+        _: &mut WgpuModifierCompileContext<'_>,
+    ) -> WgpuModifierContribution {
         return contribution("// slot_marker_1\ndiffuse = diffuse;", None);
     }
-    fn contribute_slot_2(_: &dyn Modifier, _: usize, _: &mut WgpuModifierCompileContext<'_>) -> WgpuModifierContribution {
+    fn contribute_slot_2(
+        _: &dyn Modifier,
+        _: usize,
+        _: &mut WgpuModifierCompileContext<'_>,
+    ) -> WgpuModifierContribution {
         return contribution("// slot_marker_2\nspecularColor = specularColor;", None);
     }
-    fn contribute_slot_3(_: &dyn Modifier, _: usize, _: &mut WgpuModifierCompileContext<'_>) -> WgpuModifierContribution {
+    fn contribute_slot_3(
+        _: &dyn Modifier,
+        _: usize,
+        _: &mut WgpuModifierCompileContext<'_>,
+    ) -> WgpuModifierContribution {
         return contribution("// slot_marker_3\nemissive = emissive;", None);
     }
-    fn contribute_slot_4(_: &dyn Modifier, _: usize, _: &mut WgpuModifierCompileContext<'_>) -> WgpuModifierContribution {
+    fn contribute_slot_4(
+        _: &dyn Modifier,
+        _: usize,
+        _: &mut WgpuModifierCompileContext<'_>,
+    ) -> WgpuModifierContribution {
         return contribution("// slot_marker_4\nradiance = radiance;", None);
     }
-    fn contribute_slot_5(_: &dyn Modifier, _: usize, _: &mut WgpuModifierCompileContext<'_>) -> WgpuModifierContribution {
+    fn contribute_slot_5(
+        _: &dyn Modifier,
+        _: usize,
+        _: &mut WgpuModifierCompileContext<'_>,
+    ) -> WgpuModifierContribution {
         return contribution("// slot_marker_5\nlocalPosition = localPosition;", None);
     }
 
     #[test]
     fn routes_every_open_modifier_slot_and_delimits_vendor_contributions() {
         let mut test = make_wgpu_scene3d_state(None);
-        let slots: [(&'static str, &'static str, fn(&dyn Modifier, usize, &mut WgpuModifierCompileContext<'_>) -> WgpuModifierContribution); 6] = [
+        let slots: [(
+            &'static str,
+            &'static str,
+            fn(
+                &dyn Modifier,
+                usize,
+                &mut WgpuModifierCompileContext<'_>,
+            ) -> WgpuModifierContribution,
+        ); 6] = [
             ("acme.Slot0", MODIFIER_SLOT_NORMAL, contribute_slot_0),
             ("acme.Slot1", MODIFIER_SLOT_DIFFUSE, contribute_slot_1),
             ("acme.Slot2", MODIFIER_SLOT_SPECULAR, contribute_slot_2),
@@ -434,10 +531,18 @@ mod get_wgpu_shaded_module_source {
         ensure_wgpu_shaded_pipeline(&mut test.state, &material, wgpu::TextureFormat::Bgra8Unorm);
     }
 
-    fn contribute_declaration_a(_: &dyn Modifier, _: usize, _: &mut WgpuModifierCompileContext<'_>) -> WgpuModifierContribution {
+    fn contribute_declaration_a(
+        _: &dyn Modifier,
+        _: usize,
+        _: &mut WgpuModifierCompileContext<'_>,
+    ) -> WgpuModifierContribution {
         return contribution("", Some("fn vendorA() {}"));
     }
-    fn contribute_declaration_b(_: &dyn Modifier, _: usize, _: &mut WgpuModifierCompileContext<'_>) -> WgpuModifierContribution {
+    fn contribute_declaration_b(
+        _: &dyn Modifier,
+        _: usize,
+        _: &mut WgpuModifierCompileContext<'_>,
+    ) -> WgpuModifierContribution {
         return contribution("", Some("fn vendorB() {}"));
     }
 
@@ -447,11 +552,19 @@ mod get_wgpu_shaded_module_source {
         register_built_in_wgpu_modifier_snippets(&mut test.state);
         register_wgpu_modifier_snippet(
             &mut test.state,
-            vendor_snippet("acme.DeclarationA", MODIFIER_SLOT_EFFECT, contribute_declaration_a),
+            vendor_snippet(
+                "acme.DeclarationA",
+                MODIFIER_SLOT_EFFECT,
+                contribute_declaration_a,
+            ),
         );
         register_wgpu_modifier_snippet(
             &mut test.state,
-            vendor_snippet("acme.DeclarationB", MODIFIER_SLOT_EFFECT, contribute_declaration_b),
+            vendor_snippet(
+                "acme.DeclarationB",
+                MODIFIER_SLOT_EFFECT,
+                contribute_declaration_b,
+            ),
         );
         let mut first = create_dissolve_modifier();
         first.threshold = 0.1;
@@ -538,12 +651,30 @@ mod shaded_binding_cache {
         let first_pipeline = ensure_wgpu_shaded_pipeline(&mut first.state, &material, format);
         let second_pipeline = ensure_wgpu_shaded_pipeline(&mut second.state, &material, format);
 
-        let first_group = bind_wgpu_shaded_surface(&mut first.state, &first_pipeline, &material, &white(), &white());
+        let first_group = bind_wgpu_shaded_surface(
+            &mut first.state,
+            &first_pipeline,
+            &material,
+            &white(),
+            &white(),
+        );
         let first_buffers = first.count("createBuffer");
         let first_groups = first.count("createBindGroup");
         let second_before = second.count("createBindGroup");
-        bind_wgpu_shaded_surface(&mut second.state, &second_pipeline, &material, &white(), &white());
-        let first_again = bind_wgpu_shaded_surface(&mut first.state, &first_pipeline, &material, &white(), &white());
+        bind_wgpu_shaded_surface(
+            &mut second.state,
+            &second_pipeline,
+            &material,
+            &white(),
+            &white(),
+        );
+        let first_again = bind_wgpu_shaded_surface(
+            &mut first.state,
+            &first_pipeline,
+            &material,
+            &white(),
+            &white(),
+        );
 
         // Handles on two devices compare by per-device id, so the second state's own binding is
         // observed as the group it built on its own device.
@@ -576,21 +707,49 @@ mod shaded_binding_cache {
         assert!(test.count("createBindGroup") > groups);
         assert_eq!(test.count("createBuffer"), buffers);
 
-        let glow = Arc::new(RwLock::new(emissive(0xffffffff, Some(ready_texture()), 1.0)));
+        let glow = Arc::new(RwLock::new(emissive(
+            0xffffffff,
+            Some(ready_texture()),
+            1.0,
+        )));
         material.modifiers = vec![glow.clone()];
         let modifier_pipeline = ensure_wgpu_shaded_pipeline(&mut test.state, &material, format);
-        bind_wgpu_shaded_surface(&mut test.state, &modifier_pipeline, &material, &white(), &white());
+        bind_wgpu_shaded_surface(
+            &mut test.state,
+            &modifier_pipeline,
+            &material,
+            &white(),
+            &white(),
+        );
         let before_modifier_swap = test.count("createBindGroup");
         glow.write().unwrap().mask = Some(ready_texture());
-        bind_wgpu_shaded_surface(&mut test.state, &modifier_pipeline, &material, &white(), &white());
+        bind_wgpu_shaded_surface(
+            &mut test.state,
+            &modifier_pipeline,
+            &material,
+            &white(),
+            &white(),
+        );
         assert!(test.count("createBindGroup") > before_modifier_swap);
 
         let readying = texture_ref(create_test_unbacked_texture());
         glow.write().unwrap().mask = Some(readying.clone());
-        bind_wgpu_shaded_surface(&mut test.state, &modifier_pipeline, &material, &white(), &white());
+        bind_wgpu_shaded_surface(
+            &mut test.state,
+            &modifier_pipeline,
+            &material,
+            &white(),
+            &white(),
+        );
         let before_ready = test.count("createBindGroup");
         set_texture_source(&readying, &ready_texture());
-        bind_wgpu_shaded_surface(&mut test.state, &modifier_pipeline, &material, &white(), &white());
+        bind_wgpu_shaded_surface(
+            &mut test.state,
+            &modifier_pipeline,
+            &material,
+            &white(),
+            &white(),
+        );
         assert!(test.count("createBindGroup") > before_ready);
     }
 
@@ -602,7 +761,11 @@ mod shaded_binding_cache {
         let texture = ready_texture();
         let mut material = create_shaded_material();
         material.diffuse_map = Some(texture.clone());
-        let pipeline = ensure_wgpu_shaded_pipeline(&mut test.state, &material, wgpu::TextureFormat::Bgra8Unorm);
+        let pipeline = ensure_wgpu_shaded_pipeline(
+            &mut test.state,
+            &material,
+            wgpu::TextureFormat::Bgra8Unorm,
+        );
         bind_wgpu_shaded_surface(&mut test.state, &pipeline, &material, &white(), &white());
 
         let before_swap = test.count("createBindGroup");
@@ -621,7 +784,11 @@ mod shaded_binding_cache {
 
     static CONTRIBUTIONS: AtomicU32 = AtomicU32::new(0);
 
-    fn contribute_stable(_: &dyn Modifier, _: usize, _: &mut WgpuModifierCompileContext<'_>) -> WgpuModifierContribution {
+    fn contribute_stable(
+        _: &dyn Modifier,
+        _: usize,
+        _: &mut WgpuModifierCompileContext<'_>,
+    ) -> WgpuModifierContribution {
         CONTRIBUTIONS.fetch_add(1, Ordering::SeqCst);
         return contribution("radiance = radiance;", None);
     }
@@ -634,7 +801,11 @@ mod shaded_binding_cache {
             vendor_snippet("acme.Stable", MODIFIER_SLOT_EFFECT, contribute_stable),
         );
         let material = shaded_with(vec![vendor_modifier("acme.Stable", MODIFIER_SLOT_EFFECT)]);
-        let pipeline = ensure_wgpu_shaded_pipeline(&mut test.state, &material, wgpu::TextureFormat::Bgra8Unorm);
+        let pipeline = ensure_wgpu_shaded_pipeline(
+            &mut test.state,
+            &material,
+            wgpu::TextureFormat::Bgra8Unorm,
+        );
         bind_wgpu_shaded_surface(&mut test.state, &pipeline, &material, &white(), &white());
         let buffers = test.count("createBuffer");
         let groups = test.count("createBindGroup");

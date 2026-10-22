@@ -15,7 +15,9 @@ use crate::scene_resource_signals::enable_scene3d_resource_signals;
 use crate::types::*;
 
 /// Whether the failure guard is installed on `resolver`.
-pub fn are_scene3d_resource_failure_guards_enabled(resolver: &Ref<Scene3DResourceResolver>) -> bool {
+pub fn are_scene3d_resource_failure_guards_enabled(
+    resolver: &Ref<Scene3DResourceResolver>,
+) -> bool {
     let state = resolver.read().unwrap().state.clone();
     return state.read().unwrap().failure_guard.is_some();
 }
@@ -78,7 +80,10 @@ pub fn enable_scene3d_resource_failure_guards(
             runtime.failure_attempt += 1;
             runtime.failure_attempt
         };
-        let explained = explanation.failure.as_ref().map(|failure| failure.read().unwrap().clone());
+        let explained = explanation
+            .failure
+            .as_ref()
+            .map(|failure| failure.read().unwrap().clone());
         let mut data = HashMap::new();
         data.insert(
             "failureKind".to_string(),

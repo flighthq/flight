@@ -91,7 +91,8 @@ mod ensure_wgpu_mesh_upload {
     }
 
     #[test]
-    fn pads_an_odd_length_uint16_index_upload_to_four_byte_alignment_without_changing_the_index_count() {
+    fn pads_an_odd_length_uint16_index_upload_to_four_byte_alignment_without_changing_the_index_count()
+     {
         let mut test = make_wgpu_scene3d_state(None);
         let geometry = create_mesh_geometry(MeshGeometryOptions {
             vertices: vec![0.0; 9].into_boxed_slice(),
@@ -162,7 +163,10 @@ mod ensure_wgpu_mesh_upload {
             subsets: None,
             topology: None,
         });
-        let mesh = create_mesh(Arc::new(RwLock::new(geometry)), Arc::new(RwLock::new(Vec::new())));
+        let mesh = create_mesh(
+            Arc::new(RwLock::new(geometry)),
+            Arc::new(RwLock::new(Vec::new())),
+        );
         let morph = make_morph(1.0);
         mesh.write().unwrap().morph = Some(morph.clone());
 
@@ -192,7 +196,10 @@ mod ensure_wgpu_mesh_upload {
             &mut geometry,
             Some(Arc::new(RwLock::new(make_skin_bind_pose([1.0, 0.0, 0.0])))),
         );
-        let mesh = create_mesh(Arc::new(RwLock::new(geometry)), Arc::new(RwLock::new(Vec::new())));
+        let mesh = create_mesh(
+            Arc::new(RwLock::new(geometry)),
+            Arc::new(RwLock::new(Vec::new())),
+        );
         let morph = make_morph(1.0);
         mesh.write().unwrap().morph = Some(morph.clone());
 
@@ -272,7 +279,11 @@ mod ensure_wgpu_mesh_upload {
             topology: None,
         });
 
-        assert!(ensure_wgpu_mesh_upload(&mut test.state, &geometry, None).index_format.is_none());
+        assert!(
+            ensure_wgpu_mesh_upload(&mut test.state, &geometry, None)
+                .index_format
+                .is_none()
+        );
     }
 
     #[test]
@@ -289,6 +300,9 @@ mod ensure_wgpu_mesh_upload {
             topology: None,
         });
 
-        assert_eq!(ensure_wgpu_mesh_upload(&mut test.state, &geometry, None).index_count, 0);
+        assert_eq!(
+            ensure_wgpu_mesh_upload(&mut test.state, &geometry, None).index_count,
+            0
+        );
     }
 }

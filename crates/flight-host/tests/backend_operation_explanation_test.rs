@@ -17,7 +17,10 @@ mod backend_operation_explanation {
             layer: BackendOperationExplanationLayer::Sentinel,
             operation: "getAccessoryBarVisible".to_string(),
         };
-        let absent = BackendOperationExplanation { layer: BackendOperationExplanationLayer::None, ..sentinel.clone() };
+        let absent = BackendOperationExplanation {
+            layer: BackendOperationExplanationLayer::None,
+            ..sentinel.clone()
+        };
         assert!(!sentinel.implemented && !absent.implemented);
         assert_ne!(sentinel, absent);
     }
@@ -37,7 +40,9 @@ mod get_backend_operation_explanation_layer_string {
     fn keeps_none_and_sentinel_distinct() {
         assert_ne!(
             get_backend_operation_explanation_layer_string(BackendOperationExplanationLayer::None),
-            get_backend_operation_explanation_layer_string(BackendOperationExplanationLayer::Sentinel)
+            get_backend_operation_explanation_layer_string(
+                BackendOperationExplanationLayer::Sentinel
+            )
         );
     }
 }
@@ -54,8 +59,14 @@ mod parse_backend_operation_explanation_layer {
 
     #[test]
     fn rejects_the_backend_layer_vocabulary_and_other_text() {
-        assert_eq!(parse_backend_operation_explanation_layer("host-not-enabled"), None);
-        assert_eq!(parse_backend_operation_explanation_layer("no-host-implementation"), None);
+        assert_eq!(
+            parse_backend_operation_explanation_layer("host-not-enabled"),
+            None
+        );
+        assert_eq!(
+            parse_backend_operation_explanation_layer("no-host-implementation"),
+            None
+        );
         assert_eq!(parse_backend_operation_explanation_layer("Sentinel"), None);
         assert_eq!(parse_backend_operation_explanation_layer(""), None);
     }

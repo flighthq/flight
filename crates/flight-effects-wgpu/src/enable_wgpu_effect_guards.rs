@@ -10,7 +10,9 @@ use flight_log::{LogData, LogDataOrProvider, LogLevel, LogStateRef, LogValue, lo
 use flight_render_wgpu::WgpuRenderState;
 
 use crate::types::*;
-use crate::wgpu_effect_runtime::{format_wgpu_effect_number, get_wgpu_effect_runtime, peek_wgpu_effect_runtime};
+use crate::wgpu_effect_runtime::{
+    format_wgpu_effect_number, get_wgpu_effect_runtime, peek_wgpu_effect_runtime,
+};
 use crate::wgpu_effect_state::{
     set_wgpu_effect_state_sample_count_guard, set_wgpu_effect_state_skip_guard,
 };
@@ -40,20 +42,24 @@ pub fn enable_wgpu_effect_guards(state: &mut WgpuRenderState, log_state: Option<
     let application_log = log_state.clone();
     set_wgpu_effect_application_guard(
         state,
-        Some(Arc::new(move |_state: &WgpuRenderState, explanation: &WgpuEffectApplicationExplanation| {
-            if let Some(log_state) = &application_log {
-                warn_wgpu_effect_application(log_state, explanation);
-            }
-        })),
+        Some(Arc::new(
+            move |_state: &WgpuRenderState, explanation: &WgpuEffectApplicationExplanation| {
+                if let Some(log_state) = &application_log {
+                    warn_wgpu_effect_application(log_state, explanation);
+                }
+            },
+        )),
     );
     let sample_count_log = log_state.clone();
     set_wgpu_effect_state_sample_count_guard(
         state,
-        Some(Arc::new(move |_state: &WgpuRenderState, requested: f32, applied: f32| {
-            if let Some(log_state) = &sample_count_log {
-                warn_wgpu_effect_state_sample_count(log_state, requested, applied);
-            }
-        })),
+        Some(Arc::new(
+            move |_state: &WgpuRenderState, requested: f32, applied: f32| {
+                if let Some(log_state) = &sample_count_log {
+                    warn_wgpu_effect_state_sample_count(log_state, requested, applied);
+                }
+            },
+        )),
     );
     let skip_log = log_state;
     set_wgpu_effect_state_skip_guard(
@@ -99,7 +105,10 @@ fn get_wgpu_effect_application_message(explanation: &WgpuEffectApplicationExplan
     };
 }
 
-fn warn_wgpu_effect_application(log_state: &LogStateRef, explanation: &WgpuEffectApplicationExplanation) {
+fn warn_wgpu_effect_application(
+    log_state: &LogStateRef,
+    explanation: &WgpuEffectApplicationExplanation,
+) {
     // Keyed by status plus the kinds involved: a chain missing a different effect is a different
     // observation worth reporting, while the same miss every frame is not.
     let unresolved: Vec<String> = explanation

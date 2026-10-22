@@ -271,9 +271,11 @@ mod normalize_particle_emitter_config {
         }));
         let mut issues = Vec::new();
         validate_particle_emitter_config(&mut issues, &config);
-        assert!(issues
-            .iter()
-            .any(|i| i.field == "alpha_curve" && i.severity == "error"));
+        assert!(
+            issues
+                .iter()
+                .any(|i| i.field == "alpha_curve" && i.severity == "error")
+        );
     }
 }
 
@@ -283,41 +285,46 @@ mod validate_particle_emitter_config {
     #[test]
     fn flags_alpha_outside_the_0_1_range() {
         let mut issues = Vec::new();
-        validate_particle_emitter_config(&mut issues, &create_particle_emitter_config(
-            Some(&ParticleEmitterConfigOptions {
+        validate_particle_emitter_config(
+            &mut issues,
+            &create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
                 alpha_start: Some(2.0),
                 ..create_particle_emitter_config_options()
-            }),
-        ));
+            })),
+        );
         assert!(issues.iter().any(|i| i.field == "alpha_start"));
     }
 
     #[test]
     fn flags_inverted_min_max_ranges() {
         let mut issues = Vec::new();
-        validate_particle_emitter_config(&mut issues, &create_particle_emitter_config(
-            Some(&ParticleEmitterConfigOptions {
+        validate_particle_emitter_config(
+            &mut issues,
+            &create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
                 lifetime_min: Some(5.0),
                 lifetime_max: Some(1.0),
                 ..create_particle_emitter_config_options()
-            }),
-        ));
+            })),
+        );
         assert!(issues.iter().any(|i| i.field == "lifetime_min"));
     }
 
     #[test]
     fn flags_negative_counts_rates_as_warnings() {
         let mut issues = Vec::new();
-        validate_particle_emitter_config(&mut issues, &create_particle_emitter_config(
-            Some(&ParticleEmitterConfigOptions {
+        validate_particle_emitter_config(
+            &mut issues,
+            &create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
                 spawn_rate: Some(-5.0),
                 max_particles: Some(-1.0),
                 ..create_particle_emitter_config_options()
-            }),
-        ));
-        assert!(issues
-            .iter()
-            .any(|i| i.field == "spawn_rate" && i.severity == "warning"));
+            })),
+        );
+        assert!(
+            issues
+                .iter()
+                .any(|i| i.field == "spawn_rate" && i.severity == "warning")
+        );
         assert!(issues.iter().any(|i| i.field == "max_particles"));
     }
 
@@ -350,13 +357,11 @@ mod validate_particle_emitter_config {
     #[test]
     fn clears_prefilled_sentinel_issues_before_validating() {
         let config = create_particle_emitter_config(None);
-        let mut issues = vec![
-            ParticleConfigIssue {
-                field: "sentinel".to_string(),
-                message: "leftover from previous call".to_string(),
-                severity: "error".to_string(),
-            },
-        ];
+        let mut issues = vec![ParticleConfigIssue {
+            field: "sentinel".to_string(),
+            message: "leftover from previous call".to_string(),
+            severity: "error".to_string(),
+        }];
         validate_particle_emitter_config(&mut issues, &config);
         assert!(issues.is_empty());
         assert!(!issues.iter().any(|i| i.field == "sentinel"));

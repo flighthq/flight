@@ -259,10 +259,7 @@ mod get_color_scale_bias_bias_rgb {
 
     #[test]
     fn returns_0_when_all_biases_are_0() {
-        assert_eq!(
-            get_color_scale_bias_bias_rgb(&create_color_scale_bias()),
-            0
-        );
+        assert_eq!(get_color_scale_bias_bias_rgb(&create_color_scale_bias()), 0);
     }
 }
 
@@ -298,15 +295,15 @@ mod initialize_color_scale_bias {
     #[test]
     fn sets_all_fields_from_opts() {
         let mut out = create_color_scale_bias();
-                initialize_color_scale_bias(&mut out);
-out.red_scale = 0.1;
-out.green_scale = 0.2;
-out.blue_scale = 0.3;
-out.alpha_scale = 0.4;
-out.red_bias = 10.0;
-out.green_bias = 20.0;
-out.blue_bias = 30.0;
-out.alpha_bias = 40.0;
+        initialize_color_scale_bias(&mut out);
+        out.red_scale = 0.1;
+        out.green_scale = 0.2;
+        out.blue_scale = 0.3;
+        out.alpha_scale = 0.4;
+        out.red_bias = 10.0;
+        out.green_bias = 20.0;
+        out.blue_bias = 30.0;
+        out.alpha_bias = 40.0;
         assert_eq!(out.red_scale, 0.1);
         assert_eq!(out.green_scale, 0.2);
         assert_eq!(out.blue_scale, 0.3);

@@ -5,9 +5,9 @@ use std::sync::atomic::Ordering;
 
 use flight_permissions::HostPreferencesPersistenceQueryCapability;
 use flight_permissions::HostPreferencesPersistenceRequestCapability;
+use flight_permissions::PermissionState;
 use flight_permissions::StoragePersistenceOutcome;
 use flight_permissions::StoragePersistenceOutcomeReason;
-use flight_permissions::PermissionState;
 use flight_preferences::get_storage_persistence;
 use flight_preferences::request_storage_persistence;
 

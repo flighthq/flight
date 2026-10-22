@@ -1,7 +1,7 @@
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! CRT: barrel-distorts the uv (curvature), darkens alternating scanlines, vignettes the edges, and splits the channels outward for a tube-monitor look. (TS `wgpuCrtEffect.ts`).
 
-use flight_effects::{Effect, CrtEffect};
+use flight_effects::{CrtEffect, Effect};
 use flight_render_wgpu::{WgpuEffectContext, WgpuRenderState, WgpuTextureRenderTarget};
 
 use crate::types::*;

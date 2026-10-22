@@ -139,7 +139,8 @@ fn create_gizmo_state_handle(
     kind: GizmoHandleKind,
     placement: GizmoHandlePlacement,
 ) -> GizmoHandle {
-    let node = create_gizmo_named_shape(&format!("Gizmo{}Handle", get_gizmo_handle_name(placement)));
+    let node =
+        create_gizmo_named_shape(&format!("Gizmo{}Handle", get_gizmo_handle_name(placement)));
     let node_ref: NodeRef = node.clone();
     set_node_hit_test_enabled(&node_ref, true);
     set_node_cursor(&node_ref, Some(get_gizmo_handle_cursor(kind)));

@@ -139,8 +139,14 @@ mod create_wgpu_effect_pipeline {
         assert_eq!(erase.alpha.src_factor, wgpu::BlendFactor::Zero);
         assert_eq!(erase.alpha.dst_factor, wgpu::BlendFactor::OneMinusSrcAlpha);
         for pipeline in &pipelines {
-            assert_eq!(blend_of(pipeline).color.operation, wgpu::BlendOperation::Add);
-            assert_eq!(blend_of(pipeline).alpha.operation, wgpu::BlendOperation::Add);
+            assert_eq!(
+                blend_of(pipeline).color.operation,
+                wgpu::BlendOperation::Add
+            );
+            assert_eq!(
+                blend_of(pipeline).alpha.operation,
+                wgpu::BlendOperation::Add
+            );
         }
     }
 
@@ -414,9 +420,18 @@ mod get_wgpu_effect_blend_mode_string {
 
     #[test]
     fn returns_the_source_string_of_each_mode() {
-        assert_eq!(get_wgpu_effect_blend_mode_string(WgpuEffectBlendMode::Erase), "erase");
-        assert_eq!(get_wgpu_effect_blend_mode_string(WgpuEffectBlendMode::Premul), "premul");
-        assert_eq!(get_wgpu_effect_blend_mode_string(WgpuEffectBlendMode::Replace), "replace");
+        assert_eq!(
+            get_wgpu_effect_blend_mode_string(WgpuEffectBlendMode::Erase),
+            "erase"
+        );
+        assert_eq!(
+            get_wgpu_effect_blend_mode_string(WgpuEffectBlendMode::Premul),
+            "premul"
+        );
+        assert_eq!(
+            get_wgpu_effect_blend_mode_string(WgpuEffectBlendMode::Replace),
+            "replace"
+        );
     }
 }
 
@@ -430,9 +445,18 @@ mod get_wgpu_effect_pass_state {
         let second = get_wgpu_effect_pass_state(&mut state);
 
         assert_eq!(first.sampler, second.sampler);
-        assert_eq!(first.texture_bind_group_layout, second.texture_bind_group_layout);
-        assert_eq!(first.uniform_bind_group_layout, second.uniform_bind_group_layout);
-        assert_ne!(first.texture_bind_group_layout, first.uniform_bind_group_layout);
+        assert_eq!(
+            first.texture_bind_group_layout,
+            second.texture_bind_group_layout
+        );
+        assert_eq!(
+            first.uniform_bind_group_layout,
+            second.uniform_bind_group_layout
+        );
+        assert_ne!(
+            first.texture_bind_group_layout,
+            first.uniform_bind_group_layout
+        );
     }
 
     #[test]
@@ -455,7 +479,11 @@ mod get_wgpu_effect_pass_state {
         let pass_state = get_wgpu_effect_pass_state(&mut state);
 
         let result = catch_unwind(AssertUnwindSafe(|| {
-            let _ = (pass_state.begin_pass)(&mut state, Some(&dest.read().unwrap()), wgpu::LoadOp::Load);
+            let _ = (pass_state.begin_pass)(
+                &mut state,
+                Some(&dest.read().unwrap()),
+                wgpu::LoadOp::Load,
+            );
         }));
 
         assert!(panic_message(result.unwrap_err()).contains("beginWgpuRenderPass"));
@@ -477,7 +505,12 @@ mod initialize_wgpu_dual_source_effect_pipeline {
         initialize_wgpu_dual_source_effect_pipeline(&mut pipeline, &mut state, DUAL_FRAGMENT, None);
 
         assert_eq!(pipeline.blend_mode, WgpuEffectBlendMode::Premul);
-        assert!(pipeline.variants.as_ref().is_some_and(|variants| variants.is_empty()));
+        assert!(
+            pipeline
+                .variants
+                .as_ref()
+                .is_some_and(|variants| variants.is_empty())
+        );
     }
 }
 
@@ -486,9 +519,18 @@ mod parse_wgpu_effect_blend_mode {
 
     #[test]
     fn parses_each_source_string_and_rejects_others() {
-        assert_eq!(parse_wgpu_effect_blend_mode("erase"), Some(WgpuEffectBlendMode::Erase));
-        assert_eq!(parse_wgpu_effect_blend_mode("premul"), Some(WgpuEffectBlendMode::Premul));
-        assert_eq!(parse_wgpu_effect_blend_mode("replace"), Some(WgpuEffectBlendMode::Replace));
+        assert_eq!(
+            parse_wgpu_effect_blend_mode("erase"),
+            Some(WgpuEffectBlendMode::Erase)
+        );
+        assert_eq!(
+            parse_wgpu_effect_blend_mode("premul"),
+            Some(WgpuEffectBlendMode::Premul)
+        );
+        assert_eq!(
+            parse_wgpu_effect_blend_mode("replace"),
+            Some(WgpuEffectBlendMode::Replace)
+        );
         assert_eq!(parse_wgpu_effect_blend_mode("multiply"), None);
     }
 }

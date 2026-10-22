@@ -22,11 +22,7 @@ mod sugar_tests {
 
 /// Returns the fraction of pixels (0..1) that differ from background_color.
 // flight-lint: allow(f64) pixel-count ratio; counts exceed f32 exact range (2^24) on large bitmaps
-pub fn get_bitmap_coverage(
-    source: &Bitmap,
-    background_color: u32,
-    channel_tolerance: u32,
-) -> f64 {
+pub fn get_bitmap_coverage(source: &Bitmap, background_color: u32, channel_tolerance: u32) -> f64 {
     let br = ((background_color >> 24) & 0xff) as i32;
     let bg = ((background_color >> 16) & 0xff) as i32;
     let bb = ((background_color >> 8) & 0xff) as i32;

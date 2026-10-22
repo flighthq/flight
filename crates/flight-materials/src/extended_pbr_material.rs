@@ -1,7 +1,7 @@
 use flight_entity::allocate_entity;
 
 use crate::{
-    ExtendedPbrMaterial, EXTENDED_PBR_MATERIAL_KIND, MaterialAlphaMode, BLEND_MODE_NORMAL,
+    BLEND_MODE_NORMAL, EXTENDED_PBR_MATERIAL_KIND, ExtendedPbrMaterial, MaterialAlphaMode,
     pbr_materials::create_standard_pbr_material_properties,
 };
 

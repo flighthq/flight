@@ -17,11 +17,13 @@ mod sugar_tests {
     fn caps(seen: &Arc<Mutex<Vec<Option<ImageEncodeOptions>>>>) -> HostImageEncodeCapabilities {
         let captured = seen.clone();
         let slot = HostImageEncodeFormatCapability {
-            encode: Arc::new(move |_image: DecodedImage, options: Option<ImageEncodeOptions>| {
-                captured.lock().unwrap().push(options);
-                let bytes: Box<[u8]> = vec![9, 8, 7].into_boxed_slice();
-                return Box::pin(async move { bytes });
-            }),
+            encode: Arc::new(
+                move |_image: DecodedImage, options: Option<ImageEncodeOptions>| {
+                    captured.lock().unwrap().push(options);
+                    let bytes: Box<[u8]> = vec![9, 8, 7].into_boxed_slice();
+                    return Box::pin(async move { bytes });
+                },
+            ),
         };
         return HostImageEncodeCapabilities {
             png: Some(slot),
@@ -37,7 +39,12 @@ mod sugar_tests {
         let free_caps = caps(&free_seen);
         let options = ImageEncodeOptions { quality: Some(0.5) };
         let via_method = block_on(method_caps.encode_image(&image(), "image/png", Some(&options)));
-        let via_free = block_on(encode_image(&free_caps, &image(), "image/png", Some(&options)));
+        let via_free = block_on(encode_image(
+            &free_caps,
+            &image(),
+            "image/png",
+            Some(&options),
+        ));
         assert_eq!(via_method, via_free);
         assert_eq!(*method_seen.lock().unwrap(), *free_seen.lock().unwrap());
     }
@@ -77,4 +84,3 @@ impl HostImageEncodeCapabilities {
         return encode_image(self, image, mime_type, options).await;
     }
 }
-

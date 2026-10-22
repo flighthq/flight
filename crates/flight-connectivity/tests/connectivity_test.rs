@@ -3,7 +3,9 @@ use std::sync::{Arc, Mutex};
 use flight_connectivity::contract::*;
 use flight_entity::{FlightError, FlightErrorKind};
 use flight_signals::{connect_signal, has_signal_slots};
-use flight_stream::{AbortSignal, abort_controller, create_abort_controller, is_abort_signal_aborted, wait_aborted};
+use flight_stream::{
+    AbortSignal, abort_controller, create_abort_controller, is_abort_signal_aborted, wait_aborted,
+};
 
 use crate::block_on;
 
@@ -31,8 +33,14 @@ impl FakeProvider {
     }
 
     fn fire(&self) {
-        let listeners: Vec<ConnectivityChangeListener> =
-            self.state.lock().unwrap().listeners.iter().map(|(_, l)| l.clone()).collect();
+        let listeners: Vec<ConnectivityChangeListener> = self
+            .state
+            .lock()
+            .unwrap()
+            .listeners
+            .iter()
+            .map(|(_, l)| l.clone())
+            .collect();
         for listener in listeners {
             listener();
         }
@@ -64,7 +72,10 @@ fn unreported_status() -> ConnectivityStatus {
     };
 }
 
-fn fake_provider(overrides: impl FnOnce(&mut ConnectivityStatus), subscription_available: bool) -> FakeProvider {
+fn fake_provider(
+    overrides: impl FnOnce(&mut ConnectivityStatus),
+    subscription_available: bool,
+) -> FakeProvider {
     let mut current = ConnectivityStatus {
         downlink: 10.0,
         downlink_max: 100.0,
@@ -99,30 +110,32 @@ fn fake_provider(overrides: impl FnOnce(&mut ConnectivityStatus), subscription_a
         st.listeners.clear();
     });
     let s = state.clone();
-    let subscribe = Arc::new(move |listener: ConnectivityChangeListener| -> Option<ConnectivityUnsubscribe> {
-        let id = {
-            let mut st = s.lock().unwrap();
-            if !st.subscription_available || st.destroyed {
-                return None;
-            }
-            st.next_id += 1;
-            let id = st.next_id;
-            st.listeners.push((id, listener));
-            id
-        };
-        let s = s.clone();
-        let active = Arc::new(Mutex::new(true));
-        return Some(Arc::new(move || {
-            let mut a = active.lock().unwrap();
-            if !*a {
-                return;
-            }
-            *a = false;
-            let mut st = s.lock().unwrap();
-            st.unsubscribes += 1;
-            st.listeners.retain(|(lid, _)| *lid != id);
-        }));
-    });
+    let subscribe = Arc::new(
+        move |listener: ConnectivityChangeListener| -> Option<ConnectivityUnsubscribe> {
+            let id = {
+                let mut st = s.lock().unwrap();
+                if !st.subscription_available || st.destroyed {
+                    return None;
+                }
+                st.next_id += 1;
+                let id = st.next_id;
+                st.listeners.push((id, listener));
+                id
+            };
+            let s = s.clone();
+            let active = Arc::new(Mutex::new(true));
+            return Some(Arc::new(move || {
+                let mut a = active.lock().unwrap();
+                if !*a {
+                    return;
+                }
+                *a = false;
+                let mut st = s.lock().unwrap();
+                st.unsubscribes += 1;
+                st.listeners.retain(|(lid, _)| *lid != id);
+            }));
+        },
+    );
     return FakeProvider {
         state,
         status: HostConnectivityStatusCapability { get_status },
@@ -137,7 +150,11 @@ fn default_provider() -> FakeProvider {
 fn collect<T: Clone + Send + 'static>(signal: &flight_signals::Signal<T>) -> Arc<Mutex<Vec<T>>> {
     let seen: Arc<Mutex<Vec<T>>> = Arc::new(Mutex::new(Vec::new()));
     let sink = seen.clone();
-    connect_signal(signal, Arc::new(move |value: &T| sink.lock().unwrap().push(value.clone())), None);
+    connect_signal(
+        signal,
+        Arc::new(move |value: &T| sink.lock().unwrap().push(value.clone())),
+        None,
+    );
     return seen;
 }
 
@@ -152,7 +169,11 @@ mod attach_connectivity {
         let types = collect(&connectivity.on_connection_type_change);
         let metered = collect(&connectivity.on_metered_change);
         let offline = collect(&connectivity.on_offline);
-        assert!(attach_connectivity(&provider.status, &provider.change, &mut connectivity));
+        assert!(attach_connectivity(
+            &provider.status,
+            &provider.change,
+            &mut connectivity
+        ));
         provider.set(|s| {
             s.metered = true;
             s.online = Some(false);
@@ -164,7 +185,10 @@ mod attach_connectivity {
         assert!(changes[0].metered);
         assert_eq!(changes[0].online, Some(false));
         assert_eq!(changes[0].type_, ConnectivityConnectionType::Cellular);
-        assert_eq!(*types.lock().unwrap(), vec![ConnectivityConnectionType::Cellular]);
+        assert_eq!(
+            *types.lock().unwrap(),
+            vec![ConnectivityConnectionType::Cellular]
+        );
         assert_eq!(*metered.lock().unwrap(), vec![true]);
         assert_eq!(offline.lock().unwrap().len(), 1);
     }
@@ -186,7 +210,11 @@ mod attach_connectivity {
     fn returns_false_instead_of_retaining_a_silent_no_op_subscription() {
         let provider = fake_provider(|_| {}, false);
         let mut connectivity = create_connectivity();
-        assert!(!attach_connectivity(&provider.status, &provider.change, &mut connectivity));
+        assert!(!attach_connectivity(
+            &provider.status,
+            &provider.change,
+            &mut connectivity
+        ));
         assert_eq!(provider.active_subscriptions(), 0);
     }
 
@@ -303,27 +331,53 @@ mod detect_connectivity_reachability {
 
     /// A provider that records the signal it was handed and resolves to the sentinel when that
     /// signal is (or becomes) aborted, else to a reachable result.
-    fn recording_provider(seen: Arc<Mutex<Option<Option<AbortSignal>>>>) -> HostConnectivityReachabilityCapability {
+    fn recording_provider(
+        seen: Arc<Mutex<Option<Option<AbortSignal>>>>,
+    ) -> HostConnectivityReachabilityCapability {
         return HostConnectivityReachabilityCapability {
-            detect_reachability: Arc::new(move |options: ConnectivityReachabilityOptions, mut out: ConnectivityReachability| {
-                *seen.lock().unwrap() = Some(options.signal.clone());
-                let aborted = options.signal.as_ref().map(is_abort_signal_aborted).unwrap_or(false);
-                out.reachable = !aborted;
-                out.latency = if aborted { -1.0 } else { 12.0 };
-                return Box::pin(async move { Ok(out) });
-            }),
+            detect_reachability: Arc::new(
+                move |options: ConnectivityReachabilityOptions,
+                      mut out: ConnectivityReachability| {
+                    *seen.lock().unwrap() = Some(options.signal.clone());
+                    let aborted = options
+                        .signal
+                        .as_ref()
+                        .map(is_abort_signal_aborted)
+                        .unwrap_or(false);
+                    out.reachable = !aborted;
+                    out.latency = if aborted { -1.0 } else { 12.0 };
+                    return Box::pin(async move { Ok(out) });
+                },
+            ),
         };
     }
 
     #[test]
     fn forwards_an_absent_signal_as_none() {
         let seen = Arc::new(Mutex::new(None));
-        let mut out = ConnectivityReachability { latency: -1.0, reachable: false };
-        let options = ConnectivityReachabilityOptions { url: "https://example.invalid".to_string(), timeout: None, signal: None };
-        let result = block_on(detect_connectivity_reachability(&mut out, &recording_provider(seen.clone()), &options));
+        let mut out = ConnectivityReachability {
+            latency: -1.0,
+            reachable: false,
+        };
+        let options = ConnectivityReachabilityOptions {
+            url: "https://example.invalid".to_string(),
+            timeout: None,
+            signal: None,
+        };
+        let result = block_on(detect_connectivity_reachability(
+            &mut out,
+            &recording_provider(seen.clone()),
+            &options,
+        ));
         assert_eq!(result, Ok(()));
         assert!(matches!(*seen.lock().unwrap(), Some(None)));
-        assert_eq!(out, ConnectivityReachability { latency: 12.0, reachable: true });
+        assert_eq!(
+            out,
+            ConnectivityReachability {
+                latency: 12.0,
+                reachable: true
+            }
+        );
     }
 
     #[test]
@@ -331,32 +385,58 @@ mod detect_connectivity_reachability {
         let controller = create_abort_controller();
         abort_controller(&controller, None);
         let seen = Arc::new(Mutex::new(None));
-        let mut out = ConnectivityReachability { latency: 99.0, reachable: true };
+        let mut out = ConnectivityReachability {
+            latency: 99.0,
+            reachable: true,
+        };
         let options = ConnectivityReachabilityOptions {
             url: "https://example.invalid".to_string(),
             timeout: None,
             signal: Some(controller.signal.clone()),
         };
-        let result = block_on(detect_connectivity_reachability(&mut out, &recording_provider(seen.clone()), &options));
+        let result = block_on(detect_connectivity_reachability(
+            &mut out,
+            &recording_provider(seen.clone()),
+            &options,
+        ));
         assert_eq!(result, Ok(()));
-        let forwarded = seen.lock().unwrap().clone().flatten().expect("signal forwarded");
+        let forwarded = seen
+            .lock()
+            .unwrap()
+            .clone()
+            .flatten()
+            .expect("signal forwarded");
         assert!(is_abort_signal_aborted(&forwarded));
-        assert_eq!(out, ConnectivityReachability { latency: -1.0, reachable: false });
+        assert_eq!(
+            out,
+            ConnectivityReachability {
+                latency: -1.0,
+                reachable: false
+            }
+        );
     }
 
     #[test]
     fn forwards_the_shared_signal_so_an_external_abort_reaches_the_running_provider() {
         let controller = create_abort_controller();
         let provider = HostConnectivityReachabilityCapability {
-            detect_reachability: Arc::new(|options: ConnectivityReachabilityOptions, _out: ConnectivityReachability| {
-                let signal = options.signal.expect("signal forwarded");
-                return Box::pin(async move {
-                    wait_aborted(&signal).await;
-                    Err(FlightError { kind: FlightErrorKind::Error, message: "AbortError".to_string() })
-                });
-            }),
+            detect_reachability: Arc::new(
+                |options: ConnectivityReachabilityOptions, _out: ConnectivityReachability| {
+                    let signal = options.signal.expect("signal forwarded");
+                    return Box::pin(async move {
+                        wait_aborted(&signal).await;
+                        Err(FlightError {
+                            kind: FlightErrorKind::Error,
+                            message: "AbortError".to_string(),
+                        })
+                    });
+                },
+            ),
         };
-        let mut out = ConnectivityReachability { latency: -1.0, reachable: false };
+        let mut out = ConnectivityReachability {
+            latency: -1.0,
+            reachable: false,
+        };
         let options = ConnectivityReachabilityOptions {
             url: "https://example.invalid".to_string(),
             timeout: Some(5000.0),
@@ -366,10 +446,24 @@ mod detect_connectivity_reachability {
             std::thread::sleep(std::time::Duration::from_millis(20));
             abort_controller(&controller, None);
         });
-        let result = block_on(detect_connectivity_reachability(&mut out, &provider, &options));
+        let result = block_on(detect_connectivity_reachability(
+            &mut out, &provider, &options,
+        ));
         trigger.join().unwrap();
-        assert_eq!(result, Err(FlightError { kind: FlightErrorKind::Error, message: "AbortError".to_string() }));
-        assert_eq!(out, ConnectivityReachability { latency: -1.0, reachable: false });
+        assert_eq!(
+            result,
+            Err(FlightError {
+                kind: FlightErrorKind::Error,
+                message: "AbortError".to_string()
+            })
+        );
+        assert_eq!(
+            out,
+            ConnectivityReachability {
+                latency: -1.0,
+                reachable: false
+            }
+        );
         assert!(is_abort_signal_aborted(options.signal.as_ref().unwrap()));
     }
 
@@ -385,11 +479,28 @@ mod detect_connectivity_reachability {
                 return Box::pin(async move { Ok(out) });
             }),
         };
-        let mut out = ConnectivityReachability { latency: -1.0, reachable: false };
-        let options = ConnectivityReachabilityOptions { url: "https://example.invalid".to_string(), timeout: None, signal: None };
-        let result = block_on(detect_connectivity_reachability(&mut out, &reachability, &options));
+        let mut out = ConnectivityReachability {
+            latency: -1.0,
+            reachable: false,
+        };
+        let options = ConnectivityReachabilityOptions {
+            url: "https://example.invalid".to_string(),
+            timeout: None,
+            signal: None,
+        };
+        let result = block_on(detect_connectivity_reachability(
+            &mut out,
+            &reachability,
+            &options,
+        ));
         assert_eq!(result, Ok(()));
-        assert_eq!(out, ConnectivityReachability { latency: 7.0, reachable: true });
+        assert_eq!(
+            out,
+            ConnectivityReachability {
+                latency: 7.0,
+                reachable: true
+            }
+        );
         assert_eq!(*calls.lock().unwrap(), 1);
     }
 
@@ -398,15 +509,41 @@ mod detect_connectivity_reachability {
         let reachability = HostConnectivityReachabilityCapability {
             detect_reachability: Arc::new(|_options, _out| {
                 return Box::pin(async {
-                    Err(FlightError { kind: FlightErrorKind::TypeError, message: "probe failed".to_string() })
+                    Err(FlightError {
+                        kind: FlightErrorKind::TypeError,
+                        message: "probe failed".to_string(),
+                    })
                 });
             }),
         };
-        let mut out = ConnectivityReachability { latency: -1.0, reachable: false };
-        let options = ConnectivityReachabilityOptions { url: "https://example.invalid".to_string(), timeout: Some(250.0), signal: None };
-        let result = block_on(detect_connectivity_reachability(&mut out, &reachability, &options));
-        assert_eq!(result, Err(FlightError { kind: FlightErrorKind::TypeError, message: "probe failed".to_string() }));
-        assert_eq!(out, ConnectivityReachability { latency: -1.0, reachable: false });
+        let mut out = ConnectivityReachability {
+            latency: -1.0,
+            reachable: false,
+        };
+        let options = ConnectivityReachabilityOptions {
+            url: "https://example.invalid".to_string(),
+            timeout: Some(250.0),
+            signal: None,
+        };
+        let result = block_on(detect_connectivity_reachability(
+            &mut out,
+            &reachability,
+            &options,
+        ));
+        assert_eq!(
+            result,
+            Err(FlightError {
+                kind: FlightErrorKind::TypeError,
+                message: "probe failed".to_string()
+            })
+        );
+        assert_eq!(
+            out,
+            ConnectivityReachability {
+                latency: -1.0,
+                reachable: false
+            }
+        );
     }
 }
 
@@ -418,9 +555,21 @@ mod dispose_connectivity {
         let provider = default_provider();
         let mut connectivity = create_connectivity();
         attach_connectivity(&provider.status, &provider.change, &mut connectivity);
-        connect_signal(&connectivity.on_change, Arc::new(|_: &ConnectivityStatus| {}), None);
-        connect_signal(&connectivity.on_connection_type_change, Arc::new(|_: &ConnectivityConnectionType| {}), None);
-        connect_signal(&connectivity.on_metered_change, Arc::new(|_: &bool| {}), None);
+        connect_signal(
+            &connectivity.on_change,
+            Arc::new(|_: &ConnectivityStatus| {}),
+            None,
+        );
+        connect_signal(
+            &connectivity.on_connection_type_change,
+            Arc::new(|_: &ConnectivityConnectionType| {}),
+            None,
+        );
+        connect_signal(
+            &connectivity.on_metered_change,
+            Arc::new(|_: &bool| {}),
+            None,
+        );
         connect_signal(&connectivity.on_offline, Arc::new(|_: &()| {}), None);
         connect_signal(&connectivity.on_online, Arc::new(|_: &()| {}), None);
         dispose_connectivity(&mut connectivity);
@@ -466,8 +615,14 @@ mod get_connectivity_online {
 
     #[test]
     fn preserves_unknown_and_measured_online_states() {
-        assert_eq!(get_connectivity_online(&fake_provider(|s| s.online = None, true).status), None);
-        assert_eq!(get_connectivity_online(&fake_provider(|s| s.online = Some(true), true).status), Some(true));
+        assert_eq!(
+            get_connectivity_online(&fake_provider(|s| s.online = None, true).status),
+            None
+        );
+        assert_eq!(
+            get_connectivity_online(&fake_provider(|s| s.online = Some(true), true).status),
+            Some(true)
+        );
     }
 }
 
@@ -506,16 +661,43 @@ mod has_connectivity_status_changed {
     fn detects_every_status_axis() {
         let base = unreported_status();
         let variants = [
-            ConnectivityStatus { online: Some(true), ..unreported_status() },
-            ConnectivityStatus { type_: ConnectivityConnectionType::Wifi, ..unreported_status() },
-            ConnectivityStatus { downlink: 1.0, ..unreported_status() },
-            ConnectivityStatus { downlink_max: 1.0, ..unreported_status() },
-            ConnectivityStatus { effective_type: "4g".to_string(), ..unreported_status() },
-            ConnectivityStatus { rtt: 1.0, ..unreported_status() },
-            ConnectivityStatus { save_data: true, ..unreported_status() },
-            ConnectivityStatus { metered: true, ..unreported_status() },
+            ConnectivityStatus {
+                online: Some(true),
+                ..unreported_status()
+            },
+            ConnectivityStatus {
+                type_: ConnectivityConnectionType::Wifi,
+                ..unreported_status()
+            },
+            ConnectivityStatus {
+                downlink: 1.0,
+                ..unreported_status()
+            },
+            ConnectivityStatus {
+                downlink_max: 1.0,
+                ..unreported_status()
+            },
+            ConnectivityStatus {
+                effective_type: "4g".to_string(),
+                ..unreported_status()
+            },
+            ConnectivityStatus {
+                rtt: 1.0,
+                ..unreported_status()
+            },
+            ConnectivityStatus {
+                save_data: true,
+                ..unreported_status()
+            },
+            ConnectivityStatus {
+                metered: true,
+                ..unreported_status()
+            },
         ];
-        let changed: Vec<bool> = variants.iter().map(|v| has_connectivity_status_changed(&base, v)).collect();
+        let changed: Vec<bool> = variants
+            .iter()
+            .map(|v| has_connectivity_status_changed(&base, v))
+            .collect();
         assert_eq!(changed, vec![true; 8]);
     }
 }
@@ -538,7 +720,9 @@ mod is_connectivity_metered {
 
     #[test]
     fn reads_the_metered_level_from_the_supplied_status_witness() {
-        assert!(is_connectivity_metered(&fake_provider(|s| s.metered = true, true).status));
+        assert!(is_connectivity_metered(
+            &fake_provider(|s| s.metered = true, true).status
+        ));
     }
 }
 
@@ -547,7 +731,9 @@ mod is_connectivity_save_data_enabled {
 
     #[test]
     fn reads_the_save_data_level_from_the_supplied_status_witness() {
-        assert!(is_connectivity_save_data_enabled(&fake_provider(|s| s.save_data = true, true).status));
+        assert!(is_connectivity_save_data_enabled(
+            &fake_provider(|s| s.save_data = true, true).status
+        ));
     }
 }
 
@@ -556,8 +742,14 @@ mod parse_connectivity_connection_type {
 
     #[test]
     fn parses_the_exact_ts_strings_and_rejects_others() {
-        assert_eq!(parse_connectivity_connection_type("wimax"), Some(ConnectivityConnectionType::Wimax));
-        assert_eq!(parse_connectivity_connection_type("none"), Some(ConnectivityConnectionType::None));
+        assert_eq!(
+            parse_connectivity_connection_type("wimax"),
+            Some(ConnectivityConnectionType::Wimax)
+        );
+        assert_eq!(
+            parse_connectivity_connection_type("none"),
+            Some(ConnectivityConnectionType::None)
+        );
         assert_eq!(parse_connectivity_connection_type("WIFI"), None);
         assert_eq!(parse_connectivity_connection_type(""), None);
     }

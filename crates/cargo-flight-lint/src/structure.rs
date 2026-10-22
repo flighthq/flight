@@ -19,7 +19,9 @@ pub struct NamedRange {
 
 #[derive(Debug)]
 pub enum FileItem {
-    Preamble { start_line: usize },
+    Preamble {
+        start_line: usize,
+    },
     Struct(NamedRange),
     FreeFn(NamedRange),
     Impl {
@@ -353,7 +355,10 @@ pub fn fix_structure(source: &str) -> Option<String> {
         if start <= prev_end {
             return Some(source.to_string());
         }
-        if lines[prev_end..start - 1].iter().any(|line| !line.trim().is_empty()) {
+        if lines[prev_end..start - 1]
+            .iter()
+            .any(|line| !line.trim().is_empty())
+        {
             return Some(source.to_string());
         }
     }
@@ -380,7 +385,10 @@ pub fn fix_structure(source: &str) -> Option<String> {
         if position > 0 {
             let prev = order[position - 1];
             // Keep a run of `use` / `mod` lines tight when it was tight before; otherwise one blank line.
-            let tight = sections[prev] == 0 && sections[i] == 0 && i == prev + 1 && blocks[i].0 == blocks[prev].1 + 1;
+            let tight = sections[prev] == 0
+                && sections[i] == 0
+                && i == prev + 1
+                && blocks[i].0 == blocks[prev].1 + 1;
             text.push_str(if tight { "\n" } else { "\n\n" });
         }
         text.push_str(&lines[blocks[i].0 - 1..blocks[i].1].join("\n"));
@@ -440,7 +448,10 @@ pub fn sort_group<K: Ord>(
 
     // Each block starts at its attached comment block: plain `//` lines directly above the item
     // (an allow marker, a reason) move with it, exactly like its doc comments and attributes.
-    let starts: Vec<usize> = items.iter().map(|item| attached_start(lines, item.start_line)).collect();
+    let starts: Vec<usize> = items
+        .iter()
+        .map(|item| attached_start(lines, item.start_line))
+        .collect();
 
     // Anything else between two items (a section divider separated by a blank line) has no owner to
     // move with; leave the group unsorted rather than dropping it. `check` still reports the order.
@@ -511,7 +522,10 @@ mod tests {
         let lines: Vec<&str> = src.lines().collect();
         let at = lines
             .iter()
-            .position(|l| l.trim_start().starts_with(&format!("pub fn {}(", name)) || l.trim_start().starts_with(&format!("fn {}(", name)))
+            .position(|l| {
+                l.trim_start().starts_with(&format!("pub fn {}(", name))
+                    || l.trim_start().starts_with(&format!("fn {}(", name))
+            })
             .unwrap_or_else(|| panic!("fn {} missing", name));
         let mut start = at;
         while start > 0 {
@@ -522,7 +536,10 @@ mod tests {
                 break;
             }
         }
-        return lines[start..at].iter().map(|l| l.trim().to_string()).collect();
+        return lines[start..at]
+            .iter()
+            .map(|l| l.trim().to_string())
+            .collect();
     }
 
     const MOVED_MARKERS: &str = "pub fn create_v() -> u32 {
@@ -550,14 +567,25 @@ pub fn b() -> u32 {
     #[test]
     fn fix_keeps_each_plain_allow_marker_with_the_same_function() {
         let fixed = fix_file(MOVED_MARKERS).unwrap();
-        assert_eq!(header_of(&fixed, "a"), vec!["// flight-lint: allow(conform-extra) a is Rust-only"]);
+        assert_eq!(
+            header_of(&fixed, "a"),
+            vec!["// flight-lint: allow(conform-extra) a is Rust-only"]
+        );
         assert_eq!(
             header_of(&fixed, "b"),
-            vec!["/// Docs for b.", "// flight-lint: allow(conform-params) b keeps out-first", "#[must_use]"]
+            vec![
+                "/// Docs for b.",
+                "// flight-lint: allow(conform-params) b keeps out-first",
+                "#[must_use]"
+            ]
         );
         assert_eq!(
             header_of(&fixed, "c"),
-            vec!["// flight-lint: allow(f64) c needs double precision", "/// Docs for c.", "#[inline]"]
+            vec![
+                "// flight-lint: allow(f64) c needs double precision",
+                "/// Docs for c.",
+                "#[inline]"
+            ]
         );
         let a = fixed.find("pub fn a(").unwrap();
         let b = fixed.find("pub fn b(").unwrap();
@@ -588,14 +616,23 @@ pub fn b() -> u32 {
         assert!(rules(src).contains(&"file-structure".to_string()));
         let fixed = fix_file(src).unwrap();
         assert!(rules(&fixed).is_empty(), "{:?}\n{}", rules(&fixed), fixed);
-        let at = |needle: &str| fixed.find(needle).unwrap_or_else(|| panic!("{} missing", needle));
+        let at = |needle: &str| {
+            fixed
+                .find(needle)
+                .unwrap_or_else(|| panic!("{} missing", needle))
+        };
         assert!(at("use std::fmt;") < at("pub struct V;"));
         assert!(at("pub struct V;") < at("pub fn a("));
         assert!(at("pub fn a(") < at("pub fn b("));
         assert!(at("pub fn b(") < at("impl V {"));
         // The untracked const stays with the struct before it.
-        assert!(at("pub struct V;") < at("pub const LIMIT") && at("pub const LIMIT") < at("pub fn a("));
-        assert_eq!(header_of(&fixed, "b"), vec!["// flight-lint: allow(f64) b keeps double"]);
+        assert!(
+            at("pub struct V;") < at("pub const LIMIT") && at("pub const LIMIT") < at("pub fn a(")
+        );
+        assert_eq!(
+            header_of(&fixed, "b"),
+            vec!["// flight-lint: allow(f64) b keeps double"]
+        );
         assert!(fixed.contains("/// The value.\n#[derive(Debug)]\npub struct V;"));
         assert_eq!(fix_file(&fixed).unwrap(), fixed);
     }
@@ -610,7 +647,11 @@ pub fn b() -> u32 {
     fn fix_structure_keeps_the_file_header_and_inner_docs() {
         let src = "//! Crate docs.\n\npub fn a() {}\n\npub struct V;\n";
         let fixed = fix_structure(src).unwrap();
-        assert!(fixed.starts_with("//! Crate docs.\n\npub struct V;\n\npub fn a() {}"), "{}", fixed);
+        assert!(
+            fixed.starts_with("//! Crate docs.\n\npub struct V;\n\npub fn a() {}"),
+            "{}",
+            fixed
+        );
     }
 
     #[test]
@@ -618,7 +659,10 @@ pub fn b() -> u32 {
         let src = "pub struct V;\n\nimpl V {\n    // flight-lint: allow(f64) z keeps double\n    pub fn z(&self) -> f64 {\n        return 0.0;\n    }\n\n    pub fn new() -> Self {\n        return V;\n    }\n}\n";
         let fixed = fix_file(src).unwrap();
         assert!(fixed.find("pub fn new(").unwrap() < fixed.find("pub fn z(").unwrap());
-        assert_eq!(header_of(&fixed, "z"), vec!["// flight-lint: allow(f64) z keeps double"]);
+        assert_eq!(
+            header_of(&fixed, "z"),
+            vec!["// flight-lint: allow(f64) z keeps double"]
+        );
         assert!(header_of(&fixed, "new").is_empty());
     }
 }

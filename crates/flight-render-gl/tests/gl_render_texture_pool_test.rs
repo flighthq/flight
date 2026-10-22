@@ -2,8 +2,8 @@
 mod acquire_gl_render_texture {
     use crate::gl_test_helper::{make_state, make_target_descriptor};
     use flight_render_gl::{
-        acquire_gl_render_texture, create_gl_render_texture_pool, explain_gl_render_texture,
-        release_gl_render_texture, write_gl_render_texture_target, GlRenderTextureStatus,
+        GlRenderTextureStatus, acquire_gl_render_texture, create_gl_render_texture_pool,
+        explain_gl_render_texture, release_gl_render_texture, write_gl_render_texture_target,
     };
     use flight_texture::{TextureUvTransform, TextureVariant};
 

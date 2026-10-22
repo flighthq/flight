@@ -46,51 +46,141 @@ pub fn normalize_particle_emitter_config(
     let defaults = ParticleEmitterConfig::default();
 
     // Replace any non-finite numeric field with its canonical default.
-    if !out.alpha_end.is_finite() { out.alpha_end = defaults.alpha_end; }
-    if !out.alpha_start.is_finite() { out.alpha_start = defaults.alpha_start; }
-    if !out.burst_count.is_finite() { out.burst_count = defaults.burst_count; }
-    if !out.burst_interval.is_finite() { out.burst_interval = defaults.burst_interval; }
-    if !out.color_end_b.is_finite() { out.color_end_b = defaults.color_end_b; }
-    if !out.color_end_g.is_finite() { out.color_end_g = defaults.color_end_g; }
-    if !out.color_end_r.is_finite() { out.color_end_r = defaults.color_end_r; }
-    if !out.color_end_variance_b.is_finite() { out.color_end_variance_b = defaults.color_end_variance_b; }
-    if !out.color_end_variance_g.is_finite() { out.color_end_variance_g = defaults.color_end_variance_g; }
-    if !out.color_end_variance_r.is_finite() { out.color_end_variance_r = defaults.color_end_variance_r; }
-    if !out.color_start_b.is_finite() { out.color_start_b = defaults.color_start_b; }
-    if !out.color_start_g.is_finite() { out.color_start_g = defaults.color_start_g; }
-    if !out.color_start_r.is_finite() { out.color_start_r = defaults.color_start_r; }
-    if !out.color_start_variance_b.is_finite() { out.color_start_variance_b = defaults.color_start_variance_b; }
-    if !out.color_start_variance_g.is_finite() { out.color_start_variance_g = defaults.color_start_variance_g; }
-    if !out.color_start_variance_r.is_finite() { out.color_start_variance_r = defaults.color_start_variance_r; }
-    if !out.direction_x.is_finite() { out.direction_x = defaults.direction_x; }
-    if !out.direction_y.is_finite() { out.direction_y = defaults.direction_y; }
-    if !out.direction_z.is_finite() { out.direction_z = defaults.direction_z; }
-    if !out.duration.is_finite() { out.duration = defaults.duration; }
-    if !out.emitter_cone_angle.is_finite() { out.emitter_cone_angle = defaults.emitter_cone_angle; }
-    if !out.emitter_depth.is_finite() { out.emitter_depth = defaults.emitter_depth; }
-    if !out.emitter_height.is_finite() { out.emitter_height = defaults.emitter_height; }
-    if !out.emitter_radius.is_finite() { out.emitter_radius = defaults.emitter_radius; }
-    if !out.emitter_width.is_finite() { out.emitter_width = defaults.emitter_width; }
-    if !out.frame_count.is_finite() { out.frame_count = defaults.frame_count; }
-    if !out.frame_rate.is_finite() { out.frame_rate = defaults.frame_rate; }
-    if !out.gravity_x.is_finite() { out.gravity_x = defaults.gravity_x; }
-    if !out.gravity_y.is_finite() { out.gravity_y = defaults.gravity_y; }
-    if !out.gravity_z.is_finite() { out.gravity_z = defaults.gravity_z; }
-    if !out.lifetime_max.is_finite() { out.lifetime_max = defaults.lifetime_max; }
-    if !out.lifetime_min.is_finite() { out.lifetime_min = defaults.lifetime_min; }
-    if !out.max_particles.is_finite() { out.max_particles = defaults.max_particles; }
-    if !out.region_id_max.is_finite() { out.region_id_max = defaults.region_id_max; }
-    if !out.region_id_min.is_finite() { out.region_id_min = defaults.region_id_min; }
-    if !out.rotation_speed_max.is_finite() { out.rotation_speed_max = defaults.rotation_speed_max; }
-    if !out.rotation_speed_min.is_finite() { out.rotation_speed_min = defaults.rotation_speed_min; }
-    if !out.scale_end.is_finite() { out.scale_end = defaults.scale_end; }
-    if !out.scale_max.is_finite() { out.scale_max = defaults.scale_max; }
-    if !out.scale_min.is_finite() { out.scale_min = defaults.scale_min; }
-    if !out.spawn_rate.is_finite() { out.spawn_rate = defaults.spawn_rate; }
-    if !out.speed_max.is_finite() { out.speed_max = defaults.speed_max; }
-    if !out.speed_min.is_finite() { out.speed_min = defaults.speed_min; }
-    if !out.spread.is_finite() { out.spread = defaults.spread; }
-    if !out.velocity_inheritance.is_finite() { out.velocity_inheritance = defaults.velocity_inheritance; }
+    if !out.alpha_end.is_finite() {
+        out.alpha_end = defaults.alpha_end;
+    }
+    if !out.alpha_start.is_finite() {
+        out.alpha_start = defaults.alpha_start;
+    }
+    if !out.burst_count.is_finite() {
+        out.burst_count = defaults.burst_count;
+    }
+    if !out.burst_interval.is_finite() {
+        out.burst_interval = defaults.burst_interval;
+    }
+    if !out.color_end_b.is_finite() {
+        out.color_end_b = defaults.color_end_b;
+    }
+    if !out.color_end_g.is_finite() {
+        out.color_end_g = defaults.color_end_g;
+    }
+    if !out.color_end_r.is_finite() {
+        out.color_end_r = defaults.color_end_r;
+    }
+    if !out.color_end_variance_b.is_finite() {
+        out.color_end_variance_b = defaults.color_end_variance_b;
+    }
+    if !out.color_end_variance_g.is_finite() {
+        out.color_end_variance_g = defaults.color_end_variance_g;
+    }
+    if !out.color_end_variance_r.is_finite() {
+        out.color_end_variance_r = defaults.color_end_variance_r;
+    }
+    if !out.color_start_b.is_finite() {
+        out.color_start_b = defaults.color_start_b;
+    }
+    if !out.color_start_g.is_finite() {
+        out.color_start_g = defaults.color_start_g;
+    }
+    if !out.color_start_r.is_finite() {
+        out.color_start_r = defaults.color_start_r;
+    }
+    if !out.color_start_variance_b.is_finite() {
+        out.color_start_variance_b = defaults.color_start_variance_b;
+    }
+    if !out.color_start_variance_g.is_finite() {
+        out.color_start_variance_g = defaults.color_start_variance_g;
+    }
+    if !out.color_start_variance_r.is_finite() {
+        out.color_start_variance_r = defaults.color_start_variance_r;
+    }
+    if !out.direction_x.is_finite() {
+        out.direction_x = defaults.direction_x;
+    }
+    if !out.direction_y.is_finite() {
+        out.direction_y = defaults.direction_y;
+    }
+    if !out.direction_z.is_finite() {
+        out.direction_z = defaults.direction_z;
+    }
+    if !out.duration.is_finite() {
+        out.duration = defaults.duration;
+    }
+    if !out.emitter_cone_angle.is_finite() {
+        out.emitter_cone_angle = defaults.emitter_cone_angle;
+    }
+    if !out.emitter_depth.is_finite() {
+        out.emitter_depth = defaults.emitter_depth;
+    }
+    if !out.emitter_height.is_finite() {
+        out.emitter_height = defaults.emitter_height;
+    }
+    if !out.emitter_radius.is_finite() {
+        out.emitter_radius = defaults.emitter_radius;
+    }
+    if !out.emitter_width.is_finite() {
+        out.emitter_width = defaults.emitter_width;
+    }
+    if !out.frame_count.is_finite() {
+        out.frame_count = defaults.frame_count;
+    }
+    if !out.frame_rate.is_finite() {
+        out.frame_rate = defaults.frame_rate;
+    }
+    if !out.gravity_x.is_finite() {
+        out.gravity_x = defaults.gravity_x;
+    }
+    if !out.gravity_y.is_finite() {
+        out.gravity_y = defaults.gravity_y;
+    }
+    if !out.gravity_z.is_finite() {
+        out.gravity_z = defaults.gravity_z;
+    }
+    if !out.lifetime_max.is_finite() {
+        out.lifetime_max = defaults.lifetime_max;
+    }
+    if !out.lifetime_min.is_finite() {
+        out.lifetime_min = defaults.lifetime_min;
+    }
+    if !out.max_particles.is_finite() {
+        out.max_particles = defaults.max_particles;
+    }
+    if !out.region_id_max.is_finite() {
+        out.region_id_max = defaults.region_id_max;
+    }
+    if !out.region_id_min.is_finite() {
+        out.region_id_min = defaults.region_id_min;
+    }
+    if !out.rotation_speed_max.is_finite() {
+        out.rotation_speed_max = defaults.rotation_speed_max;
+    }
+    if !out.rotation_speed_min.is_finite() {
+        out.rotation_speed_min = defaults.rotation_speed_min;
+    }
+    if !out.scale_end.is_finite() {
+        out.scale_end = defaults.scale_end;
+    }
+    if !out.scale_max.is_finite() {
+        out.scale_max = defaults.scale_max;
+    }
+    if !out.scale_min.is_finite() {
+        out.scale_min = defaults.scale_min;
+    }
+    if !out.spawn_rate.is_finite() {
+        out.spawn_rate = defaults.spawn_rate;
+    }
+    if !out.speed_max.is_finite() {
+        out.speed_max = defaults.speed_max;
+    }
+    if !out.speed_min.is_finite() {
+        out.speed_min = defaults.speed_min;
+    }
+    if !out.spread.is_finite() {
+        out.spread = defaults.spread;
+    }
+    if !out.velocity_inheritance.is_finite() {
+        out.velocity_inheritance = defaults.velocity_inheritance;
+    }
 
     // Drop any curve that is empty or contains a non-finite sample.
     out.alpha_curve = if is_finite_curve(out.alpha_curve.as_deref()) {
@@ -303,10 +393,34 @@ pub fn validate_particle_emitter_config(
     }
 
     // Inverted min/max ranges
-    report_inverted_range(out, "lifetime_min", config.lifetime_min, "lifetime_max", config.lifetime_max);
-    report_inverted_range(out, "speed_min", config.speed_min, "speed_max", config.speed_max);
-    report_inverted_range(out, "scale_min", config.scale_min, "scale_max", config.scale_max);
-    report_inverted_range(out, "rotation_speed_min", config.rotation_speed_min, "rotation_speed_max", config.rotation_speed_max);
+    report_inverted_range(
+        out,
+        "lifetime_min",
+        config.lifetime_min,
+        "lifetime_max",
+        config.lifetime_max,
+    );
+    report_inverted_range(
+        out,
+        "speed_min",
+        config.speed_min,
+        "speed_max",
+        config.speed_max,
+    );
+    report_inverted_range(
+        out,
+        "scale_min",
+        config.scale_min,
+        "scale_max",
+        config.scale_max,
+    );
+    report_inverted_range(
+        out,
+        "rotation_speed_min",
+        config.rotation_speed_min,
+        "rotation_speed_max",
+        config.rotation_speed_max,
+    );
 
     // Unit range checks
     report_unit_range(out, "alpha_start", config.alpha_start);
@@ -316,5 +430,4 @@ pub fn validate_particle_emitter_config(
     report_curve(out, config.alpha_curve.as_deref(), "alpha_curve", 1);
     report_curve(out, config.color_curve.as_deref(), "color_curve", 3);
     report_curve(out, config.scale_curve.as_deref(), "scale_curve", 1);
-
 }

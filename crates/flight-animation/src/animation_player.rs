@@ -78,7 +78,12 @@ pub fn advance_animation_player(player: &mut AnimationPlayer, dt: f32) {
     if player.loop_mode == AnimationLoopMode::PingPong {
         loop {
             if time > duration {
-                emit_animation_player_events(player, segment_start, duration, include_segment_start);
+                emit_animation_player_events(
+                    player,
+                    segment_start,
+                    duration,
+                    include_segment_start,
+                );
                 if !consume_animation_player_loop(player) {
                     finish_animation_player_at(player, duration);
                     return;

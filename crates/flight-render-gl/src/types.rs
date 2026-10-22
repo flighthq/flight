@@ -6,14 +6,13 @@ use std::rc::{Rc, Weak};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
+use flight_camera::Camera3D;
 use flight_entity::{AnySlot, Entity, EntityRuntimeSlot, Kind, Ref, UnknownValue};
 use flight_image::{HostImageCapability, ImageResolverState};
-use flight_log::LogStateRef;
-use flight_camera::Camera3D;
 use flight_lighting::{Scene3DLightBlock, Scene3DLightsLike};
+use flight_log::LogStateRef;
 use flight_materials::{BlendMode, Material2D, Material3D, MaterialData, PbrExtension, PbrUvSet};
 use flight_meshgeometry::MeshGeometry;
-use flight_shading::Modifier;
 use flight_node::NodeRef;
 use flight_registry::KindMap;
 use flight_render::{
@@ -21,6 +20,7 @@ use flight_render::{
     RenderStateBackend, RenderStateFields, RenderStateOptions, RenderStateRuntime,
     RenderTargetAxes, RenderTargetAxisDifference, Scene3DRenderProxy, ShapeRasterizer,
 };
+use flight_shading::Modifier;
 use flight_signals::Signal;
 use flight_surface::HostCanvasCapability;
 use flight_texture::{RenderTargetColorSpace, Texture, TextureColorSpace, TextureVariant};
@@ -432,7 +432,11 @@ pub struct GlModifierSnippet {
 /// Backend-safe operations exposed to a PBR extension binder (TS `GlPbrExtensionBindContext`).
 /// Extensions name their own uniforms but never receive the private program record.
 pub trait GlPbrExtensionBindContext {
-    fn bind_transmission_scene_color(&mut self, sampler_uniform: &str, max_lod_uniform: &str) -> bool;
+    fn bind_transmission_scene_color(
+        &mut self,
+        sampler_uniform: &str,
+        max_lod_uniform: &str,
+    ) -> bool;
     fn bind_texture(
         &mut self,
         sampler_uniform: &str,

@@ -109,8 +109,7 @@ pub type WgpuEffectStateSkipGuard = Arc<dyn Fn(&WgpuRenderState, &str) + Send + 
 
 /// Observed when the effect pipeline substitutes a supported sample count for the requested one:
 /// `(state, requested_sample_count, applied_sample_count)` (TS `WgpuEffectStateSampleCountGuard`).
-pub type WgpuEffectStateSampleCountGuard =
-    Arc<dyn Fn(&WgpuRenderState, f32, f32) + Send + Sync>;
+pub type WgpuEffectStateSampleCountGuard = Arc<dyn Fn(&WgpuRenderState, f32, f32) + Send + Sync>;
 
 /// Observed when a render-texture application ends in a sentinel status (TS
 /// `WgpuEffectApplicationGuard`).

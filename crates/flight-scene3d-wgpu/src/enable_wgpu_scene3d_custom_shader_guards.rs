@@ -17,7 +17,9 @@ use crate::wgpu_scene3d_runtime::get_wgpu_scene3d_runtime;
 /// Whether the custom-shader guards are installed on `state` (TS
 /// `areWgpuScene3DCustomShaderGuardsEnabled`).
 pub fn are_wgpu_scene3d_custom_shader_guards_enabled(state: &mut WgpuRenderState) -> bool {
-    return get_wgpu_scene3d_runtime(state).custom_shader_guard.is_some();
+    return get_wgpu_scene3d_runtime(state)
+        .custom_shader_guard
+        .is_some();
 }
 
 /// Installs the warn-once custom-material ABI diagnostics on `state` (TS
@@ -43,7 +45,13 @@ fn get_sorted_uniform_names(material: &CustomShaderMaterial) -> Vec<String> {
     return names;
 }
 
-fn has_attribute_pair(source: &str, first: &str, first_value: u32, second: &str, second_value: u32) -> bool {
+fn has_attribute_pair(
+    source: &str,
+    first: &str,
+    first_value: u32,
+    second: &str,
+    second_value: u32,
+) -> bool {
     let bytes = source.as_bytes();
     let mut index = 0;
     while let Some(found) = source[index..].find('@') {
@@ -102,7 +110,10 @@ pub fn run_wgpu_custom_shader_guards(
     source: &str,
     material: &CustomShaderMaterial,
 ) {
-    if get_wgpu_scene3d_runtime(state).custom_shader_guard.is_none() {
+    if get_wgpu_scene3d_runtime(state)
+        .custom_shader_guard
+        .is_none()
+    {
         return;
     }
     let log_state = state.render_runtime().registry_guard_log.clone();

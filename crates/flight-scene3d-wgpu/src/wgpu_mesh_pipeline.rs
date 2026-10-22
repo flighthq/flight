@@ -7,9 +7,11 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock, Weak};
 
-use flight_entity::Ref;
-use flight_camera::{Camera3D, Projection, get_camera_3d_position, get_camera_3d_view_projection_matrix4};
+use flight_camera::{
+    Camera3D, Projection, get_camera_3d_position, get_camera_3d_view_projection_matrix4,
+};
 use flight_entity::Float32Array;
+use flight_entity::Ref;
 use flight_geometry::{create_matrix3, create_matrix4, create_vector3};
 use flight_lighting::{
     MAX_DIRECTIONAL_SHADOW_PCF_RADIUS, MAX_FORWARD_LIGHTS, SCENE_LIGHT_HEMISPHERE_OFFSET,
@@ -49,7 +51,8 @@ const INSTANCE_RECORD_BYTES: u64 = (INSTANCE_RECORD_FLOATS * 4) as u64;
 pub const SHADOW_DEPTH_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 
 // The scene pass's depth-stencil format, matching render-wgpu's canvas and effect-target attachment.
-pub(crate) const DEPTH_STENCIL_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth24PlusStencil8;
+pub(crate) const DEPTH_STENCIL_FORMAT: wgpu::TextureFormat =
+    wgpu::TextureFormat::Depth24PlusStencil8;
 
 // Frame uniform float offsets of the punctual light arrays: the head block (viewProjection +
 // cameraPosition + directional + ambient + view) is 48 floats, then point, spot, hemisphere, counts.
@@ -109,11 +112,12 @@ const VERTEX_ATTRIBUTES: [wgpu::VertexAttribute; 4] = [
 ];
 
 // The canonical interleaved 48-byte PBR vertex: position @0, normal @12, tangent @24, uv0 @40.
-pub(crate) const VERTEX_BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBufferLayout {
-    array_stride: 48,
-    step_mode: wgpu::VertexStepMode::Vertex,
-    attributes: &VERTEX_ATTRIBUTES,
-};
+pub(crate) const VERTEX_BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> =
+    wgpu::VertexBufferLayout {
+        array_stride: 48,
+        step_mode: wgpu::VertexStepMode::Vertex,
+        attributes: &VERTEX_ATTRIBUTES,
+    };
 
 const INSTANCE_ATTRIBUTES: [wgpu::VertexAttribute; 5] = [
     wgpu::VertexAttribute {
@@ -144,11 +148,12 @@ const INSTANCE_ATTRIBUTES: [wgpu::VertexAttribute; 5] = [
 ];
 
 // One instance record per step: the model matrix columns at locations 6..9 and the tint at 10.
-pub(crate) const INSTANCE_BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> = wgpu::VertexBufferLayout {
-    array_stride: INSTANCE_RECORD_BYTES,
-    step_mode: wgpu::VertexStepMode::Instance,
-    attributes: &INSTANCE_ATTRIBUTES,
-};
+pub(crate) const INSTANCE_BUFFER_LAYOUT: wgpu::VertexBufferLayout<'static> =
+    wgpu::VertexBufferLayout {
+        array_stride: INSTANCE_RECORD_BYTES,
+        step_mode: wgpu::VertexStepMode::Instance,
+        attributes: &INSTANCE_ATTRIBUTES,
+    };
 
 /// Creates a mesh-material pipeline (TS `createWgpuMeshPipeline`).
 pub fn create_wgpu_mesh_pipeline(
@@ -410,7 +415,11 @@ pub fn draw_wgpu_mesh_subset(
     ) {
         (true, Some(joint_matrices), Some(normal_matrices), Some(skinning)) => {
             // The palettes are passed as their shared handles, whose identity keys the arena region.
-            Some((skinning.get_mesh_draw_bind_group)(state, joint_matrices, normal_matrices))
+            Some((skinning.get_mesh_draw_bind_group)(
+                state,
+                joint_matrices,
+                normal_matrices,
+            ))
         }
         _ => None,
     };
@@ -551,9 +560,21 @@ pub fn ensure_wgpu_ibl_sample_layout(state: &mut WgpuRenderState) -> wgpu::BindG
             &native,
             &[
                 uniform_layout_entry(0, wgpu::ShaderStages::FRAGMENT, false),
-                texture_layout_entry(1, wgpu::TextureSampleType::Float { filterable: true }, wgpu::TextureViewDimension::Cube),
-                texture_layout_entry(2, wgpu::TextureSampleType::Float { filterable: true }, wgpu::TextureViewDimension::Cube),
-                texture_layout_entry(3, wgpu::TextureSampleType::Float { filterable: true }, wgpu::TextureViewDimension::D2),
+                texture_layout_entry(
+                    1,
+                    wgpu::TextureSampleType::Float { filterable: true },
+                    wgpu::TextureViewDimension::Cube,
+                ),
+                texture_layout_entry(
+                    2,
+                    wgpu::TextureSampleType::Float { filterable: true },
+                    wgpu::TextureViewDimension::Cube,
+                ),
+                texture_layout_entry(
+                    3,
+                    wgpu::TextureSampleType::Float { filterable: true },
+                    wgpu::TextureViewDimension::D2,
+                ),
                 sampler_layout_entry(4, wgpu::SamplerBindingType::Filtering),
             ],
         ));
@@ -809,12 +830,28 @@ pub fn ensure_wgpu_pbr_sample_layout(state: &mut WgpuRenderState) -> wgpu::BindG
             &native,
             &[
                 uniform_layout_entry(0, wgpu::ShaderStages::FRAGMENT, false),
-                texture_layout_entry(1, wgpu::TextureSampleType::Depth, wgpu::TextureViewDimension::D2),
+                texture_layout_entry(
+                    1,
+                    wgpu::TextureSampleType::Depth,
+                    wgpu::TextureViewDimension::D2,
+                ),
                 sampler_layout_entry(2, wgpu::SamplerBindingType::Comparison),
                 uniform_layout_entry(3, wgpu::ShaderStages::FRAGMENT, false),
-                texture_layout_entry(4, wgpu::TextureSampleType::Float { filterable: true }, wgpu::TextureViewDimension::Cube),
-                texture_layout_entry(5, wgpu::TextureSampleType::Float { filterable: true }, wgpu::TextureViewDimension::Cube),
-                texture_layout_entry(6, wgpu::TextureSampleType::Float { filterable: true }, wgpu::TextureViewDimension::D2),
+                texture_layout_entry(
+                    4,
+                    wgpu::TextureSampleType::Float { filterable: true },
+                    wgpu::TextureViewDimension::Cube,
+                ),
+                texture_layout_entry(
+                    5,
+                    wgpu::TextureSampleType::Float { filterable: true },
+                    wgpu::TextureViewDimension::Cube,
+                ),
+                texture_layout_entry(
+                    6,
+                    wgpu::TextureSampleType::Float { filterable: true },
+                    wgpu::TextureViewDimension::D2,
+                ),
                 sampler_layout_entry(7, wgpu::SamplerBindingType::Filtering),
             ],
         ));
@@ -1043,7 +1080,11 @@ pub fn ensure_wgpu_shadow_sample_layout(state: &mut WgpuRenderState) -> wgpu::Bi
             &native,
             &[
                 uniform_layout_entry(0, wgpu::ShaderStages::FRAGMENT, false),
-                texture_layout_entry(1, wgpu::TextureSampleType::Depth, wgpu::TextureViewDimension::D2),
+                texture_layout_entry(
+                    1,
+                    wgpu::TextureSampleType::Depth,
+                    wgpu::TextureViewDimension::D2,
+                ),
                 sampler_layout_entry(2, wgpu::SamplerBindingType::Comparison),
             ],
         ));
@@ -1090,7 +1131,8 @@ fn ensure_wgpu_shadow_sample_resources(state: &mut WgpuRenderState, native: &Wgp
                 view_formats: &[],
             },
         );
-        scene.shadow_dummy_view = Some(texture.create_view(&wgpu::TextureViewDescriptor::default()));
+        scene.shadow_dummy_view =
+            Some(texture.create_view(&wgpu::TextureViewDescriptor::default()));
         scene.shadow_dummy_texture = Some(texture);
     }
 }
@@ -1098,7 +1140,10 @@ fn ensure_wgpu_shadow_sample_resources(state: &mut WgpuRenderState, native: &Wgp
 /// Selects the one sampler a material bind group uses from its primary map's sampler descriptor
 /// (wrap, filters, a mip filter when the map requests a mip chain, anisotropy); a missing primary
 /// map falls back to the shared linear clamp sampler (TS `getWgpuMaterialSampler`).
-pub fn get_wgpu_material_sampler(state: &WgpuRenderState, texture: Option<&Texture>) -> wgpu::Sampler {
+pub fn get_wgpu_material_sampler(
+    state: &WgpuRenderState,
+    texture: Option<&Texture>,
+) -> wgpu::Sampler {
     let Some(texture) = texture else {
         return get_wgpu_render_state_device_resources(state).linear_sampler;
     };
@@ -1139,10 +1184,7 @@ pub fn get_wgpu_material_sampler(state: &WgpuRenderState, texture: Option<&Textu
 
 /// The shared vertex prelude, extended with the skinning adapter's HAS_SKIN variant for a skinned
 /// pipeline (TS `getWgpuMeshPreludeWgsl`).
-pub fn get_wgpu_mesh_prelude_wgsl(
-    skinned: bool,
-    skinning: Option<&WgpuSkinningAdapter>,
-) -> String {
+pub fn get_wgpu_mesh_prelude_wgsl(skinned: bool, skinning: Option<&WgpuSkinningAdapter>) -> String {
     return match (skinned, skinning) {
         (true, Some(skinning)) => (skinning.extend_mesh_prelude)(WGPU_MESH_PRELUDE_WGSL),
         _ => WGPU_MESH_PRELUDE_WGSL.to_string(),
@@ -1239,7 +1281,10 @@ pub fn resolve_wgpu_material_texture_view(
     return ensure_wgpu_placeholder_texture_view(state);
 }
 
-fn sampler_layout_entry(binding: u32, kind: wgpu::SamplerBindingType) -> wgpu::BindGroupLayoutEntry {
+fn sampler_layout_entry(
+    binding: u32,
+    kind: wgpu::SamplerBindingType,
+) -> wgpu::BindGroupLayoutEntry {
     return wgpu::BindGroupLayoutEntry {
         binding,
         visibility: wgpu::ShaderStages::FRAGMENT,
@@ -1266,7 +1311,8 @@ pub fn splice_wgpu_color_adjustment_prelude(
     } else {
         feature.fragment_shader_chunk
     };
-    let anchor = "  params : vec4f,          // x = resolved object alpha, y = alpha-is-coverage flag";
+    let anchor =
+        "  params : vec4f,          // x = resolved object alpha, y = alpha-is-coverage flag";
     return format!(
         "{}{}",
         chunk,
@@ -1472,7 +1518,11 @@ pub fn write_wgpu_frame_uniform(
     let cached = scene
         .frame_bindings
         .get(&key)
-        .filter(|(block, _)| block.upgrade().is_some_and(|block| Arc::ptr_eq(&block, lights)))
+        .filter(|(block, _)| {
+            block
+                .upgrade()
+                .is_some_and(|block| Arc::ptr_eq(&block, lights))
+        })
         .map(|(_, binding)| binding.clone());
     let binding = match cached {
         Some(binding) => binding,
@@ -1569,7 +1619,12 @@ pub fn write_wgpu_frame_uniform(
 // Writes the IBL sample uniform: x = enabled, y = intensity, z = max mip (roughness 1.0).
 fn write_wgpu_ibl_sample_uniform(scene: &mut WgpuScene3DRuntime, native: &WgpuNativeDevice) {
     let values = match &scene.ibl {
-        Some(ibl) => [1.0, ibl.intensity, ibl.prefiltered_mip_count as f32 - 1.0, 0.0],
+        Some(ibl) => [
+            1.0,
+            ibl.intensity,
+            ibl.prefiltered_mip_count as f32 - 1.0,
+            0.0,
+        ],
         None => [0.0, 1.0, 0.0, 0.0],
     };
     write_wgpu_buffer(

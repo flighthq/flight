@@ -2,11 +2,11 @@ use std::sync::{Arc, LazyLock, Mutex, RwLock, Weak};
 
 use flight_entity::Ref;
 use flight_importdiagnostics::{
-    report_import_diagnostic, ImportDiagnostic, ImportDiagnosticDetailValue,
-    ImportDiagnosticSeverity,
+    ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
+    report_import_diagnostic,
 };
-use flight_scene2d::{create_display_object, Node2D, Node2DRef};
-use flight_shape::{clear_shape_commands, create_shape, Shape};
+use flight_scene2d::{Node2D, Node2DRef, create_display_object};
+use flight_shape::{Shape, clear_shape_commands, create_shape};
 
 use crate::rive_import_registry::{
     get_rive_core_object_handler, register_rive_core_object_handler,

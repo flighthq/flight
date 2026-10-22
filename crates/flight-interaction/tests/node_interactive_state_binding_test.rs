@@ -6,8 +6,8 @@ use flight_interaction::node_interactive_state_binding::*;
 use flight_interaction::types::NodeInteractiveStateFlags;
 use flight_registry::KindMap;
 use flight_scene_document::{
-    FlightDocumentInteractiveState, FlightDocumentInteractiveStates,
-    FlightDocumentInteractiveStateTransitionDescriptor, FlightDocumentInteractiveStateTransitionSchema,
+    FlightDocumentInteractiveState, FlightDocumentInteractiveStateTransitionDescriptor,
+    FlightDocumentInteractiveStateTransitionSchema, FlightDocumentInteractiveStates,
     FlightDocumentSchemaRegistry, NodeInteractiveStateTransition,
     NodeInteractiveStateTransitionApply,
 };
@@ -61,8 +61,12 @@ fn flags() -> NodeInteractiveStateFlags {
     };
 }
 
-fn capturing_transition_schemas() -> (FlightDocumentSchemaRegistry, Arc<Mutex<Vec<NodeInteractiveStateTransitionApply>>>) {
-    let captured: Arc<Mutex<Vec<NodeInteractiveStateTransitionApply>>> = Arc::new(Mutex::new(Vec::new()));
+fn capturing_transition_schemas() -> (
+    FlightDocumentSchemaRegistry,
+    Arc<Mutex<Vec<NodeInteractiveStateTransitionApply>>>,
+) {
+    let captured: Arc<Mutex<Vec<NodeInteractiveStateTransitionApply>>> =
+        Arc::new(Mutex::new(Vec::new()));
     let captured_clone = captured.clone();
     let mut schemas = empty_schemas();
     schemas.interactive_state_transition_schemas.entries.insert(
@@ -80,7 +84,10 @@ fn capturing_transition_schemas() -> (FlightDocumentSchemaRegistry, Arc<Mutex<Ve
             }),
         },
     );
-    schemas.interactive_state_transition_schemas.key_order.push("test.Transition".to_string());
+    schemas
+        .interactive_state_transition_schemas
+        .key_order
+        .push("test.Transition".to_string());
     return (schemas, captured);
 }
 

@@ -1,9 +1,9 @@
-use flight_entity::{EntityRuntimeSlot, Float32Array, allocate_entity};
 use crate::Matrix;
 use crate::Matrix3;
 use crate::Quaternion;
 use crate::Vector3;
 use crate::Vector4;
+use flight_entity::{EntityRuntimeSlot, Float32Array, allocate_entity};
 
 /// A 4x4 homogeneous matrix.
 ///
@@ -22,10 +22,7 @@ pub struct Matrix4 {
 pub fn create_matrix4() -> Matrix4 {
     let mut out: Matrix4 = allocate_entity();
     out.m = [
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0,
+        1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
     ];
     return out;
 }
@@ -39,10 +36,22 @@ pub fn create_matrix4_from_2d(a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32) 
 
 /// Creates a matrix with all 16 values specified in column-major order.
 pub fn create_matrix4_from_values(
-    m00: f32, m01: f32, m02: f32, m03: f32,
-    m10: f32, m11: f32, m12: f32, m13: f32,
-    m20: f32, m21: f32, m22: f32, m23: f32,
-    m30: f32, m31: f32, m32: f32, m33: f32,
+    m00: f32,
+    m01: f32,
+    m02: f32,
+    m03: f32,
+    m10: f32,
+    m11: f32,
+    m12: f32,
+    m13: f32,
+    m20: f32,
+    m21: f32,
+    m22: f32,
+    m23: f32,
+    m30: f32,
+    m31: f32,
+    m32: f32,
+    m33: f32,
 ) -> Matrix4 {
     let mut out = create_matrix4();
     set_matrix4(
@@ -53,7 +62,12 @@ pub fn create_matrix4_from_values(
 
 /// Initializes this matrix with values for an orthographic projection.
 pub fn create_orthographic_matrix4(
-    left: f32, right: f32, bottom: f32, top: f32, z_near: f32, z_far: f32,
+    left: f32,
+    right: f32,
+    bottom: f32,
+    top: f32,
+    z_near: f32,
+    z_far: f32,
 ) -> Matrix4 {
     let mut out = create_matrix4();
     set_orthographic_matrix4(&mut out, left, right, bottom, top, z_near, z_far);
@@ -62,7 +76,10 @@ pub fn create_orthographic_matrix4(
 
 /// Creates a perspective projection matrix. `tan_half_fov_y` is tan(fovY / 2), not the angle itself.
 pub fn create_perspective_matrix4(
-    tan_half_fov_y: f32, aspect: f32, z_near: f32, z_far: f32,
+    tan_half_fov_y: f32,
+    aspect: f32,
+    z_near: f32,
+    z_far: f32,
 ) -> Matrix4 {
     let mut out = create_matrix4();
     set_perspective_matrix4(&mut out, tan_half_fov_y, aspect, z_near, z_far);
@@ -138,13 +155,7 @@ pub fn append_scale_matrix4(
 /// Applies a world-space translation to source matrix.
 ///
 /// Translation is applied after all transformations of source are completed.
-pub fn append_translation_matrix4(
-    out: &mut Matrix4,
-    source: &Matrix4,
-    x: f32,
-    y: f32,
-    z: f32,
-) {
+pub fn append_translation_matrix4(out: &mut Matrix4, source: &Matrix4, x: f32, y: f32, z: f32) {
     let s = source.m;
     out.m = s;
     out.m[12] = s[12] + x;
@@ -366,7 +377,8 @@ pub fn decompose_matrix4(
     let sy = (m10 * m10 + m11 * m11 + m12 * m12).sqrt();
     let sz = (m20 * m20 + m21 * m21 + m22 * m22).sqrt();
 
-    let det = m00 * (m11 * m22 - m12 * m21) - m10 * (m01 * m22 - m02 * m21) + m20 * (m01 * m12 - m02 * m11);
+    let det = m00 * (m11 * m22 - m12 * m21) - m10 * (m01 * m22 - m02 * m21)
+        + m20 * (m01 * m12 - m02 * m11);
     if det < 0.0 {
         sx = -sx;
     }
@@ -522,25 +534,57 @@ pub fn inverse_matrix4(out: &mut Matrix4, source: &Matrix4) -> bool {
     let m34 = s[11];
     let m44 = s[15];
 
-    out.m[0] = d * (m22 * (m33 * m44 - m43 * m34) - m32 * (m23 * m44 - m43 * m24) + m42 * (m23 * m34 - m33 * m24));
-    out.m[1] = -d * (m12 * (m33 * m44 - m43 * m34) - m32 * (m13 * m44 - m43 * m14) + m42 * (m13 * m34 - m33 * m14));
-    out.m[2] = d * (m12 * (m23 * m44 - m43 * m24) - m22 * (m13 * m44 - m43 * m14) + m42 * (m13 * m24 - m23 * m14));
-    out.m[3] = -d * (m12 * (m23 * m34 - m33 * m24) - m22 * (m13 * m34 - m33 * m14) + m32 * (m13 * m24 - m23 * m14));
+    out.m[0] = d
+        * (m22 * (m33 * m44 - m43 * m34) - m32 * (m23 * m44 - m43 * m24)
+            + m42 * (m23 * m34 - m33 * m24));
+    out.m[1] = -d
+        * (m12 * (m33 * m44 - m43 * m34) - m32 * (m13 * m44 - m43 * m14)
+            + m42 * (m13 * m34 - m33 * m14));
+    out.m[2] = d
+        * (m12 * (m23 * m44 - m43 * m24) - m22 * (m13 * m44 - m43 * m14)
+            + m42 * (m13 * m24 - m23 * m14));
+    out.m[3] = -d
+        * (m12 * (m23 * m34 - m33 * m24) - m22 * (m13 * m34 - m33 * m14)
+            + m32 * (m13 * m24 - m23 * m14));
 
-    out.m[4] = -d * (m21 * (m33 * m44 - m43 * m34) - m31 * (m23 * m44 - m43 * m24) + m41 * (m23 * m34 - m33 * m24));
-    out.m[5] = d * (m11 * (m33 * m44 - m43 * m34) - m31 * (m13 * m44 - m43 * m14) + m41 * (m13 * m34 - m33 * m14));
-    out.m[6] = -d * (m11 * (m23 * m44 - m43 * m24) - m21 * (m13 * m44 - m43 * m14) + m41 * (m13 * m24 - m23 * m14));
-    out.m[7] = d * (m11 * (m23 * m34 - m33 * m24) - m21 * (m13 * m34 - m33 * m14) + m31 * (m13 * m24 - m23 * m14));
+    out.m[4] = -d
+        * (m21 * (m33 * m44 - m43 * m34) - m31 * (m23 * m44 - m43 * m24)
+            + m41 * (m23 * m34 - m33 * m24));
+    out.m[5] = d
+        * (m11 * (m33 * m44 - m43 * m34) - m31 * (m13 * m44 - m43 * m14)
+            + m41 * (m13 * m34 - m33 * m14));
+    out.m[6] = -d
+        * (m11 * (m23 * m44 - m43 * m24) - m21 * (m13 * m44 - m43 * m14)
+            + m41 * (m13 * m24 - m23 * m14));
+    out.m[7] = d
+        * (m11 * (m23 * m34 - m33 * m24) - m21 * (m13 * m34 - m33 * m14)
+            + m31 * (m13 * m24 - m23 * m14));
 
-    out.m[8] = d * (m21 * (m32 * m44 - m42 * m34) - m31 * (m22 * m44 - m42 * m24) + m41 * (m22 * m34 - m32 * m24));
-    out.m[9] = -d * (m11 * (m32 * m44 - m42 * m34) - m31 * (m12 * m44 - m42 * m14) + m41 * (m12 * m34 - m32 * m14));
-    out.m[10] = d * (m11 * (m22 * m44 - m42 * m24) - m21 * (m12 * m44 - m42 * m14) + m41 * (m12 * m24 - m22 * m14));
-    out.m[11] = -d * (m11 * (m22 * m34 - m32 * m24) - m21 * (m12 * m34 - m32 * m14) + m31 * (m12 * m24 - m22 * m14));
+    out.m[8] = d
+        * (m21 * (m32 * m44 - m42 * m34) - m31 * (m22 * m44 - m42 * m24)
+            + m41 * (m22 * m34 - m32 * m24));
+    out.m[9] = -d
+        * (m11 * (m32 * m44 - m42 * m34) - m31 * (m12 * m44 - m42 * m14)
+            + m41 * (m12 * m34 - m32 * m14));
+    out.m[10] = d
+        * (m11 * (m22 * m44 - m42 * m24) - m21 * (m12 * m44 - m42 * m14)
+            + m41 * (m12 * m24 - m22 * m14));
+    out.m[11] = -d
+        * (m11 * (m22 * m34 - m32 * m24) - m21 * (m12 * m34 - m32 * m14)
+            + m31 * (m12 * m24 - m22 * m14));
 
-    out.m[12] = -d * (m21 * (m32 * m43 - m42 * m33) - m31 * (m22 * m43 - m42 * m23) + m41 * (m22 * m33 - m32 * m23));
-    out.m[13] = d * (m11 * (m32 * m43 - m42 * m33) - m31 * (m12 * m43 - m42 * m13) + m41 * (m12 * m33 - m32 * m13));
-    out.m[14] = -d * (m11 * (m22 * m43 - m42 * m23) - m21 * (m12 * m43 - m42 * m13) + m41 * (m12 * m23 - m22 * m13));
-    out.m[15] = d * (m11 * (m22 * m33 - m32 * m23) - m21 * (m12 * m33 - m32 * m13) + m31 * (m12 * m23 - m22 * m13));
+    out.m[12] = -d
+        * (m21 * (m32 * m43 - m42 * m33) - m31 * (m22 * m43 - m42 * m23)
+            + m41 * (m22 * m33 - m32 * m23));
+    out.m[13] = d
+        * (m11 * (m32 * m43 - m42 * m33) - m31 * (m12 * m43 - m42 * m13)
+            + m41 * (m12 * m33 - m32 * m13));
+    out.m[14] = -d
+        * (m11 * (m22 * m43 - m42 * m23) - m21 * (m12 * m43 - m42 * m13)
+            + m41 * (m12 * m23 - m22 * m13));
+    out.m[15] = d
+        * (m11 * (m22 * m33 - m32 * m23) - m21 * (m12 * m33 - m32 * m13)
+            + m31 * (m12 * m23 - m22 * m13));
 
     return invertable;
 }
@@ -701,13 +745,7 @@ pub fn rotate_matrix4(out: &mut Matrix4, source: &Matrix4, axis: &Vector3, radia
 /// out = source * S
 ///
 /// Translation is preserved.
-pub fn scale_matrix4(
-    out: &mut Matrix4,
-    source: &Matrix4,
-    sx: f32,
-    sy: f32,
-    sz: f32,
-) {
+pub fn scale_matrix4(out: &mut Matrix4, source: &Matrix4, sx: f32, sy: f32, sz: f32) {
     let a = source.m;
     out.m[0] = a[0] * sx;
     out.m[1] = a[1] * sx;
@@ -732,10 +770,22 @@ pub fn scale_matrix4(
 
 pub fn set_matrix4(
     out: &mut Matrix4,
-    m00: f32, m01: f32, m02: f32, m03: f32,
-    m10: f32, m11: f32, m12: f32, m13: f32,
-    m20: f32, m21: f32, m22: f32, m23: f32,
-    m30: f32, m31: f32, m32: f32, m33: f32,
+    m00: f32,
+    m01: f32,
+    m02: f32,
+    m03: f32,
+    m10: f32,
+    m11: f32,
+    m12: f32,
+    m13: f32,
+    m20: f32,
+    m21: f32,
+    m22: f32,
+    m23: f32,
+    m30: f32,
+    m31: f32,
+    m32: f32,
+    m33: f32,
 ) {
     out.m[0] = m00;
     out.m[1] = m01;
@@ -760,15 +810,7 @@ pub fn set_matrix4_element(out: &mut Matrix4, row: usize, column: usize, value: 
 }
 
 /// Resets the current matrix using two-dimensional transform values.
-pub fn set_matrix4_from_2d(
-    out: &mut Matrix4,
-    a: f32,
-    b: f32,
-    c: f32,
-    d: f32,
-    tx: f32,
-    ty: f32,
-) {
+pub fn set_matrix4_from_2d(out: &mut Matrix4, a: f32, b: f32, c: f32, d: f32, tx: f32, ty: f32) {
     out.m[0] = a;
     out.m[1] = b;
     out.m[2] = 0.0;
@@ -798,7 +840,9 @@ pub fn set_matrix4_from_float32_array(out: &mut Matrix4, offset: usize, source: 
 }
 
 pub fn set_matrix4_from_matrix(out: &mut Matrix4, source: &Matrix) {
-    set_matrix4_from_2d(out, source.a, source.b, source.c, source.d, source.tx, source.ty);
+    set_matrix4_from_2d(
+        out, source.a, source.b, source.c, source.d, source.tx, source.ty,
+    );
 }
 
 pub fn set_matrix4_from_matrix3(out: &mut Matrix4, source: &Matrix3) {
@@ -852,17 +896,14 @@ pub fn set_matrix4_from_quaternion(out: &mut Matrix4, source: &Quaternion) {
 
 /// Resets the current matrix using default identity values.
 pub fn set_matrix4_identity(out: &mut Matrix4) {
-    set_matrix4(out, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+    set_matrix4(
+        out, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+    );
 }
 
 /// Builds a right-handed look-at view matrix that positions a camera at `eye` looking toward
 /// `target`, with `up` defining the camera roll.
-pub fn set_matrix4_look_at(
-    out: &mut Matrix4,
-    eye: &Vector3,
-    target: &Vector3,
-    up: &Vector3,
-) {
+pub fn set_matrix4_look_at(out: &mut Matrix4, eye: &Vector3, target: &Vector3, up: &Vector3) {
     let eye_x = eye.x;
     let eye_y = eye.y;
     let eye_z = eye.z;
@@ -994,12 +1035,20 @@ pub fn set_perspective_matrix4(
 
     out.m[8] = (right + left) / (right - left);
     out.m[9] = (top + bottom) / (top - bottom);
-    out.m[10] = if z_far == f32::INFINITY { -1.0 } else { -(z_far + z_near) / (z_far - z_near) };
+    out.m[10] = if z_far == f32::INFINITY {
+        -1.0
+    } else {
+        -(z_far + z_near) / (z_far - z_near)
+    };
     out.m[11] = -1.0;
 
     out.m[12] = 0.0;
     out.m[13] = 0.0;
-    out.m[14] = if z_far == f32::INFINITY { -2.0 * z_near } else { (-2.0 * z_far * z_near) / (z_far - z_near) };
+    out.m[14] = if z_far == f32::INFINITY {
+        -2.0 * z_near
+    } else {
+        (-2.0 * z_far * z_near) / (z_far - z_near)
+    };
     out.m[15] = 0.0;
 }
 
@@ -1007,13 +1056,7 @@ pub fn set_perspective_matrix4(
 /// matrix's rotation and scale.
 ///
 /// out = source * T
-pub fn translate_matrix4(
-    out: &mut Matrix4,
-    source: &Matrix4,
-    tx: f32,
-    ty: f32,
-    tz: f32,
-) {
+pub fn translate_matrix4(out: &mut Matrix4, source: &Matrix4, tx: f32, ty: f32, tz: f32) {
     let a = source.m;
     out.m = a;
     out.m[12] = a[0] * tx + a[4] * ty + a[8] * tz + a[12];
@@ -1054,10 +1097,7 @@ impl Default for Matrix4 {
         return Matrix4 {
             runtime: EntityRuntimeSlot::default(),
             m: [
-                1.0, 0.0, 0.0, 0.0,
-                0.0, 1.0, 0.0, 0.0,
-                0.0, 0.0, 1.0, 0.0,
-                0.0, 0.0, 0.0, 1.0,
+                1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
             ],
         };
     }

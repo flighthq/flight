@@ -111,10 +111,7 @@ mod step_particle_emitter_2d {
             None,
             Some(&callbacks),
         );
-        assert_eq!(
-            spawn_count.load(std::sync::atomic::Ordering::Relaxed),
-            3
-        );
+        assert_eq!(spawn_count.load(std::sync::atomic::Ordering::Relaxed), 3);
     }
 
     #[test]

@@ -4,12 +4,12 @@
 
 use std::sync::LazyLock;
 
-use flight_entity::Ref;
 use flight_camera::Camera3D;
 use flight_color::{allocate_linear_color, unpack_color_to_linear};
+use flight_entity::Ref;
 use flight_entity::get_entity_id;
 use flight_lighting::Scene3DLightBlock;
-use flight_materials::{BlinnPhongMaterial, Material, BLINN_PHONG_MATERIAL_KIND};
+use flight_materials::{BLINN_PHONG_MATERIAL_KIND, BlinnPhongMaterial, Material};
 use flight_meshgeometry::MeshGeometry;
 use flight_render::Scene3DRenderProxy;
 use flight_render_wgpu::{
@@ -29,13 +29,15 @@ use crate::wgpu_mesh_pipeline::{
 // The identity the material-less fallback bind caches its binding under (TS: a module-level `{}`
 // object). A real entity, so its key is a numeric entity id (D12/D15): unique to this renderer and
 // never reused, so it cannot alias a material's binding or another renderer's fallback.
-static FALLBACK_MATERIAL: LazyLock<BlinnPhongMaterial> = LazyLock::new(flight_materials::contract::create_blinn_phong_material);
+static FALLBACK_MATERIAL: LazyLock<BlinnPhongMaterial> =
+    LazyLock::new(flight_materials::contract::create_blinn_phong_material);
 
 /// The built-in BlinnPhong renderer for `BLINN_PHONG_MATERIAL_KIND` (TS `wgpuBlinnPhongMeshMaterialRenderer`).
-pub static WGPU_BLINN_PHONG_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer = WgpuMeshMaterialRenderer {
-    bind: bind_wgpu_blinn_phong_material,
-    draw: draw_wgpu_blinn_phong_material,
-};
+pub static WGPU_BLINN_PHONG_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer =
+    WgpuMeshMaterialRenderer {
+        bind: bind_wgpu_blinn_phong_material,
+        draw: draw_wgpu_blinn_phong_material,
+    };
 
 // Selects the classic `blinnphong` variant, writes the Frame uniform, binds the pipeline and Frame
 // group, then binds the material's surface at group(2).
@@ -48,11 +50,13 @@ fn bind_wgpu_blinn_phong_material(
     if get_wgpu_render_state_runtime(state).render_pass.is_none() {
         return;
     }
-    let blinn_phong = material.and_then(|material| material.as_any().downcast_ref::<BlinnPhongMaterial>());
+    let blinn_phong =
+        material.and_then(|material| material.as_any().downcast_ref::<BlinnPhongMaterial>());
     let format = get_wgpu_render_state_runtime(state)
         .current_color_format
         .unwrap_or(state.format);
-    let pipeline = ensure_wgpu_classic_pipeline(state, &define_key_for_material(blinn_phong), format);
+    let pipeline =
+        ensure_wgpu_classic_pipeline(state, &define_key_for_material(blinn_phong), format);
     write_wgpu_frame_uniform(state, camera, lights);
 
     let white = white_linear_color();
@@ -104,15 +108,22 @@ fn bind_wgpu_blinn_phong_material(
 // only mask/blend sample the alpha map.
 fn define_key_for_material(material: Option<&BlinnPhongMaterial>) -> WgpuClassicDefineKey {
     return WgpuClassicDefineKey {
-        alpha_mask_enabled: material
-            .is_some_and(|material| material.alpha_mode == flight_materials::MaterialAlphaMode::Mask),
+        alpha_mask_enabled: material.is_some_and(|material| {
+            material.alpha_mode == flight_materials::MaterialAlphaMode::Mask
+        }),
         double_sided: material.is_some_and(|material| material.double_sided),
         has_color_adjustment: None,
         has_color_matrix: None,
-        has_alpha_map: Some(material.is_some_and(|material| material.alpha_mode != flight_materials::MaterialAlphaMode::Opaque && is_texture_slot_ready(&material.alpha_map))),
-        has_diffuse_map: material.is_some_and(|material| is_texture_slot_ready(&material.diffuse_map)),
-        has_normal_map: material.is_some_and(|material| is_texture_slot_ready(&material.normal_map)),
-        has_specular_map: material.is_some_and(|material| is_texture_slot_ready(&material.specular_map)),
+        has_alpha_map: Some(material.is_some_and(|material| {
+            material.alpha_mode != flight_materials::MaterialAlphaMode::Opaque
+                && is_texture_slot_ready(&material.alpha_map)
+        })),
+        has_diffuse_map: material
+            .is_some_and(|material| is_texture_slot_ready(&material.diffuse_map)),
+        has_normal_map: material
+            .is_some_and(|material| is_texture_slot_ready(&material.normal_map)),
+        has_specular_map: material
+            .is_some_and(|material| is_texture_slot_ready(&material.specular_map)),
         lighting_model: WgpuClassicLightingModel::BlinnPhong,
     };
 }

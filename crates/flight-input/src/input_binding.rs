@@ -40,7 +40,7 @@ mod sugar_tests {
             );
         };
         return HostInputIngressCapability {
-        provider: Arc::new(()),
+            provider: Arc::new(()),
             attach_gamepad: attach("gamepad"),
             attach_keyboard: attach("keyboard"),
             attach_pointer: attach("pointer"),

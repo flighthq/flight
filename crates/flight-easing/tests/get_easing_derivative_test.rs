@@ -1,5 +1,5 @@
-use flight_easing::*;
 use flight_easing::contract::DEFAULT_EASING_DERIVATIVE_EPSILON;
+use flight_easing::*;
 
 fn assert_approx(actual: f32, expected: f32) {
     let diff = (actual - expected).abs();
@@ -15,33 +15,59 @@ mod get_easing_derivative {
     #[test]
     fn returns_approximately_1_everywhere_for_ease_linear() {
         for t in [0.0, 0.25, 0.5, 0.75, 1.0] {
-            assert_approx(get_easing_derivative(&ease_linear, t, Some(DEFAULT_EASING_DERIVATIVE_EPSILON)), 1.0);
+            assert_approx(
+                get_easing_derivative(&ease_linear, t, Some(DEFAULT_EASING_DERIVATIVE_EPSILON)),
+                1.0,
+            );
         }
     }
 
     #[test]
     fn returns_0_at_t_0_for_ease_in_cubic() {
-        assert_approx(get_easing_derivative(&ease_in_cubic, 0.0, Some(DEFAULT_EASING_DERIVATIVE_EPSILON)), 0.0);
+        assert_approx(
+            get_easing_derivative(&ease_in_cubic, 0.0, Some(DEFAULT_EASING_DERIVATIVE_EPSILON)),
+            0.0,
+        );
     }
 
     #[test]
     fn returns_3_at_t_1_for_ease_in_cubic() {
-        assert_approx(get_easing_derivative(&ease_in_cubic, 1.0, Some(DEFAULT_EASING_DERIVATIVE_EPSILON)), 3.0);
+        assert_approx(
+            get_easing_derivative(&ease_in_cubic, 1.0, Some(DEFAULT_EASING_DERIVATIVE_EPSILON)),
+            3.0,
+        );
     }
 
     #[test]
     fn returns_3_at_t_0_for_ease_out_cubic() {
-        assert_approx(get_easing_derivative(&ease_out_cubic, 0.0, Some(DEFAULT_EASING_DERIVATIVE_EPSILON)), 3.0);
+        assert_approx(
+            get_easing_derivative(
+                &ease_out_cubic,
+                0.0,
+                Some(DEFAULT_EASING_DERIVATIVE_EPSILON),
+            ),
+            3.0,
+        );
     }
 
     #[test]
     fn returns_0_at_t_1_for_ease_out_cubic() {
-        assert_approx(get_easing_derivative(&ease_out_cubic, 1.0, Some(DEFAULT_EASING_DERIVATIVE_EPSILON)), 0.0);
+        assert_approx(
+            get_easing_derivative(
+                &ease_out_cubic,
+                1.0,
+                Some(DEFAULT_EASING_DERIVATIVE_EPSILON),
+            ),
+            0.0,
+        );
     }
 
     #[test]
     fn uses_centered_difference_at_interior_points() {
-        assert_approx(get_easing_derivative(&ease_in_cubic, 0.5, Some(DEFAULT_EASING_DERIVATIVE_EPSILON)), 0.75);
+        assert_approx(
+            get_easing_derivative(&ease_in_cubic, 0.5, Some(DEFAULT_EASING_DERIVATIVE_EPSILON)),
+            0.75,
+        );
     }
 
     #[test]

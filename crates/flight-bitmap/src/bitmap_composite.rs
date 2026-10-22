@@ -1,6 +1,6 @@
-use flight_entity::Uint8Array;
 use crate::bitmap::invalidate_bitmap;
 use crate::types::*;
+use flight_entity::Uint8Array;
 
 #[cfg(test)]
 mod sugar_tests {
@@ -69,17 +69,33 @@ fn blend_channel(mode: BitmapCompositeMode, cb: f32, cs: f32) -> f32 {
         BitmapCompositeMode::Difference => (cb - cs).abs(),
         BitmapCompositeMode::Exclusion => cb + cs - (2.0 * cb * cs) / 255.0,
         BitmapCompositeMode::Overlay => {
-            if cb < 128.0 { (2.0 * cb * cs) / 255.0 } else { 255.0 - (2.0 * (255.0 - cb) * (255.0 - cs)) / 255.0 }
+            if cb < 128.0 {
+                (2.0 * cb * cs) / 255.0
+            } else {
+                255.0 - (2.0 * (255.0 - cb) * (255.0 - cs)) / 255.0
+            }
         }
         BitmapCompositeMode::HardLight => {
-            if cs < 128.0 { (2.0 * cb * cs) / 255.0 } else { 255.0 - (2.0 * (255.0 - cb) * (255.0 - cs)) / 255.0 }
+            if cs < 128.0 {
+                (2.0 * cb * cs) / 255.0
+            } else {
+                255.0 - (2.0 * (255.0 - cb) * (255.0 - cs)) / 255.0
+            }
         }
         BitmapCompositeMode::SoftLight => soft_light_channel(cb, cs),
         BitmapCompositeMode::ColorDodge => {
-            if cs >= 255.0 { 255.0 } else { ((cb * 255.0) / (255.0 - cs)).min(255.0) }
+            if cs >= 255.0 {
+                255.0
+            } else {
+                ((cb * 255.0) / (255.0 - cs)).min(255.0)
+            }
         }
         BitmapCompositeMode::ColorBurn => {
-            if cs <= 0.0 { 0.0 } else { 255.0 - (((255.0 - cb) * 255.0) / cs).min(255.0) }
+            if cs <= 0.0 {
+                0.0
+            } else {
+                255.0 - (((255.0 - cb) * 255.0) / cs).min(255.0)
+            }
         }
         BitmapCompositeMode::Invert => 255.0 - cb,
         _ => cs,
@@ -95,13 +111,25 @@ pub fn composite_bitmap_pixels(
 ) {
     for py in 0..dest.height {
         let y = dest.y + py;
-        if y < 0 || y >= dest.bitmap.height as i32 { continue; }
+        if y < 0 || y >= dest.bitmap.height as i32 {
+            continue;
+        }
         for px in 0..dest.width {
             let x = dest.x + px;
-            if x < 0 || x >= dest.bitmap.width as i32 { continue; }
+            if x < 0 || x >= dest.bitmap.width as i32 {
+                continue;
+            }
             let si = (py as usize * dest.width as usize + px as usize) * 4;
             let di = (y as usize * dest.bitmap.width as usize + x as usize) * 4;
-            composite_pixel_into(&mut dest.bitmap.data, di, pixels[si], pixels[si + 1], pixels[si + 2], pixels[si + 3], mode);
+            composite_pixel_into(
+                &mut dest.bitmap.data,
+                di,
+                pixels[si],
+                pixels[si + 1],
+                pixels[si + 2],
+                pixels[si + 3],
+                mode,
+            );
         }
     }
     invalidate_bitmap(&mut dest.bitmap);
@@ -119,20 +147,48 @@ pub fn composite_bitmap_region(
     for py in 0..sh {
         let source_y = source.y + py;
         let y = dest.y + py;
-        if source_y < 0 || source_y >= source.bitmap.height as i32 || y < 0 || y >= dest.bitmap.height as i32 { continue; }
+        if source_y < 0
+            || source_y >= source.bitmap.height as i32
+            || y < 0
+            || y >= dest.bitmap.height as i32
+        {
+            continue;
+        }
         for px in 0..sw {
             let source_x = source.x + px;
             let x = dest.x + px;
-            if source_x < 0 || source_x >= source.bitmap.width as i32 || x < 0 || x >= dest.bitmap.width as i32 { continue; }
+            if source_x < 0
+                || source_x >= source.bitmap.width as i32
+                || x < 0
+                || x >= dest.bitmap.width as i32
+            {
+                continue;
+            }
             let si = (source_y as usize * source.bitmap.width as usize + source_x as usize) * 4;
             let di = (y as usize * dest.bitmap.width as usize + x as usize) * 4;
-            composite_pixel_into(&mut dest.bitmap.data, di, sd[si], sd[si + 1], sd[si + 2], sd[si + 3], mode);
+            composite_pixel_into(
+                &mut dest.bitmap.data,
+                di,
+                sd[si],
+                sd[si + 1],
+                sd[si + 2],
+                sd[si + 3],
+                mode,
+            );
         }
     }
     invalidate_bitmap(&mut dest.bitmap);
 }
 
-fn composite_pixel_into(dest: &mut [u8], di: usize, r: u8, g: u8, b: u8, a: u8, mode: BitmapCompositeMode) {
+fn composite_pixel_into(
+    dest: &mut [u8],
+    di: usize,
+    r: u8,
+    g: u8,
+    b: u8,
+    a: u8,
+    mode: BitmapCompositeMode,
+) {
     let src_a = a as f32 / 255.0;
     let dst_a = dest[di + 3] as f32 / 255.0;
     let (fa, fb) = porter_duff_factors(mode, src_a, dst_a);
@@ -161,10 +217,14 @@ fn composite_pixel_into(dest: &mut [u8], di: usize, r: u8, g: u8, b: u8, a: u8, 
 pub fn extract_bitmap_pixels(out: &mut [u8], source: &BitmapRegion) {
     for py in 0..source.height {
         let source_y = source.y + py;
-        if source_y < 0 || source_y >= source.bitmap.height as i32 { continue; }
+        if source_y < 0 || source_y >= source.bitmap.height as i32 {
+            continue;
+        }
         for px in 0..source.width {
             let source_x = source.x + px;
-            if source_x < 0 || source_x >= source.bitmap.width as i32 { continue; }
+            if source_x < 0 || source_x >= source.bitmap.width as i32 {
+                continue;
+            }
             let si = (source_y as usize * source.bitmap.width as usize + source_x as usize) * 4;
             let di = (py as usize * source.width as usize + px as usize) * 4;
             out[di] = source.bitmap.data[si];
@@ -179,14 +239,20 @@ pub fn extract_bitmap_pixels(out: &mut [u8], source: &BitmapRegion) {
 pub fn extract_bitmap_pixels32(out: &mut [u32], source: &BitmapRegion) {
     for py in 0..source.height {
         let source_y = source.y + py;
-        if source_y < 0 || source_y >= source.bitmap.height as i32 { continue; }
+        if source_y < 0 || source_y >= source.bitmap.height as i32 {
+            continue;
+        }
         for px in 0..source.width {
             let source_x = source.x + px;
-            if source_x < 0 || source_x >= source.bitmap.width as i32 { continue; }
+            if source_x < 0 || source_x >= source.bitmap.width as i32 {
+                continue;
+            }
             let si = (source_y as usize * source.bitmap.width as usize + source_x as usize) * 4;
             let d = &source.bitmap.data;
-            out[py as usize * source.width as usize + px as usize] =
-                ((d[si] as u32) << 24) | ((d[si + 1] as u32) << 16) | ((d[si + 2] as u32) << 8) | (d[si + 3] as u32);
+            out[py as usize * source.width as usize + px as usize] = ((d[si] as u32) << 24)
+                | ((d[si + 1] as u32) << 16)
+                | ((d[si + 2] as u32) << 8)
+                | (d[si + 3] as u32);
         }
     }
 }
@@ -210,8 +276,16 @@ fn porter_duff_factors(mode: BitmapCompositeMode, src_a: f32, dst_a: f32) -> (f3
 fn soft_light_channel(cb: f32, cs: f32) -> f32 {
     let b = cb / 255.0;
     let s = cs / 255.0;
-    let d = if b <= 0.25 { ((16.0 * b - 12.0) * b + 4.0) * b } else { b.sqrt() };
-    let out = if s <= 0.5 { b - (1.0 - 2.0 * s) * b * (1.0 - b) } else { b + (2.0 * s - 1.0) * (d - b) };
+    let d = if b <= 0.25 {
+        ((16.0 * b - 12.0) * b + 4.0) * b
+    } else {
+        b.sqrt()
+    };
+    let out = if s <= 0.5 {
+        b - (1.0 - 2.0 * s) * b * (1.0 - b)
+    } else {
+        b + (2.0 * s - 1.0) * (d - b)
+    };
     out * 255.0
 }
 
@@ -220,10 +294,14 @@ fn soft_light_channel(cb: f32, cs: f32) -> f32 {
 pub fn write_bitmap_pixels(dest: &mut BitmapRegion, pixels: &Uint8Array) {
     for py in 0..dest.height {
         let y = dest.y + py;
-        if y < 0 || y >= dest.bitmap.height as i32 { continue; }
+        if y < 0 || y >= dest.bitmap.height as i32 {
+            continue;
+        }
         for px in 0..dest.width {
             let x = dest.x + px;
-            if x < 0 || x >= dest.bitmap.width as i32 { continue; }
+            if x < 0 || x >= dest.bitmap.width as i32 {
+                continue;
+            }
             let si = (py as usize * dest.width as usize + px as usize) * 4;
             let di = (y as usize * dest.bitmap.width as usize + x as usize) * 4;
             dest.bitmap.data[di] = pixels[si];
@@ -239,10 +317,14 @@ pub fn write_bitmap_pixels(dest: &mut BitmapRegion, pixels: &Uint8Array) {
 pub fn write_bitmap_pixels32(dest: &mut BitmapRegion, pixels: &[u32]) {
     for py in 0..dest.height {
         let y = dest.y + py;
-        if y < 0 || y >= dest.bitmap.height as i32 { continue; }
+        if y < 0 || y >= dest.bitmap.height as i32 {
+            continue;
+        }
         for px in 0..dest.width {
             let x = dest.x + px;
-            if x < 0 || x >= dest.bitmap.width as i32 { continue; }
+            if x < 0 || x >= dest.bitmap.width as i32 {
+                continue;
+            }
             let color = pixels[py as usize * dest.width as usize + px as usize];
             let di = (y as usize * dest.bitmap.width as usize + x as usize) * 4;
             dest.bitmap.data[di] = ((color >> 24) & 0xff) as u8;

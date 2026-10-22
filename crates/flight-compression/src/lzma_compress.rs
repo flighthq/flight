@@ -1,7 +1,7 @@
 use std::sync::LazyLock;
 
-use flight_entity::throw_error;
 use flight_entity::Uint8Array;
+use flight_entity::throw_error;
 
 use crate::types::{CompressionFraming, HostCompressLzmaCapability};
 
@@ -85,8 +85,7 @@ fn encode_literal(
     lp: u32,
 ) {
     let prev_byte: u8 = if in_pos > 0 { input[in_pos - 1] } else { 0 };
-    let lit_state =
-        ((in_pos & ((1 << lp) - 1)) << lc) + ((prev_byte >> (8 - lc)) as usize);
+    let lit_state = ((in_pos & ((1 << lp) - 1)) << lc) + ((prev_byte >> (8 - lc)) as usize);
     let prob_offset = lit_state * 0x300;
 
     if state >= 7 {
@@ -429,8 +428,7 @@ fn lzma_find_match(
             continue;
         }
         let mut rl: i32 = 0;
-        while rl < max_len
-            && input[pos + rl as usize] == input[(pos as i32 - d - 1 + rl) as usize]
+        while rl < max_len && input[pos + rl as usize] == input[(pos as i32 - d - 1 + rl) as usize]
         {
             rl += 1;
         }
@@ -501,9 +499,8 @@ fn lzma_find_match(
 }
 
 fn lzma_hash_at(input: &[u8], pos: usize) -> usize {
-    return (((input[pos] as u32) << 10)
-        ^ ((input[pos + 1] as u32) << 5)
-        ^ (input[pos + 2] as u32)) as usize
+    return (((input[pos] as u32) << 10) ^ ((input[pos + 1] as u32) << 5) ^ (input[pos + 2] as u32))
+        as usize
         & HASH_MASK;
 }
 
@@ -613,7 +610,10 @@ fn rc_enc_shift_low(rc: &mut RcEnc) {
     rc.rc_low = (rc.rc_low as u32).wrapping_shl(8) as u64;
 }
 
-fn sdk_host_compress_lzma_compress(bytes: &Uint8Array, framing: CompressionFraming) -> Box<Uint8Array> {
+fn sdk_host_compress_lzma_compress(
+    bytes: &Uint8Array,
+    framing: CompressionFraming,
+) -> Box<Uint8Array> {
     if framing != CompressionFraming::Raw {
         throw_error("lzma: only Raw framing is supported");
     }

@@ -2,9 +2,8 @@
 
 use flight_entity::get_entity_id;
 use flight_meshgeometry::{
-    IndexBuffer, MeshGeometry, MeshSkinBindPose, PrimitiveTopology, VertexAttribute,
-    VertexFormat, VertexSemantic, get_mesh_geometry_morph_bind_pose,
-    get_mesh_geometry_skin_bind_pose,
+    IndexBuffer, MeshGeometry, MeshSkinBindPose, PrimitiveTopology, VertexAttribute, VertexFormat,
+    VertexSemantic, get_mesh_geometry_morph_bind_pose, get_mesh_geometry_skin_bind_pose,
 };
 use flight_render_gl::GlRenderState;
 use glow::HasContext;
@@ -157,7 +156,11 @@ pub fn ensure_gl_mesh_upload(
         match &bind_pose {
             Some(pose) => {
                 let vertices = build_skin_bind_vertices(geometry, &pose.read().unwrap());
-                gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, f32_bytes(&vertices), glow::STATIC_DRAW);
+                gl.buffer_data_u8_slice(
+                    glow::ARRAY_BUFFER,
+                    f32_bytes(&vertices),
+                    glow::STATIC_DRAW,
+                );
             }
             None => {
                 gl.buffer_data_u8_slice(

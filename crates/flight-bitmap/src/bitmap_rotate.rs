@@ -21,8 +21,23 @@ mod sugar_tests {
     fn bitmapregion_rotate_matches_rotate_bitmap() {
         let mut a = test_region();
         let mut b = test_region();
-        let ra = a.rotate(&test_region(), 0.5, 0.5, 0.5, BitmapEdgeMode::Clamp, BitmapResizeMode::Bilinear);
-        let rb = rotate_bitmap(&mut b, &test_region(), 0.5, 0.5, 0.5, BitmapEdgeMode::Clamp, BitmapResizeMode::Bilinear);
+        let ra = a.rotate(
+            &test_region(),
+            0.5,
+            0.5,
+            0.5,
+            BitmapEdgeMode::Clamp,
+            BitmapResizeMode::Bilinear,
+        );
+        let rb = rotate_bitmap(
+            &mut b,
+            &test_region(),
+            0.5,
+            0.5,
+            0.5,
+            BitmapEdgeMode::Clamp,
+            BitmapResizeMode::Bilinear,
+        );
         assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
         assert_eq!(format!("{:?}", a), format!("{:?}", b));
     }
@@ -71,7 +86,10 @@ fn in_bounds(x: i32, y: i32, width: i32, height: i32) -> bool {
 
 fn is_same_region(a: &BitmapRegion, b: &BitmapRegion) -> bool {
     std::ptr::eq(&a.bitmap as *const _, &b.bitmap as *const _)
-        && a.x == b.x && a.y == b.y && a.width == b.width && a.height == b.height
+        && a.x == b.x
+        && a.y == b.y
+        && a.width == b.width
+        && a.height == b.height
 }
 
 /// Rotates the `source` region by `angle` radians into the `dest` region.
@@ -91,7 +109,13 @@ pub fn rotate_bitmap(
     let dest_pivot_y = (dest.height - 1) as f64 / 2.0;
     let e = pivot_x - cos_a * dest_pivot_x + sin_a * dest_pivot_y;
     let f = pivot_y - sin_a * dest_pivot_x - cos_a * dest_pivot_y;
-    transform_bitmap(dest, source, &[cos_a, sin_a, -sin_a, cos_a, e, f], edge_mode, sample_mode);
+    transform_bitmap(
+        dest,
+        source,
+        &[cos_a, sin_a, -sin_a, cos_a, e, f],
+        edge_mode,
+        sample_mode,
+    );
 }
 
 /// Rotates 180 degrees.
@@ -109,8 +133,14 @@ pub fn rotate_bitmap_180(dest: &mut BitmapRegion, source: &BitmapRegion) {
             let by = dest.y + (h - 1 - k as i32 / w);
             if !in_bounds(ax, ay, stride as i32, dest.bitmap.height as i32)
                 || !in_bounds(bx, by, stride as i32, dest.bitmap.height as i32)
-            { continue; }
-            swap_pixels(&mut dest.bitmap.data, (ay as usize * stride + ax as usize) * 4, (by as usize * stride + bx as usize) * 4);
+            {
+                continue;
+            }
+            swap_pixels(
+                &mut dest.bitmap.data,
+                (ay as usize * stride + ax as usize) * 4,
+                (by as usize * stride + bx as usize) * 4,
+            );
         }
         return;
     }
@@ -122,11 +152,15 @@ pub fn rotate_bitmap_180(dest: &mut BitmapRegion, source: &BitmapRegion) {
         let dy = dest.y + py;
         if !in_bounds(0, sy, s_stride as i32, source.bitmap.height as i32)
             || !in_bounds(0, dy, d_stride as i32, dest.bitmap.height as i32)
-        { continue; }
+        {
+            continue;
+        }
         for px in 0..w {
             let sx = source.x + (w - 1 - px);
             let dx = dest.x + px;
-            if sx < 0 || sx >= s_stride as i32 || dx < 0 || dx >= d_stride as i32 { continue; }
+            if sx < 0 || sx >= s_stride as i32 || dx < 0 || dx >= d_stride as i32 {
+                continue;
+            }
             let si = (sy as usize * s_stride + sx as usize) * 4;
             let di = (dy as usize * d_stride + dx as usize) * 4;
             copy_pixel(&mut dest.bitmap.data, di, &sd, si);
@@ -144,13 +178,19 @@ pub fn rotate_bitmap_clockwise(dest: &mut BitmapRegion, source: &BitmapRegion) {
     let d_stride = dest.bitmap.width as usize;
     for py in 0..sh {
         let sy = source.y + py;
-        if sy < 0 || sy >= source.bitmap.height as i32 { continue; }
+        if sy < 0 || sy >= source.bitmap.height as i32 {
+            continue;
+        }
         for px in 0..sw {
             let sx = source.x + px;
-            if sx < 0 || sx >= s_stride as i32 { continue; }
+            if sx < 0 || sx >= s_stride as i32 {
+                continue;
+            }
             let dx = dest.x + (sh - 1 - py);
             let dy = dest.y + px;
-            if dx < 0 || dx >= d_stride as i32 || dy < 0 || dy >= dest.bitmap.height as i32 { continue; }
+            if dx < 0 || dx >= d_stride as i32 || dy < 0 || dy >= dest.bitmap.height as i32 {
+                continue;
+            }
             let si = (sy as usize * s_stride + sx as usize) * 4;
             let di = (dy as usize * d_stride + dx as usize) * 4;
             copy_pixel(&mut dest.bitmap.data, di, &sd, si);
@@ -168,13 +208,19 @@ pub fn rotate_bitmap_counter_clockwise(dest: &mut BitmapRegion, source: &BitmapR
     let d_stride = dest.bitmap.width as usize;
     for py in 0..sh {
         let sy = source.y + py;
-        if sy < 0 || sy >= source.bitmap.height as i32 { continue; }
+        if sy < 0 || sy >= source.bitmap.height as i32 {
+            continue;
+        }
         for px in 0..sw {
             let sx = source.x + px;
-            if sx < 0 || sx >= s_stride as i32 { continue; }
+            if sx < 0 || sx >= s_stride as i32 {
+                continue;
+            }
             let dx = dest.x + py;
             let dy = dest.y + (sw - 1 - px);
-            if dx < 0 || dx >= d_stride as i32 || dy < 0 || dy >= dest.bitmap.height as i32 { continue; }
+            if dx < 0 || dx >= d_stride as i32 || dy < 0 || dy >= dest.bitmap.height as i32 {
+                continue;
+            }
             let si = (sy as usize * s_stride + sx as usize) * 4;
             let di = (dy as usize * d_stride + dx as usize) * 4;
             copy_pixel(&mut dest.bitmap.data, di, &sd, si);
@@ -193,8 +239,24 @@ fn swap_pixels(data: &mut [u8], a: usize, b: usize) {
 
 impl BitmapRegion {
     // flight-lint: allow(f64) resampling coordinates and weights kept in double (TS number) so Math.round/floor boundaries match TS bytes; f32 sufficiency not yet confirmed (D1)
-    pub fn rotate(&mut self, source: &BitmapRegion, angle: f64, pivot_x: f64, pivot_y: f64, edge_mode: BitmapEdgeMode, sample_mode: BitmapResizeMode) {
-        return rotate_bitmap(self, source, angle, pivot_x, pivot_y, edge_mode, sample_mode);
+    pub fn rotate(
+        &mut self,
+        source: &BitmapRegion,
+        angle: f64,
+        pivot_x: f64,
+        pivot_y: f64,
+        edge_mode: BitmapEdgeMode,
+        sample_mode: BitmapResizeMode,
+    ) {
+        return rotate_bitmap(
+            self,
+            source,
+            angle,
+            pivot_x,
+            pivot_y,
+            edge_mode,
+            sample_mode,
+        );
     }
 
     pub fn rotate_180(&mut self, source: &BitmapRegion) {

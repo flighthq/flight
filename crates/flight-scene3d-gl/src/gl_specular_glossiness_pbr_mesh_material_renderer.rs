@@ -1,6 +1,5 @@
 // flight-lint: allow-file(contract-vocabulary) D17 mesh-material renderers are backend-typed dispatch records over thread-bound render-gl state
 
-use std::rc::Rc;
 use flight_camera::Camera3D;
 use flight_color::{allocate_linear_color, unpack_color_to_linear};
 use flight_lighting::Scene3DLightBlock;
@@ -12,6 +11,7 @@ use flight_meshgeometry::MeshGeometry;
 use flight_render::Scene3DRenderProxy;
 use flight_render_gl::{GlMeshMaterialRenderer, GlRenderState};
 use glow::HasContext;
+use std::rc::Rc;
 
 use crate::gl_lit_program::bind_gl_mesh_light_block;
 use crate::gl_mesh_material_registry::register_gl_mesh_material_renderer;

@@ -13,7 +13,9 @@ use crate::wgpu_scene3d_runtime::get_wgpu_scene3d_runtime;
 
 /// Whether the forward-light selection guard is installed on `state` (TS
 /// `areWgpuScene3DForwardLightSelectionGuardsEnabled`).
-pub fn are_wgpu_scene3d_forward_light_selection_guards_enabled(state: &mut WgpuRenderState) -> bool {
+pub fn are_wgpu_scene3d_forward_light_selection_guards_enabled(
+    state: &mut WgpuRenderState,
+) -> bool {
     return get_wgpu_scene3d_runtime(state)
         .forward_light_selection_guard
         .is_some();

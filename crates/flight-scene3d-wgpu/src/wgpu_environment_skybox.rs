@@ -46,7 +46,10 @@ pub(crate) fn create_wgpu_linear_sampler(native: &WgpuNativeDevice) -> wgpu::Sam
 
 // Resolves, once per state and color format, the skybox pipeline: a fullscreen-triangle module, the
 // group(0) uniform and the group(1) cube + sampler, with depth-write off and compare 'always'.
-fn ensure_wgpu_skybox_pipeline(state: &mut WgpuRenderState, format: wgpu::TextureFormat) -> WgpuSkybox {
+fn ensure_wgpu_skybox_pipeline(
+    state: &mut WgpuRenderState,
+    format: wgpu::TextureFormat,
+) -> WgpuSkybox {
     if let Some(sky) = get_wgpu_scene3d_runtime(state).skyboxes.get(&format) {
         return sky.clone();
     }
@@ -88,7 +91,10 @@ fn ensure_wgpu_skybox_pipeline(state: &mut WgpuRenderState, format: wgpu::Textur
     );
     let layout = create_wgpu_pipeline_layout_recorded(
         &native,
-        &[uniform_bind_group_layout.clone(), cube_bind_group_layout.clone()],
+        &[
+            uniform_bind_group_layout.clone(),
+            cube_bind_group_layout.clone(),
+        ],
     );
     let targets = [Some(wgpu::ColorTargetState {
         format,

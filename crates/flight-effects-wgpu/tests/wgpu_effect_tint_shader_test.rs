@@ -5,7 +5,11 @@ use crate::support::*;
 fn replace_blend_of_first_pipeline(
     records: &std::sync::Arc<std::sync::Mutex<Vec<flight_render_wgpu::WgpuCommandRecord>>>,
 ) -> wgpu::BlendState {
-    return recorded_pipelines(records)[0].targets[0].as_ref().unwrap().blend.unwrap();
+    return recorded_pipelines(records)[0].targets[0]
+        .as_ref()
+        .unwrap()
+        .blend
+        .unwrap();
 }
 
 mod apply_wgpu_effect_inner_clip_pass {
@@ -28,10 +32,16 @@ mod apply_wgpu_effect_inner_clip_pass {
             );
         });
 
-        assert_eq!(replace_blend_of_first_pipeline(&records).color.dst_factor, wgpu::BlendFactor::Zero);
+        assert_eq!(
+            replace_blend_of_first_pipeline(&records).color.dst_factor,
+            wgpu::BlendFactor::Zero
+        );
         // The glow binds at group 1 and the clipping source at group 2.
         let sets = recorded_set_bind_groups(&records);
-        assert_eq!(sets.iter().map(|set| set.index).collect::<Vec<u32>>(), vec![0, 1, 2]);
+        assert_eq!(
+            sets.iter().map(|set| set.index).collect::<Vec<u32>>(),
+            vec![0, 1, 2]
+        );
     }
 }
 
@@ -56,7 +66,10 @@ mod apply_wgpu_effect_invert_tint_pass {
             );
         });
 
-        assert_eq!(replace_blend_of_first_pipeline(&records).color.dst_factor, wgpu::BlendFactor::Zero);
+        assert_eq!(
+            replace_blend_of_first_pipeline(&records).color.dst_factor,
+            wgpu::BlendFactor::Zero
+        );
         let uniforms = recorded_effect_uniforms(&records);
         assert_eq!(&uniforms[0][0..5], &[1.0, 0.0, 0.8, 0.5, 2.0]);
     }
@@ -83,7 +96,10 @@ mod apply_wgpu_effect_tint_pass {
             );
         });
 
-        assert_eq!(replace_blend_of_first_pipeline(&records).color.dst_factor, wgpu::BlendFactor::Zero);
+        assert_eq!(
+            replace_blend_of_first_pipeline(&records).color.dst_factor,
+            wgpu::BlendFactor::Zero
+        );
         let uniforms = recorded_effect_uniforms(&records);
         // The packed color's own alpha multiplies the separate alpha.
         assert!(is_close(uniforms[0][3], 0.5 * (128.0 / 255.0), 6));

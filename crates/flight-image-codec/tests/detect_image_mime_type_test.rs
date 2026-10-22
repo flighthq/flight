@@ -31,28 +31,40 @@ mod detect_image_mime_type {
 
     #[test]
     fn returns_none_for_an_unrecognised_header() {
-        assert_eq!(detect_image_mime_type(&[0x00, 0x01, 0x02, 0x03, 0, 0, 0, 0]), None);
+        assert_eq!(
+            detect_image_mime_type(&[0x00, 0x01, 0x02, 0x03, 0, 0, 0, 0]),
+            None
+        );
     }
 
     #[test]
     fn detects_png() {
         let mut bytes = vec![0u8; 16];
         bytes[..8].copy_from_slice(&[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-        assert_eq!(detect_image_mime_type(&bytes), Some("image/png".to_string()));
+        assert_eq!(
+            detect_image_mime_type(&bytes),
+            Some("image/png".to_string())
+        );
     }
 
     #[test]
     fn detects_jpeg() {
         let mut bytes = vec![0u8; 16];
         bytes[..4].copy_from_slice(&[0xff, 0xd8, 0xff, 0xe0]);
-        assert_eq!(detect_image_mime_type(&bytes), Some("image/jpeg".to_string()));
+        assert_eq!(
+            detect_image_mime_type(&bytes),
+            Some("image/jpeg".to_string())
+        );
     }
 
     #[test]
     fn detects_gif() {
         let mut bytes = vec![0u8; 16];
         bytes[..6].copy_from_slice(&[0x47, 0x49, 0x46, 0x38, 0x39, 0x61]);
-        assert_eq!(detect_image_mime_type(&bytes), Some("image/gif".to_string()));
+        assert_eq!(
+            detect_image_mime_type(&bytes),
+            Some("image/gif".to_string())
+        );
     }
 
     #[test]
@@ -60,7 +72,10 @@ mod detect_image_mime_type {
         let mut bytes = vec![0u8; 16];
         bytes[..4].copy_from_slice(&[0x52, 0x49, 0x46, 0x46]);
         bytes[8..12].copy_from_slice(&[0x57, 0x45, 0x42, 0x50]);
-        assert_eq!(detect_image_mime_type(&bytes), Some("image/webp".to_string()));
+        assert_eq!(
+            detect_image_mime_type(&bytes),
+            Some("image/webp".to_string())
+        );
     }
 
     #[test]
@@ -86,7 +101,10 @@ mod detect_image_mime_type {
         brand_outside_box[..box_bytes.len()].copy_from_slice(&box_bytes);
         write_ascii(&mut brand_outside_box, 16, "avif");
         let truncated = &file_type_box("avif", &[])[..12];
-        assert_eq!(detect_image_mime_type(&file_type_box("isom", &["mp42"])), None);
+        assert_eq!(
+            detect_image_mime_type(&file_type_box("isom", &["mp42"])),
+            None
+        );
         assert_eq!(detect_image_mime_type(truncated), None);
         assert_eq!(detect_image_mime_type(&brand_outside_box), None);
     }
@@ -115,7 +133,10 @@ mod detect_image_mime_type {
     fn detects_bmp() {
         let mut bytes = vec![0u8; 16];
         bytes[..2].copy_from_slice(&[0x42, 0x4d]);
-        assert_eq!(detect_image_mime_type(&bytes), Some("image/bmp".to_string()));
+        assert_eq!(
+            detect_image_mime_type(&bytes),
+            Some("image/bmp".to_string())
+        );
     }
 
     #[test]

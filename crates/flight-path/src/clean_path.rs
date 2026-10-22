@@ -1,5 +1,5 @@
-use crate::path::{Path, PathCommand};
 use crate::flatten_path::flatten_path;
+use crate::path::{Path, PathCommand};
 
 #[cfg(test)]
 mod sugar_tests {
@@ -48,8 +48,10 @@ pub fn clean_path(source: &Path, tolerance: f64, out: &mut Path, flatten_toleran
 
         let closed = n >= 3
             && within_tolerance(
-                contour[0], contour[1],
-                contour[n * 2 - 2], contour[n * 2 - 1],
+                contour[0],
+                contour[1],
+                contour[n * 2 - 2],
+                contour[n * 2 - 1],
                 tolerance_sq,
             );
         let count = if closed { n - 1 } else { n };
@@ -64,9 +66,13 @@ pub fn clean_path(source: &Path, tolerance: f64, out: &mut Path, flatten_toleran
 
         let kept_count = kept.len() / 2;
         if closed {
-            if kept_count < 3 { continue; }
+            if kept_count < 3 {
+                continue;
+            }
         } else {
-            if kept_count < 2 { continue; }
+            if kept_count < 2 {
+                continue;
+            }
         }
 
         out.commands.push(PathCommand::MoveTo as u8);
@@ -120,9 +126,12 @@ fn is_middle_removable(
 
 // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
 fn is_redundant_middle(
-    px: f64, py: f64,
-    mx: f64, my: f64,
-    sx: f64, sy: f64,
+    px: f64,
+    py: f64,
+    mx: f64,
+    my: f64,
+    sx: f64,
+    sy: f64,
     tolerance_sq: f64,
 ) -> bool {
     let dx = sx - px;
@@ -143,7 +152,15 @@ fn push_clean_vertex(kept: &mut Vec<f64>, x: f64, y: f64, tolerance_sq: f64) {
     }
     while kept.len() >= 4 {
         let m = kept.len();
-        if !is_redundant_middle(kept[m - 4], kept[m - 3], kept[m - 2], kept[m - 1], x, y, tolerance_sq) {
+        if !is_redundant_middle(
+            kept[m - 4],
+            kept[m - 3],
+            kept[m - 2],
+            kept[m - 1],
+            x,
+            y,
+            tolerance_sq,
+        ) {
             break;
         }
         kept.truncate(m - 2);

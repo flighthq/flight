@@ -117,7 +117,7 @@ mod create_gl_render_state {
     use std::sync::Arc;
 
     use flight_render_gl::{
-        create_gl_render_state, register_gl_blend_mode, GlBlendFactor, GlBlendRealization,
+        GlBlendFactor, GlBlendRealization, create_gl_render_state, register_gl_blend_mode,
     };
 
     use crate::gl_test_helper::{calls_with, clear_calls, make_context_state, make_state_options};
@@ -143,12 +143,14 @@ mod create_gl_render_state {
     #[test]
     fn initializes_the_shared_blend_signature_to_none() {
         let state = create_gl_render_state(make_context_state(), None);
-        assert!(state
-            .context_state
-            .runtime_state
-            .borrow()
-            .current_blend_signature
-            .is_none());
+        assert!(
+            state
+                .context_state
+                .runtime_state
+                .borrow()
+                .current_blend_signature
+                .is_none()
+        );
     }
 
     #[test]
@@ -160,12 +162,14 @@ mod create_gl_render_state {
     #[test]
     fn initializes_the_shared_texture_realization_to_none() {
         let state = create_gl_render_state(make_context_state(), None);
-        assert!(state
-            .context_state
-            .runtime_state
-            .borrow()
-            .current_texture_realization
-            .is_none());
+        assert!(
+            state
+                .context_state
+                .runtime_state
+                .borrow()
+                .current_texture_realization
+                .is_none()
+        );
     }
 
     #[test]
@@ -173,9 +177,11 @@ mod create_gl_render_state {
         let context = make_context_state();
         clear_calls();
         create_gl_render_state(context, None);
-        assert!(calls_with("enable")
-            .iter()
-            .any(|call| call.integers == vec![i64::from(glow::BLEND)]));
+        assert!(
+            calls_with("enable")
+                .iter()
+                .any(|call| call.integers == vec![i64::from(glow::BLEND)])
+        );
     }
 
     #[test]
@@ -183,9 +189,11 @@ mod create_gl_render_state {
         let context = make_context_state();
         clear_calls();
         create_gl_render_state(context, None);
-        assert!(calls_with("disable")
-            .iter()
-            .any(|call| call.integers == vec![i64::from(glow::DEPTH_TEST)]));
+        assert!(
+            calls_with("disable")
+                .iter()
+                .any(|call| call.integers == vec![i64::from(glow::DEPTH_TEST)])
+        );
     }
 
     #[test]
@@ -245,11 +253,13 @@ mod create_gl_render_state {
             &original,
             &options.gl_registries.blend_realizations
         ));
-        assert!(state
-            .gl_registries
-            .blend_realizations
-            .entries
-            .contains_key("acme.Test"));
+        assert!(
+            state
+                .gl_registries
+                .blend_realizations
+                .entries
+                .contains_key("acme.Test")
+        );
     }
 
     #[test]
@@ -298,12 +308,12 @@ mod create_gl_render_state_context_sharing {
 
     use flight_node::{Node, NodeRef, RendererDataFields, RendererDataRef};
     use flight_render::{
-        prepare_scene_2d_render, register_node_renderer, NodeRenderer, RenderProxy2D,
+        NodeRenderer, RenderProxy2D, prepare_scene_2d_render, register_node_renderer,
     };
     use flight_render_gl::{
+        GlBlendFactor, GlBlendRealization, GlRenderState, GlTextureRealization,
         create_gl_render_state, destroy_gl_render_state, register_gl_blend_mode,
-        register_gl_texture_resolver, GlBlendFactor, GlBlendRealization, GlRenderState,
-        GlTextureRealization,
+        register_gl_texture_resolver,
     };
     use flight_texture::{TextureColorSpace, TextureVariant};
 
@@ -427,16 +437,20 @@ mod create_gl_render_state_context_sharing {
         ));
 
         register_gl_texture_resolver(&mut screen, "acme.Texture".to_string(), None);
-        assert!(offscreen
-            .gl_registries
-            .texture_resolvers
-            .entries
-            .contains_key("acme.Texture"));
-        assert!(!screen
-            .gl_registries
-            .texture_resolvers
-            .entries
-            .contains_key("acme.Texture"));
+        assert!(
+            offscreen
+                .gl_registries
+                .texture_resolvers
+                .entries
+                .contains_key("acme.Texture")
+        );
+        assert!(
+            !screen
+                .gl_registries
+                .texture_resolvers
+                .entries
+                .contains_key("acme.Texture")
+        );
         screen
             .context_state
             .runtime_state
@@ -446,12 +460,14 @@ mod create_gl_render_state_context_sharing {
             equation: 2,
             src: 3,
         });
-        assert!(offscreen
-            .context_state
-            .runtime_state
-            .borrow()
-            .current_blend_signature
-            .is_some());
+        assert!(
+            offscreen
+                .context_state
+                .runtime_state
+                .borrow()
+                .current_blend_signature
+                .is_some()
+        );
         destroy_gl_render_state(&mut offscreen, &mut make_proxies());
         destroy_gl_render_state(&mut screen, &mut make_proxies());
     }
@@ -472,30 +488,38 @@ mod create_gl_render_state_context_sharing {
             },
         );
         register_gl_texture_resolver(&mut screen, "acme.LateTexture".to_string(), Some(resolver));
-        assert!(!offscreen
-            .gl_registries
-            .blend_realizations
-            .entries
-            .contains_key("acme.LateBlend"));
-        assert!(!offscreen
-            .gl_registries
-            .texture_resolvers
-            .entries
-            .contains_key("acme.LateTexture"));
+        assert!(
+            !offscreen
+                .gl_registries
+                .blend_realizations
+                .entries
+                .contains_key("acme.LateBlend")
+        );
+        assert!(
+            !offscreen
+                .gl_registries
+                .texture_resolvers
+                .entries
+                .contains_key("acme.LateTexture")
+        );
 
         destroy_gl_render_state(&mut offscreen, &mut make_proxies());
         let rebuilt = options_from_state(&screen);
         let mut offscreen = create_gl_render_state(context, Some(&rebuilt));
-        assert!(offscreen
-            .gl_registries
-            .blend_realizations
-            .entries
-            .contains_key("acme.LateBlend"));
-        assert!(offscreen
-            .gl_registries
-            .texture_resolvers
-            .entries
-            .contains_key("acme.LateTexture"));
+        assert!(
+            offscreen
+                .gl_registries
+                .blend_realizations
+                .entries
+                .contains_key("acme.LateBlend")
+        );
+        assert!(
+            offscreen
+                .gl_registries
+                .texture_resolvers
+                .entries
+                .contains_key("acme.LateTexture")
+        );
         destroy_gl_render_state(&mut offscreen, &mut make_proxies());
         destroy_gl_render_state(&mut screen, &mut make_proxies());
     }
@@ -551,16 +575,20 @@ mod create_gl_render_state_runtime {
         assert!(context.runtime_state.borrow().binding.is_none());
         let options = make_state_options();
         assert!(options.gl_registries.blend_realizations.entries.is_empty());
-        assert!(options
-            .gl_registries
-            .custom_effect_shaders
-            .entries
-            .is_empty());
-        assert!(options
-            .gl_registries
-            .custom_material_shaders
-            .entries
-            .is_empty());
+        assert!(
+            options
+                .gl_registries
+                .custom_effect_shaders
+                .entries
+                .is_empty()
+        );
+        assert!(
+            options
+                .gl_registries
+                .custom_material_shaders
+                .entries
+                .is_empty()
+        );
         assert!(options.gl_registries.material_renderers.entries.is_empty());
         assert!(options.gl_registries.modifier_snippets.entries.is_empty());
         assert!(options.gl_registries.pbr_extensions.entries.is_empty());
@@ -634,12 +662,16 @@ mod destroy_gl_render_state {
         destroy_gl_render_state(&mut owner, &mut make_proxies());
 
         let deletes = calls_with("delete_program");
-        assert!(deletes
-            .iter()
-            .any(|call| call.integers == vec![i64::from(owned.program.0.get())]));
-        assert!(!deletes
-            .iter()
-            .any(|call| call.integers == vec![i64::from(caller.program.0.get())]));
+        assert!(
+            deletes
+                .iter()
+                .any(|call| call.integers == vec![i64::from(owned.program.0.get())])
+        );
+        assert!(
+            !deletes
+                .iter()
+                .any(|call| call.integers == vec![i64::from(caller.program.0.get())])
+        );
         let replacement_context = create_gl_context_state(context.gl.clone()).unwrap();
         let mut replacement = create_gl_render_state(replacement_context, None);
         use_gl_program(&replacement, Some(caller.clone())).unwrap();
@@ -702,7 +734,7 @@ mod destroy_gl_render_state {
 }
 
 mod flush_gl_delete_queue {
-    use flight_render_gl::{flush_gl_delete_queue, GlDeletion};
+    use flight_render_gl::{GlDeletion, flush_gl_delete_queue};
     use glow::HasContext;
 
     use crate::gl_test_helper::{calls_named, make_context_state};
@@ -722,14 +754,16 @@ mod flush_gl_delete_queue {
             .push(GlDeletion::Texture(texture));
         flush_gl_delete_queue(&context);
         assert_eq!(calls_named("delete_name"), 1);
-        assert!(context
-            .runtime_state
-            .borrow()
-            .delete_queue
-            .0
-            .lock()
-            .unwrap()
-            .is_empty());
+        assert!(
+            context
+                .runtime_state
+                .borrow()
+                .delete_queue
+                .0
+                .lock()
+                .unwrap()
+                .is_empty()
+        );
     }
 }
 
@@ -755,8 +789,8 @@ mod get_gl_color_adjustment_material_feature {
 
 mod get_gl_color_adjustment_material_feature_guard {
     use flight_render_gl::{
-        create_gl_render_state, get_gl_color_adjustment_material_feature_guard,
-        GlColorAdjustmentData, GlRenderState,
+        GlColorAdjustmentData, GlRenderState, create_gl_render_state,
+        get_gl_color_adjustment_material_feature_guard,
     };
 
     use crate::gl_test_helper::{make_context_state, make_state_options};
@@ -833,17 +867,19 @@ mod initialize_gl_context_state {
     fn starts_with_live_deletion_and_empty_caches() {
         let context = initialize_gl_context_state(make_gl()).unwrap();
         let runtime = context.runtime_state.borrow();
-        assert!(runtime
-            .delete_queue
-            .1
-            .load(std::sync::atomic::Ordering::Acquire));
+        assert!(
+            runtime
+                .delete_queue
+                .1
+                .load(std::sync::atomic::Ordering::Acquire)
+        );
         assert!(runtime.texture_caches.by_texture_entity.is_empty());
         assert!(!runtime.context_lost);
     }
 }
 
 mod invalidate_gl_render_state_cache {
-    use flight_render_gl::{invalidate_gl_render_state_cache, GlScissorRect};
+    use flight_render_gl::{GlScissorRect, invalidate_gl_render_state_cache};
 
     use crate::gl_test_helper::make_state;
 
@@ -867,12 +903,14 @@ mod invalidate_gl_render_state_cache {
         });
         invalidate_gl_render_state_cache(&state);
         assert!(state.gl_runtime.borrow().current_scissor_rect.is_none());
-        assert!(state
-            .context_state
-            .runtime_state
-            .borrow()
-            .current_blend_signature
-            .is_none());
+        assert!(
+            state
+                .context_state
+                .runtime_state
+                .borrow()
+                .current_blend_signature
+                .is_none()
+        );
     }
 }
 
@@ -897,7 +935,7 @@ mod register_gl_context_teardown {
 
 mod register_gl_render_state_teardown {
     use flight_render_gl::{
-        destroy_gl_render_state, register_gl_render_state_teardown, GlRenderState,
+        GlRenderState, destroy_gl_render_state, register_gl_render_state_teardown,
     };
 
     use crate::gl_test_helper::{make_proxies, make_state};
@@ -918,7 +956,7 @@ mod register_gl_render_state_teardown {
 mod set_gl_context_lost {
     use std::sync::atomic::Ordering;
 
-    use flight_render_gl::{set_gl_context_lost, GlScissorRect};
+    use flight_render_gl::{GlScissorRect, set_gl_context_lost};
 
     use crate::gl_test_helper::make_state;
 

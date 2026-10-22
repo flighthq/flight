@@ -6,12 +6,12 @@
 use flight_effects::{Effect, SsaoEffect};
 use flight_render_wgpu::{WgpuEffectContext, WgpuRenderState, WgpuTextureRenderTarget};
 
-use crate::wgpu_effect_texel_scale::get_wgpu_effect_logical_resolution;
 use crate::types::*;
 use crate::wgpu_effect_pass::draw_wgpu_effect_pass;
 use crate::wgpu_effect_program_cache::get_wgpu_effect_pipeline;
 use crate::wgpu_effect_registry::register_wgpu_effect;
 use crate::wgpu_effect_runner_support::downcast_wgpu_effect;
+use crate::wgpu_effect_texel_scale::get_wgpu_effect_logical_resolution;
 
 const SSAO_FRAGMENT_WGSL: &str = r#"
 struct Uniforms {

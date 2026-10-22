@@ -1,7 +1,7 @@
 use flight_entity::allocate_entity;
 
 use crate::{
-    TransmissionVolumePbrExtension, TRANSMISSION_VOLUME_PBR_EXTENSION_KIND,
+    TRANSMISSION_VOLUME_PBR_EXTENSION_KIND, TransmissionVolumePbrExtension,
     material_validation::{is_valid_material_ior, is_valid_material_weight},
     pbr_extension::is_valid_pbr_uv_set,
 };

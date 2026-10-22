@@ -189,12 +189,7 @@ mod simplify_path {
     fn returns_an_empty_path_for_empty_input() {
         let kernel = create_martinez_path_boolean_kernel();
         let mut out = create_path();
-        simplify_path(
-            &mut out,
-            &kernel,
-            &create_path(),
-            None,
-        );
+        simplify_path(&mut out, &kernel, &create_path(), None);
         assert_eq!(out.commands.len(), 0);
         assert_eq!(out.data.len(), 0);
     }

@@ -1,20 +1,16 @@
 use std::sync::Arc;
 
 use flight_geometry::{create_vector2, inverse_matrix_transform_point_xy};
-use flight_node::{get_node_world_matrix, NodeRef};
 use flight_node::contract::NodeRevisionState;
+use flight_node::{NodeRef, get_node_world_matrix};
 use flight_path::contains_path_point;
 use flight_shape::contract::{MORPH_SHAPE_KIND, SCALE9_SHAPE_KIND, SHAPE_KIND};
 use flight_shape::{MorphShape, Scale9Shape, Shape, get_shape_fill_regions};
 
-use crate::hit_tests::{register_hit_test_precise, HitTestContext};
+use crate::hit_tests::{HitTestContext, register_hit_test_precise};
 
 // flight-lint: allow(f64) D1: path containment API uses f64 coordinates
-fn hit_test_shape_fill(
-    source: &NodeRef,
-    x: f32,
-    y: f32,
-) -> i32 {
+fn hit_test_shape_fill(source: &NodeRef, x: f32, y: f32) -> i32 {
     let node = source.read().unwrap();
     let commands = if let Some(shape) = node.as_any().downcast_ref::<Shape>() {
         shape.data.commands.clone()
@@ -39,7 +35,12 @@ fn hit_test_shape_fill(
 
     for region in &regions {
         let path_guard = region.path.read().unwrap();
-        if contains_path_point(&path_guard, local_point.x as f64, local_point.y as f64, None) {
+        if contains_path_point(
+            &path_guard,
+            local_point.x as f64,
+            local_point.y as f64,
+            None,
+        ) {
             return 0;
         }
     }
@@ -49,6 +50,14 @@ fn hit_test_shape_fill(
 // flight-lint: allow(conform-params) D5: caller-owned hit test context
 pub fn register_shape_hit_test(ctx: &mut HitTestContext) {
     register_hit_test_precise(ctx, SHAPE_KIND.to_string(), Arc::new(hit_test_shape_fill));
-    register_hit_test_precise(ctx, MORPH_SHAPE_KIND.to_string(), Arc::new(hit_test_shape_fill));
-    register_hit_test_precise(ctx, SCALE9_SHAPE_KIND.to_string(), Arc::new(hit_test_shape_fill));
+    register_hit_test_precise(
+        ctx,
+        MORPH_SHAPE_KIND.to_string(),
+        Arc::new(hit_test_shape_fill),
+    );
+    register_hit_test_precise(
+        ctx,
+        SCALE9_SHAPE_KIND.to_string(),
+        Arc::new(hit_test_shape_fill),
+    );
 }

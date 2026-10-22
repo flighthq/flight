@@ -11,7 +11,10 @@ mod sugar_tests {
         let free = create_power_context();
         assert!(method.destroyed.is_empty());
         assert!(free.destroyed.is_empty());
-        assert_eq!(method.idle_polling_interval_ms, free.idle_polling_interval_ms);
+        assert_eq!(
+            method.idle_polling_interval_ms,
+            free.idle_polling_interval_ms
+        );
     }
 
     #[test]
@@ -193,11 +196,23 @@ mod sugar_tests {
     #[test]
     fn host_keep_awake_is_active_delegates() {
         let cap = HostPowerKeepAwakeCapability {
-            acquire: Arc::new(|_| Box::pin(async { PowerKeepAwakeAcquireResult { reason: PowerKeepAwakeAcquireReason::Ok } })),
+            acquire: Arc::new(|_| {
+                Box::pin(async {
+                    PowerKeepAwakeAcquireResult {
+                        reason: PowerKeepAwakeAcquireReason::Ok,
+                    }
+                })
+            }),
             destroy: None,
             is_active: Arc::new(|| true),
             provider: Arc::new(()) as ProviderRef,
-            release: Arc::new(|| Box::pin(async { PowerKeepAwakeReleaseResult { reason: PowerKeepAwakeReleaseReason::Ok } })),
+            release: Arc::new(|| {
+                Box::pin(async {
+                    PowerKeepAwakeReleaseResult {
+                        reason: PowerKeepAwakeReleaseReason::Ok,
+                    }
+                })
+            }),
         };
         assert!(cap.is_active());
     }

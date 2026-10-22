@@ -69,7 +69,10 @@ mod destroy_gl_environment_source_cube {
         assert!(first.is_some());
         // Identity caching is the whole reason this verb has to exist: without dropping the cache, a
         // caller that changes the cube keeps rendering the first one forever.
-        assert_eq!(ensure_gl_environment_source_cube(&state, &environment), first);
+        assert_eq!(
+            ensure_gl_environment_source_cube(&state, &environment),
+            first
+        );
 
         destroy_gl_environment_source_cube(&state);
         let deleted: Vec<i64> = calls_with("delete_textures")
@@ -119,7 +122,10 @@ mod ensure_gl_environment_source_cube {
     #[test]
     fn returns_null_when_the_environment_has_no_source_cube() {
         let state = make_gl_scene3d_state();
-        assert_eq!(ensure_gl_environment_source_cube(&state, &empty_environment()), None);
+        assert_eq!(
+            ensure_gl_environment_source_cube(&state, &empty_environment()),
+            None
+        );
     }
 
     #[test]
@@ -209,9 +215,16 @@ mod ensure_gl_environment_source_cube {
     fn drops_a_prior_cached_cube_when_the_next_environment_has_no_complete_source() {
         let state = make_gl_scene3d_state();
         ensure_gl_environment_source_cube(&state, &data_only_environment(4).0);
-        assert_eq!(ensure_gl_environment_source_cube(&state, &empty_environment()), None);
+        assert_eq!(
+            ensure_gl_environment_source_cube(&state, &empty_environment()),
+            None
+        );
         assert_eq!(count_calls("delete_textures"), 1);
-        assert!(get_gl_scene3d_runtime(&state).environment_source_texture.is_none());
+        assert!(
+            get_gl_scene3d_runtime(&state)
+                .environment_source_texture
+                .is_none()
+        );
     }
 }
 
@@ -252,7 +265,11 @@ mod update_gl_environment_cube_face {
         let (environment, texture) = data_only_environment(4);
         ensure_gl_environment_source_cube(&state, &environment);
         let before = get_gl_scene3d_runtime(&state).environment_source_revision;
-        assert!(update_gl_environment_cube_face(&state, 2, &cube_face(&texture, 2)));
+        assert!(update_gl_environment_cube_face(
+            &state,
+            2,
+            &cube_face(&texture, 2)
+        ));
         assert_eq!(
             get_gl_scene3d_runtime(&state).environment_source_revision,
             before.wrapping_add(1)

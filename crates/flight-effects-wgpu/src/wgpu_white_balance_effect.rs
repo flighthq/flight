@@ -55,7 +55,12 @@ pub fn apply_white_balance_effect_to_wgpu(
 
 /// Registers the default runner under `WhiteBalanceEffect` (TS `registerWgpuWhiteBalanceEffect`).
 pub fn register_wgpu_white_balance_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "WhiteBalanceEffect", wgpu_white_balance_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "WhiteBalanceEffect",
+        wgpu_white_balance_effect_runner,
+        None,
+    );
 }
 
 /// The default `WhiteBalanceEffect` runner (TS `wgpuWhiteBalanceEffectRunner`).

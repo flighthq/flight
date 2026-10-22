@@ -34,7 +34,10 @@ mod compact_stroke_path_source_parity {
         };
         let mut compacted = create_path();
         compact_stroke_path(&mut compacted, &centerline, &style, None);
-        assert_eq!(compacted.commands.first(), Some(&(PathCommand::MoveTo as u8)));
+        assert_eq!(
+            compacted.commands.first(),
+            Some(&(PathCommand::MoveTo as u8))
+        );
         assert_eq!(compacted.commands.last(), Some(&(PathCommand::Close as u8)));
         assert!(compacted.data.contains(&-2.0));
         assert!(compacted.data.contains(&22.0));

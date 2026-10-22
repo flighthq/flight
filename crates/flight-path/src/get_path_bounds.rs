@@ -74,26 +74,39 @@ fn eval_quadratic(p0: f64, p1: f64, p2: f64, t: f64) -> f64 {
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn expand_cubic_bounds(
-    x0: f64, y0: f64,
-    c1x: f64, c1y: f64,
-    c2x: f64, c2y: f64,
-    x3: f64, y3: f64,
+    x0: f64,
+    y0: f64,
+    c1x: f64,
+    c1y: f64,
+    c2x: f64,
+    c2y: f64,
+    x3: f64,
+    y3: f64,
     expand: &mut impl FnMut(f64, f64),
 ) {
     expand(x3, y3);
     cubic_extremum_roots(x0, c1x, c2x, x3, &mut |t| {
-        expand(eval_cubic(x0, c1x, c2x, x3, t), eval_cubic(y0, c1y, c2y, y3, t));
+        expand(
+            eval_cubic(x0, c1x, c2x, x3, t),
+            eval_cubic(y0, c1y, c2y, y3, t),
+        );
     });
     cubic_extremum_roots(y0, c1y, c2y, y3, &mut |t| {
-        expand(eval_cubic(x0, c1x, c2x, x3, t), eval_cubic(y0, c1y, c2y, y3, t));
+        expand(
+            eval_cubic(x0, c1x, c2x, x3, t),
+            eval_cubic(y0, c1y, c2y, y3, t),
+        );
     });
 }
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn expand_quadratic_bounds(
-    x0: f64, y0: f64,
-    cx: f64, cy: f64,
-    x2: f64, y2: f64,
+    x0: f64,
+    y0: f64,
+    cx: f64,
+    cy: f64,
+    x2: f64,
+    y2: f64,
     expand: &mut impl FnMut(f64, f64),
 ) {
     expand(x2, y2);
@@ -123,10 +136,18 @@ pub fn get_path_bounds(path: &Path, out: &mut Rectangle) -> bool {
     let mut di: usize = 0;
 
     let mut expand = |px: f64, py: f64| {
-        if px < min_x { min_x = px; }
-        if px > max_x { max_x = px; }
-        if py < min_y { min_y = py; }
-        if py > max_y { max_y = py; }
+        if px < min_x {
+            min_x = px;
+        }
+        if px > max_x {
+            max_x = px;
+        }
+        if py < min_y {
+            min_y = py;
+        }
+        if py > max_y {
+            max_y = py;
+        }
     };
 
     for ci in 0..commands.len() {

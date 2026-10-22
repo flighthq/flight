@@ -1,5 +1,5 @@
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::slot::{connect_signal, disconnect_signal, is_slot_connected, set_slot_paused};
 use crate::types::{

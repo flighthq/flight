@@ -1,7 +1,7 @@
 // flight-lint: allow-file(contract-vocabulary) D17 native wgpu binding: the recipe takes host-supplied wgpu targets
 //! Displacement / heat-haze: warps the sample uv by an animated sine field for a refractive wobble. (TS `wgpuDisplacementEffect.ts`).
 
-use flight_effects::{Effect, DisplacementEffect};
+use flight_effects::{DisplacementEffect, Effect};
 use flight_render_wgpu::{WgpuEffectContext, WgpuRenderState, WgpuTextureRenderTarget};
 
 use crate::types::*;
@@ -67,7 +67,12 @@ pub fn apply_displacement_effect_to_wgpu(
 
 /// Registers the default runner under `DisplacementEffect` (TS `registerWgpuDisplacementEffect`).
 pub fn register_wgpu_displacement_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "DisplacementEffect", wgpu_displacement_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "DisplacementEffect",
+        wgpu_displacement_effect_runner,
+        None,
+    );
 }
 
 /// The default `DisplacementEffect` runner (TS `wgpuDisplacementEffectRunner`).

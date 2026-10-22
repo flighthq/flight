@@ -82,7 +82,12 @@ mod gl_blinn_phong_mesh_material_renderer {
     fn bind_selects_a_program_uploads_camera_position_light_block_and_diffuse_specular_colors() {
         let mut state = make_gl_scene3d_state();
         let material = create_blinn_phong_material();
-        (GL_BLINN_PHONG_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &make_lights(), &make_camera());
+        (GL_BLINN_PHONG_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &make_lights(),
+            &make_camera(),
+        );
 
         assert!(count_calls("use_program") > 0);
         assert!(has_call("enable", glow::DEPTH_TEST));
@@ -97,8 +102,17 @@ mod gl_blinn_phong_mesh_material_renderer {
     fn bind_caches_the_program_under_the_classic_namespace_with_a_blinnphong_key() {
         let mut state = make_gl_scene3d_state();
         let material = create_blinn_phong_material();
-        (GL_BLINN_PHONG_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &make_lights(), &make_camera());
-        let keys: Vec<String> = get_gl_scene3d_runtime(&state).program_cache.keys().cloned().collect();
+        (GL_BLINN_PHONG_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &make_lights(),
+            &make_camera(),
+        );
+        let keys: Vec<String> = get_gl_scene3d_runtime(&state)
+            .program_cache
+            .keys()
+            .cloned()
+            .collect();
         assert!(keys.iter().any(|key| key.starts_with("classic:b")));
     }
 
@@ -107,7 +121,12 @@ mod gl_blinn_phong_mesh_material_renderer {
         let mut state = make_gl_scene3d_state();
         let mut material = create_blinn_phong_material();
         material.double_sided = true;
-        (GL_BLINN_PHONG_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &make_lights(), &make_camera());
+        (GL_BLINN_PHONG_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &make_lights(),
+            &make_camera(),
+        );
         assert!(has_call("disable", glow::CULL_FACE));
     }
 
@@ -117,7 +136,12 @@ mod gl_blinn_phong_mesh_material_renderer {
         let proxy = make_proxy();
         {
             let material = proxy.material.read().unwrap();
-            (GL_BLINN_PHONG_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&*material), &make_lights(), &make_camera());
+            (GL_BLINN_PHONG_MESH_MATERIAL_RENDERER.bind)(
+                &mut state,
+                Some(&*material),
+                &make_lights(),
+                &make_camera(),
+            );
         }
         (GL_BLINN_PHONG_MESH_MATERIAL_RENDERER.draw)(&mut state, &proxy, &make_geometry());
 
@@ -144,7 +168,10 @@ mod register_gl_blinn_phong_material {
         register_gl_blinn_phong_material(&mut state);
         assert!(
             get_gl_mesh_material_renderer(&state, &BLINN_PHONG_MATERIAL_KIND.to_string())
-                .is_some_and(|renderer| std::ptr::eq(renderer, &GL_BLINN_PHONG_MESH_MATERIAL_RENDERER))
+                .is_some_and(|renderer| std::ptr::eq(
+                    renderer,
+                    &GL_BLINN_PHONG_MESH_MATERIAL_RENDERER
+                ))
         );
     }
 }

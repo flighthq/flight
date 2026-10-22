@@ -1,8 +1,8 @@
 use std::sync::{Arc, RwLock};
 
 use flight_log::{
-    add_log_sink, create_log_state, create_memory_log_sink, get_memory_log_sink_entries,
-    remove_log_sink, LogData, LogLevel, LogStateRef, LogValue,
+    LogData, LogLevel, LogStateRef, LogValue, add_log_sink, create_log_state,
+    create_memory_log_sink, get_memory_log_sink_entries, remove_log_sink,
 };
 use flight_statechart::*;
 
@@ -66,7 +66,9 @@ mod are_statechart_guards_enabled {
         assert!(are_statechart_guards_enabled(&guarded));
         assert!(!are_statechart_guards_enabled(&unguarded));
 
-        let custom: StatechartDurationGuard = Arc::new(|_: &flight_entity::Ref<StatechartInstance>, _: &StatechartTransitionExplanation| {});
+        let custom: StatechartDurationGuard = Arc::new(
+            |_: &flight_entity::Ref<StatechartInstance>, _: &StatechartTransitionExplanation| {},
+        );
         guarded.write().unwrap().duration_guard = Some(custom);
         assert!(!are_statechart_guards_enabled(&guarded));
     }
@@ -79,7 +81,12 @@ mod disable_statechart_guards {
     fn restores_silent_coercion_without_changing_transition_behavior() {
         let instance = crate::create_instance(&create_exit_time_chart());
         let guard_state = crate::guard_state();
-        enable_statechart_guards(&instance, &guard_state, &crate::log_state(), Arc::new(|| 0.0));
+        enable_statechart_guards(
+            &instance,
+            &guard_state,
+            &crate::log_state(),
+            Arc::new(|| 0.0),
+        );
         disable_statechart_guards(&instance);
         let state = log_state();
         let entries = capture_guard_log(&state, || {
@@ -127,7 +134,9 @@ mod enable_statechart_guards {
                     _ => panic!("expected status"),
                 }
                 match record.get("message") {
-                    Some(LogValue::Str(value)) => assert!(value.contains("setStatechartRegionDuration")),
+                    Some(LogValue::Str(value)) => {
+                        assert!(value.contains("setStatechartRegionDuration"))
+                    }
                     _ => panic!("expected message"),
                 }
             }
@@ -139,7 +148,12 @@ mod enable_statechart_guards {
     fn stays_silent_when_a_positive_duration_makes_the_exit_time_ratio_well_defined() {
         let instance = crate::create_instance(&create_exit_time_chart());
         let guard_state = crate::guard_state();
-        enable_statechart_guards(&instance, &guard_state, &crate::log_state(), Arc::new(|| 0.0));
+        enable_statechart_guards(
+            &instance,
+            &guard_state,
+            &crate::log_state(),
+            Arc::new(|| 0.0),
+        );
         set_statechart_region_duration(&instance, 0, 100.0);
         let state = log_state();
         let entries = capture_guard_log(&state, || {

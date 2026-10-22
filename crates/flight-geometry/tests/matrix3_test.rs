@@ -294,19 +294,14 @@ mod get_matrix3_determinant {
 
     #[test]
     fn returns_1_for_the_identity_matrix() {
-        assert_approx(
-            get_matrix3_determinant(&create_matrix3()),
-            1.0,
-        );
+        assert_approx(get_matrix3_determinant(&create_matrix3()), 1.0);
     }
 
     #[test]
     fn returns_0_for_a_singular_matrix() {
         assert_approx(
             get_matrix3_determinant(&create_matrix3_from_values(
-                1.0, 2.0, 3.0,
-                1.0, 2.0, 3.0,
-                4.0, 5.0, 6.0,
+                1.0, 2.0, 3.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0,
             )),
             0.0,
         );
@@ -316,9 +311,7 @@ mod get_matrix3_determinant {
     fn returns_a_negative_value_when_a_row_is_negated() {
         assert_approx(
             get_matrix3_determinant(&create_matrix3_from_values(
-                -1.0, 0.0, 0.0,
-                0.0, 1.0, 0.0,
-                0.0, 0.0, 1.0,
+                -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0,
             )),
             -1.0,
         );
@@ -457,7 +450,8 @@ mod multiply_matrix3 {
     fn multiplies_non_affine_matrices_into_distinct_output() {
         let a = create_matrix3_from_values(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0);
         let b = create_matrix3_from_values(2.0, 0.0, 1.0, 1.0, 3.0, 0.0, 0.0, 2.0, 4.0);
-        let expected = create_matrix3_from_values(4.0, 12.0, 13.0, 13.0, 27.0, 28.0, 22.0, 44.0, 47.0);
+        let expected =
+            create_matrix3_from_values(4.0, 12.0, 13.0, 13.0, 27.0, 28.0, 22.0, 44.0, 47.0);
         let mut out = create_matrix3();
         multiply_matrix3(&mut out, &a, &b);
         assert!(equals_matrix3(Some(&out), Some(&expected)));
@@ -467,7 +461,8 @@ mod multiply_matrix3 {
     fn multiplies_non_affine_matrices_with_aliased_output() {
         let mut a = create_matrix3_from_values(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0);
         let b = create_matrix3_from_values(2.0, 0.0, 1.0, 1.0, 3.0, 0.0, 0.0, 2.0, 4.0);
-        let expected = create_matrix3_from_values(4.0, 12.0, 13.0, 13.0, 27.0, 28.0, 22.0, 44.0, 47.0);
+        let expected =
+            create_matrix3_from_values(4.0, 12.0, 13.0, 13.0, 27.0, 28.0, 22.0, 44.0, 47.0);
         let a_copy = clone_matrix3(&a);
         multiply_matrix3(&mut a, &a_copy, &b);
         assert!(equals_matrix3(Some(&a), Some(&expected)));
@@ -573,7 +568,10 @@ mod set_matrix3 {
         set_matrix3(&mut m, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
         for row in 0..3 {
             for col in 0..3 {
-                assert_eq!(get_matrix3_element(&m, row, col), (row * 3 + col + 1) as f32);
+                assert_eq!(
+                    get_matrix3_element(&m, row, col),
+                    (row * 3 + col + 1) as f32
+                );
             }
         }
     }
@@ -737,8 +735,7 @@ mod set_matrix3_normal_from_matrix4 {
         m4.m = [
             2.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
         ];
-        let mut normal_matrix =
-            create_matrix3();
+        let mut normal_matrix = create_matrix3();
         set_matrix3_normal_from_matrix4(&mut normal_matrix, &m4);
         assert_approx(get_matrix3_element(&normal_matrix, 0, 0), 0.5);
         assert_approx(get_matrix3_element(&normal_matrix, 1, 1), 1.0);

@@ -31,7 +31,10 @@ fn recording_host_image(
     };
 }
 
-fn external(uri: &str, base_path: Option<&str>) -> flight_entity::Ref<ExternalImageResourceReference> {
+fn external(
+    uri: &str,
+    base_path: Option<&str>,
+) -> flight_entity::Ref<ExternalImageResourceReference> {
     let reference = create_external_image_resource_reference(uri.to_string());
     reference.write().unwrap().base_path = base_path.map(str::to_string);
     return reference;
@@ -49,7 +52,10 @@ mod create_web_image_resource_fetch {
         let fetch = create_web_image_resource_fetch(&host_image);
         let controller = create_abort_controller();
 
-        let result = block_on(fetch(external("leaf.png", Some("assets/textures")), controller.signal.clone()));
+        let result = block_on(fetch(
+            external("leaf.png", Some("assets/textures")),
+            controller.signal.clone(),
+        ));
 
         let requests = requests.lock().unwrap();
         assert_eq!(requests.len(), 1);
@@ -64,7 +70,10 @@ mod create_web_image_resource_fetch {
         let requests: Requests = Arc::new(Mutex::new(Vec::new()));
         let host_image = recording_host_image(&requests, Arc::new(|| None));
         let fetch = create_web_image_resource_fetch(&host_image);
-        let result = block_on(fetch(external("missing.png", None), create_abort_controller().signal));
+        let result = block_on(fetch(
+            external("missing.png", None),
+            create_abort_controller().signal,
+        ));
         assert!(result.is_none());
     }
 
@@ -76,7 +85,8 @@ mod create_web_image_resource_fetch {
         let controller = create_abort_controller();
         abort_controller(&controller, None);
         let result = block_on(
-            AssertUnwindSafe(fetch(external("x.png", None), controller.signal.clone())).catch_unwind(),
+            AssertUnwindSafe(fetch(external("x.png", None), controller.signal.clone()))
+                .catch_unwind(),
         );
         assert!(result.is_err());
     }
@@ -87,12 +97,18 @@ mod resolve_image_resource_uri {
 
     #[test]
     fn joins_a_relative_uri_to_a_base_path() {
-        assert_eq!(resolve_image_resource_uri("leaf.png", Some("assets/tex")), "assets/tex/leaf.png");
+        assert_eq!(
+            resolve_image_resource_uri("leaf.png", Some("assets/tex")),
+            "assets/tex/leaf.png"
+        );
     }
 
     #[test]
     fn does_not_double_the_separator_when_the_base_ends_with_a_slash() {
-        assert_eq!(resolve_image_resource_uri("leaf.png", Some("assets/tex/")), "assets/tex/leaf.png");
+        assert_eq!(
+            resolve_image_resource_uri("leaf.png", Some("assets/tex/")),
+            "assets/tex/leaf.png"
+        );
     }
 
     #[test]

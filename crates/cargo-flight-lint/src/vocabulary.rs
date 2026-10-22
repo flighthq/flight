@@ -26,76 +26,566 @@ pub struct Entry {
 }
 
 pub const ENTRIES: &[Entry] = &[
-    Entry { rust: "f32", ts: "number", cpp: "float", haxe: "Single", status: Status::Established, note: "Default numeric type (D1)" },
-    Entry { rust: "f64", ts: "number", cpp: "double", haxe: "Float", status: Status::Established, note: "Only with `allow(f64) <reason>` (D1)" },
-    Entry { rust: "bool", ts: "boolean", cpp: "bool", haxe: "Bool", status: Status::Established, note: "" },
-    Entry { rust: "i8 i16 i32 u8 u16 u32 usize", ts: "number", cpp: "int8_t … uint32_t, size_t", haxe: "Int / UInt", status: Status::Established, note: "`usize` for indices; `i32` where TS uses a -1 sentinel" },
-    Entry { rust: "i64 u64", ts: "number", cpp: "int64_t / uint64_t", haxe: "haxe.Int64", status: Status::Established, note: "Only with a declared range ≤ 2^53 (allow marker); 32-bit is the default (user 2026-10-21)" },
-    Entry { rust: "()", ts: "void", cpp: "void", haxe: "Void", status: Status::Established, note: "Return type only" },
-    Entry { rust: "String", ts: "string", cpp: "std::string", haxe: "String", status: Status::Established, note: "Owned text" },
-    Entry { rust: "&str", ts: "string", cpp: "std::string_view", haxe: "String", status: Status::Established, note: "Borrowed text; `&'static str` for constants" },
-    Entry { rust: "Kind", ts: "Kind (= string)", cpp: "std::string", haxe: "String", status: Status::Established, note: "Alias for `String`, defined in flight-entity; object identity tag (D2)" },
-    Entry { rust: "struct (named fields)", ts: "interface + create_* fn", cpp: "struct", haxe: "class", status: Status::Established, note: "Value type when held inline: assignment is a copy in every target" },
-    Entry { rust: "&T", ts: "Readonly<T>", cpp: "const T&", haxe: "T", status: Status::Established, note: "Parameters" },
-    Entry { rust: "&mut T", ts: "T", cpp: "T&", haxe: "T", status: Status::Established, note: "Parameters; `out` first, alias-safe" },
-    Entry { rust: "Option<T>", ts: "T | null", cpp: "std::optional<T> (pointer for Ref)", haxe: "Null<T>", status: Status::Established, note: "" },
-    Entry { rust: "Vec<T>", ts: "T[]", cpp: "std::vector<T>", haxe: "Array<T>", status: Status::Established, note: "Growable (user 2026-10-20): `Vec<f32>` → `number[]`. Also the type for iterated collections (D3)" },
-    Entry { rust: "Vec<T> (nonempty at consuming API boundary)", ts: "readonly [T, ...T[]]", cpp: "std::vector<T>", haxe: "Array<T>", status: Status::Established, note: "Validate nonemptiness at the consuming API boundary; no distinct Rust wrapper type" },
-    Entry { rust: "&mut [N] / [N; LEN] (N numeric)", ts: "Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array", cpp: "std::span<N> / std::array<N, LEN>", haxe: "haxe.io.Float32Array etc.", status: Status::Established, note: "Fixed length (user 2026-10-20): the typed array is picked by element type. `usize`/`bool` slices have no typed array (open)" },
-    Entry { rust: "Box<[N]> (N numeric)", ts: "the matching typed array", cpp: "std::unique_ptr<N[]> + length", haxe: "haxe.io.Float32Array etc.", status: Status::Established, note: "Owned, fixed length set at creation (vertex data, pixels, index buffers); user 2026-10-20" },
-    Entry { rust: "Box<[T]> (T non-numeric)", ts: "readonly T[] with fixed creation-time length", cpp: "std::vector<T> with fixed creation-time length", haxe: "Array<T>", status: Status::Established, note: "Principal batch 10 AudioBuffer channel table: Box<[Ref<Box<[f32]>>]> owns a fixed set of shared mutable Float32Array channel handles; this row does not turn ordinary TS arrays into typed arrays" },
-    Entry { rust: "&Vec<N> (read-only)", ts: "readonly number[]", cpp: "const std::vector<N>&", haxe: "Array<N>", status: Status::Established, note: "Input that must be a plain array (user 2026-10-20: specific over permissive). Workspace allows clippy::ptr_arg" },
-    Entry { rust: "Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array (aliases of [f32] etc., defined in flight-entity)", ts: "the same typed array", cpp: "std::span<N>", haxe: "haxe.io.Float32Array etc.", status: Status::Established, note: "For a TS API that declares a typed array: `&Float32Array` → `Readonly<Float32Array>` while Rust still accepts any f32 slice; `&mut Float32Array` / `Box<Float32Array>` also allowed. Specific in TS, idiomatic in Rust" },
-    Entry { rust: "&[N] (N numeric, read-only)", ts: "ArrayLike<number>", cpp: "std::span<const N>", haxe: "haxe.io.Float32Array etc.", status: Status::Established, note: "Input that is deliberately general: accepts either array kind (user 2026-10-20). Use it only when general is intended; prefer the specific forms" },
-    Entry { rust: "&[T] / &mut [T] / [T; LEN] (T non-numeric)", ts: "readonly T[] / T[]", cpp: "std::span<const T> / std::span<T> / std::array", haxe: "Array<T>", status: Status::Established, note: "No typed array exists for structs or strings" },
-    Entry { rust: "HashMap<K, V>", ts: "Map<K, V>", cpp: "std::unordered_map<K, V>", haxe: "Map<K, V>", status: Status::Established, note: "Lookup only; never iterated (D3)" },
-    Entry { rust: "HashSet<T>", ts: "Set<T>", cpp: "std::unordered_set<T>", haxe: "Map<T, Bool>", status: Status::Established, note: "Membership only; never iterated (D3)" },
-    Entry { rust: "Record<V>", ts: "Record<string, V>", cpp: "ordered string map<V>", haxe: "Dynamic<V>", status: Status::Established, note: "Plain dictionary defined in flight-entity; ordered Vec storage plus lookup index; integer-index keys enumerate numerically, then other strings in insertion order. Ordered iteration is allowed (D3)" },
-    Entry { rust: "C-like enum", ts: "string-literal union / const", cpp: "enum class", haxe: "enum abstract", status: Status::Established, note: "String table via get_<enum>_string / parse_<enum> free functions; strings exactly as TS (D9e)" },
-    Entry { rust: "data enum (one named struct payload per variant)", ts: "untagged union of interfaces; discriminated only by existing literal kind fields", cpp: "std::variant<…>", haxe: "enum", status: Status::Established, note: "Never synthesize a discriminant. Closed sets only; open sets use Kind + dispatch tables (D2)" },
-    Entry { rust: "AnySlot", ts: "unknown (read via get_*_data cast)", cpp: "std::any", haxe: "Dynamic", status: Status::Established, note: "Alias for `Option<Box<dyn Any + Send + Sync>>`, defined in flight-entity; owned and non-clone" },
-    Entry { rust: "Unknown", ts: "unknown", cpp: "nullable std::shared_ptr<const std::any>", haxe: "Dynamic", status: Status::Established, note: "Alias for `Option<Arc<dyn Any + Send + Sync>>`, defined in flight-entity. None is explicit null and Some preserves identity; Option<Unknown> distinguishes absent/undefined from null" },
-    Entry { rust: "UnknownValue", ts: "unknown", cpp: "std::shared_ptr<const std::any>", haxe: "Dynamic", status: Status::Established, note: "Alias for `Arc<dyn Any + Send + Sync>`, defined in flight-entity: the non-null payload of Unknown, for positions that are never null (e.g. LogValue::Object)" },
-    Entry { rust: "unknown_from_panic / CaughtPanic", ts: "caught unknown value", cpp: "caught exception payload in shared std::any", haxe: "Dynamic", status: Status::Established, note: "D10 catch bridge in flight-entity. The exact Rust-only input is Box<dyn Any + Send>. FlightError remains the concrete Unknown value; every other payload is retained losslessly in a mutex-backed CaughtPanic so Send-only values remain safely downcastable under a borrowed guard" },
-    Entry { rust: "unknown_to_js_string", ts: "`String(value)` for a caught unknown", cpp: "exact ruled Unknown-to-string projection", haxe: "exact ruled Unknown-to-string projection", status: Status::Established, note: "flight-entity projection for FlightError Error.toString (including the NotReadableError DOMException name), strings, concrete JS numbers, booleans and null; every other object is `[object Object]`. An outer Option<Unknown> models omitted undefined at the caller. Custom user stringification is deliberately not modeled, and no Debug/Display fallback is used" },
-    Entry { rust: "ProviderRef", ts: "field omitted; containing capability record is the provider object", cpp: "std::shared_ptr<const std::any>", haxe: "Dynamic", status: Status::Established, note: "Alias for `Arc<dyn Any + Send + Sync>`, defined in flight-host (the bottom host vocabulary, D26). Every capability record carries `provider: ProviderRef`; facets from one provider clone the same token. Compare providers with `Arc::ptr_eq`, never callbacks. Rust provider identity `Arc::ptr_eq(&cap_a.provider, &cap_b.provider)` lowers to TS `capA === capB`. Plain identity, not Entity or a numeric id" },
-    Entry { rust: "HostSpawnCapability", ts: "field omitted; `spawn(fut)` lowers to `void fut`", cpp: "host-owned executor callback", haxe: "host-owned Future executor", status: Status::Established, note: "Fire-and-forget async foundation in flight-host. The explicit Rust capability carries canonical ProviderRef identity and accepts Pin<Box<dyn Future<Output=()> + Send>>; the SDK never chooses an executor or blocks" },
-    Entry { rust: "HostTimerCapability", ts: "host object implementing `setTimeout`, `setInterval`, and `Date.now`", cpp: "host timer capability record", haxe: "host timer capability record", status: Status::Established, note: "Explicit flight-host context with canonical ProviderRef identity. Providers enqueue callbacks (never inline), normalize negative/NaN timeout delays to 0 ms, and clamp interval delays to at least 1 ms. No SDK runtime or native timer is selected" },
-    Entry { rust: "TimerHandle", ts: "owned closure calling `clearTimeout` or `clearInterval`", cpp: "owned cancellation callback", haxe: "owned cancellation callback", status: Status::Established, note: "Timer cancellation handle with an Arc callback and no public provider-specific numeric timer id" },
-    Entry { rust: "ArrayBuffer", ts: "ArrayBuffer", cpp: "small shared byte buffer", haxe: "haxe.io.Bytes", status: Status::Established, note: "Named flight-buffer struct wrapping Ref<Box<[u8]>>: fixed-length shared storage; Clone and equality preserve allocation identity rather than copying or flattening through Vec" },
-    Entry { rust: "ArrayBufferView", ts: "ArrayBufferView", cpp: "small shared byte view", haxe: "haxe.io.Bytes", status: Status::Established, note: "Named flight-buffer record carrying ArrayBuffer, byte_offset, byte_length and exact ArrayBufferViewKind; every view aliases the same shared storage" },
-    Entry { rust: "Blob", ts: "Blob", cpp: "small shared blob", haxe: "Dynamic", status: Status::Established, note: "Immutable Arc<Blob> record in flight-buffer with mime_type, size, canonical Unknown provider payload, and an optional retained arrayBuffer reader. No other Blob I/O API is implied" },
-    Entry { rust: "BlobArrayBufferReader", ts: "optional retained `() => Promise<ArrayBuffer>`", cpp: "optional shared async read callback", haxe: "optional Void->Future<ArrayBuffer>", status: Status::Established, note: "Exact flight-buffer alias for Arc<dyn Fn() -> Pin<Box<dyn Future<Output=Result<ArrayBuffer, Unknown>> + Send>> + Send + Sync>; preserves fulfillment allocation and rejection identity/null without type erasure" },
-    Entry { rust: "Result<T, Unknown>", ts: "Promise<T> fulfillment/rejection channel", cpp: "result<T, nullable shared any>", haxe: "Future outcome<T, Dynamic>", status: Status::Established, note: "Exact async host rejection representation approved for Blob.arrayBuffer: the error arm is canonical Unknown, preserving provider error identity and explicit null" },
-    Entry { rust: "TweenProp<T>", ts: "NumericProps<T>", cpp: "typed property-map entry (member pointer + destination value)", haxe: "typed property-map entry", status: Status::Established, note: "D22 (user 2026-10-21): `&[TweenProp<T>]` lowers to the plain property map `{ x: 100 }`. Each entry is `TweenProp<T> { get: fn(&mut T) -> &mut f32, to: f32 }`; `tween_prop!(field, value)` checks the field at compile time and `tween_with` is the nested/computed escape hatch. Non-capturing fn pointers only: no string lookup, hashing, boxed dispatch or runtime reflection" },
-    Entry { rust: "Arc<dyn Fn(A) -> R + Send + Sync>", ts: "(a: A) => R", cpp: "std::function<R(A)>", haxe: "A->R", status: Status::Established, note: "Stored or returned capturing callback (D9); `FnMut` and `FnOnce` are also allowed; both thread-safety bounds are required" },
-    Entry { rust: "&dyn Fn(A) -> R / &mut dyn FnMut(A) -> R", ts: "(a: A) => R", cpp: "const std::function<R(A)>& / std::function<R(A)>&", haxe: "A->R", status: Status::Established, note: "Borrowed callback parameter (D9); shared borrow for `Fn`, mutable borrow for `FnMut`" },
-    Entry { rust: "fn(A) -> R", ts: "(a: A) => R", cpp: "R (*)(A)", haxe: "A->R", status: Status::Established, note: "Stateless function value (D9)" },
-    Entry { rust: "Arc<T>", ts: "Readonly<T>", cpp: "std::shared_ptr<const T>", haxe: "T", status: Status::Established, note: "Immutable shared plain-record identity; T must itself be recognized vocabulary. Not Entity" },
-    Entry { rust: "Ref<T>", ts: "T", cpp: "std::shared_ptr<T>", haxe: "T", status: Status::Established, note: "Shared object identity (A2, trial 2026-10-20): create_* returns it, dispose_* breaks cycles, memory frees at the last drop. Defined in flight-entity as Arc<RwLock<T>>: thread-safe by default (user 2026-10-20); swap the alias only if measurement shows a hot loop suffers" },
-    Entry { rust: "WeakRef<T>", ts: "T | null", cpp: "std::weak_ptr<T>", haxe: "Null<T>", status: Status::Proposed, note: "Not for parent links: under A2 parents are strong, as in TS. Only for non-owning caches" },
-    Entry { rust: "Handle<T>", ts: "T (object) or number", cpp: "handle / T*", haxe: "T", status: Status::Open, note: "Deferred: node-store option (D), revisit only if threading or bulk release requires it" },
-    Entry { rust: "generic type parameter <T>", ts: "<T>", cpp: "template<typename T>", haxe: "<T>", status: Status::Established, note: "Bounds are lint-enforced: declared IR family traits, JSON Serialize/DeserializeOwned, and Rust-only Default/Clone/lifetimes" },
-    Entry { rust: "trait Entity / T: Entity", ts: "extends Entity / T extends Entity", cpp: "base class / template<typename T>", haxe: "interface / <T:Entity>", status: Status::Established, note: "D12/WP8b: the private runtime slot is reached through this trait; it is the only workspace trait bound in the vocabulary. Qualified paths (flight_entity::Entity) map the same way" },
-    Entry { rust: "T: Serialize / T: DeserializeOwned", ts: "generic <T>; bounds erased; JSON.stringify / JSON.parse", cpp: "template<typename T>; internal JSON engine", haxe: "<T>; internal JSON engine", status: Status::Established, note: "Principal 12ecb245: only serde::Serialize and serde::de::DeserializeOwned are accepted JSON generic bounds. serde_json stays internal; no public serde_json::Value or arbitrary serde/reflection trait surface" },
-    Entry { rust: "private runtime field (runtime: EntityRuntimeSlot)", ts: "[EntityRuntimeKey] slot", cpp: "private member", haxe: "private field", status: Status::Established, note: "D12/WP8b: never pub; `impl_entity!(T)` implements Entity for T and exposes the slot through entity_runtime/entity_runtime_mut" },
-    Entry { rust: "async fn(A) -> T", ts: "async (a: A) => Promise<T>", cpp: "T (*)(A) [coroutine]", haxe: "A->futures.Future<T>", status: Status::Established, note: "Executor-neutral async (D15); no SDK spawning/runtime choice" },
-    Entry { rust: "Pin<Box<dyn Future<Output=T> + Send>>", ts: "Promise<T>", cpp: "std::future<T>", haxe: "futures.Future<T>", status: Status::Established, note: "Boxed future return type (D15); required Send bound; used in async callback returns" },
-    Entry { rust: "SharedFuture<T>", ts: "Promise<T>", cpp: "std::shared_future<T>", haxe: "futures.Future<T>", status: Status::Established, note: "D20 (user 2026-10-21): a TS Promise stored in a field; cloneable and executor-neutral, settles once and every clone observes the same result; defined in flight-stream over futures::future::Shared. Use Ref/Arc as the output when T is not Clone; returned promises stay async fn" },
-    Entry { rust: "ReadableStream", ts: "ReadableStream<Uint8Array>", cpp: "byte read handle (e.g. std::shared_ptr<std::istream>)", haxe: "haxe.io.Input", status: Status::Established, note: "D20: flight-stream vocabulary over futures-io AsyncRead; the exclusive borrow is the lock, the caller buffer is BYOB, pull polling is backpressure, and drop cancels" },
-    Entry { rust: "WritableStream", ts: "WritableStream<Uint8Array>", cpp: "byte write handle (e.g. std::shared_ptr<std::ostream>)", haxe: "haxe.io.Output", status: Status::Established, note: "D20: flight-stream vocabulary over futures-io AsyncWrite; the exclusive borrow is the lock, a partial write is backpressure, close is explicit and drop aborts" },
-    Entry { rust: "ByteChunkStream", ts: "AsyncIterable<Readonly<Uint8Array>>", cpp: "async byte-chunk generator", haxe: "Iterator<haxe.io.Bytes> (async)", status: Status::Established, note: "D20 (Principal ae8562b8): flight-stream vocabulary over futures::Stream<Item = Result<Box<Uint8Array>, Unknown>>; one item per logical chunk so boundaries survive, Err carries the iterator rejection with its original identity, None ends iteration" },
-    Entry { rust: "WritableStreamAbortHook", ts: "UnderlyingSink.abort(reason)", cpp: "std::function<std::future<void>(reason)>", haxe: "Dynamic->futures.Future<Void>", status: Status::Established, note: "D20 (Principal ae8562b8): optional sink abort supplied at WritableStream construction; receives Option<Unknown> unchanged (None undefined, Some(None) null, Some(Some) original value) and its Unknown rejection is returned unchanged; without it abort_writable_stream is drop-as-abort" },
-    Entry { rust: "AbortSignal / AbortController", ts: "AbortSignal / AbortController", cpp: "cancellation token / controller", haxe: "AbortSignal / AbortController", status: Status::Established, note: "Small shared cancellation primitive defined in flight-stream; plain data, not Entity" },
-    Entry { rust: "(A, B) / (A, B, C) / (A, B, C, D)", ts: "readonly [A, B] / readonly [A, B, C] / readonly [A, B, C, D]", cpp: "std::pair / std::tuple", haxe: "Array<Dynamic>", status: Status::Established, note: "Fixed 2–4 element tuples of vocabulary types; unit tuple `()` is void (math #3)" },
-    Entry { rust: "enum Scalar { Variant(primitive) }", ts: "number | string (scalar union)", cpp: "std::variant<int, std::string>", haxe: "Dynamic", status: Status::Established, note: "One primitive/scalar payload per variant; enum-payload-named exemption (binpack #5)" },
-    Entry { rust: "Ref<dyn Node> / Ref<dyn Node2D> / Ref<dyn Node3D>", ts: "Node / Node2D / Node3D", cpp: "std::shared_ptr<Node> / …", haxe: "Node / Node2D / Node3D", status: Status::Established, note: "D16: node family trait objects; mixed children `Vec<Ref<dyn Node2D>>`; only declared family names accepted" },
-    Entry { rust: "kind struct + Deref<Target = *Fields>", ts: "interface X extends Node2D", cpp: "class X : public Node2D", haxe: "class X extends Node2D", status: Status::Established, note: "D16: concrete kind (Sprite, Mesh, …) composes *Fields via Deref/DerefMut; data as separate pub field" },
-    Entry { rust: "T: Node2D / T: Transform2DNode / T: BoundsNode", ts: "T extends Node2D / …", cpp: "template<typename T>", haxe: "<T:Node2D>", status: Status::Established, note: "D16: node family and feature traits as generic bounds; only declared trait names accepted" },
-    Entry { rust: "Ref<dyn Adjustment> / &dyn Adjustment / T: Adjustment", ts: "Adjustment / T extends Adjustment", cpp: "std::shared_ptr<Adjustment> / template<typename T>", haxe: "Adjustment / <T:Adjustment>", status: Status::Established, note: "Adjustment family (principal batch 4, generalizes D16): kind structs Deref to AdjustmentFields; mixed stacks `Vec<Ref<dyn Adjustment>>`; only the declared family name accepted" },
-    Entry { rust: "Ref<dyn MaterialData> / &dyn MaterialData / T: MaterialData", ts: "MaterialData / T extends MaterialData", cpp: "std::shared_ptr<MaterialData> / template<typename T>", haxe: "MaterialData / <T:MaterialData>", status: Status::Established, note: "D16 open MaterialData entity family: Ref preserves the original caller-owned custom-kind allocation through heterogeneous optional collections; only the declared family name is accepted" },
-    Entry { rust: "Ref<dyn Physics3DJoint> / &dyn Physics3DJoint / T: Physics3DJoint", ts: "Physics3DJoint / T extends Physics3DJoint", cpp: "std::shared_ptr<Physics3DJoint> / template<typename T>", haxe: "Physics3DJoint / <T:Physics3DJoint>", status: Status::Established, note: "D16 open Physics3DJoint entity family (TS `Physics3DJoint extends Entity`, kind-dispatched to its registered solver): Ref preserves the original caller-owned custom-kind allocation; only the declared family name is accepted" },
-    Entry { rust: "pub const / pub static LazyLock<T>", ts: "export const", cpp: "inline constexpr / static", haxe: "static final", status: Status::Established, note: "Immutable only (D5)" },
+    Entry {
+        rust: "f32",
+        ts: "number",
+        cpp: "float",
+        haxe: "Single",
+        status: Status::Established,
+        note: "Default numeric type (D1)",
+    },
+    Entry {
+        rust: "f64",
+        ts: "number",
+        cpp: "double",
+        haxe: "Float",
+        status: Status::Established,
+        note: "Only with `allow(f64) <reason>` (D1)",
+    },
+    Entry {
+        rust: "bool",
+        ts: "boolean",
+        cpp: "bool",
+        haxe: "Bool",
+        status: Status::Established,
+        note: "",
+    },
+    Entry {
+        rust: "i8 i16 i32 u8 u16 u32 usize",
+        ts: "number",
+        cpp: "int8_t … uint32_t, size_t",
+        haxe: "Int / UInt",
+        status: Status::Established,
+        note: "`usize` for indices; `i32` where TS uses a -1 sentinel",
+    },
+    Entry {
+        rust: "i64 u64",
+        ts: "number",
+        cpp: "int64_t / uint64_t",
+        haxe: "haxe.Int64",
+        status: Status::Established,
+        note: "Only with a declared range ≤ 2^53 (allow marker); 32-bit is the default (user 2026-10-21)",
+    },
+    Entry {
+        rust: "()",
+        ts: "void",
+        cpp: "void",
+        haxe: "Void",
+        status: Status::Established,
+        note: "Return type only",
+    },
+    Entry {
+        rust: "String",
+        ts: "string",
+        cpp: "std::string",
+        haxe: "String",
+        status: Status::Established,
+        note: "Owned text",
+    },
+    Entry {
+        rust: "&str",
+        ts: "string",
+        cpp: "std::string_view",
+        haxe: "String",
+        status: Status::Established,
+        note: "Borrowed text; `&'static str` for constants",
+    },
+    Entry {
+        rust: "Kind",
+        ts: "Kind (= string)",
+        cpp: "std::string",
+        haxe: "String",
+        status: Status::Established,
+        note: "Alias for `String`, defined in flight-entity; object identity tag (D2)",
+    },
+    Entry {
+        rust: "struct (named fields)",
+        ts: "interface + create_* fn",
+        cpp: "struct",
+        haxe: "class",
+        status: Status::Established,
+        note: "Value type when held inline: assignment is a copy in every target",
+    },
+    Entry {
+        rust: "&T",
+        ts: "Readonly<T>",
+        cpp: "const T&",
+        haxe: "T",
+        status: Status::Established,
+        note: "Parameters",
+    },
+    Entry {
+        rust: "&mut T",
+        ts: "T",
+        cpp: "T&",
+        haxe: "T",
+        status: Status::Established,
+        note: "Parameters; `out` first, alias-safe",
+    },
+    Entry {
+        rust: "Option<T>",
+        ts: "T | null",
+        cpp: "std::optional<T> (pointer for Ref)",
+        haxe: "Null<T>",
+        status: Status::Established,
+        note: "",
+    },
+    Entry {
+        rust: "Vec<T>",
+        ts: "T[]",
+        cpp: "std::vector<T>",
+        haxe: "Array<T>",
+        status: Status::Established,
+        note: "Growable (user 2026-10-20): `Vec<f32>` → `number[]`. Also the type for iterated collections (D3)",
+    },
+    Entry {
+        rust: "Vec<T> (nonempty at consuming API boundary)",
+        ts: "readonly [T, ...T[]]",
+        cpp: "std::vector<T>",
+        haxe: "Array<T>",
+        status: Status::Established,
+        note: "Validate nonemptiness at the consuming API boundary; no distinct Rust wrapper type",
+    },
+    Entry {
+        rust: "&mut [N] / [N; LEN] (N numeric)",
+        ts: "Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array",
+        cpp: "std::span<N> / std::array<N, LEN>",
+        haxe: "haxe.io.Float32Array etc.",
+        status: Status::Established,
+        note: "Fixed length (user 2026-10-20): the typed array is picked by element type. `usize`/`bool` slices have no typed array (open)",
+    },
+    Entry {
+        rust: "Box<[N]> (N numeric)",
+        ts: "the matching typed array",
+        cpp: "std::unique_ptr<N[]> + length",
+        haxe: "haxe.io.Float32Array etc.",
+        status: Status::Established,
+        note: "Owned, fixed length set at creation (vertex data, pixels, index buffers); user 2026-10-20",
+    },
+    Entry {
+        rust: "Box<[T]> (T non-numeric)",
+        ts: "readonly T[] with fixed creation-time length",
+        cpp: "std::vector<T> with fixed creation-time length",
+        haxe: "Array<T>",
+        status: Status::Established,
+        note: "Principal batch 10 AudioBuffer channel table: Box<[Ref<Box<[f32]>>]> owns a fixed set of shared mutable Float32Array channel handles; this row does not turn ordinary TS arrays into typed arrays",
+    },
+    Entry {
+        rust: "&Vec<N> (read-only)",
+        ts: "readonly number[]",
+        cpp: "const std::vector<N>&",
+        haxe: "Array<N>",
+        status: Status::Established,
+        note: "Input that must be a plain array (user 2026-10-20: specific over permissive). Workspace allows clippy::ptr_arg",
+    },
+    Entry {
+        rust: "Float32Array, Float64Array, Uint8Array, Uint16Array, Uint32Array, Int8Array, Int16Array, Int32Array (aliases of [f32] etc., defined in flight-entity)",
+        ts: "the same typed array",
+        cpp: "std::span<N>",
+        haxe: "haxe.io.Float32Array etc.",
+        status: Status::Established,
+        note: "For a TS API that declares a typed array: `&Float32Array` → `Readonly<Float32Array>` while Rust still accepts any f32 slice; `&mut Float32Array` / `Box<Float32Array>` also allowed. Specific in TS, idiomatic in Rust",
+    },
+    Entry {
+        rust: "&[N] (N numeric, read-only)",
+        ts: "ArrayLike<number>",
+        cpp: "std::span<const N>",
+        haxe: "haxe.io.Float32Array etc.",
+        status: Status::Established,
+        note: "Input that is deliberately general: accepts either array kind (user 2026-10-20). Use it only when general is intended; prefer the specific forms",
+    },
+    Entry {
+        rust: "&[T] / &mut [T] / [T; LEN] (T non-numeric)",
+        ts: "readonly T[] / T[]",
+        cpp: "std::span<const T> / std::span<T> / std::array",
+        haxe: "Array<T>",
+        status: Status::Established,
+        note: "No typed array exists for structs or strings",
+    },
+    Entry {
+        rust: "HashMap<K, V>",
+        ts: "Map<K, V>",
+        cpp: "std::unordered_map<K, V>",
+        haxe: "Map<K, V>",
+        status: Status::Established,
+        note: "Lookup only; never iterated (D3)",
+    },
+    Entry {
+        rust: "HashSet<T>",
+        ts: "Set<T>",
+        cpp: "std::unordered_set<T>",
+        haxe: "Map<T, Bool>",
+        status: Status::Established,
+        note: "Membership only; never iterated (D3)",
+    },
+    Entry {
+        rust: "Record<V>",
+        ts: "Record<string, V>",
+        cpp: "ordered string map<V>",
+        haxe: "Dynamic<V>",
+        status: Status::Established,
+        note: "Plain dictionary defined in flight-entity; ordered Vec storage plus lookup index; integer-index keys enumerate numerically, then other strings in insertion order. Ordered iteration is allowed (D3)",
+    },
+    Entry {
+        rust: "C-like enum",
+        ts: "string-literal union / const",
+        cpp: "enum class",
+        haxe: "enum abstract",
+        status: Status::Established,
+        note: "String table via get_<enum>_string / parse_<enum> free functions; strings exactly as TS (D9e)",
+    },
+    Entry {
+        rust: "data enum (one named struct payload per variant)",
+        ts: "untagged union of interfaces; discriminated only by existing literal kind fields",
+        cpp: "std::variant<…>",
+        haxe: "enum",
+        status: Status::Established,
+        note: "Never synthesize a discriminant. Closed sets only; open sets use Kind + dispatch tables (D2)",
+    },
+    Entry {
+        rust: "AnySlot",
+        ts: "unknown (read via get_*_data cast)",
+        cpp: "std::any",
+        haxe: "Dynamic",
+        status: Status::Established,
+        note: "Alias for `Option<Box<dyn Any + Send + Sync>>`, defined in flight-entity; owned and non-clone",
+    },
+    Entry {
+        rust: "Unknown",
+        ts: "unknown",
+        cpp: "nullable std::shared_ptr<const std::any>",
+        haxe: "Dynamic",
+        status: Status::Established,
+        note: "Alias for `Option<Arc<dyn Any + Send + Sync>>`, defined in flight-entity. None is explicit null and Some preserves identity; Option<Unknown> distinguishes absent/undefined from null",
+    },
+    Entry {
+        rust: "UnknownValue",
+        ts: "unknown",
+        cpp: "std::shared_ptr<const std::any>",
+        haxe: "Dynamic",
+        status: Status::Established,
+        note: "Alias for `Arc<dyn Any + Send + Sync>`, defined in flight-entity: the non-null payload of Unknown, for positions that are never null (e.g. LogValue::Object)",
+    },
+    Entry {
+        rust: "unknown_from_panic / CaughtPanic",
+        ts: "caught unknown value",
+        cpp: "caught exception payload in shared std::any",
+        haxe: "Dynamic",
+        status: Status::Established,
+        note: "D10 catch bridge in flight-entity. The exact Rust-only input is Box<dyn Any + Send>. FlightError remains the concrete Unknown value; every other payload is retained losslessly in a mutex-backed CaughtPanic so Send-only values remain safely downcastable under a borrowed guard",
+    },
+    Entry {
+        rust: "unknown_to_js_string",
+        ts: "`String(value)` for a caught unknown",
+        cpp: "exact ruled Unknown-to-string projection",
+        haxe: "exact ruled Unknown-to-string projection",
+        status: Status::Established,
+        note: "flight-entity projection for FlightError Error.toString (including the NotReadableError DOMException name), strings, concrete JS numbers, booleans and null; every other object is `[object Object]`. An outer Option<Unknown> models omitted undefined at the caller. Custom user stringification is deliberately not modeled, and no Debug/Display fallback is used",
+    },
+    Entry {
+        rust: "ProviderRef",
+        ts: "field omitted; containing capability record is the provider object",
+        cpp: "std::shared_ptr<const std::any>",
+        haxe: "Dynamic",
+        status: Status::Established,
+        note: "Alias for `Arc<dyn Any + Send + Sync>`, defined in flight-host (the bottom host vocabulary, D26). Every capability record carries `provider: ProviderRef`; facets from one provider clone the same token. Compare providers with `Arc::ptr_eq`, never callbacks. Rust provider identity `Arc::ptr_eq(&cap_a.provider, &cap_b.provider)` lowers to TS `capA === capB`. Plain identity, not Entity or a numeric id",
+    },
+    Entry {
+        rust: "HostSpawnCapability",
+        ts: "field omitted; `spawn(fut)` lowers to `void fut`",
+        cpp: "host-owned executor callback",
+        haxe: "host-owned Future executor",
+        status: Status::Established,
+        note: "Fire-and-forget async foundation in flight-host. The explicit Rust capability carries canonical ProviderRef identity and accepts Pin<Box<dyn Future<Output=()> + Send>>; the SDK never chooses an executor or blocks",
+    },
+    Entry {
+        rust: "HostTimerCapability",
+        ts: "host object implementing `setTimeout`, `setInterval`, and `Date.now`",
+        cpp: "host timer capability record",
+        haxe: "host timer capability record",
+        status: Status::Established,
+        note: "Explicit flight-host context with canonical ProviderRef identity. Providers enqueue callbacks (never inline), normalize negative/NaN timeout delays to 0 ms, and clamp interval delays to at least 1 ms. No SDK runtime or native timer is selected",
+    },
+    Entry {
+        rust: "TimerHandle",
+        ts: "owned closure calling `clearTimeout` or `clearInterval`",
+        cpp: "owned cancellation callback",
+        haxe: "owned cancellation callback",
+        status: Status::Established,
+        note: "Timer cancellation handle with an Arc callback and no public provider-specific numeric timer id",
+    },
+    Entry {
+        rust: "ArrayBuffer",
+        ts: "ArrayBuffer",
+        cpp: "small shared byte buffer",
+        haxe: "haxe.io.Bytes",
+        status: Status::Established,
+        note: "Named flight-buffer struct wrapping Ref<Box<[u8]>>: fixed-length shared storage; Clone and equality preserve allocation identity rather than copying or flattening through Vec",
+    },
+    Entry {
+        rust: "ArrayBufferView",
+        ts: "ArrayBufferView",
+        cpp: "small shared byte view",
+        haxe: "haxe.io.Bytes",
+        status: Status::Established,
+        note: "Named flight-buffer record carrying ArrayBuffer, byte_offset, byte_length and exact ArrayBufferViewKind; every view aliases the same shared storage",
+    },
+    Entry {
+        rust: "Blob",
+        ts: "Blob",
+        cpp: "small shared blob",
+        haxe: "Dynamic",
+        status: Status::Established,
+        note: "Immutable Arc<Blob> record in flight-buffer with mime_type, size, canonical Unknown provider payload, and an optional retained arrayBuffer reader. No other Blob I/O API is implied",
+    },
+    Entry {
+        rust: "BlobArrayBufferReader",
+        ts: "optional retained `() => Promise<ArrayBuffer>`",
+        cpp: "optional shared async read callback",
+        haxe: "optional Void->Future<ArrayBuffer>",
+        status: Status::Established,
+        note: "Exact flight-buffer alias for Arc<dyn Fn() -> Pin<Box<dyn Future<Output=Result<ArrayBuffer, Unknown>> + Send>> + Send + Sync>; preserves fulfillment allocation and rejection identity/null without type erasure",
+    },
+    Entry {
+        rust: "Result<T, Unknown>",
+        ts: "Promise<T> fulfillment/rejection channel",
+        cpp: "result<T, nullable shared any>",
+        haxe: "Future outcome<T, Dynamic>",
+        status: Status::Established,
+        note: "Exact async host rejection representation approved for Blob.arrayBuffer: the error arm is canonical Unknown, preserving provider error identity and explicit null",
+    },
+    Entry {
+        rust: "TweenProp<T>",
+        ts: "NumericProps<T>",
+        cpp: "typed property-map entry (member pointer + destination value)",
+        haxe: "typed property-map entry",
+        status: Status::Established,
+        note: "D22 (user 2026-10-21): `&[TweenProp<T>]` lowers to the plain property map `{ x: 100 }`. Each entry is `TweenProp<T> { get: fn(&mut T) -> &mut f32, to: f32 }`; `tween_prop!(field, value)` checks the field at compile time and `tween_with` is the nested/computed escape hatch. Non-capturing fn pointers only: no string lookup, hashing, boxed dispatch or runtime reflection",
+    },
+    Entry {
+        rust: "Arc<dyn Fn(A) -> R + Send + Sync>",
+        ts: "(a: A) => R",
+        cpp: "std::function<R(A)>",
+        haxe: "A->R",
+        status: Status::Established,
+        note: "Stored or returned capturing callback (D9); `FnMut` and `FnOnce` are also allowed; both thread-safety bounds are required",
+    },
+    Entry {
+        rust: "&dyn Fn(A) -> R / &mut dyn FnMut(A) -> R",
+        ts: "(a: A) => R",
+        cpp: "const std::function<R(A)>& / std::function<R(A)>&",
+        haxe: "A->R",
+        status: Status::Established,
+        note: "Borrowed callback parameter (D9); shared borrow for `Fn`, mutable borrow for `FnMut`",
+    },
+    Entry {
+        rust: "fn(A) -> R",
+        ts: "(a: A) => R",
+        cpp: "R (*)(A)",
+        haxe: "A->R",
+        status: Status::Established,
+        note: "Stateless function value (D9)",
+    },
+    Entry {
+        rust: "Arc<T>",
+        ts: "Readonly<T>",
+        cpp: "std::shared_ptr<const T>",
+        haxe: "T",
+        status: Status::Established,
+        note: "Immutable shared plain-record identity; T must itself be recognized vocabulary. Not Entity",
+    },
+    Entry {
+        rust: "Ref<T>",
+        ts: "T",
+        cpp: "std::shared_ptr<T>",
+        haxe: "T",
+        status: Status::Established,
+        note: "Shared object identity (A2, trial 2026-10-20): create_* returns it, dispose_* breaks cycles, memory frees at the last drop. Defined in flight-entity as Arc<RwLock<T>>: thread-safe by default (user 2026-10-20); swap the alias only if measurement shows a hot loop suffers",
+    },
+    Entry {
+        rust: "WeakRef<T>",
+        ts: "T | null",
+        cpp: "std::weak_ptr<T>",
+        haxe: "Null<T>",
+        status: Status::Proposed,
+        note: "Not for parent links: under A2 parents are strong, as in TS. Only for non-owning caches",
+    },
+    Entry {
+        rust: "Handle<T>",
+        ts: "T (object) or number",
+        cpp: "handle / T*",
+        haxe: "T",
+        status: Status::Open,
+        note: "Deferred: node-store option (D), revisit only if threading or bulk release requires it",
+    },
+    Entry {
+        rust: "generic type parameter <T>",
+        ts: "<T>",
+        cpp: "template<typename T>",
+        haxe: "<T>",
+        status: Status::Established,
+        note: "Bounds are lint-enforced: declared IR family traits, JSON Serialize/DeserializeOwned, and Rust-only Default/Clone/lifetimes",
+    },
+    Entry {
+        rust: "trait Entity / T: Entity",
+        ts: "extends Entity / T extends Entity",
+        cpp: "base class / template<typename T>",
+        haxe: "interface / <T:Entity>",
+        status: Status::Established,
+        note: "D12/WP8b: the private runtime slot is reached through this trait; it is the only workspace trait bound in the vocabulary. Qualified paths (flight_entity::Entity) map the same way",
+    },
+    Entry {
+        rust: "T: Serialize / T: DeserializeOwned",
+        ts: "generic <T>; bounds erased; JSON.stringify / JSON.parse",
+        cpp: "template<typename T>; internal JSON engine",
+        haxe: "<T>; internal JSON engine",
+        status: Status::Established,
+        note: "Principal 12ecb245: only serde::Serialize and serde::de::DeserializeOwned are accepted JSON generic bounds. serde_json stays internal; no public serde_json::Value or arbitrary serde/reflection trait surface",
+    },
+    Entry {
+        rust: "private runtime field (runtime: EntityRuntimeSlot)",
+        ts: "[EntityRuntimeKey] slot",
+        cpp: "private member",
+        haxe: "private field",
+        status: Status::Established,
+        note: "D12/WP8b: never pub; `impl_entity!(T)` implements Entity for T and exposes the slot through entity_runtime/entity_runtime_mut",
+    },
+    Entry {
+        rust: "async fn(A) -> T",
+        ts: "async (a: A) => Promise<T>",
+        cpp: "T (*)(A) [coroutine]",
+        haxe: "A->futures.Future<T>",
+        status: Status::Established,
+        note: "Executor-neutral async (D15); no SDK spawning/runtime choice",
+    },
+    Entry {
+        rust: "Pin<Box<dyn Future<Output=T> + Send>>",
+        ts: "Promise<T>",
+        cpp: "std::future<T>",
+        haxe: "futures.Future<T>",
+        status: Status::Established,
+        note: "Boxed future return type (D15); required Send bound; used in async callback returns",
+    },
+    Entry {
+        rust: "SharedFuture<T>",
+        ts: "Promise<T>",
+        cpp: "std::shared_future<T>",
+        haxe: "futures.Future<T>",
+        status: Status::Established,
+        note: "D20 (user 2026-10-21): a TS Promise stored in a field; cloneable and executor-neutral, settles once and every clone observes the same result; defined in flight-stream over futures::future::Shared. Use Ref/Arc as the output when T is not Clone; returned promises stay async fn",
+    },
+    Entry {
+        rust: "ReadableStream",
+        ts: "ReadableStream<Uint8Array>",
+        cpp: "byte read handle (e.g. std::shared_ptr<std::istream>)",
+        haxe: "haxe.io.Input",
+        status: Status::Established,
+        note: "D20: flight-stream vocabulary over futures-io AsyncRead; the exclusive borrow is the lock, the caller buffer is BYOB, pull polling is backpressure, and drop cancels",
+    },
+    Entry {
+        rust: "WritableStream",
+        ts: "WritableStream<Uint8Array>",
+        cpp: "byte write handle (e.g. std::shared_ptr<std::ostream>)",
+        haxe: "haxe.io.Output",
+        status: Status::Established,
+        note: "D20: flight-stream vocabulary over futures-io AsyncWrite; the exclusive borrow is the lock, a partial write is backpressure, close is explicit and drop aborts",
+    },
+    Entry {
+        rust: "ByteChunkStream",
+        ts: "AsyncIterable<Readonly<Uint8Array>>",
+        cpp: "async byte-chunk generator",
+        haxe: "Iterator<haxe.io.Bytes> (async)",
+        status: Status::Established,
+        note: "D20 (Principal ae8562b8): flight-stream vocabulary over futures::Stream<Item = Result<Box<Uint8Array>, Unknown>>; one item per logical chunk so boundaries survive, Err carries the iterator rejection with its original identity, None ends iteration",
+    },
+    Entry {
+        rust: "WritableStreamAbortHook",
+        ts: "UnderlyingSink.abort(reason)",
+        cpp: "std::function<std::future<void>(reason)>",
+        haxe: "Dynamic->futures.Future<Void>",
+        status: Status::Established,
+        note: "D20 (Principal ae8562b8): optional sink abort supplied at WritableStream construction; receives Option<Unknown> unchanged (None undefined, Some(None) null, Some(Some) original value) and its Unknown rejection is returned unchanged; without it abort_writable_stream is drop-as-abort",
+    },
+    Entry {
+        rust: "AbortSignal / AbortController",
+        ts: "AbortSignal / AbortController",
+        cpp: "cancellation token / controller",
+        haxe: "AbortSignal / AbortController",
+        status: Status::Established,
+        note: "Small shared cancellation primitive defined in flight-stream; plain data, not Entity",
+    },
+    Entry {
+        rust: "(A, B) / (A, B, C) / (A, B, C, D)",
+        ts: "readonly [A, B] / readonly [A, B, C] / readonly [A, B, C, D]",
+        cpp: "std::pair / std::tuple",
+        haxe: "Array<Dynamic>",
+        status: Status::Established,
+        note: "Fixed 2–4 element tuples of vocabulary types; unit tuple `()` is void (math #3)",
+    },
+    Entry {
+        rust: "enum Scalar { Variant(primitive) }",
+        ts: "number | string (scalar union)",
+        cpp: "std::variant<int, std::string>",
+        haxe: "Dynamic",
+        status: Status::Established,
+        note: "One primitive/scalar payload per variant; enum-payload-named exemption (binpack #5)",
+    },
+    Entry {
+        rust: "Ref<dyn Node> / Ref<dyn Node2D> / Ref<dyn Node3D>",
+        ts: "Node / Node2D / Node3D",
+        cpp: "std::shared_ptr<Node> / …",
+        haxe: "Node / Node2D / Node3D",
+        status: Status::Established,
+        note: "D16: node family trait objects; mixed children `Vec<Ref<dyn Node2D>>`; only declared family names accepted",
+    },
+    Entry {
+        rust: "kind struct + Deref<Target = *Fields>",
+        ts: "interface X extends Node2D",
+        cpp: "class X : public Node2D",
+        haxe: "class X extends Node2D",
+        status: Status::Established,
+        note: "D16: concrete kind (Sprite, Mesh, …) composes *Fields via Deref/DerefMut; data as separate pub field",
+    },
+    Entry {
+        rust: "T: Node2D / T: Transform2DNode / T: BoundsNode",
+        ts: "T extends Node2D / …",
+        cpp: "template<typename T>",
+        haxe: "<T:Node2D>",
+        status: Status::Established,
+        note: "D16: node family and feature traits as generic bounds; only declared trait names accepted",
+    },
+    Entry {
+        rust: "Ref<dyn Adjustment> / &dyn Adjustment / T: Adjustment",
+        ts: "Adjustment / T extends Adjustment",
+        cpp: "std::shared_ptr<Adjustment> / template<typename T>",
+        haxe: "Adjustment / <T:Adjustment>",
+        status: Status::Established,
+        note: "Adjustment family (principal batch 4, generalizes D16): kind structs Deref to AdjustmentFields; mixed stacks `Vec<Ref<dyn Adjustment>>`; only the declared family name accepted",
+    },
+    Entry {
+        rust: "Ref<dyn MaterialData> / &dyn MaterialData / T: MaterialData",
+        ts: "MaterialData / T extends MaterialData",
+        cpp: "std::shared_ptr<MaterialData> / template<typename T>",
+        haxe: "MaterialData / <T:MaterialData>",
+        status: Status::Established,
+        note: "D16 open MaterialData entity family: Ref preserves the original caller-owned custom-kind allocation through heterogeneous optional collections; only the declared family name is accepted",
+    },
+    Entry {
+        rust: "Ref<dyn Physics3DJoint> / &dyn Physics3DJoint / T: Physics3DJoint",
+        ts: "Physics3DJoint / T extends Physics3DJoint",
+        cpp: "std::shared_ptr<Physics3DJoint> / template<typename T>",
+        haxe: "Physics3DJoint / <T:Physics3DJoint>",
+        status: Status::Established,
+        note: "D16 open Physics3DJoint entity family (TS `Physics3DJoint extends Entity`, kind-dispatched to its registered solver): Ref preserves the original caller-owned custom-kind allocation; only the declared family name is accepted",
+    },
+    Entry {
+        rust: "pub const / pub static LazyLock<T>",
+        ts: "export const",
+        cpp: "inline constexpr / static",
+        haxe: "static final",
+        status: Status::Established,
+        note: "Immutable only (D5)",
+    },
 ];
 
 const PRIMITIVES: &[&str] = &[
@@ -104,13 +594,38 @@ const PRIMITIVES: &[&str] = &[
 const NUMERIC_TYPED_ARRAY_ELEMENTS: &[&str] =
     &["f32", "f64", "i8", "i16", "i32", "u8", "u16", "u32"];
 const TYPED_ARRAY_ALIASES: &[&str] = &[
-    "Float32Array", "Float64Array", "Uint8Array", "Uint16Array", "Uint32Array", "Int8Array", "Int16Array",
+    "Float32Array",
+    "Float64Array",
+    "Uint8Array",
+    "Uint16Array",
+    "Uint32Array",
+    "Int8Array",
+    "Int16Array",
     "Int32Array",
 ];
 const RESTRICTED_INTS: &[&str] = &["i64", "u64", "i128", "u128", "isize"];
 const LEAF_NAMES: &[&str] = &[
-    "String", "Kind", "AnySlot", "Unknown", "UnknownValue", "ProviderRef", "ArrayBuffer", "ArrayBufferView", "Blob", "BlobArrayBufferReader", "AbortSignal", "AbortController", "Self", "Float32Array", "Float64Array", "Uint8Array", "Uint16Array",
-    "Uint32Array", "Int8Array", "Int16Array", "Int32Array",
+    "String",
+    "Kind",
+    "AnySlot",
+    "Unknown",
+    "UnknownValue",
+    "ProviderRef",
+    "ArrayBuffer",
+    "ArrayBufferView",
+    "Blob",
+    "BlobArrayBufferReader",
+    "AbortSignal",
+    "AbortController",
+    "Self",
+    "Float32Array",
+    "Float64Array",
+    "Uint8Array",
+    "Uint16Array",
+    "Uint32Array",
+    "Int8Array",
+    "Int16Array",
+    "Int32Array",
 ];
 const CONTAINERS: &[&str] = &[
     "Option", "Vec", "HashMap", "HashSet", "Record", "Ref", "WeakRef", "Handle", "LazyLock",
@@ -127,10 +642,19 @@ const CONTAINERS: &[&str] = &[
 /// (Principal 12ecb245) are also approved. Paths match by their final segment so imported and
 /// canonical `serde::Serialize` / `serde::de::DeserializeOwned` spellings behave identically.
 const APPROVED_TYPE_PARAM_BOUNDS: &[&str] = &[
-    "Entity", "Default", "Clone", "Serialize", "DeserializeOwned",
-    "Node", "Node2D", "Node3D",
-    "Transform2DNode", "BoundsNode",
-    "Adjustment", "MaterialData", "Physics3DJoint",
+    "Entity",
+    "Default",
+    "Clone",
+    "Serialize",
+    "DeserializeOwned",
+    "Node",
+    "Node2D",
+    "Node3D",
+    "Transform2DNode",
+    "BoundsNode",
+    "Adjustment",
+    "MaterialData",
+    "Physics3DJoint",
 ];
 
 /// D16 node family traits, plus the adjustment, MaterialData and Physics3DJoint families, accepted as trait
@@ -176,7 +700,9 @@ fn check_bounds(
             continue;
         };
         if !matches!(trait_bound.modifier, TraitBoundModifier::None) {
-            out.push(String::from("relaxed generic trait bounds (`?Trait`) are not in the vocabulary"));
+            out.push(String::from(
+                "relaxed generic trait bounds (`?Trait`) are not in the vocabulary",
+            ));
             continue;
         }
         let Some(last) = trait_bound.path.segments.last() else {
@@ -184,10 +710,7 @@ fn check_bounds(
         };
         let name = last.ident.to_string();
         if !APPROVED_TYPE_PARAM_BOUNDS.contains(&name.as_str()) {
-            out.push(format!(
-                "generic bound `{}` is not in the vocabulary",
-                name
-            ));
+            out.push(format!("generic bound `{}` is not in the vocabulary", name));
         }
     }
 }
@@ -248,7 +771,9 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
                     walk(elem, known, generics, out);
                 }
             } else if len != 0 {
-                out.push(String::from("tuple types are not in the vocabulary (use a named struct or out-params)"));
+                out.push(String::from(
+                    "tuple types are not in the vocabulary (use a named struct or out-params)",
+                ));
             }
         }
         Type::BareFn(f) => {
@@ -438,7 +963,10 @@ fn walk(ty: &Type, known: &HashSet<String>, generics: &HashSet<String>, out: &mu
             {
                 // fallthrough to generic args below (none expected)
             } else if RESTRICTED_INTS.contains(&name.as_str()) {
-                out.push(format!("`{}` exceeds TS number precision (open vocabulary row)", name));
+                out.push(format!(
+                    "`{}` exceeds TS number precision (open vocabulary row)",
+                    name
+                ));
             } else if CONTAINERS.contains(&name.as_str()) || known.contains(&name) {
                 // known container or workspace type
             } else {
@@ -488,10 +1016,18 @@ fn is_approved_node_trait_object(trait_object: &syn::TypeTraitObject) -> bool {
 fn is_owned_numeric_array(ty: &Type) -> bool {
     let element_name = match ty {
         Type::Slice(slice) => match slice.elem.as_ref() {
-            Type::Path(path) => path.path.segments.last().map(|segment| segment.ident.to_string()),
+            Type::Path(path) => path
+                .path
+                .segments
+                .last()
+                .map(|segment| segment.ident.to_string()),
             _ => None,
         },
-        Type::Path(path) => path.path.segments.last().map(|segment| segment.ident.to_string()),
+        Type::Path(path) => path
+            .path
+            .segments
+            .last()
+            .map(|segment| segment.ident.to_string()),
         _ => None,
     };
     let Some(element_name) = element_name else {
@@ -725,8 +1261,19 @@ mod tests {
     #[test]
     fn accepts_vocabulary_types() {
         for ty in [
-            "f32", "&mut Vector2", "Option<Vec<Vector2>>", "&[f32]", "[f32; 16]", "HashMap<Kind, Vector2>",
-            "Ref<Vector2>", "AnySlot", "Unknown", "fn(f32) -> f32", "&'static str", "T", "()",
+            "f32",
+            "&mut Vector2",
+            "Option<Vec<Vector2>>",
+            "&[f32]",
+            "[f32; 16]",
+            "HashMap<Kind, Vector2>",
+            "Ref<Vector2>",
+            "AnySlot",
+            "Unknown",
+            "fn(f32) -> f32",
+            "&'static str",
+            "T",
+            "()",
         ] {
             assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
         }
@@ -735,17 +1282,33 @@ mod tests {
     #[test]
     fn accepts_the_batch6_shared_foundation_rows() {
         for ty in [
-            "Arc<Vector2>", "Arc<Option<Vec<Vector2>>>", "AbortSignal", "AbortController",
-            "Unknown", "Option<Unknown>", "ProviderRef", "Record<Vector2>", "Record<Unknown>", "Vec<Vector2>",
+            "Arc<Vector2>",
+            "Arc<Option<Vec<Vector2>>>",
+            "AbortSignal",
+            "AbortController",
+            "Unknown",
+            "Option<Unknown>",
+            "ProviderRef",
+            "Record<Vector2>",
+            "Record<Unknown>",
+            "Vec<Vector2>",
         ] {
             assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
         }
         for row in [
-            "Arc<T>", "AbortSignal / AbortController", "Unknown", "ProviderRef", "Record<V>",
+            "Arc<T>",
+            "AbortSignal / AbortController",
+            "Unknown",
+            "ProviderRef",
+            "Record<V>",
             "Vec<T> (nonempty at consuming API boundary)",
             "data enum (one named struct payload per variant)",
         ] {
-            assert!(ENTRIES.iter().any(|entry| entry.rust == row), "missing batch6 vocabulary row: {}", row);
+            assert!(
+                ENTRIES.iter().any(|entry| entry.rust == row),
+                "missing batch6 vocabulary row: {}",
+                row
+            );
         }
     }
 
@@ -779,9 +1342,18 @@ mod tests {
     #[test]
     fn rejects_batch6_near_misses_without_a_wildcard_waiver() {
         for ty in [
-            "Arc", "Arc<Vector2, f32>", "Arc<NotVocabulary>", "Arc<dyn Any + Send + Sync>",
-            "AbortSignal<Vector2>", "AbortController<Vector2>", "Unknown<Vector2>", "ProviderRef<Vector2>", "Record",
-            "Record<Vector2, f32>", "Record<NotVocabulary>", "NonEmptyVec<Vector2>",
+            "Arc",
+            "Arc<Vector2, f32>",
+            "Arc<NotVocabulary>",
+            "Arc<dyn Any + Send + Sync>",
+            "AbortSignal<Vector2>",
+            "AbortController<Vector2>",
+            "Unknown<Vector2>",
+            "ProviderRef<Vector2>",
+            "Record",
+            "Record<Vector2, f32>",
+            "Record<NotVocabulary>",
+            "NonEmptyVec<Vector2>",
         ] {
             assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
         }
@@ -813,9 +1385,16 @@ mod tests {
         assert_eq!(entry.cpp, "host-owned executor callback");
         assert_eq!(entry.haxe, "host-owned Future executor");
         assert!(entry.note.contains("canonical ProviderRef identity"));
-        assert!(entry.note.contains("Pin<Box<dyn Future<Output=()> + Send>>"));
+        assert!(
+            entry
+                .note
+                .contains("Pin<Box<dyn Future<Output=()> + Send>>")
+        );
         assert!(entry.note.contains("never chooses an executor or blocks"));
-        assert!(problems("Arc<dyn Fn(Pin<Box<dyn Future<Output = ()> + Send>>) + Send + Sync>").is_empty());
+        assert!(
+            problems("Arc<dyn Fn(Pin<Box<dyn Future<Output = ()> + Send>>) + Send + Sync>")
+                .is_empty()
+        );
     }
 
     #[test]
@@ -828,7 +1407,11 @@ mod tests {
         assert!(capability.ts.contains("`setInterval`"));
         assert!(capability.ts.contains("`Date.now`"));
         assert!(capability.note.contains("enqueue callbacks (never inline)"));
-        assert!(capability.note.contains("negative/NaN timeout delays to 0 ms"));
+        assert!(
+            capability
+                .note
+                .contains("negative/NaN timeout delays to 0 ms")
+        );
         assert!(capability.note.contains("interval delays to at least 1 ms"));
         assert!(capability.note.contains("No SDK runtime or native timer"));
 
@@ -838,7 +1421,11 @@ mod tests {
             .unwrap();
         assert!(handle.ts.contains("`clearTimeout`"));
         assert!(handle.ts.contains("`clearInterval`"));
-        assert!(handle.note.contains("no public provider-specific numeric timer id"));
+        assert!(
+            handle
+                .note
+                .contains("no public provider-specific numeric timer id")
+        );
     }
 
     #[test]
@@ -859,10 +1446,8 @@ mod tests {
         assert!(problems("BlobArrayBufferReader").is_empty());
         assert!(problems("Result<ArrayBuffer, Unknown>").is_empty());
         assert!(
-            problems(
-                "Pin<Box<dyn Future<Output = Result<ArrayBuffer, Unknown>> + Send>>"
-            )
-            .is_empty()
+            problems("Pin<Box<dyn Future<Output = Result<ArrayBuffer, Unknown>> + Send>>")
+                .is_empty()
         );
         assert!(!problems("Result<ArrayBuffer, FlightError>").is_empty());
     }
@@ -877,8 +1462,16 @@ mod tests {
         assert_eq!(entry.cpp, "caught exception payload in shared std::any");
         assert_eq!(entry.haxe, "Dynamic");
         assert!(entry.note.contains("Box<dyn Any + Send>"));
-        assert!(entry.note.contains("FlightError remains the concrete Unknown value"));
-        assert!(entry.note.contains("Send-only values remain safely downcastable"));
+        assert!(
+            entry
+                .note
+                .contains("FlightError remains the concrete Unknown value")
+        );
+        assert!(
+            entry
+                .note
+                .contains("Send-only values remain safely downcastable")
+        );
     }
 
     #[test]
@@ -891,7 +1484,11 @@ mod tests {
         assert!(entry.note.contains("FlightError Error.toString"));
         assert!(entry.note.contains("outer Option<Unknown>"));
         assert!(entry.note.contains("omitted undefined"));
-        assert!(entry.note.contains("Custom user stringification is deliberately not modeled"));
+        assert!(
+            entry
+                .note
+                .contains("Custom user stringification is deliberately not modeled")
+        );
         assert!(entry.note.contains("no Debug/Display fallback"));
     }
 
@@ -953,14 +1550,29 @@ mod tests {
 
     #[test]
     fn accepts_owned_fixed_length_array_boxes() {
-        for ty in ["Box<[f32]>", "Box<Float32Array>", "Box<Uint16Array>", "Box<[Vector2]>", "Box<[Ref<Box<[f32]>>]>"] {
+        for ty in [
+            "Box<[f32]>",
+            "Box<Float32Array>",
+            "Box<Uint16Array>",
+            "Box<[Vector2]>",
+            "Box<[Ref<Box<[f32]>>]>",
+        ] {
             assert!(problems(ty).is_empty(), "{} -> {:?}", ty, problems(ty));
         }
-        for ty in ["Box<[NotVocabulary]>", "Box<Vector2>", "Box<dyn Fn(f32) -> f32>", "Box<dyn Any>"] {
+        for ty in [
+            "Box<[NotVocabulary]>",
+            "Box<Vector2>",
+            "Box<dyn Fn(f32) -> f32>",
+            "Box<dyn Any>",
+        ] {
             assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
         }
         assert_eq!(problems("Box<dyn Any>").len(), 2);
-        assert!(ENTRIES.iter().any(|entry| entry.rust == "Box<[T]> (T non-numeric)"));
+        assert!(
+            ENTRIES
+                .iter()
+                .any(|entry| entry.rust == "Box<[T]> (T non-numeric)")
+        );
     }
 
     #[test]
@@ -1069,9 +1681,17 @@ mod tests {
             "pub fn f<T: Any>(x: &T) {}",
         ] {
             let item: syn::ItemFn = syn::parse_str(source).unwrap();
-            assert!(!bound_problems(&item.sig.generics).is_empty(), "{} unexpectedly accepted", source);
+            assert!(
+                !bound_problems(&item.sig.generics).is_empty(),
+                "{} unexpectedly accepted",
+                source
+            );
         }
-        for ty in ["serde_json::Value", "serde_json::Map<String, serde_json::Value>", "serde::Serializer"] {
+        for ty in [
+            "serde_json::Value",
+            "serde_json::Map<String, serde_json::Value>",
+            "serde::Serializer",
+        ] {
             assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
         }
     }
@@ -1112,11 +1732,7 @@ mod tests {
 
     #[test]
     fn rejects_non_future_pin_box() {
-        for ty in [
-            "Pin<Box<dyn Display + Send>>",
-            "Pin<Box<f32>>",
-            "Pin<f32>",
-        ] {
+        for ty in ["Pin<Box<dyn Display + Send>>", "Pin<Box<f32>>", "Pin<f32>"] {
             assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
         }
     }
@@ -1144,7 +1760,10 @@ mod tests {
 
     #[test]
     fn rejects_tuples_outside_2_to_4_elements() {
-        assert!(!problems("(f32,)").is_empty(), "1-tuple unexpectedly accepted");
+        assert!(
+            !problems("(f32,)").is_empty(),
+            "1-tuple unexpectedly accepted"
+        );
         assert!(
             !problems("(f32, f32, f32, f32, f32)").is_empty(),
             "5-tuple unexpectedly accepted"
@@ -1153,10 +1772,7 @@ mod tests {
 
     #[test]
     fn rejects_tuples_with_non_vocabulary_elements() {
-        for ty in [
-            "(f32, NotVocabulary)",
-            "(NotVocabulary, f32, bool)",
-        ] {
+        for ty in ["(f32, NotVocabulary)", "(NotVocabulary, f32, bool)"] {
             assert!(!problems(ty).is_empty(), "{} unexpectedly accepted", ty);
         }
     }
@@ -1209,9 +1825,16 @@ mod tests {
             })
             .unwrap();
         assert_eq!(entry.ts, "MaterialData / T extends MaterialData");
-        assert_eq!(entry.cpp, "std::shared_ptr<MaterialData> / template<typename T>");
+        assert_eq!(
+            entry.cpp,
+            "std::shared_ptr<MaterialData> / template<typename T>"
+        );
         assert_eq!(entry.haxe, "MaterialData / <T:MaterialData>");
-        assert!(entry.note.contains("original caller-owned custom-kind allocation"));
+        assert!(
+            entry
+                .note
+                .contains("original caller-owned custom-kind allocation")
+        );
     }
 
     #[test]
@@ -1334,7 +1957,11 @@ mod tests {
             "pub fn f<T: Physics3DJoint + Display>(x: &T) {}",
         ] {
             let item: syn::ItemFn = syn::parse_str(source).unwrap();
-            assert!(!bound_problems(&item.sig.generics).is_empty(), "{} unexpectedly accepted", source);
+            assert!(
+                !bound_problems(&item.sig.generics).is_empty(),
+                "{} unexpectedly accepted",
+                source
+            );
         }
     }
 }

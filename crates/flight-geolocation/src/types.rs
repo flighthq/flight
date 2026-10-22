@@ -66,7 +66,8 @@ pub struct GeolocationRequestOptions {
 }
 
 /// Boxed Send future for a current-position read (D15).
-pub type GeolocationPositionFuture = Pin<Box<dyn Future<Output = Option<GeolocationPosition>> + Send>>;
+pub type GeolocationPositionFuture =
+    Pin<Box<dyn Future<Output = Option<GeolocationPosition>> + Send>>;
 
 /// Boxed Send future for a position-or-reason read (D15).
 pub type GeolocationPositionResultFuture =

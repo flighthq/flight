@@ -3,11 +3,23 @@ use flight_bitmap::contract::*;
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
-    return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
+    return BitmapRegion {
+        bitmap: bmp,
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+    };
 }
 
 fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegion {
-    return BitmapRegion { bitmap: bmp, x, y, width, height };
+    return BitmapRegion {
+        bitmap: bmp,
+        x,
+        y,
+        width,
+        height,
+    };
 }
 
 mod composite_bitmap_pixels {
@@ -175,7 +187,13 @@ mod extract_bitmap_pixels {
         source.data[i] = 0xff;
         source.data[i + 3] = 0xff;
         let mut out = vec![0u8; 4];
-        let sr = BitmapRegion { bitmap: source, x: 1, y: 1, width: 1, height: 1 };
+        let sr = BitmapRegion {
+            bitmap: source,
+            x: 1,
+            y: 1,
+            width: 1,
+            height: 1,
+        };
         extract_bitmap_pixels(&mut out, &sr);
         assert_eq!(out[0], 0xff);
         assert_eq!(out[3], 0xff);
@@ -185,7 +203,13 @@ mod extract_bitmap_pixels {
     fn silently_skips_pixels_outside_source_bounds() {
         let source = create_bitmap(1, 1, Some(0xffffffff));
         let mut out = vec![0u8; 4 * 4];
-        let sr = BitmapRegion { bitmap: source, x: -1, y: -1, width: 2, height: 2 };
+        let sr = BitmapRegion {
+            bitmap: source,
+            x: -1,
+            y: -1,
+            width: 2,
+            height: 2,
+        };
         extract_bitmap_pixels(&mut out, &sr);
         let i = (1 * 2 + 1) * 4;
         assert_eq!(out[i], 0xff);
@@ -216,7 +240,13 @@ mod extract_bitmap_pixels32 {
         source.data[i + 2] = 0x33;
         source.data[i + 3] = 0x44;
         let mut out = vec![0u32; 1];
-        let sr = BitmapRegion { bitmap: source, x: 1, y: 1, width: 1, height: 1 };
+        let sr = BitmapRegion {
+            bitmap: source,
+            x: 1,
+            y: 1,
+            width: 1,
+            height: 1,
+        };
         extract_bitmap_pixels32(&mut out, &sr);
         assert_eq!(out[0], 0x11223344);
     }
@@ -244,7 +274,13 @@ mod extract_bitmap_pixels32 {
     fn silently_skips_pixels_outside_source_bounds() {
         let source = create_bitmap(1, 1, Some(0xffffffff));
         let mut out = vec![0u32; 4];
-        let sr = BitmapRegion { bitmap: source, x: -1, y: -1, width: 2, height: 2 };
+        let sr = BitmapRegion {
+            bitmap: source,
+            x: -1,
+            y: -1,
+            width: 2,
+            height: 2,
+        };
         extract_bitmap_pixels32(&mut out, &sr);
         assert_eq!(out[1 * 2 + 1], 0xffffffff);
         assert_eq!(out[0], 0);
@@ -258,7 +294,13 @@ mod write_bitmap_pixels {
     fn writes_at_given_region() {
         let dest = create_bitmap(3, 3, None);
         let pixels: Vec<u8> = vec![0x33, 0x66, 0x99, 0xff];
-        let mut dr = BitmapRegion { bitmap: dest, x: 1, y: 1, width: 1, height: 1 };
+        let mut dr = BitmapRegion {
+            bitmap: dest,
+            x: 1,
+            y: 1,
+            width: 1,
+            height: 1,
+        };
         write_bitmap_pixels(&mut dr, &pixels);
         let i = (1 * 3 + 1) * 4;
         assert_eq!(dr.bitmap.data[i], 0x33);
@@ -291,7 +333,13 @@ mod write_bitmap_pixels32 {
     #[test]
     fn unpacks_each_rgba_entry_into_destination_region() {
         let dest = create_bitmap(3, 3, None);
-        let mut dr = BitmapRegion { bitmap: dest, x: 1, y: 1, width: 1, height: 1 };
+        let mut dr = BitmapRegion {
+            bitmap: dest,
+            x: 1,
+            y: 1,
+            width: 1,
+            height: 1,
+        };
         write_bitmap_pixels32(&mut dr, &[0x336699ff]);
         let i = (1 * 3 + 1) * 4;
         assert_eq!(dr.bitmap.data[i], 0x33);

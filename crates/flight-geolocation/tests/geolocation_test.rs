@@ -39,9 +39,10 @@ fn backend(
             return future;
         }),
         is_available: Arc::new(move || available),
-        watch_position: Arc::new(move |listener: Arc<dyn Fn(&GeolocationPosition) + Send + Sync>,
-             _options: GeolocationRequestOptions,
-             on_error: Option<Arc<dyn Fn(GeolocationErrorReason) + Send + Sync>>| {
+        watch_position: Arc::new(
+            move |listener: Arc<dyn Fn(&GeolocationPosition) + Send + Sync>,
+                  _options: GeolocationRequestOptions,
+                  on_error: Option<Arc<dyn Fn(GeolocationErrorReason) + Send + Sync>>| {
                 let mut position = create_geolocation_position();
                 position.latitude = 3.0;
                 listener(&position);
@@ -98,7 +99,10 @@ mod get_current_geolocation_position {
     #[test]
     fn returns_the_backend_position() {
         let (host, _, _) = backend(true);
-        let position = block_on(flight_geolocation::get_current_geolocation_position(&host, None)).unwrap();
+        let position = block_on(flight_geolocation::get_current_geolocation_position(
+            &host, None,
+        ))
+        .unwrap();
         assert_eq!(position.latitude, 1.0);
         assert_eq!(position.longitude, 2.0);
     }
@@ -110,7 +114,9 @@ mod get_current_geolocation_position_result {
     #[test]
     fn returns_position_and_no_reason_on_success() {
         let (host, _, _) = backend(true);
-        let result = block_on(flight_geolocation::get_current_geolocation_position_result(&host, None));
+        let result = block_on(flight_geolocation::get_current_geolocation_position_result(
+            &host, None,
+        ));
         assert!(result.position.is_some());
         assert_eq!(result.position.unwrap().latitude, 1.0);
         assert_eq!(result.reason, None);
@@ -151,9 +157,15 @@ mod is_geolocation_available {
     #[test]
     fn routes_the_host_backend_availability() {
         let (available, _, _) = backend(true);
-        assert_eq!(flight_geolocation::is_geolocation_available(&available), true);
+        assert_eq!(
+            flight_geolocation::is_geolocation_available(&available),
+            true
+        );
         let (unavailable, _, _) = backend(false);
-        assert_eq!(flight_geolocation::is_geolocation_available(&unavailable), false);
+        assert_eq!(
+            flight_geolocation::is_geolocation_available(&unavailable),
+            false
+        );
     }
 }
 
@@ -191,6 +203,9 @@ mod watch_geolocation_position {
                 captured.lock().unwrap().push(reason);
             })),
         );
-        assert_eq!(*errors.lock().unwrap(), vec![GeolocationErrorReason::Denied]);
+        assert_eq!(
+            *errors.lock().unwrap(),
+            vec![GeolocationErrorReason::Denied]
+        );
     }
 }

@@ -1,6 +1,6 @@
 use flight_lighting::{
-    MAX_FORWARD_LIGHTS, Scene3DForwardLightSelectionExplanation, Scene3DForwardLightSelectionReason,
-    Scene3DLightsLike,
+    MAX_FORWARD_LIGHTS, Scene3DForwardLightSelectionExplanation,
+    Scene3DForwardLightSelectionReason, Scene3DLightsLike,
 };
 
 use crate::types::GlScene3DForwardLightList;

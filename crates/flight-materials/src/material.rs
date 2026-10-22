@@ -43,7 +43,10 @@ pub fn equals_material(a: &dyn Material, b: &dyn Material) -> bool {
 }
 
 // flight-lint: allow(contract-vocabulary) D16 open Material family: narrows any kind by its open kind name (TS `Material | null`)
-pub fn get_material_of_kind<'a>(material: Option<&'a dyn Material>, kind: &str) -> Option<&'a dyn Material> {
+pub fn get_material_of_kind<'a>(
+    material: Option<&'a dyn Material>,
+    kind: &str,
+) -> Option<&'a dyn Material> {
     return match material {
         Some(m) if m.material_fields().kind == kind => Some(m),
         _ => None,

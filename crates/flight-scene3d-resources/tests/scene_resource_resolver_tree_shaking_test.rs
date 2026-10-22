@@ -60,7 +60,8 @@ mod scene_resource_resolver_tree_shaking {
     #[test]
     fn includes_built_in_material_listers_only_through_the_named_assembly() {
         let host = MockHost::new();
-        let resolver = create_built_in_scene3d_resource_resolver(&host_image(), None, &context(&host));
+        let resolver =
+            create_built_in_scene3d_resource_resolver(&host_image(), None, &context(&host));
         {
             let registry = resolver.read().unwrap().registry.clone();
             let listers = registry.listers.read().unwrap();

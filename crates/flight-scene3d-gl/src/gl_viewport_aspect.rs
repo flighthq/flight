@@ -12,7 +12,11 @@ pub fn get_gl_scene3d_viewport_aspect(state: &GlRenderState) -> f32 {
         None => {
             let mut values = [0_i32; 4];
             // SAFETY: the viewport query runs on the state's owning GL thread.
-            unsafe { state.gl.get_parameter_i32_slice(glow::VIEWPORT, &mut values) };
+            unsafe {
+                state
+                    .gl
+                    .get_parameter_i32_slice(glow::VIEWPORT, &mut values)
+            };
             (values[2], values[3])
         }
     };

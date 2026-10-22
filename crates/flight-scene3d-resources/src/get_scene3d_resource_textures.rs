@@ -44,7 +44,10 @@ pub fn get_scene3d_texture_resource_reference(
 ) -> Option<ImageResourceReference> {
     for resource in &scene.resources {
         let textures = get_image_resource_reference_textures(resource);
-        if textures.iter().any(|candidate| Arc::ptr_eq(candidate, texture)) {
+        if textures
+            .iter()
+            .any(|candidate| Arc::ptr_eq(candidate, texture))
+        {
             return Some(resource.clone());
         }
     }

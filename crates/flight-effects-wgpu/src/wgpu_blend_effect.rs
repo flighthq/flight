@@ -228,7 +228,10 @@ pub fn register_wgpu_blend_effect_backdrop(
 
 /// Removes a borrowed backdrop reference without destroying the target (TS
 /// `unregisterWgpuBlendEffectBackdrop`).
-pub fn unregister_wgpu_blend_effect_backdrop(state: &mut WgpuRenderState, backdrop_key: &str) -> bool {
+pub fn unregister_wgpu_blend_effect_backdrop(
+    state: &mut WgpuRenderState,
+    backdrop_key: &str,
+) -> bool {
     return get_wgpu_effect_runtime(state)
         .blend_backdrops
         .remove(backdrop_key)

@@ -3,6 +3,6 @@
 //! the crate root exposes only the curated public lane from TS `index.ts` plus type sugar.
 
 pub use super::spring::*;
+pub use super::spring_config::*;
 pub use super::spring2d::*;
 pub use super::spring3d::*;
-pub use super::spring_config::*;

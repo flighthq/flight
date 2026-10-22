@@ -27,18 +27,39 @@ pub struct ColorScaleBiasAdjustment {
     pub color_scale_bias: ColorScaleBias,
 }
 
-pub fn create_color_scale_bias_adjustment(color_scale_bias: &ColorScaleBias) -> ColorScaleBiasAdjustment {
+pub fn create_color_scale_bias_adjustment(
+    color_scale_bias: &ColorScaleBias,
+) -> ColorScaleBiasAdjustment {
     let mut out: ColorScaleBiasAdjustment = allocate_entity();
     initialize_color_scale_bias_adjustment(&mut out, color_scale_bias);
     return out;
 }
 
-pub fn initialize_color_scale_bias_adjustment(out: &mut ColorScaleBiasAdjustment, color_scale_bias: &ColorScaleBias) {
+pub fn initialize_color_scale_bias_adjustment(
+    out: &mut ColorScaleBiasAdjustment,
+    color_scale_bias: &ColorScaleBias,
+) {
     let color_matrix = [
-        color_scale_bias.red_scale, 0.0, 0.0, 0.0, color_scale_bias.red_bias,
-        0.0, color_scale_bias.green_scale, 0.0, 0.0, color_scale_bias.green_bias,
-        0.0, 0.0, color_scale_bias.blue_scale, 0.0, color_scale_bias.blue_bias,
-        0.0, 0.0, 0.0, color_scale_bias.alpha_scale, color_scale_bias.alpha_bias,
+        color_scale_bias.red_scale,
+        0.0,
+        0.0,
+        0.0,
+        color_scale_bias.red_bias,
+        0.0,
+        color_scale_bias.green_scale,
+        0.0,
+        0.0,
+        color_scale_bias.green_bias,
+        0.0,
+        0.0,
+        color_scale_bias.blue_scale,
+        0.0,
+        color_scale_bias.blue_bias,
+        0.0,
+        0.0,
+        0.0,
+        color_scale_bias.alpha_scale,
+        color_scale_bias.alpha_bias,
     ];
     out.color_scale_bias = color_scale_bias.clone();
     initialize_color_matrix_adjustment(out, "ColorScaleBiasAdjustment", color_matrix);
@@ -58,13 +79,20 @@ impl AdjustmentSignatureValue for ColorScaleBias {
     fn write_adjustment_signature_value(&self, out: &mut String) {
         out.push_str("{\"redScale\":");
         self.red_scale.write_adjustment_signature_value(out);
-        self.green_scale.write_adjustment_signature_entry("greenScale", out);
-        self.blue_scale.write_adjustment_signature_entry("blueScale", out);
-        self.alpha_scale.write_adjustment_signature_entry("alphaScale", out);
-        self.red_bias.write_adjustment_signature_entry("redBias", out);
-        self.green_bias.write_adjustment_signature_entry("greenBias", out);
-        self.blue_bias.write_adjustment_signature_entry("blueBias", out);
-        self.alpha_bias.write_adjustment_signature_entry("alphaBias", out);
+        self.green_scale
+            .write_adjustment_signature_entry("greenScale", out);
+        self.blue_scale
+            .write_adjustment_signature_entry("blueScale", out);
+        self.alpha_scale
+            .write_adjustment_signature_entry("alphaScale", out);
+        self.red_bias
+            .write_adjustment_signature_entry("redBias", out);
+        self.green_bias
+            .write_adjustment_signature_entry("greenBias", out);
+        self.blue_bias
+            .write_adjustment_signature_entry("blueBias", out);
+        self.alpha_bias
+            .write_adjustment_signature_entry("alphaBias", out);
         out.push('}');
     }
 }

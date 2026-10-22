@@ -38,7 +38,9 @@ mod sugar_tests {
     }
 
     fn status_capability() -> HostConnectivityStatusCapability {
-        return HostConnectivityStatusCapability { get_status: Arc::new(|out: &mut ConnectivityStatus| *out = reported()) };
+        return HostConnectivityStatusCapability {
+            get_status: Arc::new(|out: &mut ConnectivityStatus| *out = reported()),
+        };
     }
 
     /// A change capability counting subscribes, unsubscribes and destroys.
@@ -49,7 +51,8 @@ mod sugar_tests {
             subscribe: Arc::new(move |_listener: ConnectivityChangeListener| {
                 counts.lock().unwrap()[0] += 1;
                 let on_release = counts.clone();
-                let release: ConnectivityUnsubscribe = Arc::new(move || on_release.lock().unwrap()[1] += 1);
+                let release: ConnectivityUnsubscribe =
+                    Arc::new(move || on_release.lock().unwrap()[1] += 1);
                 return Some(release);
             }),
         };
@@ -84,15 +87,24 @@ mod sugar_tests {
         connect_signal(&b.on_online, Arc::new(|_: &()| {}), None);
         a.dispose();
         dispose_connectivity(&mut b);
-        assert_eq!(has_signal_slots(&a.on_online), has_signal_slots(&b.on_online));
+        assert_eq!(
+            has_signal_slots(&a.on_online),
+            has_signal_slots(&b.on_online)
+        );
         assert!(!has_signal_slots(&a.on_online));
     }
 
     #[test]
     fn connectivity_status_has_changed_matches_has_connectivity_status_changed() {
         let base = reported();
-        let other = ConnectivityStatus { rtt: 100.0, ..reported() };
-        assert_eq!(base.has_changed(&other), has_connectivity_status_changed(&base, &other));
+        let other = ConnectivityStatus {
+            rtt: 100.0,
+            ..reported()
+        };
+        assert_eq!(
+            base.has_changed(&other),
+            has_connectivity_status_changed(&base, &other)
+        );
         assert!(base.has_changed(&other));
         assert!(!base.has_changed(&reported()));
     }
@@ -107,22 +119,42 @@ mod sugar_tests {
     }
 
     #[test]
-    fn host_connectivity_reachability_capability_detect_reachability_matches_detect_connectivity_reachability() {
+    fn host_connectivity_reachability_capability_detect_reachability_matches_detect_connectivity_reachability()
+     {
         let capability = HostConnectivityReachabilityCapability {
-            detect_reachability: Arc::new(|options: ConnectivityReachabilityOptions, mut out: ConnectivityReachability| {
-                out.reachable = true;
-                out.latency = options.timeout.unwrap_or(0.0) / 2.0;
-                return Box::pin(async move { Ok(out) });
-            }),
+            detect_reachability: Arc::new(
+                |options: ConnectivityReachabilityOptions, mut out: ConnectivityReachability| {
+                    out.reachable = true;
+                    out.latency = options.timeout.unwrap_or(0.0) / 2.0;
+                    return Box::pin(async move { Ok(out) });
+                },
+            ),
         };
-        let options = ConnectivityReachabilityOptions { url: "https://example.invalid".to_string(), timeout: Some(80.0), signal: None };
-        let mut a = ConnectivityReachability { reachable: false, latency: -1.0 };
+        let options = ConnectivityReachabilityOptions {
+            url: "https://example.invalid".to_string(),
+            timeout: Some(80.0),
+            signal: None,
+        };
+        let mut a = ConnectivityReachability {
+            reachable: false,
+            latency: -1.0,
+        };
         let mut b = a.clone();
         let ra = block_on(capability.detect_reachability(&mut a, &options));
-        let rb = block_on(detect_connectivity_reachability(&mut b, &capability, &options));
+        let rb = block_on(detect_connectivity_reachability(
+            &mut b,
+            &capability,
+            &options,
+        ));
         assert_eq!(ra, rb);
         assert_eq!(a, b);
-        assert_eq!(a, ConnectivityReachability { reachable: true, latency: 40.0 });
+        assert_eq!(
+            a,
+            ConnectivityReachability {
+                reachable: true,
+                latency: 40.0
+            }
+        );
     }
 
     #[test]
@@ -141,14 +173,21 @@ mod sugar_tests {
     #[test]
     fn host_connectivity_status_capability_is_metered_matches_is_connectivity_metered() {
         let capability = status_capability();
-        assert_eq!(capability.is_metered(), is_connectivity_metered(&capability));
+        assert_eq!(
+            capability.is_metered(),
+            is_connectivity_metered(&capability)
+        );
         assert!(capability.is_metered());
     }
 
     #[test]
-    fn host_connectivity_status_capability_is_save_data_enabled_matches_is_connectivity_save_data_enabled() {
+    fn host_connectivity_status_capability_is_save_data_enabled_matches_is_connectivity_save_data_enabled()
+     {
         let capability = status_capability();
-        assert_eq!(capability.is_save_data_enabled(), is_connectivity_save_data_enabled(&capability));
+        assert_eq!(
+            capability.is_save_data_enabled(),
+            is_connectivity_save_data_enabled(&capability)
+        );
         assert!(capability.is_save_data_enabled());
     }
 
@@ -299,7 +338,8 @@ pub async fn detect_connectivity_reachability(
     host_connectivity_reachability: &HostConnectivityReachabilityCapability,
     options: &ConnectivityReachabilityOptions,
 ) -> Result<(), FlightError> {
-    let result = (host_connectivity_reachability.detect_reachability)(options.clone(), out.clone()).await?;
+    let result =
+        (host_connectivity_reachability.detect_reachability)(options.clone(), out.clone()).await?;
     *out = result;
     return Ok(());
 }
@@ -332,7 +372,9 @@ pub fn get_connectivity_connection_type_string(value: ConnectivityConnectionType
 }
 
 /// The provider's online state: Some(true/false) when measured, None when not yet measured.
-pub fn get_connectivity_online(host_connectivity_status: &HostConnectivityStatusCapability) -> Option<bool> {
+pub fn get_connectivity_online(
+    host_connectivity_status: &HostConnectivityStatusCapability,
+) -> Option<bool> {
     let mut status = connectivity_status_out();
     (host_connectivity_status.get_status)(&mut status);
     return status.online;
@@ -340,7 +382,10 @@ pub fn get_connectivity_online(host_connectivity_status: &HostConnectivityStatus
 
 /// Writes the provider's current status into `out`.
 // flight-lint: allow(conform-params) D9b: TS takes `out` last and returns it; Rust takes `out` first and returns nothing
-pub fn get_connectivity_status(out: &mut ConnectivityStatus, host_connectivity_status: &HostConnectivityStatusCapability) {
+pub fn get_connectivity_status(
+    out: &mut ConnectivityStatus,
+    host_connectivity_status: &HostConnectivityStatusCapability,
+) {
     (host_connectivity_status.get_status)(out);
 }
 
@@ -357,13 +402,17 @@ pub fn has_connectivity_status_changed(a: &ConnectivityStatus, b: &ConnectivityS
         || a.metered != b.metered;
 }
 
-pub fn is_connectivity_metered(host_connectivity_status: &HostConnectivityStatusCapability) -> bool {
+pub fn is_connectivity_metered(
+    host_connectivity_status: &HostConnectivityStatusCapability,
+) -> bool {
     let mut status = connectivity_status_out();
     (host_connectivity_status.get_status)(&mut status);
     return status.metered;
 }
 
-pub fn is_connectivity_save_data_enabled(host_connectivity_status: &HostConnectivityStatusCapability) -> bool {
+pub fn is_connectivity_save_data_enabled(
+    host_connectivity_status: &HostConnectivityStatusCapability,
+) -> bool {
     let mut status = connectivity_status_out();
     (host_connectivity_status.get_status)(&mut status);
     return status.save_data;
@@ -422,7 +471,11 @@ impl HostConnectivityReachabilityCapability {
 }
 
 impl HostConnectivityStatusCapability {
-    pub fn attach(&self, host_connectivity_change: &HostConnectivityChangeCapability, connectivity: &mut Connectivity) -> bool {
+    pub fn attach(
+        &self,
+        host_connectivity_change: &HostConnectivityChangeCapability,
+        connectivity: &mut Connectivity,
+    ) -> bool {
         return attach_connectivity(self, host_connectivity_change, connectivity);
     }
 

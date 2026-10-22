@@ -202,7 +202,10 @@ mod create_wgpu_render_pipeline {
         assert_eq!(recorded.vertex_entry_point.as_deref(), Some("vs_main"));
         assert_eq!(recorded.fragment_entry_point.as_deref(), Some("fs_main"));
         assert_eq!(recorded.primitive.cull_mode, Some(wgpu::Face::Back));
-        assert_eq!(recorded.vertex_buffers[0].as_ref().unwrap().array_stride, 12);
+        assert_eq!(
+            recorded.vertex_buffers[0].as_ref().unwrap().array_stride,
+            12
+        );
         assert_eq!(recorded.targets, targets.to_vec());
     }
 }
@@ -425,27 +428,29 @@ mod set_wgpu_render_pass_pipeline {
             blend: None,
             write_mask: wgpu::ColorWrites::ALL,
         })];
-        let pipeline = native.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-            label: None,
-            layout: None,
-            vertex: wgpu::VertexState {
-                module: &module,
-                entry_point: Some("vs_main"),
-                compilation_options: test_default(),
-                buffers: &buffers,
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &module,
-                entry_point: Some("fs_main"),
-                compilation_options: test_default(),
-                targets: &targets,
-            }),
-            primitive: test_default(),
-            depth_stencil: None,
-            multisample: test_default(),
-            multiview_mask: None,
-            cache: None,
-        });
+        let pipeline = native
+            .device
+            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+                label: None,
+                layout: None,
+                vertex: wgpu::VertexState {
+                    module: &module,
+                    entry_point: Some("vs_main"),
+                    compilation_options: test_default(),
+                    buffers: &buffers,
+                },
+                fragment: Some(wgpu::FragmentState {
+                    module: &module,
+                    entry_point: Some("fs_main"),
+                    compilation_options: test_default(),
+                    targets: &targets,
+                }),
+                primitive: test_default(),
+                depth_stencil: None,
+                multisample: test_default(),
+                multiview_mask: None,
+                cache: None,
+            });
         set_wgpu_render_pass_pipeline(&mut state, &pipeline);
         assert!(records.lock().unwrap().iter().any(|record| matches!(
             record,

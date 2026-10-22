@@ -164,7 +164,12 @@ fn get_auto_divisor(matrix: &[f32], length: usize) -> f32 {
 
 /// Registers the default runner under `ConvolutionEffect` (TS `registerWgpuConvolutionEffect`).
 pub fn register_wgpu_convolution_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "ConvolutionEffect", wgpu_convolution_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "ConvolutionEffect",
+        wgpu_convolution_effect_runner,
+        None,
+    );
 }
 
 /// The default `ConvolutionEffect` runner (TS `wgpuConvolutionEffectRunner`).

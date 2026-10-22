@@ -99,10 +99,7 @@ mod apply_particle_import_options_source_cases {
                     formats: Some(vec![format.clone()]),
                 },
             );
-            assert_eq!(
-                registered_formats(&registry),
-                vec![format.kind.clone()]
-            );
+            assert_eq!(registered_formats(&registry), vec![format.kind.clone()]);
             assert!((get_particle_format_codec(&registry, &format.kind)
                 .expect("registered codec")
                 .detect)(&detect_probe(&format.kind)));

@@ -174,7 +174,12 @@ mod easing_family_endpoints {
     #[test]
     fn starts_at_exactly_0() {
         for family in families() {
-            assert_eq!(normalize_zero((family.ease_in)(0.0)), 0.0, "{} easeIn", family.name);
+            assert_eq!(
+                normalize_zero((family.ease_in)(0.0)),
+                0.0,
+                "{} easeIn",
+                family.name
+            );
             assert_eq!(
                 normalize_zero((family.ease_in_out)(0.0)),
                 0.0,
@@ -263,7 +268,8 @@ mod easing_family_halves {
                 family.name
             );
             let wide = ((family.ease_in_out)(0.5 + 1e-4) - (family.ease_in_out)(0.5 - 1e-4)).abs();
-            let narrow = ((family.ease_in_out)(0.5 + 1e-6) - (family.ease_in_out)(0.5 - 1e-6)).abs();
+            let narrow =
+                ((family.ease_in_out)(0.5 + 1e-6) - (family.ease_in_out)(0.5 - 1e-6)).abs();
             assert!(
                 narrow < (wide / 2.0).max(1e-9),
                 "{} has a step at the midpoint",
@@ -321,7 +327,10 @@ mod easing_family_shape {
                 .into_iter()
                 .find(|family| family.name == name)
                 .expect("family exists");
-            let minimum = points.iter().map(|&t| (family.ease_in)(t)).fold(f32::INFINITY, f32::min);
+            let minimum = points
+                .iter()
+                .map(|&t| (family.ease_in)(t))
+                .fold(f32::INFINITY, f32::min);
             let maximum = points
                 .iter()
                 .map(|&t| (family.ease_out)(t))
@@ -337,9 +346,7 @@ mod easing_family_shape {
         let values: Vec<f32> = points.iter().map(|&t| ease_in_bounce(t)).collect();
         assert!(values.iter().all(|value| *value >= 0.0 && *value <= 1.0));
         assert!(
-            values
-                .windows(2)
-                .any(|pair| pair[1] < pair[0]),
+            values.windows(2).any(|pair| pair[1] < pair[0]),
             "Bounce must reverse somewhere"
         );
     }

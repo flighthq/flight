@@ -112,7 +112,9 @@ pub fn apply_wgpu_effect_erase_pass(
     );
 }
 
-fn get_wgpu_blit_offset_shader(state: &mut WgpuRenderState) -> flight_entity::Ref<WgpuEffectPipeline> {
+fn get_wgpu_blit_offset_shader(
+    state: &mut WgpuRenderState,
+) -> flight_entity::Ref<WgpuEffectPipeline> {
     return get_wgpu_effect_module_pipeline(state, "blit.offset", |state| {
         return create_wgpu_effect_pipeline(state, BLIT_OFFSET_WGSL, None);
     });

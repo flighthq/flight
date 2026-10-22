@@ -105,7 +105,11 @@ mod ensure_gl_debug_program {
         let normal_program = ensure_gl_debug_program(&state, &normal());
         assert!(!Rc::ptr_eq(&normal_program, &depth_first));
 
-        let keys: Vec<String> = get_gl_scene3d_runtime(&state).program_cache.keys().cloned().collect();
+        let keys: Vec<String> = get_gl_scene3d_runtime(&state)
+            .program_cache
+            .keys()
+            .cloned()
+            .collect();
         assert!(keys.iter().any(|key| key.starts_with("debug:")));
         assert!(keys.contains(&"debug:d---".to_string()));
         assert!(keys.contains(&"debug:n---".to_string()));
@@ -121,10 +125,17 @@ mod ensure_gl_debug_program {
         let skinned = ensure_gl_debug_program(&state, &depth());
 
         assert!(!Rc::ptr_eq(&skinned, &rigid));
-        let mut keys: Vec<String> = get_gl_scene3d_runtime(&state).program_cache.keys().cloned().collect();
+        let mut keys: Vec<String> = get_gl_scene3d_runtime(&state)
+            .program_cache
+            .keys()
+            .cloned()
+            .collect();
         // D17: the Rust program cache is a HashMap; sort to compare against the TS insertion order.
         keys.sort();
-        assert_eq!(keys, vec!["debug:d---".to_string(), "debug:d-k-".to_string()]);
+        assert_eq!(
+            keys,
+            vec!["debug:d---".to_string(), "debug:d-k-".to_string()]
+        );
     }
 }
 
@@ -136,8 +147,12 @@ mod get_gl_debug_fragment_source_for_key {
         assert!(get_gl_debug_fragment_source_for_key(&depth()).contains("#define DEPTH_MODE"));
         assert!(!get_gl_debug_fragment_source_for_key(&depth()).contains("#define NORMAL_MODE"));
         assert!(get_gl_debug_fragment_source_for_key(&normal()).contains("#define NORMAL_MODE"));
-        assert!(!get_gl_debug_fragment_source_for_key(&normal()).contains("#define HAS_NORMAL_MAP"));
-        assert!(get_gl_debug_fragment_source_for_key(&normal_map()).contains("#define HAS_NORMAL_MAP"));
+        assert!(
+            !get_gl_debug_fragment_source_for_key(&normal()).contains("#define HAS_NORMAL_MAP")
+        );
+        assert!(
+            get_gl_debug_fragment_source_for_key(&normal_map()).contains("#define HAS_NORMAL_MAP")
+        );
     }
 
     #[test]
@@ -196,7 +211,9 @@ mod tangent_frame_under_a_model_transform {
         let vertex = get_gl_debug_vertex_source_for_key(&normal(), None);
         assert!(vertex.contains("mat3 modelRotation = mat3(u_model);"));
         assert!(vertex.contains("determinant(modelRotation) < 0.0 ? -1.0 : 1.0"));
-        assert!(vertex.contains("v_tangent = vec4(modelRotation * localTangent, tangentHandedness);"));
+        assert!(
+            vertex.contains("v_tangent = vec4(modelRotation * localTangent, tangentHandedness);")
+        );
         assert!(!vertex.contains("u_normalMatrix * a_tangent"));
         assert!(!vertex.contains("u_normalMatrix * localTangent"));
     }

@@ -1,9 +1,7 @@
 mod explain_gl_texture_resolution {
     use crate::gl_test_helper::{make_render_texture, make_state};
     use flight_render::TextureResolutionStatus;
-    use flight_render_gl::{
-        explain_gl_texture_resolution, register_gl_render_texture_resolver,
-    };
+    use flight_render_gl::{explain_gl_texture_resolution, register_gl_render_texture_resolver};
     use flight_texture::create_texture_2d;
 
     #[test]

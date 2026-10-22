@@ -1,5 +1,5 @@
-use flight_entity::Uint8Array;
 use crate::types::*;
+use flight_entity::Uint8Array;
 
 /// Warps source by sampling from displaced positions.
 // flight-lint: allow(conform-array) pixel ruling (agents/rust/ir-vocabulary.md): no clamped array in the IR; TS Uint8ClampedArray pixel buffers become Uint8Array, stores clamp explicitly
@@ -36,7 +36,9 @@ pub fn displace_bitmap(
 
             let (mut sample_x, mut sample_y) = (raw_sx, raw_sy);
 
-            if edge_mode.is_none() && (raw_sx < 0.0 || raw_sx >= w as f64 || raw_sy < 0.0 || raw_sy >= h as f64) {
+            if edge_mode.is_none()
+                && (raw_sx < 0.0 || raw_sx >= w as f64 || raw_sy < 0.0 || raw_sy >= h as f64)
+            {
                 match mode {
                     DisplacementMode::Wrap => {
                         sample_x = ((raw_sx % w as f64) + w as f64) % w as f64;
@@ -81,7 +83,10 @@ pub fn displace_bitmap(
 
             let idx = |rx: Option<i32>, ry: Option<i32>| -> Option<usize> {
                 match (rx, ry) {
-                    (Some(rx), Some(ry)) => Some(((source.y + ry) as usize * s_stride as usize + (source.x + rx) as usize) * 4),
+                    (Some(rx), Some(ry)) => Some(
+                        ((source.y + ry) as usize * s_stride as usize + (source.x + rx) as usize)
+                            * 4,
+                    ),
                     _ => None,
                 }
             };
@@ -104,14 +109,20 @@ pub fn displace_bitmap(
 }
 
 fn resolve_displacement_edge(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {
-    if v >= 0 && v < size { return Some(v); }
+    if v >= 0 && v < size {
+        return Some(v);
+    }
     match mode {
         BitmapEdgeMode::Clamp => Some(v.max(0).min(size - 1)),
         BitmapEdgeMode::Wrap => Some(((v % size) + size) % size),
         BitmapEdgeMode::Mirror => {
             let period = 2 * size;
             let wrapped = ((v % period) + period) % period;
-            if wrapped < size { Some(wrapped) } else { Some(period - 1 - wrapped) }
+            if wrapped < size {
+                Some(wrapped)
+            } else {
+                Some(period - 1 - wrapped)
+            }
         }
         BitmapEdgeMode::Transparent => None,
     }

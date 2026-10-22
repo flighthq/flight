@@ -51,7 +51,9 @@ pub fn resolve_gl_mesh_material_renderer(
 ) -> Option<&'static GlMeshMaterialRenderer> {
     let table = &state.gl_registries.material_renderers.entries;
     if let Some(material) = material {
-        if let Some(renderer) = as_gl_mesh_material_renderer(table.get(&material.material_fields().kind)) {
+        if let Some(renderer) =
+            as_gl_mesh_material_renderer(table.get(&material.material_fields().kind))
+        {
             return Some(renderer);
         }
     }

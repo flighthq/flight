@@ -1,5 +1,5 @@
-use crate::path::{Path, PathCommand};
 use crate::flatten_path::flatten_path;
+use crate::path::{Path, PathCommand};
 
 #[cfg(test)]
 mod sugar_tests {
@@ -48,7 +48,9 @@ fn compute_center_tangent(pts: &[f64], idx: usize) -> (f64, f64) {
     let dx = pts[(idx - 1) * 2] - pts[(idx + 1) * 2];
     let dy = pts[(idx - 1) * 2 + 1] - pts[(idx + 1) * 2 + 1];
     let len = (dx * dx + dy * dy).sqrt();
-    if len > 0.0 { return (dx / len, dy / len); }
+    if len > 0.0 {
+        return (dx / len, dy / len);
+    }
     return (1.0, 0.0);
 }
 
@@ -57,7 +59,9 @@ fn compute_left_tangent(pts: &[f64], idx: usize) -> (f64, f64) {
     let dx = pts[(idx + 1) * 2] - pts[idx * 2];
     let dy = pts[(idx + 1) * 2 + 1] - pts[idx * 2 + 1];
     let len = (dx * dx + dy * dy).sqrt();
-    if len > 0.0 { return (dx / len, dy / len); }
+    if len > 0.0 {
+        return (dx / len, dy / len);
+    }
     return (1.0, 0.0);
 }
 
@@ -75,10 +79,14 @@ fn compute_max_error(
     for i in 1..(last - first) {
         let t = u[i];
         let mt = 1.0 - t;
-        let bx = mt * mt * mt * bezier[0] + 3.0 * mt * mt * t * bezier[2]
-            + 3.0 * mt * t * t * bezier[4] + t * t * t * bezier[6];
-        let by = mt * mt * mt * bezier[1] + 3.0 * mt * mt * t * bezier[3]
-            + 3.0 * mt * t * t * bezier[5] + t * t * t * bezier[7];
+        let bx = mt * mt * mt * bezier[0]
+            + 3.0 * mt * mt * t * bezier[2]
+            + 3.0 * mt * t * t * bezier[4]
+            + t * t * t * bezier[6];
+        let by = mt * mt * mt * bezier[1]
+            + 3.0 * mt * mt * t * bezier[3]
+            + 3.0 * mt * t * t * bezier[5]
+            + t * t * t * bezier[7];
         let dx = pts[(first + i) * 2] - bx;
         let dy = pts[(first + i) * 2 + 1] - by;
         let dist_sq = dx * dx + dy * dy;
@@ -96,7 +104,9 @@ fn compute_right_tangent(pts: &[f64], idx: usize) -> (f64, f64) {
     let dx = pts[(idx - 1) * 2] - pts[idx * 2];
     let dy = pts[(idx - 1) * 2 + 1] - pts[idx * 2 + 1];
     let len = (dx * dx + dy * dy).sqrt();
-    if len > 0.0 { return (dx / len, dy / len); }
+    if len > 0.0 {
+        return (dx / len, dy / len);
+    }
     return (-1.0, 0.0);
 }
 
@@ -169,8 +179,24 @@ fn fit_cubic(
             u = reparameterize(pts, first, last, &u, &bezier);
         } else {
             let t_hat_center = compute_center_tangent(pts, split_point);
-            fit_cubic(pts, first, split_point, t_hat1, (-t_hat_center.0, -t_hat_center.1), tolerance_sq, out);
-            fit_cubic(pts, split_point, last, t_hat_center, t_hat2, tolerance_sq, out);
+            fit_cubic(
+                pts,
+                first,
+                split_point,
+                t_hat1,
+                (-t_hat_center.0, -t_hat_center.1),
+                tolerance_sq,
+                out,
+            );
+            fit_cubic(
+                pts,
+                split_point,
+                last,
+                t_hat_center,
+                t_hat2,
+                tolerance_sq,
+                out,
+            );
         }
     }
 }
@@ -178,7 +204,12 @@ fn fit_cubic(
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 /// Re-curves a polyline (or any flattened path) into smooth cubic bezier segments using
 /// Schneider's algorithm. Alias-safe.
-pub fn fit_path_curves(source: &Path, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>) {
+pub fn fit_path_curves(
+    source: &Path,
+    tolerance: f64,
+    out: &mut Path,
+    flatten_tolerance: Option<f64>,
+) {
     let flatten_tolerance = flatten_tolerance.unwrap_or(0.25);
     let mut contours = Vec::new();
     flatten_path(&mut contours, source, Some(flatten_tolerance));
@@ -196,7 +227,11 @@ pub fn fit_path_curves(source: &Path, tolerance: f64, out: &mut Path, flatten_to
         let closed = n >= 3
             && contour[0] == contour[contour.len() - 2]
             && contour[1] == contour[contour.len() - 1];
-        let pts: Vec<f64> = if closed { contour[0..(n - 1) * 2].to_vec() } else { contour.clone() };
+        let pts: Vec<f64> = if closed {
+            contour[0..(n - 1) * 2].to_vec()
+        } else {
+            contour.clone()
+        };
         let pn = pts.len() / 2;
 
         if pn < 2 {
@@ -274,7 +309,10 @@ fn generate_bezier(
         let tmpx = pts[(first + i) * 2]
             - (pts[first * 2] * b0 + pts[first * 2] * b1 + pts[last * 2] * b2 + pts[last * 2] * b3);
         let tmpy = pts[(first + i) * 2 + 1]
-            - (pts[first * 2 + 1] * b0 + pts[first * 2 + 1] * b1 + pts[last * 2 + 1] * b2 + pts[last * 2 + 1] * b3);
+            - (pts[first * 2 + 1] * b0
+                + pts[first * 2 + 1] * b1
+                + pts[last * 2 + 1] * b2
+                + pts[last * 2 + 1] * b3);
         x0 += a1x * tmpx + a1y * tmpy;
         x1 += a2x * tmpx + a2y * tmpy;
     }
@@ -308,20 +346,28 @@ fn generate_bezier(
     };
 
     return vec![
-        pts[first * 2], pts[first * 2 + 1],
-        pts[first * 2] + t_hat1.0 * a1, pts[first * 2 + 1] + t_hat1.1 * a1,
-        pts[last * 2] + t_hat2.0 * a2, pts[last * 2 + 1] + t_hat2.1 * a2,
-        pts[last * 2], pts[last * 2 + 1],
+        pts[first * 2],
+        pts[first * 2 + 1],
+        pts[first * 2] + t_hat1.0 * a1,
+        pts[first * 2 + 1] + t_hat1.1 * a1,
+        pts[last * 2] + t_hat2.0 * a2,
+        pts[last * 2 + 1] + t_hat2.1 * a2,
+        pts[last * 2],
+        pts[last * 2 + 1],
     ];
 }
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
 fn newton_raphson_root_find(bezier: &[f64], px: f64, py: f64, u: f64) -> f64 {
     let mt = 1.0 - u;
-    let qx = mt * mt * mt * bezier[0] + 3.0 * mt * mt * u * bezier[2]
-        + 3.0 * mt * u * u * bezier[4] + u * u * u * bezier[6];
-    let qy = mt * mt * mt * bezier[1] + 3.0 * mt * mt * u * bezier[3]
-        + 3.0 * mt * u * u * bezier[5] + u * u * u * bezier[7];
+    let qx = mt * mt * mt * bezier[0]
+        + 3.0 * mt * mt * u * bezier[2]
+        + 3.0 * mt * u * u * bezier[4]
+        + u * u * u * bezier[6];
+    let qy = mt * mt * mt * bezier[1]
+        + 3.0 * mt * mt * u * bezier[3]
+        + 3.0 * mt * u * u * bezier[5]
+        + u * u * u * bezier[7];
 
     let q1x = 3.0 * mt * mt * (bezier[2] - bezier[0])
         + 6.0 * mt * u * (bezier[4] - bezier[2])
@@ -344,16 +390,15 @@ fn newton_raphson_root_find(bezier: &[f64], px: f64, py: f64, u: f64) -> f64 {
 }
 
 // flight-lint: allow(f64) Bezier evaluation, arc length and flattening over f64 path coordinates with tolerances tuned in double; f32 sufficiency not measured
-fn reparameterize(
-    pts: &[f64],
-    first: usize,
-    last: usize,
-    u: &[f64],
-    bezier: &[f64],
-) -> Vec<f64> {
+fn reparameterize(pts: &[f64], first: usize, last: usize, u: &[f64], bezier: &[f64]) -> Vec<f64> {
     let mut u_prime: Vec<f64> = Vec::new();
     for i in 0..=(last - first) {
-        u_prime.push(newton_raphson_root_find(bezier, pts[(first + i) * 2], pts[(first + i) * 2 + 1], u[i]));
+        u_prime.push(newton_raphson_root_find(
+            bezier,
+            pts[(first + i) * 2],
+            pts[(first + i) * 2 + 1],
+            u[i],
+        ));
     }
     return u_prime;
 }

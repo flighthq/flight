@@ -3,8 +3,8 @@
 use std::sync::{Arc, RwLock};
 
 use flight_collision::{
-    register_built_in_collision_face_queries3d, register_built_in_collision_supports3d,
     CollisionAabb3D, CollisionColliderShape3D, CollisionShape3D,
+    register_built_in_collision_face_queries3d, register_built_in_collision_supports3d,
 };
 
 use super::*;

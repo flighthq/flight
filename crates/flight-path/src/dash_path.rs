@@ -1,5 +1,5 @@
-use crate::path::{Path, PathCommand};
 use crate::flatten_path::flatten_path;
+use crate::path::{Path, PathCommand};
 
 #[cfg(test)]
 mod sugar_tests {
@@ -76,13 +76,21 @@ fn apply_dash_to_contour(
         let mut consumed: f64 = 0.0;
         while consumed < seg_len {
             let step = remaining.min(seg_len - consumed);
-            let t = if seg_len > 0.0 { (consumed + step) / seg_len } else { 0.0 };
+            let t = if seg_len > 0.0 {
+                (consumed + step) / seg_len
+            } else {
+                0.0
+            };
             let ix = x0 + t * dx;
             let iy = y0 + t * dy;
 
             if is_on {
                 if !seg_started {
-                    let t_start = if seg_len > 0.0 { consumed / seg_len } else { 0.0 };
+                    let t_start = if seg_len > 0.0 {
+                        consumed / seg_len
+                    } else {
+                        0.0
+                    };
                     out.commands.push(PathCommand::MoveTo as u8);
                     out.data.push(x0 + t_start * dx);
                     out.data.push(y0 + t_start * dy);
@@ -131,7 +139,8 @@ pub fn dash_path(
     dash: &[f64],
     dash_offset: f64,
     out: &mut Path,
-    tolerance: Option<f64>) {
+    tolerance: Option<f64>,
+) {
     let tolerance = tolerance.unwrap_or(0.25);
     let total_dash_length = dash_total(dash);
     if total_dash_length <= 0.0 {

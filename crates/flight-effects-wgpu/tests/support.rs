@@ -299,7 +299,10 @@ pub fn create_test_target(
 }
 
 /// Runs `body` inside an open frame (a live command encoder and no enclosing pass), then submits.
-pub fn with_test_frame<T>(state: &mut WgpuRenderState, body: impl FnOnce(&mut WgpuRenderState) -> T) -> T {
+pub fn with_test_frame<T>(
+    state: &mut WgpuRenderState,
+    body: impl FnOnce(&mut WgpuRenderState) -> T,
+) -> T {
     begin_wgpu_frame(state);
     let value = body(state);
     submit_wgpu_frame(state);
@@ -368,7 +371,9 @@ pub fn recorded_effect_uniform_ints(records: &Arc<Mutex<Vec<WgpuCommandRecord>>>
 }
 
 /// Every recorded render-pass begin, in order.
-pub fn recorded_pass_begins(records: &Arc<Mutex<Vec<WgpuCommandRecord>>>) -> Vec<WgpuRenderPassBeginRecord> {
+pub fn recorded_pass_begins(
+    records: &Arc<Mutex<Vec<WgpuCommandRecord>>>,
+) -> Vec<WgpuRenderPassBeginRecord> {
     return records
         .lock()
         .unwrap()
@@ -381,7 +386,9 @@ pub fn recorded_pass_begins(records: &Arc<Mutex<Vec<WgpuCommandRecord>>>) -> Vec
 }
 
 /// Every recorded render-pipeline creation, in order.
-pub fn recorded_pipelines(records: &Arc<Mutex<Vec<WgpuCommandRecord>>>) -> Vec<WgpuRenderPipelineRecord> {
+pub fn recorded_pipelines(
+    records: &Arc<Mutex<Vec<WgpuCommandRecord>>>,
+) -> Vec<WgpuRenderPipelineRecord> {
     return records
         .lock()
         .unwrap()
@@ -394,7 +401,9 @@ pub fn recorded_pipelines(records: &Arc<Mutex<Vec<WgpuCommandRecord>>>) -> Vec<W
 }
 
 /// Every recorded bind-group creation, in order.
-pub fn recorded_bind_groups(records: &Arc<Mutex<Vec<WgpuCommandRecord>>>) -> Vec<WgpuBindGroupRecord> {
+pub fn recorded_bind_groups(
+    records: &Arc<Mutex<Vec<WgpuCommandRecord>>>,
+) -> Vec<WgpuBindGroupRecord> {
     return records
         .lock()
         .unwrap()
@@ -422,7 +431,9 @@ pub fn recorded_set_bind_groups(
 }
 
 /// Every pipeline set on a pass, in order.
-pub fn recorded_set_pipelines(records: &Arc<Mutex<Vec<WgpuCommandRecord>>>) -> Vec<wgpu::RenderPipeline> {
+pub fn recorded_set_pipelines(
+    records: &Arc<Mutex<Vec<WgpuCommandRecord>>>,
+) -> Vec<wgpu::RenderPipeline> {
     return records
         .lock()
         .unwrap()
@@ -450,7 +461,9 @@ pub fn recorded_draws(records: &Arc<Mutex<Vec<WgpuCommandRecord>>>) -> Vec<WgpuD
 /// The texture views each recorded draw sampled at group 1 (its source), in draw order: the view
 /// of the bind group set at index 1 before each draw.
 #[allow(clippy::mutable_key_type)] // wgpu handles hash by id; their interior mutability never changes it
-pub fn recorded_draw_sources(records: &Arc<Mutex<Vec<WgpuCommandRecord>>>) -> Vec<wgpu::TextureView> {
+pub fn recorded_draw_sources(
+    records: &Arc<Mutex<Vec<WgpuCommandRecord>>>,
+) -> Vec<wgpu::TextureView> {
     let records = records.lock().unwrap();
     let mut views: HashMap<wgpu::BindGroup, wgpu::TextureView> = HashMap::new();
     let mut current: Option<wgpu::TextureView> = None;
@@ -486,9 +499,14 @@ pub fn recorded_pass_views(records: &Arc<Mutex<Vec<WgpuCommandRecord>>>) -> Vec<
 
 /// Runs `body` inside a validation error scope on the state's device and returns the first
 /// validation error it raised, if any.
-pub fn capture_test_validation_error(state: &WgpuRenderState, body: impl FnOnce()) -> Option<wgpu::Error> {
+pub fn capture_test_validation_error(
+    state: &WgpuRenderState,
+    body: impl FnOnce(),
+) -> Option<wgpu::Error> {
     let native = get_wgpu_render_state_native_device(state);
-    let scope = native.device.push_error_scope(wgpu::ErrorFilter::Validation);
+    let scope = native
+        .device
+        .push_error_scope(wgpu::ErrorFilter::Validation);
     body();
     return block_on(scope.pop());
 }

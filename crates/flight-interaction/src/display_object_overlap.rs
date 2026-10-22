@@ -1,9 +1,9 @@
 use flight_geometry::{
-    compute_rectangle_intersection, contains_rectangle_point_xy, encloses_rectangle,
-    intersects_rectangle, Rectangle,
+    Rectangle, compute_rectangle_intersection, contains_rectangle_point_xy, encloses_rectangle,
+    intersects_rectangle,
 };
 use flight_node::contract::NodeRevisionState;
-use flight_node::{get_node_world_bounds_rectangle, NodeRef};
+use flight_node::{NodeRef, get_node_world_bounds_rectangle};
 
 // flight-lint: allow(conform-params) D1: explicit revision state per caller-owned clock
 pub fn contains_node2d(

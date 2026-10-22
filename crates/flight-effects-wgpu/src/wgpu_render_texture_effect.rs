@@ -32,7 +32,9 @@ pub fn apply_wgpu_effects_to_render_texture(
     let dest_id = get_entity_id(dest);
     let scratch_id = get_entity_id(scratch);
     if source_id == dest_id || source_id == scratch_id || dest_id == scratch_id {
-        panic!("applyWgpuEffectsToRenderTexture: source, destination, and scratch must be distinct");
+        panic!(
+            "applyWgpuEffectsToRenderTexture: source, destination, and scratch must be distinct"
+        );
     }
     let source_target = get_wgpu_render_texture_target(state, source);
     let mut unregistered_kinds: Vec<Kind> = Vec::new();
@@ -175,7 +177,9 @@ fn get_wgpu_effect_application_status(
 
 /// The string the source uses for an application status (D9e).
 // flight-lint: allow(conform-extra) D9 enum-string conversion for the TS WgpuEffectApplicationStatus string union; TS exports no get_/parse_ free functions
-pub fn get_wgpu_effect_application_status_string(value: WgpuEffectApplicationStatus) -> &'static str {
+pub fn get_wgpu_effect_application_status_string(
+    value: WgpuEffectApplicationStatus,
+) -> &'static str {
     return match value {
         WgpuEffectApplicationStatus::Complete => "complete",
         WgpuEffectApplicationStatus::NoEffects => "no-effects",
@@ -204,13 +208,17 @@ pub fn parse_wgpu_effect_application_status(value: &str) -> Option<WgpuEffectApp
     };
 }
 
-fn report_wgpu_effect_application(state: &WgpuRenderState, explanation: &WgpuEffectApplicationExplanation) {
+fn report_wgpu_effect_application(
+    state: &WgpuRenderState,
+    explanation: &WgpuEffectApplicationExplanation,
+) {
     if explanation.status == WgpuEffectApplicationStatus::Complete
         || explanation.status == WgpuEffectApplicationStatus::NoEffects
     {
         return;
     }
-    let guard = peek_wgpu_effect_runtime(state).and_then(|runtime| runtime.application_guard.clone());
+    let guard =
+        peek_wgpu_effect_runtime(state).and_then(|runtime| runtime.application_guard.clone());
     if let Some(guard) = guard {
         guard(state, explanation);
     }

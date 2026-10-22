@@ -6,13 +6,14 @@ use flight_geometry::{create_vector2, create_vector3};
 use flight_render_gl::{GlModifierBindContext, GlModifierSnippet, GlRenderState};
 use flight_scene3d_gl::contract::*;
 use flight_shading::{
-    ANIMATED_NORMAL_MODIFIER_KIND, AnimatedNormalModifier, DISSOLVE_MODIFIER_KIND, DissolveModifier,
-    EMISSIVE_MODIFIER_KIND, ENV_REFLECT_MODIFIER_KIND, EmissiveModifier, EmissiveModifierFacing,
-    FOG_MODIFIER_KIND, FogModifier, FogModifierMode, Modifier, RIM_MODIFIER_KIND, RimModifier,
-    TOON_MODIFIER_KIND, ToonModifier, VERTEX_DISPLACE_MODIFIER_KIND, VertexDisplaceModifier,
-    VertexDisplaceModifierSource, create_animated_normal_modifier, create_dissolve_modifier,
-    create_emissive_modifier, create_env_reflect_modifier, create_fog_modifier, create_rim_modifier,
-    create_toon_modifier, create_vertex_displace_modifier,
+    ANIMATED_NORMAL_MODIFIER_KIND, AnimatedNormalModifier, DISSOLVE_MODIFIER_KIND,
+    DissolveModifier, EMISSIVE_MODIFIER_KIND, ENV_REFLECT_MODIFIER_KIND, EmissiveModifier,
+    EmissiveModifierFacing, FOG_MODIFIER_KIND, FogModifier, FogModifierMode, Modifier,
+    RIM_MODIFIER_KIND, RimModifier, TOON_MODIFIER_KIND, ToonModifier,
+    VERTEX_DISPLACE_MODIFIER_KIND, VertexDisplaceModifier, VertexDisplaceModifierSource,
+    create_animated_normal_modifier, create_dissolve_modifier, create_emissive_modifier,
+    create_env_reflect_modifier, create_fog_modifier, create_rim_modifier, create_toon_modifier,
+    create_vertex_displace_modifier,
 };
 use flight_texture::{Texture, create_texture};
 
@@ -93,15 +94,26 @@ fn toon(steps: f32) -> ToonModifier {
     return modifier;
 }
 
-fn vertex_displace(source: VertexDisplaceModifierSource, amplitude: f32, axis: bool) -> VertexDisplaceModifier {
+fn vertex_displace(
+    source: VertexDisplaceModifierSource,
+    amplitude: f32,
+    axis: bool,
+) -> VertexDisplaceModifier {
     let mut modifier = create_vertex_displace_modifier();
     modifier.source = source;
     modifier.amplitude = amplitude;
-    modifier.axis = if axis { Some(create_vector3(0.0, 1.0, 0.0)) } else { None };
+    modifier.axis = if axis {
+        Some(create_vector3(0.0, 1.0, 0.0))
+    } else {
+        None
+    };
     return modifier;
 }
 
-fn is_snippet(actual: Option<&'static GlModifierSnippet>, expected: &'static GlModifierSnippet) -> bool {
+fn is_snippet(
+    actual: Option<&'static GlModifierSnippet>,
+    expected: &'static GlModifierSnippet,
+) -> bool {
     return actual.is_some_and(|actual| std::ptr::eq(actual, expected));
 }
 
@@ -115,8 +127,14 @@ mod animated_normal_gl_modifier_snippet {
         let mut dual = animated_normal(true, 0.1, 0.0);
         dual.secondary_map = Some(unloaded_texture());
         dual.secondary_scroll = Some(create_vector2(-0.05, 0.0));
-        assert_eq!(signature(&ANIMATED_NORMAL_GL_MODIFIER_SNIPPET, &disabled), "0");
-        assert_eq!(signature(&ANIMATED_NORMAL_GL_MODIFIER_SNIPPET, &single), "1");
+        assert_eq!(
+            signature(&ANIMATED_NORMAL_GL_MODIFIER_SNIPPET, &disabled),
+            "0"
+        );
+        assert_eq!(
+            signature(&ANIMATED_NORMAL_GL_MODIFIER_SNIPPET, &single),
+            "1"
+        );
         assert_eq!(signature(&ANIMATED_NORMAL_GL_MODIFIER_SNIPPET, &dual), "2");
     }
 
@@ -131,8 +149,14 @@ mod animated_normal_gl_modifier_snippet {
     #[test]
     fn emits_nothing_for_a_disabled_null_map_modifier() {
         let modifier = animated_normal(false, 0.0, 0.0);
-        assert_eq!((ANIMATED_NORMAL_GL_MODIFIER_SNIPPET.declarations.unwrap())(&modifier, 0), "");
-        assert_eq!((ANIMATED_NORMAL_GL_MODIFIER_SNIPPET.contribution)(&modifier, 0), "");
+        assert_eq!(
+            (ANIMATED_NORMAL_GL_MODIFIER_SNIPPET.declarations.unwrap())(&modifier, 0),
+            ""
+        );
+        assert_eq!(
+            (ANIMATED_NORMAL_GL_MODIFIER_SNIPPET.contribution)(&modifier, 0),
+            ""
+        );
     }
 
     #[test]
@@ -140,7 +164,12 @@ mod animated_normal_gl_modifier_snippet {
         let mut state = make_gl_scene3d_state();
         let mut modifier = animated_normal(true, 0.2, 0.3);
         modifier.strength = 2.0;
-        bind_with_context(&ANIMATED_NORMAL_GL_MODIFIER_SNIPPET, &modifier, &mut state, false);
+        bind_with_context(
+            &ANIMATED_NORMAL_GL_MODIFIER_SNIPPET,
+            &modifier,
+            &mut state,
+            false,
+        );
         assert_eq!(count_calls("uniform_2_f32"), 1);
         assert_eq!(count_calls("uniform_1_f32"), 1);
         assert_eq!(count_calls("uniform_1_i32"), 1);
@@ -150,7 +179,12 @@ mod animated_normal_gl_modifier_snippet {
     fn bind_is_a_no_op_for_a_disabled_modifier() {
         let mut state = make_gl_scene3d_state();
         let modifier = animated_normal(false, 0.0, 0.0);
-        bind_with_context(&ANIMATED_NORMAL_GL_MODIFIER_SNIPPET, &modifier, &mut state, false);
+        bind_with_context(
+            &ANIMATED_NORMAL_GL_MODIFIER_SNIPPET,
+            &modifier,
+            &mut state,
+            false,
+        );
         assert_eq!(count_calls("uniform_2_f32"), 0);
         assert_eq!(count_calls("uniform_1_i32"), 0);
     }
@@ -159,7 +193,12 @@ mod animated_normal_gl_modifier_snippet {
     fn drops_the_sampler_no_bind_when_the_texture_unit_allocator_is_exhausted() {
         let mut state = make_gl_scene3d_state();
         let modifier = animated_normal(true, 0.2, 0.3);
-        bind_with_context(&ANIMATED_NORMAL_GL_MODIFIER_SNIPPET, &modifier, &mut state, true);
+        bind_with_context(
+            &ANIMATED_NORMAL_GL_MODIFIER_SNIPPET,
+            &modifier,
+            &mut state,
+            true,
+        );
         assert_eq!(count_calls("uniform_1_i32"), 0);
         assert_eq!(count_calls("active_texture"), 0);
     }
@@ -170,15 +209,23 @@ mod dissolve_gl_modifier_snippet {
 
     #[test]
     fn reports_the_procedural_mapped_define_signature_structurally() {
-        assert_eq!(signature(&DISSOLVE_GL_MODIFIER_SNIPPET, &dissolve(0.5, false)), "");
-        assert_eq!(signature(&DISSOLVE_GL_MODIFIER_SNIPPET, &dissolve(0.5, true)), "m");
+        assert_eq!(
+            signature(&DISSOLVE_GL_MODIFIER_SNIPPET, &dissolve(0.5, false)),
+            ""
+        );
+        assert_eq!(
+            signature(&DISSOLVE_GL_MODIFIER_SNIPPET, &dissolve(0.5, true)),
+            "m"
+        );
     }
 
     #[test]
     fn discards_below_threshold_and_tints_the_burn_edge_into_the_radiance() {
         let contribution = (DISSOLVE_GL_MODIFIER_SNIPPET.contribution)(&dissolve(0.4, false), 0);
         assert!(contribution.contains("discard;"));
-        assert!(contribution.contains("radiance = mix(radiance, u_dissolveEdgeColor_0, dissolveEdge);"));
+        assert!(
+            contribution.contains("radiance = mix(radiance, u_dissolveEdgeColor_0, dissolveEdge);")
+        );
         assert!(contribution.contains("shadedValueNoise"));
     }
 
@@ -192,7 +239,12 @@ mod dissolve_gl_modifier_snippet {
     #[test]
     fn bind_uploads_threshold_edge_and_the_noise_scale_for_the_procedural_variant() {
         let mut state = make_gl_scene3d_state();
-        bind_with_context(&DISSOLVE_GL_MODIFIER_SNIPPET, &dissolve(0.5, false), &mut state, false);
+        bind_with_context(
+            &DISSOLVE_GL_MODIFIER_SNIPPET,
+            &dissolve(0.5, false),
+            &mut state,
+            false,
+        );
         // threshold + edgeWidth + scale.
         assert_eq!(count_calls("uniform_1_f32"), 3);
         assert_eq!(count_calls("uniform_3_f32"), 1);
@@ -205,7 +257,10 @@ mod emissive_gl_modifier_snippet {
     #[test]
     fn reports_the_mask_gate_define_signature_structurally() {
         assert_eq!(
-            signature(&EMISSIVE_GL_MODIFIER_SNIPPET, &emissive(0xffffffff, EmissiveModifierFacing::Ignore)),
+            signature(
+                &EMISSIVE_GL_MODIFIER_SNIPPET,
+                &emissive(0xffffffff, EmissiveModifierFacing::Ignore)
+            ),
             ""
         );
         assert_eq!(
@@ -222,7 +277,10 @@ mod emissive_gl_modifier_snippet {
 
     #[test]
     fn gates_the_contribution_by_facing_only_when_gated() {
-        let plain = (EMISSIVE_GL_MODIFIER_SNIPPET.contribution)(&emissive(0xffffffff, EmissiveModifierFacing::Ignore), 0);
+        let plain = (EMISSIVE_GL_MODIFIER_SNIPPET.contribution)(
+            &emissive(0xffffffff, EmissiveModifierFacing::Ignore),
+            0,
+        );
         assert!(!plain.contains("u_emissiveFacingSign_0"));
         let gated = (EMISSIVE_GL_MODIFIER_SNIPPET.contribution)(
             &emissive(0xffffffff, EmissiveModifierFacing::AwayFromLight),
@@ -259,12 +317,17 @@ mod env_reflect_gl_modifier_snippet {
 
     #[test]
     fn has_no_define_signature_single_program_shape() {
-        assert!(ENV_REFLECT_GL_MODIFIER_SNIPPET.get_define_signature.is_none());
+        assert!(
+            ENV_REFLECT_GL_MODIFIER_SNIPPET
+                .get_define_signature
+                .is_none()
+        );
     }
 
     #[test]
     fn reflects_the_view_vector_and_samples_the_shared_prefiltered_environment_cube() {
-        let contribution = (ENV_REFLECT_GL_MODIFIER_SNIPPET.contribution)(&create_env_reflect_modifier(), 0);
+        let contribution =
+            (ENV_REFLECT_GL_MODIFIER_SNIPPET.contribution)(&create_env_reflect_modifier(), 0);
         assert!(contribution.contains("reflect(-viewDir, normal)"));
         assert!(contribution.contains("textureLod(u_iblPrefiltered, envReflectDir"));
         assert!(contribution.contains("radiance +="));
@@ -272,7 +335,10 @@ mod env_reflect_gl_modifier_snippet {
 
     #[test]
     fn declares_the_shared_ibl_environment_samplers_so_two_instances_can_be_deduped() {
-        let declarations = (ENV_REFLECT_GL_MODIFIER_SNIPPET.declarations.unwrap())(&create_env_reflect_modifier(), 0);
+        let declarations = (ENV_REFLECT_GL_MODIFIER_SNIPPET.declarations.unwrap())(
+            &create_env_reflect_modifier(),
+            0,
+        );
         assert!(declarations.contains("uniform samplerCube u_iblPrefiltered;"));
         assert!(declarations.contains("uniform float u_iblEnabled;"));
     }
@@ -280,7 +346,12 @@ mod env_reflect_gl_modifier_snippet {
     #[test]
     fn bind_uploads_the_tint_and_the_three_reflection_scalars() {
         let mut state = make_gl_scene3d_state();
-        bind_with_context(&ENV_REFLECT_GL_MODIFIER_SNIPPET, &create_env_reflect_modifier(), &mut state, false);
+        bind_with_context(
+            &ENV_REFLECT_GL_MODIFIER_SNIPPET,
+            &create_env_reflect_modifier(),
+            &mut state,
+            false,
+        );
         assert_eq!(count_calls("uniform_3_f32"), 1);
         // intensity + fresnel + roughness.
         assert_eq!(count_calls("uniform_1_f32"), 3);
@@ -292,24 +363,51 @@ mod fog_gl_modifier_snippet {
 
     #[test]
     fn reports_the_mode_define_signature_structurally() {
-        assert_eq!(signature(&FOG_GL_MODIFIER_SNIPPET, &fog(0xffffffff, FogModifierMode::Linear)), "l");
-        assert_eq!(signature(&FOG_GL_MODIFIER_SNIPPET, &fog(0xffffffff, FogModifierMode::Exponential)), "e");
-        assert_eq!(signature(&FOG_GL_MODIFIER_SNIPPET, &fog(0xffffffff, FogModifierMode::Exponential2)), "x");
+        assert_eq!(
+            signature(
+                &FOG_GL_MODIFIER_SNIPPET,
+                &fog(0xffffffff, FogModifierMode::Linear)
+            ),
+            "l"
+        );
+        assert_eq!(
+            signature(
+                &FOG_GL_MODIFIER_SNIPPET,
+                &fog(0xffffffff, FogModifierMode::Exponential)
+            ),
+            "e"
+        );
+        assert_eq!(
+            signature(
+                &FOG_GL_MODIFIER_SNIPPET,
+                &fog(0xffffffff, FogModifierMode::Exponential2)
+            ),
+            "x"
+        );
     }
 
     #[test]
     fn emits_a_near_far_ramp_for_linear_and_an_exp_falloff_for_exponential() {
-        let linear = (FOG_GL_MODIFIER_SNIPPET.contribution)(&fog(0xffffffff, FogModifierMode::Linear), 0);
+        let linear =
+            (FOG_GL_MODIFIER_SNIPPET.contribution)(&fog(0xffffffff, FogModifierMode::Linear), 0);
         assert!(linear.contains("u_fogNear_0"));
         assert!(linear.contains("length(u_cameraPosition - v_worldPosition)"));
-        let exp = (FOG_GL_MODIFIER_SNIPPET.contribution)(&fog(0xffffffff, FogModifierMode::Exponential), 0);
+        let exp = (FOG_GL_MODIFIER_SNIPPET.contribution)(
+            &fog(0xffffffff, FogModifierMode::Exponential),
+            0,
+        );
         assert!(exp.contains("exp(-u_fogDensity_0 * fogDist)"));
     }
 
     #[test]
     fn bind_uploads_the_color_and_near_far_for_linear_density_for_exponential() {
         let mut linear = make_gl_scene3d_state();
-        bind_with_context(&FOG_GL_MODIFIER_SNIPPET, &fog(0xaabbccff, FogModifierMode::Linear), &mut linear, false);
+        bind_with_context(
+            &FOG_GL_MODIFIER_SNIPPET,
+            &fog(0xaabbccff, FogModifierMode::Linear),
+            &mut linear,
+            false,
+        );
         assert_eq!(count_calls("uniform_3_f32"), 1);
         assert_eq!(count_calls("uniform_1_f32"), 2);
 
@@ -336,17 +434,26 @@ mod register_built_in_gl_modifier_snippets {
             resolve_gl_modifier_snippet(&state, EMISSIVE_MODIFIER_KIND),
             &EMISSIVE_GL_MODIFIER_SNIPPET
         ));
-        assert!(is_snippet(resolve_gl_modifier_snippet(&state, RIM_MODIFIER_KIND), &RIM_GL_MODIFIER_SNIPPET));
+        assert!(is_snippet(
+            resolve_gl_modifier_snippet(&state, RIM_MODIFIER_KIND),
+            &RIM_GL_MODIFIER_SNIPPET
+        ));
         assert!(is_snippet(
             resolve_gl_modifier_snippet(&state, ENV_REFLECT_MODIFIER_KIND),
             &ENV_REFLECT_GL_MODIFIER_SNIPPET
         ));
-        assert!(is_snippet(resolve_gl_modifier_snippet(&state, FOG_MODIFIER_KIND), &FOG_GL_MODIFIER_SNIPPET));
+        assert!(is_snippet(
+            resolve_gl_modifier_snippet(&state, FOG_MODIFIER_KIND),
+            &FOG_GL_MODIFIER_SNIPPET
+        ));
         assert!(is_snippet(
             resolve_gl_modifier_snippet(&state, DISSOLVE_MODIFIER_KIND),
             &DISSOLVE_GL_MODIFIER_SNIPPET
         ));
-        assert!(is_snippet(resolve_gl_modifier_snippet(&state, TOON_MODIFIER_KIND), &TOON_GL_MODIFIER_SNIPPET));
+        assert!(is_snippet(
+            resolve_gl_modifier_snippet(&state, TOON_MODIFIER_KIND),
+            &TOON_GL_MODIFIER_SNIPPET
+        ));
         assert!(is_snippet(
             resolve_gl_modifier_snippet(&state, VERTEX_DISPLACE_MODIFIER_KIND),
             &VERTEX_DISPLACE_GL_MODIFIER_SNIPPET
@@ -372,7 +479,12 @@ mod rim_gl_modifier_snippet {
     #[test]
     fn bind_uploads_the_rim_color_and_power_intensity_bias_uniforms() {
         let mut state = make_gl_scene3d_state();
-        bind_with_context(&RIM_GL_MODIFIER_SNIPPET, &rim(0x88ccffff), &mut state, false);
+        bind_with_context(
+            &RIM_GL_MODIFIER_SNIPPET,
+            &rim(0x88ccffff),
+            &mut state,
+            false,
+        );
         assert_eq!(count_calls("uniform_3_f32"), 1);
         assert_eq!(count_calls("uniform_1_f32"), 3);
     }

@@ -75,7 +75,12 @@ pub fn apply_tilt_shift_effect_to_wgpu(
 
 /// Registers the default runner under `TiltShiftEffect` (TS `registerWgpuTiltShiftEffect`).
 pub fn register_wgpu_tilt_shift_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "TiltShiftEffect", wgpu_tilt_shift_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "TiltShiftEffect",
+        wgpu_tilt_shift_effect_runner,
+        None,
+    );
 }
 
 /// The default `TiltShiftEffect` runner (TS `wgpuTiltShiftEffectRunner`).

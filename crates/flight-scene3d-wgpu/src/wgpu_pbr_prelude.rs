@@ -9,7 +9,9 @@ use flight_render_wgpu::{WgpuColorAdjustmentMaterialFeature, WgpuSkinningAdapter
 
 use crate::types::WgpuPbrDefineKey;
 use crate::wgpu_mesh_fragment_tail::WGPU_MESH_FRAGMENT_TAIL;
-use crate::wgpu_mesh_pipeline::{WGPU_DIRECTIONAL_SHADOW_WGSL, splice_wgpu_color_adjustment_prelude};
+use crate::wgpu_mesh_pipeline::{
+    WGPU_DIRECTIONAL_SHADOW_WGSL, splice_wgpu_color_adjustment_prelude,
+};
 
 /// A short, stable string identity for a define key (TS `buildWgpuPbrDefineKey`): the standard
 /// map/alpha/double-sided flags, then one slot per extension lobe past the `:`, then the promoted

@@ -63,8 +63,18 @@ fn bind_with_guard(shader_key: &str, active_uniforms: &[(&str, u32)]) -> Vec<Str
 
     let mut material = create_custom_shader_material();
     material.shader_key = shader_key.to_string();
-    (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &no_lights(), &make_camera());
-    (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &no_lights(), &make_camera());
+    (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(
+        &mut state,
+        Some(&material),
+        &no_lights(),
+        &make_camera(),
+    );
+    (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(
+        &mut state,
+        Some(&material),
+        &no_lights(),
+        &make_camera(),
+    );
 
     let mut entries = Vec::new();
     get_memory_log_sink_entries(&mut entries, &sink);

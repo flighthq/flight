@@ -83,12 +83,22 @@ fn get_invert_tint_edge_color(color: u32, alpha: f32, strength: f32) -> [f32; 4]
     let mut edge = [0.0_f32; 4];
     unpack_color_rgba(&mut edge, color);
     let edge_alpha = 1.0_f32.min(alpha * edge[3] * strength);
-    return [edge[0] * edge_alpha, edge[1] * edge_alpha, edge[2] * edge_alpha, edge_alpha];
+    return [
+        edge[0] * edge_alpha,
+        edge[1] * edge_alpha,
+        edge[2] * edge_alpha,
+        edge_alpha,
+    ];
 }
 
 /// Registers the default runner under `InnerGlowEffect` (TS `registerWgpuInnerGlowEffect`).
 pub fn register_wgpu_inner_glow_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "InnerGlowEffect", wgpu_inner_glow_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "InnerGlowEffect",
+        wgpu_inner_glow_effect_runner,
+        None,
+    );
 }
 
 /// The default `InnerGlowEffect` runner (TS `wgpuInnerGlowEffectRunner`).

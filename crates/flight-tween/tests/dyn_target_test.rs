@@ -202,13 +202,7 @@ mod sized_target_unchanged {
     fn tween_prop_macro_still_works_for_sized_types() {
         let manager = setup();
         let concrete = make_concrete();
-        create_tween(
-            &manager,
-            &concrete,
-            500.0,
-            &[tween_prop!(alpha, 0.5)],
-            None,
-        );
+        create_tween(&manager, &concrete, 500.0, &[tween_prop!(alpha, 0.5)], None);
         update_tweens(&manager, 500.0);
         assert!((concrete.read().unwrap().alpha - 0.5).abs() < 0.01);
     }

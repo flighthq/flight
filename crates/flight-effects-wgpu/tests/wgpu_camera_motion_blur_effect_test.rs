@@ -20,7 +20,11 @@ fn apply_and_record(
         );
     });
     let dest_view = dest.read().unwrap().view.clone();
-    return (recorded_effect_uniforms(&records), recorded_pass_views(&records), dest_view);
+    return (
+        recorded_effect_uniforms(&records),
+        recorded_pass_views(&records),
+        dest_view,
+    );
 }
 
 mod apply_camera_motion_blur_effect_to_wgpu {
@@ -91,6 +95,9 @@ mod wgpu_camera_motion_blur_effect_runner {
             recorded_pass_views(&records).last(),
             Some(&dest.read().unwrap().view.clone())
         );
-        assert_eq!(recorded_draw_sources(&records)[0], source.read().unwrap().view.clone());
+        assert_eq!(
+            recorded_draw_sources(&records)[0],
+            source.read().unwrap().view.clone()
+        );
     }
 }

@@ -1,6 +1,8 @@
 use std::sync::{Arc, RwLock};
 
-use flight_materials::contract::{PbrExtension, create_wrapped_diffuse_pbr_extension, create_extended_pbr_material};
+use flight_materials::contract::{
+    PbrExtension, create_extended_pbr_material, create_wrapped_diffuse_pbr_extension,
+};
 use flight_scene3d_resources::contract::*;
 
 use crate::support::{create_shared_texture, same_textures};
@@ -19,7 +21,9 @@ mod register_wrapped_diffuse_pbr_scene3d_material_textures {
         extension.wrapped_diffuse_map = Some(color.clone());
         extension.thickness_map = Some(thickness.clone());
         let mut material = create_extended_pbr_material();
-        material.extensions = vec![Arc::new(RwLock::new(PbrExtension::WrappedDiffuse(extension)))];
+        material.extensions = vec![Arc::new(RwLock::new(PbrExtension::WrappedDiffuse(
+            extension,
+        )))];
         let mut out = Vec::new();
         get_scene3d_material_textures(&registry, &material, &mut out);
         assert!(same_textures(&out, &[&color, &thickness]));

@@ -298,8 +298,7 @@ fn parse_element(src: &str, state: &mut ParseState) -> Option<XmlElement> {
             }
         } else if ch == b'"' || ch == b'\'' {
             quote = ch;
-        } else if ch == b'>'
-            || (ch == b'/' && state.pos + 1 < len && bytes[state.pos + 1] == b'>')
+        } else if ch == b'>' || (ch == b'/' && state.pos + 1 < len && bytes[state.pos + 1] == b'>')
         {
             break;
         }

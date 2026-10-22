@@ -20,13 +20,12 @@ use flight_effects::EffectStateOptions;
 use flight_entity::Ref;
 use flight_render::RenderTargetFormat;
 use flight_render_wgpu::{
-    WgpuEffectContext, WgpuRenderPass, WgpuRenderState, WgpuRenderTarget,
-    WgpuTextureRenderTarget, WgpuTextureRenderTargetDescriptor,
-    acquire_wgpu_texture_render_target, begin_wgpu_render_pass, create_wgpu_render_target_pool,
-    create_wgpu_texture_render_target, destroy_wgpu_render_target_pool,
-    destroy_wgpu_texture_render_target, end_wgpu_render_pass, get_wgpu_active_render_pass,
-    get_wgpu_render_state_runtime, release_wgpu_texture_render_target, resize_wgpu_texture_render_target,
-    resume_wgpu_render_pass,
+    WgpuEffectContext, WgpuRenderPass, WgpuRenderState, WgpuRenderTarget, WgpuTextureRenderTarget,
+    WgpuTextureRenderTargetDescriptor, acquire_wgpu_texture_render_target, begin_wgpu_render_pass,
+    create_wgpu_render_target_pool, create_wgpu_texture_render_target,
+    destroy_wgpu_render_target_pool, destroy_wgpu_texture_render_target, end_wgpu_render_pass,
+    get_wgpu_active_render_pass, get_wgpu_render_state_runtime, release_wgpu_texture_render_target,
+    resize_wgpu_texture_render_target, resume_wgpu_render_pass,
 };
 use flight_texture::RenderTargetColorSpace;
 
@@ -84,9 +83,14 @@ pub fn create_wgpu_effect_state(
 ) -> WgpuEffectState {
     let options = options.copied().unwrap_or_default();
     let requested_sample_count = options.sample_count.unwrap_or(1.0);
-    let applied_sample_count = if requested_sample_count > 1.0 { 4.0 } else { 1.0 };
+    let applied_sample_count = if requested_sample_count > 1.0 {
+        4.0
+    } else {
+        1.0
+    };
     if requested_sample_count != applied_sample_count {
-        let guard = peek_wgpu_effect_runtime(state).and_then(|runtime| runtime.sample_count_guard.clone());
+        let guard =
+            peek_wgpu_effect_runtime(state).and_then(|runtime| runtime.sample_count_guard.clone());
         if let Some(guard) = guard {
             guard(state, requested_sample_count, applied_sample_count);
         }
@@ -144,7 +148,13 @@ pub fn begin_wgpu_effect_pass<'a>(
             created
         }
         Some(scene) => {
-            resize_wgpu_texture_render_target(state, &mut scene.write().unwrap(), w, h, sample_count);
+            resize_wgpu_texture_render_target(
+                state,
+                &mut scene.write().unwrap(),
+                w,
+                h,
+                sample_count,
+            );
             scene.clone()
         }
     };
@@ -291,10 +301,18 @@ fn ensure_scratch(
     descriptor: &WgpuTextureRenderTargetDescriptor,
 ) {
     if run.scratch_a.is_none() {
-        run.scratch_a = Some(acquire_wgpu_texture_render_target(state, &mut pipeline.pool, descriptor));
+        run.scratch_a = Some(acquire_wgpu_texture_render_target(
+            state,
+            &mut pipeline.pool,
+            descriptor,
+        ));
     }
     if run.scratch_b.is_none() {
-        run.scratch_b = Some(acquire_wgpu_texture_render_target(state, &mut pipeline.pool, descriptor));
+        run.scratch_b = Some(acquire_wgpu_texture_render_target(
+            state,
+            &mut pipeline.pool,
+            descriptor,
+        ));
     }
 }
 
@@ -357,8 +375,14 @@ fn linearize_clear(clear: &RenderTargetClear) -> RenderTargetClear {
 
 // The scratch target the next stage writes: whichever of the pair is not the current source.
 fn next_destination(run: &WgpuEffectChainRun) -> Ref<WgpuTextureRenderTarget> {
-    let scratch_a = run.scratch_a.as_ref().expect("scratch targets are acquired");
-    let scratch_b = run.scratch_b.as_ref().expect("scratch targets are acquired");
+    let scratch_a = run
+        .scratch_a
+        .as_ref()
+        .expect("scratch targets are acquired");
+    let scratch_b = run
+        .scratch_b
+        .as_ref()
+        .expect("scratch targets are acquired");
     return if Arc::ptr_eq(&run.source, scratch_a) {
         scratch_b.clone()
     } else {
@@ -370,7 +394,10 @@ fn next_destination(run: &WgpuEffectChainRun) -> Ref<WgpuTextureRenderTarget> {
 // compositing: the scene target already holds the finished frame, so compositing it would let the
 // enclosing clear show through wherever the frame's own alpha is zero.
 fn present_wgpu_effect_result(state: &mut WgpuRenderState, source: &WgpuTextureRenderTarget) {
-    if get_wgpu_render_state_runtime(state).command_encoder.is_none() {
+    if get_wgpu_render_state_runtime(state)
+        .command_encoder
+        .is_none()
+    {
         return;
     }
     let linear = source.color_space == RenderTargetColorSpace::Linear;
@@ -388,7 +415,13 @@ fn present_wgpu_effect_result(state: &mut WgpuRenderState, source: &WgpuTextureR
         },
         Some(WgpuEffectBlendMode::Replace),
     );
-    draw_wgpu_effect_pass(state, source, None, &mut pipeline.write().unwrap(), &mut |_, _| {});
+    draw_wgpu_effect_pass(
+        state,
+        source,
+        None,
+        &mut pipeline.write().unwrap(),
+        &mut |_, _| {},
+    );
 }
 
 fn report_wgpu_effect_state_skip(state: &WgpuRenderState, kind: &str) {

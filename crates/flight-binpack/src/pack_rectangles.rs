@@ -172,7 +172,12 @@ fn finalize_result(
         height = width;
     }
 
-    return PackResult { placements: packed.placements, width: width, height: height, unpacked: packed.unpacked };
+    return PackResult {
+        placements: packed.placements,
+        width: width,
+        height: height,
+        unpacked: packed.unpacked,
+    };
 }
 
 /// Best-Short-Side-Fit search: over every free rectangle (and, when rotation is allowed, both
@@ -338,15 +343,22 @@ fn pack_into_bin(
         }
         let placement = placement.unwrap();
 
-        placements.push(PackedRectangle { id: rect.id.clone(), x: placement.x + border, y: placement.y + border, width: if placement.rotated {
+        placements.push(PackedRectangle {
+            id: rect.id.clone(),
+            x: placement.x + border,
+            y: placement.y + border,
+            width: if placement.rotated {
                 rect.height
             } else {
                 rect.width
-            }, height: if placement.rotated {
+            },
+            height: if placement.rotated {
                 rect.width
             } else {
                 rect.height
-            }, rotated: placement.rotated });
+            },
+            rotated: placement.rotated,
+        });
 
         split_free_rectangles(&mut free, &placement);
         prune_free_rectangles(&mut free);
@@ -394,7 +406,12 @@ pub fn pack_rectangles(
         .unwrap_or(BIN_PACK_DEFAULT_MAX_EXTENT);
 
     if rects.is_empty() {
-        return PackResult { placements: Vec::new(), width: finalize_extent(0.0, power_of_two), height: finalize_extent(0.0, power_of_two), unpacked: Vec::new() };
+        return PackResult {
+            placements: Vec::new(),
+            width: finalize_extent(0.0, power_of_two),
+            height: finalize_extent(0.0, power_of_two),
+            unpacked: Vec::new(),
+        };
     }
 
     let mut degenerate: Vec<RectangleId> = Vec::new();
@@ -411,7 +428,12 @@ pub fn pack_rectangles(
         }
     }
     if placeable.is_empty() {
-        return PackResult { placements: Vec::new(), width: finalize_extent(0.0, power_of_two), height: finalize_extent(0.0, power_of_two), unpacked: degenerate };
+        return PackResult {
+            placements: Vec::new(),
+            width: finalize_extent(0.0, power_of_two),
+            height: finalize_extent(0.0, power_of_two),
+            unpacked: degenerate,
+        };
     }
 
     let sorted = sort_rectangles_for_packing(&placeable);
@@ -421,10 +443,16 @@ pub fn pack_rectangles(
     let mut total_area = 0.0_f32;
     for rect in &sorted {
         let short_side = rect.width.min(rect.height);
-        let required_width =
-            (if allow_rotation { short_side } else { rect.width }) + 2.0 * border;
-        let required_height =
-            (if allow_rotation { short_side } else { rect.height }) + 2.0 * border;
+        let required_width = (if allow_rotation {
+            short_side
+        } else {
+            rect.width
+        }) + 2.0 * border;
+        let required_height = (if allow_rotation {
+            short_side
+        } else {
+            rect.height
+        }) + 2.0 * border;
         need_width = need_width.max(required_width);
         need_height = need_height.max(required_height);
         total_area += (rect.width + padding) * (rect.height + padding);
@@ -528,19 +556,13 @@ fn sort_rectangles_for_packing(rects: &[PackableRectangle]) -> Vec<PackableRecta
         let area_a = a.width * a.height;
         let area_b = b.width * b.height;
         if area_a != area_b {
-            return area_b
-                .partial_cmp(&area_a)
-                .unwrap_or(Ordering::Equal);
+            return area_b.partial_cmp(&area_a).unwrap_or(Ordering::Equal);
         }
         if a.height != b.height {
-            return b.height
-                .partial_cmp(&a.height)
-                .unwrap_or(Ordering::Equal);
+            return b.height.partial_cmp(&a.height).unwrap_or(Ordering::Equal);
         }
         if a.width != b.width {
-            return b.width
-                .partial_cmp(&a.width)
-                .unwrap_or(Ordering::Equal);
+            return b.width.partial_cmp(&a.width).unwrap_or(Ordering::Equal);
         }
         return compare_rectangle_id(&a.id, &b.id);
     });

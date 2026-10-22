@@ -3,15 +3,16 @@
 use std::any::Any;
 
 use flight_color::{LinearColor, allocate_linear_color, unpack_color_to_linear};
-use flight_render_gl::{GlModifierBindContext, GlModifierSnippet, GlRenderState, resolve_gl_texture};
+use flight_render_gl::{
+    GlModifierBindContext, GlModifierSnippet, GlRenderState, resolve_gl_texture,
+};
 use flight_shading::{
-    ANIMATED_NORMAL_MODIFIER_KIND, AnimatedNormalModifier, DISSOLVE_MODIFIER_KIND, DissolveModifier,
-    EMISSIVE_MODIFIER_KIND, ENV_REFLECT_MODIFIER_KIND, EmissiveModifier, EmissiveModifierFacing,
-    EnvReflectModifier,
-    FOG_MODIFIER_KIND, FogModifier, FogModifierMode, MODIFIER_SLOT_EFFECT, MODIFIER_SLOT_EMISSIVE,
-    MODIFIER_SLOT_NORMAL, MODIFIER_SLOT_VERTEX, Modifier, RIM_MODIFIER_KIND, RimModifier,
-    TOON_MODIFIER_KIND, ToonModifier, VERTEX_DISPLACE_MODIFIER_KIND, VertexDisplaceModifier,
-    VertexDisplaceModifierSource,
+    ANIMATED_NORMAL_MODIFIER_KIND, AnimatedNormalModifier, DISSOLVE_MODIFIER_KIND,
+    DissolveModifier, EMISSIVE_MODIFIER_KIND, ENV_REFLECT_MODIFIER_KIND, EmissiveModifier,
+    EmissiveModifierFacing, EnvReflectModifier, FOG_MODIFIER_KIND, FogModifier, FogModifierMode,
+    MODIFIER_SLOT_EFFECT, MODIFIER_SLOT_EMISSIVE, MODIFIER_SLOT_NORMAL, MODIFIER_SLOT_VERTEX,
+    Modifier, RIM_MODIFIER_KIND, RimModifier, TOON_MODIFIER_KIND, ToonModifier,
+    VERTEX_DISPLACE_MODIFIER_KIND, VertexDisplaceModifier, VertexDisplaceModifierSource,
 };
 use flight_texture::Texture;
 use glow::{HasContext, NativeUniformLocation};
@@ -121,7 +122,10 @@ pub static VERTEX_DISPLACE_GL_MODIFIER_SNIPPET: GlModifierSnippet = GlModifierSn
     declarations: Some(declare_vertex_displace_gl_modifier),
 };
 
-fn bind_animated_normal_gl_modifier(modifier: &dyn Modifier, context: &mut GlModifierBindContext<'_>) {
+fn bind_animated_normal_gl_modifier(
+    modifier: &dyn Modifier,
+    context: &mut GlModifierBindContext<'_>,
+) {
     let Some(animated) = (modifier as &dyn Any).downcast_ref::<AnimatedNormalModifier>() else {
         return;
     };
@@ -129,14 +133,26 @@ fn bind_animated_normal_gl_modifier(modifier: &dyn Modifier, context: &mut GlMod
         return;
     };
     let suffix = format!("_{}", context.index);
-    bind_gl_modifier_texture(context, &map.read().unwrap(), &format!("u_animNormalMap{suffix}"));
+    bind_gl_modifier_texture(
+        context,
+        &map.read().unwrap(),
+        &format!("u_animNormalMap{suffix}"),
+    );
     let scroll = &animated.scroll;
-    let scroll_location = get_gl_modifier_uniform_location(context, &format!("u_animNormalScroll{suffix}"));
-    let strength_location = get_gl_modifier_uniform_location(context, &format!("u_animNormalStrength{suffix}"));
+    let scroll_location =
+        get_gl_modifier_uniform_location(context, &format!("u_animNormalScroll{suffix}"));
+    let strength_location =
+        get_gl_modifier_uniform_location(context, &format!("u_animNormalStrength{suffix}"));
     // SAFETY: the program is bound on the owning GL thread.
     unsafe {
-        context.state.gl.uniform_2_f32(scroll_location.as_ref(), scroll.x, scroll.y);
-        context.state.gl.uniform_1_f32(strength_location.as_ref(), animated.strength);
+        context
+            .state
+            .gl
+            .uniform_2_f32(scroll_location.as_ref(), scroll.x, scroll.y);
+        context
+            .state
+            .gl
+            .uniform_1_f32(strength_location.as_ref(), animated.strength);
     }
     if let Some(secondary_map) = animated.secondary_map.as_ref() {
         bind_gl_modifier_texture(
@@ -145,9 +161,15 @@ fn bind_animated_normal_gl_modifier(modifier: &dyn Modifier, context: &mut GlMod
             &format!("u_animNormalMap2{suffix}"),
         );
         let secondary = animated.secondary_scroll.as_ref().unwrap_or(scroll);
-        let location = get_gl_modifier_uniform_location(context, &format!("u_animNormalScroll2{suffix}"));
+        let location =
+            get_gl_modifier_uniform_location(context, &format!("u_animNormalScroll2{suffix}"));
         // SAFETY: the program is bound on the owning GL thread.
-        unsafe { context.state.gl.uniform_2_f32(location.as_ref(), secondary.x, secondary.y) };
+        unsafe {
+            context
+                .state
+                .gl
+                .uniform_2_f32(location.as_ref(), secondary.x, secondary.y)
+        };
     }
 }
 
@@ -156,9 +178,12 @@ fn bind_dissolve_gl_modifier(modifier: &dyn Modifier, context: &mut GlModifierBi
         return;
     };
     let suffix = format!("_{}", context.index);
-    let threshold = get_gl_modifier_uniform_location(context, &format!("u_dissolveThreshold{suffix}"));
-    let edge_width = get_gl_modifier_uniform_location(context, &format!("u_dissolveEdgeWidth{suffix}"));
-    let edge_color = get_gl_modifier_uniform_location(context, &format!("u_dissolveEdgeColor{suffix}"));
+    let threshold =
+        get_gl_modifier_uniform_location(context, &format!("u_dissolveThreshold{suffix}"));
+    let edge_width =
+        get_gl_modifier_uniform_location(context, &format!("u_dissolveEdgeWidth{suffix}"));
+    let edge_color =
+        get_gl_modifier_uniform_location(context, &format!("u_dissolveEdgeColor{suffix}"));
     let mut scratch_rgba: LinearColor = allocate_linear_color();
     unpack_color_to_linear(&mut scratch_rgba, dissolve.edge_color);
     // SAFETY: the program is bound on the owning GL thread.
@@ -166,14 +191,28 @@ fn bind_dissolve_gl_modifier(modifier: &dyn Modifier, context: &mut GlModifierBi
         let gl = &context.state.gl;
         gl.uniform_1_f32(threshold.as_ref(), dissolve.threshold);
         gl.uniform_1_f32(edge_width.as_ref(), dissolve.edge_width);
-        gl.uniform_3_f32(edge_color.as_ref(), scratch_rgba.r, scratch_rgba.g, scratch_rgba.b);
+        gl.uniform_3_f32(
+            edge_color.as_ref(),
+            scratch_rgba.r,
+            scratch_rgba.g,
+            scratch_rgba.b,
+        );
     }
     if let Some(map) = dissolve.map.as_ref() {
-        bind_gl_modifier_texture(context, &map.read().unwrap(), &format!("u_dissolveMap{suffix}"));
+        bind_gl_modifier_texture(
+            context,
+            &map.read().unwrap(),
+            &format!("u_dissolveMap{suffix}"),
+        );
     } else {
         let scale = get_gl_modifier_uniform_location(context, &format!("u_dissolveScale{suffix}"));
         // SAFETY: the program is bound on the owning GL thread.
-        unsafe { context.state.gl.uniform_1_f32(scale.as_ref(), dissolve.scale) };
+        unsafe {
+            context
+                .state
+                .gl
+                .uniform_1_f32(scale.as_ref(), dissolve.scale)
+        };
     }
 }
 
@@ -183,17 +222,27 @@ fn bind_emissive_gl_modifier(modifier: &dyn Modifier, context: &mut GlModifierBi
     };
     let suffix = format!("_{}", context.index);
     let color = get_gl_modifier_uniform_location(context, &format!("u_emissiveColor{suffix}"));
-    let strength = get_gl_modifier_uniform_location(context, &format!("u_emissiveStrength{suffix}"));
+    let strength =
+        get_gl_modifier_uniform_location(context, &format!("u_emissiveStrength{suffix}"));
     let mut scratch_rgba: LinearColor = allocate_linear_color();
     unpack_color_to_linear(&mut scratch_rgba, emissive.color);
     // SAFETY: the program is bound on the owning GL thread.
     unsafe {
         let gl = &context.state.gl;
-        gl.uniform_3_f32(color.as_ref(), scratch_rgba.r, scratch_rgba.g, scratch_rgba.b);
+        gl.uniform_3_f32(
+            color.as_ref(),
+            scratch_rgba.r,
+            scratch_rgba.g,
+            scratch_rgba.b,
+        );
         gl.uniform_1_f32(strength.as_ref(), emissive.strength);
     }
     if let Some(mask) = emissive.mask.as_ref() {
-        bind_gl_modifier_texture(context, &mask.read().unwrap(), &format!("u_emissiveMask{suffix}"));
+        bind_gl_modifier_texture(
+            context,
+            &mask.read().unwrap(),
+            &format!("u_emissiveMask{suffix}"),
+        );
     }
     if is_emissive_gated(emissive) {
         let sign = if emissive.facing == EmissiveModifierFacing::AwayFromLight {
@@ -201,13 +250,17 @@ fn bind_emissive_gl_modifier(modifier: &dyn Modifier, context: &mut GlModifierBi
         } else {
             1.0
         };
-        let sign_location = get_gl_modifier_uniform_location(context, &format!("u_emissiveFacingSign{suffix}"));
+        let sign_location =
+            get_gl_modifier_uniform_location(context, &format!("u_emissiveFacingSign{suffix}"));
         let softness_location =
             get_gl_modifier_uniform_location(context, &format!("u_emissiveFacingSoftness{suffix}"));
         // SAFETY: the program is bound on the owning GL thread.
         unsafe {
             context.state.gl.uniform_1_f32(sign_location.as_ref(), sign);
-            context.state.gl.uniform_1_f32(softness_location.as_ref(), emissive.facing_softness);
+            context
+                .state
+                .gl
+                .uniform_1_f32(softness_location.as_ref(), emissive.facing_softness);
         }
     }
 }
@@ -218,15 +271,23 @@ fn bind_env_reflect_gl_modifier(modifier: &dyn Modifier, context: &mut GlModifie
     };
     let suffix = format!("_{}", context.index);
     let tint = get_gl_modifier_uniform_location(context, &format!("u_envReflectTint{suffix}"));
-    let intensity = get_gl_modifier_uniform_location(context, &format!("u_envReflectIntensity{suffix}"));
-    let fresnel = get_gl_modifier_uniform_location(context, &format!("u_envReflectFresnel{suffix}"));
-    let roughness = get_gl_modifier_uniform_location(context, &format!("u_envReflectRoughness{suffix}"));
+    let intensity =
+        get_gl_modifier_uniform_location(context, &format!("u_envReflectIntensity{suffix}"));
+    let fresnel =
+        get_gl_modifier_uniform_location(context, &format!("u_envReflectFresnel{suffix}"));
+    let roughness =
+        get_gl_modifier_uniform_location(context, &format!("u_envReflectRoughness{suffix}"));
     let mut scratch_rgba: LinearColor = allocate_linear_color();
     unpack_color_to_linear(&mut scratch_rgba, reflect.tint);
     // SAFETY: the program is bound on the owning GL thread.
     unsafe {
         let gl = &context.state.gl;
-        gl.uniform_3_f32(tint.as_ref(), scratch_rgba.r, scratch_rgba.g, scratch_rgba.b);
+        gl.uniform_3_f32(
+            tint.as_ref(),
+            scratch_rgba.r,
+            scratch_rgba.g,
+            scratch_rgba.b,
+        );
         gl.uniform_1_f32(intensity.as_ref(), reflect.intensity);
         gl.uniform_1_f32(fresnel.as_ref(), reflect.fresnel_bias);
         gl.uniform_1_f32(roughness.as_ref(), reflect.roughness);
@@ -242,7 +303,14 @@ fn bind_fog_gl_modifier(modifier: &dyn Modifier, context: &mut GlModifierBindCon
     let mut scratch_rgba: LinearColor = allocate_linear_color();
     unpack_color_to_linear(&mut scratch_rgba, fog.color);
     // SAFETY: the program is bound on the owning GL thread.
-    unsafe { context.state.gl.uniform_3_f32(color.as_ref(), scratch_rgba.r, scratch_rgba.g, scratch_rgba.b) };
+    unsafe {
+        context.state.gl.uniform_3_f32(
+            color.as_ref(),
+            scratch_rgba.r,
+            scratch_rgba.g,
+            scratch_rgba.b,
+        )
+    };
     if fog.mode == FogModifierMode::Linear {
         let near = get_gl_modifier_uniform_location(context, &format!("u_fogNear{suffix}"));
         let far = get_gl_modifier_uniform_location(context, &format!("u_fogFar{suffix}"));
@@ -254,7 +322,12 @@ fn bind_fog_gl_modifier(modifier: &dyn Modifier, context: &mut GlModifierBindCon
     } else {
         let density = get_gl_modifier_uniform_location(context, &format!("u_fogDensity{suffix}"));
         // SAFETY: the program is bound on the owning GL thread.
-        unsafe { context.state.gl.uniform_1_f32(density.as_ref(), fog.density) };
+        unsafe {
+            context
+                .state
+                .gl
+                .uniform_1_f32(density.as_ref(), fog.density)
+        };
     }
 }
 
@@ -264,13 +337,22 @@ fn bind_fog_gl_modifier(modifier: &dyn Modifier, context: &mut GlModifierBindCon
 // unmapped) rather than clobbering a base or shadow unit. When the allocator is exhausted (returns
 // -1), the sampler is left untouched — the excess modifier texture is dropped rather than binding
 // onto the shadow/IBL units.
-fn bind_gl_modifier_texture(context: &mut GlModifierBindContext<'_>, texture: &Texture, uniform_name: &str) {
+fn bind_gl_modifier_texture(
+    context: &mut GlModifierBindContext<'_>,
+    texture: &Texture,
+    uniform_name: &str,
+) {
     let unit = (context.acquire_modifier_texture_unit)();
     if unit < 0 {
         return;
     }
     // SAFETY: texture-unit selection runs on the owning GL thread.
-    unsafe { context.state.gl.active_texture(glow::TEXTURE0 + unit as u32) };
+    unsafe {
+        context
+            .state
+            .gl
+            .active_texture(glow::TEXTURE0 + unit as u32)
+    };
     resolve_gl_texture(context.state, texture, None, None);
     let location = get_gl_modifier_uniform_location(context, uniform_name);
     // SAFETY: the program is bound on the owning GL thread.
@@ -294,7 +376,12 @@ fn bind_rim_gl_modifier(modifier: &dyn Modifier, context: &mut GlModifierBindCon
     // SAFETY: the program is bound on the owning GL thread.
     unsafe {
         let gl = &context.state.gl;
-        gl.uniform_3_f32(color.as_ref(), scratch_rgba.r, scratch_rgba.g, scratch_rgba.b);
+        gl.uniform_3_f32(
+            color.as_ref(),
+            scratch_rgba.r,
+            scratch_rgba.g,
+            scratch_rgba.b,
+        );
         gl.uniform_1_f32(power.as_ref(), rim.power);
         gl.uniform_1_f32(intensity.as_ref(), rim.intensity);
         gl.uniform_1_f32(bias.as_ref(), rim.bias);
@@ -307,35 +394,63 @@ fn bind_toon_gl_modifier(modifier: &dyn Modifier, context: &mut GlModifierBindCo
     };
     let suffix = format!("_{}", context.index);
     let steps = get_gl_modifier_uniform_location(context, &format!("u_toonSteps{suffix}"));
-    let smoothness = get_gl_modifier_uniform_location(context, &format!("u_toonSmoothness{suffix}"));
+    let smoothness =
+        get_gl_modifier_uniform_location(context, &format!("u_toonSmoothness{suffix}"));
     // SAFETY: the program is bound on the owning GL thread.
     unsafe {
-        context.state.gl.uniform_1_f32(steps.as_ref(), toon.steps.max(2.0));
-        context.state.gl.uniform_1_f32(smoothness.as_ref(), toon.smoothness);
+        context
+            .state
+            .gl
+            .uniform_1_f32(steps.as_ref(), toon.steps.max(2.0));
+        context
+            .state
+            .gl
+            .uniform_1_f32(smoothness.as_ref(), toon.smoothness);
     }
 }
 
-fn bind_vertex_displace_gl_modifier(modifier: &dyn Modifier, context: &mut GlModifierBindContext<'_>) {
+fn bind_vertex_displace_gl_modifier(
+    modifier: &dyn Modifier,
+    context: &mut GlModifierBindContext<'_>,
+) {
     let Some(displace) = (modifier as &dyn Any).downcast_ref::<VertexDisplaceModifier>() else {
         return;
     };
     let suffix = format!("_{}", context.index);
-    let amplitude = get_gl_modifier_uniform_location(context, &format!("u_vDisplaceAmplitude{suffix}"));
+    let amplitude =
+        get_gl_modifier_uniform_location(context, &format!("u_vDisplaceAmplitude{suffix}"));
     // SAFETY: the program is bound on the owning GL thread.
-    unsafe { context.state.gl.uniform_1_f32(amplitude.as_ref(), displace.amplitude) };
+    unsafe {
+        context
+            .state
+            .gl
+            .uniform_1_f32(amplitude.as_ref(), displace.amplitude)
+    };
     if let Some(axis) = displace.axis.as_ref() {
-        let location = get_gl_modifier_uniform_location(context, &format!("u_vDisplaceAxis{suffix}"));
+        let location =
+            get_gl_modifier_uniform_location(context, &format!("u_vDisplaceAxis{suffix}"));
         // SAFETY: the program is bound on the owning GL thread.
-        unsafe { context.state.gl.uniform_3_f32(location.as_ref(), axis.x, axis.y, axis.z) };
+        unsafe {
+            context
+                .state
+                .gl
+                .uniform_3_f32(location.as_ref(), axis.x, axis.y, axis.z)
+        };
     }
     if displace.source == VertexDisplaceModifierSource::HeightMap {
         if let Some(map) = displace.map.as_ref() {
-            bind_gl_modifier_texture(context, &map.read().unwrap(), &format!("u_vDisplaceMap{suffix}"));
+            bind_gl_modifier_texture(
+                context,
+                &map.read().unwrap(),
+                &format!("u_vDisplaceMap{suffix}"),
+            );
         }
     } else {
-        let frequency = get_gl_modifier_uniform_location(context, &format!("u_vDisplaceFrequency{suffix}"));
+        let frequency =
+            get_gl_modifier_uniform_location(context, &format!("u_vDisplaceFrequency{suffix}"));
         let speed = get_gl_modifier_uniform_location(context, &format!("u_vDisplaceSpeed{suffix}"));
-        let direction = get_gl_modifier_uniform_location(context, &format!("u_vDisplaceDir{suffix}"));
+        let direction =
+            get_gl_modifier_uniform_location(context, &format!("u_vDisplaceDir{suffix}"));
         let dir = &displace.direction;
         // SAFETY: the program is bound on the owning GL thread.
         unsafe {
@@ -397,14 +512,16 @@ fn contribute_emissive_gl_modifier(modifier: &dyn Modifier, index: usize) -> Str
         return String::new();
     };
     let suffix = format!("_{index}");
-    let mut body =
-        "{\n".to_string() + &format!("  vec3 emissiveTerm = u_emissiveColor{suffix} * u_emissiveStrength{suffix};\n");
+    let mut body = "{\n".to_string()
+        + &format!("  vec3 emissiveTerm = u_emissiveColor{suffix} * u_emissiveStrength{suffix};\n");
     if emissive.mask.is_some() {
         body += &format!("  emissiveTerm *= texture(u_emissiveMask{suffix}, v_uv0).rgb;\n");
     }
     if is_emissive_gated(emissive) {
         body += "  vec3 emissiveLightDir = u_directionalCount > 0.5 ? normalize(-u_directional.xyz) : vec3(0.0, 0.0, 1.0);\n";
-        body += &format!("  float emissiveFacing = dot(normal, emissiveLightDir) * u_emissiveFacingSign{suffix};\n");
+        body += &format!(
+            "  float emissiveFacing = dot(normal, emissiveLightDir) * u_emissiveFacingSign{suffix};\n"
+        );
         body += &format!("  float emissiveSoft = max(u_emissiveFacingSoftness{suffix}, 1e-4);\n");
         body += "  emissiveTerm *= smoothstep(-emissiveSoft, emissiveSoft, emissiveFacing);\n";
     }
@@ -439,7 +556,9 @@ fn contribute_fog_gl_modifier(modifier: &dyn Modifier, index: usize) -> String {
     let factor = if fog.mode == FogModifierMode::Exponential {
         format!("  float fogFactor = 1.0 - exp(-u_fogDensity{suffix} * fogDist);\n")
     } else if fog.mode == FogModifierMode::Exponential2 {
-        format!("  float fogTerm = u_fogDensity{suffix} * fogDist;\n  float fogFactor = 1.0 - exp(-fogTerm * fogTerm);\n")
+        format!(
+            "  float fogTerm = u_fogDensity{suffix} * fogDist;\n  float fogFactor = 1.0 - exp(-fogTerm * fogTerm);\n"
+        )
     } else {
         format!(
             "  float fogFactor = clamp((fogDist - u_fogNear{suffix}) / max(u_fogFar{suffix} - u_fogNear{suffix}, 1e-4), 0.0, 1.0);\n"
@@ -448,7 +567,9 @@ fn contribute_fog_gl_modifier(modifier: &dyn Modifier, index: usize) -> String {
     return "{\n".to_string()
         + "  float fogDist = length(u_cameraPosition - v_worldPosition);\n"
         + &factor
-        + &format!("  radiance = mix(radiance, u_fogColor{suffix}, clamp(fogFactor, 0.0, 1.0));\n")
+        + &format!(
+            "  radiance = mix(radiance, u_fogColor{suffix}, clamp(fogFactor, 0.0, 1.0));\n"
+        )
         + "}";
 }
 
@@ -487,13 +608,19 @@ fn contribute_vertex_displace_gl_modifier(modifier: &dyn Modifier, index: usize)
         "  vec3 vDisplaceAxis = normalize(localNormal);\n".to_string()
     };
     let amount = if displace.source == VertexDisplaceModifierSource::HeightMap {
-        format!("  float vDisplaceAmount = texture(u_vDisplaceMap{suffix}, vertexUv).r * u_vDisplaceAmplitude{suffix};\n")
+        format!(
+            "  float vDisplaceAmount = texture(u_vDisplaceMap{suffix}, vertexUv).r * u_vDisplaceAmplitude{suffix};\n"
+        )
     } else {
         format!(
             "  float vDisplacePhase = dot(localPosition.xyz, normalize(u_vDisplaceDir{suffix})) * u_vDisplaceFrequency{suffix} + u_time * u_vDisplaceSpeed{suffix};\n  float vDisplaceAmount = sin(vDisplacePhase) * u_vDisplaceAmplitude{suffix};\n"
         )
     };
-    return "{\n".to_string() + &axis + &amount + "  localPosition.xyz += vDisplaceAxis * vDisplaceAmount;\n" + "}";
+    return "{\n".to_string()
+        + &axis
+        + &amount
+        + "  localPosition.xyz += vDisplaceAxis * vDisplaceAmount;\n"
+        + "}";
 }
 
 fn declare_animated_normal_gl_modifier(modifier: &dyn Modifier, index: usize) -> String {
@@ -508,7 +635,9 @@ fn declare_animated_normal_gl_modifier(modifier: &dyn Modifier, index: usize) ->
         + &format!("uniform vec2 u_animNormalScroll{suffix};\n")
         + &format!("uniform float u_animNormalStrength{suffix};\n");
     if animated.secondary_map.is_some() {
-        source += &format!("uniform sampler2D u_animNormalMap2{suffix};\nuniform vec2 u_animNormalScroll2{suffix};\n");
+        source += &format!(
+            "uniform sampler2D u_animNormalMap2{suffix};\nuniform vec2 u_animNormalScroll2{suffix};\n"
+        );
     }
     return source;
 }
@@ -534,7 +663,9 @@ fn declare_emissive_gl_modifier(modifier: &dyn Modifier, index: usize) -> String
         return String::new();
     };
     let suffix = format!("_{index}");
-    let mut source = format!("uniform vec3 u_emissiveColor{suffix};\nuniform float u_emissiveStrength{suffix};\n");
+    let mut source = format!(
+        "uniform vec3 u_emissiveColor{suffix};\nuniform float u_emissiveStrength{suffix};\n"
+    );
     if emissive.mask.is_some() {
         source += &format!("uniform sampler2D u_emissiveMask{suffix};\n");
     }
@@ -581,7 +712,9 @@ fn declare_rim_gl_modifier(_modifier: &dyn Modifier, index: usize) -> String {
 
 fn declare_toon_gl_modifier(_modifier: &dyn Modifier, index: usize) -> String {
     let suffix = format!("_{index}");
-    return format!("uniform float u_toonSteps{suffix};\nuniform float u_toonSmoothness{suffix};\n");
+    return format!(
+        "uniform float u_toonSteps{suffix};\nuniform float u_toonSmoothness{suffix};\n"
+    );
 }
 
 fn declare_vertex_displace_gl_modifier(modifier: &dyn Modifier, index: usize) -> String {

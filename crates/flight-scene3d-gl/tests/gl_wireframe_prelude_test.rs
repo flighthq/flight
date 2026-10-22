@@ -45,12 +45,19 @@ mod ensure_gl_wireframe_program {
         let skinned = ensure_gl_wireframe_program(&state, None);
 
         assert!(!Rc::ptr_eq(&skinned, &rigid));
-        let mut keys: Vec<String> = get_gl_scene3d_runtime(&state).program_cache.keys().cloned().collect();
+        let mut keys: Vec<String> = get_gl_scene3d_runtime(&state)
+            .program_cache
+            .keys()
+            .cloned()
+            .collect();
         // D17: the Rust program cache is a HashMap; sort to compare against the TS insertion order.
         keys.sort();
         assert_eq!(
             keys,
-            vec!["wireframe:base|rigid".to_string(), "wireframe:base|skin".to_string()]
+            vec![
+                "wireframe:base|rigid".to_string(),
+                "wireframe:base|skin".to_string()
+            ]
         );
     }
 }
@@ -86,7 +93,8 @@ mod get_gl_wireframe_vertex_source {
     #[test]
     fn deforms_position_through_the_palette_only_in_the_skinned_variant() {
         let rigid = get_gl_wireframe_vertex_source(None, None);
-        let skinned = get_gl_wireframe_vertex_source(Some(true), Some(GL_SKIN_VERTEX_DECLARATIONS_GLSL));
+        let skinned =
+            get_gl_wireframe_vertex_source(Some(true), Some(GL_SKIN_VERTEX_DECLARATIONS_GLSL));
 
         assert!(!rigid.contains("#define HAS_SKIN"));
         assert!(!rigid.contains("uniform highp sampler2D u_jointTexture"));

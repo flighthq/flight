@@ -203,7 +203,11 @@ pub(crate) fn target_key_from_ref<T: ?Sized>(target: &Ref<T>) -> usize {
 
 // flight-lint: allow(conform-extra) D22 escape hatch for nested/computed property paths
 // flight-lint: allow(contract-vocabulary) D22 native fn-pointer property accessors support Ref<dyn Trait> targets through relaxed generic bounds
-pub fn tween_with<T: ?Sized>(get: fn(&mut T) -> &mut f32, key: &'static str, to: f32) -> TweenProp<T> {
+pub fn tween_with<T: ?Sized>(
+    get: fn(&mut T) -> &mut f32,
+    key: &'static str,
+    to: f32,
+) -> TweenProp<T> {
     return TweenProp { get, key, to };
 }
 

@@ -20,7 +20,11 @@ mod create_lift_gamma_gain_adjustment {
     #[test]
     fn applies_gain_as_a_per_channel_multiplier() {
         // gain 0x808080ff -> ~0.5 multiplier on each channel (before the near-neutral default gamma).
-        let adj = create_lift_gamma_gain_adjustment(Some(&LiftGammaGainAdjustmentOptions { lift: Some(0x000000ff), gamma: Some(0x808080ff), gain: Some(0x808080ff) }));
+        let adj = create_lift_gamma_gain_adjustment(Some(&LiftGammaGainAdjustmentOptions {
+            lift: Some(0x000000ff),
+            gamma: Some(0x808080ff),
+            gain: Some(0x808080ff),
+        }));
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
         (get_adjustment_color_transform(&adj).unwrap())(&mut out, 1.0, 1.0, 1.0);
         assert!((out[0] - 128.0 / 255.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
@@ -29,7 +33,11 @@ mod create_lift_gamma_gain_adjustment {
     #[test]
     fn lifts_shadows_toward_the_lift_color() {
         // lift 0xffffffff pulls dark values up toward white via (1 - rgb).
-        let adj = create_lift_gamma_gain_adjustment(Some(&LiftGammaGainAdjustmentOptions { lift: Some(0xffffffff), gamma: Some(0x808080ff), gain: Some(0xffffffff) }));
+        let adj = create_lift_gamma_gain_adjustment(Some(&LiftGammaGainAdjustmentOptions {
+            lift: Some(0xffffffff),
+            gamma: Some(0x808080ff),
+            gain: Some(0xffffffff),
+        }));
         let mut out: [f32; 3] = [0.0, 0.0, 0.0];
         (get_adjustment_color_transform(&adj).unwrap())(&mut out, 0.0, 0.0, 0.0);
         assert!((out[0] - 1.0).abs() < 0.00005); // D1 f32 bound (TS: 0.00005)
@@ -42,7 +50,14 @@ mod initialize_lift_gamma_gain_adjustment {
     #[test]
     fn is_the_construction_initializer_of_create_lift_gamma_gain_adjustment() {
         let mut out: LiftGammaGainAdjustment = allocate_entity();
-        initialize_lift_gamma_gain_adjustment(&mut out, Some(&LiftGammaGainAdjustmentOptions { lift: Some(0x000000ff), gamma: Some(0x808080ff), gain: Some(0xffffffff) }));
+        initialize_lift_gamma_gain_adjustment(
+            &mut out,
+            Some(&LiftGammaGainAdjustmentOptions {
+                lift: Some(0x000000ff),
+                gamma: Some(0x808080ff),
+                gain: Some(0xffffffff),
+            }),
+        );
         assert_eq!(out.lift, 0x000000ff);
         assert_eq!(out.gamma, 0x808080ff);
         assert_eq!(out.gain, 0xffffffff);

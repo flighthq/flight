@@ -59,12 +59,18 @@ pub fn apply_lens_distortion_effect_to_wgpu(
 
 /// Registers the default runner under `LensDistortionEffect` (TS `registerWgpuLensDistortionEffect`).
 pub fn register_wgpu_lens_distortion_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "LensDistortionEffect", wgpu_lens_distortion_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "LensDistortionEffect",
+        wgpu_lens_distortion_effect_runner,
+        None,
+    );
 }
 
 /// The default `LensDistortionEffect` runner (TS `wgpuLensDistortionEffectRunner`).
 pub fn wgpu_lens_distortion_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect) {
-    let effect = downcast_wgpu_effect::<LensDistortionEffect>(effect, "wgpuLensDistortionEffectRunner");
+    let effect =
+        downcast_wgpu_effect::<LensDistortionEffect>(effect, "wgpuLensDistortionEffectRunner");
     let source = ctx.source.read().unwrap();
     let dest = ctx.dest.read().unwrap();
     apply_lens_distortion_effect_to_wgpu(ctx.state, &source, &dest, effect);

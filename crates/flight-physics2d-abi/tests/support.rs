@@ -100,9 +100,7 @@ pub fn physics2d_prismatic_joint(
     return out;
 }
 
-pub fn physics2d_pulley_joint(
-    options: &Physics2DPulleyJointOptions,
-) -> Ref<Physics2DPulleyJoint> {
+pub fn physics2d_pulley_joint(options: &Physics2DPulleyJointOptions) -> Ref<Physics2DPulleyJoint> {
     let out = create_physics2d_pulley_joint();
     {
         let mut out = out.write().unwrap();

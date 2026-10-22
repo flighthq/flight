@@ -1,15 +1,17 @@
 // flight-lint: allow-file(contract-vocabulary) D17 mesh-material renderers are backend-typed dispatch records over thread-bound render-gl state
 
-use std::rc::Rc;
 use flight_camera::Camera3D;
 use flight_color::{LinearColor, allocate_linear_color, unpack_color_to_linear};
 use flight_lighting::Scene3DLightBlock;
-use flight_materials::{Material3D, MaterialAlphaMode, PHONG_MATERIAL_KIND, PhongMaterial, TextureSlot};
+use flight_materials::{
+    Material3D, MaterialAlphaMode, PHONG_MATERIAL_KIND, PhongMaterial, TextureSlot,
+};
 use flight_meshgeometry::MeshGeometry;
 use flight_render::Scene3DRenderProxy;
 use flight_render_gl::{GlMeshMaterialRenderer, GlRenderState, resolve_gl_texture};
 use flight_texture::TextureVariant;
 use glow::{HasContext, NativeUniformLocation};
+use std::rc::Rc;
 
 use crate::gl_classic_prelude::ensure_gl_classic_program;
 use crate::gl_lit_program::bind_gl_mesh_light_block;
@@ -19,7 +21,9 @@ use crate::gl_mesh_program::{
     set_gl_mesh_camera_position, set_gl_mesh_view_projection,
 };
 use crate::gl_scene3d_runtime::get_gl_scene3d_runtime;
-use crate::types::{GlClassicDefineKey, GlClassicLightingModel, GlClassicProgram, GlMeshProgramRef};
+use crate::types::{
+    GlClassicDefineKey, GlClassicLightingModel, GlClassicProgram, GlMeshProgramRef,
+};
 
 // The built-in classic Phong forward-lit mesh-material renderer (GlMeshMaterialRenderer for
 // PhongMaterialKind). Lambert diffuse plus a reflection-vector specular lobe: bind selects the classic
@@ -97,11 +101,16 @@ fn bind_gl_phong_material_uniforms(
     bind_gl_phong_material_map(state, &material.specular_map, 1, program.loc_specular_map);
     bind_gl_phong_material_map(state, &material.normal_map, 2, program.loc_normal_map);
 
-    let diffuse_map = material.diffuse_map.as_ref().map(|texture| texture.read().unwrap());
+    let diffuse_map = material
+        .diffuse_map
+        .as_ref()
+        .map(|texture| texture.read().unwrap());
     bind_gl_uv_transform(
         &state.gl,
         program,
-        diffuse_map.as_deref().map(|texture| texture as &dyn TextureVariant),
+        diffuse_map
+            .as_deref()
+            .map(|texture| texture as &dyn TextureVariant),
     );
 }
 
@@ -115,7 +124,11 @@ fn bind_gl_phong_mesh_material(
     let key = define_key_for_material(state, phong);
     let program = ensure_gl_classic_program(state, &key);
     let active: GlMeshProgramRef = program.clone();
-    begin_gl_mesh_draw(state, &active, phong.is_some_and(|phong| phong.double_sided));
+    begin_gl_mesh_draw(
+        state,
+        &active,
+        phong.is_some_and(|phong| phong.double_sided),
+    );
 
     set_gl_mesh_view_projection(state, program.loc_view_projection, camera);
     set_gl_mesh_camera_position(&state.gl, program.loc_camera_position, camera);
@@ -125,11 +138,14 @@ fn bind_gl_phong_mesh_material(
 
 // The feature define key for a Phong material: the fixed `phong` lighting model plus which optional
 // maps are present and whether alpha-mask cutoff is active.
-fn define_key_for_material(state: &mut GlRenderState, material: Option<&PhongMaterial>) -> GlClassicDefineKey {
+fn define_key_for_material(
+    state: &mut GlRenderState,
+    material: Option<&PhongMaterial>,
+) -> GlClassicDefineKey {
     let mut resolves = |slot: Option<&TextureSlot>| -> bool {
-        return slot
-            .and_then(|slot| slot.as_ref())
-            .is_some_and(|texture| resolve_gl_texture(state, &*texture.read().unwrap(), None, None).is_some());
+        return slot.and_then(|slot| slot.as_ref()).is_some_and(|texture| {
+            resolve_gl_texture(state, &*texture.read().unwrap(), None, None).is_some()
+        });
     };
     let has_diffuse_map = resolves(material.map(|material| &material.diffuse_map));
     let has_normal_map = resolves(material.map(|material| &material.normal_map));
@@ -138,7 +154,8 @@ fn define_key_for_material(state: &mut GlRenderState, material: Option<&PhongMat
         .and_then(|material| material.diffuse_map.as_ref())
         .map(|texture| texture.read().unwrap());
     return GlClassicDefineKey {
-        alpha_mask_enabled: material.is_some_and(|material| material.alpha_mode == MaterialAlphaMode::Mask),
+        alpha_mask_enabled: material
+            .is_some_and(|material| material.alpha_mode == MaterialAlphaMode::Mask),
         has_alpha_map: false,
         has_color_adjustment: None,
         has_color_matrix: None,
@@ -147,12 +164,20 @@ fn define_key_for_material(state: &mut GlRenderState, material: Option<&PhongMat
         has_normal_map,
         has_skin: None,
         has_specular_map,
-        has_uv_transform: has_gl_uv_transform(diffuse_map.as_deref().map(|texture| texture as &dyn TextureVariant)),
+        has_uv_transform: has_gl_uv_transform(
+            diffuse_map
+                .as_deref()
+                .map(|texture| texture as &dyn TextureVariant),
+        ),
         lighting_model: GlClassicLightingModel::Phong,
     };
 }
 
-fn draw_gl_phong_mesh_material(state: &mut GlRenderState, proxy: &Scene3DRenderProxy, geometry: &MeshGeometry) {
+fn draw_gl_phong_mesh_material(
+    state: &mut GlRenderState,
+    proxy: &Scene3DRenderProxy,
+    geometry: &MeshGeometry,
+) {
     let Some(program) = get_gl_scene3d_runtime(state).active_mesh_program.clone() else {
         return;
     };

@@ -2,12 +2,12 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use flight_animation::contract::{AnimationChannel, AnimationClip};
+use flight_buffer::ByteReader;
 use flight_entity::Uint8Array;
 use flight_importdiagnostics::ImportDiagnostic;
 use flight_skeleton2d::contract::{
     Attachment2DRef, AttachmentSkin2D, Bone2D, Skeleton2D, Skeleton2DDrawOrderTimeline, Slot2D,
 };
-use flight_buffer::ByteReader;
 use serde_json::{Map, Value};
 
 pub const DRAGON_BONES_SECTION_KIND_ANIMATIONS: &str = "animations";

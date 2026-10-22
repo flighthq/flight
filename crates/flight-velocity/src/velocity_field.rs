@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use flight_entity::allocate_entity;
 use flight_entity::EntityRuntimeSlot;
+use flight_entity::allocate_entity;
 use flight_geometry::Matrix;
 
 /// An opaque caller-assigned source handle. TS keys the velocity field by object identity
@@ -105,7 +105,10 @@ pub fn clamp_velocity(out: &mut Velocity2D, velocity: &Velocity2D, max_length: f
 }
 
 pub fn clone_velocity2d(source: &Velocity2D) -> Velocity2D {
-    return Velocity2D { x: source.x, y: source.y };
+    return Velocity2D {
+        x: source.x,
+        y: source.y,
+    };
 }
 
 pub fn contribute_velocity(field: &mut VelocityField, source: SourceId, x: f32, y: f32) {
@@ -146,19 +149,39 @@ pub fn damp_velocity(
 /// Get-or-create a source's per-frame sample. Shared with the transform-delta
 /// contributor.
 pub fn ensure_velocity_sample(field: &mut VelocityField, source: SourceId) -> &mut VelocitySample {
-    return field.samples.entry(source).or_insert_with(|| VelocitySample { previous_world_transform: None, velocity: Velocity2D { x: 0.0, y: 0.0 }, last_frame_id: -1, explicit_frame_id: -1 });
+    return field
+        .samples
+        .entry(source)
+        .or_insert_with(|| VelocitySample {
+            previous_world_transform: None,
+            velocity: Velocity2D { x: 0.0, y: 0.0 },
+            last_frame_id: -1,
+            explicit_frame_id: -1,
+        });
 }
 
 pub fn explain_velocity(field: &VelocityField, source: SourceId) -> VelocityExplanation {
     let current_frame_id = field.frame_id;
     let sample = field.samples.get(&source);
     return match sample {
-        None => {
-            VelocityExplanation { current_frame_id: current_frame_id, explicit: false, last_frame_id: -1, reason: VelocityReason::NoSample, x: 0.0, y: 0.0 }
-        }
+        None => VelocityExplanation {
+            current_frame_id: current_frame_id,
+            explicit: false,
+            last_frame_id: -1,
+            reason: VelocityReason::NoSample,
+            x: 0.0,
+            y: 0.0,
+        },
         Some(sample) => {
             if sample.last_frame_id != current_frame_id {
-                return VelocityExplanation { current_frame_id: current_frame_id, explicit: false, last_frame_id: sample.last_frame_id, reason: VelocityReason::Stale, x: 0.0, y: 0.0 };
+                return VelocityExplanation {
+                    current_frame_id: current_frame_id,
+                    explicit: false,
+                    last_frame_id: sample.last_frame_id,
+                    reason: VelocityReason::Stale,
+                    x: 0.0,
+                    y: 0.0,
+                };
             }
             let explicit = sample.explicit_frame_id == current_frame_id;
             let x = sample.velocity.x;
@@ -169,9 +192,23 @@ pub fn explain_velocity(field: &VelocityField, source: SourceId) -> VelocityExpl
                 } else {
                     VelocityReason::DerivedZero
                 };
-                return VelocityExplanation { current_frame_id: current_frame_id, explicit: explicit, last_frame_id: sample.last_frame_id, reason: reason, x: 0.0, y: 0.0 };
+                return VelocityExplanation {
+                    current_frame_id: current_frame_id,
+                    explicit: explicit,
+                    last_frame_id: sample.last_frame_id,
+                    reason: reason,
+                    x: 0.0,
+                    y: 0.0,
+                };
             }
-            VelocityExplanation { current_frame_id: current_frame_id, explicit: explicit, last_frame_id: sample.last_frame_id, reason: VelocityReason::Ok, x: x, y: y }
+            VelocityExplanation {
+                current_frame_id: current_frame_id,
+                explicit: explicit,
+                last_frame_id: sample.last_frame_id,
+                reason: VelocityReason::Ok,
+                x: x,
+                y: y,
+            }
         }
     };
 }

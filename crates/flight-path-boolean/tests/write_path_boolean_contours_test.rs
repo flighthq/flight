@@ -31,8 +31,16 @@ mod write_path_boolean_contours {
                 vec![20.0, 20.0, 30.0, 20.0, 30.0, 30.0],
             ],
         );
-        let move_count = out.commands.iter().filter(|&&c| c == PathCommand::MoveTo as u8).count();
-        let close_count = out.commands.iter().filter(|&&c| c == PathCommand::Close as u8).count();
+        let move_count = out
+            .commands
+            .iter()
+            .filter(|&&c| c == PathCommand::MoveTo as u8)
+            .count();
+        let close_count = out
+            .commands
+            .iter()
+            .filter(|&&c| c == PathCommand::Close as u8)
+            .count();
         assert_eq!(move_count, 2);
         assert_eq!(close_count, 2);
     }

@@ -4,11 +4,11 @@ use std::sync::{Arc, RwLock};
 use flight_camera::{Camera3D, Projection, create_camera_3d, create_perspective_projection};
 use flight_geometry::{create_matrix3, create_matrix4};
 use flight_lighting::Scene3DLightBlock;
+use flight_materials::NORMAL_MATERIAL_KIND;
+use flight_materials::unlit_materials::create_normal_material;
 use flight_meshgeometry::{MeshGeometry, create_box_mesh_geometry};
 use flight_render::Scene3DRenderProxy;
 use flight_scene3d_gl::contract::*;
-use flight_materials::NORMAL_MATERIAL_KIND;
-use flight_materials::unlit_materials::create_normal_material;
 
 use crate::gl_test_helper::{calls_with, count_calls, make_gl_scene3d_state};
 
@@ -73,7 +73,12 @@ mod gl_normal_mesh_material_renderer {
     fn bind_selects_a_program_sets_depth_cull_view_projection_and_the_normal_scale_uniform() {
         let mut state = make_gl_scene3d_state();
         let material = create_normal_material();
-        (GL_NORMAL_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &no_lights(), &make_camera());
+        (GL_NORMAL_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &no_lights(),
+            &make_camera(),
+        );
         assert!(count_calls("use_program") > 0);
         assert!(has_call("enable", glow::DEPTH_TEST));
         assert!(count_calls("uniform_matrix_4_f32") > 0);
@@ -86,7 +91,12 @@ mod gl_normal_mesh_material_renderer {
         let proxy = make_proxy();
         {
             let material = proxy.material.read().unwrap();
-            (GL_NORMAL_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&*material), &no_lights(), &make_camera());
+            (GL_NORMAL_MESH_MATERIAL_RENDERER.bind)(
+                &mut state,
+                Some(&*material),
+                &no_lights(),
+                &make_camera(),
+            );
         }
         (GL_NORMAL_MESH_MATERIAL_RENDERER.draw)(&mut state, &proxy, &make_geometry());
         let draws = calls_with("draw_elements");

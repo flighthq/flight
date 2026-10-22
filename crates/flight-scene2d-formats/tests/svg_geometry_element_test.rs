@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use flight_scene2d_formats::contract::*;
-use flight_shape::contract::{get_shape_command_count, SHAPE_KIND};
+use flight_shape::contract::{SHAPE_KIND, get_shape_command_count};
 use flight_xml::contract::parse_xml_document;
 
 mod svg_geometry_element_handler {

@@ -9,8 +9,8 @@ use flight_entity::Kind;
 use flight_materials::{Material, STANDARD_MATERIAL_KIND};
 use flight_registry::with_kind_map_entry;
 use flight_render_wgpu::{
-    WgpuMaterialRenderer, WgpuMeshMaterialRenderer, WgpuRenderState,
-    get_wgpu_render_state_runtime, get_wgpu_render_state_runtime_mut,
+    WgpuMaterialRenderer, WgpuMeshMaterialRenderer, WgpuRenderState, get_wgpu_render_state_runtime,
+    get_wgpu_render_state_runtime_mut,
 };
 
 /// The 3D mesh-material renderer registered for a kind on this state, or `None` (TS

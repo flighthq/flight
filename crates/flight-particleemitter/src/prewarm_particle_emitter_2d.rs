@@ -12,7 +12,11 @@ pub fn prewarm_particle_emitter_2d(
     step_delta_time: f32,
     callbacks: Option<&ParticleEmitterCallbacks>,
 ) {
-    let step = if step_delta_time > 0.0 { step_delta_time } else { duration };
+    let step = if step_delta_time > 0.0 {
+        step_delta_time
+    } else {
+        duration
+    };
     let mut elapsed = 0.0f32;
     while elapsed < duration {
         let delta_time = step.min(duration - elapsed);

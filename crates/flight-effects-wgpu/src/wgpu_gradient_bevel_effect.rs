@@ -313,12 +313,18 @@ fn get_encode_pipeline(state: &mut WgpuRenderState) -> Ref<WgpuEffectPipeline> {
 /// Registers the default runner under `GradientBevelEffect` (TS
 /// `registerWgpuGradientBevelEffect`).
 pub fn register_wgpu_gradient_bevel_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "GradientBevelEffect", wgpu_gradient_bevel_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "GradientBevelEffect",
+        wgpu_gradient_bevel_effect_runner,
+        None,
+    );
 }
 
 /// The default `GradientBevelEffect` runner (TS `wgpuGradientBevelEffectRunner`).
 pub fn wgpu_gradient_bevel_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect) {
-    let effect = downcast_wgpu_effect::<GradientBevelEffect>(effect, "wgpuGradientBevelEffectRunner");
+    let effect =
+        downcast_wgpu_effect::<GradientBevelEffect>(effect, "wgpuGradientBevelEffectRunner");
     let source = ctx.source.read().unwrap();
     let dest = ctx.dest.read().unwrap();
     apply_gradient_bevel_effect_to_wgpu(ctx.state, &source, &dest, ctx.pool, effect);

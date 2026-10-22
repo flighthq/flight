@@ -1,27 +1,26 @@
 use std::sync::Arc;
 
 use flight_geometry::{
-    create_matrix, create_vector2, inverse_matrix_transform_point_xy,
-    set_matrix_from_float32_array,
+    create_matrix, create_vector2, inverse_matrix_transform_point_xy, set_matrix_from_float32_array,
 };
-use flight_node::{get_node_world_matrix, NodeRef};
 use flight_node::contract::NodeRevisionState;
-use flight_quadbatch::{QuadBatch, QuadTransformType};
+use flight_node::{NodeRef, get_node_world_matrix};
 use flight_quadbatch::contract::QUAD_BATCH_KIND;
+use flight_quadbatch::{QuadBatch, QuadTransformType};
 use flight_textureatlas::TextureAtlasRotation;
 
-use crate::hit_tests::{register_hit_test_precise, HitTestContext};
+use crate::hit_tests::{HitTestContext, register_hit_test_precise};
 
 // flight-lint: allow(conform-params) D5: caller-owned hit test context
 pub fn register_quad_batch_hit_test(ctx: &mut HitTestContext) {
-    register_hit_test_precise(ctx, QUAD_BATCH_KIND.to_string(), Arc::new(resolve_quad_batch_instance_index));
+    register_hit_test_precise(
+        ctx,
+        QUAD_BATCH_KIND.to_string(),
+        Arc::new(resolve_quad_batch_instance_index),
+    );
 }
 
-fn resolve_quad_batch_instance_index(
-    source: &NodeRef,
-    x: f32,
-    y: f32,
-) -> i32 {
+fn resolve_quad_batch_instance_index(source: &NodeRef, x: f32, y: f32) -> i32 {
     let node = source.read().unwrap();
     let Some(qb) = node.as_any().downcast_ref::<QuadBatch>() else {
         return -1;

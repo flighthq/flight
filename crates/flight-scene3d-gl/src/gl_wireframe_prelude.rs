@@ -6,8 +6,12 @@ use std::rc::Rc;
 use flight_render_gl::GlRenderState;
 use glow::HasContext;
 
-use crate::gl_mesh_fragment_tail::{gl_mesh_fragment_tail_glsl, gl_mesh_fragment_tail_uniforms_glsl};
-use crate::gl_mesh_program::{compile_gl_program, create_gl_mesh_program_record, ensure_gl_scene3d_program};
+use crate::gl_mesh_fragment_tail::{
+    gl_mesh_fragment_tail_glsl, gl_mesh_fragment_tail_uniforms_glsl,
+};
+use crate::gl_mesh_program::{
+    compile_gl_program, create_gl_mesh_program_record, ensure_gl_scene3d_program,
+};
 use crate::gl_scene3d_runtime::get_gl_scene3d_runtime;
 use crate::types::GlWireframeProgram;
 
@@ -34,8 +38,11 @@ pub fn compile_gl_wireframe_program(
     unsafe {
         let loc_alpha_cutoff = gl.get_uniform_location(program, "u_alphaCutoff");
         let loc_color = gl.get_uniform_location(program, "u_color");
-        mesh.loc_joint_normal_texture = Cell::new(Some(gl.get_uniform_location(program, "u_jointNormalTexture")));
-        mesh.loc_joint_texture = Cell::new(Some(gl.get_uniform_location(program, "u_jointTexture")));
+        mesh.loc_joint_normal_texture = Cell::new(Some(
+            gl.get_uniform_location(program, "u_jointNormalTexture"),
+        ));
+        mesh.loc_joint_texture =
+            Cell::new(Some(gl.get_uniform_location(program, "u_jointTexture")));
         mesh.loc_model = gl.get_uniform_location(program, "u_model");
         mesh.loc_normal_matrix = None;
         mesh.loc_view_projection = gl.get_uniform_location(program, "u_viewProjection");
@@ -49,7 +56,10 @@ pub fn compile_gl_wireframe_program(
 
 // Resolves the wireframe program, compiling and caching it on first use through the shared scene
 // program cache under the `wireframe:` family namespace.
-pub fn ensure_gl_wireframe_program(state: &GlRenderState, alpha_mask_enabled: Option<bool>) -> Rc<GlWireframeProgram> {
+pub fn ensure_gl_wireframe_program(
+    state: &GlRenderState,
+    alpha_mask_enabled: Option<bool>,
+) -> Rc<GlWireframeProgram> {
     let alpha_mask_enabled = alpha_mask_enabled.unwrap_or(false);
     let (skinned, skin_declarations_glsl) = {
         let runtime = get_gl_scene3d_runtime(state);
@@ -87,7 +97,10 @@ pub fn get_gl_wireframe_fragment_source(alpha_mask_enabled: Option<bool>) -> Str
 }
 
 // The wireframe vertex source: position → clip space.
-pub fn get_gl_wireframe_vertex_source(skinned: Option<bool>, skin_declarations_glsl: Option<&str>) -> String {
+pub fn get_gl_wireframe_vertex_source(
+    skinned: Option<bool>,
+    skin_declarations_glsl: Option<&str>,
+) -> String {
     let skin = if skinned.unwrap_or(false) {
         format!("#define HAS_SKIN\n{}", skin_declarations_glsl.unwrap_or(""))
     } else {
@@ -98,7 +111,8 @@ pub fn get_gl_wireframe_vertex_source(skinned: Option<bool>, skin_declarations_g
 
 macro_rules! wireframe_vertex_glsl {
     () => {
-        concat!(r#"layout(location = 0) in vec3 a_position;
+        concat!(
+            r#"layout(location = 0) in vec3 a_position;
 
 uniform mat4 u_viewProjection;
 uniform mat4 u_model;
@@ -111,14 +125,16 @@ void main() {
 #endif
   gl_Position = u_viewProjection * u_model * localPosition;
 }
-"#)
+"#
+        )
     };
 }
 const WIREFRAME_VERTEX: &str = wireframe_vertex_glsl!();
 
 macro_rules! wireframe_fragment_glsl {
     () => {
-        concat!(r#"precision highp float;
+        concat!(
+            r#"precision highp float;
 
 uniform vec4 u_color;
 
@@ -126,7 +142,9 @@ uniform vec4 u_color;
 uniform float u_alphaCutoff;
 #endif
 
-"#, gl_mesh_fragment_tail_uniforms_glsl!(), r#"
+"#,
+            gl_mesh_fragment_tail_uniforms_glsl!(),
+            r#"
 
 out vec4 fragColor;
 
@@ -136,10 +154,12 @@ void main() {
   if (fragColor.a < u_alphaCutoff) discard;
   fragColor.a = 1.0;
 #endif
-"#, gl_mesh_fragment_tail_glsl!(), r#"
+"#,
+            gl_mesh_fragment_tail_glsl!(),
+            r#"
 }
-"#)
+"#
+        )
     };
 }
 const WIREFRAME_FRAGMENT: &str = wireframe_fragment_glsl!();
-

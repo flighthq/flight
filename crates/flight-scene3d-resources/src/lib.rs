@@ -2,13 +2,19 @@
 //! references into live image resources.
 
 mod anisotropy_pbr_scene3d_material_textures;
+mod awd2_load;
 mod clearcoat_pbr_scene3d_material_textures;
 mod enable_scene3d_resource_failure_guards;
 mod explain_scene3d_resource_coverage;
 mod get_scene3d_resource_textures;
+mod gltf_load;
+mod gltf_load_import;
 mod image_resource_fetch;
 mod iridescence_pbr_scene3d_material_textures;
 mod load_scene3d_resources;
+mod md2_load;
+mod md5_load;
+mod obj_load;
 mod resolve_scene3d_resources;
 mod reveal_scene3d_resources_on_resolve;
 mod scene_document_source;
@@ -19,16 +25,10 @@ mod scene_resource_signals;
 mod shaded_scene3d_material_textures;
 mod sheen_pbr_scene3d_material_textures;
 mod specular_pbr_scene3d_material_textures;
-mod transmission_volume_pbr_scene3d_material_textures;
-mod wrapped_diffuse_pbr_scene3d_material_textures;
-mod awd2_load;
-mod gltf_load;
-mod gltf_load_import;
-mod md2_load;
-mod md5_load;
-mod obj_load;
 mod three_ds_load;
+mod transmission_volume_pbr_scene3d_material_textures;
 mod types;
+mod wrapped_diffuse_pbr_scene3d_material_textures;
 
 pub mod contract;
 
@@ -70,7 +70,6 @@ pub use contract::get_scene3d_document_base_path_from_url;
 pub use contract::get_scene3d_resource_signals;
 pub use contract::get_scene3d_resource_textures;
 pub use contract::load_scene3d_document_bytes_from_url;
-pub use contract::load_scene3d_document_text_from_url;
 pub use contract::load_scene3d_document_from_3ds_url;
 pub use contract::load_scene3d_document_from_awd2_url;
 pub use contract::load_scene3d_document_from_glb_url;
@@ -80,6 +79,7 @@ pub use contract::load_scene3d_document_from_gltf_url_with_core_feature_handlers
 pub use contract::load_scene3d_document_from_md2_url;
 pub use contract::load_scene3d_document_from_md5_mesh_url;
 pub use contract::load_scene3d_document_from_obj_url;
+pub use contract::load_scene3d_document_text_from_url;
 pub use contract::load_scene3d_resources;
 pub use contract::resolve_image_resource_uri;
 pub use contract::resolve_one_scene3d_resource_texture;

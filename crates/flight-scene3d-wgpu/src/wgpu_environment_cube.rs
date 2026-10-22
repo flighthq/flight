@@ -112,7 +112,10 @@ pub fn update_wgpu_environment_cube_face(
     face: u32,
     image: &dyn TextureSource,
 ) -> bool {
-    let Some(texture) = get_wgpu_scene3d_runtime(state).environment_source_cube.clone() else {
+    let Some(texture) = get_wgpu_scene3d_runtime(state)
+        .environment_source_cube
+        .clone()
+    else {
         return false;
     };
     let native = get_wgpu_render_state_native_device(state);
@@ -126,12 +129,23 @@ fn upload_wgpu_environment_image(
     face: u32,
     image: &dyn TextureSource,
 ) {
-    let origin = wgpu::Origin3d { x: 0, y: 0, z: face };
+    let origin = wgpu::Origin3d {
+        x: 0,
+        y: 0,
+        z: face,
+    };
     let any = image as &dyn Any;
     if image.texture_source_fields().kind == BITMAP_TEXTURE_SOURCE_KIND {
         if let Some(bitmap) = any.downcast_ref::<Bitmap>() {
             let fields = bitmap.texture_source_fields();
-            upload_wgpu_texture_data(device, texture, origin, fields.width, fields.height, &bitmap.data);
+            upload_wgpu_texture_data(
+                device,
+                texture,
+                origin,
+                fields.width,
+                fields.height,
+                &bitmap.data,
+            );
         }
     } else if let Some(resource) = any.downcast_ref::<ImageResource>() {
         upload_wgpu_texture_image_resource(device, texture, origin, resource);

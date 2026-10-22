@@ -96,7 +96,9 @@ pub fn get_tween_on_update<T: ?Sized + Send + Sync + 'static>(
 }
 
 // flight-lint: allow(conform-extra) D18 free-function accessor backing Tween<T> sugar method
-pub fn get_tween_on_yoyo<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>) -> flight_signals::Signal<()> {
+pub fn get_tween_on_yoyo<T: ?Sized + Send + Sync + 'static>(
+    tween: &Tween<T>,
+) -> flight_signals::Signal<()> {
     return tween.data.read().unwrap().common.on_yoyo.clone();
 }
 
@@ -124,7 +126,10 @@ pub fn get_tweens_of<T: ?Sized + Send + Sync + 'static>(
     }
 }
 
-pub fn has_tweens_of<T: ?Sized + Send + Sync + 'static>(manager: &TweenManager, target: &Ref<T>) -> bool {
+pub fn has_tweens_of<T: ?Sized + Send + Sync + 'static>(
+    manager: &TweenManager,
+    target: &Ref<T>,
+) -> bool {
     let key = target_key_from_ref(target);
     let manager_data = manager.data.read().unwrap();
     return match manager_data.tweens.iter().find(|(k, _)| *k == key) {
@@ -242,7 +247,10 @@ pub fn stop_all_tweens(manager: &TweenManager, options: Option<&StopTweenOptions
     }
 }
 
-pub fn stop_tween<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>, options: Option<&StopTweenOptions>) {
+pub fn stop_tween<T: ?Sized + Send + Sync + 'static>(
+    tween: &Tween<T>,
+    options: Option<&StopTweenOptions>,
+) {
     stop_tween_erased(&tween.to_erased(), options);
 }
 

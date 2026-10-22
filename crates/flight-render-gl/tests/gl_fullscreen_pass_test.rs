@@ -43,9 +43,7 @@ mod clear_gl_render_target {
 mod clear_gl_render_target_attachments {
     use crate::gl_test_helper::{calls_named, calls_with, clear_calls, make_gl, snapshot};
     use flight_render::RenderTargetClear;
-    use flight_render_gl::{
-        clear_gl_render_target_attachments, create_gl_screen_render_target,
-    };
+    use flight_render_gl::{clear_gl_render_target_attachments, create_gl_screen_render_target};
     use glow::HasContext;
     use std::rc::Rc;
 

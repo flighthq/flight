@@ -13,12 +13,15 @@ fn expect_throw_kind<F: FnOnce()>(expected: flight_entity::FlightErrorKind, run:
     }
 }
 
-
 // ============================================================================
 // Test helpers
 // ============================================================================
 
-fn condition(input_index: i32, comparison: StatechartComparison, value: f64) -> StatechartCondition {
+fn condition(
+    input_index: i32,
+    comparison: StatechartComparison,
+    value: f64,
+) -> StatechartCondition {
     return StatechartCondition {
         comparison,
         input_index,
@@ -135,7 +138,10 @@ mod advance_statechart_instance {
 
         fire_statechart_trigger(&instance, 0);
         assert_eq!(advance_statechart_instance(&instance, 0.0), 2);
-        assert_eq!(&*(instance.read().unwrap().region_states), &(vec![1, 1])[..]);
+        assert_eq!(
+            &*(instance.read().unwrap().region_states),
+            &(vec![1, 1])[..]
+        );
         assert_eq!(instance.read().unwrap().input_values[0], 0.0);
     }
 
@@ -542,7 +548,10 @@ mod explain_statechart_transition_tests {
     fn reports_a_state_with_no_transitions() {
         let explanation =
             explain_statechart_transition(&crate::create_instance(&create_empty_chart()), 0);
-        assert_eq!(explanation.status, StatechartTransitionStatus::NoTransitions);
+        assert_eq!(
+            explanation.status,
+            StatechartTransitionStatus::NoTransitions
+        );
         assert_eq!(explanation.transition_index, -1);
     }
 
@@ -558,8 +567,7 @@ mod explain_statechart_transition_tests {
             0.0,
             -1.0,
         );
-        let explanation =
-            explain_statechart_transition(&crate::create_instance(&chart), 0);
+        let explanation = explain_statechart_transition(&crate::create_instance(&chart), 0);
         assert_eq!(
             explanation.status,
             StatechartTransitionStatus::ConditionsUnmet
@@ -602,8 +610,7 @@ mod explain_statechart_transition_tests {
     #[test]
     fn reports_a_missing_duration_that_runtime_coerces_to_no_exit_time_requirement() {
         let chart = create_single_transition_chart(Vec::new(), Vec::new(), 0.0, 0.5);
-        let explanation =
-            explain_statechart_transition(&crate::create_instance(&chart), 0);
+        let explanation = explain_statechart_transition(&crate::create_instance(&chart), 0);
         assert_eq!(
             explanation.status,
             StatechartTransitionStatus::MissingRegionDuration
@@ -641,7 +648,9 @@ mod fire_statechart_trigger_tests {
             -1.0,
         );
         let instance = crate::create_instance(&chart);
-        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || fire_statechart_trigger(&instance, -1));
+        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || {
+            fire_statechart_trigger(&instance, -1)
+        });
     }
 
     #[test]
@@ -782,7 +791,9 @@ mod set_statechart_boolean_input_tests {
             -1.0,
         );
         let instance = crate::create_instance(&chart);
-        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || set_statechart_boolean_input(&instance, 1, true));
+        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || {
+            set_statechart_boolean_input(&instance, 1, true)
+        });
     }
 
     #[test]
@@ -798,7 +809,9 @@ mod set_statechart_boolean_input_tests {
             -1.0,
         );
         let instance = crate::create_instance(&chart);
-        expect_throw_kind(flight_entity::FlightErrorKind::TypeError, || set_statechart_boolean_input(&instance, 0, true));
+        expect_throw_kind(flight_entity::FlightErrorKind::TypeError, || {
+            set_statechart_boolean_input(&instance, 0, true)
+        });
     }
 }
 
@@ -839,7 +852,9 @@ mod set_statechart_number_input_tests {
             -1.0,
         );
         let instance = crate::create_instance(&chart);
-        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || set_statechart_number_input(&instance, 1, 2.0));
+        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || {
+            set_statechart_number_input(&instance, 1, 2.0)
+        });
     }
 
     #[test]
@@ -855,7 +870,9 @@ mod set_statechart_number_input_tests {
             -1.0,
         );
         let instance = crate::create_instance(&chart);
-        expect_throw_kind(flight_entity::FlightErrorKind::TypeError, || set_statechart_number_input(&instance, 0, 2.0));
+        expect_throw_kind(flight_entity::FlightErrorKind::TypeError, || {
+            set_statechart_number_input(&instance, 0, 2.0)
+        });
     }
 }
 
@@ -883,18 +900,24 @@ mod set_statechart_region_duration_tests {
     #[test]
     fn throws_for_an_invalid_region() {
         let instance = crate::create_instance(&create_empty_chart());
-        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || set_statechart_region_duration(&instance, 1, 1.0));
+        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || {
+            set_statechart_region_duration(&instance, 1, 1.0)
+        });
     }
 
     #[test]
     fn throws_for_negative_duration() {
         let instance = crate::create_instance(&create_empty_chart());
-        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || set_statechart_region_duration(&instance, 0, -1.0));
+        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || {
+            set_statechart_region_duration(&instance, 0, -1.0)
+        });
     }
 
     #[test]
     fn throws_for_nan_duration() {
         let instance = crate::create_instance(&create_empty_chart());
-        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || set_statechart_region_duration(&instance, 0, f64::NAN));
+        expect_throw_kind(flight_entity::FlightErrorKind::RangeError, || {
+            set_statechart_region_duration(&instance, 0, f64::NAN)
+        });
     }
 }

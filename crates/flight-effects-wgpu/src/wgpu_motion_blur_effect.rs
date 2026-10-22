@@ -8,13 +8,14 @@
 use flight_effects::{Effect, MotionBlurEffect};
 use flight_entity::Ref;
 use flight_render_wgpu::{
-    WgpuEffectContext, WgpuRenderState, WgpuTextureRenderTarget, get_wgpu_render_state_native_device,
+    WgpuEffectContext, WgpuRenderState, WgpuTextureRenderTarget,
+    get_wgpu_render_state_native_device,
 };
 
 use crate::types::*;
 use crate::wgpu_effect_pass::{
     begin_effect_pass, create_wgpu_dual_source_effect_pipeline, draw_wgpu_dual_source_effect_pass,
-    get_wgpu_effect_pass_state, get_or_create_texture_bind_group,
+    get_or_create_texture_bind_group, get_wgpu_effect_pass_state,
 };
 use crate::wgpu_effect_registry::register_wgpu_effect;
 use crate::wgpu_effect_runner_support::downcast_wgpu_effect;
@@ -120,7 +121,13 @@ pub fn apply_motion_blur_effect_to_wgpu(
     let render_pipeline = resolve_motion_blur_pipeline(state, &pipeline, dest.format);
     let mut pass = begin_effect_pass(state, Some(dest), wgpu::LoadOp::Load);
     set_wgpu_effect_pass_pipeline(&native, &mut pass, &render_pipeline);
-    set_wgpu_effect_pass_bind_group(&native, &mut pass, 0, &fs.uniform_bind_group, &[slot_offset]);
+    set_wgpu_effect_pass_bind_group(
+        &native,
+        &mut pass,
+        0,
+        &fs.uniform_bind_group,
+        &[slot_offset],
+    );
     set_wgpu_effect_pass_bind_group(&native, &mut pass, 1, &source_bind_group, &[]);
     set_wgpu_effect_pass_bind_group(&native, &mut pass, 2, &velocity_bind_group, &[]);
     draw_wgpu_effect_fullscreen_quad(&native, pass);
@@ -140,7 +147,12 @@ fn get_motion_blur_pipeline(state: &mut WgpuRenderState) -> Ref<WgpuEffectPipeli
 
 /// Registers the default runner under `MotionBlurEffect` (TS `registerWgpuMotionBlurEffect`).
 pub fn register_wgpu_motion_blur_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "MotionBlurEffect", wgpu_motion_blur_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "MotionBlurEffect",
+        wgpu_motion_blur_effect_runner,
+        None,
+    );
 }
 
 // The variant whose color target matches `format` (the draw helper's per-format resolution).
@@ -154,7 +166,8 @@ fn resolve_motion_blur_pipeline(
         return pipeline.pipeline.clone();
     }
     let compile_for_format = pipeline.compile_for_format.clone();
-    let (Some(compile_for_format), Some(variants)) = (compile_for_format, pipeline.variants.as_mut())
+    let (Some(compile_for_format), Some(variants)) =
+        (compile_for_format, pipeline.variants.as_mut())
     else {
         return pipeline.pipeline.clone();
     };

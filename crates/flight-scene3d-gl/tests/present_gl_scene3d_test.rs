@@ -1,5 +1,5 @@
-use flight_materials::contract::create_standard_pbr_material;
 use flight_materials::STANDARD_PBR_MATERIAL_KIND;
+use flight_materials::contract::create_standard_pbr_material;
 use flight_meshgeometry::{MeshGeometry, create_box_mesh_geometry};
 use flight_render::{RenderTargetDepth, RenderTargetDescriptor, Scene3DRenderProxy};
 use flight_render_gl::{
@@ -50,7 +50,11 @@ fn throwing_bind(
 ) {
 }
 
-fn throwing_draw(_state: &mut GlRenderState, _proxy: &Scene3DRenderProxy, _geometry: &MeshGeometry) {
+fn throwing_draw(
+    _state: &mut GlRenderState,
+    _proxy: &Scene3DRenderProxy,
+    _geometry: &MeshGeometry,
+) {
     flight_entity::throw_error("custom draw failed");
 }
 
@@ -70,11 +74,21 @@ mod present_gl_scene3d {
         let mut target = make_target(&state);
         let framebuffer = i64::from(target.framebuffer.0.get());
 
-        present_gl_scene3d(&mut state, &mut target, &scene, &make_test_look_at_camera(), &make_test_lights());
+        present_gl_scene3d(
+            &mut state,
+            &mut target,
+            &scene,
+            &make_test_look_at_camera(),
+            &make_test_lights(),
+        );
 
         let framebuffer_binds = calls_with("bind_framebuffer");
         // The scene is drawn into the target's framebuffer...
-        assert!(framebuffer_binds.iter().any(|call| call.integers[1] == framebuffer));
+        assert!(
+            framebuffer_binds
+                .iter()
+                .any(|call| call.integers[1] == framebuffer)
+        );
         // ...and the linear->sRGB present writes to the canvas (default framebuffer = 0).
         assert!(framebuffer_binds.iter().any(|call| call.integers[1] == 0));
     }
@@ -86,17 +100,28 @@ mod present_gl_scene3d {
         let scene = make_scene();
         let mut target = make_target(&state);
 
-        present_gl_scene3d(&mut state, &mut target, &scene, &make_test_look_at_camera(), &make_test_lights());
+        present_gl_scene3d(
+            &mut state,
+            &mut target,
+            &scene,
+            &make_test_look_at_camera(),
+            &make_test_lights(),
+        );
 
         // begin_gl_render_pass clears per-attachment (clearBufferfv for color location 0) and the
         // depth/stencil buffer (clearBufferfi).
         let color_clears = calls_with("clear_buffer_f32");
-        assert!(color_clears.iter().any(|call| call.integers[0] == i64::from(glow::COLOR)
-            && call.integers[1] == 0));
+        assert!(
+            color_clears
+                .iter()
+                .any(|call| call.integers[0] == i64::from(glow::COLOR) && call.integers[1] == 0)
+        );
         let depth_clears = calls_with("clear_buffer_depth_stencil");
-        assert!(depth_clears
-            .iter()
-            .any(|call| call.integers[0] == i64::from(glow::DEPTH_STENCIL)));
+        assert!(
+            depth_clears
+                .iter()
+                .any(|call| call.integers[0] == i64::from(glow::DEPTH_STENCIL))
+        );
     }
 
     #[test]
@@ -107,7 +132,13 @@ mod present_gl_scene3d {
         let mut target = make_target(&state);
         let texture = i64::from(target.texture.0.get());
 
-        present_gl_scene3d(&mut state, &mut target, &scene, &make_test_look_at_camera(), &make_test_lights());
+        present_gl_scene3d(
+            &mut state,
+            &mut target,
+            &scene,
+            &make_test_look_at_camera(),
+            &make_test_lights(),
+        );
 
         let names = crate::gl_test_helper::call_names();
         let last_texture_bind = names.iter().rposition(|name| name == "bind_texture");
@@ -115,7 +146,11 @@ mod present_gl_scene3d {
         // The present pass binds the scene texture and draws the fullscreen quad as the final operations.
         assert!(last_texture_bind.is_some_and(|index| index > 0));
         assert!(last_draw.is_some_and(|index| index > 0));
-        assert!(calls_with("bind_texture").iter().any(|call| call.integers[1] == texture));
+        assert!(
+            calls_with("bind_texture")
+                .iter()
+                .any(|call| call.integers[1] == texture)
+        );
     }
 
     #[test]
@@ -130,7 +165,13 @@ mod present_gl_scene3d {
         let mut target = make_target(&state);
 
         let message = thrown_message(|| {
-            present_gl_scene3d(&mut state, &mut target, &scene, &make_test_look_at_camera(), &make_test_lights());
+            present_gl_scene3d(
+                &mut state,
+                &mut target,
+                &scene,
+                &make_test_look_at_camera(),
+                &make_test_lights(),
+            );
         });
         assert_eq!(message, "custom draw failed");
         assert!(state.gl_runtime.borrow().current_target.is_none());

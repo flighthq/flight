@@ -1,6 +1,8 @@
 use flight_math::create_random_source;
 use flight_particles::contract::{create_particle_emitter_config, create_particle_emitter_state};
-use flight_particles::{EmitterShape, ParticleDeathEvent, ParticleSpawnEvent, enable_particle_emitter_signals};
+use flight_particles::{
+    EmitterShape, ParticleDeathEvent, ParticleSpawnEvent, enable_particle_emitter_signals,
+};
 use flight_signals::connect_signal;
 use std::sync::{Arc, Mutex};
 
@@ -20,17 +22,26 @@ mod is_particle_emitter_2d_complete {
         config.lifetime_max = 0.5;
         config.duration = 1.0;
         config.looping = false;
-        assert_eq!(is_particle_emitter_2d_complete(&emitter.read().unwrap(), &state, &config), false);
+        assert_eq!(
+            is_particle_emitter_2d_complete(&emitter.read().unwrap(), &state, &config),
+            false
+        );
         for _i in 0..10 {
             update_particle_emitter_2d(&emitter, &mut state, &config, 0.1, None);
         }
         assert!(emitter.read().unwrap().data.particle_count > 0);
-        assert_eq!(is_particle_emitter_2d_complete(&emitter.read().unwrap(), &state, &config), false);
+        assert_eq!(
+            is_particle_emitter_2d_complete(&emitter.read().unwrap(), &state, &config),
+            false
+        );
         for _i in 0..10 {
             update_particle_emitter_2d(&emitter, &mut state, &config, 0.1, None);
         }
         assert_eq!(emitter.read().unwrap().data.particle_count, 0);
-        assert_eq!(is_particle_emitter_2d_complete(&emitter.read().unwrap(), &state, &config), true);
+        assert_eq!(
+            is_particle_emitter_2d_complete(&emitter.read().unwrap(), &state, &config),
+            true
+        );
     }
 
     #[test]
@@ -40,12 +51,18 @@ mod is_particle_emitter_2d_complete {
         let mut infinite = create_particle_emitter_config(None);
         infinite.spawn_rate = 0.0;
         infinite.duration = 0.0;
-        assert_eq!(is_particle_emitter_2d_complete(&emitter.read().unwrap(), &state, &infinite), false);
+        assert_eq!(
+            is_particle_emitter_2d_complete(&emitter.read().unwrap(), &state, &infinite),
+            false
+        );
         let mut looping = create_particle_emitter_config(None);
         looping.spawn_rate = 0.0;
         looping.duration = 1.0;
         looping.looping = true;
-        assert_eq!(is_particle_emitter_2d_complete(&emitter.read().unwrap(), &state, &looping), false);
+        assert_eq!(
+            is_particle_emitter_2d_complete(&emitter.read().unwrap(), &state, &looping),
+            false
+        );
     }
 }
 
@@ -490,7 +507,10 @@ mod update_particle_emitter_2d {
         for _i in 0..20 {
             update_particle_emitter_2d(&emitter, &mut state, &config, 0.1, None);
         }
-        assert_eq!(emitter.read().unwrap().data.particle_count, count_after_duration);
+        assert_eq!(
+            emitter.read().unwrap().data.particle_count,
+            count_after_duration
+        );
     }
 
     #[test]
@@ -515,7 +535,7 @@ mod update_particle_emitter_2d {
         let run = || -> (Vec<f32>, Vec<f32>, Vec<f32>, Vec<f32>, usize) {
             let emitter = create_particle_emitter_2d();
             let mut state = create_particle_emitter_state();
-        state.random = create_random_source(1234);
+            state.random = create_random_source(1234);
             let mut config = create_particle_emitter_config(None);
             config.spawn_rate = 30.0;
             config.max_particles = 200.0;

@@ -35,7 +35,10 @@ mod apply_median_effect_to_wgpu {
 
     #[test]
     fn clamps_the_radius_to_the_supported_window() {
-        assert_eq!(uploaded_radius(Some(9.0)), MAX_MEDIAN_EFFECT_WGPU_RADIUS as i32);
+        assert_eq!(
+            uploaded_radius(Some(9.0)),
+            MAX_MEDIAN_EFFECT_WGPU_RADIUS as i32
+        );
         assert_eq!(uploaded_radius(Some(-3.0)), 0);
     }
 }

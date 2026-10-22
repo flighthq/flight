@@ -55,13 +55,18 @@ pub fn copy_bitmap_alpha(dest: &mut BitmapRegion, source: &BitmapRegion) {
     for py in 0..h {
         let sy = source.y + py;
         let dy = dest.y + py;
-        if sy < 0 || sy >= source.bitmap.height as i32 || dy < 0 || dy >= dest.bitmap.height as i32 {
+        if sy < 0 || sy >= source.bitmap.height as i32 || dy < 0 || dy >= dest.bitmap.height as i32
+        {
             continue;
         }
         for px in 0..w {
             let sx = source.x + px;
             let dx = dest.x + px;
-            if sx < 0 || sx >= source.bitmap.width as i32 || dx < 0 || dx >= dest.bitmap.width as i32 {
+            if sx < 0
+                || sx >= source.bitmap.width as i32
+                || dx < 0
+                || dx >= dest.bitmap.width as i32
+            {
                 continue;
             }
             let si = (sy as usize * source.bitmap.width as usize + sx as usize) * 4;

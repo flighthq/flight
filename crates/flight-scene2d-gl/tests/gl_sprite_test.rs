@@ -1,10 +1,10 @@
 use std::sync::{Arc, RwLock};
 
 use flight_node::NodeRef;
+use flight_render::RenderTargetClear;
 use flight_render::{
     BatchFormat, CreateRenderTextureOptions, RenderProxy2D, create_render_texture,
 };
-use flight_render::RenderTargetClear;
 use flight_render_gl::{
     GlRenderState, register_gl_bitmap_texture_resolver, register_gl_render_texture_resolver,
     render_into_gl_render_texture,

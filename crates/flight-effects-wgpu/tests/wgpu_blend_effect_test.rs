@@ -60,7 +60,10 @@ mod apply_blend_effect_to_wgpu {
         assert_eq!(ints[0][0], 7);
         assert_eq!(recorded_effect_uniforms(&records)[0][1], 0.5);
         assert_eq!(ints[0][2], 1);
-        assert_eq!(recorded_pass_views(&records), vec![dest.read().unwrap().view.clone()]);
+        assert_eq!(
+            recorded_pass_views(&records),
+            vec![dest.read().unwrap().view.clone()]
+        );
         let sets = recorded_set_bind_groups(&records);
         assert_ne!(sets[1].bind_group, sets[2].bind_group);
     }
@@ -120,21 +123,51 @@ mod get_wgpu_blend_effect_mode_index {
 
     #[test]
     fn assigns_the_seven_separable_modes_indices_0_through_6() {
-        assert_eq!(get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_OVERLAY), 0);
-        assert_eq!(get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_HARD_LIGHT), 1);
-        assert_eq!(get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_SOFT_LIGHT), 2);
-        assert_eq!(get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_DIFFERENCE), 3);
-        assert_eq!(get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_EXCLUSION), 4);
-        assert_eq!(get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_COLOR_DODGE), 5);
-        assert_eq!(get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_COLOR_BURN), 6);
+        assert_eq!(
+            get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_OVERLAY),
+            0
+        );
+        assert_eq!(
+            get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_HARD_LIGHT),
+            1
+        );
+        assert_eq!(
+            get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_SOFT_LIGHT),
+            2
+        );
+        assert_eq!(
+            get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_DIFFERENCE),
+            3
+        );
+        assert_eq!(
+            get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_EXCLUSION),
+            4
+        );
+        assert_eq!(
+            get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_COLOR_DODGE),
+            5
+        );
+        assert_eq!(
+            get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_COLOR_BURN),
+            6
+        );
     }
 
     #[test]
     fn assigns_the_hsl_modes_indices_7_through_10() {
         assert_eq!(get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_HUE), 7);
-        assert_eq!(get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_SATURATION), 8);
-        assert_eq!(get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_COLOR), 9);
-        assert_eq!(get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_LUMINOSITY), 10);
+        assert_eq!(
+            get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_SATURATION),
+            8
+        );
+        assert_eq!(
+            get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_COLOR),
+            9
+        );
+        assert_eq!(
+            get_wgpu_blend_effect_mode_index(ADVANCED_BLEND_MODE_LUMINOSITY),
+            10
+        );
     }
 
     #[test]
@@ -234,8 +267,14 @@ mod wgpu_blend_effect_runner {
             wgpu_blend_effect_runner(&mut context, &*effect.read().unwrap());
         });
 
-        assert_eq!(recorded_pass_views(&records), vec![dest.read().unwrap().view.clone()]);
-        assert_eq!(recorded_draw_sources(&records), vec![source.read().unwrap().view.clone()]);
+        assert_eq!(
+            recorded_pass_views(&records),
+            vec![dest.read().unwrap().view.clone()]
+        );
+        assert_eq!(
+            recorded_draw_sources(&records),
+            vec![source.read().unwrap().view.clone()]
+        );
     }
 }
 
@@ -256,7 +295,9 @@ mod wgpu_blend_fragment_wgsl {
     fn un_premultiplies_inputs_and_writes_premultiplied_source_over_output() {
         assert!(WGPU_BLEND_FRAGMENT_WGSL.contains("layer.rgb / layer.a"));
         assert!(WGPU_BLEND_FRAGMENT_WGSL.contains("back.rgb / back.a"));
-        assert!(WGPU_BLEND_FRAGMENT_WGSL.contains("sourceAlpha + backdropAlpha * (1.0 - sourceAlpha)"));
+        assert!(
+            WGPU_BLEND_FRAGMENT_WGSL.contains("sourceAlpha + backdropAlpha * (1.0 - sourceAlpha)")
+        );
         assert!(
             WGPU_BLEND_FRAGMENT_WGSL
                 .contains("mixed * sourceAlpha + cb * backdropAlpha * (1.0 - sourceAlpha)")

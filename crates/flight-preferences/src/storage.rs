@@ -31,12 +31,12 @@ use crate::types::StorageJsonResult;
 use crate::types::StorageJsonWriteResult;
 use crate::types::StorageKeysResult;
 use crate::types::StorageMigration;
-use crate::types::StorageMigrationOutcome;
 use crate::types::StorageMigrationCheckpointFailed;
 use crate::types::StorageMigrationOk;
+use crate::types::StorageMigrationOutcome;
 use crate::types::StorageMigrationOutcomeInner;
-use crate::types::StorageMigrationReadVersionFailed;
 use crate::types::StorageMigrationReadFailureReason;
+use crate::types::StorageMigrationReadVersionFailed;
 use crate::types::StorageMutationErr;
 use crate::types::StorageMutationOutcome;
 use crate::types::StorageNamespace;
@@ -75,9 +75,10 @@ pub fn attach_storage(
 ) -> bool {
     detach_storage(signals);
     let on_change = signals.on_change.clone();
-    let unsubscribe = (host_preferences_change.subscribe)(Arc::new(move |change: &StorageChange| {
-        emit_signal(&on_change, change);
-    }));
+    let unsubscribe =
+        (host_preferences_change.subscribe)(Arc::new(move |change: &StorageChange| {
+            emit_signal(&on_change, change);
+        }));
     let unsubscribe = match unsubscribe {
         Some(u) => u,
         None => return false,
@@ -95,7 +96,11 @@ pub fn clear_storage(
     if result.is_ok() && storage_signals_active(signals) {
         emit_signal(
             &signals.unwrap().on_change,
-            &StorageChange { key: None, new_value: None, old_value: None },
+            &StorageChange {
+                key: None,
+                new_value: None,
+                old_value: None,
+            },
         );
     }
     return result;
@@ -160,7 +165,10 @@ pub fn get_namespaced_storage_byte_size(
     host_preferences: &HostPreferencesCapability,
     namespace: &StorageNamespace,
 ) -> StorageByteSizeResult {
-    return get_storage_byte_size_for_prefix(host_preferences, Some(&format!("{}.", namespace.prefix)));
+    return get_storage_byte_size_for_prefix(
+        host_preferences,
+        Some(&format!("{}.", namespace.prefix)),
+    );
 }
 
 pub fn get_namespaced_storage_entries(
@@ -227,7 +235,9 @@ pub fn get_storage_boolean(
     let raw = (host_preferences.get_item)(key);
     match raw {
         StorageValueOutcome::Err(StorageValueErr { reason }) => {
-            return StorageValueOutcome::Err(StorageValueErr { reason: reason.into_read() });
+            return StorageValueOutcome::Err(StorageValueErr {
+                reason: reason.into_read(),
+            });
         }
         StorageValueOutcome::Ok(StorageValueOk { value: None }) => {
             return StorageValueOutcome::Ok(StorageValueOk { value: None });
@@ -239,7 +249,9 @@ pub fn get_storage_boolean(
             return StorageValueOutcome::Ok(StorageValueOk { value: Some(false) });
         }
         StorageValueOutcome::Ok(StorageValueOk { value: Some(_) }) => {
-            return StorageValueOutcome::Err(StorageValueErr { reason: StorageReadFailureReason::ParseFailed });
+            return StorageValueOutcome::Err(StorageValueErr {
+                reason: StorageReadFailureReason::ParseFailed,
+            });
         }
     }
 }
@@ -264,7 +276,9 @@ pub fn get_storage_boolean_or(
             return StorageFallbackOutcome::Ok(StorageFallbackOk { value: false });
         }
         StorageValueOutcome::Ok(StorageValueOk { value: Some(_) }) => {
-            return StorageFallbackOutcome::ParseFailed(StorageFallbackParseFailed { value: fallback });
+            return StorageFallbackOutcome::ParseFailed(StorageFallbackParseFailed {
+                value: fallback,
+            });
         }
     }
 }
@@ -283,7 +297,10 @@ fn get_storage_byte_size_for_prefix(
     let key_list = match keys {
         StorageValueOutcome::Ok(StorageValueOk { value }) => value,
         StorageValueOutcome::Err(StorageValueErr { reason }) => {
-            return StorageQueryOutcome::Err(StorageQueryErr { failed_key: None, reason });
+            return StorageQueryOutcome::Err(StorageQueryErr {
+                failed_key: None,
+                reason,
+            });
         }
     };
     let mut total: usize = 0;
@@ -310,9 +327,7 @@ fn get_storage_byte_size_for_prefix(
     return StorageQueryOutcome::Ok(StorageQueryOk { value: total });
 }
 
-pub fn get_storage_entries(
-    host_preferences: &HostPreferencesCapability,
-) -> StorageEntriesResult {
+pub fn get_storage_entries(host_preferences: &HostPreferencesCapability) -> StorageEntriesResult {
     return get_storage_entries_for_prefix(host_preferences, None);
 }
 
@@ -324,7 +339,10 @@ fn get_storage_entries_for_prefix(
     let key_list = match keys {
         StorageValueOutcome::Ok(StorageValueOk { value }) => value,
         StorageValueOutcome::Err(StorageValueErr { reason }) => {
-            return StorageQueryOutcome::Err(StorageQueryErr { failed_key: None, reason });
+            return StorageQueryOutcome::Err(StorageQueryErr {
+                failed_key: None,
+                reason,
+            });
         }
     };
     let mut entries: Vec<(String, String)> = Vec::new();
@@ -397,7 +415,9 @@ pub fn get_storage_item_presence(
     let result = (host_preferences.get_item)(key);
     match result {
         StorageValueOutcome::Ok(StorageValueOk { value }) => {
-            return StorageValueOutcome::Ok(StorageValueOk { value: value.is_some() });
+            return StorageValueOutcome::Ok(StorageValueOk {
+                value: value.is_some(),
+            });
         }
         StorageValueOutcome::Err(StorageValueErr { reason }) => {
             return StorageValueOutcome::Err(StorageValueErr { reason });
@@ -434,7 +454,9 @@ pub fn get_storage_json<T: serde::de::DeserializeOwned>(
     let raw = (host_preferences.get_item)(key);
     match raw {
         StorageValueOutcome::Err(StorageValueErr { reason }) => {
-            return StorageValueOutcome::Err(StorageValueErr { reason: reason.into_read() });
+            return StorageValueOutcome::Err(StorageValueErr {
+                reason: reason.into_read(),
+            });
         }
         StorageValueOutcome::Ok(StorageValueOk { value: None }) => {
             return StorageValueOutcome::Ok(StorageValueOk { value: None });
@@ -463,22 +485,24 @@ pub fn get_storage_json_or<T: serde::de::DeserializeOwned>(
             return StorageFallbackOutcome::ProviderError(StorageFallbackProviderError { reason });
         }
         StorageValueOutcome::Ok(StorageValueOk { value: None }) => {
-            return StorageFallbackOutcome::Ok(StorageFallbackOk { value: Some(fallback) });
+            return StorageFallbackOutcome::Ok(StorageFallbackOk {
+                value: Some(fallback),
+            });
         }
         StorageValueOutcome::Ok(StorageValueOk { value: Some(s) }) => {
             match serde_json::from_str::<T>(&s) {
                 Ok(v) => return StorageFallbackOutcome::Ok(StorageFallbackOk { value: Some(v) }),
                 Err(_) => {
-                    return StorageFallbackOutcome::ParseFailed(StorageFallbackParseFailed { value: Some(fallback) });
+                    return StorageFallbackOutcome::ParseFailed(StorageFallbackParseFailed {
+                        value: Some(fallback),
+                    });
                 }
             }
         }
     }
 }
 
-pub fn get_storage_keys(
-    host_preferences: &HostPreferencesCapability,
-) -> StorageKeysResult {
+pub fn get_storage_keys(host_preferences: &HostPreferencesCapability) -> StorageKeysResult {
     return (host_preferences.keys)();
 }
 
@@ -490,21 +514,23 @@ pub fn get_storage_number(
     let raw = (host_preferences.get_item)(key);
     match raw {
         StorageValueOutcome::Err(StorageValueErr { reason }) => {
-            return StorageValueOutcome::Err(StorageValueErr { reason: reason.into_read() });
+            return StorageValueOutcome::Err(StorageValueErr {
+                reason: reason.into_read(),
+            });
         }
         StorageValueOutcome::Ok(StorageValueOk { value: None }) => {
             return StorageValueOutcome::Ok(StorageValueOk { value: None });
         }
-        StorageValueOutcome::Ok(StorageValueOk { value: Some(s) }) => {
-            match s.parse::<f64>() {
-                Ok(v) if v.is_finite() => return StorageValueOutcome::Ok(StorageValueOk { value: Some(v) }),
-                _ => {
-                    return StorageValueOutcome::Err(StorageValueErr {
-                        reason: StorageReadFailureReason::ParseFailed,
-                    });
-                }
+        StorageValueOutcome::Ok(StorageValueOk { value: Some(s) }) => match s.parse::<f64>() {
+            Ok(v) if v.is_finite() => {
+                return StorageValueOutcome::Ok(StorageValueOk { value: Some(v) });
             }
-        }
+            _ => {
+                return StorageValueOutcome::Err(StorageValueErr {
+                    reason: StorageReadFailureReason::ParseFailed,
+                });
+            }
+        },
     }
 }
 
@@ -522,12 +548,16 @@ pub fn get_storage_number_or(
         StorageValueOutcome::Ok(StorageValueOk { value: None }) => {
             return StorageFallbackOutcome::Ok(StorageFallbackOk { value: fallback });
         }
-        StorageValueOutcome::Ok(StorageValueOk { value: Some(s) }) => {
-            match s.parse::<f64>() {
-                Ok(v) if v.is_finite() => return StorageFallbackOutcome::Ok(StorageFallbackOk { value: v }),
-                _ => return StorageFallbackOutcome::ParseFailed(StorageFallbackParseFailed { value: fallback }),
+        StorageValueOutcome::Ok(StorageValueOk { value: Some(s) }) => match s.parse::<f64>() {
+            Ok(v) if v.is_finite() => {
+                return StorageFallbackOutcome::Ok(StorageFallbackOk { value: v });
             }
-        }
+            _ => {
+                return StorageFallbackOutcome::ParseFailed(StorageFallbackParseFailed {
+                    value: fallback,
+                });
+            }
+        },
     }
 }
 
@@ -546,9 +576,11 @@ pub fn migrate_storage(
     let stored_value = match stored_version {
         StorageValueOutcome::Ok(StorageValueOk { value }) => value,
         StorageValueOutcome::Err(StorageValueErr { reason }) => {
-            return StorageMigrationOutcomeInner::ReadVersionFailed(StorageMigrationReadVersionFailed {
-                reason: reason.into_migration_read(),
-            });
+            return StorageMigrationOutcomeInner::ReadVersionFailed(
+                StorageMigrationReadVersionFailed {
+                    reason: reason.into_migration_read(),
+                },
+            );
         }
     };
     let mut checkpoint: u32 = 0;
@@ -556,9 +588,11 @@ pub fn migrate_storage(
         match s.parse::<u32>() {
             Ok(v) => checkpoint = v,
             Err(_) => {
-                return StorageMigrationOutcomeInner::ReadVersionFailed(StorageMigrationReadVersionFailed {
-                    reason: StorageMigrationReadFailureReason::VersionParseFailed,
-                });
+                return StorageMigrationOutcomeInner::ReadVersionFailed(
+                    StorageMigrationReadVersionFailed {
+                        reason: StorageMigrationReadFailureReason::VersionParseFailed,
+                    },
+                );
             }
         }
     }
@@ -579,15 +613,19 @@ pub fn migrate_storage(
                 checkpoint = migration.version;
             }
             StorageMutationOutcome::Err(StorageMutationErr { reason }) => {
-                return StorageMigrationOutcomeInner::CheckpointFailed(StorageMigrationCheckpointFailed {
-                    failed_version: migration.version,
-                    reason,
-                    version: checkpoint,
-                });
+                return StorageMigrationOutcomeInner::CheckpointFailed(
+                    StorageMigrationCheckpointFailed {
+                        failed_version: migration.version,
+                        reason,
+                        version: checkpoint,
+                    },
+                );
             }
         }
     }
-    return StorageMigrationOutcomeInner::Ok(StorageMigrationOk { version: checkpoint });
+    return StorageMigrationOutcomeInner::Ok(StorageMigrationOk {
+        version: checkpoint,
+    });
 }
 
 fn namespaced_key(namespace: &StorageNamespace, key: &str) -> String {
@@ -600,7 +638,11 @@ pub fn remove_namespaced_storage_item(
     key: &str,
     signals: Option<&StorageSignals>,
 ) -> StorageRemoveItemResult {
-    return remove_storage_item_from_backend(host_preferences, &namespaced_key(namespace, key), signals);
+    return remove_storage_item_from_backend(
+        host_preferences,
+        &namespaced_key(namespace, key),
+        signals,
+    );
 }
 
 pub fn remove_storage_item(
@@ -672,7 +714,12 @@ pub fn set_namespaced_storage_item(
     value: &str,
     signals: Option<&StorageSignals>,
 ) -> StorageSetItemResult {
-    return set_storage_item_on_backend(host_preferences, &namespaced_key(namespace, key), value, signals);
+    return set_storage_item_on_backend(
+        host_preferences,
+        &namespaced_key(namespace, key),
+        value,
+        signals,
+    );
 }
 
 pub fn set_storage_boolean(
@@ -777,12 +824,24 @@ pub fn set_storage_json<T: serde::Serialize>(
         StorageMutationOutcome::Err(StorageMutationErr { reason }) => {
             return StorageMutationOutcome::Err(StorageMutationErr {
                 reason: match reason {
-                    StorageSetItemFailureReason::PersistenceInvalid => StorageWriteFailureReason::PersistenceInvalid,
-                    StorageSetItemFailureReason::QuotaExceeded => StorageWriteFailureReason::QuotaExceeded,
-                    StorageSetItemFailureReason::ReadFailed => StorageWriteFailureReason::ReadFailed,
-                    StorageSetItemFailureReason::RuntimeUnavailable => StorageWriteFailureReason::RuntimeUnavailable,
-                    StorageSetItemFailureReason::SecurityDenied => StorageWriteFailureReason::SecurityDenied,
-                    StorageSetItemFailureReason::WriteFailed => StorageWriteFailureReason::WriteFailed,
+                    StorageSetItemFailureReason::PersistenceInvalid => {
+                        StorageWriteFailureReason::PersistenceInvalid
+                    }
+                    StorageSetItemFailureReason::QuotaExceeded => {
+                        StorageWriteFailureReason::QuotaExceeded
+                    }
+                    StorageSetItemFailureReason::ReadFailed => {
+                        StorageWriteFailureReason::ReadFailed
+                    }
+                    StorageSetItemFailureReason::RuntimeUnavailable => {
+                        StorageWriteFailureReason::RuntimeUnavailable
+                    }
+                    StorageSetItemFailureReason::SecurityDenied => {
+                        StorageWriteFailureReason::SecurityDenied
+                    }
+                    StorageSetItemFailureReason::WriteFailed => {
+                        StorageWriteFailureReason::WriteFailed
+                    }
                 },
             });
         }
@@ -809,14 +868,19 @@ fn storage_signals_active(signals: Option<&StorageSignals>) -> bool {
     };
 }
 
-fn validate_storage_migrations<'a>(migrations: &'a [&'a StorageMigration]) -> Vec<&'a StorageMigration> {
+fn validate_storage_migrations<'a>(
+    migrations: &'a [&'a StorageMigration],
+) -> Vec<&'a StorageMigration> {
     let mut versions = std::collections::HashSet::new();
     for migration in migrations {
         if migration.version == 0 {
             panic!("Storage migration versions must be positive integers");
         }
         if versions.contains(&migration.version) {
-            panic!("Storage migration version {} is duplicated", migration.version);
+            panic!(
+                "Storage migration version {} is duplicated",
+                migration.version
+            );
         }
         versions.insert(migration.version);
     }

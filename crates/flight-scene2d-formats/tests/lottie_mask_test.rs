@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use flight_scene2d::contract::Node2DRef;
 use flight_scene2d_formats::contract::*;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 mod lottie_additive_mask_handler {
     use super::*;

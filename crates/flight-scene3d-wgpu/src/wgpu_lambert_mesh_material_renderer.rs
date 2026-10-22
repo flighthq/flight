@@ -4,12 +4,12 @@
 
 use std::sync::LazyLock;
 
-use flight_entity::Ref;
 use flight_camera::Camera3D;
 use flight_color::{allocate_linear_color, unpack_color_to_linear};
+use flight_entity::Ref;
 use flight_entity::get_entity_id;
 use flight_lighting::Scene3DLightBlock;
-use flight_materials::{LambertMaterial, Material, LAMBERT_MATERIAL_KIND};
+use flight_materials::{LAMBERT_MATERIAL_KIND, LambertMaterial, Material};
 use flight_meshgeometry::MeshGeometry;
 use flight_render::Scene3DRenderProxy;
 use flight_render_wgpu::{
@@ -29,13 +29,15 @@ use crate::wgpu_mesh_pipeline::{
 // The identity the material-less fallback bind caches its binding under (TS: a module-level `{}`
 // object). A real entity, so its key is a numeric entity id (D12/D15): unique to this renderer and
 // never reused, so it cannot alias a material's binding or another renderer's fallback.
-static FALLBACK_MATERIAL: LazyLock<LambertMaterial> = LazyLock::new(flight_materials::contract::create_lambert_material);
+static FALLBACK_MATERIAL: LazyLock<LambertMaterial> =
+    LazyLock::new(flight_materials::contract::create_lambert_material);
 
 /// The built-in Lambert renderer for `LAMBERT_MATERIAL_KIND` (TS `wgpuLambertMeshMaterialRenderer`).
-pub static WGPU_LAMBERT_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer = WgpuMeshMaterialRenderer {
-    bind: bind_wgpu_lambert_material,
-    draw: draw_wgpu_lambert_material,
-};
+pub static WGPU_LAMBERT_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer =
+    WgpuMeshMaterialRenderer {
+        bind: bind_wgpu_lambert_material,
+        draw: draw_wgpu_lambert_material,
+    };
 
 // Selects the classic `lambert` variant, writes the Frame uniform, binds the pipeline and Frame
 // group, then binds the material's surface at group(2).
@@ -98,13 +100,15 @@ fn bind_wgpu_lambert_material(
 // double-sided flags and whether a diffuse map is present; Lambert has no specular or normal map.
 fn define_key_for_material(material: Option<&LambertMaterial>) -> WgpuClassicDefineKey {
     return WgpuClassicDefineKey {
-        alpha_mask_enabled: material
-            .is_some_and(|material| material.alpha_mode == flight_materials::MaterialAlphaMode::Mask),
+        alpha_mask_enabled: material.is_some_and(|material| {
+            material.alpha_mode == flight_materials::MaterialAlphaMode::Mask
+        }),
         double_sided: material.is_some_and(|material| material.double_sided),
         has_color_adjustment: None,
         has_color_matrix: None,
         has_alpha_map: Some(false),
-        has_diffuse_map: material.is_some_and(|material| is_texture_slot_ready(&material.diffuse_map)),
+        has_diffuse_map: material
+            .is_some_and(|material| is_texture_slot_ready(&material.diffuse_map)),
         has_normal_map: false,
         has_specular_map: false,
         lighting_model: WgpuClassicLightingModel::Lambert,

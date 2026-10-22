@@ -1,10 +1,14 @@
 use flight_entity::Ref;
 use flight_node::{NodeRef, add_node_child, invalidate_node_local_transform};
-use flight_particleemitter::{ParticleEmitter3D, create_particle_emitter_3d, reserve_particle_emitter_3d};
+use flight_particleemitter::{
+    ParticleEmitter3D, create_particle_emitter_3d, reserve_particle_emitter_3d,
+};
 use flight_render_wgpu::*;
 use flight_scene3d::{Node3DFields, create_node3d, publish_node3d};
 use flight_scene3d_wgpu::contract::*;
-use flight_textureatlas::{TextureAtlasRotation, create_texture_atlas, create_texture_atlas_region};
+use flight_textureatlas::{
+    TextureAtlasRotation, create_texture_atlas, create_texture_atlas_region,
+};
 
 use crate::support::*;
 
@@ -93,7 +97,9 @@ fn find_instance_write(test: &WgpuScene3DTestState) -> Option<Vec<f32>> {
         .buffer_writes()
         .into_iter()
         .map(|write| bytes_to_f32(&write.data))
-        .find(|values| values.len() % 16 == 0 && values.len() != 24 && values.len() >= 16 && values.len() != 32);
+        .find(|values| {
+            values.len() % 16 == 0 && values.len() != 24 && values.len() >= 16 && values.len() != 32
+        });
 }
 
 fn has_texture_constant(descriptor: &WgpuRenderPipelineDescriptorRecord) -> f64 {
@@ -115,7 +121,11 @@ mod destroy_wgpu_particle_emitter3d_resources {
     fn is_a_no_op_when_no_resources_were_created() {
         let mut test = make_wgpu_scene3d_state(None);
         destroy_wgpu_particle_emitter3d_resources(&mut test.state);
-        assert!(get_wgpu_scene3d_runtime(&mut test.state).particle_resources.is_none());
+        assert!(
+            get_wgpu_scene3d_runtime(&mut test.state)
+                .particle_resources
+                .is_none()
+        );
     }
 
     #[test]
@@ -124,9 +134,17 @@ mod destroy_wgpu_particle_emitter3d_resources {
         let scene = make_scene();
         add_emitter(&scene, &make_emitter_with_particles(1));
         draw(&mut test, &scene);
-        assert!(get_wgpu_scene3d_runtime(&mut test.state).particle_resources.is_some());
+        assert!(
+            get_wgpu_scene3d_runtime(&mut test.state)
+                .particle_resources
+                .is_some()
+        );
         destroy_wgpu_particle_emitter3d_resources(&mut test.state);
-        assert!(get_wgpu_scene3d_runtime(&mut test.state).particle_resources.is_none());
+        assert!(
+            get_wgpu_scene3d_runtime(&mut test.state)
+                .particle_resources
+                .is_none()
+        );
     }
 }
 
@@ -220,10 +238,11 @@ mod draw_wgpu_scene3d_particle_emitter3_ds {
         let (emitter, _fake) = make_atlas_emitter(64.0, 64.0, TextureAtlasRotation::None);
         add_emitter(&scene, &emitter);
         draw(&mut test, &scene);
-        assert!(test
-            .pipelines()
-            .iter()
-            .any(|descriptor| has_texture_constant(descriptor) == 1.0));
+        assert!(
+            test.pipelines()
+                .iter()
+                .any(|descriptor| has_texture_constant(descriptor) == 1.0)
+        );
     }
 
     #[test]

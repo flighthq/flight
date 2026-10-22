@@ -1,5 +1,5 @@
-use crate::path::{Path, PathCommand, PathSegment};
 use crate::for_each_path_segment::for_each_path_segment;
+use crate::path::{Path, PathCommand, PathSegment};
 
 #[cfg(test)]
 mod sugar_tests {
@@ -31,8 +31,16 @@ mod sugar_tests {
 enum SubpathPointKind {
     Move,
     Line,
-    Quad { cx: f64, cy: f64 },
-    Cubic { c1x: f64, c1y: f64, c2x: f64, c2y: f64 },
+    Quad {
+        cx: f64,
+        cy: f64,
+    },
+    Cubic {
+        c1x: f64,
+        c1y: f64,
+        c2x: f64,
+        c2y: f64,
+    },
 }
 
 // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
@@ -59,7 +67,11 @@ fn decode_subpaths(path: &Path) -> Vec<Subpath> {
             PathSegment::MoveTo { x, y } => {
                 subpaths.push(Subpath {
                     closed: false,
-                    points: vec![SubpathPoint { x: *x, y: *y, kind: SubpathPointKind::Move }],
+                    points: vec![SubpathPoint {
+                        x: *x,
+                        y: *y,
+                        kind: SubpathPointKind::Move,
+                    }],
                 });
                 current = Some(subpaths.len() - 1);
             }
@@ -67,39 +79,73 @@ fn decode_subpaths(path: &Path) -> Vec<Subpath> {
                 if current.is_none() {
                     subpaths.push(Subpath {
                         closed: false,
-                        points: vec![SubpathPoint { x: 0.0, y: 0.0, kind: SubpathPointKind::Move }],
+                        points: vec![SubpathPoint {
+                            x: 0.0,
+                            y: 0.0,
+                            kind: SubpathPointKind::Move,
+                        }],
                     });
                     current = Some(subpaths.len() - 1);
                 }
                 subpaths[current.unwrap()].points.push(SubpathPoint {
-                    x: *x, y: *y, kind: SubpathPointKind::Line,
+                    x: *x,
+                    y: *y,
+                    kind: SubpathPointKind::Line,
                 });
             }
-            PathSegment::QuadraticCurveTo { control_x, control_y, x, y } => {
+            PathSegment::QuadraticCurveTo {
+                control_x,
+                control_y,
+                x,
+                y,
+            } => {
                 if current.is_none() {
                     subpaths.push(Subpath {
                         closed: false,
-                        points: vec![SubpathPoint { x: 0.0, y: 0.0, kind: SubpathPointKind::Move }],
+                        points: vec![SubpathPoint {
+                            x: 0.0,
+                            y: 0.0,
+                            kind: SubpathPointKind::Move,
+                        }],
                     });
                     current = Some(subpaths.len() - 1);
                 }
                 subpaths[current.unwrap()].points.push(SubpathPoint {
-                    x: *x, y: *y, kind: SubpathPointKind::Quad { cx: *control_x, cy: *control_y },
+                    x: *x,
+                    y: *y,
+                    kind: SubpathPointKind::Quad {
+                        cx: *control_x,
+                        cy: *control_y,
+                    },
                 });
             }
-            PathSegment::CubicCurveTo { control_x1, control_y1, control_x2, control_y2, x, y } => {
+            PathSegment::CubicCurveTo {
+                control_x1,
+                control_y1,
+                control_x2,
+                control_y2,
+                x,
+                y,
+            } => {
                 if current.is_none() {
                     subpaths.push(Subpath {
                         closed: false,
-                        points: vec![SubpathPoint { x: 0.0, y: 0.0, kind: SubpathPointKind::Move }],
+                        points: vec![SubpathPoint {
+                            x: 0.0,
+                            y: 0.0,
+                            kind: SubpathPointKind::Move,
+                        }],
                     });
                     current = Some(subpaths.len() - 1);
                 }
                 subpaths[current.unwrap()].points.push(SubpathPoint {
-                    x: *x, y: *y,
+                    x: *x,
+                    y: *y,
                     kind: SubpathPointKind::Cubic {
-                        c1x: *control_x1, c1y: *control_y1,
-                        c2x: *control_x2, c2y: *control_y2,
+                        c1x: *control_x1,
+                        c1y: *control_y1,
+                        c2x: *control_x2,
+                        c2y: *control_y2,
                     },
                 });
             }

@@ -1,5 +1,5 @@
-use flight_particles::contract::{create_particle_emitter_config, create_particle_emitter_state};
 use flight_particleemitter::*;
+use flight_particles::contract::{create_particle_emitter_config, create_particle_emitter_state};
 
 mod prewarm_particle_emitter_2d {
     use super::*;

@@ -1,6 +1,6 @@
 use crate::contract::{
-    ensure_particle_objects_state_capacity, sample_particle_curve, write_particle_spawn_offset,
     ParticleEmitterConfig, ParticleObject, ParticleObjectsState, ParticleObjectsUpdateOptions,
+    ensure_particle_objects_state_capacity, sample_particle_curve, write_particle_spawn_offset,
 };
 
 /// True once a finite, non-looping object emitter has finished emitting AND all of
@@ -55,10 +55,7 @@ pub fn update_particle_objects(
     let emitter_y = options.map_or(f32::NAN, |o| o.emitter_y);
     let mut emitter_vel_x = 0.0f32;
     let mut emitter_vel_y = 0.0f32;
-    if config.velocity_inheritance != 0.0
-        && !emitter_x.is_nan()
-        && !state.prev_x.is_nan()
-    {
+    if config.velocity_inheritance != 0.0 && !emitter_x.is_nan() && !state.prev_x.is_nan() {
         emitter_vel_x = (emitter_x - state.prev_x) / delta_time;
         emitter_vel_y = (emitter_y - state.prev_y) / delta_time;
     }
@@ -115,8 +112,7 @@ pub fn update_particle_objects(
     }
 
     // Phase 2: emission
-    let emitting =
-        config.duration <= 0.0 || config.looping || state.emitter_age < config.duration;
+    let emitting = config.duration <= 0.0 || config.looping || state.emitter_age < config.duration;
     if config.duration > 0.0 && !config.looping {
         state.emitter_age += delta_time;
     }
@@ -161,10 +157,8 @@ pub fn update_particle_objects(
             state.lifetimes[lt] = 0.0;
             state.lifetimes[lt + 1] = lifetime;
 
-            let angle =
-                base_angle + ((state.random)() - 0.5) * 2.0 * config.spread;
-            let speed = config.speed_min
-                + (state.random)() * (config.speed_max - config.speed_min);
+            let angle = base_angle + ((state.random)() - 0.5) * 2.0 * config.spread;
+            let speed = config.speed_min + (state.random)() * (config.speed_max - config.speed_min);
             let vt = i * 2;
             state.velocities[vt] = angle.cos() * speed
                 + if config.velocity_inheritance != 0.0 {
@@ -183,8 +177,8 @@ pub fn update_particle_objects(
             let spawn_x = spawn_offset[0];
             let spawn_y = spawn_offset[1];
 
-            let spawn_scale = config.scale_min
-                + (state.random)() * (config.scale_max - config.scale_min);
+            let spawn_scale =
+                config.scale_min + (state.random)() * (config.scale_max - config.scale_min);
             state.scales[i] = spawn_scale;
             state.rotation_speeds[i] = if has_rot_speed {
                 config.rotation_speed_min + (state.random)() * rot_speed_range

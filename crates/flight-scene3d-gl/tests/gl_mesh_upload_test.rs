@@ -106,7 +106,8 @@ mod destroy_gl_mesh_upload {
     #[test]
     fn deletes_the_vao_and_the_vertex_index_buffers_of_an_indexed_upload() {
         let state = make_gl_scene3d_state();
-        let upload = ensure_gl_mesh_upload(&state, &create_box_mesh_geometry(None, None, None), None);
+        let upload =
+            ensure_gl_mesh_upload(&state, &create_box_mesh_geometry(None, None, None), None);
         destroy_gl_mesh_upload(&state, &upload);
         assert_eq!(calls_with("delete_vertex_arrays").len(), 1);
         assert_eq!(calls_with("delete_buffers").len(), 2);
@@ -116,8 +117,12 @@ mod destroy_gl_mesh_upload {
     fn skips_the_index_buffer_when_the_upload_is_non_indexed() {
         let state = make_gl_scene3d_state();
         // SAFETY: the mock context allocates names on the test thread.
-        let (vao, vertex_buffer) =
-            unsafe { (state.gl.create_vertex_array().unwrap(), state.gl.create_buffer().unwrap()) };
+        let (vao, vertex_buffer) = unsafe {
+            (
+                state.gl.create_vertex_array().unwrap(),
+                state.gl.create_buffer().unwrap(),
+            )
+        };
         let upload = GlMeshUpload {
             index_buffer: None,
             index_count: 0,
@@ -214,7 +219,10 @@ mod ensure_gl_mesh_upload {
             .unwrap()
             .downcast_ref::<GlScene3DContextRuntime>()
             .unwrap();
-        assert_eq!(cache.upload_cache.get(&get_entity_id(&geometry)), Some(&first));
+        assert_eq!(
+            cache.upload_cache.get(&get_entity_id(&geometry)),
+            Some(&first)
+        );
     }
 
     #[test]
@@ -308,7 +316,8 @@ mod ensure_gl_mesh_upload {
     }
 
     #[test]
-    fn reuses_the_bind_pose_upload_across_version_bumps_for_a_gpu_skinned_draw_no_per_frame_re_skin() {
+    fn reuses_the_bind_pose_upload_across_version_bumps_for_a_gpu_skinned_draw_no_per_frame_re_skin()
+     {
         let state = make_gl_scene3d_state();
         let mut geometry = create_box_mesh_geometry(Some(2.0), Some(2.0), Some(2.0));
         let floats_per_vertex = (geometry.layout.read().unwrap().stride / 4) as usize;
@@ -343,7 +352,10 @@ mod ensure_gl_mesh_upload {
             &mut geometry,
             Some(skin_bind_pose(vec![1.0, 0.0, 0.0], vec![0.0; 3])),
         );
-        let mesh = create_mesh(Arc::new(RwLock::new(geometry)), Arc::new(RwLock::new(Vec::new())));
+        let mesh = create_mesh(
+            Arc::new(RwLock::new(geometry)),
+            Arc::new(RwLock::new(Vec::new())),
+        );
         let mesh_morph = morph(vec![4.0, 0.0, 0.0], 1.0);
         mesh.write().unwrap().morph = Some(mesh_morph.clone());
         // prepareScene3DMorph blends the morph into the vertices (x → 5) and captures the morph bind pose.
@@ -372,7 +384,10 @@ mod ensure_gl_mesh_upload {
     fn uploads_the_morph_blended_vertices_for_a_morphed_mesh_cpu_blend_then_upload_gl_path() {
         let state = make_gl_scene3d_state();
         let geometry = geometry_from(position_layout(), vec![0.0, 0.0, 0.0, 1.0, 0.0, 0.0]);
-        let mesh = create_mesh(Arc::new(RwLock::new(geometry)), Arc::new(RwLock::new(Vec::new())));
+        let mesh = create_mesh(
+            Arc::new(RwLock::new(geometry)),
+            Arc::new(RwLock::new(Vec::new())),
+        );
         mesh.write().unwrap().morph = Some(morph(vec![0.0, 5.0, 0.0, 0.0, 5.0, 0.0], 1.0));
         let geometry = mesh.read().unwrap().geometry.clone();
 
@@ -380,14 +395,20 @@ mod ensure_gl_mesh_upload {
         update_mesh_morph(&mesh.read().unwrap()); // weight 1 raises both vertices by 5 in y
         ensure_gl_mesh_upload(&state, &geometry.read().unwrap(), Some(false));
 
-        assert_eq!(last_float32_buffer_data(), vec![0.0, 5.0, 0.0, 1.0, 5.0, 0.0]);
+        assert_eq!(
+            last_float32_buffer_data(),
+            vec![0.0, 5.0, 0.0, 1.0, 5.0, 0.0]
+        );
     }
 
     #[test]
     fn re_uploads_as_the_morph_weights_change_frame_to_frame() {
         let state = make_gl_scene3d_state();
         let geometry = geometry_from(position_layout(), vec![0.0, 0.0, 0.0]);
-        let mesh = create_mesh(Arc::new(RwLock::new(geometry)), Arc::new(RwLock::new(Vec::new())));
+        let mesh = create_mesh(
+            Arc::new(RwLock::new(geometry)),
+            Arc::new(RwLock::new(Vec::new())),
+        );
         let mesh_morph = morph(vec![2.0, 0.0, 0.0], 1.0);
         mesh.write().unwrap().morph = Some(mesh_morph.clone());
         let geometry = mesh.read().unwrap().geometry.clone();

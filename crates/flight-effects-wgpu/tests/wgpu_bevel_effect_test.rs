@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-use flight_effects::{EffectRef, BevelType, EffectSourceMode, create_bevel_effect};
-use flight_entity::Ref;
+use flight_effects::{BevelType, EffectRef, EffectSourceMode, create_bevel_effect};
 use flight_effects_wgpu::contract::*;
+use flight_entity::Ref;
 use flight_render_wgpu::*;
 
 use crate::support::*;
@@ -209,9 +209,18 @@ mod apply_bevel_effect_to_wgpu {
 
     #[test]
     fn maps_each_bevel_type_to_its_clip_mode() {
-        assert_eq!(composite_uniforms(&apply(|effect| effect.bevel_type = Some(BevelType::Inner)))[11], 1.0);
-        assert_eq!(composite_uniforms(&apply(|effect| effect.bevel_type = Some(BevelType::Outer)))[11], 2.0);
-        assert_eq!(composite_uniforms(&apply(|effect| effect.bevel_type = Some(BevelType::Full)))[11], 0.0);
+        assert_eq!(
+            composite_uniforms(&apply(|effect| effect.bevel_type = Some(BevelType::Inner)))[11],
+            1.0
+        );
+        assert_eq!(
+            composite_uniforms(&apply(|effect| effect.bevel_type = Some(BevelType::Outer)))[11],
+            2.0
+        );
+        assert_eq!(
+            composite_uniforms(&apply(|effect| effect.bevel_type = Some(BevelType::Full)))[11],
+            0.0
+        );
         // The default is inner, which is the one a caller gets without asking.
         assert_eq!(composite_uniforms(&apply(|_| {}))[11], 1.0);
     }
@@ -296,7 +305,11 @@ mod wgpu_bevel_effect_runner {
             wgpu_bevel_effect_runner(&mut context, &*effect.read().unwrap());
         });
 
-        assert!(draw_calls(&records).iter().any(|draw| draw.dest == view_of(&dest)));
+        assert!(
+            draw_calls(&records)
+                .iter()
+                .any(|draw| draw.dest == view_of(&dest))
+        );
         assert_eq!(pool.free.len(), 3);
     }
 }

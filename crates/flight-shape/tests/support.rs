@@ -3,9 +3,7 @@ use std::sync::{Arc, RwLock};
 use flight_entity::Ref;
 use flight_geometry::Matrix;
 use flight_geometry::create_matrix;
-use flight_path::{
-    Path, StrokeCap, StrokeJoin, StrokeStyle, create_path, create_path_morph,
-};
+use flight_path::{Path, StrokeCap, StrokeJoin, StrokeStyle, create_path, create_path_morph};
 use flight_shape::contract::*;
 use flight_texture::contract::{Texture, create_texture};
 

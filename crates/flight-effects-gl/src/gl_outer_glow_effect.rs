@@ -6,10 +6,11 @@
 //! Compositing order depends on `source_mode`: `Draw` composites glow → source, `Hide` composites
 //! glow only, and `Knockout` composites glow then erases the source silhouette.
 
-use flight_render::RenderTargetClear;
 use flight_effects::{Effect, EffectSourceMode, OuterGlowEffect};
+use flight_render::RenderTargetClear;
 use flight_render_gl::{
-    GlRenderState, GlTextureRenderTarget, GlTextureRenderTargetPool, clear_gl_render_target, release_gl_texture_render_target,
+    GlRenderState, GlTextureRenderTarget, GlTextureRenderTargetPool, clear_gl_render_target,
+    release_gl_texture_render_target,
 };
 
 use crate::contract::{

@@ -10,7 +10,11 @@ mod dash_path {
         append_path_line_to(&mut source, 100.0, 0.0);
         let mut out = create_path();
         dash_path(&source, &[10.0, 5.0], 0.0, &mut out, Some(0.25));
-        let move_count = out.commands.iter().filter(|&&c| c == PathCommand::MoveTo as u8).count();
+        let move_count = out
+            .commands
+            .iter()
+            .filter(|&&c| c == PathCommand::MoveTo as u8)
+            .count();
         assert!(move_count >= 6);
         assert!(!out.commands.contains(&(PathCommand::Close as u8)));
     }
@@ -35,7 +39,11 @@ mod dash_path {
         append_path_close(&mut source);
         let mut out = create_path();
         dash_path(&source, &[20.0, 10.0], 0.0, &mut out, Some(0.25));
-        let move_count = out.commands.iter().filter(|&&c| c == PathCommand::MoveTo as u8).count();
+        let move_count = out
+            .commands
+            .iter()
+            .filter(|&&c| c == PathCommand::MoveTo as u8)
+            .count();
         assert!(move_count >= 2);
     }
 
@@ -107,7 +115,11 @@ mod dash_path {
         append_path_line_to(&mut source, 100.0, 100.0);
         let mut out = create_path();
         dash_path(&source, &[15.0, 10.0], 0.0, &mut out, Some(0.25));
-        let move_count = out.commands.iter().filter(|&&c| c == PathCommand::MoveTo as u8).count();
+        let move_count = out
+            .commands
+            .iter()
+            .filter(|&&c| c == PathCommand::MoveTo as u8)
+            .count();
         assert!(move_count >= 2);
     }
 }

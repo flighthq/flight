@@ -120,7 +120,10 @@ pub fn parse_marker(line: &str, line_no: usize) -> Option<Marker> {
         let idx = line.find("// ")?;
         return parse_marker(&line[idx..], line_no);
     }
-    let body = trimmed.trim_start_matches('/').trim_start_matches('!').trim();
+    let body = trimmed
+        .trim_start_matches('/')
+        .trim_start_matches('!')
+        .trim();
     let rest = body.strip_prefix(PREFIX)?.trim();
     let (kind, rest) = if let Some(r) = rest.strip_prefix("allow-file(") {
         (MarkerKind::File, r)
@@ -156,7 +159,11 @@ mod tests {
 
     #[test]
     fn parses_item_and_file_markers() {
-        let m = parse_marker("    // flight-lint: allow(f64, hidden-state) robust predicate", 3).unwrap();
+        let m = parse_marker(
+            "    // flight-lint: allow(f64, hidden-state) robust predicate",
+            3,
+        )
+        .unwrap();
         assert_eq!(m.kind, MarkerKind::Item);
         assert_eq!(m.names, vec!["f64", "hidden-state"]);
         assert_eq!(m.reason, "robust predicate");
@@ -177,13 +184,17 @@ mod tests {
 
     #[test]
     fn trailing_marker_on_item_line() {
-        let allows = FileAllows::new("static X: Mutex<u8> = Mutex::new(0); // flight-lint: allow(hidden-state) cache\n");
+        let allows = FileAllows::new(
+            "static X: Mutex<u8> = Mutex::new(0); // flight-lint: allow(hidden-state) cache\n",
+        );
         assert!(allows.is_allowed("hidden-state", &[1]));
     }
 
     #[test]
     fn missing_reason_is_reported() {
-        let allows = FileAllows::new("// flight-lint: allow(f64)\nfn f() {}\n// flight-lint: allow(nope) x\n");
+        let allows = FileAllows::new(
+            "// flight-lint: allow(f64)\nfn f() {}\n// flight-lint: allow(nope) x\n",
+        );
         let v = allows.marker_violations(Path::new("a.rs"));
         let rules: Vec<&str> = v.iter().map(|v| v.rule.as_str()).collect();
         assert_eq!(rules, vec!["allow-reason", "allow-unknown-rule"]);

@@ -96,10 +96,12 @@ mod add_physics_3d_body {
         let collider = physics_3d_collider(&triangle_mesh_shape(), None, None, None);
         body.write().unwrap().colliders.push(collider);
 
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            add_physics_3d_body(&mut world, &body);
-        }))
-        .is_err());
+        assert!(
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                add_physics_3d_body(&mut world, &body);
+            }))
+            .is_err()
+        );
         assert!(world.bodies.is_empty());
     }
 
@@ -111,10 +113,12 @@ mod add_physics_3d_body {
         let index = add_physics_3d_body(&mut world, &body);
 
         assert_eq!(index, 0);
-        assert!(world
-            .bodies
-            .iter()
-            .any(|candidate| Arc::ptr_eq(candidate, &body)));
+        assert!(
+            world
+                .bodies
+                .iter()
+                .any(|candidate| Arc::ptr_eq(candidate, &body))
+        );
         assert!(Arc::ptr_eq(
             &find_physics_3d_body(&world, index).unwrap(),
             &body
@@ -155,14 +159,18 @@ mod add_physics_3d_body {
         let mut second = world();
         let body = create_rigid_body_3d();
         let index = add_physics_3d_body(&mut first, &body);
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            add_physics_3d_body(&mut first, &body);
-        }))
-        .is_err());
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            add_physics_3d_body(&mut second, &body);
-        }))
-        .is_err());
+        assert!(
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                add_physics_3d_body(&mut first, &body);
+            }))
+            .is_err()
+        );
+        assert!(
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                add_physics_3d_body(&mut second, &body);
+            }))
+            .is_err()
+        );
         assert_eq!(first.bodies.len(), 1);
         assert!(Arc::ptr_eq(first.body_by_index.get(&index).unwrap(), &body));
         assert!(second.bodies.is_empty());
@@ -181,10 +189,12 @@ mod add_physics_3d_body {
         assert!((body.read().unwrap().inverse_mass - 1.0).abs() < 1e-6);
         let second = create_rigid_body_3d();
         second.write().unwrap().colliders.push(collider);
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            add_physics_3d_body(&mut world, &second);
-        }))
-        .is_err());
+        assert!(
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                add_physics_3d_body(&mut world, &second);
+            }))
+            .is_err()
+        );
         assert_eq!(
             second
                 .read()
@@ -204,10 +214,12 @@ mod add_physics_3d_body {
             .colliders
             .extend([collider.clone(), collider]);
 
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            add_physics_3d_body(&mut world, &body);
-        }))
-        .is_err());
+        assert!(
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                add_physics_3d_body(&mut world, &body);
+            }))
+            .is_err()
+        );
         assert_eq!(body.read().unwrap().index, -1);
         assert!(world.bodies.is_empty());
     }
@@ -222,10 +234,12 @@ mod add_physics_3d_collider {
         let body = add_body(&mut world, Physics3DBodyType::Dynamic);
         let collider = physics_3d_collider(&heightfield_shape(), None, None, None);
 
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            add_physics_3d_collider(&mut world, &body, &collider);
-        }))
-        .is_err());
+        assert!(
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                add_physics_3d_collider(&mut world, &body, &collider);
+            }))
+            .is_err()
+        );
     }
 
     #[test]
@@ -317,10 +331,12 @@ mod add_physics_3d_collider {
         let collider = physics_3d_collider(&unit_box_shape(), None, None, None);
         add_physics_3d_collider(&mut world, &body, &collider);
 
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            add_physics_3d_collider(&mut world, &body, &collider);
-        }))
-        .is_err());
+        assert!(
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                add_physics_3d_collider(&mut world, &body, &collider);
+            }))
+            .is_err()
+        );
     }
 
     #[test]
@@ -331,10 +347,12 @@ mod add_physics_3d_collider {
         add_physics_3d_collider(&mut world, &first, &collider);
         let second = add_collider_test_body(&mut world, 0.0);
 
-        assert!(std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            add_physics_3d_collider(&mut world, &second, &collider);
-        }))
-        .is_err());
+        assert!(
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                add_physics_3d_collider(&mut world, &second, &collider);
+            }))
+            .is_err()
+        );
     }
 
     #[test]
@@ -347,11 +365,12 @@ mod add_physics_3d_collider {
             add_physics_3d_collider(&mut foreign, &body, &collider);
         }));
         assert!(result.is_err());
-        assert!(body
-            .read()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-            .colliders
-            .is_empty());
+        assert!(
+            body.read()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .colliders
+                .is_empty()
+        );
         assert!(foreign.bodies.is_empty());
     }
 }

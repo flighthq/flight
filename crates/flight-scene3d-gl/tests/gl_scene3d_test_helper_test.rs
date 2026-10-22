@@ -11,7 +11,9 @@ mod make_fake_gl2 {
 
         // SAFETY: the mock validates the draw on the test thread without touching memory.
         unsafe {
-            state.gl.draw_elements(glow::TRIANGLES, -1, glow::UNSIGNED_SHORT, 0);
+            state
+                .gl
+                .draw_elements(glow::TRIANGLES, -1, glow::UNSIGNED_SHORT, 0);
             state.gl.draw_elements(0xffff, 1, glow::UNSIGNED_SHORT, 0);
         }
 
@@ -25,7 +27,11 @@ mod make_fake_gl2 {
         let state = make_gl_scene3d_state();
 
         // SAFETY: the mock validates the draw on the test thread without touching memory.
-        unsafe { state.gl.draw_elements(glow::TRIANGLES, 1, glow::UNSIGNED_SHORT, 1) };
+        unsafe {
+            state
+                .gl
+                .draw_elements(glow::TRIANGLES, 1, glow::UNSIGNED_SHORT, 1)
+        };
 
         assert!(!call_names().iter().any(|name| name == "draw_elements"));
         assert_eq!(take_gl_error(&state), glow::INVALID_OPERATION);
@@ -45,7 +51,11 @@ mod make_fake_gl2 {
         assert_eq!(take_gl_error(&state), glow::INVALID_VALUE);
 
         // SAFETY: as above.
-        unsafe { state.gl.draw_elements_instanced(glow::TRIANGLES, 1, glow::FLOAT, 0, 1) };
+        unsafe {
+            state
+                .gl
+                .draw_elements_instanced(glow::TRIANGLES, 1, glow::FLOAT, 0, 1)
+        };
         assert_eq!(take_gl_error(&state), glow::INVALID_ENUM);
         assert!(!call_names().iter().any(|name| name.starts_with("draw")));
         assert_eq!(take_gl_error(&state), glow::NO_ERROR);

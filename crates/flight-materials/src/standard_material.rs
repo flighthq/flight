@@ -1,6 +1,6 @@
 use flight_entity::allocate_entity;
 
-use crate::{StandardMaterial, STANDARD_MATERIAL_KIND};
+use crate::{STANDARD_MATERIAL_KIND, StandardMaterial};
 
 // flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 3139d09f): assign fields after create
 pub fn create_standard_material() -> StandardMaterial {

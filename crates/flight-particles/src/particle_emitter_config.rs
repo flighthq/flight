@@ -17,15 +17,27 @@ pub fn create_particle_emitter_config(
             color_end_b: c.color_end_b.unwrap_or(defaults.color_end_b),
             color_end_g: c.color_end_g.unwrap_or(defaults.color_end_g),
             color_end_r: c.color_end_r.unwrap_or(defaults.color_end_r),
-            color_end_variance_b: c.color_end_variance_b.unwrap_or(defaults.color_end_variance_b),
-            color_end_variance_g: c.color_end_variance_g.unwrap_or(defaults.color_end_variance_g),
-            color_end_variance_r: c.color_end_variance_r.unwrap_or(defaults.color_end_variance_r),
+            color_end_variance_b: c
+                .color_end_variance_b
+                .unwrap_or(defaults.color_end_variance_b),
+            color_end_variance_g: c
+                .color_end_variance_g
+                .unwrap_or(defaults.color_end_variance_g),
+            color_end_variance_r: c
+                .color_end_variance_r
+                .unwrap_or(defaults.color_end_variance_r),
             color_start_b: c.color_start_b.unwrap_or(defaults.color_start_b),
             color_start_g: c.color_start_g.unwrap_or(defaults.color_start_g),
             color_start_r: c.color_start_r.unwrap_or(defaults.color_start_r),
-            color_start_variance_b: c.color_start_variance_b.unwrap_or(defaults.color_start_variance_b),
-            color_start_variance_g: c.color_start_variance_g.unwrap_or(defaults.color_start_variance_g),
-            color_start_variance_r: c.color_start_variance_r.unwrap_or(defaults.color_start_variance_r),
+            color_start_variance_b: c
+                .color_start_variance_b
+                .unwrap_or(defaults.color_start_variance_b),
+            color_start_variance_g: c
+                .color_start_variance_g
+                .unwrap_or(defaults.color_start_variance_g),
+            color_start_variance_r: c
+                .color_start_variance_r
+                .unwrap_or(defaults.color_start_variance_r),
             direction_x: c.direction_x.unwrap_or(defaults.direction_x),
             direction_y: c.direction_y.unwrap_or(defaults.direction_y),
             direction_z: c.direction_z.unwrap_or(defaults.direction_z),
@@ -57,7 +69,9 @@ pub fn create_particle_emitter_config(
             speed_max: c.speed_max.unwrap_or(defaults.speed_max),
             speed_min: c.speed_min.unwrap_or(defaults.speed_min),
             spread: c.spread.unwrap_or(defaults.spread),
-            velocity_inheritance: c.velocity_inheritance.unwrap_or(defaults.velocity_inheritance),
+            velocity_inheritance: c
+                .velocity_inheritance
+                .unwrap_or(defaults.velocity_inheritance),
             world_space: c.world_space.unwrap_or(defaults.world_space),
         },
     };

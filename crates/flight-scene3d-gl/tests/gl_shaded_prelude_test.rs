@@ -51,8 +51,7 @@ fn record_nothing(
 
 static COLOR_FEATURE: GlColorAdjustmentMaterialFeature = GlColorAdjustmentMaterialFeature {
     fragment_shader_chunk: "vec4 applyFlightColorAdjustment(vec4 c, vec4 m, vec4 o) { return c * m + o; }",
-    matrix_fragment_shader_chunk:
-        "vec4 applyFlightColorMatrix(vec4 c, vec4 a, vec4 b, vec4 d, vec4 e, vec4 o) { return c; }",
+    matrix_fragment_shader_chunk: "vec4 applyFlightColorMatrix(vec4 c, vec4 a, vec4 b, vec4 d, vec4 e, vec4 o) { return c; }",
     draw_shape_meshes: draw_no_meshes,
     flush: flush_unhandled,
     record: record_nothing,
@@ -107,7 +106,10 @@ mod build_gl_shaded_cache_key {
 
     #[test]
     fn namespaces_under_shaded_and_joins_base_flags_with_the_modifier_define_key() {
-        assert_eq!(build_gl_shaded_cache_key(&base_key(), ""), "shaded:-------|");
+        assert_eq!(
+            build_gl_shaded_cache_key(&base_key(), ""),
+            "shaded:-------|"
+        );
         assert_eq!(
             build_gl_shaded_cache_key(
                 &GlShadedDefineKey {
@@ -127,7 +129,10 @@ mod build_gl_shaded_cache_key {
             ..base_key()
         };
         assert_eq!(build_gl_shaded_cache_key(&key, ""), "shaded:----u--|");
-        assert_ne!(build_gl_shaded_cache_key(&key, ""), build_gl_shaded_cache_key(&base_key(), ""));
+        assert_ne!(
+            build_gl_shaded_cache_key(&key, ""),
+            build_gl_shaded_cache_key(&base_key(), "")
+        );
     }
 
     #[test]
@@ -137,7 +142,10 @@ mod build_gl_shaded_cache_key {
             ..base_key()
         };
         assert_eq!(build_gl_shaded_cache_key(&key, ""), "shaded:-----k-|");
-        assert_ne!(build_gl_shaded_cache_key(&key, ""), build_gl_shaded_cache_key(&base_key(), ""));
+        assert_ne!(
+            build_gl_shaded_cache_key(&key, ""),
+            build_gl_shaded_cache_key(&base_key(), "")
+        );
     }
 }
 
@@ -177,7 +185,10 @@ mod compile_gl_shaded_program {
         compile_gl_shaded_program(&gl, &key, &[], &create_snippet_table(), None, None);
         let fragment = fragment_source();
         // The interpolated tangent is projected off the normal (the fix for the skewed-TBN normal-map bug).
-        assert!(fragment.contains("v_tangent.xyz - geometricNormal * dot(v_tangent.xyz, geometricNormal)"));
+        assert!(
+            fragment
+                .contains("v_tangent.xyz - geometricNormal * dot(v_tangent.xyz, geometricNormal)")
+        );
         assert!(fragment.contains("normal = normalize(tbn * baseTangentNormal);"));
     }
 
@@ -196,7 +207,9 @@ mod compile_gl_shaded_program {
         compile_gl_shaded_program(&gl, &key, &[], &create_snippet_table(), None, None);
         let vertex = vertex_source();
         assert!(vertex.contains("mat3 modelRotation = mat3(u_model);"));
-        assert!(vertex.contains("v_tangent = vec4(modelRotation * localTangent, tangentHandedness);"));
+        assert!(
+            vertex.contains("v_tangent = vec4(modelRotation * localTangent, tangentHandedness);")
+        );
         assert!(vertex.contains("determinant(modelRotation) < 0.0 ? -1.0 : 1.0"));
         // The normal keeps the inverse-transpose: the point is that the two DIVERGE, not that the
         // tangent's matrix replaced both.
@@ -324,11 +337,19 @@ mod compile_gl_shaded_program {
     fn dedupes_the_shared_ibl_environment_declaration_across_two_env_reflect_modifiers() {
         let gl = make_gl();
         let registry = snippet_table_with(&ENV_REFLECT_GL_MODIFIER_SNIPPET);
-        let modifiers = [share(create_env_reflect_modifier()), share(create_env_reflect_modifier())];
+        let modifiers = [
+            share(create_env_reflect_modifier()),
+            share(create_env_reflect_modifier()),
+        ];
         compile_gl_shaded_program(&gl, &base_key(), &modifiers, &registry, None, None);
         let fragment = fragment_source();
         // The shared samplerCube declares once (deduped), while the per-instance tints stay distinct.
-        assert_eq!(fragment.matches("uniform samplerCube u_iblPrefiltered;").count(), 1);
+        assert_eq!(
+            fragment
+                .matches("uniform samplerCube u_iblPrefiltered;")
+                .count(),
+            1
+        );
         assert!(fragment.contains("u_envReflectTint_0"));
         assert!(fragment.contains("u_envReflectTint_1"));
     }
@@ -400,6 +421,10 @@ mod ensure_gl_shaded_program {
         ensure_gl_shaded_program(&state, &base_key(), std::slice::from_ref(&modifier));
 
         assert_eq!(calls_named("link_program"), before + 1);
-        assert!(shader_sources().iter().any(|source| source.contains("compiler-marker-B")));
+        assert!(
+            shader_sources()
+                .iter()
+                .any(|source| source.contains("compiler-marker-B"))
+        );
     }
 }

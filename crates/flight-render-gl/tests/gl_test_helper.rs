@@ -8,8 +8,8 @@ use std::sync::Arc;
 use std::sync::RwLock;
 
 use flight_render_gl::{
-    create_gl_context_state, create_gl_render_state, GlColorAdjustmentMaterialFeature,
-    GlContextState, GlRenderState,
+    GlColorAdjustmentMaterialFeature, GlContextState, GlRenderState, create_gl_context_state,
+    create_gl_render_state,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -513,22 +513,30 @@ unsafe extern "system" fn gl_get_integer_v(parameter: u32, output: *mut i32) {
             glow::VERTEX_ARRAY_BINDING => vec![state.vertex_array],
             glow::VIEWPORT => state.viewport.to_vec(),
             glow::SCISSOR_BOX => state.scissor.to_vec(),
-            glow::TEXTURE_BINDING_2D => vec![*state
-                .textures
-                .get(&(state.active_texture, glow::TEXTURE_2D))
-                .unwrap_or(&0)],
-            glow::TEXTURE_BINDING_2D_ARRAY => vec![*state
-                .textures
-                .get(&(state.active_texture, glow::TEXTURE_2D_ARRAY))
-                .unwrap_or(&0)],
-            glow::TEXTURE_BINDING_3D => vec![*state
-                .textures
-                .get(&(state.active_texture, glow::TEXTURE_3D))
-                .unwrap_or(&0)],
-            glow::TEXTURE_BINDING_CUBE_MAP => vec![*state
-                .textures
-                .get(&(state.active_texture, glow::TEXTURE_CUBE_MAP))
-                .unwrap_or(&0)],
+            glow::TEXTURE_BINDING_2D => vec![
+                *state
+                    .textures
+                    .get(&(state.active_texture, glow::TEXTURE_2D))
+                    .unwrap_or(&0),
+            ],
+            glow::TEXTURE_BINDING_2D_ARRAY => vec![
+                *state
+                    .textures
+                    .get(&(state.active_texture, glow::TEXTURE_2D_ARRAY))
+                    .unwrap_or(&0),
+            ],
+            glow::TEXTURE_BINDING_3D => vec![
+                *state
+                    .textures
+                    .get(&(state.active_texture, glow::TEXTURE_3D))
+                    .unwrap_or(&0),
+            ],
+            glow::TEXTURE_BINDING_CUBE_MAP => vec![
+                *state
+                    .textures
+                    .get(&(state.active_texture, glow::TEXTURE_CUBE_MAP))
+                    .unwrap_or(&0),
+            ],
             _ => vec![*state.integers.get(&parameter).unwrap_or(&0)],
         }
     });

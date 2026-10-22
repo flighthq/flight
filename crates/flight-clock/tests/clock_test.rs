@@ -30,7 +30,11 @@ fn is_same(a: &Option<Ref<Clock>>, b: &Ref<Clock>) -> bool {
 fn children_are(clock: &Ref<Clock>, expected: &[&Ref<Clock>]) -> bool {
     let current = clock.read().unwrap();
     return current.children.len() == expected.len()
-        && current.children.iter().zip(expected.iter()).all(|(a, b)| Arc::ptr_eq(a, b));
+        && current
+            .children
+            .iter()
+            .zip(expected.iter())
+            .all(|(a, b)| Arc::ptr_eq(a, b));
 }
 
 mod add_clock_child {
@@ -146,7 +150,11 @@ mod advance_clock {
         let received: Arc<Mutex<Vec<f64>>> = Arc::new(Mutex::new(Vec::new()));
         let on_tick = enable_clock_signals(&mut clock.write().unwrap());
         let sink = received.clone();
-        connect_signal(&on_tick, Arc::new(move |tick: &FrameTick| sink.lock().unwrap().push(tick.delta_time)), None);
+        connect_signal(
+            &on_tick,
+            Arc::new(move |tick: &FrameTick| sink.lock().unwrap().push(tick.delta_time)),
+            None,
+        );
         advance_clock(&clock, 500.0);
         assert_eq!(*received.lock().unwrap(), vec![1000.0]);
     }
@@ -184,7 +192,13 @@ mod advance_clock {
         let on_tick = enable_clock_signals(&mut parent.write().unwrap());
         let probe = child.clone();
         let sink = seen_child_delta.clone();
-        connect_signal(&on_tick, Arc::new(move |_tick: &FrameTick| sink.lock().unwrap().push(probe.read().unwrap().delta_time)), None);
+        connect_signal(
+            &on_tick,
+            Arc::new(move |_tick: &FrameTick| {
+                sink.lock().unwrap().push(probe.read().unwrap().delta_time)
+            }),
+            None,
+        );
         advance_clock(&parent, 100.0);
         assert_eq!(*seen_child_delta.lock().unwrap(), vec![0.0]);
         assert_eq!(child.read().unwrap().delta_time, 100.0);
@@ -196,7 +210,11 @@ mod advance_clock {
         let late = create_clock();
         let on_tick = enable_clock_signals(&mut parent.write().unwrap());
         let (target, added) = (parent.clone(), late.clone());
-        connect_signal(&on_tick, Arc::new(move |_tick: &FrameTick| add_clock_child(&target, &added)), None);
+        connect_signal(
+            &on_tick,
+            Arc::new(move |_tick: &FrameTick| add_clock_child(&target, &added)),
+            None,
+        );
         advance_clock(&parent, 40.0);
         assert!(children_are(&parent, &[&late]));
         assert_eq!(late.read().unwrap().delta_time, 40.0);
@@ -211,7 +229,14 @@ mod create_child_clock {
         let parent = create_clock();
         let child = create_child_clock(&parent, None);
         assert!(is_same(&child.read().unwrap().parent, &parent));
-        assert!(parent.read().unwrap().children.iter().any(|c| Arc::ptr_eq(c, &child)));
+        assert!(
+            parent
+                .read()
+                .unwrap()
+                .children
+                .iter()
+                .any(|c| Arc::ptr_eq(c, &child))
+        );
     }
 
     #[test]
@@ -357,12 +382,16 @@ mod is_clock_effectively_paused {
 
     #[test]
     fn is_false_for_a_running_root() {
-        assert!(!is_clock_effectively_paused(&create_clock().read().unwrap()));
+        assert!(!is_clock_effectively_paused(
+            &create_clock().read().unwrap()
+        ));
     }
 
     #[test]
     fn is_true_when_the_clock_itself_is_paused() {
-        assert!(is_clock_effectively_paused(&clock_with(&options(None, Some(true))).read().unwrap()));
+        assert!(is_clock_effectively_paused(
+            &clock_with(&options(None, Some(true))).read().unwrap()
+        ));
     }
 
     #[test]

@@ -7,11 +7,25 @@ use crate::block_on;
 const PNG_BYTES: [u8; 8] = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
 fn caps_png(slot: HostImageDecodeFormatCapability) -> HostImageDecodeCapabilities {
-    return HostImageDecodeCapabilities { avif: None, bmp: None, gif: None, jpeg: None, png: Some(slot), webp: None };
+    return HostImageDecodeCapabilities {
+        avif: None,
+        bmp: None,
+        gif: None,
+        jpeg: None,
+        png: Some(slot),
+        webp: None,
+    };
 }
 
 fn caps_jpeg(slot: HostImageDecodeFormatCapability) -> HostImageDecodeCapabilities {
-    return HostImageDecodeCapabilities { avif: None, bmp: None, gif: None, jpeg: Some(slot), png: None, webp: None };
+    return HostImageDecodeCapabilities {
+        avif: None,
+        bmp: None,
+        gif: None,
+        jpeg: Some(slot),
+        png: None,
+        webp: None,
+    };
 }
 
 fn fake_decoded() -> DecodedImage {
@@ -66,7 +80,18 @@ mod decode_image {
     #[test]
     fn returns_none_when_no_slot_is_present_for_the_detected_type() {
         assert_eq!(
-            block_on(decode_image(&HostImageDecodeCapabilities { avif: None, bmp: None, gif: None, jpeg: None, png: None, webp: None }, &PNG_BYTES, None)),
+            block_on(decode_image(
+                &HostImageDecodeCapabilities {
+                    avif: None,
+                    bmp: None,
+                    gif: None,
+                    jpeg: None,
+                    png: None,
+                    webp: None
+                },
+                &PNG_BYTES,
+                None
+            )),
             None
         );
     }
@@ -94,7 +119,11 @@ mod decode_image_premultiplied {
     fn passes_premultiply_alpha_true_to_the_slot() {
         let (slot, calls) = fake_slot();
         let caps = caps_png(slot);
-        block_on(decode_image_premultiplied(&caps, &PNG_BYTES, Some("image/png")));
+        block_on(decode_image_premultiplied(
+            &caps,
+            &PNG_BYTES,
+            Some("image/png"),
+        ));
         assert_eq!(
             calls.lock().unwrap()[0].options,
             Some(ImageDecodeOptions {
@@ -123,7 +152,14 @@ mod decode_image_premultiplied {
     fn returns_none_when_no_slot_is_present_for_the_detected_type() {
         assert_eq!(
             block_on(decode_image_premultiplied(
-                &HostImageDecodeCapabilities { avif: None, bmp: None, gif: None, jpeg: None, png: None, webp: None },
+                &HostImageDecodeCapabilities {
+                    avif: None,
+                    bmp: None,
+                    gif: None,
+                    jpeg: None,
+                    png: None,
+                    webp: None
+                },
                 &PNG_BYTES,
                 None
             )),

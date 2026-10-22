@@ -39,9 +39,18 @@ mod attach_entity_binding {
         attach_entity_binding(&mut entity, Box::new(()));
 
         // The runtime is the same allocation (not replaced).
-        let runtime_ptr_after = entity.entity_runtime().data.as_deref().unwrap() as *const EntityRuntime;
+        let runtime_ptr_after =
+            entity.entity_runtime().data.as_deref().unwrap() as *const EntityRuntime;
         assert_eq!(runtime_ptr, runtime_ptr_after);
-        assert!(entity.entity_runtime().data.as_ref().unwrap().binding.is_some());
+        assert!(
+            entity
+                .entity_runtime()
+                .data
+                .as_ref()
+                .unwrap()
+                .binding
+                .is_some()
+        );
     }
 }
 
@@ -58,7 +67,15 @@ mod detach_entity_binding {
         detach_entity_binding(&mut entity);
 
         assert!(entity.entity_runtime().data.is_some());
-        assert!(entity.entity_runtime().data.as_ref().unwrap().binding.is_none());
+        assert!(
+            entity
+                .entity_runtime()
+                .data
+                .as_ref()
+                .unwrap()
+                .binding
+                .is_none()
+        );
     }
 
     #[test]

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use flight_entity::Ref;
-use flight_log::{log_once, LogData, LogLevel, LogStateRef, LogValue};
+use flight_log::{LogData, LogLevel, LogStateRef, LogValue, log_once};
 
 use crate::types::*;
 
@@ -18,7 +18,9 @@ pub fn are_statechart_guards_enabled(instance: &Ref<StatechartInstance>) -> bool
 
 fn chart_id_for(guard_state: &StatechartGuardStateRef, chart: &Ref<Statechart>) -> i32 {
     let mut state = guard_state.write().unwrap();
-    state.chart_ids.retain(|entry| entry.chart.strong_count() > 0);
+    state
+        .chart_ids
+        .retain(|entry| entry.chart.strong_count() > 0);
     let chart_ptr = Arc::as_ptr(chart);
     for entry in &state.chart_ids {
         if entry.chart.as_ptr() == chart_ptr {
@@ -55,13 +57,18 @@ pub fn enable_statechart_guards(
     let log_state = log_state.clone();
     let builtin: StatechartDurationGuard = Arc::new(move |instance, explanation| {
         let now_ms = clock();
-        log_missing_statechart_region_duration(instance, explanation, &guard_state, &log_state, now_ms);
+        log_missing_statechart_region_duration(
+            instance,
+            explanation,
+            &guard_state,
+            &log_state,
+            now_ms,
+        );
     });
     let mut current = instance.write().unwrap();
     current.duration_guard = Some(builtin.clone());
     current.builtin_guard = Some(builtin);
 }
-
 
 // flight-lint: allow(f64) D1: operation time is a millisecond timestamp
 fn log_missing_statechart_region_duration(
@@ -92,11 +99,17 @@ fn log_missing_statechart_region_duration(
     let chart_id = chart_id_for(guard_state, &chart);
     let key = format!(
         "statechart:missing-region-duration:{}:{}:{}:{}",
-        chart_id, explanation.region_index, explanation.source_state_index, explanation.transition_index
+        chart_id,
+        explanation.region_index,
+        explanation.source_state_index,
+        explanation.transition_index
     );
 
     let mut data = HashMap::new();
-    data.insert("exitTimeRatio".to_string(), LogValue::Float(exit_time_ratio));
+    data.insert(
+        "exitTimeRatio".to_string(),
+        LogValue::Float(exit_time_ratio),
+    );
     data.insert(
         "message".to_string(),
         LogValue::Str(
@@ -106,8 +119,14 @@ fn log_missing_statechart_region_duration(
                 .to_string(),
         ),
     );
-    data.insert("regionDuration".to_string(), LogValue::Float(region_duration));
-    data.insert("regionIndex".to_string(), LogValue::Int(explanation.region_index as i64));
+    data.insert(
+        "regionDuration".to_string(),
+        LogValue::Float(region_duration),
+    );
+    data.insert(
+        "regionIndex".to_string(),
+        LogValue::Int(explanation.region_index as i64),
+    );
     data.insert(
         "sourceStateIndex".to_string(),
         LogValue::Int(explanation.source_state_index as i64),

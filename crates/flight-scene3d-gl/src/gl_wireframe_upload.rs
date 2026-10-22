@@ -117,8 +117,10 @@ pub fn ensure_gl_wireframe_upload(
             // SAFETY: allocation runs on the owning GL thread.
             let (line_index_buffer, vao) = unsafe {
                 (
-                    gl.create_buffer().unwrap_or_else(|error| throw_error(&error)),
-                    gl.create_vertex_array().unwrap_or_else(|error| throw_error(&error)),
+                    gl.create_buffer()
+                        .unwrap_or_else(|error| throw_error(&error)),
+                    gl.create_vertex_array()
+                        .unwrap_or_else(|error| throw_error(&error)),
                 )
             };
             GlWireframeUpload {
@@ -152,8 +154,12 @@ pub fn ensure_gl_wireframe_upload(
     }
 
     let bytes: Vec<u8> = match &line_indices {
-        GlWireframeLineIndices::U16(lines) => lines.iter().flat_map(|index| index.to_ne_bytes()).collect(),
-        GlWireframeLineIndices::U32(lines) => lines.iter().flat_map(|index| index.to_ne_bytes()).collect(),
+        GlWireframeLineIndices::U16(lines) => {
+            lines.iter().flat_map(|index| index.to_ne_bytes()).collect()
+        }
+        GlWireframeLineIndices::U32(lines) => {
+            lines.iter().flat_map(|index| index.to_ne_bytes()).collect()
+        }
     };
     // SAFETY: the line-index buffer belongs to this context and the bound VAO captures it.
     unsafe {

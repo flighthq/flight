@@ -3,8 +3,8 @@ use std::cell::RefCell;
 use std::sync::Arc;
 
 use flight_math::create_random_source;
-use flight_particles::*;
 use flight_particles::contract::ensure_particle_objects_state_capacity;
+use flight_particles::*;
 
 thread_local! {
     static SPAWN_COUNT: RefCell<u32> = RefCell::new(0);
@@ -59,18 +59,19 @@ mod is_particle_objects_complete {
 
     #[test]
     fn is_true_once_finished_and_all_objects_are_dead() {
-        let mut objects: Vec<ParticleObject> =
-            (0..50).map(|_| ParticleObject {
-            alpha: 1.0,
-            blend_mode: None,
-            color_scale_bias: None,
-            rotation: 0.0,
-            scale_x: 1.0,
-            scale_y: 1.0,
-            visible: false,
-            x: 0.0,
-            y: 0.0,
-        }).collect();
+        let mut objects: Vec<ParticleObject> = (0..50)
+            .map(|_| ParticleObject {
+                alpha: 1.0,
+                blend_mode: None,
+                color_scale_bias: None,
+                rotation: 0.0,
+                scale_x: 1.0,
+                scale_y: 1.0,
+                visible: false,
+                x: 0.0,
+                y: 0.0,
+            })
+            .collect();
         let mut state = create_particle_objects_state();
         ensure_particle_objects_state_capacity(&mut state, 50);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
@@ -97,18 +98,19 @@ mod update_particle_objects {
 
     #[test]
     fn a_finite_non_looping_object_emitter_stops_spawning_after_its_duration() {
-        let mut objects: Vec<ParticleObject> =
-            (0..50).map(|_| ParticleObject {
-            alpha: 1.0,
-            blend_mode: None,
-            color_scale_bias: None,
-            rotation: 0.0,
-            scale_x: 1.0,
-            scale_y: 1.0,
-            visible: false,
-            x: 0.0,
-            y: 0.0,
-        }).collect();
+        let mut objects: Vec<ParticleObject> = (0..50)
+            .map(|_| ParticleObject {
+                alpha: 1.0,
+                blend_mode: None,
+                color_scale_bias: None,
+                rotation: 0.0,
+                scale_x: 1.0,
+                scale_y: 1.0,
+                visible: false,
+                x: 0.0,
+                y: 0.0,
+            })
+            .collect();
         let mut state = create_particle_objects_state();
         ensure_particle_objects_state_capacity(&mut state, 50);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
@@ -229,18 +231,19 @@ mod update_particle_objects {
 
     #[test]
     fn fires_a_one_shot_burst_on_first_frame() {
-        let mut objects: Vec<ParticleObject> =
-            (0..30).map(|_| ParticleObject {
-            alpha: 1.0,
-            blend_mode: None,
-            color_scale_bias: None,
-            rotation: 0.0,
-            scale_x: 1.0,
-            scale_y: 1.0,
-            visible: false,
-            x: 0.0,
-            y: 0.0,
-        }).collect();
+        let mut objects: Vec<ParticleObject> = (0..30)
+            .map(|_| ParticleObject {
+                alpha: 1.0,
+                blend_mode: None,
+                color_scale_bias: None,
+                rotation: 0.0,
+                scale_x: 1.0,
+                scale_y: 1.0,
+                visible: false,
+                x: 0.0,
+                y: 0.0,
+            })
+            .collect();
         let mut state = create_particle_objects_state();
         ensure_particle_objects_state_capacity(&mut state, 30);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
@@ -259,27 +262,30 @@ mod update_particle_objects {
     #[test]
     fn fires_on_spawn_callback_for_each_spawned_object() {
         SPAWN_COUNT.with(|c| *c.borrow_mut() = 0);
-        let mut objects = vec![ParticleObject {
-            alpha: 1.0,
-            blend_mode: None,
-            color_scale_bias: None,
-            rotation: 0.0,
-            scale_x: 1.0,
-            scale_y: 1.0,
-            visible: false,
-            x: 0.0,
-            y: 0.0,
-        }, ParticleObject {
-            alpha: 1.0,
-            blend_mode: None,
-            color_scale_bias: None,
-            rotation: 0.0,
-            scale_x: 1.0,
-            scale_y: 1.0,
-            visible: false,
-            x: 0.0,
-            y: 0.0,
-        }];
+        let mut objects = vec![
+            ParticleObject {
+                alpha: 1.0,
+                blend_mode: None,
+                color_scale_bias: None,
+                rotation: 0.0,
+                scale_x: 1.0,
+                scale_y: 1.0,
+                visible: false,
+                x: 0.0,
+                y: 0.0,
+            },
+            ParticleObject {
+                alpha: 1.0,
+                blend_mode: None,
+                color_scale_bias: None,
+                rotation: 0.0,
+                scale_x: 1.0,
+                scale_y: 1.0,
+                visible: false,
+                x: 0.0,
+                y: 0.0,
+            },
+        ];
         let mut state = create_particle_objects_state();
         ensure_particle_objects_state_capacity(&mut state, 2);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
@@ -307,27 +313,30 @@ mod update_particle_objects {
 
     #[test]
     fn ignores_a_negative_delta_time_frame() {
-        let mut objects = vec![ParticleObject {
-            alpha: 1.0,
-            blend_mode: None,
-            color_scale_bias: None,
-            rotation: 0.0,
-            scale_x: 1.0,
-            scale_y: 1.0,
-            visible: false,
-            x: 0.0,
-            y: 0.0,
-        }, ParticleObject {
-            alpha: 1.0,
-            blend_mode: None,
-            color_scale_bias: None,
-            rotation: 0.0,
-            scale_x: 1.0,
-            scale_y: 1.0,
-            visible: false,
-            x: 0.0,
-            y: 0.0,
-        }];
+        let mut objects = vec![
+            ParticleObject {
+                alpha: 1.0,
+                blend_mode: None,
+                color_scale_bias: None,
+                rotation: 0.0,
+                scale_x: 1.0,
+                scale_y: 1.0,
+                visible: false,
+                x: 0.0,
+                y: 0.0,
+            },
+            ParticleObject {
+                alpha: 1.0,
+                blend_mode: None,
+                color_scale_bias: None,
+                rotation: 0.0,
+                scale_x: 1.0,
+                scale_y: 1.0,
+                visible: false,
+                x: 0.0,
+                y: 0.0,
+            },
+        ];
         let mut state = create_particle_objects_state();
         ensure_particle_objects_state_capacity(&mut state, 2);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
@@ -455,27 +464,30 @@ mod update_particle_objects {
 
     #[test]
     fn respects_max_particles_does_not_exceed_pool_size() {
-        let mut objects = vec![ParticleObject {
-            alpha: 1.0,
-            blend_mode: None,
-            color_scale_bias: None,
-            rotation: 0.0,
-            scale_x: 1.0,
-            scale_y: 1.0,
-            visible: false,
-            x: 0.0,
-            y: 0.0,
-        }, ParticleObject {
-            alpha: 1.0,
-            blend_mode: None,
-            color_scale_bias: None,
-            rotation: 0.0,
-            scale_x: 1.0,
-            scale_y: 1.0,
-            visible: false,
-            x: 0.0,
-            y: 0.0,
-        }];
+        let mut objects = vec![
+            ParticleObject {
+                alpha: 1.0,
+                blend_mode: None,
+                color_scale_bias: None,
+                rotation: 0.0,
+                scale_x: 1.0,
+                scale_y: 1.0,
+                visible: false,
+                x: 0.0,
+                y: 0.0,
+            },
+            ParticleObject {
+                alpha: 1.0,
+                blend_mode: None,
+                color_scale_bias: None,
+                rotation: 0.0,
+                scale_x: 1.0,
+                scale_y: 1.0,
+                visible: false,
+                x: 0.0,
+                y: 0.0,
+            },
+        ];
         let mut state = create_particle_objects_state();
         ensure_particle_objects_state_capacity(&mut state, 2);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
@@ -554,18 +566,19 @@ mod update_particle_objects {
 
     #[test]
     fn spawns_objects_from_the_pool() {
-        let mut objects: Vec<ParticleObject> =
-            (0..3).map(|_| ParticleObject {
-            alpha: 1.0,
-            blend_mode: None,
-            color_scale_bias: None,
-            rotation: 0.0,
-            scale_x: 1.0,
-            scale_y: 1.0,
-            visible: false,
-            x: 0.0,
-            y: 0.0,
-        }).collect();
+        let mut objects: Vec<ParticleObject> = (0..3)
+            .map(|_| ParticleObject {
+                alpha: 1.0,
+                blend_mode: None,
+                color_scale_bias: None,
+                rotation: 0.0,
+                scale_x: 1.0,
+                scale_y: 1.0,
+                visible: false,
+                x: 0.0,
+                y: 0.0,
+            })
+            .collect();
         let mut state = create_particle_objects_state();
         ensure_particle_objects_state_capacity(&mut state, 3);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
@@ -612,18 +625,19 @@ mod update_particle_objects {
 
     #[test]
     fn spawns_objects_on_the_ring_emitter_boundary() {
-        let mut objects: Vec<ParticleObject> =
-            (0..20).map(|_| ParticleObject {
-            alpha: 1.0,
-            blend_mode: None,
-            color_scale_bias: None,
-            rotation: 0.0,
-            scale_x: 1.0,
-            scale_y: 1.0,
-            visible: false,
-            x: 0.0,
-            y: 0.0,
-        }).collect();
+        let mut objects: Vec<ParticleObject> = (0..20)
+            .map(|_| ParticleObject {
+                alpha: 1.0,
+                blend_mode: None,
+                color_scale_bias: None,
+                rotation: 0.0,
+                scale_x: 1.0,
+                scale_y: 1.0,
+                visible: false,
+                x: 0.0,
+                y: 0.0,
+            })
+            .collect();
         let mut state = create_particle_objects_state();
         ensure_particle_objects_state_capacity(&mut state, 20);
         state.random = create_random_source(12345);
@@ -647,18 +661,19 @@ mod update_particle_objects {
 
     #[test]
     fn spawns_objects_within_circle_emitter_shape() {
-        let mut objects: Vec<ParticleObject> =
-            (0..20).map(|_| ParticleObject {
-            alpha: 1.0,
-            blend_mode: None,
-            color_scale_bias: None,
-            rotation: 0.0,
-            scale_x: 1.0,
-            scale_y: 1.0,
-            visible: false,
-            x: 0.0,
-            y: 0.0,
-        }).collect();
+        let mut objects: Vec<ParticleObject> = (0..20)
+            .map(|_| ParticleObject {
+                alpha: 1.0,
+                blend_mode: None,
+                color_scale_bias: None,
+                rotation: 0.0,
+                scale_x: 1.0,
+                scale_y: 1.0,
+                visible: false,
+                x: 0.0,
+                y: 0.0,
+            })
+            .collect();
         let mut state = create_particle_objects_state();
         ensure_particle_objects_state_capacity(&mut state, 20);
         let config = create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
@@ -779,18 +794,19 @@ mod update_particle_objects {
             ..create_particle_emitter_config_options()
         }));
         let run = || {
-            let mut objects: Vec<ParticleObject> =
-                (0..20).map(|_| ParticleObject {
-            alpha: 1.0,
-            blend_mode: None,
-            color_scale_bias: None,
-            rotation: 0.0,
-            scale_x: 1.0,
-            scale_y: 1.0,
-            visible: false,
-            x: 0.0,
-            y: 0.0,
-        }).collect();
+            let mut objects: Vec<ParticleObject> = (0..20)
+                .map(|_| ParticleObject {
+                    alpha: 1.0,
+                    blend_mode: None,
+                    color_scale_bias: None,
+                    rotation: 0.0,
+                    scale_x: 1.0,
+                    scale_y: 1.0,
+                    visible: false,
+                    x: 0.0,
+                    y: 0.0,
+                })
+                .collect();
             let mut state = create_particle_objects_state();
             ensure_particle_objects_state_capacity(&mut state, 20);
             state.random = create_random_source(12345);
@@ -843,13 +859,7 @@ mod update_particle_objects {
             assert_eq!(s.len(), 1);
             assert_eq!(s[0], [-10.0, 0.0, 0.0]);
         });
-        update_particle_objects(
-            &mut objects,
-            &mut state,
-            &config,
-            0.6,
-            Some(&callbacks),
-        );
+        update_particle_objects(&mut objects, &mut state, &config, 0.6, Some(&callbacks));
         DEATHS.with(|c| {
             let d = c.borrow();
             assert_eq!(d.len(), 1);

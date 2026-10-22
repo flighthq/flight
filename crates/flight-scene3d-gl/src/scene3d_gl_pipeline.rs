@@ -8,10 +8,9 @@ use flight_materials::{
     CUSTOM_SHADER_MATERIAL_KIND, DEPTH_MATERIAL_KIND, EMISSIVE_MATERIAL_KIND,
     EXTENDED_PBR_MATERIAL_KIND, IRIDESCENCE_PBR_EXTENSION_KIND, LAMBERT_MATERIAL_KIND,
     MATCAP_MATERIAL_KIND, NORMAL_MATERIAL_KIND, PHONG_MATERIAL_KIND, SHEEN_PBR_EXTENSION_KIND,
-    SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND, SPECULAR_PBR_EXTENSION_KIND,
-    STANDARD_PBR_MATERIAL_KIND, TOON_MATERIAL_KIND, TRANSMISSION_VOLUME_PBR_EXTENSION_KIND,
-    UNLIT_MATERIAL_KIND, VERTEX_COLOR_MATERIAL_KIND, WIREFRAME_MATERIAL_KIND,
-    WRAPPED_DIFFUSE_PBR_EXTENSION_KIND,
+    SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND, SPECULAR_PBR_EXTENSION_KIND, STANDARD_PBR_MATERIAL_KIND,
+    TOON_MATERIAL_KIND, TRANSMISSION_VOLUME_PBR_EXTENSION_KIND, UNLIT_MATERIAL_KIND,
+    VERTEX_COLOR_MATERIAL_KIND, WIREFRAME_MATERIAL_KIND, WRAPPED_DIFFUSE_PBR_EXTENSION_KIND,
 };
 use flight_registry::{KindMap, with_kind_map_entry};
 use flight_render_gl::{
@@ -37,9 +36,9 @@ use crate::gl_matcap_mesh_material_renderer::GL_MATCAP_MESH_MATERIAL_RENDERER;
 use crate::gl_normal_mesh_material_renderer::GL_NORMAL_MESH_MATERIAL_RENDERER;
 use crate::gl_phong_mesh_material_renderer::GL_PHONG_MESH_MATERIAL_RENDERER;
 use crate::gl_shaded_built_in_modifiers::{
-    ANIMATED_NORMAL_GL_MODIFIER_SNIPPET, DISSOLVE_GL_MODIFIER_SNIPPET, EMISSIVE_GL_MODIFIER_SNIPPET,
-    ENV_REFLECT_GL_MODIFIER_SNIPPET, FOG_GL_MODIFIER_SNIPPET, RIM_GL_MODIFIER_SNIPPET,
-    TOON_GL_MODIFIER_SNIPPET, VERTEX_DISPLACE_GL_MODIFIER_SNIPPET,
+    ANIMATED_NORMAL_GL_MODIFIER_SNIPPET, DISSOLVE_GL_MODIFIER_SNIPPET,
+    EMISSIVE_GL_MODIFIER_SNIPPET, ENV_REFLECT_GL_MODIFIER_SNIPPET, FOG_GL_MODIFIER_SNIPPET,
+    RIM_GL_MODIFIER_SNIPPET, TOON_GL_MODIFIER_SNIPPET, VERTEX_DISPLACE_GL_MODIFIER_SNIPPET,
 };
 use crate::gl_shaded_mesh_material_renderer::GL_SHADED_MESH_MATERIAL_RENDERER;
 use crate::gl_specular_glossiness_pbr_mesh_material_renderer::GL_SPECULAR_GLOSSINESS_PBR_MESH_MATERIAL_RENDERER;
@@ -58,22 +57,43 @@ fn build_scene3d_gl_mesh_material_renderers(
     base: &KindMap<GlMaterialRenderer>,
 ) -> KindMap<GlMaterialRenderer> {
     let entries: [(&str, &'static GlMeshMaterialRenderer); 16] = [
-        (BLINN_PHONG_MATERIAL_KIND, &GL_BLINN_PHONG_MESH_MATERIAL_RENDERER),
-        (CUSTOM_SHADER_MATERIAL_KIND, &GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER),
+        (
+            BLINN_PHONG_MATERIAL_KIND,
+            &GL_BLINN_PHONG_MESH_MATERIAL_RENDERER,
+        ),
+        (
+            CUSTOM_SHADER_MATERIAL_KIND,
+            &GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER,
+        ),
         (DEPTH_MATERIAL_KIND, &GL_DEPTH_MESH_MATERIAL_RENDERER),
         (EMISSIVE_MATERIAL_KIND, &GL_EMISSIVE_MESH_MATERIAL_RENDERER),
-        (EXTENDED_PBR_MATERIAL_KIND, &GL_EXTENDED_PBR_MESH_MATERIAL_RENDERER),
+        (
+            EXTENDED_PBR_MATERIAL_KIND,
+            &GL_EXTENDED_PBR_MESH_MATERIAL_RENDERER,
+        ),
         (LAMBERT_MATERIAL_KIND, &GL_LAMBERT_MESH_MATERIAL_RENDERER),
         (MATCAP_MATERIAL_KIND, &GL_MATCAP_MESH_MATERIAL_RENDERER),
         (NORMAL_MATERIAL_KIND, &GL_NORMAL_MESH_MATERIAL_RENDERER),
         (PHONG_MATERIAL_KIND, &GL_PHONG_MESH_MATERIAL_RENDERER),
         (SHADED_MATERIAL_KIND, &GL_SHADED_MESH_MATERIAL_RENDERER),
-        (SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND, &GL_SPECULAR_GLOSSINESS_PBR_MESH_MATERIAL_RENDERER),
-        (STANDARD_PBR_MATERIAL_KIND, &GL_STANDARD_PBR_MESH_MATERIAL_RENDERER),
+        (
+            SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND,
+            &GL_SPECULAR_GLOSSINESS_PBR_MESH_MATERIAL_RENDERER,
+        ),
+        (
+            STANDARD_PBR_MATERIAL_KIND,
+            &GL_STANDARD_PBR_MESH_MATERIAL_RENDERER,
+        ),
         (TOON_MATERIAL_KIND, &GL_TOON_MESH_MATERIAL_RENDERER),
         (UNLIT_MATERIAL_KIND, &GL_UNLIT_MESH_MATERIAL_RENDERER),
-        (VERTEX_COLOR_MATERIAL_KIND, &GL_VERTEX_COLOR_MESH_MATERIAL_RENDERER),
-        (WIREFRAME_MATERIAL_KIND, &GL_WIREFRAME_MESH_MATERIAL_RENDERER),
+        (
+            VERTEX_COLOR_MATERIAL_KIND,
+            &GL_VERTEX_COLOR_MESH_MATERIAL_RENDERER,
+        ),
+        (
+            WIREFRAME_MATERIAL_KIND,
+            &GL_WIREFRAME_MESH_MATERIAL_RENDERER,
+        ),
     ];
     let mut table = base.clone();
     for (kind, renderer) in entries {
@@ -86,14 +106,20 @@ fn build_scene3d_gl_modifier_snippets(
     base: &KindMap<&'static GlModifierSnippet>,
 ) -> KindMap<&'static GlModifierSnippet> {
     let entries: [(&str, &'static GlModifierSnippet); 8] = [
-        (ANIMATED_NORMAL_MODIFIER_KIND, &ANIMATED_NORMAL_GL_MODIFIER_SNIPPET),
+        (
+            ANIMATED_NORMAL_MODIFIER_KIND,
+            &ANIMATED_NORMAL_GL_MODIFIER_SNIPPET,
+        ),
         (DISSOLVE_MODIFIER_KIND, &DISSOLVE_GL_MODIFIER_SNIPPET),
         (EMISSIVE_MODIFIER_KIND, &EMISSIVE_GL_MODIFIER_SNIPPET),
         (ENV_REFLECT_MODIFIER_KIND, &ENV_REFLECT_GL_MODIFIER_SNIPPET),
         (FOG_MODIFIER_KIND, &FOG_GL_MODIFIER_SNIPPET),
         (RIM_MODIFIER_KIND, &RIM_GL_MODIFIER_SNIPPET),
         (TOON_MODIFIER_KIND, &TOON_GL_MODIFIER_SNIPPET),
-        (VERTEX_DISPLACE_MODIFIER_KIND, &VERTEX_DISPLACE_GL_MODIFIER_SNIPPET),
+        (
+            VERTEX_DISPLACE_MODIFIER_KIND,
+            &VERTEX_DISPLACE_GL_MODIFIER_SNIPPET,
+        ),
     ];
     let mut table = base.clone();
     for (kind, snippet) in entries {
@@ -108,11 +134,20 @@ fn build_scene3d_gl_pbr_extensions(
     let entries: [(&str, &'static GlPbrExtensionRegistration); 7] = [
         (ANISOTROPY_PBR_EXTENSION_KIND, &ANISOTROPY_PBR_GL_EXTENSION),
         (CLEARCOAT_PBR_EXTENSION_KIND, &CLEARCOAT_PBR_GL_EXTENSION),
-        (IRIDESCENCE_PBR_EXTENSION_KIND, &IRIDESCENCE_PBR_GL_EXTENSION),
+        (
+            IRIDESCENCE_PBR_EXTENSION_KIND,
+            &IRIDESCENCE_PBR_GL_EXTENSION,
+        ),
         (SHEEN_PBR_EXTENSION_KIND, &SHEEN_PBR_GL_EXTENSION),
         (SPECULAR_PBR_EXTENSION_KIND, &SPECULAR_PBR_GL_EXTENSION),
-        (TRANSMISSION_VOLUME_PBR_EXTENSION_KIND, &TRANSMISSION_VOLUME_PBR_GL_EXTENSION),
-        (WRAPPED_DIFFUSE_PBR_EXTENSION_KIND, &WRAPPED_DIFFUSE_PBR_GL_EXTENSION),
+        (
+            TRANSMISSION_VOLUME_PBR_EXTENSION_KIND,
+            &TRANSMISSION_VOLUME_PBR_GL_EXTENSION,
+        ),
+        (
+            WRAPPED_DIFFUSE_PBR_EXTENSION_KIND,
+            &WRAPPED_DIFFUSE_PBR_GL_EXTENSION,
+        ),
     ];
     let mut table = base.clone();
     for (kind, registration) in entries {
@@ -128,10 +163,13 @@ fn build_scene3d_gl_pbr_extensions(
 pub fn gl_scene3d_render_preset() -> GlRenderStateOptions {
     let mut out = gl_scene2d_render_preset();
     let registries = &mut out.gl_registries;
-    registries.material_renderers =
-        Arc::new(build_scene3d_gl_mesh_material_renderers(&registries.material_renderers));
-    registries.modifier_snippets =
-        Arc::new(build_scene3d_gl_modifier_snippets(&registries.modifier_snippets));
-    registries.pbr_extensions = Arc::new(build_scene3d_gl_pbr_extensions(&registries.pbr_extensions));
+    registries.material_renderers = Arc::new(build_scene3d_gl_mesh_material_renderers(
+        &registries.material_renderers,
+    ));
+    registries.modifier_snippets = Arc::new(build_scene3d_gl_modifier_snippets(
+        &registries.modifier_snippets,
+    ));
+    registries.pbr_extensions =
+        Arc::new(build_scene3d_gl_pbr_extensions(&registries.pbr_extensions));
     return out;
 }

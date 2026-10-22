@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use flight_entity::{allocate_entity, Ref};
+use flight_entity::{Ref, allocate_entity};
 
 use crate::flow_guards::report_flow_guard;
 use crate::types::{FlowGuardKind, FlowGuardStateRef, FlowStack, FlowState};
@@ -150,7 +150,6 @@ mod sugar_tests {
     }
 }
 
-
 pub fn create_flow_stack() -> Ref<FlowStack> {
     let mut out: FlowStack = allocate_entity();
     initialize_flow_stack(&mut out);
@@ -260,7 +259,8 @@ pub fn push_flow_state(stack: &Ref<FlowStack>, state: Ref<FlowState>, guards: &F
         report_flow_guard(guards, FlowGuardKind::DuplicateStatePush);
     }
     let previous_top = stack.read().unwrap().states.last().cloned();
-    let previous_on_pause = previous_top.and_then(|previous| previous.read().unwrap().on_pause.clone());
+    let previous_on_pause =
+        previous_top.and_then(|previous| previous.read().unwrap().on_pause.clone());
     let on_enter = state.read().unwrap().on_enter.clone();
     if let Some(on_pause) = previous_on_pause {
         on_pause();
@@ -275,7 +275,11 @@ pub fn push_flow_state(stack: &Ref<FlowStack>, state: Ref<FlowState>, guards: &F
 /// Swap the active top for a shared state in place; the state beneath is untouched and callbacks run
 /// with no lock held.
 // flight-lint: allow(conform-params) D5: callback state is the shared FlowGuardState; the source stack remains the first argument
-pub fn replace_flow_state(stack: &Ref<FlowStack>, state: Ref<FlowState>, guards: &FlowGuardStateRef) {
+pub fn replace_flow_state(
+    stack: &Ref<FlowStack>,
+    state: Ref<FlowState>,
+    guards: &FlowGuardStateRef,
+) {
     let depth = {
         let mut guard_state = guards.write().unwrap();
         let depth = guard_state.transition_depth;
@@ -319,7 +323,10 @@ pub fn update_flow_stack(stack: &Ref<FlowStack>, delta_time: f32) {
         let state = &states[index as usize];
         let (on_update, update_below) = {
             let borrowed = state.read().unwrap();
-            (borrowed.on_update.clone(), borrowed.update_below.unwrap_or(false))
+            (
+                borrowed.on_update.clone(),
+                borrowed.update_below.unwrap_or(false),
+            )
         };
         if let Some(on_update) = on_update {
             on_update(delta_time);
@@ -380,5 +387,3 @@ impl FlowStack {
         return create_flow_stack();
     }
 }
-
-

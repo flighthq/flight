@@ -16,10 +16,7 @@ use crate::types::*;
 /// Allocates a tilemap (TS `createTilemap`).
 // flight-lint: allow(conform-params) D23 B: authored options removed; kind assigns fields after create
 pub fn create_tilemap() -> Ref<Tilemap> {
-    let mut out: Tilemap = create_node2d(
-        TILEMAP_KIND.to_string(),
-        Some(create_tilemap_runtime),
-    );
+    let mut out: Tilemap = create_node2d(TILEMAP_KIND.to_string(), Some(create_tilemap_runtime));
     out.data = create_tilemap_data();
     out.signals = None;
     return flight_scene2d::publish_node2d(out);
@@ -210,19 +207,9 @@ pub fn get_tilemap_tile_at_point_xy(source: &Tilemap, x: f32, y: f32) -> i16 {
 
 /// Writes the local-space rectangle for the cell at `(column, row)` into `out`
 /// (TS `getTilemapTileRect`). Returns false when the atlas is null or coordinates are out of bounds.
-pub fn get_tilemap_tile_rect(
-    out: &mut Rectangle,
-    source: &Tilemap,
-    column: i32,
-    row: i32,
-) -> bool {
+pub fn get_tilemap_tile_rect(out: &mut Rectangle, source: &Tilemap, column: i32, row: i32) -> bool {
     let data = &source.data;
-    if data.atlas.is_none()
-        || column < 0
-        || column >= data.columns
-        || row < 0
-        || row >= data.rows
-    {
+    if data.atlas.is_none() || column < 0 || column >= data.columns || row < 0 || row >= data.rows {
         return false;
     }
     out.x = column as f32 * data.tile_width;
@@ -276,8 +263,7 @@ pub fn set_tilemap_tile_tint(tilemap: &mut Tilemap, column: i32, row: i32, rgba:
     let mut tint: TintMaterialData = allocate_entity();
     tint.tint = rgba;
     let material_data = data.material_data.as_mut().unwrap();
-    material_data[(row * data.columns + column) as usize] =
-        Some(Arc::new(RwLock::new(tint)));
+    material_data[(row * data.columns + column) as usize] = Some(Arc::new(RwLock::new(tint)));
 }
 
 /// Blits a sub-grid of tile ids into the tilemap (TS `setTilemapTiles`). Clips writes to the

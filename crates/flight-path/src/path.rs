@@ -132,11 +132,14 @@ mod sugar_tests {
     }
 
     #[test]
-    fn path_append_rounded_rectangle_with_corner_radii_matches_append_path_rounded_rectangle_with_corner_radii() {
+    fn path_append_rounded_rectangle_with_corner_radii_matches_append_path_rounded_rectangle_with_corner_radii()
+     {
         let mut a = test_path();
         let mut b = test_path();
         a.append_rounded_rectangle_with_corner_radii(1.0, 1.0, 8.0, 6.0, 1.0, 1.0, 1.0, 1.0);
-        append_path_rounded_rectangle_with_corner_radii(&mut b, 1.0, 1.0, 8.0, 6.0, 1.0, 1.0, 1.0, 1.0);
+        append_path_rounded_rectangle_with_corner_radii(
+            &mut b, 1.0, 1.0, 8.0, 6.0, 1.0, 1.0, 1.0, 1.0,
+        );
         assert_eq!(format!("{:?}", a), format!("{:?}", b));
     }
 
@@ -307,10 +310,28 @@ pub struct StrokePathTessellationExplanation {
 /// Decoded path segment for iteration.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum PathSegment {
-    MoveTo { x: f64, y: f64 },
-    LineTo { x: f64, y: f64 },
-    QuadraticCurveTo { control_x: f64, control_y: f64, x: f64, y: f64 },
-    CubicCurveTo { control_x1: f64, control_y1: f64, control_x2: f64, control_y2: f64, x: f64, y: f64 },
+    MoveTo {
+        x: f64,
+        y: f64,
+    },
+    LineTo {
+        x: f64,
+        y: f64,
+    },
+    QuadraticCurveTo {
+        control_x: f64,
+        control_y: f64,
+        x: f64,
+        y: f64,
+    },
+    CubicCurveTo {
+        control_x1: f64,
+        control_y1: f64,
+        control_x2: f64,
+        control_y2: f64,
+        x: f64,
+        y: f64,
+    },
     Close,
 }
 
@@ -412,7 +433,8 @@ pub fn append_path_arc(
     start_angle: f64,
     end_angle: f64,
     anticlockwise: Option<bool>,
-    connect_to_current: Option<bool>) {
+    connect_to_current: Option<bool>,
+) {
     let anticlockwise = anticlockwise.unwrap_or(false);
     let connect_to_current = connect_to_current.unwrap_or(false);
     if radius <= 0.0 {
@@ -435,7 +457,16 @@ pub fn append_path_arc(
     } else {
         append_path_move_to(path, arc_start_x, arc_start_y);
     }
-    append_arc_cubics(path, center_x, center_y, radius, radius, 0.0, start_angle, sweep);
+    append_arc_cubics(
+        path,
+        center_x,
+        center_y,
+        radius,
+        radius,
+        0.0,
+        start_angle,
+        sweep,
+    );
 }
 
 // flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
@@ -484,27 +515,39 @@ pub fn append_path_ellipse(
     append_path_move_to(path, center_x + radius_x, center_y);
     append_path_cubic_curve_to(
         path,
-        center_x + radius_x, center_y - ky,
-        center_x + kx, center_y - radius_y,
-        center_x, center_y - radius_y,
+        center_x + radius_x,
+        center_y - ky,
+        center_x + kx,
+        center_y - radius_y,
+        center_x,
+        center_y - radius_y,
     );
     append_path_cubic_curve_to(
         path,
-        center_x - kx, center_y - radius_y,
-        center_x - radius_x, center_y - ky,
-        center_x - radius_x, center_y,
+        center_x - kx,
+        center_y - radius_y,
+        center_x - radius_x,
+        center_y - ky,
+        center_x - radius_x,
+        center_y,
     );
     append_path_cubic_curve_to(
         path,
-        center_x - radius_x, center_y + ky,
-        center_x - kx, center_y + radius_y,
-        center_x, center_y + radius_y,
+        center_x - radius_x,
+        center_y + ky,
+        center_x - kx,
+        center_y + radius_y,
+        center_x,
+        center_y + radius_y,
     );
     append_path_cubic_curve_to(
         path,
-        center_x + kx, center_y + radius_y,
-        center_x + radius_x, center_y + ky,
-        center_x + radius_x, center_y,
+        center_x + kx,
+        center_y + radius_y,
+        center_x + radius_x,
+        center_y + ky,
+        center_x + radius_x,
+        center_y,
     );
     append_path_close(path);
 }
@@ -555,7 +598,11 @@ pub fn append_path_elliptical_arc_to(
     let ry_sq2 = ry * ry;
     let num = rx_sq2 * ry_sq2 - rx_sq2 * y1p_sq - ry_sq2 * x1p_sq;
     let den = rx_sq2 * y1p_sq + ry_sq2 * x1p_sq;
-    let sq = if den <= 0.0 { 0.0 } else { (num / den).max(0.0).sqrt() };
+    let sq = if den <= 0.0 {
+        0.0
+    } else {
+        (num / den).max(0.0).sqrt()
+    };
     let sign = if large_arc == sweep { -1.0 } else { 1.0 };
     let cxp = sign * sq * (rx * y1p) / ry;
     let cyp = sign * sq * (-ry * x1p) / rx;
@@ -623,7 +670,13 @@ pub fn append_path_polyline(path: &mut Path, points: &[f64]) {
 
 // flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
 /// Appends a QUADRATIC_CURVE_TO command with its control point and anchor.
-pub fn append_path_quadratic_curve_to(path: &mut Path, control_x: f64, control_y: f64, x: f64, y: f64) {
+pub fn append_path_quadratic_curve_to(
+    path: &mut Path,
+    control_x: f64,
+    control_y: f64,
+    x: f64,
+    y: f64,
+) {
     path.commands.push(PathCommand::QuadraticCurveTo as u8);
     path.data.push(control_x);
     path.data.push(control_y);
@@ -651,7 +704,9 @@ pub fn append_path_rounded_rectangle(
     height: f64,
     radius: f64,
 ) {
-    append_path_rounded_rectangle_with_corner_radii(path, x, y, width, height, radius, radius, radius, radius);
+    append_path_rounded_rectangle_with_corner_radii(
+        path, x, y, width, height, radius, radius, radius, radius,
+    );
 }
 
 // flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
@@ -667,16 +722,51 @@ pub fn append_path_rounded_rectangle_with_corner_radii(
     bottom_right: f64,
     bottom_left: f64,
 ) {
-    let (rtl, rtr, rbr, rbl) = normalize_corner_radii(top_left, top_right, bottom_right, bottom_left, width, height);
+    let (rtl, rtr, rbr, rbl) = normalize_corner_radii(
+        top_left,
+        top_right,
+        bottom_right,
+        bottom_left,
+        width,
+        height,
+    );
     append_path_move_to(path, x + rtl, y);
     append_path_line_to(path, x + width - rtr, y);
-    append_corner_arc(path, x + width - rtr, y + rtr, rtr, -std::f64::consts::FRAC_PI_2, 0.0);
+    append_corner_arc(
+        path,
+        x + width - rtr,
+        y + rtr,
+        rtr,
+        -std::f64::consts::FRAC_PI_2,
+        0.0,
+    );
     append_path_line_to(path, x + width, y + height - rbr);
-    append_corner_arc(path, x + width - rbr, y + height - rbr, rbr, 0.0, std::f64::consts::FRAC_PI_2);
+    append_corner_arc(
+        path,
+        x + width - rbr,
+        y + height - rbr,
+        rbr,
+        0.0,
+        std::f64::consts::FRAC_PI_2,
+    );
     append_path_line_to(path, x + rbl, y + height);
-    append_corner_arc(path, x + rbl, y + height - rbl, rbl, std::f64::consts::FRAC_PI_2, std::f64::consts::PI);
+    append_corner_arc(
+        path,
+        x + rbl,
+        y + height - rbl,
+        rbl,
+        std::f64::consts::FRAC_PI_2,
+        std::f64::consts::PI,
+    );
     append_path_line_to(path, x, y + rtl);
-    append_corner_arc(path, x + rtl, y + rtl, rtl, std::f64::consts::PI, std::f64::consts::PI * 3.0 / 2.0);
+    append_corner_arc(
+        path,
+        x + rtl,
+        y + rtl,
+        rtl,
+        std::f64::consts::PI,
+        std::f64::consts::PI * 3.0 / 2.0,
+    );
     append_path_close(path);
 }
 
@@ -750,7 +840,10 @@ pub fn get_path_last_point(path: &Path) -> Option<(f64, f64)> {
     }
     let last_cmd = path.commands[last - 1];
     if last_cmd != PathCommand::Close as u8 {
-        return Some((path.data[path.data.len() - 2], path.data[path.data.len() - 1]));
+        return Some((
+            path.data[path.data.len() - 2],
+            path.data[path.data.len() - 1],
+        ));
     }
     let mut di = path.data.len();
     let mut ci = last as isize - 2;
@@ -806,7 +899,9 @@ pub fn get_stroke_join_string(value: StrokeJoin) -> &'static str {
 }
 
 // flight-lint: allow(conform-extra) D9 enum-string conversion for the TS StrokePathTessellationReason string union; TS exports no get_/parse_ free functions
-pub fn get_stroke_path_tessellation_reason_string(value: StrokePathTessellationReason) -> &'static str {
+pub fn get_stroke_path_tessellation_reason_string(
+    value: StrokePathTessellationReason,
+) -> &'static str {
     return match value {
         StrokePathTessellationReason::Ok => "ok",
         StrokePathTessellationReason::InvalidStyle => "invalid-style",
@@ -882,7 +977,9 @@ pub fn parse_stroke_path_tessellation_reason(value: &str) -> Option<StrokePathTe
         "ok" => Some(StrokePathTessellationReason::Ok),
         "invalid-style" => Some(StrokePathTessellationReason::InvalidStyle),
         "invalid-path" => Some(StrokePathTessellationReason::InvalidPath),
-        "self-intersecting-centerline" => Some(StrokePathTessellationReason::SelfIntersectingCenterline),
+        "self-intersecting-centerline" => {
+            Some(StrokePathTessellationReason::SelfIntersectingCenterline)
+        }
         "reversing-join" => Some(StrokePathTessellationReason::ReversingJoin),
         "self-intersecting-outline" => Some(StrokePathTessellationReason::SelfIntersectingOutline),
         _ => None,
@@ -893,7 +990,10 @@ fn path_command_data_count(cmd: u8) -> usize {
     if cmd == PathCommand::MoveTo as u8 || cmd == PathCommand::LineTo as u8 {
         return 2;
     }
-    if cmd == PathCommand::QuadraticCurveTo as u8 || cmd == PathCommand::WideMoveTo as u8 || cmd == PathCommand::WideLineTo as u8 {
+    if cmd == PathCommand::QuadraticCurveTo as u8
+        || cmd == PathCommand::WideMoveTo as u8
+        || cmd == PathCommand::WideLineTo as u8
+    {
         return 4;
     }
     if cmd == PathCommand::CubicCurveTo as u8 {
@@ -912,7 +1012,11 @@ fn vector_angle(ux: f64, uy: f64, vx: f64, vy: f64) -> f64 {
     }
     let cos_angle = (dot / (len_u * len_v)).max(-1.0).min(1.0);
     let angle = cos_angle.acos();
-    return if ux * vy - uy * vx < 0.0 { -angle } else { angle };
+    return if ux * vy - uy * vx < 0.0 {
+        -angle
+    } else {
+        angle
+    };
 }
 
 impl Default for StrokeStyle {
@@ -934,8 +1038,26 @@ impl Path {
     }
 
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
-    pub fn append_arc(&mut self, center_x: f64, center_y: f64, radius: f64, start_angle: f64, end_angle: f64, anticlockwise: Option<bool>, connect_to_current: Option<bool>) {
-        return append_path_arc(self, center_x, center_y, radius, start_angle, end_angle, anticlockwise, connect_to_current);
+    pub fn append_arc(
+        &mut self,
+        center_x: f64,
+        center_y: f64,
+        radius: f64,
+        start_angle: f64,
+        end_angle: f64,
+        anticlockwise: Option<bool>,
+        connect_to_current: Option<bool>,
+    ) {
+        return append_path_arc(
+            self,
+            center_x,
+            center_y,
+            radius,
+            start_angle,
+            end_angle,
+            anticlockwise,
+            connect_to_current,
+        );
     }
 
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
@@ -948,8 +1070,18 @@ impl Path {
     }
 
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
-    pub fn append_cubic_curve_to(&mut self, control_x1: f64, control_y1: f64, control_x2: f64, control_y2: f64, x: f64, y: f64) {
-        return append_path_cubic_curve_to(self, control_x1, control_y1, control_x2, control_y2, x, y);
+    pub fn append_cubic_curve_to(
+        &mut self,
+        control_x1: f64,
+        control_y1: f64,
+        control_x2: f64,
+        control_y2: f64,
+        x: f64,
+        y: f64,
+    ) {
+        return append_path_cubic_curve_to(
+            self, control_x1, control_y1, control_x2, control_y2, x, y,
+        );
     }
 
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
@@ -958,8 +1090,26 @@ impl Path {
     }
 
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
-    pub fn append_elliptical_arc_to(&mut self, radius_x: f64, radius_y: f64, x_axis_rotation: f64, large_arc: bool, sweep: bool, end_x: f64, end_y: f64) {
-        return append_path_elliptical_arc_to(self, radius_x, radius_y, x_axis_rotation, large_arc, sweep, end_x, end_y);
+    pub fn append_elliptical_arc_to(
+        &mut self,
+        radius_x: f64,
+        radius_y: f64,
+        x_axis_rotation: f64,
+        large_arc: bool,
+        sweep: bool,
+        end_x: f64,
+        end_y: f64,
+    ) {
+        return append_path_elliptical_arc_to(
+            self,
+            radius_x,
+            radius_y,
+            x_axis_rotation,
+            large_arc,
+            sweep,
+            end_x,
+            end_y,
+        );
     }
 
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
@@ -993,13 +1143,40 @@ impl Path {
     }
 
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
-    pub fn append_rounded_rectangle(&mut self, x: f64, y: f64, width: f64, height: f64, radius: f64) {
+    pub fn append_rounded_rectangle(
+        &mut self,
+        x: f64,
+        y: f64,
+        width: f64,
+        height: f64,
+        radius: f64,
+    ) {
         return append_path_rounded_rectangle(self, x, y, width, height, radius);
     }
 
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
-    pub fn append_rounded_rectangle_with_corner_radii(&mut self, x: f64, y: f64, width: f64, height: f64, top_left: f64, top_right: f64, bottom_right: f64, bottom_left: f64) {
-        return append_path_rounded_rectangle_with_corner_radii(self, x, y, width, height, top_left, top_right, bottom_right, bottom_left);
+    pub fn append_rounded_rectangle_with_corner_radii(
+        &mut self,
+        x: f64,
+        y: f64,
+        width: f64,
+        height: f64,
+        top_left: f64,
+        top_right: f64,
+        bottom_right: f64,
+        bottom_left: f64,
+    ) {
+        return append_path_rounded_rectangle_with_corner_radii(
+            self,
+            x,
+            y,
+            width,
+            height,
+            top_left,
+            top_right,
+            bottom_right,
+            bottom_left,
+        );
     }
 
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured

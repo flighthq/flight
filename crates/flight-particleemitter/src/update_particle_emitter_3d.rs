@@ -1,13 +1,15 @@
 use flight_entity::Ref;
 use flight_node::NodeRef;
-use flight_node::contract::{NodeRevisionState, get_node_local_matrix4, get_node_world_matrix4, invalidate_node_local_bounds};
-use flight_particles::{
-    EmitterShape, PARTICLE_VELOCITY_STRIDE, ParticleDeathEvent, ParticleEmitterConfig,
-    ParticleEmitterState, ParticleSpawnEvent, sample_particle_color_curve, sample_particle_curve,
+use flight_node::contract::{
+    NodeRevisionState, get_node_local_matrix4, get_node_world_matrix4, invalidate_node_local_bounds,
 };
 use flight_particles::contract::{
     ensure_particle_emitter_state_capacity, get_particle_emitter_signals,
     write_particle_spawn_offset,
+};
+use flight_particles::{
+    EmitterShape, PARTICLE_VELOCITY_STRIDE, ParticleDeathEvent, ParticleEmitterConfig,
+    ParticleEmitterState, ParticleSpawnEvent, sample_particle_color_curve, sample_particle_curve,
 };
 use flight_signals::emit_signal;
 
@@ -43,14 +45,7 @@ pub fn is_particle_emitter_3d_complete(
     return state.emitter_age >= config.duration && emitter.data.particle_count == 0;
 }
 
-fn rotate_to_direction(
-    lx: f32,
-    ly: f32,
-    lz: f32,
-    dx: f32,
-    dy: f32,
-    dz: f32,
-) -> [f32; 3] {
+fn rotate_to_direction(lx: f32, ly: f32, lz: f32, dx: f32, dy: f32, dz: f32) -> [f32; 3] {
     let kx = -dy;
     let ky = dx;
     let sin_angle = (kx * kx + ky * ky).sqrt();
@@ -134,7 +129,9 @@ pub fn update_particle_emitter_3d(
     }
     // Fire on_emitter_complete when a finite emitter has finished and all particles are gone
     // (TS returns before this point on a non-positive delta time).
-    if delta_time > 0.0 && let Some(signals) = &signals {
+    if delta_time > 0.0
+        && let Some(signals) = &signals
+    {
         // Release the read guard before emitting so a slot may lock the emitter.
         let complete = is_particle_emitter_3d_complete(&emitter.read().unwrap(), state, config);
         if complete {
@@ -218,7 +215,11 @@ fn update_particle_emitter_3d_impl(
                 let dx = data.transforms[tt];
                 let dy = data.transforms[tt + 1];
                 let dz = data.positions_z[i];
-                death_events.push(ParticleDeathEvent { x: dx, y: dy, z: dz });
+                death_events.push(ParticleDeathEvent {
+                    x: dx,
+                    y: dy,
+                    z: dz,
+                });
             }
             live_count -= 1;
             if i < live_count {
@@ -278,7 +279,12 @@ fn update_particle_emitter_3d_impl(
         if has_color_work {
             let ct = i * 3;
             if has_color_curve {
-                sample_particle_color_curve(&mut data.colors, ct, color_curve.unwrap(), life_fraction);
+                sample_particle_color_curve(
+                    &mut data.colors,
+                    ct,
+                    color_curve.unwrap(),
+                    life_fraction,
+                );
             } else if has_color_variance {
                 data.colors[ct] = state.color_birth[ct]
                     + (state.color_death[ct] - state.color_birth[ct]) * life_fraction;
@@ -288,10 +294,8 @@ fn update_particle_emitter_3d_impl(
                     + (state.color_death[ct + 2] - state.color_birth[ct + 2]) * life_fraction;
             } else {
                 data.colors[ct] = color_start_r + (color_end_r - color_start_r) * life_fraction;
-                data.colors[ct + 1] =
-                    color_start_g + (color_end_g - color_start_g) * life_fraction;
-                data.colors[ct + 2] =
-                    color_start_b + (color_end_b - color_start_b) * life_fraction;
+                data.colors[ct + 1] = color_start_g + (color_end_g - color_start_g) * life_fraction;
+                data.colors[ct + 2] = color_start_b + (color_end_b - color_start_b) * life_fraction;
             }
         }
 
@@ -309,8 +313,8 @@ fn update_particle_emitter_3d_impl(
         }
 
         if has_flipbook {
-            let frame =
-                (state.lifetimes[lt] * config.frame_rate).floor() as i32 % config.frame_count as i32;
+            let frame = (state.lifetimes[lt] * config.frame_rate).floor() as i32
+                % config.frame_count as i32;
             data.ids[i] = (config.region_id_min + frame as f32) as u16;
         }
 
@@ -324,7 +328,11 @@ fn update_particle_emitter_3d_impl(
         state.emitter_age += delta_time;
     }
 
-    state.spawn_accumulator += if emitting { config.spawn_rate * delta_time } else { 0.0 };
+    state.spawn_accumulator += if emitting {
+        config.spawn_rate * delta_time
+    } else {
+        0.0
+    };
     let mut to_spawn = state.spawn_accumulator.floor() as i32;
     state.spawn_accumulator -= to_spawn as f32;
 
@@ -360,9 +368,21 @@ fn update_particle_emitter_3d_impl(
             + config.direction_y * config.direction_y
             + config.direction_z * config.direction_z)
             .sqrt();
-        let dir_nx = if dir_len > 1e-6 { config.direction_x / dir_len } else { 0.0 };
-        let dir_ny = if dir_len > 1e-6 { config.direction_y / dir_len } else { -1.0 };
-        let dir_nz = if dir_len > 1e-6 { config.direction_z / dir_len } else { 0.0 };
+        let dir_nx = if dir_len > 1e-6 {
+            config.direction_x / dir_len
+        } else {
+            0.0
+        };
+        let dir_ny = if dir_len > 1e-6 {
+            config.direction_y / dir_len
+        } else {
+            -1.0
+        };
+        let dir_nz = if dir_len > 1e-6 {
+            config.direction_z / dir_len
+        } else {
+            0.0
+        };
 
         let do_trail = world_matrix.is_some() && !state.prev_x.is_nan();
         let prev_path_x = if do_trail { state.prev_x } else { track_x };
@@ -493,8 +513,7 @@ fn update_particle_emitter_3d_impl(
             state.velocities[vt + 1] = vy;
             state.velocities[vt + 2] = vz;
 
-            let spawn_scale =
-                config.scale_min + random() * (config.scale_max - config.scale_min);
+            let spawn_scale = config.scale_min + random() * (config.scale_max - config.scale_min);
             state.scales[idx] = spawn_scale;
 
             let tt = idx * PARTICLE_TRANSFORM_STRIDE;
@@ -524,24 +543,18 @@ fn update_particle_emitter_3d_impl(
             if has_color_curve {
                 sample_particle_color_curve(&mut data.colors, ct, color_curve.unwrap(), 0.0);
             } else if has_color_variance {
-                let r0 = clamp01(
-                    color_start_r + (random() - 0.5) * 2.0 * config.color_start_variance_r,
-                );
-                let g0 = clamp01(
-                    color_start_g + (random() - 0.5) * 2.0 * config.color_start_variance_g,
-                );
-                let b0 = clamp01(
-                    color_start_b + (random() - 0.5) * 2.0 * config.color_start_variance_b,
-                );
-                let r1 = clamp01(
-                    color_end_r + (random() - 0.5) * 2.0 * config.color_end_variance_r,
-                );
-                let g1 = clamp01(
-                    color_end_g + (random() - 0.5) * 2.0 * config.color_end_variance_g,
-                );
-                let b1 = clamp01(
-                    color_end_b + (random() - 0.5) * 2.0 * config.color_end_variance_b,
-                );
+                let r0 =
+                    clamp01(color_start_r + (random() - 0.5) * 2.0 * config.color_start_variance_r);
+                let g0 =
+                    clamp01(color_start_g + (random() - 0.5) * 2.0 * config.color_start_variance_g);
+                let b0 =
+                    clamp01(color_start_b + (random() - 0.5) * 2.0 * config.color_start_variance_b);
+                let r1 =
+                    clamp01(color_end_r + (random() - 0.5) * 2.0 * config.color_end_variance_r);
+                let g1 =
+                    clamp01(color_end_g + (random() - 0.5) * 2.0 * config.color_end_variance_g);
+                let b1 =
+                    clamp01(color_end_b + (random() - 0.5) * 2.0 * config.color_end_variance_b);
                 state.color_birth[ct] = r0;
                 state.color_birth[ct + 1] = g0;
                 state.color_birth[ct + 2] = b0;

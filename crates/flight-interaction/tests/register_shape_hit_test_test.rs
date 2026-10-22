@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use flight_geometry::set_rectangle;
 use flight_interaction::hit_tests::{
-    find_graph_hit_target_precise, hit_test_graph_point, HitTestContext,
+    HitTestContext, find_graph_hit_target_precise, hit_test_graph_point,
 };
 use flight_interaction::node_interaction_state::{
     enable_node_interaction_state, set_node_hit_test_enabled,
@@ -130,7 +130,10 @@ mod register_shape_hit_test {
         register_shape_hit_test(&mut ctx);
         let shape = shape_node_with_circle(50.0, 50.0, 40.0);
         let result = find_graph_hit_target_precise(&ctx, &shape, 50.0, 50.0);
-        assert!(Arc::ptr_eq(result.as_ref().unwrap(), &shape), "center of circle hits same shape");
+        assert!(
+            Arc::ptr_eq(result.as_ref().unwrap(), &shape),
+            "center of circle hits same shape"
+        );
     }
 
     #[test]
@@ -139,7 +142,10 @@ mod register_shape_hit_test {
         register_shape_hit_test(&mut ctx);
         let shape = shape_node_with_circle(50.0, 50.0, 40.0);
         let result = find_graph_hit_target_precise(&ctx, &shape, 85.0, 85.0);
-        assert!(result.is_none(), "(85,85) is inside bounding box but outside circle");
+        assert!(
+            result.is_none(),
+            "(85,85) is inside bounding box but outside circle"
+        );
     }
 
     #[test]
@@ -207,14 +213,26 @@ mod register_shape_hit_test {
 
         let node: NodeRef = shape.clone();
         let r1 = find_graph_hit_target_precise(&ctx, &node, 85.0, 85.0);
-        assert!(r1.is_none(), "progress=0: (85,85) outside circle at (50,50)");
+        assert!(
+            r1.is_none(),
+            "progress=0: (85,85) outside circle at (50,50)"
+        );
         let r2 = find_graph_hit_target_precise(&ctx, &node, 185.0, 185.0);
-        assert!(r2.is_none(), "progress=0: (185,185) outside circle at (150,150)");
+        assert!(
+            r2.is_none(),
+            "progress=0: (185,185) outside circle at (150,150)"
+        );
 
         set_morph_shape_progress(&shape, 1.0);
         let r3 = find_graph_hit_target_precise(&ctx, &node, 85.0, 85.0);
-        assert!(Arc::ptr_eq(r3.as_ref().unwrap(), &node), "progress=1: (85,85) hits same morph shape");
+        assert!(
+            Arc::ptr_eq(r3.as_ref().unwrap(), &node),
+            "progress=1: (85,85) hits same morph shape"
+        );
         let r4 = find_graph_hit_target_precise(&ctx, &node, 185.0, 185.0);
-        assert!(Arc::ptr_eq(r4.as_ref().unwrap(), &node), "progress=1: (185,185) hits same morph shape");
+        assert!(
+            Arc::ptr_eq(r4.as_ref().unwrap(), &node),
+            "progress=1: (185,185) hits same morph shape"
+        );
     }
 }

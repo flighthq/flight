@@ -6,31 +6,45 @@ mod get_geolocation_access_reason_string {
     #[test]
     fn returns_the_exact_source_strings() {
         assert_eq!(
-            flight_geolocation::get_geolocation_access_reason_string(GeolocationAccessReason::CleanupFailed),
+            flight_geolocation::get_geolocation_access_reason_string(
+                GeolocationAccessReason::CleanupFailed
+            ),
             "cleanup-failed"
         );
         assert_eq!(
-            flight_geolocation::get_geolocation_access_reason_string(GeolocationAccessReason::Denied),
+            flight_geolocation::get_geolocation_access_reason_string(
+                GeolocationAccessReason::Denied
+            ),
             "denied"
         );
         assert_eq!(
-            flight_geolocation::get_geolocation_access_reason_string(GeolocationAccessReason::Dismissed),
+            flight_geolocation::get_geolocation_access_reason_string(
+                GeolocationAccessReason::Dismissed
+            ),
             "dismissed"
         );
         assert_eq!(
-            flight_geolocation::get_geolocation_access_reason_string(GeolocationAccessReason::Granted),
+            flight_geolocation::get_geolocation_access_reason_string(
+                GeolocationAccessReason::Granted
+            ),
             "granted"
         );
         assert_eq!(
-            flight_geolocation::get_geolocation_access_reason_string(GeolocationAccessReason::OperationFailed),
+            flight_geolocation::get_geolocation_access_reason_string(
+                GeolocationAccessReason::OperationFailed
+            ),
             "operation-failed"
         );
         assert_eq!(
-            flight_geolocation::get_geolocation_access_reason_string(GeolocationAccessReason::RuntimeUnavailable),
+            flight_geolocation::get_geolocation_access_reason_string(
+                GeolocationAccessReason::RuntimeUnavailable
+            ),
             "runtime-unavailable"
         );
         assert_eq!(
-            flight_geolocation::get_geolocation_access_reason_string(GeolocationAccessReason::Timeout),
+            flight_geolocation::get_geolocation_access_reason_string(
+                GeolocationAccessReason::Timeout
+            ),
             "timeout"
         );
     }
@@ -46,11 +60,15 @@ mod get_geolocation_error_reason_string {
             "denied"
         );
         assert_eq!(
-            flight_geolocation::get_geolocation_error_reason_string(GeolocationErrorReason::Timeout),
+            flight_geolocation::get_geolocation_error_reason_string(
+                GeolocationErrorReason::Timeout
+            ),
             "timeout"
         );
         assert_eq!(
-            flight_geolocation::get_geolocation_error_reason_string(GeolocationErrorReason::Unavailable),
+            flight_geolocation::get_geolocation_error_reason_string(
+                GeolocationErrorReason::Unavailable
+            ),
             "unavailable"
         );
     }
@@ -113,6 +131,9 @@ mod parse_geolocation_error_reason {
             flight_geolocation::parse_geolocation_error_reason("unavailable"),
             Some(GeolocationErrorReason::Unavailable)
         );
-        assert_eq!(flight_geolocation::parse_geolocation_error_reason("unknown"), None);
+        assert_eq!(
+            flight_geolocation::parse_geolocation_error_reason("unknown"),
+            None
+        );
     }
 }

@@ -8,9 +8,7 @@ use flight_image::{
     create_image_resource_failure, resolve_image_resource_reference,
 };
 use flight_image_codec::HostImageDecodeCapabilities;
-use flight_loader::{
-    ResourceLoadInput, ResourceLoadItem, ResourceLoadResult, queue_resource_load,
-};
+use flight_loader::{ResourceLoadInput, ResourceLoadItem, ResourceLoadResult, queue_resource_load};
 use flight_resource::ResourceResolutionState;
 use flight_scene3d::Scene3D;
 use flight_signals::emit_signal;
@@ -312,7 +310,8 @@ pub async fn resolve_one_scene3d_resource_texture(
             context.image_resolver.read().unwrap().clone(),
         )
     };
-    let image_decode = image_decode.unwrap_or_else(|| Arc::new(HostImageDecodeCapabilities::default()));
+    let image_decode =
+        image_decode.unwrap_or_else(|| Arc::new(HostImageDecodeCapabilities::default()));
     return resolve_image_resource_reference(
         &image_decode,
         reference,
@@ -377,7 +376,11 @@ pub fn resolve_scene3d_resources(
             });
             continue;
         };
-        set_image_resource_reference_resolution(&reference, None, ResourceResolutionState::Resolved);
+        set_image_resource_reference_resolution(
+            &reference,
+            None,
+            ResourceResolutionState::Resolved,
+        );
         for texture in &subscribers {
             bind_resolved_scene3d_resource(resolver, texture, &reference, &source);
         }
@@ -525,12 +528,18 @@ fn start_scene3d_resource_resolution(
         // synchronous pass that queued it, even when the load is already complete.
         yield_to_host().await;
         match result {
-            Ok(source) => {
-                finish_scene3d_resource_resolution(&settle_resolver, &settle_reference, &entry, source)
-            }
-            Err(cause) => {
-                fail_scene3d_resource_resolution(&settle_resolver, &settle_reference, &entry, &cause)
-            }
+            Ok(source) => finish_scene3d_resource_resolution(
+                &settle_resolver,
+                &settle_reference,
+                &entry,
+                source,
+            ),
+            Err(cause) => fail_scene3d_resource_resolution(
+                &settle_resolver,
+                &settle_reference,
+                &entry,
+                &cause,
+            ),
         }
         let _ = settled.send(());
     }));

@@ -75,7 +75,10 @@ fn compile_shadow_depth_program(gl: &glow::Context) -> GlMeshProgram {
 // The HAS_SKIN depth variant: the same depth pass, but the vertex is deformed by the bone palette via
 // skinMatrix() before the model/view-projection transform — the exact deformation the forward HAS_SKIN
 // vertex shader applies, so a skinned caster's recorded depth matches its shaded silhouette.
-fn compile_shadow_depth_skinned_program(gl: &glow::Context, skin_declarations_glsl: &str) -> GlMeshProgram {
+fn compile_shadow_depth_skinned_program(
+    gl: &glow::Context,
+    skin_declarations_glsl: &str,
+) -> GlMeshProgram {
     let program = compile_gl_program(
         gl,
         &build_shadow_depth_skinned_vertex(skin_declarations_glsl),
@@ -84,9 +87,9 @@ fn compile_shadow_depth_skinned_program(gl: &glow::Context, skin_declarations_gl
     let mut record = create_gl_mesh_program_record(program);
     // SAFETY: location queries on the freshly linked program.
     unsafe {
-        record
-            .loc_joint_normal_texture
-            .set(Some(gl.get_uniform_location(program, "u_jointNormalTexture")));
+        record.loc_joint_normal_texture.set(Some(
+            gl.get_uniform_location(program, "u_jointNormalTexture"),
+        ));
         record
             .loc_joint_texture
             .set(Some(gl.get_uniform_location(program, "u_jointTexture")));
@@ -170,13 +173,23 @@ pub fn render_gl_scene3d_shadow_map(
             None,
         )
         .unwrap_or_else(|error| throw_error(&error))
-        .unwrap_or_else(|| throw_error("renderGlScene3DShadowMap could not allocate the shadow target"));
+        .unwrap_or_else(|| {
+            throw_error("renderGlScene3DShadowMap could not allocate the shadow target")
+        });
         get_gl_scene3d_runtime(state).shadow_target = Some(target);
     }
     let (target_framebuffer, target_width, target_height, target_depth_texture) = {
         let runtime = get_gl_scene3d_runtime(state);
-        let target = runtime.shadow_target.as_ref().expect("shadow target allocated above");
-        (target.framebuffer, target.axes.width, target.axes.height, target.depth_texture)
+        let target = runtime
+            .shadow_target
+            .as_ref()
+            .expect("shadow target allocated above");
+        (
+            target.framebuffer,
+            target.axes.width,
+            target.axes.height,
+            target.depth_texture,
+        )
     };
     let normal_bias_world = directional_light.normal_bias
         * get_orthographic_projection_texel_size(
@@ -191,7 +204,8 @@ pub fn render_gl_scene3d_shadow_map(
     // variant to compile and no palette to bind, matching the forward pass.
     let skin_feature = get_gl_scene3d_runtime(state).mesh_skin_feature;
 
-    let rigid_program = ensure_gl_scene3d_program(state, "shadow:depth", compile_shadow_depth_program);
+    let rigid_program =
+        ensure_gl_scene3d_program(state, "shadow:depth", compile_shadow_depth_program);
     // Compiled lazily on the first GPU-skinned caster so a scene without skinned meshes never pays for it.
     let mut skinned_program: Option<Rc<GlMeshProgram>> = None;
     // Likewise compiled lazily, so a scene with no instanced casters never pays for the variant.
@@ -230,7 +244,10 @@ pub fn render_gl_scene3d_shadow_map(
             let node_guard = node.read().unwrap();
             let any = node_guard.as_any();
             let instanced_mesh = any.downcast_ref::<InstancedMesh>();
-            let Some(mesh) = instanced_mesh.map(|mesh| &**mesh).or_else(|| any.downcast_ref::<Mesh>()) else {
+            let Some(mesh) = instanced_mesh
+                .map(|mesh| &**mesh)
+                .or_else(|| any.downcast_ref::<Mesh>())
+            else {
                 return;
             };
             if let Some(instanced_mesh) = instanced_mesh {
@@ -238,7 +255,9 @@ pub fn render_gl_scene3d_shadow_map(
             }
             (
                 mesh.geometry.clone(),
-                mesh.skin.as_ref().map(|skin| skin.read().unwrap().skeleton.clone()),
+                mesh.skin
+                    .as_ref()
+                    .map(|skin| skin.read().unwrap().skeleton.clone()),
                 instanced_mesh.map(|instanced_mesh| instanced_mesh.instance_count),
             )
         };
@@ -278,24 +297,36 @@ pub fn render_gl_scene3d_shadow_map(
             skinned_program
                 .get_or_insert_with(|| {
                     ensure_gl_scene3d_program(state, "shadow:depth:skin", |gl| {
-                        return compile_shadow_depth_skinned_program(gl, feature.vertex_declarations_glsl);
+                        return compile_shadow_depth_skinned_program(
+                            gl,
+                            feature.vertex_declarations_glsl,
+                        );
                     })
                 })
                 .clone()
         } else {
             rigid_program.clone()
         };
-        if bound_program.as_ref().is_none_or(|bound| !Rc::ptr_eq(bound, &program)) {
+        if bound_program
+            .as_ref()
+            .is_none_or(|bound| !Rc::ptr_eq(bound, &program))
+        {
             // SAFETY: the program belongs to this context.
             unsafe {
                 gl.use_program(Some(program.program));
-                gl.uniform_matrix_4_f32_slice(program.loc_view_projection.as_ref(), false, &matrix.m);
+                gl.uniform_matrix_4_f32_slice(
+                    program.loc_view_projection.as_ref(),
+                    false,
+                    &matrix.m,
+                );
             }
             bound_program = Some(program.clone());
         }
         let world_matrix = get_node_world_matrix4(node, &mut state.runtime.node_revisions);
         // SAFETY: the bound program belongs to this context.
-        unsafe { gl.uniform_matrix_4_f32_slice(program.loc_model.as_ref(), false, &world_matrix.m) };
+        unsafe {
+            gl.uniform_matrix_4_f32_slice(program.loc_model.as_ref(), false, &world_matrix.m)
+        };
 
         if skinned {
             // Upload the mesh's bone palette into the shared RGBA32F skin texture and bind it, exactly
@@ -315,7 +346,12 @@ pub fn render_gl_scene3d_shadow_map(
         // SAFETY: the upload's VAO belongs to this context.
         unsafe { gl.bind_vertex_array(Some(upload.vao)) };
         if let Some(count) = instance_count {
-            bind_gl_instance_palette(state, &program, &scratch_shadow_instance_data, count as usize);
+            bind_gl_instance_palette(
+                state,
+                &program,
+                &scratch_shadow_instance_data,
+                count as usize,
+            );
             // SAFETY: drawing the bound VAO on its context.
             unsafe {
                 if upload.index_buffer.is_some() {
@@ -327,13 +363,23 @@ pub fn render_gl_scene3d_shadow_map(
                         count,
                     );
                 } else {
-                    gl.draw_arrays_instanced(upload.primitive_mode, 0, upload.index_count as i32, count);
+                    gl.draw_arrays_instanced(
+                        upload.primitive_mode,
+                        0,
+                        upload.index_count as i32,
+                        count,
+                    );
                 }
             }
         } else if upload.index_buffer.is_some() {
             // SAFETY: drawing the bound VAO on its context.
             unsafe {
-                gl.draw_elements(upload.primitive_mode, upload.index_count as i32, upload.index_type, 0);
+                gl.draw_elements(
+                    upload.primitive_mode,
+                    upload.index_count as i32,
+                    upload.index_type,
+                    0,
+                );
             }
         } else {
             // SAFETY: drawing the bound VAO on its context.
@@ -347,7 +393,12 @@ pub fn render_gl_scene3d_shadow_map(
         // palette unit.
         gl.active_texture(glow::TEXTURE0);
         gl.bind_framebuffer(glow::FRAMEBUFFER, prev_framebuffer);
-        gl.viewport(prev_viewport[0], prev_viewport[1], prev_viewport[2], prev_viewport[3]);
+        gl.viewport(
+            prev_viewport[0],
+            prev_viewport[1],
+            prev_viewport[2],
+            prev_viewport[3],
+        );
         // Restore the default cull state the forward scene pass renders under (culling off, back-face).
         gl.disable(glow::CULL_FACE);
         gl.cull_face(glow::BACK);
@@ -359,21 +410,26 @@ pub fn render_gl_scene3d_shadow_map(
         normal_bias_world,
         pcf_radius: normalize_directional_shadow_pcf_radius(directional_light.pcf_radius),
         shadow_bias: directional_light.shadow_bias,
-        texture: target_depth_texture.expect("a depth-stencil-sampled target carries a depth texture"),
+        texture: target_depth_texture
+            .expect("a depth-stencil-sampled target carries a depth texture"),
     });
 }
 
 macro_rules! shadow_depth_instanced_vertex_glsl {
     () => {
-        concat!(r#"#version 300 es
-"#, gl_instance_vertex_declarations_glsl!(), r#"
+        concat!(
+            r#"#version 300 es
+"#,
+            gl_instance_vertex_declarations_glsl!(),
+            r#"
 layout(location = 0) in vec3 a_position;
 uniform mat4 u_viewProjection;
 uniform mat4 u_model;
 void main() {
   gl_Position = u_viewProjection * u_model * instanceModelMatrix() * vec4(a_position, 1.0);
 }
-"#)
+"#
+        )
     };
 }
 
@@ -381,14 +437,16 @@ const SHADOW_DEPTH_INSTANCED_VERTEX: &str = shadow_depth_instanced_vertex_glsl!(
 
 macro_rules! shadow_depth_vertex_glsl {
     () => {
-        concat!(r#"#version 300 es
+        concat!(
+            r#"#version 300 es
 layout(location = 0) in vec3 a_position;
 uniform mat4 u_viewProjection;
 uniform mat4 u_model;
 void main() {
   gl_Position = u_viewProjection * u_model * vec4(a_position, 1.0);
 }
-"#)
+"#
+        )
     };
 }
 
@@ -396,13 +454,15 @@ const SHADOW_DEPTH_VERTEX: &str = shadow_depth_vertex_glsl!();
 
 macro_rules! shadow_depth_fragment_glsl {
     () => {
-        concat!(r#"#version 300 es
+        concat!(
+            r#"#version 300 es
 precision highp float;
 out vec4 fragColor;
 void main() {
   fragColor = vec4(1.0);
 }
-"#)
+"#
+        )
     };
 }
 

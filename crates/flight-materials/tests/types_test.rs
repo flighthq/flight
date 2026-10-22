@@ -1,4 +1,4 @@
-use flight_entity::{allocate_entity, get_entity_uid, set_entity_uid, Entity, Ref};
+use flight_entity::{Entity, Ref, allocate_entity, get_entity_uid, set_entity_uid};
 use flight_materials::color_scale_bias::*;
 use flight_materials::material3d::create_material3d;
 use flight_materials::pbr_materials::report_material_conversion_drop;
@@ -340,7 +340,11 @@ mod standard_material {
 
     #[test]
     fn constructor_preserves_kind_and_name() {
-                let mat = { let mut value = create_standard_material(); value.name = Some("Named".to_string()); value };
+        let mat = {
+            let mut value = create_standard_material();
+            value.name = Some("Named".to_string());
+            value
+        };
         assert_eq!(mat.kind, STANDARD_MATERIAL_KIND);
         assert_eq!(mat.name, Some("Named".to_string()));
     }

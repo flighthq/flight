@@ -88,10 +88,9 @@ mod register_gl_material_shader {
             shader.clone(),
         );
         let mut proxy = crate::gl_test_helper::make_proxy(&mut state);
-        let material: flight_entity::Ref<dyn flight_materials::Material2D> =
-            std::sync::Arc::new(std::sync::RwLock::new(
-                flight_materials::standard_material::create_standard_material(),
-            ));
+        let material: flight_entity::Ref<dyn flight_materials::Material2D> = std::sync::Arc::new(
+            std::sync::RwLock::new(flight_materials::standard_material::create_standard_material()),
+        );
         proxy.proxy.material = Some(material);
         let resolved = resolve_gl_shader(&mut state, &proxy).unwrap();
         assert!(std::sync::Arc::ptr_eq(&resolved, &shader));
@@ -215,11 +214,13 @@ mod set_gl_shader {
         set_gl_shader(&mut state, &mut proxies, &node, Some(shader));
         let index = *proxies.by_uid.values().next().unwrap();
         let proxy = proxies.entries[index].as_ref().unwrap();
-        assert!(state
-            .gl_runtime
-            .borrow()
-            .shader_bindings
-            .contains_key(&flight_entity::get_entity_id(&proxy.proxy)));
+        assert!(
+            state
+                .gl_runtime
+                .borrow()
+                .shader_bindings
+                .contains_key(&flight_entity::get_entity_id(&proxy.proxy))
+        );
     }
 
     #[test]

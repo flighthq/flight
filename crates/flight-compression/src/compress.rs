@@ -2,7 +2,9 @@ use std::sync::LazyLock;
 
 use flight_entity::Uint8Array;
 
-use crate::deflate_format::{compute_adler32, DISTANCE_BASE, DISTANCE_EXTRA, LENGTH_BASE, LENGTH_EXTRA};
+use crate::deflate_format::{
+    DISTANCE_BASE, DISTANCE_EXTRA, LENGTH_BASE, LENGTH_EXTRA, compute_adler32,
+};
 use crate::types::{CompressionFraming, HostCompressDeflateCapability};
 
 // Dependency-free, synchronous RFC 1951 (DEFLATE) and RFC 1950 (zlib) encoding, in its own module so a
@@ -220,7 +222,10 @@ fn match_run_length(input: &[u8], candidate: usize, position: usize) -> usize {
     return length;
 }
 
-fn sdk_host_compress_deflate_compress(bytes: &Uint8Array, framing: CompressionFraming) -> Box<Uint8Array> {
+fn sdk_host_compress_deflate_compress(
+    bytes: &Uint8Array,
+    framing: CompressionFraming,
+) -> Box<Uint8Array> {
     return if framing == CompressionFraming::Rfc1950 {
         compress_deflate_zlib(bytes)
     } else {

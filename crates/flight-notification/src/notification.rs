@@ -1,9 +1,9 @@
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 
-use flight_entity::allocate_entity;
 use flight_entity::EntityConstruction;
-use flight_signals::{create_signal, clear_signal, emit_signal};
+use flight_entity::allocate_entity;
+use flight_signals::{clear_signal, create_signal, emit_signal};
 
 use crate::types::*;
 
@@ -105,15 +105,17 @@ pub async fn attach_notification_action_subscription(
 ) -> NotificationSubscriptionAttachOutcome {
     let signal = subscription.on_notification_action.clone();
     let attach_fn = host_notification_action.attach.clone();
-    let listener: NotificationActionListener = Arc::new(move |notification: &Notification, action_id: &str| {
-        emit_signal(&signal, &(notification.clone(), action_id.to_string()));
-    });
+    let listener: NotificationActionListener =
+        Arc::new(move |notification: &Notification, action_id: &str| {
+            emit_signal(&signal, &(notification.clone(), action_id.to_string()));
+        });
     return attach_notification_subscription_impl(
         &subscription.attachment,
         &subscription.disposed,
         &subscription.generation,
         move || (attach_fn)(listener.clone()),
-    ).await;
+    )
+    .await;
 }
 
 pub async fn attach_notification_click_subscription(
@@ -130,7 +132,8 @@ pub async fn attach_notification_click_subscription(
         &subscription.disposed,
         &subscription.generation,
         move || (attach_fn)(listener.clone()),
-    ).await;
+    )
+    .await;
 }
 
 pub async fn attach_notification_dismiss_subscription(
@@ -147,7 +150,8 @@ pub async fn attach_notification_dismiss_subscription(
         &subscription.disposed,
         &subscription.generation,
         move || (attach_fn)(listener.clone()),
-    ).await;
+    )
+    .await;
 }
 
 pub async fn attach_notification_received_subscription(
@@ -164,7 +168,8 @@ pub async fn attach_notification_received_subscription(
         &subscription.disposed,
         &subscription.generation,
         move || (attach_fn)(listener.clone()),
-    ).await;
+    )
+    .await;
 }
 
 pub async fn attach_notification_reply_subscription(
@@ -173,15 +178,25 @@ pub async fn attach_notification_reply_subscription(
 ) -> NotificationSubscriptionAttachOutcome {
     let signal = subscription.on_notification_reply.clone();
     let attach_fn = host_notification_reply.attach.clone();
-    let listener: NotificationReplyListener = Arc::new(move |notification: &Notification, action_id: &str, text: &str| {
-        emit_signal(&signal, &(notification.clone(), action_id.to_string(), text.to_string()));
-    });
+    let listener: NotificationReplyListener = Arc::new(
+        move |notification: &Notification, action_id: &str, text: &str| {
+            emit_signal(
+                &signal,
+                &(
+                    notification.clone(),
+                    action_id.to_string(),
+                    text.to_string(),
+                ),
+            );
+        },
+    );
     return attach_notification_subscription_impl(
         &subscription.attachment,
         &subscription.disposed,
         &subscription.generation,
         move || (attach_fn)(listener.clone()),
-    ).await;
+    )
+    .await;
 }
 
 async fn attach_notification_subscription_impl<F>(
@@ -223,7 +238,8 @@ where
         };
     }
 
-    let stale = disposed.load(Ordering::Relaxed) || generation.load(Ordering::Relaxed) != new_generation;
+    let stale =
+        disposed.load(Ordering::Relaxed) || generation.load(Ordering::Relaxed) != new_generation;
 
     if stale {
         if let Some(att) = outcome.attachment {
@@ -276,15 +292,21 @@ pub async fn cancel_scheduled_notification(
     scheduled: &ScheduledNotification,
 ) -> NotificationCancelOutcome {
     if scheduled.cancelled.load(Ordering::Relaxed) {
-        return NotificationCancelOutcome { reason: NotificationCancelReason::AlreadyCancelled };
+        return NotificationCancelOutcome {
+            reason: NotificationCancelReason::AlreadyCancelled,
+        };
     }
     let cancel = scheduled.cancel_callback.lock().unwrap().clone();
     if cancel.is_none() {
-        return NotificationCancelOutcome { reason: NotificationCancelReason::OperationFailed };
+        return NotificationCancelOutcome {
+            reason: NotificationCancelReason::OperationFailed,
+        };
     }
     let cancel = cancel.unwrap();
     let outcome = (cancel)().await;
-    if outcome.reason == NotificationCancelReason::Ok || outcome.reason == NotificationCancelReason::AlreadyCancelled {
+    if outcome.reason == NotificationCancelReason::Ok
+        || outcome.reason == NotificationCancelReason::AlreadyCancelled
+    {
         *scheduled.cancel_callback.lock().unwrap() = None;
         scheduled.cancelled.store(true, Ordering::Relaxed);
     }
@@ -297,19 +319,23 @@ pub async fn close_all_notifications(
     return (host_notification_close.close_all_notifications)().await;
 }
 
-pub async fn close_notification(
-    notification: &Notification,
-) -> NotificationCloseOutcome {
+pub async fn close_notification(notification: &Notification) -> NotificationCloseOutcome {
     if notification.closed.load(Ordering::Relaxed) {
-        return NotificationCloseOutcome { reason: NotificationCloseReason::AlreadyClosed };
+        return NotificationCloseOutcome {
+            reason: NotificationCloseReason::AlreadyClosed,
+        };
     }
     let close = notification.close_callback.lock().unwrap().clone();
     if close.is_none() {
-        return NotificationCloseOutcome { reason: NotificationCloseReason::OperationFailed };
+        return NotificationCloseOutcome {
+            reason: NotificationCloseReason::OperationFailed,
+        };
     }
     let close = close.unwrap();
     let outcome = (close)().await;
-    if outcome.reason == NotificationCloseReason::Ok || outcome.reason == NotificationCloseReason::AlreadyClosed {
+    if outcome.reason == NotificationCloseReason::Ok
+        || outcome.reason == NotificationCloseReason::AlreadyClosed
+    {
         *notification.close_callback.lock().unwrap() = None;
         notification.closed.store(true, Ordering::Relaxed);
     }
@@ -359,10 +385,12 @@ async fn detach_notification_subscription_impl(
 
     let current = match current {
         Some(a) => a,
-        None => return NotificationSubscriptionDetachOutcome {
-            reason: NotificationSubscriptionDetachReason::NotAttached,
-            release_failed: None,
-        },
+        None => {
+            return NotificationSubscriptionDetachOutcome {
+                reason: NotificationSubscriptionDetachReason::NotAttached,
+                release_failed: None,
+            };
+        }
     };
 
     let release_outcome = (current.release)().await;
@@ -389,7 +417,8 @@ pub async fn dispose_notification_action_subscription(
         &subscription.disposed,
         &subscription.dispose_completed,
         &subscription.generation,
-    ).await;
+    )
+    .await;
     clear_signal(&subscription.on_notification_action);
     return result;
 }
@@ -402,7 +431,8 @@ pub async fn dispose_notification_click_subscription(
         &subscription.disposed,
         &subscription.dispose_completed,
         &subscription.generation,
-    ).await;
+    )
+    .await;
     clear_signal(&subscription.on_notification_click);
     return result;
 }
@@ -415,7 +445,8 @@ pub async fn dispose_notification_dismiss_subscription(
         &subscription.disposed,
         &subscription.dispose_completed,
         &subscription.generation,
-    ).await;
+    )
+    .await;
     clear_signal(&subscription.on_notification_dismiss);
     return result;
 }
@@ -428,7 +459,8 @@ pub async fn dispose_notification_received_subscription(
         &subscription.disposed,
         &subscription.dispose_completed,
         &subscription.generation,
-    ).await;
+    )
+    .await;
     clear_signal(&subscription.on_notification_received);
     return result;
 }
@@ -441,7 +473,8 @@ pub async fn dispose_notification_reply_subscription(
         &subscription.disposed,
         &subscription.dispose_completed,
         &subscription.generation,
-    ).await;
+    )
+    .await;
     clear_signal(&subscription.on_notification_reply);
     return result;
 }
@@ -527,7 +560,9 @@ pub fn get_notification_direction_string(value: NotificationDirection) -> &'stat
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS NotificationEventReleaseReason string union; the TS package exports no get_/parse_ free functions
-pub fn get_notification_event_release_reason_string(value: NotificationEventReleaseReason) -> &'static str {
+pub fn get_notification_event_release_reason_string(
+    value: NotificationEventReleaseReason,
+) -> &'static str {
     return match value {
         NotificationEventReleaseReason::Ok => "ok",
         NotificationEventReleaseReason::OperationFailed => "operation-failed",
@@ -535,7 +570,9 @@ pub fn get_notification_event_release_reason_string(value: NotificationEventRele
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS NotificationLifecycleFailureOperation string union; the TS package exports no get_/parse_ free functions
-pub fn get_notification_lifecycle_failure_operation_string(value: NotificationLifecycleFailureOperation) -> &'static str {
+pub fn get_notification_lifecycle_failure_operation_string(
+    value: NotificationLifecycleFailureOperation,
+) -> &'static str {
     return match value {
         NotificationLifecycleFailureOperation::Cancel => "cancel",
         NotificationLifecycleFailureOperation::Close => "close",
@@ -544,7 +581,9 @@ pub fn get_notification_lifecycle_failure_operation_string(value: NotificationLi
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS NotificationLifecycleReason string union; the TS package exports no get_/parse_ free functions
-pub fn get_notification_lifecycle_reason_string(value: NotificationLifecycleReason) -> &'static str {
+pub fn get_notification_lifecycle_reason_string(
+    value: NotificationLifecycleReason,
+) -> &'static str {
     return match value {
         NotificationLifecycleReason::AlreadyDestroyed => "already-destroyed",
         NotificationLifecycleReason::Ok => "ok",
@@ -559,7 +598,9 @@ pub async fn get_notification_permission(
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS NotificationPermissionRequestReason string union; the TS package exports no get_/parse_ free functions
-pub fn get_notification_permission_request_reason_string(value: NotificationPermissionRequestReason) -> &'static str {
+pub fn get_notification_permission_request_reason_string(
+    value: NotificationPermissionRequestReason,
+) -> &'static str {
     return match value {
         NotificationPermissionRequestReason::Denied => "denied",
         NotificationPermissionRequestReason::Dismissed => "dismissed",
@@ -578,7 +619,9 @@ pub fn get_notification_permission_string(value: NotificationPermission) -> &'st
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS NotificationSchedulePrecision string union; the TS package exports no get_/parse_ free functions
-pub fn get_notification_schedule_precision_string(value: NotificationSchedulePrecision) -> &'static str {
+pub fn get_notification_schedule_precision_string(
+    value: NotificationSchedulePrecision,
+) -> &'static str {
     return match value {
         NotificationSchedulePrecision::Exact => "exact",
         NotificationSchedulePrecision::Inexact => "inexact",
@@ -608,7 +651,9 @@ pub fn get_notification_schedule_repeat_string(value: NotificationScheduleRepeat
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS NotificationSubscriptionAttachReason string union; the TS package exports no get_/parse_ free functions
-pub fn get_notification_subscription_attach_reason_string(value: NotificationSubscriptionAttachReason) -> &'static str {
+pub fn get_notification_subscription_attach_reason_string(
+    value: NotificationSubscriptionAttachReason,
+) -> &'static str {
     return match value {
         NotificationSubscriptionAttachReason::Ok => "ok",
         NotificationSubscriptionAttachReason::OperationFailed => "operation-failed",
@@ -616,7 +661,9 @@ pub fn get_notification_subscription_attach_reason_string(value: NotificationSub
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS NotificationSubscriptionDetachReason string union; the TS package exports no get_/parse_ free functions
-pub fn get_notification_subscription_detach_reason_string(value: NotificationSubscriptionDetachReason) -> &'static str {
+pub fn get_notification_subscription_detach_reason_string(
+    value: NotificationSubscriptionDetachReason,
+) -> &'static str {
     return match value {
         NotificationSubscriptionDetachReason::NotAttached => "not-attached",
         NotificationSubscriptionDetachReason::Ok => "ok",
@@ -625,7 +672,9 @@ pub fn get_notification_subscription_detach_reason_string(value: NotificationSub
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS NotificationSubscriptionDisposeReason string union; the TS package exports no get_/parse_ free functions
-pub fn get_notification_subscription_dispose_reason_string(value: NotificationSubscriptionDisposeReason) -> &'static str {
+pub fn get_notification_subscription_dispose_reason_string(
+    value: NotificationSubscriptionDisposeReason,
+) -> &'static str {
     return match value {
         NotificationSubscriptionDisposeReason::AlreadyDisposed => "already-disposed",
         NotificationSubscriptionDisposeReason::Ok => "ok",
@@ -681,7 +730,9 @@ pub fn parse_notification_direction(value: &str) -> Option<NotificationDirection
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS NotificationEventReleaseReason string union; the TS package exports no get_/parse_ free functions
-pub fn parse_notification_event_release_reason(value: &str) -> Option<NotificationEventReleaseReason> {
+pub fn parse_notification_event_release_reason(
+    value: &str,
+) -> Option<NotificationEventReleaseReason> {
     return match value {
         "ok" => Some(NotificationEventReleaseReason::Ok),
         "operation-failed" => Some(NotificationEventReleaseReason::OperationFailed),
@@ -690,7 +741,9 @@ pub fn parse_notification_event_release_reason(value: &str) -> Option<Notificati
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS NotificationLifecycleFailureOperation string union; the TS package exports no get_/parse_ free functions
-pub fn parse_notification_lifecycle_failure_operation(value: &str) -> Option<NotificationLifecycleFailureOperation> {
+pub fn parse_notification_lifecycle_failure_operation(
+    value: &str,
+) -> Option<NotificationLifecycleFailureOperation> {
     return match value {
         "cancel" => Some(NotificationLifecycleFailureOperation::Cancel),
         "close" => Some(NotificationLifecycleFailureOperation::Close),
@@ -720,7 +773,9 @@ pub fn parse_notification_permission(value: &str) -> Option<NotificationPermissi
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS NotificationPermissionRequestReason string union; the TS package exports no get_/parse_ free functions
-pub fn parse_notification_permission_request_reason(value: &str) -> Option<NotificationPermissionRequestReason> {
+pub fn parse_notification_permission_request_reason(
+    value: &str,
+) -> Option<NotificationPermissionRequestReason> {
     return match value {
         "denied" => Some(NotificationPermissionRequestReason::Denied),
         "dismissed" => Some(NotificationPermissionRequestReason::Dismissed),
@@ -764,7 +819,9 @@ pub fn parse_notification_schedule_repeat(value: &str) -> Option<NotificationSch
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS NotificationSubscriptionAttachReason string union; the TS package exports no get_/parse_ free functions
-pub fn parse_notification_subscription_attach_reason(value: &str) -> Option<NotificationSubscriptionAttachReason> {
+pub fn parse_notification_subscription_attach_reason(
+    value: &str,
+) -> Option<NotificationSubscriptionAttachReason> {
     return match value {
         "ok" => Some(NotificationSubscriptionAttachReason::Ok),
         "operation-failed" => Some(NotificationSubscriptionAttachReason::OperationFailed),
@@ -773,7 +830,9 @@ pub fn parse_notification_subscription_attach_reason(value: &str) -> Option<Noti
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS NotificationSubscriptionDetachReason string union; the TS package exports no get_/parse_ free functions
-pub fn parse_notification_subscription_detach_reason(value: &str) -> Option<NotificationSubscriptionDetachReason> {
+pub fn parse_notification_subscription_detach_reason(
+    value: &str,
+) -> Option<NotificationSubscriptionDetachReason> {
     return match value {
         "not-attached" => Some(NotificationSubscriptionDetachReason::NotAttached),
         "ok" => Some(NotificationSubscriptionDetachReason::Ok),
@@ -783,7 +842,9 @@ pub fn parse_notification_subscription_detach_reason(value: &str) -> Option<Noti
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the TS NotificationSubscriptionDisposeReason string union; the TS package exports no get_/parse_ free functions
-pub fn parse_notification_subscription_dispose_reason(value: &str) -> Option<NotificationSubscriptionDisposeReason> {
+pub fn parse_notification_subscription_dispose_reason(
+    value: &str,
+) -> Option<NotificationSubscriptionDisposeReason> {
     return match value {
         "already-disposed" => Some(NotificationSubscriptionDisposeReason::AlreadyDisposed),
         "ok" => Some(NotificationSubscriptionDisposeReason::Ok),

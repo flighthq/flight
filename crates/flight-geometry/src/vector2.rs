@@ -1,6 +1,6 @@
+use crate::Vector3;
 use flight_entity::{EntityRuntimeSlot, Float32Array, allocate_entity};
 use std::sync::LazyLock;
-use crate::Vector3;
 
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Vector2 {
@@ -42,8 +42,20 @@ pub fn clamp_vector2(out: &mut Vector2, value: &Vector2, min: &Vector2, max: &Ve
     let min_y = min.y;
     let max_x = max.x;
     let max_y = max.y;
-    out.x = if vx < min_x { min_x } else if vx > max_x { max_x } else { vx };
-    out.y = if vy < min_y { min_y } else if vy > max_y { max_y } else { vy };
+    out.x = if vx < min_x {
+        min_x
+    } else if vx > max_x {
+        max_x
+    } else {
+        vx
+    };
+    out.y = if vy < min_y {
+        min_y
+    } else if vy > max_y {
+        max_y
+    } else {
+        vy
+    };
 }
 
 pub fn clone_vector2(source: &Vector2) -> Vector2 {

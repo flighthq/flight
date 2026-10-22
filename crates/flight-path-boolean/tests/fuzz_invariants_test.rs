@@ -63,13 +63,18 @@ fn random_messy_polygon(random: &mut impl FnMut() -> f64, count: usize) -> Vec<f
 
 fn convex_hull(points: &[[f64; 2]]) -> Vec<f64> {
     let mut sorted = points.to_vec();
-    sorted.sort_by(|a, b| a[0].partial_cmp(&b[0]).unwrap().then(a[1].partial_cmp(&b[1]).unwrap()));
+    sorted.sort_by(|a, b| {
+        a[0].partial_cmp(&b[0])
+            .unwrap()
+            .then(a[1].partial_cmp(&b[1]).unwrap())
+    });
     let cross = |o: &[f64; 2], a: &[f64; 2], b: &[f64; 2]| -> f64 {
         return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
     };
     let mut lower: Vec<[f64; 2]> = Vec::new();
     for p in &sorted {
-        while lower.len() >= 2 && cross(&lower[lower.len() - 2], &lower[lower.len() - 1], p) <= 0.0 {
+        while lower.len() >= 2 && cross(&lower[lower.len() - 2], &lower[lower.len() - 1], p) <= 0.0
+        {
             lower.pop();
         }
         lower.push(*p);
@@ -77,7 +82,8 @@ fn convex_hull(points: &[[f64; 2]]) -> Vec<f64> {
     let mut upper: Vec<[f64; 2]> = Vec::new();
     for i in (0..sorted.len()).rev() {
         let p = &sorted[i];
-        while upper.len() >= 2 && cross(&upper[upper.len() - 2], &upper[upper.len() - 1], p) <= 0.0 {
+        while upper.len() >= 2 && cross(&upper[upper.len() - 2], &upper[upper.len() - 1], p) <= 0.0
+        {
             upper.pop();
         }
         upper.push(*p);
@@ -139,8 +145,14 @@ mod fuzz_invariants {
                 }
             }
             append_path_close(&mut path);
-            let nz_opts = PathBooleanOptions { fill_rule: Some(PathWinding::NonZero), tolerance: None };
-            let eo_opts = PathBooleanOptions { fill_rule: Some(PathWinding::EvenOdd), tolerance: None };
+            let nz_opts = PathBooleanOptions {
+                fill_rule: Some(PathWinding::NonZero),
+                tolerance: None,
+            };
+            let eo_opts = PathBooleanOptions {
+                fill_rule: Some(PathWinding::EvenOdd),
+                tolerance: None,
+            };
             let mut non_zero = create_path();
             simplify_path(&mut non_zero, &kernel, &path, Some(&nz_opts));
             let mut even_odd = create_path();
@@ -156,7 +168,10 @@ mod fuzz_invariants {
         let mut random = make_random(0x1234abcd);
         for iteration in 0..40 {
             let a = polygon_path(&random_simple_polygon(&mut random, 3 + (iteration % 6)));
-            let b = polygon_path(&random_simple_polygon(&mut random, 3 + ((iteration + 3) % 6)));
+            let b = polygon_path(&random_simple_polygon(
+                &mut random,
+                3 + ((iteration + 3) % 6),
+            ));
             let mut ab = create_path();
             union_paths(&mut ab, &kernel, &a, &b, None);
             let mut ba = create_path();
@@ -188,7 +203,12 @@ mod fuzz_invariants {
             union_paths(&mut union_result, &kernel, &a, &a, None);
             let mut simplified = create_path();
             simplify_path(&mut simplified, &kernel, &a, None);
-            assert!(areas_close(path_area(&union_result), path_area(&simplified), 1e-3, 1e-3));
+            assert!(areas_close(
+                path_area(&union_result),
+                path_area(&simplified),
+                1e-3,
+                1e-3
+            ));
             assert_eq!(ring_count(&union_result), ring_count(&simplified));
         }
     }
@@ -218,7 +238,12 @@ mod fuzz_invariants {
             union_all_paths(&mut union_result, &kernel, &[&a], None);
             let mut simplified = create_path();
             simplify_path(&mut simplified, &kernel, &a, None);
-            assert!(areas_close(path_area(&union_result), path_area(&simplified), 1e-3, 1e-3));
+            assert!(areas_close(
+                path_area(&union_result),
+                path_area(&simplified),
+                1e-3,
+                1e-3
+            ));
             assert_eq!(ring_count(&union_result), ring_count(&simplified));
         }
     }
@@ -232,7 +257,12 @@ mod fuzz_invariants {
             let a = polygon_path(&vertices);
             let mut zero_offset = create_path();
             offset_path(&mut zero_offset, &kernel, &a, 0.0, None);
-            assert!(areas_close(path_area(&zero_offset), path_area(&a), 1e-2, 1e-2));
+            assert!(areas_close(
+                path_area(&zero_offset),
+                path_area(&a),
+                1e-2,
+                1e-2
+            ));
             assert_eq!(ring_count(&zero_offset), 1);
         }
     }
@@ -251,10 +281,22 @@ mod fuzz_invariants {
             if base_area < 50.0 {
                 continue;
             }
-            let grow_opts = PathOffsetOptions { join: Some(PathOffsetJoin::Miter), end: None, miter_limit: Some(100.0), tolerance: None, arc_tolerance: None };
+            let grow_opts = PathOffsetOptions {
+                join: Some(PathOffsetJoin::Miter),
+                end: None,
+                miter_limit: Some(100.0),
+                tolerance: None,
+                arc_tolerance: None,
+            };
             let mut grown = create_path();
             offset_path(&mut grown, &kernel, &a, 3.0, Some(&grow_opts));
-            let shrink_opts = PathOffsetOptions { join: Some(PathOffsetJoin::Miter), end: None, miter_limit: Some(100.0), tolerance: None, arc_tolerance: None };
+            let shrink_opts = PathOffsetOptions {
+                join: Some(PathOffsetJoin::Miter),
+                end: None,
+                miter_limit: Some(100.0),
+                tolerance: None,
+                arc_tolerance: None,
+            };
             let mut recovered = create_path();
             offset_path(&mut recovered, &kernel, &grown, -3.0, Some(&shrink_opts));
             assert_eq!(ring_count(&recovered), 1);
@@ -273,10 +315,18 @@ mod fuzz_invariants {
             if offset_result.commands.is_empty() {
                 continue;
             }
-            let nz_opts = PathBooleanOptions { fill_rule: Some(PathWinding::NonZero), tolerance: None };
+            let nz_opts = PathBooleanOptions {
+                fill_rule: Some(PathWinding::NonZero),
+                tolerance: None,
+            };
             let mut simplified = create_path();
             simplify_path(&mut simplified, &kernel, &offset_result, Some(&nz_opts));
-            assert!(areas_close(path_area(&simplified), path_area(&offset_result), 1e-2, 1e-2));
+            assert!(areas_close(
+                path_area(&simplified),
+                path_area(&offset_result),
+                1e-2,
+                1e-2
+            ));
             assert_eq!(ring_count(&simplified), ring_count(&offset_result));
         }
     }

@@ -6,8 +6,8 @@ use flight_node::{Node, NodeRef, add_node_child, get_node_children};
 use flight_registry::with_kind_map_entry;
 use flight_scene_document::contract::*;
 use flight_scene2d::{
-    DISPLAY_OBJECT_KIND, Node2DRef, SPRITE_KIND, as_node2d_ref,
-    create_display_object, create_scene2d, create_sprite,
+    DISPLAY_OBJECT_KIND, Node2DRef, SPRITE_KIND, as_node2d_ref, create_display_object,
+    create_scene2d, create_sprite,
 };
 use flight_scene3d::{NODE3D_KIND, Node3DFields, create_node3d};
 

@@ -4,7 +4,9 @@ use flight_bitmap::create_bitmap;
 use flight_lighting::{Environment, create_environment};
 use flight_render_gl::{GlCubeRenderTarget, GlRenderState, initialize_gl_cube_render_target};
 use flight_scene3d_gl::contract::*;
-use flight_texture::{Texture, TextureColorSpace, TextureSourceRef, TextureUvTransform, create_cube_texture};
+use flight_texture::{
+    Texture, TextureColorSpace, TextureSourceRef, TextureUvTransform, create_cube_texture,
+};
 use glow::{HasContext, NativeTexture};
 
 use crate::gl_test_helper::{call_names, calls_with, make_gl_scene3d_state};
@@ -37,8 +39,20 @@ fn texture_name(texture: NativeTexture) -> i64 {
 fn capture_target(state: &GlRenderState, texture: NativeTexture) -> GlCubeRenderTarget {
     // SAFETY: the mock context allocates names on the test thread.
     let framebuffer = unsafe { state.gl.create_framebuffer() }.unwrap();
-    let delete_queue = state.context_state.runtime_state.borrow().delete_queue.clone();
-    return initialize_gl_cube_render_target(state.gl.clone(), 4, framebuffer, texture, None, delete_queue);
+    let delete_queue = state
+        .context_state
+        .runtime_state
+        .borrow()
+        .delete_queue
+        .clone();
+    return initialize_gl_cube_render_target(
+        state.gl.clone(),
+        4,
+        framebuffer,
+        texture,
+        None,
+        delete_queue,
+    );
 }
 
 fn deleted_textures() -> Vec<i64> {
@@ -58,12 +72,19 @@ mod bake_gl_environment_capture_ibl {
         let previous_source = ensure_gl_environment_source_cube(&state, &environment).unwrap();
         let captured_texture = texture(&state);
 
-        bake_gl_environment_capture_ibl(&state, &capture_target(&state, captured_texture), Some(2.5));
+        bake_gl_environment_capture_ibl(
+            &state,
+            &capture_target(&state, captured_texture),
+            Some(2.5),
+        );
 
         let runtime = get_gl_scene3d_runtime(&state);
         assert_eq!(runtime.environment_source_cube, Some(previous_source));
         let ibl = runtime.ibl.expect("the capture bake stores an IBL set");
-        assert_eq!(ibl.environment_source_revision, runtime.environment_source_revision);
+        assert_eq!(
+            ibl.environment_source_revision,
+            runtime.environment_source_revision
+        );
         assert_eq!(ibl.intensity, 2.5);
         assert!(!deleted_textures().contains(&texture_name(previous_source)));
         assert!(

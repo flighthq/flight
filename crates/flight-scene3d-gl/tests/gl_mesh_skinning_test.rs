@@ -26,7 +26,9 @@ mod bind_gl_mesh_skin_palette {
     fn reports_a_gpu_skinned_draw_after_binding_its_pose_palette() {
         let mut state = make_gl_scene3d_state();
         let program = make_test_mesh_program(&state);
-        program.loc_joint_texture.set(Some(Some(uniform_location("u_jointTexture"))));
+        program
+            .loc_joint_texture
+            .set(Some(Some(uniform_location("u_jointTexture"))));
 
         let gpu_skinned = bind_gl_mesh_skin_palette(&mut state, &program, &make_skinned_proxy());
 
@@ -42,7 +44,11 @@ mod bind_gl_mesh_skin_palette {
     fn reports_not_skinned_when_the_program_carries_no_joint_texture() {
         let mut state = make_gl_scene3d_state();
         let program = make_test_mesh_program(&state);
-        assert!(!bind_gl_mesh_skin_palette(&mut state, &program, &make_skinned_proxy()));
+        assert!(!bind_gl_mesh_skin_palette(
+            &mut state,
+            &program,
+            &make_skinned_proxy()
+        ));
     }
 }
 
@@ -53,8 +59,12 @@ mod bind_gl_shadow_skin_palette {
     fn uploads_the_pose_palette_on_the_skin_palette_unit() {
         let mut state = make_gl_scene3d_state();
         bind_gl_shadow_skin_palette(&mut state, &[0.0; 16]);
-        assert!(calls_with("active_texture").iter().any(|call| call.integers[0]
-            == i64::from(glow::TEXTURE0 + SKIN_PALETTE_TEXTURE_UNIT)));
+        assert!(
+            calls_with("active_texture")
+                .iter()
+                .any(|call| call.integers[0]
+                    == i64::from(glow::TEXTURE0 + SKIN_PALETTE_TEXTURE_UNIT))
+        );
     }
 }
 
@@ -103,13 +113,20 @@ mod register_gl_mesh_skinning {
         assert!(std::ptr::fn_addr_eq(
             feature.bind_mesh_skin_palette,
             bind_gl_mesh_skin_palette
-                as fn(&mut flight_render_gl::GlRenderState, &GlMeshProgram, &Scene3DRenderProxy) -> bool
+                as fn(
+                    &mut flight_render_gl::GlRenderState,
+                    &GlMeshProgram,
+                    &Scene3DRenderProxy,
+                ) -> bool
         ));
         assert!(std::ptr::fn_addr_eq(
             feature.bind_shadow_skin_palette,
             bind_gl_shadow_skin_palette as fn(&mut flight_render_gl::GlRenderState, &[f32])
         ));
-        assert_eq!(feature.vertex_declarations_glsl, GL_SKIN_VERTEX_DECLARATIONS_GLSL);
+        assert_eq!(
+            feature.vertex_declarations_glsl,
+            GL_SKIN_VERTEX_DECLARATIONS_GLSL
+        );
     }
 
     #[test]
@@ -118,7 +135,9 @@ mod register_gl_mesh_skinning {
         register_gl_mesh_skinning(&state);
         register_gl_mesh_skinning(&state);
         assert_eq!(
-            get_gl_mesh_skin_feature(&state).unwrap().vertex_declarations_glsl,
+            get_gl_mesh_skin_feature(&state)
+                .unwrap()
+                .vertex_declarations_glsl,
             GL_SKIN_VERTEX_DECLARATIONS_GLSL
         );
     }

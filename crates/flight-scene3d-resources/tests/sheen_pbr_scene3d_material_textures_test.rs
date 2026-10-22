@@ -1,6 +1,8 @@
 use std::sync::{Arc, RwLock};
 
-use flight_materials::contract::{PbrExtension, create_sheen_pbr_extension, create_extended_pbr_material};
+use flight_materials::contract::{
+    PbrExtension, create_extended_pbr_material, create_sheen_pbr_extension,
+};
 use flight_scene3d_resources::contract::*;
 
 use crate::support::{create_shared_texture, same_textures};

@@ -47,8 +47,7 @@ mod append_quad_batch_instance {
     #[test]
     fn appends_an_instance_and_returns_its_index() {
         let batch = create_quad_batch();
-        let idx =
-            append_quad_batch_instance(&mut batch.write().unwrap(), 3, 10.0, 20.0);
+        let idx = append_quad_batch_instance(&mut batch.write().unwrap(), 3, 10.0, 20.0);
         assert_eq!(idx, 0);
         let batch = batch.read().unwrap();
         assert_eq!(batch.data.instance_count, 1);

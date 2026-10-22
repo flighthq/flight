@@ -37,7 +37,9 @@ pub fn get_backend_explanation_layer_string(value: BackendExplanationLayer) -> &
 }
 
 // flight-lint: allow(conform-extra) D9e: Rust string-table helper for the inline TS BackendExplanation.viability string union; TS exports no get_/parse_ free functions
-pub fn get_backend_explanation_viability_string(value: BackendExplanationViability) -> &'static str {
+pub fn get_backend_explanation_viability_string(
+    value: BackendExplanationViability,
+) -> &'static str {
     return match value {
         BackendExplanationViability::Available => "available",
         BackendExplanationViability::RuntimeApiUnavailable => "runtime-api-unavailable",

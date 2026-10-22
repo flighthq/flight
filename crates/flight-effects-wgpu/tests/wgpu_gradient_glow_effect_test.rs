@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use flight_effects::{EffectRef, EffectSourceMode, create_gradient_glow_effect};
-use flight_entity::Ref;
 use flight_effects_wgpu::contract::*;
+use flight_entity::Ref;
 use flight_render_wgpu::*;
 
 use crate::support::*;
@@ -58,7 +58,6 @@ fn draw_calls(records: &Arc<Mutex<Vec<WgpuCommandRecord>>>) -> Vec<DrawCall> {
     }
     return out;
 }
-
 
 fn is_erase_blend(blend: Option<wgpu::BlendState>) -> bool {
     return blend.is_some_and(|blend| blend.color.src_factor == wgpu::BlendFactor::Zero);
@@ -199,7 +198,11 @@ mod wgpu_gradient_glow_effect_runner {
             wgpu_gradient_glow_effect_runner(&mut context, &*effect.read().unwrap());
         });
 
-        assert!(draw_calls(&records).iter().any(|draw| draw.dest == view_of(&dest)));
+        assert!(
+            draw_calls(&records)
+                .iter()
+                .any(|draw| draw.dest == view_of(&dest))
+        );
         assert_eq!(pool.free.len(), 3);
     }
 }

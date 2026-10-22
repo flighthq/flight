@@ -1,6 +1,6 @@
 use flight_effects::{EffectRef, GodRaysEffect, create_god_rays_effect};
-use flight_entity::Ref;
 use flight_effects_wgpu::contract::*;
+use flight_entity::Ref;
 use flight_render_wgpu::*;
 
 use crate::support::*;
@@ -158,6 +158,9 @@ mod wgpu_god_rays_effect_runner {
         });
 
         assert!(is_close(recorded_effect_uniforms(&records)[0][1], 0.25, 6));
-        assert_eq!(recorded_pass_views(&records), vec![dest.read().unwrap().view.clone()]);
+        assert_eq!(
+            recorded_pass_views(&records),
+            vec![dest.read().unwrap().view.clone()]
+        );
     }
 }

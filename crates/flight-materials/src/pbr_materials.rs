@@ -2,12 +2,11 @@ use flight_color::{allocate_linear_color, unpack_color_to_linear};
 use flight_entity::allocate_entity;
 
 use crate::{
-    MaterialAlphaMode, MaterialConversionContext, MaterialConversionExplanation, MaterialConversionGuard,
-    create_material_conversion_context,
+    BLEND_MODE_NORMAL, MaterialAlphaMode, MaterialConversionContext, MaterialConversionExplanation,
+    MaterialConversionGuard, SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND, STANDARD_PBR_MATERIAL_KIND,
     SpecularGlossinessPbrMaterial, StandardPbrMaterial, StandardPbrMaterialOptions,
     StandardPbrMaterialProperties, StandardPbrMaterialPropertiesOptions,
-    BLEND_MODE_NORMAL, SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND,
-    STANDARD_PBR_MATERIAL_KIND,
+    create_material_conversion_context,
     explain_material_conversion::explain_specular_glossiness_conversion,
 };
 
@@ -25,7 +24,9 @@ pub fn create_standard_pbr_material() -> StandardPbrMaterial {
     return out;
 }
 
-pub fn create_standard_pbr_material_properties(opts: Option<&StandardPbrMaterialPropertiesOptions>) -> StandardPbrMaterialProperties {
+pub fn create_standard_pbr_material_properties(
+    opts: Option<&StandardPbrMaterialPropertiesOptions>,
+) -> StandardPbrMaterialProperties {
     let mut properties = StandardPbrMaterialProperties::default();
     properties.alpha_map = opts.and_then(|o| o.alpha_map.clone());
     properties.base_color = opts.and_then(|o| o.base_color).unwrap_or(0xffffffff);
@@ -90,28 +91,67 @@ pub fn initialize_standard_pbr_material(out: &mut StandardPbrMaterial) {
 
 // The source spreads the caller's partial over the preset values (`{ ...preset, ...opts }`): every
 // field the caller gives wins.
-pub(crate) fn apply_standard_pbr_material_options(out: &mut StandardPbrMaterial, opts: Option<&StandardPbrMaterialOptions>) {
+pub(crate) fn apply_standard_pbr_material_options(
+    out: &mut StandardPbrMaterial,
+    opts: Option<&StandardPbrMaterialOptions>,
+) {
     let Some(o) = opts else {
         return;
     };
-    if o.name.is_some() { out.name = o.name.clone(); }
-    if let Some(value) = o.alpha_cutoff { out.alpha_cutoff = value; }
-    if let Some(value) = o.alpha_mode { out.alpha_mode = value; }
-    if let Some(value) = &o.blend_mode { out.blend_mode = value.clone(); }
-    if let Some(value) = o.double_sided { out.double_sided = value; }
-    if o.alpha_map.is_some() { out.alpha_map = o.alpha_map.clone(); }
-    if let Some(value) = o.base_color { out.base_color = value; }
-    if o.base_color_map.is_some() { out.base_color_map = o.base_color_map.clone(); }
-    if let Some(value) = o.emissive { out.emissive = value; }
-    if o.emissive_map.is_some() { out.emissive_map = o.emissive_map.clone(); }
-    if let Some(value) = o.emissive_strength { out.emissive_strength = value; }
-    if let Some(value) = o.metallic { out.metallic = value; }
-    if o.metallic_roughness_map.is_some() { out.metallic_roughness_map = o.metallic_roughness_map.clone(); }
-    if o.normal_map.is_some() { out.normal_map = o.normal_map.clone(); }
-    if let Some(value) = o.normal_scale { out.normal_scale = value; }
-    if o.occlusion_map.is_some() { out.occlusion_map = o.occlusion_map.clone(); }
-    if let Some(value) = o.occlusion_strength { out.occlusion_strength = value; }
-    if let Some(value) = o.roughness { out.roughness = value; }
+    if o.name.is_some() {
+        out.name = o.name.clone();
+    }
+    if let Some(value) = o.alpha_cutoff {
+        out.alpha_cutoff = value;
+    }
+    if let Some(value) = o.alpha_mode {
+        out.alpha_mode = value;
+    }
+    if let Some(value) = &o.blend_mode {
+        out.blend_mode = value.clone();
+    }
+    if let Some(value) = o.double_sided {
+        out.double_sided = value;
+    }
+    if o.alpha_map.is_some() {
+        out.alpha_map = o.alpha_map.clone();
+    }
+    if let Some(value) = o.base_color {
+        out.base_color = value;
+    }
+    if o.base_color_map.is_some() {
+        out.base_color_map = o.base_color_map.clone();
+    }
+    if let Some(value) = o.emissive {
+        out.emissive = value;
+    }
+    if o.emissive_map.is_some() {
+        out.emissive_map = o.emissive_map.clone();
+    }
+    if let Some(value) = o.emissive_strength {
+        out.emissive_strength = value;
+    }
+    if let Some(value) = o.metallic {
+        out.metallic = value;
+    }
+    if o.metallic_roughness_map.is_some() {
+        out.metallic_roughness_map = o.metallic_roughness_map.clone();
+    }
+    if o.normal_map.is_some() {
+        out.normal_map = o.normal_map.clone();
+    }
+    if let Some(value) = o.normal_scale {
+        out.normal_scale = value;
+    }
+    if o.occlusion_map.is_some() {
+        out.occlusion_map = o.occlusion_map.clone();
+    }
+    if let Some(value) = o.occlusion_strength {
+        out.occlusion_strength = value;
+    }
+    if let Some(value) = o.roughness {
+        out.roughness = value;
+    }
 }
 
 // flight-lint: allow(conform-params) D5: Rust passes caller-owned conversion context; TS uses module-scoped guard
@@ -204,6 +244,8 @@ pub fn report_material_conversion_drop(
 }
 
 // flight-lint: allow(conform-params) D5: Rust returns caller-owned context; TS sets module-scoped state and returns void
-pub fn set_material_conversion_guard(guard: Option<MaterialConversionGuard>) -> Option<MaterialConversionContext> {
+pub fn set_material_conversion_guard(
+    guard: Option<MaterialConversionGuard>,
+) -> Option<MaterialConversionContext> {
     return guard.map(create_material_conversion_context);
 }

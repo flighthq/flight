@@ -63,7 +63,12 @@ pub fn apply_film_grain_effect_to_wgpu(
 
 /// Registers the default runner under `FilmGrainEffect` (TS `registerWgpuFilmGrainEffect`).
 pub fn register_wgpu_film_grain_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "FilmGrainEffect", wgpu_film_grain_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "FilmGrainEffect",
+        wgpu_film_grain_effect_runner,
+        None,
+    );
 }
 
 /// The default `FilmGrainEffect` runner (TS `wgpuFilmGrainEffectRunner`).

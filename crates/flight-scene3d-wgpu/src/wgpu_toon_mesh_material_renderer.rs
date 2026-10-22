@@ -6,9 +6,9 @@
 
 use std::sync::LazyLock;
 
-use flight_entity::Ref;
 use flight_camera::Camera3D;
 use flight_color::{allocate_linear_color, unpack_color_to_linear};
+use flight_entity::Ref;
 use flight_entity::get_entity_id;
 use flight_lighting::Scene3DLightBlock;
 use flight_materials::{Material, MaterialAlphaMode, TOON_MATERIAL_KIND, ToonMaterial};
@@ -30,7 +30,8 @@ use crate::wgpu_toon_prelude::{bind_wgpu_toon_surface, ensure_wgpu_toon_pipeline
 // The identity the material-less fallback bind caches its binding under (TS: a module-level `{}`
 // object). A real entity, so its key is a numeric entity id (D12/D15): unique to this renderer and
 // never reused, so it cannot alias a material's binding or another renderer's fallback.
-static FALLBACK_MATERIAL: LazyLock<ToonMaterial> = LazyLock::new(flight_materials::contract::create_toon_material);
+static FALLBACK_MATERIAL: LazyLock<ToonMaterial> =
+    LazyLock::new(flight_materials::contract::create_toon_material);
 
 /// The Toon mesh-material renderer for `TOON_MATERIAL_KIND` (TS `wgpuToonMeshMaterialRenderer`).
 pub static WGPU_TOON_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer = WgpuMeshMaterialRenderer {

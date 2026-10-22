@@ -5,8 +5,8 @@ use crate::contract::*;
 #[cfg(test)]
 mod sugar_tests {
     use super::*;
-    use std::sync::Arc;
     use flight_signals::connect_signal;
+    use std::sync::Arc;
 
     fn memory_backend() -> HostPreferencesCapability {
         return memory_backend_with(Vec::new());
@@ -16,7 +16,10 @@ mod sugar_tests {
         use std::collections::HashMap;
         use std::sync::{Arc, Mutex};
         let data: Arc<Mutex<HashMap<String, String>>> = Arc::new(Mutex::new(
-            initial.into_iter().map(|(k, v)| (k.to_string(), v.to_string())).collect(),
+            initial
+                .into_iter()
+                .map(|(k, v)| (k.to_string(), v.to_string()))
+                .collect(),
         ));
         let d1 = data.clone();
         let d2 = data.clone();
@@ -30,7 +33,9 @@ mod sugar_tests {
             }),
             get_item: Arc::new(move |key: &str| {
                 let map = d2.lock().unwrap();
-                return StorageValueOutcome::Ok(StorageValueOk { value: map.get(key).cloned() });
+                return StorageValueOutcome::Ok(StorageValueOk {
+                    value: map.get(key).cloned(),
+                });
             }),
             keys: Arc::new(move || {
                 let map = d3.lock().unwrap();
@@ -44,7 +49,9 @@ mod sugar_tests {
                 return StorageMutationOutcome::Ok;
             }),
             set_item: Arc::new(move |key: &str, value: &str| {
-                d5.lock().unwrap().insert(key.to_string(), value.to_string());
+                d5.lock()
+                    .unwrap()
+                    .insert(key.to_string(), value.to_string());
                 return StorageMutationOutcome::Ok;
             }),
         };
@@ -78,7 +85,9 @@ mod sugar_tests {
     fn storage_clear_namespace_failure_reason_to_string_delegates() {
         assert_eq!(
             StorageClearNamespaceFailureReason::RemoveFailed.to_str(),
-            get_storage_clear_namespace_failure_reason_string(StorageClearNamespaceFailureReason::RemoveFailed),
+            get_storage_clear_namespace_failure_reason_string(
+                StorageClearNamespaceFailureReason::RemoveFailed
+            ),
         );
     }
 
@@ -110,7 +119,9 @@ mod sugar_tests {
     fn storage_migration_read_failure_reason_to_string_delegates() {
         assert_eq!(
             StorageMigrationReadFailureReason::VersionParseFailed.to_str(),
-            get_storage_migration_read_failure_reason_string(StorageMigrationReadFailureReason::VersionParseFailed),
+            get_storage_migration_read_failure_reason_string(
+                StorageMigrationReadFailureReason::VersionParseFailed
+            ),
         );
     }
 
@@ -142,7 +153,9 @@ mod sugar_tests {
     fn storage_remove_item_failure_reason_to_string_delegates() {
         assert_eq!(
             StorageRemoveItemFailureReason::QuotaExceeded.to_str(),
-            get_storage_remove_item_failure_reason_string(StorageRemoveItemFailureReason::QuotaExceeded),
+            get_storage_remove_item_failure_reason_string(
+                StorageRemoveItemFailureReason::QuotaExceeded
+            ),
         );
     }
 
@@ -184,11 +197,16 @@ mod sugar_tests {
         let changes: std::sync::Arc<std::sync::Mutex<Vec<StorageChange>>> =
             std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
         let c = changes.clone();
-        connect_signal(&signals.on_change, Arc::new(move |change: &StorageChange| {
-            c.lock().unwrap().push(change.clone());
-        }), None);
-        let captured: std::sync::Arc<std::sync::Mutex<Option<Arc<dyn Fn(&StorageChange) + Send + Sync>>>> =
-            std::sync::Arc::new(std::sync::Mutex::new(None));
+        connect_signal(
+            &signals.on_change,
+            Arc::new(move |change: &StorageChange| {
+                c.lock().unwrap().push(change.clone());
+            }),
+            None,
+        );
+        let captured: std::sync::Arc<
+            std::sync::Mutex<Option<Arc<dyn Fn(&StorageChange) + Send + Sync>>>,
+        > = std::sync::Arc::new(std::sync::Mutex::new(None));
         let cap = captured.clone();
         let change_cap = HostPreferencesChangeCapability {
             destroy: Arc::new(|| {}),
@@ -218,18 +236,28 @@ mod sugar_tests {
         let result = clear_storage(&backend, None);
         assert!(result.is_ok());
         let keys = get_storage_keys(&backend);
-        assert_eq!(keys, StorageValueOutcome::Ok(StorageValueOk { value: vec![] }));
+        assert_eq!(
+            keys,
+            StorageValueOutcome::Ok(StorageValueOk { value: vec![] })
+        );
     }
 
     #[test]
     fn clear_storage_namespace_removes_only_prefixed_keys() {
         let backend = memory_backend_with(vec![("ns.a", "1"), ("ns.b", "2"), ("other", "3")]);
-        let ns = StorageNamespace { prefix: "ns".to_string() };
+        let ns = StorageNamespace {
+            prefix: "ns".to_string(),
+        };
         let result = clear_storage_namespace(&backend, &ns, None);
-        assert_eq!(result, StorageBatchMutationOutcome::Ok(StorageBatchMutationOk { completed: 2 }));
+        assert_eq!(
+            result,
+            StorageBatchMutationOutcome::Ok(StorageBatchMutationOk { completed: 2 })
+        );
         assert_eq!(
             get_storage_item(&backend, "other"),
-            StorageValueOutcome::Ok(StorageValueOk { value: Some("3".to_string()) }),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: Some("3".to_string())
+            }),
         );
     }
 
@@ -286,20 +314,32 @@ mod sugar_tests {
     #[test]
     fn get_namespaced_storage_byte_size_scopes_to_prefix() {
         let backend = memory_backend_with(vec![("n.a", "xy"), ("other", "ignored")]);
-        let ns = StorageNamespace { prefix: "n".to_string() };
+        let ns = StorageNamespace {
+            prefix: "n".to_string(),
+        };
         let result = get_namespaced_storage_byte_size(&backend, &ns);
-        assert_eq!(result, StorageQueryOutcome::Ok(StorageQueryOk { value: ("n.a".len() + "xy".len()) * 2 }));
+        assert_eq!(
+            result,
+            StorageQueryOutcome::Ok(StorageQueryOk {
+                value: ("n.a".len() + "xy".len()) * 2
+            })
+        );
     }
 
     #[test]
     fn get_namespaced_storage_entries_strips_prefix() {
         let backend = memory_backend_with(vec![("app.a", "1"), ("app.b", "2"), ("other", "3")]);
-        let ns = StorageNamespace { prefix: "app".to_string() };
+        let ns = StorageNamespace {
+            prefix: "app".to_string(),
+        };
         let result = get_namespaced_storage_entries(&backend, &ns);
         assert_eq!(
             result,
             StorageQueryOutcome::Ok(StorageQueryOk {
-                value: vec![("a".to_string(), "1".to_string()), ("b".to_string(), "2".to_string())],
+                value: vec![
+                    ("a".to_string(), "1".to_string()),
+                    ("b".to_string(), "2".to_string())
+                ],
             }),
         );
     }
@@ -307,17 +347,23 @@ mod sugar_tests {
     #[test]
     fn get_namespaced_storage_item_reads_prefixed_key() {
         let backend = memory_backend_with(vec![("app.a", "1")]);
-        let ns = StorageNamespace { prefix: "app".to_string() };
+        let ns = StorageNamespace {
+            prefix: "app".to_string(),
+        };
         assert_eq!(
             get_namespaced_storage_item(&backend, &ns, "a"),
-            StorageValueOutcome::Ok(StorageValueOk { value: Some("1".to_string()) }),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: Some("1".to_string())
+            }),
         );
     }
 
     #[test]
     fn get_namespaced_storage_item_presence_reports_missing() {
         let backend = memory_backend();
-        let ns = StorageNamespace { prefix: "app".to_string() };
+        let ns = StorageNamespace {
+            prefix: "app".to_string(),
+        };
         assert_eq!(
             get_namespaced_storage_item_presence(&backend, &ns, "missing"),
             StorageValueOutcome::Ok(StorageValueOk { value: false }),
@@ -327,22 +373,37 @@ mod sugar_tests {
     #[test]
     fn get_namespaced_storage_keys_strips_prefix() {
         let backend = memory_backend_with(vec![("app.a", "1"), ("app.b", "2"), ("other", "3")]);
-        let ns = StorageNamespace { prefix: "app".to_string() };
+        let ns = StorageNamespace {
+            prefix: "app".to_string(),
+        };
         assert_eq!(
             get_namespaced_storage_keys(&backend, &ns),
-            StorageValueOutcome::Ok(StorageValueOk { value: vec!["a".to_string(), "b".to_string()] }),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: vec!["a".to_string(), "b".to_string()]
+            }),
         );
     }
 
     #[test]
     fn get_storage_boolean_distinguishes_true_false_missing_bad() {
         let backend = memory_backend_with(vec![("t", "true"), ("f", "false"), ("bad", "yes")]);
-        assert_eq!(get_storage_boolean(&backend, "t"), StorageValueOutcome::Ok(StorageValueOk { value: Some(true) }));
-        assert_eq!(get_storage_boolean(&backend, "f"), StorageValueOutcome::Ok(StorageValueOk { value: Some(false) }));
-        assert_eq!(get_storage_boolean(&backend, "missing"), StorageValueOutcome::Ok(StorageValueOk { value: None }));
+        assert_eq!(
+            get_storage_boolean(&backend, "t"),
+            StorageValueOutcome::Ok(StorageValueOk { value: Some(true) })
+        );
+        assert_eq!(
+            get_storage_boolean(&backend, "f"),
+            StorageValueOutcome::Ok(StorageValueOk { value: Some(false) })
+        );
+        assert_eq!(
+            get_storage_boolean(&backend, "missing"),
+            StorageValueOutcome::Ok(StorageValueOk { value: None })
+        );
         assert_eq!(
             get_storage_boolean(&backend, "bad"),
-            StorageValueOutcome::Err(StorageValueErr { reason: StorageReadFailureReason::ParseFailed }),
+            StorageValueOutcome::Err(StorageValueErr {
+                reason: StorageReadFailureReason::ParseFailed
+            }),
         );
     }
 
@@ -360,7 +421,9 @@ mod sugar_tests {
         let backend = memory_backend_with(vec![("ab", "cd")]);
         assert_eq!(
             get_storage_byte_size(&backend),
-            StorageQueryOutcome::Ok(StorageQueryOk { value: ("ab".len() + "cd".len()) * 2 }),
+            StorageQueryOutcome::Ok(StorageQueryOk {
+                value: ("ab".len() + "cd".len()) * 2
+            }),
         );
     }
 
@@ -371,7 +434,10 @@ mod sugar_tests {
         assert_eq!(
             result,
             StorageQueryOutcome::Ok(StorageQueryOk {
-                value: vec![("a".to_string(), "1".to_string()), ("b".to_string(), "2".to_string())],
+                value: vec![
+                    ("a".to_string(), "1".to_string()),
+                    ("b".to_string(), "2".to_string())
+                ],
             }),
         );
     }
@@ -385,7 +451,9 @@ mod sugar_tests {
         );
         assert_eq!(
             get_storage_item(&backend, "empty"),
-            StorageValueOutcome::Ok(StorageValueOk { value: Some("".to_string()) }),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: Some("".to_string())
+            }),
         );
     }
 
@@ -403,7 +471,9 @@ mod sugar_tests {
         let backend = memory_backend();
         assert_eq!(
             get_storage_item_or(&backend, "missing", "fallback"),
-            StorageValueOutcome::Ok(StorageValueOk { value: "fallback".to_string() }),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: "fallback".to_string()
+            }),
         );
     }
 
@@ -421,7 +491,9 @@ mod sugar_tests {
         let backend = memory_backend_with(vec![("a", "1"), ("b", "2")]);
         assert_eq!(
             get_storage_items(&backend, &["a", "b"]),
-            StorageQueryOutcome::Ok(StorageQueryOk { value: vec![Some("1".to_string()), Some("2".to_string())] }),
+            StorageQueryOutcome::Ok(StorageQueryOk {
+                value: vec![Some("1".to_string()), Some("2".to_string())]
+            }),
         );
     }
 
@@ -431,7 +503,9 @@ mod sugar_tests {
         let result = get_storage_json(&backend, "obj");
         assert_eq!(
             result,
-            StorageValueOutcome::Ok(StorageValueOk { value: Some(serde_json::json!({"x": 1})) }),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: Some(serde_json::json!({"x": 1}))
+            }),
         );
     }
 
@@ -441,7 +515,9 @@ mod sugar_tests {
         let fallback = serde_json::json!({"default": true});
         assert_eq!(
             get_storage_json_or(&backend, "bad", fallback.clone()),
-            StorageFallbackOutcome::ParseFailed(StorageFallbackParseFailed { value: Some(fallback) }),
+            StorageFallbackOutcome::ParseFailed(StorageFallbackParseFailed {
+                value: Some(fallback)
+            }),
         );
     }
 
@@ -450,7 +526,9 @@ mod sugar_tests {
         let backend = memory_backend_with(vec![("b", "2"), ("a", "1")]);
         assert_eq!(
             get_storage_keys(&backend),
-            StorageValueOutcome::Ok(StorageValueOk { value: vec!["a".to_string(), "b".to_string()] }),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: vec!["a".to_string(), "b".to_string()]
+            }),
         );
     }
 
@@ -463,7 +541,9 @@ mod sugar_tests {
         );
         assert_eq!(
             get_storage_number(&backend, "bad"),
-            StorageValueOutcome::Err(StorageValueErr { reason: StorageReadFailureReason::ParseFailed }),
+            StorageValueOutcome::Err(StorageValueErr {
+                reason: StorageReadFailureReason::ParseFailed
+            }),
         );
     }
 
@@ -490,24 +570,36 @@ mod sugar_tests {
         let s2 = seen.clone();
         let m1 = StorageMigration {
             version: 2,
-            migrate: Arc::new(move |_| { s1.lock().unwrap().push(2); }),
+            migrate: Arc::new(move |_| {
+                s1.lock().unwrap().push(2);
+            }),
         };
         let m2 = StorageMigration {
             version: 1,
-            migrate: Arc::new(move |_| { s2.lock().unwrap().push(1); }),
+            migrate: Arc::new(move |_| {
+                s2.lock().unwrap().push(1);
+            }),
         };
         let result = migrate_storage(&backend, None, &[&m1, &m2], None);
-        assert_eq!(result, StorageMigrationOutcomeInner::Ok(StorageMigrationOk { version: 2 }));
+        assert_eq!(
+            result,
+            StorageMigrationOutcomeInner::Ok(StorageMigrationOk { version: 2 })
+        );
         assert_eq!(*seen.lock().unwrap(), vec![1, 2]);
     }
 
     #[test]
     fn remove_namespaced_storage_item_removes_prefixed_key() {
         let backend = memory_backend_with(vec![("ns.a", "1")]);
-        let ns = StorageNamespace { prefix: "ns".to_string() };
+        let ns = StorageNamespace {
+            prefix: "ns".to_string(),
+        };
         let result = remove_namespaced_storage_item(&backend, &ns, "a", None);
         assert!(result.is_ok());
-        assert_eq!(get_storage_item(&backend, "ns.a"), StorageValueOutcome::Ok(StorageValueOk { value: None }));
+        assert_eq!(
+            get_storage_item(&backend, "ns.a"),
+            StorageValueOutcome::Ok(StorageValueOk { value: None })
+        );
     }
 
     #[test]
@@ -520,20 +612,35 @@ mod sugar_tests {
     fn remove_storage_items_removes_multiple_keys() {
         let backend = memory_backend_with(vec![("a", "1"), ("b", "2"), ("c", "3")]);
         let result = remove_storage_items(&backend, &["a", "b"], None);
-        assert_eq!(result, StorageBatchMutationOutcome::Ok(StorageBatchMutationOk { completed: 2 }));
-        assert_eq!(get_storage_item(&backend, "a"), StorageValueOutcome::Ok(StorageValueOk { value: None }));
-        assert_eq!(get_storage_item(&backend, "c"), StorageValueOutcome::Ok(StorageValueOk { value: Some("3".to_string()) }));
+        assert_eq!(
+            result,
+            StorageBatchMutationOutcome::Ok(StorageBatchMutationOk { completed: 2 })
+        );
+        assert_eq!(
+            get_storage_item(&backend, "a"),
+            StorageValueOutcome::Ok(StorageValueOk { value: None })
+        );
+        assert_eq!(
+            get_storage_item(&backend, "c"),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: Some("3".to_string())
+            })
+        );
     }
 
     #[test]
     fn set_namespaced_storage_item_writes_prefixed_key() {
         let backend = memory_backend();
-        let ns = StorageNamespace { prefix: "app".to_string() };
+        let ns = StorageNamespace {
+            prefix: "app".to_string(),
+        };
         let result = set_namespaced_storage_item(&backend, &ns, "key", "value", None);
         assert!(result.is_ok());
         assert_eq!(
             get_storage_item(&backend, "app.key"),
-            StorageValueOutcome::Ok(StorageValueOk { value: Some("value".to_string()) }),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: Some("value".to_string())
+            }),
         );
     }
 
@@ -543,7 +650,9 @@ mod sugar_tests {
         set_storage_boolean(&backend, "flag", true, None);
         assert_eq!(
             get_storage_item(&backend, "flag"),
-            StorageValueOutcome::Ok(StorageValueOk { value: Some("true".to_string()) }),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: Some("true".to_string())
+            }),
         );
     }
 
@@ -554,7 +663,9 @@ mod sugar_tests {
         assert!(result.is_ok());
         assert_eq!(
             get_storage_item(&backend, "key"),
-            StorageValueOutcome::Ok(StorageValueOk { value: Some("value".to_string()) }),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: Some("value".to_string())
+            }),
         );
     }
 
@@ -562,7 +673,10 @@ mod sugar_tests {
     fn set_storage_items_writes_all_pairs() {
         let backend = memory_backend();
         let result = set_storage_items(&backend, &[("a", "1"), ("b", "2")], None);
-        assert_eq!(result, StorageBatchMutationOutcome::Ok(StorageBatchMutationOk { completed: 2 }));
+        assert_eq!(
+            result,
+            StorageBatchMutationOutcome::Ok(StorageBatchMutationOk { completed: 2 })
+        );
     }
 
     #[test]
@@ -573,7 +687,9 @@ mod sugar_tests {
         let stored = get_storage_item(&backend, "obj");
         assert_eq!(
             stored,
-            StorageValueOutcome::Ok(StorageValueOk { value: Some(r#"{"x":1}"#.to_string()) }),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: Some(r#"{"x":1}"#.to_string())
+            }),
         );
     }
 
@@ -584,7 +700,9 @@ mod sugar_tests {
         assert!(result.is_ok());
         assert_eq!(
             get_storage_item(&backend, "num"),
-            StorageValueOutcome::Ok(StorageValueOk { value: Some("2.5".to_string()) }),
+            StorageValueOutcome::Ok(StorageValueOk {
+                value: Some("2.5".to_string())
+            }),
         );
     }
 
@@ -611,9 +729,9 @@ mod sugar_tests {
     #[test]
     fn get_storage_persistence_delegates_to_backend() {
         use flight_permissions::HostPreferencesPersistenceQueryCapability;
+        use flight_permissions::PermissionState;
         use flight_permissions::StoragePersistenceOutcome;
         use flight_permissions::StoragePersistenceOutcomeReason;
-        use flight_permissions::PermissionState;
         use std::pin::Pin;
         let cap = HostPreferencesPersistenceQueryCapability {
             get_persistence: Arc::new(move || {
@@ -634,9 +752,9 @@ mod sugar_tests {
     #[test]
     fn request_storage_persistence_delegates_to_backend() {
         use flight_permissions::HostPreferencesPersistenceRequestCapability;
+        use flight_permissions::PermissionState;
         use flight_permissions::StoragePersistenceOutcome;
         use flight_permissions::StoragePersistenceOutcomeReason;
-        use flight_permissions::PermissionState;
         use std::pin::Pin;
         let cap = HostPreferencesPersistenceRequestCapability {
             request_persistence: Arc::new(move || {

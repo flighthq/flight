@@ -27,7 +27,7 @@ mod upload_gl_texture_data {
 }
 mod upload_gl_texture_element {
     use crate::gl_test_helper::{last_call, make_gl};
-    use flight_render_gl::{upload_gl_texture_element, GlImageSourceToken};
+    use flight_render_gl::{GlImageSourceToken, upload_gl_texture_element};
     use std::sync::Arc;
 
     #[test]
@@ -66,13 +66,10 @@ mod upload_gl_texture_image_resource {
     fn takes_the_native_element_path_when_the_resource_carries_a_source() {
         let gl = make_gl();
         let image = make_image_resource(2, 2, true);
-        assert!(upload_gl_texture_image_resource(
-            &gl,
-            glow::TEXTURE_2D,
-            &image.read().unwrap(),
-            None
-        )
-        .is_ok());
+        assert!(
+            upload_gl_texture_image_resource(&gl, glow::TEXTURE_2D, &image.read().unwrap(), None)
+                .is_ok()
+        );
         let call = last_call("tex_image_2d");
         assert_eq!(
             call.integers,

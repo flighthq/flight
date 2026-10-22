@@ -3,8 +3,8 @@
 //! pass reborrows the enclosing one and brackets close innermost first by construction; the pass
 //! data lives on the state's pass stack.
 
-use flight_render::RenderTargetClear;
 use flight_entity::EntityRuntimeSlot;
+use flight_render::RenderTargetClear;
 
 use crate::types::*;
 use crate::wgpu_command_observer::{

@@ -78,7 +78,13 @@ pub fn apply_color_lut_pass_to_wgpu(
 
     let mut pass = (fs.begin_pass)(state, Some(dest), wgpu::LoadOp::Load);
     set_wgpu_effect_pass_pipeline(&native, &mut pass, &pipeline.read().unwrap().pipeline);
-    set_wgpu_effect_pass_bind_group(&native, &mut pass, 0, &fs.uniform_bind_group, &[slot_offset]);
+    set_wgpu_effect_pass_bind_group(
+        &native,
+        &mut pass,
+        0,
+        &fs.uniform_bind_group,
+        &[slot_offset],
+    );
     set_wgpu_effect_pass_bind_group(&native, &mut pass, 1, &source_bind_group, &[]);
     set_wgpu_effect_pass_bind_group(&native, &mut pass, 2, &lut_bind_group, &[]);
     draw_wgpu_effect_fullscreen_quad(&native, pass);

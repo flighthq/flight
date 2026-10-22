@@ -31,11 +31,13 @@ mod register_wgpu_specular_glossiness_pbr_material {
     fn installs_the_renderer_for_specular_glossiness_pbr_material_kind() {
         let mut test = make_wgpu_scene3d_state(None);
         register_wgpu_specular_glossiness_pbr_material(&mut test.state);
-        assert!(get_wgpu_mesh_material_renderer(&test.state, SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND)
-            .is_some_and(|renderer| std::ptr::eq(
-                renderer,
-                &WGPU_SPECULAR_GLOSSINESS_PBR_MESH_MATERIAL_RENDERER
-            )));
+        assert!(
+            get_wgpu_mesh_material_renderer(&test.state, SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND)
+                .is_some_and(|renderer| std::ptr::eq(
+                    renderer,
+                    &WGPU_SPECULAR_GLOSSINESS_PBR_MESH_MATERIAL_RENDERER
+                ))
+        );
     }
 }
 

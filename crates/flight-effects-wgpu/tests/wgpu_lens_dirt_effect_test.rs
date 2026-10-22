@@ -40,7 +40,12 @@ mod apply_lens_dirt_effect_to_wgpu {
         let source_view = source.read().unwrap().view.clone();
         assert_eq!(
             recorded_pass_views(&records),
-            vec![bright.clone(), temp.clone(), blurred, dest.read().unwrap().view.clone()]
+            vec![
+                bright.clone(),
+                temp.clone(),
+                blurred,
+                dest.read().unwrap().view.clone()
+            ]
         );
         assert_eq!(
             recorded_draw_sources(&records),
@@ -106,7 +111,10 @@ mod wgpu_lens_dirt_effect_runner {
             recorded_pass_views(&records).last(),
             Some(&dest.read().unwrap().view.clone())
         );
-        assert_eq!(recorded_draw_sources(&records)[0], source.read().unwrap().view.clone());
+        assert_eq!(
+            recorded_draw_sources(&records)[0],
+            source.read().unwrap().view.clone()
+        );
         assert_eq!(pool.free.len(), 3);
     }
 }

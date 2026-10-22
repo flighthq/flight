@@ -123,7 +123,9 @@ pub enum NotificationSubscriptionDisposeReason {
 
 #[derive(Clone)]
 pub struct HostNotificationActionCapability {
-    pub attach: Arc<dyn Fn(NotificationActionListener) -> NotificationEventBackendAttachFuture + Send + Sync>,
+    pub attach: Arc<
+        dyn Fn(NotificationActionListener) -> NotificationEventBackendAttachFuture + Send + Sync,
+    >,
     pub provider: ProviderRef,
 }
 
@@ -150,7 +152,9 @@ pub struct HostNotificationCapabilities {
 
 #[derive(Clone)]
 pub struct HostNotificationClickCapability {
-    pub attach: Arc<dyn Fn(NotificationClickListener) -> NotificationEventBackendAttachFuture + Send + Sync>,
+    pub attach: Arc<
+        dyn Fn(NotificationClickListener) -> NotificationEventBackendAttachFuture + Send + Sync,
+    >,
     pub provider: ProviderRef,
 }
 
@@ -168,7 +172,9 @@ pub struct HostNotificationDeliveryCapability {
 
 #[derive(Clone)]
 pub struct HostNotificationDismissCapability {
-    pub attach: Arc<dyn Fn(NotificationDismissListener) -> NotificationEventBackendAttachFuture + Send + Sync>,
+    pub attach: Arc<
+        dyn Fn(NotificationDismissListener) -> NotificationEventBackendAttachFuture + Send + Sync,
+    >,
     pub provider: ProviderRef,
 }
 
@@ -187,21 +193,30 @@ pub struct HostNotificationPermissionCapability {
 
 #[derive(Clone)]
 pub struct HostNotificationReceivedCapability {
-    pub attach: Arc<dyn Fn(NotificationReceivedListener) -> NotificationEventBackendAttachFuture + Send + Sync>,
+    pub attach: Arc<
+        dyn Fn(NotificationReceivedListener) -> NotificationEventBackendAttachFuture + Send + Sync,
+    >,
     pub provider: ProviderRef,
 }
 
 #[derive(Clone)]
 pub struct HostNotificationReplyCapability {
-    pub attach: Arc<dyn Fn(NotificationReplyListener) -> NotificationEventBackendAttachFuture + Send + Sync>,
+    pub attach: Arc<
+        dyn Fn(NotificationReplyListener) -> NotificationEventBackendAttachFuture + Send + Sync,
+    >,
     pub provider: ProviderRef,
 }
 
 #[derive(Clone)]
 pub struct HostNotificationSchedulingCapability {
-    pub cancel_all_scheduled_notifications: Arc<dyn Fn() -> NotificationLifecycleFuture + Send + Sync>,
+    pub cancel_all_scheduled_notifications:
+        Arc<dyn Fn() -> NotificationLifecycleFuture + Send + Sync>,
     pub get_pending_notifications: Arc<dyn Fn() -> NotificationPendingListFuture + Send + Sync>,
-    pub schedule_notification: Arc<dyn Fn(&NotificationRequest, &NotificationSchedule) -> NotificationScheduleFuture + Send + Sync>,
+    pub schedule_notification: Arc<
+        dyn Fn(&NotificationRequest, &NotificationSchedule) -> NotificationScheduleFuture
+            + Send
+            + Sync,
+    >,
     pub provider: ProviderRef,
 }
 
@@ -210,7 +225,8 @@ pub struct Notification {
     pub id: String,
     pub tag: String,
     pub title: String,
-    pub(crate) close_callback: Mutex<Option<Arc<dyn Fn() -> NotificationCloseFuture + Send + Sync>>>,
+    pub(crate) close_callback:
+        Mutex<Option<Arc<dyn Fn() -> NotificationCloseFuture + Send + Sync>>>,
     pub(crate) closed: AtomicBool,
 }
 
@@ -397,32 +413,45 @@ pub struct ScheduledNotification {
     pub id: String,
     pub request: NotificationRequest,
     pub schedule: NotificationSchedule,
-    pub(crate) cancel_callback: Mutex<Option<Arc<dyn Fn() -> NotificationCancelFuture + Send + Sync>>>,
+    pub(crate) cancel_callback:
+        Mutex<Option<Arc<dyn Fn() -> NotificationCancelFuture + Send + Sync>>>,
     pub(crate) cancelled: AtomicBool,
 }
 
 // ── Type aliases ──
 
 pub type NotificationActionListener = Arc<dyn Fn(&Notification, &str) + Send + Sync>;
-pub type NotificationActiveListFuture = Pin<Box<dyn Future<Output = NotificationActiveListOutcome> + Send>>;
+pub type NotificationActiveListFuture =
+    Pin<Box<dyn Future<Output = NotificationActiveListOutcome> + Send>>;
 pub type NotificationCancelFuture = Pin<Box<dyn Future<Output = NotificationCancelOutcome> + Send>>;
 pub type NotificationClickListener = Arc<dyn Fn(&Notification) + Send + Sync>;
 pub type NotificationCloseFuture = Pin<Box<dyn Future<Output = NotificationCloseOutcome> + Send>>;
-pub type NotificationDeliveryFuture = Pin<Box<dyn Future<Output = NotificationDeliveryOutcome> + Send>>;
+pub type NotificationDeliveryFuture =
+    Pin<Box<dyn Future<Output = NotificationDeliveryOutcome> + Send>>;
 pub type NotificationDismissListener = Arc<dyn Fn(&Notification) + Send + Sync>;
-pub type NotificationEventBackendAttachFuture = Pin<Box<dyn Future<Output = NotificationEventBackendAttachOutcome> + Send>>;
+pub type NotificationEventBackendAttachFuture =
+    Pin<Box<dyn Future<Output = NotificationEventBackendAttachOutcome> + Send>>;
 pub type NotificationEventBackendAttachOutcome = NotificationEventBackendAttachResult;
-pub type NotificationEventReleaseFuture = Pin<Box<dyn Future<Output = NotificationEventReleaseOutcome> + Send>>;
-pub type NotificationLifecycleFuture = Pin<Box<dyn Future<Output = NotificationLifecycleOutcome> + Send>>;
-pub type NotificationPendingListFuture = Pin<Box<dyn Future<Output = NotificationPendingListOutcome> + Send>>;
-pub type NotificationPermissionQueryFuture = Pin<Box<dyn Future<Output = NotificationPermissionQueryOutcome> + Send>>;
-pub type NotificationPermissionRequestFuture = Pin<Box<dyn Future<Output = NotificationPermissionRequestOutcome> + Send>>;
+pub type NotificationEventReleaseFuture =
+    Pin<Box<dyn Future<Output = NotificationEventReleaseOutcome> + Send>>;
+pub type NotificationLifecycleFuture =
+    Pin<Box<dyn Future<Output = NotificationLifecycleOutcome> + Send>>;
+pub type NotificationPendingListFuture =
+    Pin<Box<dyn Future<Output = NotificationPendingListOutcome> + Send>>;
+pub type NotificationPermissionQueryFuture =
+    Pin<Box<dyn Future<Output = NotificationPermissionQueryOutcome> + Send>>;
+pub type NotificationPermissionRequestFuture =
+    Pin<Box<dyn Future<Output = NotificationPermissionRequestOutcome> + Send>>;
 pub type NotificationReceivedListener = Arc<dyn Fn(&Notification) + Send + Sync>;
 pub type NotificationReplyListener = Arc<dyn Fn(&Notification, &str, &str) + Send + Sync>;
-pub type NotificationScheduleFuture = Pin<Box<dyn Future<Output = NotificationScheduleOutcome> + Send>>;
-pub type NotificationSubscriptionAttachFuture = Pin<Box<dyn Future<Output = NotificationSubscriptionAttachOutcome> + Send>>;
-pub type NotificationSubscriptionDetachFuture = Pin<Box<dyn Future<Output = NotificationSubscriptionDetachOutcome> + Send>>;
-pub type NotificationSubscriptionDisposeFuture = Pin<Box<dyn Future<Output = NotificationSubscriptionDisposeOutcome> + Send>>;
+pub type NotificationScheduleFuture =
+    Pin<Box<dyn Future<Output = NotificationScheduleOutcome> + Send>>;
+pub type NotificationSubscriptionAttachFuture =
+    Pin<Box<dyn Future<Output = NotificationSubscriptionAttachOutcome> + Send>>;
+pub type NotificationSubscriptionDetachFuture =
+    Pin<Box<dyn Future<Output = NotificationSubscriptionDetachOutcome> + Send>>;
+pub type NotificationSubscriptionDisposeFuture =
+    Pin<Box<dyn Future<Output = NotificationSubscriptionDisposeOutcome> + Send>>;
 
 // ── Impl blocks ──
 
@@ -462,7 +491,8 @@ impl Clone for Notification {
 
 impl std::fmt::Debug for Notification {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        return f.debug_struct("Notification")
+        return f
+            .debug_struct("Notification")
             .field("id", &self.id)
             .field("tag", &self.tag)
             .field("title", &self.title)
@@ -593,7 +623,8 @@ impl Clone for ScheduledNotification {
 
 impl std::fmt::Debug for ScheduledNotification {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        return f.debug_struct("ScheduledNotification")
+        return f
+            .debug_struct("ScheduledNotification")
             .field("id", &self.id)
             .field("request", &self.request)
             .field("schedule", &self.schedule)

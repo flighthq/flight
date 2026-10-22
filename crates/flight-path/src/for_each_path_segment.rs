@@ -60,7 +60,12 @@ pub fn for_each_path_segment(path: &Path, visitor: &mut dyn FnMut(PathSegment)) 
             let x = data[di + 2];
             let y = data[di + 3];
             di += 4;
-            visitor(PathSegment::QuadraticCurveTo { control_x, control_y, x, y });
+            visitor(PathSegment::QuadraticCurveTo {
+                control_x,
+                control_y,
+                x,
+                y,
+            });
         } else if command == PathCommand::CubicCurveTo as u8 {
             let control_x1 = data[di];
             let control_y1 = data[di + 1];
@@ -69,7 +74,14 @@ pub fn for_each_path_segment(path: &Path, visitor: &mut dyn FnMut(PathSegment)) 
             let x = data[di + 4];
             let y = data[di + 5];
             di += 6;
-            visitor(PathSegment::CubicCurveTo { control_x1, control_y1, control_x2, control_y2, x, y });
+            visitor(PathSegment::CubicCurveTo {
+                control_x1,
+                control_y1,
+                control_x2,
+                control_y2,
+                x,
+                y,
+            });
         } else if command == PathCommand::Close as u8 {
             visitor(PathSegment::Close);
         }

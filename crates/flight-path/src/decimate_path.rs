@@ -1,5 +1,5 @@
-use crate::path::{Path, PathCommand};
 use crate::flatten_path::flatten_path;
+use crate::path::{Path, PathCommand};
 
 #[cfg(test)]
 mod sugar_tests {
@@ -30,7 +30,12 @@ mod sugar_tests {
 /// Decimates `source` by flattening curves and applying Douglas-Peucker point reduction.
 /// Removes points that deviate less than `tolerance` from the decimated line.
 /// Alias-safe: `out` may be the same object as `source`.
-pub fn decimate_path(source: &Path, tolerance: f64, out: &mut Path, flatten_tolerance: Option<f64>) {
+pub fn decimate_path(
+    source: &Path,
+    tolerance: f64,
+    out: &mut Path,
+    flatten_tolerance: Option<f64>,
+) {
     let flatten_tolerance = flatten_tolerance.unwrap_or(0.25);
     let mut contours = Vec::new();
     flatten_path(&mut contours, source, Some(flatten_tolerance));
@@ -74,13 +79,7 @@ pub fn decimate_path(source: &Path, tolerance: f64, out: &mut Path, flatten_tole
 }
 
 // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
-fn douglas_peucker(
-    pts: &[f64],
-    first: usize,
-    last: usize,
-    tolerance_sq: f64,
-    keep: &mut Vec<u8>,
-) {
+fn douglas_peucker(pts: &[f64], first: usize, last: usize, tolerance_sq: f64, keep: &mut Vec<u8>) {
     if last - first < 2 {
         return;
     }

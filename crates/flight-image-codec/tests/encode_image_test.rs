@@ -5,11 +5,19 @@ use flight_image_codec::*;
 use crate::block_on;
 
 fn caps_png(slot: HostImageEncodeFormatCapability) -> HostImageEncodeCapabilities {
-    return HostImageEncodeCapabilities { jpeg: None, png: Some(slot), webp: None };
+    return HostImageEncodeCapabilities {
+        jpeg: None,
+        png: Some(slot),
+        webp: None,
+    };
 }
 
 fn caps_jpeg(slot: HostImageEncodeFormatCapability) -> HostImageEncodeCapabilities {
-    return HostImageEncodeCapabilities { jpeg: Some(slot), png: None, webp: None };
+    return HostImageEncodeCapabilities {
+        jpeg: Some(slot),
+        png: None,
+        webp: None,
+    };
 }
 
 fn fake_image() -> DecodedImage {
@@ -29,11 +37,13 @@ fn fake_slot(result: Box<[u8]>) -> (HostImageEncodeFormatCapability, Arc<Mutex<V
     let calls: Arc<Mutex<Vec<EncodeCall>>> = Arc::new(Mutex::new(Vec::new()));
     let captured = calls.clone();
     let slot = HostImageEncodeFormatCapability {
-        encode: Arc::new(move |image: DecodedImage, options: Option<ImageEncodeOptions>| {
-            captured.lock().unwrap().push(EncodeCall { image, options });
-            let bytes = result.clone();
-            return Box::pin(async move { bytes });
-        }),
+        encode: Arc::new(
+            move |image: DecodedImage, options: Option<ImageEncodeOptions>| {
+                captured.lock().unwrap().push(EncodeCall { image, options });
+                let bytes = result.clone();
+                return Box::pin(async move { bytes });
+            },
+        ),
     };
     return (slot, calls);
 }
@@ -74,7 +84,11 @@ mod encode_image {
     fn returns_none_when_no_slot_is_present_for_the_mime_type() {
         assert_eq!(
             block_on(encode_image(
-                &HostImageEncodeCapabilities { jpeg: None, png: None, webp: None },
+                &HostImageEncodeCapabilities {
+                    jpeg: None,
+                    png: None,
+                    webp: None
+                },
                 &fake_image(),
                 "image/png",
                 None

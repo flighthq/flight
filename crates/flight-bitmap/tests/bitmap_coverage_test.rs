@@ -5,12 +5,18 @@ mod get_bitmap_coverage {
 
     #[test]
     fn returns_0_for_a_bitmap_entirely_the_background_color() {
-        assert_eq!(get_bitmap_coverage(&create_bitmap(4, 4, Some(0x123456ff)), 0x123456ff, 0), 0.0);
+        assert_eq!(
+            get_bitmap_coverage(&create_bitmap(4, 4, Some(0x123456ff)), 0x123456ff, 0),
+            0.0
+        );
     }
 
     #[test]
     fn returns_0_for_a_fully_transparent_bitmap_against_transparent_background() {
-        assert_eq!(get_bitmap_coverage(&create_bitmap(4, 4, None), 0x00000000, 0), 0.0);
+        assert_eq!(
+            get_bitmap_coverage(&create_bitmap(4, 4, None), 0x00000000, 0),
+            0.0
+        );
     }
 
     #[test]
@@ -41,6 +47,9 @@ mod get_bitmap_coverage {
 
     #[test]
     fn returns_0_for_an_empty_bitmap() {
-        assert_eq!(get_bitmap_coverage(&create_bitmap(0, 0, None), 0x000000ff, 0), 0.0);
+        assert_eq!(
+            get_bitmap_coverage(&create_bitmap(0, 0, None), 0x000000ff, 0),
+            0.0
+        );
     }
 }

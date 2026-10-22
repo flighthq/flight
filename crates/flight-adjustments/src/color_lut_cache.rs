@@ -26,7 +26,8 @@ mod sugar_tests {
 
     #[test]
     fn bake_color_lut_for_run_matches_the_free_function() {
-        let run: Vec<Ref<dyn Adjustment>> = vec![Arc::new(RwLock::new(create_invert_adjustment(None)))];
+        let run: Vec<Ref<dyn Adjustment>> =
+            vec![Arc::new(RwLock::new(create_invert_adjustment(None)))];
         let mut a = create_color_lut_cache();
         let mut b = create_color_lut_cache();
         let la = a.bake_color_lut_for_run(&run, Some(4));
@@ -60,7 +61,11 @@ pub fn initialize_color_lut_cache(out: &mut ColorLutCache) {
 /// signature is computed from the current field values at every call (TS `JSON.stringify(run)`), so
 /// mutating an adjustment in place re-bakes. On a hit the cached ColorLut is returned; on a miss the
 /// run's transforms are composed and baked afresh.
-pub fn bake_color_lut_for_run(cache: &mut ColorLutCache, run: &[Ref<dyn Adjustment>], size: Option<u32>) -> ColorLut {
+pub fn bake_color_lut_for_run(
+    cache: &mut ColorLutCache,
+    run: &[Ref<dyn Adjustment>],
+    size: Option<u32>,
+) -> ColorLut {
     let size = size.unwrap_or(COLOR_LUT_DEFAULT_SIZE);
     let signature = color_lut_run_signature(run, size);
     if cache.signature.as_deref() == Some(&signature) && cache.lut.is_some() {
@@ -87,7 +92,10 @@ fn color_lut_run_signature(run: &[Ref<dyn Adjustment>], size: u32) -> String {
         if i > 0 {
             sig.push(',');
         }
-        operation.read().unwrap_or_else(PoisonError::into_inner).write_adjustment_signature(&mut sig);
+        operation
+            .read()
+            .unwrap_or_else(PoisonError::into_inner)
+            .write_adjustment_signature(&mut sig);
     }
     sig.push(']');
     return sig;
@@ -108,7 +116,11 @@ impl ColorLutCache {
         return create_color_lut_cache();
     }
 
-    pub fn bake_color_lut_for_run(&mut self, run: &[Ref<dyn Adjustment>], size: Option<u32>) -> ColorLut {
+    pub fn bake_color_lut_for_run(
+        &mut self,
+        run: &[Ref<dyn Adjustment>],
+        size: Option<u32>,
+    ) -> ColorLut {
         return bake_color_lut_for_run(self, run, size);
     }
 }

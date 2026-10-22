@@ -29,7 +29,9 @@ mod append_particle_emitter_3d_particle {
     fn auto_grows_capacity() {
         let emitter = create_particle_emitter_3d();
         for i in 0..20 {
-            append_particle_emitter_3d_particle(&emitter, i, i as f32, i as f32, i as f32, 0.0, 1.0);
+            append_particle_emitter_3d_particle(
+                &emitter, i, i as f32, i as f32, i as f32, 0.0, 1.0,
+            );
         }
         assert_eq!(emitter.read().unwrap().data.particle_count, 20);
         assert!(get_particle_emitter_3d_capacity(&emitter) >= 20);
@@ -198,7 +200,8 @@ mod emit_particle_burst_3d {
             looping: Some(false),
             ..create_particle_emitter_config_options()
         }));
-        let spawned = emit_particle_burst_3d(&emitter, &mut state, &config, 5.0, 0.0, 0.0, 0.0, None);
+        let spawned =
+            emit_particle_burst_3d(&emitter, &mut state, &config, 5.0, 0.0, 0.0, 0.0, None);
         assert_eq!(spawned, 5);
         assert_eq!(emitter.read().unwrap().data.particle_count, 5);
     }
@@ -277,7 +280,10 @@ mod get_particle_emitter_3d_particle_velocity {
         append_particle_emitter_3d_particle(&emitter, 1, 0.0, 0.0, 0.0, 0.0, 1.0);
         set_particle_emitter_3d_particle_velocity(&emitter, 0, 3.5, -2.1, 7.7);
         let mut out = [0.0f32; 3];
-        assert_eq!(get_particle_emitter_3d_particle_velocity(&mut out, &emitter, 0), true);
+        assert_eq!(
+            get_particle_emitter_3d_particle_velocity(&mut out, &emitter, 0),
+            true
+        );
         assert!((out[0] - 3.5).abs() < 1e-6);
         assert!((out[1] - (-2.1)).abs() < 1e-6);
         assert!((out[2] - 7.7).abs() < 1e-6);
@@ -287,7 +293,10 @@ mod get_particle_emitter_3d_particle_velocity {
     fn returns_false_for_out_of_range() {
         let emitter = create_particle_emitter_3d();
         let mut out = [0.0f32; 3];
-        assert_eq!(get_particle_emitter_3d_particle_velocity(&mut out, &emitter, 0), false);
+        assert_eq!(
+            get_particle_emitter_3d_particle_velocity(&mut out, &emitter, 0),
+            false
+        );
     }
 }
 
@@ -504,7 +513,10 @@ mod sort_particle_emitter_3d_indices_by_view_depth {
         let mut depths = vec![0.0f64; 4];
         let mat = create_matrix4();
         let result = sort_particle_emitter_3d_indices_by_view_depth(
-            &mut indices, &mut depths, &emitter, &mat.m,
+            &mut indices,
+            &mut depths,
+            &emitter,
+            &mat.m,
         );
         assert_eq!(result, true);
         assert_eq!(indices, vec![1, 2, 3, 0]);
@@ -523,7 +535,10 @@ mod sort_particle_emitter_3d_indices_by_view_depth {
         let mut indices = vec![0u32; 2];
         let mut depths = vec![0.0f64; 2];
         sort_particle_emitter_3d_indices_by_view_depth(
-            &mut indices, &mut depths, &emitter, &position_to_view.m,
+            &mut indices,
+            &mut depths,
+            &emitter,
+            &position_to_view.m,
         );
         assert_eq!(indices, vec![1, 0]);
     }
@@ -537,7 +552,10 @@ mod sort_particle_emitter_3d_indices_by_view_depth {
         let mut depths = vec![88.0f64, 77.0];
         let mat = create_matrix4();
         let result = sort_particle_emitter_3d_indices_by_view_depth(
-            &mut indices, &mut depths, &emitter, &mat.m,
+            &mut indices,
+            &mut depths,
+            &emitter,
+            &mat.m,
         );
         assert_eq!(result, false);
         assert_eq!(indices, vec![99]);
@@ -553,7 +571,10 @@ mod sort_particle_emitter_3d_indices_by_view_depth {
         let mut depths = vec![88.0f64; 1];
         let mat = create_matrix4();
         let result = sort_particle_emitter_3d_indices_by_view_depth(
-            &mut indices, &mut depths, &emitter, &mat.m,
+            &mut indices,
+            &mut depths,
+            &emitter,
+            &mat.m,
         );
         assert_eq!(result, false);
         assert_eq!(indices, vec![99]);

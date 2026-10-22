@@ -2,9 +2,9 @@ use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, RwLock};
 
 use flight_entity::Ref;
-use flight_path::contract::{append_path_rectangle, create_path, Path};
+use flight_path::contract::{Path, append_path_rectangle, create_path};
 use flight_scene2d_formats::contract::*;
-use flight_shape::contract::{create_shape, ShapeCommandToken};
+use flight_shape::contract::{ShapeCommandToken, create_shape};
 use serde_json::json;
 
 mod lottie_fill_shape_item_handler {

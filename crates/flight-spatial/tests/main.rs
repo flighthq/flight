@@ -5,7 +5,9 @@ struct SpatialGuardTestScope {
 }
 
 fn lock_spatial_guard_tests() -> SpatialGuardTestScope {
-    let lock = SPATIAL_GUARD_TEST_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let lock = SPATIAL_GUARD_TEST_LOCK
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     flight_spatial::set_spatial_indexing_guard(None);
     return SpatialGuardTestScope { _lock: lock };
 }
@@ -18,10 +20,14 @@ impl Drop for SpatialGuardTestScope {
 
 // Other tests may index objects while the shared diagnostic is installed. Capture only
 // this test's operations so a worker thread cannot inherit another test's notices.
-fn spatial_guard_for_current_test(callback: fn(&flight_spatial::SpatialIndexingNotice)) -> flight_spatial::SpatialIndexingGuard {
+fn spatial_guard_for_current_test(
+    callback: fn(&flight_spatial::SpatialIndexingNotice),
+) -> flight_spatial::SpatialIndexingGuard {
     let owner = std::thread::current().id();
     return std::sync::Arc::new(move |notice| {
-        if std::thread::current().id() == owner { callback(notice); }
+        if std::thread::current().id() == owner {
+            callback(notice);
+        }
     });
 }
 

@@ -1,9 +1,9 @@
-use std::rc::Rc;
 use flight_geometry::create_matrix4;
 use flight_lighting::{SCENE_LIGHT_BLOCK_FLOATS, Scene3DLightBlock};
 use flight_render_gl::GlRenderState;
 use flight_scene3d_gl::contract::*;
 use glow::HasContext;
+use std::rc::Rc;
 
 use crate::gl_test_helper::{calls_with, clear_calls, make_gl_scene3d_state, uniform_location_of};
 
@@ -112,7 +112,8 @@ mod bind_gl_mesh_light_block {
     }
 
     #[test]
-    fn uploads_the_directional_ambient_count_shadow_gate_and_ibl_gate_uniforms_from_the_packed_block() {
+    fn uploads_the_directional_ambient_count_shadow_gate_and_ibl_gate_uniforms_from_the_packed_block()
+     {
         let state = make_gl_scene3d_state();
         let mut lights = make_block(1, 1, 0, 0, 0, 1);
         lights.data[0] = 0.0;
@@ -258,10 +259,16 @@ mod gl_mesh_light_block_glsl {
 
     #[test]
     fn uses_a_bounded_runtime_pcf_radius_and_configurable_receiver_biases() {
-        assert!(GL_MESH_LIGHT_BLOCK_GLSL.contains("sampleDirectionalShadow(vec3 worldPos, vec3 geometricNormal)"));
+        assert!(
+            GL_MESH_LIGHT_BLOCK_GLSL
+                .contains("sampleDirectionalShadow(vec3 worldPos, vec3 geometricNormal)")
+        );
         assert!(GL_MESH_LIGHT_BLOCK_GLSL.contains("geometricNormal * u_shadowNormalBiasWorld"));
         assert!(GL_MESH_LIGHT_BLOCK_GLSL.contains("uvz.z - u_shadowBias"));
-        assert!(GL_MESH_LIGHT_BLOCK_GLSL.contains("if (radius == 0) return compareDirectionalShadow(uvz.xy, current)"));
+        assert!(
+            GL_MESH_LIGHT_BLOCK_GLSL
+                .contains("if (radius == 0) return compareDirectionalShadow(uvz.xy, current)")
+        );
         assert!(GL_MESH_LIGHT_BLOCK_GLSL.contains("if (radius == 1)"));
         assert!(GL_MESH_LIGHT_BLOCK_GLSL.contains("for (int x = -1; x <= 1; ++x)"));
         assert!(GL_MESH_LIGHT_BLOCK_GLSL.contains("for (int x = -2; x <= 2; ++x)"));

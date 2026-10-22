@@ -119,8 +119,7 @@ mod sugar_tests {
     fn node2dref_set_node2d_clip_matches_set_node2d_clip() {
         let clip =
             flight_clip::create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 2.0, 2.0));
-        let (a, b): (Node2DRef, Node2DRef) =
-            (create_display_object(), create_display_object());
+        let (a, b): (Node2DRef, Node2DRef) = (create_display_object(), create_display_object());
         a.set_node2d_clip(Some(clip.clone()));
         set_node2d_clip(&b, Some(clip.clone()));
         let (a, b) = (a.read().unwrap(), b.read().unwrap());
@@ -369,10 +368,7 @@ impl Scale9Sprite {
 }
 
 impl Scale9SpriteData {
-    pub fn initialize_scale9_sprite_data(
-        &mut self,
-        scale9_grid: &flight_geometry::Rectangle,
-    ) {
+    pub fn initialize_scale9_sprite_data(&mut self, scale9_grid: &flight_geometry::Rectangle) {
         initialize_scale9_sprite_data(self, scale9_grid);
     }
 }

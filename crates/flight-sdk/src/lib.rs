@@ -800,8 +800,8 @@ pub mod video {
 
 pub mod webcam {
     // The webcam public lane is empty (TS `@flighthq/webcam` index exports nothing yet).
-#[allow(unused_imports)]
-pub use flight_webcam::*;
+    #[allow(unused_imports)]
+    pub use flight_webcam::*;
 }
 
 pub mod xml {

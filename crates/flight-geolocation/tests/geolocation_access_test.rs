@@ -51,7 +51,9 @@ mod prompt_for_geolocation_access {
         let host = provider_answering(GeolocationAccessOutcome {
             reason: GeolocationAccessReason::Granted,
         });
-        let outcome = block_on(flight_geolocation::prompt_for_geolocation_access(Some(&host)));
+        let outcome = block_on(flight_geolocation::prompt_for_geolocation_access(Some(
+            &host,
+        )));
         assert_eq!(
             outcome,
             GeolocationAccessOutcome {
@@ -70,7 +72,12 @@ mod prompt_for_geolocation_access {
         let mut seen = Vec::new();
         for reason in reasons {
             let host = provider_answering(GeolocationAccessOutcome { reason });
-            seen.push(block_on(flight_geolocation::prompt_for_geolocation_access(Some(&host))).reason);
+            seen.push(
+                block_on(flight_geolocation::prompt_for_geolocation_access(Some(
+                    &host,
+                )))
+                .reason,
+            );
         }
         assert_eq!(seen, reasons);
         assert_eq!(seen[0] == seen[1], false);
@@ -92,7 +99,9 @@ mod prompt_for_geolocation_access {
     #[test]
     fn reports_runtime_unavailable_when_the_provider_has_no_prompt() {
         let host = prompt_capability(None);
-        let outcome = block_on(flight_geolocation::prompt_for_geolocation_access(Some(&host)));
+        let outcome = block_on(flight_geolocation::prompt_for_geolocation_access(Some(
+            &host,
+        )));
         assert_eq!(
             outcome,
             GeolocationAccessOutcome {
@@ -112,7 +121,9 @@ mod prompt_for_geolocation_access {
             });
             return future;
         })));
-        let outcome = block_on(flight_geolocation::prompt_for_geolocation_access(Some(&host)));
+        let outcome = block_on(flight_geolocation::prompt_for_geolocation_access(Some(
+            &host,
+        )));
         assert_eq!(
             outcome,
             GeolocationAccessOutcome {

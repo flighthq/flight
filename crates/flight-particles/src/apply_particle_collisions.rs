@@ -1,6 +1,6 @@
 use crate::{
-    ColliderMode, ParticleCollider, ParticleEmitterState, ParticleObject,
-    ParticleObjectsState, PARTICLE_VELOCITY_STRIDE,
+    ColliderMode, PARTICLE_VELOCITY_STRIDE, ParticleCollider, ParticleEmitterState, ParticleObject,
+    ParticleObjectsState,
 };
 
 // flight-lint: allow(conform-params) D24: TS takes ParticleEmitter2D (flight-particleemitter); Rust decomposes to raw buffers because flight-particles cannot depend on downstream crate
@@ -71,14 +71,7 @@ pub fn apply_particle_object_collisions(
     }
 }
 
-fn reflect3(
-    p: &mut [f32; 6],
-    nx: f32,
-    ny: f32,
-    nz: f32,
-    restitution: f32,
-    friction: f32,
-) {
+fn reflect3(p: &mut [f32; 6], nx: f32, ny: f32, nz: f32, restitution: f32, friction: f32) {
     let vn = p[3] * nx + p[4] * ny + p[5] * nz;
     if vn >= 0.0 {
         return; // already separating
@@ -159,16 +152,8 @@ fn resolve_colliders(colliders: &[ParticleCollider], p: &mut [f32; 6]) -> bool {
                 restitution,
                 friction,
             } => {
-                hit = resolve_rect(
-                    *x,
-                    *y,
-                    *width,
-                    *height,
-                    *mode,
-                    *restitution,
-                    *friction,
-                    p,
-                ) || hit;
+                hit =
+                    resolve_rect(*x, *y, *width, *height, *mode, *restitution, *friction, p) || hit;
             }
             ParticleCollider::SphereCollider {
                 x,
@@ -179,8 +164,7 @@ fn resolve_colliders(colliders: &[ParticleCollider], p: &mut [f32; 6]) -> bool {
                 restitution,
                 friction,
             } => {
-                hit = resolve_sphere(*x, *y, *z, *radius, *mode, *restitution, *friction, p)
-                    || hit;
+                hit = resolve_sphere(*x, *y, *z, *radius, *mode, *restitution, *friction, p) || hit;
             }
         }
     }

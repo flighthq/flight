@@ -1,9 +1,9 @@
 use std::sync::{Arc, Mutex};
 
-use flight_easing::*;
 use flight_easing::contract::get_step_position_string;
 use flight_easing::contract::parse_step_position;
 use flight_easing::contract::set_easing_steps_guard;
+use flight_easing::*;
 
 fn assert_approx(actual: f32, expected: f32) {
     let diff = (actual - expected).abs();
@@ -91,7 +91,10 @@ mod get_step_position_string {
 
     #[test]
     fn returns_the_exact_ts_strings() {
-        assert_eq!(get_step_position_string(StepPosition::JumpStart), "jumpStart");
+        assert_eq!(
+            get_step_position_string(StepPosition::JumpStart),
+            "jumpStart"
+        );
         assert_eq!(get_step_position_string(StepPosition::JumpEnd), "jumpEnd");
         assert_eq!(get_step_position_string(StepPosition::JumpNone), "jumpNone");
         assert_eq!(get_step_position_string(StepPosition::JumpBoth), "jumpBoth");
@@ -103,10 +106,19 @@ mod parse_step_position {
 
     #[test]
     fn parses_the_exact_ts_strings() {
-        assert_eq!(parse_step_position("jumpStart"), Some(StepPosition::JumpStart));
+        assert_eq!(
+            parse_step_position("jumpStart"),
+            Some(StepPosition::JumpStart)
+        );
         assert_eq!(parse_step_position("jumpEnd"), Some(StepPosition::JumpEnd));
-        assert_eq!(parse_step_position("jumpNone"), Some(StepPosition::JumpNone));
-        assert_eq!(parse_step_position("jumpBoth"), Some(StepPosition::JumpBoth));
+        assert_eq!(
+            parse_step_position("jumpNone"),
+            Some(StepPosition::JumpNone)
+        );
+        assert_eq!(
+            parse_step_position("jumpBoth"),
+            Some(StepPosition::JumpBoth)
+        );
     }
 
     #[test]
@@ -129,9 +141,10 @@ mod set_easing_steps_guard {
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         let seen: Arc<Mutex<Vec<(i32, StepPosition)>>> = Arc::new(Mutex::new(Vec::new()));
         let seen_by_guard = seen.clone();
-        let guard: Arc<dyn Fn(i32, StepPosition) + Send + Sync> = Arc::new(move |count, position| {
-            seen_by_guard.lock().unwrap().push((count, position));
-        });
+        let guard: Arc<dyn Fn(i32, StepPosition) + Send + Sync> =
+            Arc::new(move |count, position| {
+                seen_by_guard.lock().unwrap().push((count, position));
+            });
         set_easing_steps_guard(Some(guard));
         let ease = ease_steps(1, Some(StepPosition::JumpNone));
         assert!(ease(0.5).is_nan());
@@ -149,9 +162,10 @@ mod set_easing_steps_guard {
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         let seen: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
         let seen_by_guard = seen.clone();
-        let guard: Arc<dyn Fn(i32, StepPosition) + Send + Sync> = Arc::new(move |count, _position| {
-            seen_by_guard.lock().unwrap().push(count);
-        });
+        let guard: Arc<dyn Fn(i32, StepPosition) + Send + Sync> =
+            Arc::new(move |count, _position| {
+                seen_by_guard.lock().unwrap().push(count);
+            });
         set_easing_steps_guard(Some(guard));
         ease_steps(2, Some(StepPosition::JumpNone))(0.5);
         ease_steps(1, Some(StepPosition::JumpEnd))(0.5);

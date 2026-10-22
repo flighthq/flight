@@ -42,10 +42,7 @@ fn create_test_schemas(seen_resources: &SeenResources) -> FlightDocumentSchemaRe
     let seen2d = seen_resources.clone();
     let seen3d = seen_resources.clone();
     let entries = [
-        create_schema(
-            DISPLAY_OBJECT_KIND,
-            Arc::new(|_| create_display_object()),
-        ),
+        create_schema(DISPLAY_OBJECT_KIND, Arc::new(|_| create_display_object())),
         create_schema(
             TEST_SCENE2D_NODE_KIND,
             Arc::new(move |resources| {

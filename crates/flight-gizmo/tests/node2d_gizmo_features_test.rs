@@ -4,9 +4,8 @@ use flight_gizmo::*;
 use flight_node::contract::{NodeRef, add_node_child};
 use flight_scene2d::contract::{create_display_object, create_scene2d};
 use flight_shape::contract::{
-    append_shape_begin_fill, append_shape_end_fill,
-    append_shape_rectangle, create_shape, create_shape_bounds_state,
-    register_default_shape_bounds_commands,
+    append_shape_begin_fill, append_shape_end_fill, append_shape_rectangle, create_shape,
+    create_shape_bounds_state, register_default_shape_bounds_commands,
 };
 
 mod create_node2d_gizmo_features {
@@ -83,4 +82,3 @@ fn assert_f32_close(actual: f32, expected: f32) {
         "{actual} != {expected} within {bound}"
     );
 }
-

@@ -166,7 +166,13 @@ pub fn apply_gradient_glow_effect_to_wgpu(
 
         let mut pass = (fs.begin_pass)(state, Some(&t0), wgpu::LoadOp::Load);
         set_wgpu_effect_pass_pipeline(&native, &mut pass, &pipeline.read().unwrap().pipeline);
-        set_wgpu_effect_pass_bind_group(&native, &mut pass, 0, &fs.uniform_bind_group, &[slot_offset]);
+        set_wgpu_effect_pass_bind_group(
+            &native,
+            &mut pass,
+            0,
+            &fs.uniform_bind_group,
+            &[slot_offset],
+        );
         set_wgpu_effect_pass_bind_group(&native, &mut pass, 1, &blurred_bind_group, &[]);
         set_wgpu_effect_pass_bind_group(&native, &mut pass, 2, &ramp_bind_group, &[]);
         draw_wgpu_effect_fullscreen_quad(&native, pass);
@@ -218,7 +224,12 @@ fn get_lookup_pipeline(state: &mut WgpuRenderState) -> Ref<WgpuEffectPipeline> {
 /// Registers the default runner under `GradientGlowEffect` (TS
 /// `registerWgpuGradientGlowEffect`).
 pub fn register_wgpu_gradient_glow_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "GradientGlowEffect", wgpu_gradient_glow_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "GradientGlowEffect",
+        wgpu_gradient_glow_effect_runner,
+        None,
+    );
 }
 
 /// The default `GradientGlowEffect` runner (TS `wgpuGradientGlowEffectRunner`).

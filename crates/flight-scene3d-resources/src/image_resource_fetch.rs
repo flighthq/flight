@@ -43,7 +43,10 @@ fn is_absolute_image_resource_uri(uri: &str) -> bool {
         return true;
     }
     let bytes = uri.as_bytes();
-    if bytes.first().is_none_or(|first| !first.is_ascii_alphabetic()) {
+    if bytes
+        .first()
+        .is_none_or(|first| !first.is_ascii_alphabetic())
+    {
         return false;
     }
     for &byte in &bytes[1..] {

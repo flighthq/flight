@@ -16,7 +16,9 @@ use crate::wgpu_effect_pass::draw_wgpu_effect_pass;
 use crate::wgpu_effect_program_cache::get_wgpu_effect_pipeline;
 use crate::wgpu_effect_registry::register_wgpu_effect;
 use crate::wgpu_effect_runner_support::downcast_wgpu_effect;
-use crate::wgpu_effect_texel_scale::{get_wgpu_effect_logical_width, get_wgpu_render_target_texel_scale};
+use crate::wgpu_effect_texel_scale::{
+    get_wgpu_effect_logical_width, get_wgpu_render_target_texel_scale,
+};
 
 // Slot layout: [0,1]=texelSize, [2,3]=direction, [4]=radius, [5]=sigma.
 const GAUSSIAN_BLUR_WGSL: &str = r#"

@@ -106,8 +106,13 @@ fn collect_particle_emitter_3d_nodes(node: &NodeRef, out: &mut Vec<NodeRef>) {
 }
 
 fn compile_particle_3d_shader(gl: &glow::Context) -> GlParticle3DShader {
-    let program = create_gl_program(gl, PARTICLE_3D_VS, PARTICLE_3D_FS, Some("ParticleEmitter3D"))
-        .unwrap_or_else(|error| throw_error(&error));
+    let program = create_gl_program(
+        gl,
+        PARTICLE_3D_VS,
+        PARTICLE_3D_FS,
+        Some("ParticleEmitter3D"),
+    )
+    .unwrap_or_else(|error| throw_error(&error));
 
     // Bind the emitter's dedicated VAO before creating buffers. This compile runs lazily inside the
     // first particle draw — mid render_gl_scene3d, with the last mesh's VAO still bound — so the
@@ -115,24 +120,39 @@ fn compile_particle_3d_shader(gl: &glow::Context) -> GlParticle3DShader {
     // would leave it drawing against this 6-index quad buffer on later frames).
     // SAFETY: resource creation and location queries on the owning GL thread.
     unsafe {
-        let vao = gl.create_vertex_array().unwrap_or_else(|error| throw_error(&error));
+        let vao = gl
+            .create_vertex_array()
+            .unwrap_or_else(|error| throw_error(&error));
         gl.bind_vertex_array(Some(vao));
 
         let corner_data: [f32; 8] = [0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
-        let corner_buffer = gl.create_buffer().unwrap_or_else(|error| throw_error(&error));
+        let corner_buffer = gl
+            .create_buffer()
+            .unwrap_or_else(|error| throw_error(&error));
         gl.bind_buffer(glow::ARRAY_BUFFER, Some(corner_buffer));
-        gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, f32_bytes(&corner_data), glow::STATIC_DRAW);
-
-        let index_data: [u16; 6] = [0, 1, 2, 0, 2, 3];
-        let index_buffer = gl.create_buffer().unwrap_or_else(|error| throw_error(&error));
-        gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(index_buffer));
         gl.buffer_data_u8_slice(
-            glow::ELEMENT_ARRAY_BUFFER,
-            std::slice::from_raw_parts(index_data.as_ptr().cast::<u8>(), std::mem::size_of_val(&index_data)),
+            glow::ARRAY_BUFFER,
+            f32_bytes(&corner_data),
             glow::STATIC_DRAW,
         );
 
-        let instance_buffer = gl.create_buffer().unwrap_or_else(|error| throw_error(&error));
+        let index_data: [u16; 6] = [0, 1, 2, 0, 2, 3];
+        let index_buffer = gl
+            .create_buffer()
+            .unwrap_or_else(|error| throw_error(&error));
+        gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(index_buffer));
+        gl.buffer_data_u8_slice(
+            glow::ELEMENT_ARRAY_BUFFER,
+            std::slice::from_raw_parts(
+                index_data.as_ptr().cast::<u8>(),
+                std::mem::size_of_val(&index_data),
+            ),
+            glow::STATIC_DRAW,
+        );
+
+        let instance_buffer = gl
+            .create_buffer()
+            .unwrap_or_else(|error| throw_error(&error));
 
         gl.bind_vertex_array(None);
 
@@ -160,7 +180,10 @@ fn compile_particle_3d_shader(gl: &glow::Context) -> GlParticle3DShader {
 }
 
 pub fn destroy_gl_particle_emitter3d_shader(state: &GlRenderState) {
-    let Some(shader) = get_gl_scene3d_runtime(state).particle_emitter3d_shader.take() else {
+    let Some(shader) = get_gl_scene3d_runtime(state)
+        .particle_emitter3d_shader
+        .take()
+    else {
         return;
     };
     let gl = &state.gl;
@@ -258,9 +281,13 @@ fn draw_particle_emitter_3d_node(
 
     let atlas_guard = atlas.as_ref().map(|atlas| atlas.read().unwrap());
     let atlas_texture = atlas_guard.as_ref().and_then(|atlas| atlas.texture.clone());
-    let atlas_texture_guard = atlas_texture.as_ref().map(|texture| texture.read().unwrap());
+    let atlas_texture_guard = atlas_texture
+        .as_ref()
+        .map(|texture| texture.read().unwrap());
     let resolved_atlas = match atlas_texture_guard.as_deref() {
-        Some(texture) if has_texture_source(texture) => resolve_gl_texture(state, texture, Some(false), None),
+        Some(texture) if has_texture_source(texture) => {
+            resolve_gl_texture(state, texture, Some(false), None)
+        }
         _ => None,
     };
     let has_atlas = resolved_atlas.is_some();
@@ -286,8 +313,13 @@ fn draw_particle_emitter_3d_node(
         return;
     };
     let data = &emitter.data;
-    let (alphas, colors, ids, positions_z, transforms) =
-        (&data.alphas, &data.colors, &data.ids, &data.positions_z, &data.transforms);
+    let (alphas, colors, ids, positions_z, transforms) = (
+        &data.alphas,
+        &data.colors,
+        &data.ids,
+        &data.positions_z,
+        &data.transforms,
+    );
 
     let instance_data = &mut shader.instance_data;
     let mut base = 0;
@@ -301,9 +333,21 @@ fn draw_particle_emitter_3d_node(
         let scale = transforms[tt + 3];
         let lz = positions_z[i];
 
-        let wx = if world_space { lx } else { wm[0] * lx + wm[4] * ly + wm[8] * lz + wm[12] };
-        let wy = if world_space { ly } else { wm[1] * lx + wm[5] * ly + wm[9] * lz + wm[13] };
-        let wz = if world_space { lz } else { wm[2] * lx + wm[6] * ly + wm[10] * lz + wm[14] };
+        let wx = if world_space {
+            lx
+        } else {
+            wm[0] * lx + wm[4] * ly + wm[8] * lz + wm[12]
+        };
+        let wy = if world_space {
+            ly
+        } else {
+            wm[1] * lx + wm[5] * ly + wm[9] * lz + wm[13]
+        };
+        let wz = if world_space {
+            lz
+        } else {
+            wm[2] * lx + wm[6] * ly + wm[10] * lz + wm[14]
+        };
 
         let cos_r = rotation.cos() * scale;
         let sin_r = rotation.sin() * scale;
@@ -359,9 +403,21 @@ fn draw_particle_emitter_3d_node(
         // particle's world extent is its `scale` (folded into cosScale/sinScale above), so the base quad
         // is normalized to a unit square with the larger axis = 1. Using the raw pixel dims here would
         // make a 64px sprite a 64-world-unit quad — screen-covering, with crippling overdraw.
-        let max_dim = if region_w >= region_h { region_w } else { region_h };
-        instance_data[base + 13] = (if rotated && !counterclockwise { -region_w } else { region_w }) / max_dim;
-        instance_data[base + 14] = (if rotated && counterclockwise { -region_h } else { region_h }) / max_dim;
+        let max_dim = if region_w >= region_h {
+            region_w
+        } else {
+            region_h
+        };
+        instance_data[base + 13] = (if rotated && !counterclockwise {
+            -region_w
+        } else {
+            region_w
+        }) / max_dim;
+        instance_data[base + 14] = (if rotated && counterclockwise {
+            -region_h
+        } else {
+            region_h
+        }) / max_dim;
         instance_data[base + 15] = 0.0;
         base += INSTANCE_FLOATS;
         draw_count += 1;
@@ -386,7 +442,10 @@ fn draw_particle_emitter_3d_node(
             f32_bytes(&shader.instance_data[..draw_count * INSTANCE_FLOATS]),
         );
 
-        gl.uniform_1_i32(shader.loc_has_texture.as_ref(), if has_atlas { 1 } else { 0 });
+        gl.uniform_1_i32(
+            shader.loc_has_texture.as_ref(),
+            if has_atlas { 1 } else { 0 },
+        );
         if has_atlas {
             gl.active_texture(glow::TEXTURE0);
             gl.bind_texture(glow::TEXTURE_2D, resolved_atlas);
@@ -405,11 +464,25 @@ fn draw_particle_emitter_3d_node(
         gl.vertex_attrib_divisor(shader.loc_pos, 1);
 
         gl.enable_vertex_attrib_array(shader.loc_cos_scale);
-        gl.vertex_attrib_pointer_f32(shader.loc_cos_scale, 1, glow::FLOAT, false, INSTANCE_STRIDE, 12);
+        gl.vertex_attrib_pointer_f32(
+            shader.loc_cos_scale,
+            1,
+            glow::FLOAT,
+            false,
+            INSTANCE_STRIDE,
+            12,
+        );
         gl.vertex_attrib_divisor(shader.loc_cos_scale, 1);
 
         gl.enable_vertex_attrib_array(shader.loc_sin_scale);
-        gl.vertex_attrib_pointer_f32(shader.loc_sin_scale, 1, glow::FLOAT, false, INSTANCE_STRIDE, 16);
+        gl.vertex_attrib_pointer_f32(
+            shader.loc_sin_scale,
+            1,
+            glow::FLOAT,
+            false,
+            INSTANCE_STRIDE,
+            16,
+        );
         gl.vertex_attrib_divisor(shader.loc_sin_scale, 1);
 
         gl.enable_vertex_attrib_array(shader.loc_color);
@@ -417,7 +490,14 @@ fn draw_particle_emitter_3d_node(
         gl.vertex_attrib_divisor(shader.loc_color, 1);
 
         gl.enable_vertex_attrib_array(shader.loc_uv_rect);
-        gl.vertex_attrib_pointer_f32(shader.loc_uv_rect, 4, glow::FLOAT, false, INSTANCE_STRIDE, 36);
+        gl.vertex_attrib_pointer_f32(
+            shader.loc_uv_rect,
+            4,
+            glow::FLOAT,
+            false,
+            INSTANCE_STRIDE,
+            36,
+        );
         gl.vertex_attrib_divisor(shader.loc_uv_rect, 1);
 
         gl.enable_vertex_attrib_array(shader.loc_size);
@@ -425,7 +505,13 @@ fn draw_particle_emitter_3d_node(
         gl.vertex_attrib_divisor(shader.loc_size, 1);
 
         gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, Some(shader.index_buffer));
-        gl.draw_elements_instanced(glow::TRIANGLES, 6, glow::UNSIGNED_SHORT, 0, draw_count as i32);
+        gl.draw_elements_instanced(
+            glow::TRIANGLES,
+            6,
+            glow::UNSIGNED_SHORT,
+            0,
+            draw_count as i32,
+        );
 
         // Restore the default VAO. The instance divisors set above are recorded in shader.vao, so
         // isolating them here means a following mesh draw never inherits per-instance stepping.
@@ -443,13 +529,20 @@ fn ensure_instance_capacity(shader: &mut GlParticle3DShader, gl: &glow::Context,
     // SAFETY: the instance buffer belongs to this context.
     unsafe {
         gl.bind_buffer(glow::ARRAY_BUFFER, Some(shader.instance_buffer));
-        gl.buffer_data_size(glow::ARRAY_BUFFER, (new_size * 4) as i32, glow::DYNAMIC_DRAW);
+        gl.buffer_data_size(
+            glow::ARRAY_BUFFER,
+            (new_size * 4) as i32,
+            glow::DYNAMIC_DRAW,
+        );
     }
 }
 
 // The state's shader, lent out of its runtime slot for one pass (TS: the module WeakMap entry).
 fn ensure_particle_3d_shader(state: &GlRenderState) -> GlParticle3DShader {
-    if let Some(shader) = get_gl_scene3d_runtime(state).particle_emitter3d_shader.take() {
+    if let Some(shader) = get_gl_scene3d_runtime(state)
+        .particle_emitter3d_shader
+        .take()
+    {
         return shader;
     }
     return compile_particle_3d_shader(&state.gl);
@@ -457,25 +550,34 @@ fn ensure_particle_3d_shader(state: &GlRenderState) -> GlParticle3DShader {
 
 fn f32_bytes(values: &[f32]) -> &[u8] {
     // SAFETY: f32 has no padding and u8 has alignment 1, so the view covers exactly the same bytes.
-    return unsafe { std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), std::mem::size_of_val(values)) };
+    return unsafe {
+        std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), std::mem::size_of_val(values))
+    };
 }
 
 pub fn register_gl_particle_emitter3d_pass(state: &mut GlRenderState) {
     let registries = &mut state.gl_registries;
     let pass: GlScene3DPass = draw_gl_scene3d_particle_emitter3_ds;
     if let Some(passes) = &registries.passes {
-        if passes.iter().any(|existing| std::ptr::fn_addr_eq(*existing, pass)) {
+        if passes
+            .iter()
+            .any(|existing| std::ptr::fn_addr_eq(*existing, pass))
+        {
             return;
         }
     }
-    let mut next = registries.passes.as_ref().map_or_else(Vec::new, |passes| passes.to_vec());
+    let mut next = registries
+        .passes
+        .as_ref()
+        .map_or_else(Vec::new, |passes| passes.to_vec());
     next.push(pass);
     registries.passes = Some(Arc::new(next));
 }
 
 macro_rules! particle_3d_vs_glsl {
     () => {
-        concat!(r#"#version 300 es
+        concat!(
+            r#"#version 300 es
 precision highp float;
 
 in vec2 a_corner;
@@ -509,7 +611,8 @@ void main() {
       ? vec2(mix(a_uvRect.x, a_uvRect.z, a_corner.y), mix(a_uvRect.w, a_uvRect.y, a_corner.x))
       : mix(a_uvRect.xy, a_uvRect.zw, a_corner);
   v_color = a_color;
-}"#)
+}"#
+        )
     };
 }
 

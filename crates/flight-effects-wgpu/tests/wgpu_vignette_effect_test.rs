@@ -8,7 +8,8 @@ mod apply_vignette_effect_to_wgpu {
     use super::*;
 
     #[test]
-    fn draws_the_descriptor_into_dest_with_its_intensity_radius_softness_and_the_unpacked_rgba_color() {
+    fn draws_the_descriptor_into_dest_with_its_intensity_radius_softness_and_the_unpacked_rgba_color()
+     {
         let mut state = create_wgpu_render_state_for_test(None);
         let source = create_test_target(&state, 32, 16);
         let dest = create_test_target(&state, 32, 16);
@@ -28,7 +29,10 @@ mod apply_vignette_effect_to_wgpu {
             );
         });
 
-        assert_eq!(recorded_pass_views(&records), vec![dest.read().unwrap().view.clone()]);
+        assert_eq!(
+            recorded_pass_views(&records),
+            vec![dest.read().unwrap().view.clone()]
+        );
         let uniforms = recorded_effect_uniforms(&records);
         assert_eq!(uniforms[0][4], 1.0);
         assert_eq!(uniforms[0][5], 0.0);
@@ -63,7 +67,9 @@ mod apply_vignette_effect_to_wgpu {
         let pipelines = recorded_pipelines(&records);
         assert_eq!(pipelines.len(), 1);
         assert_eq!(
-            pipelines[0].targets[0].as_ref().and_then(|target| target.blend),
+            pipelines[0].targets[0]
+                .as_ref()
+                .and_then(|target| target.blend),
             Some(wgpu::BlendState::REPLACE)
         );
     }
@@ -109,7 +115,10 @@ mod wgpu_vignette_effect_runner {
             wgpu_vignette_effect_runner(&mut context, &*effect.read().unwrap());
         });
 
-        assert_eq!(recorded_pass_views(&records), vec![dest.read().unwrap().view.clone()]);
+        assert_eq!(
+            recorded_pass_views(&records),
+            vec![dest.read().unwrap().view.clone()]
+        );
         assert_eq!(recorded_effect_uniforms(&records).len(), 1);
     }
 }

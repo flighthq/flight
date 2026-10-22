@@ -4,11 +4,11 @@ use std::sync::{Arc, RwLock};
 use flight_camera::{Camera3D, Projection, create_camera_3d, create_perspective_projection};
 use flight_geometry::{create_matrix3, create_matrix4};
 use flight_lighting::Scene3DLightBlock;
+use flight_materials::VERTEX_COLOR_MATERIAL_KIND;
+use flight_materials::unlit_materials::create_vertex_color_material;
 use flight_meshgeometry::{MeshGeometry, create_box_mesh_geometry};
 use flight_render::Scene3DRenderProxy;
 use flight_scene3d_gl::contract::*;
-use flight_materials::VERTEX_COLOR_MATERIAL_KIND;
-use flight_materials::unlit_materials::create_vertex_color_material;
 
 use crate::gl_test_helper::{count_calls, make_gl_scene3d_state, shader_sources};
 
@@ -67,8 +67,17 @@ mod gl_vertex_color_mesh_material_renderer {
     fn bind_compiles_the_vertex_color_variant_and_uploads_the_tint() {
         let mut state = make_gl_scene3d_state();
         let material = create_vertex_color_material();
-        (GL_VERTEX_COLOR_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &no_lights(), &make_camera());
-        assert!(shader_sources().iter().any(|source| source.contains("#define VERTEX_COLOR")));
+        (GL_VERTEX_COLOR_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &no_lights(),
+            &make_camera(),
+        );
+        assert!(
+            shader_sources()
+                .iter()
+                .any(|source| source.contains("#define VERTEX_COLOR"))
+        );
         assert!(count_calls("uniform_4_f32") > 0);
     }
 
@@ -78,7 +87,12 @@ mod gl_vertex_color_mesh_material_renderer {
         let proxy = make_proxy();
         {
             let material = proxy.material.read().unwrap();
-            (GL_VERTEX_COLOR_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&*material), &no_lights(), &make_camera());
+            (GL_VERTEX_COLOR_MESH_MATERIAL_RENDERER.bind)(
+                &mut state,
+                Some(&*material),
+                &no_lights(),
+                &make_camera(),
+            );
         }
         (GL_VERTEX_COLOR_MESH_MATERIAL_RENDERER.draw)(&mut state, &proxy, &make_geometry());
         assert!(count_calls("draw_elements") > 0);
@@ -94,7 +108,10 @@ mod register_gl_vertex_color_material {
         register_gl_vertex_color_material(&mut state);
         assert!(
             get_gl_mesh_material_renderer(&state, &VERTEX_COLOR_MATERIAL_KIND.to_string())
-                .is_some_and(|renderer| std::ptr::eq(renderer, &GL_VERTEX_COLOR_MESH_MATERIAL_RENDERER))
+                .is_some_and(|renderer| std::ptr::eq(
+                    renderer,
+                    &GL_VERTEX_COLOR_MESH_MATERIAL_RENDERER
+                ))
         );
     }
 }

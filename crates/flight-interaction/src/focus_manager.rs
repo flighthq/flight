@@ -1,15 +1,14 @@
 use std::sync::Arc;
 
 use flight_entity::Ref;
-use flight_node::{get_node_parent, get_node_world_bounds_rectangle, NodeRef};
 use flight_node::contract::NodeRevisionState;
+use flight_node::{NodeRef, get_node_parent, get_node_world_bounds_rectangle};
 use flight_signals::{connect_signal, disconnect_signal, emit_signal};
 
 use crate::interaction_manager::get_interaction_signals;
 use crate::node_interaction_state::{get_node_tab_index, is_node_focusable};
 use crate::types::{
-    FocusDirection, FocusEventData, FocusManager, FocusManagerOptions,
-    KeyboardEventData,
+    FocusDirection, FocusEventData, FocusManager, FocusManagerOptions, KeyboardEventData,
 };
 
 const DIRECTION_EPSILON: f32 = 0.0001;
@@ -96,24 +95,25 @@ pub fn connect_focus_navigation(
 ) -> Arc<dyn Fn() + Send + Sync> {
     let arrow_keys = options.arrow_keys.unwrap_or(false);
     let mgr = manager.clone();
-    let slot: Arc<dyn Fn(&KeyboardEventData) + Send + Sync> = Arc::new(move |data: &KeyboardEventData| {
-        if data.key == "Tab" {
-            let mut m = mgr.write().unwrap();
-            if data.shift_key {
-                focus_previous_node(&mut m);
-            } else {
-                focus_next_node(&mut m);
+    let slot: Arc<dyn Fn(&KeyboardEventData) + Send + Sync> =
+        Arc::new(move |data: &KeyboardEventData| {
+            if data.key == "Tab" {
+                let mut m = mgr.write().unwrap();
+                if data.shift_key {
+                    focus_previous_node(&mut m);
+                } else {
+                    focus_next_node(&mut m);
+                }
+                return;
             }
-            return;
-        }
-        if !arrow_keys {
-            return;
-        }
-        if let Some(direction) = arrow_key_direction(&data.key) {
-            let mut m = mgr.write().unwrap();
-            focus_node_in_direction(&mut m, direction);
-        }
-    });
+            if !arrow_keys {
+                return;
+            }
+            if let Some(direction) = arrow_key_direction(&data.key) {
+                let mut m = mgr.write().unwrap();
+                focus_node_in_direction(&mut m, direction);
+            }
+        });
     let slot_id = connect_signal(&input.on_key_down, slot, None);
     let signal = input.on_key_down.clone();
     return Arc::new(move || {
@@ -236,10 +236,7 @@ pub fn is_node_focused(manager: &FocusManager, node: &NodeRef) -> bool {
     };
 }
 
-pub fn set_focused_node(
-    manager: &mut FocusManager,
-    node: Option<NodeRef>,
-) -> bool {
+pub fn set_focused_node(manager: &mut FocusManager, node: Option<NodeRef>) -> bool {
     let previous = match begin_focus_transition(manager, &node) {
         FocusTransition::Rejected => return false,
         FocusTransition::Unchanged => return true,
@@ -249,7 +246,12 @@ pub fn set_focused_node(
         emit_focus_signal(prev, &manager.root, FocusSignalName::OnFocusOut, &node);
     }
     if let Some(ref new_node) = node {
-        emit_focus_signal(new_node, &manager.root, FocusSignalName::OnFocusIn, &previous);
+        emit_focus_signal(
+            new_node,
+            &manager.root,
+            FocusSignalName::OnFocusIn,
+            &previous,
+        );
     }
     return true;
 }
@@ -292,7 +294,11 @@ fn step_focus(manager: &mut FocusManager, delta: i32) -> Option<NodeRef> {
     };
     let index = match from {
         None => {
-            if delta > 0 { 0 } else { order.len() - 1 }
+            if delta > 0 {
+                0
+            } else {
+                order.len() - 1
+            }
         }
         Some(f) => {
             let next = f as i32 + delta;

@@ -144,14 +144,22 @@ fn locate_keyframe_curve(sorted: &[CurveKeyframe], t: f32) -> KeyframeSegment {
 }
 
 // flight-lint: allow(conform-params) D24: Rust &mut out-param for LUT buffer reuse; TS returns allocated array
-pub fn particle_color_curve_from_keyframes(out: &mut Vec<f32>, keys: &[ColorKeyframe], samples: i32) {
+pub fn particle_color_curve_from_keyframes(
+    out: &mut Vec<f32>,
+    keys: &[ColorKeyframe],
+    samples: i32,
+) {
     if keys.is_empty() {
         out.clear();
         out.extend_from_slice(&[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]);
         return;
     }
     let mut sorted: Vec<ColorKeyframe> = keys.to_vec();
-    sorted.sort_by(|a, b| a.time.partial_cmp(&b.time).unwrap_or(std::cmp::Ordering::Equal));
+    sorted.sort_by(|a, b| {
+        a.time
+            .partial_cmp(&b.time)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     build_particle_color_curve(
         out,
         &|t: f32| -> [f32; 3] {
@@ -206,8 +214,16 @@ pub fn particle_curve_from_keyframes(out: &mut Vec<f32>, keys: &[CurveKeyframe],
         return;
     }
     let mut sorted: Vec<CurveKeyframe> = keys.to_vec();
-    sorted.sort_by(|a, b| a.time.partial_cmp(&b.time).unwrap_or(std::cmp::Ordering::Equal));
-    build_particle_curve(out, &|t: f32| -> f32 { interp_keyframe(&sorted, t) }, samples);
+    sorted.sort_by(|a, b| {
+        a.time
+            .partial_cmp(&b.time)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+    build_particle_curve(
+        out,
+        &|t: f32| -> f32 { interp_keyframe(&sorted, t) },
+        samples,
+    );
 }
 
 // flight-lint: allow(conform-params) D24: Rust &mut out-param for keyframe buffer reuse; TS returns allocated array
@@ -268,7 +284,13 @@ pub fn sample_particle_color_curve(out: &mut [f32], offset: usize, lut: &[f32], 
         out[offset + 2] = lut[2];
         return;
     }
-    let clamped = if t <= 0.0 { 0.0 } else if t >= 1.0 { 1.0 } else { t };
+    let clamped = if t <= 0.0 {
+        0.0
+    } else if t >= 1.0 {
+        1.0
+    } else {
+        t
+    };
     let x = clamped * (n - 1) as f32;
     let i = x as usize;
     if i >= n - 1 {
@@ -294,7 +316,13 @@ pub fn sample_particle_curve(lut: &[f32], t: f32) -> f32 {
     if n == 1 {
         return lut[0];
     }
-    let clamped = if t <= 0.0 { 0.0 } else if t >= 1.0 { 1.0 } else { t };
+    let clamped = if t <= 0.0 {
+        0.0
+    } else if t >= 1.0 {
+        1.0
+    } else {
+        t
+    };
     let x = clamped * (n - 1) as f32;
     let i = x as usize;
     if i >= n - 1 {

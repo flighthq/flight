@@ -1,5 +1,5 @@
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 use flight_camera::{Camera3D, Projection};
 use flight_entity::throw_error;
@@ -11,7 +11,8 @@ use flight_meshgeometry::create_box_mesh_geometry;
 use flight_node::{Node, NodeRef};
 use flight_render::Scene3DRenderProxy;
 use flight_render_gl::{
-    GlMeshMaterialRenderer, GlRenderState, create_gl_cube_render_target, destroy_gl_cube_render_target,
+    GlMeshMaterialRenderer, GlRenderState, create_gl_cube_render_target,
+    destroy_gl_cube_render_target,
 };
 use flight_scene3d::{Mesh, Node3DFields, create_node3d, publish_node3d};
 use flight_scene3d_gl::contract::*;
@@ -71,7 +72,12 @@ fn bind_capture_throwing(
     throw_error("capture draw failed");
 }
 
-fn draw_capture(_state: &mut GlRenderState, _proxy: &Scene3DRenderProxy, _geometry: &flight_meshgeometry::MeshGeometry) {}
+fn draw_capture(
+    _state: &mut GlRenderState,
+    _proxy: &Scene3DRenderProxy,
+    _geometry: &flight_meshgeometry::MeshGeometry,
+) {
+}
 
 static CAPTURE_RENDERER: GlMeshMaterialRenderer = GlMeshMaterialRenderer {
     bind: bind_capture,
@@ -100,7 +106,9 @@ fn make_capture_state() -> (GlRenderState, NativeFramebuffer) {
     let previous_framebuffer = unsafe {
         state.gl.active_texture(ACTIVE_TEXTURE);
         let framebuffer = state.gl.create_framebuffer().unwrap();
-        state.gl.bind_framebuffer(glow::FRAMEBUFFER, Some(framebuffer));
+        state
+            .gl
+            .bind_framebuffer(glow::FRAMEBUFFER, Some(framebuffer));
         framebuffer
     };
     set_viewport(7, 8, 90, 70);
@@ -108,7 +116,10 @@ fn make_capture_state() -> (GlRenderState, NativeFramebuffer) {
     return (state, previous_framebuffer);
 }
 
-fn add_capture_mesh(state: &mut GlRenderState, throw_on_bind: bool) -> (flight_entity::Ref<Mesh>, NodeRef) {
+fn add_capture_mesh(
+    state: &mut GlRenderState,
+    throw_on_bind: bool,
+) -> (flight_entity::Ref<Mesh>, NodeRef) {
     let renderer = if throw_on_bind {
         &THROWING_CAPTURE_RENDERER
     } else {
@@ -120,7 +131,9 @@ fn add_capture_mesh(state: &mut GlRenderState, throw_on_bind: bool) -> (flight_e
     let mesh = add_test_mesh(
         &scene,
         create_box_mesh_geometry(Some(100.0), Some(100.0), Some(100.0)),
-        vec![Some(material_ref(create_material3d(CAPTURE_MATERIAL_KIND.to_string())))],
+        vec![Some(material_ref(create_material3d(
+            CAPTURE_MATERIAL_KIND.to_string(),
+        )))],
     );
     return (mesh, scene);
 }
@@ -130,7 +143,10 @@ fn cameras() -> Vec<CameraSnapshot> {
 }
 
 fn last_integers(name: &str) -> Vec<i64> {
-    return calls_with(name).last().map(|call| call.integers.clone()).unwrap_or_default();
+    return calls_with(name)
+        .last()
+        .map(|call| call.integers.clone())
+        .unwrap_or_default();
 }
 
 mod get_gl_environment_capture_texture {
@@ -170,7 +186,11 @@ mod render_gl_environment_capture {
 
         let cameras = cameras();
         assert_eq!(cameras.len(), 6);
-        assert!(cameras.iter().all(|camera| camera.near == 0.25 && camera.far == 250.0));
+        assert!(
+            cameras
+                .iter()
+                .all(|camera| camera.near == 0.25 && camera.far == 250.0)
+        );
         assert!(
             cameras
                 .iter()
@@ -192,10 +212,16 @@ mod render_gl_environment_capture {
         assert_eq!(targets, expected);
         assert_eq!(
             last_integers("bind_framebuffer"),
-            vec![i64::from(glow::FRAMEBUFFER), i64::from(previous_framebuffer.0.get())]
+            vec![
+                i64::from(glow::FRAMEBUFFER),
+                i64::from(previous_framebuffer.0.get())
+            ]
         );
         assert_eq!(last_integers("viewport"), vec![7, 8, 90, 70]);
-        assert_eq!(last_integers("active_texture"), vec![i64::from(ACTIVE_TEXTURE)]);
+        assert_eq!(
+            last_integers("active_texture"),
+            vec![i64::from(ACTIVE_TEXTURE)]
+        );
         destroy_gl_cube_render_target(&mut target);
     }
 
@@ -251,9 +277,15 @@ mod render_gl_environment_capture {
         assert!(excluded.read().unwrap().node_fields().enabled);
         assert_eq!(
             last_integers("bind_framebuffer"),
-            vec![i64::from(glow::FRAMEBUFFER), i64::from(previous_framebuffer.0.get())]
+            vec![
+                i64::from(glow::FRAMEBUFFER),
+                i64::from(previous_framebuffer.0.get())
+            ]
         );
-        assert_eq!(last_integers("active_texture"), vec![i64::from(ACTIVE_TEXTURE)]);
+        assert_eq!(
+            last_integers("active_texture"),
+            vec![i64::from(ACTIVE_TEXTURE)]
+        );
         destroy_gl_cube_render_target(&mut target);
     }
 }

@@ -479,7 +479,8 @@ pub struct GlScene3DRuntime {
     pub ibl: Option<GlScene3DIbl>,
     pub ibl_bake_framebuffer: Option<NativeFramebuffer>,
     /// The IBL bake pass programs in creation order (TS module WeakMap `_bakePrograms` keyed by state).
-    pub(crate) ibl_bake_programs: Option<Vec<(String, crate::gl_environment_ibl_bake::GlBakeProgram)>>,
+    pub(crate) ibl_bake_programs:
+        Option<Vec<(String, crate::gl_environment_ibl_bake::GlBakeProgram)>>,
     /// The 1x1 placeholder cube + 2D textures bound to the IBL units when no environment is baked (TS
     /// module WeakMap `_iblPlaceholders` keyed by state).
     pub ibl_placeholders: Option<GlIblPlaceholders>,

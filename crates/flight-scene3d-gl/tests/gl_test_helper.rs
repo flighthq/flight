@@ -269,7 +269,6 @@ pub fn make_state_options() -> flight_render_gl::GlRenderStateOptions {
     return flight_render_gl::GlRenderStateOptions::default();
 }
 
-
 fn load(name: &str) -> *const c_void {
     let pointer = match name {
         "glGetString" => gl_get_string as *const (),
@@ -1393,7 +1392,12 @@ fn set_mock_gl_error(code: u32) {
 const MOCK_PRIMITIVE_MODES: [u32; 7] = [0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006];
 
 // TS `validateFakeGlDrawArrays`: an invalid draw sets the GL error and is not recorded.
-fn validate_mock_draw_arrays(mode: u32, first: i32, count: i32, instance_count: Option<i32>) -> bool {
+fn validate_mock_draw_arrays(
+    mode: u32,
+    first: i32,
+    count: i32,
+    instance_count: Option<i32>,
+) -> bool {
     if !MOCK_PRIMITIVE_MODES.contains(&mode) {
         set_mock_gl_error(glow::INVALID_ENUM);
         return false;
@@ -2061,7 +2065,13 @@ unsafe extern "system" fn gl_uniform_2_fv(location: i32, count: i32, value: *con
         // SAFETY: uniform2fv callers provide two floats for each declared element.
         unsafe { std::slice::from_raw_parts(value, count as usize * 2) }.to_vec()
     };
-    record_call("uniform_2_f32_slice", &[location.into(), count.into()], &values, Vec::new(), String::new());
+    record_call(
+        "uniform_2_f32_slice",
+        &[location.into(), count.into()],
+        &values,
+        Vec::new(),
+        String::new(),
+    );
 }
 
 unsafe extern "system" fn gl_uniform_3_fv(location: i32, count: i32, value: *const f32) {
@@ -2071,7 +2081,13 @@ unsafe extern "system" fn gl_uniform_3_fv(location: i32, count: i32, value: *con
         // SAFETY: uniform3fv callers provide three floats for each declared element.
         unsafe { std::slice::from_raw_parts(value, count as usize * 3) }.to_vec()
     };
-    record_call("uniform_3_f32_slice", &[location.into(), count.into()], &values, Vec::new(), String::new());
+    record_call(
+        "uniform_3_f32_slice",
+        &[location.into(), count.into()],
+        &values,
+        Vec::new(),
+        String::new(),
+    );
 }
 
 unsafe extern "system" fn gl_get_active_uniform(
@@ -2083,7 +2099,13 @@ unsafe extern "system" fn gl_get_active_uniform(
     kind: *mut u32,
     output: *mut c_char,
 ) {
-    record_call("get_active_uniform", &[index.into()], &[], Vec::new(), String::new());
+    record_call(
+        "get_active_uniform",
+        &[index.into()],
+        &[],
+        Vec::new(),
+        String::new(),
+    );
     let entry = MOCK.with(|state| state.borrow().active_uniforms.get(index as usize).cloned());
     let (name, uniform_kind) = entry.unwrap_or_default();
     let bytes = name.as_bytes();
@@ -2115,7 +2137,13 @@ unsafe extern "system" fn gl_vertex_attrib_i_pointer(
 ) {
     record_call(
         "vertex_attrib_pointer_i32",
-        &[index.into(), size.into(), kind.into(), stride.into(), offset as usize as i64],
+        &[
+            index.into(),
+            size.into(),
+            kind.into(),
+            stride.into(),
+            offset as usize as i64,
+        ],
         &[],
         Vec::new(),
         String::new(),
@@ -2123,11 +2151,23 @@ unsafe extern "system" fn gl_vertex_attrib_i_pointer(
 }
 
 unsafe extern "system" fn gl_vertex_attrib_4_f(index: u32, x: f32, y: f32, z: f32, w: f32) {
-    record_call("vertex_attrib_4_f32", &[index.into()], &[x, y, z, w], Vec::new(), String::new());
+    record_call(
+        "vertex_attrib_4_f32",
+        &[index.into()],
+        &[x, y, z, w],
+        Vec::new(),
+        String::new(),
+    );
 }
 
 unsafe extern "system" fn gl_clear_depth(depth: f64) {
-    record_call("clear_depth", &[], &[depth as f32], Vec::new(), String::new());
+    record_call(
+        "clear_depth",
+        &[],
+        &[depth as f32],
+        Vec::new(),
+        String::new(),
+    );
 }
 
 unsafe extern "system" fn gl_clear_depth_f(depth: f32) {
@@ -2162,7 +2202,10 @@ pub fn uniform_lookups() -> Vec<String> {
 
 /// The recorded shader sources, in upload order.
 pub fn shader_sources() -> Vec<String> {
-    return calls_with("shader_source").into_iter().map(|call| call.text).collect();
+    return calls_with("shader_source")
+        .into_iter()
+        .map(|call| call.text)
+        .collect();
 }
 
 pub fn call_names() -> Vec<String> {
@@ -2200,7 +2243,9 @@ pub fn make_gl_scene3d_state() -> GlRenderState {
 }
 
 /// TS `makeGlScene3DState(undefined, registry)`: the same mock state built with explicit options.
-pub fn make_gl_scene3d_state_with(options: &flight_render_gl::GlRenderStateOptions) -> GlRenderState {
+pub fn make_gl_scene3d_state_with(
+    options: &flight_render_gl::GlRenderStateOptions,
+) -> GlRenderState {
     let state = create_gl_render_state(make_context_state(), Some(options));
     set_viewport(0, 0, 256, 256);
     clear_calls();
@@ -2295,7 +2340,9 @@ pub fn make_test_proxy(
 }
 
 /// A shared material handle (TS passes the material object itself).
-pub fn material_ref<T: flight_materials::Material3D>(material: T) -> flight_materials::Material3DRef {
+pub fn material_ref<T: flight_materials::Material3D>(
+    material: T,
+) -> flight_materials::Material3DRef {
     return std::sync::Arc::new(std::sync::RwLock::new(material));
 }
 
@@ -2320,7 +2367,9 @@ pub fn thrown_message(f: impl FnOnce()) -> String {
 
 /// TS `createNode3D(Node3DKind)`: an empty scene root.
 pub fn make_test_scene() -> flight_node::NodeRef {
-    return flight_scene3d::publish_node3d(flight_scene3d::create_node3d::<flight_scene3d::Node3DFields>(None));
+    return flight_scene3d::publish_node3d(flight_scene3d::create_node3d::<
+        flight_scene3d::Node3DFields,
+    >(None));
 }
 
 /// TS `addNodeChild(scene, createMesh(geometry, materials))`; returns the mesh handle.
@@ -2345,12 +2394,14 @@ pub fn make_test_lights() -> flight_lighting::Scene3DLightsLike {
     ambient.color = 0xffff_ffff;
     ambient.intensity = 0.2;
     lights.ambient = Some(std::sync::Arc::new(std::sync::RwLock::new(ambient)));
-    let directional = flight_lighting::create_directional_light(Some(&flight_lighting::DirectionalLightOptions {
-        color: Some(0xffff_ffff),
-        direction: Some(flight_geometry::create_vector3(0.0, -1.0, -1.0)),
-        intensity: Some(1.0),
-        ..test_default()
-    }));
+    let directional = flight_lighting::create_directional_light(Some(
+        &flight_lighting::DirectionalLightOptions {
+            color: Some(0xffff_ffff),
+            direction: Some(flight_geometry::create_vector3(0.0, -1.0, -1.0)),
+            intensity: Some(1.0),
+            ..test_default()
+        },
+    ));
     lights.directional = Some(std::sync::Arc::new(std::sync::RwLock::new(directional)));
     return lights;
 }

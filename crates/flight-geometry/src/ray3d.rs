@@ -9,8 +9,12 @@ pub struct Ray3D {
 }
 
 pub fn create_ray3d(
-    origin_x: f32, origin_y: f32, origin_z: f32,
-    direction_x: f32, direction_y: f32, direction_z: f32,
+    origin_x: f32,
+    origin_y: f32,
+    origin_z: f32,
+    direction_x: f32,
+    direction_y: f32,
+    direction_z: f32,
 ) -> Ray3D {
     let mut out: Ray3D = allocate_entity();
     initialize_ray3d(
@@ -34,8 +38,10 @@ pub fn initialize_ray3d(out: &mut Ray3D, origin: &Vector3, direction: &Vector3) 
 ///
 /// Safe when `out_a`/`out_b` alias ray vectors (reads all inputs before writing).
 pub fn get_closest_point_between_ray3ds(
-    out_a: &mut Vector3, out_b: &mut Vector3,
-    a: &Ray3D, b: &Ray3D,
+    out_a: &mut Vector3,
+    out_b: &mut Vector3,
+    a: &Ray3D,
+    b: &Ray3D,
 ) {
     let aox = a.origin.x;
     let aoy = a.origin.y;
@@ -67,13 +73,17 @@ pub fn get_closest_point_between_ray3ds(
     } else {
         ta = 0.0;
     }
-    if ta < 0.0 { ta = 0.0; }
+    if ta < 0.0 {
+        ta = 0.0;
+    }
 
     tb = if bb != 0.0 { (ab * ta + br) / bb } else { 0.0 };
     if tb < 0.0 {
         tb = 0.0;
         ta = if aa != 0.0 { -ar / aa } else { 0.0 };
-        if ta < 0.0 { ta = 0.0; }
+        if ta < 0.0 {
+            ta = 0.0;
+        }
     }
 
     out_a.x = aox + adx * ta;
@@ -99,8 +109,14 @@ pub fn get_closest_point_on_ray3d(out: &mut Vector3, ray: &Ray3D, point: &Vector
     let pz = point.z;
 
     let len_sq = dx * dx + dy * dy + dz * dz;
-    let mut t = if len_sq != 0.0 { ((px - ox) * dx + (py - oy) * dy + (pz - oz) * dz) / len_sq } else { 0.0 };
-    if t < 0.0 { t = 0.0; }
+    let mut t = if len_sq != 0.0 {
+        ((px - ox) * dx + (py - oy) * dy + (pz - oz) * dz) / len_sq
+    } else {
+        0.0
+    };
+    if t < 0.0 {
+        t = 0.0;
+    }
 
     out.x = ox + dx * t;
     out.y = oy + dy * t;
@@ -135,7 +151,9 @@ pub fn intersect_ray3d_aabb(ray: &Ray3D, aabb: &Aabb) -> f32 {
     let dy = ray.direction.y;
     let dz = ray.direction.z;
 
-    if dx * dx + dy * dy + dz * dz == 0.0 { return -1.0; }
+    if dx * dx + dy * dy + dz * dz == 0.0 {
+        return -1.0;
+    }
 
     let mut t_min: f32 = 0.0;
     let mut t_max: f32 = f32::INFINITY;
@@ -145,10 +163,16 @@ pub fn intersect_ray3d_aabb(ray: &Ray3D, aabb: &Aabb) -> f32 {
         let inv_dx = 1.0 / dx;
         let mut t1 = (aabb.min.x - ox) * inv_dx;
         let mut t2 = (aabb.max.x - ox) * inv_dx;
-        if t1 > t2 { let tmp = t1; t1 = t2; t2 = tmp; }
+        if t1 > t2 {
+            let tmp = t1;
+            t1 = t2;
+            t2 = tmp;
+        }
         t_min = t_min.max(t1);
         t_max = t_max.min(t2);
-        if t_min > t_max { return -1.0; }
+        if t_min > t_max {
+            return -1.0;
+        }
     } else if ox < aabb.min.x || ox > aabb.max.x {
         return -1.0;
     }
@@ -158,10 +182,16 @@ pub fn intersect_ray3d_aabb(ray: &Ray3D, aabb: &Aabb) -> f32 {
         let inv_dy = 1.0 / dy;
         let mut t1 = (aabb.min.y - oy) * inv_dy;
         let mut t2 = (aabb.max.y - oy) * inv_dy;
-        if t1 > t2 { let tmp = t1; t1 = t2; t2 = tmp; }
+        if t1 > t2 {
+            let tmp = t1;
+            t1 = t2;
+            t2 = tmp;
+        }
         t_min = t_min.max(t1);
         t_max = t_max.min(t2);
-        if t_min > t_max { return -1.0; }
+        if t_min > t_max {
+            return -1.0;
+        }
     } else if oy < aabb.min.y || oy > aabb.max.y {
         return -1.0;
     }
@@ -171,10 +201,16 @@ pub fn intersect_ray3d_aabb(ray: &Ray3D, aabb: &Aabb) -> f32 {
         let inv_dz = 1.0 / dz;
         let mut t1 = (aabb.min.z - oz) * inv_dz;
         let mut t2 = (aabb.max.z - oz) * inv_dz;
-        if t1 > t2 { let tmp = t1; t1 = t2; t2 = tmp; }
+        if t1 > t2 {
+            let tmp = t1;
+            t1 = t2;
+            t2 = tmp;
+        }
         t_min = t_min.max(t1);
         t_max = t_max.min(t2);
-        if t_min > t_max { return -1.0; }
+        if t_min > t_max {
+            return -1.0;
+        }
     } else if oz < aabb.min.z || oz > aabb.max.z {
         return -1.0;
     }
@@ -189,17 +225,24 @@ pub fn intersect_ray3d_plane(ray: &Ray3D, plane: &Plane) -> f32 {
     let dz = ray.direction.z;
     let normal_length_sq = plane.a * plane.a + plane.b * plane.b + plane.c * plane.c;
     let direction_length_sq = dx * dx + dy * dy + dz * dz;
-    if normal_length_sq == 0.0 || direction_length_sq == 0.0 { return -1.0; }
+    if normal_length_sq == 0.0 || direction_length_sq == 0.0 {
+        return -1.0;
+    }
 
     let denom = plane.a * dx + plane.b * dy + plane.c * dz;
-    if denom.abs() <= 1e-10 * normal_length_sq.sqrt() * direction_length_sq.sqrt() { return -1.0; }
-    let t = -(plane.a * ray.origin.x + plane.b * ray.origin.y + plane.c * ray.origin.z + plane.d) / denom;
+    if denom.abs() <= 1e-10 * normal_length_sq.sqrt() * direction_length_sq.sqrt() {
+        return -1.0;
+    }
+    let t = -(plane.a * ray.origin.x + plane.b * ray.origin.y + plane.c * ray.origin.z + plane.d)
+        / denom;
     return if t >= 0.0 { t } else { -1.0 };
 }
 
 /// Tests whether a ray intersects a bounding sphere.
 pub fn intersect_ray3d_sphere(ray: &Ray3D, sphere: &BoundingSphere) -> f32 {
-    if sphere.radius < 0.0 { return -1.0; }
+    if sphere.radius < 0.0 {
+        return -1.0;
+    }
     let ox = ray.origin.x - sphere.center.x;
     let oy = ray.origin.y - sphere.center.y;
     let oz = ray.origin.z - sphere.center.z;
@@ -208,14 +251,20 @@ pub fn intersect_ray3d_sphere(ray: &Ray3D, sphere: &BoundingSphere) -> f32 {
     let dz = ray.direction.z;
 
     let a = dx * dx + dy * dy + dz * dz;
-    if a == 0.0 { return -1.0; }
+    if a == 0.0 {
+        return -1.0;
+    }
     let b = ox * dx + oy * dy + oz * dz;
     let c = ox * ox + oy * oy + oz * oz - sphere.radius * sphere.radius;
     let disc = b * b - a * c;
-    if disc < 0.0 { return -1.0; }
+    if disc < 0.0 {
+        return -1.0;
+    }
     let sqrt_disc = disc.sqrt();
     let t = (-b - sqrt_disc) / a;
-    if t >= 0.0 { return t; }
+    if t >= 0.0 {
+        return t;
+    }
     let t2 = (-b + sqrt_disc) / a;
     return if t2 >= 0.0 { 0.0 } else { -1.0 };
 }
@@ -238,14 +287,18 @@ pub fn intersect_ray3d_triangle(ray: &Ray3D, a: &Vector3, b: &Vector3, c: &Vecto
     let nz = e1x * e2y - e1y * e2x;
     let normal_length_sq = nx * nx + ny * ny + nz * nz;
     let direction_length_sq = dx * dx + dy * dy + dz * dz;
-    if normal_length_sq == 0.0 || direction_length_sq == 0.0 { return -1.0; }
+    if normal_length_sq == 0.0 || direction_length_sq == 0.0 {
+        return -1.0;
+    }
 
     let hx = dy * e2z - dz * e2y;
     let hy = dz * e2x - dx * e2z;
     let hz = dx * e2y - dy * e2x;
 
     let det = e1x * hx + e1y * hy + e1z * hz;
-    if det.abs() <= 1e-10 * normal_length_sq.sqrt() * direction_length_sq.sqrt() { return -1.0; }
+    if det.abs() <= 1e-10 * normal_length_sq.sqrt() * direction_length_sq.sqrt() {
+        return -1.0;
+    }
 
     let inv_det = 1.0 / det;
 
@@ -254,14 +307,18 @@ pub fn intersect_ray3d_triangle(ray: &Ray3D, a: &Vector3, b: &Vector3, c: &Vecto
     let sz = ray.origin.z - a.z;
 
     let u = (sx * hx + sy * hy + sz * hz) * inv_det;
-    if u < 0.0 || u > 1.0 { return -1.0; }
+    if u < 0.0 || u > 1.0 {
+        return -1.0;
+    }
 
     let qx = sy * e1z - sz * e1y;
     let qy = sz * e1x - sx * e1z;
     let qz = sx * e1y - sy * e1x;
 
     let v = (dx * qx + dy * qy + dz * qz) * inv_det;
-    if v < 0.0 || u + v > 1.0 { return -1.0; }
+    if v < 0.0 || u + v > 1.0 {
+        return -1.0;
+    }
 
     let t = (e2x * qx + e2y * qy + e2z * qz) * inv_det;
     return if t >= 0.0 { t } else { -1.0 };
@@ -323,17 +380,32 @@ impl Default for Ray3D {
             origin: Vector3::default(),
             direction: Vector3::default(),
         };
-        initialize_ray3d(&mut out, &create_vector3(0.0, 0.0, 0.0), &create_vector3(0.0, 0.0, 1.0));
+        initialize_ray3d(
+            &mut out,
+            &create_vector3(0.0, 0.0, 0.0),
+            &create_vector3(0.0, 0.0, 1.0),
+        );
         return out;
     }
 }
 
 impl Ray3D {
     pub fn new(
-        origin_x: f32, origin_y: f32, origin_z: f32,
-        direction_x: f32, direction_y: f32, direction_z: f32,
+        origin_x: f32,
+        origin_y: f32,
+        origin_z: f32,
+        direction_x: f32,
+        direction_y: f32,
+        direction_z: f32,
     ) -> Self {
-        return create_ray3d(origin_x, origin_y, origin_z, direction_x, direction_y, direction_z);
+        return create_ray3d(
+            origin_x,
+            origin_y,
+            origin_z,
+            direction_x,
+            direction_y,
+            direction_z,
+        );
     }
 
     pub fn closest_point(&self, point: &Vector3) -> Vector3 {

@@ -1,5 +1,5 @@
-use flight_binpack::*;
 use flight_binpack::contract::*;
+use flight_binpack::*;
 use std::collections::HashMap;
 
 fn is_power_of_two(value: f32) -> bool {
@@ -58,7 +58,11 @@ mod get_pack_result_occupancy {
     #[test]
     fn reports_covered_fraction_of_the_reported_extent_so_rounding_waste_is_visible() {
         let exact = pack_rectangles(
-            &[PackableRectangle { id: RectangleId::Text("a".to_string()), width: 16.0, height: 16.0 }],
+            &[PackableRectangle {
+                id: RectangleId::Text("a".to_string()),
+                width: 16.0,
+                height: 16.0,
+            }],
             None,
         );
         assert_eq!(get_pack_result_occupancy(&exact), 1.0);
@@ -76,7 +80,11 @@ mod get_pack_result_occupancy {
         };
         options.power_of_two = Some(true);
         let rounded = pack_rectangles(
-            &[PackableRectangle { id: RectangleId::Text("a".to_string()), width: 24.0, height: 24.0 }],
+            &[PackableRectangle {
+                id: RectangleId::Text("a".to_string()),
+                width: 24.0,
+                height: 24.0,
+            }],
             Some(&options),
         );
         assert_eq!(rounded.width, 32.0);
@@ -84,7 +92,13 @@ mod get_pack_result_occupancy {
         let actual_occupancy = get_pack_result_occupancy(&rounded);
         let diff = (actual_occupancy - expected_occupancy).abs();
         // TS `toBeCloseTo(expected, 10)`: abs diff < 0.5e-10.
-        assert!(diff < 0.5e-10, "expected {}, got {} (diff: {})", expected_occupancy, actual_occupancy, diff);
+        assert!(
+            diff < 0.5e-10,
+            "expected {}, got {} (diff: {})",
+            expected_occupancy,
+            actual_occupancy,
+            diff
+        );
     }
 
     #[test]
@@ -99,16 +113,24 @@ mod pack_rectangles {
     use super::*;
 
     #[test]
-    fn bin_pack_default_max_extent_is_the_cap_the_packer_actually_applies_when_the_caller_names_none(
-    ) {
+    fn bin_pack_default_max_extent_is_the_cap_the_packer_actually_applies_when_the_caller_names_none()
+     {
         let over = pack_rectangles(
-            &[PackableRectangle { id: RectangleId::Text("over".to_string()), width: BIN_PACK_DEFAULT_MAX_EXTENT + 1.0, height: 4.0 }],
+            &[PackableRectangle {
+                id: RectangleId::Text("over".to_string()),
+                width: BIN_PACK_DEFAULT_MAX_EXTENT + 1.0,
+                height: 4.0,
+            }],
             None,
         );
         assert_eq!(over.unpacked, vec![RectangleId::Text("over".to_string())]);
 
         let at = pack_rectangles(
-            &[PackableRectangle { id: RectangleId::Text("at".to_string()), width: BIN_PACK_DEFAULT_MAX_EXTENT, height: 4.0 }],
+            &[PackableRectangle {
+                id: RectangleId::Text("at".to_string()),
+                width: BIN_PACK_DEFAULT_MAX_EXTENT,
+                height: 4.0,
+            }],
             None,
         );
         assert!(at.unpacked.is_empty());
@@ -118,7 +140,11 @@ mod pack_rectangles {
     fn places_varied_rectangles_with_no_pairwise_overlap_inside_the_bin_at_their_input_size() {
         let mut rects: Vec<PackableRectangle> = Vec::new();
         for i in 0..20 {
-            rects.push(PackableRectangle { id: RectangleId::Number(i), width: 8.0 + ((i * 7) % 40) as f32, height: 6.0 + ((i * 13) % 34) as f32 });
+            rects.push(PackableRectangle {
+                id: RectangleId::Number(i),
+                width: 8.0 + ((i * 7) % 40) as f32,
+                height: 6.0 + ((i * 13) % 34) as f32,
+            });
         }
 
         let mut options = BinPackOptions {
@@ -170,11 +196,31 @@ mod pack_rectangles {
     #[test]
     fn leaves_nothing_unpacked_when_everything_fits_in_a_growable_bin() {
         let rects = vec![
-            PackableRectangle { id: RectangleId::Text("a".to_string()), width: 30.0, height: 20.0 },
-            PackableRectangle { id: RectangleId::Text("b".to_string()), width: 40.0, height: 40.0 },
-            PackableRectangle { id: RectangleId::Text("c".to_string()), width: 10.0, height: 60.0 },
-            PackableRectangle { id: RectangleId::Text("d".to_string()), width: 25.0, height: 25.0 },
-            PackableRectangle { id: RectangleId::Text("e".to_string()), width: 50.0, height: 15.0 },
+            PackableRectangle {
+                id: RectangleId::Text("a".to_string()),
+                width: 30.0,
+                height: 20.0,
+            },
+            PackableRectangle {
+                id: RectangleId::Text("b".to_string()),
+                width: 40.0,
+                height: 40.0,
+            },
+            PackableRectangle {
+                id: RectangleId::Text("c".to_string()),
+                width: 10.0,
+                height: 60.0,
+            },
+            PackableRectangle {
+                id: RectangleId::Text("d".to_string()),
+                width: 25.0,
+                height: 25.0,
+            },
+            PackableRectangle {
+                id: RectangleId::Text("e".to_string()),
+                width: 50.0,
+                height: 15.0,
+            },
         ];
 
         let result = pack_rectangles(&rects, None);
@@ -194,7 +240,11 @@ mod pack_rectangles {
     fn reports_overflow_ids_in_a_fixed_bin_and_keeps_the_placed_rectangles_non_overlapping() {
         let mut rects: Vec<PackableRectangle> = Vec::new();
         for i in 0..12 {
-            rects.push(PackableRectangle { id: RectangleId::Number(i), width: 20.0, height: 20.0 });
+            rects.push(PackableRectangle {
+                id: RectangleId::Number(i),
+                width: 20.0,
+                height: 20.0,
+            });
         }
 
         let mut options = BinPackOptions {
@@ -227,8 +277,16 @@ mod pack_rectangles {
     #[test]
     fn respects_padding_between_neighbors_and_border_at_the_bin_edge() {
         let rects = vec![
-            PackableRectangle { id: RectangleId::Text("a".to_string()), width: 10.0, height: 10.0 },
-            PackableRectangle { id: RectangleId::Text("b".to_string()), width: 10.0, height: 10.0 },
+            PackableRectangle {
+                id: RectangleId::Text("a".to_string()),
+                width: 10.0,
+                height: 10.0,
+            },
+            PackableRectangle {
+                id: RectangleId::Text("b".to_string()),
+                width: 10.0,
+                height: 10.0,
+            },
         ];
 
         let mut options = BinPackOptions {
@@ -259,11 +317,25 @@ mod pack_rectangles {
             .unwrap();
         assert_eq!(
             *a,
-            PackedRectangle { id: RectangleId::Text("a".to_string()), x: 4.0, y: 4.0, width: 10.0, height: 10.0, rotated: false }
+            PackedRectangle {
+                id: RectangleId::Text("a".to_string()),
+                x: 4.0,
+                y: 4.0,
+                width: 10.0,
+                height: 10.0,
+                rotated: false
+            }
         );
         assert_eq!(
             *b,
-            PackedRectangle { id: RectangleId::Text("b".to_string()), x: 16.0, y: 4.0, width: 10.0, height: 10.0, rotated: false }
+            PackedRectangle {
+                id: RectangleId::Text("b".to_string()),
+                x: 16.0,
+                y: 4.0,
+                width: 10.0,
+                height: 10.0,
+                rotated: false
+            }
         );
 
         assert_eq!(b.x - (a.x + a.width), 2.0);
@@ -279,9 +351,21 @@ mod pack_rectangles {
     #[test]
     fn reports_power_of_two_and_square_extents_that_still_contain_every_placement() {
         let rects = vec![
-            PackableRectangle { id: RectangleId::Text("a".to_string()), width: 30.0, height: 20.0 },
-            PackableRectangle { id: RectangleId::Text("b".to_string()), width: 17.0, height: 41.0 },
-            PackableRectangle { id: RectangleId::Text("c".to_string()), width: 25.0, height: 9.0 },
+            PackableRectangle {
+                id: RectangleId::Text("a".to_string()),
+                width: 30.0,
+                height: 20.0,
+            },
+            PackableRectangle {
+                id: RectangleId::Text("b".to_string()),
+                width: 17.0,
+                height: 41.0,
+            },
+            PackableRectangle {
+                id: RectangleId::Text("c".to_string()),
+                width: 25.0,
+                height: 9.0,
+            },
         ];
 
         let mut options = BinPackOptions {
@@ -310,7 +394,11 @@ mod pack_rectangles {
 
     #[test]
     fn rotates_a_rectangle_when_rotation_is_required_to_fit_a_fixed_bin() {
-        let rects = vec![PackableRectangle { id: RectangleId::Text("tall".to_string()), width: 8.0, height: 20.0 }];
+        let rects = vec![PackableRectangle {
+            id: RectangleId::Text("tall".to_string()),
+            width: 8.0,
+            height: 20.0,
+        }];
 
         let mut options_with = BinPackOptions {
             padding: Some(0.0),
@@ -360,7 +448,11 @@ mod pack_rectangles {
 
     #[test]
     fn grows_to_fit_a_rectangle_that_would_need_rotation_in_a_fixed_bin() {
-        let rects = vec![PackableRectangle { id: RectangleId::Text("tall".to_string()), width: 8.0, height: 20.0 }];
+        let rects = vec![PackableRectangle {
+            id: RectangleId::Text("tall".to_string()),
+            width: 8.0,
+            height: 20.0,
+        }];
 
         let mut options = BinPackOptions {
             padding: Some(0.0),
@@ -385,7 +477,11 @@ mod pack_rectangles {
     fn produces_a_deep_equal_result_for_the_same_input_packed_twice() {
         let mut rects: Vec<PackableRectangle> = Vec::new();
         for i in 0..15 {
-            rects.push(PackableRectangle { id: RectangleId::Text(format!("r{}", i)), width: 5.0 + ((i * 11) % 30) as f32, height: 5.0 + ((i * 17) % 28) as f32 });
+            rects.push(PackableRectangle {
+                id: RectangleId::Text(format!("r{}", i)),
+                width: 5.0 + ((i * 11) % 30) as f32,
+                height: 5.0 + ((i * 17) % 28) as f32,
+            });
         }
         let mut options = BinPackOptions {
             padding: Some(0.0),
@@ -431,14 +527,25 @@ mod pack_rectangles {
         };
         options.border = Some(3.0);
         let result = pack_rectangles(
-            &[PackableRectangle { id: RectangleId::Text("only".to_string()), width: 12.0, height: 7.0 }],
+            &[PackableRectangle {
+                id: RectangleId::Text("only".to_string()),
+                width: 12.0,
+                height: 7.0,
+            }],
             Some(&options),
         );
         assert!(result.unpacked.is_empty());
         assert_eq!(result.placements.len(), 1);
         assert_eq!(
             result.placements[0],
-            PackedRectangle { id: RectangleId::Text("only".to_string()), x: 3.0, y: 3.0, width: 12.0, height: 7.0, rotated: false }
+            PackedRectangle {
+                id: RectangleId::Text("only".to_string()),
+                x: 3.0,
+                y: 3.0,
+                width: 12.0,
+                height: 7.0,
+                rotated: false
+            }
         );
         assert_eq!(result.width, 18.0);
         assert_eq!(result.height, 13.0);
@@ -461,7 +568,11 @@ mod pack_rectangles {
         options.max_width = Some(64.0);
         options.max_height = Some(64.0);
         let result = pack_rectangles(
-            &[PackableRectangle { id: RectangleId::Text("big".to_string()), width: 500.0, height: 500.0 }],
+            &[PackableRectangle {
+                id: RectangleId::Text("big".to_string()),
+                width: 500.0,
+                height: 500.0,
+            }],
             Some(&options),
         );
         assert!(result.placements.is_empty());
@@ -484,29 +595,43 @@ mod pack_rectangles {
         options.max_width = Some(64.0);
         options.max_height = Some(64.0);
         let result = pack_rectangles(
-            &[PackableRectangle { id: RectangleId::Text("huge".to_string()), width: 200.0, height: 10.0 }],
+            &[PackableRectangle {
+                id: RectangleId::Text("huge".to_string()),
+                width: 200.0,
+                height: 10.0,
+            }],
             Some(&options),
         );
-        assert_eq!(
-            result.unpacked,
-            vec![RectangleId::Text("huge".to_string())]
-        );
+        assert_eq!(result.unpacked, vec![RectangleId::Text("huge".to_string())]);
     }
 
     #[test]
     fn rejects_zero_and_negative_dimensions_to_unpacked_rather_than_placing_a_degenerate_rect() {
         let rects = vec![
-            PackableRectangle { id: RectangleId::Text("zeroW".to_string()), width: 0.0, height: 10.0 },
-            PackableRectangle { id: RectangleId::Text("zeroH".to_string()), width: 10.0, height: 0.0 },
-            PackableRectangle { id: RectangleId::Text("negative".to_string()), width: -8.0, height: 10.0 },
-            PackableRectangle { id: RectangleId::Text("ok".to_string()), width: 10.0, height: 10.0 },
+            PackableRectangle {
+                id: RectangleId::Text("zeroW".to_string()),
+                width: 0.0,
+                height: 10.0,
+            },
+            PackableRectangle {
+                id: RectangleId::Text("zeroH".to_string()),
+                width: 10.0,
+                height: 0.0,
+            },
+            PackableRectangle {
+                id: RectangleId::Text("negative".to_string()),
+                width: -8.0,
+                height: 10.0,
+            },
+            PackableRectangle {
+                id: RectangleId::Text("ok".to_string()),
+                width: 10.0,
+                height: 10.0,
+            },
         ];
         let result = pack_rectangles(&rects, None);
         assert_eq!(result.placements.len(), 1);
-        assert_eq!(
-            result.placements[0].id,
-            RectangleId::Text("ok".to_string())
-        );
+        assert_eq!(result.placements[0].id, RectangleId::Text("ok".to_string()));
         let mut unpacked_strings: Vec<String> =
             result.unpacked.iter().map(|id| id.to_string()).collect();
         unpacked_strings.sort();
@@ -516,8 +641,16 @@ mod pack_rectangles {
     #[test]
     fn round_trips_negative_numeric_ids_through_placements_and_unpacked() {
         let rects = vec![
-            PackableRectangle { id: RectangleId::Number(-7), width: 10.0, height: 10.0 },
-            PackableRectangle { id: RectangleId::Number(-2), width: 10.0, height: 10.0 },
+            PackableRectangle {
+                id: RectangleId::Number(-7),
+                width: 10.0,
+                height: 10.0,
+            },
+            PackableRectangle {
+                id: RectangleId::Number(-2),
+                width: 10.0,
+                height: 10.0,
+            },
         ];
         let result = pack_rectangles(&rects, None);
         let mut ids: Vec<i32> = Vec::new();
@@ -544,7 +677,11 @@ mod pack_rectangles {
         options.max_width = Some(5.0);
         options.max_height = Some(5.0);
         let fixed = pack_rectangles(
-            &[PackableRectangle { id: RectangleId::Number(-9), width: 20.0, height: 20.0 }],
+            &[PackableRectangle {
+                id: RectangleId::Number(-9),
+                width: 20.0,
+                height: 20.0,
+            }],
             Some(&options),
         );
         assert_eq!(fixed.unpacked, vec![RectangleId::Number(-9)]);
@@ -553,8 +690,16 @@ mod pack_rectangles {
     #[test]
     fn treats_duplicate_ids_as_distinct_rectangles_placing_both_without_overlap() {
         let rects = vec![
-            PackableRectangle { id: RectangleId::Text("same".to_string()), width: 10.0, height: 10.0 },
-            PackableRectangle { id: RectangleId::Text("same".to_string()), width: 10.0, height: 10.0 },
+            PackableRectangle {
+                id: RectangleId::Text("same".to_string()),
+                width: 10.0,
+                height: 10.0,
+            },
+            PackableRectangle {
+                id: RectangleId::Text("same".to_string()),
+                width: 10.0,
+                height: 10.0,
+            },
         ];
         let result = pack_rectangles(&rects, None);
         assert_eq!(result.placements.len(), 2);
@@ -566,7 +711,11 @@ mod pack_rectangles {
     #[test]
     fn places_non_integer_sizes_without_rounding_them() {
         let result = pack_rectangles(
-            &[PackableRectangle { id: RectangleId::Text("frac".to_string()), width: 10.5, height: 4.25 }],
+            &[PackableRectangle {
+                id: RectangleId::Text("frac".to_string()),
+                width: 10.5,
+                height: 4.25,
+            }],
             None,
         );
         assert_eq!(result.placements[0].width, 10.5);
@@ -591,7 +740,11 @@ mod pack_rectangles {
         options.border = Some(6.0);
         options.growable = Some(false);
         let result = pack_rectangles(
-            &[PackableRectangle { id: RectangleId::Text("a".to_string()), width: 4.0, height: 4.0 }],
+            &[PackableRectangle {
+                id: RectangleId::Text("a".to_string()),
+                width: 4.0,
+                height: 4.0,
+            }],
             Some(&options),
         );
         assert!(result.placements.is_empty());
@@ -613,8 +766,16 @@ mod pack_rectangles {
         };
         options.padding = Some(20.0);
         let rects = vec![
-            PackableRectangle { id: RectangleId::Text("a".to_string()), width: 2.0, height: 2.0 },
-            PackableRectangle { id: RectangleId::Text("b".to_string()), width: 2.0, height: 2.0 },
+            PackableRectangle {
+                id: RectangleId::Text("a".to_string()),
+                width: 2.0,
+                height: 2.0,
+            },
+            PackableRectangle {
+                id: RectangleId::Text("b".to_string()),
+                width: 2.0,
+                height: 2.0,
+            },
         ];
         let result = pack_rectangles(&rects, Some(&options));
         assert_eq!(result.placements.len(), 2);
@@ -634,7 +795,11 @@ mod pack_rectangles {
             for i in 0..count {
                 let id = if seed % 5 == 0 { i % 3 } else { i };
                 let mut size = make_random((seed * 1000 + id) as u32);
-                rects.push(PackableRectangle { id: RectangleId::Number(id), width: 1.0 + (next_random(&mut size) * 60.0).floor(), height: 1.0 + (next_random(&mut size) * 60.0).floor() });
+                rects.push(PackableRectangle {
+                    id: RectangleId::Number(id),
+                    width: 1.0 + (next_random(&mut size) * 60.0).floor(),
+                    height: 1.0 + (next_random(&mut size) * 60.0).floor(),
+                });
             }
             let padding = (next_random(&mut rng) * 4.0).floor();
             let border = (next_random(&mut rng) * 4.0).floor();
@@ -644,16 +809,16 @@ mod pack_rectangles {
                 BinPackHeuristic::BestShortSideFit
             };
             let mut options = BinPackOptions {
-            padding: Some(0.0),
-            border: Some(0.0),
-            allow_rotation: Some(false),
-            heuristic: Some(BinPackHeuristic::BestShortSideFit),
-            growable: Some(true),
-            power_of_two: Some(false),
-            square: Some(false),
-            max_width: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
-            max_height: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
-        };
+                padding: Some(0.0),
+                border: Some(0.0),
+                allow_rotation: Some(false),
+                heuristic: Some(BinPackHeuristic::BestShortSideFit),
+                growable: Some(true),
+                power_of_two: Some(false),
+                square: Some(false),
+                max_width: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
+                max_height: Some(BIN_PACK_DEFAULT_MAX_EXTENT),
+            };
             options.padding = Some(padding);
             options.border = Some(border);
             options.heuristic = Some(heuristic);
@@ -693,24 +858,12 @@ mod pack_rectangles {
                     } else {
                         (source_width, source_height)
                     };
-                    assert_eq!(
-                        placement.width, expected_width,
-                        "{}: {}",
-                        label, n
-                    );
-                    assert_eq!(
-                        placement.height, expected_height,
-                        "{}: {}",
-                        label, n
-                    );
+                    assert_eq!(placement.width, expected_width, "{}: {}", label, n);
+                    assert_eq!(placement.height, expected_height, "{}: {}", label, n);
                 }
             }
 
-            let placed_area: f32 = result
-                .placements
-                .iter()
-                .map(|p| p.width * p.height)
-                .sum();
+            let placed_area: f32 = result.placements.iter().map(|p| p.width * p.height).sum();
             let reported_area = result.width * result.height;
             let expected_occupancy = if reported_area > 0.0 {
                 placed_area / reported_area
@@ -720,7 +873,14 @@ mod pack_rectangles {
             let actual_occupancy = get_pack_result_occupancy(&result);
             let diff = (actual_occupancy - expected_occupancy).abs();
             // TS `toBeCloseTo(expected, 12)`: abs diff < 0.5e-12.
-            assert!(diff < 0.5e-12, "{}: occupancy mismatch: expected {}, got {} (diff: {})", label, expected_occupancy, actual_occupancy, diff);
+            assert!(
+                diff < 0.5e-12,
+                "{}: occupancy mismatch: expected {}, got {} (diff: {})",
+                label,
+                expected_occupancy,
+                actual_occupancy,
+                diff
+            );
 
             for placement in &result.placements {
                 assert!(

@@ -12,7 +12,13 @@ impl DerivedCache {
     }
 
     pub(crate) fn get<T: 'static + Send + Clone>(&self) -> Option<T> {
-        return self.0.lock().unwrap().as_ref().and_then(|b| b.downcast_ref::<T>()).cloned();
+        return self
+            .0
+            .lock()
+            .unwrap()
+            .as_ref()
+            .and_then(|b| b.downcast_ref::<T>())
+            .cloned();
     }
 
     pub(crate) fn set<T: 'static + Send>(&self, value: T) {

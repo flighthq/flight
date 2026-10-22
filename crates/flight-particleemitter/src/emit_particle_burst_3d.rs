@@ -1,9 +1,9 @@
+use flight_particles::contract::{
+    ensure_particle_emitter_state_capacity, write_particle_spawn_offset,
+};
 use flight_particles::{
     EmitterShape, PARTICLE_VELOCITY_STRIDE, ParticleEmitterConfig, ParticleEmitterState,
     sample_particle_color_curve, sample_particle_curve,
-};
-use flight_particles::contract::{
-    ensure_particle_emitter_state_capacity, write_particle_spawn_offset,
 };
 
 use crate::particle_emitter_3d::reserve_particle_emitter_3d_impl as reserve_particle_emitter_3d;
@@ -67,26 +67,53 @@ pub(crate) fn emit_particle_burst_3d_impl(
 
     let has_tint = tint.is_some();
     let tint_val = tint.unwrap_or(0);
-    let tint_r = if has_tint { ((tint_val >> 24) & 0xff) as f32 / 255.0 } else { 1.0 };
-    let tint_g = if has_tint { ((tint_val >> 16) & 0xff) as f32 / 255.0 } else { 1.0 };
-    let tint_b = if has_tint { ((tint_val >> 8) & 0xff) as f32 / 255.0 } else { 1.0 };
-    let tint_a = if has_tint { (tint_val & 0xff) as f32 / 255.0 } else { 1.0 };
+    let tint_r = if has_tint {
+        ((tint_val >> 24) & 0xff) as f32 / 255.0
+    } else {
+        1.0
+    };
+    let tint_g = if has_tint {
+        ((tint_val >> 16) & 0xff) as f32 / 255.0
+    } else {
+        1.0
+    };
+    let tint_b = if has_tint {
+        ((tint_val >> 8) & 0xff) as f32 / 255.0
+    } else {
+        1.0
+    };
+    let tint_a = if has_tint {
+        (tint_val & 0xff) as f32 / 255.0
+    } else {
+        1.0
+    };
 
     let dir_len = (config.direction_x * config.direction_x
         + config.direction_y * config.direction_y
         + config.direction_z * config.direction_z)
         .sqrt();
-    let dir_nx = if dir_len > 1e-6 { config.direction_x / dir_len } else { 0.0 };
-    let dir_ny = if dir_len > 1e-6 { config.direction_y / dir_len } else { -1.0 };
-    let dir_nz = if dir_len > 1e-6 { config.direction_z / dir_len } else { 0.0 };
+    let dir_nx = if dir_len > 1e-6 {
+        config.direction_x / dir_len
+    } else {
+        0.0
+    };
+    let dir_ny = if dir_len > 1e-6 {
+        config.direction_y / dir_len
+    } else {
+        -1.0
+    };
+    let dir_nz = if dir_len > 1e-6 {
+        config.direction_z / dir_len
+    } else {
+        0.0
+    };
 
     let mut spawn_offset = [0.0f32, 0.0f32];
 
     for s_idx in 0..to_spawn {
         let idx = live_count + s_idx;
 
-        let lifetime =
-            config.lifetime_min + random() * (config.lifetime_max - config.lifetime_min);
+        let lifetime = config.lifetime_min + random() * (config.lifetime_max - config.lifetime_min);
         let lt = idx * 2;
         state.lifetimes[lt] = 0.0;
         state.lifetimes[lt + 1] = lifetime;
@@ -205,15 +232,12 @@ pub(crate) fn emit_particle_burst_3d_impl(
             let b0 = clamp01(
                 config.color_start_b + (random() - 0.5) * 2.0 * config.color_start_variance_b,
             );
-            let r1 = clamp01(
-                config.color_end_r + (random() - 0.5) * 2.0 * config.color_end_variance_r,
-            );
-            let g1 = clamp01(
-                config.color_end_g + (random() - 0.5) * 2.0 * config.color_end_variance_g,
-            );
-            let b1 = clamp01(
-                config.color_end_b + (random() - 0.5) * 2.0 * config.color_end_variance_b,
-            );
+            let r1 =
+                clamp01(config.color_end_r + (random() - 0.5) * 2.0 * config.color_end_variance_r);
+            let g1 =
+                clamp01(config.color_end_g + (random() - 0.5) * 2.0 * config.color_end_variance_g);
+            let b1 =
+                clamp01(config.color_end_b + (random() - 0.5) * 2.0 * config.color_end_variance_b);
             state.color_birth[ct] = r0;
             state.color_birth[ct + 1] = g0;
             state.color_birth[ct + 2] = b0;
@@ -263,14 +287,7 @@ pub(crate) fn emit_particle_burst_3d_impl(
     return to_spawn;
 }
 
-fn rotate_to_direction(
-    lx: f32,
-    ly: f32,
-    lz: f32,
-    dx: f32,
-    dy: f32,
-    dz: f32,
-) -> [f32; 3] {
+fn rotate_to_direction(lx: f32, ly: f32, lz: f32, dx: f32, dy: f32, dz: f32) -> [f32; 3] {
     let kx = -dy;
     let ky = dx;
     let sin_angle = (kx * kx + ky * ky).sqrt();

@@ -1,4 +1,6 @@
-use crate::path::{Path, StrokeStyle, StrokePathTessellationExplanation, StrokePathTessellationReason};
+use crate::path::{
+    Path, StrokePathTessellationExplanation, StrokePathTessellationReason, StrokeStyle,
+};
 use crate::stroke_path_geometry::build_stroke_path_geometry;
 
 #[cfg(test)]
@@ -16,7 +18,14 @@ mod sugar_tests {
     }
 
     fn test_style() -> StrokeStyle {
-        return StrokeStyle { width: 2.0, cap: StrokeCap::Round, join: StrokeJoin::Round, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
+        return StrokeStyle {
+            width: 2.0,
+            cap: StrokeCap::Round,
+            join: StrokeJoin::Round,
+            miter_limit: 4.0,
+            dash: Vec::new(),
+            dash_offset: 0.0,
+        };
     }
 
     #[test]
@@ -34,7 +43,8 @@ mod sugar_tests {
 pub fn explain_stroke_path_tessellation(
     path: &Path,
     style: &StrokeStyle,
-    tolerance: Option<f64>) -> StrokePathTessellationExplanation {
+    tolerance: Option<f64>,
+) -> StrokePathTessellationExplanation {
     let tolerance = tolerance.unwrap_or(0.25);
     let geometry = build_stroke_path_geometry(path, style, tolerance);
     return StrokePathTessellationExplanation {
@@ -46,7 +56,11 @@ pub fn explain_stroke_path_tessellation(
 
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
-    pub fn explain_stroke_tessellation(&self, style: &StrokeStyle, tolerance: Option<f64>) -> StrokePathTessellationExplanation {
+    pub fn explain_stroke_tessellation(
+        &self,
+        style: &StrokeStyle,
+        tolerance: Option<f64>,
+    ) -> StrokePathTessellationExplanation {
         return explain_stroke_path_tessellation(self, style, tolerance);
     }
 }

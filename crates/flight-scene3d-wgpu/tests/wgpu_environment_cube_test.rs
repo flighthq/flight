@@ -18,15 +18,23 @@ mod ensure_wgpu_environment_source_cube {
         let (environment, fake) = create_test_image_environment();
         let view = ensure_wgpu_environment_source_cube(&mut test.state, &environment);
         assert!(view.is_some());
-        assert_eq!(test.textures()[0].format, wgpu::TextureFormat::Rgba8UnormSrgb);
+        assert_eq!(
+            test.textures()[0].format,
+            wgpu::TextureFormat::Rgba8UnormSrgb
+        );
         assert_eq!(fake.copy_count(), 6);
-        assert!(get_wgpu_scene3d_runtime(&mut test.state).environment_source_cube.is_some());
+        assert!(
+            get_wgpu_scene3d_runtime(&mut test.state)
+                .environment_source_cube
+                .is_some()
+        );
     }
 
     #[test]
     fn uploads_a_data_only_cube_through_queue_write_texture() {
         let mut test = make_wgpu_scene3d_state(None);
-        let view = ensure_wgpu_environment_source_cube(&mut test.state, &create_test_bitmap_environment());
+        let view =
+            ensure_wgpu_environment_source_cube(&mut test.state, &create_test_bitmap_environment());
         assert!(view.is_some());
         let writes = test.texture_writes();
         assert_eq!(writes.len(), 6);
@@ -69,7 +77,11 @@ mod update_wgpu_environment_cube_face {
     fn returns_false_when_no_source_cube_has_been_built_yet() {
         let mut test = make_wgpu_scene3d_state(None);
         let face = create_test_bitmap_face();
-        assert!(!update_wgpu_environment_cube_face(&mut test.state, 2, &*face.read().unwrap()));
+        assert!(!update_wgpu_environment_cube_face(
+            &mut test.state,
+            2,
+            &*face.read().unwrap()
+        ));
         assert_eq!(test.count("writeTexture"), 0);
     }
 
@@ -80,7 +92,11 @@ mod update_wgpu_environment_cube_face {
         let after_build = test.count("writeTexture");
         assert_eq!(after_build, 6);
         let face = create_test_bitmap_face();
-        assert!(update_wgpu_environment_cube_face(&mut test.state, 2, &*face.read().unwrap()));
+        assert!(update_wgpu_environment_cube_face(
+            &mut test.state,
+            2,
+            &*face.read().unwrap()
+        ));
         assert_eq!(test.count("writeTexture"), after_build + 1);
         assert_eq!(test.texture_writes().last().unwrap().origin, [0, 0, 2]);
     }

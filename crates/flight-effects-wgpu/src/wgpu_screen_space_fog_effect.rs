@@ -67,12 +67,18 @@ pub fn apply_screen_space_fog_effect_to_wgpu(
 
 /// Registers the default runner under `ScreenSpaceFogEffect` (TS `registerWgpuScreenSpaceFogEffect`).
 pub fn register_wgpu_screen_space_fog_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "ScreenSpaceFogEffect", wgpu_screen_space_fog_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "ScreenSpaceFogEffect",
+        wgpu_screen_space_fog_effect_runner,
+        None,
+    );
 }
 
 /// The default `ScreenSpaceFogEffect` runner (TS `wgpuScreenSpaceFogEffectRunner`).
 pub fn wgpu_screen_space_fog_effect_runner(ctx: &mut WgpuEffectContext<'_>, effect: &dyn Effect) {
-    let effect = downcast_wgpu_effect::<ScreenSpaceFogEffect>(effect, "wgpuScreenSpaceFogEffectRunner");
+    let effect =
+        downcast_wgpu_effect::<ScreenSpaceFogEffect>(effect, "wgpuScreenSpaceFogEffectRunner");
     let source = ctx.source.read().unwrap();
     let dest = ctx.dest.read().unwrap();
     apply_screen_space_fog_effect_to_wgpu(ctx.state, &source, &dest, effect);

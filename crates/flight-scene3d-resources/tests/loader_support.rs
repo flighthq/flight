@@ -8,7 +8,9 @@ use flight_scene3d::Scene3DDocument;
 pub(crate) type NetRequests = Arc<Mutex<Vec<String>>>;
 
 pub(crate) fn bytes_body(bytes: &[u8]) -> NetResponseBody {
-    return NetResponseBody::Buffer(create_array_buffer_from_bytes(bytes.to_vec().into_boxed_slice()));
+    return NetResponseBody::Buffer(create_array_buffer_from_bytes(
+        bytes.to_vec().into_boxed_slice(),
+    ));
 }
 
 /// Counts of every document table, so a loaded document can be compared with the parser's own
@@ -76,7 +78,11 @@ pub(crate) fn gltf_fixture(buffer_uri: Option<&str>) -> String {
         ),
         None => String::new(),
     };
-    let mesh_node = if buffer_uri.is_some() { r#",{"mesh":0}"# } else { "" };
+    let mesh_node = if buffer_uri.is_some() {
+        r#",{"mesh":0}"#
+    } else {
+        ""
+    };
     let scene_nodes = if buffer_uri.is_some() { "[0,1]" } else { "[0]" };
     return format!(
         r#"{{"asset":{{"version":"2.0"}},"extensionsRequired":["ACME_missing"],"extensionsUsed":["ACME_missing"],"cameras":[{{"type":"perspective","perspective":{{"yfov":1,"znear":0.1}}}}],"images":[{{"uri":"skin.png"}}],"textures":[{{"source":0}}],"materials":[{{"pbrMetallicRoughness":{{"baseColorTexture":{{"index":0}}}}}}],"nodes":[{{"camera":0}}{mesh_node}],"scenes":[{{"nodes":{scene_nodes}}}],"scene":0{mesh}}}"#
@@ -91,7 +97,13 @@ pub(crate) fn glb_bytes(json: &str) -> Vec<u8> {
     }
     let length = 12 + 8 + chunk.len();
     let mut bytes = Vec::new();
-    for word in [0x46546c67_u32, 2, length as u32, chunk.len() as u32, 0x4e4f534a] {
+    for word in [
+        0x46546c67_u32,
+        2,
+        length as u32,
+        chunk.len() as u32,
+        0x4e4f534a,
+    ] {
         bytes.extend(word.to_le_bytes());
     }
     bytes.extend(chunk);
@@ -103,7 +115,10 @@ pub(crate) fn empty_headers() -> Ref<Record<String>> {
 }
 
 pub(crate) fn float_bytes(values: &[f32]) -> Vec<u8> {
-    return values.iter().flat_map(|value| value.to_le_bytes()).collect();
+    return values
+        .iter()
+        .flat_map(|value| value.to_le_bytes())
+        .collect();
 }
 
 pub(crate) fn external_base_paths(document: &Scene3DDocument) -> Vec<Option<String>> {

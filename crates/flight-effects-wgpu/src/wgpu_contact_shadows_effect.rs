@@ -31,7 +31,12 @@ pub fn apply_contact_shadows_effect_to_wgpu(
 /// Registers the default runner under `ContactShadowsEffect` (TS
 /// `registerWgpuContactShadowsEffect`).
 pub fn register_wgpu_contact_shadows_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "ContactShadowsEffect", wgpu_contact_shadows_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "ContactShadowsEffect",
+        wgpu_contact_shadows_effect_runner,
+        None,
+    );
 }
 
 /// The default `ContactShadowsEffect` runner (TS `wgpuContactShadowsEffectRunner`).

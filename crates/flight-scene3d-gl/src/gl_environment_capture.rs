@@ -23,7 +23,10 @@ use crate::types::GlEnvironmentCaptureOptions;
 // The per-state reusable capture camera (TS module WeakMap keyed by state), lent out for one capture
 // and returned to the runtime slot afterwards.
 fn get_gl_environment_capture_camera(state: &GlRenderState) -> Camera3D {
-    if let Some(camera) = get_gl_scene3d_runtime(state).environment_capture_camera.take() {
+    if let Some(camera) = get_gl_scene3d_runtime(state)
+        .environment_capture_camera
+        .take()
+    {
         return camera;
     }
     let mut camera = create_camera_3d();
@@ -58,7 +61,8 @@ pub fn render_gl_environment_capture(
     options: Option<&GlEnvironmentCaptureOptions>,
 ) {
     // SAFETY: a state query on the state's owning GL thread.
-    let previous_active_texture = unsafe { state.gl.get_parameter_i32(glow::ACTIVE_TEXTURE) } as u32;
+    let previous_active_texture =
+        unsafe { state.gl.get_parameter_i32(glow::ACTIVE_TEXTURE) } as u32;
     let mut camera = get_gl_environment_capture_camera(state);
     camera.near = options
         .and_then(|options| options.near)
@@ -86,7 +90,15 @@ pub fn render_gl_environment_capture(
                 if let Some(environment) = &environment {
                     render_gl_environment_skybox(state, &environment.read().unwrap(), &camera, 1.0);
                 }
-                render_gl_scene3d(state, &pass, Some(&mut *cube_target), scene, &camera, lights, None);
+                render_gl_scene3d(
+                    state,
+                    &pass,
+                    Some(&mut *cube_target),
+                    scene,
+                    &camera,
+                    lights,
+                    None,
+                );
             }));
             let ended = end_gl_cube_render_face(state, &pass);
             if let Err(payload) = drawn {

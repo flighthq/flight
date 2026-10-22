@@ -4,11 +4,11 @@ use std::sync::{Arc, RwLock};
 use flight_camera::{Camera3D, Projection, create_camera_3d, create_perspective_projection};
 use flight_geometry::{create_matrix3, create_matrix4};
 use flight_lighting::Scene3DLightBlock;
+use flight_materials::unlit_materials::create_wireframe_material;
+use flight_materials::{MaterialAlphaMode, WIREFRAME_MATERIAL_KIND};
 use flight_meshgeometry::{MeshGeometry, create_box_mesh_geometry};
 use flight_render::Scene3DRenderProxy;
 use flight_scene3d_gl::contract::*;
-use flight_materials::unlit_materials::create_wireframe_material;
-use flight_materials::{MaterialAlphaMode, WIREFRAME_MATERIAL_KIND};
 
 use crate::gl_test_helper::{calls_with, count_calls, make_gl_scene3d_state};
 
@@ -73,7 +73,12 @@ mod gl_wireframe_mesh_material_renderer {
     fn bind_selects_the_program_disables_culling_and_uploads_the_line_color() {
         let mut state = make_gl_scene3d_state();
         let material = create_wireframe_material();
-        (GL_WIREFRAME_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &no_lights(), &make_camera());
+        (GL_WIREFRAME_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &no_lights(),
+            &make_camera(),
+        );
         assert!(count_calls("use_program") > 0);
         assert!(has_call("disable", glow::CULL_FACE));
         assert!(count_calls("uniform_4_f32") > 0);
@@ -85,7 +90,12 @@ mod gl_wireframe_mesh_material_renderer {
         let mut material = create_wireframe_material();
         material.alpha_cutoff = 0.25;
         material.alpha_mode = MaterialAlphaMode::Mask;
-        (GL_WIREFRAME_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &no_lights(), &make_camera());
+        (GL_WIREFRAME_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &no_lights(),
+            &make_camera(),
+        );
         assert!(
             calls_with("uniform_1_f32")
                 .iter()
@@ -99,13 +109,21 @@ mod gl_wireframe_mesh_material_renderer {
         let proxy = make_proxy();
         {
             let material = proxy.material.read().unwrap();
-            (GL_WIREFRAME_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&*material), &no_lights(), &make_camera());
+            (GL_WIREFRAME_MESH_MATERIAL_RENDERER.bind)(
+                &mut state,
+                Some(&*material),
+                &no_lights(),
+                &make_camera(),
+            );
         }
         (GL_WIREFRAME_MESH_MATERIAL_RENDERER.draw)(&mut state, &proxy, &make_geometry());
         let draws = calls_with("draw_elements");
         assert!(!draws.is_empty());
         // Line index count = triangle index count * 2.
-        assert_eq!(draws[0].integers[1], i64::from(proxy.subset.index_count * 2));
+        assert_eq!(
+            draws[0].integers[1],
+            i64::from(proxy.subset.index_count * 2)
+        );
     }
 
     // This family binds its own line-index VAO and bypasses draw_gl_mesh_subset, which is where every
@@ -119,7 +137,12 @@ mod gl_wireframe_mesh_material_renderer {
         proxy.alpha = Some(0.5);
         {
             let material = proxy.material.read().unwrap();
-            (GL_WIREFRAME_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&*material), &no_lights(), &make_camera());
+            (GL_WIREFRAME_MESH_MATERIAL_RENDERER.bind)(
+                &mut state,
+                Some(&*material),
+                &no_lights(),
+                &make_camera(),
+            );
         }
         (GL_WIREFRAME_MESH_MATERIAL_RENDERER.draw)(&mut state, &proxy, &make_geometry());
 
@@ -140,11 +163,19 @@ mod gl_wireframe_mesh_material_renderer {
         get_gl_scene3d_runtime(&state).active_skinned_run = true;
         {
             let material = proxy.material.read().unwrap();
-            (GL_WIREFRAME_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&*material), &no_lights(), &make_camera());
+            (GL_WIREFRAME_MESH_MATERIAL_RENDERER.bind)(
+                &mut state,
+                Some(&*material),
+                &no_lights(),
+                &make_camera(),
+            );
         }
         (GL_WIREFRAME_MESH_MATERIAL_RENDERER.draw)(&mut state, &proxy, &make_geometry());
 
-        assert!(has_call("active_texture", glow::TEXTURE0 + SKIN_PALETTE_TEXTURE_UNIT));
+        assert!(has_call(
+            "active_texture",
+            glow::TEXTURE0 + SKIN_PALETTE_TEXTURE_UNIT
+        ));
         assert!(
             calls_with("uniform_1_i32")
                 .iter()
@@ -169,7 +200,10 @@ mod register_gl_wireframe_material {
         register_gl_wireframe_material(&mut state);
         assert!(
             get_gl_mesh_material_renderer(&state, &WIREFRAME_MATERIAL_KIND.to_string())
-                .is_some_and(|renderer| std::ptr::eq(renderer, &GL_WIREFRAME_MESH_MATERIAL_RENDERER))
+                .is_some_and(|renderer| std::ptr::eq(
+                    renderer,
+                    &GL_WIREFRAME_MESH_MATERIAL_RENDERER
+                ))
         );
     }
 }

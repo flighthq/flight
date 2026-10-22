@@ -1,5 +1,5 @@
-use flight_render::RenderTargetClear;
 use flight_entity::Ref;
+use flight_render::RenderTargetClear;
 use flight_render_wgpu::*;
 
 use crate::support::*;

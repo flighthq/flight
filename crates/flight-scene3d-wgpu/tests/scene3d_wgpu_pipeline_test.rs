@@ -10,12 +10,12 @@ use flight_registry::{KindMap, get_kind_map_keys};
 use flight_render_wgpu::*;
 use flight_scene2d_wgpu::WGPU_SCENE2D_RENDER_PRESET;
 use flight_scene3d_wgpu::contract::*;
+use flight_shading::SHADED_MATERIAL_KIND;
 use flight_shading::contract::{
     ANIMATED_NORMAL_MODIFIER_KIND, DISSOLVE_MODIFIER_KIND, EMISSIVE_MODIFIER_KIND,
     ENV_REFLECT_MODIFIER_KIND, FOG_MODIFIER_KIND, RIM_MODIFIER_KIND, TOON_MODIFIER_KIND,
     VERTEX_DISPLACE_MODIFIER_KIND,
 };
-use flight_shading::SHADED_MATERIAL_KIND;
 
 use crate::support::*;
 
@@ -112,9 +112,11 @@ mod wgpu_scene3d_render_preset {
     #[test]
     fn carries_gpu_skinning_through_the_pipeline_and_into_state_runtime() {
         let registries = &WGPU_SCENE3D_RENDER_PRESET.registries;
-        assert!(registries
-            .gpu_skinning
-            .is_some_and(|adapter| std::ptr::eq(adapter, &WGPU_SKINNING_ADAPTER)));
+        assert!(
+            registries
+                .gpu_skinning
+                .is_some_and(|adapter| std::ptr::eq(adapter, &WGPU_SKINNING_ADAPTER))
+        );
 
         let mut test = make_wgpu_scene3d_state(Some(WgpuRenderStateOptions {
             gpu_skinning: registries.gpu_skinning,
@@ -123,16 +125,23 @@ mod wgpu_scene3d_render_preset {
             texture_resolvers: Some((*registries.texture_resolvers).clone()),
             ..test_default()
         }));
-        assert!(get_wgpu_skinning_adapter(&mut test.state)
-            .is_some_and(|adapter| std::ptr::eq(adapter, &WGPU_SKINNING_ADAPTER)));
+        assert!(
+            get_wgpu_skinning_adapter(&mut test.state)
+                .is_some_and(|adapter| std::ptr::eq(adapter, &WGPU_SKINNING_ADAPTER))
+        );
     }
 
     // TS checks Object.isFrozen: a Rust static is one immutable shared value.
     #[test]
     fn is_one_shared_immutable_value_so_late_register_calls_cannot_mutate_it() {
-        assert!(std::ptr::eq(&*WGPU_SCENE3D_RENDER_PRESET, &*WGPU_SCENE3D_RENDER_PRESET));
+        assert!(std::ptr::eq(
+            &*WGPU_SCENE3D_RENDER_PRESET,
+            &*WGPU_SCENE3D_RENDER_PRESET
+        ));
         let mut test = make_wgpu_scene3d_state(Some(WgpuRenderStateOptions {
-            material_renderers: Some((*WGPU_SCENE3D_RENDER_PRESET.registries.material_renderers).clone()),
+            material_renderers: Some(
+                (*WGPU_SCENE3D_RENDER_PRESET.registries.material_renderers).clone(),
+            ),
             ..test_default()
         }));
         register_wgpu_mesh_material_renderer(
@@ -140,19 +149,23 @@ mod wgpu_scene3d_render_preset {
             "acme.LateMaterial".to_string(),
             &WGPU_UNLIT_MESH_MATERIAL_RENDERER,
         );
-        assert!(!WGPU_SCENE3D_RENDER_PRESET
-            .registries
-            .material_renderers
-            .entries
-            .contains_key("acme.LateMaterial"));
+        assert!(
+            !WGPU_SCENE3D_RENDER_PRESET
+                .registries
+                .material_renderers
+                .entries
+                .contains_key("acme.LateMaterial")
+        );
     }
 
     #[test]
     fn does_not_claim_gl_only_extended_pbr_support() {
-        assert!(!WGPU_SCENE3D_RENDER_PRESET
-            .registries
-            .material_renderers
-            .entries
-            .contains_key(EXTENDED_PBR_MATERIAL_KIND));
+        assert!(
+            !WGPU_SCENE3D_RENDER_PRESET
+                .registries
+                .material_renderers
+                .entries
+                .contains_key(EXTENDED_PBR_MATERIAL_KIND)
+        );
     }
 }

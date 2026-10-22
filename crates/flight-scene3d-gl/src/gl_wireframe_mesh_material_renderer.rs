@@ -1,6 +1,5 @@
 // flight-lint: allow-file(contract-vocabulary) D17 mesh-material renderers are backend-typed dispatch records over thread-bound render-gl state
 
-use std::rc::Rc;
 use flight_camera::Camera3D;
 use flight_color::{allocate_linear_color, unpack_color_to_linear};
 use flight_lighting::Scene3DLightBlock;
@@ -9,9 +8,12 @@ use flight_meshgeometry::MeshGeometry;
 use flight_render::Scene3DRenderProxy;
 use flight_render_gl::{GlMeshMaterialRenderer, GlRenderState};
 use glow::HasContext;
+use std::rc::Rc;
 
 use crate::gl_mesh_material_registry::register_gl_mesh_material_renderer;
-use crate::gl_mesh_program::{begin_gl_mesh_draw, set_gl_mesh_view_projection, upload_gl_mesh_draw_alpha};
+use crate::gl_mesh_program::{
+    begin_gl_mesh_draw, set_gl_mesh_view_projection, upload_gl_mesh_draw_alpha,
+};
 use crate::gl_scene3d_runtime::get_gl_scene3d_runtime;
 use crate::gl_wireframe_prelude::ensure_gl_wireframe_program;
 use crate::gl_wireframe_upload::ensure_gl_wireframe_upload;
@@ -35,8 +37,10 @@ fn bind_gl_wireframe_mesh_material(
     camera: &Camera3D,
 ) {
     let gl = state.gl.clone();
-    let wireframe = material.and_then(|material| material.as_any().downcast_ref::<WireframeMaterial>());
-    let alpha_mask_enabled = wireframe.is_some_and(|wireframe| wireframe.alpha_mode == MaterialAlphaMode::Mask);
+    let wireframe =
+        material.and_then(|material| material.as_any().downcast_ref::<WireframeMaterial>());
+    let alpha_mask_enabled =
+        wireframe.is_some_and(|wireframe| wireframe.alpha_mode == MaterialAlphaMode::Mask);
     let program = ensure_gl_wireframe_program(state, Some(alpha_mask_enabled));
     let family: GlMeshProgramRef = program.clone();
     // double_sided = true: lines have no winding, so back-face culling must be off.
@@ -65,7 +69,11 @@ fn bind_gl_wireframe_mesh_material(
     }
 }
 
-fn draw_gl_wireframe_mesh_material(state: &mut GlRenderState, proxy: &Scene3DRenderProxy, geometry: &MeshGeometry) {
+fn draw_gl_wireframe_mesh_material(
+    state: &mut GlRenderState,
+    proxy: &Scene3DRenderProxy,
+    geometry: &MeshGeometry,
+) {
     let gl = state.gl.clone();
     let program = get_gl_scene3d_runtime(state).active_mesh_program.clone();
     let Some(program) = program else {
@@ -74,7 +82,9 @@ fn draw_gl_wireframe_mesh_material(state: &mut GlRenderState, proxy: &Scene3DRen
     let program = program.mesh_program();
 
     // SAFETY: the program is bound on the owning GL thread.
-    unsafe { gl.uniform_matrix_4_f32_slice(program.loc_model.as_ref(), false, &proxy.world_matrix.m) };
+    unsafe {
+        gl.uniform_matrix_4_f32_slice(program.loc_model.as_ref(), false, &proxy.world_matrix.m)
+    };
     // This family bypasses draw_gl_mesh_subset, so it uploads the per-draw object alpha itself.
     {
         let material = proxy.material.read().unwrap();
@@ -83,12 +93,17 @@ fn draw_gl_wireframe_mesh_material(state: &mut GlRenderState, proxy: &Scene3DRen
 
     // Same opt-in gate as draw_gl_mesh_subset: no capability, no palette bind and no HAS_SKIN variant.
     let skin_feature = get_gl_scene3d_runtime(state).mesh_skin_feature;
-    let gpu_skinned = skin_feature.is_some_and(|feature| (feature.bind_mesh_skin_palette)(state, program, proxy));
+    let gpu_skinned =
+        skin_feature.is_some_and(|feature| (feature.bind_mesh_skin_palette)(state, program, proxy));
     let upload = ensure_gl_wireframe_upload(state, geometry, Some(gpu_skinned));
     let subset = proxy.subset;
     // Each triangle index contributes two line indices, so the subset's line range is its triangle range
     // scaled by 2.
-    let element_size = if upload.index_type == glow::UNSIGNED_INT { 4 } else { 2 };
+    let element_size = if upload.index_type == glow::UNSIGNED_INT {
+        4
+    } else {
+        2
+    };
     // SAFETY: the draw runs on the owning GL thread against the VAO the upload left bound.
     unsafe {
         gl.draw_elements(

@@ -4,11 +4,11 @@ use std::sync::{Arc, RwLock};
 use flight_camera::{Camera3D, Projection, create_camera_3d, create_perspective_projection};
 use flight_geometry::{create_matrix3, create_matrix4};
 use flight_lighting::Scene3DLightBlock;
+use flight_materials::EMISSIVE_MATERIAL_KIND;
+use flight_materials::unlit_materials::create_emissive_material;
 use flight_meshgeometry::{MeshGeometry, create_box_mesh_geometry};
 use flight_render::Scene3DRenderProxy;
 use flight_scene3d_gl::contract::*;
-use flight_materials::EMISSIVE_MATERIAL_KIND;
-use flight_materials::unlit_materials::create_emissive_material;
 
 use crate::gl_test_helper::{count_calls, make_gl_scene3d_state};
 
@@ -68,7 +68,12 @@ mod gl_emissive_mesh_material_renderer {
         let mut state = make_gl_scene3d_state();
         let mut material = create_emissive_material();
         material.emissive_strength = 4.0;
-        (GL_EMISSIVE_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &no_lights(), &make_camera());
+        (GL_EMISSIVE_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &no_lights(),
+            &make_camera(),
+        );
         assert!(count_calls("uniform_4_f32") > 0);
         assert!(count_calls("uniform_1_f32") > 0);
     }
@@ -79,7 +84,12 @@ mod gl_emissive_mesh_material_renderer {
         let proxy = make_proxy();
         {
             let material = proxy.material.read().unwrap();
-            (GL_EMISSIVE_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&*material), &no_lights(), &make_camera());
+            (GL_EMISSIVE_MESH_MATERIAL_RENDERER.bind)(
+                &mut state,
+                Some(&*material),
+                &no_lights(),
+                &make_camera(),
+            );
         }
         (GL_EMISSIVE_MESH_MATERIAL_RENDERER.draw)(&mut state, &proxy, &make_geometry());
         assert!(count_calls("draw_elements") > 0);
@@ -94,8 +104,9 @@ mod register_gl_emissive_material {
         let mut state = make_gl_scene3d_state();
         register_gl_emissive_material(&mut state);
         assert!(
-            get_gl_mesh_material_renderer(&state, &EMISSIVE_MATERIAL_KIND.to_string())
-                .is_some_and(|renderer| std::ptr::eq(renderer, &GL_EMISSIVE_MESH_MATERIAL_RENDERER))
+            get_gl_mesh_material_renderer(&state, &EMISSIVE_MATERIAL_KIND.to_string()).is_some_and(
+                |renderer| std::ptr::eq(renderer, &GL_EMISSIVE_MESH_MATERIAL_RENDERER)
+            )
         );
     }
 }

@@ -1,5 +1,5 @@
-use flight_velocity::*;
 use flight_velocity::contract::*;
+use flight_velocity::*;
 
 fn assert_approx(actual: f32, expected: f32) {
     let diff = (actual - expected).abs();
@@ -331,10 +331,19 @@ mod get_velocity_reason_string {
 
     #[test]
     fn returns_the_exact_ts_strings() {
-        assert_eq!(get_velocity_reason_string(VelocityReason::NoSample), "no-sample");
+        assert_eq!(
+            get_velocity_reason_string(VelocityReason::NoSample),
+            "no-sample"
+        );
         assert_eq!(get_velocity_reason_string(VelocityReason::Stale), "stale");
-        assert_eq!(get_velocity_reason_string(VelocityReason::ExplicitZero), "explicit-zero");
-        assert_eq!(get_velocity_reason_string(VelocityReason::DerivedZero), "derived-zero");
+        assert_eq!(
+            get_velocity_reason_string(VelocityReason::ExplicitZero),
+            "explicit-zero"
+        );
+        assert_eq!(
+            get_velocity_reason_string(VelocityReason::DerivedZero),
+            "derived-zero"
+        );
         assert_eq!(get_velocity_reason_string(VelocityReason::Ok), "ok");
     }
 }
@@ -370,24 +379,39 @@ mod is_velocity_zero {
 
     #[test]
     fn returns_true_for_exact_zero() {
-        assert_eq!(is_velocity_zero(&Velocity2D { x: 0.0, y: 0.0 }, Some(0.0)), true);
+        assert_eq!(
+            is_velocity_zero(&Velocity2D { x: 0.0, y: 0.0 }, Some(0.0)),
+            true
+        );
     }
 
     #[test]
     fn returns_false_for_nonzero() {
-        assert_eq!(is_velocity_zero(&Velocity2D { x: 0.001, y: 0.0 }, Some(0.0)), false);
+        assert_eq!(
+            is_velocity_zero(&Velocity2D { x: 0.001, y: 0.0 }, Some(0.0)),
+            false
+        );
     }
 
     #[test]
     fn uses_the_default_epsilon_of_zero_when_none_is_given() {
         assert_eq!(is_velocity_zero(&Velocity2D { x: 0.0, y: 0.0 }, None), true);
-        assert_eq!(is_velocity_zero(&Velocity2D { x: 0.0001, y: 0.0 }, None), false);
+        assert_eq!(
+            is_velocity_zero(&Velocity2D { x: 0.0001, y: 0.0 }, None),
+            false
+        );
     }
 
     #[test]
     fn respects_epsilon() {
-        assert_eq!(is_velocity_zero(&Velocity2D { x: 0.001, y: 0.0 }, Some(0.01)), true);
-        assert_eq!(is_velocity_zero(&Velocity2D { x: 0.1, y: 0.0 }, Some(0.01)), false);
+        assert_eq!(
+            is_velocity_zero(&Velocity2D { x: 0.001, y: 0.0 }, Some(0.01)),
+            true
+        );
+        assert_eq!(
+            is_velocity_zero(&Velocity2D { x: 0.1, y: 0.0 }, Some(0.01)),
+            false
+        );
     }
 }
 
@@ -492,10 +516,19 @@ mod parse_velocity_reason {
 
     #[test]
     fn parses_the_exact_ts_strings() {
-        assert_eq!(parse_velocity_reason("no-sample"), Some(VelocityReason::NoSample));
+        assert_eq!(
+            parse_velocity_reason("no-sample"),
+            Some(VelocityReason::NoSample)
+        );
         assert_eq!(parse_velocity_reason("stale"), Some(VelocityReason::Stale));
-        assert_eq!(parse_velocity_reason("explicit-zero"), Some(VelocityReason::ExplicitZero));
-        assert_eq!(parse_velocity_reason("derived-zero"), Some(VelocityReason::DerivedZero));
+        assert_eq!(
+            parse_velocity_reason("explicit-zero"),
+            Some(VelocityReason::ExplicitZero)
+        );
+        assert_eq!(
+            parse_velocity_reason("derived-zero"),
+            Some(VelocityReason::DerivedZero)
+        );
         assert_eq!(parse_velocity_reason("ok"), Some(VelocityReason::Ok));
     }
 

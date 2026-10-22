@@ -57,7 +57,11 @@ fn apply_box_blur_pass(
     edge_color: Option<[f32; 4]>,
 ) {
     let pipeline = get_wgpu_effect_module_pipeline(state, "boxBlur", |state| {
-        return create_wgpu_effect_pipeline(state, BOX_BLUR_WGSL, Some(WgpuEffectBlendMode::Replace));
+        return create_wgpu_effect_pipeline(
+            state,
+            BOX_BLUR_WGSL,
+            Some(WgpuEffectBlendMode::Replace),
+        );
     });
     let width = source.width as f32;
     let height = source.height as f32;
@@ -116,13 +120,21 @@ pub fn apply_wgpu_effect_box_blur(
         if radius_x > 0.0 {
             apply_box_blur_pass(state, read, write, radius_x, 1.0, 0.0, edge_color);
             read = write;
-            write = if std::ptr::eq(write, temp) { dest } else { temp };
+            write = if std::ptr::eq(write, temp) {
+                dest
+            } else {
+                temp
+            };
         }
         let radius_y = compute_box_blur_pass_radius(blur_y, passes, pass);
         if radius_y > 0.0 {
             apply_box_blur_pass(state, read, write, radius_y, 0.0, 1.0, edge_color);
             read = write;
-            write = if std::ptr::eq(write, temp) { dest } else { temp };
+            write = if std::ptr::eq(write, temp) {
+                dest
+            } else {
+                temp
+            };
         }
         pass += 1.0;
     }

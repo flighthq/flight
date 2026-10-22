@@ -18,12 +18,12 @@ mod enable_gl_texture_resolver_guards {
     use std::sync::{Arc, RwLock};
 
     use flight_log::{
-        add_log_sink, create_log_state, create_memory_log_sink, get_memory_log_sink_entries,
-        LogData, LogValue,
+        LogData, LogValue, add_log_sink, create_log_state, create_memory_log_sink,
+        get_memory_log_sink_entries,
     };
     use flight_render_gl::{
-        are_gl_texture_resolver_guards_enabled, enable_gl_texture_resolver_guards,
-        register_gl_texture_resolver, resolve_gl_texture, GlRenderState, GlTextureRealization,
+        GlRenderState, GlTextureRealization, are_gl_texture_resolver_guards_enabled,
+        enable_gl_texture_resolver_guards, register_gl_texture_resolver, resolve_gl_texture,
     };
     use flight_texture::{TextureColorSpace, TextureVariant};
 

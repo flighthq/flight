@@ -1,8 +1,6 @@
 use flight_entity::{Kind, allocate_entity};
 
-use crate::{
-    Material3D, Material3DFields, MaterialAlphaMode, BLEND_MODE_NORMAL,
-};
+use crate::{BLEND_MODE_NORMAL, Material3D, Material3DFields, MaterialAlphaMode};
 
 // flight-lint: allow(conform-params) D23 (B): the approved generic kind stays positional; the options blob is removed (Principal 3139d09f)
 pub fn create_material3d(kind: Kind) -> Material3DFields {

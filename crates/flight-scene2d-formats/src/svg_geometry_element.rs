@@ -4,15 +4,15 @@ use std::collections::HashMap;
 
 use flight_geometry::create_rectangle;
 use flight_importdiagnostics::{
-    report_import_diagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
+    ImportDiagnosticDetailValue, ImportDiagnosticSeverity, report_import_diagnostic,
 };
-use flight_path::{create_path, dash_path, get_path_bounds, Path};
+use flight_path::{Path, create_path, dash_path, get_path_bounds};
 use flight_scene2d::contract::Node2DRef;
 use flight_shape::contract::{
-    append_shape_begin_fill, append_shape_begin_gradient_fill, append_shape_end_fill,
-    append_shape_line_gradient_style, append_shape_line_style, append_shape_path, create_shape,
-    get_shape_runtime, register_default_shape_bounds_commands, CapsStyle, GradientType, JointStyle,
-    LineScaleMode, Shape,
+    CapsStyle, GradientType, JointStyle, LineScaleMode, Shape, append_shape_begin_fill,
+    append_shape_begin_gradient_fill, append_shape_end_fill, append_shape_line_gradient_style,
+    append_shape_line_style, append_shape_path, create_shape, get_shape_runtime,
+    register_default_shape_bounds_commands,
 };
 
 use crate::svg_color::resolve_svg_color;

@@ -1,5 +1,5 @@
-use flight_particles::*;
 use flight_particles::contract::*;
+use flight_particles::*;
 
 struct BufferFixture {
     transforms: Vec<f32>,
@@ -75,7 +75,13 @@ mod apply_particle_collisions {
     #[test]
     fn is_a_no_op_with_no_colliders() {
         let (mut buf, mut state) = place(0.0, 520.0, 0.0, 100.0);
-        apply_particle_collisions(&mut buf.transforms, &mut buf.positions_z, buf.particle_count, &mut state, &[]);
+        apply_particle_collisions(
+            &mut buf.transforms,
+            &mut buf.positions_z,
+            buf.particle_count,
+            &mut state,
+            &[],
+        );
         assert_eq!(buf.transforms[1], 520.0);
     }
 
@@ -335,15 +341,10 @@ fn make_object() -> ParticleObject {
     }
 }
 
-fn place_object(
-    px: f32,
-    py: f32,
-    vx: f32,
-    vy: f32,
-) -> (Vec<ParticleObject>, ParticleObjectsState) {
+fn place_object(px: f32, py: f32, vx: f32, vy: f32) -> (Vec<ParticleObject>, ParticleObjectsState) {
     let mut objects = vec![make_object(), make_object()];
     let mut state = create_particle_objects_state();
-        ensure_particle_objects_state_capacity(&mut state, 2);
+    ensure_particle_objects_state_capacity(&mut state, 2);
     state.lifetimes[1] = 0.0; // slot 0 age
     state.lifetimes[1 * 2 + 1] = 0.0; // slot 1 dead
     state.lifetimes[0 * 2 + 1] = 100.0; // slot 0 alive

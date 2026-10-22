@@ -3,7 +3,13 @@ use flight_bitmap::contract::*;
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
-    return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
+    return BitmapRegion {
+        bitmap: bmp,
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+    };
 }
 
 mod convolve_bitmap {
@@ -16,7 +22,13 @@ mod convolve_bitmap {
         source.data[4] = 20;
         source.data[8] = 30;
         let mut out = vec![0u8; 4];
-        let sr = BitmapRegion { bitmap: source, x: 1, y: 0, width: 1, height: 1 };
+        let sr = BitmapRegion {
+            bitmap: source,
+            x: 1,
+            y: 0,
+            width: 1,
+            height: 1,
+        };
         let opts = BitmapConvolutionOptions {
             matrix: vec![1.0, 1.0, 1.0],
             matrix_x: 3,

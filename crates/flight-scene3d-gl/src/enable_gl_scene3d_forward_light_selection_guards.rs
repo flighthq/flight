@@ -8,7 +8,9 @@ use crate::gl_scene3d_runtime::get_gl_scene3d_runtime;
 
 // Returns whether the forward-light selection guard is installed on `state`.
 pub fn are_gl_scene3d_forward_light_selection_guards_enabled(state: &GlRenderState) -> bool {
-    return get_gl_scene3d_runtime(state).forward_light_selection_guard.is_some();
+    return get_gl_scene3d_runtime(state)
+        .forward_light_selection_guard
+        .is_some();
 }
 
 // Installs the shakeable forward-light selection guard on `state`. render_gl_scene3d reaches this guard

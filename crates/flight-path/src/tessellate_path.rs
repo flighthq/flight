@@ -1,5 +1,5 @@
-use crate::path::{Path, PathMesh};
 use crate::flatten_path::flatten_path;
+use crate::path::{Path, PathMesh};
 
 #[cfg(test)]
 mod sugar_tests {
@@ -25,8 +25,14 @@ mod sugar_tests {
 
     #[test]
     fn path_tessellate_into_matches_tessellate_path_into() {
-        let mut oa0 = PathMesh { vertices: Vec::new(), indices: Vec::new() };
-        let mut ob0 = PathMesh { vertices: Vec::new(), indices: Vec::new() };
+        let mut oa0 = PathMesh {
+            vertices: Vec::new(),
+            indices: Vec::new(),
+        };
+        let mut ob0 = PathMesh {
+            vertices: Vec::new(),
+            indices: Vec::new(),
+        };
         let s = test_path();
         s.tessellate_into(&mut oa0, Some(0.5));
         tessellate_path_into(&s, &mut ob0, Some(0.5));
@@ -59,10 +65,14 @@ fn is_ear(contour: &[f64], ring: &[usize], a: usize, b: usize, c: usize) -> bool
 
 // flight-lint: allow(f64) orientation/area/winding/intersection predicates over f64 path coordinates (D1 path candidate: signed area, tessellation); f32 sufficiency not measured
 fn is_point_in_triangle(
-    px: f64, py: f64,
-    ax: f64, ay: f64,
-    bx: f64, by: f64,
-    cx: f64, cy: f64,
+    px: f64,
+    py: f64,
+    ax: f64,
+    ay: f64,
+    bx: f64,
+    by: f64,
+    cx: f64,
+    cy: f64,
 ) -> bool {
     let d1 = (px - bx) * (ay - by) - (ax - bx) * (py - by);
     let d2 = (px - cx) * (by - cy) - (bx - cx) * (py - cy);

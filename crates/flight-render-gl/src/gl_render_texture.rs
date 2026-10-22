@@ -14,9 +14,10 @@ use flight_texture::{
 
 use crate::{
     GlRenderPass, GlRenderState, GlRenderTextureEntry, GlRenderTextureExplanation,
-    GlRenderTextureGuard, GlRenderTextureStatus, GlTextureRealization, apply_gl_sampler_state, begin_gl_render_pass, bind_gl_texture_realization,
-    clear_gl_render_target, create_gl_texture_render_target, destroy_gl_texture_render_target,
-    end_gl_render_pass, pop_gl_render_state, push_gl_render_state, resize_gl_texture_render_target,
+    GlRenderTextureGuard, GlRenderTextureStatus, GlTextureRealization, apply_gl_sampler_state,
+    begin_gl_render_pass, bind_gl_texture_realization, clear_gl_render_target,
+    create_gl_texture_render_target, destroy_gl_texture_render_target, end_gl_render_pass,
+    pop_gl_render_state, push_gl_render_state, resize_gl_texture_render_target,
 };
 
 pub fn bind_gl_render_texture(

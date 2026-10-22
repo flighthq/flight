@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 
 use flight_scene2d_formats::contract::*;
 use flight_shape::contract::create_shape;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 mod lottie_path_shape_item_handler {
     use super::*;

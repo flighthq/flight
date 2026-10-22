@@ -16,6 +16,10 @@ use flight_render_wgpu::{
     get_wgpu_color_adjustment_material_feature, get_wgpu_render_state_native_device,
     get_wgpu_render_state_runtime, get_wgpu_texture_format_name, write_wgpu_buffer,
 };
+use flight_shading::contract::{
+    get_fog_modifier_mode_string, get_modifier_define_key,
+    get_vertex_displace_modifier_source_string, order_modifier_stack,
+};
 use flight_shading::{
     ANIMATED_NORMAL_MODIFIER_KIND, AnimatedNormalModifier, DISSOLVE_MODIFIER_KIND,
     DissolveModifier, EMISSIVE_MODIFIER_KIND, ENV_REFLECT_MODIFIER_KIND, EmissiveModifier,
@@ -24,10 +28,6 @@ use flight_shading::{
     MODIFIER_SLOT_SPECULAR, MODIFIER_SLOT_VERTEX, Modifier, RIM_MODIFIER_KIND, RimModifier,
     ShadedMaterial, TOON_MODIFIER_KIND, ToonModifier, VERTEX_DISPLACE_MODIFIER_KIND,
     VertexDisplaceModifier, VertexDisplaceModifierSource,
-};
-use flight_shading::contract::{
-    get_fog_modifier_mode_string, get_modifier_define_key,
-    get_vertex_displace_modifier_source_string, order_modifier_stack,
 };
 use flight_texture::Texture;
 
@@ -241,7 +241,10 @@ fn assemble_wgpu_shaded_module_source(
     );
     source = source.replacen(
         "  var radiance = vec3f(0.0);",
-        &format!("{}\n  var radiance = vec3f(0.0);", indent(&plan.specular, 2)),
+        &format!(
+            "{}\n  var radiance = vec3f(0.0);",
+            indent(&plan.specular, 2)
+        ),
         1,
     );
     source = source.replacen(
@@ -297,8 +300,14 @@ fn bind_animated_normal_modifier(modifier: &dyn Modifier, out: &mut [f32], base:
     out[base] = value.scroll.x;
     out[base + 1] = value.scroll.y;
     out[base + 2] = value.strength;
-    out[base + 4] = value.secondary_scroll.as_ref().map_or(0.0, |scroll| scroll.x);
-    out[base + 5] = value.secondary_scroll.as_ref().map_or(0.0, |scroll| scroll.y);
+    out[base + 4] = value
+        .secondary_scroll
+        .as_ref()
+        .map_or(0.0, |scroll| scroll.x);
+    out[base + 5] = value
+        .secondary_scroll
+        .as_ref()
+        .map_or(0.0, |scroll| scroll.y);
 }
 
 fn bind_dissolve_modifier(modifier: &dyn Modifier, out: &mut [f32], base: usize) {
@@ -429,8 +438,11 @@ pub fn bind_wgpu_shaded_surface(
     let mut texture_offset = 3;
     for (index, modifier) in plan.ordered_modifiers.iter().enumerate() {
         if let Some(textures) = plan.snippets[index].and_then(|snippet| snippet.textures) {
-            texture_offset =
-                textures(&*modifier.read().unwrap(), &mut binding.textures, texture_offset);
+            texture_offset = textures(
+                &*modifier.read().unwrap(),
+                &mut binding.textures,
+                texture_offset,
+            );
         }
     }
 
@@ -651,8 +663,10 @@ pub fn ensure_wgpu_shaded_pipeline(
     format: wgpu::TextureFormat,
 ) -> WgpuMeshPipeline {
     let registry = get_modifier_snippet_table(state);
-    let define_key =
-        build_wgpu_shaded_cache_key(material, Some(WgpuModifierSnippetSource::Snippets(&registry)));
+    let define_key = build_wgpu_shaded_cache_key(
+        material,
+        Some(WgpuModifierSnippetSource::Snippets(&registry)),
+    );
     let plan = get_cached_modifier_plan(state, material, &registry, Some(&define_key));
     let color_adjusted = get_wgpu_scene3d_runtime(state).active_color_adjustment_run;
     let color_matrix = get_wgpu_scene3d_runtime(state).active_color_matrix_run;
@@ -1072,9 +1086,7 @@ fn get_vertex_displace_contribution(
     };
     return WgpuModifierContribution {
         declarations: None,
-        source: format!(
-            "localPosition = vec4f(localPosition.xyz + {axis} * ({amount}), 1.0);\n"
-        ),
+        source: format!("localPosition = vec4f(localPosition.xyz + {axis} * ({amount}), 1.0);\n"),
     };
 }
 
@@ -1168,7 +1180,10 @@ pub fn get_wgpu_shaded_module_source(
     );
 }
 
-fn has_current_snippets(plan: &WgpuShadedModifierPlan, registry: WgpuModifierSnippetSource<'_>) -> bool {
+fn has_current_snippets(
+    plan: &WgpuShadedModifierPlan,
+    registry: WgpuModifierSnippetSource<'_>,
+) -> bool {
     for (index, modifier) in plan.ordered_modifiers.iter().enumerate() {
         let kind = modifier.read().unwrap().modifier_fields().kind.clone();
         let current = resolve_wgpu_modifier_snippet_source(Some(registry), &kind);
@@ -1212,7 +1227,9 @@ fn narrow<T: 'static>(modifier: &dyn Modifier) -> Option<&T> {
     return any.downcast_ref::<T>();
 }
 
-fn read_texture_slot(slot: &Option<Ref<Texture>>) -> Option<std::sync::RwLockReadGuard<'_, Texture>> {
+fn read_texture_slot(
+    slot: &Option<Ref<Texture>>,
+) -> Option<std::sync::RwLockReadGuard<'_, Texture>> {
     return slot.as_ref().map(|texture| texture.read().unwrap());
 }
 
@@ -1249,7 +1266,10 @@ fn texture_entry_index(texture_index: usize) -> usize {
     };
 }
 
-fn texture_layout_entry(binding: u32, visibility: wgpu::ShaderStages) -> wgpu::BindGroupLayoutEntry {
+fn texture_layout_entry(
+    binding: u32,
+    visibility: wgpu::ShaderStages,
+) -> wgpu::BindGroupLayoutEntry {
     return wgpu::BindGroupLayoutEntry {
         binding,
         visibility,
@@ -1265,7 +1285,11 @@ fn texture_layout_entry(binding: u32, visibility: wgpu::ShaderStages) -> wgpu::B
 fn write_modifier_uniforms(out: &mut [f32], offset: usize, plan: &WgpuShadedModifierPlan) {
     for (index, modifier) in plan.ordered_modifiers.iter().enumerate() {
         if let Some(bind) = plan.snippets[index].and_then(|snippet| snippet.bind) {
-            bind(&*modifier.read().unwrap(), out, offset + index * MODIFIER_FLOATS);
+            bind(
+                &*modifier.read().unwrap(),
+                out,
+                offset + index * MODIFIER_FLOATS,
+            );
         }
     }
 }

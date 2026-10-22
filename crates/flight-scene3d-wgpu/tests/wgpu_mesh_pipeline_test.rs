@@ -1,12 +1,12 @@
-use std::sync::Arc;
 use flight_geometry::create_matrix4;
 use flight_meshgeometry::{
-    MeshGeometryOptions, VertexAttribute, VertexAttributeLayout, VertexFormat,
-    VertexSemantic, create_box_mesh_geometry, create_mesh_geometry,
+    MeshGeometryOptions, VertexAttribute, VertexAttributeLayout, VertexFormat, VertexSemantic,
+    create_box_mesh_geometry, create_mesh_geometry,
 };
 use flight_render_wgpu::*;
 use flight_scene3d_wgpu::contract::*;
 use flight_texture::{TextureFilter, TextureWrap, set_texture_uv_offset, set_texture_uv_scale};
+use std::sync::Arc;
 
 use crate::support::*;
 
@@ -125,7 +125,10 @@ fn make_test_shadow(test: &WgpuScene3DTestState) -> WgpuScene3DShadow {
     };
 }
 
-fn make_test_cube(test: &WgpuScene3DTestState, mip_level_count: u32) -> (wgpu::Texture, wgpu::TextureView) {
+fn make_test_cube(
+    test: &WgpuScene3DTestState,
+    mip_level_count: u32,
+) -> (wgpu::Texture, wgpu::TextureView) {
     let texture = test.native.device.create_texture(&wgpu::TextureDescriptor {
         label: None,
         size: wgpu::Extent3d {
@@ -212,8 +215,16 @@ fn premultiplied(dst_factor: wgpu::BlendFactor) -> wgpu::BlendState {
 }
 
 fn make_feature() -> WgpuColorAdjustmentMaterialFeature {
-    fn record(_runtime: &mut WgpuRenderStateRuntime, _value: Option<&WgpuColorScaleBiasInput>, _index: u32) {}
-    fn resolve_flush(_state: &mut WgpuRenderState, _count: u32) -> Option<WgpuColorAdjustmentFlush> {
+    fn record(
+        _runtime: &mut WgpuRenderStateRuntime,
+        _value: Option<&WgpuColorScaleBiasInput>,
+        _index: u32,
+    ) {
+    }
+    fn resolve_flush(
+        _state: &mut WgpuRenderState,
+        _count: u32,
+    ) -> Option<WgpuColorAdjustmentFlush> {
         return None;
     }
     return WgpuColorAdjustmentMaterialFeature {
@@ -294,10 +305,21 @@ mod build_wgpu_material_bind_group {
         let group = test.bind_groups()[0].clone();
         let bindings: Vec<u32> = group.entries.iter().map(|entry| entry.binding).collect();
         assert_eq!(bindings, vec![0, 1, 2, 3]);
-        assert!(matches!(&group.entries[0].resource, WgpuBindingResourceRecord::Buffer(binding) if binding.buffer == buffer));
-        assert_eq!(group.entries[1].resource, WgpuBindingResourceRecord::Sampler(sampler));
-        assert_eq!(group.entries[2].resource, WgpuBindingResourceRecord::TextureView(view0));
-        assert_eq!(group.entries[3].resource, WgpuBindingResourceRecord::TextureView(view1));
+        assert!(
+            matches!(&group.entries[0].resource, WgpuBindingResourceRecord::Buffer(binding) if binding.buffer == buffer)
+        );
+        assert_eq!(
+            group.entries[1].resource,
+            WgpuBindingResourceRecord::Sampler(sampler)
+        );
+        assert_eq!(
+            group.entries[2].resource,
+            WgpuBindingResourceRecord::TextureView(view0)
+        );
+        assert_eq!(
+            group.entries[3].resource,
+            WgpuBindingResourceRecord::TextureView(view1)
+        );
     }
 }
 
@@ -325,9 +347,13 @@ mod build_wgpu_per_map_material_bind_group {
         let group = test.bind_groups()[0].clone();
         let bindings: Vec<u32> = group.entries.iter().map(|entry| entry.binding).collect();
         assert_eq!(bindings, vec![0, 1, 2, 3, 4]);
-        assert!(matches!(&group.entries[0].resource, WgpuBindingResourceRecord::Buffer(binding) if binding.buffer == buffer));
-        let resources: Vec<WgpuBindingResourceRecord> =
-            group.entries[1..].iter().map(|entry| entry.resource.clone()).collect();
+        assert!(
+            matches!(&group.entries[0].resource, WgpuBindingResourceRecord::Buffer(binding) if binding.buffer == buffer)
+        );
+        let resources: Vec<WgpuBindingResourceRecord> = group.entries[1..]
+            .iter()
+            .map(|entry| entry.resource.clone())
+            .collect();
         assert_eq!(
             resources,
             vec![
@@ -585,7 +611,8 @@ mod ensure_wgpu_material_binding {
     use super::*;
 
     #[test]
-    fn creates_the_buffer_and_bind_group_once_owns_a_copy_of_the_scratch_and_steady_state_binds_build_nothing() {
+    fn creates_the_buffer_and_bind_group_once_owns_a_copy_of_the_scratch_and_steady_state_binds_build_nothing()
+     {
         let mut test = make_wgpu_scene3d_state(None);
         let layout = create_test_material_layout(&test.state, 2);
         let sampler = create_test_sampler(&test.state);
@@ -710,7 +737,10 @@ mod ensure_wgpu_per_map_material_binding {
     fn owns_the_parallel_scratch_copies_and_builds_nothing_on_steady_state_rebind() {
         let mut test = make_wgpu_scene3d_state(None);
         let layout = create_test_per_map_layout(&test.state, 2);
-        let samplers = vec![create_test_sampler(&test.state), create_test_sampler(&test.state)];
+        let samplers = vec![
+            create_test_sampler(&test.state),
+            create_test_sampler(&test.state),
+        ];
         let views = vec![create_test_view(&test.state), create_test_view(&test.state)];
         let binding = ensure_wgpu_per_map_material_binding(
             &mut test.state,
@@ -732,7 +762,10 @@ mod ensure_wgpu_per_map_material_binding {
     fn rebuilds_only_the_bind_group_when_a_non_primary_sampler_changes() {
         let mut test = make_wgpu_scene3d_state(None);
         let layout = create_test_per_map_layout(&test.state, 2);
-        let mut samplers = vec![create_test_sampler(&test.state), create_test_sampler(&test.state)];
+        let mut samplers = vec![
+            create_test_sampler(&test.state),
+            create_test_sampler(&test.state),
+        ];
         let views = vec![create_test_view(&test.state), create_test_view(&test.state)];
         let binding = ensure_wgpu_per_map_material_binding(
             &mut test.state,
@@ -1000,7 +1033,8 @@ mod get_wgpu_material_sampler {
         let test = make_wgpu_scene3d_state(None);
         let mut texture = create_test_bitmap_texture(1, 1);
         {
-            let sampler = &mut flight_texture::TextureUvTransform::texture_fields_mut(&mut texture).sampler;
+            let sampler =
+                &mut flight_texture::TextureUvTransform::texture_fields_mut(&mut texture).sampler;
             sampler.wrap_u = TextureWrap::Repeat;
             sampler.wrap_v = TextureWrap::Repeat;
         }
@@ -1011,7 +1045,10 @@ mod get_wgpu_material_sampler {
             sampler,
             get_wgpu_render_state_device_resources(&test.state).linear_sampler
         );
-        assert_eq!(get_wgpu_material_sampler(&test.state, Some(&texture)), sampler);
+        assert_eq!(
+            get_wgpu_material_sampler(&test.state, Some(&texture)),
+            sampler
+        );
     }
 
     #[test]
@@ -1019,7 +1056,8 @@ mod get_wgpu_material_sampler {
         let test = make_wgpu_scene3d_state(None);
         let mut texture = create_test_bitmap_texture(1, 1);
         {
-            let sampler = &mut flight_texture::TextureUvTransform::texture_fields_mut(&mut texture).sampler;
+            let sampler =
+                &mut flight_texture::TextureUvTransform::texture_fields_mut(&mut texture).sampler;
             sampler.min_filter = TextureFilter::Nearest;
             sampler.mag_filter = TextureFilter::Linear;
         }
@@ -1088,7 +1126,8 @@ mod get_wgpu_mesh_prelude_wgsl {
     use super::*;
 
     #[test]
-    fn adds_the_palette_binding_attributes_and_texture_load_skin_matrix_only_to_the_skinned_variant() {
+    fn adds_the_palette_binding_attributes_and_texture_load_skin_matrix_only_to_the_skinned_variant()
+     {
         let rigid = get_wgpu_mesh_prelude_wgsl(false, None);
         let skinned = get_wgpu_mesh_prelude_wgsl(true, Some(make_wgpu_skinning_adapter()));
 
@@ -1138,7 +1177,14 @@ mod initialize_wgpu_mesh_pipeline {
 mod is_wgpu_material_bind_group_rebuild_needed {
     use super::*;
 
-    fn make_cached(test: &WgpuScene3DTestState) -> (WgpuMaterialBinding, wgpu::Sampler, wgpu::TextureView, wgpu::TextureView) {
+    fn make_cached(
+        test: &WgpuScene3DTestState,
+    ) -> (
+        WgpuMaterialBinding,
+        wgpu::Sampler,
+        wgpu::TextureView,
+        wgpu::TextureView,
+    ) {
         let layout = create_test_material_layout(&test.state, 2);
         let buffer = create_test_uniform_buffer(&test.state, 48);
         let sampler = create_test_sampler(&test.state);
@@ -1165,7 +1211,11 @@ mod is_wgpu_material_bind_group_rebuild_needed {
     fn is_false_when_the_sampler_and_every_resolved_view_match_the_cache() {
         let test = make_wgpu_scene3d_state(None);
         let (cached, sampler, view0, view1) = make_cached(&test);
-        assert!(!is_wgpu_material_bind_group_rebuild_needed(&cached, &sampler, &[view0, view1]));
+        assert!(!is_wgpu_material_bind_group_rebuild_needed(
+            &cached,
+            &sampler,
+            &[view0, view1]
+        ));
     }
 
     #[test]
@@ -1173,7 +1223,11 @@ mod is_wgpu_material_bind_group_rebuild_needed {
         let test = make_wgpu_scene3d_state(None);
         let (cached, _sampler, view0, view1) = make_cached(&test);
         let other = create_test_sampler(&test.state);
-        assert!(is_wgpu_material_bind_group_rebuild_needed(&cached, &other, &[view0, view1]));
+        assert!(is_wgpu_material_bind_group_rebuild_needed(
+            &cached,
+            &other,
+            &[view0, view1]
+        ));
     }
 
     #[test]
@@ -1181,14 +1235,22 @@ mod is_wgpu_material_bind_group_rebuild_needed {
         let test = make_wgpu_scene3d_state(None);
         let (cached, sampler, _view0, view1) = make_cached(&test);
         let other = create_test_view(&test.state);
-        assert!(is_wgpu_material_bind_group_rebuild_needed(&cached, &sampler, &[other, view1]));
+        assert!(is_wgpu_material_bind_group_rebuild_needed(
+            &cached,
+            &sampler,
+            &[other, view1]
+        ));
     }
 
     #[test]
     fn rebuilds_when_the_resolved_view_count_changes_or_the_cache_has_no_views_yet() {
         let test = make_wgpu_scene3d_state(None);
         let (cached, sampler, view0, _view1) = make_cached(&test);
-        assert!(is_wgpu_material_bind_group_rebuild_needed(&cached, &sampler, &[view0.clone()]));
+        assert!(is_wgpu_material_bind_group_rebuild_needed(
+            &cached,
+            &sampler,
+            &[view0.clone()]
+        ));
         let no_views = WgpuMaterialBinding {
             bind_group: cached.bind_group.clone(),
             buffer: cached.buffer.clone(),
@@ -1196,7 +1258,11 @@ mod is_wgpu_material_bind_group_rebuild_needed {
             sampler: None,
             views: None,
         };
-        assert!(is_wgpu_material_bind_group_rebuild_needed(&no_views, &sampler, &[view0]));
+        assert!(is_wgpu_material_bind_group_rebuild_needed(
+            &no_views,
+            &sampler,
+            &[view0]
+        ));
     }
 }
 
@@ -1206,8 +1272,12 @@ mod is_wgpu_texture_ready {
     #[test]
     fn is_true_when_the_texture_declares_a_backing_even_before_that_backing_resolves() {
         assert!(!is_wgpu_texture_ready(None));
-        assert!(!is_wgpu_texture_ready(Some(&create_test_unbacked_texture())));
-        assert!(is_wgpu_texture_ready(Some(&create_test_bitmap_texture(1, 1))));
+        assert!(!is_wgpu_texture_ready(
+            Some(&create_test_unbacked_texture())
+        ));
+        assert!(is_wgpu_texture_ready(Some(&create_test_bitmap_texture(
+            1, 1
+        ))));
     }
 }
 
@@ -1218,9 +1288,15 @@ mod resolve_wgpu_material_texture_view {
     fn returns_the_shared_placeholder_view_for_a_map_without_an_image_source() {
         let mut test = make_wgpu_scene3d_state(None);
         let placeholder = ensure_wgpu_placeholder_texture_view(&mut test.state);
-        assert_eq!(resolve_wgpu_material_texture_view(&mut test.state, None), placeholder);
         assert_eq!(
-            resolve_wgpu_material_texture_view(&mut test.state, Some(&create_test_unbacked_texture())),
+            resolve_wgpu_material_texture_view(&mut test.state, None),
+            placeholder
+        );
+        assert_eq!(
+            resolve_wgpu_material_texture_view(
+                &mut test.state,
+                Some(&create_test_unbacked_texture())
+            ),
             placeholder
         );
     }
@@ -1263,7 +1339,10 @@ mod stash_wgpu_uv_transform {
         stash_wgpu_uv_transform(&mut test.state, Some(&texture));
 
         let stash = get_wgpu_scene3d_runtime(&mut test.state).pending_uv_transform;
-        assert_eq!(stash.map(|value| value + 0.0), [2.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.5, 0.25, 1.0]);
+        assert_eq!(
+            stash.map(|value| value + 0.0),
+            [2.0, 0.0, 0.0, 0.0, 3.0, 0.0, 0.5, 0.25, 1.0]
+        );
     }
 
     #[test]
@@ -1315,13 +1394,27 @@ mod wgpu_mesh_prelude_wgsl {
 mod wgpu_per_map_material_bind_group_needs_rebuild {
     use super::*;
 
-    fn make_cached(test: &WgpuScene3DTestState) -> (WgpuMaterialBinding, Vec<wgpu::Sampler>, Vec<wgpu::TextureView>) {
+    fn make_cached(
+        test: &WgpuScene3DTestState,
+    ) -> (
+        WgpuMaterialBinding,
+        Vec<wgpu::Sampler>,
+        Vec<wgpu::TextureView>,
+    ) {
         let layout = create_test_per_map_layout(&test.state, 2);
         let buffer = create_test_uniform_buffer(&test.state, 48);
-        let samplers = vec![create_test_sampler(&test.state), create_test_sampler(&test.state)];
+        let samplers = vec![
+            create_test_sampler(&test.state),
+            create_test_sampler(&test.state),
+        ];
         let views = vec![create_test_view(&test.state), create_test_view(&test.state)];
-        let bind_group =
-            build_wgpu_per_map_material_bind_group(&test.state, &layout, &buffer, &samplers, &views);
+        let bind_group = build_wgpu_per_map_material_bind_group(
+            &test.state,
+            &layout,
+            &buffer,
+            &samplers,
+            &views,
+        );
         let cached = WgpuMaterialBinding {
             bind_group,
             buffer,
@@ -1336,7 +1429,9 @@ mod wgpu_per_map_material_bind_group_needs_rebuild {
     fn keeps_an_unchanged_parallel_sampler_view_cache() {
         let test = make_wgpu_scene3d_state(None);
         let (cached, samplers, views) = make_cached(&test);
-        assert!(!wgpu_per_map_material_bind_group_needs_rebuild(&cached, &samplers, &views));
+        assert!(!wgpu_per_map_material_bind_group_needs_rebuild(
+            &cached, &samplers, &views
+        ));
     }
 
     #[test]
@@ -1344,7 +1439,9 @@ mod wgpu_per_map_material_bind_group_needs_rebuild {
         let test = make_wgpu_scene3d_state(None);
         let (cached, mut samplers, views) = make_cached(&test);
         samplers[1] = create_test_sampler(&test.state);
-        assert!(wgpu_per_map_material_bind_group_needs_rebuild(&cached, &samplers, &views));
+        assert!(wgpu_per_map_material_bind_group_needs_rebuild(
+            &cached, &samplers, &views
+        ));
     }
 
     #[test]
@@ -1357,7 +1454,9 @@ mod wgpu_per_map_material_bind_group_needs_rebuild {
             &views
         ));
         views[1] = create_test_view(&test.state);
-        assert!(wgpu_per_map_material_bind_group_needs_rebuild(&cached, &samplers, &views));
+        assert!(wgpu_per_map_material_bind_group_needs_rebuild(
+            &cached, &samplers, &views
+        ));
     }
 }
 
@@ -1368,7 +1467,10 @@ mod write_wgpu_draw_uniform {
     fn writes_the_draw_uniform_and_returns_the_dynamic_offset_bind_group() {
         let mut test = make_wgpu_scene3d_state(None);
         let group = write_wgpu_draw_uniform(&mut test.state, &make_test_proxy());
-        assert_eq!(get_wgpu_scene3d_runtime(&mut test.state).pending_draw_offset, 0);
+        assert_eq!(
+            get_wgpu_scene3d_runtime(&mut test.state).pending_draw_offset,
+            0
+        );
         assert_eq!(
             get_wgpu_scene3d_runtime(&mut test.state).draw_bind_group,
             Some(group)
@@ -1454,9 +1556,13 @@ mod write_wgpu_frame_uniform {
         let first_lights = make_test_lights();
         let second_lights = make_test_lights();
         write_wgpu_frame_uniform(&mut test.state, &camera, &first_lights);
-        let first_buffer = get_wgpu_scene3d_runtime(&mut test.state).frame_buffer.clone();
+        let first_buffer = get_wgpu_scene3d_runtime(&mut test.state)
+            .frame_buffer
+            .clone();
         write_wgpu_frame_uniform(&mut test.state, &camera, &second_lights);
-        let second_buffer = get_wgpu_scene3d_runtime(&mut test.state).frame_buffer.clone();
+        let second_buffer = get_wgpu_scene3d_runtime(&mut test.state)
+            .frame_buffer
+            .clone();
         assert_ne!(second_buffer, first_buffer);
         write_wgpu_frame_uniform(&mut test.state, &camera, &first_lights);
         assert_eq!(
@@ -1473,7 +1579,9 @@ mod write_wgpu_frame_uniform {
         let camera = make_test_camera();
         let first_lights = make_test_lights();
         write_wgpu_frame_uniform(&mut test.state, &camera, &first_lights);
-        let first_buffer = get_wgpu_scene3d_runtime(&mut test.state).frame_buffer.clone();
+        let first_buffer = get_wgpu_scene3d_runtime(&mut test.state)
+            .frame_buffer
+            .clone();
         assert_eq!(Arc::strong_count(&first_lights), 1);
         assert_eq!(Arc::weak_count(&first_lights), 1);
         drop(first_lights);

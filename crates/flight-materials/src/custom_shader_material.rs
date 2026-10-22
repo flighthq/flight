@@ -1,7 +1,7 @@
 use flight_entity::allocate_entity;
 
 use crate::{
-    CustomShaderMaterial, CUSTOM_SHADER_MATERIAL_KIND, MaterialAlphaMode, BLEND_MODE_NORMAL,
+    BLEND_MODE_NORMAL, CUSTOM_SHADER_MATERIAL_KIND, CustomShaderMaterial, MaterialAlphaMode,
 };
 
 // flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 3139d09f): assign fields after create

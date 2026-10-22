@@ -6,9 +6,9 @@ use flight_image::{
     ImageResolverState, ImageResourceFailure, ImageResourceFetch, ImageResourceReference,
 };
 use flight_image_codec::HostImageDecodeCapabilities;
+use flight_importdiagnostics::ImportDiagnostic;
 use flight_loader::{LoadProgress, ResourceLoader, ResourceLoaderContext};
 use flight_materials::{Material, PbrExtension};
-use flight_importdiagnostics::ImportDiagnostic;
 use flight_scene3d::Scene3D;
 use flight_scene3d_formats::{GltfCoreFeatureHandler, GltfExtensionHandler};
 use flight_signals::{Signal, SlotId};

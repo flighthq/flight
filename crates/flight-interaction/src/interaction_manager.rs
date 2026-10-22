@@ -3,16 +3,16 @@ use std::sync::{Arc, RwLock};
 
 use flight_entity::UnknownValue;
 
-use flight_node::{get_node_parent, NodeRef};
+use flight_node::{NodeRef, get_node_parent};
 use flight_signals::{connect_signal, create_signal, disconnect_signal, emit_signal};
 
-use crate::hit_tests::{find_graph_hit_target, find_graph_hit_target_precise, HitTestContext};
+use crate::hit_tests::{HitTestContext, find_graph_hit_target, find_graph_hit_target_precise};
 use crate::node_interaction_state::get_node_cursor;
 use crate::types::{
     AnyInteractionSignalSlot, InteractionDispatchLayer, InteractionDispatchLayerEntry,
     InteractionDispatchLayerOptions, InteractionManager, InteractionManagerOptions,
-    InteractionPointerOptions, InteractionPointerState, InteractionSignalName,
-    InteractionSignals, KeyboardEventData, PointerEventData, PointerType,
+    InteractionPointerOptions, InteractionPointerState, InteractionSignalName, InteractionSignals,
+    KeyboardEventData, PointerEventData, PointerType,
 };
 
 const CANCEL_SIGNAL_NAMES: &[InteractionSignalName] = &[
@@ -171,67 +171,100 @@ pub fn connect_input_to_interaction(
     let sx = move |v: f32| -> f32 { v * coord_scale };
 
     let mgr = manager.clone();
-    let on_key_down: Arc<dyn Fn(&flight_input::InputKeyboardData) + Send + Sync> = Arc::new(move |data| {
-        let mut m = mgr.write().unwrap();
-        let modifiers = KeyboardEventData {
-            alt_key: data.alt_key,
-            ctrl_key: data.ctrl_key,
-            key: data.key.clone(),
-            key_code: data.key_code,
-            meta_key: data.meta_key,
-            shift_key: data.shift_key,
-        };
-        dispatch_interaction_key_down(&mut m, &data.key, data.key_code, Some(&modifiers));
-    });
+    let on_key_down: Arc<dyn Fn(&flight_input::InputKeyboardData) + Send + Sync> =
+        Arc::new(move |data| {
+            let mut m = mgr.write().unwrap();
+            let modifiers = KeyboardEventData {
+                alt_key: data.alt_key,
+                ctrl_key: data.ctrl_key,
+                key: data.key.clone(),
+                key_code: data.key_code,
+                meta_key: data.meta_key,
+                shift_key: data.shift_key,
+            };
+            dispatch_interaction_key_down(&mut m, &data.key, data.key_code, Some(&modifiers));
+        });
 
     let mgr = manager.clone();
-    let on_key_up: Arc<dyn Fn(&flight_input::InputKeyboardData) + Send + Sync> = Arc::new(move |data| {
-        let mut m = mgr.write().unwrap();
-        let modifiers = KeyboardEventData {
-            alt_key: data.alt_key,
-            ctrl_key: data.ctrl_key,
-            key: data.key.clone(),
-            key_code: data.key_code,
-            meta_key: data.meta_key,
-            shift_key: data.shift_key,
-        };
-        dispatch_interaction_key_up(&mut m, &data.key, data.key_code, Some(&modifiers));
-    });
+    let on_key_up: Arc<dyn Fn(&flight_input::InputKeyboardData) + Send + Sync> =
+        Arc::new(move |data| {
+            let mut m = mgr.write().unwrap();
+            let modifiers = KeyboardEventData {
+                alt_key: data.alt_key,
+                ctrl_key: data.ctrl_key,
+                key: data.key.clone(),
+                key_code: data.key_code,
+                meta_key: data.meta_key,
+                shift_key: data.shift_key,
+            };
+            dispatch_interaction_key_up(&mut m, &data.key, data.key_code, Some(&modifiers));
+        });
 
     let mgr = manager.clone();
-    let on_pointer_cancel: Arc<dyn Fn(&flight_input::InputPointerData) + Send + Sync> = Arc::new(move |data| {
-        let mut m = mgr.write().unwrap();
-        let opts = input_pointer_to_options(data);
-        dispatch_interaction_pointer_cancel(&mut m, sx(data.x), sx(data.y), Some(&opts));
-    });
+    let on_pointer_cancel: Arc<dyn Fn(&flight_input::InputPointerData) + Send + Sync> =
+        Arc::new(move |data| {
+            let mut m = mgr.write().unwrap();
+            let opts = input_pointer_to_options(data);
+            dispatch_interaction_pointer_cancel(&mut m, sx(data.x), sx(data.y), Some(&opts));
+        });
 
     let mgr = manager.clone();
-    let on_pointer_down: Arc<dyn Fn(&flight_input::InputPointerData) + Send + Sync> = Arc::new(move |data| {
-        let mut m = mgr.write().unwrap();
-        let opts = input_pointer_to_options(data);
-        dispatch_interaction_pointer_down(&mut m, sx(data.x), sx(data.y), data.button, Some(&opts));
-    });
+    let on_pointer_down: Arc<dyn Fn(&flight_input::InputPointerData) + Send + Sync> =
+        Arc::new(move |data| {
+            let mut m = mgr.write().unwrap();
+            let opts = input_pointer_to_options(data);
+            dispatch_interaction_pointer_down(
+                &mut m,
+                sx(data.x),
+                sx(data.y),
+                data.button,
+                Some(&opts),
+            );
+        });
 
     let mgr = manager.clone();
-    let on_pointer_move: Arc<dyn Fn(&flight_input::InputPointerData) + Send + Sync> = Arc::new(move |data| {
-        let mut m = mgr.write().unwrap();
-        let opts = input_pointer_to_options(data);
-        dispatch_interaction_pointer_move(&mut m, sx(data.x), sx(data.y), data.button, Some(&opts));
-    });
+    let on_pointer_move: Arc<dyn Fn(&flight_input::InputPointerData) + Send + Sync> =
+        Arc::new(move |data| {
+            let mut m = mgr.write().unwrap();
+            let opts = input_pointer_to_options(data);
+            dispatch_interaction_pointer_move(
+                &mut m,
+                sx(data.x),
+                sx(data.y),
+                data.button,
+                Some(&opts),
+            );
+        });
 
     let mgr = manager.clone();
-    let on_pointer_up: Arc<dyn Fn(&flight_input::InputPointerData) + Send + Sync> = Arc::new(move |data| {
-        let mut m = mgr.write().unwrap();
-        let opts = input_pointer_to_options(data);
-        dispatch_interaction_pointer_up(&mut m, sx(data.x), sx(data.y), data.button, Some(data.time_stamp), Some(&opts));
-    });
+    let on_pointer_up: Arc<dyn Fn(&flight_input::InputPointerData) + Send + Sync> =
+        Arc::new(move |data| {
+            let mut m = mgr.write().unwrap();
+            let opts = input_pointer_to_options(data);
+            dispatch_interaction_pointer_up(
+                &mut m,
+                sx(data.x),
+                sx(data.y),
+                data.button,
+                Some(data.time_stamp),
+                Some(&opts),
+            );
+        });
 
     let mgr = manager.clone();
-    let on_wheel: Arc<dyn Fn(&flight_input::InputPointerData) + Send + Sync> = Arc::new(move |data| {
-        let mut m = mgr.write().unwrap();
-        let opts = input_pointer_to_options(data);
-        dispatch_interaction_wheel(&mut m, sx(data.x), sx(data.y), data.delta_x, data.delta_y, Some(&opts));
-    });
+    let on_wheel: Arc<dyn Fn(&flight_input::InputPointerData) + Send + Sync> =
+        Arc::new(move |data| {
+            let mut m = mgr.write().unwrap();
+            let opts = input_pointer_to_options(data);
+            dispatch_interaction_wheel(
+                &mut m,
+                sx(data.x),
+                sx(data.y),
+                data.delta_x,
+                data.delta_y,
+                Some(&opts),
+            );
+        });
 
     let kd_id = connect_signal(&input.on_key_down, on_key_down, None);
     let ku_id = connect_signal(&input.on_key_up, on_key_up, None);
@@ -317,7 +350,12 @@ pub fn dispatch_interaction_context_menu(
     dispatch_pointer_signal_at(
         manager,
         InteractionSignalName::OnContextMenu,
-        x, y, button, 0.0, 0.0, options,
+        x,
+        y,
+        button,
+        0.0,
+        0.0,
+        options,
     );
 }
 
@@ -327,7 +365,13 @@ pub fn dispatch_interaction_key_down(
     key_code: i32,
     modifiers: Option<&KeyboardEventData>,
 ) {
-    dispatch_keyboard_signal(manager, InteractionSignalName::OnKeyDown, key, key_code, modifiers);
+    dispatch_keyboard_signal(
+        manager,
+        InteractionSignalName::OnKeyDown,
+        key,
+        key_code,
+        modifiers,
+    );
 }
 
 pub fn dispatch_interaction_key_up(
@@ -336,7 +380,13 @@ pub fn dispatch_interaction_key_up(
     key_code: i32,
     modifiers: Option<&KeyboardEventData>,
 ) {
-    dispatch_keyboard_signal(manager, InteractionSignalName::OnKeyUp, key, key_code, modifiers);
+    dispatch_keyboard_signal(
+        manager,
+        InteractionSignalName::OnKeyUp,
+        key,
+        key_code,
+        modifiers,
+    );
 }
 
 fn dispatch_interaction_layers(
@@ -386,9 +436,19 @@ pub fn dispatch_interaction_pointer_cancel(
         let data = make_pointer_data(target_node, x, y, -1, 0.0, 0.0, options);
         let root = manager.root.clone();
         let pass = manager.dispatch_layers.is_none()
-            || dispatch_interaction_layers(manager, target_node, InteractionSignalName::OnPointerCancel, &data);
+            || dispatch_interaction_layers(
+                manager,
+                target_node,
+                InteractionSignalName::OnPointerCancel,
+                &data,
+            );
         if pass {
-            emit_interaction_signal(target_node, &root, InteractionSignalName::OnPointerCancel, &data);
+            emit_interaction_signal(
+                target_node,
+                &root,
+                InteractionSignalName::OnPointerCancel,
+                &data,
+            );
         }
     }
     if let Some(ref old) = old_target {
@@ -418,7 +478,12 @@ pub fn dispatch_interaction_pointer_down(
     let data = make_pointer_data(&target, x, y, button, 0.0, 0.0, options);
     let root = manager.root.clone();
     let pass = manager.dispatch_layers.is_none()
-        || dispatch_interaction_layers(manager, &target, InteractionSignalName::OnPointerDown, &data);
+        || dispatch_interaction_layers(
+            manager,
+            &target,
+            InteractionSignalName::OnPointerDown,
+            &data,
+        );
     if pass {
         emit_interaction_signal(&target, &root, InteractionSignalName::OnPointerDown, &data);
     }
@@ -447,7 +512,10 @@ pub fn dispatch_interaction_pointer_move(
     }
 
     let hover = !(manager.suppress_touch_hover
-        && options.and_then(|o| o.pointer_type).unwrap_or(PointerType::Mouse) == PointerType::Touch);
+        && options
+            .and_then(|o| o.pointer_type)
+            .unwrap_or(PointerType::Mouse)
+            == PointerType::Touch);
     if hover {
         if let Some(state) = manager.pointer_states.get_mut(&pointer_id) {
             state.pointer_over_target = target.clone();
@@ -463,9 +531,19 @@ pub fn dispatch_interaction_pointer_move(
         let data = make_pointer_data(target_node, x, y, button, 0.0, 0.0, options);
         let root = manager.root.clone();
         let pass = manager.dispatch_layers.is_none()
-            || dispatch_interaction_layers(manager, target_node, InteractionSignalName::OnPointerMove, &data);
+            || dispatch_interaction_layers(
+                manager,
+                target_node,
+                InteractionSignalName::OnPointerMove,
+                &data,
+            );
         if pass {
-            emit_interaction_signal(target_node, &root, InteractionSignalName::OnPointerMove, &data);
+            emit_interaction_signal(
+                target_node,
+                &root,
+                InteractionSignalName::OnPointerMove,
+                &data,
+            );
         }
     }
 }
@@ -500,9 +578,19 @@ pub fn dispatch_interaction_pointer_up(
     if let Some(ref target_node) = target {
         let data = make_pointer_data(target_node, x, y, button, 0.0, 0.0, options);
         let pass = manager.dispatch_layers.is_none()
-            || dispatch_interaction_layers(manager, target_node, InteractionSignalName::OnPointerUp, &data);
+            || dispatch_interaction_layers(
+                manager,
+                target_node,
+                InteractionSignalName::OnPointerUp,
+                &data,
+            );
         if pass {
-            emit_interaction_signal(target_node, &root, InteractionSignalName::OnPointerUp, &data);
+            emit_interaction_signal(
+                target_node,
+                &root,
+                InteractionSignalName::OnPointerUp,
+                &data,
+            );
         }
     }
 
@@ -510,7 +598,12 @@ pub fn dispatch_interaction_pointer_up(
         let data = make_pointer_data(down, x, y, button, 0.0, 0.0, options);
         if node_ref_eq(&target, &Some(down.clone())) {
             let pass = manager.dispatch_layers.is_none()
-                || dispatch_interaction_layers(manager, down, InteractionSignalName::OnClick, &data);
+                || dispatch_interaction_layers(
+                    manager,
+                    down,
+                    InteractionSignalName::OnClick,
+                    &data,
+                );
             if pass {
                 emit_interaction_signal(down, &root, InteractionSignalName::OnClick, &data);
             }
@@ -521,9 +614,19 @@ pub fn dispatch_interaction_pointer_up(
                 && legacy_elapsed <= manager.double_click_delay
             {
                 let pass2 = manager.dispatch_layers.is_none()
-                    || dispatch_interaction_layers(manager, down, InteractionSignalName::OnDoubleClick, &data);
+                    || dispatch_interaction_layers(
+                        manager,
+                        down,
+                        InteractionSignalName::OnDoubleClick,
+                        &data,
+                    );
                 if pass2 {
-                    emit_interaction_signal(down, &root, InteractionSignalName::OnDoubleClick, &data);
+                    emit_interaction_signal(
+                        down,
+                        &root,
+                        InteractionSignalName::OnDoubleClick,
+                        &data,
+                    );
                 }
                 let state = manager.pointer_states.get_mut(&pointer_id).unwrap();
                 state.last_click_target = None;
@@ -536,9 +639,19 @@ pub fn dispatch_interaction_pointer_up(
         } else {
             reset_interaction_click_state(manager.pointer_states.get_mut(&pointer_id).unwrap());
             let pass = manager.dispatch_layers.is_none()
-                || dispatch_interaction_layers(manager, down, InteractionSignalName::OnReleaseOutside, &data);
+                || dispatch_interaction_layers(
+                    manager,
+                    down,
+                    InteractionSignalName::OnReleaseOutside,
+                    &data,
+                );
             if pass {
-                emit_interaction_signal(down, &root, InteractionSignalName::OnReleaseOutside, &data);
+                emit_interaction_signal(
+                    down,
+                    &root,
+                    InteractionSignalName::OnReleaseOutside,
+                    &data,
+                );
             }
         }
     }
@@ -555,7 +668,12 @@ pub fn dispatch_interaction_wheel(
     dispatch_pointer_signal_at(
         manager,
         InteractionSignalName::OnWheel,
-        x, y, 0, delta_x, delta_y, options,
+        x,
+        y,
+        0,
+        delta_x,
+        delta_y,
+        options,
     );
 }
 
@@ -590,7 +708,12 @@ fn dispatch_pointer_rollover_change(
         let data = make_pointer_data(old, 0.0, 0.0, 0, 0.0, 0.0, None);
         let root = manager.root.clone();
         let pass = manager.dispatch_layers.is_none()
-            || dispatch_interaction_layers(manager, old, InteractionSignalName::OnPointerOut, &data);
+            || dispatch_interaction_layers(
+                manager,
+                old,
+                InteractionSignalName::OnPointerOut,
+                &data,
+            );
         if pass {
             emit_interaction_signal(old, &root, InteractionSignalName::OnPointerOut, &data);
         }
@@ -607,9 +730,18 @@ fn dispatch_pointer_rollover_change(
         if !chain_contains(&new_chain, node) {
             let data = make_pointer_data(node, 0.0, 0.0, 0, 0.0, 0.0, None);
             let pass = manager.dispatch_layers.is_none()
-                || dispatch_interaction_layers(manager, node, InteractionSignalName::OnPointerRollOut, &data);
+                || dispatch_interaction_layers(
+                    manager,
+                    node,
+                    InteractionSignalName::OnPointerRollOut,
+                    &data,
+                );
             if pass {
-                emit_interaction_signal_direct(node, InteractionSignalName::OnPointerRollOut, &data);
+                emit_interaction_signal_direct(
+                    node,
+                    InteractionSignalName::OnPointerRollOut,
+                    &data,
+                );
             }
         }
     }
@@ -617,9 +749,18 @@ fn dispatch_pointer_rollover_change(
         if !chain_contains(&old_chain, node) {
             let data = make_pointer_data(node, 0.0, 0.0, 0, 0.0, 0.0, None);
             let pass = manager.dispatch_layers.is_none()
-                || dispatch_interaction_layers(manager, node, InteractionSignalName::OnPointerRollOver, &data);
+                || dispatch_interaction_layers(
+                    manager,
+                    node,
+                    InteractionSignalName::OnPointerRollOver,
+                    &data,
+                );
             if pass {
-                emit_interaction_signal_direct(node, InteractionSignalName::OnPointerRollOver, &data);
+                emit_interaction_signal_direct(
+                    node,
+                    InteractionSignalName::OnPointerRollOver,
+                    &data,
+                );
             }
         }
     }
@@ -775,7 +916,10 @@ fn get_interaction_pointer_state(
     manager: &mut InteractionManager,
     pointer_id: i32,
 ) -> &mut InteractionPointerState {
-    return manager.pointer_states.entry(pointer_id).or_insert_with(InteractionPointerState::new);
+    return manager
+        .pointer_states
+        .entry(pointer_id)
+        .or_insert_with(InteractionPointerState::new);
 }
 
 // flight-lint: allow(contract-vocabulary) D5: InteractionSignals stored in Unknown slot require Arc<RwLock> for shared mutable access
@@ -846,10 +990,7 @@ pub fn invalidate_interaction_cursor(manager: &mut InteractionManager) {
     apply_interaction_cursor(manager, target.as_ref());
 }
 
-fn is_pointer_signal_needed(
-    manager: &InteractionManager,
-    names: &[InteractionSignalName],
-) -> bool {
+fn is_pointer_signal_needed(manager: &InteractionManager, names: &[InteractionSignalName]) -> bool {
     if !manager.enabled {
         return false;
     }
@@ -857,7 +998,13 @@ fn is_pointer_signal_needed(
         return true;
     }
     for name in names {
-        if manager.signal_subscriber_counts.get(name).copied().unwrap_or(0) > 0 {
+        if manager
+            .signal_subscriber_counts
+            .get(name)
+            .copied()
+            .unwrap_or(0)
+            > 0
+        {
             return true;
         }
     }
@@ -876,9 +1023,11 @@ fn make_pointer_data(
     return PointerEventData {
         alt_key: options.and_then(|o| o.alt_key).unwrap_or(false),
         button,
-        buttons: options
-            .and_then(|o| o.buttons)
-            .unwrap_or(if button >= 0 { 1 << button } else { 0 }),
+        buttons: options.and_then(|o| o.buttons).unwrap_or(if button >= 0 {
+            1 << button
+        } else {
+            0
+        }),
         ctrl_key: options.and_then(|o| o.ctrl_key).unwrap_or(false),
         current_target: None,
         delta_x,

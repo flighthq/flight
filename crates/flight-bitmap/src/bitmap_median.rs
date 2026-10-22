@@ -21,9 +21,11 @@ pub fn median_bitmap(out: &mut [u8], source: &BitmapRegion, radius: i32) {
             let mut n = 0usize;
             let ri = r as i32;
             for ky in -ri..=ri {
-                let sy = ((source.y as i64 + py as i64 + ky as i64).max(0) as usize).min(bitmap_height - 1);
+                let sy = ((source.y as i64 + py as i64 + ky as i64).max(0) as usize)
+                    .min(bitmap_height - 1);
                 for kx in -ri..=ri {
-                    let sx = ((source.x as i64 + px as i64 + kx as i64).max(0) as usize).min(bitmap_width - 1);
+                    let sx = ((source.x as i64 + px as i64 + kx as i64).max(0) as usize)
+                        .min(bitmap_width - 1);
                     let si = (sy * bitmap_width + sx) * 4;
                     rs[n] = data[si];
                     gs[n] = data[si + 1];

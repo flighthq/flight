@@ -3,8 +3,8 @@ use std::sync::{Arc, RwLock};
 use flight_flow::contract::report_flow_guard;
 use flight_flow::*;
 use flight_log::{
-    add_log_sink, create_log_state, create_memory_log_sink, get_memory_log_sink_entries,
-    remove_log_sink, LogData, LogLevel, LogStateRef, LogValue,
+    LogData, LogLevel, LogStateRef, LogValue, add_log_sink, create_log_state,
+    create_memory_log_sink, get_memory_log_sink_entries, remove_log_sink,
 };
 
 // D24 out collector: each call fills a fresh caller-owned Vec.

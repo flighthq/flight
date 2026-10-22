@@ -95,10 +95,20 @@ pub(crate) fn attach_texture(reference: &ImageResourceReference) -> Ref<Texture>
     let texture = Arc::new(RwLock::new(create_texture(None)));
     match reference {
         ImageResourceReference::Embedded(value) => {
-            value.reference.write().unwrap().textures.push(texture.clone());
+            value
+                .reference
+                .write()
+                .unwrap()
+                .textures
+                .push(texture.clone());
         }
         ImageResourceReference::External(value) => {
-            value.reference.write().unwrap().textures.push(texture.clone());
+            value
+                .reference
+                .write()
+                .unwrap()
+                .textures
+                .push(texture.clone());
         }
     }
     return texture;
@@ -182,7 +192,9 @@ pub(crate) fn mesh_of(materials: Vec<Ref<dyn Material3D>>) -> Ref<Mesh> {
     );
 }
 
-pub(crate) fn reference_failure(reference: &ImageResourceReference) -> Option<ImageResourceFailure> {
+pub(crate) fn reference_failure(
+    reference: &ImageResourceReference,
+) -> Option<ImageResourceFailure> {
     let failure = match reference {
         ImageResourceReference::Embedded(value) => value.reference.read().unwrap().failure.clone(),
         ImageResourceReference::External(value) => value.reference.read().unwrap().failure.clone(),

@@ -1,8 +1,8 @@
 use flight_entity::allocate_entity;
 
 use crate::{
-    BlinnPhongMaterial, LambertMaterial, PhongMaterial, BLINN_PHONG_MATERIAL_KIND, BLEND_MODE_NORMAL, LAMBERT_MATERIAL_KIND, PHONG_MATERIAL_KIND,
-    MaterialAlphaMode,
+    BLEND_MODE_NORMAL, BLINN_PHONG_MATERIAL_KIND, BlinnPhongMaterial, LAMBERT_MATERIAL_KIND,
+    LambertMaterial, MaterialAlphaMode, PHONG_MATERIAL_KIND, PhongMaterial,
 };
 
 // flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 3139d09f): assign fields after create

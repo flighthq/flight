@@ -325,8 +325,12 @@ mod explain_gl_pbr_extensions {
         let mut state = make_state();
         let extension = make_anisotropy();
         // SAFETY: allocation occurs on the deterministic mock context's owning thread.
-        let (primary_texture, scene_color_texture) =
-            unsafe { (state.gl.create_texture().unwrap(), state.gl.create_texture().unwrap()) };
+        let (primary_texture, scene_color_texture) = unsafe {
+            (
+                state.gl.create_texture().unwrap(),
+                state.gl.create_texture().unwrap(),
+            )
+        };
         register_gl_pbr_extension(&mut state, anisotropy_kind(), &SCENE_COLOR_REGISTRATION);
         get_gl_scene3d_runtime(&state).pbr_transmission_scene_color =
             Some(GlPbrTransmissionSceneColor {

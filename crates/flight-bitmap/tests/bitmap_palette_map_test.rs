@@ -3,11 +3,23 @@ use flight_bitmap::contract::*;
 fn region(bmp: Bitmap) -> BitmapRegion {
     let w = bmp.width as i32;
     let h = bmp.height as i32;
-    return BitmapRegion { bitmap: bmp, x: 0, y: 0, width: w, height: h };
+    return BitmapRegion {
+        bitmap: bmp,
+        x: 0,
+        y: 0,
+        width: w,
+        height: h,
+    };
 }
 
 fn region_at(bmp: Bitmap, x: i32, y: i32, width: i32, height: i32) -> BitmapRegion {
-    return BitmapRegion { bitmap: bmp, x, y, width, height };
+    return BitmapRegion {
+        bitmap: bmp,
+        x,
+        y,
+        width,
+        height,
+    };
 }
 
 fn invert_table() -> Vec<u8> {
@@ -22,7 +34,14 @@ mod apply_bitmap_palette_map {
         let src = create_bitmap(1, 1, Some(0x10203040));
         let out = create_bitmap(1, 1, None);
         let mut dr = region(out);
-        apply_bitmap_palette_map(&mut dr, &region(src), Some(&invert_table()), None, None, None);
+        apply_bitmap_palette_map(
+            &mut dr,
+            &region(src),
+            Some(&invert_table()),
+            None,
+            None,
+            None,
+        );
         assert_eq!(dr.bitmap.data[0], 255 - 0x10);
         assert_eq!(dr.bitmap.data[1], 0x20);
         assert_eq!(dr.bitmap.data[2], 0x30);
@@ -57,7 +76,14 @@ mod apply_bitmap_palette_map {
         let src = create_bitmap(2, 1, Some(0x80808080));
         let out = create_bitmap(2, 1, None);
         let mut dr = region_at(out, 1, 0, 1, 1);
-        apply_bitmap_palette_map(&mut dr, &region_at(src, 1, 0, 1, 1), Some(&invert_table()), None, None, None);
+        apply_bitmap_palette_map(
+            &mut dr,
+            &region_at(src, 1, 0, 1, 1),
+            Some(&invert_table()),
+            None,
+            None,
+            None,
+        );
         assert_eq!(dr.bitmap.data[4], 255 - 0x80);
         assert_eq!(dr.bitmap.data[0], 0);
     }

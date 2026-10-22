@@ -84,7 +84,12 @@ pub fn apply_outer_glow_effect_to_wgpu(
 
 /// Registers the default runner under `OuterGlowEffect` (TS `registerWgpuOuterGlowEffect`).
 pub fn register_wgpu_outer_glow_effect(state: &mut WgpuRenderState) {
-    register_wgpu_effect(state, "OuterGlowEffect", wgpu_outer_glow_effect_runner, None);
+    register_wgpu_effect(
+        state,
+        "OuterGlowEffect",
+        wgpu_outer_glow_effect_runner,
+        None,
+    );
 }
 
 /// The default `OuterGlowEffect` runner (TS `wgpuOuterGlowEffectRunner`).

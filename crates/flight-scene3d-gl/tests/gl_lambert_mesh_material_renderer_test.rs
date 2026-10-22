@@ -82,7 +82,12 @@ mod gl_lambert_mesh_material_renderer {
     fn bind_selects_a_program_sets_depth_cull_and_uploads_light_block_and_diffuse_color() {
         let mut state = make_gl_scene3d_state();
         let material = create_lambert_material();
-        (GL_LAMBERT_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &make_lights(), &make_camera());
+        (GL_LAMBERT_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &make_lights(),
+            &make_camera(),
+        );
 
         assert!(count_calls("use_program") > 0);
         assert!(has_call("enable", glow::DEPTH_TEST));
@@ -96,8 +101,17 @@ mod gl_lambert_mesh_material_renderer {
     fn bind_caches_the_program_under_the_classic_namespace_with_a_lambert_key() {
         let mut state = make_gl_scene3d_state();
         let material = create_lambert_material();
-        (GL_LAMBERT_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &make_lights(), &make_camera());
-        let keys: Vec<String> = get_gl_scene3d_runtime(&state).program_cache.keys().cloned().collect();
+        (GL_LAMBERT_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &make_lights(),
+            &make_camera(),
+        );
+        let keys: Vec<String> = get_gl_scene3d_runtime(&state)
+            .program_cache
+            .keys()
+            .cloned()
+            .collect();
         assert!(keys.iter().any(|key| key.starts_with("classic:l")));
     }
 
@@ -106,7 +120,12 @@ mod gl_lambert_mesh_material_renderer {
         let mut state = make_gl_scene3d_state();
         let mut material = create_lambert_material();
         material.double_sided = true;
-        (GL_LAMBERT_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &make_lights(), &make_camera());
+        (GL_LAMBERT_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &make_lights(),
+            &make_camera(),
+        );
         assert!(has_call("disable", glow::CULL_FACE));
     }
 
@@ -116,7 +135,12 @@ mod gl_lambert_mesh_material_renderer {
         let proxy = make_proxy();
         {
             let material = proxy.material.read().unwrap();
-            (GL_LAMBERT_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&*material), &make_lights(), &make_camera());
+            (GL_LAMBERT_MESH_MATERIAL_RENDERER.bind)(
+                &mut state,
+                Some(&*material),
+                &make_lights(),
+                &make_camera(),
+            );
         }
         (GL_LAMBERT_MESH_MATERIAL_RENDERER.draw)(&mut state, &proxy, &make_geometry());
 

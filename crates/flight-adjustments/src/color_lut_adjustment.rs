@@ -5,13 +5,23 @@ use crate::contract::ColorTransformFunction;
 use crate::contract::get_adjustment_color_matrix;
 use crate::contract::initialize_adjustment;
 
-pub fn initialize_color_lut_adjustment<T: Adjustment>(out: &mut T, kind: &str, transform: ColorTransformFunction) {
+pub fn initialize_color_lut_adjustment<T: Adjustment>(
+    out: &mut T,
+    kind: &str,
+    transform: ColorTransformFunction,
+) {
     initialize_adjustment(out, kind);
     out.adjustment_fields_mut().transform = Some(transform);
 }
 
 pub(crate) fn clamp01(v: f32) -> f32 {
-    return if v < 0.0 { 0.0 } else if v > 1.0 { 1.0 } else { v };
+    return if v < 0.0 {
+        0.0
+    } else if v > 1.0 {
+        1.0
+    } else {
+        v
+    };
 }
 
 /// Wraps a 4x5 color matrix as an rgb->rgb transform on normalized color, at opaque alpha (TS
@@ -31,7 +41,9 @@ pub(crate) fn fract(v: f32) -> f32 {
 /// Returns the rgb->rgb transform an operation contributes to a baked LUT: its own `transform` when
 /// LUT-tier, its color matrix wrapped as a transform when matrix-tier, or None for a non-pointwise
 /// operation. Structural: reads `transform` / `color_matrix`, never the kind.
-pub fn get_adjustment_color_transform(operation: &dyn Adjustment) -> Option<ColorTransformFunction> {
+pub fn get_adjustment_color_transform(
+    operation: &dyn Adjustment,
+) -> Option<ColorTransformFunction> {
     if let Some(transform) = &operation.adjustment_fields().transform {
         return Some(transform.clone());
     }
@@ -40,11 +52,21 @@ pub fn get_adjustment_color_transform(operation: &dyn Adjustment) -> Option<Colo
 
 pub(crate) fn hue2rgb(p: f32, q: f32, t_raw: f32) -> f32 {
     let mut t = t_raw;
-    if t < 0.0 { t += 1.0; }
-    if t > 1.0 { t -= 1.0; }
-    if t < 1.0 / 6.0 { return p + (q - p) * 6.0 * t; }
-    if t < 1.0 / 2.0 { return q; }
-    if t < 2.0 / 3.0 { return p + (q - p) * (2.0 / 3.0 - t) * 6.0; }
+    if t < 0.0 {
+        t += 1.0;
+    }
+    if t > 1.0 {
+        t -= 1.0;
+    }
+    if t < 1.0 / 6.0 {
+        return p + (q - p) * 6.0 * t;
+    }
+    if t < 1.0 / 2.0 {
+        return q;
+    }
+    if t < 2.0 / 3.0 {
+        return p + (q - p) * (2.0 / 3.0 - t) * 6.0;
+    }
     return p;
 }
 

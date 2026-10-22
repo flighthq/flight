@@ -539,10 +539,7 @@ pub fn draw_wgpu_render_pass_indexed(
 
 /// Reports a command to the installed observer, building the record only when one is installed.
 // flight-lint: allow(conform-extra) Principal cafc5d6b (item D): backend packages layered on render-wgpu report their GPU calls through the same exact-recording hook
-pub fn record_wgpu_command(
-    device: &WgpuNativeDevice,
-    record: impl FnOnce() -> WgpuCommandRecord,
-) {
+pub fn record_wgpu_command(device: &WgpuNativeDevice, record: impl FnOnce() -> WgpuCommandRecord) {
     let observer = device.command_observer.read().unwrap().clone();
     if let Some(observer) = observer {
         observer(&record());

@@ -186,7 +186,10 @@ mod set_color_alpha {
         // Allow the inherent 1-LSB quantization error (~1/255 ≈ 0.004).
         let alpha = get_color_alpha(set_color_alpha(0x112233ff, 0.5));
         let diff = (alpha - 0.5).abs();
-        assert!(diff < 0.005, "expected alpha near 0.5, got {alpha} (diff: {diff})");
+        assert!(
+            diff < 0.005,
+            "expected alpha near 0.5, got {alpha} (diff: {diff})"
+        );
     }
 }
 

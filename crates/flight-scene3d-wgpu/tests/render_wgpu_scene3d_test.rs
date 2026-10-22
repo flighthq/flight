@@ -95,8 +95,14 @@ mod is_wgpu_mesh_gpu_skinned {
     fn selects_gpu_skinning_only_for_a_skin_plus_joints0_and_weights0_geometry() {
         let mut test = make_wgpu_scene3d_state(None);
         register_wgpu_gpu_skinning(&mut test.state);
-        let rigid = create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(pbr())]);
-        assert!(!is_wgpu_mesh_gpu_skinned(&mut test.state, &rigid.read().unwrap()));
+        let rigid = create_test_mesh(
+            create_box_mesh_geometry(None, None, None),
+            vec![Some(pbr())],
+        );
+        assert!(!is_wgpu_mesh_gpu_skinned(
+            &mut test.state,
+            &rigid.read().unwrap()
+        ));
 
         let skinned = create_test_mesh(
             create_mesh_geometry(MeshGeometryOptions {
@@ -115,7 +121,10 @@ mod is_wgpu_mesh_gpu_skinned {
             skeleton,
             skeleton_root: None,
         })));
-        assert!(is_wgpu_mesh_gpu_skinned(&mut test.state, &skinned.read().unwrap()));
+        assert!(is_wgpu_mesh_gpu_skinned(
+            &mut test.state,
+            &skinned.read().unwrap()
+        ));
     }
 }
 
@@ -126,7 +135,8 @@ mod render_wgpu_scene3d {
     fn uploads_one_shared_geometry_once_across_a_primary_and_derived_state_on_the_same_device() {
         let mut test = make_wgpu_scene3d_state(None);
         register_wgpu_standard_pbr_material(&mut test.state);
-        let WgpuOffscreenRenderStateResult::Ok(derived) = create_wgpu_offscreen_render_state(&test.state)
+        let WgpuOffscreenRenderStateResult::Ok(derived) =
+            create_wgpu_offscreen_render_state(&test.state)
         else {
             panic!("the device is alive");
         };
@@ -134,7 +144,13 @@ mod render_wgpu_scene3d {
         register_wgpu_standard_pbr_material(&mut derived);
 
         let scene = create_test_scene_root();
-        add_test_child(&scene, &create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(pbr())]));
+        add_test_child(
+            &scene,
+            &create_test_mesh(
+                create_box_mesh_geometry(None, None, None),
+                vec![Some(pbr())],
+            ),
+        );
         let mesh_buffers_before = count_mesh_buffers(&test);
 
         render(&mut test, &scene, &make_camera());
@@ -154,7 +170,13 @@ mod render_wgpu_scene3d {
         let mut test = make_wgpu_scene3d_state(None);
         register_wgpu_standard_pbr_material(&mut test.state);
         let scene = create_test_scene_root();
-        add_test_child(&scene, &create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(pbr())]));
+        add_test_child(
+            &scene,
+            &create_test_mesh(
+                create_box_mesh_geometry(None, None, None),
+                vec![Some(pbr())],
+            ),
+        );
 
         render(&mut test, &scene, &make_camera());
 
@@ -167,7 +189,13 @@ mod render_wgpu_scene3d {
     fn skips_a_subset_whose_material_has_no_registered_renderer() {
         let mut test = make_wgpu_scene3d_state(None);
         let scene = create_test_scene_root();
-        add_test_child(&scene, &create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(pbr())]));
+        add_test_child(
+            &scene,
+            &create_test_mesh(
+                create_box_mesh_geometry(None, None, None),
+                vec![Some(pbr())],
+            ),
+        );
 
         render(&mut test, &scene, &make_camera());
 
@@ -180,8 +208,20 @@ mod render_wgpu_scene3d {
         register_wgpu_standard_pbr_material(&mut test.state);
         let scene = create_test_scene_root();
         let material = pbr();
-        add_test_child(&scene, &create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(material.clone())]));
-        add_test_child(&scene, &create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(material)]));
+        add_test_child(
+            &scene,
+            &create_test_mesh(
+                create_box_mesh_geometry(None, None, None),
+                vec![Some(material.clone())],
+            ),
+        );
+        add_test_child(
+            &scene,
+            &create_test_mesh(
+                create_box_mesh_geometry(None, None, None),
+                vec![Some(material)],
+            ),
+        );
 
         render(&mut test, &scene, &make_camera());
 
@@ -196,7 +236,10 @@ mod render_wgpu_scene3d {
         let mut test = make_wgpu_scene3d_state(None);
         register_wgpu_standard_pbr_material(&mut test.state);
         let scene = create_test_scene_root();
-        let mesh = create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(pbr())]);
+        let mesh = create_test_mesh(
+            create_box_mesh_geometry(None, None, None),
+            vec![Some(pbr())],
+        );
         mesh.write().unwrap().enabled = false;
         add_test_child(&scene, &mesh);
 
@@ -210,8 +253,20 @@ mod render_wgpu_scene3d {
         let mut test = make_wgpu_scene3d_state(None);
         register_wgpu_standard_pbr_material(&mut test.state);
         let scene = create_test_scene_root();
-        let blended = add_test_child(&scene, &create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(blended_pbr())]));
-        let opaque = add_test_child(&scene, &create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(pbr())]));
+        let blended = add_test_child(
+            &scene,
+            &create_test_mesh(
+                create_box_mesh_geometry(None, None, None),
+                vec![Some(blended_pbr())],
+            ),
+        );
+        let opaque = add_test_child(
+            &scene,
+            &create_test_mesh(
+                create_box_mesh_geometry(None, None, None),
+                vec![Some(pbr())],
+            ),
+        );
 
         render(&mut test, &scene, &make_camera());
 
@@ -219,7 +274,10 @@ mod render_wgpu_scene3d {
         assert!(same_nodes(&blended_meshes(&mut test), &[&blended]));
         let keys = pipeline_keys(&mut test);
         assert!(keys.iter().any(|key| key.ends_with("|opaque|rigid|direct")));
-        assert!(keys.iter().any(|key| key.ends_with("|blend:Normal|rigid|direct")));
+        assert!(
+            keys.iter()
+                .any(|key| key.ends_with("|blend:Normal|rigid|direct"))
+        );
         submit_test_frame(&mut test);
     }
 
@@ -231,13 +289,21 @@ mod render_wgpu_scene3d {
         let mut material = create_standard_pbr_material();
         material.alpha_mode = MaterialAlphaMode::Blend;
         material.blend_mode = BLEND_MODE_ADD.to_string();
-        add_test_child(&scene, &create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(share_test_material(material))]));
+        add_test_child(
+            &scene,
+            &create_test_mesh(
+                create_box_mesh_geometry(None, None, None),
+                vec![Some(share_test_material(material))],
+            ),
+        );
 
         render(&mut test, &scene, &make_camera());
 
-        assert!(pipeline_keys(&mut test)
-            .iter()
-            .any(|key| key.ends_with("|blend:Add|rigid|direct")));
+        assert!(
+            pipeline_keys(&mut test)
+                .iter()
+                .any(|key| key.ends_with("|blend:Add|rigid|direct"))
+        );
     }
 
     // Pipeline identity is the blend mode alone: one premultiplied blend state per mode.
@@ -246,15 +312,26 @@ mod render_wgpu_scene3d {
         let mut test = make_wgpu_scene3d_state(None);
         register_wgpu_standard_pbr_material(&mut test.state);
         let scene = create_test_scene_root();
-        add_test_child(&scene, &create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(blended_pbr())]));
+        add_test_child(
+            &scene,
+            &create_test_mesh(
+                create_box_mesh_geometry(None, None, None),
+                vec![Some(blended_pbr())],
+            ),
+        );
 
         render(&mut test, &scene, &make_camera());
 
         let keys = pipeline_keys(&mut test);
-        assert!(keys.iter().any(|key| key.ends_with("|blend:Normal|rigid|direct")));
-        assert!(!keys
-            .iter()
-            .any(|key| key.contains("straight") || key.contains("premultiplied")));
+        assert!(
+            keys.iter()
+                .any(|key| key.ends_with("|blend:Normal|rigid|direct"))
+        );
+        assert!(
+            !keys
+                .iter()
+                .any(|key| key.contains("straight") || key.contains("premultiplied"))
+        );
     }
 
     #[test]
@@ -262,7 +339,10 @@ mod render_wgpu_scene3d {
         let mut test = make_wgpu_scene3d_state(None);
         register_wgpu_standard_pbr_material(&mut test.state);
         let scene = create_test_scene_root();
-        let mesh = create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(pbr())]);
+        let mesh = create_test_mesh(
+            create_box_mesh_geometry(None, None, None),
+            vec![Some(pbr())],
+        );
         mesh.write().unwrap().alpha = 0.5;
         add_test_child(&scene, &mesh);
 
@@ -271,9 +351,11 @@ mod render_wgpu_scene3d {
         let runtime = get_wgpu_scene3d_runtime(&mut test.state);
         assert!(runtime.opaque_draw_list.is_empty());
         assert!((runtime.blended_draw_list[0].alpha - 0.5).abs() < 1e-6);
-        assert!(pipeline_keys(&mut test)
-            .iter()
-            .any(|key| key.ends_with("|blend:Normal|rigid|direct")));
+        assert!(
+            pipeline_keys(&mut test)
+                .iter()
+                .any(|key| key.ends_with("|blend:Normal|rigid|direct"))
+        );
     }
 
     #[test]
@@ -282,8 +364,14 @@ mod render_wgpu_scene3d {
         register_wgpu_standard_pbr_material(&mut test.state);
         let scene = create_test_scene_root();
         let material = blended_pbr();
-        let far = create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(material.clone())]);
-        let near = create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(material)]);
+        let far = create_test_mesh(
+            create_box_mesh_geometry(None, None, None),
+            vec![Some(material.clone())],
+        );
+        let near = create_test_mesh(
+            create_box_mesh_geometry(None, None, None),
+            vec![Some(material)],
+        );
         far.write().unwrap().position.z = -3.0;
         near.write().unwrap().position.z = -1.0;
         let near = add_test_child(&scene, &near);
@@ -302,8 +390,14 @@ mod render_wgpu_scene3d {
         register_wgpu_standard_pbr_material(&mut test.state);
         let scene = create_test_scene_root();
         let material = blended_pbr();
-        let far = create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(material.clone())]);
-        let near = create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(material)]);
+        let far = create_test_mesh(
+            create_box_mesh_geometry(None, None, None),
+            vec![Some(material.clone())],
+        );
+        let near = create_test_mesh(
+            create_box_mesh_geometry(None, None, None),
+            vec![Some(material)],
+        );
         far.write().unwrap().position.z = -3.0;
         near.write().unwrap().position.z = -1.0;
         let near = add_test_child(&scene, &near);
@@ -331,8 +425,20 @@ mod render_wgpu_scene3d {
         let mut test = make_wgpu_scene3d_state(None);
         register_wgpu_standard_pbr_material(&mut test.state);
         let scene = create_test_scene_root();
-        let opaque = add_test_child(&scene, &create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(pbr())]));
-        let blended = add_test_child(&scene, &create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(blended_pbr())]));
+        let opaque = add_test_child(
+            &scene,
+            &create_test_mesh(
+                create_box_mesh_geometry(None, None, None),
+                vec![Some(pbr())],
+            ),
+        );
+        let blended = add_test_child(
+            &scene,
+            &create_test_mesh(
+                create_box_mesh_geometry(None, None, None),
+                vec![Some(blended_pbr())],
+            ),
+        );
         let camera = make_camera();
 
         render(&mut test, &scene, &camera);
@@ -400,7 +506,10 @@ mod render_wgpu_scene3d {
         materials.push(share_test_material(blended));
         let scene = create_test_scene_root();
         for (index, material) in materials.into_iter().enumerate() {
-            let mesh = create_test_mesh(create_box_mesh_geometry(None, None, None), vec![Some(material)]);
+            let mesh = create_test_mesh(
+                create_box_mesh_geometry(None, None, None),
+                vec![Some(material)],
+            );
             {
                 let mut mesh = mesh.write().unwrap();
                 mesh.position.x = index as f32 * 0.1 - 0.7;

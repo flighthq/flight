@@ -306,7 +306,11 @@ fn document_to_config(
     };
     let rotation_speed_min = (rotation_min * DEG_TO_RAD) / lifetime_mid;
     let rotation_speed_max = (rotation_max * DEG_TO_RAD) / lifetime_mid;
-    let blend_mode = if document.additive { ParticleBlendMode::Add } else { ParticleBlendMode::Normal };
+    let blend_mode = if document.additive {
+        ParticleBlendMode::Add
+    } else {
+        ParticleBlendMode::Normal
+    };
     return create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
         alpha_end: Some(alpha_end),
         alpha_start: Some(alpha_start),

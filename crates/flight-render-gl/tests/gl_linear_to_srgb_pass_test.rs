@@ -2,7 +2,7 @@ mod draw_gl_linear_to_srgb_pass {
     use crate::gl_test_helper::{
         calls_named, calls_with, clear_calls, make_state, make_texture_target,
     };
-    use flight_render_gl::{draw_gl_linear_to_srgb_pass, LINEAR_TO_SRGB_FRAGMENT_SOURCE};
+    use flight_render_gl::{LINEAR_TO_SRGB_FRAGMENT_SOURCE, draw_gl_linear_to_srgb_pass};
 
     #[test]
     fn binds_the_source_texture_and_draws_to_the_canvas_when_destination_is_none() {

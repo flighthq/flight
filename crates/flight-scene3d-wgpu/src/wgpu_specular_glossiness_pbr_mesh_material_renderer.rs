@@ -6,9 +6,9 @@
 
 use std::sync::LazyLock;
 
-use flight_entity::Ref;
 use flight_camera::Camera3D;
 use flight_color::{LinearColor, allocate_linear_color, unpack_color_to_linear};
+use flight_entity::Ref;
 use flight_lighting::Scene3DLightBlock;
 use flight_materials::{
     Material, Material3D, SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND, SpecularGlossinessPbrMaterial,
@@ -23,7 +23,9 @@ use flight_render_wgpu::{
 };
 
 use crate::wgpu_mesh_material_registry::register_wgpu_mesh_material_renderer;
-use crate::wgpu_mesh_pipeline::{begin_wgpu_mesh_draw, draw_wgpu_mesh_subset, write_wgpu_frame_uniform};
+use crate::wgpu_mesh_pipeline::{
+    begin_wgpu_mesh_draw, draw_wgpu_mesh_subset, write_wgpu_frame_uniform,
+};
 use crate::wgpu_pbr_pipeline_cache::ensure_wgpu_pbr_pipeline;
 use crate::wgpu_standard_pbr_mesh_material_renderer::{
     build_wgpu_pbr_standard_define_key, ensure_wgpu_pbr_material_bind_group,
@@ -42,7 +44,8 @@ const DIELECTRIC_SPECULAR: f32 = 0.04;
 // The identity the material-less fallback bind caches its binding under (TS: a module-level `{}`
 // object). A real entity, so its key is a numeric entity id (D12/D15): unique to this renderer and
 // never reused, so it cannot alias a material's binding or another renderer's fallback.
-static FALLBACK_MATERIAL: LazyLock<SpecularGlossinessPbrMaterial> = LazyLock::new(flight_materials::contract::create_specular_glossiness_pbr_material);
+static FALLBACK_MATERIAL: LazyLock<SpecularGlossinessPbrMaterial> =
+    LazyLock::new(flight_materials::contract::create_specular_glossiness_pbr_material);
 
 fn bind_wgpu_specular_glossiness_pbr_material(
     state: &mut WgpuRenderState,
@@ -55,8 +58,11 @@ fn bind_wgpu_specular_glossiness_pbr_material(
         return;
     }
     let format = runtime.current_color_format.unwrap_or(state.format);
-    let spec_gloss = material
-        .and_then(|material| material.as_any().downcast_ref::<SpecularGlossinessPbrMaterial>());
+    let spec_gloss = material.and_then(|material| {
+        material
+            .as_any()
+            .downcast_ref::<SpecularGlossinessPbrMaterial>()
+    });
     let standard = spec_gloss.map(convert_specular_glossiness_to_standard);
     let key = build_wgpu_pbr_standard_define_key(
         standard.as_ref(),
@@ -69,7 +75,8 @@ fn bind_wgpu_specular_glossiness_pbr_material(
         Some(material) => flight_entity::get_entity_id(material),
         None => flight_entity::get_entity_id(&*FALLBACK_MATERIAL),
     };
-    let binding = ensure_wgpu_pbr_material_bind_group(state, &pipeline, cache_key, standard.as_ref());
+    let binding =
+        ensure_wgpu_pbr_material_bind_group(state, &pipeline, cache_key, standard.as_ref());
     let alpha_cutoff = spec_gloss.map_or(0.5, |material| material.material3d_fields().alpha_cutoff);
     let out = get_wgpu_pbr_material_scratch(state);
     write_wgpu_pbr_standard_block(out, standard.as_ref(), alpha_cutoff);
@@ -95,13 +102,28 @@ fn convert_specular_glossiness_to_standard(
     let specular_brightness = max_rgb(&specular);
     let one_minus_specular_strength = 1.0 - specular_brightness;
     let diffuse_brightness = max_rgb(&diffuse);
-    let metallic =
-        solve_metallic(diffuse_brightness, specular_brightness, one_minus_specular_strength);
+    let metallic = solve_metallic(
+        diffuse_brightness,
+        specular_brightness,
+        one_minus_specular_strength,
+    );
 
     let denom = (1.0 - DIELECTRIC_SPECULAR).max(1e-4);
-    let r = lerp(diffuse.r * one_minus_specular_strength / denom, specular.r, metallic);
-    let g = lerp(diffuse.g * one_minus_specular_strength / denom, specular.g, metallic);
-    let b = lerp(diffuse.b * one_minus_specular_strength / denom, specular.b, metallic);
+    let r = lerp(
+        diffuse.r * one_minus_specular_strength / denom,
+        specular.r,
+        metallic,
+    );
+    let g = lerp(
+        diffuse.g * one_minus_specular_strength / denom,
+        specular.g,
+        metallic,
+    );
+    let b = lerp(
+        diffuse.b * one_minus_specular_strength / denom,
+        specular.b,
+        metallic,
+    );
 
     return StandardPbrMaterialProperties {
         alpha_map: None,

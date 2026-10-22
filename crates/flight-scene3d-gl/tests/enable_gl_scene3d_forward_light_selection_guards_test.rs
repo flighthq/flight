@@ -31,9 +31,13 @@ mod are_gl_scene3d_forward_light_selection_guards_enabled {
     #[test]
     fn reports_false_until_guards_are_installed_then_true() {
         let state = make_gl_scene3d_state();
-        assert!(!are_gl_scene3d_forward_light_selection_guards_enabled(&state));
+        assert!(!are_gl_scene3d_forward_light_selection_guards_enabled(
+            &state
+        ));
         enable_gl_scene3d_forward_light_selection_guards(&state, None);
-        assert!(are_gl_scene3d_forward_light_selection_guards_enabled(&state));
+        assert!(are_gl_scene3d_forward_light_selection_guards_enabled(
+            &state
+        ));
     }
 }
 
@@ -93,7 +97,15 @@ mod enable_gl_scene3d_forward_light_selection_guards {
         state.runtime.prepared_scene3d = Some(prepared);
         let pass = make_test_pass(&state);
 
-        render_gl_scene3d(&mut state, &pass, None, &scene, &view, &lights, Some(&selected));
+        render_gl_scene3d(
+            &mut state,
+            &pass,
+            None,
+            &scene,
+            &view,
+            &lights,
+            Some(&selected),
+        );
 
         assert!(log_messages(&sink).is_empty());
     }

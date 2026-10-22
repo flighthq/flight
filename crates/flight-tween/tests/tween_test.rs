@@ -513,16 +513,22 @@ mod get_tweens_of {
         let target = target_xy(0.0, 0.0);
         create_tween(&manager, &target, 1000.0, &[prop_x(100.0)], None);
         let mut out: Vec<Tween<Obj>> = Vec::new();
-        out.push(create_tween(&manager, &target, 500.0, &[prop_y(50.0)], Some(&TweenOptions {
-            overwrite: Some(false),
-            delay: None,
-            ease: None,
-            reflect: None,
-            repeat: None,
-            reverse: None,
-            smart_rotation: None,
-            snapping: None,
-        })));
+        out.push(create_tween(
+            &manager,
+            &target,
+            500.0,
+            &[prop_y(50.0)],
+            Some(&TweenOptions {
+                overwrite: Some(false),
+                delay: None,
+                ease: None,
+                reflect: None,
+                repeat: None,
+                reverse: None,
+                smart_rotation: None,
+                snapping: None,
+            }),
+        ));
         get_tweens_of(&mut out, &manager, &target);
         assert_eq!(out.len(), 2);
     }

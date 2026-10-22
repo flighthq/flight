@@ -17,7 +17,13 @@ pub fn ease_smoothstep(t: f32) -> f32 {
 pub fn ease_smoothstep_range(edge0: f32, edge1: f32) -> Arc<dyn Fn(f32) -> f32 + Send + Sync> {
     return Arc::new(move |x: f32| -> f32 {
         let raw = (x - edge0) / (edge1 - edge0);
-        let t = if raw < 0.0 { 0.0 } else if raw > 1.0 { 1.0 } else { raw };
+        let t = if raw < 0.0 {
+            0.0
+        } else if raw > 1.0 {
+            1.0
+        } else {
+            raw
+        };
         return t * t * (3.0 - 2.0 * t);
     });
 }

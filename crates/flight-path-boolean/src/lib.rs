@@ -12,7 +12,19 @@ pub mod contract;
 // Public lane: the names exported by the pinned TS `index.ts` (every module wholesale, plus
 // `createMartinezPathBooleanKernel` and `martinezPathBooleanKernel` from martinezKernel.ts), plus the
 // Rust types the public signatures require. `initialize_martinez_path_boolean_kernel` stays in `contract`.
+pub use contract::ComputePathBooleanFunction;
 pub use contract::MARTINEZ_PATH_BOOLEAN_KERNEL;
+pub use contract::PathBooleanContour;
+pub use contract::PathBooleanExplanation;
+pub use contract::PathBooleanExplanationOperation;
+pub use contract::PathBooleanExplanationReason;
+pub use contract::PathBooleanFillRule;
+pub use contract::PathBooleanKernel;
+pub use contract::PathBooleanOperation;
+pub use contract::PathBooleanOptions;
+pub use contract::PathOffsetEnd;
+pub use contract::PathOffsetJoin;
+pub use contract::PathOffsetOptions;
 pub use contract::boolean_paths;
 pub use contract::create_martinez_path_boolean_kernel;
 pub use contract::difference_paths;
@@ -38,15 +50,3 @@ pub use contract::union_all_paths;
 pub use contract::union_paths;
 pub use contract::write_path_boolean_contours;
 pub use contract::xor_paths;
-pub use contract::ComputePathBooleanFunction;
-pub use contract::PathBooleanContour;
-pub use contract::PathBooleanExplanation;
-pub use contract::PathBooleanExplanationOperation;
-pub use contract::PathBooleanExplanationReason;
-pub use contract::PathBooleanFillRule;
-pub use contract::PathBooleanKernel;
-pub use contract::PathBooleanOperation;
-pub use contract::PathBooleanOptions;
-pub use contract::PathOffsetEnd;
-pub use contract::PathOffsetJoin;
-pub use contract::PathOffsetOptions;

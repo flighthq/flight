@@ -9,7 +9,6 @@ use flight_signals::connect_signal;
 
 use crate::scene2d_fixture::*;
 
-
 fn resize_count(scene2d: &Ref<Scene2D>) -> Arc<AtomicUsize> {
     let count = Arc::new(AtomicUsize::new(0));
     let record = count.clone();

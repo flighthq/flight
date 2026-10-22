@@ -43,7 +43,11 @@ pub fn move_towards(current: f32, target: f32, max_delta: f32) -> f32 {
 pub fn ping_pong(t: f32, length: f32) -> f32 {
     let cycle = 2.0 * length;
     let modulo = ((t % cycle) + cycle) % cycle;
-    return if modulo <= length { modulo } else { cycle - modulo };
+    return if modulo <= length {
+        modulo
+    } else {
+        cycle - modulo
+    };
 }
 
 /// Wrap `t` over `[0, length)`.
@@ -60,6 +64,12 @@ pub fn repeat(t: f32, length: f32) -> f32 {
 /// `x <= edge0`, 1 for `x >= edge1`.
 pub fn smoother_step(edge0: f32, edge1: f32, x: f32) -> f32 {
     let t = (x - edge0) / (edge1 - edge0);
-    let s = if t < 0.0 { 0.0 } else if t > 1.0 { 1.0 } else { t };
+    let s = if t < 0.0 {
+        0.0
+    } else if t > 1.0 {
+        1.0
+    } else {
+        t
+    };
     return s * s * s * (s * (s * 6.0 - 15.0) + 10.0);
 }

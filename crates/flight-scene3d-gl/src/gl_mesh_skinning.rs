@@ -128,11 +128,20 @@ pub fn bind_gl_mesh_skin_palette(
         let mut normal_palette = ensure_gl_skin_normal_palette(state);
         // SAFETY: texture-unit selection runs on the owning GL thread.
         unsafe { gl.active_texture(glow::TEXTURE0 + SKIN_NORMAL_PALETTE_TEXTURE_UNIT) };
-        upload_gl_skin_palette_texture(state, &mut normal_palette, &normal_matrices, joint_count, Some(3))
-            .unwrap_or_else(|error| throw_error(&error));
+        upload_gl_skin_palette_texture(
+            state,
+            &mut normal_palette,
+            &normal_matrices,
+            joint_count,
+            Some(3),
+        )
+        .unwrap_or_else(|error| throw_error(&error));
         // SAFETY: the program is bound on the owning GL thread.
         unsafe {
-            gl.uniform_1_i32(Some(&joint_normal_texture), SKIN_NORMAL_PALETTE_TEXTURE_UNIT as i32);
+            gl.uniform_1_i32(
+                Some(&joint_normal_texture),
+                SKIN_NORMAL_PALETTE_TEXTURE_UNIT as i32,
+            );
         }
     }
     return true;
@@ -146,8 +155,14 @@ pub fn bind_gl_shadow_skin_palette(state: &mut GlRenderState, joint_matrices: &[
     // SAFETY: texture-unit selection runs on the owning GL thread.
     unsafe { gl.active_texture(glow::TEXTURE0 + SKIN_PALETTE_TEXTURE_UNIT) };
     let mut palette = ensure_gl_skin_palette(state);
-    upload_gl_skin_palette_texture(state, &mut palette, joint_matrices, joint_matrices.len() / 16, None)
-        .unwrap_or_else(|error| throw_error(&error));
+    upload_gl_skin_palette_texture(
+        state,
+        &mut palette,
+        joint_matrices,
+        joint_matrices.len() / 16,
+        None,
+    )
+    .unwrap_or_else(|error| throw_error(&error));
 }
 
 // Returns the GPU skinning capability registered on this state, or None. Every skin consumer reads

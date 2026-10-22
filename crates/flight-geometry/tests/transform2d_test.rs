@@ -7,11 +7,21 @@ fn assert_close(actual: f32, expected: f32) {
     assert!(
         diff < 1e-4,
         "expected {} to be approximately {}, diff = {}",
-        actual, expected, diff
+        actual,
+        expected,
+        diff
     );
 }
 
-fn build_matrix(x: f32, y: f32, rotation: f32, scale_x: f32, scale_y: f32, skew_x: f32, skew_y: f32) -> Matrix {
+fn build_matrix(
+    x: f32,
+    y: f32,
+    rotation: f32,
+    scale_x: f32,
+    scale_y: f32,
+    skew_x: f32,
+    skew_y: f32,
+) -> Matrix {
     let rad_y = (rotation + skew_y) * DEG_TO_RAD;
     let rad_x = (rotation + skew_x) * DEG_TO_RAD;
     return create_matrix(
@@ -27,7 +37,15 @@ fn build_matrix(x: f32, y: f32, rotation: f32, scale_x: f32, scale_y: f32, skew_
 fn expect_round_trip(source: &Matrix) {
     let mut out = create_transform2d(0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
     decompose_matrix_to_transform2d(&mut out, source);
-    let rebuilt = build_matrix(out.x, out.y, out.rotation, out.scale_x, out.scale_y, out.skew_x, out.skew_y);
+    let rebuilt = build_matrix(
+        out.x,
+        out.y,
+        out.rotation,
+        out.scale_x,
+        out.scale_y,
+        out.skew_x,
+        out.skew_y,
+    );
     assert_close(rebuilt.a, source.a);
     assert_close(rebuilt.b, source.b);
     assert_close(rebuilt.c, source.c);
@@ -91,7 +109,10 @@ mod decompose_matrix_to_transform2d {
     #[test]
     fn recovers_a_pure_rotation_with_no_skew() {
         let mut out = create_transform2d(0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
-        decompose_matrix_to_transform2d(&mut out, &build_matrix(0.0, 0.0, 30.0, 1.0, 1.0, 0.0, 0.0));
+        decompose_matrix_to_transform2d(
+            &mut out,
+            &build_matrix(0.0, 0.0, 30.0, 1.0, 1.0, 0.0, 0.0),
+        );
         assert_close(out.rotation, 30.0);
         assert_eq!(out.skew_x, 0.0);
         assert_eq!(out.skew_y, 0.0);
@@ -100,7 +121,10 @@ mod decompose_matrix_to_transform2d {
     #[test]
     fn round_trips_a_skewed_transform_folding_the_angles_into_skew() {
         let mut out = create_transform2d(0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
-        decompose_matrix_to_transform2d(&mut out, &build_matrix(0.0, 0.0, 0.0, 1.0, 1.0, 10.0, 20.0));
+        decompose_matrix_to_transform2d(
+            &mut out,
+            &build_matrix(0.0, 0.0, 0.0, 1.0, 1.0, 10.0, 20.0),
+        );
         assert_eq!(out.rotation, 0.0);
         assert_close(out.skew_x, 10.0);
         assert_close(out.skew_y, 20.0);
@@ -129,8 +153,12 @@ mod decompose_matrix_to_transform2d {
             for &b in values {
                 for &c in values {
                     for &d in values {
-                        if (a * d - b * c).abs() < 1e-9 { continue; }
-                        if a * d - b * c < 0.0 { negative_determinant_count += 1; }
+                        if (a * d - b * c).abs() < 1e-9 {
+                            continue;
+                        }
+                        if a * d - b * c < 0.0 {
+                            negative_determinant_count += 1;
+                        }
                         expect_round_trip(&create_matrix(a, b, c, d, 0.0, 0.0));
                     }
                 }

@@ -112,9 +112,13 @@ pub fn conform_crate(crate_name: &str, ts_src: &Path) -> Vec<Violation> {
                         .iter()
                         .filter_map(|a| match a {
                             syn::FnArg::Typed(t) => match &*t.pat {
-                                syn::Pat::Ident(pi) => {
-                                    Some(pi.ident.to_string().trim_start_matches("r#").trim_start_matches('_').to_string())
-                                }
+                                syn::Pat::Ident(pi) => Some(
+                                    pi.ident
+                                        .to_string()
+                                        .trim_start_matches("r#")
+                                        .trim_start_matches('_')
+                                        .to_string(),
+                                ),
                                 _ => Some(String::from("_")),
                             },
                             syn::FnArg::Receiver(_) => None,
@@ -269,7 +273,10 @@ fn collect_ts(ts_src: &Path) -> Vec<TsFunction> {
         .filter_map(|e| e.ok())
         .map(|e| e.path().to_owned())
         .filter(|p| {
-            let name = p.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+            let name = p
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_default();
             name.ends_with(".ts")
                 && !name.ends_with(".test.ts")
                 && !name.ends_with(".spec.ts")
@@ -293,7 +300,10 @@ fn collect_ts(ts_src: &Path) -> Vec<TsFunction> {
             continue;
         };
         let rel = display_path(f.strip_prefix(base).unwrap_or(&f));
-        let stem = f.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+        let stem = f
+            .file_stem()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default();
         let whole_file_public = public_files.contains(&stem);
         for mut t in extract_ts_functions(&source, &rel) {
             t.public = whole_file_public || public_names.contains(&t.name);
@@ -386,7 +396,10 @@ fn parse_index(index: &str) -> (HashSet<String>, HashSet<String>) {
                 if let Some(end) = tail.find(['\'', '"']) {
                     let spec = &tail[..end];
                     let stem = spec.rsplit('/').next().unwrap_or(spec);
-                    let stem = stem.strip_suffix(".ts").or_else(|| stem.strip_suffix(".js")).unwrap_or(stem);
+                    let stem = stem
+                        .strip_suffix(".ts")
+                        .or_else(|| stem.strip_suffix(".js"))
+                        .unwrap_or(stem);
                     files.insert(stem.to_string());
                 }
             }
@@ -470,7 +483,10 @@ fn arrow_signature(rest: &str) -> Option<Signature> {
         return None;
     }
     let init = rest[eq + 1..].trim_start();
-    let init = init.strip_prefix("async ").map(|s| s.trim_start()).unwrap_or(init);
+    let init = init
+        .strip_prefix("async ")
+        .map(|s| s.trim_start())
+        .unwrap_or(init);
     if init.starts_with("function") {
         return parse_signature(init);
     }
@@ -495,7 +511,8 @@ fn arrow_signature(rest: &str) -> Option<Signature> {
         let after: String = chars[close + 1..].iter().collect();
         let arrow = after.find("=>")?;
         let between = after[..arrow].trim();
-        if !(between.is_empty() || (between.starts_with(':') && !between.contains([';', '{', '(']))) {
+        if !(between.is_empty() || (between.starts_with(':') && !between.contains([';', '{', '('])))
+        {
             return None;
         }
         return parse_signature(init);
@@ -715,7 +732,10 @@ const ARRAY_LIKE: &str = "ArrayLike<number>";
 const NUMBER_ARRAY: &str = "number[]";
 
 fn typed_alias(name: &str) -> Option<&'static str> {
-    return TYPED_ARRAYS.iter().find(|(_, t)| *t == name).map(|(_, t)| *t);
+    return TYPED_ARRAYS
+        .iter()
+        .find(|(_, t)| *t == name)
+        .map(|(_, t)| *t);
 }
 
 fn numeric_elem(ty: &syn::Type) -> Option<&'static str> {
@@ -723,7 +743,10 @@ fn numeric_elem(ty: &syn::Type) -> Option<&'static str> {
         && let Some(id) = p.path.get_ident()
     {
         let name = id.to_string();
-        return TYPED_ARRAYS.iter().find(|(r, _)| *r == name).map(|(_, t)| *t);
+        return TYPED_ARRAYS
+            .iter()
+            .find(|(r, _)| *r == name)
+            .map(|(_, t)| *t);
     }
     return None;
 }
@@ -743,7 +766,11 @@ pub fn rust_array_kind(ty: &syn::Type) -> Option<String> {
         syn::Type::Reference(r) => {
             if let syn::Type::Slice(s) = &*r.elem {
                 let typed = numeric_elem(&s.elem)?;
-                return Some(if r.mutability.is_some() { typed.to_string() } else { ARRAY_LIKE.to_string() });
+                return Some(if r.mutability.is_some() {
+                    typed.to_string()
+                } else {
+                    ARRAY_LIKE.to_string()
+                });
             }
             if let syn::Type::Path(p) = &*r.elem
                 && let Some(seg) = p.path.segments.last()
@@ -798,7 +825,10 @@ pub fn ts_array_kind(text: &str) -> Option<String> {
         if p == "null" || p == "undefined" {
             continue;
         }
-        if let Some(inner) = p.strip_prefix("Readonly<").and_then(|x| x.strip_suffix('>')) {
+        if let Some(inner) = p
+            .strip_prefix("Readonly<")
+            .and_then(|x| x.strip_suffix('>'))
+        {
             p = inner.trim().to_string();
         }
         p = p.trim_start_matches("readonly ").trim().to_string();
@@ -856,10 +886,18 @@ fn check_arrays(
     if ts_params.len() == r.params.len() {
         for k in 0..r.params.len() {
             let ts_kind = t.param_types.get(k).and_then(|x| ts_array_kind(x));
-            pairs.push((format!("param `{}`", r.params[k]), r.param_kinds[k].clone(), ts_kind));
+            pairs.push((
+                format!("param `{}`", r.params[k]),
+                r.param_kinds[k].clone(),
+                ts_kind,
+            ));
         }
     }
-    pairs.push((String::from("return"), r.return_kind.clone(), ts_array_kind(&t.return_type)));
+    pairs.push((
+        String::from("return"),
+        r.return_kind.clone(),
+        ts_array_kind(&t.return_type),
+    ));
     for (what, rk, tk) in pairs {
         let (Some(rk), Some(tk)) = (rk, tk) else {
             continue;
@@ -887,19 +925,32 @@ mod tests {
 
     #[test]
     fn textformat_relocation_checks_only_its_source_file_and_keeps_export_lanes() {
-        let root = std::env::temp_dir().join(format!("flight-textformat-mapping-{}", std::process::id()));
+        let root =
+            std::env::temp_dir().join(format!("flight-textformat-mapping-{}", std::process::id()));
         let src = root.join("textlayout/src");
         std::fs::create_dir_all(&src).unwrap();
         let range = src.join("textFormatRange.ts");
         std::fs::write(&range, "export function createTextFormatRange(format: TextFormat, start: number, end: number): TextFormatRange {}\nexport function initializeTextFormatRange(out: TextFormatRange, format: TextFormat, start: number, end: number): void {}\n").unwrap();
         std::fs::write(src.join("index.ts"), "export { createTextFormatRange } from './textFormatRange.ts';\nexport * from './unrelated.ts';\n").unwrap();
-        std::fs::write(src.join("unrelated.ts"), "export function unrelatedTextLayout(): void {}\n").unwrap();
+        std::fs::write(
+            src.join("unrelated.ts"),
+            "export function unrelatedTextLayout(): void {}\n",
+        )
+        .unwrap();
         let selected = ts_src_for(&root, "flight-textformat", false).unwrap();
         assert_eq!(selected, range);
         let functions = collect_ts(&selected);
         assert_eq!(functions.len(), 2);
-        assert!(functions.iter().any(|f| f.name == "createTextFormatRange" && f.public));
-        assert!(functions.iter().any(|f| f.name == "initializeTextFormatRange" && !f.public));
+        assert!(
+            functions
+                .iter()
+                .any(|f| f.name == "createTextFormatRange" && f.public)
+        );
+        assert!(
+            functions
+                .iter()
+                .any(|f| f.name == "initializeTextFormatRange" && !f.public)
+        );
         std::fs::remove_dir_all(&root).unwrap();
     }
 
@@ -947,34 +998,62 @@ mod tests {
 
         let scene_functions =
             collect_ts_for_crate_with_relocations("flight-scene3d", &scene3d, |_| true);
-        assert!(scene_functions.iter().any(|function| function.name == "createScene3D"));
-        assert!(scene_functions.iter().any(|function| {
-            function.name == "updateMeshMorph" && function.public
-        }));
-        assert!(!scene_functions.iter().any(|function| function.name == "keepMeshFunction"));
+        assert!(
+            scene_functions
+                .iter()
+                .any(|function| function.name == "createScene3D")
+        );
+        assert!(
+            scene_functions
+                .iter()
+                .any(|function| { function.name == "updateMeshMorph" && function.public })
+        );
+        assert!(
+            !scene_functions
+                .iter()
+                .any(|function| function.name == "keepMeshFunction")
+        );
 
         let mesh_functions =
             collect_ts_for_crate_with_relocations("flight-meshgeometry", &mesh, |_| true);
-        assert!(!mesh_functions.iter().any(|function| function.name == "updateMeshMorph"));
-        assert!(mesh_functions.iter().any(|function| function.name == "keepMeshFunction"));
+        assert!(
+            !mesh_functions
+                .iter()
+                .any(|function| function.name == "updateMeshMorph")
+        );
+        assert!(
+            mesh_functions
+                .iter()
+                .any(|function| function.name == "keepMeshFunction")
+        );
 
         let dormant_scene_functions =
             collect_ts_for_crate_with_relocations("flight-scene3d", &scene3d, |_| false);
-        assert!(!dormant_scene_functions
-            .iter()
-            .any(|function| function.name == "updateMeshMorph"));
+        assert!(
+            !dormant_scene_functions
+                .iter()
+                .any(|function| function.name == "updateMeshMorph")
+        );
         let dormant_mesh_functions =
             collect_ts_for_crate_with_relocations("flight-meshgeometry", &mesh, |_| false);
-        assert!(dormant_mesh_functions
-            .iter()
-            .any(|function| function.name == "updateMeshMorph"));
+        assert!(
+            dormant_mesh_functions
+                .iter()
+                .any(|function| function.name == "updateMeshMorph")
+        );
         std::fs::remove_dir_all(&root).unwrap();
     }
 
     #[test]
     fn normalize_matches_digit_acronyms() {
-        assert_eq!(normalize("createMatrix4From2D"), normalize("create_matrix4_from_2d"));
-        assert_eq!(normalize("intersectRay3DCapsule"), normalize("intersect_ray3d_capsule"));
+        assert_eq!(
+            normalize("createMatrix4From2D"),
+            normalize("create_matrix4_from_2d")
+        );
+        assert_eq!(
+            normalize("intersectRay3DCapsule"),
+            normalize("intersect_ray3d_capsule")
+        );
     }
 
     #[test]
@@ -995,34 +1074,81 @@ mod tests {
                    export function _internal() {}\n";
         let fns = extract_ts_functions(src, "x.ts");
         let names: Vec<&str> = fns.iter().map(|f| f.name.as_str()).collect();
-        assert_eq!(names, vec!["addVector2", "pick", "easeSmoothstep", "easeIn"]);
-        assert_eq!(fns[0].params.as_deref(), Some(&["out".to_string(), "a".into(), "b".into()][..]));
-        assert_eq!(fns[1].params.as_deref(), Some(&["random".to_string(), "items".into()][..]));
+        assert_eq!(
+            names,
+            vec!["addVector2", "pick", "easeSmoothstep", "easeIn"]
+        );
+        assert_eq!(
+            fns[0].params.as_deref(),
+            Some(&["out".to_string(), "a".into(), "b".into()][..])
+        );
+        assert_eq!(
+            fns[1].params.as_deref(),
+            Some(&["random".to_string(), "items".into()][..])
+        );
         assert_eq!(fns[2].params.as_deref(), Some(&["t".to_string()][..]));
     }
 
     #[test]
     fn classifies_array_kinds() {
         let ty = |s: &str| -> syn::Type { syn::parse_str(s).unwrap() };
-        assert_eq!(rust_array_kind(&ty("&mut [f32]")).as_deref(), Some("Float32Array"));
-        assert_eq!(rust_array_kind(&ty("&[f32]")).as_deref(), Some("ArrayLike<number>"));
-        assert_eq!(rust_array_kind(&ty("Vec<f32>")).as_deref(), Some("number[]"));
-        assert_eq!(rust_array_kind(&ty("Box<[u16]>")).as_deref(), Some("Uint16Array"));
-        assert_eq!(rust_array_kind(&ty("[f32; 9]")).as_deref(), Some("Float32Array"));
-        assert_eq!(rust_array_kind(&ty("&Vec<f32>")).as_deref(), Some("number[]"));
-        assert_eq!(rust_array_kind(&ty("&Float32Array")).as_deref(), Some("Float32Array"));
-        assert_eq!(rust_array_kind(&ty("&mut Uint16Array")).as_deref(), Some("Uint16Array"));
-        assert_eq!(rust_array_kind(&ty("Box<Float32Array>")).as_deref(), Some("Float32Array"));
+        assert_eq!(
+            rust_array_kind(&ty("&mut [f32]")).as_deref(),
+            Some("Float32Array")
+        );
+        assert_eq!(
+            rust_array_kind(&ty("&[f32]")).as_deref(),
+            Some("ArrayLike<number>")
+        );
+        assert_eq!(
+            rust_array_kind(&ty("Vec<f32>")).as_deref(),
+            Some("number[]")
+        );
+        assert_eq!(
+            rust_array_kind(&ty("Box<[u16]>")).as_deref(),
+            Some("Uint16Array")
+        );
+        assert_eq!(
+            rust_array_kind(&ty("[f32; 9]")).as_deref(),
+            Some("Float32Array")
+        );
+        assert_eq!(
+            rust_array_kind(&ty("&Vec<f32>")).as_deref(),
+            Some("number[]")
+        );
+        assert_eq!(
+            rust_array_kind(&ty("&Float32Array")).as_deref(),
+            Some("Float32Array")
+        );
+        assert_eq!(
+            rust_array_kind(&ty("&mut Uint16Array")).as_deref(),
+            Some("Uint16Array")
+        );
+        assert_eq!(
+            rust_array_kind(&ty("Box<Float32Array>")).as_deref(),
+            Some("Float32Array")
+        );
         assert_eq!(rust_array_kind(&ty("&[Vector2]")), None);
-        assert_eq!(ts_array_kind("Readonly<Float32Array>").as_deref(), Some("Float32Array"));
-        assert_eq!(ts_array_kind("readonly number[] | null").as_deref(), Some("number[]"));
-        assert_eq!(ts_array_kind("number[] | Float32Array").as_deref(), Some("Float32Array | number[]"));
+        assert_eq!(
+            ts_array_kind("Readonly<Float32Array>").as_deref(),
+            Some("Float32Array")
+        );
+        assert_eq!(
+            ts_array_kind("readonly number[] | null").as_deref(),
+            Some("number[]")
+        );
+        assert_eq!(
+            ts_array_kind("number[] | Float32Array").as_deref(),
+            Some("Float32Array | number[]")
+        );
         assert_eq!(ts_array_kind("Vector2Like"), None);
     }
 
     #[test]
     fn signature_captures_types_and_return() {
-        let sig = parse_signature("f(out: number[], source: Readonly<Float32Array>, n = 3): number[] {").unwrap();
+        let sig =
+            parse_signature("f(out: number[], source: Readonly<Float32Array>, n = 3): number[] {")
+                .unwrap();
         assert_eq!(sig.types, vec!["number[]", "Readonly<Float32Array>", ""]);
         assert_eq!(sig.return_type, "number[]");
     }
@@ -1099,7 +1225,10 @@ mod tests {
 
     #[test]
     fn params_skip_arrow_types_and_defaults() {
-        let p = parse_params("f(cb: (a: number) => void, opts: { x: number } = {}, ...rest: number[]) {").unwrap();
+        let p = parse_params(
+            "f(cb: (a: number) => void, opts: { x: number } = {}, ...rest: number[]) {",
+        )
+        .unwrap();
         assert_eq!(p, vec!["cb", "opts", "rest"]);
     }
 
@@ -1113,7 +1242,9 @@ mod tests {
 
     #[test]
     fn parses_index_exports() {
-        let (names, files) = parse_index("export {\n  a,\n  type B,\n  c as d,\n} from './x.ts';\nexport * from './pool.ts';\n");
+        let (names, files) = parse_index(
+            "export {\n  a,\n  type B,\n  c as d,\n} from './x.ts';\nexport * from './pool.ts';\n",
+        );
         assert!(names.contains("a") && names.contains("B") && names.contains("d"));
         assert!(files.contains("pool"));
     }

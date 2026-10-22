@@ -12,8 +12,10 @@ mod register_wgpu_phong_material {
     fn installs_the_renderer_for_phong_material_kind() {
         let mut test = make_wgpu_scene3d_state(None);
         register_wgpu_phong_material(&mut test.state);
-        assert!(get_wgpu_mesh_material_renderer(&test.state, PHONG_MATERIAL_KIND)
-            .is_some_and(|renderer| std::ptr::eq(renderer, &WGPU_PHONG_MESH_MATERIAL_RENDERER)));
+        assert!(
+            get_wgpu_mesh_material_renderer(&test.state, PHONG_MATERIAL_KIND)
+                .is_some_and(|renderer| std::ptr::eq(renderer, &WGPU_PHONG_MESH_MATERIAL_RENDERER))
+        );
     }
 }
 
@@ -27,8 +29,17 @@ mod wgpu_phong_mesh_material_renderer {
         let mut test = make_wgpu_scene3d_state(None);
         bind_test_renderer(&mut test.state, &WGPU_PHONG_MESH_MATERIAL_RENDERER, None);
         bind_test_renderer(&mut test.state, &WGPU_LAMBERT_MESH_MATERIAL_RENDERER, None);
-        bind_test_renderer(&mut test.state, &WGPU_BLINN_PHONG_MESH_MATERIAL_RENDERER, None);
-        assert_eq!(get_wgpu_scene3d_runtime(&mut test.state).material_bind_groups.len(), 3);
+        bind_test_renderer(
+            &mut test.state,
+            &WGPU_BLINN_PHONG_MESH_MATERIAL_RENDERER,
+            None,
+        );
+        assert_eq!(
+            get_wgpu_scene3d_runtime(&mut test.state)
+                .material_bind_groups
+                .len(),
+            3
+        );
     }
 
     #[test]

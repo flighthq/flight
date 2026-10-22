@@ -75,8 +75,10 @@ mod sugar_tests {
     #[test]
     fn find_label_method_matches_find_timeline_label() {
         let source = create_timeline_source(None);
-        source.write().unwrap().labels =
-            std::sync::Arc::new(vec![TimelineLabel { frame: 3, name: String::from("run") }]);
+        source.write().unwrap().labels = std::sync::Arc::new(vec![TimelineLabel {
+            frame: 3,
+            name: String::from("run"),
+        }]);
         let method_timeline = create_timeline(None);
         method_timeline.write().unwrap().source = Some(source);
         let free_timeline = method_timeline.clone();

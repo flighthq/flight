@@ -44,8 +44,17 @@ mod sugar_tests {
     #[test]
     fn clock_advance_matches_advance_clock() {
         let (a, b) = pair(2.0, false);
-        let ca = a.create_child(Some(&ClockOptions { scale: Some(0.5), paused: None }));
-        let cb = create_child_clock(&b, Some(&ClockOptions { scale: Some(0.5), paused: None }));
+        let ca = a.create_child(Some(&ClockOptions {
+            scale: Some(0.5),
+            paused: None,
+        }));
+        let cb = create_child_clock(
+            &b,
+            Some(&ClockOptions {
+                scale: Some(0.5),
+                paused: None,
+            }),
+        );
         a.advance(300.0);
         advance_clock(&b, 300.0);
         assert!(same_state(&a, &b) && same_state(&ca, &cb));
@@ -55,7 +64,10 @@ mod sugar_tests {
     #[test]
     fn clock_create_child_matches_create_child_clock() {
         let (a, b) = pair(1.0, false);
-        let options = ClockOptions { scale: Some(3.0), paused: Some(true) };
+        let options = ClockOptions {
+            scale: Some(3.0),
+            paused: Some(true),
+        };
         let ca = a.create_child(Some(&options));
         let cb = create_child_clock(&b, Some(&options));
         assert!(same_state(&a, &b) && same_state(&ca, &cb));
@@ -86,7 +98,13 @@ mod sugar_tests {
     #[test]
     fn clock_effective_scale_matches_get_clock_effective_scale() {
         let parent = clock(2.0, false);
-        let child = create_child_clock(&parent, Some(&ClockOptions { scale: Some(1.5), paused: None }));
+        let child = create_child_clock(
+            &parent,
+            Some(&ClockOptions {
+                scale: Some(1.5),
+                paused: None,
+            }),
+        );
         let child = child.read().unwrap();
         assert_eq!(child.effective_scale(), get_clock_effective_scale(&child));
         assert_eq!(child.effective_scale(), 3.0);
@@ -97,7 +115,10 @@ mod sugar_tests {
         let parent = clock(1.0, true);
         let child = create_child_clock(&parent, None);
         let child = child.read().unwrap();
-        assert_eq!(child.is_effectively_paused(), is_clock_effectively_paused(&child));
+        assert_eq!(
+            child.is_effectively_paused(),
+            is_clock_effectively_paused(&child)
+        );
         assert!(child.is_effectively_paused());
     }
 
@@ -106,7 +127,10 @@ mod sugar_tests {
         let parent = create_clock();
         let child = create_child_clock(&parent, None);
         let child = child.read().unwrap();
-        assert!(Arc::ptr_eq(&child.parent().unwrap(), &get_clock_parent(&child).unwrap()));
+        assert!(Arc::ptr_eq(
+            &child.parent().unwrap(),
+            &get_clock_parent(&child).unwrap()
+        ));
     }
 
     #[test]
@@ -222,13 +246,22 @@ pub fn add_clock_child(parent: &Ref<Clock>, child: &Ref<Clock>) {
 pub fn advance_clock(clock: &Ref<Clock>, delta_time: f64) {
     let (scaled_delta, on_tick) = {
         let mut current = clock.write().unwrap();
-        let scaled_delta = if current.paused { 0.0 } else { delta_time * current.scale };
+        let scaled_delta = if current.paused {
+            0.0
+        } else {
+            delta_time * current.scale
+        };
         current.delta_time = scaled_delta;
         current.elapsed += scaled_delta;
         (scaled_delta, current.on_tick.clone())
     };
     if let Some(on_tick) = on_tick {
-        emit_signal(&on_tick, &FrameTick { delta_time: scaled_delta });
+        emit_signal(
+            &on_tick,
+            &FrameTick {
+                delta_time: scaled_delta,
+            },
+        );
     }
     let mut index = 0;
     loop {
@@ -255,7 +288,10 @@ pub fn dispose_clock(clock: &Ref<Clock>) {
     }
     let (children, on_tick) = {
         let mut current = clock.write().unwrap();
-        (std::mem::take(&mut current.children), current.on_tick.clone())
+        (
+            std::mem::take(&mut current.children),
+            current.on_tick.clone(),
+        )
     };
     for child in &children {
         child.write().unwrap().parent = None;

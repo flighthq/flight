@@ -3,7 +3,7 @@ mod read_gl_render_target_pixels {
         calls_named, calls_with, clear_calls, last_call, make_state, make_texture_target,
         set_framebuffer_status,
     };
-    use flight_render_gl::{read_gl_render_target_pixels, GlReadbackBuffer};
+    use flight_render_gl::{GlReadbackBuffer, read_gl_render_target_pixels};
 
     #[test]
     fn returns_false_for_a_zero_height_target_without_touching_gl() {

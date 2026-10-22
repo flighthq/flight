@@ -1,6 +1,7 @@
-use crate::path::{Path, StrokeStyle,
-    append_path_close, append_path_line_to, append_path_move_to, create_path};
-use crate::stroke_path_geometry::{build_stroke_path_geometry, StrokePathPieceGeometry};
+use crate::path::{
+    Path, StrokeStyle, append_path_close, append_path_line_to, append_path_move_to, create_path,
+};
+use crate::stroke_path_geometry::{StrokePathPieceGeometry, build_stroke_path_geometry};
 
 #[cfg(test)]
 mod sugar_tests {
@@ -17,7 +18,14 @@ mod sugar_tests {
     }
 
     fn test_style() -> StrokeStyle {
-        return StrokeStyle { width: 2.0, cap: StrokeCap::Round, join: StrokeJoin::Round, miter_limit: 4.0, dash: Vec::new(), dash_offset: 0.0 };
+        return StrokeStyle {
+            width: 2.0,
+            cap: StrokeCap::Round,
+            join: StrokeJoin::Round,
+            miter_limit: 4.0,
+            dash: Vec::new(),
+            dash_offset: 0.0,
+        };
     }
 
     #[test]
@@ -68,7 +76,11 @@ fn append_piece_outline(path: &mut Path, piece: &StrokePathPieceGeometry) {
         &piece.left,
         false,
         if piece.closed { &empty } else { &piece.end_cap },
-        if piece.closed { &empty } else { &piece.start_cap },
+        if piece.closed {
+            &empty
+        } else {
+            &piece.start_cap
+        },
         &piece.right,
     );
     if piece.closed {

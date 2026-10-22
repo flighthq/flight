@@ -49,8 +49,7 @@ fn flex_layout_resolver(
     let wrap = container
         .and_then(|c| c.wrap)
         .unwrap_or(FlexLayoutWrap::NoWrap);
-    let row =
-        direction == FlexLayoutDirection::Row || direction == FlexLayoutDirection::RowReverse;
+    let row = direction == FlexLayoutDirection::Row || direction == FlexLayoutDirection::RowReverse;
     let reverse = direction == FlexLayoutDirection::RowReverse
         || direction == FlexLayoutDirection::ColumnReverse;
     let gap = container.and_then(|c| c.gap).unwrap_or(0.0);
@@ -59,10 +58,10 @@ fn flex_layout_resolver(
     let padding_top = container.and_then(|c| c.padding_top).unwrap_or(0.0);
     let padding_bottom = container.and_then(|c| c.padding_bottom).unwrap_or(0.0);
     let parent_offset = parent_index * 4;
-    let main_start = out[parent_offset + if row { 0 } else { 1 }]
-        + if row { padding_left } else { padding_top };
-    let cross_start = out[parent_offset + if row { 1 } else { 0 }]
-        + if row { padding_top } else { padding_left };
+    let main_start =
+        out[parent_offset + if row { 0 } else { 1 }] + if row { padding_left } else { padding_top };
+    let cross_start =
+        out[parent_offset + if row { 1 } else { 0 }] + if row { padding_top } else { padding_left };
     let main_size = f32::max(
         0.0,
         out[parent_offset + if row { 2 } else { 3 }]
@@ -145,8 +144,7 @@ fn flex_layout_resolver(
         cross_offset = cross_size - cross_offset - line_cross;
     }
 
-    let distributable =
-        main_size - line_base_sum - gap * f32::max(0.0, (line_count - 1) as f32);
+    let distributable = main_size - line_base_sum - gap * f32::max(0.0, (line_count - 1) as f32);
     let shrink_scale = get_flex_shrink_scale(
         tree,
         intrinsic_sizes,
@@ -231,12 +229,7 @@ fn flex_layout_resolver(
     return None;
 }
 
-fn get_flex_align_offset(
-    align: FlexLayoutAlign,
-    available: f32,
-    size: f32,
-    reverse: bool,
-) -> f32 {
+fn get_flex_align_offset(align: FlexLayoutAlign, available: f32, size: f32, reverse: bool) -> f32 {
     if align == FlexLayoutAlign::Center {
         return (available - size) / 2.0;
     }
@@ -252,18 +245,11 @@ fn get_flex_align_offset(
     return 0.0;
 }
 
-fn get_flex_base(
-    node: &LayoutNode,
-    intrinsic_sizes: &[f32],
-    node_index: usize,
-    row: bool,
-) -> f32 {
+fn get_flex_base(node: &LayoutNode, intrinsic_sizes: &[f32], node_index: usize, row: bool) -> f32 {
     let item = get_flex_item_style(node);
     let basis = item.and_then(|s| s.basis).unwrap_or(FlexBasis::Auto);
     return match basis {
-        FlexBasis::Auto => {
-            finite_size(intrinsic_sizes[node_index * 2 + if row { 0 } else { 1 }])
-        }
+        FlexBasis::Auto => finite_size(intrinsic_sizes[node_index * 2 + if row { 0 } else { 1 }]),
         FlexBasis::Fixed(v) => v,
     };
 }
@@ -305,11 +291,7 @@ fn get_flex_justify_gap(justify: FlexLayoutJustify, free: f32, count: i32) -> f3
         };
     }
     if justify == FlexLayoutJustify::SpaceAround {
-        return if count > 0 {
-            free / count as f32
-        } else {
-            0.0
-        };
+        return if count > 0 { free / count as f32 } else { 0.0 };
     }
     if justify == FlexLayoutJustify::SpaceEvenly {
         return free / (count + 1) as f32;
@@ -317,11 +299,7 @@ fn get_flex_justify_gap(justify: FlexLayoutJustify, free: f32, count: i32) -> f3
     return 0.0;
 }
 
-fn get_flex_justify_offset(
-    justify: FlexLayoutJustify,
-    free: f32,
-    distributed_gap: f32,
-) -> f32 {
+fn get_flex_justify_offset(justify: FlexLayoutJustify, free: f32, distributed_gap: f32) -> f32 {
     if justify == FlexLayoutJustify::End {
         return free;
     }

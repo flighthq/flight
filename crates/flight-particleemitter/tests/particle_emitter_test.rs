@@ -1,8 +1,8 @@
 use flight_geometry::{create_rectangle, create_vector2};
 use flight_node::{Node, NodeRef, get_node_local_bounds_rectangle, get_node_local_bounds_revision};
 use flight_textureatlas::{
-    TextureAtlasRegionOptions, TextureAtlasRotation,
-    create_texture_atlas, create_texture_atlas_region, set_texture_atlas_region,
+    TextureAtlasRegionOptions, TextureAtlasRotation, create_texture_atlas,
+    create_texture_atlas_region, set_texture_atlas_region,
 };
 
 use flight_particleemitter::*;
@@ -15,23 +15,26 @@ fn make_atlas_region(
     height: f32,
 ) -> flight_entity::Ref<flight_textureatlas::TextureAtlasRegion> {
     let region = create_texture_atlas_region();
-    set_texture_atlas_region(&mut region.write().unwrap(), &TextureAtlasRegionOptions {
-        height: Some(height),
-        id: Some(id),
-        name: None,
-        original_height: None,
-        original_width: None,
-        page_name: None,
-        pivot_x: None,
-        pivot_y: None,
-        rotation: None,
-        source_x: None,
-        source_y: None,
-        trimmed: None,
-        x: Some(x),
-        y: Some(y),
-        width: Some(width),
-    });
+    set_texture_atlas_region(
+        &mut region.write().unwrap(),
+        &TextureAtlasRegionOptions {
+            height: Some(height),
+            id: Some(id),
+            name: None,
+            original_height: None,
+            original_width: None,
+            page_name: None,
+            pivot_x: None,
+            pivot_y: None,
+            rotation: None,
+            source_x: None,
+            source_y: None,
+            trimmed: None,
+            x: Some(x),
+            y: Some(y),
+            width: Some(width),
+        },
+    );
     return region;
 }
 
@@ -74,8 +77,14 @@ mod append_particle_emitter_2d_particle {
     #[test]
     fn returns_sequential_indices() {
         let emitter = create_particle_emitter_2d();
-        assert_eq!(append_particle_emitter_2d_particle(&emitter, 0, 0.0, 0.0, 0.0, 1.0), 0);
-        assert_eq!(append_particle_emitter_2d_particle(&emitter, 1, 5.0, 5.0, 0.0, 1.0), 1);
+        assert_eq!(
+            append_particle_emitter_2d_particle(&emitter, 0, 0.0, 0.0, 0.0, 1.0),
+            0
+        );
+        assert_eq!(
+            append_particle_emitter_2d_particle(&emitter, 1, 5.0, 5.0, 0.0, 1.0),
+            1
+        );
         assert_eq!(emitter.read().unwrap().data.particle_count, 2);
     }
 
@@ -233,23 +242,26 @@ mod compute_particle_emitter_2d_local_bounds_rectangle {
     #[test]
     fn uses_upright_extent_of_rotated_atlas_region() {
         let region = create_texture_atlas_region();
-        set_texture_atlas_region(&mut region.write().unwrap(), &TextureAtlasRegionOptions {
-            height: Some(20.0),
-            id: Some(0),
-            name: None,
-            original_height: None,
-            original_width: None,
-            page_name: None,
-            pivot_x: None,
-            pivot_y: None,
-            rotation: Some(TextureAtlasRotation::Clockwise90),
-            source_x: None,
-            source_y: None,
-            trimmed: None,
-            x: Some(0.0),
-            y: Some(0.0),
-            width: Some(10.0),
-        });
+        set_texture_atlas_region(
+            &mut region.write().unwrap(),
+            &TextureAtlasRegionOptions {
+                height: Some(20.0),
+                id: Some(0),
+                name: None,
+                original_height: None,
+                original_width: None,
+                page_name: None,
+                pivot_x: None,
+                pivot_y: None,
+                rotation: Some(TextureAtlasRotation::Clockwise90),
+                source_x: None,
+                source_y: None,
+                trimmed: None,
+                x: Some(0.0),
+                y: Some(0.0),
+                width: Some(10.0),
+            },
+        );
         let atlas = create_texture_atlas();
         atlas.write().unwrap().regions = vec![region];
         let mut data = create_particle_emitter_data();
@@ -421,7 +433,10 @@ mod get_particle_emitter_2d_particle_velocity {
     fn returns_false_for_out_of_range() {
         let emitter = create_particle_emitter_2d();
         let mut out = create_vector2(99.0, 99.0);
-        assert_eq!(get_particle_emitter_2d_particle_velocity(&mut out, &emitter, 0), false);
+        assert_eq!(
+            get_particle_emitter_2d_particle_velocity(&mut out, &emitter, 0),
+            false
+        );
         assert_eq!(out.x, 99.0);
         assert_eq!(out.y, 99.0);
     }
@@ -524,7 +539,10 @@ mod reserve_particle_emitter_2d {
         reserve_particle_emitter_2d(&emitter, 50);
         assert_eq!(emitter.read().unwrap().data.ids.as_ptr(), ids_ptr);
         assert_eq!(emitter.read().unwrap().data.alphas.as_ptr(), alphas_ptr);
-        assert_eq!(emitter.read().unwrap().data.transforms.as_ptr(), transforms_ptr);
+        assert_eq!(
+            emitter.read().unwrap().data.transforms.as_ptr(),
+            transforms_ptr
+        );
     }
 }
 

@@ -4,7 +4,10 @@ use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticSeverity, report_import_diagnostic,
 };
 use flight_math::DEG_TO_RAD;
-use flight_particles::{EmitterShape, ParticleBlendMode, ParticleEmitterConfig, ParticleEmitterConfigOptions, create_particle_emitter_config};
+use flight_particles::{
+    EmitterShape, ParticleBlendMode, ParticleEmitterConfig, ParticleEmitterConfigOptions,
+    create_particle_emitter_config,
+};
 use serde_json::Value;
 
 /// The parse result, config plus diagnostics (TS `PixiParseResult`).

@@ -1,6 +1,5 @@
 // flight-lint: allow-file(contract-vocabulary) D17 mesh-material renderers are backend-typed dispatch records over thread-bound render-gl state
 
-use std::rc::Rc;
 use flight_camera::Camera3D;
 use flight_color::{LinearColor, allocate_linear_color, unpack_color_to_linear};
 use flight_lighting::Scene3DLightBlock;
@@ -8,6 +7,7 @@ use flight_materials::{Material3D, MaterialAlphaMode, UNLIT_MATERIAL_KIND, Unlit
 use flight_meshgeometry::MeshGeometry;
 use flight_render::Scene3DRenderProxy;
 use flight_render_gl::{GlMeshMaterialRenderer, GlRenderState, resolve_gl_texture};
+use std::rc::Rc;
 
 use crate::gl_mesh_material_registry::register_gl_mesh_material_renderer;
 use crate::gl_mesh_program::{
@@ -38,7 +38,11 @@ fn bind_gl_unlit_mesh_material(
     let key = define_key_for_material(state, unlit);
     let program = ensure_gl_unlit_program(state, &key);
     let family: GlMeshProgramRef = program.clone();
-    begin_gl_mesh_draw(state, &family, unlit.is_some_and(|unlit| unlit.double_sided));
+    begin_gl_mesh_draw(
+        state,
+        &family,
+        unlit.is_some_and(|unlit| unlit.double_sided),
+    );
     set_gl_mesh_view_projection(state, program.loc_view_projection, camera);
 
     let Some(unlit) = unlit else {
@@ -59,23 +63,32 @@ fn bind_gl_unlit_mesh_material(
     bind_gl_uv_transform(&gl, &program, color_map.as_deref().map(|map| map as _));
 }
 
-fn define_key_for_material(state: &mut GlRenderState, material: Option<&UnlitMaterial>) -> GlUnlitDefineKey {
+fn define_key_for_material(
+    state: &mut GlRenderState,
+    material: Option<&UnlitMaterial>,
+) -> GlUnlitDefineKey {
     let color_map = material.and_then(|material| material.base_color_map.as_ref());
     let color_map = color_map.map(|map| map.read().unwrap());
     let color_map_ready = color_map
         .as_deref()
         .is_some_and(|map| resolve_gl_texture(state, map, None, None).is_some());
     return GlUnlitDefineKey {
-        alpha_mask_enabled: material.is_some_and(|material| material.alpha_mode == MaterialAlphaMode::Mask),
+        alpha_mask_enabled: material
+            .is_some_and(|material| material.alpha_mode == MaterialAlphaMode::Mask),
         has_color_map: color_map_ready,
         has_instances: None,
         has_skin: None,
-        has_uv_transform: color_map_ready && has_gl_uv_transform(color_map.as_deref().map(|map| map as _)),
+        has_uv_transform: color_map_ready
+            && has_gl_uv_transform(color_map.as_deref().map(|map| map as _)),
         vertex_color: false,
     };
 }
 
-fn draw_gl_unlit_mesh_material(state: &mut GlRenderState, proxy: &Scene3DRenderProxy, geometry: &MeshGeometry) {
+fn draw_gl_unlit_mesh_material(
+    state: &mut GlRenderState,
+    proxy: &Scene3DRenderProxy,
+    geometry: &MeshGeometry,
+) {
     let program = get_gl_scene3d_runtime(state).active_mesh_program.clone();
     let Some(program) = program else {
         return;

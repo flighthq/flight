@@ -109,10 +109,17 @@ mod ensure_gl_matcap_program {
         let skinned = ensure_gl_matcap_program(&state, &flat());
 
         assert!(!Rc::ptr_eq(&skinned, &rigid));
-        let mut keys: Vec<String> = get_gl_scene3d_runtime(&state).program_cache.keys().cloned().collect();
+        let mut keys: Vec<String> = get_gl_scene3d_runtime(&state)
+            .program_cache
+            .keys()
+            .cloned()
+            .collect();
         // D17: the Rust program cache is a HashMap; sort to compare against the TS insertion order.
         keys.sort();
-        assert_eq!(keys, vec!["matcap:----".to_string(), "matcap:--k-".to_string()]);
+        assert_eq!(
+            keys,
+            vec!["matcap:----".to_string(), "matcap:--k-".to_string()]
+        );
     }
 }
 

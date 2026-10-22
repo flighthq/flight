@@ -1,7 +1,7 @@
 use flight_geometry::Vector2;
 
-use crate::path::Path;
 use crate::flatten_path::flatten_path;
+use crate::path::Path;
 
 #[cfg(test)]
 mod sugar_tests {
@@ -40,7 +40,8 @@ pub fn get_path_nearest_point(
     px: f64,
     py: f64,
     out: &mut Vector2,
-    tolerance: Option<f64>) -> f64 {
+    tolerance: Option<f64>,
+) -> f64 {
     let tolerance = tolerance.unwrap_or(0.25);
     let mut contours = Vec::new();
     flatten_path(&mut contours, path, Some(tolerance));
@@ -64,7 +65,13 @@ pub fn get_path_nearest_point(
                 t = 0.0;
             } else {
                 let raw = ((px - ax) * dx + (py - ay) * dy) / len_sq;
-                t = if raw < 0.0 { 0.0 } else if raw > 1.0 { 1.0 } else { raw };
+                t = if raw < 0.0 {
+                    0.0
+                } else if raw > 1.0 {
+                    1.0
+                } else {
+                    raw
+                };
             }
             let cx = ax + t * dx;
             let cy = ay + t * dy;
@@ -88,7 +95,13 @@ pub fn get_path_nearest_point(
 
 impl Path {
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured
-    pub fn nearest_point(&self, px: f64, py: f64, out: &mut Vector2, tolerance: Option<f64>) -> f64 {
+    pub fn nearest_point(
+        &self,
+        px: f64,
+        py: f64,
+        out: &mut Vector2,
+        tolerance: Option<f64>,
+    ) -> f64 {
         return get_path_nearest_point(self, px, py, out, tolerance);
     }
 }

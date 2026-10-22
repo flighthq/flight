@@ -8,7 +8,9 @@ use flight_render_gl::{
 };
 use flight_scene3d_gl::contract::*;
 
-use crate::gl_test_helper::{make_gl_scene3d_state, make_gl_scene3d_state_with, make_state_options};
+use crate::gl_test_helper::{
+    make_gl_scene3d_state, make_gl_scene3d_state_with, make_state_options,
+};
 
 const TEST_KIND: &str = "TestMeshMaterial";
 
@@ -43,12 +45,20 @@ impl GlQuadMaterialRenderer for TestQuadRenderer {
         return 0;
     }
 
-    fn bind(&self, _state: &mut GlRenderState, _material: Option<&dyn flight_materials::Material2D>) {}
+    fn bind(
+        &self,
+        _state: &mut GlRenderState,
+        _material: Option<&dyn flight_materials::Material2D>,
+    ) {
+    }
 }
 
 static QUAD_RENDERER: TestQuadRenderer = TestQuadRenderer;
 
-fn is_renderer(actual: Option<&'static GlMeshMaterialRenderer>, expected: &'static GlMeshMaterialRenderer) -> bool {
+fn is_renderer(
+    actual: Option<&'static GlMeshMaterialRenderer>,
+    expected: &'static GlMeshMaterialRenderer,
+) -> bool {
     return actual.is_some_and(|actual| std::ptr::eq(actual, expected));
 }
 
@@ -89,7 +99,10 @@ mod register_gl_mesh_material_renderer {
 
         // D17: the derived state shares the snapshot copy-on-write (TS copies the map); either way the
         // later registration on `screen` never reaches it.
-        assert!(!Arc::ptr_eq(&screen.gl_registries.material_renderers, &snapshot));
+        assert!(!Arc::ptr_eq(
+            &screen.gl_registries.material_renderers,
+            &snapshot
+        ));
         assert!(matches!(
             snapshot.entries.get(TEST_KIND),
             Some(GlMaterialRenderer::Mesh(entry)) if std::ptr::eq(*entry, &RENDERER)
@@ -130,13 +143,20 @@ mod resolve_gl_mesh_material_renderer {
     #[test]
     fn falls_back_to_the_standard_material_kind_renderer() {
         let mut state = make_gl_scene3d_state();
-        register_gl_mesh_material_renderer(&mut state, STANDARD_MATERIAL_KIND.to_string(), &RENDERER);
+        register_gl_mesh_material_renderer(
+            &mut state,
+            STANDARD_MATERIAL_KIND.to_string(),
+            &RENDERER,
+        );
         let material = create_material3d("Other".to_string());
         assert!(is_renderer(
             resolve_gl_mesh_material_renderer(&state, Some(&material)),
             &RENDERER
         ));
-        assert!(is_renderer(resolve_gl_mesh_material_renderer(&state, None), &RENDERER));
+        assert!(is_renderer(
+            resolve_gl_mesh_material_renderer(&state, None),
+            &RENDERER
+        ));
     }
 }
 
@@ -184,7 +204,10 @@ mod shared_material_renderers_storage {
 
         let table = &state.gl_registries.material_renderers;
         assert_eq!(table.entries.len(), 2);
-        assert!(matches!(table.entries.get(QUAD_KIND), Some(GlMaterialRenderer::Quad(_))));
+        assert!(matches!(
+            table.entries.get(QUAD_KIND),
+            Some(GlMaterialRenderer::Quad(_))
+        ));
         assert!(matches!(
             table.entries.get(MESH_KIND),
             Some(GlMaterialRenderer::Mesh(entry)) if std::ptr::eq(*entry, &RENDERER)

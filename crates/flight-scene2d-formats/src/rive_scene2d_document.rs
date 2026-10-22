@@ -12,9 +12,7 @@ use flight_importdiagnostics::{
 };
 use flight_node::{NodeRef, add_node_child, get_node_child_at, get_node_child_count};
 use flight_path_boolean::PathBooleanKernel;
-use flight_scene2d::{
-    Node2DRef, Scene2DSlotReference, as_node2d_ref, create_display_object,
-};
+use flight_scene2d::{Node2DRef, Scene2DSlotReference, as_node2d_ref, create_display_object};
 use flight_texture::Texture;
 
 use crate::rive_asset_binding::{

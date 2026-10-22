@@ -21,7 +21,10 @@ use crate::types::*;
 // The source's `/^[a-zA-Z][a-zA-Z0-9+.-]*:/` scheme test, spelled out over the ASCII bytes.
 fn has_gltf_uri_scheme(uri: &str) -> bool {
     let bytes = uri.as_bytes();
-    if bytes.first().is_none_or(|first| !first.is_ascii_alphabetic()) {
+    if bytes
+        .first()
+        .is_none_or(|first| !first.is_ascii_alphabetic())
+    {
         return false;
     }
     for &byte in &bytes[1..] {
@@ -77,7 +80,8 @@ pub async fn load_scene3d_document_from_glb_url_with_core_feature_handlers(
     net_state: &NetState,
 ) -> Option<Ref<Scene3DDocument>> {
     let load = get_scene3d_document_load_options(options);
-    let bytes = load_scene3d_document_bytes_from_url(host_net, url, load.as_ref(), net_state).await?;
+    let bytes =
+        load_scene3d_document_bytes_from_url(host_net, url, load.as_ref(), net_state).await?;
     let import = GltfImportOptions {
         base_path: get_scene3d_document_base_path_from_url(url),
         draco_registry: None,
@@ -101,16 +105,22 @@ pub async fn load_scene3d_document_from_gltf_url_with_core_feature_handlers(
     net_state: &NetState,
 ) -> Option<Ref<Scene3DDocument>> {
     let load = get_scene3d_document_load_options(options);
-    let source = load_scene3d_document_text_from_url(host_net, url, load.as_ref(), net_state).await?;
+    let source =
+        load_scene3d_document_text_from_url(host_net, url, load.as_ref(), net_state).await?;
     // The source's `JSON.parse` plus its object check: arrays are objects there, null is not.
     let gltf = serde_json::from_str::<Value>(&source).ok()?;
     if !gltf.is_object() && !gltf.is_array() {
         return None;
     }
     let base_path = get_scene3d_document_base_path_from_url(url);
-    let external_buffers =
-        load_gltf_external_buffers(host_net, &gltf, base_path.as_deref(), load.as_ref(), net_state)
-            .await?;
+    let external_buffers = load_gltf_external_buffers(
+        host_net,
+        &gltf,
+        base_path.as_deref(),
+        load.as_ref(),
+        net_state,
+    )
+    .await?;
     let import = GltfImportOptions {
         base_path,
         draco_registry: None,

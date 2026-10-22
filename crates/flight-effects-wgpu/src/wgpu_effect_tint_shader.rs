@@ -98,7 +98,11 @@ pub fn apply_wgpu_effect_invert_tint_pass(
     strength: f32,
 ) {
     let pipeline = get_wgpu_effect_module_pipeline(state, "tint.invert", |state| {
-        return create_wgpu_effect_pipeline(state, INVERT_TINT_WGSL, Some(WgpuEffectBlendMode::Replace));
+        return create_wgpu_effect_pipeline(
+            state,
+            INVERT_TINT_WGSL,
+            Some(WgpuEffectBlendMode::Replace),
+        );
     });
     draw_tint(state, source, dest, &pipeline, color, alpha, strength);
 }

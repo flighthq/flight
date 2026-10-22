@@ -4,7 +4,11 @@
 /// `a != b`. Returns `0` when `a == b` to avoid division by zero.
 pub fn inverse_lerp(a: f32, b: f32, value: f32) -> f32 {
     let range = b - a;
-    return if range == 0.0 { 0.0 } else { (value - a) / range };
+    return if range == 0.0 {
+        0.0
+    } else {
+        (value - a) / range
+    };
 }
 
 /// Linearly interpolate between `a` and `b` by factor `t`.
@@ -33,7 +37,13 @@ pub fn remap(value: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -
 /// in between using `3t^2 - 2t^3`. This is the same `smoothstep` found in GLSL.
 pub fn smooth_step(edge0: f32, edge1: f32, x: f32) -> f32 {
     let t = (x - edge0) / (edge1 - edge0);
-    let s = if t < 0.0 { 0.0 } else if t > 1.0 { 1.0 } else { t };
+    let s = if t < 0.0 {
+        0.0
+    } else if t > 1.0 {
+        1.0
+    } else {
+        t
+    };
     return s * s * (3.0 - 2.0 * s);
 }
 

@@ -6,7 +6,12 @@ mod crop_bitmap {
     #[test]
     fn returns_a_bitmap_with_the_requested_dimensions() {
         let src = create_bitmap(10, 10, Some(0xff0000ff));
-        let rect = RectangleLike { x: 2.0, y: 3.0, width: 4.0, height: 5.0 };
+        let rect = RectangleLike {
+            x: 2.0,
+            y: 3.0,
+            width: 4.0,
+            height: 5.0,
+        };
         let out = crop_bitmap(&src, &rect);
         assert_eq!(out.width, 4);
         assert_eq!(out.height, 5);
@@ -16,7 +21,12 @@ mod crop_bitmap {
     fn copies_pixels_from_the_source_region() {
         let mut src = create_bitmap(4, 4, None);
         set_bitmap_pixel(&mut src, 2, 1, 0x00ff00ff);
-        let rect = RectangleLike { x: 2.0, y: 1.0, width: 2.0, height: 2.0 };
+        let rect = RectangleLike {
+            x: 2.0,
+            y: 1.0,
+            width: 2.0,
+            height: 2.0,
+        };
         let out = crop_bitmap(&src, &rect);
         assert_eq!(get_bitmap_pixel(&out, 0, 0), 0x00ff00ff);
     }
@@ -24,7 +34,12 @@ mod crop_bitmap {
     #[test]
     fn preserves_source_gamut_and_alpha_type() {
         let src = create_bitmap(2, 2, Some(0xff0000ff));
-        let rect = RectangleLike { x: 0.0, y: 0.0, width: 2.0, height: 2.0 };
+        let rect = RectangleLike {
+            x: 0.0,
+            y: 0.0,
+            width: 2.0,
+            height: 2.0,
+        };
         let out = crop_bitmap(&src, &rect);
         assert_eq!(out.gamut, src.gamut);
         assert_eq!(out.alpha_type, src.alpha_type);
@@ -33,7 +48,12 @@ mod crop_bitmap {
     #[test]
     fn fills_pixels_outside_the_source_with_transparent_black() {
         let src = create_bitmap(2, 2, Some(0xffffffff));
-        let rect = RectangleLike { x: 1.0, y: 1.0, width: 3.0, height: 3.0 };
+        let rect = RectangleLike {
+            x: 1.0,
+            y: 1.0,
+            width: 3.0,
+            height: 3.0,
+        };
         let out = crop_bitmap(&src, &rect);
         assert_eq!(get_bitmap_pixel(&out, 0, 0), 0xffffffff);
         assert_eq!(get_bitmap_pixel(&out, 2, 2), 0x00000000);
@@ -42,7 +62,15 @@ mod crop_bitmap {
     #[test]
     fn returns_a_distinct_bitmap_object() {
         let source = create_bitmap(2, 2, Some(0xff0000ff));
-        let mut cropped = crop_bitmap(&source, &RectangleLike { x: 0.0, y: 0.0, width: 2.0, height: 2.0 });
+        let mut cropped = crop_bitmap(
+            &source,
+            &RectangleLike {
+                x: 0.0,
+                y: 0.0,
+                width: 2.0,
+                height: 2.0,
+            },
+        );
         cropped.data[0] = 0;
         assert_eq!(source.data[0], 0xff);
     }

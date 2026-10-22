@@ -5,7 +5,9 @@ use flight_scene3d_gl::contract::*;
 use flight_shading::MODIFIER_SLOT_EFFECT;
 use flight_shading::Modifier;
 
-use crate::gl_test_helper::{make_gl_scene3d_state, make_gl_scene3d_state_with, make_state_options};
+use crate::gl_test_helper::{
+    make_gl_scene3d_state, make_gl_scene3d_state_with, make_state_options,
+};
 
 fn noop_contribution(_modifier: &dyn Modifier, _index: usize) -> String {
     return "// noop".to_string();
@@ -33,7 +35,10 @@ static OVERRIDE: GlModifierSnippet = GlModifierSnippet {
     declarations: None,
 };
 
-fn is_snippet(actual: Option<&'static GlModifierSnippet>, expected: &'static GlModifierSnippet) -> bool {
+fn is_snippet(
+    actual: Option<&'static GlModifierSnippet>,
+    expected: &'static GlModifierSnippet,
+) -> bool {
     return actual.is_some_and(|actual| std::ptr::eq(actual, expected));
 }
 
@@ -54,11 +59,15 @@ mod register_gl_modifier_snippet {
     fn stores_a_snippet_resolvable_by_its_kind() {
         let mut state = make_gl_scene3d_state();
         register_gl_modifier_snippet(&mut state, &SNIPPET);
-        assert!(is_snippet(resolve_gl_modifier_snippet(&state, "acme.Test"), &SNIPPET));
+        assert!(is_snippet(
+            resolve_gl_modifier_snippet(&state, "acme.Test"),
+            &SNIPPET
+        ));
     }
 
     #[test]
-    fn replaces_the_table_while_an_explicitly_copied_state_retains_its_snapshot_through_lazy_scene_init() {
+    fn replaces_the_table_while_an_explicitly_copied_state_retains_its_snapshot_through_lazy_scene_init()
+     {
         let mut screen = make_gl_scene3d_state();
         register_gl_modifier_snippet(&mut screen, &SNIPPET);
         let snapshot = screen.gl_registries.modifier_snippets.clone();
@@ -69,13 +78,28 @@ mod register_gl_modifier_snippet {
         get_gl_scene3d_runtime(&derived);
         register_gl_modifier_snippet(&mut screen, &OVERRIDE);
 
-        assert!(Arc::ptr_eq(&derived.gl_registries.modifier_snippets, &snapshot));
+        assert!(Arc::ptr_eq(
+            &derived.gl_registries.modifier_snippets,
+            &snapshot
+        ));
         assert_eq!(derived.gl_runtime.borrow().modifier_snippet_revision, 0);
-        assert!(!Arc::ptr_eq(&screen.gl_registries.modifier_snippets, &snapshot));
+        assert!(!Arc::ptr_eq(
+            &screen.gl_registries.modifier_snippets,
+            &snapshot
+        ));
         assert_eq!(screen.gl_runtime.borrow().modifier_snippet_revision, 2);
-        assert!(is_snippet(snapshot.entries.get("acme.Test").copied(), &SNIPPET));
-        assert!(is_snippet(resolve_gl_modifier_snippet(&derived, "acme.Test"), &SNIPPET));
-        assert!(is_snippet(resolve_gl_modifier_snippet(&screen, "acme.Test"), &OVERRIDE));
+        assert!(is_snippet(
+            snapshot.entries.get("acme.Test").copied(),
+            &SNIPPET
+        ));
+        assert!(is_snippet(
+            resolve_gl_modifier_snippet(&derived, "acme.Test"),
+            &SNIPPET
+        ));
+        assert!(is_snippet(
+            resolve_gl_modifier_snippet(&screen, "acme.Test"),
+            &OVERRIDE
+        ));
     }
 }
 

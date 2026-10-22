@@ -8,8 +8,8 @@ use flight_entity::throw_error;
 use flight_lighting::Scene3DLightsLike;
 use flight_node::NodeRef;
 use flight_render_gl::{
-    GlRenderState, GlTextureRenderTarget, begin_gl_render_pass,
-    end_gl_render_pass, present_gl_render_target,
+    GlRenderState, GlTextureRenderTarget, begin_gl_render_pass, end_gl_render_pass,
+    present_gl_render_target,
 };
 
 use crate::render_gl_scene3d::render_gl_scene3d;
@@ -38,7 +38,15 @@ pub fn present_gl_scene3d(
     let pass = begin_gl_render_pass(state, &*target, Some(&clear), None)
         .unwrap_or_else(|error| throw_error(&error));
     let drawn = catch_unwind(AssertUnwindSafe(|| {
-        render_gl_scene3d(state, &pass, Some(&mut *target), scene, camera, lights, None);
+        render_gl_scene3d(
+            state,
+            &pass,
+            Some(&mut *target),
+            scene,
+            camera,
+            lights,
+            None,
+        );
     }));
     let ended = end_gl_render_pass(state, &pass);
     if let Err(payload) = drawn {

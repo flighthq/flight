@@ -44,10 +44,16 @@ mod apply_motion_blur_effect_to_wgpu {
             );
         });
 
-        assert_eq!(&recorded_effect_uniforms(&records)[0][0..5], &[1.0, 16.0, 32.0, 16.0, 0.0]);
+        assert_eq!(
+            &recorded_effect_uniforms(&records)[0][0..5],
+            &[1.0, 16.0, 32.0, 16.0, 0.0]
+        );
         let sets = recorded_set_bind_groups(&records);
         assert_eq!(sets[1].bind_group, sets[2].bind_group);
-        assert_eq!(recorded_pass_views(&records), vec![dest.read().unwrap().view.clone()]);
+        assert_eq!(
+            recorded_pass_views(&records),
+            vec![dest.read().unwrap().view.clone()]
+        );
     }
 
     #[test]
@@ -74,14 +80,20 @@ mod apply_motion_blur_effect_to_wgpu {
             );
         });
 
-        assert_eq!(&recorded_effect_uniforms(&records)[0][0..5], &[2.0, 8.0, 32.0, 16.0, 1.0]);
+        assert_eq!(
+            &recorded_effect_uniforms(&records)[0][0..5],
+            &[2.0, 8.0, 32.0, 16.0, 1.0]
+        );
         let sets = recorded_set_bind_groups(&records);
         assert_eq!(
             sets.iter().map(|set| set.index).collect::<Vec<u32>>(),
             vec![0, 1, 2]
         );
         assert_ne!(sets[1].bind_group, sets[2].bind_group);
-        assert_eq!(recorded_draw_sources(&records), vec![source.read().unwrap().view.clone()]);
+        assert_eq!(
+            recorded_draw_sources(&records),
+            vec![source.read().unwrap().view.clone()]
+        );
     }
 }
 
@@ -129,6 +141,9 @@ mod wgpu_motion_blur_effect_runner {
         });
 
         assert_eq!(recorded_effect_uniforms(&records)[0][4], 1.0);
-        assert_eq!(recorded_pass_views(&records), vec![dest.read().unwrap().view.clone()]);
+        assert_eq!(
+            recorded_pass_views(&records),
+            vec![dest.read().unwrap().view.clone()]
+        );
     }
 }

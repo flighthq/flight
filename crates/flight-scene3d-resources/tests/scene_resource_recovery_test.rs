@@ -29,8 +29,11 @@ mod retry_failed_scene3d_resources {
             max_concurrent: None,
             registry: None,
         };
-        let resolver =
-            create_built_in_scene3d_resource_resolver(&host_image(), Some(&options), &context(&host));
+        let resolver = create_built_in_scene3d_resource_resolver(
+            &host_image(),
+            Some(&options),
+            &context(&host),
+        );
         let reference = external_reference("leaf.png");
         let a = attach_texture(&reference);
         let b = attach_texture(&reference);
@@ -39,13 +42,20 @@ mod retry_failed_scene3d_resources {
         add_scene_mesh(&scene, &unlit_mesh(&b));
 
         let (load_scene, load_resolver) = (scene.clone(), resolver.clone());
-        drive(&host, async move { load_scene3d_resources(&load_scene, &load_resolver, None).await });
+        drive(&host, async move {
+            load_scene3d_resources(&load_scene, &load_resolver, None).await
+        });
         assert_eq!(reference_state(&reference), ResourceResolutionState::Failed);
-        assert_eq!(reference_failure(&reference).unwrap().kind, ImageResourceFailureKind::Unavailable);
+        assert_eq!(
+            reference_failure(&reference).unwrap().kind,
+            ImageResourceFailureKind::Unavailable
+        );
 
         assert_eq!(retry_failed_scene3d_resources(&scene, &resolver, None), 1);
         let waited = resolver.clone();
-        drive(&host, async move { wait_for_scene3d_resource_resolver(&waited).await });
+        drive(&host, async move {
+            wait_for_scene3d_resource_resolver(&waited).await
+        });
         assert_eq!(calls.lock().unwrap().len(), 2);
         assert!(reference_failure(&reference).is_none());
         assert!(same_source(texture_source(&a), &image));
@@ -68,12 +78,16 @@ mod retry_failed_scene3d_resources {
         let texture = attach_texture(&reference);
         let scene = scene_with(vec![reference.clone()]);
         add_scene_mesh(&scene, &unlit_mesh(&texture));
-        let resolver = create_built_in_scene3d_resource_resolver(&host_image(), None, &context(&host));
+        let resolver =
+            create_built_in_scene3d_resource_resolver(&host_image(), None, &context(&host));
         let options = UpdateScene3DResourceStreamingOptions {
             select: Some(Arc::new(|_, _| false)),
             priority: None,
         };
-        assert_eq!(retry_failed_scene3d_resources(&scene, &resolver, Some(&options)), 0);
+        assert_eq!(
+            retry_failed_scene3d_resources(&scene, &resolver, Some(&options)),
+            0
+        );
         assert_eq!(reference_state(&reference), ResourceResolutionState::Failed);
         dispose_scene3d_resource_resolver(&resolver);
     }

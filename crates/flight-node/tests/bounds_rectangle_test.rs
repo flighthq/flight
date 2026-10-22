@@ -811,7 +811,8 @@ mod set_node_width {
         let node = bounds_node(0.0, 0.0, 0.0, 10.0);
         set_node_width(&node, 100.0);
         assert_eq!(
-            *node.read()
+            *node
+                .read()
                 .unwrap()
                 .as_transform2d_node()
                 .unwrap()
@@ -863,7 +864,8 @@ mod set_node_width {
     #[test]
     fn declines_without_mutation_when_the_scale_is_zero() {
         let node = bounds_node(0.0, 0.0, 10.0, 20.0);
-        *node.write()
+        *node
+            .write()
             .unwrap()
             .as_transform2d_node_mut()
             .unwrap()
@@ -872,7 +874,8 @@ mod set_node_width {
         let before = get_node_local_transform_revision(&*node.read().unwrap());
         set_node_width(&node, 40.0);
         assert_eq!(
-            *node.read()
+            *node
+                .read()
                 .unwrap()
                 .as_transform2d_node()
                 .unwrap()

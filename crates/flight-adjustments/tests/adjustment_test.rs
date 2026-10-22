@@ -46,7 +46,10 @@ mod adjustment_family {
             Arc::new(RwLock::new(create_invert_adjustment(None))),
         ];
         let fused = resolve_color_adjustments_color_matrix(Some(&run)).unwrap();
-        assert_eq!(fused, *get_adjustment_color_matrix(&create_invert_adjustment(None)).unwrap());
+        assert_eq!(
+            fused,
+            *get_adjustment_color_matrix(&create_invert_adjustment(None)).unwrap()
+        );
     }
 
     #[test]
@@ -69,14 +72,20 @@ mod adjustment_family {
     #[test]
     fn serializes_built_in_kinds_like_ts_json_stringify() {
         let mut exposure = String::new();
-        create_exposure_adjustment(Some(&ExposureAdjustmentOptions { exposure: Some(1.0) })).write_adjustment_signature(&mut exposure);
+        create_exposure_adjustment(Some(&ExposureAdjustmentOptions {
+            exposure: Some(1.0),
+        }))
+        .write_adjustment_signature(&mut exposure);
         assert_eq!(
             exposure,
             "{\"kind\":\"ExposureAdjustment\",\"colorMatrix\":[2,0,0,0,0,0,2,0,0,0,0,0,2,0,0,0,0,0,1,0],\"exposure\":1}"
         );
         let mut grade = String::new();
         create_lookup_table_grade_adjustment(None).write_adjustment_signature(&mut grade);
-        assert_eq!(grade, "{\"kind\":\"LookupTableGradeAdjustment\",\"strength\":1}");
+        assert_eq!(
+            grade,
+            "{\"kind\":\"LookupTableGradeAdjustment\",\"strength\":1}"
+        );
         let mut blind = String::new();
         create_color_blind_simulation_adjustment(None).write_adjustment_signature(&mut blind);
         assert!(blind.ends_with(",\"type\":\"deuteranopia\"}"));

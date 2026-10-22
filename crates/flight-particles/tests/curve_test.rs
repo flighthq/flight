@@ -109,9 +109,24 @@ mod particle_color_curve_from_keyframes {
         particle_color_curve_from_keyframes(
             &mut lut,
             &[
-                ColorKeyframe { time: 0.0, r: 1.0, g: 0.0, b: 0.0 },
-                ColorKeyframe { time: 0.5, r: 0.0, g: 1.0, b: 0.0 },
-                ColorKeyframe { time: 1.0, r: 0.0, g: 0.0, b: 1.0 },
+                ColorKeyframe {
+                    time: 0.0,
+                    r: 1.0,
+                    g: 0.0,
+                    b: 0.0,
+                },
+                ColorKeyframe {
+                    time: 0.5,
+                    r: 0.0,
+                    g: 1.0,
+                    b: 0.0,
+                },
+                ColorKeyframe {
+                    time: 1.0,
+                    r: 0.0,
+                    g: 0.0,
+                    b: 1.0,
+                },
             ],
             33,
         );
@@ -154,8 +169,18 @@ mod particle_color_curve_to_keyframes {
         particle_color_curve_from_keyframes(
             &mut lut,
             &[
-                ColorKeyframe { time: 0.0, r: 1.0, g: 0.0, b: 0.0 },
-                ColorKeyframe { time: 1.0, r: 0.0, g: 0.0, b: 1.0 },
+                ColorKeyframe {
+                    time: 0.0,
+                    r: 1.0,
+                    g: 0.0,
+                    b: 0.0,
+                },
+                ColorKeyframe {
+                    time: 1.0,
+                    r: 0.0,
+                    g: 0.0,
+                    b: 1.0,
+                },
             ],
             33,
         );
@@ -196,9 +221,18 @@ mod particle_curve_from_keyframes {
         particle_curve_from_keyframes(
             &mut lut,
             &[
-                CurveKeyframe { time: 0.0, value: 0.0 },
-                CurveKeyframe { time: 0.5, value: 1.0 },
-                CurveKeyframe { time: 1.0, value: 0.0 },
+                CurveKeyframe {
+                    time: 0.0,
+                    value: 0.0,
+                },
+                CurveKeyframe {
+                    time: 0.5,
+                    value: 1.0,
+                },
+                CurveKeyframe {
+                    time: 1.0,
+                    value: 0.0,
+                },
             ],
             33,
         );
@@ -213,8 +247,14 @@ mod particle_curve_from_keyframes {
         particle_curve_from_keyframes(
             &mut lut,
             &[
-                CurveKeyframe { time: 1.0, value: 10.0 },
-                CurveKeyframe { time: 0.0, value: 0.0 },
+                CurveKeyframe {
+                    time: 1.0,
+                    value: 10.0,
+                },
+                CurveKeyframe {
+                    time: 0.0,
+                    value: 0.0,
+                },
             ],
             33,
         );
@@ -228,8 +268,14 @@ mod particle_curve_from_keyframes {
         particle_curve_from_keyframes(
             &mut lut,
             &[
-                CurveKeyframe { time: 0.25, value: 2.0 },
-                CurveKeyframe { time: 0.75, value: 6.0 },
+                CurveKeyframe {
+                    time: 0.25,
+                    value: 2.0,
+                },
+                CurveKeyframe {
+                    time: 0.75,
+                    value: 6.0,
+                },
             ],
             33,
         );
@@ -243,7 +289,10 @@ mod particle_curve_from_keyframes {
         let mut lut = Vec::new();
         particle_curve_from_keyframes(
             &mut lut,
-            &[CurveKeyframe { time: 0.5, value: 3.0 }],
+            &[CurveKeyframe {
+                time: 0.5,
+                value: 3.0,
+            }],
             33,
         );
         assert!((sample_particle_curve(&lut, 0.0) - 3.0).abs() < 0.005); // D1 f32 bound (TS: 0.005)
@@ -281,8 +330,14 @@ mod particle_curve_to_keyframes {
         particle_curve_from_keyframes(
             &mut lut,
             &[
-                CurveKeyframe { time: 0.0, value: 0.0 },
-                CurveKeyframe { time: 1.0, value: 10.0 },
+                CurveKeyframe {
+                    time: 0.0,
+                    value: 0.0,
+                },
+                CurveKeyframe {
+                    time: 1.0,
+                    value: 10.0,
+                },
             ],
             33,
         );
@@ -295,9 +350,8 @@ mod particle_curve_to_keyframes {
         assert_eq!(last.value, 10.0);
         let mut reconstructed = Vec::new();
         particle_curve_from_keyframes(&mut reconstructed, &keys, lut.len() as i32);
-        let diff = (sample_particle_curve(&reconstructed, 0.5)
-            - sample_particle_curve(&lut, 0.5))
-        .abs();
+        let diff =
+            (sample_particle_curve(&reconstructed, 0.5) - sample_particle_curve(&lut, 0.5)).abs();
         assert!(diff < 5e-6); // D1 f32 bound (TS: 5e-6)
     }
 

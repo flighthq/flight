@@ -259,7 +259,10 @@ fn document_to_config(document: &StarlingPexDocument, texture_size: f32) -> Part
     return create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
         alpha_end: Some(document.finish_color.alpha),
         alpha_start: Some(document.start_color.alpha),
-        blend_mode: Some(pex_blend_mode(document.blend_func_source, document.blend_func_destination)),
+        blend_mode: Some(pex_blend_mode(
+            document.blend_func_source,
+            document.blend_func_destination,
+        )),
         color_end_b: Some(document.finish_color.blue),
         color_end_g: Some(document.finish_color.green),
         color_end_r: Some(document.finish_color.red),

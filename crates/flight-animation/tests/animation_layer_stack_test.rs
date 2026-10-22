@@ -20,7 +20,12 @@ fn player(target: TargetRef, value: f32, duration: f32) -> AnimationPlayerRef {
     };
     let clip = create_animation_clip(
         vec![create_animation_channel(
-            &Arc::new(RwLock::new({ let mut track = create_animation_track(); track.times = times; track.values = values; track })),
+            &Arc::new(RwLock::new({
+                let mut track = create_animation_track();
+                track.times = times;
+                track.values = values;
+                track
+            })),
             target,
         )],
         None,
@@ -46,7 +51,11 @@ mod advance_animation_layer_stack {
         let shared = player(target, 0.0, 4.0);
         let shared_tree = tree(&[shared.clone()]);
         let machine_ref = create_animation_state_machine_ref(
-            &[{ let mut created = create_animation_state_machine_state(tree(&[shared.clone()])); created.name = ("only").to_string(); created }],
+            &[{
+                let mut created = create_animation_state_machine_state(tree(&[shared.clone()]));
+                created.name = ("only").to_string();
+                created
+            }],
             None,
         );
         let mut stack = create_animation_layer_stack(&[
@@ -142,7 +151,10 @@ mod create_animation_layer_stack {
             }),
         )]);
         assert_eq!(stack.channels.len(), 1);
-        assert!(Arc::ptr_eq(stack.channels[0].channel.target_ref.as_ref().unwrap(), b_clone.as_ref().unwrap()));
+        assert!(Arc::ptr_eq(
+            stack.channels[0].channel.target_ref.as_ref().unwrap(),
+            b_clone.as_ref().unwrap()
+        ));
     }
 
     #[test]
@@ -151,7 +163,13 @@ mod create_animation_layer_stack {
         let scalar = tree(&[player(target.clone(), 1.0, 0.0)]);
         let vector_clip = create_animation_clip(
             vec![create_animation_channel(
-                &Arc::new(RwLock::new({ let mut track = create_animation_track(); track.components = 2; track.times = vec![0.0]; track.values = vec![1.0, 2.0]; track })),
+                &Arc::new(RwLock::new({
+                    let mut track = create_animation_track();
+                    track.components = 2;
+                    track.times = vec![0.0];
+                    track.values = vec![1.0, 2.0];
+                    track
+                })),
                 target,
             )],
             None,
@@ -219,7 +237,12 @@ mod create_animation_state_machine_layer {
     #[test]
     fn creates_a_layer_over_the_machine_global_channel_layout() {
         let source = create_animation_state_machine_ref(
-            &[{ let mut created = create_animation_state_machine_state(tree(&[player(test_target(), 1.0, 0.0)])); created.name = ("only").to_string(); created }],
+            &[{
+                let mut created =
+                    create_animation_state_machine_state(tree(&[player(test_target(), 1.0, 0.0)]));
+                created.name = ("only").to_string();
+                created
+            }],
             None,
         );
         let layer = create_animation_state_machine_layer(source.clone(), None);
@@ -285,7 +308,12 @@ mod initialize_animation_state_machine_layer {
     #[test]
     fn constructs_the_same_layer_as_create_and_keeps_the_receivers_identity() {
         let source = create_animation_state_machine_ref(
-            &[{ let mut created = create_animation_state_machine_state(tree(&[player(test_target(), 1.0, 0.0)])); created.name = ("only").to_string(); created }],
+            &[{
+                let mut created =
+                    create_animation_state_machine_state(tree(&[player(test_target(), 1.0, 0.0)]));
+                created.name = ("only").to_string();
+                created
+            }],
             None,
         );
         let mut layer = create_animation_blend_tree_layer(tree(&[]), None);
@@ -348,8 +376,21 @@ mod sample_animation_layer_stack {
         let target = test_target();
         let machine = create_animation_state_machine_ref(
             &[
-                { let mut created = create_animation_state_machine_state(tree(&[player(target.clone(), 0.0, 0.0)])); created.name = ("from").to_string(); created },
-                { let mut created = create_animation_state_machine_state(tree(&[player(target, 20.0, 0.0)])); created.name = ("to").to_string(); created },
+                {
+                    let mut created = create_animation_state_machine_state(tree(&[player(
+                        target.clone(),
+                        0.0,
+                        0.0,
+                    )]));
+                    created.name = ("from").to_string();
+                    created
+                },
+                {
+                    let mut created =
+                        create_animation_state_machine_state(tree(&[player(target, 20.0, 0.0)]));
+                    created.name = ("to").to_string();
+                    created
+                },
             ],
             None,
         );

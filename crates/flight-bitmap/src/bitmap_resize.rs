@@ -20,8 +20,19 @@ mod sugar_tests {
     fn bitmapregion_resize_matches_resize_bitmap() {
         let mut a = test_region();
         let mut b = test_region();
-        let ra = a.resize(&test_region(), BitmapResizeMode::Bilinear, BitmapEdgeMode::Clamp, true);
-        let rb = resize_bitmap(&mut b, &test_region(), BitmapResizeMode::Bilinear, BitmapEdgeMode::Clamp, true);
+        let ra = a.resize(
+            &test_region(),
+            BitmapResizeMode::Bilinear,
+            BitmapEdgeMode::Clamp,
+            true,
+        );
+        let rb = resize_bitmap(
+            &mut b,
+            &test_region(),
+            BitmapResizeMode::Bilinear,
+            BitmapEdgeMode::Clamp,
+            true,
+        );
         assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
         assert_eq!(format!("{:?}", a), format!("{:?}", b));
     }
@@ -30,12 +41,22 @@ mod sugar_tests {
 // flight-lint: allow(f64) resampling coordinates and weights kept in double (TS number) so Math.round/floor boundaries match TS bytes; f32 sufficiency not yet confirmed (D1)
 fn catmull_rom_weight(t: f64) -> f64 {
     let a = t.abs();
-    if a >= 2.0 { return 0.0; }
-    if a >= 1.0 { return -0.5 * a * a * a + 2.5 * a * a - 4.0 * a + 2.0; }
+    if a >= 2.0 {
+        return 0.0;
+    }
+    if a >= 1.0 {
+        return -0.5 * a * a * a + 2.5 * a * a - 4.0 * a + 2.0;
+    }
     1.5 * a * a * a - 2.5 * a * a + 1.0
 }
 
-fn idx(_sd: &[u8], rx: Option<i32>, ry: Option<i32>, source: &BitmapRegion, s_stride: usize) -> Option<usize> {
+fn idx(
+    _sd: &[u8],
+    rx: Option<i32>,
+    ry: Option<i32>,
+    source: &BitmapRegion,
+    s_stride: usize,
+) -> Option<usize> {
     match (rx, ry) {
         (Some(rx), Some(ry)) => {
             let sy = source.y as usize + ry as usize;
@@ -59,7 +80,9 @@ pub fn resize_bitmap(
     let sh = source.height as usize;
     let dw = dest.width as usize;
     let dh = dest.height as usize;
-    if sw == 0 || sh == 0 || dw == 0 || dh == 0 { return; }
+    if sw == 0 || sh == 0 || dw == 0 || dh == 0 {
+        return;
+    }
 
     let sd = source.bitmap.data.clone();
     let s_stride = source.bitmap.width as usize;
@@ -69,16 +92,24 @@ pub fn resize_bitmap(
         BitmapResizeMode::Nearest => {
             for dy in 0..dh {
                 let oy = (dest.y + dy as i32) as usize;
-                if oy >= dest.bitmap.height as usize { continue; }
+                if oy >= dest.bitmap.height as usize {
+                    continue;
+                }
                 let sy_local = ((dy * sh) / dh).min(sh - 1);
                 let sy = (source.y as usize).wrapping_add(sy_local);
-                if sy >= source.bitmap.height as usize { continue; }
+                if sy >= source.bitmap.height as usize {
+                    continue;
+                }
                 for dx in 0..dw {
                     let ox = (dest.x + dx as i32) as usize;
-                    if ox >= d_stride { continue; }
+                    if ox >= d_stride {
+                        continue;
+                    }
                     let sx_local = ((dx * sw) / dw).min(sw - 1);
                     let sx = (source.x as usize).wrapping_add(sx_local);
-                    if sx >= s_stride { continue; }
+                    if sx >= s_stride {
+                        continue;
+                    }
                     let si = (sy * s_stride + sx) * 4;
                     let di = (oy * d_stride + ox) * 4;
                     dest.bitmap.data[di] = sd[si];
@@ -93,13 +124,17 @@ pub fn resize_bitmap(
             let scale_y = sh as f64 / dh as f64;
             for dy in 0..dh {
                 let oy = (dest.y + dy as i32) as usize;
-                if oy >= dest.bitmap.height as usize { continue; }
+                if oy >= dest.bitmap.height as usize {
+                    continue;
+                }
                 let fy = (dy as f64 + 0.5) * scale_y - 0.5;
                 let y1 = fy.floor() as i32;
                 let ty = fy - fy.floor();
                 for dx in 0..dw {
                     let ox = (dest.x + dx as i32) as usize;
-                    if ox >= d_stride { continue; }
+                    if ox >= d_stride {
+                        continue;
+                    }
                     let fx = (dx as f64 + 0.5) * scale_x - 0.5;
                     let x1 = fx.floor() as i32;
                     let tx = fx - fx.floor();
@@ -130,9 +165,18 @@ pub fn resize_bitmap(
                     if premultiplied {
                         let a = dest.bitmap.data[di + 3];
                         if a > 0 {
-                            dest.bitmap.data[di] = ((dest.bitmap.data[di] as f64 * 255.0) / a as f64).round().min(255.0) as u8;
-                            dest.bitmap.data[di + 1] = ((dest.bitmap.data[di + 1] as f64 * 255.0) / a as f64).round().min(255.0) as u8;
-                            dest.bitmap.data[di + 2] = ((dest.bitmap.data[di + 2] as f64 * 255.0) / a as f64).round().min(255.0) as u8;
+                            dest.bitmap.data[di] =
+                                ((dest.bitmap.data[di] as f64 * 255.0) / a as f64)
+                                    .round()
+                                    .min(255.0) as u8;
+                            dest.bitmap.data[di + 1] =
+                                ((dest.bitmap.data[di + 1] as f64 * 255.0) / a as f64)
+                                    .round()
+                                    .min(255.0) as u8;
+                            dest.bitmap.data[di + 2] =
+                                ((dest.bitmap.data[di + 2] as f64 * 255.0) / a as f64)
+                                    .round()
+                                    .min(255.0) as u8;
                         } else {
                             dest.bitmap.data[di] = 0;
                             dest.bitmap.data[di + 1] = 0;
@@ -147,7 +191,9 @@ pub fn resize_bitmap(
             let scale_y = sh as f64 / dh as f64;
             for dy in 0..dh {
                 let oy = (dest.y + dy as i32) as usize;
-                if oy >= dest.bitmap.height as usize { continue; }
+                if oy >= dest.bitmap.height as usize {
+                    continue;
+                }
                 let fy = (dy as f64 + 0.5) * scale_y - 0.5;
                 let y0 = fy.floor() as i32;
                 let ty = fy - fy.floor();
@@ -155,7 +201,9 @@ pub fn resize_bitmap(
                 let ry1 = resolve_resize_edge(y0 + 1, sh as i32, edge_mode);
                 for dx in 0..dw {
                     let ox = (dest.x + dx as i32) as usize;
-                    if ox >= d_stride { continue; }
+                    if ox >= d_stride {
+                        continue;
+                    }
                     let fx = (dx as f64 + 0.5) * scale_x - 0.5;
                     let x0 = fx.floor() as i32;
                     let tx = fx - fx.floor();
@@ -184,9 +232,18 @@ pub fn resize_bitmap(
                     if premultiplied {
                         let a = dest.bitmap.data[di + 3];
                         if a > 0 {
-                            dest.bitmap.data[di] = ((dest.bitmap.data[di] as f64 * 255.0) / a as f64).round().min(255.0) as u8;
-                            dest.bitmap.data[di + 1] = ((dest.bitmap.data[di + 1] as f64 * 255.0) / a as f64).round().min(255.0) as u8;
-                            dest.bitmap.data[di + 2] = ((dest.bitmap.data[di + 2] as f64 * 255.0) / a as f64).round().min(255.0) as u8;
+                            dest.bitmap.data[di] =
+                                ((dest.bitmap.data[di] as f64 * 255.0) / a as f64)
+                                    .round()
+                                    .min(255.0) as u8;
+                            dest.bitmap.data[di + 1] =
+                                ((dest.bitmap.data[di + 1] as f64 * 255.0) / a as f64)
+                                    .round()
+                                    .min(255.0) as u8;
+                            dest.bitmap.data[di + 2] =
+                                ((dest.bitmap.data[di + 2] as f64 * 255.0) / a as f64)
+                                    .round()
+                                    .min(255.0) as u8;
                         } else {
                             dest.bitmap.data[di] = 0;
                             dest.bitmap.data[di + 1] = 0;
@@ -201,23 +258,33 @@ pub fn resize_bitmap(
 }
 
 fn resolve_resize_edge(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {
-    if v >= 0 && v < size { return Some(v); }
+    if v >= 0 && v < size {
+        return Some(v);
+    }
     match mode {
         BitmapEdgeMode::Clamp => Some(v.max(0).min(size - 1)),
-        BitmapEdgeMode::Wrap => {
-            Some(((v % size) + size) % size)
-        }
+        BitmapEdgeMode::Wrap => Some(((v % size) + size) % size),
         BitmapEdgeMode::Mirror => {
             let period = 2 * size;
             let wrapped = ((v % period) + period) % period;
-            if wrapped < size { Some(wrapped) } else { Some(period - 1 - wrapped) }
+            if wrapped < size {
+                Some(wrapped)
+            } else {
+                Some(period - 1 - wrapped)
+            }
         }
         _ => None,
     }
 }
 
 impl BitmapRegion {
-    pub fn resize(&mut self, source: &BitmapRegion, mode: BitmapResizeMode, edge_mode: BitmapEdgeMode, premultiplied: bool) {
+    pub fn resize(
+        &mut self,
+        source: &BitmapRegion,
+        mode: BitmapResizeMode,
+        edge_mode: BitmapEdgeMode,
+        premultiplied: bool,
+    ) {
         return resize_bitmap(self, source, mode, edge_mode, premultiplied);
     }
 }

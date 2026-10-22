@@ -1,5 +1,5 @@
 use std::any::Any;
-use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Arc, Mutex, RwLock};
 
 use super::*;
@@ -515,15 +515,19 @@ mod integrate_physics_3d_continuous {
         step_physics_3d(&mut world, &registered_registry(), 1.0 / 60.0, None);
 
         assert!(bullet.read().unwrap().x < 0.0);
-        assert!(world
-            .events
-            .began
-            .iter()
-            .all(|contact| !contact.read().unwrap().sensor));
-        assert!(world
-            .contacts
-            .iter()
-            .all(|contact| !contact.read().unwrap().sensor));
+        assert!(
+            world
+                .events
+                .began
+                .iter()
+                .all(|contact| !contact.read().unwrap().sensor)
+        );
+        assert!(
+            world
+                .contacts
+                .iter()
+                .all(|contact| !contact.read().unwrap().sensor)
+        );
     }
 
     #[test]

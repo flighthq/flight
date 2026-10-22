@@ -34,9 +34,17 @@ mod apply_outline_effect_to_wgpu {
         assert_eq!(&uniforms[0][0..4], &[0.5, 2.0, 32.0, 16.0]);
         assert_eq!(
             &uniforms[0][4..8],
-            &[0x33 as f32 / 255.0, 0x66 as f32 / 255.0, 0x99 as f32 / 255.0, 0xcc as f32 / 255.0]
+            &[
+                0x33 as f32 / 255.0,
+                0x66 as f32 / 255.0,
+                0x99 as f32 / 255.0,
+                0xcc as f32 / 255.0
+            ]
         );
-        assert_eq!(recorded_pass_views(&records), vec![dest.read().unwrap().view.clone()]);
+        assert_eq!(
+            recorded_pass_views(&records),
+            vec![dest.read().unwrap().view.clone()]
+        );
     }
 
     #[test]

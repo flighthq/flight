@@ -3,7 +3,8 @@ use flight_scene3d::Scene3DDocument;
 use flight_scene3d_formats::parse3ds;
 
 use crate::scene_document_source::{
-    load_scene3d_document_bytes_from_url, set_scene3d_document_resource_base_path_from_url, get_scene3d_document_bytes,
+    get_scene3d_document_bytes, load_scene3d_document_bytes_from_url,
+    set_scene3d_document_resource_base_path_from_url,
 };
 use crate::types::*;
 

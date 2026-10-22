@@ -1,5 +1,5 @@
 use flight_materials::contract::create_lambert_material;
-use flight_materials::{Material, LAMBERT_MATERIAL_KIND};
+use flight_materials::{LAMBERT_MATERIAL_KIND, Material};
 use flight_meshgeometry::create_box_mesh_geometry;
 use flight_scene3d_wgpu::contract::*;
 
@@ -12,8 +12,11 @@ mod register_wgpu_lambert_material {
     fn installs_the_renderer_for_lambert_material_kind() {
         let mut test = make_wgpu_scene3d_state(None);
         register_wgpu_lambert_material(&mut test.state);
-        assert!(get_wgpu_mesh_material_renderer(&test.state, LAMBERT_MATERIAL_KIND)
-            .is_some_and(|renderer| std::ptr::eq(renderer, &WGPU_LAMBERT_MESH_MATERIAL_RENDERER)));
+        assert!(
+            get_wgpu_mesh_material_renderer(&test.state, LAMBERT_MATERIAL_KIND).is_some_and(
+                |renderer| std::ptr::eq(renderer, &WGPU_LAMBERT_MESH_MATERIAL_RENDERER)
+            )
+        );
     }
 }
 

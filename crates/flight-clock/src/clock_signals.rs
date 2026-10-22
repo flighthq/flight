@@ -15,9 +15,18 @@ mod sugar_tests {
         let b = create_clock();
         let sa = a.write().unwrap().enable_signals();
         let sb = enable_clock_signals(&mut b.write().unwrap());
-        assert!(Arc::ptr_eq(&sa.data, &a.read().unwrap().on_tick.as_ref().unwrap().data));
-        assert!(Arc::ptr_eq(&sb.data, &b.read().unwrap().on_tick.as_ref().unwrap().data));
-        assert!(Arc::ptr_eq(&a.write().unwrap().enable_signals().data, &sa.data));
+        assert!(Arc::ptr_eq(
+            &sa.data,
+            &a.read().unwrap().on_tick.as_ref().unwrap().data
+        ));
+        assert!(Arc::ptr_eq(
+            &sb.data,
+            &b.read().unwrap().on_tick.as_ref().unwrap().data
+        ));
+        assert!(Arc::ptr_eq(
+            &a.write().unwrap().enable_signals().data,
+            &sa.data
+        ));
     }
 }
 

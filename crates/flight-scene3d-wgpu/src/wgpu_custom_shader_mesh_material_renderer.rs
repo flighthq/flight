@@ -50,7 +50,8 @@ fn bind_wgpu_custom_shader_material(
     lights: &Ref<Scene3DLightBlock>,
     camera: &Camera3D,
 ) {
-    let custom = material.and_then(|material| material.as_any().downcast_ref::<CustomShaderMaterial>());
+    let custom =
+        material.and_then(|material| material.as_any().downcast_ref::<CustomShaderMaterial>());
     let has_pass = get_wgpu_render_state_runtime(state).render_pass.is_some();
     let Some(custom) = custom.filter(|custom| has_pass && !custom.shader_key.is_empty()) else {
         get_wgpu_scene3d_runtime(state).active_mesh_pipeline = None;
@@ -64,8 +65,14 @@ fn bind_wgpu_custom_shader_material(
     if let Some(guard) = get_wgpu_scene3d_runtime(state).custom_shader_guard {
         guard(state, &custom.shader_key, &source, custom);
     }
-    let uniform_count = custom.uniforms.as_ref().map_or(0, |uniforms| uniforms.len());
-    let texture_count = custom.textures.as_ref().map_or(0, |textures| textures.len());
+    let uniform_count = custom
+        .uniforms
+        .as_ref()
+        .map_or(0, |uniforms| uniforms.len());
+    let texture_count = custom
+        .textures
+        .as_ref()
+        .map_or(0, |textures| textures.len());
     if uniform_count > WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY
         || texture_count > WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY
     {

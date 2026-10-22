@@ -134,7 +134,11 @@ pub fn register_scene3d_pbr_extension_textures(
     kind: Kind,
     lister: Scene3DPbrExtensionTextureLister,
 ) {
-    registry.extension_listers.write().unwrap().insert(kind, lister);
+    registry
+        .extension_listers
+        .write()
+        .unwrap()
+        .insert(kind, lister);
 }
 
 pub fn register_standard_pbr_scene3d_material_textures(registry: &Scene3DMaterialTextureRegistry) {

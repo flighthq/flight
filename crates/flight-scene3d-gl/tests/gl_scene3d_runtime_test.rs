@@ -8,7 +8,7 @@ use flight_render_gl::{GlRenderState, create_gl_texture_render_target};
 use flight_scene3d_gl::contract::*;
 use glow::HasContext;
 
-use crate::gl_test_helper::{calls_with, call_names, make_gl_scene3d_state};
+use crate::gl_test_helper::{call_names, calls_with, make_gl_scene3d_state};
 
 thread_local! {
     static CLEANUP_CALLS: Cell<u32> = const { Cell::new(0) };
@@ -66,7 +66,10 @@ mod add_gl_scene3d_resource_cleanup {
         SEEN_STATE.with(|seen| seen.set(0));
         add_gl_scene3d_resource_cleanup(&state, recording_cleanup);
         destroy_gl_scene3d_runtime(&mut state);
-        assert_eq!(SEEN_STATE.with(Cell::get), flight_entity::get_entity_id(&state));
+        assert_eq!(
+            SEEN_STATE.with(Cell::get),
+            flight_entity::get_entity_id(&state)
+        );
     }
 }
 
@@ -126,14 +129,19 @@ mod destroy_gl_scene3d_runtime {
     }
 
     #[test]
-    fn frees_the_cached_programs_the_ibl_set_the_environment_cube_and_the_shadow_target_then_clears_the_slots() {
+    fn frees_the_cached_programs_the_ibl_set_the_environment_cube_and_the_shadow_target_then_clears_the_slots()
+     {
         let mut state = make_gl_scene3d_state();
         // SAFETY: the mock context allocates names on the test thread.
         let bake_framebuffer = unsafe { state.gl.create_framebuffer().unwrap() };
         let program_a = crate::gl_test_helper::make_test_mesh_program(&state);
         let program_b = crate::gl_test_helper::make_test_mesh_program(&state);
-        let (brdf, irradiance, prefiltered, cube) =
-            (texture(&state), texture(&state), texture(&state), texture(&state));
+        let (brdf, irradiance, prefiltered, cube) = (
+            texture(&state),
+            texture(&state),
+            texture(&state),
+            texture(&state),
+        );
         let shadow_target = create_gl_texture_render_target(
             &state,
             &RenderTargetDescriptor {
@@ -216,20 +224,25 @@ mod destroy_gl_scene3d_runtime_skybox_ownership {
     #[test]
     fn reaches_the_skybox_program_vao_and_vertex_buffer_which_live_outside_the_runtime() {
         let mut state = make_gl_scene3d_state();
-        let face: flight_texture::TextureSourceRef =
-            Arc::new(std::sync::RwLock::new(flight_bitmap::create_bitmap(4, 4, None)));
+        let face: flight_texture::TextureSourceRef = Arc::new(std::sync::RwLock::new(
+            flight_bitmap::create_bitmap(4, 4, None),
+        ));
         let mut cube = flight_texture::create_cube_texture();
         flight_texture::TextureUvTransform::texture_fields_mut(&mut cube).color_space =
             flight_texture::TextureColorSpace::Srgb;
         cube.sources = std::array::from_fn(|_| Some(face.clone()));
         let mut environment = flight_lighting::create_environment();
-        environment.environment =
-            Some(Arc::new(std::sync::RwLock::new(flight_texture::Texture::Cube(cube))));
+        environment.environment = Some(Arc::new(std::sync::RwLock::new(
+            flight_texture::Texture::Cube(cube),
+        )));
         environment.intensity = 1.0;
         let camera = crate::gl_test_helper::make_test_camera();
         render_gl_environment_skybox(&state, &environment, &camera, 1.0);
 
-        let before = (calls_with("delete_buffers").len(), calls_with("delete_vertex_arrays").len());
+        let before = (
+            calls_with("delete_buffers").len(),
+            calls_with("delete_vertex_arrays").len(),
+        );
         destroy_gl_scene3d_runtime(&mut state);
 
         // These were the only GPU resources the one-call teardown could not reach directly: they are
@@ -245,7 +258,11 @@ mod ensure_gl_instance_color_palette {
     #[test]
     fn creates_a_separate_texture_from_the_matrix_palette_and_reuses_it_after() {
         let state = make_gl_scene3d_state();
-        assert!(get_gl_scene3d_runtime(&state).instance_color_palette.is_none());
+        assert!(
+            get_gl_scene3d_runtime(&state)
+                .instance_color_palette
+                .is_none()
+        );
 
         let first = ensure_gl_instance_color_palette(&state).texture;
         assert_eq!(
@@ -271,7 +288,11 @@ mod ensure_gl_instance_palette {
 
         let first = ensure_gl_instance_palette(&state).texture;
         assert_eq!(
-            get_gl_scene3d_runtime(&state).instance_palette.as_ref().unwrap().texture,
+            get_gl_scene3d_runtime(&state)
+                .instance_palette
+                .as_ref()
+                .unwrap()
+                .texture,
             first
         );
         assert_eq!(ensure_gl_instance_palette(&state).texture, first);
@@ -315,7 +336,11 @@ mod ensure_gl_skin_palette {
             (palette.texture, palette.joint_capacity)
         };
         assert_eq!(
-            get_gl_scene3d_runtime(&state).skin_palette.as_ref().unwrap().texture,
+            get_gl_scene3d_runtime(&state)
+                .skin_palette
+                .as_ref()
+                .unwrap()
+                .texture,
             first
         );
         assert_eq!(capacity, 0);
@@ -350,10 +375,22 @@ mod get_gl_scene3d_runtime {
         let state_b = make_gl_scene3d_state();
         let runtime_a = get_gl_scene3d_runtime(&state_a);
         let runtime_b = get_gl_scene3d_runtime(&state_b);
-        assert!(!std::ptr::eq(&runtime_a.opaque_pool, &runtime_b.opaque_pool));
-        assert!(!std::ptr::eq(&runtime_a.blended_pool, &runtime_b.blended_pool));
-        assert!(!std::ptr::eq(&runtime_a.opaque_draw_list, &runtime_b.opaque_draw_list));
-        assert!(!std::ptr::eq(&runtime_a.blended_draw_list, &runtime_b.blended_draw_list));
+        assert!(!std::ptr::eq(
+            &runtime_a.opaque_pool,
+            &runtime_b.opaque_pool
+        ));
+        assert!(!std::ptr::eq(
+            &runtime_a.blended_pool,
+            &runtime_b.blended_pool
+        ));
+        assert!(!std::ptr::eq(
+            &runtime_a.opaque_draw_list,
+            &runtime_b.opaque_draw_list
+        ));
+        assert!(!std::ptr::eq(
+            &runtime_a.blended_draw_list,
+            &runtime_b.blended_draw_list
+        ));
     }
 
     #[test]
@@ -363,9 +400,18 @@ mod get_gl_scene3d_runtime {
         let modifier_snippets = state.gl_registries.modifier_snippets.clone();
         let pbr_extensions = state.gl_registries.pbr_extensions.clone();
         drop(get_gl_scene3d_runtime(&state));
-        assert!(Arc::ptr_eq(&state.gl_registries.material_renderers, &materials));
-        assert!(Arc::ptr_eq(&state.gl_registries.modifier_snippets, &modifier_snippets));
-        assert!(Arc::ptr_eq(&state.gl_registries.pbr_extensions, &pbr_extensions));
+        assert!(Arc::ptr_eq(
+            &state.gl_registries.material_renderers,
+            &materials
+        ));
+        assert!(Arc::ptr_eq(
+            &state.gl_registries.modifier_snippets,
+            &modifier_snippets
+        ));
+        assert!(Arc::ptr_eq(
+            &state.gl_registries.pbr_extensions,
+            &pbr_extensions
+        ));
         assert!(
             state
                 .context_state

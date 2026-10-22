@@ -1,14 +1,15 @@
 // flight-lint: allow-file(contract-vocabulary) D17 target-pool ownership uses native handles and Result diagnostics
 
-use flight_render::RenderTargetClear;
 use flight_entity::EntityRuntimeSlot;
+use flight_render::RenderTargetClear;
 use flight_render::{
     RenderTargetAxes, RenderTargetDescriptor, RenderTargetFormatPolicy,
     resolve_render_target_descriptor,
 };
 
 use crate::{
-    GlRenderState, GlTextureRenderTarget, GlTextureRenderTargetPool, clear_gl_render_target, create_gl_texture_render_target, destroy_gl_texture_render_target,
+    GlRenderState, GlTextureRenderTarget, GlTextureRenderTargetPool, clear_gl_render_target,
+    create_gl_texture_render_target, destroy_gl_texture_render_target,
     resolve_gl_render_target_axes,
 };
 

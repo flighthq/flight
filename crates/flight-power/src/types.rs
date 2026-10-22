@@ -94,12 +94,15 @@ pub type PowerChangeListener = Arc<dyn Fn() + Send + Sync>;
 pub type PowerUnsubscribe = Arc<dyn Fn() + Send + Sync>;
 pub type PowerThermalListener = Arc<dyn Fn(PowerThermalState) + Send + Sync>;
 
-pub type PowerKeepAwakeAcquireFuture = Pin<Box<dyn Future<Output = PowerKeepAwakeAcquireResult> + Send>>;
-pub type PowerKeepAwakeReleaseFuture = Pin<Box<dyn Future<Output = PowerKeepAwakeReleaseResult> + Send>>;
+pub type PowerKeepAwakeAcquireFuture =
+    Pin<Box<dyn Future<Output = PowerKeepAwakeAcquireResult> + Send>>;
+pub type PowerKeepAwakeReleaseFuture =
+    Pin<Box<dyn Future<Output = PowerKeepAwakeReleaseResult> + Send>>;
 
 #[derive(Clone)]
 pub struct HostPowerBatteryHealthCapability {
-    pub get_battery_health: Arc<dyn Fn(&mut PowerBatteryHealth) -> PowerBatteryHealth + Send + Sync>,
+    pub get_battery_health:
+        Arc<dyn Fn(&mut PowerBatteryHealth) -> PowerBatteryHealth + Send + Sync>,
 }
 
 #[derive(Clone)]
@@ -142,7 +145,8 @@ pub struct HostPowerSuspensionCapability {
 #[derive(Clone)]
 pub struct HostPowerThermalCapability {
     pub get_thermal_state: Arc<dyn Fn() -> PowerThermalState + Send + Sync>,
-    pub subscribe_thermal_state_change: Arc<dyn Fn(PowerThermalListener) -> PowerUnsubscribe + Send + Sync>,
+    pub subscribe_thermal_state_change:
+        Arc<dyn Fn(PowerThermalListener) -> PowerUnsubscribe + Send + Sync>,
 }
 
 #[derive(Clone, Default)]

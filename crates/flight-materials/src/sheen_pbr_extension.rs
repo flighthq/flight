@@ -1,8 +1,7 @@
 use flight_entity::allocate_entity;
 
 use crate::{
-    SheenPbrExtension, SHEEN_PBR_EXTENSION_KIND,
-    material_validation::is_valid_material_weight,
+    SHEEN_PBR_EXTENSION_KIND, SheenPbrExtension, material_validation::is_valid_material_weight,
     pbr_extension::is_valid_pbr_uv_set,
 };
 

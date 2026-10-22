@@ -29,8 +29,15 @@ mod sugar_tests {
     fn path_sample_morph_matches_sample_path_morph() {
         let mut a = test_path();
         let mut b = test_path();
-        a.sample_morph(&create_path_morph(&test_path(), &other_path()).unwrap(), 0.5);
-        sample_path_morph(&mut b, &create_path_morph(&test_path(), &other_path()).unwrap(), 0.5);
+        a.sample_morph(
+            &create_path_morph(&test_path(), &other_path()).unwrap(),
+            0.5,
+        );
+        sample_path_morph(
+            &mut b,
+            &create_path_morph(&test_path(), &other_path()).unwrap(),
+            0.5,
+        );
         assert_eq!(format!("{:?}", a), format!("{:?}", b));
     }
 
@@ -63,7 +70,11 @@ pub fn sample_path_morph(out: &mut Path, morph: &PathMorph, progress: f64) {
     let end_data = &morph.end_data;
     out.data.resize(start_data.len(), 0.0);
     if progress == 0.0 || progress == 1.0 {
-        let endpoint = if progress == 0.0 { start_data } else { end_data };
+        let endpoint = if progress == 0.0 {
+            start_data
+        } else {
+            end_data
+        };
         for i in 0..endpoint.len() {
             out.data[i] = endpoint[i];
         }

@@ -135,12 +135,79 @@ pub fn is_frustum_intersecting_obb(frustum: &Frustum, obb: &Obb) -> bool {
     let ay2 = 2.0 * (yz - wx);
     let az2 = 1.0 - 2.0 * (xx + yy);
 
-    return plane_intersects_obb(&frustum.left, obb, ax0, ay0, az0, ax1, ay1, az1, ax2, ay2, az2)
-        && plane_intersects_obb(&frustum.right, obb, ax0, ay0, az0, ax1, ay1, az1, ax2, ay2, az2)
-        && plane_intersects_obb(&frustum.bottom, obb, ax0, ay0, az0, ax1, ay1, az1, ax2, ay2, az2)
-        && plane_intersects_obb(&frustum.top, obb, ax0, ay0, az0, ax1, ay1, az1, ax2, ay2, az2)
-        && plane_intersects_obb(&frustum.near, obb, ax0, ay0, az0, ax1, ay1, az1, ax2, ay2, az2)
-        && plane_intersects_obb(&frustum.far, obb, ax0, ay0, az0, ax1, ay1, az1, ax2, ay2, az2);
+    return plane_intersects_obb(
+        &frustum.left,
+        obb,
+        ax0,
+        ay0,
+        az0,
+        ax1,
+        ay1,
+        az1,
+        ax2,
+        ay2,
+        az2,
+    ) && plane_intersects_obb(
+        &frustum.right,
+        obb,
+        ax0,
+        ay0,
+        az0,
+        ax1,
+        ay1,
+        az1,
+        ax2,
+        ay2,
+        az2,
+    ) && plane_intersects_obb(
+        &frustum.bottom,
+        obb,
+        ax0,
+        ay0,
+        az0,
+        ax1,
+        ay1,
+        az1,
+        ax2,
+        ay2,
+        az2,
+    ) && plane_intersects_obb(
+        &frustum.top,
+        obb,
+        ax0,
+        ay0,
+        az0,
+        ax1,
+        ay1,
+        az1,
+        ax2,
+        ay2,
+        az2,
+    ) && plane_intersects_obb(
+        &frustum.near,
+        obb,
+        ax0,
+        ay0,
+        az0,
+        ax1,
+        ay1,
+        az1,
+        ax2,
+        ay2,
+        az2,
+    ) && plane_intersects_obb(
+        &frustum.far,
+        obb,
+        ax0,
+        ay0,
+        az0,
+        ax1,
+        ay1,
+        az1,
+        ax2,
+        ay2,
+        az2,
+    );
 }
 
 /// Returns whether a bounding sphere intersects (or is contained by) the frustum. A sphere is
@@ -160,9 +227,21 @@ pub fn is_frustum_intersecting_sphere(frustum: &Frustum, sphere: &BoundingSphere
 }
 
 fn plane_intersects_aabb(plane: &Plane, aabb: &Aabb) -> bool {
-    let px = if plane.a >= 0.0 { aabb.max.x } else { aabb.min.x };
-    let py = if plane.b >= 0.0 { aabb.max.y } else { aabb.min.y };
-    let pz = if plane.c >= 0.0 { aabb.max.z } else { aabb.min.z };
+    let px = if plane.a >= 0.0 {
+        aabb.max.x
+    } else {
+        aabb.min.x
+    };
+    let py = if plane.b >= 0.0 {
+        aabb.max.y
+    } else {
+        aabb.min.y
+    };
+    let pz = if plane.c >= 0.0 {
+        aabb.max.z
+    } else {
+        aabb.min.z
+    };
     return plane.a * px + plane.b * py + plane.c * pz + plane.d >= 0.0;
 }
 

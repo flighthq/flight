@@ -4,8 +4,7 @@
 use flight_render_wgpu::{
     WgpuColorAdjustmentMaterialFeature, WgpuRenderState, create_wgpu_bind_group_layout,
     create_wgpu_shader_module, get_wgpu_color_adjustment_material_feature,
-    get_wgpu_texture_format_name,
-    get_wgpu_render_state_native_device,
+    get_wgpu_render_state_native_device, get_wgpu_texture_format_name,
 };
 
 use crate::types::*;

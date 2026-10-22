@@ -31,7 +31,10 @@ fn empty_cache() -> WgpuColorLutTextureCache {
     };
 }
 
-fn create_format_target(state: &WgpuRenderState, format: wgpu::TextureFormat) -> Ref<WgpuTextureRenderTarget> {
+fn create_format_target(
+    state: &WgpuRenderState,
+    format: wgpu::TextureFormat,
+) -> Ref<WgpuTextureRenderTarget> {
     return Arc::new(RwLock::new(create_wgpu_texture_render_target(
         state,
         8.0,
@@ -51,7 +54,13 @@ fn apply(
     let source = create_format_target(state, format);
     let dest = create_format_target(state, format);
     with_test_frame(state, |state| {
-        apply_color_lut_pass_to_wgpu(state, &source.read().unwrap(), &dest.read().unwrap(), lut, cache);
+        apply_color_lut_pass_to_wgpu(
+            state,
+            &source.read().unwrap(),
+            &dest.read().unwrap(),
+            lut,
+            cache,
+        );
     });
 }
 
@@ -77,9 +86,17 @@ mod apply_color_lut_pass_to_wgpu {
         let samples: Vec<f32> = (0..24).map(|index| (index % 3) as f32 / 2.0).collect();
 
         let format = state.format;
-        apply(&mut state, &create_lut(2, samples), &mut empty_cache(), format);
+        apply(
+            &mut state,
+            &create_lut(2, samples),
+            &mut empty_cache(),
+            format,
+        );
 
-        assert_eq!(&uploads(&records)[0][0..8], &[0, 128, 255, 255, 0, 128, 255, 255]);
+        assert_eq!(
+            &uploads(&records)[0][0..8],
+            &[0, 128, 255, 255, 0, 128, 255, 255]
+        );
     }
 
     #[test]
@@ -91,7 +108,12 @@ mod apply_color_lut_pass_to_wgpu {
         samples[1] = 1.5;
 
         let format = state.format;
-        apply(&mut state, &create_lut(2, samples), &mut empty_cache(), format);
+        apply(
+            &mut state,
+            &create_lut(2, samples),
+            &mut empty_cache(),
+            format,
+        );
 
         assert_eq!(&uploads(&records)[0][0..2], &[0, 255]);
     }
@@ -119,7 +141,8 @@ mod apply_color_lut_pass_to_wgpu {
     // A 3D texture's dimensions are fixed at creation, so a LUT of a different SIZE needs a new
     // texture, and the previous one is destroyed rather than leaked.
     #[test]
-    fn recreates_and_destroys_the_texture_when_the_lut_size_changes_and_reuses_it_when_it_does_not() {
+    fn recreates_and_destroys_the_texture_when_the_lut_size_changes_and_reuses_it_when_it_does_not()
+    {
         let mut state = create_wgpu_render_state_for_test(None);
         let mut cache = empty_cache();
         let format = state.format;
@@ -146,11 +169,26 @@ mod apply_color_lut_pass_to_wgpu {
         let records = record_test_commands(&state);
         let mut cache = empty_cache();
 
-        apply(&mut state, &create_grey_lut(2), &mut cache, wgpu::TextureFormat::Rgba8Unorm);
-        apply(&mut state, &create_grey_lut(2), &mut cache, wgpu::TextureFormat::Rgba8Unorm);
+        apply(
+            &mut state,
+            &create_grey_lut(2),
+            &mut cache,
+            wgpu::TextureFormat::Rgba8Unorm,
+        );
+        apply(
+            &mut state,
+            &create_grey_lut(2),
+            &mut cache,
+            wgpu::TextureFormat::Rgba8Unorm,
+        );
         assert_eq!(recorded_pipelines(&records).len(), 1);
 
-        apply(&mut state, &create_grey_lut(2), &mut cache, wgpu::TextureFormat::Rgba16Float);
+        apply(
+            &mut state,
+            &create_grey_lut(2),
+            &mut cache,
+            wgpu::TextureFormat::Rgba16Float,
+        );
         let pipelines = recorded_pipelines(&records);
         assert_eq!(pipelines.len(), 2);
         assert_eq!(
@@ -169,7 +207,10 @@ mod apply_color_lut_pass_to_wgpu {
         apply(&mut state, &create_grey_lut(2), &mut empty_cache(), format);
 
         let sets = recorded_set_bind_groups(&records);
-        assert_eq!(sets.iter().map(|set| set.index).collect::<Vec<u32>>(), vec![0, 1, 2]);
+        assert_eq!(
+            sets.iter().map(|set| set.index).collect::<Vec<u32>>(),
+            vec![0, 1, 2]
+        );
         assert_eq!(
             recorded_draws(&records)
                 .iter()

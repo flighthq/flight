@@ -331,17 +331,26 @@ fn ensure_wgpu_bake_programs(state: &mut WgpuRenderState) -> WgpuBakePrograms {
     );
     let cube_layout = create_wgpu_pipeline_layout_recorded(
         &native,
-        &[uniform_bind_group_layout.clone(), source_bind_group_layout.clone()],
+        &[
+            uniform_bind_group_layout.clone(),
+            source_bind_group_layout.clone(),
+        ],
     );
     let brdf_layout = create_wgpu_pipeline_layout_recorded(&native, &[]);
 
     let irradiance_module = create_wgpu_shader_module(
         &native,
-        &format!("{}{}{}", BAKE_VERTEX_WGSL, BAKE_COMMON_WGSL, IRRADIANCE_FRAGMENT_WGSL),
+        &format!(
+            "{}{}{}",
+            BAKE_VERTEX_WGSL, BAKE_COMMON_WGSL, IRRADIANCE_FRAGMENT_WGSL
+        ),
     );
     let prefiltered_module = create_wgpu_shader_module(
         &native,
-        &format!("{}{}{}", BAKE_VERTEX_WGSL, BAKE_COMMON_WGSL, PREFILTERED_FRAGMENT_WGSL),
+        &format!(
+            "{}{}{}",
+            BAKE_VERTEX_WGSL, BAKE_COMMON_WGSL, PREFILTERED_FRAGMENT_WGSL
+        ),
     );
     let brdf_module = create_wgpu_shader_module(
         &native,
@@ -389,7 +398,12 @@ fn render_wgpu_bake_cube_faces(
             basis[0], basis[1], basis[2], 0.0, basis[3], basis[4], basis[5], 0.0, basis[6],
             basis[7], basis[8], 0.0, roughness, 0.0, 0.0, 0.0,
         ];
-        write_wgpu_buffer(native, &programs.uniform_buffer, 0, bytemuck::cast_slice(&u));
+        write_wgpu_buffer(
+            native,
+            &programs.uniform_buffer,
+            0,
+            bytemuck::cast_slice(&u),
+        );
 
         let view = cube.create_view(&wgpu::TextureViewDescriptor {
             dimension: Some(wgpu::TextureViewDimension::D2),

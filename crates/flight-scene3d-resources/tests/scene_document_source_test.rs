@@ -3,8 +3,8 @@ use std::sync::{Arc, Mutex, RwLock};
 use flight_buffer::{create_array_buffer_from_bytes, get_array_buffer_storage};
 use flight_entity::Ref;
 use flight_net::{
-    HostNetCapability, NetProgress, NetProgressPhase, NetResponse, NetResponseBody,
-    NetResponseType, };
+    HostNetCapability, NetProgress, NetProgressPhase, NetResponse, NetResponseBody, NetResponseType,
+};
 use flight_scene3d::Scene3DDocument;
 use flight_scene3d_resources::contract::*;
 use flight_signals::{connect_signal, create_signal, emit_signal};
@@ -54,7 +54,9 @@ mod load_scene3d_document_bytes_from_url {
     fn forwards_cancellation_and_identifies_byte_progress_events_by_url() {
         let controller = create_abort_controller();
         let events: Arc<Mutex<Vec<Scene3DDocumentLoadProgress>>> = Arc::new(Mutex::new(Vec::new()));
-        let progress = Arc::new(RwLock::new(create_signal::<Ref<Scene3DDocumentLoadProgress>>()));
+        let progress = Arc::new(RwLock::new(
+            create_signal::<Ref<Scene3DDocumentLoadProgress>>(),
+        ));
         let captured = events.clone();
         connect_signal(
             &progress.read().unwrap(),
@@ -99,8 +101,16 @@ mod load_scene3d_document_bytes_from_url {
 
         // The forwarded signal is the caller's own: aborting the controller now reaches it.
         abort_controller(&controller, None);
-        assert!(is_abort_signal_aborted(forwarded.lock().unwrap().as_ref().unwrap()));
-        assert_eq!(get_array_buffer_storage(&bytes.buffer).read().unwrap().to_vec(), vec![1, 2, 3]);
+        assert!(is_abort_signal_aborted(
+            forwarded.lock().unwrap().as_ref().unwrap()
+        ));
+        assert_eq!(
+            get_array_buffer_storage(&bytes.buffer)
+                .read()
+                .unwrap()
+                .to_vec(),
+            vec![1, 2, 3]
+        );
         assert_eq!(
             *events.lock().unwrap(),
             vec![Scene3DDocumentLoadProgress {
@@ -136,7 +146,10 @@ mod load_scene3d_document_text_from_url {
             send_net_request: Arc::new(move |request, _| {
                 *captured.lock().unwrap() = request.read().unwrap().response_type;
                 Box::pin(async {
-                    Ok(response(true, Some(NetResponseBody::Text("v 0 0 0".to_string()))))
+                    Ok(response(
+                        true,
+                        Some(NetResponseBody::Text("v 0 0 0".to_string())),
+                    ))
                 })
             }),
         };

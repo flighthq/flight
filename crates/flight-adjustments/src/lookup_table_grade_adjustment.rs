@@ -3,9 +3,9 @@ use std::sync::Arc;
 use flight_entity::allocate_entity;
 
 use crate::contract::AdjustmentFields;
+use crate::contract::ColorLut;
 use crate::contract::initialize_color_lut_adjustment;
 use crate::contract::sample_color_lut;
-use crate::contract::ColorLut;
 
 #[cfg(test)]
 mod sugar_tests {
@@ -40,26 +40,39 @@ pub struct LookupTableGradeAdjustmentOptions {
 }
 
 // flight-lint: allow(conform-params) D23 C: options capture LUT + strength for color grading — KEEP under c0f9227c
-pub fn create_lookup_table_grade_adjustment(options: Option<&LookupTableGradeAdjustmentOptions>) -> LookupTableGradeAdjustment {
+pub fn create_lookup_table_grade_adjustment(
+    options: Option<&LookupTableGradeAdjustmentOptions>,
+) -> LookupTableGradeAdjustment {
     let mut out: LookupTableGradeAdjustment = allocate_entity();
     initialize_lookup_table_grade_adjustment(&mut out, options);
     return out;
 }
 
 // flight-lint: allow(conform-params) D23 C: options capture LUT + strength for color grading — KEEP under c0f9227c
-pub fn initialize_lookup_table_grade_adjustment(out: &mut LookupTableGradeAdjustment, options: Option<&LookupTableGradeAdjustmentOptions>) {
+pub fn initialize_lookup_table_grade_adjustment(
+    out: &mut LookupTableGradeAdjustment,
+    options: Option<&LookupTableGradeAdjustmentOptions>,
+) {
     let lut = options.and_then(|o| o.lut.clone());
     let strength = options.and_then(|o| o.strength).unwrap_or(1.0);
     let captured_lut = lut.clone();
-    let transform: crate::contract::ColorTransformFunction = Arc::new(move |o: &mut [f32; 3], r: f32, g: f32, b: f32| {
-        lookup_table_grade_transform(&captured_lut, strength, o, r, g, b);
-    });
+    let transform: crate::contract::ColorTransformFunction =
+        Arc::new(move |o: &mut [f32; 3], r: f32, g: f32, b: f32| {
+            lookup_table_grade_transform(&captured_lut, strength, o, r, g, b);
+        });
     initialize_color_lut_adjustment(out, "LookupTableGradeAdjustment", transform);
     out.lut = lut;
     out.strength = strength;
 }
 
-fn lookup_table_grade_transform(lut: &Option<ColorLut>, strength: f32, out: &mut [f32; 3], r: f32, g: f32, b: f32) {
+fn lookup_table_grade_transform(
+    lut: &Option<ColorLut>,
+    strength: f32,
+    out: &mut [f32; 3],
+    r: f32,
+    g: f32,
+    b: f32,
+) {
     if lut.is_none() || strength <= 0.0 {
         out[0] = r;
         out[1] = g;

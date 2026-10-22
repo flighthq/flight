@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::pack_rectangles::{
-    pack_rectangles, BinPackOptions, PackableRectangle, RectangleId, BIN_PACK_DEFAULT_MAX_EXTENT,
+    BIN_PACK_DEFAULT_MAX_EXTENT, BinPackOptions, PackableRectangle, RectangleId, pack_rectangles,
 };
 
 /// The reason a rectangle could not be placed.
@@ -69,7 +69,12 @@ pub fn explain_unpacked_rectangles(
             continue;
         }
         outstanding.insert(rectangle.id.clone(), remaining - 1);
-        out.push(UnpackedRectangleExplanation { id: rectangle.id.clone(), reason: get_unpacked_reason(rectangle, usable_width, usable_height, allow_rotation), usable_width: usable_width, usable_height: usable_height });
+        out.push(UnpackedRectangleExplanation {
+            id: rectangle.id.clone(),
+            reason: get_unpacked_reason(rectangle, usable_width, usable_height, allow_rotation),
+            usable_width: usable_width,
+            usable_height: usable_height,
+        });
     }
 }
 
@@ -89,11 +94,21 @@ fn get_unpacked_reason(
     if usable_width <= 0.0 || usable_height <= 0.0 {
         return UnpackedRectangleReason::RegionCollapsed;
     }
-    if !fits_within(rectangle.width, rectangle.height, usable_width, usable_height) {
+    if !fits_within(
+        rectangle.width,
+        rectangle.height,
+        usable_width,
+        usable_height,
+    ) {
         if !allow_rotation {
             return UnpackedRectangleReason::Oversized;
         }
-        if !fits_within(rectangle.height, rectangle.width, usable_width, usable_height) {
+        if !fits_within(
+            rectangle.height,
+            rectangle.width,
+            usable_width,
+            usable_height,
+        ) {
             return UnpackedRectangleReason::Oversized;
         }
     }

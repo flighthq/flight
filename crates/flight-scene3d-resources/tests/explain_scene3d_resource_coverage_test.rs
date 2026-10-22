@@ -97,7 +97,10 @@ mod explain_scene3d_resource_coverage {
         let found = gaps(&resolver, &usage_of(vec![unlit()]));
         assert_eq!(
             found,
-            vec![unregistered("UnlitMaterial", "registerUnlitScene3DMaterialTextures")]
+            vec![unregistered(
+                "UnlitMaterial",
+                "registerUnlitScene3DMaterialTextures"
+            )]
         );
     }
 
@@ -106,7 +109,10 @@ mod explain_scene3d_resource_coverage {
         let host = MockHost::new();
         let resolver =
             create_built_in_scene3d_resource_resolver(&host_image(), None, &context(&host));
-        assert_eq!(gaps(&resolver, &usage_of(vec![unlit()])), vec![satisfied("UnlitMaterial")]);
+        assert_eq!(
+            gaps(&resolver, &usage_of(vec![unlit()])),
+            vec![satisfied("UnlitMaterial")]
+        );
     }
 
     #[test]
@@ -115,8 +121,10 @@ mod explain_scene3d_resource_coverage {
         let resolver =
             create_built_in_scene3d_resource_resolver(&host_image(), None, &context(&host));
         assert!(
-            gaps(&resolver, &usage_of(vec![shaded()]))
-                .contains(&unregistered("ShadedMaterial", "registerShadedScene3DMaterialTextures"))
+            gaps(&resolver, &usage_of(vec![shaded()])).contains(&unregistered(
+                "ShadedMaterial",
+                "registerShadedScene3DMaterialTextures"
+            ))
         );
     }
 
@@ -127,24 +135,30 @@ mod explain_scene3d_resource_coverage {
             create_built_in_scene3d_resource_resolver(&host_image(), None, &context(&host));
         let registry = resolver.read().unwrap().registry.clone();
         register_shaded_scene3d_material_textures(&registry);
-        assert_eq!(gaps(&resolver, &usage_of(vec![shaded()])), vec![satisfied("ShadedMaterial")]);
+        assert_eq!(
+            gaps(&resolver, &usage_of(vec![shaded()])),
+            vec![satisfied("ShadedMaterial")]
+        );
     }
 
     #[test]
-    fn reports_a_family_that_ships_no_lister_at_all_so_the_omission_is_visible_rather_than_inferred() {
+    fn reports_a_family_that_ships_no_lister_at_all_so_the_omission_is_visible_rather_than_inferred()
+     {
         // BlinnPhongMaterial carries four texture slots and has no lister anywhere in the SDK.
         let host = MockHost::new();
         let resolver =
             create_built_in_scene3d_resource_resolver(&host_image(), None, &context(&host));
         let blinn_phong: Ref<dyn Material3D> = Arc::new(RwLock::new(create_blinn_phong_material()));
-        assert!(gaps(&resolver, &usage_of(vec![blinn_phong])).contains(&SceneCoverageEntry {
-            coverage: SceneCoverage::Unavailable,
-            facet: RequirementFacet::SceneMaterialKind,
-            kind: "BlinnPhongMaterial".to_string(),
-            module: None,
-            registrar: None,
-            registry: RenderRegistryTable::MaterialTextureLister,
-        }));
+        assert!(
+            gaps(&resolver, &usage_of(vec![blinn_phong])).contains(&SceneCoverageEntry {
+                coverage: SceneCoverage::Unavailable,
+                facet: RequirementFacet::SceneMaterialKind,
+                kind: "BlinnPhongMaterial".to_string(),
+                module: None,
+                registrar: None,
+                registry: RenderRegistryTable::MaterialTextureLister,
+            })
+        );
     }
 
     #[test]
@@ -167,7 +181,10 @@ mod has_scene3d_resource_coverage {
     fn is_false_while_any_material_kind_is_undescribed() {
         let host = MockHost::new();
         let resolver = create_scene3d_resource_resolver(&host_image(), None, &context(&host));
-        assert!(!has_scene3d_resource_coverage(&resolver, &usage_of(vec![unlit()])));
+        assert!(!has_scene3d_resource_coverage(
+            &resolver,
+            &usage_of(vec![unlit()])
+        ));
     }
 
     #[test]
@@ -178,7 +195,10 @@ mod has_scene3d_resource_coverage {
         let usage = usage_of(vec![unlit(), shaded()]);
         let mut out = Vec::new();
         explain_scene3d_resource_coverage(&mut out, &resolver, &usage, &coverage_catalog());
-        assert_eq!(has_scene3d_resource_coverage(&resolver, &usage), out.is_empty());
+        assert_eq!(
+            has_scene3d_resource_coverage(&resolver, &usage),
+            out.is_empty()
+        );
     }
 
     #[test]
@@ -190,7 +210,10 @@ mod has_scene3d_resource_coverage {
         let mut out = Vec::new();
         explain_scene3d_resource_coverage(&mut out, &resolver, &usage, &coverage_catalog());
         assert!(!out.is_empty());
-        assert!(out.iter().all(|entry| entry.coverage == SceneCoverage::Satisfied));
+        assert!(
+            out.iter()
+                .all(|entry| entry.coverage == SceneCoverage::Satisfied)
+        );
         assert!(has_scene3d_resource_coverage(&resolver, &usage));
     }
 

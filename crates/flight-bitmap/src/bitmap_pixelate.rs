@@ -24,10 +24,14 @@ pub fn pixelate_bitmap(out: &mut [u8], source: &BitmapRegion, block_size: i32) {
             let mut count = 0u32;
             for py in by..y_end {
                 let sy = (source.y + py as i32) as usize;
-                if sy >= bitmap_height { continue; }
+                if sy >= bitmap_height {
+                    continue;
+                }
                 for px in bx..x_end {
                     let sx = (source.x + px as i32) as usize;
-                    if sx >= bitmap_width { continue; }
+                    if sx >= bitmap_width {
+                        continue;
+                    }
                     let si = (sy * bitmap_width + sx) * 4;
                     r += data[si] as u32;
                     g += data[si + 1] as u32;
@@ -36,7 +40,10 @@ pub fn pixelate_bitmap(out: &mut [u8], source: &BitmapRegion, block_size: i32) {
                     count += 1;
                 }
             }
-            if count == 0 { bx += block; continue; }
+            if count == 0 {
+                bx += block;
+                continue;
+            }
             let ar = ((r as f64 / count as f64).round()) as u8;
             let ag = ((g as f64 / count as f64).round()) as u8;
             let ab = ((b as f64 / count as f64).round()) as u8;

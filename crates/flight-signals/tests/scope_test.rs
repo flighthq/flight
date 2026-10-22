@@ -111,7 +111,11 @@ mod disconnect_signal_scope {
             once: None,
             scope: Some(scope.clone()),
         };
-        connect_signal_tracked(&signal, Arc::new(move |_: &()| *counter.lock().unwrap() += 1), Some(&options));
+        connect_signal_tracked(
+            &signal,
+            Arc::new(move |_: &()| *counter.lock().unwrap() += 1),
+            Some(&options),
+        );
 
         disconnect_signal_scope(&scope);
         disconnect_signal_scope(&scope);
@@ -267,7 +271,11 @@ mod disconnect_signal_scope {
             once: Some(true),
             scope: Some(scope.clone()),
         };
-        connect_signal_tracked(&signal, Arc::new(move |_: &()| *counter.lock().unwrap() += 1), Some(&options));
+        connect_signal_tracked(
+            &signal,
+            Arc::new(move |_: &()| *counter.lock().unwrap() += 1),
+            Some(&options),
+        );
 
         disconnect_signal_scope(&scope);
 

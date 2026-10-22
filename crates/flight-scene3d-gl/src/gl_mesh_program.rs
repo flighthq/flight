@@ -10,7 +10,9 @@ use flight_materials::{Material3D, MaterialAlphaMode};
 use flight_meshgeometry::MeshGeometry;
 use flight_render::Scene3DRenderProxy;
 use flight_render_gl::{GlRenderState, create_gl_program, upload_gl_skin_palette_texture};
-use flight_texture::{TextureVariant, get_texture_uv_matrix, has_texture_source, has_texture_uv_transform};
+use flight_texture::{
+    TextureVariant, get_texture_uv_matrix, has_texture_source, has_texture_uv_transform,
+};
 use glow::{HasContext, NativeProgram, NativeUniformLocation};
 
 use crate::gl_mesh_upload::ensure_gl_mesh_upload;
@@ -25,14 +27,16 @@ use crate::types::{GlLazyUniformLocation, GlMeshProgram, GlMeshProgramFamily, Gl
 // gates both, so an untiled surface compiles the identity branch. u_uvTransform is column-major.
 macro_rules! gl_uv_transform_vertex_glsl {
     () => {
-        concat!(r#"
+        concat!(
+            r#"
 #ifdef HAS_UV_TRANSFORM
 uniform mat3 u_uvTransform;
 vec2 applyUvTransform(vec2 uv) { return (u_uvTransform * vec3(uv, 1.0)).xy; }
 #else
 vec2 applyUvTransform(vec2 uv) { return uv; }
 #endif
-"#)
+"#
+        )
     };
 }
 #[allow(unused_imports)]
@@ -148,8 +152,14 @@ pub fn bind_gl_instance_color_palette(
         let mut palette = ensure_gl_instance_color_palette(state);
         // SAFETY: texture-unit selection runs on the owning GL thread.
         unsafe { gl.active_texture(glow::TEXTURE0 + INSTANCE_COLOR_PALETTE_TEXTURE_UNIT) };
-        upload_gl_skin_palette_texture(state, &mut palette, instance_colors, instance_count, Some(1))
-            .unwrap_or_else(|error| throw_error(&error));
+        upload_gl_skin_palette_texture(
+            state,
+            &mut palette,
+            instance_colors,
+            instance_count,
+            Some(1),
+        )
+        .unwrap_or_else(|error| throw_error(&error));
     }
     let location = resolve_gl_lazy_uniform_location(
         gl,
@@ -159,7 +169,12 @@ pub fn bind_gl_instance_color_palette(
     );
     if location.is_some() {
         // SAFETY: the program is bound on the owning GL thread.
-        unsafe { gl.uniform_1_i32(location.as_ref(), INSTANCE_COLOR_PALETTE_TEXTURE_UNIT as i32) };
+        unsafe {
+            gl.uniform_1_i32(
+                location.as_ref(),
+                INSTANCE_COLOR_PALETTE_TEXTURE_UNIT as i32,
+            )
+        };
     }
 }
 
@@ -177,8 +192,14 @@ pub fn bind_gl_instance_palette(
         let mut palette = ensure_gl_instance_palette(state);
         // SAFETY: texture-unit selection runs on the owning GL thread.
         unsafe { gl.active_texture(glow::TEXTURE0 + INSTANCE_PALETTE_TEXTURE_UNIT) };
-        upload_gl_skin_palette_texture(state, &mut palette, instance_matrices, instance_count, None)
-            .unwrap_or_else(|error| throw_error(&error));
+        upload_gl_skin_palette_texture(
+            state,
+            &mut palette,
+            instance_matrices,
+            instance_count,
+            None,
+        )
+        .unwrap_or_else(|error| throw_error(&error));
     }
     let location = resolve_gl_lazy_uniform_location(
         gl,
@@ -201,8 +222,12 @@ pub fn bind_gl_uv_transform(
     program: &GlMeshProgram,
     texture: Option<&dyn TextureVariant>,
 ) {
-    let location =
-        resolve_gl_lazy_uniform_location(gl, program.program, &program.loc_uv_transform, "u_uvTransform");
+    let location = resolve_gl_lazy_uniform_location(
+        gl,
+        program.program,
+        &program.loc_uv_transform,
+        "u_uvTransform",
+    );
     let (Some(location), Some(texture)) = (location, texture) else {
         return;
     };
@@ -231,7 +256,9 @@ pub fn destroy_gl_mesh_program(state: &GlRenderState, program: &GlMeshProgram) {
     unsafe { state.gl.delete_program(program.program) };
     let mut scene = get_gl_scene3d_runtime(state);
     scene.uploaded_light_blocks.remove(&program.program);
-    scene.custom_shader_checked_programs.remove(&program.program);
+    scene
+        .custom_shader_checked_programs
+        .remove(&program.program);
 }
 
 // The shared per-draw tail for every mesh-material family: uploads the model + normal matrices from the
@@ -425,7 +452,10 @@ pub fn ensure_gl_scene3d_program<T: GlMeshProgramFamily>(
     key: &str,
     compile: impl FnOnce(&glow::Context) -> T,
 ) -> Rc<T> {
-    let cached = get_gl_scene3d_runtime(state).program_cache.get(key).cloned();
+    let cached = get_gl_scene3d_runtime(state)
+        .program_cache
+        .get(key)
+        .cloned();
     let program: GlMeshProgramRef = match cached {
         Some(program) => program,
         None => {
@@ -437,15 +467,18 @@ pub fn ensure_gl_scene3d_program<T: GlMeshProgramFamily>(
         }
     };
     let program: Rc<dyn Any> = program;
-    return program
-        .downcast::<T>()
-        .unwrap_or_else(|_| throw_error(&format!("ensureGlScene3DProgram: key `{key}` holds another family's program")));
+    return program.downcast::<T>().unwrap_or_else(|_| {
+        throw_error(&format!(
+            "ensureGlScene3DProgram: key `{key}` holds another family's program"
+        ))
+    });
 }
 
 // The HAS_UV_TRANSFORM define-key predicate every map-sampling family shares: true only when the
 // material's primary map is bound (it has a source) AND carries a non-identity uv transform.
 pub fn has_gl_uv_transform(texture: Option<&dyn TextureVariant>) -> bool {
-    return texture.is_some_and(|texture| has_texture_source(texture) && has_texture_uv_transform(texture));
+    return texture
+        .is_some_and(|texture| has_texture_source(texture) && has_texture_uv_transform(texture));
 }
 
 // Whether a draw's fragment alpha is COVERAGE the compositor should honor: only alphaMode 'blend'.
@@ -490,7 +523,12 @@ pub fn set_gl_mesh_camera_position(
     get_camera_3d_position(&mut position, camera);
     // SAFETY: the program is bound on the owning GL thread.
     unsafe {
-        gl.uniform_3_f32(loc_camera_position.as_ref(), position.x, position.y, position.z);
+        gl.uniform_3_f32(
+            loc_camera_position.as_ref(),
+            position.x,
+            position.y,
+            position.z,
+        );
     }
 }
 
@@ -509,9 +547,11 @@ pub fn set_gl_mesh_view_projection(
     );
     // SAFETY: the program is bound on the owning GL thread.
     unsafe {
-        state
-            .gl
-            .uniform_matrix_4_f32_slice(loc_view_projection.as_ref(), false, &view_projection.m);
+        state.gl.uniform_matrix_4_f32_slice(
+            loc_view_projection.as_ref(),
+            false,
+            &view_projection.m,
+        );
     }
 }
 
@@ -524,8 +564,12 @@ pub fn upload_gl_mesh_draw_alpha(
     alpha: f32,
     material: Option<&dyn Material3D>,
 ) {
-    let location =
-        resolve_gl_lazy_uniform_location(gl, program.program, &program.loc_object_alpha, "u_objectAlpha");
+    let location = resolve_gl_lazy_uniform_location(
+        gl,
+        program.program,
+        &program.loc_object_alpha,
+        "u_objectAlpha",
+    );
     if location.is_some() {
         // SAFETY: the program is bound on the owning GL thread.
         unsafe { gl.uniform_1_f32(location.as_ref(), alpha) };

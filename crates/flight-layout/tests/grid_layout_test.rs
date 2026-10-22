@@ -171,7 +171,12 @@ mod register_grid_layout_resolver {
                     row_gap: Some(0.0),
                     rows: vec![GridLayoutTrack::Fixed { size: 0.0 }],
                 }),
-                child(Some(GridLayoutItemStyle { column: None, column_span: None, row: None, row_span: None })),
+                child(Some(GridLayoutItemStyle {
+                    column: None,
+                    column_span: None,
+                    row: None,
+                    row_span: None,
+                })),
             ],
             &[0.0; 4],
             200.0,
@@ -528,7 +533,14 @@ mod register_grid_layout_resolver {
         let mut state = create_layout_state();
         register_grid_layout_resolver(&mut state);
         assert_eq!(
-            resolve_layout_tree(&mut vec![0.0; 8], &mut state, &tree, &[0.0; 4], 100.0, 100.0),
+            resolve_layout_tree(
+                &mut vec![0.0; 8],
+                &mut state,
+                &tree,
+                &[0.0; 4],
+                100.0,
+                100.0
+            ),
             false
         );
         assert_eq!(
@@ -561,7 +573,14 @@ mod register_grid_layout_resolver {
         let mut state = create_layout_state();
         register_grid_layout_resolver(&mut state);
         assert_eq!(
-            resolve_layout_tree(&mut vec![0.0; 8], &mut state, &tree, &[0.0; 4], 100.0, 100.0),
+            resolve_layout_tree(
+                &mut vec![0.0; 8],
+                &mut state,
+                &tree,
+                &[0.0; 4],
+                100.0,
+                100.0
+            ),
             false
         );
         assert_eq!(

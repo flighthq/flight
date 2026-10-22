@@ -71,9 +71,11 @@ mod connect_input_to_interaction {
         let count2 = count.clone();
         flight_signals::connect_signal(
             &sigs.read().unwrap().on_key_down,
-            Arc::new(move |_data: &flight_interaction::types::KeyboardEventData| {
-                count2.fetch_add(1, Ordering::Relaxed);
-            }),
+            Arc::new(
+                move |_data: &flight_interaction::types::KeyboardEventData| {
+                    count2.fetch_add(1, Ordering::Relaxed);
+                },
+            ),
             None,
         );
         let mgr = Arc::new(RwLock::new(interaction_fixture::manager_for(&root)));
@@ -123,12 +125,7 @@ mod connect_interaction_signal {
         let mut mgr = interaction_fixture::manager_for(&root);
         let slot: flight_interaction::types::AnyInteractionSignalSlot =
             Arc::new(|_data: &flight_interaction::types::PointerEventData| {});
-        connect_interaction_signal(
-            &mut mgr,
-            &target,
-            InteractionSignalName::OnClick,
-            slot,
-        );
+        connect_interaction_signal(&mut mgr, &target, InteractionSignalName::OnClick, slot);
         assert_eq!(
             mgr.signal_subscriber_counts
                 .get(&InteractionSignalName::OnClick)
@@ -178,12 +175,7 @@ mod disconnect_interaction_signal {
             InteractionSignalName::OnClick,
             slot.clone(),
         );
-        disconnect_interaction_signal(
-            &mut mgr,
-            &target,
-            InteractionSignalName::OnClick,
-            &slot,
-        );
+        disconnect_interaction_signal(&mut mgr, &target, InteractionSignalName::OnClick, &slot);
         assert_eq!(
             mgr.signal_subscriber_counts
                 .get(&InteractionSignalName::OnClick)

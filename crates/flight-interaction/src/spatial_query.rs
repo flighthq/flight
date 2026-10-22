@@ -1,6 +1,6 @@
-use flight_geometry::{intersects_rectangle, Rectangle};
+use flight_geometry::{Rectangle, intersects_rectangle};
 use flight_node::contract::NodeRevisionState;
-use flight_node::{get_node_world_bounds_rectangle, NodeRef};
+use flight_node::{NodeRef, get_node_world_bounds_rectangle};
 
 // flight-lint: allow(conform-params) D1: explicit revision state per caller-owned clock
 pub fn hit_test_area_query(

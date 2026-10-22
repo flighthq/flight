@@ -42,7 +42,9 @@ fn mesh_scene(references: Vec<ImageResourceReference>, textures: &[&Ref<Texture>
 fn select_only(texture: &Ref<Texture>) -> UpdateScene3DResourceStreamingOptions {
     let wanted = texture.clone();
     return UpdateScene3DResourceStreamingOptions {
-        select: Some(Arc::new(move |candidate, _| Arc::ptr_eq(candidate, &wanted))),
+        select: Some(Arc::new(move |candidate, _| {
+            Arc::ptr_eq(candidate, &wanted)
+        })),
         priority: None,
     };
 }
@@ -56,7 +58,9 @@ fn select_none() -> UpdateScene3DResourceStreamingOptions {
 
 fn settle(host: &MockHost, resolver: &Ref<Scene3DResourceResolver>) {
     let resolver = resolver.clone();
-    drive(host, async move { wait_for_scene3d_resource_resolver(&resolver).await });
+    drive(host, async move {
+        wait_for_scene3d_resource_resolver(&resolver).await
+    });
 }
 
 fn image_outcome(image: &Ref<ImageResource>) -> Arc<dyn Fn(usize) -> FetchOutcome + Send + Sync> {
@@ -121,8 +125,11 @@ mod resolve_one_scene3d_resource_texture {
             max_concurrent: None,
             registry: None,
         };
-        let resolver =
-            create_built_in_scene3d_resource_resolver(&host_image(), Some(&options), &context(&host));
+        let resolver = create_built_in_scene3d_resource_resolver(
+            &host_image(),
+            Some(&options),
+            &context(&host),
+        );
         let reference = embedded_reference(Some("image/jpeg"));
         let signal = create_abort_controller().signal;
         let (task_resolver, task_reference) = (resolver.clone(), reference.clone());
@@ -133,7 +140,10 @@ mod resolve_one_scene3d_resource_texture {
         let source = result.unwrap();
         let fields = source.read().unwrap().texture_source_fields().clone();
         assert_eq!((fields.width, fields.height), (2, 2));
-        assert_eq!(reference_state(&reference), ResourceResolutionState::Resolved);
+        assert_eq!(
+            reference_state(&reference),
+            ResourceResolutionState::Resolved
+        );
         dispose_scene3d_resource_resolver(&resolver);
     }
 
@@ -156,8 +166,11 @@ mod resolve_one_scene3d_resource_texture {
             max_concurrent: None,
             registry: None,
         };
-        let resolver =
-            create_built_in_scene3d_resource_resolver(&host_image(), Some(&options), &context(&host));
+        let resolver = create_built_in_scene3d_resource_resolver(
+            &host_image(),
+            Some(&options),
+            &context(&host),
+        );
         let reference = embedded_reference(None);
         let signal = create_abort_controller().signal;
         let (task_resolver, task_reference) = (resolver.clone(), reference.clone());
@@ -197,7 +210,8 @@ mod resolve_scene3d_resources {
     #[test]
     fn does_not_cancel_acquisition_owned_by_a_streaming_update() {
         let host = MockHost::new();
-        let (resolver, calls) = built_in_resolver(&host, Arc::new(|_| FetchOutcome::HangUntilAbort));
+        let (resolver, calls) =
+            built_in_resolver(&host, Arc::new(|_| FetchOutcome::HangUntilAbort));
         let reference = external_reference("leaf.png");
         let texture = attach_texture(&reference);
         let scene = mesh_scene(vec![reference.clone()], &[&texture]);
@@ -213,7 +227,10 @@ mod resolve_scene3d_resources {
         assert!(resources.resolved.is_empty());
         assert!(resources.unresolved.is_empty());
         assert!(!is_abort_signal_aborted(&calls.lock().unwrap()[0]));
-        assert_eq!(reference_state(&reference), ResourceResolutionState::Loading);
+        assert_eq!(
+            reference_state(&reference),
+            ResourceResolutionState::Loading
+        );
         dispose_scene3d_resource_resolver(&resolver);
     }
 
@@ -233,9 +250,15 @@ mod resolve_scene3d_resources {
         assert!(Arc::ptr_eq(&resources.scene, &scene));
         assert!(resources.resolved.is_empty());
         assert_eq!(resources.unresolved.len(), 1);
-        assert!(same_reference(&resources.unresolved[0].reference, &reference));
+        assert!(same_reference(
+            &resources.unresolved[0].reference,
+            &reference
+        ));
         assert!(same_textures(&resources.unresolved[0].textures, &[&a, &b]));
-        assert_eq!(reference_state(&reference), ResourceResolutionState::Unresolved);
+        assert_eq!(
+            reference_state(&reference),
+            ResourceResolutionState::Unresolved
+        );
         assert!(calls.lock().unwrap().is_empty());
         dispose_scene3d_resource_resolver(&resolver);
     }
@@ -262,10 +285,16 @@ mod resolve_scene3d_resources {
         assert!(resources.unresolved.is_empty());
         assert_eq!(resources.resolved.len(), 1);
         assert!(same_reference(&resources.resolved[0].reference, &reference));
-        assert!(same_source(Some(resources.resolved[0].source.clone()), &image));
+        assert!(same_source(
+            Some(resources.resolved[0].source.clone()),
+            &image
+        ));
         assert!(same_textures(&resources.resolved[0].textures, &[&a, &b]));
         assert!(same_source(texture_source(&b), &image));
-        assert_eq!(reference_state(&reference), ResourceResolutionState::Resolved);
+        assert_eq!(
+            reference_state(&reference),
+            ResourceResolutionState::Resolved
+        );
         dispose_scene3d_resource_resolver(&resolver);
     }
 }
@@ -311,14 +340,18 @@ mod update_scene3d_resource_streaming {
         assert_eq!(calls.lock().unwrap().len(), 1);
         assert!(same_source(texture_source(&a), &image));
         assert!(same_source(texture_source(&b), &image));
-        assert_eq!(reference_state(&reference), ResourceResolutionState::Resolved);
+        assert_eq!(
+            reference_state(&reference),
+            ResourceResolutionState::Resolved
+        );
         dispose_scene3d_resource_resolver(&resolver);
     }
 
     #[test]
     fn keeps_a_shared_load_alive_until_its_final_subscriber_leaves_the_working_set() {
         let host = MockHost::new();
-        let (resolver, calls) = built_in_resolver(&host, Arc::new(|_| FetchOutcome::HangUntilAbort));
+        let (resolver, calls) =
+            built_in_resolver(&host, Arc::new(|_| FetchOutcome::HangUntilAbort));
         let reference = external_reference("leaf.png");
         let a = attach_texture(&reference);
         let b = attach_texture(&reference);
@@ -330,14 +363,23 @@ mod update_scene3d_resource_streaming {
         update_scene3d_resource_streaming(&scene, &resolver, Some(&select_only(&b)));
         host.run_ready();
         assert!(!is_abort_signal_aborted(&calls.lock().unwrap()[0]));
-        assert_eq!(reference_state(&reference), ResourceResolutionState::Loading);
+        assert_eq!(
+            reference_state(&reference),
+            ResourceResolutionState::Loading
+        );
 
         update_scene3d_resource_streaming(&scene, &resolver, Some(&select_none()));
         assert!(is_abort_signal_aborted(&calls.lock().unwrap()[0]));
-        assert_eq!(reference_state(&reference), ResourceResolutionState::Unresolved);
+        assert_eq!(
+            reference_state(&reference),
+            ResourceResolutionState::Unresolved
+        );
         host.run_ready();
         // The settled cancellation stays a cancel, not a failure.
-        assert_eq!(reference_state(&reference), ResourceResolutionState::Unresolved);
+        assert_eq!(
+            reference_state(&reference),
+            ResourceResolutionState::Unresolved
+        );
         dispose_scene3d_resource_resolver(&resolver);
     }
 
@@ -379,8 +421,14 @@ mod update_scene3d_resource_streaming {
         update_scene3d_resource_streaming(&scene, &resolver, Some(&select_only(&wanted)));
         settle(&host, &resolver);
 
-        assert_eq!(reference_state(&wanted_reference), ResourceResolutionState::Resolved);
-        assert_eq!(reference_state(&skipped_reference), ResourceResolutionState::Unresolved);
+        assert_eq!(
+            reference_state(&wanted_reference),
+            ResourceResolutionState::Resolved
+        );
+        assert_eq!(
+            reference_state(&skipped_reference),
+            ResourceResolutionState::Unresolved
+        );
         assert!(texture_source(&skipped).is_none());
         dispose_scene3d_resource_resolver(&resolver);
     }
@@ -410,7 +458,8 @@ mod update_scene3d_resource_streaming {
     #[test]
     fn fails_a_texture_whose_decode_throws() {
         let host = MockHost::new();
-        let (resolver, _) = built_in_resolver(&host, Arc::new(|_| FetchOutcome::Panic("bad image")));
+        let (resolver, _) =
+            built_in_resolver(&host, Arc::new(|_| FetchOutcome::Panic("bad image")));
         let reference = external_reference("leaf.png");
         let texture = attach_texture(&reference);
         let scene = mesh_scene(vec![reference.clone()], &[&texture]);
@@ -429,7 +478,8 @@ mod update_scene3d_resource_streaming {
     #[test]
     fn cancels_and_reverts_a_load_dropped_from_the_working_set_then_re_requests_on_re_entry() {
         let host = MockHost::new();
-        let (resolver, calls) = built_in_resolver(&host, Arc::new(|_| FetchOutcome::HangUntilAbort));
+        let (resolver, calls) =
+            built_in_resolver(&host, Arc::new(|_| FetchOutcome::HangUntilAbort));
         let reference = external_reference("leaf.png");
         let texture = attach_texture(&reference);
         let scene = mesh_scene(vec![reference.clone()], &[&texture]);
@@ -439,20 +489,29 @@ mod update_scene3d_resource_streaming {
         };
 
         update_scene3d_resource_streaming(&scene, &resolver, Some(&select_all));
-        assert_eq!(reference_state(&reference), ResourceResolutionState::Loading);
+        assert_eq!(
+            reference_state(&reference),
+            ResourceResolutionState::Loading
+        );
         host.run_ready();
         assert_eq!(calls.lock().unwrap().len(), 1);
 
         // Drop it: not in the working set this pass, so abort and revert.
         update_scene3d_resource_streaming(&scene, &resolver, Some(&select_none()));
-        assert_eq!(reference_state(&reference), ResourceResolutionState::Unresolved);
+        assert_eq!(
+            reference_state(&reference),
+            ResourceResolutionState::Unresolved
+        );
         assert!(texture_source(&texture).is_none());
         assert!(is_abort_signal_aborted(&calls.lock().unwrap()[0]));
         host.run_ready();
 
         // Re-entry re-requests from scratch.
         update_scene3d_resource_streaming(&scene, &resolver, Some(&select_all));
-        assert_eq!(reference_state(&reference), ResourceResolutionState::Loading);
+        assert_eq!(
+            reference_state(&reference),
+            ResourceResolutionState::Loading
+        );
         host.run_ready();
         assert_eq!(calls.lock().unwrap().len(), 2);
         dispose_scene3d_resource_resolver(&resolver);
@@ -517,7 +576,8 @@ mod update_scene3d_resource_streaming {
     #[test]
     fn emits_on_resource_failed_when_a_decode_throws() {
         let host = MockHost::new();
-        let (resolver, _) = built_in_resolver(&host, Arc::new(|_| FetchOutcome::Panic("bad image")));
+        let (resolver, _) =
+            built_in_resolver(&host, Arc::new(|_| FetchOutcome::Panic("bad image")));
         let reference = external_reference("leaf.png");
         let texture = attach_texture(&reference);
         let scene = mesh_scene(vec![reference], &[&texture]);

@@ -1,6 +1,6 @@
 use flight_math::create_random_source;
-use flight_particles::contract::{create_particle_emitter_config, create_particle_emitter_state};
 use flight_particles::EmitterShape;
+use flight_particles::contract::{create_particle_emitter_config, create_particle_emitter_state};
 
 use flight_particleemitter::*;
 
@@ -95,14 +95,7 @@ mod emit_particle_burst_3d {
         config.speed_min = 0.0;
         config.speed_max = 0.0;
         emit_particle_burst_3d(
-            &emitter,
-            &mut state,
-            &config,
-            50.0,
-            100.0,
-            200.0,
-            300.0,
-            None,
+            &emitter, &mut state, &config, 50.0, 100.0, 200.0, 300.0, None,
         );
         let mut has_z_offset = false;
         let guard = emitter.read().unwrap();

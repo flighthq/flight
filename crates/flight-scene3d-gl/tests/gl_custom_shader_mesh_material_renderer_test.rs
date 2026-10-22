@@ -1,16 +1,16 @@
-use std::rc::Rc;
 use std::collections::HashMap;
+use std::rc::Rc;
 use std::sync::{Arc, RwLock};
 
 use flight_camera::{Camera3D, Projection, create_camera_3d, create_perspective_projection};
 use flight_geometry::{create_matrix3, create_matrix4};
 use flight_lighting::Scene3DLightBlock;
-use flight_meshgeometry::{MeshGeometry, create_box_mesh_geometry};
-use flight_render::Scene3DRenderProxy;
-use flight_scene3d_gl::contract::*;
 use flight_materials::custom_shader_material::create_custom_shader_material;
 use flight_materials::{CUSTOM_SHADER_MATERIAL_KIND, CustomShaderMaterial, UniformValue};
+use flight_meshgeometry::{MeshGeometry, create_box_mesh_geometry};
+use flight_render::Scene3DRenderProxy;
 use flight_render_gl::GlCustomMaterialShaderSource;
+use flight_scene3d_gl::contract::*;
 
 use crate::gl_test_helper::{
     calls_with, count_calls, make_gl_scene3d_state, make_gl_scene3d_state_with, make_state_options,
@@ -19,7 +19,9 @@ use crate::gl_test_helper::{
 use flight_entity::{Ref, allocate_entity};
 use flight_render::ExternalTexture;
 use flight_render_gl::{GlRenderState, GlTextureRealization, register_gl_texture_resolver};
-use flight_texture::{Texture, TextureColorSpace, TextureSourceRef, TextureVariant, create_texture_2d};
+use flight_texture::{
+    Texture, TextureColorSpace, TextureSourceRef, TextureVariant, create_texture_2d,
+};
 use glow::HasContext;
 
 fn make_camera() -> Camera3D {
@@ -137,7 +139,10 @@ mod get_gl_custom_material_shader_source {
         let mut state = make_gl_scene3d_state();
         let source = make_source(FRAGMENT_SRC, VERTEX_SRC);
         register_gl_custom_material_shader(&mut state, "ripple", &source);
-        assert_eq!(get_gl_custom_material_shader_source(&state, "ripple"), Some(&source));
+        assert_eq!(
+            get_gl_custom_material_shader_source(&state, "ripple"),
+            Some(&source)
+        );
     }
 
     #[test]
@@ -151,11 +156,21 @@ mod gl_custom_shader_mesh_material_renderer {
     use super::*;
 
     #[test]
-    fn bind_selects_a_program_and_uploads_view_projection_and_camera_position_when_shader_is_registered() {
+    fn bind_selects_a_program_and_uploads_view_projection_and_camera_position_when_shader_is_registered()
+     {
         let mut state = make_gl_scene3d_state();
-        register_gl_custom_material_shader(&mut state, "test", &make_source(FRAGMENT_SRC, VERTEX_SRC));
+        register_gl_custom_material_shader(
+            &mut state,
+            "test",
+            &make_source(FRAGMENT_SRC, VERTEX_SRC),
+        );
         let material = make_material("test");
-        (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &no_lights(), &make_camera());
+        (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &no_lights(),
+            &make_camera(),
+        );
         assert!(count_calls("use_program") > 0);
         assert!(count_calls("uniform_matrix_4_f32") > 0);
         assert!(count_calls("uniform_3_f32") > 0);
@@ -164,13 +179,22 @@ mod gl_custom_shader_mesh_material_renderer {
     #[test]
     fn bind_uploads_custom_uniforms_from_the_material() {
         let mut state = make_gl_scene3d_state();
-        register_gl_custom_material_shader(&mut state, "test", &make_source(FRAGMENT_SRC, VERTEX_SRC));
+        register_gl_custom_material_shader(
+            &mut state,
+            "test",
+            &make_source(FRAGMENT_SRC, VERTEX_SRC),
+        );
         let mut material = make_material("test");
         material.uniforms = Some(HashMap::from([
             ("u_time".to_string(), UniformValue::Scalar(0.5)),
             ("u_scale".to_string(), UniformValue::Array(vec![2.0, 3.0])),
         ]));
-        (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &no_lights(), &make_camera());
+        (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &no_lights(),
+            &make_camera(),
+        );
         assert!(
             calls_with("uniform_1_f32")
                 .iter()
@@ -184,13 +208,22 @@ mod gl_custom_shader_mesh_material_renderer {
     fn bind_assigns_texture_units_in_texture_bag_order() {
         let mut state = make_gl_scene3d_state();
         register_gl_texture_resolver(&mut state, "test.ready".to_string(), Some(ready_resolver));
-        register_gl_custom_material_shader(&mut state, "test", &make_source(FRAGMENT_SRC, VERTEX_SRC));
+        register_gl_custom_material_shader(
+            &mut state,
+            "test",
+            &make_source(FRAGMENT_SRC, VERTEX_SRC),
+        );
         let mut material = make_material("test");
         material.textures = Some(vec![
             ("u_zeta".to_string(), make_ready_texture()),
             ("u_alpha".to_string(), make_ready_texture()),
         ]);
-        (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &no_lights(), &make_camera());
+        (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &no_lights(),
+            &make_camera(),
+        );
         let units: Vec<(i64, i64)> = calls_with("uniform_1_i32")
             .iter()
             .map(|call| (call.integers[0], call.integers[1]))
@@ -208,7 +241,12 @@ mod gl_custom_shader_mesh_material_renderer {
     fn bind_is_a_no_op_sets_active_program_null_when_shader_key_is_not_registered() {
         let mut state = make_gl_scene3d_state();
         let material = make_material("missing");
-        (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &no_lights(), &make_camera());
+        (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &no_lights(),
+            &make_camera(),
+        );
         assert_eq!(count_calls("use_program"), 0);
     }
 
@@ -216,18 +254,32 @@ mod gl_custom_shader_mesh_material_renderer {
     fn bind_is_a_no_op_when_shader_key_is_empty() {
         let mut state = make_gl_scene3d_state();
         let material = create_custom_shader_material();
-        (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &no_lights(), &make_camera());
+        (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &no_lights(),
+            &make_camera(),
+        );
         assert_eq!(count_calls("use_program"), 0);
     }
 
     #[test]
     fn draw_issues_an_indexed_draw_over_the_subset_after_bind() {
         let mut state = make_gl_scene3d_state();
-        register_gl_custom_material_shader(&mut state, "test", &make_source(FRAGMENT_SRC, VERTEX_SRC));
+        register_gl_custom_material_shader(
+            &mut state,
+            "test",
+            &make_source(FRAGMENT_SRC, VERTEX_SRC),
+        );
         let proxy = make_proxy();
         {
             let material = proxy.material.read().unwrap();
-            (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&*material), &no_lights(), &make_camera());
+            (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(
+                &mut state,
+                Some(&*material),
+                &no_lights(),
+                &make_camera(),
+            );
         }
         (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.draw)(&mut state, &proxy, &make_geometry());
         let draws = calls_with("draw_elements");
@@ -239,7 +291,12 @@ mod gl_custom_shader_mesh_material_renderer {
     fn draw_is_a_no_op_when_bind_skipped_due_to_missing_shader_key() {
         let mut state = make_gl_scene3d_state();
         let material = make_material("missing");
-        (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &no_lights(), &make_camera());
+        (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &no_lights(),
+            &make_camera(),
+        );
         (GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER.draw)(&mut state, &make_proxy(), &make_geometry());
         assert_eq!(count_calls("draw_elements"), 0);
     }
@@ -264,10 +321,19 @@ mod register_gl_custom_material_shader {
 
         // D17: the derived state shares the snapshot copy-on-write (TS copies the map); either way the
         // later registration on `screen` never reaches it.
-        assert!(!Arc::ptr_eq(&screen.gl_registries.custom_material_shaders, &snapshot));
+        assert!(!Arc::ptr_eq(
+            &screen.gl_registries.custom_material_shaders,
+            &snapshot
+        ));
         assert_eq!(snapshot.entries.get("ripple"), Some(&source));
-        assert_eq!(get_gl_custom_material_shader_source(&derived, "ripple"), Some(&source));
-        assert_eq!(get_gl_custom_material_shader_source(&screen, "ripple"), Some(&replacement));
+        assert_eq!(
+            get_gl_custom_material_shader_source(&derived, "ripple"),
+            Some(&source)
+        );
+        assert_eq!(
+            get_gl_custom_material_shader_source(&screen, "ripple"),
+            Some(&replacement)
+        );
     }
 
     #[test]
@@ -275,7 +341,10 @@ mod register_gl_custom_material_shader {
         let mut state = make_gl_scene3d_state();
         let source = make_source(FRAGMENT_SRC, VERTEX_SRC);
         register_gl_custom_material_shader(&mut state, "ripple", &source);
-        assert_eq!(get_gl_custom_material_shader_source(&state, "ripple"), Some(&source));
+        assert_eq!(
+            get_gl_custom_material_shader_source(&state, "ripple"),
+            Some(&source)
+        );
     }
 
     #[test]
@@ -285,7 +354,10 @@ mod register_gl_custom_material_shader {
         let b = make_source("b", "b");
         register_gl_custom_material_shader(&mut state, "key", &a);
         register_gl_custom_material_shader(&mut state, "key", &b);
-        assert_eq!(get_gl_custom_material_shader_source(&state, "key"), Some(&b));
+        assert_eq!(
+            get_gl_custom_material_shader_source(&state, "key"),
+            Some(&b)
+        );
     }
 }
 
@@ -298,7 +370,10 @@ mod register_gl_custom_shader_material {
         register_gl_custom_shader_material(&mut state);
         assert!(
             get_gl_mesh_material_renderer(&state, &CUSTOM_SHADER_MATERIAL_KIND.to_string())
-                .is_some_and(|renderer| std::ptr::eq(renderer, &GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER))
+                .is_some_and(|renderer| std::ptr::eq(
+                    renderer,
+                    &GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER
+                ))
         );
     }
 }

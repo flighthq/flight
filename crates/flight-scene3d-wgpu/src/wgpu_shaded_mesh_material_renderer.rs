@@ -26,10 +26,11 @@ use crate::wgpu_mesh_pipeline::{
 use crate::wgpu_shaded_prelude::{bind_wgpu_shaded_surface, ensure_wgpu_shaded_pipeline};
 
 /// The built-in ShadedMaterial renderer (TS `wgpuShadedMeshMaterialRenderer`).
-pub static WGPU_SHADED_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer = WgpuMeshMaterialRenderer {
-    bind: bind_wgpu_shaded_material,
-    draw: draw_wgpu_shaded_material,
-};
+pub static WGPU_SHADED_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer =
+    WgpuMeshMaterialRenderer {
+        bind: bind_wgpu_shaded_material,
+        draw: draw_wgpu_shaded_material,
+    };
 
 fn bind_wgpu_shaded_material(
     state: &mut WgpuRenderState,
@@ -40,7 +41,8 @@ fn bind_wgpu_shaded_material(
     if get_wgpu_render_state_runtime(state).render_pass.is_none() {
         return;
     }
-    let Some(shaded) = material.and_then(|material| material.as_any().downcast_ref::<ShadedMaterial>())
+    let Some(shaded) =
+        material.and_then(|material| material.as_any().downcast_ref::<ShadedMaterial>())
     else {
         return;
     };

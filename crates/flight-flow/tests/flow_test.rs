@@ -28,12 +28,32 @@ fn labeled_state(name: &str, log: &Arc<Mutex<Vec<String>>>) -> Ref<FlowState> {
     let update_log = log.clone();
     return state(FlowState {
         name: Some(name.to_string()),
-        on_enter: Some(Arc::new(move || enter_log.lock().unwrap().push(format!("{}.enter", enter_name)))),
-        on_exit: Some(Arc::new(move || exit_log.lock().unwrap().push(format!("{}.exit", exit_name)))),
-        on_pause: Some(Arc::new(move || pause_log.lock().unwrap().push(format!("{}.pause", pause_name)))),
-        on_resume: Some(Arc::new(move || resume_log.lock().unwrap().push(format!("{}.resume", resume_name)))),
+        on_enter: Some(Arc::new(move || {
+            enter_log
+                .lock()
+                .unwrap()
+                .push(format!("{}.enter", enter_name))
+        })),
+        on_exit: Some(Arc::new(move || {
+            exit_log.lock().unwrap().push(format!("{}.exit", exit_name))
+        })),
+        on_pause: Some(Arc::new(move || {
+            pause_log
+                .lock()
+                .unwrap()
+                .push(format!("{}.pause", pause_name))
+        })),
+        on_resume: Some(Arc::new(move || {
+            resume_log
+                .lock()
+                .unwrap()
+                .push(format!("{}.resume", resume_name))
+        })),
         on_update: Some(Arc::new(move |dt: f32| {
-            update_log.lock().unwrap().push(format!("{}.update:{}", update_name, dt))
+            update_log
+                .lock()
+                .unwrap()
+                .push(format!("{}.update:{}", update_name, dt))
         })),
         render_below: None,
         update_below: None,
@@ -410,7 +430,11 @@ mod push_flow_state {
             .collect();
         assert_eq!(
             names,
-            vec![Some("A".to_string()), Some("C".to_string()), Some("B".to_string())]
+            vec![
+                Some("A".to_string()),
+                Some("C".to_string()),
+                Some("B".to_string())
+            ]
         );
         assert_eq!(guards.read().unwrap().transition_depth, 0);
         let _ = log;

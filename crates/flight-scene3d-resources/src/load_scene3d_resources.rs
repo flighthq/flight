@@ -74,7 +74,13 @@ pub async fn load_scene3d_resources(
             promise.await;
             let count = loaded.fetch_add(1, Ordering::SeqCst) + 1;
             if let Some(progress) = &progress {
-                emit_signal(progress, &Scene3DResourceLoadProgress { loaded: count, total });
+                emit_signal(
+                    progress,
+                    &Scene3DResourceLoadProgress {
+                        loaded: count,
+                        total,
+                    },
+                );
             }
         });
     }

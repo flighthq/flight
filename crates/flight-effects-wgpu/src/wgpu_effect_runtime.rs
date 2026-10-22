@@ -40,7 +40,8 @@ pub(crate) struct WgpuEffectRuntime {
     // The per-module WeakMap<WgpuRenderState, WgpuEffectPipeline> caches, keyed by module role.
     pub(crate) module_pipelines: HashMap<&'static str, Ref<WgpuEffectPipeline>>,
     // The per-module WeakMap<WgpuRenderState, Map<GPUTextureFormat, WgpuEffectPipeline>> caches.
-    pub(crate) format_pipelines: HashMap<(&'static str, wgpu::TextureFormat), Ref<WgpuEffectPipeline>>,
+    pub(crate) format_pipelines:
+        HashMap<(&'static str, wgpu::TextureFormat), Ref<WgpuEffectPipeline>>,
     pub(crate) lut_bind_group_layout: Option<wgpu::BindGroupLayout>,
     pub(crate) ramp_textures: HashMap<String, wgpu::Texture>,
     pub(crate) blend_backdrops: HashMap<String, Ref<WgpuTextureRenderTarget>>,
@@ -137,22 +138,20 @@ pub(crate) fn create_wgpu_effect_texture_bind_group(
     view: &wgpu::TextureView,
     sampler: &wgpu::Sampler,
 ) -> wgpu::BindGroup {
-    let bind_group = native
-        .device
-        .create_bind_group(&wgpu::BindGroupDescriptor {
-            label: None,
-            layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(sampler),
-                },
-            ],
-        });
+    let bind_group = native.device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: None,
+        layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(view),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::Sampler(sampler),
+            },
+        ],
+    });
     flight_render_wgpu::record_wgpu_command(native, || {
         return flight_render_wgpu::WgpuCommandRecord::CreateBindGroup(
             flight_render_wgpu::WgpuBindGroupRecord {

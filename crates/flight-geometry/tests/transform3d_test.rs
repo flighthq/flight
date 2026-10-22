@@ -5,7 +5,9 @@ fn assert_close(actual: f32, expected: f32) {
     assert!(
         diff < 1e-4,
         "expected {} to be approximately {}, diff = {}",
-        actual, expected, diff
+        actual,
+        expected,
+        diff
     );
 }
 
@@ -80,7 +82,10 @@ mod initialize_transform3d {
         let scale = create_vector3(2.0, 3.0, 4.0);
         let mut out = create_transform3d();
         initialize_transform3d(&mut out, &position, &rotation, &scale);
-        assert_eq!((out.position.x, out.position.y, out.position.z), (1.0, 2.0, 3.0));
+        assert_eq!(
+            (out.position.x, out.position.y, out.position.z),
+            (1.0, 2.0, 3.0)
+        );
         assert_eq!((out.rotation.x, out.rotation.w), (0.0, 1.0));
         assert_eq!((out.scale.x, out.scale.y, out.scale.z), (2.0, 3.0, 4.0));
     }

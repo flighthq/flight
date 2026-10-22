@@ -1,7 +1,7 @@
 use flight_geometry::{Matrix, create_matrix};
 
-use crate::path::{Path, PathCommand};
 use crate::copy_path::copy_path;
+use crate::path::{Path, PathCommand};
 
 #[cfg(test)]
 mod sugar_tests {
@@ -78,7 +78,9 @@ pub fn transform_path(source: &Path, matrix: &Matrix, out: &mut Path) {
                 data[di + k + 1] = b * x + d * y + ty;
             }
             di += 6;
-        } else if command == PathCommand::WideMoveTo as u8 || command == PathCommand::WideLineTo as u8 {
+        } else if command == PathCommand::WideMoveTo as u8
+            || command == PathCommand::WideLineTo as u8
+        {
             let x = data[di + 2];
             let y = data[di + 3];
             data[di + 2] = a * x + c * y + tx;

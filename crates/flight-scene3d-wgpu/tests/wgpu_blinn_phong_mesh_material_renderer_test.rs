@@ -1,5 +1,5 @@
 use flight_materials::contract::create_blinn_phong_material;
-use flight_materials::{Material, BLINN_PHONG_MATERIAL_KIND};
+use flight_materials::{BLINN_PHONG_MATERIAL_KIND, Material};
 use flight_meshgeometry::create_box_mesh_geometry;
 use flight_scene3d_wgpu::contract::*;
 
@@ -12,8 +12,11 @@ mod register_wgpu_blinn_phong_material {
     fn installs_the_renderer_for_blinn_phong_material_kind() {
         let mut test = make_wgpu_scene3d_state(None);
         register_wgpu_blinn_phong_material(&mut test.state);
-        assert!(get_wgpu_mesh_material_renderer(&test.state, BLINN_PHONG_MATERIAL_KIND)
-            .is_some_and(|renderer| std::ptr::eq(renderer, &WGPU_BLINN_PHONG_MESH_MATERIAL_RENDERER)));
+        assert!(
+            get_wgpu_mesh_material_renderer(&test.state, BLINN_PHONG_MATERIAL_KIND).is_some_and(
+                |renderer| std::ptr::eq(renderer, &WGPU_BLINN_PHONG_MESH_MATERIAL_RENDERER)
+            )
+        );
     }
 }
 
@@ -21,7 +24,8 @@ mod wgpu_blinn_phong_mesh_material_renderer {
     use super::*;
 
     #[test]
-    fn bind_selects_a_blinnphong_pipeline_and_binds_frame_and_material_groups_and_uploads_uniforms() {
+    fn bind_selects_a_blinnphong_pipeline_and_binds_frame_and_material_groups_and_uploads_uniforms()
+    {
         let mut test = make_wgpu_scene3d_state(None);
         let material = create_blinn_phong_material();
         (WGPU_BLINN_PHONG_MESH_MATERIAL_RENDERER.bind)(
@@ -41,7 +45,10 @@ mod wgpu_blinn_phong_mesh_material_renderer {
     fn draw_uploads_geometry_and_issues_an_indexed_draw_over_the_subset_range() {
         let mut test = make_wgpu_scene3d_state(None);
         let geometry = create_box_mesh_geometry(None, None, None);
-        let proxy = make_test_proxy_for(&geometry, share_test_material(create_blinn_phong_material()));
+        let proxy = make_test_proxy_for(
+            &geometry,
+            share_test_material(create_blinn_phong_material()),
+        );
         {
             let material = proxy.material.read().unwrap();
             (WGPU_BLINN_PHONG_MESH_MATERIAL_RENDERER.bind)(
@@ -63,7 +70,10 @@ mod wgpu_blinn_phong_mesh_material_renderer {
     fn draw_is_a_no_op_when_bind_has_not_selected_a_pipeline() {
         let mut test = make_wgpu_scene3d_state(None);
         let geometry = create_box_mesh_geometry(None, None, None);
-        let proxy = make_test_proxy_for(&geometry, share_test_material(create_blinn_phong_material()));
+        let proxy = make_test_proxy_for(
+            &geometry,
+            share_test_material(create_blinn_phong_material()),
+        );
         (WGPU_BLINN_PHONG_MESH_MATERIAL_RENDERER.draw)(&mut test.state, &proxy, &geometry);
         assert_eq!(test.count("drawIndexed"), 0);
     }

@@ -1,15 +1,17 @@
 // flight-lint: allow-file(contract-vocabulary) D17 mesh-material renderers are backend-typed dispatch records over thread-bound render-gl state
 
-use std::rc::Rc;
 use flight_camera::Camera3D;
 use flight_color::{LinearColor, allocate_linear_color, unpack_color_to_linear};
 use flight_lighting::Scene3DLightBlock;
-use flight_materials::{Material3D, MaterialAlphaMode, TOON_MATERIAL_KIND, TextureSlot, ToonMaterial};
+use flight_materials::{
+    Material3D, MaterialAlphaMode, TOON_MATERIAL_KIND, TextureSlot, ToonMaterial,
+};
 use flight_meshgeometry::MeshGeometry;
 use flight_render::Scene3DRenderProxy;
 use flight_render_gl::{GlMeshMaterialRenderer, GlRenderState, resolve_gl_texture};
 use flight_texture::TextureVariant;
 use glow::HasContext;
+use std::rc::Rc;
 
 use crate::gl_lit_program::bind_gl_mesh_light_block;
 use crate::gl_mesh_material_registry::register_gl_mesh_material_renderer;
@@ -68,13 +70,20 @@ fn bind_gl_toon_material_uniforms(
         gl.uniform_1_f32(program.loc_alpha_cutoff.as_ref(), material.alpha_cutoff);
     }
 
-    let base_color_map = material.base_color_map.as_ref().map(|texture| texture.read().unwrap());
+    let base_color_map = material
+        .base_color_map
+        .as_ref()
+        .map(|texture| texture.read().unwrap());
     if let Some(base_color_map) = base_color_map.as_deref() {
         // SAFETY: texture-unit selection runs on the owning GL thread.
         unsafe { state.gl.active_texture(glow::TEXTURE0) };
         if resolve_gl_texture(state, base_color_map, None, None).is_some() {
             // SAFETY: the program is bound on the owning GL thread.
-            unsafe { state.gl.uniform_1_i32(program.loc_base_color_map.as_ref(), 0) };
+            unsafe {
+                state
+                    .gl
+                    .uniform_1_i32(program.loc_base_color_map.as_ref(), 0)
+            };
         }
     }
 
@@ -90,7 +99,9 @@ fn bind_gl_toon_material_uniforms(
     bind_gl_uv_transform(
         &state.gl,
         program,
-        base_color_map.as_deref().map(|texture| texture as &dyn TextureVariant),
+        base_color_map
+            .as_deref()
+            .map(|texture| texture as &dyn TextureVariant),
     );
 }
 
@@ -115,11 +126,14 @@ fn bind_gl_toon_mesh_material(
 // The feature define key for a Toon material: which optional textures are present and whether alpha-
 // mask cutoff is active. Drives both the program-cache variant and the bound textures. The ramp
 // switches the fragment quantizer from a stepped floor to a 1D ramp lookup.
-fn define_key_for_material(state: &mut GlRenderState, material: Option<&ToonMaterial>) -> GlToonDefineKey {
+fn define_key_for_material(
+    state: &mut GlRenderState,
+    material: Option<&ToonMaterial>,
+) -> GlToonDefineKey {
     let mut resolves = |slot: Option<&TextureSlot>| -> bool {
-        return slot
-            .and_then(|slot| slot.as_ref())
-            .is_some_and(|texture| resolve_gl_texture(state, &*texture.read().unwrap(), None, None).is_some());
+        return slot.and_then(|slot| slot.as_ref()).is_some_and(|texture| {
+            resolve_gl_texture(state, &*texture.read().unwrap(), None, None).is_some()
+        });
     };
     let has_base_color_map = resolves(material.map(|material| &material.base_color_map));
     let has_ramp = resolves(material.map(|material| &material.ramp));
@@ -127,16 +141,25 @@ fn define_key_for_material(state: &mut GlRenderState, material: Option<&ToonMate
         .and_then(|material| material.base_color_map.as_ref())
         .map(|texture| texture.read().unwrap());
     return GlToonDefineKey {
-        alpha_mask_enabled: material.is_some_and(|material| material.alpha_mode == MaterialAlphaMode::Mask),
+        alpha_mask_enabled: material
+            .is_some_and(|material| material.alpha_mode == MaterialAlphaMode::Mask),
         has_base_color_map,
         has_instances: None,
         has_ramp,
         has_skin: None,
-        has_uv_transform: has_gl_uv_transform(base_color_map.as_deref().map(|texture| texture as &dyn TextureVariant)),
+        has_uv_transform: has_gl_uv_transform(
+            base_color_map
+                .as_deref()
+                .map(|texture| texture as &dyn TextureVariant),
+        ),
     };
 }
 
-fn draw_gl_toon_mesh_material(state: &mut GlRenderState, proxy: &Scene3DRenderProxy, geometry: &MeshGeometry) {
+fn draw_gl_toon_mesh_material(
+    state: &mut GlRenderState,
+    proxy: &Scene3DRenderProxy,
+    geometry: &MeshGeometry,
+) {
     let Some(program) = get_gl_scene3d_runtime(state).active_mesh_program.clone() else {
         return;
     };
@@ -146,5 +169,9 @@ fn draw_gl_toon_mesh_material(state: &mut GlRenderState, proxy: &Scene3DRenderPr
 // Registers the built-in Toon renderer for ToonMaterialKind on this state. Opt-in (no top-level side
 // effect); call once per GlRenderState before drawScene3D so meshes with ToonMaterials draw.
 pub fn register_gl_toon_material(state: &mut GlRenderState) {
-    register_gl_mesh_material_renderer(state, TOON_MATERIAL_KIND.to_string(), &GL_TOON_MESH_MATERIAL_RENDERER);
+    register_gl_mesh_material_renderer(
+        state,
+        TOON_MATERIAL_KIND.to_string(),
+        &GL_TOON_MESH_MATERIAL_RENDERER,
+    );
 }

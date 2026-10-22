@@ -10,8 +10,8 @@
 
 use std::any::Any;
 use std::collections::HashMap;
-use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use std::sync::atomic::AtomicBool;
 
 use flight_collision::CollisionShape2D;
 use flight_entity::{EntityRuntimeSlot, Kind, Ref};

@@ -6,7 +6,12 @@ use flight_entity::Ref;
 
 fn track(times: Vec<f32>) -> Ref<AnimationTrack> {
     let values: Vec<f32> = times.iter().map(|_| 0.0).collect();
-    return Arc::new(RwLock::new({ let mut track = create_animation_track(); track.times = times; track.values = values; track }));
+    return Arc::new(RwLock::new({
+        let mut track = create_animation_track();
+        track.times = times;
+        track.values = values;
+        track
+    }));
 }
 
 fn test_target() -> TargetRef {
@@ -24,7 +29,13 @@ mod clone_animation_clip {
         let clip = create_animation_clip(
             vec![create_animation_channel(&source_track, target.clone())],
             None,
-            &[{ let mut event = create_animation_clip_event(); event.time = 0.5; event.name = ("step").to_string(); event.payload = payload; event }],
+            &[{
+                let mut event = create_animation_clip_event();
+                event.time = 0.5;
+                event.name = ("step").to_string();
+                event.payload = payload;
+                event
+            }],
         );
         let cloned = clone_animation_clip(&clip);
         assert!(!Arc::ptr_eq(
@@ -105,8 +116,20 @@ mod create_animation_clip {
 
     #[test]
     fn copies_and_sorts_events_and_includes_their_latest_time_in_derived_duration() {
-        let late = { let mut event = create_animation_clip_event(); event.time = 3.0; event.name = ("late").to_string(); event.payload = 0; event };
-        let early = { let mut event = create_animation_clip_event(); event.time = 1.0; event.name = ("early").to_string(); event.payload = 0; event };
+        let late = {
+            let mut event = create_animation_clip_event();
+            event.time = 3.0;
+            event.name = ("late").to_string();
+            event.payload = 0;
+            event
+        };
+        let early = {
+            let mut event = create_animation_clip_event();
+            event.time = 1.0;
+            event.name = ("early").to_string();
+            event.payload = 0;
+            event
+        };
         let clip = create_animation_clip(vec![], None, &[late, early]);
         assert_eq!(clip.events[0].name, "early");
         assert_eq!(clip.events[1].name, "late");
@@ -116,7 +139,17 @@ mod create_animation_clip {
     #[test]
     #[should_panic(expected = "finite non-negative")]
     fn rejects_negative_event_times() {
-        create_animation_clip(vec![], None, &[{ let mut event = create_animation_clip_event(); event.time = -1.0; event.name = ("bad").to_string(); event.payload = 0; event }]);
+        create_animation_clip(
+            vec![],
+            None,
+            &[{
+                let mut event = create_animation_clip_event();
+                event.time = -1.0;
+                event.name = ("bad").to_string();
+                event.payload = 0;
+                event
+            }],
+        );
     }
 
     #[test]
@@ -125,7 +158,13 @@ mod create_animation_clip {
         create_animation_clip(
             vec![],
             Some(1.0),
-            &[{ let mut event = create_animation_clip_event(); event.time = 2.0; event.name = ("late").to_string(); event.payload = 0; event }],
+            &[{
+                let mut event = create_animation_clip_event();
+                event.time = 2.0;
+                event.name = ("late").to_string();
+                event.payload = 0;
+                event
+            }],
         );
     }
 }
@@ -136,7 +175,13 @@ mod create_animation_clip_event {
     #[test]
     fn creates_an_event_with_opaque_payload() {
         let payload: usize = 42;
-        let event = { let mut event = create_animation_clip_event(); event.time = 0.5; event.name = ("step").to_string(); event.payload = payload; event };
+        let event = {
+            let mut event = create_animation_clip_event();
+            event.time = 0.5;
+            event.name = ("step").to_string();
+            event.payload = payload;
+            event
+        };
         assert_eq!(event.name, "step");
         assert_eq!(event.payload, payload);
         assert_eq!(event.time, 0.5);
@@ -158,10 +203,20 @@ mod initialize_animation_channel {
 
     #[test]
     fn reinitializes_a_channel_with_new_track_and_target() {
-        let track = Arc::new(RwLock::new({ let mut track = create_animation_track(); track.times = vec![0.0]; track.values = vec![1.0]; track }));
+        let track = Arc::new(RwLock::new({
+            let mut track = create_animation_track();
+            track.times = vec![0.0];
+            track.values = vec![1.0];
+            track
+        }));
         let mut ch = create_animation_channel(&track, test_target());
         let new_target = test_target();
-        let new_track = Arc::new(RwLock::new({ let mut track = create_animation_track(); track.times = vec![0.0, 1.0]; track.values = vec![2.0, 4.0]; track }));
+        let new_track = Arc::new(RwLock::new({
+            let mut track = create_animation_track();
+            track.times = vec![0.0, 1.0];
+            track.values = vec![2.0, 4.0];
+            track
+        }));
         initialize_animation_channel(&mut ch, &new_track, new_target.clone());
         assert!(Arc::ptr_eq(&ch.track, &new_track));
         assert!(Arc::ptr_eq(
@@ -178,7 +233,12 @@ mod initialize_animation_clip {
     #[test]
     fn reinitializes_a_clip_with_new_channels() {
         let mut clip = create_animation_clip(vec![], None, &[]);
-        let track = Arc::new(RwLock::new({ let mut track = create_animation_track(); track.times = vec![0.0, 2.0]; track.values = vec![0.0, 1.0]; track }));
+        let track = Arc::new(RwLock::new({
+            let mut track = create_animation_track();
+            track.times = vec![0.0, 2.0];
+            track.values = vec![0.0, 1.0];
+            track
+        }));
         let ch = create_animation_channel(&track, test_target());
         initialize_animation_clip(&mut clip, vec![ch], None, &[]);
         assert_eq!(clip.channels.len(), 1);
@@ -226,7 +286,13 @@ mod sample_animation_clip {
 
     #[test]
     fn releases_the_track_read_guard_before_easing_and_visiting() {
-        let track = Arc::new(RwLock::new({ let mut track = create_animation_track(); track.times = vec![0.0, 1.0]; track.values = vec![0.0, 10.0]; track.easing = Some(Arc::new(reentrant_easing)); track }));
+        let track = Arc::new(RwLock::new({
+            let mut track = create_animation_track();
+            track.times = vec![0.0, 1.0];
+            track.values = vec![0.0, 10.0];
+            track.easing = Some(Arc::new(reentrant_easing));
+            track
+        }));
         *EASING_TRACK
             .get_or_init(|| Mutex::new(None))
             .lock()
@@ -248,8 +314,18 @@ mod sample_animation_clip {
 
     #[test]
     fn samples_every_channel_at_the_given_time_and_visits_each() {
-        let a = Arc::new(RwLock::new({ let mut track = create_animation_track(); track.times = vec![0.0, 1.0]; track.values = vec![0.0, 10.0]; track }));
-        let b = Arc::new(RwLock::new({ let mut track = create_animation_track(); track.times = vec![0.0, 1.0]; track.values = vec![100.0, 200.0]; track }));
+        let a = Arc::new(RwLock::new({
+            let mut track = create_animation_track();
+            track.times = vec![0.0, 1.0];
+            track.values = vec![0.0, 10.0];
+            track
+        }));
+        let b = Arc::new(RwLock::new({
+            let mut track = create_animation_track();
+            track.times = vec![0.0, 1.0];
+            track.values = vec![100.0, 200.0];
+            track
+        }));
         let target_a = test_target();
         let target_b = test_target();
         let clip = create_animation_clip(
@@ -270,8 +346,14 @@ mod sample_animation_clip {
         assert_eq!(seen.len(), 2);
         assert_eq!(seen[0], (0, 5.0));
         assert_eq!(seen[1], (1, 150.0));
-        assert!(Arc::ptr_eq(seen_targets[0].as_ref().unwrap(), target_a.as_ref().unwrap()));
-        assert!(Arc::ptr_eq(seen_targets[1].as_ref().unwrap(), target_b.as_ref().unwrap()));
+        assert!(Arc::ptr_eq(
+            seen_targets[0].as_ref().unwrap(),
+            target_a.as_ref().unwrap()
+        ));
+        assert!(Arc::ptr_eq(
+            seen_targets[1].as_ref().unwrap(),
+            target_b.as_ref().unwrap()
+        ));
     }
 
     #[test]

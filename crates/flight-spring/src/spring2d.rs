@@ -106,17 +106,17 @@ impl Spring2D {
         return is_spring2d_settled(self, target_x, target_y, position_epsilon, velocity_epsilon);
     }
 
-    pub fn reset(&mut self, value_x: f32, value_y: f32, velocity_x: Option<f32>, velocity_y: Option<f32>) {
+    pub fn reset(
+        &mut self,
+        value_x: f32,
+        value_y: f32,
+        velocity_x: Option<f32>,
+        velocity_y: Option<f32>,
+    ) {
         reset_spring2d(self, value_x, value_y, velocity_x, velocity_y);
     }
 
-    pub fn update(
-        &mut self,
-        target_x: f32,
-        target_y: f32,
-        config: &SpringConfig,
-        delta_time: f32,
-    ) {
+    pub fn update(&mut self, target_x: f32, target_y: f32, config: &SpringConfig, delta_time: f32) {
         update_spring2d(self, target_x, target_y, config, delta_time);
     }
 }

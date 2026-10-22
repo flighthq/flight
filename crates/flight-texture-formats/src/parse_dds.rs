@@ -1,12 +1,12 @@
 use flight_entity::Uint8Array;
 
-use flight_buffer::{
-    create_byte_reader, has_byte_reader_bytes, read_byte_reader_u32, skip_byte_reader,
-};
 use crate::texture_level_layout::compute_texture_container_levels;
 use crate::types::{
     TextureContainer, TextureContainerFormat, TextureContainerParseFailureReason,
     TextureContainerSupercompression,
+};
+use flight_buffer::{
+    create_byte_reader, has_byte_reader_bytes, read_byte_reader_u32, skip_byte_reader,
 };
 
 pub fn get_dds_parse_failure_reason(

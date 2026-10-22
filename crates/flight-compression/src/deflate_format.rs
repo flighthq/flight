@@ -7,8 +7,8 @@ use flight_entity::Uint8Array;
 
 /// RFC 1951 length codes 257-285: the base copy length for each code.
 pub const LENGTH_BASE: [i32; 29] = [
-    3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115,
-    131, 163, 195, 227, 258,
+    3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131,
+    163, 195, 227, 258,
 ];
 
 /// RFC 1951 length codes 257-285: the number of extra bits that follow each code.
@@ -24,8 +24,8 @@ pub const DISTANCE_BASE: [i32; 30] = [
 
 /// RFC 1951 distance codes 0-29: the number of extra bits that follow each code.
 pub const DISTANCE_EXTRA: [i32; 30] = [
-    0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12,
-    13, 13,
+    0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13,
+    13,
 ];
 
 /// The RFC 1950 checksum, over the UNCOMPRESSED bytes. Written by the encoder into the zlib trailer and

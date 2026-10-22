@@ -1,8 +1,8 @@
 use std::sync::LazyLock;
 
 use flight_compression::{
-    HostCompressCapabilities, HostDecompressCapabilities, SDK_HOST_COMPRESS_DEFLATE, SDK_HOST_COMPRESS_LZMA,
-    SDK_HOST_DECOMPRESS_DEFLATE, SDK_HOST_DECOMPRESS_LZMA,
+    HostCompressCapabilities, HostDecompressCapabilities, SDK_HOST_COMPRESS_DEFLATE,
+    SDK_HOST_COMPRESS_LZMA, SDK_HOST_DECOMPRESS_DEFLATE, SDK_HOST_DECOMPRESS_LZMA,
 };
 
 /// The SDK's own host (TS `sdkHost`): the capabilities the SDK implements in portable code, with no

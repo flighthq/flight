@@ -4,9 +4,9 @@
 
 use std::sync::LazyLock;
 
-use flight_entity::Ref;
 use flight_camera::Camera3D;
 use flight_color::{LinearColor, allocate_linear_color, unpack_color_to_linear};
+use flight_entity::Ref;
 use flight_entity::get_entity_id;
 use flight_lighting::Scene3DLightBlock;
 use flight_materials::{Material, MaterialAlphaMode, UNLIT_MATERIAL_KIND, UnlitMaterial};
@@ -28,7 +28,8 @@ use crate::wgpu_unlit_prelude::{bind_wgpu_unlit_surface, ensure_wgpu_unlit_pipel
 // The identity the material-less fallback bind caches its binding under (TS: a module-level `{}`
 // object). A real entity, so its key is a numeric entity id (D12/D15): unique to this renderer and
 // never reused, so it cannot alias a material's binding or another renderer's fallback.
-static FALLBACK_MATERIAL: LazyLock<UnlitMaterial> = LazyLock::new(flight_materials::contract::create_unlit_material);
+static FALLBACK_MATERIAL: LazyLock<UnlitMaterial> =
+    LazyLock::new(flight_materials::contract::create_unlit_material);
 
 /// The Unlit mesh-material renderer for `UNLIT_MATERIAL_KIND` (TS `wgpuUnlitMeshMaterialRenderer`).
 pub static WGPU_UNLIT_MESH_MATERIAL_RENDERER: WgpuMeshMaterialRenderer = WgpuMeshMaterialRenderer {
