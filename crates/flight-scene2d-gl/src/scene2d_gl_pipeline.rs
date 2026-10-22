@@ -35,19 +35,43 @@ use crate::gl_tilemap::GL_TILEMAP_RENDERER;
 
 fn build_scene2d_gl_renderers() -> KindMap<&'static NodeRenderer<GlRenderState>> {
     let mut table = empty_kind_map();
-    table = with_kind_map_entry(&table, BITMAP_TEXT_KIND.to_string(), &GL_BITMAP_TEXT_RENDERER);
-    table = with_kind_map_entry(&table, DISPLAY_OBJECT_KIND.to_string(), &GL_SCENE2D_RENDERER);
-    table = with_kind_map_entry(&table, MORPH_SHAPE_KIND.to_string(), GL_MORPH_SHAPE_RENDERER);
+    table = with_kind_map_entry(
+        &table,
+        BITMAP_TEXT_KIND.to_string(),
+        &GL_BITMAP_TEXT_RENDERER,
+    );
+    table = with_kind_map_entry(
+        &table,
+        DISPLAY_OBJECT_KIND.to_string(),
+        &GL_SCENE2D_RENDERER,
+    );
+    table = with_kind_map_entry(
+        &table,
+        MORPH_SHAPE_KIND.to_string(),
+        GL_MORPH_SHAPE_RENDERER,
+    );
     table = with_kind_map_entry(
         &table,
         PARTICLE_EMITTER_2D_KIND.to_string(),
         &GL_PARTICLE_EMITTER2D_RENDERER,
     );
     table = with_kind_map_entry(&table, QUAD_BATCH_KIND.to_string(), &GL_QUAD_BATCH_RENDERER);
-    table = with_kind_map_entry(&table, RENDER_CACHE_KIND.to_string(), &GL_RENDER_CACHE_RENDERER);
+    table = with_kind_map_entry(
+        &table,
+        RENDER_CACHE_KIND.to_string(),
+        &GL_RENDER_CACHE_RENDERER,
+    );
     table = with_kind_map_entry(&table, RICH_TEXT_KIND.to_string(), &GL_RICH_TEXT_RENDERER);
-    table = with_kind_map_entry(&table, SCALE9_SPRITE_KIND.to_string(), &GL_SCALE9_SPRITE_RENDERER);
-    table = with_kind_map_entry(&table, SCALE9_SHAPE_KIND.to_string(), &GL_SCALE9_SHAPE_RENDERER);
+    table = with_kind_map_entry(
+        &table,
+        SCALE9_SPRITE_KIND.to_string(),
+        &GL_SCALE9_SPRITE_RENDERER,
+    );
+    table = with_kind_map_entry(
+        &table,
+        SCALE9_SHAPE_KIND.to_string(),
+        &GL_SCALE9_SHAPE_RENDERER,
+    );
     table = with_kind_map_entry(&table, SHAPE_KIND.to_string(), &GL_SHAPE_RENDERER);
     table = with_kind_map_entry(&table, SPRITE_KIND.to_string(), &GL_SPRITE_RENDERER);
     table = with_kind_map_entry(&table, TEXT_LABEL_KIND.to_string(), &GL_TEXT_LABEL_RENDERER);

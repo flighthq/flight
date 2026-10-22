@@ -1,4 +1,6 @@
-use flight_clip::{create_clip_region_from_contours, create_clip_region_from_rectangle, create_clip_region_state};
+use flight_clip::{
+    create_clip_region_from_contours, create_clip_region_from_rectangle, create_clip_region_state,
+};
 use flight_geometry::create_rectangle;
 use flight_node::NodeRef;
 use flight_path::PathWinding;
@@ -59,7 +61,10 @@ mod enable_gl_clip_support {
 
         push(&mut state, &source, 1);
 
-        assert_eq!(last_call("enable").integers, vec![i64::from(glow::SCISSOR_TEST)]);
+        assert_eq!(
+            last_call("enable").integers,
+            vec![i64::from(glow::SCISSOR_TEST)]
+        );
         assert_eq!(state.gl_runtime.borrow().clip_forms, vec![GlClipForm::Rect]);
     }
 

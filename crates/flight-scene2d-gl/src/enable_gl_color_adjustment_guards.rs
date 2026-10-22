@@ -17,7 +17,10 @@ pub fn are_gl_color_adjustment_guards_enabled(state: &GlRenderState) -> bool {
 // production default — costs the batch nothing. Idempotent. The warning goes to `log_state`, kept as
 // the state's guard log.
 // flight-lint: allow(conform-params) D5 caller-owned LogState replaces the TS logging singleton
-pub fn enable_gl_color_adjustment_guards(state: &mut GlRenderState, log_state: Option<LogStateRef>) {
+pub fn enable_gl_color_adjustment_guards(
+    state: &mut GlRenderState,
+    log_state: Option<LogStateRef>,
+) {
     state.gl_runtime.borrow_mut().guard_log = log_state;
     let installed = state
         .gl_registries
@@ -30,7 +33,8 @@ pub fn enable_gl_color_adjustment_guards(state: &mut GlRenderState, log_state: O
             )
         });
     if !installed {
-        state.gl_registries.color_adjustment_feature_guard = Some(warn_gl_color_adjustment_not_enabled);
+        state.gl_registries.color_adjustment_feature_guard =
+            Some(warn_gl_color_adjustment_not_enabled);
     }
 }
 

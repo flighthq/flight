@@ -57,7 +57,11 @@ pub fn render_gl_scene2d(
         else {
             continue;
         };
-        let Some(data) = proxies.entries.get_mut(index).and_then(|entry| entry.as_mut()) else {
+        let Some(data) = proxies
+            .entries
+            .get_mut(index)
+            .and_then(|entry| entry.as_mut())
+        else {
             continue;
         };
 

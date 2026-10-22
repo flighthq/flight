@@ -156,7 +156,9 @@ mod draw_gl_shape_meshes {
         let mut state = create_gl_state();
         register_gl_color_adjustment_material_feature(&mut state);
         let mut proxy = make_proxy(&mut state);
-        proxy.color_scale_bias = Some(make_color_scale_bias(0.5, 0.5, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0));
+        proxy.color_scale_bias = Some(make_color_scale_bias(
+            0.5, 0.5, 0.5, 1.0, 0.5, 0.0, 0.0, 0.0,
+        ));
         let mut mesh = triangle();
         mesh.color = 0xffffffff;
 
@@ -172,9 +174,18 @@ mod draw_gl_shape_meshes {
             .color_scale_bias_shader
             .clone()
             .unwrap();
-        assert!(has_uniform_4(shader.color_scale_location.as_ref(), [0.5, 0.5, 0.5, 1.0]));
-        assert!(has_uniform_4(shader.color_bias_location.as_ref(), [0.5, 0.0, 0.0, 0.0]));
-        assert!(has_uniform_4(shader.color_location.as_ref(), [1.0, 1.0, 1.0, 1.0]));
+        assert!(has_uniform_4(
+            shader.color_scale_location.as_ref(),
+            [0.5, 0.5, 0.5, 1.0]
+        ));
+        assert!(has_uniform_4(
+            shader.color_bias_location.as_ref(),
+            [0.5, 0.0, 0.0, 0.0]
+        ));
+        assert!(has_uniform_4(
+            shader.color_location.as_ref(),
+            [1.0, 1.0, 1.0, 1.0]
+        ));
         assert_eq!(count_calls("draw_elements"), 1);
     }
 

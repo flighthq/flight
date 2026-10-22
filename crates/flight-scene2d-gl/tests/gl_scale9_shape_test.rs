@@ -39,7 +39,10 @@ fn new_data(state: &mut GlRenderState) -> RendererDataRef {
     return create_gl_scale9_shape_data(state, &scale9_node()).unwrap();
 }
 
-fn acquire_from_state(state: &GlRenderState, data: &RendererDataRef) -> Ref<flight_surface::CanvasSurface> {
+fn acquire_from_state(
+    state: &GlRenderState,
+    data: &RendererDataRef,
+) -> Ref<flight_surface::CanvasSurface> {
     let canvas_host = state.canvas_host.clone().unwrap();
     let image_host = state.image_host.clone().unwrap();
     let mut guard = data.write().unwrap();
@@ -54,7 +57,8 @@ fn acquire_from_state(state: &GlRenderState, data: &RendererDataRef) -> Ref<flig
 
 fn draw_proxy(state: &mut GlRenderState, node: &NodeRef) -> bool {
     let mut proxies = make_proxies();
-    let proxy: &RenderProxy2D<GlRenderState> = get_or_create_render_proxy_2d(state, &mut proxies, node);
+    let proxy: &RenderProxy2D<GlRenderState> =
+        get_or_create_render_proxy_2d(state, &mut proxies, node);
     let has_data = proxy.renderer_data.is_some();
     draw_gl_scale9_shape(state, proxy);
     return has_data;
@@ -76,7 +80,11 @@ mod acquire_gl_scale9_shape_raster_surface {
             create_surface: Arc::new(move |_, _| {
                 let mut count = counter.lock().unwrap();
                 *count += 1;
-                if *count == 1 { None } else { Some(returned.clone()) }
+                if *count == 1 {
+                    None
+                } else {
+                    Some(returned.clone())
+                }
             }),
             destroy_surface: Arc::new(|_| {}),
             release: Arc::new(|_| {}),
@@ -88,13 +96,18 @@ mod acquire_gl_scale9_shape_raster_surface {
         let data = get_gl_scale9_shape_data(&mut *guard).unwrap();
         let mut surfaces = surfaces();
 
-        assert!(acquire_gl_scale9_shape_raster_surface(&mut surfaces, &canvas_host, &image_host, data).is_none());
+        assert!(
+            acquire_gl_scale9_shape_raster_surface(&mut surfaces, &canvas_host, &image_host, data)
+                .is_none()
+        );
         assert!(data.surface.is_none());
         let first =
-            acquire_gl_scale9_shape_raster_surface(&mut surfaces, &canvas_host, &image_host, data).unwrap();
+            acquire_gl_scale9_shape_raster_surface(&mut surfaces, &canvas_host, &image_host, data)
+                .unwrap();
         assert!(Arc::ptr_eq(&first, &surface));
         let second =
-            acquire_gl_scale9_shape_raster_surface(&mut surfaces, &canvas_host, &image_host, data).unwrap();
+            acquire_gl_scale9_shape_raster_surface(&mut surfaces, &canvas_host, &image_host, data)
+                .unwrap();
         assert!(Arc::ptr_eq(&second, &surface));
         assert_eq!(*attempts.lock().unwrap(), 2);
     }
@@ -108,7 +121,11 @@ mod acquire_gl_scale9_shape_raster_surface {
         let second = acquire_from_state(&state, &second_data);
         let image_of = |data: &RendererDataRef| {
             let mut guard = data.write().unwrap();
-            get_gl_scale9_shape_data(&mut *guard).unwrap().image.clone().unwrap()
+            get_gl_scale9_shape_data(&mut *guard)
+                .unwrap()
+                .image
+                .clone()
+                .unwrap()
         };
         let first_image = image_of(&first_data);
         let second_image = image_of(&second_data);
@@ -146,7 +163,12 @@ mod create_gl_scale9_shape_data {
         let (mut state, _hosts) = create_gl_state_with_hosts();
         let data = new_data(&mut state);
         let mut guard = data.write().unwrap();
-        assert!(get_gl_scale9_shape_data(&mut *guard).unwrap().surface.is_none());
+        assert!(
+            get_gl_scale9_shape_data(&mut *guard)
+                .unwrap()
+                .surface
+                .is_none()
+        );
         assert_eq!(count_calls("gen_textures"), 0);
     }
 }
@@ -172,7 +194,11 @@ mod destroy_gl_scale9_shape_data {
         acquire_from_state(&state, &data);
         let image = {
             let mut guard = data.write().unwrap();
-            get_gl_scale9_shape_data(&mut *guard).unwrap().image.clone().unwrap()
+            get_gl_scale9_shape_data(&mut *guard)
+                .unwrap()
+                .image
+                .clone()
+                .unwrap()
         };
         let image_id = get_entity_id(&*image.read().unwrap());
         let texture = flight_render_gl::create_gl_texture(&state).unwrap();
@@ -267,7 +293,12 @@ mod get_gl_scale9_shape_data {
         let (mut state, _hosts) = create_gl_state_with_hosts();
         let data = new_data(&mut state);
         let mut guard = data.write().unwrap();
-        assert!(get_gl_scale9_shape_data(&mut *guard).unwrap().surface.is_none());
+        assert!(
+            get_gl_scale9_shape_data(&mut *guard)
+                .unwrap()
+                .surface
+                .is_none()
+        );
     }
 }
 

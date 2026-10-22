@@ -49,7 +49,10 @@ fn draw_clip_contours(state: &GlRenderState, program: &GlClipProgram, contours: 
             if contour.len() < 6 {
                 continue;
             }
-            let points = contour.iter().map(|value| *value as f32).collect::<Vec<_>>();
+            let points = contour
+                .iter()
+                .map(|value| *value as f32)
+                .collect::<Vec<_>>();
             gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, gl_f32_bytes(&points), glow::STREAM_DRAW);
             // TRIANGLE_FAN fills the (possibly concave) polygon into the stencil; the winding op
             // handles correctness.

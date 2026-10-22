@@ -115,8 +115,13 @@ fn ensure_gl_velocity_program(state: &GlRenderState) -> GlVelocityProgram {
     }
 
     let gl = &state.gl;
-    let gl_program = create_gl_program(gl, VELOCITY_VERTEX_SRC, VELOCITY_FRAGMENT_SRC, Some("Velocity"))
-        .unwrap_or_else(|error| throw_error(&error));
+    let gl_program = create_gl_program(
+        gl,
+        VELOCITY_VERTEX_SRC,
+        VELOCITY_FRAGMENT_SRC,
+        Some("Velocity"),
+    )
+    .unwrap_or_else(|error| throw_error(&error));
 
     let quad: [f32; 12] = [0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0];
     // SAFETY: allocation, upload and location queries occur on the owning GL thread.
@@ -147,7 +152,11 @@ pub fn get_gl_velocity_writer(state: &GlRenderState, kind: &Kind) -> Option<GlVe
 // Batched/instanced kinds register a writer that emits per-instance velocity.
 pub fn gl_node2d_velocity_writer(ctx: &mut GlVelocityContext<'_>, node: &NodeRef) {
     let mut velocity = Velocity2D { x: 0.0, y: 0.0 };
-    get_velocity(ctx.field, get_entity_id(&*node.read().unwrap()), &mut velocity);
+    get_velocity(
+        ctx.field,
+        get_entity_id(&*node.read().unwrap()),
+        &mut velocity,
+    );
     if velocity.x == 0.0 && velocity.y == 0.0 {
         return;
     }
@@ -238,14 +247,29 @@ pub fn gl_particle_emitter2d_velocity_writer(ctx: &mut GlVelocityContext<'_>, no
                 let ly = (corner >> 1) as f32 * rh;
                 let rx = cos_scale * lx - sin_scale * ly + px;
                 let ry = sin_scale * lx + cos_scale * ly + py;
-                let wx = if world_space { rx } else { wa * rx + wc * ry + wtx };
-                let wy = if world_space { ry } else { wb * rx + wd * ry + wty };
+                let wx = if world_space {
+                    rx
+                } else {
+                    wa * rx + wc * ry + wtx
+                };
+                let wy = if world_space {
+                    ry
+                } else {
+                    wb * rx + wd * ry + wty
+                };
                 min_x = min_x.min(wx);
                 max_x = max_x.max(wx);
                 min_y = min_y.min(wy);
                 max_y = max_y.max(wy);
             }
-            quads.push((min_x, min_y, max_x - min_x, max_y - min_y, velocity_x, velocity_y));
+            quads.push((
+                min_x,
+                min_y,
+                max_x - min_x,
+                max_y - min_y,
+                velocity_x,
+                velocity_y,
+            ));
         }
     }
     for (x, y, width, height, velocity_x, velocity_y) in quads {
@@ -295,7 +319,10 @@ pub fn gl_quad_batch_velocity_writer(ctx: &mut GlVelocityContext<'_>, node: &Nod
             let transforms = &data.transforms;
             for index in 0..data.instance_count {
                 let velocity_x = instance_velocities.get(index * 2).copied().unwrap_or(0.0);
-                let velocity_y = instance_velocities.get(index * 2 + 1).copied().unwrap_or(0.0);
+                let velocity_y = instance_velocities
+                    .get(index * 2 + 1)
+                    .copied()
+                    .unwrap_or(0.0);
                 if velocity_x == 0.0 && velocity_y == 0.0 {
                     continue;
                 }
@@ -315,7 +342,14 @@ pub fn gl_quad_batch_velocity_writer(ctx: &mut GlVelocityContext<'_>, node: &Nod
                 let (wa, wb, wc, wd, wtx, wty) = if is_vector2 {
                     let dx = transforms[index * 2];
                     let dy = transforms[index * 2 + 1];
-                    (pa, pb, pc, pd, pa * dx + pc * dy + ptx, pb * dx + pd * dy + pty)
+                    (
+                        pa,
+                        pb,
+                        pc,
+                        pd,
+                        pa * dx + pc * dy + ptx,
+                        pb * dx + pd * dy + pty,
+                    )
                 } else {
                     let o = index * 6;
                     let (la, lb, lc, ld, ltx, lty) = (
@@ -349,7 +383,14 @@ pub fn gl_quad_batch_velocity_writer(ctx: &mut GlVelocityContext<'_>, node: &Nod
                 let min_y = y0.min(y1).min(y2).min(y3);
                 let max_x = x0.max(x1).max(x2).max(x3);
                 let max_y = y0.max(y1).max(y2).max(y3);
-                quads.push((min_x, min_y, max_x - min_x, max_y - min_y, velocity_x, velocity_y));
+                quads.push((
+                    min_x,
+                    min_y,
+                    max_x - min_x,
+                    max_y - min_y,
+                    velocity_x,
+                    velocity_y,
+                ));
             }
         }
         for (x, y, width, height, velocity_x, velocity_y) in quads {
@@ -362,7 +403,11 @@ pub fn gl_quad_batch_velocity_writer(ctx: &mut GlVelocityContext<'_>, node: &Nod
     gl_node2d_velocity_writer(ctx, node);
 }
 
-pub fn register_gl_velocity_writer(state: &mut GlRenderState, kind: Kind, writer: GlVelocityWriter) {
+pub fn register_gl_velocity_writer(
+    state: &mut GlRenderState,
+    kind: Kind,
+    writer: GlVelocityWriter,
+) {
     let slot: GlVelocityWriterSlot = Arc::new(writer);
     state.gl_registries.velocity_writers = Arc::new(with_kind_map_entry(
         &state.gl_registries.velocity_writers,

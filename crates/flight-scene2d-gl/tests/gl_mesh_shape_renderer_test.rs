@@ -10,7 +10,8 @@ use flight_render_gl::GlRenderState;
 use flight_scene2d_gl::*;
 use flight_shape::contract::{
     GradientType, Shape, append_shape_begin_fill, append_shape_begin_gradient_fill,
-    append_shape_end_fill, append_shape_rectangle, create_shape, register_default_shape_bounds_commands,
+    append_shape_end_fill, append_shape_rectangle, create_shape,
+    register_default_shape_bounds_commands,
 };
 
 use crate::gl_test_helper::{count_calls, create_gl_state, make_scene2d_proxy};

@@ -13,7 +13,9 @@ use flight_render::{
 };
 use flight_render_gl::{GlRenderState, bind_gl_image_resource_texture};
 use flight_surface::{CanvasSurface, SurfaceRef};
-use flight_text::contract::{TextLabel, compute_text_format_font_string, get_text_label_runtime, get_text_layout_result};
+use flight_text::contract::{
+    TextLabel, compute_text_format_font_string, get_text_label_runtime, get_text_layout_result,
+};
 use flight_textformat::TextFormat;
 use flight_textlayout::contract::{
     TextAutoSize, TextLayoutParams, TextMeasureFunction, TextVerticalAlign, compute_text_layout,
@@ -41,7 +43,10 @@ pub static GL_TEXT_LABEL_RENDERER: NodeRenderer<GlRenderState> = NodeRenderer {
     submit: draw_gl_text_label,
 };
 
-fn create_gl_text_label_data(_state: &mut GlRenderState, _source: &NodeRef) -> Option<RendererDataRef> {
+fn create_gl_text_label_data(
+    _state: &mut GlRenderState,
+    _source: &NodeRef,
+) -> Option<RendererDataRef> {
     let mut out: GlTextLabelData = allocate_entity();
     initialize_gl_text_label_data(&mut out);
     return Some(Arc::new(RwLock::new(out)));
@@ -71,7 +76,10 @@ fn destroy_gl_text_label_data(state: &mut GlRenderState, data: RendererDataRef) 
     if let Some(image) = &text_data.image {
         delete_gl_premultiplied_image_texture(state, image);
     }
-    destroy_canvas_host_surface(&mut state.gl_runtime.borrow_mut().canvas_host_surfaces, surface);
+    destroy_canvas_host_surface(
+        &mut state.gl_runtime.borrow_mut().canvas_host_surfaces,
+        surface,
+    );
 }
 
 pub fn draw_gl_text_label(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>) {
@@ -201,7 +209,11 @@ pub fn draw_gl_text_label(state: &mut GlRenderState, render_proxy: &RenderProxy2
             let end = group.end_index.min(utf16.len());
             let start = group.start_index.min(end);
             let slice = String::from_utf16_lossy(&utf16[start..end]);
-            context.fill_text(&slice, group.offset_x, group.offset_y + group.ascent * 0.815);
+            context.fill_text(
+                &slice,
+                group.offset_x,
+                group.offset_y + group.ascent * 0.815,
+            );
         }
 
         if let Some(image) = &text_data.image {
@@ -249,7 +261,10 @@ pub fn draw_gl_text_label(state: &mut GlRenderState, render_proxy: &RenderProxy2
     let base = start_instance * QUAD_BATCH_INSTANCE_FLOATS;
     let t = &render_proxy.transform_2d;
     write_gl_quad_batch_instance(
-        &mut state.gl_runtime.borrow_mut().quad_batch_writer_instance_data,
+        &mut state
+            .gl_runtime
+            .borrow_mut()
+            .quad_batch_writer_instance_data,
         base,
         &create_matrix(t.a, t.b, t.c, t.d, t.tx, t.ty),
         log_w,
@@ -285,7 +300,10 @@ fn ensure_gl_text_label_surface(
         if let Some(image) = &data.image {
             delete_gl_premultiplied_image_texture(state, image);
         }
-        destroy_canvas_host_surface(&mut state.gl_runtime.borrow_mut().canvas_host_surfaces, &surface);
+        destroy_canvas_host_surface(
+            &mut state.gl_runtime.borrow_mut().canvas_host_surfaces,
+            &surface,
+        );
     }
     let (Some(canvas_host), Some(image_host)) = (&state.canvas_host, &state.image_host) else {
         data.surface = None;

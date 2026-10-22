@@ -6,15 +6,21 @@ use glow::HasContext;
 
 use crate::gl_quad_batch_writer::{flush_gl_quad_batch_writer, get_gl_viewport_size};
 
-fn compute_scissor_rect(state: &GlRenderState, rect: &Rectangle, transform: &Matrix) -> GlScissorRect {
+fn compute_scissor_rect(
+    state: &GlRenderState,
+    rect: &Rectangle,
+    transform: &Matrix,
+) -> GlScissorRect {
     let x0 = transform.a * rect.x + transform.c * rect.y + transform.tx;
     let y0 = transform.b * rect.x + transform.d * rect.y + transform.ty;
     let x1 = transform.a * (rect.x + rect.width) + transform.c * rect.y + transform.tx;
     let y1 = transform.b * (rect.x + rect.width) + transform.d * rect.y + transform.ty;
     let x2 = transform.a * rect.x + transform.c * (rect.y + rect.height) + transform.tx;
     let y2 = transform.b * rect.x + transform.d * (rect.y + rect.height) + transform.ty;
-    let x3 = transform.a * (rect.x + rect.width) + transform.c * (rect.y + rect.height) + transform.tx;
-    let y3 = transform.b * (rect.x + rect.width) + transform.d * (rect.y + rect.height) + transform.ty;
+    let x3 =
+        transform.a * (rect.x + rect.width) + transform.c * (rect.y + rect.height) + transform.tx;
+    let y3 =
+        transform.b * (rect.x + rect.width) + transform.d * (rect.y + rect.height) + transform.ty;
 
     let viewport = state.gl_runtime.borrow().render_target_viewport;
     let (viewport_width, viewport_height) = get_gl_viewport_size(state);

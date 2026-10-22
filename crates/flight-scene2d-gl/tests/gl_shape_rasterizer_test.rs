@@ -30,7 +30,10 @@ mod register_gl_shape_rasterizer {
 
         register_gl_shape_rasterizer(&mut state, Some(rasterizer.clone()));
 
-        assert!(Arc::ptr_eq(&get_gl_shape_rasterizer(&state).unwrap(), &rasterizer));
+        assert!(Arc::ptr_eq(
+            &get_gl_shape_rasterizer(&state).unwrap(),
+            &rasterizer
+        ));
         assert!(state.gl_registries.shape_rasterizer.is_some());
         assert!(before.is_none());
     }

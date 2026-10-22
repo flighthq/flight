@@ -40,7 +40,10 @@ pub static GL_MESH_SHAPE_RENDERER: NodeRenderer<GlRenderState> = NodeRenderer {
 //
 // Resolution-independent: the meshes are cached against the node's content revision and drawn crisp
 // at any zoom, so nothing here allocates a canvas or depends on the pixel ratio.
-pub fn draw_gl_mesh_shape(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>) -> bool {
+pub fn draw_gl_mesh_shape(
+    state: &mut GlRenderState,
+    render_proxy: &RenderProxy2D<GlRenderState>,
+) -> bool {
     let source = render_proxy.source.read().unwrap();
     let Some(commands) = get_gl_shape_commands(&*source) else {
         return false;
@@ -132,12 +135,20 @@ fn resolve_gl_shape_mesh_regions(
         let stroke_regions = get_shape_stroke_outline_regions(commands)?;
         regions.extend(stroke_regions.into_iter().map(GlShapeMeshRegion::Fill));
     }
-    return if regions.is_empty() { None } else { Some(regions) };
+    return if regions.is_empty() {
+        None
+    } else {
+        Some(regions)
+    };
 }
 
 fn submit_gl_mesh_shape(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>) {
     if draw_gl_mesh_shape(state, render_proxy) {
         return;
     }
-    emit_render_registry_miss(state, RenderRegistryTable::ShapeRasterizer, SHAPE_KIND.to_string());
+    emit_render_registry_miss(
+        state,
+        RenderRegistryTable::ShapeRasterizer,
+        SHAPE_KIND.to_string(),
+    );
 }

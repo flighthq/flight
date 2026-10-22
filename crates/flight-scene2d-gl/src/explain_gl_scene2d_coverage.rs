@@ -152,7 +152,11 @@ pub fn has_gl_scene2d_coverage(state: &GlRenderState, usage: &Scene2DKindUsage) 
     return !collect_gl_scene2d_coverage_gaps(None, state, usage, true, None);
 }
 
-fn satisfied_entry(facet: RequirementFacet, kind: &str, registry: RenderRegistryTable) -> SceneCoverageEntry {
+fn satisfied_entry(
+    facet: RequirementFacet,
+    kind: &str,
+    registry: RenderRegistryTable,
+) -> SceneCoverageEntry {
     return SceneCoverageEntry {
         coverage: SceneCoverage::Satisfied,
         facet,

@@ -142,7 +142,14 @@ pub fn draw_gl_particle_emitter2d(
     if let Some(apply_blend_mode) = state.apply_blend_mode {
         apply_blend_mode(state, render_proxy.blend_mode.as_ref());
     }
-    if resolve_gl_texture(state, &*texture, Some(true), Some(SCENE2D_WORKING_COLOR_SPACE)).is_none() {
+    if resolve_gl_texture(
+        state,
+        &*texture,
+        Some(true),
+        Some(SCENE2D_WORKING_COLOR_SPACE),
+    )
+    .is_none()
+    {
         return;
     }
 
@@ -298,7 +305,10 @@ pub fn draw_gl_particle_emitter2d(
     unsafe {
         gl.uniform_matrix_3_f32_slice(shader.loc_world_matrix.as_ref(), false, &matrix);
         gl.uniform_1_i32(shader.loc_texture.as_ref(), 0);
-        gl.uniform_1_i32(shader.loc_straight_texture_alpha.as_ref(), if straight { 1 } else { 0 });
+        gl.uniform_1_i32(
+            shader.loc_straight_texture_alpha.as_ref(),
+            if straight { 1 } else { 0 },
+        );
 
         // Per-vertex: corner buffer.
         gl.bind_buffer(glow::ARRAY_BUFFER, Some(resources.corner_buffer));
@@ -317,13 +327,26 @@ pub fn draw_gl_particle_emitter2d(
             (shader.loc_size, 2, 48),
         ] {
             gl.enable_vertex_attrib_array(location);
-            gl.vertex_attrib_pointer_f32(location, size, glow::FLOAT, false, INSTANCE_STRIDE, offset);
+            gl.vertex_attrib_pointer_f32(
+                location,
+                size,
+                glow::FLOAT,
+                false,
+                INSTANCE_STRIDE,
+                offset,
+            );
             gl.vertex_attrib_divisor(location, 1);
         }
 
         // Single draw call for all particles.
         gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, index_buffer);
-        gl.draw_elements_instanced(glow::TRIANGLES, 6, glow::UNSIGNED_SHORT, 0, draw_count as i32);
+        gl.draw_elements_instanced(
+            glow::TRIANGLES,
+            6,
+            glow::UNSIGNED_SHORT,
+            0,
+            draw_count as i32,
+        );
 
         // Reset divisors so other renderers are not affected.
         for location in [
@@ -364,14 +387,21 @@ fn ensure_instance_capacity(state: &GlRenderState, count: usize) {
     // SAFETY: the instance buffer belongs to this context; reallocation occurs on the GL thread.
     unsafe {
         state.gl.bind_buffer(glow::ARRAY_BUFFER, instance_buffer);
-        state
-            .gl
-            .buffer_data_size(glow::ARRAY_BUFFER, (new_size * 4) as i32, glow::DYNAMIC_DRAW);
+        state.gl.buffer_data_size(
+            glow::ARRAY_BUFFER,
+            (new_size * 4) as i32,
+            glow::DYNAMIC_DRAW,
+        );
     }
 }
 
 fn ensure_particle_shader(state: &GlRenderState) -> GlParticleShader {
-    if let Some(resources) = &state.context_state.runtime_state.borrow().particle_resources {
+    if let Some(resources) = &state
+        .context_state
+        .runtime_state
+        .borrow()
+        .particle_resources
+    {
         return resources.shader.clone();
     }
 
@@ -386,14 +416,22 @@ fn ensure_particle_shader(state: &GlRenderState) -> GlParticleShader {
             .create_buffer()
             .unwrap_or_else(|error| throw_error(&format!("drawGlParticleEmitter2D: {error}")));
         gl.bind_buffer(glow::ARRAY_BUFFER, Some(corner));
-        gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, gl_f32_bytes(&corner_data), glow::STATIC_DRAW);
+        gl.buffer_data_u8_slice(
+            glow::ARRAY_BUFFER,
+            gl_f32_bytes(&corner_data),
+            glow::STATIC_DRAW,
+        );
         // Dynamic instance buffer — starts empty, grows as needed.
         let instance = gl
             .create_buffer()
             .unwrap_or_else(|error| throw_error(&format!("drawGlParticleEmitter2D: {error}")));
         (corner, instance)
     };
-    state.context_state.runtime_state.borrow_mut().particle_resources = Some(GlParticleResources {
+    state
+        .context_state
+        .runtime_state
+        .borrow_mut()
+        .particle_resources = Some(GlParticleResources {
         corner_buffer,
         instance_buffer,
         shader: shader.clone(),

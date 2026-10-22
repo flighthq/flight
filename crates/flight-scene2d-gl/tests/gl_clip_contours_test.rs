@@ -4,9 +4,7 @@ use std::sync::{Arc, RwLock};
 use flight_geometry::create_matrix;
 use flight_path::PathWinding;
 use flight_render::{RenderTargetDepth, create_render_cache};
-use flight_render_gl::{
-    begin_gl_render_pass, create_gl_texture_render_target, end_gl_render_pass,
-};
+use flight_render_gl::{begin_gl_render_pass, create_gl_texture_render_target, end_gl_render_pass};
 use flight_scene2d_gl::*;
 use glow::HasContext;
 
@@ -46,7 +44,8 @@ mod push_gl_clip_contours {
     use super::*;
 
     #[test]
-    fn rejects_a_shared_context_cache_refresh_into_the_contour_target_before_it_can_clear_coverage() {
+    fn rejects_a_shared_context_cache_refresh_into_the_contour_target_before_it_can_clear_coverage()
+    {
         let mut state = create_gl_state();
         let cache = Arc::new(RwLock::new(create_render_cache()));
         let mut cache_state = create_gl_cache_state(&state, None);
@@ -60,7 +59,14 @@ mod push_gl_clip_contours {
         let stencil_clear_count = calls_with("clear").len();
 
         let result = catch_unwind(AssertUnwindSafe(|| {
-            refresh_gl_render_cache(&state, &mut cache_state, &mut cache_proxies, &cache, &source, None)
+            refresh_gl_render_cache(
+                &state,
+                &mut cache_state,
+                &mut cache_proxies,
+                &cache,
+                &source,
+                None,
+            )
         }));
 
         let error = result.expect_err("refresh into the contour target must throw");
@@ -108,9 +114,18 @@ mod push_gl_clip_contours {
         );
 
         let framebuffer = i64::from(outer.framebuffer.0.get());
-        assert_eq!(*last_call("bind_framebuffer").integers.last().unwrap(), framebuffer);
-        assert_eq!(state.gl_runtime.borrow().current_framebuffer, Some(outer.framebuffer));
-        assert_eq!(state.gl_runtime.borrow().current_scissor_rect, outer_scissor);
+        assert_eq!(
+            *last_call("bind_framebuffer").integers.last().unwrap(),
+            framebuffer
+        );
+        assert_eq!(
+            state.gl_runtime.borrow().current_framebuffer,
+            Some(outer.framebuffer)
+        );
+        assert_eq!(
+            state.gl_runtime.borrow().current_scissor_rect,
+            outer_scissor
+        );
         end_gl_render_pass(&state, &pass).unwrap();
     }
 

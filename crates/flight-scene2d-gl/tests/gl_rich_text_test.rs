@@ -95,10 +95,10 @@ mod destroy_gl_rich_text_data {
             create: Arc::new(|_, _, _, _| None),
             create_surface: Arc::new(|width, height| Some(make_canvas_surface(width, height))),
             destroy_surface: Arc::new(move |_| {
-                recorded
-                    .lock()
-                    .unwrap()
-                    .push(format!("surface after {} texture deletes", count_calls("delete_textures")));
+                recorded.lock().unwrap().push(format!(
+                    "surface after {} texture deletes",
+                    count_calls("delete_textures")
+                ));
             }),
             release: Arc::new(|_| {}),
         });
@@ -143,15 +143,23 @@ mod draw_gl_rich_text {
         let (mut state, _host) = create_gl_state_with_hosts();
         let first_data = create_data(&mut state);
         let second_data = create_data(&mut state);
-        let first = make_proxy(&mut state, &make_rich_text_node("first"), Some(first_data.clone()));
-        let second =
-            make_proxy(&mut state, &make_rich_text_node("second"), Some(second_data.clone()));
+        let first = make_proxy(
+            &mut state,
+            &make_rich_text_node("first"),
+            Some(first_data.clone()),
+        );
+        let second = make_proxy(
+            &mut state,
+            &make_rich_text_node("second"),
+            Some(second_data.clone()),
+        );
 
         draw_gl_rich_text(&mut state, &first);
         draw_gl_rich_text(&mut state, &second);
 
-        let (first_surface, first_image) =
-            with_data(&first_data, |data| (data.surface.clone().unwrap(), data.image.clone().unwrap()));
+        let (first_surface, first_image) = with_data(&first_data, |data| {
+            (data.surface.clone().unwrap(), data.image.clone().unwrap())
+        });
         let (second_surface, second_image) = with_data(&second_data, |data| {
             (data.surface.clone().unwrap(), data.image.clone().unwrap())
         });
@@ -172,7 +180,8 @@ mod draw_gl_rich_text {
         }
 
         draw_gl_rich_text(&mut state, &first);
-        assert!(with_data(&first_data, |data| data.surface.is_some() && data.image.is_some()));
+        assert!(with_data(&first_data, |data| data.surface.is_some()
+            && data.image.is_some()));
     }
 
     #[test]

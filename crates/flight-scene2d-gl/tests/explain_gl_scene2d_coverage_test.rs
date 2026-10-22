@@ -53,7 +53,10 @@ fn coverage_catalog() -> SceneCoverageCatalog {
 fn usage(blend_modes: &[&str], material_kinds: &[&str], node_kinds: &[&str]) -> Scene2DKindUsage {
     let mut out = create_scene2d_kind_usage();
     out.blend_modes = blend_modes.iter().map(|value| value.to_string()).collect();
-    out.material_kinds = material_kinds.iter().map(|value| value.to_string()).collect();
+    out.material_kinds = material_kinds
+        .iter()
+        .map(|value| value.to_string())
+        .collect();
     out.node_kinds = node_kinds.iter().map(|value| value.to_string()).collect();
     return out;
 }
@@ -100,20 +103,25 @@ mod explain_gl_scene2d_coverage {
     fn includes_the_shared_node_renderer_answer_rather_than_restating_it() {
         let mut state = create_gl_state();
         register_node_renderer(&mut state, "Shape".to_string(), &NODE_RENDERER);
-        assert!(entries(&state, &usage(&[], &[], &["Shape"])).contains(&entry(
-            SceneCoverage::Satisfied,
-            RequirementFacet::SceneNodeKind,
-            "Shape",
-            RenderRegistryTable::NodeRenderer,
-            None,
-        )));
+        assert!(
+            entries(&state, &usage(&[], &[], &["Shape"])).contains(&entry(
+                SceneCoverage::Satisfied,
+                RequirementFacet::SceneNodeKind,
+                "Shape",
+                RenderRegistryTable::NodeRenderer,
+                None,
+            ))
+        );
     }
 
     #[test]
     fn reports_an_unregistered_blend_mode_as_a_remediable_fallback() {
         let state = create_gl_state();
         assert_eq!(
-            entries(&state, &usage(&[flight_materials::BLEND_MODE_MULTIPLY], &[], &[])),
+            entries(
+                &state,
+                &usage(&[flight_materials::BLEND_MODE_MULTIPLY], &[], &[])
+            ),
             vec![entry(
                 SceneCoverage::FallbackRemediable,
                 RequirementFacet::SceneBlendMode,
@@ -129,7 +137,10 @@ mod explain_gl_scene2d_coverage {
         let mut state = create_gl_state();
         register_multiply(&mut state);
         assert_eq!(
-            entries(&state, &usage(&[flight_materials::BLEND_MODE_MULTIPLY], &[], &[])),
+            entries(
+                &state,
+                &usage(&[flight_materials::BLEND_MODE_MULTIPLY], &[], &[])
+            ),
             vec![entry(
                 SceneCoverage::Satisfied,
                 RequirementFacet::SceneBlendMode,
@@ -143,13 +154,15 @@ mod explain_gl_scene2d_coverage {
     #[test]
     fn reports_an_unregistered_material_as_actionable_when_nothing_can_absorb_it() {
         let state = create_gl_state();
-        assert!(entries(&state, &usage(&[], &["acme.Custom"], &[])).contains(&entry(
-            SceneCoverage::Unregistered,
-            RequirementFacet::SceneMaterialKind,
-            "acme.Custom",
-            RenderRegistryTable::MaterialRenderer,
-            Some(("@acme/gl", "registerAcmeGlMaterial")),
-        )));
+        assert!(
+            entries(&state, &usage(&[], &["acme.Custom"], &[])).contains(&entry(
+                SceneCoverage::Unregistered,
+                RequirementFacet::SceneMaterialKind,
+                "acme.Custom",
+                RenderRegistryTable::MaterialRenderer,
+                Some(("@acme/gl", "registerAcmeGlMaterial")),
+            ))
+        );
     }
 
     #[test]
@@ -160,13 +173,15 @@ mod explain_gl_scene2d_coverage {
             STANDARD_MATERIAL_KIND.to_string(),
             &STANDARD_GL_QUAD_MATERIAL_RENDERER,
         );
-        assert!(entries(&state, &usage(&[], &["acme.Custom"], &[])).contains(&entry(
-            SceneCoverage::FallbackRemediable,
-            RequirementFacet::SceneMaterialKind,
-            "acme.Custom",
-            RenderRegistryTable::MaterialRenderer,
-            Some(("@acme/gl", "registerAcmeGlMaterial")),
-        )));
+        assert!(
+            entries(&state, &usage(&[], &["acme.Custom"], &[])).contains(&entry(
+                SceneCoverage::FallbackRemediable,
+                RequirementFacet::SceneMaterialKind,
+                "acme.Custom",
+                RenderRegistryTable::MaterialRenderer,
+                Some(("@acme/gl", "registerAcmeGlMaterial")),
+            ))
+        );
     }
 }
 
@@ -177,14 +192,20 @@ mod has_gl_scene2d_coverage {
     fn is_false_when_only_the_shared_half_is_unserved_so_composition_cannot_hide_a_gap() {
         let mut state = create_gl_state();
         register_multiply(&mut state);
-        assert!(!has_gl_scene2d_coverage(&state, &usage(&[flight_materials::BLEND_MODE_MULTIPLY], &[], &["Shape"])));
+        assert!(!has_gl_scene2d_coverage(
+            &state,
+            &usage(&[flight_materials::BLEND_MODE_MULTIPLY], &[], &["Shape"])
+        ));
     }
 
     #[test]
     fn is_false_when_only_the_gl_half_is_unserved() {
         let mut state = create_gl_state();
         register_node_renderer(&mut state, "Shape".to_string(), &NODE_RENDERER);
-        assert!(!has_gl_scene2d_coverage(&state, &usage(&[flight_materials::BLEND_MODE_MULTIPLY], &[], &["Shape"])));
+        assert!(!has_gl_scene2d_coverage(
+            &state,
+            &usage(&[flight_materials::BLEND_MODE_MULTIPLY], &[], &["Shape"])
+        ));
     }
 
     #[test]
@@ -192,7 +213,10 @@ mod has_gl_scene2d_coverage {
         let mut state = create_gl_state();
         register_node_renderer(&mut state, "Shape".to_string(), &NODE_RENDERER);
         register_multiply(&mut state);
-        assert!(has_gl_scene2d_coverage(&state, &usage(&[flight_materials::BLEND_MODE_MULTIPLY], &[], &["Shape"])));
+        assert!(has_gl_scene2d_coverage(
+            &state,
+            &usage(&[flight_materials::BLEND_MODE_MULTIPLY], &[], &["Shape"])
+        ));
     }
 
     #[test]

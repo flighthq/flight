@@ -1,7 +1,10 @@
 use flight_bitmap::BITMAP_TEXTURE_SOURCE_KIND;
 use flight_bitmaptext::BITMAP_TEXT_KIND;
 use flight_image::IMAGE_TEXTURE_SOURCE_KIND;
-use flight_materials::{BLEND_MODE_ADD, BLEND_MODE_MULTIPLY, BLEND_MODE_NORMAL, BLEND_MODE_SCREEN, STANDARD_MATERIAL_KIND};
+use flight_materials::{
+    BLEND_MODE_ADD, BLEND_MODE_MULTIPLY, BLEND_MODE_NORMAL, BLEND_MODE_SCREEN,
+    STANDARD_MATERIAL_KIND,
+};
 use flight_particleemitter::PARTICLE_EMITTER_2D_KIND;
 use flight_quadbatch::QUAD_BATCH_KIND;
 use flight_registry::with_kind_map_entry;
@@ -29,7 +32,10 @@ mod gl_render_infrastructure {
     fn carries_everything_but_the_node_renderers() {
         let options = gl_render_infrastructure();
         assert!(options.render_registries.node_renderers.is_none());
-        assert!(matches!(options.render_registries.stroke_tessellator, Some(Some(_))));
+        assert!(matches!(
+            options.render_registries.stroke_tessellator,
+            Some(Some(_))
+        ));
         assert_eq!(options.gl_registries.material_renderers.entries.len(), 1);
     }
 }
@@ -64,18 +70,33 @@ mod gl_scene2d_render_preset {
     fn carries_the_standard_texture_resolvers() {
         let preset = gl_scene2d_render_preset();
         let resolvers = &preset.gl_registries.texture_resolvers;
-        assert_eq!(sorted_keys(resolvers), sorted_keys(&standard_gl_texture_resolvers()));
+        assert_eq!(
+            sorted_keys(resolvers),
+            sorted_keys(&standard_gl_texture_resolvers())
+        );
         assert!(resolvers.entries.contains_key(BITMAP_TEXTURE_SOURCE_KIND));
         assert!(resolvers.entries.contains_key(IMAGE_TEXTURE_SOURCE_KIND));
-        assert!(resolvers.entries.contains_key(RENDER_TARGET_TEXTURE_SOURCE_KIND));
+        assert!(
+            resolvers
+                .entries
+                .contains_key(RENDER_TARGET_TEXTURE_SOURCE_KIND)
+        );
     }
 
     #[test]
     fn carries_the_standard_fixed_function_blend_realizations() {
         let preset = gl_scene2d_render_preset();
         let blends = &preset.gl_registries.blend_realizations;
-        assert_eq!(sorted_keys(blends), sorted_keys(&standard_gl_blend_realizations()));
-        for mode in [BLEND_MODE_NORMAL, BLEND_MODE_ADD, BLEND_MODE_MULTIPLY, BLEND_MODE_SCREEN] {
+        assert_eq!(
+            sorted_keys(blends),
+            sorted_keys(&standard_gl_blend_realizations())
+        );
+        for mode in [
+            BLEND_MODE_NORMAL,
+            BLEND_MODE_ADD,
+            BLEND_MODE_MULTIPLY,
+            BLEND_MODE_SCREEN,
+        ] {
             assert!(blends.entries.contains_key(mode), "{mode}");
         }
     }
@@ -83,7 +104,10 @@ mod gl_scene2d_render_preset {
     #[test]
     fn carries_the_stroke_tessellator_in_the_slot_table() {
         let preset = gl_scene2d_render_preset();
-        assert!(matches!(preset.render_registries.stroke_tessellator, Some(Some(_))));
+        assert!(matches!(
+            preset.render_registries.stroke_tessellator,
+            Some(Some(_))
+        ));
     }
 
     #[test]
@@ -97,8 +121,20 @@ mod gl_scene2d_render_preset {
     #[test]
     fn starts_with_empty_gl_specific_tables_that_no_family_populates() {
         let preset = gl_scene2d_render_preset();
-        assert!(preset.gl_registries.custom_effect_shaders.entries.is_empty());
-        assert!(preset.gl_registries.custom_material_shaders.entries.is_empty());
+        assert!(
+            preset
+                .gl_registries
+                .custom_effect_shaders
+                .entries
+                .is_empty()
+        );
+        assert!(
+            preset
+                .gl_registries
+                .custom_material_shaders
+                .entries
+                .is_empty()
+        );
     }
 
     #[test]

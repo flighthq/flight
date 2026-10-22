@@ -61,11 +61,19 @@ fn push_gl_clip(state: &mut GlRenderState, data: &RenderProxy2D<GlRenderState>, 
     match &clip.contours {
         None => {
             push_gl_clip_rectangle(state, &clip.rect, &data.transform_2d);
-            state.gl_runtime.borrow_mut().clip_forms.push(GlClipForm::Rect);
+            state
+                .gl_runtime
+                .borrow_mut()
+                .clip_forms
+                .push(GlClipForm::Rect);
         }
         Some(contours) => {
             push_gl_clip_contours(state, contours, clip.winding, &data.transform_2d);
-            state.gl_runtime.borrow_mut().clip_forms.push(GlClipForm::Contour);
+            state
+                .gl_runtime
+                .borrow_mut()
+                .clip_forms
+                .push(GlClipForm::Contour);
         }
     }
 }

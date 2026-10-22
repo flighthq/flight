@@ -1259,6 +1259,7 @@ dependencies = [
  "flight-textinput",
  "flight-textlayout",
  "flight-texture",
+ "flight-texture-formats",
  "flight-textureatlas",
  "flight-tilemap",
  "glow",

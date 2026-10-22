@@ -80,10 +80,9 @@ void main() {
 pub fn bind_gl_quad_batch_base_attributes(state: &GlRenderState, loc_corner: u32) {
     let (corner_buffer, instance_buffer) = {
         let context = state.context_state.runtime_state.borrow();
-        let resources = context
-            .quad_batch_resources
-            .as_ref()
-            .unwrap_or_else(|| throw_error("bindGlQuadBatchBaseAttributes: no quad-batch resources"));
+        let resources = context.quad_batch_resources.as_ref().unwrap_or_else(|| {
+            throw_error("bindGlQuadBatchBaseAttributes: no quad-batch resources")
+        });
         (resources.corner_buffer, resources.writer_instance_buffer)
     };
     let gl = &state.gl;
@@ -139,7 +138,12 @@ fn compile_quad_batch_writer_shader(gl: &glow::Context) -> GlQuadBatchShader {
 }
 
 pub fn ensure_gl_quad_batch_shader(state: &GlRenderState) -> GlQuadBatchShader {
-    if let Some(resources) = &state.context_state.runtime_state.borrow().quad_batch_resources {
+    if let Some(resources) = &state
+        .context_state
+        .runtime_state
+        .borrow()
+        .quad_batch_resources
+    {
         return resources.shader.clone();
     }
 
@@ -160,20 +164,33 @@ pub fn ensure_gl_quad_batch_shader(state: &GlRenderState) -> GlQuadBatchShader {
         );
         buffer
     };
-    state.context_state.runtime_state.borrow_mut().quad_batch_resources =
-        Some(GlQuadBatchResources {
-            corner_buffer,
-            shader: shader.clone(),
-            writer_color_scale_bias_buffer: None,
-            writer_instance_buffer: None,
-            writer_material_buffer: None,
-        });
+    state
+        .context_state
+        .runtime_state
+        .borrow_mut()
+        .quad_batch_resources = Some(GlQuadBatchResources {
+        corner_buffer,
+        shader: shader.clone(),
+        writer_color_scale_bias_buffer: None,
+        writer_instance_buffer: None,
+        writer_material_buffer: None,
+    });
 
     return shader;
 }
 
 pub fn flush_gl_quad_batch_writer(state: &mut GlRenderState) {
-    let (count, texture, sampler, straight_alpha, blend_mode, material, renderer, floats, smoothing) = {
+    let (
+        count,
+        texture,
+        sampler,
+        straight_alpha,
+        blend_mode,
+        material,
+        renderer,
+        floats,
+        smoothing,
+    ) = {
         let mut runtime = state.gl_runtime.borrow_mut();
         let count = runtime.quad_batch_writer_count;
         if count == 0 {
@@ -198,8 +215,9 @@ pub fn flush_gl_quad_batch_writer(state: &mut GlRenderState) {
         runtime.quad_batch_writer_material_floats = 0;
         values
     };
-    let texture = texture
-        .unwrap_or_else(|| throw_error("flushGlQuadBatchWriter: batched instances have no texture"));
+    let texture = texture.unwrap_or_else(|| {
+        throw_error("flushGlQuadBatchWriter: batched instances have no texture")
+    });
     let renderer = renderer.unwrap_or_else(|| {
         throw_error("flushGlQuadBatchWriter: batched instances have no material renderer")
     });
@@ -330,19 +348,25 @@ pub(crate) fn get_gl_viewport_size(state: &GlRenderState) -> (f32, f32) {
 /// Reinterprets an `f32` slice as its native-endian bytes for a GL upload (TS passes the typed array).
 pub(crate) fn gl_f32_bytes(values: &[f32]) -> &[u8] {
     // SAFETY: f32 has no padding or invalid bit patterns; the byte view covers exactly the slice.
-    return unsafe { std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), size_of_val(values)) };
+    return unsafe {
+        std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), size_of_val(values))
+    };
 }
 
 /// Reinterprets a `u16` slice as its native-endian bytes for a GL upload.
 pub(crate) fn gl_u16_bytes(values: &[u16]) -> &[u8] {
     // SAFETY: u16 has no padding or invalid bit patterns; the byte view covers exactly the slice.
-    return unsafe { std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), size_of_val(values)) };
+    return unsafe {
+        std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), size_of_val(values))
+    };
 }
 
 /// Reinterprets a `u32` slice as its native-endian bytes for a GL upload.
 pub(crate) fn gl_u32_bytes(values: &[u32]) -> &[u8] {
     // SAFETY: u32 has no padding or invalid bit patterns; the byte view covers exactly the slice.
-    return unsafe { std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), size_of_val(values)) };
+    return unsafe {
+        std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), size_of_val(values))
+    };
 }
 
 // Writes one instance's per-instance material floats into the active material buffer at the given
@@ -367,7 +391,10 @@ pub fn pack_gl_quad_batch_material_instance(
         )
     };
     renderer.pack_instance(state, material_data, &mut data, offset);
-    state.gl_runtime.borrow_mut().quad_batch_writer_material_data = data;
+    state
+        .gl_runtime
+        .borrow_mut()
+        .quad_batch_writer_material_data = data;
 }
 
 // Ensures the quad-batch writer can accept up to `max_instances` more instances for the given
@@ -438,7 +465,11 @@ pub fn prepare_gl_quad_batch_write(
                 resize_material = Some(new_size);
             }
         }
-        (resize_instance, resize_material, runtime.quad_batch_writer_count)
+        (
+            resize_instance,
+            resize_material,
+            runtime.quad_batch_writer_count,
+        )
     };
 
     let (instance_buffer, material_buffer) = {
@@ -455,15 +486,19 @@ pub fn prepare_gl_quad_batch_write(
     unsafe {
         if let (Some(new_size), Some(buffer)) = (resize_instance, instance_buffer) {
             state.gl.bind_buffer(glow::ARRAY_BUFFER, Some(buffer));
-            state
-                .gl
-                .buffer_data_size(glow::ARRAY_BUFFER, (new_size * 4) as i32, glow::DYNAMIC_DRAW);
+            state.gl.buffer_data_size(
+                glow::ARRAY_BUFFER,
+                (new_size * 4) as i32,
+                glow::DYNAMIC_DRAW,
+            );
         }
         if let (Some(new_size), Some(buffer)) = (resize_material, material_buffer) {
             state.gl.bind_buffer(glow::ARRAY_BUFFER, Some(buffer));
-            state
-                .gl
-                .buffer_data_size(glow::ARRAY_BUFFER, (new_size * 4) as i32, glow::DYNAMIC_DRAW);
+            state.gl.buffer_data_size(
+                glow::ARRAY_BUFFER,
+                (new_size * 4) as i32,
+                glow::DYNAMIC_DRAW,
+            );
         }
     }
 

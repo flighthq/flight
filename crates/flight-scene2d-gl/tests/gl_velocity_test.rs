@@ -3,7 +3,9 @@ use std::rc::Rc;
 use flight_entity::{Ref, get_entity_id};
 use flight_node::NodeRef;
 use flight_particleemitter::contract::{create_particle_emitter_2d, reserve_particle_emitter_2d};
-use flight_quadbatch::{QUAD_BATCH_KIND, QuadTransformType, create_quad_batch, get_quad_batch_runtime};
+use flight_quadbatch::{
+    QUAD_BATCH_KIND, QuadTransformType, create_quad_batch, get_quad_batch_runtime,
+};
 use flight_render::RenderTargetFormat;
 use flight_render_gl::{GlRenderStateOptions, create_gl_render_state};
 use flight_scene2d_gl::*;
@@ -11,11 +13,22 @@ use flight_textureatlas::{TextureAtlas, add_texture_atlas_region, create_texture
 use flight_velocity::{begin_velocity_frame, contribute_velocity, create_velocity_field};
 use glow::HasContext;
 
-use crate::gl_test_helper::{calls_with, count_calls, create_gl_state, display_node, last_call, snapshot};
+use crate::gl_test_helper::{
+    calls_with, count_calls, create_gl_state, display_node, last_call, snapshot,
+};
 
 fn region_atlas(size: f32) -> Ref<TextureAtlas> {
     let atlas = create_texture_atlas();
-    add_texture_atlas_region(&mut atlas.write().unwrap(), 0.0, 0.0, size, size, None, None, None);
+    add_texture_atlas_region(
+        &mut atlas.write().unwrap(),
+        0.0,
+        0.0,
+        size,
+        size,
+        None,
+        None,
+        None,
+    );
     return atlas;
 }
 
@@ -59,7 +72,10 @@ mod draw_gl_velocity_quad {
 
         draw_gl_velocity_quad(&mut ctx, 25.0, 10.0, 50.0, 25.0, 3.0, -1.0);
 
-        assert_eq!(last_call("uniform_4_f32").floats, vec![-0.5, 0.6, 1.0, -1.0]);
+        assert_eq!(
+            last_call("uniform_4_f32").floats,
+            vec![-0.5, 0.6, 1.0, -1.0]
+        );
         assert_eq!(last_call("uniform_2_f32").floats, vec![6.0, -2.0]);
         assert_eq!(count_calls("draw_arrays"), 1);
     }
@@ -170,7 +186,11 @@ mod gl_particle_emitter2d_velocity_writer {
             emitter.data.velocities[..4].copy_from_slice(&[3.0, -2.0, -1.0, 4.0]);
         }
         let node: NodeRef = emitter;
-        register_gl_velocity_writer(&mut state, kind_of(&node), gl_particle_emitter2d_velocity_writer);
+        register_gl_velocity_writer(
+            &mut state,
+            kind_of(&node),
+            gl_particle_emitter2d_velocity_writer,
+        );
         let mut field = create_velocity_field();
         begin_velocity_frame(&mut field);
 
@@ -202,7 +222,8 @@ mod gl_quad_batch_velocity_writer {
     }
 
     #[test]
-    fn emits_per_instance_velocity_for_a_batch_with_an_instance_velocities_array_without_throwing() {
+    fn emits_per_instance_velocity_for_a_batch_with_an_instance_velocities_array_without_throwing()
+    {
         let mut state = create_gl_state();
         let target = create_gl_velocity_target(&state, 128.0, 64.0);
         let batch = create_quad_batch();
@@ -214,11 +235,17 @@ mod gl_quad_batch_velocity_writer {
             batch.data.transforms = vec![0.0, 0.0, 40.0, 10.0];
             batch.data.transform_type = QuadTransformType::Vector2;
             // The batch owns its per-instance velocity (NOT the VelocityField).
-            get_quad_batch_runtime(&batch).write().unwrap().instance_velocities =
-                Some(vec![3.0, -2.0, -1.0, 4.0]);
+            get_quad_batch_runtime(&batch)
+                .write()
+                .unwrap()
+                .instance_velocities = Some(vec![3.0, -2.0, -1.0, 4.0]);
         }
         let node: NodeRef = batch;
-        register_gl_velocity_writer(&mut state, QUAD_BATCH_KIND.to_string(), gl_quad_batch_velocity_writer);
+        register_gl_velocity_writer(
+            &mut state,
+            QUAD_BATCH_KIND.to_string(),
+            gl_quad_batch_velocity_writer,
+        );
         let mut field = create_velocity_field();
         begin_velocity_frame(&mut field);
 
@@ -240,7 +267,11 @@ mod gl_quad_batch_velocity_writer {
             batch.data.transforms = vec![0.0, 0.0];
         }
         let node: NodeRef = batch;
-        register_gl_velocity_writer(&mut state, QUAD_BATCH_KIND.to_string(), gl_quad_batch_velocity_writer);
+        register_gl_velocity_writer(
+            &mut state,
+            QUAD_BATCH_KIND.to_string(),
+            gl_quad_batch_velocity_writer,
+        );
         let mut field = create_velocity_field();
         begin_velocity_frame(&mut field);
         contribute_velocity(&mut field, get_entity_id(&*node.read().unwrap()), 5.0, 1.0);

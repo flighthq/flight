@@ -1,7 +1,9 @@
 use std::sync::{Arc, RwLock};
 
 use flight_node::NodeRef;
-use flight_render::{BatchFormat, CreateRenderTextureOptions, RenderProxy2D, create_render_texture};
+use flight_render::{
+    BatchFormat, CreateRenderTextureOptions, RenderProxy2D, create_render_texture,
+};
 use flight_render_gl::RenderTargetClear;
 use flight_render_gl::{
     GlRenderState, register_gl_bitmap_texture_resolver, register_gl_render_texture_resolver,
@@ -33,12 +35,17 @@ fn ct(scale: f32) -> flight_materials::ColorScaleBias {
 }
 
 fn instance_data(state: &GlRenderState) -> Vec<f32> {
-    return state.gl_runtime.borrow().quad_batch_writer_instance_data.clone();
+    return state
+        .gl_runtime
+        .borrow()
+        .quad_batch_writer_instance_data
+        .clone();
 }
 
 fn close(actual: f32, expected: f32) -> bool {
     // D1 f32 bound (TS: toBeCloseTo 2 digits)
-    return (actual - expected).abs() <= 0.005_f32.max(4.0 * f32::EPSILON * expected.abs().max(1.0));
+    return (actual - expected).abs()
+        <= 0.005_f32.max(4.0 * f32::EPSILON * expected.abs().max(1.0));
 }
 
 mod draw_gl_sprite {
@@ -56,7 +63,9 @@ mod draw_gl_sprite {
         draw_gl_sprite(&mut state, &proxy);
 
         let data = instance_data(&state);
-        let expected = [32.0, 0.0, 0.0, 16.0, 10.0, 20.0, 0.125, 0.125, 0.25, 0.0, 0.0, 0.25];
+        let expected = [
+            32.0, 0.0, 0.0, 16.0, 10.0, 20.0, 0.125, 0.125, 0.25, 0.0, 0.0, 0.25,
+        ];
         for (index, value) in expected.iter().enumerate() {
             assert!(close(data[index], *value), "index {index}: {}", data[index]);
         }
@@ -146,7 +155,10 @@ mod draw_gl_sprite {
 
         let runtime = state.gl_runtime.borrow();
         assert_eq!(runtime.quad_batch_writer_count, 1);
-        assert_eq!(runtime.quad_batch_writer_color_scale_bias_mode, Some(CT_MODE_UNIFORM));
+        assert_eq!(
+            runtime.quad_batch_writer_color_scale_bias_mode,
+            Some(CT_MODE_UNIFORM)
+        );
     }
 
     #[test]

@@ -6,7 +6,9 @@ use flight_render::{
     BatchFormat, NodeRenderer, RenderProxy2D, SCENE2D_WORKING_COLOR_SPACE, noop_renderer_data,
 };
 use flight_render_gl::{GlRenderState, resolve_gl_texture};
-use flight_texture::{TextureUvTransform, get_texture_height, get_texture_width, has_texture_source};
+use flight_texture::{
+    TextureUvTransform, get_texture_height, get_texture_width, has_texture_source,
+};
 use flight_textureatlas::TextureAtlasRotation;
 
 use crate::gl_color_adjustment_material_feature::get_gl_render_proxy_color_adjustment;
@@ -57,9 +59,12 @@ fn submit_gl_bitmap_text(state: &mut GlRenderState, node: &RenderProxy2D<GlRende
             continue;
         }
 
-        let Some(gl_texture) =
-            resolve_gl_texture(state, &*texture, Some(true), Some(SCENE2D_WORKING_COLOR_SPACE))
-        else {
+        let Some(gl_texture) = resolve_gl_texture(
+            state,
+            &*texture,
+            Some(true),
+            Some(SCENE2D_WORKING_COLOR_SPACE),
+        ) else {
             continue;
         };
         let straight_alpha = current_gl_straight_alpha(state);
@@ -113,7 +118,10 @@ fn submit_gl_bitmap_text(state: &mut GlRenderState, node: &RenderProxy2D<GlRende
             let rotated = region.rotation != TextureAtlasRotation::None;
             let counterclockwise = region.rotation == TextureAtlasRotation::Counterclockwise90;
             write_gl_quad_batch_affine_instance(
-                &mut state.gl_runtime.borrow_mut().quad_batch_writer_instance_data,
+                &mut state
+                    .gl_runtime
+                    .borrow_mut()
+                    .quad_batch_writer_instance_data,
                 write_base,
                 &glyph_transform,
                 if rotated { region.height } else { region.width },

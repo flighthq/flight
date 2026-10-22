@@ -8,7 +8,9 @@ use flight_render_gl::{GlRenderState, register_gl_image_texture_resolver};
 use flight_scene2d_gl::*;
 use flight_textureatlas::{TextureAtlas, TextureAtlasRotation, create_texture_atlas};
 
-use crate::gl_test_helper::{calls_with, count_calls, create_gl_state, make_atlas, make_scene2d_proxy};
+use crate::gl_test_helper::{
+    calls_with, count_calls, create_gl_state, make_atlas, make_scene2d_proxy,
+};
 
 fn create_atlas_gl_state() -> GlRenderState {
     let mut state = create_gl_state();
@@ -61,6 +63,13 @@ mod gl_quad_batch_renderer {
     use super::*;
 
     #[test]
+    fn has_a_submit_function() {
+        let submit: fn(&mut GlRenderState, &flight_render::RenderProxy2D<GlRenderState>) =
+            GL_QUAD_BATCH_RENDERER.submit;
+        let _ = submit;
+    }
+
+    #[test]
     fn has_a_create_data_function() {
         let mut state = create_gl_state();
         assert!((GL_QUAD_BATCH_RENDERER.create_data)(&mut state, &default_node()).is_none());
@@ -100,7 +109,13 @@ mod gl_quad_batch_renderer {
             Some(Arc::new(RwLock::new(flight_texture::create_texture_2d())));
         submit(
             &mut state,
-            make_quad_batch_node(Some(atlas), 1, vec![0], vec![0.0, 0.0], QuadTransformType::Vector2),
+            make_quad_batch_node(
+                Some(atlas),
+                1,
+                vec![0],
+                vec![0.0, 0.0],
+                QuadTransformType::Vector2,
+            ),
         );
         assert_eq!(count_calls("draw_elements_instanced"), 0);
     }
@@ -143,15 +158,26 @@ mod gl_quad_batch_renderer {
     fn packs_a_rotated_region_with_upright_geometry_and_affine_uv_axes() {
         let mut state = create_atlas_gl_state();
         let atlas = make_atlas(20.0, 40.0);
-        atlas.read().unwrap().regions[0].write().unwrap().rotation = TextureAtlasRotation::Clockwise90;
+        atlas.read().unwrap().regions[0].write().unwrap().rotation =
+            TextureAtlasRotation::Clockwise90;
         let proxy = make_scene2d_proxy(
             &mut state,
-            make_quad_batch_node(Some(atlas), 1, vec![0], vec![0.0, 0.0], QuadTransformType::Vector2),
+            make_quad_batch_node(
+                Some(atlas),
+                1,
+                vec![0],
+                vec![0.0, 0.0],
+                QuadTransformType::Vector2,
+            ),
         );
 
         (GL_QUAD_BATCH_RENDERER.submit)(&mut state, &proxy);
 
-        let data = state.gl_runtime.borrow().quad_batch_writer_instance_data.clone();
+        let data = state
+            .gl_runtime
+            .borrow()
+            .quad_batch_writer_instance_data
+            .clone();
         assert!(close(data[0], 40.0));
         assert!(close(data[3], 20.0));
         assert!(close(data[6], 20.0 / 64.0));
@@ -170,12 +196,22 @@ mod gl_quad_batch_renderer {
             TextureAtlasRotation::Counterclockwise90;
         let proxy = make_scene2d_proxy(
             &mut state,
-            make_quad_batch_node(Some(atlas), 1, vec![0], vec![0.0, 0.0], QuadTransformType::Vector2),
+            make_quad_batch_node(
+                Some(atlas),
+                1,
+                vec![0],
+                vec![0.0, 0.0],
+                QuadTransformType::Vector2,
+            ),
         );
 
         (GL_QUAD_BATCH_RENDERER.submit)(&mut state, &proxy);
 
-        let data = state.gl_runtime.borrow().quad_batch_writer_instance_data.clone();
+        let data = state
+            .gl_runtime
+            .borrow()
+            .quad_batch_writer_instance_data
+            .clone();
         assert!(close(data[6], 0.0));
         assert!(close(data[7], 40.0 / 64.0));
         assert!(close(data[9], -40.0 / 64.0));

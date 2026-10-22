@@ -142,7 +142,10 @@ mod get_gl_render_cache_target {
         let state = fake_screen();
         let cache = create_render_cache();
         let target = ensure_gl_render_cache_target(&state, &cache, 8.0, 8.0);
-        assert!(Rc::ptr_eq(&get_gl_render_cache_target(&state, &cache).unwrap(), &target));
+        assert!(Rc::ptr_eq(
+            &get_gl_render_cache_target(&state, &cache).unwrap(),
+            &target
+        ));
     }
 }
 
@@ -200,7 +203,9 @@ mod gl_render_cache_renderer {
         submit_cache(&mut state, object);
 
         let names = call_names();
-        let flushed = names.iter().position(|name| name == "draw_elements_instanced");
+        let flushed = names
+            .iter()
+            .position(|name| name == "draw_elements_instanced");
         let composited = names.iter().position(|name| name == "draw_elements");
         assert!(flushed.is_some() && composited.is_some());
         assert!(flushed < composited);
@@ -293,7 +298,10 @@ mod release_gl_render_cache {
         let mut state = fake_screen();
         let first = ensure_gl_render_cache_target(&state, &create_render_cache(), 8.0, 8.0);
         let second = ensure_gl_render_cache_target(&state, &create_render_cache(), 16.0, 16.0);
-        assert_ne!(get_entity_id(&*first.borrow()), get_entity_id(&*second.borrow()));
+        assert_ne!(
+            get_entity_id(&*first.borrow()),
+            get_entity_id(&*second.borrow())
+        );
 
         destroy_gl_render_state(&mut state, &mut make_proxies());
 

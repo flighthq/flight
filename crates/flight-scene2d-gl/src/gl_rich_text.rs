@@ -10,8 +10,7 @@ use flight_render::{
     NodeRenderer, RenderProxy2D, create_canvas_host_surface, destroy_canvas_host_surface,
 };
 use flight_render_gl::{
-    GlRenderState, bind_gl_image_resource_texture, draw_gl_quad, resolve_gl_shader,
-    use_gl_program,
+    GlRenderState, bind_gl_image_resource_texture, draw_gl_quad, resolve_gl_shader, use_gl_program,
 };
 use flight_surface::{CanvasSurface, SurfaceRef};
 use flight_text::contract::{
@@ -83,7 +82,10 @@ pub fn destroy_gl_rich_text_data(state: &mut GlRenderState, data: RendererDataRe
         delete_gl_premultiplied_image_texture(state, image);
     }
     if let Some(surface) = &rich_data.surface {
-        destroy_canvas_host_surface(&mut state.gl_runtime.borrow_mut().canvas_host_surfaces, surface);
+        destroy_canvas_host_surface(
+            &mut state.gl_runtime.borrow_mut().canvas_host_surfaces,
+            surface,
+        );
     }
 }
 
@@ -186,14 +188,28 @@ pub fn draw_gl_rich_text_with_overlay(
     }
 
     if !content_text.is_empty() {
-        draw_rich_text_to_canvas(&*off_ctx, &source, &result_guard, field_w, field_h, &content_text);
+        draw_rich_text_to_canvas(
+            &*off_ctx,
+            &source,
+            &result_guard,
+            field_w,
+            field_h,
+            &content_text,
+        );
     }
     let offset_x = compute_text_bounds_offset_x(&spec, &result_guard);
     let image = rich_text_data.image.clone();
     drop(guard);
     drop(source);
     if let Some(overlay) = overlay {
-        overlay(&context, &source_ref, &result_guard, field_w, field_h, &content_text);
+        overlay(
+            &context,
+            &source_ref,
+            &result_guard,
+            field_w,
+            field_h,
+            &content_text,
+        );
     }
     drop(result_guard);
     if let Some(image) = &image {
@@ -227,7 +243,17 @@ pub fn draw_gl_rich_text_with_overlay(
 
     // Anchor the field box for autoSize right/center so the rendered quad lines up with the local
     // bounds. Zero for none/left.
-    let _ = draw_gl_quad(state, offset_x, 0.0, offset_x + field_w, field_h, 0.0, 0.0, 1.0, 1.0);
+    let _ = draw_gl_quad(
+        state,
+        offset_x,
+        0.0,
+        offset_x + field_w,
+        field_h,
+        0.0,
+        0.0,
+        1.0,
+        1.0,
+    );
 }
 
 fn draw_rich_text_to_canvas(
@@ -316,7 +342,10 @@ fn ensure_gl_rich_text_surface(
         if let Some(image) = &data.image {
             delete_gl_premultiplied_image_texture(state, image);
         }
-        destroy_canvas_host_surface(&mut state.gl_runtime.borrow_mut().canvas_host_surfaces, &surface);
+        destroy_canvas_host_surface(
+            &mut state.gl_runtime.borrow_mut().canvas_host_surfaces,
+            &surface,
+        );
     }
     let (Some(canvas_host), Some(image_host)) = (&state.canvas_host, &state.image_host) else {
         data.surface = None;

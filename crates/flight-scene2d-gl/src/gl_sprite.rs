@@ -54,9 +54,12 @@ pub fn draw_gl_sprite(state: &mut GlRenderState, render_proxy: &RenderProxy2D<Gl
     let Some(material_renderer) = resolve_gl_proxy_material_renderer(state, render_proxy) else {
         return;
     };
-    let Some(gl_texture) =
-        resolve_gl_texture(state, &*texture, Some(true), Some(SCENE2D_WORKING_COLOR_SPACE))
-    else {
+    let Some(gl_texture) = resolve_gl_texture(
+        state,
+        &*texture,
+        Some(true),
+        Some(SCENE2D_WORKING_COLOR_SPACE),
+    ) else {
         return;
     };
     let straight_alpha = current_gl_straight_alpha(state);
@@ -90,7 +93,10 @@ pub fn draw_gl_sprite(state: &mut GlRenderState, render_proxy: &RenderProxy2D<Gl
     );
     let base = instance_index * QUAD_BATCH_INSTANCE_FLOATS;
     write_gl_quad_batch_affine_instance(
-        &mut state.gl_runtime.borrow_mut().quad_batch_writer_instance_data,
+        &mut state
+            .gl_runtime
+            .borrow_mut()
+            .quad_batch_writer_instance_data,
         base,
         &render_proxy.transform_2d,
         width,

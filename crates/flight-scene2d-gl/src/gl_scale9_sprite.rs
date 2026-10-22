@@ -18,8 +18,8 @@ use crate::gl_quad_batch_common::{
     pack_gl_proxy_material_instance, resolve_gl_proxy_material_renderer,
 };
 use crate::gl_quad_batch_writer::{
-    ensure_gl_quad_batch_shader, prepare_gl_quad_batch_write, record_gl_quad_batch_color_scale_bias,
-    write_gl_quad_batch_affine_instance,
+    ensure_gl_quad_batch_shader, prepare_gl_quad_batch_write,
+    record_gl_quad_batch_color_scale_bias, write_gl_quad_batch_affine_instance,
 };
 use crate::gl_scale9_mapper::build_gl_scale9_mapper;
 
@@ -34,7 +34,10 @@ pub static GL_SCALE9_SPRITE_RENDERER: NodeRenderer<GlRenderState> = NodeRenderer
     submit: draw_gl_scale9_sprite,
 };
 
-pub fn draw_gl_scale9_sprite(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>) {
+pub fn draw_gl_scale9_sprite(
+    state: &mut GlRenderState,
+    render_proxy: &RenderProxy2D<GlRenderState>,
+) {
     let source = render_proxy.source.read().unwrap();
     let Some(source) = source.as_any().downcast_ref::<Scale9Sprite>() else {
         return;
@@ -67,9 +70,12 @@ pub fn draw_gl_scale9_sprite(state: &mut GlRenderState, render_proxy: &RenderPro
     let Some(material_renderer) = resolve_gl_proxy_material_renderer(state, render_proxy) else {
         return;
     };
-    let Some(gl_texture) =
-        resolve_gl_texture(state, &*texture, Some(true), Some(SCENE2D_WORKING_COLOR_SPACE))
-    else {
+    let Some(gl_texture) = resolve_gl_texture(
+        state,
+        &*texture,
+        Some(true),
+        Some(SCENE2D_WORKING_COLOR_SPACE),
+    ) else {
         return;
     };
     let straight_alpha = current_gl_straight_alpha(state);
@@ -127,13 +133,20 @@ pub fn draw_gl_scale9_sprite(state: &mut GlRenderState, render_proxy: &RenderPro
             slice_transform.tx = a * x + c * y + transform.tx;
             slice_transform.ty = b * x + d * y + transform.ty;
             write_gl_quad_batch_affine_instance(
-                &mut state.gl_runtime.borrow_mut().quad_batch_writer_instance_data,
+                &mut state
+                    .gl_runtime
+                    .borrow_mut()
+                    .quad_batch_writer_instance_data,
                 write_base,
                 &slice_transform,
                 target_x[column + 1] - x,
                 target_y[row + 1] - y,
                 uv[6] + uv[0] * local_u + uv[3] * local_v,
-                if reflect_v { 1.0 - uv_origin_y } else { uv_origin_y },
+                if reflect_v {
+                    1.0 - uv_origin_y
+                } else {
+                    uv_origin_y
+                },
                 uv[0] * delta_u,
                 (if reflect_v { -uv[1] } else { uv[1] }) * delta_u,
                 uv[3] * delta_v,
@@ -145,11 +158,7 @@ pub fn draw_gl_scale9_sprite(state: &mut GlRenderState, render_proxy: &RenderPro
                 render_proxy.material_data.as_ref(),
                 instance_index,
             );
-            record_gl_quad_batch_color_scale_bias(
-                state,
-                color_scale_bias.as_ref(),
-                instance_index,
-            );
+            record_gl_quad_batch_color_scale_bias(state, color_scale_bias.as_ref(), instance_index);
             write_base += INSTANCE_FLOATS;
         }
     }

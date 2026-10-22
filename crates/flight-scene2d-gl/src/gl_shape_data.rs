@@ -12,7 +12,10 @@ use glow::HasContext;
 
 use crate::types::GlShapeRendererData;
 
-pub fn create_gl_shape_data(state: &mut GlRenderState, source: &NodeRef) -> Option<RendererDataRef> {
+pub fn create_gl_shape_data(
+    state: &mut GlRenderState,
+    source: &NodeRef,
+) -> Option<RendererDataRef> {
     let mut out: GlShapeRendererData = allocate_entity();
     initialize_gl_shape_data(&mut out, state, source);
     return Some(Arc::new(RwLock::new(out)));

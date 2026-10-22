@@ -13,7 +13,9 @@ use flight_shape::contract::{
     append_shape_rectangle, create_shape, register_default_shape_bounds_commands,
 };
 
-use crate::gl_test_helper::{count_calls, create_gl_state, create_gl_state_with_hosts, make_scene2d_proxy};
+use crate::gl_test_helper::{
+    count_calls, create_gl_state, create_gl_state_with_hosts, make_scene2d_proxy,
+};
 
 // A plain solid rectangle — precisely the shape the mesh strategy would tessellate.
 fn solid_shape() -> Ref<Shape> {
@@ -57,7 +59,7 @@ mod draw_gl_raster_shape {
 
     #[test]
     fn rasterizes_a_fill_the_mesh_path_could_have_tessellated_which_is_what_pinning_this_strategy_means()
-    {
+     {
         let (mut state, _hosts) = create_gl_state_with_hosts();
         register_gl_standard_material(&mut state);
         let calls = counting_rasterizer(&mut state);
@@ -87,7 +89,10 @@ mod draw_gl_raster_shape {
 
         draw_gl_raster_shape(&mut state, &proxy);
 
-        assert_eq!(format!("{:?}", *replayed.lock().unwrap()), format!("{expected:?}"));
+        assert_eq!(
+            format!("{:?}", *replayed.lock().unwrap()),
+            format!("{expected:?}")
+        );
         assert!(!expected.is_empty());
     }
 

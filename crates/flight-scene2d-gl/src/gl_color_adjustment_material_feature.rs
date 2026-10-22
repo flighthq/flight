@@ -474,7 +474,10 @@ fn draw_gl_shape_meshes_color_scale_bias(
     meshes: &[GlShapeMesh],
 ) {
     let color_matrix = render_proxy.color_matrix;
-    let color_scale_bias = render_proxy.color_scale_bias.as_ref().map(to_gl_color_scale_bias_data);
+    let color_scale_bias = render_proxy
+        .color_scale_bias
+        .as_ref()
+        .map(to_gl_color_scale_bias_data);
     let base = ensure_gl_shape_mesh_program(state);
     if color_matrix.is_none() && color_scale_bias.is_none() {
         draw_gl_shape_mesh_batch(state, render_proxy, meshes, &base, None);
@@ -592,7 +595,9 @@ fn ensure_gl_color_adjustment_resources(state: &GlRenderState) -> GlColorAdjustm
     return resources;
 }
 
-fn ensure_gl_color_matrix_instanced_shader(state: &GlRenderState) -> GlColorScaleBiasInstancedShader {
+fn ensure_gl_color_matrix_instanced_shader(
+    state: &GlRenderState,
+) -> GlColorScaleBiasInstancedShader {
     if let Some(resources) = &state
         .context_state
         .runtime_state
@@ -630,7 +635,9 @@ fn ensure_gl_color_tint_instanced_shader(state: &GlRenderState) -> GlColorScaleB
     return ensure_gl_color_adjustment_resources(state).tint_instanced_shader;
 }
 
-fn ensure_gl_shape_mesh_color_matrix_shader(state: &GlRenderState) -> GlShapeMeshColorScaleBiasShader {
+fn ensure_gl_shape_mesh_color_matrix_shader(
+    state: &GlRenderState,
+) -> GlShapeMeshColorScaleBiasShader {
     if let Some(shader) = state
         .context_state
         .runtime_state
@@ -723,7 +730,9 @@ fn ensure_gl_shape_mesh_color_scale_bias_shader(
     return shader;
 }
 
-fn ensure_gl_uniform_color_scale_bias_shader(state: &GlRenderState) -> GlUniformColorScaleBiasShader {
+fn ensure_gl_uniform_color_scale_bias_shader(
+    state: &GlRenderState,
+) -> GlUniformColorScaleBiasShader {
     if let Some(resources) = &state
         .context_state
         .runtime_state
@@ -799,7 +808,10 @@ fn flush_gl_color_adjustment_material_feature(state: &mut GlRenderState, count: 
 
     if ct_mode == CT_MODE_PACKED_TINT {
         let runtime = state.gl_runtime.borrow();
-        let data = runtime.quad_batch_writer_color_tint_data.as_deref().unwrap_or(&[]);
+        let data = runtime
+            .quad_batch_writer_color_tint_data
+            .as_deref()
+            .unwrap_or(&[]);
         upload_color_buffer(state, gl_u32_bytes(&data[..count.min(data.len())]));
         drop(runtime);
         bind_gl_quad_batch_writer_packed_tint(state);
@@ -899,8 +911,16 @@ fn get_packed_tint(value: Option<&GlColorAdjustmentData>) -> Option<u32> {
         GlColorAdjustmentData::ColorMatrix(_) => return None,
         GlColorAdjustmentData::ColorScaleBias(values) => values,
     };
-    let [red_scale, green_scale, blue_scale, alpha_scale, red_bias, green_bias, blue_bias, alpha_bias] =
-        *scale_bias;
+    let [
+        red_scale,
+        green_scale,
+        blue_scale,
+        alpha_scale,
+        red_bias,
+        green_bias,
+        blue_bias,
+        alpha_bias,
+    ] = *scale_bias;
     if red_bias != 0.0
         || green_bias != 0.0
         || blue_bias != 0.0
@@ -945,7 +965,10 @@ fn is_color_matrix_data(value: Option<&GlColorAdjustmentData>) -> bool {
     return matches!(value, Some(GlColorAdjustmentData::ColorMatrix(_)));
 }
 
-fn promote_gl_color_scale_bias_to_matrix(runtime: &mut GlRenderStateRuntime, instance_count: usize) {
+fn promote_gl_color_scale_bias_to_matrix(
+    runtime: &mut GlRenderStateRuntime,
+    instance_count: usize,
+) {
     let affine = runtime
         .quad_batch_writer_color_scale_bias_data
         .clone()
@@ -957,7 +980,10 @@ fn promote_gl_color_scale_bias_to_matrix(runtime: &mut GlRenderStateRuntime, ins
     }
 }
 
-fn promote_gl_packed_tint_to_color_matrix(runtime: &mut GlRenderStateRuntime, instance_count: usize) {
+fn promote_gl_packed_tint_to_color_matrix(
+    runtime: &mut GlRenderStateRuntime,
+    instance_count: usize,
+) {
     let packed = runtime
         .quad_batch_writer_color_tint_data
         .clone()
@@ -1143,7 +1169,8 @@ pub fn register_gl_color_adjustment_material_feature(state: &mut GlRenderState) 
     let installed = crate::types::resolve_gl_color_adjustment_material_feature(state)
         .is_some_and(|feature| std::ptr::eq(feature, &GL_COLOR_ADJUSTMENT_MATERIAL_FEATURE));
     if !installed {
-        let feature: &'static GlColorAdjustmentMaterialFeature = &GL_COLOR_ADJUSTMENT_MATERIAL_FEATURE;
+        let feature: &'static GlColorAdjustmentMaterialFeature =
+            &GL_COLOR_ADJUSTMENT_MATERIAL_FEATURE;
         state.gl_registries.color_adjustment_feature = Some(Arc::new(feature));
     }
     let mut runtime = state.gl_runtime.borrow_mut();
@@ -1200,12 +1227,18 @@ fn write_gl_affine_values_as_color_matrix(
     instance_index: usize,
 ) {
     write_gl_color_matrix_instance(runtime, None, instance_index);
-    let out = runtime.quad_batch_writer_color_matrix_data.as_mut().unwrap();
+    let out = runtime
+        .quad_batch_writer_color_matrix_data
+        .as_mut()
+        .unwrap();
     let offset = instance_index * COLOR_MATRIX_FLOATS;
     for channel in 0..4 {
         out[offset + channel * 4 + channel] =
             affine.get(affine_offset + channel).copied().unwrap_or(0.0);
-        out[offset + 16 + channel] = affine.get(affine_offset + 4 + channel).copied().unwrap_or(0.0);
+        out[offset + 16 + channel] = affine
+            .get(affine_offset + 4 + channel)
+            .copied()
+            .unwrap_or(0.0);
     }
 }
 
@@ -1280,7 +1313,10 @@ fn write_gl_native_packed_tint_as_color_matrix(
     instance_index: usize,
 ) {
     write_gl_color_matrix_instance(runtime, None, instance_index);
-    let out = runtime.quad_batch_writer_color_matrix_data.as_mut().unwrap();
+    let out = runtime
+        .quad_batch_writer_color_matrix_data
+        .as_mut()
+        .unwrap();
     let offset = instance_index * COLOR_MATRIX_FLOATS;
     out[offset] = (native_word & 0xff) as f32 / 255.0;
     out[offset + 5] = ((native_word >> 8) & 0xff) as f32 / 255.0;
@@ -1295,14 +1331,21 @@ fn write_gl_native_packed_tint_as_color_scale_bias(
 ) {
     let offset = instance_index * COLOR_SCALE_BIAS_FLOATS;
     write_gl_color_scale_bias_instance(runtime, None, instance_index);
-    let data = runtime.quad_batch_writer_color_scale_bias_data.as_mut().unwrap();
+    let data = runtime
+        .quad_batch_writer_color_scale_bias_data
+        .as_mut()
+        .unwrap();
     data[offset] = (native_word & 0xff) as f32 / 255.0;
     data[offset + 1] = ((native_word >> 8) & 0xff) as f32 / 255.0;
     data[offset + 2] = ((native_word >> 16) & 0xff) as f32 / 255.0;
     data[offset + 3] = ((native_word >> 24) & 0xff) as f32 / 255.0;
 }
 
-fn write_gl_packed_tint_instance(runtime: &mut GlRenderStateRuntime, rgba: u32, instance_index: usize) {
+fn write_gl_packed_tint_instance(
+    runtime: &mut GlRenderStateRuntime,
+    rgba: u32,
+    instance_index: usize,
+) {
     let data = runtime
         .quad_batch_writer_color_tint_data
         .get_or_insert_with(|| vec![0; 256]);

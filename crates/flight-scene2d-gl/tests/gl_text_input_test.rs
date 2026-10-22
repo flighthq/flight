@@ -13,7 +13,9 @@ use crate::gl_test_helper::{
     make_scene2d_proxy, surface_calls, test_default,
 };
 
-fn make_focused_input_proxy(state: &mut GlRenderState) -> (Ref<RichText>, RenderProxy2D<GlRenderState>) {
+fn make_focused_input_proxy(
+    state: &mut GlRenderState,
+) -> (Ref<RichText>, RenderProxy2D<GlRenderState>) {
     let node = create_rich_text(None);
     {
         let mut text = node.write().unwrap();
@@ -37,7 +39,10 @@ mod draw_gl_text_input_overlay {
         let state = create_gl_state();
         enable_gl_text_input(&state);
         let installed: GlRichTextOverlay = draw_gl_text_input_overlay;
-        assert!(std::ptr::fn_addr_eq(installed, draw_gl_text_input_overlay as GlRichTextOverlay));
+        assert!(std::ptr::fn_addr_eq(
+            installed,
+            draw_gl_text_input_overlay as GlRichTextOverlay
+        ));
     }
 
     #[test]

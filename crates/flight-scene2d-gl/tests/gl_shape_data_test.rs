@@ -7,8 +7,8 @@ use flight_render_gl::GlTextureCacheEntry;
 use flight_scene2d_gl::*;
 
 use crate::gl_test_helper::{
-    calls_with, count_calls, create_gl_state, create_test_canvas_host, create_test_canvas_host_with,
-    create_test_image_host,
+    calls_with, count_calls, create_gl_state, create_test_canvas_host,
+    create_test_canvas_host_with, create_test_image_host,
 };
 
 fn empty_data() -> GlShapeRendererData {
@@ -87,9 +87,11 @@ mod create_gl_shape_data {
     use super::*;
 
     #[test]
-    fn starts_with_neither_cache_populated_so_a_shape_allocates_nothing_until_a_strategy_needs_it() {
+    fn starts_with_neither_cache_populated_so_a_shape_allocates_nothing_until_a_strategy_needs_it()
+    {
         let mut state = create_gl_state();
-        let data = create_gl_shape_data(&mut state, &crate::gl_test_helper::display_node()).unwrap();
+        let data =
+            create_gl_shape_data(&mut state, &crate::gl_test_helper::display_node()).unwrap();
         let mut guard = data.write().unwrap();
         let data = get_gl_shape_data(&mut *guard).unwrap();
         assert!(data.surface.is_none());

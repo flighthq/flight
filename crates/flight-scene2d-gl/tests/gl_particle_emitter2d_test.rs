@@ -7,7 +7,9 @@ use flight_render_gl::{GlRenderState, register_gl_image_texture_resolver};
 use flight_scene2d_gl::*;
 use flight_textureatlas::{TextureAtlas, TextureAtlasRotation, create_texture_atlas};
 
-use crate::gl_test_helper::{calls_with, count_calls, create_gl_state, make_atlas, make_scene2d_proxy};
+use crate::gl_test_helper::{
+    calls_with, count_calls, create_gl_state, make_atlas, make_scene2d_proxy,
+};
 
 fn make_rotated_atlas(rotation: TextureAtlasRotation) -> Ref<TextureAtlas> {
     let (width, height) = if rotation == TextureAtlasRotation::None {
@@ -94,7 +96,10 @@ mod draw_gl_particle_emitter2d {
     #[test]
     fn returns_early_without_drawing_when_particle_count_is_0() {
         let mut state = create_atlas_gl_state();
-        draw(&mut state, default_node(Some(make_rotated_atlas(TextureAtlasRotation::None)), 0));
+        draw(
+            &mut state,
+            default_node(Some(make_rotated_atlas(TextureAtlasRotation::None)), 0),
+        );
         assert_eq!(count_calls("draw_elements_instanced"), 0);
     }
 
@@ -107,7 +112,9 @@ mod draw_gl_particle_emitter2d {
                 Some(make_rotated_atlas(TextureAtlasRotation::None)),
                 3,
                 vec![0, 0, 0],
-                vec![0.0, 0.0, 0.0, 1.0, 10.0, 10.0, 0.0, 1.0, 20.0, 20.0, 0.0, 1.0],
+                vec![
+                    0.0, 0.0, 0.0, 1.0, 10.0, 10.0, 0.0, 1.0, 20.0, 20.0, 0.0, 1.0,
+                ],
                 vec![1.0, 0.5, 0.25],
                 vec![1.0; 9],
             ),
@@ -127,7 +134,9 @@ mod draw_gl_particle_emitter2d {
                 Some(make_rotated_atlas(TextureAtlasRotation::None)),
                 3,
                 vec![0, 99, 0],
-                vec![0.0, 0.0, 0.0, 1.0, 10.0, 10.0, 0.0, 1.0, 20.0, 20.0, 0.0, 1.0],
+                vec![
+                    0.0, 0.0, 0.0, 1.0, 10.0, 10.0, 0.0, 1.0, 20.0, 20.0, 0.0, 1.0,
+                ],
                 vec![1.0; 3],
                 vec![1.0; 9],
             ),
@@ -142,7 +151,10 @@ mod draw_gl_particle_emitter2d {
         let mut state = create_atlas_gl_state();
         draw(
             &mut state,
-            default_node(Some(make_rotated_atlas(TextureAtlasRotation::Clockwise90)), 1),
+            default_node(
+                Some(make_rotated_atlas(TextureAtlasRotation::Clockwise90)),
+                1,
+            ),
         );
         let runtime = state.gl_runtime.borrow();
         let data = runtime.particle_instance_data.as_ref().unwrap();
@@ -165,6 +177,75 @@ mod draw_gl_particle_emitter2d {
         assert_eq!(data[12], 40.0);
         assert_eq!(data[13], -20.0);
     }
+    #[test]
+    fn uploads_the_straight_alpha_flag_for_a_compressed_particle_atlas() {
+        let mut state = create_atlas_gl_state();
+        flight_render_gl::register_gl_compressed_image_texture_resolver(&mut state);
+        state.gl_registries.compressed_texture_upload = Some(upload_compressed_always);
+        let image = make_compressed_image_resource();
+        let mut texture = flight_texture::create_texture_2d();
+        texture.source = Some(image as flight_texture::TextureSourceRef);
+        let atlas = create_texture_atlas();
+        {
+            let mut atlas = atlas.write().unwrap();
+            flight_textureatlas::add_texture_atlas_region(
+                &mut atlas, 0.0, 0.0, 4.0, 4.0, None, None, None,
+            );
+            atlas.texture = Some(Arc::new(RwLock::new(texture)));
+        }
+
+        draw(&mut state, default_node(Some(atlas), 1));
+
+        let shader = state
+            .context_state
+            .runtime_state
+            .borrow()
+            .particle_resources
+            .as_ref()
+            .unwrap()
+            .shader
+            .clone();
+        let location = shader
+            .loc_straight_texture_alpha
+            .map_or(-1, |value| value.0 as i64);
+        assert!(
+            calls_with("uniform_1_i32")
+                .iter()
+                .any(|call| call.integers == vec![location, 1])
+        );
+    }
+}
+
+fn upload_compressed_always(
+    _gl: &glow::Context,
+    _image: &flight_image::CompressedImageResource,
+    _decoder: Option<flight_render_gl::GlCompressedTextureDecoder>,
+    _color_space: flight_texture::TextureColorSpace,
+) -> bool {
+    return true;
+}
+
+fn make_compressed_image_resource() -> Ref<flight_image::CompressedImageResource> {
+    let data = Arc::new(flight_image::CompressedImageData {
+        container: flight_texture_formats::TextureContainer {
+            format: flight_texture_formats::TextureContainerFormat::Bc1,
+            width: 4,
+            height: 4,
+            depth: 1,
+            mip_levels: 1,
+            layers: 1,
+            faces: 1,
+            supercompression: flight_texture_formats::TextureContainerSupercompression::None,
+            levels: vec![flight_texture_formats::TextureContainerLevel {
+                byte_offset: 0,
+                byte_length: 8,
+                width: 4,
+                height: 4,
+            }],
+        },
+        payload: Arc::new(RwLock::new(vec![0_u8; 8].into_boxed_slice())),
+    });
+    return flight_image::create_compressed_image_resource(data);
 }
 
 mod gl_particle_emitter2d_renderer {
@@ -173,7 +254,10 @@ mod gl_particle_emitter2d_renderer {
     #[test]
     fn has_a_create_data_function() {
         let mut state = create_gl_state();
-        assert!((GL_PARTICLE_EMITTER2D_RENDERER.create_data)(&mut state, &default_node(None, 1)).is_none());
+        assert!(
+            (GL_PARTICLE_EMITTER2D_RENDERER.create_data)(&mut state, &default_node(None, 1))
+                .is_none()
+        );
     }
 
     #[test]

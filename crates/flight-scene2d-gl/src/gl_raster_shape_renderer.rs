@@ -42,7 +42,10 @@ pub static GL_RASTER_SHAPE_RENDERER: NodeRenderer<GlRenderState> = NodeRenderer 
 // Replays the shape's whole command stream into an offscreen 2D canvas and draws the result as one
 // textured quad. Drawing at all is the registered rasterizer's job, so an absent one is reported
 // rather than quietly dropping the shape.
-pub fn draw_gl_raster_shape(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>) {
+pub fn draw_gl_raster_shape(
+    state: &mut GlRenderState,
+    render_proxy: &RenderProxy2D<GlRenderState>,
+) {
     let Some(renderer_data) = &render_proxy.renderer_data else {
         return;
     };
@@ -54,7 +57,11 @@ pub fn draw_gl_raster_shape(state: &mut GlRenderState, render_proxy: &RenderProx
     }
 
     let Some(rasterizer) = get_gl_shape_rasterizer(state) else {
-        emit_render_registry_miss(state, RenderRegistryTable::ShapeRasterizer, SHAPE_KIND.to_string());
+        emit_render_registry_miss(
+            state,
+            RenderRegistryTable::ShapeRasterizer,
+            SHAPE_KIND.to_string(),
+        );
         return;
     };
 
@@ -77,7 +84,8 @@ pub fn draw_gl_raster_shape(state: &mut GlRenderState, render_proxy: &RenderProx
     // denser raster is only sharper. The pixel ratio joins the invalidation check because a state
     // that changes it must re-rasterize at the new density.
     let pixel_ratio = state.render.pixel_ratio;
-    let (Some(canvas_host), Some(image_host)) = (state.canvas_host.clone(), state.image_host.clone())
+    let (Some(canvas_host), Some(image_host)) =
+        (state.canvas_host.clone(), state.image_host.clone())
     else {
         return;
     };
@@ -114,7 +122,10 @@ pub fn draw_gl_raster_shape(state: &mut GlRenderState, render_proxy: &RenderProx
             if let Some(image) = &shape_data.image {
                 delete_gl_premultiplied_image_texture(state, image);
             }
-            destroy_canvas_host_surface(&mut state.gl_runtime.borrow_mut().canvas_host_surfaces, &surface);
+            destroy_canvas_host_surface(
+                &mut state.gl_runtime.borrow_mut().canvas_host_surfaces,
+                &surface,
+            );
             let new_surface = create_canvas_host_surface(
                 &mut state.gl_runtime.borrow_mut().canvas_host_surfaces,
                 &canvas_host,
@@ -195,7 +206,10 @@ pub fn draw_gl_raster_shape(state: &mut GlRenderState, render_proxy: &RenderProx
     let base = start_instance * QUAD_BATCH_INSTANCE_FLOATS;
     let raster_shape_transform = create_matrix(t.a, t.b, t.c, t.d, tx, ty);
     write_gl_quad_batch_instance(
-        &mut state.gl_runtime.borrow_mut().quad_batch_writer_instance_data,
+        &mut state
+            .gl_runtime
+            .borrow_mut()
+            .quad_batch_writer_instance_data,
         base,
         &raster_shape_transform,
         w,

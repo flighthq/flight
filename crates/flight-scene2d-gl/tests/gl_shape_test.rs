@@ -9,7 +9,8 @@ use flight_scene2d_gl::*;
 use flight_shape::contract::{
     GradientType, Shape, append_shape_begin_fill, append_shape_begin_gradient_fill,
     append_shape_end_fill, append_shape_line_style, append_shape_line_to, append_shape_move_to,
-    append_shape_path, append_shape_rectangle, create_shape, register_default_shape_bounds_commands,
+    append_shape_path, append_shape_rectangle, create_shape,
+    register_default_shape_bounds_commands,
 };
 
 use crate::gl_test_helper::{
@@ -21,12 +22,26 @@ fn noop_rasterizer() -> ShapeRasterizer<GlRenderState> {
 }
 
 // The TS `enableGlStrokePathTessellation` kernel, installed directly on the registry.
-fn stroke_path_tessellator(path: &Path, style: &StrokeStyle, tolerance: Option<f32>) -> Option<PathMesh> {
+fn stroke_path_tessellator(
+    path: &Path,
+    style: &StrokeStyle,
+    tolerance: Option<f32>,
+) -> Option<PathMesh> {
     return tessellate_stroke_path(path, style, tolerance.map(f64::from));
 }
 
 fn line_style(shape: &Ref<Shape>, thickness: f64, color: u32) {
-    append_shape_line_style(shape, Some(thickness), color, None, None, None, None, None, None);
+    append_shape_line_style(
+        shape,
+        Some(thickness),
+        color,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    );
 }
 
 fn closed_stroke_shape() -> Ref<Shape> {
@@ -150,10 +165,17 @@ mod draw_gl_shape {
             (bounds.width.ceil() * 3.0).ceil(),
             (bounds.height.ceil() * 3.0).ceil(),
         );
-        assert_eq!(hosts.created.lock().unwrap().last().copied(), Some(expected));
+        assert_eq!(
+            hosts.created.lock().unwrap().last().copied(),
+            Some(expected)
+        );
         let surface = {
             let mut guard = proxy.renderer_data.as_ref().unwrap().write().unwrap();
-            get_gl_shape_data(&mut *guard).unwrap().surface.clone().unwrap()
+            get_gl_shape_data(&mut *guard)
+                .unwrap()
+                .surface
+                .clone()
+                .unwrap()
         };
         assert!(
             surface_calls(&surface)
@@ -163,7 +185,8 @@ mod draw_gl_shape {
     }
 
     #[test]
-    fn re_rasterizes_when_only_the_pixel_ratio_changes_since_the_cached_raster_is_the_wrong_density() {
+    fn re_rasterizes_when_only_the_pixel_ratio_changes_since_the_cached_raster_is_the_wrong_density()
+     {
         let (mut state, _hosts) = create_gl_state_with_hosts();
         register_gl_standard_material(&mut state);
         let calls = Arc::new(Mutex::new(0));

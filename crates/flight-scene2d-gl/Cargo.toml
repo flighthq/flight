@@ -47,6 +47,7 @@ glow = "0.18.0"
 [dev-dependencies]
 flight-bitmap = { path = "../flight-bitmap" }
 flight-glyphatlas = { path = "../flight-glyphatlas" }
+flight-texture-formats = { path = "../flight-texture-formats" }
 
 [lints]
 workspace = true

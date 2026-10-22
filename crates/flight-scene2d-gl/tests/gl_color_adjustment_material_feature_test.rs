@@ -2,7 +2,9 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 
 use flight_render::are_color_adjustments_enabled;
-use flight_render_gl::{GlColorAdjustmentData, GlRenderState, get_gl_color_adjustment_material_feature};
+use flight_render_gl::{
+    GlColorAdjustmentData, GlRenderState, get_gl_color_adjustment_material_feature,
+};
 use flight_scene2d_gl::*;
 use glow::NativeTexture;
 
@@ -55,7 +57,10 @@ fn record(state: &mut GlRenderState, value: Option<GlColorAdjustmentData>, index
 fn tint_bytes(state: &GlRenderState, offset: usize, length: usize) -> Vec<u8> {
     let runtime = state.gl_runtime.borrow();
     let words = runtime.quad_batch_writer_color_tint_data.as_ref().unwrap();
-    let bytes = words.iter().flat_map(|word| word.to_ne_bytes()).collect::<Vec<_>>();
+    let bytes = words
+        .iter()
+        .flat_map(|word| word.to_ne_bytes())
+        .collect::<Vec<_>>();
     return bytes[offset..offset + length].to_vec();
 }
 
@@ -74,7 +79,10 @@ fn prepare(state: &mut GlRenderState, max_instances: usize) {
 }
 
 fn mode(state: &GlRenderState) -> Option<u32> {
-    return state.gl_runtime.borrow().quad_batch_writer_color_scale_bias_mode;
+    return state
+        .gl_runtime
+        .borrow()
+        .quad_batch_writer_color_scale_bias_mode;
 }
 
 fn has_attrib_pointer(values: [i64; 6]) -> bool {
@@ -99,10 +107,18 @@ mod register_gl_color_adjustment_material_feature {
     fn is_idempotent() {
         let mut state = create_gl_state();
         register_gl_color_adjustment_material_feature(&mut state);
-        let table = state.gl_registries.color_adjustment_feature.clone().unwrap();
+        let table = state
+            .gl_registries
+            .color_adjustment_feature
+            .clone()
+            .unwrap();
         register_gl_color_adjustment_material_feature(&mut state);
         assert!(Arc::ptr_eq(
-            state.gl_registries.color_adjustment_feature.as_ref().unwrap(),
+            state
+                .gl_registries
+                .color_adjustment_feature
+                .as_ref()
+                .unwrap(),
             &table
         ));
     }
@@ -129,7 +145,10 @@ mod register_gl_color_adjustment_material_feature {
         record(&mut state, Some(tint), 2);
         assert_eq!(mode(&state), Some(CT_MODE_UNIFORM));
         assert_eq!(
-            state.gl_runtime.borrow().quad_batch_writer_uniform_color_scale_bias,
+            state
+                .gl_runtime
+                .borrow()
+                .quad_batch_writer_uniform_color_scale_bias,
             Some(tint)
         );
     }
@@ -190,7 +209,11 @@ mod register_gl_color_adjustment_material_feature {
     fn stores_normalized_linear_color_biases_without_conversion() {
         let mut state = create_gl_state();
         register_gl_color_adjustment_material_feature(&mut state);
-        record(&mut state, Some(ct(1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0)), 0);
+        record(
+            &mut state,
+            Some(ct(1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0)),
+            0,
+        );
         record(&mut state, Some(scale(0.5)), 1);
         assert_eq!(
             state
@@ -208,11 +231,22 @@ mod register_gl_color_adjustment_material_feature {
     fn widens_to_a_full_matrix_stream_only_when_channel_mixing_appears() {
         let mut state = create_gl_state();
         register_gl_color_adjustment_material_feature(&mut state);
-        record(&mut state, Some(GlColorAdjustmentData::TintMaterialData(0x808080ff)), 0);
-        record(&mut state, Some(GlColorAdjustmentData::ColorMatrix(MIX_RED_GREEN)), 1);
+        record(
+            &mut state,
+            Some(GlColorAdjustmentData::TintMaterialData(0x808080ff)),
+            0,
+        );
+        record(
+            &mut state,
+            Some(GlColorAdjustmentData::ColorMatrix(MIX_RED_GREEN)),
+            1,
+        );
         assert_eq!(mode(&state), Some(CT_MODE_MATRIX));
         let runtime = state.gl_runtime.borrow();
-        let data = runtime.quad_batch_writer_color_matrix_data.as_ref().unwrap();
+        let data = runtime
+            .quad_batch_writer_color_matrix_data
+            .as_ref()
+            .unwrap();
         // D1 f32 bound (TS: toBeCloseTo 2 digits)
         assert!((data[0] - 128.0 / 255.0).abs() <= 0.005);
         assert_eq!(data[20], 1.0);
@@ -225,7 +259,11 @@ mod register_gl_color_adjustment_material_feature {
         let mut state = create_gl_state();
         register_gl_color_adjustment_material_feature(&mut state);
         record(&mut state, None, 0);
-        record(&mut state, Some(GlColorAdjustmentData::TintMaterialData(0x12345678)), 1);
+        record(
+            &mut state,
+            Some(GlColorAdjustmentData::TintMaterialData(0x12345678)),
+            1,
+        );
         assert_eq!(mode(&state), Some(CT_MODE_PACKED_TINT));
         assert_eq!(tint_bytes(&state, 4, 4), vec![0x12, 0x34, 0x56, 0x78]);
     }
@@ -262,7 +300,14 @@ mod register_gl_color_adjustment_material_feature {
                 .writer_color_scale_bias_buffer
                 .is_some()
         );
-        assert!(has_attrib_pointer([7, 4, i64::from(glow::UNSIGNED_BYTE), 1, 4, 0]));
+        assert!(has_attrib_pointer([
+            7,
+            4,
+            i64::from(glow::UNSIGNED_BYTE),
+            1,
+            4,
+            0
+        ]));
         assert_eq!(calls_with("draw_elements_instanced")[0].integers[4], 2);
     }
 
@@ -272,11 +317,22 @@ mod register_gl_color_adjustment_material_feature {
         register_gl_color_adjustment_material_feature(&mut state);
         prepare(&mut state, 2);
         record(&mut state, None, 0);
-        record(&mut state, Some(GlColorAdjustmentData::ColorMatrix(MIX_RED_GREEN)), 1);
+        record(
+            &mut state,
+            Some(GlColorAdjustmentData::ColorMatrix(MIX_RED_GREEN)),
+            1,
+        );
         state.gl_runtime.borrow_mut().quad_batch_writer_count = 2;
         flush_gl_quad_batch_writer(&mut state);
         assert!(has_attrib_pointer([7, 4, i64::from(glow::FLOAT), 0, 80, 0]));
-        assert!(has_attrib_pointer([11, 4, i64::from(glow::FLOAT), 0, 80, 64]));
+        assert!(has_attrib_pointer([
+            11,
+            4,
+            i64::from(glow::FLOAT),
+            0,
+            80,
+            64
+        ]));
     }
 
     #[test]
@@ -284,7 +340,11 @@ mod register_gl_color_adjustment_material_feature {
         let mut state = create_gl_state();
         register_gl_color_adjustment_material_feature(&mut state);
         prepare(&mut state, 1);
-        record(&mut state, Some(GlColorAdjustmentData::ColorMatrix(MIX_RED_GREEN)), 0);
+        record(
+            &mut state,
+            Some(GlColorAdjustmentData::ColorMatrix(MIX_RED_GREEN)),
+            0,
+        );
         state.gl_runtime.borrow_mut().quad_batch_writer_count = 1;
         flush_gl_quad_batch_writer(&mut state);
         assert_eq!(mode(&state), Some(CT_MODE_NONE));

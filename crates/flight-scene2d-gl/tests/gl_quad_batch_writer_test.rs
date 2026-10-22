@@ -127,7 +127,10 @@ mod pack_gl_quad_batch_material_instance {
     #[test]
     fn is_a_no_op_when_no_per_instance_material_renderer_is_active() {
         let mut state = create_gl_state();
-        state.gl_runtime.borrow_mut().quad_batch_writer_material_renderer = None;
+        state
+            .gl_runtime
+            .borrow_mut()
+            .quad_batch_writer_material_renderer = None;
         pack_gl_quad_batch_material_instance(&mut state, None, 0);
     }
 }
@@ -193,11 +196,28 @@ mod prepare_gl_quad_batch_write {
     #[test]
     fn grows_instance_data_when_capacity_is_exceeded() {
         let mut state = create_gl_state();
-        let initial_floats = state.gl_runtime.borrow().quad_batch_writer_instance_data.len();
+        let initial_floats = state
+            .gl_runtime
+            .borrow()
+            .quad_batch_writer_instance_data
+            .len();
 
-        prepare(&mut state, make_texture(77), None, initial_floats + 100, None);
+        prepare(
+            &mut state,
+            make_texture(77),
+            None,
+            initial_floats + 100,
+            None,
+        );
 
-        assert!(state.gl_runtime.borrow().quad_batch_writer_instance_data.len() > initial_floats);
+        assert!(
+            state
+                .gl_runtime
+                .borrow()
+                .quad_batch_writer_instance_data
+                .len()
+                > initial_floats
+        );
     }
 
     #[test]
@@ -209,7 +229,10 @@ mod prepare_gl_quad_batch_write {
         prepare(&mut state, make_texture(77), None, 1, Some(true));
 
         assert_eq!(count_calls("draw_elements_instanced"), 1);
-        assert_eq!(state.gl_runtime.borrow().quad_batch_writer_smoothing, Some(true));
+        assert_eq!(
+            state.gl_runtime.borrow().quad_batch_writer_smoothing,
+            Some(true)
+        );
     }
 
     #[test]
@@ -228,7 +251,7 @@ mod record_gl_quad_batch_color_scale_bias {
 
     #[test]
     fn skips_the_tint_draws_untinted_and_records_no_fold_state_when_color_adjustment_is_not_enabled()
-    {
+     {
         let mut state = create_gl_state();
         prepare(&mut state, make_texture(77), None, 1, None);
         record_gl_quad_batch_color_scale_bias(&mut state, Some(&ct(0.5)), 0);
@@ -266,7 +289,10 @@ mod record_gl_quad_batch_color_scale_bias {
         register_gl_color_adjustment_material_feature(&mut state);
         record_gl_quad_batch_color_scale_bias(&mut state, Some(&ct(0.5)), 0);
         assert_eq!(
-            state.gl_runtime.borrow().quad_batch_writer_color_scale_bias_mode,
+            state
+                .gl_runtime
+                .borrow()
+                .quad_batch_writer_color_scale_bias_mode,
             Some(CT_MODE_UNIFORM)
         );
     }

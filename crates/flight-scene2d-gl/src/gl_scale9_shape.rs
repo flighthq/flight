@@ -93,11 +93,17 @@ pub fn destroy_gl_scale9_shape_data(state: &mut GlRenderState, data: RendererDat
         delete_gl_premultiplied_image_texture(state, image);
     }
     if let Some(surface) = &shape_data.surface {
-        destroy_canvas_host_surface(&mut state.gl_runtime.borrow_mut().canvas_host_surfaces, surface);
+        destroy_canvas_host_surface(
+            &mut state.gl_runtime.borrow_mut().canvas_host_surfaces,
+            surface,
+        );
     }
 }
 
-pub fn draw_gl_scale9_shape(state: &mut GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>) {
+pub fn draw_gl_scale9_shape(
+    state: &mut GlRenderState,
+    render_proxy: &RenderProxy2D<GlRenderState>,
+) {
     flush_gl_quad_batch_writer(state);
     {
         let source = render_proxy.source.read().unwrap();
@@ -145,7 +151,8 @@ pub fn draw_gl_scale9_shape(state: &mut GlRenderState, render_proxy: &RenderProx
     if w <= 0.0 || h <= 0.0 {
         return;
     }
-    let (Some(canvas_host), Some(image_host)) = (state.canvas_host.clone(), state.image_host.clone())
+    let (Some(canvas_host), Some(image_host)) =
+        (state.canvas_host.clone(), state.image_host.clone())
     else {
         return;
     };
@@ -187,7 +194,10 @@ pub fn draw_gl_scale9_shape(state: &mut GlRenderState, render_proxy: &RenderProx
             if let Some(image) = &shape_data.image {
                 delete_gl_premultiplied_image_texture(state, image);
             }
-            destroy_canvas_host_surface(&mut state.gl_runtime.borrow_mut().canvas_host_surfaces, &surface);
+            destroy_canvas_host_surface(
+                &mut state.gl_runtime.borrow_mut().canvas_host_surfaces,
+                &surface,
+            );
             let new_surface = create_canvas_host_surface(
                 &mut state.gl_runtime.borrow_mut().canvas_host_surfaces,
                 &canvas_host,
@@ -299,5 +309,17 @@ fn set_stripped_gl_matrix_from_values(
     let b = if scale_x != 0.0 { t.b / scale_x } else { t.b };
     let c = if scale_y != 0.0 { t.c / scale_y } else { t.c };
     let d = if scale_y != 0.0 { t.d / scale_y } else { t.d };
-    set_gl_matrix_from_values(gl, loc, m, a, b, c, d, t.tx, t.ty, viewport_width, viewport_height);
+    set_gl_matrix_from_values(
+        gl,
+        loc,
+        m,
+        a,
+        b,
+        c,
+        d,
+        t.tx,
+        t.ty,
+        viewport_width,
+        viewport_height,
+    );
 }

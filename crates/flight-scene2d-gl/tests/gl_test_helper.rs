@@ -6,9 +6,8 @@ use std::ffi::{c_char, c_void};
 use std::rc::Rc;
 use std::sync::Arc;
 
-
 use flight_render_gl::{
-    create_gl_context_state, create_gl_render_state, GlContextState, GlRenderState,
+    GlContextState, GlRenderState, create_gl_context_state, create_gl_render_state,
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -350,8 +349,6 @@ pub fn make_image_resource(
     );
 }
 
-
-
 // ---- scene2d-gl helpers (TS `glTestHelper.ts` + per-file fixtures) ----
 
 /// TS `createGlState`: a mock-backed render state whose drawing buffer (here the live viewport) is
@@ -393,7 +390,14 @@ pub fn set_viewport(x: i32, y: i32, width: i32, height: i32) {
 }
 
 pub fn count_calls(name: &str) -> usize {
-    return MOCK.with(|state| state.borrow().calls.iter().filter(|call| call.as_str() == name).count());
+    return MOCK.with(|state| {
+        state
+            .borrow()
+            .calls
+            .iter()
+            .filter(|call| call.as_str() == name)
+            .count()
+    });
 }
 
 pub fn call_names() -> Vec<String> {
@@ -528,9 +532,17 @@ impl flight_scene2d_gl::Canvas2DContext for RecordingCanvas2D {
 }
 
 /// The recording context behind a surface made by `make_canvas_surface`.
-pub fn surface_canvas(surface: &flight_entity::Ref<flight_surface::CanvasSurface>) -> Arc<RecordingCanvas2D> {
+pub fn surface_canvas(
+    surface: &flight_entity::Ref<flight_surface::CanvasSurface>,
+) -> Arc<RecordingCanvas2D> {
     let id = flight_entity::get_entity_id(&*surface.read().unwrap());
-    return CANVASES.with(|canvases| canvases.borrow().get(&id).cloned().expect("recording canvas"));
+    return CANVASES.with(|canvases| {
+        canvases
+            .borrow()
+            .get(&id)
+            .cloned()
+            .expect("recording canvas")
+    });
 }
 
 /// Every recorded call on a surface's context.
@@ -542,7 +554,10 @@ thread_local! {
     static CANVASES: RefCell<HashMap<u64, Arc<RecordingCanvas2D>>> = RefCell::new(HashMap::new());
 }
 
-pub fn make_canvas_surface(width: f32, height: f32) -> flight_entity::Ref<flight_surface::CanvasSurface> {
+pub fn make_canvas_surface(
+    width: f32,
+    height: f32,
+) -> flight_entity::Ref<flight_surface::CanvasSurface> {
     let surface: flight_entity::Ref<flight_surface::CanvasSurface> =
         flight_surface::allocate_surface(None);
     let canvas = Arc::new(RecordingCanvas2D {
@@ -650,14 +665,21 @@ pub fn make_image_texture_2d(width: u32, height: u32) -> flight_texture::Texture
 
 /// A 2D texture over a CPU bitmap source (TS `createTexture({ dimension: '2d', source: createBitmap })`).
 pub fn make_bitmap_texture(width: u32, height: u32) -> flight_entity::Ref<flight_texture::Texture> {
-    let bitmap = Arc::new(std::sync::RwLock::new(flight_bitmap::create_bitmap(width, height, None)));
+    let bitmap = Arc::new(std::sync::RwLock::new(flight_bitmap::create_bitmap(
+        width, height, None,
+    )));
     let mut texture = flight_texture::create_texture_2d();
     texture.source = Some(bitmap as flight_texture::TextureSourceRef);
-    return Arc::new(std::sync::RwLock::new(flight_texture::Texture::Texture2D(texture)));
+    return Arc::new(std::sync::RwLock::new(flight_texture::Texture::Texture2D(
+        texture,
+    )));
 }
 
 /// TS `makeAtlas`: a 64x64 image atlas with one region at the origin.
-pub fn make_atlas(region_width: f32, region_height: f32) -> flight_entity::Ref<flight_textureatlas::TextureAtlas> {
+pub fn make_atlas(
+    region_width: f32,
+    region_height: f32,
+) -> flight_entity::Ref<flight_textureatlas::TextureAtlas> {
     let atlas = flight_textureatlas::create_texture_atlas();
     {
         let mut atlas = atlas.write().unwrap();
@@ -671,7 +693,9 @@ pub fn make_atlas(region_width: f32, region_height: f32) -> flight_entity::Ref<f
             None,
             None,
         );
-        atlas.texture = Some(Arc::new(std::sync::RwLock::new(make_image_texture_2d(64, 64))));
+        atlas.texture = Some(Arc::new(std::sync::RwLock::new(make_image_texture_2d(
+            64, 64,
+        ))));
     }
     return atlas;
 }
@@ -809,22 +833,30 @@ unsafe extern "system" fn gl_get_integer_v(parameter: u32, output: *mut i32) {
             glow::VERTEX_ARRAY_BINDING => vec![state.vertex_array],
             glow::VIEWPORT => state.viewport.to_vec(),
             glow::SCISSOR_BOX => state.scissor.to_vec(),
-            glow::TEXTURE_BINDING_2D => vec![*state
-                .textures
-                .get(&(state.active_texture, glow::TEXTURE_2D))
-                .unwrap_or(&0)],
-            glow::TEXTURE_BINDING_2D_ARRAY => vec![*state
-                .textures
-                .get(&(state.active_texture, glow::TEXTURE_2D_ARRAY))
-                .unwrap_or(&0)],
-            glow::TEXTURE_BINDING_3D => vec![*state
-                .textures
-                .get(&(state.active_texture, glow::TEXTURE_3D))
-                .unwrap_or(&0)],
-            glow::TEXTURE_BINDING_CUBE_MAP => vec![*state
-                .textures
-                .get(&(state.active_texture, glow::TEXTURE_CUBE_MAP))
-                .unwrap_or(&0)],
+            glow::TEXTURE_BINDING_2D => vec![
+                *state
+                    .textures
+                    .get(&(state.active_texture, glow::TEXTURE_2D))
+                    .unwrap_or(&0),
+            ],
+            glow::TEXTURE_BINDING_2D_ARRAY => vec![
+                *state
+                    .textures
+                    .get(&(state.active_texture, glow::TEXTURE_2D_ARRAY))
+                    .unwrap_or(&0),
+            ],
+            glow::TEXTURE_BINDING_3D => vec![
+                *state
+                    .textures
+                    .get(&(state.active_texture, glow::TEXTURE_3D))
+                    .unwrap_or(&0),
+            ],
+            glow::TEXTURE_BINDING_CUBE_MAP => vec![
+                *state
+                    .textures
+                    .get(&(state.active_texture, glow::TEXTURE_CUBE_MAP))
+                    .unwrap_or(&0),
+            ],
             _ => vec![*state.integers.get(&parameter).unwrap_or(&0)],
         }
     });
@@ -1022,11 +1054,23 @@ unsafe extern "system" fn gl_disable_vertex_attrib_array(index: u32) {
 }
 
 unsafe extern "system" fn gl_uniform_2_f(location: i32, x: f32, y: f32) {
-    record_call("uniform_2_f32", &[location.into()], &[x, y], Vec::new(), String::new());
+    record_call(
+        "uniform_2_f32",
+        &[location.into()],
+        &[x, y],
+        Vec::new(),
+        String::new(),
+    );
 }
 
 unsafe extern "system" fn gl_uniform_3_f(location: i32, x: f32, y: f32, z: f32) {
-    record_call("uniform_3_f32", &[location.into()], &[x, y, z], Vec::new(), String::new());
+    record_call(
+        "uniform_3_f32",
+        &[location.into()],
+        &[x, y, z],
+        Vec::new(),
+        String::new(),
+    );
 }
 
 unsafe extern "system" fn gl_uniform_1_fv(location: i32, count: i32, value: *const f32) {
@@ -1036,7 +1080,13 @@ unsafe extern "system" fn gl_uniform_1_fv(location: i32, count: i32, value: *con
         // SAFETY: uniform1fv callers provide one float for each declared element.
         unsafe { std::slice::from_raw_parts(value, count as usize) }.to_vec()
     };
-    record_call("uniform_1_f32_slice", &[location.into()], &values, Vec::new(), String::new());
+    record_call(
+        "uniform_1_f32_slice",
+        &[location.into()],
+        &values,
+        Vec::new(),
+        String::new(),
+    );
 }
 
 unsafe extern "system" fn gl_uniform_matrix_4_fv(

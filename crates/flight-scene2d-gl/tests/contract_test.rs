@@ -1,5 +1,5 @@
-use flight_scene2d_gl::contract::{GL_SHAPE_RENDERER, register_gl_shape_rasterizer};
 use flight_render_gl::GlRenderState;
+use flight_scene2d_gl::contract::{GL_SHAPE_RENDERER, register_gl_shape_rasterizer};
 
 mod contract {
     use super::*;
@@ -13,7 +13,9 @@ mod contract {
 
     #[test]
     fn register_gl_shape_rasterizer_is_exported_as_a_function() {
-        let _register: fn(&mut GlRenderState, Option<flight_scene2d_gl::ShapeRasterizer<GlRenderState>>) =
-            register_gl_shape_rasterizer;
+        let _register: fn(
+            &mut GlRenderState,
+            Option<flight_scene2d_gl::ShapeRasterizer<GlRenderState>>,
+        ) = register_gl_shape_rasterizer;
     }
 }

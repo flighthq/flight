@@ -5,7 +5,9 @@ use flight_render::{
     BatchFormat, NodeRenderer, RenderProxy2D, SCENE2D_WORKING_COLOR_SPACE, noop_renderer_data,
 };
 use flight_render_gl::{GlRenderState, resolve_gl_texture};
-use flight_texture::{TextureUvTransform, get_texture_height, get_texture_width, has_texture_source};
+use flight_texture::{
+    TextureUvTransform, get_texture_height, get_texture_width, has_texture_source,
+};
 use flight_textureatlas::TextureAtlasRotation;
 use flight_tilemap::Tilemap;
 
@@ -57,9 +59,12 @@ fn submit_gl_tilemap(state: &mut GlRenderState, tilemap_node: &RenderProxy2D<GlR
     let Some(material_renderer) = resolve_gl_proxy_material_renderer(state, tilemap_node) else {
         return;
     };
-    let Some(gl_texture) =
-        resolve_gl_texture(state, &*texture, Some(true), Some(SCENE2D_WORKING_COLOR_SPACE))
-    else {
+    let Some(gl_texture) = resolve_gl_texture(
+        state,
+        &*texture,
+        Some(true),
+        Some(SCENE2D_WORKING_COLOR_SPACE),
+    ) else {
         return;
     };
     let straight_alpha = current_gl_straight_alpha(state);
@@ -117,7 +122,10 @@ fn submit_gl_tilemap(state: &mut GlRenderState, tilemap_node: &RenderProxy2D<GlR
             let rotated = region.rotation != TextureAtlasRotation::None;
             let counterclockwise = region.rotation == TextureAtlasRotation::Counterclockwise90;
             write_gl_quad_batch_affine_instance(
-                &mut state.gl_runtime.borrow_mut().quad_batch_writer_instance_data,
+                &mut state
+                    .gl_runtime
+                    .borrow_mut()
+                    .quad_batch_writer_instance_data,
                 write_base,
                 &tile_transform,
                 tile_width,

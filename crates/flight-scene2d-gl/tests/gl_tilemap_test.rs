@@ -7,7 +7,9 @@ use flight_scene2d_gl::*;
 use flight_textureatlas::{TextureAtlas, create_texture_atlas};
 use flight_tilemap::create_tilemap;
 
-use crate::gl_test_helper::{calls_with, count_calls, create_gl_state, make_atlas, make_scene2d_proxy};
+use crate::gl_test_helper::{
+    calls_with, count_calls, create_gl_state, make_atlas, make_scene2d_proxy,
+};
 
 fn create_atlas_gl_state() -> GlRenderState {
     let mut state = create_gl_state();
@@ -49,6 +51,13 @@ mod gl_tilemap_renderer {
     use super::*;
 
     #[test]
+    fn has_a_submit_function() {
+        let submit: fn(&mut GlRenderState, &flight_render::RenderProxy2D<GlRenderState>) =
+            GL_TILEMAP_RENDERER.submit;
+        let _ = submit;
+    }
+
+    #[test]
     fn has_a_create_data_function() {
         let mut state = create_gl_state();
         let node = make_tilemap_node(default_atlas(), 2, 2, vec![0; 4]);
@@ -65,7 +74,10 @@ mod gl_tilemap_renderer {
     #[test]
     fn returns_early_without_drawing_when_atlas_texture_is_null() {
         let mut state = create_atlas_gl_state();
-        submit(&mut state, make_tilemap_node(Some(create_texture_atlas()), 2, 2, vec![0; 4]));
+        submit(
+            &mut state,
+            make_tilemap_node(Some(create_texture_atlas()), 2, 2, vec![0; 4]),
+        );
         assert_eq!(count_calls("draw_elements_instanced"), 0);
     }
 
@@ -82,21 +94,30 @@ mod gl_tilemap_renderer {
     #[test]
     fn returns_early_without_drawing_when_columns_is_0() {
         let mut state = create_atlas_gl_state();
-        submit(&mut state, make_tilemap_node(default_atlas(), 0, 2, vec![0; 4]));
+        submit(
+            &mut state,
+            make_tilemap_node(default_atlas(), 0, 2, vec![0; 4]),
+        );
         assert_eq!(count_calls("draw_elements_instanced"), 0);
     }
 
     #[test]
     fn returns_early_without_drawing_when_rows_is_0() {
         let mut state = create_atlas_gl_state();
-        submit(&mut state, make_tilemap_node(default_atlas(), 2, 0, vec![0; 4]));
+        submit(
+            &mut state,
+            make_tilemap_node(default_atlas(), 2, 0, vec![0; 4]),
+        );
         assert_eq!(count_calls("draw_elements_instanced"), 0);
     }
 
     #[test]
     fn draws_all_valid_tiles_in_a_single_instanced_call() {
         let mut state = create_atlas_gl_state();
-        submit(&mut state, make_tilemap_node(default_atlas(), 2, 2, vec![0; 4]));
+        submit(
+            &mut state,
+            make_tilemap_node(default_atlas(), 2, 2, vec![0; 4]),
+        );
         let draws = calls_with("draw_elements_instanced");
         assert_eq!(draws.len(), 1);
         assert_eq!(draws[0].integers[4], 4);
@@ -105,7 +126,10 @@ mod gl_tilemap_renderer {
     #[test]
     fn excludes_out_of_range_tile_ids_from_the_instanced_draw_count() {
         let mut state = create_atlas_gl_state();
-        submit(&mut state, make_tilemap_node(default_atlas(), 2, 2, vec![0, 99, 99, 0]));
+        submit(
+            &mut state,
+            make_tilemap_node(default_atlas(), 2, 2, vec![0, 99, 99, 0]),
+        );
         let draws = calls_with("draw_elements_instanced");
         assert_eq!(draws.len(), 1);
         assert_eq!(draws[0].integers[4], 2);

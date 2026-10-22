@@ -86,7 +86,11 @@ fn prepare_scale9_sprite<'a>(
     proxies: &'a mut RenderProxies2D<GlRenderState>,
     source: &NodeRef,
 ) -> &'a RenderProxy2D<GlRenderState> {
-    register_node_renderer(state, SCALE9_SPRITE_KIND.to_string(), &GL_SCALE9_SPRITE_RENDERER);
+    register_node_renderer(
+        state,
+        SCALE9_SPRITE_KIND.to_string(),
+        &GL_SCALE9_SPRITE_RENDERER,
+    );
     prepare_scene_2d_render(state, proxies, source);
     return get_or_create_render_proxy_2d(state, proxies, source);
 }
@@ -142,7 +146,10 @@ mod draw_gl_scale9_sprite {
             ];
             for (value, expected) in actual.iter().zip(segment.iter()) {
                 // D1 f32 bound (TS: toBeCloseTo 2 digits)
-                assert!((value - expected).abs() <= 0.005, "segment {index}: {actual:?}");
+                assert!(
+                    (value - expected).abs() <= 0.005,
+                    "segment {index}: {actual:?}"
+                );
             }
         }
     }
@@ -185,12 +192,19 @@ mod draw_gl_scale9_sprite {
         assert_eq!(draws.len(), 1);
         assert_eq!(draws[0].integers[4], 9);
         assert_eq!(state.gl_runtime.borrow().quad_batch_writer_count, 9);
-        assert_eq!(PACKED.with(|calls| calls.borrow().clone()), (0..9).collect::<Vec<_>>());
-        assert_eq!(RECORDED.with(|calls| calls.borrow().clone()), (0..9).collect::<Vec<_>>());
+        assert_eq!(
+            PACKED.with(|calls| calls.borrow().clone()),
+            (0..9).collect::<Vec<_>>()
+        );
+        assert_eq!(
+            RECORDED.with(|calls| calls.borrow().clone()),
+            (0..9).collect::<Vec<_>>()
+        );
     }
 
     #[test]
-    fn scale9_sprite_renderer_declares_the_quad_format_identity_hooks_and_dedicated_submit_function() {
+    fn scale9_sprite_renderer_declares_the_quad_format_identity_hooks_and_dedicated_submit_function()
+     {
         assert_eq!(GL_SCALE9_SPRITE_RENDERER.format, Some(BatchFormat::Quad));
         assert!(GL_SCALE9_SPRITE_RENDERER.is_dirty.is_some());
         assert!(std::ptr::fn_addr_eq(

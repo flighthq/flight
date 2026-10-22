@@ -68,7 +68,8 @@ pub fn draw_gl_text_input_overlay(
     }
 
     if input.focused
-        && get_text_input_selection_begin_index(source) == get_text_input_selection_end_index(source)
+        && get_text_input_selection_begin_index(source)
+            == get_text_input_selection_end_index(source)
     {
         let mut caret_rectangle = TextSelectionRectangle {
             height: 0.0,

@@ -14,8 +14,16 @@ mod pop_gl_clip_rectangle {
     #[test]
     fn restores_the_previous_scissor_rectangle() {
         let mut state = create_gl_state();
-        push_gl_clip_rectangle(&mut state, &create_rectangle(0.0, 0.0, 100.0, 50.0), &identity());
-        push_gl_clip_rectangle(&mut state, &create_rectangle(10.0, 10.0, 10.0, 10.0), &identity());
+        push_gl_clip_rectangle(
+            &mut state,
+            &create_rectangle(0.0, 0.0, 100.0, 50.0),
+            &identity(),
+        );
+        push_gl_clip_rectangle(
+            &mut state,
+            &create_rectangle(10.0, 10.0, 10.0, 10.0),
+            &identity(),
+        );
 
         pop_gl_clip_rectangle(&mut state);
 
@@ -25,7 +33,11 @@ mod pop_gl_clip_rectangle {
     #[test]
     fn disables_scissor_testing_when_the_stack_becomes_empty() {
         let mut state = create_gl_state();
-        push_gl_clip_rectangle(&mut state, &create_rectangle(0.0, 0.0, 100.0, 50.0), &identity());
+        push_gl_clip_rectangle(
+            &mut state,
+            &create_rectangle(0.0, 0.0, 100.0, 50.0),
+            &identity(),
+        );
 
         pop_gl_clip_rectangle(&mut state);
 
@@ -50,7 +62,10 @@ mod push_gl_clip_rectangle {
             &create_matrix(1.0, 0.0, 0.0, 1.0, 5.0, 6.0),
         );
 
-        assert_eq!(last_call("enable").integers, vec![i64::from(glow::SCISSOR_TEST)]);
+        assert_eq!(
+            last_call("enable").integers,
+            vec![i64::from(glow::SCISSOR_TEST)]
+        );
         assert_eq!(last_call("scissor").integers, vec![15, 34, 30, 40]);
     }
 
@@ -58,8 +73,16 @@ mod push_gl_clip_rectangle {
     fn intersects_nested_scissor_rectangles() {
         let mut state = create_gl_state();
 
-        push_gl_clip_rectangle(&mut state, &create_rectangle(0.0, 0.0, 100.0, 100.0), &identity());
-        push_gl_clip_rectangle(&mut state, &create_rectangle(50.0, 25.0, 100.0, 50.0), &identity());
+        push_gl_clip_rectangle(
+            &mut state,
+            &create_rectangle(0.0, 0.0, 100.0, 100.0),
+            &identity(),
+        );
+        push_gl_clip_rectangle(
+            &mut state,
+            &create_rectangle(50.0, 25.0, 100.0, 50.0),
+            &identity(),
+        );
 
         assert_eq!(last_call("scissor").integers, vec![50, 25, 50, 50]);
         assert_eq!(calls_with("scissor").len(), 2);
@@ -75,7 +98,11 @@ mod push_gl_clip_rectangle {
             y: 50,
         });
 
-        push_gl_clip_rectangle(&mut state, &create_rectangle(10.0, 20.0, 30.0, 40.0), &identity());
+        push_gl_clip_rectangle(
+            &mut state,
+            &create_rectangle(10.0, 20.0, 30.0, 40.0),
+            &identity(),
+        );
 
         assert_eq!(last_call("scissor").integers, vec![210, 90, 30, 40]);
     }

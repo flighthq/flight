@@ -217,7 +217,13 @@ pub fn refresh_gl_render_cache(
             cache_state.gl.clear_color(0.0, 0.0, 0.0, 0.0);
             cache_state.gl.clear(glow::COLOR_BUFFER_BIT);
         }
-        render_gl_scene2d(cache_state, cache_proxies, &pass, source, Some(&render_transform));
+        render_gl_scene2d(
+            cache_state,
+            cache_proxies,
+            &pass,
+            source,
+            Some(&render_transform),
+        );
     }
     end_gl_render_pass(cache_state, &pass).unwrap_or_else(|error| throw_error(&error));
 

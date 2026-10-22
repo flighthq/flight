@@ -136,7 +136,12 @@ pub fn draw_gl_shape_meshes(
 // The lean flat-color mesh binding for `state`, compiled once per context. The base path and the
 // fold's tinted draw (which borrows these shared vertex/index buffers) resolve it here.
 pub fn ensure_gl_shape_mesh_program(state: &GlRenderState) -> GlShapeMeshBinding {
-    if let Some(resources) = &state.context_state.runtime_state.borrow().shape_mesh_resources {
+    if let Some(resources) = &state
+        .context_state
+        .runtime_state
+        .borrow()
+        .shape_mesh_resources
+    {
         return resources.binding.clone();
     }
 
@@ -158,18 +163,24 @@ pub fn ensure_gl_shape_mesh_program(state: &GlRenderState) -> GlShapeMeshBinding
             color_location: gl.get_uniform_location(program, "u_color"),
         }
     };
-    state.context_state.runtime_state.borrow_mut().shape_mesh_resources =
-        Some(GlShapeMeshResources {
-            binding: binding.clone(),
-            color_matrix_shader: None,
-            color_scale_bias_shader: None,
-        });
+    state
+        .context_state
+        .runtime_state
+        .borrow_mut()
+        .shape_mesh_resources = Some(GlShapeMeshResources {
+        binding: binding.clone(),
+        color_matrix_shader: None,
+        color_scale_bias_shader: None,
+    });
     return binding;
 }
 
 // Column-major mat3 = projection · world transform, mapping shape-local points to clip space —
 // identical to the quad-batch writer's projection so the mesh aligns with everything else.
-fn shape_mesh_matrix(state: &GlRenderState, render_proxy: &RenderProxy2D<GlRenderState>) -> [f32; 9] {
+fn shape_mesh_matrix(
+    state: &GlRenderState,
+    render_proxy: &RenderProxy2D<GlRenderState>,
+) -> [f32; 9] {
     let (width, height) = get_gl_viewport_size(state);
     let iw = 2.0 / if width == 0.0 { 1.0 } else { width };
     let ih = 2.0 / if height == 0.0 { 1.0 } else { height };
