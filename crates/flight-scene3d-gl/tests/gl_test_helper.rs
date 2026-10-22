@@ -1577,7 +1577,7 @@ unsafe extern "system" fn gl_uniform_4_fv(location: i32, count: i32, value: *con
         unsafe { std::slice::from_raw_parts(value, count as usize * 4) }.to_vec()
     };
     record_call(
-        "uniform_4_f32",
+        "uniform_4_f32_slice",
         &[location.into(), count.into()],
         &values,
         Vec::new(),
