@@ -6,6 +6,10 @@ license.workspace = true
 description = "Portable three-dimensional rigid-body dynamics and constraint solving"
 autotests = false
 
+[features]
+default = []
+stress-tests = []
+
 [lib]
 doctest = false
 

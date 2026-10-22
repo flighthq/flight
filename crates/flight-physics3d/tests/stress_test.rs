@@ -1,3 +1,5 @@
+#![cfg(feature = "stress-tests")]
+
 use std::sync::{Arc, RwLock};
 
 use flight_collision::{
