@@ -1,0 +1,45 @@
+[package]
+name = "flight-scene3d-formats"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+autotests = false
+
+[lib]
+doctest = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-buffer = { workspace = true }
+flight-color = { workspace = true }
+flight-compression = { workspace = true }
+flight-shading = { workspace = true }
+flight-animation = { workspace = true }
+flight-camera = { path = "../flight-camera" }
+flight-lighting = { workspace = true }
+flight-math = { workspace = true }
+flight-node = { path = "../flight-node" }
+flight-geometry = { workspace = true }
+flight-importdiagnostics = { workspace = true }
+flight-scene3d = { workspace = true }
+flight-encoding = { workspace = true }
+flight-entity = { workspace = true }
+flight-image = { workspace = true }
+flight-image-codec = { workspace = true }
+flight-texture = { workspace = true }
+flight-materials = { workspace = true }
+flight-meshgeometry = { workspace = true }
+flight-requirement = { workspace = true }
+flight-xml = { workspace = true }
+
+serde_json = { version = "1", default-features = false, features = ["std", "preserve_order", "arbitrary_precision"] }
+
+[dev-dependencies]
+flight-skeleton3d = { workspace = true }
+flight-resource = { workspace = true }
+
+[lints]
+workspace = true

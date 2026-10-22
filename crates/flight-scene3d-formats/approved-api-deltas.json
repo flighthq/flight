@@ -1,0 +1,288 @@
+{
+  "authority": "User-approved Principal21f7557f, delivered by Foreman077c804b on 2026-10-21",
+  "sourcePin": "a62784923f3be814463286c9fb28edfe6ab15789",
+  "changes": [
+    {
+      "source": "objMaterialModel.ts",
+      "before": "collectObjMaterialModels(source: string): ReadonlySet<string>",
+      "after": "collectObjMaterialModels(out: string[], source: string): void",
+      "rust": "collect_obj_material_models(out: &mut Vec<String>, source: &str)",
+      "behavior": "Clear then fill the caller-owned ordered unique model list; retain capacity. Final parsed material records determine first-discovery model order."
+    },
+    {
+      "source": "awd2BlockDispatch.ts",
+      "before": "createAwd2ParseState(document: Scene3DDocument, source: Uint8Array, view: DataView, diagnostics: ImportDiagnostic[] | undefined): Awd2ParseState",
+      "after": "createAwd2ParseState(): Awd2ParseState",
+      "rust": "create_awd2_parse_state() -> Awd2ParseState",
+      "behavior": "D23 Entity B: create the default state, then assign the original document/source/view/diagnostic handles. No added entity allocation or copying of published handles."
+    },
+    {
+      "source": "awd2BlockDispatch.ts",
+      "before": "initializeAwd2ParseState(out: EntityConstruction<Awd2ParseState>, document: Scene3DDocument, source: Uint8Array, view: DataView, diagnostics: ImportDiagnostic[] | undefined): void",
+      "after": "initializeAwd2ParseState(out: EntityConstruction<Awd2ParseState>): void",
+      "rust": "initialize_awd2_parse_state(out: &mut Awd2ParseState)",
+      "behavior": "Construction-only per-layer initialization; defaults for every public field while retaining the original private runtime/UID. Source/view initially share one empty buffer."
+    },
+    {
+      "source": "md5AnimFeatures.ts",
+      "before": "collectMd5AnimFeatures(source: string): ReadonlySet<string>",
+      "after": "collectMd5AnimFeatures(out: string[], source: string): void",
+      "rust": "pub fn collect_md5_anim_features(out: &mut Vec<String>, source: &str)",
+      "behavior": "Clear then fill the caller-owned ordered output; retain capacity and original handler handles where applicable."
+    },
+    {
+      "source": "md5MeshFeatures.ts",
+      "before": "collectMd5MeshFeatures(source: string): ReadonlySet<string>",
+      "after": "collectMd5MeshFeatures(out: string[], source: string): void",
+      "rust": "pub fn collect_md5_mesh_features(out: &mut Vec<String>, source: &str)",
+      "behavior": "Clear then fill the caller-owned ordered output; retain capacity and original handler handles where applicable."
+    },
+    {
+      "source": "objFeatures.ts",
+      "before": "collectObjFeatures(source: string): ReadonlySet<string>",
+      "after": "collectObjFeatures(out: string[], source: string): void",
+      "rust": "pub fn collect_obj_features(out: &mut Vec<String>, source: &str)",
+      "behavior": "Clear then fill the caller-owned ordered output; retain capacity and original handler handles where applicable."
+    },
+    {
+      "source": "objFeatures.ts",
+      "before": "collectObjMaterialLibraryReferences(source: string): readonly string[]",
+      "after": "collectObjMaterialLibraryReferences(out: string[], source: string): void",
+      "rust": "pub fn collect_obj_material_library_references(out: &mut Vec<String>, source: &str)",
+      "behavior": "Clear then fill the caller-owned ordered output; retain capacity and original handler handles where applicable."
+    },
+    {
+      "source": "threeDsChunkCensus.ts",
+      "before": "getThreeDsFeatureNames(): readonly string[]",
+      "after": "getThreeDsFeatureNames(out: string[]): void",
+      "rust": "pub fn get_three_ds_feature_names(out: &mut Vec<String>)",
+      "behavior": "Clear then fill the caller-owned ordered output; retain capacity and original handler handles where applicable."
+    },
+    {
+      "source": "awd2BlockCensus.ts",
+      "before": "getAwd2FeatureNames(): readonly string[]",
+      "after": "getAwd2FeatureNames(out: string[]): void",
+      "rust": "pub fn get_awd2_feature_names(out: &mut Vec<String>)",
+      "behavior": "Clear then fill the caller-owned ordered output; retain capacity and original handler handles where applicable."
+    },
+    {
+      "source": "awd2BlockDispatch.ts",
+      "before": "expandAwd2BlockDispatch(blocks: readonly Awd2BlockHandler[]): Awd2BlockDispatch",
+      "after": "expandAwd2BlockDispatch(out: Awd2BlockDispatchEntry[], blocks: readonly Awd2BlockHandler[]): void",
+      "rust": "pub fn expand_awd2_block_dispatch(out: &mut Awd2BlockDispatch, blocks: &[Ref<Awd2BlockHandler>])",
+      "behavior": "Clear then fill the caller-owned ordered output; retain capacity and original handler handles where applicable."
+    },
+    {
+      "source": "threeDsChunkDispatch.ts",
+      "before": "buildThreeDsChunkDispatch(handlers: readonly Readonly<ThreeDsChunkHandler>[]): ThreeDsChunkDispatch",
+      "after": "buildThreeDsChunkDispatch(out: ThreeDsChunkDispatchEntry[], handlers: readonly Readonly<ThreeDsChunkHandler>[]): void",
+      "rust": "pub fn build_three_ds_chunk_dispatch(out: &mut ThreeDsChunkDispatch, handlers: &[Ref<ThreeDsChunkHandler>])",
+      "behavior": "Clear then fill the caller-owned ordered output; retain capacity and original handler handles where applicable."
+    },
+    {
+      "source": "md2Features.ts",
+      "before": "collectMd2Features(source: Readonly<Uint8Array>): ReadonlySet<string> | null",
+      "after": "collectMd2Features(out: string[], source: Readonly<Uint8Array>): boolean",
+      "behavior": "Required output; true replaces a non-null source result, false replaces null. Collection outputs clear partial/stale rows and retain capacity; the STL record is written only on success."
+    },
+    {
+      "source": "threeDsChunkCensus.ts",
+      "before": "collectThreeDsChunkCounts(source: Readonly<Uint8Array>): ReadonlyMap<number, number> | null",
+      "after": "collectThreeDsChunkCounts(out: ThreeDsChunkCount[], source: Readonly<Uint8Array>): boolean",
+      "behavior": "Required output; true replaces a non-null source result, false replaces null. Collection outputs clear partial/stale rows and retain capacity; the STL record is written only on success."
+    },
+    {
+      "source": "awd2BlockCensus.ts",
+      "before": "collectAwd2BlockCounts(source: Uint8Array, deflate: Readonly<HostDecompressDeflateCapability> | null, lzma: Readonly<HostDecompressLzmaCapability> | null): ReadonlyMap<string, number> | null",
+      "after": "collectAwd2BlockCounts(out: Awd2BlockCount[], source: Uint8Array, deflate: Readonly<HostDecompressDeflateCapability> | null, lzma: Readonly<HostDecompressLzmaCapability> | null): boolean",
+      "behavior": "Required output; true replaces a non-null source result, false replaces null. Collection outputs clear partial/stale rows and retain capacity; the STL record is written only on success."
+    },
+    {
+      "source": "stlFeatures.ts",
+      "before": "collectStlFeatures(bytes: Readonly<Uint8Array>): StlFeatures | null",
+      "after": "collectStlFeatures(out: StlFeatures, bytes: Readonly<Uint8Array>): boolean",
+      "behavior": "Required output; true replaces a non-null source result, false replaces null. Collection outputs clear partial/stale rows and retain capacity; the STL record is written only on success."
+    },
+    {
+      "source": "mergeAwd2ParseOptions.ts",
+      "before": "mergeAwd2ParseOptions(...options: readonly Readonly<Partial<Awd2ParseOptions>>[]): Awd2ParseOptions",
+      "after": "mergeAwd2ParseOptions(out: Awd2ParseOptions, ...options: readonly Readonly<Partial<Awd2ParseOptions>>[]): void",
+      "behavior": "Required first caller-owned structured output. Preserve public field results, source ordering and original shared handles; collection fields clear then fill retaining capacity; read source inputs before writes."
+    },
+    {
+      "source": "awd2Reader.ts",
+      "before": "awdTransformToTransform3D(transform: Readonly<Float64Array>): Transform3D",
+      "after": "awdTransformToTransform3D(out: Transform3D, transform: Readonly<Float64Array>): void",
+      "behavior": "Required first caller-owned structured output. Preserve public field results, source ordering and original shared handles; collection fields clear then fill retaining capacity; read source inputs before writes."
+    },
+    {
+      "source": "threeDsKeyframeHandler.ts",
+      "before": "collectThreeDsPivots(view: Readonly<DataView>, offset: number): Map<string, readonly [number, number, number]>",
+      "after": "collectThreeDsPivots(out: ThreeDsPivotEntry[], view: Readonly<DataView>, offset: number): void",
+      "behavior": "Required first caller-owned structured output. Preserve public field results, source ordering and original shared handles; collection fields clear then fill retaining capacity; read source inputs before writes."
+    },
+    {
+      "source": "colladaXml.ts",
+      "before": "colladaChildren(element: XmlElement | undefined, name: string): XmlElement[]",
+      "after": "colladaChildren(out: XmlElement[], element: XmlElement | undefined, name: string): void",
+      "rust": "collada_children(out: &mut Vec<Ref<XmlElement>>, element: Option<&Ref<XmlElement>>, name: &str)",
+      "behavior": "D24 computed query collection: clear then fill caller storage with the SAME existing XML element handles in source order; preserve capacity. Numeric content parsers colladaNumbers/parseColladaFloats retain their fresh decoded-content return under Principal7f9bbcf6."
+    },
+    {
+      "source": "colladaXml.ts",
+      "before": "colladaDescendants(element: XmlElement, name: string): XmlElement[]",
+      "after": "colladaDescendants(out: XmlElement[], element: XmlElement, name: string): void",
+      "rust": "collada_descendants(out: &mut Vec<Ref<XmlElement>>, element: &Ref<XmlElement>, name: &str)",
+      "behavior": "D24 computed query collection: clear then fill caller storage with the SAME existing XML element handles in source order; preserve capacity. Numeric content parsers colladaNumbers/parseColladaFloats retain their fresh decoded-content return under Principal7f9bbcf6."
+    },
+    {
+      "source": "colladaFeatures.ts",
+      "before": "collectColladaElementCounts(xml: string): ReadonlyMap<string, number> | null",
+      "after": "collectColladaElementCounts(out: ColladaElementCount[], xml: string): boolean",
+      "rust": "collect_collada_element_counts(out: &mut Vec<ColladaElementCount>, xml: &str) -> bool",
+      "behavior": "D24 clear/fill existing output storage retaining capacity and first-discovery map/set order; boolean preserves null versus readable-empty census result where applicable."
+    },
+    {
+      "source": "colladaFeatures.ts",
+      "before": "collectColladaFeatures(xml: string): ReadonlySet<string>",
+      "after": "collectColladaFeatures(out: string[], xml: string): void",
+      "rust": "collect_collada_features(out: &mut Vec<String>, xml: &str)",
+      "behavior": "D24 clear/fill existing output storage retaining capacity and first-discovery map/set order; boolean preserves null versus readable-empty census result where applicable."
+    },
+    {
+      "source": "colladaSceneShared.ts",
+      "before": "buildColladaNodeWorldMatrices(nodes: readonly Scene3DDocumentNode[], rootNodeIndices: readonly number[]): (Matrix4Like | undefined)[]",
+      "after": "buildColladaNodeWorldMatrices(out: (Matrix4Like | undefined)[], nodes: readonly Scene3DDocumentNode[], rootNodeIndices: readonly number[]): void",
+      "rust": "build_collada_node_world_matrices(out: &mut Vec<Option<Ref<Matrix4>>>, nodes: &[Scene3DDocumentNode], root_node_indices: &[i32])",
+      "behavior": "D24 computed world-matrix output clears/fills caller storage preserving node-index holes and capacity. Queued children retain the SAME freshly computed parent matrix handle; no Entity cloning or source matrix mutation."
+    },
+    {
+      "source": "colladaSceneShared.ts",
+      "before": "resolveColladaPrimitiveSymbols(symbols: readonly string[] | undefined, symbolToIndex: ReadonlyMap<string, number>): number[]",
+      "after": "resolveColladaPrimitiveSymbols(out: number[], symbols: readonly string[] | undefined, symbolToIndex: ReadonlyMap<string, number>): void",
+      "rust": "resolve_collada_primitive_symbols(out: &mut Vec<i32>, symbols: Option<&[String]>, symbol_to_index: &[ColladaIndexEntry])",
+      "behavior": "D24 computed index query clears/fills caller storage in primitive order, dropping unresolved entries and retaining capacity. parseColladaBindMaterial retains its fresh parsed-content constructor return under Principal7f9bbcf6."
+    },
+    {
+      "source": "gltfFeatures.ts",
+      "before": "collectGlbFeatures(bytes: Readonly<Uint8Array>): ReadonlySet<string> | null",
+      "after": "collectGlbFeatures(out: string[], bytes: Readonly<Uint8Array>): boolean",
+      "behavior": "Principal7f9bbcf6 D24 computed feature query: clear/fill caller-owned storage retaining capacity and first-discovery set order. Boolean distinguishes unreadable null from a readable empty set."
+    },
+    {
+      "source": "gltfFeatures.ts",
+      "before": "collectGltfFeatures(source: GltfDocument | string): ReadonlySet<string> | null",
+      "after": "collectGltfFeatures(out: string[], source: GltfDocument | string): boolean",
+      "behavior": "Principal7f9bbcf6 D24 computed feature query: clear/fill caller-owned storage retaining capacity and first-discovery set order. Boolean distinguishes unreadable null from a readable empty set."
+    }
+  ],
+  "typescriptTypeDeltas": [
+    {
+      "name": "Awd2BlockDispatchEntry",
+      "fields": {
+        "blockType": "number",
+        "handler": "Awd2BlockHandler"
+      },
+      "reason": "D3 ordered row representation of the pinned numeric-key dispatch map; D24 caller-owned array output."
+    },
+    {
+      "name": "ThreeDsChunkDispatchEntry",
+      "fields": {
+        "chunkId": "number",
+        "handler": "Readonly<ThreeDsChunkHandler>"
+      },
+      "reason": "D3 ordered row representation of the pinned numeric-key dispatch map; D24 caller-owned array output."
+    },
+    {
+      "name": "ThreeDsChunkCount",
+      "fields": {
+        "chunkId": "number",
+        "count": "number"
+      },
+      "reason": "D3 ordered source census map row."
+    },
+    {
+      "name": "Awd2BlockCount",
+      "fields": {
+        "name": "string",
+        "count": "number"
+      },
+      "reason": "D3 ordered source census map row."
+    },
+    {
+      "name": "ThreeDsPivotEntry",
+      "fields": {
+        "key": "string",
+        "value": "readonly [number, number, number]"
+      },
+      "reason": "D3 ordered source pivot map row."
+    }
+  ],
+  "clarification": "Principal7f9bbcf6, delivered Foremand64d47f3: fresh content constructors return under their source names/signatures regardless of verb. Public free functions only; open callback protocols retain source signatures. D23 field-argument removal targets canonical Entity create/initialize only.",
+  "retainedContentConstructors": [
+    {
+      "functions": [
+        "createEmbeddedTextureRef",
+        "createExternalTextureRef",
+        "externalObjTexture"
+      ],
+      "reason": "Fresh canonical Texture construction, optionally retaining/ registering the same allocation on a reused resource; no-URI result remains null and resource-selecting basePath remains."
+    },
+    {
+      "functions": [
+        "createScene3DFrom3ds",
+        "createScene3DFromMd2",
+        "createScene3DFromMd5Mesh",
+        "createScene3DFromAwd2",
+        "importMd5Mesh"
+      ],
+      "reason": "Fresh Scene3D constructed from source content; preserve input/options/diagnostics and return a new Entity."
+    },
+    {
+      "functions": [
+        "objMaterialToBlinnPhong",
+        "objMaterialToStandardPbr"
+      ],
+      "reason": "Fresh canonical Material3D Entity from material content; return it and preserve original texture/resource identity."
+    },
+    {
+      "functions": [
+        "buildMd5SkeletonDocument"
+      ],
+      "reason": "Assembles a new authored joint hierarchy and fresh document skin from MD5 content. Only this provisional committed out adaptation is reversed; computed collection/value outs remain."
+    },
+    {
+      "functions": [
+        "rehydrateAwd2Body",
+        "buildBinaryStl"
+      ],
+      "reason": "Fresh decompressed body record or encoded binary content; preserve nullable failure, exact typed-array extent and shared source/view handles without a new sizing/failure contract."
+    },
+    {
+      "functions": [
+        "decodeColladaAnimations",
+        "decodeColladaControllers",
+        "decodeColladaMorphs"
+      ],
+      "reason": "Principal7f9bbcf6: fresh decoded-content collections from XML retain their source return; caller diagnostic collectors append rather than replace. Decoder maps/channels retain original parsed record handles."
+    }
+  ],
+  "callerOwnedDracoRegistry": {
+    "authority": "D5 explicit caller-owned context; no new callback protocol or native backend",
+    "nativeRecord": "GltfDracoRegistry { decoder: Option<GltfDracoDecoder> }",
+    "functions": [
+      "getGltfDracoDecoder(registry)",
+      "hasGltfDracoDecoder(registry)",
+      "registerGltfDracoDecoder(registry, decoder)",
+      "unregisterGltfDracoDecoder(registry)"
+    ],
+    "behavior": "An empty, last-write-wins nullable callback slot. The original two-argument synchronous decoder/nullable mesh protocol and callback identity remain. The actual primitive decoder and all nine original registry/default-parser source declarations are complete; no native codec or ambient state is installed.",
+    "integrationCarrier": "GltfImportOptions.draco_registry: Option<Ref<GltfDracoRegistry>> retains the same caller-owned slot; callbacks are copied from it outside the guard before invocation. No ambient state or native backend is installed.",
+    "nativePayload": "The first source Uint8Array argument uses canonical ArrayBufferView with Uint8Array kind, retaining original backing allocation, byteOffset and byteLength without a lock across the two-argument synchronous callback. The attributes argument and nullable mesh result retain their original Ref allocations."
+  },
+  "selectiveGltfDocumentIdentity": {
+    "authority": "D16 original shared object identity and D24 fresh document content construction retains its source return",
+    "nativeReturn": "Default and selective parseGltf/parseGlb return Ref<Scene3DDocument>, the same allocation retained by custom handler contexts. No caller-owned output replaces the source content-constructor return.",
+    "nativeByteInput": "The source Uint8Array input uses canonical Uint8Array-kind ArrayBufferView so retained custom readAccessor callbacks continue to observe the original backing allocation and byte window after parse."
+  }
+}

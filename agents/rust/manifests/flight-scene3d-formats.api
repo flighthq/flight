@@ -1,0 +1,827 @@
+src/awd2_block_census.rs: #[derive(Debug, PartialEq, Eq)] pub struct Awd2BlockCount { pub name: String, pub count: usize, }
+src/awd2_block_census.rs: pub fn collect_awd2_block_counts(out: &mut Vec<Awd2BlockCount>, source: &Uint8Array, deflate: Option<&HostDecompressDeflateCapability>, lzma: Option<&HostDecompressLzmaCapability>,) -> bool
+src/awd2_block_census.rs: pub fn get_awd2_block_name(namespace: u8, block_type: u8) -> String
+src/awd2_block_census.rs: pub fn get_awd2_feature_names(out: &mut Vec<String>)
+src/awd2_block_dispatch.rs: impl Awd2ParseState :: fn initialize(&mut self)
+src/awd2_block_dispatch.rs: impl Awd2ParseState :: fn new() -> Self
+src/awd2_block_dispatch.rs: pub fn create_awd2_parse_state() -> Awd2ParseState
+src/awd2_block_dispatch.rs: pub fn expand_awd2_block_dispatch(out: &mut Awd2BlockDispatch, blocks: &[Ref<Awd2BlockHandler>])
+src/awd2_block_dispatch.rs: pub fn initialize_awd2_parse_state(out: &mut Awd2ParseState)
+src/awd2_block_registry.rs: pub static AWD2_ALL_BLOCK_HANDLERS: LazyLock<Vec<Ref<Awd2BlockHandler>>>
+src/awd2_block_registry.rs: pub static AWD2_CAMERA_FAMILY: LazyLock<Vec<Ref<Awd2BlockHandler>>>
+src/awd2_block_registry.rs: pub static AWD2_GEOMETRY_FAMILY: LazyLock<Vec<Ref<Awd2BlockHandler>>>
+src/awd2_block_registry.rs: pub static AWD2_LIGHTING_FAMILY: LazyLock<Vec<Ref<Awd2BlockHandler>>>
+src/awd2_block_registry.rs: pub static AWD2_MATERIALS_FAMILY: LazyLock<Vec<Ref<Awd2BlockHandler>>>
+src/awd2_block_registry.rs: pub static AWD2_SCENE_STRUCTURE_FAMILY: LazyLock<Vec<Ref<Awd2BlockHandler>>>
+src/awd2_block_registry.rs: pub static AWD2_SKELETON_FAMILY: LazyLock<Vec<Ref<Awd2BlockHandler>>>
+src/awd2_block_requirements.rs: pub static AWD2_BLOCK_SCENE_REQUIREMENTS: LazyLock<Vec<Scene3DFormatFeatureRequirements>>
+src/awd2_block_requirements.rs: pub static AWD2_DOCUMENT_SCENE_REQUIREMENTS: LazyLock<Vec<Requirement>>
+src/awd2_camera_handler.rs: pub static AWD2_CAMERA_HANDLER: LazyLock<Ref<Awd2BlockHandler>>
+src/awd2_geometry_handler.rs: pub static AWD2_TRIANGLE_GEOMETRY_HANDLER: LazyLock<Ref<Awd2BlockHandler>>
+src/awd2_header.rs: pub fn parse_awd2_header(source: &Uint8Array, _deflate: Option<&HostDecompressDeflateCapability>, _lzma: Option<&HostDecompressLzmaCapability>,) -> Option<Awd2Header>
+src/awd2_lighting_handler.rs: pub static AWD2_LIGHT_HANDLER: LazyLock<Ref<Awd2BlockHandler>>
+src/awd2_lighting_handler.rs: pub static AWD2_LIGHT_PICKER_HANDLER: LazyLock<Ref<Awd2BlockHandler>>
+src/awd2_material_handler.rs: pub static AWD2_MATERIAL_HANDLER: LazyLock<Ref<Awd2BlockHandler>>
+src/awd2_material_handler.rs: pub static AWD2_TEXTURE_HANDLER: LazyLock<Ref<Awd2BlockHandler>>
+src/awd2_parse.rs: impl Awd2ParseOptions :: fn parse(&self, bytes: &Ref<Box<Uint8Array>>, diagnostics: Option<&Ref<Vec<ImportDiagnostic>>>,) -> Ref<Scene3DDocument>
+src/awd2_parse.rs: pub fn create_scene3d_from_awd2(bytes: &Ref<Box<Uint8Array>>, options: &Awd2ParseOptions, diagnostics: Option<&Ref<Vec<ImportDiagnostic>>>,) -> Scene3D
+src/awd2_parse.rs: pub fn parse_awd2(bytes: &Ref<Box<Uint8Array>>, options: &Awd2ParseOptions, diagnostics: Option<&Ref<Vec<ImportDiagnostic>>>,) -> Ref<Scene3DDocument>
+src/awd2_parse.rs: pub fn rehydrate_awd2_body(input: &Ref<Box<Uint8Array>>, deflate: Option<&HostDecompressDeflateCapability>, lzma: Option<&HostDecompressLzmaCapability>, diagnostics: Option<&Ref<Vec<ImportDiagnostic>>>,) -> Option<Awd2RehydratedBody>
+src/awd2_reader.rs: #[derive(Debug, PartialEq, Eq)] pub struct Awd2PropertiesRead { pub end: usize, pub values: Vec<Awd2PropertyEntry>, }
+src/awd2_reader.rs: #[derive(Debug, PartialEq, Eq)] pub struct Awd2PropertyEntry { pub key: u16, pub value: Awd2PropertySpan, }
+src/awd2_reader.rs: #[derive(Debug, PartialEq, Eq)] pub struct Awd2PropertySpan { pub length: usize, pub offset: usize, }
+src/awd2_reader.rs: #[derive(Debug, PartialEq, Eq)] pub struct Awd2StringRead { pub end: usize, pub value: String, }
+src/awd2_reader.rs: pub fn awd_data_type_byte_size(data_type: u8) -> usize
+src/awd2_reader.rs: pub fn awd_transform_to_matrix4(out: &mut Matrix4, transform: &Float64Array)
+src/awd2_reader.rs: pub fn awd_transform_to_transform3d(out: &mut Transform3D, transform: &Float64Array)
+src/awd2_reader.rs: pub fn has_non_unit_scale(sx: f32, sy: f32, sz: f32) -> bool
+src/awd2_reader.rs: pub fn read_awd_data_value(view: &Uint8Array, offset: usize, data_type: u8) -> f32
+src/awd2_reader.rs: pub fn read_awd_properties(view: &Uint8Array, mut offset: usize, end: usize) -> Awd2PropertiesRead
+src/awd2_reader.rs: pub fn read_awd_property_float32(view: &Uint8Array, values: &[Awd2PropertyEntry], key: u16,) -> Option<f32>
+src/awd2_reader.rs: pub fn read_awd_property_number(view: &Uint8Array, values: &[Awd2PropertyEntry], key: u16,) -> Option<f32>
+src/awd2_reader.rs: pub fn read_awd_property_uint32(view: &Uint8Array, values: &[Awd2PropertyEntry], key: u16,) -> Option<u32>
+src/awd2_reader.rs: pub fn read_awd_property_uint8(view: &Uint8Array, values: &[Awd2PropertyEntry], key: u16,) -> Option<u8>
+src/awd2_reader.rs: pub fn read_awd_string(view: &Uint8Array, source: &Uint8Array, offset: usize) -> Awd2StringRead
+src/awd2_reader.rs: pub fn read_awd_transform(view: &Uint8Array, offset: usize, wide_precision: bool,) -> Awd2TransformRead
+src/awd2_reader.rs: pub fn skip_awd_attr_list(view: &Uint8Array, offset: usize, end: usize) -> usize
+src/awd2_reader.rs: pub struct Awd2TransformRead { pub end: usize, pub transform: Box<Float64Array>, }
+src/awd2_requirements.rs: pub const AWD2_REQUIREMENT_KEY_NAMESPACE: &str
+src/awd2_requirements.rs: pub fn parse_awd2_requirements(source: &Uint8Array, deflate: Option<&HostDecompressDeflateCapability>, lzma: Option<&HostDecompressLzmaCapability>,) -> RequirementSet
+src/awd2_scene_structure_handler.rs: pub static AWD2_CONTAINER_HANDLER: LazyLock<Ref<Awd2BlockHandler>>
+src/awd2_scene_structure_handler.rs: pub static AWD2_MESH_INSTANCE_HANDLER: LazyLock<Ref<Awd2BlockHandler>>
+src/awd2_schema.rs: pub const AWD2_BLOCK_ANIMATION_SET: u8
+src/awd2_schema.rs: pub const AWD2_BLOCK_CAMERA: u8
+src/awd2_schema.rs: pub const AWD2_BLOCK_CONTAINER: u8
+src/awd2_schema.rs: pub const AWD2_BLOCK_HEADER_BYTES: usize
+src/awd2_schema.rs: pub const AWD2_BLOCK_LIGHT: u8
+src/awd2_schema.rs: pub const AWD2_BLOCK_LIGHT_PICKER: u8
+src/awd2_schema.rs: pub const AWD2_BLOCK_MATERIAL: u8
+src/awd2_schema.rs: pub const AWD2_BLOCK_MESH_INSTANCE: u8
+src/awd2_schema.rs: pub const AWD2_BLOCK_SKELETON: u8
+src/awd2_schema.rs: pub const AWD2_BLOCK_SKELETON_ANIMATION: u8
+src/awd2_schema.rs: pub const AWD2_BLOCK_SKELETON_CLIP_NODE: u8
+src/awd2_schema.rs: pub const AWD2_BLOCK_SKELETON_POSE: u8
+src/awd2_schema.rs: pub const AWD2_BLOCK_TEXTURE: u8
+src/awd2_schema.rs: pub const AWD2_BLOCK_TRIANGLE_GEOMETRY: u8
+src/awd2_schema.rs: pub const AWD2_BUILD_PHASE_CAMERA: u8
+src/awd2_schema.rs: pub const AWD2_BUILD_PHASE_LIGHTING: u8
+src/awd2_schema.rs: pub const AWD2_BUILD_PHASE_MATERIALS: u8
+src/awd2_schema.rs: pub const AWD2_BUILD_PHASE_SCENE_STRUCTURE: u8
+src/awd2_schema.rs: pub const AWD2_BUILD_PHASE_SKELETON: u8
+src/awd2_schema.rs: pub const AWD2_BUILD_PHASE_SKELETON_ANIMATION: u8
+src/awd2_schema.rs: pub const AWD2_CAMERA_PROJECTION_ORTHOGRAPHIC: i16
+src/awd2_schema.rs: pub const AWD2_CAMERA_PROJECTION_ORTHOGRAPHIC_OFFCENTER: i16
+src/awd2_schema.rs: pub const AWD2_CAMERA_PROJECTION_PERSPECTIVE: i16
+src/awd2_schema.rs: pub const AWD2_CAMERA_PROP_FOV: u16
+src/awd2_schema.rs: pub const AWD2_CAMERA_PROP_ORTHO_BOTTOM: u16
+src/awd2_schema.rs: pub const AWD2_CAMERA_PROP_ORTHO_LEFT: u16
+src/awd2_schema.rs: pub const AWD2_CAMERA_PROP_ORTHO_RIGHT: u16
+src/awd2_schema.rs: pub const AWD2_CAMERA_PROP_ORTHO_TOP: u16
+src/awd2_schema.rs: pub const AWD2_COMPRESSION_DEFLATE: u8
+src/awd2_schema.rs: pub const AWD2_COMPRESSION_LZMA: u8
+src/awd2_schema.rs: pub const AWD2_COMPRESSION_NONE: u8
+src/awd2_schema.rs: pub const AWD2_DATA_FLOAT32: u8
+src/awd2_schema.rs: pub const AWD2_DATA_FLOAT64: u8
+src/awd2_schema.rs: pub const AWD2_DATA_INT16: u8
+src/awd2_schema.rs: pub const AWD2_DATA_INT32: u8
+src/awd2_schema.rs: pub const AWD2_DATA_INT8: u8
+src/awd2_schema.rs: pub const AWD2_DATA_UINT16: u8
+src/awd2_schema.rs: pub const AWD2_DATA_UINT32: u8
+src/awd2_schema.rs: pub const AWD2_DATA_UINT8: u8
+src/awd2_schema.rs: pub const AWD2_FORMAT_VERSION: u8
+src/awd2_schema.rs: pub const AWD2_HEADER_BYTES: usize
+src/awd2_schema.rs: pub const AWD2_LIGHT_DEFAULT_AMBIENT: f32
+src/awd2_schema.rs: pub const AWD2_LIGHT_DEFAULT_DIFFUSE: f32
+src/awd2_schema.rs: pub const AWD2_LIGHT_DEFAULT_FALLOFF: f32
+src/awd2_schema.rs: pub const AWD2_LIGHT_DEFAULT_RADIUS: f32
+src/awd2_schema.rs: pub const AWD2_LIGHT_DEFAULT_RGB: u32
+src/awd2_schema.rs: pub const AWD2_LIGHT_DEFAULT_SPECULAR: f32
+src/awd2_schema.rs: pub const AWD2_LIGHT_PROP_AMBIENT: u16
+src/awd2_schema.rs: pub const AWD2_LIGHT_PROP_AMBIENT_COLOR: u16
+src/awd2_schema.rs: pub const AWD2_LIGHT_PROP_COLOR: u16
+src/awd2_schema.rs: pub const AWD2_LIGHT_PROP_DIFFUSE: u16
+src/awd2_schema.rs: pub const AWD2_LIGHT_PROP_DIRECTION_X: u16
+src/awd2_schema.rs: pub const AWD2_LIGHT_PROP_DIRECTION_Y: u16
+src/awd2_schema.rs: pub const AWD2_LIGHT_PROP_DIRECTION_Z: u16
+src/awd2_schema.rs: pub const AWD2_LIGHT_PROP_FALLOFF: u16
+src/awd2_schema.rs: pub const AWD2_LIGHT_PROP_RADIUS: u16
+src/awd2_schema.rs: pub const AWD2_LIGHT_PROP_SHADOW_MAPPER: u16
+src/awd2_schema.rs: pub const AWD2_LIGHT_PROP_SPECULAR: u16
+src/awd2_schema.rs: pub const AWD2_LIGHT_TYPE_DIRECTIONAL: u8
+src/awd2_schema.rs: pub const AWD2_LIGHT_TYPE_POINT: u8
+src/awd2_schema.rs: pub const AWD2_MAGIC_0: u8
+src/awd2_schema.rs: pub const AWD2_MAGIC_1: u8
+src/awd2_schema.rs: pub const AWD2_MAGIC_2: u8
+src/awd2_schema.rs: pub const AWD2_MATERIAL_DEFAULT_GLOSS: f32
+src/awd2_schema.rs: pub const AWD2_MATERIAL_DEFAULT_SPECULAR_RGB: u32
+src/awd2_schema.rs: pub const AWD2_MATERIAL_DEFAULT_SPECULAR_STRENGTH: f32
+src/awd2_schema.rs: pub const AWD2_MATERIAL_PROP_ALPHA: u16
+src/awd2_schema.rs: pub const AWD2_MATERIAL_PROP_COLOR: u16
+src/awd2_schema.rs: pub const AWD2_MATERIAL_PROP_DIFFUSE_TEXTURE: u16
+src/awd2_schema.rs: pub const AWD2_MATERIAL_PROP_GLOSS: u16
+src/awd2_schema.rs: pub const AWD2_MATERIAL_PROP_NORMAL_TEXTURE: u16
+src/awd2_schema.rs: pub const AWD2_MATERIAL_PROP_SPECULAR_COLOR: u16
+src/awd2_schema.rs: pub const AWD2_MATERIAL_PROP_SPECULAR_STRENGTH: u16
+src/awd2_schema.rs: pub const AWD2_MATERIAL_PROP_SPECULAR_TEXTURE: u16
+src/awd2_schema.rs: pub const AWD2_MATERIAL_TYPE_COLOR: u8
+src/awd2_schema.rs: pub const AWD2_MATERIAL_TYPE_TEXTURE: u8
+src/awd2_schema.rs: pub const AWD2_NAMESPACE_CORE: u8
+src/awd2_schema.rs: pub const AWD2_ROOT_JOINT_PARENT: u16
+src/awd2_schema.rs: pub const AWD2_STREAM_INDICES: u8
+src/awd2_schema.rs: pub const AWD2_STREAM_JOINT_INDICES: u8
+src/awd2_schema.rs: pub const AWD2_STREAM_JOINT_WEIGHTS: u8
+src/awd2_schema.rs: pub const AWD2_STREAM_NORMALS: u8
+src/awd2_schema.rs: pub const AWD2_STREAM_POSITIONS: u8
+src/awd2_schema.rs: pub const AWD2_STREAM_TANGENTS: u8
+src/awd2_schema.rs: pub const AWD2_STREAM_UVS: u8
+src/awd2_schema.rs: pub const AWD2_TEXTURE_TYPE_EMBEDDED: u8
+src/awd2_schema.rs: pub const AWD2_TEXTURE_TYPE_EXTERNAL: u8
+src/awd2_schema.rs: pub const AWD2_VERSION_MAJOR_OFFSET: usize
+src/awd2_skeleton_handler.rs: pub static AWD2_SKELETON_ANIMATION_HANDLER: LazyLock<Ref<Awd2BlockHandler>>
+src/awd2_skeleton_handler.rs: pub static AWD2_SKELETON_BLOCK_HANDLER: LazyLock<Ref<Awd2BlockHandler>>
+src/awd2_skeleton_handler.rs: pub static AWD2_SKELETON_POSE_HANDLER: LazyLock<Ref<Awd2BlockHandler>>
+src/awd2_types.rs: #[derive(Debug, PartialEq, Eq)] pub struct Awd2Header { pub body_length: u32, pub compression: u8, pub flags: u16, pub version_major: u8, pub version_minor: u8, }
+src/awd2_types.rs: impl Default for Awd2ParseState
+src/awd2_types.rs: impl Default for Awd2ParseState :: fn default() -> Self
+src/awd2_types.rs: impl Entity for Awd2ParseState
+src/awd2_types.rs: impl Entity for Awd2ParseState :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/awd2_types.rs: impl Entity for Awd2ParseState :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/awd2_types.rs: pub struct Awd2Block { pub block_id: u32, pub block_type: u8, pub data_end: usize, pub data_start: usize, pub geometry_wide: bool, pub matrix_wide: bool, pub source: Ref<Box<Uint8Array>>, pub view: Ref<Box<Uint8Array>>, }
+src/awd2_types.rs: pub struct Awd2BlockDispatchEntry { pub block_type: u8, pub handler: Ref<Awd2BlockHandler>, }
+src/awd2_types.rs: pub struct Awd2BlockHandler { pub block_types: Vec<u8>, pub build_phase: Option<f32>, pub deferred: Option<bool>, pub parse: Arc<dyn Fn(&mut Awd2ParseState, &Awd2Block) + Send + Sync>, pub build: Option<Arc<dyn Fn(&mut Awd2ParseState) + Send + Sync>>, }
+src/awd2_types.rs: pub struct Awd2CameraEntry { pub key: u32, pub value: Awd2ParsedCamera, }
+src/awd2_types.rs: pub struct Awd2ContainerEntry { pub key: u32, pub value: Awd2ParsedContainer, }
+src/awd2_types.rs: pub struct Awd2GeometryEntry { pub key: u32, pub value: Vec<Awd2ParsedGeometry>, }
+src/awd2_types.rs: pub struct Awd2LightEntry { pub key: u32, pub value: Awd2ParsedLight, }
+src/awd2_types.rs: pub struct Awd2LightPickerEntry { pub key: u32, pub value: Awd2ParsedLightPicker, }
+src/awd2_types.rs: pub struct Awd2MaterialEntry { pub key: u32, pub value: Awd2ParsedMaterial, }
+src/awd2_types.rs: pub struct Awd2MeshInstanceEntry { pub key: u32, pub value: Awd2ParsedMeshInstance, }
+src/awd2_types.rs: pub struct Awd2NodeIndexEntry { pub key: u32, pub value: i32, }
+src/awd2_types.rs: pub struct Awd2ParseOptions { pub blocks: Vec<Ref<Awd2BlockHandler>>, pub deflate: Option<Option<Arc<HostDecompressDeflateCapability>>>, pub lzma: Option<Option<Arc<HostDecompressLzmaCapability>>>, }
+src/awd2_types.rs: pub struct Awd2ParseOptionsFragment { pub blocks: Option<Vec<Ref<Awd2BlockHandler>>>, pub deflate: Option<Option<Arc<HostDecompressDeflateCapability>>>, pub lzma: Option<Option<Arc<HostDecompressLzmaCapability>>>, }
+src/awd2_types.rs: pub struct Awd2ParseState { pub cameras: Vec<Awd2CameraEntry>, pub containers: Vec<Awd2ContainerEntry>, pub diagnostics: Option<Ref<Vec<ImportDiagnostic>>>, pub document: Ref<Scene3DDocument>, pub geometries: Vec<Awd2GeometryEntry>, pub light_pickers: Vec<Awd2LightPickerEntry>, pub lights: Vec<Awd2LightEntry>, pub materials: Ref<Vec<Awd2MaterialEntry>>, pub mesh_instances: Vec<Awd2MeshInstanceEntry>, pub node_index_for_block: Vec<Awd2NodeIndexEntry>, pub resolve_material: Option<Arc<dyn Fn(u32) -> i32 + Send + Sync>>, pub skeleton_animations: Vec<Awd2SkeletonAnimationEntry>, pub skeleton_joint_node_indices: Vec<i32>, pub skeleton_poses: Vec<Awd2SkeletonPoseEntry>, pub skeletons: Vec<Awd2SkeletonEntry>, pub skin_index: Option<i32>, pub source: Ref<Box<Uint8Array>>, pub textures: Ref<Vec<Awd2TextureEntry>>, pub view: Ref<Box<Uint8Array>>, runtime: EntityRuntimeSlot, }
+src/awd2_types.rs: pub struct Awd2ParsedCamera { pub bottom: f32, pub fov: f32, pub left: f32, pub name: String, pub parent_id: u32, pub projection_type: i16, pub right: f32, pub top: f32, pub transform: Box<Float64Array>, }
+src/awd2_types.rs: pub struct Awd2ParsedContainer { pub name: String, pub parent_id: u32, pub transform: Box<Float64Array>, }
+src/awd2_types.rs: pub struct Awd2ParsedGeometry { pub geometry: Ref<MeshGeometry>, pub skinned: bool, }
+src/awd2_types.rs: pub struct Awd2ParsedJoint { pub name: String, pub parent_index: u16, pub transform: Box<Float64Array>, }
+src/awd2_types.rs: pub struct Awd2ParsedLight { pub ambient: f32, pub ambient_rgb: u32, pub casts_shadow: bool, pub diffuse: f32, pub direction_x: f32, pub direction_y: f32, pub direction_z: f32, pub fall_off: f32, pub has_radius: bool, pub light_type: u8, pub name: String, pub parent_id: u32, pub radius: f32, pub rgb: u32, pub specular: f32, pub transform: Box<Float64Array>, }
+src/awd2_types.rs: pub struct Awd2ParsedLightPicker { pub light_ids: Vec<u32>, pub name: String, }
+src/awd2_types.rs: pub struct Awd2ParsedMaterial { pub alpha: Option<f32>, pub color: Option<u32>, pub diffuse_texture_id: u32, pub gloss: Option<f32>, pub name: String, pub normal_texture_id: u32, pub num_methods: u8, pub specular_color: Option<u32>, pub specular_strength: Option<f32>, pub specular_texture_id: u32, }
+src/awd2_types.rs: pub struct Awd2ParsedMeshInstance { pub geometry_id: u32, pub material_ids: Vec<u32>, pub name: String, pub parent_id: u32, pub transform: Box<Float64Array>, }
+src/awd2_types.rs: pub struct Awd2ParsedSkeleton { pub joints: Vec<Awd2ParsedJoint>, pub name: String, }
+src/awd2_types.rs: pub struct Awd2ParsedSkeletonAnimation { pub name: String, pub poses: Vec<Awd2SkeletonAnimationPose>, }
+src/awd2_types.rs: pub struct Awd2ParsedSkeletonPose { pub joint_transforms: Vec<Option<Box<Float64Array>>>, pub name: String, }
+src/awd2_types.rs: pub struct Awd2ParsedTexture { pub bytes: Option<Ref<Box<Uint8Array>>>, pub mime_type: Option<String>, pub name: String, pub url: Option<String>, }
+src/awd2_types.rs: pub struct Awd2RehydratedBody { pub source: Ref<Box<Uint8Array>>, pub view: Ref<Box<Uint8Array>>, }
+src/awd2_types.rs: pub struct Awd2SkeletonAnimationEntry { pub key: u32, pub value: Awd2ParsedSkeletonAnimation, }
+src/awd2_types.rs: pub struct Awd2SkeletonAnimationPose { pub duration: f32, pub pose_block_id: u32, }
+src/awd2_types.rs: pub struct Awd2SkeletonEntry { pub key: u32, pub value: Awd2ParsedSkeleton, }
+src/awd2_types.rs: pub struct Awd2SkeletonPoseEntry { pub key: u32, pub value: Awd2ParsedSkeletonPose, }
+src/awd2_types.rs: pub struct Awd2TextureEntry { pub key: u32, pub value: Awd2ParsedTexture, }
+src/awd2_types.rs: pub type Awd2BlockDispatch = Vec<Awd2BlockDispatchEntry>;
+src/collada_animation_decoder.rs: pub fn decode_collada_animations(xml: &str, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Vec<Ref<ColladaDecodedAnimationChannel>>
+src/collada_animation_decoder.rs: pub static COLLADA_ANIMATION_DECODER: LazyLock<Ref<ColladaElementDecoder>>
+src/collada_camera_decoder.rs: pub static COLLADA_CAMERA_DECODER: LazyLock<Ref<ColladaElementDecoder>>
+src/collada_controller_decoder.rs: pub fn decode_collada_controllers(xml: &str, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Vec<Ref<ColladaDecodedSkin>>
+src/collada_controller_decoder.rs: pub fn decode_collada_morphs(xml: &str, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Vec<Ref<ColladaDecodedMorph>>
+src/collada_controller_decoder.rs: pub static COLLADA_CONTROLLER_DECODER: LazyLock<Ref<ColladaElementDecoder>>
+src/collada_decoder_family.rs: pub static COLLADA_ALL_ELEMENT_DECODERS: LazyLock<Vec<Ref<ColladaElementDecoder>>>
+src/collada_document.rs: impl ColladaImportOptions :: fn parse(&self, xml: &str) -> ColladaParseResult
+src/collada_document.rs: pub fn parse_collada(xml: &str, options: Option<&ColladaImportOptions>) -> ColladaParseResult
+src/collada_feature_requirements.rs: pub static COLLADA_FEATURE_SCENE_REQUIREMENTS: LazyLock<Vec<Scene3DFormatFeatureRequirements>>
+src/collada_features.rs: #[derive(Debug, PartialEq, Eq)] pub struct ColladaElementCount { pub feature: String, pub count: usize, }
+src/collada_features.rs: pub fn collect_collada_element_counts(out: &mut Vec<ColladaElementCount>, xml: &str) -> bool
+src/collada_features.rs: pub fn collect_collada_features(out: &mut Vec<String>, xml: &str)
+src/collada_features.rs: pub fn is_readable_collada(xml: &str) -> bool
+src/collada_features.rs: pub fn parse_collada_requirements(xml: &str) -> RequirementSet
+src/collada_features.rs: pub static COLLADA_FEATURE_ELEMENTS: LazyLock<Vec<ColladaFeatureElements>>
+src/collada_features.rs: pub struct ColladaFeatureElements { pub feature: String, pub elements: Vec<String>, }
+src/collada_geometry_decoder.rs: pub static COLLADA_GEOMETRY_DECODER: LazyLock<Ref<ColladaElementDecoder>>
+src/collada_light_decoder.rs: pub static COLLADA_LIGHT_DECODER: LazyLock<Ref<ColladaElementDecoder>>
+src/collada_material.rs: pub fn append_collada_materials(root: &Ref<XmlElement>, materials: &mut Vec<Scene3DDocumentMaterial>, resources: &mut Vec<ImageResourceReference>, material_indices: &mut Vec<ColladaIndexEntry>, base_url: Option<&str>, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,)
+src/collada_material_decoder.rs: pub static COLLADA_MATERIAL_DECODER: LazyLock<Ref<ColladaElementDecoder>>
+src/collada_parse.rs: pub fn parse_collada_with_decoders(xml: &str, decoders: &[Ref<ColladaElementDecoder>], options: Option<&ColladaImportOptions>,) -> ColladaParseResult
+src/collada_scene_shared.rs: #[derive(Debug, PartialEq, Eq)] pub struct ColladaIndexEntry { pub key: String, pub value: i32, }
+src/collada_scene_shared.rs: pub fn apply_collada_bind_material(document: &mut Scene3DDocument, mesh_index: i32, instance_element: &Ref<XmlElement>, primitive_symbols: Option<&[String]>, material_indices: &[ColladaIndexEntry],) -> i32
+src/collada_scene_shared.rs: pub fn apply_collada_material_overrides(document: &mut Scene3DDocument, mesh_index: i32, primitive_symbols: Option<&[String]>, symbol_to_index: &[ColladaIndexEntry],) -> i32
+src/collada_scene_shared.rs: pub fn build_collada_node_world_matrices(out: &mut Vec<Option<Ref<Matrix4>>>, nodes: &[Scene3DDocumentNode], root_node_indices: &[i32],)
+src/collada_scene_shared.rs: pub fn parse_collada_bind_material(instance_element: &Ref<XmlElement>, material_indices: &[ColladaIndexEntry],) -> Vec<ColladaIndexEntry>
+src/collada_scene_shared.rs: pub fn resolve_collada_primitive_symbols(out: &mut Vec<i32>, symbols: Option<&[String]>, symbol_to_index: &[ColladaIndexEntry],)
+src/collada_types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ColladaLightKind { Ambient, Directional, Point, Spot, }
+src/collada_types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ColladaMorphMethod { Relative, Normalized, }
+src/collada_types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum ColladaUpAxis { XUp, YUp, ZUp, }
+src/collada_types.rs: impl ColladaImportOptions :: fn parse_with_decoders(&self, xml: &str, decoders: &[Ref<ColladaElementDecoder>],) -> ColladaParseResult
+src/collada_types.rs: pub enum ColladaCameraDefinition { Orthographic(ColladaOrthographicCameraDefinition), Perspective(ColladaPerspectiveCameraDefinition), }
+src/collada_types.rs: pub struct ColladaBuildContext { pub deferred_cameras: Vec<ColladaDeferredCameraBinding>, pub deferred_controllers: Vec<ColladaDeferredControllerBinding>, pub deferred_lights: Vec<ColladaDeferredLightBinding>, pub node_id_map: Vec<ColladaIndexEntry>, pub parse: Ref<ColladaParseContext>, pub root_node_indices: Vec<i32>, }
+src/collada_types.rs: pub struct ColladaCameraEntry { pub key: String, pub value: Option<Ref<ColladaCameraDefinition>>, }
+src/collada_types.rs: pub struct ColladaDecodedAnimationChannel { pub target: String, pub times: Vec<f32>, pub values: Vec<f32>, pub interpolation: Vec<String>, pub in_tangents: Vec<f32>, pub out_tangents: Vec<f32>, }
+src/collada_types.rs: pub struct ColladaDecodedMorph { pub controller_id: String, pub base_geometry: String, pub method: ColladaMorphMethod, pub targets: Vec<String>, pub weights: Vec<f32>, }
+src/collada_types.rs: pub struct ColladaDecodedSkin { pub bind_shape_matrix: Vec<f32>, pub controller_id: String, pub geometry_ref: String, pub influences: Vec<Vec<ColladaSkinInfluence>>, pub inverse_bind_matrices: Vec<Vec<f32>>, pub joint_names: Vec<String>, pub joint_sids: Vec<String>, }
+src/collada_types.rs: pub struct ColladaDeferredCameraBinding { pub camera_id: String, pub node_index: i32, }
+src/collada_types.rs: pub struct ColladaDeferredControllerBinding { pub controller_id: String, pub material_overrides: Vec<ColladaIndexEntry>, pub node_index: i32, pub skeleton_root: Option<String>, }
+src/collada_types.rs: pub struct ColladaDeferredLightBinding { pub node_index: i32, pub url: String, }
+src/collada_types.rs: pub struct ColladaElementDecoder { pub build: Option<Arc<dyn Fn(&Ref<ColladaBuildContext>) + Send + Sync>>, pub build_phase: Option<f32>, pub elements: Vec<String>, pub features: Vec<String>, pub decode: Arc<dyn Fn(&Ref<ColladaParseContext>) + Send + Sync>, }
+src/collada_types.rs: pub struct ColladaFloatArrayEntry { pub key: String, pub value: Ref<Vec<f32>>, }
+src/collada_types.rs: pub struct ColladaImportOptions { pub base_url: Option<String>, pub decoders: Option<Vec<Ref<ColladaElementDecoder>>>, }
+src/collada_types.rs: pub struct ColladaLightDefinition { pub color: u32, pub decay: f32, pub inner_cone_degrees: f32, pub intensity: f32, pub kind: ColladaLightKind, pub name: Option<String>, pub outer_cone_degrees: f32, pub spot_blend: f32, }
+src/collada_types.rs: pub struct ColladaLightEntry { pub key: String, pub value: Option<Ref<ColladaLightDefinition>>, }
+src/collada_types.rs: pub struct ColladaMorphEntry { pub key: String, pub value: Ref<ColladaDecodedMorph>, }
+src/collada_types.rs: pub struct ColladaOrthographicCameraDefinition { pub far: f32, pub half_height: f32, pub half_width: f32, pub name: Option<String>, pub near: f32, }
+src/collada_types.rs: pub struct ColladaParseContext { pub animation_channels: Ref<Vec<Ref<ColladaDecodedAnimationChannel>>>, pub base_url: Option<String>, pub camera_definitions: Ref<Vec<ColladaCameraEntry>>, pub diagnostics: Ref<Vec<ImportDiagnostic>>, pub document: Ref<Scene3DDocument>, pub geometry_id_to_mesh_index: Ref<Vec<ColladaIndexEntry>>, pub geometry_positions: Ref<Vec<ColladaFloatArrayEntry>>, pub geometry_primitive_symbols: Ref<Vec<ColladaStringArrayEntry>>, pub light_definitions: Ref<Vec<ColladaLightEntry>>, pub material_indices: Ref<Vec<ColladaIndexEntry>>, pub morphs: Ref<Vec<ColladaMorphEntry>>, pub root: Ref<XmlElement>, pub skins: Ref<Vec<ColladaSkinEntry>>, }
+src/collada_types.rs: pub struct ColladaParseResult { pub document: Ref<Scene3DDocument>, pub diagnostics: Ref<Vec<ImportDiagnostic>>, pub up_axis: ColladaUpAxis, pub root_transform: Arc<Vec<f32>>, }
+src/collada_types.rs: pub struct ColladaPerspectiveCameraDefinition { pub aspect: f32, pub far: f32, pub fov_y: f32, pub name: Option<String>, pub near: f32, }
+src/collada_types.rs: pub struct ColladaSkinEntry { pub key: String, pub value: Ref<ColladaDecodedSkin>, }
+src/collada_types.rs: pub struct ColladaSkinInfluence { pub joint: String, pub weight: f32, }
+src/collada_types.rs: pub struct ColladaStringArrayEntry { pub key: String, pub value: Ref<Vec<String>>, }
+src/collada_xml.rs: pub fn collada_child(element: Option<&Ref<XmlElement>>, name: &str) -> Option<Ref<XmlElement>>
+src/collada_xml.rs: pub fn collada_children(out: &mut Vec<Ref<XmlElement>>, element: Option<&Ref<XmlElement>>, name: &str,)
+src/collada_xml.rs: pub fn collada_descendants(out: &mut Vec<Ref<XmlElement>>, element: &Ref<XmlElement>, name: &str)
+src/collada_xml.rs: pub fn collada_id_of(element: &Ref<XmlElement>) -> Option<String>
+src/collada_xml.rs: pub fn collada_local_name(element: &Ref<XmlElement>) -> String
+src/collada_xml.rs: pub fn collada_numbers(element: Option<&Ref<XmlElement>>) -> Vec<f32>
+src/collada_xml.rs: pub fn collada_text(element: Option<&Ref<XmlElement>>, name: &str) -> Option<String>
+src/collada_xml.rs: pub fn parse_collada_floats(text: &str) -> Vec<f32>
+src/collada_xml.rs: pub fn walk_collada_element(element: &Ref<XmlElement>, visit: &mut dyn FnMut(&Ref<XmlElement>))
+src/contract.rs: pub use crate::awd2_block_census::*;
+src/contract.rs: pub use crate::awd2_block_dispatch::*;
+src/contract.rs: pub use crate::awd2_block_registry::*;
+src/contract.rs: pub use crate::awd2_block_requirements::*;
+src/contract.rs: pub use crate::awd2_camera_handler::*;
+src/contract.rs: pub use crate::awd2_geometry_handler::*;
+src/contract.rs: pub use crate::awd2_header::*;
+src/contract.rs: pub use crate::awd2_lighting_handler::*;
+src/contract.rs: pub use crate::awd2_material_handler::*;
+src/contract.rs: pub use crate::awd2_parse::*;
+src/contract.rs: pub use crate::awd2_reader::*;
+src/contract.rs: pub use crate::awd2_requirements::*;
+src/contract.rs: pub use crate::awd2_scene_structure_handler::*;
+src/contract.rs: pub use crate::awd2_schema::*;
+src/contract.rs: pub use crate::awd2_skeleton_handler::*;
+src/contract.rs: pub use crate::awd2_types::*;
+src/contract.rs: pub use crate::collada_animation_decoder::*;
+src/contract.rs: pub use crate::collada_camera_decoder::*;
+src/contract.rs: pub use crate::collada_controller_decoder::*;
+src/contract.rs: pub use crate::collada_decoder_family::*;
+src/contract.rs: pub use crate::collada_document::*;
+src/contract.rs: pub use crate::collada_feature_requirements::*;
+src/contract.rs: pub use crate::collada_features::*;
+src/contract.rs: pub use crate::collada_geometry_decoder::*;
+src/contract.rs: pub use crate::collada_light_decoder::*;
+src/contract.rs: pub use crate::collada_material::*;
+src/contract.rs: pub use crate::collada_material_decoder::*;
+src/contract.rs: pub use crate::collada_parse::*;
+src/contract.rs: pub use crate::collada_scene_shared::*;
+src/contract.rs: pub use crate::collada_types::*;
+src/contract.rs: pub use crate::collada_xml::*;
+src/contract.rs: pub use crate::feature_requirements::*;
+src/contract.rs: pub use crate::gltf_animations::*;
+src/contract.rs: pub use crate::gltf_anisotropy::*;
+src/contract.rs: pub use crate::gltf_cameras::*;
+src/contract.rs: pub use crate::gltf_clearcoat::*;
+src/contract.rs: pub use crate::gltf_core_feature_registry::*;
+src/contract.rs: pub use crate::gltf_draco::*;
+src/contract.rs: pub use crate::gltf_emissive_strength::*;
+src/contract.rs: pub use crate::gltf_extension_handler_registry::*;
+src/contract.rs: pub use crate::gltf_feature_requirements::*;
+src/contract.rs: pub use crate::gltf_features::*;
+src/contract.rs: pub use crate::gltf_import::*;
+src/contract.rs: pub use crate::gltf_iridescence::*;
+src/contract.rs: pub use crate::gltf_material_extension::*;
+src/contract.rs: pub use crate::gltf_parse::*;
+src/contract.rs: pub use crate::gltf_punctual_lights::*;
+src/contract.rs: pub use crate::gltf_requirements::*;
+src/contract.rs: pub use crate::gltf_schema::*;
+src/contract.rs: pub use crate::gltf_sheen::*;
+src/contract.rs: pub use crate::gltf_skins::*;
+src/contract.rs: pub use crate::gltf_source::*;
+src/contract.rs: pub use crate::gltf_specular::*;
+src/contract.rs: pub use crate::gltf_specular_glossiness::*;
+src/contract.rs: pub use crate::gltf_transmission_volume::*;
+src/contract.rs: pub use crate::gltf_types::*;
+src/contract.rs: pub use crate::gltf_unlit::*;
+src/contract.rs: pub use crate::md2_animation_handler::*;
+src/contract.rs: pub use crate::md2_document::*;
+src/contract.rs: pub use crate::md2_feature_requirements::*;
+src/contract.rs: pub use crate::md2_features::*;
+src/contract.rs: pub use crate::md2_parse::*;
+src/contract.rs: pub use crate::md2_requirements::*;
+src/contract.rs: pub use crate::md2_schema::*;
+src/contract.rs: pub use crate::md2_section_registry::*;
+src/contract.rs: pub use crate::md2_skin_handler::*;
+src/contract.rs: pub use crate::md2_types::*;
+src/contract.rs: pub use crate::md5_anim_features::*;
+src/contract.rs: pub use crate::md5_anim_parse::*;
+src/contract.rs: pub use crate::md5_anim_requirements::*;
+src/contract.rs: pub use crate::md5_document::*;
+src/contract.rs: pub use crate::md5_material_handler::*;
+src/contract.rs: pub use crate::md5_mesh_feature_requirements::*;
+src/contract.rs: pub use crate::md5_mesh_features::*;
+src/contract.rs: pub use crate::md5_mesh_requirements::*;
+src/contract.rs: pub use crate::md5_parse::*;
+src/contract.rs: pub use crate::md5_section_registry::*;
+src/contract.rs: pub use crate::md5_skeleton_handler::*;
+src/contract.rs: pub use crate::md5_types::*;
+src/contract.rs: pub use crate::merge_awd2_parse_options::*;
+src/contract.rs: pub use crate::mtl_parse::*;
+src/contract.rs: pub use crate::obj_blinn_phong_material_handler::*;
+src/contract.rs: pub use crate::obj_document::*;
+src/contract.rs: pub use crate::obj_feature_requirements::*;
+src/contract.rs: pub use crate::obj_features::*;
+src/contract.rs: pub use crate::obj_material_helpers::*;
+src/contract.rs: pub use crate::obj_material_model::*;
+src/contract.rs: pub use crate::obj_material_registry::*;
+src/contract.rs: pub use crate::obj_parse::*;
+src/contract.rs: pub use crate::obj_requirements::*;
+src/contract.rs: pub use crate::obj_schema::*;
+src/contract.rs: pub use crate::obj_standard_pbr_material_handler::*;
+src/contract.rs: pub use crate::obj_types::*;
+src/contract.rs: pub use crate::register_all_gltf_handlers::*;
+src/contract.rs: pub use crate::register_gltf_animation_handlers::*;
+src/contract.rs: pub use crate::register_gltf_camera_handlers::*;
+src/contract.rs: pub use crate::register_gltf_lighting_extension_handlers::*;
+src/contract.rs: pub use crate::register_gltf_material_extension_handlers::*;
+src/contract.rs: pub use crate::register_gltf_skin_handlers::*;
+src/contract.rs: pub use crate::scene3d_format_requirements::*;
+src/contract.rs: pub use crate::scene3d_formats_test_helper::*;
+src/contract.rs: pub use crate::scene_skeleton::*;
+src/contract.rs: pub use crate::shared::*;
+src/contract.rs: pub use crate::stl_features::*;
+src/contract.rs: pub use crate::stl_parse::*;
+src/contract.rs: pub use crate::stl_requirements::*;
+src/contract.rs: pub use crate::stl_test_helper::*;
+src/contract.rs: pub use crate::three_ds_camera_handler::*;
+src/contract.rs: pub use crate::three_ds_chunk_census::*;
+src/contract.rs: pub use crate::three_ds_chunk_dispatch::*;
+src/contract.rs: pub use crate::three_ds_chunk_registry::*;
+src/contract.rs: pub use crate::three_ds_chunk_requirements::*;
+src/contract.rs: pub use crate::three_ds_document::*;
+src/contract.rs: pub use crate::three_ds_keyframe_handler::*;
+src/contract.rs: pub use crate::three_ds_light_handler::*;
+src/contract.rs: pub use crate::three_ds_material_handler::*;
+src/contract.rs: pub use crate::three_ds_mesh_handler::*;
+src/contract.rs: pub use crate::three_ds_parse::*;
+src/contract.rs: pub use crate::three_ds_requirements::*;
+src/contract.rs: pub use crate::three_ds_schema::*;
+src/contract.rs: pub use crate::three_ds_types::*;
+src/feature_requirements.rs: pub struct Scene3DFormatFeatureRequirements { pub feature: String, pub requirements: Vec<Requirement>, }
+src/gltf_animations.rs: pub static GLTF_ANIMATIONS_CORE_FEATURE_HANDLER: LazyLock<Ref<GltfCoreFeatureHandler>>
+src/gltf_anisotropy.rs: pub static GLTF_ANISOTROPY_EXTENSION_HANDLER: LazyLock<Ref<GltfExtensionHandler>>
+src/gltf_cameras.rs: pub static GLTF_CAMERAS_CORE_FEATURE_HANDLER: LazyLock<Ref<GltfCoreFeatureHandler>>
+src/gltf_clearcoat.rs: pub static GLTF_CLEARCOAT_EXTENSION_HANDLER: LazyLock<Ref<GltfExtensionHandler>>
+src/gltf_core_feature_registry.rs: pub fn register_gltf_core_feature_handler(handlers: &mut Vec<Ref<GltfCoreFeatureHandler>>, handler: Ref<GltfCoreFeatureHandler>,)
+src/gltf_draco.rs: pub fn get_gltf_draco_decoder(registry: &GltfDracoRegistry) -> Option<GltfDracoDecoder>
+src/gltf_draco.rs: pub fn has_gltf_draco_decoder(registry: &GltfDracoRegistry) -> bool
+src/gltf_draco.rs: pub fn register_gltf_draco_decoder(registry: &mut GltfDracoRegistry, decoder: GltfDracoDecoder)
+src/gltf_draco.rs: pub fn unregister_gltf_draco_decoder(registry: &mut GltfDracoRegistry)
+src/gltf_draco.rs: pub struct GltfDracoRegistry { pub decoder: Option<GltfDracoDecoder>, }
+src/gltf_emissive_strength.rs: pub static GLTF_EMISSIVE_STRENGTH_EXTENSION_HANDLER: LazyLock<Ref<GltfExtensionHandler>>
+src/gltf_extension_handler_registry.rs: pub fn register_gltf_extension_handler(handlers: &mut Vec<Ref<GltfExtensionHandler>>, handler: Ref<GltfExtensionHandler>,)
+src/gltf_feature_requirements.rs: pub static GLTF_FEATURE_SCENE_REQUIREMENTS: LazyLock<Vec<Scene3DFormatFeatureRequirements>>
+src/gltf_features.rs: pub const GLTF_FEATURE_NAMES: &[&str]
+src/gltf_features.rs: pub fn collect_glb_features(out: &mut Vec<String>, bytes: &Uint8Array) -> bool
+src/gltf_features.rs: pub fn collect_gltf_features(out: &mut Vec<String>, source: GltfSource<'_>) -> bool
+src/gltf_features.rs: pub fn extract_glb_json_chunk(bytes: &Uint8Array) -> Option<String>
+src/gltf_import.rs: pub fn create_scene3d_from_glb(bytes: &ArrayBufferView, diagnostics: Option<&Ref<Vec<ImportDiagnostic>>>, options: Option<&GltfImportOptions>,) -> Scene3D
+src/gltf_import.rs: pub fn create_scene3d_from_gltf(source: &GltfSource<'_>, diagnostics: Option<&Ref<Vec<ImportDiagnostic>>>, options: Option<&GltfImportOptions>,) -> Scene3D
+src/gltf_import.rs: pub fn create_scene3ds_from_glb(bytes: &ArrayBufferView, diagnostics: Option<&Ref<Vec<ImportDiagnostic>>>, options: Option<&GltfImportOptions>,) -> Vec<Scene3D>
+src/gltf_import.rs: pub fn create_scene3ds_from_gltf(source: &GltfSource<'_>, diagnostics: Option<&Ref<Vec<ImportDiagnostic>>>, options: Option<&GltfImportOptions>,) -> Vec<Scene3D>
+src/gltf_import.rs: pub fn parse_glb(bytes: &ArrayBufferView, diagnostics: Option<&Ref<Vec<ImportDiagnostic>>>, options: Option<&GltfImportOptions>,) -> Ref<Scene3DDocument>
+src/gltf_import.rs: pub fn parse_gltf(source: &GltfSource<'_>, diagnostics: Option<&Ref<Vec<ImportDiagnostic>>>, options: Option<&GltfImportOptions>,) -> Ref<Scene3DDocument>
+src/gltf_iridescence.rs: pub static GLTF_IRIDESCENCE_EXTENSION_HANDLER: LazyLock<Ref<GltfExtensionHandler>>
+src/gltf_material_extension.rs: pub fn attach_gltf_pbr_extension(document: &mut Scene3DDocument, index: usize, extension: Ref<PbrExtension>,) -> bool
+src/gltf_material_extension.rs: pub fn find_gltf_pbr_extension(document: &Scene3DDocument, index: usize, kind: &str,) -> Option<Ref<PbrExtension>>
+src/gltf_parse.rs: pub fn create_scene3d_from_glb_with_core_feature_handlers(bytes: &ArrayBufferView, core_feature_handlers: &[Ref<GltfCoreFeatureHandler>], diagnostics: Option<&Ref<Vec<ImportDiagnostic>>>, options: Option<&GltfImportOptions>,) -> Scene3D
+src/gltf_parse.rs: pub fn create_scene3d_from_gltf_with_core_feature_handlers(source: &GltfSource<'_>, core_feature_handlers: &[Ref<GltfCoreFeatureHandler>], diagnostics: Option<&Ref<Vec<ImportDiagnostic>>>, options: Option<&GltfImportOptions>,) -> Scene3D
+src/gltf_parse.rs: pub fn parse_glb_with_core_feature_handlers(bytes: &ArrayBufferView, core_feature_handlers: &[Ref<GltfCoreFeatureHandler>], diagnostics: Option<&Ref<Vec<ImportDiagnostic>>>, options: Option<&GltfImportOptions>,) -> Ref<Scene3DDocument>
+src/gltf_parse.rs: pub fn parse_gltf_with_core_feature_handlers(source: &GltfSource<'_>, core_feature_handlers: &[Ref<GltfCoreFeatureHandler>], diagnostics: Option<&Ref<Vec<ImportDiagnostic>>>, options: Option<&GltfImportOptions>,) -> Ref<Scene3DDocument>
+src/gltf_punctual_lights.rs: pub static GLTF_PUNCTUAL_LIGHTS_EXTENSION_HANDLER: LazyLock<Ref<GltfExtensionHandler>>
+src/gltf_requirements.rs: pub fn parse_glb_requirements(source: &Uint8Array) -> RequirementSet
+src/gltf_requirements.rs: pub fn parse_gltf_requirements(source: GltfSource<'_>) -> RequirementSet
+src/gltf_schema.rs: impl GltfTextureInfoAccess for GltfNormalTextureInfo
+src/gltf_schema.rs: impl GltfTextureInfoAccess for GltfNormalTextureInfo :: fn gltf_texture_info(&self) -> &GltfTextureInfo
+src/gltf_schema.rs: impl GltfTextureInfoAccess for GltfOcclusionTextureInfo
+src/gltf_schema.rs: impl GltfTextureInfoAccess for GltfOcclusionTextureInfo :: fn gltf_texture_info(&self) -> &GltfTextureInfo
+src/gltf_schema.rs: impl GltfTextureInfoAccess for GltfTextureInfo
+src/gltf_schema.rs: impl GltfTextureInfoAccess for GltfTextureInfo :: fn gltf_texture_info(&self) -> &GltfTextureInfo
+src/gltf_schema.rs: pub struct GltfAccessor { pub buffer_view: Option<f32>, pub byte_offset: Option<f32>, pub component_type: GltfComponentType, pub count: f32, pub normalized: Option<bool>, pub r#type: String, pub sparse: Option<Ref<GltfAccessorSparse>>, }
+src/gltf_schema.rs: pub struct GltfAccessorSparse { pub count: f32, pub indices: Ref<GltfAccessorSparseIndices>, pub values: Ref<GltfAccessorSparseValues>, }
+src/gltf_schema.rs: pub struct GltfAccessorSparseIndices { pub buffer_view: f32, pub byte_offset: Option<f32>, pub component_type: GltfComponentType, }
+src/gltf_schema.rs: pub struct GltfAccessorSparseValues { pub buffer_view: f32, pub byte_offset: Option<f32>, }
+src/gltf_schema.rs: pub struct GltfAnimation { pub name: Option<String>, pub channels: Vec<Ref<GltfAnimationChannel>>, pub samplers: Vec<Ref<GltfAnimationSampler>>, }
+src/gltf_schema.rs: pub struct GltfAnimationChannel { pub sampler: f32, pub target: Ref<GltfAnimationTarget>, }
+src/gltf_schema.rs: pub struct GltfAnimationSampler { pub input: f32, pub output: f32, pub interpolation: Option<String>, }
+src/gltf_schema.rs: pub struct GltfAnimationTarget { pub node: Option<f32>, pub path: String, }
+src/gltf_schema.rs: pub struct GltfAsset { pub version: String, }
+src/gltf_schema.rs: pub struct GltfBuffer { pub byte_length: f32, pub uri: Option<String>, }
+src/gltf_schema.rs: pub struct GltfBufferView { pub buffer: f32, pub byte_length: f32, pub byte_offset: Option<f32>, pub byte_stride: Option<f32>, }
+src/gltf_schema.rs: pub struct GltfCamera { pub name: Option<String>, pub orthographic: Option<Ref<GltfOrthographicCamera>>, pub perspective: Option<Ref<GltfPerspectiveCamera>>, pub r#type: String, }
+src/gltf_schema.rs: pub struct GltfDocument { pub asset: Option<Ref<GltfAsset>>, pub cameras: Option<Vec<Ref<GltfCamera>>>, pub scene: Option<f32>, pub scenes: Option<Vec<Ref<GltfScene3D>>>, pub nodes: Option<Vec<Ref<GltfNode>>>, pub meshes: Option<Vec<Ref<GltfMesh>>>, pub materials: Option<Vec<Ref<GltfMaterial>>>, pub textures: Option<Vec<Ref<GltfTexture>>>, pub samplers: Option<Vec<Ref<GltfSampler>>>, pub images: Option<Vec<Ref<GltfImage>>>, pub animations: Option<Vec<Ref<GltfAnimation>>>, pub accessors: Option<Vec<Ref<GltfAccessor>>>, pub buffer_views: Option<Vec<Ref<GltfBufferView>>>, pub buffers: Option<Vec<Ref<GltfBuffer>>>, pub skins: Option<Vec<Ref<GltfSkin>>>, pub extensions_used: Option<Vec<String>>, pub extensions_required: Option<Vec<String>>, pub extensions: Option<Ref<GltfDocumentExtensions>>, }
+src/gltf_schema.rs: pub struct GltfDocumentExtensions { pub khr_lights_punctual: Option<Ref<GltfPunctualLights>>, pub vendor: Record<Unknown>, }
+src/gltf_schema.rs: pub struct GltfDracoMeshCompression { pub attributes: Ref<Record<f32>>, pub buffer_view: f32, }
+src/gltf_schema.rs: pub struct GltfImage { pub uri: Option<String>, pub mime_type: Option<String>, pub buffer_view: Option<f32>, }
+src/gltf_schema.rs: pub struct GltfMaterial { pub name: Option<String>, pub pbr_metallic_roughness: Option<Ref<GltfPbrMetallicRoughness>>, pub normal_texture: Option<Ref<GltfNormalTextureInfo>>, pub occlusion_texture: Option<Ref<GltfOcclusionTextureInfo>>, pub emissive_texture: Option<Ref<GltfTextureInfo>>, pub emissive_factor: Option<Vec<f32>>, pub alpha_mode: Option<String>, pub alpha_cutoff: Option<f32>, pub double_sided: Option<bool>, pub extensions: Option<Ref<GltfMaterialExtensions>>, }
+src/gltf_schema.rs: pub struct GltfMaterialExtensions { pub khr_materials_anisotropy: Option<Ref<GltfMaterialsAnisotropy>>, pub khr_materials_clearcoat: Option<Ref<GltfMaterialsClearcoat>>, pub khr_materials_emissive_strength: Option<Ref<GltfMaterialsEmissiveStrength>>, pub khr_materials_ior: Option<Ref<GltfMaterialsIor>>, pub khr_materials_iridescence: Option<Ref<GltfMaterialsIridescence>>, pub khr_materials_pbr_specular_glossiness: Option<Ref<GltfMaterialsPbrSpecularGlossiness>>, pub khr_materials_sheen: Option<Ref<GltfMaterialsSheen>>, pub khr_materials_unlit: Option<Ref<GltfMaterialsUnlit>>, pub khr_materials_specular: Option<Ref<GltfMaterialsSpecular>>, pub khr_materials_transmission: Option<Ref<GltfMaterialsTransmission>>, pub khr_materials_volume: Option<Ref<GltfMaterialsVolume>>, pub vendor: Record<Unknown>, }
+src/gltf_schema.rs: pub struct GltfMaterialsAnisotropy { pub anisotropy_rotation: Option<f32>, pub anisotropy_strength: Option<f32>, pub anisotropy_texture: Option<Ref<GltfTextureInfo>>, }
+src/gltf_schema.rs: pub struct GltfMaterialsClearcoat { pub clearcoat_factor: Option<f32>, pub clearcoat_normal_texture: Option<Ref<GltfNormalTextureInfo>>, pub clearcoat_roughness_factor: Option<f32>, pub clearcoat_roughness_texture: Option<Ref<GltfTextureInfo>>, pub clearcoat_texture: Option<Ref<GltfTextureInfo>>, }
+src/gltf_schema.rs: pub struct GltfMaterialsEmissiveStrength { pub emissive_strength: Option<f32>, }
+src/gltf_schema.rs: pub struct GltfMaterialsIor { pub ior: Option<f32>, }
+src/gltf_schema.rs: pub struct GltfMaterialsIridescence { pub iridescence_factor: Option<f32>, pub iridescence_ior: Option<f32>, pub iridescence_texture: Option<Ref<GltfTextureInfo>>, pub iridescence_thickness_maximum: Option<f32>, pub iridescence_thickness_minimum: Option<f32>, pub iridescence_thickness_texture: Option<Ref<GltfTextureInfo>>, }
+src/gltf_schema.rs: pub struct GltfMaterialsPbrSpecularGlossiness { pub diffuse_factor: Option<Vec<f32>>, pub diffuse_texture: Option<Ref<GltfTextureInfo>>, pub glossiness_factor: Option<f32>, pub specular_factor: Option<Vec<f32>>, pub specular_glossiness_texture: Option<Ref<GltfTextureInfo>>, }
+src/gltf_schema.rs: pub struct GltfMaterialsSheen { pub sheen_color_factor: Option<Vec<f32>>, pub sheen_color_texture: Option<Ref<GltfTextureInfo>>, pub sheen_roughness_factor: Option<f32>, pub sheen_roughness_texture: Option<Ref<GltfTextureInfo>>, }
+src/gltf_schema.rs: pub struct GltfMaterialsSpecular { pub specular_color_factor: Option<Vec<f32>>, pub specular_color_texture: Option<Ref<GltfTextureInfo>>, pub specular_factor: Option<f32>, pub specular_texture: Option<Ref<GltfTextureInfo>>, }
+src/gltf_schema.rs: pub struct GltfMaterialsTransmission { pub transmission_factor: Option<f32>, pub transmission_texture: Option<Ref<GltfTextureInfo>>, }
+src/gltf_schema.rs: pub struct GltfMaterialsUnlit { }
+src/gltf_schema.rs: pub struct GltfMaterialsVolume { pub attenuation_color: Option<Vec<f32>>, pub attenuation_distance: Option<f32>, pub thickness_factor: Option<f32>, pub thickness_texture: Option<Ref<GltfTextureInfo>>, }
+src/gltf_schema.rs: pub struct GltfMesh { pub name: Option<String>, pub primitives: Vec<Ref<GltfPrimitive>>, pub weights: Option<Vec<f32>>, }
+src/gltf_schema.rs: pub struct GltfMorphTarget { pub normal: Option<f32>, pub position: Option<f32>, pub tangent: Option<f32>, }
+src/gltf_schema.rs: pub struct GltfNode { pub camera: Option<f32>, pub name: Option<String>, pub children: Option<Vec<f32>>, pub mesh: Option<f32>, pub skin: Option<f32>, pub matrix: Option<Vec<f32>>, pub translation: Option<Vec<f32>>, pub rotation: Option<Vec<f32>>, pub scale: Option<Vec<f32>>, pub extensions: Option<Ref<GltfNodeExtensions>>, }
+src/gltf_schema.rs: pub struct GltfNodeExtensions { pub khr_lights_punctual: Option<Ref<GltfNodePunctualLight>>, pub vendor: Record<Unknown>, }
+src/gltf_schema.rs: pub struct GltfNodePunctualLight { pub light: f32, }
+src/gltf_schema.rs: pub struct GltfNormalTextureInfo { pub fields: GltfTextureInfo, pub scale: Option<f32>, }
+src/gltf_schema.rs: pub struct GltfOcclusionTextureInfo { pub fields: GltfTextureInfo, pub strength: Option<f32>, }
+src/gltf_schema.rs: pub struct GltfOrthographicCamera { pub xmag: f32, pub ymag: f32, pub zfar: f32, pub znear: f32, }
+src/gltf_schema.rs: pub struct GltfPbrMetallicRoughness { pub base_color_factor: Option<Vec<f32>>, pub base_color_texture: Option<Ref<GltfTextureInfo>>, pub metallic_factor: Option<f32>, pub roughness_factor: Option<f32>, pub metallic_roughness_texture: Option<Ref<GltfTextureInfo>>, }
+src/gltf_schema.rs: pub struct GltfPerspectiveCamera { pub aspect_ratio: Option<f32>, pub yfov: f32, pub zfar: Option<f32>, pub znear: f32, }
+src/gltf_schema.rs: pub struct GltfPrimitive { pub attributes: Ref<GltfPrimitiveAttributes>, pub indices: Option<f32>, pub material: Option<f32>, pub mode: Option<f32>, pub extensions: Option<Ref<GltfPrimitiveExtensions>>, pub targets: Option<Vec<Ref<GltfMorphTarget>>>, }
+src/gltf_schema.rs: pub struct GltfPrimitiveAttributes { pub joints_0: Option<f32>, pub normal: Option<f32>, pub position: Option<f32>, pub tangent: Option<f32>, pub texcoord_0: Option<f32>, pub weights_0: Option<f32>, }
+src/gltf_schema.rs: pub struct GltfPrimitiveExtensions { pub khr_draco_mesh_compression: Option<Ref<GltfDracoMeshCompression>>, pub vendor: Record<Unknown>, }
+src/gltf_schema.rs: pub struct GltfPunctualLight { pub color: Option<Vec<f32>>, pub intensity: Option<f32>, pub name: Option<String>, pub range: Option<f32>, pub spot: Option<Ref<GltfPunctualLightSpot>>, pub r#type: String, }
+src/gltf_schema.rs: pub struct GltfPunctualLightSpot { pub inner_cone_angle: Option<f32>, pub outer_cone_angle: Option<f32>, }
+src/gltf_schema.rs: pub struct GltfPunctualLights { pub lights: Vec<Ref<GltfPunctualLight>>, }
+src/gltf_schema.rs: pub struct GltfSampler { pub mag_filter: Option<f32>, pub min_filter: Option<f32>, pub wrap_s: Option<f32>, pub wrap_t: Option<f32>, }
+src/gltf_schema.rs: pub struct GltfScene3D { pub name: Option<String>, pub nodes: Option<Vec<f32>>, }
+src/gltf_schema.rs: pub struct GltfSkin { pub name: Option<String>, pub inverse_bind_matrices: Option<f32>, pub joints: Vec<f32>, pub skeleton: Option<f32>, }
+src/gltf_schema.rs: pub struct GltfTexture { pub extensions: Option<Ref<GltfTextureExtensions>>, pub sampler: Option<f32>, pub source: Option<f32>, }
+src/gltf_schema.rs: pub struct GltfTextureBasisu { pub source: f32, }
+src/gltf_schema.rs: pub struct GltfTextureExtensions { pub khr_texture_basisu: Option<Ref<GltfTextureBasisu>>, pub vendor: Record<Unknown>, }
+src/gltf_schema.rs: pub struct GltfTextureInfo { pub index: f32, pub tex_coord: Option<f32>, pub extensions: Option<Ref<GltfTextureInfoExtensions>>, }
+src/gltf_schema.rs: pub struct GltfTextureInfoExtensions { pub khr_texture_transform: Option<Ref<GltfTextureTransform>>, }
+src/gltf_schema.rs: pub struct GltfTextureTransform { pub offset: Option<Vec<f32>>, pub rotation: Option<f32>, pub scale: Option<Vec<f32>>, pub tex_coord: Option<f32>, }
+src/gltf_schema.rs: pub trait GltfTextureInfoAccess: Send + Sync { fn gltf_texture_info(&self) -> &GltfTextureInfo; }
+src/gltf_schema.rs: pub type GltfComponentType = f32;
+src/gltf_schema.rs: pub type GltfTextureInfoRef = Ref<dyn GltfTextureInfoAccess>;
+src/gltf_sheen.rs: pub static GLTF_SHEEN_EXTENSION_HANDLER: LazyLock<Ref<GltfExtensionHandler>>
+src/gltf_skins.rs: pub static GLTF_SKINS_CORE_FEATURE_HANDLER: LazyLock<Ref<GltfCoreFeatureHandler>>
+src/gltf_source.rs: pub enum GltfSource<'a> { Document(GltfDocumentSource<'a>), Json(GltfJsonSource<'a>), }
+src/gltf_source.rs: pub struct GltfDocumentSource<'a> { pub source: &'a Ref<GltfDocument>, }
+src/gltf_source.rs: pub struct GltfJsonSource<'a> { pub source: &'a str, }
+src/gltf_specular.rs: pub static GLTF_SPECULAR_EXTENSION_HANDLER: LazyLock<Ref<GltfExtensionHandler>>
+src/gltf_specular_glossiness.rs: pub static GLTF_SPECULAR_GLOSSINESS_EXTENSION_HANDLER: LazyLock<Ref<GltfExtensionHandler>>
+src/gltf_transmission_volume.rs: pub static GLTF_IOR_EXTENSION_HANDLER: LazyLock<Ref<GltfExtensionHandler>>
+src/gltf_transmission_volume.rs: pub static GLTF_TRANSMISSION_EXTENSION_HANDLER: LazyLock<Ref<GltfExtensionHandler>>
+src/gltf_transmission_volume.rs: pub static GLTF_VOLUME_EXTENSION_HANDLER: LazyLock<Ref<GltfExtensionHandler>>
+src/gltf_types.rs: pub enum GltfComponentArray { Float32(GltfFloat32Array), Int8(GltfInt8Array), Int16(GltfInt16Array), Uint8(GltfUint8Array), Uint16(GltfUint16Array), Uint32(GltfUint32Array), }
+src/gltf_types.rs: pub enum GltfExternalBuffer { Values(GltfExternalBufferValues), View(GltfExternalBufferView), }
+src/gltf_types.rs: pub struct GltfAccessorData { pub count: usize, pub data: GltfComponentArray, pub fault: Option<Ref<GltfAccessorFault>>, }
+src/gltf_types.rs: pub struct GltfAccessorFault { pub detail: Ref<Record<f32>>, pub kind: String, }
+src/gltf_types.rs: pub struct GltfCoreFeatureContext { pub build_node_transform: Arc<dyn Fn(f32) -> Transform3D + Send + Sync>, pub document: Ref<Scene3DDocument>, pub mesh_indices: Ref<Vec<Ref<Vec<i32>>>>, pub node_indices: Ref<Vec<i32>>, pub primitive_node_indices: Ref<Vec<Ref<Vec<i32>>>>, pub read_accessor: Arc<dyn Fn(f32, Option<&str>) -> GltfAccessorData + Send + Sync>, pub report_accessor_fault: Arc<dyn Fn(ImportDiagnosticSeverity, &Ref<GltfAccessorFault>) + Send + Sync>, pub report_diagnostic: Arc<dyn Fn(ImportDiagnosticSeverity, &str, Option<&Ref<Record<ImportDiagnosticDetailValue>>>, Option<&str>,) + Send + Sync,>, pub source: Ref<GltfDocument>, }
+src/gltf_types.rs: pub struct GltfCoreFeatureHandler { pub apply: Arc<dyn Fn(&Ref<GltfCoreFeatureContext>) + Send + Sync>, pub kind: String, }
+src/gltf_types.rs: pub struct GltfDracoMesh { pub attributes: Ref<Record<Ref<Box<Float32Array>>>>, pub indices: Option<Ref<Box<Uint32Array>>>, pub vertex_count: usize, }
+src/gltf_types.rs: pub struct GltfExtensionContext { pub build_node_transform: Arc<dyn Fn(f32) -> Transform3D + Send + Sync>, pub diagnostics: Option<Ref<Vec<ImportDiagnostic>>>, pub document: Ref<Scene3DDocument>, pub node_indices: Ref<Vec<i32>>, pub resolve_texture: Arc<dyn Fn(Option<&GltfTextureInfoRef>, TextureColorSpace) -> Option<Ref<Texture>> + Send + Sync,>, pub source: Ref<GltfDocument>, }
+src/gltf_types.rs: pub struct GltfExtensionHandler { pub apply: Arc<dyn Fn(&Ref<GltfExtensionContext>) + Send + Sync>, pub kind: String, }
+src/gltf_types.rs: pub struct GltfExternalBufferValues { pub values: Ref<Vec<f32>>, }
+src/gltf_types.rs: pub struct GltfExternalBufferView { pub view: ArrayBufferView, }
+src/gltf_types.rs: pub struct GltfFloat32Array { pub values: Ref<Box<Float32Array>>, }
+src/gltf_types.rs: pub struct GltfImportOptions { pub base_path: Option<String>, pub extension_handlers: Option<Vec<Ref<GltfExtensionHandler>>>, pub external_buffers: Option<Ref<Record<GltfExternalBuffer>>>, pub draco_registry: Option<Ref<GltfDracoRegistry>>, }
+src/gltf_types.rs: pub struct GltfInt16Array { pub values: Ref<Box<Int16Array>>, }
+src/gltf_types.rs: pub struct GltfInt8Array { pub values: Ref<Box<Int8Array>>, }
+src/gltf_types.rs: pub struct GltfUint16Array { pub values: Ref<Box<Uint16Array>>, }
+src/gltf_types.rs: pub struct GltfUint32Array { pub values: Ref<Box<Uint32Array>>, }
+src/gltf_types.rs: pub struct GltfUint8Array { pub values: Ref<Box<Uint8Array>>, }
+src/gltf_types.rs: pub type GltfDracoDecoder = Arc<dyn Fn(&ArrayBufferView, &Ref<Record<f32>>) -> Option<Ref<GltfDracoMesh>> + Send + Sync>;
+src/gltf_unlit.rs: pub static GLTF_UNLIT_EXTENSION_HANDLER: LazyLock<Ref<GltfExtensionHandler>>
+src/lib.rs: pub mod contract
+src/lib.rs: pub use awd2_block_dispatch::create_awd2_parse_state;
+src/lib.rs: pub use awd2_block_registry::*;
+src/lib.rs: pub use awd2_block_requirements::*;
+src/lib.rs: pub use awd2_camera_handler::*;
+src/lib.rs: pub use awd2_geometry_handler::*;
+src/lib.rs: pub use awd2_header::*;
+src/lib.rs: pub use awd2_lighting_handler::*;
+src/lib.rs: pub use awd2_material_handler::*;
+src/lib.rs: pub use awd2_parse::*;
+src/lib.rs: pub use awd2_reader::*;
+src/lib.rs: pub use awd2_scene_structure_handler::*;
+src/lib.rs: pub use awd2_schema::*;
+src/lib.rs: pub use awd2_skeleton_handler::*;
+src/lib.rs: pub use awd2_types::*;
+src/lib.rs: pub use collada_animation_decoder::*;
+src/lib.rs: pub use collada_camera_decoder::*;
+src/lib.rs: pub use collada_controller_decoder::*;
+src/lib.rs: pub use collada_decoder_family::*;
+src/lib.rs: pub use collada_document::*;
+src/lib.rs: pub use collada_feature_requirements::*;
+src/lib.rs: pub use collada_features::*;
+src/lib.rs: pub use collada_geometry_decoder::*;
+src/lib.rs: pub use collada_light_decoder::*;
+src/lib.rs: pub use collada_material::*;
+src/lib.rs: pub use collada_material_decoder::*;
+src/lib.rs: pub use collada_parse::*;
+src/lib.rs: pub use collada_types::*;
+src/lib.rs: pub use feature_requirements::*;
+src/lib.rs: pub use gltf_core_feature_registry::*;
+src/lib.rs: pub use gltf_draco::*;
+src/lib.rs: pub use gltf_extension_handler_registry::*;
+src/lib.rs: pub use gltf_feature_requirements::*;
+src/lib.rs: pub use gltf_features::*;
+src/lib.rs: pub use gltf_import::*;
+src/lib.rs: pub use gltf_material_extension::*;
+src/lib.rs: pub use gltf_parse::*;
+src/lib.rs: pub use gltf_requirements::*;
+src/lib.rs: pub use gltf_schema::*;
+src/lib.rs: pub use gltf_source::*;
+src/lib.rs: pub use gltf_types::*;
+src/lib.rs: pub use md2_animation_handler::*;
+src/lib.rs: pub use md2_document::*;
+src/lib.rs: pub use md2_feature_requirements::*;
+src/lib.rs: pub use md2_features::*;
+src/lib.rs: pub use md2_parse::*;
+src/lib.rs: pub use md2_requirements::*;
+src/lib.rs: pub use md2_schema::*;
+src/lib.rs: pub use md2_section_registry::*;
+src/lib.rs: pub use md2_skin_handler::*;
+src/lib.rs: pub use md2_types::*;
+src/lib.rs: pub use md5_anim_features::*;
+src/lib.rs: pub use md5_anim_parse::*;
+src/lib.rs: pub use md5_anim_requirements::*;
+src/lib.rs: pub use md5_document::*;
+src/lib.rs: pub use md5_material_handler::*;
+src/lib.rs: pub use md5_mesh_feature_requirements::*;
+src/lib.rs: pub use md5_mesh_features::*;
+src/lib.rs: pub use md5_mesh_requirements::*;
+src/lib.rs: pub use md5_parse::*;
+src/lib.rs: pub use md5_section_registry::*;
+src/lib.rs: pub use md5_skeleton_handler::*;
+src/lib.rs: pub use md5_types::*;
+src/lib.rs: pub use merge_awd2_parse_options::*;
+src/lib.rs: pub use mtl_parse::*;
+src/lib.rs: pub use obj_blinn_phong_material_handler::*;
+src/lib.rs: pub use obj_document::*;
+src/lib.rs: pub use obj_feature_requirements::*;
+src/lib.rs: pub use obj_features::*;
+src/lib.rs: pub use obj_material_helpers::*;
+src/lib.rs: pub use obj_material_model::*;
+src/lib.rs: pub use obj_material_registry::*;
+src/lib.rs: pub use obj_parse::parse_obj_with_material_handlers;
+src/lib.rs: pub use obj_requirements::*;
+src/lib.rs: pub use obj_schema::*;
+src/lib.rs: pub use obj_standard_pbr_material_handler::*;
+src/lib.rs: pub use obj_types::*;
+src/lib.rs: pub use register_all_gltf_handlers::*;
+src/lib.rs: pub use register_gltf_animation_handlers::*;
+src/lib.rs: pub use register_gltf_camera_handlers::*;
+src/lib.rs: pub use register_gltf_lighting_extension_handlers::*;
+src/lib.rs: pub use register_gltf_material_extension_handlers::*;
+src/lib.rs: pub use register_gltf_skin_handlers::*;
+src/lib.rs: pub use scene3d_format_requirements::*;
+src/lib.rs: pub use scene3d_formats_test_helper::*;
+src/lib.rs: pub use scene_skeleton::*;
+src/lib.rs: pub use shared::*;
+src/lib.rs: pub use stl_features::*;
+src/lib.rs: pub use stl_parse::*;
+src/lib.rs: pub use stl_requirements::*;
+src/lib.rs: pub use three_ds_camera_handler::*;
+src/lib.rs: pub use three_ds_chunk_census::*;
+src/lib.rs: pub use three_ds_chunk_dispatch::*;
+src/lib.rs: pub use three_ds_chunk_registry::*;
+src/lib.rs: pub use three_ds_chunk_requirements::*;
+src/lib.rs: pub use three_ds_document::*;
+src/lib.rs: pub use three_ds_keyframe_handler::*;
+src/lib.rs: pub use three_ds_light_handler::*;
+src/lib.rs: pub use three_ds_material_handler::*;
+src/lib.rs: pub use three_ds_mesh_handler::*;
+src/lib.rs: pub use three_ds_parse::*;
+src/lib.rs: pub use three_ds_requirements::*;
+src/lib.rs: pub use three_ds_schema::*;
+src/lib.rs: pub use three_ds_types::*;
+src/md2_animation_handler.rs: pub static MD2_ANIMATION_FAMILY: LazyLock<Vec<Ref<Md2SectionHandler>>>
+src/md2_animation_handler.rs: pub static MD2_ANIMATION_HANDLER: LazyLock<Ref<Md2SectionHandler>>
+src/md2_document.rs: impl Md2ImportOptions :: fn parse(&self, bytes: &Uint8Array, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Scene3DDocument
+src/md2_document.rs: pub fn create_scene3d_from_md2(bytes: &Uint8Array, diagnostics: Option<&mut Vec<ImportDiagnostic>>, options: Option<&Md2ImportOptions>,) -> Scene3D
+src/md2_document.rs: pub fn parse_md2(bytes: &Uint8Array, diagnostics: Option<&mut Vec<ImportDiagnostic>>, options: Option<&Md2ImportOptions>,) -> Scene3DDocument
+src/md2_feature_requirements.rs: pub static MD2_FEATURE_SCENE_REQUIREMENTS: LazyLock<Vec<Scene3DFormatFeatureRequirements>>
+src/md2_features.rs: pub const MD2_FEATURE_NAMES: [&str; 3]
+src/md2_features.rs: pub fn collect_md2_features(out: &mut Vec<String>, source: &Uint8Array) -> bool
+src/md2_parse.rs: pub fn parse_md2_with_section_handlers(bytes: &Uint8Array, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>, section_handlers: &[Ref<Md2SectionHandler>],) -> Scene3DDocument
+src/md2_requirements.rs: pub fn parse_md2_requirements(source: &Uint8Array) -> RequirementSet
+src/md2_schema.rs: pub const MD2_ANORMS: [[f32; 3]; 162]
+src/md2_schema.rs: pub const MD2_COMPRESSED_VERTEX_SIZE: usize
+src/md2_schema.rs: pub const MD2_FRAME_FPS: f32
+src/md2_schema.rs: pub const MD2_FRAME_HEADER_SIZE: usize
+src/md2_schema.rs: pub const MD2_FRAME_NAME_SIZE: usize
+src/md2_schema.rs: pub const MD2_HEADER_SIZE: usize
+src/md2_schema.rs: pub const MD2_MAGIC: i32
+src/md2_schema.rs: pub const MD2_SKIN_SIZE: usize
+src/md2_schema.rs: pub const MD2_TEXCOORD_SIZE: usize
+src/md2_schema.rs: pub const MD2_TRIANGLE_SIZE: usize
+src/md2_schema.rs: pub const MD2_VERSION: i32
+src/md2_section_registry.rs: pub static MD2_ALL_SECTION_HANDLERS: LazyLock<Vec<Ref<Md2SectionHandler>>>
+src/md2_skin_handler.rs: pub static MD2_SKIN_FAMILY: LazyLock<Vec<Ref<Md2SectionHandler>>>
+src/md2_skin_handler.rs: pub static MD2_SKIN_HANDLER: LazyLock<Ref<Md2SectionHandler>>
+src/md2_types.rs: pub struct Md2Frame { pub name: String, pub normals: Box<Float32Array>, pub positions: Box<Float32Array>, }
+src/md2_types.rs: pub struct Md2ImportOptions { pub section_handlers: Option<Vec<Ref<Md2SectionHandler>>>, }
+src/md2_types.rs: pub struct Md2ParseContext<'a> { pub bytes: &'a Uint8Array, pub diagnostics: Option<&'a mut Vec<ImportDiagnostic>>, pub document: &'a mut Scene3DDocument, pub frames: &'a [Md2Frame], pub mesh_materials: &'a mut Vec<i32>, pub morph: Option<Ref<MeshMorph>>, pub num_skins: usize, pub off_skins: usize, }
+src/md2_types.rs: pub struct Md2SectionHandler { pub collect: Arc<dyn for<'a> Fn(&mut Md2ParseContext<'a>) + Send + Sync>, pub feature: String, }
+src/md5_anim_features.rs: pub const MD5_ANIM_FEATURE_NAMES: [&str; 2]
+src/md5_anim_features.rs: pub fn collect_md5_anim_features(out: &mut Vec<String>, source: &str)
+src/md5_anim_parse.rs: pub fn parse_md5_anim(source: &str, joints: &[Node3DRef], mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Option<Ref<AnimationClip>>
+src/md5_anim_requirements.rs: pub fn parse_md5_anim_requirements(source: &str) -> RequirementSet
+src/md5_document.rs: impl Md5ImportOptions :: fn parse(&self, source: &str, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Scene3DDocument
+src/md5_document.rs: pub fn create_scene3d_from_md5_mesh(source: &str, diagnostics: Option<&mut Vec<ImportDiagnostic>>, options: Option<&Md5ImportOptions>,) -> Scene3D
+src/md5_document.rs: pub fn import_md5_mesh(mesh_source: &str, anim_source: Option<&str>, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>, options: Option<&Md5ImportOptions>,) -> Scene3D
+src/md5_document.rs: pub fn parse_md5_mesh(source: &str, diagnostics: Option<&mut Vec<ImportDiagnostic>>, options: Option<&Md5ImportOptions>,) -> Scene3DDocument
+src/md5_material_handler.rs: pub static MD5_MATERIAL_FAMILY: LazyLock<Vec<Ref<Md5SectionHandler>>>
+src/md5_material_handler.rs: pub static MD5_MATERIAL_HANDLER: LazyLock<Ref<Md5SectionHandler>>
+src/md5_mesh_feature_requirements.rs: pub static MD5_MESH_FEATURE_SCENE_REQUIREMENTS: LazyLock<Vec<Scene3DFormatFeatureRequirements>>
+src/md5_mesh_features.rs: pub const MD5_MESH_FEATURE_NAMES: [&str; 3]
+src/md5_mesh_features.rs: pub fn collect_md5_mesh_features(out: &mut Vec<String>, source: &str)
+src/md5_mesh_requirements.rs: pub fn parse_md5_mesh_requirements(source: &str) -> RequirementSet
+src/md5_parse.rs: pub fn canonicalize_md5_tangent_handedness(geometry: &mut MeshGeometry, mut md5_drops: Option<&mut Vec<Md5DropTallyEntry>>,)
+src/md5_parse.rs: pub fn parse_md5_mesh_with_section_handlers(source: &str, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>, section_handlers: &[Ref<Md5SectionHandler>],) -> Scene3DDocument
+src/md5_parse.rs: pub fn tally_md5_drop(tallies: Option<&mut Vec<Md5DropTallyEntry>>, severity: ImportDiagnosticSeverity, kind: &str, discriminator: &str, first_detail: HashMap<String, ImportDiagnosticDetailValue>,)
+src/md5_section_registry.rs: pub static MD5_ALL_SECTION_HANDLERS: LazyLock<Vec<Ref<Md5SectionHandler>>>
+src/md5_skeleton_handler.rs: pub fn build_md5_skeleton_document(out: &mut Scene3DDocument, joints: &[Md5Joint], mut md5_drops: Option<&mut Vec<Md5DropTallyEntry>>,) -> Scene3DDocumentSkin
+src/md5_skeleton_handler.rs: pub static MD5_SKELETON_FAMILY: LazyLock<Vec<Ref<Md5SectionHandler>>>
+src/md5_skeleton_handler.rs: pub static MD5_SKELETON_HANDLER: LazyLock<Ref<Md5SectionHandler>>
+src/md5_types.rs: pub const MD5_MATERIAL_FEATURE: &str
+src/md5_types.rs: pub const MD5_SKELETON_FEATURE: &str
+src/md5_types.rs: pub struct Md5DropTally { pub count: usize, pub detail: HashMap<String, ImportDiagnosticDetailValue>, pub kind: String, pub severity: ImportDiagnosticSeverity, }
+src/md5_types.rs: pub struct Md5DropTallyEntry { pub key: String, pub value: Md5DropTally, }
+src/md5_types.rs: pub struct Md5ImportOptions { pub section_handlers: Option<Vec<Ref<Md5SectionHandler>>>, }
+src/md5_types.rs: pub struct Md5Joint { pub name: String, pub orientation_w: f32, pub orientation_x: f32, pub orientation_y: f32, pub orientation_z: f32, pub parent_index: i32, pub position_x: f32, pub position_y: f32, pub position_z: f32, }
+src/md5_types.rs: pub struct Md5Mesh { pub indices: Vec<f32>, pub shader: String, pub vertices: Vec<Md5Vertex>, pub weights: Vec<Md5Weight>, }
+src/md5_types.rs: pub struct Md5MeshSection<'a> { pub materials: &'a mut Vec<i32>, pub shader: &'a str, }
+src/md5_types.rs: pub struct Md5ParseContext<'a> { pub diagnostics: Option<&'a mut Vec<ImportDiagnostic>>, pub document: &'a mut Scene3DDocument, pub drops: Option<&'a mut Vec<Md5DropTallyEntry>>, pub joints: &'a [Md5Joint], pub mesh: Option<Md5MeshSection<'a>>, pub skin: Option<i32>, }
+src/md5_types.rs: pub struct Md5SectionHandler { pub collect: Arc<dyn for<'a> Fn(&mut Md5ParseContext<'a>) + Send + Sync>, pub feature: String, }
+src/md5_types.rs: pub struct Md5Vertex { pub count_weights: i32, pub start_weight: i32, pub u: f32, pub v: f32, }
+src/md5_types.rs: pub struct Md5Weight { pub bias: f32, pub joint_index: i32, pub position_x: f32, pub position_y: f32, pub position_z: f32, }
+src/merge_awd2_parse_options.rs: pub fn merge_awd2_parse_options(out: &mut Awd2ParseOptions, options: &[Awd2ParseOptionsFragment])
+src/mtl_parse.rs: pub fn parse_obj_material_library(source: &str, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> ObjMaterialLibrary
+src/obj_blinn_phong_material_handler.rs: pub fn obj_material_to_blinn_phong(out: &mut Scene3DDocument, material: &ObjMaterial, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> BlinnPhongMaterial
+src/obj_blinn_phong_material_handler.rs: pub static OBJ_BLINN_PHONG_MATERIAL_HANDLER: LazyLock<Ref<ObjMaterialHandler>>
+src/obj_document.rs: impl ObjImportOptions :: fn parse(&self, source: &str, materials: Option<&ObjMaterialLibrary>, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Scene3DDocument
+src/obj_document.rs: pub fn create_scene3d_from_obj(source: &str, materials: Option<&ObjMaterialLibrary>, diagnostics: Option<&mut Vec<ImportDiagnostic>>, options: Option<&ObjImportOptions>,) -> Scene3D
+src/obj_document.rs: pub fn parse_obj(source: &str, materials: Option<&ObjMaterialLibrary>, diagnostics: Option<&mut Vec<ImportDiagnostic>>, options: Option<&ObjImportOptions>,) -> Scene3DDocument
+src/obj_feature_requirements.rs: pub static OBJ_FEATURE_SCENE_REQUIREMENTS: LazyLock<Vec<Scene3DFormatFeatureRequirements>>
+src/obj_features.rs: pub const OBJ_MATERIAL_FEATURE: &str
+src/obj_features.rs: pub fn collect_obj_features(out: &mut Vec<String>, source: &str)
+src/obj_features.rs: pub fn collect_obj_material_library_references(out: &mut Vec<String>, source: &str)
+src/obj_features.rs: pub static OBJ_FEATURE_DIRECTIVES: LazyLock<Vec<ObjFeatureDirectives>>
+src/obj_features.rs: pub struct ObjFeatureDirectives { pub feature: String, pub directives: Vec<String>, }
+src/obj_material_helpers.rs: pub fn clamp_channel(value: f32) -> f32
+src/obj_material_helpers.rs: pub fn external_obj_texture(out: &mut Scene3DDocument, uri: Option<&str>, color_space: TextureColorSpace,) -> Option<Ref<Texture>>
+src/obj_material_helpers.rs: pub fn pack_obj_color(rgb: &[f32; 3], alpha: f32) -> u32
+src/obj_material_model.rs: pub fn collect_obj_material_models(out: &mut Vec<String>, source: &str)
+src/obj_material_model.rs: pub fn has_obj_pbr_directives(material: &ObjMaterial) -> bool
+src/obj_material_registry.rs: pub static OBJ_ALL_MATERIAL_HANDLERS: LazyLock<Vec<Ref<ObjMaterialHandler>>>
+src/obj_material_registry.rs: pub static OBJ_BLINN_PHONG_MATERIAL_FAMILY: LazyLock<Vec<Ref<ObjMaterialHandler>>>
+src/obj_material_registry.rs: pub static OBJ_STANDARD_PBR_MATERIAL_FAMILY: LazyLock<Vec<Ref<ObjMaterialHandler>>>
+src/obj_parse.rs: pub fn parse_obj_with_material_handlers(source: &str, materials: Option<&ObjMaterialLibrary>, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>, material_handlers: &[Ref<ObjMaterialHandler>],) -> Scene3DDocument
+src/obj_requirements.rs: pub fn parse_obj_requirements(source: &str, material_libraries: Option<&[String]>,) -> RequirementSet
+src/obj_schema.rs: pub struct ObjMaterial { pub ambient: [f32; 3], pub anisotropy: Option<f32>, pub anisotropy_rotation: Option<f32>, pub clearcoat: Option<f32>, pub clearcoat_roughness: Option<f32>, pub diffuse: [f32; 3], pub dissolve: f32, pub emissive: Option<[f32; 3]>, pub illumination: f32, pub map_ambient: Option<String>, pub map_bump: Option<String>, pub map_diffuse: Option<String>, pub map_dissolve: Option<String>, pub map_emissive: Option<String>, pub map_metallic: Option<String>, pub map_normal: Option<String>, pub map_roughness: Option<String>, pub map_specular: Option<String>, pub metallic: Option<f32>, pub name: String, pub roughness: Option<f32>, pub sheen: Option<f32>, pub specular: [f32; 3], pub specular_exponent: f32, }
+src/obj_schema.rs: pub struct ObjMaterialEntry { pub key: String, pub value: ObjMaterial, }
+src/obj_schema.rs: pub struct ObjMaterialLibrary { pub materials: Vec<ObjMaterialEntry>, }
+src/obj_standard_pbr_material_handler.rs: pub fn obj_material_to_standard_pbr(out: &mut Scene3DDocument, material: &ObjMaterial, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> StandardPbrMaterial
+src/obj_standard_pbr_material_handler.rs: pub static OBJ_STANDARD_PBR_MATERIAL_HANDLER: LazyLock<Ref<ObjMaterialHandler>>
+src/obj_types.rs: pub const OBJ_MATERIAL_BLINN_PHONG_FEATURE: &str
+src/obj_types.rs: pub const OBJ_MATERIAL_STANDARD_PBR_FEATURE: &str
+src/obj_types.rs: pub struct ObjImportOptions { pub material_handlers: Option<Vec<Ref<ObjMaterialHandler>>>, }
+src/obj_types.rs: pub struct ObjMaterialHandler { pub feature: String, pub matches: Arc<dyn Fn(&ObjMaterial) -> bool + Send + Sync>, pub resolve: Arc<dyn Fn(&ObjMaterial, &mut Scene3DDocument, Option<&mut Vec<ImportDiagnostic>>,) -> Scene3DDocumentMaterial + Send + Sync,>, }
+src/register_all_gltf_handlers.rs: pub fn register_all_gltf_handlers(core_feature_handlers: &mut Vec<Ref<GltfCoreFeatureHandler>>, extension_handlers: &mut Vec<Ref<GltfExtensionHandler>>,)
+src/register_gltf_animation_handlers.rs: pub fn register_gltf_animation_handlers(handlers: &mut Vec<Ref<GltfCoreFeatureHandler>>)
+src/register_gltf_camera_handlers.rs: pub fn register_gltf_camera_handlers(handlers: &mut Vec<Ref<GltfCoreFeatureHandler>>)
+src/register_gltf_lighting_extension_handlers.rs: pub fn register_gltf_lighting_extension_handlers(handlers: &mut Vec<Ref<GltfExtensionHandler>>)
+src/register_gltf_material_extension_handlers.rs: pub fn register_gltf_material_extension_handlers(handlers: &mut Vec<Ref<GltfExtensionHandler>>)
+src/register_gltf_skin_handlers.rs: pub fn register_gltf_skin_handlers(handlers: &mut Vec<Ref<GltfCoreFeatureHandler>>)
+src/scene3d_format_requirements.rs: pub const COLLADA_REQUIREMENT_KEY_NAMESPACE: &str
+src/scene3d_format_requirements.rs: pub const GLTF_REQUIREMENT_KEY_NAMESPACE: &str
+src/scene3d_format_requirements.rs: pub const MD2_REQUIREMENT_KEY_NAMESPACE: &str
+src/scene3d_format_requirements.rs: pub const MD5_REQUIREMENT_KEY_NAMESPACE: &str
+src/scene3d_format_requirements.rs: pub const OBJ_REQUIREMENT_KEY_NAMESPACE: &str
+src/scene3d_format_requirements.rs: pub const STL_REQUIREMENT_KEY_NAMESPACE: &str
+src/scene3d_format_requirements.rs: pub const THREE_DS_REQUIREMENT_KEY_NAMESPACE: &str
+src/scene3d_formats_test_helper.rs: pub fn get_test_texture_resource(resources: &[ImageResourceReference], texture: &Ref<Texture>,) -> ImageResourceReference
+src/scene_skeleton.rs: pub fn find_scene3d_skeleton_joints(root: &Node3DRef) -> Option<Ref<Vec<Node3DRef>>>
+src/shared.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct SkinInfluence { pub joint_index: f32, pub weight: f32, }
+src/shared.rs: pub const CANONICAL_FLOATS_PER_VERTEX: usize
+src/shared.rs: pub const MAX_SKIN_INFLUENCES: usize
+src/shared.rs: pub const SKINNED_FLOATS_PER_VERTEX: usize
+src/shared.rs: pub fn convert_positions_z_up_to_y_up(values: &mut [f32], stride: Option<usize>, offset: Option<usize>,)
+src/shared.rs: pub fn convert_quaternions_z_up_to_y_up(values: &mut [f32], stride: Option<usize>, offset: Option<usize>,)
+src/shared.rs: pub fn convert_transform_lh_to_rh(transform: &mut Float64Array)
+src/shared.rs: pub fn create_embedded_texture_ref(bytes: Ref<Box<Uint8Array>>, mime_type: Option<&str>, resources: Option<&mut Vec<ImageResourceReference>>,) -> Ref<Texture>
+src/shared.rs: pub fn create_external_texture_ref(uri: &str, base_path: Option<&str>, resources: Option<&mut Vec<ImageResourceReference>>,) -> Ref<Texture>
+src/shared.rs: pub fn negate_vec3_z(values: &mut Vec<f32>)
+src/shared.rs: pub fn pack_skin_influences(out_joints: &mut Vec<f32>, out_weights: &mut Vec<f32>, influences: &mut [SkinInfluence],)
+src/shared.rs: pub fn reverse_triangle_winding(indices: &mut Vec<f32>)
+src/shared.rs: pub fn reverse_vertex_triangle_winding(vertices: &mut Float32Array, floats_per_vertex: i32)
+src/shared.rs: pub static CANONICAL_LAYOUT: LazyLock<Ref<VertexAttributeLayout>>
+src/stl_features.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum StlVariant { Ascii, Binary, }
+src/stl_features.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct StlFeatures { pub triangle_count: usize, pub variant: StlVariant, }
+src/stl_features.rs: pub const BINARY_STL_COUNT_OFFSET: usize
+src/stl_features.rs: pub const BINARY_STL_HEADER_SIZE: usize
+src/stl_features.rs: pub const BINARY_STL_TRIANGLE_SIZE: usize
+src/stl_features.rs: pub const STL_MESH_FEATURE: &str
+src/stl_features.rs: pub fn collect_stl_features(out: &mut StlFeatures, bytes: &Uint8Array) -> bool
+src/stl_features.rs: pub fn count_ascii_stl_facets(text: &str) -> Option<usize>
+src/stl_features.rs: pub fn get_stl_variant_string(value: StlVariant) -> &'static str
+src/stl_features.rs: pub fn parse_stl_variant(value: &str) -> Option<StlVariant>
+src/stl_features.rs: pub fn read_binary_stl_triangle_count(bytes: &Uint8Array) -> Option<usize>
+src/stl_parse.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum StlNormalPolicy { FileNormals, RecomputeFromVertices, }
+src/stl_parse.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct StlImportOptions { pub normals: Option<StlNormalPolicy>, }
+src/stl_parse.rs: impl StlImportOptions :: fn parse(&self, bytes: &Uint8Array) -> Option<MeshGeometry>
+src/stl_parse.rs: pub const STL_FULL_IMPORT_OPTIONS: StlImportOptions
+src/stl_parse.rs: pub fn get_stl_normal_policy_string(value: StlNormalPolicy) -> &'static str
+src/stl_parse.rs: pub fn parse_stl(bytes: &Uint8Array, options: Option<&StlImportOptions>) -> Option<MeshGeometry>
+src/stl_parse.rs: pub fn parse_stl_normal_policy(value: &str) -> Option<StlNormalPolicy>
+src/stl_requirements.rs: pub fn parse_stl_requirements(bytes: &Uint8Array) -> RequirementSet
+src/stl_test_helper.rs: #[derive(Clone, Debug, PartialEq)] pub struct StlFixtureFacet { pub normal: [f32; 3], pub vertices: [[f32; 3]; 3], }
+src/stl_test_helper.rs: pub const STL_SQUARE_FACETS: [StlFixtureFacet; 2]
+src/stl_test_helper.rs: pub fn build_ascii_stl(facets: &[StlFixtureFacet], name: Option<&str>) -> String
+src/stl_test_helper.rs: pub fn build_binary_stl(facets: &[StlFixtureFacet], header: Option<&str>) -> Box<Uint8Array>
+src/three_ds_camera_handler.rs: pub fn parse_three_ds_camera(view: &Uint8Array, offset: usize, end: usize, name: &str, mut three_ds_drops: Option<&mut Vec<ThreeDsDropTallyEntry>>,) -> Option<ThreeDsCamera>
+src/three_ds_camera_handler.rs: pub static THREE_DS_CAMERA_FAMILY: LazyLock<Vec<Ref<ThreeDsChunkHandler>>>
+src/three_ds_camera_handler.rs: pub static THREE_DS_CAMERA_HANDLER: LazyLock<Ref<ThreeDsChunkHandler>>
+src/three_ds_chunk_census.rs: #[derive(Debug, PartialEq, Eq)] pub struct ThreeDsChunkCount { pub chunk_id: u16, pub count: usize, }
+src/three_ds_chunk_census.rs: pub fn collect_three_ds_chunk_counts(out: &mut Vec<ThreeDsChunkCount>, source: &Uint8Array,) -> bool
+src/three_ds_chunk_census.rs: pub fn get_three_ds_chunk_name(chunk_id: u16) -> String
+src/three_ds_chunk_census.rs: pub fn get_three_ds_feature_names(out: &mut Vec<String>)
+src/three_ds_chunk_dispatch.rs: pub fn build_three_ds_chunk_dispatch(out: &mut ThreeDsChunkDispatch, handlers: &[Ref<ThreeDsChunkHandler>],)
+src/three_ds_chunk_registry.rs: pub static THREE_DS_ALL_CHUNK_HANDLERS: LazyLock<Vec<Ref<ThreeDsChunkHandler>>>
+src/three_ds_chunk_requirements.rs: pub static THREE_DS_CHUNK_SCENE_REQUIREMENTS: LazyLock<Vec<Scene3DFormatFeatureRequirements>>
+src/three_ds_document.rs: impl ThreeDsImportOptions :: fn parse(&self, bytes: &Uint8Array, diagnostics: Option<&mut Vec<ImportDiagnostic>>,) -> Scene3DDocument
+src/three_ds_document.rs: pub fn create_scene3d_from_3ds(bytes: &Uint8Array, diagnostics: Option<&mut Vec<ImportDiagnostic>>, options: Option<&ThreeDsImportOptions>,) -> Scene3D
+src/three_ds_document.rs: pub fn parse3ds(bytes: &Uint8Array, diagnostics: Option<&mut Vec<ImportDiagnostic>>, options: Option<&ThreeDsImportOptions>,) -> Scene3DDocument
+src/three_ds_keyframe_handler.rs: pub fn collect_three_ds_pivots(out: &mut Vec<ThreeDsPivotEntry>, view: &Uint8Array, offset: usize)
+src/three_ds_keyframe_handler.rs: pub static THREE_DS_KEYFRAME_FAMILY: LazyLock<Vec<Ref<ThreeDsChunkHandler>>>
+src/three_ds_keyframe_handler.rs: pub static THREE_DS_KEYFRAME_HANDLER: LazyLock<Ref<ThreeDsChunkHandler>>
+src/three_ds_light_handler.rs: pub fn parse_three_ds_light(view: &Uint8Array, offset: usize, end: usize, name: &str, mut three_ds_drops: Option<&mut Vec<ThreeDsDropTallyEntry>>,) -> Option<ThreeDsLight>
+src/three_ds_light_handler.rs: pub static THREE_DS_LIGHT_FAMILY: LazyLock<Vec<Ref<ThreeDsChunkHandler>>>
+src/three_ds_light_handler.rs: pub static THREE_DS_LIGHT_HANDLER: LazyLock<Ref<ThreeDsChunkHandler>>
+src/three_ds_material_handler.rs: pub fn parse_three_ds_material(view: &Uint8Array, offset: usize, end: usize) -> ThreeDsMaterial
+src/three_ds_material_handler.rs: pub static THREE_DS_MATERIAL_FAMILY: LazyLock<Vec<Ref<ThreeDsChunkHandler>>>
+src/three_ds_material_handler.rs: pub static THREE_DS_MATERIAL_HANDLER: LazyLock<Ref<ThreeDsChunkHandler>>
+src/three_ds_mesh_handler.rs: pub fn parse_three_ds_trimesh(view: &Uint8Array, offset: usize, end: usize, name: &str, mut three_ds_drops: Option<&mut Vec<ThreeDsDropTallyEntry>>,) -> Option<ThreeDsMesh>
+src/three_ds_mesh_handler.rs: pub static THREE_DS_MESH_FAMILY: LazyLock<Vec<Ref<ThreeDsChunkHandler>>>
+src/three_ds_mesh_handler.rs: pub static THREE_DS_MESH_HANDLER: LazyLock<Ref<ThreeDsChunkHandler>>
+src/three_ds_parse.rs: pub fn pack_three_ds_color(rgb: &[f32; 3], alpha: Option<f32>) -> u32
+src/three_ds_parse.rs: pub fn parse_color_chunk(view: &Uint8Array, offset: usize, end: usize) -> Option<[f32; 3]>
+src/three_ds_parse.rs: pub fn parse_three_ds_document_with_dispatch(bytes: &Uint8Array, mut diagnostics: Option<&mut Vec<ImportDiagnostic>>, dispatch: &ThreeDsChunkDispatch,) -> Scene3DDocument
+src/three_ds_parse.rs: pub fn read_chunk_end(view: &Uint8Array, cursor: usize, end: usize) -> i64
+src/three_ds_parse.rs: pub fn read_chunk_length(view: &Uint8Array, offset: usize) -> u32
+src/three_ds_parse.rs: pub fn read_null_terminated_string(view: &Uint8Array, offset: usize, end: usize) -> String
+src/three_ds_parse.rs: pub fn tally_three_ds_drop(tallies: Option<&mut Vec<ThreeDsDropTallyEntry>>, severity: ImportDiagnosticSeverity, kind: &str, discriminator: &str, first_detail: HashMap<String, ImportDiagnosticDetailValue>,)
+src/three_ds_requirements.rs: pub fn parse_three_ds_requirements(source: &Uint8Array) -> RequirementSet
+src/three_ds_schema.rs: pub const THREE_DS_CAMERA: u16
+src/three_ds_schema.rs: pub const THREE_DS_CAMERA_APERTURE_MM: f32
+src/three_ds_schema.rs: pub const THREE_DS_CAMERA_RANGES: u16
+src/three_ds_schema.rs: pub const THREE_DS_CHUNK_HEADER_BYTES: usize
+src/three_ds_schema.rs: pub const THREE_DS_COLOR_BYTE: u16
+src/three_ds_schema.rs: pub const THREE_DS_COLOR_FLOAT: u16
+src/three_ds_schema.rs: pub const THREE_DS_EDITOR: u16
+src/three_ds_schema.rs: pub const THREE_DS_FACES: u16
+src/three_ds_schema.rs: pub const THREE_DS_FACE_MATERIAL: u16
+src/three_ds_schema.rs: pub const THREE_DS_KEYFRAME: u16
+src/three_ds_schema.rs: pub const THREE_DS_KEYFRAME_NODE_HEADER: u16
+src/three_ds_schema.rs: pub const THREE_DS_KEYFRAME_OBJECT_NODE: u16
+src/three_ds_schema.rs: pub const THREE_DS_KEYFRAME_PIVOT: u16
+src/three_ds_schema.rs: pub const THREE_DS_LIGHT: u16
+src/three_ds_schema.rs: pub const THREE_DS_LIGHT_INNER_RANGE: u16
+src/three_ds_schema.rs: pub const THREE_DS_LIGHT_MULTIPLIER: u16
+src/three_ds_schema.rs: pub const THREE_DS_LIGHT_OFF: u16
+src/three_ds_schema.rs: pub const THREE_DS_LIGHT_OUTER_RANGE: u16
+src/three_ds_schema.rs: pub const THREE_DS_LIGHT_SPOT: u16
+src/three_ds_schema.rs: pub const THREE_DS_MAIN: u16
+src/three_ds_schema.rs: pub const THREE_DS_MATERIAL: u16
+src/three_ds_schema.rs: pub const THREE_DS_MATERIAL_AMBIENT: u16
+src/three_ds_schema.rs: pub const THREE_DS_MATERIAL_BUMP_MAP: u16
+src/three_ds_schema.rs: pub const THREE_DS_MATERIAL_DIFFUSE: u16
+src/three_ds_schema.rs: pub const THREE_DS_MATERIAL_NAME: u16
+src/three_ds_schema.rs: pub const THREE_DS_MATERIAL_OPACITY_MAP: u16
+src/three_ds_schema.rs: pub const THREE_DS_MATERIAL_SHININESS: u16
+src/three_ds_schema.rs: pub const THREE_DS_MATERIAL_SPECULAR: u16
+src/three_ds_schema.rs: pub const THREE_DS_MATERIAL_TEXTURE_FILENAME: u16
+src/three_ds_schema.rs: pub const THREE_DS_MATERIAL_TEXTURE_MAP: u16
+src/three_ds_schema.rs: pub const THREE_DS_MATERIAL_TRANSPARENCY: u16
+src/three_ds_schema.rs: pub const THREE_DS_OBJECT: u16
+src/three_ds_schema.rs: pub const THREE_DS_PERCENT_FLOAT: u16
+src/three_ds_schema.rs: pub const THREE_DS_PERCENT_INT: u16
+src/three_ds_schema.rs: pub const THREE_DS_SMOOTH_GROUP: u16
+src/three_ds_schema.rs: pub const THREE_DS_TRANSFORM_MATRIX: u16
+src/three_ds_schema.rs: pub const THREE_DS_TRIMESH: u16
+src/three_ds_schema.rs: pub const THREE_DS_UV_COORDS: u16
+src/three_ds_schema.rs: pub const THREE_DS_VERTICES: u16
+src/three_ds_schema.rs: pub struct ThreeDsCamera { pub far: Option<f32>, pub focal_length: f32, pub name: String, pub near: Option<f32>, pub position: [f32; 3], pub roll: f32, pub target: [f32; 3], }
+src/three_ds_schema.rs: pub struct ThreeDsDropTally { pub count: usize, pub detail: HashMap<String, ImportDiagnosticDetailValue>, pub kind: String, pub severity: ImportDiagnosticSeverity, }
+src/three_ds_schema.rs: pub struct ThreeDsLight { pub color: [f32; 3], pub enabled: bool, pub falloff: f32, pub hotspot: f32, pub inner_range: Option<f32>, pub multiplier: f32, pub name: String, pub outer_range: Option<f32>, pub position: [f32; 3], pub target: Option<[f32; 3]>, }
+src/three_ds_schema.rs: pub struct ThreeDsMaterial { pub ambient: [f32; 3], pub bump_filename: Option<String>, pub diffuse: [f32; 3], pub name: String, pub opacity: f32, pub opacity_filename: Option<String>, pub shininess: Option<f32>, pub specular: [f32; 3], pub texture_filename: Option<String>, }
+src/three_ds_schema.rs: pub struct ThreeDsMaterialGroup { pub faces: Box<Uint16Array>, pub name: String, }
+src/three_ds_schema.rs: pub struct ThreeDsMesh { pub faces: Box<Uint16Array>, pub local_matrix: Option<Box<Float32Array>>, pub material_groups: Vec<ThreeDsMaterialGroup>, pub name: String, pub smoothing_groups: Option<Box<Uint32Array>>, pub uvs: Option<Box<Float32Array>>, pub vertices: Box<Float32Array>, }
+src/three_ds_types.rs: pub struct ThreeDsChunkDispatchEntry { pub chunk_id: u16, pub handler: Ref<ThreeDsChunkHandler>, }
+src/three_ds_types.rs: pub struct ThreeDsChunkHandler { pub build: Option<Arc<dyn for<'a> Fn(&mut ThreeDsParseState<'a>) + Send + Sync>>, pub chunk_ids: Vec<u16>, pub collect: Arc<dyn for<'a> Fn(&mut ThreeDsParseState<'a>, &Uint8Array, usize, usize, &str) + Send + Sync,>, }
+src/three_ds_types.rs: pub struct ThreeDsDropTallyEntry { pub key: String, pub value: ThreeDsDropTally, }
+src/three_ds_types.rs: pub struct ThreeDsImportOptions { pub handlers: Option<Vec<Ref<ThreeDsChunkHandler>>>, }
+src/three_ds_types.rs: pub struct ThreeDsMaterialEntry { pub key: String, pub value: ThreeDsMaterial, }
+src/three_ds_types.rs: pub struct ThreeDsParseState<'a> { pub cameras: Vec<ThreeDsCamera>, pub diagnostics: Option<&'a mut Vec<ImportDiagnostic>>, pub drops: Option<Vec<ThreeDsDropTallyEntry>>, pub document: &'a mut Scene3DDocument, pub lights: Vec<ThreeDsLight>, pub materials: Vec<ThreeDsMaterialEntry>, pub meshes: Vec<ThreeDsMesh>, pub pivots: Vec<ThreeDsPivotEntry>, }
+src/three_ds_types.rs: pub struct ThreeDsPivotEntry { pub key: String, pub value: [f32; 3], }
+src/three_ds_types.rs: pub type ThreeDsChunkDispatch = Vec<ThreeDsChunkDispatchEntry>;

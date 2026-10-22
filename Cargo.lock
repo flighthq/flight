@@ -1192,6 +1192,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-scene3d-formats"
+version = "0.6.0"
+dependencies = [
+ "flight-animation",
+ "flight-buffer",
+ "flight-camera",
+ "flight-color",
+ "flight-compression",
+ "flight-encoding",
+ "flight-entity",
+ "flight-geometry",
+ "flight-image",
+ "flight-image-codec",
+ "flight-importdiagnostics",
+ "flight-lighting",
+ "flight-materials",
+ "flight-math",
+ "flight-meshgeometry",
+ "flight-node",
+ "flight-requirement",
+ "flight-resource",
+ "flight-scene3d",
+ "flight-shading",
+ "flight-skeleton3d",
+ "flight-texture",
+ "flight-xml",
+ "serde_json",
+]
+
+[[package]]
 name = "flight-screen"
 version = "0.6.0"
 dependencies = [

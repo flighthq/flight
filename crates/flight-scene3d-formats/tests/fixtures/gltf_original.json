@@ -1,0 +1,640 @@
+{
+  "triangle": {
+    "accessors": [
+      {
+        "bufferView": 0,
+        "componentType": 5126,
+        "count": 3,
+        "type": "VEC3"
+      },
+      {
+        "bufferView": 1,
+        "componentType": 5123,
+        "count": 3,
+        "type": "SCALAR"
+      }
+    ],
+    "asset": {
+      "version": "2.0"
+    },
+    "bufferViews": [
+      {
+        "buffer": 0,
+        "byteLength": 36,
+        "byteOffset": 0
+      },
+      {
+        "buffer": 0,
+        "byteLength": 6,
+        "byteOffset": 36
+      }
+    ],
+    "buffers": [
+      {
+        "byteLength": 42,
+        "uri": "data:application/octet-stream;base64,AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAABAAIA"
+      }
+    ],
+    "meshes": [
+      {
+        "primitives": [
+          {
+            "attributes": {
+              "POSITION": 0
+            },
+            "indices": 1
+          }
+        ]
+      }
+    ],
+    "nodes": [
+      {
+        "mesh": 0,
+        "translation": [
+          5,
+          0,
+          0
+        ]
+      }
+    ],
+    "scene": 0,
+    "scenes": [
+      {
+        "nodes": [
+          0
+        ]
+      }
+    ]
+  },
+  "uvTriangle": {
+    "accessors": [
+      {
+        "bufferView": 0,
+        "componentType": 5126,
+        "count": 3,
+        "type": "VEC3"
+      },
+      {
+        "bufferView": 1,
+        "componentType": 5126,
+        "count": 3,
+        "type": "VEC2"
+      },
+      {
+        "bufferView": 2,
+        "componentType": 5123,
+        "count": 3,
+        "type": "SCALAR"
+      }
+    ],
+    "asset": {
+      "version": "2.0"
+    },
+    "bufferViews": [
+      {
+        "buffer": 0,
+        "byteLength": 36,
+        "byteOffset": 0
+      },
+      {
+        "buffer": 0,
+        "byteLength": 24,
+        "byteOffset": 36
+      },
+      {
+        "buffer": 0,
+        "byteLength": 6,
+        "byteOffset": 60
+      }
+    ],
+    "buffers": [
+      {
+        "byteLength": 66,
+        "uri": "data:application/octet-stream;base64,AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAABAAIA"
+      }
+    ],
+    "meshes": [
+      {
+        "primitives": [
+          {
+            "attributes": {
+              "POSITION": 0,
+              "TEXCOORD_0": 1
+            },
+            "indices": 2
+          }
+        ]
+      }
+    ],
+    "nodes": [
+      {
+        "mesh": 0
+      }
+    ],
+    "scene": 0,
+    "scenes": [
+      {
+        "nodes": [
+          0
+        ]
+      }
+    ]
+  },
+  "parentChild": {
+    "accessors": [
+      {
+        "bufferView": 0,
+        "componentType": 5126,
+        "count": 3,
+        "type": "VEC3"
+      }
+    ],
+    "asset": {
+      "version": "2.0"
+    },
+    "bufferViews": [
+      {
+        "buffer": 0,
+        "byteLength": 36,
+        "byteOffset": 0
+      }
+    ],
+    "buffers": [
+      {
+        "byteLength": 36,
+        "uri": "data:application/octet-stream;base64,AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAA"
+      }
+    ],
+    "meshes": [
+      {
+        "primitives": [
+          {
+            "attributes": {
+              "POSITION": 0
+            }
+          }
+        ]
+      }
+    ],
+    "nodes": [
+      {
+        "children": [
+          1
+        ]
+      },
+      {
+        "mesh": 0
+      }
+    ],
+    "scene": 0,
+    "scenes": [
+      {
+        "nodes": [
+          0
+        ]
+      }
+    ]
+  },
+  "skinned": {
+    "accessors": [
+      {
+        "bufferView": 0,
+        "componentType": 5126,
+        "count": 3,
+        "type": "VEC3"
+      },
+      {
+        "bufferView": 1,
+        "componentType": 5121,
+        "count": 3,
+        "type": "VEC4"
+      },
+      {
+        "bufferView": 2,
+        "componentType": 5126,
+        "count": 3,
+        "type": "VEC4"
+      },
+      {
+        "bufferView": 3,
+        "componentType": 5126,
+        "count": 1,
+        "type": "MAT4"
+      }
+    ],
+    "asset": {
+      "version": "2.0"
+    },
+    "bufferViews": [
+      {
+        "buffer": 0,
+        "byteLength": 36,
+        "byteOffset": 0
+      },
+      {
+        "buffer": 0,
+        "byteLength": 12,
+        "byteOffset": 36
+      },
+      {
+        "buffer": 0,
+        "byteLength": 48,
+        "byteOffset": 48
+      },
+      {
+        "buffer": 0,
+        "byteLength": 64,
+        "byteOffset": 96
+      }
+    ],
+    "buffers": [
+      {
+        "byteLength": 160,
+        "uri": "data:application/octet-stream;base64,AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAAAAAACAPw=="
+      }
+    ],
+    "meshes": [
+      {
+        "primitives": [
+          {
+            "attributes": {
+              "JOINTS_0": 1,
+              "POSITION": 0,
+              "WEIGHTS_0": 2
+            }
+          }
+        ]
+      }
+    ],
+    "nodes": [
+      {
+        "mesh": 0,
+        "skin": 0
+      },
+      {
+        "name": "joint",
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "scene": 0,
+    "scenes": [
+      {
+        "nodes": [
+          0,
+          1
+        ]
+      }
+    ],
+    "skins": [
+      {
+        "inverseBindMatrices": 3,
+        "joints": [
+          1
+        ]
+      }
+    ]
+  },
+  "skinnedIdentity": {
+    "accessors": [
+      {
+        "bufferView": 0,
+        "componentType": 5126,
+        "count": 3,
+        "type": "VEC3"
+      },
+      {
+        "bufferView": 1,
+        "componentType": 5121,
+        "count": 3,
+        "type": "VEC4"
+      },
+      {
+        "bufferView": 2,
+        "componentType": 5126,
+        "count": 3,
+        "type": "VEC4"
+      },
+      {
+        "bufferView": 3,
+        "componentType": 5126,
+        "count": 1,
+        "type": "MAT4"
+      }
+    ],
+    "asset": {
+      "version": "2.0"
+    },
+    "bufferViews": [
+      {
+        "buffer": 0,
+        "byteLength": 36,
+        "byteOffset": 0
+      },
+      {
+        "buffer": 0,
+        "byteLength": 12,
+        "byteOffset": 36
+      },
+      {
+        "buffer": 0,
+        "byteLength": 48,
+        "byteOffset": 48
+      },
+      {
+        "buffer": 0,
+        "byteLength": 64,
+        "byteOffset": 96
+      }
+    ],
+    "buffers": [
+      {
+        "byteLength": 160,
+        "uri": "data:application/octet-stream;base64,AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAAAAAACAPw=="
+      }
+    ],
+    "meshes": [
+      {
+        "primitives": [
+          {
+            "attributes": {
+              "JOINTS_0": 1,
+              "POSITION": 0,
+              "WEIGHTS_0": 2
+            }
+          }
+        ]
+      }
+    ],
+    "nodes": [
+      {
+        "mesh": 0,
+        "skin": 0
+      },
+      {
+        "name": "joint",
+        "translation": [
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "scene": 0,
+    "scenes": [
+      {
+        "nodes": [
+          0,
+          1
+        ]
+      }
+    ],
+    "skins": [
+      {
+        "joints": [
+          1
+        ]
+      }
+    ]
+  },
+  "morph": {
+    "accessors": [
+      {
+        "bufferView": 0,
+        "componentType": 5126,
+        "count": 3,
+        "type": "VEC3"
+      },
+      {
+        "bufferView": 1,
+        "componentType": 5126,
+        "count": 3,
+        "type": "VEC3"
+      },
+      {
+        "bufferView": 2,
+        "componentType": 5126,
+        "count": 3,
+        "type": "VEC3"
+      },
+      {
+        "bufferView": 3,
+        "componentType": 5126,
+        "count": 3,
+        "type": "VEC3"
+      },
+      {
+        "bufferView": 4,
+        "componentType": 5126,
+        "count": 2,
+        "type": "SCALAR"
+      },
+      {
+        "bufferView": 5,
+        "componentType": 5126,
+        "count": 2,
+        "type": "SCALAR"
+      }
+    ],
+    "animations": [
+      {
+        "channels": [
+          {
+            "sampler": 0,
+            "target": {
+              "node": 0,
+              "path": "weights"
+            }
+          }
+        ],
+        "name": "blink",
+        "samplers": [
+          {
+            "input": 4,
+            "interpolation": "LINEAR",
+            "output": 5
+          }
+        ]
+      }
+    ],
+    "asset": {
+      "version": "2.0"
+    },
+    "bufferViews": [
+      {
+        "buffer": 0,
+        "byteLength": 36,
+        "byteOffset": 0
+      },
+      {
+        "buffer": 0,
+        "byteLength": 36,
+        "byteOffset": 36
+      },
+      {
+        "buffer": 0,
+        "byteLength": 36,
+        "byteOffset": 72
+      },
+      {
+        "buffer": 0,
+        "byteLength": 36,
+        "byteOffset": 108
+      },
+      {
+        "buffer": 0,
+        "byteLength": 8,
+        "byteOffset": 144
+      },
+      {
+        "buffer": 0,
+        "byteLength": 8,
+        "byteOffset": 152
+      }
+    ],
+    "buffers": [
+      {
+        "byteLength": 160,
+        "uri": "data:application/octet-stream;base64,AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAAAAAAIA/AAAAAAAAIEEAAAAAAAAAAAAAIEEAAAAAAAAAAAAAIEEAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAACAPw=="
+      }
+    ],
+    "meshes": [
+      {
+        "primitives": [
+          {
+            "attributes": {
+              "NORMAL": 1,
+              "POSITION": 0
+            },
+            "targets": [
+              {
+                "NORMAL": 3,
+                "POSITION": 2
+              }
+            ]
+          }
+        ],
+        "weights": [
+          0
+        ]
+      }
+    ],
+    "nodes": [
+      {
+        "mesh": 0
+      }
+    ],
+    "scene": 0,
+    "scenes": [
+      {
+        "nodes": [
+          0
+        ]
+      }
+    ]
+  },
+  "animatedMultiScene": {
+    "accessors": [
+      {
+        "bufferView": 0,
+        "componentType": 5126,
+        "count": 3,
+        "type": "VEC3"
+      },
+      {
+        "bufferView": 1,
+        "componentType": 5126,
+        "count": 2,
+        "type": "SCALAR"
+      },
+      {
+        "bufferView": 2,
+        "componentType": 5126,
+        "count": 2,
+        "type": "VEC4"
+      }
+    ],
+    "animations": [
+      {
+        "channels": [
+          {
+            "sampler": 0,
+            "target": {
+              "node": 1,
+              "path": "rotation"
+            }
+          }
+        ],
+        "name": "spin",
+        "samplers": [
+          {
+            "input": 1,
+            "interpolation": "LINEAR",
+            "output": 2
+          }
+        ]
+      }
+    ],
+    "asset": {
+      "version": "2.0"
+    },
+    "bufferViews": [
+      {
+        "buffer": 0,
+        "byteLength": 36,
+        "byteOffset": 0
+      },
+      {
+        "buffer": 0,
+        "byteLength": 8,
+        "byteOffset": 36
+      },
+      {
+        "buffer": 0,
+        "byteLength": 32,
+        "byteOffset": 44
+      }
+    ],
+    "buffers": [
+      {
+        "byteLength": 76,
+        "uri": "data:application/octet-stream;base64,AAAAAAAAAAAAAAAAAACAPwAAAAAAAAAAAAAAAAAAgD8AAAAAAAAAAAAAgD8AAAAAAAAAAAAAAAAAAIA/AAAAAIEENT8AAAAAgQQ1Pw=="
+      }
+    ],
+    "meshes": [
+      {
+        "primitives": [
+          {
+            "attributes": {
+              "POSITION": 0
+            }
+          }
+        ]
+      }
+    ],
+    "nodes": [
+      {
+        "mesh": 0
+      },
+      {
+        "mesh": 0
+      }
+    ],
+    "scene": 0,
+    "scenes": [
+      {
+        "nodes": [
+          0
+        ]
+      },
+      {
+        "nodes": [
+          1
+        ]
+      }
+    ]
+  }
+}
