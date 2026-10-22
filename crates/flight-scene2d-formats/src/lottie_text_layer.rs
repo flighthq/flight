@@ -4,7 +4,7 @@ use std::sync::{Arc, RwLock};
 use flight_color::contract::pack_color;
 use flight_importdiagnostics::contract::ImportDiagnosticDetailValue;
 use flight_node::contract::{NodeRef, add_node_child};
-use flight_text::contract::{PartialTextLabel, TextLabelDataOptions, create_text_label};
+use flight_text::contract::create_text_label;
 use flight_textformat::contract::{TextFormat, TextFormatAlign};
 use flight_textlayout::contract::TextAutoSize;
 use serde_json::{Map, Value};
@@ -69,24 +69,19 @@ pub fn lottie_text_layer_handler(context: &mut LottieLayerContext<'_, '_>) {
         .get("w")
         .and_then(Value::as_f64)
         .unwrap_or(0.0) as f32;
-    let label = create_text_label(Some(&PartialTextLabel {
-        data: Some(TextLabelDataOptions {
-            auto_size: Some(TextAutoSize::Left),
-            height: Some(size * 1.25),
-            text: Some(
-                first
-                    .get("t")
-                    .and_then(Value::as_str)
-                    .unwrap_or_default()
-                    .to_string(),
-            ),
-            text_format: Some(text_format),
-            vertical_align: None,
-            width: Some(width),
-        }),
-        layout_context: None,
-        node: flight_scene2d::contract::PartialNode2D::default(),
-    }));
+    let label = create_text_label(None);
+    {
+        let mut guard = label.write().unwrap();
+        guard.data.auto_size = TextAutoSize::Left;
+        guard.data.height = size * 1.25;
+        guard.data.text = first
+            .get("t")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        guard.data.text_format = text_format;
+        guard.data.width = width;
+    }
     let parent: NodeRef = context.container.clone();
     let child: NodeRef = label;
     add_node_child(&parent, &child);

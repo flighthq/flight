@@ -13,19 +13,17 @@ use flight_textlayout::{
 
 use super::*;
 
-fn create_rich_with_data(data: RichTextDataOptions) -> Ref<RichText> {
-    return create_rich_text(Some(&PartialRichText {
+fn create_rich_with_data(data: TestRichTextData) -> Ref<RichText> {
+    return create_test_rich_text(Some(&TestRichText {
         data: Some(data),
         layout_context: None,
-        node: partial_node2d(),
     }));
 }
 
-fn create_measured_rich_with_data(data: RichTextDataOptions) -> Ref<RichText> {
-    return create_rich_text(Some(&PartialRichText {
+fn create_measured_rich_with_data(data: TestRichTextData) -> Ref<RichText> {
+    return create_test_rich_text(Some(&TestRichText {
         data: Some(data),
         layout_context: Some(measured_text_context()),
-        node: partial_node2d(),
     }));
 }
 
@@ -253,12 +251,11 @@ mod create_rich_text {
 
     #[test]
     fn returns_a_new_object_for_stable_layout() {
-        let options = PartialRichText {
+        let options = TestRichText {
             data: None,
             layout_context: None,
-            node: partial_node2d(),
         };
-        let rich_text = create_rich_text(Some(&options));
+        let rich_text = create_test_rich_text(Some(&options));
         assert_eq!(rich_text.read().unwrap().node_fields().kind, RICH_TEXT_KIND);
     }
 }
@@ -872,6 +869,28 @@ mod get_text_field_signals {
             &get_text_field_signals(&rich_text).unwrap(),
             &signals
         ));
+    }
+}
+
+mod initialize_rich_text {
+    use super::*;
+
+    // The construction initializer keeps the receiver's entity identity, resets the field data and
+    // binds the label layout of a fresh runtime to the supplied context.
+    #[test]
+    fn is_the_construction_initializer_of_create_rich_text() {
+        let context = measured_text_context();
+        let rich_text = create_rich_text(None);
+        let mut rich_text = rich_text.write().unwrap();
+        flight_entity::set_entity_uid(&mut *rich_text, "field".to_string());
+        rich_text.data.max_chars = 3;
+        initialize_rich_text(&mut rich_text, Some(context.clone()));
+        assert_eq!(flight_entity::get_entity_uid(&mut *rich_text), "field");
+        assert_eq!(rich_text.data.max_chars, -1);
+        assert!(rich_text.data.multiline);
+        let runtime = get_rich_text_runtime(&rich_text);
+        let label = runtime.read().unwrap().text_label.clone();
+        assert!(Arc::ptr_eq(&label.read().unwrap().layout_context, &context));
     }
 }
 

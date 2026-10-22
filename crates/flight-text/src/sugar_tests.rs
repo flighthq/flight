@@ -44,8 +44,8 @@ mod native_text_sugar {
 
     #[test]
     fn native_text_new_matches_create_native_text() {
-        let method = NativeText::new(None);
-        let function = create_native_text(None);
+        let method = NativeText::new();
+        let function = create_native_text();
         assert_eq!(
             method.read().unwrap().data.text,
             function.read().unwrap().data.text
@@ -828,7 +828,7 @@ fn measure() -> TextMeasureFunction {
 }
 
 fn native_text() -> Ref<NativeText> {
-    return create_native_text(None);
+    return create_native_text();
 }
 
 fn rich_text() -> Ref<RichText> {

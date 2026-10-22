@@ -8,17 +8,15 @@ use flight_textlayout::{TextAutoSize, TextVerticalAlign};
 
 use crate::types::*;
 
-pub fn create_native_text(obj: Option<&PartialNativeText>) -> Ref<NativeText> {
+/// Allocates a NativeText display node (TS `createNativeText`).
+// flight-lint: allow(conform-params) D23 (B): authored node and data fields are assigned after create (Principal c0f9227c); the constructor takes no authored options
+pub fn create_native_text() -> Ref<NativeText> {
     let mut out: NativeText = create_node2d(
         NATIVE_TEXT_KIND.to_string(),
-        obj.map(|obj| &obj.node),
+        None,
         Some(create_native_text_node2d_runtime),
     );
-    out.data = create_native_text_data();
-    if let Some(data) = obj.and_then(|obj| obj.data.as_ref()) {
-        assign_native_text_data_options(&mut out.data, data);
-    }
-    out.native_text_runtime = Arc::new(RwLock::new(create_native_text_runtime()));
+    initialize_native_text(&mut out);
     return flight_scene2d::publish_node2d(out);
 }
 
@@ -39,6 +37,13 @@ fn create_native_text_node2d_runtime() -> Node2DRuntime {
 
 pub fn create_native_text_runtime() -> NativeTextRuntime {
     return NativeTextRuntime::default();
+}
+
+/// Initializes the NativeText-owned construction tiers after the Node2D base is allocated.
+// flight-lint: allow(conform-extra, conform-params) D23 (I): the public construction initializer of the source createNativeText
+pub fn initialize_native_text(out: &mut NativeText) {
+    out.data = create_native_text_data();
+    out.native_text_runtime = Arc::new(RwLock::new(create_native_text_runtime()));
 }
 
 // flight-lint: allow(conform-params) D23 (B) zero-field initializer (Principal 3139d09f); callers assign authored fields after create
@@ -72,29 +77,6 @@ fn apply_style_patch(out: &mut NativeTextStyle, patch: &NativeTextStyle) {
     }
     if patch.size.is_some() {
         out.size = patch.size;
-    }
-}
-
-// The entity constructor still takes its partial (the NativeText entity arc follows the Node2D
-// construction change); it assigns the supplied data fields after the zero-field create.
-fn assign_native_text_data_options(out: &mut NativeTextData, data: &NativeTextDataOptions) {
-    if let Some(auto_size) = data.auto_size {
-        out.auto_size = auto_size;
-    }
-    if let Some(height) = data.height {
-        out.height = height;
-    }
-    if let Some(style) = &data.style {
-        out.style = style.clone();
-    }
-    if let Some(text) = &data.text {
-        out.text = text.clone();
-    }
-    if let Some(vertical_align) = data.vertical_align {
-        out.vertical_align = vertical_align;
-    }
-    if let Some(width) = data.width {
-        out.width = width;
     }
 }
 

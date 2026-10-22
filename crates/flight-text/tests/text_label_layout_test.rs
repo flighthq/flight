@@ -6,10 +6,9 @@ use flight_textlayout::create_text_metrics;
 use super::*;
 
 fn measured_rich_text() -> flight_entity::Ref<RichText> {
-    return create_rich_text(Some(&PartialRichText {
+    return create_test_rich_text(Some(&TestRichText {
         data: None,
         layout_context: Some(measured_text_context()),
-        node: partial_node2d(),
     }));
 }
 
@@ -100,10 +99,9 @@ mod set_text_label_guard {
     #[test]
     fn accepts_none_to_remove_the_guard() {
         let context = measured_text_context();
-        let label = create_text_label(Some(&PartialTextLabel {
+        let label = create_test_text_label(Some(&TestTextLabel {
             data: None,
             layout_context: Some(context.clone()),
-            node: partial_node2d(),
         }));
         let node: NodeRef = label.clone();
         set_text_label_string(&label, "first");
@@ -123,10 +121,9 @@ mod set_text_label_guard {
     #[test]
     fn calls_the_guard_when_live_text_disagrees_with_rasterized_text() {
         let context = measured_text_context();
-        let label = create_text_label(Some(&PartialTextLabel {
+        let label = create_test_text_label(Some(&TestTextLabel {
             data: None,
             layout_context: Some(context.clone()),
-            node: partial_node2d(),
         }));
         let node: NodeRef = label.clone();
         set_text_label_string(&label, "first");
@@ -150,10 +147,9 @@ mod set_text_label_guard {
     #[test]
     fn does_not_call_the_guard_when_content_revision_was_bumped() {
         let context = measured_text_context();
-        let label = create_text_label(Some(&PartialTextLabel {
+        let label = create_test_text_label(Some(&TestTextLabel {
             data: None,
             layout_context: Some(context.clone()),
-            node: partial_node2d(),
         }));
         let node: NodeRef = label.clone();
         set_text_label_string(&label, "first");

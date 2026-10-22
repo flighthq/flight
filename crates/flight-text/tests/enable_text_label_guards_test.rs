@@ -40,10 +40,9 @@ mod disable_text_label_guards {
         let context = measured_text_context();
         enable_text_label_guards(&context, log_state, Arc::new(|| 0.0));
         disable_text_label_guards(&context);
-        let label = create_text_label(Some(&PartialTextLabel {
+        let label = create_test_text_label(Some(&TestTextLabel {
             data: None,
             layout_context: Some(context),
-            node: partial_node2d(),
         }));
         set_text_label_string(&label, "before");
         let node: NodeRef = label.clone();
@@ -72,10 +71,9 @@ mod enable_text_label_guards {
         let (log_state, sink) = log_fixture();
         let context = measured_text_context();
         enable_text_label_guards(&context, log_state, Arc::new(|| 0.0));
-        let label = create_text_label(Some(&PartialTextLabel {
+        let label = create_test_text_label(Some(&TestTextLabel {
             data: None,
             layout_context: Some(context),
-            node: partial_node2d(),
         }));
         let node: NodeRef = label.clone();
         set_text_label_string(&label, "first");
@@ -90,10 +88,9 @@ mod enable_text_label_guards {
         let (log_state, sink) = log_fixture();
         let context = measured_text_context();
         enable_text_label_guards(&context, log_state, Arc::new(|| 0.0));
-        let label = create_text_label(Some(&PartialTextLabel {
+        let label = create_test_text_label(Some(&TestTextLabel {
             data: None,
             layout_context: Some(context),
-            node: partial_node2d(),
         }));
         let node: NodeRef = label.clone();
         set_text_label_string(&label, "original text");

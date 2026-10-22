@@ -15,21 +15,16 @@ use crate::text_label_layout::get_text_layout_for_node;
 use crate::text_layout_context::create_text_layout_context;
 use crate::types::*;
 
-pub fn create_text_label(obj: Option<&PartialTextLabel>) -> Ref<TextLabel> {
+/// Allocates a TextLabel display node (TS `createTextLabel`). `layout_context` is the caller-owned
+/// measure context (D5); without one the label gets its own.
+// flight-lint: allow(conform-params) D23 (B): authored node and data fields are assigned after create (Principal c0f9227c); keeps the D5 caller-owned layout context
+pub fn create_text_label(layout_context: Option<Ref<TextLayoutContext>>) -> Ref<TextLabel> {
     let mut out: TextLabel = create_node2d(
         TEXT_LABEL_KIND.to_string(),
-        obj.map(|obj| &obj.node),
+        None,
         Some(create_text_label_node2d_runtime),
     );
-    out.data = create_text_label_data();
-    if let Some(data) = obj.and_then(|obj| obj.data.as_ref()) {
-        assign_text_label_data_options(&mut out.data, data);
-    }
-    let mut runtime = create_text_label_runtime();
-    if let Some(context) = obj.and_then(|obj| obj.layout_context.clone()) {
-        runtime.layout_context = context;
-    }
-    out.text_label_runtime = Arc::new(RwLock::new(runtime));
+    initialize_text_label(&mut out, layout_context);
     return flight_scene2d::publish_node2d(out);
 }
 
@@ -58,6 +53,18 @@ pub fn create_text_label_runtime() -> TextLabelRuntime {
     };
 }
 
+/// Initializes the TextLabel-owned construction tiers after the Node2D base is allocated: default
+/// data and a fresh layout runtime bound to `layout_context`.
+// flight-lint: allow(conform-extra, conform-params) D23 (I): the public construction initializer of the source createTextLabel; keeps the D5 caller-owned layout context
+pub fn initialize_text_label(out: &mut TextLabel, layout_context: Option<Ref<TextLayoutContext>>) {
+    out.data = create_text_label_data();
+    let mut runtime = create_text_label_runtime();
+    if let Some(context) = layout_context {
+        runtime.layout_context = context;
+    }
+    out.text_label_runtime = Arc::new(RwLock::new(runtime));
+}
+
 // flight-lint: allow(conform-params) D23 (B) zero-field initializer (Principal 3139d09f); callers assign authored fields after create
 pub fn initialize_text_label_data(out: &mut TextLabelData) {
     out.auto_size = TextAutoSize::None;
@@ -74,29 +81,6 @@ pub fn append_text_label_string(source: &Ref<TextLabel>, value: &str) {
     }
     source.write().unwrap().data.text.push_str(value);
     invalidate_text_label_content(source);
-}
-
-// The entity constructor still takes its partial (the TextLabel entity arc follows the Node2D
-// construction change); it assigns the supplied data fields after the zero-field create.
-fn assign_text_label_data_options(out: &mut TextLabelData, data: &TextLabelDataOptions) {
-    if let Some(auto_size) = data.auto_size {
-        out.auto_size = auto_size;
-    }
-    if let Some(height) = data.height {
-        out.height = height;
-    }
-    if let Some(text) = &data.text {
-        out.text = text.clone();
-    }
-    if let Some(text_format) = &data.text_format {
-        out.text_format = text_format.clone();
-    }
-    if let Some(vertical_align) = data.vertical_align {
-        out.vertical_align = vertical_align;
-    }
-    if let Some(width) = data.width {
-        out.width = width;
-    }
 }
 
 fn build_text_label_layout_params(

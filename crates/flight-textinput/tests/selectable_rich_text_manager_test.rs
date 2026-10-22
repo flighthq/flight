@@ -2,19 +2,17 @@ use std::sync::{Arc, Mutex};
 
 use flight_entity::{Ref, allocate_entity};
 use flight_input::{KEY_CODE_A, KEY_CODE_C};
-use flight_text::contract::PartialRichText;
-use flight_text::{RichText, create_rich_text};
+use flight_text::RichText;
 
 use super::*;
 
 fn rich_text(text: &str) -> Ref<RichText> {
-    return create_rich_text(Some(&PartialRichText {
-        data: Some(flight_text::RichTextDataOptions {
+    return create_test_rich_text(Some(&TestRichText {
+        data: Some(TestRichTextData {
             text: Some(text.to_string()),
             ..rich_text_options()
         }),
         layout_context: None,
-        node: partial_node2d(),
     }));
 }
 

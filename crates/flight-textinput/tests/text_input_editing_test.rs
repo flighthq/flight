@@ -5,7 +5,7 @@ use flight_input::{
     KEY_CODE_HOME, KEY_CODE_LEFT, KEY_CODE_RETURN, KEY_CODE_RIGHT, KEY_CODE_UP, KEY_CODE_V,
 };
 use flight_node::get_node_appearance_revision;
-use flight_text::{RichTextDataOptions, TextInputOptions, set_rich_text_format_range};
+use flight_text::{TextInputOptions, set_rich_text_format_range};
 use flight_textlayout::TextSelectionRectangle;
 
 use super::*;
@@ -17,8 +17,8 @@ fn options_with_restrict(restrict: &str) -> TextInputOptions {
     };
 }
 
-fn text_data(text: &str) -> RichTextDataOptions {
-    return RichTextDataOptions {
+fn text_data(text: &str) -> TestRichTextData {
+    return TestRichTextData {
         text: Some(text.to_string()),
         ..rich_text_options()
     };
@@ -30,7 +30,7 @@ mod append_text_input {
     #[test]
     fn appends_without_input_restrictions() {
         let text = create_input(
-            RichTextDataOptions {
+            TestRichTextData {
                 max_chars: Some(3),
                 text: Some("abc".to_string()),
                 ..rich_text_options()
@@ -55,7 +55,7 @@ mod apply_text_input_restriction {
     #[test]
     fn applies_max_chars_to_inserted_user_input() {
         let text = create_input(
-            RichTextDataOptions {
+            TestRichTextData {
                 max_chars: Some(5),
                 text: Some("abc".to_string()),
                 ..rich_text_options()
@@ -74,7 +74,7 @@ mod apply_text_input_restriction {
     #[test]
     fn removes_line_breaks_for_single_line_input() {
         let text = create_input(
-            RichTextDataOptions {
+            TestRichTextData {
                 multiline: Some(false),
                 ..rich_text_options()
             },
@@ -635,7 +635,7 @@ mod handle_text_input_keyboard {
     #[test]
     fn inserts_returns_only_for_multiline_input() {
         let text = create_input(
-            RichTextDataOptions {
+            TestRichTextData {
                 multiline: Some(true),
                 text: Some("a".to_string()),
                 ..rich_text_options()
@@ -925,7 +925,7 @@ mod replace_selected_text_input {
     #[test]
     fn can_apply_input_restrictions_for_user_input_paths() {
         let text = create_input(
-            RichTextDataOptions {
+            TestRichTextData {
                 max_chars: Some(4),
                 text: Some("ab".to_string()),
                 ..rich_text_options()
@@ -945,7 +945,7 @@ mod replace_selected_text_input {
     #[test]
     fn does_not_apply_input_restrictions_by_default() {
         let text = create_input(
-            RichTextDataOptions {
+            TestRichTextData {
                 max_chars: Some(3),
                 text: Some("abc".to_string()),
                 ..rich_text_options()
@@ -1013,7 +1013,7 @@ mod scroll_text_input_caret_into_view {
     #[test]
     fn leaves_scroll_unchanged_when_the_caret_is_already_visible() {
         let text = create_input(
-            RichTextDataOptions {
+            TestRichTextData {
                 height: Some(60.0),
                 multiline: Some(true),
                 text: Some("abcd".to_string()),
@@ -1030,7 +1030,7 @@ mod scroll_text_input_caret_into_view {
     #[test]
     fn scrolls_down_so_a_caret_below_the_viewport_becomes_visible() {
         let text = create_input(
-            RichTextDataOptions {
+            TestRichTextData {
                 height: Some(28.0),
                 multiline: Some(true),
                 text: Some("abcd".to_string()),
@@ -1047,7 +1047,7 @@ mod scroll_text_input_caret_into_view {
     #[test]
     fn scrolls_horizontally_so_a_caret_past_the_right_edge_becomes_visible() {
         let text = create_input(
-            RichTextDataOptions {
+            TestRichTextData {
                 height: Some(40.0),
                 text: Some("abcdefg".to_string()),
                 width: Some(20.0),

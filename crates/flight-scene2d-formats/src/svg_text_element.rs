@@ -7,11 +7,8 @@ use flight_geometry::create_matrix;
 use flight_importdiagnostics::{
     ImportDiagnosticDetailValue, ImportDiagnosticSeverity, report_import_diagnostic,
 };
-use flight_scene2d::contract::{Node2DRef, PartialNode2D};
-use flight_text::contract::{
-    PartialRichText, PartialTextLabel, RichTextDataOptions, TextLabelDataOptions, create_rich_text,
-    create_text_label,
-};
+use flight_scene2d::contract::Node2DRef;
+use flight_text::contract::{create_rich_text, create_text_label};
 use flight_textformat::contract::{TextFormat, TextFormatAlign, TextFormatRange};
 use flight_textlayout::contract::{TextAutoSize, create_text_format_range};
 use flight_xml::contract::{XmlContent, XmlElement};
@@ -135,41 +132,40 @@ fn create_svg_text_node(context: &mut SvgElementContext<'_, '_>) -> Node2DRef {
             svg_first_number(svg_attribute(&y_element.read().unwrap(), "dy"), 0.0)
         }
         - style.font_size;
-    let node_options = PartialNode2D {
-        alpha: Some(style.opacity),
-        name: svg_attribute(&context.element.read().unwrap(), "id").map(str::to_string),
-        visible: Some(style.display != "none" && style.visibility == "visible"),
-        ..PartialNode2D::default()
-    };
     let node: Node2DRef = if ranges.is_empty() {
-        create_text_label(Some(&PartialTextLabel {
-            data: Some(TextLabelDataOptions {
-                auto_size: Some(TextAutoSize::Left),
-                height: Some(style.font_size * 1.25),
-                text: Some(text),
-                text_format: Some(format),
-                vertical_align: None,
-                width: Some(10_000.0),
-            }),
-            layout_context: None,
-            node: node_options,
-        }))
+        let label = create_text_label(None);
+        {
+            let mut guard = label.write().unwrap();
+            guard.data.auto_size = TextAutoSize::Left;
+            guard.data.height = style.font_size * 1.25;
+            guard.data.text = text;
+            guard.data.text_format = format;
+            guard.data.width = 10_000.0;
+        }
+        label
     } else {
-        create_rich_text(Some(&PartialRichText {
-            data: Some(RichTextDataOptions {
-                auto_size: Some(TextAutoSize::Left),
-                default_text_format: Some(format.clone()),
-                height: Some(style.font_size * 1.25),
-                text: Some(text),
-                text_format: Some(format),
-                text_format_ranges: Some(ranges),
-                width: Some(10_000.0),
-                ..RichTextDataOptions::default()
-            }),
-            layout_context: None,
-            node: node_options,
-        }))
+        let rich_text = create_rich_text(None);
+        {
+            let mut guard = rich_text.write().unwrap();
+            guard.data.auto_size = TextAutoSize::Left;
+            guard.data.default_text_format = format.clone();
+            guard.data.height = style.font_size * 1.25;
+            guard.data.text = text;
+            guard.data.text_format = format;
+            guard.data.text_format_ranges = ranges;
+            guard.data.width = 10_000.0;
+        }
+        rich_text
     };
+    {
+        // The SVG element's own node fields, assigned after create (D23 B).
+        let mut guard = node.write().unwrap();
+        guard.node_fields_mut().name =
+            svg_attribute(&context.element.read().unwrap(), "id").map(str::to_string);
+        let fields = guard.node2d_fields_mut();
+        fields.alpha = style.opacity;
+        fields.visible = style.display != "none" && style.visibility == "visible";
+    }
     if has_flattened_svg_text_position(&tspans, first_tspan) {
         report_import_diagnostic(
             context.import.diagnostics.as_deref_mut(),

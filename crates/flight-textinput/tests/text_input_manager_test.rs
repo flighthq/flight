@@ -3,7 +3,6 @@ use std::sync::{Arc, Mutex};
 use flight_entity::allocate_entity;
 use flight_input::{InputTextData, KEY_CODE_BACKSPACE, KEY_CODE_C, KEY_CODE_END, KEY_CODE_HOME};
 use flight_signals::{create_signal, emit_signal};
-use flight_text::RichTextDataOptions;
 
 use super::*;
 
@@ -13,8 +12,8 @@ fn is_focused(target: &flight_entity::Ref<flight_text::RichText>) -> bool {
         .unwrap_or(false);
 }
 
-fn text_data(text: &str) -> RichTextDataOptions {
-    return RichTextDataOptions {
+fn text_data(text: &str) -> TestRichTextData {
+    return TestRichTextData {
         text: Some(text.to_string()),
         ..rich_text_options()
     };
@@ -140,7 +139,7 @@ mod dispatch_text_input_key_down {
     fn uses_the_focused_target_layout_for_line_relative_home_and_end() {
         let manager = create_text_input_manager();
         let target = create_input(
-            RichTextDataOptions {
+            TestRichTextData {
                 multiline: Some(true),
                 text: Some("abcdefg".to_string()),
                 ..rich_text_options()

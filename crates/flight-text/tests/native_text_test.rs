@@ -7,11 +7,8 @@ use flight_textlayout::{TextAutoSize, TextVerticalAlign};
 
 use super::*;
 
-fn create_native_with_data(data: NativeTextDataOptions) -> flight_entity::Ref<NativeText> {
-    return create_native_text(Some(&PartialNativeText {
-        data: Some(data),
-        node: partial_node2d(),
-    }));
+fn create_native_with_data(data: TestNativeTextData) -> flight_entity::Ref<NativeText> {
+    return create_test_native_text(Some(&data));
 }
 
 mod compute_native_text_local_bounds_rectangle {
@@ -80,7 +77,7 @@ mod create_native_text {
 
     #[test]
     fn initializes_default_values() {
-        let native = create_native_text(None);
+        let native = create_native_text();
         let native = native.read().unwrap();
         assert_eq!(native.data.text, "");
         assert_eq!(native.data.auto_size, TextAutoSize::None);
@@ -132,7 +129,7 @@ mod create_native_text_runtime {
     #[test]
     fn uses_compute_native_text_local_bounds_rectangle() {
         create_native_text_runtime();
-        let native = create_native_text(None);
+        let native = create_native_text();
         let native_read = native.read().unwrap();
         let callback = get_node2d_runtime(&*native_read)
             .bounds
@@ -149,7 +146,7 @@ mod get_native_text_measured_height {
 
     #[test]
     fn returns_the_value_the_renderer_wrote_back() {
-        let native = create_native_text(None);
+        let native = create_native_text();
         let runtime = get_native_text_runtime(&*native.read().unwrap());
         runtime.write().unwrap().measured_height = 24.0;
         assert_eq!(
@@ -160,7 +157,7 @@ mod get_native_text_measured_height {
 
     #[test]
     fn returns_zero_before_the_renderer_writes_a_measurement() {
-        let native = create_native_text(None);
+        let native = create_native_text();
         assert_eq!(
             get_native_text_measured_height(&*native.read().unwrap()),
             0.0
@@ -173,7 +170,7 @@ mod get_native_text_measured_width {
 
     #[test]
     fn returns_the_value_the_renderer_wrote_back() {
-        let native = create_native_text(None);
+        let native = create_native_text();
         let runtime = get_native_text_runtime(&*native.read().unwrap());
         runtime.write().unwrap().measured_width = 80.0;
         assert_eq!(
@@ -184,7 +181,7 @@ mod get_native_text_measured_width {
 
     #[test]
     fn returns_zero_before_the_renderer_writes_a_measurement() {
-        let native = create_native_text(None);
+        let native = create_native_text();
         assert_eq!(
             get_native_text_measured_width(&*native.read().unwrap()),
             0.0
@@ -197,7 +194,7 @@ mod get_native_text_runtime {
 
     #[test]
     fn returns_the_runtime_for_a_native_text() {
-        let native = create_native_text(None);
+        let native = create_native_text();
         let first = get_native_text_runtime(&*native.read().unwrap());
         let second = get_native_text_runtime(&*native.read().unwrap());
         assert!(Arc::ptr_eq(&first, &second));
@@ -235,6 +232,22 @@ mod get_native_text_style {
     }
 }
 
+mod initialize_native_text {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_initializer_of_create_native_text() {
+        let native = create_native_text();
+        let mut native = native.write().unwrap();
+        flight_entity::set_entity_uid(&mut *native, "native".to_string());
+        native.data.text = "stale".to_string();
+        initialize_native_text(&mut native);
+        assert_eq!(flight_entity::get_entity_uid(&mut *native), "native");
+        assert_eq!(native.data.text, "");
+        assert_eq!(native.data.height, 100.0);
+    }
+}
+
 mod initialize_native_text_data {
     use super::*;
 
@@ -255,7 +268,7 @@ mod patch_native_text_style {
 
     #[test]
     fn bumps_content_after_patching() {
-        let native = create_native_text(None);
+        let native = create_native_text();
         let content = get_node_local_content_revision(&*native.read().unwrap());
         let mut patch = native_text_style();
         patch.size = Some(20.0);
@@ -291,7 +304,7 @@ mod set_native_text_auto_size {
 
     #[test]
     fn does_not_bump_content_when_the_value_is_unchanged() {
-        let native = create_native_text(None);
+        let native = create_native_text();
         let content = get_node_local_content_revision(&*native.read().unwrap());
         set_native_text_auto_size(&native, TextAutoSize::None);
         assert_eq!(
@@ -302,7 +315,7 @@ mod set_native_text_auto_size {
 
     #[test]
     fn sets_auto_size_bumps_content_and_invalidates_local_bounds() {
-        let native = create_native_text(None);
+        let native = create_native_text();
         let content = get_node_local_content_revision(&*native.read().unwrap());
         let bounds = get_node_local_bounds_revision(&*native.read().unwrap());
         set_native_text_auto_size(&native, TextAutoSize::Left);
@@ -323,7 +336,7 @@ mod set_native_text_height {
 
     #[test]
     fn sets_height_bumps_content_and_invalidates_local_bounds() {
-        let native = create_native_text(None);
+        let native = create_native_text();
         let content = get_node_local_content_revision(&*native.read().unwrap());
         let bounds = get_node_local_bounds_revision(&*native.read().unwrap());
         set_native_text_height(&native, 250.0);
@@ -357,7 +370,7 @@ mod set_native_text_string {
 
     #[test]
     fn sets_text_and_bumps_content() {
-        let native = create_native_text(None);
+        let native = create_native_text();
         let content = get_node_local_content_revision(&*native.read().unwrap());
         set_native_text_string(&native, "hello");
         assert_eq!(native.read().unwrap().data.text, "hello");
@@ -373,7 +386,7 @@ mod set_native_text_style {
 
     #[test]
     fn replaces_the_style_and_bumps_content() {
-        let native = create_native_text(None);
+        let native = create_native_text();
         let content = get_node_local_content_revision(&*native.read().unwrap());
         let mut style = native_text_style();
         style.size = Some(24.0);
@@ -393,7 +406,7 @@ mod set_native_text_vertical_align {
     #[test]
     fn defaults_to_top() {
         assert_eq!(
-            create_native_text(None).read().unwrap().data.vertical_align,
+            create_native_text().read().unwrap().data.vertical_align,
             TextVerticalAlign::Top
         );
     }
@@ -413,7 +426,7 @@ mod set_native_text_vertical_align {
 
     #[test]
     fn sets_the_value_and_bumps_content_without_touching_bounds() {
-        let native = create_native_text(None);
+        let native = create_native_text();
         let content = get_node_local_content_revision(&*native.read().unwrap());
         let bounds = get_node_local_bounds_revision(&*native.read().unwrap());
         set_native_text_vertical_align(&native, TextVerticalAlign::Middle);
@@ -437,7 +450,7 @@ mod set_native_text_width {
 
     #[test]
     fn sets_width_bumps_content_and_invalidates_local_bounds() {
-        let native = create_native_text(None);
+        let native = create_native_text();
         let content = get_node_local_content_revision(&*native.read().unwrap());
         let bounds = get_node_local_bounds_revision(&*native.read().unwrap());
         set_native_text_width(&native, 300.0);

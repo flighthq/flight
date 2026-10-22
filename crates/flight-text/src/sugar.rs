@@ -23,8 +23,8 @@ use crate::types::*;
 mod sugar_tests;
 
 impl NativeText {
-    pub fn new(obj: Option<&PartialNativeText>) -> Ref<Self> {
-        return create_native_text(obj);
+    pub fn new() -> Ref<Self> {
+        return create_native_text();
     }
 }
 
@@ -94,8 +94,8 @@ impl NativeTextMethods for Ref<NativeText> {
 }
 
 impl TextLabel {
-    pub fn new(obj: Option<&PartialTextLabel>) -> Ref<Self> {
-        return create_text_label(obj);
+    pub fn new(layout_context: Option<Ref<TextLayoutContext>>) -> Ref<Self> {
+        return create_text_label(layout_context);
     }
 }
 
@@ -155,8 +155,8 @@ impl TextLabelMethods for Ref<TextLabel> {
 }
 
 impl RichText {
-    pub fn new(obj: Option<&PartialRichText>) -> Ref<Self> {
-        return create_rich_text(obj);
+    pub fn new(layout_context: Option<Ref<TextLayoutContext>>) -> Ref<Self> {
+        return create_rich_text(layout_context);
     }
 }
 

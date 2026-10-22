@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use flight_geometry::set_rectangle;
 use flight_interaction::hit_tests::{
-    describe_graph_hit, find_graph_hit_target_precise, HitTestContext,
+    HitTestContext, describe_graph_hit, find_graph_hit_target_precise,
 };
 use flight_interaction::node_interaction_state::{
     enable_node_interaction_state, set_node_hit_test_enabled,
@@ -10,9 +10,8 @@ use flight_interaction::node_interaction_state::{
 use flight_interaction::register_text_hit_test::register_text_hit_test;
 use flight_interaction::types::HitTestResult;
 use flight_node::NodeRef;
-use flight_scene2d::PartialNode2D;
 use flight_text::contract::{TextLayoutContext, create_text_layout_context};
-use flight_text::{PartialTextLabel, TextLabelDataOptions, create_text_label};
+use flight_text::create_text_label;
 use flight_textlayout::set_text_layout_measure_provider;
 
 fn text_node_with_bounds(x: f32, y: f32, w: f32, h: f32) -> NodeRef {
@@ -41,7 +40,9 @@ fn measured_context() -> Arc<RwLock<TextLayoutContext>> {
         let mut ctx = context.write().unwrap();
         set_text_layout_measure_provider(
             &mut ctx.measure_state,
-            Some(Arc::new(|text, _format| text.encode_utf16().count() as f32 * 7.0)),
+            Some(Arc::new(|text, _format| {
+                text.encode_utf16().count() as f32 * 7.0
+            })),
         );
     }
     return context;
@@ -49,36 +50,14 @@ fn measured_context() -> Arc<RwLock<TextLayoutContext>> {
 
 fn text_node_with_measure(text: &str, w: f32, h: f32) -> NodeRef {
     let context = measured_context();
-    let label: NodeRef = create_text_label(Some(&PartialTextLabel {
-        data: Some(TextLabelDataOptions {
-            auto_size: None,
-            height: Some(h),
-            text: Some(text.to_string()),
-            text_format: None,
-            vertical_align: None,
-            width: Some(w),
-        }),
-        layout_context: Some(context),
-        node: PartialNode2D {
-            alpha: None,
-            blend_mode: None,
-            clip: None,
-            enabled: None,
-            material: None,
-            material_data: None,
-            name: None,
-            pivot_x: None,
-            pivot_y: None,
-            rotation: None,
-            scale_x: None,
-            scale_y: None,
-            skew_x: None,
-            skew_y: None,
-            visible: None,
-            x: None,
-            y: None,
-        },
-    }));
+    let label = create_text_label(Some(context));
+    {
+        let mut guard = label.write().unwrap();
+        guard.data.height = h;
+        guard.data.text = text.to_string();
+        guard.data.width = w;
+    }
+    let label: NodeRef = label;
     {
         let mut guard = label.write().unwrap();
         let bounds = guard
@@ -139,7 +118,10 @@ mod register_text_hit_test {
         assert!(result.is_some());
         let mut hit = HitTestResult::new();
         describe_graph_hit(&ctx, &text, 1.0, 10.0, &mut hit);
-        assert_eq!(hit.sub_index, 0, "x=1 is in the first character (A), subIndex 0");
+        assert_eq!(
+            hit.sub_index, 0,
+            "x=1 is in the first character (A), subIndex 0"
+        );
     }
 
     #[test]

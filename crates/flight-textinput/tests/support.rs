@@ -2,18 +2,19 @@ use std::sync::{Arc, RwLock};
 
 use flight_entity::Ref;
 use flight_input::InputKeyboardData;
-use flight_scene2d::PartialNode2D;
-use flight_text::contract::{PartialRichText, RichTextRuntime, get_rich_text_runtime};
-use flight_text::{RichText, RichTextDataOptions, TextInputOptions, create_rich_text};
-use flight_textformat::TextFormat;
+use flight_text::contract::{RichTextRuntime, TextLayoutContext, get_rich_text_runtime};
+use flight_text::{RichText, RichTextData, TextInputOptions, create_rich_text};
+use flight_textformat::{TextFormat, TextFormatRange};
 use flight_textinput::contract::enable_text_input;
-use flight_textlayout::{TextLayoutResult, create_text_layout_group, create_text_layout_result};
+use flight_textlayout::{
+    TextAutoSize, TextLayoutResult, TextVerticalAlign, create_text_layout_group,
+    create_text_layout_result,
+};
 
-pub fn create_input(data: RichTextDataOptions, options: TextInputOptions) -> Ref<RichText> {
-    let text = create_rich_text(Some(&PartialRichText {
+pub fn create_input(data: TestRichTextData, options: TextInputOptions) -> Ref<RichText> {
+    let text = create_test_rich_text(Some(&TestRichText {
         data: Some(data),
         layout_context: None,
-        node: partial_node2d(),
     }));
     enable_text_input(&text, Some(&options));
     return text;
@@ -173,30 +174,8 @@ pub fn keyboard_data() -> InputKeyboardData {
     };
 }
 
-pub fn partial_node2d() -> PartialNode2D {
-    return PartialNode2D {
-        alpha: None,
-        blend_mode: None,
-        clip: None,
-        enabled: None,
-        material: None,
-        material_data: None,
-        name: None,
-        pivot_x: None,
-        pivot_y: None,
-        rotation: None,
-        scale_x: None,
-        scale_y: None,
-        skew_x: None,
-        skew_y: None,
-        visible: None,
-        x: None,
-        y: None,
-    };
-}
-
-pub fn rich_text_options() -> RichTextDataOptions {
-    return RichTextDataOptions {
+pub fn rich_text_options() -> TestRichTextData {
+    return TestRichTextData {
         auto_size: None,
         background: None,
         background_color: None,
@@ -230,4 +209,112 @@ pub fn set_layout(source: &Ref<RichText>, layout: TextLayoutResult) {
     let runtime = runtime(source);
     let text_label = runtime.read().unwrap().text_label.clone();
     text_label.write().unwrap().text_layout = Some(Arc::new(RwLock::new(layout)));
+}
+
+// Test scaffolding in the source's `create({ data: {...} })` shape. The canonical constructors take
+// no authored options (D23 B), so these create and then assign, the way callers do.
+
+#[derive(Clone, Default)]
+pub struct TestRichTextData {
+    pub auto_size: Option<TextAutoSize>,
+    pub background: Option<bool>,
+    pub background_color: Option<u32>,
+    pub border: Option<bool>,
+    pub border_color: Option<u32>,
+    pub condense_white: Option<bool>,
+    pub default_text_format: Option<Ref<TextFormat>>,
+    pub height: Option<f32>,
+    pub max_chars: Option<i32>,
+    pub mouse_wheel_enabled: Option<bool>,
+    pub multiline: Option<bool>,
+    pub scroll_h: Option<f32>,
+    pub scroll_v: Option<f32>,
+    pub selectable: Option<bool>,
+    pub text: Option<String>,
+    pub text_color: Option<u32>,
+    pub text_format: Option<Ref<TextFormat>>,
+    pub text_format_ranges: Option<Vec<TextFormatRange>>,
+    pub vertical_align: Option<TextVerticalAlign>,
+    pub width: Option<f32>,
+    pub word_wrap: Option<bool>,
+}
+
+#[derive(Clone, Default)]
+pub struct TestRichText {
+    pub data: Option<TestRichTextData>,
+    pub layout_context: Option<Ref<TextLayoutContext>>,
+}
+
+pub fn create_test_rich_text(obj: Option<&TestRichText>) -> Ref<RichText> {
+    let text = create_rich_text(obj.and_then(|obj| obj.layout_context.clone()));
+    if let Some(data) = obj.and_then(|obj| obj.data.as_ref()) {
+        assign_test_rich_text_data(&mut text.write().unwrap().data, data);
+    }
+    return text;
+}
+
+pub fn assign_test_rich_text_data(out: &mut RichTextData, data: &TestRichTextData) {
+    if let Some(auto_size) = data.auto_size {
+        out.auto_size = auto_size;
+    }
+    if let Some(background) = data.background {
+        out.background = background;
+    }
+    if let Some(background_color) = data.background_color {
+        out.background_color = background_color;
+    }
+    if let Some(border) = data.border {
+        out.border = border;
+    }
+    if let Some(border_color) = data.border_color {
+        out.border_color = border_color;
+    }
+    if let Some(condense_white) = data.condense_white {
+        out.condense_white = condense_white;
+    }
+    if let Some(default_text_format) = &data.default_text_format {
+        out.default_text_format = default_text_format.clone();
+    }
+    if let Some(height) = data.height {
+        out.height = height;
+    }
+    if let Some(max_chars) = data.max_chars {
+        out.max_chars = max_chars;
+    }
+    if let Some(mouse_wheel_enabled) = data.mouse_wheel_enabled {
+        out.mouse_wheel_enabled = mouse_wheel_enabled;
+    }
+    if let Some(multiline) = data.multiline {
+        out.multiline = multiline;
+    }
+    if let Some(scroll_h) = data.scroll_h {
+        out.scroll_h = scroll_h;
+    }
+    if let Some(scroll_v) = data.scroll_v {
+        out.scroll_v = scroll_v;
+    }
+    if let Some(selectable) = data.selectable {
+        out.selectable = selectable;
+    }
+    if let Some(text) = &data.text {
+        out.text = text.clone();
+    }
+    if let Some(text_color) = data.text_color {
+        out.text_color = text_color;
+    }
+    if let Some(text_format) = &data.text_format {
+        out.text_format = text_format.clone();
+    }
+    if let Some(text_format_ranges) = &data.text_format_ranges {
+        out.text_format_ranges = text_format_ranges.clone();
+    }
+    if let Some(vertical_align) = data.vertical_align {
+        out.vertical_align = vertical_align;
+    }
+    if let Some(width) = data.width {
+        out.width = width;
+    }
+    if let Some(word_wrap) = data.word_wrap {
+        out.word_wrap = word_wrap;
+    }
 }

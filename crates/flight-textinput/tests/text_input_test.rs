@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use flight_text::contract::PartialRichText;
 use flight_text::{TextInputOptions, create_rich_text};
 
 use super::*;
@@ -52,10 +51,9 @@ mod enable_text_input {
 
     #[test]
     fn is_idempotent_and_returns_the_existing_state_applying_new_options() {
-        let text = create_rich_text(Some(&PartialRichText {
+        let text = create_test_rich_text(Some(&TestRichText {
             data: None,
             layout_context: None,
-            node: partial_node2d(),
         }));
         let first = enable_text_input(&text, None);
         let second = enable_text_input(

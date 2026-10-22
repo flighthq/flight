@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use flight_entity::{EntityRuntimeSlot, Ref, Unknown};
 use flight_node::Node;
-use flight_scene2d::{Node2DFields, PartialNode2D};
+use flight_scene2d::Node2DFields;
 use flight_signals::Signal;
 use flight_textformat::{TextFormat, TextFormatAlign, TextFormatRange};
 use flight_textlayout::{
@@ -46,23 +46,6 @@ pub struct TextLabelData {
     pub width: f32,
 }
 
-#[derive(Clone, Default)]
-pub struct TextLabelDataOptions {
-    pub auto_size: Option<TextAutoSize>,
-    pub height: Option<f32>,
-    pub text: Option<String>,
-    pub text_format: Option<Ref<TextFormat>>,
-    pub vertical_align: Option<TextVerticalAlign>,
-    pub width: Option<f32>,
-}
-
-#[derive(Clone, Default)]
-pub struct PartialTextLabel {
-    pub data: Option<TextLabelDataOptions>,
-    pub layout_context: Option<Ref<TextLayoutContext>>,
-    pub node: PartialNode2D,
-}
-
 pub struct TextLabelRuntime {
     pub build_text_layout_params: TextLayoutParamsBuilder,
     pub layout_context: Ref<TextLayoutContext>,
@@ -96,22 +79,6 @@ pub struct NativeTextData {
     pub text: String,
     pub vertical_align: TextVerticalAlign,
     pub width: f32,
-}
-
-#[derive(Clone, Default)]
-pub struct NativeTextDataOptions {
-    pub auto_size: Option<TextAutoSize>,
-    pub height: Option<f32>,
-    pub style: Option<Ref<NativeTextStyle>>,
-    pub text: Option<String>,
-    pub vertical_align: Option<TextVerticalAlign>,
-    pub width: Option<f32>,
-}
-
-#[derive(Clone, Default)]
-pub struct PartialNativeText {
-    pub data: Option<NativeTextDataOptions>,
-    pub node: PartialNode2D,
 }
 
 pub struct NativeTextRuntime {
@@ -149,38 +116,6 @@ pub struct RichTextData {
     pub vertical_align: TextVerticalAlign,
     pub width: f32,
     pub word_wrap: bool,
-}
-
-#[derive(Clone, Default)]
-pub struct RichTextDataOptions {
-    pub auto_size: Option<TextAutoSize>,
-    pub background: Option<bool>,
-    pub background_color: Option<u32>,
-    pub border: Option<bool>,
-    pub border_color: Option<u32>,
-    pub condense_white: Option<bool>,
-    pub default_text_format: Option<Ref<TextFormat>>,
-    pub height: Option<f32>,
-    pub max_chars: Option<i32>,
-    pub mouse_wheel_enabled: Option<bool>,
-    pub multiline: Option<bool>,
-    pub scroll_h: Option<f32>,
-    pub scroll_v: Option<f32>,
-    pub selectable: Option<bool>,
-    pub text: Option<String>,
-    pub text_color: Option<u32>,
-    pub text_format: Option<Ref<TextFormat>>,
-    pub text_format_ranges: Option<Vec<TextFormatRange>>,
-    pub vertical_align: Option<TextVerticalAlign>,
-    pub width: Option<f32>,
-    pub word_wrap: Option<bool>,
-}
-
-#[derive(Clone, Default)]
-pub struct PartialRichText {
-    pub data: Option<RichTextDataOptions>,
-    pub layout_context: Option<Ref<TextLayoutContext>>,
-    pub node: PartialNode2D,
 }
 
 pub struct RichTextRuntime {

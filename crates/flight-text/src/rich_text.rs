@@ -20,21 +20,16 @@ use crate::text_label::create_text_label_runtime;
 use crate::text_label_layout::get_text_layout_for_node;
 use crate::types::*;
 
-pub fn create_rich_text(obj: Option<&PartialRichText>) -> Ref<RichText> {
+/// Allocates a RichText display node (TS `createRichText`). `layout_context` is the caller-owned
+/// measure context (D5); without one the field gets its own.
+// flight-lint: allow(conform-params) D23 (B): authored node and data fields are assigned after create (Principal c0f9227c); keeps the D5 caller-owned layout context
+pub fn create_rich_text(layout_context: Option<Ref<TextLayoutContext>>) -> Ref<RichText> {
     let mut out: RichText = create_node2d(
         RICH_TEXT_KIND.to_string(),
-        obj.map(|obj| &obj.node),
+        None,
         Some(create_rich_text_node2d_runtime),
     );
-    out.data = create_rich_text_data();
-    if let Some(data) = obj.and_then(|obj| obj.data.as_ref()) {
-        assign_rich_text_data_options(&mut out.data, data);
-    }
-    let runtime = create_rich_text_runtime();
-    if let Some(context) = obj.and_then(|obj| obj.layout_context.clone()) {
-        runtime.text_label.write().unwrap().layout_context = context;
-    }
-    out.rich_text_runtime = Arc::new(RwLock::new(runtime));
+    initialize_rich_text(&mut out, layout_context);
     return flight_scene2d::publish_node2d(out);
 }
 
@@ -70,6 +65,18 @@ pub fn create_text_field_signals() -> TextFieldSignals {
     let mut out: TextFieldSignals = allocate_entity();
     initialize_text_field_signals(&mut out);
     return out;
+}
+
+/// Initializes the RichText-owned construction tiers after the Node2D base is allocated: default
+/// data and a fresh runtime whose label layout is bound to `layout_context`.
+// flight-lint: allow(conform-extra, conform-params) D23 (I): the public construction initializer of the source createRichText; keeps the D5 caller-owned layout context
+pub fn initialize_rich_text(out: &mut RichText, layout_context: Option<Ref<TextLayoutContext>>) {
+    out.data = create_rich_text_data();
+    let runtime = create_rich_text_runtime();
+    if let Some(context) = layout_context {
+        runtime.text_label.write().unwrap().layout_context = context;
+    }
+    out.rich_text_runtime = Arc::new(RwLock::new(runtime));
 }
 
 /// Resets rich-text data to the source defaults (TS `createRichTextData`, the label defaults plus
@@ -125,74 +132,6 @@ pub fn append_rich_text_string(source: &Ref<RichText>, value: &str) {
     };
     invalidate_rich_text_content(source);
     emit_text_field_change(source, previous_text);
-}
-
-// The entity constructor still takes its partial (the RichText entity arc follows the Node2D
-// construction change); it assigns the supplied data fields after the zero-field create.
-fn assign_rich_text_data_options(out: &mut RichTextData, data: &RichTextDataOptions) {
-    if let Some(auto_size) = data.auto_size {
-        out.auto_size = auto_size;
-    }
-    if let Some(background) = data.background {
-        out.background = background;
-    }
-    if let Some(background_color) = data.background_color {
-        out.background_color = background_color;
-    }
-    if let Some(border) = data.border {
-        out.border = border;
-    }
-    if let Some(border_color) = data.border_color {
-        out.border_color = border_color;
-    }
-    if let Some(condense_white) = data.condense_white {
-        out.condense_white = condense_white;
-    }
-    if let Some(default_text_format) = &data.default_text_format {
-        out.default_text_format = default_text_format.clone();
-    }
-    if let Some(height) = data.height {
-        out.height = height;
-    }
-    if let Some(max_chars) = data.max_chars {
-        out.max_chars = max_chars;
-    }
-    if let Some(mouse_wheel_enabled) = data.mouse_wheel_enabled {
-        out.mouse_wheel_enabled = mouse_wheel_enabled;
-    }
-    if let Some(multiline) = data.multiline {
-        out.multiline = multiline;
-    }
-    if let Some(scroll_h) = data.scroll_h {
-        out.scroll_h = scroll_h;
-    }
-    if let Some(scroll_v) = data.scroll_v {
-        out.scroll_v = scroll_v;
-    }
-    if let Some(selectable) = data.selectable {
-        out.selectable = selectable;
-    }
-    if let Some(text) = &data.text {
-        out.text = text.clone();
-    }
-    if let Some(text_color) = data.text_color {
-        out.text_color = text_color;
-    }
-    if let Some(text_format) = &data.text_format {
-        out.text_format = text_format.clone();
-    }
-    if let Some(text_format_ranges) = &data.text_format_ranges {
-        out.text_format_ranges = text_format_ranges.clone();
-    }
-    if let Some(vertical_align) = data.vertical_align {
-        out.vertical_align = vertical_align;
-    }
-    if let Some(width) = data.width {
-        out.width = width;
-    }
-    if let Some(word_wrap) = data.word_wrap {
-        out.word_wrap = word_wrap;
-    }
 }
 
 fn bounds_spec(data: &RichTextData) -> TextBoundsSpec {

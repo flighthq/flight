@@ -18,15 +18,11 @@ src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::NATIVE_TEXT_KIND;
 src/lib.rs: pub use contract::NativeText;
 src/lib.rs: pub use contract::NativeTextData;
-src/lib.rs: pub use contract::NativeTextDataOptions;
 src/lib.rs: pub use contract::NativeTextMethods;
 src/lib.rs: pub use contract::NativeTextStyle;
-src/lib.rs: pub use contract::PartialNativeText;
-src/lib.rs: pub use contract::PartialTextLabel;
 src/lib.rs: pub use contract::RICH_TEXT_KIND;
 src/lib.rs: pub use contract::RichText;
 src/lib.rs: pub use contract::RichTextData;
-src/lib.rs: pub use contract::RichTextDataOptions;
 src/lib.rs: pub use contract::RichTextMethods;
 src/lib.rs: pub use contract::TEXT_LABEL_KIND;
 src/lib.rs: pub use contract::TextFieldChangeEvent;
@@ -40,7 +36,6 @@ src/lib.rs: pub use contract::TextInputState;
 src/lib.rs: pub use contract::TextLabel;
 src/lib.rs: pub use contract::TextLabelContentExplanation;
 src/lib.rs: pub use contract::TextLabelData;
-src/lib.rs: pub use contract::TextLabelDataOptions;
 src/lib.rs: pub use contract::TextLabelMethods;
 src/lib.rs: pub use contract::TextNodeMethods;
 src/lib.rs: pub use contract::append_rich_text_string;
@@ -122,7 +117,7 @@ src/lib.rs: pub use contract::set_text_label_string;
 src/lib.rs: pub use contract::set_text_label_vertical_align;
 src/lib.rs: pub use contract::set_text_label_width;
 src/native_text.rs: pub fn compute_native_text_local_bounds_rectangle(out: &mut Rectangle, source: &dyn Node)
-src/native_text.rs: pub fn create_native_text(obj: Option<&PartialNativeText>) -> Ref<NativeText>
+src/native_text.rs: pub fn create_native_text() -> Ref<NativeText>
 src/native_text.rs: pub fn create_native_text_data() -> NativeTextData
 src/native_text.rs: pub fn create_native_text_runtime() -> NativeTextRuntime
 src/native_text.rs: pub fn get_native_text_measured_height(source: &NativeText) -> f32
@@ -130,6 +125,7 @@ src/native_text.rs: pub fn get_native_text_measured_width(source: &NativeText) -
 src/native_text.rs: pub fn get_native_text_runtime(source: &NativeText) -> Ref<NativeTextRuntime>
 src/native_text.rs: pub fn get_native_text_string(source: &NativeText) -> String
 src/native_text.rs: pub fn get_native_text_style(source: &NativeText) -> Ref<NativeTextStyle>
+src/native_text.rs: pub fn initialize_native_text(out: &mut NativeText)
 src/native_text.rs: pub fn initialize_native_text_data(out: &mut NativeTextData)
 src/native_text.rs: pub fn patch_native_text_style(source: &Ref<NativeText>, patch: &NativeTextStyle)
 src/native_text.rs: pub fn set_native_text_auto_size(source: &Ref<NativeText>, value: TextAutoSize)
@@ -142,7 +138,7 @@ src/rich_text.rs: pub fn append_rich_text_string(source: &Ref<RichText>, value: 
 src/rich_text.rs: pub fn build_rich_text_layout_params(source: &RichText, measure: TextMeasureFunction,) -> TextLayoutParams
 src/rich_text.rs: pub fn clear_rich_text_format_ranges(source: &Ref<RichText>)
 src/rich_text.rs: pub fn compute_rich_text_local_bounds_rectangle(out: &mut Rectangle, source: &dyn Node)
-src/rich_text.rs: pub fn create_rich_text(obj: Option<&PartialRichText>) -> Ref<RichText>
+src/rich_text.rs: pub fn create_rich_text(layout_context: Option<Ref<TextLayoutContext>>) -> Ref<RichText>
 src/rich_text.rs: pub fn create_rich_text_data() -> RichTextData
 src/rich_text.rs: pub fn create_rich_text_runtime() -> RichTextRuntime
 src/rich_text.rs: pub fn create_text_field_signals() -> TextFieldSignals
@@ -167,6 +163,7 @@ src/rich_text.rs: pub fn get_rich_text_string(source: &RichText) -> String
 src/rich_text.rs: pub fn get_rich_text_text_height(source: &Ref<RichText>) -> f32
 src/rich_text.rs: pub fn get_rich_text_text_width(source: &Ref<RichText>) -> f32
 src/rich_text.rs: pub fn get_text_field_signals(source: &Ref<RichText>) -> Option<Ref<TextFieldSignals>>
+src/rich_text.rs: pub fn initialize_rich_text(out: &mut RichText, layout_context: Option<Ref<TextLayoutContext>>)
 src/rich_text.rs: pub fn initialize_rich_text_data(out: &mut RichTextData)
 src/rich_text.rs: pub fn initialize_text_field_signals(out: &mut TextFieldSignals)
 src/rich_text.rs: pub fn insert_rich_text_string(source: &Ref<RichText>, index: i32, value: &str)
@@ -202,7 +199,7 @@ src/rich_text_metrics.rs: pub fn compute_rich_text_max_scroll_v(data: &RichTextD
 src/rich_text_metrics.rs: pub fn compute_rich_text_text_height(layout: &TextLayoutResult) -> f32
 src/rich_text_metrics.rs: pub fn compute_rich_text_text_width(layout: &TextLayoutResult) -> f32
 src/rich_text_metrics.rs: pub fn get_rich_text_scroll_y_offset(line_heights: &[f32], first_visible_line: usize) -> f32
-src/sugar.rs: impl NativeText :: fn new(obj: Option<&PartialNativeText>) -> Ref<Self>
+src/sugar.rs: impl NativeText :: fn new() -> Ref<Self>
 src/sugar.rs: impl NativeTextMethods for Ref<NativeText>
 src/sugar.rs: impl NativeTextMethods for Ref<NativeText> :: fn compute_local_bounds_rectangle(&self, out: &mut Rectangle)
 src/sugar.rs: impl NativeTextMethods for Ref<NativeText> :: fn measured_height(&self) -> f32
@@ -216,7 +213,7 @@ src/sugar.rs: impl NativeTextMethods for Ref<NativeText> :: fn set_vertical_alig
 src/sugar.rs: impl NativeTextMethods for Ref<NativeText> :: fn set_width(&self, value: f32)
 src/sugar.rs: impl NativeTextMethods for Ref<NativeText> :: fn string(&self) -> String
 src/sugar.rs: impl NativeTextMethods for Ref<NativeText> :: fn style(&self) -> Ref<NativeTextStyle>
-src/sugar.rs: impl RichText :: fn new(obj: Option<&PartialRichText>) -> Ref<Self>
+src/sugar.rs: impl RichText :: fn new(layout_context: Option<Ref<TextLayoutContext>>) -> Ref<Self>
 src/sugar.rs: impl RichTextMethods for Ref<RichText>
 src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn append_string(&self, value: &str)
 src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn bottom_scroll_v(&self) -> f32
@@ -267,7 +264,7 @@ src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn text_height(&self) ->
 src/sugar.rs: impl RichTextMethods for Ref<RichText> :: fn text_width(&self) -> f32
 src/sugar.rs: impl TextFormatFontMethods for TextFormat
 src/sugar.rs: impl TextFormatFontMethods for TextFormat :: fn font_string(&self) -> String
-src/sugar.rs: impl TextLabel :: fn new(obj: Option<&PartialTextLabel>) -> Ref<Self>
+src/sugar.rs: impl TextLabel :: fn new(layout_context: Option<Ref<TextLayoutContext>>) -> Ref<Self>
 src/sugar.rs: impl TextLabelMethods for Ref<TextLabel>
 src/sugar.rs: impl TextLabelMethods for Ref<TextLabel> :: fn append_string(&self, value: &str)
 src/sugar.rs: impl TextLabelMethods for Ref<TextLabel> :: fn compute_local_bounds_rectangle(&self, out: &mut Rectangle)
@@ -291,12 +288,13 @@ src/sugar.rs: pub trait TextNodeMethods { fn explain_text_content(&self) -> Text
 src/text_format_font.rs: pub fn compute_text_format_font_string(format: &TextFormat) -> String
 src/text_label.rs: pub fn append_text_label_string(source: &Ref<TextLabel>, value: &str)
 src/text_label.rs: pub fn compute_text_label_local_bounds_rectangle(out: &mut Rectangle, source: &dyn Node)
-src/text_label.rs: pub fn create_text_label(obj: Option<&PartialTextLabel>) -> Ref<TextLabel>
+src/text_label.rs: pub fn create_text_label(layout_context: Option<Ref<TextLayoutContext>>) -> Ref<TextLabel>
 src/text_label.rs: pub fn create_text_label_data() -> TextLabelData
 src/text_label.rs: pub fn create_text_label_runtime() -> TextLabelRuntime
 src/text_label.rs: pub fn get_text_label_format(source: &TextLabel) -> Ref<TextFormat>
 src/text_label.rs: pub fn get_text_label_runtime(source: &TextLabel) -> Ref<TextLabelRuntime>
 src/text_label.rs: pub fn get_text_label_string(source: &TextLabel) -> String
+src/text_label.rs: pub fn initialize_text_label(out: &mut TextLabel, layout_context: Option<Ref<TextLayoutContext>>)
 src/text_label.rs: pub fn initialize_text_label_data(out: &mut TextLabelData)
 src/text_label.rs: pub fn set_text_label_auto_size(source: &Ref<TextLabel>, value: TextAutoSize)
 src/text_label.rs: pub fn set_text_label_format(source: &Ref<TextLabel>, value: Ref<TextFormat>)
@@ -319,12 +317,6 @@ src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct TextInputSt
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct TextFieldChangeEvent { pub previous_text: String, pub text: String, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct TextInputHistoryEntry { pub caret_index_after: usize, pub caret_index_before: usize, pub merge_kind: Option<String>, pub selection_index_after: usize, pub selection_index_before: usize, pub text_after: String, pub text_before: String, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct TextLabelContentExplanation { pub agreement: bool, pub live_string: String, pub rasterized_string: Option<String>, pub revision: u32, }
-src/types.rs: #[derive(Clone, Default)] pub struct NativeTextDataOptions { pub auto_size: Option<TextAutoSize>, pub height: Option<f32>, pub style: Option<Ref<NativeTextStyle>>, pub text: Option<String>, pub vertical_align: Option<TextVerticalAlign>, pub width: Option<f32>, }
-src/types.rs: #[derive(Clone, Default)] pub struct PartialNativeText { pub data: Option<NativeTextDataOptions>, pub node: PartialNode2D, }
-src/types.rs: #[derive(Clone, Default)] pub struct PartialRichText { pub data: Option<RichTextDataOptions>, pub layout_context: Option<Ref<TextLayoutContext>>, pub node: PartialNode2D, }
-src/types.rs: #[derive(Clone, Default)] pub struct PartialTextLabel { pub data: Option<TextLabelDataOptions>, pub layout_context: Option<Ref<TextLayoutContext>>, pub node: PartialNode2D, }
-src/types.rs: #[derive(Clone, Default)] pub struct RichTextDataOptions { pub auto_size: Option<TextAutoSize>, pub background: Option<bool>, pub background_color: Option<u32>, pub border: Option<bool>, pub border_color: Option<u32>, pub condense_white: Option<bool>, pub default_text_format: Option<Ref<TextFormat>>, pub height: Option<f32>, pub max_chars: Option<i32>, pub mouse_wheel_enabled: Option<bool>, pub multiline: Option<bool>, pub scroll_h: Option<f32>, pub scroll_v: Option<f32>, pub selectable: Option<bool>, pub text: Option<String>, pub text_color: Option<u32>, pub text_format: Option<Ref<TextFormat>>, pub text_format_ranges: Option<Vec<TextFormatRange>>, pub vertical_align: Option<TextVerticalAlign>, pub width: Option<f32>, pub word_wrap: Option<bool>, }
-src/types.rs: #[derive(Clone, Default)] pub struct TextLabelDataOptions { pub auto_size: Option<TextAutoSize>, pub height: Option<f32>, pub text: Option<String>, pub text_format: Option<Ref<TextFormat>>, pub vertical_align: Option<TextVerticalAlign>, pub width: Option<f32>, }
 src/types.rs: impl Default for NativeText
 src/types.rs: impl Default for NativeText :: fn default() -> Self
 src/types.rs: impl Default for NativeTextData

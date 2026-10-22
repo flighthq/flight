@@ -8,19 +8,17 @@ use flight_textlayout::{TextAutoSize, TextVerticalAlign};
 
 use super::*;
 
-fn create_label_with_data(data: TextLabelDataOptions) -> Ref<TextLabel> {
-    return create_text_label(Some(&PartialTextLabel {
+fn create_label_with_data(data: TestTextLabelData) -> Ref<TextLabel> {
+    return create_test_text_label(Some(&TestTextLabel {
         data: Some(data),
         layout_context: None,
-        node: partial_node2d(),
     }));
 }
 
-fn create_measured_label_with_data(data: TextLabelDataOptions) -> Ref<TextLabel> {
-    return create_text_label(Some(&PartialTextLabel {
+fn create_measured_label_with_data(data: TestTextLabelData) -> Ref<TextLabel> {
+    return create_test_text_label(Some(&TestTextLabel {
         data: Some(data),
         layout_context: Some(measured_text_context()),
-        node: partial_node2d(),
     }));
 }
 
@@ -140,12 +138,11 @@ mod create_text_label {
 
     #[test]
     fn returns_a_new_object_for_stable_layout() {
-        let options = PartialTextLabel {
+        let options = TestTextLabel {
             data: None,
             layout_context: None,
-            node: partial_node2d(),
         };
-        let text = create_text_label(Some(&options));
+        let text = create_test_text_label(Some(&options));
         assert_eq!(text.read().unwrap().node_fields().kind, TEXT_LABEL_KIND);
     }
 }
@@ -247,6 +244,30 @@ mod get_text_label_string {
         data.text = Some("hello".to_string());
         let text = create_label_with_data(data);
         assert_eq!(get_text_label_string(&*text.read().unwrap()), "hello");
+    }
+}
+
+mod initialize_text_label {
+    use super::*;
+
+    // The construction initializer keeps the receiver's entity identity, resets the label data and
+    // binds a fresh layout runtime to the supplied context.
+    #[test]
+    fn is_the_construction_initializer_of_create_text_label() {
+        let context = measured_text_context();
+        let label = create_text_label(None);
+        let mut label = label.write().unwrap();
+        flight_entity::set_entity_uid(&mut *label, "label".to_string());
+        label.data.text = "stale".to_string();
+        initialize_text_label(&mut label, Some(context.clone()));
+        assert_eq!(flight_entity::get_entity_uid(&mut *label), "label");
+        assert_eq!(label.data.text, "");
+        assert_eq!(label.data.width, 100.0);
+        let runtime = get_text_label_runtime(&label);
+        assert!(Arc::ptr_eq(
+            &runtime.read().unwrap().layout_context,
+            &context
+        ));
     }
 }
 
