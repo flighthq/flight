@@ -8,7 +8,10 @@ use flight_signals::connect_signal;
 use crate::support::*;
 
 fn counting(max_size: Option<i32>) -> flight_entity::Ref<CommandHistory> {
-    let history = create_command_history(max_size);
+    let history = create_command_history();
+    if let Some(size) = max_size {
+        history.write().unwrap().max_size = size;
+    }
     register_command_binding(&history, "test.Counter", inert_binding());
     return history;
 }
@@ -48,7 +51,7 @@ mod clear_command_history {
         let parent = node();
         assert!(execute_command(
             &history,
-            &erased(create_add_node_child_command("Add", &parent, &node(), None))
+            &erased(create_add_node_child_command(&parent, &node()))
         ));
         clear_command_history(&history);
         let mut entries = Vec::new();
@@ -78,7 +81,7 @@ mod create_command_history {
 
     #[test]
     fn starts_empty_with_no_bindings_and_no_signal_allocated() {
-        let history = create_command_history(None);
+        let history = create_command_history();
         let guard = history.read().unwrap();
         assert!(guard.entries.is_empty());
         assert_eq!(guard.index, 0);
@@ -92,7 +95,7 @@ mod execute_command {
 
     #[test]
     fn refuses_an_unregistered_kind_rather_than_pushing_an_entry_undo_would_skip() {
-        let history = create_command_history(None);
+        let history = create_command_history();
         assert!(!execute_command(&history, &command("acme.Unbound", "Nope")));
         let mut entries = Vec::new();
         get_command_history_entries(&mut entries, &history);
@@ -197,10 +200,15 @@ mod initialize_command_history {
     #[test]
     fn initializes_the_same_defaults_as_the_factory() {
         let mut direct: CommandHistory = allocate_entity();
-        initialize_command_history(&mut direct, Some(5));
+        initialize_command_history(&mut direct);
+        let factory = create_command_history();
+        let factory = factory.read().unwrap();
         assert!(direct.entries.is_empty());
         assert_eq!(direct.index, 0);
-        assert_eq!(direct.max_size, 5);
+        // The source default `maxSize = 0` is unbounded.
+        assert_eq!(direct.max_size, 0);
+        assert_eq!(direct.max_size, factory.max_size);
+        assert_eq!(direct.transaction_depth, factory.transaction_depth);
         assert!(direct.on_change.is_none());
     }
 }
@@ -210,7 +218,7 @@ mod notify_command_history_changed {
 
     #[test]
     fn is_inert_when_no_signal_was_enabled() {
-        notify_command_history_changed(&create_command_history(None));
+        notify_command_history_changed(&create_command_history());
     }
 }
 
@@ -219,7 +227,7 @@ mod redo_command {
 
     #[test]
     fn reapplies_through_the_registered_execute_and_returns_false_with_nothing_to_redo() {
-        let history = create_command_history(None);
+        let history = create_command_history();
         let state = Arc::new(Mutex::new(Vec::new()));
         let executed = state.clone();
         let undone = state.clone();
@@ -245,7 +253,7 @@ mod redo_command {
         let child = node();
         assert!(execute_command(
             &history,
-            &erased(create_add_node_child_command("Add", &parent, &child, None))
+            &erased(create_add_node_child_command(&parent, &child))
         ));
         assert_eq!(get_node_child_count(&parent), 1);
         assert!(undo_command(&history));
@@ -277,12 +285,9 @@ mod redo_command_property {
         assert!(execute_command(
             &history,
             &erased(create_set_node_property_command(
-                "Move",
                 &target,
                 "x",
                 Some(value(100)),
-                None,
-                None,
                 &access
             ))
         ));
@@ -304,12 +309,12 @@ mod undo_command {
 
     #[test]
     fn returns_false_with_nothing_to_undo() {
-        assert!(!undo_command(&create_command_history(None)));
+        assert!(!undo_command(&create_command_history()));
     }
 
     #[test]
     fn reverses_entries_newest_first() {
-        let history = create_command_history(None);
+        let history = create_command_history();
         let order = Arc::new(Mutex::new(Vec::new()));
         let recorded = order.clone();
         let binding = Arc::new(CommandBinding {

@@ -1,6 +1,6 @@
 use flight_command::contract::*;
 use flight_entity::allocate_entity;
-use flight_node::contract::{add_node_child, get_node_child_index};
+use flight_node::contract::{add_node_child, get_node_child_count, get_node_child_index};
 
 use crate::support::*;
 
@@ -11,7 +11,8 @@ mod create_add_node_child_command {
     fn carries_its_kind_and_appends_by_default() {
         let parent = node();
         let child = node();
-        let command = create_add_node_child_command("Add sprite", &parent, &child, None);
+        let command = create_add_node_child_command(&parent, &child);
+        command.write().unwrap().label = String::from("Add sprite");
         let borrowed = command.read().unwrap();
         assert_eq!(borrowed.kind, ADD_NODE_CHILD_COMMAND_KIND);
         assert_eq!(borrowed.label, "Add sprite");
@@ -22,13 +23,22 @@ mod create_add_node_child_command {
 
     #[test]
     fn records_an_explicit_insertion_index() {
-        assert_eq!(
-            create_add_node_child_command("Add", &node(), &node(), Some(3))
-                .read()
-                .unwrap()
-                .index,
-            3
-        );
+        // The assigned index is the one the default binding inserts at, not only a stored field.
+        let history = history_with_defaults();
+        let parent = node();
+        for _ in 0..4 {
+            add_node_child(&parent, &node());
+        }
+        let child = node();
+        let command = create_add_node_child_command(&parent, &child);
+        command.write().unwrap().index = 3;
+        assert_eq!(command.read().unwrap().index, 3);
+        assert!(execute_command(&history, &erased(command)));
+        assert_eq!(get_node_child_index(&parent, &child), 3);
+        assert_eq!(get_node_child_count(&parent), 5);
+        assert!(undo_command(&history));
+        assert_eq!(get_node_child_index(&parent, &child), -1);
+        assert_eq!(get_node_child_count(&parent), 4);
     }
 }
 
@@ -37,19 +47,10 @@ mod create_composite_command {
 
     #[test]
     fn copies_the_child_list_so_a_later_push_cannot_rewrite_the_entry() {
-        let mut children: Vec<CommandRef> = vec![erased(create_add_node_child_command(
-            "Add",
-            &node(),
-            &node(),
-            None,
-        ))];
-        let command = create_composite_command("Align", &children);
-        children.push(erased(create_add_node_child_command(
-            "Add again",
-            &node(),
-            &node(),
-            None,
-        )));
+        let mut children: Vec<CommandRef> =
+            vec![erased(create_add_node_child_command(&node(), &node()))];
+        let command = create_composite_command(&children);
+        children.push(erased(create_add_node_child_command(&node(), &node())));
         let borrowed = command.read().unwrap();
         assert_eq!(borrowed.kind, COMPOSITE_COMMAND_KIND);
         assert_eq!(borrowed.children.len(), 1);
@@ -66,7 +67,7 @@ mod create_remove_node_child_command {
         let second = node();
         add_node_child(&parent, &first);
         add_node_child(&parent, &second);
-        let command = create_remove_node_child_command("Delete", &parent, &second);
+        let command = create_remove_node_child_command(&parent, &second);
         let borrowed = command.read().unwrap();
         assert_eq!(borrowed.kind, REMOVE_NODE_CHILD_COMMAND_KIND);
         assert_eq!(borrowed.index, 1);
@@ -83,7 +84,7 @@ mod create_reorder_node_child_command {
         let second = node();
         add_node_child(&parent, &first);
         add_node_child(&parent, &second);
-        let command = create_reorder_node_child_command("Move to front", &parent, &second, 0);
+        let command = create_reorder_node_child_command(&parent, &second, 0);
         let borrowed = command.read().unwrap();
         assert_eq!(borrowed.kind, REORDER_NODE_CHILD_COMMAND_KIND);
         assert_eq!(borrowed.from_index, 1);
@@ -102,15 +103,7 @@ mod create_set_node_property_command {
         let target = node();
         store_set(&store, &target, "x", Some(value(5)));
 
-        let command = create_set_node_property_command(
-            "Move",
-            &target,
-            "x",
-            Some(value(100)),
-            None,
-            None,
-            &access,
-        );
+        let command = create_set_node_property_command(&target, "x", Some(value(100)), &access);
         let borrowed = command.read().unwrap();
         assert_eq!(borrowed.kind, SET_NODE_PROPERTY_COMMAND_KIND);
         assert_eq!(borrowed.entries.len(), 1);
@@ -149,15 +142,7 @@ mod create_set_node_property_command {
     #[test]
     fn defaults_to_no_merge_window_so_every_change_is_its_own_undo_entry() {
         let (_store, access) = property_history();
-        let command = create_set_node_property_command(
-            "Move",
-            &node(),
-            "x",
-            Some(value(1)),
-            None,
-            None,
-            &access,
-        );
+        let command = create_set_node_property_command(&node(), "x", Some(value(1)), &access);
         let borrowed = command.read().unwrap();
         assert_eq!(borrowed.merge_window, 0.0);
         assert_eq!(borrowed.time, 0.0);
@@ -176,7 +161,6 @@ mod create_set_node_property_command_batch {
         store_set(&store, &target, "y", Some(value(2)));
 
         let command = create_set_node_property_command_batch(
-            "Move",
             &[
                 CommandPropertyAssignment {
                     property: String::from("x"),
@@ -189,8 +173,6 @@ mod create_set_node_property_command_batch {
                     value: Some(value(20)),
                 },
             ],
-            None,
-            None,
             &access,
         );
         let borrowed = command.read().unwrap();
@@ -244,9 +226,9 @@ mod initialize_add_node_child_command {
     fn matches_the_factory() {
         let parent = node();
         let child = node();
-        let factory = create_add_node_child_command("Add", &parent, &child, Some(2));
+        let factory = create_add_node_child_command(&parent, &child);
         let mut direct: AddNodeChildCommand = allocate_entity();
-        initialize_add_node_child_command(&mut direct, "Add", &parent, &child, 2);
+        initialize_add_node_child_command(&mut direct, &parent, &child);
         assert_eq!(factory.read().unwrap().index, direct.index);
         assert_eq!(factory.read().unwrap().kind, direct.kind);
     }
@@ -269,20 +251,16 @@ mod initialize_composite_command {
 
     #[test]
     fn matches_the_factory() {
-        let children: Vec<CommandRef> = vec![erased(create_add_node_child_command(
-            "Add",
-            &node(),
-            &node(),
-            None,
-        ))];
-        let factory = create_composite_command("Group", &children);
+        let children: Vec<CommandRef> =
+            vec![erased(create_add_node_child_command(&node(), &node()))];
+        let factory = create_composite_command(&children);
         let mut direct: CompositeCommand = allocate_entity();
-        initialize_composite_command(&mut direct, "Group", &children);
+        initialize_composite_command(&mut direct, &children);
         assert_eq!(
             factory.read().unwrap().children.len(),
             direct.children.len()
         );
-        assert_eq!(factory.read().unwrap().label, direct.label);
+        assert_eq!(factory.read().unwrap().kind, direct.kind);
     }
 }
 
@@ -294,9 +272,9 @@ mod initialize_remove_node_child_command {
         let parent = node();
         let child = node();
         add_node_child(&parent, &child);
-        let factory = create_remove_node_child_command("Delete", &parent, &child);
+        let factory = create_remove_node_child_command(&parent, &child);
         let mut direct: RemoveNodeChildCommand = allocate_entity();
-        initialize_remove_node_child_command(&mut direct, "Delete", &parent, &child);
+        initialize_remove_node_child_command(&mut direct, &parent, &child);
         assert_eq!(factory.read().unwrap().index, direct.index);
     }
 }
@@ -309,9 +287,9 @@ mod initialize_reorder_node_child_command {
         let parent = node();
         let child = node();
         add_node_child(&parent, &child);
-        let factory = create_reorder_node_child_command("Move", &parent, &child, 0);
+        let factory = create_reorder_node_child_command(&parent, &child, 0);
         let mut direct: ReorderNodeChildCommand = allocate_entity();
-        initialize_reorder_node_child_command(&mut direct, "Move", &parent, &child, 0);
+        initialize_reorder_node_child_command(&mut direct, &parent, &child, 0);
         assert_eq!(factory.read().unwrap().from_index, direct.from_index);
     }
 }
@@ -329,18 +307,11 @@ mod initialize_set_node_property_command {
             target: target.clone(),
         }];
         let mut out: SetNodePropertyCommand = allocate_entity();
-        initialize_set_node_property_command(
-            &mut out,
-            &entries,
-            SET_NODE_PROPERTY_COMMAND_KIND,
-            "Move",
-            300.0,
-            10.0,
-        );
+        initialize_set_node_property_command(&mut out, &entries, SET_NODE_PROPERTY_COMMAND_KIND);
         assert_eq!(out.entries.len(), 1);
         assert_eq!(out.kind, SET_NODE_PROPERTY_COMMAND_KIND);
-        assert_eq!(out.merge_window, 300.0);
-        assert_eq!(out.time, 10.0);
+        assert_eq!(out.merge_window, 0.0);
+        assert_eq!(out.time, 0.0);
         assert!(std::sync::Arc::ptr_eq(&out.entries[0].target, &target));
     }
 }

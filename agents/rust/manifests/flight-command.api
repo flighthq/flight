@@ -1,15 +1,15 @@
-src/command.rs: pub fn create_add_node_child_command(label: &str, parent: &NodeRef, child: &NodeRef, index: Option<i32>,) -> Ref<AddNodeChildCommand>
-src/command.rs: pub fn create_composite_command(label: &str, children: &[CommandRef]) -> Ref<CompositeCommand>
-src/command.rs: pub fn create_remove_node_child_command(label: &str, parent: &NodeRef, child: &NodeRef,) -> Ref<RemoveNodeChildCommand>
-src/command.rs: pub fn create_reorder_node_child_command(label: &str, parent: &NodeRef, child: &NodeRef, to_index: i32,) -> Ref<ReorderNodeChildCommand>
-src/command.rs: pub fn create_set_node_property_command(label: &str, target: &NodeRef, property: &str, value: Option<Unknown>, merge_window: Option<f64>, time: Option<f64>, access: &CommandPropertyAccessRef,) -> Ref<SetNodePropertyCommand>
-src/command.rs: pub fn create_set_node_property_command_batch(label: &str, entries: &[CommandPropertyAssignment], merge_window: Option<f64>, time: Option<f64>, access: &CommandPropertyAccessRef,) -> Ref<SetNodePropertyCommand>
-src/command.rs: pub fn initialize_add_node_child_command(out: &mut AddNodeChildCommand, label: &str, parent: &NodeRef, child: &NodeRef, index: i32,)
+src/command.rs: pub fn create_add_node_child_command(parent: &NodeRef, child: &NodeRef,) -> Ref<AddNodeChildCommand>
+src/command.rs: pub fn create_composite_command(children: &[CommandRef]) -> Ref<CompositeCommand>
+src/command.rs: pub fn create_remove_node_child_command(parent: &NodeRef, child: &NodeRef,) -> Ref<RemoveNodeChildCommand>
+src/command.rs: pub fn create_reorder_node_child_command(parent: &NodeRef, child: &NodeRef, to_index: i32,) -> Ref<ReorderNodeChildCommand>
+src/command.rs: pub fn create_set_node_property_command(target: &NodeRef, property: &str, value: Option<Unknown>, access: &CommandPropertyAccessRef,) -> Ref<SetNodePropertyCommand>
+src/command.rs: pub fn create_set_node_property_command_batch(entries: &[CommandPropertyAssignment], access: &CommandPropertyAccessRef,) -> Ref<SetNodePropertyCommand>
+src/command.rs: pub fn initialize_add_node_child_command(out: &mut AddNodeChildCommand, parent: &NodeRef, child: &NodeRef,)
 src/command.rs: pub fn initialize_command_fields(out: &mut CommandFields, kind: &str, label: &str)
-src/command.rs: pub fn initialize_composite_command(out: &mut CompositeCommand, label: &str, children: &[CommandRef],)
-src/command.rs: pub fn initialize_remove_node_child_command(out: &mut RemoveNodeChildCommand, label: &str, parent: &NodeRef, child: &NodeRef,)
-src/command.rs: pub fn initialize_reorder_node_child_command(out: &mut ReorderNodeChildCommand, label: &str, parent: &NodeRef, child: &NodeRef, to_index: i32,)
-src/command.rs: pub fn initialize_set_node_property_command(out: &mut SetNodePropertyCommand, entries: &[CommandPropertyEntry], kind: &str, label: &str, merge_window: f64, time: f64,)
+src/command.rs: pub fn initialize_composite_command(out: &mut CompositeCommand, children: &[CommandRef])
+src/command.rs: pub fn initialize_remove_node_child_command(out: &mut RemoveNodeChildCommand, parent: &NodeRef, child: &NodeRef,)
+src/command.rs: pub fn initialize_reorder_node_child_command(out: &mut ReorderNodeChildCommand, parent: &NodeRef, child: &NodeRef, to_index: i32,)
+src/command.rs: pub fn initialize_set_node_property_command(out: &mut SetNodePropertyCommand, entries: &[CommandPropertyEntry], kind: &str,)
 src/command_binding.rs: pub fn create_command_binding_table() -> CommandBindingTable
 src/command_binding.rs: pub fn get_command_binding(history: &Ref<CommandHistory>, kind: &str) -> Option<CommandBindingRef>
 src/command_binding.rs: pub fn has_command_binding(history: &Ref<CommandHistory>, kind: &str) -> bool
@@ -18,13 +18,13 @@ src/command_binding.rs: pub fn register_default_command_bindings(history: &Ref<C
 src/command_history.rs: pub fn can_redo_command(history: &Ref<CommandHistory>) -> bool
 src/command_history.rs: pub fn can_undo_command(history: &Ref<CommandHistory>) -> bool
 src/command_history.rs: pub fn clear_command_history(history: &Ref<CommandHistory>)
-src/command_history.rs: pub fn create_command_history(max_size: Option<i32>) -> Ref<CommandHistory>
+src/command_history.rs: pub fn create_command_history() -> Ref<CommandHistory>
 src/command_history.rs: pub fn execute_command(history: &Ref<CommandHistory>, command: &CommandRef) -> bool
 src/command_history.rs: pub fn get_command_history_entries(out: &mut Vec<CommandRef>, history: &Ref<CommandHistory>)
 src/command_history.rs: pub fn get_command_history_index(history: &Ref<CommandHistory>) -> usize
 src/command_history.rs: pub fn get_command_history_redo_label(history: &Ref<CommandHistory>) -> Option<String>
 src/command_history.rs: pub fn get_command_history_undo_label(history: &Ref<CommandHistory>) -> Option<String>
-src/command_history.rs: pub fn initialize_command_history(out: &mut CommandHistory, max_size: Option<i32>)
+src/command_history.rs: pub fn initialize_command_history(out: &mut CommandHistory)
 src/command_history.rs: pub fn notify_command_history_changed(history: &Ref<CommandHistory>)
 src/command_history.rs: pub fn redo_command(history: &Ref<CommandHistory>) -> bool
 src/command_history.rs: pub fn undo_command(history: &Ref<CommandHistory>) -> bool

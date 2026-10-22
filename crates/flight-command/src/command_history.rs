@@ -13,20 +13,22 @@ use crate::command_binding::command_kind;
 use crate::command_binding::{create_command_binding_table, get_command_binding};
 use crate::types::*;
 
-/// An empty history with no bindings registered; `max_size` of 0 is unbounded (TS
-/// `createCommandHistory`).
-pub fn create_command_history(max_size: Option<i32>) -> Ref<CommandHistory> {
+/// An empty history with no bindings registered (TS `createCommandHistory`). The default
+/// `max_size` of 0 is unbounded; assign it after create to cap the history.
+// flight-lint: allow(conform-params) D23 B: max_size removed; assigned after create
+pub fn create_command_history() -> Ref<CommandHistory> {
     let mut out: CommandHistory = allocate_entity();
-    initialize_command_history(&mut out, max_size);
+    initialize_command_history(&mut out);
     return Arc::new(RwLock::new(out));
 }
 
 /// The construction initializer of `create_command_history` (TS `initializeCommandHistory`).
-pub fn initialize_command_history(out: &mut CommandHistory, max_size: Option<i32>) {
+// flight-lint: allow(conform-params) D23 B: max_size removed; initialize mirrors create
+pub fn initialize_command_history(out: &mut CommandHistory) {
     out.bindings = create_command_binding_table();
     out.entries = Vec::new();
     out.index = 0;
-    out.max_size = max_size.unwrap_or(0);
+    out.max_size = 0;
     out.on_change = None;
     out.transaction_depth = 0;
     out.transaction_index = 0;

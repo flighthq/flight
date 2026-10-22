@@ -10,7 +10,7 @@ mod create_command_binding_table {
 
     #[test]
     fn starts_empty_so_nothing_dispatches_until_registered() {
-        let history = create_command_history(None);
+        let history = create_command_history();
         history.write().unwrap().bindings = create_command_binding_table();
         assert!(!has_command_binding(
             &history,
@@ -24,7 +24,7 @@ mod get_command_binding {
 
     #[test]
     fn returns_none_for_an_unregistered_kind_rather_than_throwing() {
-        assert!(get_command_binding(&create_command_history(None), "acme.Nothing").is_none());
+        assert!(get_command_binding(&create_command_history(), "acme.Nothing").is_none());
     }
 }
 
@@ -33,7 +33,7 @@ mod has_command_binding {
 
     #[test]
     fn reports_a_registered_kind() {
-        let history = create_command_history(None);
+        let history = create_command_history();
         let access = create_command_property_access();
         register_default_command_bindings(&history, &access);
         assert!(has_command_binding(&history, ADD_NODE_CHILD_COMMAND_KIND));
@@ -45,7 +45,7 @@ mod register_command_binding {
 
     #[test]
     fn accepts_a_caller_defined_vendor_prefixed_kind() {
-        let history = create_command_history(None);
+        let history = create_command_history();
         let seen = Arc::new(Mutex::new(Vec::new()));
         let executed = seen.clone();
         let undone = seen.clone();
@@ -64,7 +64,7 @@ mod register_command_binding {
 
     #[test]
     fn overrides_an_earlier_binding_for_the_same_kind() {
-        let history = create_command_history(None);
+        let history = create_command_history();
         let first = inert_binding();
         let second = inert_binding();
         register_command_binding(&history, "acme.Custom", first);
@@ -86,7 +86,7 @@ mod register_default_command_bindings {
         let child = node();
         assert!(execute_command(
             &history,
-            &erased(create_add_node_child_command("Add", &parent, &child, None))
+            &erased(create_add_node_child_command(&parent, &child))
         ));
         assert_eq!(get_node_child_count(&parent), 1);
         assert!(undo_command(&history));
@@ -105,7 +105,7 @@ mod register_default_command_bindings {
         add_node_child(&parent, &third);
         assert!(execute_command(
             &history,
-            &erased(create_remove_node_child_command("Delete", &parent, &second))
+            &erased(create_remove_node_child_command(&parent, &second))
         ));
         assert_eq!(get_node_child_count(&parent), 2);
         assert!(undo_command(&history));
@@ -122,9 +122,7 @@ mod register_default_command_bindings {
         add_node_child(&parent, &second);
         assert!(execute_command(
             &history,
-            &erased(create_reorder_node_child_command(
-                "Front", &parent, &second, 0
-            ))
+            &erased(create_reorder_node_child_command(&parent, &second, 0))
         ));
         assert_eq!(get_node_child_index(&parent, &second), 0);
         assert!(undo_command(&history));
@@ -139,13 +137,10 @@ mod register_default_command_bindings {
         let grandchild = node();
         assert!(execute_command(
             &history,
-            &erased(create_composite_command(
-                "Add two",
-                &[
-                    create_add_node_child_command("Add child", &parent, &child, None),
-                    create_add_node_child_command("Add grandchild", &child, &grandchild, None),
-                ]
-            ))
+            &erased(create_composite_command(&[
+                create_add_node_child_command(&parent, &child),
+                create_add_node_child_command(&child, &grandchild),
+            ]))
         ));
         assert_eq!(get_node_child_count(&parent), 1);
         assert_eq!(get_node_child_count(&child), 1);
@@ -178,6 +173,23 @@ mod set_node_property_binding {
         return (store, access, history);
     }
 
+    fn make_property_cmd(
+        target: &flight_node::contract::NodeRef,
+        property: &str,
+        value: Option<Unknown>,
+        merge_window: f64,
+        time: f64,
+        access: &CommandPropertyAccessRef,
+    ) -> CommandRef {
+        let cmd = create_set_node_property_command(target, property, value, access);
+        {
+            let mut guard = cmd.write().unwrap();
+            guard.merge_window = merge_window;
+            guard.time = time;
+        }
+        return erased(cmd);
+    }
+
     #[test]
     fn applies_and_reverses_a_property_write() {
         let (store, access, history) = setup();
@@ -186,12 +198,9 @@ mod set_node_property_binding {
         assert!(execute_command(
             &history,
             &erased(create_set_node_property_command(
-                "Move",
                 &target,
                 "x",
                 Some(value(100)),
-                None,
-                None,
                 &access
             ))
         ));
@@ -222,21 +231,10 @@ mod set_node_property_binding {
         store_set(&store, &child, "x", Some(value(0)));
         assert!(execute_command(
             &history,
-            &erased(create_composite_command(
-                "Add and move",
-                &[
-                    create_add_node_child_command("Add", &parent, &child, None),
-                    create_set_node_property_command(
-                        "Move",
-                        &child,
-                        "x",
-                        Some(value(10)),
-                        None,
-                        None,
-                        &access
-                    ),
-                ]
-            ))
+            &erased(create_composite_command(&[
+                create_add_node_child_command(&parent, &child),
+                create_set_node_property_command(&child, "x", Some(value(10)), &access),
+            ]))
         ));
         assert_eq!(flight_node::contract::get_node_child_count(&parent), 1);
         assert_eq!(
@@ -264,39 +262,15 @@ mod set_node_property_binding {
         store_set(&store, &target, "x", Some(value(0)));
         assert!(execute_command(
             &history,
-            &erased(create_set_node_property_command(
-                "Drag",
-                &target,
-                "x",
-                Some(value(10)),
-                Some(300.0),
-                Some(0.0),
-                &access
-            ))
+            &make_property_cmd(&target, "x", Some(value(10)), 300.0, 0.0, &access)
         ));
         assert!(execute_command(
             &history,
-            &erased(create_set_node_property_command(
-                "Drag",
-                &target,
-                "x",
-                Some(value(20)),
-                Some(300.0),
-                Some(100.0),
-                &access
-            ))
+            &make_property_cmd(&target, "x", Some(value(20)), 300.0, 100.0, &access)
         ));
         assert!(execute_command(
             &history,
-            &erased(create_set_node_property_command(
-                "Drag",
-                &target,
-                "x",
-                Some(value(30)),
-                Some(300.0),
-                Some(200.0),
-                &access
-            ))
+            &make_property_cmd(&target, "x", Some(value(30)), 300.0, 200.0, &access)
         ));
         let mut entries = Vec::new();
         get_command_history_entries(&mut entries, &history);
@@ -325,27 +299,11 @@ mod set_node_property_binding {
         store_set(&store, &target, "x", Some(value(0)));
         assert!(execute_command(
             &history,
-            &erased(create_set_node_property_command(
-                "Drag",
-                &target,
-                "x",
-                Some(value(10)),
-                Some(300.0),
-                Some(0.0),
-                &access
-            ))
+            &make_property_cmd(&target, "x", Some(value(10)), 300.0, 0.0, &access)
         ));
         assert!(execute_command(
             &history,
-            &erased(create_set_node_property_command(
-                "Drag",
-                &target,
-                "x",
-                Some(value(20)),
-                Some(300.0),
-                Some(1000.0),
-                &access
-            ))
+            &make_property_cmd(&target, "x", Some(value(20)), 300.0, 1000.0, &access)
         ));
         let mut entries = Vec::new();
         get_command_history_entries(&mut entries, &history);
@@ -358,27 +316,11 @@ mod set_node_property_binding {
         let target = node();
         assert!(execute_command(
             &history,
-            &erased(create_set_node_property_command(
-                "Move",
-                &target,
-                "x",
-                Some(value(10)),
-                Some(300.0),
-                Some(0.0),
-                &access
-            ))
+            &make_property_cmd(&target, "x", Some(value(10)), 300.0, 0.0, &access)
         ));
         assert!(execute_command(
             &history,
-            &erased(create_set_node_property_command(
-                "Move",
-                &target,
-                "y",
-                Some(value(20)),
-                Some(300.0),
-                Some(10.0),
-                &access
-            ))
+            &make_property_cmd(&target, "y", Some(value(20)), 300.0, 10.0, &access)
         ));
         let mut entries = Vec::new();
         get_command_history_entries(&mut entries, &history);
@@ -392,24 +334,18 @@ mod set_node_property_binding {
         assert!(execute_command(
             &history,
             &erased(create_set_node_property_command(
-                "Move",
                 &target,
                 "x",
                 Some(value(10)),
-                None,
-                None,
                 &access
             ))
         ));
         assert!(execute_command(
             &history,
             &erased(create_set_node_property_command(
-                "Move",
                 &target,
                 "x",
                 Some(value(20)),
-                None,
-                None,
                 &access
             ))
         ));
@@ -425,27 +361,11 @@ mod set_node_property_binding {
         store_set(&store, &target, "x", Some(value(7)));
         assert!(execute_command(
             &history,
-            &erased(create_set_node_property_command(
-                "Drag",
-                &target,
-                "x",
-                Some(value(10)),
-                Some(300.0),
-                Some(0.0),
-                &access
-            ))
+            &make_property_cmd(&target, "x", Some(value(10)), 300.0, 0.0, &access)
         ));
         assert!(execute_command(
             &history,
-            &erased(create_set_node_property_command(
-                "Drag",
-                &target,
-                "x",
-                Some(value(20)),
-                Some(300.0),
-                Some(50.0),
-                &access
-            ))
+            &make_property_cmd(&target, "x", Some(value(20)), 300.0, 50.0, &access)
         ));
         let mut entries = Vec::new();
         get_command_history_entries(&mut entries, &history);
@@ -489,12 +409,9 @@ mod set_node_property_binding {
         assert!(execute_command(
             &history,
             &erased(create_set_node_property_command(
-                "Move",
                 &target,
                 "x",
                 Some(value(100)),
-                None,
-                None,
                 &empty
             ))
         ));
@@ -546,12 +463,9 @@ mod set_node_property_undefined_carrier {
         let (store, access, history) = setup();
         let target = node();
         let command = erased(create_set_node_property_command(
-            "Move",
             &target,
             "x",
             Some(value(100)),
-            None,
-            None,
             &access,
         ));
         assert!(entries_of(&command)[0].before.is_none());
@@ -573,12 +487,9 @@ mod set_node_property_undefined_carrier {
         let target = node();
         store_set(&store, &target, "x", Some(Unknown::None));
         let command = erased(create_set_node_property_command(
-            "Move",
             &target,
             "x",
             Some(value(100)),
-            None,
-            None,
             &access,
         ));
         let before = entries_of(&command)[0].before.clone();
@@ -594,7 +505,7 @@ mod set_node_property_undefined_carrier {
         let target = node();
         store_set(&store, &target, "x", Some(value(5)));
         let command = erased(create_set_node_property_command(
-            "Move", &target, "x", None, None, None, &access,
+            &target, "x", None, &access,
         ));
         assert!(entries_of(&command)[0].after.is_none());
         assert!(execute_command(&history, &command));
@@ -615,12 +526,9 @@ mod set_node_property_undefined_carrier {
         let target = node();
         store_set(&store, &target, "x", Some(value(5)));
         let command = erased(create_set_node_property_command(
-            "Move",
             &target,
             "x",
             Some(Unknown::None),
-            None,
-            None,
             &access,
         ));
         assert!(matches!(entries_of(&command)[0].after, Some(None)));
@@ -642,7 +550,7 @@ mod set_node_property_undefined_carrier {
         let target = node();
         store_set(&store, &target, "x", Some(value(5)));
         let undefined = erased(create_set_node_property_command(
-            "Move", &target, "x", None, None, None, &access,
+            &target, "x", None, &access,
         ));
         assert!(execute_command(&history, &undefined));
         assert!(undo_command(&history));
@@ -650,12 +558,9 @@ mod set_node_property_undefined_carrier {
         assert!(store_get(&store, &target, "x").is_none());
 
         let null = erased(create_set_node_property_command(
-            "Move",
             &target,
             "x",
             Some(Unknown::None),
-            None,
-            None,
             &access,
         ));
         assert!(execute_command(&history, &null));
@@ -672,12 +577,9 @@ mod set_node_property_undefined_carrier {
         let target = node();
         store_set(&store, &target, "x", Some(value(5)));
         let command = erased(create_set_node_property_command(
-            "Move",
             &target,
             "x",
             Some(value(100)),
-            None,
-            None,
             &access,
         ));
         assert!(entries_of(&command)[0].before.is_none());
@@ -699,12 +601,9 @@ mod set_node_property_undefined_carrier {
         let (_store, access, history) = setup();
         let target = node();
         let command = erased(create_set_node_property_command(
-            "Move",
             &target,
             "x",
             Some(value(100)),
-            None,
-            None,
             &access,
         ));
         assert!(Arc::ptr_eq(&entries_of(&command)[0].target, &target));

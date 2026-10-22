@@ -43,7 +43,7 @@ pub fn history_with_defaults() -> Ref<CommandHistory> {
 }
 
 pub fn history_with_property_access(access: &CommandPropertyAccessRef) -> Ref<CommandHistory> {
-    let history = create_command_history(None);
+    let history = create_command_history();
     register_default_command_bindings(&history, access);
     return history;
 }

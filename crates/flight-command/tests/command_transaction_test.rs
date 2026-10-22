@@ -8,7 +8,7 @@ mod abort_command_transaction {
 
     #[test]
     fn returns_false_when_no_bracket_is_open() {
-        assert!(!abort_command_transaction(&create_command_history(None)));
+        assert!(!abort_command_transaction(&create_command_history()));
     }
 
     #[test]
@@ -19,16 +19,11 @@ mod abort_command_transaction {
         begin_command_transaction(&history, "Paste");
         assert!(execute_command(
             &history,
-            &erased(create_add_node_child_command("Add", &parent, &node(), None))
+            &erased(create_add_node_child_command(&parent, &node()))
         ));
         assert!(execute_command(
             &history,
-            &erased(create_add_node_child_command(
-                "Add other",
-                &other,
-                &node(),
-                None
-            ))
+            &erased(create_add_node_child_command(&other, &node()))
         ));
         assert!(abort_command_transaction(&history));
         assert_eq!(get_node_child_count(&parent), 0);
@@ -43,24 +38,15 @@ mod abort_command_transaction {
     fn leaves_entries_recorded_before_the_bracket_alone() {
         let history = history_with_defaults();
         let parent = node();
-        assert!(execute_command(
-            &history,
-            &erased(create_add_node_child_command(
-                "Before",
-                &parent,
-                &node(),
-                None
-            ))
-        ));
+        assert!(execute_command(&history, &{
+            let cmd = create_add_node_child_command(&parent, &node());
+            cmd.write().unwrap().command_fields_mut().label = String::from("Before");
+            erased(cmd)
+        }));
         begin_command_transaction(&history, "Paste");
         assert!(execute_command(
             &history,
-            &erased(create_add_node_child_command(
-                "Inside",
-                &parent,
-                &node(),
-                None
-            ))
+            &erased(create_add_node_child_command(&parent, &node()))
         ));
         assert!(abort_command_transaction(&history));
         let mut entries = Vec::new();
@@ -92,13 +78,13 @@ mod begin_command_transaction {
         begin_command_transaction(&history, "Inner");
         assert!(execute_command(
             &history,
-            &erased(create_add_node_child_command("One", &parent, &node(), None))
+            &erased(create_add_node_child_command(&parent, &node()))
         ));
         assert!(end_command_transaction(&history));
         assert!(is_command_transaction_open(&history));
         assert!(execute_command(
             &history,
-            &erased(create_add_node_child_command("Two", &parent, &node(), None))
+            &erased(create_add_node_child_command(&parent, &node()))
         ));
         assert!(end_command_transaction(&history));
         let mut entries = Vec::new();
@@ -116,7 +102,7 @@ mod end_command_transaction {
 
     #[test]
     fn returns_false_when_no_bracket_is_open() {
-        assert!(!end_command_transaction(&create_command_history(None)));
+        assert!(!end_command_transaction(&create_command_history()));
     }
 
     #[test]
@@ -127,11 +113,11 @@ mod end_command_transaction {
         begin_command_transaction(&history, "Transform");
         assert!(execute_command(
             &history,
-            &erased(create_add_node_child_command("One", &parent, &node(), None))
+            &erased(create_add_node_child_command(&parent, &node()))
         ));
         assert!(execute_command(
             &history,
-            &erased(create_add_node_child_command("Two", &other, &node(), None))
+            &erased(create_add_node_child_command(&other, &node()))
         ));
         assert!(end_command_transaction(&history));
         let mut entries = Vec::new();
@@ -154,15 +140,11 @@ mod end_command_transaction {
     fn leaves_a_single_collected_command_unwrapped_keeping_its_own_label() {
         let history = history_with_defaults();
         begin_command_transaction(&history, "Transform");
-        assert!(execute_command(
-            &history,
-            &erased(create_add_node_child_command(
-                "Move x",
-                &node(),
-                &node(),
-                None
-            ))
-        ));
+        assert!(execute_command(&history, &{
+            let cmd = create_add_node_child_command(&node(), &node());
+            cmd.write().unwrap().command_fields_mut().label = String::from("Move x");
+            erased(cmd)
+        }));
         assert!(end_command_transaction(&history));
         let mut entries = Vec::new();
         get_command_history_entries(&mut entries, &history);
@@ -202,30 +184,20 @@ mod end_command_transaction_property {
         let target = node();
         store_set(&store, &target, "x", Some(value(0)));
         begin_command_transaction(&history, "Drag");
-        assert!(execute_command(
-            &history,
-            &erased(create_set_node_property_command(
-                "One",
-                &target,
-                "x",
-                Some(value(10)),
-                Some(300.0),
-                Some(0.0),
-                &access
-            ))
-        ));
-        assert!(execute_command(
-            &history,
-            &erased(create_set_node_property_command(
-                "Two",
-                &target,
-                "x",
-                Some(value(20)),
-                Some(300.0),
-                Some(10.0),
-                &access
-            ))
-        ));
+        assert!(execute_command(&history, &{
+            let cmd = create_set_node_property_command(&target, "x", Some(value(10)), &access);
+            cmd.write().unwrap().command_fields_mut().label = String::from("One");
+            cmd.write().unwrap().merge_window = 300.0;
+            cmd.write().unwrap().time = 0.0;
+            erased(cmd)
+        }));
+        assert!(execute_command(&history, &{
+            let cmd = create_set_node_property_command(&target, "x", Some(value(20)), &access);
+            cmd.write().unwrap().command_fields_mut().label = String::from("Two");
+            cmd.write().unwrap().merge_window = 300.0;
+            cmd.write().unwrap().time = 10.0;
+            erased(cmd)
+        }));
         end_command_transaction(&history);
         let mut entries = Vec::new();
         get_command_history_entries(&mut entries, &history);
@@ -246,6 +218,6 @@ mod is_command_transaction_open {
 
     #[test]
     fn is_false_on_a_fresh_history() {
-        assert!(!is_command_transaction_open(&create_command_history(None)));
+        assert!(!is_command_transaction_open(&create_command_history()));
     }
 }

@@ -30,7 +30,7 @@ mod sugar_tests {
     use super::*;
 
     fn history() -> Ref<CommandHistory> {
-        return crate::command_history::create_command_history(None);
+        return crate::command_history::create_command_history();
     }
 
     fn inert_binding() -> CommandBindingRef {
@@ -43,9 +43,10 @@ mod sugar_tests {
 
     fn command(kind: &str, label: &str) -> CommandRef {
         // A composite with no children carries its own kind and label without a node target.
-        let composite = create_composite_command(label, &[]);
+        let composite = create_composite_command(&[]);
         let mut guard = composite.write().unwrap();
         guard.fields.kind = String::from(kind);
+        guard.fields.label = String::from(label);
         drop(guard);
         return composite;
     }
@@ -269,11 +270,11 @@ mod sugar_tests {
         };
         let parent = node();
         let child = node();
-        let factory = create_add_node_child_command("Add", &parent, &child, Some(3));
+        let factory = create_add_node_child_command(&parent, &child);
         let mut direct: AddNodeChildCommand = flight_entity::allocate_entity();
-        crate::command::initialize_add_node_child_command(&mut direct, "Add", &parent, &child, 3);
+        crate::command::initialize_add_node_child_command(&mut direct, &parent, &child);
         assert_eq!(factory.read().unwrap().index, direct.index);
-        assert_eq!(factory.read().unwrap().label, direct.label);
+        assert_eq!(factory.read().unwrap().kind, direct.kind);
     }
 
     #[derive(Default)]

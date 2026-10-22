@@ -8,7 +8,7 @@ mod enable_command_history_signals {
 
     #[test]
     fn allocates_once_and_returns_the_same_signal_on_a_second_call() {
-        let history = create_command_history(None);
+        let history = create_command_history();
         assert!(get_command_history_signals(&history).is_none());
         let signal = enable_command_history_signals(&history);
         let again = enable_command_history_signals(&history);
@@ -17,7 +17,7 @@ mod enable_command_history_signals {
 
     #[test]
     fn emits_after_an_execute_and_after_an_undo() {
-        let history = create_command_history(None);
+        let history = create_command_history();
         register_command_binding(&history, "test.Counter", inert_binding());
         let changes = std::sync::Arc::new(std::sync::Mutex::new(0));
         let counter = changes.clone();
@@ -34,7 +34,7 @@ mod enable_command_history_signals {
 
     #[test]
     fn does_not_emit_when_a_command_was_refused_for_want_of_a_binding() {
-        let history = create_command_history(None);
+        let history = create_command_history();
         let changes = std::sync::Arc::new(std::sync::Mutex::new(0));
         let counter = changes.clone();
         let _slot = connect_signal(
@@ -52,7 +52,7 @@ mod get_command_history_signals {
 
     #[test]
     fn returns_none_until_signals_are_enabled_and_never_allocates() {
-        let history = create_command_history(None);
+        let history = create_command_history();
         assert!(get_command_history_signals(&history).is_none());
         assert!(history.read().unwrap().on_change.is_none());
         let signal = enable_command_history_signals(&history);

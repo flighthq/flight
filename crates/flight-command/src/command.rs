@@ -12,49 +12,50 @@ use flight_node::contract::{NodeRef, get_node_child_index};
 use crate::command_property_access::read_command_property;
 use crate::types::*;
 
-/// Adds `child` to `parent`; `index` of `-1` appends (TS `createAddNodeChildCommand`).
+/// Adds `child` to `parent` (TS `createAddNodeChildCommand`). The default `index` of `-1` appends;
+/// assign `index` after create to insert at a position.
+// flight-lint: allow(conform-params) D23 B: label and insertion index removed; assigned after create
 pub fn create_add_node_child_command(
-    label: &str,
     parent: &NodeRef,
     child: &NodeRef,
-    index: Option<i32>,
 ) -> Ref<AddNodeChildCommand> {
     let mut out: AddNodeChildCommand = allocate_entity();
-    initialize_add_node_child_command(&mut out, label, parent, child, index.unwrap_or(-1));
+    initialize_add_node_child_command(&mut out, parent, child);
     return Arc::new(RwLock::new(out));
 }
 
 /// Applies `children` as one history entry, in order; undo runs them in reverse (TS
 /// `createCompositeCommand`). The child list is copied, so a later caller push cannot rewrite the
 /// recorded entry.
-pub fn create_composite_command(label: &str, children: &[CommandRef]) -> Ref<CompositeCommand> {
+// flight-lint: allow(conform-params) D23 B: label removed; assigned after create
+pub fn create_composite_command(children: &[CommandRef]) -> Ref<CompositeCommand> {
     let mut out: CompositeCommand = allocate_entity();
-    initialize_composite_command(&mut out, label, children);
+    initialize_composite_command(&mut out, children);
     return Arc::new(RwLock::new(out));
 }
 
 /// Removes `child` from `parent`, capturing its CURRENT index so undo restores position (TS
 /// `createRemoveNodeChildCommand`). Build this before removing the child.
+// flight-lint: allow(conform-params) D23 B: label removed; assigned after create; the current index is still captured
 pub fn create_remove_node_child_command(
-    label: &str,
     parent: &NodeRef,
     child: &NodeRef,
 ) -> Ref<RemoveNodeChildCommand> {
     let mut out: RemoveNodeChildCommand = allocate_entity();
-    initialize_remove_node_child_command(&mut out, label, parent, child);
+    initialize_remove_node_child_command(&mut out, parent, child);
     return Arc::new(RwLock::new(out));
 }
 
 /// Moves `child` to `to_index`, capturing where it started (TS `createReorderNodeChildCommand`).
 /// Build this before moving the child.
+// flight-lint: allow(conform-params) D23 B: label removed; assigned after create; to_index stays and from_index is still captured
 pub fn create_reorder_node_child_command(
-    label: &str,
     parent: &NodeRef,
     child: &NodeRef,
     to_index: i32,
 ) -> Ref<ReorderNodeChildCommand> {
     let mut out: ReorderNodeChildCommand = allocate_entity();
-    initialize_reorder_node_child_command(&mut out, label, parent, child, to_index);
+    initialize_reorder_node_child_command(&mut out, parent, child, to_index);
     return Arc::new(RwLock::new(out));
 }
 
@@ -62,14 +63,10 @@ pub fn create_reorder_node_child_command(
 /// `createSetNodePropertyCommand`). The registry is explicit caller-owned context (D5); the accessor
 /// is resolved now, at capture time.
 // flight-lint: allow(conform-params) D5: the explicit property-access registry is an added parameter; TS reads the property dynamically
-// flight-lint: allow(f64) D1: merge window and caller-supplied timestamp are JS numbers
 pub fn create_set_node_property_command(
-    label: &str,
     target: &NodeRef,
     property: &str,
     value: Option<Unknown>,
-    merge_window: Option<f64>,
-    time: Option<f64>,
     access: &CommandPropertyAccessRef,
 ) -> Ref<SetNodePropertyCommand> {
     let entry = CommandPropertyEntry {
@@ -79,26 +76,15 @@ pub fn create_set_node_property_command(
         target: target.clone(),
     };
     let mut out: SetNodePropertyCommand = allocate_entity();
-    initialize_set_node_property_command(
-        &mut out,
-        &[entry],
-        SET_NODE_PROPERTY_COMMAND_KIND,
-        label,
-        merge_window.unwrap_or(0.0),
-        time.unwrap_or(0.0),
-    );
+    initialize_set_node_property_command(&mut out, &[entry], SET_NODE_PROPERTY_COMMAND_KIND);
     return Arc::new(RwLock::new(out));
 }
 
 /// Captures each assignment's current value in the order given (TS
 /// `createSetNodePropertyCommandBatch`).
 // flight-lint: allow(conform-params) D5: the explicit property-access registry is an added parameter; TS reads the properties dynamically
-// flight-lint: allow(f64) D1: merge window and caller-supplied timestamp are JS numbers
 pub fn create_set_node_property_command_batch(
-    label: &str,
     entries: &[CommandPropertyAssignment],
-    merge_window: Option<f64>,
-    time: Option<f64>,
     access: &CommandPropertyAccessRef,
 ) -> Ref<SetNodePropertyCommand> {
     let captured: Vec<CommandPropertyEntry> = entries
@@ -111,30 +97,21 @@ pub fn create_set_node_property_command_batch(
         })
         .collect();
     let mut out: SetNodePropertyCommand = allocate_entity();
-    initialize_set_node_property_command(
-        &mut out,
-        &captured,
-        SET_NODE_PROPERTY_COMMAND_KIND,
-        label,
-        merge_window.unwrap_or(0.0),
-        time.unwrap_or(0.0),
-    );
+    initialize_set_node_property_command(&mut out, &captured, SET_NODE_PROPERTY_COMMAND_KIND);
     return Arc::new(RwLock::new(out));
 }
 
 /// The construction initializer of `create_add_node_child_command`.
+// flight-lint: allow(conform-params) D23 B: label and insertion index removed; initialize mirrors create
 pub fn initialize_add_node_child_command(
     out: &mut AddNodeChildCommand,
-    label: &str,
     parent: &NodeRef,
     child: &NodeRef,
-    index: i32,
 ) {
     out.fields.kind = String::from(ADD_NODE_CHILD_COMMAND_KIND);
-    out.fields.label = String::from(label);
     out.parent = parent.clone();
     out.child = child.clone();
-    out.index = index;
+    out.index = -1;
 }
 
 /// Initializes the shared fields of a custom command kind (D16 open family). Rust-only seam: a
@@ -146,40 +123,34 @@ pub fn initialize_command_fields(out: &mut CommandFields, kind: &str, label: &st
 }
 
 /// The construction initializer of `create_composite_command`.
-pub fn initialize_composite_command(
-    out: &mut CompositeCommand,
-    label: &str,
-    children: &[CommandRef],
-) {
+// flight-lint: allow(conform-params) D23 B: label removed; initialize mirrors create
+pub fn initialize_composite_command(out: &mut CompositeCommand, children: &[CommandRef]) {
     out.fields.kind = String::from(COMPOSITE_COMMAND_KIND);
-    out.fields.label = String::from(label);
     out.children = children.to_vec();
 }
 
 /// The construction initializer of `create_remove_node_child_command`; captures the current index.
+// flight-lint: allow(conform-params) D23 B: label removed; initialize mirrors create
 pub fn initialize_remove_node_child_command(
     out: &mut RemoveNodeChildCommand,
-    label: &str,
     parent: &NodeRef,
     child: &NodeRef,
 ) {
     out.fields.kind = String::from(REMOVE_NODE_CHILD_COMMAND_KIND);
-    out.fields.label = String::from(label);
     out.parent = parent.clone();
     out.child = child.clone();
     out.index = get_node_child_index(parent, child);
 }
 
 /// The construction initializer of `create_reorder_node_child_command`; captures `fromIndex`.
+// flight-lint: allow(conform-params) D23 B: label removed; initialize mirrors create
 pub fn initialize_reorder_node_child_command(
     out: &mut ReorderNodeChildCommand,
-    label: &str,
     parent: &NodeRef,
     child: &NodeRef,
     to_index: i32,
 ) {
     out.fields.kind = String::from(REORDER_NODE_CHILD_COMMAND_KIND);
-    out.fields.label = String::from(label);
     out.parent = parent.clone();
     out.child = child.clone();
     out.from_index = get_node_child_index(parent, child);
@@ -188,18 +159,14 @@ pub fn initialize_reorder_node_child_command(
 
 /// Builds a property command from already-captured entries (TS `initializeSetNodePropertyCommand`).
 /// The caller supplies `entries` because capturing `before` needs the pending property carrier.
-// flight-lint: allow(f64) D1: merge window and caller-supplied timestamp are JS numbers
+// flight-lint: allow(conform-params) D23 B: label, merge window and time removed; assigned after initialize
 pub fn initialize_set_node_property_command(
     out: &mut SetNodePropertyCommand,
     entries: &[CommandPropertyEntry],
     kind: &str,
-    label: &str,
-    merge_window: f64,
-    time: f64,
 ) {
     out.fields.kind = String::from(kind);
-    out.fields.label = String::from(label);
     out.entries = entries.to_vec();
-    out.merge_window = merge_window;
-    out.time = time;
+    out.merge_window = 0.0;
+    out.time = 0.0;
 }

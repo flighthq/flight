@@ -151,14 +151,10 @@ pub(crate) fn merge_set_node_property_commands(
         })
         .collect();
     let mut out: SetNodePropertyCommand = flight_entity::allocate_entity();
-    initialize_set_node_property_command(
-        &mut out,
-        &entries,
-        &previous.fields.kind,
-        &next.fields.label,
-        next.merge_window,
-        next.time,
-    );
+    initialize_set_node_property_command(&mut out, &entries, &previous.fields.kind);
+    out.fields.label = next.fields.label.clone();
+    out.merge_window = next.merge_window;
+    out.time = next.time;
     return Some(Arc::new(RwLock::new(out)));
 }
 

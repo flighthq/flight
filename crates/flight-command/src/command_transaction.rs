@@ -84,7 +84,8 @@ pub fn end_command_transaction(history: &Ref<CommandHistory>) -> bool {
     let entry = if collected.len() == 1 {
         collected[0].clone()
     } else {
-        let composite = create_composite_command(&label, &collected);
+        let composite = create_composite_command(&collected);
+        composite.write().unwrap().fields.label = label.clone();
         let erased: CommandRef = composite;
         erased
     };
