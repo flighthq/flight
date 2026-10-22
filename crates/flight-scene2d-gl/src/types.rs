@@ -59,6 +59,26 @@ pub struct GlColorAdjustmentMaterialFeature {
 pub type ShapeRasterizer<S> =
     Arc<dyn Fn(&CanvasRenderingContext2D, &[ShapeCommandToken], &mut S) + Send + Sync>;
 
+/// The position-only stencil program of the contour clip path (TS `ClipProgram`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct GlClipProgram {
+    pub(crate) program: glow::NativeProgram,
+    pub(crate) buffer: glow::NativeBuffer,
+    pub(crate) position_location: u32,
+    pub(crate) world_matrix_location: Option<glow::NativeUniformLocation>,
+    pub(crate) projection_location: Option<glow::NativeUniformLocation>,
+}
+
+/// Per-context package record (TS module WeakMaps keyed by `GlContext`).
+#[derive(Default)]
+pub(crate) struct Scene2DGlContextRuntime {
+    pub(crate) clip_program: Option<GlClipProgram>,
+}
+
+/// Per-state package record (TS module WeakMaps keyed by `GlRenderState`).
+#[derive(Default)]
+pub(crate) struct Scene2DGlRuntime {}
+
 /// Resolves render-gl's erased color-adjustment slot to this package's concrete feature contract.
 pub(crate) fn resolve_gl_color_adjustment_material_feature(
     state: &GlRenderState,

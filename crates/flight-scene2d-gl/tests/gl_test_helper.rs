@@ -369,6 +369,11 @@ pub fn create_gl_state_with(options: &flight_render_gl::GlRenderStateOptions) ->
     return state;
 }
 
+// flight-lint: allow(test-default-call) test scaffolding constructs Rust-only option bags and guard contexts that have no source create function
+pub fn test_default<T: Default>() -> T {
+    return T::default();
+}
+
 pub fn display_node() -> flight_node::NodeRef {
     return flight_scene2d::create_display_object();
 }
@@ -513,6 +518,49 @@ pub fn create_test_image_host() -> flight_image::HostImageCapability {
         }),
         provider: Arc::new(()),
     };
+}
+
+/// A 2D texture over a GL-uploadable host image of the given size (TS `createImageResource(img)`
+/// with the test dimension resolver).
+pub fn make_image_texture_2d(width: u32, height: u32) -> flight_texture::Texture2D {
+    let image = make_image_resource(width, height, true);
+    {
+        let mut guard = image.write().unwrap();
+        let fields = flight_texture::TextureSource::texture_source_fields_mut(&mut *guard);
+        fields.width = width;
+        fields.height = height;
+    }
+    let mut texture = flight_texture::create_texture_2d();
+    texture.source = Some(image as flight_texture::TextureSourceRef);
+    return texture;
+}
+
+/// A 2D texture over a CPU bitmap source (TS `createTexture({ dimension: '2d', source: createBitmap })`).
+pub fn make_bitmap_texture(width: u32, height: u32) -> flight_entity::Ref<flight_texture::Texture> {
+    let bitmap = Arc::new(std::sync::RwLock::new(flight_bitmap::create_bitmap(width, height, None)));
+    let mut texture = flight_texture::create_texture_2d();
+    texture.source = Some(bitmap as flight_texture::TextureSourceRef);
+    return Arc::new(std::sync::RwLock::new(flight_texture::Texture::Texture2D(texture)));
+}
+
+/// TS `makeAtlas`: a 64x64 image atlas with one region at the origin.
+pub fn make_atlas(region_width: f32, region_height: f32) -> flight_entity::Ref<flight_textureatlas::TextureAtlas> {
+    let atlas = flight_textureatlas::create_texture_atlas();
+    {
+        let mut atlas = atlas.write().unwrap();
+        flight_textureatlas::add_texture_atlas_region(
+            &mut atlas,
+            0.0,
+            0.0,
+            region_width,
+            region_height,
+            None,
+            None,
+            None,
+        );
+        atlas.texture = Some(Arc::new(std::sync::RwLock::new(make_image_texture_2d(64, 64))));
+    }
+    return atlas;
 }
 
 fn load(name: &str) -> *const c_void {

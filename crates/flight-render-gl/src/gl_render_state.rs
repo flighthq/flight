@@ -126,6 +126,7 @@ pub fn initialize_gl_context_state(gl: Rc<glow::Context>) -> Result<GlContextSta
             particle_resources: None,
             quad_batch_resources: None,
             shape_mesh_resources: None,
+            scene2d_context_runtime: None,
             pass_handle_pool: Vec::new(),
             pass_stack: Vec::new(),
             state_runtimes: HashMap::new(),

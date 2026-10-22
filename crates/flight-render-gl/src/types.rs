@@ -471,6 +471,9 @@ pub struct GlContextRuntime {
     pub particle_resources: Option<GlParticleResources>,
     pub quad_batch_resources: Option<GlQuadBatchResources>,
     pub shape_mesh_resources: Option<GlShapeMeshResources>,
+    /// Opaque per-context record of scene2d-gl (TS module WeakMaps keyed by `GlContext`, e.g. the
+    /// clip-contour and velocity programs); render-gl only retains it.
+    pub scene2d_context_runtime: Option<Box<dyn std::any::Any>>,
     pub(crate) pass_handle_pool: Vec<GlRenderPass>,
     pub(crate) pass_stack: Vec<GlPassStackEntry>,
     pub state_runtimes: HashMap<u64, Weak<RefCell<GlRenderStateRuntime>>>,
@@ -531,6 +534,9 @@ pub struct GlRenderStateRuntime {
     pub quad_batch_writer_color_scale_bias_data: Option<Vec<f32>>,
     pub quad_batch_writer_color_matrix_data: Option<Vec<f32>>,
     pub quad_batch_writer_color_tint_data: Option<Vec<u32>>,
+    /// Opaque per-state record of scene2d-gl (TS module WeakMaps keyed by `GlRenderState`, e.g. the
+    /// render-cache targets); render-gl only retains it.
+    pub scene2d_runtime: Option<Box<dyn std::any::Any>>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -920,6 +926,7 @@ impl Default for GlRenderStateRuntime {
             quad_batch_writer_color_scale_bias_data: None,
             quad_batch_writer_color_matrix_data: None,
             quad_batch_writer_color_tint_data: None,
+            scene2d_runtime: None,
         };
     }
 }

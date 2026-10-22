@@ -14,21 +14,29 @@ name = "tests"
 path = "tests/main.rs"
 
 [dependencies]
+flight-bitmaptext = { path = "../flight-bitmaptext" }
+flight-clip = { path = "../flight-clip" }
 flight-entity = { path = "../flight-entity" }
 flight-geometry = { path = "../flight-geometry" }
 flight-host = { path = "../flight-host" }
 flight-image = { path = "../flight-image" }
 flight-materials = { path = "../flight-materials" }
 flight-node = { path = "../flight-node" }
+flight-path = { path = "../flight-path" }
+flight-quadbatch = { path = "../flight-quadbatch" }
 flight-render = { path = "../flight-render" }
 flight-render-gl = { path = "../flight-render-gl" }
 flight-scene2d = { path = "../flight-scene2d" }
 flight-shape = { path = "../flight-shape" }
 flight-surface = { path = "../flight-surface" }
 flight-texture = { path = "../flight-texture" }
+flight-textureatlas = { path = "../flight-textureatlas" }
+flight-tilemap = { path = "../flight-tilemap" }
 glow = "0.18.0"
 
 [dev-dependencies]
+flight-bitmap = { path = "../flight-bitmap" }
+flight-glyphatlas = { path = "../flight-glyphatlas" }
 
 [lints]
 workspace = true
