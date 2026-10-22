@@ -13,16 +13,14 @@ use std::collections::HashMap;
 
 use flight_render::RenderProxy2D;
 use flight_render_wgpu::{
-    WgpuCommandRecord, WgpuRenderPipelineRecord, WgpuRenderState, WgpuShapeMeshBuffers,
-    WgpuShapeMeshPipeline, get_wgpu_blend_state, get_wgpu_render_pass_viewport,
+    WgpuCommandRecord, WgpuRenderPipelineRecord, WgpuRenderState, WgpuShapeMesh,
+    WgpuShapeMeshBuffers, WgpuShapeMeshPipeline, get_wgpu_blend_state,
+    get_wgpu_color_adjustment_material_feature, get_wgpu_render_pass_viewport,
     get_wgpu_render_state_native_device, get_wgpu_render_state_runtime,
     get_wgpu_render_state_runtime_mut, record_wgpu_command, retire_wgpu_buffer, write_wgpu_buffer,
 };
 
-use crate::types::*;
-use crate::wgpu_quad_batch_writer::{
-    flush_wgpu_quad_batch_writer, resolve_wgpu_color_adjustment_material_feature, wgpu_f32_bytes,
-};
+use crate::wgpu_quad_batch_writer::{flush_wgpu_quad_batch_writer, wgpu_f32_bytes};
 
 const SHAPE_MESH_WGSL: &str = r"
 struct ShapeMeshUniforms { matrix : mat3x3f, color : vec4f }
@@ -257,7 +255,7 @@ pub fn draw_wgpu_shape_meshes(
     if meshes.is_empty() {
         return;
     }
-    let fold = resolve_wgpu_color_adjustment_material_feature(state)
+    let fold = get_wgpu_color_adjustment_material_feature(state)
         .and_then(|feature| feature.draw_shape_meshes);
     if let Some(draw_shape_meshes) = fold
         && render_proxy.color_matrix.is_none()

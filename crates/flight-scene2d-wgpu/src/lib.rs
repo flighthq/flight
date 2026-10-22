@@ -79,9 +79,7 @@ pub use contract::WGPU_SPRITE_RENDERER;
 pub use contract::WGPU_TEXT_LABEL_RENDERER;
 pub use contract::WGPU_TILEMAP_RENDERER;
 
-pub use contract::WgpuColorAdjustmentMaterialFeature;
 pub use contract::WgpuRenderStats;
 pub use contract::WgpuRichTextOverlay;
 pub use contract::WgpuScene2DRenderPreset;
-pub use contract::WgpuShapeMesh;
 pub use contract::WgpuShapeRendererData;

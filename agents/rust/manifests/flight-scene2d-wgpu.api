@@ -52,11 +52,9 @@ src/lib.rs: pub use contract::WGPU_SHAPE_RENDERER;
 src/lib.rs: pub use contract::WGPU_SPRITE_RENDERER;
 src/lib.rs: pub use contract::WGPU_TEXT_LABEL_RENDERER;
 src/lib.rs: pub use contract::WGPU_TILEMAP_RENDERER;
-src/lib.rs: pub use contract::WgpuColorAdjustmentMaterialFeature;
 src/lib.rs: pub use contract::WgpuRenderStats;
 src/lib.rs: pub use contract::WgpuRichTextOverlay;
 src/lib.rs: pub use contract::WgpuScene2DRenderPreset;
-src/lib.rs: pub use contract::WgpuShapeMesh;
 src/lib.rs: pub use contract::WgpuShapeRendererData;
 src/lib.rs: pub use contract::are_wgpu_color_adjustment_guards_enabled;
 src/lib.rs: pub use contract::create_wgpu_cache_state;
@@ -79,12 +77,10 @@ src/lib.rs: pub use contract::wgpu_particle_emitter2d_velocity_writer;
 src/scene2d_wgpu_pipeline.rs: pub static WGPU_RENDER_INFRASTRUCTURE: LazyLock<WgpuRenderRegistries>
 src/scene2d_wgpu_pipeline.rs: pub static WGPU_SCENE2D_RENDER_PRESET: LazyLock<WgpuScene2DRenderPreset>
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub struct WgpuRenderStats { pub draw_call_count: u32, pub instance_count: u32, pub batch_flush_count: u32, pub texture_upload_count: u32, }
-src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct WgpuShapeMesh { pub vertices: Vec<f32>, pub indices: Vec<u16>, pub color: u32, pub alpha: f32, }
 src/types.rs: #[derive(Default)] pub struct WgpuRichTextData { pub(crate) renderer_data: RendererDataFields, pub alloc_h: f32, pub alloc_w: f32, pub image: Option<Ref<ImageResource>>, pub surface: Option<Ref<CanvasSurface>>, }
 src/types.rs: #[derive(Default)] pub struct WgpuScale9ShapeData { pub(crate) renderer_data: RendererDataFields, pub image: Option<Ref<ImageResource>>, pub last_h: f32, pub last_scale_x: f32, pub last_scale_y: f32, pub last_content_id: i64, pub last_pixel_ratio: f32, pub last_w: f32, pub surface: Option<Ref<CanvasSurface>>, }
 src/types.rs: #[derive(Default)] pub struct WgpuShapeRendererData { pub(crate) renderer_data: RendererDataFields, pub image: Option<Ref<ImageResource>>, pub last_content_id: i64, pub last_h: f32, pub last_pixel_ratio: f32, pub last_w: f32, pub mesh_buffers: WgpuShapeMeshBuffers, pub mesh_version: i64, pub meshes: Option<Vec<WgpuShapeMesh>>, pub surface: Option<Ref<CanvasSurface>>, }
 src/types.rs: #[derive(Default)] pub struct WgpuTextLabelData { pub(crate) renderer_data: RendererDataFields, pub alloc_h: f32, pub alloc_w: f32, pub image: Option<Ref<ImageResource>>, pub last_content_id: i64, pub last_pixel_ratio: f32, pub log_h: f32, pub log_w: f32, pub surface: Option<Ref<CanvasSurface>>, }
-src/types.rs: pub struct WgpuColorAdjustmentMaterialFeature { pub fragment_shader_chunk: &'static str, pub matrix_fragment_shader_chunk: &'static str, pub draw_shape_meshes: Option<fn(&mut WgpuRenderState, &RenderProxy2D<WgpuRenderState>, &[WgpuShapeMesh], &mut WgpuShapeMeshBuffers,),>, pub record: fn(&mut WgpuRenderStateRuntime, Option<&WgpuColorScaleBiasInput>, u32), pub resolve_flush: fn(&mut WgpuRenderState, u32) -> Option<WgpuColorAdjustmentFlush>, }
 src/types.rs: pub struct WgpuScene2DRenderPreset { pub node_renderers: KindMap<&'static NodeRenderer<WgpuRenderState>>, pub registries: WgpuRenderRegistries, }
 src/types.rs: pub type WgpuRichTextOverlay = fn(&CanvasRenderingContext2D, &Ref<RichText>, &TextLayoutResult, f32, f32, &str);
 src/wgpu_bitmap_text.rs: pub static WGPU_BITMAP_TEXT_RENDERER: NodeRenderer<WgpuRenderState>

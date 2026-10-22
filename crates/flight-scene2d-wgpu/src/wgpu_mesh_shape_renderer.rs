@@ -10,14 +10,13 @@ use flight_render::{
     BatchFormat, NodeRenderer, RenderProxy2D, RenderRegistryTable, RenderState,
     emit_render_registry_miss,
 };
-use flight_render_wgpu::{WgpuRenderState, get_wgpu_render_state_runtime};
+use flight_render_wgpu::{WgpuRenderState, WgpuShapeMesh, get_wgpu_render_state_runtime};
 use flight_shape::contract::SHAPE_KIND;
 use flight_shape::{
     ShapeCommandToken, ShapeFillRegion, ShapeStrokeRegion, get_shape_fill_regions,
     get_shape_stroke_outline_regions, get_shape_stroke_regions,
 };
 
-use crate::types::*;
 use crate::wgpu_shape_data::{
     create_wgpu_shape_data, destroy_wgpu_shape_data, get_wgpu_shape_data,
 };

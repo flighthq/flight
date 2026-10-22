@@ -32,10 +32,7 @@ mod register_wgpu_color_adjustment_material_feature {
         let mut state = create_wgpu_render_state_for_test(None);
         register_wgpu_color_adjustment_material_feature(&mut state);
         assert!(are_color_adjustments_enabled(&state));
-        let slot = get_wgpu_color_adjustment_material_feature(&state).unwrap();
-        let feature = slot
-            .downcast_ref::<&'static WgpuColorAdjustmentMaterialFeature>()
-            .unwrap();
+        let feature = get_wgpu_color_adjustment_material_feature(&state).unwrap();
         assert!(feature.draw_shape_meshes.is_some());
         assert!(
             feature
@@ -56,7 +53,7 @@ mod register_wgpu_color_adjustment_material_feature {
         let first = get_wgpu_color_adjustment_material_feature(&state).unwrap();
         register_wgpu_color_adjustment_material_feature(&mut state);
         let second = get_wgpu_color_adjustment_material_feature(&state).unwrap();
-        assert!(std::sync::Arc::ptr_eq(&first, &second));
+        assert!(std::ptr::eq(first, second));
     }
 
     #[test]

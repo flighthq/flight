@@ -25,7 +25,7 @@ fn create_cache_state(
 ) -> Ref<WgpuRenderState> {
     let registries = get_wgpu_render_state_runtime(screen).registries.clone();
     let options = WgpuRenderStateOptions {
-        color_adjustment_feature: registries.color_adjustment_feature.clone(),
+        color_adjustment_feature: registries.color_adjustment_feature,
         color_adjustment_feature_guard: registries.color_adjustment_feature_guard,
         material_renderers: Some((*registries.material_renderers).clone()),
         shape_rasterizer: registries.shape_rasterizer.clone(),
@@ -148,13 +148,9 @@ mod create_wgpu_cache_state {
             &cache_state.device.handle,
             &screen.device.handle
         ));
-        assert!(Arc::ptr_eq(
-            get_wgpu_color_adjustment_material_feature(&cache_state)
-                .as_ref()
-                .unwrap(),
-            get_wgpu_color_adjustment_material_feature(&screen)
-                .as_ref()
-                .unwrap()
+        assert!(std::ptr::eq(
+            get_wgpu_color_adjustment_material_feature(&cache_state).unwrap(),
+            get_wgpu_color_adjustment_material_feature(&screen).unwrap()
         ));
         assert!(cache_state.render_registries().color_adjustments.is_some());
     }

@@ -16,8 +16,8 @@ use flight_node::NodeRef;
 use flight_platform::PlatformEndianness;
 use flight_registry::KindMap;
 use flight_render::{
-    RenderRegistries, RenderState, RenderStateBackend, RenderStateFields, RenderStateRuntime,
-    RenderTexture, ShapeRasterizer,
+    RenderProxy2D, RenderRegistries, RenderState, RenderStateBackend, RenderStateFields,
+    RenderStateRuntime, RenderTexture, ShapeRasterizer,
 };
 use flight_signals::Signal;
 use flight_stream::SharedFuture;
@@ -220,10 +220,38 @@ pub enum WgpuColorScaleBiasInput {
     Values(WgpuColorScaleBiasValues),
 }
 
-/// The opaque opt-in color-adjustment feature slot (TS `WgpuColorAdjustmentMaterialFeature`). The
-/// concrete feature contract lives in scene2d-wgpu, which fills and reads it; render-wgpu only
-/// retains it by shared identity.
-pub type WgpuColorAdjustmentMaterialFeatureSlot = Arc<dyn std::any::Any + Send + Sync>;
+/// The opt-in inline color-adjustment fold for the WebGPU sprite/quad batch (TS
+/// `WgpuColorAdjustmentMaterialFeature`). Registered as persistent per-state policy by
+/// scene2d-wgpu's `register_wgpu_color_adjustment_material_feature`; absent on a state that never
+/// opted in. The shader chunks are the backend-authored pointwise color remap spliced into promoted
+/// material-family variants (3D compilers read only these); `draw_shape_meshes` is the optional
+/// tessellated solid-fill hook; `record` folds one instance's adjustment into the active batch;
+/// `resolve_flush` returns a tinted batch's group-3 storage data and folded module, or `None` for
+/// the lean material path.
+pub struct WgpuColorAdjustmentMaterialFeature {
+    pub fragment_shader_chunk: &'static str,
+    pub matrix_fragment_shader_chunk: &'static str,
+    pub draw_shape_meshes: Option<
+        fn(
+            &mut WgpuRenderState,
+            &RenderProxy2D<WgpuRenderState>,
+            &[WgpuShapeMesh],
+            &mut WgpuShapeMeshBuffers,
+        ),
+    >,
+    pub record: fn(&mut WgpuRenderStateRuntime, Option<&WgpuColorScaleBiasInput>, u32),
+    pub resolve_flush: fn(&mut WgpuRenderState, u32) -> Option<WgpuColorAdjustmentFlush>,
+}
+
+/// One tessellated solid fill or stroke (TS `WgpuShapeMesh`): float2 positions, uint16 triangle
+/// indices, the region's packed `0xRRGGBBAA` color and its alpha.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct WgpuShapeMesh {
+    pub vertices: Vec<f32>,
+    pub indices: Vec<u16>,
+    pub color: u32,
+    pub alpha: f32,
+}
 
 /// Reports a color adjustment recorded while no feature is registered (TS
 /// `WgpuColorAdjustmentMaterialFeatureGuard`).
@@ -281,12 +309,13 @@ pub struct WgpuColorAdjustmentFlushU32 {
 /// backend-neutral tables live in the state's `RenderRegistries`). Tables are persistent snapshots
 /// shared through `Arc`. Effect registrations are typed (`WgpuEffectRegistration`, the plugin
 /// interface this crate owns), as are the shape rasterizer (render's `ShapeRasterizer`) and the
-/// velocity writers this crate owns. Slots whose value types belong to backend packages that consume
-/// them (scene2d-wgpu's color-adjustment feature, scene3d-wgpu's passes and mesh renderers,
-/// modifiers, skinning) hold those packages' values opaquely.
+/// velocity writers this crate owns, and the color-adjustment feature contract (filled by
+/// scene2d-wgpu). Slots whose value types belong to backend packages that consume them
+/// (scene3d-wgpu's passes and mesh renderers, modifiers, skinning) hold those packages' values
+/// opaquely.
 #[derive(Clone)]
 pub struct WgpuRenderRegistries {
-    pub color_adjustment_feature: Option<WgpuColorAdjustmentMaterialFeatureSlot>,
+    pub color_adjustment_feature: Option<&'static WgpuColorAdjustmentMaterialFeature>,
     pub color_adjustment_feature_guard: Option<WgpuColorAdjustmentMaterialFeatureGuard>,
     pub compressed_texture_decoder: Option<WgpuCompressedTextureDecoder>,
     pub compressed_texture_upload: Option<WgpuCompressedTextureUploader>,
@@ -752,7 +781,7 @@ pub struct TextureResolutionExplanation {
 #[derive(Clone, Default)]
 pub struct WgpuRenderStateOptions {
     pub canvas_host: Option<HostCanvasCapability>,
-    pub color_adjustment_feature: Option<WgpuColorAdjustmentMaterialFeatureSlot>,
+    pub color_adjustment_feature: Option<&'static WgpuColorAdjustmentMaterialFeature>,
     pub color_adjustment_feature_guard: Option<WgpuColorAdjustmentMaterialFeatureGuard>,
     pub compressed_texture_decoder: Option<WgpuCompressedTextureDecoder>,
     pub compressed_texture_upload: Option<WgpuCompressedTextureUploader>,

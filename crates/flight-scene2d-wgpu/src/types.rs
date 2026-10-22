@@ -1,42 +1,23 @@
 // flight-lint: allow-file(contract-vocabulary) D17: scene2d-wgpu contracts carry native wgpu values, host handles and the Rust callback/trait-object forms of the TS closure and CanvasRenderingContext2D types
 // flight-lint: allow-file(file-structure, sugar-delegates) D16 renderer-data trait implementations are required plumbing beside the declarations
-//! The scene2d-wgpu contract types (TS `types/src/Wgpu*.ts` owned by scene2d-wgpu), the concrete
-//! form of the opaque render-wgpu color-adjustment feature slot this package fills, the renderer-private scratch records, and the per-state package
-//! record that replaces the source's module WeakMaps (D5).
+//! The scene2d-wgpu contract types (TS `types/src/Wgpu*.ts` owned by scene2d-wgpu), the
+//! renderer-private scratch records, and the per-state package record that replaces the source's
+//! module WeakMaps (D5). The color-adjustment feature contract and `WgpuShapeMesh` live in
+//! render-wgpu, which types the registry slot (D8 lowest namer).
 
 use flight_entity::Ref;
 use flight_host::CanvasRenderingContext2D;
 use flight_image::ImageResource;
 use flight_node::RendererDataFields;
 use flight_registry::KindMap;
-use flight_render::{CanvasHostSurfaces, NodeRenderer, RenderProxy2D};
+use flight_render::{CanvasHostSurfaces, NodeRenderer};
 use flight_render_wgpu::{
-    WgpuColorAdjustmentFlush, WgpuColorScaleBiasInput, WgpuRenderRegistries, WgpuRenderState,
-    WgpuRenderStateRuntime, WgpuShapeMeshBuffers, WgpuTextureRenderTarget,
+    WgpuRenderRegistries, WgpuRenderState, WgpuShapeMesh, WgpuShapeMeshBuffers,
+    WgpuTextureRenderTarget,
 };
 use flight_surface::CanvasSurface;
 use flight_text::RichText;
 use flight_textlayout::TextLayoutResult;
-
-/// The opt-in color-adjustment capability installed in a state's registry slot (TS
-/// `WgpuColorAdjustmentMaterialFeature`). render-wgpu retains it opaquely
-/// (`WgpuColorAdjustmentMaterialFeatureSlot`); the batch writer narrows it here. `record` folds one
-/// instance's adjustment into the active batch; `resolve_flush` returns a tinted batch's group-3
-/// storage data and folded module, or `None` for the lean material path.
-pub struct WgpuColorAdjustmentMaterialFeature {
-    pub fragment_shader_chunk: &'static str,
-    pub matrix_fragment_shader_chunk: &'static str,
-    pub draw_shape_meshes: Option<
-        fn(
-            &mut WgpuRenderState,
-            &RenderProxy2D<WgpuRenderState>,
-            &[WgpuShapeMesh],
-            &mut WgpuShapeMeshBuffers,
-        ),
-    >,
-    pub record: fn(&mut WgpuRenderStateRuntime, Option<&WgpuColorScaleBiasInput>, u32),
-    pub resolve_flush: fn(&mut WgpuRenderState, u32) -> Option<WgpuColorAdjustmentFlush>,
-}
 
 /// A complete render configuration (TS `WgpuRenderRegistries` as the presets carry it): the
 /// backend registries plus the node renderer table, which Rust keeps in the state's backend-neutral
@@ -64,16 +45,6 @@ pub struct WgpuRenderStats {
 /// `WgpuRichTextOverlay`): the context, the field, its layout, the field size and the displayed text.
 pub type WgpuRichTextOverlay =
     fn(&CanvasRenderingContext2D, &Ref<RichText>, &TextLayoutResult, f32, f32, &str);
-
-/// One tessellated solid fill or stroke (TS `WgpuShapeMesh`): float2 positions, uint16 triangle
-/// indices, the region's packed `0xRRGGBBAA` color and its alpha.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct WgpuShapeMesh {
-    pub vertices: Vec<f32>,
-    pub indices: Vec<u16>,
-    pub color: u32,
-    pub alpha: f32,
-}
 
 /// The per-node cache every shape strategy reads and writes (TS `WgpuShapeRendererData`): the
 /// tessellated half (`meshes`, `mesh_buffers`) and the rasterized half (`surface`, `image`, `last_*`).

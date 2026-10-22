@@ -334,7 +334,7 @@ pub fn initialize_wgpu_offscreen_render_state_ok_result(
 /// tables are built by `flight_render` and live in the state's render registries.
 pub fn build_wgpu_render_registries(options: &WgpuRenderStateOptions) -> WgpuRenderRegistries {
     return WgpuRenderRegistries {
-        color_adjustment_feature: options.color_adjustment_feature.clone(),
+        color_adjustment_feature: options.color_adjustment_feature,
         color_adjustment_feature_guard: options.color_adjustment_feature_guard,
         compressed_texture_decoder: options.compressed_texture_decoder.clone(),
         compressed_texture_upload: options.compressed_texture_upload,
@@ -494,8 +494,8 @@ fn ensure_wgpu_device_runtime_resources(
 /// `getWgpuColorAdjustmentMaterialFeature`).
 pub fn get_wgpu_color_adjustment_material_feature(
     state: &WgpuRenderState,
-) -> Option<WgpuColorAdjustmentMaterialFeatureSlot> {
-    return state.runtime.registries.color_adjustment_feature.clone();
+) -> Option<&'static WgpuColorAdjustmentMaterialFeature> {
+    return state.runtime.registries.color_adjustment_feature;
 }
 
 /// The registered color-adjustment feature guard, or `None` (TS

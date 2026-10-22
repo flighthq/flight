@@ -7,21 +7,18 @@
 //! skipped.
 
 use std::collections::HashMap;
-use std::sync::Arc;
 
 use flight_render::{RenderProxy2D, enable_color_adjustments};
 use flight_render_wgpu::{
     WgpuColorAdjustmentFlush, WgpuColorAdjustmentFlushData, WgpuColorAdjustmentFlushF32,
-    WgpuColorAdjustmentFlushU32, WgpuColorScaleBiasInput, WgpuDeviceRuntime, WgpuRenderState,
-    WgpuRenderStateRuntime, WgpuShapeMeshBuffers, WgpuShapeMeshPipeline, get_wgpu_blend_state,
-    get_wgpu_render_state_native_device, get_wgpu_render_state_runtime,
-    get_wgpu_render_state_runtime_mut,
+    WgpuColorAdjustmentFlushU32, WgpuColorAdjustmentMaterialFeature, WgpuColorScaleBiasInput,
+    WgpuDeviceRuntime, WgpuRenderState, WgpuRenderStateRuntime, WgpuShapeMesh,
+    WgpuShapeMeshBuffers, WgpuShapeMeshPipeline, get_wgpu_blend_state,
+    get_wgpu_color_adjustment_material_feature, get_wgpu_render_state_native_device,
+    get_wgpu_render_state_runtime, get_wgpu_render_state_runtime_mut,
 };
 
-use crate::types::*;
-use crate::wgpu_quad_batch_writer::{
-    get_wgpu_quad_batch_prelude_wgsl, resolve_wgpu_color_adjustment_material_feature,
-};
+use crate::wgpu_quad_batch_writer::get_wgpu_quad_batch_prelude_wgsl;
 use crate::wgpu_shape_mesh::{
     create_shape_mesh_bind_group_layout, create_shape_mesh_pipeline, draw_wgpu_shape_mesh_batch,
 };
@@ -705,13 +702,11 @@ fn record_wgpu_color_adjustment(
 /// `registerWgpuColorAdjustmentMaterialFeature`). Idempotent; safe to call per state.
 pub fn register_wgpu_color_adjustment_material_feature(state: &mut WgpuRenderState) {
     enable_color_adjustments(state);
-    let installed = resolve_wgpu_color_adjustment_material_feature(state)
+    let installed = get_wgpu_color_adjustment_material_feature(state)
         .is_some_and(|feature| std::ptr::eq(feature, &WGPU_COLOR_ADJUSTMENT_MATERIAL_FEATURE));
     let runtime = get_wgpu_render_state_runtime_mut(state);
     if !installed {
-        let feature: &'static WgpuColorAdjustmentMaterialFeature =
-            &WGPU_COLOR_ADJUSTMENT_MATERIAL_FEATURE;
-        runtime.registries.color_adjustment_feature = Some(Arc::new(feature));
+        runtime.registries.color_adjustment_feature = Some(&WGPU_COLOR_ADJUSTMENT_MATERIAL_FEATURE);
     }
     if runtime.quad_batch_writer_color_scale_bias_mode.is_none() {
         runtime.quad_batch_writer_color_scale_bias_mode = Some(CT_MODE_NONE);

@@ -23,7 +23,6 @@ use flight_render_wgpu::{
 };
 use flight_texture::TextureFilter;
 
-use crate::types::*;
 use crate::wgpu_render_stats::record_wgpu_batch_flush;
 
 // Base per-instance layout (13 floats = 52 bytes). This is a fixed contract material shaders read
@@ -245,7 +244,7 @@ pub fn flush_wgpu_quad_batch_writer(state: &mut WgpuRenderState) {
     // untinted batch (or an un-enabled state) falls back to the resolved material's own per-instance
     // data, and no fold WGSL is linked into this module. CT and material per-instance data never mix
     // in a built-in batch (built-in materials have no per-instance floats).
-    let ct_flush = resolve_wgpu_color_adjustment_material_feature(state)
+    let ct_flush = get_wgpu_color_adjustment_material_feature(state)
         .and_then(|feature| (feature.resolve_flush)(state, count));
     let runtime = get_wgpu_render_state_runtime(state);
     let group3_floats = match &ct_flush {
@@ -666,7 +665,7 @@ pub fn record_wgpu_quad_batch_color_scale_bias(
     color_scale_bias: Option<&WgpuColorScaleBiasInput>,
     instance_index: u32,
 ) {
-    if let Some(fold) = resolve_wgpu_color_adjustment_material_feature(state) {
+    if let Some(fold) = get_wgpu_color_adjustment_material_feature(state) {
         (fold.record)(
             get_wgpu_render_state_runtime_mut(state),
             color_scale_bias,
@@ -697,20 +696,6 @@ fn reset_wgpu_quad_batch_writer(state: &mut WgpuRenderState) {
 /// `resetWgpuQuadBatchWriterBufferPool`). Called once at the start of each frame's batch work.
 pub fn reset_wgpu_quad_batch_writer_buffer_pool(state: &mut WgpuRenderState) {
     get_wgpu_render_state_runtime_mut(state).quad_batch_writer_buffer_cursor = 0;
-}
-
-// The registered color-adjustment feature narrowed to this package's concrete record (TS
-// `getWgpuColorAdjustmentMaterialFeature(state)`). A foreign payload in the slot is a programming
-// error: only this package fills it.
-pub(crate) fn resolve_wgpu_color_adjustment_material_feature(
-    state: &WgpuRenderState,
-) -> Option<&'static WgpuColorAdjustmentMaterialFeature> {
-    let slot = get_wgpu_color_adjustment_material_feature(state)?;
-    return Some(
-        *slot
-            .downcast_ref::<&'static WgpuColorAdjustmentMaterialFeature>()
-            .expect("the color-adjustment feature slot holds a &'static WgpuColorAdjustmentMaterialFeature"),
-    );
 }
 
 // The quad material renderer for the proxy's material (TS `resolveWgpuQuadMaterialRenderer(state,
