@@ -15,6 +15,7 @@ use crate::shape_commands::append_shape_path;
 use crate::types::*;
 
 /// Creates a retained morph shape around a prepared path morph (TS `createMorphShape`).
+// flight-lint: allow(conform-params) D23 B: authored options removed; morph is required defining ref
 pub fn create_morph_shape(morph: &Ref<PathMorph>) -> Ref<MorphShape> {
     let mut out: MorphShape = create_node2d(
         MORPH_SHAPE_KIND.to_string(),
@@ -27,6 +28,7 @@ pub fn create_morph_shape(morph: &Ref<PathMorph>) -> Ref<MorphShape> {
 }
 
 /// Allocates morph shape data (TS `createMorphShapeData`).
+// flight-lint: allow(conform-params) D23 B: authored options removed; morph is required defining ref
 pub fn create_morph_shape_data(morph: &Ref<PathMorph>) -> MorphShapeData {
     let mut out: MorphShapeData = allocate_entity();
     initialize_morph_shape_data(&mut out, morph);
@@ -39,6 +41,7 @@ pub fn create_morph_shape_runtime() -> Node2DRuntime {
 }
 
 /// The public initialize seam for a morph shape (TS `initializeMorphShape`).
+// flight-lint: allow(conform-extra) D23 I: public initialize seam extracted from create_morph_shape
 pub fn initialize_morph_shape(_out: &mut MorphShape) {}
 
 /// The construction initializer of `create_morph_shape_data`.

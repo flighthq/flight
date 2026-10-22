@@ -16,6 +16,7 @@ use crate::shape_bounds_registry::get_shape_bounds_command_registry_revision;
 use crate::types::*;
 
 /// Creates a shape (TS `createShape`).
+// flight-lint: allow(conform-params) D23 B: authored options removed; kind assigns fields after create
 pub fn create_shape() -> Ref<Shape> {
     let mut out: Shape = create_node2d(
         SHAPE_KIND.to_string(),
@@ -28,6 +29,7 @@ pub fn create_shape() -> Ref<Shape> {
 }
 
 /// Allocates shape kind data (TS `createShapeData`).
+// flight-lint: allow(conform-params) D23 B: authored options removed
 pub fn create_shape_data() -> ShapeData {
     let mut out: ShapeData = allocate_entity();
     initialize_shape_data(&mut out);
@@ -57,6 +59,7 @@ pub(crate) fn create_shape_runtime_extra(state: &ShapeBoundsStateRef) -> ShapeRu
 }
 
 /// The public initialize seam for a shape (TS `initializeShape`).
+// flight-lint: allow(conform-extra) D23 I: public initialize seam extracted from create_shape
 pub fn initialize_shape(_out: &mut Shape) {}
 
 /// The construction initializer of `create_shape_data`.
