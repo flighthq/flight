@@ -30,6 +30,7 @@ flight-registry = { workspace = true }
 flight-render = { workspace = true }
 flight-render-gl = { path = "../flight-render-gl" }
 flight-requirement = { workspace = true }
+flight-scene2d-gl = { path = "../flight-scene2d-gl" }
 flight-scene3d = { path = "../flight-scene3d" }
 flight-shading = { workspace = true }
 flight-signals = { workspace = true }
