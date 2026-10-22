@@ -478,3 +478,16 @@ struct ForeignRendererData {
 }
 
 flight_node::impl_renderer_data!(ForeignRendererData);
+
+mod initialize_sprite {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_initializer_of_create_sprite() {
+        let sprite = create_sprite();
+        let mut guard = sprite.write().unwrap();
+        guard.data.texture = Some(texture(10, 10));
+        initialize_sprite(&mut *guard);
+        assert!(guard.data.texture.is_none());
+    }
+}
