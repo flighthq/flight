@@ -8,7 +8,7 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
 
 1. **Translate, don't rewrite (D0).** Do not fix existing drift, in either direction, without a ruling. If a test or a TS signature looks wrong, escalate it rather than editing it.
 2. **Gates.** Every parcel must pass:
-   - `cargo test --workspace`
+   - `cargo test --workspace --features flight-physics3d/stress-tests` (the full run; plain `cargo test --workspace` is the fast default and skips the 11 long Physics3D stress simulations, user 2026-10-22)
    - `cargo run -p cargo-flight-lint -- check --baseline agents/baselines/check.txt`, with no new violations
    - `cargo run -p cargo-flight-lint -- conform <ts-packages> --baseline agents/baselines/conform.txt`, with no new violations
    - `cargo run -p cargo-flight-lint -- manifest --check --crate <frozen crate>` for each frozen crate (currently only flight-geometry; an unscoped check fails on unfrozen crates)
