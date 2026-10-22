@@ -205,6 +205,35 @@ mod destroy_gl_scene3d_runtime {
     }
 }
 
+mod destroy_gl_scene3d_runtime_skybox_ownership {
+    use super::*;
+
+    #[test]
+    fn reaches_the_skybox_program_vao_and_vertex_buffer_which_live_outside_the_runtime() {
+        let mut state = make_gl_scene3d_state();
+        let face: flight_texture::TextureSourceRef =
+            Arc::new(std::sync::RwLock::new(flight_bitmap::create_bitmap(4, 4, None)));
+        let mut cube = flight_texture::create_cube_texture();
+        flight_texture::TextureUvTransform::texture_fields_mut(&mut cube).color_space =
+            flight_texture::TextureColorSpace::Srgb;
+        cube.sources = std::array::from_fn(|_| Some(face.clone()));
+        let mut environment = flight_lighting::create_environment();
+        environment.environment =
+            Some(Arc::new(std::sync::RwLock::new(flight_texture::Texture::Cube(cube))));
+        environment.intensity = 1.0;
+        let camera = crate::gl_test_helper::make_test_camera();
+        render_gl_environment_skybox(&state, &environment, &camera, 1.0);
+
+        let before = (calls_with("delete_buffers").len(), calls_with("delete_vertex_arrays").len());
+        destroy_gl_scene3d_runtime(&mut state);
+
+        // These were the only GPU resources the one-call teardown could not reach directly: they are
+        // cached outside the runtime's own fields, so the runtime has to know to ask.
+        assert!(calls_with("delete_buffers").len() > before.0);
+        assert!(calls_with("delete_vertex_arrays").len() > before.1);
+    }
+}
+
 mod ensure_gl_instance_color_palette {
     use super::*;
 

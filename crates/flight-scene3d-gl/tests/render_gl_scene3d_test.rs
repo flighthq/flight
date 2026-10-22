@@ -70,6 +70,24 @@ fn blended_meshes(state: &flight_render_gl::GlRenderState) -> Vec<NodeRef> {
         .collect();
 }
 
+fn make_emitter(count: usize) -> flight_entity::Ref<flight_particleemitter::ParticleEmitter3D> {
+    let emitter = flight_particleemitter::create_particle_emitter_3d();
+    flight_particleemitter::reserve_particle_emitter_3d(&emitter, count);
+    {
+        let mut guard = emitter.write().unwrap();
+        let data = &mut guard.data;
+        data.particle_count = count;
+        for i in 0..count {
+            data.transforms[i * 4 + 3] = 1.0;
+            data.alphas[i] = 1.0;
+            data.colors[i * 3] = 1.0;
+            data.colors[i * 3 + 1] = 1.0;
+            data.colors[i * 3 + 2] = 1.0;
+        }
+    }
+    return emitter;
+}
+
 mod render_gl_scene3d {
     use super::*;
 
@@ -422,6 +440,36 @@ mod render_gl_scene3d {
         let order = blended_meshes(&state);
         assert!(Arc::ptr_eq(&order[0], &far));
         assert!(Arc::ptr_eq(&order[1], &near));
+    }
+
+    #[test]
+    fn draws_a_particle_emitter3d_node_in_the_scene_via_the_single_render_gl_scene3d_call() {
+        let mut state = make_gl_scene3d_state();
+        register_gl_standard_pbr_material(&mut state);
+        register_gl_particle_emitter3d_pass(&mut state);
+        let scene = make_test_scene();
+        // An emitter carries no geometry, so it never appears in the visible-mesh list; the registered
+        // emitter pass is the only drawElementsInstanced caller.
+        let emitter: NodeRef = make_emitter(2);
+        flight_node::add_node_child(&scene, &emitter);
+
+        render(&mut state, &scene);
+
+        assert!(!calls_with("draw_elements_instanced").is_empty());
+    }
+
+    #[test]
+    fn draws_no_emitter_pass_when_the_particle_pass_is_not_registered() {
+        // The tree-shaking contract: an unregistered pass is not dispatched at all.
+        let mut state = make_gl_scene3d_state();
+        register_gl_standard_pbr_material(&mut state);
+        let scene = make_test_scene();
+        let emitter: NodeRef = make_emitter(2);
+        flight_node::add_node_child(&scene, &emitter);
+
+        render(&mut state, &scene);
+
+        assert!(calls_with("draw_elements_instanced").is_empty());
     }
 
     #[test]
