@@ -113,6 +113,7 @@ pub type WgpuScene3DCustomShaderGuard =
 pub type WgpuScene3DForwardLightSelectionGuard =
     Arc<dyn Fn(&Scene3DLightBlock) + Send + Sync>;
 
+#[derive(Clone)]
 pub struct WgpuMeshPipeline {
     pub has_ibl_group: bool,
     pub has_pbr_sample_group: bool,
@@ -157,6 +158,7 @@ pub struct WgpuScene3DDrawEntry {
     pub world_matrix: Matrix4,
 }
 
+#[derive(Clone)]
 pub struct WgpuScene3DLayouts {
     pub draw_bind_group_layout: wgpu::BindGroupLayout,
     pub frame_bind_group_layout: wgpu::BindGroupLayout,

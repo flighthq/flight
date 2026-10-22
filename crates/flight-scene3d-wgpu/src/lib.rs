@@ -11,6 +11,7 @@ mod types;
 mod wgpu_custom_material_abi;
 mod wgpu_mesh_fragment_tail;
 mod wgpu_mesh_material_registry;
+mod wgpu_mesh_pipeline;
 mod wgpu_mesh_upload;
 mod wgpu_scene3d_runtime;
 mod wgpu_scene3d_time;
