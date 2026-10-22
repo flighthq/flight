@@ -1376,9 +1376,12 @@ pub struct WrappedDiffusePbrExtension {
 
 // ── ColorScaleBias ───────────────────────────────────────────────────────────
 
+/// A per-channel color scale and bias (TS `ColorScaleBias`). It is also a `MaterialData` value (TS
+/// `MaterialData extends Entity {}` admits it structurally), so a per-quad or per-tile material-data
+/// entry can carry one.
 #[derive(Clone, Debug)]
 pub struct ColorScaleBias {
-    runtime: EntityRuntimeSlot,
+    fields: MaterialDataFields,
     pub red_scale: f32,
     pub green_scale: f32,
     pub blue_scale: f32,
@@ -1634,6 +1637,31 @@ impl flight_entity::Entity for TintMaterialData {
 
     fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
         return flight_entity::Entity::entity_runtime_mut(&mut self.fields);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family composition: Entity runtime delegates through MaterialDataFields base
+impl flight_entity::Entity for ColorScaleBias {
+    fn entity_runtime(&self) -> &EntityRuntimeSlot {
+        return flight_entity::Entity::entity_runtime(&self.fields);
+    }
+
+    fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot {
+        return flight_entity::Entity::entity_runtime_mut(&mut self.fields);
+    }
+}
+
+// flight-lint: allow(sugar-delegates) D16 open-family composition: MaterialData trait accessor for ColorScaleBias (TS ColorScaleBias is structurally a MaterialData)
+impl MaterialData for ColorScaleBias {
+    fn as_any(&self) -> &dyn std::any::Any {
+        return self;
+    }
+    fn material_data_fields(&self) -> &MaterialDataFields {
+        return &self.fields;
+    }
+
+    fn material_data_fields_mut(&mut self) -> &mut MaterialDataFields {
+        return &mut self.fields;
     }
 }
 
@@ -2526,7 +2554,7 @@ flight_entity::impl_entity!(WrappedDiffusePbrExtension);
 impl Default for ColorScaleBias {
     fn default() -> Self {
         return Self {
-            runtime: EntityRuntimeSlot::default(),
+            fields: MaterialDataFields::default(),
             red_scale: 1.0,
             green_scale: 1.0,
             blue_scale: 1.0,
@@ -2539,4 +2567,3 @@ impl Default for ColorScaleBias {
     }
 }
 
-flight_entity::impl_entity!(ColorScaleBias);

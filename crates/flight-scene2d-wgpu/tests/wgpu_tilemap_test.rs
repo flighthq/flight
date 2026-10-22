@@ -76,4 +76,47 @@ mod wgpu_tilemap_renderer {
         assert_eq!((data[second + 4], data[second + 5]), (16.0, 16.0));
         submit_wgpu_frame(&mut state);
     }
+
+    // Per-tile material data holds ColorScaleBias values through the shared MaterialData alias (TS
+    // `Tilemap.materialData: (MaterialData | null)[]`, read as `ColorScaleBias | TintMaterialData`).
+    #[test]
+    fn submit_takes_a_per_tile_color_scale_bias_entry_as_that_tiles_color_adjustment() {
+        let mut state = create_test_state_in_pass();
+        register_wgpu_image_texture_resolver(&mut state);
+        register_wgpu_standard_material(&mut state);
+        register_wgpu_color_adjustment_material_feature(&mut state);
+        let tilemap = flight_tilemap::create_tilemap();
+        {
+            let mut tilemap = tilemap.write().unwrap();
+            tilemap.data.atlas = Some(create_test_atlas(
+                32,
+                32,
+                &[(0.0, 0.0, 16.0, 16.0, TextureAtlasRotation::None)],
+            ));
+            tilemap.data.columns = 2;
+            tilemap.data.rows = 1;
+            tilemap.data.tile_width = 16.0;
+            tilemap.data.tile_height = 16.0;
+            tilemap.data.tiles = vec![0, 0];
+            let entry: flight_entity::Ref<dyn flight_materials::MaterialData> =
+                std::sync::Arc::new(std::sync::RwLock::new(create_test_color_scale_bias(
+                    0.5, 0.5, 0.5, 1.0, 0.1, 0.0, 0.0, 0.0,
+                )));
+            tilemap.data.material_data = Some(vec![None, Some(entry)]);
+        }
+        let node: NodeRef = tilemap;
+        let mut proxies = prepare_test_scene(&mut state, &node);
+        let proxy = get_or_create_render_proxy_2d(&mut state, &mut proxies, &node);
+
+        (WGPU_TILEMAP_RENDERER.submit)(&mut state, proxy);
+
+        let runtime = get_wgpu_render_state_runtime(&state);
+        let data = runtime
+            .quad_batch_writer_color_scale_bias_data
+            .as_ref()
+            .expect("a per-instance scale/bias stream");
+        assert_eq!(&data[0..8], &[1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0]);
+        assert_eq!(&data[8..16], &[0.5, 0.5, 0.5, 1.0, 0.1, 0.0, 0.0, 0.0]);
+        submit_wgpu_frame(&mut state);
+    }
 }

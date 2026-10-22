@@ -8,7 +8,7 @@ use flight_textureatlas::{TextureAtlas, create_texture_atlas};
 use flight_tilemap::create_tilemap;
 
 use crate::gl_test_helper::{
-    calls_with, count_calls, create_gl_state, make_atlas, make_scene2d_proxy,
+    calls_with, count_calls, create_gl_state, make_atlas, make_color_scale_bias, make_scene2d_proxy,
 };
 
 fn create_atlas_gl_state() -> GlRenderState {
@@ -133,5 +133,35 @@ mod gl_tilemap_renderer {
         let draws = calls_with("draw_elements_instanced");
         assert_eq!(draws.len(), 1);
         assert_eq!(draws[0].integers[4], 2);
+    }
+
+    // Per-tile material data holds ColorScaleBias values through the shared MaterialData alias (TS
+    // `Tilemap.materialData: (MaterialData | null)[]`, read as `ColorScaleBias | TintMaterialData`).
+    #[test]
+    fn takes_a_per_tile_color_scale_bias_entry_as_that_tiles_color_adjustment() {
+        let mut state = create_atlas_gl_state();
+        register_gl_color_adjustment_material_feature(&mut state);
+        let node = make_tilemap_node(default_atlas(), 2, 1, vec![0, 0]);
+        {
+            let mut guard = node.write().unwrap();
+            let tilemap = guard
+                .as_any_mut()
+                .downcast_mut::<flight_tilemap::Tilemap>()
+                .unwrap();
+            // A nonzero bias keeps the scale/bias form (a pure scale would pack to a tint).
+            let entry: Ref<dyn flight_materials::MaterialData> = Arc::new(RwLock::new(
+                make_color_scale_bias(0.5, 0.5, 0.5, 1.0, 0.1, 0.0, 0.0, 0.0),
+            ));
+            tilemap.data.material_data = Some(vec![None, Some(entry)]);
+        }
+        let proxy = make_scene2d_proxy(&mut state, node);
+        (GL_TILEMAP_RENDERER.submit)(&mut state, &proxy);
+        let runtime = state.gl_runtime.borrow();
+        let data = runtime
+            .quad_batch_writer_color_scale_bias_data
+            .as_ref()
+            .unwrap();
+        assert_eq!(&data[0..8], &[1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0]);
+        assert_eq!(&data[8..16], &[0.5, 0.5, 0.5, 1.0, 0.1, 0.0, 0.0, 0.0]);
     }
 }

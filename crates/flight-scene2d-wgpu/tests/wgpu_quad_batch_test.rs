@@ -121,4 +121,43 @@ mod wgpu_quad_batch_renderer {
         ));
         submit_wgpu_frame(&mut state);
     }
+
+    // Per-quad material data holds ColorScaleBias values through the shared MaterialData alias (TS
+    // `QuadBatch.materialData: (MaterialData | null)[]`, read as `ColorScaleBias | TintMaterialData`).
+    #[test]
+    fn submit_takes_a_per_quad_color_scale_bias_entry_as_that_quads_color_adjustment() {
+        let mut state = create_test_state_in_pass();
+        register_wgpu_image_texture_resolver(&mut state);
+        register_wgpu_standard_material(&mut state);
+        register_wgpu_color_adjustment_material_feature(&mut state);
+        let batch = rotated_batch(TextureAtlasRotation::None);
+        {
+            let mut guard = batch.write().unwrap();
+            let batch = guard
+                .as_any_mut()
+                .downcast_mut::<flight_quadbatch::QuadBatch>()
+                .unwrap();
+            let entry: flight_entity::Ref<dyn flight_materials::MaterialData> =
+                std::sync::Arc::new(std::sync::RwLock::new(create_test_color_scale_bias(
+                    0.5, 0.25, 1.0, 1.0, 0.1, 0.0, 0.0, 0.0,
+                )));
+            batch.data.material_data = Some(vec![Some(entry)]);
+        }
+        let mut proxies = prepare_test_scene(&mut state, &batch);
+        let proxy = get_or_create_render_proxy_2d(&mut state, &mut proxies, &batch);
+
+        (WGPU_QUAD_BATCH_RENDERER.submit)(&mut state, proxy);
+
+        let runtime = get_wgpu_render_state_runtime(&state);
+        let Some(WgpuColorScaleBiasInput::ColorScaleBias(recorded)) =
+            &runtime.quad_batch_writer_uniform_color_scale_bias
+        else {
+            panic!("expected the per-quad ColorScaleBias to be recorded");
+        };
+        assert_eq!(
+            (recorded.red_scale, recorded.green_scale, recorded.red_bias),
+            (0.5, 0.25, 0.1)
+        );
+        submit_wgpu_frame(&mut state);
+    }
 }

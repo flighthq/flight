@@ -879,12 +879,16 @@ fn get_color_scale(value: &GlColorAdjustmentData, channel: usize) -> f32 {
 }
 
 /// A per-instance material-data entry read as a color adjustment (TS casts the entry to
-/// `ColorScaleBias | TintMaterialData | number[]`). Only a tint record carries one natively.
+/// `ColorScaleBias | TintMaterialData | number[]`): a `ColorScaleBias` entry takes the scale/bias
+/// path, a tint record the packed-tint path, and any other material data carries none.
 pub(crate) fn get_gl_material_data_color_adjustment(
     material_data: &dyn MaterialData,
 ) -> Option<GlColorAdjustmentData> {
-    return material_data
-        .as_any()
+    let entry = material_data.as_any();
+    if let Some(color_scale_bias) = entry.downcast_ref::<ColorScaleBias>() {
+        return Some(to_gl_color_scale_bias_data(color_scale_bias));
+    }
+    return entry
         .downcast_ref::<TintMaterialData>()
         .map(|tint| GlColorAdjustmentData::TintMaterialData(tint.tint));
 }

@@ -7,6 +7,32 @@ use flight_materials::standard_material::create_standard_material;
 use flight_materials::*;
 use std::sync::{Arc, Mutex, RwLock};
 
+mod color_scale_bias {
+    use super::*;
+
+    #[test]
+    fn fills_a_material_data_slot_keeping_its_identity() {
+        let mut value = create_color_scale_bias();
+        value.red_scale = 0.5;
+        let concrete: Ref<ColorScaleBias> = Arc::new(RwLock::new(value));
+        let family_ref: Ref<dyn MaterialData> = concrete.clone();
+        let slots: Vec<Option<Ref<dyn MaterialData>>> = vec![None, Some(family_ref.clone())];
+        assert_eq!(slots.len(), 2);
+        assert_eq!(concrete.read().unwrap().red_scale, 0.5);
+        assert_eq!(
+            Arc::as_ptr(&concrete) as *const (),
+            Arc::as_ptr(&family_ref) as *const ()
+        );
+    }
+
+    #[test]
+    fn entity_uid_round_trips() {
+        let mut value = create_color_scale_bias();
+        set_entity_uid(&mut value, "csb_1".to_string());
+        assert_eq!(get_entity_uid(&mut value), "csb_1");
+    }
+}
+
 mod create_material_conversion_context {
     use super::*;
 

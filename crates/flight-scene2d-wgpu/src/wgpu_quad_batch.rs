@@ -4,7 +4,7 @@
 
 use flight_entity::Ref;
 use flight_geometry::{Matrix, create_matrix};
-use flight_materials::{MaterialData, TintMaterialData};
+use flight_materials::{ColorScaleBias, MaterialData, TintMaterialData};
 use flight_quadbatch::{QuadBatch, QuadTransformType};
 use flight_render::{
     BatchFormat, NodeRenderer, RenderProxy2D, SCENE2D_WORKING_COLOR_SPACE, noop_renderer_data,
@@ -168,14 +168,20 @@ fn submit_wgpu_quad_batch(
     get_wgpu_render_state_runtime_mut(state).quad_batch_writer_count += draw_count;
 }
 
-// A per-item material data entry as a recordable color adjustment: compact tint data is the one
-// per-item adjustment form; any other material data carries none.
+// A per-item material data entry as a recordable color adjustment (TS casts the entry to
+// `ColorScaleBias | TintMaterialData | number[]`): a `ColorScaleBias` entry takes the scale/bias path,
+// a tint record the packed-tint path, and any other material data carries none.
 pub(crate) fn to_wgpu_color_adjustment(
     entry: &Ref<dyn MaterialData>,
 ) -> Option<WgpuColorScaleBiasInput> {
-    let entry = entry.read().unwrap();
+    let guard = entry.read().unwrap();
+    let entry = guard.as_any();
+    if let Some(color_scale_bias) = entry.downcast_ref::<ColorScaleBias>() {
+        return Some(WgpuColorScaleBiasInput::ColorScaleBias(
+            color_scale_bias.clone(),
+        ));
+    }
     return entry
-        .as_any()
         .downcast_ref::<TintMaterialData>()
         .map(|tint| WgpuColorScaleBiasInput::TintMaterialData(tint.clone()));
 }
