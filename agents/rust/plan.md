@@ -75,7 +75,7 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
   - the native GL and wgpu render paths (before render, L11);
   - platform feature packages carry capability contracts only.
 
-- **Host GL / wgpu groups (principal, 2026-10-21):** flight-host lands without the `gl` and `wgpu` capability groups, `getHostWgpu` / `hasHostWgpu` and the `wgpu.context` coverage row (a tracked pending delta, not a waiver). They are added when render-gl / render-wgpu land, as part of those packages' acceptance; the owner of `HostGlCapability` / `HostWgpuCapability` is decided then under D8 (likely a feature-gated home in the host-capability crate, since host and the backends both name them).
+- **Host GL / wgpu capabilities (user correction, 2026-10-21):** `HostGlCapability` and `HostWgpuCapability` are drawable/context capability contracts, like `HostCanvasCapability`, so they live in **flight-surface** beside it (TS users: surface, app, host, the backends), not in render-gl / render-wgpu. Dependency direction: host → surface ← render-gl / render-wgpu; host never depends on a renderer. The contexts they return (`GlContext`, the wgpu device / queue / surface context) are **opaque platform handles** (`{provider, handle: Arc<dyn Any + Send + Sync>}`, as `CanvasRenderingContext2D`), which render-gl / render-wgpu narrow to `glow::Context` / `wgpu::*`; surface takes no glow or wgpu dependency. GL's thread-bound context is built by render-gl on the GL thread from the Send handle (D17). The type-owner table's render-gl / render-wgpu rows for these two are superseded.
 - **Final step (D21):** create `flight-sdk` (the public-lane re-export meta crate) after all waves land.
 
 ## Post-port design backlog (user, 2026-10-21; not in scope for this pass)

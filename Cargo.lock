@@ -372,6 +372,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-gizmo"
+version = "0.6.0"
+dependencies = [
+ "flight-camera",
+ "flight-entity",
+ "flight-geometry",
+ "flight-interaction",
+ "flight-math",
+ "flight-node",
+ "flight-scene2d",
+ "flight-selection",
+ "flight-shape",
+ "flight-signals",
+]
+
+[[package]]
 name = "flight-glyphatlas"
 version = "0.6.0"
 dependencies = [
@@ -789,19 +805,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "flight-picking"
-version = "0.6.0"
-dependencies = [
- "flight-camera",
- "flight-entity",
- "flight-geometry",
- "flight-materials",
- "flight-meshgeometry",
- "flight-node",
- "flight-scene3d",
-]
-
-[[package]]
 name = "flight-physics3d"
 version = "0.6.0"
 dependencies = [
@@ -813,6 +816,19 @@ dependencies = [
  "flight-node",
  "flight-scene3d",
  "flight-spatial",
+]
+
+[[package]]
+name = "flight-picking"
+version = "0.6.0"
+dependencies = [
+ "flight-camera",
+ "flight-entity",
+ "flight-geometry",
+ "flight-materials",
+ "flight-meshgeometry",
+ "flight-node",
+ "flight-scene3d",
 ]
 
 [[package]]
