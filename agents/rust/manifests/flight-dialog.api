@@ -1,5 +1,6 @@
 src/contract.rs: pub use super::dialog::*;
 src/contract.rs: pub use super::file_dialog::*;
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::media_dialog::*;
 src/contract.rs: pub use super::types::*;
 src/dialog.rs: impl HostMessageDialogCapability :: fn show_confirm_dialog(&self, options: &MessageDialogOptions,) -> DialogProviderFuture<bool>
@@ -32,6 +33,7 @@ src/file_dialog.rs: pub fn show_open_directory_dialog(host_directory_open_dialog
 src/file_dialog.rs: pub fn show_open_file_dialog(host_file_open_dialog: &HostFileOpenDialogCapability, options: &OpenFileDialogOptions,) -> DialogProviderFuture<FileOpenDialogResult>
 src/file_dialog.rs: pub fn show_save_file_dialog(host_file_save_dialog: &HostFileSaveDialogCapability, options: &SaveFileDialogOptions,) -> DialogProviderFuture<FileSaveDialogResult>
 src/file_dialog.rs: pub trait FileDialogHandleMethods { fn get_file_dialog_handle_operations(&self) -> Option<FileDialogHandleOperations>; }
+src/host_explain.rs: pub fn explain_host_dialog_capabilities(out: &mut HostExplanation, dialog: &HostDialogCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::CapturePhotoDialogOptions;
 src/lib.rs: pub use contract::CaptureVideoDialogOptions;

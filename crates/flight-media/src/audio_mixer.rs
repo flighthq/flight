@@ -1,6 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, allocate_entity};
+use flight_host::AudioDeviceHandle;
 use flight_math::clamp;
 
 use crate::audio_channel::{

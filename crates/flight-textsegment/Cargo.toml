@@ -11,6 +11,7 @@ name = "tests"
 path = "tests/main.rs"
 
 [dependencies]
+flight-host = { workspace = true }
 flight-log = { workspace = true }
 unicode-segmentation = "1.11"
 

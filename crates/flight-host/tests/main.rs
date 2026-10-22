@@ -1,6 +1,8 @@
-mod enable_host_guards_test;
-mod fixtures;
-mod host_explain_test;
-mod host_groups;
-mod host_query_test;
-mod host_test;
+mod backend_explanation_test;
+mod backend_operation_explanation_test;
+mod host_explanation_test;
+mod host_spawn_capability_test;
+mod host_timer_capability_test;
+mod numeric_handles_test;
+mod platform_handles_test;
+mod provider_ref_test;

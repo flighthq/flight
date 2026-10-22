@@ -13,4 +13,5 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
 }
 
 mod enable_tray_guards_test;
+mod host_explain_test;
 mod tray_test;

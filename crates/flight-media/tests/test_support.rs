@@ -2,9 +2,11 @@ use std::sync::{Arc, Mutex, RwLock, Weak};
 use std::task::{Context, Poll, Waker};
 
 use flight_audio::{AudioBuffer, AudioResource, create_audio_resource};
-use flight_bitmap::HostImageSource;
 use flight_entity::{FlightError, FlightErrorKind, Ref};
-use flight_hostcapability::{HostSpawnCapability, ProviderRef};
+use flight_host::{
+    AudioBufferHandle, AudioBusNodeHandle, AudioDeviceHandle, AudioMixerGraphHandle,
+    AudioSourceHandle, HostImageSource, HostSpawnCapability, ProviderRef,
+};
 use flight_video::{HostVideoCapability, VideoResource, create_video_resource};
 
 use super::*;

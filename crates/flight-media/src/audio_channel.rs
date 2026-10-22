@@ -2,6 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use flight_audio::{AudioChannelState, AudioPlayOptions, AudioResource};
 use flight_entity::Ref;
+use flight_host::{AudioBufferHandle, AudioDeviceHandle, AudioSourceHandle};
 use flight_math::clamp;
 use flight_signals::{create_signal, emit_signal};
 

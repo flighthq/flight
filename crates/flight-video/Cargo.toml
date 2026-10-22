@@ -15,8 +15,9 @@ flight-bitmap = { path = "../flight-bitmap" }
 flight-buffer = { path = "../flight-buffer" }
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
-flight-hostcapability = { workspace = true }
+flight-host = { workspace = true }
 flight-image = { workspace = true }
+flight-log = { workspace = true }
 flight-stream = { path = "../flight-stream" }
 flight-texture = { workspace = true }
 

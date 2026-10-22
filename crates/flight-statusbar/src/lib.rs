@@ -1,3 +1,4 @@
+mod host_explain;
 mod statusbar;
 mod types;
 

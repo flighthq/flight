@@ -2,9 +2,9 @@ use std::future::ready;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
-use flight_bitmap::HostImageSource;
 use flight_buffer::{Blob, create_blob};
 use flight_entity::{FlightError, FlightErrorKind};
+use flight_host::HostImageSource;
 use flight_stream::{
     AbortSignal, abort_controller, create_abort_controller, is_abort_signal_aborted,
 };

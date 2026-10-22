@@ -1,4 +1,5 @@
 mod enable_text_shaper_guards_test;
+mod host_explain_test;
 mod text_shaper_cache_test;
 mod text_shaper_cluster_test;
 mod text_shaper_fixture;

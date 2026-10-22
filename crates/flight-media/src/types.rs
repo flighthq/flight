@@ -1,31 +1,13 @@
 use std::sync::{Arc, Weak};
 
 use flight_audio::{AudioChannelState, AudioResource};
-use flight_bitmap::HostImageSource;
 use flight_entity::{EntityRuntimeSlot, Ref};
-use flight_hostcapability::{HostSpawnCapability, ProviderRef};
+use flight_host::{
+    AudioBufferHandle, AudioBusNodeHandle, AudioDeviceHandle, AudioMixerGraphHandle,
+    AudioSourceHandle, HostImageSource, HostSpawnCapability, ProviderRef,
+};
 use flight_signals::Signal;
 use flight_video::{HostVideoCapability, VideoChannelState, VideoResource};
-
-/// Opaque host buffer identity (TS branded `AudioBufferHandle`). Zero is the invalid sentinel.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub struct AudioBufferHandle(pub i32);
-
-/// Opaque host device identity (TS branded `AudioDeviceHandle`).
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub struct AudioDeviceHandle(pub i32);
-
-/// Opaque host source identity (TS branded `AudioSourceHandle`). Zero is the invalid sentinel.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub struct AudioSourceHandle(pub i32);
-
-/// Opaque host mixer-bus node identity (TS branded `AudioBusNodeHandle`).
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub struct AudioBusNodeHandle(pub i32);
-
-/// Opaque host mixer graph identity (TS branded `AudioMixerGraphHandle`).
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub struct AudioMixerGraphHandle(pub i32);
 
 /// One host source-ended callback.
 pub type AudioSourceEndedListener = Arc<dyn Fn() + Send + Sync>;

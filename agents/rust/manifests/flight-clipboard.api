@@ -53,7 +53,9 @@ src/clipboard_watch.rs: pub fn dispose_clipboard_watch(watch: &mut ClipboardWatc
 src/clipboard_watch.rs: pub fn initialize_clipboard_watch(out: &mut ClipboardWatch)
 src/contract.rs: pub use crate::clipboard::*;
 src/contract.rs: pub use crate::clipboard_watch::*;
+src/contract.rs: pub use crate::host_explain::*;
 src/contract.rs: pub use crate::types::*;
+src/host_explain.rs: pub fn explain_host_clipboard_capabilities(out: &mut HostExplanation, clipboard: &HostClipboardCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::CLIPBOARD_FORMAT_BOOKMARK;
 src/lib.rs: pub use contract::CLIPBOARD_FORMAT_HTML;

@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use flight_bitmap::HostImageSource;
+use flight_host::HostImageSource;
 
 use crate::types::*;
 

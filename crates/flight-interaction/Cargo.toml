@@ -33,5 +33,8 @@ flight-texture = { path = "../flight-texture" }
 flight-textureatlas = { path = "../flight-textureatlas" }
 flight-tilemap = { path = "../flight-tilemap" }
 
+[dev-dependencies]
+flight-host = { path = "../flight-host" }
+
 [lints]
 workspace = true

@@ -14,7 +14,7 @@ path = "tests/main.rs"
 flight-buffer = { workspace = true }
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
-flight-hostcapability = { workspace = true }
+flight-host = { workspace = true }
 flight-path = { workspace = true }
 
 [lints]

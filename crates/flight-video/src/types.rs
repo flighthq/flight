@@ -3,10 +3,9 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 
-use flight_bitmap::HostImageSource;
 use flight_buffer::{ArrayBuffer, Blob};
-use flight_entity::{EntityRuntimeSlot, FlightError, Uint8Array, Unknown};
-use flight_hostcapability::ProviderRef;
+use flight_entity::{EntityRuntimeSlot, FlightError, Uint8Array};
+use flight_host::{HostImageSource, MediaStreamHandle, ProviderRef};
 use flight_stream::AbortSignal;
 
 /// A provider Promise (D15). `Err` is its rejection, which reaches the caller unchanged.
@@ -104,7 +103,8 @@ pub struct HostVideoCapability {
     pub provider: ProviderRef,
     pub add_ended_listener:
         Option<Arc<dyn Fn(&Arc<HostImageSource>, VideoEndedListener) + Send + Sync>>,
-    pub attach_stream: Option<Arc<dyn Fn(&Unknown) -> Option<Arc<HostImageSource>> + Send + Sync>>,
+    pub attach_stream:
+        Option<Arc<dyn Fn(&MediaStreamHandle) -> Option<Arc<HostImageSource>> + Send + Sync>>,
     pub can_play_type: Arc<dyn Fn(&str) -> bool + Send + Sync>,
     pub create_object_url: Option<Arc<dyn Fn(&Arc<Blob>) -> String + Send + Sync>>,
     pub create_video_element: Option<Arc<dyn Fn() -> Option<Arc<HostImageSource>> + Send + Sync>>,

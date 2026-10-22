@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use flight_entity::Unknown;
+use flight_host::NativeSurfaceHandle;
 use flight_surface::contract::*;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -8,9 +8,16 @@ struct Drawable {
     id: i32,
 }
 
-fn drawable(id: i32) -> (Arc<Drawable>, Unknown) {
+fn native(handle: Arc<dyn std::any::Any + Send + Sync>) -> Option<NativeSurfaceHandle> {
+    return Some(NativeSurfaceHandle {
+        provider: Arc::new(()),
+        handle,
+    });
+}
+
+fn drawable(id: i32) -> (Arc<Drawable>, Option<NativeSurfaceHandle>) {
     let value = Arc::new(Drawable { id });
-    return (value.clone(), Some(value));
+    return (value.clone(), native(value));
 }
 
 mod allocate_surface {
@@ -23,7 +30,10 @@ mod allocate_surface {
         let borrowed = surface.read().unwrap();
         assert!(flight_entity::has_entity_runtime(&*borrowed));
         let stored = get_surface_handle(&*borrowed).expect("handle is stored");
-        assert_eq!(stored.downcast_ref::<Drawable>(), Some(&Drawable { id: 1 }));
+        assert_eq!(
+            stored.handle.downcast_ref::<Drawable>(),
+            Some(&Drawable { id: 1 })
+        );
     }
 
     #[test]
@@ -42,12 +52,13 @@ mod allocate_surface {
 
     #[test]
     fn accepts_any_host_representation_including_non_object_and_null_handles() {
-        let number_handle: Unknown = Some(Arc::new(7_i32));
+        let number_handle = native(Arc::new(7_i32));
         let surface: flight_entity::Ref<SurfaceBase> = allocate_surface(number_handle);
         let borrowed = surface.read().unwrap();
         assert_eq!(
             get_surface_handle(&*borrowed)
                 .expect("number handle")
+                .handle
                 .downcast_ref::<i32>(),
             Some(&7_i32)
         );
@@ -65,7 +76,7 @@ mod get_surface_handle {
         let surface: flight_entity::Ref<SurfaceBase> = allocate_surface(handle);
         let read = get_surface_handle(&*surface.read().unwrap()).expect("handle is readable");
         let expected: Arc<dyn std::any::Any + Send + Sync> = original.clone();
-        assert!(Arc::ptr_eq(&read, &expected));
+        assert!(Arc::ptr_eq(&read.handle, &expected));
     }
 }
 
@@ -82,6 +93,6 @@ mod get_surface_runtime {
             .as_ref()
             .expect("runtime handle");
         let expected: Arc<dyn std::any::Any + Send + Sync> = original.clone();
-        assert!(Arc::ptr_eq(stored, &expected));
+        assert!(Arc::ptr_eq(&stored.handle, &expected));
     }
 }

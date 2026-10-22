@@ -4,6 +4,7 @@ src/compress.rs: pub static SDK_HOST_COMPRESS_DEFLATE: LazyLock<HostCompressDefl
 src/contract.rs: pub use super::compress::*;
 src/contract.rs: pub use super::deflate::*;
 src/contract.rs: pub use super::deflate_format::*;
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::lzma::*;
 src/contract.rs: pub use super::lzma_compress::*;
 src/contract.rs: pub use super::types::*;
@@ -14,6 +15,8 @@ src/deflate_format.rs: pub const DISTANCE_EXTRA: [i32; 30]
 src/deflate_format.rs: pub const LENGTH_BASE: [i32; 29]
 src/deflate_format.rs: pub const LENGTH_EXTRA: [i32; 29]
 src/deflate_format.rs: pub fn compute_adler32(input: &Uint8Array) -> u32
+src/host_explain.rs: pub fn explain_host_compress_capabilities(out: &mut HostExplanation, compress: &HostCompressCapabilities,)
+src/host_explain.rs: pub fn explain_host_decompress_capabilities(out: &mut HostExplanation, decompress: &HostDecompressCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::Compression;
 src/lib.rs: pub use contract::CompressionFraming;

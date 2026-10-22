@@ -1,5 +1,7 @@
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::platform::*;
 src/contract.rs: pub use super::types::*;
+src/host_explain.rs: pub fn explain_host_platform_capabilities(out: &mut HostExplanation, platform: &HostPlatformCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::HostPlatformCapabilities;
 src/lib.rs: pub use contract::HostPlatformCapability;

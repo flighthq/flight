@@ -1,8 +1,8 @@
 use std::any::Any;
 use std::sync::{Arc, Mutex};
 
-use flight_bitmap::HostImageSource;
 use flight_geometry::{create_matrix3, create_vector2};
+use flight_host::HostImageSource;
 use flight_image::{
     IMAGE_TEXTURE_SOURCE_KIND, ImageResource, create_image_resolver_state, create_image_resource,
 };

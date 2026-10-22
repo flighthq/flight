@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::contract::*;
 use flight_entity::{Ref, allocate_entity};
-use flight_hostcapability::ProviderRef;
+use flight_host::{NativeWindowHandle, ProviderRef};
 use flight_input::{
     HostInputDropFileCapability, HostInputFocusCapability, HostInputPointerLockCapability,
     InputIngressRelease, InputPointerLockExitFuture, InputPointerLockExitOutcome,

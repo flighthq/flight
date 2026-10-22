@@ -1,4 +1,5 @@
 mod log;
+mod warn_missing_host_capability;
 
 pub mod contract;
 

@@ -1,5 +1,7 @@
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::notification::*;
 src/contract.rs: pub use super::types::*;
+src/host_explain.rs: pub fn explain_host_notification_capabilities(out: &mut HostExplanation, notification: &HostNotificationCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::HostNotificationActionCapability;
 src/lib.rs: pub use contract::HostNotificationActiveListCapability;
@@ -375,4 +377,4 @@ src/types.rs: pub type NotificationScheduleFuture = Pin<Box<dyn Future<Output = 
 src/types.rs: pub type NotificationSubscriptionAttachFuture = Pin<Box<dyn Future<Output = NotificationSubscriptionAttachOutcome> + Send>>;
 src/types.rs: pub type NotificationSubscriptionDetachFuture = Pin<Box<dyn Future<Output = NotificationSubscriptionDetachOutcome> + Send>>;
 src/types.rs: pub type NotificationSubscriptionDisposeFuture = Pin<Box<dyn Future<Output = NotificationSubscriptionDisposeOutcome> + Send>>;
-src/types.rs: pub use flight_hostcapability::ProviderRef;
+src/types.rs: pub use flight_host::ProviderRef;

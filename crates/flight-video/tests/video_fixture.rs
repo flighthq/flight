@@ -2,7 +2,7 @@ use std::future::Future;
 use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Waker};
 
-use flight_bitmap::HostImageSource;
+use flight_host::HostImageSource;
 use flight_video::contract::*;
 
 /// What a fake host recorded: teardown order, released elements and revoked URLs.

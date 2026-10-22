@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use flight_host::HostImageSource;
 use flight_video::{
     VideoChannelState, VideoPlayOptions, create_video_resource, destroy_video_resource,
 };
@@ -9,7 +10,7 @@ use super::*;
 fn channel() -> (
     Arc<std::sync::Mutex<VideoMockState>>,
     flight_video::HostVideoCapability,
-    flight_hostcapability::HostSpawnCapability,
+    flight_host::HostSpawnCapability,
     flight_entity::Ref<flight_video::VideoResource>,
     flight_entity::Ref<VideoChannel>,
 ) {
@@ -23,7 +24,7 @@ fn channel() -> (
 
 fn listener_count(
     state: &Arc<std::sync::Mutex<VideoMockState>>,
-    element: &Arc<flight_bitmap::HostImageSource>,
+    element: &Arc<flight_host::HostImageSource>,
 ) -> usize {
     let element = Arc::downgrade(element);
     return state
@@ -37,7 +38,7 @@ fn listener_count(
 
 fn listener_for(
     state: &Arc<std::sync::Mutex<VideoMockState>>,
-    element: &Arc<flight_bitmap::HostImageSource>,
+    element: &Arc<flight_host::HostImageSource>,
 ) -> flight_video::VideoEndedListener {
     let element = Arc::downgrade(element);
     return state

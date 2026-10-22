@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex, RwLock};
 
 use flight_audio::contract::*;
 use flight_entity::{Ref, Uint8Array};
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_stream::{abort_controller, create_abort_controller};
 
 fn bytes(values: &[u8]) -> Ref<Box<Uint8Array>> {

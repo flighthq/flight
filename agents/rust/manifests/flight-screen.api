@@ -1,5 +1,7 @@
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::screen::*;
 src/contract.rs: pub use super::types::*;
+src/host_explain.rs: pub fn explain_host_screen_capabilities(out: &mut HostExplanation, screen: &HostScreenCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::HostScreenCapabilities;
 src/lib.rs: pub use contract::HostScreenChangeCapability;

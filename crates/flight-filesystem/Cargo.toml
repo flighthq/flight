@@ -13,7 +13,7 @@ path = "tests/main.rs"
 [dependencies]
 flight-dialog = { path = "../flight-dialog" }
 flight-entity = { workspace = true }
-flight-hostcapability = { workspace = true }
+flight-host = { workspace = true }
 flight-stream = { path = "../flight-stream" }
 futures = "0.3"
 

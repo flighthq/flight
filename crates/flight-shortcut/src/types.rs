@@ -8,7 +8,7 @@ use flight_entity::{EntityRuntimeSlot, Ref};
 use flight_signals::Signal;
 
 pub use flight_entity::{Record, Unknown};
-pub use flight_hostcapability::ProviderRef;
+pub use flight_host::ProviderRef;
 
 /// A keyboard accelerator in canonical normalized form (TS `Accelerator`).
 pub type Accelerator = String;

@@ -3,7 +3,7 @@ use crate::enums::{
 };
 use crate::resource_loader::ResourceLoaderInternal;
 use flight_entity::{EntityRuntimeSlot, Ref, Unknown};
-use flight_hostcapability::{HostSpawnCapability, HostTimerCapability};
+use flight_host::{HostSpawnCapability, HostTimerCapability};
 use flight_net::NetProgressPhase;
 use flight_signals::Signal;
 use flight_stream::{AbortSignal, SharedFuture};

@@ -1,6 +1,7 @@
 src/contract.rs: pub use crate::decode_image::*;
 src/contract.rs: pub use crate::detect_image_mime_type::*;
 src/contract.rs: pub use crate::encode_image::*;
+src/contract.rs: pub use crate::host_explain::*;
 src/contract.rs: pub use crate::types::*;
 src/decode_image.rs: impl HostImageDecodeCapabilities :: async fn decode_image(&self, bytes: &Uint8Array, mime_type: Option<&str>) -> Option<DecodedImage>
 src/decode_image.rs: impl HostImageDecodeCapabilities :: async fn decode_image_premultiplied(&self, bytes: &Uint8Array, mime_type: Option<&str>,) -> Option<DecodedImage>
@@ -9,6 +10,8 @@ src/decode_image.rs: pub async fn decode_image_premultiplied(image_decode: &Host
 src/detect_image_mime_type.rs: pub fn detect_image_mime_type(data: &[u8]) -> Option<String>
 src/encode_image.rs: impl HostImageEncodeCapabilities :: async fn encode_image(&self, image: &DecodedImage, mime_type: &str, options: Option<&ImageEncodeOptions>,) -> Option<Box<[u8]>>
 src/encode_image.rs: pub async fn encode_image(image_encode: &HostImageEncodeCapabilities, image: &DecodedImage, mime_type: &str, options: Option<&ImageEncodeOptions>,) -> Option<Box<[u8]>>
+src/host_explain.rs: pub fn explain_host_image_decode_capabilities(out: &mut HostExplanation, image_decode: &HostImageDecodeCapabilities,)
+src/host_explain.rs: pub fn explain_host_image_encode_capabilities(out: &mut HostExplanation, image_encode: &HostImageEncodeCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::DecodedImage;
 src/lib.rs: pub use contract::HostImageDecodeCapabilities;

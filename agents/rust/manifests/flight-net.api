@@ -1,5 +1,6 @@
 src/contract.rs: pub use crate::enable_net_guards::*;
 src/contract.rs: pub use crate::enums::*;
+src/contract.rs: pub use crate::host_explain::*;
 src/contract.rs: pub use crate::net::*;
 src/contract.rs: pub use crate::net_form::*;
 src/contract.rs: pub use crate::types::*;
@@ -31,6 +32,7 @@ src/enums.rs: pub fn parse_net_redirect(value: &str) -> Option<NetRedirect>
 src/enums.rs: pub fn parse_net_response_explanation_reason(value: &str) -> Option<NetResponseExplanationReason>
 src/enums.rs: pub fn parse_net_response_type(value: &str) -> Option<NetResponseType>
 src/enums.rs: pub type NetMethod = String;
+src/host_explain.rs: pub fn explain_host_net_capabilities(out: &mut HostExplanation, net: &HostNetCapabilities)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use enable_net_guards::{ are_net_guards_enabled, disable_net_guards, enable_net_guards };
 src/lib.rs: pub use enums::{ NetCredentials, NetGuardOperation, NetGuardReason, NetMethod, NetProgressPhase, NetRedirect, NetResponseExplanationReason, NetResponseType, };
@@ -59,4 +61,4 @@ src/types.rs: pub type NetClock = Arc<dyn Fn() -> f64 + Send + Sync>;
 src/types.rs: pub type NetGuard = Arc<dyn Fn(Ref<NetGuardNotice>) + Send + Sync>;
 src/types.rs: pub type NetRequestResult = Result<Ref<NetResponse>, FlightError>;
 src/types.rs: pub type NetResponseFuture = Pin<Box<dyn Future<Output = NetRequestResult> + Send>>;
-src/types.rs: pub use flight_hostcapability::ProviderRef;
+src/types.rs: pub use flight_host::ProviderRef;

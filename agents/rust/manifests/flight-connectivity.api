@@ -24,7 +24,9 @@ src/connectivity.rs: pub fn is_connectivity_metered(host_connectivity_status: &H
 src/connectivity.rs: pub fn is_connectivity_save_data_enabled(host_connectivity_status: &HostConnectivityStatusCapability) -> bool
 src/connectivity.rs: pub fn parse_connectivity_connection_type(value: &str) -> Option<ConnectivityConnectionType>
 src/contract.rs: pub use super::connectivity::*;
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::types::*;
+src/host_explain.rs: pub fn explain_host_connectivity_capabilities(out: &mut HostExplanation, connectivity: &HostConnectivityCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::Connectivity;
 src/lib.rs: pub use contract::ConnectivityChangeListener;

@@ -1,3 +1,4 @@
+mod host_explain;
 mod image_resource;
 mod image_resource_from;
 mod image_resource_reference;

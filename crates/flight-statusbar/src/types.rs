@@ -3,7 +3,7 @@ use std::fmt;
 use std::sync::{Arc, Weak};
 
 use flight_entity::EntityRuntimeSlot;
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_signals::Signal;
 
 /// Status bar content style (TS `StatusBarStyle`).

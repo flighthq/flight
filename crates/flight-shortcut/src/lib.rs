@@ -1,3 +1,4 @@
+mod host_explain;
 mod shortcut;
 mod shortcut_explicit_dependency;
 mod shortcut_key_name;

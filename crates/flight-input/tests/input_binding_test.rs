@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_entity::Ref;
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_input::contract::*;
 use flight_signals::connect_signal;
 

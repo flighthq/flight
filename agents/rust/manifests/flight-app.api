@@ -238,9 +238,13 @@ src/app_window.rs: pub trait AppWindowMethods { fn compute_window_device_transfo
 src/contract.rs: pub use super::app::*;
 src/contract.rs: pub use super::app_loop::*;
 src/contract.rs: pub use super::app_window::*;
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::loop_types::*;
 src/contract.rs: pub use super::types::*;
 src/contract.rs: pub use super::window_types::*;
+src/host_explain.rs: pub fn explain_host_app_capabilities(out: &mut HostExplanation, app: &HostAppCapabilities)
+src/host_explain.rs: pub fn explain_host_fullscreen_capabilities(out: &mut HostExplanation, fullscreen: &HostFullscreenCapabilities,)
+src/host_explain.rs: pub fn explain_host_window_capabilities(out: &mut HostExplanation, window: &HostWindowCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::AppActivationPolicy;
 src/lib.rs: pub use contract::AppCancelHost;
@@ -309,7 +313,6 @@ src/lib.rs: pub use contract::HostWindowStateCapability;
 src/lib.rs: pub use contract::HostWindowVisibilityCapability;
 src/lib.rs: pub use contract::HostWindowZOrderCapability;
 src/lib.rs: pub use contract::MobileOsProfile;
-src/lib.rs: pub use contract::NativeWindowHandle;
 src/lib.rs: pub use contract::WindowAttachmentOwnership;
 src/lib.rs: pub use contract::WindowBounds;
 src/lib.rs: pub use contract::WindowCloseRequestListener;
@@ -440,7 +443,7 @@ src/lib.rs: pub use contract::step_app_loop;
 src/lib.rs: pub use contract::stop_app_loop;
 src/lib.rs: pub use contract::unregister_app_loop_window;
 src/loop_types.rs: #[derive(Clone)] pub struct HostAppExitCapability { pub provider: ProviderRef, pub subscribe: Arc<dyn Fn(AppListener) -> AppUnsubscribe + Send + Sync>, }
-src/loop_types.rs: #[derive(Clone)] pub struct HostAppLoopCapability { pub provider: ProviderRef, pub cancel_frame: Arc<dyn Fn(&Unknown) + Send + Sync>, pub now: Arc<dyn Fn() -> f64 + Send + Sync>, pub request_frame: Arc<dyn Fn(AppFrameCallback) -> Unknown + Send + Sync>, }
+src/loop_types.rs: #[derive(Clone)] pub struct HostAppLoopCapability { pub provider: ProviderRef, pub cancel_frame: Arc<dyn Fn(FrameRequestHandle) + Send + Sync>, pub now: Arc<dyn Fn() -> f64 + Send + Sync>, pub request_frame: Arc<dyn Fn(AppFrameCallback) -> FrameRequestHandle + Send + Sync>, }
 src/loop_types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct AppLoopOptions { pub max_delta_time: Option<f64>, pub target_frame_rate: Option<f64>, pub background_frame_rate: Option<f64>, pub fixed_time_step: Option<f64>, pub max_updates_per_frame: Option<f64>, }
 src/loop_types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct AppStepOptions { pub fixed_time_step: Option<f64>, pub max_delta_time: Option<f64>, pub max_updates_per_frame: Option<f64>, }
 src/loop_types.rs: #[derive(Clone, Default)] pub struct HostAppCapabilities { pub activate: Option<HostAppActivateCapability>, pub activation_policy: Option<HostAppActivationPolicyCapability>, pub all_windows_closed: Option<HostAppAllWindowsClosedCapability>, pub badge: Option<HostAppBadgeCapability>, pub dock: Option<HostAppDockCapability>, pub exit: Option<HostAppExitCapability>, pub focus: Option<HostAppFocusCapability>, pub hide: Option<HostAppHideCapability>, pub locale: Option<HostAppLocaleCapability>, pub login_item: Option<HostAppLoginItemCapability>, pub loop_: Option<HostAppLoopCapability>, pub name: Option<HostAppNameCapability>, pub name_write: Option<HostAppNameWriteCapability>, pub open_file: Option<HostAppOpenFileCapability>, pub path: Option<HostAppPathCapability>, pub quit: Option<HostAppQuitCapability>, pub quit_request: Option<HostAppQuitRequestCapability>, pub ready: Option<HostAppReadyCapability>, pub recent_documents: Option<HostAppRecentDocumentsCapability>, pub relaunch: Option<HostAppRelaunchCapability>, pub second_instance: Option<HostAppSecondInstanceCapability>, pub show: Option<HostAppShowCapability>, pub single_instance: Option<HostAppSingleInstanceCapability>, pub user_model_id: Option<HostAppUserModelIdCapability>, pub version: Option<HostAppVersionCapability>, }
@@ -533,7 +536,6 @@ src/window_types.rs: impl Entity for WindowResizeTargetHandle :: fn entity_runti
 src/window_types.rs: impl fmt::Debug for AppWindow
 src/window_types.rs: impl fmt::Debug for AppWindow :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
 src/window_types.rs: pub struct AppWindow { runtime: EntityRuntimeSlot, pub title: String, pub x: f32, pub y: f32, pub width: f32, pub height: f32, pub device_pixel_ratio: f32, pub minimized: bool, pub maximized: bool, pub fullscreen: bool, pub focused: bool, pub visible: bool, pub resizable: bool, pub always_on_top: bool, pub skip_taskbar: bool, pub opacity: f32, pub icon: String, pub min_width: f32, pub min_height: f32, pub max_width: f32, pub max_height: f32, pub on_activate: Signal<()>, pub on_close: Signal<()>, pub on_close_request: Signal<()>, pub on_deactivate: Signal<()>, pub on_drop_file: Signal<String>, pub on_focus_in: Signal<()>, pub on_focus_out: Signal<()>, pub on_fullscreen_changed: Signal<()>, pub on_maximize: Signal<()>, pub on_minimize: Signal<()>, pub on_move: Signal<()>, pub on_orientation_changed: Signal<()>, pub on_render_context_lost: Signal<()>, pub on_render_context_restored: Signal<()>, pub on_resize: Signal<()>, pub on_restore: Signal<()>, pub(crate) backend: Option<HostWindowLifecycleCapability>, pub(crate) observers: Vec<(AppWindowObserverKey, AppUnsubscribe)>, pub(crate) terminal: bool, }
-src/window_types.rs: pub type NativeWindowHandle = Unknown;
 src/window_types.rs: pub type WindowCloseRequestListener = Arc<dyn Fn() -> bool + Send + Sync>;
 src/window_types.rs: pub type WindowMoveListener = Arc<dyn Fn(f32, f32) + Send + Sync>;
 src/window_types.rs: pub type WindowResizeListener = Arc<dyn Fn(f32, f32, f32) + Send + Sync>;

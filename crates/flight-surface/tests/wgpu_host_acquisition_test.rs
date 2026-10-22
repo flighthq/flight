@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 
 use flight_entity::{FlightError, FlightErrorKind, get_entity_id};
-use flight_hostcapability::{GpuCanvasContext, GpuDevice, ProviderRef};
+use flight_host::{ProviderRef, WgpuDevice, WgpuSurfaceContext};
 use flight_surface::contract::*;
 
 use crate::block_on;
@@ -36,11 +36,11 @@ mod create_wgpu_host_acquisition {
     #[test]
     fn carries_the_providers_exact_device_and_context_handles_once_assigned() {
         let provider: ProviderRef = Arc::new(());
-        let device = GpuDevice {
+        let device = WgpuDevice {
             provider: provider.clone(),
             handle: Arc::new(7_u32),
         };
-        let context = GpuCanvasContext {
+        let context = WgpuSurfaceContext {
             provider: provider.clone(),
             handle: Arc::new(8_u32),
         };

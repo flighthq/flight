@@ -1,5 +1,7 @@
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::power::*;
 src/contract.rs: pub use super::types::*;
+src/host_explain.rs: pub fn explain_host_power_capabilities(out: &mut HostExplanation, power: &HostPowerCapabilities)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::HostPowerBatteryHealthCapability;
 src/lib.rs: pub use contract::HostPowerCapabilities;
@@ -162,4 +164,4 @@ src/types.rs: pub type PowerKeepAwakeAcquireFuture = Pin<Box<dyn Future<Output =
 src/types.rs: pub type PowerKeepAwakeReleaseFuture = Pin<Box<dyn Future<Output = PowerKeepAwakeReleaseResult> + Send>>;
 src/types.rs: pub type PowerThermalListener = Arc<dyn Fn(PowerThermalState) + Send + Sync>;
 src/types.rs: pub type PowerUnsubscribe = Arc<dyn Fn() + Send + Sync>;
-src/types.rs: pub use flight_hostcapability::ProviderRef;
+src/types.rs: pub use flight_host::ProviderRef;

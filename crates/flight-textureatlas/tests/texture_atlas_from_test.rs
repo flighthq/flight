@@ -2,9 +2,9 @@ use std::any::Any;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Arc, Mutex};
 
-use flight_bitmap::HostImageSource;
 use flight_buffer::{create_array_buffer_from_bytes, create_blob};
 use flight_entity::{FlightError, Ref, Unknown};
+use flight_host::HostImageSource;
 use flight_image::{
     HostImageCapability, ImageCrossOrigin, ImageResource, create_image_resolver_state,
     create_image_resource,

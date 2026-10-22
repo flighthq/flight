@@ -1,15 +1,19 @@
 src/canvas_surface.rs: pub fn create_canvas_surface(capability: &HostCanvasCapability, window: &Ref<AppWindow>, width: f32, height: f32, options: Option<&CanvasRenderingContext2DSettings>,) -> Option<Ref<CanvasSurface>>
-src/canvas_surface.rs: pub fn create_canvas_surface_from_native_handle(capability: &HostCanvasCapability, handle: NativeSurfaceHandle, options: Option<&CanvasRenderingContext2DSettings>,) -> Option<Ref<CanvasSurface>>
+src/canvas_surface.rs: pub fn create_canvas_surface_from_native_handle(capability: &HostCanvasCapability, handle: Option<NativeSurfaceHandle>, options: Option<&CanvasRenderingContext2DSettings>,) -> Option<Ref<CanvasSurface>>
 src/canvas_surface.rs: pub fn destroy_canvas_surface(capability: &HostCanvasCapability, surface: &Ref<CanvasSurface>)
 src/contract.rs: pub use crate::canvas_surface::*;
+src/contract.rs: pub use crate::host_explain::*;
 src/contract.rs: pub use crate::surface::*;
 src/contract.rs: pub use crate::surface_display::*;
 src/contract.rs: pub use crate::types::*;
 src/contract.rs: pub use crate::wgpu_host_acquisition::*;
 src/contract.rs: pub use crate::window_render_state::*;
+src/host_explain.rs: pub fn explain_host_canvas_capabilities(out: &mut HostExplanation, canvas: &HostCanvasCapabilities,)
+src/host_explain.rs: pub fn explain_host_gl_capabilities(out: &mut HostExplanation, gl: &HostGlCapabilities)
+src/host_explain.rs: pub fn explain_host_surface_capabilities(out: &mut HostExplanation, surface: &HostSurfaceCapabilities,)
+src/host_explain.rs: pub fn explain_host_wgpu_capabilities(out: &mut HostExplanation, wgpu: &HostWgpuCapabilities)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::CanvasColorSpace;
-src/lib.rs: pub use contract::CanvasRenderingContext2D;
 src/lib.rs: pub use contract::CanvasRenderingContext2DSettings;
 src/lib.rs: pub use contract::CanvasSurface;
 src/lib.rs: pub use contract::GlContextOptions;
@@ -25,7 +29,6 @@ src/lib.rs: pub use contract::HostSurfaceDisplayCapability;
 src/lib.rs: pub use contract::HostSurfaceResizeCapability;
 src/lib.rs: pub use contract::HostWgpuCapabilities;
 src/lib.rs: pub use contract::HostWgpuCapability;
-src/lib.rs: pub use contract::NativeSurfaceHandle;
 src/lib.rs: pub use contract::Surface;
 src/lib.rs: pub use contract::SurfaceBase;
 src/lib.rs: pub use contract::SurfaceBaseMethods;
@@ -54,25 +57,24 @@ src/lib.rs: pub use contract::initialize_wgpu_host_acquisition;
 src/lib.rs: pub use contract::resize_surface;
 src/lib.rs: pub use contract::set_surface_display_size;
 src/surface.rs: impl SurfaceBaseMethods for SurfaceBase
-src/surface.rs: impl SurfaceBaseMethods for SurfaceBase :: fn handle(&self) -> NativeSurfaceHandle
+src/surface.rs: impl SurfaceBaseMethods for SurfaceBase :: fn handle(&self) -> Option<NativeSurfaceHandle>
 src/surface.rs: impl SurfaceBaseMethods for SurfaceBase :: fn runtime(&self) -> &SurfaceRuntime
-src/surface.rs: pub fn allocate_surface<T: Entity + Default>(handle: NativeSurfaceHandle) -> Ref<T>
-src/surface.rs: pub fn get_surface_handle(surface: &dyn Surface) -> NativeSurfaceHandle
+src/surface.rs: pub fn allocate_surface<T: Entity + Default>(handle: Option<NativeSurfaceHandle>) -> Ref<T>
+src/surface.rs: pub fn get_surface_handle(surface: &dyn Surface) -> Option<NativeSurfaceHandle>
 src/surface.rs: pub fn get_surface_runtime(surface: &dyn Surface) -> &SurfaceRuntime
-src/surface.rs: pub trait SurfaceBaseMethods { fn handle(&self) -> NativeSurfaceHandle; fn runtime(&self) -> &SurfaceRuntime; }
+src/surface.rs: pub trait SurfaceBaseMethods { fn handle(&self) -> Option<NativeSurfaceHandle>; fn runtime(&self) -> &SurfaceRuntime; }
 src/surface_display.rs: impl HostSurfaceDisplayCapability :: fn set_display_size(&self, surface: &SurfaceRef, width: f32, height: f32)
 src/surface_display.rs: impl HostSurfaceResizeCapability :: fn resize(&self, surface: &SurfaceRef, width: f32, height: f32)
 src/surface_display.rs: pub fn resize_surface(capability: &HostSurfaceResizeCapability, surface: &SurfaceRef, width: f32, height: f32,)
 src/surface_display.rs: pub fn set_surface_display_size(capability: &HostSurfaceDisplayCapability, surface: &SurfaceRef, width: f32, height: f32,)
-src/types.rs: #[derive(Clone)] pub struct CanvasRenderingContext2D { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }
-src/types.rs: #[derive(Clone)] pub struct HostCanvasCapability { pub provider: ProviderRef, pub acquire: Arc<dyn Fn(&SurfaceRef, Option<&CanvasRenderingContext2DSettings>,) -> Option<CanvasRenderingContext2D> + Send + Sync,>, pub create: Arc<dyn Fn(&Ref<AppWindow>, f32, f32, Option<&CanvasRenderingContext2DSettings>,) -> NativeSurfaceHandle + Send + Sync,>, pub create_surface: Arc<dyn Fn(f32, f32) -> Option<Ref<CanvasSurface>> + Send + Sync>, pub destroy_surface: Arc<dyn Fn(&Ref<CanvasSurface>) + Send + Sync>, pub release: Arc<dyn Fn(&SurfaceRef) + Send + Sync>, }
-src/types.rs: #[derive(Clone)] pub struct HostGlCapability { pub provider: ProviderRef, pub acquire: Arc<dyn Fn(&SurfaceRef, Option<&GlContextOptions>) -> Option<GlContext> + Send + Sync>, pub create: Arc<dyn Fn(&Ref<AppWindow>, f32, f32, Option<&GlContextOptions>) -> NativeSurfaceHandle + Send + Sync,>, pub release: Arc<dyn Fn(&SurfaceRef) + Send + Sync>, pub subscribe: Arc<dyn Fn(&SurfaceRef, Arc<dyn Fn() + Send + Sync>, Arc<dyn Fn() + Send + Sync>,) -> Arc<dyn Fn() + Send + Sync> + Send + Sync,>, }
+src/types.rs: #[derive(Clone)] pub struct HostCanvasCapability { pub provider: ProviderRef, pub acquire: Arc<dyn Fn(&SurfaceRef, Option<&CanvasRenderingContext2DSettings>,) -> Option<CanvasRenderingContext2D> + Send + Sync,>, pub create: Arc<dyn Fn(&Ref<AppWindow>, f32, f32, Option<&CanvasRenderingContext2DSettings>,) -> Option<NativeSurfaceHandle> + Send + Sync,>, pub create_surface: Arc<dyn Fn(f32, f32) -> Option<Ref<CanvasSurface>> + Send + Sync>, pub destroy_surface: Arc<dyn Fn(&Ref<CanvasSurface>) + Send + Sync>, pub release: Arc<dyn Fn(&SurfaceRef) + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostGlCapability { pub provider: ProviderRef, pub acquire: Arc<dyn Fn(&SurfaceRef, Option<&GlContextOptions>) -> Option<GlContext> + Send + Sync>, pub create: Arc<dyn Fn(&Ref<AppWindow>, f32, f32, Option<&GlContextOptions>) -> Option<NativeSurfaceHandle> + Send + Sync,>, pub release: Arc<dyn Fn(&SurfaceRef) + Send + Sync>, pub subscribe: Arc<dyn Fn(&SurfaceRef, Arc<dyn Fn() + Send + Sync>, Arc<dyn Fn() + Send + Sync>,) -> Arc<dyn Fn() + Send + Sync> + Send + Sync,>, }
 src/types.rs: #[derive(Clone)] pub struct HostSurfaceDisplayCapability { pub provider: ProviderRef, pub set_display_size: Arc<dyn Fn(&SurfaceRef, f32, f32) + Send + Sync>, }
 src/types.rs: #[derive(Clone)] pub struct HostSurfaceResizeCapability { pub provider: ProviderRef, pub resize: Arc<dyn Fn(&SurfaceRef, f32, f32) + Send + Sync>, }
-src/types.rs: #[derive(Clone)] pub struct HostWgpuCapability { pub provider: ProviderRef, pub acquire: Arc<dyn Fn(&SurfaceRef, &WgpuHostAcquisitionOptions) -> WgpuProviderFuture<WgpuHostAcquisition> + Send + Sync,>, pub attach_surface: Arc<dyn Fn(&SurfaceRef, &WgpuSurfaceAttachment) -> Option<WgpuSurfaceAttachResult> + Send + Sync,>, pub create: Arc<dyn Fn(&Ref<AppWindow>, f32, f32) -> NativeSurfaceHandle + Send + Sync>, pub is_supported: Arc<dyn Fn() -> bool + Send + Sync>, pub release: Arc<dyn Fn(&WgpuHostAcquisition) + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct HostWgpuCapability { pub provider: ProviderRef, pub acquire: Arc<dyn Fn(&SurfaceRef, &WgpuHostAcquisitionOptions) -> WgpuProviderFuture<WgpuHostAcquisition> + Send + Sync,>, pub attach_surface: Arc<dyn Fn(&SurfaceRef, &WgpuSurfaceAttachment) -> Option<WgpuSurfaceAttachResult> + Send + Sync,>, pub create: Arc<dyn Fn(&Ref<AppWindow>, f32, f32) -> Option<NativeSurfaceHandle> + Send + Sync>, pub is_supported: Arc<dyn Fn() -> bool + Send + Sync>, pub release: Arc<dyn Fn(&WgpuHostAcquisition) + Send + Sync>, }
 src/types.rs: #[derive(Clone)] pub struct WgpuPresentationSurface { pub height: Arc<dyn Fn() -> f32 + Send + Sync>, pub width: Arc<dyn Fn() -> f32 + Send + Sync>, }
-src/types.rs: #[derive(Clone)] pub struct WgpuSurfaceAttachResult { pub context: GpuCanvasContext, pub surface: WgpuPresentationSurface, }
-src/types.rs: #[derive(Clone)] pub struct WgpuSurfaceAttachment { pub alpha_mode: GpuCanvasAlphaMode, pub device: GpuDevice, pub format: GpuTextureFormat, }
+src/types.rs: #[derive(Clone)] pub struct WgpuSurfaceAttachResult { pub context: WgpuSurfaceContext, pub surface: WgpuPresentationSurface, }
+src/types.rs: #[derive(Clone)] pub struct WgpuSurfaceAttachment { pub alpha_mode: GpuCanvasAlphaMode, pub device: WgpuDevice, pub format: GpuTextureFormat, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum CanvasColorSpace { Srgb, DisplayP3, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GpuCanvasAlphaMode { Opaque, Premultiplied, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GpuPowerPreference { HighPerformance, LowPower, }
@@ -86,11 +88,10 @@ src/types.rs: #[derive(Clone, Default)] pub struct HostCanvasCapabilities { pub 
 src/types.rs: #[derive(Clone, Default)] pub struct HostGlCapabilities { pub context: Option<HostGlCapability>, }
 src/types.rs: #[derive(Clone, Default)] pub struct HostSurfaceCapabilities { pub display: Option<HostSurfaceDisplayCapability>, pub resize: Option<HostSurfaceResizeCapability>, }
 src/types.rs: #[derive(Clone, Default)] pub struct HostWgpuCapabilities { pub context: Option<HostWgpuCapability>, }
-src/types.rs: #[derive(Default)] pub struct CanvasSurface { fields: SurfaceFields, pub context: CanvasRenderingContext2D, }
 src/types.rs: #[derive(Default)] pub struct SurfaceBase { fields: SurfaceFields, }
 src/types.rs: #[derive(Default)] pub struct SurfaceFields { runtime: EntityRuntimeSlot, }
-src/types.rs: impl Default for CanvasRenderingContext2D
-src/types.rs: impl Default for CanvasRenderingContext2D :: fn default() -> Self
+src/types.rs: impl Default for CanvasSurface
+src/types.rs: impl Default for CanvasSurface :: fn default() -> Self
 src/types.rs: impl Default for WgpuHostAcquisition
 src/types.rs: impl Default for WgpuHostAcquisition :: fn default() -> Self
 src/types.rs: impl Default for WgpuPresentationSurface
@@ -120,11 +121,11 @@ src/types.rs: impl Surface for SurfaceBase
 src/types.rs: impl Surface for SurfaceBase :: fn as_any(&self) -> &dyn Any
 src/types.rs: impl Surface for SurfaceBase :: fn surface_fields(&self) -> &SurfaceFields
 src/types.rs: impl Surface for SurfaceBase :: fn surface_fields_mut(&mut self) -> &mut SurfaceFields
-src/types.rs: pub struct SurfaceRuntime { pub handle: NativeSurfaceHandle, }
-src/types.rs: pub struct WgpuHostAcquisition { runtime: EntityRuntimeSlot, pub context: GpuCanvasContext, pub device: GpuDevice, pub format: GpuTextureFormat, pub ownership: WgpuHostAcquisitionOwnership, pub surface: WgpuPresentationSurface, }
+src/types.rs: pub struct CanvasSurface { fields: SurfaceFields, pub context: CanvasRenderingContext2D, }
+src/types.rs: pub struct SurfaceRuntime { pub handle: Option<NativeSurfaceHandle>, }
+src/types.rs: pub struct WgpuHostAcquisition { runtime: EntityRuntimeSlot, pub context: WgpuSurfaceContext, pub device: WgpuDevice, pub format: GpuTextureFormat, pub ownership: WgpuHostAcquisitionOwnership, pub surface: WgpuPresentationSurface, }
 src/types.rs: pub trait Surface: Entity + Any + Send + Sync { fn surface_fields(&self) -> &SurfaceFields; fn surface_fields_mut(&mut self) -> &mut SurfaceFields; fn as_any(&self) -> &dyn Any; }
 src/types.rs: pub type GpuTextureFormat = String;
-src/types.rs: pub type NativeSurfaceHandle = Unknown;
 src/types.rs: pub type SurfaceRef = Ref<dyn Surface>;
 src/types.rs: pub type WgpuProviderFuture<T> = Pin<Box<dyn Future<Output = Result<T, FlightError>> + Send>>;
 src/wgpu_host_acquisition.rs: pub fn create_wgpu_host_acquisition() -> WgpuHostAcquisition

@@ -3,7 +3,7 @@ use std::sync::Mutex;
 
 use flight_entity::EntityRuntimeSlot;
 use flight_entity::impl_entity;
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_permissions::{
     HostPreferencesPersistenceQueryCapability, HostPreferencesPersistenceRequestCapability,
 };

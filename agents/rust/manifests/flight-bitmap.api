@@ -214,9 +214,11 @@ src/contract.rs: pub use super::bitmap_tone::*;
 src/contract.rs: pub use super::bitmap_transform::*;
 src/contract.rs: pub use super::bitmap_warp::*;
 src/contract.rs: pub use super::explain_bitmap_readback::*;
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::types::*;
 src/explain_bitmap_readback.rs: impl HostBitmapReadbackCapability :: fn explain_bitmap_readback(&self, source: &Arc<HostImageSource>, width: u32, height: u32,) -> BitmapReadbackExplanation
 src/explain_bitmap_readback.rs: pub fn explain_bitmap_readback(host_bitmap_readback: &HostBitmapReadbackCapability, source: &Arc<HostImageSource>, width: u32, height: u32,) -> BitmapReadbackExplanation
+src/host_explain.rs: pub fn explain_host_bitmap_capabilities(out: &mut HostExplanation, bitmap: &HostBitmapCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::BITMAP_FINGERPRINT_COMPUTATION_ID;
 src/lib.rs: pub use contract::BITMAP_NOISE_CHANNEL_A;
@@ -256,7 +258,6 @@ src/lib.rs: pub use contract::GradientSpread;
 src/lib.rs: pub use contract::HostBitmapCapabilities;
 src/lib.rs: pub use contract::HostBitmapEncodeCapability;
 src/lib.rs: pub use contract::HostBitmapReadbackCapability;
-src/lib.rs: pub use contract::HostImageSource;
 src/lib.rs: pub use contract::ImageChannel;
 src/lib.rs: pub use contract::ImageFormat;
 src/lib.rs: pub use contract::PixelOrder;
@@ -453,7 +454,4 @@ src/types.rs: impl fmt::Debug for HostBitmapEncodeCapability
 src/types.rs: impl fmt::Debug for HostBitmapEncodeCapability :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
 src/types.rs: impl fmt::Debug for HostBitmapReadbackCapability
 src/types.rs: impl fmt::Debug for HostBitmapReadbackCapability :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
-src/types.rs: impl fmt::Debug for HostImageSource
-src/types.rs: impl fmt::Debug for HostImageSource :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
 src/types.rs: pub const BITMAP_TEXTURE_SOURCE_KIND: &str
-src/types.rs: pub struct HostImageSource { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, }

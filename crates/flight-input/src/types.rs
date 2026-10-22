@@ -4,7 +4,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use flight_entity::{EntityRuntimeSlot, Ref};
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_signals::Signal;
 
 /// The gamepad axis semantic name (TS `GamepadAxisKind`), a closed string union.

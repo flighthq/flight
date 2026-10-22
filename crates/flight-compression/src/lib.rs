@@ -1,6 +1,7 @@
 mod compress;
 mod deflate;
 mod deflate_format;
+mod host_explain;
 mod lzma;
 mod lzma_compress;
 mod types;

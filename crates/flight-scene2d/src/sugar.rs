@@ -9,7 +9,6 @@ use crate::contract::*;
 
 #[cfg(test)]
 mod sugar_tests {
-    use std::any::Any;
     use std::sync::{Arc, RwLock};
 
     use flight_entity::Ref;
@@ -83,7 +82,10 @@ mod sugar_tests {
 
     #[test]
     fn htmlviewdata_initialize_html_view_data_matches_initialize_html_view_data() {
-        let element: Arc<dyn Any + Send + Sync> = Arc::new(1_u8);
+        let element = flight_host::NativeViewHandle {
+            provider: Arc::new(()),
+            handle: Arc::new(1_u8),
+        };
         let options = HtmlViewDataOptions {
             element: Some(element),
             height: Some(7.0),
@@ -94,8 +96,8 @@ mod sugar_tests {
         initialize_html_view_data(&mut b, Some(&options));
         assert_eq!(show(&a), show(&b));
         assert!(Arc::ptr_eq(
-            a.element.as_ref().unwrap(),
-            b.element.as_ref().unwrap()
+            &a.element.as_ref().unwrap().handle,
+            &b.element.as_ref().unwrap().handle
         ));
     }
 

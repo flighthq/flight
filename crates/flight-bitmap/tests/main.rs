@@ -40,3 +40,4 @@ mod bitmap_tone_test;
 mod bitmap_transform_test;
 mod bitmap_warp_test;
 mod explain_bitmap_readback_test;
+mod host_explain_test;

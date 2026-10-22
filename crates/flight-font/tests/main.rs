@@ -5,5 +5,6 @@ mod font_resource_test;
 mod font_shorthand_test;
 mod font_status_test;
 mod glyph_outline_source_test;
+mod host_explain_test;
 mod support;
 mod types_test;

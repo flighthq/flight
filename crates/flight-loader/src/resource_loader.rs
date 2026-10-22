@@ -3,7 +3,7 @@ use crate::types::*;
 use flight_entity::{
     Ref, Unknown, allocate_entity, throw_error, throw_type_error, unknown_from_panic,
 };
-use flight_hostcapability::TimerHandle;
+use flight_host::TimerHandle;
 use flight_signals::{clear_signal, create_signal, emit_signal};
 use flight_stream::{AbortController, AbortSignal, create_abort_controller, create_shared_future};
 use flight_stream::{

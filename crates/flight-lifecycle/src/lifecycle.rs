@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_entity::{Record, allocate_entity};
-use flight_hostcapability::{BackendOperationExplanation, BackendOperationExplanationLayer};
+use flight_host::{BackendOperationExplanation, BackendOperationExplanationLayer};
 use flight_signals::{create_signal, emit_signal};
 
 use crate::types::*;

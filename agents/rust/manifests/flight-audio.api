@@ -46,8 +46,10 @@ src/contract.rs: pub use crate::audio_resource::*;
 src/contract.rs: pub use crate::audio_resource_from::*;
 src/contract.rs: pub use crate::audio_resource_reference::*;
 src/contract.rs: pub use crate::decode_audio_resource_bytes::*;
+src/contract.rs: pub use crate::host_explain::*;
 src/contract.rs: pub use crate::types::*;
 src/decode_audio_resource_bytes.rs: pub async fn decode_audio_resource_bytes(audio_decode: &HostAudioDecodeCapabilities, bytes: &Ref<Box<Uint8Array>>, mime_type: Option<&str>, signal: &AbortSignal, decoders: Option<&AudioDecoderRegistry>,) -> Option<Ref<AudioResource>>
+src/host_explain.rs: pub fn explain_host_audio_decode_capabilities(out: &mut HostExplanation, audio_decode: &HostAudioDecodeCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::AudioBuffer;
 src/lib.rs: pub use contract::AudioBufferFuture;

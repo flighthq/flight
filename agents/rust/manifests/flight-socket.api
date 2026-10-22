@@ -1,5 +1,6 @@
 src/contract.rs: pub use crate::enable_socket_guards::*;
 src/contract.rs: pub use crate::explain_socket_send_failure::*;
+src/contract.rs: pub use crate::host_explain::*;
 src/contract.rs: pub use crate::socket::*;
 src/contract.rs: pub use crate::socket_sugar::*;
 src/contract.rs: pub use crate::types::*;
@@ -12,6 +13,7 @@ src/enable_socket_guards.rs: pub fn disable_socket_guards(guard_state: &SocketGu
 src/enable_socket_guards.rs: pub fn enable_socket_guards(guard_state: &SocketGuardStateRef, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
 src/enable_socket_guards.rs: pub trait SocketGuardStateMethods { fn are_guards_enabled(&self) -> bool; fn disable_guards(&self); fn enable_guards(&self, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>); }
 src/explain_socket_send_failure.rs: pub fn explain_socket_send_failure(socket: &Ref<Socket>) -> Option<SocketSendFailureExplanation>
+src/host_explain.rs: pub fn explain_host_socket_capabilities(out: &mut HostExplanation, socket: &HostSocketCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::HostSocketCapabilities;
 src/lib.rs: pub use contract::HostSocketCapability;

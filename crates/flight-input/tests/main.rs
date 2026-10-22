@@ -1,3 +1,4 @@
+mod host_explain_test;
 mod input_binding_test;
 mod input_gamepad_test;
 mod input_signals_test;

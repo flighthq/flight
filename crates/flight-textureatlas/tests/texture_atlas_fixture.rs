@@ -2,8 +2,8 @@ use std::future::Future;
 use std::sync::{Arc, RwLock};
 use std::task::{Context, Poll, Waker};
 
-use flight_bitmap::HostImageSource;
 use flight_entity::Ref;
+use flight_host::HostImageSource;
 use flight_image::{
     HostImageDimensions, ImageResource, create_image_resolver_state, create_image_resource,
     register_test_image_dimension_resolver,

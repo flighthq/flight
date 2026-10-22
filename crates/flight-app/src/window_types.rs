@@ -1,8 +1,8 @@
 use std::fmt;
 use std::sync::Arc;
 
-use flight_entity::{EntityRuntimeSlot, Ref, Unknown};
-use flight_hostcapability::ProviderRef;
+use flight_entity::{EntityRuntimeSlot, Ref};
+use flight_host::{NativeWindowHandle, ProviderRef};
 use flight_input::HostInputPointerLockCapability;
 use flight_signals::Signal;
 
@@ -138,10 +138,6 @@ pub struct HostElementFullscreenCapability {
 pub struct HostFullscreenCapabilities {
     pub element: Option<HostElementFullscreenCapability>,
 }
-
-/// A host-defined native window identity (TS `NativeWindowHandle = unknown`): a BrowserWindow, a
-/// Tauri Window, an integer or an opaque object handle, deliberately not narrowed.
-pub type NativeWindowHandle = Unknown;
 
 /// Who owns an attached existing window (TS `WindowAttachmentOwnership`). Host-owned windows are
 /// detached from Flight on close but left alive; Flight-owned windows are closed by the provider.

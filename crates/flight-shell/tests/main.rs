@@ -12,6 +12,7 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
     }
 }
 
+mod host_explain_test;
 mod shell_process_test;
 mod shell_test;
 mod types_test;

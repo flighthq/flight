@@ -1,18 +1,24 @@
 # flight-host
 
-The portable host interface (TS `@flighthq/host`): the capability-group aggregate, typed capability queries, and host diagnostics.
+The bottom host vocabulary (D26). It holds every type the SDK uses but does not define, because a
+host provides it, and it depends on nothing else in the SDK, so these types thread through every
+layer.
 
-## Contract
+- **Opaque platform handles** (`{ provider: ProviderRef, handle: Arc<dyn Any + Send + Sync> }`;
+  the `Arc` identity of `handle` is the platform object's identity, narrowed only by the backend
+  that consumes it): `NativeWindowHandle`, `NativeSurfaceHandle`, `NativeViewHandle`,
+  `CanvasRenderingContext2D`, `GlContext`, `WgpuDevice`, `WgpuSurfaceContext`, `HostImageSource`,
+  `FontFaceHandle`, `MediaStreamHandle`. Where TS allows the object to be null, the SDK field is an
+  `Option` of the handle.
+- **Provider-issued numeric ids** (`Copy` newtypes keeping the TS sentinels): the audio buffer,
+  device, source, bus-node and mixer-graph handles, and the app loop's `FrameRequestHandle`.
+- **Shared seam vocabulary**: `ProviderRef`, `HostTimerCapability` / `TimerHandle` and
+  `HostSpawnCapability`.
+- **Explanation records**: `BackendExplanation` and `BackendOperationExplanation` (with their D9e
+  string tables), and `HostExplanation` with its coverage, group, slot and backend records.
+  `explain_host_capability_slot` builds one slot's explanation for a feature's explainer.
 
-- `Host` aggregates every capability group (D8). Each group is the owning feature's `Host<Group>Capabilities` struct of optional slots, and an omitted slot is capability absence.
-- `create_host()` / `initialize_host(out)` (contract lane only) build a host with every group empty. A host adapter assigns the groups it provides after create (D23 B). The public lane does not export them: an app imports a built host rather than constructing one.
-- `get_host_*` / `has_host_*` read one group's slot for each capability a Flight package takes as a parameter. The returned reference is the host's own capability record.
-- `explain_host` reports every group the host carries with its filled slots, plus the covered-slot census. `explain_host_*` explain one commonly needed slot, with the source's remedy prose and backend records verbatim (D0).
-- `enable_host_guards(state, now_ms, host)` warns once per missing guarded capability through the caller-owned log state (D5). It calls the same explainers, so a warning cannot contradict a query.
-
-## Rust mapping
-
-- The source walks `Object.entries(host)`. Rust has no reflection, so the group and slot enumeration is written out, in the source property order.
-- The app group's `loop` slot is the field `loop_`; the slot name reported is `loop`.
-- The IPC group uses its default target (`IpcTargetNever`).
-- The `gl` and `wgpu` groups hold flight-surface's `HostGlCapability` / `HostWgpuCapability`, whose contexts and devices are the opaque host-vocabulary handles of flight-hostcapability (D26). Host never depends on a renderer.
+There is no aggregate host. Capability contracts stay with the feature that owns them (D8), and each
+feature explains its own capability groups (`explain_host_<group>_capabilities`) and owns its guards
+(`enable_host_<group>_guards`). A `host-*` provider composes its own host value from the groups it
+supports.

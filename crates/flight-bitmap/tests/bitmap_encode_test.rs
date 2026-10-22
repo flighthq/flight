@@ -112,7 +112,7 @@ mod encode_bitmap {
 
     #[test]
     fn invokes_a_capturing_callback_and_retains_the_provider() {
-        let provider: flight_hostcapability::ProviderRef = Arc::new("encode-host");
+        let provider: flight_host::ProviderRef = Arc::new("encode-host");
         let prefix: Vec<u8> = vec![0x89, 0x50];
         let host = HostBitmapEncodeCapability {
             provider: provider.clone(),

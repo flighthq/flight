@@ -5,7 +5,7 @@ use std::sync::{Arc, Weak};
 
 use flight_entity::{EntityRuntimeSlot, Ref};
 use flight_font::FontResource;
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_signals::Signal;
 use flight_textformat::{FontVariation, TextFormat};
 

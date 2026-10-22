@@ -1,6 +1,8 @@
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::storage::*;
 src/contract.rs: pub use super::storage_persistence::*;
 src/contract.rs: pub use super::types::*;
+src/host_explain.rs: pub fn explain_host_preferences_capabilities(out: &mut HostExplanation, preferences: &HostPreferencesCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::HostPreferencesCapabilities;
 src/lib.rs: pub use contract::HostPreferencesCapability;

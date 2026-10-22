@@ -1,4 +1,5 @@
 src/contract.rs: pub use super::device::*;
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::types::*;
 src/device.rs: impl DeviceCapabilities :: fn new() -> Self
 src/device.rs: impl DeviceDisplayMetrics :: fn new() -> Self
@@ -28,6 +29,7 @@ src/device.rs: pub fn get_device_id(host_device: &HostDeviceCapability) -> Strin
 src/device.rs: pub fn get_device_info(out: &mut DeviceInfo, host_device: &HostDeviceCapability)
 src/device.rs: pub fn get_safe_area_insets(out: &mut SafeAreaInsets, host_device: &HostDeviceCapability)
 src/device.rs: pub fn refresh_device_info(host_device: &HostDeviceCapability)
+src/host_explain.rs: pub fn explain_host_device_capabilities(out: &mut HostExplanation, device: &HostDeviceCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::DeviceCapabilities;
 src/lib.rs: pub use contract::DeviceDisplayMetrics;

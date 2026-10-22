@@ -2,4 +2,5 @@
 
 pub use crate::clipboard::*;
 pub use crate::clipboard_watch::*;
+pub use crate::host_explain::*;
 pub use crate::types::*;

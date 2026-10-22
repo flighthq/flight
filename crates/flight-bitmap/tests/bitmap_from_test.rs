@@ -1,4 +1,5 @@
 use flight_bitmap::contract::*;
+use flight_host::HostImageSource;
 use std::sync::Arc;
 
 mod create_bitmap_from_image_source {

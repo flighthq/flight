@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use flight_entity::{EntityRuntimeSlot, FlightError};
 use flight_geometry::Vector2;
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_signals::Signal;
 
 /// The four logical display orientations (TS `ScreenOrientation`); the flipped variants are the 180-degree counterparts.

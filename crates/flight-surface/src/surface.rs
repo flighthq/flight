@@ -3,6 +3,7 @@
 use std::sync::RwLock;
 
 use flight_entity::{Entity, Ref, allocate_entity, attach_entity_binding};
+use flight_host::NativeSurfaceHandle;
 
 use crate::types::*;
 
@@ -12,12 +13,18 @@ mod sugar_tests {
 
     #[test]
     fn base_handle_and_runtime_methods_match_the_free_functions() {
-        let drawable: NativeSurfaceHandle = Some(std::sync::Arc::new("drawable"));
+        let drawable = Some(NativeSurfaceHandle {
+            provider: std::sync::Arc::new(()),
+            handle: std::sync::Arc::new("drawable"),
+        });
         let surface: Ref<SurfaceBase> = allocate_surface(drawable);
         let borrowed = surface.read().unwrap();
         let method_handle = SurfaceBaseMethods::handle(&*borrowed).expect("handle");
         let free_handle = get_surface_handle(&*borrowed).expect("handle");
-        assert!(std::sync::Arc::ptr_eq(&method_handle, &free_handle));
+        assert!(std::sync::Arc::ptr_eq(
+            &method_handle.handle,
+            &free_handle.handle
+        ));
         assert!(std::ptr::eq(
             SurfaceBaseMethods::runtime(&*borrowed),
             get_surface_runtime(&*borrowed)
@@ -27,7 +34,7 @@ mod sugar_tests {
 
 /// Allocates an entity around a drawable the host just created (TS `allocateSurface`). The handle
 /// lives on the private runtime binding; per-kind factories add their own context afterward.
-pub fn allocate_surface<T: Entity + Default>(handle: NativeSurfaceHandle) -> Ref<T> {
+pub fn allocate_surface<T: Entity + Default>(handle: Option<NativeSurfaceHandle>) -> Ref<T> {
     let mut out: T = allocate_entity();
     attach_entity_binding(&mut out, Box::new(SurfaceRuntime { handle }));
     return Ref::new(RwLock::new(out));
@@ -35,7 +42,7 @@ pub fn allocate_surface<T: Entity + Default>(handle: NativeSurfaceHandle) -> Ref
 
 /// Reads the drawable a surface was built around (TS `getSurfaceHandle`); identity is preserved.
 // flight-lint: allow(contract-vocabulary) D16 structural surface dispatch (Principal batch13): the open Surface trait is the approved object-safe family, not a closed IR type
-pub fn get_surface_handle(surface: &dyn Surface) -> NativeSurfaceHandle {
+pub fn get_surface_handle(surface: &dyn Surface) -> Option<NativeSurfaceHandle> {
     return get_surface_runtime(surface).handle.clone();
 }
 
@@ -53,12 +60,12 @@ pub fn get_surface_runtime(surface: &dyn Surface) -> &SurfaceRuntime {
 
 /// Sugar for the owned base surface entity.
 pub trait SurfaceBaseMethods {
-    fn handle(&self) -> NativeSurfaceHandle;
+    fn handle(&self) -> Option<NativeSurfaceHandle>;
     fn runtime(&self) -> &SurfaceRuntime;
 }
 
 impl SurfaceBaseMethods for SurfaceBase {
-    fn handle(&self) -> NativeSurfaceHandle {
+    fn handle(&self) -> Option<NativeSurfaceHandle> {
         return get_surface_handle(self);
     }
 

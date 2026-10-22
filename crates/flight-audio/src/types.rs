@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use flight_buffer::{ArrayBuffer, get_array_buffer_storage};
 use flight_entity::{EntityRuntimeSlot, Ref, Uint8Array};
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_resource::ResourceResolutionState;
 use flight_stream::AbortSignal;
 

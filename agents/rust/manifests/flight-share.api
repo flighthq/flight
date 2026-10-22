@@ -1,5 +1,7 @@
+src/contract.rs: pub use crate::host_explain::*;
 src/contract.rs: pub use crate::share::*;
 src/contract.rs: pub use crate::types::*;
+src/host_explain.rs: pub fn explain_host_share_capabilities(out: &mut HostExplanation, share: &HostShareCapabilities)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use share::{ attach_share_signals, can_share_content, can_share_files, detach_share_signals, dispose_share_signals, enable_share_signals, has_share_content_fields, is_share_file_valid, share_content, share_content_with_result, share_files, share_text, share_url, };
 src/lib.rs: pub use types::*;
@@ -49,4 +51,4 @@ src/types.rs: pub type ShareBoolFuture = Pin<Box<dyn Future<Output = ShareComman
 src/types.rs: pub type ShareCommandResult = Result<bool, FlightError>;
 src/types.rs: pub type ShareOutcome = Result<Ref<ShareResult>, FlightError>;
 src/types.rs: pub type ShareResultFuture = Pin<Box<dyn Future<Output = ShareOutcome> + Send>>;
-src/types.rs: pub use flight_hostcapability::ProviderRef;
+src/types.rs: pub use flight_host::ProviderRef;

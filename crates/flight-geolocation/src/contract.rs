@@ -2,4 +2,5 @@
 
 pub use crate::geolocation::*;
 pub use crate::geolocation_access::*;
+pub use crate::host_explain::*;
 pub use crate::types::*;

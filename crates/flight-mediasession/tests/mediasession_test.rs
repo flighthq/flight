@@ -2,7 +2,7 @@ use std::any::Any;
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Arc, Mutex};
 
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 
 use flight_entity::{FlightError, throw_error};
 use flight_mediasession::contract::*;

@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use flight_entity::{EntityRuntimeSlot, FlightError, Ref, Unknown};
 use flight_geometry::{Rectangle, Vector2};
-use flight_hostcapability::{HostSpawnCapability, ProviderRef};
+use flight_host::{HostSpawnCapability, ProviderRef};
 use flight_menu::MenuItemTemplate;
 use flight_signals::{Signal, SignalTimerState, TimerId};
 use flight_stream::{AbortSignal, SharedFuture};

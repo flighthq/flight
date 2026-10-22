@@ -1,5 +1,7 @@
+src/contract.rs: pub use crate::host_explain::*;
 src/contract.rs: pub use crate::sensors::*;
 src/contract.rs: pub use crate::types::*;
+src/host_explain.rs: pub fn explain_host_sensors_capabilities(out: &mut HostExplanation, sensors: &HostSensorsCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::AmbientLightListener;
 src/lib.rs: pub use contract::AmbientLightReading;
@@ -168,4 +170,4 @@ src/types.rs: pub type SensorsPermissionRequestFuture = Pin<Box<dyn Future<Outpu
 src/types.rs: pub type SensorsPermissionRequestResult = Result<bool, FlightError>;
 src/types.rs: pub type SensorsPermissionStateFuture = Pin<Box<dyn Future<Output = SensorsPermissionStateResult> + Send>>;
 src/types.rs: pub type SensorsPermissionStateResult = Result<SensorsPermissionState, FlightError>;
-src/types.rs: pub use flight_hostcapability::ProviderRef;
+src/types.rs: pub use flight_host::ProviderRef;

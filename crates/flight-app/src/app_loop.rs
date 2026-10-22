@@ -2,6 +2,7 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Arc, RwLock, Weak};
 
 use flight_entity::{Ref, allocate_entity, unknown_from_panic};
+use flight_host::FrameRequestHandle;
 use flight_lifecycle::{AppLifecycleState, HostLifecycleCapability};
 use flight_signals::{connect_signal, create_signal, disconnect_signal, emit_signal};
 
@@ -12,8 +13,6 @@ use crate::window_types::AppWindow;
 #[cfg(test)]
 mod sugar_tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
-
-    use flight_entity::Unknown;
 
     use super::*;
     use crate::app_window::create_app_window;
@@ -245,12 +244,11 @@ mod sugar_tests {
         let requested = frames.clone();
         let host = HostAppLoopCapability {
             provider: Arc::new(()),
-            cancel_frame: Arc::new(|_handle: &Unknown| {}),
+            cancel_frame: Arc::new(|_handle: FrameRequestHandle| {}),
             now: Arc::new(|| 0.0),
             request_frame: Arc::new(move |_frame: AppFrameCallback| {
                 requested.fetch_add(1, Ordering::SeqCst);
-                let handle: Unknown = None;
-                return handle;
+                return FrameRequestHandle(0);
             }),
         };
         let lifecycle = HostLifecycleCapability {
@@ -329,7 +327,7 @@ fn create_loop_state(
         fixed_time_step,
         fps_buffer: Vec::new(),
         fps_head: 0,
-        frame_handle: None,
+        frame_handle: FrameRequestHandle(0),
         frame_rate_accumulated: 0.0,
         last_time: -1.0,
         max_delta_time,
@@ -691,8 +689,8 @@ fn request_app_loop_frame(app: &Ref<AppLoop>, tick: &Arc<AppLoopTick>) {
         app,
         AppLoopObserverKey::Loop,
         Arc::new(move || {
-            let handle = loop_state.read().unwrap().frame_handle.clone();
-            (backend.cancel_frame)(&handle);
+            let handle = loop_state.read().unwrap().frame_handle;
+            (backend.cancel_frame)(handle);
         }),
     );
 }

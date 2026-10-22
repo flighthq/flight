@@ -1,6 +1,7 @@
 mod audio_channel;
 mod audio_mixer;
 mod enable_audio_mixer_guards;
+mod host_explain;
 mod media_channel_signals;
 mod sugar;
 mod types;
@@ -9,25 +10,20 @@ mod video_channel_runtime;
 
 pub mod contract;
 
-pub use contract::AudioBufferHandle;
 pub use contract::AudioBus;
 pub use contract::AudioBusMethods;
 pub use contract::AudioBusMixerGuard;
 pub use contract::AudioBusMixerOperation;
-pub use contract::AudioBusNodeHandle;
 pub use contract::AudioBusOptions;
 pub use contract::AudioChannel;
 pub use contract::AudioChannelMethods;
-pub use contract::AudioDeviceHandle;
 pub use contract::AudioDeviceOperation;
 pub use contract::AudioMixer;
-pub use contract::AudioMixerGraphHandle;
 pub use contract::AudioMixerGuardState;
 pub use contract::AudioMixerGuardStateMethods;
 pub use contract::AudioMixerGuardStateRef;
 pub use contract::AudioMixerMethods;
 pub use contract::AudioMixerOptions;
-pub use contract::AudioSourceHandle;
 pub use contract::HostAudioCapabilities;
 pub use contract::HostAudioDeviceCapability;
 pub use contract::HostAudioMixerCapability;

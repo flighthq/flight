@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use flight_bitmap::HostImageSource;
 use flight_entity::Ref;
+use flight_host::HostImageSource;
 use flight_image::contract::{
     HostImageDimensions, ImageResource, create_image_resolver_state, create_image_resource,
     register_test_image_dimension_resolver,

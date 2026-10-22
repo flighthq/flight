@@ -1,7 +1,8 @@
 use std::sync::{Arc, Mutex};
 
 use flight_app::contract::{AppWindow, create_app_window};
-use flight_entity::{Ref, Unknown};
+use flight_entity::Ref;
+use flight_host::{CanvasRenderingContext2D, NativeSurfaceHandle};
 use flight_surface::contract::*;
 
 #[derive(Debug)]
@@ -14,12 +15,19 @@ fn context() -> CanvasRenderingContext2D {
     };
 }
 
+fn native(value: &'static str) -> Option<NativeSurfaceHandle> {
+    return Some(NativeSurfaceHandle {
+        provider: Arc::new(()),
+        handle: Arc::new(value),
+    });
+}
+
 fn app_window() -> Ref<AppWindow> {
     return create_app_window();
 }
 
 fn capability(
-    create_handle: Unknown,
+    create_handle: Option<NativeSurfaceHandle>,
     acquired_context: Option<CanvasRenderingContext2D>,
     created: Arc<Mutex<Vec<(Ref<AppWindow>, f32, f32)>>>,
     acquired: Arc<Mutex<Vec<SurfaceRef>>>,
@@ -62,7 +70,7 @@ mod create_canvas_surface {
     fn allocates_a_drawable_in_the_window_and_acquires_a_2d_context() {
         let created = Arc::new(Mutex::new(Vec::new()));
         let acquired = Arc::new(Mutex::new(Vec::new()));
-        let handle: Unknown = Some(Arc::new("canvas"));
+        let handle = native("canvas");
         let expected_context = context();
         let capability = capability(
             handle,
@@ -80,7 +88,7 @@ mod create_canvas_surface {
         assert_eq!((created[0].1, created[0].2), (320.0, 240.0));
         let stored_handle = get_surface_handle(&*borrowed).expect("handle");
         assert_eq!(
-            stored_handle.downcast_ref::<&'static str>(),
+            stored_handle.handle.downcast_ref::<&'static str>(),
             Some(&"canvas")
         );
         assert!(Arc::ptr_eq(
@@ -106,7 +114,7 @@ mod create_canvas_surface {
     #[test]
     fn returns_null_when_the_drawable_cannot_rasterize_2d() {
         let capability = capability(
-            Some(Arc::new("canvas")),
+            native("canvas"),
             None,
             Arc::new(Mutex::new(Vec::new())),
             Arc::new(Mutex::new(Vec::new())),
@@ -123,18 +131,18 @@ mod create_canvas_surface_from_native_handle {
     fn adopts_a_drawable_the_caller_owns_without_allocating_one() {
         let created = Arc::new(Mutex::new(Vec::new()));
         let capability = capability(
-            Some(Arc::new("unused")),
+            native("unused"),
             Some(context()),
             created.clone(),
             Arc::new(Mutex::new(Vec::new())),
             Arc::new(Mutex::new(Vec::new())),
         );
         let surface =
-            create_canvas_surface_from_native_handle(&capability, Some(Arc::new("adopted")), None)
+            create_canvas_surface_from_native_handle(&capability, native("adopted"), None)
                 .expect("surface is adopted");
         let borrowed = surface.read().unwrap();
         let handle = get_surface_handle(&*borrowed).expect("adopted handle");
-        assert_eq!(handle.downcast_ref::<&str>(), Some(&"adopted"));
+        assert_eq!(handle.handle.downcast_ref::<&str>(), Some(&"adopted"));
         assert!(created.lock().unwrap().is_empty());
     }
 }
@@ -146,7 +154,7 @@ mod destroy_canvas_surface {
     fn releases_the_surface_through_the_capability_preserving_identity() {
         let released = Arc::new(Mutex::new(Vec::new()));
         let capability = capability(
-            Some(Arc::new("canvas")),
+            native("canvas"),
             Some(context()),
             Arc::new(Mutex::new(Vec::new())),
             Arc::new(Mutex::new(Vec::new())),

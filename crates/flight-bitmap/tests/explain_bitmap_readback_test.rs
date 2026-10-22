@@ -1,4 +1,5 @@
 use flight_bitmap::contract::*;
+use flight_host::HostImageSource;
 use std::sync::Arc;
 
 mod explain_bitmap_readback {

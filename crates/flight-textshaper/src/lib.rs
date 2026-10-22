@@ -1,4 +1,5 @@
 mod enable_text_shaper_guards;
+mod host_explain;
 mod sugar;
 mod text_shaper;
 mod text_shaper_cache;

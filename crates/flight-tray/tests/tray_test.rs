@@ -6,7 +6,7 @@ use flight_entity::{
     CaughtPanic, FlightError, FlightErrorKind, Ref, allocate_entity, get_caught_panic_payload,
 };
 use flight_geometry::{create_rectangle, create_vector2};
-use flight_hostcapability::{HostSpawnCapability, ProviderRef};
+use flight_host::{HostSpawnCapability, ProviderRef};
 use flight_menu::MenuItemTemplate;
 use flight_signals::{
     Signal, SignalSlot, SignalTimerState, advance_signal_timers, create_signal,

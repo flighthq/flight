@@ -18,4 +18,5 @@ mod app_loop_test;
 mod app_test;
 mod app_window_test;
 mod fixture;
+mod host_explain_test;
 mod window_fixture;

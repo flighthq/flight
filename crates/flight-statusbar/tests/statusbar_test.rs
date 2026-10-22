@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 
 use flight_signals::connect_signal;
 use flight_statusbar::contract::*;

@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use flight_device::contract::*;
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_useragent::DEVICE_FORM_FACTOR_UNKNOWN;
 
 fn fake_backend(refresh: Option<Arc<dyn Fn() + Send + Sync>>) -> HostDeviceCapability {

@@ -4,9 +4,9 @@ use std::ops::{Deref, DerefMut};
 use std::pin::Pin;
 use std::sync::{Arc, RwLock, Weak};
 
-use flight_bitmap::{Bitmap, HostImageSource};
+use flight_bitmap::Bitmap;
 use flight_entity::{Entity, EntityRuntimeSlot, Ref, Uint8Array};
-use flight_hostcapability::ProviderRef;
+use flight_host::{HostImageSource, ProviderRef};
 use flight_image_codec::{
     DecodedImage, HostImageDecodeCapabilities, ImageDecodeOptions, ImageEncodeOptions,
 };

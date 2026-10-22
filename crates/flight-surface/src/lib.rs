@@ -4,6 +4,7 @@
 //! platform access lives here.
 
 mod canvas_surface;
+mod host_explain;
 mod surface;
 mod surface_display;
 mod types;
@@ -29,7 +30,6 @@ pub use contract::resize_surface;
 pub use contract::set_surface_display_size;
 
 pub use contract::CanvasColorSpace;
-pub use contract::CanvasRenderingContext2D;
 pub use contract::CanvasRenderingContext2DSettings;
 pub use contract::CanvasSurface;
 pub use contract::GlContextOptions;
@@ -45,7 +45,6 @@ pub use contract::HostSurfaceDisplayCapability;
 pub use contract::HostSurfaceResizeCapability;
 pub use contract::HostWgpuCapabilities;
 pub use contract::HostWgpuCapability;
-pub use contract::NativeSurfaceHandle;
 pub use contract::Surface;
 pub use contract::SurfaceBase;
 pub use contract::SurfaceBaseMethods;

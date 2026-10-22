@@ -1,9 +1,10 @@
 // flight-lint: allow-file(contract-vocabulary, sugar-delegates) D16 structural Surface trait and Deref accessors preserve the derived surface family and are contract dispatch, not convenience methods
 //! The surface contract types: opaque native handle, D16 surface fields and trait, the canonical
-//! canvas context record, and the host capabilities (TS `Surface.ts`, `HostSurface.ts`,
-//! `HostCanvas.ts`, `CanvasSurface.ts`, `HostGl.ts`, `GlContext.ts`, `WgpuHost.ts`). The GL and WGPU
-//! contracts are written in terms of the opaque host-vocabulary handles of flight-hostcapability
-//! (D26): this crate has no GL or GPU dependency.
+//! canvas surface, and the host capabilities (TS `Surface.ts`, `HostSurface.ts`, `HostCanvas.ts`,
+//! `CanvasSurface.ts`, `HostGl.ts`, `WgpuHost.ts`). The Canvas, GL and WGPU contracts are written in
+//! terms of the opaque host-vocabulary handles of the bottom flight-host crate (D26): the native
+//! drawable, the Canvas 2D and GL contexts and the WebGPU device and context live there, and this
+//! crate has no GL or GPU dependency. A null native drawable is `None`.
 
 use std::any::Any;
 use std::ops::{Deref, DerefMut};
@@ -13,12 +14,11 @@ use flight_app::contract::AppWindow;
 use std::future::Future;
 use std::pin::Pin;
 
-use flight_entity::{Entity, EntityRuntimeSlot, FlightError, Ref, Unknown};
-use flight_hostcapability::{GlContext, GpuCanvasContext, GpuDevice, ProviderRef};
-
-/// A host-defined native drawable identity (TS `NativeSurfaceHandle`): opaque, may be an object,
-/// integer or null, and retains shared identity.
-pub type NativeSurfaceHandle = Unknown;
+use flight_entity::{Entity, EntityRuntimeSlot, FlightError, Ref};
+use flight_host::{
+    CanvasRenderingContext2D, GlContext, NativeSurfaceHandle, ProviderRef, WgpuDevice,
+    WgpuSurfaceContext,
+};
 
 /// The D16 fields base for every surface entity (TS `Surface extends Entity`). It carries the
 /// private entity runtime (and thereby the host handle binding); per-kind surfaces compose it and
@@ -43,22 +43,13 @@ pub type SurfaceRef = Ref<dyn Surface>;
 
 /// Per-surface runtime data (TS `SurfaceRuntime extends EntityRuntime`).
 pub struct SurfaceRuntime {
-    pub handle: NativeSurfaceHandle,
+    pub handle: Option<NativeSurfaceHandle>,
 }
 
 /// The base drawable entity used when no kind-specific context is needed (TS bare `Surface`).
 #[derive(Default)]
 pub struct SurfaceBase {
     fields: SurfaceFields,
-}
-
-/// The surface-owned, non-null Canvas 2D context record (TS `CanvasRenderingContext2D` residue).
-/// The handle is opaque; `Arc` identity is the platform context identity. The SDK only retains and
-/// passes it through.
-#[derive(Clone)]
-pub struct CanvasRenderingContext2D {
-    pub provider: ProviderRef,
-    pub handle: Arc<dyn Any + Send + Sync>,
 }
 
 /// The DOM 2D context settings (TS `CanvasRenderingContext2DSettings`). Every field is optional so
@@ -78,7 +69,6 @@ pub struct CanvasRenderingContext2DSettings {
 }
 
 /// A host-allocated drawable with an acquired 2D context (TS `CanvasSurface`).
-#[derive(Default)]
 pub struct CanvasSurface {
     fields: SurfaceFields,
     pub context: CanvasRenderingContext2D,
@@ -131,7 +121,7 @@ pub struct HostCanvasCapability {
                 f32,
                 f32,
                 Option<&CanvasRenderingContext2DSettings>,
-            ) -> NativeSurfaceHandle
+            ) -> Option<NativeSurfaceHandle>
             + Send
             + Sync,
     >,
@@ -183,7 +173,7 @@ pub struct HostGlCapability {
     pub acquire:
         Arc<dyn Fn(&SurfaceRef, Option<&GlContextOptions>) -> Option<GlContext> + Send + Sync>,
     pub create: Arc<
-        dyn Fn(&Ref<AppWindow>, f32, f32, Option<&GlContextOptions>) -> NativeSurfaceHandle
+        dyn Fn(&Ref<AppWindow>, f32, f32, Option<&GlContextOptions>) -> Option<NativeSurfaceHandle>
             + Send
             + Sync,
     >,
@@ -243,8 +233,8 @@ pub struct WgpuPresentationSurface {
 /// Entity).
 pub struct WgpuHostAcquisition {
     runtime: EntityRuntimeSlot,
-    pub context: GpuCanvasContext,
-    pub device: GpuDevice,
+    pub context: WgpuSurfaceContext,
+    pub device: WgpuDevice,
     pub format: GpuTextureFormat,
     pub ownership: WgpuHostAcquisitionOwnership,
     pub surface: WgpuPresentationSurface,
@@ -261,7 +251,7 @@ pub struct WgpuHostAcquisitionOptions {
 #[derive(Clone)]
 pub struct WgpuSurfaceAttachment {
     pub alpha_mode: GpuCanvasAlphaMode,
-    pub device: GpuDevice,
+    pub device: WgpuDevice,
     pub format: GpuTextureFormat,
 }
 
@@ -269,7 +259,7 @@ pub struct WgpuSurfaceAttachment {
 /// `WgpuSurfaceAttachResult`).
 #[derive(Clone)]
 pub struct WgpuSurfaceAttachResult {
-    pub context: GpuCanvasContext,
+    pub context: WgpuSurfaceContext,
     pub surface: WgpuPresentationSurface,
 }
 
@@ -294,7 +284,7 @@ pub struct HostWgpuCapability {
             + Send
             + Sync,
     >,
-    pub create: Arc<dyn Fn(&Ref<AppWindow>, f32, f32) -> NativeSurfaceHandle + Send + Sync>,
+    pub create: Arc<dyn Fn(&Ref<AppWindow>, f32, f32) -> Option<NativeSurfaceHandle> + Send + Sync>,
     pub is_supported: Arc<dyn Fn() -> bool + Send + Sync>,
     pub release: Arc<dyn Fn(&WgpuHostAcquisition) + Send + Sync>,
 }
@@ -305,11 +295,16 @@ pub struct HostWgpuCapabilities {
     pub context: Option<HostWgpuCapability>,
 }
 
-impl Default for CanvasRenderingContext2D {
+// The construction placeholder `create_canvas_surface_from_native_handle` overwrites with the
+// acquired context; the opaque context itself has no default.
+impl Default for CanvasSurface {
     fn default() -> Self {
-        return CanvasRenderingContext2D {
-            provider: Arc::new(()),
-            handle: Arc::new(()),
+        return CanvasSurface {
+            fields: SurfaceFields::default(),
+            context: CanvasRenderingContext2D {
+                provider: Arc::new(()),
+                handle: Arc::new(()),
+            },
         };
     }
 }
@@ -318,11 +313,11 @@ impl Default for WgpuHostAcquisition {
     fn default() -> Self {
         return WgpuHostAcquisition {
             runtime: EntityRuntimeSlot::default(),
-            context: GpuCanvasContext {
+            context: WgpuSurfaceContext {
                 provider: Arc::new(()),
                 handle: Arc::new(()),
             },
-            device: GpuDevice {
+            device: WgpuDevice {
                 provider: Arc::new(()),
                 handle: Arc::new(()),
             },

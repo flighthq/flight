@@ -12,7 +12,7 @@ path = "tests/main.rs"
 
 [dependencies]
 flight-entity = { workspace = true }
-flight-hostcapability = { path = "../flight-hostcapability" }
+flight-host = { path = "../flight-host" }
 
 [lints]
 workspace = true

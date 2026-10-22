@@ -1,4 +1,5 @@
 mod enable_tray_guards;
+mod host_explain;
 mod results;
 mod tray;
 mod types;

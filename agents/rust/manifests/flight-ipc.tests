@@ -1,3 +1,4 @@
+tests/host_explain_test.rs: explain_host_ipc_capabilities::appends_the_group_after_earlier_groups_with_no_slots_and_covered_slots_absent_when_empty
 tests/ipc_test.rs: invoke_ipc::preserves_a_rejected_request
 tests/ipc_test.rs: invoke_ipc::requires_the_invoke_capability_and_returns_its_response
 tests/ipc_test.rs: on_ipc_invoke::spreads_arguments_and_returns_its_release

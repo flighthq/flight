@@ -3,7 +3,7 @@ use std::panic::AssertUnwindSafe;
 use std::sync::{Arc, Mutex, RwLock, Weak};
 
 use flight_entity::{FlightError, FlightErrorKind, Ref};
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_menu::contract::*;
 use flight_signals::connect_signal;
 

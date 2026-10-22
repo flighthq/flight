@@ -2,5 +2,6 @@
 //! Consumers that need the construction initializer import this lane; the crate root mirrors the
 //! curated TS `index.ts` lane plus the types and Rust string-table helpers its API requires.
 
+pub use super::host_explain::*;
 pub use super::keyboard::*;
 pub use super::types::*;

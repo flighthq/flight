@@ -3,9 +3,10 @@
 
 use std::sync::Arc;
 
-use flight_bitmap::{Bitmap, HostBitmapReadbackCapability, HostImageSource};
+use flight_bitmap::{Bitmap, HostBitmapReadbackCapability};
 use flight_buffer::Blob;
 use flight_entity::{Ref, Uint8Array, Unknown};
+use flight_host::HostImageSource;
 use flight_image_codec::HostImageDecodeCapabilities;
 use flight_stream::AbortSignal;
 use flight_surface::SurfaceRef;
@@ -214,7 +215,10 @@ mod sugar_tests {
         let resource = create_image_resource(source, &create_image_resolver_state());
         let expected_resource = resource.clone();
         let surface: SurfaceRef = flight_surface::allocate_surface::<flight_surface::SurfaceBase>(
-            Some(Arc::new("surface")),
+            Some(flight_host::NativeSurfaceHandle {
+                provider: Arc::new(()),
+                handle: Arc::new("surface"),
+            }),
         );
         let expected_surface = surface.clone();
         let host = HostImageCapability {

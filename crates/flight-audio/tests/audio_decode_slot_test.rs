@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use flight_audio::*;
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 
 fn empty_slots() -> HostAudioDecodeCapabilities {
     return HostAudioDecodeCapabilities {

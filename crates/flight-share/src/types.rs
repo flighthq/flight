@@ -5,7 +5,7 @@ use std::sync::Arc;
 use flight_entity::{EntityRuntimeSlot, FlightError, Ref};
 use flight_signals::Signal;
 
-pub use flight_hostcapability::ProviderRef;
+pub use flight_host::ProviderRef;
 
 /// One of the three source structural alternatives; no discriminator is added to payload fields.
 #[derive(Clone, Debug, PartialEq, Eq)]

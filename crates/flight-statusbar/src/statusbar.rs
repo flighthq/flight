@@ -9,7 +9,7 @@ use crate::types::*;
 mod sugar_tests {
     use std::sync::Mutex;
 
-    use flight_hostcapability::ProviderRef;
+    use flight_host::ProviderRef;
 
     use super::*;
 

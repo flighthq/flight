@@ -67,7 +67,7 @@ mod font_contract_types {
 
     #[test]
     fn keeps_measure_metrics_optional_and_provider_identity_explicit() {
-        let provider = Arc::new(()) as flight_hostcapability::ProviderRef;
+        let provider = Arc::new(()) as flight_host::ProviderRef;
         let capability = HostGlyphRasterizerCapability {
             measure_metrics: None,
             provider: provider.clone(),

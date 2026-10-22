@@ -1,5 +1,5 @@
 use flight_entity::Ref;
-use flight_hostcapability::HostSpawnCapability;
+use flight_host::{AudioDeviceHandle, AudioSourceHandle, HostSpawnCapability};
 use flight_video::HostVideoCapability;
 
 use crate::audio_channel::*;

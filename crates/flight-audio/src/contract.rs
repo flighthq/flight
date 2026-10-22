@@ -7,4 +7,5 @@ pub use crate::audio_resource::*;
 pub use crate::audio_resource_from::*;
 pub use crate::audio_resource_reference::*;
 pub use crate::decode_audio_resource_bytes::*;
+pub use crate::host_explain::*;
 pub use crate::types::*;

@@ -7,7 +7,7 @@ use flight_buffer::{
     get_array_buffer_storage,
 };
 use flight_entity::{FlightError, Float32Array, Record, Ref, Uint8Array, set_record_value};
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_net::{HostNetCapability, NetRequestOptions, NetResponse, NetResponseBody, NetState};
 use flight_stream::{AbortSignal, abort_controller, create_abort_controller};
 

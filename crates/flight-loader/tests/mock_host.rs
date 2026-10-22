@@ -1,4 +1,4 @@
-use flight_hostcapability::{HostSpawnCapability, HostTimerCapability, TimerHandle};
+use flight_host::{HostSpawnCapability, HostTimerCapability, TimerHandle};
 use std::collections::VecDeque;
 use std::future::Future;
 use std::pin::Pin;

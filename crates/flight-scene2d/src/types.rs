@@ -14,8 +14,9 @@ use std::fmt;
 use std::ops::{Deref, DerefMut};
 use std::sync::{Arc, OnceLock, RwLock, Weak};
 
-use flight_entity::{EntityRuntimeSlot, Kind, Ref, Unknown};
+use flight_entity::{EntityRuntimeSlot, Kind, Ref};
 use flight_geometry::Rectangle;
+use flight_host::NativeViewHandle;
 use flight_layout::ViewportAlign;
 use flight_materials::BlendMode;
 use flight_materials::contract::{Material2D, MaterialData};
@@ -235,13 +236,13 @@ pub struct HtmlView {
     pub data: HtmlViewData,
 }
 
-/// HtmlView kind data (TS `HtmlViewData`). `element` is the host's opaque element handle (TS
-/// `HTMLElement | null`); scene2d never reads it.
+/// HtmlView kind data (TS `HtmlViewData`). `element` is the host-vocabulary `NativeViewHandle`
+/// (D26; TS `HTMLElement | null`, natively a platform view); scene2d never reads it.
 // flight-lint: allow(f64) D1: the element size is a JS number, compared exactly by setHtmlViewSize
 #[derive(Clone, Default)]
 pub struct HtmlViewData {
     runtime: EntityRuntimeSlot,
-    pub element: Unknown,
+    pub element: Option<NativeViewHandle>,
     pub height: f64,
     pub width: f64,
 }
@@ -250,7 +251,7 @@ pub struct HtmlViewData {
 // flight-lint: allow(f64) D1: the element size is a JS number
 #[derive(Clone, Default)]
 pub struct HtmlViewDataOptions {
-    pub element: Unknown,
+    pub element: Option<NativeViewHandle>,
     pub height: Option<f64>,
     pub width: Option<f64>,
 }

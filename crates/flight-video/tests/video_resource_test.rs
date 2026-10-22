@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use flight_bitmap::HostImageSource;
+use flight_host::HostImageSource;
 use flight_video::contract::*;
 
 use crate::video_fixture::*;
@@ -18,7 +18,7 @@ fn video_resource_of(
     return resource;
 }
 
-fn released_is(host: &FakeVideoHost, expected: &[&Arc<flight_bitmap::HostImageSource>]) -> bool {
+fn released_is(host: &FakeVideoHost, expected: &[&Arc<flight_host::HostImageSource>]) -> bool {
     let log = host.log.lock().unwrap();
     return log.released.len() == expected.len()
         && log

@@ -6,6 +6,7 @@ mod audio_resource_from;
 mod audio_resource_reference;
 mod audio_resource_source;
 mod decode_audio_resource_bytes;
+mod host_explain;
 mod sugar;
 mod types;
 

@@ -1,10 +1,9 @@
 use std::sync::{Arc, Mutex};
 
 use flight_bitmap::contract::{BitmapReadbackBackendReason, BitmapReadbackOutcome};
-use flight_bitmap::{
-    BitmapReadbackMode, HostBitmapReadbackCapability, HostImageSource, create_bitmap,
-};
+use flight_bitmap::{BitmapReadbackMode, HostBitmapReadbackCapability, create_bitmap};
 use flight_buffer::{create_array_buffer_from_bytes, create_blob};
+use flight_host::{HostImageSource, NativeSurfaceHandle};
 use flight_image::contract::*;
 use flight_stream::{
     AbortSignal, abort_controller, create_abort_controller, is_abort_signal_aborted,
@@ -213,7 +212,10 @@ mod create_image_resource_from_surface {
     fn routes_the_exact_canonical_surface_through_the_optional_bridge() {
         let (mut host, _, resource) = recording_host();
         let expected = resource.clone();
-        let surface: SurfaceRef = allocate_surface::<SurfaceBase>(Some(Arc::new("surface")));
+        let surface: SurfaceRef = allocate_surface::<SurfaceBase>(Some(NativeSurfaceHandle {
+            provider: Arc::new(()),
+            handle: Arc::new("surface"),
+        }));
         let captured_surface = surface.clone();
         host.create_image_from_surface = Some(Arc::new(move |actual| {
             assert!(Arc::ptr_eq(actual, &captured_surface));

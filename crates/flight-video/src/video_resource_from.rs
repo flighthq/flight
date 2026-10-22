@@ -15,8 +15,8 @@ mod sugar_tests {
     use std::sync::Arc;
     use std::task::{Context, Poll, Waker};
 
-    use flight_bitmap::HostImageSource;
     use flight_buffer::create_blob;
+    use flight_host::HostImageSource;
 
     use crate::contract::*;
 

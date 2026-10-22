@@ -1,4 +1,5 @@
 src/contract.rs: pub use super::enable_text_shaper_guards::*;
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::text_shaper::*;
 src/contract.rs: pub use super::text_shaper_cache::*;
 src/contract.rs: pub use super::text_shaper_cluster::*;
@@ -9,6 +10,9 @@ src/contract.rs: pub use super::text_shaper_signals::*;
 src/contract.rs: pub use super::types::*;
 src/enable_text_shaper_guards.rs: pub fn disable_text_shaper_guards(pool: &mut ShapedRunPool)
 src/enable_text_shaper_guards.rs: pub fn enable_text_shaper_guards(pool: &mut ShapedRunPool, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/host_explain.rs: pub fn enable_host_text_shaper_guards(state: &LogStateRef, now_ms: f64, text_shaper: &HostTextShaperCapabilities,)
+src/host_explain.rs: pub fn explain_host_text_shaper(text_shaper: &HostTextShaperCapabilities,) -> HostCapabilityExplanation
+src/host_explain.rs: pub fn explain_host_text_shaper_capabilities(out: &mut HostExplanation, text_shaper: &HostTextShaperCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::FontMetrics;
 src/lib.rs: pub use contract::GlyphExtents;

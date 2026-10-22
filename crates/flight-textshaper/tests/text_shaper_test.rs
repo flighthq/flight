@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use flight_hostcapability::BackendOperationExplanationLayer;
+use flight_host::BackendOperationExplanationLayer;
 use flight_textshaper::contract::*;
 
 use crate::text_shaper_fixture::*;

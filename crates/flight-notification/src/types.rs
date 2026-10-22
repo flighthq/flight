@@ -7,7 +7,7 @@ use flight_entity::EntityRuntimeSlot;
 use flight_entity::Unknown;
 use flight_signals::Signal;
 
-pub use flight_hostcapability::ProviderRef;
+pub use flight_host::ProviderRef;
 
 // ── Enums ──
 

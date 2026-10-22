@@ -1,3 +1,4 @@
+mod host_explain_test;
 mod image_resource_from_test;
 mod image_resource_reference_test;
 mod image_resource_test;

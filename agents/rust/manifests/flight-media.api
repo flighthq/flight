@@ -39,6 +39,7 @@ src/audio_mixer.rs: pub fn unroute_audio_channel_from_mixer_bus(host_audio_mixer
 src/contract.rs: pub use crate::audio_channel::*;
 src/contract.rs: pub use crate::audio_mixer::*;
 src/contract.rs: pub use crate::enable_audio_mixer_guards::*;
+src/contract.rs: pub use crate::host_explain::*;
 src/contract.rs: pub use crate::media_channel_signals::*;
 src/contract.rs: pub use crate::sugar::*;
 src/contract.rs: pub use crate::types::*;
@@ -47,26 +48,25 @@ src/contract.rs: pub use crate::video_channel_runtime::*;
 src/enable_audio_mixer_guards.rs: pub fn create_audio_mixer_guard_state() -> AudioMixerGuardStateRef
 src/enable_audio_mixer_guards.rs: pub fn disable_audio_mixer_guards(guard_state: &AudioMixerGuardStateRef)
 src/enable_audio_mixer_guards.rs: pub fn enable_audio_mixer_guards(guard_state: &AudioMixerGuardStateRef, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/host_explain.rs: pub fn enable_host_audio_guards(state: &LogStateRef, now_ms: f64, audio: &HostAudioCapabilities)
+src/host_explain.rs: pub fn explain_host_audio_capabilities(out: &mut HostExplanation, audio: &HostAudioCapabilities)
+src/host_explain.rs: pub fn explain_host_audio_device(audio: &HostAudioCapabilities) -> HostCapabilityExplanation
+src/host_explain.rs: pub fn explain_host_audio_mixer(audio: &HostAudioCapabilities) -> HostCapabilityExplanation
 src/lib.rs: pub mod contract
-src/lib.rs: pub use contract::AudioBufferHandle;
 src/lib.rs: pub use contract::AudioBus;
 src/lib.rs: pub use contract::AudioBusMethods;
 src/lib.rs: pub use contract::AudioBusMixerGuard;
 src/lib.rs: pub use contract::AudioBusMixerOperation;
-src/lib.rs: pub use contract::AudioBusNodeHandle;
 src/lib.rs: pub use contract::AudioBusOptions;
 src/lib.rs: pub use contract::AudioChannel;
 src/lib.rs: pub use contract::AudioChannelMethods;
-src/lib.rs: pub use contract::AudioDeviceHandle;
 src/lib.rs: pub use contract::AudioDeviceOperation;
 src/lib.rs: pub use contract::AudioMixer;
-src/lib.rs: pub use contract::AudioMixerGraphHandle;
 src/lib.rs: pub use contract::AudioMixerGuardState;
 src/lib.rs: pub use contract::AudioMixerGuardStateMethods;
 src/lib.rs: pub use contract::AudioMixerGuardStateRef;
 src/lib.rs: pub use contract::AudioMixerMethods;
 src/lib.rs: pub use contract::AudioMixerOptions;
-src/lib.rs: pub use contract::AudioSourceHandle;
 src/lib.rs: pub use contract::HostAudioCapabilities;
 src/lib.rs: pub use contract::HostAudioDeviceCapability;
 src/lib.rs: pub use contract::HostAudioMixerCapability;
@@ -206,11 +206,6 @@ src/sugar.rs: pub trait AudioMixerMethods { fn active_channels(&self, out: &mut 
 src/sugar.rs: pub trait VideoChannelMethods { fn current_time(&self, host_video: &HostVideoCapability) -> f32; fn destroy(&self, host_video: &HostVideoCapability); fn duration(&self) -> f32; fn enable_signals(&self) -> Ref<MediaChannelSignals>; fn height(&self, host_video: &HostVideoCapability) -> f32; fn is_muted(&self) -> bool; fn is_playing(&self) -> bool; fn pause(&self, host_video: &HostVideoCapability); fn resume(&self, host_video: &HostVideoCapability, host_spawn: &HostSpawnCapability); fn set_current_time(&self, host_video: &HostVideoCapability, value: f32) -> f32; fn set_gain(&self, host_video: &HostVideoCapability, value: f32) -> f32; fn set_muted(&self, host_video: &HostVideoCapability, value: bool) -> bool; fn set_playback_rate(&self, host_video: &HostVideoCapability, value: f32) -> f32; fn signals(&self) -> Option<Ref<MediaChannelSignals>>; fn stop(&self, host_video: &HostVideoCapability); fn width(&self, host_video: &HostVideoCapability) -> f32; }
 src/types.rs: #[derive(Clone)] pub struct HostAudioDeviceCapability { pub provider: ProviderRef, pub create_buffer: Arc<dyn Fn(AudioDeviceHandle, usize, usize, f32, &[Ref<Box<[f32]>>]) -> AudioBufferHandle + Send + Sync,>, pub create_device: Arc<dyn Fn(f32) -> AudioDeviceHandle + Send + Sync>, pub create_source: Arc<dyn Fn(AudioDeviceHandle, AudioBufferHandle) -> AudioSourceHandle + Send + Sync>, pub destroy_buffer: Arc<dyn Fn(AudioBufferHandle) + Send + Sync>, pub destroy_device: Arc<dyn Fn(AudioDeviceHandle) + Send + Sync>, pub destroy_source: Arc<dyn Fn(AudioSourceHandle) + Send + Sync>, pub fade_source_gain: Option<Arc<dyn Fn(AudioSourceHandle, f32, f32) + Send + Sync>>, pub get_device_time: Arc<dyn Fn(AudioDeviceHandle) -> f64 + Send + Sync>, pub on_source_ended: Arc<dyn Fn(AudioSourceHandle, Option<AudioSourceEndedListener>) + Send + Sync>, pub resume_device: Arc<dyn Fn(AudioDeviceHandle) + Send + Sync>, pub set_source_gain: Arc<dyn Fn(AudioSourceHandle, f32) + Send + Sync>, pub set_source_pan: Arc<dyn Fn(AudioSourceHandle, f32) + Send + Sync>, pub set_source_playback_rate: Arc<dyn Fn(AudioSourceHandle, f32) + Send + Sync>, pub start_source: Arc<dyn Fn(AudioSourceHandle, f64, f64) + Send + Sync>, pub stop_source: Arc<dyn Fn(AudioSourceHandle) + Send + Sync>, }
 src/types.rs: #[derive(Clone)] pub struct HostAudioMixerCapability { pub provider: ProviderRef, pub create_mixer_graph: Arc<dyn Fn(AudioDeviceHandle, f32) -> AudioMixerGraphHandle + Send + Sync>, pub destroy_mixer_graph: Arc<dyn Fn(AudioMixerGraphHandle) + Send + Sync>, pub create_bus_node: Arc<dyn Fn(AudioMixerGraphHandle, f32, f32) -> AudioBusNodeHandle + Send + Sync>, pub destroy_bus_node: Arc<dyn Fn(AudioMixerGraphHandle, AudioBusNodeHandle) + Send + Sync>, pub set_bus_node_gain: Arc<dyn Fn(AudioMixerGraphHandle, AudioBusNodeHandle, f32) + Send + Sync>, pub set_bus_node_pan: Arc<dyn Fn(AudioMixerGraphHandle, AudioBusNodeHandle, f32) + Send + Sync>, pub fade_bus_node_gain: Arc<dyn Fn(AudioMixerGraphHandle, AudioBusNodeHandle, f32, f32) + Send + Sync>, pub set_master_gain: Arc<dyn Fn(AudioMixerGraphHandle, f32) + Send + Sync>, pub route_source_to_bus: Arc<dyn Fn(AudioMixerGraphHandle, AudioSourceHandle, AudioBusNodeHandle) + Send + Sync>, pub unroute_source: Arc<dyn Fn(AudioMixerGraphHandle, AudioSourceHandle) + Send + Sync>, pub route_source_to_default: Arc<dyn Fn(AudioMixerGraphHandle, AudioSourceHandle) + Send + Sync>, }
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub struct AudioBufferHandle(pub i32);
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub struct AudioBusNodeHandle(pub i32);
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub struct AudioDeviceHandle(pub i32);
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub struct AudioMixerGraphHandle(pub i32);
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)] pub struct AudioSourceHandle(pub i32);
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AudioBusMixerOperation { Gain, Mute, Pan, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum AudioDeviceOperation { CreateBuffer, CreateDevice, CreateSource, DestroyBuffer, DestroyDevice, DestroySource, FadeSourceGain, GetDeviceTime, OnSourceEnded, ResumeDevice, SetSourceGain, SetSourcePan, SetSourcePlaybackRate, StartSource, StopSource, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MediaReadyState { Buffering, Error, Idle, Ready, }

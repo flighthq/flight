@@ -3,7 +3,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use flight_entity::FlightError;
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_notification::HostNotificationPermissionCapability;
 
 /// An open OS/runtime permission name (TS `PermissionName`). Known names receive method-tight

@@ -1,4 +1,5 @@
 src/contract.rs: pub use super::enable_tray_guards::*;
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::results::*;
 src/contract.rs: pub use super::tray::*;
 src/contract.rs: pub use super::types::*;
@@ -6,6 +7,7 @@ src/enable_tray_guards.rs: impl TrayAnimationState :: fn disable_guards(&mut sel
 src/enable_tray_guards.rs: impl TrayAnimationState :: fn enable_guards(&mut self, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
 src/enable_tray_guards.rs: pub fn disable_tray_guards(state: &mut TrayAnimationState)
 src/enable_tray_guards.rs: pub fn enable_tray_guards(state: &mut TrayAnimationState, log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/host_explain.rs: pub fn explain_host_tray_capabilities(out: &mut HostExplanation, tray: &HostTrayCapabilities)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::DesktopOsProfile;
 src/lib.rs: pub use contract::HostTrayBalloonCapability;

@@ -3,7 +3,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use flight_entity::{FlightError, Uint8Array};
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_stream::{AbortSignal, ReadableStream, WritableStream};
 
 /// A provider Promise (D15). `Err` is its rejection, which reaches the caller unchanged; an abort

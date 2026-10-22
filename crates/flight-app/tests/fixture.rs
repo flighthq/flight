@@ -4,7 +4,7 @@
 use std::sync::{Arc, Mutex};
 
 use flight_entity::Ref;
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_menu::MenuItemTemplate;
 
 use crate::contract::*;

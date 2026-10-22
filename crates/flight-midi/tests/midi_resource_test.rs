@@ -167,7 +167,7 @@ mod retain_midi_access_resource_state {
 
     #[test]
     fn binds_the_provider_operations_to_the_entity() {
-        let provider: flight_hostcapability::ProviderRef = Arc::new("provider".to_string());
+        let provider: flight_host::ProviderRef = Arc::new("provider".to_string());
         let mut operations = access_operations();
         operations.provider = provider.clone();
         let mut access: MidiAccess = allocate_entity();

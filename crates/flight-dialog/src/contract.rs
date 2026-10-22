@@ -2,5 +2,6 @@
 
 pub use super::dialog::*;
 pub use super::file_dialog::*;
+pub use super::host_explain::*;
 pub use super::media_dialog::*;
 pub use super::types::*;

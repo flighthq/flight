@@ -19,7 +19,7 @@ flight-stream.workspace = true
 futures = "0.3"
 
 [dev-dependencies]
-flight-hostcapability.workspace = true
+flight-host.workspace = true
 
 [lints]
 workspace = true

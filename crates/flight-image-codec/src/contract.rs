@@ -3,4 +3,5 @@
 pub use crate::decode_image::*;
 pub use crate::detect_image_mime_type::*;
 pub use crate::encode_image::*;
+pub use crate::host_explain::*;
 pub use crate::types::*;

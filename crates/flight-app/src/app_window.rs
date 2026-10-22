@@ -3,6 +3,7 @@ use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, allocate_entity, throw_type_error};
 use flight_geometry::Matrix;
+use flight_host::NativeWindowHandle;
 use flight_input::{
     HostInputDropFileCapability, HostInputFocusCapability, HostInputPointerLockCapability,
     HostInputTargetCapability, InputPointerLockExitFuture, InputPointerLockExitReason,
@@ -343,18 +344,22 @@ mod sugar_tests {
     fn host_window_attach_capability_attach_window_matches_attach_window() {
         let (ba, bb) = (window_backend(), window_backend());
         let (wa, wb) = (create_app_window(), create_app_window());
+        let native = NativeWindowHandle {
+            provider: Arc::new(()),
+            handle: Arc::new(1_i32),
+        };
         assert_eq!(
             ba.attach().attach_window(
                 &ba.lifecycle(),
                 &wa,
-                &Some(Arc::new(1_i32)),
+                &native,
                 WindowAttachmentOwnership::Host
             ),
             attach_window(
                 &bb.attach(),
                 &bb.lifecycle(),
                 &wb,
-                &Some(Arc::new(1_i32)),
+                &native,
                 WindowAttachmentOwnership::Host
             )
         );

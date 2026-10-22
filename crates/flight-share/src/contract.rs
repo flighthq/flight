@@ -33,5 +33,6 @@
 //! ```
 //!
 
+pub use crate::host_explain::*;
 pub use crate::share::*;
 pub use crate::types::*;

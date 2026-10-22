@@ -41,6 +41,7 @@ mod bitmap_tone;
 mod bitmap_transform;
 mod bitmap_warp;
 mod explain_bitmap_readback;
+mod host_explain;
 mod types;
 
 pub mod contract;
@@ -86,7 +87,6 @@ pub use contract::GradientSpread;
 pub use contract::HostBitmapCapabilities;
 pub use contract::HostBitmapEncodeCapability;
 pub use contract::HostBitmapReadbackCapability;
-pub use contract::HostImageSource;
 pub use contract::ImageChannel;
 pub use contract::ImageFormat;
 pub use contract::PixelOrder;

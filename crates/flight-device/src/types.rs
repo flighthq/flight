@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_useragent::DeviceFormFactor;
 
 // flight-lint: allow(f64) available_memory/total_memory are byte counts (e.g. 8_000_000_000) that need exact integers far beyond f32's 2^24; TS number (double)

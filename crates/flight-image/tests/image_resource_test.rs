@@ -1,8 +1,8 @@
 use std::any::Any;
 use std::sync::{Arc, RwLock};
 
-use flight_bitmap::HostImageSource;
 use flight_entity::{Entity, allocate_entity};
+use flight_host::HostImageSource;
 use flight_image::contract::*;
 use flight_texture::{AlphaType, TextureGamut, TextureSource, TextureSourceRef};
 use flight_texture_formats::{

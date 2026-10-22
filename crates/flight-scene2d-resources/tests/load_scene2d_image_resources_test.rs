@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex, RwLock};
 
-use flight_bitmap::HostImageSource;
+use flight_host::HostImageSource;
 use flight_image::{
     EmbeddedImageResourceReferenceValue, ExternalImageResourceReferenceValue, ImageResolverState,
     ImageResourceFetch, ImageResourceReference, create_embedded_image_resource_reference,

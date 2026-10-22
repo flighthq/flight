@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_entity::{FlightError, FlightErrorKind, Ref, Uint8Array, Unknown, allocate_entity};
+use flight_host::HostImageSource;
 use flight_image::contract::*;
 use flight_image_codec::{
     DecodedImage, HostImageDecodeCapabilities, HostImageDecodeFormatCapability, ImageDecodeOptions,
@@ -32,8 +33,8 @@ fn empty_capabilities() -> HostImageDecodeCapabilities {
     };
 }
 
-fn image_source() -> Arc<flight_bitmap::HostImageSource> {
-    return Arc::new(flight_bitmap::HostImageSource {
+fn image_source() -> Arc<flight_host::HostImageSource> {
+    return Arc::new(flight_host::HostImageSource {
         provider: Arc::new(()),
         handle: Arc::new(()),
     });

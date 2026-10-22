@@ -44,4 +44,5 @@ pub use super::bitmap_tone::*;
 pub use super::bitmap_transform::*;
 pub use super::bitmap_warp::*;
 pub use super::explain_bitmap_readback::*;
+pub use super::host_explain::*;
 pub use super::types::*;

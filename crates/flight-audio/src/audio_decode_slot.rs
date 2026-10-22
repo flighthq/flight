@@ -7,7 +7,7 @@ use crate::types::{HostAudioDecodeCapabilities, HostAudioDecodeFormatCapability}
 mod sugar_tests {
     use std::sync::Arc;
 
-    use flight_hostcapability::ProviderRef;
+    use flight_host::ProviderRef;
 
     use super::*;
 

@@ -18,4 +18,5 @@ pub(crate) fn ok<T: Send + 'static>(value: T) -> flight_dialog::contract::Dialog
 
 mod dialog_test;
 mod file_dialog_test;
+mod host_explain_test;
 mod media_dialog_test;

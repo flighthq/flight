@@ -8,4 +8,5 @@ pub use crate::font_resource_from::*;
 pub use crate::font_shorthand::*;
 pub use crate::font_status::*;
 pub use crate::glyph_outline_source::*;
+pub use crate::host_explain::*;
 pub use crate::types::*;

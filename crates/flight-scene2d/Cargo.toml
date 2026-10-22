@@ -15,6 +15,7 @@ flight-animation = { workspace = true }
 flight-clip = { workspace = true }
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
+flight-host = { workspace = true }
 flight-layout = { workspace = true }
 flight-materials = { workspace = true }
 flight-node = { path = "../flight-node" }

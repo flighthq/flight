@@ -1,5 +1,7 @@
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::statusbar::*;
 src/contract.rs: pub use super::types::*;
+src/host_explain.rs: pub fn explain_host_status_bar_capabilities(out: &mut HostExplanation, status_bar: &HostStatusBarCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::HostStatusBarCapabilities;
 src/lib.rs: pub use contract::HostStatusBarChangeCapability;

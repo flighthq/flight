@@ -4,7 +4,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use flight_entity::{EntityRuntimeSlot, FlightError, Ref};
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_menu::MenuItemTemplate;
 use flight_signals::Signal;
 

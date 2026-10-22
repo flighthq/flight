@@ -1,4 +1,4 @@
-use flight_bitmap::HostImageSource;
+use flight_host::HostImageSource;
 use std::sync::Arc;
 
 use crate::types::{HostImageDimensionResolver, HostImageDimensions, ImageResolverState};

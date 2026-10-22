@@ -18,7 +18,7 @@ batch start, and request routes that deliberately do not fall back to reads.
 Notification uses `flight-notification`'s canonical permission capability; geolocation requests
 use `flight-geolocation`'s canonical access-prompt capability. This crate owns the generic
 permissions capability plus the relocated MIDI permission and persistence query/request facets.
-Every callback record carries the canonical `flight-hostcapability::ProviderRef`; provider
+Every callback record carries the canonical `flight-host::ProviderRef`; provider
 identity is metadata and is never compared or used as a callback key.
 
 `get_permission_states` captures every needed capability before starting any asynchronous work,

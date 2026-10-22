@@ -27,7 +27,7 @@ mod sugar_tests {
     }
 
     fn backend(checks: Arc<Mutex<Vec<String>>>) -> HostFontLoadingCapability {
-        let provider = Arc::new(()) as flight_hostcapability::ProviderRef;
+        let provider = Arc::new(()) as flight_host::ProviderRef;
         let face_provider = provider.clone();
         return HostFontLoadingCapability {
             add_font_face: Arc::new(|_| {}),
@@ -37,8 +37,10 @@ mod sugar_tests {
             }),
             create_font_face: Arc::new(move |family, _source| {
                 Arc::new(FontFace {
-                    provider: face_provider.clone(),
-                    handle: Arc::new(()),
+                    handle: flight_host::FontFaceHandle {
+                        provider: face_provider.clone(),
+                        handle: Arc::new(()),
+                    },
                     family: family.to_string(),
                 })
             }),

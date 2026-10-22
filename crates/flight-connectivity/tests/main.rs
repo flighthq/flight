@@ -13,3 +13,4 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
 }
 
 mod connectivity_test;
+mod host_explain_test;

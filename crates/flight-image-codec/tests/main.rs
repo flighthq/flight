@@ -15,3 +15,4 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
 mod decode_image_test;
 mod detect_image_mime_type_test;
 mod encode_image_test;
+mod host_explain_test;

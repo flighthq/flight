@@ -4,7 +4,7 @@ use std::pin::Pin;
 use std::sync::{Arc, Weak};
 
 use flight_entity::{EntityRuntimeSlot, FlightError, Ref};
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_signals::Signal;
 
 /// The menu item kind (TS `MenuItemType`), a closed string union.

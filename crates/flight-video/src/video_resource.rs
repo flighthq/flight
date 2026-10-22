@@ -6,7 +6,7 @@ use crate::types::*;
 mod sugar_tests {
     use std::sync::{Arc, Mutex};
 
-    use flight_bitmap::HostImageSource;
+    use flight_host::HostImageSource;
 
     use crate::contract::*;
 

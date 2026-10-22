@@ -11,7 +11,9 @@ src/accessibility_sugar.rs: impl HostAccessibilityCapability :: fn remove_node(&
 src/accessibility_sugar.rs: impl HostAccessibilityCapability :: fn set_focus(&self, id: &str,) -> AccessibilityOperationOutcome<AccessibilityOperationBlockReason>
 src/accessibility_sugar.rs: impl HostAccessibilityCapability :: fn set_node(&self, node: &AccessibilityNode,) -> AccessibilityOperationOutcome<AccessibilityTreeBlockReason>
 src/contract.rs: pub use crate::accessibility::*;
+src/contract.rs: pub use crate::host_explain::*;
 src/contract.rs: pub use crate::types::*;
+src/host_explain.rs: pub fn explain_host_accessibility_capabilities(out: &mut HostExplanation, accessibility: &HostAccessibilityCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::AccessibilityDescriptor;
 src/lib.rs: pub use contract::AccessibilityLiveness;

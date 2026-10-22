@@ -1,5 +1,6 @@
 src/contract.rs: pub use crate::geolocation::*;
 src/contract.rs: pub use crate::geolocation_access::*;
+src/contract.rs: pub use crate::host_explain::*;
 src/contract.rs: pub use crate::types::*;
 src/geolocation.rs: impl HostGeolocationCapability :: async fn get_current_position(&self, options: Option<&GeolocationRequestOptions>,) -> Option<GeolocationPosition>
 src/geolocation.rs: impl HostGeolocationCapability :: async fn get_current_position_result(&self, options: Option<&GeolocationRequestOptions>,) -> GeolocationPositionResult
@@ -15,6 +16,7 @@ src/geolocation.rs: pub fn initialize_geolocation_position(out: &mut Geolocation
 src/geolocation.rs: pub fn is_geolocation_available(host_geolocation: &HostGeolocationCapability) -> bool
 src/geolocation.rs: pub fn watch_geolocation_position(host_geolocation: &HostGeolocationCapability, handler: Arc<dyn Fn(&GeolocationPosition) + Send + Sync>, options: Option<&GeolocationRequestOptions>, on_error: Option<Arc<dyn Fn(GeolocationErrorReason) + Send + Sync>>,) -> i32
 src/geolocation_access.rs: pub async fn prompt_for_geolocation_access(host_geolocation: Option<&HostGeolocationCapability>,) -> GeolocationAccessOutcome
+src/host_explain.rs: pub fn explain_host_geolocation_capabilities(out: &mut HostExplanation, geolocation: &HostGeolocationCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::GeolocationAccessOutcome;
 src/lib.rs: pub use contract::GeolocationAccessReason;

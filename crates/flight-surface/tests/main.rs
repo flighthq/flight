@@ -1,4 +1,5 @@
 mod canvas_surface_test;
+mod host_explain_test;
 mod surface_display_test;
 mod surface_test;
 mod wgpu_host_acquisition_test;

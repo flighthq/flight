@@ -13,7 +13,7 @@ path = "tests/main.rs"
 [dependencies]
 flight-buffer = { workspace = true }
 flight-entity = { workspace = true }
-flight-hostcapability = { workspace = true }
+flight-host = { workspace = true }
 flight-net = { workspace = true }
 flight-resource = { workspace = true }
 flight-stream = { workspace = true }

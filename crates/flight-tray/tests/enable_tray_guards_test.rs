@@ -3,7 +3,7 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_entity::Ref;
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_log::{
     LogData, LogLevel, LogStateRef, add_log_sink, create_log_state, create_memory_log_sink,
     get_memory_log_sink_entries,
@@ -68,7 +68,7 @@ fn tray() -> (Ref<TrayIcon>, HostTrayImageCapability) {
 }
 
 fn animation_state() -> TrayAnimationState {
-    let spawn = flight_hostcapability::HostSpawnCapability {
+    let spawn = flight_host::HostSpawnCapability {
         provider: Arc::new(()),
         spawn: Arc::new(
             |_future: std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>| {},

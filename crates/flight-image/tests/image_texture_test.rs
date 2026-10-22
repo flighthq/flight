@@ -1,6 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, Uint8Array};
+use flight_host::HostImageSource;
 use flight_image::contract::*;
 
 fn embedded() -> ImageResourceReference {
@@ -81,7 +82,7 @@ mod create_texture_from_image_resource {
         let mut material = flight_materials::contract::create_blinn_phong_material(None);
         material.diffuse_map = Some(texture.clone());
         let resource = create_image_resource(
-            Arc::new(flight_bitmap::HostImageSource {
+            Arc::new(flight_host::HostImageSource {
                 provider: Arc::new(()),
                 handle: Arc::new(()),
             }),

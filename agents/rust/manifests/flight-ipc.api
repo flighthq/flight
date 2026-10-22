@@ -1,5 +1,7 @@
+src/contract.rs: pub use crate::host_explain::*;
 src/contract.rs: pub use crate::ipc::*;
 src/contract.rs: pub use crate::types::*;
+src/host_explain.rs: pub fn explain_host_ipc_capabilities(out: &mut HostExplanation, ipc: &HostIpcCapabilities)
 src/ipc.rs: impl HostIpcHandleCapability :: fn on_invoke(&self, channel: &str, handler: IpcInvokeHandler) -> IpcUnsubscribe
 src/ipc.rs: impl HostIpcInvokeCapability :: async fn invoke(&self, channel: &str, args: IpcArguments) -> IpcInvokeResult
 src/ipc.rs: impl HostIpcMessageCapability :: fn on_message(&self, channel: &str, listener: IpcMessageListener) -> IpcUnsubscribe

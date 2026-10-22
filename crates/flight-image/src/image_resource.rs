@@ -1,8 +1,8 @@
 use std::any::Any;
 use std::sync::{Arc, RwLock, Weak};
 
-use flight_bitmap::HostImageSource;
 use flight_entity::{Ref, allocate_entity};
+use flight_host::HostImageSource;
 use flight_texture::{AlphaType, TextureGamut, TextureSourceFields, TextureSourceRef};
 
 use crate::image_source_dimensions::get_host_image_source_dimensions;

@@ -8,6 +8,7 @@ mod audio_resource_from_test;
 mod audio_resource_reference_test;
 mod audio_resource_test;
 mod decode_audio_resource_bytes_test;
+mod host_explain_test;
 mod types_test;
 
 fn block_on<F: Future>(future: F) -> F::Output {

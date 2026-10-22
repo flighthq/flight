@@ -14,3 +14,4 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
 
 mod clipboard_test;
 mod clipboard_watch_test;
+mod host_explain_test;

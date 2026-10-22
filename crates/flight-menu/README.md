@@ -20,7 +20,7 @@ Two source module-level records become explicit caller-owned state (D5):
   no hidden singleton or TLS exists.
 - `AppMenuDestroyedProviders` records finally-released application providers as **non-owning weak
   handles to the provider identity token** (`provider: ProviderRef`, the canonical alias from
-  flight-hostcapability), mirroring the source WeakSet keyed by the provider object. Every
+  flight-host), mirroring the source WeakSet keyed by the provider object. Every
   capability facet carries that token; facets from one provider clone the same token and different
   providers keep distinct tokens even when they share callbacks. Identity is compared with
   `Arc::ptr_eq`, never by callbacks or by the facet wrapper: two wrappers for one provider destroy

@@ -2,7 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use flight_entity::EntityRuntimeSlot;
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_signals::Signal;
 
 /// The standard W3C transport actions the OS surfaces as buttons and hardware media keys (TS `MediaSessionAction`); the strings keep the web API source form.

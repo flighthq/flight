@@ -18,7 +18,7 @@ distinct from explicit empty strings. `ShareFilesContent.files` uses ordered
 `Vec<Ref<ShareFile>>`, with the source nonempty invariant checked at command
 boundaries. Core copies the file array and retains descriptor references.
 Both capability records carry canonical `provider: ProviderRef` from
-`flight-hostcapability`; facets from one provider share its token (Principal
+`flight-host`; facets from one provider share its token (Principal
 9170da33). No duplicate identity alias is defined.
 Content and detailed outcomes use `Ref` to preserve provider/caller identity,
 including callback retention of the exact emitted and returned result.

@@ -4,6 +4,7 @@
 mod app;
 mod app_loop;
 mod app_window;
+mod host_explain;
 mod loop_types;
 mod types;
 mod window_types;
@@ -80,7 +81,6 @@ pub use contract::HostWindowStateCapability;
 pub use contract::HostWindowVisibilityCapability;
 pub use contract::HostWindowZOrderCapability;
 pub use contract::MobileOsProfile;
-pub use contract::NativeWindowHandle;
 pub use contract::WindowAttachmentOwnership;
 pub use contract::WindowBounds;
 pub use contract::WindowCloseRequestListener;

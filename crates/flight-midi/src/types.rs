@@ -4,7 +4,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use flight_entity::{EntityRuntimeSlot, FlightError, Ref, Uint8Array};
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_permissions::HostMidiPermissionCapability;
 use flight_signals::Signal;
 use flight_stream::SharedFuture;

@@ -1,5 +1,7 @@
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::lifecycle::*;
 src/contract.rs: pub use super::types::*;
+src/host_explain.rs: pub fn explain_host_lifecycle_capabilities(out: &mut HostExplanation, lifecycle: &HostLifecycleCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::AppLaunchKind;
 src/lib.rs: pub use contract::AppLifecycle;

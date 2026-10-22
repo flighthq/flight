@@ -89,7 +89,7 @@ flight-font = { path = "crates/flight-font" }
 flight-font-formats = { path = "crates/flight-font-formats" }
 flight-glyphatlas = { path = "crates/flight-glyphatlas" }
 flight-geolocation = { path = "crates/flight-geolocation" }
-flight-hostcapability = { path = "crates/flight-hostcapability" }
+flight-host = { path = "crates/flight-host" }
 flight-log = { path = "crates/flight-log" }
 flight-materials = { path = "crates/flight-materials" }
 flight-regexp = { path = "crates/flight-regexp" }

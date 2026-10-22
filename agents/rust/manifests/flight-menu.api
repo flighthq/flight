@@ -1,7 +1,9 @@
+src/contract.rs: pub use crate::host_explain::*;
 src/contract.rs: pub use crate::menu::*;
 src/contract.rs: pub use crate::menu_templates::*;
 src/contract.rs: pub use crate::menu_watch::*;
 src/contract.rs: pub use crate::types::*;
+src/host_explain.rs: pub fn explain_host_menu_capabilities(out: &mut HostExplanation, menu: &HostMenuCapabilities)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::AppMenuDestroyedProviders;
 src/lib.rs: pub use contract::HostAppMenuCapability;

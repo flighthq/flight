@@ -7,7 +7,7 @@ use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 
-pub use flight_hostcapability::ProviderRef;
+pub use flight_host::ProviderRef;
 
 /// Exact Principal batch8 native-body union; null is the surrounding Option.
 #[derive(Clone)]

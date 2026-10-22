@@ -1,4 +1,5 @@
 src/contract.rs: pub use super::enable_text_segment_guards::*;
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::text_segment::*;
 src/contract.rs: pub use super::text_segment_boundary::*;
 src/contract.rs: pub use super::text_segment_guards::*;
@@ -6,6 +7,9 @@ src/contract.rs: pub use super::text_segmenter_backend::*;
 src/contract.rs: pub use super::types::*;
 src/enable_text_segment_guards.rs: pub fn disable_text_segment_guards()
 src/enable_text_segment_guards.rs: pub fn enable_text_segment_guards(log_state: &LogStateRef, clock: Arc<dyn Fn() -> f64 + Send + Sync>,)
+src/host_explain.rs: pub fn enable_host_text_segment_guards(state: &LogStateRef, now_ms: f64, text_segment: &HostTextSegmentCapabilities,)
+src/host_explain.rs: pub fn explain_host_text_segment_capabilities(out: &mut HostExplanation, text_segment: &HostTextSegmentCapabilities,)
+src/host_explain.rs: pub fn explain_host_text_segmenter(text_segment: &HostTextSegmentCapabilities,) -> HostCapabilityExplanation
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::HostTextSegmentCapabilities;
 src/lib.rs: pub use contract::HostTextSegmenterCapability;

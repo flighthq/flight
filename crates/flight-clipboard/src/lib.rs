@@ -1,5 +1,6 @@
 mod clipboard;
 mod clipboard_watch;
+mod host_explain;
 mod types;
 
 pub mod contract;

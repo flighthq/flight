@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use flight_audio::AudioChannelState;
 use flight_entity::Entity;
+use flight_host::AudioDeviceHandle;
 
 use super::*;
 

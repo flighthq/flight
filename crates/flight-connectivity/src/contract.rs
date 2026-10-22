@@ -3,4 +3,5 @@
 //! the crate root exposes only the curated public lane from TS `index.ts` plus type sugar.
 
 pub use super::connectivity::*;
+pub use super::host_explain::*;
 pub use super::types::*;

@@ -3,6 +3,7 @@
 //! the crate root exposes only the curated public lane from TS `index.ts` plus required types.
 
 pub use super::enable_text_segment_guards::*;
+pub use super::host_explain::*;
 pub use super::text_segment::*;
 pub use super::text_segment_boundary::*;
 pub use super::text_segment_guards::*;

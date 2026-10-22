@@ -1,3 +1,4 @@
+src/contract.rs: pub use crate::host_explain::*;
 src/contract.rs: pub use crate::image_resource::*;
 src/contract.rs: pub use crate::image_resource_from::*;
 src/contract.rs: pub use crate::image_resource_reference::*;
@@ -5,6 +6,9 @@ src/contract.rs: pub use crate::image_source_dimensions::*;
 src/contract.rs: pub use crate::image_test_helper::*;
 src/contract.rs: pub use crate::image_texture::*;
 src/contract.rs: pub use crate::types::*;
+src/host_explain.rs: pub fn enable_host_image_guards(state: &LogStateRef, now_ms: f64, image: &HostImageCapabilities)
+src/host_explain.rs: pub fn explain_host_image(image: &HostImageCapabilities) -> HostCapabilityExplanation
+src/host_explain.rs: pub fn explain_host_image_capabilities(out: &mut HostExplanation, image: &HostImageCapabilities)
 src/image_resource.rs: pub fn as_image_resource_ref(source: &TextureSourceRef) -> Option<Ref<ImageResource>>
 src/image_resource.rs: pub fn clone_image_resource(resource: &Ref<ImageResource>) -> Ref<ImageResource>
 src/image_resource.rs: pub fn create_compressed_image_resource(compressed: Arc<CompressedImageData>,) -> Ref<CompressedImageResource>

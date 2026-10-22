@@ -1,6 +1,7 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
 
+use flight_host::AudioDeviceHandle;
 use flight_log::{
     LogData, LogStateRef, LogValue, create_log_state, create_memory_log_sink,
     get_memory_log_sink_entries, set_log_sink,

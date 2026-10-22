@@ -1,14 +1,14 @@
-use std::any::Any;
 use std::sync::Arc;
 
 use flight_geometry::create_rectangle;
+use flight_host::NativeViewHandle;
 use flight_node::{NodeRef, get_node_local_bounds_rectangle, get_node_local_bounds_revision};
 use flight_scene2d::contract::*;
 
 fn view_with(
     width: f64,
     height: f64,
-    element: flight_entity::Unknown,
+    element: Option<NativeViewHandle>,
 ) -> flight_entity::Ref<HtmlView> {
     let make: fn() -> PartialHtmlView = PartialHtmlView::default;
     let obj = PartialHtmlView {
@@ -22,8 +22,11 @@ fn view_with(
     return create_html_view(Some(&obj));
 }
 
-fn element() -> Arc<dyn Any + Send + Sync> {
-    return Arc::new(String::from("img"));
+fn element() -> NativeViewHandle {
+    return NativeViewHandle {
+        provider: Arc::new(()),
+        handle: Arc::new(String::from("img")),
+    };
 }
 
 mod compute_html_view_local_bounds_rectangle {
@@ -55,7 +58,10 @@ mod create_html_view {
         let host = element();
         let view = view_with(640.0, 480.0, Some(host.clone()));
         let view = view.read().unwrap();
-        assert!(Arc::ptr_eq(view.data.element.as_ref().unwrap(), &host));
+        assert!(Arc::ptr_eq(
+            &view.data.element.as_ref().unwrap().handle,
+            &host.handle
+        ));
         assert_eq!((view.data.width, view.data.height), (640.0, 480.0));
     }
 
@@ -93,7 +99,10 @@ mod create_html_view_data {
             width: Some(200.0),
             height: Some(150.0),
         }));
-        assert!(Arc::ptr_eq(data.element.as_ref().unwrap(), &host));
+        assert!(Arc::ptr_eq(
+            &data.element.as_ref().unwrap().handle,
+            &host.handle
+        ));
         assert_eq!((data.width, data.height), (200.0, 150.0));
     }
 }

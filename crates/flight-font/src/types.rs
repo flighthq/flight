@@ -1,11 +1,10 @@
-use std::any::Any;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
 
 use flight_buffer::{ArrayBuffer, ArrayBufferView};
 use flight_entity::{EntityRuntimeSlot, Uint8Array, Unknown};
-use flight_hostcapability::ProviderRef;
+use flight_host::{FontFaceHandle, ProviderRef};
 use flight_path::Path;
 
 #[cfg(test)]
@@ -83,12 +82,11 @@ pub struct FontFormatUint8Array<'a> {
     pub bytes: &'a Uint8Array,
 }
 
-/// One host-created platform font face. The handle is opaque SDK data; its provider token records
-/// which host owns it, and clones of the surrounding `Arc` preserve exact face identity.
-// flight-lint: allow(contract-vocabulary) Principal 1015f931: FontFace.handle is the approved opaque Arc<dyn Any + Send + Sync> host handle
+/// One host-created platform font face: the opaque host-vocabulary `FontFaceHandle` (D26), whose
+/// provider token records which host owns it, with the SDK's family metadata. Clones of the
+/// surrounding `Arc` preserve exact face identity.
 pub struct FontFace {
-    pub provider: ProviderRef,
-    pub handle: Arc<dyn Any + Send + Sync>,
+    pub handle: FontFaceHandle,
     pub family: String,
 }
 

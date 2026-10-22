@@ -1,6 +1,7 @@
 mod decode_image;
 mod detect_image_mime_type;
 mod encode_image;
+mod host_explain;
 mod types;
 
 pub mod contract;

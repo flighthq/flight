@@ -18,6 +18,7 @@ flight-color = { workspace = true }
 flight-easing = { workspace = true }
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
+flight-host = { workspace = true }
 flight-image = { workspace = true }
 flight-importdiagnostics = { workspace = true }
 flight-layout = { workspace = true }

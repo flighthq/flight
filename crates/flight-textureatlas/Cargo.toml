@@ -21,6 +21,7 @@ flight-stream = { workspace = true }
 flight-texture = { workspace = true }
 
 [dev-dependencies]
+flight-host = { workspace = true }
 flight-texture-formats = { workspace = true }
 
 [lints]

@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use flight_hostcapability::{BackendOperationExplanation, BackendOperationExplanationLayer};
+use flight_host::{BackendOperationExplanation, BackendOperationExplanationLayer};
 use flight_lifecycle::contract::*;
 use flight_signals::{cancel_signal, connect_signal};
 

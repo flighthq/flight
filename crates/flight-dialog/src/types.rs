@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use flight_app::AppWindow;
 use flight_entity::{EntityRuntimeSlot, FlightError, Record, Ref, Uint8Array};
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_stream::AbortSignal;
 
 /// A provider Promise (D15), returned to the caller as is. `Err` is its rejection.

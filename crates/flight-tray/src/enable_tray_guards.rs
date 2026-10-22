@@ -15,7 +15,7 @@ mod sugar_tests {
     use super::*;
 
     fn animation_state() -> TrayAnimationState {
-        let spawn = flight_hostcapability::HostSpawnCapability {
+        let spawn = flight_host::HostSpawnCapability {
             provider: Arc::new(()),
             spawn: Arc::new(
                 |_future: std::pin::Pin<Box<dyn std::future::Future<Output = ()> + Send>>| {},

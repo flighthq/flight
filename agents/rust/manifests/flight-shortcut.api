@@ -1,7 +1,9 @@
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::shortcut::*;
 src/contract.rs: pub use super::shortcut_explicit_dependency::*;
 src/contract.rs: pub use super::shortcut_key_name::*;
 src/contract.rs: pub use super::types::*;
+src/host_explain.rs: pub fn explain_host_shortcut_capabilities(out: &mut HostExplanation, shortcut: &HostShortcutCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::Accelerator;
 src/lib.rs: pub use contract::AcceleratorParseError;
@@ -262,4 +264,4 @@ src/types.rs: pub type ShortcutTriggerSubscribeResult = Result<ShortcutTriggerSu
 src/types.rs: pub type ShortcutTriggerUnsubscribeFuture = Pin<Box<dyn Future<Output = ShortcutTriggerUnsubscribeResult> + Send>>;
 src/types.rs: pub type ShortcutTriggerUnsubscribeResult = Result<ShortcutTriggerUnsubscribeOutcome, Unknown>;
 src/types.rs: pub use flight_entity::{ Record, Unknown };
-src/types.rs: pub use flight_hostcapability::ProviderRef;
+src/types.rs: pub use flight_host::ProviderRef;

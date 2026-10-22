@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use flight_entity::EntityRuntimeSlot;
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 
 /// The specific OS/runtime name (TS `PlatformName`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]

@@ -1,11 +1,15 @@
 use std::sync::Arc;
 
+use flight_host::HostImageSource;
+
 use crate::bitmap_readback_resolver::resolve_bitmap_readback;
 use crate::types::*;
 
 #[cfg(test)]
 mod sugar_tests {
     use std::sync::Arc;
+
+    use flight_host::HostImageSource;
 
     use crate::contract::*;
 

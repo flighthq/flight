@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use flight_bitmap::HostImageSource;
+use flight_host::HostImageSource;
 
 use crate::image_source_dimensions::{
     register_host_image_dimension_resolver, unregister_host_image_dimension_resolver,

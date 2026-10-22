@@ -51,7 +51,7 @@ version = "0.6.0"
 dependencies = [
  "flight-entity",
  "flight-geometry",
- "flight-hostcapability",
+ "flight-host",
 ]
 
 [[package]]
@@ -76,7 +76,7 @@ version = "0.6.0"
 dependencies = [
  "flight-entity",
  "flight-geometry",
- "flight-hostcapability",
+ "flight-host",
  "flight-input",
  "flight-lifecycle",
  "flight-menu",
@@ -89,7 +89,7 @@ name = "flight-assets"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-loader",
  "flight-log",
  "flight-signals",
@@ -103,7 +103,7 @@ version = "0.6.0"
 dependencies = [
  "flight-buffer",
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-net",
  "flight-resource",
  "flight-stream",
@@ -119,7 +119,7 @@ name = "flight-bitmap"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-materials",
  "flight-texture",
 ]
@@ -223,6 +223,7 @@ name = "flight-clipboard"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
+ "flight-host",
  "flight-signals",
 ]
 
@@ -265,6 +266,7 @@ name = "flight-compression"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
+ "flight-host",
 ]
 
 [[package]]
@@ -272,6 +274,7 @@ name = "flight-connectivity"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
+ "flight-host",
  "flight-signals",
  "flight-stream",
 ]
@@ -281,7 +284,7 @@ name = "flight-device"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-useragent",
 ]
 
@@ -291,7 +294,7 @@ version = "0.6.0"
 dependencies = [
  "flight-app",
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-stream",
 ]
 
@@ -320,7 +323,7 @@ version = "0.6.0"
 dependencies = [
  "flight-dialog",
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-stream",
  "futures",
 ]
@@ -340,7 +343,7 @@ dependencies = [
  "flight-buffer",
  "flight-entity",
  "flight-geometry",
- "flight-hostcapability",
+ "flight-host",
  "flight-path",
 ]
 
@@ -361,6 +364,7 @@ name = "flight-geolocation"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
+ "flight-host",
 ]
 
 [[package]]
@@ -402,61 +406,12 @@ dependencies = [
 [[package]]
 name = "flight-haptics"
 version = "0.6.0"
-
-[[package]]
-name = "flight-host"
-version = "0.6.0"
 dependencies = [
- "flight-accessibility",
- "flight-app",
- "flight-audio",
- "flight-bitmap",
- "flight-clipboard",
- "flight-compression",
- "flight-connectivity",
- "flight-device",
- "flight-dialog",
- "flight-entity",
- "flight-filesystem",
- "flight-font",
- "flight-geolocation",
- "flight-haptics",
- "flight-hostcapability",
- "flight-image",
- "flight-image-codec",
- "flight-input",
- "flight-ipc",
- "flight-keyboard",
- "flight-lifecycle",
- "flight-log",
- "flight-media",
- "flight-mediasession",
- "flight-menu",
- "flight-midi",
- "flight-net",
- "flight-notification",
- "flight-permissions",
- "flight-platform",
- "flight-power",
- "flight-preferences",
- "flight-protocol",
- "flight-screen",
- "flight-sensors",
- "flight-share",
- "flight-shell",
- "flight-shortcut",
- "flight-socket",
- "flight-statusbar",
- "flight-surface",
- "flight-textsegment",
- "flight-textshaper",
- "flight-tray",
- "flight-updater",
- "flight-video",
+ "flight-host",
 ]
 
 [[package]]
-name = "flight-hostcapability"
+name = "flight-host"
 version = "0.6.0"
 
 [[package]]
@@ -466,8 +421,9 @@ dependencies = [
  "flight-bitmap",
  "flight-buffer",
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-image-codec",
+ "flight-log",
  "flight-materials",
  "flight-resource",
  "flight-stream",
@@ -483,6 +439,7 @@ name = "flight-image-codec"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
+ "flight-host",
 ]
 
 [[package]]
@@ -494,7 +451,8 @@ name = "flight-input"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
+ "flight-log",
  "flight-signals",
 ]
 
@@ -506,6 +464,7 @@ dependencies = [
  "flight-clip",
  "flight-entity",
  "flight-geometry",
+ "flight-host",
  "flight-image",
  "flight-input",
  "flight-log",
@@ -530,7 +489,7 @@ name = "flight-intl"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
 ]
 
 [[package]]
@@ -538,6 +497,7 @@ name = "flight-ipc"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
+ "flight-host",
 ]
 
 [[package]]
@@ -545,6 +505,7 @@ name = "flight-keyboard"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
+ "flight-host",
  "flight-signals",
 ]
 
@@ -560,7 +521,7 @@ name = "flight-lifecycle"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-signals",
 ]
 
@@ -580,7 +541,7 @@ version = "0.6.0"
 dependencies = [
  "flight-buffer",
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-net",
  "flight-signals",
  "flight-stream",
@@ -592,6 +553,7 @@ name = "flight-log"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
+ "flight-host",
  "flight-signals",
 ]
 
@@ -619,7 +581,7 @@ dependencies = [
  "flight-audio",
  "flight-bitmap",
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-log",
  "flight-math",
  "flight-signals",
@@ -632,7 +594,7 @@ name = "flight-mediasession"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-signals",
 ]
 
@@ -641,7 +603,7 @@ name = "flight-menu"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-signals",
 ]
 
@@ -658,7 +620,7 @@ name = "flight-midi"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-permissions",
  "flight-signals",
  "flight-stream",
@@ -695,7 +657,7 @@ version = "0.6.0"
 dependencies = [
  "flight-buffer",
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-log",
  "flight-signals",
  "flight-stream",
@@ -721,7 +683,7 @@ name = "flight-notification"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-signals",
 ]
 
@@ -777,7 +739,7 @@ version = "0.6.0"
 dependencies = [
  "flight-entity",
  "flight-geolocation",
- "flight-hostcapability",
+ "flight-host",
  "flight-notification",
 ]
 
@@ -836,7 +798,7 @@ name = "flight-platform"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
 ]
 
 [[package]]
@@ -844,7 +806,7 @@ name = "flight-power"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-signals",
 ]
 
@@ -853,7 +815,7 @@ name = "flight-preferences"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-permissions",
  "flight-signals",
  "serde",
@@ -865,7 +827,7 @@ name = "flight-protocol"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-signals",
 ]
 
@@ -975,6 +937,7 @@ dependencies = [
  "flight-clip",
  "flight-entity",
  "flight-geometry",
+ "flight-host",
  "flight-layout",
  "flight-materials",
  "flight-node",
@@ -993,6 +956,7 @@ dependencies = [
  "flight-easing",
  "flight-entity",
  "flight-geometry",
+ "flight-host",
  "flight-image",
  "flight-importdiagnostics",
  "flight-layout",
@@ -1022,6 +986,7 @@ dependencies = [
  "flight-audio",
  "flight-bitmap",
  "flight-entity",
+ "flight-host",
  "flight-image",
  "flight-image-codec",
  "flight-importdiagnostics",
@@ -1066,7 +1031,7 @@ version = "0.6.0"
 dependencies = [
  "flight-entity",
  "flight-geometry",
- "flight-hostcapability",
+ "flight-host",
  "flight-signals",
 ]
 
@@ -1086,7 +1051,7 @@ name = "flight-sensors"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-math",
  "flight-signals",
 ]
@@ -1134,7 +1099,7 @@ name = "flight-share"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-signals",
 ]
 
@@ -1143,6 +1108,7 @@ name = "flight-shell"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
+ "flight-host",
  "flight-stream",
  "futures",
  "url",
@@ -1153,7 +1119,7 @@ name = "flight-shortcut"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-platform",
  "flight-signals",
 ]
@@ -1220,7 +1186,7 @@ version = "0.6.0"
 dependencies = [
  "flight-buffer",
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-log",
  "flight-signals",
  "flight-stream",
@@ -1284,7 +1250,7 @@ name = "flight-statusbar"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-signals",
 ]
 
@@ -1302,7 +1268,7 @@ version = "0.6.0"
 dependencies = [
  "flight-app",
  "flight-entity",
- "flight-hostcapability",
+ "flight-host",
  "flight-signals",
 ]
 
@@ -1377,6 +1343,7 @@ dependencies = [
 name = "flight-textsegment"
 version = "0.6.0"
 dependencies = [
+ "flight-host",
  "flight-log",
  "unicode-segmentation",
 ]
@@ -1387,7 +1354,7 @@ version = "0.6.0"
 dependencies = [
  "flight-entity",
  "flight-font",
- "flight-hostcapability",
+ "flight-host",
  "flight-log",
  "flight-signals",
  "flight-textformat",
@@ -1416,6 +1383,7 @@ dependencies = [
  "flight-buffer",
  "flight-entity",
  "flight-geometry",
+ "flight-host",
  "flight-image",
  "flight-log",
  "flight-stream",
@@ -1492,7 +1460,7 @@ version = "0.6.0"
 dependencies = [
  "flight-entity",
  "flight-geometry",
- "flight-hostcapability",
+ "flight-host",
  "flight-log",
  "flight-menu",
  "flight-signals",
@@ -1513,6 +1481,7 @@ name = "flight-unhomed"
 version = "0.6.0"
 dependencies = [
  "flight-entity",
+ "flight-host",
 ]
 
 [[package]]
@@ -1546,8 +1515,9 @@ dependencies = [
  "flight-buffer",
  "flight-entity",
  "flight-geometry",
- "flight-hostcapability",
+ "flight-host",
  "flight-image",
+ "flight-log",
  "flight-stream",
  "flight-texture",
 ]

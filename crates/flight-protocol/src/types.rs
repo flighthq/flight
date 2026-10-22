@@ -2,7 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use flight_entity::{EntityRuntimeSlot, Record};
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_signals::Signal;
 
 /// The optional fields accepted by `create_protocol_url` (TS

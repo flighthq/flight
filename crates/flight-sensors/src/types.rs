@@ -5,7 +5,7 @@ use std::sync::Arc;
 use flight_entity::{EntityRuntimeSlot, FlightError};
 use flight_signals::Signal;
 
-pub use flight_hostcapability::ProviderRef;
+pub use flight_host::ProviderRef;
 
 /// Reported confidence of a sensor reading (TS `SensorAccuracy`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]

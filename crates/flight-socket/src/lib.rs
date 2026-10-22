@@ -4,6 +4,7 @@
 
 mod enable_socket_guards;
 mod explain_socket_send_failure;
+mod host_explain;
 mod socket;
 mod socket_sugar;
 mod types;

@@ -2,7 +2,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
 use flight_entity::{Entity, Record, entries, get_record_value, set_record_value};
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_protocol::contract::*;
 use flight_signals::{connect_signal, has_signal_slots};
 

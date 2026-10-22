@@ -10,7 +10,7 @@ mod tests {
     use std::collections::HashSet;
     use std::sync::Arc;
 
-    use flight_hostcapability::ProviderRef;
+    use flight_host::ProviderRef;
 
     use super::*;
 

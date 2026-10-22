@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use flight_app::contract::*;
 use flight_entity::{Entity, FlightError, FlightErrorKind, Ref, Unknown};
+use flight_host::FrameRequestHandle;
 use flight_lifecycle::{AppLifecycleState, HostLifecycleCapability};
 use flight_signals::{connect_signal, emit_signal};
 
@@ -20,15 +21,14 @@ fn manual_loop() -> ManualLoop {
         (callback.clone(), callback.clone(), cancel_count.clone());
     let capability = HostAppLoopCapability {
         provider: Arc::new(()),
-        cancel_frame: Arc::new(move |_handle: &Unknown| {
+        cancel_frame: Arc::new(move |_handle: FrameRequestHandle| {
             counted.fetch_add(1, Ordering::SeqCst);
             *cancelled.lock().unwrap() = None;
         }),
         now: Arc::new(|| 0.0),
         request_frame: Arc::new(move |frame: AppFrameCallback| {
             *requested.lock().unwrap() = Some(frame);
-            let handle: Unknown = Some(Arc::new(1_i32));
-            return handle;
+            return FrameRequestHandle(1);
         }),
     };
     return ManualLoop {

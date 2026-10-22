@@ -6,6 +6,6 @@ Application lifecycle over a host capability (TS `@flighthq/lifecycle`). `attach
 - `on_save_state` hands listeners a fresh bag on pause; `on_restore_state` re-emits that same bag on resume.
 - `on_memory_warning` fires when the provider supplies a memory-warning source.
 
-`request_app_back` emits `on_back_button` and reports whether a listener vetoed it with `cancel_signal`. Optional provider members are `Option` fields, and `explain_lifecycle_operation` reports their absence as the sentinel layer (flight-hostcapability). The subscription and the saved bag are private entity state, replacing the TS module WeakMaps. No lock is held while signals emit. The crate uses capability routing only, with no platform events.
+`request_app_back` emits `on_back_button` and reports whether a listener vetoed it with `cancel_signal`. Optional provider members are `Option` fields, and `explain_lifecycle_operation` reports their absence as the sentinel layer (flight-host). The subscription and the saved bag are private entity state, replacing the TS module WeakMaps. No lock is held while signals emit. The crate uses capability routing only, with no platform events.
 
 The bag is `Ref<Record<Unknown>>` (TS `Record<string, unknown>`, Principal batch 6): a fresh bag per save, mutated in place by save listeners and re-emitted as the same `Ref` on restore.

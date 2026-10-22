@@ -13,7 +13,7 @@ path = "tests/main.rs"
 [dependencies]
 flight-app = { path = "../flight-app" }
 flight-entity = { workspace = true }
-flight-hostcapability = { path = "../flight-hostcapability" }
+flight-host = { path = "../flight-host" }
 flight-signals = { workspace = true }
 
 [dev-dependencies]

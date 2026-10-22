@@ -31,6 +31,7 @@ serde_json = { version = "1", default-features = false, features = ["std"] }
 
 [dev-dependencies]
 flight-bitmap = { workspace = true }
+flight-host = { workspace = true }
 
 [lints]
 workspace = true

@@ -1,3 +1,4 @@
+mod host_explain_test;
 mod video_fixture;
 mod video_format_test;
 mod video_resource_from_test;

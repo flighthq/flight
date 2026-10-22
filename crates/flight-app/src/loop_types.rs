@@ -2,7 +2,7 @@ use std::fmt;
 use std::sync::{Arc, RwLock, Weak};
 
 use flight_entity::{EntityRuntimeSlot, Ref, Unknown};
-use flight_hostcapability::ProviderRef;
+use flight_host::{FrameRequestHandle, ProviderRef};
 use flight_signals::Signal;
 
 use crate::types::*;
@@ -60,7 +60,7 @@ pub(crate) struct AppLoopState {
     pub(crate) fixed_time_step: f64,
     pub(crate) fps_buffer: Vec<f64>,
     pub(crate) fps_head: usize,
-    pub(crate) frame_handle: Unknown,
+    pub(crate) frame_handle: FrameRequestHandle,
     pub(crate) frame_rate_accumulated: f64,
     pub(crate) last_time: f64,
     pub(crate) max_delta_time: f64,
@@ -99,14 +99,15 @@ pub struct AppStepOptions {
 // flight-lint: allow(f64) D1: the host frame timestamp is a JS number
 pub type AppFrameCallback = Arc<dyn Fn(f64) + Send + Sync>;
 
-/// TS `HostAppLoopCapability`: frame scheduling. The frame handle is the host's opaque `unknown`.
+/// TS `HostAppLoopCapability`: frame scheduling. The frame handle is the provider-issued numeric
+/// `FrameRequestHandle` (D26; the web's `requestAnimationFrame` id).
 // flight-lint: allow(f64) D1: the host clock returns a JS number
 #[derive(Clone)]
 pub struct HostAppLoopCapability {
     pub provider: ProviderRef,
-    pub cancel_frame: Arc<dyn Fn(&Unknown) + Send + Sync>,
+    pub cancel_frame: Arc<dyn Fn(FrameRequestHandle) + Send + Sync>,
     pub now: Arc<dyn Fn() -> f64 + Send + Sync>,
-    pub request_frame: Arc<dyn Fn(AppFrameCallback) -> Unknown + Send + Sync>,
+    pub request_frame: Arc<dyn Fn(AppFrameCallback) -> FrameRequestHandle + Send + Sync>,
 }
 
 /// TS `HostAppExitCapability`: the host's application-exit event.

@@ -14,4 +14,5 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
 
 mod geolocation_access_test;
 mod geolocation_test;
+mod host_explain_test;
 mod types_test;

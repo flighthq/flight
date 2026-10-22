@@ -2,8 +2,9 @@ use std::sync::{Arc, RwLock};
 use std::task::{Context, Poll, Waker};
 
 use flight_audio::{AudioBuffer, create_audio_resource};
-use flight_bitmap::HostImageSource;
-use flight_hostcapability::ProviderRef;
+use flight_host::{
+    AudioBufferHandle, AudioBusNodeHandle, AudioMixerGraphHandle, HostImageSource, ProviderRef,
+};
 use flight_log::create_log_state;
 use flight_video::{VideoChannelState, create_video_resource};
 

@@ -1,8 +1,7 @@
 use std::sync::{Arc, RwLock};
 
-use flight_bitmap::HostImageSource;
 use flight_entity::Ref;
-use flight_hostcapability::HostSpawnCapability;
+use flight_host::{HostImageSource, HostSpawnCapability};
 use flight_math::clamp;
 use flight_signals::{create_signal, emit_signal};
 use flight_video::{HostVideoCapability, VideoChannelState, VideoPlayOptions, VideoResource};

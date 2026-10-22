@@ -3,9 +3,9 @@
 use std::any::Any;
 use std::sync::Arc;
 
-use flight_bitmap::HostImageSource;
 use flight_entity::{Ref, throw_error};
 use flight_geometry::{Matrix3, inverse_matrix3};
+use flight_host::HostImageSource;
 use flight_image::{
     IMAGE_TEXTURE_SOURCE_KIND, ImageResource, create_image_resolver_state, create_image_resource,
 };
@@ -21,7 +21,7 @@ use crate::types::*;
 mod sugar_tests {
     use std::sync::Arc;
 
-    use flight_bitmap::HostImageSource;
+    use flight_host::HostImageSource;
     use flight_texture::TextureUvTransform;
 
     use crate::contract::*;

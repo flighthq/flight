@@ -1,5 +1,7 @@
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::keyboard::*;
 src/contract.rs: pub use super::types::*;
+src/host_explain.rs: pub fn explain_host_soft_keyboard_capabilities(out: &mut HostExplanation, soft_keyboard: &HostSoftKeyboardCapabilities,)
 src/keyboard.rs: impl HostSoftKeyboardAccessoryBarCapability :: async fn set_visible(&self, visible: bool) -> SoftKeyboardSetterOperationResult
 src/keyboard.rs: impl HostSoftKeyboardChangeCapability :: async fn attach(&self, host_soft_keyboard_info: &HostSoftKeyboardInfoCapability, keyboard: &mut SoftKeyboard,) -> SoftKeyboardAttachOperationResult
 src/keyboard.rs: impl HostSoftKeyboardInfoCapability :: fn height(&self) -> f32

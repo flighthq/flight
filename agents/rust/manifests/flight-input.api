@@ -1,3 +1,4 @@
+src/contract.rs: pub use crate::host_explain::*;
 src/contract.rs: pub use crate::input_binding::*;
 src/contract.rs: pub use crate::input_gamepad::*;
 src/contract.rs: pub use crate::input_signals::*;
@@ -6,6 +7,9 @@ src/contract.rs: pub use crate::input_target::*;
 src/contract.rs: pub use crate::input_timer::*;
 src/contract.rs: pub use crate::key_code::*;
 src/contract.rs: pub use crate::types::*;
+src/host_explain.rs: pub fn enable_host_input_guards(state: &LogStateRef, now_ms: f64, input: &HostInputCapabilities)
+src/host_explain.rs: pub fn explain_host_input_capabilities(out: &mut HostExplanation, input: &HostInputCapabilities)
+src/host_explain.rs: pub fn explain_host_input_ingress(input: &HostInputCapabilities) -> HostCapabilityExplanation
 src/input_binding.rs: impl HostInputIngressCapability :: fn attach_gamepad(&self, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
 src/input_binding.rs: impl HostInputIngressCapability :: fn attach_keyboard(&self, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)
 src/input_binding.rs: impl HostInputIngressCapability :: fn attach_pointer(&self, manager: &Ref<InputManager>, source: &Ref<InputIngressSource>, options: Option<&AttachInputOptions>,)

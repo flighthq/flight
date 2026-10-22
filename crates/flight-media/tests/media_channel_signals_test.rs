@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use flight_audio::AudioPlayOptions;
+use flight_host::AudioDeviceHandle;
 use flight_signals::connect_signal;
 
 use super::*;

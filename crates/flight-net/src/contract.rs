@@ -23,6 +23,7 @@
 
 pub use crate::enable_net_guards::*;
 pub use crate::enums::*;
+pub use crate::host_explain::*;
 pub use crate::net::*;
 pub use crate::net_form::*;
 pub use crate::types::*;

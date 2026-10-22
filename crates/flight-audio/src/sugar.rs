@@ -40,7 +40,7 @@ mod sugar_tests {
 
     use flight_buffer::{create_array_buffer_from_bytes, create_blob};
     use flight_entity::{FlightError, FlightErrorKind, Record};
-    use flight_hostcapability::ProviderRef;
+    use flight_host::ProviderRef;
     use flight_net::{NetResponse, NetResponseBody};
     use flight_stream::create_abort_controller;
 

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use flight_audio::*;
 use flight_buffer::create_array_buffer_from_bytes;
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 
 fn host_with(can_play: impl Fn(&str) -> bool + Send + Sync + 'static) -> HostAudioCodecCapability {
     return HostAudioCodecCapability {

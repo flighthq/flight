@@ -20,7 +20,7 @@ pub(crate) struct FontBackendRecord {
 }
 
 pub(crate) fn backend() -> (HostFontLoadingCapability, Arc<FontBackendRecord>) {
-    let provider = Arc::new(()) as flight_hostcapability::ProviderRef;
+    let provider = Arc::new(()) as flight_host::ProviderRef;
     let record = Arc::new(FontBackendRecord {
         added: Mutex::new(Vec::new()),
         checked: Mutex::new(Vec::new()),
@@ -53,8 +53,10 @@ pub(crate) fn backend() -> (HostFontLoadingCapability, Arc<FontBackendRecord>) {
         }),
         create_font_face: Arc::new(move |family, source| {
             let face = Arc::new(FontFace {
-                provider: face_provider.clone(),
-                handle: Arc::new(()),
+                handle: flight_host::FontFaceHandle {
+                    provider: face_provider.clone(),
+                    handle: Arc::new(()),
+                },
                 family: family.to_string(),
             });
             create_record.constructions.lock().unwrap().push((
@@ -117,8 +119,10 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
 
 pub(crate) fn face(family: &str) -> Arc<FontFace> {
     return Arc::new(FontFace {
-        provider: Arc::new(()),
-        handle: Arc::new(()),
+        handle: flight_host::FontFaceHandle {
+            provider: Arc::new(()),
+            handle: Arc::new(()),
+        },
         family: family.to_string(),
     });
 }

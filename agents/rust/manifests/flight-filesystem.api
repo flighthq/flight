@@ -1,4 +1,5 @@
 src/contract.rs: pub use super::filesystem::*;
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::types::*;
 src/filesystem.rs: impl Drop for ChunkAbortListener
 src/filesystem.rs: impl Drop for ChunkAbortListener :: fn drop(&mut self)
@@ -75,6 +76,7 @@ src/filesystem.rs: pub fn write_dialog_handle_binary_file(host_file_system: &Hos
 src/filesystem.rs: pub fn write_dialog_handle_text_file(host_file_system: &HostFileSystemCapability, handle: &Ref<FileDialogHandle>, data: &str, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<bool>
 src/filesystem.rs: pub fn write_file_atomic(host_file_system: &HostFileSystemCapability, path: &str, data: FileAtomicWriteData<'_>, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<bool>
 src/filesystem.rs: pub fn write_text_file(host_file_system: &HostFileSystemCapability, path: &str, data: &str, signal: Option<&AbortSignal>,) -> FileSystemProviderFuture<bool>
+src/host_explain.rs: pub fn explain_host_file_system_capabilities(out: &mut HostExplanation, file_system: &HostFileSystemCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::FileAccessMode;
 src/lib.rs: pub use contract::FileAtomicWriteBytes;

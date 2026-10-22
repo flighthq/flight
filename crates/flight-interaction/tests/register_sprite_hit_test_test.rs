@@ -3,8 +3,9 @@ use std::sync::RwLock;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 use flight_bitmap::contract::{BitmapReadbackBackendReason, BitmapReadbackOutcome};
-use flight_bitmap::{BitmapReadbackMode, HostBitmapReadbackCapability, HostImageSource, create_bitmap};
+use flight_bitmap::{BitmapReadbackMode, HostBitmapReadbackCapability, create_bitmap};
 use flight_geometry::set_rectangle;
+use flight_host::HostImageSource;
 use flight_image::{ImageResource, create_image_resolver_state, create_image_resource};
 use flight_interaction::hit_tests::{find_graph_hit_target_precise, HitTestContext};
 use flight_interaction::node_interaction_state::{

@@ -9,6 +9,7 @@ src/contract.rs: pub use crate::font_resource_from::*;
 src/contract.rs: pub use crate::font_shorthand::*;
 src/contract.rs: pub use crate::font_status::*;
 src/contract.rs: pub use crate::glyph_outline_source::*;
+src/contract.rs: pub use crate::host_explain::*;
 src/contract.rs: pub use crate::types::*;
 src/font_format.rs: impl FontFormatData<'_> :: fn detect_font_format(self) -> Option<&'static str>
 src/font_format.rs: pub fn detect_font_format(bytes: FontFormatData<'_>) -> Option<&'static str>
@@ -29,6 +30,8 @@ src/glyph_outline_source.rs: pub fn allocate_glyph_rasterizer_backend_from_glyph
 src/glyph_outline_source.rs: pub fn create_glyph_outline_source(get_glyph_outline: Arc<dyn Fn(&mut Path, i32) -> bool + Send + Sync>, get_glyph_outline_advance: Arc<dyn Fn(i32) -> f32 + Send + Sync>, get_glyph_outline_index_for_code_point: Arc<dyn Fn(u32) -> i32 + Send + Sync>, get_glyph_outline_metrics: Arc<dyn Fn() -> Arc<GlyphOutlineMetrics> + Send + Sync>,) -> GlyphOutlineSource
 src/glyph_outline_source.rs: pub fn initialize_glyph_outline_source(out: &mut GlyphOutlineSource, get_glyph_outline: Arc<dyn Fn(&mut Path, i32) -> bool + Send + Sync>, get_glyph_outline_advance: Arc<dyn Fn(i32) -> f32 + Send + Sync>, get_glyph_outline_index_for_code_point: Arc<dyn Fn(u32) -> i32 + Send + Sync>, get_glyph_outline_metrics: Arc<dyn Fn() -> Arc<GlyphOutlineMetrics> + Send + Sync>,)
 src/glyph_outline_source.rs: pub fn initialize_glyph_rasterizer_backend_from_glyph_outline_source(out: &mut HostGlyphRasterizerCapability, source: Arc<GlyphOutlineSource>,)
+src/host_explain.rs: pub fn explain_host_font_capabilities(out: &mut HostExplanation, font: &HostFontCapabilities)
+src/host_explain.rs: pub fn explain_host_glyph_capabilities(out: &mut HostExplanation, glyph: &HostGlyphCapabilities)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::FontFace;
 src/lib.rs: pub use contract::FontFaceLoadFuture;
@@ -108,7 +111,7 @@ src/types.rs: impl HostGlyphRasterizerCapability :: fn rasterize(&self, code_poi
 src/types.rs: pub enum FontFormatData<'a> { ArrayBuffer(FontFormatArrayBuffer<'a>), Uint8Array(FontFormatUint8Array<'a>), }
 src/types.rs: pub fn get_glyph_rasterizer_operation_string(value: GlyphRasterizerOperation) -> &'static str
 src/types.rs: pub fn parse_glyph_rasterizer_operation(value: &str) -> Option<GlyphRasterizerOperation>
-src/types.rs: pub struct FontFace { pub provider: ProviderRef, pub handle: Arc<dyn Any + Send + Sync>, pub family: String, }
+src/types.rs: pub struct FontFace { pub handle: FontFaceHandle, pub family: String, }
 src/types.rs: pub struct FontFormatArrayBuffer<'a> { pub bytes: &'a ArrayBuffer, }
 src/types.rs: pub struct FontFormatUint8Array<'a> { pub bytes: &'a Uint8Array, }
 src/types.rs: pub type FontFaceLoadFuture = Pin<Box<dyn Future<Output = Result<(), Unknown>> + Send>>;

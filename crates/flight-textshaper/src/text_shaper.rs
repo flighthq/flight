@@ -1,4 +1,4 @@
-use flight_hostcapability::{BackendOperationExplanation, BackendOperationExplanationLayer};
+use flight_host::{BackendOperationExplanation, BackendOperationExplanationLayer};
 use flight_textformat::TextFormat;
 
 use crate::types::*;

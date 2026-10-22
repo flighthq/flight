@@ -1,7 +1,7 @@
 use flight_bitmap::contract::*;
 use std::sync::{Arc, Mutex};
 
-use flight_hostcapability::ProviderRef;
+use flight_host::{HostImageSource, ProviderRef};
 
 mod resolve_bitmap_readback {
     use super::*;

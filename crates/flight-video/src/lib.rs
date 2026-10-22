@@ -1,3 +1,4 @@
+mod host_explain;
 mod types;
 mod video_format;
 mod video_resource;

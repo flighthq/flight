@@ -1,10 +1,9 @@
-use std::any::Any;
 use std::fmt;
 use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 
 use flight_entity::{Entity, EntityRuntimeSlot, Uint8Array};
-use flight_hostcapability::ProviderRef;
+use flight_host::{HostImageSource, ProviderRef};
 pub(crate) use flight_texture::{AlphaType, PixelFormat, TextureGamut};
 use flight_texture::{TextureSource, TextureSourceFields};
 
@@ -418,17 +417,6 @@ pub struct HostBitmapEncodeCapability {
     pub supported_formats: Vec<ImageFormat>,
 }
 
-/// An opaque host-side image handle carried across the native seam (TS `HostImageSource`; the web
-/// target aliases the platform's drawable-source union). Shared as `Arc<HostImageSource>`, whose
-/// `Arc::ptr_eq` is the source's object identity; it is never null (an absent source is
-/// `Option<Arc<HostImageSource>>`). `provider` is the host that produced the handle, and `handle` the
-/// host's own value, which portable code never inspects. Resources never own or free the handle.
-// flight-lint: allow(contract-vocabulary) D15/D10 the opaque host handle is non-null by contract, so the nullable Unknown alias does not fit
-pub struct HostImageSource {
-    pub provider: ProviderRef,
-    pub handle: Arc<dyn Any + Send + Sync>,
-}
-
 /// Resolve an edge coordinate. Returns None for transparent out-of-bounds.
 pub(crate) fn resolve_edge(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {
     if v >= 0 && v < size {
@@ -633,13 +621,6 @@ impl Default for BitmapResizeOptions {
 }
 
 flight_entity::impl_entity!(BitmapFingerprint);
-
-// flight-lint: allow(sugar-delegates) trait boilerplate: the handle is opaque, so Debug reports only that a source is present
-impl fmt::Debug for HostImageSource {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        return f.debug_struct("HostImageSource").finish_non_exhaustive();
-    }
-}
 
 // flight-lint: allow(sugar-delegates) trait boilerplate: the readback callback is a closure, so Debug names the capability only
 impl fmt::Debug for HostBitmapReadbackCapability {

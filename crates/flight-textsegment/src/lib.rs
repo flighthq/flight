@@ -1,4 +1,5 @@
 mod enable_text_segment_guards;
+mod host_explain;
 mod text_segment;
 mod text_segment_boundary;
 mod text_segment_guards;

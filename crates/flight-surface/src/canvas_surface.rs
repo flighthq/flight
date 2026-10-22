@@ -2,6 +2,7 @@
 
 use flight_app::contract::AppWindow;
 use flight_entity::Ref;
+use flight_host::NativeSurfaceHandle;
 
 use crate::surface::allocate_surface;
 use crate::types::*;
@@ -25,7 +26,7 @@ pub fn create_canvas_surface(
 /// `createCanvasSurfaceFromNativeHandle`). The caller keeps ownership of the drawable.
 pub fn create_canvas_surface_from_native_handle(
     capability: &HostCanvasCapability,
-    handle: NativeSurfaceHandle,
+    handle: Option<NativeSurfaceHandle>,
     options: Option<&CanvasRenderingContext2DSettings>,
 ) -> Option<Ref<CanvasSurface>> {
     let surface: Ref<CanvasSurface> = allocate_surface(handle);

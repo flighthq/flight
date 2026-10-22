@@ -1,5 +1,6 @@
 mod dialog;
 mod file_dialog;
+mod host_explain;
 mod media_dialog;
 mod types;
 

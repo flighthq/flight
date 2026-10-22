@@ -3,8 +3,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 
 use flight_app::contract::*;
-use flight_entity::{Entity, FlightError, FlightErrorKind, Ref, Unknown, allocate_entity};
+use flight_entity::{Entity, FlightError, FlightErrorKind, Ref, allocate_entity};
 use flight_geometry::Matrix;
+use flight_host::NativeWindowHandle;
 use flight_input::{
     HostInputTargetCapability, InputPointerLockExitFuture, InputPointerLockExitOutcome,
     InputPointerLockExitReason, InputPointerLockRequestFuture, InputPointerLockRequestOutcome,
@@ -16,7 +17,10 @@ use crate::block_on;
 use crate::window_fixture::*;
 
 fn handle(id: i32) -> NativeWindowHandle {
-    return Some(Arc::new(id));
+    return NativeWindowHandle {
+        provider: Arc::new(()),
+        handle: Arc::new(id),
+    };
 }
 
 fn on_close(w: &AppWindow) -> &flight_signals::Signal<()> {
@@ -62,7 +66,7 @@ mod attach_window {
     #[test]
     fn attaches_an_existing_handle_without_creating_an_app_loop_and_preserves_identity() {
         let backend = window_backend();
-        let seen: Arc<Mutex<Vec<(usize, Unknown)>>> = Arc::new(Mutex::new(Vec::new()));
+        let seen: Arc<Mutex<Vec<(usize, NativeWindowHandle)>>> = Arc::new(Mutex::new(Vec::new()));
         let keep = seen.clone();
         let mut attach = backend.attach();
         attach.attach = Arc::new(
@@ -86,10 +90,7 @@ mod attach_window {
         ));
         let seen = seen.lock().unwrap();
         assert_eq!(seen[0].0, Arc::as_ptr(&win) as usize);
-        assert!(Arc::ptr_eq(
-            seen[0].1.as_ref().unwrap(),
-            native.as_ref().unwrap()
-        ));
+        assert!(Arc::ptr_eq(&seen[0].1.handle, &native.handle));
     }
 
     #[test]

@@ -1,6 +1,8 @@
+src/contract.rs: pub use crate::host_explain::*;
 src/contract.rs: pub use crate::shell::*;
 src/contract.rs: pub use crate::shell_process::*;
 src/contract.rs: pub use crate::types::*;
+src/host_explain.rs: pub fn explain_host_shell_capabilities(out: &mut HostExplanation, shell: &HostShellCapabilities)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::HostShellBeepCapability;
 src/lib.rs: pub use contract::HostShellCapabilities;

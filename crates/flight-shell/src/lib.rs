@@ -1,3 +1,4 @@
+mod host_explain;
 mod shell;
 mod shell_process;
 mod types;

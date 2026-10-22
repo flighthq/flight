@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_platform::contract::*;
 
 /// A provider (TS `fakeBackend`) that resets `out` to the zeroed snapshot, then applies `edit`.

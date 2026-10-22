@@ -4,7 +4,7 @@ use std::task::{Context, Poll, Waker};
 
 use flight_entity::{FlightError, FlightErrorKind, attach_entity_binding, get_entity_binding_as};
 use flight_geometry::{Rectangle, Vector2, create_rectangle, create_vector2};
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_screen::contract::*;
 use flight_signals::{connect_signal, has_signal_slots};
 

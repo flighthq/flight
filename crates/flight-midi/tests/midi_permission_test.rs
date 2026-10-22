@@ -9,7 +9,7 @@ mod get_midi_permission {
 
     #[test]
     fn queries_only_the_explicit_owner_and_maps_rejection() {
-        let provider: flight_hostcapability::ProviderRef = Arc::new("midi-permission".to_string());
+        let provider: flight_host::ProviderRef = Arc::new("midi-permission".to_string());
         let capability = HostMidiPermissionCapability {
             get_permission: Arc::new(|| {
                 Box::pin(async {

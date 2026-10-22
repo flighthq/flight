@@ -1,4 +1,5 @@
 src/contract.rs: pub use flight_permissions::{ HostMidiPermissionCapability, PermissionQueryOutcome, PermissionQueryProviderResult, PermissionQueryReason, PermissionState, };
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::midi_access::*;
 src/contract.rs: pub use super::midi_operations::*;
 src/contract.rs: pub use super::midi_permission::*;
@@ -6,6 +7,7 @@ src/contract.rs: pub use super::midi_port::*;
 src/contract.rs: pub use super::midi_resource::*;
 src/contract.rs: pub use super::midi_subscription::*;
 src/contract.rs: pub use super::types::*;
+src/host_explain.rs: pub fn explain_host_midi_capabilities(out: &mut HostExplanation, midi: &HostMidiCapabilities)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::HostMidiAccessCapability;
 src/lib.rs: pub use contract::HostMidiCapabilities;

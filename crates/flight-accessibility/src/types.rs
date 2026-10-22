@@ -4,7 +4,7 @@
 
 use flight_entity::Ref;
 use flight_geometry::Rectangle;
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use std::sync::Arc;
 
 /// An ARIA role (TS `AccessibilityRole`). Open union: the well-known roles plus any string, so a

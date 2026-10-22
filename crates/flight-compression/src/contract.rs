@@ -5,6 +5,7 @@
 pub use super::compress::*;
 pub use super::deflate::*;
 pub use super::deflate_format::*;
+pub use super::host_explain::*;
 pub use super::lzma::*;
 pub use super::lzma_compress::*;
 pub use super::types::*;

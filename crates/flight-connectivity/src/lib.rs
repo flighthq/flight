@@ -1,4 +1,5 @@
 mod connectivity;
+mod host_explain;
 mod types;
 
 pub mod contract;

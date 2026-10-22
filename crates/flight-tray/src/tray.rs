@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex, RwLock, Weak};
 
 use flight_entity::{NonEntityCreateResult, Ref, Unknown, allocate_entity, unknown_from_panic};
 use flight_geometry::Vector2;
-use flight_hostcapability::HostSpawnCapability;
+use flight_host::HostSpawnCapability;
 use flight_menu::MenuItemTemplate;
 use flight_signals::{
     Signal, SignalSlot, SignalTimerState, clear_signal_timeout, connect_signal, disconnect_signal,
@@ -23,7 +23,7 @@ mod sugar_tests {
     use std::task::{Context, Poll, Waker};
 
     use flight_geometry::create_vector2;
-    use flight_hostcapability::ProviderRef;
+    use flight_host::ProviderRef;
     use flight_signals::create_signal;
 
     use super::*;

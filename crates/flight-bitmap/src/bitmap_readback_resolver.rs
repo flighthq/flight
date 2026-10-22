@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use flight_host::HostImageSource;
+
 use crate::types::*;
 
 /// Resolves a bitmap readback from a host capability.

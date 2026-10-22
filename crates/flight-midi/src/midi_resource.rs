@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{Entity, Ref, allocate_entity, attach_entity_binding, get_entity_binding_as};
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 use flight_stream::SharedFuture;
 
 use crate::types::*;

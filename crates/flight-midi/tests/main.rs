@@ -1,3 +1,4 @@
+mod host_explain_test;
 mod midi_access_test;
 mod midi_operations_test;
 mod midi_permission_test;

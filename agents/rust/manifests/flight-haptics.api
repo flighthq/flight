@@ -1,4 +1,5 @@
 src/contract.rs: pub use super::haptics::*;
+src/contract.rs: pub use super::host_explain::*;
 src/contract.rs: pub use super::types::*;
 src/haptics.rs: impl HapticsCapabilities :: fn get(&mut self, host_haptics: &HostHapticsCapability)
 src/haptics.rs: impl HostHapticsCapability :: fn cancel_device_vibration(&self) -> bool
@@ -20,6 +21,7 @@ src/haptics.rs: pub fn trigger_haptic_selection(host_haptics: &HostHapticsCapabi
 src/haptics.rs: pub fn vibrate_device(host_haptics: &HostHapticsCapability, duration_ms: f32) -> bool
 src/haptics.rs: pub fn vibrate_device_pattern(host_haptics: &HostHapticsCapability, pattern: &Vec<f32>) -> bool
 src/haptics.rs: pub fn vibrate_device_waveform(host_haptics: &HostHapticsCapability, timings: &Vec<f32>, amplitudes: &Vec<f32>, repeat: Option<i32>,) -> bool
+src/host_explain.rs: pub fn explain_host_haptics_capabilities(out: &mut HostExplanation, haptics: &HostHapticsCapabilities,)
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::HapticImpactStyle;
 src/lib.rs: pub use contract::HapticNotificationType;

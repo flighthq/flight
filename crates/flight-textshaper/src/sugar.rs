@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use flight_entity::Ref;
-use flight_hostcapability::BackendOperationExplanation;
+use flight_host::BackendOperationExplanation;
 use flight_log::LogStateRef;
 use flight_textformat::TextFormat;
 

@@ -4,7 +4,7 @@
 
 use std::sync::Arc;
 
-use flight_hostcapability::ProviderRef;
+use flight_host::ProviderRef;
 
 use crate::options::*;
 

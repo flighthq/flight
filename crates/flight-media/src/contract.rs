@@ -4,6 +4,7 @@
 pub use crate::audio_channel::*;
 pub use crate::audio_mixer::*;
 pub use crate::enable_audio_mixer_guards::*;
+pub use crate::host_explain::*;
 pub use crate::media_channel_signals::*;
 pub use crate::sugar::*;
 pub use crate::types::*;
