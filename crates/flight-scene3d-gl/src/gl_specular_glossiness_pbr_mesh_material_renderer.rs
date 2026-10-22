@@ -54,7 +54,7 @@ impl GlMeshMaterialRenderer for GlSpecularGlossinessPbrMeshMaterialRenderer {
             extension_define_key: String::new(),
             modifier_define_key: String::new(),
         };
-        let program = ensure_gl_pbr_program(state, &define_key);
+        let program = ensure_gl_pbr_program(state, &define_key, "", "");
         let double_sided = sg.map_or(false, |s| s.material3d_fields().double_sided);
         begin_gl_mesh_draw(state, &program.lit.base, double_sided);
         set_gl_mesh_view_projection(

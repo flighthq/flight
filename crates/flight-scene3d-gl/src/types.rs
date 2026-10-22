@@ -419,6 +419,7 @@ pub struct GlShadedDefineKey {
     pub modifier_define_key: String,
 }
 
+#[derive(Clone)]
 pub struct GlCustomMaterialShaderSource {
     pub key: String,
     pub vertex_source: String,
