@@ -15,7 +15,6 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
 }
 
 mod fixture;
-#[allow(dead_code)]
 mod window_fixture;
 
 #[path = "app_loop_test.rs"]

@@ -120,14 +120,6 @@ pub fn assert_physics2d_world_not_stepping(world: &Physics2DWorld) {
     }
 }
 
-#[allow(dead_code)]
-pub(crate) fn is_physics2d_body_owned_by(body: &RigidBody2D, world: &Physics2DWorld) -> bool {
-    return body
-        .owner
-        .as_ref()
-        .is_some_and(|owner| std::sync::Arc::ptr_eq(owner, &world.identity));
-}
-
 pub(crate) fn is_physics2d_world_stepping(world: &Physics2DWorld) -> bool {
     return world.identity.stepping.load(Ordering::SeqCst);
 }
