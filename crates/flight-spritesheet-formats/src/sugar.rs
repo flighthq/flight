@@ -113,7 +113,7 @@ mod sugar_tests {
         let kind = "acme.D18".to_string();
         let entry = Arc::new(SpritesheetFormatEntry {
             detect: Arc::new(|content| content == "D18"),
-            parse: Arc::new(|_content, _options| create_spritesheet_data(None)),
+            parse: Arc::new(|_content, _options| create_spritesheet_data()),
         });
         method.register_spritesheet_format(&kind, entry.clone());
         register_spritesheet_format(&mut function, &kind, entry);

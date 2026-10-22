@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use flight_entity::Ref;
+use flight_entity::{Ref, get_entity_id};
 use flight_regexp::create_reg_exp;
 use flight_spritesheet::contract::*;
 
@@ -13,10 +13,8 @@ fn named_sheet() -> Spritesheet {
     push_region(&shared, 1, Some("walk_1"), 32.0);
     push_region(&shared, 2, Some("run_0"), 64.0);
     push_region(&shared, 3, None, 96.0);
-    let mut sheet = create_spritesheet(Some(SpritesheetOptions {
-        atlas: Some(shared),
-        ..sheet_options()
-    }));
+    let mut sheet = create_spritesheet();
+    sheet.atlas = Some(shared);
     for i in 0..4 {
         sheet.frames.push(frame(i));
     }
@@ -44,7 +42,7 @@ mod create_spritesheet_animation {
 
     #[test]
     fn initializes_default_values() {
-        let shared = create_spritesheet_animation(None);
+        let shared = create_spritesheet_animation();
         let animation = shared.read().unwrap();
         assert_eq!(animation.direction, SpritesheetAnimationDirection::Forward);
         assert!(animation.frame_durations.is_none());
@@ -61,15 +59,16 @@ mod create_spritesheet_animation {
     }
 
     #[test]
-    fn applies_partial_overrides() {
-        let shared = create_spritesheet_animation(Some(&SpritesheetAnimationOptions {
-            frame_duration: Some(100.0),
-            frames: Some(vec![0.0, 1.0, 2.0]),
-            repeat_count: Some(2),
-            origin_x: Some(16.0),
-            origin_y: Some(32.0),
-            ..animation_options()
-        }));
+    fn accepts_authored_fields_after_canonical_construction() {
+        let shared = create_spritesheet_animation();
+        {
+            let mut animation = shared.write().unwrap();
+            animation.frame_duration = 100.0;
+            animation.frames = vec![0.0, 1.0, 2.0];
+            animation.repeat_count = 2;
+            animation.origin_x = 16.0;
+            animation.origin_y = 32.0;
+        }
         let animation = shared.read().unwrap();
         assert_eq!(
             (animation.frame_duration, animation.repeat_count),
@@ -82,8 +81,8 @@ mod create_spritesheet_animation {
     #[test]
     fn returns_a_new_animation_with_its_own_frames_each_call() {
         let (a, b) = (
-            create_spritesheet_animation(None),
-            create_spritesheet_animation(None),
+            create_spritesheet_animation(),
+            create_spritesheet_animation(),
         );
         assert!(!Arc::ptr_eq(&a, &b));
         a.write().unwrap().frames.push(99.0);
@@ -127,7 +126,7 @@ mod create_spritesheet_animation_from_frame_names {
         );
         assert!(
             create_spritesheet_animation_from_frame_names(
-                &create_spritesheet(None),
+                &create_spritesheet(),
                 &name("walk_"),
                 None
             )
@@ -275,8 +274,10 @@ mod initialize_spritesheet_animation {
     #[test]
     fn is_the_construction_initializer_resetting_unset_fields() {
         let shared = animation(&[0.0, 1.0], 100.0, 3);
-        initialize_spritesheet_animation(&mut shared.write().unwrap(), None);
+        let entity_id = get_entity_id(&*shared.read().unwrap());
+        initialize_spritesheet_animation(&mut shared.write().unwrap());
         let animation = shared.read().unwrap();
+        assert_eq!(get_entity_id(&*animation), entity_id);
         assert!(animation.frames.is_empty());
         assert_eq!((animation.frame_duration, animation.repeat_count), (0.0, 0));
     }

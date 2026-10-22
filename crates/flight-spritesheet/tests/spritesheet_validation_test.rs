@@ -15,10 +15,8 @@ fn animations(entries: &[(&str, &[f64])]) -> Record<flight_entity::Ref<Spriteshe
     let make: fn() -> Record<flight_entity::Ref<SpritesheetAnimation>> = Record::default;
     let mut record = make();
     for (name, frames) in entries {
-        let animation = create_spritesheet_animation(Some(&SpritesheetAnimationOptions {
-            frames: Some(frames.to_vec()),
-            ..animation_options()
-        }));
+        let animation = create_spritesheet_animation();
+        animation.write().unwrap().frames = frames.to_vec();
         set_record_value(&mut record, name.to_string(), animation);
     }
     return record;
@@ -29,11 +27,10 @@ fn checked(
     frame_ids: &[i32],
     anims: &[(&str, &[f64])],
 ) -> Option<Vec<SpritesheetValidationDiagnostic>> {
-    let sheet = create_spritesheet(Some(SpritesheetOptions {
-        atlas: atlas_regions.map(region_atlas),
-        frames: Some(frame_ids.iter().map(|id| frame(*id)).collect()),
-        animations: Some(animations(anims)),
-    }));
+    let mut sheet = create_spritesheet();
+    sheet.atlas = atlas_regions.map(region_atlas);
+    sheet.frames = frame_ids.iter().map(|id| frame(*id)).collect();
+    sheet.animations = animations(anims);
     return validate_spritesheet(&sheet);
 }
 
@@ -187,11 +184,10 @@ mod validate_spritesheet_data {
     use super::*;
 
     fn data(frames: &[&str], anims: Vec<SpritesheetAnimationData>) -> SpritesheetData {
-        return create_spritesheet_data(Some(SpritesheetDataOptions {
-            frames: Some(frames.iter().map(|name| named_frame_data(name)).collect()),
-            animations: Some(anims),
-            ..data_options()
-        }));
+        let mut data = create_spritesheet_data();
+        data.frames = frames.iter().map(|name| named_frame_data(name)).collect();
+        data.animations = anims;
+        return data;
     }
 
     #[test]

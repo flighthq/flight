@@ -33,18 +33,11 @@ mod create_spritesheet_from_data {
         let shared = atlas();
         push_region(&shared, 0, Some("hero_0"), 0.0);
         push_region(&shared, 1, Some("hero_1"), 32.0);
-        let data = create_spritesheet_data(Some(SpritesheetDataOptions {
-            frames: Some(vec![
-                named_frame_data("hero_0"),
-                create_spritesheet_frame_data(Some(SpritesheetFrameDataOptions {
-                    name: Some("hero_1".into()),
-                    offset_x: Some(4.0),
-                    ..frame_data_options()
-                })),
-            ]),
-            image_file: Some("hero.png".into()),
-            ..data_options()
-        }));
+        let mut second = named_frame_data("hero_1");
+        second.offset_x = 4.0;
+        let mut data = create_spritesheet_data();
+        data.frames = vec![named_frame_data("hero_0"), second];
+        data.image_file = "hero.png".into();
         let sheet = create_spritesheet_from_data(&data, &shared);
         assert_eq!(ids(&sheet), vec![0, 1]);
         assert_eq!(sheet.frames[1].read().unwrap().offset_x, 4.0);
@@ -56,10 +49,8 @@ mod create_spritesheet_from_data {
         let shared = atlas();
         push_region(&shared, 5, Some("walk_0"), 0.0);
         push_region(&shared, 8, Some("walk_0"), 32.0);
-        let data = create_spritesheet_data(Some(SpritesheetDataOptions {
-            frames: Some(vec![named_frame_data("walk_0")]),
-            ..data_options()
-        }));
+        let mut data = create_spritesheet_data();
+        data.frames = vec![named_frame_data("walk_0")];
         assert_eq!(ids(&create_spritesheet_from_data(&data, &shared)), vec![8]);
     }
 
@@ -67,10 +58,8 @@ mod create_spritesheet_from_data {
     fn falls_back_to_the_position_for_an_empty_or_unknown_name() {
         let shared = atlas();
         push_region(&shared, 7, None, 0.0);
-        let data = create_spritesheet_data(Some(SpritesheetDataOptions {
-            frames: Some(vec![named_frame_data(""), named_frame_data("missing")]),
-            ..data_options()
-        }));
+        let mut data = create_spritesheet_data();
+        data.frames = vec![named_frame_data(""), named_frame_data("missing")];
         assert_eq!(
             ids(&create_spritesheet_from_data(&data, &shared)),
             vec![0, 1]
@@ -82,20 +71,14 @@ mod create_spritesheet_from_data {
         let shared = atlas();
         push_region(&shared, 0, Some("f0"), 0.0);
         push_region(&shared, 1, Some("f1"), 32.0);
-        let walk = create_spritesheet_animation_data(Some(SpritesheetAnimationDataOptions {
-            name: Some("walk".into()),
-            direction: Some(SpritesheetAnimationDirection::Pingpong),
-            frame_duration: Some(100.0),
-            frame_durations: Some(vec![80.0, 120.0]),
-            frame_names: Some(vec!["f0".into(), "f1".into()]),
-            repeat_count: Some(3),
-            ..animation_data_options()
-        }));
-        let data = create_spritesheet_data(Some(SpritesheetDataOptions {
-            animations: Some(vec![walk]),
-            frames: Some(vec![named_frame_data("f0"), named_frame_data("f1")]),
-            ..data_options()
-        }));
+        let mut walk = named_animation_data("walk", &["f0", "f1"]);
+        walk.direction = SpritesheetAnimationDirection::Pingpong;
+        walk.frame_duration = 100.0;
+        walk.frame_durations = Some(vec![80.0, 120.0]);
+        walk.repeat_count = 3;
+        let mut data = create_spritesheet_data();
+        data.animations = vec![walk];
+        data.frames = vec![named_frame_data("f0"), named_frame_data("f1")];
         let sheet = create_spritesheet_from_data(&data, &shared);
         let animation = get_record_value(&sheet.animations, "walk")
             .unwrap()
@@ -114,18 +97,12 @@ mod create_spritesheet_from_data {
     fn carries_pivot_and_rotated_onto_runtime_frames() {
         let shared = atlas();
         push_region(&shared, 0, Some("r0"), 0.0);
-        let data = create_spritesheet_data(Some(SpritesheetDataOptions {
-            frames: Some(vec![create_spritesheet_frame_data(Some(
-                SpritesheetFrameDataOptions {
-                    name: Some("r0".into()),
-                    pivot_x: Some(8.0),
-                    pivot_y: Some(16.0),
-                    rotated: Some(true),
-                    ..frame_data_options()
-                },
-            ))]),
-            ..data_options()
-        }));
+        let mut authored = named_frame_data("r0");
+        authored.pivot_x = Some(8.0);
+        authored.pivot_y = Some(16.0);
+        authored.rotated = true;
+        let mut data = create_spritesheet_data();
+        data.frames = vec![authored];
         let sheet = create_spritesheet_from_data(&data, &shared);
         let frame = sheet.frames[0].read().unwrap();
         assert_eq!(
@@ -136,11 +113,9 @@ mod create_spritesheet_from_data {
 
     #[test]
     fn uses_all_data_frames_when_an_animation_has_no_frame_names() {
-        let data = create_spritesheet_data(Some(SpritesheetDataOptions {
-            animations: Some(vec![named_animation_data("idle", &[])]),
-            frames: Some(vec![named_frame_data(""), named_frame_data("")]),
-            ..data_options()
-        }));
+        let mut data = create_spritesheet_data();
+        data.animations = vec![named_animation_data("idle", &[])];
+        data.frames = vec![named_frame_data(""), named_frame_data("")];
         let sheet = create_spritesheet_from_data(&data, &atlas());
         assert_eq!(
             get_record_value(&sheet.animations, "idle")
@@ -154,15 +129,13 @@ mod create_spritesheet_from_data {
 
     #[test]
     fn drops_unknown_frame_names_and_resolves_duplicates_to_the_last_frame() {
-        let data = create_spritesheet_data(Some(SpritesheetDataOptions {
-            animations: Some(vec![named_animation_data("a", &["x", "missing", "y"])]),
-            frames: Some(vec![
-                named_frame_data("x"),
-                named_frame_data("y"),
-                named_frame_data("x"),
-            ]),
-            ..data_options()
-        }));
+        let mut data = create_spritesheet_data();
+        data.animations = vec![named_animation_data("a", &["x", "missing", "y"])];
+        data.frames = vec![
+            named_frame_data("x"),
+            named_frame_data("y"),
+            named_frame_data("x"),
+        ];
         let sheet = create_spritesheet_from_data(&data, &atlas());
         assert_eq!(
             get_record_value(&sheet.animations, "a")
@@ -176,15 +149,13 @@ mod create_spritesheet_from_data {
 
     #[test]
     fn a_repeated_animation_name_keeps_its_first_position_and_the_last_definition() {
-        let data = create_spritesheet_data(Some(SpritesheetDataOptions {
-            animations: Some(vec![
-                named_animation_data("walk", &["a"]),
-                named_animation_data("idle", &[]),
-                named_animation_data("walk", &[]),
-            ]),
-            frames: Some(vec![named_frame_data("a"), named_frame_data("b")]),
-            ..data_options()
-        }));
+        let mut data = create_spritesheet_data();
+        data.animations = vec![
+            named_animation_data("walk", &["a"]),
+            named_animation_data("idle", &[]),
+            named_animation_data("walk", &[]),
+        ];
+        data.frames = vec![named_frame_data("a"), named_frame_data("b")];
         let sheet = create_spritesheet_from_data(&data, &atlas());
         assert_eq!(
             {

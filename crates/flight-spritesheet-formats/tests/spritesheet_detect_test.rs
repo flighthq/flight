@@ -220,7 +220,7 @@ mod get_spritesheet_format {
         let kind = "acme.GetFormat".to_string();
         let entry = Arc::new(SpritesheetFormatEntry {
             detect: Arc::new(|text| text.starts_with("GFT:")),
-            parse: Arc::new(|_, _| create_spritesheet_data(None)),
+            parse: Arc::new(|_, _| create_spritesheet_data()),
         });
         register_spritesheet_format(&mut registry, &kind, entry.clone());
         assert!(Arc::ptr_eq(
@@ -259,7 +259,7 @@ mod get_spritesheet_format_kinds {
             &kind,
             Arc::new(SpritesheetFormatEntry {
                 detect: Arc::new(|_| false),
-                parse: Arc::new(|_, _| create_spritesheet_data(None)),
+                parse: Arc::new(|_, _| create_spritesheet_data()),
             }),
         );
         let mut kinds = Vec::new();
@@ -354,7 +354,7 @@ mod register_spritesheet_format {
         let first = Arc::new(SpritesheetFormatEntry {
             detect: Arc::new(|text| text == "custom"),
             parse: Arc::new(|_, _| {
-                let mut data = create_spritesheet_data(None);
+                let mut data = create_spritesheet_data();
                 data.image_file = "first".to_string();
                 data
             }),
@@ -373,7 +373,7 @@ mod register_spritesheet_format {
         let replacement = Arc::new(SpritesheetFormatEntry {
             detect: Arc::new(|text| text == "custom"),
             parse: Arc::new(|_, _| {
-                let mut data = create_spritesheet_data(None);
+                let mut data = create_spritesheet_data();
                 data.image_file = "second".to_string();
                 data
             }),
@@ -499,7 +499,7 @@ mod unregister_spritesheet_format {
             &kind,
             Arc::new(SpritesheetFormatEntry {
                 detect: Arc::new(|text| text.starts_with("REMOVED:")),
-                parse: Arc::new(|_, _| create_spritesheet_data(None)),
+                parse: Arc::new(|_, _| create_spritesheet_data()),
             }),
         );
         unregister_spritesheet_format(&mut registry, &kind);

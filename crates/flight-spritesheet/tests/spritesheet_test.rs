@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use flight_entity::{Record, Ref, get_record_keys, get_record_value, set_record_value};
+use flight_entity::{
+    Record, Ref, get_entity_id, get_record_keys, get_record_value, set_record_value,
+};
 use flight_spritesheet::contract::*;
 
 use crate::spritesheet_fixture::*;
@@ -10,24 +12,23 @@ mod clone_spritesheet {
 
     #[test]
     fn returns_a_distinct_sheet_with_copies_of_all_frames_sharing_atlas_and_animations() {
-        let mut sheet = create_spritesheet(Some(SpritesheetOptions {
-            atlas: Some(atlas()),
-            ..sheet_options()
-        }));
-        sheet
-            .frames
-            .push(create_spritesheet_frame(Some(&SpritesheetFrameOptions {
-                id: Some(1),
-                offset_x: Some(5.0),
-                offset_y: Some(10.0),
-                pivot_x: Some(2.0),
-                pivot_y: Some(3.0),
-                rotated: Some(true),
-            })));
+        let mut sheet = create_spritesheet();
+        sheet.atlas = Some(atlas());
+        let frame = create_spritesheet_frame();
+        {
+            let mut frame = frame.write().unwrap();
+            frame.id = 1;
+            frame.offset_x = 5.0;
+            frame.offset_y = 10.0;
+            frame.pivot_x = Some(2.0);
+            frame.pivot_y = Some(3.0);
+            frame.rotated = true;
+        }
+        sheet.frames.push(frame);
         set_record_value(
             &mut sheet.animations,
             "walk".to_string(),
-            create_spritesheet_animation(None),
+            create_spritesheet_animation(),
         );
         let clone = clone_spritesheet(&sheet);
         assert!(!Arc::ptr_eq(&clone.frames[0], &sheet.frames[0]));
@@ -45,17 +46,17 @@ mod clone_spritesheet {
 
     #[test]
     fn copies_the_animation_table_shallowly() {
-        let mut sheet = create_spritesheet(None);
+        let mut sheet = create_spritesheet();
         set_record_value(
             &mut sheet.animations,
             "a".to_string(),
-            create_spritesheet_animation(None),
+            create_spritesheet_animation(),
         );
         let mut clone = clone_spritesheet(&sheet);
         set_record_value(
             &mut clone.animations,
             "b".to_string(),
-            create_spritesheet_animation(None),
+            create_spritesheet_animation(),
         );
         assert_eq!(
             {
@@ -65,7 +66,7 @@ mod clone_spritesheet {
             },
             vec!["a"]
         );
-        assert!(clone_spritesheet(&create_spritesheet(None)).atlas.is_none());
+        assert!(clone_spritesheet(&create_spritesheet()).atlas.is_none());
     }
 }
 
@@ -74,7 +75,7 @@ mod create_spritesheet {
 
     #[test]
     fn initializes_with_null_atlas_and_empty_animations_and_frames() {
-        let sheet = create_spritesheet(None);
+        let sheet = create_spritesheet();
         assert!(sheet.atlas.is_none());
         assert!(sheet.frames.is_empty());
         assert!(
@@ -88,18 +89,16 @@ mod create_spritesheet {
     }
 
     #[test]
-    fn uses_provided_animations_and_frames_directly() {
-        let idle = create_spritesheet_animation(None);
+    fn accepts_authored_animations_and_frames_directly_after_construction() {
+        let idle = create_spritesheet_animation();
         let make: fn() -> Record<Ref<SpritesheetAnimation>> = Record::default;
         let mut animations = make();
         set_record_value(&mut animations, "idle".to_string(), idle.clone());
         let frames = vec![frame(0)];
         let address = frames.as_ptr();
-        let sheet = create_spritesheet(Some(SpritesheetOptions {
-            animations: Some(animations),
-            frames: Some(frames),
-            ..sheet_options()
-        }));
+        let mut sheet = create_spritesheet();
+        sheet.animations = animations;
+        sheet.frames = frames;
         assert_eq!(sheet.frames.as_ptr(), address);
         assert!(Arc::ptr_eq(
             get_record_value(&sheet.animations, "idle").unwrap(),
@@ -113,24 +112,24 @@ mod get_spritesheet_animation {
 
     #[test]
     fn returns_null_when_no_animation_matches() {
-        let mut sheet = create_spritesheet(None);
+        let mut sheet = create_spritesheet();
         assert!(get_spritesheet_animation(&sheet, "walk").is_none());
         set_record_value(
             &mut sheet.animations,
             "idle".to_string(),
-            create_spritesheet_animation(None),
+            create_spritesheet_animation(),
         );
         assert!(get_spritesheet_animation(&sheet, "walk").is_none());
     }
 
     #[test]
     fn returns_the_matching_animation_by_label() {
-        let mut sheet = create_spritesheet(None);
-        let walk = create_spritesheet_animation(None);
+        let mut sheet = create_spritesheet();
+        let walk = create_spritesheet_animation();
         set_record_value(
             &mut sheet.animations,
             "idle".to_string(),
-            create_spritesheet_animation(None),
+            create_spritesheet_animation(),
         );
         set_record_value(&mut sheet.animations, "walk".to_string(), walk.clone());
         assert!(Arc::ptr_eq(
@@ -146,7 +145,9 @@ mod initialize_spritesheet {
     #[test]
     fn is_the_construction_initializer_replacing_every_field() {
         let mut sheet = sheet(2);
-        initialize_spritesheet(&mut sheet, None);
+        let entity_id = get_entity_id(&sheet);
+        initialize_spritesheet(&mut sheet);
+        assert_eq!(get_entity_id(&sheet), entity_id);
         assert!(sheet.frames.is_empty() && sheet.atlas.is_none());
     }
 }

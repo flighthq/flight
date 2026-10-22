@@ -10,22 +10,15 @@ src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::Spritesheet;
 src/lib.rs: pub use contract::SpritesheetAnimation;
 src/lib.rs: pub use contract::SpritesheetAnimationData;
-src/lib.rs: pub use contract::SpritesheetAnimationDataOptions;
 src/lib.rs: pub use contract::SpritesheetAnimationDirection;
 src/lib.rs: pub use contract::SpritesheetAnimationFrameNameOptions;
-src/lib.rs: pub use contract::SpritesheetAnimationOptions;
 src/lib.rs: pub use contract::SpritesheetData;
-src/lib.rs: pub use contract::SpritesheetDataOptions;
 src/lib.rs: pub use contract::SpritesheetFrame;
 src/lib.rs: pub use contract::SpritesheetFrameData;
-src/lib.rs: pub use contract::SpritesheetFrameDataOptions;
-src/lib.rs: pub use contract::SpritesheetFrameOptions;
 src/lib.rs: pub use contract::SpritesheetFramePattern;
 src/lib.rs: pub use contract::SpritesheetFramePatternName;
 src/lib.rs: pub use contract::SpritesheetFramePatternRegExp;
-src/lib.rs: pub use contract::SpritesheetOptions;
 src/lib.rs: pub use contract::SpritesheetPlayer;
-src/lib.rs: pub use contract::SpritesheetPlayerOptions;
 src/lib.rs: pub use contract::SpritesheetPlayerPool;
 src/lib.rs: pub use contract::SpritesheetValidationDiagnostic;
 src/lib.rs: pub use contract::SpritesheetValidationSeverity;
@@ -64,31 +57,31 @@ src/lib.rs: pub use contract::update_spritesheet_player;
 src/lib.rs: pub use contract::validate_spritesheet;
 src/lib.rs: pub use contract::validate_spritesheet_data;
 src/spritesheet.rs: pub fn clone_spritesheet(spritesheet: &Spritesheet) -> Spritesheet
-src/spritesheet.rs: pub fn create_spritesheet(obj: Option<SpritesheetOptions>) -> Spritesheet
+src/spritesheet.rs: pub fn create_spritesheet() -> Spritesheet
 src/spritesheet.rs: pub fn get_spritesheet_animation(spritesheet: &Spritesheet, label: &str,) -> Option<Ref<SpritesheetAnimation>>
-src/spritesheet.rs: pub fn initialize_spritesheet(out: &mut Spritesheet, obj: Option<SpritesheetOptions>)
-src/spritesheet_animation.rs: pub fn create_spritesheet_animation(obj: Option<&SpritesheetAnimationOptions>,) -> Ref<SpritesheetAnimation>
+src/spritesheet.rs: pub fn initialize_spritesheet(out: &mut Spritesheet)
+src/spritesheet_animation.rs: pub fn create_spritesheet_animation() -> Ref<SpritesheetAnimation>
 src/spritesheet_animation.rs: pub fn create_spritesheet_animation_from_frame_names(spritesheet: &Spritesheet, pattern: &SpritesheetFramePattern, options: Option<&SpritesheetAnimationFrameNameOptions>,) -> Option<Ref<SpritesheetAnimation>>
 src/spritesheet_animation.rs: pub fn get_spritesheet_animation_direction_string(value: SpritesheetAnimationDirection,) -> &'static str
-src/spritesheet_animation.rs: pub fn initialize_spritesheet_animation(out: &mut SpritesheetAnimation, obj: Option<&SpritesheetAnimationOptions>,)
+src/spritesheet_animation.rs: pub fn initialize_spritesheet_animation(out: &mut SpritesheetAnimation)
 src/spritesheet_animation.rs: pub fn parse_spritesheet_animation_direction(value: &str) -> Option<SpritesheetAnimationDirection>
-src/spritesheet_data.rs: pub fn create_spritesheet_animation_data(obj: Option<SpritesheetAnimationDataOptions>,) -> SpritesheetAnimationData
-src/spritesheet_data.rs: pub fn create_spritesheet_data(obj: Option<SpritesheetDataOptions>) -> SpritesheetData
-src/spritesheet_data.rs: pub fn create_spritesheet_frame_data(obj: Option<SpritesheetFrameDataOptions>,) -> SpritesheetFrameData
-src/spritesheet_data.rs: pub fn initialize_spritesheet_animation_data(out: &mut SpritesheetAnimationData, obj: Option<SpritesheetAnimationDataOptions>,)
-src/spritesheet_data.rs: pub fn initialize_spritesheet_data(out: &mut SpritesheetData, obj: Option<SpritesheetDataOptions>)
-src/spritesheet_data.rs: pub fn initialize_spritesheet_frame_data(out: &mut SpritesheetFrameData, obj: Option<SpritesheetFrameDataOptions>,)
-src/spritesheet_frame.rs: pub fn create_spritesheet_frame(obj: Option<&SpritesheetFrameOptions>) -> Ref<SpritesheetFrame>
-src/spritesheet_frame.rs: pub fn initialize_spritesheet_frame(out: &mut SpritesheetFrame, obj: Option<&SpritesheetFrameOptions>,)
+src/spritesheet_data.rs: pub fn create_spritesheet_animation_data() -> SpritesheetAnimationData
+src/spritesheet_data.rs: pub fn create_spritesheet_data() -> SpritesheetData
+src/spritesheet_data.rs: pub fn create_spritesheet_frame_data() -> SpritesheetFrameData
+src/spritesheet_data.rs: pub fn initialize_spritesheet_animation_data(out: &mut SpritesheetAnimationData)
+src/spritesheet_data.rs: pub fn initialize_spritesheet_data(out: &mut SpritesheetData)
+src/spritesheet_data.rs: pub fn initialize_spritesheet_frame_data(out: &mut SpritesheetFrameData)
+src/spritesheet_frame.rs: pub fn create_spritesheet_frame() -> Ref<SpritesheetFrame>
+src/spritesheet_frame.rs: pub fn initialize_spritesheet_frame(out: &mut SpritesheetFrame)
 src/spritesheet_from.rs: pub fn create_spritesheet_from_data(data: &SpritesheetData, atlas: &Ref<TextureAtlas>,) -> Spritesheet
 src/spritesheet_from.rs: pub fn create_spritesheet_from_grid(options: &GridSliceOptions) -> Spritesheet
 src/spritesheet_player.rs: pub fn acquire_spritesheet_player(pool: &mut SpritesheetPlayerPool) -> Ref<SpritesheetPlayer>
 src/spritesheet_player.rs: pub fn clone_spritesheet_player(player: &SpritesheetPlayer) -> Ref<SpritesheetPlayer>
-src/spritesheet_player.rs: pub fn create_spritesheet_player(obj: Option<SpritesheetPlayerOptions>) -> Ref<SpritesheetPlayer>
+src/spritesheet_player.rs: pub fn create_spritesheet_player() -> Ref<SpritesheetPlayer>
 src/spritesheet_player.rs: pub fn dispose_spritesheet_player(player: &mut SpritesheetPlayer)
 src/spritesheet_player.rs: pub fn get_spritesheet_player_frame(player: &SpritesheetPlayer, spritesheet: &Spritesheet,) -> Option<Ref<SpritesheetFrame>>
 src/spritesheet_player.rs: pub fn get_spritesheet_player_frame_at(player: &SpritesheetPlayer, spritesheet: &Spritesheet, frame_offset: f64,) -> Option<Ref<SpritesheetFrame>>
-src/spritesheet_player.rs: pub fn initialize_spritesheet_player(out: &mut SpritesheetPlayer, obj: Option<SpritesheetPlayerOptions>,)
+src/spritesheet_player.rs: pub fn initialize_spritesheet_player(out: &mut SpritesheetPlayer)
 src/spritesheet_player.rs: pub fn pause_spritesheet_player(player: &mut SpritesheetPlayer)
 src/spritesheet_player.rs: pub fn play_spritesheet_animation(player: &mut SpritesheetPlayer, animation: Option<&Ref<SpritesheetAnimation>>, restart: Option<bool>,)
 src/spritesheet_player.rs: pub fn queue_spritesheet_animation(player: &mut SpritesheetPlayer, animation: &Ref<SpritesheetAnimation>,)
@@ -107,20 +100,20 @@ src/spritesheet_validation.rs: pub fn validate_spritesheet_data(data: &Spriteshe
 src/sugar.rs: impl Spritesheet :: fn clone_spritesheet(&self) -> Spritesheet
 src/sugar.rs: impl Spritesheet :: fn create_spritesheet_animation_from_frame_names(&self, pattern: &SpritesheetFramePattern, options: Option<&SpritesheetAnimationFrameNameOptions>,) -> Option<Ref<SpritesheetAnimation>>
 src/sugar.rs: impl Spritesheet :: fn get_spritesheet_animation(&self, label: &str) -> Option<Ref<SpritesheetAnimation>>
-src/sugar.rs: impl Spritesheet :: fn initialize_spritesheet(&mut self, obj: Option<SpritesheetOptions>)
+src/sugar.rs: impl Spritesheet :: fn initialize_spritesheet(&mut self)
 src/sugar.rs: impl Spritesheet :: fn validate_spritesheet(&self) -> Option<Vec<SpritesheetValidationDiagnostic>>
-src/sugar.rs: impl SpritesheetAnimation :: fn initialize_spritesheet_animation(&mut self, obj: Option<&SpritesheetAnimationOptions>)
-src/sugar.rs: impl SpritesheetAnimationData :: fn initialize_spritesheet_animation_data(&mut self, obj: Option<SpritesheetAnimationDataOptions>,)
+src/sugar.rs: impl SpritesheetAnimation :: fn initialize_spritesheet_animation(&mut self)
+src/sugar.rs: impl SpritesheetAnimationData :: fn initialize_spritesheet_animation_data(&mut self)
 src/sugar.rs: impl SpritesheetData :: fn create_spritesheet_from_data(&self, atlas: &Ref<TextureAtlas>) -> Spritesheet
-src/sugar.rs: impl SpritesheetData :: fn initialize_spritesheet_data(&mut self, obj: Option<SpritesheetDataOptions>)
+src/sugar.rs: impl SpritesheetData :: fn initialize_spritesheet_data(&mut self)
 src/sugar.rs: impl SpritesheetData :: fn validate_spritesheet_data(&self) -> Option<Vec<SpritesheetValidationDiagnostic>>
-src/sugar.rs: impl SpritesheetFrame :: fn initialize_spritesheet_frame(&mut self, obj: Option<&SpritesheetFrameOptions>)
-src/sugar.rs: impl SpritesheetFrameData :: fn initialize_spritesheet_frame_data(&mut self, obj: Option<SpritesheetFrameDataOptions>)
+src/sugar.rs: impl SpritesheetFrame :: fn initialize_spritesheet_frame(&mut self)
+src/sugar.rs: impl SpritesheetFrameData :: fn initialize_spritesheet_frame_data(&mut self)
 src/sugar.rs: impl SpritesheetPlayer :: fn clone_spritesheet_player(&self) -> Ref<SpritesheetPlayer>
 src/sugar.rs: impl SpritesheetPlayer :: fn dispose_spritesheet_player(&mut self)
 src/sugar.rs: impl SpritesheetPlayer :: fn get_spritesheet_player_frame(&self, spritesheet: &Spritesheet,) -> Option<Ref<SpritesheetFrame>>
 src/sugar.rs: impl SpritesheetPlayer :: fn get_spritesheet_player_frame_at(&self, spritesheet: &Spritesheet, frame_offset: f64,) -> Option<Ref<SpritesheetFrame>>
-src/sugar.rs: impl SpritesheetPlayer :: fn initialize_spritesheet_player(&mut self, obj: Option<SpritesheetPlayerOptions>)
+src/sugar.rs: impl SpritesheetPlayer :: fn initialize_spritesheet_player(&mut self)
 src/sugar.rs: impl SpritesheetPlayer :: fn pause_spritesheet_player(&mut self)
 src/sugar.rs: impl SpritesheetPlayer :: fn play_spritesheet_animation(&mut self, animation: Option<&Ref<SpritesheetAnimation>>, restart: Option<bool>,)
 src/sugar.rs: impl SpritesheetPlayer :: fn queue_spritesheet_animation(&mut self, animation: &Ref<SpritesheetAnimation>)
@@ -136,12 +129,7 @@ src/types.rs: #[derive(Clone)] pub struct SpritesheetFramePatternRegExp { pub va
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum SpritesheetAnimationDirection { #[default] Forward, Pingpong, PingpongReverse, Reverse, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SpritesheetParseDiagnosticSeverity { Error, Warning, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum SpritesheetValidationSeverity { Error, Warning, }
-src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct SpritesheetAnimationDataOptions { pub direction: Option<SpritesheetAnimationDirection>, pub frame_duration: Option<f64>, pub frame_durations: Option<Vec<f64>>, pub frame_names: Option<Vec<String>>, pub repeat_count: Option<i32>, pub name: Option<String>, pub origin_x: Option<f32>, pub origin_y: Option<f32>, }
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct SpritesheetAnimationFrameNameOptions { pub direction: Option<SpritesheetAnimationDirection>, pub frame_duration: Option<f64>, pub frame_durations: Option<Vec<f64>>, pub origin_x: Option<f32>, pub origin_y: Option<f32>, pub repeat_count: Option<i32>, }
-src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct SpritesheetAnimationOptions { pub direction: Option<SpritesheetAnimationDirection>, pub frame_duration: Option<f64>, pub frame_durations: Option<Vec<f64>>, pub frames: Option<Vec<f64>>, pub origin_x: Option<f32>, pub origin_y: Option<f32>, pub repeat_count: Option<i32>, }
-src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct SpritesheetDataOptions { pub animations: Option<Vec<SpritesheetAnimationData>>, pub frames: Option<Vec<SpritesheetFrameData>>, pub image_file: Option<String>, pub image_height: Option<f32>, pub image_width: Option<f32>, pub scale: Option<f32>, }
-src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct SpritesheetFrameDataOptions { pub height: Option<f32>, pub name: Option<String>, pub offset_x: Option<f32>, pub offset_y: Option<f32>, pub pivot_x: Option<f32>, pub pivot_y: Option<f32>, pub rotated: Option<bool>, pub source_height: Option<f32>, pub source_width: Option<f32>, pub width: Option<f32>, pub x: Option<f32>, pub y: Option<f32>, }
-src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct SpritesheetFrameOptions { pub id: Option<i32>, pub offset_x: Option<f32>, pub offset_y: Option<f32>, pub pivot_x: Option<f32>, pub pivot_y: Option<f32>, pub rotated: Option<bool>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct SpritesheetAnimationData { runtime: EntityRuntimeSlot, pub direction: SpritesheetAnimationDirection, pub frame_duration: f64, pub frame_durations: Option<Vec<f64>>, pub frame_names: Vec<String>, pub repeat_count: i32, pub name: String, pub origin_x: f32, pub origin_y: f32, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct SpritesheetData { runtime: EntityRuntimeSlot, pub animations: Vec<SpritesheetAnimationData>, pub frames: Vec<SpritesheetFrameData>, pub image_file: String, pub image_height: f32, pub image_width: f32, pub scale: f32, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct SpritesheetFrame { runtime: EntityRuntimeSlot, pub id: i32, pub offset_x: f32, pub offset_y: f32, pub pivot_x: Option<f32>, pub pivot_y: Option<f32>, pub rotated: bool, }
@@ -149,8 +137,6 @@ src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct SpritesheetFrameData
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct SpritesheetFramePatternName { pub value: String, }
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct SpritesheetParseDiagnostic { pub field: Option<String>, pub frame_name: Option<String>, pub message: String, pub severity: SpritesheetParseDiagnosticSeverity, }
 src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct SpritesheetValidationDiagnostic { pub animation_name: Option<String>, pub frame_index: Option<usize>, pub message: String, pub severity: SpritesheetValidationSeverity, }
-src/types.rs: #[derive(Clone, Default)] pub struct SpritesheetOptions { pub atlas: Option<Ref<TextureAtlas>>, pub animations: Option<Record<Ref<SpritesheetAnimation>>>, pub frames: Option<Vec<Ref<SpritesheetFrame>>>, }
-src/types.rs: #[derive(Clone, Default)] pub struct SpritesheetPlayerOptions { pub animation: Option<Ref<SpritesheetAnimation>>, pub complete: Option<bool>, pub elapsed: Option<f64>, pub frame_index: Option<f64>, pub on_complete: Option<Signal<()>>, pub on_loop: Option<Signal<()>>, pub paused: Option<bool>, pub queue: Option<Vec<Ref<SpritesheetAnimation>>>, pub speed: Option<f64>, }
 src/types.rs: #[derive(Clone, Default)] pub struct SpritesheetPlayerPool { pub(crate) players: Vec<Ref<SpritesheetPlayer>>, }
 src/types.rs: impl Default for Spritesheet
 src/types.rs: impl Default for Spritesheet :: fn default() -> Self

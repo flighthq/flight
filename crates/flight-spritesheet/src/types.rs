@@ -84,17 +84,6 @@ pub struct SpritesheetFrame {
     pub rotated: bool,
 }
 
-/// The source's `Partial<SpritesheetFrame>`. Plain record.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct SpritesheetFrameOptions {
-    pub id: Option<i32>,
-    pub offset_x: Option<f32>,
-    pub offset_y: Option<f32>,
-    pub pivot_x: Option<f32>,
-    pub pivot_y: Option<f32>,
-    pub rotated: Option<bool>,
-}
-
 /// One animation (TS `SpritesheetAnimation extends Entity`), shared as `Ref<SpritesheetAnimation>`:
 /// players hold, compare and queue animations by identity. `frames` are indices into the sheet's
 /// frames and the timings are milliseconds, all JS numbers. `repeat_count` is the number of extra
@@ -113,19 +102,6 @@ pub struct SpritesheetAnimation {
     pub origin_x: f32,
     pub origin_y: f32,
     pub(crate) cumulative_durations: Mutex<Option<Arc<Vec<f64>>>>,
-}
-
-/// The source's `Partial<SpritesheetAnimation>`. Plain record.
-// flight-lint: allow(f64) D1: frame references and millisecond timings are JS numbers
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct SpritesheetAnimationOptions {
-    pub direction: Option<SpritesheetAnimationDirection>,
-    pub frame_duration: Option<f64>,
-    pub frame_durations: Option<Vec<f64>>,
-    pub frames: Option<Vec<f64>>,
-    pub origin_x: Option<f32>,
-    pub origin_y: Option<f32>,
-    pub repeat_count: Option<i32>,
 }
 
 /// The playback options `create_spritesheet_animation_from_frame_names` carries (the source's
@@ -150,14 +126,6 @@ pub struct Spritesheet {
     pub frames: Vec<Ref<SpritesheetFrame>>,
 }
 
-/// The source's `Partial<Spritesheet>`. Plain record.
-#[derive(Clone, Default)]
-pub struct SpritesheetOptions {
-    pub atlas: Option<Ref<TextureAtlas>>,
-    pub animations: Option<Record<Ref<SpritesheetAnimation>>>,
-    pub frames: Option<Vec<Ref<SpritesheetFrame>>>,
-}
-
 /// One authored frame descriptor (TS `SpritesheetFrameData extends Entity`).
 #[derive(Clone, Debug, PartialEq)]
 pub struct SpritesheetFrameData {
@@ -176,23 +144,6 @@ pub struct SpritesheetFrameData {
     pub y: f32,
 }
 
-/// The source's `Partial<SpritesheetFrameData>`. Plain record.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct SpritesheetFrameDataOptions {
-    pub height: Option<f32>,
-    pub name: Option<String>,
-    pub offset_x: Option<f32>,
-    pub offset_y: Option<f32>,
-    pub pivot_x: Option<f32>,
-    pub pivot_y: Option<f32>,
-    pub rotated: Option<bool>,
-    pub source_height: Option<f32>,
-    pub source_width: Option<f32>,
-    pub width: Option<f32>,
-    pub x: Option<f32>,
-    pub y: Option<f32>,
-}
-
 /// One authored animation descriptor (TS `SpritesheetAnimationData extends Entity`).
 // flight-lint: allow(f64) D1: millisecond timings are JS numbers
 #[derive(Clone, Debug, PartialEq)]
@@ -208,20 +159,6 @@ pub struct SpritesheetAnimationData {
     pub origin_y: f32,
 }
 
-/// The source's `Partial<SpritesheetAnimationData>`. Plain record.
-// flight-lint: allow(f64) D1: millisecond timings are JS numbers
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct SpritesheetAnimationDataOptions {
-    pub direction: Option<SpritesheetAnimationDirection>,
-    pub frame_duration: Option<f64>,
-    pub frame_durations: Option<Vec<f64>>,
-    pub frame_names: Option<Vec<String>>,
-    pub repeat_count: Option<i32>,
-    pub name: Option<String>,
-    pub origin_x: Option<f32>,
-    pub origin_y: Option<f32>,
-}
-
 /// A spritesheet descriptor (TS `SpritesheetData extends Entity`).
 #[derive(Clone, Debug, PartialEq)]
 pub struct SpritesheetData {
@@ -232,17 +169,6 @@ pub struct SpritesheetData {
     pub image_height: f32,
     pub image_width: f32,
     pub scale: f32,
-}
-
-/// The source's `Partial<SpritesheetData>`. Plain record.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct SpritesheetDataOptions {
-    pub animations: Option<Vec<SpritesheetAnimationData>>,
-    pub frames: Option<Vec<SpritesheetFrameData>>,
-    pub image_file: Option<String>,
-    pub image_height: Option<f32>,
-    pub image_width: Option<f32>,
-    pub scale: Option<f32>,
 }
 
 /// An animation playhead (TS `SpritesheetPlayer extends Entity`), shared as
@@ -261,22 +187,6 @@ pub struct SpritesheetPlayer {
     pub on_complete: Signal<()>,
     pub on_loop: Signal<()>,
     pub queue: Vec<Ref<SpritesheetAnimation>>,
-}
-
-/// The source's `Partial<SpritesheetPlayer>`; provided signals and queue are used directly. Plain
-/// record.
-// flight-lint: allow(f64) D1: elapsed time, speed and the display index are JS numbers
-#[derive(Clone, Default)]
-pub struct SpritesheetPlayerOptions {
-    pub animation: Option<Ref<SpritesheetAnimation>>,
-    pub complete: Option<bool>,
-    pub elapsed: Option<f64>,
-    pub frame_index: Option<f64>,
-    pub on_complete: Option<Signal<()>>,
-    pub on_loop: Option<Signal<()>>,
-    pub paused: Option<bool>,
-    pub queue: Option<Vec<Ref<SpritesheetAnimation>>>,
-    pub speed: Option<f64>,
 }
 
 /// Caller-owned player pool replacing the source module pool (D5).

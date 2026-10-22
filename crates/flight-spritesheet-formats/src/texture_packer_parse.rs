@@ -2,8 +2,8 @@ use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticSeverity, report_import_diagnostic,
 };
 use flight_spritesheet::{
-    SpritesheetAnimationDataOptions, SpritesheetAnimationDirection, SpritesheetData,
-    SpritesheetDataOptions, create_spritesheet_animation_data, create_spritesheet_data,
+    SpritesheetAnimationDirection, SpritesheetData, create_spritesheet_animation_data,
+    create_spritesheet_data,
 };
 use flight_textureatlas::TextureAtlas;
 use flight_textureatlas_formats::{
@@ -26,7 +26,7 @@ pub fn parse_texture_packer_spritesheet(
             "parseTexturePackerSpritesheet",
             None,
         );
-        return create_spritesheet_data(None);
+        return create_spritesheet_data();
     };
     return texture_packer_document_to_data(&document);
 }
@@ -65,7 +65,7 @@ pub fn parse_texture_packer_spritesheet_document(
             },
         );
         return TexturePackerParsed {
-            data: create_spritesheet_data(None),
+            data: create_spritesheet_data(),
             document,
         };
     };
@@ -103,52 +103,43 @@ fn texture_packer_document_to_data(document: &TexturePackerDocument) -> Spritesh
             let end = usize::try_from(tag.to.saturating_add(1).max(0))
                 .unwrap_or(0)
                 .min(frame_names.len());
-            create_spritesheet_animation_data(Some(SpritesheetAnimationDataOptions {
-                direction: Some(
-                    match tag
-                        .direction
-                        .unwrap_or(TextureAtlasFrameTagDirection::Forward)
-                    {
-                        TextureAtlasFrameTagDirection::Forward => {
-                            SpritesheetAnimationDirection::Forward
-                        }
-                        TextureAtlasFrameTagDirection::PingPong => {
-                            SpritesheetAnimationDirection::Pingpong
-                        }
-                        TextureAtlasFrameTagDirection::PingPongReverse => {
-                            SpritesheetAnimationDirection::PingpongReverse
-                        }
-                        TextureAtlasFrameTagDirection::Reverse => {
-                            SpritesheetAnimationDirection::Reverse
-                        }
-                    },
-                ),
-                frame_duration: Some(100.0),
-                frame_names: Some(if start <= end {
-                    frame_names[start..end].to_vec()
-                } else {
-                    Vec::new()
-                }),
-                name: Some(tag.name.clone()),
-                repeat_count: Some(-1),
-                ..SpritesheetAnimationDataOptions::default()
-            }))
+            let mut animation = create_spritesheet_animation_data();
+            animation.direction = match tag
+                .direction
+                .unwrap_or(TextureAtlasFrameTagDirection::Forward)
+            {
+                TextureAtlasFrameTagDirection::Forward => SpritesheetAnimationDirection::Forward,
+                TextureAtlasFrameTagDirection::PingPong => SpritesheetAnimationDirection::Pingpong,
+                TextureAtlasFrameTagDirection::PingPongReverse => {
+                    SpritesheetAnimationDirection::PingpongReverse
+                }
+                TextureAtlasFrameTagDirection::Reverse => SpritesheetAnimationDirection::Reverse,
+            };
+            animation.frame_duration = 100.0;
+            animation.frame_names = if start <= end {
+                frame_names[start..end].to_vec()
+            } else {
+                Vec::new()
+            };
+            animation.name = tag.name.clone();
+            animation.repeat_count = -1;
+            return animation;
         })
         .collect();
-    return create_spritesheet_data(Some(SpritesheetDataOptions {
-        animations: Some(animations),
-        frames: Some(frames),
-        image_file: Some(meta.image.clone()),
-        image_height: Some(meta.size.h),
-        image_width: Some(meta.size.w),
-        scale: Some(match &meta.scale {
-            TextureAtlasScale::Number(scale) => scale.value,
-            TextureAtlasScale::String(scale) => scale
-                .value
-                .parse::<f32>()
-                .ok()
-                .filter(|value| *value != 0.0)
-                .unwrap_or(1.0),
-        }),
-    }));
+    let mut data = create_spritesheet_data();
+    data.animations = animations;
+    data.frames = frames;
+    data.image_file = meta.image.clone();
+    data.image_height = meta.size.h;
+    data.image_width = meta.size.w;
+    data.scale = match &meta.scale {
+        TextureAtlasScale::Number(scale) => scale.value,
+        TextureAtlasScale::String(scale) => scale
+            .value
+            .parse::<f32>()
+            .ok()
+            .filter(|value| *value != 0.0)
+            .unwrap_or(1.0),
+    };
+    return data;
 }

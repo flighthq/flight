@@ -1,7 +1,7 @@
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticSeverity, report_import_diagnostic,
 };
-use flight_spritesheet::{SpritesheetData, SpritesheetDataOptions, create_spritesheet_data};
+use flight_spritesheet::{SpritesheetData, create_spritesheet_data};
 use flight_textureatlas::TextureAtlas;
 use flight_textureatlas_formats::parse_texture_atlas_libgdx_atlas;
 
@@ -45,14 +45,14 @@ pub fn parse_libgdx_atlas_spritesheet(
     let frame_duration = options
         .and_then(|options| options.frame_duration)
         .unwrap_or(100.0);
-    return create_spritesheet_data(Some(SpritesheetDataOptions {
-        animations: Some(infer_animations(&frame_names, frame_duration)),
-        frames: Some(frames),
-        image_file: Some(first_page.map_or_else(String::new, |page| page.filename.clone())),
-        image_height: Some(first_page.map_or(0.0, |page| page.height)),
-        image_width: Some(first_page.map_or(0.0, |page| page.width)),
-        scale: Some(1.0),
-    }));
+    let mut data = create_spritesheet_data();
+    data.animations = infer_animations(&frame_names, frame_duration);
+    data.frames = frames;
+    data.image_file = first_page.map_or_else(String::new, |page| page.filename.clone());
+    data.image_height = first_page.map_or(0.0, |page| page.height);
+    data.image_width = first_page.map_or(0.0, |page| page.width);
+    data.scale = 1.0;
+    return data;
 }
 
 fn z_a_parse_libgdx_pages(text: &str) -> Vec<LibgdxPage> {

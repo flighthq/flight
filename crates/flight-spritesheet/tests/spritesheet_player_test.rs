@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use flight_entity::Ref;
+use flight_entity::{Ref, get_entity_id};
 use flight_signals::{connect_signal, create_signal};
 use flight_spritesheet::contract::*;
 
@@ -12,13 +12,8 @@ fn pool() -> SpritesheetPlayerPool {
     return make();
 }
 
-fn player_options() -> SpritesheetPlayerOptions {
-    let make: fn() -> SpritesheetPlayerOptions = SpritesheetPlayerOptions::default;
-    return make();
-}
-
 fn player() -> Ref<SpritesheetPlayer> {
-    return create_spritesheet_player(None);
+    return create_spritesheet_player();
 }
 
 fn counter(signal: &flight_signals::Signal<()>) -> Arc<AtomicUsize> {
@@ -44,14 +39,16 @@ fn directed(
     frames: &[f64],
     frame_durations: Option<Vec<f64>>,
 ) -> Ref<SpritesheetAnimation> {
-    return create_spritesheet_animation(Some(&SpritesheetAnimationOptions {
-        direction: Some(direction),
-        frame_duration: Some(100.0),
-        frame_durations,
-        frames: Some(frames.to_vec()),
-        repeat_count: Some(-1),
-        ..animation_options()
-    }));
+    let animation = create_spritesheet_animation();
+    {
+        let mut animation = animation.write().unwrap();
+        animation.direction = direction;
+        animation.frame_duration = 100.0;
+        animation.frame_durations = frame_durations;
+        animation.frames = frames.to_vec();
+        animation.repeat_count = -1;
+    }
+    return animation;
 }
 
 fn frame_id(frame: Option<Ref<SpritesheetFrame>>) -> i32 {
@@ -186,17 +183,18 @@ mod create_spritesheet_player {
     }
 
     #[test]
-    fn uses_the_provided_queue_and_signals_directly() {
+    fn accepts_authored_queue_and_signals_directly_after_construction() {
         let anim = animation(&[0.0], 100.0, -1);
         let queue = vec![anim.clone()];
         let address = queue.as_ptr();
         let on_complete = create_signal::<()>();
         let count = counter(&on_complete);
-        let shared = create_spritesheet_player(Some(SpritesheetPlayerOptions {
-            queue: Some(queue),
-            on_complete: Some(on_complete),
-            ..player_options()
-        }));
+        let shared = create_spritesheet_player();
+        {
+            let mut player = shared.write().unwrap();
+            player.queue = queue;
+            player.on_complete = on_complete;
+        }
         assert_eq!(shared.read().unwrap().queue.as_ptr(), address);
         emit(&shared.read().unwrap().on_complete);
         assert_eq!(count.load(Ordering::SeqCst), 1);
@@ -392,12 +390,12 @@ mod initialize_spritesheet_player {
 
     #[test]
     fn is_the_construction_initializer_with_fresh_signals() {
-        let shared = create_spritesheet_player(Some(SpritesheetPlayerOptions {
-            speed: Some(3.0),
-            ..player_options()
-        }));
+        let shared = create_spritesheet_player();
+        shared.write().unwrap().speed = 3.0;
+        let entity_id = get_entity_id(&*shared.read().unwrap());
         let old = counter(&shared.read().unwrap().on_complete);
-        initialize_spritesheet_player(&mut shared.write().unwrap(), None);
+        initialize_spritesheet_player(&mut shared.write().unwrap());
+        assert_eq!(get_entity_id(&*shared.read().unwrap()), entity_id);
         assert_eq!(shared.read().unwrap().speed, 1.0);
         emit(&shared.read().unwrap().on_complete);
         assert_eq!(old.load(Ordering::SeqCst), 0);
@@ -523,10 +521,8 @@ mod resume_spritesheet_player {
 
     #[test]
     fn sets_paused_to_false() {
-        let shared = create_spritesheet_player(Some(SpritesheetPlayerOptions {
-            paused: Some(true),
-            ..player_options()
-        }));
+        let shared = create_spritesheet_player();
+        shared.write().unwrap().paused = true;
         resume_spritesheet_player(&mut shared.write().unwrap());
         assert!(!shared.read().unwrap().paused);
     }
@@ -860,10 +856,8 @@ mod update_spritesheet_player {
 
     #[test]
     fn scales_elapsed_time_by_speed() {
-        let shared = create_spritesheet_player(Some(SpritesheetPlayerOptions {
-            speed: Some(2.0),
-            ..player_options()
-        }));
+        let shared = create_spritesheet_player();
+        shared.write().unwrap().speed = 2.0;
         play_spritesheet_animation(
             &mut shared.write().unwrap(),
             Some(&animation(&[0.0, 1.0, 2.0, 3.0], 100.0, -1)),

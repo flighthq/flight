@@ -2,9 +2,8 @@ use std::sync::{Arc, RwLock};
 
 use flight_entity::Ref;
 use flight_spritesheet::{
-    Spritesheet, SpritesheetAnimation, SpritesheetAnimationOptions, SpritesheetFrame,
-    SpritesheetFrameOptions, SpritesheetOptions, create_spritesheet, create_spritesheet_animation,
-    create_spritesheet_frame,
+    Spritesheet, SpritesheetAnimation, SpritesheetFrame, create_spritesheet,
+    create_spritesheet_animation, create_spritesheet_frame,
 };
 use flight_texture::create_texture_2d;
 use flight_textureatlas::{TextureAtlas, add_texture_atlas_region, create_texture_atlas};
@@ -35,21 +34,14 @@ pub fn sheet_with_frames(count: i32) -> Ref<Spritesheet> {
     let atlas = atlas_with_regions(count);
     let frames: Vec<Ref<SpritesheetFrame>> = (0..count)
         .map(|index| {
-            create_spritesheet_frame(Some(&SpritesheetFrameOptions {
-                id: Some(index),
-                offset_x: None,
-                offset_y: None,
-                pivot_x: None,
-                pivot_y: None,
-                rotated: None,
-            }))
+            let frame = create_spritesheet_frame();
+            frame.write().unwrap().id = index;
+            return frame;
         })
         .collect();
-    let sheet = create_spritesheet(Some(SpritesheetOptions {
-        atlas: Some(atlas),
-        animations: None,
-        frames: Some(frames),
-    }));
+    let mut sheet = create_spritesheet();
+    sheet.atlas = Some(atlas);
+    sheet.frames = frames;
     return Arc::new(RwLock::new(sheet));
 }
 
@@ -58,13 +50,14 @@ pub fn animation(
     frames: Vec<f64>,
     direction: Option<flight_spritesheet::SpritesheetAnimationDirection>,
 ) -> Ref<SpritesheetAnimation> {
-    return create_spritesheet_animation(Some(&SpritesheetAnimationOptions {
-        direction,
-        frame_duration: Some(100.0),
-        frame_durations: None,
-        frames: Some(frames),
-        origin_x: None,
-        origin_y: None,
-        repeat_count: None,
-    }));
+    let animation = create_spritesheet_animation();
+    {
+        let mut animation = animation.write().unwrap();
+        if let Some(direction) = direction {
+            animation.direction = direction;
+        }
+        animation.frame_duration = 100.0;
+        animation.frames = frames;
+    }
+    return animation;
 }

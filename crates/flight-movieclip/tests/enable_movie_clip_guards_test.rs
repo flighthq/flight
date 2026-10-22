@@ -5,7 +5,6 @@ use flight_log::{
     get_memory_log_sink_entries, remove_log_sink,
 };
 use flight_movieclip::contract::*;
-use flight_spritesheet::contract::*;
 
 use crate::support::*;
 
@@ -58,15 +57,8 @@ mod disable_movie_clip_guards {
         disable_movie_clip_guards(&mut guards);
         let entries = capture_log(|| {
             let sheet = sheet_with_frames(1);
-            let animation = create_spritesheet_animation(Some(&SpritesheetAnimationOptions {
-                direction: None,
-                frame_duration: None,
-                frame_durations: None,
-                frames: Some(vec![0.0]),
-                origin_x: None,
-                origin_y: None,
-                repeat_count: Some(3),
-            }));
+            let animation = animation(vec![0.0], None);
+            animation.write().unwrap().repeat_count = 3;
             let source = create_spritesheet_timeline_source(&guards, &sheet, &animation);
             assert_eq!(source.read().unwrap().total_frames, 1);
         });
@@ -88,15 +80,12 @@ mod enable_movie_clip_guards {
         };
         enable_movie_clip_guards(&mut guards, &state, clock());
         let sheet = sheet_with_frames(2);
-        let animation = create_spritesheet_animation(Some(&SpritesheetAnimationOptions {
-            direction: None,
-            frame_duration: None,
-            frame_durations: Some(vec![50.0, 150.0]),
-            frames: Some(vec![0.0, 1.0]),
-            origin_x: None,
-            origin_y: None,
-            repeat_count: Some(2),
-        }));
+        let animation = animation(vec![0.0, 1.0], None);
+        {
+            let mut animation = animation.write().unwrap();
+            animation.frame_durations = Some(vec![50.0, 150.0]);
+            animation.repeat_count = 2;
+        }
         create_spritesheet_timeline_source(&guards, &sheet, &animation);
         create_spritesheet_timeline_source(&guards, &sheet, &animation);
         let entries = {

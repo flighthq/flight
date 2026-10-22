@@ -5,29 +5,26 @@ use flight_signals::{clear_signal, create_signal, emit_signal};
 
 use crate::types::*;
 
-pub fn create_spritesheet_player(obj: Option<SpritesheetPlayerOptions>) -> Ref<SpritesheetPlayer> {
+// flight-lint: allow(conform-params) Principal c0f9227c D23 callers assign authored player fields after canonical construction
+pub fn create_spritesheet_player() -> Ref<SpritesheetPlayer> {
     let mut out: SpritesheetPlayer = allocate_entity();
-    initialize_spritesheet_player(&mut out, obj);
+    initialize_spritesheet_player(&mut out);
     return Arc::new(RwLock::new(out));
 }
 
-/// The construction initializer of `create_spritesheet_player`: each field from `obj` (provided
-/// signals and queue used directly), or an idle complete player at speed 1 with fresh signals.
+/// Restores an idle complete player at speed 1 with fresh signals without replacing entity identity.
 // flight-lint: allow(f64) D1: elapsed time, speed and the display index are JS numbers
-pub fn initialize_spritesheet_player(
-    out: &mut SpritesheetPlayer,
-    obj: Option<SpritesheetPlayerOptions>,
-) {
-    let obj = obj.unwrap_or_default();
-    out.animation = obj.animation;
-    out.complete = obj.complete.unwrap_or(true);
-    out.elapsed = obj.elapsed.unwrap_or(0.0);
-    out.frame_index = obj.frame_index.unwrap_or(0.0);
-    out.on_complete = obj.on_complete.unwrap_or_else(create_signal);
-    out.on_loop = obj.on_loop.unwrap_or_else(create_signal);
-    out.paused = obj.paused.unwrap_or(false);
-    out.queue = obj.queue.unwrap_or_default();
-    out.speed = obj.speed.unwrap_or(1.0);
+// flight-lint: allow(conform-params) Principal c0f9227c D23 initialization establishes canonical player defaults before authored assignment
+pub fn initialize_spritesheet_player(out: &mut SpritesheetPlayer) {
+    out.animation = None;
+    out.complete = true;
+    out.elapsed = 0.0;
+    out.frame_index = 0.0;
+    out.on_complete = create_signal();
+    out.on_loop = create_signal();
+    out.paused = false;
+    out.queue = Vec::new();
+    out.speed = 1.0;
 }
 
 /// A pooled player reset to an idle, complete state (its signals were cleared on release), or a new
@@ -35,7 +32,7 @@ pub fn initialize_spritesheet_player(
 // flight-lint: allow(conform-params) D5: caller-owned pool replaces the source module pool
 pub fn acquire_spritesheet_player(pool: &mut SpritesheetPlayerPool) -> Ref<SpritesheetPlayer> {
     let Some(player) = pool.players.pop() else {
-        return create_spritesheet_player(None);
+        return create_spritesheet_player();
     };
     {
         let mut p = player.write().unwrap();

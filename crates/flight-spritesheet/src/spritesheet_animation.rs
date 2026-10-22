@@ -6,11 +6,10 @@ use flight_regexp::test_reg_exp;
 
 use crate::types::*;
 
-pub fn create_spritesheet_animation(
-    obj: Option<&SpritesheetAnimationOptions>,
-) -> Ref<SpritesheetAnimation> {
+// flight-lint: allow(conform-params) Principal c0f9227c D23 callers assign authored animation fields after canonical construction
+pub fn create_spritesheet_animation() -> Ref<SpritesheetAnimation> {
     let mut out: SpritesheetAnimation = allocate_entity();
-    initialize_spritesheet_animation(&mut out, obj);
+    initialize_spritesheet_animation(&mut out);
     return Arc::new(RwLock::new(out));
 }
 
@@ -53,37 +52,33 @@ pub fn create_spritesheet_animation_from_frame_names(
         SpritesheetAnimationFrameNameOptions::default;
     let defaults = make();
     let options = options.unwrap_or(&defaults);
-    return Some(create_spritesheet_animation(Some(
-        &SpritesheetAnimationOptions {
-            direction: options.direction,
-            frame_duration: options.frame_duration,
-            frame_durations: options.frame_durations.clone(),
-            frames: Some(matched),
-            origin_x: options.origin_x,
-            origin_y: options.origin_y,
-            repeat_count: options.repeat_count,
-        },
-    )));
+    let animation = create_spritesheet_animation();
+    {
+        let mut animation = animation.write().unwrap();
+        animation.direction = options
+            .direction
+            .unwrap_or(SpritesheetAnimationDirection::Forward);
+        animation.frame_duration = options.frame_duration.unwrap_or(0.0);
+        animation.frame_durations = options.frame_durations.clone();
+        animation.frames = matched;
+        animation.origin_x = options.origin_x.unwrap_or(0.0);
+        animation.origin_y = options.origin_y.unwrap_or(0.0);
+        animation.repeat_count = options.repeat_count.unwrap_or(0);
+    }
+    return Some(animation);
 }
 
-/// The construction initializer of `create_spritesheet_animation`: each field from `obj`, or forward,
-/// zero duration, no per-frame durations, no frames, zero origin, no extra repeats.
-pub fn initialize_spritesheet_animation(
-    out: &mut SpritesheetAnimation,
-    obj: Option<&SpritesheetAnimationOptions>,
-) {
-    let make: fn() -> SpritesheetAnimationOptions = SpritesheetAnimationOptions::default;
-    let defaults = make();
-    let obj = obj.unwrap_or(&defaults);
-    out.direction = obj
-        .direction
-        .unwrap_or(SpritesheetAnimationDirection::Forward);
-    out.frame_duration = obj.frame_duration.unwrap_or(0.0);
-    out.frame_durations = obj.frame_durations.clone();
-    out.frames = obj.frames.clone().unwrap_or_default();
-    out.origin_x = obj.origin_x.unwrap_or(0.0);
-    out.origin_y = obj.origin_y.unwrap_or(0.0);
-    out.repeat_count = obj.repeat_count.unwrap_or(0);
+/// Restores the canonical animation defaults and clears the derived duration cache without replacing
+/// the entity identity.
+// flight-lint: allow(conform-params) Principal c0f9227c D23 initialization establishes canonical animation defaults before authored assignment
+pub fn initialize_spritesheet_animation(out: &mut SpritesheetAnimation) {
+    out.direction = SpritesheetAnimationDirection::Forward;
+    out.frame_duration = 0.0;
+    out.frame_durations = None;
+    out.frames = Vec::new();
+    out.origin_x = 0.0;
+    out.origin_y = 0.0;
+    out.repeat_count = 0;
     out.cumulative_durations = Mutex::new(None);
 }
 

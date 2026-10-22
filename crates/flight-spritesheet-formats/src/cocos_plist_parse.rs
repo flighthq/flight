@@ -6,8 +6,7 @@ use flight_importdiagnostics::{
     report_import_diagnostic,
 };
 use flight_spritesheet::{
-    SpritesheetData, SpritesheetDataOptions, SpritesheetFrameData, SpritesheetFrameDataOptions,
-    create_spritesheet_data, create_spritesheet_frame_data,
+    SpritesheetData, SpritesheetFrameData, create_spritesheet_data, create_spritesheet_frame_data,
 };
 use flight_xml::{XmlElement, parse_xml_document};
 use regex::Regex;
@@ -154,14 +153,14 @@ fn z_b_cocos_document_to_data(document: &CocosPlistDocument) -> SpritesheetData 
         .map(|(name, frame)| z_c_cocos_frame_to_data(name, frame))
         .collect();
     let (image_width, image_height) = z_m_parse_plist_pair(&document.metadata.size);
-    return create_spritesheet_data(Some(SpritesheetDataOptions {
-        animations: Some(Vec::new()),
-        frames: Some(frames),
-        image_file: Some(document.metadata.texture_file_name.clone()),
-        image_height: Some(image_height),
-        image_width: Some(image_width),
-        scale: Some(1.0),
-    }));
+    let mut data = create_spritesheet_data();
+    data.animations = Vec::new();
+    data.frames = frames;
+    data.image_file = document.metadata.texture_file_name.clone();
+    data.image_height = image_height;
+    data.image_width = image_width;
+    data.scale = 1.0;
+    return data;
 }
 
 fn z_c_cocos_frame_to_data(name: &str, frame: &CocosPlistFrame) -> SpritesheetFrameData {
@@ -178,28 +177,28 @@ fn z_c_cocos_frame_to_data(name: &str, frame: &CocosPlistFrame) -> SpritesheetFr
     } else {
         packed_height
     };
-    return create_spritesheet_frame_data(Some(SpritesheetFrameDataOptions {
-        height: Some(height),
-        name: Some(name.to_string()),
-        offset_x: Some(offset_x),
-        offset_y: Some(offset_y),
-        pivot_x: None,
-        pivot_y: None,
-        rotated: Some(frame.texture_rotated),
-        source_height: Some(if source_height > 0.0 {
-            source_height
-        } else {
-            height
-        }),
-        source_width: Some(if source_width > 0.0 {
-            source_width
-        } else {
-            width
-        }),
-        width: Some(width),
-        x: Some(x),
-        y: Some(y),
-    }));
+    let mut data = create_spritesheet_frame_data();
+    data.height = height;
+    data.name = name.to_string();
+    data.offset_x = offset_x;
+    data.offset_y = offset_y;
+    data.pivot_x = None;
+    data.pivot_y = None;
+    data.rotated = frame.texture_rotated;
+    data.source_height = if source_height > 0.0 {
+        source_height
+    } else {
+        height
+    };
+    data.source_width = if source_width > 0.0 {
+        source_width
+    } else {
+        width
+    };
+    data.width = width;
+    data.x = x;
+    data.y = y;
+    return data;
 }
 
 fn z_d_dict_to_map(element: &XmlElement) -> Record<XmlElement> {

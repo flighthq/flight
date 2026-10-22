@@ -4,25 +4,20 @@ use flight_entity::{Ref, allocate_entity};
 
 use crate::types::*;
 
-pub fn create_spritesheet_frame(obj: Option<&SpritesheetFrameOptions>) -> Ref<SpritesheetFrame> {
+// flight-lint: allow(conform-params) Principal c0f9227c D23 callers assign authored frame fields after canonical construction
+pub fn create_spritesheet_frame() -> Ref<SpritesheetFrame> {
     let mut out: SpritesheetFrame = allocate_entity();
-    initialize_spritesheet_frame(&mut out, obj);
+    initialize_spritesheet_frame(&mut out);
     return Arc::new(RwLock::new(out));
 }
 
-/// The construction initializer of `create_spritesheet_frame`: each field from `obj`, or id 0, zero
-/// offsets, no pivot, not rotated.
-pub fn initialize_spritesheet_frame(
-    out: &mut SpritesheetFrame,
-    obj: Option<&SpritesheetFrameOptions>,
-) {
-    let make: fn() -> SpritesheetFrameOptions = SpritesheetFrameOptions::default;
-    let defaults = make();
-    let obj = obj.unwrap_or(&defaults);
-    out.id = obj.id.unwrap_or(0);
-    out.offset_x = obj.offset_x.unwrap_or(0.0);
-    out.offset_y = obj.offset_y.unwrap_or(0.0);
-    out.pivot_x = obj.pivot_x;
-    out.pivot_y = obj.pivot_y;
-    out.rotated = obj.rotated.unwrap_or(false);
+/// Restores the canonical frame defaults without replacing the entity identity.
+// flight-lint: allow(conform-params) Principal c0f9227c D23 initialization establishes canonical frame defaults before authored assignment
+pub fn initialize_spritesheet_frame(out: &mut SpritesheetFrame) {
+    out.id = 0;
+    out.offset_x = 0.0;
+    out.offset_y = 0.0;
+    out.pivot_x = None;
+    out.pivot_y = None;
+    out.rotated = false;
 }

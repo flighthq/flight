@@ -37,14 +37,17 @@ pub fn create_spritesheet_from_data(
                     .copied()
                     .unwrap_or(index as i32)
             };
-            create_spritesheet_frame(Some(&SpritesheetFrameOptions {
-                id: Some(region_id),
-                offset_x: Some(fd.offset_x),
-                offset_y: Some(fd.offset_y),
-                pivot_x: fd.pivot_x,
-                pivot_y: fd.pivot_y,
-                rotated: Some(fd.rotated),
-            }))
+            let frame = create_spritesheet_frame();
+            {
+                let mut frame = frame.write().unwrap();
+                frame.id = region_id;
+                frame.offset_x = fd.offset_x;
+                frame.offset_y = fd.offset_y;
+                frame.pivot_x = fd.pivot_x;
+                frame.pivot_y = fd.pivot_y;
+                frame.rotated = fd.rotated;
+            }
+            return frame;
         })
         .collect();
     let mut data_frame_index: HashMap<&str, usize> = HashMap::new();
@@ -64,22 +67,24 @@ pub fn create_spritesheet_from_data(
                 .map(|i| *i as f64)
                 .collect()
         };
-        let animation = create_spritesheet_animation(Some(&SpritesheetAnimationOptions {
-            direction: Some(ad.direction),
-            frame_duration: Some(ad.frame_duration),
-            frame_durations: ad.frame_durations.clone(),
-            frames: Some(resolved),
-            origin_x: Some(ad.origin_x),
-            origin_y: Some(ad.origin_y),
-            repeat_count: Some(ad.repeat_count),
-        }));
+        let animation = create_spritesheet_animation();
+        {
+            let mut animation = animation.write().unwrap();
+            animation.direction = ad.direction;
+            animation.frame_duration = ad.frame_duration;
+            animation.frame_durations = ad.frame_durations.clone();
+            animation.frames = resolved;
+            animation.origin_x = ad.origin_x;
+            animation.origin_y = ad.origin_y;
+            animation.repeat_count = ad.repeat_count;
+        }
         set_record_value(&mut animations, ad.name.clone(), animation);
     }
-    return create_spritesheet(Some(SpritesheetOptions {
-        animations: Some(animations),
-        atlas: Some(atlas.clone()),
-        frames: Some(frames),
-    }));
+    let mut spritesheet = create_spritesheet();
+    spritesheet.animations = animations;
+    spritesheet.atlas = Some(atlas.clone());
+    spritesheet.frames = frames;
+    return spritesheet;
 }
 
 /// A sheet over a regular grid sliced from the image: the grid atlas's row-major regions, one frame
@@ -92,15 +97,13 @@ pub fn create_spritesheet_from_grid(options: &GridSliceOptions) -> Spritesheet {
         .regions
         .iter()
         .map(|region| {
-            create_spritesheet_frame(Some(&SpritesheetFrameOptions {
-                id: Some(region.read().unwrap().id),
-                ..SpritesheetFrameOptions::default()
-            }))
+            let frame = create_spritesheet_frame();
+            frame.write().unwrap().id = region.read().unwrap().id;
+            return frame;
         })
         .collect();
-    return create_spritesheet(Some(SpritesheetOptions {
-        atlas: Some(atlas),
-        frames: Some(frames),
-        ..SpritesheetOptions::default()
-    }));
+    let mut spritesheet = create_spritesheet();
+    spritesheet.atlas = Some(atlas);
+    spritesheet.frames = frames;
+    return spritesheet;
 }

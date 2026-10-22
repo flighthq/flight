@@ -1,7 +1,7 @@
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticSeverity, report_import_diagnostic,
 };
-use flight_spritesheet::{SpritesheetData, SpritesheetDataOptions, create_spritesheet_data};
+use flight_spritesheet::{SpritesheetData, create_spritesheet_data};
 use flight_textureatlas::TextureAtlas;
 use flight_textureatlas_formats::parse_texture_atlas_starling_xml;
 use flight_xml::{XmlElement, parse_xml_document};
@@ -102,14 +102,14 @@ fn z_b_starling_document_to_data(
             None,
         );
     }
-    return create_spritesheet_data(Some(SpritesheetDataOptions {
-        animations: Some(infer_animations(&frame_names, frame_duration)),
-        frames: Some(frames),
-        image_file: Some(document.image_path.clone()),
-        image_height: Some(image_height),
-        image_width: Some(image_width),
-        scale: Some(1.0),
-    }));
+    let mut data = create_spritesheet_data();
+    data.animations = infer_animations(&frame_names, frame_duration);
+    data.frames = frames;
+    data.image_file = document.image_path.clone();
+    data.image_height = image_height;
+    data.image_width = image_width;
+    data.scale = 1.0;
+    return data;
 }
 
 fn z_c_resolve_starling_atlas(root: XmlElement) -> XmlElement {

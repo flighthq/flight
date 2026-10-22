@@ -33,17 +33,12 @@ mod sugar_tests {
     }
 
     fn sheet() -> Spritesheet {
-        let mut sheet = create_spritesheet(Some(SpritesheetOptions {
-            atlas: Some(atlas()),
-            ..SpritesheetOptions::default()
-        }));
+        let mut sheet = create_spritesheet();
+        sheet.atlas = Some(atlas());
         for id in [0, 1, 7] {
-            sheet
-                .frames
-                .push(create_spritesheet_frame(Some(&SpritesheetFrameOptions {
-                    id: Some(id),
-                    ..SpritesheetFrameOptions::default()
-                })));
+            let frame = create_spritesheet_frame();
+            frame.write().unwrap().id = id;
+            sheet.frames.push(frame);
         }
         set_record_value(
             &mut sheet.animations,
@@ -54,33 +49,30 @@ mod sugar_tests {
     }
 
     fn playing_animation() -> Ref<SpritesheetAnimation> {
-        return create_spritesheet_animation(Some(&SpritesheetAnimationOptions {
-            frames: Some(vec![0.0, 1.0, 2.0, 5.0]),
-            frame_duration: Some(100.0),
-            repeat_count: Some(-1),
-            ..SpritesheetAnimationOptions::default()
-        }));
+        let animation = create_spritesheet_animation();
+        {
+            let mut animation = animation.write().unwrap();
+            animation.frames = vec![0.0, 1.0, 2.0, 5.0];
+            animation.frame_duration = 100.0;
+            animation.repeat_count = -1;
+        }
+        return animation;
     }
 
     fn data() -> SpritesheetData {
-        let frame = create_spritesheet_frame_data(Some(SpritesheetFrameDataOptions {
-            name: Some("walk_1".to_string()),
-            ..SpritesheetFrameDataOptions::default()
-        }));
-        let animation = create_spritesheet_animation_data(Some(SpritesheetAnimationDataOptions {
-            name: Some("walk".to_string()),
-            frame_names: Some(vec!["walk_1".to_string(), "nope".to_string()]),
-            ..SpritesheetAnimationDataOptions::default()
-        }));
-        return create_spritesheet_data(Some(SpritesheetDataOptions {
-            animations: Some(vec![animation]),
-            frames: Some(vec![frame]),
-            ..SpritesheetDataOptions::default()
-        }));
+        let mut frame = create_spritesheet_frame_data();
+        frame.name = "walk_1".to_string();
+        let mut animation = create_spritesheet_animation_data();
+        animation.name = "walk".to_string();
+        animation.frame_names = vec!["walk_1".to_string(), "nope".to_string()];
+        let mut data = create_spritesheet_data();
+        data.animations = vec![animation];
+        data.frames = vec![frame];
+        return data;
     }
 
     fn playing() -> Ref<SpritesheetPlayer> {
-        let player = create_spritesheet_player(None);
+        let player = create_spritesheet_player();
         play_spritesheet_animation(
             &mut player.write().unwrap(),
             Some(&playing_animation()),
@@ -102,8 +94,8 @@ mod sugar_tests {
     #[test]
     fn spritesheet_initialize_spritesheet_matches_initialize_spritesheet() {
         let (mut a, mut b) = (sheet(), sheet());
-        a.initialize_spritesheet(None);
-        initialize_spritesheet(&mut b, None);
+        a.initialize_spritesheet();
+        initialize_spritesheet(&mut b);
         assert_eq!(show(&a), show(&b));
     }
 
@@ -148,8 +140,8 @@ mod sugar_tests {
     fn spritesheetanimation_initialize_spritesheet_animation_matches_initialize_spritesheet_animation()
      {
         let (a, b) = (playing_animation(), playing_animation());
-        a.write().unwrap().initialize_spritesheet_animation(None);
-        initialize_spritesheet_animation(&mut b.write().unwrap(), None);
+        a.write().unwrap().initialize_spritesheet_animation();
+        initialize_spritesheet_animation(&mut b.write().unwrap());
         assert_eq!(show(&*a.read().unwrap()), show(&*b.read().unwrap()));
     }
 
@@ -157,16 +149,16 @@ mod sugar_tests {
     fn spritesheetanimationdata_initialize_spritesheet_animation_data_matches_initialize_spritesheet_animation_data()
      {
         let (mut a, mut b) = (data().animations[0].clone(), data().animations[0].clone());
-        a.initialize_spritesheet_animation_data(None);
-        initialize_spritesheet_animation_data(&mut b, None);
+        a.initialize_spritesheet_animation_data();
+        initialize_spritesheet_animation_data(&mut b);
         assert_eq!(a, b);
     }
 
     #[test]
     fn spritesheetdata_initialize_spritesheet_data_matches_initialize_spritesheet_data() {
         let (mut a, mut b) = (data(), data());
-        a.initialize_spritesheet_data(None);
-        initialize_spritesheet_data(&mut b, None);
+        a.initialize_spritesheet_data();
+        initialize_spritesheet_data(&mut b);
         assert_eq!(a, b);
     }
 
@@ -190,24 +182,24 @@ mod sugar_tests {
     fn spritesheetframedata_initialize_spritesheet_frame_data_matches_initialize_spritesheet_frame_data()
      {
         let (mut a, mut b) = (data().frames[0].clone(), data().frames[0].clone());
-        a.initialize_spritesheet_frame_data(None);
-        initialize_spritesheet_frame_data(&mut b, None);
+        a.initialize_spritesheet_frame_data();
+        initialize_spritesheet_frame_data(&mut b);
         assert_eq!(a, b);
     }
 
     #[test]
     fn spritesheetframe_initialize_spritesheet_frame_matches_initialize_spritesheet_frame() {
         let (a, b) = (sheet().frames[2].clone(), sheet().frames[2].clone());
-        a.write().unwrap().initialize_spritesheet_frame(None);
-        initialize_spritesheet_frame(&mut b.write().unwrap(), None);
+        a.write().unwrap().initialize_spritesheet_frame();
+        initialize_spritesheet_frame(&mut b.write().unwrap());
         assert_eq!(*a.read().unwrap(), *b.read().unwrap());
     }
 
     #[test]
     fn spritesheetplayer_initialize_spritesheet_player_matches_initialize_spritesheet_player() {
         let (a, b) = (playing(), playing());
-        a.write().unwrap().initialize_spritesheet_player(None);
-        initialize_spritesheet_player(&mut b.write().unwrap(), None);
+        a.write().unwrap().initialize_spritesheet_player();
+        initialize_spritesheet_player(&mut b.write().unwrap());
         assert_eq!(show(&*a.read().unwrap()), show(&*b.read().unwrap()));
     }
 
@@ -352,8 +344,8 @@ impl Spritesheet {
         return create_spritesheet_animation_from_frame_names(self, pattern, options);
     }
 
-    pub fn initialize_spritesheet(&mut self, obj: Option<SpritesheetOptions>) {
-        initialize_spritesheet(self, obj);
+    pub fn initialize_spritesheet(&mut self) {
+        initialize_spritesheet(self);
     }
 
     pub fn clone_spritesheet(&self) -> Spritesheet {
@@ -370,14 +362,14 @@ impl Spritesheet {
 }
 
 impl SpritesheetFrame {
-    pub fn initialize_spritesheet_frame(&mut self, obj: Option<&SpritesheetFrameOptions>) {
-        initialize_spritesheet_frame(self, obj);
+    pub fn initialize_spritesheet_frame(&mut self) {
+        initialize_spritesheet_frame(self);
     }
 }
 
 impl SpritesheetAnimation {
-    pub fn initialize_spritesheet_animation(&mut self, obj: Option<&SpritesheetAnimationOptions>) {
-        initialize_spritesheet_animation(self, obj);
+    pub fn initialize_spritesheet_animation(&mut self) {
+        initialize_spritesheet_animation(self);
     }
 }
 
@@ -386,8 +378,8 @@ impl SpritesheetData {
         return create_spritesheet_from_data(self, atlas);
     }
 
-    pub fn initialize_spritesheet_data(&mut self, obj: Option<SpritesheetDataOptions>) {
-        initialize_spritesheet_data(self, obj);
+    pub fn initialize_spritesheet_data(&mut self) {
+        initialize_spritesheet_data(self);
     }
 
     pub fn validate_spritesheet_data(&self) -> Option<Vec<SpritesheetValidationDiagnostic>> {
@@ -396,24 +388,21 @@ impl SpritesheetData {
 }
 
 impl SpritesheetFrameData {
-    pub fn initialize_spritesheet_frame_data(&mut self, obj: Option<SpritesheetFrameDataOptions>) {
-        initialize_spritesheet_frame_data(self, obj);
+    pub fn initialize_spritesheet_frame_data(&mut self) {
+        initialize_spritesheet_frame_data(self);
     }
 }
 
 impl SpritesheetAnimationData {
-    pub fn initialize_spritesheet_animation_data(
-        &mut self,
-        obj: Option<SpritesheetAnimationDataOptions>,
-    ) {
-        initialize_spritesheet_animation_data(self, obj);
+    pub fn initialize_spritesheet_animation_data(&mut self) {
+        initialize_spritesheet_animation_data(self);
     }
 }
 
 impl SpritesheetPlayer {
     // flight-lint: allow(f64) D1: elapsed time, speed and the display index are JS numbers
-    pub fn initialize_spritesheet_player(&mut self, obj: Option<SpritesheetPlayerOptions>) {
-        initialize_spritesheet_player(self, obj);
+    pub fn initialize_spritesheet_player(&mut self) {
+        initialize_spritesheet_player(self);
     }
 
     pub fn clone_spritesheet_player(&self) -> Ref<SpritesheetPlayer> {

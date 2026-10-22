@@ -1,7 +1,6 @@
 use flight_spritesheet::{
-    SpritesheetAnimationData, SpritesheetAnimationDataOptions, SpritesheetAnimationDirection,
-    SpritesheetFrameData, SpritesheetFrameDataOptions, create_spritesheet_animation_data,
-    create_spritesheet_frame_data,
+    SpritesheetAnimationData, SpritesheetAnimationDirection, SpritesheetFrameData,
+    create_spritesheet_animation_data, create_spritesheet_frame_data,
 };
 use flight_textureatlas::{TextureAtlasRegion, TextureAtlasRotation};
 
@@ -14,32 +13,32 @@ pub(crate) fn frame_from_region(
     let height = if rotated { region.width } else { region.height };
     let source_width = region.original_width.unwrap_or(width);
     let source_height = region.original_height.unwrap_or(height);
-    return create_spritesheet_frame_data(Some(SpritesheetFrameDataOptions {
-        height: Some(height),
-        name: Some(region.name.clone().unwrap_or_default()),
-        offset_x: Some(region.source_x),
-        offset_y: Some(region.source_y),
-        pivot_x: region.pivot_x.map(|value| {
-            if normalize_pivot && source_width > 0.0 {
-                value / source_width
-            } else {
-                value
-            }
-        }),
-        pivot_y: region.pivot_y.map(|value| {
-            if normalize_pivot && source_height > 0.0 {
-                value / source_height
-            } else {
-                value
-            }
-        }),
-        rotated: Some(rotated),
-        source_height: Some(source_height),
-        source_width: Some(source_width),
-        width: Some(width),
-        x: Some(region.x),
-        y: Some(region.y),
-    }));
+    let mut frame = create_spritesheet_frame_data();
+    frame.height = height;
+    frame.name = region.name.clone().unwrap_or_default();
+    frame.offset_x = region.source_x;
+    frame.offset_y = region.source_y;
+    frame.pivot_x = region.pivot_x.map(|value| {
+        if normalize_pivot && source_width > 0.0 {
+            value / source_width
+        } else {
+            value
+        }
+    });
+    frame.pivot_y = region.pivot_y.map(|value| {
+        if normalize_pivot && source_height > 0.0 {
+            value / source_height
+        } else {
+            value
+        }
+    });
+    frame.rotated = rotated;
+    frame.source_height = source_height;
+    frame.source_width = source_width;
+    frame.width = width;
+    frame.x = region.x;
+    frame.y = region.y;
+    return frame;
 }
 
 // flight-lint: allow(f64) D1: frame timings are source JavaScript numbers
@@ -65,16 +64,13 @@ pub(crate) fn infer_animations(
             continue;
         }
         entries.sort_by_key(|(index, _)| *index);
-        animations.push(create_spritesheet_animation_data(Some(
-            SpritesheetAnimationDataOptions {
-                direction: Some(SpritesheetAnimationDirection::Forward),
-                frame_duration: Some(frame_duration),
-                frame_names: Some(entries.into_iter().map(|(_, name)| name).collect()),
-                name: Some(base),
-                repeat_count: Some(-1),
-                ..SpritesheetAnimationDataOptions::default()
-            },
-        )));
+        let mut animation = create_spritesheet_animation_data();
+        animation.direction = SpritesheetAnimationDirection::Forward;
+        animation.frame_duration = frame_duration;
+        animation.frame_names = entries.into_iter().map(|(_, name)| name).collect();
+        animation.name = base;
+        animation.repeat_count = -1;
+        animations.push(animation);
     }
     return animations;
 }

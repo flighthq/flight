@@ -113,15 +113,12 @@ mod create_spritesheet_timeline_source {
         let sheet = sheet_with_frames(1);
         sheet.read().unwrap().frames[0].write().unwrap().offset_x = 12.0;
         sheet.read().unwrap().frames[0].write().unwrap().offset_y = 7.0;
-        let animation = create_spritesheet_animation(Some(&SpritesheetAnimationOptions {
-            direction: None,
-            frame_duration: Some(100.0),
-            frame_durations: None,
-            frames: Some(vec![0.0]),
-            origin_x: Some(2.0),
-            origin_y: Some(1.0),
-            repeat_count: None,
-        }));
+        let animation = animation(vec![0.0], None);
+        {
+            let mut animation = animation.write().unwrap();
+            animation.origin_x = 2.0;
+            animation.origin_y = 1.0;
+        }
         let guards = MovieClipGuardState {
             movie_clip_guards_enabled: false,
             spritesheet_timeline_source_guard: None,
@@ -138,7 +135,7 @@ mod create_spritesheet_timeline_source {
 
     #[test]
     fn does_not_throw_without_an_atlas() {
-        let sheet = std::sync::Arc::new(std::sync::RwLock::new(create_spritesheet(None)));
+        let sheet = std::sync::Arc::new(std::sync::RwLock::new(create_spritesheet()));
         let animation = animation(vec![0.0], None);
         let guards = MovieClipGuardState {
             movie_clip_guards_enabled: false,
@@ -219,24 +216,20 @@ mod explain_spritesheet_timeline_source {
 
     #[test]
     fn reports_only_fields_the_source_cannot_carry() {
-        let uniform = create_spritesheet_animation(Some(&SpritesheetAnimationOptions {
-            direction: Some(SpritesheetAnimationDirection::Pingpong),
-            frame_duration: None,
-            frame_durations: None,
-            frames: Some(vec![0.0, 1.0, 2.0]),
-            origin_x: None,
-            origin_y: None,
-            repeat_count: Some(3),
-        }));
-        let variable = create_spritesheet_animation(Some(&SpritesheetAnimationOptions {
-            direction: Some(SpritesheetAnimationDirection::PingpongReverse),
-            frame_duration: None,
-            frame_durations: Some(vec![50.0, 100.0, 200.0]),
-            frames: Some(vec![0.0, 1.0, 2.0]),
-            origin_x: None,
-            origin_y: None,
-            repeat_count: Some(-1),
-        }));
+        let uniform = animation(
+            vec![0.0, 1.0, 2.0],
+            Some(SpritesheetAnimationDirection::Pingpong),
+        );
+        uniform.write().unwrap().repeat_count = 3;
+        let variable = animation(
+            vec![0.0, 1.0, 2.0],
+            Some(SpritesheetAnimationDirection::PingpongReverse),
+        );
+        {
+            let mut variable = variable.write().unwrap();
+            variable.frame_durations = Some(vec![50.0, 100.0, 200.0]);
+            variable.repeat_count = -1;
+        }
         assert_eq!(
             explain_spritesheet_timeline_source(&uniform),
             SpritesheetTimelineSourceExplanation {

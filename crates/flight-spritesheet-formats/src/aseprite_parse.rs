@@ -2,8 +2,8 @@ use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticSeverity, report_import_diagnostic,
 };
 use flight_spritesheet::{
-    SpritesheetAnimationDataOptions, SpritesheetAnimationDirection, SpritesheetData,
-    SpritesheetDataOptions, create_spritesheet_animation_data, create_spritesheet_data,
+    SpritesheetAnimationDirection, SpritesheetData, create_spritesheet_animation_data,
+    create_spritesheet_data,
 };
 use flight_textureatlas::TextureAtlas;
 use flight_textureatlas_formats::{
@@ -133,38 +133,37 @@ fn aseprite_document_to_data(document: &AsepriteDocument) -> SpritesheetData {
             let uniform = frame_durations
                 .iter()
                 .all(|duration| *duration == frame_duration);
-            create_spritesheet_animation_data(Some(SpritesheetAnimationDataOptions {
-                direction: Some(match tag.direction {
-                    flight_textureatlas_formats::TextureAtlasFrameTagDirection::Forward => {
-                        SpritesheetAnimationDirection::Forward
-                    }
-                    flight_textureatlas_formats::TextureAtlasFrameTagDirection::PingPong => {
-                        SpritesheetAnimationDirection::Pingpong
-                    }
-                    flight_textureatlas_formats::TextureAtlasFrameTagDirection::PingPongReverse => {
-                        SpritesheetAnimationDirection::PingpongReverse
-                    }
-                    flight_textureatlas_formats::TextureAtlasFrameTagDirection::Reverse => {
-                        SpritesheetAnimationDirection::Reverse
-                    }
-                }),
-                frame_duration: Some(frame_duration),
-                frame_durations: if uniform { None } else { Some(frame_durations) },
-                frame_names: Some(names),
-                name: Some(tag.name.clone()),
-                repeat_count: Some(-1),
-                ..SpritesheetAnimationDataOptions::default()
-            }))
+            let mut animation = create_spritesheet_animation_data();
+            animation.direction = match tag.direction {
+                flight_textureatlas_formats::TextureAtlasFrameTagDirection::Forward => {
+                    SpritesheetAnimationDirection::Forward
+                }
+                flight_textureatlas_formats::TextureAtlasFrameTagDirection::PingPong => {
+                    SpritesheetAnimationDirection::Pingpong
+                }
+                flight_textureatlas_formats::TextureAtlasFrameTagDirection::PingPongReverse => {
+                    SpritesheetAnimationDirection::PingpongReverse
+                }
+                flight_textureatlas_formats::TextureAtlasFrameTagDirection::Reverse => {
+                    SpritesheetAnimationDirection::Reverse
+                }
+            };
+            animation.frame_duration = frame_duration;
+            animation.frame_durations = if uniform { None } else { Some(frame_durations) };
+            animation.frame_names = names;
+            animation.name = tag.name.clone();
+            animation.repeat_count = -1;
+            return animation;
         })
         .collect();
-    return create_spritesheet_data(Some(SpritesheetDataOptions {
-        animations: Some(animations),
-        frames: Some(frames),
-        image_file: Some(meta.image.clone()),
-        image_height: Some(meta.size.h),
-        image_width: Some(meta.size.w),
-        scale: Some(scale_value(&meta.scale)),
-    }));
+    let mut data = create_spritesheet_data();
+    data.animations = animations;
+    data.frames = frames;
+    data.image_file = meta.image.clone();
+    data.image_height = meta.size.h;
+    data.image_width = meta.size.w;
+    data.scale = scale_value(&meta.scale);
+    return data;
 }
 
 fn empty_aseprite_document() -> AsepriteDocument {
@@ -200,7 +199,7 @@ pub fn parse_aseprite_spritesheet(
             "parseAsepriteSpritesheet",
             None,
         );
-        return create_spritesheet_data(None);
+        return create_spritesheet_data();
     };
     return aseprite_document_to_data(&document);
 }
@@ -219,7 +218,7 @@ pub fn parse_aseprite_spritesheet_document(
         );
         let document = empty_aseprite_document();
         return AsepriteParsed {
-            data: create_spritesheet_data(None),
+            data: create_spritesheet_data(),
             document,
         };
     };

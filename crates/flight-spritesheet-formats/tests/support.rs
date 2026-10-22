@@ -1,6 +1,5 @@
 use flight_spritesheet::{
-    SpritesheetAnimationDataOptions, SpritesheetData, SpritesheetDataOptions,
-    SpritesheetFrameDataOptions, create_spritesheet_animation_data, create_spritesheet_data,
+    SpritesheetData, create_spritesheet_animation_data, create_spritesheet_data,
     create_spritesheet_frame_data,
 };
 
@@ -55,50 +54,36 @@ pub(crate) const STARLING_XML: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
 pub(crate) const LIBGDX_ATLAS: &str = "atlas.png\n  size: 256, 128\n  format: RGBA8888\n  filter: Linear, Linear\n  repeat: none\nwalk\n  rotate: false\n  xy: 0, 0\n  size: 32, 32\n  orig: 32, 32\n  offset: 0, 0\n  index: 2\nwalk\n  rotate: true\n  xy: 32, 0\n  size: 20, 40\n  orig: 40, 20\n  offset: 1, 2\n  index: 1\n";
 
 pub(crate) fn sample_data() -> SpritesheetData {
-    let frames = vec![
-        create_spritesheet_frame_data(Some(SpritesheetFrameDataOptions {
-            height: Some(32.0),
-            name: Some("hero_0.png".to_string()),
-            offset_x: Some(0.0),
-            offset_y: Some(0.0),
-            pivot_x: Some(0.5),
-            pivot_y: Some(1.0),
-            rotated: Some(false),
-            source_height: Some(32.0),
-            source_width: Some(32.0),
-            width: Some(32.0),
-            x: Some(0.0),
-            y: Some(0.0),
-        })),
-        create_spritesheet_frame_data(Some(SpritesheetFrameDataOptions {
-            height: Some(20.0),
-            name: Some("hero_1.png".to_string()),
-            offset_x: Some(1.0),
-            offset_y: Some(2.0),
-            pivot_x: None,
-            pivot_y: None,
-            rotated: Some(true),
-            source_height: Some(24.0),
-            source_width: Some(44.0),
-            width: Some(40.0),
-            x: Some(32.0),
-            y: Some(0.0),
-        })),
-    ];
-    let animation = create_spritesheet_animation_data(Some(SpritesheetAnimationDataOptions {
-        frame_duration: Some(100.0),
-        frame_durations: Some(vec![100.0, 150.0]),
-        frame_names: Some(vec!["hero_0.png".to_string(), "hero_1.png".to_string()]),
-        name: Some("hero".to_string()),
-        repeat_count: Some(-1),
-        ..SpritesheetAnimationDataOptions::default()
-    }));
-    return create_spritesheet_data(Some(SpritesheetDataOptions {
-        animations: Some(vec![animation]),
-        frames: Some(frames),
-        image_file: Some("atlas.png".to_string()),
-        image_height: Some(128.0),
-        image_width: Some(256.0),
-        scale: Some(1.0),
-    }));
+    let mut first = create_spritesheet_frame_data();
+    first.height = 32.0;
+    first.name = "hero_0.png".to_string();
+    first.pivot_x = Some(0.5);
+    first.pivot_y = Some(1.0);
+    first.source_height = 32.0;
+    first.source_width = 32.0;
+    first.width = 32.0;
+    let mut second = create_spritesheet_frame_data();
+    second.height = 20.0;
+    second.name = "hero_1.png".to_string();
+    second.offset_x = 1.0;
+    second.offset_y = 2.0;
+    second.rotated = true;
+    second.source_height = 24.0;
+    second.source_width = 44.0;
+    second.width = 40.0;
+    second.x = 32.0;
+    let mut animation = create_spritesheet_animation_data();
+    animation.frame_duration = 100.0;
+    animation.frame_durations = Some(vec![100.0, 150.0]);
+    animation.frame_names = vec!["hero_0.png".to_string(), "hero_1.png".to_string()];
+    animation.name = "hero".to_string();
+    animation.repeat_count = -1;
+    let mut data = create_spritesheet_data();
+    data.animations = vec![animation];
+    data.frames = vec![first, second];
+    data.image_file = "atlas.png".to_string();
+    data.image_height = 128.0;
+    data.image_width = 256.0;
+    data.scale = 1.0;
+    return data;
 }
