@@ -14,6 +14,7 @@ name = "tests"
 path = "tests/main.rs"
 
 [dependencies]
+bytemuck = "1.25.2"
 flight-bitmaptext = { path = "../flight-bitmaptext" }
 flight-clip = { path = "../flight-clip" }
 flight-color = { path = "../flight-color" }

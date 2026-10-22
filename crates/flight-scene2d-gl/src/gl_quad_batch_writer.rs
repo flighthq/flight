@@ -347,26 +347,17 @@ pub(crate) fn get_gl_viewport_size(state: &GlRenderState) -> (f32, f32) {
 
 /// Reinterprets an `f32` slice as its native-endian bytes for a GL upload (TS passes the typed array).
 pub(crate) fn gl_f32_bytes(values: &[f32]) -> &[u8] {
-    // SAFETY: f32 has no padding or invalid bit patterns; the byte view covers exactly the slice.
-    return unsafe {
-        std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), size_of_val(values))
-    };
+    return bytemuck::cast_slice(values);
 }
 
 /// Reinterprets a `u16` slice as its native-endian bytes for a GL upload.
 pub(crate) fn gl_u16_bytes(values: &[u16]) -> &[u8] {
-    // SAFETY: u16 has no padding or invalid bit patterns; the byte view covers exactly the slice.
-    return unsafe {
-        std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), size_of_val(values))
-    };
+    return bytemuck::cast_slice(values);
 }
 
 /// Reinterprets a `u32` slice as its native-endian bytes for a GL upload.
 pub(crate) fn gl_u32_bytes(values: &[u32]) -> &[u8] {
-    // SAFETY: u32 has no padding or invalid bit patterns; the byte view covers exactly the slice.
-    return unsafe {
-        std::slice::from_raw_parts(values.as_ptr().cast::<u8>(), size_of_val(values))
-    };
+    return bytemuck::cast_slice(values);
 }
 
 // Writes one instance's per-instance material floats into the active material buffer at the given

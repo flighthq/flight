@@ -742,18 +742,12 @@ fn stencil_face_state(
 
 // The bytes a Float32Array view uploads, in host order.
 pub(crate) fn wgpu_f32_bytes(data: &[f32]) -> &[u8] {
-    // SAFETY: f32 has no padding or invalid bit patterns, and u8 has alignment 1.
-    return unsafe {
-        std::slice::from_raw_parts(data.as_ptr().cast::<u8>(), std::mem::size_of_val(data))
-    };
+    return bytemuck::cast_slice(data);
 }
 
 // The bytes a Uint32Array view uploads, in host order.
 pub(crate) fn wgpu_u32_bytes(data: &[u32]) -> &[u8] {
-    // SAFETY: u32 has no padding or invalid bit patterns, and u8 has alignment 1.
-    return unsafe {
-        std::slice::from_raw_parts(data.as_ptr().cast::<u8>(), std::mem::size_of_val(data))
-    };
+    return bytemuck::cast_slice(data);
 }
 
 /// Writes one affine instance record: pre-scaled geometry axes, translation, two affine UV axes and

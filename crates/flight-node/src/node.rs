@@ -2,6 +2,9 @@
 
 // flight-lint: allow-file(contract-vocabulary) D16 open node trait objects and the caller-owned revision state are contract dispatch, not vocabulary types
 
+use std::any::Any;
+use std::sync::{Arc, RwLock};
+
 use flight_entity::{Kind, Ref, allocate_entity};
 use flight_signals::{clear_signal, create_signal};
 
@@ -113,6 +116,23 @@ pub fn dispose_node(target: &NodeRef) {
     runtime.interaction_state = None;
 }
 
+/// Recovers the concrete shared handle of an erased node (TS reads the same object through its kind
+/// type): the same `Arc` the node was published as, or `None` when the node is of another kind or
+/// was never published through `publish_node`. Built on the node's weak self-handle, so it needs no
+/// unsafe and never keeps the node alive.
+// flight-lint: allow(conform-extra) typed handle recovery (ir-vocabulary): Rust-only projection of an erased NodeRef to its concrete Ref<T>; TS reads the same object through its kind type
+pub fn downcast_node_ref<T: Node>(node: &NodeRef) -> Option<Ref<T>> {
+    let handle = {
+        let guard = node.read().unwrap();
+        guard.node_fields().self_handle().get()?.upgrade()?
+    };
+    let out = handle.downcast::<RwLock<T>>().ok()?;
+    if !std::ptr::addr_eq(Arc::as_ptr(&out), Arc::as_ptr(node)) {
+        return None;
+    }
+    return Some(out);
+}
+
 /// Creates the node's signal registry on first use and returns the shared instance
 /// (TS `enableNodeSignals`).
 
@@ -136,6 +156,22 @@ pub fn get_node_runtime(source: &dyn Node) -> &NodeRuntime {
 
 pub fn get_node_signals(source: &dyn Node) -> Option<Ref<NodeSignals>> {
     return source.node_runtime().node_signals.clone();
+}
+
+/// Publishes a constructed node as its shared handle and binds the node's type-erased weak
+/// self-handle, so `downcast_node_ref` recovers this same `Arc` from an erased `NodeRef`. Family
+/// publishers (`publish_node2d`, `publish_node3d`) publish through it.
+// flight-lint: allow(conform-extra) typed handle recovery (ir-vocabulary): Rust-only publication of the concrete Ref<T>, where TS needs no handle projection
+pub fn publish_node<T: Node>(node: T) -> Ref<T> {
+    let out = Arc::new(RwLock::new(node));
+    let erased: Arc<dyn Any + Send + Sync> = out.clone();
+    let _ = out
+        .read()
+        .unwrap()
+        .node_fields()
+        .self_handle()
+        .set(Arc::downgrade(&erased));
+    return out;
 }
 
 /// The construction initializer of `create_node` (TS `initializeNode`).

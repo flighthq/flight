@@ -1,28 +1,11 @@
 //! Access to this package's per-state record (the source's module WeakMaps keyed by state), held in
-//! render-wgpu's opaque `scene2d_runtime` slot (D5), and the D17 narrowing of host 2D contexts.
+//! render-wgpu's opaque `scene2d_runtime` slot (D5).
 
-use std::sync::Arc;
-
-use flight_entity::Ref;
-use flight_node::{Node, NodeRef};
 use flight_render_wgpu::{
     WgpuRenderState, get_wgpu_render_state_runtime, get_wgpu_render_state_runtime_mut,
 };
 
 use crate::types::*;
-
-// Recovers the typed handle of a node published as `Ref<T>` (the source's `renderProxy.source as
-// T`, keeping object identity), or `None` for another kind.
-pub(crate) fn downcast_wgpu_node_ref<T: Node>(node: &NodeRef) -> Option<Ref<T>> {
-    if !node.read().unwrap().as_any().is::<T>() {
-        return None;
-    }
-    let raw = Arc::into_raw(node.clone());
-    // SAFETY: every node handle is published as `Arc<RwLock<T>>` and unsized to
-    // `Arc<RwLock<dyn Node>>`; the check above proves the allocation's concrete type is `T`, so
-    // dropping the vtable metadata recovers the original sized pointer of the same allocation.
-    return Some(unsafe { Arc::from_raw(raw as *const std::sync::RwLock<T>) });
-}
 
 // The state's package record, created on first use.
 pub(crate) fn ensure_scene2d_wgpu_runtime(state: &mut WgpuRenderState) -> &mut Scene2DWgpuRuntime {

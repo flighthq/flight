@@ -8,7 +8,7 @@
 // flight-lint: allow-file(contract-vocabulary, sugar-delegates) D16 structural node feature accessors preserve the open node families and are contract dispatch, not convenience methods
 
 use std::any::Any;
-use std::sync::{Arc, RwLock, Weak};
+use std::sync::{Arc, OnceLock, RwLock, Weak};
 
 use flight_adjustments::Adjustment;
 use flight_clip::ClipRegion;
@@ -100,10 +100,12 @@ macro_rules! impl_renderer_data {
 }
 
 /// The fields every node has (TS `NodeTraits`): open kind name, optional name, enabled gate.
-/// The entity runtime slot and the private runtime tier live here too.
+/// The entity runtime slot and the private runtime tier live here too, with the node's own
+/// type-erased weak self-handle, bound once by `publish_node` (typed handle recovery).
 pub struct NodeFields {
     runtime: EntityRuntimeSlot,
     state: NodeRuntime,
+    self_handle: OnceLock<Weak<dyn Any + Send + Sync>>,
     pub enabled: bool,
     pub kind: Kind,
     pub name: Option<String>,
@@ -551,6 +553,10 @@ pub(crate) fn init_transform3d_value() -> HasTransform3D {
 }
 
 impl NodeFields {
+    pub(crate) fn self_handle(&self) -> &OnceLock<Weak<dyn Any + Send + Sync>> {
+        return &self.self_handle;
+    }
+
     pub(crate) fn state_mut(&mut self) -> &mut NodeRuntime {
         return &mut self.state;
     }
@@ -561,6 +567,7 @@ impl Default for NodeFields {
         return NodeFields {
             runtime: EntityRuntimeSlot::default(),
             state: create_node_runtime_internal(None),
+            self_handle: OnceLock::new(),
             enabled: true,
             kind: String::new(),
             name: None,
@@ -804,9 +811,7 @@ impl HasClip {
     }
 
     pub fn as_ref(&self) -> ClipRef<'_> {
-        return ClipRef {
-            clip: &self.clip,
-        };
+        return ClipRef { clip: &self.clip };
     }
 }
 

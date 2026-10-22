@@ -1,7 +1,7 @@
 //! The Node2D family constructor, its runtime tier and the plain display object (TS
 //! `displayObject.ts`).
 
-use std::sync::{Arc, LazyLock, OnceLock, RwLock};
+use std::sync::{Arc, LazyLock, OnceLock};
 
 use flight_clip::ClipRegion;
 use flight_entity::{Kind, Ref, allocate_entity};
@@ -9,7 +9,7 @@ use flight_node::contract::BoundsRectangleRuntimeMethods;
 use flight_node::{
     Node, NodeRef, NodeTraits, NodeTraitsKey, init_appearance_runtime_trait,
     init_bounds_rectangle_runtime_trait, init_transform2d_runtime_trait, initialize_node,
-    invalidate_node_appearance,
+    invalidate_node_appearance, publish_node,
 };
 
 use crate::types::*;
@@ -183,7 +183,7 @@ fn narrow_node2d_mut<T: Node2D>(node: &mut dyn Node) -> Option<&mut dyn Node2D> 
 /// 2D kind constructor publishes through it.
 // flight-lint: allow(conform-extra) Principal 68e645eb C1: Rust-only publication of the concrete Ref<T>, where TS needs no handle projection
 pub fn publish_node2d<T: Node2D + 'static>(node: T) -> Ref<T> {
-    let out = Arc::new(RwLock::new(node));
+    let out = publish_node(node);
     let handle: Node2DRef = out.clone();
     if let Some(key) = get_node2d_traits_key(&*out.read().unwrap()) {
         let _ = key.handle.set(Arc::downgrade(&handle));

@@ -1239,6 +1239,7 @@ dependencies = [
 name = "flight-scene2d-gl"
 version = "0.6.0"
 dependencies = [
+ "bytemuck",
  "flight-bitmap",
  "flight-bitmaptext",
  "flight-clip",
@@ -1302,6 +1303,7 @@ dependencies = [
 name = "flight-scene2d-wgpu"
 version = "0.6.0"
 dependencies = [
+ "bytemuck",
  "flight-bitmaptext",
  "flight-clip",
  "flight-color",

@@ -3,27 +3,10 @@
 //! `scene2d_context_runtime` slots (D5: explicit state, no hidden globals).
 
 use std::cell::RefMut;
-use std::sync::Arc;
-
-use flight_entity::Ref;
-use flight_node::{Node, NodeRef};
 
 use flight_render_gl::GlRenderState;
 
 use crate::types::{Scene2DGlContextRuntime, Scene2DGlRuntime};
-
-// Recovers the concrete shared handle of an erased node (TS reads the same object through its kind
-// type). `None` when the node is of another kind.
-pub(crate) fn downcast_gl_node_ref<T: Node>(node: &NodeRef) -> Option<Ref<T>> {
-    if !node.read().unwrap().as_any().is::<T>() {
-        return None;
-    }
-    let raw = Arc::into_raw(node.clone());
-    // SAFETY: every node handle is published as `Arc<RwLock<T>>` and unsized to
-    // `Arc<RwLock<dyn Node>>`; the check above proves the allocation's concrete type is `T`, so
-    // dropping the vtable metadata recovers the original sized pointer of the same allocation.
-    return Some(unsafe { Arc::from_raw(raw as *const std::sync::RwLock<T>) });
-}
 
 // The context's package record, created on first use.
 pub(crate) fn ensure_scene2d_gl_context_runtime(

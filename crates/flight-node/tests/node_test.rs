@@ -1,8 +1,8 @@
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use flight_node::contract::*;
 
-use crate::support::{TestNode, create_test_node};
+use crate::support::{TestNode, TestNode2D, create_test_node};
 
 mod create_node {
     use super::*;
@@ -184,6 +184,42 @@ mod dispose_node {
     }
 }
 
+mod downcast_node_ref {
+    use super::*;
+
+    #[test]
+    fn recovers_the_same_concrete_handle_the_node_was_published_as() {
+        let published = publish_node(create_node::<TestNode>(String::from("NodeTest")));
+        let erased: NodeRef = published.clone();
+        let recovered: Option<Arc<RwLock<TestNode>>> = downcast_node_ref(&erased);
+        let recovered = recovered.expect("a TestNode");
+        assert!(Arc::ptr_eq(&recovered, &published));
+    }
+
+    #[test]
+    fn returns_none_for_a_node_of_another_kind() {
+        let published = publish_node(create_node::<TestNode>(String::from("NodeTest")));
+        let erased: NodeRef = published;
+        let recovered: Option<Arc<RwLock<TestNode2D>>> = downcast_node_ref(&erased);
+        assert!(recovered.is_none());
+    }
+
+    #[test]
+    fn returns_none_for_a_node_never_published_through_publish_node() {
+        let erased = create_test_node("NodeTest");
+        let recovered: Option<Arc<RwLock<TestNode>>> = downcast_node_ref(&erased);
+        assert!(recovered.is_none());
+    }
+
+    #[test]
+    fn does_not_keep_the_node_alive() {
+        let published = publish_node(create_node::<TestNode>(String::from("NodeTest")));
+        let weak = Arc::downgrade(&published);
+        drop(published);
+        assert!(weak.upgrade().is_none());
+    }
+}
+
 mod enable_node_signals {
     use super::*;
 
@@ -265,6 +301,30 @@ mod initialize_node_signals {
         }
         let guard = signals.read().unwrap();
         flight_signals::emit_signal(&guard.on_parent_changed, &());
+    }
+}
+
+mod publish_node {
+    use super::*;
+
+    #[test]
+    fn publishes_the_constructed_node_with_its_fields() {
+        let mut node = create_node::<TestNode>(String::from("NodeTest"));
+        node.node_fields_mut().name = Some(String::from("published"));
+        let published = publish_node(node);
+        let guard = published.read().unwrap();
+        assert_eq!(guard.node_fields().kind, "NodeTest");
+        assert_eq!(guard.node_fields().name.as_deref(), Some("published"));
+    }
+
+    #[test]
+    fn binds_a_self_handle_that_recovers_the_published_handle() {
+        let published = publish_node(create_node::<TestNode>(String::from("NodeTest")));
+        let erased: NodeRef = published.clone();
+        let recovered: Option<Arc<RwLock<TestNode>>> = downcast_node_ref(&erased);
+        let recovered = recovered.unwrap();
+        assert!(Arc::ptr_eq(&recovered, &published));
+        assert_eq!(Arc::strong_count(&published), 3);
     }
 }
 

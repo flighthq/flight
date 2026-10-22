@@ -5,7 +5,7 @@ use flight_node::{
     Node, NodeRef, NodeSignals, NodeTraits, enable_node_signals, get_node_signals,
     init_appearance_runtime_trait, init_transform3d_runtime_trait, initialize_node,
 };
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
 /// Constructs the open Node3D family with its defining kind. Assign authored appearance/name fields
 /// afterward; the construction initializer fills the existing transform children without replacing them.
@@ -119,7 +119,7 @@ fn narrow_node3d_mut<T: Node3D>(node: &mut dyn Node) -> Option<&mut dyn Node3D> 
 /// Custom constructors finish their own fields first, then use this function or `into_node3d_ref`.
 // flight-lint: allow(conform-extra) Principal68e645eb C1/D16 native publication adapter binds the original concrete Ref before family erasure without copying an Entity or allocating another UID
 pub fn publish_node3d<T: Node3D>(value: T) -> Ref<T> {
-    let published = Arc::new(RwLock::new(value));
+    let published = flight_node::publish_node(value);
     let weak = Arc::downgrade(&published);
     let weak: crate::Node3DWeak = weak;
     {
