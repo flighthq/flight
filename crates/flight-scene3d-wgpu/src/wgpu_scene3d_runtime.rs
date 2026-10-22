@@ -102,6 +102,14 @@ fn create_wgpu_scene3d_runtime_record(
         sort_keys: HashMap::new(),
         time: 0.0,
         wireframe_uploads: HashMap::new(),
+
+        custom_material_bindings: HashMap::new(),
+        custom_material_layouts: None,
+        environment_bake_programs: None,
+        particle_dummy_view: None,
+        particle_resources: None,
+        skybox_sampler: None,
+        skyboxes: HashMap::new(),
     };
 }
 

@@ -209,10 +209,13 @@ pub struct WgpuVertexBufferLayoutRecord {
     pub step_mode: wgpu::VertexStepMode,
 }
 
-/// A render pipeline and its whole descriptor (TS `GPURenderPipelineDescriptor`).
+/// A render pipeline and its whole descriptor (TS `GPURenderPipelineDescriptor`), including the
+/// fragment stage's pipeline-overridable constants.
+// flight-lint: allow(f64) pipeline override constants are the f64 values wgpu's compilation options carry
 #[derive(Clone, Debug, PartialEq)]
 pub struct WgpuRenderPipelineDescriptorRecord {
     pub depth_stencil: Option<wgpu::DepthStencilState>,
+    pub fragment_constants: Vec<(String, f64)>,
     pub fragment_entry_point: Option<String>,
     pub layout: Option<wgpu::PipelineLayout>,
     pub module: wgpu::ShaderModule,
@@ -407,6 +410,18 @@ pub fn create_wgpu_render_pipeline(
         return WgpuCommandRecord::CreateRenderPipelineDescriptor(
             WgpuRenderPipelineDescriptorRecord {
                 depth_stencil: descriptor.depth_stencil.clone(),
+                fragment_constants: descriptor
+                    .fragment
+                    .as_ref()
+                    .map(|fragment| {
+                        return fragment
+                            .compilation_options
+                            .constants
+                            .iter()
+                            .map(|(name, value)| (name.to_string(), *value))
+                            .collect();
+                    })
+                    .unwrap_or_default(),
                 fragment_entry_point: descriptor
                     .fragment
                     .as_ref()

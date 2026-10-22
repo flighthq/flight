@@ -419,6 +419,85 @@ pub struct WgpuScene3DRuntime {
     // The wireframe family's per-state line-index uploads keyed by geometry entity id (TS: the
     // module `wireframeUploads` WeakMap keyed by state).
     pub wireframe_uploads: HashMap<u64, WgpuWireframeUpload>,
+
+    // The environment, particle and custom-shader families' per-state caches (the source's module
+    // WeakMaps keyed by state, D5): custom-material layouts and per-material bindings, the IBL bake
+    // programs, the 3D particle resources and dummy view, and the skybox pipelines and sampler.
+    pub custom_material_bindings: HashMap<u64, WgpuCustomMaterialBinding>,
+    pub custom_material_layouts: Option<WgpuCustomMaterialLayouts>,
+    pub environment_bake_programs: Option<WgpuBakePrograms>,
+    pub particle_dummy_view: Option<wgpu::TextureView>,
+    pub particle_resources: Option<WgpuParticle3DResources>,
+    pub skybox_sampler: Option<wgpu::Sampler>,
+    pub skyboxes: HashMap<wgpu::TextureFormat, WgpuSkybox>,
+}
+
+/// One custom shader material's per-state GPU binding (TS `CustomMaterialBinding`): the user uniform
+/// buffer and group, and the texture group with the keys, samplers and views it was built from.
+#[derive(Clone, Debug)]
+pub struct WgpuCustomMaterialBinding {
+    pub texture_bind_group: Option<wgpu::BindGroup>,
+    pub texture_keys: Vec<String>,
+    pub texture_samplers: Vec<wgpu::Sampler>,
+    pub texture_views: Vec<wgpu::TextureView>,
+    pub uniform_bind_group: wgpu::BindGroup,
+    pub uniform_buffer: wgpu::Buffer,
+}
+
+/// The custom shader material's group(2) user and group(3) texture layouts (TS
+/// `CustomMaterialLayouts`).
+#[derive(Clone, Debug)]
+pub struct WgpuCustomMaterialLayouts {
+    pub texture: wgpu::BindGroupLayout,
+    pub user: wgpu::BindGroupLayout,
+}
+
+/// The IBL bake pipelines and their shared uniform and source layouts (TS `WgpuBakePrograms`).
+#[derive(Clone, Debug)]
+pub struct WgpuBakePrograms {
+    pub brdf_pipeline: wgpu::RenderPipeline,
+    pub irradiance_pipeline: wgpu::RenderPipeline,
+    pub prefiltered_pipeline: wgpu::RenderPipeline,
+    pub sampler: wgpu::Sampler,
+    pub source_bind_group_layout: wgpu::BindGroupLayout,
+    pub uniform_bind_group: wgpu::BindGroup,
+    pub uniform_buffer: wgpu::Buffer,
+}
+
+/// One 3D particle emitter's instance buffer and its capacity in instances (TS
+/// `WgpuParticle3DInstanceBuffer`).
+#[derive(Clone, Debug)]
+pub struct WgpuParticle3DInstanceBuffer {
+    pub buffer: wgpu::Buffer,
+    pub capacity: u32,
+}
+
+/// The 3D particle pass's per-state GPU resources (TS `WgpuParticle3DResources`); instance buffers
+/// key by the emitter's entity id.
+#[derive(Clone, Debug)]
+pub struct WgpuParticle3DResources {
+    pub corner_buffer: wgpu::Buffer,
+    pub frame_bind_group: wgpu::BindGroup,
+    pub frame_buffer: wgpu::Buffer,
+    pub frame_layout: wgpu::BindGroupLayout,
+    pub index_buffer: wgpu::Buffer,
+    pub instance_buffers: HashMap<u64, WgpuParticle3DInstanceBuffer>,
+    pub instance_data: Vec<f32>,
+    pub module: wgpu::ShaderModule,
+    pub pipeline_layout: wgpu::PipelineLayout,
+    pub pipelines: HashMap<String, wgpu::RenderPipeline>,
+    pub texture_layout: wgpu::BindGroupLayout,
+}
+
+/// One skybox pipeline variant for a color format (TS `WgpuSkybox`).
+#[derive(Clone, Debug)]
+pub struct WgpuSkybox {
+    pub cube_bind_group: Option<wgpu::BindGroup>,
+    pub cube_bind_group_layout: wgpu::BindGroupLayout,
+    pub cube_view: Option<wgpu::TextureView>,
+    pub pipeline: wgpu::RenderPipeline,
+    pub uniform_bind_group: wgpu::BindGroup,
+    pub uniform_buffer: wgpu::Buffer,
 }
 
 flight_entity::impl_entity!(WgpuMeshPipeline);
