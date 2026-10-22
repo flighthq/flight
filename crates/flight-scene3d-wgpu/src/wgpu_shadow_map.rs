@@ -86,6 +86,44 @@ const SHADOW_INSTANCED_VERTEX_BUFFER_LAYOUTS: [wgpu::VertexBufferLayout<'static>
     },
 ];
 
+fn create_wgpu_shadow_depth_pipeline(
+    native: &flight_render_wgpu::WgpuNativeDevice,
+    layout: &wgpu::PipelineLayout,
+    module: &wgpu::ShaderModule,
+    buffers: &[Option<wgpu::VertexBufferLayout<'static>>],
+) -> wgpu::RenderPipeline {
+    return create_wgpu_render_pipeline(
+        native,
+        &wgpu::RenderPipelineDescriptor {
+            label: None,
+            layout: Some(layout),
+            vertex: wgpu::VertexState {
+                module,
+                entry_point: Some("vs_main"),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                buffers,
+            },
+            fragment: None,
+            primitive: wgpu::PrimitiveState {
+                topology: wgpu::PrimitiveTopology::TriangleList,
+                front_face: wgpu::FrontFace::Ccw,
+                cull_mode: Some(wgpu::Face::Front),
+                ..wgpu::PrimitiveState::default()
+            },
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: SHADOW_DEPTH_FORMAT,
+                depth_write_enabled: Some(true),
+                depth_compare: Some(wgpu::CompareFunction::Less),
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            }),
+            multisample: wgpu::MultisampleState::default(),
+            multiview_mask: None,
+            cache: None,
+        },
+    );
+}
+
 /// Frees the directional shadow's GPU resources for `state` (the depth map, the 1x1 dummy and the
 /// shadow uniform) and clears the derived slots (TS `destroyWgpuScene3DShadow`). Safe to call more
 /// than once and when no shadow was ever drawn.
@@ -110,6 +148,90 @@ pub fn destroy_wgpu_scene3d_shadow(state: &mut WgpuRenderState) {
     scene.shadow_sample_view = None;
     scene.pbr_sample_bind_group = None;
     scene.pbr_sample_shadow_view = None;
+}
+
+// The instanced depth pipeline: the rigid depth pass plus the instance-step matrix buffer, so a batch
+// records one silhouette per live instance.
+fn ensure_wgpu_shadow_depth_instanced_pipeline(state: &mut WgpuRenderState) -> wgpu::RenderPipeline {
+    if let Some(pipeline) = &get_wgpu_scene3d_runtime(state).shadow_depth_instanced_pipeline {
+        return pipeline.clone();
+    }
+    let native = get_wgpu_render_state_native_device(state);
+    let draw_layout = ensure_wgpu_scene3d_layouts(state).draw_bind_group_layout;
+    let layout = create_wgpu_pipeline_layout_recorded(&native, &[draw_layout]);
+    let module = create_wgpu_shader_module(&native, SHADOW_DEPTH_INSTANCED_WGSL);
+    let buffers: Vec<Option<wgpu::VertexBufferLayout<'static>>> = SHADOW_INSTANCED_VERTEX_BUFFER_LAYOUTS
+        .iter()
+        .map(|layout| Some(layout.clone()))
+        .collect();
+    let pipeline = create_wgpu_shadow_depth_pipeline(&native, &layout, &module, &buffers);
+    get_wgpu_scene3d_runtime(state).shadow_depth_instanced_pipeline = Some(pipeline.clone());
+    return pipeline;
+}
+
+// Resolves (once per state) the depth-only shadow pipeline: a vertex-only module (position to light
+// clip with the GL-to-WebGPU depth remap), depth32float, front-face culling, the shared Draw layout
+// (or the skinning adapter's palette layout) at group(0).
+fn ensure_wgpu_shadow_depth_pipeline(state: &mut WgpuRenderState, skinned: bool) -> wgpu::RenderPipeline {
+    let cached = {
+        let scene = get_wgpu_scene3d_runtime(state);
+        if skinned {
+            scene.shadow_depth_skinned_pipeline.clone()
+        } else {
+            scene.shadow_depth_pipeline.clone()
+        }
+    };
+    if let Some(pipeline) = cached {
+        return pipeline;
+    }
+    let native = get_wgpu_render_state_native_device(state);
+    let skinning = get_wgpu_skinning_adapter(state).filter(|_| skinned);
+    let source = match skinning {
+        Some(skinning) => (skinning.extend_shadow_depth_prelude)(SHADOW_DEPTH_WGSL),
+        None => SHADOW_DEPTH_WGSL.to_string(),
+    };
+    let module = create_wgpu_shader_module(&native, &source);
+    let draw_layout = match skinning {
+        Some(skinning) => (skinning.get_draw_layout)(state),
+        None => ensure_wgpu_scene3d_layouts(state).draw_bind_group_layout,
+    };
+    let layout = create_wgpu_pipeline_layout_recorded(&native, &[draw_layout]);
+    let buffers: Vec<Option<wgpu::VertexBufferLayout<'static>>> = match skinning {
+        Some(skinning) => skinning
+            .vertex_buffer_layouts
+            .iter()
+            .map(|layout| Some(layout.clone()))
+            .collect(),
+        None => SHADOW_VERTEX_BUFFER_LAYOUTS.iter().map(|layout| Some(layout.clone())).collect(),
+    };
+    let pipeline = create_wgpu_shadow_depth_pipeline(&native, &layout, &module, &buffers);
+    let scene = get_wgpu_scene3d_runtime(state);
+    if skinned {
+        scene.shadow_depth_skinned_pipeline = Some(pipeline.clone());
+    } else {
+        scene.shadow_depth_pipeline = Some(pipeline.clone());
+    }
+    return pipeline;
+}
+
+// Packs the live instance matrices into the shared 20-float instance stride (only the matrix half is
+// read by the depth shader). The depth pass keeps its own scratch rather than sharing the forward
+// pass's.
+fn flatten_shadow_instance_matrices(mesh: &InstancedMesh) -> Vec<f32> {
+    let count = mesh.instance_count.max(0) as usize;
+    let mut records = vec![0.0_f32; count * INSTANCE_RECORD_FLOATS];
+    for index in 0..count {
+        let offset = index * INSTANCE_RECORD_FLOATS;
+        records[offset..offset + 16].copy_from_slice(&mesh.instance_matrices[index].read().unwrap().m);
+    }
+    return records;
+}
+
+fn normalize_directional_shadow_pcf_radius(radius: f32) -> f32 {
+    if !radius.is_finite() {
+        return 0.0;
+    }
+    return (MAX_DIRECTIONAL_SHADOW_PCF_RADIUS as f32).min(radius.floor().max(0.0));
 }
 
 /// The directional shadow recipe's first pass (TS `renderWgpuScene3DShadowMap`): renders every
@@ -336,128 +458,6 @@ pub fn render_wgpu_scene3d_shadow_map(
     shadow.normal_bias_world = normal_bias_world;
     shadow.pcf_radius = normalize_directional_shadow_pcf_radius(directional_light.pcf_radius);
     shadow.shadow_bias = directional_light.shadow_bias;
-}
-
-// Resolves (once per state) the depth-only shadow pipeline: a vertex-only module (position to light
-// clip with the GL-to-WebGPU depth remap), depth32float, front-face culling, the shared Draw layout
-// (or the skinning adapter's palette layout) at group(0).
-fn ensure_wgpu_shadow_depth_pipeline(state: &mut WgpuRenderState, skinned: bool) -> wgpu::RenderPipeline {
-    let cached = {
-        let scene = get_wgpu_scene3d_runtime(state);
-        if skinned {
-            scene.shadow_depth_skinned_pipeline.clone()
-        } else {
-            scene.shadow_depth_pipeline.clone()
-        }
-    };
-    if let Some(pipeline) = cached {
-        return pipeline;
-    }
-    let native = get_wgpu_render_state_native_device(state);
-    let skinning = get_wgpu_skinning_adapter(state).filter(|_| skinned);
-    let source = match skinning {
-        Some(skinning) => (skinning.extend_shadow_depth_prelude)(SHADOW_DEPTH_WGSL),
-        None => SHADOW_DEPTH_WGSL.to_string(),
-    };
-    let module = create_wgpu_shader_module(&native, &source);
-    let draw_layout = match skinning {
-        Some(skinning) => (skinning.get_draw_layout)(state),
-        None => ensure_wgpu_scene3d_layouts(state).draw_bind_group_layout,
-    };
-    let layout = create_wgpu_pipeline_layout_recorded(&native, &[draw_layout]);
-    let buffers: Vec<Option<wgpu::VertexBufferLayout<'static>>> = match skinning {
-        Some(skinning) => skinning
-            .vertex_buffer_layouts
-            .iter()
-            .map(|layout| Some(layout.clone()))
-            .collect(),
-        None => SHADOW_VERTEX_BUFFER_LAYOUTS.iter().map(|layout| Some(layout.clone())).collect(),
-    };
-    let pipeline = create_wgpu_shadow_depth_pipeline(&native, &layout, &module, &buffers);
-    let scene = get_wgpu_scene3d_runtime(state);
-    if skinned {
-        scene.shadow_depth_skinned_pipeline = Some(pipeline.clone());
-    } else {
-        scene.shadow_depth_pipeline = Some(pipeline.clone());
-    }
-    return pipeline;
-}
-
-// The instanced depth pipeline: the rigid depth pass plus the instance-step matrix buffer, so a batch
-// records one silhouette per live instance.
-fn ensure_wgpu_shadow_depth_instanced_pipeline(state: &mut WgpuRenderState) -> wgpu::RenderPipeline {
-    if let Some(pipeline) = &get_wgpu_scene3d_runtime(state).shadow_depth_instanced_pipeline {
-        return pipeline.clone();
-    }
-    let native = get_wgpu_render_state_native_device(state);
-    let draw_layout = ensure_wgpu_scene3d_layouts(state).draw_bind_group_layout;
-    let layout = create_wgpu_pipeline_layout_recorded(&native, &[draw_layout]);
-    let module = create_wgpu_shader_module(&native, SHADOW_DEPTH_INSTANCED_WGSL);
-    let buffers: Vec<Option<wgpu::VertexBufferLayout<'static>>> = SHADOW_INSTANCED_VERTEX_BUFFER_LAYOUTS
-        .iter()
-        .map(|layout| Some(layout.clone()))
-        .collect();
-    let pipeline = create_wgpu_shadow_depth_pipeline(&native, &layout, &module, &buffers);
-    get_wgpu_scene3d_runtime(state).shadow_depth_instanced_pipeline = Some(pipeline.clone());
-    return pipeline;
-}
-
-fn create_wgpu_shadow_depth_pipeline(
-    native: &flight_render_wgpu::WgpuNativeDevice,
-    layout: &wgpu::PipelineLayout,
-    module: &wgpu::ShaderModule,
-    buffers: &[Option<wgpu::VertexBufferLayout<'static>>],
-) -> wgpu::RenderPipeline {
-    return create_wgpu_render_pipeline(
-        native,
-        &wgpu::RenderPipelineDescriptor {
-            label: None,
-            layout: Some(layout),
-            vertex: wgpu::VertexState {
-                module,
-                entry_point: Some("vs_main"),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-                buffers,
-            },
-            fragment: None,
-            primitive: wgpu::PrimitiveState {
-                topology: wgpu::PrimitiveTopology::TriangleList,
-                front_face: wgpu::FrontFace::Ccw,
-                cull_mode: Some(wgpu::Face::Front),
-                ..wgpu::PrimitiveState::default()
-            },
-            depth_stencil: Some(wgpu::DepthStencilState {
-                format: SHADOW_DEPTH_FORMAT,
-                depth_write_enabled: Some(true),
-                depth_compare: Some(wgpu::CompareFunction::Less),
-                stencil: wgpu::StencilState::default(),
-                bias: wgpu::DepthBiasState::default(),
-            }),
-            multisample: wgpu::MultisampleState::default(),
-            multiview_mask: None,
-            cache: None,
-        },
-    );
-}
-
-// Packs the live instance matrices into the shared 20-float instance stride (only the matrix half is
-// read by the depth shader). The depth pass keeps its own scratch rather than sharing the forward
-// pass's.
-fn flatten_shadow_instance_matrices(mesh: &InstancedMesh) -> Vec<f32> {
-    let count = mesh.instance_count.max(0) as usize;
-    let mut records = vec![0.0_f32; count * INSTANCE_RECORD_FLOATS];
-    for index in 0..count {
-        let offset = index * INSTANCE_RECORD_FLOATS;
-        records[offset..offset + 16].copy_from_slice(&mesh.instance_matrices[index].read().unwrap().m);
-    }
-    return records;
-}
-
-fn normalize_directional_shadow_pcf_radius(radius: f32) -> f32 {
-    if !radius.is_finite() {
-        return 0.0;
-    }
-    return (MAX_DIRECTIONAL_SHADOW_PCF_RADIUS as f32).min(radius.floor().max(0.0));
 }
 
 // draw.world already carries lightMatrix * nodeWorld, so the per-instance matrix slots between it
