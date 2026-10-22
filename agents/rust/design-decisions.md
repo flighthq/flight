@@ -457,7 +457,7 @@ Ruling:
     - `capability` (`BackendOperationExplanation`), which removes logic duplicated in lifecycle and textshaper that has diverged (`'sentinel'` vs `'none'`).
   - **APPROVED: `resource` crate.**
   - **DECIDED (principal, delegated by the user):** the `mesh` package becomes **`meshgeometry`**. It is a geometry-data library also used by importers and formats, so merging it into scene3d would pull scene3d into every consumer. The `Mesh` node and `updateMeshMorph` move to scene3d, matching `Sprite` in scene2d.
-  - **APPROVED: `flight-unhomed`**, a holding crate for types without a home yet (rules in `agents/plan.md`).
+  - **APPROVED (retired 2026-10-22, emptied): `flight-unhomed`**, a holding crate for types without a home yet (rules in `agents/plan.md`).
   - Naming: "backend" is reserved for render backends. The rest of the SDK says "host capabilities" or "host seams". The explanation-vocabulary crate gets a host-capability name, not `backend`. It is part of the host seam API (user, 2026-10-21).
     - Proposed name **`hostcapability`**, following the naming convention: a hyphen suffix marks an adapter or variant of a base package (host-web, scene2d-gl, *-formats), and a joined compound marks a distinct subdomain (textformat, textlayout).
     - Possible type rename `Backend*Explanation` → `HostCapability*Explanation`: deferred, not needed now.

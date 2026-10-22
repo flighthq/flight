@@ -122,4 +122,3 @@ flight-quadbatch = { path = "crates/flight-quadbatch" }
 flight-shortcut = { path = "crates/flight-shortcut" }
 flight-tilemap = { path = "crates/flight-tilemap" }
 flight-tilemap-formats = { path = "crates/flight-tilemap-formats" }
-flight-unhomed = { path = "crates/flight-unhomed" }

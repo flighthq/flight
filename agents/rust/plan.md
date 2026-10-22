@@ -25,15 +25,11 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
      - pre-approved manifest regenerations.
    - Other `agents/` prose is principal-owned.
    - TS reference: the snapshot archive at rev `a627849` was sent to every agent. Keep it outside repo/.
-4. **Type ownership (D8): a type lives in the lowest crate that must name it.** Use the owner table in `agents/research/dissolve-types.md` and `agents/research/text-host-ownership.md`. If a type has no clear home, put it in `flight-unhomed` (below) instead of blocking.
+4. **Type ownership (D8): a type lives in the lowest crate that must name it.** Use the owner table in `agents/research/dissolve-types.md` and `agents/research/text-host-ownership.md`. If a type has no clear home, ask principal for one.
 5. **One crate per work package,** unless the package says otherwise. Shared-type changes go through principal.
 
-## `flight-unhomed`: a holding crate for types with no home yet (user, 2026-10-21)
-
-- It is temporary, so agents can move forward while the type's real home is factored out separately.
-- **Depends only on the foundation crates** (entity, math, geometry, path, color). Anything that needs more than that must get a real home now.
-- Every item carries `// flight-lint: allow(unhomed) <proposed owner or open question>`, so `allows --rule unhomed` lists the backlog. The rule will be added to the lint.
-- It mirrors a TS `@flighthq/unhomed` package until it empties.
+## `flight-unhomed` (retired 2026-10-22)
+- The holding crate emptied as every type found its owner; it and its `unhomed` lint rule were removed. A type with no clear home now gets one decided by principal before porting.
 
 ## Phases
 
