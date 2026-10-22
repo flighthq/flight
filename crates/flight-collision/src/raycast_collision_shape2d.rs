@@ -80,13 +80,11 @@ fn raycast_aabb2d(
         let mut t1 = (aabb.min_x - ox) * inv;
         let mut t2 = (aabb.max_x - ox) * inv;
         let mut n1x = -1.0_f64;
-        let mut n2x = 1.0_f64;
         if t1 > t2 {
             let tmp = t1;
             t1 = t2;
             t2 = tmp;
             n1x = 1.0;
-            n2x = -1.0;
         }
         if t1 > t_min {
             t_min = t1;
@@ -110,13 +108,11 @@ fn raycast_aabb2d(
         let mut t1 = (aabb.min_y - oy) * inv;
         let mut t2 = (aabb.max_y - oy) * inv;
         let mut n1y = -1.0_f64;
-        let mut n2y = 1.0_f64;
         if t1 > t2 {
             let tmp = t1;
             t1 = t2;
             t2 = tmp;
             n1y = 1.0;
-            n2y = -1.0;
         }
         if t1 > t_min {
             t_min = t1;
@@ -415,7 +411,6 @@ pub fn raycast_collision_shape2d(
             max_fraction,
             out,
         ),
-        _ => false,
     }
 }
 

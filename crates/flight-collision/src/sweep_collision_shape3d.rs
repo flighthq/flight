@@ -3,7 +3,6 @@ use crate::types::*;
 
 const SWEEP_TOUCH_TOLERANCE: f32 = 1e-6;
 const MAX_SWEEP_ITERATIONS: usize = 32;
-const EPSILON: f32 = 1e-12;
 
 pub fn create_collision_time_of_impact3d() -> CollisionTimeOfImpact3D {
     let mut out: CollisionTimeOfImpact3D = flight_entity::allocate_entity();

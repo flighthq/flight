@@ -47,37 +47,6 @@ fn clamp(v: f32, min: f32, max: f32) -> f32 {
     }
 }
 
-fn clip_against_plane(
-    nx: f32,
-    ny: f32,
-    offset: f32,
-    points: &mut [(f32, f32); 2],
-    count: usize,
-) -> usize {
-    if count < 2 {
-        return count;
-    }
-    let d0 = nx * points[0].0 + ny * points[0].1 - offset;
-    let d1 = nx * points[1].0 + ny * points[1].1 - offset;
-
-    if d0 <= 0.0 && d1 <= 0.0 {
-        return count; // both inside
-    }
-    if d0 > 0.0 && d1 > 0.0 {
-        return 0; // both outside
-    }
-    // One inside, one outside - clip
-    let t = d0 / (d0 - d1);
-    let clip_x = points[0].0 + (points[1].0 - points[0].0) * t;
-    let clip_y = points[0].1 + (points[1].1 - points[0].1) * t;
-    if d0 > 0.0 {
-        points[0] = (clip_x, clip_y);
-    } else {
-        points[1] = (clip_x, clip_y);
-    }
-    return 2;
-}
-
 fn closest_point_on_segment(sx: f32, sy: f32, ex: f32, ey: f32, px: f32, py: f32) -> (f32, f32) {
     let dx = ex - sx;
     let dy = ey - sy;

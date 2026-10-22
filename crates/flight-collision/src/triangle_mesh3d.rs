@@ -1,5 +1,7 @@
 use crate::types::*;
 
+// Port gap: TS builds a BVH to accelerate triangle queries; Rust brute-forces (correct but slow).
+#[allow(dead_code)]
 const BVH_LEAF_SIZE: usize = 4;
 const CONTACT_DEPTH_EPSILON: f32 = 1e-7;
 const CONTACT_NORMAL_ALIGNMENT: f32 = 0.98;
@@ -21,7 +23,7 @@ struct CollisionTriangleContactAccumulator3D {
     best_normal: [f32; 3],
 }
 
-// BVH node for acceleration
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 struct BvhNode {
     min_x: f32,
@@ -35,14 +37,14 @@ struct BvhNode {
     triangles: Vec<usize>, // triangle indices (only for leaf nodes)
 }
 
-// Cached BVH data for triangle mesh
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 struct TriangleMeshCache {
     bvh: Option<BvhNode>,
     version: i64,
 }
 
-// Cached BVH data for heightfield
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 struct HeightfieldCache {
     bvh: Option<BvhNode>,

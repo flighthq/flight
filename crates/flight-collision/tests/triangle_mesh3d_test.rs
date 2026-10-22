@@ -209,7 +209,6 @@ mod collide_collision_triangle_mesh3d {
 }
 
 mod create_collision_heightfield3d {
-
     #[test]
     fn creates_the_canonical_zero_field_entity() {
         let heightfield = flight_collision::create_collision_heightfield3d();
@@ -224,7 +223,6 @@ mod create_collision_heightfield3d {
 }
 
 mod create_collision_triangle_mesh3d {
-
     #[test]
     fn creates_the_canonical_zero_field_entity() {
         let mesh = flight_collision::create_collision_triangle_mesh3d();

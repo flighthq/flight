@@ -5,7 +5,6 @@ use crate::convex_vertices2d::*;
 use crate::types::*;
 
 const SWEEP_EPSILON: f32 = 1e-9;
-const SWEEP_TOUCH_TOLERANCE: f32 = 1e-6;
 
 /// One convex piece of a swept shape.
 struct SweepPiece {

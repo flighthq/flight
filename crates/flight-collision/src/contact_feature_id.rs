@@ -1,4 +1,3 @@
-
 // flight-lint: allow(contract-vocabulary) D1 range declaration: packed feature ids use 25-bit fields (< 2^53), exact in TS numbers
 pub const FEATURE_INDEX_LIMIT: i64 = 1 << 25;
 
