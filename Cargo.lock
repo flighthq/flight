@@ -1399,7 +1399,6 @@ dependencies = [
 name = "flight-scene3d-gl"
 version = "0.6.0"
 dependencies = [
- "flight-bitmap",
  "flight-camera",
  "flight-color",
  "flight-entity",
@@ -1483,6 +1482,7 @@ dependencies = [
  "flight-shading",
  "flight-signals",
  "flight-texture",
+ "flight-textureatlas",
  "flight-video",
  "futures",
  "wgpu",

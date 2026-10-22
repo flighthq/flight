@@ -1,5 +1,6 @@
 //! The contract lane of the WebGPU 3D scene renderer (TS `contract.ts`): every module's exports.
 
+pub use crate::enable_wgpu_scene3d_custom_shader_guards::*;
 pub use crate::enable_wgpu_scene3d_forward_light_selection_guards::*;
 pub use crate::explain_wgpu_scene3d_coverage::*;
 pub use crate::explain_wgpu_scene3d_forward_light_selection::*;
@@ -10,9 +11,13 @@ pub use crate::types::*;
 pub use crate::wgpu_blinn_phong_mesh_material_renderer::*;
 pub use crate::wgpu_classic_prelude::*;
 pub use crate::wgpu_custom_material_abi::*;
+pub use crate::wgpu_custom_shader_mesh_material_renderer::*;
 pub use crate::wgpu_debug_prelude::*;
 pub use crate::wgpu_depth_mesh_material_renderer::*;
 pub use crate::wgpu_emissive_mesh_material_renderer::*;
+pub use crate::wgpu_environment_cube::*;
+pub use crate::wgpu_environment_ibl_bake::*;
+pub use crate::wgpu_environment_skybox::*;
 pub use crate::wgpu_lambert_mesh_material_renderer::*;
 pub use crate::wgpu_matcap_mesh_material_renderer::*;
 pub use crate::wgpu_matcap_prelude::*;
@@ -21,6 +26,7 @@ pub use crate::wgpu_mesh_material_registry::*;
 pub use crate::wgpu_mesh_pipeline::*;
 pub use crate::wgpu_mesh_upload::*;
 pub use crate::wgpu_normal_mesh_material_renderer::*;
+pub use crate::wgpu_particle_emitter3d::*;
 pub use crate::wgpu_pbr_pipeline_cache::*;
 pub use crate::wgpu_pbr_prelude::*;
 pub use crate::wgpu_phong_mesh_material_renderer::*;

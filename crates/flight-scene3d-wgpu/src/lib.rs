@@ -2,6 +2,7 @@
 //! (D17): mesh-material renderers and their WGSL families, the shared mesh pipeline, environment
 //! maps and image-based lighting, directional shadows, GPU skinning and 3D particles.
 
+mod enable_wgpu_scene3d_custom_shader_guards;
 mod enable_wgpu_scene3d_forward_light_selection_guards;
 mod explain_wgpu_scene3d_coverage;
 mod explain_wgpu_scene3d_forward_light_selection;
@@ -12,9 +13,13 @@ mod types;
 mod wgpu_blinn_phong_mesh_material_renderer;
 mod wgpu_classic_prelude;
 mod wgpu_custom_material_abi;
+mod wgpu_custom_shader_mesh_material_renderer;
 mod wgpu_debug_prelude;
 mod wgpu_depth_mesh_material_renderer;
 mod wgpu_emissive_mesh_material_renderer;
+mod wgpu_environment_cube;
+mod wgpu_environment_ibl_bake;
+mod wgpu_environment_skybox;
 mod wgpu_lambert_mesh_material_renderer;
 mod wgpu_matcap_mesh_material_renderer;
 mod wgpu_matcap_prelude;
@@ -24,6 +29,7 @@ mod wgpu_mesh_material_registry;
 mod wgpu_mesh_pipeline;
 mod wgpu_mesh_upload;
 mod wgpu_normal_mesh_material_renderer;
+mod wgpu_particle_emitter3d;
 mod wgpu_pbr_pipeline_cache;
 mod wgpu_pbr_prelude;
 mod wgpu_phong_mesh_material_renderer;

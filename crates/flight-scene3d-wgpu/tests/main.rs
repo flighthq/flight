@@ -30,6 +30,16 @@ mod flight_scene3d_wgpu_wgpu_emissive_mesh_material_renderer_test;
 mod flight_scene3d_wgpu_wgpu_matcap_mesh_material_renderer_test;
 #[path = "wgpu_matcap_prelude_test.rs"]
 mod flight_scene3d_wgpu_wgpu_matcap_prelude_test;
+#[path = "enable_wgpu_scene3d_custom_shader_guards_test.rs"]
+mod flight_scene3d_wgpu_enable_wgpu_scene3d_custom_shader_guards_test;
+#[path = "wgpu_custom_shader_mesh_material_renderer_test.rs"]
+mod flight_scene3d_wgpu_wgpu_custom_shader_mesh_material_renderer_test;
+#[path = "wgpu_environment_cube_test.rs"]
+mod flight_scene3d_wgpu_wgpu_environment_cube_test;
+#[path = "wgpu_environment_ibl_bake_test.rs"]
+mod flight_scene3d_wgpu_wgpu_environment_ibl_bake_test;
+#[path = "wgpu_environment_skybox_test.rs"]
+mod flight_scene3d_wgpu_wgpu_environment_skybox_test;
 #[path = "wgpu_mesh_fragment_tail_test.rs"]
 mod flight_scene3d_wgpu_wgpu_mesh_fragment_tail_test;
 #[path = "wgpu_mesh_material_registry_test.rs"]
@@ -46,6 +56,8 @@ mod flight_scene3d_wgpu_wgpu_pbr_prelude_test;
 mod flight_scene3d_wgpu_wgpu_phong_mesh_material_renderer_test;
 #[path = "wgpu_normal_mesh_material_renderer_test.rs"]
 mod flight_scene3d_wgpu_wgpu_normal_mesh_material_renderer_test;
+#[path = "wgpu_particle_emitter3d_test.rs"]
+mod flight_scene3d_wgpu_wgpu_particle_emitter3d_test;
 #[path = "wgpu_scene3d_runtime_test.rs"]
 mod flight_scene3d_wgpu_wgpu_scene3d_runtime_test;
 #[path = "wgpu_scene3d_time_test.rs"]

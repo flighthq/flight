@@ -711,6 +711,71 @@ impl WgpuExternalImageSource for TestVideoElement {
     ) -> Result<(), WgpuExternalCopyError> {
         self.copies
             .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+
+// ── environment family ───────────────────────────────────────────────────────────────────────
+
+/// One recorded external image copy (the source's `copyExternalImageToTexture` call).
+#[derive(Clone, Debug, PartialEq)]
+pub struct TestImageCopy {
+    pub height: u32,
+    pub origin: [u32; 3],
+    pub premultiplied_alpha: bool,
+    pub texture: wgpu::Texture,
+    pub width: u32,
+}
+
+/// A host image fake (the source's canvas / image element): a size, readiness, a solid pixel it
+/// writes on copy, and a copy log.
+pub struct TestImageSource {
+    pub copies: Mutex<Vec<TestImageCopy>>,
+    pub height: std::sync::atomic::AtomicU32,
+    pub ready: std::sync::atomic::AtomicBool,
+    pub width: std::sync::atomic::AtomicU32,
+}
+
+impl TestImageSource {
+    pub fn copy_count(&self) -> usize {
+        return self.copies.lock().unwrap().len();
+    }
+}
+
+impl WgpuExternalImageSource for TestImageSource {
+    fn copy_to_texture(
+        &self,
+        queue: &wgpu::Queue,
+        texture: &wgpu::Texture,
+        origin: wgpu::Origin3d,
+        premultiplied_alpha: bool,
+        width: u32,
+        height: u32,
+    ) -> Result<(), WgpuExternalCopyError> {
+        let data = vec![255_u8; (width * height * 4) as usize];
+        queue.write_texture(
+            wgpu::TexelCopyTextureInfo {
+                texture,
+                mip_level: 0,
+                origin,
+                aspect: wgpu::TextureAspect::All,
+            },
+            &data,
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(width * 4),
+                rows_per_image: Some(height),
+            },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+        );
+        self.copies.lock().unwrap().push(TestImageCopy {
+            height,
+            origin: [origin.x, origin.y, origin.z],
+            premultiplied_alpha,
+            texture: texture.clone(),
+            width,
+        });
         return Ok(());
     }
 
@@ -793,4 +858,96 @@ pub fn create_test_video_texture(
 /// Whether the video element received an external frame copy.
 pub fn was_test_video_copied(element: &TestVideoElement) -> bool {
     return element.copies.load(std::sync::atomic::Ordering::SeqCst) > 0;
+
+        return self.height.load(std::sync::atomic::Ordering::SeqCst);
+    }
+
+    fn is_ready(&self, width: u32, height: u32) -> bool {
+        return self.ready.load(std::sync::atomic::Ordering::SeqCst)
+            && self.width() >= width
+            && self.height() >= height;
+    }
+
+    fn width(&self) -> u32 {
+        return self.width.load(std::sync::atomic::Ordering::SeqCst);
+    }
+}
+
+/// An image resource over a ready `width`x`height` host image fake (the source's canvas-backed
+/// `ImageResource`), sized through a dimension resolver that reads the fake.
+pub fn create_test_image_resource(
+    width: u32,
+    height: u32,
+) -> (Ref<flight_image::ImageResource>, Arc<TestImageSource>) {
+    let fake = Arc::new(TestImageSource {
+        copies: Mutex::new(Vec::new()),
+        height: std::sync::atomic::AtomicU32::new(height),
+        ready: std::sync::atomic::AtomicBool::new(true),
+        width: std::sync::atomic::AtomicU32::new(width),
+    });
+    let source: Arc<dyn WgpuExternalImageSource> = fake.clone();
+    let image = Arc::new(create_wgpu_external_host_image_source(test_provider(), source));
+    let mut resolver = flight_image::contract::create_image_resolver_state();
+    flight_image::contract::register_host_image_dimension_resolver(
+        &mut resolver,
+        Arc::new(
+            |source: &Arc<flight_host::HostImageSource>,
+             out: &mut flight_image::contract::HostImageDimensions| {
+                let Some(fake) = source
+                    .handle
+                    .downcast_ref::<Arc<dyn WgpuExternalImageSource>>()
+                else {
+                    return false;
+                };
+                out.width = fake.width();
+                out.height = fake.height();
+                return true;
+            },
+        ),
+    );
+    let resource = flight_image::contract::create_image_resource(image, &resolver);
+    return (resource, fake);
+}
+
+/// A 4x4 rgba8 data-only bitmap face (the source's generated `Bitmap`).
+pub fn create_test_bitmap_face() -> flight_texture::TextureSourceRef {
+    return Arc::new(std::sync::RwLock::new(flight_bitmap::create_bitmap(4, 4, Some(0))));
+}
+
+/// An environment over a cube texture whose six faces are `faces`, in the color space given.
+pub fn create_test_cube_environment(
+    faces: [flight_texture::TextureSourceRef; 6],
+    color_space: flight_texture::TextureColorSpace,
+) -> flight_lighting::Environment {
+    let mut cube = flight_texture::create_cube_texture();
+    flight_texture::TextureUvTransform::texture_fields_mut(&mut cube).color_space = color_space;
+    cube.sources = faces.map(Some);
+    let mut environment = flight_lighting::create_environment();
+    environment.environment = Some(Arc::new(std::sync::RwLock::new(
+        flight_texture::Texture::Cube(cube),
+    )));
+    environment.intensity = 1.0;
+    return environment;
+}
+
+/// An sRGB environment whose six faces share one 4x4 image resource (the source's
+/// `completeEnvironment`), with the image fake its copies record into.
+pub fn create_test_image_environment() -> (flight_lighting::Environment, Arc<TestImageSource>) {
+    let (image, fake) = create_test_image_resource(4, 4);
+    let face: flight_texture::TextureSourceRef = image;
+    let environment = create_test_cube_environment(
+        std::array::from_fn(|_| face.clone()),
+        flight_texture::TextureColorSpace::Srgb,
+    );
+    return (environment, fake);
+}
+
+/// An sRGB environment whose six faces share one data-only bitmap (the source's
+/// `dataOnlyEnvironment`).
+pub fn create_test_bitmap_environment() -> flight_lighting::Environment {
+    let face = create_test_bitmap_face();
+    return create_test_cube_environment(
+        std::array::from_fn(|_| face.clone()),
+        flight_texture::TextureColorSpace::Srgb,
+    );
 }
