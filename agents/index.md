@@ -36,6 +36,9 @@ charter / review / assessment / status architecture), [catalog](packages/catalog
 [map](packages/map.md), [register](packages/register.md),
 [structural forks](packages/structural-forks.md).
 
+**Rust crates** — [Rust library](rust/index.md) (crate conventions in
+[`crates/AGENTS.md`](../crates/AGENTS.md)).
+
 **Focused package evidence** — [scene2d-dom CSS-filter public-lane audit](packages/scene2d-dom/public-lane-audit.md).
 
 ## Architecture records
