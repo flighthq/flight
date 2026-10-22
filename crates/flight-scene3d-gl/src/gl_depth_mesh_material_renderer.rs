@@ -37,7 +37,8 @@ impl GlMeshMaterialRenderer for GlDepthMeshMaterialRenderer {
 
         unsafe {
             if let Some(ref loc) = program.view_location {
-                state.gl.uniform_matrix_4_f32_slice(Some(loc), false, &camera.view.m);
+                let view = camera.view.read().unwrap();
+                state.gl.uniform_matrix_4_f32_slice(Some(loc), false, &view.m);
             }
         }
 

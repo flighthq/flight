@@ -8,6 +8,8 @@ pub use crate::enable_gl_deform_guards::*;
 pub use crate::enable_gl_forward_light_selection_guards::*;
 pub use crate::enable_gl_pbr_extension_guards::*;
 pub use crate::enable_gl_scene3d_color_space_guards::*;
+pub use crate::enable_gl_scene3d_deform_guards::*;
+pub use crate::enable_gl_scene3d_forward_light_selection_guards::*;
 pub use crate::explain_gl_mesh_geometry_uv_sets::*;
 pub use crate::explain_gl_scene3d_coverage::*;
 pub use crate::explain_gl_scene3d_forward_light_selection::*;

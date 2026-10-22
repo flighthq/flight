@@ -2,7 +2,7 @@ use flight_camera::Camera3D;
 use flight_render_gl::GlRenderState;
 use glow::{HasContext, NativeTexture};
 
-use crate::gl_mesh_program::ensure_gl_scene3d_program;
+use crate::gl_mesh_program::{ensure_gl_scene3d_program, set_gl_mesh_view_projection};
 use crate::gl_scene3d_runtime::get_gl_scene3d_runtime;
 use crate::types::GlMeshProgram;
 
@@ -22,9 +22,7 @@ pub fn render_gl_environment_skybox(
     let gl = &state.gl;
     unsafe {
         gl.use_program(Some(program.program));
-        if let Some(ref loc) = program.view_projection_location {
-            gl.uniform_matrix_4_f32_slice(Some(loc), false, &camera.view_projection.m);
-        }
+        set_gl_mesh_view_projection(state, program.view_projection_location.clone(), camera);
         gl.active_texture(glow::TEXTURE0);
         gl.bind_texture(glow::TEXTURE_CUBE_MAP, Some(cube));
         gl.depth_func(glow::LEQUAL);

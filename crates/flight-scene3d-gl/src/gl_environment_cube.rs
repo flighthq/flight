@@ -47,7 +47,7 @@ pub fn create_gl_environment_cube(
                 0,
                 glow::RGBA,
                 glow::UNSIGNED_BYTE,
-                glow::PixelUnpackData::Slice(face_data[face as usize]),
+                glow::PixelUnpackData::Slice(Some(face_data[face as usize])),
             );
         }
         gl.tex_parameter_i32(glow::TEXTURE_CUBE_MAP, glow::TEXTURE_MIN_FILTER, glow::LINEAR as i32);
@@ -94,7 +94,7 @@ pub fn update_gl_environment_cube_face(
             0,
             glow::RGBA,
             glow::UNSIGNED_BYTE,
-            glow::PixelUnpackData::Slice(data),
+            glow::PixelUnpackData::Slice(Some(data)),
         );
         gl.bind_texture(glow::TEXTURE_CUBE_MAP, None);
     }

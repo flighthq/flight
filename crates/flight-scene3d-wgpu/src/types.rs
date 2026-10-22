@@ -164,6 +164,7 @@ pub struct WgpuScene3DLayouts {
     pub frame_bind_group_layout: wgpu::BindGroupLayout,
 }
 
+#[derive(Clone)]
 pub struct WgpuMaterialBinding {
     pub bind_group: wgpu::BindGroup,
     pub buffer: wgpu::Buffer,
