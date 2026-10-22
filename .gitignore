@@ -158,6 +158,7 @@ artifacts/
 # Generic build-output dir guard. Kept so a stray `target/` from any tool never gets tracked or
 # swept into a working-tree sync.
 /target/
+**/*.rs.bk
 
 # Native projects generated on demand by the private host-probe tool. Capacitor regenerates these
 # from capacitor.config.ts so platform templates and build output never become repository source.
