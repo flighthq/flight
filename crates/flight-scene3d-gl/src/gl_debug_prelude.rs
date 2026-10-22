@@ -77,17 +77,15 @@ pub fn ensure_gl_debug_program(
 pub fn bind_gl_debug_normal_map(
     state: &GlRenderState,
     program: &GlDebugProgram,
-    normal_map: Option<&Texture>,
+    has_normal_map: bool,
     normal_scale: f32,
 ) {
     let gl = &state.gl;
     unsafe {
         gl.uniform_1_f32(program.normal_scale_location.as_ref(), normal_scale);
-        if let Some(map) = normal_map {
+        if has_normal_map {
             gl.active_texture(glow::TEXTURE0);
-            if resolve_gl_texture(state, map).is_some() {
-                gl.uniform_1_i32(program.normal_map_location.as_ref(), 0);
-            }
+            gl.uniform_1_i32(program.normal_map_location.as_ref(), 0);
         }
     }
 }

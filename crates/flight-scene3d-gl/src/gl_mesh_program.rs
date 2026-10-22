@@ -2,10 +2,16 @@ use std::rc::Rc;
 
 use flight_camera::{Camera3D, get_camera_3d_position, get_camera_3d_view_projection_matrix4};
 use flight_geometry::{Matrix3, Matrix4, Vector3};
-use flight_render_gl::{GlRenderState, create_gl_program};
+use flight_materials::Material3D;
+use flight_meshgeometry::{MeshGeometry, MeshSubset};
+use flight_render::RenderProxy;
+use flight_render_gl::GlRenderState;
+pub use flight_render_gl::create_gl_program;
+use flight_texture::{TextureVariant, has_texture_source, has_texture_uv_transform, get_texture_uv_matrix};
 use glow::{HasContext, NativeProgram, NativeUniformLocation};
 
-use crate::gl_scene3d_runtime::get_gl_scene3d_runtime_mut;
+use crate::gl_mesh_upload::ensure_gl_mesh_upload;
+use crate::gl_scene3d_runtime::{get_gl_scene3d_runtime, get_gl_scene3d_runtime_mut};
 use crate::gl_viewport_aspect::get_gl_scene3d_viewport_aspect;
 use crate::types::GlMeshProgram;
 
@@ -147,6 +153,69 @@ mat4 instanceModelMatrix() {
 }
 "#;
 
+pub fn draw_gl_mesh_subset(
+    state: &GlRenderState,
+    program: &GlMeshProgram,
+    world_matrix: &Matrix4,
+    normal_matrix: &Matrix3,
+    alpha: f32,
+    subset: &MeshSubset,
+    geometry: &MeshGeometry,
+    gpu_skinned: bool,
+) {
+    let gl = &state.gl;
+    unsafe {
+        if let Some(ref loc) = program.model_location {
+            gl.uniform_matrix_4_f32_slice(Some(loc), false, &world_matrix.m);
+        }
+        if let Some(ref loc) = program.normal_matrix_location {
+            gl.uniform_matrix_3_f32_slice(Some(loc), false, &normal_matrix.m);
+        }
+
+        let cw = is_mirroring_world_matrix(&world_matrix.m);
+        gl.front_face(if cw { glow::CW } else { glow::CCW });
+
+        upload_gl_mesh_draw_alpha(gl, program, alpha);
+
+        ensure_gl_mesh_upload(state, geometry, gpu_skinned, |upload| {
+            let element_size: i32 = if upload.index_type == glow::UNSIGNED_INT { 4 } else { 2 };
+            gl.draw_elements(
+                upload.primitive_mode,
+                subset.index_count as i32,
+                upload.index_type,
+                (subset.index_offset as i32) * element_size,
+            );
+        });
+
+        gl.front_face(glow::CCW);
+    }
+}
+
+pub fn has_gl_uv_transform(texture: Option<&dyn TextureVariant>) -> bool {
+    return match texture {
+        Some(tex) => has_texture_source(tex) && has_texture_uv_transform(tex),
+        None => false,
+    };
+}
+
+pub fn bind_gl_uv_transform(
+    gl: &glow::Context,
+    program: NativeProgram,
+    texture: Option<&dyn TextureVariant>,
+) {
+    let loc = unsafe { gl.get_uniform_location(program, "u_uvTransform") };
+    if loc.is_none() {
+        return;
+    }
+    if let Some(tex) = texture {
+        let mut uv_mat = Matrix3::default();
+        get_texture_uv_matrix(&mut uv_mat, tex);
+        unsafe {
+            gl.uniform_matrix_3_f32_slice(loc.as_ref(), false, &uv_mat.m);
+        }
+    }
+}
+
 fn get_gl_scene3d_runtime_blended(state: &GlRenderState) -> bool {
-    return crate::gl_scene3d_runtime::get_gl_scene3d_runtime(state, |rt| rt.active_blended_run);
+    return get_gl_scene3d_runtime(state, |rt| rt.active_blended_run);
 }

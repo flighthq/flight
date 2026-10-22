@@ -1,7 +1,7 @@
 use flight_render_gl::GlRenderState;
 use glow::HasContext;
 
-use crate::gl_lit_program::{GL_MESH_LIGHT_BLOCK_GLSL, resolve_gl_lit_locations};
+use crate::gl_lit_program::{gl_mesh_light_block_glsl, resolve_gl_lit_locations};
 use crate::gl_mesh_fragment_tail::{GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS};
 use crate::gl_mesh_program::{
     compile_gl_mesh_program, ensure_gl_scene3d_program, GL_INSTANCE_VERTEX_DECLARATIONS_GLSL,
@@ -169,6 +169,7 @@ void main() {{
 }
 
 fn get_toon_fragment_body() -> String {
+    let GL_MESH_LIGHT_BLOCK_GLSL = gl_mesh_light_block_glsl();
     return format!(
         r#"
 precision highp float;

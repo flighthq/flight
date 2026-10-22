@@ -92,8 +92,8 @@ fn compile_shadow_depth_program(gl: &glow::Context) -> GlMeshProgram {
         gl,
         SHADOW_DEPTH_VERTEX,
         SHADOW_DEPTH_FRAGMENT,
-        "shadow:depth",
-    );
+        Some("shadow:depth"),
+    ).expect("shadow depth program");
     return GlMeshProgram {
         program,
         model_location: unsafe { gl.get_uniform_location(program, "u_model") },

@@ -28,7 +28,7 @@ pub fn compile_gl_pbr_program(
     vertex_source: &str,
     fragment_source: &str,
 ) -> GlPbrProgram {
-    let program = create_gl_program(gl, vertex_source, fragment_source, "pbr");
+    let program = create_gl_program(gl, vertex_source, fragment_source, Some("pbr")).expect("PBR program");
     let lit = resolve_gl_lit_locations(gl, program);
     return GlPbrProgram {
         lit,
@@ -58,7 +58,7 @@ pub fn build_gl_pbr_define_key(key: &GlPbrDefineKey) -> String {
     if key.has_skin { s.push('S'); }
     if key.has_color_adjustment { s.push('C'); }
     if key.has_color_matrix { s.push('X'); }
-    if key.has_alpha_mask { s.push('A'); }
+    if key.alpha_mask_enabled { s.push('A'); }
     if key.has_instanced { s.push('I'); }
     if key.has_ibl { s.push('L'); }
     if key.has_shadow { s.push('W'); }

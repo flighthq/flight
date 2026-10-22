@@ -68,7 +68,7 @@ void main() {
   fragColor = texture(u_skybox, v_texCoord);
 }
 "#;
-    let program = crate::gl_mesh_program::create_gl_program(gl, vs, fs, "skybox");
+    let program = crate::gl_mesh_program::create_gl_program(gl, vs, fs, Some("skybox")).expect("skybox program");
     return GlMeshProgram {
         program,
         model_location: None,

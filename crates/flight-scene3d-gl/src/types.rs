@@ -81,6 +81,7 @@ pub struct GlPbrTransmissionSceneColor {
     pub target: GlTextureRenderTarget,
 }
 
+#[derive(Clone)]
 pub struct GlMeshProgram {
     pub program: NativeProgram,
     pub model_location: Option<NativeUniformLocation>,
@@ -91,6 +92,7 @@ pub struct GlMeshProgram {
     pub alpha_is_coverage_location: Option<NativeUniformLocation>,
 }
 
+#[derive(Clone)]
 pub struct GlLitProgram {
     pub base: GlMeshProgram,
     pub ambient_color_location: Option<NativeUniformLocation>,
@@ -124,6 +126,7 @@ pub struct GlLitProgram {
     pub ibl_max_mip_location: Option<NativeUniformLocation>,
 }
 
+#[derive(Clone)]
 pub struct GlClassicProgram {
     pub lit: GlLitProgram,
     pub alpha_cutoff_location: Option<NativeUniformLocation>,
@@ -137,6 +140,7 @@ pub struct GlClassicProgram {
     pub specular_map_location: Option<NativeUniformLocation>,
 }
 
+#[derive(Clone)]
 pub struct GlDebugProgram {
     pub base: GlMeshProgram,
     pub far_location: Option<NativeUniformLocation>,
@@ -146,6 +150,7 @@ pub struct GlDebugProgram {
     pub view_location: Option<NativeUniformLocation>,
 }
 
+#[derive(Clone)]
 pub struct GlMatcapProgram {
     pub base: GlMeshProgram,
     pub alpha_cutoff_location: Option<NativeUniformLocation>,
@@ -154,6 +159,7 @@ pub struct GlMatcapProgram {
     pub view_location: Option<NativeUniformLocation>,
 }
 
+#[derive(Clone)]
 pub struct GlToonProgram {
     pub lit: GlLitProgram,
     pub alpha_cutoff_location: Option<NativeUniformLocation>,
@@ -163,6 +169,7 @@ pub struct GlToonProgram {
     pub steps_location: Option<NativeUniformLocation>,
 }
 
+#[derive(Clone)]
 pub struct GlUnlitProgram {
     pub base: GlMeshProgram,
     pub alpha_cutoff_location: Option<NativeUniformLocation>,
@@ -171,6 +178,7 @@ pub struct GlUnlitProgram {
     pub intensity_location: Option<NativeUniformLocation>,
 }
 
+#[derive(Clone)]
 pub struct GlWireframeProgram {
     pub base: GlMeshProgram,
     pub alpha_cutoff_location: Option<NativeUniformLocation>,
@@ -201,6 +209,7 @@ pub struct GlWireframeUpload {
     pub version: u32,
 }
 
+#[derive(Clone)]
 pub struct GlMeshSkinFeature {
     pub skin_declarations_glsl: String,
 }
@@ -230,6 +239,7 @@ pub struct ColorScaleBias {
     pub a_bias: f32,
 }
 
+#[derive(Clone)]
 pub struct Scene3DLightBlock {
     pub ambient_color: [f32; 3],
     pub directional_color: [f32; 3],
