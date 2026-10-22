@@ -6,7 +6,7 @@ use std::rc::{Rc, Weak};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
-use flight_entity::{Entity, EntityRuntimeSlot, Kind};
+use flight_entity::{AnySlot, Entity, EntityRuntimeSlot, Kind, UnknownValue};
 use flight_log::LogStateRef;
 use flight_materials::{BlendMode, Material2D, MaterialData};
 use flight_registry::KindMap;
@@ -255,6 +255,10 @@ pub struct GlRenderRegistries {
     pub compressed_texture_upload: Option<GlCompressedTextureUploader>,
     pub custom_effect_shaders: Arc<KindMap<String>>,
     pub custom_material_shaders: Arc<KindMap<GlCustomMaterialShaderSource>>,
+    /// TS `GlRenderRegistries.effects`: per-kind effect registrations owned by effects-gl. The value
+    /// type belongs to that package, which depends on render-gl, so render-gl holds each
+    /// registration opaquely by identity and never invokes it (D8 slot pattern).
+    pub effects: Arc<KindMap<UnknownValue>>,
     pub material_renderers: Arc<KindMap<&'static dyn GlQuadMaterialRenderer>>,
     pub modifier_snippets: Arc<KindMap<String>>,
     pub pbr_extensions: Arc<KindMap<String>>,
@@ -341,6 +345,9 @@ pub struct GlContextRuntime {
     pub(crate) pass_handle_pool: Vec<GlRenderPass>,
     pub(crate) pass_stack: Vec<GlPassStackEntry>,
     pub state_runtimes: HashMap<u64, Weak<RefCell<GlRenderStateRuntime>>>,
+    /// Per-context caches owned by effects-gl (TS module WeakMaps keyed by the GL context: compiled
+    /// effect programs and uniform locations). Opaque here; only effects-gl reads it (D15 slot).
+    pub effect_cache: AnySlot,
 }
 
 pub struct GlContextState {
@@ -374,6 +381,9 @@ pub struct GlRenderStateRuntime {
     pub destroyed: bool,
     pub stats: GlRenderStats,
     pub teardowns: Vec<fn(&mut GlRenderState)>,
+    /// Per-state runtime owned by effects-gl (TS module WeakMaps keyed by the render state: effect
+    /// guards and blend backdrops). Opaque here; only effects-gl reads it (D15 slot).
+    pub effect_runtime: AnySlot,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -693,6 +703,7 @@ impl Default for GlRenderRegistries {
             compressed_texture_upload: None,
             custom_effect_shaders: Arc::new(empty_kind_map()),
             custom_material_shaders: Arc::new(empty_kind_map()),
+            effects: Arc::new(empty_kind_map()),
             material_renderers: Arc::new(empty_kind_map()),
             modifier_snippets: Arc::new(empty_kind_map()),
             pbr_extensions: Arc::new(empty_kind_map()),
@@ -738,6 +749,7 @@ impl Default for GlRenderStateRuntime {
             destroyed: false,
             stats: GlRenderStats::default(),
             teardowns: Vec::new(),
+            effect_runtime: None,
         };
     }
 }

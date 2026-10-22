@@ -123,6 +123,7 @@ pub fn initialize_gl_context_state(gl: Rc<glow::Context>) -> Result<GlContextSta
             pass_handle_pool: Vec::new(),
             pass_stack: Vec::new(),
             state_runtimes: HashMap::new(),
+            effect_cache: None,
         }),
     });
 }

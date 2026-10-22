@@ -1,0 +1,36 @@
+[package]
+name = "flight-effects-gl"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Native glow-backed GL shader recipes for render effects and the MSAA-aware post-process pipeline"
+autotests = false
+
+[lib]
+doctest = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-adjustments = { workspace = true }
+flight-bitmap = { workspace = true }
+flight-color = { workspace = true }
+flight-effects = { workspace = true }
+flight-entity = { workspace = true }
+flight-log = { workspace = true }
+flight-registry = { workspace = true }
+flight-regexp = { workspace = true }
+flight-render = { workspace = true }
+flight-render-gl = { path = "../flight-render-gl" }
+flight-texture = { workspace = true }
+glow = "0.18.0"
+
+[dev-dependencies]
+flight-host = { workspace = true }
+flight-image = { workspace = true }
+flight-texture-formats = { workspace = true }
+
+[lints]
+workspace = true
