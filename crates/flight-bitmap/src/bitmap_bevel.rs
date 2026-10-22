@@ -16,7 +16,7 @@ pub fn bevel_bitmap(
     let distance = options.distance.unwrap_or(4.0);
     let offset_x = (angle.cos() * distance).round() as i32;
     let offset_y = (angle.sin() * distance).round() as i32;
-    let type_ = options.type_.unwrap_or(BevelType::Inner);
+    let type_ = options.type_.unwrap_or(BitmapBevelType::Inner);
     let intensity = options.intensity.unwrap_or(1.0);
     let highlight_color = options.highlight_color.unwrap_or(0xffffffff);
     let shadow_color = options.shadow_color.unwrap_or(0x000000ff);
@@ -43,9 +43,9 @@ pub fn bevel_bitmap(
             let color = if gradient >= 0.0 { highlight_color } else { shadow_color };
             let color_alpha = (color & 0xff) as f32 / 255.0;
             let clip = match type_ {
-                BevelType::Inner => read_source_alpha(source, px as i32, py as i32) as f32 / 255.0,
-                BevelType::Outer => 1.0 - read_source_alpha(source, px as i32, py as i32) as f32 / 255.0,
-                BevelType::Both => 1.0,
+                BitmapBevelType::Inner => read_source_alpha(source, px as i32, py as i32) as f32 / 255.0,
+                BitmapBevelType::Outer => 1.0 - read_source_alpha(source, px as i32, py as i32) as f32 / 255.0,
+                BitmapBevelType::Both => 1.0,
             };
             let edge_intensity = (gradient.abs() * intensity).min(1.0);
 

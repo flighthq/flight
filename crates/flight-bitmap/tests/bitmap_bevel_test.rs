@@ -26,7 +26,7 @@ mod bevel_bitmap {
         let opts = BitmapBevelOptions {
             angle: Some(std::f32::consts::PI),
             distance: Some(1.0),
-            type_: Some(BevelType::Both),
+            type_: Some(BitmapBevelType::Both),
             intensity: Some(1.0),
             highlight_color: Some(0xffffffff),
             shadow_color: Some(0x000000ff),
@@ -60,7 +60,7 @@ mod bevel_bitmap {
         let opts = BitmapBevelOptions {
             angle: Some(std::f32::consts::PI),
             distance: Some(1.0),
-            type_: Some(BevelType::Inner),
+            type_: Some(BitmapBevelType::Inner),
             intensity: Some(1.0),
             highlight_color: None,
             shadow_color: None,

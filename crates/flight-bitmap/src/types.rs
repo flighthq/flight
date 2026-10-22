@@ -113,9 +113,9 @@ pub enum DisplacementMode {
     Color,
 }
 
-/// Bevel type for clipping.
+/// Which side of the source edge a bitmap bevel or gradient bevel draws on (TS `BitmapBevelType`).
 #[derive(Clone, Copy, Debug, PartialEq)]
-pub enum BevelType {
+pub enum BitmapBevelType {
     Inner,
     Outer,
     Both,
@@ -239,7 +239,7 @@ pub struct BitmapShadowBlurOptions {
 pub struct BitmapBevelOptions {
     pub angle: Option<f32>,
     pub distance: Option<f32>,
-    pub type_: Option<BevelType>,
+    pub type_: Option<BitmapBevelType>,
     pub intensity: Option<f32>,
     pub highlight_color: Option<u32>,
     pub shadow_color: Option<u32>,
@@ -329,7 +329,7 @@ pub struct BitmapSharpenOptions {
 pub struct BitmapGradientBevelOptions {
     pub angle: Option<f32>,
     pub distance: Option<f32>,
-    pub type_: Option<BevelType>,
+    pub type_: Option<BitmapBevelType>,
     pub intensity: Option<f32>,
     pub radius_x: Option<f32>,
     pub radius_y: Option<f32>,
@@ -477,9 +477,9 @@ impl Default for DisplacementMode {
     }
 }
 
-impl Default for BevelType {
+impl Default for BitmapBevelType {
     fn default() -> Self {
-        BevelType::Inner
+        BitmapBevelType::Inner
     }
 }
 

@@ -107,7 +107,7 @@ pub fn gradient_bevel_bitmap(
     let distance = options.distance.unwrap_or(4.0);
     let offset_x = (angle.cos() * distance).round() as i32;
     let offset_y = (angle.sin() * distance).round() as i32;
-    let bevel_type = options.type_.unwrap_or(BevelType::Inner);
+    let bevel_type = options.type_.unwrap_or(BitmapBevelType::Inner);
     let intensity = options.intensity.unwrap_or(1.0);
 
     // Write alpha field into scratch
@@ -132,9 +132,9 @@ pub fn gradient_bevel_bitmap(
             let idx = ((gradient * 0.5 + 0.5) * 255.0).round().max(0.0).min(255.0) as usize;
             let ri = idx * 4;
             let clip = match bevel_type {
-                BevelType::Inner => read_source_alpha(source, px as i32, py as i32) as f32 / 255.0,
-                BevelType::Outer => 1.0 - read_source_alpha(source, px as i32, py as i32) as f32 / 255.0,
-                BevelType::Both => 1.0,
+                BitmapBevelType::Inner => read_source_alpha(source, px as i32, py as i32) as f32 / 255.0,
+                BitmapBevelType::Outer => 1.0 - read_source_alpha(source, px as i32, py as i32) as f32 / 255.0,
+                BitmapBevelType::Both => 1.0,
             };
             out[di] = ramp[ri];
             out[di + 1] = ramp[ri + 1];

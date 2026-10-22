@@ -54,7 +54,7 @@ mod gradient_bevel_bitmap {
         let opts = BitmapGradientBevelOptions {
             angle: Some(std::f32::consts::PI),
             distance: Some(1.0),
-            type_: Some(BevelType::Both),
+            type_: Some(BitmapBevelType::Both),
             intensity: Some(1.0),
             radius_x: Some(1.0),
             radius_y: Some(0.0),
