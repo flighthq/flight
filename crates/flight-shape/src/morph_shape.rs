@@ -21,9 +21,7 @@ pub fn create_morph_shape(morph: &Ref<PathMorph>) -> Ref<MorphShape> {
         MORPH_SHAPE_KIND.to_string(),
         Some(create_morph_shape_runtime),
     );
-    out.data = create_morph_shape_data(morph);
-    let state = out.data.bounds_state.clone();
-    crate::shape::set_shape_runtime_for_morph_shape(&mut out, create_shape_runtime_extra(&state));
+    initialize_morph_shape(&mut out, morph);
     return flight_scene2d::publish_node2d(out);
 }
 
@@ -42,9 +40,14 @@ pub fn create_morph_shape_runtime() -> Node2DRuntime {
 
 /// The public initialize seam for a morph shape (TS `initializeMorphShape`).
 // flight-lint: allow(conform-extra) D23 I: public initialize seam extracted from create_morph_shape
-pub fn initialize_morph_shape(_out: &mut MorphShape) {}
+pub fn initialize_morph_shape(out: &mut MorphShape, morph: &Ref<PathMorph>) {
+    out.data = create_morph_shape_data(morph);
+    let state = out.data.bounds_state.clone();
+    crate::shape::set_shape_runtime_for_morph_shape(out, create_shape_runtime_extra(&state));
+}
 
 /// The construction initializer of `create_morph_shape_data`.
+// flight-lint: allow(conform-params) D23 B: TS data param removed; Rust out-parameter IS the data
 pub fn initialize_morph_shape_data(
     out: &mut MorphShapeData,
     morph: &Ref<PathMorph>,

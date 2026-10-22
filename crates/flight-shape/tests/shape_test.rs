@@ -121,8 +121,19 @@ mod initialize_shape {
     #[test]
     fn is_the_construction_seam_of_create_shape() {
         let shape = create_shape();
+        let guard = shape.read().unwrap();
+        assert!(is_shape_empty(&*guard));
+        assert!(guard.data.commands.is_empty());
+        assert!(get_shape_runtime(&*guard).is_some());
+    }
+
+    #[test]
+    fn reinitializes_data_and_runtime() {
+        let shape = create_shape();
         initialize_shape(&mut *shape.write().unwrap());
-        assert!(is_shape_empty(&*shape.read().unwrap()));
+        let guard = shape.read().unwrap();
+        assert!(is_shape_empty(&*guard));
+        assert!(get_shape_runtime(&*guard).is_some());
     }
 }
 

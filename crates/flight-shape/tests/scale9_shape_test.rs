@@ -49,8 +49,18 @@ mod initialize_scale9_shape {
     #[test]
     fn is_the_construction_seam_of_create_scale9_shape() {
         let shape = scale9();
+        let guard = shape.read().unwrap();
+        assert_eq!(guard.data.scale9_grid, scale9_grid());
+        assert!(get_scale9_shape_runtime(&*guard).is_some());
+    }
+
+    #[test]
+    fn reinitializes_data_and_runtime() {
+        let shape = scale9();
         initialize_scale9_shape(&mut *shape.write().unwrap(), &scale9_grid());
-        assert_eq!(shape.read().unwrap().data.scale9_grid, scale9_grid());
+        let guard = shape.read().unwrap();
+        assert_eq!(guard.data.scale9_grid, scale9_grid());
+        assert!(get_scale9_shape_runtime(&*guard).is_some());
     }
 }
 

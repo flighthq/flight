@@ -15,9 +15,7 @@ pub fn create_scale9_shape(scale9_grid: &ShapeScale9Grid) -> Ref<Scale9Shape> {
         SCALE9_SHAPE_KIND.to_string(),
         Some(create_scale9_shape_runtime),
     );
-    out.data = create_scale9_shape_data(scale9_grid);
-    let state = out.data.bounds_state.clone();
-    crate::shape::set_shape_runtime_for_scale9_shape(&mut out, create_shape_runtime_extra(&state));
+    initialize_scale9_shape(&mut out, scale9_grid);
     return flight_scene2d::publish_node2d(out);
 }
 
@@ -36,9 +34,14 @@ pub fn create_scale9_shape_runtime() -> Node2DRuntime {
 
 /// The public initialize seam for a nine-slice shape (TS `initializeScale9Shape`).
 // flight-lint: allow(conform-extra) D23 I: public initialize seam extracted from create_scale9_shape
-pub fn initialize_scale9_shape(_out: &mut Scale9Shape, _scale9_grid: &ShapeScale9Grid) {}
+pub fn initialize_scale9_shape(out: &mut Scale9Shape, scale9_grid: &ShapeScale9Grid) {
+    out.data = create_scale9_shape_data(scale9_grid);
+    let state = out.data.bounds_state.clone();
+    crate::shape::set_shape_runtime_for_scale9_shape(out, create_shape_runtime_extra(&state));
+}
 
 /// The construction initializer of `create_scale9_shape_data`.
+// flight-lint: allow(conform-params) D23 B: TS data param removed; Rust out-parameter IS the data
 pub fn initialize_scale9_shape_data(
     out: &mut Scale9ShapeData,
     scale9_grid: &ShapeScale9Grid,

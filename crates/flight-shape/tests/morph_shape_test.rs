@@ -66,8 +66,20 @@ mod initialize_morph_shape {
     #[test]
     fn is_the_construction_seam_of_create_morph_shape() {
         let shape = morph();
-        initialize_morph_shape(&mut *shape.write().unwrap());
+        let morph_ref = shape.read().unwrap().data.morph.clone();
+        let created = create_morph_shape(&morph_ref);
+        let guard = created.read().unwrap();
+        assert_eq!(guard.data.progress, 0.0);
+        assert!(get_morph_shape_runtime(&*guard).is_some());
+    }
+
+    #[test]
+    fn reinitializes_data_and_runtime() {
+        let shape = morph();
+        let morph_ref = shape.read().unwrap().data.morph.clone();
+        initialize_morph_shape(&mut *shape.write().unwrap(), &morph_ref);
         assert_eq!(shape.read().unwrap().data.progress, 0.0);
+        assert!(get_morph_shape_runtime(&*shape.read().unwrap()).is_some());
     }
 }
 
