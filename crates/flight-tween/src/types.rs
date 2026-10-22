@@ -9,8 +9,7 @@ use flight_signals::Signal;
 pub type EasingFunction = fn(f32) -> f32;
 
 // flight-lint: allow(conform-extra) D22 Rust fn-pointer property accessor replacing TS NumericProps<T>
-#[derive(Clone, Copy)]
-pub struct TweenProp<T> {
+pub struct TweenProp<T: ?Sized> {
     pub get: fn(&mut T) -> &mut f32,
     pub key: &'static str,
     pub to: f32,
@@ -120,7 +119,7 @@ pub(crate) struct ErasedTweenHandle {
     pub(crate) data: ErasedTweenRef,
 }
 
-pub(crate) struct PropertyState<T> {
+pub(crate) struct PropertyState<T: ?Sized> {
     pub get: fn(&mut T) -> &mut f32,
     pub key: String,
     pub to: f32,
@@ -128,13 +127,13 @@ pub(crate) struct PropertyState<T> {
     pub change: f32,
 }
 
-pub(crate) struct TypedTweenOps<T: Send + Sync + 'static> {
+pub(crate) struct TypedTweenOps<T: ?Sized + Send + Sync + 'static> {
     pub target: Ref<T>,
     pub properties: Vec<PropertyState<T>>,
 }
 
 // flight-lint: allow(contract-vocabulary) D22 Tween<T> requires T: Send + Sync + 'static for Arc<RwLock<>> thread-safety
-pub struct Tween<T: Send + Sync + 'static> {
+pub struct Tween<T: ?Sized + Send + Sync + 'static> {
     pub(crate) data: ErasedTweenRef,
     _marker: PhantomData<T>,
     runtime: EntityRuntimeSlot,
@@ -181,7 +180,7 @@ fn default_ease(t: f32) -> f32 {
 
 // flight-lint: allow(conform-extra) Rust sugar-layer free function backing impl PartialEq for Tween
 // flight-lint: allow(contract-vocabulary) D22 Tween<T> requires T: Send + Sync + 'static for Arc<RwLock<>> thread-safety
-pub fn equals_tween<T: Send + Sync + 'static>(a: &Tween<T>, b: &Tween<T>) -> bool {
+pub fn equals_tween<T: ?Sized + Send + Sync + 'static>(a: &Tween<T>, b: &Tween<T>) -> bool {
     return Arc::ptr_eq(&a.data, &b.data);
 }
 
@@ -197,16 +196,24 @@ pub(crate) fn erased_target_key(handle: &ErasedTweenHandle) -> usize {
     return handle.data.read().unwrap().ops.target_key();
 }
 
-pub(crate) fn target_key_from_ref<T>(target: &Ref<T>) -> usize {
-    return Arc::as_ptr(target) as usize;
+pub(crate) fn target_key_from_ref<T: ?Sized>(target: &Ref<T>) -> usize {
+    return Arc::as_ptr(target) as *const () as usize;
 }
 
 // flight-lint: allow(conform-extra) D22 escape hatch for nested/computed property paths
-pub fn tween_with<T>(get: fn(&mut T) -> &mut f32, key: &'static str, to: f32) -> TweenProp<T> {
+pub fn tween_with<T: ?Sized>(get: fn(&mut T) -> &mut f32, key: &'static str, to: f32) -> TweenProp<T> {
     return TweenProp { get, key, to };
 }
 
 // ── Impl blocks ──────────────────────────────────────────────────────
+
+impl<T: ?Sized> Clone for TweenProp<T> {
+    fn clone(&self) -> Self {
+        return *self;
+    }
+}
+
+impl<T: ?Sized> Copy for TweenProp<T> {}
 
 impl Clone for ErasedTweenHandle {
     fn clone(&self) -> Self {
@@ -217,7 +224,7 @@ impl Clone for ErasedTweenHandle {
 }
 
 // flight-lint: allow(sugar-delegates) D22 type-erasure core: these are the trait-object vtable, not sugar over free functions
-impl<T: Send + Sync + 'static> TweenOps for TypedTweenOps<T> {
+impl<T: ?Sized + Send + Sync + 'static> TweenOps for TypedTweenOps<T> {
     fn has_property(&self, key: &str) -> bool {
         return self.properties.iter().any(|p| p.key == key);
     }
@@ -244,7 +251,7 @@ impl<T: Send + Sync + 'static> TweenOps for TypedTweenOps<T> {
     }
 
     fn target_key(&self) -> usize {
-        return Arc::as_ptr(&self.target) as usize;
+        return Arc::as_ptr(&self.target) as *const () as usize;
     }
 
     fn write_values(&self, eased_t: f32, snapping: bool) {
@@ -260,7 +267,7 @@ impl<T: Send + Sync + 'static> TweenOps for TypedTweenOps<T> {
 }
 
 // flight-lint: allow(sugar-delegates) D22 pub(crate) constructors for generic tween handle
-impl<T: Send + Sync + 'static> Tween<T> {
+impl<T: ?Sized + Send + Sync + 'static> Tween<T> {
     pub(crate) fn new(inner: ErasedTweenRef) -> Self {
         return Tween {
             data: inner,
@@ -276,7 +283,7 @@ impl<T: Send + Sync + 'static> Tween<T> {
     }
 }
 
-impl<T: Send + Sync + 'static> Clone for Tween<T> {
+impl<T: ?Sized + Send + Sync + 'static> Clone for Tween<T> {
     fn clone(&self) -> Self {
         return Tween {
             data: self.data.clone(),
@@ -287,14 +294,14 @@ impl<T: Send + Sync + 'static> Clone for Tween<T> {
 }
 
 // flight-lint: allow(sugar-delegates) D22 identity equality backed by equals_tween free function
-impl<T: Send + Sync + 'static> PartialEq for Tween<T> {
+impl<T: ?Sized + Send + Sync + 'static> PartialEq for Tween<T> {
     fn eq(&self, other: &Self) -> bool {
         return Arc::ptr_eq(&self.data, &other.data);
     }
 }
 
 // flight-lint: allow(sugar-delegates) Entity trait boilerplate — no free function exists for entity_runtime
-impl<T: Send + Sync + 'static> flight_entity::Entity for Tween<T> {
+impl<T: ?Sized + Send + Sync + 'static> flight_entity::Entity for Tween<T> {
     fn entity_runtime(&self) -> &EntityRuntimeSlot {
         return &self.runtime;
     }

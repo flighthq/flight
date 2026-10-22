@@ -7,7 +7,7 @@ use crate::types::{
 
 // flight-lint: allow(conform-params) D22 TweenProp<T> fn-pointer accessors replace TS NumericProps<T> property_map
 // flight-lint: allow(contract-vocabulary) D22 Tween<T> requires T: Send + Sync + 'static for Arc<RwLock<>> thread-safety
-pub fn create_tween_stagger<T: Send + Sync + 'static>(
+pub fn create_tween_stagger<T: ?Sized + Send + Sync + 'static>(
     manager: &TweenManager,
     targets: &[Ref<T>],
     duration: f32,

@@ -67,7 +67,7 @@ pub(crate) fn add_tween_to_manager(
 
 // flight-lint: allow(conform-params) D22 TweenProp<T> fn-pointer accessors replace TS NumericProps<T> property_map
 // flight-lint: allow(contract-vocabulary) D22 Tween<T> requires T: Send + Sync + 'static for Arc<RwLock<>> thread-safety
-pub fn make_tween<T: Send + Sync + 'static>(
+pub fn make_tween<T: ?Sized + Send + Sync + 'static>(
     target: &Ref<T>,
     duration: f32,
     props: &[TweenProp<T>],

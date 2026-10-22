@@ -4,7 +4,7 @@ use crate::internal::initialize_tween;
 use crate::types::{ErasedTweenHandle, Tween, TweenManager};
 
 // flight-lint: allow(contract-vocabulary) D22 Tween<T> requires T: Send + Sync + 'static for Arc<RwLock<>> thread-safety
-pub fn complete_tween<T: Send + Sync + 'static>(tween: &Tween<T>) {
+pub fn complete_tween<T: ?Sized + Send + Sync + 'static>(tween: &Tween<T>) {
     complete_tween_erased(&tween.to_erased());
 }
 

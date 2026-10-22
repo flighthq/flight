@@ -304,7 +304,7 @@ mod sugar_tests {
 }
 
 impl TweenContext {
-    pub fn create_tween_default<T: Send + Sync + 'static>(
+    pub fn create_tween_default<T: ?Sized + Send + Sync + 'static>(
         &self,
         target: &Ref<T>,
         duration: f32,
@@ -323,7 +323,7 @@ impl TweenContext {
     }
 }
 
-impl<T: Send + Sync + 'static> Tween<T> {
+impl<T: ?Sized + Send + Sync + 'static> Tween<T> {
     pub fn complete_tween(&self) {
         complete_tween(self);
     }
@@ -426,7 +426,7 @@ impl<T: Send + Sync + 'static> Tween<T> {
 }
 
 impl TweenManager {
-    pub fn create_color_tween<T: Send + Sync + 'static>(
+    pub fn create_color_tween<T: ?Sized + Send + Sync + 'static>(
         &self,
         target: &Ref<T>,
         get_color: fn(&mut T) -> &mut f32,
@@ -440,7 +440,7 @@ impl TweenManager {
         );
     }
 
-    pub fn create_stagger<T: Send + Sync + 'static>(
+    pub fn create_stagger<T: ?Sized + Send + Sync + 'static>(
         &self,
         targets: &[Ref<T>],
         duration: f32,
@@ -459,7 +459,7 @@ impl TweenManager {
         return create_tween_timer(self, duration, options);
     }
 
-    pub fn create_tween<T: Send + Sync + 'static>(
+    pub fn create_tween<T: ?Sized + Send + Sync + 'static>(
         &self,
         target: &Ref<T>,
         duration: f32,
@@ -477,11 +477,11 @@ impl TweenManager {
         return get_active_tween_count(self);
     }
 
-    pub fn apply<T: Send + Sync + 'static>(&self, target: &Ref<T>, props: &[TweenProp<T>]) {
+    pub fn apply<T: ?Sized + Send + Sync + 'static>(&self, target: &Ref<T>, props: &[TweenProp<T>]) {
         apply_tween(self, target, props);
     }
 
-    pub fn has_tweens_of<T: Send + Sync + 'static>(&self, target: &Ref<T>) -> bool {
+    pub fn has_tweens_of<T: ?Sized + Send + Sync + 'static>(&self, target: &Ref<T>) -> bool {
         return has_tweens_of(self, target);
     }
 
@@ -493,7 +493,7 @@ impl TweenManager {
         pause_all_tweens(self);
     }
 
-    pub fn pause_tweens<T: Send + Sync + 'static>(&self, target: &Ref<T>) {
+    pub fn pause_tweens<T: ?Sized + Send + Sync + 'static>(&self, target: &Ref<T>) {
         pause_tweens(self, target);
     }
 
@@ -505,7 +505,7 @@ impl TweenManager {
         resume_all_tweens(self);
     }
 
-    pub fn resume_tweens<T: Send + Sync + 'static>(&self, target: &Ref<T>) {
+    pub fn resume_tweens<T: ?Sized + Send + Sync + 'static>(&self, target: &Ref<T>) {
         resume_tweens(self, target);
     }
 
@@ -513,7 +513,7 @@ impl TweenManager {
         stop_all_tweens(self, options);
     }
 
-    pub fn stop_tweens<T: Send + Sync + 'static>(
+    pub fn stop_tweens<T: ?Sized + Send + Sync + 'static>(
         &self,
         target: &Ref<T>,
         props: Option<&[TweenProp<T>]>,
@@ -522,7 +522,7 @@ impl TweenManager {
         stop_tweens(self, target, props, options);
     }
 
-    pub fn tweens_of<T: Send + Sync + 'static>(&self, target: &Ref<T>) -> Vec<Tween<T>> {
+    pub fn tweens_of<T: ?Sized + Send + Sync + 'static>(&self, target: &Ref<T>) -> Vec<Tween<T>> {
         return get_tweens_of(self, target);
     }
 
