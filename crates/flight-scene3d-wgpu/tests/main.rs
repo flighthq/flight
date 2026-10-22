@@ -1,5 +1,11 @@
 mod support;
 
+#[path = "enable_wgpu_scene3d_forward_light_selection_guards_test.rs"]
+mod flight_scene3d_wgpu_enable_wgpu_scene3d_forward_light_selection_guards_test;
+#[path = "explain_wgpu_scene3d_forward_light_selection_test.rs"]
+mod flight_scene3d_wgpu_explain_wgpu_scene3d_forward_light_selection_test;
+#[path = "prepare_wgpu_scene3d_forward_lights_test.rs"]
+mod flight_scene3d_wgpu_prepare_wgpu_scene3d_forward_lights_test;
 #[path = "support_test.rs"]
 mod flight_scene3d_wgpu_support_test;
 #[path = "wgpu_mesh_fragment_tail_test.rs"]

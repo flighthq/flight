@@ -395,6 +395,65 @@ pub fn make_test_camera() -> flight_camera::Camera3D {
     return camera;
 }
 
+/// A perspective camera (aspect 1, fovY `fov_y`, near 0.1, far 100) looking from `eye` at `target`
+/// with +Y up (TS `createCamera3D` + `setCamera3DViewMatrix4FromLookAt`).
+pub fn make_test_look_at_camera(fov_y: f32, eye: [f32; 3], target: [f32; 3]) -> flight_camera::Camera3D {
+    let mut camera = make_test_camera();
+    if let flight_camera::Projection::Perspective(projection) = &camera.projection {
+        projection.write().unwrap().fov_y = fov_y;
+    }
+    flight_camera::set_camera_3d_view_matrix4_from_look_at(
+        &mut camera,
+        &flight_geometry::create_vector3(eye[0], eye[1], eye[2]),
+        &flight_geometry::create_vector3(target[0], target[1], target[2]),
+        &flight_geometry::create_vector3(0.0, 1.0, 0.0),
+    );
+    return camera;
+}
+
+/// A bare Node3D scene root (TS `createNode3D(Node3DKind)`).
+pub fn create_test_scene_root() -> flight_node::NodeRef {
+    return flight_scene3d::publish_node3d(flight_scene3d::create_node3d::<flight_scene3d::Node3DFields>(None));
+}
+
+/// A mesh over `geometry` with one material slot per entry (TS `createMesh(geometry, materials)`).
+pub fn create_test_mesh(
+    geometry: flight_meshgeometry::MeshGeometry,
+    materials: Vec<Option<flight_materials::Material3DRef>>,
+) -> Ref<flight_scene3d::Mesh> {
+    return flight_scene3d::create_mesh(
+        Arc::new(std::sync::RwLock::new(geometry)),
+        Arc::new(std::sync::RwLock::new(materials)),
+    );
+}
+
+/// Adds `child` under `scene` and returns the child's node handle.
+pub fn add_test_child<T: flight_node::Node + 'static>(
+    scene: &flight_node::NodeRef,
+    child: &Ref<T>,
+) -> flight_node::NodeRef {
+    let node: flight_node::NodeRef = child.clone();
+    flight_node::add_node_child(scene, &node);
+    return node;
+}
+
+/// An ambient (white, 0.2) plus directional (white, (0, -1, -1), 1) light set (TS `LIGHTS`).
+pub fn make_test_scene_lights() -> flight_lighting::Scene3DLights {
+    let mut lights = flight_lighting::create_scene_3d_lights();
+    let mut ambient = flight_lighting::create_ambient_light();
+    ambient.color = 0xffffffff;
+    ambient.intensity = 0.2;
+    lights.ambient = Some(Arc::new(std::sync::RwLock::new(ambient)));
+    let directional = flight_lighting::create_directional_light(Some(&flight_lighting::DirectionalLightOptions {
+        color: Some(0xffffffff),
+        direction: Some(flight_geometry::create_vector3(0.0, -1.0, -1.0)),
+        intensity: Some(1.0),
+        ..test_default()
+    }));
+    lights.directional = Some(Arc::new(std::sync::RwLock::new(directional)));
+    return lights;
+}
+
 /// A light block with one directional and one ambient light (TS `makeLights`).
 pub fn make_test_lights() -> flight_lighting::Scene3DLightBlock {
     let mut data = vec![0.0_f32; flight_lighting::SCENE_LIGHT_BLOCK_FLOATS];

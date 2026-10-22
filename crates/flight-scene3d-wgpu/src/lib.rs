@@ -2,6 +2,9 @@
 //! (D17): mesh-material renderers and their WGSL families, the shared mesh pipeline, environment
 //! maps and image-based lighting, directional shadows, GPU skinning and 3D particles.
 
+mod enable_wgpu_scene3d_forward_light_selection_guards;
+mod explain_wgpu_scene3d_forward_light_selection;
+mod prepare_wgpu_scene3d_forward_lights;
 mod render_wgpu_scene3d;
 mod types;
 mod wgpu_custom_material_abi;
