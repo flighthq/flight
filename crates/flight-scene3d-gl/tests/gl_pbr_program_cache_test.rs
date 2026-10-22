@@ -9,7 +9,8 @@ use flight_render_gl::{
 use flight_scene3d_gl::*;
 
 use crate::gl_test_helper::{
-    count_calls, make_gl_scene3d_state, set_program_link, set_shader_compile, shader_sources, test_default,
+    count_calls, make_gl_scene3d_state, set_program_link, set_shader_compile, shader_sources,
+    test_default,
 };
 
 fn make_key() -> GlPbrDefineKey {
@@ -66,7 +67,11 @@ fn panic_message(run: impl FnOnce()) -> String {
 }
 
 fn program_cache_keys(state: &GlRenderState) -> Vec<String> {
-    return get_gl_scene3d_runtime(state).program_cache.keys().cloned().collect();
+    return get_gl_scene3d_runtime(state)
+        .program_cache
+        .keys()
+        .cloned()
+        .collect();
 }
 
 mod compile_gl_pbr_program {
@@ -160,7 +165,11 @@ mod ensure_gl_pbr_program {
         register_gl_mesh_skinning(&state);
         get_gl_scene3d_runtime(&state).active_skinned_run = true;
         ensure_gl_pbr_program(&state, &make_key(), None);
-        assert!(shader_sources().iter().any(|source| source.contains("mat4 skinMatrix()")));
+        assert!(
+            shader_sources()
+                .iter()
+                .any(|source| source.contains("mat4 skinMatrix()"))
+        );
     }
 
     #[test]
@@ -179,11 +188,27 @@ mod ensure_gl_pbr_program {
     fn compiles_a_distinct_same_key_program_after_a_pbr_registration_is_replaced() {
         let mut state = make_gl_scene3d_state();
         let contribution = make_contribution("vendor");
-        register_gl_pbr_extension(&mut state, "VendorExtension".to_string(), &FIRST_REGISTRATION);
-        let first = ensure_gl_pbr_program(&state, &make_key(), Some(std::slice::from_ref(&contribution)));
+        register_gl_pbr_extension(
+            &mut state,
+            "VendorExtension".to_string(),
+            &FIRST_REGISTRATION,
+        );
+        let first = ensure_gl_pbr_program(
+            &state,
+            &make_key(),
+            Some(std::slice::from_ref(&contribution)),
+        );
 
-        register_gl_pbr_extension(&mut state, "VendorExtension".to_string(), &SECOND_REGISTRATION);
-        let second = ensure_gl_pbr_program(&state, &make_key(), Some(std::slice::from_ref(&contribution)));
+        register_gl_pbr_extension(
+            &mut state,
+            "VendorExtension".to_string(),
+            &SECOND_REGISTRATION,
+        );
+        let second = ensure_gl_pbr_program(
+            &state,
+            &make_key(),
+            Some(std::slice::from_ref(&contribution)),
+        );
 
         assert!(!Rc::ptr_eq(&second, &first));
         assert_eq!(get_gl_scene3d_runtime(&state).program_cache.len(), 2);

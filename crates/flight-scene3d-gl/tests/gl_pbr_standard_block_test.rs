@@ -1,12 +1,16 @@
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, allocate_entity};
-use flight_materials::pbr_materials::{create_standard_pbr_material, create_standard_pbr_material_properties};
+use flight_materials::pbr_materials::{
+    create_standard_pbr_material, create_standard_pbr_material_properties,
+};
 use flight_materials::{MaterialAlphaMode, StandardPbrMaterialPropertiesOptions};
 use flight_render::ExternalTexture;
 use flight_render_gl::{GlRenderState, GlTextureRealization, register_gl_texture_resolver};
 use flight_scene3d_gl::*;
-use flight_texture::{Texture, TextureColorSpace, TextureSourceRef, TextureVariant, create_texture_2d};
+use flight_texture::{
+    Texture, TextureColorSpace, TextureSourceRef, TextureVariant, create_texture_2d,
+};
 use glow::HasContext;
 
 use crate::gl_test_helper::{clear_calls, count_calls, make_gl_scene3d_state};
@@ -72,12 +76,13 @@ mod bind_gl_pbr_standard_block {
     #[test]
     fn uploads_the_metallic_roughness_scalars_and_emissive_for_a_material_block() {
         let mut state = make_gl_scene3d_state();
-        let standard = create_standard_pbr_material_properties(Some(&StandardPbrMaterialPropertiesOptions {
-            metallic: Some(0.5),
-            occlusion_strength: Some(0.3),
-            roughness: Some(0.6),
-            ..Default::default()
-        }));
+        let standard =
+            create_standard_pbr_material_properties(Some(&StandardPbrMaterialPropertiesOptions {
+                metallic: Some(0.5),
+                occlusion_strength: Some(0.3),
+                roughness: Some(0.6),
+                ..Default::default()
+            }));
         let program = make_program(&mut state);
         bind_gl_pbr_standard_block(&mut state, &program, Some(&standard));
         assert!(count_calls("uniform_4_f32") > 0);
@@ -107,7 +112,9 @@ mod build_gl_pbr_standard_define_key {
     fn propagates_the_alpha_mask_flag_from_the_surface_material() {
         let mut state = make_texture_ready_state();
         let surface = make_surface(MaterialAlphaMode::Mask);
-        assert!(build_gl_pbr_standard_define_key(&mut state, None, Some(&surface)).alpha_mask_enabled);
+        assert!(
+            build_gl_pbr_standard_define_key(&mut state, None, Some(&surface)).alpha_mask_enabled
+        );
     }
 
     #[test]
@@ -118,9 +125,18 @@ mod build_gl_pbr_standard_define_key {
         let mask = make_surface(MaterialAlphaMode::Mask);
         let blend = make_surface(MaterialAlphaMode::Blend);
         let opaque = make_surface(MaterialAlphaMode::Opaque);
-        assert!(build_gl_pbr_standard_define_key(&mut state, Some(&standard), Some(&mask)).has_alpha_map);
-        assert!(build_gl_pbr_standard_define_key(&mut state, Some(&standard), Some(&blend)).has_alpha_map);
-        assert!(!build_gl_pbr_standard_define_key(&mut state, Some(&standard), Some(&opaque)).has_alpha_map);
+        assert!(
+            build_gl_pbr_standard_define_key(&mut state, Some(&standard), Some(&mask))
+                .has_alpha_map
+        );
+        assert!(
+            build_gl_pbr_standard_define_key(&mut state, Some(&standard), Some(&blend))
+                .has_alpha_map
+        );
+        assert!(
+            !build_gl_pbr_standard_define_key(&mut state, Some(&standard), Some(&opaque))
+                .has_alpha_map
+        );
     }
 
     #[test]

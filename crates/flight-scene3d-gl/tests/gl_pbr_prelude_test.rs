@@ -1,7 +1,7 @@
 use flight_render::RenderProxy2D;
 use flight_render_gl::{
-    GlColorAdjustmentData, GlColorAdjustmentMaterialFeature, GlPbrExtensionShaderContribution, GlRenderState,
-    GlRenderStateRuntime, GlShapeMesh,
+    GlColorAdjustmentData, GlColorAdjustmentMaterialFeature, GlPbrExtensionShaderContribution,
+    GlRenderState, GlRenderStateRuntime, GlShapeMesh,
 };
 use flight_scene3d_gl::*;
 
@@ -23,13 +23,23 @@ fn standard_all() -> GlPbrDefineKey {
     };
 }
 
-fn no_draw_shape_meshes(_state: &mut GlRenderState, _proxy: &RenderProxy2D<GlRenderState>, _meshes: &[GlShapeMesh]) {}
+fn no_draw_shape_meshes(
+    _state: &mut GlRenderState,
+    _proxy: &RenderProxy2D<GlRenderState>,
+    _meshes: &[GlShapeMesh],
+) {
+}
 
 fn no_flush(_state: &mut GlRenderState, _count: usize) -> bool {
     return false;
 }
 
-fn no_record(_runtime: &mut GlRenderStateRuntime, _data: Option<&GlColorAdjustmentData>, _index: usize) {}
+fn no_record(
+    _runtime: &mut GlRenderStateRuntime,
+    _data: Option<&GlColorAdjustmentData>,
+    _index: usize,
+) {
+}
 
 static COLOR_FEATURE: GlColorAdjustmentMaterialFeature = GlColorAdjustmentMaterialFeature {
     fragment_shader_chunk: "vec4 applyFlightColorAdjustment(vec4 c, vec4 m, vec4 o) { return c * m + o; }",
@@ -66,7 +76,10 @@ mod build_gl_pbr_define_key {
             ..make_key()
         };
         assert_eq!(build_gl_pbr_define_key(&key), "-------u:--");
-        assert_ne!(build_gl_pbr_define_key(&key), build_gl_pbr_define_key(&make_key()));
+        assert_ne!(
+            build_gl_pbr_define_key(&key),
+            build_gl_pbr_define_key(&make_key())
+        );
     }
 
     #[test]
@@ -76,7 +89,10 @@ mod build_gl_pbr_define_key {
             ..make_key()
         };
         assert_eq!(build_gl_pbr_define_key(&key), "--------:k-");
-        assert_ne!(build_gl_pbr_define_key(&key), build_gl_pbr_define_key(&make_key()));
+        assert_ne!(
+            build_gl_pbr_define_key(&key),
+            build_gl_pbr_define_key(&make_key())
+        );
     }
 
     #[test]
@@ -91,7 +107,10 @@ mod build_gl_pbr_define_key {
 
     #[test]
     fn is_identical_for_equal_flag_sets() {
-        assert_eq!(build_gl_pbr_define_key(&standard_all()), build_gl_pbr_define_key(&standard_all()));
+        assert_eq!(
+            build_gl_pbr_define_key(&standard_all()),
+            build_gl_pbr_define_key(&standard_all())
+        );
     }
 }
 
@@ -183,7 +202,8 @@ mod get_gl_pbr_fragment_source_for_key {
         assert!(src.contains("#define HAS_NORMAL_MAP"));
         assert!(src.contains("out vec4 fragColor"));
         assert_eq!(
-            src.matches("float sampleDirectionalShadow(vec3 worldPos, vec3 geometricNormal)").count(),
+            src.matches("float sampleDirectionalShadow(vec3 worldPos, vec3 geometricNormal)")
+                .count(),
             1
         );
     }
@@ -215,7 +235,8 @@ mod get_gl_pbr_fragment_source_for_key {
         let src = get_gl_pbr_fragment_source_for_key(&make_key(), Some(&[contribution]), None);
 
         assert!(
-            src.find("vec3 flightExtensionSample()").unwrap() < src.find("vec3 sampleIblAmbient(").unwrap()
+            src.find("vec3 flightExtensionSample()").unwrap()
+                < src.find("vec3 sampleIblAmbient(").unwrap()
         );
     }
 }
@@ -253,7 +274,10 @@ mod get_gl_pbr_vertex_source_for_key {
         assert!(!rigid.contains("a_joints0"));
         assert!(!rigid.contains("mat4 skinMatrix()"));
 
-        let skinned = get_gl_pbr_vertex_source_for_key(&skinned_key(), Some(GL_SKIN_VERTEX_DECLARATIONS_GLSL));
+        let skinned = get_gl_pbr_vertex_source_for_key(
+            &skinned_key(),
+            Some(GL_SKIN_VERTEX_DECLARATIONS_GLSL),
+        );
         assert!(skinned.contains("#define HAS_SKIN"));
         assert!(!skinned.contains("#define MAX_JOINTS"));
         assert!(skinned.contains("sampler2D u_jointTexture"));
@@ -267,7 +291,10 @@ mod get_gl_pbr_vertex_source_for_key {
     // pinning that the guard is present in both skin functions.
     #[test]
     fn gives_both_skin_matrices_a_bind_pose_fallback_for_an_uninfluenced_vertex() {
-        let skinned = get_gl_pbr_vertex_source_for_key(&skinned_key(), Some(GL_SKIN_VERTEX_DECLARATIONS_GLSL));
+        let skinned = get_gl_pbr_vertex_source_for_key(
+            &skinned_key(),
+            Some(GL_SKIN_VERTEX_DECLARATIONS_GLSL),
+        );
 
         let skin_body = &skinned[skinned.find("mat4 skinMatrix()").unwrap()..];
         assert!(skin_body.contains("return mat4(1.0);"));
@@ -293,7 +320,9 @@ mod tangent_frame_under_a_model_transform {
         let vertex = get_gl_pbr_vertex_source();
         assert!(vertex.contains("mat3 modelRotation = mat3(u_model);"));
         assert!(vertex.contains("determinant(modelRotation) < 0.0 ? -1.0 : 1.0"));
-        assert!(vertex.contains("v_tangent = vec4(modelRotation * localTangent, tangentHandedness);"));
+        assert!(
+            vertex.contains("v_tangent = vec4(modelRotation * localTangent, tangentHandedness);")
+        );
         assert!(vertex.contains("v_normal = u_normalMatrix * localNormal;"));
         assert!(!vertex.contains("u_normalMatrix * localTangent"));
     }
