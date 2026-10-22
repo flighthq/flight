@@ -220,14 +220,32 @@ mod get_glyph_atlas_codepoints {
     use super::*;
 
     #[test]
-    fn snapshots_cached_codepoints_in_insertion_order_without_rasterizing() {
+    fn clears_and_fills_cached_codepoints_in_insertion_order_without_rasterizing() {
         let mock = mock_rasterizer(|_| (8, 8));
         let atlas = create_glyph_atlas(&atlas_options(mock.backend, 128, 128));
         get_glyph_atlas_entry(&atlas, 66);
         get_glyph_atlas_entry(&atlas, 65);
         get_glyph_atlas_entry(&atlas, 66);
-        assert_eq!(get_glyph_atlas_codepoints(&atlas), vec![66, 65]);
+        let mut out = vec![99];
+        get_glyph_atlas_codepoints(&mut out, &atlas);
+        assert_eq!(out, vec![66, 65]);
         assert_eq!(*mock.calls.lock().unwrap(), vec![66, 65]);
+    }
+
+    #[test]
+    fn reuses_caller_capacity_across_calls() {
+        let mock = mock_rasterizer(|_| (8, 8));
+        let atlas = create_glyph_atlas(&atlas_options(mock.backend, 128, 128));
+        get_glyph_atlas_entry(&atlas, 65);
+        let mut out = Vec::with_capacity(4);
+        let allocation = out.as_ptr();
+        get_glyph_atlas_codepoints(&mut out, &atlas);
+        assert_eq!(out, vec![65]);
+        assert_eq!(out.as_ptr(), allocation);
+        get_glyph_atlas_entry(&atlas, 66);
+        get_glyph_atlas_codepoints(&mut out, &atlas);
+        assert_eq!(out, vec![65, 66]);
+        assert_eq!(out.as_ptr(), allocation);
     }
 }
 

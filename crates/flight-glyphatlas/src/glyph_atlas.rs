@@ -77,12 +77,14 @@ pub fn get_glyph_atlas_bitmap(atlas: &Ref<GlyphAtlas>) -> Ref<Bitmap> {
     return runtime.read().unwrap().bitmap.clone();
 }
 
-/// Returns cached codepoints in insertion order without rasterizing misses or exposing the private
-/// atlas runtime.
-// flight-lint: allow(conform-extra) D5: Rust keeps the source runtime private, so product packages need this ordered snapshot seam
-pub fn get_glyph_atlas_codepoints(atlas: &Ref<GlyphAtlas>) -> Vec<u32> {
+/// Clears and fills caller-owned storage with cached codepoints in insertion order, without
+/// rasterizing misses or exposing the private atlas runtime.
+// flight-lint: allow(conform-extra) D5/D24: Rust exposes the private runtime through a caller-owned ordered snapshot
+pub fn get_glyph_atlas_codepoints(out: &mut Vec<u32>, atlas: &Ref<GlyphAtlas>) {
     let runtime = get_glyph_atlas_runtime(atlas);
-    return runtime.read().unwrap().entry_order.clone();
+    let runtime = runtime.read().unwrap();
+    out.clear();
+    out.extend_from_slice(&runtime.entry_order);
 }
 
 pub fn get_glyph_atlas_layout_version(atlas: &Ref<GlyphAtlas>) -> u32 {

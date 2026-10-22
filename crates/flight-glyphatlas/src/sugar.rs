@@ -220,7 +220,11 @@ mod sugar_tests {
     fn glyph_atlas_get_codepoints_matches_get_glyph_atlas_codepoints() {
         let atlas = create_glyph_atlas(&options(backend(Arc::new(Mutex::new(Vec::new())))));
         get_glyph_atlas_entry(&atlas, 65);
-        assert_eq!(atlas.get_codepoints(), get_glyph_atlas_codepoints(&atlas));
+        let mut method = Vec::new();
+        atlas.get_codepoints(&mut method);
+        let mut function = Vec::new();
+        get_glyph_atlas_codepoints(&mut function, &atlas);
+        assert_eq!(method, function);
     }
 
     #[test]
@@ -266,7 +270,7 @@ pub trait GlyphAtlasMethods {
     fn enable_guards(&self, log_state: &LogStateRef, clock: GlyphAtlasClock);
     fn explain_entry(&self, codepoint: u32) -> GlyphAtlasEntryExplanation;
     fn get_bitmap(&self) -> Ref<Bitmap>;
-    fn get_codepoints(&self) -> Vec<u32>;
+    fn get_codepoints(&self, out: &mut Vec<u32>);
     fn get_dirty_region(&self) -> Option<Rectangle>;
     fn get_entry(&self, codepoint: u32) -> Option<Ref<GlyphEntry>>;
     fn get_kerning(&self, left: u32, right: u32) -> f32;
@@ -299,8 +303,8 @@ impl GlyphAtlasMethods for Ref<GlyphAtlas> {
         return get_glyph_atlas_bitmap(self);
     }
 
-    fn get_codepoints(&self) -> Vec<u32> {
-        return get_glyph_atlas_codepoints(self);
+    fn get_codepoints(&self, out: &mut Vec<u32>) {
+        return get_glyph_atlas_codepoints(out, self);
     }
 
     fn get_dirty_region(&self) -> Option<Rectangle> {

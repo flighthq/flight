@@ -17,7 +17,9 @@ pub fn create_bitmap_font_from_glyph_atlas(
     atlas: &Ref<GlyphAtlas>,
 ) -> Ref<BitmapFont> {
     let mut glyphs = Vec::new();
-    for codepoint in get_glyph_atlas_codepoints(atlas) {
+    let mut codepoints = Vec::new();
+    get_glyph_atlas_codepoints(&mut codepoints, atlas);
+    for codepoint in codepoints {
         if let Some(entry) = get_glyph_atlas_entry(atlas, codepoint) {
             let entry = entry.read().unwrap();
             glyphs.push(BitmapFontGlyphData {
