@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use flight_host::HostImageSource;
 use flight_video::{
     VideoChannelState, VideoPlayOptions, create_video_resource, destroy_video_resource,
 };
