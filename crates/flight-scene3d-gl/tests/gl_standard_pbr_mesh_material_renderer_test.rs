@@ -79,7 +79,12 @@ mod gl_standard_pbr_mesh_material_renderer {
     fn bind_selects_a_program_sets_depth_cull_state_and_uploads_camera_light_material_uniforms() {
         let mut state = make_gl_scene3d_state();
         let material = create_standard_pbr_material();
-        (GL_STANDARD_PBR_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &make_lights(), &make_camera());
+        (GL_STANDARD_PBR_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &make_lights(),
+            &make_camera(),
+        );
 
         assert!(count_calls("use_program") > 0);
         assert!(has_call("enable", glow::DEPTH_TEST));
@@ -94,7 +99,12 @@ mod gl_standard_pbr_mesh_material_renderer {
         let mut state = make_gl_scene3d_state();
         let mut material = create_standard_pbr_material();
         material.double_sided = true;
-        (GL_STANDARD_PBR_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &make_lights(), &make_camera());
+        (GL_STANDARD_PBR_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &make_lights(),
+            &make_camera(),
+        );
         assert!(has_call("disable", glow::CULL_FACE));
     }
 
@@ -105,7 +115,12 @@ mod gl_standard_pbr_mesh_material_renderer {
         let geometry = create_box_mesh_geometry(None, None, None);
         {
             let material = proxy.material.read().unwrap();
-            (GL_STANDARD_PBR_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&*material), &make_lights(), &make_camera());
+            (GL_STANDARD_PBR_MESH_MATERIAL_RENDERER.bind)(
+                &mut state,
+                Some(&*material),
+                &make_lights(),
+                &make_camera(),
+            );
         }
         (GL_STANDARD_PBR_MESH_MATERIAL_RENDERER.draw)(&mut state, &proxy, &geometry);
 
@@ -118,7 +133,11 @@ mod gl_standard_pbr_mesh_material_renderer {
     #[test]
     fn draw_is_a_no_op_when_bind_has_not_selected_a_program() {
         let mut state = make_gl_scene3d_state();
-        (GL_STANDARD_PBR_MESH_MATERIAL_RENDERER.draw)(&mut state, &make_proxy(), &create_box_mesh_geometry(None, None, None));
+        (GL_STANDARD_PBR_MESH_MATERIAL_RENDERER.draw)(
+            &mut state,
+            &make_proxy(),
+            &create_box_mesh_geometry(None, None, None),
+        );
         assert_eq!(count_calls("draw_elements"), 0);
     }
 
@@ -129,7 +148,12 @@ mod gl_standard_pbr_mesh_material_renderer {
         material.metallic = 0.25;
         material.occlusion_strength = 0.7;
         material.roughness = 0.4;
-        (GL_STANDARD_PBR_MESH_MATERIAL_RENDERER.bind)(&mut state, Some(&material), &make_lights(), &make_camera());
+        (GL_STANDARD_PBR_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &make_lights(),
+            &make_camera(),
+        );
         // The standard block uploads metallic + roughness + normalScale + emissiveStrength +
         // occlusionStrength as uniform1f, so at least five scalar uploads land.
         assert!(count_calls("uniform_1_f32") >= 5);

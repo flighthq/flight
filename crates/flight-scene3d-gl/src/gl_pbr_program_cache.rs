@@ -28,13 +28,17 @@ pub fn compile_gl_pbr_program(
     skin_declarations_glsl: Option<&str>,
 ) -> GlPbrProgram {
     let vertex_source = get_gl_pbr_vertex_source_for_key(key, skin_declarations_glsl);
-    let fragment_source = get_gl_pbr_fragment_source_for_key(key, contributions, color_adjustment_feature);
+    let fragment_source =
+        get_gl_pbr_fragment_source_for_key(key, contributions, color_adjustment_feature);
     let program = compile_gl_program(gl, &vertex_source, &fragment_source);
     let mut lit = resolve_gl_lit_locations(gl, program);
     // SAFETY: lookups run on the owning GL thread.
     unsafe {
-        lit.mesh.loc_joint_normal_texture = Cell::new(Some(gl.get_uniform_location(program, "u_jointNormalTexture")));
-        lit.mesh.loc_joint_texture = Cell::new(Some(gl.get_uniform_location(program, "u_jointTexture")));
+        lit.mesh.loc_joint_normal_texture = Cell::new(Some(
+            gl.get_uniform_location(program, "u_jointNormalTexture"),
+        ));
+        lit.mesh.loc_joint_texture =
+            Cell::new(Some(gl.get_uniform_location(program, "u_jointTexture")));
         lit.mesh.loc_model = gl.get_uniform_location(program, "u_model");
         lit.mesh.loc_normal_matrix = gl.get_uniform_location(program, "u_normalMatrix");
         lit.mesh.loc_view_projection = gl.get_uniform_location(program, "u_viewProjection");
@@ -94,7 +98,10 @@ pub fn ensure_gl_pbr_program(
     let registry_revision = state.gl_runtime.borrow().pbr_extension_revision;
     return ensure_gl_scene3d_program(
         state,
-        &format!("pbr:{}:{registry_revision}:{extension_key}", build_gl_pbr_define_key(&full_key)),
+        &format!(
+            "pbr:{}:{registry_revision}:{extension_key}",
+            build_gl_pbr_define_key(&full_key)
+        ),
         |gl| {
             return compile_gl_pbr_program(
                 gl,

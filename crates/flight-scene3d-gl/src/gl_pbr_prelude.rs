@@ -26,7 +26,9 @@ use flight_lighting::MAX_FORWARD_LIGHTS;
 use flight_render_gl::{GlColorAdjustmentMaterialFeature, GlPbrExtensionShaderContribution};
 
 use crate::gl_lit_program::gl_directional_shadow_glsl;
-use crate::gl_mesh_fragment_tail::{gl_mesh_fragment_tail_glsl, gl_mesh_fragment_tail_uniforms_glsl};
+use crate::gl_mesh_fragment_tail::{
+    gl_mesh_fragment_tail_glsl, gl_mesh_fragment_tail_uniforms_glsl,
+};
 use crate::gl_mesh_program::{GL_INSTANCE_VERTEX_DECLARATIONS_GLSL, gl_uv_transform_vertex_glsl};
 use crate::types::GlPbrDefineKey;
 
@@ -103,15 +105,38 @@ pub fn build_gl_pbr_define_source(key: &GlPbrDefineKey) -> String {
 }
 
 // Splices every contribution's GLSL into the fragment body's extension markers, in descriptor order.
-fn compose_gl_pbr_extension_source(body: &str, contributions: &[GlPbrExtensionShaderContribution]) -> String {
+fn compose_gl_pbr_extension_source(
+    body: &str,
+    contributions: &[GlPbrExtensionShaderContribution],
+) -> String {
     let join = |select: fn(&GlPbrExtensionShaderContribution) -> &str| -> String {
-        return contributions.iter().map(select).collect::<Vec<&str>>().join("\n");
+        return contributions
+            .iter()
+            .map(select)
+            .collect::<Vec<&str>>()
+            .join("\n");
     };
     return body
-        .replacen(PBR_EXTENSION_DECLARATIONS, &join(|value| &value.fragment_declarations), 1)
-        .replacen(PBR_EXTENSION_FUNCTIONS, &join(|value| &value.fragment_functions), 1)
-        .replacen(PBR_EXTENSION_SURFACE, &join(|value| &value.apply_surface), 1)
-        .replacen(PBR_EXTENSION_PUNCTUAL, &join(|value| &value.contribute_punctual), 1)
+        .replacen(
+            PBR_EXTENSION_DECLARATIONS,
+            &join(|value| &value.fragment_declarations),
+            1,
+        )
+        .replacen(
+            PBR_EXTENSION_FUNCTIONS,
+            &join(|value| &value.fragment_functions),
+            1,
+        )
+        .replacen(
+            PBR_EXTENSION_SURFACE,
+            &join(|value| &value.apply_surface),
+            1,
+        )
+        .replacen(
+            PBR_EXTENSION_PUNCTUAL,
+            &join(|value| &value.contribute_punctual),
+            1,
+        )
         .replacen(PBR_EXTENSION_IBL, &join(|value| &value.contribute_ibl), 1)
         .replacen(PBR_EXTENSION_FINALIZE, &join(|value| &value.finalize), 1);
 }
@@ -140,7 +165,11 @@ pub fn get_gl_pbr_fragment_source_for_key(
         } else {
             feature.fragment_shader_chunk
         };
-        body = body.replacen("precision highp float;", &format!("precision highp float;\n{chunk}"), 1);
+        body = body.replacen(
+            "precision highp float;",
+            &format!("precision highp float;\n{chunk}"),
+            1,
+        );
     }
     let extensions = if contributions.is_empty() {
         ""
@@ -160,7 +189,10 @@ pub fn get_gl_pbr_vertex_source() -> &'static str {
 // The full vertex source for a define key (define block + optional skin declarations + body), ready to
 // hand to the GL compiler. The skin GLSL is vertex-only (its `in` attributes are illegal in a fragment
 // shader), so it is spliced here rather than into the shared define block.
-pub fn get_gl_pbr_vertex_source_for_key(key: &GlPbrDefineKey, skin_declarations_glsl: Option<&str>) -> String {
+pub fn get_gl_pbr_vertex_source_for_key(
+    key: &GlPbrDefineKey,
+    skin_declarations_glsl: Option<&str>,
+) -> String {
     let skin = if key.has_skin == Some(true) {
         skin_declarations_glsl.unwrap_or("")
     } else {
@@ -596,4 +628,3 @@ void main() {
 }
 
 const PBR_FRAGMENT_BODY: &str = pbr_fragment_body_glsl!();
-

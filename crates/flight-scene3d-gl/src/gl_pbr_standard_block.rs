@@ -55,18 +55,30 @@ pub fn bind_gl_pbr_standard_block(
     unpack_color_to_linear(&mut rgba, standard.base_color);
     // SAFETY: the program is bound on the owning GL thread.
     unsafe {
-        gl.uniform_4_f32(program.loc_base_color.as_ref(), rgba.r, rgba.g, rgba.b, rgba.a);
+        gl.uniform_4_f32(
+            program.loc_base_color.as_ref(),
+            rgba.r,
+            rgba.g,
+            rgba.b,
+            rgba.a,
+        );
         gl.uniform_1_f32(program.loc_metallic.as_ref(), standard.metallic);
         gl.uniform_1_f32(program.loc_roughness.as_ref(), standard.roughness);
         gl.uniform_1_f32(program.loc_normal_scale.as_ref(), standard.normal_scale);
-        gl.uniform_1_f32(program.loc_occlusion_strength.as_ref(), standard.occlusion_strength);
+        gl.uniform_1_f32(
+            program.loc_occlusion_strength.as_ref(),
+            standard.occlusion_strength,
+        );
     }
 
     unpack_color_to_linear(&mut rgba, standard.emissive);
     // SAFETY: the program is bound on the owning GL thread.
     unsafe {
         gl.uniform_3_f32(program.loc_emissive.as_ref(), rgba.r, rgba.g, rgba.b);
-        gl.uniform_1_f32(program.loc_emissive_strength.as_ref(), standard.emissive_strength);
+        gl.uniform_1_f32(
+            program.loc_emissive_strength.as_ref(),
+            standard.emissive_strength,
+        );
     }
 
     bind_gl_pbr_standard_texture(
@@ -75,7 +87,12 @@ pub fn bind_gl_pbr_standard_block(
         program.loc_base_color_map,
         GL_PBR_BASE_COLOR_TEXTURE_UNIT,
     );
-    bind_gl_pbr_standard_texture(state, standard.normal_map.as_ref(), program.loc_normal_map, GL_PBR_NORMAL_TEXTURE_UNIT);
+    bind_gl_pbr_standard_texture(
+        state,
+        standard.normal_map.as_ref(),
+        program.loc_normal_map,
+        GL_PBR_NORMAL_TEXTURE_UNIT,
+    );
     bind_gl_pbr_standard_texture(
         state,
         standard.metallic_roughness_map.as_ref(),
@@ -94,7 +111,12 @@ pub fn bind_gl_pbr_standard_block(
         program.loc_emissive_map,
         GL_PBR_EMISSIVE_TEXTURE_UNIT,
     );
-    bind_gl_pbr_standard_texture(state, standard.alpha_map.as_ref(), program.loc_alpha_map, GL_PBR_ALPHA_TEXTURE_UNIT);
+    bind_gl_pbr_standard_texture(
+        state,
+        standard.alpha_map.as_ref(),
+        program.loc_alpha_map,
+        GL_PBR_ALPHA_TEXTURE_UNIT,
+    );
     // The base-color map's uv transform drives the shared v_uv0 that every standard map samples.
     match standard.base_color_map.as_ref() {
         Some(texture) => bind_gl_uv_transform(&gl, program, Some(&*texture.read().unwrap())),
@@ -137,21 +159,32 @@ pub fn build_gl_pbr_standard_define_key(
     surface: Option<&dyn Material3D>,
 ) -> GlPbrDefineKey {
     let base_color_map = standard.and_then(|standard| standard.base_color_map.as_ref());
-    let alpha_mode = surface.map_or(MaterialAlphaMode::Opaque, |surface| surface.material3d_fields().alpha_mode);
+    let alpha_mode = surface.map_or(MaterialAlphaMode::Opaque, |surface| {
+        surface.material3d_fields().alpha_mode
+    });
     let has_base_color_map = is_gl_texture_ready(state, base_color_map);
     return GlPbrDefineKey {
         alpha_mask_enabled: alpha_mode == MaterialAlphaMode::Mask,
         // An opaque material ignores coverage (Material3D contract), so it must not sample the alpha
         // map; only Mask/Blend do. Same is_gl_texture_ready predicate as the bind path.
         has_alpha_map: alpha_mode != MaterialAlphaMode::Opaque
-            && is_gl_texture_ready(state, standard.and_then(|standard| standard.alpha_map.as_ref())),
+            && is_gl_texture_ready(
+                state,
+                standard.and_then(|standard| standard.alpha_map.as_ref()),
+            ),
         has_base_color_map,
-        has_emissive_map: is_gl_texture_ready(state, standard.and_then(|standard| standard.emissive_map.as_ref())),
+        has_emissive_map: is_gl_texture_ready(
+            state,
+            standard.and_then(|standard| standard.emissive_map.as_ref()),
+        ),
         has_metallic_roughness_map: is_gl_texture_ready(
             state,
             standard.and_then(|standard| standard.metallic_roughness_map.as_ref()),
         ),
-        has_normal_map: is_gl_texture_ready(state, standard.and_then(|standard| standard.normal_map.as_ref())),
+        has_normal_map: is_gl_texture_ready(
+            state,
+            standard.and_then(|standard| standard.normal_map.as_ref()),
+        ),
         has_occlusion_map: is_gl_texture_ready(
             state,
             standard.and_then(|standard| standard.occlusion_map.as_ref()),
@@ -159,7 +192,8 @@ pub fn build_gl_pbr_standard_define_key(
         // Gated on the same readiness test as has_base_color_map so the transforming variant compiles
         // only when the base map is actually bound and carries a non-identity transform.
         has_uv_transform: base_color_map.is_some_and(|base_color_map| {
-            return has_base_color_map && has_texture_uv_transform(&*base_color_map.read().unwrap());
+            return has_base_color_map
+                && has_texture_uv_transform(&*base_color_map.read().unwrap());
         }),
         ..GlPbrDefineKey::default()
     };
@@ -169,5 +203,7 @@ pub fn build_gl_pbr_standard_define_key(
 // The single predicate the define-key builder and the bind path share, so "map present" means the
 // same thing in both places.
 pub fn is_gl_texture_ready(state: &mut GlRenderState, texture: Option<&Ref<Texture>>) -> bool {
-    return texture.is_some_and(|texture| resolve_gl_texture(state, &*texture.read().unwrap(), None, None).is_some());
+    return texture.is_some_and(|texture| {
+        resolve_gl_texture(state, &*texture.read().unwrap(), None, None).is_some()
+    });
 }

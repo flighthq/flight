@@ -10,7 +10,8 @@ use glow::HasContext;
 
 use crate::gl_lit_program::bind_gl_mesh_light_block;
 use crate::gl_mesh_program::{
-    begin_gl_mesh_draw, draw_gl_mesh_subset, set_gl_mesh_camera_position, set_gl_mesh_view_projection,
+    begin_gl_mesh_draw, draw_gl_mesh_subset, set_gl_mesh_camera_position,
+    set_gl_mesh_view_projection,
 };
 use crate::gl_pbr_program_cache::ensure_gl_pbr_program;
 use crate::gl_pbr_standard_block::{bind_gl_pbr_standard_block, build_gl_pbr_standard_define_key};
@@ -26,10 +27,11 @@ use crate::types::GlMeshProgramRef;
 // geometry.version), sets the per-draw model + normal matrices from the proxy, and issues the indexed
 // draw over the proxy's subset with depth-test LESS + depth-write on and back-face culling unless the
 // material is double-sided. See register_gl_standard_pbr_material to install it.
-pub static GL_STANDARD_PBR_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer = GlMeshMaterialRenderer {
-    bind: bind_gl_standard_pbr_mesh_material,
-    draw: draw_gl_standard_pbr_mesh_material,
-};
+pub static GL_STANDARD_PBR_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer =
+    GlMeshMaterialRenderer {
+        bind: bind_gl_standard_pbr_mesh_material,
+        draw: draw_gl_standard_pbr_mesh_material,
+    };
 
 fn bind_gl_standard_pbr_mesh_material(
     state: &mut GlRenderState,
@@ -45,7 +47,11 @@ fn bind_gl_standard_pbr_mesh_material(
     let key = build_gl_pbr_standard_define_key(state, standard.as_ref(), surface);
     let program = ensure_gl_pbr_program(state, &key, None);
     let mesh_program: GlMeshProgramRef = program.clone();
-    begin_gl_mesh_draw(state, &mesh_program, pbr.is_some_and(|pbr| pbr.material3d_fields().double_sided));
+    begin_gl_mesh_draw(
+        state,
+        &mesh_program,
+        pbr.is_some_and(|pbr| pbr.material3d_fields().double_sided),
+    );
 
     set_gl_mesh_view_projection(state, program.loc_view_projection, camera);
     set_gl_mesh_camera_position(&state.gl, program.loc_camera_position, camera);
@@ -53,7 +59,11 @@ fn bind_gl_standard_pbr_mesh_material(
     bind_gl_pbr_standard_block(state, &program, standard.as_ref());
     let alpha_cutoff = pbr.map_or(0.5, |pbr| pbr.material3d_fields().alpha_cutoff);
     // SAFETY: the program is bound on the owning GL thread.
-    unsafe { state.gl.uniform_1_f32(program.loc_alpha_cutoff.as_ref(), alpha_cutoff) };
+    unsafe {
+        state
+            .gl
+            .uniform_1_f32(program.loc_alpha_cutoff.as_ref(), alpha_cutoff)
+    };
 }
 
 fn draw_gl_standard_pbr_mesh_material(
@@ -68,7 +78,9 @@ fn draw_gl_standard_pbr_mesh_material(
 }
 
 // The StandardPbrMaterialProperties view of a StandardPbrMaterial (its standard-block fields).
-fn get_standard_pbr_material_properties(material: &StandardPbrMaterial) -> StandardPbrMaterialProperties {
+fn get_standard_pbr_material_properties(
+    material: &StandardPbrMaterial,
+) -> StandardPbrMaterialProperties {
     return StandardPbrMaterialProperties {
         alpha_map: material.alpha_map.clone(),
         base_color: material.base_color,
