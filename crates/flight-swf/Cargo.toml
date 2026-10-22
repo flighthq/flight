@@ -3,6 +3,9 @@ name = "flight-swf"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Backend-neutral SWF parsing and Scene2D document import"
 autotests = false
 
@@ -31,18 +34,18 @@ flight-importdiagnostics = { workspace = true }
 flight-log = { workspace = true }
 flight-materials = { workspace = true }
 flight-math = { workspace = true }
-flight-movieclip = { path = "../flight-movieclip" }
-flight-node = { path = "../flight-node" }
+flight-movieclip = { workspace = true }
+flight-node = { workspace = true }
 flight-path = { workspace = true }
 flight-requirement = { workspace = true }
-flight-scene2d = { path = "../flight-scene2d" }
-flight-scene2d-resources = { path = "../flight-scene2d-resources" }
+flight-scene2d = { workspace = true }
+flight-scene2d-resources = { workspace = true }
 flight-shape = { workspace = true }
 flight-text = { workspace = true }
 flight-text-markup = { workspace = true }
 flight-textformat = { workspace = true }
 flight-texture = { workspace = true }
-flight-timeline = { path = "../flight-timeline" }
+flight-timeline = { workspace = true }
 indexmap = "2"
 
 [dev-dependencies]

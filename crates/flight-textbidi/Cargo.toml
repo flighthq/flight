@@ -3,6 +3,9 @@ name = "flight-textbidi"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Unicode Bidirectional Algorithm: bidi class resolution, level assignment, and visual reordering"
 autotests = false
 

@@ -3,6 +3,9 @@ name = "flight-selection"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Ordered node selection plus marquee, lasso, and pointer selection policies"
 autotests = false
 
@@ -16,7 +19,7 @@ path = "tests/main.rs"
 [dependencies]
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
-flight-node = { path = "../flight-node" }
+flight-node = { workspace = true }
 flight-path = { workspace = true }
 flight-signals = { workspace = true }
 

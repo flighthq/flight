@@ -3,6 +3,9 @@ name = "flight-physics3d-abi"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "The target-neutral Physics3D execution boundary: a little-endian command stream, packed readback buffers and an executable reference backend over flight-physics3d"
 autotests = false
 
@@ -16,7 +19,7 @@ path = "tests/main.rs"
 [dependencies]
 flight-collision = { workspace = true }
 flight-entity = { workspace = true }
-flight-physics3d = { path = "../flight-physics3d" }
+flight-physics3d = { workspace = true }
 flight-spatial = { workspace = true }
 
 [lints]

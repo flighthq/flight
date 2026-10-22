@@ -3,6 +3,9 @@ name = "flight-sensors"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Device sensor event seam with reusable readings, conversion helpers and explicit host subscriptions"
 autotests = false
 

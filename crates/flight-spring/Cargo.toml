@@ -3,6 +3,9 @@ name = "flight-spring"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Spring physics simulation: 1D, 2D, and 3D springs with configurable frequency and damping"
 autotests = false
 

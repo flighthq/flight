@@ -3,6 +3,9 @@ name = "flight-stream"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "D20 shared-future and byte-stream vocabulary: cloneable stored promises and AsyncRead/AsyncWrite-backed ReadableStream/WritableStream"
 autotests = false
 

@@ -3,6 +3,9 @@ name = "flight-requirement-catalog"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Caller-owned requirement catalog data and deterministic built-in ownership rows"
 autotests = false
 

@@ -3,6 +3,9 @@ name = "flight-log"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Structured logging: log sinks, memory logs, log-once dedup, and log level filtering"
 autotests = false
 

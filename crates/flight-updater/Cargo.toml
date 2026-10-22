@@ -3,6 +3,9 @@ name = "flight-updater"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Updater capability seam: app update checks, installs and updater destruction routed through a provider-pinned host command"
 autotests = false
 

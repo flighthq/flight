@@ -3,6 +3,9 @@ name = "flight-notification"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Notification delivery, scheduling, permission, subscription lifecycle and entity identity over host capabilities"
 autotests = false
 

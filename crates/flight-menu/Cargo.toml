@@ -3,6 +3,9 @@ name = "flight-menu"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Menu capability seam: application menu installation, context-menu popups, highlight/select event entities and default menu templates routed through explicit host providers"
 autotests = false
 
@@ -15,7 +18,7 @@ path = "tests/main.rs"
 
 [dependencies]
 flight-entity = { workspace = true }
-flight-host = { path = "../flight-host" }
+flight-host = { workspace = true }
 flight-signals = { workspace = true }
 
 [lints]

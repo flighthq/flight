@@ -3,6 +3,9 @@ name = "flight-easing"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Easing functions: back, bounce, circular, cubic, elastic, exponential, sine, and more"
 autotests = false
 

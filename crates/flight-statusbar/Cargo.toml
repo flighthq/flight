@@ -3,6 +3,9 @@ name = "flight-statusbar"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Mobile status bar: snapshot, change signal, commands and a per-provider style stack over host capabilities"
 autotests = false
 

@@ -3,6 +3,9 @@ name = "flight-textshaper"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Text-shaping seam: measure and shape text into advances and glyph runs over an explicit host shaper"
 autotests = false
 

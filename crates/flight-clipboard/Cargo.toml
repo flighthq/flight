@@ -3,6 +3,9 @@ name = "flight-clipboard"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Clipboard capability seam: text, HTML, RTF, image, bookmark and generic format reads/writes plus change watches routed through explicit host capabilities"
 autotests = false
 

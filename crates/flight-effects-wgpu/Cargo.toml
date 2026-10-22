@@ -3,6 +3,9 @@ name = "flight-effects-wgpu"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "WebGPU shader recipes for render effects over native wgpu (substrate-agnostic post-process pipeline)"
 autotests = false
 
@@ -22,7 +25,7 @@ flight-entity = { workspace = true }
 flight-log = { workspace = true }
 flight-registry = { workspace = true }
 flight-render = { workspace = true }
-flight-render-wgpu = { path = "../flight-render-wgpu" }
+flight-render-wgpu = { workspace = true }
 flight-texture = { workspace = true }
 wgpu = { version = "30.0.1", default-features = false, features = ["std", "wgsl"] }
 

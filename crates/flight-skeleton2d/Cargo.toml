@@ -3,6 +3,9 @@ name = "flight-skeleton2d"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "2D skeletal rig: bones, slots, attachments, skinning, constraints, guards and explanations"
 autotests = false
 
@@ -19,7 +22,7 @@ flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
 flight-log = { workspace = true }
 flight-math = { workspace = true }
-flight-node = { path = "../flight-node" }
+flight-node = { workspace = true }
 flight-registry = { workspace = true }
 flight-path = { workspace = true }
 

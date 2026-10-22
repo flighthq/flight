@@ -3,6 +3,9 @@ name = "flight-regexp"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "ECMAScript regular expressions with shared lastIndex state and UTF-16 match indices"
 autotests = false
 

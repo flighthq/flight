@@ -3,6 +3,9 @@ name = "flight-debug"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Debug umbrella: subsystem registry, debug sessions over caller-owned log state, and timing spans"
 autotests = false
 

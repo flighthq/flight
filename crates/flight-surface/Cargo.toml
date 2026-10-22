@@ -3,6 +3,9 @@ name = "flight-surface"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Drawable surface entity: opaque host handle on the private runtime, canvas context seam and display/resize capabilities"
 autotests = false
 
@@ -14,9 +17,9 @@ name = "tests"
 path = "tests/main.rs"
 
 [dependencies]
-flight-app = { path = "../flight-app" }
+flight-app = { workspace = true }
 flight-entity = { workspace = true }
-flight-host = { path = "../flight-host" }
+flight-host = { workspace = true }
 flight-signals = { workspace = true }
 
 [dev-dependencies]

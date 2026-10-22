@@ -3,6 +3,9 @@ name = "flight-interaction"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Hit testing, pointer/keyboard dispatch, focus management, and interactive state binding"
 autotests = false
 
@@ -14,30 +17,30 @@ name = "tests"
 path = "tests/main.rs"
 
 [dependencies]
-flight-bitmap = { path = "../flight-bitmap" }
-flight-clip = { path = "../flight-clip" }
-flight-entity = { path = "../flight-entity" }
-flight-geometry = { path = "../flight-geometry" }
-flight-image = { path = "../flight-image" }
-flight-input = { path = "../flight-input" }
-flight-log = { path = "../flight-log" }
-flight-node = { path = "../flight-node" }
-flight-path = { path = "../flight-path" }
-flight-quadbatch = { path = "../flight-quadbatch" }
-flight-registry = { path = "../flight-registry" }
-flight-scene-document = { path = "../flight-scene-document" }
-flight-scene2d = { path = "../flight-scene2d" }
-flight-shape = { path = "../flight-shape" }
-flight-signals = { path = "../flight-signals" }
-flight-spatial = { path = "../flight-spatial" }
-flight-text = { path = "../flight-text" }
-flight-textlayout = { path = "../flight-textlayout" }
-flight-texture = { path = "../flight-texture" }
-flight-textureatlas = { path = "../flight-textureatlas" }
-flight-tilemap = { path = "../flight-tilemap" }
+flight-bitmap = { workspace = true }
+flight-clip = { workspace = true }
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-image = { workspace = true }
+flight-input = { workspace = true }
+flight-log = { workspace = true }
+flight-node = { workspace = true }
+flight-path = { workspace = true }
+flight-quadbatch = { workspace = true }
+flight-registry = { workspace = true }
+flight-scene-document = { workspace = true }
+flight-scene2d = { workspace = true }
+flight-shape = { workspace = true }
+flight-signals = { workspace = true }
+flight-spatial = { workspace = true }
+flight-text = { workspace = true }
+flight-textlayout = { workspace = true }
+flight-texture = { workspace = true }
+flight-textureatlas = { workspace = true }
+flight-tilemap = { workspace = true }
 
 [dev-dependencies]
-flight-host = { path = "../flight-host" }
+flight-host = { workspace = true }
 
 [lints]
 workspace = true

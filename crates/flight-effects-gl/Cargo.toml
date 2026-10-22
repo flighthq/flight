@@ -3,6 +3,9 @@ name = "flight-effects-gl"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Native glow-backed GL shader recipes for render effects and the MSAA-aware post-process pipeline"
 autotests = false
 
@@ -23,7 +26,7 @@ flight-log = { workspace = true }
 flight-registry = { workspace = true }
 flight-regexp = { workspace = true }
 flight-render = { workspace = true }
-flight-render-gl = { path = "../flight-render-gl" }
+flight-render-gl = { workspace = true }
 flight-texture = { workspace = true }
 glow = "0.18.0"
 

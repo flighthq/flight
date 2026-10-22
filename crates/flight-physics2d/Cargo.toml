@@ -3,6 +3,9 @@ name = "flight-physics2d"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Portable 2D rigid-body dynamics: a sequential-impulse solver over the spatial broadphase and collision narrow phase"
 autotests = false
 
@@ -18,8 +21,8 @@ flight-collision = { workspace = true }
 flight-entity = { workspace = true }
 flight-log = { workspace = true }
 flight-math = { workspace = true }
-flight-node = { path = "../flight-node" }
-flight-scene2d = { path = "../flight-scene2d" }
+flight-node = { workspace = true }
+flight-scene2d = { workspace = true }
 flight-spatial = { workspace = true }
 
 [lints]

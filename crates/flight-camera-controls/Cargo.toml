@@ -3,6 +3,9 @@ name = "flight-camera-controls"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Stateful camera controllers: orbit and fly intents with damping, 2D follow, sphere framing, and deterministic trauma-based shake"
 autotests = false
 
@@ -14,7 +17,7 @@ name = "tests"
 path = "tests/main.rs"
 
 [dependencies]
-flight-camera = { path = "../flight-camera" }
+flight-camera = { workspace = true }
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
 flight-math = { workspace = true }

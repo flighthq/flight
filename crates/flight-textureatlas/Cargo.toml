@@ -3,6 +3,9 @@ name = "flight-textureatlas"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Texture atlases: regions, grid slicing, UVs, and constructors over image resources"
 autotests = false
 

@@ -3,6 +3,9 @@ name = "flight-render-wgpu"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "WebGPU render backend over host-supplied native wgpu devices: device tiers, frames, passes, targets, texture realization and capture"
 autotests = false
 
@@ -15,7 +18,7 @@ path = "tests/main.rs"
 
 [dependencies]
 flight-bitmap = { workspace = true }
-flight-camera = { path = "../flight-camera" }
+flight-camera = { workspace = true }
 flight-effects = { workspace = true }
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
@@ -25,7 +28,7 @@ flight-lighting = { workspace = true }
 flight-log = { workspace = true }
 flight-materials = { workspace = true }
 flight-meshgeometry = { workspace = true }
-flight-node = { path = "../flight-node" }
+flight-node = { workspace = true }
 flight-platform = { workspace = true }
 flight-registry = { workspace = true }
 flight-render = { workspace = true }

@@ -3,6 +3,9 @@ name = "flight-socket"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Socket capability seam: framed connection lifecycle, opt-in event signals and raw TCP byte streams routed through explicit host providers"
 autotests = false
 
@@ -16,10 +19,10 @@ path = "tests/main.rs"
 [dependencies]
 flight-buffer = { workspace = true }
 flight-entity = { workspace = true }
-flight-host = { path = "../flight-host" }
+flight-host = { workspace = true }
 flight-log = { workspace = true }
 flight-signals = { workspace = true }
-flight-stream = { path = "../flight-stream" }
+flight-stream = { workspace = true }
 
 [dev-dependencies]
 futures = "0.3"

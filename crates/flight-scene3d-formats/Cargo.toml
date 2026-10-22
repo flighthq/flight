@@ -3,6 +3,10 @@ name = "flight-scene3d-formats"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+description = "3D scene format codecs: glTF and related importers/exporters"
 autotests = false
 
 [lib]
@@ -18,10 +22,10 @@ flight-color = { workspace = true }
 flight-compression = { workspace = true }
 flight-shading = { workspace = true }
 flight-animation = { workspace = true }
-flight-camera = { path = "../flight-camera" }
+flight-camera = { workspace = true }
 flight-lighting = { workspace = true }
 flight-math = { workspace = true }
-flight-node = { path = "../flight-node" }
+flight-node = { workspace = true }
 flight-geometry = { workspace = true }
 flight-importdiagnostics = { workspace = true }
 flight-scene3d = { workspace = true }

@@ -3,6 +3,9 @@ name = "flight-scene2d-resources"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Scene2D document import, slot resolution, and image/audio resource loading"
 autotests = false
 
@@ -20,11 +23,11 @@ flight-image = { workspace = true }
 flight-image-codec = { workspace = true }
 flight-importdiagnostics = { workspace = true }
 flight-log = { workspace = true }
-flight-node = { path = "../flight-node" }
+flight-node = { workspace = true }
 flight-path-boolean = { workspace = true }
 flight-resource = { workspace = true }
-flight-scene2d = { path = "../flight-scene2d" }
-flight-scene2d-formats = { path = "../flight-scene2d-formats" }
+flight-scene2d = { workspace = true }
+flight-scene2d-formats = { workspace = true }
 flight-signals = { workspace = true }
 flight-stream = { workspace = true }
 flight-texture = { workspace = true }

@@ -3,6 +3,9 @@ name = "flight-camera"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Mathematical 2D/3D cameras: projection descriptors, view matrices, culling, picking, reflection and shadow fit helpers"
 autotests = false
 

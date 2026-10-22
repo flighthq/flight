@@ -3,6 +3,9 @@ name = "flight-clock"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Hierarchical, pausable, scalable time primitive for time-driven systems"
 autotests = false
 

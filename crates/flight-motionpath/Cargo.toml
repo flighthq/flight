@@ -3,6 +3,9 @@ name = "flight-motionpath"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Arc-length motion-path markers: position, heading, progress, direction and clamp/loop/pingpong stepping over a Path"
 autotests = false
 

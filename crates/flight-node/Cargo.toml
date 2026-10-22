@@ -3,6 +3,9 @@ name = "flight-node"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Scene node graph: D16 node fields/feature groups, private runtime tiers, hierarchy, traversal, transforms and revision in"
 autotests = false
 

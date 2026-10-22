@@ -3,6 +3,9 @@ name = "flight-particleemitter"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Particle emitter 2D/3D: typed-array buffer management, burst emission, simulation stepping, and bounds computation"
 autotests = false
 
@@ -17,9 +20,9 @@ path = "tests/main.rs"
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
 flight-math = { workspace = true }
-flight-node = { path = "../flight-node" }
+flight-node = { workspace = true }
 flight-particles = { workspace = true }
-flight-scene2d = { path = "../flight-scene2d" }
+flight-scene2d = { workspace = true }
 flight-scene3d = { workspace = true }
 flight-signals = { workspace = true }
 flight-textureatlas = { workspace = true }

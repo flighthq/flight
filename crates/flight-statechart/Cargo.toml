@@ -3,6 +3,9 @@ name = "flight-statechart"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Hierarchical state machine: Harel statecharts with guards, transitions, and signal integration"
 autotests = false
 

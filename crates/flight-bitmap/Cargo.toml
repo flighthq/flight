@@ -3,6 +3,9 @@ name = "flight-bitmap"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Software bitmap operations: pixel manipulation, filters, compositing, transforms, and image analysis"
 autotests = false
 
@@ -16,7 +19,7 @@ path = "tests/main.rs"
 [dependencies]
 flight-entity = { workspace = true }
 flight-host = { workspace = true }
-flight-materials = { path = "../flight-materials" }
+flight-materials = { workspace = true }
 flight-texture = { workspace = true }
 
 [lints]

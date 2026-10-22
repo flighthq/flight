@@ -3,6 +3,9 @@ name = "flight-lifecycle"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Application lifecycle: state, launch kind, memory pressure and save/restore signals over a host capability"
 autotests = false
 

@@ -3,6 +3,9 @@ name = "flight-video"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Video resources, URL loaders and video format detection over an explicit host video capability"
 autotests = false
 
@@ -14,14 +17,14 @@ name = "tests"
 path = "tests/main.rs"
 
 [dependencies]
-flight-bitmap = { path = "../flight-bitmap" }
-flight-buffer = { path = "../flight-buffer" }
+flight-bitmap = { workspace = true }
+flight-buffer = { workspace = true }
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
 flight-host = { workspace = true }
 flight-image = { workspace = true }
 flight-log = { workspace = true }
-flight-stream = { path = "../flight-stream" }
+flight-stream = { workspace = true }
 flight-texture = { workspace = true }
 
 [lints]

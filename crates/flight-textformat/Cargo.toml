@@ -3,6 +3,9 @@ name = "flight-textformat"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Text format records, font variation settings, and UTF-16 format ranges"
 autotests = false
 

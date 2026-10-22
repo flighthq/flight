@@ -3,6 +3,9 @@ name = "flight-gizmo"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Screen-space 2D transform gizmos, alignment helpers, and Node2D feature adapters"
 autotests = false
 
@@ -14,15 +17,15 @@ name = "tests"
 path = "tests/main.rs"
 
 [dependencies]
-flight-camera = { path = "../flight-camera" }
+flight-camera = { workspace = true }
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
-flight-interaction = { path = "../flight-interaction" }
+flight-interaction = { workspace = true }
 flight-math = { workspace = true }
-flight-node = { path = "../flight-node" }
-flight-scene2d = { path = "../flight-scene2d" }
+flight-node = { workspace = true }
+flight-scene2d = { workspace = true }
 flight-selection = { workspace = true }
-flight-shape = { path = "../flight-shape" }
+flight-shape = { workspace = true }
 flight-signals = { workspace = true }
 
 [lints]

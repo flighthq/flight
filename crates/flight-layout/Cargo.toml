@@ -3,6 +3,9 @@ name = "flight-layout"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Layout algorithms: anchor, flex, and grid layout resolution with tree-shaking support"
 autotests = false
 

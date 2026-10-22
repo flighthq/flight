@@ -3,6 +3,9 @@ name = "flight-scene3d-gl"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "GL 3D scene rendering: material renderers, shader programs, environment maps, shadow maps, and particle emitters for the glow backend"
 autotests = false
 
@@ -15,7 +18,7 @@ path = "tests/main.rs"
 
 [dependencies]
 flight-bitmap = { workspace = true }
-flight-camera = { path = "../flight-camera" }
+flight-camera = { workspace = true }
 flight-color = { workspace = true }
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
@@ -24,17 +27,17 @@ flight-lighting = { workspace = true }
 flight-log = { workspace = true }
 flight-materials = { workspace = true }
 flight-meshgeometry = { workspace = true }
-flight-node = { path = "../flight-node" }
-flight-particleemitter = { path = "../flight-particleemitter" }
+flight-node = { workspace = true }
+flight-particleemitter = { workspace = true }
 flight-registry = { workspace = true }
 flight-render = { workspace = true }
-flight-render-gl = { path = "../flight-render-gl" }
+flight-render-gl = { workspace = true }
 flight-requirement = { workspace = true }
-flight-scene2d-gl = { path = "../flight-scene2d-gl" }
-flight-scene3d = { path = "../flight-scene3d" }
+flight-scene2d-gl = { workspace = true }
+flight-scene3d = { workspace = true }
 flight-shading = { workspace = true }
 flight-signals = { workspace = true }
-flight-skeleton3d = { path = "../flight-skeleton3d" }
+flight-skeleton3d = { workspace = true }
 flight-texture = { workspace = true }
 flight-textureatlas = { workspace = true }
 flight-video = { workspace = true }

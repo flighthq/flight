@@ -3,6 +3,9 @@ name = "flight-command"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Reversible command history: D16 kind-tagged commands, kind-registry bindings, undo/redo stacks and transactions over the node graph"
 autotests = false
 
@@ -15,7 +18,7 @@ path = "tests/main.rs"
 
 [dependencies]
 flight-entity = { workspace = true }
-flight-node = { path = "../flight-node" }
+flight-node = { workspace = true }
 flight-registry = { workspace = true }
 flight-signals = { workspace = true }
 

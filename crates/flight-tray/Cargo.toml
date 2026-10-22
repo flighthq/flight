@@ -3,6 +3,9 @@ name = "flight-tray"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "System tray icons over explicit host capabilities: lifecycle, image/title/tooltip/menu, balloons and events"
 autotests = false
 
@@ -18,9 +21,9 @@ flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
 flight-host = { workspace = true }
 flight-log = { workspace = true }
-flight-menu = { path = "../flight-menu" }
+flight-menu = { workspace = true }
 flight-signals = { workspace = true }
-flight-stream = { path = "../flight-stream" }
+flight-stream = { workspace = true }
 
 [lints]
 workspace = true

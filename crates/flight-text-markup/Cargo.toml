@@ -3,6 +3,9 @@ name = "flight-text-markup"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "htmlText-subset markup: the open tag registry, standard dialect, named colors, class styles and opt-in parse guards"
 autotests = false
 

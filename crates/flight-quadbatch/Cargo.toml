@@ -3,6 +3,9 @@ name = "flight-quadbatch"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Atlas-based multi-quad scene node and instance-buffer operations"
 autotests = false
 
@@ -17,8 +20,8 @@ path = "tests/main.rs"
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
 flight-materials = { workspace = true }
-flight-node = { path = "../flight-node" }
-flight-scene2d = { path = "../flight-scene2d" }
+flight-node = { workspace = true }
+flight-scene2d = { workspace = true }
 flight-signals = { workspace = true }
 flight-textureatlas = { workspace = true }
 

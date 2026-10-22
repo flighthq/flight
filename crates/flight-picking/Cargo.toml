@@ -3,6 +3,9 @@ name = "flight-picking"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "3D picking: camera-ray scene selection (ray vs bounds + brute-force ray vs triangle)"
 autotests = false
 
@@ -11,12 +14,12 @@ name = "tests"
 path = "tests/main.rs"
 
 [dependencies]
-flight-camera = { path = "../flight-camera" }
+flight-camera = { workspace = true }
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
 flight-materials = { workspace = true }
 flight-meshgeometry = { workspace = true }
-flight-node = { path = "../flight-node" }
+flight-node = { workspace = true }
 flight-scene3d = { workspace = true }
 
 [lints]

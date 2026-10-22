@@ -3,6 +3,9 @@ name = "flight-geolocation"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Geolocation capability seam: position reads, watches and access prompts routed through a host provider"
 autotests = false
 

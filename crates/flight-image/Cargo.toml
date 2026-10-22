@@ -3,6 +3,9 @@ name = "flight-image"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Host image resources, encoded image references, and texture-source integration"
 autotests = false
 

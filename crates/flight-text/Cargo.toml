@@ -3,6 +3,9 @@ name = "flight-text"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Portable TextLabel, NativeText, and RichText display nodes"
 autotests = false
 
@@ -17,8 +20,8 @@ path = "tests/main.rs"
 flight-entity.workspace = true
 flight-geometry.workspace = true
 flight-log.workspace = true
-flight-node = { path = "../flight-node" }
-flight-scene2d = { path = "../flight-scene2d" }
+flight-node = { workspace = true }
+flight-scene2d = { workspace = true }
 flight-signals.workspace = true
 flight-textformat.workspace = true
 flight-textlayout.workspace = true

@@ -3,6 +3,9 @@ name = "flight-resource"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Resource reference lifecycle shared by audio and image: ResourceResolutionState"
 
 [lints]

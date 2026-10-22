@@ -3,6 +3,9 @@ name = "flight-audio"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Decoded audio resources, format routing, and caller-owned audio decoder dispatch"
 autotests = false
 

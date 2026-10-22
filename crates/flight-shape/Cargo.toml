@@ -3,6 +3,9 @@ name = "flight-shape"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Vector shape nodes: retained command streams, solid fill/stroke regions, bounds traversal, morph shapes and nine-slice command mapping"
 autotests = false
 
@@ -19,9 +22,9 @@ flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
 flight-log = { workspace = true }
 flight-math = { workspace = true }
-flight-node = { path = "../flight-node" }
+flight-node = { workspace = true }
 flight-path = { workspace = true }
-flight-scene2d = { path = "../flight-scene2d" }
+flight-scene2d = { workspace = true }
 flight-texture = { workspace = true }
 
 [lints]

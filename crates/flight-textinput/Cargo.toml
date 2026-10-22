@@ -3,6 +3,9 @@ name = "flight-textinput"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Portable RichText editing and selection management"
 autotests = false
 
@@ -17,7 +20,7 @@ path = "tests/main.rs"
 flight-entity.workspace = true
 flight-geometry.workspace = true
 flight-input.workspace = true
-flight-node = { path = "../flight-node" }
+flight-node = { workspace = true }
 flight-signals.workspace = true
 flight-text.workspace = true
 flight-textformat.workspace = true
@@ -25,7 +28,7 @@ flight-textlayout.workspace = true
 flight-textsegment.workspace = true
 
 [dev-dependencies]
-flight-scene2d = { path = "../flight-scene2d" }
+flight-scene2d = { workspace = true }
 
 [lints]
 workspace = true

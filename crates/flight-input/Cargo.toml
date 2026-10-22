@@ -3,6 +3,9 @@ name = "flight-input"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Input capability seam: normalized keyboard, pointer, wheel, text and gamepad events with held-state and frame-edge tracking routed through explicit host ingress"
 autotests = false
 
@@ -15,7 +18,7 @@ path = "tests/main.rs"
 
 [dependencies]
 flight-entity = { workspace = true }
-flight-host = { path = "../flight-host" }
+flight-host = { workspace = true }
 flight-log = { workspace = true }
 flight-signals = { workspace = true }
 

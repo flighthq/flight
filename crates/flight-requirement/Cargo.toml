@@ -3,6 +3,9 @@ name = "flight-requirement"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Canonical requirement collection, set comparison, and merging"
 autotests = false
 

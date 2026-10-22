@@ -3,6 +3,9 @@ name = "flight-capture"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Capture verification: tolerant fingerprint parity/regression checks and the canonical committed baseline record"
 autotests = false
 

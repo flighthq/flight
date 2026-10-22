@@ -1,18 +1,23 @@
 [package]
 name = "flight-tilemap-formats"
-version = "0.1.0"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+description = "Tilemap format codecs: TMX/Tiled and related importers"
 autotests = false
 
 [dependencies]
-flight-entity = { path = "../flight-entity" }
-flight-geometry = { path = "../flight-geometry" }
-flight-importdiagnostics = { path = "../flight-importdiagnostics" }
-flight-log = { path = "../flight-log" }
-flight-registry = { path = "../flight-registry" }
-flight-tilemap = { path = "../flight-tilemap" }
-flight-textureatlas = { path = "../flight-textureatlas" }
-flight-xml = { path = "../flight-xml" }
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-importdiagnostics = { workspace = true }
+flight-log = { workspace = true }
+flight-registry = { workspace = true }
+flight-tilemap = { workspace = true }
+flight-textureatlas = { workspace = true }
+flight-xml = { workspace = true }
 serde_json = { version = "1", default-features = false, features = ["std"] }
 
 [lib]

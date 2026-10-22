@@ -3,6 +3,9 @@ name = "flight-scene3d"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Portable 3D scene documents and open node families"
 autotests = false
 
@@ -13,7 +16,7 @@ path = "tests/main.rs"
 [dependencies]
 flight-adjustments = { workspace = true }
 flight-animation = { workspace = true }
-flight-camera = { path = "../flight-camera" }
+flight-camera = { workspace = true }
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
 flight-image = { workspace = true }
@@ -21,13 +24,13 @@ flight-lighting = { workspace = true }
 flight-log = { workspace = true }
 flight-materials = { workspace = true }
 flight-meshgeometry = { workspace = true }
-flight-node = { path = "../flight-node" }
+flight-node = { workspace = true }
 flight-signals = { workspace = true }
 flight-texture = { workspace = true }
 
 [dev-dependencies]
 flight-shading = { workspace = true }
-flight-scene2d = { path = "../flight-scene2d" }
+flight-scene2d = { workspace = true }
 
 [lints]
 workspace = true

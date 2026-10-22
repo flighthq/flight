@@ -3,6 +3,9 @@ name = "flight-xml"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "XML parsing and querying: DOM-style element tree with attribute and child access"
 autotests = false
 

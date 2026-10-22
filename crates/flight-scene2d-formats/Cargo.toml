@@ -3,6 +3,9 @@ name = "flight-scene2d-formats"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "SVG, Lottie, and Rive document importers with caller-owned format registries"
 autotests = false
 
@@ -27,14 +30,14 @@ flight-importdiagnostics = { workspace = true }
 flight-layout = { workspace = true }
 flight-materials = { workspace = true }
 flight-math = { workspace = true }
-flight-node = { path = "../flight-node" }
+flight-node = { workspace = true }
 flight-path = { workspace = true }
 flight-path-boolean = { workspace = true }
 flight-path-formats = { workspace = true }
 flight-requirement = { workspace = true }
-flight-scene2d = { path = "../flight-scene2d" }
-flight-shape = { path = "../flight-shape" }
-flight-skeleton2d = { path = "../flight-skeleton2d" }
+flight-scene2d = { workspace = true }
+flight-shape = { workspace = true }
+flight-skeleton2d = { workspace = true }
 flight-text = { workspace = true }
 flight-textformat = { workspace = true }
 flight-textlayout = { workspace = true }

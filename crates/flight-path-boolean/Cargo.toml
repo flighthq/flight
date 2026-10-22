@@ -3,6 +3,9 @@ name = "flight-path-boolean"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Boolean path operations: union, intersect, difference, XOR, offset, simplify"
 autotests = false
 

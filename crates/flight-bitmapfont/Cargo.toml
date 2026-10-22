@@ -3,6 +3,9 @@ name = "flight-bitmapfont"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Static bitmap fonts, glyph-source adapters, diagnostics, and atlas snapshots"
 autotests = false
 

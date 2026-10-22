@@ -3,6 +3,9 @@ name = "flight-scene3d-wgpu"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "WebGPU 3D scene rendering: material renderers, shader pipelines, environment maps, shadow maps, and particle emitters for the wgpu backend"
 autotests = false
 
@@ -16,7 +19,7 @@ path = "tests/main.rs"
 [dependencies]
 bytemuck = "1.25.2"
 flight-bitmap = { workspace = true }
-flight-camera = { path = "../flight-camera" }
+flight-camera = { workspace = true }
 flight-color = { workspace = true }
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
@@ -25,14 +28,14 @@ flight-lighting = { workspace = true }
 flight-log = { workspace = true }
 flight-materials = { workspace = true }
 flight-meshgeometry = { workspace = true }
-flight-node = { path = "../flight-node" }
-flight-particleemitter = { path = "../flight-particleemitter" }
+flight-node = { workspace = true }
+flight-particleemitter = { workspace = true }
 flight-registry = { workspace = true }
 flight-render = { workspace = true }
-flight-render-wgpu = { path = "../flight-render-wgpu" }
+flight-render-wgpu = { workspace = true }
 flight-requirement = { workspace = true }
-flight-scene2d-wgpu = { path = "../flight-scene2d-wgpu" }
-flight-scene3d = { path = "../flight-scene3d" }
+flight-scene2d-wgpu = { workspace = true }
+flight-scene3d = { workspace = true }
 flight-shading = { workspace = true }
 flight-signals = { workspace = true }
 flight-texture = { workspace = true }

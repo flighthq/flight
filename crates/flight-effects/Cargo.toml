@@ -3,6 +3,9 @@ name = "flight-effects"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Backend-neutral render effect intents, recipes, padding, and diagnostics"
 autotests = false
 
@@ -18,7 +21,7 @@ flight-bitmap = { workspace = true }
 flight-color = { workspace = true }
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
-flight-node = { path = "../flight-node" }
+flight-node = { workspace = true }
 flight-registry = { workspace = true }
 flight-render = { workspace = true }
 flight-signals = { workspace = true }

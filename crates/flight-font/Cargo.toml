@@ -3,6 +3,9 @@ name = "flight-font"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Portable font resources, format helpers, and glyph rasterization seams"
 autotests = false
 

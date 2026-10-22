@@ -8,6 +8,8 @@ version = "0.6.0"
 edition = "2024"
 license = "MIT"
 authors = ["Joshua Granick and other Flight contributors"]
+repository = "https://github.com/flighthq/flight"
+homepage = "https://github.com/flighthq/flight"
 
 [workspace.lints.clippy]
 needless_return = "allow"
@@ -15,111 +17,157 @@ too_many_arguments = "allow"
 type_complexity = "allow"
 
 [workspace.dependencies]
-flight-abc = { path = "crates/flight-abc" }
-flight-assets = { path = "crates/flight-assets" }
-flight-audio = { path = "crates/flight-audio" }
-flight-adjustments = { path = "crates/flight-adjustments" }
-flight-binpack = { path = "crates/flight-binpack" }
-flight-collision = { path = "crates/flight-collision" }
-flight-clip = { path = "crates/flight-clip" }
-flight-color = { path = "crates/flight-color" }
-flight-easing = { path = "crates/flight-easing" }
-flight-encoding = { path = "crates/flight-encoding" }
-flight-effects = { path = "crates/flight-effects" }
-flight-geometry = { path = "crates/flight-geometry" }
-flight-haptics = { path = "crates/flight-haptics" }
-flight-importdiagnostics = { path = "crates/flight-importdiagnostics" }
-flight-image = { path = "crates/flight-image" }
-flight-image-codec = { path = "crates/flight-image-codec" }
-flight-input = { path = "crates/flight-input" }
-flight-surface = { path = "crates/flight-surface" }
-flight-ipc = { path = "crates/flight-ipc" }
-flight-keyboard = { path = "crates/flight-keyboard" }
-flight-lighting = { path = "crates/flight-lighting" }
-flight-loader = { path = "crates/flight-loader" }
-flight-math = { path = "crates/flight-math" }
-flight-media = { path = "crates/flight-media" }
-flight-mediasession = { path = "crates/flight-mediasession" }
-flight-net = { path = "crates/flight-net" }
-flight-meshgeometry = { path = "crates/flight-meshgeometry" }
-flight-midi = { path = "crates/flight-midi" }
-flight-path = { path = "crates/flight-path" }
-flight-path-boolean = { path = "crates/flight-path-boolean" }
-flight-path-formats = { path = "crates/flight-path-formats" }
-flight-shape = { path = "crates/flight-shape" }
-flight-shape-formats = { path = "crates/flight-shape-formats" }
-flight-spatial = { path = "crates/flight-spatial" }
-flight-spring = { path = "crates/flight-spring" }
-flight-spritesheet = { path = "crates/flight-spritesheet" }
-flight-spritesheet-formats = { path = "crates/flight-spritesheet-formats" }
-flight-skeleton3d = { path = "crates/flight-skeleton3d" }
-flight-skeleton2d-formats = { path = "crates/flight-skeleton2d-formats" }
-flight-velocity = { path = "crates/flight-velocity" }
-flight-video = { path = "crates/flight-video" }
-flight-bitmap = { path = "crates/flight-bitmap" }
-flight-bitmapfont = { path = "crates/flight-bitmapfont" }
-flight-bitmapfont-formats = { path = "crates/flight-bitmapfont-formats" }
-flight-bitmaptext = { path = "crates/flight-bitmaptext" }
-flight-buffer = { path = "crates/flight-buffer" }
-flight-layout = { path = "crates/flight-layout" }
-flight-lifecycle = { path = "crates/flight-lifecycle" }
-flight-particles = { path = "crates/flight-particles" }
-flight-share = { path = "crates/flight-share" }
-flight-platform = { path = "crates/flight-platform" }
-flight-useragent = { path = "crates/flight-useragent" }
-flight-signals = { path = "crates/flight-signals" }
-flight-sensors = { path = "crates/flight-sensors" }
-flight-textbidi = { path = "crates/flight-textbidi" }
-flight-textsegment = { path = "crates/flight-textsegment" }
-flight-tray = { path = "crates/flight-tray" }
-flight-textformat = { path = "crates/flight-textformat" }
-flight-text = { path = "crates/flight-text" }
-flight-text-markup = { path = "crates/flight-text-markup" }
-flight-textinput = { path = "crates/flight-textinput" }
-flight-textlayout = { path = "crates/flight-textlayout" }
-flight-textshaper = { path = "crates/flight-textshaper" }
-flight-texture-formats = { path = "crates/flight-texture-formats" }
-flight-textureatlas-formats = { path = "crates/flight-textureatlas-formats" }
-flight-texture = { path = "crates/flight-texture" }
-flight-textureatlas = { path = "crates/flight-textureatlas" }
-flight-animation = { path = "crates/flight-animation" }
-flight-compression = { path = "crates/flight-compression" }
-flight-device = { path = "crates/flight-device" }
-flight-entity = { path = "crates/flight-entity" }
-flight-clock = { path = "crates/flight-clock" }
-flight-connectivity = { path = "crates/flight-connectivity" }
-flight-flow = { path = "crates/flight-flow" }
-flight-font = { path = "crates/flight-font" }
-flight-font-formats = { path = "crates/flight-font-formats" }
-flight-glyphatlas = { path = "crates/flight-glyphatlas" }
-flight-geolocation = { path = "crates/flight-geolocation" }
-flight-host = { path = "crates/flight-host" }
-flight-log = { path = "crates/flight-log" }
-flight-materials = { path = "crates/flight-materials" }
-flight-regexp = { path = "crates/flight-regexp" }
-flight-registry = { path = "crates/flight-registry" }
-flight-render = { path = "crates/flight-render" }
-flight-screen = { path = "crates/flight-screen" }
-flight-scene2d-resources = { path = "crates/flight-scene2d-resources" }
-flight-scene3d = { path = "crates/flight-scene3d" }
-flight-selection = { path = "crates/flight-selection" }
-flight-shading = { path = "crates/flight-shading" }
-flight-statechart = { path = "crates/flight-statechart" }
-flight-statusbar = { path = "crates/flight-statusbar" }
-flight-stream = { path = "crates/flight-stream" }
-flight-swf = { path = "crates/flight-swf" }
-flight-tween = { path = "crates/flight-tween" }
-flight-xml = { path = "crates/flight-xml" }
-flight-resource = { path = "crates/flight-resource" }
-flight-requirement = { path = "crates/flight-requirement" }
-flight-requirement-catalog = { path = "crates/flight-requirement-catalog" }
-flight-requirement-codegen = { path = "crates/flight-requirement-codegen" }
-flight-notification = { path = "crates/flight-notification" }
-flight-power = { path = "crates/flight-power" }
-flight-permissions = { path = "crates/flight-permissions" }
-flight-preferences = { path = "crates/flight-preferences" }
-flight-protocol = { path = "crates/flight-protocol" }
-flight-quadbatch = { path = "crates/flight-quadbatch" }
-flight-shortcut = { path = "crates/flight-shortcut" }
-flight-tilemap = { path = "crates/flight-tilemap" }
-flight-tilemap-formats = { path = "crates/flight-tilemap-formats" }
+flight-abc = { path = "crates/flight-abc", version = "0.6.0" }
+flight-assets = { path = "crates/flight-assets", version = "0.6.0" }
+flight-audio = { path = "crates/flight-audio", version = "0.6.0" }
+flight-adjustments = { path = "crates/flight-adjustments", version = "0.6.0" }
+flight-binpack = { path = "crates/flight-binpack", version = "0.6.0" }
+flight-collision = { path = "crates/flight-collision", version = "0.6.0" }
+flight-clip = { path = "crates/flight-clip", version = "0.6.0" }
+flight-color = { path = "crates/flight-color", version = "0.6.0" }
+flight-easing = { path = "crates/flight-easing", version = "0.6.0" }
+flight-encoding = { path = "crates/flight-encoding", version = "0.6.0" }
+flight-effects = { path = "crates/flight-effects", version = "0.6.0" }
+flight-geometry = { path = "crates/flight-geometry", version = "0.6.0" }
+flight-haptics = { path = "crates/flight-haptics", version = "0.6.0" }
+flight-importdiagnostics = { path = "crates/flight-importdiagnostics", version = "0.6.0" }
+flight-image = { path = "crates/flight-image", version = "0.6.0" }
+flight-image-codec = { path = "crates/flight-image-codec", version = "0.6.0" }
+flight-input = { path = "crates/flight-input", version = "0.6.0" }
+flight-surface = { path = "crates/flight-surface", version = "0.6.0" }
+flight-ipc = { path = "crates/flight-ipc", version = "0.6.0" }
+flight-keyboard = { path = "crates/flight-keyboard", version = "0.6.0" }
+flight-lighting = { path = "crates/flight-lighting", version = "0.6.0" }
+flight-loader = { path = "crates/flight-loader", version = "0.6.0" }
+flight-math = { path = "crates/flight-math", version = "0.6.0" }
+flight-media = { path = "crates/flight-media", version = "0.6.0" }
+flight-mediasession = { path = "crates/flight-mediasession", version = "0.6.0" }
+flight-net = { path = "crates/flight-net", version = "0.6.0" }
+flight-meshgeometry = { path = "crates/flight-meshgeometry", version = "0.6.0" }
+flight-midi = { path = "crates/flight-midi", version = "0.6.0" }
+flight-path = { path = "crates/flight-path", version = "0.6.0" }
+flight-path-boolean = { path = "crates/flight-path-boolean", version = "0.6.0" }
+flight-path-formats = { path = "crates/flight-path-formats", version = "0.6.0" }
+flight-shape = { path = "crates/flight-shape", version = "0.6.0" }
+flight-shape-formats = { path = "crates/flight-shape-formats", version = "0.6.0" }
+flight-spatial = { path = "crates/flight-spatial", version = "0.6.0" }
+flight-spring = { path = "crates/flight-spring", version = "0.6.0" }
+flight-spritesheet = { path = "crates/flight-spritesheet", version = "0.6.0" }
+flight-spritesheet-formats = { path = "crates/flight-spritesheet-formats", version = "0.6.0" }
+flight-skeleton3d = { path = "crates/flight-skeleton3d", version = "0.6.0" }
+flight-skeleton2d-formats = { path = "crates/flight-skeleton2d-formats", version = "0.6.0" }
+flight-velocity = { path = "crates/flight-velocity", version = "0.6.0" }
+flight-video = { path = "crates/flight-video", version = "0.6.0" }
+flight-bitmap = { path = "crates/flight-bitmap", version = "0.6.0" }
+flight-bitmapfont = { path = "crates/flight-bitmapfont", version = "0.6.0" }
+flight-bitmapfont-formats = { path = "crates/flight-bitmapfont-formats", version = "0.6.0" }
+flight-bitmaptext = { path = "crates/flight-bitmaptext", version = "0.6.0" }
+flight-buffer = { path = "crates/flight-buffer", version = "0.6.0" }
+flight-layout = { path = "crates/flight-layout", version = "0.6.0" }
+flight-lifecycle = { path = "crates/flight-lifecycle", version = "0.6.0" }
+flight-particles = { path = "crates/flight-particles", version = "0.6.0" }
+flight-share = { path = "crates/flight-share", version = "0.6.0" }
+flight-platform = { path = "crates/flight-platform", version = "0.6.0" }
+flight-useragent = { path = "crates/flight-useragent", version = "0.6.0" }
+flight-signals = { path = "crates/flight-signals", version = "0.6.0" }
+flight-sensors = { path = "crates/flight-sensors", version = "0.6.0" }
+flight-textbidi = { path = "crates/flight-textbidi", version = "0.6.0" }
+flight-textsegment = { path = "crates/flight-textsegment", version = "0.6.0" }
+flight-tray = { path = "crates/flight-tray", version = "0.6.0" }
+flight-textformat = { path = "crates/flight-textformat", version = "0.6.0" }
+flight-text = { path = "crates/flight-text", version = "0.6.0" }
+flight-text-markup = { path = "crates/flight-text-markup", version = "0.6.0" }
+flight-textinput = { path = "crates/flight-textinput", version = "0.6.0" }
+flight-textlayout = { path = "crates/flight-textlayout", version = "0.6.0" }
+flight-textshaper = { path = "crates/flight-textshaper", version = "0.6.0" }
+flight-texture-formats = { path = "crates/flight-texture-formats", version = "0.6.0" }
+flight-textureatlas-formats = { path = "crates/flight-textureatlas-formats", version = "0.6.0" }
+flight-texture = { path = "crates/flight-texture", version = "0.6.0" }
+flight-textureatlas = { path = "crates/flight-textureatlas", version = "0.6.0" }
+flight-animation = { path = "crates/flight-animation", version = "0.6.0" }
+flight-compression = { path = "crates/flight-compression", version = "0.6.0" }
+flight-device = { path = "crates/flight-device", version = "0.6.0" }
+flight-entity = { path = "crates/flight-entity", version = "0.6.0" }
+flight-clock = { path = "crates/flight-clock", version = "0.6.0" }
+flight-connectivity = { path = "crates/flight-connectivity", version = "0.6.0" }
+flight-flow = { path = "crates/flight-flow", version = "0.6.0" }
+flight-font = { path = "crates/flight-font", version = "0.6.0" }
+flight-font-formats = { path = "crates/flight-font-formats", version = "0.6.0" }
+flight-glyphatlas = { path = "crates/flight-glyphatlas", version = "0.6.0" }
+flight-geolocation = { path = "crates/flight-geolocation", version = "0.6.0" }
+flight-host = { path = "crates/flight-host", version = "0.6.0" }
+flight-log = { path = "crates/flight-log", version = "0.6.0" }
+flight-materials = { path = "crates/flight-materials", version = "0.6.0" }
+flight-regexp = { path = "crates/flight-regexp", version = "0.6.0" }
+flight-registry = { path = "crates/flight-registry", version = "0.6.0" }
+flight-render = { path = "crates/flight-render", version = "0.6.0" }
+flight-screen = { path = "crates/flight-screen", version = "0.6.0" }
+flight-scene2d-resources = { path = "crates/flight-scene2d-resources", version = "0.6.0" }
+flight-scene3d = { path = "crates/flight-scene3d", version = "0.6.0" }
+flight-selection = { path = "crates/flight-selection", version = "0.6.0" }
+flight-shading = { path = "crates/flight-shading", version = "0.6.0" }
+flight-statechart = { path = "crates/flight-statechart", version = "0.6.0" }
+flight-statusbar = { path = "crates/flight-statusbar", version = "0.6.0" }
+flight-stream = { path = "crates/flight-stream", version = "0.6.0" }
+flight-swf = { path = "crates/flight-swf", version = "0.6.0" }
+flight-tween = { path = "crates/flight-tween", version = "0.6.0" }
+flight-xml = { path = "crates/flight-xml", version = "0.6.0" }
+flight-resource = { path = "crates/flight-resource", version = "0.6.0" }
+flight-requirement = { path = "crates/flight-requirement", version = "0.6.0" }
+flight-requirement-catalog = { path = "crates/flight-requirement-catalog", version = "0.6.0" }
+flight-requirement-codegen = { path = "crates/flight-requirement-codegen", version = "0.6.0" }
+flight-notification = { path = "crates/flight-notification", version = "0.6.0" }
+flight-power = { path = "crates/flight-power", version = "0.6.0" }
+flight-permissions = { path = "crates/flight-permissions", version = "0.6.0" }
+flight-preferences = { path = "crates/flight-preferences", version = "0.6.0" }
+flight-protocol = { path = "crates/flight-protocol", version = "0.6.0" }
+flight-quadbatch = { path = "crates/flight-quadbatch", version = "0.6.0" }
+flight-shortcut = { path = "crates/flight-shortcut", version = "0.6.0" }
+flight-tilemap = { path = "crates/flight-tilemap", version = "0.6.0" }
+flight-tilemap-formats = { path = "crates/flight-tilemap-formats", version = "0.6.0" }
+flight-accessibility = { path = "crates/flight-accessibility", version = "0.6.0" }
+flight-app = { path = "crates/flight-app", version = "0.6.0" }
+flight-camera = { path = "crates/flight-camera", version = "0.6.0" }
+flight-camera-controls = { path = "crates/flight-camera-controls", version = "0.6.0" }
+flight-capture = { path = "crates/flight-capture", version = "0.6.0" }
+flight-clipboard = { path = "crates/flight-clipboard", version = "0.6.0" }
+flight-command = { path = "crates/flight-command", version = "0.6.0" }
+flight-debug = { path = "crates/flight-debug", version = "0.6.0" }
+flight-dialog = { path = "crates/flight-dialog", version = "0.6.0" }
+flight-effects-gl = { path = "crates/flight-effects-gl", version = "0.6.0" }
+flight-effects-wgpu = { path = "crates/flight-effects-wgpu", version = "0.6.0" }
+flight-filesystem = { path = "crates/flight-filesystem", version = "0.6.0" }
+flight-gizmo = { path = "crates/flight-gizmo", version = "0.6.0" }
+flight-gui = { path = "crates/flight-gui", version = "0.6.0" }
+flight-interaction = { path = "crates/flight-interaction", version = "0.6.0" }
+flight-intl = { path = "crates/flight-intl", version = "0.6.0" }
+flight-menu = { path = "crates/flight-menu", version = "0.6.0" }
+flight-motionpath = { path = "crates/flight-motionpath", version = "0.6.0" }
+flight-movieclip = { path = "crates/flight-movieclip", version = "0.6.0" }
+flight-node = { path = "crates/flight-node", version = "0.6.0" }
+flight-particleemitter = { path = "crates/flight-particleemitter", version = "0.6.0" }
+flight-particles-formats = { path = "crates/flight-particles-formats", version = "0.6.0" }
+flight-physics2d = { path = "crates/flight-physics2d", version = "0.6.0" }
+flight-physics2d-abi = { path = "crates/flight-physics2d-abi", version = "0.6.0" }
+flight-physics3d = { path = "crates/flight-physics3d", version = "0.6.0" }
+flight-physics3d-abi = { path = "crates/flight-physics3d-abi", version = "0.6.0" }
+flight-picking = { path = "crates/flight-picking", version = "0.6.0" }
+flight-render-gl = { path = "crates/flight-render-gl", version = "0.6.0" }
+flight-render-wgpu = { path = "crates/flight-render-wgpu", version = "0.6.0" }
+flight-scene-document = { path = "crates/flight-scene-document", version = "0.6.0" }
+flight-scene2d = { path = "crates/flight-scene2d", version = "0.6.0" }
+flight-scene2d-formats = { path = "crates/flight-scene2d-formats", version = "0.6.0" }
+flight-scene2d-gl = { path = "crates/flight-scene2d-gl", version = "0.6.0" }
+flight-scene2d-wgpu = { path = "crates/flight-scene2d-wgpu", version = "0.6.0" }
+flight-scene3d-formats = { path = "crates/flight-scene3d-formats", version = "0.6.0" }
+flight-scene3d-gl = { path = "crates/flight-scene3d-gl", version = "0.6.0" }
+flight-scene3d-resources = { path = "crates/flight-scene3d-resources", version = "0.6.0" }
+flight-scene3d-wgpu = { path = "crates/flight-scene3d-wgpu", version = "0.6.0" }
+flight-shell = { path = "crates/flight-shell", version = "0.6.0" }
+flight-skeleton2d = { path = "crates/flight-skeleton2d", version = "0.6.0" }
+flight-snapshot = { path = "crates/flight-snapshot", version = "0.6.0" }
+flight-socket = { path = "crates/flight-socket", version = "0.6.0" }
+flight-timeline = { path = "crates/flight-timeline", version = "0.6.0" }
+flight-tokens = { path = "crates/flight-tokens", version = "0.6.0" }
+flight-updater = { path = "crates/flight-updater", version = "0.6.0" }
+flight-webcam = { path = "crates/flight-webcam", version = "0.6.0" }

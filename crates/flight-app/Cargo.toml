@@ -3,6 +3,9 @@ name = "flight-app"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Application identity, lifecycle control, events and windows over explicit host capabilities"
 autotests = false
 
@@ -17,10 +20,10 @@ path = "tests/main.rs"
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
 flight-host = { workspace = true }
-flight-input = { path = "../flight-input" }
-flight-lifecycle = { path = "../flight-lifecycle" }
-flight-menu = { path = "../flight-menu" }
-flight-screen = { path = "../flight-screen" }
+flight-input = { workspace = true }
+flight-lifecycle = { workspace = true }
+flight-menu = { workspace = true }
+flight-screen = { workspace = true }
 flight-signals = { workspace = true }
 
 [lints]

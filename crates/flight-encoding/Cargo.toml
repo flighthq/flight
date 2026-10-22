@@ -3,6 +3,9 @@ name = "flight-encoding"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Text encoding utilities: UTF-8 encode/decode"
 autotests = false
 
@@ -14,10 +17,10 @@ name = "tests"
 path = "tests/main.rs"
 
 [dependencies]
-flight-entity = { path = "../flight-entity" }
+flight-entity = { workspace = true }
 
 [dev-dependencies]
-flight-entity = { path = "../flight-entity" }
+flight-entity = { workspace = true }
 
 [lints]
 workspace = true

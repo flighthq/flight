@@ -1,0 +1,43 @@
+name: Rust Publish
+
+# Manual trigger for publishing all Flight crates to crates.io.
+# Designed for the initial name-parking publish and subsequent releases.
+# Requires a CARGO_REGISTRY_TOKEN secret with crates.io API token.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: 'Dry run (validate without publishing)'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: rust-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish crates to crates.io
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      # Verify the workspace compiles before attempting any publish
+      - name: Verify workspace builds
+        run: cargo check --workspace
+
+      - name: Publish crates
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          if [[ "${{ inputs.dry-run }}" == "true" ]]; then
+            bash scripts/publish-crates.sh --dry-run
+          else
+            bash scripts/publish-crates.sh
+          fi

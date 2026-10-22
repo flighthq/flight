@@ -3,6 +3,9 @@ name = "flight-platform"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Platform identity (name, kind, runtime, engine, version) read through an explicit host capability"
 autotests = false
 

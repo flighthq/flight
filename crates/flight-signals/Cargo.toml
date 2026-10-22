@@ -3,6 +3,9 @@ name = "flight-signals"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Signal-slot event system: signals, connections, scopes, emitters, and throttling"
 autotests = false
 

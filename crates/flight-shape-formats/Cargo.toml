@@ -3,6 +3,9 @@ name = "flight-shape-formats"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Native JSON codec and shared command schemas for retained flight-shape streams"
 autotests = false
 
@@ -18,7 +21,7 @@ flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
 flight-path = { workspace = true }
 flight-registry = { workspace = true }
-flight-shape = { path = "../flight-shape" }
+flight-shape = { workspace = true }
 flight-texture = { workspace = true }
 serde_json = { version = "1", default-features = false, features = ["std", "preserve_order"] }
 

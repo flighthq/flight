@@ -3,6 +3,9 @@ name = "flight-abc"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Reader and instruction decoder for ActionScript byte code containers"
 autotests = false
 

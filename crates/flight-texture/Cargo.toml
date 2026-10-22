@@ -3,6 +3,9 @@ name = "flight-texture"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Texture sampling views, open pixel-source identities, cube faces, UV transforms, color-space policy and voxel sources"
 autotests = false
 

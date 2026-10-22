@@ -3,6 +3,9 @@ name = "flight-bitmapfont-formats"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "AngelCode bitmap-font codecs, diagnostics, detection, and caller-owned registration"
 autotests = false
 

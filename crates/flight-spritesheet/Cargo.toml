@@ -3,6 +3,9 @@ name = "flight-spritesheet"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Spritesheets: frames, animations, data hydration, validation and pooled animation players over texture atlases"
 autotests = false
 
@@ -17,7 +20,7 @@ path = "tests/main.rs"
 flight-entity = { workspace = true }
 flight-regexp = { workspace = true }
 flight-signals = { workspace = true }
-flight-textureatlas = { path = "../flight-textureatlas" }
+flight-textureatlas = { workspace = true }
 
 [lints]
 workspace = true

@@ -3,6 +3,9 @@ name = "flight-dialog"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Host-explicit open/save file, message, confirm, prompt and media dialog operations"
 autotests = false
 
@@ -14,10 +17,10 @@ name = "tests"
 path = "tests/main.rs"
 
 [dependencies]
-flight-app = { path = "../flight-app" }
+flight-app = { workspace = true }
 flight-entity = { workspace = true }
 flight-host = { workspace = true }
-flight-stream = { path = "../flight-stream" }
+flight-stream = { workspace = true }
 
 [lints]
 workspace = true

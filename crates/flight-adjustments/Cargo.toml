@@ -3,6 +3,9 @@ name = "flight-adjustments"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Color adjustment math: color matrices, brightness, contrast, hue, saturation, LUT, grading"
 autotests = false
 

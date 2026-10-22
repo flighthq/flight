@@ -3,6 +3,9 @@ name = "flight-tween"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Tween animation: property interpolation, color tweens, stagger, timing, and tween management"
 autotests = false
 

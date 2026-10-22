@@ -3,6 +3,9 @@ name = "flight-snapshot"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "Immutable point-in-time snapshots of plain state: capture, restore, interpolate, compare"
 autotests = false
 

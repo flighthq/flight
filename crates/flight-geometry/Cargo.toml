@@ -3,6 +3,9 @@ name = "flight-geometry"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 description = "2D/3D math primitives: vectors, matrices, rectangles, and object pools"
 autotests = false
 
