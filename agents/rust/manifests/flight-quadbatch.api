@@ -8,8 +8,8 @@ src/quad_batch.rs: pub fn clear_quad_batch(target: &mut QuadBatch)
 src/quad_batch.rs: pub fn clone_quad_batch(source: &QuadBatch) -> Ref<QuadBatch>
 src/quad_batch.rs: pub fn compact_quad_batch(target: &mut QuadBatch)
 src/quad_batch.rs: pub fn compute_quad_batch_local_bounds_rectangle(out: &mut Rectangle, source: &QuadBatch)
-src/quad_batch.rs: pub fn create_quad_batch(obj: Option<&PartialQuadBatch>) -> Ref<QuadBatch>
-src/quad_batch.rs: pub fn create_quad_batch_data(data: Option<&QuadBatchDataOptions>) -> QuadBatchData
+src/quad_batch.rs: pub fn create_quad_batch() -> Ref<QuadBatch>
+src/quad_batch.rs: pub fn create_quad_batch_data() -> QuadBatchData
 src/quad_batch.rs: pub fn create_quad_batch_runtime() -> Node2DRuntime
 src/quad_batch.rs: pub fn create_quad_batch_signals() -> Ref<QuadBatchSignals>
 src/quad_batch.rs: pub fn enable_quad_batch_signals(target: &mut QuadBatch) -> Ref<QuadBatchSignals>
@@ -23,7 +23,8 @@ src/quad_batch.rs: pub fn hit_test_quad_batch_point(source: &QuadBatch, point: &
 src/quad_batch.rs: pub fn hit_test_quad_batch_point_exact(source: &QuadBatch, point: &Vector2) -> i32
 src/quad_batch.rs: pub fn hit_test_quad_batch_point_exact_xy(source: &QuadBatch, x: f32, y: f32) -> i32
 src/quad_batch.rs: pub fn hit_test_quad_batch_point_xy(source: &QuadBatch, x: f32, y: f32) -> i32
-src/quad_batch.rs: pub fn initialize_quad_batch_data(out: &mut QuadBatchData, data: Option<&QuadBatchDataOptions>)
+src/quad_batch.rs: pub fn initialize_quad_batch(out: &mut QuadBatch)
+src/quad_batch.rs: pub fn initialize_quad_batch_data(out: &mut QuadBatchData)
 src/quad_batch.rs: pub fn initialize_quad_batch_signals(out: &mut QuadBatchSignals)
 src/quad_batch.rs: pub fn iterate_quad_batch_instances(source: &QuadBatch, visitor: &mut dyn FnMut(usize, u16, &[f32]),)
 src/quad_batch.rs: pub fn remove_quad_batch_instance(target: &mut QuadBatch, index: i32)
@@ -37,8 +38,6 @@ src/quad_batch.rs: pub fn set_quad_batch_local_bounds_rectangle(target: &Ref<Qua
 src/quad_batch.rs: pub fn set_quad_batch_transform_type(target: &mut QuadBatch, new_type: QuadTransformType)
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum QuadTransformType { Matrix3x2, #[default] Vector2, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct QuadBatchRuntime { pub instance_velocities: Option<Vec<f32>>, pub local_bounds_rectangle: Option<Rectangle>, }
-src/types.rs: #[derive(Clone, Default)] pub struct PartialQuadBatch { pub data: Option<QuadBatchDataOptions>, pub node: PartialNode2D, }
-src/types.rs: #[derive(Clone, Default)] pub struct QuadBatchDataOptions { pub atlas: Option<Ref<TextureAtlas>>, pub ids: Option<Vec<u16>>, pub instance_count: Option<usize>, pub material_data: Option<Vec<Option<Ref<dyn MaterialData>>>>, pub transforms: Option<Vec<f32>>, pub transform_type: Option<QuadTransformType>, }
 src/types.rs: impl Default for QuadBatch
 src/types.rs: impl Default for QuadBatch :: fn default() -> Self
 src/types.rs: impl Default for QuadBatchData

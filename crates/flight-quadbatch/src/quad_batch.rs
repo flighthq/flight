@@ -19,22 +19,22 @@ const QUAD_VECTOR2_STRIDE: usize = 2;
 pub const QUAD_BATCH_DELETED_ID: u16 = 0xffff;
 
 /// Allocates an atlas-backed batch node (TS `createQuadBatch`).
-pub fn create_quad_batch(obj: Option<&PartialQuadBatch>) -> Ref<QuadBatch> {
+// flight-lint: allow(conform-params) D23 B: authored options removed; kind assigns fields after create
+pub fn create_quad_batch() -> Ref<QuadBatch> {
     let mut out: QuadBatch = create_node2d(
         QUAD_BATCH_KIND.to_string(),
-        obj.map(|obj| &obj.node),
+        None,
         Some(create_quad_batch_runtime),
     );
-    out.data = create_quad_batch_data(obj.and_then(|obj| obj.data.as_ref()));
-    out.quad_batch_runtime = Arc::new(RwLock::new(QuadBatchRuntime::default()));
-    out.quad_batch_signals = None;
+    initialize_quad_batch(&mut out);
     return flight_scene2d::publish_node2d(out);
 }
 
 /// Allocates the batch's instance data (TS `createQuadBatchData`).
-pub fn create_quad_batch_data(data: Option<&QuadBatchDataOptions>) -> QuadBatchData {
+// flight-lint: allow(conform-params) D23 B: authored options removed
+pub fn create_quad_batch_data() -> QuadBatchData {
     let mut out: QuadBatchData = allocate_entity();
-    initialize_quad_batch_data(&mut out, data);
+    initialize_quad_batch_data(&mut out);
     return out;
 }
 
@@ -55,18 +55,23 @@ pub fn create_quad_batch_signals() -> Ref<QuadBatchSignals> {
     return Arc::new(RwLock::new(out));
 }
 
-/// Initializes instance data from optional caller-owned buffers (TS `initializeQuadBatchData`).
-pub fn initialize_quad_batch_data(out: &mut QuadBatchData, data: Option<&QuadBatchDataOptions>) {
-    out.atlas = data.and_then(|data| data.atlas.clone());
-    out.ids = data.and_then(|data| data.ids.clone()).unwrap_or_default();
-    out.instance_count = data.and_then(|data| data.instance_count).unwrap_or(0);
-    out.material_data = data.and_then(|data| data.material_data.clone());
-    out.transforms = data
-        .and_then(|data| data.transforms.clone())
-        .unwrap_or_default();
-    out.transform_type = data
-        .and_then(|data| data.transform_type)
-        .unwrap_or(QuadTransformType::Vector2);
+/// Initializes the batch-specific fields of a pre-allocated node (TS `initializeQuadBatch`).
+// flight-lint: allow(conform-extra) D23 I: public initialize seam extracted from create_quad_batch
+pub fn initialize_quad_batch(out: &mut QuadBatch) {
+    initialize_quad_batch_data(&mut out.data);
+    out.quad_batch_runtime = Arc::new(RwLock::new(QuadBatchRuntime::default()));
+    out.quad_batch_signals = None;
+}
+
+/// Initializes instance data with defaults (TS `initializeQuadBatchData`).
+// flight-lint: allow(conform-params) D23 B: authored data options removed; initialize mirrors create
+pub fn initialize_quad_batch_data(out: &mut QuadBatchData) {
+    out.atlas = None;
+    out.ids = Vec::new();
+    out.instance_count = 0;
+    out.material_data = None;
+    out.transforms = Vec::new();
+    out.transform_type = QuadTransformType::Vector2;
 }
 
 /// Initializes a signal group with three fresh signals (TS `initializeQuadBatchSignals`).
@@ -103,18 +108,17 @@ pub fn clear_quad_batch(target: &mut QuadBatch) {
 /// Creates a fresh node with shared atlas/material identities and independent instance buffers (TS
 /// `cloneQuadBatch`).
 pub fn clone_quad_batch(source: &QuadBatch) -> Ref<QuadBatch> {
-    let obj = PartialQuadBatch {
-        data: Some(QuadBatchDataOptions {
-            atlas: source.data.atlas.clone(),
-            ids: Some(source.data.ids.clone()),
-            instance_count: Some(source.data.instance_count),
-            material_data: source.data.material_data.clone(),
-            transforms: Some(source.data.transforms.clone()),
-            transform_type: Some(source.data.transform_type),
-        }),
-        node: Default::default(),
-    };
-    return create_quad_batch(Some(&obj));
+    let batch = create_quad_batch();
+    {
+        let mut guard = batch.write().unwrap();
+        guard.data.atlas = source.data.atlas.clone();
+        guard.data.ids = source.data.ids.clone();
+        guard.data.instance_count = source.data.instance_count;
+        guard.data.material_data = source.data.material_data.clone();
+        guard.data.transforms = source.data.transforms.clone();
+        guard.data.transform_type = source.data.transform_type;
+    }
+    return batch;
 }
 
 /// Stably removes sentinel-id holes from the logical prefix without shrinking buffers (TS

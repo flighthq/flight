@@ -12,17 +12,10 @@ use flight_textureatlas::{
     create_texture_atlas, create_texture_atlas_region, set_texture_atlas_region,
 };
 
-fn batch_with(data: QuadBatchDataOptions) -> Ref<QuadBatch> {
-    let make: fn() -> PartialQuadBatch = PartialQuadBatch::default;
-    return create_quad_batch(Some(&PartialQuadBatch {
-        data: Some(data),
-        ..make()
-    }));
-}
-
-fn data_options() -> QuadBatchDataOptions {
-    let make: fn() -> QuadBatchDataOptions = QuadBatchDataOptions::default;
-    return make();
+fn batch_with_data(setup: impl FnOnce(&mut QuadBatchData)) -> Ref<QuadBatch> {
+    let batch = create_quad_batch();
+    setup(&mut batch.write().unwrap().data);
+    return batch;
 }
 
 fn make_quad_atlas(regions: Vec<Ref<TextureAtlasRegion>>) -> Ref<TextureAtlas> {
@@ -53,7 +46,7 @@ mod append_quad_batch_instance {
 
     #[test]
     fn appends_sequential_instances_and_grows_capacity() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         for index in 0..10 {
             let appended = append_quad_batch_instance(
                 &mut batch.write().unwrap(),
@@ -75,7 +68,7 @@ mod clear_quad_batch {
 
     #[test]
     fn clears_the_logical_count_without_releasing_capacity() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         reserve_quad_batch(&mut batch.write().unwrap(), 50);
         resize_quad_batch(&mut batch.write().unwrap(), 10);
         let before = get_quad_batch_capacity(&batch.read().unwrap());
@@ -91,9 +84,8 @@ mod clone_quad_batch {
     #[test]
     fn shares_resource_identity_but_deep_copies_instance_buffers() {
         let atlas = make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)]);
-        let source = batch_with(QuadBatchDataOptions {
-            atlas: Some(atlas.clone()),
-            ..data_options()
+        let source = batch_with_data(|d| {
+            d.atlas = Some(atlas.clone());
         });
         append_quad_batch_instance(&mut source.write().unwrap(), 0, 10.0, 20.0);
         set_quad_batch_instance_tint(&mut source.write().unwrap(), 0, 0x12345678);
@@ -119,7 +111,7 @@ mod clone_quad_batch {
 
     #[test]
     fn mutations_to_cloned_typed_arrays_do_not_leak_to_the_source() {
-        let source = create_quad_batch(None);
+        let source = create_quad_batch();
         append_quad_batch_instance(&mut source.write().unwrap(), 1, 0.0, 0.0);
         let copy = clone_quad_batch(&source.read().unwrap());
         set_quad_batch_instance(&mut copy.write().unwrap(), 0, 5, 99.0, 99.0);
@@ -129,7 +121,7 @@ mod clone_quad_batch {
 
     #[test]
     fn gives_the_clone_a_fresh_node_identity_and_runtime() {
-        let source = create_quad_batch(None);
+        let source = create_quad_batch();
         let source_uid = get_entity_uid(&mut *source.write().unwrap());
         let copy = clone_quad_batch(&source.read().unwrap());
         let copy_uid = get_entity_uid(&mut *copy.write().unwrap());
@@ -147,7 +139,7 @@ mod compact_quad_batch {
 
     #[test]
     fn stably_removes_sentinel_holes_without_shrinking_capacity() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         append_quad_batch_instance(&mut batch.write().unwrap(), 10, 1.0, 1.0);
         append_quad_batch_instance(&mut batch.write().unwrap(), 11, 2.0, 2.0);
         append_quad_batch_instance(&mut batch.write().unwrap(), 12, 3.0, 3.0);
@@ -163,7 +155,7 @@ mod compact_quad_batch {
 
     #[test]
     fn no_ops_for_empty_and_fully_live_batches() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         compact_quad_batch(&mut batch.write().unwrap());
         append_quad_batch_instance(&mut batch.write().unwrap(), 1, 0.0, 0.0);
         compact_quad_batch(&mut batch.write().unwrap());
@@ -176,7 +168,7 @@ mod compute_quad_batch_local_bounds_rectangle {
 
     #[test]
     fn returns_zero_without_an_atlas_or_live_instances() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         let mut out = create_rectangle(1.0, 2.0, 3.0, 4.0);
         compute_quad_batch_local_bounds_rectangle(&mut out, &batch.read().unwrap());
         assert_eq!((out.x, out.y, out.width, out.height), (0.0, 0.0, 0.0, 0.0));
@@ -184,9 +176,8 @@ mod compute_quad_batch_local_bounds_rectangle {
 
     #[test]
     fn returns_zero_with_an_atlas_but_no_live_instances() {
-        let batch = batch_with(QuadBatchDataOptions {
-            atlas: Some(make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)])),
-            ..data_options()
+        let batch = batch_with_data(|d| {
+            d.atlas = Some(make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)]));
         });
         let mut out = create_rectangle(1.0, 2.0, 3.0, 4.0);
         compute_quad_batch_local_bounds_rectangle(&mut out, &batch.read().unwrap());
@@ -197,12 +188,11 @@ mod compute_quad_batch_local_bounds_rectangle {
     fn unions_valid_vector_quads_and_uses_rotated_logical_extents() {
         let rotated = make_quad_region(0, 10.0, 20.0);
         rotated.write().unwrap().rotation = TextureAtlasRotation::Clockwise90;
-        let batch = batch_with(QuadBatchDataOptions {
-            atlas: Some(make_quad_atlas(vec![rotated])),
-            ids: Some(vec![0, 0, 99]),
-            instance_count: Some(3),
-            transforms: Some(vec![5.0, 7.0, 50.0, 100.0, 1000.0, 1000.0]),
-            ..data_options()
+        let batch = batch_with_data(|d| {
+            d.atlas = Some(make_quad_atlas(vec![rotated]));
+            d.ids = vec![0, 0, 99];
+            d.instance_count = 3;
+            d.transforms = vec![5.0, 7.0, 50.0, 100.0, 1000.0, 1000.0];
         });
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
         compute_quad_batch_local_bounds_rectangle(&mut out, &batch.read().unwrap());
@@ -214,13 +204,12 @@ mod compute_quad_batch_local_bounds_rectangle {
 
     #[test]
     fn computes_the_affine_quad_aabb_without_storing_it() {
-        let batch = batch_with(QuadBatchDataOptions {
-            atlas: Some(make_quad_atlas(vec![make_quad_region(0, 10.0, 10.0)])),
-            ids: Some(vec![0]),
-            instance_count: Some(1),
-            transforms: Some(vec![1.0, 0.0, 0.0, 1.0, 5.0, 5.0]),
-            transform_type: Some(QuadTransformType::Matrix3x2),
-            ..data_options()
+        let batch = batch_with_data(|d| {
+            d.atlas = Some(make_quad_atlas(vec![make_quad_region(0, 10.0, 10.0)]));
+            d.ids = vec![0];
+            d.instance_count = 1;
+            d.transforms = vec![1.0, 0.0, 0.0, 1.0, 5.0, 5.0];
+            d.transform_type = QuadTransformType::Matrix3x2;
         });
         let node: NodeRef = batch.clone();
         let before = get_node_local_bounds_revision(&*batch.read().unwrap());
@@ -242,22 +231,17 @@ mod create_quad_batch {
     use super::*;
 
     #[test]
-    fn initializes_defaults_and_applies_data_and_node_options() {
+    fn fields_are_assignable_after_construction() {
         let atlas = make_quad_atlas(Vec::new());
-        let make: fn() -> PartialQuadBatch = PartialQuadBatch::default;
-        let batch = create_quad_batch(Some(&PartialQuadBatch {
-            data: Some(QuadBatchDataOptions {
-                atlas: Some(atlas.clone()),
-                instance_count: Some(1000),
-                transform_type: Some(QuadTransformType::Matrix3x2),
-                ..data_options()
-            }),
-            node: flight_scene2d::PartialNode2D {
-                alpha: Some(0.5),
-                x: Some(7.0),
-                ..make().node
-            },
-        }));
+        let batch = create_quad_batch();
+        {
+            let mut guard = batch.write().unwrap();
+            guard.data.atlas = Some(atlas.clone());
+            guard.data.instance_count = 1000;
+            guard.data.transform_type = QuadTransformType::Matrix3x2;
+            guard.alpha = 0.5;
+            guard.x = 7.0;
+        }
         let batch = batch.read().unwrap();
         assert_eq!(batch.kind, QUAD_BATCH_KIND);
         assert!(Arc::ptr_eq(batch.data.atlas.as_ref().unwrap(), &atlas));
@@ -268,7 +252,7 @@ mod create_quad_batch {
 
     #[test]
     fn initializes_the_complete_batch_defaults() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         let batch = batch.read().unwrap();
         assert_eq!(batch.kind, QUAD_BATCH_KIND);
         assert!(batch.data.atlas.is_none());
@@ -281,7 +265,7 @@ mod create_quad_batch {
 
     #[test]
     fn composes_the_complete_node2d_feature_family() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         let node: NodeRef = batch.clone();
         let node = node.read().unwrap();
         assert!(node.as_transform2d_node().is_some());
@@ -293,10 +277,7 @@ mod create_quad_batch {
 
     #[test]
     fn returns_a_fresh_object_each_call() {
-        assert!(!Arc::ptr_eq(
-            &create_quad_batch(None),
-            &create_quad_batch(None)
-        ));
+        assert!(!Arc::ptr_eq(&create_quad_batch(), &create_quad_batch()));
     }
 }
 
@@ -304,18 +285,20 @@ mod create_quad_batch_data {
     use super::*;
 
     #[test]
-    fn returns_typed_buffer_defaults_and_accepts_a_logical_count() {
-        let defaults = create_quad_batch_data(None);
+    fn returns_typed_buffer_defaults() {
+        let defaults = create_quad_batch_data();
         assert!(defaults.atlas.is_none());
         assert!(defaults.ids.is_empty());
         assert_eq!(defaults.instance_count, 0);
         assert!(defaults.material_data.is_none());
         assert!(defaults.transforms.is_empty());
         assert_eq!(defaults.transform_type, QuadTransformType::Vector2);
-        let data = create_quad_batch_data(Some(&QuadBatchDataOptions {
-            instance_count: Some(10),
-            ..data_options()
-        }));
+    }
+
+    #[test]
+    fn fields_are_assignable_after_creation() {
+        let mut data = create_quad_batch_data();
+        data.instance_count = 10;
         assert_eq!(data.instance_count, 10);
     }
 }
@@ -374,7 +357,7 @@ mod enable_quad_batch_signals {
 
     #[test]
     fn preserves_group_identity_and_makes_mutations_emit() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         let signals = enable_quad_batch_signals(&mut batch.write().unwrap());
         let same = enable_quad_batch_signals(&mut batch.write().unwrap());
         assert!(Arc::ptr_eq(&signals, &same));
@@ -407,10 +390,9 @@ mod get_quad_batch_capacity {
 
     #[test]
     fn returns_the_lower_of_id_and_transform_capacities() {
-        let batch = batch_with(QuadBatchDataOptions {
-            ids: Some(vec![0; 10]),
-            transforms: Some(vec![0.0; 40]),
-            ..data_options()
+        let batch = batch_with_data(|d| {
+            d.ids = vec![0; 10];
+            d.transforms = vec![0.0; 40];
         });
         assert_eq!(get_quad_batch_capacity(&batch.read().unwrap()), 10);
         batch.write().unwrap().data.ids.resize(100, 0);
@@ -420,7 +402,7 @@ mod get_quad_batch_capacity {
     #[test]
     fn returns_zero_for_a_new_batch() {
         assert_eq!(
-            get_quad_batch_capacity(&create_quad_batch(None).read().unwrap()),
+            get_quad_batch_capacity(&create_quad_batch().read().unwrap()),
             0
         );
     }
@@ -431,7 +413,7 @@ mod get_quad_batch_instance_id {
 
     #[test]
     fn returns_the_id_or_negative_one_outside_the_logical_prefix() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         resize_quad_batch(&mut batch.write().unwrap(), 2);
         set_quad_batch_instance(&mut batch.write().unwrap(), 1, 7, 0.0, 0.0);
         assert_eq!(get_quad_batch_instance_id(&batch.read().unwrap(), 1), 7);
@@ -445,7 +427,7 @@ mod get_quad_batch_instance_transform {
 
     #[test]
     fn writes_vector_translation_or_matrix_offset_and_leaves_misses_unchanged() {
-        let vector = create_quad_batch(None);
+        let vector = create_quad_batch();
         resize_quad_batch(&mut vector.write().unwrap(), 1);
         set_quad_batch_instance(&mut vector.write().unwrap(), 0, 0, 15.0, 25.0);
         let mut out = create_vector2(99.0, 99.0);
@@ -462,9 +444,8 @@ mod get_quad_batch_instance_transform {
         ));
         assert_eq!((out.x, out.y), (15.0, 25.0));
 
-        let matrix = batch_with(QuadBatchDataOptions {
-            transform_type: Some(QuadTransformType::Matrix3x2),
-            ..data_options()
+        let matrix = batch_with_data(|d| {
+            d.transform_type = QuadTransformType::Matrix3x2;
         });
         resize_quad_batch(&mut matrix.write().unwrap(), 1);
         set_quad_batch_instance_matrix(
@@ -488,7 +469,7 @@ mod get_quad_batch_runtime {
 
     #[test]
     fn returns_the_same_private_runtime_each_time() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         let a = get_quad_batch_runtime(&batch.read().unwrap());
         let b = get_quad_batch_runtime(&batch.read().unwrap());
         assert!(Arc::ptr_eq(&a, &b));
@@ -501,7 +482,7 @@ mod get_quad_batch_signals {
 
     #[test]
     fn returns_none_until_enabled_then_the_attached_identity() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         assert!(get_quad_batch_signals(&batch.read().unwrap()).is_none());
         let signals = enable_quad_batch_signals(&mut batch.write().unwrap());
         assert!(Arc::ptr_eq(
@@ -532,12 +513,11 @@ mod hit_test_quad_batch_point {
 
     #[test]
     fn delegates_point_coordinates_to_the_aabb_test() {
-        let batch = batch_with(QuadBatchDataOptions {
-            atlas: Some(make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)])),
-            ids: Some(vec![0]),
-            instance_count: Some(1),
-            transforms: Some(vec![10.0, 20.0]),
-            ..data_options()
+        let batch = batch_with_data(|d| {
+            d.atlas = Some(make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)]));
+            d.ids = vec![0];
+            d.instance_count = 1;
+            d.transforms = vec![10.0, 20.0];
         });
         assert_eq!(
             hit_test_quad_batch_point(&batch.read().unwrap(), &create_vector2(15.0, 25.0)),
@@ -555,12 +535,11 @@ mod hit_test_quad_batch_point_exact {
 
     #[test]
     fn delegates_point_coordinates_to_the_exact_test() {
-        let batch = batch_with(QuadBatchDataOptions {
-            atlas: Some(make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)])),
-            ids: Some(vec![0]),
-            instance_count: Some(1),
-            transforms: Some(vec![10.0, 20.0]),
-            ..data_options()
+        let batch = batch_with_data(|d| {
+            d.atlas = Some(make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)]));
+            d.ids = vec![0];
+            d.instance_count = 1;
+            d.transforms = vec![10.0, 20.0];
         });
         assert_eq!(
             hit_test_quad_batch_point_exact(&batch.read().unwrap(), &create_vector2(15.0, 25.0)),
@@ -579,13 +558,12 @@ mod hit_test_quad_batch_point_exact_xy {
     #[test]
     fn rejects_an_aabb_corner_outside_a_rotated_affine_quad() {
         let sine = std::f32::consts::FRAC_1_SQRT_2;
-        let batch = batch_with(QuadBatchDataOptions {
-            atlas: Some(make_quad_atlas(vec![make_quad_region(0, 100.0, 100.0)])),
-            ids: Some(vec![0]),
-            instance_count: Some(1),
-            transforms: Some(vec![sine, sine, -sine, sine, 0.0, 0.0]),
-            transform_type: Some(QuadTransformType::Matrix3x2),
-            ..data_options()
+        let batch = batch_with_data(|d| {
+            d.atlas = Some(make_quad_atlas(vec![make_quad_region(0, 100.0, 100.0)]));
+            d.ids = vec![0];
+            d.instance_count = 1;
+            d.transforms = vec![sine, sine, -sine, sine, 0.0, 0.0];
+            d.transform_type = QuadTransformType::Matrix3x2;
         });
         assert_eq!(
             hit_test_quad_batch_point_exact_xy(&batch.read().unwrap(), 60.0, 5.0),
@@ -604,12 +582,11 @@ mod hit_test_quad_batch_point_exact_xy {
     #[test]
     fn returns_negative_one_without_an_atlas_or_without_live_instances() {
         assert_eq!(
-            hit_test_quad_batch_point_exact_xy(&create_quad_batch(None).read().unwrap(), 0.0, 0.0),
+            hit_test_quad_batch_point_exact_xy(&create_quad_batch().read().unwrap(), 0.0, 0.0),
             -1
         );
-        let empty = batch_with(QuadBatchDataOptions {
-            atlas: Some(make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)])),
-            ..data_options()
+        let empty = batch_with_data(|d| {
+            d.atlas = Some(make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)]));
         });
         assert_eq!(
             hit_test_quad_batch_point_exact_xy(&empty.read().unwrap(), 0.0, 0.0),
@@ -621,12 +598,11 @@ mod hit_test_quad_batch_point_exact_xy {
     fn honors_rotated_logical_extent_and_skips_invalid_region_ids() {
         let region = make_quad_region(0, 10.0, 20.0);
         region.write().unwrap().rotation = TextureAtlasRotation::Clockwise90;
-        let batch = batch_with(QuadBatchDataOptions {
-            atlas: Some(make_quad_atlas(vec![region])),
-            ids: Some(vec![0, 99]),
-            instance_count: Some(2),
-            transforms: Some(vec![0.0, 0.0, 0.0, 0.0]),
-            ..data_options()
+        let batch = batch_with_data(|d| {
+            d.atlas = Some(make_quad_atlas(vec![region]));
+            d.ids = vec![0, 99];
+            d.instance_count = 2;
+            d.transforms = vec![0.0, 0.0, 0.0, 0.0];
         });
         assert_eq!(
             hit_test_quad_batch_point_exact_xy(&batch.read().unwrap(), 15.0, 5.0),
@@ -644,12 +620,11 @@ mod hit_test_quad_batch_point_xy {
 
     #[test]
     fn returns_first_half_open_hit_and_skips_invalid_ids() {
-        let batch = batch_with(QuadBatchDataOptions {
-            atlas: Some(make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)])),
-            ids: Some(vec![0, 0, 99]),
-            instance_count: Some(3),
-            transforms: Some(vec![10.0, 20.0, 10.0, 20.0, 0.0, 0.0]),
-            ..data_options()
+        let batch = batch_with_data(|d| {
+            d.atlas = Some(make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)]));
+            d.ids = vec![0, 0, 99];
+            d.instance_count = 3;
+            d.transforms = vec![10.0, 20.0, 10.0, 20.0, 0.0, 0.0];
         });
         assert_eq!(
             hit_test_quad_batch_point_xy(&batch.read().unwrap(), 15.0, 25.0),
@@ -663,12 +638,11 @@ mod hit_test_quad_batch_point_xy {
 
     #[test]
     fn finds_a_later_vector_instance() {
-        let batch = batch_with(QuadBatchDataOptions {
-            atlas: Some(make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)])),
-            ids: Some(vec![0, 0]),
-            instance_count: Some(2),
-            transforms: Some(vec![10.0, 20.0, 100.0, 200.0]),
-            ..data_options()
+        let batch = batch_with_data(|d| {
+            d.atlas = Some(make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)]));
+            d.ids = vec![0, 0];
+            d.instance_count = 2;
+            d.transforms = vec![10.0, 20.0, 100.0, 200.0];
         });
         assert_eq!(
             hit_test_quad_batch_point_xy(&batch.read().unwrap(), 110.0, 210.0),
@@ -679,12 +653,11 @@ mod hit_test_quad_batch_point_xy {
     #[test]
     fn returns_negative_one_without_an_atlas_or_instances() {
         assert_eq!(
-            hit_test_quad_batch_point_xy(&create_quad_batch(None).read().unwrap(), 0.0, 0.0),
+            hit_test_quad_batch_point_xy(&create_quad_batch().read().unwrap(), 0.0, 0.0),
             -1
         );
-        let empty = batch_with(QuadBatchDataOptions {
-            atlas: Some(make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)])),
-            ..data_options()
+        let empty = batch_with_data(|d| {
+            d.atlas = Some(make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)]));
         });
         assert_eq!(
             hit_test_quad_batch_point_xy(&empty.read().unwrap(), 0.0, 0.0),
@@ -693,23 +666,63 @@ mod hit_test_quad_batch_point_xy {
     }
 }
 
+mod initialize_quad_batch {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_initializer_of_create_quad_batch() {
+        let batch = create_quad_batch();
+        let atlas = make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)]);
+        set_quad_batch_local_bounds_rectangle(&batch, &create_rectangle(1.0, 2.0, 3.0, 4.0));
+        let stale_runtime = get_quad_batch_runtime(&batch.read().unwrap());
+        {
+            let mut guard = batch.write().unwrap();
+            flight_entity::set_entity_uid(&mut *guard, "batch".to_string());
+            enable_quad_batch_signals(&mut guard);
+            append_quad_batch_instance(&mut guard, 0, 5.0, 6.0);
+            guard.data.atlas = Some(atlas);
+            guard.data.transform_type = QuadTransformType::Matrix3x2;
+            initialize_quad_batch(&mut guard);
+        }
+        let mut guard = batch.write().unwrap();
+        // Construction only: the receiver keeps its identity and gets the factory's defaults.
+        assert_eq!(get_entity_uid(&mut *guard), "batch");
+        assert_eq!(guard.kind, QUAD_BATCH_KIND);
+        assert!(guard.data.atlas.is_none());
+        assert!(guard.data.ids.is_empty());
+        assert_eq!(guard.data.instance_count, 0);
+        assert!(guard.data.material_data.is_none());
+        assert!(guard.data.transforms.is_empty());
+        assert_eq!(guard.data.transform_type, QuadTransformType::Vector2);
+        assert!(get_quad_batch_signals(&guard).is_none());
+        // A fresh batch runtime tier: the previously set explicit bounds are not carried over.
+        let runtime = get_quad_batch_runtime(&guard);
+        assert!(!Arc::ptr_eq(&runtime, &stale_runtime));
+        assert!(runtime.read().unwrap().local_bounds_rectangle.is_none());
+    }
+}
+
 mod initialize_quad_batch_data {
     use super::*;
 
     #[test]
-    fn resets_an_allocated_data_record_to_supplied_values() {
-        let mut out = create_quad_batch_data(None);
-        initialize_quad_batch_data(
-            &mut out,
-            Some(&QuadBatchDataOptions {
-                ids: Some(vec![3, 4]),
-                instance_count: Some(2),
-                transforms: Some(vec![1.0, 2.0, 3.0, 4.0]),
-                ..data_options()
-            }),
-        );
-        assert_eq!(out.ids, vec![3, 4]);
-        assert_eq!(out.instance_count, 2);
+    fn is_the_construction_initializer_of_create_quad_batch_data() {
+        let mut out = create_quad_batch_data();
+        flight_entity::set_entity_uid(&mut out, "data".to_string());
+        out.atlas = Some(make_quad_atlas(Vec::new()));
+        out.ids = vec![3, 4];
+        out.instance_count = 2;
+        out.transforms = vec![1.0, 2.0, 3.0, 4.0];
+        out.transform_type = QuadTransformType::Matrix3x2;
+        initialize_quad_batch_data(&mut out);
+        let defaults = create_quad_batch_data();
+        assert_eq!(get_entity_uid(&mut out), "data");
+        assert!(out.atlas.is_none());
+        assert_eq!(out.ids, defaults.ids);
+        assert_eq!(out.instance_count, defaults.instance_count);
+        assert!(out.material_data.is_none());
+        assert_eq!(out.transforms, defaults.transforms);
+        assert_eq!(out.transform_type, QuadTransformType::Vector2);
     }
 }
 
@@ -733,7 +746,7 @@ mod iterate_quad_batch_instances {
 
     #[test]
     fn visits_each_instance_in_order_with_a_stride_length_view() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         append_quad_batch_instance(&mut batch.write().unwrap(), 7, 1.0, 2.0);
         append_quad_batch_instance(&mut batch.write().unwrap(), 8, 3.0, 4.0);
         let mut seen = Vec::new();
@@ -742,12 +755,11 @@ mod iterate_quad_batch_instances {
         });
         assert_eq!(seen, vec![(0, 7, vec![1.0, 2.0]), (1, 8, vec![3.0, 4.0])]);
 
-        let matrix = batch_with(QuadBatchDataOptions {
-            ids: Some(vec![2]),
-            instance_count: Some(1),
-            transforms: Some(vec![1.0, 0.0, 0.0, 1.0, 9.0, 10.0]),
-            transform_type: Some(QuadTransformType::Matrix3x2),
-            ..data_options()
+        let matrix = batch_with_data(|d| {
+            d.ids = vec![2];
+            d.instance_count = 1;
+            d.transforms = vec![1.0, 0.0, 0.0, 1.0, 9.0, 10.0];
+            d.transform_type = QuadTransformType::Matrix3x2;
         });
         let mut length = 0;
         iterate_quad_batch_instances(&matrix.read().unwrap(), &mut |_, _, transform| {
@@ -758,7 +770,7 @@ mod iterate_quad_batch_instances {
 
     #[test]
     fn does_not_invoke_the_visitor_for_an_empty_batch() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         let mut calls = 0;
         iterate_quad_batch_instances(&batch.read().unwrap(), &mut |_, _, _| calls += 1);
         assert_eq!(calls, 0);
@@ -770,7 +782,7 @@ mod remove_quad_batch_instance {
 
     #[test]
     fn swap_removes_and_reports_the_swap_source() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         append_quad_batch_instance(&mut batch.write().unwrap(), 0, 0.0, 0.0);
         append_quad_batch_instance(&mut batch.write().unwrap(), 1, 10.0, 10.0);
         append_quad_batch_instance(&mut batch.write().unwrap(), 2, 20.0, 20.0);
@@ -792,7 +804,7 @@ mod remove_quad_batch_instance {
 
     #[test]
     fn removes_the_last_directly_and_no_ops_outside_the_prefix() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         append_quad_batch_instance(&mut batch.write().unwrap(), 5, 50.0, 50.0);
         remove_quad_batch_instance(&mut batch.write().unwrap(), -1);
         remove_quad_batch_instance(&mut batch.write().unwrap(), 1);
@@ -807,7 +819,7 @@ mod reserve_quad_batch {
 
     #[test]
     fn allocates_exact_typed_array_lengths_and_no_ops_at_or_below_capacity() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         reserve_quad_batch(&mut batch.write().unwrap(), 100);
         let ids = batch.read().unwrap().data.ids.as_ptr();
         let transforms = batch.read().unwrap().data.transforms.as_ptr();
@@ -829,9 +841,8 @@ mod resize_quad_batch {
         let texture = make_texture();
         let atlas = make_quad_atlas(vec![make_quad_region(0, 32.0, 32.0)]);
         atlas.write().unwrap().texture = Some(texture.clone());
-        let batch = batch_with(QuadBatchDataOptions {
-            atlas: Some(atlas.clone()),
-            ..data_options()
+        let batch = batch_with_data(|d| {
+            d.atlas = Some(atlas.clone());
         });
         resize_quad_batch(&mut batch.write().unwrap(), 300_000);
         let batch = batch.read().unwrap();
@@ -856,9 +867,8 @@ mod resize_quad_batch {
 
     #[test]
     fn trusts_a_shrinking_logical_count_without_allocating() {
-        let batch = batch_with(QuadBatchDataOptions {
-            instance_count: Some(200),
-            ..data_options()
+        let batch = batch_with_data(|d| {
+            d.instance_count = 200;
         });
         resize_quad_batch(&mut batch.write().unwrap(), 100);
         let batch = batch.read().unwrap();
@@ -873,7 +883,7 @@ mod set_quad_batch_instance {
 
     #[test]
     fn writes_inside_the_prefix_and_no_ops_outside_it() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         resize_quad_batch(&mut batch.write().unwrap(), 3);
         set_quad_batch_instance(&mut batch.write().unwrap(), 1, 7, 100.0, 200.0);
         set_quad_batch_instance(&mut batch.write().unwrap(), -1, 9, 0.0, 0.0);
@@ -889,9 +899,8 @@ mod set_quad_batch_instance_matrix {
 
     #[test]
     fn writes_all_six_affine_components_inside_the_prefix() {
-        let batch = batch_with(QuadBatchDataOptions {
-            transform_type: Some(QuadTransformType::Matrix3x2),
-            ..data_options()
+        let batch = batch_with_data(|d| {
+            d.transform_type = QuadTransformType::Matrix3x2;
         });
         resize_quad_batch(&mut batch.write().unwrap(), 1);
         set_quad_batch_instance_matrix(
@@ -927,7 +936,7 @@ mod set_quad_batch_instance_range {
 
     #[test]
     fn copies_vector_and_matrix_ranges_and_rejects_invalid_ranges() {
-        let vector = create_quad_batch(None);
+        let vector = create_quad_batch();
         resize_quad_batch(&mut vector.write().unwrap(), 3);
         set_quad_batch_instance_range(
             &mut vector.write().unwrap(),
@@ -942,9 +951,8 @@ mod set_quad_batch_instance_range {
             &[10.0, 20.0, 30.0, 40.0]
         );
 
-        let matrix = batch_with(QuadBatchDataOptions {
-            transform_type: Some(QuadTransformType::Matrix3x2),
-            ..data_options()
+        let matrix = batch_with_data(|d| {
+            d.transform_type = QuadTransformType::Matrix3x2;
         });
         resize_quad_batch(&mut matrix.write().unwrap(), 1);
         set_quad_batch_instance_range(
@@ -958,7 +966,7 @@ mod set_quad_batch_instance_range {
 
     #[test]
     fn no_ops_for_a_zero_count() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         resize_quad_batch(&mut batch.write().unwrap(), 2);
         set_quad_batch_instance_range(&mut batch.write().unwrap(), 0, 0, &[1.0, 2.0]);
         assert_eq!(batch.read().unwrap().data.transforms[0], 0.0);
@@ -970,9 +978,8 @@ mod set_quad_batch_instance_tint {
 
     #[test]
     fn lazily_allocates_per_instance_material_slots_and_ignores_invalid_indices() {
-        let batch = batch_with(QuadBatchDataOptions {
-            instance_count: Some(3),
-            ..data_options()
+        let batch = batch_with_data(|d| {
+            d.instance_count = 3;
         });
         set_quad_batch_instance_tint(&mut batch.write().unwrap(), 1, 0x12345678);
         let batch_guard = batch.read().unwrap();
@@ -983,9 +990,8 @@ mod set_quad_batch_instance_tint {
         assert!(materials[2].is_none());
         drop(batch_guard);
 
-        let untouched = batch_with(QuadBatchDataOptions {
-            instance_count: Some(1),
-            ..data_options()
+        let untouched = batch_with_data(|d| {
+            d.instance_count = 1;
         });
         set_quad_batch_instance_tint(&mut untouched.write().unwrap(), 2, u32::MAX);
         assert!(untouched.read().unwrap().data.material_data.is_none());
@@ -997,7 +1003,7 @@ mod set_quad_batch_local_bounds_rectangle {
 
     #[test]
     fn copies_explicit_bounds_and_invalidates_the_node_cache() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         let node: NodeRef = batch.clone();
         let before = get_node_local_bounds_revision(&*batch.read().unwrap());
         let mut rect = create_rectangle(10.0, 20.0, 32.0, 16.0);
@@ -1016,7 +1022,7 @@ mod set_quad_batch_local_bounds_rectangle {
 
     #[test]
     fn returns_zero_node_bounds_before_any_explicit_set() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         let node: NodeRef = batch;
         let bounds = get_node_local_bounds_rectangle(&node);
         assert_eq!((bounds.width, bounds.height), (0.0, 0.0));
@@ -1028,7 +1034,7 @@ mod set_quad_batch_transform_type {
 
     #[test]
     fn expands_vectors_to_identity_matrices_without_losing_capacity() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         reserve_quad_batch(&mut batch.write().unwrap(), 4);
         append_quad_batch_instance(&mut batch.write().unwrap(), 0, 5.0, 6.0);
         append_quad_batch_instance(&mut batch.write().unwrap(), 1, 7.0, 8.0);
@@ -1044,9 +1050,8 @@ mod set_quad_batch_transform_type {
 
     #[test]
     fn collapses_matrices_in_place_to_translation_only() {
-        let batch = batch_with(QuadBatchDataOptions {
-            transform_type: Some(QuadTransformType::Matrix3x2),
-            ..data_options()
+        let batch = batch_with_data(|d| {
+            d.transform_type = QuadTransformType::Matrix3x2;
         });
         resize_quad_batch(&mut batch.write().unwrap(), 2);
         set_quad_batch_instance_matrix(
@@ -1080,7 +1085,7 @@ mod set_quad_batch_transform_type {
 
     #[test]
     fn no_ops_without_replacing_the_buffer_when_the_layout_matches() {
-        let batch = create_quad_batch(None);
+        let batch = create_quad_batch();
         reserve_quad_batch(&mut batch.write().unwrap(), 2);
         let pointer = batch.read().unwrap().data.transforms.as_ptr();
         set_quad_batch_transform_type(&mut batch.write().unwrap(), QuadTransformType::Vector2);

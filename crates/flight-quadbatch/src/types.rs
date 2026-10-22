@@ -5,7 +5,7 @@
 use flight_entity::{EntityRuntimeSlot, Ref};
 use flight_geometry::Rectangle;
 use flight_materials::contract::MaterialData;
-use flight_scene2d::{Node2DFields, PartialNode2D};
+use flight_scene2d::Node2DFields;
 use flight_signals::Signal;
 use flight_textureatlas::TextureAtlas;
 
@@ -39,24 +39,6 @@ pub struct QuadBatchData {
     pub material_data: Option<Vec<Option<Ref<dyn MaterialData>>>>,
     pub transforms: Vec<f32>,
     pub transform_type: QuadTransformType,
-}
-
-/// Optional fields accepted by `create_quad_batch_data` (TS `Partial<QuadBatchData>`).
-#[derive(Clone, Default)]
-pub struct QuadBatchDataOptions {
-    pub atlas: Option<Ref<TextureAtlas>>,
-    pub ids: Option<Vec<u16>>,
-    pub instance_count: Option<usize>,
-    pub material_data: Option<Vec<Option<Ref<dyn MaterialData>>>>,
-    pub transforms: Option<Vec<f32>>,
-    pub transform_type: Option<QuadTransformType>,
-}
-
-/// Construction options for a batch (TS `PartialNode<QuadBatch>`).
-#[derive(Clone, Default)]
-pub struct PartialQuadBatch {
-    pub data: Option<QuadBatchDataOptions>,
-    pub node: PartialNode2D,
 }
 
 /// Batch-specific mutable runtime fields (TS `QuadBatchRuntime` past the inherited Node2D tier).

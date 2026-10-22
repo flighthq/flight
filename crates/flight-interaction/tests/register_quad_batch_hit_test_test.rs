@@ -4,10 +4,7 @@ use flight_interaction::node_interaction_state::{
 };
 use flight_interaction::register_quad_batch_hit_test::register_quad_batch_hit_test;
 use flight_node::NodeRef;
-use flight_quadbatch::{
-    PartialQuadBatch, QuadBatchDataOptions, QuadTransformType, create_quad_batch,
-};
-use flight_scene2d::contract::PartialNode2D;
+use flight_quadbatch::create_quad_batch;
 use flight_textureatlas::{
     TextureAtlasRegionOptions, create_texture_atlas, create_texture_atlas_region,
     set_texture_atlas_region,
@@ -35,35 +32,15 @@ fn quad_batch_with_one_instance(x: f32, y: f32, region_w: f32, region_h: f32) ->
     set_texture_atlas_region(&mut region.write().unwrap(), &region_options);
     let atlas = create_texture_atlas();
     atlas.write().unwrap().regions.push(region);
-    let qb: NodeRef = create_quad_batch(Some(&PartialQuadBatch {
-        data: Some(QuadBatchDataOptions {
-            atlas: Some(atlas),
-            ids: Some(vec![0]),
-            instance_count: Some(1),
-            transforms: Some(vec![x, y]),
-            transform_type: Some(QuadTransformType::Vector2),
-            material_data: None,
-        }),
-        node: PartialNode2D {
-            alpha: None,
-            blend_mode: None,
-            clip: None,
-            enabled: None,
-            material: None,
-            material_data: None,
-            name: None,
-            pivot_x: None,
-            pivot_y: None,
-            rotation: None,
-            scale_x: None,
-            scale_y: None,
-            skew_x: None,
-            skew_y: None,
-            visible: None,
-            x: None,
-            y: None,
-        },
-    }));
+    let batch = create_quad_batch();
+    {
+        let mut guard = batch.write().unwrap();
+        guard.data.atlas = Some(atlas);
+        guard.data.ids = vec![0];
+        guard.data.instance_count = 1;
+        guard.data.transforms = vec![x, y];
+    }
+    let qb: NodeRef = batch;
     enable_node_interaction_state(&qb);
     set_node_hit_test_enabled(&qb, true);
     return qb;
@@ -94,7 +71,7 @@ mod register_quad_batch_hit_test {
     fn no_instances_misses() {
         let mut ctx = HitTestContext::new();
         register_quad_batch_hit_test(&mut ctx);
-        let qb: NodeRef = create_quad_batch(None);
+        let qb: NodeRef = create_quad_batch();
         enable_node_interaction_state(&qb);
         set_node_hit_test_enabled(&qb, true);
         let result = find_graph_hit_target_precise(&ctx, &qb, 0.0, 0.0);
