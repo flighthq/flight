@@ -3,6 +3,50 @@ use flight_render_wgpu::{get_wgpu_render_state_native_device, WgpuRenderState};
 
 use crate::types::WgpuWireframeUpload;
 
+fn align_to_4(byte_length: usize) -> usize {
+    return (byte_length + 3) & !3;
+}
+
+fn build_line_indices(geometry: &MeshGeometry) -> Vec<usize> {
+    let layout = geometry.layout.read().unwrap();
+    let stride = layout.stride;
+    let triangle_count = match &geometry.indices {
+        IndexBuffer::U16(idx) => idx.data.read().unwrap().len() / 3,
+        IndexBuffer::U32(idx) => idx.data.read().unwrap().len() / 3,
+        IndexBuffer::None => {
+            if stride > 0 {
+                let vertex_bytes = geometry.vertices.len() * std::mem::size_of::<f32>();
+                vertex_bytes / stride as usize / 3
+            } else {
+                0
+            }
+        }
+    };
+
+    let mut lines = Vec::with_capacity(triangle_count * 6);
+    for t in 0..triangle_count {
+        let base = t * 3;
+        let (i0, i1, i2) = match &geometry.indices {
+            IndexBuffer::U16(idx) => {
+                let data = idx.data.read().unwrap();
+                (data[base] as usize, data[base + 1] as usize, data[base + 2] as usize)
+            }
+            IndexBuffer::U32(idx) => {
+                let data = idx.data.read().unwrap();
+                (data[base] as usize, data[base + 1] as usize, data[base + 2] as usize)
+            }
+            IndexBuffer::None => (base, base + 1, base + 2),
+        };
+        lines.push(i0);
+        lines.push(i1);
+        lines.push(i1);
+        lines.push(i2);
+        lines.push(i2);
+        lines.push(i0);
+    }
+    return lines;
+}
+
 pub fn ensure_wgpu_wireframe_upload(
     state: &WgpuRenderState,
     geometry: &MeshGeometry,
@@ -48,50 +92,6 @@ pub fn ensure_wgpu_wireframe_upload(
         line_count: (lines.len() / 2) as u32,
         version: geometry.version,
     });
-}
-
-fn build_line_indices(geometry: &MeshGeometry) -> Vec<usize> {
-    let layout = geometry.layout.read().unwrap();
-    let stride = layout.stride;
-    let triangle_count = match &geometry.indices {
-        IndexBuffer::U16(idx) => idx.data.read().unwrap().len() / 3,
-        IndexBuffer::U32(idx) => idx.data.read().unwrap().len() / 3,
-        IndexBuffer::None => {
-            if stride > 0 {
-                let vertex_bytes = geometry.vertices.len() * std::mem::size_of::<f32>();
-                vertex_bytes / stride as usize / 3
-            } else {
-                0
-            }
-        }
-    };
-
-    let mut lines = Vec::with_capacity(triangle_count * 6);
-    for t in 0..triangle_count {
-        let base = t * 3;
-        let (i0, i1, i2) = match &geometry.indices {
-            IndexBuffer::U16(idx) => {
-                let data = idx.data.read().unwrap();
-                (data[base] as usize, data[base + 1] as usize, data[base + 2] as usize)
-            }
-            IndexBuffer::U32(idx) => {
-                let data = idx.data.read().unwrap();
-                (data[base] as usize, data[base + 1] as usize, data[base + 2] as usize)
-            }
-            IndexBuffer::None => (base, base + 1, base + 2),
-        };
-        lines.push(i0);
-        lines.push(i1);
-        lines.push(i1);
-        lines.push(i2);
-        lines.push(i2);
-        lines.push(i0);
-    }
-    return lines;
-}
-
-fn align_to_4(byte_length: usize) -> usize {
-    return (byte_length + 3) & !3;
 }
 
 fn u16_as_bytes_owned(data: Vec<u16>) -> Vec<u8> {

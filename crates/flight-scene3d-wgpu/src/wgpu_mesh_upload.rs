@@ -5,25 +5,6 @@ use flight_render_wgpu::{get_wgpu_render_state_native_device, WgpuRenderState};
 use crate::types::WgpuMeshUpload;
 use crate::wgpu_scene3d_runtime::get_wgpu_scene3d_runtime_mut;
 
-pub fn ensure_wgpu_mesh_upload<R>(
-    state: &WgpuRenderState,
-    geometry: &MeshGeometry,
-    f: impl FnOnce(&WgpuMeshUpload) -> R,
-) -> R {
-    let geom_id = get_entity_id(geometry);
-    return get_wgpu_scene3d_runtime_mut(state, |rt| {
-        let needs_upload = match rt.upload_cache.get(&geom_id) {
-            Some(upload) if upload.version == geometry.version => false,
-            _ => true,
-        };
-        if needs_upload {
-            let upload = create_mesh_upload(state, geometry);
-            rt.upload_cache.insert(geom_id, upload);
-        }
-        return f(rt.upload_cache.get(&geom_id).unwrap());
-    });
-}
-
 fn create_mesh_upload(state: &WgpuRenderState, geometry: &MeshGeometry) -> WgpuMeshUpload {
     let native = get_wgpu_render_state_native_device(state);
     let vertices = &geometry.vertices;
@@ -87,6 +68,25 @@ fn create_mesh_upload(state: &WgpuRenderState, geometry: &MeshGeometry) -> WgpuM
 
 fn align_to_4(byte_length: usize) -> usize {
     return (byte_length + 3) & !3;
+}
+
+pub fn ensure_wgpu_mesh_upload<R>(
+    state: &WgpuRenderState,
+    geometry: &MeshGeometry,
+    f: impl FnOnce(&WgpuMeshUpload) -> R,
+) -> R {
+    let geom_id = get_entity_id(geometry);
+    return get_wgpu_scene3d_runtime_mut(state, |rt| {
+        let needs_upload = match rt.upload_cache.get(&geom_id) {
+            Some(upload) if upload.version == geometry.version => false,
+            _ => true,
+        };
+        if needs_upload {
+            let upload = create_mesh_upload(state, geometry);
+            rt.upload_cache.insert(geom_id, upload);
+        }
+        return f(rt.upload_cache.get(&geom_id).unwrap());
+    });
 }
 
 fn f32_as_bytes(data: &[f32]) -> &[u8] {

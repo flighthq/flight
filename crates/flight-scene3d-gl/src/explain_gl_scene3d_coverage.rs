@@ -4,10 +4,6 @@ use flight_scene3d::Scene3DKindUsage;
 use crate::gl_mesh_material_registry::has_gl_mesh_material_renderer;
 use crate::gl_modifier_snippet_registry::has_gl_modifier_snippet;
 
-pub fn has_gl_scene3d_coverage(state: &GlRenderState, usage: &Scene3DKindUsage) -> bool {
-    return !collect_gl_scene3d_coverage_gaps(state, usage, true);
-}
-
 fn collect_gl_scene3d_coverage_gaps(
     state: &GlRenderState,
     usage: &Scene3DKindUsage,
@@ -36,4 +32,8 @@ fn collect_gl_scene3d_coverage_gaps(
     }
 
     return found;
+}
+
+pub fn has_gl_scene3d_coverage(state: &GlRenderState, usage: &Scene3DKindUsage) -> bool {
+    return !collect_gl_scene3d_coverage_gaps(state, usage, true);
 }

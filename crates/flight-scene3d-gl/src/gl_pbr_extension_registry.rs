@@ -4,12 +4,6 @@ use flight_render_gl::GlRenderState;
 use crate::gl_scene3d_runtime::{get_gl_scene3d_runtime, get_gl_scene3d_runtime_mut};
 use crate::{GlPbrExtensionIssue, GlPbrExtensionRegistration};
 
-pub fn register_gl_pbr_extension(state: &GlRenderState, registration: GlPbrExtensionRegistration) {
-    get_gl_scene3d_runtime_mut(state, |rt| {
-        rt.pbr_extension_registrations.insert(registration.kind.clone(), registration);
-    });
-}
-
 pub fn explain_gl_pbr_extensions(
     state: &GlRenderState,
     extensions: &[PbrExtension],
@@ -61,4 +55,10 @@ fn get_pbr_extension_kind(ext: &PbrExtension) -> String {
         PbrExtension::TransmissionVolume(e) => e.kind.clone(),
         PbrExtension::WrappedDiffuse(e) => e.kind.clone(),
     };
+}
+
+pub fn register_gl_pbr_extension(state: &GlRenderState, registration: GlPbrExtensionRegistration) {
+    get_gl_scene3d_runtime_mut(state, |rt| {
+        rt.pbr_extension_registrations.insert(registration.kind.clone(), registration);
+    });
 }

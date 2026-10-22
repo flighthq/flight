@@ -4,10 +4,6 @@ use flight_scene3d::Scene3DKindUsage;
 use crate::wgpu_mesh_material_registry::has_wgpu_mesh_material_renderer;
 use crate::wgpu_shaded_modifier_snippet::has_wgpu_modifier_snippet;
 
-pub fn has_wgpu_scene3d_coverage(state: &WgpuRenderState, usage: &Scene3DKindUsage) -> bool {
-    return !collect_wgpu_scene3d_coverage_gaps(state, usage, true);
-}
-
 fn collect_wgpu_scene3d_coverage_gaps(
     state: &WgpuRenderState,
     usage: &Scene3DKindUsage,
@@ -36,4 +32,8 @@ fn collect_wgpu_scene3d_coverage_gaps(
     }
 
     return found;
+}
+
+pub fn has_wgpu_scene3d_coverage(state: &WgpuRenderState, usage: &Scene3DKindUsage) -> bool {
+    return !collect_wgpu_scene3d_coverage_gaps(state, usage, true);
 }

@@ -10,32 +10,6 @@ thread_local! {
     static SCENE_RUNTIMES: RefCell<HashMap<u64, WgpuScene3DRuntime>> = RefCell::new(HashMap::new());
 }
 
-pub fn get_wgpu_scene3d_runtime<R>(state: &WgpuRenderState, f: impl FnOnce(&WgpuScene3DRuntime) -> R) -> R {
-    let id = get_entity_id(state);
-    SCENE_RUNTIMES.with(|runtimes| {
-        let mut map = runtimes.borrow_mut();
-        let scene = map.entry(id).or_insert_with(create_default_runtime);
-        f(scene)
-    })
-}
-
-pub fn get_wgpu_scene3d_runtime_mut<R>(state: &WgpuRenderState, f: impl FnOnce(&mut WgpuScene3DRuntime) -> R) -> R {
-    let id = get_entity_id(state);
-    SCENE_RUNTIMES.with(|runtimes| {
-        let mut map = runtimes.borrow_mut();
-        let scene = map.entry(id).or_insert_with(create_default_runtime);
-        f(scene)
-    })
-}
-
-pub fn destroy_wgpu_scene3d_runtime(state: &WgpuRenderState) {
-    let id = get_entity_id(state);
-    SCENE_RUNTIMES.with(|runtimes| {
-        let mut map = runtimes.borrow_mut();
-        map.remove(&id);
-    });
-}
-
 fn create_default_runtime() -> WgpuScene3DRuntime {
     return WgpuScene3DRuntime {
         active_blend_mode: None,
@@ -111,4 +85,30 @@ fn create_default_runtime() -> WgpuScene3DRuntime {
         time: 0.0,
         upload_cache: HashMap::new(),
     };
+}
+
+pub fn destroy_wgpu_scene3d_runtime(state: &WgpuRenderState) {
+    let id = get_entity_id(state);
+    SCENE_RUNTIMES.with(|runtimes| {
+        let mut map = runtimes.borrow_mut();
+        map.remove(&id);
+    });
+}
+
+pub fn get_wgpu_scene3d_runtime<R>(state: &WgpuRenderState, f: impl FnOnce(&WgpuScene3DRuntime) -> R) -> R {
+    let id = get_entity_id(state);
+    SCENE_RUNTIMES.with(|runtimes| {
+        let mut map = runtimes.borrow_mut();
+        let scene = map.entry(id).or_insert_with(create_default_runtime);
+        f(scene)
+    })
+}
+
+pub fn get_wgpu_scene3d_runtime_mut<R>(state: &WgpuRenderState, f: impl FnOnce(&mut WgpuScene3DRuntime) -> R) -> R {
+    let id = get_entity_id(state);
+    SCENE_RUNTIMES.with(|runtimes| {
+        let mut map = runtimes.borrow_mut();
+        let scene = map.entry(id).or_insert_with(create_default_runtime);
+        f(scene)
+    })
 }
