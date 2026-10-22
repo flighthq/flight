@@ -41,6 +41,7 @@ src/host_query.rs: pub fn get_host_soft_keyboard_info(host: &Host) -> Option<&Ho
 src/host_query.rs: pub fn get_host_text_segmenter(host: &Host) -> Option<&HostTextSegmenterCapability>
 src/host_query.rs: pub fn get_host_text_shaper(host: &Host) -> Option<&HostTextShaperCapability>
 src/host_query.rs: pub fn get_host_video(host: &Host) -> Option<&HostVideoCapability>
+src/host_query.rs: pub fn get_host_wgpu(host: &Host) -> Option<&HostWgpuCapability>
 src/host_query.rs: pub fn has_host_audio_device(host: &Host) -> bool
 src/host_query.rs: pub fn has_host_audio_mixer(host: &Host) -> bool
 src/host_query.rs: pub fn has_host_bitmap_encode(host: &Host) -> bool
@@ -68,6 +69,7 @@ src/host_query.rs: pub fn has_host_soft_keyboard_info(host: &Host) -> bool
 src/host_query.rs: pub fn has_host_text_segmenter(host: &Host) -> bool
 src/host_query.rs: pub fn has_host_text_shaper(host: &Host) -> bool
 src/host_query.rs: pub fn has_host_video(host: &Host) -> bool
+src/host_query.rs: pub fn has_host_wgpu(host: &Host) -> bool
 src/lib.rs: pub mod contract
 src/lib.rs: pub use contract::Host;
 src/lib.rs: pub use contract::HostCapabilityBackend;
@@ -111,6 +113,7 @@ src/lib.rs: pub use contract::get_host_soft_keyboard_info;
 src/lib.rs: pub use contract::get_host_text_segmenter;
 src/lib.rs: pub use contract::get_host_text_shaper;
 src/lib.rs: pub use contract::get_host_video;
+src/lib.rs: pub use contract::get_host_wgpu;
 src/lib.rs: pub use contract::has_host_audio_device;
 src/lib.rs: pub use contract::has_host_audio_mixer;
 src/lib.rs: pub use contract::has_host_bitmap_encode;
@@ -138,6 +141,7 @@ src/lib.rs: pub use contract::has_host_soft_keyboard_info;
 src/lib.rs: pub use contract::has_host_text_segmenter;
 src/lib.rs: pub use contract::has_host_text_shaper;
 src/lib.rs: pub use contract::has_host_video;
+src/lib.rs: pub use contract::has_host_wgpu;
 src/sugar.rs: impl Host :: fn audio_device(&self) -> Option<&HostAudioDeviceCapability>
 src/sugar.rs: impl Host :: fn audio_mixer(&self) -> Option<&HostAudioMixerCapability>
 src/sugar.rs: impl Host :: fn bitmap_encode(&self) -> Option<&HostBitmapEncodeCapability>
@@ -184,6 +188,7 @@ src/sugar.rs: impl Host :: fn has_soft_keyboard_info(&self) -> bool
 src/sugar.rs: impl Host :: fn has_text_segmenter(&self) -> bool
 src/sugar.rs: impl Host :: fn has_text_shaper(&self) -> bool
 src/sugar.rs: impl Host :: fn has_video(&self) -> bool
+src/sugar.rs: impl Host :: fn has_wgpu(&self) -> bool
 src/sugar.rs: impl Host :: fn image(&self) -> Option<&HostImageCapability>
 src/sugar.rs: impl Host :: fn input_ingress(&self) -> Option<&HostInputIngressCapability>
 src/sugar.rs: impl Host :: fn lifecycle(&self) -> Option<&HostLifecycleCapability>
@@ -201,12 +206,13 @@ src/sugar.rs: impl Host :: fn soft_keyboard_info(&self) -> Option<&HostSoftKeybo
 src/sugar.rs: impl Host :: fn text_segmenter(&self) -> Option<&HostTextSegmenterCapability>
 src/sugar.rs: impl Host :: fn text_shaper(&self) -> Option<&HostTextShaperCapability>
 src/sugar.rs: impl Host :: fn video(&self) -> Option<&HostVideoCapability>
+src/sugar.rs: impl Host :: fn wgpu(&self) -> Option<&HostWgpuCapability>
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HostCapabilityBackend { pub entry_point: String, pub package_name: String, pub platform: String, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HostCapabilityCoverage { pub capability: String, pub group: String, pub is_present: bool, pub slot: String, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HostCapabilityExplanation { pub backends: Vec<HostCapabilityBackend>, pub capability: String, pub group: String, pub is_present: bool, pub message: String, pub slot: String, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HostCapabilityGroupExplanation { pub group: String, pub slots: Vec<String>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct HostExplanation { pub capabilities: Vec<HostCapabilityCoverage>, pub groups: Vec<HostCapabilityGroupExplanation>, }
-src/types.rs: #[derive(Default)] pub struct Host { runtime: EntityRuntimeSlot, pub accessibility: HostAccessibilityCapabilities, pub app: HostAppCapabilities, pub audio: HostAudioCapabilities, pub audio_decode: HostAudioDecodeCapabilities, pub bitmap: HostBitmapCapabilities, pub canvas: HostCanvasCapabilities, pub clipboard: HostClipboardCapabilities, pub compress: HostCompressCapabilities, pub connectivity: HostConnectivityCapabilities, pub decompress: HostDecompressCapabilities, pub device: HostDeviceCapabilities, pub dialog: HostDialogCapabilities, pub file_system: HostFileSystemCapabilities, pub font: HostFontCapabilities, pub fullscreen: HostFullscreenCapabilities, pub geolocation: HostGeolocationCapabilities, pub glyph: HostGlyphCapabilities, pub haptics: HostHapticsCapabilities, pub image: HostImageCapabilities, pub image_decode: HostImageDecodeCapabilities, pub image_encode: HostImageEncodeCapabilities, pub input: HostInputCapabilities, pub ipc: HostIpcCapabilities, pub lifecycle: HostLifecycleCapabilities, pub media_session: HostMediaSessionCapabilities, pub menu: HostMenuCapabilities, pub midi: HostMidiCapabilities, pub net: HostNetCapabilities, pub notification: HostNotificationCapabilities, pub permissions: HostPermissionsCapabilities, pub platform: HostPlatformCapabilities, pub power: HostPowerCapabilities, pub preferences: HostPreferencesCapabilities, pub protocol: HostProtocolCapabilities, pub screen: HostScreenCapabilities, pub sensors: HostSensorsCapabilities, pub share: HostShareCapabilities, pub shell: HostShellCapabilities, pub shortcut: HostShortcutCapabilities, pub socket: HostSocketCapabilities, pub soft_keyboard: HostSoftKeyboardCapabilities, pub status_bar: HostStatusBarCapabilities, pub surface: HostSurfaceCapabilities, pub text_segment: HostTextSegmentCapabilities, pub text_shaper: HostTextShaperCapabilities, pub tray: HostTrayCapabilities, pub updater: HostUpdaterCapabilities, pub video: HostVideoCapabilities, pub window: HostWindowCapabilities, }
+src/types.rs: #[derive(Default)] pub struct Host { runtime: EntityRuntimeSlot, pub accessibility: HostAccessibilityCapabilities, pub app: HostAppCapabilities, pub audio: HostAudioCapabilities, pub audio_decode: HostAudioDecodeCapabilities, pub bitmap: HostBitmapCapabilities, pub canvas: HostCanvasCapabilities, pub clipboard: HostClipboardCapabilities, pub compress: HostCompressCapabilities, pub connectivity: HostConnectivityCapabilities, pub decompress: HostDecompressCapabilities, pub device: HostDeviceCapabilities, pub dialog: HostDialogCapabilities, pub file_system: HostFileSystemCapabilities, pub font: HostFontCapabilities, pub fullscreen: HostFullscreenCapabilities, pub geolocation: HostGeolocationCapabilities, pub gl: HostGlCapabilities, pub glyph: HostGlyphCapabilities, pub haptics: HostHapticsCapabilities, pub image: HostImageCapabilities, pub image_decode: HostImageDecodeCapabilities, pub image_encode: HostImageEncodeCapabilities, pub input: HostInputCapabilities, pub ipc: HostIpcCapabilities, pub lifecycle: HostLifecycleCapabilities, pub media_session: HostMediaSessionCapabilities, pub menu: HostMenuCapabilities, pub midi: HostMidiCapabilities, pub net: HostNetCapabilities, pub notification: HostNotificationCapabilities, pub permissions: HostPermissionsCapabilities, pub platform: HostPlatformCapabilities, pub power: HostPowerCapabilities, pub preferences: HostPreferencesCapabilities, pub protocol: HostProtocolCapabilities, pub screen: HostScreenCapabilities, pub sensors: HostSensorsCapabilities, pub share: HostShareCapabilities, pub shell: HostShellCapabilities, pub shortcut: HostShortcutCapabilities, pub socket: HostSocketCapabilities, pub soft_keyboard: HostSoftKeyboardCapabilities, pub status_bar: HostStatusBarCapabilities, pub surface: HostSurfaceCapabilities, pub text_segment: HostTextSegmentCapabilities, pub text_shaper: HostTextShaperCapabilities, pub tray: HostTrayCapabilities, pub updater: HostUpdaterCapabilities, pub video: HostVideoCapabilities, pub wgpu: HostWgpuCapabilities, pub window: HostWindowCapabilities, }
 src/types.rs: impl Entity for Host
 src/types.rs: impl Entity for Host :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for Host :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
