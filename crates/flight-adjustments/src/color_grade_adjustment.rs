@@ -68,12 +68,14 @@ struct ColorGradeTransform {
     gain: [f32; 3],
 }
 
+// flight-lint: allow(conform-params) D23 C: options derive captured transform from exposure/contrast/saturation/temperature/tint/lift/gamma/gain — KEEP under c0f9227c
 pub fn create_color_grade_adjustment(options: Option<&ColorGradeAdjustmentOptions>) -> ColorGradeAdjustment {
     let mut out: ColorGradeAdjustment = allocate_entity();
     initialize_color_grade_adjustment(&mut out, options);
     return out;
 }
 
+// flight-lint: allow(conform-params) D23 C: options derive captured transform from exposure/contrast/saturation/temperature/tint/lift/gamma/gain — KEEP under c0f9227c
 pub fn initialize_color_grade_adjustment(out: &mut ColorGradeAdjustment, options: Option<&ColorGradeAdjustmentOptions>) {
     let exposure = options.and_then(|o| o.exposure).unwrap_or(0.0);
     let brightness = options.and_then(|o| o.brightness).unwrap_or(0.0);

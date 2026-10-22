@@ -30,12 +30,14 @@ pub struct InvertAdjustmentOptions {
     pub intensity: Option<f32>,
 }
 
+// flight-lint: allow(conform-params) D23 C: options derive the invert intensity matrix — KEEP under c0f9227c
 pub fn create_invert_adjustment(options: Option<&InvertAdjustmentOptions>) -> InvertAdjustment {
     let mut out: InvertAdjustment = allocate_entity();
     initialize_invert_adjustment(&mut out, options);
     return out;
 }
 
+// flight-lint: allow(conform-params) D23 C: options derive the invert intensity matrix — KEEP under c0f9227c
 pub fn initialize_invert_adjustment(out: &mut InvertAdjustment, options: Option<&InvertAdjustmentOptions>) {
     let intensity = options.and_then(|o| o.intensity).unwrap_or(1.0);
     let s = 1.0 - 2.0 * intensity;

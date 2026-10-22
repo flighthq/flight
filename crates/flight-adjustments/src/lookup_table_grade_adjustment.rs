@@ -39,12 +39,14 @@ pub struct LookupTableGradeAdjustmentOptions {
     pub strength: Option<f32>,
 }
 
+// flight-lint: allow(conform-params) D23 C: options capture LUT + strength for color grading — KEEP under c0f9227c
 pub fn create_lookup_table_grade_adjustment(options: Option<&LookupTableGradeAdjustmentOptions>) -> LookupTableGradeAdjustment {
     let mut out: LookupTableGradeAdjustment = allocate_entity();
     initialize_lookup_table_grade_adjustment(&mut out, options);
     return out;
 }
 
+// flight-lint: allow(conform-params) D23 C: options capture LUT + strength for color grading — KEEP under c0f9227c
 pub fn initialize_lookup_table_grade_adjustment(out: &mut LookupTableGradeAdjustment, options: Option<&LookupTableGradeAdjustmentOptions>) {
     let lut = options.and_then(|o| o.lut.clone());
     let strength = options.and_then(|o| o.strength).unwrap_or(1.0);

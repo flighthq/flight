@@ -30,12 +30,14 @@ pub struct GrayscaleAdjustmentOptions {
     pub intensity: Option<f32>,
 }
 
+// flight-lint: allow(conform-params) D23 C: options derive the grayscale intensity matrix — KEEP under c0f9227c
 pub fn create_grayscale_adjustment(options: Option<&GrayscaleAdjustmentOptions>) -> GrayscaleAdjustment {
     let mut out: GrayscaleAdjustment = allocate_entity();
     initialize_grayscale_adjustment(&mut out, options);
     return out;
 }
 
+// flight-lint: allow(conform-params) D23 C: options derive the grayscale intensity matrix — KEEP under c0f9227c
 pub fn initialize_grayscale_adjustment(out: &mut GrayscaleAdjustment, options: Option<&GrayscaleAdjustmentOptions>) {
     let intensity = options.and_then(|o| o.intensity).unwrap_or(1.0);
     let k = intensity;

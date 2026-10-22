@@ -43,12 +43,14 @@ pub struct ColorBlindSimulationAdjustmentOptions {
     pub type_: Option<ColorBlindType>,
 }
 
+// flight-lint: allow(conform-params) D23 C: type_ selects the simulation color matrix — KEEP under c0f9227c
 pub fn create_color_blind_simulation_adjustment(options: Option<&ColorBlindSimulationAdjustmentOptions>) -> ColorBlindSimulationAdjustment {
     let mut out: ColorBlindSimulationAdjustment = allocate_entity();
     initialize_color_blind_simulation_adjustment(&mut out, options);
     return out;
 }
 
+// flight-lint: allow(conform-params) D23 C: type_ selects the simulation color matrix — KEEP under c0f9227c
 pub fn initialize_color_blind_simulation_adjustment(out: &mut ColorBlindSimulationAdjustment, options: Option<&ColorBlindSimulationAdjustmentOptions>) {
     let color_blind_type = options.and_then(|o| o.type_).unwrap_or(ColorBlindType::Deuteranopia);
     let m = get_color_blind_matrix(color_blind_type);

@@ -41,12 +41,14 @@ pub struct HueSaturationAdjustmentOptions {
     pub lightness: Option<f32>,
 }
 
+// flight-lint: allow(conform-params) D23 C: options derive the hue/saturation/lightness matrix — KEEP under c0f9227c
 pub fn create_hue_saturation_adjustment(options: Option<&HueSaturationAdjustmentOptions>) -> HueSaturationAdjustment {
     let mut out: HueSaturationAdjustment = allocate_entity();
     initialize_hue_saturation_adjustment(&mut out, options);
     return out;
 }
 
+// flight-lint: allow(conform-params) D23 C: options derive the hue/saturation/lightness matrix — KEEP under c0f9227c
 pub fn initialize_hue_saturation_adjustment(out: &mut HueSaturationAdjustment, options: Option<&HueSaturationAdjustmentOptions>) {
     let hue = options.and_then(|o| o.hue).unwrap_or(0.0);
     let saturation = options.and_then(|o| o.saturation).unwrap_or(1.0);

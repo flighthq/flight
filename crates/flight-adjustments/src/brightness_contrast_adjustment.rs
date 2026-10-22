@@ -32,12 +32,14 @@ pub struct BrightnessContrastAdjustmentOptions {
     pub contrast: Option<f32>,
 }
 
+// flight-lint: allow(conform-params) D23 C: options derive the 4x5 color matrix from brightness+contrast — KEEP under c0f9227c
 pub fn create_brightness_contrast_adjustment(options: Option<&BrightnessContrastAdjustmentOptions>) -> BrightnessContrastAdjustment {
     let mut out: BrightnessContrastAdjustment = allocate_entity();
     initialize_brightness_contrast_adjustment(&mut out, options);
     return out;
 }
 
+// flight-lint: allow(conform-params) D23 C: options derive the 4x5 color matrix from brightness+contrast — KEEP under c0f9227c
 pub fn initialize_brightness_contrast_adjustment(out: &mut BrightnessContrastAdjustment, options: Option<&BrightnessContrastAdjustmentOptions>) {
     let brightness = options.and_then(|o| o.brightness).unwrap_or(0.0);
     let contrast = options.and_then(|o| o.contrast).unwrap_or(1.0);

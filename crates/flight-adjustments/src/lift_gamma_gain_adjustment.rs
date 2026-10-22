@@ -41,12 +41,14 @@ pub struct LiftGammaGainAdjustmentOptions {
     pub gain: Option<u32>,
 }
 
+// flight-lint: allow(conform-params) D23 C: options derive the LGG color matrix from packed RGBA lift/gamma/gain — KEEP under c0f9227c
 pub fn create_lift_gamma_gain_adjustment(options: Option<&LiftGammaGainAdjustmentOptions>) -> LiftGammaGainAdjustment {
     let mut out: LiftGammaGainAdjustment = allocate_entity();
     initialize_lift_gamma_gain_adjustment(&mut out, options);
     return out;
 }
 
+// flight-lint: allow(conform-params) D23 C: options derive the LGG color matrix from packed RGBA lift/gamma/gain — KEEP under c0f9227c
 pub fn initialize_lift_gamma_gain_adjustment(out: &mut LiftGammaGainAdjustment, options: Option<&LiftGammaGainAdjustmentOptions>) {
     let lift = options.and_then(|o| o.lift).unwrap_or(0x000000ff);
     let gamma = options.and_then(|o| o.gamma).unwrap_or(0x808080ff);

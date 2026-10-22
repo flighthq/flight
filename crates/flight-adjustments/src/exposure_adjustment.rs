@@ -30,12 +30,14 @@ pub struct ExposureAdjustmentOptions {
     pub exposure: Option<f32>,
 }
 
+// flight-lint: allow(conform-params) D23 C: options derive the exposure color matrix — KEEP under c0f9227c
 pub fn create_exposure_adjustment(options: Option<&ExposureAdjustmentOptions>) -> ExposureAdjustment {
     let mut out: ExposureAdjustment = allocate_entity();
     initialize_exposure_adjustment(&mut out, options);
     return out;
 }
 
+// flight-lint: allow(conform-params) D23 C: options derive the exposure color matrix — KEEP under c0f9227c
 pub fn initialize_exposure_adjustment(out: &mut ExposureAdjustment, options: Option<&ExposureAdjustmentOptions>) {
     let exposure = options.and_then(|o| o.exposure).unwrap_or(0.0);
     let m = (2.0_f32).powf(exposure);

@@ -33,12 +33,14 @@ pub struct ChannelMixerAdjustmentOptions {
     pub matrix: [f32; 12],
 }
 
+// flight-lint: allow(conform-params) D23 C: options carry the channel mixer matrix — KEEP under c0f9227c
 pub fn create_channel_mixer_adjustment(options: Option<&ChannelMixerAdjustmentOptions>) -> ChannelMixerAdjustment {
     let mut out: ChannelMixerAdjustment = allocate_entity();
     initialize_channel_mixer_adjustment(&mut out, options);
     return out;
 }
 
+// flight-lint: allow(conform-params) D23 C: options carry the channel mixer matrix — KEEP under c0f9227c
 pub fn initialize_channel_mixer_adjustment(out: &mut ChannelMixerAdjustment, options: Option<&ChannelMixerAdjustmentOptions>) {
     let matrix = options.map_or(IDENTITY_CHANNEL_MIXER, |o| o.matrix);
     let m = |i: usize| -> f32 { matrix[i] };

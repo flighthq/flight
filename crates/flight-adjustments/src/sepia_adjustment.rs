@@ -29,12 +29,14 @@ pub struct SepiaAdjustmentOptions {
     pub intensity: Option<f32>,
 }
 
+// flight-lint: allow(conform-params) D23 C: options derive the sepia intensity matrix — KEEP under c0f9227c
 pub fn create_sepia_adjustment(options: Option<&SepiaAdjustmentOptions>) -> SepiaAdjustment {
     let mut out: SepiaAdjustment = allocate_entity();
     initialize_sepia_adjustment(&mut out, options);
     return out;
 }
 
+// flight-lint: allow(conform-params) D23 C: options derive the sepia intensity matrix — KEEP under c0f9227c
 pub fn initialize_sepia_adjustment(out: &mut SepiaAdjustment, options: Option<&SepiaAdjustmentOptions>) {
     let intensity = options.and_then(|o| o.intensity).unwrap_or(1.0);
     let k = intensity;
