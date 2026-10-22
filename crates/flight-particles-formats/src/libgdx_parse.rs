@@ -123,6 +123,7 @@ struct LibgdxSection {
 }
 
 struct LibgdxSections {
+    #[allow(dead_code)]
     header: String,
     sections: Vec<(String, LibgdxSection)>,
 }

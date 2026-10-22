@@ -45,8 +45,6 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
     let data = &path.data;
     let tolerance_sq = tolerance * tolerance;
     let mut winding_number: i32 = 0;
-    let mut x: f64 = 0.0;
-    let mut y: f64 = 0.0;
     let mut contour_start_x: f64 = 0.0;
     let mut contour_start_y: f64 = 0.0;
     let mut has_contour = false;
@@ -60,25 +58,21 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
             if has_contour {
                 winding_number += count_segment_crossings(px, py, last_x, last_y, contour_start_x, contour_start_y);
             }
-            x = data[di];
-            y = data[di + 1];
+            contour_start_x = data[di];
+            contour_start_y = data[di + 1];
             di += 2;
-            contour_start_x = x;
-            contour_start_y = y;
-            last_x = x;
-            last_y = y;
+            last_x = contour_start_x;
+            last_y = contour_start_y;
             has_contour = true;
         } else if command == PathCommand::WideMoveTo as u8 {
             if has_contour {
                 winding_number += count_segment_crossings(px, py, last_x, last_y, contour_start_x, contour_start_y);
             }
-            x = data[di + 2];
-            y = data[di + 3];
+            contour_start_x = data[di + 2];
+            contour_start_y = data[di + 3];
             di += 4;
-            contour_start_x = x;
-            contour_start_y = y;
-            last_x = x;
-            last_y = y;
+            last_x = contour_start_x;
+            last_y = contour_start_y;
             has_contour = true;
         } else if command == PathCommand::LineTo as u8 {
             let nx = data[di];
@@ -89,8 +83,6 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
             }
             last_x = nx;
             last_y = ny;
-            x = nx;
-            y = ny;
         } else if command == PathCommand::WideLineTo as u8 {
             let nx = data[di + 2];
             let ny = data[di + 3];
@@ -100,8 +92,6 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
             }
             last_x = nx;
             last_y = ny;
-            x = nx;
-            y = ny;
         } else if command == PathCommand::QuadraticCurveTo as u8 {
             let cx = data[di];
             let cy = data[di + 1];
@@ -113,8 +103,6 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
             }
             last_x = ax;
             last_y = ay;
-            x = ax;
-            y = ay;
         } else if command == PathCommand::CubicCurveTo as u8 {
             let c1x = data[di];
             let c1y = data[di + 1];
@@ -128,15 +116,11 @@ fn compute_path_winding_number(path: &Path, px: f64, py: f64, tolerance: f64) ->
             }
             last_x = ax;
             last_y = ay;
-            x = ax;
-            y = ay;
         } else if command == PathCommand::Close as u8 {
             if has_contour {
                 winding_number += count_segment_crossings(px, py, last_x, last_y, contour_start_x, contour_start_y);
                 last_x = contour_start_x;
                 last_y = contour_start_y;
-                x = contour_start_x;
-                y = contour_start_y;
                 has_contour = false;
             }
         }

@@ -119,6 +119,7 @@ pub(crate) fn as_node2d(node: &dyn Node) -> Option<&dyn Node2D> {
 }
 
 /// Mutable narrowing from any node to the 2D family (TS mutable `asNode2D` path).
+#[allow(dead_code)]
 pub(crate) fn as_node2d_mut(node: &mut dyn Node) -> Option<&mut dyn Node2D> {
     let key = get_node2d_traits_key(node)?;
     let narrow_mut = key.narrow_mut;

@@ -291,6 +291,7 @@ pub enum Node2DAnimationPath {
 pub struct Node2DTraitsKey {
     pub(crate) handle: OnceLock<Weak<RwLock<dyn Node2D>>>,
     pub(crate) narrow: fn(&dyn Node) -> Option<&dyn Node2D>,
+    #[allow(dead_code)]
     pub(crate) narrow_mut: fn(&mut dyn Node) -> Option<&mut dyn Node2D>,
 }
 

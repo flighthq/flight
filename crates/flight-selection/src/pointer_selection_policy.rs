@@ -60,12 +60,6 @@ mod sugar_tests {
         return out;
     }
 
-    fn method_selected(state: &SelectionState) -> Vec<NodeRef> {
-        let mut out = Vec::new();
-        state.selected_nodes(&mut out);
-        return out;
-    }
-
     fn same_nodes(a: &[NodeRef], b: &[NodeRef]) -> bool {
         return a.len() == b.len() && a.iter().zip(b).all(|(a, b)| Arc::ptr_eq(a, b));
     }

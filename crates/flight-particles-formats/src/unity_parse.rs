@@ -539,7 +539,7 @@ fn raw_to_config(raw: &Value, ppu: f32) -> ParticleEmitterConfig {
     };
     let gradient = color_over_lifetime
         .and_then(|color| color.get("gradient"))
-        .filter(|_gradient| color_enabled);
+        .filter(|_| color_enabled);
     let color_curve = color_keys_to_curve(gradient.and_then(|gradient| gradient.get("colorKeys")));
     let alpha_curve = alpha_keys_to_curve(gradient.and_then(|gradient| gradient.get("alphaKeys")));
     let scale_curve = if size_enabled {

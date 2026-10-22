@@ -120,6 +120,7 @@ pub fn assert_physics2d_world_not_stepping(world: &Physics2DWorld) {
     }
 }
 
+#[allow(dead_code)]
 pub(crate) fn is_physics2d_body_owned_by(body: &RigidBody2D, world: &Physics2DWorld) -> bool {
     return body
         .owner
