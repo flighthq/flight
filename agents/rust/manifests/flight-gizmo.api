@@ -1,0 +1,68 @@
+src/contract.rs: pub use crate::gizmo_alignment::*;
+src/contract.rs: pub use crate::gizmo_state::*;
+src/contract.rs: pub use crate::node2d_gizmo_features::*;
+src/contract.rs: pub use crate::types::*;
+src/gizmo_alignment.rs: pub fn compute_gizmo_alignment_deltas(out: &mut Vec<f32>, bounds: &[Rectangle], alignment: GizmoAlignment,)
+src/gizmo_alignment.rs: pub fn find_gizmo_smart_guides(out: &mut GizmoSmartGuideResult, moving_bounds: &Rectangle, candidate_bounds: &[Rectangle], threshold: f32,) -> bool
+src/gizmo_state.rs: pub fn create_gizmo_state(options: &GizmoCreateOptions) -> GizmoState
+src/gizmo_state.rs: pub fn dispose_gizmo_state(state: &GizmoState)
+src/gizmo_state.rs: pub fn get_gizmo_mode(state: &GizmoState) -> GizmoMode
+src/gizmo_state.rs: pub fn get_gizmo_signals(state: &GizmoState) -> GizmoSignals
+src/gizmo_state.rs: pub fn get_gizmo_space(state: &GizmoState) -> GizmoSpace
+src/gizmo_state.rs: pub fn set_gizmo_custom_pivot(state: &GizmoState, x: f32, y: f32)
+src/gizmo_state.rs: pub fn set_gizmo_mode(state: &GizmoState, mode: GizmoMode)
+src/gizmo_state.rs: pub fn set_gizmo_pivot(state: &GizmoState, pivot: GizmoPivot)
+src/gizmo_state.rs: pub fn set_gizmo_selection_outline_color(state: &GizmoState, color: u32)
+src/gizmo_state.rs: pub fn set_gizmo_selection_outline_enabled(state: &GizmoState, enabled: bool)
+src/gizmo_state.rs: pub fn set_gizmo_snap_rotation(state: &GizmoState, degrees: f32)
+src/gizmo_state.rs: pub fn set_gizmo_snap_scale(state: &GizmoState, step: f32)
+src/gizmo_state.rs: pub fn set_gizmo_snap_translate(state: &GizmoState, world_units: f32)
+src/gizmo_state.rs: pub fn set_gizmo_space(state: &GizmoState, space: GizmoSpace)
+src/gizmo_state.rs: pub fn update_gizmo(state: &GizmoState)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::GizmoAlignment;
+src/lib.rs: pub use contract::GizmoCreateOptions;
+src/lib.rs: pub use contract::GizmoHandleKind;
+src/lib.rs: pub use contract::GizmoMode;
+src/lib.rs: pub use contract::GizmoNode2DFeatures;
+src/lib.rs: pub use contract::GizmoPivot;
+src/lib.rs: pub use contract::GizmoSignals;
+src/lib.rs: pub use contract::GizmoSmartGuideResult;
+src/lib.rs: pub use contract::GizmoSpace;
+src/lib.rs: pub use contract::GizmoState;
+src/lib.rs: pub use contract::GizmoTransformMode;
+src/lib.rs: pub use contract::compute_gizmo_alignment_deltas;
+src/lib.rs: pub use contract::create_gizmo_state;
+src/lib.rs: pub use contract::create_node2d_gizmo_features;
+src/lib.rs: pub use contract::dispose_gizmo_state;
+src/lib.rs: pub use contract::find_gizmo_smart_guides;
+src/lib.rs: pub use contract::get_gizmo_mode;
+src/lib.rs: pub use contract::get_gizmo_signals;
+src/lib.rs: pub use contract::get_gizmo_space;
+src/lib.rs: pub use contract::set_gizmo_custom_pivot;
+src/lib.rs: pub use contract::set_gizmo_mode;
+src/lib.rs: pub use contract::set_gizmo_pivot;
+src/lib.rs: pub use contract::set_gizmo_selection_outline_color;
+src/lib.rs: pub use contract::set_gizmo_selection_outline_enabled;
+src/lib.rs: pub use contract::set_gizmo_snap_rotation;
+src/lib.rs: pub use contract::set_gizmo_snap_scale;
+src/lib.rs: pub use contract::set_gizmo_snap_translate;
+src/lib.rs: pub use contract::set_gizmo_space;
+src/lib.rs: pub use contract::update_gizmo;
+src/node2d_gizmo_features.rs: pub fn create_node2d_gizmo_features() -> GizmoNode2DFeatures
+src/types.rs: #[derive(Clone)] pub struct GizmoCreateOptions { pub camera: Ref<Camera2D>, pub features: GizmoNode2DFeatures, pub overlay_scene: Ref<Scene2D>, pub selection: Ref<SelectionState>, pub viewport_height: f32, pub viewport_width: f32, }
+src/types.rs: #[derive(Clone)] pub struct GizmoNode2DFeatures { pub get_world_bounds_rectangle: Arc<dyn Fn(&mut Rectangle, &NodeRef) -> bool + Send + Sync>, pub get_world_origin: Arc<dyn Fn(&mut Vector2, &NodeRef) + Send + Sync>, pub get_world_rotation: Arc<dyn Fn(&NodeRef) -> f32 + Send + Sync>, }
+src/types.rs: #[derive(Clone)] pub struct GizmoSignals { pub on_rotate: Signal<f32>, pub on_scale: Signal<(f32, f32)>, pub on_transform_begin: Signal<()>, pub on_transform_end: Signal<()>, pub on_translate: Signal<(f32, f32)>, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct GizmoSmartGuideResult { pub delta_x: f32, pub delta_y: f32, pub guide_x: Option<f32>, pub guide_y: Option<f32>, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GizmoAlignment { Bottom, HorizontalCenter, Left, Right, Top, VerticalCenter, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GizmoHandleKind { Rotate, ScaleX, ScaleXy, ScaleY, TranslateX, TranslateXy, TranslateY, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GizmoMode { None, Rotate, Scale, Translate, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GizmoPivot { Center, Custom, Origin, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GizmoSpace { Local, World, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GizmoTransformMode { Rotate, Scale, Translate, }
+src/types.rs: impl Default for GizmoState
+src/types.rs: impl Default for GizmoState :: fn default() -> Self
+src/types.rs: impl Entity for GizmoState
+src/types.rs: impl Entity for GizmoState :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/types.rs: impl Entity for GizmoState :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/types.rs: pub struct GizmoState { runtime: EntityRuntimeSlot, pub(crate) state: Option<Ref<crate::gizmo_state::GizmoRuntime>>, }
