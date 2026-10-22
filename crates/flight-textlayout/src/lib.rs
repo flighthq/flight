@@ -5,13 +5,13 @@
 //! this lower crate, which must not name the future text display objects.
 
 // flight-lint: conform-skip(clearRichTextContent, computeRichTextContent, getRichTextContent, computeRichTextBottomScrollV, computeRichTextLineCount, computeRichTextMaxScrollH, computeRichTextMaxScrollV, computeRichTextTextHeight, computeRichTextTextWidth, getRichTextScrollYOffset, clearTextLayoutResult, getTextLayoutResult) Principal 46126ffc plus 8b33bdfb D8 moves only runtime-dependent functions to flight-text
+// flight-lint: conform-skip(createTextFormatRange, initializeTextFormatRange) D8: defined once beside TextFormatRange in flight-textformat; re-exported here, not redefined
 
 mod rich_text_content;
 mod rich_text_query;
 mod sugar;
 mod text_bounds;
 mod text_format;
-mod text_format_range;
 mod text_layout;
 mod text_layout_group;
 mod text_layout_measure;
