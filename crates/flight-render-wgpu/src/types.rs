@@ -368,6 +368,7 @@ pub struct WgpuEffectRegistration {
 
 /// One material-renderer table entry (TS `WgpuMeshMaterialRenderer | WgpuQuadMaterialRenderer`): a
 /// material kind is either 2D or 3D, never both.
+// flight-lint: allow(enum-payload-named) D17 typed renderer table entry: the mesh arm holds the registered `&'static` renderer, as the scene2d node-renderer tables do
 #[derive(Clone)]
 pub enum WgpuMaterialRenderer {
     Mesh(&'static WgpuMeshMaterialRenderer),

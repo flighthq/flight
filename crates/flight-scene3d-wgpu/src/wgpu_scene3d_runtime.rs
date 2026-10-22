@@ -15,56 +15,6 @@ use flight_scene3d::Scene3DAppearanceState;
 
 use crate::types::*;
 
-/// Resolves scene3d-wgpu's private runtime for a state, allocating it and wiring the device tier's
-/// mesh upload cache on first use (TS `getWgpuScene3DRuntime`). Mutable by design: the draw path
-/// writes the caches and shared bindings every frame.
-pub fn get_wgpu_scene3d_runtime(state: &mut WgpuRenderState) -> &mut WgpuScene3DRuntime {
-    let installed = get_wgpu_render_state_runtime(state)
-        .scene3d_runtime
-        .as_ref()
-        .is_some_and(|value| value.is::<WgpuScene3DRuntime>());
-    if !installed {
-        let skinning_entry = get_wgpu_render_state_runtime(state).registries.gpu_skinning;
-        // The device tier owns the upload cache; a derived state keeps the map its primary already
-        // installed rather than replacing it with a state-local one.
-        {
-            let context = get_wgpu_render_state_runtime(state).context.clone();
-            let mut context = context.write().unwrap();
-            if context.scene_mesh_upload_cache.is_none() {
-                context.scene_mesh_upload_cache = Some(HashMap::new());
-            }
-        }
-        let scene = create_wgpu_scene3d_runtime_record(skinning_entry);
-        get_wgpu_render_state_runtime_mut(state).scene3d_runtime = Some(Box::new(scene));
-    }
-    return get_wgpu_render_state_runtime_mut(state)
-        .scene3d_runtime
-        .as_mut()
-        .and_then(|value| value.downcast_mut::<WgpuScene3DRuntime>())
-        .expect("the scene3d-wgpu runtime slot holds a WgpuScene3DRuntime");
-}
-
-/// The state-scoped opt-in GPU skinning adapter, or `None` (TS `getWgpuSkinningAdapter`).
-pub fn get_wgpu_skinning_adapter(
-    state: &mut WgpuRenderState,
-) -> Option<&'static WgpuSkinningAdapter> {
-    return get_wgpu_scene3d_runtime(state).skinning_adapter;
-}
-
-// The placeholder default material handed to a renderer for a subset whose material slot is empty
-// (TS `DEFAULT_MATERIAL`): a standard-kind material with createMaterial3D's own defaults.
-pub(crate) fn get_wgpu_scene3d_default_material(state: &mut WgpuRenderState) -> Material3DRef {
-    let scene = get_wgpu_scene3d_runtime(state);
-    if let Some(material) = &scene.default_material {
-        return material.clone();
-    }
-    let material: Material3DRef = Arc::new(RwLock::new(create_material3d(
-        STANDARD_MATERIAL_KIND.to_string(),
-    )));
-    scene.default_material = Some(material.clone());
-    return material;
-}
-
 fn create_wgpu_scene3d_runtime_record(
     skinning_adapter: Option<&'static WgpuSkinningAdapter>,
 ) -> WgpuScene3DRuntime {
@@ -151,4 +101,54 @@ fn create_wgpu_scene3d_runtime_record(
         sort_keys: HashMap::new(),
         time: 0.0,
     };
+}
+
+// The placeholder default material handed to a renderer for a subset whose material slot is empty
+// (TS `DEFAULT_MATERIAL`): a standard-kind material with createMaterial3D's own defaults.
+pub(crate) fn get_wgpu_scene3d_default_material(state: &mut WgpuRenderState) -> Material3DRef {
+    let scene = get_wgpu_scene3d_runtime(state);
+    if let Some(material) = &scene.default_material {
+        return material.clone();
+    }
+    let material: Material3DRef = Arc::new(RwLock::new(create_material3d(
+        STANDARD_MATERIAL_KIND.to_string(),
+    )));
+    scene.default_material = Some(material.clone());
+    return material;
+}
+
+/// Resolves scene3d-wgpu's private runtime for a state, allocating it and wiring the device tier's
+/// mesh upload cache on first use (TS `getWgpuScene3DRuntime`). Mutable by design: the draw path
+/// writes the caches and shared bindings every frame.
+pub fn get_wgpu_scene3d_runtime(state: &mut WgpuRenderState) -> &mut WgpuScene3DRuntime {
+    let installed = get_wgpu_render_state_runtime(state)
+        .scene3d_runtime
+        .as_ref()
+        .is_some_and(|value| value.is::<WgpuScene3DRuntime>());
+    if !installed {
+        let skinning_entry = get_wgpu_render_state_runtime(state).registries.gpu_skinning;
+        // The device tier owns the upload cache; a derived state keeps the map its primary already
+        // installed rather than replacing it with a state-local one.
+        {
+            let context = get_wgpu_render_state_runtime(state).context.clone();
+            let mut context = context.write().unwrap();
+            if context.scene_mesh_upload_cache.is_none() {
+                context.scene_mesh_upload_cache = Some(HashMap::new());
+            }
+        }
+        let scene = create_wgpu_scene3d_runtime_record(skinning_entry);
+        get_wgpu_render_state_runtime_mut(state).scene3d_runtime = Some(Box::new(scene));
+    }
+    return get_wgpu_render_state_runtime_mut(state)
+        .scene3d_runtime
+        .as_mut()
+        .and_then(|value| value.downcast_mut::<WgpuScene3DRuntime>())
+        .expect("the scene3d-wgpu runtime slot holds a WgpuScene3DRuntime");
+}
+
+/// The state-scoped opt-in GPU skinning adapter, or `None` (TS `getWgpuSkinningAdapter`).
+pub fn get_wgpu_skinning_adapter(
+    state: &mut WgpuRenderState,
+) -> Option<&'static WgpuSkinningAdapter> {
+    return get_wgpu_scene3d_runtime(state).skinning_adapter;
 }

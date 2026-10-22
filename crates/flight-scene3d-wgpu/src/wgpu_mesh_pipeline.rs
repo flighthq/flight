@@ -224,6 +224,126 @@ pub fn build_wgpu_material_bind_group(
     return create_wgpu_bind_group(&native, layout, &entries);
 }
 
+fn build_wgpu_mesh_pipeline(
+    state: &mut WgpuRenderState,
+    options: &WgpuMeshPipelineOptions,
+    runtime: flight_entity::EntityRuntimeSlot,
+) -> WgpuMeshPipeline {
+    let native = get_wgpu_render_state_native_device(state);
+    let layouts = ensure_wgpu_scene3d_layouts(state);
+    let skinning = get_wgpu_scene3d_runtime(state).skinning_adapter;
+    let skinned = options.skinned == Some(true);
+    let blended = options.blended == Some(true);
+    let scene = get_wgpu_scene3d_runtime(state);
+    let blend_mode = if blended {
+        Some(
+            scene
+                .active_blend_mode
+                .clone()
+                .unwrap_or_else(|| BLEND_MODE_NORMAL.to_string()),
+        )
+    } else {
+        None
+    };
+    let mirrored = scene.active_mirrored_run;
+    let draw_layout = match (skinned, skinning) {
+        (true, Some(skinning)) => (skinning.get_mesh_draw_layout)(state),
+        _ => layouts.draw_bind_group_layout.clone(),
+    };
+    let mut bind_group_layouts = vec![
+        layouts.frame_bind_group_layout.clone(),
+        draw_layout,
+        options.material_bind_group_layout.clone(),
+    ];
+    if let Some(extra) = &options.extra_bind_group_layout {
+        bind_group_layouts.push(extra.clone());
+    }
+    if options.extra_bind_group_layout.is_none() {
+        if let Some(pbr_sample) = &options.pbr_sample_bind_group_layout {
+            bind_group_layouts.push(pbr_sample.clone());
+        } else {
+            // Group order is positional: shadow (group 3) then IBL (group 4).
+            if let Some(shadow) = &options.shadow_bind_group_layout {
+                bind_group_layouts.push(shadow.clone());
+            }
+            if let Some(ibl) = &options.ibl_bind_group_layout {
+                bind_group_layouts.push(ibl.clone());
+            }
+        }
+    }
+    let layout = create_wgpu_pipeline_layout_recorded(&native, &bind_group_layouts);
+    let mut buffers: Vec<Option<wgpu::VertexBufferLayout<'static>>> = Vec::new();
+    match (skinned, skinning) {
+        (true, Some(skinning)) => {
+            for buffer in skinning.vertex_buffer_layouts {
+                buffers.push(Some(buffer.clone()));
+            }
+        }
+        _ => buffers.push(Some(VERTEX_BUFFER_LAYOUT)),
+    }
+    buffers.push(Some(INSTANCE_BUFFER_LAYOUT));
+    let targets = [Some(wgpu::ColorTargetState {
+        format: options.format,
+        blend: blend_mode.map(|mode| get_wgpu_blend_state(Some(&mode))),
+        write_mask: wgpu::ColorWrites::ALL,
+    })];
+    let pipeline = create_wgpu_render_pipeline(
+        &native,
+        &wgpu::RenderPipelineDescriptor {
+            label: None,
+            layout: Some(&layout),
+            vertex: wgpu::VertexState {
+                module: &options.module,
+                entry_point: Some("vs_main"),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                buffers: &buffers,
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &options.module,
+                entry_point: Some("fs_main"),
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
+                targets: &targets,
+            }),
+            primitive: wgpu::PrimitiveState {
+                topology: options
+                    .topology
+                    .unwrap_or(wgpu::PrimitiveTopology::TriangleList),
+                // A mirrored world matrix reverses winding; the flip is pipeline state here.
+                front_face: if mirrored {
+                    wgpu::FrontFace::Cw
+                } else {
+                    wgpu::FrontFace::Ccw
+                },
+                cull_mode: if options.double_sided {
+                    None
+                } else {
+                    Some(wgpu::Face::Back)
+                },
+                ..wgpu::PrimitiveState::default()
+            },
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: DEPTH_STENCIL_FORMAT,
+                depth_write_enabled: Some(!blended),
+                depth_compare: Some(wgpu::CompareFunction::Less),
+                stencil: wgpu::StencilState::default(),
+                bias: wgpu::DepthBiasState::default(),
+            }),
+            multisample: wgpu::MultisampleState::default(),
+            multiview_mask: None,
+            cache: None,
+        },
+    );
+    return WgpuMeshPipeline {
+        runtime,
+        has_ibl_group: options.ibl_bind_group_layout.is_some(),
+        has_pbr_sample_group: options.pbr_sample_bind_group_layout.is_some(),
+        has_shadow_group: options.shadow_bind_group_layout.is_some(),
+        material_bind_group_layout: options.material_bind_group_layout.clone(),
+        pipeline,
+        skinned,
+    };
+}
+
 /// Builds a per-map material bind group: the uniform at binding 0, N samplers at 1..N, then the N
 /// matching views at N+1..2N (TS `buildWgpuPerMapMaterialBindGroup`).
 pub fn build_wgpu_per_map_material_bind_group(
@@ -440,6 +560,74 @@ pub fn ensure_wgpu_ibl_sample_layout(state: &mut WgpuRenderState) -> wgpu::BindG
         ));
     }
     return scene.ibl_sample_layout.clone().unwrap();
+}
+
+// The IBL uniform, trilinear sampler and 1x1 dummy cube + LUT the IBL and PBR sample groups share,
+// created lazily.
+fn ensure_wgpu_ibl_sample_resources(state: &mut WgpuRenderState, native: &WgpuNativeDevice) {
+    let scene = get_wgpu_scene3d_runtime(state);
+    if scene.ibl_uniform_buffer.is_none() {
+        scene.ibl_uniform_buffer = Some(create_wgpu_buffer(
+            native,
+            IBL_SAMPLE_UNIFORM_BYTES,
+            wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        ));
+    }
+    if scene.ibl_sampler.is_none() {
+        // Trilinear so the prefiltered cube's roughness mip chain filters.
+        let descriptor = wgpu::SamplerDescriptor {
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::MipmapFilterMode::Linear,
+            ..wgpu::SamplerDescriptor::default()
+        };
+        let sampler = native.device.create_sampler(&descriptor);
+        record_wgpu_sampler(native, &sampler, &descriptor);
+        scene.ibl_sampler = Some(sampler);
+    }
+    if scene.ibl_dummy_cube_view.is_none() {
+        let cube = create_wgpu_texture(
+            native,
+            &wgpu::TextureDescriptor {
+                label: None,
+                size: wgpu::Extent3d {
+                    width: 1,
+                    height: 1,
+                    depth_or_array_layers: 6,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: IBL_DUMMY_FORMAT,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                view_formats: &[],
+            },
+        );
+        scene.ibl_dummy_cube_view = Some(cube.create_view(&wgpu::TextureViewDescriptor {
+            dimension: Some(wgpu::TextureViewDimension::Cube),
+            ..wgpu::TextureViewDescriptor::default()
+        }));
+        scene.ibl_dummy_cube_texture = Some(cube);
+        let lut = create_wgpu_texture(
+            native,
+            &wgpu::TextureDescriptor {
+                label: None,
+                size: wgpu::Extent3d {
+                    width: 1,
+                    height: 1,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: IBL_DUMMY_FORMAT,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                view_formats: &[],
+            },
+        );
+        scene.ibl_dummy_lut_view = Some(lut.create_view(&wgpu::TextureViewDescriptor::default()));
+        scene.ibl_dummy_lut_texture = Some(lut);
+    }
 }
 
 /// Claims a per-draw slot from the frame's instance-buffer pool, sizes it, uploads the instance
@@ -864,6 +1052,50 @@ pub fn ensure_wgpu_shadow_sample_layout(state: &mut WgpuRenderState) -> wgpu::Bi
     return scene.shadow_sample_layout.clone().unwrap();
 }
 
+// The shadow uniform, comparison sampler and 1x1 dummy depth texture the shadow and PBR sample
+// groups share, created lazily.
+fn ensure_wgpu_shadow_sample_resources(state: &mut WgpuRenderState, native: &WgpuNativeDevice) {
+    let scene = get_wgpu_scene3d_runtime(state);
+    if scene.shadow_uniform_buffer.is_none() {
+        scene.shadow_uniform_buffer = Some(create_wgpu_buffer(
+            native,
+            SHADOW_SAMPLE_UNIFORM_BYTES,
+            wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        ));
+    }
+    if scene.shadow_comparison_sampler.is_none() {
+        let descriptor = wgpu::SamplerDescriptor {
+            compare: Some(wgpu::CompareFunction::LessEqual),
+            ..wgpu::SamplerDescriptor::default()
+        };
+        let sampler = native.device.create_sampler(&descriptor);
+        record_wgpu_sampler(native, &sampler, &descriptor);
+        scene.shadow_comparison_sampler = Some(sampler);
+    }
+    if scene.shadow_dummy_view.is_none() {
+        let texture = create_wgpu_texture(
+            native,
+            &wgpu::TextureDescriptor {
+                label: None,
+                size: wgpu::Extent3d {
+                    width: 1,
+                    height: 1,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: SHADOW_DEPTH_FORMAT,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING
+                    | wgpu::TextureUsages::RENDER_ATTACHMENT,
+                view_formats: &[],
+            },
+        );
+        scene.shadow_dummy_view = Some(texture.create_view(&wgpu::TextureViewDescriptor::default()));
+        scene.shadow_dummy_texture = Some(texture);
+    }
+}
+
 /// Selects the one sampler a material bind group uses from its primary map's sampler descriptor
 /// (wrap, filters, a mip filter when the map requests a mip chain, anisotropy); a missing primary
 /// map falls back to the shared linear clamp sampler (TS `getWgpuMaterialSampler`).
@@ -918,6 +1150,15 @@ pub fn get_wgpu_mesh_prelude_wgsl(
     };
 }
 
+fn is_nearest_filter(filter: TextureFilter) -> bool {
+    return matches!(
+        filter,
+        TextureFilter::Nearest
+            | TextureFilter::NearestMipmapLinear
+            | TextureFilter::NearestMipmapNearest
+    );
+}
+
 /// Whether a cached material binding must rebuild because the primary sampler or a resolved view no
 /// longer matches what it was built from (TS `isWgpuMaterialBindGroupRebuildNeeded`).
 pub fn is_wgpu_material_bind_group_rebuild_needed(
@@ -942,9 +1183,39 @@ pub fn is_wgpu_material_bind_group_rebuild_needed(
     return false;
 }
 
+// Whether a draw's fragment alpha is coverage the compositor should honor: only alphaMode 'blend'.
+fn is_wgpu_mesh_alpha_coverage(material: &dyn Material3D) -> bool {
+    return material.material3d_fields().alpha_mode == MaterialAlphaMode::Blend;
+}
+
 /// Whether a material map declares a backing (TS `isWgpuTextureReady`).
 pub fn is_wgpu_texture_ready(texture: Option<&Texture>) -> bool {
     return texture.is_some_and(|texture| has_texture_source(texture));
+}
+
+fn record_wgpu_sampler(
+    native: &WgpuNativeDevice,
+    sampler: &wgpu::Sampler,
+    descriptor: &wgpu::SamplerDescriptor<'_>,
+) {
+    record_wgpu_command(native, || {
+        return flight_render_wgpu::WgpuCommandRecord::CreateSampler(
+            flight_render_wgpu::WgpuSamplerRecord {
+                address_mode_u: descriptor.address_mode_u,
+                address_mode_v: descriptor.address_mode_v,
+                anisotropy_clamp: descriptor.anisotropy_clamp,
+                mag_filter: descriptor.mag_filter,
+                min_filter: descriptor.min_filter,
+                mipmap_filter: descriptor.mipmap_filter,
+                sampler: sampler.clone(),
+            },
+        );
+    });
+}
+
+// Writes the column-major identity mat3 into a uv-transform stash, the untiled default.
+fn reset_wgpu_uv_transform_stash(out: &mut [f32; 9]) {
+    *out = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0];
 }
 
 /// The view a family binds into a material map slot: the uploaded view when the texture resolves,
@@ -959,6 +1230,15 @@ pub fn resolve_wgpu_material_texture_view(
         return entry.read().unwrap().view.clone();
     }
     return ensure_wgpu_placeholder_texture_view(state);
+}
+
+fn sampler_layout_entry(binding: u32, kind: wgpu::SamplerBindingType) -> wgpu::BindGroupLayoutEntry {
+    return wgpu::BindGroupLayoutEntry {
+        binding,
+        visibility: wgpu::ShaderStages::FRAGMENT,
+        ty: wgpu::BindingType::Sampler(kind),
+        count: None,
+    };
 }
 
 /// Splices the registered color-adjustment chunk and its affine or full-matrix vectors into a
@@ -1002,6 +1282,40 @@ pub fn stash_wgpu_uv_transform(state: &mut WgpuRenderState, texture: Option<&Tex
     let mut matrix = create_matrix3();
     get_texture_uv_matrix(&mut matrix, texture);
     out.copy_from_slice(&matrix.m);
+}
+
+fn texture_layout_entry(
+    binding: u32,
+    sample_type: wgpu::TextureSampleType,
+    view_dimension: wgpu::TextureViewDimension,
+) -> wgpu::BindGroupLayoutEntry {
+    return wgpu::BindGroupLayoutEntry {
+        binding,
+        visibility: wgpu::ShaderStages::FRAGMENT,
+        ty: wgpu::BindingType::Texture {
+            sample_type,
+            view_dimension,
+            multisampled: false,
+        },
+        count: None,
+    };
+}
+
+fn uniform_layout_entry(
+    binding: u32,
+    visibility: wgpu::ShaderStages,
+    has_dynamic_offset: bool,
+) -> wgpu::BindGroupLayoutEntry {
+    return wgpu::BindGroupLayoutEntry {
+        binding,
+        visibility,
+        ty: wgpu::BindingType::Buffer {
+            ty: wgpu::BufferBindingType::Uniform,
+            has_dynamic_offset,
+            min_binding_size: None,
+        },
+        count: None,
+    };
 }
 
 /// Whether a cached per-map binding must rebuild because a sampler or view differs (TS
@@ -1231,320 +1545,6 @@ pub fn write_wgpu_frame_uniform(
     f[FRAME_COUNTS_OFFSET + 3] = 0.0;
 
     write_wgpu_buffer(&native, &binding.buffer, 0, bytemuck::cast_slice(&f));
-}
-
-fn build_wgpu_mesh_pipeline(
-    state: &mut WgpuRenderState,
-    options: &WgpuMeshPipelineOptions,
-    runtime: flight_entity::EntityRuntimeSlot,
-) -> WgpuMeshPipeline {
-    let native = get_wgpu_render_state_native_device(state);
-    let layouts = ensure_wgpu_scene3d_layouts(state);
-    let skinning = get_wgpu_scene3d_runtime(state).skinning_adapter;
-    let skinned = options.skinned == Some(true);
-    let blended = options.blended == Some(true);
-    let scene = get_wgpu_scene3d_runtime(state);
-    let blend_mode = if blended {
-        Some(
-            scene
-                .active_blend_mode
-                .clone()
-                .unwrap_or_else(|| BLEND_MODE_NORMAL.to_string()),
-        )
-    } else {
-        None
-    };
-    let mirrored = scene.active_mirrored_run;
-    let draw_layout = match (skinned, skinning) {
-        (true, Some(skinning)) => (skinning.get_mesh_draw_layout)(state),
-        _ => layouts.draw_bind_group_layout.clone(),
-    };
-    let mut bind_group_layouts = vec![
-        layouts.frame_bind_group_layout.clone(),
-        draw_layout,
-        options.material_bind_group_layout.clone(),
-    ];
-    if let Some(extra) = &options.extra_bind_group_layout {
-        bind_group_layouts.push(extra.clone());
-    }
-    if options.extra_bind_group_layout.is_none() {
-        if let Some(pbr_sample) = &options.pbr_sample_bind_group_layout {
-            bind_group_layouts.push(pbr_sample.clone());
-        } else {
-            // Group order is positional: shadow (group 3) then IBL (group 4).
-            if let Some(shadow) = &options.shadow_bind_group_layout {
-                bind_group_layouts.push(shadow.clone());
-            }
-            if let Some(ibl) = &options.ibl_bind_group_layout {
-                bind_group_layouts.push(ibl.clone());
-            }
-        }
-    }
-    let layout = create_wgpu_pipeline_layout_recorded(&native, &bind_group_layouts);
-    let mut buffers: Vec<Option<wgpu::VertexBufferLayout<'static>>> = Vec::new();
-    match (skinned, skinning) {
-        (true, Some(skinning)) => {
-            for buffer in skinning.vertex_buffer_layouts {
-                buffers.push(Some(buffer.clone()));
-            }
-        }
-        _ => buffers.push(Some(VERTEX_BUFFER_LAYOUT)),
-    }
-    buffers.push(Some(INSTANCE_BUFFER_LAYOUT));
-    let targets = [Some(wgpu::ColorTargetState {
-        format: options.format,
-        blend: blend_mode.map(|mode| get_wgpu_blend_state(Some(&mode))),
-        write_mask: wgpu::ColorWrites::ALL,
-    })];
-    let pipeline = create_wgpu_render_pipeline(
-        &native,
-        &wgpu::RenderPipelineDescriptor {
-            label: None,
-            layout: Some(&layout),
-            vertex: wgpu::VertexState {
-                module: &options.module,
-                entry_point: Some("vs_main"),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-                buffers: &buffers,
-            },
-            fragment: Some(wgpu::FragmentState {
-                module: &options.module,
-                entry_point: Some("fs_main"),
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
-                targets: &targets,
-            }),
-            primitive: wgpu::PrimitiveState {
-                topology: options
-                    .topology
-                    .unwrap_or(wgpu::PrimitiveTopology::TriangleList),
-                // A mirrored world matrix reverses winding; the flip is pipeline state here.
-                front_face: if mirrored {
-                    wgpu::FrontFace::Cw
-                } else {
-                    wgpu::FrontFace::Ccw
-                },
-                cull_mode: if options.double_sided {
-                    None
-                } else {
-                    Some(wgpu::Face::Back)
-                },
-                ..wgpu::PrimitiveState::default()
-            },
-            depth_stencil: Some(wgpu::DepthStencilState {
-                format: DEPTH_STENCIL_FORMAT,
-                depth_write_enabled: Some(!blended),
-                depth_compare: Some(wgpu::CompareFunction::Less),
-                stencil: wgpu::StencilState::default(),
-                bias: wgpu::DepthBiasState::default(),
-            }),
-            multisample: wgpu::MultisampleState::default(),
-            multiview_mask: None,
-            cache: None,
-        },
-    );
-    return WgpuMeshPipeline {
-        runtime,
-        has_ibl_group: options.ibl_bind_group_layout.is_some(),
-        has_pbr_sample_group: options.pbr_sample_bind_group_layout.is_some(),
-        has_shadow_group: options.shadow_bind_group_layout.is_some(),
-        material_bind_group_layout: options.material_bind_group_layout.clone(),
-        pipeline,
-        skinned,
-    };
-}
-
-// The shadow uniform, comparison sampler and 1x1 dummy depth texture the shadow and PBR sample
-// groups share, created lazily.
-fn ensure_wgpu_shadow_sample_resources(state: &mut WgpuRenderState, native: &WgpuNativeDevice) {
-    let scene = get_wgpu_scene3d_runtime(state);
-    if scene.shadow_uniform_buffer.is_none() {
-        scene.shadow_uniform_buffer = Some(create_wgpu_buffer(
-            native,
-            SHADOW_SAMPLE_UNIFORM_BYTES,
-            wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        ));
-    }
-    if scene.shadow_comparison_sampler.is_none() {
-        let descriptor = wgpu::SamplerDescriptor {
-            compare: Some(wgpu::CompareFunction::LessEqual),
-            ..wgpu::SamplerDescriptor::default()
-        };
-        let sampler = native.device.create_sampler(&descriptor);
-        record_wgpu_sampler(native, &sampler, &descriptor);
-        scene.shadow_comparison_sampler = Some(sampler);
-    }
-    if scene.shadow_dummy_view.is_none() {
-        let texture = create_wgpu_texture(
-            native,
-            &wgpu::TextureDescriptor {
-                label: None,
-                size: wgpu::Extent3d {
-                    width: 1,
-                    height: 1,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: SHADOW_DEPTH_FORMAT,
-                usage: wgpu::TextureUsages::TEXTURE_BINDING
-                    | wgpu::TextureUsages::RENDER_ATTACHMENT,
-                view_formats: &[],
-            },
-        );
-        scene.shadow_dummy_view = Some(texture.create_view(&wgpu::TextureViewDescriptor::default()));
-        scene.shadow_dummy_texture = Some(texture);
-    }
-}
-
-// The IBL uniform, trilinear sampler and 1x1 dummy cube + LUT the IBL and PBR sample groups share,
-// created lazily.
-fn ensure_wgpu_ibl_sample_resources(state: &mut WgpuRenderState, native: &WgpuNativeDevice) {
-    let scene = get_wgpu_scene3d_runtime(state);
-    if scene.ibl_uniform_buffer.is_none() {
-        scene.ibl_uniform_buffer = Some(create_wgpu_buffer(
-            native,
-            IBL_SAMPLE_UNIFORM_BYTES,
-            wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        ));
-    }
-    if scene.ibl_sampler.is_none() {
-        // Trilinear so the prefiltered cube's roughness mip chain filters.
-        let descriptor = wgpu::SamplerDescriptor {
-            mag_filter: wgpu::FilterMode::Linear,
-            min_filter: wgpu::FilterMode::Linear,
-            mipmap_filter: wgpu::MipmapFilterMode::Linear,
-            ..wgpu::SamplerDescriptor::default()
-        };
-        let sampler = native.device.create_sampler(&descriptor);
-        record_wgpu_sampler(native, &sampler, &descriptor);
-        scene.ibl_sampler = Some(sampler);
-    }
-    if scene.ibl_dummy_cube_view.is_none() {
-        let cube = create_wgpu_texture(
-            native,
-            &wgpu::TextureDescriptor {
-                label: None,
-                size: wgpu::Extent3d {
-                    width: 1,
-                    height: 1,
-                    depth_or_array_layers: 6,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: IBL_DUMMY_FORMAT,
-                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-                view_formats: &[],
-            },
-        );
-        scene.ibl_dummy_cube_view = Some(cube.create_view(&wgpu::TextureViewDescriptor {
-            dimension: Some(wgpu::TextureViewDimension::Cube),
-            ..wgpu::TextureViewDescriptor::default()
-        }));
-        scene.ibl_dummy_cube_texture = Some(cube);
-        let lut = create_wgpu_texture(
-            native,
-            &wgpu::TextureDescriptor {
-                label: None,
-                size: wgpu::Extent3d {
-                    width: 1,
-                    height: 1,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format: IBL_DUMMY_FORMAT,
-                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-                view_formats: &[],
-            },
-        );
-        scene.ibl_dummy_lut_view = Some(lut.create_view(&wgpu::TextureViewDescriptor::default()));
-        scene.ibl_dummy_lut_texture = Some(lut);
-    }
-}
-
-fn is_nearest_filter(filter: TextureFilter) -> bool {
-    return matches!(
-        filter,
-        TextureFilter::Nearest
-            | TextureFilter::NearestMipmapLinear
-            | TextureFilter::NearestMipmapNearest
-    );
-}
-
-// Whether a draw's fragment alpha is coverage the compositor should honor: only alphaMode 'blend'.
-fn is_wgpu_mesh_alpha_coverage(material: &dyn Material3D) -> bool {
-    return material.material3d_fields().alpha_mode == MaterialAlphaMode::Blend;
-}
-
-fn record_wgpu_sampler(
-    native: &WgpuNativeDevice,
-    sampler: &wgpu::Sampler,
-    descriptor: &wgpu::SamplerDescriptor<'_>,
-) {
-    record_wgpu_command(native, || {
-        return flight_render_wgpu::WgpuCommandRecord::CreateSampler(
-            flight_render_wgpu::WgpuSamplerRecord {
-                address_mode_u: descriptor.address_mode_u,
-                address_mode_v: descriptor.address_mode_v,
-                anisotropy_clamp: descriptor.anisotropy_clamp,
-                mag_filter: descriptor.mag_filter,
-                min_filter: descriptor.min_filter,
-                mipmap_filter: descriptor.mipmap_filter,
-                sampler: sampler.clone(),
-            },
-        );
-    });
-}
-
-// Writes the column-major identity mat3 into a uv-transform stash, the untiled default.
-fn reset_wgpu_uv_transform_stash(out: &mut [f32; 9]) {
-    *out = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0];
-}
-
-fn sampler_layout_entry(binding: u32, kind: wgpu::SamplerBindingType) -> wgpu::BindGroupLayoutEntry {
-    return wgpu::BindGroupLayoutEntry {
-        binding,
-        visibility: wgpu::ShaderStages::FRAGMENT,
-        ty: wgpu::BindingType::Sampler(kind),
-        count: None,
-    };
-}
-
-fn texture_layout_entry(
-    binding: u32,
-    sample_type: wgpu::TextureSampleType,
-    view_dimension: wgpu::TextureViewDimension,
-) -> wgpu::BindGroupLayoutEntry {
-    return wgpu::BindGroupLayoutEntry {
-        binding,
-        visibility: wgpu::ShaderStages::FRAGMENT,
-        ty: wgpu::BindingType::Texture {
-            sample_type,
-            view_dimension,
-            multisampled: false,
-        },
-        count: None,
-    };
-}
-
-fn uniform_layout_entry(
-    binding: u32,
-    visibility: wgpu::ShaderStages,
-    has_dynamic_offset: bool,
-) -> wgpu::BindGroupLayoutEntry {
-    return wgpu::BindGroupLayoutEntry {
-        binding,
-        visibility,
-        ty: wgpu::BindingType::Buffer {
-            ty: wgpu::BufferBindingType::Uniform,
-            has_dynamic_offset,
-            min_binding_size: None,
-        },
-        count: None,
-    };
 }
 
 // Writes the IBL sample uniform: x = enabled, y = intensity, z = max mip (roughness 1.0).

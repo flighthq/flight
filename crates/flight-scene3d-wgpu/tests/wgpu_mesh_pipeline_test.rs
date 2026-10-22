@@ -110,7 +110,7 @@ fn make_test_shadow(test: &WgpuScene3DTestState) -> WgpuScene3DShadow {
         usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::RENDER_ATTACHMENT,
         view_formats: &[],
     });
-    let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+    let view = texture.create_view(&test_default());
     return WgpuScene3DShadow {
         depth_texture: texture,
         depth_view: view,
@@ -141,7 +141,7 @@ fn make_test_cube(test: &WgpuScene3DTestState, mip_level_count: u32) -> (wgpu::T
     });
     let view = texture.create_view(&wgpu::TextureViewDescriptor {
         dimension: Some(wgpu::TextureViewDimension::Cube),
-        ..wgpu::TextureViewDescriptor::default()
+        ..test_default()
     });
     return (texture, view);
 }
@@ -163,7 +163,7 @@ fn make_test_ibl(test: &WgpuScene3DTestState) -> WgpuScene3DIbl {
         usage: wgpu::TextureUsages::TEXTURE_BINDING,
         view_formats: &[],
     });
-    let brdf_lut_view = brdf_lut.create_view(&wgpu::TextureViewDescriptor::default());
+    let brdf_lut_view = brdf_lut.create_view(&test_default());
     return WgpuScene3DIbl {
         brdf_lut,
         brdf_lut_view,

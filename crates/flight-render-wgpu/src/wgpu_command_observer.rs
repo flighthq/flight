@@ -258,72 +258,6 @@ pub struct WgpuSetVertexBufferRecord {
 /// Receives every command the device records while installed.
 pub type WgpuCommandObserver = Arc<dyn Fn(&WgpuCommandRecord) + Send + Sync>;
 
-/// Reports a command to the installed observer, building the record only when one is installed.
-// flight-lint: allow(conform-extra) Principal cafc5d6b (item D): backend packages layered on render-wgpu report their GPU calls through the same exact-recording hook
-pub fn record_wgpu_command(
-    device: &WgpuNativeDevice,
-    record: impl FnOnce() -> WgpuCommandRecord,
-) {
-    let observer = device.command_observer.read().unwrap().clone();
-    if let Some(observer) = observer {
-        observer(&record());
-    }
-}
-
-/// Installs or clears the device's command observer, shared by every clone of the payload.
-// flight-lint: allow(conform-extra) Principal cafc5d6b (item D): the exact-recording hook for values a headless device cannot expose
-pub fn set_wgpu_native_device_command_observer(
-    device: &WgpuNativeDevice,
-    observer: Option<WgpuCommandObserver>,
-) {
-    *device.command_observer.write().unwrap() = observer;
-}
-
-/// Writes bytes into a buffer through the queue and records the exact call.
-// flight-lint: allow(conform-extra) Principal cafc5d6b (item D): the recorded queue write backend packages layered on render-wgpu share
-pub fn write_wgpu_buffer(
-    device: &WgpuNativeDevice,
-    buffer: &wgpu::Buffer,
-    offset: u64,
-    data: &[u8],
-) {
-    record_wgpu_command(device, || {
-        return WgpuCommandRecord::WriteBuffer(WgpuBufferWriteRecord {
-            buffer: buffer.clone(),
-            data: data.to_vec(),
-            offset,
-        });
-    });
-    device.queue.write_buffer(buffer, offset, data);
-}
-
-/// Writes texels through the queue and records the exact call.
-// flight-lint: allow(conform-extra) Principal cafc5d6b (item D): the recorded queue write backend packages layered on render-wgpu share
-pub fn write_wgpu_texture(
-    device: &WgpuNativeDevice,
-    destination: wgpu::TexelCopyTextureInfo<'_>,
-    data: &[u8],
-    layout: wgpu::TexelCopyBufferLayout,
-    size: wgpu::Extent3d,
-) {
-    record_wgpu_command(device, || {
-        return WgpuCommandRecord::WriteTexture(WgpuTextureWriteRecord {
-            bytes_per_row: layout.bytes_per_row,
-            data: data.to_vec(),
-            mip_level: destination.mip_level,
-            origin: [
-                destination.origin.x,
-                destination.origin.y,
-                destination.origin.z,
-            ],
-            rows_per_image: layout.rows_per_image,
-            size: [size.width, size.height, size.depth_or_array_layers],
-            texture: destination.texture.clone(),
-        });
-    });
-    device.queue.write_texture(destination, data, layout, size);
-}
-
 /// Creates a bind group and records every entry it was given.
 // flight-lint: allow(conform-extra) Principal cafc5d6b (item D): the recorded device call backend packages layered on render-wgpu share
 pub fn create_wgpu_bind_group(
@@ -577,6 +511,27 @@ pub fn draw_wgpu_render_pass_indexed(
     });
 }
 
+/// Reports a command to the installed observer, building the record only when one is installed.
+// flight-lint: allow(conform-extra) Principal cafc5d6b (item D): backend packages layered on render-wgpu report their GPU calls through the same exact-recording hook
+pub fn record_wgpu_command(
+    device: &WgpuNativeDevice,
+    record: impl FnOnce() -> WgpuCommandRecord,
+) {
+    let observer = device.command_observer.read().unwrap().clone();
+    if let Some(observer) = observer {
+        observer(&record());
+    }
+}
+
+/// Installs or clears the device's command observer, shared by every clone of the payload.
+// flight-lint: allow(conform-extra) Principal cafc5d6b (item D): the exact-recording hook for values a headless device cannot expose
+pub fn set_wgpu_native_device_command_observer(
+    device: &WgpuNativeDevice,
+    observer: Option<WgpuCommandObserver>,
+) {
+    *device.command_observer.write().unwrap() = observer;
+}
+
 /// Sets a bind group on the state's open pass and records it; a no-op with no pass open.
 // flight-lint: allow(conform-extra) Principal cafc5d6b (item D): the recorded pass call backend packages layered on render-wgpu share
 pub fn set_wgpu_render_pass_bind_group(
@@ -650,4 +605,49 @@ pub fn set_wgpu_render_pass_vertex_buffer(
             slot,
         });
     });
+}
+
+/// Writes bytes into a buffer through the queue and records the exact call.
+// flight-lint: allow(conform-extra) Principal cafc5d6b (item D): the recorded queue write backend packages layered on render-wgpu share
+pub fn write_wgpu_buffer(
+    device: &WgpuNativeDevice,
+    buffer: &wgpu::Buffer,
+    offset: u64,
+    data: &[u8],
+) {
+    record_wgpu_command(device, || {
+        return WgpuCommandRecord::WriteBuffer(WgpuBufferWriteRecord {
+            buffer: buffer.clone(),
+            data: data.to_vec(),
+            offset,
+        });
+    });
+    device.queue.write_buffer(buffer, offset, data);
+}
+
+/// Writes texels through the queue and records the exact call.
+// flight-lint: allow(conform-extra) Principal cafc5d6b (item D): the recorded queue write backend packages layered on render-wgpu share
+pub fn write_wgpu_texture(
+    device: &WgpuNativeDevice,
+    destination: wgpu::TexelCopyTextureInfo<'_>,
+    data: &[u8],
+    layout: wgpu::TexelCopyBufferLayout,
+    size: wgpu::Extent3d,
+) {
+    record_wgpu_command(device, || {
+        return WgpuCommandRecord::WriteTexture(WgpuTextureWriteRecord {
+            bytes_per_row: layout.bytes_per_row,
+            data: data.to_vec(),
+            mip_level: destination.mip_level,
+            origin: [
+                destination.origin.x,
+                destination.origin.y,
+                destination.origin.z,
+            ],
+            rows_per_image: layout.rows_per_image,
+            size: [size.width, size.height, size.depth_or_array_layers],
+            texture: destination.texture.clone(),
+        });
+    });
+    device.queue.write_texture(destination, data, layout, size);
 }

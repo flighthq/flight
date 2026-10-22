@@ -10,6 +10,11 @@ use flight_render_wgpu::{
 
 use crate::wgpu_scene3d_runtime::get_wgpu_scene3d_runtime;
 
+// Buffers written through the queue must be a multiple of 4 bytes; round the requested size up.
+fn align_to_4(byte_length: u64) -> u64 {
+    return (byte_length + 3) & !3;
+}
+
 /// Uploads a geometry's interleaved vertex buffer and index buffer for this state's device, caching
 /// the upload by geometry and re-uploading when `geometry.version` moves (TS
 /// `ensureWgpuMeshUpload`). A GPU-skinned geometry with a captured bind pose uploads its bind-pose
@@ -119,11 +124,6 @@ pub fn ensure_wgpu_mesh_upload(
         .get_or_insert_with(Default::default)
         .insert(key, upload.clone());
     return upload;
-}
-
-// Buffers written through the queue must be a multiple of 4 bytes; round the requested size up.
-fn align_to_4(byte_length: u64) -> u64 {
-    return (byte_length + 3) & !3;
 }
 
 // A 16-bit index array with an odd element count occupies 2 mod 4 bytes, which the queue rejects:

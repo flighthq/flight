@@ -80,6 +80,71 @@ pub static WGPU_SKINNING_ADAPTER: WgpuSkinningAdapter = WgpuSkinningAdapter {
     vertex_buffer_layouts: &SKINNED_VERTEX_BUFFER_LAYOUTS,
 };
 
+fn create_wgpu_skin_arena_texture(state: &WgpuRenderState, rows: u32) -> wgpu::Texture {
+    let native = get_wgpu_render_state_native_device(state);
+    return create_wgpu_texture(
+        &native,
+        &wgpu::TextureDescriptor {
+            label: None,
+            size: wgpu::Extent3d {
+                width: WGPU_SKIN_ARENA_WIDTH,
+                height: rows,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba32Float,
+            usage: wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        },
+    );
+}
+
+// Starts a new arena frame when render-wgpu has opened a new command encoder; the encoder serial is
+// the frame identity (TS: the encoder object), absent while no frame is open.
+fn begin_wgpu_skin_arena_frame(state: &mut WgpuRenderState) {
+    let runtime = get_wgpu_render_state_runtime(state);
+    let frame = if runtime.command_encoder.is_some() {
+        Some(runtime.command_encoder_serial)
+    } else {
+        None
+    };
+    let scene = get_wgpu_scene3d_runtime(state);
+    if scene.skin_arena_frame == frame && scene.skin_palette_arena_bases.is_some() {
+        return;
+    }
+    scene.skin_arena_frame = frame;
+    scene.skin_palette_arena_cursor = 0;
+    scene.skin_normal_palette_arena_cursor = 0;
+    scene.skin_palette_arena_bases = Some(HashMap::new());
+    scene.skin_normal_palette_arena_bases = Some(HashMap::new());
+    scene.skin_palette_arena_replays.clear();
+    scene.skin_normal_palette_arena_replays.clear();
+}
+
+// The bind-pose positions and normals spliced into a copy of the interleaved vertices.
+fn build_skin_bind_vertices(geometry: &MeshGeometry, bind_pose: &MeshSkinBindPose) -> Vec<f32> {
+    let mut out = geometry.vertices.to_vec();
+    let floats_per_vertex = (geometry.layout.read().unwrap().stride / 4) as usize;
+    let position_offset = float_offset_for_semantic(geometry, VertexSemantic::Position);
+    let normal_offset = float_offset_for_semantic(geometry, VertexSemantic::Normal);
+    let vertex_count = bind_pose.positions.len() / 3;
+    for vertex in 0..vertex_count {
+        let base = vertex * floats_per_vertex;
+        let source = vertex * 3;
+        if let Some(offset) = position_offset {
+            out[base + offset..base + offset + 3]
+                .copy_from_slice(&bind_pose.positions[source..source + 3]);
+        }
+        if let Some(offset) = normal_offset {
+            out[base + offset..base + offset + 3]
+                .copy_from_slice(&bind_pose.normals[source..source + 3]);
+        }
+    }
+    return out;
+}
+
 /// Frees the palette arenas and their bind groups (TS `destroyWgpuSkinPalette`).
 pub fn destroy_wgpu_skin_palette(state: &mut WgpuRenderState) {
     let runtime = get_wgpu_scene3d_runtime(state);
@@ -101,6 +166,21 @@ pub fn destroy_wgpu_skin_palette(state: &mut WgpuRenderState) {
     runtime.skin_normal_palette_arena_rows = 0;
     runtime.skin_normal_palette_arena_bases = None;
     runtime.skin_mesh_draw_bind_group = None;
+}
+
+fn draw_uniform_layout_entry() -> wgpu::BindGroupLayoutEntry {
+    // Binding 0 is the shared Draw uniform, which the fragment tail reads too: stage-for-stage
+    // identical to the rigid Draw layout, or a skinned pipeline fails validation.
+    return wgpu::BindGroupLayoutEntry {
+        binding: 0,
+        visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
+        ty: wgpu::BindingType::Buffer {
+            ty: wgpu::BufferBindingType::Uniform,
+            has_dynamic_offset: true,
+            min_binding_size: None,
+        },
+        count: None,
+    };
 }
 
 /// Uploads the pose palette and returns the shadow path's skinned Draw bind group: the Draw ring at
@@ -214,11 +294,183 @@ pub fn ensure_wgpu_skin_mesh_draw_layout(state: &mut WgpuRenderState) -> wgpu::B
     return scene.skin_mesh_draw_bind_group_layout.clone().unwrap();
 }
 
+fn extend_mesh_prelude(rigid_prelude: &str) -> String {
+    return rigid_prelude
+        .replacen(
+            "@group(1) @binding(0) var<uniform> draw : Draw;",
+            &format!(
+                "@group(1) @binding(0) var<uniform> draw : Draw;\n{}\n{}",
+                get_wgpu_skin_binding_wgsl(1),
+                get_wgpu_skin_normal_binding_wgsl(1)
+            ),
+            1,
+        )
+        .replacen(
+            "  @location(3) uv : vec2f,\n  @location(6) instanceModel0 : vec4f,",
+            "  @location(3) uv : vec2f,\n  @location(4) joints0 : vec4f,\n  @location(5) weights0 : vec4f,\n  @location(6) instanceModel0 : vec4f,",
+            1,
+        )
+        .replacen(
+            "  var localTangent = tangent.xyz;\n  let instanceModel =",
+            "  var localTangent = tangent.xyz;\n  let skin = skinMatrix(joints0, weights0);\n  localPosition = skin * localPosition;\n  localNormal = skinNormalMatrix(joints0, weights0) * localNormal;\n  localTangent = (skin * vec4f(localTangent, 0.0)).xyz;\n  let instanceModel =",
+            1,
+        );
+}
+
+fn extend_shadow_depth_prelude(rigid_prelude: &str) -> String {
+    return rigid_prelude
+        .replacen(
+            "@group(0) @binding(0) var<uniform> draw : Draw;",
+            &format!(
+                "@group(0) @binding(0) var<uniform> draw : Draw;\n{}",
+                get_wgpu_skin_binding_wgsl(0)
+            ),
+            1,
+        )
+        .replacen(
+            "@vertex fn vs_main(@location(0) position : vec3f) -> @builtin(position) vec4f {",
+            "@vertex fn vs_main(\n  @location(0) position : vec3f,\n  @location(4) joints0 : vec4f,\n  @location(5) weights0 : vec4f,\n) -> @builtin(position) vec4f {",
+            1,
+        )
+        .replacen(
+            "  var clip = draw.world * vec4f(position, 1.0);",
+            "  var clip = draw.world * skinMatrix(joints0, weights0) * vec4f(position, 1.0);",
+            1,
+        );
+}
+
+fn float_offset_for_semantic(geometry: &MeshGeometry, semantic: VertexSemantic) -> Option<usize> {
+    let layout = geometry.layout.read().unwrap();
+    for attribute in &layout.attributes {
+        if attribute.semantic == semantic {
+            return Some((attribute.byte_offset / 4) as usize);
+        }
+    }
+    return None;
+}
+
+fn get_upload_vertices(geometry: &MeshGeometry) -> Option<Vec<f32>> {
+    if get_mesh_geometry_morph_bind_pose(geometry).is_some() {
+        return None;
+    }
+    let bind_pose = get_mesh_geometry_skin_bind_pose(geometry)?;
+    return Some(build_skin_bind_vertices(geometry, &bind_pose.read().unwrap()));
+}
+
+fn get_wgpu_skin_arena_row_count(texels: u32) -> u32 {
+    return 1.max(texels.div_ceil(WGPU_SKIN_ARENA_WIDTH));
+}
+
+// The palette WGSL: the joint texture, an arena texel fetch, a joint mat4 from four texels at the
+// draw's arena base (draw.params.z) and the weighted skin matrix. The arena width is formatted from
+// the constant that sizes the texture, so the shader's row arithmetic cannot drift.
+fn get_wgpu_skin_binding_wgsl(group: u32) -> String {
+    return format!(
+        "@group({group}) @binding(1) var jointTexture : texture_2d<f32>;
+
+fn loadJointTexel(i : u32) -> vec4f {{
+  return textureLoad(jointTexture, vec2i(i32(i % {width}u), i32(i / {width}u)), 0);
+}}
+
+fn fetchJointMatrix(joint : u32) -> mat4x4f {{
+  let x = u32(draw.params.z) + joint * 4u;
+  return mat4x4f(
+    loadJointTexel(x),
+    loadJointTexel(x + 1u),
+    loadJointTexel(x + 2u),
+    loadJointTexel(x + 3u)
+  );
+}}
+
+fn skinMatrix(joints : vec4f, weights : vec4f) -> mat4x4f {{
+  return weights.x * fetchJointMatrix(u32(joints.x))
+       + weights.y * fetchJointMatrix(u32(joints.y))
+       + weights.z * fetchJointMatrix(u32(joints.z))
+       + weights.w * fetchJointMatrix(u32(joints.w));
+}}",
+        group = group,
+        width = WGPU_SKIN_ARENA_WIDTH
+    );
+}
+
+// The mesh path's normal palette WGSL: three texels per joint at the draw's normal arena base
+// (draw.params.w), blended per joint (an approximation of the blended inverse-transpose, shared by
+// the CPU and GL paths).
+fn get_wgpu_skin_normal_binding_wgsl(group: u32) -> String {
+    return format!(
+        "@group({group}) @binding(2) var jointNormalTexture : texture_2d<f32>;
+
+fn loadJointNormalTexel(i : u32) -> vec3f {{
+  return textureLoad(jointNormalTexture, vec2i(i32(i % {width}u), i32(i / {width}u)), 0).xyz;
+}}
+
+fn fetchJointNormalMatrix(joint : u32) -> mat3x3f {{
+  let x = u32(draw.params.w) + joint * 3u;
+  return mat3x3f(
+    loadJointNormalTexel(x),
+    loadJointNormalTexel(x + 1u),
+    loadJointNormalTexel(x + 2u)
+  );
+}}
+
+fn skinNormalMatrix(joints : vec4f, weights : vec4f) -> mat3x3f {{
+  return weights.x * fetchJointNormalMatrix(u32(joints.x))
+       + weights.y * fetchJointNormalMatrix(u32(joints.y))
+       + weights.z * fetchJointNormalMatrix(u32(joints.z))
+       + weights.w * fetchJointNormalMatrix(u32(joints.w));
+}}",
+        group = group,
+        width = WGPU_SKIN_ARENA_WIDTH
+    );
+}
+
+fn has_bind_pose(geometry: &MeshGeometry) -> bool {
+    return get_mesh_geometry_morph_bind_pose(geometry).is_none()
+        && get_mesh_geometry_skin_bind_pose(geometry).is_some();
+}
+
+fn is_gpu_skinned(mesh: &Mesh) -> bool {
+    if mesh.skin.is_none() {
+        return false;
+    }
+    let geometry = mesh.geometry.read().unwrap();
+    let layout = geometry.layout.read().unwrap();
+    let mut has_joints = false;
+    let mut has_weights = false;
+    for attribute in &layout.attributes {
+        if attribute.semantic == VertexSemantic::Joints0 {
+            has_joints = true;
+        }
+        if attribute.semantic == VertexSemantic::Weights0 {
+            has_weights = true;
+        }
+    }
+    return has_joints && has_weights;
+}
+
+fn palette_layout_entry(binding: u32) -> wgpu::BindGroupLayoutEntry {
+    return wgpu::BindGroupLayoutEntry {
+        binding,
+        visibility: wgpu::ShaderStages::VERTEX,
+        ty: wgpu::BindingType::Texture {
+            sample_type: wgpu::TextureSampleType::Float { filterable: false },
+            view_dimension: wgpu::TextureViewDimension::D2,
+            multisampled: false,
+        },
+        count: None,
+    };
+}
+
 /// Opts a state into GPU skinning (TS `registerWgpuGpuSkinning`): installs the adapter in the
 /// registry and on the scene runtime.
 pub fn register_wgpu_gpu_skinning(state: &mut WgpuRenderState) {
     get_wgpu_render_state_runtime_mut(state).registries.gpu_skinning = Some(&WGPU_SKINNING_ADAPTER);
     get_wgpu_scene3d_runtime(state).skinning_adapter = Some(&WGPU_SKINNING_ADAPTER);
+}
+
+// Regions start on a row boundary so every write is a rectangle.
+fn row_aligned_wgpu_skin_arena_texels(texels: u32) -> u32 {
+    return get_wgpu_skin_arena_row_count(texels) * WGPU_SKIN_ARENA_WIDTH;
 }
 
 /// Uploads the per-joint normal palette (three texels per joint: a 3x3 as three padded columns)
@@ -325,258 +577,6 @@ pub fn upload_wgpu_skin_palette(state: &mut WgpuRenderState, joint_matrices: &[f
         .push((joint_matrices.to_vec(), base));
     scene.pending_skin_palette_base = base;
     return base;
-}
-
-// Starts a new arena frame when render-wgpu has opened a new command encoder; the encoder serial is
-// the frame identity (TS: the encoder object), absent while no frame is open.
-fn begin_wgpu_skin_arena_frame(state: &mut WgpuRenderState) {
-    let runtime = get_wgpu_render_state_runtime(state);
-    let frame = if runtime.command_encoder.is_some() {
-        Some(runtime.command_encoder_serial)
-    } else {
-        None
-    };
-    let scene = get_wgpu_scene3d_runtime(state);
-    if scene.skin_arena_frame == frame && scene.skin_palette_arena_bases.is_some() {
-        return;
-    }
-    scene.skin_arena_frame = frame;
-    scene.skin_palette_arena_cursor = 0;
-    scene.skin_normal_palette_arena_cursor = 0;
-    scene.skin_palette_arena_bases = Some(HashMap::new());
-    scene.skin_normal_palette_arena_bases = Some(HashMap::new());
-    scene.skin_palette_arena_replays.clear();
-    scene.skin_normal_palette_arena_replays.clear();
-}
-
-fn create_wgpu_skin_arena_texture(state: &WgpuRenderState, rows: u32) -> wgpu::Texture {
-    let native = get_wgpu_render_state_native_device(state);
-    return create_wgpu_texture(
-        &native,
-        &wgpu::TextureDescriptor {
-            label: None,
-            size: wgpu::Extent3d {
-                width: WGPU_SKIN_ARENA_WIDTH,
-                height: rows,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba32Float,
-            usage: wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
-            view_formats: &[],
-        },
-    );
-}
-
-fn draw_uniform_layout_entry() -> wgpu::BindGroupLayoutEntry {
-    // Binding 0 is the shared Draw uniform, which the fragment tail reads too: stage-for-stage
-    // identical to the rigid Draw layout, or a skinned pipeline fails validation.
-    return wgpu::BindGroupLayoutEntry {
-        binding: 0,
-        visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-        ty: wgpu::BindingType::Buffer {
-            ty: wgpu::BufferBindingType::Uniform,
-            has_dynamic_offset: true,
-            min_binding_size: None,
-        },
-        count: None,
-    };
-}
-
-fn extend_mesh_prelude(rigid_prelude: &str) -> String {
-    return rigid_prelude
-        .replacen(
-            "@group(1) @binding(0) var<uniform> draw : Draw;",
-            &format!(
-                "@group(1) @binding(0) var<uniform> draw : Draw;\n{}\n{}",
-                get_wgpu_skin_binding_wgsl(1),
-                get_wgpu_skin_normal_binding_wgsl(1)
-            ),
-            1,
-        )
-        .replacen(
-            "  @location(3) uv : vec2f,\n  @location(6) instanceModel0 : vec4f,",
-            "  @location(3) uv : vec2f,\n  @location(4) joints0 : vec4f,\n  @location(5) weights0 : vec4f,\n  @location(6) instanceModel0 : vec4f,",
-            1,
-        )
-        .replacen(
-            "  var localTangent = tangent.xyz;\n  let instanceModel =",
-            "  var localTangent = tangent.xyz;\n  let skin = skinMatrix(joints0, weights0);\n  localPosition = skin * localPosition;\n  localNormal = skinNormalMatrix(joints0, weights0) * localNormal;\n  localTangent = (skin * vec4f(localTangent, 0.0)).xyz;\n  let instanceModel =",
-            1,
-        );
-}
-
-fn extend_shadow_depth_prelude(rigid_prelude: &str) -> String {
-    return rigid_prelude
-        .replacen(
-            "@group(0) @binding(0) var<uniform> draw : Draw;",
-            &format!(
-                "@group(0) @binding(0) var<uniform> draw : Draw;\n{}",
-                get_wgpu_skin_binding_wgsl(0)
-            ),
-            1,
-        )
-        .replacen(
-            "@vertex fn vs_main(@location(0) position : vec3f) -> @builtin(position) vec4f {",
-            "@vertex fn vs_main(\n  @location(0) position : vec3f,\n  @location(4) joints0 : vec4f,\n  @location(5) weights0 : vec4f,\n) -> @builtin(position) vec4f {",
-            1,
-        )
-        .replacen(
-            "  var clip = draw.world * vec4f(position, 1.0);",
-            "  var clip = draw.world * skinMatrix(joints0, weights0) * vec4f(position, 1.0);",
-            1,
-        );
-}
-
-// The bind-pose positions and normals spliced into a copy of the interleaved vertices.
-fn build_skin_bind_vertices(geometry: &MeshGeometry, bind_pose: &MeshSkinBindPose) -> Vec<f32> {
-    let mut out = geometry.vertices.to_vec();
-    let floats_per_vertex = (geometry.layout.read().unwrap().stride / 4) as usize;
-    let position_offset = float_offset_for_semantic(geometry, VertexSemantic::Position);
-    let normal_offset = float_offset_for_semantic(geometry, VertexSemantic::Normal);
-    let vertex_count = bind_pose.positions.len() / 3;
-    for vertex in 0..vertex_count {
-        let base = vertex * floats_per_vertex;
-        let source = vertex * 3;
-        if let Some(offset) = position_offset {
-            out[base + offset..base + offset + 3]
-                .copy_from_slice(&bind_pose.positions[source..source + 3]);
-        }
-        if let Some(offset) = normal_offset {
-            out[base + offset..base + offset + 3]
-                .copy_from_slice(&bind_pose.normals[source..source + 3]);
-        }
-    }
-    return out;
-}
-
-fn float_offset_for_semantic(geometry: &MeshGeometry, semantic: VertexSemantic) -> Option<usize> {
-    let layout = geometry.layout.read().unwrap();
-    for attribute in &layout.attributes {
-        if attribute.semantic == semantic {
-            return Some((attribute.byte_offset / 4) as usize);
-        }
-    }
-    return None;
-}
-
-// The palette WGSL: the joint texture, an arena texel fetch, a joint mat4 from four texels at the
-// draw's arena base (draw.params.z) and the weighted skin matrix. The arena width is formatted from
-// the constant that sizes the texture, so the shader's row arithmetic cannot drift.
-fn get_wgpu_skin_binding_wgsl(group: u32) -> String {
-    return format!(
-        "@group({group}) @binding(1) var jointTexture : texture_2d<f32>;
-
-fn loadJointTexel(i : u32) -> vec4f {{
-  return textureLoad(jointTexture, vec2i(i32(i % {width}u), i32(i / {width}u)), 0);
-}}
-
-fn fetchJointMatrix(joint : u32) -> mat4x4f {{
-  let x = u32(draw.params.z) + joint * 4u;
-  return mat4x4f(
-    loadJointTexel(x),
-    loadJointTexel(x + 1u),
-    loadJointTexel(x + 2u),
-    loadJointTexel(x + 3u)
-  );
-}}
-
-fn skinMatrix(joints : vec4f, weights : vec4f) -> mat4x4f {{
-  return weights.x * fetchJointMatrix(u32(joints.x))
-       + weights.y * fetchJointMatrix(u32(joints.y))
-       + weights.z * fetchJointMatrix(u32(joints.z))
-       + weights.w * fetchJointMatrix(u32(joints.w));
-}}",
-        group = group,
-        width = WGPU_SKIN_ARENA_WIDTH
-    );
-}
-
-// The mesh path's normal palette WGSL: three texels per joint at the draw's normal arena base
-// (draw.params.w), blended per joint (an approximation of the blended inverse-transpose, shared by
-// the CPU and GL paths).
-fn get_wgpu_skin_normal_binding_wgsl(group: u32) -> String {
-    return format!(
-        "@group({group}) @binding(2) var jointNormalTexture : texture_2d<f32>;
-
-fn loadJointNormalTexel(i : u32) -> vec3f {{
-  return textureLoad(jointNormalTexture, vec2i(i32(i % {width}u), i32(i / {width}u)), 0).xyz;
-}}
-
-fn fetchJointNormalMatrix(joint : u32) -> mat3x3f {{
-  let x = u32(draw.params.w) + joint * 3u;
-  return mat3x3f(
-    loadJointNormalTexel(x),
-    loadJointNormalTexel(x + 1u),
-    loadJointNormalTexel(x + 2u)
-  );
-}}
-
-fn skinNormalMatrix(joints : vec4f, weights : vec4f) -> mat3x3f {{
-  return weights.x * fetchJointNormalMatrix(u32(joints.x))
-       + weights.y * fetchJointNormalMatrix(u32(joints.y))
-       + weights.z * fetchJointNormalMatrix(u32(joints.z))
-       + weights.w * fetchJointNormalMatrix(u32(joints.w));
-}}",
-        group = group,
-        width = WGPU_SKIN_ARENA_WIDTH
-    );
-}
-
-fn get_upload_vertices(geometry: &MeshGeometry) -> Option<Vec<f32>> {
-    if get_mesh_geometry_morph_bind_pose(geometry).is_some() {
-        return None;
-    }
-    let bind_pose = get_mesh_geometry_skin_bind_pose(geometry)?;
-    return Some(build_skin_bind_vertices(geometry, &bind_pose.read().unwrap()));
-}
-
-fn get_wgpu_skin_arena_row_count(texels: u32) -> u32 {
-    return 1.max(texels.div_ceil(WGPU_SKIN_ARENA_WIDTH));
-}
-
-fn has_bind_pose(geometry: &MeshGeometry) -> bool {
-    return get_mesh_geometry_morph_bind_pose(geometry).is_none()
-        && get_mesh_geometry_skin_bind_pose(geometry).is_some();
-}
-
-fn is_gpu_skinned(mesh: &Mesh) -> bool {
-    if mesh.skin.is_none() {
-        return false;
-    }
-    let geometry = mesh.geometry.read().unwrap();
-    let layout = geometry.layout.read().unwrap();
-    let mut has_joints = false;
-    let mut has_weights = false;
-    for attribute in &layout.attributes {
-        if attribute.semantic == VertexSemantic::Joints0 {
-            has_joints = true;
-        }
-        if attribute.semantic == VertexSemantic::Weights0 {
-            has_weights = true;
-        }
-    }
-    return has_joints && has_weights;
-}
-
-fn palette_layout_entry(binding: u32) -> wgpu::BindGroupLayoutEntry {
-    return wgpu::BindGroupLayoutEntry {
-        binding,
-        visibility: wgpu::ShaderStages::VERTEX,
-        ty: wgpu::BindingType::Texture {
-            sample_type: wgpu::TextureSampleType::Float { filterable: false },
-            view_dimension: wgpu::TextureViewDimension::D2,
-            multisampled: false,
-        },
-        count: None,
-    };
-}
-
-// Regions start on a row boundary so every write is a rectangle.
-fn row_aligned_wgpu_skin_arena_texels(texels: u32) -> u32 {
-    return get_wgpu_skin_arena_row_count(texels) * WGPU_SKIN_ARENA_WIDTH;
 }
 
 // Writes one palette into its arena region as at most two rectangles: the whole rows it fills,
