@@ -1,4 +1,4 @@
-use crate::{create_particle_emitter_config, ParticleConfigIssue, ParticleEmitterConfig};
+use crate::{ParticleConfigIssue, ParticleEmitterConfig};
 
 fn check_finite(issues: &mut Vec<ParticleConfigIssue>, field: &str, value: f32) {
     if !value.is_finite() {
@@ -42,8 +42,8 @@ fn is_finite_curve(curve: Option<&[f32]>) -> bool {
 pub fn normalize_particle_emitter_config(
     config: Option<&ParticleEmitterConfig>,
 ) -> ParticleEmitterConfig {
-    let mut out = create_particle_emitter_config(config);
-    let defaults = create_particle_emitter_config(None);
+    let mut out = config.cloned().unwrap_or_default();
+    let defaults = ParticleEmitterConfig::default();
 
     // Replace any non-finite numeric field with its canonical default.
     if !out.alpha_end.is_finite() { out.alpha_end = defaults.alpha_end; }

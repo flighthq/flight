@@ -4,7 +4,10 @@ use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticSeverity, report_import_diagnostic,
 };
 use flight_math::DEG_TO_RAD;
-use flight_particles::{EmitterShape, ParticleEmitterConfig, create_particle_emitter_config};
+use flight_particles::{
+    EmitterShape, ParticleEmitterConfig, ParticleEmitterConfigOptions,
+    create_particle_emitter_config,
+};
 
 use crate::text::{parse_js_float, parse_js_int};
 
@@ -342,64 +345,63 @@ fn raw_dict_to_config(dict: &ParticleDesignerRawDict, texture_size: f32) -> Part
     let rotation_speed_variance =
         (rotation_start_variance.max(rotation_end_variance) * DEG_TO_RAD) / lifetime_mid;
     let duration = num(dict, "duration", -1.0);
-    let defaults = create_particle_emitter_config(None);
-    return create_particle_emitter_config(Some(&ParticleEmitterConfig {
-        alpha_end: num(dict, "finishColorAlpha", 0.0),
-        alpha_start: num(dict, "startColorAlpha", 1.0),
-        blend_mode: pd_blend_mode(
+    return create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
+        alpha_end: Some(num(dict, "finishColorAlpha", 0.0)),
+        alpha_start: Some(num(dict, "startColorAlpha", 1.0)),
+        blend_mode: Some(pd_blend_mode(
             num(dict, "blendFuncSource", 770.0),
             num(dict, "blendFuncDestination", 771.0),
-        ),
-        color_end_b: num(dict, "finishColorBlue", 1.0),
-        color_end_g: num(dict, "finishColorGreen", 1.0),
-        color_end_r: num(dict, "finishColorRed", 1.0),
-        color_end_variance_b: num(dict, "finishColorVarianceBlue", 0.0),
-        color_end_variance_g: num(dict, "finishColorVarianceGreen", 0.0),
-        color_end_variance_r: num(dict, "finishColorVarianceRed", 0.0),
-        color_start_b: num(dict, "startColorBlue", 1.0),
-        color_start_g: num(dict, "startColorGreen", 1.0),
-        color_start_r: num(dict, "startColorRed", 1.0),
-        color_start_variance_b: num(dict, "startColorVarianceBlue", 0.0),
-        color_start_variance_g: num(dict, "startColorVarianceGreen", 0.0),
-        color_start_variance_r: num(dict, "startColorVarianceRed", 0.0),
-        direction_x: angle_rad.cos(),
-        direction_y: -angle_rad.sin(),
-        duration: if duration > 0.0 { duration } else { 0.0 },
-        emitter_height: if emitter_shape == EmitterShape::Rect {
+        )),
+        color_end_b: Some(num(dict, "finishColorBlue", 1.0)),
+        color_end_g: Some(num(dict, "finishColorGreen", 1.0)),
+        color_end_r: Some(num(dict, "finishColorRed", 1.0)),
+        color_end_variance_b: Some(num(dict, "finishColorVarianceBlue", 0.0)),
+        color_end_variance_g: Some(num(dict, "finishColorVarianceGreen", 0.0)),
+        color_end_variance_r: Some(num(dict, "finishColorVarianceRed", 0.0)),
+        color_start_b: Some(num(dict, "startColorBlue", 1.0)),
+        color_start_g: Some(num(dict, "startColorGreen", 1.0)),
+        color_start_r: Some(num(dict, "startColorRed", 1.0)),
+        color_start_variance_b: Some(num(dict, "startColorVarianceBlue", 0.0)),
+        color_start_variance_g: Some(num(dict, "startColorVarianceGreen", 0.0)),
+        color_start_variance_r: Some(num(dict, "startColorVarianceRed", 0.0)),
+        direction_x: Some(angle_rad.cos()),
+        direction_y: Some(-angle_rad.sin()),
+        duration: Some(if duration > 0.0 { duration } else { 0.0 }),
+        emitter_height: Some(if emitter_shape == EmitterShape::Rect {
             variance_y * 2.0
         } else {
             0.0
-        },
-        emitter_radius: if emitter_shape == EmitterShape::Circle {
+        }),
+        emitter_radius: Some(if emitter_shape == EmitterShape::Circle {
             variance_x
         } else {
             0.0
-        },
-        emitter_shape,
-        emitter_width: if emitter_shape == EmitterShape::Rect {
+        }),
+        emitter_shape: Some(emitter_shape),
+        emitter_width: Some(if emitter_shape == EmitterShape::Rect {
             variance_x * 2.0
         } else {
             0.0
-        },
-        gravity_x: num(dict, "gravityx", 0.0),
-        gravity_y: num(dict, "gravityy", 0.0),
-        lifetime_max: lifespan + lifespan_variance,
-        lifetime_min: (lifespan - lifespan_variance).max(0.0),
-        looping: duration <= 0.0,
-        max_particles: (num(dict, "maxParticles", 200.0) as i32) as f32,
-        rotation_speed_max: rotation_speed_mid + rotation_speed_variance,
-        rotation_speed_min: rotation_speed_mid - rotation_speed_variance,
-        scale_end: if start_size > 0.0 {
+        }),
+        gravity_x: Some(num(dict, "gravityx", 0.0)),
+        gravity_y: Some(num(dict, "gravityy", 0.0)),
+        lifetime_max: Some(lifespan + lifespan_variance),
+        lifetime_min: Some((lifespan - lifespan_variance).max(0.0)),
+        looping: Some(duration <= 0.0),
+        max_particles: Some((num(dict, "maxParticles", 200.0) as i32) as f32),
+        rotation_speed_max: Some(rotation_speed_mid + rotation_speed_variance),
+        rotation_speed_min: Some(rotation_speed_mid - rotation_speed_variance),
+        scale_end: Some(if start_size > 0.0 {
             finish_size / start_size
         } else {
             1.0
-        },
-        scale_max: start_size + start_variance,
-        scale_min: (start_size - start_variance).max(0.0),
-        speed_max: speed + speed_variance,
-        speed_min: (speed - speed_variance).max(0.0),
-        spread: num(dict, "angleVariance", 0.0) * DEG_TO_RAD,
-        ..defaults
+        }),
+        scale_max: Some(start_size + start_variance),
+        scale_min: Some((start_size - start_variance).max(0.0)),
+        speed_max: Some(speed + speed_variance),
+        speed_min: Some((speed - speed_variance).max(0.0)),
+        spread: Some(num(dict, "angleVariance", 0.0) * DEG_TO_RAD),
+        ..Default::default()
     }));
 }
 

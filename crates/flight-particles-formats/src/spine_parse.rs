@@ -6,8 +6,8 @@ use flight_importdiagnostics::{
 use flight_math::DEG_TO_RAD;
 use flight_particles::{
     ColorKeyframe, CurveKeyframe, EmitterShape, ParticleEmitterConfig,
-    create_particle_emitter_config, particle_color_curve_from_keyframes,
-    particle_curve_from_keyframes,
+    ParticleEmitterConfigOptions, create_particle_emitter_config,
+    particle_color_curve_from_keyframes, particle_curve_from_keyframes,
 };
 use serde_json::Value;
 
@@ -330,65 +330,64 @@ fn raw_to_config(raw: &Value) -> ParticleEmitterConfig {
         _ => true,
     };
     let duration_ms = number_field(raw, "duration", -1.0);
-    let defaults = create_particle_emitter_config(None);
-    return create_particle_emitter_config(Some(&ParticleEmitterConfig {
-        alpha_curve,
-        alpha_end: last_alpha(raw.get("alpha")),
-        alpha_start: first_alpha(raw.get("alpha")),
-        blend_mode: spine_blend_mode(&string_field(raw, "blendMode", "normal")),
-        color_curve,
-        color_end_b: end_tint.2,
-        color_end_g: end_tint.1,
-        color_end_r: end_tint.0,
-        color_start_b: start_tint.2,
-        color_start_g: start_tint.1,
-        color_start_r: start_tint.0,
-        direction_x: angle_mid.cos(),
-        direction_y: -angle_mid.sin(),
-        duration: if !continuous && duration_ms > 0.0 {
+    return create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
+        alpha_curve: Some(alpha_curve),
+        alpha_end: Some(last_alpha(raw.get("alpha"))),
+        alpha_start: Some(first_alpha(raw.get("alpha"))),
+        blend_mode: Some(spine_blend_mode(&string_field(raw, "blendMode", "normal"))),
+        color_curve: Some(color_curve),
+        color_end_b: Some(end_tint.2),
+        color_end_g: Some(end_tint.1),
+        color_end_r: Some(end_tint.0),
+        color_start_b: Some(start_tint.2),
+        color_start_g: Some(start_tint.1),
+        color_start_r: Some(start_tint.0),
+        direction_x: Some(angle_mid.cos()),
+        direction_y: Some(-angle_mid.sin()),
+        duration: Some(if !continuous && duration_ms > 0.0 {
             duration_ms / 1000.0
         } else {
             0.0
-        },
-        emitter_height: if emitter_shape == EmitterShape::Rect {
+        }),
+        emitter_height: Some(if emitter_shape == EmitterShape::Rect {
             spawn_height
         } else {
             0.0
-        },
-        emitter_radius: if emitter_shape == EmitterShape::Circle {
+        }),
+        emitter_radius: Some(if emitter_shape == EmitterShape::Circle {
             spawn_width * 0.5
         } else {
             0.0
-        },
-        emitter_shape,
-        emitter_width: if emitter_shape == EmitterShape::Rect {
+        }),
+        emitter_shape: Some(emitter_shape),
+        emitter_width: Some(if emitter_shape == EmitterShape::Rect {
             spawn_width
         } else {
             0.0
-        },
-        gravity_x: range_mid(raw.get("wind"), 0.0),
-        gravity_y: range_mid(raw.get("gravity"), 0.0),
-        lifetime_max: life_high,
-        lifetime_min: life_low,
-        looping: continuous,
-        max_particles: match raw.get("maxParticles") {
+        }),
+        gravity_x: Some(range_mid(raw.get("wind"), 0.0)),
+        gravity_y: Some(range_mid(raw.get("gravity"), 0.0)),
+        lifetime_max: Some(life_high),
+        lifetime_min: Some(life_low),
+        looping: Some(continuous),
+        max_particles: Some(match raw.get("maxParticles") {
             Some(Value::Number(number)) => (number.as_f64().unwrap_or(500.0) as i32) as f32,
             _ => 500.0,
-        },
-        rotation_speed_max: range_high(raw.get("rotation"), 0.0) * DEG_TO_RAD,
-        rotation_speed_min: range_low(raw.get("rotation"), 0.0) * DEG_TO_RAD,
-        scale_end: if spawn_scale_mid > 0.0 {
+        }),
+        rotation_speed_max: Some(range_high(raw.get("rotation"), 0.0) * DEG_TO_RAD),
+        rotation_speed_min: Some(range_low(raw.get("rotation"), 0.0) * DEG_TO_RAD),
+        scale_end: Some(if spawn_scale_mid > 0.0 {
             end_scale_mid / spawn_scale_mid
         } else {
             0.0
-        },
-        scale_max: range_high(raw.get("scale"), 1.0),
-        scale_min: range_low(raw.get("scale"), 1.0),
-        spawn_rate: range_mid(raw.get("emission"), 20.0),
-        speed_max: range_high(raw.get("velocity"), 150.0),
-        speed_min: range_low(raw.get("velocity"), 50.0),
-        spread,
-        ..defaults
+        }),
+        scale_max: Some(range_high(raw.get("scale"), 1.0)),
+        scale_min: Some(range_low(raw.get("scale"), 1.0)),
+        spawn_rate: Some(range_mid(raw.get("emission"), 20.0)),
+        speed_max: Some(range_high(raw.get("velocity"), 150.0)),
+        speed_min: Some(range_low(raw.get("velocity"), 50.0)),
+        spread: Some(spread),
+        ..Default::default()
     }));
 }
 

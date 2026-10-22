@@ -9,8 +9,8 @@ use flight_importdiagnostics::{
 use flight_math::DEG_TO_RAD;
 use flight_particles::{
     ColorKeyframe, CurveKeyframe, EmitterShape, ParticleEmitterConfig,
-    create_particle_emitter_config, particle_color_curve_from_keyframes,
-    particle_curve_from_keyframes,
+    ParticleEmitterConfigOptions, create_particle_emitter_config,
+    particle_color_curve_from_keyframes, particle_curve_from_keyframes,
 };
 use serde_json::Value;
 
@@ -569,49 +569,47 @@ fn raw_to_config(raw: &Value, ppu: f32) -> ParticleEmitterConfig {
         0.0
     };
     let looping = rb(raw.get("looping"), true);
-    let defaults = create_particle_emitter_config(None);
-    return create_particle_emitter_config(Some(&ParticleEmitterConfig {
-        alpha_curve,
-        alpha_end: end_color.a,
-        alpha_start: start_color.a,
-        blend_mode: unity_blend_mode(raw),
-        burst_count,
-        burst_interval,
-        color_curve,
-        color_end_b: end_color.b,
-        color_end_g: end_color.g,
-        color_end_r: end_color.r,
-        color_start_b: start_color.b,
-        color_start_g: start_color.g,
-        color_start_r: start_color.r,
-        direction_x,
-        direction_y,
-        duration: if looping {
+    return create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
+        alpha_curve: Some(alpha_curve),
+        alpha_end: Some(end_color.a),
+        alpha_start: Some(start_color.a),
+        blend_mode: Some(unity_blend_mode(raw)),
+        burst_count: Some(burst_count),
+        burst_interval: Some(burst_interval),
+        color_curve: Some(color_curve),
+        color_end_b: Some(end_color.b),
+        color_end_g: Some(end_color.g),
+        color_end_r: Some(end_color.r),
+        color_start_b: Some(start_color.b),
+        color_start_g: Some(start_color.g),
+        color_start_r: Some(start_color.r),
+        direction_x: Some(direction_x),
+        direction_y: Some(direction_y),
+        duration: Some(if looping {
             0.0
         } else {
             (0.0f32).max(rn(raw.get("duration"), 5.0))
-        },
-        emitter_height,
-        emitter_radius,
-        emitter_shape,
-        emitter_width,
-        gravity_x: 0.0,
-        gravity_y: gravity_pixels,
-        lifetime_max: mm_high(raw.get("startLifetime"), 1.0),
-        lifetime_min: mm_low(raw.get("startLifetime"), 1.0),
-        looping,
-        max_particles: (rn(raw.get("maxParticles"), 1000.0) as i32) as f32,
-        rotation_speed_max: rotation_high,
-        rotation_speed_min: rotation_low,
-        scale_curve,
-        scale_end,
-        scale_max: scale_high,
-        scale_min: scale_low,
-        spawn_rate,
-        speed_max: mm_high(raw.get("startSpeed"), 5.0) * ppu,
-        speed_min: mm_low(raw.get("startSpeed"), 5.0) * ppu,
-        spread,
-        ..defaults
+        }),
+        emitter_height: Some(emitter_height),
+        emitter_radius: Some(emitter_radius),
+        emitter_shape: Some(emitter_shape),
+        emitter_width: Some(emitter_width),
+        gravity_y: Some(gravity_pixels),
+        lifetime_max: Some(mm_high(raw.get("startLifetime"), 1.0)),
+        lifetime_min: Some(mm_low(raw.get("startLifetime"), 1.0)),
+        looping: Some(looping),
+        max_particles: Some((rn(raw.get("maxParticles"), 1000.0) as i32) as f32),
+        rotation_speed_max: Some(rotation_high),
+        rotation_speed_min: Some(rotation_low),
+        scale_curve: Some(scale_curve),
+        scale_end: Some(scale_end),
+        scale_max: Some(scale_high),
+        scale_min: Some(scale_low),
+        spawn_rate: Some(spawn_rate),
+        speed_max: Some(mm_high(raw.get("startSpeed"), 5.0) * ppu),
+        speed_min: Some(mm_low(raw.get("startSpeed"), 5.0) * ppu),
+        spread: Some(spread),
+        ..Default::default()
     }));
 }
 

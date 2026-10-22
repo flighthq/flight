@@ -4,7 +4,10 @@ use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticSeverity, report_import_diagnostic,
 };
 use flight_math::DEG_TO_RAD;
-use flight_particles::{EmitterShape, ParticleEmitterConfig, create_particle_emitter_config};
+use flight_particles::{
+    EmitterShape, ParticleEmitterConfig, ParticleEmitterConfigOptions,
+    create_particle_emitter_config,
+};
 
 use crate::text::parse_js_float;
 
@@ -303,43 +306,42 @@ fn document_to_config(
     let rotation_speed_min = (rotation_min * DEG_TO_RAD) / lifetime_mid;
     let rotation_speed_max = (rotation_max * DEG_TO_RAD) / lifetime_mid;
     let blend_mode = if document.additive { "add" } else { "normal" };
-    let defaults = create_particle_emitter_config(None);
-    return create_particle_emitter_config(Some(&ParticleEmitterConfig {
-        alpha_end,
-        alpha_start,
-        blend_mode: Some(String::from(blend_mode)),
-        color_end_b: end_b,
-        color_end_g: end_g,
-        color_end_r: end_r,
-        color_start_b: start_b,
-        color_start_g: start_g,
-        color_start_r: start_r,
-        direction_x: angle_mid.cos(),
-        direction_y: -angle_mid.sin(),
-        duration: if duration_mid > 0.0 {
+    return create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
+        alpha_end: Some(alpha_end),
+        alpha_start: Some(alpha_start),
+        blend_mode: Some(Some(String::from(blend_mode))),
+        color_end_b: Some(end_b),
+        color_end_g: Some(end_g),
+        color_end_r: Some(end_r),
+        color_start_b: Some(start_b),
+        color_start_g: Some(start_g),
+        color_start_r: Some(start_r),
+        direction_x: Some(angle_mid.cos()),
+        direction_y: Some(-angle_mid.sin()),
+        duration: Some(if duration_mid > 0.0 {
             duration_mid / 1000.0
         } else {
             0.0
-        },
-        emitter_height,
-        emitter_radius,
-        emitter_shape,
-        emitter_width,
-        gravity_x: wind_min,
-        gravity_y: gravity_min,
-        lifetime_max: life_max / 1000.0,
-        lifetime_min: (life_min / 1000.0).max(0.0),
-        looping: duration_mid <= 0.0,
-        max_particles: document.max_particle_count,
-        rotation_speed_max,
-        rotation_speed_min,
-        scale_end: last_scaling,
-        scale_max,
-        scale_min,
-        speed_max: velocity_max,
-        speed_min: velocity_min,
-        spread,
-        ..defaults
+        }),
+        emitter_height: Some(emitter_height),
+        emitter_radius: Some(emitter_radius),
+        emitter_shape: Some(emitter_shape),
+        emitter_width: Some(emitter_width),
+        gravity_x: Some(wind_min),
+        gravity_y: Some(gravity_min),
+        lifetime_max: Some(life_max / 1000.0),
+        lifetime_min: Some((life_min / 1000.0).max(0.0)),
+        looping: Some(duration_mid <= 0.0),
+        max_particles: Some(document.max_particle_count),
+        rotation_speed_max: Some(rotation_speed_max),
+        rotation_speed_min: Some(rotation_speed_min),
+        scale_end: Some(last_scaling),
+        scale_max: Some(scale_max),
+        scale_min: Some(scale_min),
+        speed_max: Some(velocity_max),
+        speed_min: Some(velocity_min),
+        spread: Some(spread),
+        ..Default::default()
     }));
 }
 

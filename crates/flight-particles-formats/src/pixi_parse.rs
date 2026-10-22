@@ -4,7 +4,7 @@ use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticSeverity, report_import_diagnostic,
 };
 use flight_math::DEG_TO_RAD;
-use flight_particles::{EmitterShape, ParticleEmitterConfig, create_particle_emitter_config};
+use flight_particles::{EmitterShape, ParticleEmitterConfig, ParticleEmitterConfigOptions, create_particle_emitter_config};
 use serde_json::Value;
 
 /// The parse result, config plus diagnostics (TS `PixiParseResult`).
@@ -145,36 +145,35 @@ fn raw_to_config(raw: &Value) -> ParticleEmitterConfig {
         _ => None,
     };
     let rotation_speed = rn(raw.get("rotationSpeed"), 0.0) * DEG_TO_RAD;
-    let defaults = create_particle_emitter_config(None);
-    return create_particle_emitter_config(Some(&ParticleEmitterConfig {
-        alpha_end,
-        alpha_start,
-        blend_mode,
-        color_end_b: end_b,
-        color_end_g: end_g,
-        color_end_r: end_r,
-        color_start_b: start_b,
-        color_start_g: start_g,
-        color_start_r: start_r,
-        direction_x: angle_mid.cos(),
-        direction_y: angle_mid.sin(),
-        emitter_height,
-        emitter_radius,
-        emitter_shape,
-        emitter_width,
-        lifetime_max,
-        lifetime_min,
-        max_particles,
-        rotation_speed_max: rotation_speed,
-        rotation_speed_min: rotation_speed,
-        scale_end: scale_end_ratio,
-        scale_max,
-        scale_min,
-        spawn_rate,
-        speed_max,
-        speed_min,
-        spread,
-        ..defaults
+    return create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
+        alpha_end: Some(alpha_end),
+        alpha_start: Some(alpha_start),
+        blend_mode: Some(blend_mode),
+        color_end_b: Some(end_b),
+        color_end_g: Some(end_g),
+        color_end_r: Some(end_r),
+        color_start_b: Some(start_b),
+        color_start_g: Some(start_g),
+        color_start_r: Some(start_r),
+        direction_x: Some(angle_mid.cos()),
+        direction_y: Some(angle_mid.sin()),
+        emitter_height: Some(emitter_height),
+        emitter_radius: Some(emitter_radius),
+        emitter_shape: Some(emitter_shape),
+        emitter_width: Some(emitter_width),
+        lifetime_max: Some(lifetime_max),
+        lifetime_min: Some(lifetime_min),
+        max_particles: Some(max_particles),
+        rotation_speed_max: Some(rotation_speed),
+        rotation_speed_min: Some(rotation_speed),
+        scale_end: Some(scale_end_ratio),
+        scale_max: Some(scale_max),
+        scale_min: Some(scale_min),
+        spawn_rate: Some(spawn_rate),
+        speed_max: Some(speed_max),
+        speed_min: Some(speed_min),
+        spread: Some(spread),
+        ..Default::default()
     }));
 }
 

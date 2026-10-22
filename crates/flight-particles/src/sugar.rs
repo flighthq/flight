@@ -14,59 +14,10 @@ mod sugar_tests {
 
     #[test]
     fn emitter_config_normalize_delegates() {
-        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
-            spawn_rate: -5.0,
-            max_particles: -1.0,
-            alpha_curve: None,
-            alpha_end: 0.0,
-            alpha_start: 1.0,
-            blend_mode: None,
-            burst_count: 0.0,
-            burst_interval: 0.0,
-            color_curve: None,
-            color_end_b: 1.0,
-            color_end_g: 1.0,
-            color_end_r: 1.0,
-            color_end_variance_b: 0.0,
-            color_end_variance_g: 0.0,
-            color_end_variance_r: 0.0,
-            color_start_b: 1.0,
-            color_start_g: 1.0,
-            color_start_r: 1.0,
-            color_start_variance_b: 0.0,
-            color_start_variance_g: 0.0,
-            color_start_variance_r: 0.0,
-            direction_x: 0.0,
-            direction_y: -1.0,
-            direction_z: 0.0,
-            duration: 0.0,
-            emitter_cone_angle: 0.0,
-            emitter_depth: 0.0,
-            emitter_height: 0.0,
-            emitter_radius: 0.0,
-            emitter_shape: EmitterShape::Point,
-            emitter_width: 0.0,
-            frame_count: 1.0,
-            frame_rate: 12.0,
-            gravity_x: 0.0,
-            gravity_y: 0.0,
-            gravity_z: 0.0,
-            lifetime_max: 1.0,
-            lifetime_min: 0.5,
-            looping: true,
-            region_id_max: 1.0,
-            region_id_min: 0.0,
-            rotation_speed_max: 0.0,
-            rotation_speed_min: 0.0,
-            scale_curve: None,
-            scale_end: 1.0,
-            scale_max: 1.0,
-            scale_min: 1.0,
-            speed_max: 100.0,
-            speed_min: 50.0,
-            spread: std::f32::consts::PI,
-            velocity_inheritance: 0.0,
-            world_space: false,
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
+            spawn_rate: Some(-5.0),
+            max_particles: Some(-1.0),
+            ..create_particle_emitter_config_options()
         }));
         let method = config.normalize();
         let free = normalize_particle_emitter_config(Some(&config));
@@ -167,7 +118,7 @@ mod sugar_tests {
 }
 
 impl ParticleEmitterConfig {
-    pub fn new(overrides: Option<&ParticleEmitterConfig>) -> Self {
+    pub fn new(overrides: Option<&ParticleEmitterConfigOptions>) -> Self {
         return create_particle_emitter_config(overrides);
     }
 

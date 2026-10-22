@@ -28,6 +28,7 @@ pub use contract::ParticleCollider;
 pub use contract::ParticleConfigIssue;
 pub use contract::ParticleEmitterCallbacks;
 pub use contract::ParticleEmitterConfig;
+pub use contract::ParticleEmitterConfigOptions;
 pub use contract::ParticleEmitterSignals;
 pub use contract::ParticleEmitterState;
 pub use contract::ParticleForce;
@@ -60,6 +61,7 @@ pub use contract::sample_particle_curve;
 
 // particleEmitterConfig — export *
 pub use contract::create_particle_emitter_config;
+pub use contract::create_particle_emitter_config_options;
 
 // particleEmitterSignals — selective (index.ts exports only enable + get)
 pub use contract::enable_particle_emitter_signals;

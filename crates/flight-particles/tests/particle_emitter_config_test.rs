@@ -59,59 +59,10 @@ mod create_particle_emitter_config {
 
     #[test]
     fn overrides_individual_fields() {
-        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
-            spawn_rate: 60.0,
-            max_particles: 500.0,
-            alpha_curve: None,
-            alpha_end: 0.0,
-            alpha_start: 1.0,
-            blend_mode: None,
-            burst_count: 0.0,
-            burst_interval: 0.0,
-            color_curve: None,
-            color_end_b: 1.0,
-            color_end_g: 1.0,
-            color_end_r: 1.0,
-            color_end_variance_b: 0.0,
-            color_end_variance_g: 0.0,
-            color_end_variance_r: 0.0,
-            color_start_b: 1.0,
-            color_start_g: 1.0,
-            color_start_r: 1.0,
-            color_start_variance_b: 0.0,
-            color_start_variance_g: 0.0,
-            color_start_variance_r: 0.0,
-            direction_x: 0.0,
-            direction_y: -1.0,
-            direction_z: 0.0,
-            duration: 0.0,
-            emitter_cone_angle: 0.0,
-            emitter_depth: 0.0,
-            emitter_height: 0.0,
-            emitter_radius: 0.0,
-            emitter_shape: EmitterShape::Point,
-            emitter_width: 0.0,
-            frame_count: 1.0,
-            frame_rate: 12.0,
-            gravity_x: 0.0,
-            gravity_y: 0.0,
-            gravity_z: 0.0,
-            lifetime_max: 1.0,
-            lifetime_min: 0.5,
-            looping: true,
-            region_id_max: 1.0,
-            region_id_min: 0.0,
-            rotation_speed_max: 0.0,
-            rotation_speed_min: 0.0,
-            scale_curve: None,
-            scale_end: 1.0,
-            scale_max: 1.0,
-            scale_min: 1.0,
-            speed_max: 100.0,
-            speed_min: 50.0,
-            spread: std::f32::consts::PI,
-            velocity_inheritance: 0.0,
-            world_space: false,
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
+            spawn_rate: Some(60.0),
+            max_particles: Some(500.0),
+            ..create_particle_emitter_config_options()
         }));
         assert_eq!(config.spawn_rate, 60.0);
         assert_eq!(config.max_particles, 500.0);
@@ -124,5 +75,19 @@ mod create_particle_emitter_config {
         let b = create_particle_emitter_config(None);
         // They are equal by value but are distinct allocations.
         assert_eq!(a.spawn_rate, b.spawn_rate);
+    }
+}
+
+mod create_particle_emitter_config_options {
+    use super::*;
+
+    #[test]
+    fn returns_all_none_fields() {
+        let opts = create_particle_emitter_config_options();
+        assert!(opts.spawn_rate.is_none());
+        assert!(opts.max_particles.is_none());
+        assert!(opts.alpha_start.is_none());
+        assert!(opts.blend_mode.is_none());
+        assert!(opts.emitter_shape.is_none());
     }
 }

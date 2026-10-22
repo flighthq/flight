@@ -211,6 +211,66 @@ pub struct ParticleEmitterConfig {
 }
 
 // ---------------------------------------------------------------------------
+// ParticleEmitterConfigOptions (partial input for create)
+// ---------------------------------------------------------------------------
+
+#[derive(Clone, Debug, Default)]
+pub struct ParticleEmitterConfigOptions {
+    pub alpha_curve: Option<Option<Vec<f32>>>,
+    pub alpha_end: Option<f32>,
+    pub alpha_start: Option<f32>,
+    pub blend_mode: Option<Option<String>>,
+    pub burst_count: Option<f32>,
+    pub burst_interval: Option<f32>,
+    pub color_curve: Option<Option<Vec<f32>>>,
+    pub color_end_b: Option<f32>,
+    pub color_end_g: Option<f32>,
+    pub color_end_r: Option<f32>,
+    pub color_end_variance_b: Option<f32>,
+    pub color_end_variance_g: Option<f32>,
+    pub color_end_variance_r: Option<f32>,
+    pub color_start_b: Option<f32>,
+    pub color_start_g: Option<f32>,
+    pub color_start_r: Option<f32>,
+    pub color_start_variance_b: Option<f32>,
+    pub color_start_variance_g: Option<f32>,
+    pub color_start_variance_r: Option<f32>,
+    pub direction_x: Option<f32>,
+    pub direction_y: Option<f32>,
+    pub direction_z: Option<f32>,
+    pub duration: Option<f32>,
+    pub emitter_cone_angle: Option<f32>,
+    pub emitter_depth: Option<f32>,
+    pub emitter_height: Option<f32>,
+    pub emitter_radius: Option<f32>,
+    pub emitter_shape: Option<EmitterShape>,
+    pub emitter_width: Option<f32>,
+    pub frame_count: Option<f32>,
+    pub frame_rate: Option<f32>,
+    pub gravity_x: Option<f32>,
+    pub gravity_y: Option<f32>,
+    pub gravity_z: Option<f32>,
+    pub lifetime_max: Option<f32>,
+    pub lifetime_min: Option<f32>,
+    pub looping: Option<bool>,
+    pub max_particles: Option<f32>,
+    pub region_id_max: Option<f32>,
+    pub region_id_min: Option<f32>,
+    pub rotation_speed_max: Option<f32>,
+    pub rotation_speed_min: Option<f32>,
+    pub scale_curve: Option<Option<Vec<f32>>>,
+    pub scale_end: Option<f32>,
+    pub scale_max: Option<f32>,
+    pub scale_min: Option<f32>,
+    pub spawn_rate: Option<f32>,
+    pub speed_max: Option<f32>,
+    pub speed_min: Option<f32>,
+    pub spread: Option<f32>,
+    pub velocity_inheritance: Option<f32>,
+    pub world_space: Option<bool>,
+}
+
+// ---------------------------------------------------------------------------
 // ParticleEmitterState (Entity)
 // ---------------------------------------------------------------------------
 

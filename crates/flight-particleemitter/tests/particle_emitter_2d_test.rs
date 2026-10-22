@@ -1,7 +1,8 @@
+// flight-lint: allow(test-default-call) ParticleEmitterConfigOptions is an input option bag with no create function
 use flight_geometry::{Vector2, create_rectangle, create_vector2};
 use flight_node::{Node, NodeRef, get_node_local_bounds_rectangle, get_node_local_bounds_revision};
 use flight_particles::contract::{create_particle_emitter_config, create_particle_emitter_state};
-use flight_particles::ParticleEmitterConfig;
+use flight_particles::{ParticleEmitterConfigOptions, create_particle_emitter_config_options};
 
 use flight_particleemitter::*;
 
@@ -229,59 +230,16 @@ mod emit_particle_burst_2d {
         let emitter = create_particle_emitter_2d();
         reserve_particle_emitter_2d(&emitter, 16);
         let mut state = create_particle_emitter_state();
-        let config = create_particle_emitter_config(Some(&ParticleEmitterConfig {
-            spawn_rate: 100.0,
-            max_particles: 100.0,
-            lifetime_min: 1.0,
-            lifetime_max: 1.0,
-            speed_min: 10.0,
-            speed_max: 10.0,
-            alpha_curve: None,
-            alpha_end: 1.0,
-            alpha_start: 1.0,
-            blend_mode: None,
-            burst_count: 0.0,
-            burst_interval: 0.0,
-            color_curve: None,
-            color_end_b: 1.0,
-            color_end_g: 1.0,
-            color_end_r: 1.0,
-            color_end_variance_b: 0.0,
-            color_end_variance_g: 0.0,
-            color_end_variance_r: 0.0,
-            color_start_b: 1.0,
-            color_start_g: 1.0,
-            color_start_r: 1.0,
-            color_start_variance_b: 0.0,
-            color_start_variance_g: 0.0,
-            color_start_variance_r: 0.0,
-            direction_x: 0.0,
-            direction_y: -1.0,
-            direction_z: 0.0,
-            duration: 0.0,
-            emitter_cone_angle: 0.0,
-            emitter_depth: 0.0,
-            emitter_height: 0.0,
-            emitter_radius: 0.0,
-            emitter_shape: flight_particles::EmitterShape::Point,
-            emitter_width: 0.0,
-            frame_count: 1.0,
-            frame_rate: 12.0,
-            gravity_x: 0.0,
-            gravity_y: 0.0,
-            gravity_z: 0.0,
-            looping: false,
-            region_id_max: 1.0,
-            region_id_min: 0.0,
-            rotation_speed_max: 0.0,
-            rotation_speed_min: 0.0,
-            scale_curve: None,
-            scale_end: 1.0,
-            scale_max: 1.0,
-            scale_min: 1.0,
-            spread: std::f32::consts::PI,
-            velocity_inheritance: 0.0,
-            world_space: false,
+        let config = create_particle_emitter_config(Some(&ParticleEmitterConfigOptions {
+            spawn_rate: Some(100.0),
+            max_particles: Some(100.0),
+            lifetime_min: Some(1.0),
+            lifetime_max: Some(1.0),
+            speed_min: Some(10.0),
+            speed_max: Some(10.0),
+            alpha_end: Some(1.0),
+            looping: Some(false),
+            ..create_particle_emitter_config_options()
         }));
         let spawned = emit_particle_burst_2d(&emitter, &mut state, &config, 5.0, 0.0, 0.0, None);
         assert_eq!(spawned, 5);
