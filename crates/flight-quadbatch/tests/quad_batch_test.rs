@@ -8,8 +8,8 @@ use flight_quadbatch::contract::*;
 use flight_signals::{connect_signal, emit_signal};
 use flight_texture::{Texture2D, create_texture_2d};
 use flight_textureatlas::{
-    TextureAtlas, TextureAtlasOptions, TextureAtlasRegion, TextureAtlasRegionOptions,
-    TextureAtlasRotation, create_texture_atlas, create_texture_atlas_region,
+    TextureAtlas, TextureAtlasRegion, TextureAtlasRegionOptions, TextureAtlasRotation,
+    create_texture_atlas, create_texture_atlas_region, set_texture_atlas_region,
 };
 
 fn batch_with(data: QuadBatchDataOptions) -> Ref<QuadBatch> {
@@ -26,21 +26,22 @@ fn data_options() -> QuadBatchDataOptions {
 }
 
 fn make_quad_atlas(regions: Vec<Ref<TextureAtlasRegion>>) -> Ref<TextureAtlas> {
-    let make: fn() -> TextureAtlasOptions = TextureAtlasOptions::default;
-    return create_texture_atlas(Some(TextureAtlasOptions {
-        regions: Some(regions),
-        ..make()
-    }));
+    let atlas = create_texture_atlas();
+    atlas.write().unwrap().regions = regions;
+    return atlas;
 }
 
 fn make_quad_region(id: i32, width: f32, height: f32) -> Ref<TextureAtlasRegion> {
     let make: fn() -> TextureAtlasRegionOptions = TextureAtlasRegionOptions::default;
-    return create_texture_atlas_region(Some(&TextureAtlasRegionOptions {
+    let options = TextureAtlasRegionOptions {
         height: Some(height),
         id: Some(id),
         width: Some(width),
         ..make()
-    }));
+    };
+    let region = create_texture_atlas_region();
+    set_texture_atlas_region(&mut region.write().unwrap(), &options);
+    return region;
 }
 
 fn make_texture() -> Ref<Texture2D> {

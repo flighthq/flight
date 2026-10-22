@@ -51,7 +51,7 @@ pub(crate) const FNT_JSON: &str = r#"{
 }"#;
 
 pub(crate) fn atlas() -> Ref<TextureAtlas> {
-    return create_texture_atlas(None);
+    return create_texture_atlas();
 }
 
 pub(crate) fn guard_state() -> BitmapFontGuardStateRef {

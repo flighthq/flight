@@ -1,5 +1,6 @@
 use flight_textureatlas::{
     TextureAtlas, TextureAtlasRegionOptions, TextureAtlasRotation, create_texture_atlas_region,
+    set_texture_atlas_region,
 };
 
 use crate::json::{RawAtlasDocument, RawFrame, RawFrames, RawMeta};
@@ -96,7 +97,7 @@ fn texture_packer_atlas_apply_declared_frame(
         name,
         options.strip_path_prefix.unwrap_or(false),
     );
-    let region = create_texture_atlas_region(Some(&TextureAtlasRegionOptions {
+    let region_options = TextureAtlasRegionOptions {
         height: Some(frame.h),
         id: Some(atlas.regions.len() as i32),
         name: Some(name),
@@ -116,7 +117,9 @@ fn texture_packer_atlas_apply_declared_frame(
         x: Some(frame.x),
         y: Some(frame.y),
         ..TextureAtlasRegionOptions::default()
-    }));
+    };
+    let region = create_texture_atlas_region();
+    set_texture_atlas_region(&mut region.write().unwrap(), &region_options);
     atlas.regions.push(region);
 }
 
@@ -145,7 +148,7 @@ fn texture_packer_atlas_apply_raw_frame(
         options.strip_path_prefix.unwrap_or(false),
     );
     let trimmed = entry.trimmed == Some(true);
-    let region = create_texture_atlas_region(Some(&TextureAtlasRegionOptions {
+    let region_options = TextureAtlasRegionOptions {
         height: Some(frame.h),
         id: Some(atlas.regions.len() as i32),
         name: Some(name),
@@ -173,7 +176,9 @@ fn texture_packer_atlas_apply_raw_frame(
         x: Some(frame.x),
         y: Some(frame.y),
         ..TextureAtlasRegionOptions::default()
-    }));
+    };
+    let region = create_texture_atlas_region();
+    set_texture_atlas_region(&mut region.write().unwrap(), &region_options);
     atlas.regions.push(region);
 }
 

@@ -28,7 +28,7 @@ mod sugar_tests {
     }
 
     fn page_options() -> BitmapFontParseOptions {
-        let page = create_texture_atlas(None);
+        let page = create_texture_atlas();
         return BitmapFontParseOptions {
             resolve_page: Some(Arc::new(move |_id, _file| Some(page.clone()))),
         };

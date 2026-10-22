@@ -30,7 +30,7 @@ fn create_test_data() -> BitmapFontData {
             descent: 2.0,
             line_gap: 1.0,
         },
-        pages: vec![Some(create_texture_atlas(None))],
+        pages: vec![Some(create_texture_atlas())],
     };
 }
 

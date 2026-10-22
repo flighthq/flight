@@ -1,15 +1,15 @@
-use flight_interaction::hit_tests::{find_graph_hit_target_precise, HitTestContext};
+use flight_interaction::hit_tests::{HitTestContext, find_graph_hit_target_precise};
 use flight_interaction::node_interaction_state::{
     enable_node_interaction_state, set_node_hit_test_enabled,
 };
 use flight_interaction::register_tilemap_hit_test::register_tilemap_hit_test;
 use flight_node::NodeRef;
-use flight_textureatlas::create_texture_atlas;
 use flight_scene2d::contract::PartialNode2D;
+use flight_textureatlas::create_texture_atlas;
 use flight_tilemap::{PartialTilemap, TilemapDataOptions, create_tilemap};
 
 fn tilemap_node(columns: i32, rows: i32, tw: f32, th: f32, tiles: Vec<i16>) -> NodeRef {
-    let atlas = create_texture_atlas(None);
+    let atlas = create_texture_atlas();
     let tm: NodeRef = create_tilemap(Some(&PartialTilemap {
         data: Some(TilemapDataOptions {
             atlas: Some(atlas),

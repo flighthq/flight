@@ -49,7 +49,7 @@ mod enable_texture_atlas_guards {
     fn rotated_atlas() -> flight_entity::Ref<TextureAtlas> {
         let mut options = common();
         options.uv_rotation = Some(0.25);
-        let atlas = create_texture_atlas(Some(TextureAtlasOptions {
+        let atlas = create_test_texture_atlas_ref(Some(TextureAtlasOptions {
             texture: Some(page(Some(image(100, 50) as TextureSourceRef), options)),
             ..atlas_options()
         }));
@@ -111,7 +111,7 @@ mod enable_texture_atlas_guards {
         add_log_sink(&log_state, sink.sink.clone());
         let mut state = guard_state();
         enable_texture_atlas_guards(&mut state, &log_state, Arc::new(|| 0.0));
-        let atlas = create_texture_atlas(None);
+        let atlas = create_texture_atlas();
         assert!(get_texture_atlas_region_texture(&atlas, 0, Some(&state)).is_none());
         add_texture_atlas_region(
             &mut atlas.write().unwrap(),

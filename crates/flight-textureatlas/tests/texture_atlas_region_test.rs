@@ -10,17 +10,6 @@ use flight_textureatlas::contract::*;
 
 use crate::texture_atlas_fixture::*;
 
-fn create_texture_atlas(obj: Option<TextureAtlasOptions>) -> TextureAtlas {
-    return Arc::try_unwrap(flight_textureatlas::create_texture_atlas(obj))
-        .unwrap()
-        .into_inner()
-        .unwrap();
-}
-
-fn create_texture_atlas_ref(obj: Option<TextureAtlasOptions>) -> Ref<TextureAtlas> {
-    return flight_textureatlas::create_texture_atlas(obj);
-}
-
 fn named(atlas: &mut TextureAtlas, x: f32, name: &str) {
     add_texture_atlas_region(atlas, x, 0.0, 10.0, 10.0, None, None, Some(name));
 }
@@ -37,7 +26,7 @@ fn names(regions: &[Ref<TextureAtlasRegion>]) -> Vec<String> {
 }
 
 fn region(options: TextureAtlasRegionOptions) -> TextureAtlasRegion {
-    return create_texture_atlas_region(Some(&options))
+    return create_test_texture_atlas_region(Some(&options))
         .read()
         .unwrap()
         .clone();
@@ -56,14 +45,14 @@ fn image_page(
 }
 
 fn atlas_over(page: Ref<flight_texture::Texture2D>) -> TextureAtlas {
-    return create_texture_atlas(Some(TextureAtlasOptions {
+    return create_test_texture_atlas(Some(TextureAtlasOptions {
         texture: Some(page),
         ..atlas_options()
     }));
 }
 
 fn atlas_ref_over(page: Ref<flight_texture::Texture2D>) -> Ref<TextureAtlas> {
-    return create_texture_atlas_ref(Some(TextureAtlasOptions {
+    return create_test_texture_atlas_ref(Some(TextureAtlasOptions {
         texture: Some(page),
         ..atlas_options()
     }));
@@ -78,7 +67,7 @@ mod add_texture_atlas_region {
 
     #[test]
     fn pushes_a_new_region_onto_the_atlas_with_the_given_coordinates() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         add_texture_atlas_region(&mut atlas, 10.0, 20.0, 30.0, 40.0, None, None, None);
         assert_eq!(atlas.regions.len(), 1);
         let region = region_at(&atlas, 0);
@@ -90,7 +79,7 @@ mod add_texture_atlas_region {
 
     #[test]
     fn assigns_ids_in_order_on_a_fresh_atlas() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         add_texture_atlas_region(&mut atlas, 0.0, 0.0, 10.0, 10.0, None, None, None);
         add_texture_atlas_region(&mut atlas, 0.0, 0.0, 10.0, 10.0, None, None, None);
         assert_eq!((region_at(&atlas, 0).id, region_at(&atlas, 1).id), (0, 1));
@@ -98,7 +87,7 @@ mod add_texture_atlas_region {
 
     #[test]
     fn sets_optional_pivot_values_and_name() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         add_texture_atlas_region(&mut atlas, 0.0, 0.0, 10.0, 10.0, Some(5.0), Some(5.0), None);
         add_texture_atlas_region(&mut atlas, 0.0, 0.0, 10.0, 10.0, None, None, Some("hero"));
         assert_eq!(
@@ -110,7 +99,7 @@ mod add_texture_atlas_region {
 
     #[test]
     fn defaults_name_and_pivot_to_null_when_not_provided() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         add_texture_atlas_region(&mut atlas, 0.0, 0.0, 10.0, 10.0, None, None, None);
         let region = region_at(&atlas, 0);
         assert!(region.name.is_none() && region.pivot_x.is_none() && region.pivot_y.is_none());
@@ -119,7 +108,7 @@ mod add_texture_atlas_region {
     #[test]
     fn does_not_collide_with_an_existing_non_sequential_id() {
         let make = |id: i32, name: &str, x: f32| {
-            create_texture_atlas_region(Some(&TextureAtlasRegionOptions {
+            create_test_texture_atlas_region(Some(&TextureAtlasRegionOptions {
                 height: Some(1.0),
                 id: Some(id),
                 name: Some(name.to_string()),
@@ -128,7 +117,7 @@ mod add_texture_atlas_region {
                 ..region_options()
             }))
         };
-        let mut atlas = create_texture_atlas(Some(TextureAtlasOptions {
+        let mut atlas = create_test_texture_atlas(Some(TextureAtlasOptions {
             regions: Some(vec![make(5, "a", 0.0), make(2, "b", 1.0)]),
             ..atlas_options()
         }));
@@ -168,7 +157,7 @@ mod add_texture_atlas_region {
 
     #[test]
     fn does_not_reuse_a_removed_region_id() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         named(&mut atlas, 0.0, "a");
         named(&mut atlas, 1.0, "b");
         let removed = get_texture_atlas_region_by_name(&atlas, "b")
@@ -190,7 +179,7 @@ mod add_texture_atlas_region {
 
     #[test]
     fn does_not_reuse_ids_after_clearing() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         named(&mut atlas, 0.0, "a");
         named(&mut atlas, 1.0, "b");
         clear_texture_atlas_regions(&mut atlas);
@@ -204,7 +193,7 @@ mod add_texture_atlas_region_corners {
 
     #[test]
     fn computes_width_and_height_from_corner_coordinates() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         add_texture_atlas_region_corners(&mut atlas, 5.0, 10.0, 25.0, 30.0, None, None, None);
         let region = region_at(&atlas, 0);
         assert_eq!(
@@ -215,7 +204,7 @@ mod add_texture_atlas_region_corners {
 
     #[test]
     fn sets_optional_name_and_pivot() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         add_texture_atlas_region_corners(
             &mut atlas,
             0.0,
@@ -237,7 +226,7 @@ mod add_texture_atlas_region_rectangle {
 
     #[test]
     fn adds_a_region_from_a_rectangle_and_vector_pivot() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         add_texture_atlas_region_rectangle(
             &mut atlas,
             &create_rectangle(10.0, 20.0, 30.0, 40.0),
@@ -254,7 +243,7 @@ mod add_texture_atlas_region_rectangle {
 
     #[test]
     fn leaves_the_pivot_null_without_one_and_sets_optional_name() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         add_texture_atlas_region_rectangle(
             &mut atlas,
             &create_rectangle(0.0, 0.0, 10.0, 10.0),
@@ -272,7 +261,7 @@ mod add_texture_atlas_region_vector2 {
 
     #[test]
     fn computes_the_region_from_two_corner_points_with_a_pivot() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         add_texture_atlas_region_vector2(
             &mut atlas,
             &create_vector2(5.0, 10.0),
@@ -290,7 +279,7 @@ mod add_texture_atlas_region_vector2 {
 
     #[test]
     fn sets_optional_name() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         add_texture_atlas_region_vector2(
             &mut atlas,
             &create_vector2(0.0, 0.0),
@@ -307,7 +296,7 @@ mod build_texture_atlas_region_index {
 
     #[test]
     fn maps_every_named_region_to_itself() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         named(&mut atlas, 0.0, "a");
         named(&mut atlas, 1.0, "b");
         let mut index = HashMap::new();
@@ -325,7 +314,7 @@ mod build_texture_atlas_region_index {
 
     #[test]
     fn skips_unnamed_regions() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         add_texture_atlas_region(&mut atlas, 0.0, 0.0, 1.0, 1.0, None, None, None);
         let mut index = HashMap::new();
         build_texture_atlas_region_index(&mut index, &atlas);
@@ -334,7 +323,7 @@ mod build_texture_atlas_region_index {
 
     #[test]
     fn resolves_a_duplicate_name_the_same_way_the_linear_scan_does() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         named(&mut atlas, 0.0, "dup");
         named(&mut atlas, 5.0, "dup");
         let mut index = HashMap::new();
@@ -348,7 +337,7 @@ mod build_texture_atlas_region_index {
 
     #[test]
     fn is_a_snapshot_a_later_add_is_not_reflected() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         named(&mut atlas, 0.0, "a");
         let mut index = HashMap::new();
         build_texture_atlas_region_index(&mut index, &atlas);
@@ -358,7 +347,7 @@ mod build_texture_atlas_region_index {
 
     #[test]
     fn clears_stale_entries_and_reuses_caller_capacity() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         named(&mut atlas, 0.0, "a");
         named(&mut atlas, 1.0, "b");
         let mut index = HashMap::with_capacity(8);
@@ -392,7 +381,7 @@ mod clear_texture_atlas_regions {
 
     #[test]
     fn is_a_no_op_on_an_empty_atlas() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         clear_texture_atlas_regions(&mut atlas);
         assert_eq!(get_texture_atlas_region_count(&atlas), 0);
     }
@@ -402,8 +391,8 @@ mod create_texture_atlas_region {
     use super::*;
 
     #[test]
-    fn allows_pre_defined_values() {
-        let obj = region(TextureAtlasRegionOptions {
+    fn callers_assign_authored_fields_after_construction() {
+        let options = TextureAtlasRegionOptions {
             x: Some(1.0),
             y: Some(2.0),
             width: Some(3.0),
@@ -413,7 +402,10 @@ mod create_texture_atlas_region {
             pivot_x: Some(6.0),
             pivot_y: Some(7.0),
             ..region_options()
-        });
+        };
+        let obj = create_texture_atlas_region();
+        set_texture_atlas_region(&mut obj.write().unwrap(), &options);
+        let obj = obj.read().unwrap();
         assert_eq!(
             (obj.x, obj.y, obj.width, obj.height, obj.id),
             (1.0, 2.0, 3.0, 4.0, 5)
@@ -424,7 +416,7 @@ mod create_texture_atlas_region {
 
     #[test]
     fn initializes_default_values() {
-        let region = create_texture_atlas_region(None).read().unwrap().clone();
+        let region = create_texture_atlas_region().read().unwrap().clone();
         assert_eq!(
             (region.x, region.y, region.width, region.height, region.id),
             (0.0, 0.0, 0.0, 0.0, -1)
@@ -468,8 +460,8 @@ mod create_texture_atlas_region {
     fn returns_a_distinct_region_each_call() {
         let options = region_options();
         assert!(!Arc::ptr_eq(
-            &create_texture_atlas_region(Some(&options)),
-            &create_texture_atlas_region(Some(&options))
+            &create_test_texture_atlas_region(Some(&options)),
+            &create_test_texture_atlas_region(Some(&options))
         ));
     }
 
@@ -486,7 +478,7 @@ mod explain_texture_atlas_region_texture {
 
     #[test]
     fn reports_missing_inputs_unsupported_page_rotation_and_readiness() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         assert_eq!(
             explain_texture_atlas_region_texture(&atlas, 0).status,
             TextureAtlasRegionTextureStatus::MissingRegion
@@ -523,7 +515,7 @@ mod get_texture_atlas_region_by_id {
 
     #[test]
     fn returns_null_for_an_empty_atlas_or_an_unknown_id() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         assert!(get_texture_atlas_region_by_id(&atlas, 0).is_none());
         add_texture_atlas_region(&mut atlas, 0.0, 0.0, 10.0, 10.0, None, None, None);
         assert!(get_texture_atlas_region_by_id(&atlas, 99).is_none());
@@ -531,7 +523,7 @@ mod get_texture_atlas_region_by_id {
 
     #[test]
     fn returns_the_atlas_region_with_the_matching_id() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         add_texture_atlas_region(&mut atlas, 0.0, 0.0, 10.0, 10.0, None, None, None);
         add_texture_atlas_region(&mut atlas, 10.0, 0.0, 10.0, 10.0, None, None, None);
         let region = get_texture_atlas_region_by_id(&atlas, 1).unwrap();
@@ -548,7 +540,7 @@ mod get_texture_atlas_region_by_name {
 
     #[test]
     fn returns_null_for_an_empty_atlas_a_missing_name_or_an_unnamed_region() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         assert!(get_texture_atlas_region_by_name(&atlas, "hero").is_none());
         add_texture_atlas_region(&mut atlas, 0.0, 0.0, 10.0, 10.0, None, None, None);
         assert!(get_texture_atlas_region_by_name(&atlas, "").is_none());
@@ -558,7 +550,7 @@ mod get_texture_atlas_region_by_name {
 
     #[test]
     fn returns_the_region_with_the_matching_name() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         named(&mut atlas, 0.0, "hero_idle_0");
         named(&mut atlas, 10.0, "hero_walk_0");
         let region = get_texture_atlas_region_by_name(&atlas, "hero_walk_0").unwrap();
@@ -567,7 +559,7 @@ mod get_texture_atlas_region_by_name {
 
     #[test]
     fn is_case_sensitive() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         named(&mut atlas, 0.0, "Hero");
         assert!(get_texture_atlas_region_by_name(&atlas, "hero").is_none());
         assert!(get_texture_atlas_region_by_name(&atlas, "Hero").is_some());
@@ -579,7 +571,7 @@ mod get_texture_atlas_region_by_ordinal {
 
     #[test]
     fn returns_the_region_carrying_that_frame_number() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         named(&mut atlas, 0.0, "walk_01");
         named(&mut atlas, 10.0, "walk_02");
         assert_eq!(
@@ -595,14 +587,14 @@ mod get_texture_atlas_region_by_ordinal {
 
     #[test]
     fn matches_the_ordinal_as_a_number_so_zero_padding_does_not_matter() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         named(&mut atlas, 0.0, "walk_0007");
         assert!(get_texture_atlas_region_by_ordinal(&atlas, "walk", 7.0).is_some());
     }
 
     #[test]
     fn returns_null_for_a_missing_ordinal_or_a_different_prefix() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         named(&mut atlas, 0.0, "walk_01");
         named(&mut atlas, 10.0, "idle_01");
         assert!(get_texture_atlas_region_by_ordinal(&atlas, "walk", 9.0).is_none());
@@ -611,14 +603,14 @@ mod get_texture_atlas_region_by_ordinal {
 
     #[test]
     fn skips_unnamed_regions_rather_than_reading_an_ordinal_off_them() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         add_texture_atlas_region(&mut atlas, 0.0, 0.0, 10.0, 10.0, None, None, None);
         assert!(get_texture_atlas_region_by_ordinal(&atlas, "", -1.0).is_none());
     }
 
     #[test]
     fn reaches_a_longer_stem_sharing_the_prefix() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         named(&mut atlas, 0.0, "walkFast_7");
         assert!(get_texture_atlas_region_by_ordinal(&atlas, "walk", 7.0).is_some());
     }
@@ -629,7 +621,7 @@ mod get_texture_atlas_region_count {
 
     #[test]
     fn counts_the_regions() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         assert_eq!(get_texture_atlas_region_count(&atlas), 0);
         add_texture_atlas_region(&mut atlas, 0.0, 0.0, 1.0, 1.0, None, None, None);
         assert_eq!(get_texture_atlas_region_count(&atlas), 1);
@@ -744,7 +736,7 @@ mod get_texture_atlas_region_sequence {
     }
 
     fn atlas_named(list: &[&str]) -> TextureAtlas {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         for (i, name) in list.iter().enumerate() {
             named(&mut atlas, i as f32, name);
         }
@@ -753,7 +745,7 @@ mod get_texture_atlas_region_sequence {
 
     #[test]
     fn leaves_out_empty_when_the_atlas_has_no_regions_or_no_match() {
-        assert!(sequence(&create_texture_atlas(None), "walk").is_empty());
+        assert!(sequence(&create_test_texture_atlas(None), "walk").is_empty());
         assert!(sequence(&atlas_named(&["idle_01"]), "walk").is_empty());
     }
 
@@ -921,7 +913,7 @@ mod get_texture_atlas_region_texture {
 
     #[test]
     fn returns_null_without_an_image_or_matching_region() {
-        let atlas = create_texture_atlas_ref(None);
+        let atlas = create_test_texture_atlas_ref(None);
         add(&atlas, 0.0, 0.0, 10.0, 10.0);
         assert!(get_texture_atlas_region_texture(&atlas, 0, None).is_none());
         atlas.write().unwrap().texture = Some(image_page(10, 10, common()));
@@ -951,7 +943,7 @@ mod get_texture_atlas_region_texture {
             .write()
             .unwrap()
             .regions
-            .push(create_texture_atlas_region(Some(
+            .push(create_test_texture_atlas_region(Some(
                 &TextureAtlasRegionOptions {
                     height: Some(15.0),
                     id: Some(0),
@@ -984,7 +976,7 @@ mod get_texture_atlas_region_texture {
             .write()
             .unwrap()
             .regions
-            .push(create_texture_atlas_region(Some(
+            .push(create_test_texture_atlas_region(Some(
                 &TextureAtlasRegionOptions {
                     height: Some(15.0),
                     id: Some(0),
@@ -1019,7 +1011,7 @@ mod get_texture_atlas_region_texture {
     fn refuses_a_rotated_page() {
         let mut rotated = common();
         rotated.uv_rotation = Some(0.25);
-        let atlas = create_texture_atlas_ref(None);
+        let atlas = create_test_texture_atlas_ref(None);
         add(&atlas, 0.0, 0.0, 10.0, 10.0);
         atlas.write().unwrap().texture = Some(image_page(100, 50, rotated));
         assert!(get_texture_atlas_region_texture(&atlas, 0, None).is_none());
@@ -1042,7 +1034,7 @@ mod get_texture_atlas_region_texture {
         add(&atlas, 10.0, 5.0, 20.0, 15.0);
         let first = get_texture_atlas_region_texture(&atlas, 0, None).unwrap();
         atlas.write().unwrap().regions[0] =
-            create_texture_atlas_region(Some(&TextureAtlasRegionOptions {
+            create_test_texture_atlas_region(Some(&TextureAtlasRegionOptions {
                 id: Some(0),
                 width: Some(10.0),
                 height: Some(10.0),
@@ -1249,7 +1241,7 @@ mod has_texture_atlas_region {
 
     #[test]
     fn is_true_for_a_present_name_and_false_otherwise_case_sensitively() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         named(&mut atlas, 0.0, "Hero");
         assert!(has_texture_atlas_region(&atlas, "Hero"));
         assert!(!has_texture_atlas_region(&atlas, "hero"));
@@ -1261,13 +1253,18 @@ mod initialize_texture_atlas_region {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_texture_atlas_region() {
-        let shared = create_texture_atlas_region(Some(&TextureAtlasRegionOptions {
+    fn restores_defaults_without_replacing_entity_identity() {
+        let shared = create_test_texture_atlas_region(Some(&TextureAtlasRegionOptions {
             name: Some("old".to_string()),
             trimmed: Some(true),
             ..region_options()
         }));
-        initialize_texture_atlas_region(&mut shared.write().unwrap(), None);
+        flight_entity::set_entity_uid(&mut *shared.write().unwrap(), "region".to_string());
+        initialize_texture_atlas_region(&mut shared.write().unwrap());
+        assert_eq!(
+            flight_entity::get_entity_uid(&mut *shared.write().unwrap()),
+            "region"
+        );
         let region = shared.read().unwrap().clone();
         assert!(region.name.is_none() && !region.trimmed && region.id == -1);
     }
@@ -1288,7 +1285,7 @@ mod remove_texture_atlas_region {
 
     #[test]
     fn removes_the_region_and_reports_it() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         named(&mut atlas, 0.0, "a");
         let id = get_texture_atlas_region_by_name(&atlas, "a")
             .unwrap()
@@ -1303,14 +1300,14 @@ mod remove_texture_atlas_region {
     #[test]
     fn reports_false_for_an_id_no_region_holds() {
         assert!(!remove_texture_atlas_region(
-            &mut create_texture_atlas(None),
+            &mut create_test_texture_atlas(None),
             99
         ));
     }
 
     #[test]
     fn leaves_the_remaining_regions_findable_by_their_original_ids() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         named(&mut atlas, 0.0, "a");
         named(&mut atlas, 1.0, "b");
         named(&mut atlas, 2.0, "c");
@@ -1339,13 +1336,13 @@ mod remove_texture_atlas_region {
     #[test]
     fn removes_only_the_first_region_holding_a_duplicated_id() {
         let make = |name: &str| {
-            create_texture_atlas_region(Some(&TextureAtlasRegionOptions {
+            create_test_texture_atlas_region(Some(&TextureAtlasRegionOptions {
                 id: Some(3),
                 name: Some(name.to_string()),
                 ..region_options()
             }))
         };
-        let mut atlas = create_texture_atlas(Some(TextureAtlasOptions {
+        let mut atlas = create_test_texture_atlas(Some(TextureAtlasOptions {
             regions: Some(vec![make("first"), make("second")]),
             ..atlas_options()
         }));
@@ -1442,7 +1439,7 @@ mod set_texture_atlas_region {
 
     #[test]
     fn reuses_the_existing_shared_region_rather_than_replacing_it() {
-        let mut atlas = create_texture_atlas(None);
+        let mut atlas = create_test_texture_atlas(None);
         add_texture_atlas_region(&mut atlas, 0.0, 0.0, 1.0, 1.0, None, None, None);
         let shared = atlas.regions[0].clone();
         set_texture_atlas_region(
@@ -1495,7 +1492,7 @@ mod set_texture_atlas_region_texture_guard {
 
     #[test]
     fn installs_and_removes_the_null_result_diagnostics_hook() {
-        let atlas = create_texture_atlas_ref(None);
+        let atlas = create_test_texture_atlas_ref(None);
         add_texture_atlas_region(
             &mut atlas.write().unwrap(),
             0.0,

@@ -1,5 +1,6 @@
 use flight_textureatlas::{
     TextureAtlas, TextureAtlasRegionOptions, TextureAtlasRotation, create_texture_atlas_region,
+    set_texture_atlas_region,
 };
 
 use crate::texture_atlas_page_meta::{reset_texture_atlas_page_meta, texture_atlas_parse_js_float};
@@ -109,7 +110,7 @@ pub fn parse_texture_atlas_libgdx_atlas(atlas: &mut TextureAtlas, text: &str) {
             let trimmed = original_width > 0.0
                 && original_height > 0.0
                 && (original_width != logical_width || original_height != logical_height);
-            let region = create_texture_atlas_region(Some(&TextureAtlasRegionOptions {
+            let options = TextureAtlasRegionOptions {
                 height: Some(atlas_height),
                 id: Some(region_id),
                 name: Some(name),
@@ -125,7 +126,9 @@ pub fn parse_texture_atlas_libgdx_atlas(atlas: &mut TextureAtlas, text: &str) {
                 width: Some(atlas_width),
                 x: Some(atlas_x),
                 y: Some(atlas_y),
-            }));
+            };
+            let region = create_texture_atlas_region();
+            set_texture_atlas_region(&mut region.write().unwrap(), &options);
             atlas.regions.push(region);
             region_id += 1;
         }

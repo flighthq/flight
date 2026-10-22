@@ -12,7 +12,10 @@ use flight_texture::{
     CreateTexture2DOptions, CreateTextureCommonOptions, Texture2D, TextureSourceRef,
     create_texture_2d,
 };
-use flight_textureatlas::contract::{TextureAtlasOptions, TextureAtlasRegionOptions};
+use flight_textureatlas::contract::{
+    TextureAtlas, TextureAtlasOptions, TextureAtlasRegion, TextureAtlasRegionOptions,
+    create_texture_atlas, create_texture_atlas_region, set_texture_atlas_region,
+};
 
 pub fn block_on<F: Future>(future: F) -> F::Output {
     let mut future = Box::pin(future);
@@ -65,4 +68,35 @@ pub fn region_options() -> TextureAtlasRegionOptions {
 pub fn atlas_options() -> TextureAtlasOptions {
     let make: fn() -> TextureAtlasOptions = TextureAtlasOptions::default;
     return make();
+}
+
+pub fn create_test_texture_atlas(obj: Option<TextureAtlasOptions>) -> TextureAtlas {
+    return Arc::try_unwrap(create_test_texture_atlas_ref(obj))
+        .unwrap()
+        .into_inner()
+        .unwrap();
+}
+
+pub fn create_test_texture_atlas_ref(obj: Option<TextureAtlasOptions>) -> Ref<TextureAtlas> {
+    let atlas = create_texture_atlas();
+    if let Some(obj) = obj {
+        let mut atlas = atlas.write().unwrap();
+        atlas.image_height = obj.image_height.unwrap_or(0.0);
+        atlas.image_name = obj.image_name;
+        atlas.image_width = obj.image_width.unwrap_or(0.0);
+        atlas.regions = obj.regions.unwrap_or_default();
+        atlas.scale = obj.scale.unwrap_or(1.0);
+        atlas.texture = obj.texture;
+    }
+    return atlas;
+}
+
+pub fn create_test_texture_atlas_region(
+    obj: Option<&TextureAtlasRegionOptions>,
+) -> Ref<TextureAtlasRegion> {
+    let region = create_texture_atlas_region();
+    if let Some(obj) = obj {
+        set_texture_atlas_region(&mut region.write().unwrap(), obj);
+    }
+    return region;
 }

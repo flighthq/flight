@@ -243,7 +243,7 @@ fn ensure_bitmap_text_page(
     };
     while runtime.pages.len() <= page {
         runtime.pages.push(BitmapTextPage {
-            atlas: create_texture_atlas(None),
+            atlas: create_texture_atlas(),
             ids: Vec::new().into_boxed_slice(),
             instance_count: 0,
             transforms: Vec::new().into_boxed_slice(),

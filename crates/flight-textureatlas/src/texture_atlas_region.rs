@@ -14,38 +14,31 @@ use crate::types::*;
 // flight-lint: allow(f64) D1: ordinals are JS numbers accumulated digit by digit
 const NO_ORDINAL_SORT_KEY: f64 = 9007199254740991.0;
 
-pub fn create_texture_atlas_region(
-    obj: Option<&TextureAtlasRegionOptions>,
-) -> Ref<TextureAtlasRegion> {
+// flight-lint: allow(conform-params) Principal c0f9227c D23 callers assign authored region fields after canonical construction
+pub fn create_texture_atlas_region() -> Ref<TextureAtlasRegion> {
     let mut out: TextureAtlasRegion = allocate_entity();
-    initialize_texture_atlas_region(&mut out, obj);
+    initialize_texture_atlas_region(&mut out);
     return Arc::new(RwLock::new(out));
 }
 
-/// The construction initializer of `create_texture_atlas_region`: every field from `obj`, or its
-/// default (0 extents, id -1, null name/original size/page/pivot, no rotation, untrimmed).
-pub fn initialize_texture_atlas_region(
-    out: &mut TextureAtlasRegion,
-    obj: Option<&TextureAtlasRegionOptions>,
-) {
-    let make: fn() -> TextureAtlasRegionOptions = TextureAtlasRegionOptions::default;
-    let defaults = make();
-    let obj = obj.unwrap_or(&defaults);
-    out.x = obj.x.unwrap_or(0.0);
-    out.y = obj.y.unwrap_or(0.0);
-    out.width = obj.width.unwrap_or(0.0);
-    out.height = obj.height.unwrap_or(0.0);
-    out.id = obj.id.unwrap_or(-1);
-    out.name = obj.name.clone();
-    out.original_height = obj.original_height;
-    out.original_width = obj.original_width;
-    out.page_name = obj.page_name.clone();
-    out.pivot_x = obj.pivot_x;
-    out.pivot_y = obj.pivot_y;
-    out.rotation = obj.rotation.unwrap_or(TextureAtlasRotation::None);
-    out.source_x = obj.source_x.unwrap_or(0.0);
-    out.source_y = obj.source_y.unwrap_or(0.0);
-    out.trimmed = obj.trimmed.unwrap_or(false);
+/// Restores canonical region defaults while preserving entity identity.
+// flight-lint: allow(conform-params) Principal c0f9227c D23 initialization restores defaults before caller-authored assignment
+pub fn initialize_texture_atlas_region(out: &mut TextureAtlasRegion) {
+    out.x = 0.0;
+    out.y = 0.0;
+    out.width = 0.0;
+    out.height = 0.0;
+    out.id = -1;
+    out.name = None;
+    out.original_height = None;
+    out.original_width = None;
+    out.page_name = None;
+    out.pivot_x = None;
+    out.pivot_y = None;
+    out.rotation = TextureAtlasRotation::None;
+    out.source_x = 0.0;
+    out.source_y = 0.0;
+    out.trimmed = false;
 }
 
 /// Appends a region, assigning it an id no region in the atlas holds or has held: one past the
@@ -72,9 +65,9 @@ pub fn add_texture_atlas_region(
         name: name.map(|name| name.to_string()),
         ..TextureAtlasRegionOptions::default()
     };
-    target
-        .regions
-        .push(create_texture_atlas_region(Some(&options)));
+    let region = create_texture_atlas_region();
+    set_texture_atlas_region(&mut region.write().unwrap(), &options);
+    target.regions.push(region);
 }
 
 /// Appends a region given two opposite corners: `(ax, ay)` top-left and `(bx, by)` bottom-right.
@@ -469,10 +462,24 @@ pub fn remove_texture_atlas_region(target: &mut TextureAtlas, id: i32) -> bool {
     return true;
 }
 
-/// Overwrites every field of `out` from `source`, taking the constructor defaults for unset fields, so
-/// `out` describes exactly what `create_texture_atlas_region(source)` would allocate.
+/// Overwrites every authored field of `out` from `source`, taking canonical defaults for unset
+/// fields while preserving entity identity.
 pub fn set_texture_atlas_region(out: &mut TextureAtlasRegion, source: &TextureAtlasRegionOptions) {
-    initialize_texture_atlas_region(out, Some(source));
+    out.x = source.x.unwrap_or(0.0);
+    out.y = source.y.unwrap_or(0.0);
+    out.width = source.width.unwrap_or(0.0);
+    out.height = source.height.unwrap_or(0.0);
+    out.id = source.id.unwrap_or(-1);
+    out.name = source.name.clone();
+    out.original_height = source.original_height;
+    out.original_width = source.original_width;
+    out.page_name = source.page_name.clone();
+    out.pivot_x = source.pivot_x;
+    out.pivot_y = source.pivot_y;
+    out.rotation = source.rotation.unwrap_or(TextureAtlasRotation::None);
+    out.source_x = source.source_x.unwrap_or(0.0);
+    out.source_y = source.source_y.unwrap_or(0.0);
+    out.trimmed = source.trimmed.unwrap_or(false);
 }
 
 /// Installs (or, with `None`, removes) the diagnostics hook consulted when region texture minting

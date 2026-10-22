@@ -2,11 +2,12 @@ use flight_entity::Ref;
 use flight_spritesheet::contract::*;
 use flight_textureatlas::{
     TextureAtlas, TextureAtlasRegionOptions, create_texture_atlas, create_texture_atlas_region,
+    set_texture_atlas_region,
 };
 
 /// A shared empty atlas (the source's `createTextureAtlas()`).
 pub fn atlas() -> Ref<TextureAtlas> {
-    return create_texture_atlas(None);
+    return create_texture_atlas();
 }
 
 /// Appends a 32x32 region with this id and name.
@@ -19,11 +20,9 @@ pub fn push_region(atlas: &Ref<TextureAtlas>, id: i32, name: Option<&str>, x: f3
     options.y = Some(0.0);
     options.width = Some(32.0);
     options.height = Some(32.0);
-    atlas
-        .write()
-        .unwrap()
-        .regions
-        .push(create_texture_atlas_region(Some(&options)));
+    let region = create_texture_atlas_region();
+    set_texture_atlas_region(&mut region.write().unwrap(), &options);
+    atlas.write().unwrap().regions.push(region);
 }
 
 pub fn frame(id: i32) -> Ref<SpritesheetFrame> {

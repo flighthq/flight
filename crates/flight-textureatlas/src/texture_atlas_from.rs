@@ -21,10 +21,9 @@ pub fn create_texture_atlas_from_image_resource(
         ..CreateTexture2DOptions::default()
     };
     let texture = Arc::new(RwLock::new(create_texture_2d(Some(&options))));
-    return create_texture_atlas(Some(TextureAtlasOptions {
-        texture: Some(texture),
-        ..TextureAtlasOptions::default()
-    }));
+    let atlas = create_texture_atlas();
+    atlas.write().unwrap().texture = Some(texture);
+    return atlas;
 }
 
 /// Loads the image through the host and wraps it as an empty atlas; the image loader's rejections

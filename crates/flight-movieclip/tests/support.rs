@@ -7,20 +7,12 @@ use flight_spritesheet::{
     create_spritesheet_frame,
 };
 use flight_texture::create_texture_2d;
-use flight_textureatlas::{
-    TextureAtlas, TextureAtlasOptions, add_texture_atlas_region, create_texture_atlas,
-};
+use flight_textureatlas::{TextureAtlas, add_texture_atlas_region, create_texture_atlas};
 
 pub fn atlas_with_regions(count: i32) -> Ref<TextureAtlas> {
     let texture = Arc::new(RwLock::new(create_texture_2d(None)));
-    let atlas = create_texture_atlas(Some(TextureAtlasOptions {
-        image_height: None,
-        image_name: None,
-        image_width: None,
-        regions: None,
-        scale: None,
-        texture: Some(texture),
-    }));
+    let atlas = create_texture_atlas();
+    atlas.write().unwrap().texture = Some(texture);
     {
         let mut atlas = atlas.write().unwrap();
         for index in 0..count {

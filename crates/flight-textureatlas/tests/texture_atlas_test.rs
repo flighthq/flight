@@ -12,7 +12,7 @@ use flight_textureatlas::contract::*;
 use crate::texture_atlas_fixture::*;
 
 fn region_for_test() -> flight_entity::Ref<TextureAtlasRegion> {
-    return create_texture_atlas_region(Some(&TextureAtlasRegionOptions {
+    return create_test_texture_atlas_region(Some(&TextureAtlasRegionOptions {
         height: Some(1.0),
         id: Some(0),
         width: Some(1.0),
@@ -24,14 +24,15 @@ mod create_texture_atlas {
     use super::*;
 
     #[test]
-    fn allows_pre_defined_values() {
+    fn callers_assign_authored_references_after_construction() {
         let texture = empty_page();
-        let regions = vec![create_texture_atlas_region(None)];
-        let obj = create_texture_atlas(Some(TextureAtlasOptions {
-            regions: Some(regions.clone()),
-            texture: Some(texture.clone()),
-            ..atlas_options()
-        }));
+        let regions = vec![create_texture_atlas_region()];
+        let obj = create_texture_atlas();
+        {
+            let mut obj = obj.write().unwrap();
+            obj.regions = regions.clone();
+            obj.texture = Some(texture.clone());
+        }
         let obj = obj.read().unwrap();
         assert!(Arc::ptr_eq(obj.texture.as_ref().unwrap(), &texture));
         assert_eq!(obj.regions.len(), 1);
@@ -40,7 +41,7 @@ mod create_texture_atlas {
 
     #[test]
     fn initializes_default_values() {
-        let atlas = create_texture_atlas(None);
+        let atlas = create_texture_atlas();
         let atlas = atlas.read().unwrap();
         assert!(atlas.texture.is_none());
         assert!(atlas.regions.is_empty());
@@ -52,14 +53,15 @@ mod create_texture_atlas {
     }
 
     #[test]
-    fn takes_every_page_metadata_field() {
-        let atlas = create_texture_atlas(Some(TextureAtlasOptions {
-            image_height: Some(64.0),
-            image_name: Some("page.png".to_string()),
-            image_width: Some(128.0),
-            scale: Some(0.5),
-            ..atlas_options()
-        }));
+    fn callers_assign_page_metadata_after_construction() {
+        let atlas = create_texture_atlas();
+        {
+            let mut atlas = atlas.write().unwrap();
+            atlas.image_height = 64.0;
+            atlas.image_name = Some("page.png".to_string());
+            atlas.image_width = 128.0;
+            atlas.scale = 0.5;
+        }
         let atlas = atlas.read().unwrap();
         assert_eq!(
             (atlas.image_width, atlas.image_height, atlas.scale),
@@ -69,13 +71,11 @@ mod create_texture_atlas {
     }
 
     #[test]
-    fn uses_a_provided_regions_vector_directly() {
-        let regions = vec![create_texture_atlas_region(None)];
+    fn caller_assignment_adopts_the_provided_regions_vector() {
+        let regions = vec![create_texture_atlas_region()];
         let address = regions.as_ptr();
-        let atlas = create_texture_atlas(Some(TextureAtlasOptions {
-            regions: Some(regions),
-            ..atlas_options()
-        }));
+        let atlas = create_texture_atlas();
+        atlas.write().unwrap().regions = regions;
         assert_eq!(atlas.read().unwrap().regions.as_ptr(), address);
     }
 }
@@ -85,7 +85,7 @@ mod dispose_texture_atlas {
 
     #[test]
     fn drops_the_regions_and_the_texture_reference_leaving_the_atlas_reusable() {
-        let atlas = create_texture_atlas(Some(TextureAtlasOptions {
+        let atlas = create_test_texture_atlas_ref(Some(TextureAtlasOptions {
             regions: Some(vec![region_for_test()]),
             texture: Some(empty_page()),
             ..atlas_options()
@@ -110,7 +110,7 @@ mod dispose_texture_atlas {
     #[test]
     fn does_not_destroy_the_texture_it_was_handed() {
         let texture = empty_page();
-        let atlas = create_texture_atlas(Some(TextureAtlasOptions {
+        let atlas = create_test_texture_atlas_ref(Some(TextureAtlasOptions {
             texture: Some(texture.clone()),
             ..atlas_options()
         }));
@@ -122,7 +122,7 @@ mod dispose_texture_atlas {
 
     #[test]
     fn is_idempotent() {
-        let atlas = create_texture_atlas(Some(TextureAtlasOptions {
+        let atlas = create_test_texture_atlas_ref(Some(TextureAtlasOptions {
             texture: Some(empty_page()),
             ..atlas_options()
         }));
@@ -138,10 +138,10 @@ mod get_texture_atlas_byte_size {
     #[test]
     fn returns_0_when_the_atlas_has_no_image() {
         assert_eq!(
-            get_texture_atlas_byte_size(&create_texture_atlas(None).read().unwrap()),
+            get_texture_atlas_byte_size(&create_texture_atlas().read().unwrap()),
             0
         );
-        let unbound = create_texture_atlas(Some(TextureAtlasOptions {
+        let unbound = create_test_texture_atlas_ref(Some(TextureAtlasOptions {
             texture: Some(empty_page()),
             ..atlas_options()
         }));
@@ -150,7 +150,7 @@ mod get_texture_atlas_byte_size {
 
     #[test]
     fn returns_0_when_the_atlas_image_has_no_data() {
-        let atlas = create_texture_atlas(Some(TextureAtlasOptions {
+        let atlas = create_test_texture_atlas_ref(Some(TextureAtlasOptions {
             texture: Some(page(Some(image(4, 4) as TextureSourceRef), common())),
             ..atlas_options()
         }));
@@ -160,7 +160,7 @@ mod get_texture_atlas_byte_size {
     #[test]
     fn returns_the_bitmap_data_byte_length_when_data_is_present() {
         let bitmap: TextureSourceRef = Arc::new(RwLock::new(create_bitmap(8, 8, None)));
-        let atlas = create_texture_atlas(Some(TextureAtlasOptions {
+        let atlas = create_test_texture_atlas_ref(Some(TextureAtlasOptions {
             texture: Some(page(Some(bitmap), common())),
             ..atlas_options()
         }));
@@ -189,7 +189,7 @@ mod get_texture_atlas_byte_size {
             payload: Arc::new(RwLock::new(vec![0; 48].into_boxed_slice())),
         });
         let compressed: TextureSourceRef = create_compressed_image_resource(data);
-        let atlas = create_texture_atlas(Some(TextureAtlasOptions {
+        let atlas = create_test_texture_atlas_ref(Some(TextureAtlasOptions {
             texture: Some(page(Some(compressed), common())),
             ..atlas_options()
         }));
@@ -200,7 +200,7 @@ mod get_texture_atlas_byte_size {
     fn trusts_the_open_kind_and_reports_0_for_a_relabelled_source() {
         let bitmap = Arc::new(RwLock::new(create_bitmap(8, 8, None)));
         bitmap.write().unwrap().kind = "custom".to_string();
-        let atlas = create_texture_atlas(Some(TextureAtlasOptions {
+        let atlas = create_test_texture_atlas_ref(Some(TextureAtlasOptions {
             texture: Some(page(Some(bitmap as TextureSourceRef), common())),
             ..atlas_options()
         }));
@@ -212,13 +212,18 @@ mod initialize_texture_atlas {
     use super::*;
 
     #[test]
-    fn is_the_construction_initializer_of_create_texture_atlas() {
-        let atlas = create_texture_atlas(Some(TextureAtlasOptions {
+    fn restores_defaults_without_replacing_entity_identity() {
+        let atlas = create_test_texture_atlas_ref(Some(TextureAtlasOptions {
             image_width: Some(9.0),
             regions: Some(vec![region_for_test()]),
             ..atlas_options()
         }));
-        initialize_texture_atlas(&mut atlas.write().unwrap(), None);
+        flight_entity::set_entity_uid(&mut *atlas.write().unwrap(), "atlas".to_string());
+        initialize_texture_atlas(&mut atlas.write().unwrap());
+        assert_eq!(
+            flight_entity::get_entity_uid(&mut *atlas.write().unwrap()),
+            "atlas"
+        );
         assert_eq!(atlas.read().unwrap().image_width, 0.0);
         assert!(atlas.read().unwrap().regions.is_empty());
         assert_eq!(atlas.read().unwrap().scale, 1.0);

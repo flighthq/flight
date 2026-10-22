@@ -44,7 +44,7 @@ fn create_bitmap_text_node2d_runtime() -> Node2DRuntime {
 
 fn create_bitmap_text_page() -> BitmapTextPage {
     return BitmapTextPage {
-        atlas: create_texture_atlas(None),
+        atlas: create_texture_atlas(),
         ids: Vec::new().into_boxed_slice(),
         instance_count: 0,
         transforms: Vec::new().into_boxed_slice(),

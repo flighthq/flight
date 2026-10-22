@@ -1,5 +1,6 @@
 use flight_textureatlas::{
     TextureAtlas, TextureAtlasRegionOptions, TextureAtlasRotation, create_texture_atlas_region,
+    set_texture_atlas_region,
 };
 use flight_xml::{XmlElement, parse_xml_document};
 
@@ -51,7 +52,7 @@ pub fn parse_texture_atlas_starling_xml(atlas: &mut TextureAtlas, xml: &str) {
         let source_y = attributes
             .get("frameY")
             .map_or(0.0, |value| -texture_atlas_parse_js_float(value));
-        let region = create_texture_atlas_region(Some(&TextureAtlasRegionOptions {
+        let options = TextureAtlasRegionOptions {
             height: Some(height),
             id: Some(region_id),
             name: Some(name.clone()),
@@ -79,7 +80,9 @@ pub fn parse_texture_atlas_starling_xml(atlas: &mut TextureAtlas, xml: &str) {
             width: Some(width),
             x: Some(x),
             y: Some(y),
-        }));
+        };
+        let region = create_texture_atlas_region();
+        set_texture_atlas_region(&mut region.write().unwrap(), &options);
         atlas.regions.push(region);
         region_id += 1;
     }

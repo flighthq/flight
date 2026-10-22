@@ -27,26 +27,24 @@ pub fn create_texture_atlas_from_grid(
         ((options.image_height - 2.0 * margin_y - spacing_y * (rows - 1) as f32) / rows as f32)
             .floor()
     });
-    let atlas = create_texture_atlas(Some(TextureAtlasOptions {
-        texture,
-        ..TextureAtlasOptions::default()
-    }));
+    let atlas = create_texture_atlas();
     {
         let mut atlas_value = atlas.write().unwrap();
+        atlas_value.texture = texture;
         let mut id = 0;
         for row in 0..rows.max(0) {
             for column in 0..columns.max(0) {
-                atlas_value.regions.push(create_texture_atlas_region(Some(
-                    &TextureAtlasRegionOptions {
-                        height: Some(frame_height),
-                        id: Some(id),
-                        name: Some(format!("{name_prefix}{id}")),
-                        width: Some(frame_width),
-                        x: Some(margin_x + column as f32 * (frame_width + spacing_x)),
-                        y: Some(margin_y + row as f32 * (frame_height + spacing_y)),
-                        ..TextureAtlasRegionOptions::default()
-                    },
-                )));
+                let region = create_texture_atlas_region();
+                {
+                    let mut region_value = region.write().unwrap();
+                    region_value.height = frame_height;
+                    region_value.id = id;
+                    region_value.name = Some(format!("{name_prefix}{id}"));
+                    region_value.width = frame_width;
+                    region_value.x = margin_x + column as f32 * (frame_width + spacing_x);
+                    region_value.y = margin_y + row as f32 * (frame_height + spacing_y);
+                }
+                atlas_value.regions.push(region);
                 id += 1;
             }
         }

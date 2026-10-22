@@ -1,16 +1,32 @@
 use std::sync::Arc;
 
 use flight_textureatlas::{
-    TextureAtlasOptions, TextureAtlasRegionOptions, TextureAtlasRotation,
-    create_texture_atlas_region,
+    TextureAtlasOptions, TextureAtlasRegionOptions, TextureAtlasRotation, set_texture_atlas_region,
 };
 use flight_textureatlas_formats::*;
 
 fn create_texture_atlas(obj: Option<TextureAtlasOptions>) -> flight_textureatlas::TextureAtlas {
-    return Arc::try_unwrap(flight_textureatlas::create_texture_atlas(obj))
-        .unwrap()
-        .into_inner()
-        .unwrap();
+    let atlas = flight_textureatlas::create_texture_atlas();
+    if let Some(obj) = obj {
+        let mut atlas = atlas.write().unwrap();
+        atlas.image_height = obj.image_height.unwrap_or(0.0);
+        atlas.image_name = obj.image_name;
+        atlas.image_width = obj.image_width.unwrap_or(0.0);
+        atlas.regions = obj.regions.unwrap_or_default();
+        atlas.scale = obj.scale.unwrap_or(1.0);
+        atlas.texture = obj.texture;
+    }
+    return Arc::try_unwrap(atlas).unwrap().into_inner().unwrap();
+}
+
+fn create_texture_atlas_region(
+    obj: Option<&TextureAtlasRegionOptions>,
+) -> flight_entity::Ref<flight_textureatlas::TextureAtlasRegion> {
+    let region = flight_textureatlas::create_texture_atlas_region();
+    if let Some(obj) = obj {
+        set_texture_atlas_region(&mut region.write().unwrap(), obj);
+    }
+    return region;
 }
 
 fn texture_packer_meta() -> TexturePackerAtlasMeta {

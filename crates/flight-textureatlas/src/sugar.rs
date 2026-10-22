@@ -22,7 +22,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn atlas() -> Ref<TextureAtlas> {
-        let atlas = create_texture_atlas(None);
+        let atlas = create_texture_atlas();
         add_texture_atlas_region(
             &mut atlas.write().unwrap(),
             0.0,
@@ -57,10 +57,9 @@ mod sugar_tests {
             y: Some(6.0),
             ..TextureAtlasRegionOptions::default()
         };
-        return create_texture_atlas_region(Some(&options))
-            .read()
-            .unwrap()
-            .clone();
+        let region = create_texture_atlas_region();
+        set_texture_atlas_region(&mut region.write().unwrap(), &options);
+        return region.read().unwrap().clone();
     }
 
     fn guards() -> TextureAtlasGuardState {
@@ -278,12 +277,8 @@ mod sugar_tests {
     #[test]
     fn textureatlas_initialize_texture_atlas_matches_initialize_texture_atlas() {
         let (a, b) = (atlas(), atlas());
-        let options = TextureAtlasOptions {
-            scale: Some(2.0),
-            ..TextureAtlasOptions::default()
-        };
-        a.initialize_texture_atlas(Some(options.clone()));
-        initialize_texture_atlas(&mut b.write().unwrap(), Some(options));
+        a.initialize_texture_atlas();
+        initialize_texture_atlas(&mut b.write().unwrap());
         assert_eq!(shown(&a.read().unwrap()), shown(&b.read().unwrap()));
     }
 
@@ -345,8 +340,8 @@ mod sugar_tests {
     fn textureatlasregion_initialize_texture_atlas_region_matches_initialize_texture_atlas_region()
     {
         let (mut a, mut b) = (region(), region());
-        a.initialize_texture_atlas_region(None);
-        initialize_texture_atlas_region(&mut b, None);
+        a.initialize_texture_atlas_region();
+        initialize_texture_atlas_region(&mut b);
         assert_eq!(a, b);
     }
 
@@ -415,7 +410,7 @@ mod sugar_tests {
 }
 
 pub trait TextureAtlasMethods {
-    fn initialize_texture_atlas(&self, obj: Option<TextureAtlasOptions>);
+    fn initialize_texture_atlas(&self);
 
     fn add_texture_atlas_region(
         &self,
@@ -498,8 +493,8 @@ pub trait TextureAtlasMethods {
 }
 
 impl TextureAtlasMethods for Ref<TextureAtlas> {
-    fn initialize_texture_atlas(&self, obj: Option<TextureAtlasOptions>) {
-        initialize_texture_atlas(&mut self.write().unwrap(), obj);
+    fn initialize_texture_atlas(&self) {
+        initialize_texture_atlas(&mut self.write().unwrap());
     }
 
     fn add_texture_atlas_region(
@@ -635,8 +630,8 @@ impl TextureAtlasMethods for Ref<TextureAtlas> {
 }
 
 impl TextureAtlasRegion {
-    pub fn initialize_texture_atlas_region(&mut self, obj: Option<&TextureAtlasRegionOptions>) {
-        initialize_texture_atlas_region(self, obj);
+    pub fn initialize_texture_atlas_region(&mut self) {
+        initialize_texture_atlas_region(self);
     }
 
     pub fn get_texture_atlas_region_frame(&self, out: &mut Rectangle) {

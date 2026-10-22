@@ -4,10 +4,17 @@ use flight_textureatlas::{TextureAtlas, TextureAtlasOptions};
 use flight_textureatlas_formats::*;
 
 fn create_texture_atlas(obj: Option<TextureAtlasOptions>) -> TextureAtlas {
-    return Arc::try_unwrap(flight_textureatlas::create_texture_atlas(obj))
-        .unwrap()
-        .into_inner()
-        .unwrap();
+    let atlas = flight_textureatlas::create_texture_atlas();
+    if let Some(obj) = obj {
+        let mut atlas = atlas.write().unwrap();
+        atlas.image_height = obj.image_height.unwrap_or(0.0);
+        atlas.image_name = obj.image_name;
+        atlas.image_width = obj.image_width.unwrap_or(0.0);
+        atlas.regions = obj.regions.unwrap_or_default();
+        atlas.scale = obj.scale.unwrap_or(1.0);
+        atlas.texture = obj.texture;
+    }
+    return Arc::try_unwrap(atlas).unwrap().into_inner().unwrap();
 }
 
 fn custom_entry(marker: &'static str) -> Arc<TextureAtlasFormatEntry> {

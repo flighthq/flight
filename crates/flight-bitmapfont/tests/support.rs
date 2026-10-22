@@ -4,7 +4,7 @@ use flight_bitmap::create_bitmap;
 use flight_entity::Ref;
 use flight_font::GlyphMetrics;
 use flight_texture::{CreateTexture2DOptions, TextureSourceRef, create_texture_2d};
-use flight_textureatlas::{TextureAtlas, TextureAtlasOptions, create_texture_atlas};
+use flight_textureatlas::{TextureAtlas, create_texture_atlas};
 
 use super::*;
 
@@ -54,7 +54,7 @@ pub(crate) fn guard_state() -> BitmapFontGuardStateRef {
 }
 
 pub(crate) fn page() -> Ref<TextureAtlas> {
-    return create_texture_atlas(None);
+    return create_texture_atlas();
 }
 
 pub(crate) fn page_of_bytes(bytes: usize) -> Ref<TextureAtlas> {
@@ -70,9 +70,7 @@ pub(crate) fn page_and_source(bytes: usize) -> (Ref<TextureAtlas>, TextureSource
             ..CreateTexture2DOptions::default()
         },
     ))));
-    let page = create_texture_atlas(Some(TextureAtlasOptions {
-        texture: Some(texture),
-        ..TextureAtlasOptions::default()
-    }));
+    let page = create_texture_atlas();
+    page.write().unwrap().texture = Some(texture);
     return (page, source);
 }

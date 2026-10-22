@@ -11,7 +11,7 @@ mod tests {
     use flight_textureatlas::create_texture_atlas;
 
     fn atlas() -> TextureAtlas {
-        return Arc::try_unwrap(create_texture_atlas(None))
+        return Arc::try_unwrap(create_texture_atlas())
             .unwrap()
             .into_inner()
             .unwrap();

@@ -12,23 +12,22 @@ mod sugar_tests {
     use flight_entity::{Ref, set_record_value};
     use flight_textureatlas::{
         TextureAtlas, TextureAtlasRegionOptions, create_texture_atlas, create_texture_atlas_region,
+        set_texture_atlas_region,
     };
 
     use crate::contract::*;
 
     fn atlas() -> Ref<TextureAtlas> {
-        let atlas = create_texture_atlas(None);
+        let atlas = create_texture_atlas();
         for (id, name) in [(0, "walk_0"), (1, "walk_1")] {
             let options = TextureAtlasRegionOptions {
                 id: Some(id),
                 name: Some(name.to_string()),
                 ..TextureAtlasRegionOptions::default()
             };
-            atlas
-                .write()
-                .unwrap()
-                .regions
-                .push(create_texture_atlas_region(Some(&options)));
+            let region = create_texture_atlas_region();
+            set_texture_atlas_region(&mut region.write().unwrap(), &options);
+            atlas.write().unwrap().regions.push(region);
         }
         return atlas;
     }

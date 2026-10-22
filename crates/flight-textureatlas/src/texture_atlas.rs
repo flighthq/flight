@@ -7,22 +7,22 @@ use flight_image::{COMPRESSED_IMAGE_TEXTURE_SOURCE_KIND, CompressedImageResource
 
 use crate::types::*;
 
-pub fn create_texture_atlas(obj: Option<TextureAtlasOptions>) -> Ref<TextureAtlas> {
+// flight-lint: allow(conform-params) Principal c0f9227c D23 callers assign authored atlas fields after canonical construction
+pub fn create_texture_atlas() -> Ref<TextureAtlas> {
     let mut out: TextureAtlas = allocate_entity();
-    initialize_texture_atlas(&mut out, obj);
+    initialize_texture_atlas(&mut out);
     return Arc::new(RwLock::new(out));
 }
 
-/// The construction initializer of `create_texture_atlas`: every field from `obj`, or its default.
-/// A provided `regions` vector is taken as the atlas's own.
-pub fn initialize_texture_atlas(out: &mut TextureAtlas, obj: Option<TextureAtlasOptions>) {
-    let obj = obj.unwrap_or_default();
-    out.image_height = obj.image_height.unwrap_or(0.0);
-    out.image_name = obj.image_name;
-    out.image_width = obj.image_width.unwrap_or(0.0);
-    out.regions = obj.regions.unwrap_or_default();
-    out.scale = obj.scale.unwrap_or(1.0);
-    out.texture = obj.texture;
+/// Restores the canonical empty atlas fields while preserving entity identity.
+// flight-lint: allow(conform-params) Principal c0f9227c D23 initialization restores defaults before caller-authored assignment
+pub fn initialize_texture_atlas(out: &mut TextureAtlas) {
+    out.image_height = 0.0;
+    out.image_name = None;
+    out.image_width = 0.0;
+    out.regions.clear();
+    out.scale = 1.0;
+    out.texture = None;
 }
 
 /// Releases what keeps the atlas reachable: drops its regions and its texture reference. The texture

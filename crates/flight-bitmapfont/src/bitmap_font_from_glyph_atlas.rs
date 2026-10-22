@@ -6,7 +6,7 @@ use flight_glyphatlas::{
     get_glyph_atlas_metrics,
 };
 use flight_texture::{CreateTexture2DOptions, TextureSourceRef, create_texture_2d};
-use flight_textureatlas::{TextureAtlasOptions, create_texture_atlas};
+use flight_textureatlas::create_texture_atlas;
 
 use crate::bitmap_font::create_bitmap_font;
 use crate::types::*;
@@ -43,10 +43,8 @@ pub fn create_bitmap_font_from_glyph_atlas(
             ..CreateTexture2DOptions::default()
         },
     ))));
-    let page = create_texture_atlas(Some(TextureAtlasOptions {
-        texture: Some(texture),
-        ..TextureAtlasOptions::default()
-    }));
+    let page = create_texture_atlas();
+    page.write().unwrap().texture = Some(texture);
     return create_bitmap_font(
         guard_state,
         &BitmapFontData {

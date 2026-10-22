@@ -88,8 +88,8 @@ pub struct TextureAtlasRegionLike {
     pub width: f32,
 }
 
-/// The source's `Partial<TextureAtlasRegionLike>` accepted by `create_texture_atlas_region` and
-/// `set_texture_atlas_region`: `None` takes the constructor default. Plain record.
+/// The source's `Partial<TextureAtlasRegionLike>` accepted by `set_texture_atlas_region`. Plain
+/// record.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct TextureAtlasRegionOptions {
     pub height: Option<f32>,
@@ -109,8 +109,8 @@ pub struct TextureAtlasRegionOptions {
     pub width: Option<f32>,
 }
 
-/// The source's `Partial<TextureAtlas>` accepted by `create_texture_atlas`: `None` takes the default,
-/// and a provided `regions` vector becomes the atlas's own. Plain record.
+/// Rust representation of authored `Partial<TextureAtlas>` fields. Canonical construction does not
+/// consume this record; callers assign its fields after `create_texture_atlas`. Plain record.
 #[derive(Clone, Debug, Default)]
 pub struct TextureAtlasOptions {
     pub image_height: Option<f32>,

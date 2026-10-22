@@ -8,7 +8,7 @@ use flight_textureatlas::{TextureAtlas, create_texture_atlas};
 use flight_tilemap::contract::*;
 
 fn atlas() -> Ref<TextureAtlas> {
-    return create_texture_atlas(None);
+    return create_texture_atlas();
 }
 
 fn tilemap_options() -> PartialTilemap {
@@ -724,12 +724,7 @@ mod get_tilemap_tile_rect {
             ..tilemap_options()
         }));
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        assert!(!get_tilemap_tile_rect(
-            &mut out,
-            &tm.read().unwrap(),
-            0,
-            0
-        ));
+        assert!(!get_tilemap_tile_rect(&mut out, &tm.read().unwrap(), 0, 0));
     }
 }
 

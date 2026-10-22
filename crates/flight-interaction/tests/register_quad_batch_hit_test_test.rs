@@ -1,4 +1,4 @@
-use flight_interaction::hit_tests::{find_graph_hit_target_precise, HitTestContext};
+use flight_interaction::hit_tests::{HitTestContext, find_graph_hit_target_precise};
 use flight_interaction::node_interaction_state::{
     enable_node_interaction_state, set_node_hit_test_enabled,
 };
@@ -9,12 +9,12 @@ use flight_quadbatch::{
 };
 use flight_scene2d::contract::PartialNode2D;
 use flight_textureatlas::{
-    TextureAtlasOptions, TextureAtlasRegionOptions, create_texture_atlas,
-    create_texture_atlas_region,
+    TextureAtlasRegionOptions, create_texture_atlas, create_texture_atlas_region,
+    set_texture_atlas_region,
 };
 
 fn quad_batch_with_one_instance(x: f32, y: f32, region_w: f32, region_h: f32) -> NodeRef {
-    let region = create_texture_atlas_region(Some(&TextureAtlasRegionOptions {
+    let region_options = TextureAtlasRegionOptions {
         width: Some(region_w),
         height: Some(region_h),
         id: None,
@@ -30,15 +30,11 @@ fn quad_batch_with_one_instance(x: f32, y: f32, region_w: f32, region_h: f32) ->
         trimmed: None,
         x: None,
         y: None,
-    }));
-    let atlas = create_texture_atlas(Some(TextureAtlasOptions {
-        regions: Some(vec![region]),
-        image_height: None,
-        image_name: None,
-        image_width: None,
-        scale: None,
-        texture: None,
-    }));
+    };
+    let region = create_texture_atlas_region();
+    set_texture_atlas_region(&mut region.write().unwrap(), &region_options);
+    let atlas = create_texture_atlas();
+    atlas.write().unwrap().regions.push(region);
     let qb: NodeRef = create_quad_batch(Some(&PartialQuadBatch {
         data: Some(QuadBatchDataOptions {
             atlas: Some(atlas),
