@@ -22,7 +22,7 @@ pub fn in_range(value: f32, min: f32, max: f32) -> bool {
 /// NaN returns 0 (unlike `clamp`, which propagates NaN). Safe in hot loops,
 /// no allocation.
 pub fn saturate(value: f32) -> f32 {
-    if value != value {
+    if value.is_nan() {
         return 0.0;
     }
     return if value < 0.0 {
