@@ -32,12 +32,13 @@ src/audio_resource_from.rs: pub fn create_audio_resource_from_samples(channels: 
 src/audio_resource_from.rs: pub fn select_audio_resource_url(host_audio_codec: &HostAudioCodecCapability, sources: &[AudioResourceUrl], decoders: Option<&AudioDecoderRegistry>,) -> Option<String>
 src/audio_resource_reference.rs: pub async fn resolve_audio_resource_reference(reference: &AudioResourceReference, audio_decode: &HostAudioDecodeCapabilities, fetch: &AudioResourceFetch, signal: &AbortSignal, decoders: Option<&AudioDecoderRegistry>,) -> Option<Ref<AudioResource>>
 src/audio_resource_reference.rs: pub fn create_audio_resource_failure(cause: &Unknown) -> Ref<AudioResourceFailure>
-src/audio_resource_reference.rs: pub fn create_embedded_audio_resource_reference(bytes: Ref<Box<Uint8Array>>, mime_type: Option<String>, name: Option<String>,) -> Ref<EmbeddedAudioResourceReference>
-src/audio_resource_reference.rs: pub fn create_external_audio_resource_reference(uri: String, base_path: Option<String>, mime_type: Option<String>, name: Option<String>,) -> Ref<ExternalAudioResourceReference>
+src/audio_resource_reference.rs: pub fn create_embedded_audio_resource_reference(bytes: Ref<Box<Uint8Array>>,) -> Ref<EmbeddedAudioResourceReference>
+src/audio_resource_reference.rs: pub fn create_external_audio_resource_reference(uri: String,) -> Ref<ExternalAudioResourceReference>
 src/audio_resource_reference.rs: pub fn explain_audio_resource_reference_resolution(reference: &AudioResourceReference,) -> AudioResourceReferenceResolutionExplanation
 src/audio_resource_reference.rs: pub fn find_audio_resource_reference_by_name(references: &[AudioResourceReference], name: &str,) -> Option<AudioResourceReference>
-src/audio_resource_reference.rs: pub fn initialize_embedded_audio_resource_reference(out: &mut EmbeddedAudioResourceReference, bytes: Ref<Box<Uint8Array>>, mime_type: Option<String>, name: Option<String>,)
-src/audio_resource_reference.rs: pub fn initialize_external_audio_resource_reference(out: &mut ExternalAudioResourceReference, uri: String, base_path: Option<String>, mime_type: Option<String>, name: Option<String>,)
+src/audio_resource_reference.rs: pub fn initialize_audio_resource_failure(out: &mut AudioResourceFailure, cause: &Unknown)
+src/audio_resource_reference.rs: pub fn initialize_embedded_audio_resource_reference(out: &mut EmbeddedAudioResourceReference, bytes: Ref<Box<Uint8Array>>,)
+src/audio_resource_reference.rs: pub fn initialize_external_audio_resource_reference(out: &mut ExternalAudioResourceReference, uri: String,)
 src/audio_resource_reference.rs: pub fn reset_failed_audio_resource_reference(reference: &AudioResourceReference) -> bool
 src/contract.rs: pub use crate::audio_buffer::*;
 src/contract.rs: pub use crate::audio_decode_slot::*;
@@ -135,8 +136,8 @@ src/sugar.rs: impl AudioResourceReference :: async fn resolve(&self, audio_decod
 src/sugar.rs: impl AudioResourceReference :: fn explain_resolution(&self) -> AudioResourceReferenceResolutionExplanation
 src/sugar.rs: impl AudioResourceReference :: fn find_by_name(references: &[AudioResourceReference], name: &str,) -> Option<AudioResourceReference>
 src/sugar.rs: impl AudioResourceReference :: fn reset_failed(&self) -> bool
-src/sugar.rs: impl EmbeddedAudioResourceReference :: fn new(bytes: Ref<Box<Uint8Array>>, mime_type: Option<String>, name: Option<String>,) -> Ref<Self>
-src/sugar.rs: impl ExternalAudioResourceReference :: fn new(uri: String, base_path: Option<String>, mime_type: Option<String>, name: Option<String>,) -> Ref<Self>
+src/sugar.rs: impl EmbeddedAudioResourceReference :: fn new(bytes: Ref<Box<Uint8Array>>) -> Ref<Self>
+src/sugar.rs: impl ExternalAudioResourceReference :: fn new(uri: String) -> Ref<Self>
 src/sugar.rs: impl HostAudioCodecCapability :: fn select_audio_resource_url(&self, sources: &[AudioResourceUrl], decoders: Option<&AudioDecoderRegistry>,) -> Option<String>
 src/sugar.rs: impl HostAudioDecodeCapabilities :: async fn load_resource_from_base64(&self, base64: &str, mime_type: &str, signal: Option<&AbortSignal>, decoders: Option<&AudioDecoderRegistry>,) -> Ref<AudioResource>
 src/sugar.rs: impl HostAudioDecodeCapabilities :: async fn load_resource_from_blob(&self, blob: &Blob, signal: Option<&AbortSignal>, decoders: Option<&AudioDecoderRegistry>,) -> Ref<AudioResource>

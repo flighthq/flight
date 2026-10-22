@@ -2,12 +2,44 @@ use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 
 use flight_audio::contract::*;
-use flight_entity::{FlightError, FlightErrorKind, Ref, Uint8Array, Unknown};
+use flight_entity::{
+    FlightError, FlightErrorKind, Ref, Uint8Array, Unknown, allocate_entity, get_entity_id,
+};
 use flight_resource::ResourceResolutionState;
 use flight_stream::{abort_controller, create_abort_controller};
 
 fn bytes(values: &[u8]) -> Ref<Box<Uint8Array>> {
     return Arc::new(RwLock::new(values.to_vec().into_boxed_slice()));
+}
+
+fn embedded_reference(
+    bytes: Ref<Box<Uint8Array>>,
+    mime_type: Option<&str>,
+    name: Option<&str>,
+) -> Ref<EmbeddedAudioResourceReference> {
+    let reference = create_embedded_audio_resource_reference(bytes);
+    {
+        let mut reference = reference.write().unwrap();
+        reference.mime_type = mime_type.map(str::to_string);
+        reference.name = name.map(str::to_string);
+    }
+    return reference;
+}
+
+fn external_reference(
+    uri: &str,
+    base_path: Option<&str>,
+    mime_type: Option<&str>,
+    name: Option<&str>,
+) -> Ref<ExternalAudioResourceReference> {
+    let reference = create_external_audio_resource_reference(uri.to_string());
+    {
+        let mut reference = reference.write().unwrap();
+        reference.base_path = base_path.map(str::to_string);
+        reference.mime_type = mime_type.map(str::to_string);
+        reference.name = name.map(str::to_string);
+    }
+    return reference;
 }
 
 fn embedded(reference: Ref<EmbeddedAudioResourceReference>) -> AudioResourceReference {
@@ -38,7 +70,7 @@ mod create_audio_resource_failure {
     use super::*;
 
     #[test]
-    fn preserves_error_name_and_message_and_stringifies_other_values() {
+    fn derives_serialization_safe_details_from_the_required_cause() {
         let cause: Unknown = Some(Arc::new(FlightError {
             kind: FlightErrorKind::TypeError,
             message: "bad samples".to_string(),
@@ -64,13 +96,14 @@ mod create_embedded_audio_resource_reference {
     use super::*;
 
     #[test]
-    fn retains_byte_identity_and_allocates_the_stable_empty_resource() {
+    fn callers_assign_bytes_and_metadata_after_canonical_construction() {
         let bytes = bytes(&[1, 2, 3]);
-        let reference = create_embedded_audio_resource_reference(
-            bytes.clone(),
-            Some("audio/mpeg".to_string()),
-            Some("theme".to_string()),
-        );
+        let reference = create_embedded_audio_resource_reference(bytes.clone());
+        {
+            let mut reference = reference.write().unwrap();
+            reference.mime_type = Some("audio/mpeg".to_string());
+            reference.name = Some("theme".to_string());
+        }
         let reference = reference.read().unwrap();
         assert!(Arc::ptr_eq(&reference.bytes, &bytes));
         assert_eq!(reference.mime_type.as_deref(), Some("audio/mpeg"));
@@ -85,13 +118,14 @@ mod create_external_audio_resource_reference {
     use super::*;
 
     #[test]
-    fn retains_uri_metadata_and_allocates_the_stable_empty_resource() {
-        let reference = create_external_audio_resource_reference(
-            "sound/theme.mp3".to_string(),
-            Some("https://example.test/assets/".to_string()),
-            Some("audio/mpeg".to_string()),
-            Some("theme".to_string()),
-        );
+    fn callers_assign_uri_and_metadata_after_canonical_construction() {
+        let reference = create_external_audio_resource_reference("sound/theme.mp3".to_string());
+        {
+            let mut reference = reference.write().unwrap();
+            reference.base_path = Some("https://example.test/assets/".to_string());
+            reference.mime_type = Some("audio/mpeg".to_string());
+            reference.name = Some("theme".to_string());
+        }
         let reference = reference.read().unwrap();
         assert_eq!(reference.uri, "sound/theme.mp3");
         assert_eq!(
@@ -110,7 +144,7 @@ mod explain_audio_resource_reference_resolution {
 
     #[test]
     fn returns_detached_plain_failure_data_and_retryability() {
-        let reference = create_embedded_audio_resource_reference(bytes(&[1]), None, None);
+        let reference = embedded_reference(bytes(&[1]), None, None);
         let failure = create_audio_resource_failure(&Some(Arc::new(FlightError {
             kind: FlightErrorKind::Error,
             message: "decode failed".to_string(),
@@ -135,13 +169,8 @@ mod find_audio_resource_reference_by_name {
 
     #[test]
     fn returns_the_first_matching_reference_by_identity() {
-        let unnamed = create_embedded_audio_resource_reference(bytes(&[1]), None, None);
-        let named = create_external_audio_resource_reference(
-            "theme.mp3".to_string(),
-            None,
-            None,
-            Some("theme".to_string()),
-        );
+        let unnamed = embedded_reference(bytes(&[1]), None, None);
+        let named = external_reference("theme.mp3", None, None, Some("theme"));
         let references = [embedded(unnamed), external(named.clone())];
         let found = find_audio_resource_reference_by_name(&references, "theme").unwrap();
         let AudioResourceReference::External(found) = found else {
@@ -152,24 +181,41 @@ mod find_audio_resource_reference_by_name {
     }
 }
 
+mod initialize_audio_resource_failure {
+    use super::*;
+
+    #[test]
+    fn derives_the_same_fields_without_replacing_entity_identity() {
+        let mut failure: AudioResourceFailure = allocate_entity();
+        let id = get_entity_id(&failure);
+        let cause: Unknown = Some(Arc::new(FlightError {
+            kind: FlightErrorKind::TypeError,
+            message: "bad samples".to_string(),
+        }));
+        initialize_audio_resource_failure(&mut failure, &cause);
+        assert_eq!(get_entity_id(&failure), id);
+        assert_eq!(failure.kind, AudioResourceFailureKind::Error);
+        assert_eq!(failure.message, "bad samples");
+        assert_eq!(failure.name.as_deref(), Some("TypeError"));
+    }
+}
+
 mod initialize_embedded_audio_resource_reference {
     use super::*;
 
     #[test]
-    fn replaces_every_construction_field_and_resource_identity() {
-        let reference = create_embedded_audio_resource_reference(bytes(&[1]), None, None);
-        let old_resource = reference.read().unwrap().resource.clone();
-        let replacement = bytes(&[8, 9]);
-        initialize_embedded_audio_resource_reference(
-            &mut reference.write().unwrap(),
-            replacement.clone(),
-            Some("audio/wav".to_string()),
-            Some("effect".to_string()),
-        );
-        let reference = reference.read().unwrap();
-        assert!(Arc::ptr_eq(&reference.bytes, &replacement));
-        assert!(!Arc::ptr_eq(&reference.resource, &old_resource));
+    fn retains_required_bytes_without_replacing_entity_identity() {
+        let mut reference: EmbeddedAudioResourceReference = allocate_entity();
+        let id = get_entity_id(&reference);
+        let bytes = bytes(&[8, 9]);
+        initialize_embedded_audio_resource_reference(&mut reference, bytes.clone());
+        assert_eq!(get_entity_id(&reference), id);
+        assert!(Arc::ptr_eq(&reference.bytes, &bytes));
+        assert!(reference.mime_type.is_none());
+        assert!(reference.name.is_none());
+        assert!(reference.failure.is_none());
         assert_eq!(reference.state, ResourceResolutionState::Unresolved);
+        assert!(reference.resource.read().unwrap().buffer.is_none());
     }
 }
 
@@ -177,21 +223,18 @@ mod initialize_external_audio_resource_reference {
     use super::*;
 
     #[test]
-    fn replaces_every_construction_field_and_resource_identity() {
-        let reference = create_external_audio_resource_reference("a".to_string(), None, None, None);
-        let old_resource = reference.read().unwrap().resource.clone();
-        initialize_external_audio_resource_reference(
-            &mut reference.write().unwrap(),
-            "b".to_string(),
-            Some("base".to_string()),
-            Some("audio/ogg".to_string()),
-            Some("effect".to_string()),
-        );
-        let reference = reference.read().unwrap();
-        assert_eq!(reference.uri, "b");
-        assert_eq!(reference.base_path.as_deref(), Some("base"));
-        assert!(!Arc::ptr_eq(&reference.resource, &old_resource));
+    fn retains_required_uri_without_replacing_entity_identity() {
+        let mut reference: ExternalAudioResourceReference = allocate_entity();
+        let id = get_entity_id(&reference);
+        initialize_external_audio_resource_reference(&mut reference, "sound.mp3".to_string());
+        assert_eq!(get_entity_id(&reference), id);
+        assert_eq!(reference.uri, "sound.mp3");
+        assert!(reference.base_path.is_none());
+        assert!(reference.mime_type.is_none());
+        assert!(reference.name.is_none());
+        assert!(reference.failure.is_none());
         assert_eq!(reference.state, ResourceResolutionState::Unresolved);
+        assert!(reference.resource.read().unwrap().buffer.is_none());
     }
 }
 
@@ -200,7 +243,7 @@ mod reset_failed_audio_resource_reference {
 
     #[test]
     fn resets_only_failed_references() {
-        let reference = create_embedded_audio_resource_reference(bytes(&[1]), None, None);
+        let reference = embedded_reference(bytes(&[1]), None, None);
         let union = embedded(reference.clone());
         assert!(!reset_failed_audio_resource_reference(&union));
         {
@@ -220,11 +263,7 @@ mod resolve_audio_resource_reference {
 
     #[test]
     fn binds_embedded_samples_into_the_preallocated_resource() {
-        let reference = create_embedded_audio_resource_reference(
-            bytes(&[1]),
-            Some("audio/mpeg".to_string()),
-            None,
-        );
+        let reference = embedded_reference(bytes(&[1]), Some("audio/mpeg"), None);
         let stable_resource = reference.read().unwrap().resource.clone();
         let buffer = create_audio_buffer(2, 1, 44_100.0);
         let decoder: AudioDecoder = Arc::new({
@@ -256,8 +295,7 @@ mod resolve_audio_resource_reference {
 
     #[test]
     fn fetches_an_external_reference_by_identity() {
-        let reference =
-            create_external_audio_resource_reference("theme.mp3".to_string(), None, None, None);
+        let reference = external_reference("theme.mp3", None, None, None);
         let stable_resource = reference.read().unwrap().resource.clone();
         let buffer = create_audio_buffer(1, 1, 48_000.0);
         let fetch: AudioResourceFetch = Arc::new({
@@ -287,11 +325,7 @@ mod resolve_audio_resource_reference {
 
     #[test]
     fn records_expected_misses_as_retryable_unavailable_failures() {
-        let reference = create_embedded_audio_resource_reference(
-            bytes(&[1]),
-            Some("audio/mpeg".to_string()),
-            None,
-        );
+        let reference = embedded_reference(bytes(&[1]), Some("audio/mpeg"), None);
         let decoder: AudioDecoder = Arc::new(|_, _, _| Box::pin(async { None }));
         let decoders = HashMap::from([("audio/mpeg".to_string(), decoder)]);
         let union = embedded(reference.clone());
@@ -315,11 +349,7 @@ mod resolve_audio_resource_reference {
 
     #[test]
     fn reduces_thrown_values_to_serialization_safe_failure_data() {
-        let reference = create_embedded_audio_resource_reference(
-            bytes(&[1]),
-            Some("audio/mpeg".to_string()),
-            None,
-        );
+        let reference = embedded_reference(bytes(&[1]), Some("audio/mpeg"), None);
         let decoder: AudioDecoder = Arc::new(|_, _, _| {
             Box::pin(async {
                 std::panic::panic_any(FlightError {
@@ -350,11 +380,7 @@ mod resolve_audio_resource_reference {
 
     #[test]
     fn retains_a_direct_unknown_rejection_for_string_projection() {
-        let reference = create_embedded_audio_resource_reference(
-            bytes(&[1]),
-            Some("audio/mpeg".to_string()),
-            None,
-        );
+        let reference = embedded_reference(bytes(&[1]), Some("audio/mpeg"), None);
         let reason: Unknown = Some(Arc::new("decoder rejected".to_string()));
         let decoder: AudioDecoder = Arc::new({
             let reason = reason.clone();
@@ -386,11 +412,7 @@ mod resolve_audio_resource_reference {
 
     #[test]
     fn restores_unresolved_and_rethrows_the_exact_abort_reason() {
-        let reference = create_embedded_audio_resource_reference(
-            bytes(&[1]),
-            Some("audio/mpeg".to_string()),
-            None,
-        );
+        let reference = embedded_reference(bytes(&[1]), Some("audio/mpeg"), None);
         let controller = Arc::new(create_abort_controller());
         let reason: Unknown = Some(Arc::new("stop".to_string()));
         let decoder: AudioDecoder = Arc::new({

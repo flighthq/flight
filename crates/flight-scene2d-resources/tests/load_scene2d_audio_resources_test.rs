@@ -32,11 +32,10 @@ fn audio_decode() -> HostAudioDecodeCapabilities {
 }
 
 fn embedded(value: u8, mime_type: &str) -> AudioResourceReference {
-    let reference = create_embedded_audio_resource_reference(
-        Arc::new(std::sync::RwLock::new(vec![value].into_boxed_slice())),
-        Some(mime_type.to_string()),
-        None,
-    );
+    let reference = create_embedded_audio_resource_reference(Arc::new(std::sync::RwLock::new(
+        vec![value].into_boxed_slice(),
+    )));
+    reference.write().unwrap().mime_type = Some(mime_type.to_string());
     return AudioResourceReference::Embedded(EmbeddedAudioResourceReferenceValue { reference });
 }
 
@@ -52,7 +51,7 @@ fn empty_options() -> LoadScene2DAudioResourcesOptions {
 }
 
 fn external(uri: &str) -> AudioResourceReference {
-    let reference = create_external_audio_resource_reference(uri.to_string(), None, None, None);
+    let reference = create_external_audio_resource_reference(uri.to_string());
     return AudioResourceReference::External(ExternalAudioResourceReferenceValue { reference });
 }
 

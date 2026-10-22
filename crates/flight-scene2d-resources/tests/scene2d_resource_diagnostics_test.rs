@@ -35,8 +35,7 @@ mod explain_scene2d_resource_coverage {
         let failed_image = create_external_image_resource_reference("failed.png".to_string(), None);
         resolved_image.write().unwrap().state = ResourceResolutionState::Resolved;
         failed_image.write().unwrap().state = ResourceResolutionState::Failed;
-        let audio =
-            create_external_audio_resource_reference("sound.mp3".to_string(), None, None, None);
+        let audio = create_external_audio_resource_reference("sound.mp3".to_string());
         audio.write().unwrap().state = ResourceResolutionState::Loading;
         let filled = create_scene2d_slot_reference();
         {
@@ -208,8 +207,7 @@ mod set_scene2d_resource_failure_guard {
             &state,
         ));
 
-        let audio =
-            create_external_audio_resource_reference("missing.mp3".to_string(), None, None, None);
+        let audio = create_external_audio_resource_reference("missing.mp3".to_string());
         let audio_document = create_scene2d_document();
         audio_document.write().unwrap().audio_resources = vec![AudioResourceReference::External(
             ExternalAudioResourceReferenceValue { reference: audio },

@@ -83,6 +83,15 @@ mod sugar_tests {
         return HostAudioDecodeCapabilities::default();
     }
 
+    fn embedded_for_decode() -> Ref<EmbeddedAudioResourceReference> {
+        let reference = EmbeddedAudioResourceReference::new(bytes(&[1]));
+        {
+            let mut reference = reference.write().unwrap();
+            reference.mime_type = Some("audio/mpeg".to_string());
+        }
+        return reference;
+    }
+
     fn resource() -> Ref<AudioResource> {
         return create_audio_resource(Some(create_audio_buffer(2, 1, 48_000.0)));
     }
@@ -280,7 +289,7 @@ mod sugar_tests {
 
     #[test]
     fn audio_resource_reference_explain_resolution_delegates() {
-        let reference = EmbeddedAudioResourceReference::new(bytes(&[1]), None, None);
+        let reference = EmbeddedAudioResourceReference::new(bytes(&[1]));
         let reference =
             AudioResourceReference::Embedded(EmbeddedAudioResourceReferenceValue { reference });
         assert_eq!(
@@ -291,12 +300,8 @@ mod sugar_tests {
 
     #[test]
     fn audio_resource_reference_find_by_name_delegates() {
-        let reference = ExternalAudioResourceReference::new(
-            "u".to_string(),
-            None,
-            None,
-            Some("named".to_string()),
-        );
+        let reference = ExternalAudioResourceReference::new("u".to_string());
+        reference.write().unwrap().name = Some("named".to_string());
         let references = [AudioResourceReference::External(
             ExternalAudioResourceReferenceValue {
                 reference: reference.clone(),
@@ -314,8 +319,8 @@ mod sugar_tests {
 
     #[test]
     fn audio_resource_reference_reset_failed_delegates() {
-        let method = EmbeddedAudioResourceReference::new(bytes(&[1]), None, None);
-        let function = EmbeddedAudioResourceReference::new(bytes(&[1]), None, None);
+        let method = EmbeddedAudioResourceReference::new(bytes(&[1]));
+        let function = EmbeddedAudioResourceReference::new(bytes(&[1]));
         method.write().unwrap().state = flight_resource::ResourceResolutionState::Failed;
         function.write().unwrap().state = flight_resource::ResourceResolutionState::Failed;
         let method = AudioResourceReference::Embedded(EmbeddedAudioResourceReferenceValue {
@@ -335,18 +340,10 @@ mod sugar_tests {
         let buffer = create_audio_buffer(1, 1, 44_100.0);
         let decoders = decoder(&buffer);
         let method = AudioResourceReference::Embedded(EmbeddedAudioResourceReferenceValue {
-            reference: EmbeddedAudioResourceReference::new(
-                bytes(&[1]),
-                Some("audio/mpeg".to_string()),
-                None,
-            ),
+            reference: embedded_for_decode(),
         });
         let function = AudioResourceReference::Embedded(EmbeddedAudioResourceReferenceValue {
-            reference: EmbeddedAudioResourceReference::new(
-                bytes(&[1]),
-                Some("audio/mpeg".to_string()),
-                None,
-            ),
+            reference: embedded_for_decode(),
         });
         let signal = create_abort_controller().signal;
         let method =
@@ -377,15 +374,15 @@ mod sugar_tests {
 
     #[test]
     fn embedded_audio_resource_reference_new_delegates() {
-        let method = EmbeddedAudioResourceReference::new(bytes(&[1]), None, None);
-        let function = create_embedded_audio_resource_reference(bytes(&[1]), None, None);
+        let method = EmbeddedAudioResourceReference::new(bytes(&[1]));
+        let function = create_embedded_audio_resource_reference(bytes(&[1]));
         assert_eq!(method.read().unwrap().state, function.read().unwrap().state);
     }
 
     #[test]
     fn external_audio_resource_reference_new_delegates() {
-        let method = ExternalAudioResourceReference::new("u".to_string(), None, None, None);
-        let function = create_external_audio_resource_reference("u".to_string(), None, None, None);
+        let method = ExternalAudioResourceReference::new("u".to_string());
+        let function = create_external_audio_resource_reference("u".to_string());
         assert_eq!(method.read().unwrap().uri, function.read().unwrap().uri);
     }
 
@@ -629,23 +626,14 @@ impl AudioResourceReference {
 }
 
 impl EmbeddedAudioResourceReference {
-    pub fn new(
-        bytes: Ref<Box<Uint8Array>>,
-        mime_type: Option<String>,
-        name: Option<String>,
-    ) -> Ref<Self> {
-        return create_embedded_audio_resource_reference(bytes, mime_type, name);
+    pub fn new(bytes: Ref<Box<Uint8Array>>) -> Ref<Self> {
+        return create_embedded_audio_resource_reference(bytes);
     }
 }
 
 impl ExternalAudioResourceReference {
-    pub fn new(
-        uri: String,
-        base_path: Option<String>,
-        mime_type: Option<String>,
-        name: Option<String>,
-    ) -> Ref<Self> {
-        return create_external_audio_resource_reference(uri, base_path, mime_type, name);
+    pub fn new(uri: String) -> Ref<Self> {
+        return create_external_audio_resource_reference(uri);
     }
 }
 

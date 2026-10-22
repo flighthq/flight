@@ -20,6 +20,30 @@ use crate::types::{
 
 pub fn create_audio_resource_failure(cause: &Unknown) -> Ref<AudioResourceFailure> {
     let mut out: AudioResourceFailure = allocate_entity();
+    initialize_audio_resource_failure(&mut out, cause);
+    return Arc::new(RwLock::new(out));
+}
+
+// flight-lint: allow(conform-params) D23 (B): required bytes define the reference; callers assign optional authored metadata after construction
+pub fn create_embedded_audio_resource_reference(
+    bytes: Ref<Box<Uint8Array>>,
+) -> Ref<EmbeddedAudioResourceReference> {
+    let mut out: EmbeddedAudioResourceReference = allocate_entity();
+    initialize_embedded_audio_resource_reference(&mut out, bytes);
+    return Arc::new(RwLock::new(out));
+}
+
+// flight-lint: allow(conform-params) D23 (B): required URI defines the reference; callers assign optional authored metadata after construction
+pub fn create_external_audio_resource_reference(
+    uri: String,
+) -> Ref<ExternalAudioResourceReference> {
+    let mut out: ExternalAudioResourceReference = allocate_entity();
+    initialize_external_audio_resource_reference(&mut out, uri);
+    return Arc::new(RwLock::new(out));
+}
+
+// flight-lint: allow(conform-extra) D23 (I): public canonical construction initializer absent from the pinned source
+pub fn initialize_audio_resource_failure(out: &mut AudioResourceFailure, cause: &Unknown) {
     out.kind = AudioResourceFailureKind::Error;
     if let Some(error) = cause
         .as_ref()
@@ -31,55 +55,30 @@ pub fn create_audio_resource_failure(cause: &Unknown) -> Ref<AudioResourceFailur
         out.message = unknown_to_js_string(cause);
         out.name = None;
     }
-    return Arc::new(RwLock::new(out));
 }
 
-pub fn create_embedded_audio_resource_reference(
-    bytes: Ref<Box<Uint8Array>>,
-    mime_type: Option<String>,
-    name: Option<String>,
-) -> Ref<EmbeddedAudioResourceReference> {
-    let mut out: EmbeddedAudioResourceReference = allocate_entity();
-    initialize_embedded_audio_resource_reference(&mut out, bytes, mime_type, name);
-    return Arc::new(RwLock::new(out));
-}
-
-pub fn create_external_audio_resource_reference(
-    uri: String,
-    base_path: Option<String>,
-    mime_type: Option<String>,
-    name: Option<String>,
-) -> Ref<ExternalAudioResourceReference> {
-    let mut out: ExternalAudioResourceReference = allocate_entity();
-    initialize_external_audio_resource_reference(&mut out, uri, base_path, mime_type, name);
-    return Arc::new(RwLock::new(out));
-}
-
+// flight-lint: allow(conform-params) D23 (B): required bytes define the reference; callers assign optional authored metadata after construction
 pub fn initialize_embedded_audio_resource_reference(
     out: &mut EmbeddedAudioResourceReference,
     bytes: Ref<Box<Uint8Array>>,
-    mime_type: Option<String>,
-    name: Option<String>,
 ) {
     out.bytes = bytes;
     out.failure = None;
-    out.mime_type = mime_type;
-    out.name = name;
+    out.mime_type = None;
+    out.name = None;
     out.resource = create_audio_resource(None);
     out.state = ResourceResolutionState::Unresolved;
 }
 
+// flight-lint: allow(conform-params) D23 (B): required URI defines the reference; callers assign optional authored metadata after construction
 pub fn initialize_external_audio_resource_reference(
     out: &mut ExternalAudioResourceReference,
     uri: String,
-    base_path: Option<String>,
-    mime_type: Option<String>,
-    name: Option<String>,
 ) {
-    out.base_path = base_path;
+    out.base_path = None;
     out.failure = None;
-    out.mime_type = mime_type;
-    out.name = name;
+    out.mime_type = None;
+    out.name = None;
     out.resource = create_audio_resource(None);
     out.state = ResourceResolutionState::Unresolved;
     out.uri = uri;

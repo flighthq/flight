@@ -35,11 +35,8 @@ mod create_scene2d_document {
         let slot = create_scene2d_slot_reference();
         let image =
             create_embedded_image_resource_reference(bytes(1), Some("image/png".to_string()), None);
-        let audio = create_embedded_audio_resource_reference(
-            bytes(2),
-            Some("audio/mpeg".to_string()),
-            None,
-        );
+        let audio = create_embedded_audio_resource_reference(bytes(2));
+        audio.write().unwrap().mime_type = Some("audio/mpeg".to_string());
         let document = create_scene2d_document();
         {
             let mut document = document.write().unwrap();
