@@ -1416,6 +1416,7 @@ dependencies = [
  "flight-render",
  "flight-render-gl",
  "flight-requirement",
+ "flight-scene2d-gl",
  "flight-scene3d",
  "flight-shading",
  "flight-signals",
