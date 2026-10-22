@@ -1379,12 +1379,73 @@ unsafe extern "system" fn gl_read_pixels(
     );
 }
 
+// TS `createFakeGlErrorState`: records the FIRST GL error until `glGetError` consumes it.
+fn set_mock_gl_error(code: u32) {
+    MOCK.with(|state| {
+        let mut state = state.borrow_mut();
+        if state.error == glow::NO_ERROR {
+            state.error = code;
+        }
+    });
+}
+
+const MOCK_PRIMITIVE_MODES: [u32; 7] = [0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006];
+
+// TS `validateFakeGlDrawArrays`: an invalid draw sets the GL error and is not recorded.
+fn validate_mock_draw_arrays(mode: u32, first: i32, count: i32, instance_count: Option<i32>) -> bool {
+    if !MOCK_PRIMITIVE_MODES.contains(&mode) {
+        set_mock_gl_error(glow::INVALID_ENUM);
+        return false;
+    }
+    if first < 0 || count < 0 || instance_count.is_some_and(|value| value < 0) {
+        set_mock_gl_error(glow::INVALID_VALUE);
+        return false;
+    }
+    return true;
+}
+
+// TS `validateFakeGlDrawElements`: mode, index type, non-negative ranges and type-aligned offsets.
+fn validate_mock_draw_elements(
+    mode: u32,
+    count: i32,
+    kind: u32,
+    offset: i64,
+    instance_count: Option<i32>,
+) -> bool {
+    if !MOCK_PRIMITIVE_MODES.contains(&mode) {
+        set_mock_gl_error(glow::INVALID_ENUM);
+        return false;
+    }
+    let type_size = match kind {
+        glow::UNSIGNED_BYTE => 1,
+        glow::UNSIGNED_SHORT => 2,
+        glow::UNSIGNED_INT => 4,
+        _ => 0,
+    };
+    if type_size == 0 {
+        set_mock_gl_error(glow::INVALID_ENUM);
+        return false;
+    }
+    if count < 0 || offset < 0 || instance_count.is_some_and(|value| value < 0) {
+        set_mock_gl_error(glow::INVALID_VALUE);
+        return false;
+    }
+    if offset % type_size != 0 {
+        set_mock_gl_error(glow::INVALID_OPERATION);
+        return false;
+    }
+    return true;
+}
+
 unsafe extern "system" fn gl_draw_elements(
     mode: u32,
     count: i32,
     kind: u32,
     indices: *const c_void,
 ) {
+    if !validate_mock_draw_elements(mode, count, kind, indices as usize as i64, None) {
+        return;
+    }
     MOCK.with(|state| {
         let mut state = state.borrow_mut();
         let draw = MockGlDrawState {
@@ -1411,6 +1472,9 @@ unsafe extern "system" fn gl_draw_elements(
     );
 }
 unsafe extern "system" fn gl_draw_arrays(mode: u32, first: i32, count: i32) {
+    if !validate_mock_draw_arrays(mode, first, count, None) {
+        return;
+    }
     record_call(
         "draw_arrays",
         &[mode.into(), first.into(), count.into()],
@@ -1425,6 +1489,9 @@ unsafe extern "system" fn gl_draw_arrays_instanced(
     count: i32,
     instances: i32,
 ) {
+    if !validate_mock_draw_arrays(mode, first, count, Some(instances)) {
+        return;
+    }
     record_call(
         "draw_arrays_instanced",
         &[mode.into(), first.into(), count.into(), instances.into()],
@@ -1440,6 +1507,9 @@ unsafe extern "system" fn gl_draw_elements_instanced(
     indices: *const c_void,
     instances: i32,
 ) {
+    if !validate_mock_draw_elements(mode, count, kind, indices as usize as i64, Some(instances)) {
+        return;
+    }
     record_call(
         "draw_elements_instanced",
         &[
@@ -2312,4 +2382,11 @@ pub fn log_messages(sink: &flight_log::MemoryLogSink) -> Vec<String> {
             },
         })
         .collect();
+}
+
+/// TS `gl.getError()`: returns and clears the pending mock GL error.
+pub fn take_gl_error(state: &GlRenderState) -> u32 {
+    use glow::HasContext;
+    // SAFETY: the mock context answers on the test thread.
+    return unsafe { state.gl.get_error() };
 }
