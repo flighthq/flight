@@ -508,7 +508,7 @@ mod create_gl_render_state_context_sharing {
         DESTROY_DATA_CALLS.store(0, Ordering::SeqCst);
         let context = make_context_state();
         let mut screen = create_gl_render_state(context.clone(), None);
-        let root = flight_scene2d::create_display_object(None);
+        let root = flight_scene2d::create_display_object();
         let kind = root.read().unwrap().node_fields().kind.clone();
         register_node_renderer(&mut screen, kind, &TEST_RENDERER);
         let options = options_from_state(&screen);

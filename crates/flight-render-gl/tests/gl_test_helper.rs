@@ -297,7 +297,7 @@ pub fn make_compressed_support() -> flight_render_gl::GlCompressedTextureSupport
 }
 
 pub fn make_proxy(state: &mut GlRenderState) -> flight_render::RenderProxy2D<GlRenderState> {
-    let source: flight_node::NodeRef = flight_scene2d::create_display_object(None);
+    let source: flight_node::NodeRef = flight_scene2d::create_display_object();
     return flight_render::create_render_proxy_2d(state, &source);
 }
 

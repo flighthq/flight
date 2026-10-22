@@ -145,7 +145,7 @@ mod resolve_gl_shader {
     fn returns_the_bound_shader_when_binding_support_is_used() {
         let mut state = make_state();
         let mut proxies = crate::gl_test_helper::make_proxies();
-        let node: flight_node::NodeRef = flight_scene2d::create_display_object(None);
+        let node: flight_node::NodeRef = flight_scene2d::create_display_object();
         let shader = super::shader(&state);
         set_gl_shader(&mut state, &mut proxies, &node, Some(shader.clone()));
         let index = proxies.by_uid[&flight_entity::get_entity_id(&*node.read().unwrap())];
@@ -179,7 +179,7 @@ mod set_gl_shader {
     fn clears_the_binding_when_passed_none() {
         let mut state = make_state();
         let mut proxies = make_proxies();
-        let node: flight_node::NodeRef = flight_scene2d::create_display_object(None);
+        let node: flight_node::NodeRef = flight_scene2d::create_display_object();
         let shader = super::shader(&state);
         set_gl_shader(&mut state, &mut proxies, &node, Some(shader.clone()));
         let index = *proxies.by_uid.values().next().unwrap();
@@ -193,7 +193,7 @@ mod set_gl_shader {
         let mut state_b = make_state();
         let mut proxies_a = make_proxies();
         let mut proxies_b = make_proxies();
-        let node: flight_node::NodeRef = flight_scene2d::create_display_object(None);
+        let node: flight_node::NodeRef = flight_scene2d::create_display_object();
         let shader = super::shader(&state_a);
         set_gl_shader(&mut state_a, &mut proxies_a, &node, Some(shader.clone()));
         let proxy_b =
@@ -210,7 +210,7 @@ mod set_gl_shader {
     fn installs_the_per_proxy_binding_entry() {
         let mut state = make_state();
         let mut proxies = make_proxies();
-        let node: flight_node::NodeRef = flight_scene2d::create_display_object(None);
+        let node: flight_node::NodeRef = flight_scene2d::create_display_object();
         let shader = super::shader(&state);
         set_gl_shader(&mut state, &mut proxies, &node, Some(shader));
         let index = *proxies.by_uid.values().next().unwrap();
@@ -226,7 +226,7 @@ mod set_gl_shader {
     fn stores_a_shader_keyed_by_the_per_state_render_proxy() {
         let mut state = make_state();
         let mut proxies = make_proxies();
-        let node: flight_node::NodeRef = flight_scene2d::create_display_object(None);
+        let node: flight_node::NodeRef = flight_scene2d::create_display_object();
         let shader = super::shader(&state);
         set_gl_shader(&mut state, &mut proxies, &node, Some(shader.clone()));
         let index = *proxies.by_uid.values().next().unwrap();
