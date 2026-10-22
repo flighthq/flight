@@ -165,7 +165,7 @@ src/modifier.rs: impl Entity for ModifierFields :: fn entity_runtime_mut(&mut se
 src/modifier.rs: impl fmt::Debug for ModifierFields
 src/modifier.rs: impl fmt::Debug for ModifierFields :: fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result
 src/modifier.rs: pub fn initialize_modifier<T: Modifier>(out: &mut T, kind: Kind, slot: ModifierSlot)
-src/modifier.rs: pub trait Modifier: flight_entity::Entity + fmt::Debug + Send + Sync { fn modifier_fields(&self) -> &ModifierFields; fn modifier_fields_mut(&mut self) -> &mut ModifierFields; fn modifier_define_signature(&self) -> String; }
+src/modifier.rs: pub trait Modifier: flight_entity::Entity + std::any::Any + fmt::Debug + Send + Sync { fn modifier_fields(&self) -> &ModifierFields; fn modifier_fields_mut(&mut self) -> &mut ModifierFields; fn modifier_define_signature(&self) -> String; }
 src/modifier_registry.rs: #[derive(Clone)] pub struct ModifierDefinition { pub kind: ModifierKind, pub slot: ModifierSlot, pub get_define_signature: Option<ModifierDefineSignature>, }
 src/modifier_registry.rs: #[derive(Clone, Debug, Default)] pub struct ModifierRegistry { pub definitions: Record<Ref<ModifierDefinition>>, }
 src/modifier_registry.rs: impl fmt::Debug for ModifierDefinition

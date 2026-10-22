@@ -1,0 +1,383 @@
+src/anisotropy_pbr_gl_extension.rs: pub fn register_gl_anisotropy_pbr_extension(state: &mut GlRenderState)
+src/anisotropy_pbr_gl_extension.rs: pub static ANISOTROPY_PBR_GL_EXTENSION: GlPbrExtensionRegistration
+src/clearcoat_pbr_gl_extension.rs: pub fn register_gl_clearcoat_pbr_extension(state: &mut GlRenderState)
+src/clearcoat_pbr_gl_extension.rs: pub static CLEARCOAT_PBR_GL_EXTENSION: GlPbrExtensionRegistration
+src/contract.rs: pub use crate::anisotropy_pbr_gl_extension::*;
+src/contract.rs: pub use crate::clearcoat_pbr_gl_extension::*;
+src/contract.rs: pub use crate::enable_gl_pbr_extension_guards::*;
+src/contract.rs: pub use crate::enable_gl_scene3d_color_space_guards::*;
+src/contract.rs: pub use crate::enable_gl_scene3d_custom_shader_guards::*;
+src/contract.rs: pub use crate::enable_gl_scene3d_deform_guards::*;
+src/contract.rs: pub use crate::enable_gl_scene3d_forward_light_selection_guards::*;
+src/contract.rs: pub use crate::explain_gl_mesh_geometry_uv_sets::*;
+src/contract.rs: pub use crate::explain_gl_scene3d_coverage::*;
+src/contract.rs: pub use crate::explain_gl_scene3d_forward_light_selection::*;
+src/contract.rs: pub use crate::gl_blinn_phong_mesh_material_renderer::*;
+src/contract.rs: pub use crate::gl_classic_prelude::*;
+src/contract.rs: pub use crate::gl_custom_shader_mesh_material_renderer::*;
+src/contract.rs: pub use crate::gl_debug_prelude::*;
+src/contract.rs: pub use crate::gl_depth_mesh_material_renderer::*;
+src/contract.rs: pub use crate::gl_emissive_mesh_material_renderer::*;
+src/contract.rs: pub use crate::gl_environment_capture::*;
+src/contract.rs: pub use crate::gl_environment_cube::*;
+src/contract.rs: pub use crate::gl_environment_ibl_bake::*;
+src/contract.rs: pub use crate::gl_environment_skybox::*;
+src/contract.rs: pub use crate::gl_extended_pbr_mesh_material_renderer::*;
+src/contract.rs: pub use crate::gl_lambert_mesh_material_renderer::*;
+src/contract.rs: pub use crate::gl_lit_program::*;
+src/contract.rs: pub use crate::gl_matcap_mesh_material_renderer::*;
+src/contract.rs: pub use crate::gl_matcap_prelude::*;
+src/contract.rs: pub use crate::gl_mesh_fragment_tail::*;
+src/contract.rs: pub use crate::gl_mesh_material_registry::*;
+src/contract.rs: pub use crate::gl_mesh_program::*;
+src/contract.rs: pub use crate::gl_mesh_skinning::*;
+src/contract.rs: pub use crate::gl_mesh_upload::*;
+src/contract.rs: pub use crate::gl_normal_mesh_material_renderer::*;
+src/contract.rs: pub use crate::gl_particle_emitter3d::*;
+src/contract.rs: pub use crate::gl_pbr_extension_registry::*;
+src/contract.rs: pub use crate::gl_pbr_prelude::*;
+src/contract.rs: pub use crate::gl_pbr_program_cache::*;
+src/contract.rs: pub use crate::gl_pbr_standard_block::*;
+src/contract.rs: pub use crate::gl_pbr_transmission_scene_color::*;
+src/contract.rs: pub use crate::gl_phong_mesh_material_renderer::*;
+src/contract.rs: pub use crate::gl_scene3d_runtime::*;
+src/contract.rs: pub use crate::gl_scene3d_time::*;
+src/contract.rs: pub use crate::gl_shaded_built_in_modifiers::*;
+src/contract.rs: pub use crate::gl_shaded_mesh_material_renderer::*;
+src/contract.rs: pub use crate::gl_shaded_modifier_snippet::*;
+src/contract.rs: pub use crate::gl_shaded_prelude::*;
+src/contract.rs: pub use crate::gl_shadow_map::*;
+src/contract.rs: pub use crate::gl_specular_glossiness_pbr_mesh_material_renderer::*;
+src/contract.rs: pub use crate::gl_standard_pbr_mesh_material_renderer::*;
+src/contract.rs: pub use crate::gl_toon_mesh_material_renderer::*;
+src/contract.rs: pub use crate::gl_toon_prelude::*;
+src/contract.rs: pub use crate::gl_unlit_mesh_material_renderer::*;
+src/contract.rs: pub use crate::gl_unlit_prelude::*;
+src/contract.rs: pub use crate::gl_vertex_color_mesh_material_renderer::*;
+src/contract.rs: pub use crate::gl_viewport_aspect::*;
+src/contract.rs: pub use crate::gl_wireframe_mesh_material_renderer::*;
+src/contract.rs: pub use crate::gl_wireframe_prelude::*;
+src/contract.rs: pub use crate::gl_wireframe_upload::*;
+src/contract.rs: pub use crate::iridescence_pbr_gl_extension::*;
+src/contract.rs: pub use crate::prepare_gl_scene3d_forward_lights::*;
+src/contract.rs: pub use crate::present_gl_scene3d::*;
+src/contract.rs: pub use crate::register_gl_standard_pbr_material::*;
+src/contract.rs: pub use crate::render_gl_scene3d::*;
+src/contract.rs: pub use crate::scene3d_gl_pipeline::*;
+src/contract.rs: pub use crate::sheen_pbr_gl_extension::*;
+src/contract.rs: pub use crate::specular_pbr_gl_extension::*;
+src/contract.rs: pub use crate::transmission_volume_pbr_gl_extension::*;
+src/contract.rs: pub use crate::types::*;
+src/contract.rs: pub use crate::wrapped_diffuse_pbr_gl_extension::*;
+src/enable_gl_pbr_extension_guards.rs: pub fn are_gl_pbr_extension_guards_enabled(state: &GlRenderState) -> bool
+src/enable_gl_pbr_extension_guards.rs: pub fn enable_gl_pbr_extension_guards(state: &GlRenderState, log_state: Option<LogStateRef>)
+src/enable_gl_scene3d_color_space_guards.rs: pub fn are_gl_scene3d_color_space_guards_enabled(state: &GlRenderState) -> bool
+src/enable_gl_scene3d_color_space_guards.rs: pub fn enable_gl_scene3d_color_space_guards(state: &GlRenderState, log_state: Option<LogStateRef>)
+src/enable_gl_scene3d_custom_shader_guards.rs: pub fn are_gl_scene3d_custom_shader_guards_enabled(state: &GlRenderState) -> bool
+src/enable_gl_scene3d_custom_shader_guards.rs: pub fn enable_gl_scene3d_custom_shader_guards(state: &GlRenderState, log_state: Option<LogStateRef>)
+src/enable_gl_scene3d_deform_guards.rs: pub fn are_gl_scene3d_deform_guards_enabled(state: &GlRenderState) -> bool
+src/enable_gl_scene3d_deform_guards.rs: pub fn enable_gl_scene3d_deform_guards(state: &GlRenderState, log_state: Option<LogStateRef>)
+src/enable_gl_scene3d_forward_light_selection_guards.rs: pub fn are_gl_scene3d_forward_light_selection_guards_enabled(state: &GlRenderState) -> bool
+src/enable_gl_scene3d_forward_light_selection_guards.rs: pub fn enable_gl_scene3d_forward_light_selection_guards(state: &GlRenderState, log_state: Option<LogStateRef>,)
+src/explain_gl_mesh_geometry_uv_sets.rs: pub fn explain_gl_mesh_geometry_uv_sets(geometry: &MeshGeometry, requested_uv_sets: &[PbrUvSet],) -> MeshGeometryUvSetExplanation
+src/explain_gl_scene3d_coverage.rs: pub fn explain_gl_scene3d_coverage(out: &mut Vec<SceneCoverageEntry>, state: &GlRenderState, usage: &Scene3DKindUsage, catalog: &SceneCoverageCatalog,)
+src/explain_gl_scene3d_coverage.rs: pub fn has_gl_scene3d_coverage(state: &GlRenderState, usage: &Scene3DKindUsage) -> bool
+src/explain_gl_scene3d_forward_light_selection.rs: pub fn explain_gl_scene3d_forward_light_selection(lights: &Scene3DLightsLike, selection: Option<&GlScene3DForwardLightList>,) -> Scene3DForwardLightSelectionExplanation
+src/gl_blinn_phong_mesh_material_renderer.rs: pub fn register_gl_blinn_phong_material(state: &mut GlRenderState)
+src/gl_blinn_phong_mesh_material_renderer.rs: pub static GL_BLINN_PHONG_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer
+src/gl_classic_prelude.rs: pub fn build_gl_classic_define_key(key: &GlClassicDefineKey) -> String
+src/gl_classic_prelude.rs: pub fn compile_gl_classic_program(gl: &glow::Context, key: &GlClassicDefineKey, color_adjustment_feature: Option<&GlColorAdjustmentMaterialFeature>, skin_declarations_glsl: Option<&str>,) -> GlClassicProgram
+src/gl_classic_prelude.rs: pub fn ensure_gl_classic_program(state: &GlRenderState, key: &GlClassicDefineKey) -> Rc<GlClassicProgram>
+src/gl_classic_prelude.rs: pub fn get_gl_classic_fragment_source() -> String
+src/gl_classic_prelude.rs: pub fn get_gl_classic_fragment_source_for_key(key: &GlClassicDefineKey, color_adjustment_feature: Option<&GlColorAdjustmentMaterialFeature>,) -> String
+src/gl_classic_prelude.rs: pub fn get_gl_classic_vertex_source() -> String
+src/gl_classic_prelude.rs: pub fn get_gl_classic_vertex_source_for_key(key: &GlClassicDefineKey, skin_declarations_glsl: Option<&str>,) -> String
+src/gl_custom_shader_mesh_material_renderer.rs: impl GlMeshProgramFamily for GlCustomShaderProgram
+src/gl_custom_shader_mesh_material_renderer.rs: impl GlMeshProgramFamily for GlCustomShaderProgram :: fn mesh_program(&self) -> &GlMeshProgram
+src/gl_custom_shader_mesh_material_renderer.rs: pub fn get_gl_custom_material_shader_source<'a>(state: &'a GlRenderState, shader_key: &str,) -> Option<&'a GlCustomMaterialShaderSource>
+src/gl_custom_shader_mesh_material_renderer.rs: pub fn register_gl_custom_material_shader(state: &mut GlRenderState, shader_key: &str, source: &GlCustomMaterialShaderSource,)
+src/gl_custom_shader_mesh_material_renderer.rs: pub fn register_gl_custom_shader_material(state: &mut GlRenderState)
+src/gl_custom_shader_mesh_material_renderer.rs: pub static GL_CUSTOM_SHADER_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer
+src/gl_debug_prelude.rs: pub fn bind_gl_debug_normal_map(state: &mut GlRenderState, program: &GlDebugProgram, normal_map: Option<&Texture>, normal_scale: f32,)
+src/gl_debug_prelude.rs: pub fn bind_gl_debug_range(state: &GlRenderState, program: &GlDebugProgram, near: f32, far: f32)
+src/gl_debug_prelude.rs: pub fn build_gl_debug_define_key(key: &GlDebugDefineKey) -> String
+src/gl_debug_prelude.rs: pub fn compile_gl_debug_program(gl: &glow::Context, key: &GlDebugDefineKey, skin_declarations_glsl: Option<&str>,) -> GlDebugProgram
+src/gl_debug_prelude.rs: pub fn ensure_gl_debug_program(state: &GlRenderState, key: &GlDebugDefineKey) -> Rc<GlDebugProgram>
+src/gl_debug_prelude.rs: pub fn get_gl_debug_fragment_source_for_key(key: &GlDebugDefineKey) -> String
+src/gl_debug_prelude.rs: pub fn get_gl_debug_vertex_source_for_key(key: &GlDebugDefineKey, skin_declarations_glsl: Option<&str>,) -> String
+src/gl_depth_mesh_material_renderer.rs: pub fn register_gl_depth_material(state: &mut GlRenderState)
+src/gl_depth_mesh_material_renderer.rs: pub static GL_DEPTH_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer
+src/gl_emissive_mesh_material_renderer.rs: pub fn register_gl_emissive_material(state: &mut GlRenderState)
+src/gl_emissive_mesh_material_renderer.rs: pub static GL_EMISSIVE_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer
+src/gl_environment_capture.rs: pub fn get_gl_environment_capture_texture(target: &GlCubeRenderTarget) -> NativeTexture
+src/gl_environment_capture.rs: pub fn render_gl_environment_capture(state: &mut GlRenderState, position: &Vector3, scene: &NodeRef, lights: &Scene3DLightsLike, cube_target: &mut GlCubeRenderTarget, options: Option<&GlEnvironmentCaptureOptions>,)
+src/gl_environment_cube.rs: pub fn destroy_gl_environment_source_cube(state: &GlRenderState)
+src/gl_environment_cube.rs: pub fn ensure_gl_environment_source_cube(state: &GlRenderState, environment: &Environment,) -> Option<NativeTexture>
+src/gl_environment_cube.rs: pub fn get_gl_cube_face_target(_gl: &glow::Context, face: u32) -> u32
+src/gl_environment_cube.rs: pub fn update_gl_environment_cube_face(state: &GlRenderState, face: u32, image: &TextureSourceRef,) -> bool
+src/gl_environment_ibl_bake.rs: pub fn bake_gl_environment_capture_ibl(state: &GlRenderState, target: &GlCubeRenderTarget, intensity: Option<f32>,)
+src/gl_environment_ibl_bake.rs: pub fn bake_gl_environment_ibl(state: &GlRenderState, environment: &Environment)
+src/gl_environment_ibl_bake.rs: pub fn destroy_gl_environment_ibl_bake_programs(state: &mut GlRenderState)
+src/gl_environment_skybox.rs: pub fn destroy_gl_environment_skybox(state: &mut GlRenderState)
+src/gl_environment_skybox.rs: pub fn render_gl_environment_skybox(state: &GlRenderState, environment: &Environment, camera: &Camera3D, aspect: f32,)
+src/gl_extended_pbr_mesh_material_renderer.rs: pub fn register_gl_extended_pbr_material(state: &mut GlRenderState)
+src/gl_extended_pbr_mesh_material_renderer.rs: pub static GL_EXTENDED_PBR_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer
+src/gl_lambert_mesh_material_renderer.rs: pub fn register_gl_lambert_material(state: &mut GlRenderState)
+src/gl_lambert_mesh_material_renderer.rs: pub static GL_LAMBERT_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer
+src/gl_lit_program.rs: pub const GL_DIRECTIONAL_SHADOW_GLSL: &str
+src/gl_lit_program.rs: pub const GL_MESH_LIGHT_BLOCK_GLSL: &str
+src/gl_lit_program.rs: pub fn bind_gl_mesh_light_block(state: &GlRenderState, program: &GlLitProgram, lights: &Scene3DLightBlock)
+src/gl_lit_program.rs: pub fn resolve_gl_lit_locations(gl: &glow::Context, program: NativeProgram) -> GlLitProgram
+src/gl_matcap_mesh_material_renderer.rs: pub fn register_gl_matcap_material(state: &mut GlRenderState)
+src/gl_matcap_mesh_material_renderer.rs: pub static GL_MATCAP_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer
+src/gl_matcap_prelude.rs: pub fn bind_gl_matcap_surface(state: &mut GlRenderState, program: &GlMatcapProgram, tint: &LinearColor, matcap: Option<&Texture>, alpha_cutoff: f32,)
+src/gl_matcap_prelude.rs: pub fn build_gl_matcap_define_key(key: &GlMatcapDefineKey) -> String
+src/gl_matcap_prelude.rs: pub fn compile_gl_matcap_program(gl: &glow::Context, key: &GlMatcapDefineKey, skin_declarations_glsl: Option<&str>,) -> GlMatcapProgram
+src/gl_matcap_prelude.rs: pub fn ensure_gl_matcap_program(state: &GlRenderState, key: &GlMatcapDefineKey) -> Rc<GlMatcapProgram>
+src/gl_matcap_prelude.rs: pub fn get_gl_matcap_fragment_source_for_key(key: &GlMatcapDefineKey) -> String
+src/gl_matcap_prelude.rs: pub fn get_gl_matcap_vertex_source_for_key(key: &GlMatcapDefineKey, skin_declarations_glsl: Option<&str>,) -> String
+src/gl_mesh_fragment_tail.rs: pub const GL_MESH_FRAGMENT_TAIL: &str
+src/gl_mesh_fragment_tail.rs: pub const GL_MESH_FRAGMENT_TAIL_UNIFORMS: &str
+src/gl_mesh_material_registry.rs: pub fn get_gl_mesh_material_renderer(state: &GlRenderState, kind: &Kind,) -> Option<&'static GlMeshMaterialRenderer>
+src/gl_mesh_material_registry.rs: pub fn register_gl_mesh_material_renderer(state: &mut GlRenderState, kind: Kind, renderer: &'static GlMeshMaterialRenderer,)
+src/gl_mesh_material_registry.rs: pub fn resolve_gl_mesh_material_renderer(state: &GlRenderState, material: Option<&dyn Material>,) -> Option<&'static GlMeshMaterialRenderer>
+src/gl_mesh_program.rs: pub const GL_INSTANCE_VERTEX_DECLARATIONS_GLSL: &str
+src/gl_mesh_program.rs: pub const GL_UV_TRANSFORM_VERTEX_GLSL: &str
+src/gl_mesh_program.rs: pub const INSTANCE_COLOR_PALETTE_TEXTURE_UNIT: u32
+src/gl_mesh_program.rs: pub const INSTANCE_PALETTE_TEXTURE_UNIT: u32
+src/gl_mesh_program.rs: pub const SKIN_NORMAL_PALETTE_TEXTURE_UNIT: u32
+src/gl_mesh_program.rs: pub const SKIN_PALETTE_TEXTURE_UNIT: u32
+src/gl_mesh_program.rs: pub fn begin_gl_mesh_draw(state: &GlRenderState, program: &GlMeshProgramRef, double_sided: bool)
+src/gl_mesh_program.rs: pub fn bind_gl_instance_color_palette(state: &GlRenderState, program: &GlMeshProgram, instance_colors: &[f32], instance_count: usize,)
+src/gl_mesh_program.rs: pub fn bind_gl_instance_palette(state: &GlRenderState, program: &GlMeshProgram, instance_matrices: &[f32], instance_count: usize,)
+src/gl_mesh_program.rs: pub fn bind_gl_uv_transform(gl: &glow::Context, program: &GlMeshProgram, texture: Option<&dyn TextureVariant>,)
+src/gl_mesh_program.rs: pub fn compile_gl_program(gl: &glow::Context, vertex_source: &str, fragment_source: &str,) -> NativeProgram
+src/gl_mesh_program.rs: pub fn destroy_gl_mesh_program(state: &GlRenderState, program: &GlMeshProgram)
+src/gl_mesh_program.rs: pub fn draw_gl_mesh_subset(state: &mut GlRenderState, program: &GlMeshProgram, proxy: &Scene3DRenderProxy, geometry: &MeshGeometry,)
+src/gl_mesh_program.rs: pub fn ensure_gl_scene3d_program<T: GlMeshProgramFamily>(state: &GlRenderState, key: &str, compile: impl FnOnce(&glow::Context) -> T,) -> Rc<T>
+src/gl_mesh_program.rs: pub fn has_gl_uv_transform(texture: Option<&dyn TextureVariant>) -> bool
+src/gl_mesh_program.rs: pub fn set_gl_mesh_camera_position(gl: &glow::Context, loc_camera_position: Option<NativeUniformLocation>, camera: &Camera3D,)
+src/gl_mesh_program.rs: pub fn set_gl_mesh_view_projection(state: &GlRenderState, loc_view_projection: Option<NativeUniformLocation>, camera: &Camera3D,)
+src/gl_mesh_program.rs: pub fn upload_gl_mesh_draw_alpha(gl: &glow::Context, program: &GlMeshProgram, alpha: f32, material: Option<&dyn Material3D>,)
+src/gl_mesh_skinning.rs: pub const GL_SKIN_VERTEX_DECLARATIONS_GLSL: &str
+src/gl_mesh_skinning.rs: pub fn bind_gl_mesh_skin_palette(state: &mut GlRenderState, program: &GlMeshProgram, proxy: &Scene3DRenderProxy,) -> bool
+src/gl_mesh_skinning.rs: pub fn bind_gl_shadow_skin_palette(state: &mut GlRenderState, joint_matrices: &[f32])
+src/gl_mesh_skinning.rs: pub fn get_gl_mesh_skin_feature(state: &GlRenderState) -> Option<&'static GlMeshSkinFeature>
+src/gl_mesh_skinning.rs: pub fn register_gl_mesh_skinning(state: &GlRenderState)
+src/gl_mesh_upload.rs: pub fn bind_gl_vertex_attribute(gl: &glow::Context, attribute: &VertexAttribute, stride: i32)
+src/gl_mesh_upload.rs: pub fn destroy_gl_mesh_upload(state: &GlRenderState, upload: &GlMeshUpload)
+src/gl_mesh_upload.rs: pub fn ensure_gl_mesh_upload(state: &GlRenderState, geometry: &MeshGeometry, gpu_skinned: Option<bool>,) -> GlMeshUpload
+src/gl_normal_mesh_material_renderer.rs: pub fn register_gl_normal_material(state: &mut GlRenderState)
+src/gl_normal_mesh_material_renderer.rs: pub static GL_NORMAL_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer
+src/gl_particle_emitter3d.rs: pub fn destroy_gl_particle_emitter3d_shader(state: &GlRenderState)
+src/gl_particle_emitter3d.rs: pub fn draw_gl_scene3d_particle_emitter3_ds(state: &mut GlRenderState, scene: &NodeRef, camera: &Camera3D, lights: &Scene3DLightsLike,)
+src/gl_particle_emitter3d.rs: pub fn register_gl_particle_emitter3d_pass(state: &mut GlRenderState)
+src/gl_pbr_extension_registry.rs: impl GlPbrExtensionBindContext for GlPbrExtensionBindContextRecord<'_>
+src/gl_pbr_extension_registry.rs: impl GlPbrExtensionBindContext for GlPbrExtensionBindContextRecord<'_> :: fn bind_texture(&mut self, sampler_uniform: &str, uv_set_uniform: &str, uv_transform_uniform: &str, texture: Option<&Ref<Texture>>, uv_set: PbrUvSet,) -> bool
+src/gl_pbr_extension_registry.rs: impl GlPbrExtensionBindContext for GlPbrExtensionBindContextRecord<'_> :: fn bind_transmission_scene_color(&mut self, sampler_uniform: &str, max_lod_uniform: &str,) -> bool
+src/gl_pbr_extension_registry.rs: impl GlPbrExtensionBindContext for GlPbrExtensionBindContextRecord<'_> :: fn set_float(&mut self, uniform: &str, value: f32)
+src/gl_pbr_extension_registry.rs: impl GlPbrExtensionBindContext for GlPbrExtensionBindContextRecord<'_> :: fn set_linear_color(&mut self, uniform: &str, color: u32)
+src/gl_pbr_extension_registry.rs: impl GlPbrExtensionShaderContext for GlPbrExtensionShaderContextRecord<'_>
+src/gl_pbr_extension_registry.rs: impl GlPbrExtensionShaderContext for GlPbrExtensionShaderContextRecord<'_> :: fn has_transmission_scene_color(&self) -> bool
+src/gl_pbr_extension_registry.rs: impl GlPbrExtensionShaderContext for GlPbrExtensionShaderContextRecord<'_> :: fn is_texture_ready(&self, texture: Option<&Ref<Texture>>) -> bool
+src/gl_pbr_extension_registry.rs: pub fn bind_gl_pbr_extensions(state: &mut GlRenderState, program: NativeProgram, extensions: &[Ref<PbrExtension>],) -> bool
+src/gl_pbr_extension_registry.rs: pub fn explain_gl_pbr_extensions(state: &mut GlRenderState, extensions: &[Ref<PbrExtension>],) -> Vec<GlPbrExtensionIssue>
+src/gl_pbr_extension_registry.rs: pub fn get_gl_pbr_extension_registration(state: &GlRenderState, kind: &Kind,) -> Option<&'static GlPbrExtensionRegistration>
+src/gl_pbr_extension_registry.rs: pub fn register_gl_pbr_extension(state: &mut GlRenderState, kind: Kind, registration: &'static GlPbrExtensionRegistration,)
+src/gl_pbr_extension_registry.rs: pub fn resolve_gl_pbr_extension_contributions(state: &mut GlRenderState, extensions: &[Ref<PbrExtension>],) -> Option<Vec<GlPbrExtensionShaderContribution>>
+src/gl_pbr_prelude.rs: pub fn build_gl_pbr_define_key(key: &GlPbrDefineKey) -> String
+src/gl_pbr_prelude.rs: pub fn build_gl_pbr_define_source(key: &GlPbrDefineKey) -> String
+src/gl_pbr_prelude.rs: pub fn get_gl_pbr_fragment_source() -> &'static str
+src/gl_pbr_prelude.rs: pub fn get_gl_pbr_fragment_source_for_key(key: &GlPbrDefineKey, contributions: Option<&[GlPbrExtensionShaderContribution]>, color_adjustment_feature: Option<&GlColorAdjustmentMaterialFeature>,) -> String
+src/gl_pbr_prelude.rs: pub fn get_gl_pbr_vertex_source() -> &'static str
+src/gl_pbr_prelude.rs: pub fn get_gl_pbr_vertex_source_for_key(key: &GlPbrDefineKey, skin_declarations_glsl: Option<&str>,) -> String
+src/gl_pbr_program_cache.rs: pub fn compile_gl_pbr_program(gl: &glow::Context, key: &GlPbrDefineKey, contributions: Option<&[GlPbrExtensionShaderContribution]>, color_adjustment_feature: Option<&GlColorAdjustmentMaterialFeature>, skin_declarations_glsl: Option<&str>,) -> GlPbrProgram
+src/gl_pbr_program_cache.rs: pub fn ensure_gl_pbr_program(state: &GlRenderState, key: &GlPbrDefineKey, contributions: Option<&[GlPbrExtensionShaderContribution]>,) -> Rc<GlPbrProgram>
+src/gl_pbr_standard_block.rs: pub const GL_PBR_ALPHA_TEXTURE_UNIT: u32
+src/gl_pbr_standard_block.rs: pub const GL_PBR_BASE_COLOR_TEXTURE_UNIT: u32
+src/gl_pbr_standard_block.rs: pub const GL_PBR_EMISSIVE_TEXTURE_UNIT: u32
+src/gl_pbr_standard_block.rs: pub const GL_PBR_EXTENSION_TEXTURE_UNIT: u32
+src/gl_pbr_standard_block.rs: pub const GL_PBR_METALLIC_ROUGHNESS_TEXTURE_UNIT: u32
+src/gl_pbr_standard_block.rs: pub const GL_PBR_NORMAL_TEXTURE_UNIT: u32
+src/gl_pbr_standard_block.rs: pub const GL_PBR_OCCLUSION_TEXTURE_UNIT: u32
+src/gl_pbr_standard_block.rs: pub fn bind_gl_pbr_standard_block(state: &mut GlRenderState, program: &GlPbrProgram, standard: Option<&StandardPbrMaterialProperties>,)
+src/gl_pbr_standard_block.rs: pub fn bind_gl_pbr_standard_texture(state: &mut GlRenderState, texture: Option<&Ref<Texture>>, location: Option<NativeUniformLocation>, unit: u32,)
+src/gl_pbr_standard_block.rs: pub fn build_gl_pbr_standard_define_key(state: &mut GlRenderState, standard: Option<&StandardPbrMaterialProperties>, surface: Option<&dyn Material3D>,) -> GlPbrDefineKey
+src/gl_pbr_standard_block.rs: pub fn is_gl_texture_ready(state: &mut GlRenderState, texture: Option<&Ref<Texture>>) -> bool
+src/gl_pbr_transmission_scene_color.rs: pub fn set_gl_pbr_transmission_scene_color(state: &GlRenderState, scene_color: Option<&GlPbrTransmissionSceneColor>,)
+src/gl_phong_mesh_material_renderer.rs: pub fn register_gl_phong_material(state: &mut GlRenderState)
+src/gl_phong_mesh_material_renderer.rs: pub static GL_PHONG_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer
+src/gl_scene3d_runtime.rs: pub fn add_gl_scene3d_resource_cleanup(state: &GlRenderState, cleanup: GlScene3DResourceCleanup)
+src/gl_scene3d_runtime.rs: pub fn destroy_gl_scene3d_runtime(state: &mut GlRenderState)
+src/gl_scene3d_runtime.rs: pub fn ensure_gl_instance_color_palette(state: &GlRenderState) -> RefMut<'_, GlSkinPaletteTexture>
+src/gl_scene3d_runtime.rs: pub fn ensure_gl_instance_palette(state: &GlRenderState) -> RefMut<'_, GlSkinPaletteTexture>
+src/gl_scene3d_runtime.rs: pub fn ensure_gl_skin_normal_palette(state: &GlRenderState) -> RefMut<'_, GlSkinPaletteTexture>
+src/gl_scene3d_runtime.rs: pub fn ensure_gl_skin_palette(state: &GlRenderState) -> RefMut<'_, GlSkinPaletteTexture>
+src/gl_scene3d_runtime.rs: pub fn get_gl_scene3d_runtime(state: &GlRenderState) -> RefMut<'_, GlScene3DRuntime>
+src/gl_scene3d_time.rs: pub fn get_gl_scene3d_time(state: &GlRenderState) -> f32
+src/gl_scene3d_time.rs: pub fn set_gl_scene3d_time(state: &GlRenderState, time_seconds: f32)
+src/gl_shaded_built_in_modifiers.rs: pub fn register_built_in_gl_modifier_snippets(state: &mut GlRenderState)
+src/gl_shaded_built_in_modifiers.rs: pub static ANIMATED_NORMAL_GL_MODIFIER_SNIPPET: GlModifierSnippet
+src/gl_shaded_built_in_modifiers.rs: pub static DISSOLVE_GL_MODIFIER_SNIPPET: GlModifierSnippet
+src/gl_shaded_built_in_modifiers.rs: pub static EMISSIVE_GL_MODIFIER_SNIPPET: GlModifierSnippet
+src/gl_shaded_built_in_modifiers.rs: pub static ENV_REFLECT_GL_MODIFIER_SNIPPET: GlModifierSnippet
+src/gl_shaded_built_in_modifiers.rs: pub static FOG_GL_MODIFIER_SNIPPET: GlModifierSnippet
+src/gl_shaded_built_in_modifiers.rs: pub static RIM_GL_MODIFIER_SNIPPET: GlModifierSnippet
+src/gl_shaded_built_in_modifiers.rs: pub static TOON_GL_MODIFIER_SNIPPET: GlModifierSnippet
+src/gl_shaded_built_in_modifiers.rs: pub static VERTEX_DISPLACE_GL_MODIFIER_SNIPPET: GlModifierSnippet
+src/gl_shaded_mesh_material_renderer.rs: pub fn register_gl_shaded_material(state: &mut GlRenderState)
+src/gl_shaded_mesh_material_renderer.rs: pub static GL_SHADED_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer
+src/gl_shaded_modifier_snippet.rs: pub fn register_gl_modifier_snippet(state: &mut GlRenderState, snippet: &'static GlModifierSnippet)
+src/gl_shaded_modifier_snippet.rs: pub fn resolve_gl_modifier_snippet(state: &GlRenderState, kind: &str) -> Option<&'static GlModifierSnippet>
+src/gl_shaded_prelude.rs: pub fn build_gl_shaded_cache_key(key: &GlShadedDefineKey, modifier_define_key: &str) -> String
+src/gl_shaded_prelude.rs: pub fn compile_gl_shaded_program(gl: &glow::Context, key: &GlShadedDefineKey, ordered_modifiers: &[Ref<dyn Modifier>], registry: &KindMap<&'static GlModifierSnippet>, color_adjustment_feature: Option<&GlColorAdjustmentMaterialFeature>, skin_declarations_glsl: Option<&str>,) -> GlShadedProgram
+src/gl_shaded_prelude.rs: pub fn ensure_gl_shaded_program(state: &GlRenderState, key: &GlShadedDefineKey, modifiers: &[Ref<dyn Modifier>],) -> Rc<GlShadedProgram>
+src/gl_shadow_map.rs: pub fn render_gl_scene3d_shadow_map(state: &mut GlRenderState, scene: &NodeRef, shadow_camera: &Camera3D, directional_light: Option<&DirectionalLight>,)
+src/gl_specular_glossiness_pbr_mesh_material_renderer.rs: pub fn register_gl_specular_glossiness_pbr_material(state: &mut GlRenderState)
+src/gl_specular_glossiness_pbr_mesh_material_renderer.rs: pub static GL_SPECULAR_GLOSSINESS_PBR_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer
+src/gl_standard_pbr_mesh_material_renderer.rs: pub static GL_STANDARD_PBR_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer
+src/gl_toon_mesh_material_renderer.rs: pub fn register_gl_toon_material(state: &mut GlRenderState)
+src/gl_toon_mesh_material_renderer.rs: pub static GL_TOON_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer
+src/gl_toon_prelude.rs: pub fn build_gl_toon_define_key(key: &GlToonDefineKey) -> String
+src/gl_toon_prelude.rs: pub fn compile_gl_toon_program(gl: &glow::Context, key: &GlToonDefineKey, skin_declarations_glsl: Option<&str>,) -> GlToonProgram
+src/gl_toon_prelude.rs: pub fn ensure_gl_toon_program(state: &GlRenderState, key: &GlToonDefineKey) -> Rc<GlToonProgram>
+src/gl_toon_prelude.rs: pub fn get_gl_toon_fragment_source_for_key(key: &GlToonDefineKey) -> String
+src/gl_toon_prelude.rs: pub fn get_gl_toon_vertex_source_for_key(key: &GlToonDefineKey, skin_declarations_glsl: Option<&str>) -> String
+src/gl_unlit_mesh_material_renderer.rs: pub fn register_gl_unlit_material(state: &mut GlRenderState)
+src/gl_unlit_mesh_material_renderer.rs: pub static GL_UNLIT_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer
+src/gl_unlit_prelude.rs: pub fn bind_gl_unlit_surface(state: &mut GlRenderState, program: &GlUnlitProgram, color: &LinearColor, intensity: f32, color_map: Option<&Texture>, alpha_cutoff: f32,)
+src/gl_unlit_prelude.rs: pub fn build_gl_unlit_define_key(key: &GlUnlitDefineKey) -> String
+src/gl_unlit_prelude.rs: pub fn compile_gl_unlit_program(gl: &glow::Context, key: &GlUnlitDefineKey, skin_declarations_glsl: Option<&str>,) -> GlUnlitProgram
+src/gl_unlit_prelude.rs: pub fn ensure_gl_unlit_program(state: &GlRenderState, key: &GlUnlitDefineKey) -> Rc<GlUnlitProgram>
+src/gl_unlit_prelude.rs: pub fn get_gl_unlit_fragment_source_for_key(key: &GlUnlitDefineKey) -> String
+src/gl_unlit_prelude.rs: pub fn get_gl_unlit_vertex_source_for_key(key: &GlUnlitDefineKey, skin_declarations_glsl: Option<&str>,) -> String
+src/gl_vertex_color_mesh_material_renderer.rs: pub fn register_gl_vertex_color_material(state: &mut GlRenderState)
+src/gl_vertex_color_mesh_material_renderer.rs: pub static GL_VERTEX_COLOR_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer
+src/gl_viewport_aspect.rs: pub fn get_gl_scene3d_viewport_aspect(state: &GlRenderState) -> f32
+src/gl_wireframe_mesh_material_renderer.rs: pub fn register_gl_wireframe_material(state: &mut GlRenderState)
+src/gl_wireframe_mesh_material_renderer.rs: pub static GL_WIREFRAME_MESH_MATERIAL_RENDERER: GlMeshMaterialRenderer
+src/gl_wireframe_prelude.rs: pub fn compile_gl_wireframe_program(gl: &glow::Context, alpha_mask_enabled: Option<bool>, skinned: Option<bool>, skin_declarations_glsl: Option<&str>,) -> GlWireframeProgram
+src/gl_wireframe_prelude.rs: pub fn ensure_gl_wireframe_program(state: &GlRenderState, alpha_mask_enabled: Option<bool>) -> Rc<GlWireframeProgram>
+src/gl_wireframe_prelude.rs: pub fn get_gl_wireframe_fragment_source(alpha_mask_enabled: Option<bool>) -> String
+src/gl_wireframe_prelude.rs: pub fn get_gl_wireframe_vertex_source(skinned: Option<bool>, skin_declarations_glsl: Option<&str>) -> String
+src/gl_wireframe_upload.rs: pub fn destroy_gl_wireframe_upload(state: &GlRenderState, upload: &GlWireframeUpload)
+src/gl_wireframe_upload.rs: pub fn ensure_gl_wireframe_upload(state: &GlRenderState, geometry: &MeshGeometry, gpu_skinned: Option<bool>,) -> GlWireframeUpload
+src/iridescence_pbr_gl_extension.rs: pub fn register_gl_iridescence_pbr_extension(state: &mut GlRenderState)
+src/iridescence_pbr_gl_extension.rs: pub static IRIDESCENCE_PBR_GL_EXTENSION: GlPbrExtensionRegistration
+src/lib.rs: pub mod contract
+src/lib.rs: pub use contract::bake_gl_environment_capture_ibl;
+src/lib.rs: pub use contract::bake_gl_environment_ibl;
+src/lib.rs: pub use contract::explain_gl_pbr_extensions;
+src/lib.rs: pub use contract::get_gl_pbr_extension_registration;
+src/lib.rs: pub use contract::register_gl_mesh_skinning;
+src/lib.rs: pub use contract::register_gl_particle_emitter3d_pass;
+src/lib.rs: pub use contract::register_gl_pbr_extension;
+src/lib.rs: pub use contract::render_gl_environment_skybox;
+src/lib.rs: pub use crate::anisotropy_pbr_gl_extension::*;
+src/lib.rs: pub use crate::clearcoat_pbr_gl_extension::*;
+src/lib.rs: pub use crate::enable_gl_pbr_extension_guards::*;
+src/lib.rs: pub use crate::enable_gl_scene3d_color_space_guards::*;
+src/lib.rs: pub use crate::enable_gl_scene3d_custom_shader_guards::*;
+src/lib.rs: pub use crate::enable_gl_scene3d_deform_guards::*;
+src/lib.rs: pub use crate::enable_gl_scene3d_forward_light_selection_guards::*;
+src/lib.rs: pub use crate::explain_gl_mesh_geometry_uv_sets::*;
+src/lib.rs: pub use crate::explain_gl_scene3d_coverage::*;
+src/lib.rs: pub use crate::explain_gl_scene3d_forward_light_selection::*;
+src/lib.rs: pub use crate::gl_blinn_phong_mesh_material_renderer::*;
+src/lib.rs: pub use crate::gl_custom_shader_mesh_material_renderer::*;
+src/lib.rs: pub use crate::gl_depth_mesh_material_renderer::*;
+src/lib.rs: pub use crate::gl_emissive_mesh_material_renderer::*;
+src/lib.rs: pub use crate::gl_environment_capture::*;
+src/lib.rs: pub use crate::gl_extended_pbr_mesh_material_renderer::*;
+src/lib.rs: pub use crate::gl_lambert_mesh_material_renderer::*;
+src/lib.rs: pub use crate::gl_matcap_mesh_material_renderer::*;
+src/lib.rs: pub use crate::gl_mesh_material_registry::*;
+src/lib.rs: pub use crate::gl_normal_mesh_material_renderer::*;
+src/lib.rs: pub use crate::gl_pbr_transmission_scene_color::*;
+src/lib.rs: pub use crate::gl_phong_mesh_material_renderer::*;
+src/lib.rs: pub use crate::gl_scene3d_time::*;
+src/lib.rs: pub use crate::gl_shaded_built_in_modifiers::*;
+src/lib.rs: pub use crate::gl_shaded_mesh_material_renderer::*;
+src/lib.rs: pub use crate::gl_shaded_modifier_snippet::*;
+src/lib.rs: pub use crate::gl_shadow_map::*;
+src/lib.rs: pub use crate::gl_specular_glossiness_pbr_mesh_material_renderer::*;
+src/lib.rs: pub use crate::gl_standard_pbr_mesh_material_renderer::*;
+src/lib.rs: pub use crate::gl_toon_mesh_material_renderer::*;
+src/lib.rs: pub use crate::gl_unlit_mesh_material_renderer::*;
+src/lib.rs: pub use crate::gl_vertex_color_mesh_material_renderer::*;
+src/lib.rs: pub use crate::gl_wireframe_mesh_material_renderer::*;
+src/lib.rs: pub use crate::iridescence_pbr_gl_extension::*;
+src/lib.rs: pub use crate::prepare_gl_scene3d_forward_lights::*;
+src/lib.rs: pub use crate::present_gl_scene3d::*;
+src/lib.rs: pub use crate::register_gl_standard_pbr_material::*;
+src/lib.rs: pub use crate::render_gl_scene3d::*;
+src/lib.rs: pub use crate::scene3d_gl_pipeline::*;
+src/lib.rs: pub use crate::sheen_pbr_gl_extension::*;
+src/lib.rs: pub use crate::specular_pbr_gl_extension::*;
+src/lib.rs: pub use crate::transmission_volume_pbr_gl_extension::*;
+src/lib.rs: pub use crate::types::{ GlEnvironmentCaptureOptions, GlPbrExtensionIssue, GlPbrExtensionIssueCode, GlPbrTransmissionSceneColor, GlScene3DForwardLightList, MeshGeometryUvSetExplanation, };
+src/lib.rs: pub use crate::wrapped_diffuse_pbr_gl_extension::*;
+src/prepare_gl_scene3d_forward_lights.rs: pub fn prepare_gl_scene3d_forward_lights(state: &mut GlRenderState, scene_render_list: &Scene3DRenderList, lights: &Scene3DLightsLike,) -> GlScene3DForwardLightList
+src/present_gl_scene3d.rs: pub fn present_gl_scene3d(state: &mut GlRenderState, target: &mut GlTextureRenderTarget, scene: &NodeRef, camera: &Camera3D, lights: &Scene3DLightsLike,)
+src/register_gl_standard_pbr_material.rs: pub fn register_gl_standard_pbr_material(state: &mut GlRenderState)
+src/render_gl_scene3d.rs: pub fn render_gl_scene3d(state: &mut GlRenderState, _pass: &GlRenderPass, target: Option<&mut dyn GlRenderTarget>, scene: &NodeRef, camera: &Camera3D, lights: &Scene3DLightsLike, forward_lights: Option<&GlScene3DForwardLightList>,)
+src/scene3d_gl_pipeline.rs: pub fn gl_scene3d_render_preset() -> GlRenderStateOptions
+src/sheen_pbr_gl_extension.rs: pub fn register_gl_sheen_pbr_extension(state: &mut GlRenderState)
+src/sheen_pbr_gl_extension.rs: pub static SHEEN_PBR_GL_EXTENSION: GlPbrExtensionRegistration
+src/specular_pbr_gl_extension.rs: pub fn register_gl_specular_pbr_extension(state: &mut GlRenderState)
+src/specular_pbr_gl_extension.rs: pub static SPECULAR_PBR_GL_EXTENSION: GlPbrExtensionRegistration
+src/transmission_volume_pbr_gl_extension.rs: pub fn register_gl_transmission_volume_pbr_extension(state: &mut GlRenderState)
+src/transmission_volume_pbr_gl_extension.rs: pub static TRANSMISSION_VOLUME_PBR_GL_EXTENSION: GlPbrExtensionRegistration
+src/types.rs: #[derive(Clone)] pub struct GlScene3DDrawEntry { pub alpha: f32, pub color_matrix: Option<[f32; 20]>, pub color_scale_bias: Option<flight_materials::ColorScaleBias>, pub depth: f32, pub light_block: Option<Rc<Scene3DLightBlock>>, pub material: Option<Material3DRef>, pub mesh: Option<NodeRef>, pub renderer: Option<&'static GlMeshMaterialRenderer>, pub sort_key: u32, pub subset: MeshSubset, pub world_matrix: Matrix4, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum GlClassicLightingModel { BlinnPhong, #[default] Lambert, Phong, }
+src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum GlDebugMode { #[default] Depth, Normal, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq)] pub struct GlScene3DIbl { pub brdf_lut: NativeTexture, pub environment_source_revision: u32, pub intensity: f32, pub irradiance_cube: NativeTexture, pub prefiltered_cube: NativeTexture, pub prefiltered_mip_count: u32, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GlPbrExtensionIssueCode { DuplicateKind, FramebufferFeedback, MissingRegistration, TextureUnitExhaustion, UnsupportedExtension, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct GlIblPlaceholders { pub cube: NativeTexture, pub lut: NativeTexture, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct GlMeshUpload { pub index_buffer: Option<NativeBuffer>, pub index_count: u32, pub index_type: u32, pub primitive_mode: u32, pub skin_bind_uploaded: Option<bool>, pub vao: NativeVertexArray, pub version: i64, pub vertex_buffer: NativeBuffer, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct GlPbrTransmissionSceneColor { pub height: u32, pub mip_level_count: u32, pub texture: NativeTexture, pub width: u32, }
+src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub struct GlWireframeUpload { pub index_type: u32, pub line_index_buffer: NativeBuffer, pub vao: NativeVertexArray, pub version: i64, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct GlScene3DForwardLightList { pub mesh_count: usize, pub mesh_light_blocks: Vec<Rc<Scene3DLightBlock>>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct PreparedForwardLightBlock { pub indices: Vec<i32>, pub lights: Rc<Scene3DLightBlock>, }
+src/types.rs: #[derive(Clone, Debug, Default)] pub struct PreparedGlScene3DForwardLights { pub block_count: usize, pub blocks: Vec<PreparedForwardLightBlock>, pub list: GlScene3DForwardLightList, pub selection: flight_lighting::Scene3DForwardLightSelection, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct GlClassicDefineKey { pub alpha_mask_enabled: bool, pub has_color_adjustment: Option<bool>, pub has_color_matrix: Option<bool>, pub has_alpha_map: bool, pub has_diffuse_map: bool, pub has_instances: Option<bool>, pub has_normal_map: bool, pub has_skin: Option<bool>, pub has_specular_map: bool, pub has_uv_transform: bool, pub lighting_model: GlClassicLightingModel, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct GlDebugDefineKey { pub has_instances: Option<bool>, pub has_normal_map: bool, pub has_skin: Option<bool>, pub mode: GlDebugMode, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct GlMatcapDefineKey { pub alpha_mask_enabled: bool, pub has_instances: Option<bool>, pub has_matcap: bool, pub has_skin: Option<bool>, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct GlPbrDefineKey { pub alpha_mask_enabled: bool, pub has_alpha_map: bool, pub has_base_color_map: bool, pub has_color_adjustment: Option<bool>, pub has_color_matrix: Option<bool>, pub has_emissive_map: bool, pub has_instances: Option<bool>, pub has_metallic_roughness_map: bool, pub has_normal_map: bool, pub has_occlusion_map: bool, pub has_skin: Option<bool>, pub has_uv_transform: bool, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct GlShadedDefineKey { pub alpha_mask_enabled: bool, pub has_color_adjustment: Option<bool>, pub has_color_matrix: Option<bool>, pub has_diffuse_map: bool, pub has_instances: Option<bool>, pub has_normal_map: bool, pub has_skin: Option<bool>, pub has_specular_map: bool, pub has_uv_transform: bool, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct GlToonDefineKey { pub alpha_mask_enabled: bool, pub has_base_color_map: bool, pub has_instances: Option<bool>, pub has_ramp: bool, pub has_skin: Option<bool>, pub has_uv_transform: bool, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct GlUnlitDefineKey { pub alpha_mask_enabled: bool, pub has_color_map: bool, pub has_instances: Option<bool>, pub has_skin: Option<bool>, pub has_uv_transform: bool, pub vertex_color: bool, }
+src/types.rs: #[derive(Clone, Debug, Default, PartialEq, Eq)] pub struct MeshGeometryUvSetExplanation { pub available_uv_sets: Vec<PbrUvSet>, pub requested_uv_sets: Vec<PbrUvSet>, pub samples_at_origin: bool, pub unserved_uv_sets: Vec<PbrUvSet>, }
+src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct GlScene3DShadow { pub enabled: bool, pub matrix: Matrix4, pub normal_bias_world: f32, pub pcf_radius: f32, pub shadow_bias: f32, pub texture: NativeTexture, }
+src/types.rs: #[derive(Clone, Debug, PartialEq, Eq)] pub struct GlPbrExtensionIssue { pub code: GlPbrExtensionIssueCode, pub kind: Kind, }
+src/types.rs: #[derive(Clone, Default)] pub struct GlEnvironmentCaptureOptions { pub environment: Option<Ref<flight_lighting::Environment>>, pub exclude_node: Option<NodeRef>, pub far: Option<f32>, pub near: Option<f32>, }
+src/types.rs: #[derive(Debug)] pub struct GlClassicProgram { pub lit: GlLitProgram, pub loc_alpha_cutoff: Option<NativeUniformLocation>, pub loc_alpha_map: Option<NativeUniformLocation>, pub loc_diffuse: Option<NativeUniformLocation>, pub loc_diffuse_map: Option<NativeUniformLocation>, pub loc_normal_map: Option<NativeUniformLocation>, pub loc_normal_scale: Option<NativeUniformLocation>, pub loc_shininess: Option<NativeUniformLocation>, pub loc_specular: Option<NativeUniformLocation>, pub loc_specular_map: Option<NativeUniformLocation>, }
+src/types.rs: #[derive(Debug)] pub struct GlDebugProgram { pub mesh: GlMeshProgram, pub loc_far: Option<NativeUniformLocation>, pub loc_near: Option<NativeUniformLocation>, pub loc_normal_map: Option<NativeUniformLocation>, pub loc_normal_scale: Option<NativeUniformLocation>, pub loc_view: Option<NativeUniformLocation>, }
+src/types.rs: #[derive(Debug)] pub struct GlLitProgram { pub mesh: GlMeshProgram, pub loc_ambient_count: Option<NativeUniformLocation>, pub loc_ambient_radiance: Option<NativeUniformLocation>, pub loc_camera_position: Option<NativeUniformLocation>, pub loc_directional: Option<NativeUniformLocation>, pub loc_directional_count: Option<NativeUniformLocation>, pub loc_directional_radiance: Option<NativeUniformLocation>, pub loc_hemisphere_count: Option<NativeUniformLocation>, pub loc_hemisphere_lights: Option<NativeUniformLocation>, pub loc_ibl_brdf: Option<NativeUniformLocation>, pub loc_ibl_enabled: Option<NativeUniformLocation>, pub loc_ibl_intensity: Option<NativeUniformLocation>, pub loc_ibl_irradiance: Option<NativeUniformLocation>, pub loc_ibl_max_mip: Option<NativeUniformLocation>, pub loc_ibl_prefiltered: Option<NativeUniformLocation>, pub loc_point_count: Option<NativeUniformLocation>, pub loc_point_lights: Option<NativeUniformLocation>, pub loc_shadow_bias: Option<NativeUniformLocation>, pub loc_shadow_enabled: Option<NativeUniformLocation>, pub loc_shadow_map: Option<NativeUniformLocation>, pub loc_shadow_matrix: Option<NativeUniformLocation>, pub loc_shadow_normal_bias_world: Option<NativeUniformLocation>, pub loc_shadow_pcf_radius: Option<NativeUniformLocation>, pub loc_spot_count: Option<NativeUniformLocation>, pub loc_spot_lights: Option<NativeUniformLocation>, }
+src/types.rs: #[derive(Debug)] pub struct GlMatcapProgram { pub mesh: GlMeshProgram, pub loc_alpha_cutoff: Option<NativeUniformLocation>, pub loc_matcap: Option<NativeUniformLocation>, pub loc_tint: Option<NativeUniformLocation>, pub loc_view: Option<NativeUniformLocation>, }
+src/types.rs: #[derive(Debug)] pub struct GlMeshProgram { pub loc_color_scale: GlLazyUniformLocation, pub loc_color_bias: GlLazyUniformLocation, pub loc_color_matrix0: GlLazyUniformLocation, pub loc_color_matrix1: GlLazyUniformLocation, pub loc_color_matrix2: GlLazyUniformLocation, pub loc_color_matrix3: GlLazyUniformLocation, pub loc_color_matrix_offset: GlLazyUniformLocation, pub loc_object_alpha: GlLazyUniformLocation, pub loc_alpha_is_coverage: GlLazyUniformLocation, pub loc_joint_texture: GlLazyUniformLocation, pub loc_instance_palette: GlLazyUniformLocation, pub loc_instance_color_palette: GlLazyUniformLocation, pub loc_joint_normal_texture: GlLazyUniformLocation, pub loc_model: Option<NativeUniformLocation>, pub loc_normal_matrix: Option<NativeUniformLocation>, pub loc_uv_transform: GlLazyUniformLocation, pub loc_view_projection: Option<NativeUniformLocation>, pub program: NativeProgram, }
+src/types.rs: #[derive(Debug)] pub struct GlPbrProgram { pub lit: GlLitProgram, pub loc_alpha_cutoff: Option<NativeUniformLocation>, pub loc_alpha_map: Option<NativeUniformLocation>, pub loc_base_color: Option<NativeUniformLocation>, pub loc_base_color_map: Option<NativeUniformLocation>, pub loc_emissive: Option<NativeUniformLocation>, pub loc_emissive_map: Option<NativeUniformLocation>, pub loc_emissive_strength: Option<NativeUniformLocation>, pub loc_metallic: Option<NativeUniformLocation>, pub loc_metallic_roughness_map: Option<NativeUniformLocation>, pub loc_normal_map: Option<NativeUniformLocation>, pub loc_normal_scale: Option<NativeUniformLocation>, pub loc_occlusion_map: Option<NativeUniformLocation>, pub loc_occlusion_strength: Option<NativeUniformLocation>, pub loc_roughness: Option<NativeUniformLocation>, }
+src/types.rs: #[derive(Debug)] pub struct GlShadedProgram { pub lit: GlLitProgram, pub loc_alpha_cutoff: Option<NativeUniformLocation>, pub loc_diffuse: Option<NativeUniformLocation>, pub loc_diffuse_map: Option<NativeUniformLocation>, pub loc_normal_map: Option<NativeUniformLocation>, pub loc_normal_scale: Option<NativeUniformLocation>, pub loc_shininess: Option<NativeUniformLocation>, pub loc_specular: Option<NativeUniformLocation>, pub loc_specular_map: Option<NativeUniformLocation>, pub loc_time: Option<NativeUniformLocation>, }
+src/types.rs: #[derive(Debug)] pub struct GlToonProgram { pub lit: GlLitProgram, pub loc_alpha_cutoff: Option<NativeUniformLocation>, pub loc_base_color: Option<NativeUniformLocation>, pub loc_base_color_map: Option<NativeUniformLocation>, pub loc_ramp: Option<NativeUniformLocation>, pub loc_steps: Option<NativeUniformLocation>, }
+src/types.rs: #[derive(Debug)] pub struct GlUnlitProgram { pub mesh: GlMeshProgram, pub loc_alpha_cutoff: Option<NativeUniformLocation>, pub loc_color: Option<NativeUniformLocation>, pub loc_color_map: Option<NativeUniformLocation>, pub loc_intensity: Option<NativeUniformLocation>, }
+src/types.rs: #[derive(Debug)] pub struct GlWireframeProgram { pub mesh: GlMeshProgram, pub loc_alpha_cutoff: Option<NativeUniformLocation>, pub loc_color: Option<NativeUniformLocation>, }
+src/types.rs: #[derive(Default)] pub struct GlScene3DContextRuntime { pub upload_cache: HashMap<u64, GlMeshUpload>, pub wireframe_upload_cache: HashMap<u64, GlWireframeUpload>, }
+src/types.rs: impl Deref for GlLitProgram
+src/types.rs: impl Deref for GlLitProgram :: fn deref(&self) -> &GlMeshProgram
+src/types.rs: impl GlMeshProgramFamily for GlLitProgram
+src/types.rs: impl GlMeshProgramFamily for GlLitProgram :: fn mesh_program(&self) -> &GlMeshProgram
+src/types.rs: impl GlMeshProgramFamily for GlMeshProgram
+src/types.rs: impl GlMeshProgramFamily for GlMeshProgram :: fn mesh_program(&self) -> &GlMeshProgram
+src/types.rs: pub struct GlMeshSkinFeature { pub bind_mesh_skin_palette: fn(&mut GlRenderState, &GlMeshProgram, &Scene3DRenderProxy) -> bool, pub bind_shadow_skin_palette: fn(&mut GlRenderState, &[f32]), pub vertex_declarations_glsl: &'static str, }
+src/types.rs: pub struct GlScene3DRuntime { pub active_blended_run: bool, pub active_color_adjustment_run: bool, pub active_color_matrix_run: bool, pub active_instanced_run: bool, pub active_mesh_program: Option<GlMeshProgramRef>, pub active_skinned_run: bool, pub appearance: Scene3DAppearanceState, pub blended_draw_list: Vec<GlScene3DDrawEntry>, pub blended_pool: Vec<GlScene3DDrawEntry>, pub color_space_guard: Option<GlScene3DColorSpaceGuard>, pub custom_shader_guard: Option<GlScene3DCustomShaderGuard>, pub custom_shader_checked_programs: std::collections::HashSet<NativeProgram>, pub default_material: Material3DRef, pub deform_guard: Option<GlScene3DDeformGuard>, pub environment_capture_camera: Option<flight_camera::Camera3D>, pub(crate) environment_skybox: Option<crate::gl_environment_skybox::GlSkybox>, pub environment_source_cube: Option<NativeTexture>, pub environment_source_cube_color_space: TextureColorSpace, pub environment_source_cube_face_versions: Vec<i64>, pub environment_source_cube_face_sources: Vec<u64>, pub environment_source_revision: u32, pub environment_source_texture: Option<u64>, pub environment_source_texture_version: i64, pub forward_light_selection_guard: Option<GlScene3DForwardLightSelectionGuard>, pub ibl: Option<GlScene3DIbl>, pub ibl_bake_framebuffer: Option<NativeFramebuffer>, pub(crate) ibl_bake_programs: Option<Vec<(String, crate::gl_environment_ibl_bake::GlBakeProgram)>>, pub ibl_placeholders: Option<GlIblPlaceholders>, pub instance_color_palette: Option<GlSkinPaletteTexture>, pub instance_palette: Option<GlSkinPaletteTexture>, pub list_light_block: Option<Rc<Scene3DLightBlock>>, pub mesh_skin_feature: Option<&'static GlMeshSkinFeature>, pub opaque_draw_list: Vec<GlScene3DDrawEntry>, pub(crate) particle_emitter3d_shader: Option<crate::gl_particle_emitter3d::GlParticle3DShader>, pub opaque_pool: Vec<GlScene3DDrawEntry>, pub pbr_extension_guard: Option<GlScene3DPbrExtensionGuard>, pub prepared_forward_lights: Option<PreparedGlScene3DForwardLights>, pub pbr_transmission_scene_color: Option<GlPbrTransmissionSceneColor>, pub program_cache: HashMap<String, GlMeshProgramRef>, pub resource_cleanups: Option<Vec<GlScene3DResourceCleanup>>, pub shadow: Option<GlScene3DShadow>, pub shadow_target: Option<GlTextureRenderTarget>, pub skin_normal_palette: Option<GlSkinPaletteTexture>, pub skin_palette: Option<GlSkinPaletteTexture>, pub time: f32, pub uploaded_light_blocks: HashMap<NativeProgram,(usize, u32)>, }
+src/types.rs: pub trait GlMeshProgramFamily: Any { fn mesh_program(&self) -> &GlMeshProgram; }
+src/types.rs: pub type GlLazyUniformLocation = Cell<Option<Option<NativeUniformLocation>>>;
+src/types.rs: pub type GlMeshProgramRef = Rc<dyn GlMeshProgramFamily>;
+src/types.rs: pub type GlScene3DColorSpaceGuard = fn(&GlRenderState);
+src/types.rs: pub type GlScene3DCustomShaderGuard = fn(&GlRenderState, NativeProgram, &str);
+src/types.rs: pub type GlScene3DDeformGuard = fn(&GlRenderState, &Mesh);
+src/types.rs: pub type GlScene3DForwardLightSelectionGuard = fn(&GlRenderState, &Scene3DLightsLike);
+src/types.rs: pub type GlScene3DPbrExtensionGuard = fn(&mut GlRenderState, &[Ref<PbrExtension>]);
+src/types.rs: pub type GlScene3DResourceCleanup = fn(&mut GlRenderState);
+src/wrapped_diffuse_pbr_gl_extension.rs: pub fn register_gl_wrapped_diffuse_pbr_extension(state: &mut GlRenderState)
+src/wrapped_diffuse_pbr_gl_extension.rs: pub static WRAPPED_DIFFUSE_PBR_GL_EXTENSION: GlPbrExtensionRegistration
