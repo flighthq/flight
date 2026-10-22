@@ -641,6 +641,9 @@ pub struct GlRenderStateRuntime {
     pub binding_cache_guard: Option<fn(&GlRenderState, NativeProgram)>,
     pub guard_log: Option<LogStateRef>,
     pub first_render_root_id: Option<u64>,
+    /// TS `GlRenderStateRuntime.pbrExtensionRevision`: bumped by scene3d-gl's `register_gl_pbr_extension`
+    /// so the PBR program cache never reuses a variant compiled against a replaced registration.
+    pub pbr_extension_revision: u32,
     pub flush_pending_draws: Option<fn(&mut GlRenderState)>,
     pub destroyed: bool,
     pub stats: GlRenderStats,
@@ -1044,6 +1047,7 @@ impl Default for GlRenderStateRuntime {
             binding_cache_guard: None,
             guard_log: None,
             first_render_root_id: None,
+            pbr_extension_revision: 0,
             flush_pending_draws: None,
             destroyed: false,
             stats: GlRenderStats::default(),
