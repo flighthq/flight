@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use flight_node::RendererData;
-use flight_scene2d_wgpu::*;
+use flight_scene2d_wgpu::contract::*;
 
 fn create_rich_text_scratch(alloc_w: f32) -> WgpuRichTextData {
     let mut out: WgpuRichTextData = flight_entity::allocate_entity();

@@ -5,7 +5,7 @@ use flight_node::NodeRef;
 use flight_quadbatch::{QUAD_BATCH_KIND, QuadTransformType, get_quad_batch_runtime};
 use flight_render_wgpu::*;
 use flight_scene2d::DISPLAY_OBJECT_KIND;
-use flight_scene2d_wgpu::*;
+use flight_scene2d_wgpu::contract::*;
 use flight_textureatlas::TextureAtlasRotation;
 use flight_velocity::{begin_velocity_frame, contribute_velocity, create_velocity_field};
 

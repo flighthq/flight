@@ -5,7 +5,7 @@ use flight_log::{
     create_memory_log_sink, get_memory_log_sink_entries,
 };
 use flight_render_wgpu::*;
-use flight_scene2d_wgpu::*;
+use flight_scene2d_wgpu::contract::*;
 
 use crate::support::*;
 

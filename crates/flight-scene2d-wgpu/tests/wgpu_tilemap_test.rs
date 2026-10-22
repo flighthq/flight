@@ -1,7 +1,7 @@
 use flight_node::NodeRef;
 use flight_render::{BatchFormat, get_or_create_render_proxy_2d};
 use flight_render_wgpu::*;
-use flight_scene2d_wgpu::*;
+use flight_scene2d_wgpu::contract::*;
 use flight_textureatlas::TextureAtlasRotation;
 
 use crate::support::*;

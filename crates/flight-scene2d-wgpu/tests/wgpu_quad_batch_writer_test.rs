@@ -7,7 +7,7 @@ use flight_materials::{
     BLEND_MODE_DARKEN, BLEND_MODE_LIGHTEN, BLEND_MODE_MULTIPLY, BLEND_MODE_SCREEN, Material2D,
 };
 use flight_render_wgpu::*;
-use flight_scene2d_wgpu::*;
+use flight_scene2d_wgpu::contract::*;
 
 use crate::support::*;
 

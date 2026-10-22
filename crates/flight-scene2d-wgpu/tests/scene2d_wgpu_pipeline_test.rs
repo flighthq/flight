@@ -4,7 +4,7 @@ use flight_particleemitter::PARTICLE_EMITTER_2D_KIND;
 use flight_quadbatch::QUAD_BATCH_KIND;
 use flight_render::RENDER_CACHE_KIND;
 use flight_scene2d::{DISPLAY_OBJECT_KIND, SCALE9_SPRITE_KIND, SPRITE_KIND};
-use flight_scene2d_wgpu::*;
+use flight_scene2d_wgpu::contract::*;
 use flight_shape::contract::{MORPH_SHAPE_KIND, SCALE9_SHAPE_KIND, SHAPE_KIND};
 use flight_text::contract::{RICH_TEXT_KIND, TEXT_LABEL_KIND};
 use flight_tilemap::TILEMAP_KIND;

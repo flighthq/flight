@@ -1,7 +1,7 @@
 use flight_materials::{BLEND_MODE_ADD, BLEND_MODE_NORMAL};
 use flight_render::RenderProxy2D;
 use flight_render_wgpu::*;
-use flight_scene2d_wgpu::*;
+use flight_scene2d_wgpu::contract::*;
 
 use crate::support::*;
 

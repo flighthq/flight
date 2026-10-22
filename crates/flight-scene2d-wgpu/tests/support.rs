@@ -20,7 +20,7 @@ use flight_image::contract::{
     create_image_resolver_state, create_image_resource, register_host_image_dimension_resolver,
 };
 use flight_render_wgpu::*;
-use flight_scene2d_wgpu::*;
+use flight_scene2d_wgpu::contract::*;
 use flight_surface::{
     CanvasSurface, HostCanvasCapability, HostWgpuCapability, SurfaceBase, SurfaceRef,
     WgpuHostAcquisition, WgpuHostAcquisitionOwnership, WgpuPresentationSurface,

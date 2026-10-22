@@ -4,7 +4,7 @@ use flight_entity::get_entity_id;
 use flight_node::{NodeRef, RendererDataRef};
 use flight_render::CanvasHostSurfaces;
 use flight_render_wgpu::*;
-use flight_scene2d_wgpu::*;
+use flight_scene2d_wgpu::contract::*;
 use flight_shape::ShapeScale9Grid;
 
 use crate::support::*;

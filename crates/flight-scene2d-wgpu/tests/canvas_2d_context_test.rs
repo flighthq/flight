@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use flight_scene2d_wgpu::*;
+use flight_scene2d_wgpu::contract::*;
 
 use crate::support::*;
 

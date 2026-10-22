@@ -2,7 +2,7 @@ use flight_node::NodeRef;
 use flight_render::{RenderProxies2D, prepare_scene_2d_render, register_node_renderer};
 use flight_render_wgpu::*;
 use flight_scene2d::{DISPLAY_OBJECT_KIND, SPRITE_KIND};
-use flight_scene2d_wgpu::*;
+use flight_scene2d_wgpu::contract::*;
 
 use crate::support::*;
 
