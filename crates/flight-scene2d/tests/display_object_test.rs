@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use flight_adjustments::{Adjustment, create_color_matrix_adjustment, create_tint_adjustment};
 use flight_clip::create_clip_region_from_rectangle;
-use flight_entity::Ref;
+use flight_entity::{
+    Ref, allocate_entity, attach_entity_binding, get_entity_binding_as, get_entity_id,
+    get_entity_uid, set_entity_uid,
+};
 use flight_geometry::{Rectangle, create_rectangle};
 use flight_materials::BLEND_MODE_DARKEN;
 use flight_node::contract::AdjustmentRef;
@@ -74,7 +77,7 @@ mod as_node2d_ref {
 
     #[test]
     fn recovers_a_custom_kind_published_through_the_family_helper() {
-        let mut node: Node2DTest = create_node2d("acme.Custom".to_string(), None, None);
+        let mut node: Node2DTest = create_node2d("acme.Custom".to_string(), None);
         node.data = create_node2d_test_data(Some("custom"));
         let published = publish_node2d(node);
         let erased: flight_node::NodeRef = published.clone();
@@ -99,7 +102,7 @@ mod as_node2d_ref {
 
     #[test]
     fn refuses_a_2d_node_that_was_never_published_through_the_family_helper() {
-        let node: Node2DTest = create_node2d(DISPLAY_OBJECT_KIND.to_string(), None, None);
+        let node: Node2DTest = create_node2d(DISPLAY_OBJECT_KIND.to_string(), None);
         let erased: flight_node::NodeRef = Arc::new(std::sync::RwLock::new(node));
         assert!(as_node2d_ref(&erased).is_none());
     }
@@ -195,17 +198,14 @@ mod create_node2d {
 
     #[test]
     fn allows_creation_of_a_kind_without_a_data_field() {
-        let obj: DisplayObject = create_node2d(DISPLAY_OBJECT_KIND.to_string(), None, None);
+        let obj: DisplayObject = create_node2d(DISPLAY_OBJECT_KIND.to_string(), None);
         assert_eq!(obj.kind, DISPLAY_OBJECT_KIND);
     }
 
     #[test]
     fn allows_a_custom_kind() {
-        let base = PartialNode2D {
-            x: Some(100.0),
-            ..node2d_options()
-        };
-        let obj: Node2DTest = create_node2d(DISPLAY_OBJECT_KIND.to_string(), Some(&base), None);
+        let mut obj: Node2DTest = create_node2d(DISPLAY_OBJECT_KIND.to_string(), None);
+        obj.x = 100.0;
         assert_eq!(obj.x, 100.0);
         let shared: Node2DRef = Arc::new(std::sync::RwLock::new(obj));
         assert_eq!(shared.read().unwrap().node2d_fields().x, 100.0);
@@ -213,25 +213,22 @@ mod create_node2d {
 
     #[test]
     fn returns_a_new_object_with_the_custom_kind_data_initialized_by_the_kind() {
-        let mut obj: Node2DTest = create_node2d(DISPLAY_OBJECT_KIND.to_string(), None, None);
+        let mut obj: Node2DTest = create_node2d(DISPLAY_OBJECT_KIND.to_string(), None);
         obj.data = create_node2d_test_data(None);
         assert_eq!(obj.data.foo, "bar");
     }
 
     #[test]
     fn installs_the_runtime_factory_tier() {
-        let obj: Node2DTest = create_node2d(
-            HTML_VIEW_KIND.to_string(),
-            None,
-            Some(create_sprite_runtime),
-        );
+        let obj: Node2DTest =
+            create_node2d(HTML_VIEW_KIND.to_string(), Some(create_sprite_runtime));
         assert!(
             get_node2d_runtime(&obj)
                 .bounds
                 .is_local_bounds_rectangle_valid
                 .is_some()
         );
-        let plain: Node2DTest = create_node2d(HTML_VIEW_KIND.to_string(), None, None);
+        let plain: Node2DTest = create_node2d(HTML_VIEW_KIND.to_string(), None);
         assert!(
             get_node2d_runtime(&plain)
                 .bounds
@@ -242,7 +239,7 @@ mod create_node2d {
 
     #[test]
     fn resets_the_base_node_runtime_tier() {
-        let obj: Node2DTest = create_node2d(DISPLAY_OBJECT_KIND.to_string(), None, None);
+        let obj: Node2DTest = create_node2d(DISPLAY_OBJECT_KIND.to_string(), None);
         let runtime = get_node_runtime(&obj);
         assert!(runtime.children.is_none() && runtime.parent.is_none());
         assert_eq!(runtime.world_transform_using_local_transform_id, -1);
@@ -315,6 +312,55 @@ mod initialize_display_object {
     use super::*;
 
     #[test]
+    fn constructs_a_raw_allocation_without_replacing_its_identity_or_binding() {
+        let mut obj: DisplayObject = allocate_entity();
+        let id = get_entity_id(&obj);
+        let binding = Arc::new(());
+        set_entity_uid(&mut obj, "raw-display".to_string());
+        attach_entity_binding(&mut obj, Box::new(binding.clone()));
+        assert!(!is_node2d(&obj));
+
+        initialize_display_object(&mut obj);
+
+        assert_eq!(get_entity_id(&obj), id);
+        assert_eq!(get_entity_uid(&mut obj), "raw-display");
+        assert!(Arc::ptr_eq(
+            get_entity_binding_as::<Arc<()>, _>(&obj).unwrap(),
+            &binding
+        ));
+        assert_eq!(obj.kind, DISPLAY_OBJECT_KIND);
+        assert!(is_node2d(&obj));
+        assert!(obj.enabled && obj.visible);
+        assert!(obj.name.is_none() && obj.clip.is_none() && obj.material.is_none());
+        assert!(obj.blend_mode.is_none() && obj.material_data.is_none());
+        assert_eq!(
+            (obj.x, obj.y, obj.rotation, obj.alpha),
+            (0.0, 0.0, 0.0, 1.0)
+        );
+        assert_eq!((obj.scale_x, obj.scale_y), (1.0, 1.0));
+        assert_eq!(
+            (obj.pivot_x, obj.pivot_y, obj.skew_x, obj.skew_y),
+            (0.0, 0.0, 0.0, 0.0)
+        );
+        let runtime = get_display_object_runtime(&obj);
+        assert!(runtime.scene2d.is_none());
+        assert_eq!(runtime.transform2d.rotation_cosine, 1.0);
+        assert!(runtime.bounds.is_local_bounds_rectangle_valid.is_none());
+        let mut bounds = create_rectangle(1.0, 2.0, 3.0, 4.0);
+        (runtime.bounds.compute_local_bounds_rectangle)(&mut bounds, &obj);
+        assert_eq!(bounds, create_rectangle(1.0, 2.0, 3.0, 4.0));
+
+        let published = publish_node2d(obj);
+        let erased: flight_node::NodeRef = published.clone();
+        let recovered = as_node2d_ref(&erased).unwrap();
+        assert!(std::ptr::addr_eq(
+            Arc::as_ptr(&published),
+            Arc::as_ptr(&recovered)
+        ));
+        assert_eq!(get_entity_id(&*published.read().unwrap()), id);
+    }
+
+    #[test]
     fn is_the_construction_initializer_of_create_display_object() {
         let obj = create_display_object();
         let mut guard = obj.write().unwrap();
@@ -331,7 +377,7 @@ mod is_node2d {
         assert!(is_node2d(&*display_object().read().unwrap()));
         assert!(is_node2d(&*create_sprite().read().unwrap()));
         assert!(is_node2d(&*create_html_view().read().unwrap()));
-        let custom: Node2DTest = create_node2d("Custom".to_string(), None, None);
+        let custom: Node2DTest = create_node2d("Custom".to_string(), None);
         assert!(is_node2d(&custom));
     }
 
@@ -342,7 +388,7 @@ mod is_node2d {
 
     #[test]
     fn create_node2d_installs_the_node2d_traits_key_on_the_base_runtime() {
-        let obj: Node2DTest = create_node2d(DISPLAY_OBJECT_KIND.to_string(), None, None);
+        let obj: Node2DTest = create_node2d(DISPLAY_OBJECT_KIND.to_string(), None);
         let traits = get_node_runtime(&obj).traits.as_ref().unwrap();
         assert!(std::sync::Arc::ptr_eq(
             &traits.key,
@@ -375,7 +421,6 @@ mod publish_node2d {
     fn keeps_the_one_private_runtime_uid_of_the_published_node() {
         let published = publish_node2d(create_node2d::<Node2DTest>(
             DISPLAY_OBJECT_KIND.to_string(),
-            None,
             None,
         ));
         let uid = flight_entity::get_entity_uid(published.write().unwrap().node_fields_mut());

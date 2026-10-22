@@ -1,5 +1,9 @@
 use std::sync::Arc;
 
+use flight_entity::{
+    allocate_entity, attach_entity_binding, get_entity_binding_as, get_entity_id, get_entity_uid,
+    set_entity_uid,
+};
 use flight_geometry::create_rectangle;
 use flight_host::NativeViewHandle;
 use flight_node::{NodeRef, get_node_local_bounds_rectangle, get_node_local_bounds_revision};
@@ -65,10 +69,7 @@ mod create_html_view {
 
     #[test]
     fn returns_a_new_object_each_call() {
-        assert!(!Arc::ptr_eq(
-            &create_html_view(),
-            &create_html_view()
-        ));
+        assert!(!Arc::ptr_eq(&create_html_view(), &create_html_view()));
     }
 
     #[test]
@@ -134,6 +135,56 @@ mod get_html_view_runtime {
 
 mod initialize_html_view {
     use super::*;
+
+    #[test]
+    fn constructs_raw_view_bounds_and_publishes_the_same_bound_entity() {
+        let mut view: HtmlView = allocate_entity();
+        let id = get_entity_id(&view);
+        let binding = Arc::new(());
+        set_entity_uid(&mut view, "raw-view".to_string());
+        attach_entity_binding(&mut view, Box::new(binding.clone()));
+        assert!(!is_node2d(&view));
+
+        initialize_html_view(&mut view);
+
+        assert_eq!(get_entity_id(&view), id);
+        assert_eq!(get_entity_uid(&mut view), "raw-view");
+        assert!(Arc::ptr_eq(
+            get_entity_binding_as::<Arc<()>, _>(&view).unwrap(),
+            &binding
+        ));
+        assert_eq!(view.kind, HTML_VIEW_KIND);
+        assert!(is_node2d(&view));
+        assert!(view.enabled && view.visible && view.data.element.is_none());
+        assert_eq!((view.x, view.y, view.alpha), (0.0, 0.0, 1.0));
+        assert_eq!((view.scale_x, view.scale_y), (1.0, 1.0));
+        assert_eq!((view.data.width, view.data.height), (100.0, 100.0));
+        let runtime = get_html_view_runtime(&view);
+        assert!(runtime.scene2d.is_none());
+        assert!(runtime.bounds.is_local_bounds_rectangle_valid.is_none());
+        let mut bounds = create_rectangle(0.0, 0.0, 0.0, 0.0);
+        (runtime.bounds.compute_local_bounds_rectangle)(&mut bounds, &view);
+        assert_eq!((bounds.width, bounds.height), (100.0, 100.0));
+
+        let host = element();
+        view.data.element = Some(host.clone());
+        view.data.width = 320.0;
+        view.data.height = 240.0;
+        let published = publish_node2d(view);
+        let erased: NodeRef = published.clone();
+        let recovered = as_node2d_ref(&erased).unwrap();
+        assert!(std::ptr::addr_eq(
+            Arc::as_ptr(&published),
+            Arc::as_ptr(&recovered)
+        ));
+        let bounds = get_node_local_bounds_rectangle(&erased);
+        assert_eq!((bounds.width, bounds.height), (320.0, 240.0));
+        let view = published.read().unwrap();
+        assert_eq!(get_entity_id(&*view), id);
+        let actual = view.data.element.as_ref().unwrap();
+        assert!(Arc::ptr_eq(&actual.provider, &host.provider));
+        assert!(Arc::ptr_eq(&actual.handle, &host.handle));
+    }
 
     #[test]
     fn is_the_construction_initializer_of_create_html_view() {

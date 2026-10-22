@@ -18,7 +18,6 @@ use crate::types::*;
 pub fn create_tilemap() -> Ref<Tilemap> {
     let mut out: Tilemap = create_node2d(
         TILEMAP_KIND.to_string(),
-        None,
         Some(create_tilemap_runtime),
     );
     out.data = create_tilemap_data();

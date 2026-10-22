@@ -26,7 +26,6 @@ use crate::types::*;
 pub fn create_rich_text(layout_context: Option<Ref<TextLayoutContext>>) -> Ref<RichText> {
     let mut out: RichText = create_node2d(
         RICH_TEXT_KIND.to_string(),
-        None,
         Some(create_rich_text_node2d_runtime),
     );
     initialize_rich_text(&mut out, layout_context);

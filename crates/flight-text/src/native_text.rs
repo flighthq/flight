@@ -13,7 +13,6 @@ use crate::types::*;
 pub fn create_native_text() -> Ref<NativeText> {
     let mut out: NativeText = create_node2d(
         NATIVE_TEXT_KIND.to_string(),
-        None,
         Some(create_native_text_node2d_runtime),
     );
     initialize_native_text(&mut out);

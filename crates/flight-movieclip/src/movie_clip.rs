@@ -19,7 +19,6 @@ use crate::types::*;
 pub fn create_movie_clip() -> Ref<MovieClip> {
     let mut out: MovieClip = create_node2d(
         String::from(MOVIE_CLIP_KIND),
-        None,
         Some(create_node2d_runtime_minimal),
     );
     initialize_movie_clip(&mut out);

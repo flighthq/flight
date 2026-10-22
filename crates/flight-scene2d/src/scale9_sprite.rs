@@ -5,18 +5,14 @@ use std::sync::{Arc, RwLock};
 use flight_entity::{Ref, allocate_entity};
 use flight_geometry::Rectangle;
 
-use crate::display_object::create_node2d;
+use crate::display_object::initialize_node2d;
 use crate::sprite::create_sprite_runtime;
 use crate::types::*;
 
 /// Allocates a nine-slice sprite over `scale9_grid` (TS `createScale9Sprite`).
 // flight-lint: allow(conform-params) D23 B: authored options removed; scale9_grid is required defining ref
 pub fn create_scale9_sprite(scale9_grid: &Rectangle) -> Ref<Scale9Sprite> {
-    let mut out: Scale9Sprite = create_node2d(
-        SCALE9_SPRITE_KIND.to_string(),
-        None,
-        Some(create_scale9_sprite_runtime),
-    );
+    let mut out: Scale9Sprite = allocate_entity();
     initialize_scale9_sprite(&mut out, scale9_grid);
     return crate::display_object::publish_node2d(out);
 }
@@ -37,6 +33,11 @@ pub fn create_scale9_sprite_runtime() -> Node2DRuntime {
 /// The construction initializer of `create_scale9_sprite` (TS `initializeScale9Sprite`).
 // flight-lint: allow(conform-extra) D23 I: public initialize seam extracted from create_scale9_sprite
 pub fn initialize_scale9_sprite(out: &mut Scale9Sprite, scale9_grid: &Rectangle) {
+    initialize_node2d(
+        out,
+        SCALE9_SPRITE_KIND.to_string(),
+        Some(create_scale9_sprite_runtime),
+    );
     out.data = create_scale9_sprite_data(scale9_grid);
     out.sprite_runtime = Arc::new(RwLock::new(SpriteRuntime::default()));
 }

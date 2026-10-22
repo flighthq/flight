@@ -9,11 +9,11 @@ src/contract.rs: pub use super::types::*;
 src/display_object.rs: pub fn as_node2d_ref(node: &NodeRef) -> Option<Node2DRef>
 src/display_object.rs: pub fn create_display_object() -> Ref<DisplayObject>
 src/display_object.rs: pub fn create_display_object_runtime() -> DisplayObjectRuntime
-src/display_object.rs: pub fn create_node2d<T: Node2D + Default>(kind: Kind, obj: Option<&PartialNode2D>, create_node2d_runtime_factory: Option<Node2DRuntimeFactory>,) -> T
+src/display_object.rs: pub fn create_node2d<T: Node2D + Default>(kind: Kind, create_node2d_runtime_factory: Option<Node2DRuntimeFactory>,) -> T
 src/display_object.rs: pub fn create_node2d_runtime(methods: Option<&Node2DRuntimeMethods>) -> Node2DRuntime
 src/display_object.rs: pub fn get_display_object_runtime(source: &DisplayObject) -> &DisplayObjectRuntime
 src/display_object.rs: pub fn get_node2d_runtime(source: &dyn Node2D) -> &Node2DRuntime
-src/display_object.rs: pub fn initialize_display_object(_out: &mut DisplayObject)
+src/display_object.rs: pub fn initialize_display_object(out: &mut DisplayObject)
 src/display_object.rs: pub fn is_node2d(node: &dyn Node) -> bool
 src/display_object.rs: pub fn publish_node2d<T: Node2D + 'static>(node: T) -> Ref<T>
 src/display_object.rs: pub fn set_node2d_clip(source: &Node2DRef, value: Option<Ref<ClipRegion>>)
@@ -112,7 +112,6 @@ src/types.rs: #[derive(Clone, Debug, Default)] pub struct SpriteData { runtime: 
 src/types.rs: #[derive(Clone, Debug, Default, PartialEq)] pub struct Scene2DKindUsage { runtime: EntityRuntimeSlot, pub blend_modes: Vec<BlendMode>, pub material_kinds: Vec<Kind>, pub node_kinds: Vec<Kind>, pub shape_command_keys: Vec<String>, }
 src/types.rs: #[derive(Clone, Default)] pub struct HtmlViewData { runtime: EntityRuntimeSlot, pub element: Option<NativeViewHandle>, pub height: f64, pub width: f64, }
 src/types.rs: #[derive(Clone, Default)] pub struct Node2DRuntimeMethods { pub compute_local_bounds_rectangle: Option<NodeLocalBoundsComputer>, pub is_local_bounds_rectangle_valid: Option<NodeLocalBoundsValidity>, }
-src/types.rs: #[derive(Clone, Default)] pub struct PartialNode2D { pub alpha: Option<f32>, pub blend_mode: Option<BlendMode>, pub clip: Option<Ref<flight_clip::ClipRegion>>, pub enabled: Option<bool>, pub material: Option<Ref<dyn Material2D>>, pub material_data: Option<Ref<dyn MaterialData>>, pub name: Option<String>, pub pivot_x: Option<f32>, pub pivot_y: Option<f32>, pub rotation: Option<f32>, pub scale_x: Option<f32>, pub scale_y: Option<f32>, pub skew_x: Option<f32>, pub skew_y: Option<f32>, pub visible: Option<bool>, pub x: Option<f32>, pub y: Option<f32>, }
 src/types.rs: #[derive(Clone, Default)] pub struct Scene2DRuntime { pub scene2d_signals: Option<Ref<Scene2DSignals>>, }
 src/types.rs: #[derive(Default)] pub struct DisplayObject { node: Node2DFields, }
 src/types.rs: #[derive(Default)] pub struct HtmlView { node: Node2DFields, pub data: HtmlViewData, }

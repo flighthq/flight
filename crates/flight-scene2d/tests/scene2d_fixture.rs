@@ -16,11 +16,6 @@ pub fn texture(width: u32, height: u32) -> Ref<Texture> {
     return Arc::new(RwLock::new(Texture::Texture2D(texture)));
 }
 
-pub fn node2d_options() -> PartialNode2D {
-    let make: fn() -> PartialNode2D = PartialNode2D::default;
-    return make();
-}
-
 pub fn as_node(source: &Node2DRef) -> NodeRef {
     return source.clone();
 }
@@ -118,7 +113,7 @@ impl Node2D for ShapeLikeNode {
 }
 
 pub fn shape_like_node(tokens: Vec<TestToken>) -> Node2DRef {
-    let mut node: ShapeLikeNode = create_node2d(DISPLAY_OBJECT_KIND.to_string(), None, None);
+    let mut node: ShapeLikeNode = create_node2d(DISPLAY_OBJECT_KIND.to_string(), None);
     node.data = Some(TestStream { tokens });
     return Arc::new(RwLock::new(node));
 }

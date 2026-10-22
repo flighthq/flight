@@ -13,7 +13,6 @@ use crate::types::*;
 pub fn create_scale9_shape(scale9_grid: &ShapeScale9Grid) -> Ref<Scale9Shape> {
     let mut out: Scale9Shape = create_node2d(
         SCALE9_SHAPE_KIND.to_string(),
-        None,
         Some(create_scale9_shape_runtime),
     );
     initialize_scale9_shape(&mut out, scale9_grid);

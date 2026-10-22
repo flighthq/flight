@@ -98,28 +98,6 @@ pub struct Node2DRuntimeMethods {
     pub is_local_bounds_rectangle_valid: Option<NodeLocalBoundsValidity>,
 }
 
-/// Construction options for any 2D node (TS `PartialNode<Node2D>`); `None` keeps the source default.
-#[derive(Clone, Default)]
-pub struct PartialNode2D {
-    pub alpha: Option<f32>,
-    pub blend_mode: Option<BlendMode>,
-    pub clip: Option<Ref<flight_clip::ClipRegion>>,
-    pub enabled: Option<bool>,
-    pub material: Option<Ref<dyn Material2D>>,
-    pub material_data: Option<Ref<dyn MaterialData>>,
-    pub name: Option<String>,
-    pub pivot_x: Option<f32>,
-    pub pivot_y: Option<f32>,
-    pub rotation: Option<f32>,
-    pub scale_x: Option<f32>,
-    pub scale_y: Option<f32>,
-    pub skew_x: Option<f32>,
-    pub skew_y: Option<f32>,
-    pub visible: Option<bool>,
-    pub x: Option<f32>,
-    pub y: Option<f32>,
-}
-
 /// Any node of the 2D family (TS `Node2D`, an open base contract). Implement it for a custom kind
 /// with `impl_node2d!`.
 // The flat fields reach flight-node's generic features through borrowed views (Principal 939e24d3).

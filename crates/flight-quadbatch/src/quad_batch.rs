@@ -23,7 +23,6 @@ pub const QUAD_BATCH_DELETED_ID: u16 = 0xffff;
 pub fn create_quad_batch() -> Ref<QuadBatch> {
     let mut out: QuadBatch = create_node2d(
         QUAD_BATCH_KIND.to_string(),
-        None,
         Some(create_quad_batch_runtime),
     );
     initialize_quad_batch(&mut out);

@@ -19,7 +19,6 @@ const BITMAP_TEXT_TRANSFORM_STRIDE: usize = 2;
 pub fn create_bitmap_text(glyph_source: Option<Ref<GlyphSource>>) -> Ref<BitmapText> {
     let mut out: BitmapText = create_node2d(
         BITMAP_TEXT_KIND.to_string(),
-        None,
         Some(create_bitmap_text_node2d_runtime),
     );
     initialize_bitmap_text(&mut out, glyph_source);

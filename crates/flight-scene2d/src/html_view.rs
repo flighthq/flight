@@ -7,17 +7,13 @@ use flight_entity::{Ref, allocate_entity};
 use flight_geometry::Rectangle;
 use flight_node::{Node, NodeRef, invalidate_node_local_bounds};
 
-use crate::display_object::{create_node2d, create_node2d_runtime, get_node2d_runtime};
+use crate::display_object::{create_node2d_runtime, get_node2d_runtime, initialize_node2d};
 use crate::types::*;
 
 /// Allocates an html view (TS `createHtmlView`).
 // flight-lint: allow(conform-params) D23 B: authored options removed; kind assigns fields after create
 pub fn create_html_view() -> Ref<HtmlView> {
-    let mut out: HtmlView = create_node2d(
-        HTML_VIEW_KIND.to_string(),
-        None,
-        Some(create_html_view_runtime),
-    );
+    let mut out: HtmlView = allocate_entity();
     initialize_html_view(&mut out);
     return crate::display_object::publish_node2d(out);
 }
@@ -43,6 +39,11 @@ pub fn create_html_view_runtime() -> HtmlViewRuntime {
 /// The construction initializer of `create_html_view` (TS `initializeHtmlView`).
 // flight-lint: allow(conform-extra) D23 I: public initialize seam extracted from create_html_view
 pub fn initialize_html_view(out: &mut HtmlView) {
+    initialize_node2d(
+        out,
+        HTML_VIEW_KIND.to_string(),
+        Some(create_html_view_runtime),
+    );
     out.data = create_html_view_data();
 }
 

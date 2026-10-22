@@ -20,7 +20,6 @@ use crate::types::*;
 pub fn create_shape() -> Ref<Shape> {
     let mut out: Shape = create_node2d(
         SHAPE_KIND.to_string(),
-        None,
         Some(create_shape_runtime),
     );
     initialize_shape(&mut out);

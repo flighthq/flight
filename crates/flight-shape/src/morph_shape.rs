@@ -19,7 +19,6 @@ use crate::types::*;
 pub fn create_morph_shape(morph: &Ref<PathMorph>) -> Ref<MorphShape> {
     let mut out: MorphShape = create_node2d(
         MORPH_SHAPE_KIND.to_string(),
-        None,
         Some(create_morph_shape_runtime),
     );
     initialize_morph_shape(&mut out, morph);

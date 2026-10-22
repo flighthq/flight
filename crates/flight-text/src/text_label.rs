@@ -21,7 +21,6 @@ use crate::types::*;
 pub fn create_text_label(layout_context: Option<Ref<TextLayoutContext>>) -> Ref<TextLabel> {
     let mut out: TextLabel = create_node2d(
         TEXT_LABEL_KIND.to_string(),
-        None,
         Some(create_text_label_node2d_runtime),
     );
     initialize_text_label(&mut out, layout_context);

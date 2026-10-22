@@ -31,7 +31,6 @@ use crate::types::*;
 pub fn create_particle_emitter_2d() -> Ref<ParticleEmitter2D> {
     let mut out: ParticleEmitter2D = create_node2d(
         PARTICLE_EMITTER_2D_KIND.to_string(),
-        None,
         Some(create_particle_emitter_2d_runtime),
     );
     out.data = create_particle_emitter_data();
@@ -76,7 +75,6 @@ pub fn clear_particle_emitter_2d(target: &Ref<ParticleEmitter2D>) {
 pub fn clone_particle_emitter_2d(source: &ParticleEmitter2D) -> Ref<ParticleEmitter2D> {
     let mut out: ParticleEmitter2D = create_node2d(
         PARTICLE_EMITTER_2D_KIND.to_string(),
-        None,
         Some(create_particle_emitter_2d_runtime),
     );
     out.data = source.data.clone();

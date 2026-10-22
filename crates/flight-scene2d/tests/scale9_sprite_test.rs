@@ -1,5 +1,9 @@
 use std::sync::Arc;
 
+use flight_entity::{
+    allocate_entity, attach_entity_binding, get_entity_binding_as, get_entity_id, get_entity_uid,
+    set_entity_uid,
+};
 use flight_geometry::{Rectangle, create_rectangle};
 use flight_node::{NodeRef, get_node_local_bounds_rectangle, get_node_local_bounds_revision};
 use flight_scene2d::contract::*;
@@ -149,6 +153,67 @@ mod get_scale9_sprite_runtime {
 
 mod initialize_scale9_sprite {
     use super::*;
+
+    #[test]
+    fn constructs_raw_scale9_bounds_with_the_defining_grid_and_same_entity() {
+        let mut sprite: Scale9Sprite = allocate_entity();
+        let id = get_entity_id(&sprite);
+        let binding = Arc::new(());
+        let scale9_grid = create_rectangle(3.0, 5.0, 17.0, 11.0);
+        set_entity_uid(&mut sprite, "raw-scale9".to_string());
+        attach_entity_binding(&mut sprite, Box::new(binding.clone()));
+        assert!(!is_node2d(&sprite));
+
+        initialize_scale9_sprite(&mut sprite, &scale9_grid);
+
+        assert_eq!(get_entity_id(&sprite), id);
+        assert_eq!(get_entity_uid(&mut sprite), "raw-scale9");
+        assert!(Arc::ptr_eq(
+            get_entity_binding_as::<Arc<()>, _>(&sprite).unwrap(),
+            &binding
+        ));
+        assert_eq!(sprite.kind, SCALE9_SPRITE_KIND);
+        assert!(is_node2d(&sprite));
+        assert!(sprite.enabled && sprite.visible && sprite.data.texture.is_none());
+        assert_eq!(sprite.data.scale9_grid, scale9_grid);
+        assert_eq!((sprite.x, sprite.y, sprite.alpha), (0.0, 0.0, 1.0));
+        assert_eq!((sprite.scale_x, sprite.scale_y), (1.0, 1.0));
+        assert!(get_node2d_runtime(&sprite).scene2d.is_none());
+        assert!(
+            get_node2d_runtime(&sprite)
+                .bounds
+                .is_local_bounds_rectangle_valid
+                .is_some()
+        );
+        let mut empty = create_rectangle(0.0, 0.0, 99.0, 88.0);
+        (get_node2d_runtime(&sprite)
+            .bounds
+            .compute_local_bounds_rectangle)(&mut empty, &sprite);
+        assert_eq!((empty.width, empty.height), (0.0, 0.0));
+
+        let image = texture(37, 23);
+        sprite.data.texture = Some(image.clone());
+        let published = publish_node2d(sprite);
+        let erased: NodeRef = published.clone();
+        let recovered = as_node2d_ref(&erased).unwrap();
+        assert!(std::ptr::addr_eq(
+            Arc::as_ptr(&published),
+            Arc::as_ptr(&recovered)
+        ));
+        let bounds = get_node_local_bounds_rectangle(&erased);
+        assert_eq!((bounds.width, bounds.height), (37.0, 23.0));
+        let sprite = published.read().unwrap();
+        assert_eq!(get_entity_id(&*sprite), id);
+        assert_eq!(sprite.data.scale9_grid, scale9_grid);
+        assert!(Arc::ptr_eq(sprite.data.texture.as_ref().unwrap(), &image));
+        let runtime = get_scale9_sprite_runtime(&sprite);
+        let runtime = runtime.read().unwrap();
+        assert!(Arc::ptr_eq(
+            runtime.local_bounds_texture.as_ref().unwrap(),
+            &image
+        ));
+        assert_eq!(runtime.local_bounds_texture_version, 0);
+    }
 
     #[test]
     fn is_the_construction_initializer_of_create_scale9_sprite() {

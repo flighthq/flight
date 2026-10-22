@@ -7,17 +7,13 @@ use flight_geometry::{Rectangle, create_vector2};
 use flight_node::{Node, RendererData};
 use flight_texture::{Texture, TextureUvTransform, get_texture_view_size};
 
-use crate::display_object::{create_node2d, create_node2d_runtime};
+use crate::display_object::{create_node2d_runtime, initialize_node2d};
 use crate::types::*;
 
 /// Allocates a sprite (TS `createSprite`).
 // flight-lint: allow(conform-params) D23 B: authored options removed; kind assigns fields after create
 pub fn create_sprite() -> Ref<Sprite> {
-    let mut out: Sprite = create_node2d(
-        SPRITE_KIND.to_string(),
-        None,
-        Some(create_sprite_runtime),
-    );
+    let mut out: Sprite = allocate_entity();
     initialize_sprite(&mut out);
     return crate::display_object::publish_node2d(out);
 }
@@ -54,6 +50,7 @@ pub fn create_sprite_runtime() -> Node2DRuntime {
 /// The construction initializer of `create_sprite` (TS `initializeSprite`).
 // flight-lint: allow(conform-extra) D23 I: public initialize seam extracted from create_sprite
 pub fn initialize_sprite(out: &mut Sprite) {
+    initialize_node2d(out, SPRITE_KIND.to_string(), Some(create_sprite_runtime));
     out.data = create_sprite_data();
     out.sprite_runtime = Arc::new(RwLock::new(SpriteRuntime::default()));
 }

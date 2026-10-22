@@ -22,11 +22,7 @@ pub static NODE2D_TRAITS_KEY: LazyLock<Arc<NodeTraitsKey>> =
 /// Allocates a plain display object (TS `createDisplayObject`).
 // flight-lint: allow(conform-params) D23 B: authored options removed; kind assigns fields after create
 pub fn create_display_object() -> Ref<DisplayObject> {
-    let mut out: DisplayObject = create_node2d(
-        DISPLAY_OBJECT_KIND.to_string(),
-        None,
-        Some(create_display_object_runtime),
-    );
+    let mut out: DisplayObject = allocate_entity();
     initialize_display_object(&mut out);
     return publish_node2d(out);
 }
@@ -39,49 +35,13 @@ pub fn create_display_object_runtime() -> DisplayObjectRuntime {
 /// Allocates any 2D kind and initializes the common node fields, the 2D field groups and the 2D
 /// runtime tier from `create_node2d_runtime_factory` (default `create_node2d_runtime`), as TS
 /// `createNode2D`. The kind's data is its own typed struct, initialized by the kind constructor.
-// flight-lint: allow(conform-params) D16: kind data is the kind struct's own typed field, so there is no data factory; the runtime factory keeps its source position
+// flight-lint: allow(conform-params) D23 B: authored fields are assigned after create; D16 kind data belongs to the typed kind, and the runtime factory is retained
 pub fn create_node2d<T: Node2D + Default>(
     kind: Kind,
-    obj: Option<&PartialNode2D>,
     create_node2d_runtime_factory: Option<Node2DRuntimeFactory>,
 ) -> T {
     let mut out: T = allocate_entity();
-    initialize_node(&mut out, kind);
-    {
-        // D23 (B): the canonical base initializer takes no options; the kind constructor assigns them.
-        let fields = out.node_fields_mut();
-        fields.enabled = obj.and_then(|obj| obj.enabled).unwrap_or(true);
-        fields.name = obj.and_then(|obj| obj.name.clone());
-    }
-    let narrow = Node2DTraitsKey {
-        handle: OnceLock::new(),
-        narrow: narrow_node2d::<T>,
-        narrow_mut: narrow_node2d_mut::<T>,
-    };
-    out.node_runtime_mut().traits = Some(NodeTraits {
-        key: NODE2D_TRAITS_KEY.clone(),
-        narrow: Arc::new(narrow),
-    });
-    let fields = out.node2d_fields_mut();
-    *fields.node2d_runtime_mut() = match create_node2d_runtime_factory {
-        Some(factory) => factory(),
-        None => create_node2d_runtime(None),
-    };
-    fields.x = obj.and_then(|obj| obj.x).unwrap_or(0.0);
-    fields.y = obj.and_then(|obj| obj.y).unwrap_or(0.0);
-    fields.rotation = obj.and_then(|obj| obj.rotation).unwrap_or(0.0);
-    fields.scale_x = obj.and_then(|obj| obj.scale_x).unwrap_or(1.0);
-    fields.scale_y = obj.and_then(|obj| obj.scale_y).unwrap_or(1.0);
-    fields.skew_x = obj.and_then(|obj| obj.skew_x).unwrap_or(0.0);
-    fields.skew_y = obj.and_then(|obj| obj.skew_y).unwrap_or(0.0);
-    fields.pivot_x = obj.and_then(|obj| obj.pivot_x).unwrap_or(0.0);
-    fields.pivot_y = obj.and_then(|obj| obj.pivot_y).unwrap_or(0.0);
-    fields.alpha = obj.and_then(|obj| obj.alpha).unwrap_or(1.0);
-    fields.visible = obj.and_then(|obj| obj.visible).unwrap_or(true);
-    fields.blend_mode = obj.and_then(|obj| obj.blend_mode.clone());
-    fields.material = obj.and_then(|obj| obj.material.clone());
-    fields.material_data = obj.and_then(|obj| obj.material_data.clone());
-    fields.clip = obj.and_then(|obj| obj.clip.clone());
+    initialize_node2d(&mut out, kind, create_node2d_runtime_factory);
     return out;
 }
 
@@ -104,7 +64,52 @@ pub fn create_node2d_runtime(methods: Option<&Node2DRuntimeMethods>) -> Node2DRu
 
 /// The construction initializer of `create_display_object` (TS `initializeDisplayObject`).
 // flight-lint: allow(conform-extra) D23 I: public initialize seam extracted from create_display_object
-pub fn initialize_display_object(_out: &mut DisplayObject) {}
+pub fn initialize_display_object(out: &mut DisplayObject) {
+    initialize_node2d(
+        out,
+        DISPLAY_OBJECT_KIND.to_string(),
+        Some(create_display_object_runtime),
+    );
+}
+
+/// Constructs the common 2D layer in the already allocated concrete kind, preserving its entity
+/// slot. Kept internal: the existing public kind initializers are the construction contract.
+pub(crate) fn initialize_node2d<T: Node2D>(
+    out: &mut T,
+    kind: Kind,
+    create_node2d_runtime_factory: Option<Node2DRuntimeFactory>,
+) {
+    initialize_node(out, kind);
+    let narrow = Node2DTraitsKey {
+        handle: OnceLock::new(),
+        narrow: narrow_node2d::<T>,
+        narrow_mut: narrow_node2d_mut::<T>,
+    };
+    out.node_runtime_mut().traits = Some(NodeTraits {
+        key: NODE2D_TRAITS_KEY.clone(),
+        narrow: Arc::new(narrow),
+    });
+    let fields = out.node2d_fields_mut();
+    *fields.node2d_runtime_mut() = match create_node2d_runtime_factory {
+        Some(factory) => factory(),
+        None => create_node2d_runtime(None),
+    };
+    fields.x = 0.0;
+    fields.y = 0.0;
+    fields.rotation = 0.0;
+    fields.scale_x = 1.0;
+    fields.scale_y = 1.0;
+    fields.skew_x = 0.0;
+    fields.skew_y = 0.0;
+    fields.pivot_x = 0.0;
+    fields.pivot_y = 0.0;
+    fields.alpha = 1.0;
+    fields.visible = true;
+    fields.blend_mode = None;
+    fields.material = None;
+    fields.material_data = None;
+    fields.clip = None;
+}
 
 /// Narrows any node to the 2D family through its runtime's family key, or `None` for other
 /// families.

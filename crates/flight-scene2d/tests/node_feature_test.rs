@@ -23,11 +23,8 @@ fn revisions() -> NodeRevisionState {
 }
 
 fn custom_node(x: f32) -> Node2DRef {
-    let base = PartialNode2D {
-        x: Some(x),
-        ..node2d_options()
-    };
-    let node: Node2DTest = create_node2d("Custom".to_string(), Some(&base), None);
+    let mut node: Node2DTest = create_node2d("Custom".to_string(), None);
+    node.x = x;
     return Arc::new(RwLock::new(node));
 }
 
