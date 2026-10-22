@@ -75,8 +75,7 @@ Authoritative sources: `agents/design-decisions.md` (rulings D0–D8), `agents/i
   - the native GL and wgpu render paths (before render, L11);
   - platform feature packages carry capability contracts only.
 
-- **Host GL / wgpu capabilities (user, 2026-10-21/22; D26):** `HostGlCapability` / `HostWgpuCapability` contracts live in **flight-surface** beside `HostCanvasCapability`; the contexts they return (`GlContext`, wgpu device / queue / context) are host-vocabulary handles in **flight-hostcapability**. Direction: host → surface → hostcapability ← render-gl / render-wgpu; host never depends on a renderer. Host includes its gl / wgpu groups as in TS. The type-owner table's render-gl / render-wgpu rows for these are superseded.
-- **Host vocabulary (D26) work:** (1) inventory every TS type that is host-provided (opaque platform objects and handles), with current Rust location; principal reviews; (2) move them to `flight-hostcapability` and write `agents/host-vocabulary.md` (Rust ↔ TS ↔ C++ ↔ Haxe ↔ providers).
+- **D26 host layering work (user, 2026-10-22):** (1) fold `flight-hostcapability` into `flight-host` and make it the bottom crate, moving the reviewed host-vocabulary types in (`agents/research/host-type-inventory-review.md`); (2) redistribute the landed aggregate's explain / guard code to the feature crates that own each group, and remove the aggregate `Host`, its queries and `create_host`; (3) `HostGlCapability` / `HostWgpuCapability` contracts go in flight-surface; (4) fill `agents/host-vocabulary.md`. TS mirrors via transpile. Host-* providers compose their own hosts when they are built (host-web TS-only; native hosts D19).
 - **Final step (D21):** create `flight-sdk` (the public-lane re-export meta crate) after all waves land.
 
 ## Post-port design backlog (user, 2026-10-21; not in scope for this pass)
