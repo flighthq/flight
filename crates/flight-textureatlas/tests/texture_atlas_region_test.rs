@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use flight_entity::Ref;
@@ -309,7 +310,8 @@ mod build_texture_atlas_region_index {
         let mut atlas = create_texture_atlas(None);
         named(&mut atlas, 0.0, "a");
         named(&mut atlas, 1.0, "b");
-        let index = build_texture_atlas_region_index(&atlas);
+        let mut index = HashMap::new();
+        build_texture_atlas_region_index(&mut index, &atlas);
         assert_eq!(index.len(), 2);
         assert!(Arc::ptr_eq(
             &index["a"],
@@ -325,7 +327,9 @@ mod build_texture_atlas_region_index {
     fn skips_unnamed_regions() {
         let mut atlas = create_texture_atlas(None);
         add_texture_atlas_region(&mut atlas, 0.0, 0.0, 1.0, 1.0, None, None, None);
-        assert!(build_texture_atlas_region_index(&atlas).is_empty());
+        let mut index = HashMap::new();
+        build_texture_atlas_region_index(&mut index, &atlas);
+        assert!(index.is_empty());
     }
 
     #[test]
@@ -333,7 +337,8 @@ mod build_texture_atlas_region_index {
         let mut atlas = create_texture_atlas(None);
         named(&mut atlas, 0.0, "dup");
         named(&mut atlas, 5.0, "dup");
-        let index = build_texture_atlas_region_index(&atlas);
+        let mut index = HashMap::new();
+        build_texture_atlas_region_index(&mut index, &atlas);
         assert!(Arc::ptr_eq(
             &index["dup"],
             &get_texture_atlas_region_by_name(&atlas, "dup").unwrap()
@@ -345,9 +350,28 @@ mod build_texture_atlas_region_index {
     fn is_a_snapshot_a_later_add_is_not_reflected() {
         let mut atlas = create_texture_atlas(None);
         named(&mut atlas, 0.0, "a");
-        let index = build_texture_atlas_region_index(&atlas);
+        let mut index = HashMap::new();
+        build_texture_atlas_region_index(&mut index, &atlas);
         named(&mut atlas, 1.0, "b");
         assert!(!index.contains_key("b"));
+    }
+
+    #[test]
+    fn clears_stale_entries_and_reuses_caller_capacity() {
+        let mut atlas = create_texture_atlas(None);
+        named(&mut atlas, 0.0, "a");
+        named(&mut atlas, 1.0, "b");
+        let mut index = HashMap::with_capacity(8);
+        index.insert("stale".to_string(), atlas.regions[0].clone());
+        let capacity = index.capacity();
+        build_texture_atlas_region_index(&mut index, &atlas);
+        assert!(!index.contains_key("stale"));
+        assert_eq!(index.len(), 2);
+        assert_eq!(index.capacity(), capacity);
+        clear_texture_atlas_regions(&mut atlas);
+        build_texture_atlas_region_index(&mut index, &atlas);
+        assert!(index.is_empty());
+        assert_eq!(index.capacity(), capacity);
     }
 }
 

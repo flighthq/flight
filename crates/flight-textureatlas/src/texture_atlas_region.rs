@@ -128,19 +128,20 @@ pub fn add_texture_atlas_region_vector2(
     );
 }
 
-/// A name -> region lookup over the atlas (the first region wins a duplicate name, as the linear
-/// scan does). A snapshot owned by the caller, not cached on the atlas: rebuild it after changing the
-/// atlas.
+/// Clears and fills a caller-owned name -> region lookup over the atlas (the first region wins a
+/// duplicate name, as the linear scan does). The lookup is not cached on the atlas: rebuild it after
+/// changing the atlas.
+// flight-lint: allow(conform-params) D24: computed index fills and reuses caller-owned storage
 pub fn build_texture_atlas_region_index(
+    out: &mut HashMap<String, Ref<TextureAtlasRegion>>,
     atlas: &TextureAtlas,
-) -> HashMap<String, Ref<TextureAtlasRegion>> {
-    let mut index = HashMap::new();
+) {
+    out.clear();
     for region in &atlas.regions {
         if let Some(name) = region.read().unwrap().name.clone() {
-            index.entry(name).or_insert_with(|| region.clone());
+            out.entry(name).or_insert_with(|| region.clone());
         }
     }
-    return index;
 }
 
 /// Removes every region, leaving the atlas reusable and its texture untouched.
@@ -268,6 +269,7 @@ pub fn get_texture_atlas_region_ordinal(region: &TextureAtlasRegion) -> f64 {
 /// ordinals and unnumbered regions keep insertion order.
 // flight-lint: allow(f64) D1: ordinal sort keys are JS numbers
 // flight-lint: allow(conform-params) D9b: out-first; the source passes (atlas, prefix, out) and returns out
+// flight-lint: allow(hashmap-iteration) this output is a Vec; a separate D24 function in this file owns the HashMap output
 pub fn get_texture_atlas_region_sequence(
     out: &mut Vec<Ref<TextureAtlasRegion>>,
     atlas: &TextureAtlas,

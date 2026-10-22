@@ -12,6 +12,7 @@ use crate::contract::*;
 
 #[cfg(test)]
 mod sugar_tests {
+    use std::collections::HashMap;
     use std::sync::{Arc, RwLock};
 
     use flight_entity::Ref;
@@ -162,10 +163,10 @@ mod sugar_tests {
     #[test]
     fn textureatlas_build_texture_atlas_region_index_matches_build_texture_atlas_region_index() {
         let s = atlas();
-        let (a, b) = (
-            s.build_texture_atlas_region_index(),
-            build_texture_atlas_region_index(&s.read().unwrap()),
-        );
+        let mut a = HashMap::new();
+        s.build_texture_atlas_region_index(&mut a);
+        let mut b = HashMap::new();
+        build_texture_atlas_region_index(&mut b, &s.read().unwrap());
         let mut keys: Vec<&String> = a.keys().collect();
         keys.sort();
         assert_eq!(keys.len(), b.len());
@@ -453,7 +454,7 @@ pub trait TextureAtlasMethods {
         name: Option<&str>,
     );
 
-    fn build_texture_atlas_region_index(&self) -> HashMap<String, Ref<TextureAtlasRegion>>;
+    fn build_texture_atlas_region_index(&self, out: &mut HashMap<String, Ref<TextureAtlasRegion>>);
 
     fn clear_texture_atlas_regions(&self);
 
@@ -564,8 +565,8 @@ impl TextureAtlasMethods for Ref<TextureAtlas> {
         add_texture_atlas_region_vector2(&mut self.write().unwrap(), a, b, pivot, name);
     }
 
-    fn build_texture_atlas_region_index(&self) -> HashMap<String, Ref<TextureAtlasRegion>> {
-        return build_texture_atlas_region_index(&self.read().unwrap());
+    fn build_texture_atlas_region_index(&self, out: &mut HashMap<String, Ref<TextureAtlasRegion>>) {
+        return build_texture_atlas_region_index(out, &self.read().unwrap());
     }
 
     fn clear_texture_atlas_regions(&self) {
