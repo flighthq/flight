@@ -565,6 +565,38 @@ mod read_physics3d_abi_joints {
     }
 
     #[test]
+    fn reports_broken_and_collide_connected_in_the_same_bits_the_set_joint_record_uses() {
+        let abi = create_physics3d_abi();
+        let world = create_physics3d_abi_world(&abi);
+        let broken = distance_joint(1, 2, 1.0);
+        broken.write().unwrap().fields_mut().broken = true;
+        let connected = distance_joint(1, 2, 1.0);
+        connected.write().unwrap().fields_mut().collide_connected = true;
+        execute_or_throw(
+            &abi,
+            world,
+            &write_commands(|commands| {
+                let dynamic = rigid_body3d(Physics3DBodyType::Dynamic);
+                write_physics3d_abi_set_body_command(commands, 1, &dynamic.read().unwrap());
+                write_physics3d_abi_set_body_command(commands, 2, &dynamic.read().unwrap());
+                write_physics3d_abi_set_joint_command(commands, 5, &*broken.read().unwrap());
+                write_physics3d_abi_set_joint_command(commands, 6, &*connected.read().unwrap());
+            }),
+        );
+
+        let mut out = create_physics3d_abi_joint_buffer(2);
+        assert!(read_physics3d_abi_joints(&mut out, &abi, world));
+        assert_eq!(&out.ids[..2], &[5, 6]);
+        assert_eq!(
+            (PHYSICS3D_ABI_JOINT_FLAG_COLLIDE_CONNECTED, PHYSICS3D_ABI_JOINT_FLAG_BROKEN),
+            (1, 2)
+        );
+        assert_eq!(out.flags[0], PHYSICS3D_ABI_JOINT_FLAG_BROKEN);
+        assert_eq!(out.flags[0] & PHYSICS3D_ABI_JOINT_FLAG_COLLIDE_CONNECTED, 0);
+        assert_eq!(out.flags[1], 0);
+    }
+
+    #[test]
     fn removes_a_joint_explicitly_and_cascades_the_others_when_a_body_is_destroyed() {
         let abi = create_physics3d_abi();
         let world = create_physics3d_abi_world(&abi);

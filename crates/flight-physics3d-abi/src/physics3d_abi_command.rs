@@ -83,14 +83,18 @@ fn encode_body_type(body_type: Physics3DBodyType) -> u32 {
     };
 }
 
-// The SetJoint flag word: bit 0 collide-connected, bit 1 broken, then up to three bits read against
-// the record's own kind.
+// The SetJoint flag word (`PHYSICS3D_ABI_JOINT_FLAG_*`): collide-connected and broken, then up to
+// three bits read against the record's own kind.
 fn encode_joint_flags(joint: &dyn Physics3DJoint, kind: u32) -> Option<u32> {
     let fields = joint.fields();
     let any = joint.as_any();
-    let mut flags = u32::from(fields.collide_connected);
+    let mut flags = if fields.collide_connected {
+        PHYSICS3D_ABI_JOINT_FLAG_COLLIDE_CONNECTED
+    } else {
+        0
+    };
     if fields.broken {
-        flags |= 1 << 1;
+        flags |= PHYSICS3D_ABI_JOINT_FLAG_BROKEN;
     }
     if kind == PHYSICS3D_ABI_JOINT_KIND_DISTANCE {
         let distance = any.downcast_ref::<Physics3DDistanceJoint>()?;

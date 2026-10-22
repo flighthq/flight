@@ -114,6 +114,7 @@ src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_VALUE_NORMAL_Z;
 src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_VALUE_RESTITUTION;
 src/lib.rs: pub use contract::PHYSICS3D_ABI_CONTACT_VALUE_STRIDE;
 src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_FLAG_BROKEN;
+src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_FLAG_COLLIDE_CONNECTED;
 src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_KIND_BALL_AND_SOCKET;
 src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_KIND_CONE_TWIST;
 src/lib.rs: pub use contract::PHYSICS3D_ABI_JOINT_KIND_DISTANCE;
@@ -390,6 +391,7 @@ src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_VALUE_NORMAL_Z: usi
 src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_VALUE_RESTITUTION: usize
 src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_CONTACT_VALUE_STRIDE: usize
 src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_FLAG_BROKEN: u32
+src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_FLAG_COLLIDE_CONNECTED: u32
 src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_KIND_BALL_AND_SOCKET: u32
 src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_KIND_CONE_TWIST: u32
 src/physics3d_abi_layout.rs: pub const PHYSICS3D_ABI_JOINT_KIND_DISTANCE: u32

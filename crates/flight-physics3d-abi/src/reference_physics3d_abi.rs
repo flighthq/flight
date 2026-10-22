@@ -135,7 +135,7 @@ fn create_joint(
     let c = |i: usize| common[i] as f32;
     let v = |i: usize| values[i] as f32;
     let bit = |i: u32| flags & (1 << i) != 0;
-    let broken = bit(1);
+    let broken = flags & PHYSICS3D_ABI_JOINT_FLAG_BROKEN != 0;
     let frames = Physics3DJointFrames {
         local_rotation_ax: c(8),
         local_rotation_ay: c(9),
@@ -158,7 +158,7 @@ fn create_joint(
         out.local_anchor_bz = c(5);
         out.break_force = c(6);
         out.break_torque = c(7);
-        out.collide_connected = bit(0);
+        out.collide_connected = flags & PHYSICS3D_ABI_JOINT_FLAG_COLLIDE_CONNECTED != 0;
         out.broken = broken;
     };
     if kind == PHYSICS3D_ABI_JOINT_KIND_BALL_AND_SOCKET {

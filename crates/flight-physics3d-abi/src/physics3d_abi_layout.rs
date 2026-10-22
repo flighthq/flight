@@ -223,9 +223,12 @@ pub const PHYSICS3D_ABI_CONTACT_FLAG_ENABLED: u32 = 1 << 0;
 pub const PHYSICS3D_ABI_CONTACT_FLAG_SENSOR: u32 = 1 << 1;
 pub const PHYSICS3D_ABI_CONTACT_FLAG_TOUCHING: u32 = 1 << 2;
 
-// TS `Physics3DAbiJointFlag`: the readback flag word. (The SetJoint record's own flag word is
-// positional per kind: bit 0 collide-connected, bit 1 broken, bits 2-4 the kind's enable bits.)
-pub const PHYSICS3D_ABI_JOINT_FLAG_BROKEN: u32 = 1 << 0;
+// TS `Physics3DAbiJointFlag`: one joint flag word shared by the SetJoint record and the joint
+// readback, as in the 2D ABI. Bits 0-1 are common to every kind; bits 2-4 are the kind's own enable
+// bits. The pinned TS readback reported Broken at bit 0, colliding with CollideConnected
+// (api-drift, TS defect).
+pub const PHYSICS3D_ABI_JOINT_FLAG_COLLIDE_CONNECTED: u32 = 1 << 0;
+pub const PHYSICS3D_ABI_JOINT_FLAG_BROKEN: u32 = 1 << 1;
 
 // TS `Physics3DAbiBodyType`.
 pub const PHYSICS3D_ABI_BODY_TYPE_DYNAMIC: u32 = 0;
