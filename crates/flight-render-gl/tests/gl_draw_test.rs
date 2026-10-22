@@ -26,7 +26,7 @@ mod apply_gl_sampler_state {
     fn generates_mipmaps_at_most_once_per_texture() {
         let state = make_state();
         let texture = create_gl_texture(&state).unwrap();
-        let sampler = create_sampler(None);
+        let sampler = create_sampler();
         apply_gl_sampler_state(&state, texture, Some(&sampler), None);
         apply_gl_sampler_state(&state, texture, Some(&sampler), None);
         assert_eq!(calls_named("generate_mipmap"), 1);
@@ -152,7 +152,7 @@ mod bind_gl_video_texture {
     #[test]
     fn uploads_a_ready_frame_once_per_version() {
         let state = make_state();
-        let texture = create_texture_2d(None);
+        let texture = create_texture_2d();
         let image = make_image_resource(2, 2, true);
         let image = image.read().unwrap();
         let first = bind_gl_video_texture(&state, &texture, &image, None).unwrap();

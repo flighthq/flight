@@ -8,7 +8,7 @@ mod explain_gl_texture_resolution {
     #[test]
     fn distinguishes_missing_kind_missing_resolver_and_registered() {
         let mut state = make_state();
-        let empty = create_texture_2d(None);
+        let empty = create_texture_2d();
         assert_eq!(
             explain_gl_texture_resolution(&state, &empty).status,
             TextureResolutionStatus::MissingKind

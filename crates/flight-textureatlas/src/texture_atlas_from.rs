@@ -7,7 +7,7 @@ use flight_image::{
     load_image_resource_from_blob, load_image_resource_from_bytes, load_image_resource_from_url,
 };
 use flight_stream::AbortSignal;
-use flight_texture::{CreateTexture2DOptions, TextureSourceRef, create_texture_2d};
+use flight_texture::{TextureSourceRef, create_texture_2d};
 
 use crate::texture_atlas::create_texture_atlas;
 use crate::types::*;
@@ -16,11 +16,9 @@ use crate::types::*;
 pub fn create_texture_atlas_from_image_resource(
     resource: &Ref<ImageResource>,
 ) -> Ref<TextureAtlas> {
-    let options = CreateTexture2DOptions {
-        source: Some(resource.clone() as TextureSourceRef),
-        ..CreateTexture2DOptions::default()
-    };
-    let texture = Arc::new(RwLock::new(create_texture_2d(Some(&options))));
+    let mut texture = create_texture_2d();
+    texture.source = Some(resource.clone() as TextureSourceRef);
+    let texture = Arc::new(RwLock::new(texture));
     let atlas = create_texture_atlas();
     atlas.write().unwrap().texture = Some(texture);
     return atlas;

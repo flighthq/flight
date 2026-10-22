@@ -5,7 +5,7 @@ use flight_glyphatlas::{
     GlyphAtlas, get_glyph_atlas_bitmap, get_glyph_atlas_codepoints, get_glyph_atlas_entry,
     get_glyph_atlas_metrics,
 };
-use flight_texture::{CreateTexture2DOptions, TextureSourceRef, create_texture_2d};
+use flight_texture::{TextureSourceRef, create_texture_2d};
 use flight_textureatlas::create_texture_atlas;
 
 use crate::bitmap_font::create_bitmap_font;
@@ -37,12 +37,9 @@ pub fn create_bitmap_font_from_glyph_atlas(
     }
     let bitmap = get_glyph_atlas_bitmap(atlas);
     let source: TextureSourceRef = bitmap;
-    let texture = Arc::new(RwLock::new(create_texture_2d(Some(
-        &CreateTexture2DOptions {
-            source: Some(source),
-            ..CreateTexture2DOptions::default()
-        },
-    ))));
+    let mut texture = create_texture_2d();
+    texture.source = Some(source);
+    let texture = Arc::new(RwLock::new(texture));
     let page = create_texture_atlas();
     page.write().unwrap().texture = Some(texture);
     return create_bitmap_font(

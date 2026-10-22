@@ -14,10 +14,7 @@ mod sugar_tests {
     use flight_entity::Ref;
     use flight_geometry::create_rectangle;
     use flight_node::{NodeRef, add_node_child};
-    use flight_texture::{
-        CreateTexture2DOptions, CreateTextureCommonOptions, Texture, TextureSourceRef, VoxelGrid,
-        create_texture_2d,
-    };
+    use flight_texture::{Texture, TextureSourceRef, VoxelGrid, create_texture_2d};
 
     use crate::contract::*;
     use crate::sugar::{HtmlViewRefMethods, Node2DRefMethods, Scene2DRefMethods};
@@ -27,13 +24,9 @@ mod sugar_tests {
         grid.width = 6;
         grid.height = 4;
         let source: TextureSourceRef = Arc::new(RwLock::new(grid));
-        let options = CreateTexture2DOptions {
-            common: CreateTextureCommonOptions::default(),
-            source: Some(source),
-        };
-        return Arc::new(RwLock::new(Texture::Texture2D(create_texture_2d(Some(
-            &options,
-        )))));
+        let mut texture = create_texture_2d();
+        texture.source = Some(source);
+        return Arc::new(RwLock::new(Texture::Texture2D(texture)));
     }
 
     fn sprite() -> Ref<Sprite> {

@@ -7,9 +7,10 @@ src/contract.rs: pub use super::types::*;
 src/contract.rs: pub use super::voxel_grid::*;
 src/cube_texture.rs: pub fn clone_cube_texture(source: &CubeTexture) -> CubeTexture
 src/cube_texture.rs: pub fn copy_cube_texture(out: &mut CubeTexture, source: &CubeTexture)
-src/cube_texture.rs: pub fn create_cube_texture(opts: Option<&CreateCubeTextureOptions>) -> CubeTexture
+src/cube_texture.rs: pub fn create_cube_texture() -> CubeTexture
 src/cube_texture.rs: pub fn equals_cube_texture(a: Option<&CubeTexture>, b: Option<&CubeTexture>) -> bool
 src/cube_texture.rs: pub fn get_cube_texture_face_size(cube: &CubeTexture) -> i32
+src/cube_texture.rs: pub fn initialize_cube_texture(out: &mut CubeTexture)
 src/cube_texture.rs: pub fn is_cube_texture_complete(cube: &CubeTexture) -> bool
 src/cube_texture.rs: pub fn set_cube_texture_face(cube: &mut CubeTexture, face_index: usize, source: Option<TextureSourceRef>,)
 src/enums.rs: pub fn get_alpha_type_string(value: AlphaType) -> &'static str
@@ -36,7 +37,6 @@ src/lib.rs: pub use contract::CUBE_FACE_NEGATIVE_Z;
 src/lib.rs: pub use contract::CUBE_FACE_POSITIVE_X;
 src/lib.rs: pub use contract::CUBE_FACE_POSITIVE_Y;
 src/lib.rs: pub use contract::CUBE_FACE_POSITIVE_Z;
-src/lib.rs: pub use contract::CreateCubeTextureOptions;
 src/lib.rs: pub use contract::CreateTexture2DArrayOptions;
 src/lib.rs: pub use contract::CreateTexture2DOptions;
 src/lib.rs: pub use contract::CreateTexture3DOptions;
@@ -48,7 +48,6 @@ src/lib.rs: pub use contract::PixelFormat;
 src/lib.rs: pub use contract::RenderTargetColorSpace;
 src/lib.rs: pub use contract::SAMPLER_KIND;
 src/lib.rs: pub use contract::Sampler;
-src/lib.rs: pub use contract::SamplerOptions;
 src/lib.rs: pub use contract::TEXTURE_KIND;
 src/lib.rs: pub use contract::Texture2D;
 src/lib.rs: pub use contract::Texture2DArray;
@@ -96,6 +95,9 @@ src/lib.rs: pub use contract::get_texture_view_size;
 src/lib.rs: pub use contract::get_texture_width;
 src/lib.rs: pub use contract::has_texture_source;
 src/lib.rs: pub use contract::has_texture_uv_transform;
+src/lib.rs: pub use contract::initialize_cube_texture;
+src/lib.rs: pub use contract::initialize_sampler;
+src/lib.rs: pub use contract::initialize_texture_2d;
 src/lib.rs: pub use contract::invalidate_voxel_grid;
 src/lib.rs: pub use contract::is_cube_texture_complete;
 src/lib.rs: pub use contract::is_texture_ready;
@@ -116,10 +118,10 @@ src/sampler.rs: pub fn copy_sampler(out: &mut Sampler, source: &Sampler)
 src/sampler.rs: pub fn create_anisotropic_sampler(level: f32) -> Sampler
 src/sampler.rs: pub fn create_clamp_linear_sampler() -> Sampler
 src/sampler.rs: pub fn create_pixel_art_sampler() -> Sampler
-src/sampler.rs: pub fn create_sampler(opts: Option<&SamplerOptions>) -> Sampler
+src/sampler.rs: pub fn create_sampler() -> Sampler
 src/sampler.rs: pub fn create_tiling_sampler() -> Sampler
 src/sampler.rs: pub fn equals_sampler(a: Option<&Sampler>, b: Option<&Sampler>) -> bool
-src/sampler.rs: pub fn initialize_sampler(out: &mut Sampler, opts: Option<&SamplerOptions>)
+src/sampler.rs: pub fn initialize_sampler(out: &mut Sampler)
 src/sugar.rs: impl AlphaType :: fn parse(value: &str) -> Option<Self>
 src/sugar.rs: impl AlphaType :: fn to_str(self) -> &'static str
 src/sugar.rs: impl CubeTexture :: fn clone_cube_texture(&self) -> Self
@@ -127,7 +129,7 @@ src/sugar.rs: impl CubeTexture :: fn copy_from(&mut self, source: &Self)
 src/sugar.rs: impl CubeTexture :: fn equals(&self, other: Option<&Self>) -> bool
 src/sugar.rs: impl CubeTexture :: fn face_size(&self) -> i32
 src/sugar.rs: impl CubeTexture :: fn is_complete(&self) -> bool
-src/sugar.rs: impl CubeTexture :: fn new(opts: Option<&CreateCubeTextureOptions>) -> Self
+src/sugar.rs: impl CubeTexture :: fn new() -> Self
 src/sugar.rs: impl CubeTexture :: fn set_face(&mut self, face_index: usize, source: Option<TextureSourceRef>)
 src/sugar.rs: impl PixelFormat :: fn parse(value: &str) -> Option<Self>
 src/sugar.rs: impl PixelFormat :: fn to_str(self) -> &'static str
@@ -138,11 +140,11 @@ src/sugar.rs: impl Sampler :: fn clamp_linear() -> Self
 src/sugar.rs: impl Sampler :: fn clone_sampler(&self) -> Self
 src/sugar.rs: impl Sampler :: fn copy_from(&mut self, source: &Self)
 src/sugar.rs: impl Sampler :: fn equals(&self, other: Option<&Self>) -> bool
-src/sugar.rs: impl Sampler :: fn new(opts: Option<&SamplerOptions>) -> Self
+src/sugar.rs: impl Sampler :: fn new() -> Self
 src/sugar.rs: impl Sampler :: fn pixel_art() -> Self
 src/sugar.rs: impl Sampler :: fn tiling() -> Self
 src/sugar.rs: impl Texture :: fn new(opts: Option<&CreateTextureOptions>) -> Self
-src/sugar.rs: impl Texture2D :: fn new(opts: Option<&CreateTexture2DOptions>) -> Self
+src/sugar.rs: impl Texture2D :: fn new() -> Self
 src/sugar.rs: impl TextureColorSpace :: fn parse(value: &str) -> Option<Self>
 src/sugar.rs: impl TextureColorSpace :: fn to_str(self) -> &'static str
 src/sugar.rs: impl TextureDimension :: fn parse(value: &str) -> Option<Self>
@@ -159,7 +161,7 @@ src/sugar.rs: pub trait TextureExt: TextureVariant + Sized { fn clone_texture(&s
 src/texture.rs: pub fn clone_texture(source: &dyn TextureVariant) -> Texture
 src/texture.rs: pub fn copy_texture(out: &mut dyn TextureVariant, source: &dyn TextureVariant)
 src/texture.rs: pub fn create_texture(opts: Option<&CreateTextureOptions>) -> Texture
-src/texture.rs: pub fn create_texture_2d(opts: Option<&CreateTexture2DOptions>) -> Texture2D
+src/texture.rs: pub fn create_texture_2d() -> Texture2D
 src/texture.rs: pub fn equals_texture(a: Option<&dyn TextureVariant>, b: Option<&dyn TextureVariant>) -> bool
 src/texture.rs: pub fn get_texture_height(texture: &dyn TextureVariant) -> i32
 src/texture.rs: pub fn get_texture_inverse_uv_matrix(out: &mut Matrix3, texture: &dyn TextureUvTransform)
@@ -170,7 +172,7 @@ src/texture.rs: pub fn get_texture_view_size(out: &mut Vector2, texture: &dyn Te
 src/texture.rs: pub fn get_texture_width(texture: &dyn TextureVariant) -> i32
 src/texture.rs: pub fn has_texture_source(texture: &dyn TextureVariant) -> bool
 src/texture.rs: pub fn has_texture_uv_transform(texture: &dyn TextureUvTransform) -> bool
-src/texture.rs: pub fn initialize_texture_2d(out: &mut Texture2D, opts: Option<&CreateTexture2DOptions>)
+src/texture.rs: pub fn initialize_texture_2d(out: &mut Texture2D)
 src/texture.rs: pub fn is_texture_ready(texture: &dyn TextureVariant) -> bool
 src/texture.rs: pub fn reset_texture_uv_transform(texture: &mut dyn TextureUvTransform)
 src/texture.rs: pub fn set_texture_flip(texture: &mut dyn TextureUvTransform, flip_x: bool, flip_y: bool)
@@ -183,7 +185,6 @@ src/texture.rs: pub fn transform_texture_uv(out: &mut Vector2, texture: &dyn Tex
 src/texture_color_space.rs: pub fn get_texture_sample_color_space(source: TextureColorSpace, working: RenderTargetColorSpace,) -> TextureColorSpace
 src/texture_color_space.rs: pub fn should_decode_texture_on_sample(source: TextureColorSpace, working: RenderTargetColorSpace,) -> bool
 src/texture_color_space.rs: pub fn should_premultiply_texture_on_upload(source: TextureColorSpace, working: RenderTargetColorSpace,) -> bool
-src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq)] pub struct SamplerOptions { pub anisotropy: Option<f32>, pub mag_filter: Option<TextureFilter>, pub min_filter: Option<TextureFilter>, pub mipmaps: Option<bool>, pub wrap_u: Option<TextureWrap>, pub wrap_v: Option<TextureWrap>, }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum AlphaType { Opaque, Premultiplied, #[default] Straight, }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum PixelFormat { Bgra8Unorm, #[default] Rgba8Unorm, }
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum RenderTargetColorSpace { Linear, #[default] Srgb, }
@@ -200,7 +201,6 @@ src/types.rs: #[derive(Clone, Debug)] pub struct Texture2DArray { pub(crate) fie
 src/types.rs: #[derive(Clone, Debug)] pub struct Texture3D { pub(crate) fields: TextureFields, pub source: Option<Ref<VoxelGrid>>, }
 src/types.rs: #[derive(Clone, Debug)] pub struct TextureSourceFields { runtime: EntityRuntimeSlot, pub alpha_type: AlphaType, pub gamut: TextureGamut, pub height: u32, pub kind: Kind, pub version: u32, pub width: u32, }
 src/types.rs: #[derive(Clone, Debug)] pub struct VoxelGrid { pub(crate) fields: TextureSourceFields, pub data: Box<Uint8Array>, pub depth: u32, pub format: PixelFormat, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct CreateCubeTextureOptions { pub color_space: Option<TextureColorSpace>, pub sampler: Option<Sampler>, pub sources: Option<TextureSourceCubeFaces>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct CreateTexture2DArrayOptions { pub common: CreateTextureCommonOptions, pub sources: Option<Vec<Option<TextureSourceRef>>>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct CreateTexture2DOptions { pub common: CreateTextureCommonOptions, pub source: Option<TextureSourceRef>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct CreateTexture3DOptions { pub common: CreateTextureCommonOptions, pub source: Option<Ref<VoxelGrid>>, }

@@ -45,7 +45,7 @@ mod create_bitmap_displacement_effect {
     #[test]
     fn carries_explicit_channel_scale_and_edge_options() {
         let effect = create_bitmap_displacement_effect();
-        let map = Arc::new(RwLock::new(create_texture_2d(None)));
+        let map = Arc::new(RwLock::new(create_texture_2d()));
         let mut guard = effect.write().unwrap();
         guard.map = Some(map.clone());
         guard.component_x = Some(ImageChannel::Alpha);

@@ -82,16 +82,6 @@ pub struct Sampler {
     pub wrap_v: TextureWrap,
 }
 
-#[derive(Clone, Copy, Debug, Default, PartialEq)]
-pub struct SamplerOptions {
-    pub anisotropy: Option<f32>,
-    pub mag_filter: Option<TextureFilter>,
-    pub min_filter: Option<TextureFilter>,
-    pub mipmaps: Option<bool>,
-    pub wrap_u: Option<TextureWrap>,
-    pub wrap_v: Option<TextureWrap>,
-}
-
 #[derive(Clone, Debug)]
 pub struct TextureSourceFields {
     runtime: EntityRuntimeSlot,
@@ -246,13 +236,6 @@ pub enum CreateTextureOptions {
     Texture2DArray(CreateTexture2DArrayOptions),
     Texture3D(CreateTexture3DOptions),
     Cube(CreateTextureCubeOptions),
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct CreateCubeTextureOptions {
-    pub color_space: Option<TextureColorSpace>,
-    pub sampler: Option<Sampler>,
-    pub sources: Option<TextureSourceCubeFaces>,
 }
 
 impl Default for Sampler {

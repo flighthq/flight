@@ -8,7 +8,7 @@ use flight_geometry::{Rectangle, create_rectangle};
 use flight_glyphatlas::contract::GlyphMetrics;
 use flight_glyphatlas::{GlyphEntry, GlyphSource};
 use flight_node::Node;
-use flight_texture::{CreateTexture2DOptions, create_texture_2d, set_texture_source};
+use flight_texture::{create_texture_2d, set_texture_source};
 use flight_textureatlas::{add_texture_atlas_region, create_texture_atlas};
 
 use crate::bitmap_text::is_bitmap_text_glyph_layout_stale;
@@ -254,12 +254,9 @@ fn ensure_bitmap_text_page(
     match texture {
         Some(texture) => set_texture_source(&mut *texture.write().unwrap(), Some(image)),
         None => {
-            let texture = Arc::new(RwLock::new(create_texture_2d(Some(
-                &CreateTexture2DOptions {
-                    source: Some(image),
-                    ..CreateTexture2DOptions::default()
-                },
-            ))));
+            let mut texture = create_texture_2d();
+            texture.source = Some(image);
+            let texture = Arc::new(RwLock::new(texture));
             page_data.atlas.write().unwrap().texture = Some(texture);
         }
     }

@@ -20,19 +20,9 @@ mod sugar_tests {
     }
 
     fn texture() -> Texture2D {
-        return create_texture_2d(Some(&CreateTexture2DOptions {
-            common: CreateTextureCommonOptions {
-                color_space: None,
-                flip_x: None,
-                flip_y: None,
-                sampler: None,
-                uv_offset: None,
-                uv_rotation: None,
-                uv_scale: None,
-                version: None,
-            },
-            source: Some(source()),
-        }));
+        let mut texture = create_texture_2d();
+        texture.source = Some(source());
+        return texture;
     }
 
     #[test]
@@ -50,7 +40,7 @@ mod sugar_tests {
 
     #[test]
     fn cube_texture_clone_matches_free_function() {
-        let cube = create_cube_texture(None);
+        let cube = create_cube_texture();
         assert!(equals_cube_texture(
             Some(&cube.clone_cube_texture()),
             Some(&clone_cube_texture(&cube)),
@@ -59,9 +49,9 @@ mod sugar_tests {
 
     #[test]
     fn cube_texture_copy_from_matches_free_function() {
-        let source = create_cube_texture(None);
-        let mut method = create_cube_texture(None);
-        let mut free = create_cube_texture(None);
+        let source = create_cube_texture();
+        let mut method = create_cube_texture();
+        let mut free = create_cube_texture();
         method.copy_from(&source);
         copy_cube_texture(&mut free, &source);
         assert!(equals_cube_texture(Some(&method), Some(&free)));
@@ -69,35 +59,35 @@ mod sugar_tests {
 
     #[test]
     fn cube_texture_equals_matches_free_function() {
-        let a = create_cube_texture(None);
-        let b = create_cube_texture(None);
+        let a = create_cube_texture();
+        let b = create_cube_texture();
         assert_eq!(a.equals(Some(&b)), equals_cube_texture(Some(&a), Some(&b)));
     }
 
     #[test]
     fn cube_texture_face_size_matches_free_function() {
-        let cube = create_cube_texture(None);
+        let cube = create_cube_texture();
         assert_eq!(cube.face_size(), get_cube_texture_face_size(&cube));
     }
 
     #[test]
     fn cube_texture_is_complete_matches_free_function() {
-        let cube = create_cube_texture(None);
+        let cube = create_cube_texture();
         assert_eq!(cube.is_complete(), is_cube_texture_complete(&cube));
     }
 
     #[test]
     fn cube_texture_new_matches_free_function() {
         assert!(equals_cube_texture(
-            Some(&CubeTexture::new(None)),
-            Some(&create_cube_texture(None)),
+            Some(&CubeTexture::new()),
+            Some(&create_cube_texture()),
         ));
     }
 
     #[test]
     fn cube_texture_set_face_matches_free_function() {
-        let mut method = create_cube_texture(None);
-        let mut free = create_cube_texture(None);
+        let mut method = create_cube_texture();
+        let mut free = create_cube_texture();
         let source = source();
         method.set_face(CUBE_FACE_POSITIVE_X, Some(source.clone()));
         set_cube_texture_face(&mut free, CUBE_FACE_POSITIVE_X, Some(source));
@@ -164,8 +154,8 @@ mod sugar_tests {
     #[test]
     fn sampler_copy_from_matches_free_function() {
         let source = create_anisotropic_sampler(4.0);
-        let mut method = create_sampler(None);
-        let mut free = create_sampler(None);
+        let mut method = create_sampler();
+        let mut free = create_sampler();
         method.copy_from(&source);
         copy_sampler(&mut free, &source);
         assert!(equals_sampler(Some(&method), Some(&free)));
@@ -173,16 +163,16 @@ mod sugar_tests {
 
     #[test]
     fn sampler_equals_matches_free_function() {
-        let a = create_sampler(None);
-        let b = create_sampler(None);
+        let a = create_sampler();
+        let b = create_sampler();
         assert_eq!(a.equals(Some(&b)), equals_sampler(Some(&a), Some(&b)));
     }
 
     #[test]
     fn sampler_new_matches_free_function() {
         assert!(equals_sampler(
-            Some(&Sampler::new(None)),
-            Some(&create_sampler(None))
+            Some(&Sampler::new()),
+            Some(&create_sampler())
         ));
     }
 
@@ -205,8 +195,8 @@ mod sugar_tests {
     #[test]
     fn texture_2d_new_matches_free_function() {
         assert!(equals_texture(
-            Some(&Texture2D::new(None)),
-            Some(&create_texture_2d(None)),
+            Some(&Texture2D::new()),
+            Some(&create_texture_2d()),
         ));
     }
 
@@ -238,8 +228,8 @@ mod sugar_tests {
     #[test]
     fn texture_copy_from_matches_free_function() {
         let source = texture();
-        let mut method = create_texture_2d(None);
-        let mut free = create_texture_2d(None);
+        let mut method = create_texture_2d();
+        let mut free = create_texture_2d();
         method.copy_from_texture(&source);
         copy_texture(&mut free, &source);
         assert!(equals_texture(Some(&method), Some(&free)));
@@ -360,8 +350,8 @@ mod sugar_tests {
 
     #[test]
     fn texture_set_source_matches_free_function() {
-        let mut method = create_texture_2d(None);
-        let mut free = create_texture_2d(None);
+        let mut method = create_texture_2d();
+        let mut free = create_texture_2d();
         let source = source();
         method.set_source(Some(source.clone()));
         set_texture_source(&mut free, Some(source));
@@ -531,8 +521,8 @@ impl AlphaType {
 }
 
 impl CubeTexture {
-    pub fn new(opts: Option<&CreateCubeTextureOptions>) -> Self {
-        return create_cube_texture(opts);
+    pub fn new() -> Self {
+        return create_cube_texture();
     }
 
     pub fn clone_cube_texture(&self) -> Self {
@@ -581,8 +571,8 @@ impl RenderTargetColorSpace {
 }
 
 impl Sampler {
-    pub fn new(opts: Option<&SamplerOptions>) -> Self {
-        return create_sampler(opts);
+    pub fn new() -> Self {
+        return create_sampler();
     }
 
     pub fn anisotropic(level: f32) -> Self {
@@ -621,8 +611,8 @@ impl Texture {
 }
 
 impl Texture2D {
-    pub fn new(opts: Option<&CreateTexture2DOptions>) -> Self {
-        return create_texture_2d(opts);
+    pub fn new() -> Self {
+        return create_texture_2d();
     }
 }
 

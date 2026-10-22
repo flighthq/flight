@@ -10,9 +10,9 @@ use flight_image::{
     IMAGE_TEXTURE_SOURCE_KIND, ImageResource, create_image_resolver_state, create_image_resource,
 };
 use flight_texture::{
-    AlphaType, CreateTexture2DOptions, CreateTextureCommonOptions, Texture, Texture2D,
-    TextureDimension, TextureGamut, TextureSourceRef, TextureUvTransform, TextureVariant,
-    clone_texture, copy_texture, create_texture_2d, get_texture_uv_matrix,
+    AlphaType, CreateTextureCommonOptions, Texture, Texture2D, TextureDimension, TextureGamut,
+    TextureSourceRef, TextureUvTransform, TextureVariant, clone_texture, copy_texture,
+    create_texture_2d, get_texture_uv_matrix,
 };
 
 use crate::types::*;
@@ -181,11 +181,31 @@ pub fn create_video_texture(
     };
     let mut common = opts.cloned().unwrap_or_default();
     common.version = Some(version);
-    let options = CreateTexture2DOptions {
-        common,
-        source: image.map(|image| image as TextureSourceRef),
-    };
-    return create_texture_2d(Some(&options));
+    let mut texture = create_texture_2d();
+    if let Some(value) = common.color_space {
+        texture.color_space = value;
+    }
+    if let Some(value) = common.flip_x {
+        texture.flip_x = value;
+    }
+    if let Some(value) = common.flip_y {
+        texture.flip_y = value;
+    }
+    if let Some(value) = common.sampler {
+        texture.sampler = value;
+    }
+    if let Some(value) = common.uv_offset {
+        texture.uv_offset = value;
+    }
+    if let Some(value) = common.uv_rotation {
+        texture.uv_rotation = value;
+    }
+    if let Some(value) = common.uv_scale {
+        texture.uv_scale = value;
+    }
+    texture.version = common.version.unwrap_or(0);
+    texture.source = image.map(|image| image as TextureSourceRef);
+    return texture;
 }
 
 /// The construction initializer of a video ImageResource: straight alpha, sRGB, no size yet, the image

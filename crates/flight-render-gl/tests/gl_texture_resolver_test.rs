@@ -1,13 +1,13 @@
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
 
-use flight_entity::{allocate_entity, Ref};
+use flight_entity::{Ref, allocate_entity};
 use flight_image::ImageResource;
 use flight_render::ExternalTexture;
 use flight_render_gl::{GlRenderState, GlTextureRealization};
 use flight_texture::{
-    create_texture_2d, CreateTexture2DOptions, CreateTextureCommonOptions, RenderTargetColorSpace,
-    Texture2D, TextureColorSpace, TextureSourceRef, TextureVariant,
+    RenderTargetColorSpace, Texture2D, TextureColorSpace, TextureSourceRef, TextureVariant,
+    create_texture_2d,
 };
 use glow::HasContext;
 
@@ -18,31 +18,15 @@ static SECOND_CALLS: AtomicUsize = AtomicUsize::new(0);
 static GENERIC_CALLS: AtomicUsize = AtomicUsize::new(0);
 static SPECIFIC_CALLS: AtomicUsize = AtomicUsize::new(0);
 
-fn create_texture_common_options() -> CreateTextureCommonOptions {
-    return CreateTextureCommonOptions {
-        color_space: None,
-        flip_x: None,
-        flip_y: None,
-        sampler: None,
-        uv_offset: None,
-        uv_rotation: None,
-        uv_scale: None,
-        version: None,
-    };
-}
-
 fn make_image_texture(
     image: Option<Ref<ImageResource>>,
     color_space: TextureColorSpace,
 ) -> Texture2D {
     let source = image.map(|image| image as TextureSourceRef);
-    return create_texture_2d(Some(&CreateTexture2DOptions {
-        common: CreateTextureCommonOptions {
-            color_space: Some(color_space),
-            ..create_texture_common_options()
-        },
-        source,
-    }));
+    let mut texture = create_texture_2d();
+    texture.color_space = color_space;
+    texture.source = source;
+    return texture;
 }
 
 fn make_kind_texture(kind: &str) -> Texture2D {
@@ -51,10 +35,9 @@ fn make_kind_texture(kind: &str) -> Texture2D {
     source.width = 1;
     source.height = 1;
     let source: TextureSourceRef = Arc::new(RwLock::new(source));
-    return create_texture_2d(Some(&CreateTexture2DOptions {
-        common: create_texture_common_options(),
-        source: Some(source),
-    }));
+    let mut texture = create_texture_2d();
+    texture.source = Some(source);
+    return texture;
 }
 
 fn make_realization(state: &GlRenderState, straight_alpha: bool) -> Option<GlTextureRealization> {
@@ -361,11 +344,13 @@ mod register_standard_gl_texture_resolvers {
                 flight_render::RENDER_TARGET_TEXTURE_SOURCE_KIND.to_string(),
             ]
         );
-        assert!(!state
-            .gl_registries
-            .texture_resolvers
-            .entries
-            .contains_key(flight_image::COMPRESSED_IMAGE_TEXTURE_SOURCE_KIND));
+        assert!(
+            !state
+                .gl_registries
+                .texture_resolvers
+                .entries
+                .contains_key(flight_image::COMPRESSED_IMAGE_TEXTURE_SOURCE_KIND)
+        );
     }
 }
 
@@ -403,8 +388,10 @@ mod standard_gl_texture_resolvers {
 
     #[test]
     fn does_not_include_the_compressed_image_resolver() {
-        assert!(!standard_gl_texture_resolvers()
-            .entries
-            .contains_key(flight_image::COMPRESSED_IMAGE_TEXTURE_SOURCE_KIND));
+        assert!(
+            !standard_gl_texture_resolvers()
+                .entries
+                .contains_key(flight_image::COMPRESSED_IMAGE_TEXTURE_SOURCE_KIND)
+        );
     }
 }

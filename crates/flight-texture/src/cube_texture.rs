@@ -1,25 +1,21 @@
 use std::sync::Arc;
 
-use crate::sampler::clone_sampler;
 use crate::texture::{clone_texture, copy_texture, equals_texture};
 use crate::types::*;
 
-pub fn create_cube_texture(opts: Option<&CreateCubeTextureOptions>) -> CubeTexture {
-    let common = CreateTextureCommonOptions {
-        color_space: opts.and_then(|value| value.color_space),
-        sampler: opts
-            .and_then(|value| value.sampler.as_ref())
-            .map(clone_sampler),
-        ..CreateTextureCommonOptions::default()
-    };
-    let general = CreateTextureOptions::Cube(CreateTextureCubeOptions {
-        common,
-        sources: opts.and_then(|value| value.sources.clone()),
-    });
-    return match crate::texture::create_texture(Some(&general)) {
-        Texture::Cube(cube) => cube,
-        _ => unreachable!(),
-    };
+// flight-lint: allow(conform-params) Principal c0f9227c D23 callers assign authored cube fields after canonical construction
+pub fn create_cube_texture() -> CubeTexture {
+    let mut out = flight_entity::allocate_entity();
+    initialize_cube_texture(&mut out);
+    return out;
+}
+
+// flight-lint: allow(conform-extra) D23 (I): public canonical construction initializer absent from the pinned source
+pub fn initialize_cube_texture(out: &mut CubeTexture) {
+    let runtime = std::mem::take(&mut out.fields.runtime);
+    out.fields = TextureFields::default();
+    out.fields.runtime = runtime;
+    out.sources = std::array::from_fn(|_| None);
 }
 
 pub fn clone_cube_texture(source: &CubeTexture) -> CubeTexture {

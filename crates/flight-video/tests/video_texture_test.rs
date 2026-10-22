@@ -147,7 +147,7 @@ mod advance_video_texture {
         let host = test_video_host();
         let mut empty = create_video_texture(&host, &create_video_resource(), None);
         assert_eq!(advance_video_texture(&host, &mut empty), 0xffffffff);
-        let mut plain = create_texture_2d(None);
+        let mut plain = create_texture_2d();
         plain.texture_fields_mut().version = 5;
         assert_eq!(advance_video_texture(&host, &mut plain), 5);
     }

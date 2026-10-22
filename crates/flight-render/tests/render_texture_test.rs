@@ -41,7 +41,7 @@ mod create_render_texture {
 
     #[test]
     fn applies_sampling_depth_color_space_and_uv_overrides_without_aliasing_mutable_values() {
-        let mut sampler = create_sampler(None);
+        let mut sampler = create_sampler();
         sampler.mag_filter = TextureFilter::Nearest;
         let sampler_id = get_entity_id(&sampler);
         let mut options = render_texture_options(16, 8);

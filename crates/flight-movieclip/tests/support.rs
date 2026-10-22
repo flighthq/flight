@@ -10,7 +10,7 @@ use flight_texture::create_texture_2d;
 use flight_textureatlas::{TextureAtlas, add_texture_atlas_region, create_texture_atlas};
 
 pub fn atlas_with_regions(count: i32) -> Ref<TextureAtlas> {
-    let texture = Arc::new(RwLock::new(create_texture_2d(None)));
+    let texture = Arc::new(RwLock::new(create_texture_2d()));
     let atlas = create_texture_atlas();
     atlas.write().unwrap().texture = Some(texture);
     {

@@ -19,10 +19,40 @@ fn common_options() -> CreateTextureCommonOptions {
 }
 
 fn texture_2d(source: Option<TextureSourceRef>) -> Texture2D {
-    return create_texture_2d(Some(&CreateTexture2DOptions {
-        common: common_options(),
-        source,
-    }));
+    return texture_2d_with_common(common_options(), source);
+}
+
+fn texture_2d_with_common(
+    common: CreateTextureCommonOptions,
+    source: Option<TextureSourceRef>,
+) -> Texture2D {
+    let mut texture = create_texture_2d();
+    if let Some(value) = common.color_space {
+        texture.color_space = value;
+    }
+    if let Some(value) = common.flip_x {
+        texture.flip_x = value;
+    }
+    if let Some(value) = common.flip_y {
+        texture.flip_y = value;
+    }
+    if let Some(value) = common.sampler {
+        texture.sampler = value;
+    }
+    if let Some(value) = common.uv_offset {
+        texture.uv_offset = value;
+    }
+    if let Some(value) = common.uv_rotation {
+        texture.uv_rotation = value;
+    }
+    if let Some(value) = common.uv_scale {
+        texture.uv_scale = value;
+    }
+    if let Some(value) = common.version {
+        texture.version = value;
+    }
+    texture.source = source;
+    return texture;
 }
 
 fn multiply_uv(matrix: &flight_geometry::Matrix3, u: f32, v: f32) -> (f32, f32) {
@@ -75,11 +105,8 @@ mod copy_texture {
         common.sampler = Some(create_anisotropic_sampler(8.0));
         common.uv_rotation = Some(0.75);
         common.uv_scale = Some(create_vector2(4.0, 5.0));
-        let source_texture = create_texture_2d(Some(&CreateTexture2DOptions {
-            common,
-            source: Some(active),
-        }));
-        let mut out = create_texture_2d(None);
+        let source_texture = texture_2d_with_common(common, Some(active));
+        let mut out = create_texture_2d();
         let sampler_address = std::ptr::from_ref(&out.sampler);
         let offset_address = std::ptr::from_ref(&out.uv_offset);
         copy_texture(&mut out, &source_texture);
@@ -87,7 +114,7 @@ mod copy_texture {
         assert_eq!(std::ptr::from_ref(&out.sampler), sampler_address);
         assert_eq!(std::ptr::from_ref(&out.uv_offset), offset_address);
 
-        let cube = create_cube_texture(None);
+        let cube = create_cube_texture();
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             copy_texture(&mut out, &cube);
         }));
@@ -133,21 +160,21 @@ mod create_texture_2d {
     use super::*;
 
     #[test]
-    fn clones_supplied_sampling_state_and_uv_vectors() {
+    fn establishes_defaults_before_caller_authored_assignment() {
         let sampler = create_anisotropic_sampler(8.0);
         let offset = create_vector2(2.0, 3.0);
-        let mut common = common_options();
-        common.sampler = Some(sampler.clone());
-        common.uv_offset = Some(offset.clone());
-        common.version = Some(3);
-        let texture = create_texture_2d(Some(&CreateTexture2DOptions {
-            common,
-            source: None,
-        }));
+        let mut texture = create_texture_2d();
+        assert_eq!(texture.color_space, TextureColorSpace::Srgb);
+        assert_eq!(texture.uv_offset, create_vector2(0.0, 0.0));
+        assert_eq!(texture.uv_scale, create_vector2(1.0, 1.0));
+        assert_eq!(texture.version, 0);
+        assert!(texture.source.is_none());
+
+        texture.sampler = sampler.clone();
+        texture.uv_offset = offset.clone();
+        texture.version = 3;
         assert!(equals_sampler(Some(&texture.sampler), Some(&sampler)));
-        assert!(!std::ptr::eq(&texture.sampler, &sampler));
         assert_eq!(texture.uv_offset, offset);
-        assert!(!std::ptr::eq(&texture.uv_offset, &offset));
         assert_eq!(texture.version, 3);
     }
 }
@@ -250,10 +277,7 @@ mod get_texture_uv_matrix {
         common.uv_offset = Some(create_vector2(0.1, 0.2));
         common.uv_rotation = Some(0.5);
         common.uv_scale = Some(create_vector2(2.0, 3.0));
-        let texture = create_texture_2d(Some(&CreateTexture2DOptions {
-            common,
-            source: None,
-        }));
+        let texture = texture_2d_with_common(common, None);
         let mut matrix = create_matrix3();
         get_texture_uv_matrix(&mut matrix, &texture);
         let via_matrix = multiply_uv(&matrix, 0.35, 0.6);
@@ -328,24 +352,19 @@ mod initialize_texture_2d {
     use super::*;
 
     #[test]
-    fn reinitializes_all_fields_and_fresh_sampling_state() {
+    fn restores_defaults_without_replacing_entity_identity() {
         let active = source("image", 4, 8);
-        let mut texture = texture_2d(None);
-        let old_sampler_address = std::ptr::from_ref(&texture.sampler);
-        let mut common = common_options();
-        common.color_space = Some(TextureColorSpace::Linear);
-        common.version = Some(9);
-        initialize_texture_2d(
-            &mut texture,
-            Some(&CreateTexture2DOptions {
-                common,
-                source: Some(active.clone()),
-            }),
-        );
-        assert_eq!(texture.color_space, TextureColorSpace::Linear);
-        assert_eq!(texture.version, 9);
-        assert!(Arc::ptr_eq(texture.source.as_ref().unwrap(), &active));
-        assert_eq!(std::ptr::from_ref(&texture.sampler), old_sampler_address);
+        let mut texture = texture_2d(Some(active));
+        texture.color_space = TextureColorSpace::Linear;
+        texture.flip_x = true;
+        texture.version = 9;
+        let uid = flight_entity::get_entity_uid(&mut texture);
+        initialize_texture_2d(&mut texture);
+        assert_eq!(texture.color_space, TextureColorSpace::Srgb);
+        assert!(!texture.flip_x);
+        assert_eq!(texture.version, 0);
+        assert!(texture.source.is_none());
+        assert_eq!(flight_entity::get_entity_uid(&mut texture), uid);
     }
 }
 

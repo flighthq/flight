@@ -19,10 +19,11 @@ enum CapturedTextureSources {
 
 pub fn create_texture(opts: Option<&CreateTextureOptions>) -> Texture {
     return match opts {
-        None => Texture::Texture2D(create_texture_2d(None)),
-        Some(CreateTextureOptions::Texture2D(options)) => {
-            Texture::Texture2D(create_texture_2d(Some(options)))
-        }
+        None => Texture::Texture2D(create_texture_2d()),
+        Some(CreateTextureOptions::Texture2D(options)) => Texture::Texture2D(Texture2D {
+            fields: create_texture_fields(Some(&options.common)),
+            source: options.source.clone(),
+        }),
         Some(CreateTextureOptions::Texture2DArray(options)) => {
             let mut out: Texture2DArray = allocate_entity();
             out.fields = create_texture_fields(Some(&options.common));
@@ -47,9 +48,10 @@ pub fn create_texture(opts: Option<&CreateTextureOptions>) -> Texture {
     };
 }
 
-pub fn create_texture_2d(opts: Option<&CreateTexture2DOptions>) -> Texture2D {
+// flight-lint: allow(conform-params) Principal c0f9227c D23 callers assign authored texture fields after canonical construction
+pub fn create_texture_2d() -> Texture2D {
     let mut out: Texture2D = allocate_entity();
-    initialize_texture_2d(&mut out, opts);
+    initialize_texture_2d(&mut out);
     return out;
 }
 
@@ -64,7 +66,7 @@ fn create_texture_fields(opts: Option<&CreateTextureCommonOptions>) -> TextureFi
         sampler: opts
             .and_then(|value| value.sampler.as_ref())
             .map(clone_sampler)
-            .unwrap_or_else(|| create_sampler(None)),
+            .unwrap_or_else(create_sampler),
         uv_offset: opts
             .and_then(|value| value.uv_offset.as_ref())
             .map(clone_vector2)
@@ -78,9 +80,12 @@ fn create_texture_fields(opts: Option<&CreateTextureCommonOptions>) -> TextureFi
     };
 }
 
-pub fn initialize_texture_2d(out: &mut Texture2D, opts: Option<&CreateTexture2DOptions>) {
-    out.fields = create_texture_fields(opts.map(|value| &value.common));
-    out.source = opts.and_then(|value| value.source.clone());
+// flight-lint: allow(conform-params) Principal c0f9227c D23 initialization establishes canonical texture defaults before caller-authored assignment
+pub fn initialize_texture_2d(out: &mut Texture2D) {
+    let runtime = std::mem::take(&mut out.fields.runtime);
+    out.fields = create_texture_fields(None);
+    out.fields.runtime = runtime;
+    out.source = None;
 }
 
 fn capture_texture_sources(source: &dyn TextureVariant) -> CapturedTextureSources {

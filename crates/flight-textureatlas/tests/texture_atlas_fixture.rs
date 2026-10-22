@@ -8,10 +8,7 @@ use flight_image::{
     HostImageDimensions, ImageResource, create_image_resolver_state, create_image_resource,
     register_test_image_dimension_resolver,
 };
-use flight_texture::{
-    CreateTexture2DOptions, CreateTextureCommonOptions, Texture2D, TextureSourceRef,
-    create_texture_2d,
-};
+use flight_texture::{CreateTextureCommonOptions, Texture2D, TextureSourceRef, create_texture_2d};
 use flight_textureatlas::contract::{
     TextureAtlas, TextureAtlasOptions, TextureAtlasRegion, TextureAtlasRegionOptions,
     create_texture_atlas, create_texture_atlas_region, set_texture_atlas_region,
@@ -49,13 +46,38 @@ pub fn page(
     source: Option<TextureSourceRef>,
     common: CreateTextureCommonOptions,
 ) -> Ref<Texture2D> {
-    let options = CreateTexture2DOptions { common, source };
-    return Arc::new(RwLock::new(create_texture_2d(Some(&options))));
+    let mut texture = create_texture_2d();
+    if let Some(value) = common.color_space {
+        texture.color_space = value;
+    }
+    if let Some(value) = common.flip_x {
+        texture.flip_x = value;
+    }
+    if let Some(value) = common.flip_y {
+        texture.flip_y = value;
+    }
+    if let Some(value) = common.sampler {
+        texture.sampler = value;
+    }
+    if let Some(value) = common.uv_offset {
+        texture.uv_offset = value;
+    }
+    if let Some(value) = common.uv_rotation {
+        texture.uv_rotation = value;
+    }
+    if let Some(value) = common.uv_scale {
+        texture.uv_scale = value;
+    }
+    if let Some(value) = common.version {
+        texture.version = value;
+    }
+    texture.source = source;
+    return Arc::new(RwLock::new(texture));
 }
 
 /// A shared empty 2D texture (the source's `createTexture()`).
 pub fn empty_page() -> Ref<Texture2D> {
-    return Arc::new(RwLock::new(create_texture_2d(None)));
+    return Arc::new(RwLock::new(create_texture_2d()));
 }
 
 /// An all-`None` region options record (the source's `{}` Partial).

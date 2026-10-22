@@ -45,7 +45,7 @@ fn make_quad_region(id: i32, width: f32, height: f32) -> Ref<TextureAtlasRegion>
 }
 
 fn make_texture() -> Ref<Texture2D> {
-    return Arc::new(RwLock::new(create_texture_2d(None)));
+    return Arc::new(RwLock::new(create_texture_2d()));
 }
 
 mod append_quad_batch_instance {

@@ -3,54 +3,45 @@ use flight_entity::allocate_entity;
 use crate::types::*;
 
 pub fn create_anisotropic_sampler(level: f32) -> Sampler {
-    return create_sampler(Some(&SamplerOptions {
-        anisotropy: Some(level),
-        ..SamplerOptions::default()
-    }));
+    let mut out = create_sampler();
+    out.anisotropy = level;
+    return out;
 }
 
 pub fn create_clamp_linear_sampler() -> Sampler {
-    return create_sampler(None);
+    return create_sampler();
 }
 
 pub fn create_pixel_art_sampler() -> Sampler {
-    return create_sampler(Some(&SamplerOptions {
-        mag_filter: Some(TextureFilter::Nearest),
-        min_filter: Some(TextureFilter::Nearest),
-        mipmaps: Some(false),
-        ..SamplerOptions::default()
-    }));
+    let mut out = create_sampler();
+    out.mag_filter = TextureFilter::Nearest;
+    out.min_filter = TextureFilter::Nearest;
+    out.mipmaps = false;
+    return out;
 }
 
-pub fn create_sampler(opts: Option<&SamplerOptions>) -> Sampler {
+// flight-lint: allow(conform-params) Principal c0f9227c D23 callers assign authored sampling fields after canonical construction
+pub fn create_sampler() -> Sampler {
     let mut out: Sampler = allocate_entity();
-    initialize_sampler(&mut out, opts);
+    initialize_sampler(&mut out);
     return out;
 }
 
 pub fn create_tiling_sampler() -> Sampler {
-    return create_sampler(Some(&SamplerOptions {
-        wrap_u: Some(TextureWrap::Repeat),
-        wrap_v: Some(TextureWrap::Repeat),
-        ..SamplerOptions::default()
-    }));
+    let mut out = create_sampler();
+    out.wrap_u = TextureWrap::Repeat;
+    out.wrap_v = TextureWrap::Repeat;
+    return out;
 }
 
-pub fn initialize_sampler(out: &mut Sampler, opts: Option<&SamplerOptions>) {
-    out.anisotropy = opts.and_then(|value| value.anisotropy).unwrap_or(1.0);
-    out.mag_filter = opts
-        .and_then(|value| value.mag_filter)
-        .unwrap_or(TextureFilter::Linear);
-    out.min_filter = opts
-        .and_then(|value| value.min_filter)
-        .unwrap_or(TextureFilter::LinearMipmapLinear);
-    out.mipmaps = opts.and_then(|value| value.mipmaps).unwrap_or(true);
-    out.wrap_u = opts
-        .and_then(|value| value.wrap_u)
-        .unwrap_or(TextureWrap::ClampToEdge);
-    out.wrap_v = opts
-        .and_then(|value| value.wrap_v)
-        .unwrap_or(TextureWrap::ClampToEdge);
+// flight-lint: allow(conform-params) Principal c0f9227c D23 initialization establishes canonical sampling defaults before caller-authored assignment
+pub fn initialize_sampler(out: &mut Sampler) {
+    out.anisotropy = 1.0;
+    out.mag_filter = TextureFilter::Linear;
+    out.min_filter = TextureFilter::LinearMipmapLinear;
+    out.mipmaps = true;
+    out.wrap_u = TextureWrap::ClampToEdge;
+    out.wrap_v = TextureWrap::ClampToEdge;
 }
 
 pub fn clone_sampler(source: &Sampler) -> Sampler {

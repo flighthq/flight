@@ -10,8 +10,7 @@ use flight_materials::{BLEND_MODE_ADD, color_scale_bias::create_color_scale_bias
 use flight_render::{RenderState, create_render_proxy_2d};
 use flight_render_wgpu::*;
 use flight_texture::{
-    CreateTexture2DOptions, CreateTextureCommonOptions, Texture2D, TextureColorSpace,
-    TextureSourceRef, TextureUvTransform, create_texture_2d,
+    Texture2D, TextureColorSpace, TextureSourceRef, TextureUvTransform, create_texture_2d,
 };
 use flight_texture_formats::{
     TextureContainer, TextureContainerFormat, TextureContainerLevel,
@@ -74,13 +73,9 @@ fn video_texture(
     let (image, fake) = create_test_image_resource(width, height, ready);
     image.write().unwrap().version = version;
     let source: TextureSourceRef = image.clone();
-    let texture = create_texture_2d(Some(&CreateTexture2DOptions {
-        common: CreateTextureCommonOptions {
-            color_space: Some(TextureColorSpace::Srgb),
-            ..test_default()
-        },
-        source: Some(source),
-    }));
+    let mut texture = create_texture_2d();
+    texture.color_space = TextureColorSpace::Srgb;
+    texture.source = Some(source);
     return (texture, image, fake);
 }
 
@@ -516,7 +511,7 @@ mod destroy_wgpu_video_texture {
         assert!(!destroy_wgpu_video_texture(&mut state, &video));
         bind_wgpu_video_texture(&mut state, &video).unwrap();
         assert!(destroy_wgpu_video_texture(&mut state, &video));
-        let sourceless = create_texture_2d(None);
+        let sourceless = create_texture_2d();
         assert!(!destroy_wgpu_video_texture(&mut state, &sourceless));
     }
 }

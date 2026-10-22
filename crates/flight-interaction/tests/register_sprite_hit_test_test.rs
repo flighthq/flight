@@ -7,7 +7,7 @@ use flight_bitmap::{BitmapReadbackMode, HostBitmapReadbackCapability, create_bit
 use flight_geometry::set_rectangle;
 use flight_host::HostImageSource;
 use flight_image::{ImageResource, create_image_resolver_state, create_image_resource};
-use flight_interaction::hit_tests::{find_graph_hit_target_precise, HitTestContext};
+use flight_interaction::hit_tests::{HitTestContext, find_graph_hit_target_precise};
 use flight_interaction::node_interaction_state::{
     enable_node_interaction_state, set_node_hit_test_enabled,
 };
@@ -34,7 +34,9 @@ fn sprite_node_with_bounds(x: f32, y: f32, w: f32, h: f32) -> NodeRef {
             .as_bounds_node_mut()
             .expect("sprite has bounds")
             .bounds_runtime_mut();
-        let rect = bounds.local_bounds_rectangle.get_or_insert_with(Default::default);
+        let rect = bounds
+            .local_bounds_rectangle
+            .get_or_insert_with(Default::default);
         set_rectangle(rect, x, y, w, h);
         let local_bounds_id = guard.node_runtime().local_bounds_id as i32;
         guard.node_runtime_mut().local_bounds_using_local_bounds_id = local_bounds_id;
@@ -51,7 +53,11 @@ fn make_host_source() -> Arc<HostImageSource> {
     });
 }
 
-fn make_image_resource(host_source: &Arc<HostImageSource>, width: u32, height: u32) -> Arc<RwLock<ImageResource>> {
+fn make_image_resource(
+    host_source: &Arc<HostImageSource>,
+    width: u32,
+    height: u32,
+) -> Arc<RwLock<ImageResource>> {
     let resource = create_image_resource(host_source.clone(), &create_image_resolver_state());
     {
         let mut guard = resource.write().unwrap();
@@ -95,12 +101,15 @@ fn sprite_with_image_texture(
     image: &Arc<RwLock<ImageResource>>,
 ) -> NodeRef {
     let sprite = sprite_node_with_bounds(x, y, w, h);
-    let mut tex = create_texture_2d(None);
+    let mut tex = create_texture_2d();
     tex.source = Some(image.clone());
     let texture_ref = Arc::new(RwLock::new(Texture::Texture2D(tex)));
     {
         let mut guard = sprite.write().unwrap();
-        let spr = guard.as_any_mut().downcast_mut::<flight_scene2d::Sprite>().unwrap();
+        let spr = guard
+            .as_any_mut()
+            .downcast_mut::<flight_scene2d::Sprite>()
+            .unwrap();
         spr.data.texture = Some(texture_ref);
     }
     return sprite;
@@ -220,7 +229,10 @@ mod register_sprite_hit_test {
         let image = make_image_resource(&source, 10, 10);
         let sprite = sprite_with_image_texture(0.0, 0.0, 10.0, 10.0, &image);
         let r1 = find_graph_hit_target_precise(&ctx, &sprite, 5.0, 5.0);
-        assert!(r1.is_some(), "readback failure means no alpha data -> falls through to bounds hit");
+        assert!(
+            r1.is_some(),
+            "readback failure means no alpha data -> falls through to bounds hit"
+        );
         let r2 = find_graph_hit_target_precise(&ctx, &sprite, 5.0, 5.0);
         assert!(r2.is_some());
         assert_eq!(attempt.load(Ordering::Relaxed), 2);
@@ -295,7 +307,11 @@ mod register_sprite_hit_test {
         let image2 = make_image_resource(&source2, 10, 10);
         let sprite2 = sprite_with_image_texture(0.0, 0.0, 10.0, 10.0, &image2);
         let _r2 = find_graph_hit_target_precise(&ctx, &sprite2, 5.0, 5.0);
-        assert_eq!(calls.load(Ordering::Relaxed), 2, "new resource after drop must re-read bitmap");
+        assert_eq!(
+            calls.load(Ordering::Relaxed),
+            2,
+            "new resource after drop must re-read bitmap"
+        );
     }
 
     #[test]
@@ -316,7 +332,14 @@ mod register_sprite_hit_test {
             guard.height = 20;
         }
         let r2 = find_graph_hit_target_precise(&ctx, &sprite, 15.0, 15.0);
-        assert_eq!(calls.load(Ordering::Relaxed), 1, "bitmap cached, no re-read");
-        assert!(r2.is_none(), "point (15,15) with 20x20 image maps to px 15 which is outside 10x10 bitmap");
+        assert_eq!(
+            calls.load(Ordering::Relaxed),
+            1,
+            "bitmap cached, no re-read"
+        );
+        assert!(
+            r2.is_none(),
+            "point (15,15) with 20x20 image maps to px 15 which is outside 10x10 bitmap"
+        );
     }
 }

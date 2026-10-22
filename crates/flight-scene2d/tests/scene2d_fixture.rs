@@ -3,10 +3,7 @@ use std::sync::{Arc, RwLock};
 use flight_entity::{EntityRuntimeSlot, Ref, allocate_entity};
 use flight_node::NodeRef;
 use flight_scene2d::contract::*;
-use flight_texture::{
-    CreateTexture2DOptions, CreateTextureCommonOptions, Texture, TextureSourceRef, VoxelGrid,
-    create_texture_2d,
-};
+use flight_texture::{Texture, TextureSourceRef, VoxelGrid, create_texture_2d};
 
 /// A texture over a sized stand-in source (TS `createTexture({ dimension: '2d', source })`).
 pub fn texture(width: u32, height: u32) -> Ref<Texture> {
@@ -14,14 +11,9 @@ pub fn texture(width: u32, height: u32) -> Ref<Texture> {
     grid.width = width;
     grid.height = height;
     let source: TextureSourceRef = Arc::new(RwLock::new(grid));
-    let make: fn() -> CreateTextureCommonOptions = CreateTextureCommonOptions::default;
-    let options = CreateTexture2DOptions {
-        common: make(),
-        source: Some(source),
-    };
-    return Arc::new(RwLock::new(Texture::Texture2D(create_texture_2d(Some(
-        &options,
-    )))));
+    let mut texture = create_texture_2d();
+    texture.source = Some(source);
+    return Arc::new(RwLock::new(Texture::Texture2D(texture)));
 }
 
 pub fn node2d_options() -> PartialNode2D {

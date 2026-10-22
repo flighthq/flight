@@ -6,8 +6,7 @@ use std::sync::{Arc, RwLock};
 use flight_entity::{allocate_entity, get_entity_id};
 use flight_render::{CreateExternalTextureOptions, EXTERNAL_TEXTURE_SOURCE_KIND, ExternalTexture};
 use flight_texture::{
-    CreateTexture2DOptions, CreateTextureCommonOptions, Texture2D, TextureDimension,
-    TextureSourceRef, TextureVariant, create_texture_2d,
+    Texture2D, TextureDimension, TextureSourceRef, TextureVariant, clone_sampler, create_texture_2d,
 };
 
 use crate::{
@@ -24,14 +23,14 @@ pub fn create_external_gl_texture(
     initialize_external_gl_texture_source(&mut source, options);
     let source_id = get_entity_id(&source);
     let source: TextureSourceRef = Arc::new(RwLock::new(source));
-    let texture = create_texture_2d(Some(&CreateTexture2DOptions {
-        common: CreateTextureCommonOptions {
-            color_space: options.color_space,
-            sampler: options.sampler.clone(),
-            ..CreateTextureCommonOptions::default()
-        },
-        source: Some(source),
-    }));
+    let mut texture = create_texture_2d();
+    if let Some(color_space) = options.color_space {
+        texture.color_space = color_space;
+    }
+    if let Some(sampler) = options.sampler.as_ref() {
+        texture.sampler = clone_sampler(sampler);
+    }
+    texture.source = Some(source);
     state
         .context_state
         .runtime_state

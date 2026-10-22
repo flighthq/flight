@@ -4,7 +4,7 @@ use flight_lighting::contract::*;
 use flight_texture::{Texture, create_cube_texture};
 
 fn cube() -> flight_entity::Ref<Texture> {
-    return Arc::new(RwLock::new(Texture::Cube(create_cube_texture(None))));
+    return Arc::new(RwLock::new(Texture::Cube(create_cube_texture())));
 }
 
 mod clone_environment {

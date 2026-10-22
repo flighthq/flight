@@ -1,9 +1,9 @@
 use std::sync::{Arc, RwLock};
 
 use flight_entity::allocate_entity;
+use flight_geometry::clone_vector2;
 use flight_texture::{
-    CreateTexture2DOptions, CreateTextureCommonOptions, RenderTargetColorSpace, TextureColorSpace,
-    TextureSourceRef, create_texture_2d,
+    RenderTargetColorSpace, TextureColorSpace, TextureSourceRef, clone_sampler, create_texture_2d,
 };
 
 use crate::{CreateRenderTextureOptions, RenderTarget, RenderTexture};
@@ -22,19 +22,22 @@ pub fn create_render_texture(options: &CreateRenderTextureOptions) -> RenderText
     let target = Arc::new(RwLock::new(target));
     let source: TextureSourceRef = target;
 
-    return create_texture_2d(Some(&CreateTexture2DOptions {
-        common: CreateTextureCommonOptions {
-            color_space: Some(texture_color_space),
-            flip_x: Some(options.flip_x.unwrap_or(false)),
-            flip_y: Some(options.flip_y.unwrap_or(false)),
-            sampler: options.sampler.clone(),
-            uv_offset: options.uv_offset.clone(),
-            uv_rotation: options.uv_rotation,
-            uv_scale: options.uv_scale.clone(),
-            version: None,
-        },
-        source: Some(source),
-    }));
+    let mut texture = create_texture_2d();
+    texture.color_space = texture_color_space;
+    texture.flip_x = options.flip_x.unwrap_or(false);
+    texture.flip_y = options.flip_y.unwrap_or(false);
+    if let Some(sampler) = &options.sampler {
+        texture.sampler = clone_sampler(sampler);
+    }
+    if let Some(offset) = &options.uv_offset {
+        texture.uv_offset = clone_vector2(offset);
+    }
+    texture.uv_rotation = options.uv_rotation.unwrap_or(0.0);
+    if let Some(scale) = &options.uv_scale {
+        texture.uv_scale = clone_vector2(scale);
+    }
+    texture.source = Some(source);
+    return texture;
 }
 
 // flight-lint: allow(conform-extra) approved relocation from texture/renderTexture.ts to flight-render

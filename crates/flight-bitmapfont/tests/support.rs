@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use flight_bitmap::create_bitmap;
 use flight_entity::Ref;
 use flight_font::GlyphMetrics;
-use flight_texture::{CreateTexture2DOptions, TextureSourceRef, create_texture_2d};
+use flight_texture::{TextureSourceRef, create_texture_2d};
 use flight_textureatlas::{TextureAtlas, create_texture_atlas};
 
 use super::*;
@@ -64,12 +64,9 @@ pub(crate) fn page_of_bytes(bytes: usize) -> Ref<TextureAtlas> {
 pub(crate) fn page_and_source(bytes: usize) -> (Ref<TextureAtlas>, TextureSourceRef) {
     let bitmap = Arc::new(RwLock::new(create_bitmap((bytes / 4) as u32, 1, None)));
     let source: TextureSourceRef = bitmap;
-    let texture = Arc::new(RwLock::new(create_texture_2d(Some(
-        &CreateTexture2DOptions {
-            source: Some(source.clone()),
-            ..CreateTexture2DOptions::default()
-        },
-    ))));
+    let mut texture = create_texture_2d();
+    texture.source = Some(source.clone());
+    let texture = Arc::new(RwLock::new(texture));
     let page = create_texture_atlas();
     page.write().unwrap().texture = Some(texture);
     return (page, source);
