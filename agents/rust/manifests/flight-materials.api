@@ -332,9 +332,11 @@ src/types.rs: impl Material3DFields :: fn is_opaque(&self) -> bool
 src/types.rs: impl Material3DFields :: fn new(kind: Kind) -> Self
 src/types.rs: impl MaterialConversionContext :: fn new(guard: MaterialConversionGuard) -> Self
 src/types.rs: impl MaterialData for MaterialDataFields
+src/types.rs: impl MaterialData for MaterialDataFields :: fn as_any(&self) -> &dyn std::any::Any
 src/types.rs: impl MaterialData for MaterialDataFields :: fn material_data_fields(&self) -> &MaterialDataFields
 src/types.rs: impl MaterialData for MaterialDataFields :: fn material_data_fields_mut(&mut self) -> &mut MaterialDataFields
 src/types.rs: impl MaterialData for TintMaterialData
+src/types.rs: impl MaterialData for TintMaterialData :: fn as_any(&self) -> &dyn std::any::Any
 src/types.rs: impl MaterialData for TintMaterialData :: fn material_data_fields(&self) -> &MaterialDataFields
 src/types.rs: impl MaterialData for TintMaterialData :: fn material_data_fields_mut(&mut self) -> &mut MaterialDataFields
 src/types.rs: impl MaterialFields :: fn clone_material(&self) -> Self
@@ -431,7 +433,7 @@ src/types.rs: pub struct MaterialConversionContext { pub(crate) guard: MaterialC
 src/types.rs: pub trait Material2D: Material { fn material2d_fields(&self) -> &Material2DFields; fn material2d_fields_mut(&mut self) -> &mut Material2DFields; }
 src/types.rs: pub trait Material3D: Material { fn material3d_fields(&self) -> &Material3DFields; fn material3d_fields_mut(&mut self) -> &mut Material3DFields; }
 src/types.rs: pub trait Material: flight_entity::Entity + std::any::Any + Send + Sync { fn as_any(&self) -> &dyn std::any::Any; fn as_any_mut(&mut self) -> &mut dyn std::any::Any; fn material_fields(&self) -> &MaterialFields; fn material_fields_mut(&mut self) -> &mut MaterialFields; fn modifier_stream(&self) -> Option<&dyn MaterialModifierStream>; }
-src/types.rs: pub trait MaterialData: flight_entity::Entity + Send + Sync { fn material_data_fields(&self) -> &MaterialDataFields; fn material_data_fields_mut(&mut self) -> &mut MaterialDataFields; }
+src/types.rs: pub trait MaterialData: flight_entity::Entity + std::any::Any + Send + Sync { fn as_any(&self) -> &dyn std::any::Any; fn material_data_fields(&self) -> &MaterialDataFields; fn material_data_fields_mut(&mut self) -> &mut MaterialDataFields; }
 src/types.rs: pub trait MaterialModifierStream { fn len(&self) -> usize; fn is_empty(&self) -> bool; fn kind_at(&self, index: usize) -> Option<flight_entity::Kind>; }
 src/types.rs: pub type BlendMode = String;
 src/types.rs: pub type Material3DRef = Ref<dyn Material3D>;

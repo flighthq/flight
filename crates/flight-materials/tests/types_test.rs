@@ -177,6 +177,9 @@ mod custom_material_data {
     }
 
     impl MaterialData for CustomMaterialData {
+        fn as_any(&self) -> &dyn std::any::Any {
+            return self;
+        }
         fn material_data_fields(&self) -> &MaterialDataFields {
             return &self.fields;
         }

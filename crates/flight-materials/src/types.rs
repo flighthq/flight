@@ -933,7 +933,8 @@ pub struct MaterialDataFields {
     runtime: EntityRuntimeSlot,
 }
 
-pub trait MaterialData: flight_entity::Entity + Send + Sync {
+pub trait MaterialData: flight_entity::Entity + std::any::Any + Send + Sync {
+    fn as_any(&self) -> &dyn std::any::Any;
     fn material_data_fields(&self) -> &MaterialDataFields;
     fn material_data_fields_mut(&mut self) -> &mut MaterialDataFields;
 }
@@ -1478,6 +1479,9 @@ pub(crate) fn default_material3d_fields(kind: &str) -> Material3DFields {
 
 // flight-lint: allow(sugar-delegates) D16 open-family: base type self-implements its own family trait
 impl MaterialData for MaterialDataFields {
+    fn as_any(&self) -> &dyn std::any::Any {
+        return self;
+    }
     fn material_data_fields(&self) -> &MaterialDataFields {
         return self;
     }
@@ -1635,6 +1639,9 @@ impl flight_entity::Entity for TintMaterialData {
 
 // flight-lint: allow(sugar-delegates) D16 open-family composition: MaterialData trait accessor for TintMaterialData
 impl MaterialData for TintMaterialData {
+    fn as_any(&self) -> &dyn std::any::Any {
+        return self;
+    }
     fn material_data_fields(&self) -> &MaterialDataFields {
         return &self.fields;
     }

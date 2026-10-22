@@ -1057,18 +1057,25 @@ mod set_quad_batch_instance_tint {
     use super::*;
 
     #[test]
-    fn lazily_allocates_per_instance_material_slots_and_ignores_invalid_indices() {
+    fn lazily_allocates_per_instance_material_slots_and_stores_packed_rgba() {
         let batch = batch_with_data(|d| {
             d.instance_count = 3;
         });
         set_quad_batch_instance_tint(&mut batch.write().unwrap(), 1, 0x12345678);
-        let batch_guard = batch.read().unwrap();
-        let materials = batch_guard.data.material_data.as_ref().unwrap();
-        assert_eq!(materials.len(), 3);
-        assert!(materials[0].is_none());
-        assert!(materials[1].is_some());
-        assert!(materials[2].is_none());
-        drop(batch_guard);
+        let tint_ref = {
+            let batch_guard = batch.read().unwrap();
+            let materials = batch_guard.data.material_data.as_ref().unwrap();
+            assert_eq!(materials.len(), 3);
+            assert!(materials[0].is_none());
+            assert!(materials[2].is_none());
+            materials[1].clone().expect("material_data[1] present")
+        };
+        let tint_guard = tint_ref.read().unwrap();
+        let tint_data = tint_guard
+            .as_any()
+            .downcast_ref::<flight_materials::TintMaterialData>()
+            .expect("material_data[1] is TintMaterialData");
+        assert_eq!(tint_data.tint, 0x12345678);
 
         let untouched = batch_with_data(|d| {
             d.instance_count = 1;
