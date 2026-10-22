@@ -23,14 +23,22 @@ use crate::types::{GlLazyUniformLocation, GlMeshProgram, GlMeshProgramFamily, Gl
 // Vertex-stage GLSL every map-sampling family interpolates into its vertex body ahead of `main`: the
 // guarded u_uvTransform uniform and an applyUvTransform() the body calls on a_uv0. HAS_UV_TRANSFORM
 // gates both, so an untiled surface compiles the identity branch. u_uvTransform is column-major.
-pub const GL_UV_TRANSFORM_VERTEX_GLSL: &str = r"
+macro_rules! gl_uv_transform_vertex_glsl {
+    () => {
+        concat!(r#"
 #ifdef HAS_UV_TRANSFORM
 uniform mat3 u_uvTransform;
 vec2 applyUvTransform(vec2 uv) { return (u_uvTransform * vec3(uv, 1.0)).xy; }
 #else
 vec2 applyUvTransform(vec2 uv) { return uv; }
 #endif
-";
+"#)
+    };
+}
+#[allow(unused_imports)]
+pub(crate) use gl_uv_transform_vertex_glsl;
+
+pub const GL_UV_TRANSFORM_VERTEX_GLSL: &str = gl_uv_transform_vertex_glsl!();
 
 // The GPU skin-palette bone texture is read from this texture unit — above the material maps (0–4),
 // the directional shadow map (8), and the IBL set (9/10/11).
@@ -43,7 +51,9 @@ pub const INSTANCE_PALETTE_TEXTURE_UNIT: u32 = 14;
 // fetches, and WebGL2 guarantees at least 16 vertex texture image units.
 pub const INSTANCE_COLOR_PALETTE_TEXTURE_UNIT: u32 = 15;
 
-pub const GL_INSTANCE_VERTEX_DECLARATIONS_GLSL: &str = r"
+macro_rules! gl_instance_vertex_declarations_glsl {
+    () => {
+        concat!(r#"
 uniform highp sampler2D u_instancePalette;
 uniform highp sampler2D u_instanceColorPalette;
 
@@ -65,7 +75,13 @@ mat4 instanceModelMatrix() {
     texelFetch(u_instancePalette, ivec2((x + 3) % w, (x + 3) / w), 0)
   );
 }
-";
+"#)
+    };
+}
+#[allow(unused_imports)]
+pub(crate) use gl_instance_vertex_declarations_glsl;
+
+pub const GL_INSTANCE_VERTEX_DECLARATIONS_GLSL: &str = gl_instance_vertex_declarations_glsl!();
 
 // The shared mesh-program record for a freshly linked program: every lazily resolved location is
 // unresolved, every eagerly resolved one absent until the family fills it.
