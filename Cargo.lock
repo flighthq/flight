@@ -523,6 +523,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-gui"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-geometry",
+ "flight-host",
+ "flight-input",
+ "flight-interaction",
+ "flight-node",
+ "flight-registry",
+ "flight-scene-document",
+ "flight-scene2d",
+ "flight-signals",
+ "flight-text",
+ "flight-textinput",
+ "flight-textlayout",
+]
+
+[[package]]
 name = "flight-haptics"
 version = "0.6.0"
 dependencies = [

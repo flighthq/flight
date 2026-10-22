@@ -1,0 +1,353 @@
+src/button_controller.rs: impl ButtonController :: fn new(options: &ButtonControllerOptions) -> Self
+src/button_controller.rs: pub fn create_button_controller(options: &ButtonControllerOptions) -> ButtonController
+src/button_controller.rs: pub fn dispose_button_controller(controller: &ButtonController)
+src/button_controller.rs: pub fn get_button_controller_signals(controller: &ButtonController,) -> Ref<ButtonControllerSignals>
+src/button_controller.rs: pub fn initialize_button_controller(out: &mut ButtonController, options: &ButtonControllerOptions)
+src/button_controller.rs: pub fn is_button_controller_disabled(controller: &ButtonController) -> bool
+src/button_controller.rs: pub fn set_button_controller_disabled(controller: &ButtonController, disabled: bool)
+src/button_controller.rs: pub struct ButtonControllerFields { pub disabled: bool, pub down_state: Option<Node2DRef>, pub interactive_state_binding: Option<Ref<NodeInteractiveStateBinding>>, pub over: bool, pub over_state: Option<Node2DRef>, pub pressed: bool, pub signals: Ref<ButtonControllerSignals>, pub up_state: Option<Node2DRef>, }
+src/button_controller.rs: pub struct ButtonControllerOptions { pub disabled: Option<bool>, pub down_state: Option<Node2DRef>, pub hit_area: Option<Node2DRef>, pub interactive_state_binding: Option<Ref<NodeInteractiveStateBinding>>, pub over_state: Option<Node2DRef>, pub up_state: Node2DRef, pub transition: Option<Arc<GuiTransitionDescriptor>>, }
+src/button_controller.rs: pub struct ButtonControllerSignals { pub on_click: Ref<Signal<()>>, pub on_press: Ref<Signal<()>>, pub on_release: Ref<Signal<()>>, }
+src/button_controller.rs: pub type ButtonController = GuiController<ButtonControllerFields>;
+src/combo_box_controller.rs: impl ComboBoxController :: fn new(options: &ComboBoxControllerOptions) -> Self
+src/combo_box_controller.rs: pub fn create_combo_box_controller(options: &ComboBoxControllerOptions) -> ComboBoxController
+src/combo_box_controller.rs: pub fn dispose_combo_box_controller(controller: &ComboBoxController)
+src/combo_box_controller.rs: pub fn get_combo_box_controller_signals(controller: &ComboBoxController,) -> Ref<ComboBoxControllerSignals>
+src/combo_box_controller.rs: pub fn initialize_combo_box_controller(out: &mut ComboBoxController, options: &ComboBoxControllerOptions,)
+src/combo_box_controller.rs: pub fn is_combo_box_controller_open(controller: &ComboBoxController) -> bool
+src/combo_box_controller.rs: pub fn set_combo_box_controller_open(controller: &ComboBoxController, open: bool)
+src/combo_box_controller.rs: pub struct ComboBoxControllerFields { pub button: Option<Ref<ButtonController>>, pub display: Option<Node2DRef>, pub list: Option<Ref<ListController>>, pub open: bool, pub signals: Ref<ComboBoxControllerSignals>, }
+src/combo_box_controller.rs: pub struct ComboBoxControllerOptions { pub button: Ref<ButtonController>, pub display: Option<Node2DRef>, pub list: Ref<ListController>, pub open: Option<bool>, pub transition: Option<Arc<GuiTransitionDescriptor>>, }
+src/combo_box_controller.rs: pub struct ComboBoxControllerSignals { pub on_change: Ref<Signal<i32>>, pub on_open_change: Ref<Signal<bool>>, }
+src/combo_box_controller.rs: pub type ComboBoxController = GuiController<ComboBoxControllerFields>;
+src/contract.rs: pub use crate::button_controller::*;
+src/contract.rs: pub use crate::combo_box_controller::*;
+src/contract.rs: pub use crate::gui_controller::*;
+src/contract.rs: pub use crate::gui_dialog::*;
+src/contract.rs: pub use crate::gui_test_helper::*;
+src/contract.rs: pub use crate::list_controller::*;
+src/contract.rs: pub use crate::progress_bar_controller::*;
+src/contract.rs: pub use crate::radio_group_controller::*;
+src/contract.rs: pub use crate::scroll_bar_controller::*;
+src/contract.rs: pub use crate::scroll_view_controller::*;
+src/contract.rs: pub use crate::slider_controller::*;
+src/contract.rs: pub use crate::split_pane_controller::*;
+src/contract.rs: pub use crate::tab_bar_controller::*;
+src/contract.rs: pub use crate::text_input_controller::*;
+src/contract.rs: pub use crate::toggle_controller::*;
+src/contract.rs: pub use crate::tooltip_controller::*;
+src/contract.rs: pub use crate::tree_view_controller::*;
+src/contract.rs: pub use crate::window_controller::*;
+src/gui_controller.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GuiOrientation { Horizontal, Vertical, }
+src/gui_controller.rs: #[derive(Default)] pub struct GuiControllerOptions { pub transition: Option<Arc<GuiTransitionDescriptor>>, }
+src/gui_controller.rs: impl Default for GuiController<F>
+src/gui_controller.rs: impl Default for GuiController<F> :: fn default() -> Self
+src/gui_controller.rs: impl Entity for GuiController<F>
+src/gui_controller.rs: impl Entity for GuiController<F> :: fn entity_runtime(&self) -> &EntityRuntimeSlot
+src/gui_controller.rs: impl Entity for GuiController<F> :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
+src/gui_controller.rs: pub enum GuiInteractionSlot { Pointer(GuiPointerSlot), Keyboard(GuiKeyboardSlot), Focus(GuiFocusSlot), }
+src/gui_controller.rs: pub fn clamp_gui_value(value: f32, minimum: f32, maximum: f32) -> f32
+src/gui_controller.rs: pub fn configure_gui_hit_area<F>(runtime: &Ref<GuiControllerRuntime<F>>, target: &Node2DRef, hit_area: &Node2DRef,)
+src/gui_controller.rs: pub fn connect_gui_interaction<F>(runtime: &Ref<GuiControllerRuntime<F>>, target: &Node2DRef, name: InteractionSignalName, slot: GuiInteractionSlot,)
+src/gui_controller.rs: pub fn connect_gui_signal<F, T: 'static>(runtime: &Ref<GuiControllerRuntime<F>>, signal: &Ref<Signal<T>>, slot: SignalSlot<T>,)
+src/gui_controller.rs: pub fn create_gui_controller<F>(runtime: Ref<GuiControllerRuntime<F>>) -> GuiController<F>
+src/gui_controller.rs: pub fn create_gui_controller_runtime<F>(fields: F, transition: Option<Arc<GuiTransitionDescriptor>>,) -> Ref<GuiControllerRuntime<F>>
+src/gui_controller.rs: pub fn dispose_gui_controller<F>(controller: &GuiController<F>, clear: &dyn Fn())
+src/gui_controller.rs: pub fn get_gui_controller_runtime<F>(controller: &GuiController<F>,) -> Ref<GuiControllerRuntime<F>>
+src/gui_controller.rs: pub fn get_gui_length(target: &Node2DRef, orientation: GuiOrientation, revisions: &mut NodeRevisionState,) -> f32
+src/gui_controller.rs: pub fn get_gui_orientation_string(value: GuiOrientation) -> &'static str
+src/gui_controller.rs: pub fn get_gui_position(target: &Node2DRef, orientation: GuiOrientation) -> f32
+src/gui_controller.rs: pub fn initialize_gui_controller<F>(out: &mut GuiController<F>, runtime: Ref<GuiControllerRuntime<F>>,)
+src/gui_controller.rs: pub fn parse_gui_orientation(value: &str) -> Option<GuiOrientation>
+src/gui_controller.rs: pub fn set_gui_position<F>(runtime: &Ref<GuiControllerRuntime<F>>, target: Option<&Node2DRef>, orientation: GuiOrientation, value: f32,)
+src/gui_controller.rs: pub fn set_gui_scale<F>(runtime: &Ref<GuiControllerRuntime<F>>, target: Option<&Node2DRef>, orientation: GuiOrientation, value: f32,)
+src/gui_controller.rs: pub fn set_gui_visible<F>(runtime: &Ref<GuiControllerRuntime<F>>, target: Option<&Node2DRef>, visible: bool,)
+src/gui_controller.rs: pub fn set_gui_visual_property<F>(runtime: &Ref<GuiControllerRuntime<F>>, target: Option<&Node2DRef>, property: GuiTransitionProperty, value: GuiTransitionValue,)
+src/gui_controller.rs: pub fn snap_gui_value(value: f32, minimum: f32, step: Option<f32>) -> f32
+src/gui_controller.rs: pub struct GuiController<F =()> { runtime: EntityRuntimeSlot, state: Option<Ref<GuiControllerRuntime<F>>>, }
+src/gui_controller.rs: pub struct GuiControllerRuntime<F =()> { pub cleanups: Vec<Arc<dyn Fn() + Send + Sync>>, pub disposed: bool, pub fields: F, pub hit_states: Vec<GuiHitState>, pub transition: Option<Arc<GuiTransitionDescriptor>>, }
+src/gui_controller.rs: pub struct GuiFocusSlot { pub callback: SignalSlot<FocusEventData>, }
+src/gui_controller.rs: pub struct GuiHitState { pub target: Node2DRef, pub enabled: bool, }
+src/gui_controller.rs: pub struct GuiKeyboardSlot { pub callback: SignalSlot<KeyboardEventData>, }
+src/gui_controller.rs: pub struct GuiPointerSlot { pub callback: SignalSlot<PointerEventData>, }
+src/gui_controller.rs: pub type GuiTransitionDescriptor = flight_interaction::contract::NodeInteractiveStateTransition;
+src/gui_controller.rs: pub type GuiTransitionProperty = flight_interaction::contract::NodeInteractiveStateProperty;
+src/gui_controller.rs: pub type GuiTransitionRequest = flight_interaction::contract::NodeInteractiveStateTransitionRequest;
+src/gui_controller.rs: pub type GuiTransitionValue = flight_interaction::contract::NodeInteractiveStateTransitionValue;
+src/gui_dialog.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum GuiDialogCloseReason { Accepted, Cancelled, Dismissed, }
+src/gui_dialog.rs: #[derive(Default)] pub struct GuiDialogOptions { pub backdrop: Option<Node2DRef>, pub focus_manager: Option<Ref<FocusManager>>, pub transition: Option<Arc<GuiTransitionDescriptor>>, }
+src/gui_dialog.rs: impl GuiDialog :: fn new(options: Option<&GuiDialogOptions>) -> Self
+src/gui_dialog.rs: pub fn close_gui_dialog(dialog: &GuiDialog, result: &Ref<GuiDialogCloseResult>) -> bool
+src/gui_dialog.rs: pub fn create_gui_dialog(options: Option<&GuiDialogOptions>) -> GuiDialog
+src/gui_dialog.rs: pub fn dispose_gui_dialog(dialog: &GuiDialog)
+src/gui_dialog.rs: pub fn enqueue_gui_dialog(dialog: &GuiDialog, entry: &Ref<GuiDialogEntry>) -> bool
+src/gui_dialog.rs: pub fn get_active_gui_dialog_entry(dialog: &GuiDialog) -> Option<Ref<GuiDialogEntry>>
+src/gui_dialog.rs: pub fn get_gui_dialog_close_reason_string(value: GuiDialogCloseReason) -> &'static str
+src/gui_dialog.rs: pub fn get_gui_dialog_entries(out: &mut Vec<Ref<GuiDialogEntry>>, dialog: &GuiDialog)
+src/gui_dialog.rs: pub fn get_gui_dialog_signals(dialog: &GuiDialog) -> Ref<GuiDialogSignals>
+src/gui_dialog.rs: pub fn initialize_gui_dialog(out: &mut GuiDialog, options: Option<&GuiDialogOptions>)
+src/gui_dialog.rs: pub fn parse_gui_dialog_close_reason(value: &str) -> Option<GuiDialogCloseReason>
+src/gui_dialog.rs: pub fn remove_gui_dialog_entry(dialog: &GuiDialog, id: &str) -> bool
+src/gui_dialog.rs: pub struct GuiDialogCloseResult { pub entry_id: String, pub reason: GuiDialogCloseReason, pub value: Option<Unknown>, }
+src/gui_dialog.rs: pub struct GuiDialogEntry { pub dismiss_on_backdrop: Option<bool>, pub id: String, pub initial_focus: Option<Node2DRef>, pub root: Node2DRef, }
+src/gui_dialog.rs: pub struct GuiDialogFields { pub backdrop: Option<Node2DRef>, pub entries: Vec<Ref<GuiDialogEntry>>, pub focus_manager: Option<Ref<FocusManager>>, pub has_focus_snapshot: bool, pub previous_focus: Option<NodeRef>, pub signals: Ref<GuiDialogSignals>, }
+src/gui_dialog.rs: pub struct GuiDialogSignals { pub on_active_change: Ref<Signal<Option<Ref<GuiDialogEntry>>>>, pub on_close: Ref<Signal<Ref<GuiDialogCloseResult>>>, pub on_queue_change: Ref<Signal<()>>, }
+src/gui_dialog.rs: pub type GuiDialog = GuiController<GuiDialogFields>;
+src/gui_test_helper.rs: #[derive(Default)] pub struct GuiPointerOptions { pub alt_key: Option<bool>, pub button: Option<i32>, pub buttons: Option<i32>, pub ctrl_key: Option<bool>, pub current_target: Option<Option<flight_node::NodeRef>>, pub delta_x: Option<f32>, pub delta_y: Option<f32>, pub local_x: Option<f32>, pub local_y: Option<f32>, pub meta_key: Option<bool>, pub pointer_id: Option<i32>, pub pointer_type: Option<PointerType>, pub shift_key: Option<bool>, pub target: Option<Option<flight_node::NodeRef>>, pub world_x: Option<f32>, pub world_y: Option<f32>, pub x: Option<f32>, pub y: Option<f32>, }
+src/gui_test_helper.rs: pub fn create_gui_test_node(width: Option<f32>, height: Option<f32>) -> Ref<DisplayObject>
+src/gui_test_helper.rs: pub fn emit_gui_keyboard(target: &Node2DRef, name: InteractionSignalName, key: &str)
+src/gui_test_helper.rs: pub fn emit_gui_pointer(target: &Node2DRef, name: InteractionSignalName, fields: Option<&GuiPointerOptions>,)
+src/lib.rs: pub mod contract
+src/lib.rs: pub use button_controller::{ ButtonController, ButtonControllerOptions, ButtonControllerSignals, create_button_controller, dispose_button_controller, get_button_controller_signals, is_button_controller_disabled, set_button_controller_disabled, };
+src/lib.rs: pub use combo_box_controller::{ ComboBoxController, ComboBoxControllerOptions, ComboBoxControllerSignals, create_combo_box_controller, dispose_combo_box_controller, get_combo_box_controller_signals, is_combo_box_controller_open, set_combo_box_controller_open, };
+src/lib.rs: pub use gui_controller::{ GuiController, GuiControllerOptions, GuiControllerRuntime, GuiFocusSlot, GuiInteractionSlot, GuiKeyboardSlot, GuiOrientation, GuiPointerSlot, GuiTransitionDescriptor, GuiTransitionProperty, GuiTransitionRequest, GuiTransitionValue, clamp_gui_value, configure_gui_hit_area, connect_gui_interaction, connect_gui_signal, create_gui_controller, dispose_gui_controller, get_gui_length, get_gui_orientation_string, get_gui_position, parse_gui_orientation, set_gui_position, set_gui_scale, set_gui_visible, set_gui_visual_property, snap_gui_value, };
+src/lib.rs: pub use gui_dialog::{ GuiDialog, GuiDialogCloseReason, GuiDialogCloseResult, GuiDialogEntry, GuiDialogOptions, GuiDialogSignals, close_gui_dialog, create_gui_dialog, dispose_gui_dialog, enqueue_gui_dialog, get_active_gui_dialog_entry, get_gui_dialog_close_reason_string, get_gui_dialog_entries, get_gui_dialog_signals, parse_gui_dialog_close_reason, remove_gui_dialog_entry, };
+src/lib.rs: pub use gui_test_helper::*;
+src/lib.rs: pub use list_controller::{ ListController, ListControllerOptions, ListControllerSignals, create_list_controller, dispose_list_controller, get_list_controller_selected_index, get_list_controller_signals, set_list_controller_selected_index, set_list_controller_visible, };
+src/lib.rs: pub use progress_bar_controller::{ ProgressBarController, ProgressBarControllerOptions, create_progress_bar_controller, dispose_progress_bar_controller, get_progress_bar_controller_value, set_progress_bar_controller_value, };
+src/lib.rs: pub use radio_group_controller::{ RadioGroupController, RadioGroupControllerOptions, RadioGroupControllerSignals, create_radio_group_controller, dispose_radio_group_controller, get_radio_group_controller_selected_index, get_radio_group_controller_signals, set_radio_group_controller_selected_index, };
+src/lib.rs: pub use scroll_bar_controller::{ ScrollBarController, ScrollBarControllerOptions, ScrollBarControllerSignals, create_scroll_bar_controller, dispose_scroll_bar_controller, get_scroll_bar_controller_signals, get_scroll_bar_controller_value, set_scroll_bar_controller_value, };
+src/lib.rs: pub use scroll_view_controller::{ ScrollViewController, ScrollViewControllerOptions, ScrollViewControllerSignals, create_scroll_view_controller, dispose_scroll_view_controller, get_scroll_view_controller_signals, get_scroll_view_controller_x, get_scroll_view_controller_y, set_scroll_view_controller_position, };
+src/lib.rs: pub use slider_controller::{ SliderController, SliderControllerOptions, SliderControllerSignals, create_slider_controller, dispose_slider_controller, get_slider_controller_signals, get_slider_controller_value, set_slider_controller_value, };
+src/lib.rs: pub use split_pane_controller::{ SplitPaneController, SplitPaneControllerOptions, SplitPaneControllerSignals, create_split_pane_controller, dispose_split_pane_controller, get_split_pane_controller_position, get_split_pane_controller_signals, set_split_pane_controller_position, };
+src/lib.rs: pub use sugar::GuiNodeMethods;
+src/lib.rs: pub use tab_bar_controller::{ TabBarController, TabBarControllerItem, TabBarControllerOptions, TabBarControllerSignals, create_tab_bar_controller, dispose_tab_bar_controller, get_tab_bar_controller_selected_index, get_tab_bar_controller_signals, set_tab_bar_controller_selected_index, };
+src/lib.rs: pub use text_input_controller::{ TextInputController, TextInputControllerKeyboardData, TextInputControllerOptions, TextInputControllerSignals, blur_text_input_controller, create_text_input_controller, dispatch_text_input_controller_key_down, dispatch_text_input_controller_text, dispose_text_input_controller, focus_text_input_controller, get_text_input_controller_signals, };
+src/lib.rs: pub use toggle_controller::{ ToggleController, ToggleControllerOptions, ToggleControllerSignals, create_toggle_controller, dispose_toggle_controller, get_toggle_controller_signals, is_toggle_controller_checked, set_toggle_controller_checked, };
+src/lib.rs: pub use tooltip_controller::{ TooltipController, TooltipControllerOptions, create_tooltip_controller, dispose_tooltip_controller, hide_tooltip_controller, show_tooltip_controller, };
+src/lib.rs: pub use tree_view_controller::{ TreeViewController, TreeViewControllerItem, TreeViewControllerOptions, TreeViewControllerSignals, create_tree_view_controller, dispose_tree_view_controller, get_tree_view_controller_selected_item, get_tree_view_controller_signals, is_tree_view_controller_item_expanded, set_tree_view_controller_item_expanded, set_tree_view_controller_selected_item, toggle_tree_view_controller_item, };
+src/lib.rs: pub use window_controller::{ WindowController, WindowControllerOptions, WindowControllerSignals, create_window_controller, dispose_window_controller, get_window_controller_signals, set_window_controller_position, set_window_controller_size, };
+src/list_controller.rs: impl ListController :: fn new(options: &ListControllerOptions) -> Self
+src/list_controller.rs: pub fn create_list_controller(options: &ListControllerOptions) -> ListController
+src/list_controller.rs: pub fn dispose_list_controller(controller: &ListController)
+src/list_controller.rs: pub fn get_list_controller_selected_index(controller: &ListController) -> i32
+src/list_controller.rs: pub fn get_list_controller_signals(controller: &ListController) -> Ref<ListControllerSignals>
+src/list_controller.rs: pub fn initialize_list_controller(out: &mut ListController, options: &ListControllerOptions)
+src/list_controller.rs: pub fn set_list_controller_selected_index(controller: &ListController, index: i32)
+src/list_controller.rs: pub fn set_list_controller_visible(controller: &ListController, visible: bool)
+src/list_controller.rs: pub struct ListControllerFields { pub base_content_y: f32, pub content: Option<Node2DRef>, pub items: Vec<Node2DRef>, pub scroll_bar: Option<Ref<ScrollBarController>>, pub selectable: bool, pub selected_index: i32, pub signals: Ref<ListControllerSignals>, pub viewport: Option<Node2DRef>, }
+src/list_controller.rs: pub struct ListControllerOptions { pub content: Node2DRef, pub items: Vec<Node2DRef>, pub scroll_bar: Option<Ref<ScrollBarController>>, pub selectable: Option<bool>, pub selected_index: Option<i32>, pub viewport: Node2DRef, pub transition: Option<Arc<GuiTransitionDescriptor>>, }
+src/list_controller.rs: pub struct ListControllerSignals { pub on_activate: Ref<Signal<i32>>, pub on_select: Ref<Signal<i32>>, }
+src/list_controller.rs: pub type ListController = GuiController<ListControllerFields>;
+src/progress_bar_controller.rs: impl ProgressBarController :: fn new(options: &ProgressBarControllerOptions) -> Self
+src/progress_bar_controller.rs: pub fn create_progress_bar_controller(options: &ProgressBarControllerOptions,) -> ProgressBarController
+src/progress_bar_controller.rs: pub fn dispose_progress_bar_controller(controller: &ProgressBarController)
+src/progress_bar_controller.rs: pub fn get_progress_bar_controller_value(controller: &ProgressBarController) -> f32
+src/progress_bar_controller.rs: pub fn initialize_progress_bar_controller(out: &mut ProgressBarController, options: &ProgressBarControllerOptions,)
+src/progress_bar_controller.rs: pub fn set_progress_bar_controller_value(controller: &ProgressBarController, value: f32)
+src/progress_bar_controller.rs: pub struct ProgressBarControllerFields { pub base_scale: f32, pub fill: Option<Node2DRef>, pub maximum: f32, pub minimum: f32, pub orientation: GuiOrientation, pub track: Option<Node2DRef>, pub value: f32, }
+src/progress_bar_controller.rs: pub struct ProgressBarControllerOptions { pub fill: Node2DRef, pub maximum: Option<f32>, pub minimum: Option<f32>, pub orientation: Option<GuiOrientation>, pub track: Node2DRef, pub value: Option<f32>, pub transition: Option<Arc<GuiTransitionDescriptor>>, }
+src/progress_bar_controller.rs: pub type ProgressBarController = GuiController<ProgressBarControllerFields>;
+src/radio_group_controller.rs: impl RadioGroupController :: fn new(options: &RadioGroupControllerOptions) -> Self
+src/radio_group_controller.rs: pub fn create_radio_group_controller(options: &RadioGroupControllerOptions,) -> RadioGroupController
+src/radio_group_controller.rs: pub fn dispose_radio_group_controller(controller: &RadioGroupController)
+src/radio_group_controller.rs: pub fn get_radio_group_controller_selected_index(controller: &RadioGroupController) -> i32
+src/radio_group_controller.rs: pub fn get_radio_group_controller_signals(controller: &RadioGroupController,) -> Ref<RadioGroupControllerSignals>
+src/radio_group_controller.rs: pub fn initialize_radio_group_controller(out: &mut RadioGroupController, options: &RadioGroupControllerOptions,)
+src/radio_group_controller.rs: pub fn set_radio_group_controller_selected_index(controller: &RadioGroupController, index: i32)
+src/radio_group_controller.rs: pub struct RadioGroupControllerFields { pub selected_index: i32, pub signals: Ref<RadioGroupControllerSignals>, pub toggles: Vec<Ref<ToggleController>>, pub updating: bool, }
+src/radio_group_controller.rs: pub struct RadioGroupControllerOptions { pub selected_index: Option<i32>, pub toggles: Vec<Ref<ToggleController>>, }
+src/radio_group_controller.rs: pub struct RadioGroupControllerSignals { pub on_change: Ref<Signal<i32>>, }
+src/radio_group_controller.rs: pub type RadioGroupController = GuiController<RadioGroupControllerFields>;
+src/scroll_bar_controller.rs: impl ScrollBarController :: fn new(options: &ScrollBarControllerOptions, revisions: Ref<NodeRevisionState>, timer: Arc<HostTimerCapability>,) -> Self
+src/scroll_bar_controller.rs: pub fn create_scroll_bar_controller(options: &ScrollBarControllerOptions, revisions: Ref<NodeRevisionState>, timer: Arc<HostTimerCapability>,) -> ScrollBarController
+src/scroll_bar_controller.rs: pub fn dispose_scroll_bar_controller(controller: &ScrollBarController)
+src/scroll_bar_controller.rs: pub fn get_scroll_bar_controller_signals(controller: &ScrollBarController,) -> Ref<ScrollBarControllerSignals>
+src/scroll_bar_controller.rs: pub fn get_scroll_bar_controller_value(controller: &ScrollBarController) -> f32
+src/scroll_bar_controller.rs: pub fn initialize_scroll_bar_controller(out: &mut ScrollBarController, options: &ScrollBarControllerOptions, revisions: Ref<NodeRevisionState>, timer: Arc<HostTimerCapability>,)
+src/scroll_bar_controller.rs: pub fn set_scroll_bar_controller_value(controller: &ScrollBarController, value: f32)
+src/scroll_bar_controller.rs: pub struct ScrollBarControllerFields { pub drag_pointer: i32, pub drag_start_coordinate: f32, pub drag_start_value: f32, pub maximum: f32, pub minimum: f32, pub orientation: GuiOrientation, pub signals: Ref<ScrollBarControllerSignals>, pub thumb: Option<Node2DRef>, pub track: Option<Node2DRef>, pub value: f32, pub revisions: Ref<NodeRevisionState>, pub down_button: Option<Node2DRef>, pub up_button: Option<Node2DRef>, pub line_size: f32, pub page_size: f32, pub repeat_interval: f32, pub repeat_timer: Option<TimerHandle>, pub timer: Arc<HostTimerCapability>, }
+src/scroll_bar_controller.rs: pub struct ScrollBarControllerOptions { pub maximum: Option<f32>, pub minimum: Option<f32>, pub orientation: Option<GuiOrientation>, pub thumb: Node2DRef, pub track: Node2DRef, pub value: Option<f32>, pub transition: Option<Arc<GuiTransitionDescriptor>>, pub down_button: Option<Node2DRef>, pub up_button: Option<Node2DRef>, pub line_size: Option<f32>, pub page_size: Option<f32>, pub repeat_interval: Option<f32>, }
+src/scroll_bar_controller.rs: pub struct ScrollBarControllerSignals { pub on_change: Ref<Signal<f32>>, }
+src/scroll_bar_controller.rs: pub type ScrollBarController = GuiController<ScrollBarControllerFields>;
+src/scroll_view_controller.rs: impl ScrollViewController :: fn new(options: &ScrollViewControllerOptions, revisions: Ref<NodeRevisionState>) -> Self
+src/scroll_view_controller.rs: pub fn create_scroll_view_controller(options: &ScrollViewControllerOptions, revisions: Ref<NodeRevisionState>,) -> ScrollViewController
+src/scroll_view_controller.rs: pub fn dispose_scroll_view_controller(controller: &ScrollViewController)
+src/scroll_view_controller.rs: pub fn get_scroll_view_controller_signals(controller: &ScrollViewController,) -> Ref<ScrollViewControllerSignals>
+src/scroll_view_controller.rs: pub fn get_scroll_view_controller_x(controller: &ScrollViewController) -> f32
+src/scroll_view_controller.rs: pub fn get_scroll_view_controller_y(controller: &ScrollViewController) -> f32
+src/scroll_view_controller.rs: pub fn initialize_scroll_view_controller(out: &mut ScrollViewController, options: &ScrollViewControllerOptions, revisions: Ref<NodeRevisionState>,)
+src/scroll_view_controller.rs: pub fn set_scroll_view_controller_position(controller: &ScrollViewController, x: f32, y: f32)
+src/scroll_view_controller.rs: pub struct ScrollViewControllerFields { pub base_content_x: f32, pub base_content_y: f32, pub content: Option<Node2DRef>, pub drag_pointer: i32, pub drag_start_world_x: f32, pub drag_start_world_y: f32, pub drag_start_x: f32, pub drag_start_y: f32, pub horizontal_scroll_bar: Option<Ref<ScrollBarController>>, pub mouse_wheel_enabled: bool, pub signals: Ref<ScrollViewControllerSignals>, pub vertical_scroll_bar: Option<Ref<ScrollBarController>>, pub viewport: Option<Node2DRef>, pub x: f32, pub y: f32, pub revisions: Ref<NodeRevisionState>, }
+src/scroll_view_controller.rs: pub struct ScrollViewControllerOptions { pub content: Node2DRef, pub horizontal_scroll_bar: Option<Ref<ScrollBarController>>, pub mouse_wheel_enabled: Option<bool>, pub vertical_scroll_bar: Option<Ref<ScrollBarController>>, pub viewport: Node2DRef, pub transition: Option<Arc<GuiTransitionDescriptor>>, }
+src/scroll_view_controller.rs: pub struct ScrollViewControllerSignals { pub on_scroll: Ref<Signal<(f32, f32)>>, }
+src/scroll_view_controller.rs: pub type ScrollViewController = GuiController<ScrollViewControllerFields>;
+src/slider_controller.rs: impl SliderController :: fn new(options: &SliderControllerOptions, revisions: Ref<NodeRevisionState>) -> Self
+src/slider_controller.rs: pub fn create_slider_controller(options: &SliderControllerOptions, revisions: Ref<NodeRevisionState>,) -> SliderController
+src/slider_controller.rs: pub fn dispose_slider_controller(controller: &SliderController)
+src/slider_controller.rs: pub fn get_slider_controller_signals(controller: &SliderController,) -> Ref<SliderControllerSignals>
+src/slider_controller.rs: pub fn get_slider_controller_value(controller: &SliderController) -> f32
+src/slider_controller.rs: pub fn initialize_slider_controller(out: &mut SliderController, options: &SliderControllerOptions, revisions: Ref<NodeRevisionState>,)
+src/slider_controller.rs: pub fn set_slider_controller_value(controller: &SliderController, value: f32)
+src/slider_controller.rs: pub struct SliderControllerFields { pub drag_pointer: i32, pub drag_start_coordinate: f32, pub drag_start_value: f32, pub maximum: f32, pub minimum: f32, pub orientation: GuiOrientation, pub signals: Ref<SliderControllerSignals>, pub thumb: Option<Node2DRef>, pub track: Option<Node2DRef>, pub value: f32, pub revisions: Ref<NodeRevisionState>, pub step: Option<f32>, }
+src/slider_controller.rs: pub struct SliderControllerOptions { pub maximum: Option<f32>, pub minimum: Option<f32>, pub orientation: Option<GuiOrientation>, pub thumb: Node2DRef, pub track: Node2DRef, pub value: Option<f32>, pub transition: Option<Arc<GuiTransitionDescriptor>>, pub step: Option<f32>, }
+src/slider_controller.rs: pub struct SliderControllerSignals { pub on_change: Ref<Signal<f32>>, }
+src/slider_controller.rs: pub type SliderController = GuiController<SliderControllerFields>;
+src/split_pane_controller.rs: impl SplitPaneController :: fn new(options: &SplitPaneControllerOptions, revisions: Ref<NodeRevisionState>) -> Self
+src/split_pane_controller.rs: pub fn create_split_pane_controller(options: &SplitPaneControllerOptions, revisions: Ref<NodeRevisionState>,) -> SplitPaneController
+src/split_pane_controller.rs: pub fn dispose_split_pane_controller(controller: &SplitPaneController)
+src/split_pane_controller.rs: pub fn get_split_pane_controller_position(controller: &SplitPaneController) -> f32
+src/split_pane_controller.rs: pub fn get_split_pane_controller_signals(controller: &SplitPaneController,) -> Ref<SplitPaneControllerSignals>
+src/split_pane_controller.rs: pub fn initialize_split_pane_controller(out: &mut SplitPaneController, options: &SplitPaneControllerOptions, revisions: Ref<NodeRevisionState>,)
+src/split_pane_controller.rs: pub fn set_split_pane_controller_position(controller: &SplitPaneController, position: f32)
+src/split_pane_controller.rs: pub struct SplitPaneControllerFields { pub divider: Option<Node2DRef>, pub drag_pointer: i32, pub drag_start_coordinate: f32, pub drag_start_position: f32, pub first_base_length: f32, pub first_base_scale: f32, pub first_origin: f32, pub first_region: Option<Node2DRef>, pub maximum_first: f32, pub minimum_first: f32, pub minimum_second: f32, pub orientation: GuiOrientation, pub position: f32, pub second_base_length: f32, pub second_base_scale: f32, pub second_region: Option<Node2DRef>, pub signals: Ref<SplitPaneControllerSignals>, pub total_size: f32, pub revisions: Ref<NodeRevisionState>, }
+src/split_pane_controller.rs: pub struct SplitPaneControllerOptions { pub divider: Node2DRef, pub first_region: Node2DRef, pub maximum_first: Option<f32>, pub minimum_first: Option<f32>, pub minimum_second: Option<f32>, pub orientation: Option<GuiOrientation>, pub position: Option<f32>, pub second_region: Node2DRef, pub total_size: Option<f32>, pub transition: Option<Arc<GuiTransitionDescriptor>>, }
+src/split_pane_controller.rs: pub struct SplitPaneControllerSignals { pub on_change: Ref<Signal<f32>>, }
+src/split_pane_controller.rs: pub type SplitPaneController = GuiController<SplitPaneControllerFields>;
+src/sugar.rs: impl ButtonController :: fn dispose(&self)
+src/sugar.rs: impl ButtonController :: fn is_disabled(&self) -> bool
+src/sugar.rs: impl ButtonController :: fn set_disabled(&self, disabled: bool)
+src/sugar.rs: impl ButtonController :: fn signals(&self) -> Ref<ButtonControllerSignals>
+src/sugar.rs: impl ComboBoxController :: fn dispose(&self)
+src/sugar.rs: impl ComboBoxController :: fn is_open(&self) -> bool
+src/sugar.rs: impl ComboBoxController :: fn set_open(&self, open: bool)
+src/sugar.rs: impl ComboBoxController :: fn signals(&self) -> Ref<ComboBoxControllerSignals>
+src/sugar.rs: impl GuiController<F> :: fn dispose_gui_controller(&self, clear: &dyn Fn())
+src/sugar.rs: impl GuiController<F> :: fn from_runtime(runtime: Ref<GuiControllerRuntime<F>>) -> Self
+src/sugar.rs: impl GuiDialog :: fn active_entry(&self) -> Option<Ref<GuiDialogEntry>>
+src/sugar.rs: impl GuiDialog :: fn close(&self, result: &Ref<GuiDialogCloseResult>) -> bool
+src/sugar.rs: impl GuiDialog :: fn dispose(&self)
+src/sugar.rs: impl GuiDialog :: fn enqueue(&self, entry: &Ref<GuiDialogEntry>) -> bool
+src/sugar.rs: impl GuiDialog :: fn entries(&self, out: &mut Vec<Ref<GuiDialogEntry>>)
+src/sugar.rs: impl GuiDialog :: fn remove_entry(&self, id: &str) -> bool
+src/sugar.rs: impl GuiDialog :: fn signals(&self) -> Ref<GuiDialogSignals>
+src/sugar.rs: impl GuiDialogCloseReason :: fn as_str(&self) -> &'static str
+src/sugar.rs: impl GuiDialogCloseReason :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl GuiNodeMethods for Node2DRef
+src/sugar.rs: impl GuiNodeMethods for Node2DRef :: fn emit_gui_keyboard(&self, name: flight_interaction::contract::InteractionSignalName, key: &str,)
+src/sugar.rs: impl GuiNodeMethods for Node2DRef :: fn emit_gui_pointer(&self, name: flight_interaction::contract::InteractionSignalName, fields: Option<&GuiPointerOptions>,)
+src/sugar.rs: impl GuiNodeMethods for Node2DRef :: fn gui_length(&self, orientation: GuiOrientation, revisions: &mut NodeRevisionState) -> f32
+src/sugar.rs: impl GuiNodeMethods for Node2DRef :: fn gui_position(&self, orientation: GuiOrientation) -> f32
+src/sugar.rs: impl GuiOrientation :: fn as_str(&self) -> &'static str
+src/sugar.rs: impl GuiOrientation :: fn parse(value: &str) -> Option<Self>
+src/sugar.rs: impl ListController :: fn dispose(&self)
+src/sugar.rs: impl ListController :: fn selected_index(&self) -> i32
+src/sugar.rs: impl ListController :: fn set_selected_index(&self, index: i32)
+src/sugar.rs: impl ListController :: fn set_visible(&self, visible: bool)
+src/sugar.rs: impl ListController :: fn signals(&self) -> Ref<ListControllerSignals>
+src/sugar.rs: impl ProgressBarController :: fn dispose(&self)
+src/sugar.rs: impl ProgressBarController :: fn set_value(&self, value: f32)
+src/sugar.rs: impl ProgressBarController :: fn value(&self) -> f32
+src/sugar.rs: impl RadioGroupController :: fn dispose(&self)
+src/sugar.rs: impl RadioGroupController :: fn selected_index(&self) -> i32
+src/sugar.rs: impl RadioGroupController :: fn set_selected_index(&self, index: i32)
+src/sugar.rs: impl RadioGroupController :: fn signals(&self) -> Ref<RadioGroupControllerSignals>
+src/sugar.rs: impl ScrollBarController :: fn dispose(&self)
+src/sugar.rs: impl ScrollBarController :: fn set_value(&self, value: f32)
+src/sugar.rs: impl ScrollBarController :: fn signals(&self) -> Ref<ScrollBarControllerSignals>
+src/sugar.rs: impl ScrollBarController :: fn value(&self) -> f32
+src/sugar.rs: impl ScrollViewController :: fn dispose(&self)
+src/sugar.rs: impl ScrollViewController :: fn set_position(&self, x: f32, y: f32)
+src/sugar.rs: impl ScrollViewController :: fn signals(&self) -> Ref<ScrollViewControllerSignals>
+src/sugar.rs: impl ScrollViewController :: fn x(&self) -> f32
+src/sugar.rs: impl ScrollViewController :: fn y(&self) -> f32
+src/sugar.rs: impl SliderController :: fn dispose(&self)
+src/sugar.rs: impl SliderController :: fn set_value(&self, value: f32)
+src/sugar.rs: impl SliderController :: fn signals(&self) -> Ref<SliderControllerSignals>
+src/sugar.rs: impl SliderController :: fn value(&self) -> f32
+src/sugar.rs: impl SplitPaneController :: fn dispose(&self)
+src/sugar.rs: impl SplitPaneController :: fn position(&self) -> f32
+src/sugar.rs: impl SplitPaneController :: fn set_position(&self, position: f32)
+src/sugar.rs: impl SplitPaneController :: fn signals(&self) -> Ref<SplitPaneControllerSignals>
+src/sugar.rs: impl TabBarController :: fn dispose(&self)
+src/sugar.rs: impl TabBarController :: fn selected_index(&self) -> i32
+src/sugar.rs: impl TabBarController :: fn set_selected_index(&self, index: i32)
+src/sugar.rs: impl TabBarController :: fn signals(&self) -> Ref<TabBarControllerSignals>
+src/sugar.rs: impl TextInputController :: fn blur(&self)
+src/sugar.rs: impl TextInputController :: fn dispatch_key_down(&self, data: &flight_input::InputKeyboardData) -> bool
+src/sugar.rs: impl TextInputController :: fn dispatch_text(&self, text: &str) -> bool
+src/sugar.rs: impl TextInputController :: fn dispose(&self)
+src/sugar.rs: impl TextInputController :: fn focus(&self)
+src/sugar.rs: impl TextInputController :: fn signals(&self) -> Ref<TextInputControllerSignals>
+src/sugar.rs: impl ToggleController :: fn dispose(&self)
+src/sugar.rs: impl ToggleController :: fn is_checked(&self) -> bool
+src/sugar.rs: impl ToggleController :: fn set_checked(&self, checked: bool)
+src/sugar.rs: impl ToggleController :: fn signals(&self) -> Ref<ToggleControllerSignals>
+src/sugar.rs: impl TooltipController :: fn dispose(&self)
+src/sugar.rs: impl TooltipController :: fn hide(&self)
+src/sugar.rs: impl TooltipController :: fn show(&self)
+src/sugar.rs: impl TreeViewController :: fn dispose(&self)
+src/sugar.rs: impl TreeViewController :: fn is_item_expanded(&self, item: &Ref<TreeViewControllerItem>) -> bool
+src/sugar.rs: impl TreeViewController :: fn selected_item(&self) -> Option<Ref<TreeViewControllerItem>>
+src/sugar.rs: impl TreeViewController :: fn set_item_expanded(&self, item: &Ref<TreeViewControllerItem>, expanded: bool)
+src/sugar.rs: impl TreeViewController :: fn set_selected_item(&self, item: Option<Ref<TreeViewControllerItem>>)
+src/sugar.rs: impl TreeViewController :: fn signals(&self) -> Ref<TreeViewControllerSignals>
+src/sugar.rs: impl TreeViewController :: fn toggle_item(&self, item: &Ref<TreeViewControllerItem>)
+src/sugar.rs: impl WindowController :: fn dispose(&self)
+src/sugar.rs: impl WindowController :: fn set_position(&self, x: f32, y: f32)
+src/sugar.rs: impl WindowController :: fn set_size(&self, width: f32, height: f32)
+src/sugar.rs: impl WindowController :: fn signals(&self) -> Ref<WindowControllerSignals>
+src/sugar.rs: pub trait GuiNodeMethods { fn gui_length(&self, orientation: GuiOrientation, revisions: &mut NodeRevisionState) -> f32; fn gui_position(&self, orientation: GuiOrientation) -> f32; fn emit_gui_keyboard(&self, name: flight_interaction::contract::InteractionSignalName, key: &str,); fn emit_gui_pointer(&self, name: flight_interaction::contract::InteractionSignalName, fields: Option<&GuiPointerOptions>,); }
+src/tab_bar_controller.rs: impl TabBarController :: fn new(options: &TabBarControllerOptions) -> Self
+src/tab_bar_controller.rs: pub fn create_tab_bar_controller(options: &TabBarControllerOptions) -> TabBarController
+src/tab_bar_controller.rs: pub fn dispose_tab_bar_controller(controller: &TabBarController)
+src/tab_bar_controller.rs: pub fn get_tab_bar_controller_selected_index(controller: &TabBarController) -> i32
+src/tab_bar_controller.rs: pub fn get_tab_bar_controller_signals(controller: &TabBarController,) -> Ref<TabBarControllerSignals>
+src/tab_bar_controller.rs: pub fn initialize_tab_bar_controller(out: &mut TabBarController, options: &TabBarControllerOptions,)
+src/tab_bar_controller.rs: pub fn set_tab_bar_controller_selected_index(controller: &TabBarController, index: i32)
+src/tab_bar_controller.rs: pub struct TabBarControllerFields { pub selected_index: i32, pub signals: Ref<TabBarControllerSignals>, pub tabs: Vec<Ref<TabBarControllerItem>>, }
+src/tab_bar_controller.rs: pub struct TabBarControllerItem { pub selected_state: Node2DRef, pub unselected_state: Node2DRef, }
+src/tab_bar_controller.rs: pub struct TabBarControllerOptions { pub selected_index: Option<i32>, pub tabs: Vec<Ref<TabBarControllerItem>>, pub transition: Option<Arc<GuiTransitionDescriptor>>, }
+src/tab_bar_controller.rs: pub struct TabBarControllerSignals { pub on_change: Ref<Signal<i32>>, }
+src/tab_bar_controller.rs: pub type TabBarController = GuiController<TabBarControllerFields>;
+src/text_input_controller.rs: impl TextInputController :: fn new(options: &TextInputControllerOptions) -> Self
+src/text_input_controller.rs: pub fn blur_text_input_controller(controller: &TextInputController)
+src/text_input_controller.rs: pub fn create_text_input_controller(options: &TextInputControllerOptions) -> TextInputController
+src/text_input_controller.rs: pub fn dispatch_text_input_controller_key_down(controller: &TextInputController, data: &InputKeyboardData,) -> bool
+src/text_input_controller.rs: pub fn dispatch_text_input_controller_text(controller: &TextInputController, text: &str) -> bool
+src/text_input_controller.rs: pub fn dispose_text_input_controller(controller: &TextInputController)
+src/text_input_controller.rs: pub fn focus_text_input_controller(controller: &TextInputController)
+src/text_input_controller.rs: pub fn get_text_input_controller_signals(controller: &TextInputController,) -> Ref<TextInputControllerSignals>
+src/text_input_controller.rs: pub fn initialize_text_input_controller(out: &mut TextInputController, options: &TextInputControllerOptions,)
+src/text_input_controller.rs: pub struct TextInputControllerFields { pub background: Option<Node2DRef>, pub caret: Option<Node2DRef>, pub manager: Ref<TextInputManager>, pub owns_input: bool, pub signals: Ref<TextInputControllerSignals>, pub text_field: Option<Ref<RichText>>, }
+src/text_input_controller.rs: pub struct TextInputControllerOptions { pub background: Option<Node2DRef>, pub caret: Option<Node2DRef>, pub input: Option<Ref<TextInputSource>>, pub manager: Option<Ref<TextInputManager>>, pub text_field: Ref<RichText>, pub transition: Option<Arc<GuiTransitionDescriptor>>, }
+src/text_input_controller.rs: pub struct TextInputControllerSignals { pub on_change: Ref<Signal<String>>, pub on_submit: Ref<Signal<String>>, }
+src/text_input_controller.rs: pub type TextInputController = GuiController<TextInputControllerFields>;
+src/text_input_controller.rs: pub type TextInputControllerKeyboardData = InputKeyboardData;
+src/toggle_controller.rs: impl ToggleController :: fn new(options: &ToggleControllerOptions) -> Self
+src/toggle_controller.rs: pub fn create_toggle_controller(options: &ToggleControllerOptions) -> ToggleController
+src/toggle_controller.rs: pub fn dispose_toggle_controller(controller: &ToggleController)
+src/toggle_controller.rs: pub fn get_toggle_controller_signals(controller: &ToggleController,) -> Ref<ToggleControllerSignals>
+src/toggle_controller.rs: pub fn initialize_toggle_controller(out: &mut ToggleController, options: &ToggleControllerOptions)
+src/toggle_controller.rs: pub fn is_toggle_controller_checked(controller: &ToggleController) -> bool
+src/toggle_controller.rs: pub fn set_toggle_controller_checked(controller: &ToggleController, checked: bool)
+src/toggle_controller.rs: pub struct ToggleControllerFields { pub checked: bool, pub checked_state: Option<Node2DRef>, pub label: Option<Node2DRef>, pub over: bool, pub over_state: Option<Node2DRef>, pub signals: Ref<ToggleControllerSignals>, pub unchecked_state: Option<Node2DRef>, }
+src/toggle_controller.rs: pub struct ToggleControllerOptions { pub checked: Option<bool>, pub checked_state: Node2DRef, pub label: Option<Node2DRef>, pub over_state: Option<Node2DRef>, pub unchecked_state: Node2DRef, pub transition: Option<Arc<GuiTransitionDescriptor>>, }
+src/toggle_controller.rs: pub struct ToggleControllerSignals { pub on_change: Ref<Signal<bool>>, }
+src/toggle_controller.rs: pub type ToggleController = GuiController<ToggleControllerFields>;
+src/tooltip_controller.rs: impl TooltipController :: fn new(options: &TooltipControllerOptions, timer: Arc<HostTimerCapability>) -> Self
+src/tooltip_controller.rs: pub fn create_tooltip_controller(options: &TooltipControllerOptions, timer: Arc<HostTimerCapability>,) -> TooltipController
+src/tooltip_controller.rs: pub fn dispose_tooltip_controller(controller: &TooltipController)
+src/tooltip_controller.rs: pub fn hide_tooltip_controller(controller: &TooltipController)
+src/tooltip_controller.rs: pub fn initialize_tooltip_controller(out: &mut TooltipController, options: &TooltipControllerOptions, timer: Arc<HostTimerCapability>,)
+src/tooltip_controller.rs: pub fn show_tooltip_controller(controller: &TooltipController)
+src/tooltip_controller.rs: pub struct TooltipControllerFields { pub content: Option<Node2DRef>, pub delay: f32, pub offset_x: f32, pub offset_y: f32, pub target: Option<Node2DRef>, pub timer: Option<TimerHandle>, pub world_x: f32, pub world_y: f32, pub timer_capability: Arc<HostTimerCapability>, }
+src/tooltip_controller.rs: pub struct TooltipControllerOptions { pub content: Node2DRef, pub delay: Option<f32>, pub offset: Option<Vector2>, pub target: Node2DRef, pub transition: Option<Arc<GuiTransitionDescriptor>>, }
+src/tooltip_controller.rs: pub type TooltipController = GuiController<TooltipControllerFields>;
+src/tree_view_controller.rs: impl TreeViewController :: fn new(options: &TreeViewControllerOptions) -> Self
+src/tree_view_controller.rs: pub fn create_tree_view_controller(options: &TreeViewControllerOptions) -> TreeViewController
+src/tree_view_controller.rs: pub fn dispose_tree_view_controller(controller: &TreeViewController)
+src/tree_view_controller.rs: pub fn get_tree_view_controller_selected_item(controller: &TreeViewController,) -> Option<Ref<TreeViewControllerItem>>
+src/tree_view_controller.rs: pub fn get_tree_view_controller_signals(controller: &TreeViewController,) -> Ref<TreeViewControllerSignals>
+src/tree_view_controller.rs: pub fn initialize_tree_view_controller(out: &mut TreeViewController, options: &TreeViewControllerOptions,)
+src/tree_view_controller.rs: pub fn is_tree_view_controller_item_expanded(controller: &TreeViewController, item: &Ref<TreeViewControllerItem>,) -> bool
+src/tree_view_controller.rs: pub fn set_tree_view_controller_item_expanded(controller: &TreeViewController, item: &Ref<TreeViewControllerItem>, expanded: bool,)
+src/tree_view_controller.rs: pub fn set_tree_view_controller_selected_item(controller: &TreeViewController, item: Option<Ref<TreeViewControllerItem>>,)
+src/tree_view_controller.rs: pub fn toggle_tree_view_controller_item(controller: &TreeViewController, item: &Ref<TreeViewControllerItem>,)
+src/tree_view_controller.rs: pub struct TreeViewControllerFields { pub expanded: Vec<Ref<TreeViewControllerItem>>, pub items: Vec<Ref<TreeViewControllerItem>>, pub parents: Vec<TreeViewParent>, pub roots: Vec<Ref<TreeViewControllerItem>>, pub selected_item: Option<Ref<TreeViewControllerItem>>, pub signals: Ref<TreeViewControllerSignals>, }
+src/tree_view_controller.rs: pub struct TreeViewControllerItem { pub children: Option<Vec<Ref<TreeViewControllerItem>>>, pub expanded: Option<bool>, pub visual: Node2DRef, }
+src/tree_view_controller.rs: pub struct TreeViewControllerOptions { pub items: Vec<Ref<TreeViewControllerItem>>, pub selected_item: Option<Ref<TreeViewControllerItem>>, pub transition: Option<Arc<GuiTransitionDescriptor>>, }
+src/tree_view_controller.rs: pub struct TreeViewControllerSignals { pub on_activate: Ref<Signal<Ref<TreeViewControllerItem>>>, pub on_expand_change: Ref<Signal<(Ref<TreeViewControllerItem>, bool)>>, pub on_select: Ref<Signal<Option<Ref<TreeViewControllerItem>>>>, }
+src/tree_view_controller.rs: pub struct TreeViewParent { pub item: Ref<TreeViewControllerItem>, pub parent: Option<Ref<TreeViewControllerItem>>, }
+src/tree_view_controller.rs: pub type TreeViewController = GuiController<TreeViewControllerFields>;
+src/window_controller.rs: impl WindowController :: fn new(options: &WindowControllerOptions, revisions: Ref<NodeRevisionState>) -> Self
+src/window_controller.rs: pub fn create_window_controller(options: &WindowControllerOptions, revisions: Ref<NodeRevisionState>,) -> WindowController
+src/window_controller.rs: pub fn dispose_window_controller(controller: &WindowController)
+src/window_controller.rs: pub fn get_window_controller_signals(controller: &WindowController,) -> Ref<WindowControllerSignals>
+src/window_controller.rs: pub fn initialize_window_controller(out: &mut WindowController, options: &WindowControllerOptions, revisions: Ref<NodeRevisionState>,)
+src/window_controller.rs: pub fn set_window_controller_position(controller: &WindowController, x: f32, y: f32)
+src/window_controller.rs: pub fn set_window_controller_size(controller: &WindowController, width: f32, height: f32)
+src/window_controller.rs: pub struct WindowControllerFields { pub close_button: Option<Ref<ButtonController>>, pub content: Option<Node2DRef>, pub drag_pointer: i32, pub drag_start_frame_x: f32, pub drag_start_frame_y: f32, pub drag_start_world_x: f32, pub drag_start_world_y: f32, pub draggable: bool, pub frame: Option<Node2DRef>, pub frame_base_height: f32, pub frame_base_scale_x: f32, pub frame_base_scale_y: f32, pub frame_base_width: f32, pub minimum_height: f32, pub minimum_width: f32, pub resize_handle: Option<Node2DRef>, pub resize_pointer: i32, pub resize_start_height: f32, pub resize_start_width: f32, pub resize_start_world_x: f32, pub resize_start_world_y: f32, pub resizable: bool, pub signals: Ref<WindowControllerSignals>, pub title_bar: Option<Node2DRef>, pub revisions: Ref<NodeRevisionState>, }
+src/window_controller.rs: pub struct WindowControllerOptions { pub close_button: Option<Ref<ButtonController>>, pub content: Option<Node2DRef>, pub draggable: Option<bool>, pub frame: Node2DRef, pub minimum_height: Option<f32>, pub minimum_width: Option<f32>, pub resizable: Option<bool>, pub resize_handle: Option<Node2DRef>, pub title_bar: Option<Node2DRef>, pub transition: Option<Arc<GuiTransitionDescriptor>>, }
+src/window_controller.rs: pub struct WindowControllerSignals { pub on_close: Ref<Signal<()>>, pub on_move: Ref<Signal<(f32, f32)>>, pub on_resize: Ref<Signal<(f32, f32)>>, }
+src/window_controller.rs: pub type WindowController = GuiController<WindowControllerFields>;

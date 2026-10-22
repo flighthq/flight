@@ -1,0 +1,34 @@
+[package]
+name = "flight-gui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Portable controllers over caller-owned scene visuals and canonical interaction signals"
+autotests = false
+
+[lib]
+doctest = false
+
+[[test]]
+name = "tests"
+path = "tests/main.rs"
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-geometry = { workspace = true }
+flight-signals = { workspace = true }
+flight-host = { workspace = true }
+flight-node = { path = "../flight-node" }
+flight-scene2d = { path = "../flight-scene2d" }
+flight-interaction = { path = "../flight-interaction" }
+flight-scene-document = { path = "../flight-scene-document" }
+flight-text = { path = "../flight-text" }
+flight-textinput = { workspace = true }
+flight-textlayout = { workspace = true }
+flight-input = { workspace = true }
+
+[dev-dependencies]
+flight-registry = { workspace = true }
+
+[lints]
+workspace = true
