@@ -656,6 +656,7 @@ pub fn submit_test_frame(test: &mut WgpuScene3DTestState) {
     submit_wgpu_frame(&mut test.state);
     let native = get_wgpu_render_state_native_device(&test.state);
     let _ = native.device.poll(wgpu::PollType::wait_indefinitely());
+}
 
 // ── unlit family ─────────────────────────────────────────────────────────────────────────────
 
@@ -711,71 +712,6 @@ impl WgpuExternalImageSource for TestVideoElement {
     ) -> Result<(), WgpuExternalCopyError> {
         self.copies
             .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-
-// ── environment family ───────────────────────────────────────────────────────────────────────
-
-/// One recorded external image copy (the source's `copyExternalImageToTexture` call).
-#[derive(Clone, Debug, PartialEq)]
-pub struct TestImageCopy {
-    pub height: u32,
-    pub origin: [u32; 3],
-    pub premultiplied_alpha: bool,
-    pub texture: wgpu::Texture,
-    pub width: u32,
-}
-
-/// A host image fake (the source's canvas / image element): a size, readiness, a solid pixel it
-/// writes on copy, and a copy log.
-pub struct TestImageSource {
-    pub copies: Mutex<Vec<TestImageCopy>>,
-    pub height: std::sync::atomic::AtomicU32,
-    pub ready: std::sync::atomic::AtomicBool,
-    pub width: std::sync::atomic::AtomicU32,
-}
-
-impl TestImageSource {
-    pub fn copy_count(&self) -> usize {
-        return self.copies.lock().unwrap().len();
-    }
-}
-
-impl WgpuExternalImageSource for TestImageSource {
-    fn copy_to_texture(
-        &self,
-        queue: &wgpu::Queue,
-        texture: &wgpu::Texture,
-        origin: wgpu::Origin3d,
-        premultiplied_alpha: bool,
-        width: u32,
-        height: u32,
-    ) -> Result<(), WgpuExternalCopyError> {
-        let data = vec![255_u8; (width * height * 4) as usize];
-        queue.write_texture(
-            wgpu::TexelCopyTextureInfo {
-                texture,
-                mip_level: 0,
-                origin,
-                aspect: wgpu::TextureAspect::All,
-            },
-            &data,
-            wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(width * 4),
-                rows_per_image: Some(height),
-            },
-            wgpu::Extent3d {
-                width,
-                height,
-                depth_or_array_layers: 1,
-            },
-        );
-        self.copies.lock().unwrap().push(TestImageCopy {
-            height,
-            origin: [origin.x, origin.y, origin.z],
-            premultiplied_alpha,
-            texture: texture.clone(),
-            width,
-        });
         return Ok(());
     }
 
@@ -858,7 +794,76 @@ pub fn create_test_video_texture(
 /// Whether the video element received an external frame copy.
 pub fn was_test_video_copied(element: &TestVideoElement) -> bool {
     return element.copies.load(std::sync::atomic::Ordering::SeqCst) > 0;
+}
 
+// ── environment family ───────────────────────────────────────────────────────────────────────
+
+/// One recorded external image copy (the source's `copyExternalImageToTexture` call).
+#[derive(Clone, Debug, PartialEq)]
+pub struct TestImageCopy {
+    pub height: u32,
+    pub origin: [u32; 3],
+    pub premultiplied_alpha: bool,
+    pub texture: wgpu::Texture,
+    pub width: u32,
+}
+
+/// A host image fake (the source's canvas / image element): a size, readiness, a solid pixel it
+/// writes on copy, and a copy log.
+pub struct TestImageSource {
+    pub copies: Mutex<Vec<TestImageCopy>>,
+    pub height: std::sync::atomic::AtomicU32,
+    pub ready: std::sync::atomic::AtomicBool,
+    pub width: std::sync::atomic::AtomicU32,
+}
+
+impl TestImageSource {
+    pub fn copy_count(&self) -> usize {
+        return self.copies.lock().unwrap().len();
+    }
+}
+
+impl WgpuExternalImageSource for TestImageSource {
+    fn copy_to_texture(
+        &self,
+        queue: &wgpu::Queue,
+        texture: &wgpu::Texture,
+        origin: wgpu::Origin3d,
+        premultiplied_alpha: bool,
+        width: u32,
+        height: u32,
+    ) -> Result<(), WgpuExternalCopyError> {
+        let data = vec![255_u8; (width * height * 4) as usize];
+        queue.write_texture(
+            wgpu::TexelCopyTextureInfo {
+                texture,
+                mip_level: 0,
+                origin,
+                aspect: wgpu::TextureAspect::All,
+            },
+            &data,
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(width * 4),
+                rows_per_image: Some(height),
+            },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+        );
+        self.copies.lock().unwrap().push(TestImageCopy {
+            height,
+            origin: [origin.x, origin.y, origin.z],
+            premultiplied_alpha,
+            texture: texture.clone(),
+            width,
+        });
+        return Ok(());
+    }
+
+    fn height(&self) -> u32 {
         return self.height.load(std::sync::atomic::Ordering::SeqCst);
     }
 
