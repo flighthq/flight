@@ -13,7 +13,8 @@ use crate::command_binding::command_kind;
 use crate::command_binding::{create_command_binding_table, get_command_binding};
 use crate::types::*;
 
-/// An empty history with no bindings registered (TS `createCommandHistory`).
+/// An empty history with no bindings registered (TS `createCommandHistory`). The default
+/// `max_size` of 0 is unbounded; assign it after create to cap the history.
 // flight-lint: allow(conform-params) D23 B: max_size removed; assigned after create
 pub fn create_command_history() -> Ref<CommandHistory> {
     let mut out: CommandHistory = allocate_entity();
@@ -22,6 +23,7 @@ pub fn create_command_history() -> Ref<CommandHistory> {
 }
 
 /// The construction initializer of `create_command_history` (TS `initializeCommandHistory`).
+// flight-lint: allow(conform-params) D23 B: max_size removed; initialize mirrors create
 pub fn initialize_command_history(out: &mut CommandHistory) {
     out.bindings = create_command_binding_table();
     out.entries = Vec::new();

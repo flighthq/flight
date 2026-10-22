@@ -8,20 +8,17 @@ use crate::types::*;
 mod sugar_tests {
     use super::*;
 
-    fn make_timer(delay: f64, interval: f64) -> Ref<InputKeyRepeatTimer> {
-        let timer = create_input_key_repeat_timer();
-        {
-            let mut g = timer.write().unwrap();
-            g.delay_ms = delay;
-            g.interval_ms = interval;
-        }
-        return timer;
+    fn options() -> InputKeyRepeatOptions {
+        return InputKeyRepeatOptions {
+            delay: 500.0,
+            interval: 33.0,
+        };
     }
 
     #[test]
     fn new_matches_create_input_key_repeat_timer() {
-        let method_timer = InputKeyRepeatTimer::new();
-        let free_timer = create_input_key_repeat_timer();
+        let method_timer = InputKeyRepeatTimer::new(&options());
+        let free_timer = create_input_key_repeat_timer(&options());
         assert_eq!(
             method_timer.read().unwrap().delay_ms,
             free_timer.read().unwrap().delay_ms
@@ -30,8 +27,8 @@ mod sugar_tests {
 
     #[test]
     fn advance_method_matches_advance_input_key_repeat_timer() {
-        let method_timer = make_timer(500.0, 33.0);
-        let free_timer = make_timer(500.0, 33.0);
+        let method_timer = create_input_key_repeat_timer(&options());
+        let free_timer = create_input_key_repeat_timer(&options());
         start_input_key_repeat_timer(&method_timer, Arc::new(|| {}), 0.0);
         start_input_key_repeat_timer(&free_timer, Arc::new(|| {}), 0.0);
         method_timer.advance(500.0);
@@ -44,8 +41,8 @@ mod sugar_tests {
 
     #[test]
     fn start_method_matches_start_input_key_repeat_timer() {
-        let method_timer = make_timer(500.0, 33.0);
-        let free_timer = make_timer(500.0, 33.0);
+        let method_timer = create_input_key_repeat_timer(&options());
+        let free_timer = create_input_key_repeat_timer(&options());
         let method_calls = Arc::new(std::sync::Mutex::new(0));
         let captured = method_calls.clone();
         method_timer.start(Arc::new(move || *captured.lock().unwrap() += 1), 10.0);
@@ -61,8 +58,8 @@ mod sugar_tests {
 
     #[test]
     fn stop_method_matches_stop_input_key_repeat_timer() {
-        let method_timer = make_timer(500.0, 33.0);
-        let free_timer = make_timer(500.0, 33.0);
+        let method_timer = create_input_key_repeat_timer(&options());
+        let free_timer = create_input_key_repeat_timer(&options());
         start_input_key_repeat_timer(&method_timer, Arc::new(|| {}), 0.0);
         start_input_key_repeat_timer(&free_timer, Arc::new(|| {}), 0.0);
         method_timer.stop();
@@ -76,19 +73,21 @@ mod sugar_tests {
 
 /// Allocates a reusable key-repeat timer from the supplied timings (TS
 /// `createInputKeyRepeatTimer`). Timing is caller-driven; no real timer is created.
-// flight-lint: allow(conform-params) D23 B: InputKeyRepeatOptions removed; timings assigned after create
-pub fn create_input_key_repeat_timer() -> Ref<InputKeyRepeatTimer> {
+pub fn create_input_key_repeat_timer(options: &InputKeyRepeatOptions) -> Ref<InputKeyRepeatTimer> {
     let mut out: InputKeyRepeatTimer = allocate_entity();
-    initialize_input_key_repeat_timer(&mut out);
+    initialize_input_key_repeat_timer(&mut out, options);
     return Arc::new(RwLock::new(out));
 }
 
+/// Gives a timer under construction its timings and an inactive cycle (TS
+/// `initializeInputKeyRepeatTimer`).
 pub fn initialize_input_key_repeat_timer(
     out: &mut InputKeyRepeatTimer,
+    options: &InputKeyRepeatOptions,
 ) {
     out.callback = None;
-    out.delay_ms = 0.0;
-    out.interval_ms = 0.0;
+    out.delay_ms = options.delay;
+    out.interval_ms = options.interval;
     out.next_fire_ms = 0.0;
     out.repeating = false;
     out.started = false;
@@ -156,8 +155,8 @@ pub fn stop_input_key_repeat_timer(timer: &Ref<InputKeyRepeatTimer>) {
 // ============================================================================
 
 impl InputKeyRepeatTimer {
-    pub fn new() -> Ref<InputKeyRepeatTimer> {
-        return create_input_key_repeat_timer();
+    pub fn new(options: &InputKeyRepeatOptions) -> Ref<InputKeyRepeatTimer> {
+        return create_input_key_repeat_timer(options);
     }
 }
 

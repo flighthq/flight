@@ -157,6 +157,14 @@ pub struct AttachInputOptions {
     pub prevent_default: Option<bool>,
 }
 
+/// Key-repeat timing options (TS `InputKeyRepeatOptions`), in milliseconds.
+// flight-lint: allow(f64) D1: repeat delays and intervals are millisecond durations; f32 loses fractional precision for long delays
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
+pub struct InputKeyRepeatOptions {
+    pub delay: f64,
+    pub interval: f64,
+}
+
 /// The caller-owned output of a radial stick dead zone (TS out object `{ x, y }`).
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct GamepadStickOutput {
@@ -381,8 +389,8 @@ pub struct InputState {
 pub struct InputKeyRepeatTimer {
     runtime: EntityRuntimeSlot,
     pub(crate) callback: Option<InputRepeatCallback>,
-    pub delay_ms: f64,
-    pub interval_ms: f64,
+    pub(crate) delay_ms: f64,
+    pub(crate) interval_ms: f64,
     pub(crate) next_fire_ms: f64,
     pub(crate) repeating: bool,
     pub(crate) started: bool,

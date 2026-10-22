@@ -67,6 +67,7 @@ pub use contract::InputGamepadConnectData;
 pub use contract::InputIngressAttach;
 pub use contract::InputIngressRelease;
 pub use contract::InputIngressSink;
+pub use contract::InputKeyRepeatOptions;
 pub use contract::InputKeyRepeatTimer;
 pub use contract::InputKeyRepeatTimerMethods;
 pub use contract::InputKeyboardData;

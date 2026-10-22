@@ -1,16 +1,9 @@
 use std::sync::{Arc, Mutex};
 
-use flight_entity::Ref;
 use flight_input::contract::*;
 
-fn make_timer(delay: f64, interval: f64) -> Ref<InputKeyRepeatTimer> {
-    let timer = create_input_key_repeat_timer();
-    {
-        let mut g = timer.write().unwrap();
-        g.delay_ms = delay;
-        g.interval_ms = interval;
-    }
-    return timer;
+fn options(delay: f64, interval: f64) -> InputKeyRepeatOptions {
+    return InputKeyRepeatOptions { delay, interval };
 }
 
 fn counter() -> (Arc<Mutex<usize>>, InputRepeatCallback) {
@@ -25,7 +18,7 @@ mod advance_input_key_repeat_timer {
 
     #[test]
     fn fires_the_delayed_tick_then_one_tick_per_interval() {
-        let timer = make_timer(500.0, 33.0);
+        let timer = create_input_key_repeat_timer(&options(500.0, 33.0));
         let (count, callback) = counter();
         start_input_key_repeat_timer(&timer, callback, 0.0);
         assert_eq!(*count.lock().unwrap(), 1);
@@ -39,7 +32,7 @@ mod advance_input_key_repeat_timer {
 
     #[test]
     fn catches_up_every_due_tick_in_order() {
-        let timer = make_timer(10.0, 10.0);
+        let timer = create_input_key_repeat_timer(&options(10.0, 10.0));
         let (count, callback) = counter();
         start_input_key_repeat_timer(&timer, callback, 0.0);
         advance_input_key_repeat_timer(&timer, 35.0);
@@ -48,7 +41,7 @@ mod advance_input_key_repeat_timer {
 
     #[test]
     fn a_zero_interval_fires_once_per_advance() {
-        let timer = make_timer(0.0, 0.0);
+        let timer = create_input_key_repeat_timer(&options(0.0, 0.0));
         let (count, callback) = counter();
         start_input_key_repeat_timer(&timer, callback, 0.0);
         assert_eq!(*count.lock().unwrap(), 1);
@@ -60,7 +53,7 @@ mod advance_input_key_repeat_timer {
 
     #[test]
     fn does_nothing_when_stopped_or_not_yet_due() {
-        let timer = make_timer(100.0, 10.0);
+        let timer = create_input_key_repeat_timer(&options(100.0, 10.0));
         let (count, callback) = counter();
         advance_input_key_repeat_timer(&timer, 1000.0);
         assert_eq!(*count.lock().unwrap(), 0);
@@ -75,13 +68,8 @@ mod create_input_key_repeat_timer {
     use super::*;
 
     #[test]
-    fn allocates_an_inactive_timer() {
-        let timer = create_input_key_repeat_timer();
-        {
-            let mut g = timer.write().unwrap();
-            g.delay_ms = 500.0;
-            g.interval_ms = 33.0;
-        }
+    fn allocates_an_inactive_timer_with_the_supplied_timings() {
+        let timer = create_input_key_repeat_timer(&options(500.0, 33.0));
         let (count, callback) = counter();
         advance_input_key_repeat_timer(&timer, 1000.0);
         assert_eq!(*count.lock().unwrap(), 0);
@@ -99,15 +87,13 @@ mod initialize_input_key_repeat_timer {
     use super::*;
 
     #[test]
-    fn resets_the_cycle() {
-        let timer = make_timer(500.0, 33.0);
+    fn resets_the_cycle_and_replaces_the_timings() {
+        let timer = create_input_key_repeat_timer(&options(500.0, 33.0));
         let (count, callback) = counter();
         start_input_key_repeat_timer(&timer, callback, 0.0);
         {
             let mut locked = timer.write().unwrap();
-            initialize_input_key_repeat_timer(&mut locked);
-            locked.delay_ms = 10.0;
-            locked.interval_ms = 5.0;
+            initialize_input_key_repeat_timer(&mut locked, &options(10.0, 5.0));
         }
         advance_input_key_repeat_timer(&timer, 100.0);
         assert_eq!(*count.lock().unwrap(), 1);
@@ -125,7 +111,7 @@ mod start_input_key_repeat_timer {
 
     #[test]
     fn invokes_immediately_and_restarts_the_cycle() {
-        let timer = make_timer(100.0, 10.0);
+        let timer = create_input_key_repeat_timer(&options(100.0, 10.0));
         let (count, callback) = counter();
         start_input_key_repeat_timer(&timer, callback, 0.0);
         assert_eq!(*count.lock().unwrap(), 1);
@@ -145,7 +131,7 @@ mod stop_input_key_repeat_timer {
 
     #[test]
     fn cancels_the_cycle_and_is_idempotent() {
-        let timer = make_timer(10.0, 10.0);
+        let timer = create_input_key_repeat_timer(&options(10.0, 10.0));
         let (count, callback) = counter();
         start_input_key_repeat_timer(&timer, callback, 0.0);
         stop_input_key_repeat_timer(&timer);
