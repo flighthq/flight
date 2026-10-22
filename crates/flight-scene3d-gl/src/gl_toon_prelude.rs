@@ -12,11 +12,10 @@ use crate::types::{GlLitProgram, GlMeshProgram, GlToonDefineKey, GlToonProgram};
 
 pub fn build_gl_toon_define_key(key: &GlToonDefineKey) -> String {
     return format!(
-        "{}{}{}{}{}{}",
-        if key.has_alpha_mask { 'm' } else { '-' },
-        if key.has_diffuse_map { 'b' } else { '-' },
+        "{}{}{}{}{}",
+        if key.alpha_mask_enabled { 'm' } else { '-' },
+        if key.has_base_color_map { 'b' } else { '-' },
         if key.has_ramp { 'r' } else { '-' },
-        '-', // uv transform placeholder
         if key.has_skin { 'k' } else { '-' },
         if key.has_instanced { 'i' } else { '-' },
     );
@@ -45,13 +44,15 @@ pub fn compile_gl_toon_program(
         base,
         ..resolve_gl_lit_locations(gl, program)
     };
-    return GlToonProgram {
-        diffuse_color_location: unsafe { gl.get_uniform_location(program, "u_baseColor") },
-        diffuse_map_location: unsafe { gl.get_uniform_location(program, "u_baseColorMap") },
-        has_diffuse_map: key.has_diffuse_map,
-        ramp_location: unsafe { gl.get_uniform_location(program, "u_ramp") },
-        has_ramp: key.has_ramp,
-        lit,
+    return unsafe {
+        GlToonProgram {
+            alpha_cutoff_location: gl.get_uniform_location(program, "u_alphaCutoff"),
+            base_color_location: gl.get_uniform_location(program, "u_baseColor"),
+            base_color_map_location: gl.get_uniform_location(program, "u_baseColorMap"),
+            ramp_location: gl.get_uniform_location(program, "u_ramp"),
+            steps_location: gl.get_uniform_location(program, "u_steps"),
+            lit,
+        }
     };
 }
 
@@ -60,13 +61,12 @@ pub fn ensure_gl_toon_program(
     key: &GlToonDefineKey,
 ) -> GlToonProgram {
     let full_key = GlToonDefineKey {
-        has_diffuse_map: key.has_diffuse_map,
+        alpha_mask_enabled: key.alpha_mask_enabled,
+        has_base_color_map: key.has_base_color_map,
         has_ramp: key.has_ramp,
         has_skin: get_gl_scene3d_runtime(state, |rt| rt.active_skinned_run),
-        has_color_adjustment: key.has_color_adjustment,
-        has_color_matrix: key.has_color_matrix,
-        has_alpha_mask: key.has_alpha_mask,
         has_instanced: get_gl_scene3d_runtime(state, |rt| rt.active_instanced_run),
+        has_uv_transform: key.has_uv_transform,
     };
     let skin_glsl = get_gl_scene3d_runtime(state, |rt| {
         rt.mesh_skin_feature
@@ -103,10 +103,10 @@ pub fn get_gl_toon_vertex_source_for_key(
 
 fn build_gl_toon_define_source(key: &GlToonDefineKey) -> String {
     let mut defines = format!("#version 300 es\n#define MAX_FORWARD_LIGHTS {}\n", 8);
-    if key.has_alpha_mask {
+    if key.alpha_mask_enabled {
         defines.push_str("#define ALPHA_MASK\n");
     }
-    if key.has_diffuse_map {
+    if key.has_base_color_map {
         defines.push_str("#define HAS_BASE_COLOR_MAP\n");
     }
     if key.has_ramp {

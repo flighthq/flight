@@ -11,11 +11,10 @@ use crate::types::{GlMeshProgram, GlUnlitDefineKey, GlUnlitProgram};
 
 pub fn build_gl_unlit_define_key(key: &GlUnlitDefineKey) -> String {
     return format!(
-        "{}{}{}{}{}{}",
-        if key.has_alpha_mask { 'm' } else { '-' },
-        if key.has_diffuse_map { 'c' } else { '-' },
-        if key.has_video { 'v' } else { '-' },
-        '-', // uv transform placeholder
+        "{}{}{}{}{}",
+        if key.alpha_mask_enabled { 'm' } else { '-' },
+        if key.has_color_map { 'c' } else { '-' },
+        if key.vertex_color { 'v' } else { '-' },
         if key.has_skin { 'k' } else { '-' },
         if key.has_instanced { 'i' } else { '-' },
     );
@@ -40,11 +39,14 @@ pub fn compile_gl_unlit_program(
             alpha_is_coverage_location: gl.get_uniform_location(program, "u_alphaIsCoverage"),
         }
     };
-    return GlUnlitProgram {
-        diffuse_color_location: unsafe { gl.get_uniform_location(program, "u_color") },
-        diffuse_map_location: unsafe { gl.get_uniform_location(program, "u_colorMap") },
-        has_diffuse_map: key.has_diffuse_map,
-        base,
+    return unsafe {
+        GlUnlitProgram {
+            alpha_cutoff_location: gl.get_uniform_location(program, "u_alphaCutoff"),
+            color_location: gl.get_uniform_location(program, "u_color"),
+            color_map_location: gl.get_uniform_location(program, "u_colorMap"),
+            intensity_location: gl.get_uniform_location(program, "u_intensity"),
+            base,
+        }
     };
 }
 
@@ -53,13 +55,12 @@ pub fn ensure_gl_unlit_program(
     key: &GlUnlitDefineKey,
 ) -> GlUnlitProgram {
     let full_key = GlUnlitDefineKey {
-        has_diffuse_map: key.has_diffuse_map,
+        alpha_mask_enabled: key.alpha_mask_enabled,
+        has_color_map: key.has_color_map,
         has_skin: get_gl_scene3d_runtime(state, |rt| rt.active_skinned_run),
-        has_color_adjustment: get_gl_scene3d_runtime(state, |rt| rt.active_color_adjustment_run),
-        has_color_matrix: get_gl_scene3d_runtime(state, |rt| rt.active_color_matrix_run),
-        has_alpha_mask: key.has_alpha_mask,
         has_instanced: get_gl_scene3d_runtime(state, |rt| rt.active_instanced_run),
-        has_video: key.has_video,
+        has_uv_transform: key.has_uv_transform,
+        vertex_color: key.vertex_color,
     };
     let skin_glsl = get_gl_scene3d_runtime(state, |rt| {
         rt.mesh_skin_feature
@@ -96,11 +97,14 @@ pub fn get_gl_unlit_vertex_source_for_key(
 
 fn build_define_source(key: &GlUnlitDefineKey) -> String {
     let mut defines = String::from("#version 300 es\n");
-    if key.has_alpha_mask {
+    if key.alpha_mask_enabled {
         defines.push_str("#define ALPHA_MASK\n");
     }
-    if key.has_diffuse_map {
+    if key.has_color_map {
         defines.push_str("#define HAS_COLOR_MAP\n");
+    }
+    if key.vertex_color {
+        defines.push_str("#define VERTEX_COLOR\n");
     }
     if key.has_skin {
         defines.push_str("#define HAS_SKIN\n");

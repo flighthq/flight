@@ -11,8 +11,8 @@ use crate::types::{GlMatcapDefineKey, GlMatcapProgram, GlMeshProgram};
 pub fn build_gl_matcap_define_key(key: &GlMatcapDefineKey) -> String {
     return format!(
         "{}{}{}{}",
-        if key.has_alpha_mask { 'm' } else { '-' },
-        if key.has_matcap_map { 't' } else { '-' },
+        if key.alpha_mask_enabled { 'm' } else { '-' },
+        if key.has_matcap { 't' } else { '-' },
         if key.has_skin { 'k' } else { '-' },
         if key.has_instanced { 'i' } else { '-' },
     );
@@ -37,10 +37,14 @@ pub fn compile_gl_matcap_program(
             alpha_is_coverage_location: gl.get_uniform_location(program, "u_alphaIsCoverage"),
         }
     };
-    return GlMatcapProgram {
-        matcap_location: unsafe { gl.get_uniform_location(program, "u_matcap") },
-        diffuse_color_location: unsafe { gl.get_uniform_location(program, "u_tint") },
-        base,
+    return unsafe {
+        GlMatcapProgram {
+            alpha_cutoff_location: gl.get_uniform_location(program, "u_alphaCutoff"),
+            matcap_location: gl.get_uniform_location(program, "u_matcap"),
+            tint_location: gl.get_uniform_location(program, "u_tint"),
+            view_location: gl.get_uniform_location(program, "u_view"),
+            base,
+        }
     };
 }
 
@@ -49,12 +53,9 @@ pub fn ensure_gl_matcap_program(
     key: &GlMatcapDefineKey,
 ) -> GlMatcapProgram {
     let full_key = GlMatcapDefineKey {
-        has_matcap_map: key.has_matcap_map,
-        has_normal_map: key.has_normal_map,
+        alpha_mask_enabled: key.alpha_mask_enabled,
+        has_matcap: key.has_matcap,
         has_skin: get_gl_scene3d_runtime(state, |rt| rt.active_skinned_run),
-        has_color_adjustment: key.has_color_adjustment,
-        has_color_matrix: key.has_color_matrix,
-        has_alpha_mask: key.has_alpha_mask,
         has_instanced: get_gl_scene3d_runtime(state, |rt| rt.active_instanced_run),
     };
     let skin_glsl = get_gl_scene3d_runtime(state, |rt| {
@@ -92,10 +93,10 @@ pub fn get_gl_matcap_vertex_source_for_key(
 
 fn build_define_source(key: &GlMatcapDefineKey) -> String {
     let mut defines = String::from("#version 300 es\n");
-    if key.has_alpha_mask {
+    if key.alpha_mask_enabled {
         defines.push_str("#define ALPHA_MASK\n");
     }
-    if key.has_matcap_map {
+    if key.has_matcap {
         defines.push_str("#define HAS_MATCAP\n");
     }
     if key.has_skin {

@@ -74,6 +74,37 @@ pub fn ensure_gl_debug_program(
     });
 }
 
+pub fn bind_gl_debug_normal_map(
+    state: &GlRenderState,
+    program: &GlDebugProgram,
+    normal_map: Option<&Texture>,
+    normal_scale: f32,
+) {
+    let gl = &state.gl;
+    unsafe {
+        gl.uniform_1_f32(program.normal_scale_location.as_ref(), normal_scale);
+        if let Some(map) = normal_map {
+            gl.active_texture(glow::TEXTURE0);
+            if resolve_gl_texture(state, map).is_some() {
+                gl.uniform_1_i32(program.normal_map_location.as_ref(), 0);
+            }
+        }
+    }
+}
+
+pub fn bind_gl_debug_range(
+    state: &GlRenderState,
+    program: &GlDebugProgram,
+    near: f32,
+    far: f32,
+) {
+    let gl = &state.gl;
+    unsafe {
+        gl.uniform_1_f32(program.near_location.as_ref(), near);
+        gl.uniform_1_f32(program.far_location.as_ref(), far);
+    }
+}
+
 pub fn get_gl_debug_fragment_source_for_key(key: &GlDebugDefineKey) -> String {
     let mut src = build_define_source(key);
     src.push_str(&get_debug_fragment_body());

@@ -37,14 +37,15 @@ pub struct GlPbrProgram {
 
 pub fn build_gl_pbr_define_key(key: &GlPbrDefineKey) -> String {
     return format!(
-        "pbr{}{}{}{}{}{}{}{}{}",
+        "pbr{}{}{}{}{}{}{}{}{}{}",
         if key.has_base_color_map { 'b' } else { '-' },
         if key.has_metallic_roughness_map { 'r' } else { '-' },
         if key.has_normal_map { 'n' } else { '-' },
         if key.has_occlusion_map { 'o' } else { '-' },
         if key.has_emissive_map { 'e' } else { '-' },
         if key.has_ibl { 'i' } else { '-' },
-        if key.has_alpha_mask { 'm' } else { '-' },
+        if key.has_shadow { 'S' } else { '-' },
+        if key.alpha_mask_enabled { 'm' } else { '-' },
         if key.has_skin { 'k' } else { '-' },
         if key.has_instanced { 'I' } else { '-' },
     );
@@ -115,17 +116,22 @@ pub fn ensure_gl_pbr_program(
     pbr_extension_fragment_glsl: &str,
 ) -> GlPbrProgram {
     let full_key = GlPbrDefineKey {
+        alpha_mask_enabled: key.alpha_mask_enabled,
+        has_alpha_map: key.has_alpha_map,
         has_base_color_map: key.has_base_color_map,
+        has_color_adjustment: key.has_color_adjustment,
+        has_color_matrix: key.has_color_matrix,
+        has_emissive_map: key.has_emissive_map,
+        has_instanced: get_gl_scene3d_runtime(state, |rt| rt.active_instanced_run),
         has_metallic_roughness_map: key.has_metallic_roughness_map,
         has_normal_map: key.has_normal_map,
         has_occlusion_map: key.has_occlusion_map,
-        has_emissive_map: key.has_emissive_map,
-        has_ibl: key.has_ibl,
         has_skin: get_gl_scene3d_runtime(state, |rt| rt.active_skinned_run),
-        has_color_adjustment: key.has_color_adjustment,
-        has_color_matrix: key.has_color_matrix,
-        has_alpha_mask: key.has_alpha_mask,
-        has_instanced: get_gl_scene3d_runtime(state, |rt| rt.active_instanced_run),
+        has_uv_transform: key.has_uv_transform,
+        has_ibl: key.has_ibl,
+        has_shadow: key.has_shadow,
+        extension_define_key: key.extension_define_key.clone(),
+        modifier_define_key: key.modifier_define_key.clone(),
     };
     let skin_glsl = get_gl_scene3d_runtime(state, |rt| {
         rt.mesh_skin_feature
@@ -188,8 +194,14 @@ fn build_gl_pbr_define_source(key: &GlPbrDefineKey) -> String {
     if key.has_ibl {
         defines.push_str("#define HAS_IBL\n");
     }
-    if key.has_alpha_mask {
+    if key.alpha_mask_enabled {
         defines.push_str("#define ALPHA_MASK\n");
+    }
+    if key.has_alpha_map {
+        defines.push_str("#define HAS_ALPHA_MAP\n");
+    }
+    if key.has_shadow {
+        defines.push_str("#define HAS_SHADOW\n");
     }
     if key.has_skin {
         defines.push_str("#define HAS_SKIN\n");
