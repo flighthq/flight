@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock};
+
 use crate::{
     ExtendedPbrMaterial, ExtendedPbrMaterialOptions, GlassExtendedPbrMaterialOptions,
     PbrExtension, StandardPbrMaterial, StandardPbrMaterialOptions,
@@ -40,7 +42,7 @@ pub fn create_glass_extended_pbr_material(opts: Option<&GlassExtendedPbrMaterial
         alpha_mode: opts.and_then(|o| o.alpha_mode),
         blend_mode: opts.and_then(|o| o.blend_mode.clone()),
         double_sided: opts.and_then(|o| o.double_sided),
-        extensions: Some(vec![PbrExtension::TransmissionVolume(tv)]),
+        extensions: Some(vec![Arc::new(RwLock::new(PbrExtension::TransmissionVolume(tv)))]),
         standard: Some(std),
     };
     return create_extended_pbr_material(Some(&ext_opts));

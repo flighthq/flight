@@ -34,7 +34,7 @@ mod create_glass_extended_pbr_material {
         assert_eq!(m.standard.roughness, 0.0);
         assert_eq!(m.extensions.len(), 1);
         assert_eq!(
-            m.extensions[0].kind(),
+            m.extensions[0].read().unwrap().kind(),
             TRANSMISSION_VOLUME_PBR_EXTENSION_KIND
         );
     }

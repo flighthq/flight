@@ -1213,7 +1213,7 @@ pub const EXTENDED_PBR_MATERIAL_KIND: &str = "ExtendedPbrMaterial";
 #[derive(Clone, Debug)]
 pub struct ExtendedPbrMaterial {
     fields: Material3DFields,
-    pub extensions: Vec<PbrExtension>,
+    pub extensions: Vec<Ref<PbrExtension>>,
     pub standard: StandardPbrMaterialProperties,
 }
 
@@ -1595,7 +1595,7 @@ pub struct ExtendedPbrMaterialOptions {
     pub alpha_mode: Option<MaterialAlphaMode>,
     pub blend_mode: Option<BlendMode>,
     pub double_sided: Option<bool>,
-    pub extensions: Option<Vec<PbrExtension>>,
+    pub extensions: Option<Vec<Ref<PbrExtension>>>,
     pub standard: Option<StandardPbrMaterialProperties>,
 }
 
