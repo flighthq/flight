@@ -87,7 +87,7 @@ pub struct Scene2DDocumentLoadOptions {
 
 /// Application resolver for one authored slot.
 pub type Scene2DSlotContentResolver =
-    Arc<dyn Fn(&Scene2DSlotReference) -> Option<Node2DRef> + Send + Sync>;
+    Arc<dyn Fn(&Ref<Scene2DSlotReference>) -> Option<Node2DRef> + Send + Sync>;
 
 /// One successfully filled slot.
 #[derive(Clone)]
@@ -108,7 +108,7 @@ pub struct Scene2DResources {
 #[derive(Clone, Default)]
 pub struct ResolveScene2DResourcesOptions {
     pub resolve_slot_content: Option<Scene2DSlotContentResolver>,
-    pub select: Option<Arc<dyn Fn(&Scene2DSlotReference) -> bool + Send + Sync>>,
+    pub select: Option<Arc<dyn Fn(&Ref<Scene2DSlotReference>) -> bool + Send + Sync>>,
 }
 
 /// Progress emitted after one selected image reference completes.

@@ -37,10 +37,8 @@ pub async fn load_scene2d_image_resources(
     resolver_state: &ImageResolverState,
     guard_state: &Scene2DResourceFailureGuardStateRef,
 ) -> Scene2DImageResources {
-    let selected: Vec<_> = document
-        .read()
-        .unwrap()
-        .image_resources
+    let references = document.read().unwrap().image_resources.clone();
+    let selected: Vec<_> = references
         .iter()
         .filter(|reference| {
             options

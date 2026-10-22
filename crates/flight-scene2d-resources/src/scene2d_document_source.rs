@@ -35,6 +35,6 @@ pub async fn load_scene2d_document_from_url(
         mime_type: options.and_then(|options| options.mime_type.clone()),
         url: Some(url),
     };
-    let source = source.read().unwrap();
+    let source = source.read().unwrap().clone();
     return create_scene2d_document_from_bytes(&source, registry, Some(&context), guard_state);
 }

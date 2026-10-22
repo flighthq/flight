@@ -143,6 +143,69 @@ mod load_scene2d_audio_resources {
     }
 
     #[test]
+    fn releases_the_document_guard_before_select_and_preserves_identity_order_and_outcomes() {
+        let first = embedded(1, "audio/mpeg");
+        let second = embedded(2, "audio/mpeg");
+        let first_handle = match &first {
+            AudioResourceReference::Embedded(value) => value.reference.clone(),
+            AudioResourceReference::External(_) => unreachable!(),
+        };
+        let second_handle = match &second {
+            AudioResourceReference::Embedded(value) => value.reference.clone(),
+            AudioResourceReference::External(_) => unreachable!(),
+        };
+        let document = create_scene2d_document();
+        document.write().unwrap().audio_resources = vec![first, second];
+        let seen = Arc::new(Mutex::new(Vec::new()));
+        let captured_seen = seen.clone();
+        let captured_document = document.clone();
+        let captured_first = first_handle.clone();
+        let captured_second = second_handle.clone();
+        let mut options = empty_options();
+        options.audio_decode = Some(audio_decode());
+        options.select = Some(Arc::new(move |reference| {
+            let mut document = captured_document
+                .try_write()
+                .expect("select must not run under the document read guard");
+            document.source_kind = Some("audio-select-reentered".to_string());
+            let ordinal = match reference {
+                AudioResourceReference::Embedded(value)
+                    if Arc::ptr_eq(&value.reference, &captured_first) =>
+                {
+                    1
+                }
+                AudioResourceReference::Embedded(value)
+                    if Arc::ptr_eq(&value.reference, &captured_second) =>
+                {
+                    2
+                }
+                _ => 0,
+            };
+            captured_seen.lock().unwrap().push(ordinal);
+            return true;
+        }));
+        let result = futures::executor::block_on(load_scene2d_audio_resources(
+            &document,
+            Some(&options),
+            &guard_state(),
+        ));
+        assert_eq!(*seen.lock().unwrap(), vec![1, 2]);
+        assert_eq!(result.resolved.len(), 2);
+        match (&result.resolved[0], &result.resolved[1]) {
+            (AudioResourceReference::Embedded(first), AudioResourceReference::Embedded(second)) => {
+                assert!(Arc::ptr_eq(&first.reference, &first_handle));
+                assert!(Arc::ptr_eq(&second.reference, &second_handle));
+            }
+            _ => panic!("selected references changed variants"),
+        }
+        assert!(result.unresolved.is_empty());
+        assert_eq!(
+            document.read().unwrap().source_kind.as_deref(),
+            Some("audio-select-reentered")
+        );
+    }
+
+    #[test]
     fn reports_an_external_reference_unresolved_without_a_fetch_seam() {
         let reference = external("hit.mp3");
         let document = create_scene2d_document();

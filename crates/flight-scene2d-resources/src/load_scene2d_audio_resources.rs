@@ -19,10 +19,8 @@ pub async fn load_scene2d_audio_resources(
     options: Option<&LoadScene2DAudioResourcesOptions>,
     guard_state: &Scene2DResourceFailureGuardStateRef,
 ) -> Scene2DAudioResources {
-    let selected: Vec<_> = document
-        .read()
-        .unwrap()
-        .audio_resources
+    let references = document.read().unwrap().audio_resources.clone();
+    let selected: Vec<_> = references
         .iter()
         .filter(|reference| {
             options

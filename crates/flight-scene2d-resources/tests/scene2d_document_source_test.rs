@@ -34,6 +34,46 @@ mod load_scene2d_document_from_url {
     }
 
     #[test]
+    fn releases_fetched_bytes_before_matcher_and_importer_callbacks() {
+        let source = Arc::new(RwLock::new(vec![1].into_boxed_slice()));
+        let matcher_source = source.clone();
+        let importer_source = source.clone();
+        let mut registry = create_scene2d_document_importer_registry();
+        register_scene2d_document_importer(
+            &mut registry,
+            "acme".to_string(),
+            Arc::new(move |bytes, _| {
+                let mut source = matcher_source
+                    .try_write()
+                    .expect("matcher must not run under the fetched-byte read guard");
+                source[0] = bytes[0];
+                return true;
+            }),
+            Arc::new(move |bytes, _| {
+                let mut source = importer_source
+                    .try_write()
+                    .expect("importer must not run under the fetched-byte read guard");
+                source[0] = bytes[0];
+                return Some(create_scene2d_document());
+            }),
+        );
+        let fetched = source.clone();
+        let fetch: Scene2DDocumentFetcher = Arc::new(move |_, _, _| {
+            let fetched = fetched.clone();
+            Box::pin(async move { Some(fetched) })
+        });
+        let document = futures::executor::block_on(load_scene2d_document_from_url(
+            "scene.acme".to_string(),
+            &registry,
+            &fetch,
+            None,
+            &guard_state(),
+        ));
+        assert!(document.is_some());
+        assert_eq!(source.read().unwrap()[0], 1);
+    }
+
+    #[test]
     fn returns_none_when_acquisition_reports_an_expected_failure() {
         let fetch: Scene2DDocumentFetcher = Arc::new(|_, _, _| Box::pin(async { None }));
         assert!(

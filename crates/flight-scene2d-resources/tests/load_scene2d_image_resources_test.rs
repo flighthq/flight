@@ -247,6 +247,75 @@ mod load_scene2d_image_resources {
     }
 
     #[test]
+    fn releases_the_document_guard_before_select_and_preserves_identity_order_and_outcomes() {
+        let state = create_image_resolver_state();
+        let first = external("a.png");
+        let second = external("b.png");
+        let first_handle = match &first {
+            ImageResourceReference::External(value) => value.reference.clone(),
+            ImageResourceReference::Embedded(_) => unreachable!(),
+        };
+        let second_handle = match &second {
+            ImageResourceReference::External(value) => value.reference.clone(),
+            ImageResourceReference::Embedded(_) => unreachable!(),
+        };
+        let document = create_scene2d_document();
+        document.write().unwrap().image_resources = vec![first, second];
+        let seen = Arc::new(Mutex::new(Vec::new()));
+        let captured_seen = seen.clone();
+        let captured_document = document.clone();
+        let captured_first = first_handle.clone();
+        let captured_second = second_handle.clone();
+        let mut options = empty_options();
+        options.fetch = Some(Arc::new(move |_, _| {
+            let resource = fetched_image(&create_image_resolver_state());
+            Box::pin(async move { Some(resource) })
+        }));
+        options.select = Some(Arc::new(move |reference| {
+            let mut document = captured_document
+                .try_write()
+                .expect("select must not run under the document read guard");
+            document.source_kind = Some("image-select-reentered".to_string());
+            let ordinal = match reference {
+                ImageResourceReference::External(value)
+                    if Arc::ptr_eq(&value.reference, &captured_first) =>
+                {
+                    1
+                }
+                ImageResourceReference::External(value)
+                    if Arc::ptr_eq(&value.reference, &captured_second) =>
+                {
+                    2
+                }
+                _ => 0,
+            };
+            captured_seen.lock().unwrap().push(ordinal);
+            return true;
+        }));
+        let result = futures::executor::block_on(load_scene2d_image_resources(
+            &image_decode(),
+            &document,
+            Some(&options),
+            &state,
+            &guard_state(),
+        ));
+        assert_eq!(*seen.lock().unwrap(), vec![1, 2]);
+        assert_eq!(result.resolved.len(), 2);
+        match (&result.resolved[0], &result.resolved[1]) {
+            (ImageResourceReference::External(first), ImageResourceReference::External(second)) => {
+                assert!(Arc::ptr_eq(&first.reference, &first_handle));
+                assert!(Arc::ptr_eq(&second.reference, &second_handle));
+            }
+            _ => panic!("selected references changed variants"),
+        }
+        assert!(result.unresolved.is_empty());
+        assert_eq!(
+            document.read().unwrap().source_kind.as_deref(),
+            Some("image-select-reentered")
+        );
+    }
+
+    #[test]
     fn reports_a_miss_without_demanding_a_fetch_seam() {
         let state = create_image_resolver_state();
         let document = create_scene2d_document();

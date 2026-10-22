@@ -22,23 +22,17 @@ pub fn resolve_scene2d_resources(
     let mut required_total = 0;
     let mut required_unresolved = 0;
     for reference in slots {
-        let selected = {
-            let reference = reference.read().unwrap();
-            options
-                .and_then(|options| options.select.as_ref())
-                .map(|select| select(&reference))
-                .unwrap_or(true)
-        };
+        let selected = options
+            .and_then(|options| options.select.as_ref())
+            .map(|select| select(&reference))
+            .unwrap_or(true);
         if !selected {
             continue;
         }
-        let (required, content) = {
-            let reference = reference.read().unwrap();
-            let content = options
-                .and_then(|options| options.resolve_slot_content.as_ref())
-                .and_then(|resolve| resolve(&reference));
-            (reference.required, content)
-        };
+        let required = reference.read().unwrap().required;
+        let content = options
+            .and_then(|options| options.resolve_slot_content.as_ref())
+            .and_then(|resolve| resolve(&reference));
         if required {
             required_total += 1;
         }
