@@ -1,16 +1,15 @@
 //! Stateful fly / first-person camera controller (TS `flyCameraController.ts`).
 
-use std::sync::RwLock;
-
 use flight_camera::contract::{Camera3D, set_camera_3d_view_matrix4_from_look_at};
-use flight_entity::{Ref, allocate_entity};
-use flight_geometry::create_vector3;
+use flight_entity::allocate_entity;
+use flight_geometry::{create_vector3, initialize_vector3};
 use flight_math::{clamp, damp, delta_angle};
 
 use crate::types::*;
 
 /// Allocates a fly controller (TS `createFlyCameraController`). `position` defaults to the origin,
 /// angles to 0 (looking down -Z), pitch limits just inside ±90°, and `smooth_time` to 0 (snap).
+// D23: KEEP the optional source seed; construction derives synchronized goals and an owned vector.
 pub fn create_fly_camera_controller(
     options: Option<&FlyCameraControllerOptions>,
 ) -> FlyCameraController {
@@ -37,11 +36,12 @@ pub fn initialize_fly_camera_controller(
         .and_then(|values| values.min_pitch)
         .unwrap_or(DEFAULT_MIN_PITCH);
     out.pitch = pitch;
-    out.position = Ref::new(RwLock::new(create_vector3(
+    initialize_vector3(
+        &mut out.position.write().unwrap(),
         position.map(|value| value.x).unwrap_or(0.0),
         position.map(|value| value.y).unwrap_or(0.0),
         position.map(|value| value.z).unwrap_or(0.0),
-    )));
+    );
     out.smooth_time = options.and_then(|values| values.smooth_time).unwrap_or(0.0);
     out.yaw = yaw;
 }

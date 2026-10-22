@@ -23,6 +23,23 @@ operation lives here.
   projection and only the projection half-extents for orthographic; raw projections and invalid
   inputs return false without mutation.
 
+## Constructor decisions (D23)
+
+`CameraShake` creates and initializes with no arguments, and `CameraShake::new()` mirrors that
+signature. Its decay, frequency and amplitude options only assign authored fields, so callers assign those
+fields after construction. Defaults remain decay 1.5, frequency 15, rotation amplitude 3 and
+translation amplitude 0.5; trauma and time start at zero. `CameraShakeOptions` remains a plain value
+record; it is not an Entity construction parameter.
+
+`FlyCameraController` keeps the original optional seed: initialization derives both the current and
+goal yaw/pitch from the same inputs and creates an independent position vector. `OrbitCameraController`
+also keeps its optional seed: azimuth, polar and distance each initialize coupled current/goal state,
+and target coordinates initialize an independent vector. Their source defaults and optionality remain
+unchanged. The Rust allocation bootstrap supplies each controller's sole position/target Entity;
+construction fills that vector rather than allocating and discarding another one. Public initializers
+preserve the preallocated controller runtime and vector identity. They are construction seams; the
+existing `reset` verbs retain their source behavior.
+
 ## Shake
 
 `CameraShake` accumulates trauma (clamped to 1) and `update` decays it, then writes a deterministic

@@ -1,4 +1,7 @@
 use flight_camera_controls::contract::*;
+use flight_entity::{
+    allocate_entity, get_entity_id, get_entity_runtime, get_entity_uid, set_entity_uid,
+};
 
 use crate::test_support::*;
 
@@ -7,7 +10,7 @@ mod add_camera_shake_trauma {
 
     #[test]
     fn accumulates_trauma_clamped_to_one() {
-        let mut shake = create_camera_shake(None);
+        let mut shake = create_camera_shake();
         add_camera_shake_trauma(&mut shake, 0.3);
         assert_eq!(shake.trauma, 0.3);
         add_camera_shake_trauma(&mut shake, 0.5);
@@ -18,7 +21,7 @@ mod add_camera_shake_trauma {
 
     #[test]
     fn does_not_go_below_zero() {
-        let mut shake = create_camera_shake(None);
+        let mut shake = create_camera_shake();
         add_camera_shake_trauma(&mut shake, -1.0);
         assert_eq!(shake.trauma, 0.0);
     }
@@ -29,7 +32,7 @@ mod create_camera_shake {
 
     #[test]
     fn creates_with_default_values() {
-        let shake = create_camera_shake(None);
+        let shake = create_camera_shake();
         assert_eq!(shake.trauma, 0.0);
         assert_eq!(shake.decay, 1.5);
         assert_eq!(shake.frequency, 15.0);
@@ -40,13 +43,11 @@ mod create_camera_shake {
 
     #[test]
     fn accepts_custom_options() {
-        let options = CameraShakeOptions {
-            decay: Some(2.0),
-            frequency: Some(20.0),
-            rotation_amplitude: Some(5.0),
-            translation_amplitude: Some(1.0),
-        };
-        let shake = create_camera_shake(Some(&options));
+        let mut shake = create_camera_shake();
+        shake.decay = 2.0;
+        shake.frequency = 20.0;
+        shake.rotation_amplitude = 5.0;
+        shake.translation_amplitude = 1.0;
         assert_eq!(shake.decay, 2.0);
         assert_eq!(shake.frequency, 20.0);
         assert_eq!(shake.translation_amplitude, 1.0);
@@ -73,9 +74,37 @@ mod initialize_camera_shake {
     use super::*;
 
     #[test]
+    fn preserves_preallocated_identity_and_runtime_before_authored_assignment() {
+        let mut shake: CameraShake = allocate_entity();
+        let id = get_entity_id(&shake);
+        set_entity_uid(&mut shake, "constructed-shake".to_string());
+        let runtime = get_entity_runtime(&shake).unwrap() as *const _;
+        initialize_camera_shake(&mut shake);
+        assert_eq!(shake.decay, 1.5);
+        assert_eq!(shake.frequency, 15.0);
+        assert_eq!(shake.rotation_amplitude, 3.0);
+        assert_eq!(shake.translation_amplitude, 0.5);
+        assert_eq!(shake.trauma, 0.0);
+        assert_eq!(shake.time, 0.0);
+        shake.decay = 0.0;
+        shake.frequency = 20.0;
+        shake.rotation_amplitude = 5.0;
+        shake.translation_amplitude = 1.0;
+        assert_eq!(get_entity_id(&shake), id);
+        assert_eq!(get_entity_uid(&mut shake), "constructed-shake");
+        assert_eq!(get_entity_runtime(&shake).unwrap() as *const _, runtime);
+        add_camera_shake_trauma(&mut shake, 1.0);
+        let mut out = create_camera_shake_offset();
+        update_camera_shake(&mut shake, 0.1, &mut out);
+        assert_eq!(shake.trauma, 1.0);
+        assert!(out.x.abs() <= 1.0);
+        assert!(out.rotation_x.abs() <= 5.0);
+    }
+
+    #[test]
     fn is_the_construction_initializer_of_create_camera_shake() {
         let mut shake = flight_entity::allocate_entity::<CameraShake>();
-        initialize_camera_shake(&mut shake, None);
+        initialize_camera_shake(&mut shake);
         assert_eq!(shake.decay, 1.5);
         assert_eq!(shake.time, 0.0);
     }
@@ -97,7 +126,7 @@ mod reset_camera_shake {
 
     #[test]
     fn zeros_trauma_and_time() {
-        let mut shake = create_camera_shake(None);
+        let mut shake = create_camera_shake();
         add_camera_shake_trauma(&mut shake, 0.8);
         let mut out = create_camera_shake_offset();
         update_camera_shake(&mut shake, 0.1, &mut out);
@@ -114,7 +143,7 @@ mod update_camera_shake {
 
     #[test]
     fn produces_zero_offset_when_trauma_is_zero() {
-        let mut shake = create_camera_shake(None);
+        let mut shake = create_camera_shake();
         let mut out = create_camera_shake_offset();
         update_camera_shake(&mut shake, 1.0 / 60.0, &mut out);
         assert_eq!(out.x, 0.0);
@@ -127,7 +156,7 @@ mod update_camera_shake {
 
     #[test]
     fn produces_non_zero_offset_when_trauma_is_active() {
-        let mut shake = create_camera_shake(None);
+        let mut shake = create_camera_shake();
         add_camera_shake_trauma(&mut shake, 1.0);
         let mut out = create_camera_shake_offset();
         update_camera_shake(&mut shake, 0.05, &mut out);
@@ -137,13 +166,8 @@ mod update_camera_shake {
 
     #[test]
     fn decays_trauma_over_time() {
-        let options = CameraShakeOptions {
-            decay: Some(2.0),
-            frequency: None,
-            rotation_amplitude: None,
-            translation_amplitude: None,
-        };
-        let mut shake = create_camera_shake(Some(&options));
+        let mut shake = create_camera_shake();
+        shake.decay = 2.0;
         add_camera_shake_trauma(&mut shake, 1.0);
         let mut out = create_camera_shake_offset();
         update_camera_shake(&mut shake, 0.25, &mut out);
@@ -154,13 +178,8 @@ mod update_camera_shake {
 
     #[test]
     fn scales_offset_quadratically_with_trauma() {
-        let options = CameraShakeOptions {
-            decay: Some(0.0),
-            frequency: None,
-            rotation_amplitude: None,
-            translation_amplitude: None,
-        };
-        let mut shake = create_camera_shake(Some(&options));
+        let mut shake = create_camera_shake();
+        shake.decay = 0.0;
         let mut out = create_camera_shake_offset();
         shake.trauma = 1.0;
         shake.time = 0.0;
@@ -175,14 +194,10 @@ mod update_camera_shake {
 
     #[test]
     fn advances_time_deterministically() {
-        let options = CameraShakeOptions {
-            decay: Some(0.0),
-            frequency: None,
-            rotation_amplitude: None,
-            translation_amplitude: None,
-        };
-        let mut shake_a = create_camera_shake(Some(&options));
-        let mut shake_b = create_camera_shake(Some(&options));
+        let mut shake_a = create_camera_shake();
+        shake_a.decay = 0.0;
+        let mut shake_b = create_camera_shake();
+        shake_b.decay = 0.0;
         add_camera_shake_trauma(&mut shake_a, 0.7);
         add_camera_shake_trauma(&mut shake_b, 0.7);
         let mut out_a = create_camera_shake_offset();
@@ -198,13 +213,10 @@ mod update_camera_shake {
 
     #[test]
     fn keeps_offsets_within_amplitude_bounds() {
-        let options = CameraShakeOptions {
-            decay: Some(0.0),
-            frequency: None,
-            rotation_amplitude: Some(5.0),
-            translation_amplitude: Some(1.0),
-        };
-        let mut shake = create_camera_shake(Some(&options));
+        let mut shake = create_camera_shake();
+        shake.decay = 0.0;
+        shake.rotation_amplitude = 5.0;
+        shake.translation_amplitude = 1.0;
         add_camera_shake_trauma(&mut shake, 1.0);
         let mut out = create_camera_shake_offset();
         let mut step = 0;

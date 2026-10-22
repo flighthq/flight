@@ -7,9 +7,10 @@ use crate::types::*;
 
 /// Allocates shake state with the documented defaults (TS `createCameraShake`): decay 1.5,
 /// frequency 15, rotation amplitude 3, translation amplitude 0.5, zero trauma and time.
-pub fn create_camera_shake(options: Option<&CameraShakeOptions>) -> CameraShake {
+// flight-lint: allow(conform-params) D23 B: callers assign authored shake fields after default construction
+pub fn create_camera_shake() -> CameraShake {
     let mut out: CameraShake = allocate_entity();
-    initialize_camera_shake(&mut out, options);
+    initialize_camera_shake(&mut out);
     return out;
 }
 
@@ -21,16 +22,13 @@ pub fn create_camera_shake_offset() -> CameraShakeOffset {
 }
 
 /// Builds shake state under construction (TS `initializeCameraShake`).
-pub fn initialize_camera_shake(out: &mut CameraShake, options: Option<&CameraShakeOptions>) {
-    out.decay = options.and_then(|values| values.decay).unwrap_or(1.5);
-    out.frequency = options.and_then(|values| values.frequency).unwrap_or(15.0);
-    out.rotation_amplitude = options
-        .and_then(|values| values.rotation_amplitude)
-        .unwrap_or(3.0);
+// flight-lint: allow(conform-params) D23 B: construction establishes defaults before authored field assignment
+pub fn initialize_camera_shake(out: &mut CameraShake) {
+    out.decay = 1.5;
+    out.frequency = 15.0;
+    out.rotation_amplitude = 3.0;
     out.time = 0.0;
-    out.translation_amplitude = options
-        .and_then(|values| values.translation_amplitude)
-        .unwrap_or(0.5);
+    out.translation_amplitude = 0.5;
     out.trauma = 0.0;
 }
 

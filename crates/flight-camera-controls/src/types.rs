@@ -20,8 +20,8 @@ pub struct CameraShake {
     pub time: f32,
 }
 
-/// Structural inputs for `create_camera_shake` (TS `CameraShakeOptions`). Omitted fields take the
-/// documented defaults.
+/// Plain authored shake options (TS `CameraShakeOptions`). Canonical D23 construction takes no
+/// options; callers assign the selected fields after creating the default state.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct CameraShakeOptions {
     pub decay: Option<f32>,
@@ -100,7 +100,8 @@ pub struct OrbitCameraControllerOptions {
     pub target: Option<Vector3>,
 }
 
-// D12 allocation bootstrap: the initializers immediately replace every field.
+// D12 allocation bootstrap: initializers fill the one owned vector without allocating a
+// replacement Entity; the resulting position/target is independent of the source option vector.
 impl Default for FlyCameraController {
     fn default() -> Self {
         return FlyCameraController {

@@ -25,27 +25,20 @@ mod sugar_tests {
         return camera;
     }
 
-    fn shake_options() -> CameraShakeOptions {
-        return CameraShakeOptions {
-            decay: Some(2.0),
-            frequency: None,
-            rotation_amplitude: None,
-            translation_amplitude: None,
-        };
-    }
-
     #[test]
     fn camera_shake_new_matches_create_camera_shake() {
-        let method_shake = CameraShake::new(Some(&shake_options()));
-        let free_shake = create_camera_shake(Some(&shake_options()));
+        let mut method_shake = CameraShake::new();
+        let mut free_shake = create_camera_shake();
+        method_shake.decay = 2.0;
+        free_shake.decay = 2.0;
         assert_eq!(method_shake.decay, free_shake.decay);
         assert_eq!(method_shake.frequency, free_shake.frequency);
     }
 
     #[test]
     fn camera_shake_add_trauma_matches_add_camera_shake_trauma() {
-        let mut method_shake = create_camera_shake(None);
-        let mut free_shake = create_camera_shake(None);
+        let mut method_shake = create_camera_shake();
+        let mut free_shake = create_camera_shake();
         method_shake.add_trauma(0.4);
         add_camera_shake_trauma(&mut free_shake, 0.4);
         assert_eq!(method_shake.trauma, free_shake.trauma);
@@ -53,8 +46,8 @@ mod sugar_tests {
 
     #[test]
     fn camera_shake_reset_matches_reset_camera_shake() {
-        let mut method_shake = create_camera_shake(None);
-        let mut free_shake = create_camera_shake(None);
+        let mut method_shake = create_camera_shake();
+        let mut free_shake = create_camera_shake();
         add_camera_shake_trauma(&mut method_shake, 0.5);
         add_camera_shake_trauma(&mut free_shake, 0.5);
         method_shake.reset();
@@ -65,8 +58,8 @@ mod sugar_tests {
 
     #[test]
     fn camera_shake_update_matches_update_camera_shake() {
-        let mut method_shake = create_camera_shake(None);
-        let mut free_shake = create_camera_shake(None);
+        let mut method_shake = create_camera_shake();
+        let mut free_shake = create_camera_shake();
         add_camera_shake_trauma(&mut method_shake, 0.6);
         add_camera_shake_trauma(&mut free_shake, 0.6);
         let mut method_offset = create_camera_shake_offset();
@@ -324,8 +317,8 @@ mod sugar_tests {
 }
 
 impl CameraShake {
-    pub fn new(options: Option<&CameraShakeOptions>) -> CameraShake {
-        return create_camera_shake(options);
+    pub fn new() -> CameraShake {
+        return create_camera_shake();
     }
 
     pub fn add_trauma(&mut self, amount: f32) {

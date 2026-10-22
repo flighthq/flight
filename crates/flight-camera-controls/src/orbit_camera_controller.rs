@@ -1,16 +1,15 @@
 //! Stateful orbit / arcball camera controller (TS `orbitCameraController.ts`).
 
-use std::sync::RwLock;
-
 use flight_camera::contract::{Camera3D, set_camera_3d_view_matrix4_from_look_at};
-use flight_entity::{Ref, allocate_entity};
-use flight_geometry::create_vector3;
+use flight_entity::allocate_entity;
+use flight_geometry::{create_vector3, initialize_vector3};
 use flight_math::{clamp, damp, delta_angle};
 
 use crate::types::*;
 
 /// Allocates an orbit controller (TS `createOrbitCameraController`). Target defaults to the origin,
 /// distance to 10, angles to 0, polar limits just inside ±90°, and `smooth_time` to 0 (snap).
+// D23: KEEP the optional source seed; construction derives synchronized goals and an owned vector.
 pub fn create_orbit_camera_controller(
     options: Option<&OrbitCameraControllerOptions>,
 ) -> OrbitCameraController {
@@ -48,11 +47,12 @@ pub fn initialize_orbit_camera_controller(
         .unwrap_or(DEFAULT_MIN_POLAR);
     out.polar = polar;
     out.smooth_time = options.and_then(|values| values.smooth_time).unwrap_or(0.0);
-    out.target = Ref::new(RwLock::new(create_vector3(
+    initialize_vector3(
+        &mut out.target.write().unwrap(),
         target.map(|value| value.x).unwrap_or(0.0),
         target.map(|value| value.y).unwrap_or(0.0),
         target.map(|value| value.z).unwrap_or(0.0),
-    )));
+    );
 }
 
 /// Allocates an independent controller with the same value state (TS `cloneOrbitCameraController`).

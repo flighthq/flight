@@ -1,7 +1,7 @@
 src/camera_shake.rs: pub fn add_camera_shake_trauma(shake: &mut CameraShake, amount: f32)
-src/camera_shake.rs: pub fn create_camera_shake(options: Option<&CameraShakeOptions>) -> CameraShake
+src/camera_shake.rs: pub fn create_camera_shake() -> CameraShake
 src/camera_shake.rs: pub fn create_camera_shake_offset() -> CameraShakeOffset
-src/camera_shake.rs: pub fn initialize_camera_shake(out: &mut CameraShake, options: Option<&CameraShakeOptions>)
+src/camera_shake.rs: pub fn initialize_camera_shake(out: &mut CameraShake)
 src/camera_shake.rs: pub fn initialize_camera_shake_offset(out: &mut CameraShakeOffset)
 src/camera_shake.rs: pub fn reset_camera_shake(shake: &mut CameraShake)
 src/camera_shake.rs: pub fn update_camera_shake(shake: &mut CameraShake, dt: f32, out: &mut CameraShakeOffset)
@@ -12,7 +12,7 @@ src/contract.rs: pub use crate::framing::*;
 src/contract.rs: pub use crate::orbit_camera_controller::*;
 src/contract.rs: pub use crate::types::*;
 src/controls_sugar.rs: impl CameraShake :: fn add_trauma(&mut self, amount: f32)
-src/controls_sugar.rs: impl CameraShake :: fn new(options: Option<&CameraShakeOptions>) -> CameraShake
+src/controls_sugar.rs: impl CameraShake :: fn new() -> CameraShake
 src/controls_sugar.rs: impl CameraShake :: fn reset(&mut self)
 src/controls_sugar.rs: impl CameraShake :: fn update(&mut self, dt: f32, out: &mut CameraShakeOffset)
 src/controls_sugar.rs: impl CameraShakeOffset :: fn new() -> CameraShakeOffset

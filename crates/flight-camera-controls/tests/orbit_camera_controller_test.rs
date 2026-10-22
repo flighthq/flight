@@ -2,6 +2,9 @@ use std::sync::Arc;
 
 use flight_camera::contract::set_camera_3d_view_matrix4_from_look_at;
 use flight_camera_controls::contract::*;
+use flight_entity::{
+    allocate_entity, get_entity_id, get_entity_runtime, get_entity_uid, set_entity_uid,
+};
 use flight_geometry::create_vector3;
 
 use crate::test_support::*;
@@ -73,7 +76,11 @@ mod copy_orbit_camera_controller {
         )));
         let mut out = create_orbit_camera_controller(None);
         let retained = out.target.clone();
+        set_entity_uid(&mut out, "copy-destination".to_string());
+        let runtime = get_entity_runtime(&out).unwrap() as *const _;
         copy_orbit_camera_controller(&mut out, &source);
+        assert_eq!(get_entity_uid(&mut out), "copy-destination");
+        assert_eq!(get_entity_runtime(&out).unwrap() as *const _, runtime);
         assert_eq!(out.azimuth, 0.2);
         assert_eq!(out.distance, 4.0);
         assert!(Arc::ptr_eq(&out.target, &retained));
@@ -143,6 +150,70 @@ mod dolly_orbit_camera_controller {
 
 mod initialize_orbit_camera_controller {
     use super::*;
+
+    #[test]
+    fn derives_coupled_state_without_replacing_preallocated_entities_or_runtimes() {
+        let mut seed = options(
+            Some(-0.5),
+            Some(4.0),
+            Some(6.0),
+            Some(1.2),
+            Some(2.0),
+            Some(-1.1),
+            Some(0.25),
+            Some(0.4),
+            Some((4.0, 5.0, 6.0)),
+        );
+        let mut controller: OrbitCameraController = allocate_entity();
+        let id = get_entity_id(&controller);
+        set_entity_uid(&mut controller, "controller-under-construction".to_string());
+        let runtime = get_entity_runtime(&controller).unwrap() as *const _;
+        let retained = controller.target.clone();
+        let vector_id = get_entity_id(&*retained.read().unwrap());
+        set_entity_uid(&mut *retained.write().unwrap(), "owned-vector".to_string());
+        let vector_runtime = get_entity_runtime(&*retained.read().unwrap()).unwrap() as *const _;
+        initialize_orbit_camera_controller(&mut controller, Some(&seed));
+        assert_eq!(controller.azimuth, -0.5);
+        assert_eq!(controller.goal_azimuth, controller.azimuth);
+        assert_eq!(controller.polar, 0.25);
+        assert_eq!(controller.goal_polar, controller.polar);
+        assert_eq!(controller.distance, 4.0);
+        assert_eq!(controller.goal_distance, controller.distance);
+        assert_eq!(controller.max_distance, 6.0);
+        assert_eq!(controller.min_distance, 2.0);
+        assert_eq!(controller.max_polar, 1.2);
+        assert_eq!(controller.min_polar, -1.1);
+        assert_eq!(controller.smooth_time, 0.4);
+        assert!(Arc::ptr_eq(&controller.target, &retained));
+        assert_eq!(get_entity_id(&controller), id);
+        assert_eq!(
+            get_entity_uid(&mut controller),
+            "controller-under-construction"
+        );
+        assert_eq!(
+            get_entity_runtime(&controller).unwrap() as *const _,
+            runtime
+        );
+        {
+            let mut vector = controller.target.write().unwrap();
+            assert_eq!(get_entity_id(&*vector), vector_id);
+            assert_eq!(get_entity_uid(&mut *vector), "owned-vector");
+            assert_eq!(
+                get_entity_runtime(&*vector).unwrap() as *const _,
+                vector_runtime
+            );
+            assert_eq!((vector.x, vector.y, vector.z), (4.0, 5.0, 6.0));
+            assert_ne!(
+                get_entity_id(&*vector),
+                get_entity_id(seed.target.as_ref().unwrap())
+            );
+        }
+        let second = create_orbit_camera_controller(Some(&seed));
+        assert!(!Arc::ptr_eq(&controller.target, &second.target));
+        seed.target.as_mut().unwrap().x = 99.0;
+        assert_eq!(controller.target.read().unwrap().x, 4.0);
+        assert_eq!(second.target.read().unwrap().x, 4.0);
+    }
 
     #[test]
     fn is_the_construction_initializer_of_create_orbit_camera_controller() {
