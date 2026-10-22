@@ -7,7 +7,9 @@ fn create_layout() -> TextLayoutResult {
     let mut linked = empty_text_format();
     linked.url = Some("https://example.com".to_string());
     let second_format = format_ref(linked);
-    let mut first = create_text_layout_group(first_format, 0, 3);
+    let mut first = create_text_layout_group(first_format);
+    first.start_index = 0;
+    first.end_index = 3;
     first.ascent = 10.0;
     first.descent = 2.0;
     first.height = 12.0;
@@ -16,7 +18,9 @@ fn create_layout() -> TextLayoutResult {
     first.offset_y = 2.0;
     first.positions = vec![10.0, 10.0, 10.0];
     first.width = 30.0;
-    let mut second = create_text_layout_group(second_format, 3, 7);
+    let mut second = create_text_layout_group(second_format);
+    second.start_index = 3;
+    second.end_index = 7;
     second.ascent = 10.0;
     second.descent = 2.0;
     second.height = 12.0;

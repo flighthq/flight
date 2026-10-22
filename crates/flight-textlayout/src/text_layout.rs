@@ -714,11 +714,9 @@ impl<'a> LayoutBuilder<'a> {
                     }
                 }
                 let last_group = &self.groups[last_group_index];
-                let mut ellipsis_group = create_text_layout_group(
-                    format_ref,
-                    last_group.end_index,
-                    last_group.end_index,
-                );
+                let mut ellipsis_group = create_text_layout_group(format_ref);
+                ellipsis_group.start_index = last_group.end_index;
+                ellipsis_group.end_index = last_group.end_index;
                 ellipsis_group.positions = vec![ellipsis_width];
                 ellipsis_group.width = ellipsis_width;
                 ellipsis_group.offset_x = last_group.offset_x + last_group.width;
@@ -766,7 +764,9 @@ impl<'a> LayoutBuilder<'a> {
         }
         let bullet_width = (self.measure)("•", &self.current_format);
         let format = Arc::new(RwLock::new(self.current_format.clone()));
-        let mut group = create_text_layout_group(format, self.text_index, self.text_index);
+        let mut group = create_text_layout_group(format);
+        group.start_index = self.text_index;
+        group.end_index = self.text_index;
         group.positions = vec![bullet_width];
         group.width = bullet_width;
         group.offset_x = TEXT_LAYOUT_GUTTER + self.left_margin + self.block_indent;
@@ -830,8 +830,10 @@ impl<'a> LayoutBuilder<'a> {
                     .unwrap_or(true);
                 if needs_new_group {
                     let format = self.format_ranges[self.range_index].format.clone();
-                    self.groups
-                        .push(create_text_layout_group(format, index, range_end));
+                    let mut group = create_text_layout_group(format);
+                    group.start_index = index;
+                    group.end_index = range_end;
+                    self.groups.push(group);
                     self.active_group = Some(self.groups.len() - 1);
                 } else {
                     let group = &mut self.groups[self.active_group.unwrap()];

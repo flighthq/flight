@@ -81,7 +81,7 @@ src/sugar.rs: impl TextBoundsSpec :: fn compute_offset_x(&self, layout: &TextLay
 src/sugar.rs: impl TextBoundsSpec :: fn compute_rectangle(&self, out: &mut Rectangle, layout: &TextLayoutResult)
 src/sugar.rs: impl TextBoundsSpec :: fn compute_width(&self, layout: &TextLayoutResult) -> f32
 src/sugar.rs: impl TextJustification :: fn as_str(&self) -> &'static str
-src/sugar.rs: impl TextLayoutGroup :: fn new(format: Ref<TextFormat>, start_index: usize, end_index: usize) -> Self
+src/sugar.rs: impl TextLayoutGroup :: fn new(format: Ref<TextFormat>) -> Self
 src/sugar.rs: impl TextLayoutMeasureState :: fn get_provider(&self, host_text_shaper: Option<&flight_textshaper::HostTextShaperCapability>,) -> Option<flight_textshaper::TextMeasureFunction>
 src/sugar.rs: impl TextLayoutMeasureState :: fn new() -> Self
 src/sugar.rs: impl TextLayoutMeasureState :: fn set_provider(&mut self, provider: Option<flight_textshaper::TextMeasureFunction>)
@@ -108,8 +108,8 @@ src/text_layout.rs: pub fn compute_text_layout(out: &mut TextLayoutResult, param
 src/text_layout.rs: pub fn create_text_layout_result() -> TextLayoutResult
 src/text_layout.rs: pub fn initialize_text_layout_result(out: &mut TextLayoutResult)
 src/text_layout.rs: pub fn is_text_layout_truncated(layout: &TextLayoutResult, params: &TextLayoutParams) -> bool
-src/text_layout_group.rs: pub fn create_text_layout_group(format: Ref<TextFormat>, start_index: usize, end_index: usize,) -> TextLayoutGroup
-src/text_layout_group.rs: pub fn initialize_text_layout_group(out: &mut TextLayoutGroup, format: Ref<TextFormat>, start_index: usize, end_index: usize,)
+src/text_layout_group.rs: pub fn create_text_layout_group(format: Ref<TextFormat>) -> TextLayoutGroup
+src/text_layout_group.rs: pub fn initialize_text_layout_group(out: &mut TextLayoutGroup, format: Ref<TextFormat>)
 src/text_layout_measure.rs: pub fn create_text_layout_measure_state() -> TextLayoutMeasureState
 src/text_layout_measure.rs: pub fn get_text_layout_measure_provider(state: &TextLayoutMeasureState, host_text_shaper: Option<&HostTextShaperCapability>,) -> Option<TextMeasureFunction>
 src/text_layout_measure.rs: pub fn set_text_layout_measure_provider(state: &mut TextLayoutMeasureState, measure: Option<TextMeasureFunction>,)

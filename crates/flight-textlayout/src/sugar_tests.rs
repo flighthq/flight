@@ -108,8 +108,12 @@ fn text_justification_as_str_matches_free_function() {
 #[test]
 fn text_layout_group_new_matches_free_function_and_preserves_ref() {
     let format = Arc::new(RwLock::new(format()));
-    let method = TextLayoutGroup::new(format.clone(), 2, 5);
-    let function = create_text_layout_group(format.clone(), 2, 5);
+    let mut method = TextLayoutGroup::new(format.clone());
+    method.start_index = 2;
+    method.end_index = 5;
+    let mut function = create_text_layout_group(format.clone());
+    function.start_index = 2;
+    function.end_index = 5;
     assert_eq!(
         (method.start_index, method.end_index),
         (function.start_index, function.end_index)

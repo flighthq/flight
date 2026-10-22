@@ -51,8 +51,8 @@ impl TextJustification {
 }
 
 impl TextLayoutGroup {
-    pub fn new(format: Ref<TextFormat>, start_index: usize, end_index: usize) -> Self {
-        return create_text_layout_group(format, start_index, end_index);
+    pub fn new(format: Ref<TextFormat>) -> Self {
+        return create_text_layout_group(format);
     }
 }
 

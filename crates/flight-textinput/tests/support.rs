@@ -21,7 +21,9 @@ pub fn create_input(data: RichTextDataOptions, options: TextInputOptions) -> Ref
 
 pub fn create_layout() -> TextLayoutResult {
     let format = format_ref(empty_text_format());
-    let mut first = create_text_layout_group(format.clone(), 0, 3);
+    let mut first = create_text_layout_group(format.clone());
+    first.start_index = 0;
+    first.end_index = 3;
     first.ascent = 10.0;
     first.descent = 2.0;
     first.height = 12.0;
@@ -30,7 +32,9 @@ pub fn create_layout() -> TextLayoutResult {
     first.offset_y = 2.0;
     first.positions = vec![10.0, 10.0, 10.0];
     first.width = 30.0;
-    let mut second = create_text_layout_group(format, 3, 7);
+    let mut second = create_text_layout_group(format);
+    second.start_index = 3;
+    second.end_index = 7;
     second.ascent = 10.0;
     second.descent = 2.0;
     second.height = 12.0;
@@ -53,7 +57,9 @@ pub fn create_layout() -> TextLayoutResult {
 }
 
 pub fn create_single_line_layout() -> TextLayoutResult {
-    let mut group = create_text_layout_group(format_ref(empty_text_format()), 0, 11);
+    let mut group = create_text_layout_group(format_ref(empty_text_format()));
+    group.start_index = 0;
+    group.end_index = 11;
     group.ascent = 10.0;
     group.descent = 2.0;
     group.height = 12.0;
@@ -79,7 +85,9 @@ pub fn create_tall_layout() -> TextLayoutResult {
     let format = format_ref(empty_text_format());
     let mut groups = Vec::new();
     for line in 0..4 {
-        let mut group = create_text_layout_group(format.clone(), line, line + 1);
+        let mut group = create_text_layout_group(format.clone());
+        group.start_index = line;
+        group.end_index = line + 1;
         group.ascent = 10.0;
         group.descent = 2.0;
         group.height = 12.0;

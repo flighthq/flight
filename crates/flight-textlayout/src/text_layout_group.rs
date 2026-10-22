@@ -3,25 +3,18 @@ use flight_textformat::TextFormat;
 
 use crate::types::TextLayoutGroup;
 
-pub fn create_text_layout_group(
-    format: Ref<TextFormat>,
-    start_index: usize,
-    end_index: usize,
-) -> TextLayoutGroup {
+// flight-lint: allow(conform-params) Principalc0f9227c D23: retain the required defining format reference; authored range indices are assigned after construction
+pub fn create_text_layout_group(format: Ref<TextFormat>) -> TextLayoutGroup {
     let mut out: TextLayoutGroup = allocate_entity();
-    initialize_text_layout_group(&mut out, format, start_index, end_index);
+    initialize_text_layout_group(&mut out, format);
     return out;
 }
 
-pub fn initialize_text_layout_group(
-    out: &mut TextLayoutGroup,
-    format: Ref<TextFormat>,
-    start_index: usize,
-    end_index: usize,
-) {
+// flight-lint: allow(conform-params) Principalc0f9227c D23: construction retains the required format reference and initializes range defaults before authored assignment
+pub fn initialize_text_layout_group(out: &mut TextLayoutGroup, format: Ref<TextFormat>) {
     out.ascent = 0.0;
     out.descent = 0.0;
-    out.end_index = end_index;
+    out.end_index = 0;
     out.format = format;
     out.height = 0.0;
     out.leading = 0.0;
@@ -29,6 +22,7 @@ pub fn initialize_text_layout_group(
     out.offset_x = 0.0;
     out.offset_y = 0.0;
     out.positions.clear();
-    out.start_index = start_index;
+    out.start_index = 0;
     out.width = 0.0;
+    return;
 }
