@@ -29,6 +29,7 @@ flight-particleemitter = { path = "../flight-particleemitter" }
 flight-registry = { workspace = true }
 flight-render = { workspace = true }
 flight-render-wgpu = { path = "../flight-render-wgpu" }
+flight-requirement = { workspace = true }
 flight-scene3d = { path = "../flight-scene3d" }
 flight-shading = { workspace = true }
 flight-signals = { workspace = true }

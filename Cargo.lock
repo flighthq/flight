@@ -1475,6 +1475,7 @@ dependencies = [
  "flight-registry",
  "flight-render",
  "flight-render-wgpu",
+ "flight-requirement",
  "flight-scene3d",
  "flight-shading",
  "flight-signals",

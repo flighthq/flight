@@ -1,6 +1,7 @@
 //! The contract lane of the WebGPU 3D scene renderer (TS `contract.ts`): every module's exports.
 
 pub use crate::enable_wgpu_scene3d_forward_light_selection_guards::*;
+pub use crate::explain_wgpu_scene3d_coverage::*;
 pub use crate::explain_wgpu_scene3d_forward_light_selection::*;
 pub use crate::prepare_wgpu_scene3d_forward_lights::*;
 pub use crate::render_wgpu_scene3d::*;

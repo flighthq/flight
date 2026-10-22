@@ -3,6 +3,7 @@
 //! maps and image-based lighting, directional shadows, GPU skinning and 3D particles.
 
 mod enable_wgpu_scene3d_forward_light_selection_guards;
+mod explain_wgpu_scene3d_coverage;
 mod explain_wgpu_scene3d_forward_light_selection;
 mod prepare_wgpu_scene3d_forward_lights;
 mod render_wgpu_scene3d;
