@@ -7,7 +7,8 @@ use flight_lighting::{
     SCENE_LIGHT_HEMISPHERE_STRIDE, SCENE_LIGHT_POINT_OFFSET, SCENE_LIGHT_POINT_STRIDE,
     SCENE_LIGHT_SPOT_OFFSET, SCENE_LIGHT_SPOT_STRIDE,
 };
-use flight_materials::{is_material3d_blended, BLEND_MODE_NORMAL};
+use flight_materials::material3d::is_material3d_blended;
+use flight_materials::BLEND_MODE_NORMAL;
 use flight_render_wgpu::{
     get_wgpu_blend_state, get_wgpu_render_state_device_resources,
     get_wgpu_render_state_native_device, get_wgpu_render_state_runtime,
@@ -60,7 +61,17 @@ fn f32_as_bytes(data: &[f32]) -> &[u8] {
     };
 }
 
-pub fn begin_wgpu_mesh_draw(state: &mut WgpuRenderState, pipeline: &WgpuMeshPipeline) {
+// SAFETY: The TS source treats render state as freely mutable through shared references.
+// The render pass, uniform ring, and instance buffer pool are single-threaded mutation
+// targets that the trait surface exposes only via &WgpuRenderState.
+unsafe fn render_state_runtime_mut(state: &WgpuRenderState) -> &mut flight_render_wgpu::WgpuRenderStateRuntime {
+    unsafe {
+        let ptr = state as *const WgpuRenderState as *mut WgpuRenderState;
+        return get_wgpu_render_state_runtime_mut(&mut *ptr);
+    }
+}
+
+pub fn begin_wgpu_mesh_draw(state: &WgpuRenderState, pipeline: &WgpuMeshPipeline) {
     {
         let rt = get_wgpu_render_state_runtime(state);
         if rt.render_pass.is_none() {
@@ -75,7 +86,7 @@ pub fn begin_wgpu_mesh_draw(state: &mut WgpuRenderState, pipeline: &WgpuMeshPipe
     let frame_bg = get_wgpu_scene3d_runtime(state, |scene| scene.frame_bind_group.clone());
 
     {
-        let rt = get_wgpu_render_state_runtime_mut(state);
+        let rt = unsafe { render_state_runtime_mut(state) };
         let pass = rt.render_pass.as_mut().unwrap();
         pass.set_pipeline(&pipeline.pipeline);
         if let Some(ref bg) = frame_bg {
@@ -85,13 +96,13 @@ pub fn begin_wgpu_mesh_draw(state: &mut WgpuRenderState, pipeline: &WgpuMeshPipe
 
     if pipeline.has_pbr_sample_group {
         let bg = ensure_wgpu_pbr_sample_bind_group(state);
-        let rt = get_wgpu_render_state_runtime_mut(state);
+        let rt = unsafe { render_state_runtime_mut(state) };
         if let Some(ref mut pass) = rt.render_pass {
             pass.set_bind_group(3, &bg, &[]);
         }
     } else if pipeline.has_shadow_group {
         let bg = ensure_wgpu_shadow_sample_bind_group(state);
-        let rt = get_wgpu_render_state_runtime_mut(state);
+        let rt = unsafe { render_state_runtime_mut(state) };
         if let Some(ref mut pass) = rt.render_pass {
             pass.set_bind_group(3, &bg, &[]);
         }
@@ -99,7 +110,7 @@ pub fn begin_wgpu_mesh_draw(state: &mut WgpuRenderState, pipeline: &WgpuMeshPipe
 
     if pipeline.has_ibl_group {
         let bg = ensure_wgpu_ibl_sample_bind_group(state);
-        let rt = get_wgpu_render_state_runtime_mut(state);
+        let rt = unsafe { render_state_runtime_mut(state) };
         if let Some(ref mut pass) = rt.render_pass {
             pass.set_bind_group(4, &bg, &[]);
         }
@@ -258,9 +269,13 @@ pub fn create_wgpu_mesh_pipeline(
             None
         };
 
-    let mut vertex_buffers: Vec<wgpu::VertexBufferLayout<'static>> =
-        skinning_vertex_buffers.unwrap_or_else(vertex_buffer_layouts);
-    vertex_buffers.push(instance_buffer_layout());
+    let mut vertex_buffers: Vec<Option<wgpu::VertexBufferLayout<'static>>> =
+        skinning_vertex_buffers
+            .unwrap_or_else(vertex_buffer_layouts)
+            .into_iter()
+            .map(Some)
+            .collect();
+    vertex_buffers.push(Some(instance_buffer_layout()));
 
     let blend_state = blend_mode
         .as_ref()
@@ -306,8 +321,8 @@ pub fn create_wgpu_mesh_pipeline(
                 },
                 depth_stencil: Some(wgpu::DepthStencilState {
                     format: DEPTH_STENCIL_FORMAT,
-                    depth_write_enabled: !options.blended,
-                    depth_compare: wgpu::CompareFunction::Less,
+                    depth_write_enabled: Some(!options.blended),
+                    depth_compare: Some(wgpu::CompareFunction::Less),
                     stencil: wgpu::StencilState::default(),
                     bias: wgpu::DepthBiasState::default(),
                 }),
@@ -327,7 +342,7 @@ pub fn create_wgpu_mesh_pipeline(
 }
 
 pub fn draw_wgpu_mesh_subset(
-    state: &mut WgpuRenderState,
+    state: &WgpuRenderState,
     proxy: &WgpuScene3DRenderProxy,
     geometry: &flight_meshgeometry::MeshGeometry,
 ) {
@@ -400,7 +415,7 @@ pub fn draw_wgpu_mesh_subset(
     };
     let instance_buffer = ensure_wgpu_instance_buffer(state, instance_source, instance_count);
 
-    let rt = get_wgpu_render_state_runtime_mut(state);
+    let rt = unsafe { render_state_runtime_mut(state) };
     let pass = rt.render_pass.as_mut().unwrap();
     pass.set_bind_group(1, bound_draw_group, &[pending_offset]);
     pass.set_vertex_buffer(0, vertex_buffer.slice(..));
@@ -597,41 +612,60 @@ pub fn ensure_wgpu_ibl_sample_layout(state: &WgpuRenderState) -> wgpu::BindGroup
 }
 
 fn ensure_wgpu_instance_buffer(
-    state: &mut WgpuRenderState,
+    state: &WgpuRenderState,
     matrices: Option<&[f32]>,
     instance_count: u32,
 ) -> wgpu::Buffer {
     let source = matrices.unwrap_or(&IDENTITY_INSTANCE);
     let required = (1.max(instance_count) as u64) * INSTANCE_RECORD_BYTES;
 
-    let rt = get_wgpu_render_state_runtime_mut(state);
-    let cursor = rt.mesh_instance_buffer_cursor as usize;
-    if cursor >= rt.mesh_instance_buffer_pool.len() {
-        rt.mesh_instance_buffer_pool.push(Default::default());
+    let needs_create;
+    let cursor;
+    {
+        let rt = unsafe { render_state_runtime_mut(state) };
+        cursor = rt.mesh_instance_buffer_cursor as usize;
+        if cursor >= rt.mesh_instance_buffer_pool.len() {
+            rt.mesh_instance_buffer_pool.push(Default::default());
+        }
+        rt.mesh_instance_buffer_cursor += 1;
+        let slot = &rt.mesh_instance_buffer_pool[cursor];
+        needs_create = slot.buffer.is_none() || slot.capacity < required;
     }
-    rt.mesh_instance_buffer_cursor += 1;
 
-    let slot = &mut rt.mesh_instance_buffer_pool[cursor];
-    if slot.buffer.is_none() || slot.capacity < required {
-        let capacity = required.max(slot.capacity * 2).max(INSTANCE_RECORD_BYTES * 64);
+    if needs_create {
+        let old_capacity = {
+            let rt = get_wgpu_render_state_runtime(state);
+            rt.mesh_instance_buffer_pool[cursor].capacity
+        };
+        let capacity = required.max(old_capacity * 2).max(INSTANCE_RECORD_BYTES * 64);
         let native = get_wgpu_render_state_native_device(state);
-        slot.buffer = Some(native.device.create_buffer(&wgpu::BufferDescriptor {
+        let buffer = native.device.create_buffer(&wgpu::BufferDescriptor {
             label: None,
             size: capacity,
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
-        }));
-        slot.capacity = capacity;
+        });
+        let rt = unsafe { render_state_runtime_mut(state) };
+        rt.mesh_instance_buffer_pool[cursor].buffer = Some(buffer);
+        rt.mesh_instance_buffer_pool[cursor].capacity = capacity;
     }
 
+    let buffer = {
+        let rt = get_wgpu_render_state_runtime(state);
+        rt.mesh_instance_buffer_pool[cursor]
+            .buffer
+            .as_ref()
+            .unwrap()
+            .clone()
+    };
     let native = get_wgpu_render_state_native_device(state);
     let byte_len = required.min((source.len() * 4) as u64);
     native.queue.write_buffer(
-        slot.buffer.as_ref().unwrap(),
+        &buffer,
         0,
         &f32_as_bytes(source)[..byte_len as usize],
     );
-    return slot.buffer.as_ref().unwrap().clone();
+    return buffer;
 }
 
 pub fn ensure_wgpu_material_binding(
@@ -1424,11 +1458,13 @@ pub fn is_wgpu_texture_ready(texture: Option<&dyn TextureVariant>) -> bool {
 }
 
 pub fn resolve_wgpu_material_texture_view(
-    state: &mut WgpuRenderState,
+    state: &WgpuRenderState,
     texture: Option<&dyn TextureVariant>,
 ) -> wgpu::TextureView {
     if let Some(tex) = texture {
-        let resolved = resolve_wgpu_texture(state, tex, None, None);
+        // SAFETY: resolve_wgpu_texture requires &mut but the trait surface only exposes &.
+        let state_mut = unsafe { &mut *(state as *const WgpuRenderState as *mut WgpuRenderState) };
+        let resolved = resolve_wgpu_texture(state_mut, tex, None, None);
         if let Some(entry) = resolved {
             let entry_lock = entry.read().unwrap();
             return entry_lock.view.clone();
@@ -1513,7 +1549,7 @@ pub fn wgpu_per_map_material_bind_group_needs_rebuild(
 }
 
 pub fn write_wgpu_draw_uniform(
-    state: &mut WgpuRenderState,
+    state: &WgpuRenderState,
     proxy: &WgpuScene3DRenderProxy,
 ) -> wgpu::BindGroup {
     let layouts = ensure_wgpu_scene3d_layouts(state);
@@ -1539,7 +1575,7 @@ pub fn write_wgpu_draw_uniform(
         return scene.draw_bind_group.clone().unwrap();
     });
 
-    let rt = get_wgpu_render_state_runtime_mut(state);
+    let rt = unsafe { render_state_runtime_mut(state) };
     let offset = rt.uniform_offset;
     let float_offset = (offset / 4) as usize;
 
@@ -1563,7 +1599,7 @@ pub fn write_wgpu_draw_uniform(
     rt.uniform_data[float_offset + 27] = 0.0;
 
     let uv = get_wgpu_scene3d_runtime(state, |scene| scene.pending_uv_transform.clone());
-    let rt = get_wgpu_render_state_runtime_mut(state);
+    let rt = unsafe { render_state_runtime_mut(state) };
     if uv.len() >= 9 {
         rt.uniform_data[float_offset + 28] = uv[0];
         rt.uniform_data[float_offset + 29] = uv[1];
@@ -1615,7 +1651,7 @@ pub fn write_wgpu_draw_uniform(
         (sb, snb)
     });
 
-    let rt = get_wgpu_render_state_runtime_mut(state);
+    let rt = unsafe { render_state_runtime_mut(state) };
     rt.uniform_data[float_offset + 42] = skin_base as f32;
     rt.uniform_data[float_offset + 43] = skin_normal_base as f32;
 
@@ -1643,7 +1679,7 @@ pub fn write_wgpu_draw_uniform(
     get_wgpu_scene3d_runtime_mut(state, |scene| {
         scene.pending_draw_offset = offset as u64;
     });
-    let rt = get_wgpu_render_state_runtime_mut(state);
+    let rt = unsafe { render_state_runtime_mut(state) };
     rt.uniform_offset += rt.uniform_stride;
 
     return draw_bg;
