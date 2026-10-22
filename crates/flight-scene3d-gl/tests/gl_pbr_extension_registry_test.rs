@@ -83,7 +83,15 @@ fn bind_transformed_texture(
     _extension: &PbrExtension,
 ) {
     let texture = BOUND_TEXTURE.with(|texture| texture.borrow().clone());
-    context.bind_texture("u_map", "u_mapUvSet", "u_mapTransform", texture.as_ref(), 1);
+    // A registration binder reaches its context only through the trait (TS calls the context object).
+    GlPbrExtensionBindContext::bind_texture(
+        context,
+        "u_map",
+        "u_mapUvSet",
+        "u_mapTransform",
+        texture.as_ref(),
+        1,
+    );
 }
 
 static REGISTRATION: GlPbrExtensionRegistration = GlPbrExtensionRegistration {

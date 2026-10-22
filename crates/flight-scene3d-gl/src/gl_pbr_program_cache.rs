@@ -1,3 +1,5 @@
+// flight-lint: allow-file(contract-vocabulary) D17 PBR program records hold glow handles and thread-bound render-gl state
+
 use std::cell::Cell;
 use std::rc::Rc;
 

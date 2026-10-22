@@ -1,4 +1,4 @@
-// flight-lint: allow-file(contract-vocabulary) D17 PBR extension registrations are backend-typed dispatch records over thread-bound render-gl state
+// flight-lint: allow-file(contract-vocabulary, sugar-delegates) D17 PBR extension registrations are backend-typed dispatch records over thread-bound render-gl state; the bind/shader context records realize the TS object-literal contexts, not receiver sugar
 
 use std::cell::RefCell;
 use std::collections::HashSet;

@@ -1,3 +1,5 @@
+// flight-lint: allow-file(contract-vocabulary) D17 PBR program records hold glow handles and thread-bound render-gl state
+
 use flight_color::{allocate_linear_color, unpack_color_to_linear};
 use flight_entity::Ref;
 use flight_materials::{Material3D, MaterialAlphaMode, StandardPbrMaterialProperties};
