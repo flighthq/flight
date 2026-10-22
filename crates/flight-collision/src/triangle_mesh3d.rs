@@ -1,6 +1,3 @@
-use std::cell::RefCell;
-use std::collections::HashMap;
-
 use crate::types::*;
 
 const BVH_LEAF_SIZE: usize = 4;
@@ -37,22 +34,10 @@ struct BvhNode {
     triangles: Vec<usize>,
 }
 
-#[derive(Debug, Clone)]
-struct TriangleMeshCache {
+#[derive(Clone)]
+struct BvhCacheEntry {
     bvh: Option<BvhNode>,
     version: i64,
-}
-
-#[derive(Debug, Clone)]
-struct HeightfieldCache {
-    bvh: Option<BvhNode>,
-    version: i64,
-}
-
-// flight-lint: allow(hidden-state) non-semantic BVH acceleration cache; removing it changes only performance, not results
-thread_local! {
-    static MESH_CACHE: RefCell<HashMap<u64, TriangleMeshCache>> = RefCell::new(HashMap::new());
-    static HEIGHTFIELD_CACHE: RefCell<HashMap<u64, HeightfieldCache>> = RefCell::new(HashMap::new());
 }
 
 struct TriangleAabb {
@@ -110,6 +95,7 @@ pub fn initialize_collision_heightfield3d(out: &mut CollisionHeightfield3D) {
     out.rotation_y = 0.0;
     out.rotation_z = 0.0;
     out.rotation_w = 1.0;
+    out.bvh_cache.clear();
 }
 
 
@@ -125,6 +111,7 @@ pub fn initialize_collision_triangle_mesh3d(out: &mut CollisionTriangleMesh3D) {
     out.rotation_y = 0.0;
     out.rotation_z = 0.0;
     out.rotation_w = 1.0;
+    out.bvh_cache.clear();
 }
 
 fn append_collision_triangle_contact_candidate3d(
@@ -495,39 +482,31 @@ pub fn get_collision_triangle_mesh_validation_status3d(
 }
 
 fn get_or_build_heightfield_bvh(heightfield: &CollisionHeightfield3D) -> Option<BvhNode> {
-    let entity_id = flight_entity::get_entity_id(heightfield);
-    return HEIGHTFIELD_CACHE.with(|cache| {
-        let mut cache = cache.borrow_mut();
-        if let Some(entry) = cache.get(&entity_id) {
-            if entry.version == heightfield.version {
-                return entry.bvh.clone();
-            }
+    if let Some(entry) = heightfield.bvh_cache.get::<BvhCacheEntry>() {
+        if entry.version == heightfield.version {
+            return entry.bvh;
         }
-        let bvh = build_heightfield_bvh(heightfield);
-        cache.insert(entity_id, HeightfieldCache {
-            bvh: bvh.clone(),
-            version: heightfield.version,
-        });
-        return bvh;
+    }
+    let bvh = build_heightfield_bvh(heightfield);
+    heightfield.bvh_cache.set(BvhCacheEntry {
+        bvh: bvh.clone(),
+        version: heightfield.version,
     });
+    return bvh;
 }
 
 fn get_or_build_mesh_bvh(mesh: &CollisionTriangleMesh3D) -> Option<BvhNode> {
-    let entity_id = flight_entity::get_entity_id(mesh);
-    return MESH_CACHE.with(|cache| {
-        let mut cache = cache.borrow_mut();
-        if let Some(entry) = cache.get(&entity_id) {
-            if entry.version == mesh.version {
-                return entry.bvh.clone();
-            }
+    if let Some(entry) = mesh.bvh_cache.get::<BvhCacheEntry>() {
+        if entry.version == mesh.version {
+            return entry.bvh;
         }
-        let bvh = build_mesh_bvh(mesh);
-        cache.insert(entity_id, TriangleMeshCache {
-            bvh: bvh.clone(),
-            version: mesh.version,
-        });
-        return bvh;
+    }
+    let bvh = build_mesh_bvh(mesh);
+    mesh.bvh_cache.set(BvhCacheEntry {
+        bvh: bvh.clone(),
+        version: mesh.version,
     });
+    return bvh;
 }
 
 fn heightfield_candidate_triangles(heightfield: &CollisionHeightfield3D, convex: &CollisionShape3D) -> Vec<usize> {
@@ -686,10 +665,12 @@ fn include_collision_triangle_contact_manifold3d(
 
 pub fn invalidate_collision_heightfield3d(heightfield: &mut CollisionHeightfield3D) {
     heightfield.version += 1;
+    heightfield.bvh_cache.clear();
 }
 
 pub fn invalidate_collision_triangle_mesh3d(mesh: &mut CollisionTriangleMesh3D) {
     mesh.version += 1;
+    mesh.bvh_cache.clear();
 }
 
 fn inverse_transform_aabb_to_local(

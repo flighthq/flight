@@ -253,6 +253,54 @@ mod collide_collision_triangle_mesh3d_bvh_candidate_order {
     }
 }
 
+mod collide_collision_triangle_mesh3d_bvh_version_rebuild {
+    use super::*;
+
+    #[test]
+    fn version_bump_rebuilds_bvh_and_uses_new_geometry() {
+        let mut mesh = create_collision_triangle_mesh3d(
+            vec![
+                -5.0, 0.0, -5.0, 5.0, 0.0, -5.0, 5.0, 0.0, 5.0, -5.0, 0.0, 5.0,
+            ],
+            vec![0, 2, 1, 0, 3, 2],
+        );
+        let box_shape = CollisionShape3D::Box(CollisionBox3D {
+            x: 0.0,
+            y: 0.4,
+            z: 0.0,
+            half_x: 0.5,
+            half_y: 0.5,
+            half_z: 0.5,
+            rotation_x: 0.0,
+            rotation_y: 0.0,
+            rotation_z: 0.0,
+            rotation_w: 1.0,
+        });
+        let registry = collision_registry3d_with_supports_and_faces();
+        let mut manifold = create_collision_contact_manifold3d();
+
+        assert!(flight_collision::collide_collision_triangle_mesh3d(
+            &mut manifold,
+            &registry,
+            &box_shape,
+            &mesh,
+        ));
+        assert_eq!(manifold.normal_y, 1.0);
+
+        mesh.points = vec![
+            -5.0, -10.0, -5.0, 5.0, -10.0, -5.0, 5.0, -10.0, 5.0, -5.0, -10.0, 5.0,
+        ];
+        flight_collision::invalidate_collision_triangle_mesh3d(&mut mesh);
+
+        assert!(!flight_collision::collide_collision_triangle_mesh3d(
+            &mut manifold,
+            &registry,
+            &box_shape,
+            &mesh,
+        ));
+    }
+}
+
 mod create_collision_heightfield3d {
     #[test]
     fn creates_the_canonical_zero_field_entity() {

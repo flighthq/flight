@@ -1,7 +1,46 @@
+use std::any::Any;
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use flight_entity::{EntityRuntimeSlot, Ref};
+
+pub(crate) struct DerivedCache(Mutex<Option<Box<dyn Any + Send>>>);
+
+impl DerivedCache {
+    pub(crate) fn new() -> Self {
+        return DerivedCache(Mutex::new(None));
+    }
+
+    pub(crate) fn get<T: 'static + Send + Clone>(&self) -> Option<T> {
+        return self.0.lock().unwrap().as_ref().and_then(|b| b.downcast_ref::<T>()).cloned();
+    }
+
+    pub(crate) fn set<T: 'static + Send>(&self, value: T) {
+        *self.0.lock().unwrap() = Some(Box::new(value));
+    }
+
+    pub(crate) fn clear(&self) {
+        *self.0.lock().unwrap() = None;
+    }
+}
+
+impl Clone for DerivedCache {
+    fn clone(&self) -> Self {
+        return DerivedCache::new();
+    }
+}
+
+impl std::fmt::Debug for DerivedCache {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        return f.write_str("DerivedCache(..)");
+    }
+}
+
+impl PartialEq for DerivedCache {
+    fn eq(&self, _other: &Self) -> bool {
+        return true;
+    }
+}
 
 // Shape kind enums
 
@@ -422,6 +461,7 @@ pub struct CollisionTriangleMesh3D {
     pub rotation_y: f32,
     pub rotation_z: f32,
     pub rotation_w: f32,
+    pub(crate) bvh_cache: DerivedCache,
     runtime: EntityRuntimeSlot,
 }
 
@@ -441,6 +481,7 @@ pub struct CollisionHeightfield3D {
     pub rotation_y: f32,
     pub rotation_z: f32,
     pub rotation_w: f32,
+    pub(crate) bvh_cache: DerivedCache,
     runtime: EntityRuntimeSlot,
 }
 
@@ -569,6 +610,7 @@ impl Default for CollisionTriangleMesh3D {
             rotation_y: 0.0,
             rotation_z: 0.0,
             rotation_w: 1.0,
+            bvh_cache: DerivedCache::new(),
             runtime: EntityRuntimeSlot::default(),
         }
     }
@@ -590,6 +632,7 @@ impl Default for CollisionHeightfield3D {
             rotation_y: 0.0,
             rotation_z: 0.0,
             rotation_w: 1.0,
+            bvh_cache: DerivedCache::new(),
             runtime: EntityRuntimeSlot::default(),
         }
     }
