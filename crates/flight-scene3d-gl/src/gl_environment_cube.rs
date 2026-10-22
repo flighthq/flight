@@ -3,27 +3,6 @@ use glow::{HasContext, NativeTexture};
 
 use crate::gl_scene3d_runtime::{get_gl_scene3d_runtime, get_gl_scene3d_runtime_mut};
 
-pub fn destroy_gl_environment_source_cube(state: &GlRenderState) {
-    let cube = get_gl_scene3d_runtime(state, |rt| rt.environment_source_cube);
-    if let Some(cube) = cube {
-        unsafe {
-            state.gl.delete_texture(cube);
-        }
-        get_gl_scene3d_runtime_mut(state, |rt| {
-            rt.environment_source_cube = None;
-            rt.environment_source_cube_color_space = "linear".to_string();
-            rt.environment_source_cube_face_versions.clear();
-            rt.environment_source_revision = rt.environment_source_revision.wrapping_add(1);
-            rt.environment_source_texture = None;
-            rt.environment_source_texture_version = -1;
-        });
-    }
-}
-
-pub fn get_gl_cube_face_target(face: u32) -> u32 {
-    return glow::TEXTURE_CUBE_MAP_POSITIVE_X + face;
-}
-
 pub fn create_gl_environment_cube(
     state: &GlRenderState,
     face_data: &[&[u8]; 6],
@@ -64,6 +43,27 @@ pub fn create_gl_environment_cube(
     });
 
     return texture;
+}
+
+pub fn destroy_gl_environment_source_cube(state: &GlRenderState) {
+    let cube = get_gl_scene3d_runtime(state, |rt| rt.environment_source_cube);
+    if let Some(cube) = cube {
+        unsafe {
+            state.gl.delete_texture(cube);
+        }
+        get_gl_scene3d_runtime_mut(state, |rt| {
+            rt.environment_source_cube = None;
+            rt.environment_source_cube_color_space = "linear".to_string();
+            rt.environment_source_cube_face_versions.clear();
+            rt.environment_source_revision = rt.environment_source_revision.wrapping_add(1);
+            rt.environment_source_texture = None;
+            rt.environment_source_texture_version = -1;
+        });
+    }
+}
+
+pub fn get_gl_cube_face_target(face: u32) -> u32 {
+    return glow::TEXTURE_CUBE_MAP_POSITIVE_X + face;
 }
 
 pub fn update_gl_environment_cube_face(

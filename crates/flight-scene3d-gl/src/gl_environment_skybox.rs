@@ -6,31 +6,6 @@ use crate::gl_mesh_program::{ensure_gl_scene3d_program, set_gl_mesh_view_project
 use crate::gl_scene3d_runtime::get_gl_scene3d_runtime;
 use crate::types::GlMeshProgram;
 
-pub fn render_gl_environment_skybox(
-    state: &GlRenderState,
-    camera: &Camera3D,
-) {
-    let cube = get_gl_scene3d_runtime(state, |rt| rt.environment_source_cube);
-    let cube = match cube {
-        Some(c) => c,
-        None => return,
-    };
-
-    let program = ensure_gl_scene3d_program(state, "skybox", |gl| {
-        compile_skybox_program(gl)
-    });
-    let gl = &state.gl;
-    unsafe {
-        gl.use_program(Some(program.program));
-        set_gl_mesh_view_projection(state, program.view_projection_location.clone(), camera);
-        gl.active_texture(glow::TEXTURE0);
-        gl.bind_texture(glow::TEXTURE_CUBE_MAP, Some(cube));
-        gl.depth_func(glow::LEQUAL);
-        gl.draw_arrays(glow::TRIANGLES, 0, 36);
-        gl.depth_func(glow::LESS);
-    }
-}
-
 fn compile_skybox_program(gl: &glow::Context) -> GlMeshProgram {
     let vs = r#"#version 300 es
 layout(location = 0) in vec3 a_position;
@@ -76,4 +51,29 @@ void main() {
         object_alpha_location: None,
         alpha_is_coverage_location: None,
     };
+}
+
+pub fn render_gl_environment_skybox(
+    state: &GlRenderState,
+    camera: &Camera3D,
+) {
+    let cube = get_gl_scene3d_runtime(state, |rt| rt.environment_source_cube);
+    let cube = match cube {
+        Some(c) => c,
+        None => return,
+    };
+
+    let program = ensure_gl_scene3d_program(state, "skybox", |gl| {
+        compile_skybox_program(gl)
+    });
+    let gl = &state.gl;
+    unsafe {
+        gl.use_program(Some(program.program));
+        set_gl_mesh_view_projection(state, program.view_projection_location.clone(), camera);
+        gl.active_texture(glow::TEXTURE0);
+        gl.bind_texture(glow::TEXTURE_CUBE_MAP, Some(cube));
+        gl.depth_func(glow::LEQUAL);
+        gl.draw_arrays(glow::TRIANGLES, 0, 36);
+        gl.depth_func(glow::LESS);
+    }
 }

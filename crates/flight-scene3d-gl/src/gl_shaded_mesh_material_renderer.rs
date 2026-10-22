@@ -21,6 +21,14 @@ pub const SHADED_MATERIAL_KIND: &str = "ShadedMaterial";
 
 pub struct GlShadedMeshMaterialRenderer;
 
+pub fn register_gl_shaded_material(state: &GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        SHADED_MATERIAL_KIND.to_string(),
+        Arc::new(GlShadedMeshMaterialRenderer),
+    );
+}
+
 impl GlMeshMaterialRenderer for GlShadedMeshMaterialRenderer {
     fn bind(
         &self,
@@ -71,12 +79,4 @@ impl GlMeshMaterialRenderer for GlShadedMeshMaterialRenderer {
             return;
         }
     }
-}
-
-pub fn register_gl_shaded_material(state: &GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        SHADED_MATERIAL_KIND.to_string(),
-        Arc::new(GlShadedMeshMaterialRenderer),
-    );
 }

@@ -20,6 +20,14 @@ use crate::types::{GlMeshMaterialRenderer, GlPbrDefineKey, Scene3DLightBlock};
 
 pub struct GlStandardPbrMeshMaterialRenderer;
 
+pub fn register_gl_standard_pbr_material(state: &GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        STANDARD_PBR_MATERIAL_KIND.to_string(),
+        Arc::new(GlStandardPbrMeshMaterialRenderer),
+    );
+}
+
 impl GlMeshMaterialRenderer for GlStandardPbrMeshMaterialRenderer {
     fn bind(
         &self,
@@ -109,12 +117,4 @@ impl GlMeshMaterialRenderer for GlStandardPbrMeshMaterialRenderer {
             return;
         }
     }
-}
-
-pub fn register_gl_standard_pbr_material(state: &GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        STANDARD_PBR_MATERIAL_KIND.to_string(),
-        Arc::new(GlStandardPbrMeshMaterialRenderer),
-    );
 }

@@ -16,6 +16,14 @@ use crate::types::{GlMeshMaterialRenderer, GlUnlitDefineKey, Scene3DLightBlock};
 
 pub struct GlUnlitMeshMaterialRenderer;
 
+pub fn register_gl_unlit_material(state: &GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        UNLIT_MATERIAL_KIND.to_string(),
+        Arc::new(GlUnlitMeshMaterialRenderer),
+    );
+}
+
 impl GlMeshMaterialRenderer for GlUnlitMeshMaterialRenderer {
     fn bind(
         &self,
@@ -79,12 +87,4 @@ impl GlMeshMaterialRenderer for GlUnlitMeshMaterialRenderer {
             return;
         }
     }
-}
-
-pub fn register_gl_unlit_material(state: &GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        UNLIT_MATERIAL_KIND.to_string(),
-        Arc::new(GlUnlitMeshMaterialRenderer),
-    );
 }

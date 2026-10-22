@@ -15,6 +15,14 @@ use crate::types::{GlDebugDefineKey, GlDebugMode, GlMeshMaterialRenderer, Scene3
 
 pub struct GlDepthMeshMaterialRenderer;
 
+pub fn register_gl_depth_material(state: &GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        DEPTH_MATERIAL_KIND.to_string(),
+        Arc::new(GlDepthMeshMaterialRenderer),
+    );
+}
+
 impl GlMeshMaterialRenderer for GlDepthMeshMaterialRenderer {
     fn bind(
         &self,
@@ -64,12 +72,4 @@ impl GlMeshMaterialRenderer for GlDepthMeshMaterialRenderer {
             return;
         }
     }
-}
-
-pub fn register_gl_depth_material(state: &GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        DEPTH_MATERIAL_KIND.to_string(),
-        Arc::new(GlDepthMeshMaterialRenderer),
-    );
 }

@@ -19,6 +19,82 @@ use crate::types::{GlCustomMaterialShaderSource, GlMeshMaterialRenderer, GlMeshP
 
 pub struct GlCustomShaderMeshMaterialRenderer;
 
+pub fn register_gl_custom_shader_material(state: &GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        CUSTOM_SHADER_MATERIAL_KIND.to_string(),
+        Arc::new(GlCustomShaderMeshMaterialRenderer),
+    );
+}
+
+pub fn register_gl_custom_shader_source(
+    state: &GlRenderState,
+    shader_key: &str,
+    source: GlCustomMaterialShaderSource,
+) {
+    get_gl_scene3d_runtime_mut(state, |rt| {
+        rt.program_cache.insert(
+            format!("custom_source:{}", shader_key),
+            Box::new(source),
+        );
+    });
+}
+
+fn upload_custom_textures(
+    state: &GlRenderState,
+    program: glow::NativeProgram,
+    material: &CustomShaderMaterial,
+) {
+    let textures = match &material.textures {
+        Some(t) => t,
+        None => return,
+    };
+    let gl = &state.gl;
+    let mut unit: u32 = 0;
+    for (name, _texture) in textures {
+        let location = unsafe { gl.get_uniform_location(program, name) };
+        if location.is_none() {
+            continue;
+        }
+        unsafe {
+            gl.active_texture(glow::TEXTURE0 + unit);
+            gl.uniform_1_i32(location.as_ref(), unit as i32);
+        }
+        unit += 1;
+    }
+}
+
+fn upload_custom_uniforms(
+    gl: &glow::Context,
+    program: glow::NativeProgram,
+    material: &CustomShaderMaterial,
+) {
+    let uniforms = match &material.uniforms {
+        Some(u) => u,
+        None => return,
+    };
+    for (name, value) in uniforms {
+        let location = unsafe { gl.get_uniform_location(program, name) };
+        if location.is_none() {
+            continue;
+        }
+        unsafe {
+            match value {
+                UniformValue::Scalar(v) => {
+                    gl.uniform_1_f32(location.as_ref(), *v);
+                }
+                UniformValue::Array(arr) => match arr.len() {
+                    1 => gl.uniform_1_f32(location.as_ref(), arr[0]),
+                    2 => gl.uniform_2_f32(location.as_ref(), arr[0], arr[1]),
+                    3 => gl.uniform_3_f32(location.as_ref(), arr[0], arr[1], arr[2]),
+                    4 => gl.uniform_4_f32(location.as_ref(), arr[0], arr[1], arr[2], arr[3]),
+                    _ => gl.uniform_1_f32_slice(location.as_ref(), arr),
+                },
+            }
+        }
+    }
+}
+
 impl GlMeshMaterialRenderer for GlCustomShaderMeshMaterialRenderer {
     fn bind(
         &self,
@@ -107,80 +183,4 @@ impl GlMeshMaterialRenderer for GlCustomShaderMeshMaterialRenderer {
             return;
         }
     }
-}
-
-fn upload_custom_uniforms(
-    gl: &glow::Context,
-    program: glow::NativeProgram,
-    material: &CustomShaderMaterial,
-) {
-    let uniforms = match &material.uniforms {
-        Some(u) => u,
-        None => return,
-    };
-    for (name, value) in uniforms {
-        let location = unsafe { gl.get_uniform_location(program, name) };
-        if location.is_none() {
-            continue;
-        }
-        unsafe {
-            match value {
-                UniformValue::Scalar(v) => {
-                    gl.uniform_1_f32(location.as_ref(), *v);
-                }
-                UniformValue::Array(arr) => match arr.len() {
-                    1 => gl.uniform_1_f32(location.as_ref(), arr[0]),
-                    2 => gl.uniform_2_f32(location.as_ref(), arr[0], arr[1]),
-                    3 => gl.uniform_3_f32(location.as_ref(), arr[0], arr[1], arr[2]),
-                    4 => gl.uniform_4_f32(location.as_ref(), arr[0], arr[1], arr[2], arr[3]),
-                    _ => gl.uniform_1_f32_slice(location.as_ref(), arr),
-                },
-            }
-        }
-    }
-}
-
-fn upload_custom_textures(
-    state: &GlRenderState,
-    program: glow::NativeProgram,
-    material: &CustomShaderMaterial,
-) {
-    let textures = match &material.textures {
-        Some(t) => t,
-        None => return,
-    };
-    let gl = &state.gl;
-    let mut unit: u32 = 0;
-    for (name, _texture) in textures {
-        let location = unsafe { gl.get_uniform_location(program, name) };
-        if location.is_none() {
-            continue;
-        }
-        unsafe {
-            gl.active_texture(glow::TEXTURE0 + unit);
-            gl.uniform_1_i32(location.as_ref(), unit as i32);
-        }
-        unit += 1;
-    }
-}
-
-pub fn register_gl_custom_shader_source(
-    state: &GlRenderState,
-    shader_key: &str,
-    source: GlCustomMaterialShaderSource,
-) {
-    get_gl_scene3d_runtime_mut(state, |rt| {
-        rt.program_cache.insert(
-            format!("custom_source:{}", shader_key),
-            Box::new(source),
-        );
-    });
-}
-
-pub fn register_gl_custom_shader_material(state: &GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        CUSTOM_SHADER_MATERIAL_KIND.to_string(),
-        Arc::new(GlCustomShaderMeshMaterialRenderer),
-    );
 }

@@ -23,6 +23,14 @@ use crate::types::{
 
 pub struct GlBlinnPhongMeshMaterialRenderer;
 
+pub fn register_gl_blinn_phong_material(state: &GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        BLINN_PHONG_MATERIAL_KIND.to_string(),
+        Arc::new(GlBlinnPhongMeshMaterialRenderer),
+    );
+}
+
 impl GlMeshMaterialRenderer for GlBlinnPhongMeshMaterialRenderer {
     fn bind(
         &self,
@@ -119,12 +127,4 @@ impl GlMeshMaterialRenderer for GlBlinnPhongMeshMaterialRenderer {
             return;
         }
     }
-}
-
-pub fn register_gl_blinn_phong_material(state: &GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        BLINN_PHONG_MATERIAL_KIND.to_string(),
-        Arc::new(GlBlinnPhongMeshMaterialRenderer),
-    );
 }

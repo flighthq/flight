@@ -31,6 +31,42 @@ pub fn build_gl_classic_define_key(key: &GlClassicDefineKey) -> String {
     );
 }
 
+fn build_gl_classic_define_source(key: &GlClassicDefineKey) -> String {
+    let mut defines = format!("#version 300 es\n#define MAX_FORWARD_LIGHTS {}\n", 8);
+    match key.lighting_model {
+        GlClassicLightingModel::Lambert => defines.push_str("#define LAMBERT\n"),
+        GlClassicLightingModel::Phong => defines.push_str("#define PHONG\n"),
+        GlClassicLightingModel::BlinnPhong => defines.push_str("#define BLINN_PHONG\n"),
+    }
+    if key.alpha_mask_enabled {
+        defines.push_str("#define ALPHA_MASK\n");
+    }
+    if key.has_diffuse_map {
+        defines.push_str("#define HAS_DIFFUSE_MAP\n");
+    }
+    if key.has_specular_map {
+        defines.push_str("#define HAS_SPECULAR_MAP\n");
+    }
+    if key.has_normal_map {
+        defines.push_str("#define HAS_NORMAL_MAP\n");
+    }
+    if key.has_alpha_map {
+        defines.push_str("#define HAS_ALPHA_MAP\n");
+    }
+    if key.has_skin {
+        defines.push_str("#define HAS_SKIN\n");
+    }
+    if key.has_instanced {
+        defines.push_str("#define HAS_INSTANCES\n");
+    }
+    if key.has_color_matrix {
+        defines.push_str("#define HAS_COLOR_MATRIX\n");
+    } else if key.has_color_adjustment {
+        defines.push_str("#define HAS_COLOR_ADJUSTMENT\n");
+    }
+    return defines;
+}
+
 pub fn compile_gl_classic_program(
     gl: &glow::Context,
     key: &GlClassicDefineKey,
@@ -97,118 +133,6 @@ pub fn ensure_gl_classic_program(
     return ensure_gl_scene3d_program(state, &cache_key, |gl| {
         compile_gl_classic_program(gl, &full_key, &skin_glsl)
     });
-}
-
-pub fn get_gl_classic_fragment_source_for_key(key: &GlClassicDefineKey) -> String {
-    let mut src = build_gl_classic_define_source(key);
-    src.push_str(&get_classic_fragment_body());
-    return src;
-}
-
-pub fn get_gl_classic_vertex_source_for_key(
-    key: &GlClassicDefineKey,
-    skin_declarations_glsl: &str,
-) -> String {
-    let mut src = build_gl_classic_define_source(key);
-    if key.has_skin {
-        src.push_str(skin_declarations_glsl);
-    }
-    if key.has_instanced {
-        src.push_str(GL_INSTANCE_VERTEX_DECLARATIONS_GLSL);
-    }
-    src.push_str(&get_classic_vertex_body());
-    return src;
-}
-
-fn build_gl_classic_define_source(key: &GlClassicDefineKey) -> String {
-    let mut defines = format!("#version 300 es\n#define MAX_FORWARD_LIGHTS {}\n", 8);
-    match key.lighting_model {
-        GlClassicLightingModel::Lambert => defines.push_str("#define LAMBERT\n"),
-        GlClassicLightingModel::Phong => defines.push_str("#define PHONG\n"),
-        GlClassicLightingModel::BlinnPhong => defines.push_str("#define BLINN_PHONG\n"),
-    }
-    if key.alpha_mask_enabled {
-        defines.push_str("#define ALPHA_MASK\n");
-    }
-    if key.has_diffuse_map {
-        defines.push_str("#define HAS_DIFFUSE_MAP\n");
-    }
-    if key.has_specular_map {
-        defines.push_str("#define HAS_SPECULAR_MAP\n");
-    }
-    if key.has_normal_map {
-        defines.push_str("#define HAS_NORMAL_MAP\n");
-    }
-    if key.has_alpha_map {
-        defines.push_str("#define HAS_ALPHA_MAP\n");
-    }
-    if key.has_skin {
-        defines.push_str("#define HAS_SKIN\n");
-    }
-    if key.has_instanced {
-        defines.push_str("#define HAS_INSTANCES\n");
-    }
-    if key.has_color_matrix {
-        defines.push_str("#define HAS_COLOR_MATRIX\n");
-    } else if key.has_color_adjustment {
-        defines.push_str("#define HAS_COLOR_ADJUSTMENT\n");
-    }
-    return defines;
-}
-
-fn get_classic_vertex_body() -> String {
-    return format!(
-        r#"#ifdef HAS_INSTANCES
-flat out vec4 v_instanceColor;
-#endif
-
-layout(location = 0) in vec3 a_position;
-layout(location = 1) in vec3 a_normal;
-layout(location = 2) in vec4 a_tangent;
-layout(location = 3) in vec2 a_uv0;
-
-uniform mat4 u_viewProjection;
-uniform mat4 u_model;
-uniform mat3 u_normalMatrix;
-{GL_UV_TRANSFORM_VERTEX_GLSL}
-out vec3 v_worldPosition;
-out vec3 v_normal;
-out vec4 v_tangent;
-out vec2 v_uv0;
-
-void main() {{
-#ifdef HAS_INSTANCES
-  v_instanceColor = instanceColor();
-#endif
-#ifdef HAS_SKIN
-  mat4 skin = skinMatrix();
-  vec4 localPosition = skin * vec4(a_position, 1.0);
-  vec3 localNormal = skinNormalMatrix() * a_normal;
-  vec3 localTangent = mat3(skin) * a_tangent.xyz;
-#else
-  vec4 localPosition = vec4(a_position, 1.0);
-  vec3 localNormal = a_normal;
-  vec3 localTangent = a_tangent.xyz;
-#endif
-#ifdef HAS_INSTANCES
-  mat4 instanceModel = u_model * instanceModelMatrix();
-  vec4 worldPosition = instanceModel * localPosition;
-  v_worldPosition = worldPosition.xyz;
-  v_normal = mat3(instanceModel) * localNormal;
-  mat3 modelRotation = mat3(instanceModel);
-#else
-  vec4 worldPosition = u_model * localPosition;
-  v_worldPosition = worldPosition.xyz;
-  v_normal = u_normalMatrix * localNormal;
-  mat3 modelRotation = mat3(u_model);
-#endif
-  float tangentHandedness = a_tangent.w * (determinant(modelRotation) < 0.0 ? -1.0 : 1.0);
-  v_tangent = vec4(modelRotation * localTangent, tangentHandedness);
-  v_uv0 = applyUvTransform(a_uv0);
-  gl_Position = u_viewProjection * worldPosition;
-}}
-"#
-    );
 }
 
 fn get_classic_fragment_body() -> String {
@@ -377,4 +301,80 @@ void main() {{
 }}
 "#
     );
+}
+
+fn get_classic_vertex_body() -> String {
+    return format!(
+        r#"#ifdef HAS_INSTANCES
+flat out vec4 v_instanceColor;
+#endif
+
+layout(location = 0) in vec3 a_position;
+layout(location = 1) in vec3 a_normal;
+layout(location = 2) in vec4 a_tangent;
+layout(location = 3) in vec2 a_uv0;
+
+uniform mat4 u_viewProjection;
+uniform mat4 u_model;
+uniform mat3 u_normalMatrix;
+{GL_UV_TRANSFORM_VERTEX_GLSL}
+out vec3 v_worldPosition;
+out vec3 v_normal;
+out vec4 v_tangent;
+out vec2 v_uv0;
+
+void main() {{
+#ifdef HAS_INSTANCES
+  v_instanceColor = instanceColor();
+#endif
+#ifdef HAS_SKIN
+  mat4 skin = skinMatrix();
+  vec4 localPosition = skin * vec4(a_position, 1.0);
+  vec3 localNormal = skinNormalMatrix() * a_normal;
+  vec3 localTangent = mat3(skin) * a_tangent.xyz;
+#else
+  vec4 localPosition = vec4(a_position, 1.0);
+  vec3 localNormal = a_normal;
+  vec3 localTangent = a_tangent.xyz;
+#endif
+#ifdef HAS_INSTANCES
+  mat4 instanceModel = u_model * instanceModelMatrix();
+  vec4 worldPosition = instanceModel * localPosition;
+  v_worldPosition = worldPosition.xyz;
+  v_normal = mat3(instanceModel) * localNormal;
+  mat3 modelRotation = mat3(instanceModel);
+#else
+  vec4 worldPosition = u_model * localPosition;
+  v_worldPosition = worldPosition.xyz;
+  v_normal = u_normalMatrix * localNormal;
+  mat3 modelRotation = mat3(u_model);
+#endif
+  float tangentHandedness = a_tangent.w * (determinant(modelRotation) < 0.0 ? -1.0 : 1.0);
+  v_tangent = vec4(modelRotation * localTangent, tangentHandedness);
+  v_uv0 = applyUvTransform(a_uv0);
+  gl_Position = u_viewProjection * worldPosition;
+}}
+"#
+    );
+}
+
+pub fn get_gl_classic_fragment_source_for_key(key: &GlClassicDefineKey) -> String {
+    let mut src = build_gl_classic_define_source(key);
+    src.push_str(&get_classic_fragment_body());
+    return src;
+}
+
+pub fn get_gl_classic_vertex_source_for_key(
+    key: &GlClassicDefineKey,
+    skin_declarations_glsl: &str,
+) -> String {
+    let mut src = build_gl_classic_define_source(key);
+    if key.has_skin {
+        src.push_str(skin_declarations_glsl);
+    }
+    if key.has_instanced {
+        src.push_str(GL_INSTANCE_VERTEX_DECLARATIONS_GLSL);
+    }
+    src.push_str(&get_classic_vertex_body());
+    return src;
 }

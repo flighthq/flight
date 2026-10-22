@@ -8,6 +8,54 @@ use crate::gl_mesh_program::{
 use crate::gl_scene3d_runtime::get_gl_scene3d_runtime;
 use crate::types::{GlDebugDefineKey, GlDebugMode, GlDebugProgram, GlMeshProgram};
 
+pub fn bind_gl_debug_normal_map(
+    state: &GlRenderState,
+    program: &GlDebugProgram,
+    has_normal_map: bool,
+    normal_scale: f32,
+) {
+    let gl = &state.gl;
+    unsafe {
+        gl.uniform_1_f32(program.normal_scale_location.as_ref(), normal_scale);
+        if has_normal_map {
+            gl.active_texture(glow::TEXTURE0);
+            gl.uniform_1_i32(program.normal_map_location.as_ref(), 0);
+        }
+    }
+}
+
+pub fn bind_gl_debug_range(
+    state: &GlRenderState,
+    program: &GlDebugProgram,
+    near: f32,
+    far: f32,
+) {
+    let gl = &state.gl;
+    unsafe {
+        gl.uniform_1_f32(program.near_location.as_ref(), near);
+        gl.uniform_1_f32(program.far_location.as_ref(), far);
+    }
+}
+
+fn build_define_source(key: &GlDebugDefineKey) -> String {
+    let mut defines = String::from("#version 300 es\n");
+    if key.mode == GlDebugMode::Depth {
+        defines.push_str("#define DEPTH_MODE\n");
+    } else {
+        defines.push_str("#define NORMAL_MODE\n");
+    }
+    if key.has_normal_map {
+        defines.push_str("#define HAS_NORMAL_MAP\n");
+    }
+    if key.has_skin {
+        defines.push_str("#define HAS_SKIN\n");
+    }
+    if key.has_instanced {
+        defines.push_str("#define HAS_INSTANCES\n");
+    }
+    return defines;
+}
+
 pub fn build_gl_debug_define_key(key: &GlDebugDefineKey) -> String {
     return format!(
         "{}{}{}{}",
@@ -74,75 +122,6 @@ pub fn ensure_gl_debug_program(
     });
 }
 
-pub fn bind_gl_debug_normal_map(
-    state: &GlRenderState,
-    program: &GlDebugProgram,
-    has_normal_map: bool,
-    normal_scale: f32,
-) {
-    let gl = &state.gl;
-    unsafe {
-        gl.uniform_1_f32(program.normal_scale_location.as_ref(), normal_scale);
-        if has_normal_map {
-            gl.active_texture(glow::TEXTURE0);
-            gl.uniform_1_i32(program.normal_map_location.as_ref(), 0);
-        }
-    }
-}
-
-pub fn bind_gl_debug_range(
-    state: &GlRenderState,
-    program: &GlDebugProgram,
-    near: f32,
-    far: f32,
-) {
-    let gl = &state.gl;
-    unsafe {
-        gl.uniform_1_f32(program.near_location.as_ref(), near);
-        gl.uniform_1_f32(program.far_location.as_ref(), far);
-    }
-}
-
-pub fn get_gl_debug_fragment_source_for_key(key: &GlDebugDefineKey) -> String {
-    let mut src = build_define_source(key);
-    src.push_str(&get_debug_fragment_body());
-    return src;
-}
-
-pub fn get_gl_debug_vertex_source_for_key(
-    key: &GlDebugDefineKey,
-    skin_declarations_glsl: &str,
-) -> String {
-    let mut src = build_define_source(key);
-    if key.has_skin {
-        src.push_str(skin_declarations_glsl);
-    }
-    if key.has_instanced {
-        src.push_str(GL_INSTANCE_VERTEX_DECLARATIONS_GLSL);
-    }
-    src.push_str(DEBUG_VERTEX_BODY);
-    return src;
-}
-
-fn build_define_source(key: &GlDebugDefineKey) -> String {
-    let mut defines = String::from("#version 300 es\n");
-    if key.mode == GlDebugMode::Depth {
-        defines.push_str("#define DEPTH_MODE\n");
-    } else {
-        defines.push_str("#define NORMAL_MODE\n");
-    }
-    if key.has_normal_map {
-        defines.push_str("#define HAS_NORMAL_MAP\n");
-    }
-    if key.has_skin {
-        defines.push_str("#define HAS_SKIN\n");
-    }
-    if key.has_instanced {
-        defines.push_str("#define HAS_INSTANCES\n");
-    }
-    return defines;
-}
-
 fn get_debug_fragment_body() -> String {
     return format!(
         r#"
@@ -194,6 +173,27 @@ void main() {{
 }}
 "#
     );
+}
+
+pub fn get_gl_debug_fragment_source_for_key(key: &GlDebugDefineKey) -> String {
+    let mut src = build_define_source(key);
+    src.push_str(&get_debug_fragment_body());
+    return src;
+}
+
+pub fn get_gl_debug_vertex_source_for_key(
+    key: &GlDebugDefineKey,
+    skin_declarations_glsl: &str,
+) -> String {
+    let mut src = build_define_source(key);
+    if key.has_skin {
+        src.push_str(skin_declarations_glsl);
+    }
+    if key.has_instanced {
+        src.push_str(GL_INSTANCE_VERTEX_DECLARATIONS_GLSL);
+    }
+    src.push_str(DEBUG_VERTEX_BODY);
+    return src;
 }
 
 const DEBUG_VERTEX_BODY: &str = r#"

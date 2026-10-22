@@ -9,6 +9,15 @@ use glow::HasContext;
 use crate::gl_scene3d_runtime::{get_gl_scene3d_runtime, get_gl_scene3d_runtime_mut};
 use crate::types::GlMeshUpload;
 
+fn as_u8_slice<T>(data: &[T]) -> &[u8] {
+    unsafe {
+        std::slice::from_raw_parts(
+            data.as_ptr() as *const u8,
+            data.len() * std::mem::size_of::<T>(),
+        )
+    }
+}
+
 fn attribute_location(semantic: VertexSemantic) -> Option<u32> {
     return match semantic {
         VertexSemantic::Position => Some(0),
@@ -19,17 +28,6 @@ fn attribute_location(semantic: VertexSemantic) -> Option<u32> {
         VertexSemantic::Uv1 => Some(5),
         VertexSemantic::Joints0 => Some(6),
         VertexSemantic::Weights0 => Some(7),
-    };
-}
-
-fn resolve_gl_vertex_format(format: VertexFormat) -> (i32, u32, bool) {
-    return match format {
-        VertexFormat::Float32x2 => (2, glow::FLOAT, false),
-        VertexFormat::Float32x3 => (3, glow::FLOAT, false),
-        VertexFormat::Float32x4 => (4, glow::FLOAT, false),
-        VertexFormat::Uint8x4 => (4, glow::UNSIGNED_BYTE, false),
-        VertexFormat::Unorm8x4 => (4, glow::UNSIGNED_BYTE, true),
-        VertexFormat::Uint16x4 => (4, glow::UNSIGNED_SHORT, false),
     };
 }
 
@@ -54,26 +52,6 @@ pub fn bind_gl_vertex_attribute(
             attribute.byte_offset as i32,
         );
     }
-}
-
-fn get_gl_primitive_mode(topology: flight_meshgeometry::PrimitiveTopology) -> u32 {
-    return match topology {
-        flight_meshgeometry::PrimitiveTopology::LineList => glow::LINES,
-        flight_meshgeometry::PrimitiveTopology::LineStrip => glow::LINE_STRIP,
-        flight_meshgeometry::PrimitiveTopology::PointList => glow::POINTS,
-        flight_meshgeometry::PrimitiveTopology::TriangleStrip => glow::TRIANGLE_STRIP,
-        flight_meshgeometry::PrimitiveTopology::TriangleList => glow::TRIANGLES,
-    };
-}
-
-fn float_offset_for_semantic(geometry: &MeshGeometry, semantic: VertexSemantic) -> i32 {
-    let layout = geometry.layout.read().unwrap();
-    for attr in &layout.attributes {
-        if attr.semantic == semantic {
-            return (attr.byte_offset / 4) as i32;
-        }
-    }
-    return -1;
 }
 
 fn build_skin_bind_vertices(
@@ -106,15 +84,6 @@ fn build_skin_bind_vertices(
         }
     }
     return out;
-}
-
-fn as_u8_slice<T>(data: &[T]) -> &[u8] {
-    unsafe {
-        std::slice::from_raw_parts(
-            data.as_ptr() as *const u8,
-            data.len() * std::mem::size_of::<T>(),
-        )
-    }
 }
 
 pub fn destroy_gl_mesh_upload(state: &GlRenderState, upload: &GlMeshUpload) {
@@ -246,4 +215,35 @@ pub fn ensure_gl_mesh_upload<R>(
         rt.upload_cache.insert(id, upload);
     });
     return result;
+}
+
+fn float_offset_for_semantic(geometry: &MeshGeometry, semantic: VertexSemantic) -> i32 {
+    let layout = geometry.layout.read().unwrap();
+    for attr in &layout.attributes {
+        if attr.semantic == semantic {
+            return (attr.byte_offset / 4) as i32;
+        }
+    }
+    return -1;
+}
+
+fn get_gl_primitive_mode(topology: flight_meshgeometry::PrimitiveTopology) -> u32 {
+    return match topology {
+        flight_meshgeometry::PrimitiveTopology::LineList => glow::LINES,
+        flight_meshgeometry::PrimitiveTopology::LineStrip => glow::LINE_STRIP,
+        flight_meshgeometry::PrimitiveTopology::PointList => glow::POINTS,
+        flight_meshgeometry::PrimitiveTopology::TriangleStrip => glow::TRIANGLE_STRIP,
+        flight_meshgeometry::PrimitiveTopology::TriangleList => glow::TRIANGLES,
+    };
+}
+
+fn resolve_gl_vertex_format(format: VertexFormat) -> (i32, u32, bool) {
+    return match format {
+        VertexFormat::Float32x2 => (2, glow::FLOAT, false),
+        VertexFormat::Float32x3 => (3, glow::FLOAT, false),
+        VertexFormat::Float32x4 => (4, glow::FLOAT, false),
+        VertexFormat::Uint8x4 => (4, glow::UNSIGNED_BYTE, false),
+        VertexFormat::Unorm8x4 => (4, glow::UNSIGNED_BYTE, true),
+        VertexFormat::Uint16x4 => (4, glow::UNSIGNED_SHORT, false),
+    };
 }

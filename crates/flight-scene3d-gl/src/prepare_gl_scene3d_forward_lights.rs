@@ -2,22 +2,6 @@ use flight_render_gl::GlRenderState;
 
 use crate::types::{GlScene3DForwardLightList, Scene3DLightBlock, Scene3DLightsLike};
 
-pub fn prepare_gl_scene3d_forward_lights(
-    _state: &GlRenderState,
-    mesh_count: usize,
-    lights: &Scene3DLightsLike,
-) -> GlScene3DForwardLightList {
-    let mut mesh_light_blocks = Vec::with_capacity(mesh_count);
-    let block = pack_scene3d_light_block(lights);
-    for _ in 0..mesh_count {
-        mesh_light_blocks.push(block.clone());
-    }
-    return GlScene3DForwardLightList {
-        mesh_count,
-        mesh_light_blocks,
-    };
-}
-
 fn pack_scene3d_light_block(lights: &Scene3DLightsLike) -> Scene3DLightBlock {
     let mut block = Scene3DLightBlock {
         ambient_color: [0.0; 3],
@@ -75,4 +59,20 @@ fn pack_scene3d_light_block(lights: &Scene3DLightsLike) -> Scene3DLightBlock {
     }
 
     return block;
+}
+
+pub fn prepare_gl_scene3d_forward_lights(
+    _state: &GlRenderState,
+    mesh_count: usize,
+    lights: &Scene3DLightsLike,
+) -> GlScene3DForwardLightList {
+    let mut mesh_light_blocks = Vec::with_capacity(mesh_count);
+    let block = pack_scene3d_light_block(lights);
+    for _ in 0..mesh_count {
+        mesh_light_blocks.push(block.clone());
+    }
+    return GlScene3DForwardLightList {
+        mesh_count,
+        mesh_light_blocks,
+    };
 }

@@ -16,6 +16,14 @@ use crate::types::{GlMeshMaterialRenderer, GlUnlitDefineKey, Scene3DLightBlock};
 
 pub struct GlVertexColorMeshMaterialRenderer;
 
+pub fn register_gl_vertex_color_material(state: &GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        VERTEX_COLOR_MATERIAL_KIND.to_string(),
+        Arc::new(GlVertexColorMeshMaterialRenderer),
+    );
+}
+
 impl GlMeshMaterialRenderer for GlVertexColorMeshMaterialRenderer {
     fn bind(
         &self,
@@ -82,12 +90,4 @@ impl GlMeshMaterialRenderer for GlVertexColorMeshMaterialRenderer {
             return;
         }
     }
-}
-
-pub fn register_gl_vertex_color_material(state: &GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        VERTEX_COLOR_MATERIAL_KIND.to_string(),
-        Arc::new(GlVertexColorMeshMaterialRenderer),
-    );
 }

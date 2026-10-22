@@ -14,6 +14,81 @@ use crate::types::{
     GlScene3DDrawEntry, GlScene3DForwardLightList, Scene3DLightsLike,
 };
 
+fn draw_blended_pass(state: &GlRenderState, camera: &Camera3D) {
+    let is_empty = get_gl_scene3d_runtime(state, |rt| rt.blended_draw_list.is_empty());
+    if is_empty {
+        return;
+    }
+
+    get_gl_scene3d_runtime_mut(state, |rt| {
+        rt.blended_draw_list
+            .sort_by(|a, b| b.depth.partial_cmp(&a.depth).unwrap_or(std::cmp::Ordering::Equal));
+        rt.active_blended_run = true;
+    });
+
+    unsafe {
+        state.gl.enable(glow::BLEND);
+    }
+
+    let entry_count = get_gl_scene3d_runtime(state, |rt| rt.blended_draw_list.len());
+    let mut bound_sort_key: Option<i32> = None;
+    let mut scratch_normal_matrix = create_matrix3();
+
+    for i in 0..entry_count {
+        let (sort_key, world_matrix) = get_gl_scene3d_runtime(state, |rt| {
+            let entry = &rt.blended_draw_list[i];
+            (entry.sort_key, entry.world_matrix.clone())
+        });
+
+        set_matrix3_normal_from_matrix4(&mut scratch_normal_matrix, &world_matrix);
+
+        if Some(sort_key) != bound_sort_key {
+            get_gl_scene3d_runtime_mut(state, |rt| {
+                rt.active_skinned_run = false;
+            });
+
+            // TODO: apply blend mode and call renderer.bind
+            bound_sort_key = Some(sort_key);
+        }
+
+        // TODO: set proxy fields and call renderer.draw
+    }
+
+    unsafe {
+        state.gl.disable(glow::BLEND);
+    }
+}
+
+fn draw_opaque_pass(state: &GlRenderState, camera: &Camera3D) {
+    let entry_count = get_gl_scene3d_runtime(state, |rt| rt.opaque_draw_list.len());
+    let mut bound_sort_key: Option<i32> = None;
+    let mut scratch_normal_matrix = create_matrix3();
+
+    for i in 0..entry_count {
+        let (sort_key, world_matrix, renderer_id) = get_gl_scene3d_runtime(state, |rt| {
+            let entry = &rt.opaque_draw_list[i];
+            (entry.sort_key, entry.world_matrix.clone(), entry.renderer_id)
+        });
+
+        set_matrix3_normal_from_matrix4(&mut scratch_normal_matrix, &world_matrix);
+
+        if Some(sort_key) != bound_sort_key {
+            get_gl_scene3d_runtime_mut(state, |rt| {
+                rt.active_skinned_run = false;
+            });
+
+            // TODO: resolve renderer by id and call bind
+            bound_sort_key = Some(sort_key);
+        }
+
+        // TODO: set proxy fields and call renderer.draw
+    }
+}
+
+fn has_excess_forward_lights(lights: &Scene3DLightsLike) -> bool {
+    return lights.point.len() > MAX_FORWARD_LIGHTS || lights.spot.len() > MAX_FORWARD_LIGHTS;
+}
+
 fn is_gpu_skinned_draw(state: &GlRenderState, mesh: &Mesh) -> bool {
     let has_feature = get_gl_scene3d_runtime(state, |rt| rt.mesh_skin_feature.is_some());
     if !has_feature {
@@ -21,6 +96,12 @@ fn is_gpu_skinned_draw(state: &GlRenderState, mesh: &Mesh) -> bool {
     }
     let geom = mesh.geometry.read().unwrap();
     return mesh.skin.is_some() && has_mesh_geometry_skin(&geom);
+}
+
+fn recycle_draw_entries(entries: &mut Vec<GlScene3DDrawEntry>, pool: &mut Vec<GlScene3DDrawEntry>) {
+    while let Some(entry) = entries.pop() {
+        pool.push(entry);
+    }
 }
 
 pub fn render_gl_scene3d(
@@ -95,85 +176,4 @@ pub fn render_gl_scene3d_with_forward_lights(
     }
 
     invalidate_gl_render_state_cache(state);
-}
-
-fn draw_opaque_pass(state: &GlRenderState, camera: &Camera3D) {
-    let entry_count = get_gl_scene3d_runtime(state, |rt| rt.opaque_draw_list.len());
-    let mut bound_sort_key: Option<i32> = None;
-    let mut scratch_normal_matrix = create_matrix3();
-
-    for i in 0..entry_count {
-        let (sort_key, world_matrix, renderer_id) = get_gl_scene3d_runtime(state, |rt| {
-            let entry = &rt.opaque_draw_list[i];
-            (entry.sort_key, entry.world_matrix.clone(), entry.renderer_id)
-        });
-
-        set_matrix3_normal_from_matrix4(&mut scratch_normal_matrix, &world_matrix);
-
-        if Some(sort_key) != bound_sort_key {
-            get_gl_scene3d_runtime_mut(state, |rt| {
-                rt.active_skinned_run = false;
-            });
-
-            // TODO: resolve renderer by id and call bind
-            bound_sort_key = Some(sort_key);
-        }
-
-        // TODO: set proxy fields and call renderer.draw
-    }
-}
-
-fn draw_blended_pass(state: &GlRenderState, camera: &Camera3D) {
-    let is_empty = get_gl_scene3d_runtime(state, |rt| rt.blended_draw_list.is_empty());
-    if is_empty {
-        return;
-    }
-
-    get_gl_scene3d_runtime_mut(state, |rt| {
-        rt.blended_draw_list
-            .sort_by(|a, b| b.depth.partial_cmp(&a.depth).unwrap_or(std::cmp::Ordering::Equal));
-        rt.active_blended_run = true;
-    });
-
-    unsafe {
-        state.gl.enable(glow::BLEND);
-    }
-
-    let entry_count = get_gl_scene3d_runtime(state, |rt| rt.blended_draw_list.len());
-    let mut bound_sort_key: Option<i32> = None;
-    let mut scratch_normal_matrix = create_matrix3();
-
-    for i in 0..entry_count {
-        let (sort_key, world_matrix) = get_gl_scene3d_runtime(state, |rt| {
-            let entry = &rt.blended_draw_list[i];
-            (entry.sort_key, entry.world_matrix.clone())
-        });
-
-        set_matrix3_normal_from_matrix4(&mut scratch_normal_matrix, &world_matrix);
-
-        if Some(sort_key) != bound_sort_key {
-            get_gl_scene3d_runtime_mut(state, |rt| {
-                rt.active_skinned_run = false;
-            });
-
-            // TODO: apply blend mode and call renderer.bind
-            bound_sort_key = Some(sort_key);
-        }
-
-        // TODO: set proxy fields and call renderer.draw
-    }
-
-    unsafe {
-        state.gl.disable(glow::BLEND);
-    }
-}
-
-fn has_excess_forward_lights(lights: &Scene3DLightsLike) -> bool {
-    return lights.point.len() > MAX_FORWARD_LIGHTS || lights.spot.len() > MAX_FORWARD_LIGHTS;
-}
-
-fn recycle_draw_entries(entries: &mut Vec<GlScene3DDrawEntry>, pool: &mut Vec<GlScene3DDrawEntry>) {
-    while let Some(entry) = entries.pop() {
-        pool.push(entry);
-    }
 }

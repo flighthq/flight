@@ -21,6 +21,14 @@ use crate::types::{
 
 pub struct GlPhongMeshMaterialRenderer;
 
+pub fn register_gl_phong_material(state: &GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        PHONG_MATERIAL_KIND.to_string(),
+        Arc::new(GlPhongMeshMaterialRenderer),
+    );
+}
+
 impl GlMeshMaterialRenderer for GlPhongMeshMaterialRenderer {
     fn bind(
         &self,
@@ -111,12 +119,4 @@ impl GlMeshMaterialRenderer for GlPhongMeshMaterialRenderer {
             return;
         }
     }
-}
-
-pub fn register_gl_phong_material(state: &GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        PHONG_MATERIAL_KIND.to_string(),
-        Arc::new(GlPhongMeshMaterialRenderer),
-    );
 }

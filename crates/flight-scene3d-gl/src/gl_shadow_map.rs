@@ -12,6 +12,31 @@ use crate::gl_scene3d_runtime::{get_gl_scene3d_runtime, get_gl_scene3d_runtime_m
 use crate::gl_viewport_aspect::get_gl_scene3d_viewport_aspect;
 use crate::types::{GlMeshProgram, GlScene3DShadow};
 
+fn compile_shadow_depth_program(gl: &glow::Context) -> GlMeshProgram {
+    let program = create_gl_program(
+        gl,
+        SHADOW_DEPTH_VERTEX,
+        SHADOW_DEPTH_FRAGMENT,
+        Some("shadow:depth"),
+    ).expect("shadow depth program");
+    return GlMeshProgram {
+        program,
+        model_location: unsafe { gl.get_uniform_location(program, "u_model") },
+        view_projection_location: unsafe { gl.get_uniform_location(program, "u_viewProjection") },
+        normal_matrix_location: None,
+        camera_position_location: None,
+        object_alpha_location: None,
+        alpha_is_coverage_location: None,
+    };
+}
+
+pub fn normalize_directional_shadow_pcf_radius(radius: f32) -> u32 {
+    if !radius.is_finite() {
+        return 0;
+    }
+    return (radius.floor() as u32).min(MAX_DIRECTIONAL_SHADOW_PCF_RADIUS).max(0);
+}
+
 pub fn render_gl_scene3d_shadow_map(
     state: &GlRenderState,
     _scene: &NodeRef,
@@ -93,31 +118,6 @@ pub fn render_gl_scene3d_shadow_map(
             shadow_map_size: DIRECTIONAL_SHADOW_MAP_SIZE,
         });
     });
-}
-
-pub fn normalize_directional_shadow_pcf_radius(radius: f32) -> u32 {
-    if !radius.is_finite() {
-        return 0;
-    }
-    return (radius.floor() as u32).min(MAX_DIRECTIONAL_SHADOW_PCF_RADIUS).max(0);
-}
-
-fn compile_shadow_depth_program(gl: &glow::Context) -> GlMeshProgram {
-    let program = create_gl_program(
-        gl,
-        SHADOW_DEPTH_VERTEX,
-        SHADOW_DEPTH_FRAGMENT,
-        Some("shadow:depth"),
-    ).expect("shadow depth program");
-    return GlMeshProgram {
-        program,
-        model_location: unsafe { gl.get_uniform_location(program, "u_model") },
-        view_projection_location: unsafe { gl.get_uniform_location(program, "u_viewProjection") },
-        normal_matrix_location: None,
-        camera_position_location: None,
-        object_alpha_location: None,
-        alpha_is_coverage_location: None,
-    };
 }
 
 const SHADOW_DEPTH_VERTEX: &str = r#"#version 300 es

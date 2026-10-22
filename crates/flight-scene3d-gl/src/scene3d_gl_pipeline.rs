@@ -9,12 +9,6 @@ use crate::transmission_volume_pbr_gl_extension::register_gl_transmission_volume
 use crate::wrapped_diffuse_pbr_gl_extension::register_gl_wrapped_diffuse_pbr_extension;
 use crate::gl_shaded_built_in_modifiers::register_built_in_gl_modifier_snippets;
 
-pub fn register_gl_scene3d_pipeline(state: &GlRenderState) {
-    register_gl_scene3d_material_renderers(state);
-    register_built_in_gl_modifier_snippets(state);
-    register_gl_scene3d_pbr_extensions(state);
-}
-
 fn register_gl_scene3d_material_renderers(state: &GlRenderState) {
     crate::gl_blinn_phong_mesh_material_renderer::register_gl_blinn_phong_material(state);
     crate::gl_custom_shader_mesh_material_renderer::register_gl_custom_shader_material(state);
@@ -42,4 +36,10 @@ fn register_gl_scene3d_pbr_extensions(state: &GlRenderState) {
     register_gl_specular_pbr_extension(state);
     register_gl_transmission_volume_pbr_extension(state);
     register_gl_wrapped_diffuse_pbr_extension(state);
+}
+
+pub fn register_gl_scene3d_pipeline(state: &GlRenderState) {
+    register_gl_scene3d_material_renderers(state);
+    register_built_in_gl_modifier_snippets(state);
+    register_gl_scene3d_pbr_extensions(state);
 }

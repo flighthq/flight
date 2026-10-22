@@ -23,6 +23,67 @@ const DIELECTRIC_SPECULAR: f32 = 0.04;
 
 pub struct GlSpecularGlossinessPbrMeshMaterialRenderer;
 
+fn convert_specular_glossiness(
+    material: &SpecularGlossinessPbrMaterial,
+) -> ([f32; 4], f32, f32) {
+    let mut diffuse = allocate_linear_color();
+    unpack_color_to_linear(&mut diffuse, material.diffuse);
+    let mut specular = allocate_linear_color();
+    unpack_color_to_linear(&mut specular, material.specular);
+
+    let specular_brightness = specular.r.max(specular.g).max(specular.b);
+    let one_minus_specular_strength = 1.0 - specular_brightness;
+    let diffuse_brightness = diffuse.r.max(diffuse.g).max(diffuse.b);
+    let metallic = solve_metallic(
+        diffuse_brightness,
+        specular_brightness,
+        one_minus_specular_strength,
+    );
+
+    let roughness = 1.0 - material.glossiness;
+    let denom = (1.0 - DIELECTRIC_SPECULAR).max(1e-4);
+    let r = lerp(
+        (diffuse.r * one_minus_specular_strength) / denom,
+        specular.r,
+        metallic,
+    );
+    let g = lerp(
+        (diffuse.g * one_minus_specular_strength) / denom,
+        specular.g,
+        metallic,
+    );
+    let b = lerp(
+        (diffuse.b * one_minus_specular_strength) / denom,
+        specular.b,
+        metallic,
+    );
+    return ([r, g, b, diffuse.a], metallic, roughness);
+}
+
+fn lerp(a: f32, b: f32, t: f32) -> f32 {
+    return a + (b - a) * t;
+}
+
+pub fn register_gl_specular_glossiness_pbr_material(state: &GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND.to_string(),
+        Arc::new(GlSpecularGlossinessPbrMeshMaterialRenderer),
+    );
+}
+
+fn solve_metallic(diffuse: f32, specular: f32, one_minus_specular_strength: f32) -> f32 {
+    if specular < DIELECTRIC_SPECULAR {
+        return 0.0;
+    }
+    let a = DIELECTRIC_SPECULAR;
+    let b = (diffuse * one_minus_specular_strength) / (1.0 - DIELECTRIC_SPECULAR) + specular
+        - 2.0 * DIELECTRIC_SPECULAR;
+    let c = DIELECTRIC_SPECULAR - specular;
+    let discriminant = (b * b - 4.0 * a * c).max(0.0);
+    return ((-b + discriminant.sqrt()) / (2.0 * a)).clamp(0.0, 1.0);
+}
+
 impl GlMeshMaterialRenderer for GlSpecularGlossinessPbrMeshMaterialRenderer {
     fn bind(
         &self,
@@ -113,65 +174,4 @@ impl GlMeshMaterialRenderer for GlSpecularGlossinessPbrMeshMaterialRenderer {
             return;
         }
     }
-}
-
-fn convert_specular_glossiness(
-    material: &SpecularGlossinessPbrMaterial,
-) -> ([f32; 4], f32, f32) {
-    let mut diffuse = allocate_linear_color();
-    unpack_color_to_linear(&mut diffuse, material.diffuse);
-    let mut specular = allocate_linear_color();
-    unpack_color_to_linear(&mut specular, material.specular);
-
-    let specular_brightness = specular.r.max(specular.g).max(specular.b);
-    let one_minus_specular_strength = 1.0 - specular_brightness;
-    let diffuse_brightness = diffuse.r.max(diffuse.g).max(diffuse.b);
-    let metallic = solve_metallic(
-        diffuse_brightness,
-        specular_brightness,
-        one_minus_specular_strength,
-    );
-
-    let roughness = 1.0 - material.glossiness;
-    let denom = (1.0 - DIELECTRIC_SPECULAR).max(1e-4);
-    let r = lerp(
-        (diffuse.r * one_minus_specular_strength) / denom,
-        specular.r,
-        metallic,
-    );
-    let g = lerp(
-        (diffuse.g * one_minus_specular_strength) / denom,
-        specular.g,
-        metallic,
-    );
-    let b = lerp(
-        (diffuse.b * one_minus_specular_strength) / denom,
-        specular.b,
-        metallic,
-    );
-    return ([r, g, b, diffuse.a], metallic, roughness);
-}
-
-fn lerp(a: f32, b: f32, t: f32) -> f32 {
-    return a + (b - a) * t;
-}
-
-fn solve_metallic(diffuse: f32, specular: f32, one_minus_specular_strength: f32) -> f32 {
-    if specular < DIELECTRIC_SPECULAR {
-        return 0.0;
-    }
-    let a = DIELECTRIC_SPECULAR;
-    let b = (diffuse * one_minus_specular_strength) / (1.0 - DIELECTRIC_SPECULAR) + specular
-        - 2.0 * DIELECTRIC_SPECULAR;
-    let c = DIELECTRIC_SPECULAR - specular;
-    let discriminant = (b * b - 4.0 * a * c).max(0.0);
-    return ((-b + discriminant.sqrt()) / (2.0 * a)).clamp(0.0, 1.0);
-}
-
-pub fn register_gl_specular_glossiness_pbr_material(state: &GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND.to_string(),
-        Arc::new(GlSpecularGlossinessPbrMeshMaterialRenderer),
-    );
 }

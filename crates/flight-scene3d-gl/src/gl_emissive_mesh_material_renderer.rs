@@ -16,6 +16,14 @@ use crate::types::{GlMeshMaterialRenderer, GlUnlitDefineKey, Scene3DLightBlock};
 
 pub struct GlEmissiveMeshMaterialRenderer;
 
+pub fn register_gl_emissive_material(state: &GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        EMISSIVE_MATERIAL_KIND.to_string(),
+        Arc::new(GlEmissiveMeshMaterialRenderer),
+    );
+}
+
 impl GlMeshMaterialRenderer for GlEmissiveMeshMaterialRenderer {
     fn bind(
         &self,
@@ -78,12 +86,4 @@ impl GlMeshMaterialRenderer for GlEmissiveMeshMaterialRenderer {
             return;
         }
     }
-}
-
-pub fn register_gl_emissive_material(state: &GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        EMISSIVE_MATERIAL_KIND.to_string(),
-        Arc::new(GlEmissiveMeshMaterialRenderer),
-    );
 }

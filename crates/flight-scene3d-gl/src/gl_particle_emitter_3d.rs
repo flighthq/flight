@@ -7,6 +7,19 @@ use crate::gl_mesh_program::{create_gl_program, ensure_gl_scene3d_program};
 use crate::gl_viewport_aspect::get_gl_scene3d_viewport_aspect;
 use crate::types::GlMeshProgram;
 
+fn compile_particle_program(gl: &glow::Context) -> GlMeshProgram {
+    let program = create_gl_program(gl, PARTICLE_VERTEX, PARTICLE_FRAGMENT, Some("particle:3d")).expect("particle program");
+    return GlMeshProgram {
+        program,
+        model_location: unsafe { gl.get_uniform_location(program, "u_model") },
+        view_projection_location: unsafe { gl.get_uniform_location(program, "u_viewProjection") },
+        normal_matrix_location: None,
+        camera_position_location: None,
+        object_alpha_location: None,
+        alpha_is_coverage_location: None,
+    };
+}
+
 pub fn render_gl_particle_emitter_3d(
     state: &GlRenderState,
     camera: &Camera3D,
@@ -43,19 +56,6 @@ pub fn render_gl_particle_emitter_3d(
         gl.depth_mask(true);
         gl.disable(glow::BLEND);
     }
-}
-
-fn compile_particle_program(gl: &glow::Context) -> GlMeshProgram {
-    let program = create_gl_program(gl, PARTICLE_VERTEX, PARTICLE_FRAGMENT, Some("particle:3d")).expect("particle program");
-    return GlMeshProgram {
-        program,
-        model_location: unsafe { gl.get_uniform_location(program, "u_model") },
-        view_projection_location: unsafe { gl.get_uniform_location(program, "u_viewProjection") },
-        normal_matrix_location: None,
-        camera_position_location: None,
-        object_alpha_location: None,
-        alpha_is_coverage_location: None,
-    };
 }
 
 const PARTICLE_VERTEX: &str = r#"#version 300 es

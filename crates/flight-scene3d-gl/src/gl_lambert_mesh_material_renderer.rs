@@ -19,6 +19,14 @@ use crate::types::{
 
 pub struct GlLambertMeshMaterialRenderer;
 
+pub fn register_gl_lambert_material(state: &GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        LAMBERT_MATERIAL_KIND.to_string(),
+        Arc::new(GlLambertMeshMaterialRenderer),
+    );
+}
+
 impl GlMeshMaterialRenderer for GlLambertMeshMaterialRenderer {
     fn bind(
         &self,
@@ -85,12 +93,4 @@ impl GlMeshMaterialRenderer for GlLambertMeshMaterialRenderer {
             return;
         }
     }
-}
-
-pub fn register_gl_lambert_material(state: &GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        LAMBERT_MATERIAL_KIND.to_string(),
-        Arc::new(GlLambertMeshMaterialRenderer),
-    );
 }

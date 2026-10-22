@@ -15,6 +15,14 @@ use crate::types::{GlDebugDefineKey, GlDebugMode, GlMeshMaterialRenderer, Scene3
 
 pub struct GlNormalMeshMaterialRenderer;
 
+pub fn register_gl_normal_material(state: &GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        NORMAL_MATERIAL_KIND.to_string(),
+        Arc::new(GlNormalMeshMaterialRenderer),
+    );
+}
+
 impl GlMeshMaterialRenderer for GlNormalMeshMaterialRenderer {
     fn bind(
         &self,
@@ -55,12 +63,4 @@ impl GlMeshMaterialRenderer for GlNormalMeshMaterialRenderer {
             return;
         }
     }
-}
-
-pub fn register_gl_normal_material(state: &GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        NORMAL_MATERIAL_KIND.to_string(),
-        Arc::new(GlNormalMeshMaterialRenderer),
-    );
 }

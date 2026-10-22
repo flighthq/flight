@@ -16,6 +16,14 @@ use crate::types::{GlMeshMaterialRenderer, Scene3DLightBlock};
 
 pub struct GlWireframeMeshMaterialRenderer;
 
+pub fn register_gl_wireframe_material(state: &GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        WIREFRAME_MATERIAL_KIND.to_string(),
+        Arc::new(GlWireframeMeshMaterialRenderer),
+    );
+}
+
 impl GlMeshMaterialRenderer for GlWireframeMeshMaterialRenderer {
     fn bind(
         &self,
@@ -63,12 +71,4 @@ impl GlMeshMaterialRenderer for GlWireframeMeshMaterialRenderer {
             return;
         }
     }
-}
-
-pub fn register_gl_wireframe_material(state: &GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        WIREFRAME_MATERIAL_KIND.to_string(),
-        Arc::new(GlWireframeMeshMaterialRenderer),
-    );
 }

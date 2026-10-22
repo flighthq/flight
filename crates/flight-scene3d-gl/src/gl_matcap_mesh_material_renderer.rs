@@ -16,6 +16,14 @@ use crate::types::{GlMatcapDefineKey, GlMeshMaterialRenderer, Scene3DLightBlock}
 
 pub struct GlMatcapMeshMaterialRenderer;
 
+pub fn register_gl_matcap_material(state: &GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        MATCAP_MATERIAL_KIND.to_string(),
+        Arc::new(GlMatcapMeshMaterialRenderer),
+    );
+}
+
 impl GlMeshMaterialRenderer for GlMatcapMeshMaterialRenderer {
     fn bind(
         &self,
@@ -82,12 +90,4 @@ impl GlMeshMaterialRenderer for GlMatcapMeshMaterialRenderer {
             return;
         }
     }
-}
-
-pub fn register_gl_matcap_material(state: &GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        MATCAP_MATERIAL_KIND.to_string(),
-        Arc::new(GlMatcapMeshMaterialRenderer),
-    );
 }

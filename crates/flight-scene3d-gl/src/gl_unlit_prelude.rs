@@ -9,6 +9,26 @@ use crate::gl_mesh_program::{
 use crate::gl_scene3d_runtime::get_gl_scene3d_runtime;
 use crate::types::{GlMeshProgram, GlUnlitDefineKey, GlUnlitProgram};
 
+fn build_define_source(key: &GlUnlitDefineKey) -> String {
+    let mut defines = String::from("#version 300 es\n");
+    if key.alpha_mask_enabled {
+        defines.push_str("#define ALPHA_MASK\n");
+    }
+    if key.has_color_map {
+        defines.push_str("#define HAS_COLOR_MAP\n");
+    }
+    if key.vertex_color {
+        defines.push_str("#define VERTEX_COLOR\n");
+    }
+    if key.has_skin {
+        defines.push_str("#define HAS_SKIN\n");
+    }
+    if key.has_instanced {
+        defines.push_str("#define HAS_INSTANCES\n");
+    }
+    return defines;
+}
+
 pub fn build_gl_unlit_define_key(key: &GlUnlitDefineKey) -> String {
     return format!(
         "{}{}{}{}{}",
@@ -95,64 +115,6 @@ pub fn get_gl_unlit_vertex_source_for_key(
     return src;
 }
 
-fn build_define_source(key: &GlUnlitDefineKey) -> String {
-    let mut defines = String::from("#version 300 es\n");
-    if key.alpha_mask_enabled {
-        defines.push_str("#define ALPHA_MASK\n");
-    }
-    if key.has_color_map {
-        defines.push_str("#define HAS_COLOR_MAP\n");
-    }
-    if key.vertex_color {
-        defines.push_str("#define VERTEX_COLOR\n");
-    }
-    if key.has_skin {
-        defines.push_str("#define HAS_SKIN\n");
-    }
-    if key.has_instanced {
-        defines.push_str("#define HAS_INSTANCES\n");
-    }
-    return defines;
-}
-
-fn get_unlit_vertex_body() -> String {
-    return format!(
-        r#"#ifdef HAS_INSTANCES
-flat out vec4 v_instanceColor;
-#endif
-
-layout(location = 0) in vec3 a_position;
-layout(location = 3) in vec2 a_uv0;
-#ifdef VERTEX_COLOR
-layout(location = 4) in vec4 a_color0;
-out vec4 v_color0;
-#endif
-
-uniform mat4 u_viewProjection;
-uniform mat4 u_model;
-{GL_UV_TRANSFORM_VERTEX_GLSL}
-out vec2 v_uv0;
-
-void main() {{
-#ifdef HAS_INSTANCES
-  v_instanceColor = instanceColor();
-#endif
-  v_uv0 = applyUvTransform(a_uv0);
-#ifdef VERTEX_COLOR
-  v_color0 = a_color0;
-#endif
-#ifdef HAS_INSTANCES
-  gl_Position = u_viewProjection * u_model * instanceModelMatrix() * vec4(a_position, 1.0);
-#elif defined(HAS_SKIN)
-  gl_Position = u_viewProjection * u_model * skinMatrix() * vec4(a_position, 1.0);
-#else
-  gl_Position = u_viewProjection * u_model * vec4(a_position, 1.0);
-#endif
-}}
-"#
-    );
-}
-
 fn get_unlit_fragment_body() -> String {
     return format!(
         r#"
@@ -198,6 +160,44 @@ void main() {{
 #endif
   fragColor = vec4(color.rgb * u_intensity, color.a);
 {GL_MESH_FRAGMENT_TAIL}
+}}
+"#
+    );
+}
+
+fn get_unlit_vertex_body() -> String {
+    return format!(
+        r#"#ifdef HAS_INSTANCES
+flat out vec4 v_instanceColor;
+#endif
+
+layout(location = 0) in vec3 a_position;
+layout(location = 3) in vec2 a_uv0;
+#ifdef VERTEX_COLOR
+layout(location = 4) in vec4 a_color0;
+out vec4 v_color0;
+#endif
+
+uniform mat4 u_viewProjection;
+uniform mat4 u_model;
+{GL_UV_TRANSFORM_VERTEX_GLSL}
+out vec2 v_uv0;
+
+void main() {{
+#ifdef HAS_INSTANCES
+  v_instanceColor = instanceColor();
+#endif
+  v_uv0 = applyUvTransform(a_uv0);
+#ifdef VERTEX_COLOR
+  v_color0 = a_color0;
+#endif
+#ifdef HAS_INSTANCES
+  gl_Position = u_viewProjection * u_model * instanceModelMatrix() * vec4(a_position, 1.0);
+#elif defined(HAS_SKIN)
+  gl_Position = u_viewProjection * u_model * skinMatrix() * vec4(a_position, 1.0);
+#else
+  gl_Position = u_viewProjection * u_model * vec4(a_position, 1.0);
+#endif
 }}
 "#
     );

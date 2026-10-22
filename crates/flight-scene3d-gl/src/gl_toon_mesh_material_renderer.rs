@@ -19,6 +19,14 @@ use crate::types::{GlMeshMaterialRenderer, GlToonDefineKey, Scene3DLightBlock};
 
 pub struct GlToonMeshMaterialRenderer;
 
+pub fn register_gl_toon_material(state: &GlRenderState) {
+    register_gl_mesh_material_renderer(
+        state,
+        TOON_MATERIAL_KIND.to_string(),
+        Arc::new(GlToonMeshMaterialRenderer),
+    );
+}
+
 impl GlMeshMaterialRenderer for GlToonMeshMaterialRenderer {
     fn bind(
         &self,
@@ -95,12 +103,4 @@ impl GlMeshMaterialRenderer for GlToonMeshMaterialRenderer {
             return;
         }
     }
-}
-
-pub fn register_gl_toon_material(state: &GlRenderState) {
-    register_gl_mesh_material_renderer(
-        state,
-        TOON_MATERIAL_KIND.to_string(),
-        Arc::new(GlToonMeshMaterialRenderer),
-    );
 }
