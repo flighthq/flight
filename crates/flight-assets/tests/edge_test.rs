@@ -32,12 +32,16 @@ mod catalog {
             explain_asset_load(&library, "new").status,
             AssetLoadStatus::MissingDescriptor
         );
-        assert!(get_asset_group_ids(&library, "new").is_empty());
+        let mut actual_ids = Vec::new();
+        get_asset_group_ids(&mut actual_ids, &library, "new");
+        assert!(actual_ids.is_empty());
         register_asset_manifest(
             &library,
             &vec![changed, descriptor("new", &["g"]), descriptor("held", &[])],
         );
-        assert_eq!(get_asset_group_ids(&library, "g"), ["new"]);
+        let mut actual_ids = Vec::new();
+        get_asset_group_ids(&mut actual_ids, &library, "g");
+        assert_eq!(actual_ids, ["new"]);
         flush(&mock, &host);
         assert!(result(&pending).unwrap().is_ok());
     }
@@ -84,12 +88,17 @@ mod catalog {
         register_asset_manifest(&library, &vec![descriptor("a", &[]), descriptor("b", &[])]);
         let a = acquire(&library, "a");
         let b = acquire(&library, "b");
-        let mut ids = get_asset_ids(&library);
+        let mut ids = Vec::new();
+        get_asset_ids(&mut ids, &library);
         ids.clear();
-        assert_eq!(get_asset_ids(&library), ["a", "b"]);
+        let mut actual_ids = Vec::new();
+        get_asset_ids(&mut actual_ids, &library);
+        assert_eq!(actual_ids, ["a", "b"]);
         release_asset(&library, "a");
         let fresh = acquire(&library, "a");
-        assert_eq!(get_asset_ids(&library), ["b", "a"]);
+        let mut actual_ids = Vec::new();
+        get_asset_ids(&mut actual_ids, &library);
+        assert_eq!(actual_ids, ["b", "a"]);
         flush(&mock, &host);
         assert!(result(&a).unwrap().is_ok());
         assert!(result(&b).unwrap().is_ok());
@@ -160,7 +169,9 @@ mod failures {
         assert!(entry.read().unwrap().load_promise.is_none());
         release_asset(&library, "a");
         release_asset(&library, "a");
-        assert!(get_asset_ids(&library).is_empty());
+        let mut actual_ids = Vec::new();
+        get_asset_ids(&mut actual_ids, &library);
+        assert!(actual_ids.is_empty());
     }
     #[test]
     fn synchronous_same_id_reentry_uses_the_approved_programmer_failure_without_poisoning_the_outer_load()
@@ -216,7 +227,9 @@ mod failures {
             error_message(&result(&promise).unwrap().unwrap_err()),
             "orphan free"
         );
-        assert!(get_asset_ids(&library).is_empty());
+        let mut actual_ids = Vec::new();
+        get_asset_ids(&mut actual_ids, &library);
+        assert!(actual_ids.is_empty());
         assert_eq!(
             explain_asset_load(&library, "a").status,
             AssetLoadStatus::Freed
@@ -685,7 +698,9 @@ mod reentry {
         host.run_ready();
         dispose_asset_library(&library);
         assert_eq!(*freed.lock().unwrap(), ["a", "b"]);
-        assert!(get_asset_ids(&library).is_empty());
+        let mut actual_ids = Vec::new();
+        get_asset_ids(&mut actual_ids, &library);
+        assert!(actual_ids.is_empty());
     }
     #[test]
     fn release_group_keeps_the_origin_member_array_live_during_disposer_catalog_mutations() {
@@ -744,7 +759,9 @@ mod reentry {
             "free throws"
         );
         assert_eq!(get_asset_ref_count(&library, "a"), 1);
-        assert_eq!(get_asset_group_ids(&library, "g"), ["a"]);
+        let mut actual_ids = Vec::new();
+        get_asset_group_ids(&mut actual_ids, &library, "g");
+        assert_eq!(actual_ids, ["a"]);
         let error = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             release_asset(&library, "a")
         }))

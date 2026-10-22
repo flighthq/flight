@@ -79,7 +79,9 @@ mod acquire_asset {
             error_message(&result(&missing).unwrap().unwrap_err()),
             "assets: no loader for type \"image\""
         );
-        assert!(get_asset_ids(&library).is_empty());
+        let mut actual_ids = Vec::new();
+        get_asset_ids(&mut actual_ids, &library);
+        assert!(actual_ids.is_empty());
     }
 }
 mod create_asset_library {
@@ -124,7 +126,9 @@ mod dispose_asset_library {
         assert!(Arc::ptr_eq(&mock.disposed.lock().unwrap()[0], &value));
         assert!(loaded(&library, "hero").is_none());
         assert_eq!(get_asset_ref_count(&library, "hero"), 0);
-        assert!(get_asset_group_ids(&library, "unknown").is_empty());
+        let mut actual_ids = Vec::new();
+        get_asset_group_ids(&mut actual_ids, &library, "unknown");
+        assert!(actual_ids.is_empty());
         assert_eq!(
             explain_asset_load(&library, "hero").status,
             AssetLoadStatus::MissingDescriptor
@@ -161,11 +165,46 @@ mod get_asset_group_ids {
                 descriptor("b", &["boot", "shared"]),
             ],
         );
-        let mut ids = get_asset_group_ids(&library, "boot");
+        let mut ids = Vec::new();
+        get_asset_group_ids(&mut ids, &library, "boot");
         assert_eq!(ids, ["a", "b"]);
         ids.clear();
-        assert_eq!(get_asset_group_ids(&library, "boot"), ["a", "b"]);
-        assert!(get_asset_group_ids(&library, "unknown").is_empty());
+        let mut actual_ids = Vec::new();
+        get_asset_group_ids(&mut actual_ids, &library, "boot");
+        assert_eq!(actual_ids, ["a", "b"]);
+        let mut actual_ids = Vec::new();
+        get_asset_group_ids(&mut actual_ids, &library, "unknown");
+        assert!(actual_ids.is_empty());
+    }
+    #[test]
+    fn clears_stale_members_and_reuses_storage_for_smaller_and_missing_groups() {
+        let host = MockHost::new();
+        let library = library(&host);
+        register_asset_manifest(
+            &library,
+            &vec![
+                descriptor("a", &["boot"]),
+                descriptor("b", &["boot", "shared"]),
+            ],
+        );
+        let mut ids = Vec::with_capacity(16);
+        ids.push("stale".to_string());
+        let pointer = ids.as_ptr();
+        let capacity = ids.capacity();
+        get_asset_group_ids(&mut ids, &library, "boot");
+        assert_eq!(ids, ["a", "b"]);
+        assert_eq!(ids.as_ptr(), pointer);
+        assert_eq!(ids.capacity(), capacity);
+        ids[0] = "caller-only".to_string();
+        get_asset_group_ids(&mut ids, &library, "boot");
+        assert_eq!(ids, ["a", "b"]);
+        get_asset_group_ids(&mut ids, &library, "shared");
+        assert_eq!(ids, ["b"]);
+        assert_eq!(ids.as_ptr(), pointer);
+        get_asset_group_ids(&mut ids, &library, "unknown");
+        assert!(ids.is_empty());
+        assert_eq!(ids.as_ptr(), pointer);
+        assert_eq!(ids.capacity(), capacity);
     }
 }
 mod get_asset_ids {
@@ -175,12 +214,50 @@ mod get_asset_ids {
         let host = MockHost::new();
         let (library, mock) = with_asset(&host, "hero");
         let pending = acquire(&library, "hero");
-        assert_eq!(get_asset_ids(&library), ["hero"]);
+        let mut actual_ids = Vec::new();
+        get_asset_ids(&mut actual_ids, &library);
+        assert_eq!(actual_ids, ["hero"]);
         flush(&mock, &host);
         assert!(result(&pending).unwrap().is_ok());
-        assert_eq!(get_asset_ids(&library), ["hero"]);
+        let mut actual_ids = Vec::new();
+        get_asset_ids(&mut actual_ids, &library);
+        assert_eq!(actual_ids, ["hero"]);
         release_asset(&library, "hero");
-        assert!(get_asset_ids(&library).is_empty());
+        let mut actual_ids = Vec::new();
+        get_asset_ids(&mut actual_ids, &library);
+        assert!(actual_ids.is_empty());
+    }
+    #[test]
+    fn reuses_snapshot_storage_through_loading_residency_and_release_without_changing_order() {
+        let host = MockHost::new();
+        let library = library(&host);
+        let mock = mock_adapter();
+        register_asset_loader(&library, "image", &mock.adapter);
+        register_asset_manifest(&library, &vec![descriptor("a", &[]), descriptor("b", &[])]);
+        let a = acquire(&library, "a");
+        let b = acquire(&library, "b");
+        let mut ids = Vec::with_capacity(16);
+        ids.push("stale".to_string());
+        let pointer = ids.as_ptr();
+        let capacity = ids.capacity();
+        get_asset_ids(&mut ids, &library);
+        assert_eq!(ids, ["a", "b"]);
+        ids[0] = "caller-only".to_string();
+        flush(&mock, &host);
+        assert!(result(&a).unwrap().is_ok());
+        assert!(result(&b).unwrap().is_ok());
+        get_asset_ids(&mut ids, &library);
+        assert_eq!(ids, ["a", "b"]);
+        assert_eq!(ids.as_ptr(), pointer);
+        assert_eq!(ids.capacity(), capacity);
+        release_asset(&library, "a");
+        get_asset_ids(&mut ids, &library);
+        assert_eq!(ids, ["b"]);
+        release_asset(&library, "b");
+        get_asset_ids(&mut ids, &library);
+        assert!(ids.is_empty());
+        assert_eq!(ids.as_ptr(), pointer);
+        assert_eq!(ids.capacity(), capacity);
     }
 }
 mod get_asset_ref_count {
@@ -211,7 +288,9 @@ mod initialize_asset_library {
         initialize_asset_library(&mut library.write().unwrap(), &context(&host));
         let new = library.read().unwrap().library_runtime.clone();
         assert!(!Arc::ptr_eq(&old, &new));
-        assert!(get_asset_group_ids(&library, "g").is_empty());
+        let mut actual_ids = Vec::new();
+        get_asset_group_ids(&mut actual_ids, &library, "g");
+        assert!(actual_ids.is_empty());
         assert!(old.read().unwrap().descriptors.contains_key("old"));
     }
 }
@@ -348,9 +427,15 @@ mod register_asset_descriptor {
         let replacement = descriptor("hero", &["level", "shared"]);
         replacement.write().unwrap().url = "hero-b.bin".to_string();
         register_asset_descriptor(&library, &replacement);
-        assert!(get_asset_group_ids(&library, "boot").is_empty());
-        assert_eq!(get_asset_group_ids(&library, "level"), ["hero"]);
-        assert_eq!(get_asset_group_ids(&library, "shared"), ["hero"]);
+        let mut actual_ids = Vec::new();
+        get_asset_group_ids(&mut actual_ids, &library, "boot");
+        assert!(actual_ids.is_empty());
+        let mut actual_ids = Vec::new();
+        get_asset_group_ids(&mut actual_ids, &library, "level");
+        assert_eq!(actual_ids, ["hero"]);
+        let mut actual_ids = Vec::new();
+        get_asset_group_ids(&mut actual_ids, &library, "shared");
+        assert_eq!(actual_ids, ["hero"]);
     }
     #[test]
     fn equivalent_acquired_registration_is_allowed_and_incompatible_replacement_throws() {
@@ -501,7 +586,9 @@ mod release_asset_group {
         let host = MockHost::new();
         let library = library(&host);
         release_asset_group(&library, "nope");
-        assert!(get_asset_ids(&library).is_empty());
+        let mut actual_ids = Vec::new();
+        get_asset_ids(&mut actual_ids, &library);
+        assert!(actual_ids.is_empty());
     }
 }
 mod set_asset_acquire_guard {

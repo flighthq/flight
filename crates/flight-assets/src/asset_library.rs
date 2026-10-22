@@ -292,23 +292,30 @@ pub fn get_asset<T: Clone + 'static>(library: &Ref<AssetLibrary>, id: &str) -> O
     return Some(restore_value(&value));
 }
 
-pub fn get_asset_group_ids(library: &Ref<AssetLibrary>, name: &str) -> Vec<String> {
+// flight-lint: allow(conform-params) Principal3139d09f D24: required first caller-owned group snapshot clears/fills retained capacity in original catalog order; no returned allocation
+pub fn get_asset_group_ids(out: &mut Vec<String>, library: &Ref<AssetLibrary>, name: &str) {
+    out.clear();
     let runtime = library.read().unwrap().library_runtime.clone();
     let group = runtime.read().unwrap().groups.get(name).cloned();
-    return group
-        .map(|group| group.read().unwrap().clone())
-        .unwrap_or_default();
+    if let Some(group) = group {
+        out.extend(group.read().unwrap().iter().cloned());
+    }
+    return;
 }
 
-pub fn get_asset_ids(library: &Ref<AssetLibrary>) -> Vec<String> {
+// flight-lint: allow(conform-params) Principal3139d09f D24: required first caller-owned live-ID snapshot clears/fills retained capacity in original acquisition order; no returned allocation
+pub fn get_asset_ids(out: &mut Vec<String>, library: &Ref<AssetLibrary>) {
+    out.clear();
     let runtime = library.read().unwrap().library_runtime.clone();
-    return runtime
-        .read()
-        .unwrap()
-        .entry_order
-        .iter()
-        .map(|slot| slot.id.clone())
-        .collect();
+    out.extend(
+        runtime
+            .read()
+            .unwrap()
+            .entry_order
+            .iter()
+            .map(|slot| slot.id.clone()),
+    );
+    return;
 }
 
 pub fn get_asset_ref_count(library: &Ref<AssetLibrary>, id: &str) -> usize {

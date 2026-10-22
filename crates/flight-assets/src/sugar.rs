@@ -58,7 +58,11 @@ mod sugar_tests {
         assert_eq!(host.timer_count(), 0);
         let method = AssetLibrary::new(&context(&host));
         let free = create_asset_library(&context(&host));
-        assert_eq!(get_asset_ids(&method), get_asset_ids(&free));
+        let mut actual_ids = Vec::new();
+        get_asset_ids(&mut actual_ids, &method);
+        let mut expected_ids = Vec::new();
+        get_asset_ids(&mut expected_ids, &free);
+        assert_eq!(actual_ids, expected_ids);
         assert!(
             method
                 .read()
@@ -90,11 +94,14 @@ mod sugar_tests {
         set_entity_uid(&mut *method.write().unwrap(), "retained".to_string());
         method.write().unwrap().initialize(&context(&host));
         initialize_asset_library(&mut free.write().unwrap(), &context(&host));
-        assert_eq!(
-            get_asset_group_ids(&method, "g"),
-            get_asset_group_ids(&free, "g")
-        );
-        assert!(get_asset_group_ids(&method, "g").is_empty());
+        let mut actual_ids = Vec::new();
+        get_asset_group_ids(&mut actual_ids, &method, "g");
+        let mut expected_ids = Vec::new();
+        get_asset_group_ids(&mut expected_ids, &free, "g");
+        assert_eq!(actual_ids, expected_ids);
+        let mut actual_ids = Vec::new();
+        get_asset_group_ids(&mut actual_ids, &method, "g");
+        assert!(actual_ids.is_empty());
         assert_eq!(get_entity_uid(&mut *method.write().unwrap()), "retained");
     }
     #[test]
@@ -169,8 +176,14 @@ mod sugar_tests {
         dispose_asset_library(&free);
         assert_eq!(*a.lock().unwrap(), *b.lock().unwrap());
         assert_eq!(*a.lock().unwrap(), ["a"]);
-        assert_eq!(get_asset_ids(&method), get_asset_ids(&free));
-        assert!(get_asset_ids(&method).is_empty());
+        let mut actual_ids = Vec::new();
+        get_asset_ids(&mut actual_ids, &method);
+        let mut expected_ids = Vec::new();
+        get_asset_ids(&mut expected_ids, &free);
+        assert_eq!(actual_ids, expected_ids);
+        let mut actual_ids = Vec::new();
+        get_asset_ids(&mut actual_ids, &method);
+        assert!(actual_ids.is_empty());
     }
     #[test]
     fn enable_guards_matches_the_free_installation_on_each_owned_library() {
@@ -227,11 +240,20 @@ mod sugar_tests {
         let host = MockHost::new();
         let method = library(&host);
         ready(&method);
-        let mut ids = method.group_ids("g");
-        assert_eq!(ids, get_asset_group_ids(&method, "g"));
+        let mut ids = Vec::with_capacity(8);
+        ids.push("stale".to_string());
+        let pointer = ids.as_ptr();
+        let capacity = ids.capacity();
+        method.group_ids(&mut ids, "g");
+        let mut expected_ids = Vec::new();
+        get_asset_group_ids(&mut expected_ids, &method, "g");
+        assert_eq!(ids, expected_ids);
         assert_eq!(ids, ["a"]);
         ids.clear();
-        assert_eq!(method.group_ids("g"), ["a"]);
+        method.group_ids(&mut ids, "g");
+        assert_eq!(ids, ["a"]);
+        assert_eq!(ids.as_ptr(), pointer);
+        assert_eq!(ids.capacity(), capacity);
     }
     #[test]
     fn ids_matches_the_free_held_loading_and_resident_order() {
@@ -239,11 +261,22 @@ mod sugar_tests {
         let method = library(&host);
         ready(&method);
         let pending = acquire_asset::<String>(&method, "a");
-        assert_eq!(method.ids(), get_asset_ids(&method));
-        assert_eq!(method.ids(), ["a"]);
+        let mut actual_ids = Vec::with_capacity(8);
+        actual_ids.push("stale".to_string());
+        let pointer = actual_ids.as_ptr();
+        let capacity = actual_ids.capacity();
+        method.ids(&mut actual_ids);
+        let mut expected_ids = Vec::new();
+        get_asset_ids(&mut expected_ids, &method);
+        assert_eq!(actual_ids, expected_ids);
+        assert_eq!(actual_ids, ["a"]);
         host.run_ready();
         assert!(pending.now_or_never().unwrap().is_ok());
-        assert_eq!(method.ids(), get_asset_ids(&method));
+        method.ids(&mut actual_ids);
+        get_asset_ids(&mut expected_ids, &method);
+        assert_eq!(actual_ids, expected_ids);
+        assert_eq!(actual_ids.as_ptr(), pointer);
+        assert_eq!(actual_ids.capacity(), capacity);
     }
     #[test]
     fn load_group_matches_free_loader_scheduling_and_retains_group_holds() {
@@ -288,11 +321,14 @@ mod sugar_tests {
         let input = descriptor("a");
         method.register_descriptor(&input);
         register_asset_descriptor(&free, &input);
-        assert_eq!(
-            get_asset_group_ids(&method, "g"),
-            get_asset_group_ids(&free, "g")
-        );
-        assert_eq!(get_asset_group_ids(&method, "g"), ["a"]);
+        let mut actual_ids = Vec::new();
+        get_asset_group_ids(&mut actual_ids, &method, "g");
+        let mut expected_ids = Vec::new();
+        get_asset_group_ids(&mut expected_ids, &free, "g");
+        assert_eq!(actual_ids, expected_ids);
+        let mut actual_ids = Vec::new();
+        get_asset_group_ids(&mut actual_ids, &method, "g");
+        assert_eq!(actual_ids, ["a"]);
         input
             .write()
             .unwrap()
@@ -300,7 +336,9 @@ mod sugar_tests {
             .as_mut()
             .unwrap()
             .push("later".to_string());
-        assert!(get_asset_group_ids(&method, "later").is_empty());
+        let mut actual_ids = Vec::new();
+        get_asset_group_ids(&mut actual_ids, &method, "later");
+        assert!(actual_ids.is_empty());
     }
     #[test]
     fn register_loader_matches_the_free_actual_open_generic_adapter_identity() {
@@ -345,11 +383,14 @@ mod sugar_tests {
         let manifest = vec![descriptor("a"), descriptor("b")];
         method.register_manifest(&manifest);
         register_asset_manifest(&free, &manifest);
-        assert_eq!(
-            get_asset_group_ids(&method, "g"),
-            get_asset_group_ids(&free, "g")
-        );
-        assert_eq!(get_asset_group_ids(&method, "g"), ["a", "b"]);
+        let mut actual_ids = Vec::new();
+        get_asset_group_ids(&mut actual_ids, &method, "g");
+        let mut expected_ids = Vec::new();
+        get_asset_group_ids(&mut expected_ids, &free, "g");
+        assert_eq!(actual_ids, expected_ids);
+        let mut actual_ids = Vec::new();
+        get_asset_group_ids(&mut actual_ids, &method, "g");
+        assert_eq!(actual_ids, ["a", "b"]);
     }
     #[test]
     fn release_matches_the_free_last_holder_disposal() {
@@ -384,8 +425,14 @@ mod sugar_tests {
         release_asset_group(&free, "g");
         assert_eq!(*a.lock().unwrap(), *b.lock().unwrap());
         assert_eq!(*a.lock().unwrap(), ["a"]);
-        assert_eq!(get_asset_ids(&method), get_asset_ids(&free));
-        assert!(get_asset_ids(&method).is_empty());
+        let mut actual_ids = Vec::new();
+        get_asset_ids(&mut actual_ids, &method);
+        let mut expected_ids = Vec::new();
+        get_asset_ids(&mut expected_ids, &free);
+        assert_eq!(actual_ids, expected_ids);
+        let mut actual_ids = Vec::new();
+        get_asset_ids(&mut actual_ids, &method);
+        assert!(actual_ids.is_empty());
     }
     #[test]
     fn set_acquire_guard_matches_the_free_original_callback_identity() {
@@ -439,8 +486,8 @@ pub trait AssetLibraryMethods {
     fn enable_guards(&self, log_state: &LogStateRef) -> ();
     fn explain(&self, id: &str) -> AssetLoadExplanation;
     fn get<T: Clone + 'static>(&self, id: &str) -> Option<T>;
-    fn group_ids(&self, name: &str) -> Vec<String>;
-    fn ids(&self) -> Vec<String>;
+    fn group_ids(&self, out: &mut Vec<String>, name: &str) -> ();
+    fn ids(&self, out: &mut Vec<String>) -> ();
     fn load_group(
         &self,
         name: &str,
@@ -494,11 +541,11 @@ impl AssetLibraryMethods for Ref<AssetLibrary> {
     fn get<T: Clone + 'static>(&self, id: &str) -> Option<T> {
         return get_asset(self, id);
     }
-    fn group_ids(&self, name: &str) -> Vec<String> {
-        return get_asset_group_ids(self, name);
+    fn group_ids(&self, out: &mut Vec<String>, name: &str) -> () {
+        return get_asset_group_ids(out, self, name);
     }
-    fn ids(&self) -> Vec<String> {
-        return get_asset_ids(self);
+    fn ids(&self, out: &mut Vec<String>) -> () {
+        return get_asset_ids(out, self);
     }
     fn load_group(
         &self,
