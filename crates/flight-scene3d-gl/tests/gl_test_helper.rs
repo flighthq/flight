@@ -555,6 +555,7 @@ unsafe extern "system" fn gl_get_program_iv(_program: u32, parameter: u32, outpu
     let value = MOCK.with(|state| match parameter {
         glow::LINK_STATUS => i32::from(state.borrow().program_link),
         glow::ACTIVE_UNIFORMS => state.borrow().active_uniforms.len() as i32,
+        glow::ACTIVE_UNIFORM_MAX_LENGTH => 256,
         glow::INFO_LOG_LENGTH => state.borrow().info_log.len() as i32 + 1,
         _ => 0,
     });
