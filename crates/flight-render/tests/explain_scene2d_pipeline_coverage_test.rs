@@ -8,7 +8,7 @@ mod explain_scene_2d_pipeline_coverage {
 
     #[test]
     fn pipeline_coverage_reports_unused_registrations() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         register_node_renderer(&mut state, "Sprite".to_string(), &NOOP_RENDERER);
         register_node_renderer(&mut state, "DisplayObject".to_string(), &NOOP_RENDERER);
         let result = explain_scene_2d_pipeline_coverage(&state, &sprite_node());
@@ -19,7 +19,7 @@ mod explain_scene_2d_pipeline_coverage {
 
     #[test]
     fn pipeline_coverage_reports_uncovered_kinds() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         register_node_renderer(&mut state, "Sprite".to_string(), &NOOP_RENDERER);
         let root = display_node();
         add_node_child(&root, &sprite_node());
@@ -37,7 +37,7 @@ mod explain_scene_2d_pipeline_coverage {
 
     #[test]
     fn pipeline_coverage_handles_empty_pipeline() {
-        let state = create_render_state(None);
+        let state = create_render_state();
         let result = explain_scene_2d_pipeline_coverage(&state, &display_node());
         assert_eq!(result.used_kinds, vec!["DisplayObject"]);
         assert!(result.registered_kinds.is_empty());
@@ -46,7 +46,7 @@ mod explain_scene_2d_pipeline_coverage {
 
     #[test]
     fn pipeline_coverage_returns_sorted_stable_arrays() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         for kind in ["Sprite", "DisplayObject", "BitmapText"] {
             register_node_renderer(&mut state, kind.to_string(), &NOOP_RENDERER);
         }
@@ -63,7 +63,7 @@ mod explain_scene_2d_pipeline_coverage {
 
     #[test]
     fn pipeline_coverage_traverses_full_tree_iteratively() {
-        let state = create_render_state(None);
+        let state = create_render_state();
         let root = display_node();
         let first = sprite_node();
         let second = display_node();

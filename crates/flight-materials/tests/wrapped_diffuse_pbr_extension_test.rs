@@ -6,7 +6,7 @@ mod create_wrapped_diffuse_pbr_extension {
 
     #[test]
     fn creates_with_defaults() {
-        let ext = create_wrapped_diffuse_pbr_extension(None);
+        let ext = create_wrapped_diffuse_pbr_extension();
         assert_eq!(ext.kind, WRAPPED_DIFFUSE_PBR_EXTENSION_KIND);
         assert_eq!(ext.wrapped_diffuse_color, 0xffffffff);
         assert_eq!(ext.wrapped_diffuse_strength, 0.0);
@@ -19,9 +19,9 @@ mod initialize_wrapped_diffuse_pbr_extension {
 
     #[test]
     fn sets_kind_and_defaults() {
-        let mut ext = create_wrapped_diffuse_pbr_extension(None);
+        let mut ext = create_wrapped_diffuse_pbr_extension();
         ext.wrapped_diffuse_strength = 0.5;
-        initialize_wrapped_diffuse_pbr_extension(&mut ext, None);
+        initialize_wrapped_diffuse_pbr_extension(&mut ext);
         assert_eq!(ext.kind, WRAPPED_DIFFUSE_PBR_EXTENSION_KIND);
         assert_eq!(ext.wrapped_diffuse_strength, 0.0);
     }
@@ -33,7 +33,7 @@ mod is_valid_wrapped_diffuse_pbr_extension {
     #[test]
     fn validates_default_as_valid() {
         assert!(is_valid_wrapped_diffuse_pbr_extension(
-            &create_wrapped_diffuse_pbr_extension(None)
+            &create_wrapped_diffuse_pbr_extension()
         ));
     }
 }

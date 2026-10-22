@@ -50,7 +50,7 @@ mod apply_render_proxy_adapter {
 
     #[test]
     fn applying_without_adapter_enables_child_traversal() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         let mut data = create_render_proxy_2d(&mut state, &source);
         data.traverse_children = false;
@@ -60,7 +60,7 @@ mod apply_render_proxy_adapter {
 
     #[test]
     fn adapter_non_null_result_sets_child_traversal() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         let mut data = create_render_proxy_2d(&mut state, &source);
         set_render_proxy_adapter(&mut state, &source, Some(custom_adapter(adapt_false)));
@@ -70,7 +70,7 @@ mod apply_render_proxy_adapter {
 
     #[test]
     fn adapter_kind_change_synchronizes_renderer() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         register_node_renderer(&mut state, "Adapted".to_string(), &NOOP_RENDERER);
         let source = display_node();
         let mut data = create_render_proxy_2d(&mut state, &source);
@@ -85,14 +85,14 @@ mod get_render_proxy_adapter {
 
     #[test]
     fn adapter_lookup_is_none_until_set() {
-        let state = create_render_state(None);
+        let state = create_render_state();
         let source = display_node();
         assert!(get_render_proxy_adapter(&state, &source).is_none());
     }
 
     #[test]
     fn adapter_lookup_returns_same_adapter_after_set() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         let adapter = custom_adapter(adapt_false);
         set_render_proxy_adapter(&mut state, &source, Some(adapter.clone()));
@@ -108,7 +108,7 @@ mod set_render_proxy_adapter {
 
     #[test]
     fn setting_adapter_attaches_it_to_source() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         let adapter = custom_adapter(adapt_false);
         set_render_proxy_adapter(&mut state, &source, Some(adapter.clone()));
@@ -120,8 +120,8 @@ mod set_render_proxy_adapter {
 
     #[test]
     fn adapters_are_isolated_between_render_states() {
-        let mut a = create_render_state(None);
-        let b = create_render_state(None);
+        let mut a = create_render_state();
+        let b = create_render_state();
         let source = display_node();
         let adapter = custom_adapter(adapt_false);
         set_render_proxy_adapter(&mut a, &source, Some(adapter.clone()));
@@ -134,7 +134,7 @@ mod set_render_proxy_adapter {
 
     #[test]
     fn passing_none_removes_adapter() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         set_render_proxy_adapter(&mut state, &source, Some(custom_adapter(adapt_false)));
         set_render_proxy_adapter(&mut state, &source, None);

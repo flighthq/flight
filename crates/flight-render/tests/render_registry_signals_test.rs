@@ -7,7 +7,7 @@ mod emit_render_registry_miss {
 
     #[test]
     fn emit_render_registry_miss_dispatches_to_enabled_guards() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         enable_render_registries_guards(&mut state, None);
         emit_render_registry_miss(
             &mut state,
@@ -29,7 +29,7 @@ mod enable_render_registry_signals {
 
     #[test]
     fn enable_render_registry_signals_allocates_one_state_local_seam() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         assert!(state.runtime.registry_signals.is_none());
         let first = enable_render_registry_signals(&mut state);
         let attached = state.runtime.registry_signals.as_ref().unwrap();

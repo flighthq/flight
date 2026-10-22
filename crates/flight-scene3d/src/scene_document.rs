@@ -5,7 +5,7 @@ use crate::{
 };
 use flight_animation::{create_animation_channel, create_animation_clip};
 use flight_entity::{Ref, allocate_entity};
-use flight_materials::contract::{Material3D, Material3DOptions, create_material3d};
+use flight_materials::contract::{Material3D, create_material3d};
 use flight_node::{NodeRef, PartialNode, add_node_child, invalidate_node_local_transform};
 use std::sync::{Arc, RwLock};
 
@@ -188,16 +188,11 @@ fn build_document_nodes(document: &Scene3DDocument) -> Vec<Node3DRef> {
         .iter()
         .map(|m| match m {
             Scene3DDocumentMaterial::Entity(e) => e.material.clone(),
-            Scene3DDocumentMaterial::Fields(f) => Arc::new(RwLock::new(create_material3d(
-                f.kind.clone(),
-                Some(&Material3DOptions {
-                    alpha_cutoff: None,
-                    alpha_mode: None,
-                    blend_mode: None,
-                    double_sided: None,
-                    name: f.name.clone(),
-                }),
-            ))) as Ref<dyn Material3D>,
+            Scene3DDocumentMaterial::Fields(f) => {
+                let mut material = create_material3d(f.kind.clone());
+                material.name = f.name.clone();
+                Arc::new(RwLock::new(material)) as Ref<dyn Material3D>
+            }
         })
         .collect();
     let nodes: Vec<Node3DRef> = document

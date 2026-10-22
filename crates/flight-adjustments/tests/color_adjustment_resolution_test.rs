@@ -53,7 +53,7 @@ mod resolve_color_adjustments_color_scale_bias {
 
     #[test]
     fn returns_none_for_a_null_or_empty_stack() {
-        let mut out = create_color_scale_bias(None);
+        let mut out = create_color_scale_bias();
         assert_eq!(resolve_color_adjustments_color_scale_bias(None, &mut out), COLOR_ADJUSTMENT_NONE);
         assert_eq!(resolve_color_adjustments_color_scale_bias(Some(&[]), &mut out), COLOR_ADJUSTMENT_NONE);
     }
@@ -62,7 +62,7 @@ mod resolve_color_adjustments_color_scale_bias {
     fn resolves_a_single_generic_affine_matrix_exactly() {
         let matrix = [0.5, 0.0, 0.0, 0.0, 0.4, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0];
         let adjustment = create_color_matrix_adjustment(matrix);
-        let mut out = create_color_scale_bias(None);
+        let mut out = create_color_scale_bias();
         assert_eq!(
             resolve_color_adjustments_color_scale_bias(Some(&[to_adjustment_ref(adjustment)]), &mut out),
             COLOR_ADJUSTMENT_AFFINE
@@ -78,7 +78,7 @@ mod resolve_color_adjustments_color_scale_bias {
         let matrix = [0.5, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0];
         let a = create_color_matrix_adjustment(matrix);
         let b = create_color_matrix_adjustment(matrix);
-        let mut out = create_color_scale_bias(None);
+        let mut out = create_color_scale_bias();
         assert_eq!(
             resolve_color_adjustments_color_scale_bias(Some(&[to_adjustment_ref(a), to_adjustment_ref(b)]), &mut out),
             COLOR_ADJUSTMENT_AFFINE
@@ -89,7 +89,7 @@ mod resolve_color_adjustments_color_scale_bias {
     #[test]
     fn reports_channel_mixing_for_an_off_diagonal_stack() {
         let saturation = create_color_matrix_adjustment(create_saturation_color_matrix(0.0));
-        let mut out = create_color_scale_bias(None);
+        let mut out = create_color_scale_bias();
         assert_eq!(
             resolve_color_adjustments_color_scale_bias(Some(&[to_adjustment_ref(saturation)]), &mut out),
             COLOR_ADJUSTMENT_CHANNEL_MIXING
@@ -100,7 +100,7 @@ mod resolve_color_adjustments_color_scale_bias {
     #[test]
     fn reports_channel_mixing_when_a_non_matrix_lut_op_is_present() {
         let lut = create_hue_saturation_adjustment(Some(&HueSaturationAdjustmentOptions { hue: Some(0.0), saturation: Some(1.0), lightness: Some(0.0) }));
-        let mut out = create_color_scale_bias(None);
+        let mut out = create_color_scale_bias();
         assert_eq!(
             resolve_color_adjustments_color_scale_bias(Some(&[to_adjustment_ref(lut)]), &mut out),
             COLOR_ADJUSTMENT_CHANNEL_MIXING

@@ -11,7 +11,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_scale_bias() -> ColorScaleBias {
-        let mut out = create_color_scale_bias(None);
+        let mut out = create_color_scale_bias();
         out.red_scale = 0.5;
         out.blue_scale = 1.5;
         out.red_bias = 0.1;

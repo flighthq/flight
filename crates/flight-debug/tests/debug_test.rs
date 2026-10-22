@@ -356,7 +356,7 @@ mod enable_flight_diagnostics {
     #[test]
     fn enables_the_console_diagnostics_session_and_every_generic_render_guard_for_the_state() {
         let (state, log_state) = states();
-        let mut render_state = create_render_state(None);
+        let mut render_state = create_render_state();
         enable_flight_diagnostics(&state, &log_state, &mut render_state);
         assert!(is_debug_enabled(&state));
         assert_eq!(log_state.read().unwrap().sinks.len(), 1);

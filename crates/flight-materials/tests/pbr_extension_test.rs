@@ -23,7 +23,7 @@ mod pbr_extension_kind {
 
     #[test]
     fn returns_the_kind_of_the_wrapped_extension() {
-        let ext = PbrExtension::Anisotropy(create_anisotropy_pbr_extension(None));
+        let ext = PbrExtension::Anisotropy(create_anisotropy_pbr_extension());
         assert_eq!(ext.kind(), ANISOTROPY_PBR_EXTENSION_KIND);
     }
 }

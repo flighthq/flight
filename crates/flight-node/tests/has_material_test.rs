@@ -7,7 +7,7 @@ use flight_materials::contract::{
 use flight_node::contract::*;
 
 fn material() -> Ref<dyn Material2D> {
-    return Arc::new(RwLock::new(create_standard_material(None)));
+    return Arc::new(RwLock::new(create_standard_material()));
 }
 
 fn material_data() -> Ref<dyn MaterialData> {

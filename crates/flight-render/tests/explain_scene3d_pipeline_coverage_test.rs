@@ -23,7 +23,7 @@ fn material_table(kinds: &[&str]) -> KindMap<UnknownValue> {
 }
 
 fn material(kind: &str) -> Ref<dyn Material3D> {
-    return Arc::new(RwLock::new(create_material3d(kind.to_string(), None)));
+    return Arc::new(RwLock::new(create_material3d(kind.to_string())));
 }
 
 fn mesh(materials: Vec<Option<Ref<dyn Material3D>>>) -> NodeRef {
@@ -41,7 +41,7 @@ mod explain_scene_3d_pipeline_coverage {
 
     #[test]
     fn scene3d_coverage_uses_standard_material_for_null_slot() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         register_node_renderer(&mut state, MESH_KIND.to_string(), &NOOP_RENDERER);
         let table = material_table(&[STANDARD_MATERIAL_KIND]);
         let result = explain_scene_3d_pipeline_coverage(&state, &mesh(vec![None]), Some(&table));
@@ -55,7 +55,7 @@ mod explain_scene_3d_pipeline_coverage {
 
     #[test]
     fn scene3d_coverage_reports_uncovered_custom_material() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         register_node_renderer(&mut state, MESH_KIND.to_string(), &NOOP_RENDERER);
         let table = material_table(&[STANDARD_MATERIAL_KIND]);
         let result = explain_scene_3d_pipeline_coverage(
@@ -73,7 +73,7 @@ mod explain_scene_3d_pipeline_coverage {
 
     #[test]
     fn scene3d_coverage_handles_absent_material_renderer_table() {
-        let state = create_render_state(None);
+        let state = create_render_state();
         let result =
             explain_scene_3d_pipeline_coverage::<_, UnknownValue>(&state, &mesh(vec![None]), None);
         assert_eq!(result.used_material_kinds, vec![STANDARD_MATERIAL_KIND]);
@@ -86,7 +86,7 @@ mod explain_scene_3d_pipeline_coverage {
 
     #[test]
     fn scene3d_coverage_reports_unused_node_registrations() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         register_node_renderer(&mut state, MESH_KIND.to_string(), &NOOP_RENDERER);
         register_node_renderer(&mut state, INSTANCED_MESH_KIND.to_string(), &NOOP_RENDERER);
         let table = material_table(&[STANDARD_MATERIAL_KIND]);
@@ -102,7 +102,7 @@ mod explain_scene_3d_pipeline_coverage {
 
     #[test]
     fn scene3d_coverage_collects_mixed_tree_dimensions() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         register_node_renderer(&mut state, MESH_KIND.to_string(), &NOOP_RENDERER);
         register_node_renderer(&mut state, NODE3D_KIND.to_string(), &NOOP_RENDERER);
         let table = material_table(&[STANDARD_MATERIAL_KIND, "PhongMaterial"]);
@@ -121,7 +121,7 @@ mod explain_scene_3d_pipeline_coverage {
 
     #[test]
     fn scene3d_coverage_returns_sorted_stable_arrays() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         for kind in [MESH_KIND, INSTANCED_MESH_KIND, NODE3D_KIND] {
             register_node_renderer(&mut state, kind.to_string(), &NOOP_RENDERER);
         }

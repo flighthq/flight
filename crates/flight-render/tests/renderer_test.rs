@@ -63,8 +63,8 @@ mod copy_all_renderers_from_render_state {
 
     #[test]
     fn copy_all_renderers_copies_registrations_and_clip_hooks() {
-        let mut source = create_render_state(None);
-        let mut target = create_render_state(None);
+        let mut source = create_render_state();
+        let mut target = create_render_state();
         register_node_renderer(&mut source, "kind".to_string(), &NOOP_RENDERER);
         source.registries.clip_hooks = Some(&CLIP_HOOKS);
         copy_all_renderers_from_render_state(&mut target, &source);
@@ -85,8 +85,8 @@ mod copy_all_renderers_from_render_state {
 
     #[test]
     fn copy_all_renderers_is_noop_for_empty_source() {
-        let source = create_render_state(None);
-        let mut target = create_render_state(None);
+        let source = create_render_state();
+        let mut target = create_render_state();
         copy_all_renderers_from_render_state(&mut target, &source);
         assert!(target.registries.node_renderers.entries.is_empty());
         assert!(target.registries.clip_hooks.is_none());
@@ -98,8 +98,8 @@ mod copy_render_state_registrations {
 
     #[test]
     fn copy_render_state_registrations_shares_policy_snapshots() {
-        let mut source = create_render_state(None);
-        let mut target = create_render_state(None);
+        let mut source = create_render_state();
+        let mut target = create_render_state();
         source.registries.color_adjustments = Some(color_resolver);
         source.registries.color_adjustment_unsupported_guard = Some(unsupported_guard);
         source.registries.effect_padding_resolvers = Some(Arc::new(KindMap {
@@ -139,8 +139,8 @@ mod copy_render_state_registrations {
 
     #[test]
     fn copy_render_state_registrations_shares_shape_command_snapshot() {
-        let mut source = create_render_state(None);
-        let mut target = create_render_state(None);
+        let mut source = create_render_state();
+        let mut target = create_render_state();
         source.registries.canvas_shape_commands = Some(Arc::new(KindMap {
             entries: HashMap::from([("beginFill".to_string(), Arc::new(42_u32) as UnknownValue)]),
             key_order: vec!["beginFill".to_string()],
@@ -163,8 +163,8 @@ mod copy_render_state_registrations {
 
     #[test]
     fn copy_render_state_registrations_leaves_absent_shape_commands_absent() {
-        let source = create_render_state(None);
-        let mut target = create_render_state(None);
+        let source = create_render_state();
+        let mut target = create_render_state();
         copy_render_state_registrations(&mut target, &source);
         assert!(target.registries.canvas_shape_commands.is_none());
     }
@@ -175,8 +175,8 @@ mod copy_renderers_from_render_state {
 
     #[test]
     fn copy_renderers_copies_all_registrations() {
-        let mut source = create_render_state(None);
-        let mut target = create_render_state(None);
+        let mut source = create_render_state();
+        let mut target = create_render_state();
         register_node_renderer(&mut source, "kind".to_string(), &NOOP_RENDERER);
         copy_renderers_from_render_state(&mut target, &source);
         assert!(Arc::ptr_eq(
@@ -187,16 +187,16 @@ mod copy_renderers_from_render_state {
 
     #[test]
     fn copy_renderers_is_noop_for_empty_source() {
-        let source = create_render_state(None);
-        let mut target = create_render_state(None);
+        let source = create_render_state();
+        let mut target = create_render_state();
         copy_renderers_from_render_state(&mut target, &source);
         assert!(target.registries.node_renderers.entries.is_empty());
     }
 
     #[test]
     fn copy_renderers_does_not_change_source_map_id() {
-        let mut source = create_render_state(None);
-        let mut target = create_render_state(None);
+        let mut source = create_render_state();
+        let mut target = create_render_state();
         register_node_renderer(&mut source, "kind".to_string(), &NOOP_RENDERER);
         let source_id = source.runtime.renderer_map_id;
         copy_renderers_from_render_state(&mut target, &source);
@@ -205,8 +205,8 @@ mod copy_renderers_from_render_state {
 
     #[test]
     fn copy_renderers_preserves_target_only_and_source_wins_collision() {
-        let mut source = create_render_state(None);
-        let mut target = create_render_state(None);
+        let mut source = create_render_state();
+        let mut target = create_render_state();
         register_node_renderer(&mut source, "shared".to_string(), &NOOP_RENDERER);
         register_node_renderer(&mut target, "shared".to_string(), &SECOND_RENDERER);
         register_node_renderer(&mut target, "target-only".to_string(), &SECOND_RENDERER);
@@ -231,8 +231,8 @@ mod copy_renderers_from_render_state {
 
     #[test]
     fn copy_renderers_shares_then_diverges_cow_snapshot() {
-        let mut source = create_render_state(None);
-        let mut target = create_render_state(None);
+        let mut source = create_render_state();
+        let mut target = create_render_state();
         register_node_renderer(&mut source, "shared".to_string(), &NOOP_RENDERER);
         copy_renderers_from_render_state(&mut target, &source);
         let snapshot = target.registries.node_renderers.clone();
@@ -249,7 +249,7 @@ mod noop_renderer_data {
 
     #[test]
     fn noop_renderer_data_returns_none() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         assert!(noop_renderer_data(&mut state, &display_node()).is_none());
     }
 }
@@ -259,7 +259,7 @@ mod register_node_renderer {
 
     #[test]
     fn register_node_renderer_registers_and_increments_id() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let before = state.registries.node_renderers.clone();
         register_node_renderer(&mut state, "kindA".to_string(), &NOOP_RENDERER);
         assert!(!Arc::ptr_eq(&before, &state.registries.node_renderers));
@@ -275,7 +275,7 @@ mod register_node_renderer {
 
     #[test]
     fn register_node_renderer_increments_for_each_new_renderer() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         register_node_renderer(&mut state, "kindA".to_string(), &NOOP_RENDERER);
         let first_id = state.runtime.renderer_map_id;
         register_node_renderer(&mut state, "kindB".to_string(), &SECOND_RENDERER);
@@ -284,7 +284,7 @@ mod register_node_renderer {
 
     #[test]
     fn register_node_renderer_same_identity_is_actual_fast_path() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         register_node_renderer(&mut state, "kindA".to_string(), &NOOP_RENDERER);
         let id = state.runtime.renderer_map_id;
         let snapshot = state.registries.node_renderers.clone();
@@ -295,7 +295,7 @@ mod register_node_renderer {
 
     #[test]
     fn register_node_renderer_replacement_increments_id() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         register_node_renderer(&mut state, "kindA".to_string(), &NOOP_RENDERER);
         let id = state.runtime.renderer_map_id;
         register_node_renderer(&mut state, "kindA".to_string(), &SECOND_RENDERER);
@@ -313,7 +313,7 @@ mod register_node_renderer {
 
     #[test]
     fn register_node_renderer_wraps_map_id() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         state.runtime.renderer_map_id = u32::MAX;
         register_node_renderer(&mut state, "kindA".to_string(), &NOOP_RENDERER);
         assert_eq!(state.runtime.renderer_map_id, 0);
@@ -325,7 +325,7 @@ mod register_node_renderers {
 
     #[test]
     fn register_node_renderers_registers_every_pair() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         register_node_renderers(
             &mut state,
             &[
@@ -339,7 +339,7 @@ mod register_node_renderers {
 
     #[test]
     fn register_node_renderers_empty_set_is_noop() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let entries: [(String, &'static NodeRenderer<BaseRenderState>); 0] = [];
         register_node_renderers(&mut state, &entries);
         assert_eq!(state.runtime.renderer_map_id, 0);

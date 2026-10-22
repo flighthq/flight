@@ -527,7 +527,7 @@ mod sugar_tests {
             a.read().unwrap().node3d_fields().position,
             b.read().unwrap().node3d_fields().position
         );
-        let mut material = flight_materials::contract::create_standard_pbr_material(None);
+        let mut material = flight_materials::contract::create_standard_pbr_material();
         material.name = Some("shared".to_string());
         let material: Ref<dyn Material3D> = Arc::new(RwLock::new(material));
         let slots = Arc::new(RwLock::new(vec![

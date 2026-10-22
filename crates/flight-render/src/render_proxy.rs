@@ -12,6 +12,9 @@ use crate::{
     update_render_proxy_appearance, update_render_proxy_material,
 };
 
+/// Allocates the render proxy for `source` (TS `createRenderProxy`), resolving its renderer and
+/// renderer data during construction. D23: `source` is defining content and `state` the D5 context
+/// (Principal 06d7a025).
 pub fn create_render_proxy<S: RenderState>(state: &mut S, source: &NodeRef) -> RenderProxy<S> {
     let renderer = resolve_render_proxy_renderer(state, &node_kind(source));
     let renderer_data = renderer.and_then(|value| (value.create_data)(state, source));
@@ -42,6 +45,8 @@ pub fn create_render_proxy<S: RenderState>(state: &mut S, source: &NodeRef) -> R
     };
 }
 
+/// The one render-node allocator for the 2D graph (TS `createRenderProxy2D`): a render proxy plus
+/// the 2D transform, child traversal and clip depth every 2D node carries.
 pub fn create_render_proxy_2d<S: RenderState>(state: &mut S, source: &NodeRef) -> RenderProxy2D<S> {
     return RenderProxy2D {
         proxy: create_render_proxy(state, source),
@@ -51,13 +56,30 @@ pub fn create_render_proxy_2d<S: RenderState>(state: &mut S, source: &NodeRef) -
     };
 }
 
+/// Constructs a render proxy for `source` in place (TS `initializeRenderProxy`), keeping the
+/// receiver's entity identity (D12).
 pub fn initialize_render_proxy<S: RenderState>(
     out: &mut RenderProxy<S>,
     state: &mut S,
     source: &NodeRef,
 ) {
-    let replacement = create_render_proxy(state, source);
-    *out = replacement;
+    let runtime = std::mem::take(&mut out.runtime);
+    *out = create_render_proxy(state, source);
+    out.runtime = runtime;
+}
+
+/// Constructs a 2D render proxy for `source` in place, the per-layer seam of
+/// `create_render_proxy_2d`: the base proxy layer, then the 2D fields.
+// flight-lint: allow(conform-extra) D23 (I): the public initialize seam of the source's createRenderProxy2D
+pub fn initialize_render_proxy_2d<S: RenderState>(
+    out: &mut RenderProxy2D<S>,
+    state: &mut S,
+    source: &NodeRef,
+) {
+    initialize_render_proxy(&mut out.proxy, state, source);
+    out.transform_2d = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+    out.traverse_children = true;
+    out.clip_depth = 0;
 }
 
 fn clone_render_proxy_2d<S: RenderState>(source: &RenderProxy2D<S>) -> RenderProxy2D<S> {

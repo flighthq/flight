@@ -4,8 +4,8 @@ use flight_adjustments::{
     Adjustment, apply_color_matrix_to_color, create_color_matrix_adjustment,
     create_color_scale_bias_adjustment, create_tint_adjustment,
 };
+use flight_materials::ColorScaleBias;
 use flight_materials::color_scale_bias::create_color_scale_bias;
-use flight_materials::{ColorScaleBias, ColorScaleBiasOptions};
 use flight_node::contract::AdjustmentRef;
 use flight_node::{NodeRef, add_node_child, set_node_color_adjustments};
 use flight_render::*;
@@ -22,7 +22,7 @@ fn set_adjustments(source: &NodeRef, values: Vec<AdjustmentRef>) {
 }
 
 fn enabled() -> BaseRenderState {
-    let mut state = create_render_state(None);
+    let mut state = create_render_state();
     enable_color_adjustments(&mut state);
     return state;
 }
@@ -37,16 +37,18 @@ fn resolve(
 }
 
 fn scale_bias(red_scale: f32, red_bias: f32) -> AdjustmentRef {
-    let value = create_color_scale_bias(Some(&ColorScaleBiasOptions {
-        red_scale: Some(red_scale),
-        red_bias: Some(red_bias),
-        green_scale: Some(1.0),
-        green_bias: Some(0.0),
-        blue_scale: Some(1.0),
-        blue_bias: Some(0.0),
-        alpha_scale: Some(1.0),
-        alpha_bias: Some(0.0),
-    }));
+    let value = {
+        let mut value = create_color_scale_bias();
+        value.red_scale = red_scale;
+        value.red_bias = red_bias;
+        value.green_scale = 1.0;
+        value.green_bias = 0.0;
+        value.blue_scale = 1.0;
+        value.blue_bias = 0.0;
+        value.alpha_scale = 1.0;
+        value.alpha_bias = 0.0;
+        value
+    };
     return adjustment(create_color_scale_bias_adjustment(&value));
 }
 
@@ -84,7 +86,7 @@ mod are_color_adjustments_enabled {
 
     #[test]
     fn adjustment_resolver_reports_installation() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         assert!(!are_color_adjustments_enabled(&state));
         enable_color_adjustments(&mut state);
         assert!(are_color_adjustments_enabled(&state));
@@ -96,7 +98,7 @@ mod enable_color_adjustments {
 
     #[test]
     fn adjustment_resolver_installation_is_idempotent() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         enable_color_adjustments(&mut state);
         let first = state.registries.color_adjustments.unwrap();
         enable_color_adjustments(&mut state);
@@ -108,7 +110,7 @@ mod enable_color_adjustments {
 
     #[test]
     fn adjustments_remain_unresolved_until_state_opts_in() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         set_adjustments(
             &source,

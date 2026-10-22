@@ -111,7 +111,7 @@ pub(crate) fn assert_sum_close(actual: f32, expected: f32, terms: usize, ts_boun
 }
 
 pub(crate) fn fresh_render_state() -> BaseRenderState {
-    return create_render_state(None);
+    return create_render_state();
 }
 
 pub(crate) fn has_padding_resolver(state: &BaseRenderState, kind: &str) -> bool {

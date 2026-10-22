@@ -60,7 +60,7 @@ fn resolve_node_color_adjustments(runtime: &mut NodeRuntime) {
     }
     let mut scale_bias: ColorScaleBias = match runtime.resolved_color_scale_bias.take() {
         Some(existing) => existing,
-        None => flight_materials::color_scale_bias::create_color_scale_bias(None),
+        None => flight_materials::color_scale_bias::create_color_scale_bias(),
     };
     let status = resolve_color_adjustments_color_scale_bias(Some(&adjustments), &mut scale_bias);
     runtime.resolved_color_scale_bias = Some(scale_bias);

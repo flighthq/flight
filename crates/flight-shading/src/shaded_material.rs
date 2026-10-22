@@ -72,7 +72,7 @@ pub fn initialize_shaded_material(out: &mut ShadedMaterial, options: &ShadedMate
 impl Default for ShadedMaterial {
     fn default() -> Self {
         return Self {
-            fields: create_material3d(SHADED_MATERIAL_KIND.to_string(), None),
+            fields: create_material3d(SHADED_MATERIAL_KIND.to_string()),
             diffuse: 0xffff_ffff,
             diffuse_map: None,
             modifiers: Vec::new(),

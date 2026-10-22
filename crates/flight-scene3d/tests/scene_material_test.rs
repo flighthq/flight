@@ -7,7 +7,7 @@ use flight_node::add_node_child;
 use flight_scene3d::contract::*;
 use std::sync::{Arc, RwLock};
 fn phong(name: Option<&str>) -> Ref<dyn Material3D> {
-    let mut m = create_blinn_phong_material(None);
+    let mut m = create_blinn_phong_material();
     m.name = name.map(str::to_string);
     return Arc::new(RwLock::new(m));
 }
@@ -64,7 +64,7 @@ mod find_scene3d_material_by_name {
             &find_scene3d_material_by_name(&as_node_ref(&root), "shared").unwrap(),
             &first
         ));
-        let deep: Ref<dyn Material3D> = Arc::new(RwLock::new(create_standard_pbr_material(None)));
+        let deep: Ref<dyn Material3D> = Arc::new(RwLock::new(create_standard_pbr_material()));
         deep.write().unwrap().material3d_fields_mut().name = Some("deep".to_string());
         other
             .write()
@@ -84,7 +84,7 @@ mod get_scene3d_materials {
     #[test]
     fn collects_original_heterogeneous_refs_in_preorder_and_deduplicates_against_existing_out() {
         let shared = phong(None);
-        let other: Ref<dyn Material3D> = Arc::new(RwLock::new(create_standard_pbr_material(None)));
+        let other: Ref<dyn Material3D> = Arc::new(RwLock::new(create_standard_pbr_material()));
         let root = create_mesh(
             test_geometry(),
             Arc::new(RwLock::new(vec![Some(shared.clone())])),

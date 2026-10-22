@@ -32,7 +32,7 @@ mod are_color_adjustment_guards_enabled {
 
     #[test]
     fn color_adjustment_guards_report_installation_and_are_idempotent() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         assert!(!are_color_adjustment_guards_enabled(&state));
         enable_color_adjustment_guards(&mut state, None);
         assert!(are_color_adjustment_guards_enabled(&state));
@@ -50,7 +50,7 @@ mod enable_color_adjustment_guards {
 
     #[test]
     fn guards_warn_once_for_a_non_inlineable_adjustment() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let logs = log_state();
         let sink = create_memory_log_sink(8);
         add_log_sink(&logs, sink.sink.clone());
@@ -81,7 +81,7 @@ mod enable_color_adjustment_guards {
 
     #[test]
     fn guards_stay_silent_for_an_affine_adjustment_stack() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let logs = log_state();
         let sink = create_memory_log_sink(8);
         add_log_sink(&logs, sink.sink.clone());

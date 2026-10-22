@@ -12,8 +12,8 @@ mod sugar_tests {
 
     #[test]
     fn new_matches_create_color_scale_bias_adjustment() {
-        let a = ColorScaleBiasAdjustment::new(&create_color_scale_bias(None));
-        let b = create_color_scale_bias_adjustment(&create_color_scale_bias(None));
+        let a = ColorScaleBiasAdjustment::new(&create_color_scale_bias());
+        let b = create_color_scale_bias_adjustment(&create_color_scale_bias());
         assert_eq!(a.kind, b.kind);
         assert_eq!(a.color_matrix, b.color_matrix);
     }

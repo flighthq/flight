@@ -177,7 +177,7 @@ mod node2d_feature_views {
         let node = display_object();
         let clip = create_clip_region_from_rectangle(&create_rectangle(0.0, 0.0, 4.0, 4.0));
         let material: flight_entity::Ref<dyn Material2D> =
-            Arc::new(RwLock::new(create_standard_material(None)));
+            Arc::new(RwLock::new(create_standard_material()));
         {
             let mut guard = node.write().unwrap();
             *guard.clip_view_mut().clip = Some(clip.clone());

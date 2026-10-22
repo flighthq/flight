@@ -81,10 +81,9 @@ static SCENE_DATA_RENDERER: NodeRenderer<BaseRenderState> = NodeRenderer {
 };
 
 fn requires_invalidation_state() -> BaseRenderState {
-    return create_render_state(Some(&RenderStateInit {
-        scene_graph_sync_policy: Some(Scene3DGraphSyncPolicy::RequiresInvalidation),
-        ..crate::support::test_default()
-    }));
+    let mut state = create_render_state();
+    state.render.scene_graph_sync_policy = Scene3DGraphSyncPolicy::RequiresInvalidation;
+    return state;
 }
 
 fn mark_clean(data: &mut RenderProxy<BaseRenderState>, source: &NodeRef) {
@@ -147,7 +146,7 @@ mod create_render_proxy {
 
     #[test]
     fn create_proxy_initializes_defaults() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         let data = create_render_proxy(&mut state, &source);
         assert!(Arc::ptr_eq(&data.source, &source));
@@ -171,7 +170,7 @@ mod create_render_proxy {
 
     #[test]
     fn create_proxy_picks_up_registered_renderer_and_data() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         register_node_renderer(&mut state, "DisplayObject".to_string(), &DATA_RENDERER);
         let data = create_render_proxy(&mut state, &source);
@@ -192,7 +191,7 @@ mod create_render_proxy {
 
     #[test]
     fn create_proxy_uses_none_for_unregistered_kind() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         assert!(
             create_render_proxy(&mut state, &display_node())
                 .renderer
@@ -206,7 +205,7 @@ mod create_render_proxy_2d {
 
     #[test]
     fn create_proxy_2d_includes_transform_matrix() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let data = create_render_proxy_2d(&mut state, &display_node());
         assert_eq!(
             data.transform_2d,
@@ -216,7 +215,7 @@ mod create_render_proxy_2d {
 
     #[test]
     fn create_proxy_2d_retains_source() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         let data = create_render_proxy_2d(&mut state, &source);
         assert!(Arc::ptr_eq(&data.source, &source));
@@ -224,7 +223,7 @@ mod create_render_proxy_2d {
 
     #[test]
     fn create_proxy_2d_defaults_match_for_display_and_sprite() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         for data in [
             create_render_proxy_2d(&mut state, &display_node()),
             create_render_proxy_2d(&mut state, &sprite_node()),
@@ -239,7 +238,7 @@ mod create_render_proxy_2d {
         let typed = flight_scene2d::create_display_object(None);
         let family: Node2DRef = typed.clone();
         let source: NodeRef = family;
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         assert!(Arc::ptr_eq(
             &create_render_proxy_2d(&mut state, &source).source,
             &source
@@ -253,7 +252,7 @@ mod dispose_render_proxy {
     #[test]
     fn dispose_proxy_calls_destroy_and_removes_proxy() {
         SCENE_DESTROY_CALLS.store(0, Ordering::SeqCst);
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut proxies = crate::support::test_default::<RenderProxies2D<BaseRenderState>>();
         let source = sprite_node();
         register_node_renderer(&mut state, "Sprite".to_string(), &DATA_RENDERER);
@@ -265,7 +264,7 @@ mod dispose_render_proxy {
 
     #[test]
     fn dispose_missing_proxy_is_noop() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         dispose_render_proxy(
             &mut state,
             &mut crate::support::test_default::<RenderProxies2D<BaseRenderState>>(),
@@ -279,7 +278,7 @@ mod dispose_scene_2d_render {
 
     #[test]
     fn dispose_scene_removes_root_and_all_descendants() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut proxies = crate::support::test_default::<RenderProxies2D<BaseRenderState>>();
         let root = display_node();
         let child = display_node();
@@ -295,7 +294,7 @@ mod dispose_scene_2d_render {
 
     #[test]
     fn dispose_scene_handles_sprite_subtree() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut proxies = crate::support::test_default::<RenderProxies2D<BaseRenderState>>();
         let root = sprite_node();
         let child = sprite_node();
@@ -312,7 +311,7 @@ mod dispose_scene_2d_render {
     #[test]
     fn dispose_scene_destroys_renderer_data_for_each_node() {
         DESTROY_CALLS.store(0, Ordering::SeqCst);
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut proxies = crate::support::test_default::<RenderProxies2D<BaseRenderState>>();
         let root = display_node();
         let child = display_node();
@@ -330,7 +329,7 @@ mod dispose_scene_2d_render {
 
     #[test]
     fn dispose_scene_visits_disabled_never_prepared_nodes() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut proxies = crate::support::test_default::<RenderProxies2D<BaseRenderState>>();
         let root = display_node();
         let child = display_node();
@@ -348,7 +347,7 @@ mod get_or_create_render_proxy_2d {
 
     #[test]
     fn get_or_create_creates_on_first_call() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut proxies = crate::support::test_default::<RenderProxies2D<BaseRenderState>>();
         let source = display_node();
         let data = get_or_create_render_proxy_2d(&mut state, &mut proxies, &source);
@@ -358,7 +357,7 @@ mod get_or_create_render_proxy_2d {
 
     #[test]
     fn get_or_create_returns_same_proxy_subsequently() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut proxies = crate::support::test_default::<RenderProxies2D<BaseRenderState>>();
         let source = display_node();
         let first = get_or_create_render_proxy_2d(&mut state, &mut proxies, &source) as *const _;
@@ -368,7 +367,7 @@ mod get_or_create_render_proxy_2d {
 
     #[test]
     fn get_or_create_syncs_proxy_after_renderer_table_replacement() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut proxies = crate::support::test_default::<RenderProxies2D<BaseRenderState>>();
         let source = sprite_node();
         get_or_create_render_proxy_2d(&mut state, &mut proxies, &source);
@@ -406,7 +405,7 @@ mod get_render_proxy_2d {
 
     #[test]
     fn get_proxy_returns_created_proxy() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut proxies = crate::support::test_default::<RenderProxies2D<BaseRenderState>>();
         let source = display_node();
         let created = get_or_create_render_proxy_2d(&mut state, &mut proxies, &source) as *const _;
@@ -420,7 +419,7 @@ mod initialize_render_proxy {
 
     #[test]
     fn initialize_proxy_restores_construction_values() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         let mut data = create_render_proxy(&mut state, &source);
         data.alpha = 0.0;
@@ -429,6 +428,51 @@ mod initialize_render_proxy {
         assert_eq!(data.alpha, 1.0);
         assert_eq!(data.kind, "DisplayObject");
     }
+
+    // The initializer constructs over an existing allocation and keeps its entity identity (D12).
+    #[test]
+    fn initialize_proxy_keeps_the_receivers_entity_identity() {
+        let mut state = create_render_state();
+        let source = display_node();
+        let mut data = create_render_proxy(&mut state, &source);
+        let id = get_entity_id(&data);
+        initialize_render_proxy(&mut data, &mut state, &sprite_node());
+        assert_eq!(get_entity_id(&data), id);
+        assert_eq!(data.kind, "Sprite");
+    }
+}
+
+mod initialize_render_proxy_2d {
+    use super::*;
+
+    #[test]
+    fn initialize_proxy_2d_restores_the_base_and_2d_construction_values() {
+        let mut state = create_render_state();
+        let source = display_node();
+        let mut data = create_render_proxy_2d(&mut state, &source);
+        data.alpha = 0.0;
+        data.transform_2d = create_matrix(2.0, 0.0, 0.0, 2.0, 5.0, 5.0);
+        data.traverse_children = false;
+        data.clip_depth = 3;
+        initialize_render_proxy_2d(&mut data, &mut state, &source);
+        assert_eq!(data.alpha, 1.0);
+        assert!(Arc::ptr_eq(&data.source, &source));
+        assert_eq!(
+            data.transform_2d,
+            create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
+        );
+        assert!(data.traverse_children);
+        assert_eq!(data.clip_depth, 0);
+    }
+
+    #[test]
+    fn initialize_proxy_2d_keeps_the_receivers_entity_identity() {
+        let mut state = create_render_state();
+        let mut data = create_render_proxy_2d(&mut state, &display_node());
+        let id = get_entity_id(&data.proxy);
+        initialize_render_proxy_2d(&mut data, &mut state, &display_node());
+        assert_eq!(get_entity_id(&data.proxy), id);
+    }
 }
 
 mod install_render_adapt_hook {
@@ -436,13 +480,13 @@ mod install_render_adapt_hook {
 
     #[test]
     fn install_adapt_hook_accepts_hook() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         install_render_adapt_hook(&mut state, install_hook);
     }
 
     #[test]
     fn install_adapt_hook_writes_runtime_slot() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         install_render_adapt_hook(&mut state, install_hook);
         let expected: fn(&mut BaseRenderState, &NodeRef, &mut RenderProxy2D<BaseRenderState>) =
             install_hook;
@@ -460,7 +504,7 @@ mod is_render_proxy_dirty {
     fn dirty_check_is_false_when_source_and_parent_are_clean() {
         let state = requires_invalidation_state();
         let source = display_node();
-        let mut local_state = create_render_state(None);
+        let mut local_state = create_render_state();
         let mut data = create_render_proxy_2d(&mut local_state, &source);
         mark_clean(&mut data.proxy, &source);
         assert!(!is_render_proxy_dirty(&state, &source, &data.proxy, None));
@@ -470,7 +514,7 @@ mod is_render_proxy_dirty {
     fn dirty_check_detects_appearance_change() {
         let state = requires_invalidation_state();
         let source = display_node();
-        let mut local_state = create_render_state(None);
+        let mut local_state = create_render_state();
         let mut data = create_render_proxy_2d(&mut local_state, &source);
         mark_clean(&mut data.proxy, &source);
         invalidate_node_appearance(&source);
@@ -481,7 +525,7 @@ mod is_render_proxy_dirty {
     fn dirty_check_detects_parent_update_in_current_frame() {
         let state = requires_invalidation_state();
         let source = display_node();
-        let mut local_state = create_render_state(None);
+        let mut local_state = create_render_state();
         let mut data = create_render_proxy_2d(&mut local_state, &source);
         mark_clean(&mut data.proxy, &source);
         let mut parent = create_render_proxy_2d(&mut local_state, &display_node());
@@ -499,7 +543,7 @@ mod is_render_proxy_dirty {
         let state = requires_invalidation_state();
         let typed = flight_scene2d::create_display_object(None);
         let source: NodeRef = typed.clone();
-        let mut local_state = create_render_state(None);
+        let mut local_state = create_render_state();
         let mut data = create_render_proxy_2d(&mut local_state, &source);
         mark_clean(&mut data.proxy, &source);
         typed.write().unwrap().x = 10.0;
@@ -513,7 +557,7 @@ mod is_render_proxy_visible {
 
     #[test]
     fn proxy_with_zero_alpha_is_invisible() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut data = create_render_proxy_2d(&mut state, &display_node());
         data.alpha = 0.0;
         assert!(!is_render_proxy_visible(&data));
@@ -521,7 +565,7 @@ mod is_render_proxy_visible {
 
     #[test]
     fn hidden_proxy_is_invisible() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut data = create_render_proxy_2d(&mut state, &display_node());
         data.visible = false;
         assert!(!is_render_proxy_visible(&data));
@@ -529,7 +573,7 @@ mod is_render_proxy_visible {
 
     #[test]
     fn proxy_collapsed_on_both_axes_is_invisible() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut data = create_render_proxy_2d(&mut state, &display_node());
         data.transform_2d.a = 0.0;
         data.transform_2d.d = 0.0;
@@ -538,7 +582,7 @@ mod is_render_proxy_visible {
 
     #[test]
     fn normal_visible_proxy_is_visible() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         assert!(is_render_proxy_visible(&create_render_proxy_2d(
             &mut state,
             &display_node()
@@ -646,7 +690,7 @@ mod prepare_scene_2d_render {
 
     #[test]
     fn prepare_creates_proxies_for_all_enabled_nodes() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut proxies = crate::support::test_default::<RenderProxies2D<BaseRenderState>>();
         let root = display_node();
         let child = display_node();
@@ -658,7 +702,7 @@ mod prepare_scene_2d_render {
 
     #[test]
     fn prepare_handles_sprite_tree() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut proxies = crate::support::test_default::<RenderProxies2D<BaseRenderState>>();
         let root = sprite_node();
         let child = sprite_node();
@@ -670,7 +714,7 @@ mod prepare_scene_2d_render {
 
     #[test]
     fn prepare_skips_disabled_nodes() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut proxies = crate::support::test_default::<RenderProxies2D<BaseRenderState>>();
         let root = display_node();
         let child = display_node();
@@ -683,7 +727,7 @@ mod prepare_scene_2d_render {
 
     #[test]
     fn prepare_returns_true_for_dirty_tree() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         assert!(prepare_scene_2d_render(
             &mut state,
             &mut crate::support::test_default::<RenderProxies2D<BaseRenderState>>(),
@@ -716,7 +760,7 @@ mod prepare_scene_2d_render {
 
     #[test]
     fn prepare_accumulates_clip_depth_through_subtree() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut proxies = crate::support::test_default::<RenderProxies2D<BaseRenderState>>();
         let root = clipped_display();
         let child = clipped_display();
@@ -740,7 +784,7 @@ mod update_node_clip {
 
     #[test]
     fn update_clip_adds_one_for_local_clip() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = clipped_display();
         let mut data = create_render_proxy_2d(&mut state, &source);
         update_node_clip(&mut state, &source, &mut data, None);
@@ -749,7 +793,7 @@ mod update_node_clip {
 
     #[test]
     fn update_clip_inherits_parent_depth_without_local_clip() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         let mut data = create_render_proxy_2d(&mut state, &source);
         let mut parent = create_render_proxy_2d(&mut state, &display_node());
@@ -760,7 +804,7 @@ mod update_node_clip {
 
     #[test]
     fn sprite_without_clip_trait_contributes_no_depth() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = sprite_node();
         let mut data = create_render_proxy_2d(&mut state, &source);
         update_node_clip(&mut state, &source, &mut data, None);
@@ -773,7 +817,7 @@ mod update_render_proxy_2d {
 
     #[test]
     fn update_proxy_2d_updates_display_appearance() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         let mut data = create_render_proxy_2d(&mut state, &source);
         update_render_proxy_2d(&mut state, &source, &mut data, None);
@@ -782,7 +826,7 @@ mod update_render_proxy_2d {
 
     #[test]
     fn update_proxy_2d_updates_sprite_appearance() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = sprite_node();
         let mut data = create_render_proxy_2d(&mut state, &source);
         update_render_proxy_2d(&mut state, &source, &mut data, None);
@@ -791,7 +835,7 @@ mod update_render_proxy_2d {
 
     #[test]
     fn update_proxy_2d_sets_clip_depth() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = clipped_display();
         let mut data = create_render_proxy_2d(&mut state, &source);
         update_render_proxy_2d(&mut state, &source, &mut data, None);
@@ -809,7 +853,7 @@ mod update_render_proxy_2d {
         let family: Node2DRef = typed.clone();
         set_node2d_clip(&family, Some(clip()));
         let source: NodeRef = typed;
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         state.registries.color_adjustments = Some(ordered_color_resolver);
         let mut data = create_render_proxy_2d(&mut state, &source);
         update_render_proxy_2d(&mut state, &source, &mut data, None);
@@ -827,7 +871,7 @@ mod update_render_proxy_renderer {
 
     #[test]
     fn renderer_update_resolves_matching_kind() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         register_node_renderer(&mut state, "DisplayObject".to_string(), &NOOP_RENDERER);
         let mut data = create_render_proxy(&mut state, &source);
@@ -838,7 +882,7 @@ mod update_render_proxy_renderer {
 
     #[test]
     fn renderer_update_clears_missing_registration() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         let mut data = create_render_proxy(&mut state, &source);
         data.renderer = Some(&SECOND_RENDERER);
@@ -848,7 +892,7 @@ mod update_render_proxy_renderer {
 
     #[test]
     fn renderer_update_records_current_map_id() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut data = create_render_proxy(&mut state, &display_node());
         data.renderer_map_id = u32::MAX;
         update_render_proxy_renderer(&mut state, &mut data);
@@ -857,7 +901,7 @@ mod update_render_proxy_renderer {
 
     #[test]
     fn renderer_update_rebuilds_data_when_source_changes() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         register_node_renderer(&mut state, "DisplayObject".to_string(), &DATA_RENDERER);
         let mut data = create_render_proxy(&mut state, &display_node());
         let next = display_node();
@@ -876,7 +920,7 @@ mod walk_node {
     #[test]
     fn walk_calls_visitor_for_each_enabled_node_and_reports_dirty() {
         VISIT_CALLS.store(0, Ordering::SeqCst);
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut proxies = crate::support::test_default::<RenderProxies2D<BaseRenderState>>();
         let root = sprite_node();
         let child = sprite_node();
@@ -887,7 +931,7 @@ mod walk_node {
 
     #[test]
     fn walk_skips_children_when_proxy_disables_traversal() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let mut proxies = crate::support::test_default::<RenderProxies2D<BaseRenderState>>();
         let root = sprite_node();
         let child = sprite_node();

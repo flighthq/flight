@@ -7,7 +7,7 @@ use crate::support::{NOOP_RENDERER, display_node, sprite_node};
 fn prepared_tree(
     child_count: usize,
 ) -> (BaseRenderState, RenderProxies2D<BaseRenderState>, NodeRef) {
-    let mut state = create_render_state(None);
+    let mut state = create_render_state();
     let root = display_node();
     register_node_renderer(
         &mut state,
@@ -31,7 +31,7 @@ mod build_render_queue {
 
     #[test]
     fn build_render_queue_produces_zero_entries_without_renderers() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let root = display_node();
         let mut proxies = crate::support::test_default::<RenderProxies2D<BaseRenderState>>();
         prepare_scene_2d_render(&mut state, &mut proxies, &root);
@@ -50,7 +50,7 @@ mod build_render_queue {
 
     #[test]
     fn build_render_queue_skips_invisible_proxies() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let typed = flight_scene2d::create_display_object(None);
         typed.write().unwrap().visible = false;
         let root: NodeRef = typed;
@@ -78,7 +78,7 @@ mod build_render_queue {
 
     #[test]
     fn build_render_queue_assigns_increasing_scene_order_keys() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let root = display_node();
         let child_one = display_node();
         let child_two = sprite_node();
@@ -105,7 +105,7 @@ mod clear_render_queue {
 
     #[test]
     fn clear_render_queue_resets_count() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let proxy = create_render_proxy(&mut state, &display_node());
         let mut queue = create_render_queue();
         push_render_queue_entry(&mut queue, &proxy, 0);
@@ -115,7 +115,7 @@ mod clear_render_queue {
 
     #[test]
     fn clear_render_queue_preserves_capacity_slots() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let proxy = create_render_proxy(&mut state, &display_node());
         let mut queue = create_render_queue();
         push_render_queue_entry(&mut queue, &proxy, 0);
@@ -228,7 +228,7 @@ mod push_render_queue_entry {
 
     #[test]
     fn push_render_queue_entry_increments_count() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let proxy = create_render_proxy(&mut state, &display_node());
         let mut queue = create_render_queue();
         push_render_queue_entry(&mut queue, &proxy, 0);
@@ -237,7 +237,7 @@ mod push_render_queue_entry {
 
     #[test]
     fn push_render_queue_entry_stores_proxy_identity_and_key() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let proxy = create_render_proxy(&mut state, &display_node());
         let mut queue = create_render_queue();
         push_render_queue_entry(&mut queue, &proxy, 42);
@@ -247,7 +247,7 @@ mod push_render_queue_entry {
 
     #[test]
     fn push_render_queue_entry_reuses_slots_within_capacity() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let first = create_render_proxy(&mut state, &display_node());
         let second = create_render_proxy(&mut state, &display_node());
         let mut queue = create_render_queue();
@@ -264,7 +264,7 @@ mod sort_render_queue {
 
     #[test]
     fn sort_render_queue_orders_ascending_by_default() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let proxy = create_render_proxy(&mut state, &display_node());
         let mut queue = create_render_queue();
         for key in [3, 1, 2] {
@@ -283,7 +283,7 @@ mod sort_render_queue {
 
     #[test]
     fn sort_render_queue_accepts_custom_comparator() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let proxy = create_render_proxy(&mut state, &display_node());
         let mut queue = create_render_queue();
         for key in [1, 3, 2] {
@@ -302,7 +302,7 @@ mod sort_render_queue {
 
     #[test]
     fn sort_render_queue_only_sorts_valid_window() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let proxy = create_render_proxy(&mut state, &display_node());
         let mut queue = create_render_queue();
         for key in [3, 1, 2] {

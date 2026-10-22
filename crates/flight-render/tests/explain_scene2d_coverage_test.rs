@@ -69,7 +69,7 @@ mod explain_scene_2d_coverage {
 
     #[test]
     fn coverage_reports_unregistered_node_with_primary_remedy() {
-        let state = create_render_state(None);
+        let state = create_render_state();
         let mut out = Vec::new();
         explain_scene_2d_coverage(&mut out, &state, &usage(&["Shape"], &[]), &catalog());
         assert_eq!(
@@ -87,7 +87,7 @@ mod explain_scene_2d_coverage {
 
     #[test]
     fn coverage_reports_uncatalogued_node_as_unavailable() {
-        let state = create_render_state(None);
+        let state = create_render_state();
         let mut out = Vec::new();
         explain_scene_2d_coverage(&mut out, &state, &usage(&["Shape"], &[]), &Vec::new());
         assert_eq!(out[0].coverage, SceneCoverage::Unavailable);
@@ -96,7 +96,7 @@ mod explain_scene_2d_coverage {
 
     #[test]
     fn coverage_reports_registered_node_as_satisfied() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         register_node_renderer(&mut state, "Shape".to_string(), &NOOP_RENDERER);
         let mut out = Vec::new();
         explain_scene_2d_coverage(&mut out, &state, &usage(&["Shape"], &[]), &catalog());
@@ -105,7 +105,7 @@ mod explain_scene_2d_coverage {
 
     #[test]
     fn coverage_reports_unhandled_shape_command_with_remedy() {
-        let state = create_render_state(None);
+        let state = create_render_state();
         let mut out = Vec::new();
         explain_scene_2d_coverage(&mut out, &state, &usage(&[], &["beginFill"]), &catalog());
         assert_eq!(out[0].coverage, SceneCoverage::Unregistered);
@@ -115,7 +115,7 @@ mod explain_scene_2d_coverage {
 
     #[test]
     fn coverage_reports_wired_shape_command_as_satisfied() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         wire_shape_command(&mut state, "beginFill");
         let mut out = Vec::new();
         explain_scene_2d_coverage(&mut out, &state, &usage(&[], &["beginFill"]), &catalog());
@@ -124,7 +124,7 @@ mod explain_scene_2d_coverage {
 
     #[test]
     fn coverage_answers_both_registries_in_one_manifest() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         register_node_renderer(&mut state, "Shape".to_string(), &NOOP_RENDERER);
         let mut out = Vec::new();
         explain_scene_2d_coverage(
@@ -145,7 +145,7 @@ mod explain_scene_2d_coverage {
 
     #[test]
     fn coverage_clears_out_before_each_call() {
-        let state = create_render_state(None);
+        let state = create_render_state();
         let mut out = Vec::new();
         let usage = usage(&["Shape"], &[]);
         explain_scene_2d_coverage(&mut out, &state, &usage, &catalog());
@@ -161,14 +161,14 @@ mod has_scene_2d_coverage {
     #[test]
     fn has_coverage_is_false_for_unserved_kind() {
         assert!(!has_scene_2d_coverage(
-            &create_render_state(None),
+            &create_render_state(),
             &usage(&["Shape"], &[])
         ));
     }
 
     #[test]
     fn has_coverage_is_true_for_all_satisfied_entries() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         register_node_renderer(&mut state, "Shape".to_string(), &NOOP_RENDERER);
         wire_shape_command(&mut state, "beginFill");
         assert!(has_scene_2d_coverage(
@@ -179,7 +179,7 @@ mod has_scene_2d_coverage {
 
     #[test]
     fn has_coverage_agrees_with_explanation() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         register_node_renderer(&mut state, "Shape".to_string(), &NOOP_RENDERER);
         let usage = usage(&["Shape", "Sprite"], &[]);
         let mut out = Vec::new();
@@ -193,7 +193,7 @@ mod has_scene_2d_coverage {
     #[test]
     fn has_coverage_is_true_for_empty_usage() {
         assert!(has_scene_2d_coverage(
-            &create_render_state(None),
+            &create_render_state(),
             &crate::support::test_default::<Scene2DKindUsage>()
         ));
     }

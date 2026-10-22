@@ -4,7 +4,7 @@ use flight_render::*;
 use crate::support::{NOOP_RENDERER, display_node};
 
 fn registered() -> (BaseRenderState, NodeRef) {
-    let mut state = create_render_state(None);
+    let mut state = create_render_state();
     let source = display_node();
     register_node_renderer(
         &mut state,
@@ -19,7 +19,7 @@ mod explain_scene_2d_render {
 
     #[test]
     fn render_explanation_reports_missing_renderer() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         let mut proxies = crate::support::test_default::<RenderProxies2D<BaseRenderState>>();
         prepare_scene_2d_render(&mut state, &mut proxies, &source);
@@ -55,7 +55,7 @@ mod explain_scene_2d_render {
 
     #[test]
     fn render_explanation_reports_hidden_node() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let typed = flight_scene2d::create_display_object(None);
         typed.write().unwrap().visible = false;
         let source: NodeRef = typed;
@@ -69,7 +69,7 @@ mod explain_scene_2d_render {
 
     #[test]
     fn render_explanation_reports_zero_effective_alpha() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let typed = flight_scene2d::create_display_object(None);
         typed.write().unwrap().alpha = 0.0;
         let source: NodeRef = typed;
@@ -84,7 +84,7 @@ mod explain_scene_2d_render {
 
     #[test]
     fn render_explanation_reports_hidden_descendant_not_prepared() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let typed_parent = flight_scene2d::create_display_object(None);
         typed_parent.write().unwrap().visible = false;
         let parent: NodeRef = typed_parent;
@@ -101,7 +101,7 @@ mod explain_scene_2d_render {
 
     #[test]
     fn render_explanation_folds_ancestor_alpha() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let typed_parent = flight_scene2d::create_display_object(None);
         let typed_child = flight_scene2d::create_display_object(None);
         typed_parent.write().unwrap().alpha = 0.5;
@@ -129,7 +129,7 @@ mod explain_scene_2d_render {
 
     #[test]
     fn render_explanation_handles_node_without_appearance_fields() {
-        let state = create_render_state(None);
+        let state = create_render_state();
         let source: NodeRef = flight_scene3d::publish_node3d(flight_scene3d::create_node3d::<
             flight_scene3d::Node3DFields,
         >(None, None));

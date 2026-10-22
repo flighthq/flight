@@ -18,7 +18,7 @@ flight_materials::impl_material3d!(ProbeMaterial);
 
 /// The probe kind's constructor: a blended `ProbeMaterial` over the shared base initializer.
 fn create_probe_material() -> ProbeMaterial {
-    let mut fields = create_material3d("ProbeMaterial".to_string(), None);
+    let mut fields = create_material3d("ProbeMaterial".to_string());
     fields.alpha_mode = MaterialAlphaMode::Blend;
     return ProbeMaterial {
         fields,
@@ -42,13 +42,13 @@ mod create_material3d {
 
     #[test]
     fn carries_the_given_kind() {
-        let m = create_material3d("TestMaterial3D".to_string(), None);
+        let m = create_material3d("TestMaterial3D".to_string());
         assert_eq!(m.kind, "TestMaterial3D");
     }
 
     #[test]
     fn defaults_to_opaque_single_sided() {
-        let m = create_material3d("TestMaterial3D".to_string(), None);
+        let m = create_material3d("TestMaterial3D".to_string());
         assert_eq!(m.alpha_mode, MaterialAlphaMode::Opaque);
         assert_eq!(m.alpha_cutoff, 0.5);
         assert_eq!(m.blend_mode, BLEND_MODE_NORMAL);
@@ -57,14 +57,13 @@ mod create_material3d {
 
     #[test]
     fn forwards_trailer_fields_from_opts() {
-        let opts = Material3DOptions {
-            alpha_cutoff: Some(0.25),
-            alpha_mode: Some(MaterialAlphaMode::Mask),
-            blend_mode: None,
-            double_sided: Some(true),
-            name: None,
+        let m = {
+            let mut value = create_material3d("TestMaterial3D".to_string());
+            value.alpha_cutoff = 0.25;
+            value.alpha_mode = MaterialAlphaMode::Mask;
+            value.double_sided = true;
+            value
         };
-        let m = create_material3d("TestMaterial3D".to_string(), Some(&opts));
         assert_eq!(m.alpha_mode, MaterialAlphaMode::Mask);
         assert_eq!(m.alpha_cutoff, 0.25);
         assert!(m.double_sided);
@@ -76,7 +75,7 @@ mod get_material3d_alpha_mode {
 
     #[test]
     fn returns_the_alpha_mode() {
-        let m = create_material3d("T".to_string(), None);
+        let m = create_material3d("T".to_string());
         assert_eq!(get_material3d_alpha_mode(&m), MaterialAlphaMode::Opaque);
     }
 }
@@ -86,8 +85,8 @@ mod initialize_material3d {
 
     #[test]
     fn sets_kind_and_defaults() {
-        let mut m = create_material3d("Placeholder".to_string(), None);
-        initialize_material3d(&mut m, "NewKind".to_string(), None);
+        let mut m = create_material3d("Placeholder".to_string());
+        initialize_material3d(&mut m, "NewKind".to_string());
         assert_eq!(m.kind, "NewKind");
         assert_eq!(m.alpha_mode, MaterialAlphaMode::Opaque);
         assert_eq!(m.alpha_cutoff, 0.5);
@@ -96,15 +95,12 @@ mod initialize_material3d {
 
     #[test]
     fn applies_options() {
-        let mut m = create_material3d("Placeholder".to_string(), None);
-        let opts = Material3DOptions {
-            alpha_cutoff: Some(0.75),
-            alpha_mode: Some(MaterialAlphaMode::Blend),
-            blend_mode: None,
-            double_sided: Some(true),
-            name: Some("test".to_string()),
-        };
-        initialize_material3d(&mut m, "NewKind".to_string(), Some(&opts));
+        let mut m = create_material3d("Placeholder".to_string());
+        initialize_material3d(&mut m, "NewKind".to_string());
+        m.alpha_cutoff = 0.75;
+        m.alpha_mode = MaterialAlphaMode::Blend;
+        m.double_sided = true;
+        m.name = Some("test".to_string());
         assert_eq!(m.kind, "NewKind");
         assert_eq!(m.alpha_mode, MaterialAlphaMode::Blend);
         assert_eq!(m.alpha_cutoff, 0.75);
@@ -118,7 +114,7 @@ mod is_material3d_blended {
 
     #[test]
     fn returns_true_only_for_blend() {
-        let mut m = create_material3d("T".to_string(), None);
+        let mut m = create_material3d("T".to_string());
         assert!(!is_material3d_blended(&m));
         m.alpha_mode = MaterialAlphaMode::Blend;
         assert!(is_material3d_blended(&m));
@@ -130,7 +126,7 @@ mod is_material3d_masked {
 
     #[test]
     fn returns_true_only_for_mask() {
-        let mut m = create_material3d("T".to_string(), None);
+        let mut m = create_material3d("T".to_string());
         assert!(!is_material3d_masked(&m));
         m.alpha_mode = MaterialAlphaMode::Mask;
         assert!(is_material3d_masked(&m));
@@ -142,9 +138,9 @@ mod is_material3d_opaque {
 
     #[test]
     fn returns_true_only_for_opaque() {
-        let m = create_material3d("T".to_string(), None);
+        let m = create_material3d("T".to_string());
         assert!(is_material3d_opaque(&m));
-        let mut blended = create_material3d("T".to_string(), None);
+        let mut blended = create_material3d("T".to_string());
         blended.alpha_mode = MaterialAlphaMode::Blend;
         assert!(!is_material3d_opaque(&blended));
     }
@@ -155,9 +151,9 @@ mod material3d_family {
 
     #[test]
     fn holds_heterogeneous_built_in_and_custom_kinds_as_their_original_allocations() {
-        let phong = shared(create_blinn_phong_material(None));
-        let pbr = shared(create_standard_pbr_material(None));
-        let unlit = shared(create_unlit_material(None));
+        let phong = shared(create_blinn_phong_material());
+        let pbr = shared(create_standard_pbr_material());
+        let unlit = shared(create_unlit_material());
         let probe = shared(create_probe_material());
         let list = vec![phong.clone(), pbr.clone(), unlit.clone(), probe.clone()];
         assert_eq!(
@@ -174,8 +170,8 @@ mod material3d_family {
 
     #[test]
     fn dedupes_by_allocation_identity_not_by_value() {
-        let a = shared(create_standard_pbr_material(None));
-        let b = shared(create_standard_pbr_material(None));
+        let a = shared(create_standard_pbr_material());
+        let b = shared(create_standard_pbr_material());
         let list = [a.clone(), b.clone(), a.clone()];
         let mut unique: Vec<Material3DRef> = Vec::new();
         for m in &list {
@@ -190,7 +186,7 @@ mod material3d_family {
     #[test]
     fn narrows_back_to_the_concrete_kind_and_mutates_it_in_place() {
         let probe = shared(create_probe_material());
-        let phong = shared(create_phong_material(None));
+        let phong = shared(create_phong_material());
         {
             let mut guard = probe.write().unwrap();
             let concrete = guard.as_any_mut().downcast_mut::<ProbeMaterial>().unwrap();
@@ -220,23 +216,20 @@ mod material3d_family {
     #[test]
     fn generic_readers_accept_any_kind_through_the_trait() {
         let probe = shared(create_probe_material());
-        let make: fn() -> LambertMaterialOptions = LambertMaterialOptions::default;
-        let masked = create_lambert_material(Some(&LambertMaterialOptions {
-            alpha_mode: Some(MaterialAlphaMode::Mask),
-            ..make()
-        }));
+        let mut masked = create_lambert_material();
+        masked.alpha_mode = MaterialAlphaMode::Mask;
         assert!(is_material3d_blended(&*probe.read().unwrap()));
         assert_eq!(
             get_material3d_alpha_mode(&*probe.read().unwrap()),
             MaterialAlphaMode::Blend
         );
         assert!(is_material3d_masked(&masked) && !is_material3d_opaque(&masked));
-        assert!(is_material3d_opaque(&create_depth_material(None)));
+        assert!(is_material3d_opaque(&create_depth_material()));
     }
 
     #[test]
     fn a_kind_carries_one_entity_runtime_shared_with_its_base_fields() {
-        let phong = create_phong_material(None);
+        let phong = create_phong_material();
         assert!(get_entity_runtime(&phong).is_none());
         let fields: &Material3DFields = &phong;
         assert!(std::ptr::eq(

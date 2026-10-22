@@ -84,7 +84,7 @@ mod disable_scene_render_guards {
     #[test]
     fn disabling_guards_stops_later_reporting() {
         let (logs, sink) = logs();
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         enable_scene_render_guards(&mut state, Some(logs));
         disable_scene_render_guards(&mut state);
         prepare(true, &mut state);
@@ -98,7 +98,7 @@ mod enable_scene_render_guards {
     #[test]
     fn rigid_mesh_without_posed_bounds_is_silent() {
         let (logs, sink) = logs();
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         enable_scene_render_guards(&mut state, Some(logs));
         prepare(false, &mut state);
         assert!(messages(&sink).is_empty());
@@ -111,7 +111,7 @@ mod set_skinned_mesh_bounds_guard {
     #[test]
     fn skinned_mesh_without_posed_bounds_warns() {
         let (logs, sink) = logs();
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         enable_scene_render_guards(&mut state, Some(logs));
         let guard = state.registries.skinned_mesh_bounds_guard;
         set_skinned_mesh_bounds_guard(&mut state, guard);

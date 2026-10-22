@@ -139,7 +139,7 @@ mod create_scene3d_from_document {
     #[test]
     fn resolves_original_material_entities_by_index_and_preserves_geometry_and_morph() {
         let material: flight_entity::Ref<dyn Material3D> =
-            Arc::new(RwLock::new(create_standard_pbr_material(None)));
+            Arc::new(RwLock::new(create_standard_pbr_material()));
         let g = test_geometry();
         let morph = test_morph(vec![0.5]);
         let mut doc = empty_document();

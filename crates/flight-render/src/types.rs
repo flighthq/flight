@@ -61,6 +61,23 @@ pub trait RenderState: Entity + Sized + 'static {
     fn render_runtime_mut(&mut self) -> &mut RenderStateRuntime<Self>;
     fn render_registries(&self) -> &RenderRegistries<Self>;
     fn render_registries_mut(&mut self) -> &mut RenderRegistries<Self>;
+
+    /// Which backend family this state belongs to (TS: the structural `'gl' in state` /
+    /// `'device' in state` / `'element' in state` probes). A state with none of those is Canvas.
+    fn render_backend(&self) -> RenderStateBackend {
+        return RenderStateBackend::Canvas;
+    }
+}
+
+/// The backend family a render state belongs to, selecting backend-specific diagnostics (TS: the
+/// structural checks on the state's `gl`, `device` or `element` member).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum RenderStateBackend {
+    #[default]
+    Canvas,
+    Dom,
+    Gl,
+    Wgpu,
 }
 
 /// Concrete backend-free state returned by `create_render_state`.
@@ -68,18 +85,6 @@ pub struct BaseRenderState {
     pub render: RenderStateFields,
     pub runtime: RenderStateRuntime<BaseRenderState>,
     pub registries: RenderRegistries<BaseRenderState>,
-}
-
-/// Optional construction overrides for the backend-neutral state fields.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct RenderStateInit {
-    pub allow_smoothing: Option<bool>,
-    pub current_clip_depth: Option<u32>,
-    pub pixel_ratio: Option<f32>,
-    pub render_alpha: Option<f32>,
-    pub render_blend_mode: Option<Option<BlendMode>>,
-    pub round_pixels: Option<bool>,
-    pub scene_graph_sync_policy: Option<Scene3DGraphSyncPolicy>,
 }
 
 pub type ColorAdjustmentResolver<S> = fn(&mut S, &mut RenderProxy<S>, Option<&RenderProxy<S>>);

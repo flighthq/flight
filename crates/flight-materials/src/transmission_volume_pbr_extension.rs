@@ -1,28 +1,30 @@
 use flight_entity::allocate_entity;
 
 use crate::{
-    TransmissionVolumePbrExtension, TransmissionVolumePbrExtensionOptions, TRANSMISSION_VOLUME_PBR_EXTENSION_KIND,
+    TransmissionVolumePbrExtension, TRANSMISSION_VOLUME_PBR_EXTENSION_KIND,
     material_validation::{is_valid_material_ior, is_valid_material_weight},
     pbr_extension::is_valid_pbr_uv_set,
 };
 
-pub fn create_transmission_volume_pbr_extension(opts: Option<&TransmissionVolumePbrExtensionOptions>) -> TransmissionVolumePbrExtension {
+// flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 3139d09f): assign fields after create
+pub fn create_transmission_volume_pbr_extension() -> TransmissionVolumePbrExtension {
     let mut out: TransmissionVolumePbrExtension = allocate_entity();
-    initialize_transmission_volume_pbr_extension(&mut out, opts);
+    initialize_transmission_volume_pbr_extension(&mut out);
     return out;
 }
 
-pub fn initialize_transmission_volume_pbr_extension(out: &mut TransmissionVolumePbrExtension, opts: Option<&TransmissionVolumePbrExtensionOptions>) {
-    out.attenuation_color = opts.and_then(|o| o.attenuation_color).unwrap_or(0xffffffff);
-    out.attenuation_distance = opts.and_then(|o| o.attenuation_distance).unwrap_or(f32::INFINITY);
-    out.ior = opts.and_then(|o| o.ior).unwrap_or(1.5);
+// flight-lint: allow(conform-params) D23 (B) zero-field initializer (Principal 3139d09f)
+pub fn initialize_transmission_volume_pbr_extension(out: &mut TransmissionVolumePbrExtension) {
+    out.attenuation_color = 0xffffffff;
+    out.attenuation_distance = f32::INFINITY;
+    out.ior = 1.5;
     out.kind = TRANSMISSION_VOLUME_PBR_EXTENSION_KIND.to_string();
-    out.thickness = opts.and_then(|o| o.thickness).unwrap_or(0.0);
-    out.thickness_map = opts.and_then(|o| o.thickness_map.clone());
-    out.thickness_map_uv_set = opts.and_then(|o| o.thickness_map_uv_set).unwrap_or(0);
-    out.transmission = opts.and_then(|o| o.transmission).unwrap_or(0.0);
-    out.transmission_map = opts.and_then(|o| o.transmission_map.clone());
-    out.transmission_map_uv_set = opts.and_then(|o| o.transmission_map_uv_set).unwrap_or(0);
+    out.thickness = 0.0;
+    out.thickness_map = None;
+    out.thickness_map_uv_set = 0;
+    out.transmission = 0.0;
+    out.transmission_map = None;
+    out.transmission_map_uv_set = 0;
 }
 
 pub fn is_valid_transmission_volume_pbr_extension(value: &TransmissionVolumePbrExtension) -> bool {

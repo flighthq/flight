@@ -66,7 +66,7 @@ mod create_render_cache_adapter {
 
     #[test]
     fn cache_adapter_renders_normally_without_attached_cache() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         let mut data = create_render_proxy_2d(&mut state, &source);
         let adapter = create_render_cache_adapter(None);
@@ -75,7 +75,7 @@ mod create_render_cache_adapter {
 
     #[test]
     fn cache_adapter_switches_kind_transform_and_stops_traversal() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         let mut data = create_render_proxy_2d(&mut state, &source);
         let cache = Arc::new(RwLock::new(create_render_cache()));
@@ -89,7 +89,7 @@ mod create_render_cache_adapter {
 
     #[test]
     fn cache_adapter_emits_prepare_when_signals_enabled() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         let mut data = create_render_proxy_2d(&mut state, &source);
         let adapter = create_render_cache_adapter(None);
@@ -149,7 +149,7 @@ mod get_render_proxy_cache {
 
     #[test]
     fn proxy_cache_lookup_returns_attached_cache_or_none() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         assert!(get_render_proxy_cache(&state, &source).is_none());
         let cache = Arc::new(RwLock::new(create_render_cache()));
@@ -229,7 +229,7 @@ mod register_render_cache_node_renderer {
 
     #[test]
     fn registering_cache_renderer_uses_cache_kind() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         register_render_cache_node_renderer(&mut state, &NOOP_RENDERER);
         assert!(std::ptr::eq(
             *state
@@ -248,7 +248,7 @@ mod use_render_cache {
 
     #[test]
     fn use_cache_attaches_adapter_and_cache() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         let cache = Arc::new(RwLock::new(create_render_cache()));
         let adapter = use_render_cache(&mut state, &source, cache.clone());
@@ -264,7 +264,7 @@ mod use_render_cache {
 
     #[test]
     fn use_cache_reuses_adapter_and_swaps_handle() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = display_node();
         let first = use_render_cache(
             &mut state,
@@ -282,8 +282,8 @@ mod use_render_cache {
 
     #[test]
     fn use_cache_isolates_attachment_between_states() {
-        let mut a = create_render_state(None);
-        let b = create_render_state(None);
+        let mut a = create_render_state();
+        let b = create_render_state();
         let source = display_node();
         use_render_cache(
             &mut a,

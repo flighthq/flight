@@ -72,10 +72,10 @@ mod clone_node3d_subtree {
     }
     #[test]
     fn shares_rigid_mesh_geometry_and_passes_original_materials_to_capturable_override() {
-        let first: Ref<dyn Material3D> = Arc::new(RwLock::new(create_standard_pbr_material(None)));
-        let second: Ref<dyn Material3D> = Arc::new(RwLock::new(create_standard_pbr_material(None)));
+        let first: Ref<dyn Material3D> = Arc::new(RwLock::new(create_standard_pbr_material()));
+        let second: Ref<dyn Material3D> = Arc::new(RwLock::new(create_standard_pbr_material()));
         let replacement: Ref<dyn Material3D> =
-            Arc::new(RwLock::new(create_standard_pbr_material(None)));
+            Arc::new(RwLock::new(create_standard_pbr_material()));
         let mesh = create_mesh(
             test_geometry(),
             Arc::new(RwLock::new(vec![

@@ -1,22 +1,25 @@
 use flight_entity::allocate_entity;
 
 use crate::{
-    ExtendedPbrMaterial, ExtendedPbrMaterialOptions,
-    EXTENDED_PBR_MATERIAL_KIND, MaterialAlphaMode, BLEND_MODE_NORMAL,
+    ExtendedPbrMaterial, EXTENDED_PBR_MATERIAL_KIND, MaterialAlphaMode, BLEND_MODE_NORMAL,
     pbr_materials::create_standard_pbr_material_properties,
 };
 
-pub fn create_extended_pbr_material(
-    opts: Option<&ExtendedPbrMaterialOptions>,
-) -> ExtendedPbrMaterial {
-    let mut m: ExtendedPbrMaterial = allocate_entity();
-    m.kind = EXTENDED_PBR_MATERIAL_KIND.to_string();
-    m.name = opts.and_then(|o| o.name.clone());
-    m.alpha_cutoff = opts.and_then(|o| o.alpha_cutoff).unwrap_or(0.5);
-    m.alpha_mode = opts.and_then(|o| o.alpha_mode).unwrap_or(MaterialAlphaMode::Opaque);
-    m.blend_mode = opts.and_then(|o| o.blend_mode.clone()).unwrap_or_else(|| BLEND_MODE_NORMAL.to_string());
-    m.double_sided = opts.and_then(|o| o.double_sided).unwrap_or(false);
-    m.extensions = opts.and_then(|o| o.extensions.clone()).unwrap_or_default();
-    m.standard = opts.and_then(|o| o.standard.clone()).unwrap_or_else(|| create_standard_pbr_material_properties(None));
-    return m;
+// flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 3139d09f): assign fields after create
+pub fn create_extended_pbr_material() -> ExtendedPbrMaterial {
+    let mut out: ExtendedPbrMaterial = allocate_entity();
+    initialize_extended_pbr_material(&mut out);
+    return out;
+}
+
+// flight-lint: allow(conform-extra) D23 (I): the public initialize seam of the source create
+pub fn initialize_extended_pbr_material(out: &mut ExtendedPbrMaterial) {
+    out.kind = EXTENDED_PBR_MATERIAL_KIND.to_string();
+    out.name = None;
+    out.alpha_cutoff = 0.5;
+    out.alpha_mode = MaterialAlphaMode::Opaque;
+    out.blend_mode = BLEND_MODE_NORMAL.to_string();
+    out.double_sided = false;
+    out.extensions = Default::default();
+    out.standard = create_standard_pbr_material_properties(None);
 }

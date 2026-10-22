@@ -11,8 +11,8 @@ mod sugar_tests {
 
         #[test]
         fn sugar_new_matches_free_function() {
-            let free = create_color_scale_bias(None);
-            let sugar = ColorScaleBias::new(None);
+            let free = create_color_scale_bias();
+            let sugar = ColorScaleBias::new();
             assert_eq!(free.red_scale, sugar.red_scale);
             assert_eq!(free.green_scale, sugar.green_scale);
             assert_eq!(free.blue_scale, sugar.blue_scale);
@@ -25,17 +25,18 @@ mod sugar_tests {
 
         #[test]
         fn sugar_clone_matches_free_function() {
-            let opts = ColorScaleBiasOptions {
-                red_scale: Some(0.5),
-                green_scale: Some(0.6),
-                blue_scale: Some(0.7),
-                alpha_scale: Some(0.8),
-                red_bias: Some(0.1),
-                green_bias: Some(0.2),
-                blue_bias: Some(0.3),
-                alpha_bias: Some(0.4),
+            let source = {
+                let mut value = create_color_scale_bias();
+                value.red_scale = 0.5;
+                value.green_scale = 0.6;
+                value.blue_scale = 0.7;
+                value.alpha_scale = 0.8;
+                value.red_bias = 0.1;
+                value.green_bias = 0.2;
+                value.blue_bias = 0.3;
+                value.alpha_bias = 0.4;
+                value
             };
-            let source = create_color_scale_bias(Some(&opts));
             let free = clone_color_scale_bias(&source);
             let sugar = source.clone_color_scale_bias();
             assert_eq!(free.red_scale, sugar.red_scale);
@@ -44,18 +45,14 @@ mod sugar_tests {
 
         #[test]
         fn sugar_copy_from_matches_free_function() {
-            let source = create_color_scale_bias(Some(&ColorScaleBiasOptions {
-                red_scale: Some(2.0),
-                green_scale: None,
-                blue_scale: None,
-                alpha_scale: None,
-                red_bias: Some(0.5),
-                green_bias: None,
-                blue_bias: None,
-                alpha_bias: None,
-            }));
-            let mut free_out = create_color_scale_bias(None);
-            let mut sugar_out = create_color_scale_bias(None);
+            let source = {
+                let mut value = create_color_scale_bias();
+                value.red_scale = 2.0;
+                value.red_bias = 0.5;
+                value
+            };
+            let mut free_out = create_color_scale_bias();
+            let mut sugar_out = create_color_scale_bias();
             copy_color_scale_bias(&mut free_out, &source);
             sugar_out.copy_from(&source);
             assert_eq!(free_out.red_scale, sugar_out.red_scale);
@@ -64,15 +61,15 @@ mod sugar_tests {
 
         #[test]
         fn sugar_equals_matches_free_function() {
-            let a = create_color_scale_bias(None);
-            let b = create_color_scale_bias(None);
+            let a = create_color_scale_bias();
+            let b = create_color_scale_bias();
             assert_eq!(equals_color_scale_bias(&a, &b), a.equals(&b));
         }
 
         #[test]
         fn sugar_equals_biases_matches_free_function() {
-            let a = create_color_scale_bias(None);
-            let b = create_color_scale_bias(None);
+            let a = create_color_scale_bias();
+            let b = create_color_scale_bias();
             assert_eq!(
                 equals_color_scale_bias_biases(&a, &b, true),
                 a.equals_biases(&b, true),
@@ -85,8 +82,8 @@ mod sugar_tests {
 
         #[test]
         fn sugar_equals_scales_matches_free_function() {
-            let a = create_color_scale_bias(None);
-            let b = create_color_scale_bias(None);
+            let a = create_color_scale_bias();
+            let b = create_color_scale_bias();
             assert_eq!(
                 equals_color_scale_bias_scales(&a, &b, true),
                 a.equals_scales(&b, true),
@@ -95,19 +92,19 @@ mod sugar_tests {
 
         #[test]
         fn sugar_bias_rgb_matches_free_function() {
-            let csb = create_color_scale_bias(None);
+            let csb = create_color_scale_bias();
             assert_eq!(get_color_scale_bias_bias_rgb(&csb), csb.bias_rgb());
         }
 
         #[test]
         fn sugar_bias_rgba_matches_free_function() {
-            let csb = create_color_scale_bias(None);
+            let csb = create_color_scale_bias();
             assert_eq!(get_color_scale_bias_bias_rgba(&csb), csb.bias_rgba());
         }
 
         #[test]
         fn sugar_is_identity_matches_free_function() {
-            let csb = create_color_scale_bias(None);
+            let csb = create_color_scale_bias();
             assert_eq!(
                 is_identity_color_scale_bias(&csb, true),
                 csb.is_identity(true),
@@ -120,28 +117,32 @@ mod sugar_tests {
 
         #[test]
         fn sugar_concat_matches_free_function() {
-            let a = create_color_scale_bias(Some(&ColorScaleBiasOptions {
-                red_scale: Some(0.5),
-                green_scale: Some(1.0),
-                blue_scale: Some(1.0),
-                alpha_scale: Some(1.0),
-                red_bias: Some(0.1),
-                green_bias: Some(0.0),
-                blue_bias: Some(0.0),
-                alpha_bias: Some(0.0),
-            }));
-            let b = create_color_scale_bias(Some(&ColorScaleBiasOptions {
-                red_scale: Some(2.0),
-                green_scale: Some(1.0),
-                blue_scale: Some(1.0),
-                alpha_scale: Some(1.0),
-                red_bias: Some(0.05),
-                green_bias: Some(0.0),
-                blue_bias: Some(0.0),
-                alpha_bias: Some(0.0),
-            }));
-            let mut free_out = create_color_scale_bias(None);
-            let mut sugar_out = create_color_scale_bias(None);
+            let a = {
+                let mut value = create_color_scale_bias();
+                value.red_scale = 0.5;
+                value.green_scale = 1.0;
+                value.blue_scale = 1.0;
+                value.alpha_scale = 1.0;
+                value.red_bias = 0.1;
+                value.green_bias = 0.0;
+                value.blue_bias = 0.0;
+                value.alpha_bias = 0.0;
+                value
+            };
+            let b = {
+                let mut value = create_color_scale_bias();
+                value.red_scale = 2.0;
+                value.green_scale = 1.0;
+                value.blue_scale = 1.0;
+                value.alpha_scale = 1.0;
+                value.red_bias = 0.05;
+                value.green_bias = 0.0;
+                value.blue_bias = 0.0;
+                value.alpha_bias = 0.0;
+                value
+            };
+            let mut free_out = create_color_scale_bias();
+            let mut sugar_out = create_color_scale_bias();
             concat_color_scale_bias(&mut free_out, &a, &b);
             sugar_out.concat(&a, &b);
             assert_eq!(free_out.red_scale, sugar_out.red_scale);
@@ -150,18 +151,20 @@ mod sugar_tests {
 
         #[test]
         fn sugar_invert_from_matches_free_function() {
-            let source = create_color_scale_bias(Some(&ColorScaleBiasOptions {
-                red_scale: Some(2.0),
-                green_scale: Some(0.5),
-                blue_scale: Some(1.0),
-                alpha_scale: Some(1.0),
-                red_bias: Some(0.1),
-                green_bias: Some(0.0),
-                blue_bias: Some(0.0),
-                alpha_bias: Some(0.0),
-            }));
-            let mut free_out = create_color_scale_bias(None);
-            let mut sugar_out = create_color_scale_bias(None);
+            let source = {
+                let mut value = create_color_scale_bias();
+                value.red_scale = 2.0;
+                value.green_scale = 0.5;
+                value.blue_scale = 1.0;
+                value.alpha_scale = 1.0;
+                value.red_bias = 0.1;
+                value.green_bias = 0.0;
+                value.blue_bias = 0.0;
+                value.alpha_bias = 0.0;
+                value
+            };
+            let mut free_out = create_color_scale_bias();
+            let mut sugar_out = create_color_scale_bias();
             invert_color_scale_bias(&mut free_out, &source);
             sugar_out.invert_from(&source);
             assert_eq!(free_out.red_scale, sugar_out.red_scale);
@@ -170,8 +173,8 @@ mod sugar_tests {
 
         #[test]
         fn sugar_set_values_matches_free_function() {
-            let mut free_out = create_color_scale_bias(None);
-            let mut sugar_out = create_color_scale_bias(None);
+            let mut free_out = create_color_scale_bias();
+            let mut sugar_out = create_color_scale_bias();
             set_color_scale_bias(&mut free_out, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8);
             sugar_out.set_values(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8);
             assert_eq!(free_out.red_scale, sugar_out.red_scale);
@@ -180,8 +183,8 @@ mod sugar_tests {
 
         #[test]
         fn sugar_set_bias_rgb_matches_free_function() {
-            let mut free_out = create_color_scale_bias(None);
-            let mut sugar_out = create_color_scale_bias(None);
+            let mut free_out = create_color_scale_bias();
+            let mut sugar_out = create_color_scale_bias();
             set_color_scale_bias_bias_rgb(&mut free_out, 0xff8040);
             sugar_out.set_bias_rgb(0xff8040);
             assert_eq!(free_out.red_bias, sugar_out.red_bias);
@@ -191,8 +194,8 @@ mod sugar_tests {
 
         #[test]
         fn sugar_set_bias_rgba_matches_free_function() {
-            let mut free_out = create_color_scale_bias(None);
-            let mut sugar_out = create_color_scale_bias(None);
+            let mut free_out = create_color_scale_bias();
+            let mut sugar_out = create_color_scale_bias();
             set_color_scale_bias_bias_rgba(&mut free_out, 0xff8040cc);
             sugar_out.set_bias_rgba(0xff8040cc);
             assert_eq!(free_out.red_bias, sugar_out.red_bias);
@@ -201,18 +204,30 @@ mod sugar_tests {
 
         #[test]
         fn sugar_set_identity_matches_free_function() {
-            let opts = ColorScaleBiasOptions {
-                red_scale: Some(2.0),
-                green_scale: Some(3.0),
-                blue_scale: Some(4.0),
-                alpha_scale: Some(5.0),
-                red_bias: Some(0.1),
-                green_bias: Some(0.2),
-                blue_bias: Some(0.3),
-                alpha_bias: Some(0.4),
+            let mut free_out = {
+                let mut value = create_color_scale_bias();
+                value.red_scale = 2.0;
+                value.green_scale = 3.0;
+                value.blue_scale = 4.0;
+                value.alpha_scale = 5.0;
+                value.red_bias = 0.1;
+                value.green_bias = 0.2;
+                value.blue_bias = 0.3;
+                value.alpha_bias = 0.4;
+                value
             };
-            let mut free_out = create_color_scale_bias(Some(&opts));
-            let mut sugar_out = create_color_scale_bias(Some(&opts));
+            let mut sugar_out = {
+                let mut value = create_color_scale_bias();
+                value.red_scale = 2.0;
+                value.green_scale = 3.0;
+                value.blue_scale = 4.0;
+                value.alpha_scale = 5.0;
+                value.red_bias = 0.1;
+                value.green_bias = 0.2;
+                value.blue_bias = 0.3;
+                value.alpha_bias = 0.4;
+                value
+            };
             set_color_scale_bias_identity(&mut free_out);
             sugar_out.set_identity();
             assert_eq!(free_out.red_scale, sugar_out.red_scale);
@@ -221,36 +236,32 @@ mod sugar_tests {
 
         #[test]
         fn sugar_initialize_matches_free_function() {
-            let opts = ColorScaleBiasOptions {
-                red_scale: Some(0.5),
-                green_scale: None,
-                blue_scale: None,
-                alpha_scale: None,
-                red_bias: None,
-                green_bias: None,
-                blue_bias: None,
-                alpha_bias: Some(0.9),
-            };
-            let mut free_out = create_color_scale_bias(None);
-            let mut sugar_out = create_color_scale_bias(None);
-            initialize_color_scale_bias(&mut free_out, Some(&opts));
-            sugar_out.initialize(Some(&opts));
+            let mut free_out = create_color_scale_bias();
+            let mut sugar_out = create_color_scale_bias();
+            initialize_color_scale_bias(&mut free_out);
+            free_out.red_scale = 0.5;
+            free_out.alpha_bias = 0.9;
+            sugar_out.initialize();
+            sugar_out.red_scale = 0.5;
+            sugar_out.alpha_bias = 0.9;
             assert_eq!(free_out.red_scale, sugar_out.red_scale);
             assert_eq!(free_out.alpha_bias, sugar_out.alpha_bias);
         }
 
         #[test]
         fn sugar_copy_to_arrays_matches_free_function() {
-            let csb = create_color_scale_bias(Some(&ColorScaleBiasOptions {
-                red_scale: Some(0.5),
-                green_scale: Some(0.6),
-                blue_scale: Some(0.7),
-                alpha_scale: Some(0.8),
-                red_bias: Some(0.1),
-                green_bias: Some(0.2),
-                blue_bias: Some(0.3),
-                alpha_bias: Some(0.4),
-            }));
+            let csb = {
+                let mut value = create_color_scale_bias();
+                value.red_scale = 0.5;
+                value.green_scale = 0.6;
+                value.blue_scale = 0.7;
+                value.alpha_scale = 0.8;
+                value.red_bias = 0.1;
+                value.green_bias = 0.2;
+                value.blue_bias = 0.3;
+                value.alpha_bias = 0.4;
+                value
+            };
             let mut free_scales: Vec<f32> = Vec::new();
             let mut free_biases: Vec<f32> = Vec::new();
             let mut sugar_scales: Vec<f32> = Vec::new();
@@ -339,8 +350,8 @@ mod sugar_tests {
 
         #[test]
         fn sugar_new_matches_free_function() {
-            let free = create_material3d("Test3D".to_string(), None);
-            let sugar = Material3DFields::new("Test3D".to_string(), None);
+            let free = create_material3d("Test3D".to_string());
+            let sugar = Material3DFields::new("Test3D".to_string());
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.name, sugar.name);
             assert_eq!(free.alpha_mode, sugar.alpha_mode);
@@ -351,25 +362,25 @@ mod sugar_tests {
 
         #[test]
         fn sugar_alpha_mode_matches_free_function() {
-            let mat = create_material3d("Test".to_string(), None);
+            let mat = create_material3d("Test".to_string());
             assert_eq!(get_material3d_alpha_mode(&mat), mat.alpha_mode());
         }
 
         #[test]
         fn sugar_is_blended_matches_free_function() {
-            let mat = create_material3d("Test".to_string(), None);
+            let mat = create_material3d("Test".to_string());
             assert_eq!(is_material3d_blended(&mat), mat.is_blended());
         }
 
         #[test]
         fn sugar_is_masked_matches_free_function() {
-            let mat = create_material3d("Test".to_string(), None);
+            let mat = create_material3d("Test".to_string());
             assert_eq!(is_material3d_masked(&mat), mat.is_masked());
         }
 
         #[test]
         fn sugar_is_opaque_matches_free_function() {
-            let mat = create_material3d("Test".to_string(), None);
+            let mat = create_material3d("Test".to_string());
             assert_eq!(is_material3d_opaque(&mat), mat.is_opaque());
         }
 
@@ -377,8 +388,8 @@ mod sugar_tests {
         fn sugar_initialize_matches_free_function() {
             let mut free_mat: Material3DFields = allocate_entity();
             let mut sugar_mat: Material3DFields = allocate_entity();
-            initialize_material3d(&mut free_mat, "Init3D".to_string(), None);
-            sugar_mat.initialize("Init3D".to_string(), None);
+            initialize_material3d(&mut free_mat, "Init3D".to_string());
+            sugar_mat.initialize("Init3D".to_string());
             assert_eq!(free_mat.kind, sugar_mat.kind);
             assert_eq!(free_mat.alpha_mode, sugar_mat.alpha_mode);
         }
@@ -388,9 +399,9 @@ mod sugar_tests {
             fn accepts_material3d(m: &dyn Material3D) -> &str {
                 return &m.material3d_fields().kind;
             }
-            let mat = create_material3d("Test".to_string(), None);
+            let mat = create_material3d("Test".to_string());
             assert_eq!(accepts_material3d(&mat), "Test");
-            let phong = crate::classic_materials::create_phong_material(None);
+            let phong = crate::classic_materials::create_phong_material();
             assert_eq!(accepts_material3d(&phong), PHONG_MATERIAL_KIND);
         }
     }
@@ -402,24 +413,28 @@ mod sugar_tests {
 
         #[test]
         fn sugar_new_matches_free_function() {
-            let opts = StandardMaterialOptions {
-                name: Some("Sugar".to_string()),
+            let free = {
+                let mut value = create_standard_material();
+                value.name = Some("Sugar".to_string());
+                value
             };
-            let free = create_standard_material(Some(&opts));
-            let sugar = StandardMaterial::new(Some(&opts));
+            let sugar = {
+                let mut value = StandardMaterial::new();
+                value.name = Some("Sugar".to_string());
+                value
+            };
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.name, sugar.name);
         }
 
         #[test]
         fn sugar_initialize_matches_free_function() {
-            let opts = StandardMaterialOptions {
-                name: Some("Init".to_string()),
-            };
             let mut free_out: StandardMaterial = allocate_entity();
             let mut sugar_out: StandardMaterial = allocate_entity();
-            initialize_standard_material(&mut free_out, Some(&opts));
-            sugar_out.initialize(Some(&opts));
+            initialize_standard_material(&mut free_out);
+            free_out.name = Some("Init".to_string());
+            sugar_out.initialize();
+            sugar_out.name = Some("Init".to_string());
             assert_eq!(free_out.kind, sugar_out.kind);
             assert_eq!(free_out.name, sugar_out.name);
         }
@@ -431,8 +446,8 @@ mod sugar_tests {
 
         #[test]
         fn blinn_phong_sugar_new_matches_free_function() {
-            let free = create_blinn_phong_material(None);
-            let sugar = BlinnPhongMaterial::new(None);
+            let free = create_blinn_phong_material();
+            let sugar = BlinnPhongMaterial::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.diffuse, sugar.diffuse);
             assert_eq!(free.shininess, sugar.shininess);
@@ -440,8 +455,8 @@ mod sugar_tests {
 
         #[test]
         fn lambert_sugar_new_matches_free_function() {
-            let free = create_lambert_material(None);
-            let sugar = LambertMaterial::new(None);
+            let free = create_lambert_material();
+            let sugar = LambertMaterial::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.diffuse, sugar.diffuse);
             assert_eq!(free.emissive, sugar.emissive);
@@ -449,8 +464,8 @@ mod sugar_tests {
 
         #[test]
         fn phong_sugar_new_matches_free_function() {
-            let free = create_phong_material(None);
-            let sugar = PhongMaterial::new(None);
+            let free = create_phong_material();
+            let sugar = PhongMaterial::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.diffuse, sugar.diffuse);
             assert_eq!(free.shininess, sugar.shininess);
@@ -463,8 +478,8 @@ mod sugar_tests {
 
         #[test]
         fn depth_sugar_new_matches_free_function() {
-            let free = create_depth_material(None);
-            let sugar = DepthMaterial::new(None);
+            let free = create_depth_material();
+            let sugar = DepthMaterial::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.far, sugar.far);
             assert_eq!(free.near, sugar.near);
@@ -472,56 +487,56 @@ mod sugar_tests {
 
         #[test]
         fn emissive_sugar_new_matches_free_function() {
-            let free = create_emissive_material(None);
-            let sugar = EmissiveMaterial::new(None);
+            let free = create_emissive_material();
+            let sugar = EmissiveMaterial::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.emissive, sugar.emissive);
         }
 
         #[test]
         fn matcap_sugar_new_matches_free_function() {
-            let free = create_matcap_material(None);
-            let sugar = MatcapMaterial::new(None);
+            let free = create_matcap_material();
+            let sugar = MatcapMaterial::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.tint, sugar.tint);
         }
 
         #[test]
         fn normal_sugar_new_matches_free_function() {
-            let free = create_normal_material(None);
-            let sugar = NormalMaterial::new(None);
+            let free = create_normal_material();
+            let sugar = NormalMaterial::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.normal_scale, sugar.normal_scale);
         }
 
         #[test]
         fn toon_sugar_new_matches_free_function() {
-            let free = create_toon_material(None);
-            let sugar = ToonMaterial::new(None);
+            let free = create_toon_material();
+            let sugar = ToonMaterial::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.steps, sugar.steps);
         }
 
         #[test]
         fn unlit_sugar_new_matches_free_function() {
-            let free = create_unlit_material(None);
-            let sugar = UnlitMaterial::new(None);
+            let free = create_unlit_material();
+            let sugar = UnlitMaterial::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.base_color, sugar.base_color);
         }
 
         #[test]
         fn vertex_color_sugar_new_matches_free_function() {
-            let free = create_vertex_color_material(None);
-            let sugar = VertexColorMaterial::new(None);
+            let free = create_vertex_color_material();
+            let sugar = VertexColorMaterial::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.tint, sugar.tint);
         }
 
         #[test]
         fn wireframe_sugar_new_matches_free_function() {
-            let free = create_wireframe_material(None);
-            let sugar = WireframeMaterial::new(None);
+            let free = create_wireframe_material();
+            let sugar = WireframeMaterial::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.thickness, sugar.thickness);
         }
@@ -533,8 +548,8 @@ mod sugar_tests {
 
         #[test]
         fn standard_pbr_sugar_new_matches_free_function() {
-            let free = create_standard_pbr_material(None);
-            let sugar = StandardPbrMaterial::new(None);
+            let free = create_standard_pbr_material();
+            let sugar = StandardPbrMaterial::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.base_color, sugar.base_color);
             assert_eq!(free.metallic, sugar.metallic);
@@ -543,8 +558,8 @@ mod sugar_tests {
 
         #[test]
         fn specular_glossiness_sugar_new_matches_free_function() {
-            let free = create_specular_glossiness_pbr_material(None);
-            let sugar = SpecularGlossinessPbrMaterial::new(None);
+            let free = create_specular_glossiness_pbr_material();
+            let sugar = SpecularGlossinessPbrMaterial::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.diffuse, sugar.diffuse);
             assert_eq!(free.glossiness, sugar.glossiness);
@@ -561,7 +576,7 @@ mod sugar_tests {
 
         #[test]
         fn specular_glossiness_sugar_convert_matches_free_function() {
-            let source = create_specular_glossiness_pbr_material(None);
+            let source = create_specular_glossiness_pbr_material();
             let mut free_out = create_standard_pbr_material_properties(None);
             let mut sugar_out = create_standard_pbr_material_properties(None);
             convert_specular_glossiness_to_standard_pbr(&mut free_out, &source, None);
@@ -578,8 +593,8 @@ mod sugar_tests {
 
         #[test]
         fn sugar_new_matches_free_function() {
-            let free = create_extended_pbr_material(None);
-            let sugar = ExtendedPbrMaterial::new(None);
+            let free = create_extended_pbr_material();
+            let sugar = ExtendedPbrMaterial::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.standard.base_color, sugar.standard.base_color);
             assert_eq!(free.standard.roughness, sugar.standard.roughness);
@@ -592,8 +607,8 @@ mod sugar_tests {
 
         #[test]
         fn sugar_new_matches_free_function() {
-            let free = create_custom_shader_material(None);
-            let sugar = CustomShaderMaterial::new(None);
+            let free = create_custom_shader_material();
+            let sugar = CustomShaderMaterial::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.alpha_cutoff, sugar.alpha_cutoff);
             assert_eq!(free.alpha_mode, sugar.alpha_mode);
@@ -612,85 +627,85 @@ mod sugar_tests {
 
         #[test]
         fn anisotropy_sugar_new_matches_free_function() {
-            let free = create_anisotropy_pbr_extension(None);
-            let sugar = AnisotropyPbrExtension::new(None);
+            let free = create_anisotropy_pbr_extension();
+            let sugar = AnisotropyPbrExtension::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.anisotropy_strength, sugar.anisotropy_strength);
         }
 
         #[test]
         fn anisotropy_sugar_is_valid_matches_free_function() {
-            let ext = create_anisotropy_pbr_extension(None);
+            let ext = create_anisotropy_pbr_extension();
             assert_eq!(is_valid_anisotropy_pbr_extension(&ext), ext.is_valid());
         }
 
         #[test]
         fn clearcoat_sugar_new_matches_free_function() {
-            let free = create_clearcoat_pbr_extension(None);
-            let sugar = ClearcoatPbrExtension::new(None);
+            let free = create_clearcoat_pbr_extension();
+            let sugar = ClearcoatPbrExtension::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.clearcoat, sugar.clearcoat);
         }
 
         #[test]
         fn clearcoat_sugar_is_valid_matches_free_function() {
-            let ext = create_clearcoat_pbr_extension(None);
+            let ext = create_clearcoat_pbr_extension();
             assert_eq!(is_valid_clearcoat_pbr_extension(&ext), ext.is_valid());
         }
 
         #[test]
         fn iridescence_sugar_new_matches_free_function() {
-            let free = create_iridescence_pbr_extension(None);
-            let sugar = IridescencePbrExtension::new(None);
+            let free = create_iridescence_pbr_extension();
+            let sugar = IridescencePbrExtension::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.iridescence, sugar.iridescence);
         }
 
         #[test]
         fn iridescence_sugar_is_valid_matches_free_function() {
-            let ext = create_iridescence_pbr_extension(None);
+            let ext = create_iridescence_pbr_extension();
             assert_eq!(is_valid_iridescence_pbr_extension(&ext), ext.is_valid());
         }
 
         #[test]
         fn sheen_sugar_new_matches_free_function() {
-            let free = create_sheen_pbr_extension(None);
-            let sugar = SheenPbrExtension::new(None);
+            let free = create_sheen_pbr_extension();
+            let sugar = SheenPbrExtension::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.sheen_color, sugar.sheen_color);
         }
 
         #[test]
         fn sheen_sugar_is_valid_matches_free_function() {
-            let ext = create_sheen_pbr_extension(None);
+            let ext = create_sheen_pbr_extension();
             assert_eq!(is_valid_sheen_pbr_extension(&ext), ext.is_valid());
         }
 
         #[test]
         fn specular_sugar_new_matches_free_function() {
-            let free = create_specular_pbr_extension(None);
-            let sugar = SpecularPbrExtension::new(None);
+            let free = create_specular_pbr_extension();
+            let sugar = SpecularPbrExtension::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.specular, sugar.specular);
         }
 
         #[test]
         fn specular_sugar_is_valid_matches_free_function() {
-            let ext = create_specular_pbr_extension(None);
+            let ext = create_specular_pbr_extension();
             assert_eq!(is_valid_specular_pbr_extension(&ext), ext.is_valid());
         }
 
         #[test]
         fn transmission_volume_sugar_new_matches_free_function() {
-            let free = create_transmission_volume_pbr_extension(None);
-            let sugar = TransmissionVolumePbrExtension::new(None);
+            let free = create_transmission_volume_pbr_extension();
+            let sugar = TransmissionVolumePbrExtension::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(free.transmission, sugar.transmission);
         }
 
         #[test]
         fn transmission_volume_sugar_is_valid_matches_free_function() {
-            let ext = create_transmission_volume_pbr_extension(None);
+            let ext = create_transmission_volume_pbr_extension();
             assert_eq!(
                 is_valid_transmission_volume_pbr_extension(&ext),
                 ext.is_valid(),
@@ -699,8 +714,8 @@ mod sugar_tests {
 
         #[test]
         fn wrapped_diffuse_sugar_new_matches_free_function() {
-            let free = create_wrapped_diffuse_pbr_extension(None);
-            let sugar = WrappedDiffusePbrExtension::new(None);
+            let free = create_wrapped_diffuse_pbr_extension();
+            let sugar = WrappedDiffusePbrExtension::new();
             assert_eq!(free.kind, sugar.kind);
             assert_eq!(
                 free.wrapped_diffuse_strength,
@@ -710,15 +725,15 @@ mod sugar_tests {
 
         #[test]
         fn wrapped_diffuse_sugar_is_valid_matches_free_function() {
-            let ext = create_wrapped_diffuse_pbr_extension(None);
+            let ext = create_wrapped_diffuse_pbr_extension();
             assert_eq!(is_valid_wrapped_diffuse_pbr_extension(&ext), ext.is_valid(),);
         }
 
         #[test]
         fn sugar_kind_returns_wrapped_extension_kind() {
-            let aniso = PbrExtension::Anisotropy(create_anisotropy_pbr_extension(None));
+            let aniso = PbrExtension::Anisotropy(create_anisotropy_pbr_extension());
             assert_eq!(aniso.kind(), ANISOTROPY_PBR_EXTENSION_KIND);
-            let clearcoat = PbrExtension::Clearcoat(create_clearcoat_pbr_extension(None));
+            let clearcoat = PbrExtension::Clearcoat(create_clearcoat_pbr_extension());
             assert_eq!(clearcoat.kind(), CLEARCOAT_PBR_EXTENSION_KIND);
         }
     }
@@ -732,7 +747,7 @@ mod sugar_tests {
 
         #[test]
         fn sugar_convert_phong_to_standard_pbr_matches_free_function() {
-            let phong = create_phong_material(None);
+            let phong = create_phong_material();
             let free = convert_phong_to_standard_pbr_material(&phong, None, None);
             let sugar = phong.convert_to_standard_pbr(None, None);
             assert_eq!(free.kind, sugar.kind);
@@ -743,7 +758,7 @@ mod sugar_tests {
 
         #[test]
         fn sugar_explain_phong_matches_free_function() {
-            let phong = create_phong_material(None);
+            let phong = create_phong_material();
             let free = explain_phong_conversion(&phong);
             let sugar = phong.explain_conversion();
             assert_eq!(free.dropped_maps, sugar.dropped_maps);
@@ -752,7 +767,7 @@ mod sugar_tests {
 
         #[test]
         fn sugar_explain_specular_glossiness_matches_free_function() {
-            let mat = create_specular_glossiness_pbr_material(None);
+            let mat = create_specular_glossiness_pbr_material();
             let free = explain_specular_glossiness_conversion(&mat);
             let sugar = mat.explain_conversion();
             assert_eq!(free.dropped_maps, sugar.dropped_maps);
@@ -1376,159 +1391,6 @@ pub struct ColorScaleBias {
 // ── Options types ────────────────────────────────────────────────────────────
 
 #[derive(Clone, Debug, Default)]
-pub struct StandardMaterialOptions {
-    pub name: Option<String>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct ColorScaleBiasOptions {
-    pub red_scale: Option<f32>,
-    pub green_scale: Option<f32>,
-    pub blue_scale: Option<f32>,
-    pub alpha_scale: Option<f32>,
-    pub red_bias: Option<f32>,
-    pub green_bias: Option<f32>,
-    pub blue_bias: Option<f32>,
-    pub alpha_bias: Option<f32>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct BlinnPhongMaterialOptions {
-    pub name: Option<String>,
-    pub alpha_cutoff: Option<f32>,
-    pub alpha_mode: Option<MaterialAlphaMode>,
-    pub blend_mode: Option<BlendMode>,
-    pub double_sided: Option<bool>,
-    pub alpha_map: TextureSlot,
-    pub diffuse: Option<u32>,
-    pub diffuse_map: TextureSlot,
-    pub normal_map: TextureSlot,
-    pub normal_scale: Option<f32>,
-    pub shininess: Option<f32>,
-    pub specular: Option<u32>,
-    pub specular_map: TextureSlot,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct LambertMaterialOptions {
-    pub name: Option<String>,
-    pub alpha_cutoff: Option<f32>,
-    pub alpha_mode: Option<MaterialAlphaMode>,
-    pub blend_mode: Option<BlendMode>,
-    pub double_sided: Option<bool>,
-    pub diffuse: Option<u32>,
-    pub diffuse_map: TextureSlot,
-    pub emissive: Option<u32>,
-    pub emissive_map: TextureSlot,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct PhongMaterialOptions {
-    pub name: Option<String>,
-    pub alpha_cutoff: Option<f32>,
-    pub alpha_mode: Option<MaterialAlphaMode>,
-    pub blend_mode: Option<BlendMode>,
-    pub double_sided: Option<bool>,
-    pub diffuse: Option<u32>,
-    pub diffuse_map: TextureSlot,
-    pub normal_map: TextureSlot,
-    pub normal_scale: Option<f32>,
-    pub shininess: Option<f32>,
-    pub specular: Option<u32>,
-    pub specular_map: TextureSlot,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct DepthMaterialOptions {
-    pub name: Option<String>,
-    pub alpha_cutoff: Option<f32>,
-    pub alpha_mode: Option<MaterialAlphaMode>,
-    pub blend_mode: Option<BlendMode>,
-    pub double_sided: Option<bool>,
-    pub far: Option<f32>,
-    pub near: Option<f32>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct EmissiveMaterialOptions {
-    pub name: Option<String>,
-    pub alpha_cutoff: Option<f32>,
-    pub alpha_mode: Option<MaterialAlphaMode>,
-    pub blend_mode: Option<BlendMode>,
-    pub double_sided: Option<bool>,
-    pub emissive: Option<u32>,
-    pub emissive_map: TextureSlot,
-    pub emissive_strength: Option<f32>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct MatcapMaterialOptions {
-    pub name: Option<String>,
-    pub alpha_cutoff: Option<f32>,
-    pub alpha_mode: Option<MaterialAlphaMode>,
-    pub blend_mode: Option<BlendMode>,
-    pub double_sided: Option<bool>,
-    pub matcap: TextureSlot,
-    pub tint: Option<u32>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct NormalMaterialOptions {
-    pub name: Option<String>,
-    pub alpha_cutoff: Option<f32>,
-    pub alpha_mode: Option<MaterialAlphaMode>,
-    pub blend_mode: Option<BlendMode>,
-    pub double_sided: Option<bool>,
-    pub normal_map: TextureSlot,
-    pub normal_scale: Option<f32>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct ToonMaterialOptions {
-    pub name: Option<String>,
-    pub alpha_cutoff: Option<f32>,
-    pub alpha_mode: Option<MaterialAlphaMode>,
-    pub blend_mode: Option<BlendMode>,
-    pub double_sided: Option<bool>,
-    pub base_color: Option<u32>,
-    pub base_color_map: TextureSlot,
-    pub ramp: TextureSlot,
-    pub steps: Option<u32>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct UnlitMaterialOptions {
-    pub name: Option<String>,
-    pub alpha_cutoff: Option<f32>,
-    pub alpha_mode: Option<MaterialAlphaMode>,
-    pub blend_mode: Option<BlendMode>,
-    pub double_sided: Option<bool>,
-    pub base_color: Option<u32>,
-    pub base_color_map: TextureSlot,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct VertexColorMaterialOptions {
-    pub name: Option<String>,
-    pub alpha_cutoff: Option<f32>,
-    pub alpha_mode: Option<MaterialAlphaMode>,
-    pub blend_mode: Option<BlendMode>,
-    pub double_sided: Option<bool>,
-    pub tint: Option<u32>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct WireframeMaterialOptions {
-    pub name: Option<String>,
-    pub alpha_cutoff: Option<f32>,
-    pub alpha_mode: Option<MaterialAlphaMode>,
-    pub blend_mode: Option<BlendMode>,
-    pub double_sided: Option<bool>,
-    pub color: Option<u32>,
-    pub thickness: Option<f32>,
-}
-
-#[derive(Clone, Debug, Default)]
 pub struct StandardPbrMaterialPropertiesOptions {
     pub alpha_map: TextureSlot,
     pub base_color: Option<u32>,
@@ -1568,103 +1430,6 @@ pub struct StandardPbrMaterialOptions {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct SpecularGlossinessPbrMaterialOptions {
-    pub name: Option<String>,
-    pub alpha_cutoff: Option<f32>,
-    pub alpha_mode: Option<MaterialAlphaMode>,
-    pub blend_mode: Option<BlendMode>,
-    pub double_sided: Option<bool>,
-    pub diffuse: Option<u32>,
-    pub diffuse_map: TextureSlot,
-    pub emissive: Option<u32>,
-    pub emissive_map: TextureSlot,
-    pub emissive_strength: Option<f32>,
-    pub glossiness: Option<f32>,
-    pub normal_map: TextureSlot,
-    pub normal_scale: Option<f32>,
-    pub occlusion_map: TextureSlot,
-    pub occlusion_strength: Option<f32>,
-    pub specular: Option<u32>,
-    pub specular_glossiness_map: TextureSlot,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct ExtendedPbrMaterialOptions {
-    pub name: Option<String>,
-    pub alpha_cutoff: Option<f32>,
-    pub alpha_mode: Option<MaterialAlphaMode>,
-    pub blend_mode: Option<BlendMode>,
-    pub double_sided: Option<bool>,
-    pub extensions: Option<Vec<Ref<PbrExtension>>>,
-    pub standard: Option<StandardPbrMaterialProperties>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct CustomShaderMaterialOptions {
-    pub name: Option<String>,
-    pub alpha_cutoff: Option<f32>,
-    pub alpha_mode: Option<MaterialAlphaMode>,
-    pub blend_mode: Option<BlendMode>,
-    pub double_sided: Option<bool>,
-    pub shader_key: Option<String>,
-    pub textures: Option<std::collections::HashMap<String, Ref<Texture>>>,
-    pub uniforms: Option<std::collections::HashMap<String, UniformValue>>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct AnisotropyPbrExtensionOptions {
-    pub anisotropy_map: TextureSlot,
-    pub anisotropy_map_uv_set: Option<PbrUvSet>,
-    pub anisotropy_rotation: Option<f32>,
-    pub anisotropy_strength: Option<f32>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct ClearcoatPbrExtensionOptions {
-    pub clearcoat: Option<f32>,
-    pub clearcoat_map: TextureSlot,
-    pub clearcoat_map_uv_set: Option<PbrUvSet>,
-    pub clearcoat_normal_map: TextureSlot,
-    pub clearcoat_normal_map_uv_set: Option<PbrUvSet>,
-    pub clearcoat_normal_scale: Option<f32>,
-    pub clearcoat_roughness: Option<f32>,
-    pub clearcoat_roughness_map: TextureSlot,
-    pub clearcoat_roughness_map_uv_set: Option<PbrUvSet>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct IridescencePbrExtensionOptions {
-    pub iridescence: Option<f32>,
-    pub iridescence_ior: Option<f32>,
-    pub iridescence_map: TextureSlot,
-    pub iridescence_map_uv_set: Option<PbrUvSet>,
-    pub iridescence_thickness_map: TextureSlot,
-    pub iridescence_thickness_map_uv_set: Option<PbrUvSet>,
-    pub iridescence_thickness_max: Option<f32>,
-    pub iridescence_thickness_min: Option<f32>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct SheenPbrExtensionOptions {
-    pub sheen_color: Option<u32>,
-    pub sheen_color_map: TextureSlot,
-    pub sheen_color_map_uv_set: Option<PbrUvSet>,
-    pub sheen_roughness: Option<f32>,
-    pub sheen_roughness_map: TextureSlot,
-    pub sheen_roughness_map_uv_set: Option<PbrUvSet>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct SpecularPbrExtensionOptions {
-    pub specular: Option<f32>,
-    pub specular_color: Option<u32>,
-    pub specular_color_map: TextureSlot,
-    pub specular_color_map_uv_set: Option<PbrUvSet>,
-    pub specular_map: TextureSlot,
-    pub specular_map_uv_set: Option<PbrUvSet>,
-}
-
-#[derive(Clone, Debug, Default)]
 pub struct TransmissionVolumePbrExtensionOptions {
     pub attenuation_color: Option<u32>,
     pub attenuation_distance: Option<f32>,
@@ -1675,17 +1440,6 @@ pub struct TransmissionVolumePbrExtensionOptions {
     pub transmission: Option<f32>,
     pub transmission_map: TextureSlot,
     pub transmission_map_uv_set: Option<PbrUvSet>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct WrappedDiffusePbrExtensionOptions {
-    pub thickness: Option<f32>,
-    pub thickness_map: TextureSlot,
-    pub thickness_map_uv_set: Option<PbrUvSet>,
-    pub wrapped_diffuse_color: Option<u32>,
-    pub wrapped_diffuse_map: TextureSlot,
-    pub wrapped_diffuse_map_uv_set: Option<PbrUvSet>,
-    pub wrapped_diffuse_strength: Option<f32>,
 }
 
 pub struct GlassExtendedPbrMaterialOptions {
@@ -1921,16 +1675,16 @@ impl MaterialFields {
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: Material3DFields methods delegate to free functions
 impl Material3DFields {
-    pub fn new(kind: Kind, opts: Option<&crate::material3d::Material3DOptions>) -> Self {
-        return crate::material3d::create_material3d(kind, opts);
+    pub fn new(kind: Kind) -> Self {
+        return crate::material3d::create_material3d(kind);
     }
 
     pub fn alpha_mode(&self) -> MaterialAlphaMode {
         return crate::material3d::get_material3d_alpha_mode(self);
     }
 
-    pub fn initialize(&mut self, kind: Kind, opts: Option<&crate::material3d::Material3DOptions>) {
-        crate::material3d::initialize_material3d(self, kind, opts);
+    pub fn initialize(&mut self, kind: Kind) {
+        crate::material3d::initialize_material3d(self, kind);
     }
 
     pub fn is_blended(&self) -> bool {
@@ -1948,19 +1702,19 @@ impl Material3DFields {
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: StandardMaterial methods delegate to free functions
 impl StandardMaterial {
-    pub fn new(options: Option<&StandardMaterialOptions>) -> Self {
-        return crate::standard_material::create_standard_material(options);
+    pub fn new() -> Self {
+        return crate::standard_material::create_standard_material();
     }
 
-    pub fn initialize(&mut self, options: Option<&StandardMaterialOptions>) {
-        crate::standard_material::initialize_standard_material(self, options);
+    pub fn initialize(&mut self) {
+        crate::standard_material::initialize_standard_material(self);
     }
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: ColorScaleBias methods delegate to free functions
 impl ColorScaleBias {
-    pub fn new(opts: Option<&ColorScaleBiasOptions>) -> Self {
-        return crate::color_scale_bias::create_color_scale_bias(opts);
+    pub fn new() -> Self {
+        return crate::color_scale_bias::create_color_scale_bias();
     }
 
     pub fn bias_rgb(&self) -> u32 {
@@ -2003,8 +1757,8 @@ impl ColorScaleBias {
         return crate::color_scale_bias::equals_color_scale_bias_scales(self, other, compare_alpha);
     }
 
-    pub fn initialize(&mut self, opts: Option<&ColorScaleBiasOptions>) {
-        crate::color_scale_bias::initialize_color_scale_bias(self, opts);
+    pub fn initialize(&mut self) {
+        crate::color_scale_bias::initialize_color_scale_bias(self);
     }
 
     pub fn invert_from(&mut self, source: &ColorScaleBias) {
@@ -2054,92 +1808,92 @@ impl ColorScaleBias {
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: BlinnPhongMaterial constructor delegates to free function
 impl BlinnPhongMaterial {
-    pub fn new(opts: Option<&BlinnPhongMaterialOptions>) -> Self {
-        return crate::classic_materials::create_blinn_phong_material(opts);
+    pub fn new() -> Self {
+        return crate::classic_materials::create_blinn_phong_material();
     }
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: LambertMaterial constructor delegates to free function
 impl LambertMaterial {
-    pub fn new(opts: Option<&LambertMaterialOptions>) -> Self {
-        return crate::classic_materials::create_lambert_material(opts);
+    pub fn new() -> Self {
+        return crate::classic_materials::create_lambert_material();
     }
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: DepthMaterial constructor delegates to free function
 impl DepthMaterial {
-    pub fn new(opts: Option<&DepthMaterialOptions>) -> Self {
-        return crate::unlit_materials::create_depth_material(opts);
+    pub fn new() -> Self {
+        return crate::unlit_materials::create_depth_material();
     }
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: EmissiveMaterial constructor delegates to free function
 impl EmissiveMaterial {
-    pub fn new(opts: Option<&EmissiveMaterialOptions>) -> Self {
-        return crate::unlit_materials::create_emissive_material(opts);
+    pub fn new() -> Self {
+        return crate::unlit_materials::create_emissive_material();
     }
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: MatcapMaterial constructor delegates to free function
 impl MatcapMaterial {
-    pub fn new(opts: Option<&MatcapMaterialOptions>) -> Self {
-        return crate::unlit_materials::create_matcap_material(opts);
+    pub fn new() -> Self {
+        return crate::unlit_materials::create_matcap_material();
     }
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: NormalMaterial constructor delegates to free function
 impl NormalMaterial {
-    pub fn new(opts: Option<&NormalMaterialOptions>) -> Self {
-        return crate::unlit_materials::create_normal_material(opts);
+    pub fn new() -> Self {
+        return crate::unlit_materials::create_normal_material();
     }
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: ToonMaterial constructor delegates to free function
 impl ToonMaterial {
-    pub fn new(opts: Option<&ToonMaterialOptions>) -> Self {
-        return crate::unlit_materials::create_toon_material(opts);
+    pub fn new() -> Self {
+        return crate::unlit_materials::create_toon_material();
     }
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: UnlitMaterial constructor delegates to free function
 impl UnlitMaterial {
-    pub fn new(opts: Option<&UnlitMaterialOptions>) -> Self {
-        return crate::unlit_materials::create_unlit_material(opts);
+    pub fn new() -> Self {
+        return crate::unlit_materials::create_unlit_material();
     }
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: VertexColorMaterial constructor delegates to free function
 impl VertexColorMaterial {
-    pub fn new(opts: Option<&VertexColorMaterialOptions>) -> Self {
-        return crate::unlit_materials::create_vertex_color_material(opts);
+    pub fn new() -> Self {
+        return crate::unlit_materials::create_vertex_color_material();
     }
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: WireframeMaterial constructor delegates to free function
 impl WireframeMaterial {
-    pub fn new(opts: Option<&WireframeMaterialOptions>) -> Self {
-        return crate::unlit_materials::create_wireframe_material(opts);
+    pub fn new() -> Self {
+        return crate::unlit_materials::create_wireframe_material();
     }
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: StandardPbrMaterial constructor delegates to free function
 impl StandardPbrMaterial {
-    pub fn new(opts: Option<&StandardPbrMaterialOptions>) -> Self {
-        return crate::pbr_materials::create_standard_pbr_material(opts);
+    pub fn new() -> Self {
+        return crate::pbr_materials::create_standard_pbr_material();
     }
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: CustomShaderMaterial constructor delegates to free function
 impl CustomShaderMaterial {
-    pub fn new(opts: Option<&CustomShaderMaterialOptions>) -> Self {
-        return crate::custom_shader_material::create_custom_shader_material(opts);
+    pub fn new() -> Self {
+        return crate::custom_shader_material::create_custom_shader_material();
     }
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: AnisotropyPbrExtension methods delegate to free functions
 impl AnisotropyPbrExtension {
-    pub fn new(opts: Option<&AnisotropyPbrExtensionOptions>) -> Self {
-        return crate::anisotropy_pbr_extension::create_anisotropy_pbr_extension(opts);
+    pub fn new() -> Self {
+        return crate::anisotropy_pbr_extension::create_anisotropy_pbr_extension();
     }
 
     pub fn is_valid(&self) -> bool {
@@ -2149,8 +1903,8 @@ impl AnisotropyPbrExtension {
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: ClearcoatPbrExtension methods delegate to free functions
 impl ClearcoatPbrExtension {
-    pub fn new(opts: Option<&ClearcoatPbrExtensionOptions>) -> Self {
-        return crate::clearcoat_pbr_extension::create_clearcoat_pbr_extension(opts);
+    pub fn new() -> Self {
+        return crate::clearcoat_pbr_extension::create_clearcoat_pbr_extension();
     }
 
     pub fn is_valid(&self) -> bool {
@@ -2160,8 +1914,8 @@ impl ClearcoatPbrExtension {
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: IridescencePbrExtension methods delegate to free functions
 impl IridescencePbrExtension {
-    pub fn new(opts: Option<&IridescencePbrExtensionOptions>) -> Self {
-        return crate::iridescence_pbr_extension::create_iridescence_pbr_extension(opts);
+    pub fn new() -> Self {
+        return crate::iridescence_pbr_extension::create_iridescence_pbr_extension();
     }
 
     pub fn is_valid(&self) -> bool {
@@ -2171,8 +1925,8 @@ impl IridescencePbrExtension {
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: SheenPbrExtension methods delegate to free functions
 impl SheenPbrExtension {
-    pub fn new(opts: Option<&SheenPbrExtensionOptions>) -> Self {
-        return crate::sheen_pbr_extension::create_sheen_pbr_extension(opts);
+    pub fn new() -> Self {
+        return crate::sheen_pbr_extension::create_sheen_pbr_extension();
     }
 
     pub fn is_valid(&self) -> bool {
@@ -2182,8 +1936,8 @@ impl SheenPbrExtension {
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: SpecularPbrExtension methods delegate to free functions
 impl SpecularPbrExtension {
-    pub fn new(opts: Option<&SpecularPbrExtensionOptions>) -> Self {
-        return crate::specular_pbr_extension::create_specular_pbr_extension(opts);
+    pub fn new() -> Self {
+        return crate::specular_pbr_extension::create_specular_pbr_extension();
     }
 
     pub fn is_valid(&self) -> bool {
@@ -2193,9 +1947,8 @@ impl SpecularPbrExtension {
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: TransmissionVolumePbrExtension methods delegate to free functions
 impl TransmissionVolumePbrExtension {
-    pub fn new(opts: Option<&TransmissionVolumePbrExtensionOptions>) -> Self {
+    pub fn new() -> Self {
         return crate::transmission_volume_pbr_extension::create_transmission_volume_pbr_extension(
-            opts,
         );
     }
 
@@ -2206,8 +1959,8 @@ impl TransmissionVolumePbrExtension {
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: WrappedDiffusePbrExtension methods delegate to free functions
 impl WrappedDiffusePbrExtension {
-    pub fn new(opts: Option<&WrappedDiffusePbrExtensionOptions>) -> Self {
-        return crate::wrapped_diffuse_pbr_extension::create_wrapped_diffuse_pbr_extension(opts);
+    pub fn new() -> Self {
+        return crate::wrapped_diffuse_pbr_extension::create_wrapped_diffuse_pbr_extension();
     }
 
     pub fn is_valid(&self) -> bool {
@@ -2217,15 +1970,15 @@ impl WrappedDiffusePbrExtension {
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: ExtendedPbrMaterial constructor delegates to free function
 impl ExtendedPbrMaterial {
-    pub fn new(opts: Option<&ExtendedPbrMaterialOptions>) -> Self {
-        return crate::extended_pbr_material::create_extended_pbr_material(opts);
+    pub fn new() -> Self {
+        return crate::extended_pbr_material::create_extended_pbr_material();
     }
 }
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: PhongMaterial methods delegate to free functions
 impl PhongMaterial {
-    pub fn new(opts: Option<&PhongMaterialOptions>) -> Self {
-        return crate::classic_materials::create_phong_material(opts);
+    pub fn new() -> Self {
+        return crate::classic_materials::create_phong_material();
     }
 
     pub fn convert_to_standard_pbr(
@@ -2243,8 +1996,8 @@ impl PhongMaterial {
 
 // flight-lint: allow(sugar-delegates) D18 receiver sugar: SpecularGlossinessPbrMaterial methods delegate to free functions
 impl SpecularGlossinessPbrMaterial {
-    pub fn new(opts: Option<&SpecularGlossinessPbrMaterialOptions>) -> Self {
-        return crate::pbr_materials::create_specular_glossiness_pbr_material(opts);
+    pub fn new() -> Self {
+        return crate::pbr_materials::create_specular_glossiness_pbr_material();
     }
 
     pub fn convert_to_standard_pbr(

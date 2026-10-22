@@ -12,7 +12,8 @@ use crate::types::*;
 /// wiring the provider's open/message/close/error into the socket's still-inert signal group (TS
 /// `createSocket`). The socket starts in `connecting` and is left attached (delivering). A host that
 /// carries no socket transport yields no connection and the socket stays in `connecting` until
-/// closed; absence is an answer here, never a process-global fallback.
+/// closed; absence is an answer here, never a process-global fallback. D23: a provider construction
+/// seam (Principal 06d7a025): `options` is the provider's open request and `url` stays required.
 // flight-lint: allow(conform-params) D5: caller-owned SocketGuardState replaces the source module-level guard hook
 pub fn create_socket(
     guard_state: &SocketGuardStateRef,

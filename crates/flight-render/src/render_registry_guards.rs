@@ -7,7 +7,7 @@ use flight_signals::connect_signal;
 
 use crate::{
     RenderRegistriesMiss, RenderRegistriesMissExplanation, RenderRegistriesMissStatus,
-    RenderRegistryTable, RenderState, enable_render_registry_signals,
+    RenderRegistryTable, RenderState, RenderStateBackend, enable_render_registry_signals,
 };
 
 pub fn are_render_registries_guards_enabled<S: RenderState>(state: &S) -> bool {
@@ -24,6 +24,8 @@ pub fn enable_render_registries_guards<S: RenderState>(
     }
     let signals = enable_render_registry_signals(state);
     let state_id = get_entity_id(state);
+    // A state's backend is fixed (TS probes its members structurally), so it is read once here.
+    let backend = state.render_backend();
     let misses = state.render_runtime().registry_misses.clone();
     misses.write().unwrap().clear();
     let listener_misses = misses.clone();
@@ -35,6 +37,7 @@ pub fn enable_render_registries_guards<S: RenderState>(
                 &listener_misses,
                 listener_log.as_ref(),
                 state_id,
+                backend,
                 *registry,
                 kind.clone(),
             );
@@ -65,33 +68,71 @@ pub fn explain_render_registries_misses<S: RenderState>(
     };
 }
 
-fn get_render_registries_miss_message(registry: RenderRegistryTable) -> &'static str {
+fn get_render_registries_miss_message(
+    backend: RenderStateBackend,
+    registry: RenderRegistryTable,
+) -> &'static str {
+    let wgpu = backend == RenderStateBackend::Wgpu;
     return match registry {
+        // GL composites through an explicit per-mode realization; Canvas and DOM express blend
+        // modes natively and never report this.
         RenderRegistryTable::BlendRealization => {
-            "a blend mode this scene uses has no registered realization"
+            "a blend mode this scene uses has no registered GL realization, so the node composites as Normal instead — call registerGlBlendMode(state, blendMode, realization)"
         }
         RenderRegistryTable::EffectPaddingResolver => {
-            "computeEffectPadding: effect kind has no registered padding resolver"
+            "computeEffectPadding: effect kind has no registered padding resolver — call registerEffectPaddingResolver(state, kind, resolver)"
+        }
+        // Reported by the resource layer, not the frame path: a material kind with no lister has its
+        // texture slots invisible to anything that walks materials.
+        RenderRegistryTable::MaterialTextureLister => {
+            "a material kind in this scene has no registered texture lister, so an all-unlisted mesh gets no fade, while a mixed mesh can reveal before that material's textures settle and show a later texture pop-in — call registerScene3DMaterialTextures(registry, kind, lister), or the named door for that family"
+        }
+        // Reported only by the GPU backends, where an unresolved material means the node does not
+        // draw at all.
+        RenderRegistryTable::MaterialRenderer if wgpu => {
+            "resolveWgpuQuadMaterialRenderer: material kind has no registered renderer, so nodes using it do not draw — call registerWgpuQuadMaterialRenderer(state, kind, renderer)"
         }
         RenderRegistryTable::MaterialRenderer => {
-            "material kind has no registered renderer, so nodes using it do not draw"
+            "resolveGlQuadMaterialRenderer: material kind has no registered renderer, so nodes using it do not draw — call registerGlQuadMaterialRenderer(state, kind, renderer)"
         }
-        RenderRegistryTable::MaterialTextureLister => {
-            "material kind has no registered texture lister"
+        RenderRegistryTable::ModifierSnippet if wgpu => {
+            "a modifier on this material has no registered shader snippet — call registerWgpuModifierSnippet(state, snippet), or registerBuiltInWgpuModifierSnippets(state)"
         }
         RenderRegistryTable::ModifierSnippet => {
-            "a modifier on this material has no registered shader snippet"
+            "a modifier on this material has no registered shader snippet — call registerGlModifierSnippet(state, snippet), or registerBuiltInGlModifierSnippets(state)"
         }
         RenderRegistryTable::NodeRenderer => {
             "createRenderProxy: node kind has no registered renderer — call registerNodeRenderer(state, kind, renderer)"
         }
         RenderRegistryTable::ShapeCommandHandler => {
-            "renderCanvasShapeCommands: shape command key has no registered handler on this state"
+            "renderCanvasShapeCommands: shape command key has no registered handler on this state — call registerCanvasShapeCommand(state, command)"
         }
-        RenderRegistryTable::ShapeRasterizer => {
-            "a fill this node uses has no tessellated form and no rasterizer is registered"
-        }
-        RenderRegistryTable::TextureResolver => "texture source kind has no registered resolver",
+        // The kind reported is the node kind that went undrawn.
+        RenderRegistryTable::ShapeRasterizer => match backend {
+            RenderStateBackend::Wgpu => {
+                "drawWgpuShape: a fill this node uses has no tessellated form and no rasterizer is registered, so it does not draw — call registerWgpuShapeRasterizer(state, createCanvasShapeRasterizer(resolvers))"
+            }
+            RenderStateBackend::Dom => {
+                "drawDomShape: a fill this node uses has no tessellated form and no rasterizer is registered, so it does not draw — call registerDomShapeRasterizer(state, createCanvasShapeRasterizer(resolvers))"
+            }
+            _ => {
+                "drawGlShape: a fill this node uses has no tessellated form and no rasterizer is registered, so it does not draw — call registerGlShapeRasterizer(state, createCanvasShapeRasterizer(resolvers))"
+            }
+        },
+        RenderRegistryTable::TextureResolver => match backend {
+            RenderStateBackend::Gl => {
+                "resolveGlTexture: texture source kind has no registered resolver — rebuild the GlRenderRegistries with the required resolver and create the render state from that registry"
+            }
+            RenderStateBackend::Wgpu => {
+                "resolveWgpuTexture: texture source kind has no registered resolver — call registerWgpuTextureResolver(state, sourceKind, resolver)"
+            }
+            RenderStateBackend::Dom => {
+                "resolveDomTexture: texture source kind has no registered resolver — call registerDomTextureResolver(state, sourceKind, resolver)"
+            }
+            RenderStateBackend::Canvas => {
+                "resolveCanvasTexture: texture source kind has no registered resolver — call registerCanvasTextureResolver(resolvers, sourceKind, resolver) on the set the caller resolves through"
+            }
+        },
     };
 }
 
@@ -106,6 +147,7 @@ pub fn record_render_registries_miss<S: RenderState>(
         &runtime.registry_misses,
         runtime.registry_guard_log.as_ref(),
         get_entity_id(state),
+        state.render_backend(),
         registry,
         kind,
     );
@@ -115,6 +157,7 @@ fn record_render_registries_miss_shared(
     misses: &Ref<Vec<RenderRegistriesMiss>>,
     log_state: Option<&LogStateRef>,
     state_id: u64,
+    backend: RenderStateBackend,
     registry: RenderRegistryTable,
     kind: Kind,
 ) {
@@ -138,7 +181,7 @@ fn record_render_registries_miss_shared(
     data.insert("kind".to_string(), LogValue::Str(kind.clone()));
     data.insert(
         "message".to_string(),
-        LogValue::Str(get_render_registries_miss_message(registry).to_string()),
+        LogValue::Str(get_render_registries_miss_message(backend, registry).to_string()),
     );
     data.insert("registry".to_string(), LogValue::Int(registry as i64));
     log_once(

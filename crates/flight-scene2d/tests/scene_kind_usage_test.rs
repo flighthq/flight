@@ -190,7 +190,7 @@ mod get_scene2d_kind_usage {
         let usage = usage_of(|root| {
             let node = display_object();
             let material: flight_entity::Ref<dyn Material2D> =
-                Arc::new(RwLock::new(create_standard_material(None)));
+                Arc::new(RwLock::new(create_standard_material()));
             node.write().unwrap().node2d_fields_mut().material = Some(material);
             add(root, &node);
         });

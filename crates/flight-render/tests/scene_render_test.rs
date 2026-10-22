@@ -369,7 +369,7 @@ mod prepare_scene_3d_render {
 
     #[test]
     fn prepare_returns_lit_view_projected_frame_with_visible_mesh() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let scene = root();
         let mesh = mesh(bounded_box());
         let mesh_node: NodeRef = mesh.clone();
@@ -386,7 +386,7 @@ mod prepare_scene_3d_render {
 
     #[test]
     fn prepare_computes_non_identity_view_projection() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let list =
             prepare_scene_3d_render(&mut state, &root(), &front_camera(), &empty_lights(), None);
         assert_ne!(list.view_projection.m[15], 1.0);
@@ -394,7 +394,7 @@ mod prepare_scene_3d_render {
 
     #[test]
     fn draw_time_aspect_does_not_mutate_camera_projection() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let scene = root();
         let camera = front_camera();
         let tall = prepare_scene_3d_render(&mut state, &scene, &camera, &empty_lights(), Some(0.5))
@@ -412,7 +412,7 @@ mod prepare_scene_3d_render {
 
     #[test]
     fn prepare_consumes_camera_jitter() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let scene = root();
         let camera = front_camera();
         let base = prepare_scene_3d_render(&mut state, &scene, &camera, &empty_lights(), None)
@@ -427,7 +427,7 @@ mod prepare_scene_3d_render {
 
     #[test]
     fn prepare_culls_mesh_far_behind_camera() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let scene = root();
         let mesh = mesh(bounded_box());
         mesh.write().unwrap().position.z = 1000.0;
@@ -443,7 +443,7 @@ mod prepare_scene_3d_render {
 
     #[test]
     fn prepare_computes_uncached_bounds_and_culls_against_them() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let scene = root();
         let geometry = bounded_box();
         geometry.write().unwrap().bounds = None;
@@ -474,7 +474,7 @@ mod prepare_scene_3d_render {
         invalidate_node_local_transform(&mesh_node);
         let scene = root();
         add_node_child(&scene, &mesh_node);
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         assert_eq!(
             prepare_scene_3d_render(&mut state, &scene, &front_camera(), &empty_lights(), None)
                 .mesh_count,
@@ -491,7 +491,7 @@ mod prepare_scene_3d_render {
         add_node_child(&group, &mesh_node);
         let scene = root();
         add_node_child(&scene, &group);
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         assert_eq!(
             prepare_scene_3d_render(&mut state, &scene, &front_camera(), &empty_lights(), None)
                 .mesh_count,
@@ -508,7 +508,7 @@ mod prepare_scene_3d_render {
         add_node_child(&group, &mesh_node);
         let scene = root();
         add_node_child(&scene, &group);
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         assert_eq!(
             prepare_scene_3d_render(&mut state, &scene, &front_camera(), &empty_lights(), None)
                 .mesh_count,
@@ -526,7 +526,7 @@ mod prepare_scene_3d_render {
         add_node_child(&group, &mesh_node);
         let scene = root();
         add_node_child(&scene, &group);
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let list =
             prepare_scene_3d_render(&mut state, &scene, &front_camera(), &empty_lights(), None);
         assert_eq!(list.mesh_count, 1);
@@ -546,7 +546,7 @@ mod prepare_scene_3d_render {
         let mesh_node: NodeRef = mesh;
         add_node_child(&group, &mesh_node);
         add_node_child(&scene, &group);
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         prepare_scene_3d_render(&mut state, &scene, &front_camera(), &empty_lights(), None);
         let mut appearance = crate::support::test_default::<Scene3DAppearanceState>();
         assert_eq!(get_node3d_world_alpha(&scene, &mut appearance), 0.5);
@@ -556,7 +556,7 @@ mod prepare_scene_3d_render {
 
     #[test]
     fn prepare_reuses_same_list_per_render_state() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let scene = root();
         let first =
             prepare_scene_3d_render(&mut state, &scene, &front_camera(), &empty_lights(), None)
@@ -581,7 +581,7 @@ mod prepare_scene_3d_render {
         let mesh_node: NodeRef = mesh;
         let scene = root();
         add_node_child(&scene, &mesh_node);
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         prepare_scene_3d_render(&mut state, &scene, &front_camera(), &empty_lights(), None);
         let guard = mesh_node.read().unwrap();
         let mesh = guard.as_any().downcast_ref::<Mesh>().unwrap();
@@ -598,7 +598,7 @@ mod prepare_scene_3d_render {
         let scene = root();
         add_node_child(&scene, &mesh_node);
         let camera = front_camera();
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         prepare_scene_3d_render(&mut state, &scene, &camera, &empty_lights(), None);
         mesh.write().unwrap().position.x = 3.0;
         prepare_scene_3d_render(&mut state, &scene, &camera, &empty_lights(), None);
@@ -613,7 +613,7 @@ mod prepare_scene_3d_render {
         add_node_child(&scene, &mesh_node);
         let local = translation_matrix(3.0);
         set_node_local_matrix4(&mesh_node, &local);
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         prepare_scene_3d_render(&mut state, &scene, &front_camera(), &empty_lights(), None);
         let world = get_node_world_matrix4(&mesh_node, &mut state.runtime.node_revisions);
         assert!((world.m[12] - 3.0).abs() < 1e-6);
@@ -626,10 +626,8 @@ mod prepare_scene_3d_render {
         let scene = root();
         add_node_child(&scene, &mesh_node);
         let camera = front_camera();
-        let mut state = create_render_state(Some(&RenderStateInit {
-            scene_graph_sync_policy: Some(Scene3DGraphSyncPolicy::RequiresInvalidation),
-            ..crate::support::test_default()
-        }));
+        let mut state = create_render_state();
+        state.render.scene_graph_sync_policy = Scene3DGraphSyncPolicy::RequiresInvalidation;
         prepare_scene_3d_render(&mut state, &scene, &camera, &empty_lights(), None);
         mesh.write().unwrap().position.x = 3.0;
         prepare_scene_3d_render(&mut state, &scene, &camera, &empty_lights(), None);
@@ -648,7 +646,7 @@ mod prepare_scene_3d_render {
     #[test]
     fn instanced_mesh_is_kept_when_instances_are_away_from_node_origin() {
         let (scene, _mesh, mesh_node) = instanced_scene(&[60.0]);
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let list = prepare_scene_3d_render(
             &mut state,
             &scene,
@@ -663,7 +661,7 @@ mod prepare_scene_3d_render {
     #[test]
     fn instanced_mesh_is_culled_when_all_instances_are_outside() {
         let (scene, _mesh, _mesh_node) = instanced_scene(&[0.0]);
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         assert_eq!(
             prepare_scene_3d_render(
                 &mut state,
@@ -681,7 +679,7 @@ mod prepare_scene_3d_render {
     fn instanced_mesh_is_reculled_after_instance_matrices_move() {
         let (scene, mesh, _mesh_node) = instanced_scene(&[0.0]);
         let camera = camera_looking_at_x(60.0);
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         assert_eq!(
             prepare_scene_3d_render(&mut state, &scene, &camera, &empty_lights(), None)
                 .instanced_mesh_count,
@@ -698,7 +696,7 @@ mod prepare_scene_3d_render {
     #[test]
     fn instanced_mesh_is_kept_when_some_instances_are_visible() {
         let (scene, _mesh, _mesh_node) = instanced_scene(&[0.0, 60.0]);
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         assert_eq!(
             prepare_scene_3d_render(
                 &mut state,
@@ -726,7 +724,7 @@ mod set_skinned_mesh_bounds_guard {
         let mesh_node: NodeRef = mesh;
         let scene = root();
         add_node_child(&scene, &mesh_node);
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         set_skinned_mesh_bounds_guard(&mut state, Some(record_guard));
         prepare_scene_3d_render(&mut state, &scene, &front_camera(), &empty_lights(), None);
         assert_eq!(GUARD_CALLS.load(Ordering::SeqCst), 1);
@@ -741,7 +739,7 @@ mod set_skinned_mesh_bounds_guard {
         let mesh_node: NodeRef = mesh;
         let scene = root();
         add_node_child(&scene, &mesh_node);
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         set_skinned_mesh_bounds_guard(&mut state, Some(count_cleared_guard));
         prepare_scene_3d_render(&mut state, &scene, &front_camera(), &empty_lights(), None);
         set_skinned_mesh_bounds_guard(&mut state, None);

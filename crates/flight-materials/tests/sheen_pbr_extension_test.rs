@@ -6,7 +6,7 @@ mod create_sheen_pbr_extension {
 
     #[test]
     fn creates_with_defaults() {
-        let ext = create_sheen_pbr_extension(None);
+        let ext = create_sheen_pbr_extension();
         assert_eq!(ext.kind, SHEEN_PBR_EXTENSION_KIND);
         assert_eq!(ext.sheen_color, 0x000000ff);
         assert_eq!(ext.sheen_roughness, 0.0);
@@ -18,9 +18,9 @@ mod initialize_sheen_pbr_extension {
 
     #[test]
     fn sets_kind_and_defaults() {
-        let mut ext = create_sheen_pbr_extension(None);
+        let mut ext = create_sheen_pbr_extension();
         ext.sheen_roughness = 0.5;
-        initialize_sheen_pbr_extension(&mut ext, None);
+        initialize_sheen_pbr_extension(&mut ext);
         assert_eq!(ext.kind, SHEEN_PBR_EXTENSION_KIND);
         assert_eq!(ext.sheen_roughness, 0.0);
     }
@@ -31,8 +31,6 @@ mod is_valid_sheen_pbr_extension {
 
     #[test]
     fn validates_default_as_valid() {
-        assert!(is_valid_sheen_pbr_extension(&create_sheen_pbr_extension(
-            None
-        )));
+        assert!(is_valid_sheen_pbr_extension(&create_sheen_pbr_extension()));
     }
 }

@@ -126,7 +126,7 @@ mod custom_material2d {
 
     #[test]
     fn heterogeneous_material2d_vec() {
-        let sm = create_standard_material(None);
+        let sm = create_standard_material();
         let custom: CustomMaterial2D = allocate_entity();
         let slots: Vec<Ref<dyn Material2D>> =
             vec![Arc::new(RwLock::new(sm)), Arc::new(RwLock::new(custom))];
@@ -258,7 +258,7 @@ mod material_alpha_mode {
 
     #[test]
     fn material3d_initializes_alpha_mode_to_opaque() {
-        let mat = create_material3d("TestMaterial".to_string(), None);
+        let mat = create_material3d("TestMaterial".to_string());
         assert_eq!(mat.alpha_mode, MaterialAlphaMode::Opaque);
     }
 }
@@ -312,17 +312,14 @@ mod standard_material {
 
     #[test]
     fn constructor_preserves_kind_and_name() {
-        let opts = StandardMaterialOptions {
-            name: Some("Named".to_string()),
-        };
-        let mat = create_standard_material(Some(&opts));
+                let mat = { let mut value = create_standard_material(); value.name = Some("Named".to_string()); value };
         assert_eq!(mat.kind, STANDARD_MATERIAL_KIND);
         assert_eq!(mat.name, Some("Named".to_string()));
     }
 
     #[test]
     fn standard_material_fills_material2d_slot() {
-        let mat = create_standard_material(None);
+        let mat = create_standard_material();
         let concrete: Ref<StandardMaterial> = Arc::new(RwLock::new(mat));
         let _family_ref: Ref<dyn Material2D> = concrete.clone();
         assert_eq!(concrete.read().unwrap().kind, STANDARD_MATERIAL_KIND);
@@ -330,7 +327,7 @@ mod standard_material {
 
     #[test]
     fn family_ref_preserves_identity() {
-        let mat = create_standard_material(None);
+        let mat = create_standard_material();
         let concrete: Ref<StandardMaterial> = Arc::new(RwLock::new(mat));
         let family_ref: Ref<dyn Material2D> = concrete.clone();
         set_entity_uid(&mut *concrete.write().unwrap(), "sm_identity".to_string());

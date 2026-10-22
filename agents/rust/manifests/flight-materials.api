@@ -1,23 +1,26 @@
-src/anisotropy_pbr_extension.rs: pub fn create_anisotropy_pbr_extension(opts: Option<&AnisotropyPbrExtensionOptions>) -> AnisotropyPbrExtension
-src/anisotropy_pbr_extension.rs: pub fn initialize_anisotropy_pbr_extension(out: &mut AnisotropyPbrExtension, opts: Option<&AnisotropyPbrExtensionOptions>)
+src/anisotropy_pbr_extension.rs: pub fn create_anisotropy_pbr_extension() -> AnisotropyPbrExtension
+src/anisotropy_pbr_extension.rs: pub fn initialize_anisotropy_pbr_extension(out: &mut AnisotropyPbrExtension)
 src/anisotropy_pbr_extension.rs: pub fn is_valid_anisotropy_pbr_extension(value: &AnisotropyPbrExtension) -> bool
-src/classic_materials.rs: pub fn create_blinn_phong_material(opts: Option<&BlinnPhongMaterialOptions>) -> BlinnPhongMaterial
-src/classic_materials.rs: pub fn create_lambert_material(opts: Option<&LambertMaterialOptions>) -> LambertMaterial
-src/classic_materials.rs: pub fn create_phong_material(opts: Option<&PhongMaterialOptions>) -> PhongMaterial
-src/clearcoat_pbr_extension.rs: pub fn create_clearcoat_pbr_extension(opts: Option<&ClearcoatPbrExtensionOptions>) -> ClearcoatPbrExtension
-src/clearcoat_pbr_extension.rs: pub fn initialize_clearcoat_pbr_extension(out: &mut ClearcoatPbrExtension, opts: Option<&ClearcoatPbrExtensionOptions>)
+src/classic_materials.rs: pub fn create_blinn_phong_material() -> BlinnPhongMaterial
+src/classic_materials.rs: pub fn create_lambert_material() -> LambertMaterial
+src/classic_materials.rs: pub fn create_phong_material() -> PhongMaterial
+src/classic_materials.rs: pub fn initialize_blinn_phong_material(out: &mut BlinnPhongMaterial)
+src/classic_materials.rs: pub fn initialize_lambert_material(out: &mut LambertMaterial)
+src/classic_materials.rs: pub fn initialize_phong_material(out: &mut PhongMaterial)
+src/clearcoat_pbr_extension.rs: pub fn create_clearcoat_pbr_extension() -> ClearcoatPbrExtension
+src/clearcoat_pbr_extension.rs: pub fn initialize_clearcoat_pbr_extension(out: &mut ClearcoatPbrExtension)
 src/clearcoat_pbr_extension.rs: pub fn is_valid_clearcoat_pbr_extension(value: &ClearcoatPbrExtension) -> bool
 src/color_scale_bias.rs: pub fn clone_color_scale_bias(source: &ColorScaleBias) -> ColorScaleBias
 src/color_scale_bias.rs: pub fn concat_color_scale_bias(out: &mut ColorScaleBias, source: &ColorScaleBias, other: &ColorScaleBias,)
 src/color_scale_bias.rs: pub fn copy_color_scale_bias(out: &mut ColorScaleBias, source: &ColorScaleBias)
 src/color_scale_bias.rs: pub fn copy_color_scale_bias_to_arrays(out_color_scales: &mut Vec<f32>, out_color_biases: &mut Vec<f32>, source: &ColorScaleBias,)
-src/color_scale_bias.rs: pub fn create_color_scale_bias(opts: Option<&ColorScaleBiasOptions>) -> ColorScaleBias
+src/color_scale_bias.rs: pub fn create_color_scale_bias() -> ColorScaleBias
 src/color_scale_bias.rs: pub fn equals_color_scale_bias(a: &ColorScaleBias, b: &ColorScaleBias) -> bool
 src/color_scale_bias.rs: pub fn equals_color_scale_bias_biases(a: &ColorScaleBias, b: &ColorScaleBias, compare_alpha: bool,) -> bool
 src/color_scale_bias.rs: pub fn equals_color_scale_bias_scales(a: &ColorScaleBias, b: &ColorScaleBias, compare_alpha: bool,) -> bool
 src/color_scale_bias.rs: pub fn get_color_scale_bias_bias_rgb(source: &ColorScaleBias) -> u32
 src/color_scale_bias.rs: pub fn get_color_scale_bias_bias_rgba(source: &ColorScaleBias) -> u32
-src/color_scale_bias.rs: pub fn initialize_color_scale_bias(out: &mut ColorScaleBias, opts: Option<&ColorScaleBiasOptions>,)
+src/color_scale_bias.rs: pub fn initialize_color_scale_bias(out: &mut ColorScaleBias)
 src/color_scale_bias.rs: pub fn invert_color_scale_bias(out: &mut ColorScaleBias, source: &ColorScaleBias)
 src/color_scale_bias.rs: pub fn is_identity_color_scale_bias(source: &ColorScaleBias, compare_alpha_scale: bool) -> bool
 src/color_scale_bias.rs: pub fn set_color_scale_bias(out: &mut ColorScaleBias, red_scale: f32, green_scale: f32, blue_scale: f32, alpha_scale: f32, red_bias: f32, green_bias: f32, blue_bias: f32, alpha_bias: f32,)
@@ -47,15 +50,17 @@ src/contract.rs: pub use crate::transmission_volume_pbr_extension::*;
 src/contract.rs: pub use crate::types::*;
 src/contract.rs: pub use crate::unlit_materials::*;
 src/contract.rs: pub use crate::wrapped_diffuse_pbr_extension::*;
-src/custom_shader_material.rs: pub fn create_custom_shader_material(opts: Option<&CustomShaderMaterialOptions>) -> CustomShaderMaterial
+src/custom_shader_material.rs: pub fn create_custom_shader_material() -> CustomShaderMaterial
+src/custom_shader_material.rs: pub fn initialize_custom_shader_material(out: &mut CustomShaderMaterial)
 src/enable_material_conversion_guards.rs: pub fn disable_material_conversion_guards()
 src/enable_material_conversion_guards.rs: pub fn enable_material_conversion_guards(log_state: LogStateRef, clock: ClockProvider) -> MaterialConversionContext
 src/enable_material_conversion_guards.rs: pub type ClockProvider = Arc<dyn Fn() -> f64 + Send + Sync>;
 src/explain_material_conversion.rs: pub fn explain_phong_conversion(source: &PhongMaterial) -> MaterialConversionExplanation
 src/explain_material_conversion.rs: pub fn explain_specular_glossiness_conversion(source: &SpecularGlossinessPbrMaterial,) -> MaterialConversionExplanation
-src/extended_pbr_material.rs: pub fn create_extended_pbr_material(opts: Option<&ExtendedPbrMaterialOptions>,) -> ExtendedPbrMaterial
-src/iridescence_pbr_extension.rs: pub fn create_iridescence_pbr_extension(opts: Option<&IridescencePbrExtensionOptions>) -> IridescencePbrExtension
-src/iridescence_pbr_extension.rs: pub fn initialize_iridescence_pbr_extension(out: &mut IridescencePbrExtension, opts: Option<&IridescencePbrExtensionOptions>)
+src/extended_pbr_material.rs: pub fn create_extended_pbr_material() -> ExtendedPbrMaterial
+src/extended_pbr_material.rs: pub fn initialize_extended_pbr_material(out: &mut ExtendedPbrMaterial)
+src/iridescence_pbr_extension.rs: pub fn create_iridescence_pbr_extension() -> IridescencePbrExtension
+src/iridescence_pbr_extension.rs: pub fn initialize_iridescence_pbr_extension(out: &mut IridescencePbrExtension)
 src/iridescence_pbr_extension.rs: pub fn is_valid_iridescence_pbr_extension(value: &IridescencePbrExtension) -> bool
 src/lib.rs: pub mod anisotropy_pbr_extension
 src/lib.rs: pub mod classic_materials
@@ -88,13 +93,12 @@ src/material.rs: pub fn create_material(kind: Kind) -> MaterialFields
 src/material.rs: pub fn equals_material(a: &dyn Material, b: &dyn Material) -> bool
 src/material.rs: pub fn get_material_of_kind<'a>(material: Option<&'a dyn Material>, kind: &str) -> Option<&'a dyn Material>
 src/material.rs: pub fn initialize_material(material: &mut MaterialFields, kind: Kind)
-src/material3d.rs: pub fn create_material3d(kind: Kind, opts: Option<&Material3DOptions>) -> Material3DFields
+src/material3d.rs: pub fn create_material3d(kind: Kind) -> Material3DFields
 src/material3d.rs: pub fn get_material3d_alpha_mode(source: &dyn Material3D) -> MaterialAlphaMode
-src/material3d.rs: pub fn initialize_material3d(material: &mut Material3DFields, kind: Kind, opts: Option<&Material3DOptions>,)
+src/material3d.rs: pub fn initialize_material3d(material: &mut Material3DFields, kind: Kind)
 src/material3d.rs: pub fn is_material3d_blended(source: &dyn Material3D) -> bool
 src/material3d.rs: pub fn is_material3d_masked(source: &dyn Material3D) -> bool
 src/material3d.rs: pub fn is_material3d_opaque(source: &dyn Material3D) -> bool
-src/material3d.rs: pub struct Material3DOptions { pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub name: Option<String>, }
 src/material_presets.rs: pub fn create_aluminum_standard_pbr_material(opts: Option<&StandardPbrMaterialOptions>) -> StandardPbrMaterial
 src/material_presets.rs: pub fn create_carbon_standard_pbr_material(opts: Option<&StandardPbrMaterialOptions>) -> StandardPbrMaterial
 src/material_presets.rs: pub fn create_glass_extended_pbr_material(opts: Option<&GlassExtendedPbrMaterialOptions>) -> ExtendedPbrMaterial
@@ -113,25 +117,27 @@ src/material_validation.rs: pub fn is_valid_material_iridescence_thickness(value
 src/material_validation.rs: pub fn is_valid_material_weight(value: f32) -> bool
 src/pbr_extension.rs: pub fn is_valid_pbr_uv_set(value: u32) -> bool
 src/pbr_materials.rs: pub fn convert_specular_glossiness_to_standard_pbr(out: &mut StandardPbrMaterialProperties, source: &SpecularGlossinessPbrMaterial, ctx: Option<&MaterialConversionContext>,)
-src/pbr_materials.rs: pub fn create_specular_glossiness_pbr_material(opts: Option<&SpecularGlossinessPbrMaterialOptions>) -> SpecularGlossinessPbrMaterial
-src/pbr_materials.rs: pub fn create_standard_pbr_material(opts: Option<&StandardPbrMaterialOptions>) -> StandardPbrMaterial
+src/pbr_materials.rs: pub fn create_specular_glossiness_pbr_material() -> SpecularGlossinessPbrMaterial
+src/pbr_materials.rs: pub fn create_standard_pbr_material() -> StandardPbrMaterial
 src/pbr_materials.rs: pub fn create_standard_pbr_material_properties(opts: Option<&StandardPbrMaterialPropertiesOptions>) -> StandardPbrMaterialProperties
+src/pbr_materials.rs: pub fn initialize_specular_glossiness_pbr_material(out: &mut SpecularGlossinessPbrMaterial)
+src/pbr_materials.rs: pub fn initialize_standard_pbr_material(out: &mut StandardPbrMaterial)
 src/pbr_materials.rs: pub fn report_material_conversion_drop(ctx: Option<&MaterialConversionContext>, explanation: &MaterialConversionExplanation, conversion: &str,)
 src/pbr_materials.rs: pub fn set_material_conversion_guard(guard: Option<MaterialConversionGuard>) -> Option<MaterialConversionContext>
 src/phong_to_pbr.rs: pub fn convert_phong_to_standard_pbr_material(phong: &PhongMaterial, opts: Option<&StandardPbrMaterialOptions>, ctx: Option<&MaterialConversionContext>) -> StandardPbrMaterial
 src/phong_to_pbr.rs: pub fn get_pbr_metallic_from_phong_specular(specular: u32, diffuse: u32) -> f32
 src/phong_to_pbr.rs: pub fn get_pbr_roughness_from_phong_shininess(shininess: f32) -> f32
 src/phong_to_pbr.rs: pub fn get_phong_to_pbr_light_exposure() -> f32
-src/sheen_pbr_extension.rs: pub fn create_sheen_pbr_extension(opts: Option<&SheenPbrExtensionOptions>) -> SheenPbrExtension
-src/sheen_pbr_extension.rs: pub fn initialize_sheen_pbr_extension(out: &mut SheenPbrExtension, opts: Option<&SheenPbrExtensionOptions>)
+src/sheen_pbr_extension.rs: pub fn create_sheen_pbr_extension() -> SheenPbrExtension
+src/sheen_pbr_extension.rs: pub fn initialize_sheen_pbr_extension(out: &mut SheenPbrExtension)
 src/sheen_pbr_extension.rs: pub fn is_valid_sheen_pbr_extension(value: &SheenPbrExtension) -> bool
-src/specular_pbr_extension.rs: pub fn create_specular_pbr_extension(opts: Option<&SpecularPbrExtensionOptions>) -> SpecularPbrExtension
-src/specular_pbr_extension.rs: pub fn initialize_specular_pbr_extension(out: &mut SpecularPbrExtension, opts: Option<&SpecularPbrExtensionOptions>)
+src/specular_pbr_extension.rs: pub fn create_specular_pbr_extension() -> SpecularPbrExtension
+src/specular_pbr_extension.rs: pub fn initialize_specular_pbr_extension(out: &mut SpecularPbrExtension)
 src/specular_pbr_extension.rs: pub fn is_valid_specular_pbr_extension(value: &SpecularPbrExtension) -> bool
-src/standard_material.rs: pub fn create_standard_material(options: Option<&StandardMaterialOptions>) -> StandardMaterial
-src/standard_material.rs: pub fn initialize_standard_material(out: &mut StandardMaterial, options: Option<&StandardMaterialOptions>)
-src/transmission_volume_pbr_extension.rs: pub fn create_transmission_volume_pbr_extension(opts: Option<&TransmissionVolumePbrExtensionOptions>) -> TransmissionVolumePbrExtension
-src/transmission_volume_pbr_extension.rs: pub fn initialize_transmission_volume_pbr_extension(out: &mut TransmissionVolumePbrExtension, opts: Option<&TransmissionVolumePbrExtensionOptions>)
+src/standard_material.rs: pub fn create_standard_material() -> StandardMaterial
+src/standard_material.rs: pub fn initialize_standard_material(out: &mut StandardMaterial)
+src/transmission_volume_pbr_extension.rs: pub fn create_transmission_volume_pbr_extension() -> TransmissionVolumePbrExtension
+src/transmission_volume_pbr_extension.rs: pub fn initialize_transmission_volume_pbr_extension(out: &mut TransmissionVolumePbrExtension)
 src/transmission_volume_pbr_extension.rs: pub fn is_valid_transmission_volume_pbr_extension(value: &TransmissionVolumePbrExtension) -> bool
 src/types.rs: #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)] pub enum MaterialAlphaMode { Blend, Mask, #[default] Opaque, }
 src/types.rs: #[derive(Clone, Copy, Debug, PartialEq, Eq)] pub enum MaterialConversionDropReason { IncompatibleChannelSemantics, UnsupportedByTargetModel, }
@@ -166,38 +172,16 @@ src/types.rs: #[derive(Clone, Debug)] pub struct UnlitMaterial { fields: Materia
 src/types.rs: #[derive(Clone, Debug)] pub struct VertexColorMaterial { fields: Material3DFields, pub tint: u32, }
 src/types.rs: #[derive(Clone, Debug)] pub struct WireframeMaterial { fields: Material3DFields, pub color: u32, pub thickness: f32, }
 src/types.rs: #[derive(Clone, Debug)] pub struct WrappedDiffusePbrExtension { runtime: EntityRuntimeSlot, pub kind: Kind, pub thickness: f32, pub thickness_map: TextureSlot, pub thickness_map_uv_set: PbrUvSet, pub wrapped_diffuse_color: u32, pub wrapped_diffuse_map: TextureSlot, pub wrapped_diffuse_map_uv_set: PbrUvSet, pub wrapped_diffuse_strength: f32, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct AnisotropyPbrExtensionOptions { pub anisotropy_map: TextureSlot, pub anisotropy_map_uv_set: Option<PbrUvSet>, pub anisotropy_rotation: Option<f32>, pub anisotropy_strength: Option<f32>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct BlinnPhongMaterialOptions { pub name: Option<String>, pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub alpha_map: TextureSlot, pub diffuse: Option<u32>, pub diffuse_map: TextureSlot, pub normal_map: TextureSlot, pub normal_scale: Option<f32>, pub shininess: Option<f32>, pub specular: Option<u32>, pub specular_map: TextureSlot, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct ClearcoatPbrExtensionOptions { pub clearcoat: Option<f32>, pub clearcoat_map: TextureSlot, pub clearcoat_map_uv_set: Option<PbrUvSet>, pub clearcoat_normal_map: TextureSlot, pub clearcoat_normal_map_uv_set: Option<PbrUvSet>, pub clearcoat_normal_scale: Option<f32>, pub clearcoat_roughness: Option<f32>, pub clearcoat_roughness_map: TextureSlot, pub clearcoat_roughness_map_uv_set: Option<PbrUvSet>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct ColorScaleBiasOptions { pub red_scale: Option<f32>, pub green_scale: Option<f32>, pub blue_scale: Option<f32>, pub alpha_scale: Option<f32>, pub red_bias: Option<f32>, pub green_bias: Option<f32>, pub blue_bias: Option<f32>, pub alpha_bias: Option<f32>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct CustomShaderMaterialOptions { pub name: Option<String>, pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub shader_key: Option<String>, pub textures: Option<std::collections::HashMap<String, Ref<Texture>>>, pub uniforms: Option<std::collections::HashMap<String, UniformValue>>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct DepthMaterialOptions { pub name: Option<String>, pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub far: Option<f32>, pub near: Option<f32>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct EmissiveMaterialOptions { pub name: Option<String>, pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub emissive: Option<u32>, pub emissive_map: TextureSlot, pub emissive_strength: Option<f32>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct ExtendedPbrMaterialOptions { pub name: Option<String>, pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub extensions: Option<Vec<Ref<PbrExtension>>>, pub standard: Option<StandardPbrMaterialProperties>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct IridescencePbrExtensionOptions { pub iridescence: Option<f32>, pub iridescence_ior: Option<f32>, pub iridescence_map: TextureSlot, pub iridescence_map_uv_set: Option<PbrUvSet>, pub iridescence_thickness_map: TextureSlot, pub iridescence_thickness_map_uv_set: Option<PbrUvSet>, pub iridescence_thickness_max: Option<f32>, pub iridescence_thickness_min: Option<f32>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct LambertMaterialOptions { pub name: Option<String>, pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub diffuse: Option<u32>, pub diffuse_map: TextureSlot, pub emissive: Option<u32>, pub emissive_map: TextureSlot, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct MatcapMaterialOptions { pub name: Option<String>, pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub matcap: TextureSlot, pub tint: Option<u32>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct MaterialDataFields { runtime: EntityRuntimeSlot, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct NormalMaterialOptions { pub name: Option<String>, pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub normal_map: TextureSlot, pub normal_scale: Option<f32>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct PhongMaterialOptions { pub name: Option<String>, pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub diffuse: Option<u32>, pub diffuse_map: TextureSlot, pub normal_map: TextureSlot, pub normal_scale: Option<f32>, pub shininess: Option<f32>, pub specular: Option<u32>, pub specular_map: TextureSlot, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct SheenPbrExtensionOptions { pub sheen_color: Option<u32>, pub sheen_color_map: TextureSlot, pub sheen_color_map_uv_set: Option<PbrUvSet>, pub sheen_roughness: Option<f32>, pub sheen_roughness_map: TextureSlot, pub sheen_roughness_map_uv_set: Option<PbrUvSet>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct SpecularGlossinessPbrMaterialOptions { pub name: Option<String>, pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub diffuse: Option<u32>, pub diffuse_map: TextureSlot, pub emissive: Option<u32>, pub emissive_map: TextureSlot, pub emissive_strength: Option<f32>, pub glossiness: Option<f32>, pub normal_map: TextureSlot, pub normal_scale: Option<f32>, pub occlusion_map: TextureSlot, pub occlusion_strength: Option<f32>, pub specular: Option<u32>, pub specular_glossiness_map: TextureSlot, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct SpecularPbrExtensionOptions { pub specular: Option<f32>, pub specular_color: Option<u32>, pub specular_color_map: TextureSlot, pub specular_color_map_uv_set: Option<PbrUvSet>, pub specular_map: TextureSlot, pub specular_map_uv_set: Option<PbrUvSet>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct StandardMaterialOptions { pub name: Option<String>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct StandardPbrMaterialOptions { pub name: Option<String>, pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub alpha_map: TextureSlot, pub base_color: Option<u32>, pub base_color_map: TextureSlot, pub emissive: Option<u32>, pub emissive_map: TextureSlot, pub emissive_strength: Option<f32>, pub metallic: Option<f32>, pub metallic_roughness_map: TextureSlot, pub normal_map: TextureSlot, pub normal_scale: Option<f32>, pub occlusion_map: TextureSlot, pub occlusion_strength: Option<f32>, pub roughness: Option<f32>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct StandardPbrMaterialPropertiesOptions { pub alpha_map: TextureSlot, pub base_color: Option<u32>, pub base_color_map: TextureSlot, pub emissive: Option<u32>, pub emissive_map: TextureSlot, pub emissive_strength: Option<f32>, pub metallic: Option<f32>, pub metallic_roughness_map: TextureSlot, pub normal_map: TextureSlot, pub normal_scale: Option<f32>, pub occlusion_map: TextureSlot, pub occlusion_strength: Option<f32>, pub roughness: Option<f32>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct ToonMaterialOptions { pub name: Option<String>, pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub base_color: Option<u32>, pub base_color_map: TextureSlot, pub ramp: TextureSlot, pub steps: Option<u32>, }
 src/types.rs: #[derive(Clone, Debug, Default)] pub struct TransmissionVolumePbrExtensionOptions { pub attenuation_color: Option<u32>, pub attenuation_distance: Option<f32>, pub ior: Option<f32>, pub thickness: Option<f32>, pub thickness_map: TextureSlot, pub thickness_map_uv_set: Option<PbrUvSet>, pub transmission: Option<f32>, pub transmission_map: TextureSlot, pub transmission_map_uv_set: Option<PbrUvSet>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct UnlitMaterialOptions { pub name: Option<String>, pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub base_color: Option<u32>, pub base_color_map: TextureSlot, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct VertexColorMaterialOptions { pub name: Option<String>, pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub tint: Option<u32>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct WireframeMaterialOptions { pub name: Option<String>, pub alpha_cutoff: Option<f32>, pub alpha_mode: Option<MaterialAlphaMode>, pub blend_mode: Option<BlendMode>, pub double_sided: Option<bool>, pub color: Option<u32>, pub thickness: Option<f32>, }
-src/types.rs: #[derive(Clone, Debug, Default)] pub struct WrappedDiffusePbrExtensionOptions { pub thickness: Option<f32>, pub thickness_map: TextureSlot, pub thickness_map_uv_set: Option<PbrUvSet>, pub wrapped_diffuse_color: Option<u32>, pub wrapped_diffuse_map: TextureSlot, pub wrapped_diffuse_map_uv_set: Option<PbrUvSet>, pub wrapped_diffuse_strength: Option<f32>, }
 src/types.rs: #[derive(Clone, Debug, PartialEq)] pub struct MaterialConversionExplanation { pub dropped_maps: Vec<String>, pub reason: Option<MaterialConversionDropReason>, }
 src/types.rs: impl AnisotropyPbrExtension :: fn is_valid(&self) -> bool
-src/types.rs: impl AnisotropyPbrExtension :: fn new(opts: Option<&AnisotropyPbrExtensionOptions>) -> Self
-src/types.rs: impl BlinnPhongMaterial :: fn new(opts: Option<&BlinnPhongMaterialOptions>) -> Self
+src/types.rs: impl AnisotropyPbrExtension :: fn new() -> Self
+src/types.rs: impl BlinnPhongMaterial :: fn new() -> Self
 src/types.rs: impl ClearcoatPbrExtension :: fn is_valid(&self) -> bool
-src/types.rs: impl ClearcoatPbrExtension :: fn new(opts: Option<&ClearcoatPbrExtensionOptions>) -> Self
+src/types.rs: impl ClearcoatPbrExtension :: fn new() -> Self
 src/types.rs: impl ColorScaleBias :: fn bias_rgb(&self) -> u32
 src/types.rs: impl ColorScaleBias :: fn bias_rgba(&self) -> u32
 src/types.rs: impl ColorScaleBias :: fn clone_color_scale_bias(&self) -> Self
@@ -207,15 +191,15 @@ src/types.rs: impl ColorScaleBias :: fn copy_to_arrays(&self, out_color_scales: 
 src/types.rs: impl ColorScaleBias :: fn equals(&self, other: &ColorScaleBias) -> bool
 src/types.rs: impl ColorScaleBias :: fn equals_biases(&self, other: &ColorScaleBias, compare_alpha: bool) -> bool
 src/types.rs: impl ColorScaleBias :: fn equals_scales(&self, other: &ColorScaleBias, compare_alpha: bool) -> bool
-src/types.rs: impl ColorScaleBias :: fn initialize(&mut self, opts: Option<&ColorScaleBiasOptions>)
+src/types.rs: impl ColorScaleBias :: fn initialize(&mut self)
 src/types.rs: impl ColorScaleBias :: fn invert_from(&mut self, source: &ColorScaleBias)
 src/types.rs: impl ColorScaleBias :: fn is_identity(&self, compare_alpha_scale: bool) -> bool
-src/types.rs: impl ColorScaleBias :: fn new(opts: Option<&ColorScaleBiasOptions>) -> Self
+src/types.rs: impl ColorScaleBias :: fn new() -> Self
 src/types.rs: impl ColorScaleBias :: fn set_bias_rgb(&mut self, value: u32)
 src/types.rs: impl ColorScaleBias :: fn set_bias_rgba(&mut self, value: u32)
 src/types.rs: impl ColorScaleBias :: fn set_identity(&mut self)
 src/types.rs: impl ColorScaleBias :: fn set_values(&mut self, red_scale: f32, green_scale: f32, blue_scale: f32, alpha_scale: f32, red_bias: f32, green_bias: f32, blue_bias: f32, alpha_bias: f32,)
-src/types.rs: impl CustomShaderMaterial :: fn new(opts: Option<&CustomShaderMaterialOptions>) -> Self
+src/types.rs: impl CustomShaderMaterial :: fn new() -> Self
 src/types.rs: impl Default for AnisotropyPbrExtension
 src/types.rs: impl Default for AnisotropyPbrExtension :: fn default() -> Self
 src/types.rs: impl Default for BlinnPhongMaterial
@@ -274,8 +258,8 @@ src/types.rs: impl Default for WireframeMaterial
 src/types.rs: impl Default for WireframeMaterial :: fn default() -> Self
 src/types.rs: impl Default for WrappedDiffusePbrExtension
 src/types.rs: impl Default for WrappedDiffusePbrExtension :: fn default() -> Self
-src/types.rs: impl DepthMaterial :: fn new(opts: Option<&DepthMaterialOptions>) -> Self
-src/types.rs: impl EmissiveMaterial :: fn new(opts: Option<&EmissiveMaterialOptions>) -> Self
+src/types.rs: impl DepthMaterial :: fn new() -> Self
+src/types.rs: impl EmissiveMaterial :: fn new() -> Self
 src/types.rs: impl Entity for AnisotropyPbrExtension
 src/types.rs: impl Entity for AnisotropyPbrExtension :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for AnisotropyPbrExtension :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
@@ -306,11 +290,11 @@ src/types.rs: impl Entity for TransmissionVolumePbrExtension :: fn entity_runtim
 src/types.rs: impl Entity for WrappedDiffusePbrExtension
 src/types.rs: impl Entity for WrappedDiffusePbrExtension :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl Entity for WrappedDiffusePbrExtension :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
-src/types.rs: impl ExtendedPbrMaterial :: fn new(opts: Option<&ExtendedPbrMaterialOptions>) -> Self
+src/types.rs: impl ExtendedPbrMaterial :: fn new() -> Self
 src/types.rs: impl IridescencePbrExtension :: fn is_valid(&self) -> bool
-src/types.rs: impl IridescencePbrExtension :: fn new(opts: Option<&IridescencePbrExtensionOptions>) -> Self
-src/types.rs: impl LambertMaterial :: fn new(opts: Option<&LambertMaterialOptions>) -> Self
-src/types.rs: impl MatcapMaterial :: fn new(opts: Option<&MatcapMaterialOptions>) -> Self
+src/types.rs: impl IridescencePbrExtension :: fn new() -> Self
+src/types.rs: impl LambertMaterial :: fn new() -> Self
+src/types.rs: impl MatcapMaterial :: fn new() -> Self
 src/types.rs: impl Material for Material2DFields
 src/types.rs: impl Material for Material2DFields :: fn as_any(&self) -> &dyn std::any::Any
 src/types.rs: impl Material for Material2DFields :: fn as_any_mut(&mut self) -> &mut dyn std::any::Any
@@ -341,11 +325,11 @@ src/types.rs: impl Material3D for Material3DFields
 src/types.rs: impl Material3D for Material3DFields :: fn material3d_fields(&self) -> &Material3DFields
 src/types.rs: impl Material3D for Material3DFields :: fn material3d_fields_mut(&mut self) -> &mut Material3DFields
 src/types.rs: impl Material3DFields :: fn alpha_mode(&self) -> MaterialAlphaMode
-src/types.rs: impl Material3DFields :: fn initialize(&mut self, kind: Kind, opts: Option<&crate::material3d::Material3DOptions>)
+src/types.rs: impl Material3DFields :: fn initialize(&mut self, kind: Kind)
 src/types.rs: impl Material3DFields :: fn is_blended(&self) -> bool
 src/types.rs: impl Material3DFields :: fn is_masked(&self) -> bool
 src/types.rs: impl Material3DFields :: fn is_opaque(&self) -> bool
-src/types.rs: impl Material3DFields :: fn new(kind: Kind, opts: Option<&crate::material3d::Material3DOptions>) -> Self
+src/types.rs: impl Material3DFields :: fn new(kind: Kind) -> Self
 src/types.rs: impl MaterialConversionContext :: fn new(guard: MaterialConversionGuard) -> Self
 src/types.rs: impl MaterialData for MaterialDataFields
 src/types.rs: impl MaterialData for MaterialDataFields :: fn material_data_fields(&self) -> &MaterialDataFields
@@ -359,31 +343,31 @@ src/types.rs: impl MaterialFields :: fn equals(&self, other: &dyn Material) -> b
 src/types.rs: impl MaterialFields :: fn initialize(&mut self, kind: Kind)
 src/types.rs: impl MaterialFields :: fn new(kind: Kind) -> Self
 src/types.rs: impl MaterialFields :: fn of_kind<'a>(material: Option<&'a dyn Material>, kind: &str) -> Option<&'a dyn Material>
-src/types.rs: impl NormalMaterial :: fn new(opts: Option<&NormalMaterialOptions>) -> Self
+src/types.rs: impl NormalMaterial :: fn new() -> Self
 src/types.rs: impl PbrExtension :: fn kind(&self) -> &str
 src/types.rs: impl PhongMaterial :: fn convert_to_standard_pbr(&self, opts: Option<&StandardPbrMaterialOptions>, ctx: Option<&MaterialConversionContext>,) -> StandardPbrMaterial
 src/types.rs: impl PhongMaterial :: fn explain_conversion(&self) -> MaterialConversionExplanation
-src/types.rs: impl PhongMaterial :: fn new(opts: Option<&PhongMaterialOptions>) -> Self
+src/types.rs: impl PhongMaterial :: fn new() -> Self
 src/types.rs: impl SheenPbrExtension :: fn is_valid(&self) -> bool
-src/types.rs: impl SheenPbrExtension :: fn new(opts: Option<&SheenPbrExtensionOptions>) -> Self
+src/types.rs: impl SheenPbrExtension :: fn new() -> Self
 src/types.rs: impl SpecularGlossinessPbrMaterial :: fn convert_to_standard_pbr(&self, out: &mut StandardPbrMaterialProperties, ctx: Option<&MaterialConversionContext>,)
 src/types.rs: impl SpecularGlossinessPbrMaterial :: fn explain_conversion(&self) -> MaterialConversionExplanation
-src/types.rs: impl SpecularGlossinessPbrMaterial :: fn new(opts: Option<&SpecularGlossinessPbrMaterialOptions>) -> Self
+src/types.rs: impl SpecularGlossinessPbrMaterial :: fn new() -> Self
 src/types.rs: impl SpecularPbrExtension :: fn is_valid(&self) -> bool
-src/types.rs: impl SpecularPbrExtension :: fn new(opts: Option<&SpecularPbrExtensionOptions>) -> Self
-src/types.rs: impl StandardMaterial :: fn initialize(&mut self, options: Option<&StandardMaterialOptions>)
-src/types.rs: impl StandardMaterial :: fn new(options: Option<&StandardMaterialOptions>) -> Self
-src/types.rs: impl StandardPbrMaterial :: fn new(opts: Option<&StandardPbrMaterialOptions>) -> Self
+src/types.rs: impl SpecularPbrExtension :: fn new() -> Self
+src/types.rs: impl StandardMaterial :: fn initialize(&mut self)
+src/types.rs: impl StandardMaterial :: fn new() -> Self
+src/types.rs: impl StandardPbrMaterial :: fn new() -> Self
 src/types.rs: impl StandardPbrMaterialProperties :: fn clamp(&mut self) -> &mut Self
 src/types.rs: impl StandardPbrMaterialProperties :: fn new(opts: Option<&StandardPbrMaterialPropertiesOptions>) -> Self
-src/types.rs: impl ToonMaterial :: fn new(opts: Option<&ToonMaterialOptions>) -> Self
+src/types.rs: impl ToonMaterial :: fn new() -> Self
 src/types.rs: impl TransmissionVolumePbrExtension :: fn is_valid(&self) -> bool
-src/types.rs: impl TransmissionVolumePbrExtension :: fn new(opts: Option<&TransmissionVolumePbrExtensionOptions>) -> Self
-src/types.rs: impl UnlitMaterial :: fn new(opts: Option<&UnlitMaterialOptions>) -> Self
-src/types.rs: impl VertexColorMaterial :: fn new(opts: Option<&VertexColorMaterialOptions>) -> Self
-src/types.rs: impl WireframeMaterial :: fn new(opts: Option<&WireframeMaterialOptions>) -> Self
+src/types.rs: impl TransmissionVolumePbrExtension :: fn new() -> Self
+src/types.rs: impl UnlitMaterial :: fn new() -> Self
+src/types.rs: impl VertexColorMaterial :: fn new() -> Self
+src/types.rs: impl WireframeMaterial :: fn new() -> Self
 src/types.rs: impl WrappedDiffusePbrExtension :: fn is_valid(&self) -> bool
-src/types.rs: impl WrappedDiffusePbrExtension :: fn new(opts: Option<&WrappedDiffusePbrExtensionOptions>) -> Self
+src/types.rs: impl WrappedDiffusePbrExtension :: fn new() -> Self
 src/types.rs: impl flight_entity::Entity for Material2DFields
 src/types.rs: impl flight_entity::Entity for Material2DFields :: fn entity_runtime(&self) -> &EntityRuntimeSlot
 src/types.rs: impl flight_entity::Entity for Material2DFields :: fn entity_runtime_mut(&mut self) -> &mut EntityRuntimeSlot
@@ -454,14 +438,22 @@ src/types.rs: pub type Material3DRef = Ref<dyn Material3D>;
 src/types.rs: pub type MaterialConversionGuard = Arc<dyn Fn(&MaterialConversionExplanation, &str) + Send + Sync>;
 src/types.rs: pub type PbrUvSet = u32;
 src/types.rs: pub type TextureSlot = Option<Ref<Texture>>;
-src/unlit_materials.rs: pub fn create_depth_material(opts: Option<&DepthMaterialOptions>) -> DepthMaterial
-src/unlit_materials.rs: pub fn create_emissive_material(opts: Option<&EmissiveMaterialOptions>) -> EmissiveMaterial
-src/unlit_materials.rs: pub fn create_matcap_material(opts: Option<&MatcapMaterialOptions>) -> MatcapMaterial
-src/unlit_materials.rs: pub fn create_normal_material(opts: Option<&NormalMaterialOptions>) -> NormalMaterial
-src/unlit_materials.rs: pub fn create_toon_material(opts: Option<&ToonMaterialOptions>) -> ToonMaterial
-src/unlit_materials.rs: pub fn create_unlit_material(opts: Option<&UnlitMaterialOptions>) -> UnlitMaterial
-src/unlit_materials.rs: pub fn create_vertex_color_material(opts: Option<&VertexColorMaterialOptions>) -> VertexColorMaterial
-src/unlit_materials.rs: pub fn create_wireframe_material(opts: Option<&WireframeMaterialOptions>) -> WireframeMaterial
-src/wrapped_diffuse_pbr_extension.rs: pub fn create_wrapped_diffuse_pbr_extension(opts: Option<&WrappedDiffusePbrExtensionOptions>) -> WrappedDiffusePbrExtension
-src/wrapped_diffuse_pbr_extension.rs: pub fn initialize_wrapped_diffuse_pbr_extension(out: &mut WrappedDiffusePbrExtension, opts: Option<&WrappedDiffusePbrExtensionOptions>)
+src/unlit_materials.rs: pub fn create_depth_material() -> DepthMaterial
+src/unlit_materials.rs: pub fn create_emissive_material() -> EmissiveMaterial
+src/unlit_materials.rs: pub fn create_matcap_material() -> MatcapMaterial
+src/unlit_materials.rs: pub fn create_normal_material() -> NormalMaterial
+src/unlit_materials.rs: pub fn create_toon_material() -> ToonMaterial
+src/unlit_materials.rs: pub fn create_unlit_material() -> UnlitMaterial
+src/unlit_materials.rs: pub fn create_vertex_color_material() -> VertexColorMaterial
+src/unlit_materials.rs: pub fn create_wireframe_material() -> WireframeMaterial
+src/unlit_materials.rs: pub fn initialize_depth_material(out: &mut DepthMaterial)
+src/unlit_materials.rs: pub fn initialize_emissive_material(out: &mut EmissiveMaterial)
+src/unlit_materials.rs: pub fn initialize_matcap_material(out: &mut MatcapMaterial)
+src/unlit_materials.rs: pub fn initialize_normal_material(out: &mut NormalMaterial)
+src/unlit_materials.rs: pub fn initialize_toon_material(out: &mut ToonMaterial)
+src/unlit_materials.rs: pub fn initialize_unlit_material(out: &mut UnlitMaterial)
+src/unlit_materials.rs: pub fn initialize_vertex_color_material(out: &mut VertexColorMaterial)
+src/unlit_materials.rs: pub fn initialize_wireframe_material(out: &mut WireframeMaterial)
+src/wrapped_diffuse_pbr_extension.rs: pub fn create_wrapped_diffuse_pbr_extension() -> WrappedDiffusePbrExtension
+src/wrapped_diffuse_pbr_extension.rs: pub fn initialize_wrapped_diffuse_pbr_extension(out: &mut WrappedDiffusePbrExtension)
 src/wrapped_diffuse_pbr_extension.rs: pub fn is_valid_wrapped_diffuse_pbr_extension(value: &WrappedDiffusePbrExtension) -> bool

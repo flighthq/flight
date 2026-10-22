@@ -96,7 +96,7 @@ mod is_render_proxy_in_viewport {
 
     #[test]
     fn proxy_outside_viewport_is_culled() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = object_with_bounds(900.0, 900.0, 50.0, 50.0);
         let proxy = create_render_proxy_2d(&mut state, &source);
         assert!(!is_render_proxy_in_viewport(
@@ -109,7 +109,7 @@ mod is_render_proxy_in_viewport {
 
     #[test]
     fn proxy_inside_viewport_is_visible() {
-        let mut state = create_render_state(None);
+        let mut state = create_render_state();
         let source = object_with_bounds(10.0, 10.0, 50.0, 50.0);
         let proxy = create_render_proxy_2d(&mut state, &source);
         assert!(is_render_proxy_in_viewport(

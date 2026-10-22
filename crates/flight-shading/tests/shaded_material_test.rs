@@ -179,8 +179,7 @@ mod shaded_material_family {
                 ..options()
             })),
         ));
-        let phong: Material3DRef =
-            Arc::new(std::sync::RwLock::new(create_blinn_phong_material(None)));
+        let phong: Material3DRef = Arc::new(std::sync::RwLock::new(create_blinn_phong_material()));
         let as_family: Material3DRef = shaded.clone();
         let list = vec![phong.clone(), as_family.clone()];
         assert!(Arc::ptr_eq(&list[1], &as_family));

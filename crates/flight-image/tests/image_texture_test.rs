@@ -42,7 +42,7 @@ mod create_texture_from_image_resource {
     fn material_and_resource_keep_one_canonical_texture_handle_and_observe_mutations() {
         let reference = embedded();
         let texture = create_texture_from_image_resource(&reference, None);
-        let mut material = flight_materials::contract::create_blinn_phong_material(None);
+        let mut material = flight_materials::contract::create_blinn_phong_material();
         material.diffuse_map = Some(texture.clone());
         let ImageResourceReference::Embedded(value) = &reference else {
             panic!("expected embedded");
@@ -79,7 +79,7 @@ mod create_texture_from_image_resource {
             reference: create_external_image_resource_reference("model.png".to_string(), None),
         });
         let texture = create_texture_from_image_resource(&reference, None);
-        let mut material = flight_materials::contract::create_blinn_phong_material(None);
+        let mut material = flight_materials::contract::create_blinn_phong_material();
         material.diffuse_map = Some(texture.clone());
         let resource = create_image_resource(
             Arc::new(flight_host::HostImageSource {

@@ -1,22 +1,24 @@
 use flight_entity::allocate_entity;
 
 use crate::{
-    AnisotropyPbrExtension, AnisotropyPbrExtensionOptions, ANISOTROPY_PBR_EXTENSION_KIND,
+    AnisotropyPbrExtension, ANISOTROPY_PBR_EXTENSION_KIND,
     material_validation::is_valid_material_weight,
     pbr_extension::is_valid_pbr_uv_set,
 };
 
-pub fn create_anisotropy_pbr_extension(opts: Option<&AnisotropyPbrExtensionOptions>) -> AnisotropyPbrExtension {
+// flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 3139d09f): assign fields after create
+pub fn create_anisotropy_pbr_extension() -> AnisotropyPbrExtension {
     let mut out: AnisotropyPbrExtension = allocate_entity();
-    initialize_anisotropy_pbr_extension(&mut out, opts);
+    initialize_anisotropy_pbr_extension(&mut out);
     return out;
 }
 
-pub fn initialize_anisotropy_pbr_extension(out: &mut AnisotropyPbrExtension, opts: Option<&AnisotropyPbrExtensionOptions>) {
-    out.anisotropy_map = opts.and_then(|o| o.anisotropy_map.clone());
-    out.anisotropy_map_uv_set = opts.and_then(|o| o.anisotropy_map_uv_set).unwrap_or(0);
-    out.anisotropy_rotation = opts.and_then(|o| o.anisotropy_rotation).unwrap_or(0.0);
-    out.anisotropy_strength = opts.and_then(|o| o.anisotropy_strength).unwrap_or(0.0);
+// flight-lint: allow(conform-params) D23 (B) zero-field initializer (Principal 3139d09f)
+pub fn initialize_anisotropy_pbr_extension(out: &mut AnisotropyPbrExtension) {
+    out.anisotropy_map = None;
+    out.anisotropy_map_uv_set = 0;
+    out.anisotropy_rotation = 0.0;
+    out.anisotropy_strength = 0.0;
     out.kind = ANISOTROPY_PBR_EXTENSION_KIND.to_string();
 }
 

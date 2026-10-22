@@ -115,8 +115,8 @@ mod material_family {
     #[test]
     fn generic_base_readers_accept_2d_3d_and_base_kinds() {
         let base = create_material("Base".to_string());
-        let standard = create_standard_material(None);
-        let phong = create_phong_material(None);
+        let standard = create_standard_material();
+        let phong = create_phong_material();
         let materials: [&dyn Material; 3] = [&base, &standard, &phong];
         let kinds: Vec<&str> = materials
             .iter()
@@ -129,7 +129,7 @@ mod material_family {
 
     #[test]
     fn copies_and_compares_base_fields_across_families() {
-        let mut phong = create_phong_material(None);
+        let mut phong = create_phong_material();
         let mut named = create_material("StandardMaterial".to_string());
         named.name = Some("hero".to_string());
         copy_material(&mut phong, &named);
@@ -153,13 +153,13 @@ mod material_family {
                 .modifier_stream()
                 .is_none()
         );
-        assert!(create_standard_material(None).modifier_stream().is_none());
-        assert!(create_phong_material(None).modifier_stream().is_none());
+        assert!(create_standard_material().modifier_stream().is_none());
+        assert!(create_phong_material().modifier_stream().is_none());
     }
 
     #[test]
     fn narrows_through_the_base_trait() {
-        let phong = create_phong_material(None);
+        let phong = create_phong_material();
         let any: &dyn Material = &phong;
         assert!(
             any.as_any()

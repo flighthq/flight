@@ -8,7 +8,7 @@ mod create_billboard {
     #[test]
     fn uses_default_kind_and_full_facing_and_retains_actual_geometry_and_materials() {
         let g = test_geometry();
-        let m: Ref<dyn Material3D> = Arc::new(RwLock::new(create_standard_pbr_material(None)));
+        let m: Ref<dyn Material3D> = Arc::new(RwLock::new(create_standard_pbr_material()));
         let materials = Arc::new(RwLock::new(vec![Some(m.clone())]));
         let b = create_billboard(g.clone(), materials.clone(), None, None, None);
         let b = b.read().unwrap();

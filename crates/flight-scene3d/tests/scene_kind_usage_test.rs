@@ -83,14 +83,12 @@ mod get_scene3d_kind_usage {
     #[test]
     fn collects_sorted_distinct_materials_and_all_node_kinds_and_resets_every_list() {
         let scene = create_scene3d(None);
-        let unlit: Ref<dyn Material3D> = Arc::new(RwLock::new(create_unlit_material(None)));
+        let unlit: Ref<dyn Material3D> = Arc::new(RwLock::new(create_unlit_material()));
         attach(&scene, vec![None, Some(unlit.clone())]);
         attach(&scene, vec![Some(unlit)]);
         attach(
             &scene,
-            vec![Some(Arc::new(RwLock::new(create_blinn_phong_material(
-                None,
-            ))))],
+            vec![Some(Arc::new(RwLock::new(create_blinn_phong_material())))],
         );
         let group = node3d();
         add_node_child(
@@ -142,7 +140,7 @@ mod get_scene3d_kind_usage {
         );
         assert_eq!(usage.material_kinds, vec!["ShadedMaterial"]);
         let custom = Arc::new(RwLock::new(CustomMaterial {
-            fields: create_material3d("CustomStack".to_string(), None),
+            fields: create_material3d("CustomStack".to_string()),
             modifiers: vec![rim.clone()],
         }));
         let scene = create_scene3d(None);

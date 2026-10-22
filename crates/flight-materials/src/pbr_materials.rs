@@ -4,59 +4,25 @@ use flight_entity::allocate_entity;
 use crate::{
     MaterialAlphaMode, MaterialConversionContext, MaterialConversionExplanation, MaterialConversionGuard,
     create_material_conversion_context,
-    SpecularGlossinessPbrMaterial, SpecularGlossinessPbrMaterialOptions,
-    StandardPbrMaterial, StandardPbrMaterialOptions,
+    SpecularGlossinessPbrMaterial, StandardPbrMaterial, StandardPbrMaterialOptions,
     StandardPbrMaterialProperties, StandardPbrMaterialPropertiesOptions,
     BLEND_MODE_NORMAL, SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND,
     STANDARD_PBR_MATERIAL_KIND,
     explain_material_conversion::explain_specular_glossiness_conversion,
 };
 
-pub fn create_specular_glossiness_pbr_material(opts: Option<&SpecularGlossinessPbrMaterialOptions>) -> SpecularGlossinessPbrMaterial {
-    let mut m: SpecularGlossinessPbrMaterial = allocate_entity();
-    m.kind = SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND.to_string();
-    m.name = opts.and_then(|o| o.name.clone());
-    m.alpha_cutoff = opts.and_then(|o| o.alpha_cutoff).unwrap_or(0.5);
-    m.alpha_mode = opts.and_then(|o| o.alpha_mode).unwrap_or(MaterialAlphaMode::Opaque);
-    m.blend_mode = opts.and_then(|o| o.blend_mode.clone()).unwrap_or_else(|| BLEND_MODE_NORMAL.to_string());
-    m.double_sided = opts.and_then(|o| o.double_sided).unwrap_or(false);
-    m.diffuse = opts.and_then(|o| o.diffuse).unwrap_or(0xffffffff);
-    m.diffuse_map = opts.and_then(|o| o.diffuse_map.clone());
-    m.emissive = opts.and_then(|o| o.emissive).unwrap_or(0x000000ff);
-    m.emissive_map = opts.and_then(|o| o.emissive_map.clone());
-    m.emissive_strength = opts.and_then(|o| o.emissive_strength).unwrap_or(1.0);
-    m.glossiness = opts.and_then(|o| o.glossiness).unwrap_or(1.0);
-    m.normal_map = opts.and_then(|o| o.normal_map.clone());
-    m.normal_scale = opts.and_then(|o| o.normal_scale).unwrap_or(1.0);
-    m.occlusion_map = opts.and_then(|o| o.occlusion_map.clone());
-    m.occlusion_strength = opts.and_then(|o| o.occlusion_strength).unwrap_or(1.0);
-    m.specular = opts.and_then(|o| o.specular).unwrap_or(0xffffffff);
-    m.specular_glossiness_map = opts.and_then(|o| o.specular_glossiness_map.clone());
-    return m;
+// flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 3139d09f): assign fields after create
+pub fn create_specular_glossiness_pbr_material() -> SpecularGlossinessPbrMaterial {
+    let mut out: SpecularGlossinessPbrMaterial = allocate_entity();
+    initialize_specular_glossiness_pbr_material(&mut out);
+    return out;
 }
 
-pub fn create_standard_pbr_material(opts: Option<&StandardPbrMaterialOptions>) -> StandardPbrMaterial {
-    let mut m: StandardPbrMaterial = allocate_entity();
-    m.kind = STANDARD_PBR_MATERIAL_KIND.to_string();
-    m.name = opts.and_then(|o| o.name.clone());
-    m.alpha_cutoff = opts.and_then(|o| o.alpha_cutoff).unwrap_or(0.5);
-    m.alpha_mode = opts.and_then(|o| o.alpha_mode).unwrap_or(MaterialAlphaMode::Opaque);
-    m.blend_mode = opts.and_then(|o| o.blend_mode.clone()).unwrap_or_else(|| BLEND_MODE_NORMAL.to_string());
-    m.double_sided = opts.and_then(|o| o.double_sided).unwrap_or(false);
-    m.alpha_map = opts.and_then(|o| o.alpha_map.clone());
-    m.base_color = opts.and_then(|o| o.base_color).unwrap_or(0xffffffff);
-    m.base_color_map = opts.and_then(|o| o.base_color_map.clone());
-    m.emissive = opts.and_then(|o| o.emissive).unwrap_or(0x000000ff);
-    m.emissive_map = opts.and_then(|o| o.emissive_map.clone());
-    m.emissive_strength = opts.and_then(|o| o.emissive_strength).unwrap_or(1.0);
-    m.metallic = opts.and_then(|o| o.metallic).unwrap_or(0.0);
-    m.metallic_roughness_map = opts.and_then(|o| o.metallic_roughness_map.clone());
-    m.normal_map = opts.and_then(|o| o.normal_map.clone());
-    m.normal_scale = opts.and_then(|o| o.normal_scale).unwrap_or(1.0);
-    m.occlusion_map = opts.and_then(|o| o.occlusion_map.clone());
-    m.occlusion_strength = opts.and_then(|o| o.occlusion_strength).unwrap_or(1.0);
-    m.roughness = opts.and_then(|o| o.roughness).unwrap_or(1.0);
-    return m;
+// flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 3139d09f): assign fields after create
+pub fn create_standard_pbr_material() -> StandardPbrMaterial {
+    let mut out: StandardPbrMaterial = allocate_entity();
+    initialize_standard_pbr_material(&mut out);
+    return out;
 }
 
 pub fn create_standard_pbr_material_properties(opts: Option<&StandardPbrMaterialPropertiesOptions>) -> StandardPbrMaterialProperties {
@@ -75,6 +41,77 @@ pub fn create_standard_pbr_material_properties(opts: Option<&StandardPbrMaterial
     properties.occlusion_strength = opts.and_then(|o| o.occlusion_strength).unwrap_or(1.0);
     properties.roughness = opts.and_then(|o| o.roughness).unwrap_or(1.0);
     return properties;
+}
+
+// flight-lint: allow(conform-extra) D23 (I): the public initialize seam of the source create
+pub fn initialize_specular_glossiness_pbr_material(out: &mut SpecularGlossinessPbrMaterial) {
+    out.kind = SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND.to_string();
+    out.name = None;
+    out.alpha_cutoff = 0.5;
+    out.alpha_mode = MaterialAlphaMode::Opaque;
+    out.blend_mode = BLEND_MODE_NORMAL.to_string();
+    out.double_sided = false;
+    out.diffuse = 0xffffffff;
+    out.diffuse_map = None;
+    out.emissive = 0x000000ff;
+    out.emissive_map = None;
+    out.emissive_strength = 1.0;
+    out.glossiness = 1.0;
+    out.normal_map = None;
+    out.normal_scale = 1.0;
+    out.occlusion_map = None;
+    out.occlusion_strength = 1.0;
+    out.specular = 0xffffffff;
+    out.specular_glossiness_map = None;
+}
+
+// flight-lint: allow(conform-extra) D23 (I): the public initialize seam of the source create
+pub fn initialize_standard_pbr_material(out: &mut StandardPbrMaterial) {
+    out.kind = STANDARD_PBR_MATERIAL_KIND.to_string();
+    out.name = None;
+    out.alpha_cutoff = 0.5;
+    out.alpha_mode = MaterialAlphaMode::Opaque;
+    out.blend_mode = BLEND_MODE_NORMAL.to_string();
+    out.double_sided = false;
+    out.alpha_map = None;
+    out.base_color = 0xffffffff;
+    out.base_color_map = None;
+    out.emissive = 0x000000ff;
+    out.emissive_map = None;
+    out.emissive_strength = 1.0;
+    out.metallic = 0.0;
+    out.metallic_roughness_map = None;
+    out.normal_map = None;
+    out.normal_scale = 1.0;
+    out.occlusion_map = None;
+    out.occlusion_strength = 1.0;
+    out.roughness = 1.0;
+}
+
+// The source spreads the caller's partial over the preset values (`{ ...preset, ...opts }`): every
+// field the caller gives wins.
+pub(crate) fn apply_standard_pbr_material_options(out: &mut StandardPbrMaterial, opts: Option<&StandardPbrMaterialOptions>) {
+    let Some(o) = opts else {
+        return;
+    };
+    if o.name.is_some() { out.name = o.name.clone(); }
+    if let Some(value) = o.alpha_cutoff { out.alpha_cutoff = value; }
+    if let Some(value) = o.alpha_mode { out.alpha_mode = value; }
+    if let Some(value) = &o.blend_mode { out.blend_mode = value.clone(); }
+    if let Some(value) = o.double_sided { out.double_sided = value; }
+    if o.alpha_map.is_some() { out.alpha_map = o.alpha_map.clone(); }
+    if let Some(value) = o.base_color { out.base_color = value; }
+    if o.base_color_map.is_some() { out.base_color_map = o.base_color_map.clone(); }
+    if let Some(value) = o.emissive { out.emissive = value; }
+    if o.emissive_map.is_some() { out.emissive_map = o.emissive_map.clone(); }
+    if let Some(value) = o.emissive_strength { out.emissive_strength = value; }
+    if let Some(value) = o.metallic { out.metallic = value; }
+    if o.metallic_roughness_map.is_some() { out.metallic_roughness_map = o.metallic_roughness_map.clone(); }
+    if o.normal_map.is_some() { out.normal_map = o.normal_map.clone(); }
+    if let Some(value) = o.normal_scale { out.normal_scale = value; }
+    if o.occlusion_map.is_some() { out.occlusion_map = o.occlusion_map.clone(); }
+    if let Some(value) = o.occlusion_strength { out.occlusion_strength = value; }
+    if let Some(value) = o.roughness { out.roughness = value; }
 }
 
 // flight-lint: allow(conform-params) D5: Rust passes caller-owned conversion context; TS uses module-scoped guard

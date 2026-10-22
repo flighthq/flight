@@ -6,7 +6,7 @@ mod create_iridescence_pbr_extension {
 
     #[test]
     fn creates_with_defaults() {
-        let ext = create_iridescence_pbr_extension(None);
+        let ext = create_iridescence_pbr_extension();
         assert_eq!(ext.kind, IRIDESCENCE_PBR_EXTENSION_KIND);
         assert_eq!(ext.iridescence, 0.0);
         assert_eq!(ext.iridescence_ior, 1.3);
@@ -20,9 +20,9 @@ mod initialize_iridescence_pbr_extension {
 
     #[test]
     fn sets_kind_and_defaults() {
-        let mut ext = create_iridescence_pbr_extension(None);
+        let mut ext = create_iridescence_pbr_extension();
         ext.iridescence = 0.5;
-        initialize_iridescence_pbr_extension(&mut ext, None);
+        initialize_iridescence_pbr_extension(&mut ext);
         assert_eq!(ext.kind, IRIDESCENCE_PBR_EXTENSION_KIND);
         assert_eq!(ext.iridescence, 0.0);
     }
@@ -34,13 +34,13 @@ mod is_valid_iridescence_pbr_extension {
     #[test]
     fn validates_default_as_valid() {
         assert!(is_valid_iridescence_pbr_extension(
-            &create_iridescence_pbr_extension(None)
+            &create_iridescence_pbr_extension()
         ));
     }
 
     #[test]
     fn invalid_when_min_exceeds_max() {
-        let mut ext = create_iridescence_pbr_extension(None);
+        let mut ext = create_iridescence_pbr_extension();
         ext.iridescence_thickness_min = 500.0;
         ext.iridescence_thickness_max = 100.0;
         assert!(!is_valid_iridescence_pbr_extension(&ext));

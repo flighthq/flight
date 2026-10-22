@@ -1,66 +1,76 @@
 use flight_entity::allocate_entity;
 
 use crate::{
-    BlinnPhongMaterial, BlinnPhongMaterialOptions, LambertMaterial, LambertMaterialOptions,
-    PhongMaterial, PhongMaterialOptions,
-    BLINN_PHONG_MATERIAL_KIND, BLEND_MODE_NORMAL, LAMBERT_MATERIAL_KIND, PHONG_MATERIAL_KIND,
+    BlinnPhongMaterial, LambertMaterial, PhongMaterial, BLINN_PHONG_MATERIAL_KIND, BLEND_MODE_NORMAL, LAMBERT_MATERIAL_KIND, PHONG_MATERIAL_KIND,
     MaterialAlphaMode,
 };
 
-pub fn create_blinn_phong_material(opts: Option<&BlinnPhongMaterialOptions>) -> BlinnPhongMaterial {
-    let mut m: BlinnPhongMaterial = allocate_entity();
-    m.kind = BLINN_PHONG_MATERIAL_KIND.to_string();
-    m.name = None;
-    m.alpha_cutoff = opts.and_then(|o| o.alpha_cutoff).unwrap_or(0.5);
-    m.alpha_mode = opts.and_then(|o| o.alpha_mode).unwrap_or(MaterialAlphaMode::Opaque);
-    m.blend_mode = opts
-        .and_then(|o| o.blend_mode.clone())
-        .unwrap_or_else(|| BLEND_MODE_NORMAL.to_string());
-    m.double_sided = opts.and_then(|o| o.double_sided).unwrap_or(false);
-    m.alpha_map = opts.and_then(|o| o.alpha_map.clone());
-    m.diffuse = opts.and_then(|o| o.diffuse).unwrap_or(0xffffffff);
-    m.diffuse_map = opts.and_then(|o| o.diffuse_map.clone());
-    m.normal_map = opts.and_then(|o| o.normal_map.clone());
-    m.normal_scale = opts.and_then(|o| o.normal_scale).unwrap_or(1.0);
-    m.shininess = opts.and_then(|o| o.shininess).unwrap_or(32.0);
-    m.specular = opts.and_then(|o| o.specular).unwrap_or(0xffffffff);
-    m.specular_map = opts.and_then(|o| o.specular_map.clone());
-    return m;
+// flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 3139d09f): assign fields after create
+pub fn create_blinn_phong_material() -> BlinnPhongMaterial {
+    let mut out: BlinnPhongMaterial = allocate_entity();
+    initialize_blinn_phong_material(&mut out);
+    return out;
 }
 
-pub fn create_lambert_material(opts: Option<&LambertMaterialOptions>) -> LambertMaterial {
-    let mut m: LambertMaterial = allocate_entity();
-    m.kind = LAMBERT_MATERIAL_KIND.to_string();
-    m.name = None;
-    m.alpha_cutoff = opts.and_then(|o| o.alpha_cutoff).unwrap_or(0.5);
-    m.alpha_mode = opts.and_then(|o| o.alpha_mode).unwrap_or(MaterialAlphaMode::Opaque);
-    m.blend_mode = opts
-        .and_then(|o| o.blend_mode.clone())
-        .unwrap_or_else(|| BLEND_MODE_NORMAL.to_string());
-    m.double_sided = opts.and_then(|o| o.double_sided).unwrap_or(false);
-    m.diffuse = opts.and_then(|o| o.diffuse).unwrap_or(0xffffffff);
-    m.diffuse_map = opts.and_then(|o| o.diffuse_map.clone());
-    m.emissive = opts.and_then(|o| o.emissive).unwrap_or(0x000000ff);
-    m.emissive_map = opts.and_then(|o| o.emissive_map.clone());
-    return m;
+// flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 3139d09f): assign fields after create
+pub fn create_lambert_material() -> LambertMaterial {
+    let mut out: LambertMaterial = allocate_entity();
+    initialize_lambert_material(&mut out);
+    return out;
 }
 
-pub fn create_phong_material(opts: Option<&PhongMaterialOptions>) -> PhongMaterial {
-    let mut m: PhongMaterial = allocate_entity();
-    m.kind = PHONG_MATERIAL_KIND.to_string();
-    m.name = None;
-    m.alpha_cutoff = opts.and_then(|o| o.alpha_cutoff).unwrap_or(0.5);
-    m.alpha_mode = opts.and_then(|o| o.alpha_mode).unwrap_or(MaterialAlphaMode::Opaque);
-    m.blend_mode = opts
-        .and_then(|o| o.blend_mode.clone())
-        .unwrap_or_else(|| BLEND_MODE_NORMAL.to_string());
-    m.double_sided = opts.and_then(|o| o.double_sided).unwrap_or(false);
-    m.diffuse = opts.and_then(|o| o.diffuse).unwrap_or(0xffffffff);
-    m.diffuse_map = opts.and_then(|o| o.diffuse_map.clone());
-    m.normal_map = opts.and_then(|o| o.normal_map.clone());
-    m.normal_scale = opts.and_then(|o| o.normal_scale).unwrap_or(1.0);
-    m.shininess = opts.and_then(|o| o.shininess).unwrap_or(32.0);
-    m.specular = opts.and_then(|o| o.specular).unwrap_or(0xffffffff);
-    m.specular_map = opts.and_then(|o| o.specular_map.clone());
-    return m;
+// flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 3139d09f): assign fields after create
+pub fn create_phong_material() -> PhongMaterial {
+    let mut out: PhongMaterial = allocate_entity();
+    initialize_phong_material(&mut out);
+    return out;
+}
+
+// flight-lint: allow(conform-extra) D23 (I): the public initialize seam of the source create
+pub fn initialize_blinn_phong_material(out: &mut BlinnPhongMaterial) {
+    out.kind = BLINN_PHONG_MATERIAL_KIND.to_string();
+    out.name = None;
+    out.alpha_cutoff = 0.5;
+    out.alpha_mode = MaterialAlphaMode::Opaque;
+    out.blend_mode = BLEND_MODE_NORMAL.to_string();
+    out.double_sided = false;
+    out.alpha_map = None;
+    out.diffuse = 0xffffffff;
+    out.diffuse_map = None;
+    out.normal_map = None;
+    out.normal_scale = 1.0;
+    out.shininess = 32.0;
+    out.specular = 0xffffffff;
+    out.specular_map = None;
+}
+
+// flight-lint: allow(conform-extra) D23 (I): the public initialize seam of the source create
+pub fn initialize_lambert_material(out: &mut LambertMaterial) {
+    out.kind = LAMBERT_MATERIAL_KIND.to_string();
+    out.name = None;
+    out.alpha_cutoff = 0.5;
+    out.alpha_mode = MaterialAlphaMode::Opaque;
+    out.blend_mode = BLEND_MODE_NORMAL.to_string();
+    out.double_sided = false;
+    out.diffuse = 0xffffffff;
+    out.diffuse_map = None;
+    out.emissive = 0x000000ff;
+    out.emissive_map = None;
+}
+
+// flight-lint: allow(conform-extra) D23 (I): the public initialize seam of the source create
+pub fn initialize_phong_material(out: &mut PhongMaterial) {
+    out.kind = PHONG_MATERIAL_KIND.to_string();
+    out.name = None;
+    out.alpha_cutoff = 0.5;
+    out.alpha_mode = MaterialAlphaMode::Opaque;
+    out.blend_mode = BLEND_MODE_NORMAL.to_string();
+    out.double_sided = false;
+    out.diffuse = 0xffffffff;
+    out.diffuse_map = None;
+    out.normal_map = None;
+    out.normal_scale = 1.0;
+    out.shininess = 32.0;
+    out.specular = 0xffffffff;
+    out.specular_map = None;
 }

@@ -1,14 +1,16 @@
 use flight_entity::allocate_entity;
 
-use crate::{StandardMaterial, StandardMaterialOptions, STANDARD_MATERIAL_KIND};
+use crate::{StandardMaterial, STANDARD_MATERIAL_KIND};
 
-pub fn create_standard_material(options: Option<&StandardMaterialOptions>) -> StandardMaterial {
+// flight-lint: allow(conform-params) D23 (B) zero-field create (Principal 3139d09f): assign fields after create
+pub fn create_standard_material() -> StandardMaterial {
     let mut out: StandardMaterial = allocate_entity();
-    initialize_standard_material(&mut out, options);
+    initialize_standard_material(&mut out);
     return out;
 }
 
-pub fn initialize_standard_material(out: &mut StandardMaterial, options: Option<&StandardMaterialOptions>) {
+// flight-lint: allow(conform-params) D23 (B) zero-field initializer (Principal 3139d09f)
+pub fn initialize_standard_material(out: &mut StandardMaterial) {
     out.kind = STANDARD_MATERIAL_KIND.to_string();
-    out.name = options.and_then(|o| o.name.clone());
+    out.name = None;
 }

@@ -1,37 +1,24 @@
 use flight_entity::{Kind, allocate_entity};
 
 use crate::{
-    BlendMode, Material3D, Material3DFields, MaterialAlphaMode, BLEND_MODE_NORMAL,
+    Material3D, Material3DFields, MaterialAlphaMode, BLEND_MODE_NORMAL,
 };
 
-pub struct Material3DOptions {
-    pub alpha_cutoff: Option<f32>,
-    pub alpha_mode: Option<MaterialAlphaMode>,
-    pub blend_mode: Option<BlendMode>,
-    pub double_sided: Option<bool>,
-    pub name: Option<String>,
-}
-
-pub fn create_material3d(kind: Kind, opts: Option<&Material3DOptions>) -> Material3DFields {
+// flight-lint: allow(conform-params) D23 (B): the approved generic kind stays positional; the options blob is removed (Principal 3139d09f)
+pub fn create_material3d(kind: Kind) -> Material3DFields {
     let mut material: Material3DFields = allocate_entity();
-    initialize_material3d(&mut material, kind, opts);
+    initialize_material3d(&mut material, kind);
     return material;
 }
 
 // flight-lint: allow(conform-extra) D12: Rust exposes initializer separately for reuse; TS only has createMaterial3D
-pub fn initialize_material3d(
-    material: &mut Material3DFields,
-    kind: Kind,
-    opts: Option<&Material3DOptions>,
-) {
+pub fn initialize_material3d(material: &mut Material3DFields, kind: Kind) {
     material.kind = kind;
-    material.name = opts.and_then(|o| o.name.clone());
-    material.alpha_cutoff = opts.and_then(|o| o.alpha_cutoff).unwrap_or(0.5);
-    material.alpha_mode = opts.and_then(|o| o.alpha_mode).unwrap_or(MaterialAlphaMode::Opaque);
-    material.blend_mode = opts
-        .and_then(|o| o.blend_mode.clone())
-        .unwrap_or_else(|| BLEND_MODE_NORMAL.to_string());
-    material.double_sided = opts.and_then(|o| o.double_sided).unwrap_or(false);
+    material.name = None;
+    material.alpha_cutoff = 0.5;
+    material.alpha_mode = MaterialAlphaMode::Opaque;
+    material.blend_mode = BLEND_MODE_NORMAL.to_string();
+    material.double_sided = false;
 }
 
 // flight-lint: allow(contract-vocabulary) D16 open Material3D family: generic readers take any kind (TS `Readonly<Material3D>`)

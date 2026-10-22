@@ -6,7 +6,7 @@ mod convert_specular_glossiness_to_standard_pbr {
 
     #[test]
     fn converts_default_specular_glossiness_to_standard() {
-        let source = create_specular_glossiness_pbr_material(None);
+        let source = create_specular_glossiness_pbr_material();
         let mut out = create_standard_pbr_material_properties(None);
         convert_specular_glossiness_to_standard_pbr(&mut out, &source, None);
         assert!(out.roughness >= 0.0 && out.roughness <= 1.0);
@@ -15,7 +15,7 @@ mod convert_specular_glossiness_to_standard_pbr {
 
     #[test]
     fn maps_glossiness_to_roughness() {
-        let mut source = create_specular_glossiness_pbr_material(None);
+        let mut source = create_specular_glossiness_pbr_material();
         source.glossiness = 0.75;
         let mut out = create_standard_pbr_material_properties(None);
         convert_specular_glossiness_to_standard_pbr(&mut out, &source, None);
@@ -24,7 +24,7 @@ mod convert_specular_glossiness_to_standard_pbr {
 
     #[test]
     fn preserves_emissive_and_occlusion() {
-        let mut source = create_specular_glossiness_pbr_material(None);
+        let mut source = create_specular_glossiness_pbr_material();
         source.emissive = 0xff0000ff;
         source.emissive_strength = 2.0;
         source.normal_scale = 0.5;
@@ -43,7 +43,7 @@ mod create_specular_glossiness_pbr_material {
 
     #[test]
     fn creates_with_correct_defaults() {
-        let m = create_specular_glossiness_pbr_material(None);
+        let m = create_specular_glossiness_pbr_material();
         assert_eq!(m.kind, SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND);
         assert_eq!(m.diffuse, 0xffffffff);
         assert_eq!(m.specular, 0xffffffff);
@@ -57,7 +57,7 @@ mod create_standard_pbr_material {
 
     #[test]
     fn creates_white_fully_rough_dielectric() {
-        let m = create_standard_pbr_material(None);
+        let m = create_standard_pbr_material();
         assert_eq!(m.kind, STANDARD_PBR_MATERIAL_KIND);
         assert_eq!(m.base_color, 0xffffffff);
         assert_eq!(m.metallic, 0.0);
@@ -88,6 +88,56 @@ mod create_standard_pbr_material_properties {
         assert_eq!(p.emissive_strength, 1.0);
         assert_eq!(p.normal_scale, 1.0);
         assert_eq!(p.occlusion_strength, 1.0);
+    }
+}
+
+mod initialize_specular_glossiness_pbr_material {
+    use super::*;
+
+    // D23 (I): the public construction seam of create_specular_glossiness_pbr_material. It writes the source defaults over an
+    // existing allocation and keeps the receiver's entity identity (D12).
+    #[test]
+    fn writes_the_source_defaults_and_keeps_the_receivers_identity() {
+        let mut out = create_specular_glossiness_pbr_material();
+        let id = flight_entity::get_entity_id(&out);
+        out.kind = "Changed".to_string();
+        out.name = Some("changed".to_string());
+        out.alpha_mode = MaterialAlphaMode::Blend;
+        out.alpha_cutoff = 0.9;
+        out.double_sided = true;
+        initialize_specular_glossiness_pbr_material(&mut out);
+        let fresh = create_specular_glossiness_pbr_material();
+        assert_eq!(out.kind, SPECULAR_GLOSSINESS_PBR_MATERIAL_KIND);
+        assert_eq!(out.name, None);
+        assert_eq!(out.alpha_mode, MaterialAlphaMode::Opaque);
+        assert_eq!(out.alpha_cutoff, fresh.alpha_cutoff);
+        assert_eq!(out.double_sided, false);
+        assert_eq!(flight_entity::get_entity_id(&out), id);
+    }
+}
+
+mod initialize_standard_pbr_material {
+    use super::*;
+
+    // D23 (I): the public construction seam of create_standard_pbr_material. It writes the source defaults over an
+    // existing allocation and keeps the receiver's entity identity (D12).
+    #[test]
+    fn writes_the_source_defaults_and_keeps_the_receivers_identity() {
+        let mut out = create_standard_pbr_material();
+        let id = flight_entity::get_entity_id(&out);
+        out.kind = "Changed".to_string();
+        out.name = Some("changed".to_string());
+        out.alpha_mode = MaterialAlphaMode::Blend;
+        out.alpha_cutoff = 0.9;
+        out.double_sided = true;
+        initialize_standard_pbr_material(&mut out);
+        let fresh = create_standard_pbr_material();
+        assert_eq!(out.kind, STANDARD_PBR_MATERIAL_KIND);
+        assert_eq!(out.name, None);
+        assert_eq!(out.alpha_mode, MaterialAlphaMode::Opaque);
+        assert_eq!(out.alpha_cutoff, fresh.alpha_cutoff);
+        assert_eq!(out.double_sided, false);
+        assert_eq!(flight_entity::get_entity_id(&out), id);
     }
 }
 

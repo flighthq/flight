@@ -11,8 +11,7 @@ mod clone_mesh {
     #[test]
     fn shares_rigid_geometry_and_material_entities_but_copies_the_array_and_transform() {
         let geometry = test_geometry();
-        let material: Ref<dyn Material3D> =
-            Arc::new(RwLock::new(create_standard_pbr_material(None)));
+        let material: Ref<dyn Material3D> = Arc::new(RwLock::new(create_standard_pbr_material()));
         let materials = Arc::new(RwLock::new(vec![Some(material.clone())]));
         let source = create_mesh(
             geometry.clone(),
