@@ -53,6 +53,7 @@ pub fn initialize_movie_clip(out: &mut MovieClip) {
 }
 
 /// The construction initializer of `create_movie_clip_data` (TS `initializeMovieClipData`).
+// flight-lint: allow(conform-params) D23 B: authored options removed; initialize mirrors create with timeline assigned afterward
 pub fn initialize_movie_clip_data(out: &mut MovieClipData) {
     out.timeline = None;
 }
