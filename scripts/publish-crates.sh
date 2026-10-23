@@ -82,7 +82,7 @@ publish_one() {
   local delay=$BASE_DELAY
 
   while (( attempt < MAX_RETRIES )); do
-    OUTPUT=$(cargo publish -p "$crate" $DRY_RUN --no-verify 2>&1) && RC=0 || RC=$?
+    OUTPUT=$(cargo publish -p "$crate" $DRY_RUN --no-verify --allow-dirty 2>&1) && RC=0 || RC=$?
 
     if [ $RC -eq 0 ]; then
       return 0
