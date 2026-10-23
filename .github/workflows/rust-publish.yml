@@ -8,8 +8,8 @@ on:
   workflow_call:
     inputs:
       version:
-        description: The version to stamp and publish (e.g. 0.7.0 or 0.7.0-next.42.gabc1234)
-        required: true
+        description: The version to stamp and publish (e.g. 0.7.0 or 0.7.0-next.42.gabc1234). Leave empty to compute from edge-version.ts.
+        required: false
         type: string
     secrets:
       CARGO_REGISTRY_TOKEN:
