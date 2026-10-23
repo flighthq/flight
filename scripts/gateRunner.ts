@@ -90,6 +90,8 @@ export async function runGate(
               [CHECK_PROGRESS_TOKEN_ENV]: progress.token,
             },
       stdio: ['ignore', 'pipe', 'pipe'],
+      // npm bins are .cmd shims on Windows; spawn without shell cannot execute them.
+      ...(process.platform === 'win32' ? { shell: true } : {}),
     });
 
     // ★ DECODE PER STREAM, NOT PER CHUNK. `chunk.toString()` decodes each Buffer independently, so a
