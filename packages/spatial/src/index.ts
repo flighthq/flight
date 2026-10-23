@@ -26,6 +26,5 @@ export {
   removeSpatialObject3D,
   updateSpatialObject3D,
 } from './spatialIndex3D.ts';
-export * from './spatialIndexingGuard.ts';
 export { MAX_INDEXED_CELLS_PER_OBJECT, createUniformGridSpatialBackend2D } from './uniformGrid.ts';
 export { createUniformGridSpatialBackend3D } from './uniformGrid3D.ts';

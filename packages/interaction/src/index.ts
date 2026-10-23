@@ -33,7 +33,6 @@ export {
   getInteractionSignals,
   invalidateInteractionCursor,
   releaseInteractionPointer,
-  setInteractionConnectGuard,
 } from './interactionManager.ts';
 export * from './interactionSpatialIndex.ts';
 export {

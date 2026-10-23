@@ -1,1 +1,2 @@
-export { collectImportDiagnostics, formatImportDiagnostic, reportImportDiagnostic } from './contract.ts';
+export { collectImportDiagnostics } from './importDiagnosticCollector.ts';
+export * from './importDiagnosticText.ts';

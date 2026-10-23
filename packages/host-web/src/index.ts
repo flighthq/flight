@@ -13,7 +13,8 @@ export {
 export * from './webAppHost.ts';
 export * from './webAppLoopExit.ts';
 export { webHostAudio } from './webAudio.ts';
-export { getAudioDeviceContext, hasAudioDeviceWebNodeAccess, webHostAudioDevice } from './webAudioDevice.ts';
+export * from './webAudioDecodeHost.ts';
+export * from './webAudioDevice.ts';
 export * from './webAudioHost.ts';
 export * from './webAudioMixer.ts';
 export * from './webBitmapDraw.ts';
@@ -33,6 +34,7 @@ export * from './webCompressHost.ts';
 export * from './webConnectivity.ts';
 export * from './webConnectivityHost.ts';
 export * from './webCursor.ts';
+export * from './webDecompressHost.ts';
 export * from './webDevice.ts';
 export * from './webDeviceHost.ts';
 export {
@@ -66,7 +68,6 @@ export * from './webHostSurface.ts';
 export * from './webHostWgpuContext.ts';
 export * from './webImage.ts';
 export * from './webImageBitmapComposition.ts';
-export * from './webAudioDecodeHost.ts';
 export * from './webImageDecodeHost.ts';
 export * from './webImageEncodeHost.ts';
 export * from './webImageHost.ts';
@@ -99,31 +100,22 @@ export { webMidiAccess, webMidiPermission, webHostMidiAccess, webHostMidiPermiss
 export * from './webMidiHost.ts';
 export * from './webNet.ts';
 export * from './webNetHost.ts';
-export { createWebPageNotificationCapabilities } from './webNotification.ts';
+export * from './webNotification.ts';
 export * from './webNotificationHost.ts';
 export * from './webPermissions.ts';
 export * from './webPermissionsHost.ts';
 export * from './webPlatform.ts';
 export * from './webPlatformHost.ts';
-export { webHostPowerKeepAwake, webHostPowerSuspension, webHostPowerChange, webHostPowerStatus } from './webPower.ts';
+export * from './webPower.ts';
 export * from './webPowerHost.ts';
 export * from './webPreferencesHost.ts';
 export { createWebProtocolCapabilities, webHostProtocolLaunch, webHostProtocolRegistration } from './webProtocol.ts';
 export * from './webProtocolHost.ts';
-export {
-  createWebScreenCapabilities,
-  webHostScreenChange,
-  webHostScreenDetails,
-  webHostScreenPermissionChange,
-  webHostScreenQuery,
-} from './webScreen.ts';
+export * from './webScreen.ts';
 export * from './webScreenHost.ts';
 export * from './webSensors.ts';
 export * from './webSensorsHost.ts';
-export {
-  createWebServiceWorkerNotificationCapabilities,
-  notifyWebServiceWorkerNotificationEvent,
-} from './webServiceWorkerNotification.ts';
+export * from './webServiceWorkerNotification.ts';
 export { webHostShareContent, webHostShareFiles } from './webShare.ts';
 export * from './webShareHost.ts';
 export { webHostShellExternal } from './webShell.ts';
@@ -135,19 +127,13 @@ export * from './webSoftKeyboardHost.ts';
 export * from './webStatusBarHost.ts';
 export * from './webStatusbar.ts';
 export { webHostStorage, webHostStorageChange } from './webStorage.ts';
-export {
-  createWebWindowStoragePersistenceCapabilities,
-  createWebWorkerStoragePersistenceCapabilities,
-  webHostStoragePersistenceQuery,
-  webHostStoragePersistenceRequest,
-} from './webStoragePersistence.ts';
-export { allocateWebSurfaceCanvas, getWebSurfaceCanvasHandle, getWebSurfaceElementHandle } from './webSurfaceHandle.ts';
+export * from './webStoragePersistence.ts';
+export * from './webSurfaceHandle.ts';
 export * from './webSurfaceHost.ts';
 export * from './webSurfacePresentation.ts';
 export * from './webTextSegmentHost.ts';
-export * from './webTextShaperHost.ts';
-export * from './webDecompressHost.ts';
 export * from './webTextShaper.ts';
+export * from './webTextShaperHost.ts';
 export * from './webTextureAtlas.ts';
 export * from './webTrayHost.ts';
 export * from './webUpdaterHost.ts';
