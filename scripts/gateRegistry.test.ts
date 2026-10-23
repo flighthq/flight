@@ -57,4 +57,29 @@ describe('createGateRegistry', () => {
 
     expect(registry.gates).toEqual([{ args: ['--max-warnings=0'], command: 'oxlint', label: 'lint' }]);
   });
+
+  describe('FLIGHT_CHECK_GATES filtering', () => {
+    const originalEnv = process.env.FLIGHT_CHECK_GATES;
+    afterEach(() => {
+      if (originalEnv === undefined) delete process.env.FLIGHT_CHECK_GATES;
+      else process.env.FLIGHT_CHECK_GATES = originalEnv;
+    });
+
+    it('queues only the gates named in FLIGHT_CHECK_GATES', () => {
+      process.env.FLIGHT_CHECK_GATES = 'lint,typecheck';
+      const registry = createGateRegistry();
+      registry.add('typecheck', 'tsc', ['-b']);
+      registry.add('lint', 'oxlint', ['--max-warnings=0']);
+      registry.add('format:check', 'oxfmt', ['--check']);
+
+      expect(registry.gates.map((g) => g.label)).toEqual(['typecheck', 'lint']);
+    });
+
+    it('still rejects duplicates even when the gate is filtered out', () => {
+      process.env.FLIGHT_CHECK_GATES = 'lint';
+      const registry = createGateRegistry();
+      registry.add('typecheck', 'tsc', ['-b']);
+      expect(() => registry.add('typecheck', 'tsc', ['-b'])).toThrow(/twice/);
+    });
+  });
 });

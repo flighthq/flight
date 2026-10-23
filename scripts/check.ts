@@ -155,6 +155,18 @@ if (!scoped) {
   add('size (advisory)', 'tsx', ['scripts/size.ts']);
 }
 
+// When FLIGHT_CHECK_GATES filters the registry, zero surviving gates means every requested gate was
+// either misspelled or belongs to a mode (scoped/whole-repo) that this invocation is not in. A sweep
+// that runs nothing and exits zero is the shape of failure this guard exists to prevent.
+if (gates.length === 0) {
+  const requested = process.env.FLIGHT_CHECK_GATES?.trim();
+  if (requested) {
+    console.error(pc.red(`FLIGHT_CHECK_GATES selected no gates from this ${scoped ? 'scoped' : 'whole-repo'} run.`));
+    console.error(pc.dim(`  requested: ${requested}`));
+    process.exit(1);
+  }
+}
+
 // Gates are independent and still all run, but a small worker pool overlaps their repeated repository
 // walks and native tooling. Output is buffered per gate and replayed in canonical order so concurrency
 // never turns diagnostics into an interleaved log. Override the bounded default when profiling a host.

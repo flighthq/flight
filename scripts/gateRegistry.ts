@@ -39,6 +39,12 @@ export interface GateRegistry {
 export function createGateRegistry(): GateRegistry {
   const gates: Gate[] = [];
   const registered = new Set<string>();
+
+  // FLIGHT_CHECK_GATES: comma-separated gate labels. When set, only matching gates are queued;
+  // the rest are silently skipped. Unset or empty = all gates run (the local default).
+  const allowRaw = process.env.FLIGHT_CHECK_GATES?.trim();
+  const allow = allowRaw ? new Set(allowRaw.split(',').map((s) => s.trim())) : null;
+
   return {
     add: (label: string, command: string, args: readonly string[]): void => {
       if (registered.has(label)) {
@@ -47,6 +53,7 @@ export function createGateRegistry(): GateRegistry {
         );
       }
       registered.add(label);
+      if (allow !== null && !allow.has(label)) return;
       gates.push({ args, command, label });
     },
     gates,

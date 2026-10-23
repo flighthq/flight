@@ -269,21 +269,17 @@ jobs:
       - run: npm ci
       - run: npm run test
 
-  # Runs packages:check and typecheck as its first two gates, which is the whole of what the former
-  # `build-check` preflight did — so a graph that does not compile still fails CI here, just without
-  # holding every other leg behind it.
-  quality:
-    name: Quality sweep
+  # The quality sweep, split into four parallel jobs so a failure names its category in the
+  # GitHub Actions UI without scrolling a combined log. Each job sets FLIGHT_CHECK_GATES to
+  # its gate subset; `npm run check` runs only those gates and exits nonzero if any fail.
+  # Locally, `npm run check` with no env var still runs every gate as before.
+
+  quality-structure:
+    name: Quality · structure
     needs: changes
     if: ${{ needs.changes.outputs.code == 'true' }}
     runs-on: ubuntu-latest
-
     steps:
-      # `npm run check` includes `append-only-ledgers:check`, which compares the guarded ledger
-      # sections against their MERGE-BASE. A bare checkout is a depth-1 single-branch clone with no
-      # second integration ref, so that comparison has nothing to resolve: the gate exits 0 having
-      # read nothing. It reported that honestly and still passed, which is the shape of failure that
-      # makes a green CI a lie. Full history is what gives the gate a baseline to compare against.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -293,6 +289,72 @@ jobs:
           cache: 'npm'
       - run: npm ci
       - run: npm run check
+        env:
+          FLIGHT_CHECK_GATES: >-
+            packages:check,module-specifiers:check,license-provenance:check,
+            package-dist-orphans:check,sdk-subpaths:check,transport-bypasses:check,
+            export-lanes:check
+
+  quality-typecheck:
+    name: Quality · typecheck
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run check
+        env:
+          FLIGHT_CHECK_GATES: typecheck
+
+  quality-lint:
+    name: Quality · lint & format
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run check
+        env:
+          FLIGHT_CHECK_GATES: >-
+            lint,format:check,order:check,portable:check,
+            mocks:check,backend-prefix:check
+
+  quality-invariants:
+    name: Quality · invariants
+    needs: changes
+    if: ${{ needs.changes.outputs.code == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run check
+        env:
+          FLIGHT_CHECK_GATES: >-
+            exports:check,reachability:check,type-home:check,
+            backend-lifecycle:check,entity-contracts:check,api:check,
+            facets:check,catalog:check,support:check,instrumentation:check,
+            fingerprint-computation-id:check,evidence:check,assertions:check,
+            data-cast-colour:check,unit-test-cost:check,
+            expected-image-descriptions:check,functional-antialiasing:check,
+            degree-constants:check,capability-arrival:check,host-bypasses:check,
+            mixed-absence:check,opaque-values:check,double-casts:check,
+            capture provenance (advisory)
 
   # Advisory, not a gate: `npm run size` always exits 0. It reports which bundles moved against the
   # committed unminified baseline so a reviewer sees the tree-shaking delta in the log. The shipping
