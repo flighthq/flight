@@ -42,6 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       code: ${{ steps.scope.outputs.code }}
+      rust: ${{ steps.scope.outputs.rust }}
     steps:
       # Full history: paths-filter needs the merge-base (PRs) or the pre-push commit
       # (pushes) present locally. A shallow clone makes it fetch --deepen in a loop, which
@@ -68,6 +69,13 @@ jobs:
               - '**'
               - '!**/*.md'
               - '!agents/**/*.md'
+            rust:
+              - 'crates/**'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'scripts/publish-crates.sh'
+              - 'scripts/version-crates.sh'
+              - '.github/workflows/rust-publish.yml'
 
       # There is no meaningful changed-file range on a manual dispatch. Treat it as an explicit request
       # for the complete CI gate rather than allowing every path-filtered job to skip and reporting a
@@ -77,11 +85,14 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           FILTER_CODE: ${{ steps.filter.outputs.code }}
+          FILTER_RUST: ${{ steps.filter.outputs.rust }}
         run: |
           if [ "$EVENT_NAME" = 'workflow_dispatch' ]; then
             echo 'code=true' >> "$GITHUB_OUTPUT"
+            echo 'rust=true' >> "$GITHUB_OUTPUT"
           else
             echo "code=$FILTER_CODE" >> "$GITHUB_OUTPUT"
+            echo "rust=$FILTER_RUST" >> "$GITHUB_OUTPUT"
           fi
 
   test-scripts:
@@ -475,6 +486,53 @@ jobs:
           include-hidden-files: true
           if-no-files-found: warn
 
+  rust-check:
+    name: Rust · check
+    needs: changes
+    if: ${{ needs.changes.outputs.rust == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check --workspace
+
+  rust-test:
+    name: Rust · test
+    needs: changes
+    if: ${{ needs.changes.outputs.rust == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --workspace
+
+  rust-clippy:
+    name: Rust · clippy
+    needs: changes
+    if: ${{ needs.changes.outputs.rust == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --workspace
+
+  rust-fmt:
+    name: Rust · format
+    needs: changes
+    if: ${{ needs.changes.outputs.rust == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+
   edge-publish:
     # Snapshot ("edge"/"next") publish to npm on every push to a release channel — the continuous
     # counterpart to the tag-triggered stable release (release.yml). Edge is meant to be *available*,
@@ -562,11 +620,18 @@ jobs:
 
   rust-edge-publish:
     # Publishes the Rust crate graph to crates.io under the same snapshot version that the npm
-    # edge-publish job computed. Depends on edge-publish for the version output, not for npm ordering —
-    # the two registries are independent. Same gates: build + test-fast.
+    # edge-publish job computed. Depends on edge-publish for the version output, and on the Rust CI
+    # jobs for quality. The Rust CI jobs are path-filtered and may be skipped when no Rust files
+    # changed; `if: always()` on `needs` entries means "don't fail when skipped", and the version
+    # check still gates the publish.
     name: Publish · Rust · ${{ github.ref_name }} snapshot
-    needs: [edge-publish]
-    if: ${{ needs.edge-publish.outputs.version != '' }}
+    needs: [edge-publish, rust-check, rust-test, rust-clippy, rust-fmt]
+    if: |-
+      always()
+      && needs.edge-publish.outputs.version != ''
+      && needs.edge-publish.result == 'success'
+      && !contains(needs.*.result, 'failure')
+      && !contains(needs.*.result, 'cancelled')
     uses: ./.github/workflows/rust-publish.yml
     with:
       version: ${{ needs.edge-publish.outputs.version }}
