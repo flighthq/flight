@@ -109,6 +109,7 @@ const MARKER_PATTERN = new RegExp(
 const MARKER_PHRASE_TO_RULE = new Map(MARKERS.map((r) => [r.phrase.toLowerCase(), r]));
 const NEGATION_PATTERN = /\b(?:never|neither|no|not|nothing|without)\b/i;
 const MANIFEST_LICENSE_LINE = /^\s*"license"\s*:\s*"[^"]+"\s*,?\s*$/;
+const CARGO_LICENSE_LINE = /^\s*license\s*=\s*"[^"]+"\s*$/;
 const MAX_GIT_OUTPUT_BYTES = 64 * 1024 * 1024;
 const DISSOLVED_FLIGHT_PACKAGES = new Set(['filters']);
 
@@ -119,6 +120,17 @@ const NAMED_ESCAPES: readonly LicenseProvenanceEscape[] = [
     match: ({ line, path }) => path === 'package-lock.json' && MANIFEST_LICENSE_LINE.test(line),
     name: 'npm-lock-license-metadata',
     reason: 'generated dependency metadata; only an exact license property line is allowed',
+  },
+  {
+    match: ({ line, path }) => isCargoManifest(path) && CARGO_LICENSE_LINE.test(line),
+    name: 'cargo-manifest-license',
+    reason: 'the workspace Cargo.toml SPDX license identifier; same role as the package.json license field',
+  },
+  {
+    match: ({ match, path }) =>
+      match === parts('Z', 'lib') && (path.endsWith('.rs') || path.endsWith('.api')) && !path.startsWith('LICENSE'),
+    name: 'rust-compression-enum-variant',
+    reason: 'a compression algorithm enum variant or format identifier in Rust source, not a license reference',
   },
   {
     match: isProjectPolicyToken,
@@ -395,6 +407,10 @@ function externalRepositoryPathIndex(object: string): number {
   return /^(?:@flighthq|agents|crates|functional|packages|scripts|tools)\//.test(match[1])
     ? Number.POSITIVE_INFINITY
     : (match.index ?? Number.POSITIVE_INFINITY);
+}
+
+function isCargoManifest(path: string): boolean {
+  return path === 'Cargo.toml' || path.endsWith('/Cargo.toml');
 }
 
 function isPackageManifest(path: string): boolean {
