@@ -21,7 +21,11 @@ if (failed) process.exit(1);
 
 async function runProject(project: Readonly<TypecheckProject>): Promise<TypecheckResult> {
   return await new Promise((resolve) => {
-    const child = spawn('tsc', [...project.args], { env: process.env, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn('tsc', [...project.args], {
+      env: process.env,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      ...(process.platform === 'win32' ? { shell: true } : {}),
+    });
     const chunks: string[] = [];
     child.stdout.on('data', (chunk: Buffer) => chunks.push(chunk.toString()));
     child.stderr.on('data', (chunk: Buffer) => chunks.push(chunk.toString()));

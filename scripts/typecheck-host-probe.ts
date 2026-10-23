@@ -62,7 +62,12 @@ process.stdout.write(
 
 async function runTsc(args: readonly string[]): Promise<string> {
   return await new Promise((settle) => {
-    const child = spawn('tsc', [...args], { cwd: repoRoot, env: process.env, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn('tsc', [...args], {
+      cwd: repoRoot,
+      env: process.env,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      ...(process.platform === 'win32' ? { shell: true } : {}),
+    });
     const chunks: string[] = [];
     child.stdout.on('data', (chunk: Buffer) => chunks.push(chunk.toString()));
     child.stderr.on('data', (chunk: Buffer) => chunks.push(chunk.toString()));
