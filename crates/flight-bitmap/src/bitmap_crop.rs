@@ -178,7 +178,7 @@ fn resolve_edge_crop(v: i32, size: i32, mode: BitmapEdgeMode) -> Option<i32> {
 }
 
 /// Trims transparent border from source.
-// flight-lint: allow(f64) mirrors TS RectangleLike (number) pixel bounds; D8 candidate for flight-geometry Rectangle
+// flight-lint: allow(f64) RectangleLike (number) pixel bounds; D8 candidate for flight-geometry Rectangle
 pub fn trim_bitmap(source: &Bitmap) -> Bitmap {
     let sw = source.width as i32;
     let sh = source.height as i32;

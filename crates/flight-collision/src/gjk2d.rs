@@ -33,7 +33,7 @@ fn is_preferred_epa_axis(
     return (axis_x - best_axis_x).abs() <= AXIS_EPSILON && axis_y > best_axis_y;
 }
 
-// flight-lint: allow(fn-order) the source-ordered GJK implementation follows its EPA and interior helpers
+// flight-lint: allow(fn-order) the source-ordered GJK implementation precedes its EPA and interior helpers
 fn run_gjk2d(
     a: &CollisionShape2D,
     support_a: &CollisionSupport2D,

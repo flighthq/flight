@@ -244,7 +244,7 @@ This changes the TS API as well as Rust. It is applied via a reviewed classifica
   invalidate_node_local_content(&mut s);
   ```
   The `.write()` / `.read()` borrow is the only Rust-specific step; it is required by safe shared mutation (`Ref<T>` = `Arc<RwLock<T>>`).
-- **Construction:** `create_sprite(Some(&PartialSprite { … }))` mirrors TS `createSprite(PartialNode<Sprite>)`. Sugar may add a `Sprite::new(..)` that delegates to it. **No property getters or setters in sugar.**
+- **Construction:** `create_sprite(Some(&PartialSprite { … }))`. Sugar may add a `Sprite::new(..)` that delegates to it. **No property getters or setters in sugar.**
 - **Runtime:** private. `Node2DFields` holds the private `Node2DRuntime` tier (containing the `NodeRuntime` tier and the entity binding/uid). Kind runtime extras (e.g. `SpriteRuntime`'s texture-cache fields) are private fields of the kind struct, reached by `get_sprite_runtime`-style internal functions.
 - **Custom kinds:** a user either reuses a kind and changes `kind`, or declares their own struct (`node: Node2DFields` plus data) and implements `Node2D` / `Entity`, through helper macros such as `impl_node2d!`.
 - **General family pattern (principal, 2026-10-21):** the same shape applies to every open family with heterogeneous collections, not only nodes. Examples: adjustments (`AdjustmentFields` + per-kind structs + `trait Adjustment`, stacks of `Ref<dyn Adjustment>`, structural dispatch through the trait, cache key from a deterministic serialization of public fields, mirroring TS `JSON.stringify`) and effects.

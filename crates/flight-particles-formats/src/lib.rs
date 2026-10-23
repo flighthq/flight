@@ -1,5 +1,5 @@
-//! Particle format detection, parsing and serialization across the built-in formats. The public
-//! lane mirrors TS `particles-formats/src/index.ts`; the format registry is caller-owned state (D5).
+//! Particle format detection, parsing and serialization across the built-in formats. The format
+//! registry is caller-owned state (D5).
 
 mod detect;
 mod format_registry;

@@ -179,7 +179,7 @@ pub struct BitmapRegion {
 
 /// Axis-aligned rectangle with floating-point coordinates.
 #[derive(Clone, Debug, Default)]
-// flight-lint: allow(f64) mirrors TS RectangleLike (number) pixel bounds; D8 candidate for flight-geometry Rectangle
+// flight-lint: allow(f64) RectangleLike (number) pixel bounds; D8 candidate for flight-geometry Rectangle
 pub struct RectangleLike {
     pub x: f64,
     pub y: f64,

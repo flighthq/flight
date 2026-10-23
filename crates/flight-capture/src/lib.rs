@@ -1,6 +1,5 @@
 //! Capture verification: tolerant fingerprint comparison and the canonical committed baseline
-//! record. No filesystem, browser, screenshot or hash computation lives here; the public lane
-//! mirrors TS `capture/src/index.ts`.
+//! record. No filesystem, browser, screenshot or hash computation lives here.
 
 mod capture_baseline;
 mod capture_comparison;

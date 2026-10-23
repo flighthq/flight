@@ -27,7 +27,7 @@ mod sugar_tests {
 /// Scans the `source` region for pixels matching `color` under `mask`
 /// (`find_color` true) or not matching it (false), and returns the tightest
 /// bounding rectangle, or None if none match.
-// flight-lint: allow(f64) mirrors TS RectangleLike (number) pixel bounds; D8 candidate for flight-geometry Rectangle
+// flight-lint: allow(f64) RectangleLike (number) pixel bounds; D8 candidate for flight-geometry Rectangle
 pub fn get_bitmap_color_bounds_rectangle(
     source: &BitmapRegion,
     mask: u32,

@@ -26,7 +26,7 @@ not invent editing APIs or depend on a separate text-input implementation.
 
 ## Export lanes
 
-The crate root follows the pinned `text/src/index.ts` public lane. Construction/runtime
+The crate root matches the pinned `text/src/index.ts` public lane. Construction/runtime
 initializers, `TextLayoutContext`, cache access, the relocated D8 helpers, and the explicit D5 guard
 setter remain available through `flight_text::contract`. `ensure_text_layout` is likewise
 contract-only; the public lane exposes `get_text_layout` and `get_text_layout_metrics`, which ensure
