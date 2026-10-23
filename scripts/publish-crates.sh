@@ -2,8 +2,9 @@
 set -euo pipefail
 
 # Publishes all workspace crates to crates.io in topological dependency order.
-# Skips crates marked `publish = false`. Retries on rate-limit (HTTP 429) with
-# exponential backoff. Treats "already uploaded" as success for idempotent re-runs.
+# Skips crates marked `publish = false`. Retries on rate-limit (HTTP 429) by
+# parsing the retry-after time from the error message. Treats "already uploaded"
+# as success for idempotent re-runs.
 #
 # Usage: scripts/publish-crates.sh [--dry-run]
 
@@ -13,8 +14,9 @@ if [[ "${1:-}" == "--dry-run" ]]; then
   echo "=== DRY RUN ==="
 fi
 
-MAX_RETRIES=5
-BASE_DELAY=2
+MAX_RETRIES=20
+MIN_RETRY_DELAY=10
+MAX_RETRY_DELAY=900
 
 # Topological sort via cargo metadata + python: leaves (no workspace deps) first,
 # umbrella crates (flight-sdk) last.
@@ -76,10 +78,35 @@ SKIPPED=0
 echo "Publishing $TOTAL crates in dependency order..."
 echo ""
 
+# Parse "try again after <HTTP date>" from crates.io error and return seconds to wait.
+# Falls back to the provided default if parsing fails.
+parse_retry_after() {
+  local output="$1"
+  local default_delay="$2"
+
+  local retry_date
+  retry_date=$(echo "$output" | grep -oiP 'try again after \K[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT' | head -1)
+  if [ -z "$retry_date" ]; then
+    echo "$default_delay"
+    return
+  fi
+
+  local retry_epoch now_epoch wait_seconds
+  retry_epoch=$(date -d "$retry_date" +%s 2>/dev/null) || { echo "$default_delay"; return; }
+  now_epoch=$(date +%s)
+  wait_seconds=$((retry_epoch - now_epoch + 5))
+
+  if (( wait_seconds < MIN_RETRY_DELAY )); then
+    wait_seconds=$MIN_RETRY_DELAY
+  elif (( wait_seconds > MAX_RETRY_DELAY )); then
+    wait_seconds=$MAX_RETRY_DELAY
+  fi
+  echo "$wait_seconds"
+}
+
 publish_one() {
   local crate="$1"
   local attempt=0
-  local delay=$BASE_DELAY
 
   while (( attempt < MAX_RETRIES )); do
     OUTPUT=$(cargo publish -p "$crate" $DRY_RUN --no-verify --allow-dirty 2>&1) && RC=0 || RC=$?
@@ -94,13 +121,13 @@ publish_one() {
       return 0
     fi
 
-    # Retry on rate limit or transient server errors
     if echo "$OUTPUT" | grep -qiE "429|rate limit|try again|503|504"; then
       attempt=$((attempt + 1))
       if (( attempt < MAX_RETRIES )); then
+        local delay
+        delay=$(parse_retry_after "$OUTPUT" "$MIN_RETRY_DELAY")
         echo "  rate-limited, retry $attempt/$MAX_RETRIES in ${delay}s..."
         sleep "$delay"
-        delay=$((delay * 2))
         continue
       fi
     fi
@@ -127,7 +154,7 @@ for CRATE in $ORDER; do
 
   # Brief pause between publishes to stay under rate limits
   if [ -z "$DRY_RUN" ]; then
-    sleep 1
+    sleep 2
   fi
 done
 
