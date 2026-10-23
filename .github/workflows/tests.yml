@@ -534,10 +534,10 @@ jobs:
       - run: cargo fmt --all -- --check
 
   edge-publish:
-    # Snapshot ("edge"/"next") publish to npm on every push to a release channel — the continuous
-    # counterpart to the tag-triggered stable release (release.yml). Edge is meant to be *available*,
-    # so it gates only on the two correctness legs — `build` (it compiles) and `test-fast` (the merged
-    # unit-test run, seconds not minutes) — and deliberately NOT on the thorough `test` leg or the
+    # Snapshot ("edge"/"next") publish to npm on every push to develop — the continuous counterpart
+    # to the tag-triggered stable release (release.yml). Edge is meant to be *available*, so it gates
+    # only on the two correctness legs — `build` (it compiles) and `test-fast` (the merged unit-test
+    # run, seconds not minutes) — and deliberately NOT on the thorough `test` leg or the
     # health/hygiene legs (`size`, the flaky `render-test` matrix, `harness-build`, `quality`), which
     # still run in parallel as signals but never block an edge build. It never runs on pull_request (no
     # secrets on forks, and only landed code should publish). The version is a prerelease under its own
@@ -551,12 +551,10 @@ jobs:
     # second publisher for the same channel, reachable only by a hand-push to a branch documented as
     # never hand-pushed, racing the dispatched run on a different concurrency key for the same version.
     # `next` (develop) is unaffected: a human pushes develop, so that push does start a run.
-    name: Publish · ${{ github.ref_name }} snapshot
+    name: Publish · npm · ${{ github.ref_name }} snapshot
     needs: [build, test-fast]
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.edge.outputs.version }}
     permissions:
       contents: read
       id-token: write # npm provenance
@@ -567,7 +565,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # edge-version derives the sortable build number from `git rev-list --count`
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -619,21 +617,19 @@ jobs:
           version: ${{ steps.edge.outputs.version }}
 
   rust-edge-publish:
-    # Publishes the Rust crate graph to crates.io under the same snapshot version that the npm
-    # edge-publish job computed. Depends on edge-publish for the version output, and on the Rust CI
-    # jobs for quality. The Rust CI jobs are path-filtered and may be skipped when no Rust files
-    # changed; `if: always()` on `needs` entries means "don't fail when skipped", and the version
-    # check still gates the publish.
+    # Publishes the Rust crate graph to crates.io in parallel with npm. Each registry computes the
+    # snapshot version independently from edge-version.ts — same git history, deterministic output.
+    # The Rust CI jobs are path-filtered and may be skipped when no Rust files changed; `always()`
+    # in the condition prevents skipped jobs from blocking, and the branch gate still applies.
     name: Publish · Rust · ${{ github.ref_name }} snapshot
-    needs: [edge-publish, rust-check, rust-test, rust-clippy, rust-fmt]
+    needs: [build, test-fast, rust-check, rust-test, rust-clippy, rust-fmt]
     if: |-
       always()
-      && needs.edge-publish.outputs.version != ''
-      && needs.edge-publish.result == 'success'
+      && github.event_name == 'push' && github.ref == 'refs/heads/develop'
+      && needs.build.result == 'success'
+      && needs.test-fast.result == 'success'
       && !contains(needs.*.result, 'failure')
       && !contains(needs.*.result, 'cancelled')
     uses: ./.github/workflows/rust-publish.yml
-    with:
-      version: ${{ needs.edge-publish.outputs.version }}
     secrets:
       CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
