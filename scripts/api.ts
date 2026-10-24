@@ -59,7 +59,7 @@ function findPackages(): Map<string, PackageInfo> {
       peerDependencies?: Record<string, string>;
     };
 
-    if (!pkg.name?.startsWith('@flighthq/') || pkg.name === '@flighthq/sdk') continue;
+    if (!pkg.name?.startsWith('@flighthq/') || pkg.name === '@flighthq/sdk' || pkg.name.endsWith('-wasm')) continue;
 
     const allDeps = { ...pkg.dependencies, ...pkg.peerDependencies };
     const deps = Object.keys(allDeps).filter((dep) => dep.startsWith('@flighthq/') && dep !== '@flighthq/sdk');
