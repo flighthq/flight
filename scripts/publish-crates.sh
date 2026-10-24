@@ -115,7 +115,7 @@ publish_one() {
       return 0
     fi
 
-    if echo "$OUTPUT" | grep -q "already uploaded"; then
+    if echo "$OUTPUT" | grep -qiE "already (uploaded|exists)"; then
       echo "  (already published)"
       SKIPPED=$((SKIPPED + 1))
       return 0
