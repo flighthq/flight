@@ -5,6 +5,7 @@ export {
   getPlatformInfo,
   getPlatformKind,
   getPlatformName,
+  getPlatformRuntime,
   isPlatformDesktop,
   isPlatformMobile,
   isPlatformNative,

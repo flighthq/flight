@@ -239,7 +239,7 @@ function parseExportsYml(content: string): ExportsPolicy {
 
   let currentLane: { symbols: Set<string>; files: Set<string>; prefixes: Set<string> } | null = null;
 
-  for (const raw of content.split('\n')) {
+  for (const raw of content.split(/\r?\n/)) {
     const line = raw.replace(/#.*$/, '').trimEnd();
     if (line.trim() === '') continue;
 
