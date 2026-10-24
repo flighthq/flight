@@ -21,8 +21,8 @@
     "dist"
   ],
   "scripts": {
-    "build:wasm": "wasm-pack build ../../crates/flight-compression-wasm --target web --out-dir ../../packages/compression-wasm/src/wasm --out-name compression_wasm",
-    "build": "tsc -b",
+    "build:wasm": "wasm-pack build ../../crates/flight-compression-wasm --target web --out-dir ../../packages/compression-wasm/src/wasm --out-name compression_wasm && node ../../scripts/embed-wasm-bytes.mjs src/wasm/compression_wasm_bg.wasm src/wasm/compressionWasmBytes.ts compressionWasmBytes",
+    "build": "tsc -b && node ../../scripts/copy-wasm-glue.mjs src/wasm/compression_wasm.js dist/wasm/compression_wasm.js",
     "clean": "tsc -b --clean"
   },
   "dependencies": {
