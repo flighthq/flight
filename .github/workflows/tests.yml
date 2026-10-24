@@ -291,9 +291,8 @@ jobs:
       - run: npm run check
         env:
           FLIGHT_CHECK_GATES: >-
-            packages:check,module-specifiers:check,license-provenance:check,
-            package-dist-orphans:check,sdk-subpaths:check,transport-bypasses:check,
-            export-lanes:check
+            packages:check,module-specifiers:check,license-provenance:check, package-dist-orphans:check,sdk-subpaths:check,transport-bypasses:check, export-lanes:check
+
 
   quality-typecheck:
     name: Quality · typecheck
@@ -326,8 +325,8 @@ jobs:
       - run: npm run check
         env:
           FLIGHT_CHECK_GATES: >-
-            lint,format:check,order:check,portable:check,
-            mocks:check,backend-prefix:check
+            lint,format:check,order:check,portable:check, mocks:check,backend-prefix:check
+
 
   quality-invariants:
     name: Quality · invariants
@@ -346,15 +345,8 @@ jobs:
       - run: npm run check
         env:
           FLIGHT_CHECK_GATES: >-
-            exports:check,reachability:check,type-home:check,
-            backend-lifecycle:check,entity-contracts:check,api:check,
-            facets:check,catalog:check,support:check,instrumentation:check,
-            fingerprint-computation-id:check,evidence:check,assertions:check,
-            data-cast-colour:check,unit-test-cost:check,
-            expected-image-descriptions:check,functional-antialiasing:check,
-            degree-constants:check,capability-arrival:check,host-bypasses:check,
-            mixed-absence:check,opaque-values:check,double-casts:check,
-            capture provenance (advisory)
+            exports:check,reachability:check,type-home:check, backend-lifecycle:check,entity-contracts:check,api:check, facets:check,catalog:check,support:check,instrumentation:check, fingerprint-computation-id:check,evidence:check,assertions:check, data-cast-colour:check,unit-test-cost:check, expected-image-descriptions:check,functional-antialiasing:check, degree-constants:check,capability-arrival:check,host-bypasses:check, mixed-absence:check,opaque-values:check,double-casts:check, capture provenance (advisory)
+
 
   # Advisory, not a gate: `npm run size` always exits 0. It reports which bundles moved against the
   # committed unminified baseline so a reviewer sees the tree-shaking delta in the log. The shipping
