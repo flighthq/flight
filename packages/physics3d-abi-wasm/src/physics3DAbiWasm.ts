@@ -53,7 +53,6 @@ let initialized = false;
 export function createPhysics3DAbi(): Physics3DAbi {
   ensureInitialized();
   const instance = create_abi();
-  if (instance === 0) throw new Error('Physics3D wasm ABI instance handles are exhausted');
 
   return {
     [EntityRuntimeKey]: undefined,
