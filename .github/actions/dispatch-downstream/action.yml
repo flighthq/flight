@@ -36,9 +36,6 @@ inputs:
   flight-compiler-token:
     description: Token with dispatch access to flighthq/flight-compiler
     required: true
-  flight-rs-token:
-    description: Token with dispatch access to flighthq/flight-rs
-    required: true
   probe-package:
     description: Package read back to confirm the dist-tag really points at `version` before dispatching
     required: false
@@ -96,31 +93,17 @@ runs:
         DIST_TAG: ${{ inputs.dist-tag }}
         EVENT_TYPE: ${{ inputs.event-type }}
         FLIGHT_COMPILER_TOKEN: ${{ inputs.flight-compiler-token }}
-        FLIGHT_RS_TOKEN: ${{ inputs.flight-rs-token }}
         VERSION: ${{ inputs.version }}
       run: |
-        # Deliberately NOT `set -e`: both repos must be attempted even when the first one fails. A
-        # bad or expired token for one receiver must not silently skip the other, which is exactly
-        # what a fail-fast sequence of two steps would do.
         set -uo pipefail
-
-        dispatch() {
-          repo="$1"
-          token="$2"
-          if GH_TOKEN="${token}" gh api --method POST "repos/flighthq/${repo}/dispatches" \
-            --raw-field "event_type=${EVENT_TYPE}" \
-            --raw-field "client_payload[version]=${VERSION}" \
-            --raw-field "client_payload[commit]=${COMMIT}" \
-            --raw-field "client_payload[dist_tag]=${DIST_TAG}"; then
-            echo "dispatched ${EVENT_TYPE} to ${repo}: version ${VERSION} under dist-tag ${DIST_TAG}"
-            echo "  (a 204 here does NOT prove ${repo} has a workflow listening for ${EVENT_TYPE})"
-            return 0
-          fi
-          echo "::error::failed to dispatch ${EVENT_TYPE} to ${repo} for version ${VERSION}"
-          return 1
-        }
-
-        status=0
-        dispatch flight-rs "${FLIGHT_RS_TOKEN}" || status=1
-        dispatch flight-compiler "${FLIGHT_COMPILER_TOKEN}" || status=1
-        exit "${status}"
+        if GH_TOKEN="${FLIGHT_COMPILER_TOKEN}" gh api --method POST "repos/flighthq/flight-compiler/dispatches" \
+          --raw-field "event_type=${EVENT_TYPE}" \
+          --raw-field "client_payload[version]=${VERSION}" \
+          --raw-field "client_payload[commit]=${COMMIT}" \
+          --raw-field "client_payload[dist_tag]=${DIST_TAG}"; then
+          echo "dispatched ${EVENT_TYPE} to flight-compiler: version ${VERSION} under dist-tag ${DIST_TAG}"
+          echo "  (a 204 here does NOT prove flight-compiler has a workflow listening for ${EVENT_TYPE})"
+        else
+          echo "::error::failed to dispatch ${EVENT_TYPE} to flight-compiler for version ${VERSION}"
+          exit 1
+        fi

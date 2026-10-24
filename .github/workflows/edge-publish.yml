@@ -86,6 +86,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.edge.outputs.version }}
+      tag: ${{ steps.edge.outputs.tag }}
     permissions:
       contents: read
       actions: read # read tests.yml run conclusions for the dispatched sha
@@ -199,12 +200,12 @@ jobs:
         env:
           EDGE_VERSION: ${{ steps.edge.outputs.version }}
         run: npm run version:packages "${EDGE_VERSION}"
-      - name: Publish snapshot to npm
+      - name: Publish snapshot to npm (excluding wasm)
         env:
           EDGE_TAG: ${{ steps.edge.outputs.tag }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
-        run: npm run release -- --no-build --tag "${EDGE_TAG}"
+        run: npm run release -- --no-build --exclude wasm --tag "${EDGE_TAG}"
 
       # The npm artifact must exist before the downstream port and compiler are asked to release, so
       # this follows the publish rather than running beside it. `flight-snapshot`, NOT
@@ -217,7 +218,6 @@ jobs:
           dist-tag: ${{ steps.edge.outputs.tag }}
           event-type: flight-snapshot
           flight-compiler-token: ${{ secrets.FLIGHT_COMPILER_DISPATCH_TOKEN }}
-          flight-rs-token: ${{ secrets.FLIGHT_RS_DISPATCH_TOKEN }}
           version: ${{ steps.edge.outputs.version }}
 
       # Correlation in the direction that is fully supported: this run names the promote run that asked
@@ -246,6 +246,43 @@ jobs:
             echo "| dist-tag | \`${EDGE_TAG}\` |"
             echo "| dispatched by | promote run \`${PROMOTE_RUN_ID}\` |"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  wasm-edge-publish:
+    name: Publish · Wasm · edge snapshot
+    needs: [publish]
+    if: ${{ needs.publish.outputs.version != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Install wasm-pack
+        run: cargo install wasm-pack
+      - run: npm ci
+      - run: npm run build:wasm
+      - name: Build wasm package dist
+        run: |
+          npm run build -w @flighthq/bitmap-wasm \
+            -w @flighthq/compression-wasm \
+            -w @flighthq/physics2d-abi-wasm \
+            -w @flighthq/physics3d-abi-wasm
+      - name: Stamp the graph to the snapshot version
+        run: npm run version:packages ${{ needs.publish.outputs.version }}
+      - name: Publish wasm snapshot to npm
+        run: npm run release -- --no-build --tag ${{ needs.publish.outputs.tag }} wasm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'
 
   rust-edge-publish:
     name: Publish · Rust · edge snapshot

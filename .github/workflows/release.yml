@@ -132,8 +132,8 @@ jobs:
           fi
           npm run release:notes -- "${args[@]}"
       - run: npm run build
-      - name: Publish packages to npm
-        run: npm run release -- --no-build
+      - name: Publish packages to npm (excluding wasm)
+        run: npm run release -- --no-build --exclude wasm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           # Attaches build provenance to each package (public repo + id-token: write above).
@@ -150,7 +150,6 @@ jobs:
           dist-tag: latest
           event-type: flight-release
           flight-compiler-token: ${{ secrets.FLIGHT_COMPILER_DISPATCH_TOKEN }}
-          flight-rs-token: ${{ secrets.FLIGHT_RS_DISPATCH_TOKEN }}
           version: ${{ github.ref_name }}
 
       # Examples site → GitHub release asset for the site repo's /examples route. Built at this tag,
@@ -173,6 +172,35 @@ jobs:
             gh release create "${GITHUB_REF_NAME}" "examples-dist-${GITHUB_REF_NAME}.tgz" \
               --title "${GITHUB_REF_NAME}" --notes-file "${RUNNER_TEMP}/release-notes.md"
           fi
+
+  wasm-publish:
+    name: Publish · Wasm · ${{ github.ref_name }}
+    needs: [publish]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Install wasm-pack
+        run: cargo install wasm-pack
+      - run: npm ci
+      - run: npm run build:wasm
+      - name: Build wasm package dist
+        run: |
+          npm run build -w @flighthq/bitmap-wasm \
+            -w @flighthq/compression-wasm \
+            -w @flighthq/physics2d-abi-wasm \
+            -w @flighthq/physics3d-abi-wasm
+      - name: Publish wasm packages to npm
+        run: npm run release -- --no-build wasm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: 'true'
 
   rust-publish:
     # Publishes the Rust crate graph to crates.io at the tagged stable version. Runs after the npm

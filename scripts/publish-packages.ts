@@ -54,6 +54,7 @@
 //   tsx scripts/publish-packages.ts --no-build      skip the root build (dist must already exist)
 //   tsx scripts/publish-packages.ts --tag <tag>     publish under a dist-tag (e.g. edge/next), not
 //                                                   `latest` — the snapshot-channel publish path
+//   tsx scripts/publish-packages.ts --exclude <sub>  skip packages whose name contains the substring
 //   tsx scripts/publish-packages.ts <name-substr>   only packages whose name contains the substring
 
 import { execFile, execFileSync } from 'node:child_process';
@@ -150,10 +151,14 @@ const noBuild = args.includes('--no-build');
 // value is a positional-looking token, so exclude it before resolving the name-substring filter.
 const tagIndex = args.indexOf('--tag');
 const distTag = tagIndex === -1 ? undefined : args[tagIndex + 1];
+// --exclude <substr> drops packages whose name contains the substring (opposite of the positional
+// include filter). Used by the TS publish lane to skip wasm packages that have their own lane.
+const excludeIndex = args.indexOf('--exclude');
+const exclude = excludeIndex === -1 ? undefined : args[excludeIndex + 1];
 // The dist-tag this run will actually move. npm defaults to `latest` when --tag is absent, so the
 // backwards-move guard covers the stable release path (release.yml) on the same terms as edge/next.
 const targetTag = distTag ?? 'latest';
-const filter = args.find((a, i) => !a.startsWith('--') && i !== tagIndex + 1);
+const filter = args.find((a, i) => !a.startsWith('--') && i !== tagIndex + 1 && i !== excludeIndex + 1);
 
 const manifests = readdirSync(packagesDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory() && existsSync(join(packagesDir, entry.name, 'package.json')))
@@ -163,6 +168,7 @@ const manifests = readdirSync(packagesDir, { withFileTypes: true })
     return { dir, path, pkg: JSON.parse(readFileSync(path, 'utf8')) as Manifest };
   })
   .filter((m) => filter === undefined || m.pkg.name.includes(filter))
+  .filter((m) => exclude === undefined || !m.pkg.name.includes(exclude))
   .sort((a, b) => a.pkg.name.localeCompare(b.pkg.name));
 
 // Version map for pinning internal deps, plus a locked-versioning sanity check: the whole graph must
