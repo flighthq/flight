@@ -23,7 +23,9 @@
   "scripts": {
     "build:wasm": "wasm-pack build ../../crates/flight-physics2d-abi-wasm --target web --out-dir ../../packages/physics2d-abi-wasm/src/wasm --out-name physics2d_abi_wasm && node ../../scripts/embed-wasm-bytes.mjs src/wasm/physics2d_abi_wasm_bg.wasm src/wasm/physics2DAbiWasmBytes.ts physics2DAbiWasmBytes",
     "build": "tsc -b && node ../../scripts/copy-wasm-glue.mjs src/wasm/physics2d_abi_wasm.js dist/wasm/physics2d_abi_wasm.js",
-    "clean": "tsc -b --clean"
+    "clean": "tsc -b --clean",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --watch --config vitest.config.ts"
   },
   "dependencies": {
     "@flighthq/physics2d-abi": "*",

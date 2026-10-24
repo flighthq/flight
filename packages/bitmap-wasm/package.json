@@ -23,7 +23,9 @@
   "scripts": {
     "build:wasm": "wasm-pack build ../../crates/flight-bitmap-wasm --target web --out-dir ../../packages/bitmap-wasm/src/wasm --out-name bitmap_wasm && node ../../scripts/embed-wasm-bytes.mjs src/wasm/bitmap_wasm_bg.wasm src/wasm/bitmapWasmBytes.ts bitmapWasmBytes",
     "build": "tsc -b && node ../../scripts/copy-wasm-glue.mjs src/wasm/bitmap_wasm.js dist/wasm/bitmap_wasm.js",
-    "clean": "tsc -b --clean"
+    "clean": "tsc -b --clean",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --watch --config vitest.config.ts"
   },
   "dependencies": {
     "@flighthq/bitmap": "*",
