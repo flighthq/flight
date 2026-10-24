@@ -1,2 +1,4 @@
-physics3d_abi_wasm.js
-physics3DAbiWasmBytes.ts
+*
+!.gitignore
+!physics3d_abi_wasm.d.ts
+!physics3DAbiWasmBytes.d.ts

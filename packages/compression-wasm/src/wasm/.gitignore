@@ -1,2 +1,4 @@
-compression_wasm.js
-compressionWasmBytes.ts
+*
+!.gitignore
+!compression_wasm.d.ts
+!compressionWasmBytes.d.ts

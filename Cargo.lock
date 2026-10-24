@@ -220,6 +220,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-bitmap-wasm"
+version = "0.6.0"
+dependencies = [
+ "flight-bitmap",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "flight-bitmapfont"
 version = "0.6.0"
 dependencies = [
@@ -362,6 +370,14 @@ version = "0.6.0"
 dependencies = [
  "flight-entity",
  "flight-host",
+]
+
+[[package]]
+name = "flight-compression-wasm"
+version = "0.6.0"
+dependencies = [
+ "flight-compression",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -961,6 +977,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "flight-physics2d-abi-wasm"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-physics2d-abi",
+ "js-sys",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "flight-physics3d"
 version = "0.6.0"
 dependencies = [
@@ -982,6 +1008,16 @@ dependencies = [
  "flight-entity",
  "flight-physics3d",
  "flight-spatial",
+]
+
+[[package]]
+name = "flight-physics3d-abi-wasm"
+version = "0.6.0"
+dependencies = [
+ "flight-entity",
+ "flight-physics3d-abi",
+ "js-sys",
+ "wasm-bindgen",
 ]
 
 [[package]]

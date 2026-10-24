@@ -59,6 +59,7 @@ flight-skeleton2d-formats = { path = "crates/flight-skeleton2d-formats", version
 flight-velocity = { path = "crates/flight-velocity", version = "0.6.0" }
 flight-video = { path = "crates/flight-video", version = "0.6.0" }
 flight-bitmap = { path = "crates/flight-bitmap", version = "0.6.0" }
+flight-bitmap-wasm = { path = "crates/flight-bitmap-wasm" }
 flight-bitmapfont = { path = "crates/flight-bitmapfont", version = "0.6.0" }
 flight-bitmapfont-formats = { path = "crates/flight-bitmapfont-formats", version = "0.6.0" }
 flight-bitmaptext = { path = "crates/flight-bitmaptext", version = "0.6.0" }
