@@ -24,8 +24,8 @@
     "build:wasm": "wasm-pack build ../../crates/flight-compression-wasm --target web --out-dir ../../packages/compression-wasm/src/wasm --out-name compression_wasm && node ../../scripts/embed-wasm-bytes.mjs src/wasm/compression_wasm_bg.wasm src/wasm/compressionWasmBytes.ts compressionWasmBytes",
     "build": "tsc -b && node ../../scripts/copy-wasm-glue.mjs src/wasm/compression_wasm.js dist/wasm/compression_wasm.js",
     "clean": "tsc -b --clean",
-    "test": "vitest run --config vitest.config.ts",
-    "test:watch": "vitest --watch --config vitest.config.ts"
+    "test:wasm": "vitest run --config vitest.config.ts",
+    "test:wasm:watch": "vitest --watch --config vitest.config.ts"
   },
   "dependencies": {
     "@flighthq/compression": "*",

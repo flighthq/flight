@@ -35,7 +35,7 @@
     "build:check": "npm run packages:check && npm run typecheck",
     "build:clean": "npm run clean && npm run build",
     "build:wasm": "npm run build:wasm -w @flighthq/bitmap-wasm -w @flighthq/compression-wasm -w @flighthq/physics2d-abi-wasm -w @flighthq/physics3d-abi-wasm",
-    "test:wasm": "npm run test -w @flighthq/bitmap-wasm -w @flighthq/compression-wasm -w @flighthq/physics2d-abi-wasm -w @flighthq/physics3d-abi-wasm",
+    "test:wasm": "npm run test:wasm -w @flighthq/bitmap-wasm -w @flighthq/compression-wasm -w @flighthq/physics2d-abi-wasm -w @flighthq/physics3d-abi-wasm",
     "build:electron-harness": "npm run build:examples:electron",
     "build:examples": "npm run build --workspace=@flighthq/examples",
     "build:examples:electron": "npm run build --workspace=@flighthq/examples-electron",
