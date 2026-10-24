@@ -767,10 +767,10 @@ function readGateFile(files: ReadonlySet<string>, path: string): string | null {
 }
 
 function parseFrontMatter(text: string): Record<string, string> {
-  const match = text.match(/^---\n([\s\S]*?)\n---/);
+  const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (match === null) return {};
   const result: Record<string, string> = {};
-  for (const line of match[1].split('\n')) {
+  for (const line of match[1].split(/\r?\n/)) {
     const pair = line.match(/^([\w-]+):\s*(.*)$/);
     if (pair !== null) result[pair[1]] = pair[2].replace(/^['"]|['"]$/g, '').trim();
   }

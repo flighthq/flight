@@ -124,7 +124,7 @@ export function listFixturePackVariants(manifest: Readonly<FixtureManifest>, pac
 // for the whole file — a partially-read hash listing would silently verify fewer packs than it appears to.
 export function parseFixtureChecksums(text: string): ReadonlyMap<string, string> | null {
   const checksums = new Map<string, string>();
-  for (const line of text.split('\n')) {
+  for (const line of text.split(/\r?\n/)) {
     if (line.trim() === '') continue;
     const match = /^([0-9a-f]{64}) [ *](.+)$/.exec(line);
     if (match === null) return null;

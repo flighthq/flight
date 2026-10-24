@@ -93,7 +93,7 @@ export function readToolsCoverage(repoRoot: string): ToolsCoverage {
 export function readTsconfigPatterns(path: string): TsconfigPatterns {
   // These configs carry `//` comments, so strip them rather than adding a JSONC dependency for one read.
   const raw = readFileSync(path, 'utf-8')
-    .split('\n')
+    .split(/\r?\n/)
     .map((line) => (/^\s*\/\//.test(line) ? '' : line.replace(/\s+\/\/.*$/, '')))
     .join('\n');
   const config = JSON.parse(raw) as { exclude?: string[]; include?: string[] };
