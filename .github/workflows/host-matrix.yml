@@ -69,7 +69,7 @@ jobs:
             os: ubuntu-latest
             command: xvfb-run -a npm run test:host-probe:tauri
           - host: capacitor-android
-            os: ubuntu-latest
+            os: ubuntu-24.04
             command: HOST_PROBE_CAPACITOR_DEVICE_UDID=emulator-5554 HOST_PROBE_CAPACITOR_PLATFORM=android npm exec --workspace=@flighthq/tool-host-probe -- wdio run wdio.capacitor.conf.ts
           - host: capacitor-ios
             # Capacitor 8's SwiftPM binaries require the Swift toolchain shipped with Xcode 26.
