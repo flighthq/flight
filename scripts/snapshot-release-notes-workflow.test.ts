@@ -24,7 +24,7 @@ describe('snapshot release notes contract', () => {
   ])('generates cumulative %s notes before publishing to npm', (_channel, workflowName, jobName) => {
     const steps = jobSteps(workflowName, jobName);
     const generateIndex = steps.findIndex((step) => step.name === 'Generate cumulative snapshot release notes');
-    const publishIndex = steps.findIndex((step) => step.name === 'Publish snapshot to npm');
+    const publishIndex = steps.findIndex((step) => step.name === 'Publish snapshot to npm (excluding wasm)');
     const generate = steps[generateIndex];
     const run = String(generate?.run);
 

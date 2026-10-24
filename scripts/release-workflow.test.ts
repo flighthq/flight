@@ -26,7 +26,7 @@ function workflow(): {
 describe('stable release workflow contract', () => {
   it('dispatches downstream releases after npm publication and before examples', () => {
     const releaseSteps = workflow().jobs.publish.steps;
-    const publishIndex = releaseSteps.findIndex((step) => step.name === 'Publish packages to npm');
+    const publishIndex = releaseSteps.findIndex((step) => step.name === 'Publish packages to npm (excluding wasm)');
     const examplesIndex = releaseSteps.findIndex((step) => step.name === 'Build examples site');
     const dispatchIndex = releaseSteps.findIndex((step) => step.name === 'Dispatch downstream releases');
     const dispatch = releaseSteps[dispatchIndex];
@@ -41,7 +41,6 @@ describe('stable release workflow contract', () => {
       'dist-tag': 'latest',
       'event-type': 'flight-release',
       'flight-compiler-token': '${{ secrets.FLIGHT_COMPILER_DISPATCH_TOKEN }}',
-      'flight-rs-token': '${{ secrets.FLIGHT_RS_DISPATCH_TOKEN }}',
       version: '${{ github.ref_name }}',
     });
   });
@@ -51,7 +50,7 @@ describe('stable release workflow contract', () => {
     const releaseSteps = releaseWorkflow.jobs.publish.steps;
     const checkout = releaseSteps.find((step) => step.with?.['fetch-depth'] !== undefined);
     const generateIndex = releaseSteps.findIndex((step) => step.name === 'Generate release notes');
-    const publishIndex = releaseSteps.findIndex((step) => step.name === 'Publish packages to npm');
+    const publishIndex = releaseSteps.findIndex((step) => step.name === 'Publish packages to npm (excluding wasm)');
     const generate = String(releaseSteps[generateIndex]?.run);
 
     expect(checkout?.with?.['fetch-depth']).toBe(0);

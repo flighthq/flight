@@ -706,12 +706,15 @@ jobs:
         id: edge
         run: npx tsx scripts/edge-version.ts >> "$GITHUB_OUTPUT"
       - name: Stamp the graph to the snapshot version
-        run: npm run version:packages ${{ steps.edge.outputs.version }}
-      - name: Publish wasm snapshot to npm
-        run: npm run release -- --no-build --tag ${{ steps.edge.outputs.tag }} wasm
         env:
+          EDGE_VERSION: ${{ steps.edge.outputs.version }}
+        run: npm run version:packages "${EDGE_VERSION}"
+      - name: Publish wasm snapshot to npm
+        env:
+          EDGE_TAG: ${{ steps.edge.outputs.tag }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
+        run: npm run release -- --no-build --tag "${EDGE_TAG}" wasm
 
   rust-edge-publish:
     # Publishes the Rust crate graph to crates.io in parallel with npm. Each registry computes the

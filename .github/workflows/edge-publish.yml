@@ -277,12 +277,15 @@ jobs:
             -w @flighthq/physics2d-abi-wasm \
             -w @flighthq/physics3d-abi-wasm
       - name: Stamp the graph to the snapshot version
-        run: npm run version:packages ${{ needs.publish.outputs.version }}
-      - name: Publish wasm snapshot to npm
-        run: npm run release -- --no-build --tag ${{ needs.publish.outputs.tag }} wasm
         env:
+          EDGE_VERSION: ${{ needs.publish.outputs.version }}
+        run: npm run version:packages "${EDGE_VERSION}"
+      - name: Publish wasm snapshot to npm
+        env:
+          EDGE_TAG: ${{ needs.publish.outputs.tag }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_CONFIG_PROVENANCE: 'true'
+        run: npm run release -- --no-build --tag "${EDGE_TAG}" wasm
 
   rust-edge-publish:
     name: Publish · Rust · edge snapshot
