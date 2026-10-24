@@ -24,7 +24,7 @@ import {
   step,
   world_status,
 } from './wasm/physics3d_abi_wasm.js';
-import { physics3DAbiWasmBytes } from './wasm/physics3DAbiWasmBytes';
+import { physics3DAbiWasmBytes } from './wasm/physics3DAbiWasmBytes.js';
 
 const EMPTY_IDS = new Uint32Array();
 const EXECUTION_STATUSES: readonly Physics3DAbiExecutionStatus[] = [

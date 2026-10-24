@@ -45,7 +45,7 @@ import {
   set_bitmap_color_matrix_identity_wasm,
   unpremultiply_bitmap_pixels_wasm,
 } from './wasm/bitmap_wasm.js';
-import { bitmapWasmBytes } from './wasm/bitmapWasmBytes';
+import { bitmapWasmBytes } from './wasm/bitmapWasmBytes.js';
 
 let initialized = false;
 const EMPTY_BYTE_CHANNEL_MAP = new Uint8Array();

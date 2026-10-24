@@ -164,6 +164,7 @@ function findSourceFiles(): SourceFile[] {
 
   for (const packageEntry of readdirSync(packagesDir, { withFileTypes: true })) {
     if (!packageEntry.isDirectory() || !selected.has(packageEntry.name)) continue;
+    if (packageEntry.name.endsWith('-wasm')) continue;
     const srcDir = join(packagesDir, packageEntry.name, 'src');
     if (!existsSync(srcDir)) continue;
     collectSourceFiles(srcDir, srcDir, results);

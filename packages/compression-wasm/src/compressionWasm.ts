@@ -15,7 +15,7 @@ import {
   decompress_lzma_wasm,
   initSync,
 } from './wasm/compression_wasm.js';
-import { compressionWasmBytes } from './wasm/compressionWasmBytes';
+import { compressionWasmBytes } from './wasm/compressionWasmBytes.js';
 
 const FRAMING_CODES: Record<string, number> = { Raw: 0, Rfc1950: 1 };
 

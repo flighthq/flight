@@ -198,6 +198,7 @@ function collectTypeScriptFiles(root: string): string[] {
       if (entry.isDirectory() && SKIPPED_DIRECTORIES.has(entry.name)) continue;
       const path = join(directory, entry.name);
       if (entry.isDirectory()) {
+        if (entry.name.endsWith('-wasm') && directory.endsWith('packages')) continue;
         walk(path);
       } else if (entry.isFile() && SOURCE_EXTENSIONS.some((extension) => entry.name.endsWith(extension))) {
         files.push(path);
