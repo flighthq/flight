@@ -1,0 +1,22 @@
+[package]
+name = "flight-physics2d-abi-wasm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+description = "Wasm-bindgen shim for the flight-physics2d-abi execution boundary"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+flight-entity = { workspace = true }
+flight-physics2d-abi = { workspace = true }
+js-sys = "0.3"
+wasm-bindgen = "0.2"
+
+[lints]
+workspace = true
