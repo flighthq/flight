@@ -412,7 +412,7 @@ const workspacePackageNames = packageDirs.flatMap((pkgDir) => {
   const name = readJson<PackageJson>(join(pkgDir, 'package.json'))?.name;
   return name === undefined ? [] : [name];
 });
-const layerPolicyErrors = getPackageLayerCoverageViolations(workspacePackageNames);
+const layerPolicyErrors = getPackageLayerCoverageViolations(workspacePackageNames, isSdkBarrelExcludedPackage);
 const workspaceManifests = packageDirs.flatMap((pkgDir): WorkspaceManifest[] => {
   const manifest = readJson<PackageJson>(join(pkgDir, 'package.json'));
   if (manifest?.name === undefined) return [];
@@ -474,6 +474,10 @@ for (const pkgDir of packageDirs) {
 
   if (!pkg?.name) continue;
 
+  // Wasm bridge packages have their own build/test/publish lanes and do not follow the
+  // standard structural conventions (contract.ts, prepack, clean:dist, files, barrel).
+  if (pkg.name.endsWith('-wasm')) continue;
+
   const name = pkg.name;
   const errors: CheckError[] = [];
   const warnings: CheckWarning[] = [];
@@ -534,7 +538,7 @@ for (const pkgDir of packageDirs) {
   // and are intentionally kept out of the standard tsc build graph so it needs no
   // Rust toolchain. They must NOT be in tsconfig.build.json references; `build:wasm`
   // builds and type-checks them via their own tsconfig.
-  if (pkg.scripts?.wasm) {
+  if (pkg.scripts?.['build:wasm']) {
     check(errors, `${dirName} excluded from tsconfig.build.json references`, !buildRefs.has(dirName));
   } else {
     check(errors, `${dirName} in tsconfig.build.json references`, buildRefs.has(dirName));

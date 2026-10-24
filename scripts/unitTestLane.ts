@@ -13,6 +13,7 @@ export const UNIT_TEST_LANE_EXCLUDE: readonly string[] = [
   '**/node_modules/**',
   'packages/host-*/src/**/*.test.ts',
   'packages/tool-*/src/**/*.test.ts',
+  'packages/*-wasm/src/**/*.test.ts',
   ...REGISTRY_ISOLATED_TEST_FILES,
 ];
 
@@ -20,7 +21,13 @@ export function readUnitTestLaneFiles(root: string): string[] {
   const excluded = new Set(UNIT_TEST_LANE_EXCLUDE.filter((pattern) => !pattern.includes('*')));
   return testFilesUnder(resolve(root, 'packages'))
     .map((path) => relative(root, path).replaceAll('\\', '/'))
-    .filter((path) => !path.startsWith('packages/host-') && !path.startsWith('packages/tool-') && !excluded.has(path))
+    .filter(
+      (path) =>
+        !path.startsWith('packages/host-') &&
+        !path.startsWith('packages/tool-') &&
+        !path.includes('-wasm/') &&
+        !excluded.has(path),
+    )
     .filter((path) => /^packages\/[^/]+\/src\//u.test(path))
     .sort();
 }

@@ -19,6 +19,7 @@
  *   - @flighthq/vite-plugin-* bundler plugins (not app-facing; they RUN in the build, configured
  *     from vite.config.ts, and depend on Node — the bundler-side sibling of tool-*)
  *   - @flighthq/*-rs Rust wasm drop-ins (not TS API packages; mixable leaf crates)
+ *   - @flighthq/*-wasm wasm bridge packages (not app-facing; consumed via their TS counterpart)
  */
 export function isSdkBarrelExcludedPackage(name: string): boolean {
   return (
@@ -26,6 +27,7 @@ export function isSdkBarrelExcludedPackage(name: string): boolean {
     name.startsWith('@flighthq/host-') ||
     name.startsWith('@flighthq/tool-') ||
     name.startsWith('@flighthq/vite-plugin-') ||
-    name.endsWith('-rs')
+    name.endsWith('-rs') ||
+    name.endsWith('-wasm')
   );
 }

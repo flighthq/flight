@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { getPackageLayerCoverageViolations, getPackageLayerDependencyViolation } from './package-layers.ts';
+import { isSdkBarrelExcludedPackage } from './sdk-policy.ts';
 
 describe('package dependency layers', () => {
   it('rejects application packages depending on renderer backends', () => {
@@ -35,6 +36,6 @@ describe('package dependency layers', () => {
       .map((manifestPath) => JSON.parse(readFileSync(manifestPath, 'utf8')) as { name: string })
       .map((manifest) => manifest.name);
 
-    expect(getPackageLayerCoverageViolations(workspacePackageNames)).toEqual([]);
+    expect(getPackageLayerCoverageViolations(workspacePackageNames, isSdkBarrelExcludedPackage)).toEqual([]);
   });
 });

@@ -210,11 +210,15 @@ function buildPackageLayerMap(): ReadonlyMap<string, PackageLayer> {
   return layers;
 }
 
-export function getPackageLayerCoverageViolations(workspacePackageNames: Iterable<string>): PackageLayerViolation[] {
+export function getPackageLayerCoverageViolations(
+  workspacePackageNames: Iterable<string>,
+  isExcluded?: (name: string) => boolean,
+): PackageLayerViolation[] {
   const workspace = new Set(workspacePackageNames);
   const violations: PackageLayerViolation[] = [];
 
   for (const name of [...workspace].sort()) {
+    if (isExcluded?.(name)) continue;
     if (!packageLayerByName.has(name)) {
       violations.push({
         label: `${name} has a dependency layer classification`,

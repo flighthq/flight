@@ -24,10 +24,11 @@ describe('readUnitTestLaneFiles', () => {
     }
   });
 
-  it('drops host backends, dev tools, and isolated files', () => {
+  it('drops host backends, dev tools, wasm bridges, and isolated files', () => {
     const root = makeTree({
       'packages/host-web/src/routed.test.ts': '',
       'packages/tool-capture/src/routed.test.ts': '',
+      'packages/bitmap-wasm/src/bitmapWasm.test.ts': '',
       'packages/alpha/src/kept.test.ts': '',
     });
     try {
@@ -61,9 +62,10 @@ describe('UNIT_TEST_LANE_EXCLUDE', () => {
     for (const file of REGISTRY_ISOLATED_TEST_FILES) expect(UNIT_TEST_LANE_EXCLUDE).toContain(file);
   });
 
-  it('routes host backends and dev tools away from the unit runner', () => {
+  it('routes host backends, dev tools, and wasm bridges away from the unit runner', () => {
     expect(UNIT_TEST_LANE_EXCLUDE).toContain('packages/host-*/src/**/*.test.ts');
     expect(UNIT_TEST_LANE_EXCLUDE).toContain('packages/tool-*/src/**/*.test.ts');
+    expect(UNIT_TEST_LANE_EXCLUDE).toContain('packages/*-wasm/src/**/*.test.ts');
   });
 });
 
