@@ -1,0 +1,37 @@
+{
+  "name": "@flighthq/compression-wasm",
+  "version": "0.5.0",
+  "author": "Joshua Granick and other contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flighthq/flight.git",
+    "directory": "packages/compression-wasm"
+  },
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build:wasm": "wasm-pack build ../../crates/flight-compression-wasm --target web --out-dir ../../packages/compression-wasm/src/wasm --out-name compression_wasm",
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "dependencies": {
+    "@flighthq/compression": "*",
+    "@flighthq/types": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  },
+  "description": "Wasm-backed drop-in replacement for @flighthq/compression codecs",
+  "sideEffects": false
+}
