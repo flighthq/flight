@@ -1,0 +1,20 @@
+[package]
+name = "flight-bitmap-wasm"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+description = "Wasm-bindgen shim for flight-bitmap pixel operations"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+flight-bitmap = { workspace = true }
+wasm-bindgen = "0.2"
+
+[lints]
+workspace = true
