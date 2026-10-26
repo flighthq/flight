@@ -1,4 +1,4 @@
-import { createTextFormatRange, initializeTextFormatRange } from './textFormatRange.ts';
+import { createTextFormatRange, initializeTextFormatRange } from '@flighthq/textformat/contract';
 
 describe('createTextFormatRange', () => {
   it('creates a range with the given fields', () => {

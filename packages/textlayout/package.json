@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
+    "@flighthq/textformat": "*",
     "@flighthq/textshaper": "*",
     "@flighthq/types": "*"
   },

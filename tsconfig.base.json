@@ -333,6 +333,8 @@
       "@flighthq/text-markup/*": ["./packages/text-markup/src/*"],
       "@flighthq/textbidi": ["./packages/textbidi/src/index.ts"],
       "@flighthq/textbidi/*": ["./packages/textbidi/src/*"],
+      "@flighthq/textformat": ["./packages/textformat/src/index.ts"],
+      "@flighthq/textformat/*": ["./packages/textformat/src/*"],
       "@flighthq/textlayout": ["./packages/textlayout/src/index.ts"],
       "@flighthq/textlayout/*": ["./packages/textlayout/src/*"],
       "@flighthq/textinput": ["./packages/textinput/src/index.ts"],

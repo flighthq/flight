@@ -4,7 +4,7 @@ import {
   getTextFormatHeight,
   getTextFormatLeading,
   mergeTextFormat,
-} from './textFormat.ts';
+} from '@flighthq/textformat/contract';
 
 describe('getTextFormatAscent', () => {
   it('returns size when specified', () => {

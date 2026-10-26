@@ -8,6 +8,11 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../entity" }, { "path": "../textshaper" }, { "path": "../types" }],
+  "references": [
+    { "path": "../entity" },
+    { "path": "../textformat" },
+    { "path": "../textshaper" },
+    { "path": "../types" }
+  ],
   "include": ["src"]
 }
