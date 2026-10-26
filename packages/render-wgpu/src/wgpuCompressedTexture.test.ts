@@ -87,16 +87,16 @@ describe('registerWgpuCompressedTextureUpload', () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     const before = runtime.registries.compressedTextureUpload;
-    registerWgpuCompressedTextureUpload(state);
+    registerWgpuCompressedTextureUpload(state, true);
     expect(runtime.registries.compressedTextureUpload).not.toBe(before);
     expect(runtime.registries.compressedTextureUpload).toMatchObject(expect.any(Function));
-    registerWgpuCompressedTextureUpload(state, null);
+    registerWgpuCompressedTextureUpload(state, false);
     expect(runtime.registries.compressedTextureUpload).toBeNull();
   });
 
   it('lets the compressed-image binder consume its source', async () => {
     const state = await createWgpuRenderStateForTest();
-    registerWgpuCompressedTextureUpload(state);
+    registerWgpuCompressedTextureUpload(state, true);
     registerWgpuCompressedTextureDecoder(state, (_format, width, height) => {
       return new Uint8ClampedArray(width * height * 4);
     });
@@ -107,7 +107,7 @@ describe('registerWgpuCompressedTextureUpload', () => {
 
   it('premultiplies straight-alpha decoder output before the RGBA upload', async () => {
     const state = await createWgpuRenderStateForTest();
-    registerWgpuCompressedTextureUpload(state);
+    registerWgpuCompressedTextureUpload(state, true);
     registerWgpuCompressedTextureDecoder(state, (_format, width, height) => {
       const rgba = new Uint8ClampedArray(width * height * 4);
       for (let i = 0; i < rgba.length; i += 4) {
@@ -128,7 +128,7 @@ describe('registerWgpuCompressedTextureUpload', () => {
   it('marks native straight-alpha blocks for display-shader premultiplication', async () => {
     const state = await createWgpuRenderStateForTest();
     (state.device.features as Set<GPUFeatureName>).add('texture-compression-bc');
-    registerWgpuCompressedTextureUpload(state);
+    registerWgpuCompressedTextureUpload(state, true);
     expect(bindWgpuCompressedImageTexture(state, compressedImage())?.straightAlpha).toBe(true);
   });
 });

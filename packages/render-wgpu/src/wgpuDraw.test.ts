@@ -186,7 +186,7 @@ describe('bindWgpuCompressedImageTexture', () => {
   it('routes through the registered compressed upload seam', async () => {
     const state = await createWgpuRenderStateForTest();
     const decode = vi.fn(() => new Uint8ClampedArray(4 * 4 * 4));
-    registerWgpuCompressedTextureUpload(state);
+    registerWgpuCompressedTextureUpload(state, true);
     registerWgpuCompressedTextureDecoder(state, decode);
     const entry = bindWgpuCompressedImageTexture(state, compressedBc3Image());
     expect(entry?.texture).toBeDefined();

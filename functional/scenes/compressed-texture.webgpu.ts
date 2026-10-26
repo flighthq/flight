@@ -96,7 +96,7 @@ registerWgpuImageTextureResolver(state);
 registerWgpuCompressedImageTextureResolver(state);
 registerNodeRenderer(state, DisplayObjectKind, wgpuScene2DRenderer);
 registerNodeRenderer(state, SpriteKind, wgpuSpriteRenderer);
-registerWgpuCompressedTextureUpload(state);
+registerWgpuCompressedTextureUpload(state, true);
 registerWgpuCompressedTextureDecoder(state, (_format, w, h) => {
   const rgba = new Uint8ClampedArray(w * h * 4);
   for (let i = 0; i < rgba.length; i += 4) {

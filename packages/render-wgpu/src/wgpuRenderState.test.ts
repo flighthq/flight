@@ -870,7 +870,7 @@ describe('WgpuRenderRegistries snapshots', () => {
     const decoder = vi.fn(() => new Uint8ClampedArray(4));
     const resolver = vi.fn(() => null);
     registerWgpuCompressedTextureDecoder(screen, decoder);
-    registerWgpuCompressedTextureUpload(screen);
+    registerWgpuCompressedTextureUpload(screen, true);
     registerWgpuQuadMaterialRenderer(screen, 'acme.LateMaterial', materialRenderer);
     registerWgpuTextureResolver(screen, 'acme.LateTexture', resolver);
     const offscreen = createWgpuOffscreenRenderState(screen);
@@ -890,7 +890,7 @@ describe('WgpuRenderRegistries snapshots', () => {
     );
     registerWgpuQuadMaterialRenderer(offscreen, 'acme.LateMaterial', offscreenMaterialRenderer);
     registerWgpuCompressedTextureDecoder(offscreen, null);
-    registerWgpuCompressedTextureUpload(offscreen, null);
+    registerWgpuCompressedTextureUpload(offscreen, false);
     registerWgpuTextureResolver(offscreen, 'acme.LateTexture', null);
     expect(getWgpuRenderStateRuntime(offscreen).registries.materialRenderers.get('acme.LateMaterial') ?? null).toBe(
       offscreenMaterialRenderer,

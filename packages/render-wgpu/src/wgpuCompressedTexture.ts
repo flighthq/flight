@@ -75,9 +75,9 @@ export function registerWgpuCompressedTextureDecoder(
   runtime.registries.compressedTextureDecoder = decode;
 }
 
-export function registerWgpuCompressedTextureUpload(state: WgpuRenderState, uploader?: null): void {
+export function registerWgpuCompressedTextureUpload(state: WgpuRenderState, enabled: boolean): void {
   const runtime = getWgpuRenderStateRuntime(state);
-  runtime.registries.compressedTextureUpload = uploader === null ? null : uploadWgpuCompressedImage;
+  runtime.registries.compressedTextureUpload = enabled ? uploadWgpuCompressedImage : null;
 }
 
 // Creates and fills a WebGPU texture from a parsed block-compressed container. Native uploads cover
