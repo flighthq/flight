@@ -50,7 +50,7 @@ export function getScene3DKindUsage(out: Scene3DKindUsage, scene: Readonly<Scene
     }
   };
   visit(scene.root);
-  // forEachNodeDescendant yields Node<Node3DTraits>; isMesh re-narrows inside the visitor, so the cast
+  // forEachNodeDescendant yields Node<Node3DFields>; isMesh re-narrows inside the visitor, so the cast
   // only restores the trait fields the walk generic drops.
   forEachNodeDescendant(scene.root, (node) => visit(node as Readonly<Node3D>));
 

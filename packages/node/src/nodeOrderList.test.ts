@@ -1,5 +1,5 @@
 import { connectSignal } from '@flighthq/signals/contract';
-import type { Node, NodeTraits } from '@flighthq/types/contract';
+import type { Node, NodeFields } from '@flighthq/types/contract';
 import { NodeKind } from '@flighthq/types/contract';
 
 import { addNodeChild, removeNodeChild } from './hierarchy.ts';
@@ -23,10 +23,10 @@ import {
 } from './nodeOrderList.ts';
 import { getNodeChildrenRevision } from './revision.ts';
 
-let container: Node<NodeTraits>;
-let childA: Node<NodeTraits>;
-let childB: Node<NodeTraits>;
-let childC: Node<NodeTraits>;
+let container: Node<NodeFields>;
+let childA: Node<NodeFields>;
+let childB: Node<NodeFields>;
+let childC: Node<NodeFields>;
 
 beforeEach(() => {
   container = createNode(NodeKind);

@@ -8,9 +8,9 @@ import { getNodeRuntime } from './node.ts';
 // it is lossy (an ancestor two-plus levels up changes a node's world matrix without changing the node's
 // own composite id, since the ancestor's contribution does not survive into the low bits), so the change
 // never reaches grandchildren. A fresh monotonic revision per recompute is unconditionally propagating.
-export function computeNodeWorldTransformRevision<Traits extends object>(
-  runtime: NodeRuntime<Traits>,
-  parentRuntime?: Readonly<NodeRuntime<Traits>>,
+export function computeNodeWorldTransformRevision<Fields extends object>(
+  runtime: NodeRuntime<Fields>,
+  parentRuntime?: Readonly<NodeRuntime<Fields>>,
 ): void {
   runtime.worldTransformUsingLocalTransformId = runtime.localTransformId;
   runtime.worldTransformUsingParentTransformId = parentRuntime ? parentRuntime.worldTransformId : 0;
@@ -20,31 +20,31 @@ export function computeNodeWorldTransformRevision<Traits extends object>(
   runtime.worldTransformId = _worldTransformRevisionCounter;
 }
 
-export function getNodeAppearanceRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
+export function getNodeAppearanceRevision<Fields extends object>(source: Readonly<Node<Fields>>): number {
   return getNodeRuntime(source).appearanceId;
 }
 
-export function getNodeChildrenRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
+export function getNodeChildrenRevision<Fields extends object>(source: Readonly<Node<Fields>>): number {
   return getNodeRuntime(source).childrenId;
 }
 
-export function getNodeLocalBoundsRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
+export function getNodeLocalBoundsRevision<Fields extends object>(source: Readonly<Node<Fields>>): number {
   return getNodeRuntime(source).localBoundsId;
 }
 
-export function getNodeLocalContentRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
+export function getNodeLocalContentRevision<Fields extends object>(source: Readonly<Node<Fields>>): number {
   return getNodeRuntime(source).localContentId;
 }
 
-export function getNodeLocalTransformRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
+export function getNodeLocalTransformRevision<Fields extends object>(source: Readonly<Node<Fields>>): number {
   return getNodeRuntime(source).localTransformId;
 }
 
-export function getNodeParentReferenceRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
+export function getNodeParentReferenceRevision<Fields extends object>(source: Readonly<Node<Fields>>): number {
   return getNodeRuntime(source).parentReferenceId;
 }
 
-export function getNodeWorldTransformRevision<Traits extends object>(source: Readonly<Node<Traits>>): number {
+export function getNodeWorldTransformRevision<Fields extends object>(source: Readonly<Node<Fields>>): number {
   return getNodeRuntime(source).worldTransformId;
 }
 
@@ -55,12 +55,12 @@ export function getNodeWorldTransformRevision<Traits extends object>(source: Rea
  * contract for any node kind. Setters keep their own precise per-field invalidation; this is the
  * broad companion, not a replacement for them. Never touches the transform.
  */
-export function invalidateContent<Traits extends object>(target: Node<Traits>): void {
+export function invalidateContent<Fields extends object>(target: Node<Fields>): void {
   invalidateNodeLocalContent(target);
   invalidateNodeLocalBounds(target);
 }
 
-export function invalidateNode<Traits extends object>(target: Node<Traits>): void {
+export function invalidateNode<Fields extends object>(target: Node<Fields>): void {
   invalidateNodeAppearance(target);
   invalidateNodeLocalBounds(target);
   invalidateNodeLocalContent(target);
@@ -72,16 +72,16 @@ export function invalidateNode<Traits extends object>(target: Node<Traits>): voi
 /**
  * Target object's appearance changed (excluding transforms).
  */
-export function invalidateNodeAppearance<Traits extends object>(target: Node<Traits>): void {
-  const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
+export function invalidateNodeAppearance<Fields extends object>(target: Node<Fields>): void {
+  const runtime = getNodeRuntime(target) as NodeRuntime<Fields>;
   runtime.appearanceId = (runtime.appearanceId + 1) >>> 0;
 }
 
 /**
  * Target object's own dimensions (not including children) changed.
  */
-export function invalidateNodeLocalBounds<Traits extends object>(target: Node<Traits>): void {
-  const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
+export function invalidateNodeLocalBounds<Fields extends object>(target: Node<Fields>): void {
+  const runtime = getNodeRuntime(target) as NodeRuntime<Fields>;
   runtime.localBoundsId = (runtime.localBoundsId + 1) >>> 0;
 }
 
@@ -90,24 +90,24 @@ export function invalidateNodeLocalBounds<Traits extends object>(target: Node<Tr
  * pixels — not its children and not how it is composited). Renderers re-rasterize on this; the walk
  * and render caches re-examine the node. Distinct from appearance (compositing) and bounds (extent).
  */
-export function invalidateNodeLocalContent<Traits extends object>(target: Node<Traits>): void {
-  const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
+export function invalidateNodeLocalContent<Fields extends object>(target: Node<Fields>): void {
+  const runtime = getNodeRuntime(target) as NodeRuntime<Fields>;
   runtime.localContentId = (runtime.localContentId + 1) >>> 0;
 }
 
 /**
  * Target object's own transform (x, y, rotation, scaleX, scaleY, skewX, skewY, or pivot) changed.
  */
-export function invalidateNodeLocalTransform<Traits extends object>(target: Node<Traits>): void {
-  const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
+export function invalidateNodeLocalTransform<Fields extends object>(target: Node<Fields>): void {
+  const runtime = getNodeRuntime(target) as NodeRuntime<Fields>;
   runtime.localTransformId = (runtime.localTransformId + 1) >>> 0;
 }
 
 /**
  * Target object's parent changed.
  */
-export function invalidateNodeParentReference<Traits extends object>(target: Node<Traits>): void {
-  const runtime = getNodeRuntime(target) as NodeRuntime<Traits>;
+export function invalidateNodeParentReference<Fields extends object>(target: Node<Fields>): void {
+  const runtime = getNodeRuntime(target) as NodeRuntime<Fields>;
   runtime.parentReferenceId = (runtime.parentReferenceId + 1) >>> 0;
   runtime.worldTransformUsingParentTransformId = -1;
 }
@@ -116,7 +116,7 @@ export function invalidateNodeParentReference<Traits extends object>(target: Nod
  * Target object's visual output changed (appearance or local transform).
  * Use this when animating properties like alpha, x, y, scaleX, scaleY, rotation.
  */
-export function invalidateNodeRender<Traits extends object>(target: Node<Traits>): void {
+export function invalidateNodeRender<Fields extends object>(target: Node<Fields>): void {
   invalidateNodeAppearance(target);
   invalidateNodeLocalTransform(target);
 }
@@ -125,10 +125,10 @@ export function invalidateNodeRender<Traits extends object>(target: Node<Traits>
  * Target object's child bounds have changed. Invalidates the target and every ancestor whose
  * aggregate world bounds include it.
  */
-export function invalidateNodeWorldBounds<Traits extends object>(target: Node<Traits>): void {
-  let current: Node<Traits> | null = target;
+export function invalidateNodeWorldBounds<Fields extends object>(target: Node<Fields>): void {
+  let current: Node<Fields> | null = target;
   while (current !== null) {
-    const runtime = getNodeRuntime(current) as NodeRuntime<Traits>;
+    const runtime = getNodeRuntime(current) as NodeRuntime<Fields>;
     runtime.worldBoundsUsingWorldTransformId = -1;
     runtime.worldBoundsUsingLocalBoundsId = -1;
     current = runtime.parent;

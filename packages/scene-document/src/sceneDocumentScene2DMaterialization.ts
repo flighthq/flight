@@ -2,7 +2,7 @@ import { allocateEntity, finishEntity, getEntityRuntime } from '@flighthq/entity
 import { getNodeRuntime } from '@flighthq/node/contract';
 import { addNodeChild, getNodeChildren } from '@flighthq/node/contract';
 import { createScene2D } from '@flighthq/scene2d/contract';
-import { FlightDocumentRefusalReason, Node2DTraitsKey, Node3DTraitsKey } from '@flighthq/types/contract';
+import { FlightDocumentRefusalReason, Node2DFieldsKey, Node3DFieldsKey } from '@flighthq/types/contract';
 import type {
   FlightDocument,
   FlightDocumentFields,
@@ -306,7 +306,7 @@ function adoptDocumentRoot2D(
   const root = schema.createNode(documentRoot.fields, resources);
   if (root === null) return false;
   const runtime = getEntityRuntime(root) as Readonly<{ traits?: unknown }> | undefined;
-  if (runtime?.traits !== Node2DTraitsKey) return false;
+  if (runtime?.fields !== Node2DFieldsKey) return false;
   const previous = scene.root;
   scene.root = root as Node2D;
   (getNodeRuntime(root) as Node2DRuntime).scene2d = scene;
@@ -328,8 +328,8 @@ function checkRootKindDimension(
   const probe = schema.createNode(documentRoot.fields, createEmptyResourceLookup());
   if (probe === null) return null;
   const runtime = getEntityRuntime(probe) as Readonly<{ traits?: unknown }> | undefined;
-  const expected = dimension === 'Scene2D' ? Node2DTraitsKey : Node3DTraitsKey;
-  if (runtime?.traits === expected) return null;
+  const expected = dimension === 'Scene2D' ? Node2DFieldsKey : Node3DFieldsKey;
+  if (runtime?.fields === expected) return null;
   return {
     ...createSceneRefusal(FlightDocumentRefusalReason.RootKindMismatch, sceneIndex, 'scene'),
     kind: documentRoot.kind,

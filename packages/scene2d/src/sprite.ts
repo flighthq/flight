@@ -4,7 +4,7 @@ import type {
   BoundsNode,
   EntityConstruction,
   MethodsOf,
-  Node2DTraits,
+  Node2DFields,
   PartialNode,
   Rectangle,
   NodeAny,
@@ -23,7 +23,7 @@ export function cloneSprite(source: Readonly<Sprite>): Sprite {
   return createSprite({ data: { texture: source.data.texture } });
 }
 
-export function computeSpriteLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
+export function computeSpriteLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DFields>>): void {
   const sprite = source as Readonly<Sprite>;
   const texture = sprite.data.texture;
   if (texture === null) {
@@ -99,7 +99,7 @@ export function isSpriteRendererDirty(
   return dirty;
 }
 
-function isSpriteLocalBoundsRectangleValid(source: Readonly<BoundsNode<Node2DTraits>>): boolean {
+function isSpriteLocalBoundsRectangleValid(source: Readonly<BoundsNode<Node2DFields>>): boolean {
   const sprite = source as Readonly<Sprite>;
   const runtime = getNode2DRuntime(sprite) as SpriteRuntime;
   const texture = sprite.data.texture;

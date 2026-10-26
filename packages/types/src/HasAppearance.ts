@@ -1,5 +1,5 @@
 import type { EntityRuntime } from './Entity.ts';
-import type { NodeOf, NodeTraits } from './Node.ts';
+import type { NodeOf, NodeFields } from './Node.ts';
 
 // Per-object hierarchical render state, shared across 2D and 3D graphs. `alpha` (opacity, default 1)
 // and `visible` (default true) both compose down the hierarchy — a group's alpha multiplies, and its
@@ -22,4 +22,4 @@ export interface HasAppearanceRuntime extends EntityRuntime {
   worldAppearanceId: number;
 }
 
-export type AppearanceNode<Traits extends object = NodeTraits> = NodeOf<Traits> & HasAppearance;
+export type AppearanceNode<Fields extends object = NodeFields> = NodeOf<Fields> & HasAppearance;

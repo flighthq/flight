@@ -1,4 +1,4 @@
-import type { Node, NodeRuntime, NodeTraits } from '@flighthq/types/contract';
+import type { Node, NodeRuntime, NodeFields } from '@flighthq/types/contract';
 import { NodeKind } from '@flighthq/types/contract';
 
 import { addNodeChild } from './hierarchy.ts';
@@ -15,10 +15,10 @@ import {
   walkNodeDescendants,
 } from './traversal.ts';
 
-let root: Node<NodeTraits>;
-let childA: Node<NodeTraits>;
-let childB: Node<NodeTraits>;
-let grandchild: Node<NodeTraits>;
+let root: Node<NodeFields>;
+let childA: Node<NodeFields>;
+let childB: Node<NodeFields>;
+let grandchild: Node<NodeFields>;
 
 beforeEach(() => {
   root = createNode(NodeKind);
@@ -67,10 +67,10 @@ describe('findNode', () => {
   });
 
   it('narrows the result to the guarded type when the predicate is a type guard', () => {
-    interface TaggedNode extends Node<NodeTraits> {
+    interface TaggedNode extends Node<NodeFields> {
       tag: string;
     }
-    const isTagged = (n: Node<NodeTraits>): n is TaggedNode => (n as Partial<TaggedNode>).tag === 'tagged';
+    const isTagged = (n: Node<NodeFields>): n is TaggedNode => (n as Partial<TaggedNode>).tag === 'tagged';
     (childA as TaggedNode).tag = 'tagged';
     const result = findNode(root, isTagged);
     // Compile-time proof of the guard overload: `result` is `TaggedNode | null`, so reading `.tag`
@@ -100,7 +100,7 @@ describe('findNodeByName', () => {
 
 describe('forEachNodeAncestor', () => {
   it('does not call callback for a root node', () => {
-    const visited: Node<NodeTraits>[] = [];
+    const visited: Node<NodeFields>[] = [];
     forEachNodeAncestor(root, (n) => {
       visited.push(n);
       return true;
@@ -109,7 +109,7 @@ describe('forEachNodeAncestor', () => {
   });
 
   it('visits ancestors from parent toward root', () => {
-    const visited: Node<NodeTraits>[] = [];
+    const visited: Node<NodeFields>[] = [];
     forEachNodeAncestor(grandchild, (n) => {
       visited.push(n);
     });
@@ -117,7 +117,7 @@ describe('forEachNodeAncestor', () => {
   });
 
   it('stops early when callback returns false', () => {
-    const visited: Node<NodeTraits>[] = [];
+    const visited: Node<NodeFields>[] = [];
     forEachNodeAncestor(grandchild, (n) => {
       visited.push(n);
       return false; // stop after first
@@ -128,19 +128,19 @@ describe('forEachNodeAncestor', () => {
 
 describe('forEachNodeDescendant', () => {
   it('does not call callback for a leaf node', () => {
-    const visited: Node<NodeTraits>[] = [];
+    const visited: Node<NodeFields>[] = [];
     forEachNodeDescendant(grandchild, (n) => visited.push(n));
     expect(visited).toHaveLength(0);
   });
 
   it('visits all descendants in depth-first pre-order', () => {
-    const visited: Node<NodeTraits>[] = [];
+    const visited: Node<NodeFields>[] = [];
     forEachNodeDescendant(root, (n) => visited.push(n));
     expect(visited).toEqual([childA, grandchild, childB]);
   });
 
   it('does not include the source node', () => {
-    const visited: Node<NodeTraits>[] = [];
+    const visited: Node<NodeFields>[] = [];
     forEachNodeDescendant(root, (n) => visited.push(n));
     expect(visited).not.toContain(root);
   });
@@ -230,7 +230,7 @@ describe('walkNodeDescendants', () => {
   });
 
   it('visits all descendants in depth-first pre-order when visitor always returns true', () => {
-    const visited: Node<NodeTraits>[] = [];
+    const visited: Node<NodeFields>[] = [];
     const result = walkNodeDescendants(root, (n) => {
       visited.push(n);
       return true;
@@ -240,7 +240,7 @@ describe('walkNodeDescendants', () => {
   });
 
   it('stops early and returns false when visitor returns false', () => {
-    const visited: Node<NodeTraits>[] = [];
+    const visited: Node<NodeFields>[] = [];
     const result = walkNodeDescendants(root, (n) => {
       visited.push(n);
       return false; // stop at first node
@@ -251,7 +251,7 @@ describe('walkNodeDescendants', () => {
   });
 
   it('does not visit subtree when visitor returns false for a parent', () => {
-    const visited: Node<NodeTraits>[] = [];
+    const visited: Node<NodeFields>[] = [];
     walkNodeDescendants(root, (n) => {
       visited.push(n);
       // Stop when we reach childA — its subtree (grandchild) should be skipped
@@ -262,7 +262,7 @@ describe('walkNodeDescendants', () => {
   });
 
   it('propagates an early stop from a nested descendant', () => {
-    const visited: Node<NodeTraits>[] = [];
+    const visited: Node<NodeFields>[] = [];
 
     const result = walkNodeDescendants(root, (node) => {
       visited.push(node);

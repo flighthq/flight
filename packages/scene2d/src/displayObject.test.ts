@@ -15,7 +15,7 @@ import type {
   PartialNode,
   Rectangle,
 } from '@flighthq/types/contract';
-import { BlendMode, DisplayObjectKind, Node2DTraitsKey } from '@flighthq/types/contract';
+import { BlendMode, DisplayObjectKind, Node2DFieldsKey } from '@flighthq/types/contract';
 
 import {
   createDisplayObject,
@@ -142,9 +142,9 @@ describe('createNode2DRuntime', () => {
     expect(runtime).not.toBeNull();
   });
 
-  it('sets traits to Node2DTraitsKey', () => {
+  it('sets traits to Node2DFieldsKey', () => {
     const runtime = createNode2DRuntime();
-    expect(runtime.traits).toBe(Node2DTraitsKey);
+    expect(runtime.fields).toBe(Node2DFieldsKey);
   });
 
   it('allows a custom bounds calculation', () => {

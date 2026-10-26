@@ -8,7 +8,7 @@ import type {
   EntityConstruction,
   MethodsOf,
   Node2D,
-  Node2DTraits,
+  Node2DFields,
   PartialNode,
   ParticleEmitter2D,
   ParticleEmitter2DRuntime,
@@ -26,7 +26,7 @@ const PARTICLE_VELOCITY_STRIDE = 2; // [vx, vy] per particle
 // Uint16Array sentinel marking a logically deleted slot in a particle emitter.
 export const PARTICLE_EMITTER_DELETED_ID = 0xffff;
 
-function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
+function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DFields>>): void {
   const runtime = getNode2DRuntime(source as Node2D) as ParticleEmitter2DRuntime;
   if (runtime.localBoundsRectangle !== null) copyRectangle(out, runtime.localBoundsRectangle);
 }

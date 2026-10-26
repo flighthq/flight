@@ -12,7 +12,7 @@ export interface RenderProxy2D extends RenderProxy {
   // so the quad resolve reads it with no cast and no runtime dimensionality check.
   material: Material2D | null;
   // Narrowed from RenderProxy.source, which stays NodeAny for the base walk that also carries 3D
-  // proxies. The 2D walk consumes the complete Node2DTraits family, so retaining that concrete family
+  // proxies. The 2D walk consumes the complete Node2DFields family, so retaining that concrete family
   // keeps its runtime callbacks and hierarchy specialised without a Node<any> erasure.
   source: Node2D;
   transform2D: Matrix;

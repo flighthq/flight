@@ -55,7 +55,7 @@ function makeClipRegion(): ClipRegion {
   return finishEntity(out);
 }
 
-function markRenderProxyClean<Traits extends object>(data: RenderProxy, source: Node<Traits>): void {
+function markRenderProxyClean<Fields extends object>(data: RenderProxy, source: Node<Fields>): void {
   data.lastAppearanceId = getNodeAppearanceRevision(source);
   data.lastChildrenId = getNodeChildrenRevision(source);
   data.lastLocalContentId = getNodeLocalContentRevision(source);

@@ -16,11 +16,11 @@ import type {
   PointerEventData,
   Rectangle,
 } from '@flighthq/types/contract';
-import { DisplayObjectKind, Node2DTraitsKey } from '@flighthq/types/contract';
+import { DisplayObjectKind, Node2DFieldsKey } from '@flighthq/types/contract';
 
 export function createGuiTestNode(width = 100, height = 20): Node2D {
   const runtime = createNodeRuntime() as Node2DRuntime;
-  runtime.traits = Node2DTraitsKey;
+  runtime.fields = Node2DFieldsKey;
   runtime.scene2d = null;
   initTransform2DRuntimeTrait(runtime);
   initBoundsRectangleRuntimeTrait(runtime);

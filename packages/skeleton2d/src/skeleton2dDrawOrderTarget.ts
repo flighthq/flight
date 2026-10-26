@@ -6,7 +6,7 @@ import type {
   EntityConstruction,
   Node,
   NodeOrderList,
-  NodeTraits,
+  NodeFields,
   Skeleton2DDrawOrderAnimationTarget,
   Skeleton2DDrawOrderTimeline,
 } from '@flighthq/types/contract';
@@ -19,11 +19,11 @@ import {
 } from './skeleton2dAnimationTarget.ts';
 import { reportSkeleton2DCoercedInterpolation } from './skeleton2dGuards.ts';
 
-export function createSkeleton2DDrawOrderAnimationTarget<Traits extends object = NodeTraits>(
-  nodes: readonly (Node<Traits> | null)[],
-  orderList: NodeOrderList<Traits>,
-): Skeleton2DDrawOrderAnimationTarget<Traits> {
-  const out = allocateEntity<Skeleton2DDrawOrderAnimationTarget<Traits>>();
+export function createSkeleton2DDrawOrderAnimationTarget<Fields extends object = NodeFields>(
+  nodes: readonly (Node<Fields> | null)[],
+  orderList: NodeOrderList<Fields>,
+): Skeleton2DDrawOrderAnimationTarget<Fields> {
+  const out = allocateEntity<Skeleton2DDrawOrderAnimationTarget<Fields>>();
   initializeSkeleton2DDrawOrderAnimationTarget(out, nodes, orderList);
   return finishEntity(out);
 }
@@ -45,10 +45,10 @@ export function createSkeleton2DDrawOrderAnimationTarget<Traits extends object =
  * Returns `null` for a timeline with no keyframes, and for one whose `orderings` is not a whole number
  * of per-keyframe orderings — a partial final ordering would silently drop the slots past its end.
  */
-export function createSkeleton2DDrawOrderChannel<Traits extends object = NodeTraits>(
+export function createSkeleton2DDrawOrderChannel<Fields extends object = NodeFields>(
   timeline: Readonly<Skeleton2DDrawOrderTimeline>,
-  nodes: readonly (Node<Traits> | null)[],
-  orderList: NodeOrderList<Traits>,
+  nodes: readonly (Node<Fields> | null)[],
+  orderList: NodeOrderList<Fields>,
 ): AnimationChannel | null {
   const keyframes = timeline.times.length;
   if (keyframes === 0) return null;
@@ -74,10 +74,10 @@ export function createSkeleton2DDrawOrderChannel<Traits extends object = NodeTra
  * is the caller's own list — ordering is never node state — and the binder fills it rather than applying
  * it, leaving `applyNodeOrderList` an explicit step the caller takes once per frame.
  */
-export function initializeSkeleton2DDrawOrderAnimationTarget<Traits extends object = NodeTraits>(
-  out: EntityConstruction<Skeleton2DDrawOrderAnimationTarget<Traits>>,
-  nodes: readonly (Node<Traits> | null)[],
-  orderList: NodeOrderList<Traits>,
+export function initializeSkeleton2DDrawOrderAnimationTarget<Fields extends object = NodeFields>(
+  out: EntityConstruction<Skeleton2DDrawOrderAnimationTarget<Fields>>,
+  nodes: readonly (Node<Fields> | null)[],
+  orderList: NodeOrderList<Fields>,
 ): void {
   out.kind = TargetKind.DrawOrder;
   out.nodes = nodes;

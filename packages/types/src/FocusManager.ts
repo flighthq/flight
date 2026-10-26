@@ -1,6 +1,6 @@
 import type { Entity } from './Entity.ts';
 import type { InputSignals } from './InputSignals.ts';
-import type { Node, NodeAny, NodeTraits } from './Node.ts';
+import type { Node, NodeAny, NodeFields } from './Node.ts';
 
 export type FocusDirection = 'down' | 'left' | 'right' | 'up';
 
@@ -17,7 +17,7 @@ export type FocusDirection = 'down' | 'left' | 'right' | 'up';
  * that only share the `root` and the per-node interaction signal cell — an app that never navigates by
  * keyboard never creates one, and the focus logic tree-shakes out.
  */
-export interface FocusManager<N extends NodeAny = Node<NodeTraits>> extends Entity {
+export interface FocusManager<N extends NodeAny = Node<NodeFields>> extends Entity {
   focused: N | null;
   root: N;
   wrap: boolean;

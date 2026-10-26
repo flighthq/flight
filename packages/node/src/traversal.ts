@@ -1,4 +1,4 @@
-import type { Node, NodeDescendantVisitor, NodeOf, NodeTraits } from '@flighthq/types/contract';
+import type { Node, NodeDescendantVisitor, NodeOf, NodeFields } from '@flighthq/types/contract';
 
 import { getNodeParent } from './hierarchy.ts';
 import { getNodeRuntime } from './node.ts';
@@ -8,18 +8,18 @@ import { getNodeRuntime } from './node.ts';
  * Returns `null` if no descendant matches. When `predicate` is a type guard, the result is
  * narrowed to the guarded type, so `findNode(root, isMesh)` returns `Mesh | null` with no cast.
  */
-export function findNode<Traits extends object, Result extends Node<Traits>>(
-  source: Readonly<Node<Traits>>,
-  predicate: (node: Node<Traits>) => node is Result,
+export function findNode<Fields extends object, Result extends Node<Fields>>(
+  source: Readonly<Node<Fields>>,
+  predicate: (node: Node<Fields>) => node is Result,
 ): Result | null;
-export function findNode<Traits extends object = NodeTraits>(
-  source: Readonly<Node<Traits>>,
-  predicate: (node: Node<Traits>) => boolean,
-): NodeOf<Traits> | null;
-export function findNode<Traits extends object = NodeTraits>(
-  source: Readonly<Node<Traits>>,
-  predicate: (node: Node<Traits>) => boolean,
-): NodeOf<Traits> | null {
+export function findNode<Fields extends object = NodeFields>(
+  source: Readonly<Node<Fields>>,
+  predicate: (node: Node<Fields>) => boolean,
+): NodeOf<Fields> | null;
+export function findNode<Fields extends object = NodeFields>(
+  source: Readonly<Node<Fields>>,
+  predicate: (node: Node<Fields>) => boolean,
+): NodeOf<Fields> | null {
   const children = getNodeRuntime(source).children;
   if (children === null) return null;
   for (let i = 0; i < children.length; i++) {
@@ -36,10 +36,10 @@ export function findNode<Traits extends object = NodeTraits>(
  * the full subtree recursively, unlike `getNodeChildByName` which only checks direct children.
  * Returns `null` if no descendant matches.
  */
-export function findNodeByName<Traits extends object = NodeTraits>(
-  source: Readonly<Node<Traits>>,
+export function findNodeByName<Fields extends object = NodeFields>(
+  source: Readonly<Node<Fields>>,
   name: string,
-): NodeOf<Traits> | null {
+): NodeOf<Fields> | null {
   return findNode(source, (node) => node.name === name);
 }
 
@@ -47,11 +47,11 @@ export function findNodeByName<Traits extends object = NodeTraits>(
  * Walks upward from `source` toward the root, calling `callback` for each ancestor. If `callback`
  * returns `false`, the walk stops early. The source node itself is not visited.
  */
-export function forEachNodeAncestor<Traits extends object = NodeTraits>(
-  source: Readonly<Node<Traits>>,
-  callback: (node: Node<Traits>) => boolean | void,
+export function forEachNodeAncestor<Fields extends object = NodeFields>(
+  source: Readonly<Node<Fields>>,
+  callback: (node: Node<Fields>) => boolean | void,
 ): void {
-  let current = getNodeParent(source as Node<Traits>);
+  let current = getNodeParent(source as Node<Fields>);
   while (current !== null) {
     if (callback(current) === false) return;
     current = getNodeParent(current);
@@ -63,9 +63,9 @@ export function forEachNodeAncestor<Traits extends object = NodeTraits>(
  * `walkNodeDescendants`, this variant never stops early — every descendant is visited regardless
  * of the callback's return value.
  */
-export function forEachNodeDescendant<Traits extends object = NodeTraits>(
-  source: Readonly<Node<Traits>>,
-  callback: (node: Node<Traits>) => void,
+export function forEachNodeDescendant<Fields extends object = NodeFields>(
+  source: Readonly<Node<Fields>>,
+  callback: (node: Node<Fields>) => void,
 ): void {
   const children = getNodeRuntime(source).children;
   if (children === null) return;
@@ -79,11 +79,11 @@ export function forEachNodeDescendant<Traits extends object = NodeTraits>(
  * Returns a read-only snapshot of the direct children of `source`. Returns an empty array if the
  * node has no children. The returned array is a copy and safe to iterate while the graph mutates.
  */
-export function getNodeChildren<Traits extends object = NodeTraits>(
-  source: Readonly<Node<Traits>>,
-): readonly NodeOf<Traits>[] {
+export function getNodeChildren<Fields extends object = NodeFields>(
+  source: Readonly<Node<Fields>>,
+): readonly NodeOf<Fields>[] {
   const children = getNodeRuntime(source).children;
-  if (children === null) return _emptyChildren as readonly NodeOf<Traits>[];
+  if (children === null) return _emptyChildren as readonly NodeOf<Fields>[];
   return children.slice();
 }
 
@@ -91,9 +91,9 @@ export function getNodeChildren<Traits extends object = NodeTraits>(
  * Returns the depth of `source` in the tree: 0 for a root node (no parent), 1 for a direct child
  * of the root, and so on.
  */
-export function getNodeDepth<Traits extends object = NodeTraits>(source: Readonly<Node<Traits>>): number {
+export function getNodeDepth<Fields extends object = NodeFields>(source: Readonly<Node<Fields>>): number {
   let depth = 0;
-  let current = getNodeParent(source as Node<Traits>);
+  let current = getNodeParent(source as Node<Fields>);
   while (current !== null) {
     depth++;
     current = getNodeParent(current);
@@ -105,10 +105,10 @@ export function getNodeDepth<Traits extends object = NodeTraits>(source: Readonl
  * Returns the next sibling of `source` (the child immediately after it in its parent's children
  * array), or `null` if `source` is the last child or has no parent.
  */
-export function getNodeNextSibling<Traits extends object = NodeTraits>(
-  source: Readonly<Node<Traits>>,
-): NodeOf<Traits> | null {
-  const sourceNode = source as NodeOf<Traits>;
+export function getNodeNextSibling<Fields extends object = NodeFields>(
+  source: Readonly<Node<Fields>>,
+): NodeOf<Fields> | null {
+  const sourceNode = source as NodeOf<Fields>;
   const parent = getNodeParent(sourceNode);
   if (parent === null) return null;
   const siblings = getNodeRuntime(parent).children;
@@ -122,10 +122,10 @@ export function getNodeNextSibling<Traits extends object = NodeTraits>(
  * Returns the previous sibling of `source` (the child immediately before it in its parent's
  * children array), or `null` if `source` is the first child or has no parent.
  */
-export function getNodePreviousSibling<Traits extends object = NodeTraits>(
-  source: Readonly<Node<Traits>>,
-): NodeOf<Traits> | null {
-  const sourceNode = source as NodeOf<Traits>;
+export function getNodePreviousSibling<Fields extends object = NodeFields>(
+  source: Readonly<Node<Fields>>,
+): NodeOf<Fields> | null {
+  const sourceNode = source as NodeOf<Fields>;
   const parent = getNodeParent(sourceNode);
   if (parent === null) return null;
   const siblings = getNodeRuntime(parent).children;
@@ -141,9 +141,9 @@ export function getNodePreviousSibling<Traits extends object = NodeTraits>(
  * remaining siblings are visited). Returns `true` if the walk completed without early termination,
  * `false` if it was cut short.
  */
-export function walkNodeDescendants<Traits extends object = NodeTraits>(
-  source: Readonly<Node<Traits>>,
-  visit: NodeDescendantVisitor<Traits>,
+export function walkNodeDescendants<Fields extends object = NodeFields>(
+  source: Readonly<Node<Fields>>,
+  visit: NodeDescendantVisitor<Fields>,
 ): boolean {
   const children = getNodeRuntime(source).children;
   if (children === null) return true;

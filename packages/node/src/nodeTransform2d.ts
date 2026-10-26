@@ -25,9 +25,9 @@ import { invalidateNodeLocalTransform } from './revision.ts';
  * Converts the `vector` object from the Scene2D (global) coordinates
  * to the display object's (local) coordinates.
  **/
-export function convertNodeVector2GlobalToLocal<Traits extends object>(
+export function convertNodeVector2GlobalToLocal<Fields extends object>(
   out: Vector2Like,
-  source: Transform2DNode<Traits>,
+  source: Transform2DNode<Fields>,
   vector: Readonly<Vector2Like>,
 ): void {
   inverseMatrixTransformPointXY(out, getNodeWorldMatrix(source), vector.x, vector.y);
@@ -37,31 +37,31 @@ export function convertNodeVector2GlobalToLocal<Traits extends object>(
  * Converts the `vector` object from the display object's (local)
  * coordinates to world coordinates.
  **/
-export function convertNodeVector2LocalToGlobal<Traits extends object>(
+export function convertNodeVector2LocalToGlobal<Fields extends object>(
   out: Vector2Like,
-  source: Transform2DNode<Traits>,
+  source: Transform2DNode<Fields>,
   vector: Readonly<Vector2Like>,
 ): void {
   matrixTransformPointXY(out, getNodeWorldMatrix(source), vector.x, vector.y);
 }
 
-export function ensureNodeLocalMatrix<Traits extends object>(target: Transform2DNode<Traits>): void {
-  const runtime = getEntityRuntime(target) as NodeRuntime<Traits> & HasTransform2DRuntime;
+export function ensureNodeLocalMatrix<Fields extends object>(target: Transform2DNode<Fields>): void {
+  const runtime = getEntityRuntime(target) as NodeRuntime<Fields> & HasTransform2DRuntime;
   if (runtime.localTransformUsingLocalTransformId !== runtime.localTransformId) {
     recomputeLocalTransform2D(target, runtime);
   }
 }
 
-export function ensureNodeWorldMatrix<Traits extends object>(target: Transform2DNode<Traits>): void {
-  const runtime = getEntityRuntime(target) as NodeRuntime<Traits> & HasTransform2DRuntime;
-  const parent = runtime.parent as Transform2DNode<Traits>;
+export function ensureNodeWorldMatrix<Fields extends object>(target: Transform2DNode<Fields>): void {
+  const runtime = getEntityRuntime(target) as NodeRuntime<Fields> & HasTransform2DRuntime;
+  const parent = runtime.parent as Transform2DNode<Fields>;
 
-  let parentRuntime: (NodeRuntime<Traits> & HasTransform2DRuntime) | undefined;
+  let parentRuntime: (NodeRuntime<Fields> & HasTransform2DRuntime) | undefined;
   let parentWorldTransformId = 0;
 
   if (parent !== null) {
     ensureNodeWorldMatrix(parent);
-    parentRuntime = getEntityRuntime(parent) as NodeRuntime<Traits> & HasTransform2DRuntime;
+    parentRuntime = getEntityRuntime(parent) as NodeRuntime<Fields> & HasTransform2DRuntime;
     parentWorldTransformId = parentRuntime.worldTransformId;
   }
 
@@ -73,13 +73,13 @@ export function ensureNodeWorldMatrix<Traits extends object>(target: Transform2D
   }
 }
 
-export function getNodeLocalMatrix<Traits extends object>(target: Transform2DNode<Traits>): Readonly<Matrix> {
+export function getNodeLocalMatrix<Fields extends object>(target: Transform2DNode<Fields>): Readonly<Matrix> {
   ensureNodeLocalMatrix(target);
-  return (getEntityRuntime(target) as NodeRuntime<Traits> & HasTransform2DRuntime).localMatrix!;
+  return (getEntityRuntime(target) as NodeRuntime<Fields> & HasTransform2DRuntime).localMatrix!;
 }
 
 // Reads the node's decomposed local transform fields into `out`.
-export function getNodeTransform2D<Traits extends object>(out: Transform2DLike, source: Transform2DNode<Traits>): void {
+export function getNodeTransform2D<Fields extends object>(out: Transform2DLike, source: Transform2DNode<Fields>): void {
   out.pivotX = source.pivotX;
   out.pivotY = source.pivotY;
   out.rotation = source.rotation;
@@ -91,16 +91,16 @@ export function getNodeTransform2D<Traits extends object>(out: Transform2DLike, 
   out.y = source.y;
 }
 
-export function getNodeWorldMatrix<Traits extends object>(target: Transform2DNode<Traits>): Readonly<Matrix> {
+export function getNodeWorldMatrix<Fields extends object>(target: Transform2DNode<Fields>): Readonly<Matrix> {
   ensureNodeWorldMatrix(target);
-  return (getEntityRuntime(target) as NodeRuntime<Traits> & HasTransform2DRuntime).worldMatrix!;
+  return (getEntityRuntime(target) as NodeRuntime<Fields> & HasTransform2DRuntime).worldMatrix!;
 }
 
 // Sets the node's local transform directly from a matrix, decomposing it into the transform fields.
 // Lossless: 2D is 6-DOF complete, so the effective transform round-trips. Pivot resets to the origin
 // (a matrix cannot carry pivot; `x`/`y` absorb the offset). The matrix cache rebuilds from the fields.
-export function setNodeLocalMatrix<Traits extends object>(
-  target: Transform2DNode<Traits>,
+export function setNodeLocalMatrix<Fields extends object>(
+  target: Transform2DNode<Fields>,
   source: Readonly<MatrixLike>,
 ): void {
   decomposeMatrixToTransform2D(target, source);
@@ -108,8 +108,8 @@ export function setNodeLocalMatrix<Traits extends object>(
 }
 
 // Sets the node's local transform from a decomposed carrier. The matrix cache rebuilds from the fields.
-export function setNodeTransform2D<Traits extends object>(
-  target: Transform2DNode<Traits>,
+export function setNodeTransform2D<Fields extends object>(
+  target: Transform2DNode<Fields>,
   source: Readonly<Transform2DLike>,
 ): void {
   target.pivotX = source.pivotX;
@@ -124,9 +124,9 @@ export function setNodeTransform2D<Traits extends object>(
   invalidateNodeLocalTransform(target);
 }
 
-function recomputeLocalTransform2D<Traits extends object>(
-  target: Transform2DNode<Traits>,
-  runtime: NodeRuntime<Traits> & HasTransform2DRuntime,
+function recomputeLocalTransform2D<Fields extends object>(
+  target: Transform2DNode<Fields>,
+  runtime: NodeRuntime<Fields> & HasTransform2DRuntime,
 ): void {
   if (target.rotation !== runtime.rotationAngle) {
     // Normalize from -180 to 180
@@ -164,10 +164,10 @@ function recomputeLocalTransform2D<Traits extends object>(
   runtime.localTransformUsingLocalTransformId = runtime.localTransformId;
 }
 
-function recomputeWorldTransform2D<Traits extends object>(
-  target: Transform2DNode<Traits>,
-  runtime: NodeRuntime<Traits> & HasTransform2DRuntime,
-  parentRuntime?: Readonly<NodeRuntime<Traits> & HasTransform2DRuntime>,
+function recomputeWorldTransform2D<Fields extends object>(
+  target: Transform2DNode<Fields>,
+  runtime: NodeRuntime<Fields> & HasTransform2DRuntime,
+  parentRuntime?: Readonly<NodeRuntime<Fields> & HasTransform2DRuntime>,
 ): void {
   if (runtime.worldMatrix === null) runtime.worldMatrix = createMatrix();
   ensureNodeLocalMatrix(target);

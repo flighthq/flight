@@ -36,6 +36,7 @@ function bindPoseFor(positions: number[], jointIndices: number[]): MeshSkinBindP
   }
   return {
     joints,
+    lastSkinVersion: -1,
     normals: new Float32Array(count * 3),
     positions: new Float32Array(positions),
     skinnedNormals: new Float32Array(count * 3),

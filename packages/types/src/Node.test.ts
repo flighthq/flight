@@ -1,7 +1,7 @@
 import type { Entity, EntityRuntime } from './Entity.ts';
 import type { EntityRuntimeKey } from './Entity.ts';
 import type { Transform2DNode } from './HasTransform2D.ts';
-import type { Node, NodeAny, NodeData, NodeRuntime, NodeTraits } from './Node.ts';
+import type { Node, NodeAny, NodeData, NodeRuntime, NodeFields } from './Node.ts';
 import { NodeKind } from './Node.ts';
 
 describe('Node', () => {
@@ -12,11 +12,11 @@ describe('Node', () => {
   });
 
   describe('NodeOf', () => {
-    it('intersects Node<Traits> with Traits', () => {
+    it('intersects Node<Fields> with Fields', () => {
       interface MyData extends NodeData {
         score: number;
       }
-      interface MyTraits extends NodeTraits {
+      interface MyTraits extends NodeFields {
         data: MyData | null;
         enabled: boolean;
         kind: 'MyNode';
@@ -24,7 +24,7 @@ describe('Node', () => {
         myField: string;
       }
 
-      // NodeOf<MyTraits> should have both Node and Traits properties
+      // NodeOf<MyTraits> should have both Node and Fields properties
       type MyNodeKind = MyTraits['kind'];
       const kindCheck: MyNodeKind = 'MyNode';
       expect(kindCheck).toBe('MyNode');
@@ -32,15 +32,15 @@ describe('Node', () => {
   });
 
   describe('NodeAny', () => {
-    it('accepts any Node regardless of Traits', () => {
-      interface TraitsA extends NodeTraits {
+    it('accepts any Node regardless of Fields', () => {
+      interface TraitsA extends NodeFields {
         data: null;
         enabled: boolean;
         kind: 'A';
         name: string | null;
         fieldA: number;
       }
-      interface TraitsB extends NodeTraits {
+      interface TraitsB extends NodeFields {
         data: null;
         enabled: boolean;
         kind: 'B';
@@ -92,7 +92,7 @@ describe('Node', () => {
     });
 
     it('preserves the trait intersection for parents and children', () => {
-      interface TestTraits extends NodeTraits {
+      interface TestTraits extends NodeFields {
         marker: number;
       }
 
@@ -105,7 +105,7 @@ describe('Node', () => {
     });
 
     it('preserves caller traits through trait-specific node aliases', () => {
-      interface TestTraits extends NodeTraits {
+      interface TestTraits extends NodeFields {
         marker: number;
       }
 
@@ -118,7 +118,7 @@ describe('Node', () => {
   });
 });
 
-// Compile-time check: Node<Traits> extends Entity
+// Compile-time check: Node<Fields> extends Entity
 type _NodeExtendsEntity = Node extends Entity ? true : false;
 const _nodeIsEntity: _NodeExtendsEntity = true;
 void _nodeIsEntity;

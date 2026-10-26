@@ -3,7 +3,7 @@ import { getNodeWorldBoundsRectangle } from '@flighthq/node/contract';
 import type { Matrix, Node2D, Rectangle, RenderProxy2D, Viewport } from '@flighthq/types/contract';
 
 // Writes the world-space axis-aligned bounding box of `source` into `out`. Node2D carries the bounds and
-// transform traits while retaining the concrete Node2DTraits family required by native ports.
+// transform traits while retaining the concrete Node2DFields family required by native ports.
 export function computeRenderProxyWorldBounds(
   out: Pick<Rectangle, 'x' | 'y' | 'width' | 'height'>,
   source: Node2D,

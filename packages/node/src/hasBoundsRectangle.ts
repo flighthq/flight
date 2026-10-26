@@ -3,21 +3,21 @@ import type {
   HasBoundsRectangle,
   HasBoundsRectangleRuntime,
   MethodsOf,
-  NodeTraits,
+  NodeFields,
   Rectangle,
 } from '@flighthq/types/contract';
 
-export function defaultComputeLocalBoundsRectangle<Traits extends object = NodeTraits>(
+export function defaultComputeLocalBoundsRectangle<Fields extends object = NodeFields>(
   _out: Rectangle,
-  _source: Readonly<BoundsNode<Traits>>,
+  _source: Readonly<BoundsNode<Fields>>,
 ) {}
 
-export function initBoundsRectangleRuntimeTrait<Traits extends object = NodeTraits>(
-  target: HasBoundsRectangleRuntime<Traits>,
+export function initBoundsRectangleRuntimeTrait<Fields extends object = NodeFields>(
+  target: HasBoundsRectangleRuntime<Fields>,
   methods?: Readonly<
     Partial<
-      MethodsOf<HasBoundsRectangleRuntime<Traits>> &
-        Pick<HasBoundsRectangleRuntime<Traits>, 'isLocalBoundsRectangleValid'>
+      MethodsOf<HasBoundsRectangleRuntime<Fields>> &
+        Pick<HasBoundsRectangleRuntime<Fields>, 'isLocalBoundsRectangleValid'>
     >
   >,
 ): void {

@@ -16,8 +16,8 @@ import { invalidateNodeAppearance } from './revision.ts';
  * For explicit per-channel scale/bias authoring, use
  * `createColorScaleBiasAdjustment` from `@flighthq/adjustments`.
  */
-export function addNodeColorAdjustment<Traits extends object>(source: Node<Traits>, adjustment: Adjustment): void {
-  const runtime = getNodeRuntime(source) as NodeRuntime<Traits>;
+export function addNodeColorAdjustment<Fields extends object>(source: Node<Fields>, adjustment: Adjustment): void {
+  const runtime = getNodeRuntime(source) as NodeRuntime<Fields>;
   const current = runtime.colorAdjustments;
   runtime.colorAdjustments = current === null ? [adjustment] : [...current, adjustment];
   resolveNodeColorAdjustments(runtime);
@@ -25,8 +25,8 @@ export function addNodeColorAdjustment<Traits extends object>(source: Node<Trait
 }
 
 /** Returns the complete authored adjustment stack, or null for the untinted default. */
-export function getNodeColorAdjustments<Traits extends object>(
-  source: Readonly<Node<Traits>>,
+export function getNodeColorAdjustments<Fields extends object>(
+  source: Readonly<Node<Fields>>,
 ): readonly Adjustment[] | null {
   return getNodeRuntime(source).colorAdjustments;
 }
@@ -37,18 +37,18 @@ export function getNodeColorAdjustments<Traits extends object>(
  * Tint's golden path is `setNodeColorAdjustmentsTint`. Use `createColorScaleBiasAdjustment` for
  * explicit per-channel `out = in * scale + bias` values with normalized-linear bias.
  */
-export function setNodeColorAdjustments<Traits extends object>(
-  source: Node<Traits>,
+export function setNodeColorAdjustments<Fields extends object>(
+  source: Node<Fields>,
   value: readonly Adjustment[] | null,
 ): void {
-  const runtime = getNodeRuntime(source) as NodeRuntime<Traits>;
+  const runtime = getNodeRuntime(source) as NodeRuntime<Fields>;
   runtime.colorAdjustments = value;
   resolveNodeColorAdjustments(runtime);
   invalidateNodeAppearance(source);
 }
 
 /** Replaces the complete stack with one packed-RGBA tint adjustment. */
-export function setNodeColorAdjustmentsTint<Traits extends object>(source: Node<Traits>, tint: number): void {
+export function setNodeColorAdjustmentsTint<Fields extends object>(source: Node<Fields>, tint: number): void {
   setNodeColorAdjustments(source, [createTintAdjustment(tint)]);
 }
 

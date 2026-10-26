@@ -6,7 +6,7 @@ import type {
   EntityConstruction,
   MethodsOf,
   MorphShape,
-  Node2DTraits,
+  Node2DFields,
   PartialNode,
   Rectangle,
   Shape,
@@ -25,7 +25,7 @@ export function clearShapeCommands(shape: Shape): void {
   invalidateContent(shape);
 }
 
-export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
+export function computeShapeLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DFields>>): void {
   getShapeBounds(out, source as Readonly<Shape>, 'ink');
 }
 
@@ -101,7 +101,7 @@ export function isShapeEmpty(source: Readonly<Shape>): boolean {
   return source.data.commands.length === 0;
 }
 
-function isShapeLocalBoundsRectangleValid(source: Readonly<BoundsNode<Node2DTraits>>): boolean {
+function isShapeLocalBoundsRectangleValid(source: Readonly<BoundsNode<Node2DFields>>): boolean {
   const runtime = getNode2DRuntime(source as Readonly<Shape>) as ShapeRuntime;
   return runtime.shapeBoundsCommandRegistryRevision === getShapeBoundsCommandRegistryRevision();
 }

@@ -5,7 +5,7 @@ import type {
   BoundsNode,
   EntityConstruction,
   MethodsOf,
-  Node2DTraits,
+  Node2DFields,
   PartialNode,
   Rectangle,
   Tilemap,
@@ -44,7 +44,7 @@ export function cloneTilemap(source: Readonly<Tilemap>): Tilemap {
   });
 }
 
-export function computeTilemapLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
+export function computeTilemapLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DFields>>): void {
   const tilemap = source as Tilemap;
   const { atlas, columns, rows, tileHeight, tileWidth } = tilemap.data;
   out.x = 0;

@@ -1,7 +1,7 @@
 import { getEntityRuntime as getRawEntityRuntime } from '@flighthq/entity/contract';
 import { cloneMatrix } from '@flighthq/geometry/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { HasTransform2D, HasTransform2DRuntime, Node, NodeRuntime, NodeTraits } from '@flighthq/types/contract';
+import type { HasTransform2D, HasTransform2DRuntime, Node, NodeRuntime, NodeFields } from '@flighthq/types/contract';
 import { NodeKind } from '@flighthq/types/contract';
 
 import { initTransform2DRuntimeTrait, initTransform2DTrait } from './hasTransform2d.ts';
@@ -34,9 +34,9 @@ import { createNode, enableNodeSignals, getNodeRuntime } from './node.ts';
 import { getNodeWorldMatrix } from './nodeTransform2d.ts';
 import { getNodeChildrenRevision, getNodeParentReferenceRevision, invalidateNodeLocalTransform } from './revision.ts';
 
-let container: Node<NodeTraits>;
-let childA: Node<NodeTraits>;
-let childB: Node<NodeTraits>;
+let container: Node<NodeFields>;
+let childA: Node<NodeFields>;
+let childB: Node<NodeFields>;
 
 beforeEach(() => {
   container = createNode(NodeKind);
@@ -146,9 +146,9 @@ describe('addNodeChild', () => {
     expect(called).toBe(false);
   });
 
-  // Compile-time law: Node<Traits> is invariant in Traits, so nodes from different trait
+  // Compile-time law: Node<Fields> is invariant in Fields, so nodes from different trait
   // families cannot be mixed in one graph. The @ts-expect-error is the assertion — if the
-  // wall ever collapses (e.g. Traits leaks to `any`), this line stops erroring and the test
+  // wall ever collapses (e.g. Fields leaks to `any`), this line stops erroring and the test
   // fails to compile under `npm run typecheck`.
   it('rejects mixing nodes from different trait families', () => {
     interface FooTraits {
@@ -325,7 +325,7 @@ describe('forEachNodeChild', () => {
   it('visits each child with its index', () => {
     addNodeChild(container, childA);
     addNodeChild(container, childB);
-    const visited: Array<[Node<NodeTraits>, number]> = [];
+    const visited: Array<[Node<NodeFields>, number]> = [];
     forEachNodeChild(container, (child, index) => {
       visited.push([child, index]);
     });
@@ -338,7 +338,7 @@ describe('forEachNodeChild', () => {
   it('stops early when callback returns false', () => {
     addNodeChild(container, childA);
     addNodeChild(container, childB);
-    const visited: Node<NodeTraits>[] = [];
+    const visited: Node<NodeFields>[] = [];
     forEachNodeChild(container, (child) => {
       visited.push(child);
       return false;

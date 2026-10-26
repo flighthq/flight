@@ -32,7 +32,7 @@ import type {
   MorphShape,
   MovieClip,
   Node2D,
-  Node2DTraits,
+  Node2DFields,
   Scene2DDocument,
   Scene2DDocumentImportContext,
   Scene2DDocumentImporterRegistry,
@@ -513,7 +513,7 @@ function createSwfTimelineSource(
 ): TimelineSource {
   const attached = new Set<Node2D>();
   const framed = new Set<Node2D>();
-  const depths = createNodeOrderList<Node2DTraits>();
+  const depths = createNodeOrderList<Node2DFields>();
   const appliedMatrices = new Map<Node2D, Readonly<SwfTagMatrix>>();
   const appliedClips = new Map<Node2D, ClipRegion | null>();
   const appliedAlphas = new Map<Node2D, number>();

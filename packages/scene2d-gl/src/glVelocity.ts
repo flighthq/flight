@@ -275,9 +275,9 @@ export function registerGlVelocityWriter(state: GlRenderState, kind: Kind, write
  * registered GlVelocityWriter for each node's kind. Nodes whose kind has no writer are skipped; the
  * cleared (0,0,0,0) background means zero velocity. Restores the previously bound framebuffer.
  */
-export function renderGlVelocity<Traits extends object>(
+export function renderGlVelocity<Fields extends object>(
   state: GlRenderState,
-  root: Readonly<Transform2DNode<Traits>>,
+  root: Readonly<Transform2DNode<Fields>>,
   field: VelocityField,
   target: Readonly<GlTextureRenderTarget>,
 ): void {
@@ -343,9 +343,9 @@ function ensureGlVelocityProgram(state: GlRenderState): GlVelocityProgram {
   return program;
 }
 
-function visitGlVelocity<Traits extends object>(
+function visitGlVelocity<Fields extends object>(
   ctx: Readonly<GlVelocityContext>,
-  node: Readonly<Transform2DNode<Traits>>,
+  node: Readonly<Transform2DNode<Fields>>,
 ): void {
   const writer = getGlVelocityWriter(ctx.state, node.kind);
   if (writer !== null) writer(ctx, node);
@@ -353,7 +353,7 @@ function visitGlVelocity<Traits extends object>(
   const count = getNodeChildCount(node);
   for (let i = 0; i < count; i++) {
     const child = getNodeChildAt(node, i);
-    if (child !== null) visitGlVelocity(ctx, child as unknown as Readonly<Transform2DNode<Traits>>);
+    if (child !== null) visitGlVelocity(ctx, child as unknown as Readonly<Transform2DNode<Fields>>);
   }
 }
 

@@ -242,7 +242,7 @@ export function walkNode(state: RenderState, root: Node2D, visit: RenderProxyVis
 
   while (stackLength > 0) {
     // tempStack is NodeAny[] because disposeScene2DRender shares it for a walk that needs no traits.
-    // This walk accepts Node2D and NodeRuntime<Node2DTraits> preserves that family through children;
+    // This walk accepts Node2D and NodeRuntime<Node2DFields> preserves that family through children;
     // the assertion restores only the specialisation erased by the shared scratch array.
     const current = tempStack[--stackLength] as Node2D;
     if (!current.enabled) continue;

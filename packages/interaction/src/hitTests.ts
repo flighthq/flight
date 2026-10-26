@@ -50,12 +50,12 @@ export function describeGraphHit(node: NodeAny, x: number, y: number, out: HitTe
  * subtree from the walk when the point falls outside it, matching what the renderers draw. Cheap — the
  * bbox path.
  **/
-export function findGraphHitTarget<Traits extends object>(
-  source: Node<Traits>,
+export function findGraphHitTarget<Fields extends object>(
+  source: Node<Fields>,
   x: number,
   y: number,
-): Node<Traits> | null {
-  return findFirstHit(source as NodeAny, x, y, false) as Node<Traits> | null;
+): Node<Fields> | null {
+  return findFirstHit(source as NodeAny, x, y, false) as Node<Fields> | null;
 }
 
 /**
@@ -63,36 +63,36 @@ export function findGraphHitTarget<Traits extends object>(
  * (fill/alpha/glyph), **falling back to bounds per kind** where no exact provider is registered — so
  * the answer is the most precise available. Pays for the exact math; use on click/select, not per move.
  **/
-export function findGraphHitTargetPrecise<Traits extends object>(
-  source: Node<Traits>,
+export function findGraphHitTargetPrecise<Fields extends object>(
+  source: Node<Fields>,
   x: number,
   y: number,
-): Node<Traits> | null {
-  return findFirstHit(source as NodeAny, x, y, true) as Node<Traits> | null;
+): Node<Fields> | null {
+  return findFirstHit(source as NodeAny, x, y, true) as Node<Fields> | null;
 }
 
 /**
  * Coarse stack: every node whose bounding geometry contains (x, y), front-to-back into `out` (cleared
  * first). The "what is under this point" query — overlapping targets, multi-pick.
  **/
-export function findGraphHitTargets<Traits extends object>(
-  source: Node<Traits>,
+export function findGraphHitTargets<Fields extends object>(
+  source: Node<Fields>,
   x: number,
   y: number,
-  out: Node<Traits>[] = [],
-): Node<Traits>[] {
+  out: Node<Fields>[] = [],
+): Node<Fields>[] {
   out.length = 0;
   collectHits(source as NodeAny, x, y, false, out as NodeAny[]);
   return out;
 }
 
 /** Precise stack: `findGraphHitTargets` using exact geometry per kind (bounds fallback where none). */
-export function findGraphHitTargetsPrecise<Traits extends object>(
-  source: Node<Traits>,
+export function findGraphHitTargetsPrecise<Fields extends object>(
+  source: Node<Fields>,
   x: number,
   y: number,
-  out: Node<Traits>[] = [],
-): Node<Traits>[] {
+  out: Node<Fields>[] = [],
+): Node<Fields>[] {
   out.length = 0;
   collectHits(source as NodeAny, x, y, true, out as NodeAny[]);
   return out;
@@ -102,7 +102,7 @@ export function findGraphHitTargetsPrecise<Traits extends object>(
  * Tests whether world-space (x, y) falls within the node's local bounds rect,
  * after inverting through the node's world transform.
  **/
-export function hitTestGraphLocalBounds<Traits extends object>(source: Node<Traits>, x: number, y: number): boolean {
+export function hitTestGraphLocalBounds<Fields extends object>(source: Node<Fields>, x: number, y: number): boolean {
   inverseMatrixTransformPointXY(hitTestScratchPoint, getNodeWorldMatrix(source as Node2D), x, y);
   return containsRectanglePointXY(
     getNodeLocalBoundsRectangle(source as Node2D),
@@ -116,12 +116,12 @@ export function hitTestGraphLocalBounds<Traits extends object>(source: Node<Trai
  * irrelevant to the boolean, but the same eligibility, `hitArea`, children-gate, and `clip` rules as
  * `findGraphHitTarget` apply.
  **/
-export function hitTestGraphPoint<Traits extends object>(source: Node<Traits>, x: number, y: number): boolean {
+export function hitTestGraphPoint<Fields extends object>(source: Node<Fields>, x: number, y: number): boolean {
   return anyHit(source as NodeAny, x, y, false);
 }
 
 /** Precise any-hit query: `hitTestGraphPoint` using exact geometry per kind (bounds fallback where none). */
-export function hitTestGraphPointPrecise<Traits extends object>(source: Node<Traits>, x: number, y: number): boolean {
+export function hitTestGraphPointPrecise<Fields extends object>(source: Node<Fields>, x: number, y: number): boolean {
   return anyHit(source as NodeAny, x, y, true);
 }
 

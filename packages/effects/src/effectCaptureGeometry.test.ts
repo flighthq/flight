@@ -26,7 +26,7 @@ import type {
   Effect,
   EffectCaptureGeometry,
 } from '@flighthq/types/contract';
-import { Node2DTraitsKey } from '@flighthq/types/contract';
+import { Node2DFieldsKey } from '@flighthq/types/contract';
 
 import { computeEffectCaptureGeometry } from './effectCaptureGeometry.ts';
 import { computeEffectPadding, registerEffectPaddingResolver } from './effectPadding.ts';
@@ -34,7 +34,7 @@ import { computeEffectPadding, registerEffectPaddingResolver } from './effectPad
 function createCaptureNode(bounds: Readonly<Rectangle>): Node2D {
   const node = createNode('CaptureGeometryTest') as Node2D;
   const runtime = getNodeRuntime(node) as Node2DRuntime;
-  runtime.traits = Node2DTraitsKey;
+  runtime.fields = Node2DFieldsKey;
   initBoundsRectangleTrait(node);
   initBoundsRectangleRuntimeTrait(runtime, {
     computeLocalBoundsRectangle(out) {

@@ -10,7 +10,7 @@ import type {
   NodeRuntime,
   NodeRuntimeFactory,
   NodeSignals,
-  NodeTraits,
+  NodeFields,
   PartialNode,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -19,24 +19,24 @@ import { removeNodeChild } from './hierarchy.ts';
 import { invalidateNode } from './revision.ts';
 
 export function createNode<
-  Traits extends object = NodeTraits,
+  Fields extends object = NodeFields,
   Data extends NodeData = NodeData,
-  Runtime extends NodeRuntime<Traits> = NodeRuntime<Traits>,
+  Runtime extends NodeRuntime<Fields> = NodeRuntime<Fields>,
 >(
   nodeKind: Kind,
-  obj?: Readonly<PartialNode<Node<Traits>>>,
+  obj?: Readonly<PartialNode<Node<Fields>>>,
   createData?: NodeDataFactory<Data>,
   createNodeRuntimeFactory?: NodeRuntimeFactory<Runtime>,
-): Node<Traits> & Traits {
-  const out = allocateEntity<Node<Traits> & Traits>();
+): Node<Fields> & Fields {
+  const out = allocateEntity<Node<Fields> & Fields>();
   initializeNode(out, nodeKind, obj, createData, createNodeRuntimeFactory);
   return finishEntity(out);
 }
 
-export function createNodeRuntime<Traits extends object = NodeTraits>(
-  methods?: Readonly<Partial<MethodsOf<NodeRuntime<Traits>>>>,
-): NodeRuntime<Traits> {
-  const out = createEntityRuntime() as NodeRuntime<Traits>;
+export function createNodeRuntime<Fields extends object = NodeFields>(
+  methods?: Readonly<Partial<MethodsOf<NodeRuntime<Fields>>>>,
+): NodeRuntime<Fields> {
+  const out = createEntityRuntime() as NodeRuntime<Fields>;
   out.appearanceId = 0;
   out.boundsUsingLocalBoundsId = -1;
   out.boundsUsingLocalTransformId = -1;
@@ -71,9 +71,9 @@ export function createNodeSignals(): NodeSignals {
   return finishEntity(out);
 }
 
-export function defaultNodeRuntimeCanAddChild<Traits extends object>(
-  _target: Node<Traits>,
-  _child: Node<Traits>,
+export function defaultNodeRuntimeCanAddChild<Fields extends object>(
+  _target: Node<Fields>,
+  _child: Node<Fields>,
 ): boolean {
   return true;
 }
@@ -88,8 +88,8 @@ export function defaultNodeRuntimeCanAddChild<Traits extends object>(
  * resources (render proxies, GPU textures) should call `disposeNode` first and then release those
  * resources themselves.
  */
-export function disposeNode<Traits extends object = NodeTraits>(target: Node<Traits>): void {
-  const runtime = getEntityRuntime(target) as NodeRuntime<Traits>;
+export function disposeNode<Fields extends object = NodeFields>(target: Node<Fields>): void {
+  const runtime = getEntityRuntime(target) as NodeRuntime<Fields>;
 
   // Detach from parent first so the parent's children list stays consistent.
   const parent = runtime.parent;
@@ -130,34 +130,34 @@ export function disposeNode<Traits extends object = NodeTraits>(target: Node<Tra
   runtime.interactionState = null;
 }
 
-export function enableNodeSignals<Traits extends object = NodeTraits>(source: Node<Traits>): NodeSignals {
-  const runtime = getEntityRuntime(source) as NodeRuntime<Traits>;
+export function enableNodeSignals<Fields extends object = NodeFields>(source: Node<Fields>): NodeSignals {
+  const runtime = getEntityRuntime(source) as NodeRuntime<Fields>;
   return (runtime.nodeSignals ??= createNodeSignals());
 }
 
-export function getNodeRuntime<Traits extends object = NodeTraits>(
-  source: Readonly<Node<Traits>>,
-): Readonly<NodeRuntime<Traits>> {
-  return getEntityRuntime(source) as NodeRuntime<Traits>;
+export function getNodeRuntime<Fields extends object = NodeFields>(
+  source: Readonly<Node<Fields>>,
+): Readonly<NodeRuntime<Fields>> {
+  return getEntityRuntime(source) as NodeRuntime<Fields>;
 }
 
-export function getNodeSignals<Traits extends object = NodeTraits>(source: Node<Traits>): NodeSignals | null {
-  return (getEntityRuntime(source) as NodeRuntime<Traits>).nodeSignals;
+export function getNodeSignals<Fields extends object = NodeFields>(source: Node<Fields>): NodeSignals | null {
+  return (getEntityRuntime(source) as NodeRuntime<Fields>).nodeSignals;
 }
 
 export function initializeNode<
-  Traits extends object = NodeTraits,
+  Fields extends object = NodeFields,
   Data extends NodeData = NodeData,
-  Runtime extends NodeRuntime<Traits> = NodeRuntime<Traits>,
+  Runtime extends NodeRuntime<Fields> = NodeRuntime<Fields>,
 >(
-  out: EntityConstruction<Node<Traits> & Traits>,
+  out: EntityConstruction<Node<Fields> & Fields>,
   nodeKind: Kind,
-  obj?: Readonly<PartialNode<Node<Traits>>>,
+  obj?: Readonly<PartialNode<Node<Fields>>>,
   createData?: NodeDataFactory<Data>,
   createNodeRuntimeFactory?: NodeRuntimeFactory<Runtime>,
 ): void {
   const runtimeFactory = createNodeRuntimeFactory ?? (createNodeRuntime as unknown as NodeRuntimeFactory<Runtime>);
-  const node = out as EntityConstruction<Node<Traits>>;
+  const node = out as EntityConstruction<Node<Fields>>;
   (node as { [EntityRuntimeKey]?: unknown })[EntityRuntimeKey] = runtimeFactory();
   node.data = createData !== undefined ? createData(obj?.data as Partial<Data>) : null;
   node.name = obj?.name ?? null;
@@ -173,7 +173,7 @@ export function initializeNodeSignals(out: EntityConstruction<NodeSignals>): voi
   out.onParentChanged = createSignal();
 }
 
-export function setNodeEnabled<Traits extends object = NodeTraits>(target: Node<Traits>, value: boolean): void {
+export function setNodeEnabled<Fields extends object = NodeFields>(target: Node<Fields>, value: boolean): void {
   target.enabled = value;
   invalidateNode(target);
 }

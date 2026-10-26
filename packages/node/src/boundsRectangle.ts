@@ -31,10 +31,10 @@ import { invalidateNodeLocalTransform } from './revision.ts';
  * Writes a rectangle which defines the area of the scene node
  * relative to the coordinate system of the `targetCoordinateSpace` object.
  **/
-export function computeNodeBoundsRectangle<Traits extends object>(
+export function computeNodeBoundsRectangle<Fields extends object>(
   out: RectangleLike,
-  source: Spatial2DNode<Traits>,
-  targetCoordinateSpace: Spatial2DNode<Traits> | null | undefined,
+  source: Spatial2DNode<Fields>,
+  targetCoordinateSpace: Spatial2DNode<Fields> | null | undefined,
 ): void {
   if (!targetCoordinateSpace) targetCoordinateSpace = source;
   let bounds;
@@ -43,7 +43,7 @@ export function computeNodeBoundsRectangle<Traits extends object>(
     if (targetCoordinateSpace === source) {
       // fast path, return local bounds for self
       bounds = getNodeLocalBoundsRectangle(source);
-    } else if (targetCoordinateSpace === (getNodeParent(source) as Spatial2DNode<Traits> | null)) {
+    } else if (targetCoordinateSpace === (getNodeParent(source) as Spatial2DNode<Fields> | null)) {
       // fast path, return bounds for parent
       bounds = getNodeParentBoundsRectangle(source);
     }
@@ -70,23 +70,23 @@ export function computeNodeBoundsRectangle<Traits extends object>(
  * rotation. Offscreen subtree capture uses this contract together with
  * computeScene2DRenderTargetTransform so the root transform cancels exactly.
  */
-export function computeNodeRootLocalBoundsRectangle<Traits extends object>(
+export function computeNodeRootLocalBoundsRectangle<Fields extends object>(
   out: RectangleLike,
-  root: Spatial2DNode<Traits>,
+  root: Spatial2DNode<Fields>,
 ): void {
   setEmptyRectangle(out);
   mergeRootLocalBounds(out, root, null);
 }
 
-export function ensureNodeLocalBoundsRectangle<Traits extends object>(target: BoundsNode<Traits>): void {
-  const runtime = getEntityRuntime(target) as NodeRuntime<Traits> & HasBoundsRectangleRuntime<Traits>;
+export function ensureNodeLocalBoundsRectangle<Fields extends object>(target: BoundsNode<Fields>): void {
+  const runtime = getEntityRuntime(target) as NodeRuntime<Fields> & HasBoundsRectangleRuntime<Fields>;
   if (!isNodeLocalBoundsRectangleValid(target, runtime)) {
     recomputeLocalBoundsRectangle(target, runtime);
   }
 }
 
-export function ensureNodeParentBoundsRectangle<Traits extends object>(target: Spatial2DNode<Traits>): void {
-  const runtime = getEntityRuntime(target) as NodeRuntime<Traits> & HasBoundsRectangleRuntime<Traits>;
+export function ensureNodeParentBoundsRectangle<Fields extends object>(target: Spatial2DNode<Fields>): void {
+  const runtime = getEntityRuntime(target) as NodeRuntime<Fields> & HasBoundsRectangleRuntime<Fields>;
   if (
     !isNodeLocalBoundsRectangleValid(target, runtime) ||
     runtime.boundsUsingLocalBoundsId !== runtime.localBoundsId ||
@@ -96,9 +96,9 @@ export function ensureNodeParentBoundsRectangle<Traits extends object>(target: S
   }
 }
 
-export function ensureNodeWorldBoundsRectangle<Traits extends object>(target: Spatial2DNode<Traits>): void {
-  const runtime = getEntityRuntime(target) as NodeRuntime<Traits> &
-    HasBoundsRectangleRuntime<Traits> &
+export function ensureNodeWorldBoundsRectangle<Fields extends object>(target: Spatial2DNode<Fields>): void {
+  const runtime = getEntityRuntime(target) as NodeRuntime<Fields> &
+    HasBoundsRectangleRuntime<Fields> &
     HasTransform2DRuntime;
   const localBoundsInvalid =
     !isNodeLocalBoundsRectangleValid(target, runtime) ||
@@ -121,11 +121,11 @@ export function ensureNodeWorldBoundsRectangle<Traits extends object>(target: Sp
   }
 }
 
-export function getNodeHeight<Traits extends object>(source: Spatial2DNode<Traits>): number {
+export function getNodeHeight<Fields extends object>(source: Spatial2DNode<Fields>): number {
   computeNodeBoundsRectangle(
     _tempBoundsRectangle,
     source,
-    getNodeParent(source) as unknown as Spatial2DNode<Traits> | null,
+    getNodeParent(source) as unknown as Spatial2DNode<Fields> | null,
   );
   return _tempBoundsRectangle.height;
 }
@@ -133,7 +133,7 @@ export function getNodeHeight<Traits extends object>(source: Spatial2DNode<Trait
 /**
  * Object's own bounds (not including children)
  */
-export function getNodeLocalBoundsRectangle<Traits extends object>(target: BoundsNode<Traits>): Readonly<Rectangle> {
+export function getNodeLocalBoundsRectangle<Fields extends object>(target: BoundsNode<Fields>): Readonly<Rectangle> {
   ensureNodeLocalBoundsRectangle(target);
   return (getEntityRuntime(target) as HasBoundsRectangleRuntime).localBoundsRectangle!;
 }
@@ -141,18 +141,18 @@ export function getNodeLocalBoundsRectangle<Traits extends object>(target: Bound
 /**
  * localBoundsRectangle * localTransform
  */
-export function getNodeParentBoundsRectangle<Traits extends object>(
-  target: Spatial2DNode<Traits>,
+export function getNodeParentBoundsRectangle<Fields extends object>(
+  target: Spatial2DNode<Fields>,
 ): Readonly<Rectangle> {
   ensureNodeParentBoundsRectangle(target);
   return (getEntityRuntime(target) as HasBoundsRectangleRuntime).boundsRectangle!;
 }
 
-export function getNodeWidth<Traits extends object>(source: Spatial2DNode<Traits>): number {
+export function getNodeWidth<Fields extends object>(source: Spatial2DNode<Fields>): number {
   computeNodeBoundsRectangle(
     _tempBoundsRectangle,
     source,
-    getNodeParent(source) as unknown as Spatial2DNode<Traits> | null,
+    getNodeParent(source) as unknown as Spatial2DNode<Fields> | null,
   );
   return _tempBoundsRectangle.width;
 }
@@ -160,12 +160,12 @@ export function getNodeWidth<Traits extends object>(source: Spatial2DNode<Traits
 /**
  * Object's bounds in world space (including children)
  */
-export function getNodeWorldBoundsRectangle<Traits extends object>(target: Spatial2DNode<Traits>): Readonly<Rectangle> {
+export function getNodeWorldBoundsRectangle<Fields extends object>(target: Spatial2DNode<Fields>): Readonly<Rectangle> {
   ensureNodeWorldBoundsRectangle(target);
   return (getEntityRuntime(target) as HasBoundsRectangleRuntime).worldBoundsRectangle!;
 }
 
-export function setNodeHeight<Traits extends object>(target: Spatial2DNode<Traits>, value: number): void {
+export function setNodeHeight<Fields extends object>(target: Spatial2DNode<Fields>, value: number): void {
   if (target.scaleY === 0) return;
   const bounds = getNodeLocalBoundsRectangle(target);
   const matrix = getNodeLocalMatrix(target);
@@ -181,7 +181,7 @@ export function setNodeHeight<Traits extends object>(target: Spatial2DNode<Trait
   invalidateNodeLocalTransform(target);
 }
 
-export function setNodeWidth<Traits extends object>(target: Spatial2DNode<Traits>, value: number): void {
+export function setNodeWidth<Fields extends object>(target: Spatial2DNode<Fields>, value: number): void {
   if (target.scaleX === 0) return;
   const bounds = getNodeLocalBoundsRectangle(target);
   const matrix = getNodeLocalMatrix(target);
@@ -197,9 +197,9 @@ export function setNodeWidth<Traits extends object>(target: Spatial2DNode<Traits
   invalidateNodeLocalTransform(target);
 }
 
-function recomputeNodeBoundsRectangle<Traits extends object>(
-  target: Spatial2DNode<Traits>,
-  runtime: NodeRuntime<Traits> & HasBoundsRectangleRuntime<Traits>,
+function recomputeNodeBoundsRectangle<Fields extends object>(
+  target: Spatial2DNode<Fields>,
+  runtime: NodeRuntime<Fields> & HasBoundsRectangleRuntime<Fields>,
 ): void {
   if (runtime.boundsRectangle === null) runtime.boundsRectangle = createRectangle();
   matrixTransformRectangle(runtime.boundsRectangle, getNodeLocalMatrix(target), getNodeLocalBoundsRectangle(target));
@@ -207,9 +207,9 @@ function recomputeNodeBoundsRectangle<Traits extends object>(
   runtime.boundsUsingLocalTransformId = runtime.localTransformId;
 }
 
-function isNodeLocalBoundsRectangleValid<Traits extends object>(
-  target: BoundsNode<Traits>,
-  runtime: NodeRuntime<Traits> & HasBoundsRectangleRuntime<Traits>,
+function isNodeLocalBoundsRectangleValid<Fields extends object>(
+  target: BoundsNode<Fields>,
+  runtime: NodeRuntime<Fields> & HasBoundsRectangleRuntime<Fields>,
 ): boolean {
   return (
     runtime.localBoundsUsingLocalBoundsId === runtime.localBoundsId &&
@@ -217,14 +217,14 @@ function isNodeLocalBoundsRectangleValid<Traits extends object>(
   );
 }
 
-function ensureNodeChildWorldBoundsRectangles<Traits extends object>(target: Spatial2DNode<Traits>): boolean {
+function ensureNodeChildWorldBoundsRectangles<Fields extends object>(target: Spatial2DNode<Fields>): boolean {
   const children = getNodeRuntime(target).children;
   if (children === null) return false;
   let changed = false;
   for (const child of children) {
     if (!child.enabled) continue;
-    const childNode = child as Spatial2DNode<Traits>;
-    const runtime = getNodeRuntime(childNode) as NodeRuntime<Traits> & HasBoundsRectangleRuntime<Traits>;
+    const childNode = child as Spatial2DNode<Fields>;
+    const runtime = getNodeRuntime(childNode) as NodeRuntime<Fields> & HasBoundsRectangleRuntime<Fields>;
     const previous = runtime.worldBoundsRectangle;
     const previousX = previous?.x;
     const previousY = previous?.y;
@@ -245,9 +245,9 @@ function ensureNodeChildWorldBoundsRectangles<Traits extends object>(target: Spa
   return changed;
 }
 
-function mergeRootLocalBounds<Traits extends object>(
+function mergeRootLocalBounds<Fields extends object>(
   out: RectangleLike,
-  node: Spatial2DNode<Traits>,
+  node: Spatial2DNode<Fields>,
   transform: Readonly<Matrix> | null,
 ): void {
   const localBounds = getNodeLocalBoundsRectangle(node);
@@ -263,26 +263,26 @@ function mergeRootLocalBounds<Traits extends object>(
   for (const child of children) {
     if (!child.enabled) continue;
     const childTransform = acquireMatrix();
-    const childLocal = getNodeLocalMatrix(child as Spatial2DNode<Traits>);
+    const childLocal = getNodeLocalMatrix(child as Spatial2DNode<Fields>);
     if (transform === null) copyMatrix(childTransform, childLocal);
     else multiplyMatrix(childTransform, transform, childLocal);
-    mergeRootLocalBounds(out, child as Spatial2DNode<Traits>, childTransform);
+    mergeRootLocalBounds(out, child as Spatial2DNode<Fields>, childTransform);
     releaseMatrix(childTransform);
   }
 }
 
-function recomputeLocalBoundsRectangle<Traits extends object>(
-  target: BoundsNode<Traits>,
-  runtime: NodeRuntime<Traits> & HasBoundsRectangleRuntime<Traits>,
+function recomputeLocalBoundsRectangle<Fields extends object>(
+  target: BoundsNode<Fields>,
+  runtime: NodeRuntime<Fields> & HasBoundsRectangleRuntime<Fields>,
 ): void {
   if (runtime.localBoundsRectangle === null) runtime.localBoundsRectangle = createRectangle();
   runtime.computeLocalBoundsRectangle(runtime.localBoundsRectangle, target);
   runtime.localBoundsUsingLocalBoundsId = runtime.localBoundsId;
 }
 
-function recomputeWorldBoundsRectangle<Traits extends object>(
-  target: Spatial2DNode<Traits>,
-  runtime: NodeRuntime<Traits> & HasBoundsRectangleRuntime<Traits> & HasTransform2DRuntime,
+function recomputeWorldBoundsRectangle<Fields extends object>(
+  target: Spatial2DNode<Fields>,
+  runtime: NodeRuntime<Fields> & HasBoundsRectangleRuntime<Fields> & HasTransform2DRuntime,
 ) {
   if (runtime.worldBoundsRectangle === null) runtime.worldBoundsRectangle = createRectangle();
   matrixTransformRectangle(
@@ -294,7 +294,7 @@ function recomputeWorldBoundsRectangle<Traits extends object>(
   if (children !== null) {
     for (const child of children) {
       if (!child.enabled) continue;
-      const childWorldBounds = getNodeWorldBoundsRectangle(child as Spatial2DNode<Traits>);
+      const childWorldBounds = getNodeWorldBoundsRectangle(child as Spatial2DNode<Fields>);
       if (childWorldBounds.width !== 0 && childWorldBounds.height !== 0) {
         mergeRectangle(runtime.worldBoundsRectangle, runtime.worldBoundsRectangle, childWorldBounds);
       }
@@ -304,9 +304,9 @@ function recomputeWorldBoundsRectangle<Traits extends object>(
   runtime.worldBoundsUsingLocalBoundsId = runtime.localBoundsId;
 }
 
-function tryFastRecomputeWorldBoundsRectangle<Traits extends object>(
-  target: Spatial2DNode<Traits>,
-  runtime: HasBoundsRectangleRuntime<Traits> & HasTransform2DRuntime,
+function tryFastRecomputeWorldBoundsRectangle<Fields extends object>(
+  target: Spatial2DNode<Fields>,
+  runtime: HasBoundsRectangleRuntime<Fields> & HasTransform2DRuntime,
 ): boolean {
   if (runtime.worldBoundsRectangle !== null && runtime.worldMatrix !== null) {
     const { a: _a, b: _b, c: _c, d: _d, tx: _tx, ty: _ty } = runtime.worldMatrix;

@@ -11,7 +11,7 @@ import type {
   Matrix4,
   Mesh,
   Node3D,
-  Node3DTraits,
+  Node3DFields,
   Scene3DRenderProxy,
   WgpuRenderState,
 } from '@flighthq/types/contract';
@@ -137,7 +137,7 @@ export function renderWgpuScene3DShadowMap(
   pass.setViewport(0, 0, shadow.mapWidth, shadow.mapHeight, 0, 1);
   let boundPipeline: GPURenderPipeline | null = null;
 
-  forEachNodeDescendant<Node3DTraits>(scene, (node) => {
+  forEachNodeDescendant<Node3DFields>(scene, (node) => {
     // A drawable node carries geometry (structural, like prepareScene3DRender's mesh test).
     const mesh = node as unknown as Mesh;
     if (mesh.geometry == null) return;

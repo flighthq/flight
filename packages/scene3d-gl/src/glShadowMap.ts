@@ -11,7 +11,7 @@ import type {
   InstancedMesh,
   Mesh,
   Node3D,
-  Node3DTraits,
+  Node3DFields,
   GlMeshProgram,
 } from '@flighthq/types/contract';
 import { DIRECTIONAL_SHADOW_MAP_SIZE, MAX_DIRECTIONAL_SHADOW_PCF_RADIUS } from '@flighthq/types/contract';
@@ -94,7 +94,7 @@ export function renderGlScene3DShadowMap(
   // program switch; u_model is per caster. boundProgram tracks the last program bound to avoid redundant
   // useProgram + view-projection uploads across a run of same-kind casters.
   let boundProgram: GlMeshProgram | null = null;
-  forEachNodeDescendant<Node3DTraits>(scene, (node) => {
+  forEachNodeDescendant<Node3DFields>(scene, (node) => {
     // A drawable node carries geometry (structural, like prepareScene3DRender's mesh test).
     const mesh = node as unknown as Mesh;
     if (mesh.geometry == null) return;

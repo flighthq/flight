@@ -3,7 +3,7 @@ import type {
   BoundsNode,
   HasBoundsRectangleRuntime,
   MatrixLike,
-  NodeTraits,
+  NodeFields,
   Rectangle,
   Scene2DFitContext,
   ViewportAlign,
@@ -52,9 +52,9 @@ export function computeScene2DFitScale(
 // per its `scaleMode` (`noscale`/`exactfit`/`showall`/`noborder`) and `align`. Reads the root's local bounds
 // through its runtime; an empty or unmeasurable root yields identity. This is the scene2d-fit transform the 2D
 // present pass applies before drawing the tree.
-export function computeScene2DFitTransform<Traits extends object = NodeTraits>(
+export function computeScene2DFitTransform<Fields extends object = NodeFields>(
   out: MatrixLike,
-  scene2d: Readonly<Scene2DFitContext<Traits>>,
+  scene2d: Readonly<Scene2DFitContext<Fields>>,
   viewWidth: number,
   viewHeight: number,
 ): void {
@@ -64,13 +64,13 @@ export function computeScene2DFitTransform<Traits extends object = NodeTraits>(
   let contentHeight = 0;
 
   if (scene2d.root !== null) {
-    const runtime = getNodeRuntime(scene2d.root) as Partial<HasBoundsRectangleRuntime<Traits>>;
+    const runtime = getNodeRuntime(scene2d.root) as Partial<HasBoundsRectangleRuntime<Fields>>;
     if (runtime?.computeLocalBoundsRectangle !== undefined) {
       _tempRectangle.x = 0;
       _tempRectangle.y = 0;
       _tempRectangle.width = 0;
       _tempRectangle.height = 0;
-      runtime.computeLocalBoundsRectangle(_tempRectangle, scene2d.root as BoundsNode<Traits>);
+      runtime.computeLocalBoundsRectangle(_tempRectangle, scene2d.root as BoundsNode<Fields>);
       contentX = _tempRectangle.x;
       contentY = _tempRectangle.y;
       contentWidth = _tempRectangle.width;

@@ -1,6 +1,6 @@
 import type { EntityRuntime } from './Entity.ts';
 import type { Matrix4 } from './Matrix4.ts';
-import type { NodeOf, NodeTraits } from './Node.ts';
+import type { NodeOf, NodeFields } from './Node.ts';
 import type { Quaternion } from './Quaternion.ts';
 import type { Vector3 } from './Vector3.ts';
 
@@ -25,4 +25,4 @@ export interface HasTransform3DRuntime extends EntityRuntime {
   worldMatrix4: Matrix4 | null;
 }
 
-export type Transform3DNode<Traits extends object = NodeTraits> = NodeOf<Traits> & HasTransform3D;
+export type Transform3DNode<Fields extends object = NodeFields> = NodeOf<Fields> & HasTransform3D;

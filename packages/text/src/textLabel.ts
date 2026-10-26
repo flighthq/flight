@@ -6,7 +6,7 @@ import type {
   BoundsNode,
   EntityConstruction,
   MethodsOf,
-  Node2DTraits,
+  Node2DFields,
   PartialNode,
   Rectangle,
   TextAutoSize,
@@ -50,7 +50,7 @@ export function appendTextLabelString(source: TextLabel, value: string): void {
 // content (textWidth/textHeight + gutter) positioned by the left/right/center anchor. The layout is
 // ensured on demand here, so a TextLabel's autoSize bounds are queryable before it is ever rendered.
 // Falls back to the fixed box until a measure provider is registered.
-export function computeTextLabelLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
+export function computeTextLabelLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DFields>>): void {
   const label = source as TextLabel;
   const data = label.data;
   if (data.autoSize === 'none') {

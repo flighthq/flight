@@ -4,7 +4,7 @@ import type { FocusEventData } from './FocusEventData.ts';
 import type { InputSignals } from './InputSignals.ts';
 import type { InteractionSignals } from './InteractionSignals.ts';
 import type { KeyboardEventData } from './KeyboardEventData.ts';
-import type { Node, NodeAny, NodeTraits } from './Node.ts';
+import type { Node, NodeAny, NodeFields } from './Node.ts';
 import type { NodeInteractionState } from './NodeInteractionState.ts';
 import type { PointerEventData, PointerType } from './PointerEventData.ts';
 import type { SpatialIndex2D } from './Spatial.ts';
@@ -14,7 +14,7 @@ import type { SpatialIndex2D } from './Spatial.ts';
 // every consumer accept a key it cannot dispatch.
 export type InteractionSignalName = Exclude<keyof InteractionSignals, typeof EntityRuntimeKey>;
 export type AnyInteractionSignalSlot = (value: PointerEventData | KeyboardEventData | FocusEventData) => void;
-export type InteractionDispatchLayer<N extends NodeAny = Node<NodeTraits>> = (
+export type InteractionDispatchLayer<N extends NodeAny = Node<NodeFields>> = (
   target: N,
   name: InteractionSignalName,
   data: Readonly<PointerEventData | KeyboardEventData | FocusEventData>,
@@ -24,7 +24,7 @@ export interface InteractionDispatchLayerOptions {
   priority?: number;
 }
 
-export interface InteractionManager<N extends NodeAny = Node<NodeTraits>> extends Entity {
+export interface InteractionManager<N extends NodeAny = Node<NodeFields>> extends Entity {
   // Active cursor backend for this manager's canvas; `null` disables cursor resolution. Per-manager
   // (not a global) so each manager owns its own canvas's cursor zone. Rollover resolves the innermost
   // ancestor's `NodeInteractionState.cursor` and applies it here.
@@ -87,7 +87,7 @@ export interface InteractionPointerOptions {
   timeStamp?: number;
 }
 
-export interface InteractionPointerState<N extends NodeAny = Node<NodeTraits>> {
+export interface InteractionPointerState<N extends NodeAny = Node<NodeFields>> {
   lastClickTarget: N | null;
   lastClickTime: number;
   lastPointerClickButton: number;

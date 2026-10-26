@@ -9,7 +9,7 @@ import type {
   NativeTextData,
   NativeTextRuntime,
   NativeTextStyle,
-  Node2DTraits,
+  Node2DFields,
   PartialNode,
   Rectangle,
   TextAutoSize,
@@ -27,7 +27,7 @@ import { NativeTextKind } from '@flighthq/types/contract';
 // otherwise it tracks the last measured element size, falling back to the user box until first measured.
 export function computeNativeTextLocalBoundsRectangle(
   out: Rectangle,
-  source: Readonly<BoundsNode<Node2DTraits>>,
+  source: Readonly<BoundsNode<Node2DFields>>,
 ): void {
   const native = source as NativeText;
   const data = native.data;

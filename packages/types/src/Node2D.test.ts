@@ -1,7 +1,7 @@
 import type { HasBoundsRectangleRuntime } from './HasBoundsRectangle.ts';
 import type { HasTransform2DRuntime } from './HasTransform2D.ts';
 import type { NodeRuntime } from './Node.ts';
-import type { Node2DRuntime, Node2DTraits } from './Node2D.ts';
+import type { Node2DRuntime, Node2DFields } from './Node2D.ts';
 
 describe('Node2DRuntime', () => {
   // These do NOT prove the interface form: an interface and the intersection typedef it replaced are
@@ -9,12 +9,12 @@ describe('Node2DRuntime', () => {
   // the shape a future edit could break — and the reason to name the shape is that a declaration can
   // be found, read, and errored against by name, which is a source property rather than a type one.
   it('is assignable to every runtime it specialises, so naming it introduced no second root', () => {
-    expectTypeOf<Node2DRuntime>().toMatchTypeOf<NodeRuntime<Node2DTraits>>();
+    expectTypeOf<Node2DRuntime>().toMatchTypeOf<NodeRuntime<Node2DFields>>();
     // Parameterised, not bare: the bounds callbacks are contravariant in the node they receive, so
-    // the runtime a Node2D specialises is HasBoundsRectangleRuntime<Node2DTraits>. The bare form
-    // (defaulting to NodeTraits) is deliberately NOT a supertype — that erasure is what the generic
+    // the runtime a Node2D specialises is HasBoundsRectangleRuntime<Node2DFields>. The bare form
+    // (defaulting to NodeFields) is deliberately NOT a supertype — that erasure is what the generic
     // removed.
-    expectTypeOf<Node2DRuntime>().toMatchTypeOf<HasBoundsRectangleRuntime<Node2DTraits>>();
+    expectTypeOf<Node2DRuntime>().toMatchTypeOf<HasBoundsRectangleRuntime<Node2DFields>>();
     expectTypeOf<Node2DRuntime>().toMatchTypeOf<HasTransform2DRuntime>();
   });
 

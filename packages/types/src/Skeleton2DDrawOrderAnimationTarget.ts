@@ -1,5 +1,5 @@
 import type { Entity } from './Entity.ts';
-import type { Node, NodeTraits } from './Node.ts';
+import type { Node, NodeFields } from './Node.ts';
 import type { NodeOrderList } from './NodeOrderList.ts';
 import type { Skeleton2DAnimationTargetKind } from './Skeleton2DAnimationTargetKind.ts';
 
@@ -22,8 +22,8 @@ import type { Skeleton2DAnimationTargetKind } from './Skeleton2DAnimationTargetK
  * whatever the track states — interpolating two orderings yields fractional sort keys and a sequence
  * nobody authored — and that coercion reports through `enableSkeleton2DGuards`.
  */
-export interface Skeleton2DDrawOrderAnimationTarget<Traits extends object = NodeTraits> extends Entity {
+export interface Skeleton2DDrawOrderAnimationTarget<Fields extends object = NodeFields> extends Entity {
   kind: Skeleton2DAnimationTargetKind;
-  nodes: readonly (Node<Traits> | null)[];
-  orderList: NodeOrderList<Traits>;
+  nodes: readonly (Node<Fields> | null)[];
+  orderList: NodeOrderList<Fields>;
 }

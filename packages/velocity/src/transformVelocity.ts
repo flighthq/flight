@@ -13,18 +13,18 @@ import { ensureVelocitySample } from './velocityField.ts';
 // but still have their previous transform updated, so order relative to explicit contributors does not
 // matter. Run once per frame after beginVelocityFrame. Velocity is in node units; a producer scales by
 // the render pixel ratio.
-export function contributeTransformVelocity<Traits extends object>(
+export function contributeTransformVelocity<Fields extends object>(
   field: VelocityField,
-  root: Readonly<Transform2DNode<Traits>>,
+  root: Readonly<Transform2DNode<Fields>>,
 ): void {
   visitTransformVelocity(field, root);
 }
 
-function visitTransformVelocity<Traits extends object>(
+function visitTransformVelocity<Fields extends object>(
   field: VelocityField,
-  node: Readonly<Transform2DNode<Traits>>,
+  node: Readonly<Transform2DNode<Fields>>,
 ): void {
-  const mutableNode = node as Transform2DNode<Traits>;
+  const mutableNode = node as Transform2DNode<Fields>;
   ensureNodeWorldMatrix(mutableNode);
   const world = getNodeWorldMatrix(mutableNode);
   const sample = ensureVelocitySample(field, node);
@@ -48,6 +48,6 @@ function visitTransformVelocity<Traits extends object>(
   const count = getNodeChildCount(mutableNode);
   for (let i = 0; i < count; i++) {
     const child = getNodeChildAt(mutableNode, i);
-    if (child !== null) visitTransformVelocity(field, child as unknown as Readonly<Transform2DNode<Traits>>);
+    if (child !== null) visitTransformVelocity(field, child as unknown as Readonly<Transform2DNode<Fields>>);
   }
 }

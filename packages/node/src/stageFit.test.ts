@@ -2,7 +2,7 @@ import { createMatrix } from '@flighthq/geometry/contract';
 import type {
   HasBoundsRectangleRuntime,
   Node,
-  NodeTraits,
+  NodeFields,
   ViewportAlign,
   ViewportScaleMode,
 } from '@flighthq/types/contract';
@@ -31,9 +31,9 @@ function makeNodeWithBounds(width: number, height: number, x = 0, y = 0) {
 }
 
 // A structural scene2d-fit context (what Scene2D supplies): root plus how it maps into the view.
-function fit(overrides: { align?: ViewportAlign; root?: Node<NodeTraits> | null; scaleMode?: ViewportScaleMode }): {
+function fit(overrides: { align?: ViewportAlign; root?: Node<NodeFields> | null; scaleMode?: ViewportScaleMode }): {
   align: ViewportAlign;
-  root: Node<NodeTraits> | null;
+  root: Node<NodeFields> | null;
   scaleMode: ViewportScaleMode;
 } {
   return {

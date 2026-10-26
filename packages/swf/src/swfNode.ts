@@ -9,7 +9,7 @@ import type {
   Node2D,
   Node2DData,
   Node2DRuntime,
-  Node2DTraits,
+  Node2DFields,
   NodeData,
   Rectangle,
   Sprite,
@@ -52,7 +52,7 @@ export function applySwfMorphBounds(shape: MorphShape, progress: number): void {
   invalidateNodeLocalBounds(shape);
 }
 
-export function computeSwfLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
+export function computeSwfLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DFields>>): void {
   const bounds = (source.data as SwfAuthoredBoundsData).authoredBounds;
   out.x = bounds.x;
   out.y = bounds.y;

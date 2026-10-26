@@ -8,7 +8,7 @@ import type {
   NodeOrderList,
   NodeOrderListEntryVisitor,
   NodeRuntime,
-  NodeTraits,
+  NodeFields,
 } from '@flighthq/types/contract';
 
 import { getNodeRuntime } from './node.ts';
@@ -19,9 +19,9 @@ import { getNodeRuntime } from './node.ts';
  * already entered — it is the O(1) bulk-fill verb. Use setNodeOrderListEntry to re-key a node that may
  * already be present; a node entered twice resolves to its last entry.
  */
-export function addNodeOrderListEntry<Traits extends object = NodeTraits>(
-  list: NodeOrderList<Traits>,
-  node: Node<Traits>,
+export function addNodeOrderListEntry<Fields extends object = NodeFields>(
+  list: NodeOrderList<Fields>,
+  node: Node<Fields>,
   sortKey: number,
 ): void {
   const entryCount = list.entryCount;
@@ -50,11 +50,11 @@ export function addNodeOrderListEntry<Traits extends object = NodeTraits>(
  * child of `target`, so no parent pointer or parentReferenceId changes, and the whole permutation stamps
  * `childrenId` once instead of once per moved node.
  */
-export function applyNodeOrderList<Traits extends object = NodeTraits>(
-  target: Node<Traits>,
-  list: Readonly<NodeOrderList<Traits>>,
+export function applyNodeOrderList<Fields extends object = NodeFields>(
+  target: Node<Fields>,
+  list: Readonly<NodeOrderList<Fields>>,
 ): void {
-  const targetRuntime = getNodeRuntime(target) as NodeRuntime<Traits>;
+  const targetRuntime = getNodeRuntime(target) as NodeRuntime<Fields>;
   const children = targetRuntime.children;
   if (children === null || list.entryCount === 0) return;
 
@@ -99,7 +99,7 @@ export function applyNodeOrderList<Traits extends object = NodeTraits>(
   for (let i = 0; i < slots.length; i++) {
     const slot = slots[i];
     if (children[slot] === members[i]) continue;
-    children[slot] = members[i] as NodeOf<Traits>;
+    children[slot] = members[i] as NodeOf<Fields>;
     moved = true;
   }
 
@@ -118,12 +118,12 @@ export function applyNodeOrderList<Traits extends object = NodeTraits>(
  * Empties the valid window without releasing capacity, so the next fill reuses the arrays. Entries past
  * `entryCount` keep their node references; use disposeNodeOrderList to drop them.
  */
-export function clearNodeOrderList<Traits extends object = NodeTraits>(list: NodeOrderList<Traits>): void {
+export function clearNodeOrderList<Fields extends object = NodeFields>(list: NodeOrderList<Fields>): void {
   list.entryCount = 0;
 }
 
-export function createNodeOrderList<Traits extends object = NodeTraits>(): NodeOrderList<Traits> {
-  const out = allocateEntity<NodeOrderList<Traits>>();
+export function createNodeOrderList<Fields extends object = NodeFields>(): NodeOrderList<Fields> {
+  const out = allocateEntity<NodeOrderList<Fields>>();
   initializeNodeOrderList(out);
   return finishEntity(out);
 }
@@ -133,7 +133,7 @@ export function createNodeOrderList<Traits extends object = NodeTraits>(): NodeO
  * The list stays usable; this is the teardown counterpart to clearNodeOrderList, which deliberately
  * retains both capacity and the references past the window for reuse.
  */
-export function disposeNodeOrderList<Traits extends object = NodeTraits>(list: NodeOrderList<Traits>): void {
+export function disposeNodeOrderList<Fields extends object = NodeFields>(list: NodeOrderList<Fields>): void {
   list.entryCount = 0;
   list.nodes.length = 0;
   list.sortKeys.length = 0;
@@ -143,9 +143,9 @@ export function disposeNodeOrderList<Traits extends object = NodeTraits>(list: N
  * Calls `callback` for each entry in the order the entries were added, which is not the order they
  * resolve to. Stops early if `callback` returns `false`.
  */
-export function forEachNodeOrderListEntry<Traits extends object = NodeTraits>(
-  list: Readonly<NodeOrderList<Traits>>,
-  callback: NodeOrderListEntryVisitor<Traits>,
+export function forEachNodeOrderListEntry<Fields extends object = NodeFields>(
+  list: Readonly<NodeOrderList<Fields>>,
+  callback: NodeOrderListEntryVisitor<Fields>,
 ): void {
   for (let i = 0; i < list.entryCount; i++) {
     if (callback(list.nodes[i], list.sortKeys[i], i) === false) return;
@@ -156,23 +156,23 @@ export function forEachNodeOrderListEntry<Traits extends object = NodeTraits>(
  * Returns the sort key `node` is entered with, or `null` when it has no entry. Null rather than -1
  * because every finite number, negative included, is a legal sort key.
  */
-export function getNodeOrderListEntrySortKey<Traits extends object = NodeTraits>(
-  list: Readonly<NodeOrderList<Traits>>,
-  node: Readonly<Node<Traits>>,
+export function getNodeOrderListEntrySortKey<Fields extends object = NodeFields>(
+  list: Readonly<NodeOrderList<Fields>>,
+  node: Readonly<Node<Fields>>,
 ): number | null {
   const index = findNodeOrderListEntryIndex(list, node);
   return index === -1 ? null : list.sortKeys[index];
 }
 
-export function hasNodeOrderListEntry<Traits extends object = NodeTraits>(
-  list: Readonly<NodeOrderList<Traits>>,
-  node: Readonly<Node<Traits>>,
+export function hasNodeOrderListEntry<Fields extends object = NodeFields>(
+  list: Readonly<NodeOrderList<Fields>>,
+  node: Readonly<Node<Fields>>,
 ): boolean {
   return findNodeOrderListEntryIndex(list, node) !== -1;
 }
 
-export function initializeNodeOrderList<Traits extends object = NodeTraits>(
-  out: EntityConstruction<NodeOrderList<Traits>>,
+export function initializeNodeOrderList<Fields extends object = NodeFields>(
+  out: EntityConstruction<NodeOrderList<Fields>>,
 ): void {
   out.entryCount = 0;
   out.nodes = [];
@@ -184,9 +184,9 @@ export function initializeNodeOrderList<Traits extends object = NodeTraits>(
  * being back-filled from the end: entry position breaks ties between equal sort keys, so preserving it
  * is part of the contract, not an implementation detail.
  */
-export function removeNodeOrderListEntry<Traits extends object = NodeTraits>(
-  list: NodeOrderList<Traits>,
-  node: Readonly<Node<Traits>>,
+export function removeNodeOrderListEntry<Fields extends object = NodeFields>(
+  list: NodeOrderList<Fields>,
+  node: Readonly<Node<Fields>>,
 ): boolean {
   const index = findNodeOrderListEntryIndex(list, node);
   if (index === -1) return false;
@@ -199,9 +199,9 @@ export function removeNodeOrderListEntry<Traits extends object = NodeTraits>(
  * incremental re-keying: unlike addNodeOrderListEntry it never grows the list with a second entry for
  * the same node, at the cost of a scan.
  */
-export function setNodeOrderListEntry<Traits extends object = NodeTraits>(
-  list: NodeOrderList<Traits>,
-  node: Node<Traits>,
+export function setNodeOrderListEntry<Fields extends object = NodeFields>(
+  list: NodeOrderList<Fields>,
+  node: Node<Fields>,
   sortKey: number,
 ): void {
   const index = findNodeOrderListEntryIndex(list, node);
@@ -221,10 +221,10 @@ export function setNodeOrderListEntry<Traits extends object = NodeTraits>(
  * That holds however tightly packed the surrounding keys are, and repeated placement never exhausts
  * float precision the way bisection does.
  */
-export function setNodeOrderListEntryAbove<Traits extends object = NodeTraits>(
-  list: NodeOrderList<Traits>,
-  node: Node<Traits>,
-  target: Readonly<Node<Traits>>,
+export function setNodeOrderListEntryAbove<Fields extends object = NodeFields>(
+  list: NodeOrderList<Fields>,
+  node: Node<Fields>,
+  target: Readonly<Node<Fields>>,
 ): void {
   insertNodeOrderListEntryBeside(list, node, target, 1);
 }
@@ -234,10 +234,10 @@ export function setNodeOrderListEntryAbove<Traits extends object = NodeTraits>(
  * when `target` has no entry. The mirror of setNodeOrderListEntryAbove, placing `node`'s entry just
  * before `target`'s at the same sort key.
  */
-export function setNodeOrderListEntryBelow<Traits extends object = NodeTraits>(
-  list: NodeOrderList<Traits>,
-  node: Node<Traits>,
-  target: Readonly<Node<Traits>>,
+export function setNodeOrderListEntryBelow<Fields extends object = NodeFields>(
+  list: NodeOrderList<Fields>,
+  node: Node<Fields>,
+  target: Readonly<Node<Fields>>,
 ): void {
   insertNodeOrderListEntryBeside(list, node, target, 0);
 }
@@ -247,9 +247,9 @@ export function setNodeOrderListEntryBelow<Traits extends object = NodeTraits>(
  * inverse of applyNodeOrderList: capture what is there, edit it with the *Above/*Below/swap verbs, then
  * apply it back. Any previous contents are discarded.
  */
-export function setNodeOrderListFromNodeChildren<Traits extends object = NodeTraits>(
-  list: NodeOrderList<Traits>,
-  source: Readonly<Node<Traits>>,
+export function setNodeOrderListFromNodeChildren<Fields extends object = NodeFields>(
+  list: NodeOrderList<Fields>,
+  source: Readonly<Node<Fields>>,
 ): void {
   list.entryCount = 0;
   const children = getNodeRuntime(source).children;
@@ -264,10 +264,10 @@ export function setNodeOrderListFromNodeChildren<Traits extends object = NodeTra
  * unless both nodes have entries. Entry positions are left alone, so a tie between the two resolves the
  * same way afterwards as before.
  */
-export function swapNodeOrderListEntries<Traits extends object = NodeTraits>(
-  list: NodeOrderList<Traits>,
-  nodeA: Readonly<Node<Traits>>,
-  nodeB: Readonly<Node<Traits>>,
+export function swapNodeOrderListEntries<Fields extends object = NodeFields>(
+  list: NodeOrderList<Fields>,
+  nodeA: Readonly<Node<Fields>>,
+  nodeB: Readonly<Node<Fields>>,
 ): void {
   const indexA = findNodeOrderListEntryIndex(list, nodeA);
   if (indexA === -1) return;
@@ -278,9 +278,9 @@ export function swapNodeOrderListEntries<Traits extends object = NodeTraits>(
   list.sortKeys[indexB] = sortKeyA;
 }
 
-function findNodeOrderListEntryIndex<Traits extends object>(
-  list: Readonly<NodeOrderList<Traits>>,
-  node: Readonly<Node<Traits>>,
+function findNodeOrderListEntryIndex<Fields extends object>(
+  list: Readonly<NodeOrderList<Fields>>,
+  node: Readonly<Node<Fields>>,
 ): number {
   // Scans backwards so a node entered more than once reports the entry that wins at apply time.
   for (let i = list.entryCount - 1; i >= 0; i--) {
@@ -292,10 +292,10 @@ function findNodeOrderListEntryIndex<Traits extends object>(
 // Shared by the Above (offset 1) and Below (offset 0) verbs: `node` takes `target`'s sort key and its
 // entry lands on the named side of `target`'s. An existing entry for `node` is removed first, so
 // re-placing a node already in the list moves it rather than duplicating it.
-function insertNodeOrderListEntryBeside<Traits extends object>(
-  list: NodeOrderList<Traits>,
-  node: Node<Traits>,
-  target: Readonly<Node<Traits>>,
+function insertNodeOrderListEntryBeside<Fields extends object>(
+  list: NodeOrderList<Fields>,
+  node: Node<Fields>,
+  target: Readonly<Node<Fields>>,
   offset: number,
 ): void {
   if (node === target) return;
@@ -317,7 +317,7 @@ function insertNodeOrderListEntryBeside<Traits extends object>(
   list.sortKeys[at] = sortKey;
 }
 
-function removeNodeOrderListEntryAtIndex<Traits extends object>(list: NodeOrderList<Traits>, index: number): void {
+function removeNodeOrderListEntryAtIndex<Fields extends object>(list: NodeOrderList<Fields>, index: number): void {
   const last = list.entryCount - 1;
   for (let i = index; i < last; i++) {
     list.nodes[i] = list.nodes[i + 1];

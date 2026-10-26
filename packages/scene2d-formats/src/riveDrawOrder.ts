@@ -12,7 +12,7 @@ import type {
   DisplayObject,
   ImportDiagnostic,
   Node2D,
-  Node2DTraits,
+  Node2DFields,
   NodeOrderList,
   RiveArtboardGraph,
   RiveArtboardImportContext,
@@ -44,7 +44,7 @@ export function applyRiveDrawOrder(
   root: DisplayObject,
   diagnostics?: ImportDiagnostic[],
 ): void {
-  const lists = new Map<Node2D, NodeOrderList<Node2DTraits>>();
+  const lists = new Map<Node2D, NodeOrderList<Node2DFields>>();
   for (let index = 0; index < artboard.objects.length; index++) {
     const object = artboard.objects[index];
     if (object.typeKey !== RIVE_DRAW_RULES_TYPE_KEY) continue;
@@ -77,7 +77,7 @@ export function applyRiveDrawOrder(
 
     let list = lists.get(parent);
     if (list === undefined) {
-      list = createNodeOrderList<Node2DTraits>();
+      list = createNodeOrderList<Node2DFields>();
       setNodeOrderListFromNodeChildren(list, parent);
       lists.set(parent, list);
     }

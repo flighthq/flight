@@ -7,7 +7,7 @@ import type {
   HtmlViewData,
   HtmlViewRuntime,
   MethodsOf,
-  Node2DTraits,
+  Node2DFields,
   PartialNode,
   Rectangle,
 } from '@flighthq/types/contract';
@@ -15,7 +15,7 @@ import { HtmlViewKind } from '@flighthq/types/contract';
 
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject.ts';
 
-export function computeHtmlViewLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
+export function computeHtmlViewLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DFields>>): void {
   const data = (source as HtmlView).data;
   out.width = data.width;
   out.height = data.height;

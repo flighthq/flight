@@ -3,33 +3,33 @@ import type { Entity, EntityRuntime, EntityRuntimeKey, Kind } from './Entity.ts'
 import type { InteractionSignals } from './InteractionSignals.ts';
 import type { NodeInteractionState } from './NodeInteractionState.ts';
 import type { NodeSignals } from './NodeSignals.ts';
-declare const NodeTraitsKey: unique symbol;
-export type NodeTraitsKey<T extends object> = symbol & {
-  readonly [NodeTraitsKey]?: T;
+declare const NodeFieldsKey: unique symbol;
+export type NodeFieldsKey<T extends object> = symbol & {
+  readonly [NodeFieldsKey]?: T;
 };
 export interface NodeData extends Entity {}
 export type NodeDataFactory<D extends NodeData> = (obj?: Readonly<Partial<D>>) => D;
 export type NodeRuntimeFactory<R extends EntityRuntime> = (obj?: Readonly<Partial<R>>) => R;
-export interface NodeTraits {
+export interface NodeFields {
   readonly data: NodeData | null;
   enabled: boolean;
   kind: Kind;
   name: string | null;
 }
-export interface Node<Traits extends object = NodeTraits> extends NodeTraits, Entity {
-  [EntityRuntimeKey]: NodeRuntime<Traits> | undefined;
+export interface Node<Fields extends object = NodeFields> extends NodeFields, Entity {
+  [EntityRuntimeKey]: NodeRuntime<Fields> | undefined;
 }
-export type NodeOf<Traits extends object> = Node<Traits> & NoInfer<Traits>;
-export interface NodeRuntime<Traits extends object = NodeTraits> extends EntityRuntime, ColorAdjustmentRuntime {
+export type NodeOf<Fields extends object> = Node<Fields> & NoInfer<Fields>;
+export interface NodeRuntime<Fields extends object = NodeFields> extends EntityRuntime, ColorAdjustmentRuntime {
   appearanceId: number;
   boundsUsingLocalBoundsId: number;
   boundsUsingLocalTransformId: number;
-  canAddChild: (target: Node<Traits>, child: Node<Traits>) => boolean;
-  children: NodeOf<Traits>[] | null;
+  canAddChild: (target: Node<Fields>, child: Node<Fields>) => boolean;
+  children: NodeOf<Fields>[] | null;
   // Changes whenever this node's child membership or ordering changes. Consumers stamp this
   // independently from localContentId because descendants are not the node's local payload.
   childrenId: number;
-  traits?: NodeTraitsKey<Traits>;
+  fields?: NodeFieldsKey<Fields>;
   interactionSignals: InteractionSignals | null;
   localBoundsId: number;
   localBoundsUsingLocalBoundsId: number;
@@ -41,7 +41,7 @@ export interface NodeRuntime<Traits extends object = NodeTraits> extends EntityR
   // proxy, rollover cursor, and focus/tab settings. `null` → all defaults (fully hit-testable, no
   // cursor, not focusable). Owned and read by `@flighthq/interaction`.
   interactionState: NodeInteractionState | null;
-  parent: NodeOf<Traits> | null;
+  parent: NodeOf<Fields> | null;
   // Changes whenever parent-dependent derived state must be recomputed. Effective attach/detach
   // operations always advance it, including reattaching to the same parent later: consumers cannot
   // use parent identity alone because their inherited state may have gone stale while detached.

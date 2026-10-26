@@ -27,7 +27,7 @@ import type {
   NodeRuntimeFactory,
   PartialNode,
 } from '@flighthq/types/contract';
-import { DisplayObjectKind, Node2DTraitsKey } from '@flighthq/types/contract';
+import { DisplayObjectKind, Node2DFieldsKey } from '@flighthq/types/contract';
 
 export function createDisplayObject(obj?: Readonly<PartialNode<DisplayObject>>): DisplayObject {
   return createNode2D(DisplayObjectKind, obj, undefined, createDisplayObjectRuntime) as DisplayObject;
@@ -64,7 +64,7 @@ export function createNode2DRuntime(
   methods?: Readonly<Partial<MethodsOf<Node2DRuntime> & Pick<Node2DRuntime, 'isLocalBoundsRectangleValid'>>>,
 ): Node2DRuntime {
   const out = createNodeRuntime(methods) as Node2DRuntime;
-  out.traits = Node2DTraitsKey;
+  out.fields = Node2DFieldsKey;
   out.scene2d = null;
   initTransform2DRuntimeTrait(out, methods);
   initBoundsRectangleRuntimeTrait(out, methods);
@@ -80,7 +80,7 @@ export function getNode2DRuntime(source: Readonly<Node2D>): Readonly<Node2DRunti
 }
 
 export function isNode2D(node: NodeAny): node is Node2D {
-  return getNodeRuntime(node).traits === Node2DTraitsKey;
+  return getNodeRuntime(node).fields === Node2DFieldsKey;
 }
 
 export function setNode2DClip(source: Node2D, value: ClipRegion | null): void {

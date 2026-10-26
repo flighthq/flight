@@ -50,7 +50,7 @@ export function getScene2DKindUsage(out: Scene2DKindUsage, scene: Readonly<Scene
     }
   };
   visit(scene.root);
-  // forEachNodeDescendant yields Node<Node2DTraits>; the cast restores the trait fields the walk
+  // forEachNodeDescendant yields Node<Node2DFields>; the cast restores the trait fields the walk
   // generic drops, which the visitor reads structurally.
   forEachNodeDescendant(scene.root, (node) => visit(node as Readonly<Node2D>));
 

@@ -8,7 +8,7 @@ import type {
   BoundsNode,
   EntityConstruction,
   MethodsOf,
-  Node2DTraits,
+  Node2DFields,
   PartialNode,
   QuadBatch,
   QuadBatchData,
@@ -73,7 +73,7 @@ export function cloneQuadBatch(source: Readonly<QuadBatch>): QuadBatch {
   });
 }
 
-function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
+function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DFields>>): void {
   const runtime = getNode2DRuntime(source as QuadBatch) as QuadBatchRuntime;
   if (runtime.localBoundsRectangle !== null) copyRectangle(out, runtime.localBoundsRectangle);
 }

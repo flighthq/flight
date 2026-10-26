@@ -13,7 +13,7 @@ import type {
   EntityConstruction,
   GlyphSource,
   MethodsOf,
-  Node2DTraits,
+  Node2DFields,
   Rectangle,
 } from '@flighthq/types/contract';
 import { BitmapTextKind } from '@flighthq/types/contract';
@@ -178,7 +178,7 @@ function applyBitmapTextOptions(data: BitmapTextData, options: Readonly<BitmapTe
   if (options.wrapWidth !== undefined) data.wrapWidth = options.wrapWidth;
 }
 
-function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DTraits>>): void {
+function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DFields>>): void {
   const runtime = getNode2DRuntime(source as BitmapText) as BitmapTextRuntime;
   if (runtime.localBoundsRectangle !== null) copyRectangle(out, runtime.localBoundsRectangle);
 }

@@ -3,7 +3,7 @@ import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { getEntityRuntime } from '@flighthq/entity/contract';
-import { Node2DTraitsKey, Node3DTraitsKey } from '@flighthq/types/contract';
+import { Node2DFieldsKey, Node3DFieldsKey } from '@flighthq/types/contract';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import {

@@ -39,7 +39,7 @@ import {
   AmbientLightKind,
   DirectionalLightKind,
   FlightDocumentRefusalReason,
-  Node3DTraitsKey,
+  Node3DFieldsKey,
 } from '@flighthq/types/contract';
 
 import { explainFlightDocumentText, parseFlightDocumentText } from './flightDocumentText.ts';
@@ -433,7 +433,7 @@ function adoptDocumentRoot3D(
   const root = schema.createNode(documentRoot.fields, resources);
   if (root === null) return false;
   const runtime = getEntityRuntime(root) as Readonly<{ traits?: unknown }> | undefined;
-  if (runtime?.traits !== Node3DTraitsKey) return false;
+  if (runtime?.fields !== Node3DFieldsKey) return false;
   scene.root = root as Node3D;
   return true;
 }
@@ -449,7 +449,7 @@ function checkRootKindDimension3D(
   const probe = schema.createNode(documentRoot.fields, {});
   if (probe === null) return null;
   const runtime = getEntityRuntime(probe) as Readonly<{ traits?: unknown }> | undefined;
-  if (runtime?.traits === Node3DTraitsKey) return null;
+  if (runtime?.fields === Node3DFieldsKey) return null;
   return {
     ...createSceneRefusal(FlightDocumentRefusalReason.RootKindMismatch, sceneIndex, 'scene'),
     kind: documentRoot.kind,

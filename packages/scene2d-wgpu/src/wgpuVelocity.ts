@@ -110,9 +110,9 @@ export function registerWgpuVelocityWriter(state: WgpuRenderState, kind: Kind, w
  * cleared (0,0,0,0) background means zero velocity. Runs inside the frame's command encoder (open one with
  * a pass or beginWgpuFrame first), as its own render pass; the caller's pass is suspended and resumed.
  */
-export function renderWgpuVelocity<Traits extends object>(
+export function renderWgpuVelocity<Fields extends object>(
   state: WgpuRenderState,
-  root: Readonly<Transform2DNode<Traits>>,
+  root: Readonly<Transform2DNode<Fields>>,
   field: VelocityField,
   target: Readonly<WgpuTextureRenderTarget>,
 ): void {
@@ -375,9 +375,9 @@ function ensureWgpuVelocityPipeline(state: WgpuRenderState): WgpuVelocityPipelin
   return entry;
 }
 
-function visitWgpuVelocity<Traits extends object>(
+function visitWgpuVelocity<Fields extends object>(
   ctx: Readonly<WgpuVelocityContext>,
-  node: Readonly<Transform2DNode<Traits>>,
+  node: Readonly<Transform2DNode<Fields>>,
 ): void {
   const writer = getWgpuVelocityWriter(ctx.state, node.kind);
   if (writer !== null) writer(ctx, node);
@@ -385,7 +385,7 @@ function visitWgpuVelocity<Traits extends object>(
   const count = getNodeChildCount(node);
   for (let i = 0; i < count; i++) {
     const child = getNodeChildAt(node, i);
-    if (child !== null) visitWgpuVelocity(ctx, child as unknown as Readonly<Transform2DNode<Traits>>);
+    if (child !== null) visitWgpuVelocity(ctx, child as unknown as Readonly<Transform2DNode<Fields>>);
   }
 }
 
