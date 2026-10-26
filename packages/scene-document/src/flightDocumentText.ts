@@ -256,7 +256,9 @@ function appendObjectEntries(
   indent: number,
   reserved: readonly string[],
 ): void {
-  for (const [key, entry] of Object.entries(value).sort(([left], [right]) => left.localeCompare(right))) {
+  for (const [key, entry] of Object.entries(value).sort(([left], [right]) =>
+    left < right ? -1 : left > right ? 1 : 0,
+  )) {
     if (reserved.includes(key)) continue;
     if (entry !== undefined) appendMappingEntry(lines, key, entry, indent);
   }
