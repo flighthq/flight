@@ -23,7 +23,7 @@ export interface BitmapFont extends Entity {
   glyphs: Map<number, GlyphEntry>;
   kerning: Map<number, number>;
   metrics: GlyphMetrics;
-  pages: readonly TextureAtlas[];
+  pages: readonly (TextureAtlas | undefined)[];
 }
 
 // The plain-data input to `createBitmapFont`: the page-indexed atlas list, the glyph list, an
@@ -36,7 +36,7 @@ export interface BitmapFontData {
   glyphs: readonly BitmapFontGlyphData[];
   kerning?: readonly BitmapFontKerningData[];
   metrics: GlyphMetrics;
-  pages: readonly TextureAtlas[];
+  pages: readonly (TextureAtlas | undefined)[];
 }
 
 // One glyph in a `BitmapFontData` construction input: a codepoint plus the `GlyphEntry` fields (atlas

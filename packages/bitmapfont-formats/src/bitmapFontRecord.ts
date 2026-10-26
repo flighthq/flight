@@ -46,7 +46,7 @@ export function buildBitmapFontFromRecord(
     if (char.page > maxPageId) maxPageId = char.page;
   }
 
-  const pages: TextureAtlas[] = [];
+  const pages: (TextureAtlas | undefined)[] = [];
   for (let id = 0; id <= maxPageId; id++) {
     const atlas = resolved.get(id);
     // A hole only occurs for a declared-but-unreferenced page that failed to resolve; no glyph
