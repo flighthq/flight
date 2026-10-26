@@ -142,7 +142,7 @@ describe('createNode2DRuntime', () => {
     expect(runtime).not.toBeNull();
   });
 
-  it('sets traits to Node2DFieldsKey', () => {
+  it('sets fields to Node2DFieldsKey', () => {
     const runtime = createNode2DRuntime();
     expect(runtime.fields).toBe(Node2DFieldsKey);
   });

@@ -29,7 +29,7 @@ import type {
 // as it is now, so adding a graph-node kind changes the answer here without anyone remembering to.
 //
 // The predicate, stated before anything is counted: a kind belongs to the covered population iff a PUBLIC
-// exported constructor can actually mint it as an entity whose runtime carries a Node2D/Node3D traits key.
+// exported constructor can actually mint it as an entity whose runtime carries a Node2D/Node3D fields key.
 // A kind constant with no public constructor is not in the population, however canonical its name looks.
 describe('node kind census', () => {
   let chokepointSites: readonly NodeKindChokepointSite[];
@@ -215,7 +215,7 @@ function probe(packageName: string, exportName: string, value: () => unknown): N
       traits: null,
     };
   }
-  return { exportName, kind: producedKind(produced), packageName, thrown: null, traits: producedTraits(produced) };
+  return { exportName, kind: producedKind(produced), packageName, thrown: null, traits: producedFields(produced) };
 }
 
 function producedKind(produced: unknown): string | null {
@@ -224,7 +224,7 @@ function producedKind(produced: unknown): string | null {
   return typeof kind === 'string' && kind.length > 0 ? kind : null;
 }
 
-function producedTraits(produced: unknown): NodeKindFamily | null {
+function producedFields(produced: unknown): NodeKindFamily | null {
   if (typeof produced !== 'object' || produced === null) return null;
   let runtime: unknown;
   try {
@@ -233,8 +233,8 @@ function producedTraits(produced: unknown): NodeKindFamily | null {
     return null;
   }
   if (typeof runtime !== 'object' || runtime === null) return null;
-  const traits = (runtime as { traits?: unknown }).traits;
-  if (traits === Node2DTraitsKey) return '2d';
-  if (traits === Node3DTraitsKey) return '3d';
+  const fields = (runtime as { fields?: unknown }).fields;
+  if (fields === Node2DFieldsKey) return '2d';
+  if (fields === Node3DFieldsKey) return '3d';
   return null;
 }

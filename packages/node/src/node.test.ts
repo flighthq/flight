@@ -107,7 +107,7 @@ describe('createNodeRuntime', () => {
     expect(runtime.canAddChild).toStrictEqual(defaultNodeRuntimeCanAddChild);
   });
 
-  it('does not set traits — concrete graph runtimes set it', () => {
+  it('does not set fields — concrete graph runtimes set it', () => {
     expect(runtime.fields).toBeUndefined();
   });
 

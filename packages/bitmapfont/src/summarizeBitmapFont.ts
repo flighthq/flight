@@ -14,7 +14,9 @@ import type { BitmapFont, BitmapFontSummary } from '@flighthq/types/contract';
  *  BOUND on a font mid-load rather than an estimate; `pageCount` is what shows the gap. */
 export function summarizeBitmapFont(font: Readonly<BitmapFont>): BitmapFontSummary {
   let byteSize = 0;
-  for (const page of font.pages) byteSize += getTextureAtlasByteSize(page);
+  for (const page of font.pages) {
+    if (page !== undefined) byteSize += getTextureAtlasByteSize(page);
+  }
 
   let minCodepoint = -1;
   let maxCodepoint = -1;

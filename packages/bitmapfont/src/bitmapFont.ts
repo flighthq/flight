@@ -41,7 +41,7 @@ export function getBitmapFontPage(font: Readonly<BitmapFont>, page = 0): Texture
 
 // The font's page-indexed atlas list — one `TextureAtlas` per page image. A single-page font has
 // length 1; each glyph's `page` indexes this array. Immutable: shared, not cloned.
-export function getBitmapFontPages(font: Readonly<BitmapFont>): readonly TextureAtlas[] {
+export function getBitmapFontPages(font: Readonly<BitmapFont>): readonly (TextureAtlas | undefined)[] {
   return font.pages;
 }
 

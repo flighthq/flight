@@ -420,7 +420,7 @@ function writeFieldsWithDefaults(
 }
 
 // Replaces the scene's default root with the authored one, carrying its kind and fields. Returns false
-// when the root cannot serve as a 3D root — checked structurally by reading the built node's traits key,
+// when the root cannot serve as a 3D root — checked structurally by reading the built node's fields key,
 // so a registered kind of the wrong dimension is caught rather than installed.
 function adoptDocumentRoot3D(
   scene: Scene3D,
@@ -432,7 +432,7 @@ function adoptDocumentRoot3D(
   if (schema === null) return true;
   const root = schema.createNode(documentRoot.fields, resources);
   if (root === null) return false;
-  const runtime = getEntityRuntime(root) as Readonly<{ traits?: unknown }> | undefined;
+  const runtime = getEntityRuntime(root) as Readonly<{ fields?: unknown }> | undefined;
   if (runtime?.fields !== Node3DFieldsKey) return false;
   scene.root = root as Node3D;
   return true;
@@ -448,7 +448,7 @@ function checkRootKindDimension3D(
   if (schema === null) return null;
   const probe = schema.createNode(documentRoot.fields, {});
   if (probe === null) return null;
-  const runtime = getEntityRuntime(probe) as Readonly<{ traits?: unknown }> | undefined;
+  const runtime = getEntityRuntime(probe) as Readonly<{ fields?: unknown }> | undefined;
   if (runtime?.fields === Node3DFieldsKey) return null;
   return {
     ...createSceneRefusal(FlightDocumentRefusalReason.RootKindMismatch, sceneIndex, 'scene'),

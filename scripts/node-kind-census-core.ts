@@ -3,8 +3,8 @@ import type { Node } from 'oxc-parser';
 import { getParsedOxcSource } from './oxc-source.ts';
 
 // The three functions that mint a graph node. Every Node2D/Node3D in the SDK is created through one of
-// them, because they are the only callers of the two runtime factories that stamp a family traits key
-// (`Node2DTraitsKey` in scene2d/displayObject.ts, `Node3DTraitsKey` in scene3d/sceneNode.ts). This is a
+// them, because they are the only callers of the two runtime factories that stamp a family fields key
+// (`Node2DFieldsKey` in scene2d/displayObject.ts, `Node3DFieldsKey` in scene3d/sceneNode.ts). This is a
 // SEAM, not a registry: a kind reaches a node only by being passed as an argument here, and nothing
 // records that afterwards, which is why the population has to be derived by probing rather than read.
 export const NODE_KIND_CHOKEPOINTS: readonly string[] = ['createNode', 'createNode2D', 'createNode3D'];
@@ -50,7 +50,7 @@ export interface NodeKindProbeOutcome {
   packageName: string;
   // The error message when the probe threw, else null.
   thrown: string | null;
-  // The family resolved from the live runtime's traits key, or null when the value is not a graph node.
+  // The family resolved from the live runtime's fields key, or null when the value is not a graph node.
   traits: NodeKindFamily | null;
 }
 

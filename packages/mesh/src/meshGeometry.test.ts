@@ -251,6 +251,7 @@ describe('setMeshGeometrySkinBindPose', () => {
     const geometry = createMeshGeometry({ layout: CANONICAL_LAYOUT, vertices: makeVertices(3) });
     const bindPose: MeshSkinBindPose = {
       joints: new Float32Array(4),
+      lastSkinVersion: -1,
       normals: new Float32Array(3),
       positions: new Float32Array(3),
       skinnedNormals: new Float32Array(3),

@@ -292,7 +292,7 @@ function writeFieldsWithDefaults(
 // Replaces the scene's default container root with the authored one, carrying its kind and fields.
 // Returns false when the root cannot serve as a 2D root, which the caller reports as a refusal.
 //
-// ★ The dimension check is STRUCTURAL, not a roster: the node is built and its runtime traits key is read.
+// ★ The dimension check is STRUCTURAL, not a roster: the node is built and its runtime fields key is read.
 // A registered kind of the wrong dimension passes the unregistered-kind check — it IS registered — and
 // would otherwise be installed as a 2D scene root while actually being a Node3D.
 function adoptDocumentRoot2D(
@@ -305,7 +305,7 @@ function adoptDocumentRoot2D(
   if (schema === null) return true;
   const root = schema.createNode(documentRoot.fields, resources);
   if (root === null) return false;
-  const runtime = getEntityRuntime(root) as Readonly<{ traits?: unknown }> | undefined;
+  const runtime = getEntityRuntime(root) as Readonly<{ fields?: unknown }> | undefined;
   if (runtime?.fields !== Node2DFieldsKey) return false;
   const previous = scene.root;
   scene.root = root as Node2D;
@@ -316,7 +316,7 @@ function adoptDocumentRoot2D(
 
 // A registered root kind belonging to the other dimension. Distinct from an unregistered kind — the kind
 // IS registered, so that check passes it through — and detected structurally by building the node and
-// reading its runtime traits key rather than consulting any per-dimension roster.
+// reading its runtime fields key rather than consulting any per-dimension roster.
 function checkRootKindDimension(
   documentRoot: Readonly<FlightDocumentNode>,
   dimension: 'Scene2D' | 'Scene3D',
@@ -327,7 +327,7 @@ function checkRootKindDimension(
   if (schema === null) return null;
   const probe = schema.createNode(documentRoot.fields, createEmptyResourceLookup());
   if (probe === null) return null;
-  const runtime = getEntityRuntime(probe) as Readonly<{ traits?: unknown }> | undefined;
+  const runtime = getEntityRuntime(probe) as Readonly<{ fields?: unknown }> | undefined;
   const expected = dimension === 'Scene2D' ? Node2DFieldsKey : Node3DFieldsKey;
   if (runtime?.fields === expected) return null;
   return {

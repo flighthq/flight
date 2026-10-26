@@ -175,6 +175,7 @@ describe('ensureGlMeshUpload', () => {
     }
     const bindPose: MeshSkinBindPose = {
       joints: new Float32Array(0),
+      lastSkinVersion: -1,
       normals,
       positions,
       skinnedNormals: new Float32Array(0),
@@ -212,6 +213,7 @@ describe('ensureGlMeshUpload', () => {
     }
     setMeshGeometrySkinBindPose(geometry, {
       joints: new Float32Array(0),
+      lastSkinVersion: -1,
       normals: new Float32Array(vertexCount * 3),
       positions,
       skinnedNormals: new Float32Array(0),
@@ -239,6 +241,7 @@ describe('ensureGlMeshUpload', () => {
     // A captured skin bind pose at the rest position x = 1 — what the freeze would pin the buffer to.
     setMeshGeometrySkinBindPose(geometry, {
       joints: new Float32Array(0),
+      lastSkinVersion: -1,
       normals: new Float32Array(3),
       positions: new Float32Array([1, 0, 0]),
       skinnedNormals: new Float32Array(0),
