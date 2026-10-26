@@ -79,7 +79,7 @@ export function drawGlScale9Sprite(state: GlRenderState, renderProxy: RenderProx
   const d = transform.d / source.scaleY;
   const colorScaleBias = renderProxy.colorMatrix ?? renderProxy.colorScaleBias;
 
-  let writeBase = base;
+  let writeBase = base * INSTANCE_FLOATS;
   for (let row = 0; row < 3; row++) {
     for (let column = 0; column < 3; column++) {
       const instanceIndex = startCount + row * 3 + column;

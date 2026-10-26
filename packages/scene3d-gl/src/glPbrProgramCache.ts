@@ -74,6 +74,13 @@ export function ensureGlPbrProgram(
   return ensureGlScene3DProgram(
     state,
     `pbr:${buildGlPbrDefineKey(fullKey)}:${registryRevision}:${extensionKey}`,
-    (gl) => compileGlPbrProgram(gl, fullKey, contributions, getGlColorAdjustmentMaterialFeature(state)),
+    (gl) =>
+      compileGlPbrProgram(
+        gl,
+        fullKey,
+        contributions,
+        getGlColorAdjustmentMaterialFeature(state),
+        getGlScene3DRuntime(state).meshSkinFeature?.vertexDeclarationsGlsl ?? '',
+      ),
   );
 }

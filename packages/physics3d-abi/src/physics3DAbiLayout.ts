@@ -239,7 +239,8 @@ export const Physics3DAbiContactFlag = {
 } as const;
 
 export const Physics3DAbiJointFlag = {
-  Broken: 1 << 0,
+  CollideConnected: 1 << 0,
+  Broken: 1 << 1,
 } as const;
 
 export const Physics3DAbiBodyType = {

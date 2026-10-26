@@ -65,6 +65,7 @@ export function captureMeshSkinBindPose(geometry: Readonly<MeshGeometry>): MeshS
 
   return {
     joints,
+    lastSkinVersion: -1,
     normals,
     positions,
     skinnedNormals: new Float32Array(vertexCount * 3),

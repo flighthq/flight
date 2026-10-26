@@ -5,4 +5,5 @@ export interface WgpuFullscreenPipeline extends Entity {
   readonly pipelineLayout: GPUPipelineLayout;
   readonly uniformBindGroupLayout: GPUBindGroupLayout;
   readonly textureBindGroupLayouts: ReadonlyArray<GPUBindGroupLayout>;
+  readonly emptyUniformBindGroup: GPUBindGroup;
 }

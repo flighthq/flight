@@ -84,7 +84,10 @@ function getAutoDivisor(matrix: ReadonlyArray<number>, length: number): number {
 //   offset  0: texelSize (vec2f)   offset  8: matrixX (i32)   offset 12: matrixY (i32)
 //   offset 16: divisor (f32)       offset 20: bias (f32)      offset 24: clampEdge (i32)
 //   offset 28: preserveAlpha (i32) offset 32: edgeColor (vec4f)
-//   offset 48: matrix (array<f32, 49>) — 244 bytes total, within the 256-byte slot.
+//   offset 48: matrix (array<vec4f, 13>) — 256 bytes total, within the 256-byte slot.
+//   WebGPU uniform arrays need 16-byte element stride; array<f32, 49> is rejected by naga and Tint.
+//   The CPU packs contiguous f32 values which map naturally to vec4f elements; the shader reads
+//   individual weights as matrix[i / 4][i % 4].
 const CONVOLUTION_WGSL = /* wgsl */ `
 struct Uniforms {
   texelSize : vec2f,
@@ -95,7 +98,7 @@ struct Uniforms {
   clampEdge : i32,
   preserveAlpha : i32,
   edgeColor : vec4f,
-  matrix : array<f32, ${MAX_CONVOLUTION_EFFECT_WGPU_KERNEL_SIZE}>,
+  matrix : array<vec4f, 13>,
 }
 @group(0) @binding(0) var<uniform> uni : Uniforms;
 @group(1) @binding(0) var tex : texture_2d<f32>;
@@ -118,7 +121,8 @@ fn fs_main(@location(0) uv : vec2f) -> @location(0) vec4f {
   var sum = vec4f(0.0);
   for (var ky : i32 = 0; ky < uni.matrixY; ky++) {
     for (var kx : i32 = 0; kx < uni.matrixX; kx++) {
-      let weight = uni.matrix[ky * uni.matrixX + kx];
+      let idx = ky * uni.matrixX + kx;
+      let weight = uni.matrix[idx / 4][idx % 4];
       let off = vec2f(f32(kx - offsetX), f32(ky - offsetY)) * uni.texelSize;
       sum += sampleAt(uv + off) * weight;
     }

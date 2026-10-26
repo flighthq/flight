@@ -1138,7 +1138,9 @@ function readJoints(state: ReferencePhysics3DAbiWorld, out: Physics3DAbiJointBuf
     if (joint === undefined) continue;
     const at = out.count;
     out.ids[at] = id;
-    out.flags[at] = joint.broken ? Physics3DAbiJointFlag.Broken : 0;
+    out.flags[at] =
+      (joint.collideConnected ? Physics3DAbiJointFlag.CollideConnected : 0) |
+      (joint.broken ? Physics3DAbiJointFlag.Broken : 0);
     writePhysics3DJointReaction(state.world, joint, state.world.previousTimestep, state.reaction);
     const valueAt = at * Physics3DAbiJointValueStride;
     out.values[valueAt] = state.reaction.forceX;

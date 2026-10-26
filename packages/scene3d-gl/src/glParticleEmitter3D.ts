@@ -390,6 +390,7 @@ export function destroyGlParticleEmitter3DShader(state: GlRenderState): void {
   if (shader === undefined) return;
   const gl = state.gl;
   gl.deleteProgram(shader.program);
+  gl.deleteVertexArray(shader.vao);
   gl.deleteBuffer(shader.cornerBuffer);
   gl.deleteBuffer(shader.indexBuffer);
   gl.deleteBuffer(shader.instanceBuffer);

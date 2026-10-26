@@ -143,7 +143,7 @@ struct Draw {
   world : mat4x4f,
   normalMatrix : mat3x3f,
   uvTransform : mat3x3f,   // KHR_texture_transform of the base-color map (identity when unused)
-  params : vec4f,          // x = resolved object alpha
+  params : vec4f,          // x = resolved object alpha, y = alpha-is-coverage flag
 };
 
 // The 48-float MaterialBlock: the base StandardPbr block (vec4 0..3) plus one vec4 slot per extension
@@ -234,13 +234,16 @@ struct VertexOutput {
   // is a no-op there and the family needs no second pipeline variant. Without it an InstancedMesh drawn
   // with a PBR material renders every instance stacked at the node origin — the geometry is placed by the
   // vertex stage, so a shader that ignores these attributes ignores the whole batch's placement.
+  var localPosition = vec4f(position, 1.0);
+  var localNormal = normal;
+  var localTangent = tangent.xyz;
   let instanceModel = mat4x4f(instanceModel0, instanceModel1, instanceModel2, instanceModel3);
   // The instance rotation/scale also carries the normal and tangent, or a rotated instance would light as
   // though it were still in the batch's bind orientation.
   let instanceBasis = mat3x3f(instanceModel[0].xyz, instanceModel[1].xyz, instanceModel[2].xyz);
-  var localPosition = instanceModel * vec4f(position, 1.0);
-  var localNormal = instanceBasis * normal;
-  var localTangent = instanceBasis * tangent.xyz;
+  localPosition = instanceModel * localPosition;
+  localNormal = instanceBasis * localNormal;
+  localTangent = instanceBasis * localTangent;
   let world = draw.world * localPosition;
   out.worldPosition = world.xyz;
   out.clipPosition = frame.viewProjection * world;

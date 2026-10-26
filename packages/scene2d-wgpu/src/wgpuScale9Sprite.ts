@@ -71,7 +71,7 @@ export function drawWgpuScale9Sprite(state: WgpuRenderState, renderProxy: Render
   const d = transform.d / scaleY;
   const colorScaleBias = renderProxy.colorMatrix ?? renderProxy.colorScaleBias;
 
-  let writeBase = base;
+  let writeBase = base * QUAD_BATCH_INSTANCE_FLOATS;
   let instance = 0;
   for (let row = 0; row < 3; row++) {
     const y = targetYs[row];

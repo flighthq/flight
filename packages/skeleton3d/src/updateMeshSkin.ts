@@ -27,13 +27,12 @@ export function updateMeshSkin(mesh: Readonly<Mesh>): void {
   if (bindPose === null) {
     bindPose = captureMeshSkinBindPose(geometry);
     setMeshGeometrySkinBindPose(geometry, bindPose);
-  } else if (mesh.morph != null) {
-    // The composed update has just written the current morph result into geometry. Refresh only
-    // skin's deform input so later morph-weight changes are not frozen into the first captured pose.
+  } else if (mesh.morph != null && geometry.version !== bindPose.lastSkinVersion) {
     updateMeshSkinBindPoseDeformInput(bindPose, geometry);
   }
 
   skinMeshGeometry(geometry, skin.skeleton, bindPose);
+  bindPose.lastSkinVersion = geometry.version;
   // Bounds are deliberately NOT refreshed here. skinMeshGeometry bumped geometry.version, which marks
   // the bounds cache stale; ensureMeshGeometryBounds does the sweep on the first query. A skinned mesh
   // that is only uploaded and never culled or picked never pays for a box it does not use.

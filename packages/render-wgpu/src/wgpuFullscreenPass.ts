@@ -46,6 +46,8 @@ export function drawWgpuFullscreenPass(
   if (setUniforms !== null) {
     const uniformBindGroup = setUniforms(state, wgpuPipeline.uniformBindGroupLayout);
     pass.setBindGroup(0, uniformBindGroup);
+  } else {
+    pass.setBindGroup(0, wgpuPipeline.emptyUniformBindGroup);
   }
   for (let i = 0; i < inputs.length; i++) {
     const input = inputs[i];
@@ -111,11 +113,22 @@ export function initializeWgpuFullscreenPipeline(
       targets: [{ format }],
     },
     primitive: { topology: 'triangle-list' },
+    depthStencil: {
+      format: 'depth24plus-stencil8',
+      depthWriteEnabled: false,
+      depthCompare: 'always',
+      stencilWriteMask: 0,
+    },
+  });
+  const emptyUniformBindGroup = device.createBindGroup({
+    layout: uniformBindGroupLayout,
+    entries: [{ binding: 0, resource: { buffer: device.createBuffer({ size: 16, usage: GPUBufferUsage.UNIFORM }) } }],
   });
   out.pipeline = pipeline;
   out.pipelineLayout = pipelineLayout;
   out.uniformBindGroupLayout = uniformBindGroupLayout;
   out.textureBindGroupLayouts = textureBindGroupLayouts;
+  out.emptyUniformBindGroup = emptyUniformBindGroup;
 }
 
 // The substrate-level WebGPU fullscreen-pass primitive. Filter and effect leaf packages draw

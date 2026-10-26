@@ -13,6 +13,7 @@
 // skeleton — two meshes skinned by the same skeleton each keep their own bind pose here.
 export interface MeshSkinBindPose {
   joints: Float32Array;
+  lastSkinVersion: number;
   normals: Float32Array;
   positions: Float32Array;
   skinnedNormals: Float32Array;
