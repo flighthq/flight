@@ -644,3 +644,5 @@ export function writeMatrixToFloat32Array(out: Float32Array, offset: number, sou
   out[offset + 4] = source.tx;
   out[offset + 5] = source.ty;
 }
+
+export const MATRIX_IDENTITY: Readonly<Matrix> = createMatrix();

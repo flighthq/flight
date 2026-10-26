@@ -85,6 +85,7 @@ export {
   translateMatrixByVector,
   translateMatrixByVectorXY,
   writeMatrixToFloat32Array,
+  MATRIX_IDENTITY,
 } from './matrix.ts';
 export {
   cloneMatrix3,
