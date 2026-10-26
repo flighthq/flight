@@ -40,10 +40,10 @@ Pure rename, no logic change. Easier before other churn.
 The foundational structural change: dissolve `@flighthq/types` so every type lives in its owning package, matching Rust (D8). The sub-items (textformat, meshgeometry, resource, ByteReader, host) fold into this.
 
 - [ ] **T4-01** Plan dissolution using `agents/rust/research/dissolve-types.md` — map every type file to its owning package.
-- [ ] **T4-02** Create `textformat` package — move `TextFormat`, `TextFormatAlign`, `TextFormatListMarker`, `TextFormatRange`, `FontVariation` and functions out of textlayout/text (D8).
-- [ ] **T4-03** Rename `mesh` → `meshgeometry` — move `Mesh` node and `updateMeshMorph` to scene3d (D8).
-- [ ] **T4-04** Create `resource` package — move `ResourceResolutionState` (D8).
-- [ ] **T4-05** Move `ByteReader` — from texture-formats to a new package mirroring flight-buffer (D8).
+- [x] **T4-02** Create `textformat` package — move `TextFormat`, `TextFormatAlign`, `TextFormatListMarker`, `TextFormatRange`, `FontVariation` and functions out of textlayout/text (D8).
+- [x] **T4-03** Rename `mesh` → `meshgeometry` — move `Mesh` node and `updateMeshMorph` to scene3d (D8).
+- [x] **T4-04** Create `resource` package — move `ResourceResolutionState` (D8).
+- [x] **T4-05** Move `ByteReader` — from texture-formats to a new package mirroring flight-buffer (D8).
 - [ ] **T4-06** Execute the remaining ~1,073 type relocations and update all imports.
 - [ ] **T4-07** Dissolve aggregate Host — fold hostcapability into host at the bottom; redistribute explain/guard code to feature crates; remove aggregate Host entity, its queries, and createHost (D26).
 
