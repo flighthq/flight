@@ -10,7 +10,7 @@ import type { EasingFunction } from '@flighthq/types/contract';
 // `t ≤ epsilon` a forward difference is used; at `t ≥ 1 - epsilon` a backward
 // difference is used.
 //
-// `epsilon` defaults to 1e-6. Pass a smaller value for smoother curves or a
+// `epsilon` defaults to 1e-3. Pass a smaller value for smoother curves or a
 // larger one for noisy/discretized curves. The function never throws.
 export function getEasingDerivative(ease: EasingFunction, t: number, epsilon: number = defaultEpsilon): number {
   if (t <= epsilon) {
@@ -25,6 +25,4 @@ export function getEasingDerivative(ease: EasingFunction, t: number, epsilon: nu
   return (ease(t + epsilon) - ease(t - epsilon)) / (2 * epsilon);
 }
 
-// Default step size for numerical differentiation. Small enough for smooth
-// curves but large enough to avoid cancellation errors in Float64.
-const defaultEpsilon = 1e-6;
+const defaultEpsilon = 1e-3;

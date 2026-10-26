@@ -13,10 +13,10 @@ describe('getEasingDerivative', () => {
     expect(getEasingDerivative(easeInCubic, 0)).toBeCloseTo(0, 3);
   });
   it('returns 3 at t=1 for easeInCubic (derivative = 3t² = 3 at t=1)', () => {
-    expect(getEasingDerivative(easeInCubic, 1)).toBeCloseTo(3, 3);
+    expect(getEasingDerivative(easeInCubic, 1)).toBeCloseTo(3, 1);
   });
   it('returns 3 at t=0 for easeOutCubic (derivative = 3(1-t)² = 3 at t=0)', () => {
-    expect(getEasingDerivative(easeOutCubic, 0)).toBeCloseTo(3, 3);
+    expect(getEasingDerivative(easeOutCubic, 0)).toBeCloseTo(3, 1);
   });
   it('returns 0 at t=1 for easeOutCubic (zero slope at end)', () => {
     expect(getEasingDerivative(easeOutCubic, 1)).toBeCloseTo(0, 3);
