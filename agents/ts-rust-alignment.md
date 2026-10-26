@@ -23,17 +23,17 @@ Localized defects found and fixed in the Rust port. Each has a known location an
 
 Small scope, independently shippable, no structural dependency.
 
-- [ ] **T2-01** `getEasingDerivative` default epsilon — change from `1e-6` to `1e-3` (f32-tuned; D14).
-- [ ] **T2-02** Add `MATRIX_IDENTITY` export — new singleton (D14).
-- [ ] **T2-03** `registerWgpuCompressedTextureUpload` — change `(state, uploader?: null)` to `(state, enabled: boolean)` (D9).
-- [ ] **T2-04** bitmapfont `pages` type — `readonly TextureAtlas[]` → `readonly (TextureAtlas | undefined)[]`.
-- [ ] **T2-05** scene-document key sort — replace `localeCompare` with UTF-16 code-unit comparison.
+- [x] **T2-01** `getEasingDerivative` default epsilon — change from `1e-6` to `1e-3` (f32-tuned; D14).
+- [x] **T2-02** Add `MATRIX_IDENTITY` export — new singleton (D14).
+- [x] **T2-03** `registerWgpuCompressedTextureUpload` — change `(state, uploader?: null)` to `(state, enabled: boolean)` (D9).
+- [x] **T2-04** bitmapfont `pages` type — `readonly TextureAtlas[]` → `readonly (TextureAtlas | undefined)[]`.
+- [x] **T2-05** scene-document key sort — replace `localeCompare` with UTF-16 code-unit comparison.
 
 ## Tier 3 — Structural rename
 
 Pure rename, no logic change. Easier before other churn.
 
-- [ ] **T3-01** `*Traits` → `*Fields` rename — `NodeTraits` → `NodeFields`, `Node2DTraits` → `Node2DFields`, `Node3DTraits` → `Node3DFields` across ~45 files (D16).
+- [x] **T3-01** `*Traits` → `*Fields` rename — `NodeTraits` → `NodeFields`, `Node2DTraits` → `Node2DFields`, `Node3DTraits` → `Node3DFields` across ~57 files (D16).
 
 ## Tier 4 — Types dissolution
 
