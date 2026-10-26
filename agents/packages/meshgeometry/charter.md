@@ -1,5 +1,5 @@
 ---
-package: '@flighthq/mesh'
+package: '@flighthq/meshgeometry'
 role: package
 crate: flighthq-mesh
 draft: false
@@ -66,10 +66,10 @@ Where it ends vs a neighbor:
 
 1. **Builder argument shape (deferred API fork).** All 17 builders take positional numeric args (matching three.js). For 4–6-knob builders (capsule, cylinder, torus-knot, polyhedron) an options object is more self-documenting and extensible. Pre-release is the moment to settle this in one sweep — but it is a deliberate API fork, not a sweep-safe cleanup.
 2. **Index-pipeline ownership & flat-shading correctness.** Are `computeMeshGeometryIndices` (weld) and `expandMeshGeometryIndices` (de-index) in-package? The current `computeMeshGeometryFlatNormals` is last-write-wins on shared vertices and explicitly defers true per-face shading to the missing de-index — is that an acceptable interim or a correctness debt to close before scene-backend use?
-3. **Mesh simplification / LOD home.** In-package (`simplifyMeshGeometry`) or a dedicated neighbor (`@flighthq/mesh-simplify`)? Fork G's 3D build-out makes this live, and `types/LodMesh.ts` already exists — implying a decision was gestured at but not recorded.
+3. **Mesh simplification / LOD home.** In-package (`simplifyMeshGeometry`) or a dedicated neighbor (`@flighthq/meshgeometry-simplify`)? Fork G's 3D build-out makes this live, and `types/LodMesh.ts` already exists — implying a decision was gestured at but not recorded.
 4. ~~**`mesh-formats` triad split.**~~ Resolved 2026-07-03: mesh-formats is NOT a separate package. Mesh file formats (OBJ/STL/PLY/glTF-primitive) inherently carry scene structure, so they belong in `scene-formats`.
 5. **Reserved-channel activation & skinning data home (structural-forks fork A).** `uv1`, `color0`, `joints0`, `weights0` are declared semantics in `@flighthq/types` but have no accessors — the header advertises capability the package does not expose. When accessors land, the morph-target / skinning _data model_ must be agreed with whatever owns runtime deformation before baking shapes into `@flighthq/types`.
 6. **Quantization seam.** The non-float `VertexFormat` members (`unorm8x4`/`uint8x4`/`uint16x4`) are modeled but `convertMeshGeometryLayout` only copies float32. Is octahedral-encoded quantization (Gold) in scope here, paired with the conversion path?
 7. **Rust `flighthq-mesh` as a first mixable conformance target (structural-forks fork D).** The builders are pure math and an ideal value-in/value-out fingerprint target — is porting `mesh` an early conformance priority, and how are weld/dedup float-rounding tolerances recorded in the divergence map?
-8. **Package Map first-class entry (admin-doc drift).** With fork G's _"full 3D is in scope"_ decision (2026-06-24), should `@flighthq/mesh` get a first-class Package Map entry in `agents/index.md` next to `geometry`/`materials`, rather than only appearing in the Rust map's 3D-pipeline section?
+8. **Package Map first-class entry (admin-doc drift).** With fork G's _"full 3D is in scope"_ decision (2026-06-24), should `@flighthq/meshgeometry` get a first-class Package Map entry in `agents/index.md` next to `geometry`/`materials`, rather than only appearing in the Rust map's 3D-pipeline section?
 9. **3D-family type ownership tracking.** `@flighthq/types` already carries `Mesh`, `InstancedMesh`, `LodMesh`, `PathMesh`, `VertexColorMaterial`, and GL/Wgpu mesh-material renderer types — design surface for a 3D family larger than this package. Which package realizes each (e.g. `InstancedMesh` → `instancing`, `LodMesh` → a simplification owner TBD)?

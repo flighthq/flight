@@ -1,5 +1,5 @@
 import { logOnce } from '@flighthq/log/contract';
-import { getMeshGeometryMorphBindPose, hasMeshGeometrySkin } from '@flighthq/mesh/contract';
+import { getMeshGeometryMorphBindPose, hasMeshGeometrySkin } from '@flighthq/meshgeometry/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
 import type { GlRenderState, Mesh, MeshRuntime, NodeAny } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';

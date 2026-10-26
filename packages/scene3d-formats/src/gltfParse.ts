@@ -18,7 +18,7 @@ import {
   expandMeshGeometryIndices,
   getMeshGeometryVertexCount,
   indexMeshGeometryVertices,
-} from '@flighthq/mesh/contract';
+} from '@flighthq/meshgeometry/contract';
 import { createScene3DFromDocument } from '@flighthq/scene3d/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type {

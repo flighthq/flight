@@ -1,4 +1,4 @@
-import { updateMeshMorph } from '@flighthq/mesh/contract';
+import { updateMeshMorph } from '@flighthq/meshgeometry/contract';
 import type { Mesh } from '@flighthq/types/contract';
 
 import { updateMeshSkin } from './updateMeshSkin.ts';
@@ -7,7 +7,7 @@ import { updateMeshSkin } from './updateMeshSkin.ts';
 // deformer remains a standalone primitive and is a no-op when absent; this small composition prevents
 // callers from freezing the first morph into skin's captured input or accidentally reversing the two.
 //
-// Both halves are same-layer primitives: morph needs only geometry, so it lives in @flighthq/mesh;
+// Both halves are same-layer primitives: morph needs only geometry, so it lives in @flighthq/meshgeometry;
 // skin needs the joint palette, so it lives here. Composing them here — at the upper of the two —
 // keeps skeleton3d below @flighthq/scene3d with no cycle.
 // Backends using GPU skinning should continue to update morph CPU-side and upload the joint palette,

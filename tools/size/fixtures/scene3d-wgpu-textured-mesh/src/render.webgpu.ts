@@ -10,7 +10,7 @@ import {
 } from '@flighthq/host-web';
 import { createScene3DLights } from '@flighthq/lighting';
 import { createUnlitMaterial } from '@flighthq/materials';
-import { CANONICAL_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/mesh';
+import { CANONICAL_MESH_GEOMETRY_LAYOUT, createMeshGeometry } from '@flighthq/meshgeometry';
 import { addNodeChild } from '@flighthq/node';
 import { withKindMapEntry } from '@flighthq/registry';
 import { prepareScene3DRender } from '@flighthq/render';

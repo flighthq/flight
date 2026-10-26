@@ -11,7 +11,7 @@ import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   createBoxMeshGeometry,
   createMeshGeometry,
-} from '@flighthq/mesh/contract';
+} from '@flighthq/meshgeometry/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
 import { createWgpuOffscreenRenderState, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';

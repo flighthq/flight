@@ -5,7 +5,7 @@ import {
 } from '@flighthq/camera/contract';
 import { createMatrix4 } from '@flighthq/geometry/contract';
 import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
-import { createPlaneMeshGeometry } from '@flighthq/mesh/contract';
+import { createPlaneMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { Camera3D, LogEntry } from '@flighthq/types/contract';
 import { afterEach, describe, expect, test } from 'vitest';
 

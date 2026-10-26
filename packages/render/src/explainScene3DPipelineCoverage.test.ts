@@ -1,5 +1,5 @@
 import { createMaterial3D } from '@flighthq/materials/contract';
-import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { createMesh, createNode3D } from '@flighthq/scene3d/contract';

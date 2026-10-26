@@ -17,7 +17,7 @@ import {
   computeMeshGeometryBounds,
   createBoxMeshGeometry,
   createMeshGeometry,
-} from '@flighthq/mesh/contract';
+} from '@flighthq/meshgeometry/contract';
 import {
   addNodeChild,
   getNodeWorldMatrix4,

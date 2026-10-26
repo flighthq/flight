@@ -42,7 +42,7 @@ Parked: cross-package coordination, larger scope, breaking change, or waiting on
 
 - **Shadow mapping** — depth-only pass, shadow prelude (`SHADOW` define, PCF), directional → spot → point, then cascades. Needs `ShadowMap`/`LightShadowSettings` in `@flighthq/types`, a shadow-atlas runtime slot, and a decision on whether the depth-only pass is hoisted into `@flighthq/render` for `scene-gl` reuse. The single largest item. (review.md#gaps, roadmap Silver)
 - **Image-based lighting (IBL)** — `EnvironmentLight` descriptor in `@flighthq/types`; cubemap + prefiltered-env + BRDF LUT binds; `wgpuIblPrelude` behind an `IBL` define replacing flat ambient; prefiltering utilities (home TBD: here vs. a shared `scene` math). Highest visual-quality-per-effort for the existing PBR + extension lobes. (review.md#gaps, roadmap Silver)
-- **GPU instancing → skinning → morph targets** — each gated on `@flighthq/mesh` + `@flighthq/types` first gaining `InstancedMesh` / `Skin` joint-palette / morph-attribute concepts. scene-wgpu can only consume what the mesh layer defines; **raise as `@flighthq/mesh` additions before scoping here.** (review.md#gaps, roadmap Silver, Open direction #5)
+- **GPU instancing → skinning → morph targets** — each gated on `@flighthq/meshgeometry` + `@flighthq/types` first gaining `InstancedMesh` / `Skin` joint-palette / morph-attribute concepts. scene-wgpu can only consume what the mesh layer defines; **raise as `@flighthq/meshgeometry` additions before scoping here.** (review.md#gaps, roadmap Silver, Open direction #5)
 - **Real transmission** — depends on the transparent pass (done) plus an opaque-scene-color capture (`rgba16float` mip pyramid) that does not exist; replaces the current coverage/tint stand-in. (review.md#gaps, roadmap Silver)
 - **MSAA + tonemap ownership** — a layering decision between this package and the effect pipeline over who produces a finished frame; surface as a design question before building. (review.md#gaps, roadmap Silver)
 
@@ -66,5 +66,5 @@ Surfaced here for the charter author (not edited into the charter by this pass);
 2. **Built-yet-dark shader paths** — is shipping dormant WGSL (forward loops, `HAS_UV1`) intended infrastructure-first discipline, or a smell to close before the next pass?
 3. **Renderer-envelope scope & order** — which of shadows / IBL / skinning / instancing are this package's slice vs. a neighbor's, and in what order (fork G accepts full 3D SDK-wide; this slice needs naming).
 4. **scene-gl ↔ scene-wgpu twin obligation** — record that shadow-map and IBL types are designed once in `@flighthq/types` and mirrored, so no agent advances one backend's lighting without the other.
-5. **uv1 / skinning vertex-layout change** — may scene-wgpu drive the 48-byte-stride extension, or must it wait on a `@flighthq/mesh` decision?
+5. **uv1 / skinning vertex-layout change** — may scene-wgpu drive the 48-byte-stride extension, or must it wait on a `@flighthq/meshgeometry` decision?
 6. **Public surface size** — prelude internals public API vs. implementation detail (barrel breadth).

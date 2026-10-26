@@ -50,7 +50,7 @@
       "path": "../math"
     },
     {
-      "path": "../mesh"
+      "path": "../meshgeometry"
     },
     {
       "path": "../node"

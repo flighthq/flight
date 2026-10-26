@@ -27,7 +27,7 @@ Current package score: 46/100 (partial). The existing glTF parser is well-shaped
 
 ## Scope
 
-Six formats to add, in priority order. Each gets its own parse file + schema file, exports a `createScene3DFrom{Format}` function, and returns a `Scene` node hierarchy through the same `@flighthq/scene3d` + `@flighthq/mesh` primitives the glTF parser uses.
+Six formats to add, in priority order. Each gets its own parse file + schema file, exports a `createScene3DFrom{Format}` function, and returns a `Scene` node hierarchy through the same `@flighthq/scene3d` + `@flighthq/meshgeometry` primitives the glTF parser uses.
 
 ### Priority 1: OBJ/MTL
 
@@ -167,15 +167,15 @@ Text formats take `string`; binary formats take `Readonly<Uint8Array>`. FBX take
 
 ### Output shape
 
-All parsers return `Scene` (from `@flighthq/scene3d`). Geometry is interleaved into the canonical PBR vertex layout (position/normal/tangent/uv0, stride 48) via `createMeshGeometry` from `@flighthq/mesh`. Node hierarchy uses `createSceneNode`, `createMesh`, `addNodeChild`, `setSceneNodeTransform` from `@flighthq/scene3d` and `@flighthq/node`. This is the exact same pipeline the glTF parser uses.
+All parsers return `Scene` (from `@flighthq/scene3d`). Geometry is interleaved into the canonical PBR vertex layout (position/normal/tangent/uv0, stride 48) via `createMeshGeometry` from `@flighthq/meshgeometry`. Node hierarchy uses `createSceneNode`, `createMesh`, `addNodeChild`, `setSceneNodeTransform` from `@flighthq/scene3d` and `@flighthq/node`. This is the exact same pipeline the glTF parser uses.
 
 ### Shared utilities
 
 Several helpers in `gltfParse.ts` are format-agnostic and will be needed by other parsers:
 - `decodeBase64` — already flagged for extraction (assessment backlog: "shared home")
-- The `CANONICAL_LAYOUT` / `CANONICAL_FLOATS_PER_VERTEX` constants — already flagged for export from `@flighthq/mesh` or `@flighthq/types`
+- The `CANONICAL_LAYOUT` / `CANONICAL_FLOATS_PER_VERTEX` constants — already flagged for export from `@flighthq/meshgeometry` or `@flighthq/types`
 
-Extract these to a shared internal module (e.g. `shared.ts`) when the second parser lands, or promote them to `@flighthq/mesh` if appropriate. Do not duplicate them in each parser file.
+Extract these to a shared internal module (e.g. `shared.ts`) when the second parser lands, or promote them to `@flighthq/meshgeometry` if appropriate. Do not duplicate them in each parser file.
 
 ### Barrel export
 
@@ -183,7 +183,7 @@ Each parser's public function and input-shape type are re-exported from `index.t
 
 ### Dependencies
 
-No new package dependencies. All parsers use the same dependency set as glTF: `@flighthq/mesh`, `@flighthq/node`, `@flighthq/scene3d`, `@flighthq/types`. No external parsing libraries — all format decoding is hand-written (portable, tree-shakable, C/C++ portable idiom).
+No new package dependencies. All parsers use the same dependency set as glTF: `@flighthq/meshgeometry`, `@flighthq/node`, `@flighthq/scene3d`, `@flighthq/types`. No external parsing libraries — all format decoding is hand-written (portable, tree-shakable, C/C++ portable idiom).
 
 ## Acceptance criteria
 

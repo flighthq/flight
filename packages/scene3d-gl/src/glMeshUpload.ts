@@ -1,4 +1,4 @@
-import { getMeshGeometryMorphBindPose, getMeshGeometrySkinBindPose } from '@flighthq/mesh/contract';
+import { getMeshGeometryMorphBindPose, getMeshGeometrySkinBindPose } from '@flighthq/meshgeometry/contract';
 import type {
   GlContext,
   GlRenderState,

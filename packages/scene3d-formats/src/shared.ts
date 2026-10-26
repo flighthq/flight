@@ -1,5 +1,5 @@
 import { createEmbeddedImageResourceReference, createExternalImageResourceReference } from '@flighthq/image/contract';
-import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT } from '@flighthq/mesh/contract';
+import { CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT } from '@flighthq/meshgeometry/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type {
   EmbeddedImageResourceReference,

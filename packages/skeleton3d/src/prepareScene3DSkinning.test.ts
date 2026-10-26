@@ -3,7 +3,7 @@ import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   createMeshGeometry,
   getMeshGeometrySkinBindPose,
-} from '@flighthq/mesh/contract';
+} from '@flighthq/meshgeometry/contract';
 import { addNodeChild, getNodeRuntime, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createMesh, createNode3D } from '@flighthq/scene3d/contract';
 import type { MeshRuntime } from '@flighthq/types/contract';

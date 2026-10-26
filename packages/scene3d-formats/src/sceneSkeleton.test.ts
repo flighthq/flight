@@ -1,4 +1,4 @@
-import { createMeshGeometry } from '@flighthq/mesh/contract';
+import { createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createScene3D, createNode3D } from '@flighthq/scene3d/contract';
 import { createSkeleton3D } from '@flighthq/skeleton3d/contract';

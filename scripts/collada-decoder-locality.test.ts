@@ -18,7 +18,7 @@ const FEATURE_PACKAGES = [
   '@flighthq/camera',
   '@flighthq/color',
   '@flighthq/lighting',
-  '@flighthq/mesh',
+  '@flighthq/meshgeometry',
 ];
 
 // The fixture pairs that price the boundary, and the minimum saving each must show. The thresholds are set well

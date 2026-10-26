@@ -1,6 +1,6 @@
 import { unpackColorToLinear } from '@flighthq/color/contract';
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry/contract';
-import { hasMeshGeometrySkin } from '@flighthq/mesh/contract';
+import { hasMeshGeometrySkin } from '@flighthq/meshgeometry/contract';
 import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import {
   declareGlRenderTargetColorSpace,

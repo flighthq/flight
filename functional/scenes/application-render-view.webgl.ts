@@ -5,7 +5,7 @@ import { createVector3 } from '@flighthq/geometry';
 import { getWebGlContext } from '@flighthq/host-web';
 import { createAmbientLight } from '@flighthq/lighting';
 import { createUnlitMaterial } from '@flighthq/materials';
-import { createBoxMeshGeometry } from '@flighthq/mesh';
+import { createBoxMeshGeometry } from '@flighthq/meshgeometry';
 import { addNodeChild } from '@flighthq/node';
 import { prepareScene3DRender } from '@flighthq/render';
 import {

@@ -4,7 +4,7 @@ import {
   invalidateMeshGeometry,
   setMeshGeometrySkinBindPose,
   updateMeshMorph,
-} from '@flighthq/mesh/contract';
+} from '@flighthq/meshgeometry/contract';
 import { createMesh } from '@flighthq/scene3d/contract';
 import type { Mesh, MeshMorph, MeshSkinBindPose, VertexAttributeLayout, GlMeshUpload } from '@flighthq/types/contract';
 

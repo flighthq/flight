@@ -27,7 +27,7 @@ A renderer is the per-backend realization of a node family — its name says _wh
 ## Data atoms (built, pure data — types in `@flighthq/types`)
 
 - `@flighthq/geometry` — `Vector2/3/4`, `Matrix3/4` (+ lookAt, compose/decompose, normal-matrix), `Quaternion`, `Aabb`, `BoundingSphere`, `Frustum`, `Plane`.
-- `@flighthq/mesh` — `MeshGeometry` (interleaved 48-byte canonical vertex: position3+normal3+tangent4+uv0_2; `MeshSubset` index-range partitions; branded GPU-data slots + `destroyMeshGeometry{Gl,Wgpu}Data`); builders `createBox/Sphere/Plane/Quad/Cylinder/Cone/TorusMeshGeometry`; `computeMeshGeometryNormals/ Tangents/Bounds`.
+- `@flighthq/meshgeometry` — `MeshGeometry` (interleaved 48-byte canonical vertex: position3+normal3+tangent4+uv0_2; `MeshSubset` index-range partitions; branded GPU-data slots + `destroyMeshGeometry{Gl,Wgpu}Data`); builders `createBox/Sphere/Plane/Quad/Cylinder/Cone/TorusMeshGeometry`; `computeMeshGeometryNormals/ Tangents/Bounds`.
 - `@flighthq/texture` — `Texture` (references an `ImageResource` + `Sampler` + `colorSpace` + uv-transform), `Sampler`, `CubeTexture`. Texture is also the universal render-graph bridge (see Stage/Texture below).
 - `@flighthq/camera` — `Camera` (view `Matrix4` + `Projection` + near/far/jitter + cached inverse-view-projection), `PerspectiveProjection`/`OrthographicProjection`.
 - `@flighthq/lighting` — `AmbientLight`/`DirectionalLight`/`PointLight`/`SpotLight`/`HemisphereLight`/ `AreaLight` + `Environment`. Packed-RGBA color; radiance = `unpackColorToLinear(color) × intensity`; `range: -1` = infinite; spot cones stored as precomputed cosines.

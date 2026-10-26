@@ -5,7 +5,7 @@
 // index-for-index with the base geometry's vertices. `normalDeltas`/`tangentDeltas` are null when the
 // source supplies no delta for that channel (glTF morph targets carry POSITION always, NORMAL/TANGENT
 // optionally). The blended vertex is `base + Σ wᵢ·targetᵢ` (an additive `replace`-free blend); see
-// blendMeshGeometryMorph in @flighthq/mesh. A target's vertex count matches the base geometry's, so a
+// blendMeshGeometryMorph in @flighthq/meshgeometry. A target's vertex count matches the base geometry's, so a
 // target array is not resizable against its mesh — morph targets are mesh-local by construction.
 export interface MorphTarget {
   normalDeltas: Float32Array | null;

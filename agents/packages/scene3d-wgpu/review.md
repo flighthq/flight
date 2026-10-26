@@ -139,7 +139,7 @@ One charter open direction is now resolved: **Open direction #1 (forward-light-c
 
 1. **PBR extension registry parity.** GL has an open `PbrExtension` registry with seven registered lobes and an `ExtendedPbrMaterial` renderer. This package has the const-flag shader branches but no open registration mechanism. The charter's Directed section defers this until GL contracts settle; the gap should be tracked and revisited when GL stabilizes.
 
-2. **Fixed vertex layout and the color0/uv1 gap.** The 48-byte stride prevents vertex `color0` and `uv1` from reaching the shader. Deriving the layout requires a cache-key change (vertex-layout component) and a compiled variant (WebGPU has no `gl.vertexAttrib4f` for defaulting missing attributes). The charter's open direction #5 asks whether this package may drive the change or must wait on `@flighthq/mesh`.
+2. **Fixed vertex layout and the color0/uv1 gap.** The 48-byte stride prevents vertex `color0` and `uv1` from reaching the shader. Deriving the layout requires a cache-key change (vertex-layout component) and a compiled variant (WebGPU has no `gl.vertexAttrib4f` for defaulting missing attributes). The charter's open direction #5 asks whether this package may drive the change or must wait on `@flighthq/meshgeometry`.
 
 3. **Aggregate teardown.** A `destroyWgpuScene3DRuntime` that folds shadow, IBL, skin palette, particle, and material-binding cleanup into one call, mirroring GL's `destroyGlScene3DRuntime`.
 
@@ -147,7 +147,7 @@ One charter open direction is now resolved: **Open direction #1 (forward-light-c
 
 5. **Spot/point shadows and cascaded shadow maps.** Directional shadow is implemented; the shadow types and atlas infrastructure for spot/point shadows are not.
 
-6. **Draw-call instancing and morph targets.** Both require `@flighthq/mesh` + `@flighthq/types` additions before this package can consume them.
+6. **Draw-call instancing and morph targets.** Both require `@flighthq/meshgeometry` + `@flighthq/types` additions before this package can consume them.
 
 7. **Transmission fidelity.** The current coverage/tint model approximates; true refraction needs an opaque-scene-color capture pass. Whether that pass is in scope for the first registered WebGPU extension realization is a charter question.
 

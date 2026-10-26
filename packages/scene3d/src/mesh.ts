@@ -1,4 +1,4 @@
-import { cloneMeshGeometryForDeformation } from '@flighthq/mesh/contract';
+import { cloneMeshGeometryForDeformation } from '@flighthq/meshgeometry/contract';
 import {
   enableNodeSignals,
   getNodeLocalMatrix4,

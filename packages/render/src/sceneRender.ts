@@ -14,7 +14,7 @@ import {
   transformAabbByMatrix4,
   unionAabb,
 } from '@flighthq/geometry/contract';
-import { ensureMeshGeometryBounds } from '@flighthq/mesh/contract';
+import { ensureMeshGeometryBounds } from '@flighthq/meshgeometry/contract';
 import {
   getNodeRuntime,
   getNodeWorldMatrix4,

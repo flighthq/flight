@@ -4,7 +4,7 @@ import {
   createMeshGeometry,
   ensureMeshGeometryBounds,
   getMeshGeometrySkinBindPose,
-} from '@flighthq/mesh/contract';
+} from '@flighthq/meshgeometry/contract';
 import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createMesh, createNode3D } from '@flighthq/scene3d/contract';
 import { describe, expect, it } from 'vitest';

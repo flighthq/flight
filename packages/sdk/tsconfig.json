@@ -223,7 +223,7 @@
       "path": "../midi"
     },
     {
-      "path": "../mesh"
+      "path": "../meshgeometry"
     },
     {
       "path": "../motionpath"

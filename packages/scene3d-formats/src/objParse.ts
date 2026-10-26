@@ -1,6 +1,10 @@
 import { createTransform3D } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import { computeMeshGeometryNormals, computeMeshGeometryTangents, createMeshGeometry } from '@flighthq/mesh/contract';
+import {
+  computeMeshGeometryNormals,
+  computeMeshGeometryTangents,
+  createMeshGeometry,
+} from '@flighthq/meshgeometry/contract';
 import type {
   ImportDiagnostic,
   Material,

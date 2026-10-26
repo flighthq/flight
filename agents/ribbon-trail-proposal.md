@@ -38,7 +38,7 @@ so `ribbon` does **not** depend on `trail`.
 
 ## What exists, verified
 
-**`@flighthq/mesh` is ready.** `MeshGeometry.vertices`/`indices` are the live typed arrays and are
+**`@flighthq/meshgeometry` is ready.** `MeshGeometry.vertices`/`indices` are the live typed arrays and are
 rewritable in place; `topology` carries `'triangle-strip'`; `setMeshGeometryVertexPosition`,
 `setMeshGeometryVertexColor0`, and `setMeshGeometryVertexUv0` write per-vertex attributes; and
 `invalidateMeshGeometry` bumps `version` so a backend re-uploads on the next draw. That is the

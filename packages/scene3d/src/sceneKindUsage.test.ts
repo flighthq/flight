@@ -1,5 +1,5 @@
 import { createBlinnPhongMaterial, createUnlitMaterial } from '@flighthq/materials/contract';
-import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createRimModifier, createShadedMaterial } from '@flighthq/shading/contract';
 import { createTexture } from '@flighthq/texture/contract';

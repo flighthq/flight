@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { copyMatrix4, createAabb, createMatrix4, transformAabbByMatrix4, unionAabb } from '@flighthq/geometry/contract';
-import { ensureMeshGeometryBounds } from '@flighthq/mesh/contract';
+import { ensureMeshGeometryBounds } from '@flighthq/meshgeometry/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import type {

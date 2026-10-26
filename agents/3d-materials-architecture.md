@@ -17,7 +17,7 @@ Refined in design discussion. These decisions override the `World*Node` names an
 
 1. **Renames:** `world` → `scene`; device `camera` → `webcam`.
 2. **Geometry math (`@flighthq/geometry`, extend):** `Vector3`, `Vector4`, `Quaternion`; `Matrix4` compose/decompose + `lookAt` (perspective/ortho exist); `transposeMatrix3` + `setMatrix3NormalFromMatrix4`; `AABB`, `BoundingSphere`, `Frustum`.
-3. **`@flighthq/mesh` (new):** `MeshGeometry` + `VertexLayout`/`VertexAttribute`/`VertexSemantic`/ `VertexFormat`/`PrimitiveTopology`/`MeshSubset`; builders `createPlane/Box/Sphere/Cylinder/Cone/Torus/ QuadMeshGeometry`; `computeMeshGeometryNormals/Tangents/Bounds(out)`.
+3. **`@flighthq/meshgeometry` (new):** `MeshGeometry` + `VertexLayout`/`VertexAttribute`/`VertexSemantic`/ `VertexFormat`/`PrimitiveTopology`/`MeshSubset`; builders `createPlane/Box/Sphere/Cylinder/Cone/Torus/ QuadMeshGeometry`; `computeMeshGeometryNormals/Tangents/Bounds(out)`.
 4. **`@flighthq/texture` (new):** `Texture` (image ref + `Sampler` + `colorSpace` + uv-transform), `Sampler`, `CubeTexture`, `TextureWrap`/`TextureFilter`/`TextureColorSpace`.
 5. **`@flighthq/camera` (new):** `Camera` (`Projection` + view `Matrix4`), `Projection` / `PerspectiveProjection` / `OrthographicProjection`; view-projection helpers.
 6. **`@flighthq/lighting` (new):** light DATA types `AmbientLight`/`DirectionalLight`/`PointLight`/ `SpotLight`/`HemisphereLight`/`AreaLight` + `Environment` (IBL/skybox source). Pure data (color/intensity/range/cone/shadow params); placement/node-ness deferred.

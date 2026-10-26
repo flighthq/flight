@@ -56,7 +56,7 @@ What remains is the four Depth gaps above. Three are blocked on a decision rathe
 each is stated with the ruling it needs so the next reader does not re-derive it:
 
 1. **Rule on the mesh encoding vocabulary before importing higher vertex channels (Depth gap 2).**
-   The gap's own text requires `@flighthq/mesh` to gain two-component uint/unorm, unorm16, and
+   The gap's own text requires `@flighthq/meshgeometry` to gain two-component uint/unorm, unorm16, and
    quantized signed-normalized encodings *first*, so `TEXCOORD_1`/`COLOR_0`/`JOINTS_1` can be carried
    without eagerly decoding every accessor to float. Cross-package and sequenced; not startable here.
    The *reporting* half was separable and shipped 2026-07-30 — a material declaring a `texCoord` set

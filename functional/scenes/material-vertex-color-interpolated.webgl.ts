@@ -101,7 +101,7 @@ const logicalWidth = width / scale;
 const logicalHeight = height / scale;
 
 // The canonical 48-byte PBR record extended with color0 at byte 48 — the layout a color0-carrying glTF
-// mesh imports as. Declared here rather than in @flighthq/mesh because a shared
+// mesh imports as. Declared here rather than in @flighthq/meshgeometry because a shared
 // CANONICAL_VERTEX_COLOR_MESH_GEOMETRY_LAYOUT constant would be a cross-package addition, not a fixture.
 const vertexColorLayout: VertexAttributeLayout = {
   attributes: [

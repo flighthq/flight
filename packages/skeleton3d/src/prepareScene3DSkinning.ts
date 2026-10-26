@@ -1,5 +1,5 @@
 import { createAabb } from '@flighthq/geometry/contract';
-import { getMeshGeometrySkinBindPose, setMeshGeometrySkinBindPose } from '@flighthq/mesh/contract';
+import { getMeshGeometrySkinBindPose, setMeshGeometrySkinBindPose } from '@flighthq/meshgeometry/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
 import type { Mesh, MeshRuntime, NodeAny } from '@flighthq/types/contract';
 
@@ -56,7 +56,7 @@ export function prepareMeshSkinning(mesh: Readonly<Mesh>): void {
 // This is a separate caller-invoked pass rather than something prepareScene3DRender does itself so that
 // @flighthq/render never depends on @flighthq/skeleton3d: cull consumes the posed bounds as plain data
 // off the node runtime, and a rigid or 2D bundle pays nothing for skinning it does not use. The walk
-// itself needs only @flighthq/node + @flighthq/mesh (both already skeleton3d dependencies), so it
+// itself needs only @flighthq/node + @flighthq/meshgeometry (both already skeleton3d dependencies), so it
 // carries no @flighthq/scene3d dependency at all. A scene with no skinned meshes may skip this call; it
 // is a no-op for rigid meshes, and disabled subtrees are skipped whole (matching the render walk).
 export function prepareScene3DSkinning(scene: Readonly<NodeAny>): void {

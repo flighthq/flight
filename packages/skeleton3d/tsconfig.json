@@ -12,7 +12,7 @@
     { "path": "../entity" },
     { "path": "../geometry" },
     { "path": "../log" },
-    { "path": "../mesh" },
+    { "path": "../meshgeometry" },
     { "path": "../node" },
     { "path": "../scene3d" },
     { "path": "../types" }

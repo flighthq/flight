@@ -45,7 +45,7 @@
     "@flighthq/geometry": "*",
     "@flighthq/log": "*",
     "@flighthq/materials": "*",
-    "@flighthq/mesh": "*",
+    "@flighthq/meshgeometry": "*",
     "@flighthq/node": "*",
     "@flighthq/registry": "*",
     "@flighthq/signals": "*",

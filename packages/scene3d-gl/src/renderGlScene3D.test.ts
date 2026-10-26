@@ -7,7 +7,7 @@ import {
 import { createMatrix4, createVector3 } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
-import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createParticleEmitter3D, reserveParticleEmitter3D } from '@flighthq/particleemitter/contract';
 import { createGlRenderState, buildGlRenderRegistries, getGlRenderStateRuntime } from '@flighthq/render-gl/contract';

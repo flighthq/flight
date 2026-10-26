@@ -2,7 +2,7 @@ import {
   getMeshGeometryIndexCount,
   getMeshGeometryVertexCount,
   getMeshGeometryVertexPosition,
-} from '@flighthq/mesh/contract';
+} from '@flighthq/meshgeometry/contract';
 import type { GltfDocument, GltfDracoDecoder, GltfDracoMesh, ImportDiagnostic } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 import { afterEach, describe, expect, it } from 'vitest';

@@ -59,7 +59,7 @@ It is the `scene-<backend>` leaf in the render layering: it sits over the `rende
 
 4. **scene-gl ↔ scene-wgpu co-design obligation.** The two are deliberate twins. Shadow-map and IBL types should be designed once in `@flighthq/types` and mirrored. The charter should record the twin obligation so a future agent does not advance one backend's lighting without the other.
 
-5. **uv1 / skinning vertex-layout change.** Extending the 48-byte stride (uv1 → 56; joints/weights → more) is a coordinated `@flighthq/mesh` + pipeline change. May scene-wgpu drive that change, or must it wait on a mesh-side decision?
+5. **uv1 / skinning vertex-layout change.** Extending the 48-byte stride (uv1 → 56; joints/weights → more) is a coordinated `@flighthq/meshgeometry` + pipeline change. May scene-wgpu drive that change, or must it wait on a mesh-side decision?
 
 6. **Public surface size.** The root barrel re-exports every prelude's key-builder, module-source getter, and pipeline compiler — a very wide surface for a leaf renderer where most consumers want only the `register*WgpuMaterial` functions + `drawWgpuScene`. Are the prelude internals public API (parity-tooling reach, small-functions philosophy) or implementation detail? Not a contract violation; a deliberate surface-size question.
 

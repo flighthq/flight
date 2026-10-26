@@ -7,7 +7,7 @@ import {
   getMeshGeometryVertexNormal,
   getMeshGeometryVertexPosition,
   getMeshGeometryVertexUv0,
-} from '@flighthq/mesh/contract';
+} from '@flighthq/meshgeometry/contract';
 import { getNodeChildren, getNodeLocalMatrix4, getNodeParent } from '@flighthq/node/contract';
 import { createNode3D, isMesh } from '@flighthq/scene3d/contract';
 import { getTextureSource } from '@flighthq/texture/contract';

@@ -1,6 +1,6 @@
 import { createTransform3D } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import { createMeshGeometry } from '@flighthq/mesh/contract';
+import { createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type {
   ImportDiagnostic,
   Md2Frame,

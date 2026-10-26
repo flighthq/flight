@@ -4,7 +4,7 @@ import {
   setFrustumFromMatrix4,
   transformAabbByMatrix4,
 } from '@flighthq/geometry/contract';
-import { computeMeshGeometryBounds } from '@flighthq/mesh/contract';
+import { computeMeshGeometryBounds } from '@flighthq/meshgeometry/contract';
 import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import type { FrustumLike, Matrix4Like, Node3D } from '@flighthq/types/contract';
 

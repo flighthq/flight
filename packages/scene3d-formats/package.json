@@ -51,7 +51,7 @@
     "@flighthq/lighting": "*",
     "@flighthq/materials": "*",
     "@flighthq/math": "*",
-    "@flighthq/mesh": "*",
+    "@flighthq/meshgeometry": "*",
     "@flighthq/node": "*",
     "@flighthq/requirement": "*",
     "@flighthq/scene3d": "*",

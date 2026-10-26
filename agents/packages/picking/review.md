@@ -79,7 +79,7 @@ All six guard `hit.node === null` before accessing geometry, returning their res
 
 **Package shape:** `sideEffects: false`, no top-level registration or module-scope mutation beyond
 scratch allocation. Dependencies are `@flighthq/camera`, `@flighthq/entity`, `@flighthq/geometry`,
-`@flighthq/mesh`, `@flighthq/node`, `@flighthq/scene3d`, `@flighthq/types` -- all imported via
+`@flighthq/meshgeometry`, `@flighthq/node`, `@flighthq/scene3d`, `@flighthq/types` -- all imported via
 `./contract`. No dependency on `@flighthq/sdk` or any render package. The SDK barrel re-exports picking
 at both `.` and `./contract` and in the `scene3d` sub-barrel.
 

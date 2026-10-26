@@ -4,7 +4,7 @@ import {
   computeMeshGeometryNormals,
   computeMeshGeometryTangents,
   createMeshGeometry,
-} from '@flighthq/mesh/contract';
+} from '@flighthq/meshgeometry/contract';
 import type { Awd2BlockHandler, Awd2ParsedGeometry, ImportDiagnostic, SkinInfluence } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
@@ -30,7 +30,7 @@ import {
 } from './shared.ts';
 
 // Triangle geometry: the vertex streams a mesh is drawn from. This is the one handler a build that
-// renders anything at all registers, and the only one that reaches @flighthq/mesh.
+// renders anything at all registers, and the only one that reaches @flighthq/meshgeometry.
 
 export const awd2TriangleGeometryHandler: Awd2BlockHandler = {
   blockTypes: [AWD2_BLOCK_TRIANGLE_GEOMETRY],

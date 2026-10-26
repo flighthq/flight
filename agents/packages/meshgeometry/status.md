@@ -1,5 +1,5 @@
 ---
-package: '@flighthq/mesh'
+package: '@flighthq/meshgeometry'
 updated: 2026-08-21
 by: builder5
 ---
@@ -50,7 +50,7 @@ A file:line here is a claim about this tree, not about a session.
   absent, and their return shape (what represents an edge; how a non-manifold report reads) is
   unspecified.
 - **No LOD or simplification.** No `simplifyMeshGeometry` / `generateMeshGeometryLod` in `packages/`.
-  Open direction: in-package or a `@flighthq/mesh-simplify` neighbor.
+  Open direction: in-package or a `@flighthq/meshgeometry-simplify` neighbor.
 - **No quantization pair.** `quantizeMeshGeometry` / `dequantizeMeshGeometry` are absent, though
   `convertMeshGeometryLayout` (`meshGeometryLayout.ts:15`) already converts between declared formats
   including normalized packed channels, so the layout half of the work is done.

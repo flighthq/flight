@@ -8,7 +8,7 @@ import {
   multiplyMatrix4,
 } from '@flighthq/geometry/contract';
 import { createBlinnPhongMaterial } from '@flighthq/materials/contract';
-import { createMeshGeometry } from '@flighthq/mesh/contract';
+import { createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type {
   Material,
   MaterialLike,

@@ -1,4 +1,4 @@
-import { getMeshGeometrySkinBindPose, setMeshGeometrySkinBindPose } from '@flighthq/mesh/contract';
+import { getMeshGeometrySkinBindPose, setMeshGeometrySkinBindPose } from '@flighthq/meshgeometry/contract';
 import type { Mesh } from '@flighthq/types/contract';
 
 import { computeSkeleton3DJointMatrices } from './skeleton3d.ts';

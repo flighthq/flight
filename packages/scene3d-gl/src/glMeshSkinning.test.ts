@@ -1,6 +1,6 @@
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
-import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { GlMeshProgram } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 

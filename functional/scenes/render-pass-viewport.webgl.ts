@@ -13,7 +13,7 @@ import {
 } from '@flighthq/host-web';
 import { createAmbientLight } from '@flighthq/lighting';
 import { createUnlitMaterial } from '@flighthq/materials';
-import { createBoxMeshGeometry } from '@flighthq/mesh';
+import { createBoxMeshGeometry } from '@flighthq/meshgeometry';
 import { addNodeChild, createViewport } from '@flighthq/node';
 import { prepareScene2DRender } from '@flighthq/render';
 import {

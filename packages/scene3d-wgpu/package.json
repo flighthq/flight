@@ -60,7 +60,7 @@
     "@webgpu/types": "^0.1.70"
   },
   "devDependencies": {
-    "@flighthq/mesh": "*",
+    "@flighthq/meshgeometry": "*",
     "@flighthq/particleemitter": "*",
     "@flighthq/video": "*",
     "@webgpu/types": "*",

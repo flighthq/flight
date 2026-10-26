@@ -1,7 +1,7 @@
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
 import { createMatrix3, createMatrix4 } from '@flighthq/geometry/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
-import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/mesh/contract';
+import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createTexture, setTextureUvOffset, setTextureUvScale } from '@flighthq/texture/contract';
 import type {

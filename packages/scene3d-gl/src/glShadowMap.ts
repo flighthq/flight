@@ -1,6 +1,6 @@
 import { getCamera3DViewProjectionMatrix4, getOrthographicProjectionTexelSize } from '@flighthq/camera/contract';
 import { createMatrix4 } from '@flighthq/geometry/contract';
-import { hasMeshGeometrySkin } from '@flighthq/mesh/contract';
+import { hasMeshGeometrySkin } from '@flighthq/meshgeometry/contract';
 import { forEachNodeDescendant, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { createGlTextureRenderTarget } from '@flighthq/render-gl/contract';
 import type {

@@ -53,7 +53,7 @@
   },
   "devDependencies": {
     "@flighthq/materials": "*",
-    "@flighthq/mesh": "*",
+    "@flighthq/meshgeometry": "*",
     "@flighthq/shading": "*",
     "typescript": "^5.3.0"
   },

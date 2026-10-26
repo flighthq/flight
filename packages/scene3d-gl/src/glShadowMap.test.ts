@@ -7,7 +7,7 @@ import {
 } from '@flighthq/camera/contract';
 import { createMatrix4, createVector3 } from '@flighthq/geometry/contract';
 import { createDirectionalLight } from '@flighthq/lighting/contract';
-import { createBoxMeshGeometry, createMeshGeometry, updateMeshMorph } from '@flighthq/mesh/contract';
+import { createBoxMeshGeometry, createMeshGeometry, updateMeshMorph } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import {
   createInstancedMesh,

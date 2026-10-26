@@ -1,5 +1,5 @@
 ---
-package: '@flighthq/mesh'
+package: '@flighthq/meshgeometry'
 status: solid
 score: 89
 updated: 2026-09-02
@@ -12,7 +12,7 @@ ingested:
   - types
 ---
 
-# Review: @flighthq/mesh
+# Review: @flighthq/meshgeometry
 
 **Evidence and population.** Full re-review of `packages/mesh/src/` (15 source files, 15 colocated
 test files), `packages/types/src/MeshGeometry.ts` and related type headers, `package.json`,
@@ -199,7 +199,7 @@ winding verified against normal direction. 74 builder tests.
 - **Triangle strip mirrored-UV split unresolved.** `computeMeshGeometryTangents` and
   `restoreMirroredWindingAndHandedness` exclude strips; documented as a topology-contract question.
 - **`ensureMeshGeometryBounds` is contract-only.** Confirmed deliberate: consumed by `scene3d` and
-  `render` via `@flighthq/mesh/contract`; the public lane exposes `refreshMeshGeometryBounds`.
+  `render` via `@flighthq/meshgeometry/contract`; the public lane exposes `refreshMeshGeometryBounds`.
 
 ## Charter contradictions
 
@@ -237,7 +237,7 @@ The package aligns well with the repository contract:
 
 1. **Crease-aware normals and projection UVs.** The charter names these as "likely in scope, not yet
    built." Define topology semantics (vertex splitting, index remapping) before implementation.
-2. **Simplification/LOD home.** Charter open direction 3: in-package or `@flighthq/mesh-simplify`.
+2. **Simplification/LOD home.** Charter open direction 3: in-package or `@flighthq/meshgeometry-simplify`.
    `types/LodMesh.ts` exists but no implementation.
 3. **Quantization pair.** Packed formats are modeled; `convertMeshGeometryLayout` handles cross-format
    conversion. The explicit `quantizeMeshGeometry`/`dequantizeMeshGeometry` pipeline and round-trip

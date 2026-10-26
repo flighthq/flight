@@ -12,7 +12,7 @@
     { "path": "../camera" },
     { "path": "../entity" },
     { "path": "../geometry" },
-    { "path": "../mesh" },
+    { "path": "../meshgeometry" },
     { "path": "../node" },
     { "path": "../scene3d" },
     { "path": "../types" }

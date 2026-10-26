@@ -6,7 +6,7 @@ import {
 import { createAabb } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
 import { setLogSink } from '@flighthq/log/contract';
-import { computeMeshGeometryBounds, createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { computeMeshGeometryBounds, createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
 import type { Camera3D, LogEntry, Mesh, MeshGeometry, Skin } from '@flighthq/types/contract';

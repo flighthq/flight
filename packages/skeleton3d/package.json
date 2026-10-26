@@ -41,7 +41,7 @@
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/log": "*",
-    "@flighthq/mesh": "*",
+    "@flighthq/meshgeometry": "*",
     "@flighthq/node": "*",
     "@flighthq/types": "*"
   },

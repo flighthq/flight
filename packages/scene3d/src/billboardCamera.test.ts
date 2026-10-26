@@ -11,7 +11,7 @@ import {
   setQuaternionFromAxisAngle,
   setVector3,
 } from '@flighthq/geometry/contract';
-import { createPlaneMeshGeometry } from '@flighthq/mesh/contract';
+import { createPlaneMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild, getNodeWorldMatrix4, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import type { Camera3D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';

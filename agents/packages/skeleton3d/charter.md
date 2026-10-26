@@ -58,7 +58,7 @@ joint nodes) but nothing deforms. The primitives already exist and work (`create
   joint-exposure gap for free: `mesh.skin.skeleton.joints` *is* the array `parseMd5Anim` needs.
 - **Explicit deform, no magic:** extract the example's hand-coded interleave/deform into
   `skinMeshGeometry(geometry, skeleton, bindPose)` + a mesh-level `updateMeshSkin(mesh)` — **both in
-  `@flighthq/skeleton3d` (which deps `@flighthq/mesh`)**, called each frame after
+  `@flighthq/skeleton3d` (which deps `@flighthq/meshgeometry`)**, called each frame after
   `applyAnimationClipToScene`. (Placing `updateMeshSkin` in `@flighthq/scene3d` was the initial lean, but
   it created a project-reference dependency cycle; `skeleton3d` breaks it and is closer to the deform
   feature anyway — see Decisions.) Drop the example's `destroy*`-per-frame re-upload hack for a

@@ -7,7 +7,7 @@ import {
   computeMeshGeometryTangents,
   createMeshGeometry,
   getVertexAttributeFloatOffset,
-} from '@flighthq/mesh/contract';
+} from '@flighthq/meshgeometry/contract';
 import { getNodeChildren } from '@flighthq/node/contract';
 import { createScene3DFromMd5Mesh } from '@flighthq/scene3d-formats/contract';
 import { isMesh } from '@flighthq/scene3d/contract';

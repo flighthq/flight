@@ -15,7 +15,7 @@ import {
   getMeshGeometryTriangleCount,
   getMeshGeometryTriangleVertexIndices,
   getMeshGeometryVertexPosition,
-} from '@flighthq/mesh/contract';
+} from '@flighthq/meshgeometry/contract';
 import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import { getNode3DWorldBounds, isMesh } from '@flighthq/scene3d/contract';
 import type {

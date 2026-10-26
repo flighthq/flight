@@ -1,5 +1,5 @@
 import { decodeUTF8 } from '@flighthq/encoding/contract';
-import { createMeshGeometry } from '@flighthq/mesh/contract';
+import { createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { MeshGeometry, StlImportOptions, StlNormalPolicy } from '@flighthq/types/contract';
 
 import { CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT } from './shared.ts';

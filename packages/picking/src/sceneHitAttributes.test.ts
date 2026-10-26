@@ -1,6 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createRay3D, createVector3, setRay3D, setVector3 } from '@flighthq/geometry/contract';
-import { createMeshGeometry, createMeshGeometryFromAttributes, setMeshGeometrySubsets } from '@flighthq/mesh/contract';
+import {
+  createMeshGeometry,
+  createMeshGeometryFromAttributes,
+  setMeshGeometrySubsets,
+} from '@flighthq/meshgeometry/contract';
 import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createMesh } from '@flighthq/scene3d/contract';
 import type { Material3D, Mesh, Scene3DHit, VertexAttributeLayout } from '@flighthq/types/contract';

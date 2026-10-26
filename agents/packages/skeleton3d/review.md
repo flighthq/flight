@@ -31,7 +31,7 @@ tangent handedness preservation, and the conservative-contains-exact bounds inva
 
 The boundary discipline is strong: `@flighthq/render` and `@flighthq/picking` consume the
 `deformedLocalBounds` slot as plain data with no import of this package. The `updateMeshMorph` half
-lives in `@flighthq/mesh` (below scene), and `updateMeshDeformation` composes the two as same-layer
+lives in `@flighthq/meshgeometry` (below scene), and `updateMeshDeformation` composes the two as same-layer
 primitives — skeleton3d sits below `@flighthq/scene3d` with no cycle. `@flighthq/scene3d` appears
 only in `devDependencies` (for `createMesh`/`createNode3D` in tests).
 
@@ -113,7 +113,7 @@ None found. The source accurately implements the charter's committed Phases 1-3 
 - CPU skinning is the v1 path; GPU is layout-driven via `prepareMeshSkinning` / the HAS_SKIN
   shader variant in scene3d-gl.
 - Phase 4 (morph targets, IK) remains correctly out of scope for this package. Morph target
-  deformation lives in `@flighthq/mesh` as charted.
+  deformation lives in `@flighthq/meshgeometry` as charted.
 
 ## Contract and docs fit
 

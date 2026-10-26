@@ -12,7 +12,7 @@ import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   createBoxMeshGeometry,
   createMeshGeometry,
-} from '@flighthq/mesh/contract';
+} from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import {

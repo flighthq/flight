@@ -1,1 +1,1 @@
-export * from '@flighthq/mesh';
+export * from '@flighthq/meshgeometry';

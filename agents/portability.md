@@ -67,7 +67,7 @@ because every current attribute format happens to be 4-byte sized and every host
 little-endian. Neither is a guarantee the source states; both are coincidences the runtime is currently
 providing for free.
 
-The worked example is `@flighthq/mesh`: its vertex accessors *read* by float index
+The worked example is `@flighthq/meshgeometry`: its vertex accessors *read* by float index
 (`getVertexAttributeFloatOffset` returns `attr.byteOffset / 4`, with no check that the offset is
 4-aligned) and *write* by byte offset through a little-endian `DataView`. There is no bug today —
 misalignment is unreachable while every non-float format (`unorm8x4`, `uint8x4`, `uint16x4`) is a

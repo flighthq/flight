@@ -1,6 +1,6 @@
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
-import { createBoxMeshGeometry, getMeshGeometryVertexCount } from '@flighthq/mesh/contract';
-import { updateMeshMorph } from '@flighthq/mesh/contract';
+import { createBoxMeshGeometry, getMeshGeometryVertexCount } from '@flighthq/meshgeometry/contract';
+import { updateMeshMorph } from '@flighthq/meshgeometry/contract';
 import {
   addNodeChild,
   getNodeChildCount,

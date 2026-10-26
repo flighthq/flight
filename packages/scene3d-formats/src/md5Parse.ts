@@ -9,7 +9,7 @@ import {
   getMeshGeometryTriangleCount,
   getMeshGeometryTriangleVertexIndices,
   getVertexAttributeFloatOffset,
-} from '@flighthq/mesh/contract';
+} from '@flighthq/meshgeometry/contract';
 import type {
   ImportDiagnostic,
   MeshGeometry,

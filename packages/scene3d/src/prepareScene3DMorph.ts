@@ -1,4 +1,4 @@
-import { updateMeshMorph } from '@flighthq/mesh/contract';
+import { updateMeshMorph } from '@flighthq/meshgeometry/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
 import type { Mesh, NodeAny } from '@flighthq/types/contract';
 
@@ -16,7 +16,7 @@ import type { Mesh, NodeAny } from '@flighthq/types/contract';
 // This lives in @flighthq/scene3d, not @flighthq/skeleton3d, so a morph-only app (e.g. an MD2 model) never
 // imports the skinning package to animate blend shapes — the skin pass (prepareScene3DSkinning) is a
 // separate call a skinned app makes, and the two deformers' consumers stay independent. The walk needs
-// only @flighthq/node + @flighthq/mesh (both already scene dependencies). A scene with no morphed meshes
+// only @flighthq/node + @flighthq/meshgeometry (both already scene dependencies). A scene with no morphed meshes
 // may skip this call; it is a no-op for non-morphed meshes, and disabled subtrees are skipped whole.
 export function prepareScene3DMorph(scene: Readonly<NodeAny>): void {
   if (!scene.enabled) return;

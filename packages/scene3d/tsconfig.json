@@ -34,7 +34,7 @@
       "path": "../materials"
     },
     {
-      "path": "../mesh"
+      "path": "../meshgeometry"
     },
     {
       "path": "../node"

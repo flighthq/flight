@@ -16,7 +16,7 @@ import {
   CANONICAL_SKINNED_MESH_GEOMETRY_LAYOUT,
   createMeshGeometry,
   createBoxMeshGeometry,
-} from '@flighthq/mesh/contract';
+} from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createNode3D, prepareScene3DMorph, Node3DKind } from '@flighthq/scene3d/contract';
 import { createSkeleton3D, prepareScene3DSkinning } from '@flighthq/skeleton3d/contract';

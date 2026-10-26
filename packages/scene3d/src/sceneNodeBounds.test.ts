@@ -1,5 +1,5 @@
 import { createAabb, setVector3 } from '@flighthq/geometry/contract';
-import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 
 import { createMesh } from './mesh.ts';

@@ -1,5 +1,5 @@
 ---
-package: '@flighthq/mesh'
+package: '@flighthq/meshgeometry'
 updated: 2026-07-22
 basedOn: ./review.md
 ---

@@ -74,7 +74,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/media',
     '@flighthq/mediasession',
     '@flighthq/menu',
-    '@flighthq/mesh',
+    '@flighthq/meshgeometry',
     '@flighthq/midi',
     '@flighthq/motionpath',
     '@flighthq/movieclip',

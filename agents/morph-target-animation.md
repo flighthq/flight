@@ -2,14 +2,14 @@
 feature: "morph-target animation"
 draft: false
 lastDirection: 2026-07-18
-spans: ["@flighthq/types", "@flighthq/mesh", "@flighthq/scene3d", "@flighthq/animation", "@flighthq/scene3d-gl", "@flighthq/scene3d-wgpu", "@flighthq/scene3d-formats"]
+spans: ["@flighthq/types", "@flighthq/meshgeometry", "@flighthq/scene3d", "@flighthq/animation", "@flighthq/scene3d-gl", "@flighthq/scene3d-wgpu", "@flighthq/scene3d-formats"]
 ---
 
 # Morph-Target Animation — Charter
 
 > **Blessed design of record; BUILT (GL path).** The architecture below is approved and implemented on
 > the GL backend: `Weights` is a `Scene3DAnimationPath`; `Mesh.morph` carries a `MeshMorph` (targets +
-> weight array); `@flighthq/mesh` blends base + Σ wᵢ·targetᵢ (`blendMeshGeometryMorph`/
+> weight array); `@flighthq/meshgeometry` blends base + Σ wᵢ·targetᵢ (`blendMeshGeometryMorph`/
 > `captureMeshMorphBindPose`); `@flighthq/scene3d` routes `Weights` channels into the weight array
 > (`applyAnimationClipToScene`) and drives the deform (`updateMeshMorph`), with `getMeshDeformer`
 > naming the `none`/`skeletal`/`morph` tag; `scene-gl` runs the morph in `drawGlScene` via
@@ -125,7 +125,7 @@ MD2, keep the generic `weights` path for real blend shapes.** Same abstraction, 
 | Package | Change |
 | --- | --- |
 | `@flighthq/types` | Add `'weights'` to `Scene3DAnimationPath`; a `Scene3DAnimationTarget` variant (or sibling) that targets a mesh's weight array, not a node TRS; morph-target + weight-array fields on the `Mesh`/geometry types; a `MeshDeformer` tag (`none`/`skeletal`/`morph`). |
-| `@flighthq/mesh` | Morph-target storage (base + per-target position/normal/tangent deltas) and the CPU blend that produces a deformed `MeshGeometry` from base + weights (sibling of `skinMeshGeometry`). |
+| `@flighthq/meshgeometry` | Morph-target storage (base + per-target position/normal/tangent deltas) and the CPU blend that produces a deformed `MeshGeometry` from base + weights (sibling of `skinMeshGeometry`). |
 | `@flighthq/scene3d` | The deformer abstraction; the morph sink in `sceneAnimation.ts` (`applyAnimationClipToScene` must route `weights` channels into the mesh weight array); the MD2 specialized evaluator hook. |
 | `@flighthq/animation` | Likely nothing structural — `Sampler`/`AnimationTrack` already carry the curve. Confirm `weights` (variable-width value) samples cleanly. |
 | `@flighthq/scene3d-gl` / `-wgpu` | GPU morph blend in the mesh shaders (or CPU-blend upload), beside the existing skinning path. |

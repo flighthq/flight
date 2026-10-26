@@ -166,7 +166,7 @@ Y-up conversion for both positions and quaternions.
 1. **Vertex channel breadth within glTF.** Only `TEXCOORD_0` is interleaved. `TEXCOORD_1`, `COLOR_0`,
    secondary `JOINTS_1`/`WEIGHTS_1` are not carried. A material declaring `texCoord: 1` now emits
    `gltf.texcoord-set-unsupported` (Recover) rather than silently sampling set 0, but the geometry
-   data is still absent. Blocked on `@flighthq/mesh` gaining the missing two-component uint/unorm,
+   data is still absent. Blocked on `@flighthq/meshgeometry` gaining the missing two-component uint/unorm,
    unorm16, and quantized signed-normalized encodings.
 
 2. **No USD importer.** The charter names USD as a long-term target and `description` once mentioned
@@ -253,7 +253,7 @@ Y-up conversion for both positions and quaternions.
 
 ## Candidate open directions
 
-1. **Mesh encoding vocabulary** -- prerequisite for higher vertex channels. Once `@flighthq/mesh`
+1. **Mesh encoding vocabulary** -- prerequisite for higher vertex channels. Once `@flighthq/meshgeometry`
    gains the missing encodings, glTF can carry `TEXCOORD_1`, `COLOR_0`, and secondary skin
    influences without decoding everything to float.
 

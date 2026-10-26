@@ -1,4 +1,4 @@
-import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/mesh/contract';
+import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { VertexAttributeLayout } from '@flighthq/types/contract';
 
 import { makeGlScene3DState } from './glScene3DTestHelper.ts';

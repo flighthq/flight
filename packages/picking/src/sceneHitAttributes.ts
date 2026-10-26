@@ -5,7 +5,7 @@ import {
   getMeshGeometryVertexNormal,
   getMeshGeometryVertexTangent,
   getMeshGeometryVertexUv0,
-} from '@flighthq/mesh/contract';
+} from '@flighthq/meshgeometry/contract';
 import { ensureNodeWorldMatrix4, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import type { Material, Ray3D, Scene3DHit, Vector2Like, Vector3Like } from '@flighthq/types/contract';
 

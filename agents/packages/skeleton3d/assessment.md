@@ -54,7 +54,7 @@ _(All current Recommended items implemented — see Approved.)_
   `cloneSkeleton3D` sharing contract is unchanged.
 - [2026-07-24 · completed] The per-frame bounds recompute is dirty-gated. `updateMeshMorph`/
   `updateMeshSkin` no longer call `refreshMeshGeometryBounds` each frame; the deform's `version` bump
-  marks the bounds cache stale, and a new `ensureMeshGeometryBounds` (@flighthq/mesh) recomputes only
+  marks the bounds cache stale, and a new `ensureMeshGeometryBounds` (@flighthq/meshgeometry) recomputes only
   when `boundsVersion !== version` — the single correct bounds read path (a raw `geometry.bounds` read
   can now be stale). A GPU-skinned or upload-only mesh that never culls/picks computes bounds zero
   times. `updateMeshMorph` additionally skips the blend itself while weights are unchanged. The posed
@@ -64,7 +64,7 @@ _(All current Recommended items implemented — see Approved.)_
   @flighthq/skeleton3d dependency entirely. The picking-agreement correctness is preserved (the
   deform-then-pick tests still pass through the production path).
 - [2026-07-24 · completed] The morph/skin deformer layering inversion is resolved. `updateMeshMorph`
-  moved down into `@flighthq/mesh` (it reads only `mesh.geometry`/`mesh.morph` and the geometry runtime
+  moved down into `@flighthq/meshgeometry` (it reads only `mesh.geometry`/`mesh.morph` and the geometry runtime
   slot, so mesh is the lowest layer that can host it); `updateMeshSkin` stays in skeleton3d, which owns
   the palette. `updateMeshDeformation` now composes two same-layer primitives, and skeleton3d's source
   no longer imports `@flighthq/scene3d` at all — the duplicate `dependencies` entry is dropped, leaving

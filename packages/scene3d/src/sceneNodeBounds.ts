@@ -1,5 +1,5 @@
 import { createAabb, setAabb, transformAabbByMatrix4, unionAabb } from '@flighthq/geometry/contract';
-import { ensureMeshGeometryBounds } from '@flighthq/mesh/contract';
+import { ensureMeshGeometryBounds } from '@flighthq/meshgeometry/contract';
 import { ensureNodeWorldMatrix4, getNodeRuntime, getNodeWorldMatrix4 } from '@flighthq/node/contract';
 import type { AabbLike, Node3D } from '@flighthq/types/contract';
 

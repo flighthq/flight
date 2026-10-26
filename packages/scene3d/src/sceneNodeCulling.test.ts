@@ -1,5 +1,5 @@
 import { createFrustum, createMatrix4, setVector3 } from '@flighthq/geometry/contract';
-import { createMeshGeometry } from '@flighthq/mesh/contract';
+import { createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild, invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { Node3DKind } from '@flighthq/types/contract';
 

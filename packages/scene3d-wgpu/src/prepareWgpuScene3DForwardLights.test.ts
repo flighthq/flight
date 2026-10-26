@@ -4,7 +4,7 @@ import {
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/camera/contract';
 import { createPointLight, createSpotLight } from '@flighthq/lighting/contract';
-import { createBoxMeshGeometry } from '@flighthq/mesh/contract';
+import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
