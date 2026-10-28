@@ -88,7 +88,7 @@ ${FINALLY_ROW}
 ${PAGE_ROW}
 `;
 const PAGE_LIFETIME_REGISTRATION = {
-  argument: 'createConsoleLogSink()',
+  argument: 'createConsoleLogSink(logState)',
   classification: 'missing-cleanup' as const,
   line: 3,
   path: 'tools/size/fixtures/log-console/src/render.canvas.ts',

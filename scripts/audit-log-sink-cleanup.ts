@@ -10,6 +10,7 @@ type CleanupClassification =
   | 'finally-cleanup'
   | 'lifecycle-owned'
   | 'missing-cleanup'
+  | 'state-owned'
   | 'test-hook-cleanup';
 
 interface LogSinkRegistration {
@@ -37,6 +38,8 @@ const cleanupDescriptions: Readonly<Record<CleanupClassification, string>> = {
     'Owned by an explicit API lifetime: a failed `enableDebug` rolls back the sink, while `disableDebug` removes it after a successful enable.',
   'missing-cleanup':
     'Missing an exception-safe shorter-lifetime teardown. The sink and anything its closure captures remain reachable and can receive later log entries.',
+  'state-owned':
+    'Bounded by a caller-owned `LogState` created in the same file: the sink is reachable only through that state, so it is collected with it and cannot receive entries emitted into any other state.',
   'test-hook-cleanup':
     'Guaranteed after every test, including failures, by an `afterEach` hook that removes or clears registered sinks.',
 };
@@ -92,10 +95,12 @@ function findRegistrations(): LogSinkRegistration[] {
 
     visit(source, (node) => {
       if (!isNamedCall(node, 'addLogSink')) return;
-      const argument = node.arguments[0]?.getText(source) ?? '<missing argument>';
+      // addLogSink(state, sink): the sink is the second argument, the caller-owned state the first.
+      const argument = node.arguments[1]?.getText(source) ?? '<missing argument>';
+      const stateArgument = node.arguments[0]?.getText(source) ?? '';
       const registration: LogSinkRegistration = {
         argument,
-        classification: classifyRegistration(path, source, node, argument, fileHasCleanupHook),
+        classification: classifyRegistration(path, source, node, argument, stateArgument, fileHasCleanupHook),
         line: source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1,
         path,
       };
@@ -110,6 +115,7 @@ function classifyRegistration(
   source: ts.SourceFile,
   call: ts.CallExpression,
   argument: string,
+  stateArgument: string,
   fileHasCleanupHook: boolean,
 ): CleanupClassification {
   if (path === 'packages/debug/src/debug.ts' && argument === 'sink') {
@@ -119,6 +125,7 @@ function classifyRegistration(
     return 'missing-cleanup';
   }
   if (fileHasCleanupHook) return 'test-hook-cleanup';
+  if (isLocallyCreatedLogState(source, resolveParameterDefault(call, stateArgument))) return 'state-owned';
 
   const owner = findEnclosingFunction(call);
   if (owner !== null && hasFinallyCleanup(owner, source, argument)) return 'finally-cleanup';
@@ -206,7 +213,7 @@ function hasDirectCleanup(
       found = true;
       return;
     }
-    if (name === 'removeLogSink' && node.arguments[0]?.getText(source) === argument) found = true;
+    if (name === 'removeLogSink' && node.arguments[1]?.getText(source) === argument) found = true;
   });
   return found;
 }
@@ -224,7 +231,7 @@ function hasTestCleanupHook(source: ts.SourceFile): boolean {
 function containsMatchingRemove(node: ts.Node, source: ts.SourceFile, argument: string): boolean {
   let found = false;
   visit(node, (candidate) => {
-    if (!found && isNamedCall(candidate, 'removeLogSink') && candidate.arguments[0]?.getText(source) === argument) {
+    if (!found && isNamedCall(candidate, 'removeLogSink') && candidate.arguments[1]?.getText(source) === argument) {
       found = true;
     }
   });
@@ -254,6 +261,48 @@ function containsPropertyCall(node: ts.Node, name: string): boolean {
   return found;
 }
 
+// Follows a helper parameter to its default: `function sink(target = state)` registers on `state`
+// whenever the caller omits it, and every in-file caller is checked against the same rule.
+function resolveParameterDefault(call: ts.CallExpression, name: string): string {
+  const owner = findEnclosingFunction(call);
+  if (owner === null) return name;
+  for (const parameter of owner.parameters) {
+    if (ts.isIdentifier(parameter.name) && parameter.name.text === name && parameter.initializer !== undefined) {
+      return parameter.initializer.getText();
+    }
+  }
+  return name;
+}
+
+// True when `name` is bound in this file to a fresh `createLogState()`, by declaration or assignment
+// (including a `beforeEach` reassignment). A state created this way is owned by the file, so every
+// sink registered on it shares its lifetime.
+function isLocallyCreatedLogState(source: ts.SourceFile, name: string): boolean {
+  if (!/^[A-Za-z_$][\w$]*$/.test(name)) return false;
+  let found = false;
+  visit(source, (node) => {
+    if (found) return;
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.name.text === name &&
+      node.initializer !== undefined &&
+      isNamedCall(node.initializer, 'createLogState')
+    ) {
+      found = true;
+    } else if (
+      ts.isBinaryExpression(node) &&
+      node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+      ts.isIdentifier(node.left) &&
+      node.left.text === name &&
+      isNamedCall(node.right, 'createLogState')
+    ) {
+      found = true;
+    }
+  });
+  return found;
+}
+
 function isNamedCall(node: ts.Node, name: string): node is ts.CallExpression {
   return ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === name;
 }
@@ -273,7 +322,7 @@ function isFunctionLikeDeclaration(node: ts.Node): node is ts.FunctionLikeDeclar
 function isPageLifetimeRegistration(registration: Readonly<LogSinkRegistration>): boolean {
   return (
     registration.path === 'tools/size/fixtures/log-console/src/render.canvas.ts' &&
-    registration.argument === 'createConsoleLogSink()'
+    registration.argument === 'createConsoleLogSink(logState)'
   );
 }
 
@@ -337,7 +386,8 @@ function formatReport(registrations: readonly LogSinkRegistration[]): string {
       `${counts.get('finally-cleanup') ?? 0} locally bracketed by \`finally\`, ` +
       `${counts.get('test-hook-cleanup') ?? 0} cleared by failure-safe test hooks, ` +
       `${counts.get('direct-cleanup') ?? 0} immediately removed/replaced, ` +
-      `${counts.get('lifecycle-owned') ?? 0} owned by an explicit API lifetime, and ${missing} without a shorter-lifetime cleanup.`,
+      `${counts.get('lifecycle-owned') ?? 0} owned by an explicit API lifetime, ` +
+      `${counts.get('state-owned') ?? 0} bounded by a locally created LogState, and ${missing} without a shorter-lifetime cleanup.`,
     '',
     'The check fails for every new unbracketed registration. The one named exception is the size fixture:',
     'its console sink deliberately lives for the document lifetime and becomes unreachable at page teardown.',
@@ -387,7 +437,14 @@ function groupRegistrations(registrations: readonly LogSinkRegistration[]): Regi
 }
 
 function cleanupClassifications(): CleanupClassification[] {
-  return ['finally-cleanup', 'test-hook-cleanup', 'direct-cleanup', 'lifecycle-owned', 'missing-cleanup'];
+  return [
+    'finally-cleanup',
+    'test-hook-cleanup',
+    'direct-cleanup',
+    'lifecycle-owned',
+    'state-owned',
+    'missing-cleanup',
+  ];
 }
 
 if (resolve(process.argv[1] ?? '') === resolve(scriptPath)) main();
