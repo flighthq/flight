@@ -1,10 +1,10 @@
-// Progress meter for the type-home migration: every exported type belongs in @flighthq/types
-// (see agents/conventions/file-naming.md). Reports exported interface/type/enum declarations still
-// living outside packages/types, per package. Run as a meter during the migration; pass --gate to
-// exit non-zero while any remain (the eventual hard packages:check).
+// Guard for the staged D8 type-home migration. Approved packages may own their exported types;
+// @flighthq/types remains a compatibility aggregator until the broader dissolution lands. Reports
+// exported interface/type/enum declarations in packages whose owner migration is not yet approved.
+// Run as a meter during the migration; pass --gate to reject an unapproved owner move.
 //
 //   npx tsx scripts/type-home-progress.ts          # meter (always exit 0)
-//   npx tsx scripts/type-home-progress.ts --gate    # exit 1 if any exported types remain outside types
+//   npx tsx scripts/type-home-progress.ts --gate    # exit 1 for types in an unapproved owner package
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -15,6 +15,10 @@ const root = process.cwd();
 const packagesDir = join(root, 'packages');
 const gate = process.argv.includes('--gate');
 const selected = new Set(selectPackages(getSelectors()));
+
+// Completed Tier 4 owner-package decisions in agents/ts-rust-alignment.md. Keep this list narrow:
+// adding a package is an ownership decision, not a way to silence the gate.
+const approvedOwnerPackages = new Set(['buffer', 'meshgeometry', 'resource', 'textformat']);
 
 function sourceFiles(dir: string): string[] {
   if (!existsSync(dir)) return [];
@@ -60,6 +64,7 @@ for (const e of readdirSync(packagesDir, { withFileTypes: true })) {
   if (
     !e.isDirectory() ||
     e.name === 'types' ||
+    approvedOwnerPackages.has(e.name) ||
     e.name.startsWith('tool-') ||
     e.name.startsWith('vite-plugin-') ||
     e.name.endsWith('-wasm')
@@ -76,9 +81,9 @@ for (const e of readdirSync(packagesDir, { withFileTypes: true })) {
 
 perPackage.sort((a, b) => b.count - a.count);
 for (const { pkg, count } of perPackage) console.log(`  ${String(count).padStart(4)}  @flighthq/${pkg}`);
-console.log(`\n  ${perPackage.length} packages, ${total} exported types still outside @flighthq/types`);
+console.log(`\n  ${perPackage.length} packages, ${total} exported types in unapproved owner packages`);
 
 if (gate && total > 0) {
-  console.error(`\ntype-home gate: ${total} exported types must move to @flighthq/types`);
+  console.error(`\ntype-home gate: ${total} exported types need an approved owner-package decision`);
   process.exit(1);
 }
