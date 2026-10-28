@@ -1,4 +1,5 @@
-import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
+import { createLogState, setLogSink } from '@flighthq/log/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 import { vi } from 'vitest';
 
@@ -9,22 +10,23 @@ import { webTextSegmenterBackend } from './textSegmenterBackend.ts';
 const backend = webTextSegmenterBackend;
 
 let entries: LogEntry[];
+let logState: LogState;
 
 beforeEach(() => {
-  clearLogOnceKeys();
   entries = [];
-  setLogSink((entry) => entries.push(entry));
+  logState = createLogState();
+  setLogSink(logState, (entry) => entries.push(entry));
 });
 
 afterEach(() => {
   disableTextSegmentGuards();
-  setLogSink(null);
+  setLogSink(logState, null);
   vi.unstubAllGlobals();
 });
 
 describe('disableTextSegmentGuards', () => {
   it('restores silent missing-engine recovery', () => {
-    enableTextSegmentGuards();
+    enableTextSegmentGuards(logState, () => 0);
     disableTextSegmentGuards();
     vi.stubGlobal('Intl', { Segmenter: undefined });
     segmentGraphemes(backend, 'text');
@@ -34,7 +36,7 @@ describe('disableTextSegmentGuards', () => {
 
 describe('enableTextSegmentGuards', () => {
   it('warns once and names the provider type when Intl.Segmenter is absent', () => {
-    enableTextSegmentGuards();
+    enableTextSegmentGuards(logState, () => 0);
     vi.stubGlobal('Intl', { Segmenter: undefined });
     segmentGraphemes(backend, 'first');
     segmentGraphemes(backend, 'second');
@@ -43,7 +45,7 @@ describe('enableTextSegmentGuards', () => {
   });
 
   it('stays silent when the bundled Intl provider is available', () => {
-    enableTextSegmentGuards();
+    enableTextSegmentGuards(logState, () => 0);
     segmentGraphemes(backend, 'text');
     expect(entries).toEqual([]);
   });

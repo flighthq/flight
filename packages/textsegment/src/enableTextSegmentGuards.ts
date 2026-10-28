@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -9,12 +10,14 @@ export function disableTextSegmentGuards(): void {
 }
 
 /** Installs an opt-in warning for use of the bundled capability where Intl.Segmenter is absent. */
-export function enableTextSegmentGuards(): void {
-  setTextSegmentGuard(warnOnMissingIntlSegmenter);
+export function enableTextSegmentGuards(logState: LogState, clock: () => number): void {
+  setTextSegmentGuard((): void => warnOnMissingIntlSegmenter(logState, clock()));
 }
 
-function warnOnMissingIntlSegmenter(): void {
+function warnOnMissingIntlSegmenter(logState: LogState, nowMs: number): void {
   logOnce(
+    logState,
+    nowMs,
     'textsegment:intl-segmenter-unavailable',
     LogLevel.Warn,
     {
