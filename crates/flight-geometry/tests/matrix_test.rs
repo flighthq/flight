@@ -84,6 +84,22 @@ mod copy_matrix_column_from_vector3 {
         assert_eq!(m.tx, 5.0);
         assert_eq!(m.ty, 6.0);
     }
+
+    #[test]
+    #[should_panic]
+    fn panics_when_column_is_above_2() {
+        let mut m = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        let v = create_vector3(0.0, 0.0, 0.0);
+        copy_matrix_column_from_vector3(&mut m, 3, &v);
+    }
+
+    #[test]
+    #[should_panic]
+    fn panics_when_column_is_negative() {
+        let mut m = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        let v = create_vector3(0.0, 0.0, 0.0);
+        copy_matrix_column_from_vector3(&mut m, -1, &v);
+    }
 }
 
 mod copy_matrix_column_to_vector3 {
@@ -117,6 +133,22 @@ mod copy_matrix_column_to_vector3 {
         assert_eq!(v.x, 7.0);
         assert_eq!(v.y, 8.0);
         assert_eq!(v.z, 1.0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn panics_when_column_is_above_2() {
+        let m = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        let mut v = create_vector3(0.0, 0.0, 0.0);
+        copy_matrix_column_to_vector3(&mut v, 3, &m);
+    }
+
+    #[test]
+    #[should_panic]
+    fn panics_when_column_is_negative() {
+        let m = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        let mut v = create_vector3(0.0, 0.0, 0.0);
+        copy_matrix_column_to_vector3(&mut v, -1, &m);
     }
 }
 
@@ -154,6 +186,22 @@ mod copy_matrix_row_from_vector3 {
         assert_eq!(m.tx, 5.0);
         assert_eq!(m.ty, 6.0);
     }
+
+    #[test]
+    #[should_panic]
+    fn panics_when_row_is_above_2() {
+        let mut m = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        let v = create_vector3(0.0, 0.0, 0.0);
+        copy_matrix_row_from_vector3(&mut m, 3, &v);
+    }
+
+    #[test]
+    #[should_panic]
+    fn panics_when_row_is_negative() {
+        let mut m = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        let v = create_vector3(0.0, 0.0, 0.0);
+        copy_matrix_row_from_vector3(&mut m, -1, &v);
+    }
 }
 
 mod copy_matrix_row_to_vector3 {
@@ -187,6 +235,22 @@ mod copy_matrix_row_to_vector3 {
         assert_eq!(v.x, 0.0);
         assert_eq!(v.y, 0.0);
         assert_eq!(v.z, 1.0);
+    }
+
+    #[test]
+    #[should_panic]
+    fn panics_when_row_is_above_2() {
+        let m = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        let mut v = create_vector3(0.0, 0.0, 0.0);
+        copy_matrix_row_to_vector3(&mut v, 3, &m);
+    }
+
+    #[test]
+    #[should_panic]
+    fn panics_when_row_is_negative() {
+        let m = create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        let mut v = create_vector3(0.0, 0.0, 0.0);
+        copy_matrix_row_to_vector3(&mut v, -1, &m);
     }
 }
 

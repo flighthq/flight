@@ -93,7 +93,7 @@ pub fn copy_matrix_column_from_vector3(out: &mut Matrix, column: i32, source: &V
             out.tx = x;
             out.ty = y;
         }
-        _ => {}
+        _ => panic!("Column {} out of bounds (2)", column),
     }
 }
 
@@ -121,7 +121,7 @@ pub fn copy_matrix_column_to_vector3(out: &mut Vector3, column: i32, source: &Ma
             out.y = ty;
             out.z = 1.0;
         }
-        _ => {}
+        _ => panic!("Column {} out of bounds (2)", column),
     }
 }
 
@@ -142,7 +142,7 @@ pub fn copy_matrix_row_from_vector3(out: &mut Matrix, row: i32, source: &Vector3
             out.ty = z;
         }
         2 => {}
-        _ => {}
+        _ => panic!("Row {} out of bounds (2)", row),
     }
 }
 
@@ -170,7 +170,7 @@ pub fn copy_matrix_row_to_vector3(out: &mut Vector3, row: i32, source: &Matrix) 
             out.y = 0.0;
             out.z = 1.0;
         }
-        _ => {}
+        _ => panic!("Row {} out of bounds (2)", row),
     }
 }
 
