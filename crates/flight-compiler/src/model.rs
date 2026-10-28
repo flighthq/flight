@@ -21,14 +21,21 @@ pub(crate) struct Program {
     pub(crate) structs: Vec<ItemStruct>,
     pub(crate) readonly_structs: HashSet<String>,
     pub(crate) string_unions: BTreeMap<String, StringUnionStyle>,
+    pub(crate) string_union_values: BTreeMap<String, BTreeMap<String, String>>,
     pub(crate) type_aliases: Vec<ItemType>,
     pub(crate) uses: Vec<ItemUse>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum StringUnionStyle {
+    Exact,
     KebabCase,
     LowerCamel,
+}
+
+pub(crate) struct StringUnionMetadata {
+    pub(crate) styles: BTreeMap<String, StringUnionStyle>,
+    pub(crate) values: BTreeMap<String, BTreeMap<String, String>>,
 }
 
 pub(crate) struct TestProgram {
@@ -131,7 +138,8 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
             | "nullable-options"
             | "readonly-fields"
             | "root"
-            | "string-union" => {}
+            | "string-union"
+            | "string-union-value" => {}
             _ => {
                 return Err(compile_error(format!(
                     "unknown `flight-compiler` source directive `{name}`"
@@ -174,6 +182,15 @@ fn doc_directive(attribute: &Attribute) -> Option<String> {
         .map(str::to_string);
 }
 
+fn next_directive_field(value: &str) -> Option<(&str, &str)> {
+    let value = value.trim_start();
+    if value.is_empty() {
+        return None;
+    }
+    let end = value.find(char::is_whitespace).unwrap_or(value.len());
+    return Some((&value[..end], &value[end..]));
+}
+
 fn is_public(visibility: &Visibility) -> bool {
     return matches!(visibility, Visibility::Public(_));
 }
@@ -196,7 +213,9 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let mut type_aliases = Vec::new();
     let mut uses = Vec::new();
     let readonly_structs = directive_names(source, "readonly-fields");
-    let string_unions = parse_string_unions(&file.attrs)?;
+    let string_union_metadata = parse_string_union_metadata_from_attributes(&file.attrs)?;
+    let string_unions = string_union_metadata.styles;
+    let string_union_values = string_union_metadata.values;
 
     for item in &file.items {
         if let Item::Struct(structure) = item
@@ -253,7 +272,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
 
     validate_callable_parameters(&callable_parameters, &type_aliases)?;
     validate_data_union_directives(&data_unions, &enums, &string_unions)?;
-    validate_string_union_directives(&string_unions, &enums)?;
+    validate_string_union_directives(&string_unions, &string_union_values, &enums)?;
     validate_frozen_objects(&frozen_objects, &constants)?;
     validate_identity_aliases(&identity_alias_directives, &type_aliases)?;
 
@@ -271,6 +290,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         structs,
         readonly_structs,
         string_unions,
+        string_union_values,
         type_aliases,
         uses,
     });
@@ -301,10 +321,11 @@ fn parse_flag_directive(attributes: &[Attribute], expected: &str) -> Result<bool
     return Ok(found);
 }
 
-fn parse_string_unions(
+fn parse_string_union_metadata_from_attributes(
     attributes: &[Attribute],
-) -> Result<BTreeMap<String, StringUnionStyle>, CompileError> {
+) -> Result<StringUnionMetadata, CompileError> {
     let mut directives = BTreeMap::new();
+    let mut values = BTreeMap::<String, BTreeMap<String, String>>::new();
     for attribute in attributes {
         let Some(directive) = doc_directive(attribute) else {
             continue;
@@ -329,6 +350,7 @@ fn parse_string_unions(
         for specification in specifications {
             let (name, style) = if let Some((name, style)) = specification.split_once('=') {
                 let style = match style {
+                    "exact" => StringUnionStyle::Exact,
                     "kebab-case" => StringUnionStyle::KebabCase,
                     "lower-camel" => StringUnionStyle::LowerCamel,
                     _ => {
@@ -353,15 +375,69 @@ fn parse_string_unions(
             }
         }
     }
-    return Ok(directives);
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let Some(specification) = directive.strip_prefix("string-union-value") else {
+            continue;
+        };
+        if !specification.is_empty()
+            && !specification.starts_with(|character: char| character.is_whitespace())
+        {
+            continue;
+        }
+        let Some((owner, remaining)) = next_directive_field(specification) else {
+            return Err(compile_error(
+                "`flight-compiler: string-union-value` requires an enum name, variant name, and Rust string literal",
+            ));
+        };
+        let Some((variant, literal)) = next_directive_field(remaining) else {
+            return Err(compile_error(format!(
+                "`flight-compiler: string-union-value {owner}` requires a variant name and Rust string literal"
+            )));
+        };
+        let literal = literal.trim_start();
+        if literal.is_empty() {
+            return Err(compile_error(format!(
+                "`flight-compiler: string-union-value {owner} {variant}` requires a Rust string literal"
+            )));
+        }
+        for (role, name) in [("enum", owner), ("variant", variant)] {
+            if syn::parse_str::<syn::Ident>(name).is_err() || name.starts_with("r#") {
+                return Err(compile_error(format!(
+                    "`flight-compiler: string-union-value` {role} name `{name}` is not a valid identifier"
+                )));
+            }
+        }
+        let value = syn::parse_str::<syn::LitStr>(literal).map_err(|_| {
+            compile_error(format!(
+                "`flight-compiler: string-union-value {owner} {variant}` value must be one Rust string literal"
+            ))
+        })?;
+        if values
+            .entry(owner.to_string())
+            .or_default()
+            .insert(variant.to_string(), value.value())
+            .is_some()
+        {
+            return Err(compile_error(format!(
+                "duplicate `flight-compiler: string-union-value` directive for `{owner}::{variant}`"
+            )));
+        }
+    }
+    return Ok(StringUnionMetadata {
+        styles: directives,
+        values,
+    });
 }
 
 pub(crate) fn parse_string_union_metadata(
     source: &str,
-) -> Result<BTreeMap<String, StringUnionStyle>, CompileError> {
+) -> Result<StringUnionMetadata, CompileError> {
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
-    return parse_string_unions(&file.attrs);
+    return parse_string_union_metadata_from_attributes(&file.attrs);
 }
 
 fn parse_frozen_objects(
@@ -910,13 +986,62 @@ fn validate_data_union_directives(
 
 fn validate_string_union_directives(
     string_unions: &BTreeMap<String, StringUnionStyle>,
+    string_union_values: &BTreeMap<String, BTreeMap<String, String>>,
     enums: &[ItemEnum],
 ) -> Result<(), CompileError> {
-    for name in string_unions.keys() {
-        if !enums.iter().any(|rust_enum| rust_enum.ident == name) {
+    for name in string_union_values.keys() {
+        if !string_unions.contains_key(name) {
+            return Err(compile_error(format!(
+                "`flight-compiler: string-union-value` enum `{name}` is not declared by `flight-compiler: string-union`"
+            )));
+        }
+    }
+    for (name, style) in string_unions {
+        let Some(rust_enum) = enums.iter().find(|rust_enum| rust_enum.ident == name) else {
             return Err(compile_error(format!(
                 "`flight-compiler: string-union` enum `{name}` does not exist"
             )));
+        };
+        let values = string_union_values.get(name);
+        if *style != StringUnionStyle::Exact {
+            if values.is_some() {
+                return Err(compile_error(format!(
+                    "`flight-compiler: string-union-value` enum `{name}` must use `string-union {name}=exact`"
+                )));
+            }
+            continue;
+        }
+        let Some(values) = values else {
+            return Err(compile_error(format!(
+                "exact string union `{name}` requires one `flight-compiler: string-union-value` directive per variant"
+            )));
+        };
+        for variant in values.keys() {
+            if !rust_enum
+                .variants
+                .iter()
+                .any(|candidate| candidate.ident == variant)
+            {
+                return Err(compile_error(format!(
+                    "`flight-compiler: string-union-value` variant `{name}::{variant}` does not exist"
+                )));
+            }
+        }
+        for variant in &rust_enum.variants {
+            if !values.contains_key(&variant.ident.to_string()) {
+                return Err(compile_error(format!(
+                    "exact string union `{name}` has no value for variant `{}`",
+                    variant.ident
+                )));
+            }
+        }
+        let mut unique = HashSet::new();
+        for value in values.values() {
+            if !unique.insert(value) {
+                return Err(compile_error(format!(
+                    "exact string union `{name}` repeats value `{value}`"
+                )));
+            }
         }
     }
     return Ok(());

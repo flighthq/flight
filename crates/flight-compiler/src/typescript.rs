@@ -1283,6 +1283,7 @@ fn emit_enum(
     out: &mut String,
     rust_enum: &syn::ItemEnum,
     string_union: Option<StringUnionStyle>,
+    string_union_values: Option<&BTreeMap<String, String>>,
     data_union: bool,
     entities: &HashSet<String>,
 ) -> Result<(), CompileError> {
@@ -1344,6 +1345,26 @@ fn emit_enum(
         return Ok(());
     }
     if let Some(style) = string_union {
+        if style == StringUnionStyle::Exact {
+            let values = string_union_values
+                .expect("exact string-union values were validated before TypeScript emission");
+            writeln!(out, "{export}const {} = {{", rust_enum.ident)
+                .expect("writing to a String cannot fail");
+            for variant in &rust_enum.variants {
+                emit_documentation(out, &variant.attrs, 1);
+                let value = &values[&variant.ident.to_string()];
+                writeln!(out, "  {}: {value:?},", variant.ident)
+                    .expect("writing to a String cannot fail");
+            }
+            writeln!(out, "}} as const;").expect("writing to a String cannot fail");
+            writeln!(
+                out,
+                "{export}type {} = (typeof {})[keyof typeof {}];",
+                rust_enum.ident, rust_enum.ident, rust_enum.ident
+            )
+            .expect("writing to a String cannot fail");
+            return Ok(());
+        }
         if rust_enum
             .variants
             .iter()
@@ -4570,6 +4591,9 @@ pub(crate) fn emit_program(
                 .string_unions
                 .get(&rust_enum.ident.to_string())
                 .copied(),
+            program
+                .string_union_values
+                .get(&rust_enum.ident.to_string()),
             program.data_unions.contains(&rust_enum.ident.to_string()),
             &source_context,
         )?;
@@ -5566,6 +5590,9 @@ pub(crate) fn lower_camel_from_upper_camel(name: &str) -> String {
 }
 
 pub(crate) fn string_union_literal(name: &str, style: StringUnionStyle) -> String {
+    if style == StringUnionStyle::Exact {
+        unreachable!("exact string-union values require their declared metadata");
+    }
     if style == StringUnionStyle::LowerCamel {
         return lower_camel_from_upper_camel(name);
     }

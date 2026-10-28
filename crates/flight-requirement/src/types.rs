@@ -1,4 +1,15 @@
 //! flight-compiler: readonly-fields Requirement RequirementSet
+//! flight-compiler: string-union RequirementFacet=exact
+//! flight-compiler: string-union-value RequirementFacet CompressionKind "compression.kind"
+//! flight-compiler: string-union-value RequirementFacet DocumentFormat "document.format"
+//! flight-compiler: string-union-value RequirementFacet Physics2DJointKind "physics2d.joint-kind"
+//! flight-compiler: string-union-value RequirementFacet SceneBlendMode "scene.blend-mode"
+//! flight-compiler: string-union-value RequirementFacet SceneMaterialKind "scene.material-kind"
+//! flight-compiler: string-union-value RequirementFacet SceneModifierKind "scene.modifier-kind"
+//! flight-compiler: string-union-value RequirementFacet SceneNodeKind "scene.node-kind"
+//! flight-compiler: string-union-value RequirementFacet SceneResourceMimeType "scene.resource-mime-type"
+//! flight-compiler: string-union-value RequirementFacet SceneShapeCommand "scene.shape-command"
+//! flight-compiler: string-union-value RequirementFacet SceneTextureSourceKind "scene.texture-source-kind"
 
 use flight_entity::EntityRuntimeSlot;
 

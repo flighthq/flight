@@ -45,7 +45,9 @@ pub(crate) fn compile_error(message: impl Into<String>) -> CompileError {
 /// `//! flight-compiler: nullable-options` to emit `T | null`; other sources keep
 /// optional properties and `undefined` absence. String unions default to
 /// lower-camel literals and can select kebab-case per enum with
-/// `//! flight-compiler: string-union Reason=kebab-case`.
+/// `//! flight-compiler: string-union Reason=kebab-case`. Exact string unions
+/// use `Reason=exact` plus one `string-union-value` directive per variant and
+/// emit a const object alongside their value union.
 // flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
 pub fn compile_typescript(
     source: &str,
@@ -101,11 +103,12 @@ pub fn compile_typescript_with_external_alias_sources(
         &alias_programs,
         &external_alias_programs,
     )?;
-    return Ok(lower_string_union_variants(
+    return lower_string_union_variants(
         output,
         &program.string_unions,
+        &program.string_union_values,
         false,
-    ));
+    );
 }
 
 /// Compiles one canonical Rust contract-test module into a Vitest suite.
@@ -133,7 +136,7 @@ pub fn compile_vitest_with_alias_sources(
     let alias_program_refs = alias_programs.iter().collect::<Vec<_>>();
     let string_unions = model::parse_string_union_metadata(source)?;
     let mut context = typescript::generation_context(&alias_program_refs)?;
-    typescript::insert_string_union_context(&mut context, string_unions.keys());
+    typescript::insert_string_union_context(&mut context, string_unions.styles.keys());
     typescript::insert_vitest_struct_context(
         &mut context,
         alias_programs
@@ -142,9 +145,15 @@ pub fn compile_vitest_with_alias_sources(
             .chain(&program.structs),
     );
     let mut output = vitest::emit_test_program(&program, contract_module, &context)?;
-    output = lower_string_union_variants(output, &string_unions, false);
+    output =
+        lower_string_union_variants(output, &string_unions.styles, &string_unions.values, false)?;
     for alias_program in &alias_programs {
-        output = lower_string_union_variants(output, &alias_program.string_unions, false);
+        output = lower_string_union_variants(
+            output,
+            &alias_program.string_unions,
+            &alias_program.string_union_values,
+            false,
+        )?;
     }
     return Ok(output);
 }
@@ -152,8 +161,12 @@ pub fn compile_vitest_with_alias_sources(
 fn lower_string_union_variants(
     mut output: String,
     string_unions: &std::collections::BTreeMap<String, model::StringUnionStyle>,
+    string_union_values: &std::collections::BTreeMap<
+        String,
+        std::collections::BTreeMap<String, String>,
+    >,
     remove_runtime_imports: bool,
-) -> String {
+) -> Result<String, CompileError> {
     for (owner, style) in string_unions {
         if remove_runtime_imports {
             output = output.replace(&format!("  {owner},\n"), "");
@@ -173,15 +186,26 @@ fn lower_string_union_variants(
                 continue;
             }
             let end = variant_start + variant_length;
-            let literal = format!(
-                "{:?}",
-                typescript::string_union_literal(&output[variant_start..end], *style)
-            );
+            let variant = &output[variant_start..end];
+            let value = if *style == model::StringUnionStyle::Exact {
+                string_union_values
+                    .get(owner)
+                    .and_then(|values| values.get(variant))
+                    .ok_or_else(|| {
+                        compile_error(format!(
+                            "exact string union `{owner}` has no value for referenced variant `{variant}`"
+                        ))
+                    })?
+                    .clone()
+            } else {
+                typescript::string_union_literal(variant, *style)
+            };
+            let literal = format!("{value:?}");
             output.replace_range(start..end, &literal);
             cursor = start + literal.len();
         }
     }
-    return output;
+    return Ok(output);
 }
 
 /// Reads the source-local generation mode for a Rust module or test file.

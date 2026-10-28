@@ -799,6 +799,57 @@ pub fn default_reason() -> ResultReason {
     }
 
     #[test]
+    fn emits_exact_string_union_const_objects_and_rewrites_references() {
+        let source = r#"
+//! flight-compiler: string-union Facet=exact
+//! flight-compiler: string-union-value Facet Compression "compression.kind"
+//! flight-compiler: string-union-value Facet DisplayName "display  name"
+//! flight-compiler: string-union-value Facet SceneNode "scene.node-kind"
+
+#[repr(u8)]
+pub enum Facet {
+    Compression = 0,
+    DisplayName = 1,
+    SceneNode = 2,
+}
+
+pub fn default_facet() -> Facet {
+    return Facet::SceneNode;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(
+            "export const Facet = {\n  Compression: \"compression.kind\",\n  DisplayName: \"display  name\",\n  SceneNode: \"scene.node-kind\",\n} as const;"
+        ));
+        assert!(output.contains("export type Facet = (typeof Facet)[keyof typeof Facet];"));
+        assert!(output.contains("return \"scene.node-kind\";"));
+        assert!(!output.contains("export enum Facet"));
+    }
+
+    #[test]
+    fn lowers_real_requirement_facet_as_its_exact_const_object() {
+        let source = include_str!("../../flight-requirement/src/types.rs");
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+
+        assert!(output.contains(
+            "export const RequirementFacet = {\n  CompressionKind: \"compression.kind\",\n  DocumentFormat: \"document.format\","
+        ));
+        assert!(
+            output
+                .contains("  SceneTextureSourceKind: \"scene.texture-source-kind\",\n} as const;")
+        );
+        assert!(output.contains(
+            "export type RequirementFacet = (typeof RequirementFacet)[keyof typeof RequirementFacet];"
+        ));
+        assert!(output.contains(
+            "case \"scene.resource-mime-type\":\n      return \"scene.resource-mime-type\";"
+        ));
+        assert!(!output.contains("export enum RequirementFacet"));
+    }
+
+    #[test]
     fn rejects_malformed_string_union_styles() {
         for (source, expected) in [
             (
@@ -820,6 +871,26 @@ pub fn default_reason() -> ResultReason {
             (
                 "//! flight-compiler: string-union Missing=kebab-case\npub enum ResultReason { Ok }\n",
                 "`flight-compiler: string-union` enum `Missing` does not exist",
+            ),
+            (
+                "//! flight-compiler: string-union ResultReason=exact\npub enum ResultReason { Ok }\n",
+                "exact string union `ResultReason` requires one `flight-compiler: string-union-value` directive per variant",
+            ),
+            (
+                "//! flight-compiler: string-union-value ResultReason Ok \"ok\"\npub enum ResultReason { Ok }\n",
+                "`flight-compiler: string-union-value` enum `ResultReason` is not declared by `flight-compiler: string-union`",
+            ),
+            (
+                "//! flight-compiler: string-union ResultReason\n//! flight-compiler: string-union-value ResultReason Ok \"ok\"\npub enum ResultReason { Ok }\n",
+                "`flight-compiler: string-union-value` enum `ResultReason` must use `string-union ResultReason=exact`",
+            ),
+            (
+                "//! flight-compiler: string-union ResultReason=exact\n//! flight-compiler: string-union-value ResultReason Other \"other\"\npub enum ResultReason { Ok }\n",
+                "`flight-compiler: string-union-value` variant `ResultReason::Other` does not exist",
+            ),
+            (
+                "//! flight-compiler: string-union ResultReason=exact\n//! flight-compiler: string-union-value ResultReason First \"same\"\n//! flight-compiler: string-union-value ResultReason Second \"same\"\npub enum ResultReason { First, Second }\n",
+                "exact string union `ResultReason` repeats value `same`",
             ),
         ] {
             let error = compile_typescript(source, None).unwrap_err();
@@ -2653,6 +2724,43 @@ mod ease_steps {
         assert!(!output.contains("  StepPosition,"));
         assert!(output.contains("easeSteps(4, \"jumpEnd\")"));
         assert!(!output.contains("StepPosition.JumpEnd"));
+    }
+
+    #[test]
+    fn inherits_exact_string_union_values_from_production_sources() {
+        let production = r#"
+//! flight-compiler: string-union Facet=exact
+//! flight-compiler: string-union-value Facet Compression "compression.kind"
+//! flight-compiler: string-union-value Facet SceneNode "scene.node-kind"
+
+pub enum Facet {
+    Compression,
+    SceneNode,
+}
+"#;
+        let source = r#"
+use flight_requirement::*;
+
+mod facet {
+    use super::*;
+
+    #[test]
+    fn accepts_an_exact_facet() {
+        assert_eq!(identity(Facet::SceneNode), "scene.node-kind");
+    }
+}
+"#;
+
+        let output = compile_vitest_with_alias_sources(
+            source,
+            "@flighthq/requirement/contract",
+            &[production],
+        )
+        .unwrap();
+
+        assert!(!output.contains("  Facet,"));
+        assert!(output.contains("identity(\"scene.node-kind\")"));
+        assert!(!output.contains("Facet.SceneNode"));
     }
 
     #[test]
