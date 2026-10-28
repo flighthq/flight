@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use std::sync::Arc;
 
 use flight_haptics::contract::*;
