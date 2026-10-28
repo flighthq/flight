@@ -5,7 +5,13 @@ use std::process;
 
 const USAGE: &str = "\
 Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--check]
+       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> [--check]
 ";
+
+enum GenerateKind {
+    Source,
+    Tests,
+}
 
 struct GenerateOptions {
     check: bool,
@@ -13,16 +19,20 @@ struct GenerateOptions {
     source: PathBuf,
 }
 
-fn generate(options: &GenerateOptions) -> Result<(), String> {
+fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String> {
     let source = fs::read_to_string(&options.source)
         .map_err(|error| format!("{}: {error}", options.source.display()))?;
-    let output = flight_compiler::compile_typescript(&source).map_err(|error| error.to_string())?;
+    let output = match kind {
+        GenerateKind::Source => flight_compiler::compile_typescript(&source),
+        GenerateKind::Tests => flight_compiler::compile_vitest(&source),
+    }
+    .map_err(|error| error.to_string())?;
     if options.check {
         let existing = fs::read_to_string(&options.out)
             .map_err(|error| format!("{}: {error}", options.out.display()))?;
         if existing != output {
             return Err(format!(
-                "{} is stale; run flight-compile generate without --check",
+                "{} is stale; rerun flight-compile without --check",
                 options.out.display()
             ));
         }
@@ -34,9 +44,10 @@ fn generate(options: &GenerateOptions) -> Result<(), String> {
 fn main() {
     let arguments = env::args().skip(1).collect::<Vec<_>>();
     let result = match arguments.first().map(String::as_str) {
-        Some("generate") => {
-            parse_generate_options(&arguments[1..]).and_then(|options| generate(&options))
-        }
+        Some("generate") => parse_generate_options(&arguments[1..])
+            .and_then(|options| generate(&options, GenerateKind::Source)),
+        Some("generate-tests") => parse_generate_options(&arguments[1..])
+            .and_then(|options| generate(&options, GenerateKind::Tests)),
         Some("help" | "--help" | "-h") => {
             print!("{USAGE}");
             return;

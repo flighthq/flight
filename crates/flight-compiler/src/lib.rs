@@ -1,5 +1,6 @@
 mod model;
 mod typescript;
+mod vitest;
 
 use std::error::Error;
 use std::fmt;
@@ -25,6 +26,16 @@ pub(crate) fn compile_error(message: impl Into<String>) -> CompileError {
 pub fn compile_typescript(source: &str) -> Result<String, CompileError> {
     let program = model::parse_program(source)?;
     return typescript::emit_program(&program);
+}
+
+/// Compiles one canonical Rust contract-test module into a Vitest suite.
+///
+/// Only tests of the free-function contract are portable. Rust `impl` tests
+/// are rejected, while target-specific TypeScript tests remain handwritten.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_vitest(source: &str) -> Result<String, CompileError> {
+    let program = model::parse_test_program(source)?;
+    return vitest::emit_test_program(&program);
 }
 
 impl fmt::Display for CompileError {

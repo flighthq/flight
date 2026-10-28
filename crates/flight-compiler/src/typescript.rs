@@ -52,7 +52,10 @@ fn emit_block(
     return Ok(());
 }
 
-fn emit_expression(expression: &Expr, entities: &HashSet<String>) -> Result<String, CompileError> {
+pub(crate) fn emit_expression(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
     return match expression {
         Expr::Array(array) => {
             let elements = array
@@ -74,6 +77,9 @@ fn emit_expression(expression: &Expr, entities: &HashSet<String>) -> Result<Stri
             emit_expression(&binary.right, entities)?
         )),
         Expr::Call(call) => {
+            if expression_is_path(&call.func, "Some") && call.args.len() == 1 {
+                return emit_expression(&call.args[0], entities);
+            }
             let function = emit_expression(&call.func, entities)?;
             let arguments = call
                 .args
@@ -98,6 +104,12 @@ fn emit_expression(expression: &Expr, entities: &HashSet<String>) -> Result<Stri
         Expr::MethodCall(call) => emit_method_call(call, entities),
         Expr::Paren(paren) => Ok(format!("({})", emit_expression(&paren.expr, entities)?)),
         Expr::Path(path) => {
+            if path.path.is_ident("None") {
+                return Ok("null".to_string());
+            }
+            if path_is_float_constant(&path.path, "NAN") {
+                return Ok("Number.NaN".to_string());
+            }
             let rendered = path
                 .path
                 .segments
@@ -108,6 +120,15 @@ fn emit_expression(expression: &Expr, entities: &HashSet<String>) -> Result<Stri
             Ok(rendered)
         }
         Expr::Reference(reference) => emit_expression(&reference.expr, entities),
+        Expr::Repeat(repeat) => {
+            let value = emit_expression(&repeat.expr, entities)?;
+            let length = emit_expression(&repeat.len, entities)?;
+            if expression_is_f32(&repeat.expr) {
+                Ok(format!("new Float32Array({length}).fill({value})"))
+            } else {
+                Ok(format!("new Array({length}).fill({value})"))
+            }
+        }
         Expr::Struct(structure) => {
             let fields = structure
                 .fields
@@ -144,6 +165,75 @@ fn emit_expression(expression: &Expr, entities: &HashSet<String>) -> Result<Stri
             "unsupported Rust expression `{}`",
             expression_kind(expression)
         ))),
+    };
+}
+
+fn emit_expression_for_type(
+    expression: &Expr,
+    rust_type: &Type,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    if let Expr::Reference(reference) = expression {
+        return emit_expression_for_type(&reference.expr, rust_type, entities);
+    }
+    return match rust_type {
+        Type::Array(array_type) => match expression {
+            Expr::Array(array) => {
+                let elements = array
+                    .elems
+                    .iter()
+                    .map(|element| emit_expression_for_type(element, &array_type.elem, entities))
+                    .collect::<Result<Vec<_>, _>>()?;
+                if type_is_named(&array_type.elem, "f32") {
+                    Ok(format!("new Float32Array([{}])", elements.join(", ")))
+                } else {
+                    Ok(format!("[{}]", elements.join(", ")))
+                }
+            }
+            Expr::Repeat(repeat) => {
+                let value = emit_expression_for_type(&repeat.expr, &array_type.elem, entities)?;
+                let length = emit_expression(&repeat.len, entities)?;
+                if type_is_named(&array_type.elem, "f32") {
+                    Ok(format!("new Float32Array({length}).fill({value})"))
+                } else {
+                    Ok(format!("new Array({length}).fill({value})"))
+                }
+            }
+            _ => emit_expression(expression, entities),
+        },
+        Type::Paren(paren) => emit_expression_for_type(expression, &paren.elem, entities),
+        Type::Reference(reference) => {
+            emit_expression_for_type(expression, &reference.elem, entities)
+        }
+        Type::Slice(slice) => match expression {
+            Expr::Array(array) => {
+                let elements = array
+                    .elems
+                    .iter()
+                    .map(|element| emit_expression_for_type(element, &slice.elem, entities))
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(format!("[{}]", elements.join(", ")))
+            }
+            _ => emit_expression(expression, entities),
+        },
+        Type::Tuple(tuple_type) => match expression {
+            Expr::Tuple(tuple) if tuple.elems.len() == tuple_type.elems.len() => {
+                let elements = tuple
+                    .elems
+                    .iter()
+                    .zip(&tuple_type.elems)
+                    .map(|(element, element_type)| {
+                        emit_expression_for_type(element, element_type, entities)
+                    })
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok(format!("[{}]", elements.join(", ")))
+            }
+            Expr::Tuple(_) => Err(compile_error(
+                "tuple initializer length does not match its Rust type",
+            )),
+            _ => emit_expression(expression, entities),
+        },
+        _ => emit_expression(expression, entities),
     };
 }
 
@@ -192,7 +282,7 @@ fn emit_literal(literal: &Lit) -> Result<String, CompileError> {
     };
 }
 
-fn emit_local(
+pub(crate) fn emit_local(
     out: &mut String,
     local: &syn::Local,
     entities: &HashSet<String>,
@@ -221,16 +311,22 @@ fn emit_local(
     let typescript_type = rust_type
         .map(|rust_type| emit_type(rust_type, entities))
         .transpose()?;
-    let value = if expression_is_path_call(&initializer.expr, "allocate_entity") {
+    let mut value = if expression_is_path_call(&initializer.expr, "allocate_entity") {
         let Some(typescript_type) = &typescript_type else {
             return Err(compile_error(
                 "allocate_entity local needs an explicit Rust type",
             ));
         };
         format!("allocateEntity<{typescript_type}>()")
+    } else if let Some(rust_type) = rust_type {
+        emit_expression_for_type(&initializer.expr, rust_type, entities)?
     } else {
         emit_expression(&initializer.expr, entities)?
     };
+    if typescript_type.as_deref() == Some("Float32Array") && !value.starts_with("new Float32Array(")
+    {
+        value = format!("new Float32Array({value})");
+    }
     write_indent(out, indent);
     write!(out, "let {}", snake_to_lower_camel(&name)).expect("writing to a String cannot fail");
     if let Some(typescript_type) = typescript_type {
@@ -271,6 +367,7 @@ fn emit_method_call(
         )),
         "cos" if arguments.is_empty() => Ok(format!("Math.cos({receiver})")),
         "floor" if arguments.is_empty() => Ok(format!("Math.floor({receiver})")),
+        "is_nan" if arguments.is_empty() => Ok(format!("Number.isNaN({receiver})")),
         "max" if arguments.len() == 1 => Ok(format!("Math.max({receiver}, {})", arguments[0])),
         "min" if arguments.len() == 1 => Ok(format!("Math.min({receiver}, {})", arguments[0])),
         "powf" if arguments.len() == 1 => Ok(format!("Math.pow({receiver}, {})", arguments[0])),
@@ -284,7 +381,10 @@ fn emit_method_call(
     };
 }
 
-fn emit_parameter(argument: &FnArg, entities: &HashSet<String>) -> Result<String, CompileError> {
+pub(crate) fn emit_parameter(
+    argument: &FnArg,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
     let FnArg::Typed(argument) = argument else {
         return Err(compile_error(
             "free-function contract cannot contain a self receiver",
@@ -303,10 +403,9 @@ fn emit_parameter(argument: &FnArg, entities: &HashSet<String>) -> Result<String
 }
 
 fn emit_path_segment(segment: &str) -> String {
-    if segment
-        .chars()
-        .all(|character| character.is_ascii_uppercase() || character == '_')
-    {
+    if segment.chars().all(|character| {
+        character.is_ascii_uppercase() || character.is_ascii_digit() || character == '_'
+    }) {
         return segment.to_string();
     }
     return snake_to_lower_camel(segment);
@@ -482,8 +581,12 @@ fn emit_struct(
     return Ok(());
 }
 
-fn emit_type(rust_type: &Type, entities: &HashSet<String>) -> Result<String, CompileError> {
+pub(crate) fn emit_type(
+    rust_type: &Type,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
     return match rust_type {
+        Type::Array(array) if type_is_named(&array.elem, "f32") => Ok("Float32Array".to_string()),
         Type::Array(array) => Ok(format!("readonly {}[]", emit_type(&array.elem, entities)?)),
         Type::Paren(paren) => emit_type(&paren.elem, entities),
         Type::Path(path) => {
@@ -598,6 +701,24 @@ fn expression_contains_path(block: &syn::Block, expected: &str) -> bool {
     return finder.found;
 }
 
+fn expression_is_f32(expression: &Expr) -> bool {
+    let Expr::Lit(literal) = expression else {
+        return false;
+    };
+    return match &literal.lit {
+        Lit::Float(value) => value.suffix() == "f32",
+        Lit::Int(value) => value.suffix() == "f32",
+        _ => false,
+    };
+}
+
+fn expression_is_path(expression: &Expr, expected: &str) -> bool {
+    let Expr::Path(path) = expression else {
+        return false;
+    };
+    return path.path.is_ident(expected);
+}
+
 fn expression_is_path_call(expression: &Expr, expected: &str) -> bool {
     let Expr::Call(call) = expression else {
         return false;
@@ -650,7 +771,21 @@ fn is_public(visibility: &Visibility) -> bool {
     return matches!(visibility, Visibility::Public(_));
 }
 
-fn snake_to_lower_camel(name: &str) -> String {
+fn path_is_float_constant(path: &syn::Path, constant: &str) -> bool {
+    if path.segments.len() != 2 {
+        return false;
+    }
+    let mut segments = path.segments.iter();
+    let Some(rust_type) = segments.next() else {
+        return false;
+    };
+    let Some(name) = segments.next() else {
+        return false;
+    };
+    return matches!(rust_type.ident.to_string().as_str(), "f32" | "f64") && name.ident == constant;
+}
+
+pub(crate) fn snake_to_lower_camel(name: &str) -> String {
     let mut words = name.split('_');
     let mut out = words.next().unwrap_or_default().to_string();
     for word in words {
@@ -661,6 +796,13 @@ fn snake_to_lower_camel(name: &str) -> String {
         }
     }
     return out;
+}
+
+fn type_is_named(rust_type: &Type, expected: &str) -> bool {
+    let Type::Path(path) = rust_type else {
+        return false;
+    };
+    return path.path.is_ident(expected);
 }
 
 fn type_kind(rust_type: &Type) -> &'static str {
@@ -677,7 +819,7 @@ fn type_kind(rust_type: &Type) -> &'static str {
     };
 }
 
-fn write_indent(out: &mut String, indent: usize) {
+pub(crate) fn write_indent(out: &mut String, indent: usize) {
     for _ in 0..indent {
         out.push_str("  ");
     }
