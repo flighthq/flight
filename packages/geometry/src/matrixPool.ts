@@ -1,5 +1,5 @@
+import { detachEntityBinding } from '@flighthq/entity/contract';
 import type { Matrix } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { geometryPoolReleaseGuard } from './geometryPoolGuards.ts';
 import { createMatrix, setMatrixIdentity } from './matrix.ts';
@@ -30,7 +30,7 @@ export function clearMatrixPool(): void {
 export function releaseMatrix(m: Matrix): void {
   if (!m) return;
   if (geometryPoolReleaseGuard !== null && pool.includes(m)) geometryPoolReleaseGuard('releaseMatrix');
-  m[EntityRuntimeKey] = undefined;
+  detachEntityBinding(m);
   pool.push(m);
 }
 

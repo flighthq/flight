@@ -1,5 +1,5 @@
+import { detachEntityBinding } from '@flighthq/entity/contract';
 import type { Quaternion } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { geometryPoolReleaseGuard } from './geometryPoolGuards.ts';
 import { createQuaternion } from './quaternion.ts';
@@ -33,7 +33,7 @@ export function clearQuaternionPool(): void {
 export function releaseQuaternion(q: Quaternion): void {
   if (!q) return;
   if (geometryPoolReleaseGuard !== null && pool.includes(q)) geometryPoolReleaseGuard('releaseQuaternion');
-  q[EntityRuntimeKey] = undefined;
+  detachEntityBinding(q);
   pool.push(q);
 }
 

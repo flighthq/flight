@@ -1,5 +1,5 @@
+import { detachEntityBinding } from '@flighthq/entity/contract';
 import type { Vector2 } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { geometryPoolReleaseGuard } from './geometryPoolGuards.ts';
 import { createVector2 } from './vector2.ts';
@@ -23,7 +23,7 @@ export function clearVector2Pool(): void {
 export function releaseVector2(v: Vector2): void {
   if (!v) return;
   if (geometryPoolReleaseGuard !== null && pool.includes(v)) geometryPoolReleaseGuard('releaseVector2');
-  v[EntityRuntimeKey] = undefined;
+  detachEntityBinding(v);
   pool.push(v);
 }
 

@@ -1,5 +1,5 @@
+import { detachEntityBinding } from '@flighthq/entity/contract';
 import type { Rectangle } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { geometryPoolReleaseGuard } from './geometryPoolGuards.ts';
 import { createRectangle } from './rectangle.ts';
@@ -33,7 +33,7 @@ export function clearRectanglePool(): void {
 export function releaseRectangle(r: Rectangle): void {
   if (!r) return;
   if (geometryPoolReleaseGuard !== null && pool.includes(r)) geometryPoolReleaseGuard('releaseRectangle');
-  r[EntityRuntimeKey] = undefined;
+  detachEntityBinding(r);
   pool.push(r);
 }
 
