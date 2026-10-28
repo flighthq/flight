@@ -1,23 +1,23 @@
+//! flight-compiler: string-union HapticImpactStyle HapticNotificationType HapticsOperation
+
 use std::sync::Arc;
 
 /// Physical impact styles supported by a haptics provider.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u8)]
 pub enum HapticImpactStyle {
-    Light = 0,
-    Medium = 1,
-    Heavy = 2,
-    Soft = 3,
-    Rigid = 4,
+    Light,
+    Medium,
+    Heavy,
+    Soft,
+    Rigid,
 }
 
 /// Notification feedback categories supported by a haptics provider.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u8)]
 pub enum HapticNotificationType {
-    Success = 0,
-    Warning = 1,
-    Error = 2,
+    Success,
+    Warning,
+    Error,
 }
 
 /// Snapshot of the features exposed by a selected haptics provider.
@@ -54,18 +54,17 @@ pub struct HostHapticsCapabilities {
 
 /// Every operation exposed by [`HostHapticsCapability`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u8)]
 pub enum HapticsOperation {
-    Cancel = 0,
-    Capabilities = 1,
-    Impact = 2,
-    IsSupported = 3,
-    Notification = 4,
-    Prepare = 5,
-    Selection = 6,
-    Vibrate = 7,
-    VibratePattern = 8,
-    VibrateWaveform = 9,
+    Cancel,
+    Capabilities,
+    Impact,
+    IsSupported,
+    Notification,
+    Prepare,
+    Selection,
+    Vibrate,
+    VibratePattern,
+    VibrateWaveform,
 }
 
 // flight-lint: allow(conform-extra) D9 enum-string conversion for the TS HapticImpactStyle string union; @flighthq/types exports the union only
