@@ -1,3 +1,5 @@
+//! flight-compiler: data-union SubpathPointKind
+
 use crate::for_each_path_segment::for_each_path_segment;
 use crate::path::{Path, PathCommand, PathSegment};
 
