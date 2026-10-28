@@ -1,4 +1,5 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
+import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
 import { StatechartAtomicStateKind, StatechartTransitionStatus } from '@flighthq/types/contract';
 import type { LogEntry, Statechart } from '@flighthq/types/contract';
 
@@ -9,11 +10,17 @@ import {
 } from './enableStatechartGuards.ts';
 import { advanceStatechartInstance, createStatechartInstance, setStatechartRegionDuration } from './statechart.ts';
 
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
+
 describe('areStatechartGuardsEnabled', () => {
   it('reports guard state per actor', () => {
     const guarded = createStatechartInstance(createExitTimeChart());
     const unguarded = createStatechartInstance(createExitTimeChart());
-    enableStatechartGuards(guarded);
+    enableStatechartGuards(guarded, logState, () => 0);
     expect(areStatechartGuardsEnabled(guarded)).toBe(true);
     expect(areStatechartGuardsEnabled(unguarded)).toBe(false);
   });
@@ -22,7 +29,7 @@ describe('areStatechartGuardsEnabled', () => {
 describe('disableStatechartGuards', () => {
   it('restores silent coercion without changing transition behavior', () => {
     const instance = createStatechartInstance(createExitTimeChart());
-    enableStatechartGuards(instance);
+    enableStatechartGuards(instance, logState, () => 0);
     disableStatechartGuards(instance);
     const entries = captureLog(() => {
       expect(advanceStatechartInstance(instance, 0)).toBe(1);
@@ -34,7 +41,7 @@ describe('disableStatechartGuards', () => {
 describe('enableStatechartGuards', () => {
   it('warns once and names the duration setter while preserving no-requirement coercion', () => {
     const instance = createStatechartInstance(createExitTimeChart());
-    enableStatechartGuards(instance);
+    enableStatechartGuards(instance, logState, () => 0);
     const entries = captureLog(() => {
       expect(advanceStatechartInstance(instance, 0)).toBe(1);
     });
@@ -52,7 +59,7 @@ describe('enableStatechartGuards', () => {
 
   it('stays silent when a positive duration makes the exit-time ratio well-defined', () => {
     const instance = createStatechartInstance(createExitTimeChart());
-    enableStatechartGuards(instance);
+    enableStatechartGuards(instance, logState, () => 0);
     setStatechartRegionDuration(instance, 0, 100);
     const entries = captureLog(() => {
       expect(advanceStatechartInstance(instance, 49)).toBe(0);
@@ -72,13 +79,11 @@ describe('enableStatechartGuards', () => {
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
-  try {
-    run();
-    return getMemoryLogSinkEntries(sink);
-  } finally {
-    removeLogSink(sink.sink);
-  }
+  addLogSink(logState, sink.sink);
+  run();
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
 }
 
 function createExitTimeChart(): Statechart {

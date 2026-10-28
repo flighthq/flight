@@ -1,4 +1,5 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
+import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
 import type { HostSocketCapability, LogEntry } from '@flighthq/types/contract';
 
 import { areSocketGuardsEnabled, disableSocketGuards, enableSocketGuards } from './enableSocketGuards.ts';
@@ -6,13 +7,11 @@ import { closeSocket, createSocket, disposeSocket, enableSocketSignals, sendSock
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
-  try {
-    run();
-    return getMemoryLogSinkEntries(sink);
-  } finally {
-    removeLogSink(sink.sink);
-  }
+  addLogSink(logState, sink.sink);
+  run();
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
 }
 
 function backend(hasConnection: boolean): HostSocketCapability {
@@ -24,6 +23,12 @@ function backend(hasConnection: boolean): HostSocketCapability {
   };
 }
 
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
+
 afterEach(() => {
   disableSocketGuards();
 });
@@ -34,7 +39,7 @@ function hostOf(backend: HostSocketCapability): { readonly net: { readonly socke
 
 describe('areSocketGuardsEnabled', () => {
   it('reports whether the global guard hook is installed', () => {
-    enableSocketGuards();
+    enableSocketGuards(logState, () => 0);
     expect(areSocketGuardsEnabled()).toBe(true);
     disableSocketGuards();
     expect(areSocketGuardsEnabled()).toBe(false);
@@ -43,7 +48,7 @@ describe('areSocketGuardsEnabled', () => {
 
 describe('disableSocketGuards', () => {
   it('restores silent core behavior', () => {
-    enableSocketGuards();
+    enableSocketGuards(logState, () => 0);
     disableSocketGuards();
     const host = hostOf(backend(false));
     expect(captureLog(() => createSocket(host.net.socket, { url: 'tcp://silent' }))).toEqual([]);
@@ -52,7 +57,7 @@ describe('disableSocketGuards', () => {
 
 describe('enableSocketGuards', () => {
   it('warns once when socket creation produces no connection', () => {
-    enableSocketGuards();
+    enableSocketGuards(logState, () => 0);
     const host = hostOf(backend(false));
     const entries = captureLog(() => {
       createSocket(host.net.socket, { url: 'tcp://unsupported' });
@@ -69,7 +74,7 @@ describe('enableSocketGuards', () => {
   });
 
   it('warns once per command issued after terminal disposal', () => {
-    enableSocketGuards();
+    enableSocketGuards(logState, () => 0);
     const host = hostOf(backend(true));
     const socket = createSocket(host.net.socket, { url: 'ws://disposed' });
     disposeSocket(socket);
@@ -92,7 +97,7 @@ describe('enableSocketGuards', () => {
   });
 
   it('stays silent for ordinary pre-open sends and closes', () => {
-    enableSocketGuards();
+    enableSocketGuards(logState, () => 0);
     const host = hostOf(backend(true));
     const socket = createSocket(host.net.socket, { url: 'ws://connecting' });
     const entries = captureLog(() => {

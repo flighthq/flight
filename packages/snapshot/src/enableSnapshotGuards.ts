@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -30,15 +31,15 @@ export function disableSnapshotGuards(): void {
  * message at the point the cyclic state is captured rather than several frames later.
  *
  * Not importing this module costs production nothing: the messages and the `@flighthq/log` dependency
- * live only here.
+ * live only here. Warnings go to the caller-owned `logState`, stamped with `clock()` when reported.
  */
-export function enableSnapshotGuards(): void {
-  setSnapshotCaptureGuard(warnOnUnsupportedSnapshotSource);
+export function enableSnapshotGuards(logState: LogState, clock: () => number): void {
+  setSnapshotCaptureGuard((source) => warnOnUnsupportedSnapshotSource(logState, clock, source));
 }
 
 // Walks the source once, reporting the first occurrence of each problem kind. Tracks visited objects
 // so the walk itself terminates on the very cycles it is looking for.
-function warnOnUnsupportedSnapshotSource(source: unknown): void {
+function warnOnUnsupportedSnapshotSource(logState: LogState, clock: () => number, source: unknown): void {
   const seen = new Set<object>();
   const nonPlain = new Set<string>();
   let cyclic = false;
@@ -69,6 +70,8 @@ function warnOnUnsupportedSnapshotSource(source: unknown): void {
 
   if (nonPlain.size > 0) {
     logOnce(
+      logState,
+      clock(),
       'snapshot:non-plain-source',
       LogLevel.Warn,
       {
@@ -82,6 +85,8 @@ function warnOnUnsupportedSnapshotSource(source: unknown): void {
   }
   if (cyclic) {
     logOnce(
+      logState,
+      clock(),
       'snapshot:cyclic-source',
       LogLevel.Warn,
       {
