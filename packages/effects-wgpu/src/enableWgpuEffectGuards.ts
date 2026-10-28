@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type { WgpuEffectApplicationExplanation, WgpuRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -24,10 +25,16 @@ export function disableWgpuEffectGuards(state: WgpuRenderState): void {
 // The WGPU sibling of enableGlEffectGuards. WGPU now observes per-instance resolution for effects
 // that name external resources (BitmapDisplacementEffect); GL alone additionally guards custom-shader
 // source re-registration because WGPU has no custom-shader effect.
-export function enableWgpuEffectGuards(state: WgpuRenderState): void {
-  setWgpuEffectApplicationGuard(state, warnWgpuEffectApplication);
-  setWgpuEffectStateSampleCountGuard(state, warnWgpuEffectStateSampleCount);
-  setWgpuEffectStateSkipGuard(state, warnWgpuEffectStateSkip);
+export function enableWgpuEffectGuards(state: WgpuRenderState, logState: LogState | null): void {
+  setWgpuEffectApplicationGuard(state, (...args) => {
+    if (logState !== null) warnWgpuEffectApplication(logState, ...args);
+  });
+  setWgpuEffectStateSampleCountGuard(state, (...args) => {
+    if (logState !== null) warnWgpuEffectStateSampleCount(logState, ...args);
+  });
+  setWgpuEffectStateSkipGuard(state, (...args) => {
+    if (logState !== null) warnWgpuEffectStateSkip(logState, ...args);
+  });
   _guardedStates.add(state);
 }
 
@@ -35,11 +42,14 @@ export function enableWgpuEffectGuards(state: WgpuRenderState): void {
 // rather than rejected so module-scope pipeline construction remains loadable; the guard makes the
 // applied count explicit. Warn once per requested count.
 function warnWgpuEffectStateSampleCount(
+  logState: LogState,
   _state: WgpuRenderState,
   requestedSampleCount: number,
   appliedSampleCount: number,
 ): void {
   logOnce(
+    logState,
+    WGPU_EFFECT_GUARD_LOG_TIME_MS,
     `effects-wgpu:pipeline-sample-count-substituted:${requestedSampleCount}`,
     LogLevel.Warn,
     {
@@ -69,12 +79,15 @@ function getWgpuEffectApplicationMessage(explanation: Readonly<WgpuEffectApplica
 }
 
 function warnWgpuEffectApplication(
+  logState: LogState,
   _state: WgpuRenderState,
   explanation: Readonly<WgpuEffectApplicationExplanation>,
 ): void {
   // Keyed by status plus the kinds involved: a chain missing a different effect is a different
   // observation worth reporting, while the same miss every frame is not.
   logOnce(
+    logState,
+    WGPU_EFFECT_GUARD_LOG_TIME_MS,
     `effects-wgpu:effect-application:${explanation.status}:${explanation.unregisteredKinds.join(',')}:${explanation.unresolvedIndexes.join(',')}`,
     LogLevel.Warn,
     {
@@ -93,10 +106,12 @@ function warnWgpuEffectApplication(
 // artifact. Seven effect kinds ship a descriptor and a constructor with no runner on ANY backend
 // (AutoExposure, BarrelDistortion, FilmEmulation, PanniniProjection, Ssr, Taa, VolumetricLight), so a
 // caller can build one into a chain and watch nothing happen with nothing to grep for.
-function warnWgpuEffectStateSkip(_state: WgpuRenderState, kind: string): void {
+function warnWgpuEffectStateSkip(logState: LogState, _state: WgpuRenderState, kind: string): void {
   // Keyed by kind, not by frame: the same missing kind every frame is one observation, and a second kind
   // going missing is a new one worth reporting.
   logOnce(
+    logState,
+    WGPU_EFFECT_GUARD_LOG_TIME_MS,
     `effects-wgpu:pipeline-effect-skipped:${kind}`,
     LogLevel.Warn,
     {
@@ -108,3 +123,7 @@ function warnWgpuEffectStateSkip(_state: WgpuRenderState, kind: string): void {
 }
 
 const _guardedStates = new WeakSet<WgpuRenderState>();
+
+// The effect guards carry no clock (crates/flight-effects-wgpu stamps them with 0), so every warning
+// reports this time.
+const WGPU_EFFECT_GUARD_LOG_TIME_MS = 0;
