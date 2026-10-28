@@ -1,5 +1,3 @@
-use std::sync::{Arc, Mutex};
-
 use flight_easing::contract::get_step_position_string;
 use flight_easing::contract::parse_step_position;
 use flight_easing::contract::set_easing_steps_guard;
@@ -132,50 +130,10 @@ mod parse_step_position {
 mod set_easing_steps_guard {
     use super::*;
 
-    use crate::GUARD_TEST_LOCK;
-
     #[test]
-    /// flight-compiler: rust-only — the Rust process-global guard needs a mutex to isolate parallel tests; the target-native TypeScript guard suite covers the same seam without threads.
-    fn reports_the_degenerate_jump_none_call_that_silently_returns_nan() {
-        let _lock = GUARD_TEST_LOCK
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let seen: Arc<Mutex<Vec<(i32, StepPosition)>>> = Arc::new(Mutex::new(Vec::new()));
-        let seen_by_guard = seen.clone();
-        let guard: Arc<dyn Fn(i32, StepPosition) + Send + Sync> =
-            Arc::new(move |count, position| {
-                seen_by_guard.lock().unwrap().push((count, position));
-            });
-        set_easing_steps_guard(Some(guard));
-        let ease = ease_steps(1, Some(StepPosition::JumpNone));
-        assert!(ease(0.5).is_nan());
-        set_easing_steps_guard(None);
-        let seen = seen.lock().unwrap();
-        assert_eq!(seen.len(), 1);
-        assert_eq!(seen[0].0, 1);
-        assert_eq!(seen[0].1, StepPosition::JumpNone);
-    }
-
-    #[test]
-    /// flight-compiler: rust-only — the Rust process-global guard needs a mutex to isolate parallel tests; the target-native TypeScript guard suite covers uninstall behavior.
-    fn stays_silent_for_well_defined_calls_and_once_uninstalled() {
-        let _lock = GUARD_TEST_LOCK
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let seen: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
-        let seen_by_guard = seen.clone();
-        let guard: Arc<dyn Fn(i32, StepPosition) + Send + Sync> =
-            Arc::new(move |count, _position| {
-                seen_by_guard.lock().unwrap().push(count);
-            });
-        set_easing_steps_guard(Some(guard));
-        ease_steps(2, Some(StepPosition::JumpNone))(0.5);
-        ease_steps(1, Some(StepPosition::JumpEnd))(0.5);
-        ease_steps(1, Some(StepPosition::JumpBoth))(0.5);
-        set_easing_steps_guard(None);
-        assert_eq!(seen.lock().unwrap().len(), 0);
-
-        ease_steps(1, Some(StepPosition::JumpNone))(0.5);
-        assert_eq!(seen.lock().unwrap().len(), 0);
+    fn is_available_to_the_target_native_guard_suite() {
+        // Bind the contract without mutating its process-global slot. Behavioral coverage lives in
+        // the matched target-native enable_easing_guards suites, where the Rust tests can serialize.
+        let _clear_guard = || set_easing_steps_guard(None);
     }
 }

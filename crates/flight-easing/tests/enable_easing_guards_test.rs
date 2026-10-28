@@ -1,8 +1,9 @@
 //! flight-compiler: target-native
 
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
 
+use flight_easing::contract::set_easing_steps_guard;
 use flight_easing::*;
 use flight_log::LogData;
 use flight_log::LogLevel;
@@ -128,5 +129,52 @@ mod enable_easing_guards {
             .len(),
             0
         );
+    }
+}
+
+mod set_easing_steps_guard {
+    use super::*;
+
+    #[test]
+    fn reports_the_degenerate_jump_none_call_that_silently_returns_nan() {
+        let _lock = GUARD_TEST_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let seen: Arc<Mutex<Vec<(i32, StepPosition)>>> = Arc::new(Mutex::new(Vec::new()));
+        let seen_by_guard = seen.clone();
+        let guard: Arc<dyn Fn(i32, StepPosition) + Send + Sync> =
+            Arc::new(move |count, position| {
+                seen_by_guard.lock().unwrap().push((count, position));
+            });
+        set_easing_steps_guard(Some(guard));
+        let ease = ease_steps(1, Some(StepPosition::JumpNone));
+        assert!(ease(0.5).is_nan());
+        set_easing_steps_guard(None);
+        let seen = seen.lock().unwrap();
+        assert_eq!(seen.len(), 1);
+        assert_eq!(seen[0].0, 1);
+        assert_eq!(seen[0].1, StepPosition::JumpNone);
+    }
+
+    #[test]
+    fn stays_silent_for_well_defined_calls_and_once_uninstalled() {
+        let _lock = GUARD_TEST_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let seen: Arc<Mutex<Vec<i32>>> = Arc::new(Mutex::new(Vec::new()));
+        let seen_by_guard = seen.clone();
+        let guard: Arc<dyn Fn(i32, StepPosition) + Send + Sync> =
+            Arc::new(move |count, _position| {
+                seen_by_guard.lock().unwrap().push(count);
+            });
+        set_easing_steps_guard(Some(guard));
+        ease_steps(2, Some(StepPosition::JumpNone))(0.5);
+        ease_steps(1, Some(StepPosition::JumpEnd))(0.5);
+        ease_steps(1, Some(StepPosition::JumpBoth))(0.5);
+        set_easing_steps_guard(None);
+        assert_eq!(seen.lock().unwrap().len(), 0);
+
+        ease_steps(1, Some(StepPosition::JumpNone))(0.5);
+        assert_eq!(seen.lock().unwrap().len(), 0);
     }
 }
