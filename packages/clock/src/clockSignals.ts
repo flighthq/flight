@@ -1,6 +1,7 @@
 import { createSignal } from '@flighthq/signals/contract';
 import type { Signal } from '@flighthq/signals/contract';
-import type { Clock } from '@flighthq/types/contract';
+
+import type { Clock } from './clock.ts';
 
 // Opts the clock into the onTick signal, allocating it on first call and returning it (idempotent — a
 // second call returns the same signal). onTick emits the clock's scaled deltaTime on every advance, so it

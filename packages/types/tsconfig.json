@@ -14,6 +14,9 @@
       "path": "../buffer"
     },
     {
+      "path": "../clock"
+    },
+    {
       "path": "../color"
     },
     {

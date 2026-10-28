@@ -14,3 +14,4 @@ export {
   resumeClock,
   setClockScale,
 } from './contract.ts';
+export type { Clock, ClockOptions } from './clock.ts';
