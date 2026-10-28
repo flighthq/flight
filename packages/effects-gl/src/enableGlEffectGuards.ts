@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type { GlEffectApplicationExplanation, GlRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -21,10 +22,16 @@ export function disableGlEffectGuards(state: GlRenderState): void {
 // an unregistered chain returns false having never written `dest`, so a sprite sampling that texture
 // shows whatever was last in it, and a partially registered chain succeeds while silently dropping
 // the effects it could not run. Both are correct by contract and neither surfaces anywhere.
-export function enableGlEffectGuards(state: GlRenderState): void {
-  setGlEffectApplicationGuard(state, warnGlEffectApplication);
-  setGlCustomShaderSourceGuard(state, warnGlCustomShaderSourceReregistered);
-  setGlEffectStateSkipGuard(state, warnGlEffectStateSkip);
+export function enableGlEffectGuards(state: GlRenderState, logState: LogState | null): void {
+  setGlEffectApplicationGuard(state, (...args) => {
+    if (logState !== null) warnGlEffectApplication(logState, ...args);
+  });
+  setGlCustomShaderSourceGuard(state, (...args) => {
+    if (logState !== null) warnGlCustomShaderSourceReregistered(logState, ...args);
+  });
+  setGlEffectStateSkipGuard(state, (...args) => {
+    if (logState !== null) warnGlEffectStateSkip(logState, ...args);
+  });
   _guardedStates.add(state);
 }
 
@@ -33,6 +40,7 @@ export function enableGlEffectGuards(state: GlRenderState): void {
 // still draws, using the old shader, so an author editing their shader sees their edit have no effect
 // and has no way to tell that from the edit being wrong.
 function warnGlCustomShaderSourceReregistered(
+  logState: LogState,
   _state: GlRenderState,
   shaderKey: string,
   _previousSource: string,
@@ -41,6 +49,8 @@ function warnGlCustomShaderSourceReregistered(
   // Keyed by shaderKey: the same key re-registered every frame is one observation, while a second key
   // hitting the same trap is a new one worth reporting.
   logOnce(
+    logState,
+    GL_EFFECT_GUARD_LOG_TIME_MS,
     `effects-gl:custom-shader-source-reregistered:${shaderKey}`,
     LogLevel.Warn,
     {
@@ -68,10 +78,16 @@ function getGlEffectApplicationMessage(explanation: Readonly<GlEffectApplication
   }
 }
 
-function warnGlEffectApplication(_state: GlRenderState, explanation: Readonly<GlEffectApplicationExplanation>): void {
+function warnGlEffectApplication(
+  logState: LogState,
+  _state: GlRenderState,
+  explanation: Readonly<GlEffectApplicationExplanation>,
+): void {
   // Keyed by status plus the kinds involved: a chain missing a different effect is a different
   // observation worth reporting, while the same miss every frame is not.
   logOnce(
+    logState,
+    GL_EFFECT_GUARD_LOG_TIME_MS,
     `effects-gl:effect-application:${explanation.status}:${explanation.unregisteredKinds.join(',')}:${explanation.unresolvedIndexes.join(',')}`,
     LogLevel.Warn,
     {
@@ -89,10 +105,12 @@ function warnGlEffectApplication(_state: GlRenderState, explanation: Readonly<Gl
 // no artifact. Seven effect kinds ship a descriptor and a constructor with no runner on ANY backend
 // (AutoExposure, BarrelDistortion, FilmEmulation, PanniniProjection, Ssr, Taa, VolumetricLight), so a
 // caller can build one into a chain and watch nothing happen with nothing to grep for.
-function warnGlEffectStateSkip(_state: GlRenderState, kind: string): void {
+function warnGlEffectStateSkip(logState: LogState, _state: GlRenderState, kind: string): void {
   // Keyed by kind, not by frame: the same missing kind every frame is one observation, and a second
   // kind going missing is a new one worth reporting.
   logOnce(
+    logState,
+    GL_EFFECT_GUARD_LOG_TIME_MS,
     `effects-gl:pipeline-effect-skipped:${kind}`,
     LogLevel.Warn,
     {
@@ -104,3 +122,7 @@ function warnGlEffectStateSkip(_state: GlRenderState, kind: string): void {
 }
 
 const _guardedStates = new WeakSet<GlRenderState>();
+
+// The effect guards carry no clock (crates/flight-effects-gl stamps them with 0), so every warning
+// reports this time.
+const GL_EFFECT_GUARD_LOG_TIME_MS = 0;

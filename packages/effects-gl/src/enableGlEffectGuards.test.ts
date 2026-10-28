@@ -1,8 +1,9 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createWebGlContext } from '@flighthq/host-web/contract';
+import type { LogState } from '@flighthq/log/contract';
 import {
   addLogSink,
-  clearLogOnceKeys,
+  createLogState,
   createMemoryLogSink,
   getMemoryLogSinkEntries,
   removeLogSink,
@@ -13,7 +14,7 @@ import {
   createGlRenderTexturePool,
   writeGlRenderTextureTarget,
 } from '@flighthq/render-gl/contract';
-import type { GlEffectRunner, GlRenderState, LogEntry, Effect } from '@flighthq/types/contract';
+import type { Effect, GlEffectRunner, GlRenderState, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import { areGlEffectGuardsEnabled, disableGlEffectGuards, enableGlEffectGuards } from './enableGlEffectGuards.ts';
 import { registerGlCustomShaderSource } from './glCustomShaderEffect.ts';
@@ -21,14 +22,22 @@ import { registerGlEffect } from './glEffectRegistry.ts';
 import { beginGlEffectPass, createGlEffectState, endGlEffectPass } from './glEffectState.ts';
 import { applyGlEffectsToRenderTexture } from './glRenderTextureEffect.ts';
 
-beforeEach(() => clearLogOnceKeys());
+function readLogEntries(sink: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
+}
+
+beforeEach(() => {
+  logState = createLogState();
+});
 
 describe('areGlEffectGuardsEnabled', () => {
   it('reports whether diagnostics were installed for the state', () => {
     const state = createState();
     expect(areGlEffectGuardsEnabled(state)).toBe(false);
 
-    enableGlEffectGuards(state);
+    enableGlEffectGuards(state, logState);
     expect(areGlEffectGuardsEnabled(state)).toBe(true);
 
     disableGlEffectGuards(state);
@@ -39,7 +48,7 @@ describe('areGlEffectGuardsEnabled', () => {
 describe('disableGlEffectGuards', () => {
   it('stops reporting, leaving the silent sentinel silent again', () => {
     const state = createState();
-    enableGlEffectGuards(state);
+    enableGlEffectGuards(state, logState);
     disableGlEffectGuards(state);
 
     const entries = captureLog(() => {
@@ -56,7 +65,7 @@ describe('enableGlEffectGuards', () => {
   // this file uses distinct effect kinds so no two share a key.
   it('WARNS that an unregistered chain returned false without writing dest, then stays quiet', () => {
     const state = createState();
-    enableGlEffectGuards(state);
+    enableGlEffectGuards(state, logState);
 
     const entries = captureLog(() => {
       expect(applyChain(state, ['test.unregistered-a'])).toBe(false);
@@ -76,7 +85,7 @@ describe('enableGlEffectGuards', () => {
   it('WARNS that a partially registered chain silently DROPPED the effects it could not run', () => {
     const state = createState();
     registerGlEffect(state, 'test.registered-b', noopRunner);
-    enableGlEffectGuards(state);
+    enableGlEffectGuards(state, logState);
 
     const entries = captureLog(() => {
       // It succeeds — which is exactly why this one is invisible without a crumb.
@@ -90,7 +99,7 @@ describe('enableGlEffectGuards', () => {
 
   it('WARNS when a failed chain leaves a previously published destination stale', () => {
     const state = createState();
-    enableGlEffectGuards(state);
+    enableGlEffectGuards(state, logState);
 
     const entries = captureLog(() => {
       expect(applyChain(state, ['test.stale-destination'], true)).toBe(false);
@@ -103,7 +112,7 @@ describe('enableGlEffectGuards', () => {
 
   it('WARNS that re-registered shader source will NOT run, because the program is cached by key', () => {
     const state = createState();
-    enableGlEffectGuards(state);
+    enableGlEffectGuards(state, logState);
 
     const entries = captureLog(() => {
       registerGlCustomShaderSource(state, 'test.reregistered-a', 'void main() { o_color = vec4(1.0); }');
@@ -128,7 +137,7 @@ describe('enableGlEffectGuards', () => {
   it('WARNS that an unresolvable effect COPIED THROUGH rather than being dropped', () => {
     const state = createState();
     registerGlEffect(state, 'test.unresolved-a', noopRunner, () => false);
-    enableGlEffectGuards(state);
+    enableGlEffectGuards(state, logState);
 
     const entries = captureLog(() => {
       // It returns TRUE and writes dest — the pass ran, it just did nothing. That is the whole hazard.
@@ -144,7 +153,7 @@ describe('enableGlEffectGuards', () => {
 
   it('WARNS that a pipeline pass DROPPED an effect kind with no runner, once per kind', () => {
     const state = createState();
-    enableGlEffectGuards(state);
+    enableGlEffectGuards(state, logState);
     const pipeline = createGlEffectState(state);
 
     const entries = captureLog(() => {
@@ -180,7 +189,7 @@ describe('enableGlEffectGuards', () => {
 
   it('stays SILENT for an empty chain, which is a no-op the caller asked for rather than a miss', () => {
     const state = createState();
-    enableGlEffectGuards(state);
+    enableGlEffectGuards(state, logState);
 
     const entries = captureLog(() => {
       expect(applyChain(state, [])).toBe(false);
@@ -193,7 +202,7 @@ describe('enableGlEffectGuards', () => {
   it('stays SILENT when every requested effect has a runner', () => {
     const state = createState();
     registerGlEffect(state, 'test.registered-c', noopRunner);
-    enableGlEffectGuards(state);
+    enableGlEffectGuards(state, logState);
 
     const entries = captureLog(() => {
       expect(applyChain(state, ['test.registered-c'])).toBe(true);
@@ -224,12 +233,12 @@ function applyChain(state: GlRenderState, kinds: readonly string[], publishDesti
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
+  addLogSink(logState, sink.sink);
   try {
     run();
-    return getMemoryLogSinkEntries(sink);
+    return readLogEntries(sink);
   } finally {
-    removeLogSink(sink.sink);
+    removeLogSink(logState, sink.sink);
   }
 }
 
@@ -246,3 +255,5 @@ function messageOf(entry: Readonly<LogEntry>): string {
 }
 
 const noopRunner: GlEffectRunner = () => {};
+
+let logState: LogState = createLogState();
