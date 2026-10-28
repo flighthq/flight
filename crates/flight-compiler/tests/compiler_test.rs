@@ -976,6 +976,63 @@ pub fn disable_easing_guards() {
     }
 
     #[test]
+    fn preserves_numeric_enum_values_comparisons_and_ordering() {
+        let source = r#"
+#[repr(u8)]
+pub enum LogLevel {
+    None = 0,
+    Error = 1,
+    Warn = 2,
+    Info = 3,
+    Debug = 4,
+    Verbose = 5,
+}
+
+pub enum Priority {
+    Before = -1,
+    Normal,
+    After = 4,
+}
+
+pub fn passes_level_gate(level: LogLevel, gate: LogLevel) -> bool {
+    return level <= gate && level != LogLevel::None;
+}
+
+pub fn order_levels(levels: &mut Vec<LogLevel>) {
+    levels.sort();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(
+            "export enum LogLevel {\n  None = 0,\n  Error = 1,\n  Warn = 2,\n  Info = 3,\n  Debug = 4,\n  Verbose = 5,\n}"
+        ));
+        assert!(
+            output.contains("export enum Priority {\n  Before = -1,\n  Normal,\n  After = 4,\n}")
+        );
+        assert!(output.contains("return level <= gate && level !== LogLevel.None;"));
+        assert!(output.contains("levels.sort((a, b) => a - b);"));
+        assert!(!output.contains("None = \"none\""));
+    }
+
+    #[test]
+    fn rejects_nonliteral_numeric_enum_discriminants() {
+        let source = r#"
+pub enum Level {
+    Error = 1 + 1,
+}
+"#;
+
+        let error = compile_typescript(source, None).unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "unsupported enum discriminant `Level::Error`; explicit discriminants must be integer literals"
+        );
+    }
+
+    #[test]
     fn refuses_unsupported_public_contract_items() {
         let source = r#"
 pub enum Axis {
@@ -987,7 +1044,7 @@ pub enum Axis {
 
         assert_eq!(
             error.to_string(),
-            "unsupported enum variant `Axis::Named`; only unit variants without explicit discriminants are portable"
+            "unsupported enum variant `Axis::Named`; only unit variants are portable"
         );
     }
 }

@@ -867,7 +867,11 @@ fn emit_documentation(out: &mut String, attributes: &[Attribute], indent: usize)
     out.push_str(" */\n");
 }
 
-fn emit_enum(out: &mut String, rust_enum: &syn::ItemEnum, string_union: bool) {
+fn emit_enum(
+    out: &mut String,
+    rust_enum: &syn::ItemEnum,
+    string_union: bool,
+) -> Result<(), CompileError> {
     emit_documentation(out, &rust_enum.attrs, 0);
     let export = if is_public(&rust_enum.vis) {
         "export "
@@ -875,6 +879,16 @@ fn emit_enum(out: &mut String, rust_enum: &syn::ItemEnum, string_union: bool) {
         ""
     };
     if string_union {
+        if rust_enum
+            .variants
+            .iter()
+            .any(|variant| variant.discriminant.is_some())
+        {
+            return Err(compile_error(format!(
+                "numeric enum `{}` cannot use `flight-compiler: string-union`",
+                rust_enum.ident
+            )));
+        }
         let variants = rust_enum
             .variants
             .iter()
@@ -892,20 +906,39 @@ fn emit_enum(out: &mut String, rust_enum: &syn::ItemEnum, string_union: bool) {
             variants.join(" | ")
         )
         .expect("writing to a String cannot fail");
-        return;
+        return Ok(());
     }
+    let numeric = rust_enum
+        .variants
+        .iter()
+        .any(|variant| variant.discriminant.is_some());
     writeln!(out, "{export}enum {} {{", rust_enum.ident).expect("writing to a String cannot fail");
     for variant in &rust_enum.variants {
         emit_documentation(out, &variant.attrs, 1);
-        writeln!(
-            out,
-            "  {} = {:?},",
-            variant.ident,
-            lower_camel_from_upper_camel(&variant.ident.to_string())
-        )
-        .expect("writing to a String cannot fail");
+        if numeric {
+            if let Some((_, discriminant)) = &variant.discriminant {
+                writeln!(
+                    out,
+                    "  {} = {},",
+                    variant.ident,
+                    emit_expression(discriminant, &HashSet::new())?
+                )
+                .expect("writing to a String cannot fail");
+            } else {
+                writeln!(out, "  {},", variant.ident).expect("writing to a String cannot fail");
+            }
+        } else {
+            writeln!(
+                out,
+                "  {} = {:?},",
+                variant.ident,
+                lower_camel_from_upper_camel(&variant.ident.to_string())
+            )
+            .expect("writing to a String cannot fail");
+        }
     }
     out.push_str("}\n");
+    return Ok(());
 }
 
 pub(crate) fn emit_expression(
@@ -2540,7 +2573,7 @@ pub(crate) fn emit_program(
             &mut out,
             rust_enum,
             program.string_unions.contains(&rust_enum.ident.to_string()),
-        );
+        )?;
         out.push('\n');
     }
     for type_alias in &program.type_aliases {

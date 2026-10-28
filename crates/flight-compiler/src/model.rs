@@ -654,14 +654,34 @@ fn unsupported_public(kind: &str, name: &str) -> CompileError {
 
 fn validate_enum(rust_enum: &ItemEnum) -> Result<(), CompileError> {
     for variant in &rust_enum.variants {
-        if !matches!(variant.fields, Fields::Unit) || variant.discriminant.is_some() {
+        if !matches!(variant.fields, Fields::Unit) {
             return Err(compile_error(format!(
-                "unsupported enum variant `{}::{}`; only unit variants without explicit discriminants are portable",
+                "unsupported enum variant `{}::{}`; only unit variants are portable",
+                rust_enum.ident, variant.ident
+            )));
+        }
+        if let Some((_, discriminant)) = &variant.discriminant
+            && !is_integer_discriminant(discriminant)
+        {
+            return Err(compile_error(format!(
+                "unsupported enum discriminant `{}::{}`; explicit discriminants must be integer literals",
                 rust_enum.ident, variant.ident
             )));
         }
     }
     return Ok(());
+}
+
+fn is_integer_discriminant(expression: &syn::Expr) -> bool {
+    return match expression {
+        syn::Expr::Group(group) => is_integer_discriminant(&group.expr),
+        syn::Expr::Lit(literal) => matches!(literal.lit, syn::Lit::Int(_)),
+        syn::Expr::Paren(paren) => is_integer_discriminant(&paren.expr),
+        syn::Expr::Unary(unary) if matches!(unary.op, syn::UnOp::Neg(_)) => {
+            matches!(unary.expr.as_ref(), syn::Expr::Lit(literal) if matches!(literal.lit, syn::Lit::Int(_)))
+        }
+        _ => false,
+    };
 }
 
 fn validate_fields(structure: &ItemStruct) -> Result<(), CompileError> {
