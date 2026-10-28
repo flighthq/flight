@@ -92,13 +92,13 @@ export function unpackColorRgba(out: [number, number, number, number], color: nu
 // The single sRgb→linear decode seam for the whole SDK (§0.2): packed `0xRRGGBBAA` is
 // sRgb-albedo, so RGB is gamma-decoded to linear while alpha passes through unchanged
 // (alpha is already linear coverage, never gamma-encoded). Writes four floats in [0, 1]
-// into `out` and returns it. A packed 8-bit integer cannot carry HDR — light and emissive
+// into `out`. A packed 8-bit integer cannot carry HDR — light and emissive
 // radiance is `unpackColorToLinear(out, color) × intensity`, computed by the caller.
 // Backends must not re-decode packed colors; they consume this output.
-export function unpackColorToLinear(out: LinearColor, color: number): LinearColor {
+export function unpackColorToLinear(out: LinearColor, color: number): void {
   out[0] = srgbChannelToLinear(((color >>> 24) & 0xff) / 0xff);
   out[1] = srgbChannelToLinear(((color >>> 16) & 0xff) / 0xff);
   out[2] = srgbChannelToLinear(((color >>> 8) & 0xff) / 0xff);
   out[3] = (color & 0xff) / 0xff;
-  return out;
+  return;
 }

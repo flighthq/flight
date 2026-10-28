@@ -31,7 +31,7 @@ export function lerpLinearColor(
   start: Readonly<LinearColor>,
   end: Readonly<LinearColor>,
   t: number,
-): LinearColor {
+): void {
   const tc = Math.min(1, Math.max(0, t));
   const r0 = start[0];
   const g0 = start[1];
@@ -45,5 +45,5 @@ export function lerpLinearColor(
   out[1] = g0 + (g1 - g0) * tc;
   out[2] = b0 + (b1 - b0) * tc;
   out[3] = a0 + (a1 - a0) * tc;
-  return out;
+  return;
 }

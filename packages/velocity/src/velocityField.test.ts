@@ -21,6 +21,12 @@ import {
   zeroVelocity,
 } from './velocityField.ts';
 
+function readVelocity(field: Parameters<typeof getVelocity>[0], source: Parameters<typeof getVelocity>[1]) {
+  const out = { x: 0, y: 0 };
+  getVelocity(field, source, out);
+  return out;
+}
+
 describe('addVelocity', () => {
   it('adds two velocity vectors', () => {
     const out = { x: 0, y: 0 };
@@ -83,14 +89,14 @@ describe('contributeVelocity', () => {
     const field = createVelocityField();
     const source = {};
     contributeVelocity(field, source, 3, -4);
-    expect(getVelocity(field, source, { x: 0, y: 0 })).toEqual({ x: 3, y: -4 });
+    expect(readVelocity(field, source)).toEqual({ x: 3, y: -4 });
   });
 
   it('accepts any object source, not only nodes', () => {
     const field = createVelocityField();
     const batchLike = { instances: 12 };
     contributeVelocity(field, batchLike, 1, 2);
-    expect(getVelocity(field, batchLike, { x: 0, y: 0 })).toEqual({ x: 1, y: 2 });
+    expect(readVelocity(field, batchLike)).toEqual({ x: 1, y: 2 });
   });
 });
 
@@ -112,7 +118,7 @@ describe('createVelocityField', () => {
   it('starts at frame zero and returns zero for unknown sources', () => {
     const field = createVelocityField();
     expect(field.frameId).toBe(0);
-    expect(getVelocity(field, {}, { x: 0, y: 0 })).toEqual({ x: 0, y: 0 });
+    expect(readVelocity(field, {})).toEqual({ x: 0, y: 0 });
   });
 });
 
@@ -207,7 +213,7 @@ describe('getVelocity', () => {
     const source = {};
     contributeVelocity(field, source, 5, 5);
     beginVelocityFrame(field);
-    expect(getVelocity(field, source, { x: 0, y: 0 })).toEqual({ x: 0, y: 0 });
+    expect(readVelocity(field, source)).toEqual({ x: 0, y: 0 });
   });
 });
 
@@ -336,7 +342,7 @@ describe('suppressVelocity', () => {
     const source = {};
     contributeVelocity(field, source, 9, 9);
     suppressVelocity(field, source);
-    expect(getVelocity(field, source, { x: 0, y: 0 })).toEqual({ x: 0, y: 0 });
+    expect(readVelocity(field, source)).toEqual({ x: 0, y: 0 });
   });
 });
 describe('zeroVelocity', () => {
@@ -344,10 +350,5 @@ describe('zeroVelocity', () => {
     const v = { x: 5, y: -3 };
     zeroVelocity(v);
     expect(v).toEqual({ x: 0, y: 0 });
-  });
-
-  it('returns the out reference', () => {
-    const v = { x: 1, y: 1 };
-    expect(zeroVelocity(v)).toBe(v);
   });
 });

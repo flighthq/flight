@@ -14,12 +14,12 @@ import type {
 // baseline regardless of call order, via per-sample explicitFrameId.
 
 // Adds velocity contributions: `out = a + b`.
-export function addVelocity(out: Velocity2D, a: Readonly<Velocity2D>, b: Readonly<Velocity2D>): Velocity2D {
+export function addVelocity(out: Velocity2D, a: Readonly<Velocity2D>, b: Readonly<Velocity2D>): void {
   const ax = a.x;
   const ay = a.y;
   out.x = ax + b.x;
   out.y = ay + b.y;
-  return out;
+  return;
 }
 
 export function beginVelocityFrame(field: VelocityField): void {
@@ -28,7 +28,7 @@ export function beginVelocityFrame(field: VelocityField): void {
 
 // Clamps velocity to `maxLength` in-place style: `out` may equal `velocity` (alias-safe).
 // The most common motion-blur safety helper — prevents runaway blur lengths on fast objects.
-export function clampVelocity(out: Velocity2D, velocity: Readonly<Velocity2D>, maxLength: number): Velocity2D {
+export function clampVelocity(out: Velocity2D, velocity: Readonly<Velocity2D>, maxLength: number): void {
   const vx = velocity.x;
   const vy = velocity.y;
   const lenSq = vx * vx + vy * vy;
@@ -41,7 +41,7 @@ export function clampVelocity(out: Velocity2D, velocity: Readonly<Velocity2D>, m
     out.x = vx;
     out.y = vy;
   }
-  return out;
+  return;
 }
 
 export function contributeVelocity(field: VelocityField, source: object, x: number, y: number): void {
@@ -53,12 +53,12 @@ export function contributeVelocity(field: VelocityField, source: object, x: numb
 }
 
 // Copies one velocity value into another (alias-safe: out may equal source).
-export function copyVelocity(out: Velocity2D, source: Readonly<Velocity2D>): Velocity2D {
+export function copyVelocity(out: Velocity2D, source: Readonly<Velocity2D>): void {
   const sx = source.x;
   const sy = source.y;
   out.x = sx;
   out.y = sy;
-  return out;
+  return;
 }
 
 export function createVelocityField(): VelocityField {
@@ -75,14 +75,14 @@ export function dampVelocity(
   current: Readonly<Velocity2D>,
   previous: Readonly<Velocity2D>,
   factor: number,
-): Velocity2D {
+): void {
   const cx = current.x;
   const cy = current.y;
   const px = previous.x;
   const py = previous.y;
   out.x = cx * factor + px * (1 - factor);
   out.y = cy * factor + py * (1 - factor);
-  return out;
+  return;
 }
 
 // Get-or-create a source's per-frame sample. Shared with the transform-delta contributor in this package.
@@ -116,16 +116,16 @@ export function explainVelocity(field: VelocityField, source: object): VelocityE
 
 // Writes the source's current-frame velocity into `out`. Returns zero velocity for sources with no
 // sample or whose sample is stale (not touched this frame).
-export function getVelocity(field: VelocityField, source: object, out: Velocity2D): Velocity2D {
+export function getVelocity(field: VelocityField, source: object, out: Velocity2D): void {
   const sample = field.samples.get(source);
   if (sample === undefined || sample.lastFrameId !== field.frameId) {
     out.x = 0;
     out.y = 0;
-    return out;
+    return;
   }
   out.x = sample.velocity.x;
   out.y = sample.velocity.y;
-  return out;
+  return;
 }
 
 export function hasVelocity(field: VelocityField, source: object): boolean {
@@ -153,17 +153,17 @@ export function lengthOfVelocity(velocity: Readonly<Velocity2D>): number {
 }
 
 // Linearly interpolates between two velocity values. Alias-safe: `out` may equal `a` or `b`.
-export function lerpVelocity(out: Velocity2D, a: Readonly<Velocity2D>, b: Readonly<Velocity2D>, t: number): Velocity2D {
+export function lerpVelocity(out: Velocity2D, a: Readonly<Velocity2D>, b: Readonly<Velocity2D>, t: number): void {
   const ax = a.x;
   const ay = a.y;
   out.x = ax + (b.x - ax) * t;
   out.y = ay + (b.y - ay) * t;
-  return out;
+  return;
 }
 
 // Normalizes the velocity vector to unit length. Returns the zero vector when length is zero.
 // Alias-safe: `out` may equal `source`.
-export function normalizeVelocity(out: Velocity2D, source: Readonly<Velocity2D>): Velocity2D {
+export function normalizeVelocity(out: Velocity2D, source: Readonly<Velocity2D>): void {
   const sx = source.x;
   const sy = source.y;
   const len = Math.sqrt(sx * sx + sy * sy);
@@ -175,26 +175,26 @@ export function normalizeVelocity(out: Velocity2D, source: Readonly<Velocity2D>)
     out.x = 0;
     out.y = 0;
   }
-  return out;
+  return;
 }
 
 // Scales a velocity by a scalar factor. Used for pixel-ratio conversion and unit normalization.
 // Alias-safe: `out` may equal `velocity`.
-export function scaleVelocity(out: Velocity2D, velocity: Readonly<Velocity2D>, scale: number): Velocity2D {
+export function scaleVelocity(out: Velocity2D, velocity: Readonly<Velocity2D>, scale: number): void {
   const vx = velocity.x;
   const vy = velocity.y;
   out.x = vx * scale;
   out.y = vy * scale;
-  return out;
+  return;
 }
 
 // Subtracts `b` from `a`: `out = a - b`. Alias-safe.
-export function subtractVelocity(out: Velocity2D, a: Readonly<Velocity2D>, b: Readonly<Velocity2D>): Velocity2D {
+export function subtractVelocity(out: Velocity2D, a: Readonly<Velocity2D>, b: Readonly<Velocity2D>): void {
   const ax = a.x;
   const ay = a.y;
   out.x = ax - b.x;
   out.y = ay - b.y;
-  return out;
+  return;
 }
 
 // Zeroes a source's velocity this frame — a teleport/cut that must not smear.
@@ -203,8 +203,8 @@ export function suppressVelocity(field: VelocityField, source: object): void {
 }
 
 // Sets both components to zero.
-export function zeroVelocity(out: Velocity2D): Velocity2D {
+export function zeroVelocity(out: Velocity2D): void {
   out.x = 0;
   out.y = 0;
-  return out;
+  return;
 }

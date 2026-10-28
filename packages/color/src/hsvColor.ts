@@ -56,8 +56,8 @@ export function hsvToRgb(out: [number, number, number, number], h: number, s: nu
 
 // Converts a packed sRGB `0xRRGGBBAA` color to HSV and writes to `out`.
 // `out[0]` = hue in [0, 360), `out[1]` = saturation [0, 1], `out[2]` = value [0, 1].
-// Alpha is ignored. The conversion operates in sRGB (non-linear) space. Returns `out`.
-export function rgbToHsv(out: HsvColor, color: number): HsvColor {
+// Alpha is ignored. The conversion operates in sRGB (non-linear) space.
+export function rgbToHsv(out: HsvColor, color: number): void {
   const r = ((color >>> 24) & 0xff) / 0xff;
   const g = ((color >>> 16) & 0xff) / 0xff;
   const b = ((color >>> 8) & 0xff) / 0xff;
@@ -79,5 +79,5 @@ export function rgbToHsv(out: HsvColor, color: number): HsvColor {
   out[0] = h * 360;
   out[1] = s;
   out[2] = v;
-  return out;
+  return;
 }

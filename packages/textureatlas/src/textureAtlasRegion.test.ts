@@ -441,7 +441,7 @@ describe('getTextureAtlasRegionFrame', () => {
       y: 200,
     });
     const out = { height: 0, width: 0, x: 0, y: 0 };
-    expect(getTextureAtlasRegionFrame(region, out)).toBe(out);
+    getTextureAtlasRegionFrame(region, out);
     expect(out).toEqual({ height: 64, width: 64, x: 8, y: 12 });
   });
 
@@ -499,7 +499,9 @@ describe('getTextureAtlasRegionOrdinal', () => {
 describe('getTextureAtlasRegionSequence', () => {
   it('leaves out empty when the atlas has no regions', () => {
     const atlas = createTextureAtlas();
-    expect(getTextureAtlasRegionSequence(atlas, 'walk', [])).toEqual([]);
+    const out: TextureAtlasRegion[] = [];
+    getTextureAtlasRegionSequence(atlas, 'walk', out);
+    expect(out).toEqual([]);
   });
 
   it('collects regions whose names start with the given prefix', () => {
@@ -507,7 +509,8 @@ describe('getTextureAtlasRegionSequence', () => {
     addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'walk_01');
     addTextureAtlasRegion(atlas, 10, 0, 10, 10, undefined, undefined, 'walk_02');
     addTextureAtlasRegion(atlas, 20, 0, 10, 10, undefined, undefined, 'idle_01');
-    const seq = getTextureAtlasRegionSequence(atlas, 'walk', []);
+    const seq: TextureAtlasRegion[] = [];
+    getTextureAtlasRegionSequence(atlas, 'walk', seq);
     expect(seq.map((r) => r.name)).toEqual(['walk_01', 'walk_02']);
   });
 
@@ -515,7 +518,8 @@ describe('getTextureAtlasRegionSequence', () => {
     const atlas = createTextureAtlas();
     addTextureAtlasRegion(atlas, 0, 0, 10, 10);
     addTextureAtlasRegion(atlas, 10, 0, 10, 10, undefined, undefined, 'walk_01');
-    const seq = getTextureAtlasRegionSequence(atlas, 'walk', []);
+    const seq: TextureAtlasRegion[] = [];
+    getTextureAtlasRegionSequence(atlas, 'walk', seq);
     expect(seq.map((r) => r.name)).toEqual(['walk_01']);
   });
 
@@ -524,7 +528,8 @@ describe('getTextureAtlasRegionSequence', () => {
     addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'run_03');
     addTextureAtlasRegion(atlas, 10, 0, 10, 10, undefined, undefined, 'run_01');
     addTextureAtlasRegion(atlas, 20, 0, 10, 10, undefined, undefined, 'run_02');
-    const seq = getTextureAtlasRegionSequence(atlas, 'run', []);
+    const seq: TextureAtlasRegion[] = [];
+    getTextureAtlasRegionSequence(atlas, 'run', seq);
     expect(seq.map((r) => r.name)).toEqual(['run_01', 'run_02', 'run_03']);
   });
 
@@ -535,7 +540,8 @@ describe('getTextureAtlasRegionSequence', () => {
     for (const name of ['walk_1', 'walk_10', 'walk_2', 'walk_11']) {
       addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, name);
     }
-    const seq = getTextureAtlasRegionSequence(atlas, 'walk', []);
+    const seq: TextureAtlasRegion[] = [];
+    getTextureAtlasRegionSequence(atlas, 'walk', seq);
     expect(seq.map((r) => r.name)).toEqual(['walk_1', 'walk_2', 'walk_10', 'walk_11']);
   });
 
@@ -544,7 +550,8 @@ describe('getTextureAtlasRegionSequence', () => {
     addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'run');
     addTextureAtlasRegion(atlas, 10, 0, 10, 10, undefined, undefined, 'run_02');
     addTextureAtlasRegion(atlas, 20, 0, 10, 10, undefined, undefined, 'run_01');
-    const seq = getTextureAtlasRegionSequence(atlas, 'run', []);
+    const seq: TextureAtlasRegion[] = [];
+    getTextureAtlasRegionSequence(atlas, 'run', seq);
     expect(seq.map((r) => r.name)).toEqual(['run_01', 'run_02', 'run']);
   });
 
@@ -553,7 +560,8 @@ describe('getTextureAtlasRegionSequence', () => {
     addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'runFast_01');
     addTextureAtlasRegion(atlas, 10, 0, 10, 10, undefined, undefined, 'runSlow_01');
     addTextureAtlasRegion(atlas, 20, 0, 10, 10, undefined, undefined, 'run_00');
-    const seq = getTextureAtlasRegionSequence(atlas, 'run', []);
+    const seq: TextureAtlasRegion[] = [];
+    getTextureAtlasRegionSequence(atlas, 'run', seq);
     expect(seq.map((r) => r.name)).toEqual(['run_00', 'runFast_01', 'runSlow_01']);
   });
 
@@ -561,24 +569,27 @@ describe('getTextureAtlasRegionSequence', () => {
     const atlas = createTextureAtlas();
     addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'runB');
     addTextureAtlasRegion(atlas, 10, 0, 10, 10, undefined, undefined, 'runA');
-    const seq = getTextureAtlasRegionSequence(atlas, 'run', []);
+    const seq: TextureAtlasRegion[] = [];
+    getTextureAtlasRegionSequence(atlas, 'run', seq);
     expect(seq.map((r) => r.name)).toEqual(['runB', 'runA']);
   });
 
   it('leaves out empty when no region names match the prefix', () => {
     const atlas = createTextureAtlas();
     addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'idle_01');
-    expect(getTextureAtlasRegionSequence(atlas, 'walk', [])).toEqual([]);
+    const out: TextureAtlasRegion[] = [];
+    getTextureAtlasRegionSequence(atlas, 'walk', out);
+    expect(out).toEqual([]);
   });
 
-  it('returns out itself, and resets it so one array can be reused across calls', () => {
+  it('resets out so one array can be reused across calls', () => {
     const atlas = createTextureAtlas();
     addTextureAtlasRegion(atlas, 0, 0, 10, 10, undefined, undefined, 'walk_01');
     addTextureAtlasRegion(atlas, 10, 0, 10, 10, undefined, undefined, 'idle_01');
     const out: TextureAtlasRegion[] = [];
-    expect(getTextureAtlasRegionSequence(atlas, 'walk', out)).toBe(out);
+    getTextureAtlasRegionSequence(atlas, 'walk', out);
     expect(out.map((r) => r.name)).toEqual(['walk_01']);
-    expect(getTextureAtlasRegionSequence(atlas, 'idle', out)).toBe(out);
+    getTextureAtlasRegionSequence(atlas, 'idle', out);
     expect(out.map((r) => r.name)).toEqual(['idle_01']);
   });
 });
@@ -751,8 +762,7 @@ describe('getTextureAtlasRegionUv', () => {
   it('is alias-safe when out shares no fields with region', () => {
     const region = createTextureAtlasRegion({ x: 64, y: 64, width: 64, height: 64 });
     const out = { x: 0, y: 0, width: 0, height: 0 };
-    const result = getTextureAtlasRegionUv(region, 256, 256, out);
-    expect(result).toBe(out);
+    getTextureAtlasRegionUv(region, 256, 256, out);
     expect(out.x).toBeCloseTo(0.25);
     expect(out.y).toBeCloseTo(0.25);
     expect(out.width).toBeCloseTo(0.25);
@@ -764,7 +774,7 @@ describe('getTextureAtlasRegionUvQuad', () => {
   it('walks an unrotated region top-left, top-right, bottom-right, bottom-left', () => {
     const region = createTextureAtlasRegion({ height: 25, width: 50, x: 0, y: 0 });
     const out: number[] = [];
-    expect(getTextureAtlasRegionUvQuad(region, 100, 100, out)).toBe(out);
+    getTextureAtlasRegionUvQuad(region, 100, 100, out);
     expect(out).toEqual([0, 0, 0.5, 0, 0.5, 0.25, 0, 0.25]);
   });
 

@@ -33,11 +33,11 @@ export function setBitmapRegion(
   y: number = 0,
   width: number = bitmap.width,
   height: number = bitmap.height,
-): BitmapRegion {
+): void {
   out.bitmap = bitmap;
   out.x = x;
   out.y = y;
   out.width = width;
   out.height = height;
-  return out;
+  return;
 }

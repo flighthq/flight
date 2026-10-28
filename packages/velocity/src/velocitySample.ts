@@ -12,11 +12,11 @@ export function getVelocitySampleAt(
   pointX: number,
   pointY: number,
   out: Velocity2D,
-): Velocity2D {
+): void {
   if (sample.previousWorldTransform === null) {
     out.x = 0;
     out.y = 0;
-    return out;
+    return;
   }
   // Read both transforms into locals before writing out (alias safety, though out is Velocity2D here).
   const cx = currentWorldTransform.a * pointX + currentWorldTransform.c * pointY + currentWorldTransform.tx;
@@ -31,5 +31,5 @@ export function getVelocitySampleAt(
     sample.previousWorldTransform.ty;
   out.x = cx - px;
   out.y = cy - py;
-  return out;
+  return;
 }

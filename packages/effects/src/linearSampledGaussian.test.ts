@@ -63,12 +63,6 @@ describe('computeLinearSampledGaussian', () => {
     computeLinearSampledGaussian(sigma, weights, offsets);
     expect(sumOf(weights)).toBeCloseTo(sumOf(discrete), 12);
   });
-
-  it('returns outWeights', () => {
-    const weights: number[] = [];
-    const offsets: number[] = [];
-    expect(computeLinearSampledGaussian(2, weights, offsets)).toBe(weights);
-  });
 });
 
 describe('getLinearSampledGaussianTapCount', () => {

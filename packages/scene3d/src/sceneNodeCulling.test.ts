@@ -56,7 +56,8 @@ describe('cullNode3DByFrustum', () => {
     const root = createNode3D(Node3DKind);
     const frustum = createFrustum();
     buildScene3DFrustum(frustum, makeViewProjection());
-    const out = cullNode3DByFrustum([], root, frustum);
+    const out: ReturnType<typeof createNode3D>[] = [];
+    cullNode3DByFrustum(out, root, frustum);
     expect(out).toHaveLength(0);
   });
 
@@ -68,7 +69,8 @@ describe('cullNode3DByFrustum', () => {
     addNodeChild(root, mesh);
     const frustum = createFrustum();
     buildScene3DFrustum(frustum, makeViewProjection());
-    const out = cullNode3DByFrustum([], root, frustum);
+    const out: ReturnType<typeof createNode3D>[] = [];
+    cullNode3DByFrustum(out, root, frustum);
     expect(out).toContain(mesh);
   });
 
@@ -83,7 +85,8 @@ describe('cullNode3DByFrustum', () => {
     addNodeChild(root, parent);
     const frustum = createFrustum();
     buildScene3DFrustum(frustum, makeViewProjection());
-    const out = cullNode3DByFrustum([], root, frustum);
+    const out: ReturnType<typeof createNode3D>[] = [];
+    cullNode3DByFrustum(out, root, frustum);
     expect(out).not.toContain(mesh);
     expect(out).not.toContain(parent);
   });
@@ -96,7 +99,8 @@ describe('cullNode3DByFrustum', () => {
     addNodeChild(root, mesh);
     const frustum = createFrustum();
     buildScene3DFrustum(frustum, makeViewProjection());
-    const out = cullNode3DByFrustum([], root, frustum);
+    const out: ReturnType<typeof createNode3D>[] = [];
+    cullNode3DByFrustum(out, root, frustum);
     expect(out).not.toContain(mesh);
   });
 
@@ -111,13 +115,5 @@ describe('cullNode3DByFrustum', () => {
     const existing = [createNode3D()];
     cullNode3DByFrustum(existing, root, frustum);
     expect(existing).toHaveLength(2); // original + new mesh
-  });
-
-  it('returns the out array', () => {
-    const root = createNode3D(Node3DKind);
-    const frustum = createFrustum();
-    buildScene3DFrustum(frustum, makeViewProjection());
-    const out: ReturnType<typeof createNode3D>[] = [];
-    expect(cullNode3DByFrustum(out, root, frustum)).toBe(out);
   });
 });

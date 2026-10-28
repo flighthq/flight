@@ -189,8 +189,8 @@ export function getTextureAtlasRegionCount(atlas: Readonly<TextureAtlas>): numbe
 // This is the arithmetic a renderer must do to place a trimmed region correctly: packers drop
 // transparent margins, so drawing the packed rect at the sprite's position puts the art in the wrong
 // place by exactly (sourceX, sourceY). Every consumer was re-deriving it from four fields.
-// Returns `out`. Alias-safe.
-export function getTextureAtlasRegionFrame(region: Readonly<TextureAtlasRegion>, out: RectangleLike): RectangleLike {
+// Alias-safe.
+export function getTextureAtlasRegionFrame(region: Readonly<TextureAtlasRegion>, out: RectangleLike): void {
   const sourceX = region.sourceX;
   const sourceY = region.sourceY;
   const rotated = region.rotation !== TextureAtlasRotation.None;
@@ -200,7 +200,7 @@ export function getTextureAtlasRegionFrame(region: Readonly<TextureAtlasRegion>,
   out.y = sourceY;
   out.width = originalWidth;
   out.height = originalHeight;
-  return out;
+  return;
 }
 
 // The trailing decimal ordinal in the region's name — the frame number in the `baseName_NNN`
@@ -249,7 +249,7 @@ export function getTextureAtlasRegionSequence(
   atlas: Readonly<TextureAtlas>,
   prefix: string,
   out: TextureAtlasRegion[],
-): TextureAtlasRegion[] {
+): void {
   out.length = 0;
   for (const region of atlas.regions) {
     if (region.name !== null && region.name.startsWith(prefix)) out.push(region);
@@ -274,7 +274,7 @@ export function getTextureAtlasRegionSequence(
     out[j + 1] = region;
     keys[j + 1] = key;
   }
-  return out;
+  return;
 }
 
 // Returns one shared Texture2D per distinct atlas region. A region is a texel rect relative to the
@@ -319,20 +319,20 @@ export function getTextureAtlasRegionTexture(atlas: Readonly<TextureAtlas>, regi
 // Accounts for the atlas image dimensions: `out.x = region.x / imageWidth`, etc.
 // When `region.rotation` is not None the packed rectangle is transposed — the UV rect still
 // covers the packed (rotated) texels; callers drawing a rotated region must swap width/height.
-// Returns `out` for chaining. Returns `out` with all zeros when `imageWidth` or `imageHeight`
+// Writes all zeros when `imageWidth` or `imageHeight`
 // is zero to avoid division by zero.
 export function getTextureAtlasRegionUv(
   region: Readonly<TextureAtlasRegion>,
   imageWidth: number,
   imageHeight: number,
   out: RectangleLike,
-): RectangleLike {
+): void {
   if (imageWidth <= 0 || imageHeight <= 0) {
     out.x = 0;
     out.y = 0;
     out.width = 0;
     out.height = 0;
-    return out;
+    return;
   }
   // Read all inputs before writing — alias-safe.
   const rx = region.x;
@@ -343,7 +343,7 @@ export function getTextureAtlasRegionUv(
   out.y = ry / imageHeight;
   out.width = rw / imageWidth;
   out.height = rh / imageHeight;
-  return out;
+  return;
 }
 
 // Overwrites every field of `out` from `source`, so `out` afterwards describes exactly what
@@ -371,18 +371,18 @@ export function getTextureAtlasRegionUv(
 // leaves rotation to the caller. TexturePacker/Starling store clockwise, while libGDX stores
 // counterclockwise; the rotation enum preserves that distinction. Drawing either
 // upright means walking the packed rect's corners in the matching order — arithmetic every renderer
-// was repeating, and getting wrong quietly. Returns `out`, filled with zeros when either image
+// was repeating, and getting wrong quietly. Writes zeros when either image
 // dimension is zero.
 export function getTextureAtlasRegionUvQuad(
   region: Readonly<TextureAtlasRegion>,
   imageWidth: number,
   imageHeight: number,
   out: number[],
-): number[] {
+): void {
   out.length = 8;
   if (imageWidth <= 0 || imageHeight <= 0) {
     out.fill(0);
-    return out;
+    return;
   }
   const u0 = region.x / imageWidth;
   const v0 = region.y / imageHeight;
@@ -398,7 +398,7 @@ export function getTextureAtlasRegionUvQuad(
       out[5] = v0;
       out[6] = u1;
       out[7] = v1;
-      return out;
+      return;
     }
     // Packed 90° clockwise: the drawn top-left corner is the packed top-right, and the walk
     // continues from there, undoing the packer's quarter-turn without moving texels.
@@ -410,7 +410,7 @@ export function getTextureAtlasRegionUvQuad(
     out[5] = v1;
     out[6] = u0;
     out[7] = v0;
-    return out;
+    return;
   }
   out[0] = u0;
   out[1] = v0;
@@ -420,7 +420,7 @@ export function getTextureAtlasRegionUvQuad(
   out[5] = v1;
   out[6] = u0;
   out[7] = v1;
-  return out;
+  return;
 }
 
 // True when the atlas holds a region with this exact name. Case-sensitive, like

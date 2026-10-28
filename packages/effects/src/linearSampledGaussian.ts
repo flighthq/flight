@@ -22,7 +22,7 @@ import { computeGaussianKernelWeights, getGaussianKernelSize } from './gaussianK
  * standalone unit-pair sample at its own integer offset. The combined weights sum to 1 because the
  * source discrete weights do. Returns `outWeights`.
  */
-export function computeLinearSampledGaussian(sigma: number, outWeights: number[], outOffsets: number[]): number[] {
+export function computeLinearSampledGaussian(sigma: number, outWeights: number[], outOffsets: number[]): void {
   const size = getGaussianKernelSize(sigma);
   const radius = (size - 1) / 2;
   computeGaussianKernelWeights(sigma, scratchWeights);
@@ -43,7 +43,7 @@ export function computeLinearSampledGaussian(sigma: number, outWeights: number[]
       outOffsets[tap] = posA;
     }
   }
-  return outWeights;
+  return;
 }
 
 /**

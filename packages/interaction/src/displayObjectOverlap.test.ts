@@ -35,8 +35,7 @@ describe('getNode2DOverlapRectangle', () => {
     const a = makeAt(0, 0, 100, 100);
     const b = makeAt(50, 50, 100, 100);
     const out = createRectangle();
-    const result = getNode2DOverlapRectangle(a, b, out);
-    expect(result).toBe(out);
+    getNode2DOverlapRectangle(a, b, out);
     expect(out.x).toBe(50);
     expect(out.y).toBe(50);
     expect(out.width).toBe(50);

@@ -143,8 +143,10 @@ describe('unpackColorRgba', () => {
 describe('unpackColorToLinear', () => {
   it('decodes white and black exactly at the endpoints', () => {
     const out = allocateLinearColor();
-    expect(unpackColorToLinear(out, 0xffffffff)).toEqual([1, 1, 1, 1]);
-    expect(unpackColorToLinear(out, 0x000000ff)).toEqual([0, 0, 0, 1]);
+    unpackColorToLinear(out, 0xffffffff);
+    expect(out).toEqual([1, 1, 1, 1]);
+    unpackColorToLinear(out, 0x000000ff);
+    expect(out).toEqual([0, 0, 0, 1]);
   });
 
   it('passes alpha through linearly without gamma decode', () => {
@@ -159,10 +161,5 @@ describe('unpackColorToLinear', () => {
     expect(out[0]).toBeCloseTo(0.21586, 4);
     expect(out[0]).toBe(out[1]);
     expect(out[1]).toBe(out[2]);
-  });
-
-  it('returns the same out instance it was given', () => {
-    const out = allocateLinearColor();
-    expect(unpackColorToLinear(out, 0xff0000ff)).toBe(out);
   });
 });

@@ -303,16 +303,15 @@ describe('pickScene3DAll', () => {
     addNodeChild(scene, meshNear);
     const outArray: Scene3DHit[] = [];
 
-    const hits = pickScene3DAll(scene, camera, 0, 0, outArray);
+    pickScene3DAll(scene, camera, 0, 0, outArray);
 
-    expect(hits).toBe(outArray);
     // Each box contributes a front-face hit (a 2x2x2 box's front quad is two triangles, but the
     // center ray crosses one triangle per box). Nearest first.
-    expect(hits.length).toBeGreaterThanOrEqual(2);
-    for (let i = 1; i < hits.length; i++) {
-      expect(hits[i].distance).toBeGreaterThanOrEqual(hits[i - 1].distance);
+    expect(outArray.length).toBeGreaterThanOrEqual(2);
+    for (let i = 1; i < outArray.length; i++) {
+      expect(outArray[i].distance).toBeGreaterThanOrEqual(outArray[i - 1].distance);
     }
-    expect(hits[0].node).toBe(meshNear);
+    expect(outArray[0].node).toBe(meshNear);
   });
 
   it('empties the array on a miss', () => {
@@ -320,10 +319,9 @@ describe('pickScene3DAll', () => {
     const { scene } = sceneWithCenteredBox();
     const outArray: Scene3DHit[] = [createScene3DHit(), createScene3DHit()];
 
-    const hits = pickScene3DAll(scene, camera, 0.99, 0.99, outArray);
+    pickScene3DAll(scene, camera, 0.99, 0.99, outArray);
 
-    expect(hits).toBe(outArray);
-    expect(hits.length).toBe(0);
+    expect(outArray.length).toBe(0);
   });
 });
 
@@ -333,16 +331,16 @@ describe('pickScene3DAllWithRay3D', () => {
     const ray = makeCenterRay();
     const outArray: Scene3DHit[] = [];
 
-    const hits = pickScene3DAllWithRay3D(scene, ray, outArray);
+    pickScene3DAllWithRay3D(scene, ray, outArray);
 
     // The center ray runs along the shared diagonal of each quad, so it grazes both triangles of the
     // front face (z = 1) and both of the back face (z = -1): four hits, sorted near-to-far.
-    expect(hits.length).toBe(4);
-    for (let i = 1; i < hits.length; i++) {
-      expect(hits[i].distance).toBeGreaterThanOrEqual(hits[i - 1].distance);
+    expect(outArray.length).toBe(4);
+    for (let i = 1; i < outArray.length; i++) {
+      expect(outArray[i].distance).toBeGreaterThanOrEqual(outArray[i - 1].distance);
     }
-    expect(hits[0].pointZ).toBeCloseTo(1, 3);
-    expect(hits[hits.length - 1].pointZ).toBeCloseTo(-1, 3);
+    expect(outArray[0].pointZ).toBeCloseTo(1, 3);
+    expect(outArray[outArray.length - 1].pointZ).toBeCloseTo(-1, 3);
   });
 
   it('keeps only front faces when cullBackfaces is set', () => {
@@ -350,11 +348,11 @@ describe('pickScene3DAllWithRay3D', () => {
     const ray = makeCenterRay();
     const outArray: Scene3DHit[] = [];
 
-    const hits = pickScene3DAllWithRay3D(scene, ray, outArray, { cullBackfaces: true });
+    pickScene3DAllWithRay3D(scene, ray, outArray, { cullBackfaces: true });
 
     // Only the two front-face triangles survive; both point at +Z (toward the ray origin).
-    expect(hits.length).toBe(2);
-    for (const hit of hits) {
+    expect(outArray.length).toBe(2);
+    for (const hit of outArray) {
       expect(hit.pointZ).toBeCloseTo(1, 3);
       expect(hit.normalZ).toBeCloseTo(1, 3);
     }

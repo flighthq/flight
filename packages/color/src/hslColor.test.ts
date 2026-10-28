@@ -71,10 +71,6 @@ describe('rgbToHsl', () => {
     expect(out[1]).toBeCloseTo(1, 5);
     expect(out[2]).toBeCloseTo(0.75098, 5);
   });
-  it('returns the out instance', () => {
-    const out: [number, number, number] = [0, 0, 0];
-    expect(rgbToHsl(out, 0xff0000ff)).toBe(out);
-  });
   it('round-trips with hslToRgb within 1 LSB', () => {
     const hsl: [number, number, number] = [0, 0, 0];
     rgbToHsl(hsl, 0x3c8ab5ff);

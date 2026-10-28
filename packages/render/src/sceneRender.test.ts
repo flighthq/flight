@@ -122,7 +122,8 @@ describe('packScene3DLightBlock', () => {
     expect(block.data[0]).toBeCloseTo(0);
     expect(block.data[1]).toBeCloseTo(-1);
     expect(block.data[2]).toBeCloseTo(0);
-    const expected = unpackColorToLinear([0, 0, 0, 0], 0xffffffff);
+    const expected: [number, number, number, number] = [0, 0, 0, 0];
+    unpackColorToLinear(expected, 0xffffffff);
     expect(block.data[4]).toBeCloseTo(expected[0] * 2);
     expect(block.data[5]).toBeCloseTo(expected[1] * 2);
     expect(block.data[6]).toBeCloseTo(expected[2] * 2);
@@ -133,7 +134,8 @@ describe('packScene3DLightBlock', () => {
     const ambient = createAmbientLight({ color: 0xffffffff, intensity: 0.5 });
     packScene3DLightBlock(block, { ambient, directional: null });
     expect(block.ambientCount).toBe(1);
-    const expected = unpackColorToLinear([0, 0, 0, 0], 0xffffffff);
+    const expected: [number, number, number, number] = [0, 0, 0, 0];
+    unpackColorToLinear(expected, 0xffffffff);
     expect(block.data[8]).toBeCloseTo(expected[0] * 0.5);
     expect(block.data[9]).toBeCloseTo(expected[1] * 0.5);
     expect(block.data[10]).toBeCloseTo(expected[2] * 0.5);
@@ -177,7 +179,8 @@ describe('packScene3DLightBlock', () => {
     expect(block.data[o + 1]).toBeCloseTo(2);
     expect(block.data[o + 2]).toBeCloseTo(3);
     expect(block.data[o + 3]).toBeCloseTo(10);
-    const expected = unpackColorToLinear([0, 0, 0, 0], 0xffffffff);
+    const expected: [number, number, number, number] = [0, 0, 0, 0];
+    unpackColorToLinear(expected, 0xffffffff);
     expect(block.data[o + 4]).toBeCloseTo(expected[0] * 3);
     expect(block.data[o + 7]).toBeCloseTo(1 / (10 * 10));
   });
@@ -217,7 +220,8 @@ describe('packScene3DLightBlock', () => {
     packScene3DLightBlock(block, { ambient: null, directional: null, hemisphere: [hemisphere] });
     expect(block.hemisphereCount).toBe(1);
     const o = SCENE_LIGHT_HEMISPHERE_OFFSET;
-    const sky = unpackColorToLinear([0, 0, 0, 0], 0xffffffff);
+    const sky: [number, number, number, number] = [0, 0, 0, 0];
+    unpackColorToLinear(sky, 0xffffffff);
     expect(block.data[o + 0]).toBeCloseTo(sky[0] * 2);
     expect(block.data[o + 4]).toBeCloseTo(0);
     // Packed world-up (0, 1, 0).

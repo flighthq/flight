@@ -72,9 +72,9 @@ export function pickScene3D(
   return pickScene3DWithRay3D(scene, _cameraRay, out, options);
 }
 
-// Collects every Mesh hit by a camera pick ray into `outArray`, sorted by ascending distance, and
-// returns `outArray`. A thin wrapper over `pickScene3DAllWithRay3D` that first unprojects the camera
-// ray; on an unprojectable camera the array is emptied and returned.
+// Collects every Mesh hit by a camera pick ray into `outArray`, sorted by ascending distance. A thin
+// wrapper over `pickScene3DAllWithRay3D` that first unprojects the camera ray; on an unprojectable
+// camera the array is emptied.
 export function pickScene3DAll(
   scene: Readonly<Node3D>,
   camera: Readonly<Camera3D>,
@@ -82,16 +82,17 @@ export function pickScene3DAll(
   screenY: number,
   outArray: Scene3DHit[],
   options?: Readonly<Scene3DPickOptions>,
-): Scene3DHit[] {
+): void {
   if (!buildCameraPickRay(_cameraRay, camera, screenX, screenY)) {
     outArray.length = 0;
-    return outArray;
+    return;
   }
-  return pickScene3DAllWithRay3D(scene, _cameraRay, outArray, options);
+  pickScene3DAllWithRay3D(scene, _cameraRay, outArray, options);
+  return;
 }
 
-// Collects every Mesh hit by a world-space `ray` into `outArray`, sorted by ascending distance, and
-// returns `outArray` (its `length` is set to the hit count; empty on a miss). Existing slots are
+// Collects every Mesh hit by a world-space `ray` into `outArray`, sorted by ascending distance (its
+// `length` is set to the hit count; empty on a miss). Existing slots are
 // reused and new ones allocated as needed, so the array can be kept and refilled across picks. The
 // general primitive behind `pickScene3DAll`; the ray need not be unit-length (see `Scene3DPickOptions`).
 export function pickScene3DAllWithRay3D(
@@ -99,7 +100,7 @@ export function pickScene3DAllWithRay3D(
   ray: Readonly<Ray3D>,
   outArray: Scene3DHit[],
   options?: Readonly<Scene3DPickOptions>,
-): Scene3DHit[] {
+): void {
   let count = 0;
   forEachScene3DRayHit(scene, ray, options, (hit) => {
     let slot = outArray[count];
@@ -112,7 +113,7 @@ export function pickScene3DAllWithRay3D(
   });
   outArray.length = count;
   outArray.sort(compareScene3DHitByDistance);
-  return outArray;
+  return;
 }
 
 // Resolves the nearest Mesh hit by a world-space `ray` through a scene, filling `out` and returning

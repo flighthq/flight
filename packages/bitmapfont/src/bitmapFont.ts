@@ -124,10 +124,10 @@ export function setBitmapFontGuard(guard: ((reason: string, codepoint: number, p
 //
 // Division and remainder, not shifts, for the same exactness reason the pack multiplies — the key
 // leaves the 32-bit range well inside the supported codepoint space.
-export function unpackBitmapFontKerningKey(key: number, out: BitmapFontKerningPair): BitmapFontKerningPair {
+export function unpackBitmapFontKerningKey(key: number, out: BitmapFontKerningPair): void {
   out.left = Math.floor(key / UNICODE_CODEPOINT_SPACE);
   out.right = key % UNICODE_CODEPOINT_SPACE;
-  return out;
+  return;
 }
 
 // The page a glyph is placed on. An out-of-range index is clamped to the primary page so the glyph is

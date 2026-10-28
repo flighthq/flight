@@ -19,8 +19,7 @@ describe('setBitmapRegion', () => {
   it('mutates the existing region without allocating a new object', () => {
     const bitmap = createBitmap(8, 8);
     const r = createBitmapRegion(bitmap);
-    const returned = setBitmapRegion(r, bitmap, 2, 3, 4, 5);
-    expect(returned).toBe(r);
+    setBitmapRegion(r, bitmap, 2, 3, 4, 5);
     expect(r).toEqual({ bitmap, x: 2, y: 3, width: 4, height: 5 });
   });
 

@@ -42,7 +42,7 @@ export function getCubicBezierPoint(
   y1: number,
   t: number,
   out: Vector2Like,
-): Vector2Like {
+): void {
   const u = 1 - t;
   const u2 = u * u;
   const u3 = u2 * u;
@@ -50,7 +50,7 @@ export function getCubicBezierPoint(
   const t3 = t2 * t;
   out.x = u3 * x0 + 3 * u2 * t * c1x + 3 * u * t2 * c2x + t3 * x1;
   out.y = u3 * y0 + 3 * u2 * t * c1y + 3 * u * t2 * c2y + t3 * y1;
-  return out;
+  return;
 }
 
 // Returns the tangent direction at parameter `t` on a cubic bezier (first derivative).
@@ -67,13 +67,13 @@ export function getCubicBezierTangent(
   y1: number,
   t: number,
   out: Vector2Like,
-): Vector2Like {
+): void {
   const u = 1 - t;
   const u2 = u * u;
   const t2 = t * t;
   out.x = 3 * (u2 * (c1x - x0) + 2 * u * t * (c2x - c1x) + t2 * (x1 - c2x));
   out.y = 3 * (u2 * (c1y - y0) + 2 * u * t * (c2y - c1y) + t2 * (y1 - c2y));
-  return out;
+  return;
 }
 
 // Returns the signed curvature at parameter `t` on the n-th segment of `path`. Lines return 0.
@@ -149,11 +149,11 @@ export function getQuadraticBezierPoint(
   y1: number,
   t: number,
   out: Vector2Like,
-): Vector2Like {
+): void {
   const u = 1 - t;
   out.x = u * u * x0 + 2 * u * t * cx + t * t * x1;
   out.y = u * u * y0 + 2 * u * t * cy + t * t * y1;
-  return out;
+  return;
 }
 
 // Returns the tangent direction (not necessarily unit length) at parameter `t` on a quadratic bezier.
@@ -168,11 +168,11 @@ export function getQuadraticBezierTangent(
   y1: number,
   t: number,
   out: Vector2Like,
-): Vector2Like {
+): void {
   const u = 1 - t;
   out.x = 2 * (u * (cx - x0) + t * (x1 - cx));
   out.y = 2 * (u * (cy - y0) + t * (y1 - cy));
-  return out;
+  return;
 }
 
 // Shared walker: iterates the segment stream and evaluates either the point or the tangent at t

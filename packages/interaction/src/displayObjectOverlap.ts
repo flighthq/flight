@@ -11,9 +11,9 @@ export function containsNode2D(outer: Node2D, inner: Node2D): boolean {
   return enclosesRectangle(getNodeWorldBoundsRectangle(outer), getNodeWorldBoundsRectangle(inner));
 }
 
-export function getNode2DOverlapRectangle(source: Node2D, other: Node2D, out: Rectangle): Rectangle {
+export function getNode2DOverlapRectangle(source: Node2D, other: Node2D, out: Rectangle): void {
   computeRectangleIntersection(out, getNodeWorldBoundsRectangle(source), getNodeWorldBoundsRectangle(other));
-  return out;
+  return;
 }
 
 export function hitTestNode2DsShape(source: Node2D, other: Node2D): boolean {

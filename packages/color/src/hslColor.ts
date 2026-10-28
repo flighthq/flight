@@ -26,8 +26,8 @@ export function hslToRgb(out: [number, number, number, number], h: number, s: nu
 // Converts a packed sRGB `0xRRGGBBAA` color to HSL and writes to `out`.
 // `out[0]` = hue in [0, 360), `out[1]` = saturation [0, 1], `out[2]` = lightness [0, 1].
 // Alpha is ignored. The conversion operates in sRGB (non-linear) space, consistent with
-// artist-facing HSL color pickers. Returns `out`.
-export function rgbToHsl(out: HslColor, color: number): HslColor {
+// artist-facing HSL color pickers.
+export function rgbToHsl(out: HslColor, color: number): void {
   const r = ((color >>> 24) & 0xff) / 0xff;
   const g = ((color >>> 16) & 0xff) / 0xff;
   const b = ((color >>> 8) & 0xff) / 0xff;
@@ -38,7 +38,7 @@ export function rgbToHsl(out: HslColor, color: number): HslColor {
     out[0] = 0;
     out[1] = 0;
     out[2] = l;
-    return out;
+    return;
   }
   const d = max - min;
   const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
@@ -53,7 +53,7 @@ export function rgbToHsl(out: HslColor, color: number): HslColor {
   out[0] = h * 360;
   out[1] = s;
   out[2] = l;
-  return out;
+  return;
 }
 
 // HSL helper: interpolates a single channel from hue position `t`.

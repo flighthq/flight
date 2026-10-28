@@ -298,7 +298,9 @@ describe('unpackBitmapFontKerningKey', () => {
 
     for (const [left, right] of pairs) {
       const key = packBitmapFontKerningKey(left, right);
-      expect(unpackBitmapFontKerningKey(key, { left: 0, right: 0 })).toEqual({ left, right });
+      const pair = { left: 0, right: 0 };
+      unpackBitmapFontKerningKey(key, pair);
+      expect(pair).toEqual({ left, right });
     }
   });
 
@@ -306,19 +308,19 @@ describe('unpackBitmapFontKerningKey', () => {
     const key = packBitmapFontKerningKey(0x1f600, 0x41);
     expect(key).toBeGreaterThan(0x1_0000_0000);
 
-    const pair = unpackBitmapFontKerningKey(key, { left: 0, right: 0 });
+    const pair = { left: 0, right: 0 };
+    unpackBitmapFontKerningKey(key, pair);
 
     expect(pair).toEqual({ left: 0x1f600, right: 0x41 });
     // What the truncating inverse this replaced would have produced from the same key.
     expect(pair.left).not.toBe(key >>> 16);
   });
 
-  it('writes into the out object the caller supplied and returns it', () => {
+  it('writes into the out object the caller supplied', () => {
     const out = { left: -1, right: -1 };
 
-    const returned = unpackBitmapFontKerningKey(packBitmapFontKerningKey(0x10000, 0x41), out);
+    unpackBitmapFontKerningKey(packBitmapFontKerningKey(0x10000, 0x41), out);
 
-    expect(returned).toBe(out);
     expect(out).toEqual({ left: 0x10000, right: 0x41 });
   });
 

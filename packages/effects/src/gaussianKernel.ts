@@ -12,14 +12,14 @@
  * kernel is truncated at radius `ceil(3 * sigma)`, the raw Gaussian samples are renormalized by
  * their own truncated sum rather than the analytic 1/(sqrt(2π)·sigma) factor, so the discrete tail
  * loss is absorbed and the taps a separable blur applies sum to 1. `sigma <= 0` yields a single
- * unit weight (`[1]`), the identity kernel. Returns `out`.
+ * unit weight (`[1]`), the identity kernel.
  */
-export function computeGaussianKernelWeights(sigma: number, out: number[]): number[] {
+export function computeGaussianKernelWeights(sigma: number, out: number[]): void {
   const size = getGaussianKernelSize(sigma);
   out.length = size;
   if (size === 1) {
     out[0] = 1;
-    return out;
+    return;
   }
   const radius = (size - 1) / 2;
   const twoSigmaSquared = 2 * sigma * sigma;
@@ -34,7 +34,7 @@ export function computeGaussianKernelWeights(sigma: number, out: number[]): numb
   for (let i = 0; i < size; i++) {
     out[i] *= inverseSum;
   }
-  return out;
+  return;
 }
 
 /**

@@ -53,11 +53,6 @@ describe('computeGaussianKernelWeights', () => {
     computeGaussianKernelWeights(-3, out);
     expect(out).toEqual([1]);
   });
-
-  it('returns out', () => {
-    const out: number[] = [];
-    expect(computeGaussianKernelWeights(1.5, out)).toBe(out);
-  });
 });
 
 describe('getGaussianKernelSize', () => {

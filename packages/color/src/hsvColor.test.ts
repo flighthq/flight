@@ -78,8 +78,4 @@ describe('rgbToHsv', () => {
     expect(out[1]).toBeCloseTo(1, 5);
     expect(out[2]).toBeCloseTo(1, 5);
   });
-  it('returns the out instance', () => {
-    const out: [number, number, number] = [0, 0, 0];
-    expect(rgbToHsv(out, 0xff0000ff)).toBe(out);
-  });
 });
