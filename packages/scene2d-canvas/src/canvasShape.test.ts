@@ -285,7 +285,7 @@ describe('renderCanvasShapeCommands', () => {
 
   it('records an unknown command key through the shared registry-miss seam', () => {
     const { context, state } = makeShapeTarget();
-    enableRenderRegistriesGuards(state);
+    enableRenderRegistriesGuards(state, null);
     renderCanvasShapeCommands(context, state, ['acme.unknownCommand', 0], resolvers);
     expect(explainRenderRegistriesMisses(state)).toEqual({
       misses: [{ kind: 'acme.unknownCommand', registry: RenderRegistryTable.ShapeCommandHandler }],
@@ -295,7 +295,7 @@ describe('renderCanvasShapeCommands', () => {
 
   it('does not record a registered command handler as a registry miss', () => {
     const { context, state } = makeShapeTarget();
-    enableRenderRegistriesGuards(state);
+    enableRenderRegistriesGuards(state, null);
     const shape = createShape();
     appendShapeRectangle(shape, 0, 0, 10, 10);
     renderCanvasShapeCommands(context, state, shape.data.commands, resolvers);

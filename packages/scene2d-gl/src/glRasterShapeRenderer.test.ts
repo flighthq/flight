@@ -140,7 +140,7 @@ describe('drawGlRasterShape', () => {
 
   it('reports a ShapeRasterizer miss when no rasterizer is registered', () => {
     const { state } = createGlState();
-    enableRenderRegistriesGuards(state);
+    enableRenderRegistriesGuards(state, null);
     drawGlRasterShape(state, makeShapeNode({ commands: solidShape().data.commands, version: 1 }));
     expect(explainRenderRegistriesMisses(state).misses).toContainEqual({
       kind: 'Shape',

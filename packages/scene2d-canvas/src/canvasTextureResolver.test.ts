@@ -53,7 +53,7 @@ describe('connectCanvasTextureResolverMisses', () => {
     // The blind spot this closes: a set built for a DOM or GPU shape rasterizer belongs to no canvas of
     // its own, so nothing wires it and an unresolvable fill goes silently unpainted.
     const state = createCanvasRenderState(document.createElement('canvas'));
-    enableRenderRegistriesGuards(state);
+    enableRenderRegistriesGuards(state, null);
 
     const resolvers = createCanvasTextureResolvers();
     connectCanvasTextureResolverMisses(resolvers, state);
@@ -71,7 +71,7 @@ describe('connectCanvasTextureResolverMisses', () => {
     const resolvers = createCanvasTextureResolvers();
     connectCanvasTextureResolverMisses(resolvers, state);
 
-    enableRenderRegistriesGuards(state);
+    enableRenderRegistriesGuards(state, null);
     resolveCanvasTexture(resolvers, createUnresolvableTexture());
 
     expect(explainRenderRegistriesMisses(state).misses).toHaveLength(1);
@@ -90,7 +90,7 @@ describe('connectCanvasTextureResolverMisses', () => {
     // Guards the value of this function: without the connection the same miss reaches nobody, on a
     // state whose diagnostics are enabled and reporting everything else.
     const state = createCanvasRenderState(document.createElement('canvas'));
-    enableRenderRegistriesGuards(state);
+    enableRenderRegistriesGuards(state, null);
 
     resolveCanvasTexture(createCanvasTextureResolvers(), createUnresolvableTexture());
 

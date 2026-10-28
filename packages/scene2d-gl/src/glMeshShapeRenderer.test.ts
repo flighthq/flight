@@ -101,7 +101,7 @@ describe('glMeshShapeRenderer', () => {
 
   it('reports a ShapeRasterizer miss rather than silently dropping an untessellatable fill', () => {
     const { state } = createGlState();
-    enableRenderRegistriesGuards(state);
+    enableRenderRegistriesGuards(state, null);
     glMeshShapeRenderer.submit!(state, makeShapeNode({ commands: gradientShape().data.commands, version: 1 }));
     expect(explainRenderRegistriesMisses(state).misses).toContainEqual({
       kind: 'Shape',
