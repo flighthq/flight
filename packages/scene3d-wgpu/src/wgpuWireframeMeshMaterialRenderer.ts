@@ -50,7 +50,11 @@ export const wgpuWireframeMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     let group: GPUBindGroup;
     if (wireframe === null) {
-      group = bindWgpuWireframeColor(state, pipeline, FALLBACK_MATERIAL, WHITE);
+      _scratch.r = 1;
+      _scratch.g = 1;
+      _scratch.b = 1;
+      _scratch.a = 1;
+      group = bindWgpuWireframeColor(state, pipeline, FALLBACK_MATERIAL, _scratch);
     } else {
       unpackColorToLinear(_scratch, wireframe.color);
       group = bindWgpuWireframeColor(state, pipeline, wireframe, _scratch, wireframe.alphaCutoff);
@@ -105,9 +109,4 @@ export function registerWgpuWireframeMaterial(state: WgpuRenderState): void {
 
 const _scratch: LinearColorRaw = allocateLinearColor();
 const _dynamicOffsets = new Uint32Array(1);
-const WHITE: LinearColorRaw = allocateLinearColor();
-WHITE.r = 1;
-WHITE.g = 1;
-WHITE.b = 1;
-WHITE.a = 1;
 const FALLBACK_MATERIAL = {} as Readonly<WireframeMaterial>;

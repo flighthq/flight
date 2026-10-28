@@ -47,7 +47,11 @@ export const wgpuMatcapMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     let group: GPUBindGroup;
     if (matcap === null) {
-      group = bindWgpuMatcapSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, 0.5);
+      _scratch.r = 1;
+      _scratch.g = 1;
+      _scratch.b = 1;
+      _scratch.a = 1;
+      group = bindWgpuMatcapSurface(state, pipeline, FALLBACK_MATERIAL, _scratch, 0.5);
     } else {
       unpackColorToLinear(_scratch, matcap.tint);
       group = bindWgpuMatcapSurface(state, pipeline, matcap, _scratch, matcap.alphaCutoff);
@@ -79,9 +83,4 @@ function defineKeyForMaterial(material: Readonly<MatcapMaterial> | null): WgpuMa
 }
 
 const _scratch: LinearColorRaw = allocateLinearColor();
-const WHITE: LinearColorRaw = allocateLinearColor();
-WHITE.r = 1;
-WHITE.g = 1;
-WHITE.b = 1;
-WHITE.a = 1;
 const FALLBACK_MATERIAL = {} as Readonly<MatcapMaterial>;

@@ -50,9 +50,29 @@ export const wgpuLambertMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
     const pipeline = ensureWgpuClassicPipeline(state, defineKeyForMaterial(lambert), format);
     writeWgpuFrameUniform(state, camera, lights);
 
+    _specular.r = 1;
+    _specular.g = 1;
+    _specular.b = 1;
+    _specular.a = 1;
     let group: GPUBindGroup;
     if (lambert === null) {
-      group = bindWgpuClassicSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, WHITE, 32, 0.5, null, null, null, null);
+      _diffuse.r = 1;
+      _diffuse.g = 1;
+      _diffuse.b = 1;
+      _diffuse.a = 1;
+      group = bindWgpuClassicSurface(
+        state,
+        pipeline,
+        FALLBACK_MATERIAL,
+        _diffuse,
+        _specular,
+        32,
+        0.5,
+        null,
+        null,
+        null,
+        null,
+      );
     } else {
       unpackColorToLinear(_diffuse, lambert.diffuse);
       group = bindWgpuClassicSurface(
@@ -60,7 +80,7 @@ export const wgpuLambertMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
         pipeline,
         lambert,
         _diffuse,
-        WHITE,
+        _specular,
         32,
         lambert.alphaCutoff,
         lambert.diffuseMap,
@@ -103,9 +123,5 @@ function defineKeyForMaterial(material: Readonly<LambertMaterial> | null): WgpuC
 }
 
 const _diffuse: LinearColorRaw = allocateLinearColor();
-const WHITE: LinearColorRaw = allocateLinearColor();
-WHITE.r = 1;
-WHITE.g = 1;
-WHITE.b = 1;
-WHITE.a = 1;
+const _specular: LinearColorRaw = allocateLinearColor();
 const FALLBACK_MATERIAL = {} as Readonly<LambertMaterial>;

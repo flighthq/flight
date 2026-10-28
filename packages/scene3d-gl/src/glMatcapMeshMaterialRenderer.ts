@@ -41,7 +41,11 @@ export const glMatcapMeshMaterialRenderer: GlMeshMaterialRenderer = {
     gl.uniformMatrix4fv(program.locView, false, camera.view.m);
 
     if (matcap === null) {
-      bindGlMatcapSurface(state, program, WHITE, null, 0.5);
+      scratchRgba.r = 1;
+      scratchRgba.g = 1;
+      scratchRgba.b = 1;
+      scratchRgba.a = 1;
+      bindGlMatcapSurface(state, program, scratchRgba, null, 0.5);
       return;
     }
     unpackColorToLinear(scratchRgba, matcap.tint);
@@ -69,8 +73,3 @@ function defineKeyForMaterial(state: GlRenderState, material: Readonly<MatcapMat
 }
 
 const scratchRgba: LinearColorRaw = allocateLinearColor();
-const WHITE: LinearColorRaw = allocateLinearColor();
-WHITE.r = 1;
-WHITE.g = 1;
-WHITE.b = 1;
-WHITE.a = 1;

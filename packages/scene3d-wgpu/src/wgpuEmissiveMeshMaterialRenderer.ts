@@ -49,7 +49,11 @@ export const wgpuEmissiveMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     let group: GPUBindGroup;
     if (emissive === null) {
-      group = bindWgpuUnlitSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, 1, 0.5, null);
+      _scratch.r = 1;
+      _scratch.g = 1;
+      _scratch.b = 1;
+      _scratch.a = 1;
+      group = bindWgpuUnlitSurface(state, pipeline, FALLBACK_MATERIAL, _scratch, 1, 0.5, null);
     } else {
       unpackColorToLinear(_scratch, emissive.emissive);
       group = bindWgpuUnlitSurface(
@@ -89,9 +93,4 @@ function defineKeyForMaterial(material: Readonly<EmissiveMaterial> | null): Wgpu
 }
 
 const _scratch: LinearColorRaw = allocateLinearColor();
-const WHITE: LinearColorRaw = allocateLinearColor();
-WHITE.r = 1;
-WHITE.g = 1;
-WHITE.b = 1;
-WHITE.a = 1;
 const FALLBACK_MATERIAL = {} as Readonly<EmissiveMaterial>;

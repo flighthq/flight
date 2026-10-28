@@ -60,7 +60,11 @@ export const wgpuToonMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     let group: GPUBindGroup;
     if (toon === null) {
-      group = bindWgpuToonSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, 3, 0.5);
+      _scratch.r = 1;
+      _scratch.g = 1;
+      _scratch.b = 1;
+      _scratch.a = 1;
+      group = bindWgpuToonSurface(state, pipeline, FALLBACK_MATERIAL, _scratch, 3, 0.5);
     } else {
       unpackColorToLinear(_scratch, toon.baseColor);
       group = bindWgpuToonSurface(state, pipeline, toon, _scratch, toon.steps, toon.alphaCutoff);
@@ -96,9 +100,4 @@ function defineKeyForMaterial(material: Readonly<ToonMaterial> | null): WgpuToon
 }
 
 const _scratch: LinearColorRaw = allocateLinearColor();
-const WHITE: LinearColorRaw = allocateLinearColor();
-WHITE.r = 1;
-WHITE.g = 1;
-WHITE.b = 1;
-WHITE.a = 1;
 const FALLBACK_MATERIAL = {} as Readonly<ToonMaterial>;

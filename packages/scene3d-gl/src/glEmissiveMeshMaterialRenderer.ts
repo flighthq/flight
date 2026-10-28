@@ -43,7 +43,11 @@ export const glEmissiveMeshMaterialRenderer: GlMeshMaterialRenderer = {
     setGlMeshViewProjection(state, program.locViewProjection, camera);
 
     if (emissive === null) {
-      bindGlUnlitSurface(state, program, WHITE, 1, null, 0.5);
+      scratchRgba.r = 1;
+      scratchRgba.g = 1;
+      scratchRgba.b = 1;
+      scratchRgba.a = 1;
+      bindGlUnlitSurface(state, program, scratchRgba, 1, null, 0.5);
       return;
     }
     unpackColorToLinear(scratchRgba, emissive.emissive);
@@ -83,8 +87,3 @@ function defineKeyForMaterial(state: GlRenderState, material: Readonly<EmissiveM
 }
 
 const scratchRgba: LinearColorRaw = allocateLinearColor();
-const WHITE: LinearColorRaw = allocateLinearColor();
-WHITE.r = 1;
-WHITE.g = 1;
-WHITE.b = 1;
-WHITE.a = 1;

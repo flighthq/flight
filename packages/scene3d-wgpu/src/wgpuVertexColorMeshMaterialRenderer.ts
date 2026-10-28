@@ -41,7 +41,11 @@ export const wgpuVertexColorMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 
     let group: GPUBindGroup;
     if (vertexColor === null) {
-      group = bindWgpuUnlitSurface(state, pipeline, FALLBACK_MATERIAL, WHITE, 1, 0.5, null);
+      _scratch.r = 1;
+      _scratch.g = 1;
+      _scratch.b = 1;
+      _scratch.a = 1;
+      group = bindWgpuUnlitSurface(state, pipeline, FALLBACK_MATERIAL, _scratch, 1, 0.5, null);
     } else {
       unpackColorToLinear(_scratch, vertexColor.tint);
       // VertexColor carries no map texture; color0 (the per-vertex tint) is the absent vertex attribute,
@@ -74,9 +78,4 @@ function defineKeyForMaterial(material: Readonly<VertexColorMaterial> | null): W
 }
 
 const _scratch: LinearColorRaw = allocateLinearColor();
-const WHITE: LinearColorRaw = allocateLinearColor();
-WHITE.r = 1;
-WHITE.g = 1;
-WHITE.b = 1;
-WHITE.a = 1;
 const FALLBACK_MATERIAL = {} as Readonly<VertexColorMaterial>;
