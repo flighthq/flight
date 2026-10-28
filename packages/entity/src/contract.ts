@@ -31,4 +31,5 @@ export type {
   EntityRuntimeWriteGuard,
   EntityWithoutRuntime,
   Kind,
+  NonEntityCreateResult,
 } from './types.ts';

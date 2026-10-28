@@ -177,13 +177,15 @@ export function checkEntityContracts(scope: Readonly<EntityContractScope>): Enti
   if (entitySource === undefined) throw new Error('Entity contract gate could not find packages/types/src/Entity.ts');
   const entityType = exportedType(entitySource, 'Entity');
   const entityRuntimeType = exportedType(entitySource, 'EntityRuntime');
-  const markerSource = scope.sourceFiles.find((source) =>
-    normalizePath(source.getFilePath()).endsWith('/types/src/NonEntityCreateResult.ts'),
-  );
-  if (markerSource === undefined) {
-    throw new Error('Entity contract gate could not find packages/types/src/NonEntityCreateResult.ts');
+  const nonEntityCreateResults = scope.sourceFiles.flatMap((source) => {
+    const path = normalizePath(source.getFilePath());
+    if (!path.endsWith('/entity/src/types.ts') && !path.endsWith('/types/src/NonEntityCreateResult.ts')) return [];
+    const declaration = source.getTypeAlias('NonEntityCreateResult');
+    return declaration === undefined ? [] : [declaration];
+  });
+  if (nonEntityCreateResults.length === 0) {
+    throw new Error('Entity contract gate could not find the canonical NonEntityCreateResult declaration');
   }
-  const nonEntityCreateResult = markerSource.getTypeAliasOrThrow('NonEntityCreateResult');
   const advisories: EntityContractAdvisory[] = [];
   const issues: EntityContractIssue[] = [];
   const candidates = scope.sourceFiles.flatMap(collectCandidateIntersections);
@@ -270,7 +272,7 @@ export function checkEntityContracts(scope: Readonly<EntityContractScope>): Enti
     exportedSurfaces,
     entityType,
     entityRuntimeType,
-    nonEntityCreateResult,
+    nonEntityCreateResults,
     scope.root,
   );
   issues.push(...exportedCreateCensus.candidates, ...exportedCreateCensus.issues);
@@ -502,7 +504,7 @@ function collectExportedCreateCensus(
   surfaces: readonly ExportedSurface[],
   entityType: Type,
   entityRuntimeType: Type,
-  nonEntityCreateResult: TypeAliasDeclaration,
+  nonEntityCreateResults: readonly TypeAliasDeclaration[],
   root: string,
 ): ExportedCreateCensus {
   const census: ExportedCreateCensus = {
@@ -535,7 +537,7 @@ function collectExportedCreateCensus(
     const invalidReturnTypes = new Set<string>();
     const markerKinds = new Set<'descriptor' | 'options' | 'type-only'>();
     for (const signature of surface.declaration.getType().getCallSignatures()) {
-      const marker = classifyNonEntityCreateMarker(signature, nonEntityCreateResult, entityType, entityRuntimeType);
+      const marker = classifyNonEntityCreateMarker(signature, nonEntityCreateResults, entityType, entityRuntimeType);
       if (marker?.detail !== undefined) {
         for (const name of names) {
           census.issues.push(issue(root, marker.node, 'invalid-non-entity-create-result', name, marker.detail));
@@ -721,13 +723,13 @@ function containsCandidateIntersection(typeNode: TypeNode): boolean {
 
 function classifyNonEntityCreateMarker(
   signature: Signature,
-  markerDeclaration: TypeAliasDeclaration,
+  markerDeclarations: readonly TypeAliasDeclaration[],
   entityType: Type,
   entityRuntimeType: Type,
 ): NonEntityCreateMarkerClassification | undefined {
   const returnTypeNode = signature.getDeclaration().getReturnTypeNode();
   if (returnTypeNode === undefined) return undefined;
-  const marker = findDirectNonEntityCreateMarker(returnTypeNode, markerDeclaration);
+  const marker = findDirectNonEntityCreateMarker(returnTypeNode, markerDeclarations);
   if (marker === undefined) return undefined;
   const typeArguments = marker.getTypeArguments();
   if (typeArguments.length !== 2) {
@@ -759,25 +761,26 @@ function classifyNonEntityCreateMarker(
 
 function findDirectNonEntityCreateMarker(
   typeNode: TypeNode,
-  markerDeclaration: TypeAliasDeclaration,
+  markerDeclarations: readonly TypeAliasDeclaration[],
 ): TypeReferenceNode | undefined {
   if (Node.isParenthesizedTypeNode(typeNode)) {
-    return findDirectNonEntityCreateMarker(typeNode.getTypeNode(), markerDeclaration);
+    return findDirectNonEntityCreateMarker(typeNode.getTypeNode(), markerDeclarations);
   }
   if (Node.isUnionTypeNode(typeNode)) {
     const resultNodes = typeNode.getTypeNodes().filter((node) => !isFailureSentinelTypeNode(node));
-    return resultNodes.length === 1 ? findDirectNonEntityCreateMarker(resultNodes[0]!, markerDeclaration) : undefined;
+    return resultNodes.length === 1 ? findDirectNonEntityCreateMarker(resultNodes[0]!, markerDeclarations) : undefined;
   }
   if (!Node.isTypeReference(typeNode)) return undefined;
   const symbol = typeNode.getTypeName().getSymbol();
   const declarationSymbol = symbol?.getAliasedSymbol() ?? symbol;
-  if (declarationSymbol?.getDeclarations().some((node) => nodeKey(node) === nodeKey(markerDeclaration)) === true) {
+  const markerKeys = new Set(markerDeclarations.map(nodeKey));
+  if (declarationSymbol?.getDeclarations().some((node) => markerKeys.has(nodeKey(node))) === true) {
     return typeNode;
   }
   const transparentWrapper = typeNode.getTypeName().getText();
   const typeArguments = typeNode.getTypeArguments();
   return (transparentWrapper === 'Awaited' || transparentWrapper === 'Promise') && typeArguments.length === 1
-    ? findDirectNonEntityCreateMarker(typeArguments[0]!, markerDeclaration)
+    ? findDirectNonEntityCreateMarker(typeArguments[0]!, markerDeclarations)
     : undefined;
 }
 

@@ -1,5 +1,6 @@
 use flight_compiler::{
-    SourceMode, compile_typescript, compile_typescript_with_alias_sources, compile_vitest,
+    ExternalAliasSource, SourceMode, compile_typescript, compile_typescript_with_alias_sources,
+    compile_typescript_with_external_alias_sources, compile_vitest,
     compile_vitest_with_alias_sources, source_mode,
 };
 
@@ -32,6 +33,13 @@ mod source_modes {
             )
             .unwrap(),
             SourceMode::Generate
+        );
+        assert_eq!(
+            source_mode(
+                "//! flight-compiler: target-native\n//! flight-compiler: identity-alias Marker descriptor\npub type Marker<T> = T;\n"
+            )
+            .unwrap(),
+            SourceMode::TargetNative
         );
     }
 
@@ -823,6 +831,104 @@ pub fn get_easing_derivative(ease: &dyn Fn(f32) -> f32, t: f32) -> f32 {
         assert!(output.contains(
             "export function getEasingDerivative(ease: EasingFunction, t: number): number"
         ));
+    }
+
+    #[test]
+    fn preserves_external_identity_aliases_and_erases_lifetimes() {
+        let external = r#"
+//! flight-compiler: target-native
+//! flight-compiler: identity-alias Marker descriptor
+
+pub type Marker<T> = T;
+"#;
+        let source = r#"
+pub struct Widget {
+    runtime: EntityRuntimeSlot,
+}
+
+pub fn create_reader<'a>(reader: Reader<'a>) -> Option<Marker<Reader<'_>>> {
+    return Some(reader);
+}
+
+pub fn borrow_value<'a, T>(value: Borrowed<'a, T>) -> Borrowed<'a, T> {
+    return value;
+}
+"#;
+
+        let output = compile_typescript_with_external_alias_sources(
+            source,
+            Some("@flighthq/entity/contract"),
+            &[],
+            &[ExternalAliasSource {
+                source: external,
+                module: "@flighthq/entity/contract",
+            }],
+        )
+        .unwrap();
+
+        assert!(
+            output
+                .contains("import type { EntityRaw, Marker } from \"@flighthq/entity/contract\";")
+        );
+        assert!(output.contains(
+            "export function createReader(reader: Reader): Marker<Reader, \"descriptor\"> | undefined"
+        ));
+        assert!(output.contains("export function borrowValue<T>(value: Borrowed<T>): Borrowed<T>"));
+        assert_eq!(output.matches("import type").count(), 1);
+        assert!(!output.contains("Reader<>"));
+        assert!(!output.contains("import { Marker"));
+
+        let unused = compile_typescript_with_external_alias_sources(
+            "pub fn value() -> u32 { return 1; }\n",
+            None,
+            &[],
+            &[ExternalAliasSource {
+                source: external,
+                module: "@flighthq/entity/contract",
+            }],
+        )
+        .unwrap();
+        assert!(!unused.contains("Marker"));
+    }
+
+    #[test]
+    fn validates_external_identity_alias_directives() {
+        let cases = [
+            (
+                "//! flight-compiler: identity-alias Missing descriptor\n",
+                "`flight-compiler: identity-alias` alias `Missing` does not exist",
+            ),
+            (
+                "//! flight-compiler: identity-alias Marker descriptor\n//! flight-compiler: identity-alias Marker descriptor\npub type Marker<T> = T;\n",
+                "duplicate `flight-compiler: identity-alias` directive for alias `Marker`",
+            ),
+            (
+                "//! flight-compiler: identity-alias Marker descriptor\npub type Marker<T> = Vec<T>;\n",
+                "`flight-compiler: identity-alias` alias `Marker` must resolve directly to its type parameter `T`",
+            ),
+            (
+                "//! flight-compiler: identity-alias Marker descriptor\npub type Marker<'a, T> = T;\n",
+                "`flight-compiler: identity-alias` alias `Marker` must declare exactly one type parameter",
+            ),
+            (
+                "//! flight-compiler: identity-alias Marker Descriptor\npub type Marker<T> = T;\n",
+                "`flight-compiler: identity-alias Marker` reason tag `Descriptor` must contain only lowercase ASCII letters, digits, or hyphens",
+            ),
+        ];
+
+        for (external, expected) in cases {
+            let error = compile_typescript_with_external_alias_sources(
+                "pub fn portable() {}\n",
+                None,
+                &[],
+                &[ExternalAliasSource {
+                    source: external,
+                    module: "@flighthq/entity/contract",
+                }],
+            )
+            .unwrap_err();
+            assert_eq!(error.to_string(), expected);
+        }
     }
 
     #[test]

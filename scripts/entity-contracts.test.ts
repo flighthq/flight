@@ -296,6 +296,56 @@ describe('checkEntityContracts', () => {
     });
   });
 
+  it('recognizes the canonical entity-owned non-Entity result marker', () => {
+    const report = checkFixture({
+      'packages/entity/src/types.ts': [
+        "export type NonEntityCreateResult<Type, Kind extends 'descriptor' | 'options' | 'type-only'> =",
+        "  Kind extends 'descriptor' | 'options' | 'type-only' ? Type : never;",
+      ].join('\n'),
+      'packages/example/src/contract.ts': "export * from './example';",
+      'packages/example/src/example.ts': [
+        "import type { NonEntityCreateResult } from '../../entity/src/types';",
+        'interface Descriptor { readonly value: number }',
+        "export declare function createDescriptor(): NonEntityCreateResult<Descriptor, 'descriptor'>;",
+      ].join('\n'),
+    });
+
+    expect(report.exportedCreateExclusions).toContainEqual(
+      expect.objectContaining({
+        name: '@flighthq/example createDescriptor',
+        reasons: ['descriptor'],
+        source: 'marker',
+      }),
+    );
+    expect(report.issues).toEqual([]);
+  });
+
+  it('recognizes the transitional Types re-export of the entity-owned marker', () => {
+    const report = checkFixture({
+      'packages/entity/src/types.ts': [
+        "export type NonEntityCreateResult<Type, Kind extends 'descriptor' | 'options' | 'type-only'> =",
+        "  Kind extends 'descriptor' | 'options' | 'type-only' ? Type : never;",
+      ].join('\n'),
+      'packages/types/src/NonEntityCreateResult.ts':
+        "export type { NonEntityCreateResult } from '../../entity/src/types';",
+      'packages/example/src/contract.ts': "export * from './example';",
+      'packages/example/src/example.ts': [
+        "import type { NonEntityCreateResult } from '../../types/src/NonEntityCreateResult';",
+        'interface Descriptor { readonly value: number }',
+        "export declare function createDescriptor(): NonEntityCreateResult<Descriptor, 'descriptor'>;",
+      ].join('\n'),
+    });
+
+    expect(report.exportedCreateExclusions).toContainEqual(
+      expect.objectContaining({
+        name: '@flighthq/example createDescriptor',
+        reasons: ['descriptor'],
+        source: 'marker',
+      }),
+    );
+    expect(report.issues).toEqual([]);
+  });
+
   it('rejects unknown marker tags and wrappers around Entity roots', () => {
     const report = checkFixture({
       'packages/example/src/contract.ts': "export * from './example';",

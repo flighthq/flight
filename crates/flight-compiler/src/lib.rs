@@ -17,6 +17,13 @@ pub enum SourceMode {
     TargetNative,
 }
 
+/// A Rust source that owns target-language-only identity aliases in an external module.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ExternalAliasSource<'a> {
+    pub source: &'a str,
+    pub module: &'a str,
+}
+
 /// A source construct that cannot yet be lowered mechanically.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompileError {
@@ -49,13 +56,46 @@ pub fn compile_typescript_with_alias_sources(
     entity_module: Option<&str>,
     alias_sources: &[&str],
 ) -> Result<String, CompileError> {
+    return compile_typescript_with_external_alias_sources(
+        source,
+        entity_module,
+        alias_sources,
+        &[],
+    );
+}
+
+/// Compiles one Rust module with same-package aliases and externally owned identity aliases.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_typescript_with_external_alias_sources(
+    source: &str,
+    entity_module: Option<&str>,
+    alias_sources: &[&str],
+    external_alias_sources: &[ExternalAliasSource<'_>],
+) -> Result<String, CompileError> {
     require_generated_source(source)?;
     let program = model::parse_program(source)?;
     let alias_programs = alias_sources
         .iter()
         .map(|alias_source| model::parse_program(alias_source))
         .collect::<Result<Vec<_>, _>>()?;
-    let output = typescript::emit_program(&program, entity_module, &alias_programs)?;
+    let external_alias_programs = external_alias_sources
+        .iter()
+        .map(|external| {
+            if external.module.is_empty() {
+                return Err(compile_error("external alias module cannot be empty"));
+            }
+            return Ok((
+                model::parse_identity_alias_metadata(external.source)?,
+                external.module,
+            ));
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let output = typescript::emit_program(
+        &program,
+        entity_module,
+        &alias_programs,
+        &external_alias_programs,
+    )?;
     return Ok(lower_string_union_variants(output, source, false));
 }
 

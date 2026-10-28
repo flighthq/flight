@@ -1,9 +1,10 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::Write;
 
 use quote::ToTokens;
 use syn::parse::Parser;
 use syn::punctuated::Punctuated;
+use syn::visit::Visit;
 use syn::{
     Attribute, BinOp, Expr, FnArg, GenericArgument, ItemFn, ItemStruct, Lit, Pat, PathArguments,
     ReturnType, Stmt, Token, Type, UnOp, Visibility,
@@ -20,6 +21,7 @@ const ENTITY_DEFAULT_FIELD_MARKER: &str = "@entity-default-field:";
 const ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER: &str = "@entity-unsupported-default-field:";
 const FIXED_BUFFER_ARGUMENT_MARKER: &str = "@fixed-buffer-argument:";
 const FIXED_BUFFER_LOCAL_MARKER: &str = "@fixed-buffer-local:";
+const IDENTITY_ALIAS_MARKER: &str = "@identity-alias:";
 const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
 const RECORD_CLONE_ARGUMENT_MARKER: &str = "@record-clone-argument:";
 const RECORD_CLONE_LOCAL_MARKER: &str = "@record-clone-local:";
@@ -308,12 +310,21 @@ fn vec_clone_optional(rust_type: &Type) -> Option<bool> {
 }
 
 pub(crate) fn generation_context(programs: &[&Program]) -> Result<HashSet<String>, CompileError> {
-    let mut context = HashSet::new();
+    return generation_context_with_types(programs, &HashSet::new());
+}
+
+fn generation_context_with_types(
+    programs: &[&Program],
+    type_context: &HashSet<String>,
+) -> Result<HashSet<String>, CompileError> {
+    let mut context = type_context.clone();
     let entity_types = programs
         .iter()
         .flat_map(|program| &program.entities)
         .cloned()
         .collect::<HashSet<_>>();
+    let mut callable_type_context = type_context.clone();
+    callable_type_context.extend(entity_types.iter().cloned());
     let record_types = programs
         .iter()
         .flat_map(|program| {
@@ -421,7 +432,8 @@ pub(crate) fn generation_context(programs: &[&Program]) -> Result<HashSet<String
                         "{FIXED_BUFFER_ARGUMENT_MARKER}{function_name}:{argument_index}:{typescript_type}"
                     ));
                 }
-                let Some(parameters) = callable_parameter_types(&argument.ty, &program.entities)?
+                let Some(parameters) =
+                    callable_parameter_types(&argument.ty, &callable_type_context)?
                 else {
                     continue;
                 };
@@ -2314,6 +2326,7 @@ fn emit_type_with_aliases(
 fn nullable_guard_types(
     programs: &[&Program],
     aliases: &PreferredAliases,
+    type_context: &HashSet<String>,
 ) -> Result<HashSet<String>, CompileError> {
     let mut types = HashSet::new();
     for program in programs {
@@ -2323,7 +2336,7 @@ fn nullable_guard_types(
                     && let FnArg::Typed(argument) = argument
                     && let Some(inner) = option_inner_type(&argument.ty)
                 {
-                    types.insert(emit_preferred_type(inner, &program.entities, aliases)?);
+                    types.insert(emit_preferred_type(inner, type_context, aliases)?);
                 }
             }
         }
@@ -2342,11 +2355,99 @@ fn type_contains_nullable(
     );
 }
 
+struct ExternalIdentityAlias {
+    module: String,
+    tag: String,
+}
+
+fn external_identity_aliases(
+    external_alias_programs: &[(BTreeMap<String, String>, &str)],
+) -> Result<BTreeMap<String, ExternalIdentityAlias>, CompileError> {
+    let mut aliases = BTreeMap::new();
+    for (identity_aliases, module) in external_alias_programs {
+        for (name, tag) in identity_aliases {
+            if aliases
+                .insert(
+                    name.clone(),
+                    ExternalIdentityAlias {
+                        module: (*module).to_string(),
+                        tag: tag.clone(),
+                    },
+                )
+                .is_some()
+            {
+                return Err(compile_error(format!(
+                    "external identity alias `{name}` is declared by more than one source"
+                )));
+            }
+        }
+    }
+    return Ok(aliases);
+}
+
+fn identity_alias_marker(name: &str, tag: &str) -> String {
+    return format!("{IDENTITY_ALIAS_MARKER}{name}:{tag}");
+}
+
+fn identity_alias_tag<'a>(context: &'a HashSet<String>, name: &str) -> Option<&'a str> {
+    let prefix = format!("{IDENTITY_ALIAS_MARKER}{name}:");
+    return context
+        .iter()
+        .find_map(|marker| marker.strip_prefix(&prefix));
+}
+
+fn used_identity_aliases(
+    program: &Program,
+    aliases: &BTreeMap<String, ExternalIdentityAlias>,
+) -> BTreeSet<String> {
+    struct Collector<'a> {
+        aliases: &'a BTreeMap<String, ExternalIdentityAlias>,
+        names: BTreeSet<String>,
+    }
+
+    impl<'ast> Visit<'ast> for Collector<'_> {
+        fn visit_type_path(&mut self, rust_type: &'ast syn::TypePath) {
+            if let Some(segment) = rust_type.path.segments.last() {
+                let name = segment.ident.to_string();
+                if self.aliases.contains_key(&name) {
+                    self.names.insert(name);
+                }
+            }
+            syn::visit::visit_type_path(self, rust_type);
+        }
+    }
+
+    let mut collector = Collector {
+        aliases,
+        names: BTreeSet::new(),
+    };
+    for constant in &program.constants {
+        collector.visit_item_const(constant);
+    }
+    for rust_enum in &program.enums {
+        collector.visit_item_enum(rust_enum);
+    }
+    for function in &program.functions {
+        collector.visit_item_fn(function);
+    }
+    for rust_static in &program.statics {
+        collector.visit_item_static(rust_static);
+    }
+    for structure in &program.structs {
+        collector.visit_item_struct(structure);
+    }
+    for type_alias in &program.type_aliases {
+        collector.visit_item_type(type_alias);
+    }
+    return collector.names;
+}
+
 // flight-lint: allow(hashmap-iteration) Program constants are a Vec retained in Rust source order; the rule's name heuristic cannot see the field type across modules
 pub(crate) fn emit_program(
     program: &Program,
     entity_module: Option<&str>,
     alias_programs: &[Program],
+    external_alias_programs: &[(BTreeMap<String, String>, &str)],
 ) -> Result<String, CompileError> {
     let programs = std::iter::once(program)
         .chain(alias_programs)
@@ -2356,15 +2457,21 @@ pub(crate) fn emit_program(
         .iter()
         .any(|function| expression_contains_path(&function.block, "allocate_entity"));
     let aliases = preferred_aliases(program, alias_programs)?;
-    let expression_context = generation_context(&programs)?;
-    let nullable_types = nullable_guard_types(&programs, &aliases)?;
+    let external_identity_aliases = external_identity_aliases(external_alias_programs)?;
+    let used_identity_aliases = used_identity_aliases(program, &external_identity_aliases);
+    let mut identity_context = HashSet::new();
+    for (name, alias) in &external_identity_aliases {
+        identity_context.insert(identity_alias_marker(name, &alias.tag));
+    }
+    let expression_context = generation_context_with_types(&programs, &identity_context)?;
+    let nullable_types = nullable_guard_types(&programs, &aliases, &expression_context)?;
     let nullable_static_names = program
         .statics
         .iter()
         .filter_map(|rust_static| {
             type_contains_nullable(
                 &rust_static.ty,
-                &program.entities,
+                &expression_context,
                 &aliases,
                 &nullable_types,
             )
@@ -2392,15 +2499,36 @@ pub(crate) fn emit_program(
         )
         .expect("writing to a String cannot fail");
     }
+    let mut type_imports = BTreeMap::<String, BTreeSet<String>>::new();
     if !program.entities.is_empty() {
+        type_imports
+            .entry(
+                entity_module
+                    .expect("entity module was required")
+                    .to_string(),
+            )
+            .or_default()
+            .insert("EntityRaw".to_string());
+    }
+    for name in used_identity_aliases {
+        let alias = external_identity_aliases
+            .get(&name)
+            .expect("used identity alias came from the external alias map");
+        type_imports
+            .entry(alias.module.clone())
+            .or_default()
+            .insert(name);
+    }
+    for (module, names) in &type_imports {
         writeln!(
             out,
-            "import type {{ EntityRaw }} from {:?};",
-            entity_module.expect("entity module was required")
+            "import type {{ {} }} from {:?};",
+            names.iter().cloned().collect::<Vec<_>>().join(", "),
+            module
         )
         .expect("writing to a String cannot fail");
     }
-    if uses_allocate_entity || !program.entities.is_empty() {
+    if uses_allocate_entity || !type_imports.is_empty() {
         out.push('\n');
     }
     if program.standard_constants.contains("PI") {
@@ -2419,7 +2547,7 @@ pub(crate) fn emit_program(
         emit_type_alias(
             &mut out,
             type_alias,
-            &program.entities,
+            &expression_context,
             program
                 .callable_parameters
                 .get(&type_alias.ident.to_string())
@@ -2431,7 +2559,7 @@ pub(crate) fn emit_program(
         emit_struct(
             &mut out,
             structure,
-            &program.entities,
+            &expression_context,
             &aliases,
             program
                 .readonly_structs
@@ -2440,14 +2568,14 @@ pub(crate) fn emit_program(
         out.push('\n');
     }
     for constant in &program.constants {
-        emit_constant(&mut out, constant, &program.entities)?;
+        emit_constant(&mut out, constant, &expression_context)?;
         out.push('\n');
     }
     for rust_static in &program.statics {
         emit_static(
             &mut out,
             rust_static,
-            &program.entities,
+            &expression_context,
             &aliases,
             &nullable_types,
         )?;
@@ -2751,6 +2879,30 @@ pub(crate) fn emit_type(
                 return Err(compile_error("empty Rust type path"));
             };
             let name = segment.ident.to_string();
+            if let Some(tag) = identity_alias_tag(entities, &name) {
+                let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                    return Err(compile_error(format!(
+                        "identity alias `{name}` needs exactly one type argument"
+                    )));
+                };
+                let types = arguments
+                    .args
+                    .iter()
+                    .filter_map(|argument| match argument {
+                        GenericArgument::Type(rust_type) => Some(rust_type),
+                        _ => None,
+                    })
+                    .collect::<Vec<_>>();
+                if types.len() != 1 {
+                    return Err(compile_error(format!(
+                        "identity alias `{name}` needs exactly one type argument"
+                    )));
+                }
+                return Ok(format!(
+                    "{name}<{}, {tag:?}>",
+                    emit_type(types[0], entities)?
+                ));
+            }
             match name.as_str() {
                 "bool" => Ok("boolean".to_string()),
                 "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "isize" | "u8" | "u16" | "u32"
@@ -2799,7 +2951,11 @@ pub(crate) fn emit_type(
                                 _ => None,
                             })
                             .collect::<Result<Vec<_>, _>>()?;
-                        Ok(format!("{name}<{}>", rendered.join(", ")))
+                        if rendered.is_empty() {
+                            Ok(name)
+                        } else {
+                            Ok(format!("{name}<{}>", rendered.join(", ")))
+                        }
                     }
                 }
             }

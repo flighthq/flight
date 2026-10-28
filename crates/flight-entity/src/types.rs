@@ -1,5 +1,6 @@
 //! flight-compiler: target-native
-//! flight-compiler: root EntityRaw
+//! flight-compiler: root EntityRaw NonEntityCreateResult
+//! flight-compiler: identity-alias NonEntityCreateResult descriptor
 
 use std::fmt;
 

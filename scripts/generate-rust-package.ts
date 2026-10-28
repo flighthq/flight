@@ -240,7 +240,14 @@ function crateImports(
 function entityArguments(command: string): string[] {
   if (command !== 'generate') return [];
   const specifier = options.packageName === 'entity' ? './types.ts' : '@flighthq/entity/contract';
-  return ['--entity-module', specifier];
+  return [
+    '--entity-module',
+    specifier,
+    '--external-alias-source',
+    join(repositoryRoot, 'crates', 'flight-entity', 'src', 'types.rs'),
+    '--external-alias-module',
+    specifier,
+  ];
 }
 
 function finishGeneration(fileNames: string[]): void {

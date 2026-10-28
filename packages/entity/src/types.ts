@@ -10,6 +10,20 @@ export interface EntityRuntime {
 }
 
 /**
+ * Classifies a repository-owned `create*` result that is intentionally outside the Entity population.
+ *
+ * RETIRED as a standard, retained only until its remaining uses are migrated. Do not add new uses.
+ * This wrapper has no runtime representation and does not change `Type`; the reason remains beside
+ * the public API so the Entity contract analyzer can distinguish descriptors from Entity results.
+ */
+export type NonEntityCreateResult<Type, Kind extends 'descriptor' | 'options' | 'type-only'> = Kind extends
+  | 'descriptor'
+  | 'options'
+  | 'type-only'
+  ? Type
+  : never;
+
+/**
  * @deprecated Import EntityRaw and use the Entity helpers instead. This bridge remains only for
  * existing contract consumers that access the old symbol-keyed runtime slot directly.
  */

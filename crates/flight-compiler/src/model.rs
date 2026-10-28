@@ -115,6 +115,7 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
             "callable-parameters"
             | "companion"
             | "contract"
+            | "identity-alias"
             | "readonly-fields"
             | "root"
             | "string-union" => {}
@@ -168,6 +169,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
     let callable_parameters = parse_callable_parameters(&file.attrs)?;
+    let identity_alias_directives = parse_identity_aliases(&file.attrs)?;
     let mut constants = Vec::new();
     let mut entities = HashSet::new();
     let mut enums = Vec::new();
@@ -233,6 +235,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     }
 
     validate_callable_parameters(&callable_parameters, &type_aliases)?;
+    validate_identity_aliases(&identity_alias_directives, &type_aliases)?;
 
     return Ok(Program {
         callable_parameters,
@@ -247,6 +250,132 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         string_unions,
         type_aliases,
     });
+}
+
+fn parse_identity_aliases(
+    attributes: &[Attribute],
+) -> Result<BTreeMap<String, String>, CompileError> {
+    let mut directives = BTreeMap::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("identity-alias") {
+            continue;
+        }
+        let Some(alias) = fields.next() else {
+            return Err(compile_error(
+                "`flight-compiler: identity-alias` requires an alias name and reason tag",
+            ));
+        };
+        let Some(tag) = fields.next() else {
+            return Err(compile_error(format!(
+                "`flight-compiler: identity-alias {alias}` requires a reason tag"
+            )));
+        };
+        if fields.next().is_some() {
+            return Err(compile_error(format!(
+                "`flight-compiler: identity-alias {alias}` accepts exactly one reason tag"
+            )));
+        }
+        if syn::parse_str::<syn::Ident>(alias).is_err() || alias.starts_with("r#") {
+            return Err(compile_error(format!(
+                "`flight-compiler: identity-alias` alias name `{alias}` is not a valid identifier"
+            )));
+        }
+        if tag.is_empty()
+            || !tag.chars().all(|character| {
+                character.is_ascii_lowercase() || character.is_ascii_digit() || character == '-'
+            })
+        {
+            return Err(compile_error(format!(
+                "`flight-compiler: identity-alias {alias}` reason tag `{tag}` must contain only lowercase ASCII letters, digits, or hyphens"
+            )));
+        }
+        if directives
+            .insert(alias.to_string(), tag.to_string())
+            .is_some()
+        {
+            return Err(compile_error(format!(
+                "duplicate `flight-compiler: identity-alias` directive for alias `{alias}`"
+            )));
+        }
+    }
+    return Ok(directives);
+}
+
+fn identity_parameter(rust_type: &Type) -> Option<&syn::Ident> {
+    return match rust_type {
+        Type::Group(group) => identity_parameter(&group.elem),
+        Type::Paren(paren) => identity_parameter(&paren.elem),
+        Type::Path(path)
+            if path.qself.is_none()
+                && path.path.leading_colon.is_none()
+                && path.path.segments.len() == 1
+                && matches!(path.path.segments[0].arguments, PathArguments::None) =>
+        {
+            Some(&path.path.segments[0].ident)
+        }
+        _ => None,
+    };
+}
+
+fn validate_identity_aliases(
+    directives: &BTreeMap<String, String>,
+    type_aliases: &[ItemType],
+) -> Result<(), CompileError> {
+    for alias in directives.keys() {
+        let Some(type_alias) = type_aliases
+            .iter()
+            .find(|type_alias| type_alias.ident == alias.as_str())
+        else {
+            return Err(compile_error(format!(
+                "`flight-compiler: identity-alias` alias `{alias}` does not exist"
+            )));
+        };
+        if !is_public(&type_alias.vis) {
+            return Err(compile_error(format!(
+                "`flight-compiler: identity-alias` alias `{alias}` must be public"
+            )));
+        }
+        let mut parameters = type_alias.generics.params.iter();
+        let Some(syn::GenericParam::Type(parameter)) = parameters.next() else {
+            return Err(compile_error(format!(
+                "`flight-compiler: identity-alias` alias `{alias}` must declare exactly one type parameter"
+            )));
+        };
+        if parameters.next().is_some() {
+            return Err(compile_error(format!(
+                "`flight-compiler: identity-alias` alias `{alias}` must declare exactly one type parameter"
+            )));
+        }
+        if identity_parameter(&type_alias.ty) != Some(&parameter.ident) {
+            return Err(compile_error(format!(
+                "`flight-compiler: identity-alias` alias `{alias}` must resolve directly to its type parameter `{}`",
+                parameter.ident
+            )));
+        }
+    }
+    return Ok(());
+}
+
+pub(crate) fn parse_identity_alias_metadata(
+    source: &str,
+) -> Result<BTreeMap<String, String>, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    let directives = parse_identity_aliases(&file.attrs)?;
+    let type_aliases = file
+        .items
+        .into_iter()
+        .filter_map(|item| match item {
+            Item::Type(type_alias) => Some(type_alias),
+            _ => None,
+        })
+        .collect::<Vec<_>>();
+    validate_identity_aliases(&directives, &type_aliases)?;
+    return Ok(directives);
 }
 
 fn callable_arity(rust_type: &Type) -> Option<usize> {

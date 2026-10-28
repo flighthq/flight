@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::process;
 
 const USAGE: &str = "\
-Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--check]
+Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--check]
        flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--alias-source <rust-file> ...] [--check]
        flight-compile source-mode --source <rust-file>
 ";
@@ -20,6 +20,8 @@ struct GenerateOptions {
     check: bool,
     contract_module: Option<String>,
     entity_module: Option<String>,
+    external_alias_modules: Vec<String>,
+    external_alias_sources: Vec<PathBuf>,
     out: PathBuf,
     source: PathBuf,
 }
@@ -37,10 +39,23 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 })
                 .collect::<Result<Vec<_>, _>>()?;
             let alias_source_refs = alias_sources.iter().map(String::as_str).collect::<Vec<_>>();
-            flight_compiler::compile_typescript_with_alias_sources(
+            let external_alias_sources = options
+                .external_alias_sources
+                .iter()
+                .map(|path| {
+                    fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let external_aliases = external_alias_sources
+                .iter()
+                .zip(&options.external_alias_modules)
+                .map(|(source, module)| flight_compiler::ExternalAliasSource { source, module })
+                .collect::<Vec<_>>();
+            flight_compiler::compile_typescript_with_external_alias_sources(
                 &source,
                 options.entity_module.as_deref(),
                 &alias_source_refs,
+                &external_aliases,
             )
         }
         GenerateKind::Tests => {
@@ -127,6 +142,8 @@ fn parse_generate_options(
     let mut alias_sources = Vec::new();
     let mut contract_module = None;
     let mut entity_module = None;
+    let mut external_alias_modules = Vec::new();
+    let mut external_alias_sources = Vec::new();
     let mut out = None;
     let mut source = None;
     let mut index = 0;
@@ -143,6 +160,20 @@ fn parse_generate_options(
             "--contract-module" => {
                 index += 1;
                 contract_module = arguments.get(index).cloned();
+            }
+            "--external-alias-module" => {
+                index += 1;
+                let module = arguments.get(index).cloned().ok_or_else(|| {
+                    format!("--external-alias-module requires a specifier\n\n{USAGE}")
+                })?;
+                external_alias_modules.push(module);
+            }
+            "--external-alias-source" => {
+                index += 1;
+                let path = arguments
+                    .get(index)
+                    .ok_or_else(|| format!("--external-alias-source requires a path\n\n{USAGE}"))?;
+                external_alias_sources.push(PathBuf::from(path));
             }
             "--entity-module" => {
                 index += 1;
@@ -171,13 +202,27 @@ fn parse_generate_options(
                 "--entity-module is only valid for generate\n\n{USAGE}"
             ));
         }
+        GenerateKind::Tests
+            if !external_alias_sources.is_empty() || !external_alias_modules.is_empty() =>
+        {
+            return Err(format!(
+                "external alias options are only valid for generate\n\n{USAGE}"
+            ));
+        }
         GenerateKind::Source | GenerateKind::Tests => {}
+    }
+    if external_alias_sources.len() != external_alias_modules.len() {
+        return Err(format!(
+            "--external-alias-source and --external-alias-module must be provided the same number of times\n\n{USAGE}"
+        ));
     }
     return Ok(GenerateOptions {
         alias_sources,
         check,
         contract_module,
         entity_module,
+        external_alias_modules,
+        external_alias_sources,
         out: out.ok_or_else(|| format!("--out is required\n\n{USAGE}"))?,
         source: source.ok_or_else(|| format!("--source is required\n\n{USAGE}"))?,
     });
