@@ -18,7 +18,8 @@ export enum LogLevel {
 export type LogData = string | Readonly<Record<string, unknown>>;
 
 // A bound logging context: a channel plus base fields merged into every entry emitted through it.
-// Created with createLogContext / createChildLogContext; consumed by logWith and the *With wrappers.
+// createLogContext returns an empty context to assign; createChildLogContext derives one. Consumed by
+// logWith and the *With wrappers.
 export interface LogContext extends Entity {
   channel: string | null;
   fields: Readonly<Record<string, unknown>>;
@@ -34,7 +35,9 @@ export type LogFormatter = (entry: Readonly<LogEntry>) => string;
 
 // A named tracing span — a plain value, inert until enterLogSpan. While active, its fields merge
 // into every emitted entry (lower priority than the entry's own fields).
+// `id` comes from the owning LogState and is what exitLogSpan matches on.
 export interface LogSpan extends Entity {
+  id: number;
   name: string;
   fields: Readonly<Record<string, unknown>>;
   channel: string | null;
@@ -90,11 +93,14 @@ export interface LogTransport extends Entity {
 }
 
 // One emitted log entry. `channel` is a free categorization tag (for example 'batch', 'shader',
-// 'user') used to filter captured output; null when uncategorized.
+// 'user') used to filter captured output; null when uncategorized. `timestampMs` is the caller's
+// clock reading at emit time, injected rather than sampled, so formatters and rate limits read it
+// instead of a hidden clock.
 export interface LogEntry {
   level: LogLevel;
   channel: string | null;
   data: LogData;
+  timestampMs: number;
 }
 
 // Receives every emitted entry regardless of the console verbosity threshold. The capture harness

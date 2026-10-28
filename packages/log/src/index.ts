@@ -1,5 +1,6 @@
 export {
   addLogSink,
+  advanceLogSink,
   beginLogGroup,
   clearLogChannelLevel,
   clearLogChannelLevels,
@@ -19,6 +20,7 @@ export {
   createJsonLogFormatter,
   createLogContext,
   createLogSpan,
+  createLogState,
   createMemoryLogSink,
   createRateLimitedLogSink,
   createSampledLogSink,
@@ -36,6 +38,12 @@ export {
   getLogLevel,
   getLogLevelName,
   getMemoryLogSinkEntries,
+  initializeBufferedLogSink,
+  initializeLogContext,
+  initializeLogSpan,
+  initializeLogState,
+  initializeMemoryLogSink,
+  initializeRateLimitedLogSink,
   log,
   logAssert,
   logDebug,
@@ -60,4 +68,15 @@ export {
   setLogRedactionPaths,
   setLogSink,
   startLogTimer,
+} from './contract.ts';
+export type {
+  BufferedLogSinkOptions,
+  ConsoleLogSinkOptions,
+  FileLogSinkOptions,
+  LogDataOrProvider,
+  LogPredicate,
+  LogSerializer,
+  LogState,
+  RateLimitedLogSinkOptions,
+  TextLogFormatterOptions,
 } from './contract.ts';
