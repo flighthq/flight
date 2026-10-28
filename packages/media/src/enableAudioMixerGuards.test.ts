@@ -1,15 +1,30 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  createLogState,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import type {
   AudioBusNodeHandle,
   AudioDeviceHandle,
   AudioMixerGraphHandle,
   HostAudioMixerCapability,
   LogEntry,
+  MemoryLogSink,
 } from '@flighthq/types/contract';
 
 import { addAudioBusToMixer, createAudioBus, createAudioMixer, setAudioBusGain } from './audioMixer.ts';
 import { disableAudioMixerGuards, enableAudioMixerGuards } from './enableAudioMixerGuards.ts';
+
+// Each test logs into a fresh caller-owned state, so logOnce keys never leak between tests.
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
 
 const device = 1 as AudioDeviceHandle;
 const graph = 1 as AudioMixerGraphHandle;
@@ -32,12 +47,12 @@ const mixerProvider = (() => {
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
+  addLogSink(logState, sink.sink);
   try {
     run();
-    return getMemoryLogSinkEntries(sink);
+    return readMemoryLogEntries(sink);
   } finally {
-    removeLogSink(sink.sink);
+    removeLogSink(logState, sink.sink);
   }
 }
 
@@ -49,7 +64,7 @@ function messageOf(entry: Readonly<LogEntry>): string {
 describe('disableAudioMixerGuards', () => {
   it('uninstalls the guard, returning the silent no-op to silence', () => {
     const entries = captureLog(() => {
-      enableAudioMixerGuards();
+      enableAudioMixerGuards(logState, () => 0);
       disableAudioMixerGuards();
       setAudioBusGain(mixerProvider, createAudioBus({ name: 'orphan' }), 0.25);
     });
@@ -60,7 +75,7 @@ describe('disableAudioMixerGuards', () => {
 describe('enableAudioMixerGuards', () => {
   it('WARNS that a gain change on an unmixed bus reached no audio node', () => {
     const entries = captureLog(() => {
-      enableAudioMixerGuards();
+      enableAudioMixerGuards(logState, () => 0);
       try {
         // Returns the value it set, which is exactly why the failure is invisible without the guard.
         expect(setAudioBusGain(mixerProvider, createAudioBus({ name: 'orphan' }), 0.25)).toBe(0.25);
@@ -74,7 +89,7 @@ describe('enableAudioMixerGuards', () => {
 
   it('stays SILENT for a bus that belongs to a mixer', () => {
     const entries = captureLog(() => {
-      enableAudioMixerGuards();
+      enableAudioMixerGuards(logState, () => 0);
       try {
         const mixer = createAudioMixer(mixerProvider, device);
         const bus = createAudioBus({ name: 'music' });
@@ -87,3 +102,9 @@ describe('enableAudioMixerGuards', () => {
     expect(entries.length).toBe(0);
   });
 });
+
+function readMemoryLogEntries(handle: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, handle);
+  return entries;
+}

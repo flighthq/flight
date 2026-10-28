@@ -1,18 +1,32 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  createLogState,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import { createSpritesheet, createSpritesheetAnimation } from '@flighthq/spritesheet/contract';
-import type { LogEntry } from '@flighthq/types/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import { areMovieClipGuardsEnabled, disableMovieClipGuards, enableMovieClipGuards } from './enableMovieClipGuards.ts';
 import { createSpritesheetTimelineSource } from './spritesheetTimelineSource.ts';
 
+// Each test logs into a fresh caller-owned state, so logOnce keys never leak between tests.
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
+
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
+  addLogSink(logState, sink.sink);
   try {
     run();
-    return getMemoryLogSinkEntries(sink);
+    return readMemoryLogEntries(sink);
   } finally {
-    removeLogSink(sink.sink);
+    removeLogSink(logState, sink.sink);
   }
 }
 
@@ -23,7 +37,7 @@ afterEach(() => {
 describe('areMovieClipGuardsEnabled', () => {
   it('reports whether the spritesheet adapter diagnostic is installed', () => {
     expect(areMovieClipGuardsEnabled()).toBe(false);
-    enableMovieClipGuards();
+    enableMovieClipGuards(logState, () => 0);
     expect(areMovieClipGuardsEnabled()).toBe(true);
     disableMovieClipGuards();
     expect(areMovieClipGuardsEnabled()).toBe(false);
@@ -32,7 +46,7 @@ describe('areMovieClipGuardsEnabled', () => {
 
 describe('disableMovieClipGuards', () => {
   it('restores silent adaptation without changing the returned source', () => {
-    enableMovieClipGuards();
+    enableMovieClipGuards(logState, () => 0);
     disableMovieClipGuards();
     const entries = captureLog(() => {
       const source = createSpritesheetTimelineSource(
@@ -48,7 +62,7 @@ describe('disableMovieClipGuards', () => {
 
 describe('enableMovieClipGuards', () => {
   it('WARNS once with the authored repeat and variable-timing loss', () => {
-    enableMovieClipGuards();
+    enableMovieClipGuards(logState, () => 0);
     const entries = captureLog(() => {
       const sheet = createSpritesheet();
       const animation = createSpritesheetAnimation({
@@ -69,3 +83,9 @@ describe('enableMovieClipGuards', () => {
     expect(String((entries[0].data as Record<string, unknown>).message)).toContain('explainSpritesheetTimelineSource');
   });
 });
+
+function readMemoryLogEntries(handle: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, handle);
+  return entries;
+}

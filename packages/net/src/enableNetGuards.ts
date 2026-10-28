@@ -1,4 +1,5 @@
 import { logOnce } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import type { NetGuardNotice } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -16,12 +17,12 @@ export function disableNetGuards(): void {
 // Installs opt-in warnings for invalid request descriptors and successful requests whose capability
 // ignored a supplied progress signal. Omitting this module sheds the guidance strings and
 // @flighthq/log dependency from the transport path.
-export function enableNetGuards(): void {
-  setNetGuard(warnOnNetMisuse);
+export function enableNetGuards(logState: LogState, clock: () => number): void {
+  setNetGuard((notice) => warnOnNetMisuse(logState, clock(), notice));
   _enabled = true;
 }
 
-function warnOnNetMisuse(notice: Readonly<NetGuardNotice>): void {
+function warnOnNetMisuse(logState: LogState, nowMs: number, notice: Readonly<NetGuardNotice>): void {
   const { method, timeoutMs, url } = notice.request;
   let message: string;
   if (notice.reason === 'body-on-get-or-head') {
@@ -34,6 +35,8 @@ function warnOnNetMisuse(notice: Readonly<NetGuardNotice>): void {
       'sendNetRequest: the capability completed successfully without emitting the supplied progress signal — use a capability that supports download progress';
   }
   logOnce(
+    logState,
+    nowMs,
     `net:${notice.operation}:${notice.reason}`,
     LogLevel.Warn,
     { message, method, operation: notice.operation, reason: notice.reason, timeoutMs, url },

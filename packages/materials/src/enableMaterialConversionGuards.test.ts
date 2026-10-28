@@ -1,12 +1,7 @@
-import {
-  addLogSink,
-  clearLogOnceKeys,
-  createMemoryLogSink,
-  getMemoryLogSinkEntries,
-  removeLogSink,
-} from '@flighthq/log/contract';
+import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import type { LogEntry } from '@flighthq/types/contract';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createPhongMaterial } from './classicMaterials.ts';
 import { disableMaterialConversionGuards, enableMaterialConversionGuards } from './enableMaterialConversionGuards.ts';
@@ -17,24 +12,27 @@ import {
 } from './pbrMaterials.ts';
 import { convertPhongToStandardPbrMaterial } from './phongToPbr.ts';
 
-// logOnce dedupes by key for the life of the PROCESS, so without clearing, the first test to warn under
-// a given key silences every later one — a test would then pass or fail on its position in the file.
+// logOnce dedupes by key for the life of its LogState, so each test gets a fresh state — otherwise the
+// first test to warn under a given key would silence every later one.
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
+
 afterEach(() => {
   disableMaterialConversionGuards();
-  clearLogOnceKeys();
 });
 
 const texture = {} as never;
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
-  try {
-    run();
-    return getMemoryLogSinkEntries(sink);
-  } finally {
-    removeLogSink(sink.sink);
-  }
+  addLogSink(logState, sink.sink);
+  run();
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
 }
 
 function messageOf(entry: Readonly<LogEntry>): string {
@@ -45,7 +43,7 @@ function messageOf(entry: Readonly<LogEntry>): string {
 describe('disableMaterialConversionGuards', () => {
   it('restores the silent conversion', () => {
     const entries = captureLog(() => {
-      enableMaterialConversionGuards();
+      enableMaterialConversionGuards(logState, () => 0);
       disableMaterialConversionGuards();
       convertPhongToStandardPbrMaterial(createPhongMaterial({ specularMap: texture }));
     });
@@ -56,7 +54,7 @@ describe('disableMaterialConversionGuards', () => {
 describe('enableMaterialConversionGuards', () => {
   it('WARNS when the spec-gloss conversion drops its packed map, telling the caller to bake', () => {
     const entries = captureLog(() => {
-      enableMaterialConversionGuards();
+      enableMaterialConversionGuards(logState, () => 0);
       convertSpecularGlossinessToStandardPbr(
         createStandardPbrMaterial(),
         createSpecularGlossinessPbrMaterial({ specularGlossinessMap: texture }),
@@ -70,7 +68,7 @@ describe('enableMaterialConversionGuards', () => {
 
   it('WARNS SEPARATELY for the Phong conversion, so one does not silence the other', () => {
     const entries = captureLog(() => {
-      enableMaterialConversionGuards();
+      enableMaterialConversionGuards(logState, () => 0);
       convertSpecularGlossinessToStandardPbr(
         createStandardPbrMaterial(),
         createSpecularGlossinessPbrMaterial({ specularGlossinessMap: texture }),
@@ -84,7 +82,7 @@ describe('enableMaterialConversionGuards', () => {
 
   it('stays SILENT when the conversion loses nothing', () => {
     const entries = captureLog(() => {
-      enableMaterialConversionGuards();
+      enableMaterialConversionGuards(logState, () => 0);
       convertSpecularGlossinessToStandardPbr(createStandardPbrMaterial(), createSpecularGlossinessPbrMaterial());
       convertPhongToStandardPbrMaterial(createPhongMaterial());
     });

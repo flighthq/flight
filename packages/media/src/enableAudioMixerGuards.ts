@@ -1,4 +1,5 @@
 import { logOnce } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import type { AudioBus, AudioBusMixerOperation } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -19,14 +20,21 @@ export function disableAudioMixerGuards(): void {
 // The guard warns once per operation through @flighthq/log. Not importing this module costs production
 // nothing: the message text and the @flighthq/log dependency live only here, and the reverse-map lookup
 // that detects the case runs only while the guard is installed. Idempotent.
-export function enableAudioMixerGuards(): void {
-  setAudioBusMixerGuard(warnOnUnmixedBus);
+export function enableAudioMixerGuards(logState: LogState, clock: () => number): void {
+  setAudioBusMixerGuard((operation, bus) => warnOnUnmixedBus(logState, clock(), operation, bus));
 }
 
-function warnOnUnmixedBus(operation: AudioBusMixerOperation, bus: Readonly<AudioBus>): void {
+function warnOnUnmixedBus(
+  logState: LogState,
+  nowMs: number,
+  operation: AudioBusMixerOperation,
+  bus: Readonly<AudioBus>,
+): void {
   const setter =
     operation === 'gain' ? 'setAudioBusGain' : operation === 'mute' ? 'setAudioBusMuted' : 'setAudioBusPan';
   logOnce(
+    logState,
+    nowMs,
     `media:unmixed-bus-${operation}`,
     LogLevel.Warn,
     {

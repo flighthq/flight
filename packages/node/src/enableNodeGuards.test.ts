@@ -1,7 +1,8 @@
 import { getEntityRuntime as getRawEntityRuntime } from '@flighthq/entity/contract';
-import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
+import { createLogState, setLogSink } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import type { HasTransform2D, HasTransform2DRuntime, LogEntry, Node } from '@flighthq/types/contract';
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import { areNodeGuardsEnabled, disableNodeGuards, enableNodeGuards } from './enableNodeGuards.ts';
 import { initTransform2DRuntimeTrait, initTransform2DTrait } from './hasTransform2d.ts';
@@ -9,12 +10,17 @@ import { reparentNode } from './hierarchy.ts';
 import { createNode } from './node.ts';
 import { invalidateNodeLocalTransform } from './revision.ts';
 
-beforeEach(() => clearLogOnceKeys());
+// Each test logs into a fresh caller-owned state, so logOnce keys never leak between tests.
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
 
 describe('areNodeGuardsEnabled', () => {
   test('reports whether the guards are installed', () => {
     expect(areNodeGuardsEnabled()).toBe(false);
-    enableNodeGuards();
+    enableNodeGuards(logState, () => 0);
     expect(areNodeGuardsEnabled()).toBe(true);
     disableNodeGuards();
     expect(areNodeGuardsEnabled()).toBe(false);
@@ -23,7 +29,7 @@ describe('areNodeGuardsEnabled', () => {
 
 describe('disableNodeGuards', () => {
   test('leaves the core silent again once removed', () => {
-    enableNodeGuards();
+    enableNodeGuards(logState, () => 0);
     disableNodeGuards();
     expect(captureLog(() => reparentNode(transformNode(), collapsedParent('gone')))).toHaveLength(0);
   });
@@ -33,7 +39,7 @@ describe('enableNodeGuards', () => {
   // `logOnce` keys on the parent name and has no reset, so each triggering test must use a DISTINCT
   // name — a repeat would be deduplicated away and assert nothing while still looking green.
   test('warns, naming both nodes, when a reparent is declined', () => {
-    enableNodeGuards();
+    enableNodeGuards(logState, () => 0);
     const child = transformNode();
     child.name = 'child';
     const entries = captureLog(() => reparentNode(child, collapsedParent('collapsed-warns')));
@@ -42,7 +48,7 @@ describe('enableNodeGuards', () => {
   });
 
   test('stays silent when the reparent succeeds', () => {
-    enableNodeGuards();
+    enableNodeGuards(logState, () => 0);
     const healthy = transformNode();
     invalidateNodeLocalTransform(healthy);
     expect(captureLog(() => reparentNode(transformNode(), healthy))).toHaveLength(0);
@@ -55,11 +61,11 @@ afterEach(() => {
 
 function captureLog(run: () => void): LogEntry[] {
   const entries: LogEntry[] = [];
-  setLogSink((entry) => entries.push(entry));
+  setLogSink(logState, (entry) => entries.push(entry));
   try {
     run();
   } finally {
-    setLogSink(null);
+    setLogSink(logState, null);
   }
   return entries;
 }

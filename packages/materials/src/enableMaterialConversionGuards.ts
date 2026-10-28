@@ -1,4 +1,5 @@
 import { logOnce } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import type { MaterialConversionExplanation } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -15,16 +16,26 @@ export function disableMaterialConversionGuards(): void {
 // the conversion and the remedy.
 //
 // Not calling this — the production default — costs the conversion nothing: the messages and the
-// `@flighthq/log` dependency live only in this separately-imported module. Idempotent.
-export function enableMaterialConversionGuards(): void {
-  setMaterialConversionGuard(warnMaterialConversionDrop);
+// `@flighthq/log` dependency live only in this separately-imported module. Warnings go to the
+// caller-owned `logState`, stamped with `clock()` at the moment a conversion drops a map. Idempotent.
+export function enableMaterialConversionGuards(logState: LogState, clock: () => number): void {
+  setMaterialConversionGuard((explanation, conversion) =>
+    warnMaterialConversionDrop(logState, clock(), explanation, conversion),
+  );
 }
 
-function warnMaterialConversionDrop(explanation: Readonly<MaterialConversionExplanation>, conversion: string): void {
+function warnMaterialConversionDrop(
+  logState: LogState,
+  nowMs: number,
+  explanation: Readonly<MaterialConversionExplanation>,
+  conversion: string,
+): void {
   const maps = explanation.droppedMaps.join(', ');
   // Keyed by conversion so two different converters each get heard once, rather than the first one
   // silencing the second for the rest of the process.
   logOnce(
+    logState,
+    nowMs,
     `materials:conversion-dropped-map:${conversion}`,
     LogLevel.Warn,
     {

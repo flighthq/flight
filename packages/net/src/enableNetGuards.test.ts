@@ -1,16 +1,30 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import type { HostNetCapability, LogEntry, NetResponse } from '@flighthq/types/contract';
+import {
+  addLogSink,
+  createLogState,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
+import type { HostNetCapability, LogEntry, MemoryLogSink, NetResponse } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import { areNetGuardsEnabled, disableNetGuards, enableNetGuards } from './enableNetGuards.ts';
 import { sendNetRequest } from './net.ts';
 
+// Each test logs into a fresh caller-owned state, so logOnce keys never leak between tests.
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
+
 function captureLog(run: () => Promise<void>): Promise<readonly LogEntry[]> {
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
+  addLogSink(logState, sink.sink);
   return run()
-    .then(() => getMemoryLogSinkEntries(sink))
-    .finally(() => removeLogSink(sink.sink));
+    .then(() => readMemoryLogEntries(sink))
+    .finally(() => removeLogSink(logState, sink.sink));
 }
 
 function hostOf(sendNetRequestBackend: HostNetCapability['sendNetRequest']): {
@@ -33,7 +47,7 @@ afterEach(() => {
 
 describe('areNetGuardsEnabled', () => {
   it('reports whether the global guard hook is installed', () => {
-    enableNetGuards();
+    enableNetGuards(logState, () => 0);
     expect(areNetGuardsEnabled()).toBe(true);
     disableNetGuards();
     expect(areNetGuardsEnabled()).toBe(false);
@@ -42,7 +56,7 @@ describe('areNetGuardsEnabled', () => {
 
 describe('disableNetGuards', () => {
   it('restores silent request delegation', async () => {
-    enableNetGuards();
+    enableNetGuards(logState, () => 0);
     disableNetGuards();
     const host = hostOf(async () => stubResponse());
     const entries = await captureLog(async () => {
@@ -54,7 +68,7 @@ describe('disableNetGuards', () => {
 
 describe('enableNetGuards', () => {
   it('warns once for bodyless-method bodies and negative timeouts', async () => {
-    enableNetGuards();
+    enableNetGuards(logState, () => 0);
     const host = hostOf(async () => stubResponse());
     const entries = await captureLog(async () => {
       await sendNetRequest(host.net.http, { body: 'ignored', method: 'GET', timeoutMs: -1, url: 'u' });
@@ -68,7 +82,7 @@ describe('enableNetGuards', () => {
   });
 
   it('warns when a successful provider ignores a supplied progress signal', async () => {
-    enableNetGuards();
+    enableNetGuards(logState, () => 0);
     const host = hostOf(async () => stubResponse());
     const progress = {
       [EntityRuntimeKey]: undefined,
@@ -84,7 +98,7 @@ describe('enableNetGuards', () => {
   });
 
   it('stays silent when the provider emits progress', async () => {
-    enableNetGuards();
+    enableNetGuards(logState, () => 0);
     const progress = {
       [EntityRuntimeKey]: undefined,
       data: null,
@@ -100,3 +114,9 @@ describe('enableNetGuards', () => {
     expect(entries).toEqual([]);
   });
 });
+
+function readMemoryLogEntries(handle: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, handle);
+  return entries;
+}

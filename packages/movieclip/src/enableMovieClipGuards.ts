@@ -1,4 +1,5 @@
 import { logOnce } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import type { SpritesheetAnimation, SpritesheetTimelineSourceExplanation } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -16,17 +17,23 @@ export function disableMovieClipGuards(): void {
 // Installs opt-in reporting for authored spritesheet playback semantics that TimelineSource cannot carry.
 // The ordinary adapter stays logger-free, and importing neither this module nor @flighthq/log keeps both
 // the diagnostic prose and logger outside production bundles.
-export function enableMovieClipGuards(): void {
-  setSpritesheetTimelineSourceGuard(warnOnUnsupportedSpritesheetTimelineFields);
+export function enableMovieClipGuards(logState: LogState, clock: () => number): void {
+  setSpritesheetTimelineSourceGuard((animation, explanation) =>
+    warnOnUnsupportedSpritesheetTimelineFields(logState, clock(), animation, explanation),
+  );
   movieClipGuardsEnabled = true;
 }
 
 function warnOnUnsupportedSpritesheetTimelineFields(
+  logState: LogState,
+  nowMs: number,
   animation: Readonly<SpritesheetAnimation>,
   explanation: Readonly<SpritesheetTimelineSourceExplanation>,
 ): void {
   if (explanation.unsupportedFields.length === 0) return;
   logOnce(
+    logState,
+    nowMs,
     `movieclip:spritesheet-timeline-source:${explanation.unsupportedFields.join(',')}`,
     LogLevel.Warn,
     {
