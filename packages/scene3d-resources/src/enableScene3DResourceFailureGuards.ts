@@ -1,4 +1,5 @@
 import { explainImageResourceReferenceResolution } from '@flighthq/image/contract';
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
 import type { Scene3DResourceEvent, Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
@@ -26,8 +27,13 @@ export function disableScene3DResourceFailureGuards(resolver: Scene3DResourceRes
 // Installs an opt-in warning guard over the resolver's failure signal. The async resolver still
 // settles normally and never throws for an expected unavailable image; diagnostics remain in this
 // separately imported module so the base resolver does not carry @flighthq/log. One shared reference
-// warns once per failed attempt, even when several Texture subscribers receive the event. Idempotent.
-export function enableScene3DResourceFailureGuards(resolver: Scene3DResourceResolverWithRuntime): () => void {
+// warns once per failed attempt, even when several Texture subscribers receive the event. Each warning
+// goes to the caller-owned `logState`, stamped with `clock()` when reported. Idempotent.
+export function enableScene3DResourceFailureGuards(
+  resolver: Scene3DResourceResolverWithRuntime,
+  logState: LogState,
+  clock: () => number,
+): () => void {
   if (_guards.has(resolver)) return () => disableScene3DResourceFailureGuards(resolver);
   const warned = new WeakMap<Scene3DResourceEvent['ref'], Scene3DResourceEvent['ref']['failure']>();
   const signals = enableScene3DResourceSignals(resolver);
@@ -36,6 +42,8 @@ export function enableScene3DResourceFailureGuards(resolver: Scene3DResourceReso
     warned.set(event.ref, event.ref.failure);
     const explanation = explainImageResourceReferenceResolution(event.ref);
     logOnce(
+      logState,
+      clock(),
       `scene-resources:image-resource-resolution-failed:${++_attemptId}`,
       LogLevel.Warn,
       {
