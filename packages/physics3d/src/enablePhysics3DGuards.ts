@@ -1,4 +1,5 @@
 import { logOnce } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import type { Physics3DJointExplanation, Physics3DStepExplanation, Physics3DWorld } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -41,18 +42,18 @@ export function disablePhysics3DGuards(): void {
 // The fourth is a body routed through a backend's overflow path. Collision remains correct, but every
 // broadphase query scans that body linearly, so a mixed-scale world can retain the right contacts while
 // silently shedding the pruning its index exists to provide.
-export function enablePhysics3DGuards(): void {
-  setPhysics3DStepGuard(warnOnUnsteppablePhysics3DWorld);
-  setPhysics3DContactIntakeGuard(warnOnUndetectablePhysics3DColliders);
-  setPhysics3DJointResolutionGuard(warnOnUnresolvedPhysics3DJoints);
-  setPhysics3DSpatialIndexingGuard(warnOnPhysics3DSpatialIndexing);
+export function enablePhysics3DGuards(logState: LogState, clock: () => number): void {
+  setPhysics3DStepGuard((world, dt) => warnOnUnsteppablePhysics3DWorld(logState, clock(), world, dt));
+  setPhysics3DContactIntakeGuard((world) => warnOnUndetectablePhysics3DColliders(logState, clock(), world));
+  setPhysics3DJointResolutionGuard((world) => warnOnUnresolvedPhysics3DJoints(logState, clock(), world));
+  setPhysics3DSpatialIndexingGuard((world) => warnOnPhysics3DSpatialIndexing(logState, clock(), world));
   physics3DGuardsEnabled = true;
 }
 
 // Reports the broadphase fallback that preserves correctness while materially changing cost. Reading the
 // world's own backend keeps this diagnostic scoped to physics3d instead of taking ownership of spatial's
 // process-wide caller-composed guard.
-function warnOnPhysics3DSpatialIndexing(world: Readonly<Physics3DWorld>): void {
+function warnOnPhysics3DSpatialIndexing(logState: LogState, nowMs: number, world: Readonly<Physics3DWorld>): void {
   const overflowBodyIndices: number[] = [];
   for (let bodyIndex = 0; bodyIndex < world.bodies.length; bodyIndex += 1) {
     const index = world.bodies[bodyIndex].index;
@@ -62,6 +63,8 @@ function warnOnPhysics3DSpatialIndexing(world: Readonly<Physics3DWorld>): void {
 
   if (overflowBodyIndices.length > 0) {
     logOnce(
+      logState,
+      nowMs,
       `physics3d:spatial-overflow:${getPhysics3DGuardWorldId(world)}`,
       LogLevel.Warn,
       {
@@ -87,12 +90,18 @@ function getPhysics3DGuardWorldId(world: Readonly<Physics3DWorld>): number {
 //
 // Keyed on the kinds rather than logged per step, so a 60Hz loop says this once — and a world that later
 // gains a second unsupported kind still says so.
-function warnOnUndetectablePhysics3DColliders(world: Readonly<Physics3DWorld>): void {
+function warnOnUndetectablePhysics3DColliders(
+  logState: LogState,
+  nowMs: number,
+  world: Readonly<Physics3DWorld>,
+): void {
   const explanation = explainPhysics3DCollision(world);
   if (explanation.status === 'ready') return;
 
   const kinds = explanation.unsupportedKinds;
   logOnce(
+    logState,
+    nowMs,
     `physics3d:missing-support:${kinds.join(',')}`,
     LogLevel.Warn,
     {
@@ -106,7 +115,7 @@ function warnOnUndetectablePhysics3DColliders(world: Readonly<Physics3DWorld>): 
 
 // Warns once per distinct world-list set of unresolved joints. Index belongs in the key: two joints of
 // one kind may fail independently, and repairing the first must not suppress the second's later warning.
-function warnOnUnresolvedPhysics3DJoints(world: Readonly<Physics3DWorld>): void {
+function warnOnUnresolvedPhysics3DJoints(logState: LogState, nowMs: number, world: Readonly<Physics3DWorld>): void {
   const explanations = explainPhysics3DJoints(world);
   const joints: Pick<Physics3DJointExplanation, 'index' | 'kind' | 'status'>[] = [];
   for (const explanation of explanations) {
@@ -121,6 +130,8 @@ function warnOnUnresolvedPhysics3DJoints(world: Readonly<Physics3DWorld>): void 
 
   const key = joints.map((joint) => `${joint.index}:${joint.kind}:${joint.status}`).join(',');
   logOnce(
+    logState,
+    nowMs,
     `physics3d:unresolved-joints:${key}`,
     LogLevel.Warn,
     {
@@ -141,12 +152,19 @@ function warnOnUnresolvedPhysics3DJoints(world: Readonly<Physics3DWorld>): void 
 //
 // Keyed on the failing set, so a loop calling this at 60Hz logs once and not once per frame, while a world
 // that develops a SECOND fault after the first is repaired still says so.
-function warnOnUnsteppablePhysics3DWorld(world: Readonly<Physics3DWorld>, dt: number): void {
+function warnOnUnsteppablePhysics3DWorld(
+  logState: LogState,
+  nowMs: number,
+  world: Readonly<Physics3DWorld>,
+  dt: number,
+): void {
   const explanation = explainPhysics3DStep(world, dt);
   const failing = getFailingPhysics3DPreconditions(explanation);
   if (failing.length === 0) return;
 
   logOnce(
+    logState,
+    nowMs,
     `physics3d:${explanation.status}:${failing.join(',')}`,
     LogLevel.Warn,
     {

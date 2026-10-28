@@ -1,4 +1,5 @@
 import { logOnce } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import type {
   Physics2DJointResolutionExplanation,
   Physics2DStepExplanation,
@@ -45,10 +46,10 @@ export function disablePhysics2DGuards(): void {
 // through the floor with nothing failing anywhere.
 //
 // Applications that never import this module shed both the message text and `@flighthq/log`.
-export function enablePhysics2DGuards(): void {
-  setPhysics2DStepGuard(warnOnUnsteppablePhysics2DWorld);
-  setPhysics2DJointResolutionGuard(warnOnUnresolvedPhysics2DJoints);
-  setPhysics2DContactIntakeGuard(warnOnUndetectablePhysics2DColliders);
+export function enablePhysics2DGuards(logState: LogState, clock: () => number): void {
+  setPhysics2DStepGuard((world, dt) => warnOnUnsteppablePhysics2DWorld(logState, clock(), world, dt));
+  setPhysics2DJointResolutionGuard((world) => warnOnUnresolvedPhysics2DJoints(logState, clock(), world));
+  setPhysics2DContactIntakeGuard((world) => warnOnUndetectablePhysics2DColliders(logState, clock(), world));
   physics2DGuardsEnabled = true;
 }
 
@@ -80,12 +81,18 @@ function getUnresolvedPhysics2DJointFaults(explanation: Readonly<Physics2DJointR
 //
 // Keyed on the kinds rather than logged per step, so a 60Hz loop says this once — and a world that later
 // gains a second undetectable kind still says so.
-function warnOnUndetectablePhysics2DColliders(world: Readonly<Physics2DWorld>): void {
+function warnOnUndetectablePhysics2DColliders(
+  logState: LogState,
+  nowMs: number,
+  world: Readonly<Physics2DWorld>,
+): void {
   const explanation = explainPhysics2DCollision(world);
   if (explanation.status === 'ready') return;
 
   const kinds = explanation.unsupportedKinds;
   logOnce(
+    logState,
+    nowMs,
     `physics2d:${explanation.status}:${kinds.join(',')}`,
     LogLevel.Warn,
     {
@@ -102,7 +109,7 @@ function warnOnUndetectablePhysics2DColliders(world: Readonly<Physics2DWorld>): 
 // The two fault families need different advice, so the message names whichever applies rather than
 // reciting a generic one: an unregistered solver is repaired by registering it, while a missing endpoint
 // means the joint outlived a body and should have been removed with it.
-function warnOnUnresolvedPhysics2DJoints(world: Readonly<Physics2DWorld>): void {
+function warnOnUnresolvedPhysics2DJoints(logState: LogState, nowMs: number, world: Readonly<Physics2DWorld>): void {
   const explanation = explainPhysics2DJoints(world);
   if (explanation.status === 'complete') return;
 
@@ -118,6 +125,8 @@ function warnOnUnresolvedPhysics2DJoints(world: Readonly<Physics2DWorld>): void 
     : '';
 
   logOnce(
+    logState,
+    nowMs,
     `physics2d:${explanation.status}:${faults.join(',')}`,
     LogLevel.Warn,
     {
@@ -138,12 +147,19 @@ function warnOnUnresolvedPhysics2DJoints(world: Readonly<Physics2DWorld>): void 
 //
 // Keyed on the failing set, so a loop calling this at 60Hz logs once and not once per frame, while a world
 // that develops a SECOND fault after the first is repaired still says so.
-function warnOnUnsteppablePhysics2DWorld(world: Readonly<Physics2DWorld>, dt: number): void {
+function warnOnUnsteppablePhysics2DWorld(
+  logState: LogState,
+  nowMs: number,
+  world: Readonly<Physics2DWorld>,
+  dt: number,
+): void {
   const explanation = explainPhysics2DStep(world, dt);
   const failing = getFailingPhysics2DPreconditions(explanation);
   if (failing.length === 0) return;
 
   logOnce(
+    logState,
+    nowMs,
     `physics2d:${explanation.status}:${failing.join(',')}`,
     LogLevel.Warn,
     {

@@ -1,12 +1,20 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import {
   addLogSink,
-  clearLogOnceKeys,
+  createLogState,
   createMemoryLogSink,
   getMemoryLogSinkEntries,
   removeLogSink,
 } from '@flighthq/log/contract';
-import type { Entity, LogEntry, Physics2DDistanceJoint, Physics2DWorld, RigidBody2D } from '@flighthq/types/contract';
+import type { LogState } from '@flighthq/log/contract';
+import type {
+  Entity,
+  LogEntry,
+  MemoryLogSink,
+  Physics2DDistanceJoint,
+  Physics2DWorld,
+  RigidBody2D,
+} from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { arePhysics2DGuardsEnabled, disablePhysics2DGuards, enablePhysics2DGuards } from './enablePhysics2DGuards.ts';
@@ -16,16 +24,23 @@ import { registerBuiltInPhysics2DJointSolvers } from './registerBuiltInPhysics2D
 import { stepPhysics2D } from './step.ts';
 import { addPhysics2DBody, createPhysics2DCollider, createPhysics2DWorld, createRigidBody2D } from './world.ts';
 
+// Each test logs into a fresh caller-owned state, so logOnce keys never leak between tests.
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
+
 const STONE = { density: 1, friction: 0.3, restitution: 0 };
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
+  addLogSink(logState, sink.sink);
   try {
     run();
-    return getMemoryLogSinkEntries(sink);
+    return readMemoryLogEntries(sink);
   } finally {
-    removeLogSink(sink.sink);
+    removeLogSink(logState, sink.sink);
   }
 }
 
@@ -67,11 +82,6 @@ function unregisteredJointWorld(): Physics2DWorld {
   return world;
 }
 
-beforeEach(() => {
-  // `logOnce` keys are process-global and this file deliberately provokes the same faults repeatedly.
-  clearLogOnceKeys();
-});
-
 afterEach(() => {
   disablePhysics2DGuards();
 });
@@ -79,7 +89,7 @@ afterEach(() => {
 describe('arePhysics2DGuardsEnabled', () => {
   it('reports the current module guard state', () => {
     expect(arePhysics2DGuardsEnabled()).toBe(false);
-    enablePhysics2DGuards();
+    enablePhysics2DGuards(logState, () => 0);
     expect(arePhysics2DGuardsEnabled()).toBe(true);
     disablePhysics2DGuards();
     expect(arePhysics2DGuardsEnabled()).toBe(false);
@@ -88,7 +98,7 @@ describe('arePhysics2DGuardsEnabled', () => {
 
 describe('disablePhysics2DGuards', () => {
   it('removes both seams so a declined step and an unsolved joint are silent again', () => {
-    enablePhysics2DGuards();
+    enablePhysics2DGuards(logState, () => 0);
     disablePhysics2DGuards();
     const declining = createPhysics2DWorld(0, -10);
     declining.config.positionIterations = -3;
@@ -106,7 +116,7 @@ describe('enablePhysics2DGuards', () => {
   it('reports an area-less collider used as a body shape', () => {
     // The third seam. A segment on a rigid body is a modelling mistake the simulation cannot show you:
     // nothing fails, nothing is slow, the body simply never collides with anything.
-    enablePhysics2DGuards();
+    enablePhysics2DGuards(logState, () => 0);
     const world = createPhysics2DWorld(0, -10);
     const body = createRigidBody2D('dynamic', 0, 0);
     body.colliders.push(createPhysics2DCollider({ kind: 'segment', x0: 0, y0: 0, x1: 1, y1: 0 }, STONE));
@@ -129,7 +139,7 @@ describe('enablePhysics2DGuards', () => {
     // This test is the inverse of one that used to assert the opposite. The capsule was named by this
     // guard while its pair functions were missing and stopped being named when they landed, which is the
     // seam working in both directions rather than a list someone edits by hand.
-    enablePhysics2DGuards();
+    enablePhysics2DGuards(logState, () => 0);
     const world = createPhysics2DWorld(0, -10);
     const body = createRigidBody2D('dynamic', 0, 0);
     body.colliders.push(createPhysics2DCollider({ kind: 'capsule', x0: 0, y0: 0, x1: 1, y1: 0, radius: 0.4 }, STONE));
@@ -139,7 +149,7 @@ describe('enablePhysics2DGuards', () => {
   });
 
   it('says nothing about colliders the dispatcher does answer for', () => {
-    enablePhysics2DGuards();
+    enablePhysics2DGuards(logState, () => 0);
     const world = createPhysics2DWorld(0, -10);
     const body = createRigidBody2D('dynamic', 0, 0);
     body.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.5 }, STONE));
@@ -149,7 +159,7 @@ describe('enablePhysics2DGuards', () => {
   });
 
   it('says nothing while a healthy world steps', () => {
-    enablePhysics2DGuards();
+    enablePhysics2DGuards(logState, () => 0);
     const world = createPhysics2DWorld(0, -10);
     ball(world, 'static', 0, 0);
     ball(world, 'dynamic', 0, 2);
@@ -162,7 +172,7 @@ describe('enablePhysics2DGuards', () => {
   });
 
   it('says nothing about joints once their solvers are registered', () => {
-    enablePhysics2DGuards();
+    enablePhysics2DGuards(logState, () => 0);
     const world = unregisteredJointWorld();
     registerBuiltInPhysics2DJointSolvers(world);
 
@@ -174,7 +184,7 @@ describe('enablePhysics2DGuards', () => {
   it('names every failing precondition at once, not only the first', () => {
     // The step's own condition short-circuits, so surfacing one fault per frame would cost a round trip
     // per fault. The explain seam exists to avoid exactly that and the guard must not reintroduce it.
-    enablePhysics2DGuards();
+    enablePhysics2DGuards(logState, () => 0);
     const world = createPhysics2DWorld(Number.NaN, -10);
     world.config.positionIterations = -3;
 
@@ -190,7 +200,7 @@ describe('enablePhysics2DGuards', () => {
   it('reports a joint whose kind has no registered solver, on a step that otherwise succeeds', () => {
     // The case the whole second seam is for. The world steps, the bob falls, nothing fails — and the
     // rope it is supposed to be hanging from is simply not there.
-    enablePhysics2DGuards();
+    enablePhysics2DGuards(logState, () => 0);
     const world = unregisteredJointWorld();
 
     const entries = captureLog(() => stepPhysics2D(world, 1 / 60));
@@ -208,7 +218,7 @@ describe('enablePhysics2DGuards', () => {
   });
 
   it('reports a joint whose endpoint body is gone with endpoint advice, not registration advice', () => {
-    enablePhysics2DGuards();
+    enablePhysics2DGuards(logState, () => 0);
     const world = unregisteredJointWorld();
     registerBuiltInPhysics2DJointSolvers(world);
     world.joints[0].bodyB = 9999;
@@ -225,7 +235,7 @@ describe('enablePhysics2DGuards', () => {
   it('collapses many identically broken joints into one report', () => {
     // A ragdoll with a dozen unregistered joints of the same kind is ONE mistake. Listing twelve indices
     // would read as twelve, and re-keying per index would defeat logOnce entirely.
-    enablePhysics2DGuards();
+    enablePhysics2DGuards(logState, () => 0);
     const world = unregisteredJointWorld();
     for (let extra = 0; extra < 11; extra++) {
       addPhysics2DJoint(world, { ...world.joints[0], impulse0: 0 });
@@ -240,7 +250,7 @@ describe('enablePhysics2DGuards', () => {
   });
 
   it('warns once for a repeated fault rather than once per frame', () => {
-    enablePhysics2DGuards();
+    enablePhysics2DGuards(logState, () => 0);
     const world = unregisteredJointWorld();
 
     const entries = captureLog(() => {
@@ -253,7 +263,7 @@ describe('enablePhysics2DGuards', () => {
   it('still speaks when a second, different fault appears after the first', () => {
     // The counterpart risk of keying on the fault set: a world that develops a new problem must not be
     // silenced by having already reported the old one.
-    enablePhysics2DGuards();
+    enablePhysics2DGuards(logState, () => 0);
     const world = unregisteredJointWorld();
 
     const entries = captureLog(() => {
@@ -270,7 +280,7 @@ describe('enablePhysics2DGuards', () => {
   it('does not add the joint complaint on top of a declined step', () => {
     // A declined step advanced nothing at all, so its own message is the whole story. Repeating the joint
     // finding underneath it would bury the reason the world is frozen.
-    enablePhysics2DGuards();
+    enablePhysics2DGuards(logState, () => 0);
     const world = unregisteredJointWorld();
     world.config.velocityIterations = -1;
 
@@ -280,3 +290,9 @@ describe('enablePhysics2DGuards', () => {
     expect((entries[0].data as { status: string }).status).toBe('invalid-step');
   });
 });
+
+function readMemoryLogEntries(handle: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, handle);
+  return entries;
+}

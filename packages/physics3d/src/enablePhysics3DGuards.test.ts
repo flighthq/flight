@@ -1,5 +1,12 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import type { LogEntry, Physics3DWorld } from '@flighthq/types/contract';
+import {
+  addLogSink,
+  createLogState,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink, Physics3DWorld } from '@flighthq/types/contract';
 
 import { synchronizePhysics3DBroadphase } from './broadphase.ts';
 import { arePhysics3DGuardsEnabled, disablePhysics3DGuards, enablePhysics3DGuards } from './enablePhysics3DGuards.ts';
@@ -15,14 +22,21 @@ import {
   createRigidBody3D,
 } from './world.ts';
 
+// Each test logs into a fresh caller-owned state, so logOnce keys never leak between tests.
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
+
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
+  addLogSink(logState, sink.sink);
   try {
     run();
-    return getMemoryLogSinkEntries(sink);
+    return readMemoryLogEntries(sink);
   } finally {
-    removeLogSink(sink.sink);
+    removeLogSink(logState, sink.sink);
   }
 }
 
@@ -33,14 +47,14 @@ afterEach(() => {
 describe('arePhysics3DGuardsEnabled', () => {
   it('reports the current module guard state', () => {
     expect(arePhysics3DGuardsEnabled()).toBe(false);
-    enablePhysics3DGuards();
+    enablePhysics3DGuards(logState, () => 0);
     expect(arePhysics3DGuardsEnabled()).toBe(true);
   });
 });
 
 describe('disablePhysics3DGuards', () => {
   it('removes the seam so a declined step is silent again', () => {
-    enablePhysics3DGuards();
+    enablePhysics3DGuards(logState, () => 0);
     disablePhysics3DGuards();
     const world = createTestWorld();
     world.config.sequentialImpulse.positionIterations = -3;
@@ -51,7 +65,7 @@ describe('disablePhysics3DGuards', () => {
   });
 
   it('removes the unresolved-joint seam', () => {
-    enablePhysics3DGuards();
+    enablePhysics3DGuards(logState, () => 0);
     disablePhysics3DGuards();
     const world = createTestWorld();
     addPhysics3DJoint(world, createPhysics3DHingeJoint({ bodyA: 0, bodyB: 1 }));
@@ -62,7 +76,7 @@ describe('disablePhysics3DGuards', () => {
   });
 
   it('removes the spatial-indexing seam', () => {
-    enablePhysics3DGuards();
+    enablePhysics3DGuards(logState, () => 0);
     disablePhysics3DGuards();
 
     const entries = captureLog(() => addPhysics3DBody(createPhysics3DWorld(), createOverflowBody()));
@@ -73,7 +87,7 @@ describe('disablePhysics3DGuards', () => {
 
 describe('enablePhysics3DGuards', () => {
   it('says nothing while the world steps normally', () => {
-    enablePhysics3DGuards();
+    enablePhysics3DGuards(logState, () => 0);
 
     const entries = captureLog(() => stepPhysics3D(createTestWorld(), 1 / 60));
 
@@ -83,7 +97,7 @@ describe('enablePhysics3DGuards', () => {
   });
 
   it('names every failing precondition at once, not only the first', () => {
-    enablePhysics3DGuards();
+    enablePhysics3DGuards(logState, () => 0);
     const world = createTestWorld();
     world.gravityY = Number.NaN;
     world.config.substeps = 0;
@@ -98,7 +112,7 @@ describe('enablePhysics3DGuards', () => {
   });
 
   it('logs once for a repeating fault and again when a different one joins it', () => {
-    enablePhysics3DGuards();
+    enablePhysics3DGuards(logState, () => 0);
     const world = createTestWorld();
     world.config.sequentialImpulse.velocityIterations = -1;
 
@@ -118,7 +132,7 @@ describe('enablePhysics3DGuards', () => {
   });
 
   it('names invalid collider state before contact intake can consume it', () => {
-    enablePhysics3DGuards();
+    enablePhysics3DGuards(logState, () => 0);
     const world = createTestWorld();
     const collider = createPhysics3DCollider({
       kind: 'sphere',
@@ -137,7 +151,7 @@ describe('enablePhysics3DGuards', () => {
   });
 
   it('names every joint the solve skips and distinguishes why', () => {
-    enablePhysics3DGuards();
+    enablePhysics3DGuards(logState, () => 0);
     const world = createTestWorld();
     const unregistered = createPhysics3DHingeJoint({ bodyA: 0, bodyB: 1 });
     unregistered.kind = 'guard.unregistered';
@@ -160,7 +174,7 @@ describe('enablePhysics3DGuards', () => {
   });
 
   it('reports a body routed through spatial overflow once and stays silent for ordinary indexing', () => {
-    enablePhysics3DGuards();
+    enablePhysics3DGuards(logState, () => 0);
     const world = createPhysics3DWorld();
 
     const entries = captureLog(() => {
@@ -226,4 +240,10 @@ function createOverflowBody() {
     }),
   );
   return body;
+}
+
+function readMemoryLogEntries(handle: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, handle);
+  return entries;
 }
