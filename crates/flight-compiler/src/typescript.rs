@@ -816,7 +816,7 @@ fn emit_constant(
     } else {
         ""
     };
-    let value = emit_expression(&constant.expr, entities)?;
+    let value = emit_expression_for_type(&constant.expr, &constant.ty, entities)?;
     if matches!(constant.expr.as_ref(), Expr::Lit(value) if matches!(&value.lit, Lit::Str(_)))
         && matches!(constant.ty.as_ref(), Type::Reference(reference) if type_is_named(&reference.elem, "str"))
     {
@@ -1794,6 +1794,22 @@ fn emit_macro_expression(
         return Err(compile_error("Rust macro expression has an empty path"));
     };
     if name.ident == "vec" {
+        let repeat_parser = |input: syn::parse::ParseStream<'_>| {
+            let value = input.parse::<Expr>()?;
+            input.parse::<Token![;]>()?;
+            let length = input.parse::<Expr>()?;
+            if !input.is_empty() {
+                return Err(input.error("unexpected tokens after `vec!` repeat length"));
+            }
+            return Ok((value, length));
+        };
+        if let Ok((value, length)) = repeat_parser.parse2(rust_macro.tokens.clone()) {
+            return Ok(format!(
+                "new Array({}).fill({})",
+                emit_expression(&length, entities)?,
+                emit_expression(&value, entities)?
+            ));
+        }
         let values = Punctuated::<Expr, Token![,]>::parse_terminated
             .parse2(rust_macro.tokens.clone())
             .map_err(|error| compile_error(format!("failed to parse `vec!` values: {error}")))?;

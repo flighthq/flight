@@ -538,6 +538,27 @@ pub fn numeric_literals() -> (u32, u32, f64, f64) {
     }
 
     #[test]
+    fn types_fixed_array_constants_and_lowers_vec_repeats() {
+        let source = r#"
+pub const TABLE: [i32; 3] = [1, 2, 3];
+pub const ZEROES: [u8; 4] = [0u8; 4];
+
+pub fn repeated_values(count: usize) -> Vec<i32> {
+    let leading = vec![1i32, 2i32];
+    let repeated = vec![-1i32; count];
+    return repeated;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("export const TABLE: Int32Array = new Int32Array([1, 2, 3]);"));
+        assert!(output.contains("export const ZEROES: Uint8Array = new Uint8Array(4).fill(0);"));
+        assert!(output.contains("const leading = [1, 2];"));
+        assert!(output.contains("const repeated = new Array(count).fill(-1);"));
+    }
+
+    #[test]
     fn keeps_string_literal_to_string_bare_without_changing_numeric_conversion() {
         let source = r#"
 pub fn string_values(value: u32) -> (String, String) {
