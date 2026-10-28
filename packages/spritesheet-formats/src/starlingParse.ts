@@ -153,7 +153,9 @@ function documentToData(
 }
 
 function regionsFromXml(xml: string): readonly TextureAtlasRegion[] {
-  return parseTextureAtlasStarlingXml(xml, createTextureAtlas()).regions;
+  const atlas = createTextureAtlas();
+  parseTextureAtlasStarlingXml(xml, atlas);
+  return atlas.regions;
 }
 
 export function parseStarlingSpritesheet(

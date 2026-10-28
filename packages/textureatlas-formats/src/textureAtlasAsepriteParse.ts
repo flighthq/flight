@@ -10,10 +10,7 @@ import type {
 import { readTextureAtlasScale, resetTextureAtlasPageMeta } from './textureAtlasPageMeta.ts';
 
 // Convenience variant that accepts an already-parsed Aseprite document object.
-export function parseTextureAtlasAsepriteDocument(
-  doc: TextureAtlasAsepriteDocument,
-  atlas: TextureAtlas,
-): TextureAtlas {
+export function parseTextureAtlasAsepriteDocument(doc: TextureAtlasAsepriteDocument, atlas: TextureAtlas): void {
   atlas.regions.length = 0;
   applyAsepritePageMeta(atlas, doc);
   if (Array.isArray(doc.frames)) {
@@ -25,22 +22,21 @@ export function parseTextureAtlasAsepriteDocument(
       applyAsepriteFrame(atlas, frameName, entry);
     }
   }
-  return atlas;
 }
 
 // Parses an Aseprite JSON string and populates `atlas.regions`.
 // Supports both the JSON-hash and JSON-array frame shapes.
-// Existing regions in `atlas` are cleared. Returns `atlas` for convenience.
-export function parseTextureAtlasAsepriteJson(json: string, atlas: TextureAtlas): TextureAtlas {
+// Existing regions in `atlas` are cleared.
+export function parseTextureAtlasAsepriteJson(json: string, atlas: TextureAtlas): void {
   let doc: TextureAtlasAsepriteDocument;
   try {
     doc = JSON.parse(json) as TextureAtlasAsepriteDocument;
   } catch {
-    // Malformed JSON is an expected failure (sentinel, not a throw) — return the atlas unchanged,
+    // Malformed JSON is an expected failure (sentinel, not a throw) — leave the atlas unchanged,
     // matching the Starling XML path and the never-throw importer policy.
-    return atlas;
+    return;
   }
-  return parseTextureAtlasAsepriteDocument(doc, atlas);
+  parseTextureAtlasAsepriteDocument(doc, atlas);
 }
 
 function applyAsepritePageMeta(atlas: TextureAtlas, doc: TextureAtlasAsepriteDocument): void {

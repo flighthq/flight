@@ -68,14 +68,13 @@ describe('clearShapedRun', () => {
     const run = createShapedRun();
     (run as { advanceWidth: number }).advanceWidth = 42;
     (run.glyphs as unknown[]).push(_testGlyphs[0]);
-    const returned = clearShapedRun(run);
+    clearShapedRun(run);
     expect(run.advanceWidth).toBe(0);
     expect(run.glyphCount).toBe(0);
     expect(run.glyphs).toHaveLength(0);
     expect(run.direction).toBe('LeftToRight');
     expect(run.script).toBe('');
     expect(run.font).toBeNull();
-    expect(returned).toBe(run);
   });
 
   it('retains the same glyphs array reference after clearing', () => {

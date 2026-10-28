@@ -15,29 +15,27 @@ export function parseTexturePackerAtlasDocument(
   doc: TexturePackerAtlasDocument,
   atlas: TextureAtlas,
   options?: TexturePackerAtlasParseOptions,
-): TextureAtlas {
+): void {
   applyDocument(atlas, doc, options ?? {});
-  return atlas;
 }
 
 // Parses a TexturePacker JSON string and populates `atlas.regions`.
 // Supports both the JSON-hash and JSON-array shapes.
-// Existing regions in `atlas` are cleared. Returns `atlas` for convenience.
+// Existing regions in `atlas` are cleared.
 export function parseTexturePackerAtlasJson(
   json: string,
   atlas: TextureAtlas,
   options?: TexturePackerAtlasParseOptions,
-): TextureAtlas {
+): void {
   let doc: TexturePackerAtlasDocument;
   try {
     doc = JSON.parse(json) as TexturePackerAtlasDocument;
   } catch {
-    // Malformed JSON is an expected failure (sentinel, not a throw) — return the atlas unchanged,
-    // matching the Starling XML path's `if (!root) return atlas` and the never-throw importer policy.
-    return atlas;
+    // Malformed JSON is an expected failure (sentinel, not a throw) — leave the atlas unchanged,
+    // matching the Starling XML path and the never-throw importer policy.
+    return;
   }
   applyDocument(atlas, doc, options ?? {});
-  return atlas;
 }
 
 // Populates `atlas.regions` from a parsed TexturePacker document.

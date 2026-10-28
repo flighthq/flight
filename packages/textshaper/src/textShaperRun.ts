@@ -10,14 +10,13 @@ import type {
   TextFormat,
 } from '@flighthq/types/contract';
 
-export function clearShapedRun(run: ShapedRun): ShapedRun {
+export function clearShapedRun(run: ShapedRun): void {
   run.advanceWidth = 0;
   run.direction = 'LeftToRight';
   run.font = null;
   run.glyphCount = 0;
   run.glyphs.length = 0;
   run.script = '';
-  return run;
 }
 
 export function createShapedRun(): ShapedRun & Entity {

@@ -5,12 +5,11 @@ import type { TextureAtlasParseOptions } from './TextureAtlasParseOptions.ts';
 /**
  * What one texture-atlas format contributes: the test that recognises its content and the parser that reads it.
  *
- * `parse` fills `atlas` and returns it, so the caller owns the allocation — the same ownership split the rest of
- * the texture-atlas API uses.
+ * `parse` fills the caller-owned `atlas`.
  */
 export interface TextureAtlasFormatEntry {
   detect: (content: string) => boolean;
-  parse: (content: string, atlas: TextureAtlas, options: TextureAtlasParseOptions) => TextureAtlas;
+  parse: (content: string, atlas: TextureAtlas, options: TextureAtlasParseOptions) => void;
 }
 
 /**

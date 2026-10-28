@@ -242,7 +242,9 @@ export function parseLibgdxAtlasSpritesheet(
     );
   }
 
-  const regions: readonly TextureAtlasRegion[] = parseTextureAtlasLibgdxAtlas(text, createTextureAtlas()).regions;
+  const atlas = createTextureAtlas();
+  parseTextureAtlasLibgdxAtlas(text, atlas);
+  const regions: readonly TextureAtlasRegion[] = atlas.regions;
   const frames: SpritesheetFrameData[] = regions.map(frameFromRegion);
   const frameNames = frames.map((f) => f.name);
   const animations = inferAnimations(frameNames, frameDuration);

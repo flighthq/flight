@@ -89,11 +89,6 @@ describe('parseTextureAtlasStarlingXml', () => {
     parseTextureAtlasStarlingXml(SIMPLE_XML, atlas);
     expect(atlas.regions).toHaveLength(4);
   });
-  it('returns the atlas for chaining', () => {
-    const atlas = createTextureAtlas();
-    const result = parseTextureAtlasStarlingXml(SIMPLE_XML, atlas);
-    expect(result).toBe(atlas);
-  });
   it('returns the atlas unchanged when no SubTexture elements exist', () => {
     const atlas = createTextureAtlas();
     parseTextureAtlasStarlingXml('<TextureAtlas imagePath="a.png"></TextureAtlas>', atlas);

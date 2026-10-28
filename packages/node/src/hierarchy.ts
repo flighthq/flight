@@ -18,8 +18,8 @@ import { invalidateNodeLocalTransform, invalidateNodeParentReference, invalidate
  * instance. The child is added to the front (top) of all other children in
  * this Node instance.
  **/
-export function addNodeChild<Fields extends object>(target: Node<Fields>, child: Node<Fields>): NodeOf<Fields> {
-  return addNodeChildAt(target, child, getNodeChildCount(target));
+export function addNodeChild<Fields extends object>(target: Node<Fields>, child: Node<Fields>): void {
+  addNodeChildAt(target, child, getNodeChildCount(target));
 }
 
 /**
@@ -28,11 +28,7 @@ export function addNodeChild<Fields extends object>(target: Node<Fields>, child:
  * 0 represents the back (bottom) of the display list for this
  * Node object.
  **/
-export function addNodeChildAt<Fields extends object>(
-  target: Node<Fields>,
-  child: Node<Fields>,
-  index: number,
-): NodeOf<Fields> {
+export function addNodeChildAt<Fields extends object>(target: Node<Fields>, child: Node<Fields>, index: number): void {
   const targetRuntime = getNodeRuntime(target) as NodeRuntime<Fields>;
   const targetNode = target as NodeOf<Fields>;
   const childNode = child as NodeOf<Fields>;
@@ -65,7 +61,7 @@ export function addNodeChildAt<Fields extends object>(
     if (i !== -1) {
       wasChild = true;
       // `index === children.length` means append. An already-last child is therefore unchanged.
-      if (i === Math.min(index, children.length - 1)) return childNode;
+      if (i === Math.min(index, children.length - 1)) return;
       children!.splice(i, 1);
     }
   } else {
@@ -87,8 +83,6 @@ export function addNodeChildAt<Fields extends object>(
     if (childSignals !== null) emitSignal(childSignals.onParentChanged);
     invalidateNodeParentReference(child);
   }
-
-  return childNode;
 }
 
 /**
@@ -266,9 +260,9 @@ export function isNodeAncestorOf<Fields extends object>(
  * positions of any scene nodes above the child in the
  * Node are decreased by 1.
  **/
-export function removeNodeChild<Fields extends object>(target: Node<Fields>, child: Node<Fields>): NodeOf<Fields> {
+export function removeNodeChild<Fields extends object>(target: Node<Fields>, child: Node<Fields>): void {
   const childNode = child as NodeOf<Fields>;
-  if (!child) return childNode;
+  if (!child) return;
   const targetRuntime = getNodeRuntime(target);
   const childRuntime = getNodeRuntime(child) as NodeRuntime<Fields>;
   const children = targetRuntime.children;
@@ -289,7 +283,6 @@ export function removeNodeChild<Fields extends object>(target: Node<Fields>, chi
       emitSignal(targetSignals.onChildrenChanged);
     }
   }
-  return childNode;
 }
 
 /**
@@ -303,7 +296,9 @@ export function removeNodeChild<Fields extends object>(target: Node<Fields>, chi
 export function removeNodeChildAt<Fields extends object>(target: Node<Fields>, index: number): NodeOf<Fields> | null {
   const children = getNodeRuntime(target).children;
   if (children !== null && index >= 0 && index < children.length) {
-    return removeNodeChild(target, children[index]);
+    const child = children[index];
+    removeNodeChild(target, child);
+    return child;
   }
   return null;
 }

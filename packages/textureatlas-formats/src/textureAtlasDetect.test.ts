@@ -338,7 +338,6 @@ describe('registerTextureAtlasFormat', () => {
       detect: (content) => content.startsWith('ACME'),
       parse: (_content, atlas) => {
         addTextureAtlasRegion(atlas, 0, 0, 2, 2, undefined, undefined, 'custom');
-        return atlas;
       },
     });
     expect(detectTextureAtlasFormat('ACME v1')).toBe(CUSTOM);

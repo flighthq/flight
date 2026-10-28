@@ -58,7 +58,9 @@ function metaScale(meta: TexturePackerMeta): number {
 function documentToData(doc: TexturePackerDocument): SpritesheetData {
   // Delegate region geometry to the atlas-formats parser (the TexturePacker document shapes are shared),
   // then layer the spritesheet frame/animation metadata on top — no independent re-parse of the frames.
-  const regions = parseTexturePackerAtlasDocument(doc, createTextureAtlas()).regions;
+  const atlas = createTextureAtlas();
+  parseTexturePackerAtlasDocument(doc, atlas);
+  const regions = atlas.regions;
   const frames: SpritesheetFrameData[] = regions.map(frameFromRegion);
   const frameNames: string[] = regions.map((region) => region.name ?? '');
 

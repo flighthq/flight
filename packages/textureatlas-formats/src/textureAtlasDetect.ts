@@ -158,7 +158,8 @@ export function parseTextureAtlas(
   if (kind === null || kind === undefined) return null;
   const registered = getRegistry().get(kind) ?? null;
   if (registered === null) return null;
-  return registered.entry.parse(content, atlas, options ?? {});
+  registered.entry.parse(content, atlas, options ?? {});
+  return atlas;
 }
 
 /** Register a custom texture-atlas format for `detectTextureAtlasFormat` and `parseTextureAtlas`.

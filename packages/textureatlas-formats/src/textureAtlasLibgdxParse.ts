@@ -6,8 +6,8 @@ import { resetTextureAtlasPageMeta } from './textureAtlasPageMeta.ts';
 
 // Parses a libGDX / Spine text-format atlas string and populates `atlas.regions`.
 // Handles single and multi-page atlases; regions from all pages are concatenated.
-// Existing regions in `atlas` are cleared. Returns `atlas` for convenience.
-export function parseTextureAtlasLibgdxAtlas(text: string, atlas: TextureAtlas): TextureAtlas {
+// Existing regions in `atlas` are cleared.
+export function parseTextureAtlasLibgdxAtlas(text: string, atlas: TextureAtlas): void {
   atlas.regions.length = 0;
   resetTextureAtlasPageMeta(atlas);
   const lines = text.split(/\r?\n/);
@@ -127,5 +127,4 @@ export function parseTextureAtlasLibgdxAtlas(text: string, atlas: TextureAtlas):
       }
     }
   }
-  return atlas;
 }

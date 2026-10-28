@@ -160,8 +160,7 @@ describe('addNodeChild', () => {
 
     const foo = createNode<FooTraits>('FooNode');
     const foo2 = createNode<FooTraits>('FooNode');
-    const added = addNodeChild(foo, foo2);
-    expect(added).toBe(foo2);
+    addNodeChild(foo, foo2);
 
     const bar = createNode<BarTraits>('BarNode');
     // @ts-expect-error a node from a different trait family does not unify with foo's family

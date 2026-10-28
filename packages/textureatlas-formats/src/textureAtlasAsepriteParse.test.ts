@@ -109,11 +109,6 @@ describe('parseTextureAtlasAsepriteDocument', () => {
     parseTextureAtlasAsepriteDocument(ARRAY_DOC, atlas);
     expect(atlas.regions).toHaveLength(1);
   });
-  it('returns the atlas for chaining', () => {
-    const atlas = createTextureAtlas();
-    const result = parseTextureAtlasAsepriteDocument(ARRAY_DOC, atlas);
-    expect(result).toBe(atlas);
-  });
 });
 
 describe('parseTextureAtlasAsepriteJson', () => {
@@ -128,10 +123,5 @@ describe('parseTextureAtlasAsepriteJson', () => {
     parseTextureAtlasAsepriteJson(JSON.stringify(ARRAY_DOC), atlas);
     expect(atlas.regions).toHaveLength(1);
     expect(atlas.regions[0].name).toBe('tile_0.png');
-  });
-  it('returns the atlas for chaining', () => {
-    const atlas = createTextureAtlas();
-    const result = parseTextureAtlasAsepriteJson(JSON.stringify(ARRAY_DOC), atlas);
-    expect(result).toBe(atlas);
   });
 });

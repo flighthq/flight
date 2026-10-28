@@ -67,7 +67,9 @@ function animationFromTag(
 function documentToData(doc: AsepriteDocument): SpritesheetData {
   // Region geometry is delegated to the atlas-formats parser (shared Aseprite document shape); this
   // package adds the per-frame durations and tag-based animations, which the atlas layer does not model.
-  const regions = parseTextureAtlasAsepriteDocument(doc, createTextureAtlas()).regions;
+  const atlas = createTextureAtlas();
+  parseTextureAtlasAsepriteDocument(doc, atlas);
+  const regions = atlas.regions;
   const frames: SpritesheetFrameData[] = regions.map(frameFromRegion);
   const frameNames: string[] = regions.map((region) => region.name ?? '');
 

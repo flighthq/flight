@@ -165,11 +165,6 @@ describe('parseTexturePackerAtlasDocument', () => {
     parseTexturePackerAtlasDocument(ARRAY_FIXTURE, atlas);
     expect(atlas.regions).toHaveLength(2);
   });
-  it('returns the atlas for chaining', () => {
-    const atlas = createTextureAtlas();
-    const result = parseTexturePackerAtlasDocument(HASH_FIXTURE, atlas);
-    expect(result).toBe(atlas);
-  });
 });
 
 describe('parseTexturePackerAtlasJson', () => {
@@ -204,10 +199,5 @@ describe('parseTexturePackerAtlasJson', () => {
     const atlas = createTextureAtlas();
     parseTexturePackerAtlasJson(JSON.stringify(docWithPaths), atlas, { stripPathPrefix: true });
     expect(atlas.regions[0].name).toBe('hero.png');
-  });
-  it('returns the atlas for chaining', () => {
-    const atlas = createTextureAtlas();
-    const result = parseTexturePackerAtlasJson(JSON.stringify(ARRAY_FIXTURE), atlas);
-    expect(result).toBe(atlas);
   });
 });

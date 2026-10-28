@@ -108,9 +108,4 @@ hero_walk
     parseTextureAtlasLibgdxAtlas(SIMPLE_ATLAS, atlas);
     expect(atlas.regions).toHaveLength(3);
   });
-  it('returns the atlas for chaining', () => {
-    const atlas = createTextureAtlas();
-    const result = parseTextureAtlasLibgdxAtlas(SIMPLE_ATLAS, atlas);
-    expect(result).toBe(atlas);
-  });
 });

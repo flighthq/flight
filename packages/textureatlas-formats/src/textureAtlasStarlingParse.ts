@@ -6,16 +6,16 @@ import { parseXmlDocument } from '@flighthq/xml/contract';
 import { resetTextureAtlasPageMeta } from './textureAtlasPageMeta.ts';
 
 // Populates `atlas.regions` from a Starling / Sparrow XML string.
-// Existing regions are cleared before parsing. Returns `atlas` for convenience.
+// Existing regions are cleared before parsing.
 //
 // Takes no image-dimension options. Starling XML declares no atlas size, but the one consumer that
 // needs it — getTextureAtlasRegionUv — takes width and height as its own arguments, so a parse-time
 // hint would be a second path to a value the caller already supplies at the point of use.
-export function parseTextureAtlasStarlingXml(xml: string, atlas: TextureAtlas): TextureAtlas {
+export function parseTextureAtlasStarlingXml(xml: string, atlas: TextureAtlas): void {
   atlas.regions.length = 0;
   resetTextureAtlasPageMeta(atlas);
   const root = parseXmlDocument(xml);
-  if (!root) return atlas;
+  if (!root) return;
   // The TextureAtlas element may be the root or a child.
   const atlasEl = root.name === 'TextureAtlas' ? root : (root.children.find((c) => c.name === 'TextureAtlas') ?? root);
   // Starling declares its page image in `imagePath` and nothing else about the page: no size, no
@@ -57,5 +57,4 @@ export function parseTextureAtlasStarlingXml(xml: string, atlas: TextureAtlas): 
     );
     id++;
   }
-  return atlas;
 }
