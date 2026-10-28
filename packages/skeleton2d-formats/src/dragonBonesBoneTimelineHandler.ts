@@ -1,10 +1,10 @@
 import { createAnimationChannel, createAnimationTrack } from '@flighthq/animation/contract';
+import type { EasingFunction } from '@flighthq/easing/contract';
 import { createSkeleton2DBoneAnimationTarget } from '@flighthq/skeleton2d/contract';
 import type {
   AnimationChannel,
   AnimationInterpolation,
   DragonBonesTimelineContext,
-  EasingFunction,
   ImportDiagnostic,
 } from '@flighthq/types/contract';
 import { Skeleton2DAnimationPath } from '@flighthq/types/contract';

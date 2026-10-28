@@ -1,13 +1,7 @@
+import type { EasingFunction } from '@flighthq/easing/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
-import type {
-  EasingFunction,
-  NumericProps,
-  Tween,
-  TweenManager,
-  TweenOptions,
-  TweenPropertyDetail,
-} from '@flighthq/types/contract';
+import type { NumericProps, Tween, TweenManager, TweenOptions, TweenPropertyDetail } from '@flighthq/types/contract';
 
 export function addTweenToManager<T extends object>(
   manager: TweenManager,

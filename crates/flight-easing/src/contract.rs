@@ -20,6 +20,7 @@ pub use super::ease_quintic::*;
 pub use super::ease_sine::*;
 pub use super::ease_smoothstep::*;
 pub use super::ease_steps::*;
+pub use super::easing_types::*;
 pub use super::enable_easing_guards::*;
 pub use super::get_easing_derivative::*;
 pub use super::write_easing_samples::*;

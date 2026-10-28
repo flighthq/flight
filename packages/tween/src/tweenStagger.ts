@@ -1,11 +1,5 @@
-import type {
-  EasingFunction,
-  NumericProps,
-  Tween,
-  TweenManager,
-  TweenOptions,
-  TweenStaggerOptions,
-} from '@flighthq/types/contract';
+import type { EasingFunction } from '@flighthq/easing/contract';
+import type { NumericProps, Tween, TweenManager, TweenOptions, TweenStaggerOptions } from '@flighthq/types/contract';
 
 import { createTween } from './tween.ts';
 

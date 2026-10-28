@@ -1,11 +1,11 @@
 import { createAnimationChannel, createAnimationTrack } from '@flighthq/animation/contract';
+import type { EasingFunction } from '@flighthq/easing/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createSkeleton2DBoneAnimationTarget } from '@flighthq/skeleton2d/contract';
 import type {
   AnimationChannel,
   ByteReader,
-  EasingFunction,
   ImportDiagnostic,
   SpineBinaryTimelineContext,
 } from '@flighthq/types/contract';

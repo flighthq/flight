@@ -4,6 +4,7 @@ import {
   createAnimationTrack,
   sampleAnimationTrack,
 } from '@flighthq/animation/contract';
+import type { EasingFunction } from '@flighthq/easing/contract';
 import { easeCubicBezier, easeInDampedSine, easeInOutDampedSine, easeOutDampedSine } from '@flighthq/easing/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { RAD_TO_DEG } from '@flighthq/math/contract';
@@ -25,7 +26,6 @@ import type {
   Bone2D,
   ImportDiagnostic,
   DisplayObject,
-  EasingFunction,
   Node2DAnimationPath,
   Node2DAnimationTarget,
   RiveCoreObject,

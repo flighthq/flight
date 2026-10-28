@@ -1,5 +1,7 @@
 import type { EasingFunction, EasingStepsGuard, StepPosition } from '@flighthq/types/contract';
 
+export type { StepPosition } from '@flighthq/types/contract';
+
 // Returns a stepped easing function that quantizes [0,1] into `count` equal
 // intervals, jumping at the position(s) selected by `position`:
 //   jumpStart - jump at t=0; the first interval already outputs 1/count.

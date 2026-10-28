@@ -5,6 +5,7 @@ import {
   createAnimationTrack,
   sampleAnimationTrack,
 } from '@flighthq/animation/contract';
+import type { EasingFunction } from '@flighthq/easing/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
@@ -14,7 +15,6 @@ import type {
   AnimationClip,
   AnimationTrack,
   DisplayObject,
-  EasingFunction,
   EntityConstruction,
   ImportDiagnostic,
   LottieAdvancedBlend,

@@ -1,3 +1,4 @@
+import type { EasingFunction } from '@flighthq/easing/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type {
   AnimationBlendTree,
@@ -5,7 +6,6 @@ import type {
   AnimationStateMachine,
   AnimationStateMachineChannel,
   AnimationStateMachineState,
-  EasingFunction,
   EntityConstruction,
 } from '@flighthq/types/contract';
 

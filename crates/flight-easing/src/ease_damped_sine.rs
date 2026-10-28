@@ -1,9 +1,11 @@
 use std::f32::consts::PI;
 use std::sync::Arc;
 
+use crate::EasingFunction;
+
 /// The parameterized form of `ease_in_elastic`: a decaying sine that winds up
 /// before departing, with the overshoot and wavelength stated rather than fixed.
-pub fn ease_in_damped_sine(amplitude: f32, period: f32) -> Arc<dyn Fn(f32) -> f32 + Send + Sync> {
+pub fn ease_in_damped_sine(amplitude: f32, period: f32) -> EasingFunction {
     let wavelength = to_damped_sine_wavelength(period);
     let overshoot = to_damped_sine_overshoot(amplitude);
     let phase = to_damped_sine_phase(overshoot, wavelength);
@@ -21,10 +23,7 @@ pub fn ease_in_damped_sine(amplitude: f32, period: f32) -> Arc<dyn Fn(f32) -> f3
 /// The parameterized form of `ease_in_out_elastic`: a decaying sine that winds
 /// up, crosses, and settles, with the overshoot and wavelength stated rather
 /// than fixed.
-pub fn ease_in_out_damped_sine(
-    amplitude: f32,
-    period: f32,
-) -> Arc<dyn Fn(f32) -> f32 + Send + Sync> {
+pub fn ease_in_out_damped_sine(amplitude: f32, period: f32) -> EasingFunction {
     let wavelength = to_damped_sine_wavelength(period);
     let overshoot = to_damped_sine_overshoot(amplitude);
     let phase = to_damped_sine_phase(overshoot, wavelength);
@@ -49,7 +48,7 @@ pub fn ease_in_out_damped_sine(
 
 /// The parameterized form of `ease_out_elastic`: a decaying sine that overshoots
 /// the target and settles back onto it.
-pub fn ease_out_damped_sine(amplitude: f32, period: f32) -> Arc<dyn Fn(f32) -> f32 + Send + Sync> {
+pub fn ease_out_damped_sine(amplitude: f32, period: f32) -> EasingFunction {
     let wavelength = to_damped_sine_wavelength(period);
     let overshoot = to_damped_sine_overshoot(amplitude);
     let phase = to_damped_sine_phase(overshoot, wavelength);

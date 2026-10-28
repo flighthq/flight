@@ -135,6 +135,7 @@ mod set_easing_steps_guard {
     use crate::GUARD_TEST_LOCK;
 
     #[test]
+    /// flight-compiler: rust-only — the Rust process-global guard needs a mutex to isolate parallel tests; the target-native TypeScript guard suite covers the same seam without threads.
     fn reports_the_degenerate_jump_none_call_that_silently_returns_nan() {
         let _lock = GUARD_TEST_LOCK
             .lock()
@@ -156,6 +157,7 @@ mod set_easing_steps_guard {
     }
 
     #[test]
+    /// flight-compiler: rust-only — the Rust process-global guard needs a mutex to isolate parallel tests; the target-native TypeScript guard suite covers uninstall behavior.
     fn stays_silent_for_well_defined_calls_and_once_uninstalled() {
         let _lock = GUARD_TEST_LOCK
             .lock()

@@ -19,3 +19,4 @@ export { easeSteps } from './easeSteps.ts';
 export * from './enableEasingGuards.ts';
 export * from './getEasingDerivative.ts';
 export * from './writeEasingSamples.ts';
+export type { EasingFunction, EasingSegment, ScalarRemap, StepPosition } from '@flighthq/types/contract';

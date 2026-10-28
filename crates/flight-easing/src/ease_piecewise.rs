@@ -2,16 +2,18 @@ use std::sync::Arc;
 
 use flight_entity::throw_error;
 
+use crate::EasingFunction;
+
 #[derive(Clone)]
 pub struct EasingSegment {
-    pub ease: Arc<dyn Fn(f32) -> f32 + Send + Sync>,
+    pub ease: EasingFunction,
     pub weight: Option<f32>,
 }
 
 /// Returns an easing function that splices multiple easing functions across the
 /// [0,1] input range. Each segment is allocated a proportional slice of the
 /// input domain based on its `weight` (default 1). Weights are relative.
-pub fn ease_piecewise(segments: &[EasingSegment]) -> Arc<dyn Fn(f32) -> f32 + Send + Sync> {
+pub fn ease_piecewise(segments: &[EasingSegment]) -> EasingFunction {
     if segments.is_empty() {
         throw_error("easePiecewise: segments array must not be empty");
     }
@@ -21,7 +23,7 @@ pub fn ease_piecewise(segments: &[EasingSegment]) -> Arc<dyn Fn(f32) -> f32 + Se
         throw_error("easePiecewise: total segment weight must be greater than zero");
     }
 
-    let mut breakpoints: Vec<(Arc<dyn Fn(f32) -> f32 + Send + Sync>, f32, f32)> = Vec::new();
+    let mut breakpoints: Vec<(EasingFunction, f32, f32)> = Vec::new();
     let mut accumulated = 0.0_f32;
     for segment in segments {
         let weight = segment.weight.unwrap_or(1.0);

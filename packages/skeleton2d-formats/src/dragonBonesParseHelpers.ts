@@ -1,6 +1,7 @@
+import type { EasingFunction } from '@flighthq/easing/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { AnimationInterpolation, EasingFunction, ImportDiagnostic } from '@flighthq/types/contract';
+import type { AnimationInterpolation, ImportDiagnostic } from '@flighthq/types/contract';
 import {
   AnimationInterpolationLinear,
   AnimationInterpolationStep,

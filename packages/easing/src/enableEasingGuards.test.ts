@@ -2,7 +2,7 @@ import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink
 import type { LogEntry } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
-import { easeSteps } from './easeSteps.ts';
+import { easeSteps, setEasingStepsGuard } from './easeSteps.ts';
 import { disableEasingGuards, enableEasingGuards } from './enableEasingGuards.ts';
 
 function captureLog(run: () => void): readonly LogEntry[] {
@@ -66,5 +66,33 @@ describe('enableEasingGuards', () => {
       expect(Number.isNaN(easeSteps(1, 'jumpNone')(0.5))).toBe(true);
     });
     expect(unguarded.length).toBe(0);
+  });
+});
+
+describe('setEasingStepsGuard', () => {
+  it('reports the degenerate jumpNone call that silently returns NaN', () => {
+    const seen: [number, string][] = [];
+    setEasingStepsGuard((count, position) => seen.push([count, position]));
+    try {
+      expect(Number.isNaN(easeSteps(1, 'jumpNone')(0.5))).toBe(true);
+      expect(seen).toEqual([[1, 'jumpNone']]);
+    } finally {
+      setEasingStepsGuard(null);
+    }
+  });
+
+  it('stays silent for well-defined calls and once uninstalled', () => {
+    const seen: number[] = [];
+    setEasingStepsGuard((count) => seen.push(count));
+    try {
+      easeSteps(2, 'jumpNone')(0.5);
+      easeSteps(1, 'jumpEnd')(0.5);
+      expect(seen).toEqual([]);
+    } finally {
+      setEasingStepsGuard(null);
+    }
+
+    expect(Number.isNaN(easeSteps(1, 'jumpNone')(0.5))).toBe(true);
+    expect(seen).toEqual([]);
   });
 });
