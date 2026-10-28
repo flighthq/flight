@@ -14,6 +14,12 @@ mod direction_values {
     }
 
     #[test]
+    fn carries_the_source_numeric_values() {
+        assert_eq!(MotionPathDirection::Forward as i8, 1);
+        assert_eq!(MotionPathDirection::Backward as i8, -1);
+    }
+
+    #[test]
     fn is_copyable_and_comparable() {
         let direction = MotionPathDirection::Backward;
         assert_eq!(direction, MotionPathDirection::Backward);
@@ -88,8 +94,7 @@ mod path_identity {
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 0.0);
         let handle = Ref::new(RwLock::new(path));
-        let mut marker = create_motion_path();
-        marker.path = handle.clone();
+        let marker = create_motion_path(handle.clone(), 0.0, MotionPathLoopMode::Clamp, None);
         assert!(std::sync::Arc::ptr_eq(&marker.path, &handle));
     }
 }

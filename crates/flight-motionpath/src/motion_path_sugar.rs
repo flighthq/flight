@@ -1,7 +1,9 @@
 //! D18 sugar for the motion-path public lane: constructor and receiver methods that delegate to the
 //! free functions. Sugar contains no logic.
 
+use flight_entity::Ref;
 use flight_geometry::{Vector2, create_vector2};
+use flight_path::Path;
 
 use crate::motion_path::*;
 use crate::types::*;
@@ -10,9 +12,7 @@ use crate::types::*;
 mod sugar_tests {
     use std::sync::RwLock;
 
-    use flight_entity::Ref;
-    use flight_geometry::create_vector2;
-    use flight_path::{Path, append_path_line_to, append_path_move_to, create_path};
+    use flight_path::{append_path_line_to, append_path_move_to, create_path};
 
     use super::*;
 
@@ -23,24 +23,10 @@ mod sugar_tests {
         return Ref::new(RwLock::new(path));
     }
 
-    fn configured_motion_path(
-        path: &Ref<Path>,
-        speed: Option<f64>,
-        loop_mode: Option<MotionPathLoopMode>,
-        tolerance: Option<f64>,
-    ) -> MotionPath {
-        let mut marker = create_motion_path();
-        marker.length = flight_path::get_path_length(&path.read().unwrap(), tolerance);
-        marker.loop_mode = loop_mode.unwrap_or(MotionPathLoopMode::Clamp);
-        marker.path = path.clone();
-        marker.speed = speed.unwrap_or(0.0);
-        return marker;
-    }
-
     #[test]
     fn new_matches_create_motion_path() {
-        let method_marker = MotionPath::new();
-        let free_marker = create_motion_path();
+        let method_marker = MotionPath::new(line(), 30.0, MotionPathLoopMode::PingPong, None);
+        let free_marker = create_motion_path(line(), 30.0, MotionPathLoopMode::PingPong, None);
         assert_eq!(method_marker.length, free_marker.length);
         assert_eq!(method_marker.speed, free_marker.speed);
         assert_eq!(method_marker.loop_mode, free_marker.loop_mode);
@@ -48,20 +34,20 @@ mod sugar_tests {
 
     #[test]
     fn heading_method_matches_get_motion_path_heading() {
-        let marker = configured_motion_path(&line(), Some(0.0), None, None);
+        let marker = create_motion_path(line(), 0.0, MotionPathLoopMode::Clamp, None);
         assert_eq!(marker.heading(), get_motion_path_heading(&marker));
     }
 
     #[test]
     fn is_at_end_method_matches_is_motion_path_at_end() {
-        let mut marker = configured_motion_path(&line(), Some(0.0), None, None);
+        let mut marker = create_motion_path(line(), 0.0, MotionPathLoopMode::Clamp, None);
         set_motion_path_distance(&mut marker, 100.0);
         assert_eq!(marker.is_at_end(), is_motion_path_at_end(&marker));
     }
 
     #[test]
     fn position_method_matches_get_motion_path_position() {
-        let marker = configured_motion_path(&line(), Some(0.0), None, None);
+        let marker = create_motion_path(line(), 0.0, MotionPathLoopMode::Clamp, None);
         let (method_point, method_tangent, method_ok) = marker.position();
         let mut free_point = create_vector2(0.0, 0.0);
         let mut free_tangent = create_vector2(0.0, 0.0);
@@ -75,15 +61,15 @@ mod sugar_tests {
 
     #[test]
     fn progress_method_matches_get_motion_path_progress() {
-        let mut marker = configured_motion_path(&line(), Some(0.0), None, None);
+        let mut marker = create_motion_path(line(), 0.0, MotionPathLoopMode::Clamp, None);
         set_motion_path_distance(&mut marker, 25.0);
         assert_eq!(marker.progress(), get_motion_path_progress(&marker));
     }
 
     #[test]
     fn set_direction_method_matches_set_motion_path_direction() {
-        let mut method_marker = configured_motion_path(&line(), Some(0.0), None, None);
-        let mut free_marker = configured_motion_path(&line(), Some(0.0), None, None);
+        let mut method_marker = create_motion_path(line(), 0.0, MotionPathLoopMode::Clamp, None);
+        let mut free_marker = create_motion_path(line(), 0.0, MotionPathLoopMode::Clamp, None);
         method_marker.set_direction(MotionPathDirection::Backward);
         set_motion_path_direction(&mut free_marker, MotionPathDirection::Backward);
         assert_eq!(method_marker.direction, free_marker.direction);
@@ -91,8 +77,8 @@ mod sugar_tests {
 
     #[test]
     fn set_distance_method_matches_set_motion_path_distance() {
-        let mut method_marker = configured_motion_path(&line(), Some(0.0), None, None);
-        let mut free_marker = configured_motion_path(&line(), Some(0.0), None, None);
+        let mut method_marker = create_motion_path(line(), 0.0, MotionPathLoopMode::Clamp, None);
+        let mut free_marker = create_motion_path(line(), 0.0, MotionPathLoopMode::Clamp, None);
         method_marker.set_distance(150.0);
         set_motion_path_distance(&mut free_marker, 150.0);
         assert_eq!(method_marker.distance, free_marker.distance);
@@ -100,8 +86,8 @@ mod sugar_tests {
 
     #[test]
     fn set_progress_method_matches_set_motion_path_progress() {
-        let mut method_marker = configured_motion_path(&line(), Some(0.0), None, None);
-        let mut free_marker = configured_motion_path(&line(), Some(0.0), None, None);
+        let mut method_marker = create_motion_path(line(), 0.0, MotionPathLoopMode::Clamp, None);
+        let mut free_marker = create_motion_path(line(), 0.0, MotionPathLoopMode::Clamp, None);
         method_marker.set_progress(0.5);
         set_motion_path_progress(&mut free_marker, 0.5);
         assert_eq!(method_marker.distance, free_marker.distance);
@@ -109,18 +95,9 @@ mod sugar_tests {
 
     #[test]
     fn update_method_matches_update_motion_path() {
-        let mut method_marker = configured_motion_path(
-            &line(),
-            Some(30.0),
-            Some(MotionPathLoopMode::PingPong),
-            None,
-        );
-        let mut free_marker = configured_motion_path(
-            &line(),
-            Some(30.0),
-            Some(MotionPathLoopMode::PingPong),
-            None,
-        );
+        let mut method_marker =
+            create_motion_path(line(), 30.0, MotionPathLoopMode::PingPong, None);
+        let mut free_marker = create_motion_path(line(), 30.0, MotionPathLoopMode::PingPong, None);
         method_marker.set_distance(90.0);
         free_marker.set_distance(90.0);
         method_marker.update(1.0);
@@ -132,8 +109,14 @@ mod sugar_tests {
 
 impl MotionPath {
     /// The convenience constructor mirrors `create_motion_path` (D18).
-    pub fn new() -> MotionPath {
-        return create_motion_path();
+    // flight-lint: allow(f64) D1: speed and tolerance flow through flight-path's f64 arc-length API
+    pub fn new(
+        path: Ref<Path>,
+        speed: f64,
+        loop_mode: MotionPathLoopMode,
+        tolerance: Option<f64>,
+    ) -> MotionPath {
+        return create_motion_path(path, speed, loop_mode, tolerance);
     }
 
     // flight-lint: allow(f64) D1: the heading is a radian angle over flight-path's f64 sampling

@@ -1,31 +1,48 @@
 //! Arc-length motion-path markers over a `Path` (TS `motionPath.ts`).
 
-use std::sync::RwLock;
-
 use flight_entity::{Ref, allocate_entity};
 use flight_geometry::{Vector2, create_vector2};
-use flight_path::{create_path, get_path_position_at_distance, get_path_tangent_at_distance};
+use flight_path::{
+    Path, get_path_length, get_path_position_at_distance, get_path_tangent_at_distance,
+};
 
 use crate::types::*;
 
-/// Allocates a marker with a fresh empty path and neutral traversal state (TS `createMotionPath`).
-/// Assign a retained path, cached length, speed and loop mode after construction.
-// flight-lint: allow(conform-params) D23 (B) zero-field create: assign motion-path fields after create
-pub fn create_motion_path() -> MotionPath {
+/// Allocates a motion-path marker at the start of `path` (TS `createMotionPath`): distance 0,
+/// direction forward. `speed` is the traversal rate (a magnitude, path units per
+/// `update_motion_path` delta-time unit),
+/// `loop_mode` the end behavior. The path arc length is measured once with
+/// `get_path_length(path, tolerance)` and cached in `length`; `tolerance` is the curve-flattening
+/// tolerance forwarded to that measurement. The path handle is retained, not copied.
+// flight-lint: allow(f64) D1: speed and tolerance flow through flight-path's f64 arc-length API
+pub fn create_motion_path(
+    path: Ref<Path>,
+    speed: f64,
+    loop_mode: MotionPathLoopMode,
+    tolerance: Option<f64>,
+) -> MotionPath {
     let mut out: MotionPath = allocate_entity();
-    initialize_motion_path(&mut out);
+    initialize_motion_path(&mut out, path, speed, loop_mode, tolerance);
     return out;
 }
 
-/// Builds a motion-path marker under construction (TS `initializeMotionPath`).
-// flight-lint: allow(conform-params) D23 (B) receiver-only initializer
-pub fn initialize_motion_path(out: &mut MotionPath) {
+/// Initializes a motion-path marker under construction (TS `initializeMotionPath`): direction
+/// forward, distance 0, the retained `path`, `speed`, `loop_mode`, and the arc length measured once
+/// with `get_path_length(path, tolerance)`.
+// flight-lint: allow(f64) D1: speed and tolerance flow through flight-path's f64 arc-length API
+pub fn initialize_motion_path(
+    out: &mut MotionPath,
+    path: Ref<Path>,
+    speed: f64,
+    loop_mode: MotionPathLoopMode,
+    tolerance: Option<f64>,
+) {
     out.direction = MotionPathDirection::Forward;
     out.distance = 0.0;
-    out.length = 0.0;
-    out.loop_mode = MotionPathLoopMode::Clamp;
-    out.path = Ref::new(RwLock::new(create_path(flight_path::PathWinding::NonZero)));
-    out.speed = 0.0;
+    out.length = get_path_length(&path.read().unwrap(), tolerance);
+    out.loop_mode = loop_mode;
+    out.path = path;
+    out.speed = speed;
 }
 
 /// Resolves the end behavior after advancing `mp` by `move` units along its direction (TS
@@ -36,7 +53,7 @@ pub fn initialize_motion_path(out: &mut MotionPath) {
 fn apply_motion_path_loop_mode(mp: &mut MotionPath, movement: f64, length: f64) {
     let loop_mode = mp.loop_mode;
     let distance = mp.distance;
-    let direction = direction_value(mp.direction);
+    let direction = mp.direction as i8 as f64;
     if loop_mode == MotionPathLoopMode::Loop {
         let mut wrapped = (distance + direction * movement) % length;
         if wrapped < 0.0 {
@@ -72,14 +89,6 @@ fn apply_motion_path_loop_mode(mp: &mut MotionPath, movement: f64, length: f64) 
         clamped = length;
     }
     mp.distance = clamped;
-}
-
-// flight-lint: allow(f64) D1: the direction maps to the source\'s 1 | -1 numeric values used with f64 arc lengths
-fn direction_value(direction: MotionPathDirection) -> f64 {
-    return match direction {
-        MotionPathDirection::Forward => 1.0,
-        MotionPathDirection::Backward => -1.0,
-    };
 }
 
 /// Returns the marker's heading angle in radians — `atan2(tangentY, tangentX)` of the path tangent

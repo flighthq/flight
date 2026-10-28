@@ -9,10 +9,14 @@ timer or device operation lives here.
 
 - `MotionPath` is an Entity whose `path` is the source's retained object handle (`Ref<Path>`);
   `distance`, `length` and `speed` are arc lengths/rates (f64, the precision of `flight-path`'s
-  API), `direction` is the closed `MotionPathDirection` (`Forward` = 1, `Backward` = -1), and
+  API), `direction` is the closed `#[repr(i8)]` `MotionPathDirection` whose discriminants are the source's
+  numeric values (`Forward = 1`, `Backward = -1`, so `direction as i8 as f64` is the travel sign), and
   `loop_mode` is the closed source union with its canonical string table.
-- `create_motion_path` measures the path arc length once with `get_path_length(path, tolerance)` and
-  caches it; no later call re-measures. `speed` defaults to 0 and `loop_mode` to `clamp`.
+- `create_motion_path(path, speed, loop_mode, tolerance)` takes the source's parameters in source
+  order, retains the `path` handle, starts at distance 0 moving `Forward`, and measures the path arc
+  length once with `get_path_length(path, tolerance)`; no later call re-measures. The source
+  defaults (`speed` 0, `loop_mode` `clamp`) are not Rust defaults: Rust callers pass explicit
+  values (`0.0`, `MotionPathLoopMode::Clamp`, `None`).
 - `get_motion_path_position` delegates to `get_path_position_at_distance`; an empty path returns
   false and leaves the point output unchanged (the tangent falls back to `(1, 0)` inside the path
   package, so the heading is 0).

@@ -20,11 +20,14 @@ pub enum MotionPathLoopMode {
 /// The marker's travel direction (TS `1 | -1`), a closed representation. `Forward` traverses from
 /// the path start; `Backward` travels toward it. Direction is stored rather than folded into a
 /// signed speed because `PingPong` must remember which way the marker is heading across frames.
+/// The discriminants are the source's numeric values, so `direction as i8 as f64` is the signed
+/// travel factor.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[repr(i8)]
 pub enum MotionPathDirection {
     #[default]
-    Forward,
-    Backward,
+    Forward = 1,
+    Backward = -1,
 }
 
 /// A marker's arc-length position and traversal state along a `Path` (TS `MotionPath`, an Entity).
