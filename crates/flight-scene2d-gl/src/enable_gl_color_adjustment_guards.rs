@@ -21,7 +21,10 @@ pub fn enable_gl_color_adjustment_guards(
     state: &mut GlRenderState,
     log_state: Option<LogStateRef>,
 ) {
-    state.gl_runtime.borrow_mut().guard_log = log_state;
+    state
+        .gl_runtime
+        .borrow_mut()
+        .color_adjustment_feature_guard_log = log_state;
     let installed = state
         .gl_registries
         .color_adjustment_feature_guard
@@ -42,7 +45,12 @@ fn warn_gl_color_adjustment_not_enabled(
     state: &mut GlRenderState,
     _color_scale_bias: &GlColorAdjustmentData,
 ) {
-    let Some(log_state) = state.gl_runtime.borrow().guard_log.clone() else {
+    let Some(log_state) = state
+        .gl_runtime
+        .borrow()
+        .color_adjustment_feature_guard_log
+        .clone()
+    else {
         return;
     };
     let mut data = HashMap::new();

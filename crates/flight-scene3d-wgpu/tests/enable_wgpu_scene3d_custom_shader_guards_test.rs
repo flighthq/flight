@@ -123,14 +123,54 @@ mod run_wgpu_custom_shader_guards {
         let logs = log_state();
         let sink = create_memory_log_sink(2);
         add_log_sink(&logs, sink.sink.clone());
-        flight_render::RenderState::render_runtime_mut(&mut test.state).registry_guard_log =
-            Some(logs);
+        // A destination alone does not install the guard: the run is gated on enablement.
+        flight_scene3d_wgpu::contract::get_wgpu_scene3d_runtime(&mut test.state)
+            .custom_shader_guard_log = Some(logs);
         run_wgpu_custom_shader_guards(
             &mut test.state,
             "disabled-guard-test",
             "",
             &create_custom_shader_material(),
         );
+        assert!(messages(&sink).is_empty());
+    }
+
+    // Each guard owns its destination: re-enabling ANOTHER guard family with None must not silence
+    // this one (Principal ruling: None silences only the guard it is passed to).
+    #[test]
+    fn keeps_reporting_after_another_guard_family_is_enabled_with_none() {
+        let mut test = make_wgpu_scene3d_state(None);
+        let logs = log_state();
+        let sink = create_memory_log_sink(16);
+        add_log_sink(&logs, sink.sink.clone());
+        enable_wgpu_scene3d_custom_shader_guards(&mut test.state, Some(logs));
+        enable_wgpu_scene3d_forward_light_selection_guards(&mut test.state, None);
+        run_wgpu_custom_shader_guards(
+            &mut test.state,
+            "cross-family-guard-test",
+            "",
+            &create_custom_shader_material(),
+        );
+        assert!(!messages(&sink).is_empty());
+    }
+
+    #[test]
+    fn stays_silent_after_its_own_enable_with_none_replaces_the_log() {
+        let mut test = make_wgpu_scene3d_state(None);
+        let logs = log_state();
+        let sink = create_memory_log_sink(16);
+        add_log_sink(&logs, sink.sink.clone());
+        enable_wgpu_scene3d_custom_shader_guards(&mut test.state, Some(logs));
+        enable_wgpu_scene3d_custom_shader_guards(&mut test.state, None);
+        run_wgpu_custom_shader_guards(
+            &mut test.state,
+            "own-null-guard-test",
+            "",
+            &create_custom_shader_material(),
+        );
+        assert!(are_wgpu_scene3d_custom_shader_guards_enabled(
+            &mut test.state
+        ));
         assert!(messages(&sink).is_empty());
     }
 }

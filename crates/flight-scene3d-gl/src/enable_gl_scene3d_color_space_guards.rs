@@ -17,12 +17,12 @@ pub fn are_gl_scene3d_color_space_guards_enabled(state: &GlRenderState) -> bool 
 // log). Not calling this costs the draw path nothing. Idempotent.
 // flight-lint: allow(conform-params) D5 caller-owned LogState replaces the TS logging singleton
 pub fn enable_gl_scene3d_color_space_guards(state: &GlRenderState, log_state: Option<LogStateRef>) {
-    state.gl_runtime.borrow_mut().guard_log = log_state;
+    get_gl_scene3d_runtime(state).color_space_guard_log = log_state;
     get_gl_scene3d_runtime(state).color_space_guard = Some(warn_gl_scene3d_drawn_to_canvas);
 }
 
 fn warn_gl_scene3d_drawn_to_canvas(state: &GlRenderState) {
-    let Some(log_state) = state.gl_runtime.borrow().guard_log.clone() else {
+    let Some(log_state) = get_gl_scene3d_runtime(state).color_space_guard_log.clone() else {
         return;
     };
     let mut data = HashMap::new();

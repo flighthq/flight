@@ -25,7 +25,7 @@ pub fn enable_gl_scene3d_custom_shader_guards(
     state: &GlRenderState,
     log_state: Option<LogStateRef>,
 ) {
-    state.gl_runtime.borrow_mut().guard_log = log_state;
+    get_gl_scene3d_runtime(state).custom_shader_guard_log = log_state;
     get_gl_scene3d_runtime(state).custom_shader_guard = Some(warn_gl_custom_shader_uniform_types);
 }
 
@@ -69,7 +69,9 @@ fn warn_gl_custom_shader_uniform_types(
         ("u_normalMatrix", glow::FLOAT_MAT3),
         ("u_cameraPosition", glow::FLOAT_VEC3),
     ]);
-    let log_state = state.gl_runtime.borrow().guard_log.clone();
+    let log_state = get_gl_scene3d_runtime(state)
+        .custom_shader_guard_log
+        .clone();
 
     // SAFETY: program introspection runs on the owning GL thread.
     let count =

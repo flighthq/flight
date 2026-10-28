@@ -22,7 +22,7 @@ pub fn enable_gl_scene3d_forward_light_selection_guards(
     state: &GlRenderState,
     log_state: Option<LogStateRef>,
 ) {
-    state.gl_runtime.borrow_mut().guard_log = log_state;
+    get_gl_scene3d_runtime(state).forward_light_selection_guard_log = log_state;
     get_gl_scene3d_runtime(state).forward_light_selection_guard =
         Some(warn_gl_scene3d_forward_light_selection_required);
 }
@@ -31,7 +31,10 @@ fn warn_gl_scene3d_forward_light_selection_required(
     state: &GlRenderState,
     lights: &Scene3DLightsLike,
 ) {
-    let Some(log_state) = state.gl_runtime.borrow().guard_log.clone() else {
+    let Some(log_state) = get_gl_scene3d_runtime(state)
+        .forward_light_selection_guard_log
+        .clone()
+    else {
         return;
     };
     let mut data = HashMap::new();

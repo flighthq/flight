@@ -20,7 +20,7 @@ pub fn are_gl_render_texture_guards_enabled(state: &GlRenderState) -> bool {
 
 // flight-lint: allow(conform-params) D5 native logging state is caller-owned
 pub fn enable_gl_render_texture_guards(state: &GlRenderState, log_state: Option<LogStateRef>) {
-    state.gl_runtime.borrow_mut().guard_log = log_state;
+    state.gl_runtime.borrow_mut().render_texture_guard_log = log_state;
     set_gl_render_texture_guard(state, Some(warn_gl_render_texture_unavailable));
 }
 
@@ -29,7 +29,7 @@ fn warn_gl_render_texture_unavailable(
     _render_texture: &dyn TextureVariant,
     explanation: &GlRenderTextureExplanation,
 ) {
-    let log_state = state.gl_runtime.borrow().guard_log.clone();
+    let log_state = state.gl_runtime.borrow().render_texture_guard_log.clone();
     let Some(log_state) = log_state else {
         return;
     };

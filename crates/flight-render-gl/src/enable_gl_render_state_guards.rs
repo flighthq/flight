@@ -19,11 +19,11 @@ pub fn enable_gl_render_state_guards(state: &mut GlRenderState, log_state: Optio
     state.registries.render_root_guard = Some(warn_on_second_render_root);
     let mut runtime = state.gl_runtime.borrow_mut();
     runtime.binding_cache_guard = Some(warn_on_foreign_gl_binding);
-    runtime.guard_log = log_state;
+    runtime.render_state_guard_log = log_state;
 }
 
 fn log_guard(state: &GlRenderState, key: &str, message: &str) {
-    let log_state = state.gl_runtime.borrow().guard_log.clone();
+    let log_state = state.gl_runtime.borrow().render_state_guard_log.clone();
     if let Some(log_state) = log_state {
         log_once(
             &log_state,

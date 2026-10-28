@@ -6,13 +6,12 @@ use std::collections::HashMap;
 
 use flight_log::{LogData, LogDataOrProvider, LogLevel, LogStateRef, LogValue, log_once};
 use flight_materials::{CustomShaderMaterial, UniformValue};
-use flight_render::RenderState;
 use flight_render_wgpu::WgpuRenderState;
 
 use crate::wgpu_custom_material_abi::{
     WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY, WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY,
 };
-use crate::wgpu_scene3d_runtime::get_wgpu_scene3d_runtime;
+use crate::wgpu_scene3d_runtime::{find_wgpu_scene3d_runtime, get_wgpu_scene3d_runtime};
 
 /// Whether the custom-shader guards are installed on `state` (TS
 /// `areWgpuScene3DCustomShaderGuardsEnabled`).
@@ -30,7 +29,7 @@ pub fn enable_wgpu_scene3d_custom_shader_guards(
     state: &mut WgpuRenderState,
     log_state: Option<LogStateRef>,
 ) {
-    state.render_runtime_mut().registry_guard_log = log_state;
+    get_wgpu_scene3d_runtime(state).custom_shader_guard_log = log_state;
     get_wgpu_scene3d_runtime(state).custom_shader_guard = Some(run_wgpu_custom_shader_guards);
 }
 
@@ -116,7 +115,8 @@ pub fn run_wgpu_custom_shader_guards(
     {
         return;
     }
-    let log_state = state.render_runtime().registry_guard_log.clone();
+    let log_state = find_wgpu_scene3d_runtime(state)
+        .and_then(|runtime| runtime.custom_shader_guard_log.clone());
 
     let uniform_names = get_sorted_uniform_names(material);
     if let Some(uniforms) = &material.uniforms {

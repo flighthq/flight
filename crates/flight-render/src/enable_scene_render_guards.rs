@@ -12,7 +12,7 @@ pub fn disable_scene_render_guards<S: RenderState>(state: &mut S) {
 
 // flight-lint: allow(conform-params) D5 state-local guard and caller-owned LogState replace TS globals
 pub fn enable_scene_render_guards<S: RenderState>(state: &mut S, log_state: Option<LogStateRef>) {
-    state.render_runtime_mut().registry_guard_log = log_state;
+    state.render_runtime_mut().scene_render_guard_log = log_state;
     set_skinned_mesh_bounds_guard(state, Some(warn_on_unposed_skinned_mesh::<S>));
 }
 
@@ -25,7 +25,7 @@ pub fn set_skinned_mesh_bounds_guard<S: RenderState>(
 }
 
 fn warn_on_unposed_skinned_mesh<S: RenderState>(state: &mut S, _mesh: &Mesh) {
-    let Some(log_state) = state.render_runtime().registry_guard_log.clone() else {
+    let Some(log_state) = state.render_runtime().scene_render_guard_log.clone() else {
         return;
     };
     let mut data = HashMap::new();

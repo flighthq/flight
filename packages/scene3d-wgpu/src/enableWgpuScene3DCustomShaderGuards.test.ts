@@ -13,6 +13,7 @@ import {
   enableWgpuScene3DCustomShaderGuards,
   runWgpuCustomShaderGuards,
 } from './enableWgpuScene3DCustomShaderGuards.ts';
+import { enableWgpuScene3DForwardLightSelectionGuards } from './enableWgpuScene3DForwardLightSelectionGuards.ts';
 import { makeWgpuScene3DState } from './wgpuScene3DTestHelper.ts';
 
 describe('areWgpuScene3DCustomShaderGuardsEnabled', () => {
@@ -30,6 +31,17 @@ describe('enableWgpuScene3DCustomShaderGuards', () => {
     enableWgpuScene3DCustomShaderGuards(state, createLogState());
     enableWgpuScene3DCustomShaderGuards(state, null);
     expect(areWgpuScene3DCustomShaderGuardsEnabled(state)).toBe(true);
+  });
+
+  it('keeps reporting after another guard family is enabled with null', () => {
+    const { state } = makeWgpuScene3DState();
+    const logState = createLogState();
+    const sink = createMemoryLogSink(16);
+    addLogSink(logState, sink.sink);
+    enableWgpuScene3DCustomShaderGuards(state, logState);
+    enableWgpuScene3DForwardLightSelectionGuards(state, null);
+    runWgpuCustomShaderGuards(state, 'cross-family-guard-test', '', createCustomShaderMaterial());
+    expect(readMemoryLogEntries(sink).length).toBeGreaterThan(0);
   });
 
   it('stays silent after a later enable with null replaces an earlier log state', () => {

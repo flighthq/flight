@@ -61,6 +61,8 @@ pub fn destroy_render_state<S: RenderState>(state: &mut S, proxies: &mut RenderP
     runtime.registry_guard_enabled = false;
     runtime.registry_misses.write().unwrap().clear();
     runtime.registry_guard_log = None;
+    runtime.color_adjustment_guard_log = None;
+    runtime.scene_render_guard_log = None;
     runtime.prepared_scene3d = None;
     state.render_registries_mut().effect_padding_resolvers = None;
 }

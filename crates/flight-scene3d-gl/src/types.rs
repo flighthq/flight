@@ -9,6 +9,7 @@ use std::rc::Rc;
 use flight_entity::{Kind, Ref};
 use flight_geometry::Matrix4;
 use flight_lighting::{Scene3DLightBlock, Scene3DLightsLike};
+use flight_log::LogStateRef;
 use flight_materials::{Material3DRef, PbrExtension, PbrUvSet};
 use flight_meshgeometry::MeshSubset;
 use flight_node::NodeRef;
@@ -451,7 +452,9 @@ pub struct GlScene3DRuntime {
     pub blended_draw_list: Vec<GlScene3DDrawEntry>,
     pub blended_pool: Vec<GlScene3DDrawEntry>,
     pub color_space_guard: Option<GlScene3DColorSpaceGuard>,
+    pub color_space_guard_log: Option<LogStateRef>,
     pub custom_shader_guard: Option<GlScene3DCustomShaderGuard>,
+    pub custom_shader_guard_log: Option<LogStateRef>,
     /// Custom-shader programs the guard already introspected (TS module WeakSet `_checkedPrograms`).
     pub custom_shader_checked_programs: std::collections::HashSet<NativeProgram>,
     /// The placeholder material a subset with no concrete material draws with (TS module const
@@ -459,6 +462,7 @@ pub struct GlScene3DRuntime {
     /// state so it batches across frames.
     pub default_material: Material3DRef,
     pub deform_guard: Option<GlScene3DDeformGuard>,
+    pub deform_guard_log: Option<LogStateRef>,
     /// The reusable face camera for environment captures (TS module WeakMap
     /// `glEnvironmentCaptureCameras` keyed by state).
     pub environment_capture_camera: Option<flight_camera::Camera3D>,
@@ -476,6 +480,7 @@ pub struct GlScene3DRuntime {
     pub environment_source_texture: Option<u64>,
     pub environment_source_texture_version: i64,
     pub forward_light_selection_guard: Option<GlScene3DForwardLightSelectionGuard>,
+    pub forward_light_selection_guard_log: Option<LogStateRef>,
     pub ibl: Option<GlScene3DIbl>,
     pub ibl_bake_framebuffer: Option<NativeFramebuffer>,
     /// The IBL bake pass programs in creation order (TS module WeakMap `_bakePrograms` keyed by state).
@@ -495,6 +500,7 @@ pub struct GlScene3DRuntime {
     pub(crate) particle_emitter3d_shader: Option<crate::gl_particle_emitter3d::GlParticle3DShader>,
     pub opaque_pool: Vec<GlScene3DDrawEntry>,
     pub pbr_extension_guard: Option<GlScene3DPbrExtensionGuard>,
+    pub pbr_extension_guard_log: Option<LogStateRef>,
     /// prepare_gl_scene3d_forward_lights's state-owned scratch (TS module WeakMap
     /// `preparedGlScene3DForwardLights` keyed by state).
     pub prepared_forward_lights: Option<PreparedGlScene3DForwardLights>,

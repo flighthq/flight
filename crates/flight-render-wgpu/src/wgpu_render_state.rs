@@ -218,6 +218,7 @@ fn create_wgpu_render_state_runtime_internal(
         mipmap_degraded_guard: None,
         mipmap_generator: None,
         wgpu_render_texture_guard: None,
+        color_adjustment_feature_guard_log: None,
         default_bitmap_shader: None,
         webgpu_shader_binding_resolver: None,
         shader_bindings: HashMap::new(),

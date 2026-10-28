@@ -645,7 +645,10 @@ pub struct GlRenderStateRuntime {
     pub shader_bindings: HashMap<u64, Arc<GlBitmapShader>>,
     pub render_texture_guard: Option<GlRenderTextureGuard>,
     pub binding_cache_guard: Option<fn(&GlRenderState, NativeProgram)>,
-    pub guard_log: Option<LogStateRef>,
+    // Each guard family owns its log destination; a None enable silences only that family.
+    pub render_texture_guard_log: Option<LogStateRef>,
+    pub render_state_guard_log: Option<LogStateRef>,
+    pub color_adjustment_feature_guard_log: Option<LogStateRef>,
     pub first_render_root_id: Option<u64>,
     /// TS `GlRenderStateRuntime.pbrExtensionRevision`: bumped by scene3d-gl's `register_gl_pbr_extension`
     /// so the PBR program cache never reuses a variant compiled against a replaced registration.
@@ -1042,7 +1045,9 @@ impl Default for GlRenderStateRuntime {
             shader_bindings: HashMap::new(),
             render_texture_guard: None,
             binding_cache_guard: None,
-            guard_log: None,
+            render_texture_guard_log: None,
+            render_state_guard_log: None,
+            color_adjustment_feature_guard_log: None,
             first_render_root_id: None,
             pbr_extension_revision: 0,
             modifier_snippet_revision: 0,

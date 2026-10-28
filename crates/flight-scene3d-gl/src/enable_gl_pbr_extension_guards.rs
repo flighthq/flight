@@ -20,7 +20,7 @@ pub fn are_gl_pbr_extension_guards_enabled(state: &GlRenderState) -> bool {
 // Warnings go to `log_state`, kept as the state's guard log.
 // flight-lint: allow(conform-params) D5 caller-owned LogState replaces the TS logging singleton
 pub fn enable_gl_pbr_extension_guards(state: &GlRenderState, log_state: Option<LogStateRef>) {
-    state.gl_runtime.borrow_mut().guard_log = log_state;
+    get_gl_scene3d_runtime(state).pbr_extension_guard_log = log_state;
     get_gl_scene3d_runtime(state).pbr_extension_guard = Some(warn_gl_pbr_extension_issues);
 }
 
@@ -56,7 +56,10 @@ fn get_gl_pbr_extension_issue_message(issue: &GlPbrExtensionIssue) -> String {
 
 fn warn_gl_pbr_extension_issues(state: &mut GlRenderState, extensions: &[Ref<PbrExtension>]) {
     let issues = explain_gl_pbr_extensions(state, extensions);
-    let Some(log_state) = state.gl_runtime.borrow().guard_log.clone() else {
+    let Some(log_state) = get_gl_scene3d_runtime(state)
+        .pbr_extension_guard_log
+        .clone()
+    else {
         return;
     };
     for issue in &issues {

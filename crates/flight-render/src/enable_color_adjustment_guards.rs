@@ -17,14 +17,14 @@ pub fn enable_color_adjustment_guards<S: RenderState>(
     state: &mut S,
     log_state: Option<LogStateRef>,
 ) {
-    state.render_runtime_mut().registry_guard_log = log_state;
+    state.render_runtime_mut().color_adjustment_guard_log = log_state;
     state
         .render_registries_mut()
         .color_adjustment_unsupported_guard = Some(warn_unsupported_color_adjustment::<S>);
 }
 
 fn warn_unsupported_color_adjustment<S: RenderState>(state: &mut S, _source: &NodeRef) {
-    let Some(log_state) = state.render_runtime().registry_guard_log.clone() else {
+    let Some(log_state) = state.render_runtime().color_adjustment_guard_log.clone() else {
         return;
     };
     let mut data = HashMap::new();

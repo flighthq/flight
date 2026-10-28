@@ -11,6 +11,7 @@ use std::sync::{Arc, RwLock, Weak};
 use flight_entity::{EntityRuntimeSlot, Float32Array, Ref};
 use flight_geometry::Matrix4;
 use flight_lighting::{Scene3DForwardLightSelection, Scene3DLightBlock, Scene3DLightsLike};
+use flight_log::LogStateRef;
 use flight_materials::{BlendMode, ColorScaleBias, CustomShaderMaterial, Material3DRef};
 use flight_meshgeometry::MeshSubset;
 use flight_node::NodeRef;
@@ -348,7 +349,9 @@ pub struct WgpuScene3DRuntime {
     /// Each entry holds a Weak to its block, which keeps the address reserved for the entry's life.
     pub frame_bindings: HashMap<usize, (Weak<RwLock<Scene3DLightBlock>>, WgpuScene3DFrameBinding)>,
     pub custom_shader_guard: Option<WgpuScene3DCustomShaderGuard>,
+    pub custom_shader_guard_log: Option<LogStateRef>,
     pub forward_light_selection_guard: Option<WgpuScene3DForwardLightSelectionGuard>,
+    pub forward_light_selection_guard_log: Option<LogStateRef>,
     pub environment_source_cube: Option<wgpu::Texture>,
     pub environment_source_cube_view: Option<wgpu::TextureView>,
     pub ibl: Option<WgpuScene3DIbl>,

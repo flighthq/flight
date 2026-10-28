@@ -20,7 +20,7 @@ pub fn are_gl_scene3d_deform_guards_enabled(state: &GlRenderState) -> bool {
 // the state's guard log.
 // flight-lint: allow(conform-params) D5 caller-owned LogState replaces the TS logging singleton
 pub fn enable_gl_scene3d_deform_guards(state: &GlRenderState, log_state: Option<LogStateRef>) {
-    state.gl_runtime.borrow_mut().guard_log = log_state;
+    get_gl_scene3d_runtime(state).deform_guard_log = log_state;
     get_gl_scene3d_runtime(state).deform_guard = Some(warn_gl_scene3d_mesh_drawn_undeformed);
 }
 
@@ -28,7 +28,7 @@ pub fn enable_gl_scene3d_deform_guards(state: &GlRenderState, log_state: Option<
 // not run). A GPU-skinned mesh whose runtime carries no posed bounds was never readied by
 // prepare_scene3d_skinning, so its joint palette is uncomputed. One warning per key.
 fn warn_gl_scene3d_mesh_drawn_undeformed(state: &GlRenderState, mesh: &Mesh) {
-    let Some(log_state) = state.gl_runtime.borrow().guard_log.clone() else {
+    let Some(log_state) = get_gl_scene3d_runtime(state).deform_guard_log.clone() else {
         return;
     };
     let geometry = mesh.geometry.read().unwrap();

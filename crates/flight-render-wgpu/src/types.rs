@@ -887,6 +887,8 @@ pub struct WgpuRenderStateRuntime {
     pub mipmap_degraded_guard: Option<WgpuMipmapDegradedGuard>,
     pub mipmap_generator: Option<WgpuMipmapGenerator>,
     pub wgpu_render_texture_guard: Option<WgpuRenderTextureGuard>,
+    // The scene2d-wgpu color-adjustment feature guard's own log destination.
+    pub color_adjustment_feature_guard_log: Option<flight_log::LogStateRef>,
     pub default_bitmap_shader: Option<WgpuBitmapShader>,
     pub webgpu_shader_binding_resolver:
         Option<fn(&WgpuRenderState, u64) -> Option<WgpuBitmapShader>>,

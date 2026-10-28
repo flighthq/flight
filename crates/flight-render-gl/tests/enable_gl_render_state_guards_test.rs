@@ -39,7 +39,7 @@ mod enable_gl_render_state_guards {
         let binding_cache_guard = state.gl_runtime.borrow().binding_cache_guard.unwrap();
         enable_gl_render_state_guards(&mut state, None);
         assert!(are_gl_render_state_guards_enabled(&state));
-        assert!(state.gl_runtime.borrow().guard_log.is_none());
+        assert!(state.gl_runtime.borrow().render_state_guard_log.is_none());
         assert!(std::ptr::fn_addr_eq(
             state.registries.render_root_guard.unwrap(),
             render_root_guard,

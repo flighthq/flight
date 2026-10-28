@@ -79,4 +79,35 @@ mod enable_gl_scene3d_color_space_guards {
         assert!(are_gl_scene3d_color_space_guards_enabled(&state));
         assert!(log_messages(&sink).is_empty());
     }
+
+    // Each guard owns its destination: re-enabling OTHER guard families with None must not silence
+    // this one (Principal ruling: None silences only the guard it is passed to).
+    #[test]
+    fn keeps_reporting_after_other_guard_families_are_enabled_with_none() {
+        let mut state = make_gl_scene3d_state();
+        register_gl_standard_pbr_material(&mut state);
+        let scene = make_test_scene();
+        add_test_mesh(
+            &scene,
+            create_box_mesh_geometry(None, None, None),
+            vec![Some(material_ref(create_standard_pbr_material()))],
+        );
+        let (log, sink) = make_test_log();
+        enable_gl_scene3d_color_space_guards(&state, Some(log));
+        enable_gl_scene3d_deform_guards(&state, None);
+        enable_gl_pbr_extension_guards(&state, None);
+        enable_gl_scene3d_forward_light_selection_guards(&state, None);
+        enable_gl_scene3d_custom_shader_guards(&state, None);
+        let pass = make_test_pass(&state);
+        render_gl_scene3d(
+            &mut state,
+            &pass,
+            None,
+            &scene,
+            &make_test_look_at_camera(),
+            &make_test_lights(),
+            None,
+        );
+        assert_eq!(log_messages(&sink).len(), 1);
+    }
 }

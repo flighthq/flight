@@ -6,10 +6,9 @@ use std::collections::HashMap;
 
 use flight_lighting::Scene3DLightsLike;
 use flight_log::{LogData, LogDataOrProvider, LogLevel, LogStateRef, LogValue, log_once};
-use flight_render::RenderState;
 use flight_render_wgpu::WgpuRenderState;
 
-use crate::wgpu_scene3d_runtime::get_wgpu_scene3d_runtime;
+use crate::wgpu_scene3d_runtime::{find_wgpu_scene3d_runtime, get_wgpu_scene3d_runtime};
 
 /// Whether the forward-light selection guard is installed on `state` (TS
 /// `areWgpuScene3DForwardLightSelectionGuardsEnabled`).
@@ -29,7 +28,7 @@ pub fn enable_wgpu_scene3d_forward_light_selection_guards(
     state: &mut WgpuRenderState,
     log_state: Option<LogStateRef>,
 ) {
-    state.render_runtime_mut().registry_guard_log = log_state;
+    get_wgpu_scene3d_runtime(state).forward_light_selection_guard_log = log_state;
     get_wgpu_scene3d_runtime(state).forward_light_selection_guard =
         Some(warn_wgpu_scene3d_forward_light_selection_required);
 }
@@ -38,7 +37,9 @@ fn warn_wgpu_scene3d_forward_light_selection_required(
     state: &WgpuRenderState,
     lights: &Scene3DLightsLike,
 ) {
-    let Some(log_state) = state.render_runtime().registry_guard_log.clone() else {
+    let Some(log_state) = find_wgpu_scene3d_runtime(state)
+        .and_then(|runtime| runtime.forward_light_selection_guard_log.clone())
+    else {
         return;
     };
     let mut data = HashMap::new();

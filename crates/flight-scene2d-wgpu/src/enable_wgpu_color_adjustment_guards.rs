@@ -5,10 +5,9 @@
 use std::collections::HashMap;
 
 use flight_log::{LogData, LogDataOrProvider, LogLevel, LogStateRef, LogValue, log_once};
-use flight_render::RenderState;
 use flight_render_wgpu::{
     WgpuColorScaleBiasInput, WgpuRenderState, get_wgpu_color_adjustment_material_feature_guard,
-    get_wgpu_render_state_runtime_mut,
+    get_wgpu_render_state_runtime, get_wgpu_render_state_runtime_mut,
 };
 
 /// Whether color-adjustment guards are installed on `state` (TS
@@ -25,7 +24,7 @@ pub fn enable_wgpu_color_adjustment_guards(
     state: &mut WgpuRenderState,
     log_state: Option<LogStateRef>,
 ) {
-    state.render_runtime_mut().registry_guard_log = log_state;
+    get_wgpu_render_state_runtime_mut(state).color_adjustment_feature_guard_log = log_state;
     let registries = &mut get_wgpu_render_state_runtime_mut(state).registries;
     let installed = registries
         .color_adjustment_feature_guard
@@ -41,7 +40,10 @@ fn warn_wgpu_color_adjustment_not_enabled(
     state: &mut WgpuRenderState,
     _color_scale_bias: &WgpuColorScaleBiasInput,
 ) {
-    let Some(log_state) = state.render_runtime().registry_guard_log.clone() else {
+    let Some(log_state) = get_wgpu_render_state_runtime(state)
+        .color_adjustment_feature_guard_log
+        .clone()
+    else {
         return;
     };
     let mut data = HashMap::new();

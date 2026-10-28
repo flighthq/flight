@@ -24,7 +24,7 @@ mod enable_gl_render_texture_guards {
         let guard = state.gl_runtime.borrow().render_texture_guard.unwrap();
         enable_gl_render_texture_guards(&state, None);
         assert!(are_gl_render_texture_guards_enabled(&state));
-        assert!(state.gl_runtime.borrow().guard_log.is_none());
+        assert!(state.gl_runtime.borrow().render_texture_guard_log.is_none());
         assert!(std::ptr::fn_addr_eq(
             state.gl_runtime.borrow().render_texture_guard.unwrap(),
             guard,

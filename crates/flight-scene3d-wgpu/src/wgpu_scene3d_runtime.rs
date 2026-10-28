@@ -35,7 +35,9 @@ fn create_wgpu_scene3d_runtime_record(
         frame_buffer: None,
         frame_bindings: HashMap::new(),
         custom_shader_guard: None,
+        custom_shader_guard_log: None,
         forward_light_selection_guard: None,
+        forward_light_selection_guard_log: None,
         environment_source_cube: None,
         environment_source_cube_view: None,
         ibl: None,
@@ -113,6 +115,15 @@ fn create_wgpu_scene3d_runtime_record(
         skybox_sampler: None,
         skyboxes: HashMap::new(),
     };
+}
+
+// The installed scene runtime for read-only access, or None before the scene path first runs on
+// `state` (nothing is installed by a read).
+pub(crate) fn find_wgpu_scene3d_runtime(state: &WgpuRenderState) -> Option<&WgpuScene3DRuntime> {
+    return get_wgpu_render_state_runtime(state)
+        .scene3d_runtime
+        .as_ref()
+        .and_then(|value| value.downcast_ref::<WgpuScene3DRuntime>());
 }
 
 // The placeholder default material handed to a renderer for a subset whose material slot is empty
