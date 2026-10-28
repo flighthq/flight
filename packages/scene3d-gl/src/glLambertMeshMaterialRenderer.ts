@@ -1,7 +1,7 @@
-import { unpackColorToLinear } from '@flighthq/color/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
-  LinearColor,
   Camera3D,
   GlMeshMaterialRenderer,
   GlRenderState,
@@ -75,7 +75,7 @@ function bindGlLambertMaterialUniforms(
   }
 
   unpackColorToLinear(scratchRgba, material.diffuse);
-  gl.uniform4f(program.locDiffuse, scratchRgba[0], scratchRgba[1], scratchRgba[2], scratchRgba[3]);
+  gl.uniform4f(program.locDiffuse, scratchRgba.r, scratchRgba.g, scratchRgba.b, scratchRgba.a);
   gl.uniform1f(program.locAlphaCutoff, material.alphaCutoff);
 
   const diffuseMap = material.diffuseMap;
@@ -101,4 +101,4 @@ function defineKeyForMaterial(state: GlRenderState, material: Readonly<LambertMa
   };
 }
 
-const scratchRgba: LinearColor = [0, 0, 0, 0];
+const scratchRgba: LinearColorRaw = allocateLinearColor();

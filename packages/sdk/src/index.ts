@@ -17,6 +17,7 @@ export * from '@flighthq/clipboard';
 export * from '@flighthq/clock';
 export * from '@flighthq/abc';
 export * from '@flighthq/color';
+export { HslColor, HsvColor, LinearColor } from '@flighthq/color';
 export * from '@flighthq/command';
 export * from '@flighthq/compression';
 export * from '@flighthq/encoding';

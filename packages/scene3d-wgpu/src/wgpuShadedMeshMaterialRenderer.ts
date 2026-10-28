@@ -1,4 +1,5 @@
-import { unpackColorToLinear } from '@flighthq/color/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import {
   getWgpuRenderStateRuntime,
   registerWgpuBitmapTextureResolver,
@@ -6,7 +7,6 @@ import {
 } from '@flighthq/render-wgpu/contract';
 import type {
   Camera3D,
-  LinearColor,
   Material,
   MeshGeometry,
   Scene3DLightBlock,
@@ -80,5 +80,5 @@ export function registerWgpuShadedMaterial(state: WgpuRenderState): void {
   registerWgpuMeshMaterialRenderer(state, ShadedMaterialKind, wgpuShadedMeshMaterialRenderer);
 }
 
-const _diffuse: LinearColor = [0, 0, 0, 0];
-const _specular: LinearColor = [0, 0, 0, 0];
+const _diffuse: LinearColorRaw = allocateLinearColor();
+const _specular: LinearColorRaw = allocateLinearColor();

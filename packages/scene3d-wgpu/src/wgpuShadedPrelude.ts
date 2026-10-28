@@ -1,4 +1,5 @@
-import { unpackColorToLinear } from '@flighthq/color/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { getWgpuColorAdjustmentMaterialFeature, getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import {
   createModifierRegistry,
@@ -13,7 +14,6 @@ import type {
   EnvReflectModifier,
   FogModifier,
   Kind,
-  LinearColor,
   Modifier,
   ModifierKind,
   ModifierRegistry,
@@ -101,8 +101,8 @@ export function bindWgpuShadedSurface(
   state: WgpuRenderState,
   pipeline: Readonly<WgpuMeshPipeline>,
   material: Readonly<ShadedMaterial>,
-  diffuse: Readonly<LinearColor>,
-  specular: Readonly<LinearColor>,
+  diffuse: Readonly<LinearColorRaw>,
+  specular: Readonly<LinearColorRaw>,
 ): GPUBindGroup {
   const registry = getModifierSnippetTable(state);
   const plan = getCachedModifierPlan(state, material, registry);
@@ -521,9 +521,9 @@ function hasCurrentSnippets(plan: Readonly<ShadedModifierPlan>, registry: WgpuMo
 }
 
 function copyColorRgb(out: Float32Array, offset: number): void {
-  out[offset] = _color[0];
-  out[offset + 1] = _color[1];
-  out[offset + 2] = _color[2];
+  out[offset] = _color.r;
+  out[offset + 1] = _color.g;
+  out[offset + 2] = _color.b;
 }
 
 export const animatedNormalWgpuModifierSnippet: WgpuModifierSnippet = {
@@ -827,7 +827,7 @@ fn shadedValueNoise(p : vec2f) -> f32 {
 `;
 
 const MODIFIER_FLOATS = 12;
-const _color: LinearColor = [0, 0, 0, 0];
+const _color: LinearColorRaw = allocateLinearColor();
 const EMPTY_MODIFIER_REGISTRY: ModifierRegistry = createModifierRegistry();
 
 function getWgpuModifierDefineKey(stack: readonly Modifier[], registry: WgpuModifierSnippetSource): string {

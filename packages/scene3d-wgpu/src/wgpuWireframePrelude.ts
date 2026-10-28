@@ -1,5 +1,5 @@
+import type { LinearColorRaw } from '@flighthq/color/contract';
 import type {
-  LinearColor,
   WgpuMaterialBinding,
   WgpuRenderState,
   WgpuSkinningAdapter,
@@ -26,7 +26,7 @@ export function bindWgpuWireframeColor(
   state: WgpuRenderState,
   pipeline: Readonly<WgpuWireframePipeline>,
   materialKey: object,
-  color: Readonly<LinearColor>,
+  color: Readonly<LinearColorRaw>,
   alphaCutoff = 0.5,
 ): GPUBindGroup {
   const scene = getWgpuScene3DRuntime(state);
@@ -44,10 +44,10 @@ export function bindWgpuWireframeColor(
     scene.materialBindGroups.set(materialKey, binding);
   }
 
-  _scratch[0] = color[0];
-  _scratch[1] = color[1];
-  _scratch[2] = color[2];
-  _scratch[3] = color[3];
+  _scratch[0] = color.r;
+  _scratch[1] = color.g;
+  _scratch[2] = color.b;
+  _scratch[3] = color.a;
   _scratch[4] = alphaCutoff;
   _scratch[5] = 0;
   _scratch[6] = 0;

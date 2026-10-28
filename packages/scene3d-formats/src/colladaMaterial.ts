@@ -1,10 +1,10 @@
-import { packLinearToColor } from '@flighthq/color/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor, packLinearChannelsToColor } from '@flighthq/color/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createStandardPbrMaterial, getPbrRoughnessFromPhongShininess } from '@flighthq/materials/contract';
 import type {
   ImageResourceReference,
   ImportDiagnostic,
-  LinearColor,
   MaterialLike,
   StandardPbrMaterial,
   Texture,
@@ -123,14 +123,14 @@ function convertColladaEffectToStandardPbrMaterial(
   }
 
   const parameters = collectParameters(profile, technique, instanceEffect);
-  const diffuse = resolveColorProperty(colladaChild(shading, 'diffuse'), parameters, DEFAULT_DIFFUSE);
-  const emission = resolveColorProperty(colladaChild(shading, 'emission'), parameters, DEFAULT_EMISSION);
+  resolveColorProperty(diffuseColor, colladaChild(shading, 'diffuse'), parameters, 1, 1, 1, 1);
+  resolveColorProperty(emissionColor, colladaChild(shading, 'emission'), parameters, 0, 0, 0, 1);
   const opacity = resolveColladaOpacity(shading, parameters);
-  diffuse[3] *= opacity;
+  diffuseColor.a *= opacity;
   const shadingModel = colladaLocalName(shading.name);
   const shininess = resolveFloatProperty(colladaChild(shading, 'shininess'), parameters, 0);
   const material = createStandardPbrMaterial({
-    baseColor: packLinearToColor(diffuse),
+    baseColor: packLinearChannelsToColor(diffuseColor.r, diffuseColor.g, diffuseColor.b, diffuseColor.a),
     baseColorMap: resolveTextureProperty(
       colladaChild(shading, 'diffuse'),
       effect,
@@ -142,7 +142,7 @@ function convertColladaEffectToStandardPbrMaterial(
       diagnostics,
       missingReferences,
     ),
-    emissive: packLinearToColor(emission),
+    emissive: packLinearChannelsToColor(emissionColor.r, emissionColor.g, emissionColor.b, emissionColor.a),
     emissiveMap: resolveTextureProperty(
       colladaChild(shading, 'emission'),
       effect,
@@ -258,24 +258,43 @@ function reportUnsupportedEffectProfiles(
 function resolveColladaOpacity(shading: Readonly<XmlElement>, parameters: ReadonlyMap<string, XmlElement>): number {
   const transparent = colladaChild(shading, 'transparent');
   const transparency = resolveFloatProperty(colladaChild(shading, 'transparency'), parameters, 1);
-  const color = resolveColorProperty(transparent, parameters, DEFAULT_TRANSPARENT);
+  resolveColorProperty(opacityColor, transparent, parameters, 1, 1, 1, 1);
   if (transparent?.attributes.opaque === 'RGB_ZERO') {
-    const luminance = color[0] * 0.212671 + color[1] * 0.71516 + color[2] * 0.072169;
+    const luminance = opacityColor.r * 0.212671 + opacityColor.g * 0.71516 + opacityColor.b * 0.072169;
     return clamp01(1 - luminance * transparency);
   }
-  return clamp01(color[3] * transparency);
+  return clamp01(opacityColor.a * transparency);
 }
 
 function resolveColorProperty(
+  out: LinearColorRaw,
   property: Readonly<XmlElement> | null,
   parameters: ReadonlyMap<string, XmlElement>,
-  fallback: Readonly<LinearColor>,
-): LinearColor {
+  fallbackR: number,
+  fallbackG: number,
+  fallbackB: number,
+  fallbackA: number,
+): void {
   const value = resolvePropertyValue(property, parameters, COLOR_VALUE_NAMES);
-  if (value === null) return [...fallback];
+  if (value === null) {
+    out.r = fallbackR;
+    out.g = fallbackG;
+    out.b = fallbackB;
+    out.a = fallbackA;
+    return;
+  }
   const colladaNumbers = parseNumbers(value.text);
-  if (colladaNumbers.length < 3) return [...fallback];
-  return [colladaNumbers[0], colladaNumbers[1], colladaNumbers[2], colladaNumbers[3] ?? 1];
+  if (colladaNumbers.length < 3) {
+    out.r = fallbackR;
+    out.g = fallbackG;
+    out.b = fallbackB;
+    out.a = fallbackA;
+    return;
+  }
+  out.r = colladaNumbers[0];
+  out.g = colladaNumbers[1];
+  out.b = colladaNumbers[2];
+  out.a = colladaNumbers[3] ?? 1;
 }
 
 function resolveFloatProperty(
@@ -383,11 +402,11 @@ function clamp01(value: number): number {
 }
 
 const COLOR_VALUE_NAMES = new Set(['color', 'float3', 'float4']);
-const DEFAULT_DIFFUSE: LinearColor = [1, 1, 1, 1];
-const DEFAULT_EMISSION: LinearColor = [0, 0, 0, 1];
-const DEFAULT_TRANSPARENT: LinearColor = [1, 1, 1, 1];
+const diffuseColor: LinearColorRaw = allocateLinearColor();
+const emissionColor: LinearColorRaw = allocateLinearColor();
 const FLOAT_VALUE_NAMES = new Set(['float']);
 const NORMAL_PROPERTY_NAMES = new Set(['bump', 'normal']);
+const opacityColor: LinearColorRaw = allocateLinearColor();
 const SHADING_MODELS = new Set(['blinn', 'constant', 'lambert', 'phong']);
 const SUPPORTED_SHADING_MODELS = new Set(['blinn', 'lambert', 'phong']);
 const TEXTURE_ELEMENT_NAMES = new Set(['texture']);

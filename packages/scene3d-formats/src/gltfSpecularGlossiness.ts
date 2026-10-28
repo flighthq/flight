@@ -1,4 +1,4 @@
-import { packLinearToColor } from '@flighthq/color/contract';
+import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import { createSpecularGlossinessPbrMaterial } from '@flighthq/materials/contract';
 import type { GltfExtensionHandler, MaterialLike, StandardPbrMaterial } from '@flighthq/types/contract';
 import { StandardPbrMaterialKind } from '@flighthq/types/contract';
@@ -32,7 +32,7 @@ export const GltfSpecularGlossinessExtensionHandler: GltfExtensionHandler = {
       const diffuse = block.diffuseFactor ?? [1, 1, 1, 1];
       const specular = block.specularFactor ?? [1, 1, 1];
       const replacement = createSpecularGlossinessPbrMaterial({
-        diffuse: packLinearToColor([diffuse[0] ?? 1, diffuse[1] ?? 1, diffuse[2] ?? 1, diffuse[3] ?? 1]),
+        diffuse: packLinearChannelsToColor(diffuse[0] ?? 1, diffuse[1] ?? 1, diffuse[2] ?? 1, diffuse[3] ?? 1),
         diffuseMap: context.resolveTexture(block.diffuseTexture, 'srgb'),
         // Shared channels ride across from the base material rather than being re-resolved, so the
         // swap cannot disagree with the core about sampler, color space, or UV transform.
@@ -44,7 +44,7 @@ export const GltfSpecularGlossinessExtensionHandler: GltfExtensionHandler = {
         normalScale: standard.normalScale,
         occlusionMap: standard.occlusionMap,
         occlusionStrength: standard.occlusionStrength,
-        specular: packLinearToColor([specular[0] ?? 1, specular[1] ?? 1, specular[2] ?? 1, 1]),
+        specular: packLinearChannelsToColor(specular[0] ?? 1, specular[1] ?? 1, specular[2] ?? 1, 1),
         // Specular in RGB, glossiness in A — one packed color texture, so sRGB.
         specularGlossinessMap: context.resolveTexture(block.specularGlossinessTexture, 'srgb'),
       });

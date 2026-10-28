@@ -1,6 +1,6 @@
-import { unpackColorToLinear } from '@flighthq/color/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import type {
-  LinearColor,
   Camera3D,
   GlMeshMaterialRenderer,
   GlRenderState,
@@ -44,7 +44,7 @@ export const glWireframeMeshMaterialRenderer: GlMeshMaterialRenderer = {
       return;
     }
     unpackColorToLinear(scratchRgba, wireframe.color);
-    gl.uniform4f(program.locColor, scratchRgba[0], scratchRgba[1], scratchRgba[2], scratchRgba[3]);
+    gl.uniform4f(program.locColor, scratchRgba.r, scratchRgba.g, scratchRgba.b, scratchRgba.a);
     if (alphaMaskEnabled) gl.uniform1f(program.locAlphaCutoff, wireframe.alphaCutoff);
   },
 
@@ -76,4 +76,4 @@ export function registerGlWireframeMaterial(state: GlRenderState): void {
   registerGlMeshMaterialRenderer(state, WireframeMaterialKind, glWireframeMeshMaterialRenderer);
 }
 
-const scratchRgba: LinearColor = [0, 0, 0, 0];
+const scratchRgba: LinearColorRaw = allocateLinearColor();

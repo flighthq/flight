@@ -1,3 +1,4 @@
+import type { LinearColorRaw } from '@flighthq/color/contract';
 import { getWgpuRenderStateDeviceResources } from '@flighthq/render-wgpu/contract';
 import type {
   WgpuToonDefineKey,
@@ -28,7 +29,7 @@ export function bindWgpuToonSurface(
   state: WgpuRenderState,
   pipeline: Readonly<WgpuToonPipeline>,
   materialKey: object,
-  baseColor: Readonly<[number, number, number, number]>,
+  baseColor: Readonly<LinearColorRaw>,
   steps: number,
   alphaCutoff: number,
 ): GPUBindGroup {
@@ -53,10 +54,10 @@ export function bindWgpuToonSurface(
     scene.materialBindGroups.set(materialKey, binding);
   }
 
-  _scratch[0] = baseColor[0];
-  _scratch[1] = baseColor[1];
-  _scratch[2] = baseColor[2];
-  _scratch[3] = baseColor[3];
+  _scratch[0] = baseColor.r;
+  _scratch[1] = baseColor.g;
+  _scratch[2] = baseColor.b;
+  _scratch[3] = baseColor.a;
   _scratch[4] = steps;
   _scratch[5] = alphaCutoff;
   _scratch[6] = 0;

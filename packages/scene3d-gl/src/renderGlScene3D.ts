@@ -1,4 +1,5 @@
-import { unpackColorToLinear } from '@flighthq/color/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { createMatrix3, createMatrix4, setMatrix3NormalFromMatrix4 } from '@flighthq/geometry/contract';
 import { hasMeshGeometrySkin } from '@flighthq/meshgeometry/contract';
 import { getNodeWorldMatrix4 } from '@flighthq/node/contract';
@@ -19,7 +20,6 @@ import type {
   GlRenderPass,
   GlRenderState,
   InstancedMesh,
-  LinearColor,
   Material,
   Matrix3,
   Matrix4,
@@ -508,7 +508,11 @@ function flattenInstancedMeshColors(mesh: Readonly<InstancedMesh>): Float32Array
   }
   for (let i = 0; i < count; i++) {
     unpackColorToLinear(scratchLinearColor, colors[i]);
-    scratchInstanceColors.set(scratchLinearColor, i * 4);
+    const offset = i * 4;
+    scratchInstanceColors[offset + 0] = scratchLinearColor.r;
+    scratchInstanceColors[offset + 1] = scratchLinearColor.g;
+    scratchInstanceColors[offset + 2] = scratchLinearColor.b;
+    scratchInstanceColors[offset + 3] = scratchLinearColor.a;
   }
   return scratchInstanceColors;
 }
@@ -532,5 +536,5 @@ function resolveInstancedMeshSubsetMaterial(
 
 let scratchInstanceData = new Float32Array(64 * 16);
 let scratchInstanceColors = new Float32Array(64 * 4);
-const scratchLinearColor: LinearColor = [0, 0, 0, 0];
+const scratchLinearColor: LinearColorRaw = allocateLinearColor();
 const scratchNormalMatrix = createMatrix3() as Matrix3;

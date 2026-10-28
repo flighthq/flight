@@ -1,3 +1,5 @@
+//! flight-compiler: companion linearColor.ts
+
 use crate::{linear_channel_to_srgb, srgb_channel_to_linear};
 use flight_entity::EntityRuntimeSlot;
 
@@ -92,11 +94,17 @@ pub fn pack_color(r: f32, g: f32, b: f32, a: f32) -> u32 {
 /// `unpack_color_to_linear`). RGB channels are gamma-encoded to sRGB; alpha passes through
 /// unchanged (alpha is linear coverage, never gamma-encoded). Channels are clamped to [0, 1].
 pub fn pack_linear_to_color(color: &LinearColor) -> u32 {
-    let r = (linear_channel_to_srgb(color.r).max(0.0).min(1.0) * 255.0).round() as u32;
-    let g = (linear_channel_to_srgb(color.g).max(0.0).min(1.0) * 255.0).round() as u32;
-    let b = (linear_channel_to_srgb(color.b).max(0.0).min(1.0) * 255.0).round() as u32;
-    let a = (color.a.max(0.0).min(1.0) * 255.0).round() as u32;
-    return (r << 24) | (g << 16) | (b << 8) | a;
+    return pack_linear_channels_to_color(color.r, color.g, color.b, color.a);
+}
+
+/// Packs scalar linear-space RGBA channels to a `0xRRGGBBAA` integer without allocating a
+/// `LinearColor` entity. RGB channels are gamma-encoded to sRGB; alpha passes through unchanged.
+pub fn pack_linear_channels_to_color(r: f32, g: f32, b: f32, a: f32) -> u32 {
+    let ri = (linear_channel_to_srgb(r).max(0.0).min(1.0) * 255.0).round() as u32;
+    let gi = (linear_channel_to_srgb(g).max(0.0).min(1.0) * 255.0).round() as u32;
+    let bi = (linear_channel_to_srgb(b).max(0.0).min(1.0) * 255.0).round() as u32;
+    let ai = (a.max(0.0).min(1.0) * 255.0).round() as u32;
+    return (ri << 24) | (gi << 16) | (bi << 8) | ai;
 }
 
 /// Widens a 24-bit RGB color (`0xRRGGBB` -- a CSS hex literal, a Flash/AwayJS source color, a

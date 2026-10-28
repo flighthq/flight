@@ -1,6 +1,6 @@
-import { unpackColorToLinear } from '@flighthq/color/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor, packLinearChannelsToColor, unpackColorToLinear } from '@flighthq/color/contract';
 import type {
-  LinearColor,
   Camera3D,
   GlMeshMaterialRenderer,
   GlRenderState,
@@ -93,21 +93,21 @@ function convertSpecularGlossinessToStandard(
   unpackColorToLinear(scratchDiffuse, material.diffuse);
   unpackColorToLinear(scratchSpecular, material.specular);
 
-  const specularBrightness = Math.max(scratchSpecular[0], scratchSpecular[1], scratchSpecular[2]);
+  const specularBrightness = Math.max(scratchSpecular.r, scratchSpecular.g, scratchSpecular.b);
   const oneMinusSpecularStrength = 1 - specularBrightness;
-  const diffuseBrightness = Math.max(scratchDiffuse[0], scratchDiffuse[1], scratchDiffuse[2]);
+  const diffuseBrightness = Math.max(scratchDiffuse.r, scratchDiffuse.g, scratchDiffuse.b);
   const metallic = solveMetallic(diffuseBrightness, specularBrightness, oneMinusSpecularStrength);
 
   // baseColor: blend the dielectric diffuse estimate and the specular tint by metallic, per the
   // reference converter, then re-pack to RGBA8 for the standard block to decode.
   const denom = Math.max(1 - DIELECTRIC_SPECULAR, 1e-4);
-  const r = lerp((scratchDiffuse[0] * oneMinusSpecularStrength) / denom, scratchSpecular[0], metallic);
-  const g = lerp((scratchDiffuse[1] * oneMinusSpecularStrength) / denom, scratchSpecular[1], metallic);
-  const b = lerp((scratchDiffuse[2] * oneMinusSpecularStrength) / denom, scratchSpecular[2], metallic);
+  const r = lerp((scratchDiffuse.r * oneMinusSpecularStrength) / denom, scratchSpecular.r, metallic);
+  const g = lerp((scratchDiffuse.g * oneMinusSpecularStrength) / denom, scratchSpecular.g, metallic);
+  const b = lerp((scratchDiffuse.b * oneMinusSpecularStrength) / denom, scratchSpecular.b, metallic);
 
   return {
     alphaMap: null,
-    baseColor: packLinearRgba(r, g, b, scratchDiffuse[3]),
+    baseColor: packLinearChannelsToColor(r, g, b, scratchDiffuse.a),
     baseColorMap: material.diffuseMap,
     emissive: material.emissive,
     emissiveMap: material.emissiveMap,
@@ -126,18 +126,6 @@ function lerp(a: number, b: number, t: number): number {
   return a + (b - a) * t;
 }
 
-// Re-encodes a linear RGBA color (components in [0,1]) back to a packed 0xRRGGBBAA integer with the
-// sRgb transfer, the inverse of unpackColorToLinear, so the standard block's CPU decode round-trips.
-function packLinearRgba(r: number, g: number, b: number, a: number): number {
-  const toByte = (linear: number): number => {
-    const clamped = Math.min(Math.max(linear, 0), 1);
-    const srgb = clamped <= 0.0031308 ? clamped * 12.92 : 1.055 * Math.pow(clamped, 1 / 2.4) - 0.055;
-    return Math.round(srgb * 255) & 0xff;
-  };
-  const alpha = Math.round(Math.min(Math.max(a, 0), 1) * 255) & 0xff;
-  return ((toByte(r) << 24) | (toByte(g) << 16) | (toByte(b) << 8) | alpha) >>> 0;
-}
-
 // The Khronos spec-gloss → metallic solver: recovers the metallic factor from the diffuse and
 // specular reflectances by solving the quadratic that the metallic-roughness F0 model implies. Below
 // the 0.04 dielectric floor the surface is fully dielectric (metallic 0).
@@ -151,5 +139,5 @@ function solveMetallic(diffuse: number, specular: number, oneMinusSpecularStreng
 }
 
 const DIELECTRIC_SPECULAR = 0.04;
-const scratchDiffuse: LinearColor = [0, 0, 0, 0];
-const scratchSpecular: LinearColor = [0, 0, 0, 0];
+const scratchDiffuse: LinearColorRaw = allocateLinearColor();
+const scratchSpecular: LinearColorRaw = allocateLinearColor();

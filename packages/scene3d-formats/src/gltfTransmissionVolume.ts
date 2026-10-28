@@ -1,4 +1,4 @@
-import { packLinearToColor } from '@flighthq/color/contract';
+import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import { createTransmissionVolumePbrExtension } from '@flighthq/materials/contract';
 import type {
   GltfExtensionContext,
@@ -42,7 +42,12 @@ export const GltfVolumeExtensionHandler: GltfExtensionHandler = {
       const target = resolveTransmissionVolume(context, i);
       if (target === null) continue;
       const attenuation = block.attenuationColor ?? [1, 1, 1];
-      target.attenuationColor = packLinearToColor([attenuation[0] ?? 1, attenuation[1] ?? 1, attenuation[2] ?? 1, 1]);
+      target.attenuationColor = packLinearChannelsToColor(
+        attenuation[0] ?? 1,
+        attenuation[1] ?? 1,
+        attenuation[2] ?? 1,
+        1,
+      );
       // Spec default is +Infinity: a volume that never absorbs, however deep the ray travels.
       target.attenuationDistance = block.attenuationDistance ?? Number.POSITIVE_INFINITY;
       target.thickness = block.thicknessFactor ?? 0;

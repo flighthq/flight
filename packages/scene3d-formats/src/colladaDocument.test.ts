@@ -1,4 +1,4 @@
-import { packLinearToColor } from '@flighthq/color/contract';
+import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import type { DirectionalLight, PointLight, SpotLight } from '@flighthq/types/contract';
 import {
   AmbientLightKind,
@@ -77,7 +77,7 @@ describe('parseCollada', () => {
 
     expect(document.lights[0]).toMatchObject({ name: 'Fill', node: 0 });
     expect(document.lights[0].descriptor).toMatchObject({
-      color: packLinearToColor([0.25, 0.5, 0.75, 1]),
+      color: packLinearChannelsToColor(0.25, 0.5, 0.75, 1),
       intensity: 1,
       kind: AmbientLightKind,
     });
@@ -85,7 +85,7 @@ describe('parseCollada', () => {
     const directional = document.lights[1].descriptor as DirectionalLight;
     expect(document.lights[1]).toMatchObject({ name: 'Sun', node: 1 });
     expect(directional).toMatchObject({
-      color: packLinearToColor([1, 0.5, 0.25, 1]),
+      color: packLinearChannelsToColor(1, 0.5, 0.25, 1),
       direction: { x: 0, y: 0, z: -1 },
       intensity: 2,
       kind: DirectionalLightKind,

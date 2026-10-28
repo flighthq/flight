@@ -1,4 +1,4 @@
-import { packLinearToColor } from '@flighthq/color/contract';
+import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import type { ExtendedPbrMaterial, GltfDocument, SpecularPbrExtension } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
@@ -32,7 +32,7 @@ describe('GltfSpecularExtensionHandler', () => {
 
     const ext = extensionOf(document);
     expect(ext.specular).toBeCloseTo(0.3, 6);
-    expect(ext.specularColor).toBe(packLinearToColor([0.2, 0.4, 0.6, 1]));
+    expect(ext.specularColor).toBe(packLinearChannelsToColor(0.2, 0.4, 0.6, 1));
   });
 
   it('splits the two textures by color space, because they split by channel', () => {
@@ -59,6 +59,6 @@ describe('GltfSpecularExtensionHandler', () => {
 
     const ext = extensionOf(document);
     expect(ext.specular).toBe(1);
-    expect(ext.specularColor).toBe(packLinearToColor([1, 1, 1, 1]));
+    expect(ext.specularColor).toBe(packLinearChannelsToColor(1, 1, 1, 1));
   });
 });

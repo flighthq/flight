@@ -1,4 +1,4 @@
-import { packLinearToColor } from '@flighthq/color/contract';
+import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import { createSpecularPbrExtension } from '@flighthq/materials/contract';
 import type { GltfExtensionHandler } from '@flighthq/types/contract';
 
@@ -22,7 +22,7 @@ export const GltfSpecularExtensionHandler: GltfExtensionHandler = {
         i,
         createSpecularPbrExtension({
           specular: block.specularFactor ?? 1,
-          specularColor: packLinearToColor([color[0] ?? 1, color[1] ?? 1, color[2] ?? 1, 1]),
+          specularColor: packLinearChannelsToColor(color[0] ?? 1, color[1] ?? 1, color[2] ?? 1, 1),
           specularColorMap: context.resolveTexture(block.specularColorTexture, 'srgb'),
           specularMap: context.resolveTexture(block.specularTexture, 'linear'),
         }),

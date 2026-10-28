@@ -1,3 +1,5 @@
+//! flight-compiler: companion hslColor.ts
+
 use flight_entity::EntityRuntimeSlot;
 
 #[cfg(test)]

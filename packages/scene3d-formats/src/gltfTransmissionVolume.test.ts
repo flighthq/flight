@@ -1,4 +1,4 @@
-import { packLinearToColor } from '@flighthq/color/contract';
+import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import type { ExtendedPbrMaterial, GltfDocument, TransmissionVolumePbrExtension } from '@flighthq/types/contract';
 import { TransmissionVolumePbrExtensionKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -121,7 +121,7 @@ describe('GltfVolumeExtensionHandler', () => {
     const ext = extensionOf(document);
     expect(ext.thickness).toBeCloseTo(2, 6);
     expect(ext.attenuationDistance).toBeCloseTo(3, 6);
-    expect(ext.attenuationColor).toBe(packLinearToColor([0.5, 0.25, 0.125, 1]));
+    expect(ext.attenuationColor).toBe(packLinearChannelsToColor(0.5, 0.25, 0.125, 1));
     expect(ext.thicknessMap?.colorSpace).toBe('linear');
   });
 

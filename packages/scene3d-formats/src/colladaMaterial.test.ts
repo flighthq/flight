@@ -1,4 +1,4 @@
-import { packLinearToColor } from '@flighthq/color/contract';
+import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import { getPbrRoughnessFromPhongShininess } from '@flighthq/materials/contract';
 import type {
   ImageResourceReference,
@@ -56,15 +56,15 @@ describe('appendColladaMaterials', () => {
     const blinn = materials[2] as StandardPbrMaterial;
 
     expect(lambert.name).toBe('Matte');
-    expect(lambert.baseColor).toBe(packLinearToColor([0.25, 0.5, 1, 0.2]));
-    expect(lambert.emissive).toBe(packLinearToColor([0.1, 0, 0.25, 1]));
+    expect(lambert.baseColor).toBe(packLinearChannelsToColor(0.25, 0.5, 1, 0.2));
+    expect(lambert.emissive).toBe(packLinearChannelsToColor(0.1, 0, 0.25, 1));
     expect(lambert.alphaMode).toBe('blend');
     expect(lambert.metallic).toBe(0);
     expect(lambert.roughness).toBe(1);
     expect(phong.name).toBe('phong');
     expect(phong.roughness).toBeCloseTo(getPbrRoughnessFromPhongShininess(18));
     expect(phong.alphaMode).toBe('opaque');
-    expect(blinn.baseColor).toBe(packLinearToColor([1, 1, 1, 0.75]));
+    expect(blinn.baseColor).toBe(packLinearChannelsToColor(1, 1, 1, 0.75));
     expect(blinn.roughness).toBeCloseTo(getPbrRoughnessFromPhongShininess(32));
   });
 

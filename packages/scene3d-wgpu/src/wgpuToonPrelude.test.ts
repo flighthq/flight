@@ -1,4 +1,6 @@
-import type { LinearColor, WgpuToonDefineKey } from '@flighthq/types/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor } from '@flighthq/color/contract';
+import type { WgpuToonDefineKey } from '@flighthq/types/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper.ts';
@@ -11,7 +13,11 @@ import {
 } from './wgpuToonPrelude.ts';
 
 const FLAT: WgpuToonDefineKey = { alphaMaskEnabled: false, doubleSided: false, hasBaseColorMap: false, hasRamp: false };
-const COLOR: LinearColor = [0.5, 0.25, 0.1, 1];
+const COLOR: LinearColorRaw = allocateLinearColor();
+COLOR.r = 0.5;
+COLOR.g = 0.25;
+COLOR.b = 0.1;
+COLOR.a = 1;
 
 describe('bindWgpuToonSurface', () => {
   it('creates a material bind group once per key and writes its uniform', () => {

@@ -1,5 +1,6 @@
 import { applyObliqueNearClipPlane } from '@flighthq/camera/contract';
-import { unpackColorToLinear } from '@flighthq/color/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import {
   copyAabb,
   copyMatrix4,
@@ -21,7 +22,6 @@ import {
   invalidateNodeLocalTransform,
   isNodeLocalMatrix4Detached,
 } from '@flighthq/node/contract';
-import type { LinearColor } from '@flighthq/types/contract';
 import type {
   Aabb,
   AmbientLight,
@@ -345,9 +345,9 @@ function isMeshVisible(mesh: Readonly<Mesh>, frustum: Readonly<Frustum>, worldBo
 function packAmbientLight(data: Float32Array, ambient: Readonly<AmbientLight>): void {
   unpackColorToLinear(scratchColor, ambient.color);
   const intensity = ambient.intensity;
-  data[SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET + 0] = scratchColor[0] * intensity;
-  data[SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET + 1] = scratchColor[1] * intensity;
-  data[SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET + 2] = scratchColor[2] * intensity;
+  data[SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET + 0] = scratchColor.r * intensity;
+  data[SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET + 1] = scratchColor.g * intensity;
+  data[SCENE_LIGHT_AMBIENT_RADIANCE_OFFSET + 2] = scratchColor.b * intensity;
 }
 
 function packDirectionalLight(data: Float32Array, directional: Readonly<DirectionalLight>): void {
@@ -356,9 +356,9 @@ function packDirectionalLight(data: Float32Array, directional: Readonly<Directio
   data[SCENE_LIGHT_DIRECTIONAL_DIRECTION_OFFSET + 2] = directional.direction.z;
   unpackColorToLinear(scratchColor, directional.color);
   const intensity = directional.intensity;
-  data[SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET + 0] = scratchColor[0] * intensity;
-  data[SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET + 1] = scratchColor[1] * intensity;
-  data[SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET + 2] = scratchColor[2] * intensity;
+  data[SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET + 0] = scratchColor.r * intensity;
+  data[SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET + 1] = scratchColor.g * intensity;
+  data[SCENE_LIGHT_DIRECTIONAL_RADIANCE_OFFSET + 2] = scratchColor.b * intensity;
 }
 
 // Gradient ambient: sky radiance @+0, ground radiance @+4, world-up @+8. Both colors are premultiplied
@@ -367,13 +367,13 @@ function packDirectionalLight(data: Float32Array, directional: Readonly<Directio
 function packHemisphereLight(data: Float32Array, offset: number, hemisphere: Readonly<HemisphereLight>): void {
   const intensity = hemisphere.intensity;
   unpackColorToLinear(scratchColor, hemisphere.skyColor);
-  data[offset + 0] = scratchColor[0] * intensity;
-  data[offset + 1] = scratchColor[1] * intensity;
-  data[offset + 2] = scratchColor[2] * intensity;
+  data[offset + 0] = scratchColor.r * intensity;
+  data[offset + 1] = scratchColor.g * intensity;
+  data[offset + 2] = scratchColor.b * intensity;
   unpackColorToLinear(scratchColor, hemisphere.groundColor);
-  data[offset + 4] = scratchColor[0] * intensity;
-  data[offset + 5] = scratchColor[1] * intensity;
-  data[offset + 6] = scratchColor[2] * intensity;
+  data[offset + 4] = scratchColor.r * intensity;
+  data[offset + 5] = scratchColor.g * intensity;
+  data[offset + 6] = scratchColor.b * intensity;
   data[offset + 8] = 0;
   data[offset + 9] = 1;
   data[offset + 10] = 0;
@@ -389,9 +389,9 @@ function packPointLight(data: Float32Array, offset: number, point: Readonly<Poin
   data[offset + 3] = range;
   unpackColorToLinear(scratchColor, point.color);
   const intensity = point.intensity;
-  data[offset + 4] = scratchColor[0] * intensity;
-  data[offset + 5] = scratchColor[1] * intensity;
-  data[offset + 6] = scratchColor[2] * intensity;
+  data[offset + 4] = scratchColor.r * intensity;
+  data[offset + 5] = scratchColor.g * intensity;
+  data[offset + 6] = scratchColor.b * intensity;
   data[offset + 7] = range > 0 ? 1 / (range * range) : 0;
 }
 
@@ -405,9 +405,9 @@ function packSpotLight(data: Float32Array, offset: number, spot: Readonly<SpotLi
   data[offset + 3] = range;
   unpackColorToLinear(scratchColor, spot.color);
   const intensity = spot.intensity;
-  data[offset + 4] = scratchColor[0] * intensity;
-  data[offset + 5] = scratchColor[1] * intensity;
-  data[offset + 6] = scratchColor[2] * intensity;
+  data[offset + 4] = scratchColor.r * intensity;
+  data[offset + 5] = scratchColor.g * intensity;
+  data[offset + 6] = scratchColor.b * intensity;
   data[offset + 7] = range > 0 ? 1 / (range * range) : 0;
   data[offset + 8] = spot.direction.x;
   data[offset + 9] = spot.direction.y;
@@ -484,7 +484,7 @@ const DEFAULT_VIEWPORT_ASPECT = 1;
 // scratch; a state's entry is freed when the state is GC'd.
 const preparedScene3Ds = new WeakMap<RenderState, PreparedScene3D>();
 
-const scratchColor: LinearColor = [0, 0, 0, 0];
+const scratchColor: LinearColorRaw = allocateLinearColor();
 const scratchProjection = createMatrix4();
 
 // Reused staging buffer for packScene3DLightBlock's pack-then-compare: the new block is packed here and

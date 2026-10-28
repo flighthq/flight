@@ -1,4 +1,4 @@
-import { packLinearToColor } from '@flighthq/color/contract';
+import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createDirectionalLight, createPointLight, createSpotLight } from '@flighthq/lighting/contract';
 import type { Light, GltfExtensionHandler, GltfPunctualLight } from '@flighthq/types/contract';
@@ -50,7 +50,7 @@ function buildGltfPunctualLight(
   lightDrops: Map<string, LightDropTally> | null,
 ): Light | null {
   const color = source.color ?? [1, 1, 1];
-  const packedColor = packLinearToColor([color[0] ?? 1, color[1] ?? 1, color[2] ?? 1, 1]);
+  const packedColor = packLinearChannelsToColor(color[0] ?? 1, color[1] ?? 1, color[2] ?? 1, 1);
   const intensity = source.intensity ?? 1;
   if (!(intensity >= 0)) {
     tallyLightDrop(lightDrops, ImportDiagnosticSeverity.Drop, 'gltf.light-negative-intensity', {

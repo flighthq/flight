@@ -1,12 +1,6 @@
+import type { LinearColorRaw } from '@flighthq/color/contract';
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
-import type {
-  GlContext,
-  GlMatcapDefineKey,
-  GlMatcapProgram,
-  LinearColor,
-  GlRenderState,
-  Texture,
-} from '@flighthq/types/contract';
+import type { GlContext, GlMatcapDefineKey, GlMatcapProgram, GlRenderState, Texture } from '@flighthq/types/contract';
 
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail.ts';
 import { compileGlProgram, ensureGlScene3DProgram, GL_INSTANCE_VERTEX_DECLARATIONS_GLSL } from './glMeshProgram.ts';
@@ -17,12 +11,12 @@ import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 export function bindGlMatcapSurface(
   state: GlRenderState,
   program: Readonly<GlMatcapProgram>,
-  tint: Readonly<LinearColor>,
+  tint: Readonly<LinearColorRaw>,
   matcap: Readonly<Texture> | null,
   alphaCutoff: number,
 ): void {
   const gl = state.gl;
-  gl.uniform4f(program.locTint, tint[0], tint[1], tint[2], tint[3]);
+  gl.uniform4f(program.locTint, tint.r, tint.g, tint.b, tint.a);
   gl.uniform1f(program.locAlphaCutoff, alphaCutoff);
 
   if (matcap !== null) {

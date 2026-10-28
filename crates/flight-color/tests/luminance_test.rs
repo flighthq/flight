@@ -71,9 +71,9 @@ mod get_rec2020_luminance_weights {
     fn writes_the_itu_r_bt2020_weights_that_sum_to_1() {
         let mut out = [0.0_f32; 3];
         get_rec2020_luminance_weights(&mut out);
-        assert_eq!(out[0], 0.2627);
-        assert_eq!(out[1], 0.678);
-        assert_eq!(out[2], 0.0593);
+        assert_approx_tight(out[0], 0.2627);
+        assert_approx_tight(out[1], 0.678);
+        assert_approx_tight(out[2], 0.0593);
         assert_approx_tight(out[0] + out[1] + out[2], 1.0);
     }
 }
@@ -85,9 +85,9 @@ mod get_rec709_luminance_weights {
     fn writes_the_itu_r_bt709_weights_that_sum_to_1() {
         let mut out = [0.0_f32; 3];
         get_rec709_luminance_weights(&mut out);
-        assert_eq!(out[0], 0.2126);
-        assert_eq!(out[1], 0.7152);
-        assert_eq!(out[2], 0.0722);
+        assert_approx_tight(out[0], 0.2126);
+        assert_approx_tight(out[1], 0.7152);
+        assert_approx_tight(out[2], 0.0722);
         assert_approx_tight(out[0] + out[1] + out[2], 1.0);
     }
 }

@@ -1,12 +1,6 @@
+import type { LinearColorRaw } from '@flighthq/color/contract';
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
-import type {
-  GlContext,
-  GlUnlitDefineKey,
-  GlUnlitProgram,
-  LinearColor,
-  GlRenderState,
-  Texture,
-} from '@flighthq/types/contract';
+import type { GlContext, GlUnlitDefineKey, GlUnlitProgram, GlRenderState, Texture } from '@flighthq/types/contract';
 
 import { GL_MESH_FRAGMENT_TAIL, GL_MESH_FRAGMENT_TAIL_UNIFORMS } from './glMeshFragmentTail.ts';
 import {
@@ -24,13 +18,13 @@ import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 export function bindGlUnlitSurface(
   state: GlRenderState,
   program: Readonly<GlUnlitProgram>,
-  color: Readonly<LinearColor>,
+  color: Readonly<LinearColorRaw>,
   intensity: number,
   colorMap: Readonly<Texture> | null,
   alphaCutoff: number,
 ): void {
   const gl = state.gl;
-  gl.uniform4f(program.locColor, color[0], color[1], color[2], color[3]);
+  gl.uniform4f(program.locColor, color.r, color.g, color.b, color.a);
   gl.uniform1f(program.locIntensity, intensity);
   gl.uniform1f(program.locAlphaCutoff, alphaCutoff);
 

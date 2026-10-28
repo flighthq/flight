@@ -1,8 +1,9 @@
-use crate::{LinearColor, allocate_linear_color, pack_linear_to_color, srgb_channel_to_linear};
+use crate::{LinearColor, pack_linear_channels_to_color, srgb_channel_to_linear};
 
 #[cfg(test)]
 mod sugar_tests {
     use super::*;
+    use crate::allocate_linear_color;
 
     fn make_linear_color(r: f32, g: f32, b: f32, a: f32) -> LinearColor {
         let mut color = allocate_linear_color();
@@ -43,12 +44,7 @@ pub fn lerp_color(start: u32, end: u32, t: f32) -> u32 {
     let g = sg + (eg - sg) * tc;
     let b = sb + (eb - sb) * tc;
     let a = sa + (ea - sa) * tc;
-    let mut linear = allocate_linear_color();
-    linear.r = r;
-    linear.g = g;
-    linear.b = b;
-    linear.a = a;
-    return pack_linear_to_color(&linear);
+    return pack_linear_channels_to_color(r, g, b, a);
 }
 
 /// Linearly interpolates between two LinearColors in linear space and writes the result to

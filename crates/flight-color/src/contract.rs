@@ -1,6 +1,6 @@
 pub use super::color_from_kelvin::*;
-pub use super::hsl_color::*;
-pub use super::hsv_color::*;
+pub use super::hsl_color_raw::*;
+pub use super::hsv_color_raw::*;
 pub use super::lerp_color::*;
 pub use super::luminance::*;
 pub use super::oklab::*;

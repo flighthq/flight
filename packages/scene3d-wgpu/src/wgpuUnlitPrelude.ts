@@ -1,5 +1,5 @@
+import type { LinearColorRaw } from '@flighthq/color/contract';
 import type {
-  LinearColor,
   Texture,
   WgpuMaterialBinding,
   WgpuRenderState,
@@ -26,7 +26,7 @@ export function bindWgpuUnlitSurface(
   state: WgpuRenderState,
   pipeline: Readonly<WgpuUnlitPipeline>,
   materialKey: object,
-  color: Readonly<LinearColor>,
+  color: Readonly<LinearColorRaw>,
   intensity: number,
   alphaCutoff: number,
   colorMap: Readonly<Texture> | null,
@@ -44,7 +44,7 @@ export function bindWgpuUnlitVideoSurface(
   state: WgpuRenderState,
   pipeline: Readonly<WgpuUnlitPipeline>,
   materialKey: object,
-  color: Readonly<LinearColor>,
+  color: Readonly<LinearColorRaw>,
   intensity: number,
   alphaCutoff: number,
   colorMap: Readonly<Texture>,
@@ -103,14 +103,14 @@ function createWgpuUnlitBindGroup(
 function writeWgpuUnlitUniform(
   state: WgpuRenderState,
   binding: Readonly<WgpuMaterialBinding>,
-  color: Readonly<LinearColor>,
+  color: Readonly<LinearColorRaw>,
   intensity: number,
   alphaCutoff: number,
 ): void {
-  _scratch[0] = color[0];
-  _scratch[1] = color[1];
-  _scratch[2] = color[2];
-  _scratch[3] = color[3];
+  _scratch[0] = color.r;
+  _scratch[1] = color.g;
+  _scratch[2] = color.b;
+  _scratch[3] = color.a;
   _scratch[4] = intensity;
   _scratch[5] = alphaCutoff;
   _scratch[6] = 0;

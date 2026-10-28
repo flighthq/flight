@@ -1,6 +1,6 @@
+import type { LinearColorRaw } from '@flighthq/color/contract';
 import { getWgpuRenderStateDeviceResources } from '@flighthq/render-wgpu/contract';
 import type {
-  LinearColor,
   WgpuMatcapDefineKey,
   WgpuMatcapPipeline,
   WgpuMaterialBinding,
@@ -46,7 +46,7 @@ export function bindWgpuMatcapSurface(
   state: WgpuRenderState,
   pipeline: Readonly<WgpuMatcapPipeline>,
   materialKey: object,
-  tint: Readonly<LinearColor>,
+  tint: Readonly<LinearColorRaw>,
   alphaCutoff: number,
 ): GPUBindGroup {
   const scene = getWgpuScene3DRuntime(state);
@@ -68,10 +68,10 @@ export function bindWgpuMatcapSurface(
     scene.materialBindGroups.set(materialKey, binding);
   }
 
-  _scratch[0] = tint[0];
-  _scratch[1] = tint[1];
-  _scratch[2] = tint[2];
-  _scratch[3] = tint[3];
+  _scratch[0] = tint.r;
+  _scratch[1] = tint.g;
+  _scratch[2] = tint.b;
+  _scratch[3] = tint.a;
   _scratch[4] = alphaCutoff;
   _scratch[5] = 0;
   _scratch[6] = 0;

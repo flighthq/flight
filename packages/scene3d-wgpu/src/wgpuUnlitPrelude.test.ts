@@ -1,6 +1,8 @@
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor } from '@flighthq/color/contract';
 import { registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import { advanceVideoTexture, createVideoTexture } from '@flighthq/texture/contract';
-import type { HostVideoCapability, LinearColor, WgpuUnlitDefineKey } from '@flighthq/types/contract';
+import type { HostVideoCapability, WgpuUnlitDefineKey } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
@@ -15,7 +17,11 @@ import {
 } from './wgpuUnlitPrelude.ts';
 
 const FLAT: WgpuUnlitDefineKey = { alphaMaskEnabled: false, doubleSided: false, hasColorMap: false };
-const COLOR: LinearColor = [0.5, 0.25, 0.1, 1];
+const COLOR: LinearColorRaw = allocateLinearColor();
+COLOR.r = 0.5;
+COLOR.g = 0.25;
+COLOR.b = 0.1;
+COLOR.a = 1;
 const testVideoHost = {
   canPlayType: () => true,
   getHeight: (source) => (source as HTMLVideoElement).videoHeight,

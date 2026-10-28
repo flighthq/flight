@@ -1,11 +1,11 @@
-import { unpackColorToLinear } from '@flighthq/color/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import {
   getWgpuRenderStateRuntime,
   registerWgpuBitmapTextureResolver,
   registerWgpuImageTextureResolver,
 } from '@flighthq/render-wgpu/contract';
 import type {
-  LinearColor,
   BlinnPhongMaterial,
   Camera3D,
   Material,
@@ -106,7 +106,11 @@ function defineKeyForMaterial(material: Readonly<BlinnPhongMaterial> | null): Wg
   };
 }
 
-const _diffuse: LinearColor = [0, 0, 0, 0];
-const _specular: LinearColor = [0, 0, 0, 0];
-const WHITE: LinearColor = [1, 1, 1, 1];
+const _diffuse: LinearColorRaw = allocateLinearColor();
+const _specular: LinearColorRaw = allocateLinearColor();
+const WHITE: LinearColorRaw = allocateLinearColor();
+WHITE.r = 1;
+WHITE.g = 1;
+WHITE.b = 1;
+WHITE.a = 1;
 const FALLBACK_MATERIAL = {} as Readonly<BlinnPhongMaterial>;

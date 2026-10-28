@@ -1,4 +1,4 @@
-import { packLinearToColor } from '@flighthq/color/contract';
+import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import type { GltfDocument, SpecularGlossinessPbrMaterial } from '@flighthq/types/contract';
 import { SpecularGlossinessPbrMaterialKind, StandardPbrMaterialKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -38,8 +38,8 @@ describe('GltfSpecularGlossinessExtensionHandler', () => {
 
     expect(document.materials[0].kind).toBe(SpecularGlossinessPbrMaterialKind);
     const material = document.materials[0] as unknown as SpecularGlossinessPbrMaterial;
-    expect(material.diffuse).toBe(packLinearToColor([0.5, 0.25, 0.125, 1]));
-    expect(material.specular).toBe(packLinearToColor([0.2, 0.2, 0.2, 1]));
+    expect(material.diffuse).toBe(packLinearChannelsToColor(0.5, 0.25, 0.125, 1));
+    expect(material.specular).toBe(packLinearChannelsToColor(0.2, 0.2, 0.2, 1));
     expect(material.glossiness).toBeCloseTo(0.8, 6);
   });
 
@@ -98,7 +98,7 @@ describe('GltfSpecularGlossinessExtensionHandler', () => {
     });
 
     const material = document.materials[0] as unknown as SpecularGlossinessPbrMaterial;
-    expect(material.diffuse).toBe(packLinearToColor([1, 1, 1, 1]));
+    expect(material.diffuse).toBe(packLinearChannelsToColor(1, 1, 1, 1));
     expect(material.glossiness).toBe(1);
   });
 

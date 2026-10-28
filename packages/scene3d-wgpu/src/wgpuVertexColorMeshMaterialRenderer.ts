@@ -1,7 +1,7 @@
-import { unpackColorToLinear } from '@flighthq/color/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type {
-  LinearColor,
   Camera3D,
   Material,
   MeshGeometry,
@@ -73,6 +73,10 @@ function defineKeyForMaterial(material: Readonly<VertexColorMaterial> | null): W
   };
 }
 
-const _scratch: LinearColor = [0, 0, 0, 0];
-const WHITE: LinearColor = [1, 1, 1, 1];
+const _scratch: LinearColorRaw = allocateLinearColor();
+const WHITE: LinearColorRaw = allocateLinearColor();
+WHITE.r = 1;
+WHITE.g = 1;
+WHITE.b = 1;
+WHITE.a = 1;
 const FALLBACK_MATERIAL = {} as Readonly<VertexColorMaterial>;

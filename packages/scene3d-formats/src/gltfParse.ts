@@ -1,4 +1,4 @@
-import { packLinearToColor } from '@flighthq/color/contract';
+import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import {
   composeMatrix4FromTransform3D,
   createMatrix4,
@@ -765,7 +765,7 @@ function buildGltfImageResourceReference(
 // alpha is forced opaque; with 4 the 4th is the (linear coverage) alpha, passed through unencoded.
 function packGltfLinearColor(factor: readonly number[], channels: number): number {
   const a = channels === 4 ? (factor[3] ?? 0) : 1;
-  return packLinearToColor([factor[0] ?? 0, factor[1] ?? 0, factor[2] ?? 0, a]);
+  return packLinearChannelsToColor(factor[0] ?? 0, factor[1] ?? 0, factor[2] ?? 0, a);
 }
 
 // Decodes a buffer into bytes. A `data:` URI base64-decodes; a buffer with no `uri` is backed by the

@@ -1,4 +1,5 @@
-import { unpackColorToLinear } from '@flighthq/color/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/contract';
 import { orderModifierStack } from '@flighthq/shading/contract';
 import type {
@@ -8,7 +9,6 @@ import type {
   GlRenderState,
   GlShadedDefineKey,
   GlShadedProgram,
-  LinearColor,
   Material,
   MeshGeometry,
   Modifier,
@@ -123,9 +123,9 @@ function bindGlShadedMaterialUniforms(
   }
 
   unpackColorToLinear(scratchRgba, material.diffuse);
-  gl.uniform4f(program.locDiffuse, scratchRgba[0], scratchRgba[1], scratchRgba[2], scratchRgba[3]);
+  gl.uniform4f(program.locDiffuse, scratchRgba.r, scratchRgba.g, scratchRgba.b, scratchRgba.a);
   unpackColorToLinear(scratchRgba, material.specular);
-  gl.uniform4f(program.locSpecular, scratchRgba[0], scratchRgba[1], scratchRgba[2], scratchRgba[3]);
+  gl.uniform4f(program.locSpecular, scratchRgba.r, scratchRgba.g, scratchRgba.b, scratchRgba.a);
   gl.uniform1f(program.locShininess, material.shininess);
   gl.uniform1f(program.locNormalScale, material.normalScale);
   gl.uniform1f(program.locAlphaCutoff, material.alphaCutoff);
@@ -174,4 +174,4 @@ function defineKeyForMaterial(state: GlRenderState, material: Readonly<ShadedMat
 const MODIFIER_TEXTURE_UNIT_BASE = 3;
 const MODIFIER_TEXTURE_UNIT_LIMIT = 8;
 const EMPTY_MODIFIERS: readonly Modifier[] = [];
-const scratchRgba: LinearColor = [0, 0, 0, 0];
+const scratchRgba: LinearColorRaw = allocateLinearColor();

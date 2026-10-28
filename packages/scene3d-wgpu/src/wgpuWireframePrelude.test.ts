@@ -1,4 +1,5 @@
-import type { LinearColor } from '@flighthq/types/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor } from '@flighthq/color/contract';
 
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper.ts';
@@ -9,7 +10,9 @@ import {
   getWgpuWireframeModuleSource,
 } from './wgpuWireframePrelude.ts';
 
-const COLOR: LinearColor = [1, 0, 0, 1];
+const COLOR: LinearColorRaw = allocateLinearColor();
+COLOR.r = 1;
+COLOR.a = 1;
 
 describe('bindWgpuWireframeColor', () => {
   it('creates a color bind group once per key and writes its uniform', () => {

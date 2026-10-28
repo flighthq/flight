@@ -14,7 +14,7 @@ import {
   createTexture,
   createVideoTexture,
 } from '@flighthq/texture/contract';
-import type { GlUnlitDefineKey, HostVideoCapability, LinearColor } from '@flighthq/types/contract';
+import type { GlUnlitDefineKey, HostVideoCapability } from '@flighthq/types/contract';
 import { createVideoResource } from '@flighthq/video/contract';
 
 import { GL_SKIN_VERTEX_DECLARATIONS_GLSL } from './glMeshSkinning.ts';
@@ -45,7 +45,11 @@ const FLAT: GlUnlitDefineKey = {
   hasUvTransform: false,
   vertexColor: false,
 };
-const COLOR: LinearColor = [0.5, 0.25, 0.1, 1];
+const COLOR: LinearColorRaw = allocateLinearColor();
+COLOR.r = 0.5;
+COLOR.g = 0.25;
+COLOR.b = 0.1;
+COLOR.a = 1;
 const testVideoHost = {
   canPlayType: () => true,
   getHeight: (source) => (source as HTMLVideoElement).videoHeight,
@@ -236,3 +240,5 @@ describe('getGlUnlitVertexSourceForKey', () => {
     expect(flat).not.toContain('a_joints0');
   });
 });
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor } from '@flighthq/color/contract';

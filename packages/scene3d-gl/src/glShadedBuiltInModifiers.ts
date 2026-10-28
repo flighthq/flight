@@ -1,4 +1,5 @@
-import { unpackColorToLinear } from '@flighthq/color/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import {
   animatedNormalModifierDefinition,
@@ -11,7 +12,6 @@ import {
   vertexDisplaceModifierDefinition,
 } from '@flighthq/shading/contract';
 import type {
-  LinearColor,
   AnimatedNormalModifier,
   DissolveModifier,
   EmissiveModifier,
@@ -103,9 +103,9 @@ export const emissiveGlModifierSnippet: GlModifierSnippet = {
     unpackColorToLinear(scratchRgba, emissive.color);
     gl.uniform3f(
       gl.getUniformLocation(context.program, `u_emissiveColor${suffix}`),
-      scratchRgba[0],
-      scratchRgba[1],
-      scratchRgba[2],
+      scratchRgba.r,
+      scratchRgba.g,
+      scratchRgba.b,
     );
     gl.uniform1f(gl.getUniformLocation(context.program, `u_emissiveStrength${suffix}`), emissive.strength);
     if (emissive.mask !== undefined) bindGlModifierTexture(context, emissive.mask, `u_emissiveMask${suffix}`);
@@ -156,9 +156,9 @@ export const rimGlModifierSnippet: GlModifierSnippet = {
     unpackColorToLinear(scratchRgba, rim.color);
     gl.uniform3f(
       gl.getUniformLocation(context.program, `u_rimColor${suffix}`),
-      scratchRgba[0],
-      scratchRgba[1],
-      scratchRgba[2],
+      scratchRgba.r,
+      scratchRgba.g,
+      scratchRgba.b,
     );
     gl.uniform1f(gl.getUniformLocation(context.program, `u_rimPower${suffix}`), rim.power ?? 3);
     gl.uniform1f(gl.getUniformLocation(context.program, `u_rimIntensity${suffix}`), rim.intensity ?? 1);
@@ -197,9 +197,9 @@ export const dissolveGlModifierSnippet: GlModifierSnippet = {
     unpackColorToLinear(scratchRgba, dissolve.edgeColor);
     gl.uniform3f(
       gl.getUniformLocation(context.program, `u_dissolveEdgeColor${suffix}`),
-      scratchRgba[0],
-      scratchRgba[1],
-      scratchRgba[2],
+      scratchRgba.r,
+      scratchRgba.g,
+      scratchRgba.b,
     );
     if (dissolve.map !== undefined) bindGlModifierTexture(context, dissolve.map, `u_dissolveMap${suffix}`);
     else gl.uniform1f(gl.getUniformLocation(context.program, `u_dissolveScale${suffix}`), dissolve.scale ?? 8);
@@ -249,9 +249,9 @@ export const envReflectGlModifierSnippet: GlModifierSnippet = {
     unpackColorToLinear(scratchRgba, reflect.tint);
     gl.uniform3f(
       gl.getUniformLocation(context.program, `u_envReflectTint${suffix}`),
-      scratchRgba[0],
-      scratchRgba[1],
-      scratchRgba[2],
+      scratchRgba.r,
+      scratchRgba.g,
+      scratchRgba.b,
     );
     gl.uniform1f(gl.getUniformLocation(context.program, `u_envReflectIntensity${suffix}`), reflect.intensity ?? 1);
     gl.uniform1f(gl.getUniformLocation(context.program, `u_envReflectFresnel${suffix}`), reflect.fresnelBias ?? 0.04);
@@ -294,9 +294,9 @@ export const fogGlModifierSnippet: GlModifierSnippet = {
     unpackColorToLinear(scratchRgba, fog.color);
     gl.uniform3f(
       gl.getUniformLocation(context.program, `u_fogColor${suffix}`),
-      scratchRgba[0],
-      scratchRgba[1],
-      scratchRgba[2],
+      scratchRgba.r,
+      scratchRgba.g,
+      scratchRgba.b,
     );
     if (fog.mode === undefined || fog.mode === FogModifierMode.Linear) {
       gl.uniform1f(gl.getUniformLocation(context.program, `u_fogNear${suffix}`), fog.near ?? 0);
@@ -461,4 +461,4 @@ function isEmissiveGated(modifier: Readonly<EmissiveModifier>): boolean {
   return modifier.facing !== undefined && modifier.facing !== EmissiveModifierFacing.Ignore;
 }
 
-const scratchRgba: LinearColor = [0, 0, 0, 0];
+const scratchRgba: LinearColorRaw = allocateLinearColor();

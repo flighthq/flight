@@ -147,6 +147,19 @@ mod pack_linear_to_color {
             rep_r
         );
     }
+
+    #[test]
+    fn delegates_to_the_allocation_free_scalar_seam() {
+        let mut color = allocate_linear_color();
+        color.r = 0.25;
+        color.g = 0.5;
+        color.b = 0.75;
+        color.a = 0.875;
+        assert_eq!(
+            pack_linear_to_color(&color),
+            pack_linear_channels_to_color(color.r, color.g, color.b, color.a)
+        );
+    }
 }
 
 mod pack_opaque_color {

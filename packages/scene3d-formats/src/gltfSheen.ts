@@ -1,4 +1,4 @@
-import { packLinearToColor } from '@flighthq/color/contract';
+import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import { createSheenPbrExtension } from '@flighthq/materials/contract';
 import type { GltfExtensionHandler } from '@flighthq/types/contract';
 
@@ -19,7 +19,7 @@ export const GltfSheenExtensionHandler: GltfExtensionHandler = {
         context.document,
         i,
         createSheenPbrExtension({
-          sheenColor: packLinearToColor([color[0] ?? 0, color[1] ?? 0, color[2] ?? 0, 1]),
+          sheenColor: packLinearChannelsToColor(color[0] ?? 0, color[1] ?? 0, color[2] ?? 0, 1),
           sheenColorMap: context.resolveTexture(block.sheenColorTexture, 'srgb'),
           sheenRoughness: block.sheenRoughnessFactor ?? 0,
           sheenRoughnessMap: context.resolveTexture(block.sheenRoughnessTexture, 'linear'),

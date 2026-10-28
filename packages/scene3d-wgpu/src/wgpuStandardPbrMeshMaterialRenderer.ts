@@ -1,7 +1,7 @@
-import { unpackColorToLinear } from '@flighthq/color/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
 import type {
-  LinearColor,
   Camera3D,
   Material,
   MeshGeometry,
@@ -157,16 +157,16 @@ export function writeWgpuPbrStandardBlock(
   }
 
   unpackColorToLinear(_colorScratch, standard.baseColor);
-  out[0] = _colorScratch[0];
-  out[1] = _colorScratch[1];
-  out[2] = _colorScratch[2];
-  out[3] = _colorScratch[3];
+  out[0] = _colorScratch.r;
+  out[1] = _colorScratch.g;
+  out[2] = _colorScratch.b;
+  out[3] = _colorScratch.a;
 
   unpackColorToLinear(_colorScratch, standard.emissive);
   const strength = standard.emissiveStrength;
-  out[4] = _colorScratch[0] * strength;
-  out[5] = _colorScratch[1] * strength;
-  out[6] = _colorScratch[2] * strength;
+  out[4] = _colorScratch.r * strength;
+  out[5] = _colorScratch.g * strength;
+  out[6] = _colorScratch.b * strength;
   out[7] = 0;
 
   out[8] = standard.metallic;
@@ -231,7 +231,7 @@ export const wgpuStandardPbrMeshMaterialRenderer: WgpuMeshMaterialRenderer = {
 // identity in the WeakMap.
 const FALLBACK_MATERIAL = {} as Readonly<StandardPbrMaterial>;
 
-const _colorScratch: LinearColor = [0, 0, 0, 0];
+const _colorScratch: LinearColorRaw = allocateLinearColor();
 const _materialScratch = new Float32Array(WGPU_PBR_MATERIAL_UNIFORM_FLOATS);
 const _samplerScratch = new Array<GPUSampler>(6);
 // Reused per-bind resolved-view scratch (base-color, metallic-roughness, normal, occlusion, emissive,

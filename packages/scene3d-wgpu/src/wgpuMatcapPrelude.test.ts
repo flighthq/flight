@@ -1,4 +1,6 @@
-import type { LinearColor, WgpuMatcapDefineKey } from '@flighthq/types/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor } from '@flighthq/color/contract';
+import type { WgpuMatcapDefineKey } from '@flighthq/types/contract';
 
 import {
   bindWgpuMatcapSurface,
@@ -11,7 +13,11 @@ import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper.ts';
 
 const FLAT: WgpuMatcapDefineKey = { alphaMaskEnabled: false, doubleSided: false, hasMatcap: false };
-const TINT: LinearColor = [0.5, 0.25, 0.1, 1];
+const TINT: LinearColorRaw = allocateLinearColor();
+TINT.r = 0.5;
+TINT.g = 0.25;
+TINT.b = 0.1;
+TINT.a = 1;
 
 describe('bindWgpuMatcapSurface', () => {
   it('creates a material bind group once per key and writes its uniform', () => {

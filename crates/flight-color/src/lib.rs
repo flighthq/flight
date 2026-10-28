@@ -1,6 +1,6 @@
 mod color_from_kelvin;
-mod hsl_color;
-mod hsv_color;
+mod hsl_color_raw;
+mod hsv_color_raw;
 mod lerp_color;
 mod luminance;
 mod oklab;
@@ -31,6 +31,7 @@ pub use contract::linear_channel_to_srgb;
 pub use contract::linear_rgb_to_oklab;
 pub use contract::oklab_to_linear_rgb;
 pub use contract::pack_color;
+pub use contract::pack_linear_channels_to_color;
 pub use contract::pack_linear_to_color;
 pub use contract::pack_opaque_color;
 pub use contract::premultiply_color_alpha;

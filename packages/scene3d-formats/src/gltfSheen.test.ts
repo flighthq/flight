@@ -1,4 +1,4 @@
-import { packLinearToColor } from '@flighthq/color/contract';
+import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import type { ExtendedPbrMaterial, GltfDocument, SheenPbrExtension } from '@flighthq/types/contract';
 import { ExtendedPbrMaterialKind } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
@@ -30,7 +30,7 @@ describe('GltfSheenExtensionHandler', () => {
     const extended = document.materials[0] as unknown as ExtendedPbrMaterial;
     expect(extended.kind).toBe(ExtendedPbrMaterialKind);
     const sheen = extended.extensions[0] as SheenPbrExtension;
-    expect(sheen.sheenColor).toBe(packLinearToColor([0.5, 0.25, 0.125, 1]));
+    expect(sheen.sheenColor).toBe(packLinearChannelsToColor(0.5, 0.25, 0.125, 1));
   });
 
   it('samples the color map as sRGB and the roughness map as linear', () => {
@@ -60,7 +60,7 @@ describe('GltfSheenExtensionHandler', () => {
     });
 
     const sheen = (document.materials[0] as unknown as ExtendedPbrMaterial).extensions[0] as SheenPbrExtension;
-    expect(sheen.sheenColor).toBe(packLinearToColor([0, 0, 0, 1]));
+    expect(sheen.sheenColor).toBe(packLinearChannelsToColor(0, 0, 0, 1));
     expect(sheen.sheenRoughness).toBe(0);
   });
 });

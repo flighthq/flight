@@ -1,7 +1,7 @@
-import { unpackColorToLinear } from '@flighthq/color/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import type {
-  LinearColor,
   Camera3D,
   EmissiveMaterial,
   GlMeshMaterialRenderer,
@@ -82,5 +82,9 @@ function defineKeyForMaterial(state: GlRenderState, material: Readonly<EmissiveM
   };
 }
 
-const scratchRgba: LinearColor = [0, 0, 0, 0];
-const WHITE: LinearColor = [1, 1, 1, 1];
+const scratchRgba: LinearColorRaw = allocateLinearColor();
+const WHITE: LinearColorRaw = allocateLinearColor();
+WHITE.r = 1;
+WHITE.g = 1;
+WHITE.b = 1;
+WHITE.a = 1;

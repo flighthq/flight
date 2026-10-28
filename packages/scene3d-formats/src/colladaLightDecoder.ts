@@ -1,4 +1,4 @@
-import { packLinearToColor } from '@flighthq/color/contract';
+import { packLinearChannelsToColor } from '@flighthq/color/contract';
 import { createTransform3D, decomposeMatrix4ToTransform3D } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import {
@@ -71,12 +71,12 @@ function parseColladaLightDefinition(
   // Flight stores radiance as packed color × intensity. Pull HDR energy out of COLLADA's unbounded
   // linear RGB so packing does not clip it, while ordinary [0, 1] colors retain unit intensity.
   const colorIntensity = Math.max(1, colorValues[0], colorValues[1], colorValues[2]);
-  const color = packLinearToColor([
+  const color = packLinearChannelsToColor(
     colorValues[0] / colorIntensity,
     colorValues[1] / colorIntensity,
     colorValues[2] / colorIntensity,
     1,
-  ]);
+  );
   const definition: ColladaLightDefinition = {
     color,
     decay: 0,

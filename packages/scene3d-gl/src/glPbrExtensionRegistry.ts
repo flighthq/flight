@@ -1,4 +1,5 @@
-import { unpackColorToLinear } from '@flighthq/color/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { createMatrix3 } from '@flighthq/geometry/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import { getGlRenderStateRuntime, resolveGlTexture } from '@flighthq/render-gl/contract';
@@ -12,7 +13,6 @@ import type {
   GlPbrExtensionShaderContribution,
   GlRenderState,
   Kind,
-  LinearColor,
   Matrix3,
   PbrExtension,
 } from '@flighthq/types/contract';
@@ -157,7 +157,7 @@ function createGlPbrExtensionBindContext(state: GlRenderState, program: WebGLPro
     },
     setLinearColor(uniform, color): void {
       unpackColorToLinear(scratchRgba, color);
-      gl.uniform3f(gl.getUniformLocation(program, uniform), scratchRgba[0], scratchRgba[1], scratchRgba[2]);
+      gl.uniform3f(gl.getUniformLocation(program, uniform), scratchRgba.r, scratchRgba.g, scratchRgba.b);
     },
   };
 }
@@ -171,5 +171,5 @@ function getGlPbrExtensionTextureUnits(gl: GlContext): readonly number[] {
   return units;
 }
 
-const scratchRgba: LinearColor = [0, 0, 0, 0];
+const scratchRgba: LinearColorRaw = allocateLinearColor();
 const scratchUvMatrix: Matrix3 = createMatrix3();

@@ -1,8 +1,8 @@
-import { unpackColorToLinear } from '@flighthq/color/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { resolveGlTexture } from '@flighthq/render-gl/contract';
 import { hasTextureUvTransform } from '@flighthq/texture/contract';
 import type {
-  LinearColor,
   GlRenderState,
   StandardPbrMaterialProperties,
   Material3D,
@@ -54,14 +54,14 @@ export function bindGlPbrStandardBlock(
   }
 
   unpackColorToLinear(scratchRgba, standard.baseColor);
-  gl.uniform4f(program.locBaseColor, scratchRgba[0], scratchRgba[1], scratchRgba[2], scratchRgba[3]);
+  gl.uniform4f(program.locBaseColor, scratchRgba.r, scratchRgba.g, scratchRgba.b, scratchRgba.a);
   gl.uniform1f(program.locMetallic, standard.metallic);
   gl.uniform1f(program.locRoughness, standard.roughness);
   gl.uniform1f(program.locNormalScale, standard.normalScale);
   gl.uniform1f(program.locOcclusionStrength, standard.occlusionStrength);
 
   unpackColorToLinear(scratchRgba, standard.emissive);
-  gl.uniform3f(program.locEmissive, scratchRgba[0], scratchRgba[1], scratchRgba[2]);
+  gl.uniform3f(program.locEmissive, scratchRgba.r, scratchRgba.g, scratchRgba.b);
   gl.uniform1f(program.locEmissiveStrength, standard.emissiveStrength);
 
   bindGlPbrStandardTexture(state, standard.baseColorMap, program.locBaseColorMap, GL_PBR_BASE_COLOR_TEXTURE_UNIT);
@@ -133,4 +133,4 @@ export function isGlTextureReady(state: GlRenderState, texture: Readonly<Texture
   return texture !== null && resolveGlTexture(state, texture) !== null;
 }
 
-const scratchRgba: LinearColor = [0, 0, 0, 0];
+const scratchRgba: LinearColorRaw = allocateLinearColor();

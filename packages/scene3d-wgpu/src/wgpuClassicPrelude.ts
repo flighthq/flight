@@ -1,6 +1,6 @@
+import type { LinearColorRaw } from '@flighthq/color/contract';
 import { getWgpuColorAdjustmentMaterialFeature } from '@flighthq/render-wgpu/contract';
 import type {
-  LinearColor,
   Texture,
   WgpuClassicDefineKey,
   WgpuClassicPipeline,
@@ -32,8 +32,8 @@ export function bindWgpuClassicSurface(
   state: WgpuRenderState,
   pipeline: Readonly<WgpuClassicPipeline>,
   materialKey: object,
-  diffuse: Readonly<LinearColor>,
-  specular: Readonly<LinearColor>,
+  diffuse: Readonly<LinearColorRaw>,
+  specular: Readonly<LinearColorRaw>,
   shininess: number,
   alphaCutoff: number,
   diffuseMap: Readonly<Texture> | null,
@@ -62,14 +62,14 @@ export function bindWgpuClassicSurface(
     _viewScratch,
   );
 
-  _scratch[0] = diffuse[0];
-  _scratch[1] = diffuse[1];
-  _scratch[2] = diffuse[2];
-  _scratch[3] = diffuse[3];
-  _scratch[4] = specular[0];
-  _scratch[5] = specular[1];
-  _scratch[6] = specular[2];
-  _scratch[7] = specular[3];
+  _scratch[0] = diffuse.r;
+  _scratch[1] = diffuse.g;
+  _scratch[2] = diffuse.b;
+  _scratch[3] = diffuse.a;
+  _scratch[4] = specular.r;
+  _scratch[5] = specular.g;
+  _scratch[6] = specular.b;
+  _scratch[7] = specular.a;
   _scratch[8] = shininess;
   _scratch[9] = alphaCutoff;
   _scratch[10] = 0;

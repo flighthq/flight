@@ -1,4 +1,5 @@
-import { unpackColorToLinear } from '@flighthq/color/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import {
   createMatrix3,
   createMatrix4,
@@ -18,7 +19,6 @@ import type {
   ColorScaleBias,
   Material,
   InstancedMesh,
-  LinearColor,
   Matrix3,
   Matrix4,
   Mesh,
@@ -320,7 +320,7 @@ function createDrawEntry(): WgpuScene3DDrawEntry {
 }
 
 let scratchInstanceData = new Float32Array(64 * 20);
-const scratchInstanceColor: LinearColor = [0, 0, 0, 0];
+const scratchInstanceColor: LinearColorRaw = allocateLinearColor();
 // Packs each instance as its model matrix followed by its linear RGBA tint — the 20-float record
 // INSTANCE_BUFFER_LAYOUT describes. A batch with no per-instance colours packs opaque white, so the
 // shader multiply is an identity there rather than a second pipeline variant.
@@ -336,7 +336,10 @@ function flattenInstancedMeshMatrices(mesh: Readonly<InstancedMesh>): Float32Arr
       scratchInstanceData.fill(1, offset + 16, offset + 20);
     } else {
       unpackColorToLinear(scratchInstanceColor, colors[i]);
-      scratchInstanceData.set(scratchInstanceColor, offset + 16);
+      scratchInstanceData[offset + 16] = scratchInstanceColor.r;
+      scratchInstanceData[offset + 17] = scratchInstanceColor.g;
+      scratchInstanceData[offset + 18] = scratchInstanceColor.b;
+      scratchInstanceData[offset + 19] = scratchInstanceColor.a;
     }
   }
   return scratchInstanceData;

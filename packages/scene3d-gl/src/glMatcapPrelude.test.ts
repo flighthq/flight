@@ -1,4 +1,6 @@
-import type { LinearColor, GlMatcapDefineKey } from '@flighthq/types/contract';
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor } from '@flighthq/color/contract';
+import type { GlMatcapDefineKey } from '@flighthq/types/contract';
 
 import {
   bindGlMatcapSurface,
@@ -13,7 +15,11 @@ import { getGlScene3DRuntime } from './glScene3DRuntime.ts';
 import { makeFakeGl2, makeGlScene3DState } from './glScene3DTestHelper.ts';
 
 const FLAT: GlMatcapDefineKey = { alphaMaskEnabled: false, hasMatcap: false };
-const TINT: LinearColor = [0.5, 0.25, 0.1, 1];
+const TINT: LinearColorRaw = allocateLinearColor();
+TINT.r = 0.5;
+TINT.g = 0.25;
+TINT.b = 0.1;
+TINT.a = 1;
 
 describe('bindGlMatcapSurface', () => {
   it('uploads the tint and alpha cutoff with no texture bind when the matcap is absent', () => {
