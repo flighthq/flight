@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, HashSet};
 
 use syn::{
     Attribute, Fields, GenericArgument, Item, ItemConst, ItemEnum, ItemFn, ItemStatic, ItemStruct,
-    ItemType, PathArguments, Type, UseTree, Visibility,
+    ItemType, ItemUse, PathArguments, Type, UseTree, Visibility,
 };
 
 use crate::{CompileError, SourceMode, compile_error};
@@ -22,6 +22,7 @@ pub(crate) struct Program {
     pub(crate) readonly_structs: HashSet<String>,
     pub(crate) string_unions: BTreeMap<String, StringUnionStyle>,
     pub(crate) type_aliases: Vec<ItemType>,
+    pub(crate) uses: Vec<ItemUse>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -193,6 +194,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let mut statics = Vec::new();
     let mut structs = Vec::new();
     let mut type_aliases = Vec::new();
+    let mut uses = Vec::new();
     let readonly_structs = directive_names(source, "readonly-fields");
     let string_unions = parse_string_unions(&file.attrs)?;
 
@@ -233,6 +235,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
                 structs.push(structure);
             }
             Item::Type(item) => type_aliases.push(item),
+            Item::Use(item) => uses.push(item),
             Item::Trait(item) if is_public(&item.vis) => {
                 return Err(unsupported_public("trait", &item.ident.to_string()));
             }
@@ -243,8 +246,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
             | Item::ForeignMod(_)
             | Item::Impl(_)
             | Item::Macro(_)
-            | Item::Mod(_)
-            | Item::Use(_) => {}
+            | Item::Mod(_) => {}
             _ => {}
         }
     }
@@ -270,6 +272,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         readonly_structs,
         string_unions,
         type_aliases,
+        uses,
     });
 }
 

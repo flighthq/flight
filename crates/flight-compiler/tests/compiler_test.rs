@@ -170,6 +170,58 @@ export function addVector2(out: Vector2Raw, a: Readonly<Vector2Raw>, b: Readonly
     }
 
     #[test]
+    fn emits_used_cross_crate_contract_imports_by_runtime_role() {
+        let source = r#"
+use flight_entity::{Float32Array, Ref, throw_error};
+use flight_geometry::{Matrix, copy_matrix, create_matrix as make_matrix, unused_value};
+use flight_host::HiddenHost;
+use flight_node::contract::{NodeRef, NodeRevisionState, ensure_node_world_matrix as ensure_world};
+use flight_platform::HostMode;
+
+pub struct Sample {
+    pub matrix: Matrix,
+}
+
+pub fn update_sample(
+    sample: &mut Sample,
+    node: &NodeRef,
+    revisions: &mut NodeRevisionState,
+    values: &Float32Array,
+    mode: HostMode,
+) -> Ref<Matrix> {
+    if values.len() == 0 {
+        throw_error("values are required");
+    }
+    if mode == HostMode::Web {
+        ensure_world(node, revisions);
+    }
+    let next = make_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+    copy_matrix(&mut sample.matrix, &next);
+    return sample.matrix.clone();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.starts_with(
+            r#"import { copyMatrix, createMatrix as makeMatrix } from "@flighthq/geometry/contract";
+import { ensureNodeWorldMatrix as ensureWorld } from "@flighthq/node/contract";
+import { HostMode } from "@flighthq/platform/contract";
+import type { Matrix } from "@flighthq/geometry/contract";
+import type { NodeRef, NodeRevisionState } from "@flighthq/node/contract";
+
+"#
+        ));
+        assert!(!output.contains("HiddenHost"));
+        assert!(!output.contains("unusedValue"));
+        assert!(!output.contains("import type { Float32Array"));
+        assert!(!output.contains("import type { Ref"));
+        assert!(!output.contains("import { throwError"));
+        assert!(output.contains("throw new Error(\"values are required\");"));
+        assert!(output.contains("if (mode === HostMode.Web)"));
+    }
+
+    #[test]
     fn maps_trailing_options_to_optional_undefined_contracts() {
         let source = r#"
 pub struct Vector2 {
@@ -275,6 +327,10 @@ pub fn call_nullable_contract() {
     fn lowers_real_velocity_sources_with_nullable_option_semantics() {
         let sample_source = include_str!("../../flight-velocity/src/velocity_sample.rs");
         let sample_output = compile_typescript(sample_source, None).unwrap();
+        assert!(
+            sample_output
+                .starts_with("import type { Matrix } from \"@flighthq/geometry/contract\";\n\n")
+        );
         assert!(sample_output.contains("previousWorldTransform: Matrix | null;"));
         assert!(sample_output.contains("sample: Readonly<VelocitySample> | null, frameId: number"));
         assert!(sample_output.contains("if (sample !== null)"));
@@ -283,6 +339,13 @@ pub fn call_nullable_contract() {
         let transform_source = include_str!("../../flight-velocity/src/transform_velocity.rs")
             .replacen("//! flight-compiler: target-native\n", "", 1);
         let transform_output = compile_typescript(&transform_source, None).unwrap();
+        assert!(transform_output.starts_with(
+            r#"import { copyMatrix, createMatrix } from "@flighthq/geometry/contract";
+import { ensureNodeWorldMatrix, getNodeChildAt, getNodeChildCount, getNodeWorldMatrix } from "@flighthq/node/contract";
+import type { NodeRef, NodeRevisionState } from "@flighthq/node/contract";
+
+"#
+        ));
         assert!(transform_output.contains("sample.previousWorldTransform !== null"));
         assert!(transform_output.contains("sample.previousWorldTransform === null"));
         assert!(transform_output.contains("getNodeChildAt(node, (i) | 0) !== null"));

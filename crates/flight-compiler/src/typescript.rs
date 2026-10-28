@@ -3838,6 +3838,214 @@ fn used_identity_aliases(
     return collector.names;
 }
 
+#[derive(Clone)]
+struct CrossCrateSymbol {
+    imported: String,
+    local: String,
+    module: String,
+}
+
+fn collect_cross_crate_use_tree(
+    tree: &syn::UseTree,
+    prefix: &mut Vec<String>,
+    symbols: &mut BTreeMap<String, CrossCrateSymbol>,
+) {
+    let mut record = |imported: String, local: String| {
+        let Some(root) = prefix.first() else {
+            return;
+        };
+        let Some(package) = root.strip_prefix("flight_") else {
+            return;
+        };
+        symbols.insert(
+            local.clone(),
+            CrossCrateSymbol {
+                imported,
+                local,
+                module: format!("@flighthq/{}/contract", package.replace('_', "-")),
+            },
+        );
+    };
+    match tree {
+        syn::UseTree::Name(name) if name.ident == "self" => {
+            if let Some(imported) = prefix.last() {
+                record(imported.clone(), imported.clone());
+            }
+        }
+        syn::UseTree::Name(name) => {
+            let name = name.ident.to_string();
+            record(name.clone(), name);
+        }
+        syn::UseTree::Rename(rename) => {
+            record(rename.ident.to_string(), rename.rename.to_string());
+        }
+        syn::UseTree::Path(path) => {
+            prefix.push(path.ident.to_string());
+            collect_cross_crate_use_tree(&path.tree, prefix, symbols);
+            prefix.pop();
+        }
+        syn::UseTree::Group(group) => {
+            for item in &group.items {
+                collect_cross_crate_use_tree(item, prefix, symbols);
+            }
+        }
+        syn::UseTree::Glob(_) => {}
+    }
+}
+
+fn import_specifier(symbol: &CrossCrateSymbol) -> String {
+    let imported = emit_path_segment(&symbol.imported);
+    let local = emit_path_segment(&symbol.local);
+    if imported == local {
+        return imported;
+    }
+    return format!("{imported} as {local}");
+}
+
+fn is_lowered_cross_crate_type(name: &str) -> bool {
+    return matches!(
+        name,
+        "EntityRuntimeSlot"
+            | "Float32Array"
+            | "Float64Array"
+            | "Int8Array"
+            | "Int16Array"
+            | "Int32Array"
+            | "Ref"
+            | "Uint8Array"
+            | "Uint16Array"
+            | "Uint32Array"
+            | "UnknownValue"
+    );
+}
+
+fn is_lowered_cross_crate_value(name: &str) -> bool {
+    return matches!(
+        name,
+        "allocate_entity" | "throw_error" | "throw_range_error"
+    );
+}
+
+fn cross_crate_imports(
+    program: &Program,
+) -> (
+    BTreeMap<String, BTreeSet<String>>,
+    BTreeMap<String, BTreeSet<String>>,
+) {
+    struct UsageCollector<'a> {
+        symbols: &'a BTreeMap<String, CrossCrateSymbol>,
+        type_names: BTreeSet<String>,
+        value_names: BTreeSet<String>,
+    }
+
+    impl UsageCollector<'_> {
+        fn record_type_path(&mut self, path: &syn::Path) {
+            let Some(segment) = path.segments.first() else {
+                return;
+            };
+            let name = segment.ident.to_string();
+            if self.symbols.contains_key(&name) && !is_lowered_cross_crate_type(&name) {
+                self.type_names.insert(name);
+            }
+        }
+
+        fn record_value_path(&mut self, path: &syn::Path) {
+            let Some(segment) = path.segments.first() else {
+                return;
+            };
+            let name = segment.ident.to_string();
+            if self.symbols.contains_key(&name) && !is_lowered_cross_crate_value(&name) {
+                self.value_names.insert(name);
+            }
+        }
+    }
+
+    impl<'ast> Visit<'ast> for UsageCollector<'_> {
+        fn visit_expr_path(&mut self, expression: &'ast syn::ExprPath) {
+            if expression.qself.is_none() {
+                self.record_value_path(&expression.path);
+            }
+            syn::visit::visit_expr_path(self, expression);
+        }
+
+        fn visit_pat_struct(&mut self, pattern: &'ast syn::PatStruct) {
+            if pattern.qself.is_none() {
+                self.record_value_path(&pattern.path);
+            }
+            syn::visit::visit_pat_struct(self, pattern);
+        }
+
+        fn visit_pat_tuple_struct(&mut self, pattern: &'ast syn::PatTupleStruct) {
+            if pattern.qself.is_none() {
+                self.record_value_path(&pattern.path);
+            }
+            syn::visit::visit_pat_tuple_struct(self, pattern);
+        }
+
+        fn visit_type_path(&mut self, rust_type: &'ast syn::TypePath) {
+            if rust_type.qself.is_none() {
+                self.record_type_path(&rust_type.path);
+            }
+            syn::visit::visit_type_path(self, rust_type);
+        }
+    }
+
+    let mut symbols = BTreeMap::new();
+    for item_use in &program.uses {
+        collect_cross_crate_use_tree(&item_use.tree, &mut Vec::new(), &mut symbols);
+    }
+    let mut collector = UsageCollector {
+        symbols: &symbols,
+        type_names: BTreeSet::new(),
+        value_names: BTreeSet::new(),
+    };
+    for constant in &program.constants {
+        collector.visit_item_const(constant);
+    }
+    for rust_enum in &program.enums {
+        collector.visit_item_enum(rust_enum);
+    }
+    for function in &program.functions {
+        collector.visit_item_fn(function);
+    }
+    for rust_static in &program.statics {
+        collector.visit_item_static(rust_static);
+    }
+    for structure in &program.structs {
+        let module_private_plain_data =
+            !is_public(&structure.vis) && !program.entities.contains(&structure.ident.to_string());
+        for field in &structure.fields {
+            if module_private_plain_data || is_public(&field.vis) {
+                collector.visit_type(&field.ty);
+            }
+        }
+    }
+    for type_alias in &program.type_aliases {
+        collector.visit_item_type(type_alias);
+    }
+
+    collector
+        .type_names
+        .retain(|name| !collector.value_names.contains(name));
+    let mut value_imports = BTreeMap::<String, BTreeSet<String>>::new();
+    let mut type_imports = BTreeMap::<String, BTreeSet<String>>::new();
+    for (names, imports) in [
+        (collector.value_names, &mut value_imports),
+        (collector.type_names, &mut type_imports),
+    ] {
+        for name in names {
+            let symbol = symbols
+                .get(&name)
+                .expect("collected cross-crate use came from the import map");
+            imports
+                .entry(symbol.module.clone())
+                .or_default()
+                .insert(import_specifier(symbol));
+        }
+    }
+    return (value_imports, type_imports);
+}
+
 // flight-lint: allow(hashmap-iteration) Program constants are a Vec retained in Rust source order; the rule's name heuristic cannot see the field type across modules
 pub(crate) fn emit_program(
     program: &Program,
@@ -3855,6 +4063,7 @@ pub(crate) fn emit_program(
     let aliases = preferred_aliases(program, alias_programs)?;
     let external_identity_aliases = external_identity_aliases(external_alias_programs)?;
     let used_identity_aliases = used_identity_aliases(program, &external_identity_aliases);
+    let (mut value_imports, mut type_imports) = cross_crate_imports(program);
     let mut identity_context = HashSet::new();
     for (name, alias) in &external_identity_aliases {
         identity_context.insert(identity_alias_marker(name, &alias.tag));
@@ -3887,14 +4096,24 @@ pub(crate) fn emit_program(
         None
     };
     if uses_allocate_entity {
+        value_imports
+            .entry(
+                entity_module
+                    .expect("entity module was required")
+                    .to_string(),
+            )
+            .or_default()
+            .insert("allocateEntity".to_string());
+    }
+    for (module, names) in &value_imports {
         writeln!(
             out,
-            "import {{ allocateEntity }} from {:?};",
-            entity_module.expect("entity module was required")
+            "import {{ {} }} from {:?};",
+            names.iter().cloned().collect::<Vec<_>>().join(", "),
+            module
         )
         .expect("writing to a String cannot fail");
     }
-    let mut type_imports = BTreeMap::<String, BTreeSet<String>>::new();
     if !program.entities.is_empty() {
         type_imports
             .entry(
@@ -3923,7 +4142,7 @@ pub(crate) fn emit_program(
         )
         .expect("writing to a String cannot fail");
     }
-    if uses_allocate_entity || !type_imports.is_empty() {
+    if !value_imports.is_empty() || !type_imports.is_empty() {
         out.push('\n');
     }
     if program.standard_constants.contains("PI") {
