@@ -1,10 +1,10 @@
 // Generated from crates/flight-textformat/src/text_format_range_raw.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
+import type { TextFormat } from './textFormat.ts';
+
 import { allocateEntity } from '@flighthq/entity/contract';
 import type { EntityRaw } from '@flighthq/entity/contract';
-
-import type { TextFormat } from './textFormat.ts';
 
 /**
  * Half-open UTF-16 code-unit offsets (D15), with the same format object as the caller.

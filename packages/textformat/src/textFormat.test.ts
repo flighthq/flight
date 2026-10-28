@@ -16,6 +16,7 @@ import {
   parseTextFormatAlign,
   parseTextFormatListMarker,
 } from './contract.ts';
+
 import type { TextFormat } from './contract.ts';
 
 function emptyTextFormat(): TextFormat {
