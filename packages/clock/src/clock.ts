@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 import { clearSignal, emitSignal } from '@flighthq/signals/contract';
-import type { Clock, ClockOptions, EntityConstruction } from '@flighthq/types/contract';
+import type { Clock, ClockOptions } from '@flighthq/types/contract';
 
 // Attaches `child` under `parent`, detaching it from any previous parent first (reparent-safe). After
 // this, advancing `parent` cascades into `child`. A no-op if `child` is already parented here.
@@ -31,14 +32,16 @@ export function advanceClock(clock: Clock, deltaTime: number): void {
 // Allocates a child clock and attaches it to `parent` in one step. Equivalent to createClock followed by
 // addClockChild; the child inherits `parent`'s scale and pause state through the advanceClock cascade.
 export function createChildClock(parent: Clock, options?: Readonly<ClockOptions>): Clock {
-  const child = createClock(options);
+  const child = createClock();
+  if (options?.scale !== undefined) child.scale = options.scale;
+  if (options?.paused !== undefined) child.paused = options.paused;
   addClockChild(parent, child);
   return child;
 }
 
-export function createClock(options?: Readonly<ClockOptions>): Clock {
+export function createClock(): Clock {
   const out = allocateEntity<Clock>();
-  initializeClock(out, options);
+  initializeClock(out);
   return finishEntity(out);
 }
 
@@ -75,11 +78,11 @@ export function getClockParent(clock: Readonly<Clock>): Clock | null {
   return clock.parent;
 }
 
-// Allocates a root clock (no parent). Defaults to realtime and running; pass options to start scaled or
-// paused. Drive it each frame with advanceClock(clock, dtMs).
-export function initializeClock(out: EntityConstruction<Clock>, options?: Readonly<ClockOptions>): void {
-  out.scale = options?.scale ?? 1;
-  out.paused = options?.paused ?? false;
+// Allocates a root clock (no parent), realtime and running. Assign scale / paused after create to start
+// scaled or paused. Drive it each frame with advanceClock(clock, dtMs).
+export function initializeClock(out: EntityConstruction<Clock>): void {
+  out.scale = 1;
+  out.paused = false;
   out.deltaTime = 0;
   out.elapsed = 0;
   out.parent = null;

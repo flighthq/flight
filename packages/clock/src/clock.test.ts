@@ -56,21 +56,21 @@ describe('advanceClock', () => {
   });
 
   it('applies the local scale', () => {
-    const clock = createClock({ scale: 2 });
+    const clock = Object.assign(createClock(), { scale: 2 });
     advanceClock(clock, 1000);
     expect(clock.deltaTime).toBe(2000);
     expect(clock.elapsed).toBe(2000);
   });
 
   it('feeds a zero delta while paused, freezing elapsed', () => {
-    const clock = createClock({ paused: true });
+    const clock = Object.assign(createClock(), { paused: true });
     advanceClock(clock, 1000);
     expect(clock.deltaTime).toBe(0);
     expect(clock.elapsed).toBe(0);
   });
 
   it('composes scale down a 3-level hierarchy — grandparent to parent to child', () => {
-    const grandparent = createClock({ scale: 2 });
+    const grandparent = Object.assign(createClock(), { scale: 2 });
     const parent = createChildClock(grandparent, { scale: 3 });
     const child = createChildClock(parent, { scale: 0.5 });
     advanceClock(grandparent, 1000);
@@ -81,7 +81,7 @@ describe('advanceClock', () => {
   });
 
   it('composes scale down the hierarchy — a child rate is the product of the chain', () => {
-    const parent = createClock({ scale: 2 });
+    const parent = Object.assign(createClock(), { scale: 2 });
     const child = createChildClock(parent, { scale: 0.5 });
     advanceClock(parent, 1000);
     expect(parent.deltaTime).toBe(2000);
@@ -90,7 +90,7 @@ describe('advanceClock', () => {
   });
 
   it('freezes a subtree when an ancestor is paused even if the child is running', () => {
-    const parent = createClock({ paused: true });
+    const parent = Object.assign(createClock(), { paused: true });
     const child = createChildClock(parent);
     advanceClock(parent, 1000);
     expect(parent.deltaTime).toBe(0);
@@ -108,7 +108,7 @@ describe('advanceClock', () => {
   });
 
   it('applies a negative scale, reversing the effective delta direction', () => {
-    const clock = createClock({ scale: -1 });
+    const clock = Object.assign(createClock(), { scale: -1 });
     advanceClock(clock, 1000);
     expect(clock.deltaTime).toBe(-1000);
     expect(clock.elapsed).toBe(-1000);
@@ -143,8 +143,8 @@ describe('createClock', () => {
     expect(clock.onTick).toBeNull();
   });
 
-  it('applies scale and paused options', () => {
-    const clock = createClock({ scale: 3, paused: true });
+  it('takes scale and paused by assignment after create', () => {
+    const clock = Object.assign(createClock(), { scale: 3, paused: true });
     expect(clock.scale).toBe(3);
     expect(clock.paused).toBe(true);
   });
@@ -177,11 +177,11 @@ describe('disposeClock', () => {
 
 describe('getClockEffectiveScale', () => {
   it('returns the local scale for a root', () => {
-    expect(getClockEffectiveScale(createClock({ scale: 2 }))).toBe(2);
+    expect(getClockEffectiveScale(Object.assign(createClock(), { scale: 2 }))).toBe(2);
   });
 
   it('multiplies through the ancestor chain', () => {
-    const a = createClock({ scale: 2 });
+    const a = Object.assign(createClock(), { scale: 2 });
     const b = createChildClock(a, { scale: 0.5 });
     const c = createChildClock(b, { scale: 3 });
     expect(getClockEffectiveScale(c)).toBe(3); // 2 * 0.5 * 3
@@ -201,8 +201,23 @@ describe('getClockParent', () => {
 });
 
 describe('initializeClock', () => {
-  it('is the construction initializer of createClock', () => {
-    expect(typeof initializeClock).toBe('function');
+  it('restores the canonical construction defaults', () => {
+    const clock = Object.assign(createClock(), {
+      scale: 3,
+      paused: true,
+      deltaTime: 20,
+      elapsed: 50,
+      parent: createClock(),
+      children: [createClock()],
+    });
+    initializeClock(clock);
+    expect(clock.scale).toBe(1);
+    expect(clock.paused).toBe(false);
+    expect(clock.deltaTime).toBe(0);
+    expect(clock.elapsed).toBe(0);
+    expect(clock.parent).toBeNull();
+    expect(clock.children).toEqual([]);
+    expect(clock.onTick).toBeNull();
   });
 });
 
@@ -212,11 +227,11 @@ describe('isClockEffectivelyPaused', () => {
   });
 
   it('is true when the clock itself is paused', () => {
-    expect(isClockEffectivelyPaused(createClock({ paused: true }))).toBe(true);
+    expect(isClockEffectivelyPaused(Object.assign(createClock(), { paused: true }))).toBe(true);
   });
 
   it('is true when an ancestor is paused even if the clock is running', () => {
-    const parent = createClock({ paused: true });
+    const parent = Object.assign(createClock(), { paused: true });
     const child = createChildClock(parent);
     expect(child.paused).toBe(false);
     expect(isClockEffectivelyPaused(child)).toBe(true);
@@ -251,7 +266,7 @@ describe('removeClockChild', () => {
 
 describe('resetClock', () => {
   it('clears elapsed and deltaTime without touching scale or pause', () => {
-    const clock = createClock({ scale: 2 });
+    const clock = Object.assign(createClock(), { scale: 2 });
     advanceClock(clock, 1000);
     resetClock(clock);
     expect(clock.elapsed).toBe(0);
@@ -263,7 +278,7 @@ describe('resetClock', () => {
 
 describe('resumeClock', () => {
   it('sets paused to false', () => {
-    const clock = createClock({ paused: true });
+    const clock = Object.assign(createClock(), { paused: true });
     resumeClock(clock);
     expect(clock.paused).toBe(false);
   });

@@ -105,7 +105,8 @@ pub fn advance_clock(clock: &Ref<Clock>, delta_time: f64) {
 
 /// Detaches a clock from its parent, releases its children, and drops any `on_tick` listeners, so
 /// nothing keeps the subtree (or the clock's subscribers) reachable through it: the parent no longer
-/// references this clock, each child becomes a root, and the `on_tick` slot list is cleared. This
+/// references this clock, each child becomes a root, and the `on_tick` slot list is cleared. The
+/// public children collection is cleared in place so its identity is preserved in the target. This
 /// breaks the strong parent/child cycle (A2); the memory frees when the last `Ref` drops.
 pub fn dispose_clock(clock: &Ref<Clock>) {
     let parent = clock.read().unwrap().parent.clone();
@@ -114,10 +115,9 @@ pub fn dispose_clock(clock: &Ref<Clock>) {
     }
     let (children, on_tick) = {
         let mut current = clock.write().unwrap();
-        (
-            std::mem::take(&mut current.children),
-            current.on_tick.clone(),
-        )
+        let children = current.children.to_vec();
+        current.children.clear();
+        (children, current.on_tick.clone())
     };
     for child in &children {
         child.write().unwrap().parent = None;

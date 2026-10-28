@@ -11,7 +11,7 @@ describe('advanceClock signals', () => {
   });
 
   it('emits onTick with the scaled delta when signals are enabled', () => {
-    const clock = createClock({ scale: 2 });
+    const clock = Object.assign(createClock(), { scale: 2 });
     const received: number[] = [];
     const onTick = enableClockSignals(clock);
     connectSignal(onTick, (deltaTime) => received.push(deltaTime));
