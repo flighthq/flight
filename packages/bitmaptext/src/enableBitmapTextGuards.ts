@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -25,13 +26,15 @@ export function disableBitmapTextGuards(): void {
  * importing this module costs production nothing: the wording and the `@flighthq/log` dependency live
  * only here.
  */
-export function enableBitmapTextGuards(): void {
-  setBitmapTextLayoutGuard(warnOnBitmapTextLayoutBlocked);
-  setBitmapTextMissingGlyphGuard(warnOnBitmapTextMissingGlyph);
+export function enableBitmapTextGuards(logState: LogState, clock: () => number): void {
+  setBitmapTextLayoutGuard((...args) => warnOnBitmapTextLayoutBlocked(logState, clock, ...args));
+  setBitmapTextMissingGlyphGuard((...args) => warnOnBitmapTextMissingGlyph(logState, clock, ...args));
 }
 
-function warnOnBitmapTextMissingGlyph(codepoint: number): void {
+function warnOnBitmapTextMissingGlyph(logState: LogState, clock: () => number, codepoint: number): void {
   logOnce(
+    logState,
+    clock(),
     `bitmaptext:missing-glyph:${codepoint}`,
     LogLevel.Warn,
     {
@@ -44,8 +47,15 @@ function warnOnBitmapTextMissingGlyph(codepoint: number): void {
   );
 }
 
-function warnOnBitmapTextLayoutBlocked(_reason: string, attempts: number): void {
+function warnOnBitmapTextLayoutBlocked(
+  logState: LogState,
+  clock: () => number,
+  _reason: string,
+  attempts: number,
+): void {
   logOnce(
+    logState,
+    clock(),
     'bitmaptext:layout-did-not-converge',
     LogLevel.Warn,
     {

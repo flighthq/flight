@@ -1,11 +1,13 @@
 import { createGlyphAtlas, createGlyphSourceFromGlyphAtlas } from '@flighthq/glyphatlas/contract';
-import { setLogSink } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
+import { createLogState, getMemoryLogSinkEntries, setLogSink } from '@flighthq/log/contract';
 import type {
   GlyphAtlas,
   GlyphEntry,
-  HostGlyphRasterizerCapability,
   GlyphSource,
+  HostGlyphRasterizerCapability,
   LogEntry,
+  MemoryLogSink,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -16,14 +18,25 @@ import { updateBitmapText } from './updateBitmapText.ts';
 
 let entries: LogEntry[];
 
+function clock(): number {
+  return 0;
+}
+
+function readLogEntries(sink: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
+}
+
 beforeEach(() => {
+  logState = createLogState();
   entries = [];
-  setLogSink((entry) => entries.push(entry));
+  setLogSink(logState, (entry) => entries.push(entry));
 });
 
 afterEach(() => {
   disableBitmapTextGuards();
-  setLogSink(null);
+  setLogSink(logState, null);
 });
 
 function messages(): string {
@@ -71,7 +84,7 @@ function createLimitedGlyphSource(codepoints: readonly number[]): GlyphSource {
 
 describe('disableBitmapTextGuards', () => {
   it('stops the guard reporting later layouts', () => {
-    enableBitmapTextGuards();
+    enableBitmapTextGuards(logState, clock);
     disableBitmapTextGuards();
     const source = createGlyphSourceFromGlyphAtlas(createTinyGlyphAtlas());
     updateBitmapText(createBitmapText(source, { text: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' }));
@@ -79,7 +92,7 @@ describe('disableBitmapTextGuards', () => {
   });
 
   it('stops the missing-glyph guard from reporting', () => {
-    enableBitmapTextGuards();
+    enableBitmapTextGuards(logState, clock);
     disableBitmapTextGuards();
     const source = createLimitedGlyphSource([0x41]);
     updateBitmapText(createBitmapText(source, { text: 'AB' }));
@@ -89,7 +102,7 @@ describe('disableBitmapTextGuards', () => {
 
 describe('enableBitmapTextGuards', () => {
   it('says nothing for a layout that settles', () => {
-    enableBitmapTextGuards();
+    enableBitmapTextGuards(logState, clock);
     const source = createGlyphSourceFromGlyphAtlas(createTinyGlyphAtlas());
     updateBitmapText(createBitmapText(source, { text: 'ABC' }));
     expect(messages()).toBe('');
@@ -98,7 +111,7 @@ describe('enableBitmapTextGuards', () => {
   // Without this the failure is silent and looks like a rendering bug: the text draws, every quad is
   // where layout put it, and the pixels under them belong to other glyphs.
   it('warns when a string needs more glyphs at once than the atlas can hold', () => {
-    enableBitmapTextGuards();
+    enableBitmapTextGuards(logState, clock);
     const source = createGlyphSourceFromGlyphAtlas(createTinyGlyphAtlas());
     updateBitmapText(createBitmapText(source, { text: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' }));
     expect(messages()).toContain('never settled');
@@ -106,7 +119,7 @@ describe('enableBitmapTextGuards', () => {
   });
 
   it('warns when a codepoint has no glyph in the source', () => {
-    enableBitmapTextGuards();
+    enableBitmapTextGuards(logState, clock);
     const source = createLimitedGlyphSource([0x41]);
     updateBitmapText(createBitmapText(source, { text: 'AB' }));
     expect(messages()).toContain('U+0042');
@@ -114,7 +127,7 @@ describe('enableBitmapTextGuards', () => {
   });
 
   it('says nothing when all codepoints have glyphs', () => {
-    enableBitmapTextGuards();
+    enableBitmapTextGuards(logState, clock);
     const source = createLimitedGlyphSource([0x41, 0x42]);
     updateBitmapText(createBitmapText(source, { text: 'AB' }));
     const missingMessages = entries.filter((e) =>
@@ -123,3 +136,5 @@ describe('enableBitmapTextGuards', () => {
     expect(missingMessages).toHaveLength(0);
   });
 });
+
+let logState: LogState = createLogState();
