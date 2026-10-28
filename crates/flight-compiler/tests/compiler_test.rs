@@ -1,4 +1,37 @@
-use flight_compiler::{compile_typescript, compile_vitest};
+use flight_compiler::{SourceMode, compile_typescript, compile_vitest, source_mode};
+
+mod source_modes {
+    use super::*;
+
+    #[test]
+    fn reads_source_local_generation_modes() {
+        assert_eq!(
+            source_mode("pub fn portable() {}\n").unwrap(),
+            SourceMode::Generate
+        );
+        assert_eq!(
+            source_mode("//! flight-compiler: target-native\npub fn native() {}\n").unwrap(),
+            SourceMode::TargetNative
+        );
+        assert_eq!(
+            source_mode("//! flight-compiler: rust-only\npub fn rust() {}\n").unwrap(),
+            SourceMode::RustOnly
+        );
+    }
+
+    #[test]
+    fn refuses_to_compile_an_explicit_target_native_source() {
+        let error = compile_typescript(
+            "//! flight-compiler: target-native\npub fn native() {}\n",
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "source is marked `flight-compiler: target-native`; preserve its target-native TypeScript file"
+        );
+    }
+}
 
 mod compile_typescript {
     use super::*;
@@ -99,6 +132,27 @@ pub fn equals_vector2(a: Option<&Vector2>, b: Option<&Vector2>) -> bool {
         assert!(output.contains(
             "export function equalsVector2(a?: Readonly<Vector2Raw>, b?: Readonly<Vector2Raw>): boolean"
         ));
+    }
+
+    #[test]
+    fn lowers_fully_qualified_entity_allocation_to_the_imported_hook() {
+        let source = r#"
+pub struct Vector2 {
+    runtime: EntityRuntimeSlot,
+    pub x: f32,
+}
+
+pub fn create_vector2() -> Vector2 {
+    let out: Vector2 = flight_entity::allocate_entity();
+    return out;
+}
+"#;
+
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+
+        assert!(output.contains("import { allocateEntity } from \"@flighthq/entity/contract\";"));
+        assert!(output.contains("const out: Vector2Raw = allocateEntity<Vector2Raw>();"));
+        assert!(!output.contains("flightEntity.allocateEntity"));
     }
 
     #[test]
@@ -320,5 +374,26 @@ mod hash_uint32 {
 
         assert!(output.contains("expect(value >= 0).toBe(true);"));
         assert!(!output.contains("value > 0 || value === 0"));
+    }
+
+    #[test]
+    fn imports_contract_enum_objects_used_by_portable_tests() {
+        let source = r#"
+use flight_entity::*;
+
+mod explain {
+    use super::*;
+
+    #[test]
+    fn names_the_slot() {
+        assert_eq!(explain(EntityRuntimeWriteSlot::BindingSlot), "binding-slot");
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/entity/contract").unwrap();
+
+        assert!(output.contains("  EntityRuntimeWriteSlot,"));
+        assert!(output.contains("explain(EntityRuntimeWriteSlot.BindingSlot)"));
     }
 }

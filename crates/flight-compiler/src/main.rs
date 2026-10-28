@@ -6,6 +6,7 @@ use std::process;
 const USAGE: &str = "\
 Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--check]
        flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--check]
+       flight-compile source-mode --source <rust-file>
 ";
 
 #[derive(Clone, Copy)]
@@ -59,6 +60,7 @@ fn main() {
             .and_then(|options| generate(&options, GenerateKind::Source)),
         Some("generate-tests") => parse_generate_options(&arguments[1..], GenerateKind::Tests)
             .and_then(|options| generate(&options, GenerateKind::Tests)),
+        Some("source-mode") => source_mode(&arguments[1..]),
         Some("help" | "--help" | "-h") => {
             print!("{USAGE}");
             return;
@@ -69,6 +71,28 @@ fn main() {
         eprintln!("error: {error}");
         process::exit(2);
     }
+}
+
+fn source_mode(arguments: &[String]) -> Result<(), String> {
+    let [flag, source] = arguments else {
+        return Err(format!(
+            "source-mode requires --source <rust-file>\n\n{USAGE}"
+        ));
+    };
+    if flag != "--source" {
+        return Err(format!("unknown source-mode option `{flag}`\n\n{USAGE}"));
+    }
+    let source = fs::read_to_string(source).map_err(|error| format!("{source}: {error}"))?;
+    let mode = flight_compiler::source_mode(&source).map_err(|error| error.to_string())?;
+    println!(
+        "{}",
+        match mode {
+            flight_compiler::SourceMode::Generate => "generate",
+            flight_compiler::SourceMode::RustOnly => "rust-only",
+            flight_compiler::SourceMode::TargetNative => "target-native",
+        }
+    );
+    return Ok(());
 }
 
 fn parse_generate_options(

@@ -5,7 +5,7 @@ use syn::{
     UseTree, Visibility,
 };
 
-use crate::{CompileError, compile_error};
+use crate::{CompileError, SourceMode, compile_error};
 
 pub(crate) struct Program {
     pub(crate) constants: Vec<ItemConst>,
@@ -90,6 +90,58 @@ fn has_rust_only_directive(attributes: &[Attribute]) -> bool {
         };
         return value.value().contains("flight-compiler: rust-only");
     });
+}
+
+pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    let mut rust_only = false;
+    let mut target_native = false;
+    for attribute in &file.attrs {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        match directive {
+            "rust-only" => rust_only = true,
+            "target-native" => target_native = true,
+            _ => {}
+        }
+    }
+    if rust_only && target_native {
+        return Err(compile_error(
+            "source cannot be both `flight-compiler: rust-only` and `flight-compiler: target-native`",
+        ));
+    }
+    return Ok(if rust_only {
+        SourceMode::RustOnly
+    } else if target_native {
+        SourceMode::TargetNative
+    } else {
+        SourceMode::Generate
+    });
+}
+
+fn doc_directive(attribute: &Attribute) -> Option<&str> {
+    if !attribute.path().is_ident("doc") {
+        return None;
+    }
+    let syn::Meta::NameValue(meta) = &attribute.meta else {
+        return None;
+    };
+    let syn::Expr::Lit(value) = &meta.value else {
+        return None;
+    };
+    let syn::Lit::Str(value) = &value.lit else {
+        return None;
+    };
+    let value = value.value();
+    let directive = value.trim().strip_prefix("flight-compiler:")?.trim();
+    // The returned value must outlive this function, so match the finite vocabulary here.
+    return match directive {
+        "rust-only" => Some("rust-only"),
+        "target-native" => Some("target-native"),
+        _ => None,
+    };
 }
 
 fn is_public(visibility: &Visibility) -> bool {
@@ -314,8 +366,8 @@ fn validate_fields(structure: &ItemStruct) -> Result<(), CompileError> {
         )));
     };
     for field in &fields.named {
-        if !is_public(&field.vis)
-            && !(field.ident.as_ref().is_some_and(|ident| ident == "runtime")
+        if !(is_public(&field.vis)
+            || field.ident.as_ref().is_some_and(|ident| ident == "runtime")
                 && type_name(&field.ty).as_deref() == Some("EntityRuntimeSlot"))
         {
             return Err(compile_error(format!(

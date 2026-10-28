@@ -109,11 +109,28 @@ fn collect_contract_symbols(program: &TestProgram) -> Vec<String> {
         }
 
         fn visit_expr_path(&mut self, expression: &'ast syn::ExprPath) {
-            if expression.qself.is_none()
-                && expression.path.segments.len() == 1
-                && let Some(segment) = expression.path.segments.first()
-            {
-                self.record_identifier(&segment.ident);
+            if expression.qself.is_none() {
+                let segments = &expression.path.segments;
+                if segments.len() == 1
+                    && let Some(segment) = segments.first()
+                {
+                    self.record_identifier(&segment.ident);
+                } else if let Some(segment) = segments.first()
+                    && segment
+                        .ident
+                        .to_string()
+                        .chars()
+                        .next()
+                        .is_some_and(|character| character.is_ascii_uppercase())
+                    && !matches!(
+                        segment.ident.to_string().as_str(),
+                        "Arc" | "Box" | "Option" | "Result" | "String" | "Vec"
+                    )
+                {
+                    // Rust enum variants are paths (`Type::Variant`) while the generated TypeScript
+                    // test needs the owning enum object imported from the contract lane.
+                    self.record_identifier(&segment.ident);
+                }
             }
             syn::visit::visit_expr_path(self, expression);
         }
