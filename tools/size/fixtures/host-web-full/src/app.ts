@@ -15,7 +15,8 @@ const opened = openWindow(lifecycle, geometry, applicationWindow, {
 
 setWindowTitle(appearance, applicationWindow, 'Flight Web Host');
 
-const bounds = getWindowBounds(geometry, applicationWindow, { height: 0, width: 0, x: 0, y: 0 });
+const bounds = { height: 0, width: 0, x: 0, y: 0 };
+getWindowBounds(geometry, applicationWindow, bounds);
 const card = renderHostWebFullCard(applicationWindow, bounds, opened);
 
 Reflect.set(globalThis, '__flightHostWebFull', card);

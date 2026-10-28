@@ -12,7 +12,8 @@ const opened = openWindow(webHostWindowLifecycle, webHostWindowGeometry, applica
 
 setWindowTitle(webHostWindowAppearance, applicationWindow, 'Direct Web Window');
 
-const bounds = getWindowBounds(webHostWindowGeometry, applicationWindow, { height: 0, width: 0, x: 0, y: 0 });
+const bounds = { height: 0, width: 0, x: 0, y: 0 };
+getWindowBounds(webHostWindowGeometry, applicationWindow, bounds);
 const card = renderHostWebWindowCard(applicationWindow, bounds, opened);
 
 Reflect.set(globalThis, '__flightHostWebWindowOnly', card);
