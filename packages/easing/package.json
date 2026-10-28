@@ -32,7 +32,8 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
-    "generate": "tsx generate.ts",
+    "generate": "tsx ../../scripts/generate-rust-package.ts --crate flight-easing --package easing",
+    "generate:check": "tsx ../../scripts/generate-rust-package.ts --crate flight-easing --package easing --check",
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --watch --config vitest.config.ts",
     "prepack": "npm run clean && npm run clean:dist && npm run build",

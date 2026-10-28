@@ -1,3 +1,5 @@
+//! flight-compiler: string-union StepPosition
+
 use std::sync::{Arc, Mutex, PoisonError};
 
 use crate::EasingFunction;

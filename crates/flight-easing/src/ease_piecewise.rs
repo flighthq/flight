@@ -1,3 +1,5 @@
+//! flight-compiler: readonly-fields EasingSegment
+
 use std::sync::Arc;
 
 use flight_entity::throw_error;
