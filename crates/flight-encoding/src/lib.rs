@@ -2,5 +2,6 @@ mod utf8;
 
 pub mod contract;
 
-pub use contract::decode_utf8;
-pub use contract::encode_utf8;
+// Public lane equals the contract lane, mirroring TS `index.ts` and `contract.ts`, which both export
+// all of utf8.
+pub use contract::*;

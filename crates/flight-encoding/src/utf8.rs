@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::Uint8Array;
 
 const UTF8_REPLACEMENT_CHARACTER: char = '\u{FFFD}';

@@ -1,3 +1,9 @@
+//! flight-compiler: rust-only
+
+// The generated TypeScript test would name `decodeUtf8`/`encodeUtf8`; the shipped names are
+// `decodeUTF8`/`encodeUTF8`, which the compiler cannot yet derive from `decode_utf8`. TS coverage of
+// the contract lane lives in the target-native utf8.test.ts until generic acronym naming lands.
+
 use flight_encoding::contract::*;
 
 #[test]
