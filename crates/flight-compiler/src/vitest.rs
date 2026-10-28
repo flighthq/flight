@@ -9,7 +9,7 @@ use syn::{BinOp, Expr, Fields, FnArg, ItemFn, Pat, ReturnType, Stmt, Token};
 use crate::model::{TestCase, TestProgram, TestSuite};
 use crate::typescript::{
     emit_expression, emit_for_header, emit_format_template, emit_local, emit_local_with_shadow,
-    emit_parameter, emit_type, function_expression_context, is_transparent_data_union_variant,
+    emit_parameter, emit_type, function_expression_context, is_data_union_variant,
     numeric_literal_spelling, snake_to_lower_camel, write_indent,
 };
 use crate::{CompileError, compile_error};
@@ -160,7 +160,7 @@ fn collect_contract_symbols(
                 {
                     if segments.len() == 2
                         && let Some(variant) = segments.last()
-                        && is_transparent_data_union_variant(
+                        && is_data_union_variant(
                             self.context,
                             &segment.ident.to_string(),
                             &variant.ident.to_string(),

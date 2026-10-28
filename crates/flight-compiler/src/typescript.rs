@@ -19,6 +19,7 @@ const CALLBACK_ARGUMENT_MARKER: &str = "@callback-argument:";
 const CLOSURE_PARAMETER_MARKER: &str = "@closure-parameter:";
 const DATA_UNION_UNIT_MARKER: &str = "@data-union-unit:";
 const DATA_UNION_VARIANT_MARKER: &str = "@data-union-variant:";
+const TAGGED_DATA_UNION_VARIANT_MARKER: &str = "@tagged-data-union-variant:";
 const ENTITY_DEFAULT_FIELD_MARKER: &str = "@entity-default-field:";
 const ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER: &str = "@entity-unsupported-default-field:";
 const FIXED_BUFFER_ARGUMENT_MARKER: &str = "@fixed-buffer-argument:";
@@ -516,7 +517,19 @@ fn insert_data_union_context(
     for program in programs {
         for rust_enum in &program.enums {
             let owner = rust_enum.ident.to_string();
-            if !program.data_unions.contains(&owner) || !transparent_data_union(rust_enum) {
+            if !program.data_unions.contains(&owner) {
+                continue;
+            }
+            if !transparent_data_union(rust_enum) {
+                for variant in &rust_enum.variants {
+                    let variant_name = variant.ident.to_string();
+                    context.insert(format!(
+                        "{TAGGED_DATA_UNION_VARIANT_MARKER}{owner}:{variant_name}"
+                    ));
+                    if matches!(variant.fields, syn::Fields::Unit) {
+                        context.insert(format!("{DATA_UNION_UNIT_MARKER}{owner}:{variant_name}"));
+                    }
+                }
                 continue;
             }
             for variant in &rust_enum.variants {
@@ -1269,6 +1282,29 @@ pub(crate) fn is_transparent_data_union_variant(
     return data_union_variant_categories(entities, owner, variant).is_some();
 }
 
+fn is_tagged_data_union_variant(entities: &HashSet<String>, owner: &str, variant: &str) -> bool {
+    return entities.contains(&format!(
+        "{TAGGED_DATA_UNION_VARIANT_MARKER}{owner}:{variant}"
+    ));
+}
+
+fn tagged_data_union_variants(entities: &HashSet<String>, owner: &str) -> BTreeSet<String> {
+    let prefix = format!("{TAGGED_DATA_UNION_VARIANT_MARKER}{owner}:");
+    return entities
+        .iter()
+        .filter_map(|marker| marker.strip_prefix(&prefix).map(str::to_string))
+        .collect();
+}
+
+pub(crate) fn is_data_union_variant(
+    entities: &HashSet<String>,
+    owner: &str,
+    variant: &str,
+) -> bool {
+    return is_transparent_data_union_variant(entities, owner, variant)
+        || is_tagged_data_union_variant(entities, owner, variant);
+}
+
 fn data_union_expression_variant(
     expression: &Expr,
     entities: &HashSet<String>,
@@ -1516,6 +1552,19 @@ pub(crate) fn emit_expression(
         Expr::MethodCall(call) => emit_method_call(call, entities),
         Expr::Paren(paren) => Ok(format!("({})", emit_expression(&paren.expr, entities)?)),
         Expr::Path(path) => {
+            if let Some((owner, variant)) = associated_owner_and_member(expression)
+                && is_tagged_data_union_variant(entities, &owner, &variant)
+            {
+                if !data_union_unit(entities, &owner, &variant) {
+                    return Err(compile_error(format!(
+                        "tagged data union payload variant `{owner}::{variant}` needs named fields"
+                    )));
+                }
+                return Ok(format!(
+                    "{{ kind: {:?} as const }}",
+                    lower_camel_from_upper_camel(&variant)
+                ));
+            }
             if let Some((owner, variant, _)) = data_union_expression_variant(expression, entities) {
                 return if data_union_unit(entities, &owner, &variant) {
                     Ok("null".to_string())
@@ -1608,6 +1657,38 @@ pub(crate) fn emit_expression(
             Ok(format!("new Array({length}).fill({value})"))
         }
         Expr::Struct(structure) => {
+            if let Some((owner, variant)) = path_owner_and_member(&structure.path)
+                && is_tagged_data_union_variant(entities, &owner, &variant)
+            {
+                if data_union_unit(entities, &owner, &variant) {
+                    return Err(compile_error(format!(
+                        "tagged data union unit variant `{owner}::{variant}` cannot declare fields"
+                    )));
+                }
+                if structure.rest.is_some() {
+                    return Err(compile_error(
+                        "tagged data union construction cannot use a struct update",
+                    ));
+                }
+                let mut fields = vec![format!(
+                    "kind: {:?} as const",
+                    lower_camel_from_upper_camel(&variant)
+                )];
+                fields.extend(
+                    structure
+                        .fields
+                        .iter()
+                        .map(|field| {
+                            Ok(format!(
+                                "{}: {}",
+                                emit_member(&field.member),
+                                emit_expression(&field.expr, entities)?
+                            ))
+                        })
+                        .collect::<Result<Vec<_>, CompileError>>()?,
+                );
+                return Ok(format!("{{ {} }}", fields.join(", ")));
+            }
             let fields = structure
                 .fields
                 .iter()
@@ -2243,6 +2324,276 @@ fn emit_macro_expression(
     return emit_format_template(&template.value(), &values, entities, "portable `format!`");
 }
 
+struct TaggedDataUnionPattern {
+    bindings: BTreeMap<String, String>,
+    owner: String,
+    variant: String,
+}
+
+enum TaggedDataUnionPatternAnalysis {
+    CatchAll(Option<String>),
+    Ordinary,
+    Variants(Vec<TaggedDataUnionPattern>),
+}
+
+struct TaggedDataUnionMatchArm {
+    catch_all_binding: Option<String>,
+    otherwise: bool,
+    variants: Vec<TaggedDataUnionPattern>,
+}
+
+fn tagged_data_union_field_binding(pattern: &Pat) -> Result<Option<String>, CompileError> {
+    return match pattern {
+        Pat::Ident(identifier) if identifier.subpat.is_none() => {
+            Ok(Some(snake_to_lower_camel(&identifier.ident.to_string())))
+        }
+        Pat::Reference(reference) => tagged_data_union_field_binding(&reference.pat),
+        Pat::Wild(_) => Ok(None),
+        _ => Err(compile_error(
+            "tagged data union field pattern must be an identifier or `_`",
+        )),
+    };
+}
+
+fn analyze_tagged_data_union_pattern(
+    pattern: &Pat,
+    entities: &HashSet<String>,
+) -> Result<TaggedDataUnionPatternAnalysis, CompileError> {
+    return match pattern {
+        Pat::Ident(identifier) if identifier.subpat.is_none() => {
+            Ok(TaggedDataUnionPatternAnalysis::CatchAll(Some(
+                snake_to_lower_camel(&identifier.ident.to_string()),
+            )))
+        }
+        Pat::Or(or_pattern) => {
+            let mut variants = Vec::new();
+            for pattern in &or_pattern.cases {
+                match analyze_tagged_data_union_pattern(pattern, entities)? {
+                    TaggedDataUnionPatternAnalysis::Variants(patterns) => variants.extend(patterns),
+                    TaggedDataUnionPatternAnalysis::CatchAll(_) => {
+                        return Err(compile_error(
+                            "tagged data union `|` pattern cannot contain a catch-all",
+                        ));
+                    }
+                    TaggedDataUnionPatternAnalysis::Ordinary => {
+                        return Ok(TaggedDataUnionPatternAnalysis::Ordinary);
+                    }
+                }
+            }
+            Ok(TaggedDataUnionPatternAnalysis::Variants(variants))
+        }
+        Pat::Paren(paren) => analyze_tagged_data_union_pattern(&paren.pat, entities),
+        Pat::Path(path) => {
+            let Some((owner, variant)) = path_owner_and_member(&path.path) else {
+                return Ok(TaggedDataUnionPatternAnalysis::Ordinary);
+            };
+            if !is_tagged_data_union_variant(entities, &owner, &variant) {
+                return Ok(TaggedDataUnionPatternAnalysis::Ordinary);
+            }
+            if !data_union_unit(entities, &owner, &variant) {
+                return Err(compile_error(format!(
+                    "tagged data union payload variant `{owner}::{variant}` needs a field pattern"
+                )));
+            }
+            Ok(TaggedDataUnionPatternAnalysis::Variants(vec![
+                TaggedDataUnionPattern {
+                    bindings: BTreeMap::new(),
+                    owner,
+                    variant,
+                },
+            ]))
+        }
+        Pat::Reference(reference) => analyze_tagged_data_union_pattern(&reference.pat, entities),
+        Pat::Struct(pattern) => {
+            let Some((owner, variant)) = path_owner_and_member(&pattern.path) else {
+                return Ok(TaggedDataUnionPatternAnalysis::Ordinary);
+            };
+            if !is_tagged_data_union_variant(entities, &owner, &variant) {
+                return Ok(TaggedDataUnionPatternAnalysis::Ordinary);
+            }
+            if data_union_unit(entities, &owner, &variant) {
+                return Err(compile_error(format!(
+                    "tagged data union unit variant `{owner}::{variant}` cannot declare field patterns"
+                )));
+            }
+            let mut bindings = BTreeMap::new();
+            for field in &pattern.fields {
+                let Some(binding) = tagged_data_union_field_binding(&field.pat)? else {
+                    continue;
+                };
+                let source = emit_member(&field.member);
+                if bindings.insert(binding.clone(), source).is_some() {
+                    return Err(compile_error(format!(
+                        "tagged data union pattern binds `{binding}` more than once"
+                    )));
+                }
+            }
+            Ok(TaggedDataUnionPatternAnalysis::Variants(vec![
+                TaggedDataUnionPattern {
+                    bindings,
+                    owner,
+                    variant,
+                },
+            ]))
+        }
+        Pat::Wild(_) => Ok(TaggedDataUnionPatternAnalysis::CatchAll(None)),
+        _ => Ok(TaggedDataUnionPatternAnalysis::Ordinary),
+    };
+}
+
+fn analyze_tagged_data_union_match(
+    arms: &[syn::Arm],
+    entities: &HashSet<String>,
+) -> Result<Option<Vec<TaggedDataUnionMatchArm>>, CompileError> {
+    let analyses = arms
+        .iter()
+        .map(|arm| analyze_tagged_data_union_pattern(&arm.pat, entities))
+        .collect::<Result<Vec<_>, _>>()?;
+    if !analyses
+        .iter()
+        .any(|analysis| matches!(analysis, TaggedDataUnionPatternAnalysis::Variants(_)))
+    {
+        return Ok(None);
+    }
+    let mut owner = None;
+    let mut handled = BTreeMap::<String, String>::new();
+    let mut output = Vec::new();
+    let mut has_catch_all = false;
+    for (arm_index, analysis) in analyses.into_iter().enumerate() {
+        match analysis {
+            TaggedDataUnionPatternAnalysis::CatchAll(binding) => {
+                if arm_index + 1 != arms.len() {
+                    return Err(compile_error(
+                        "tagged data union catch-all match arm must be last",
+                    ));
+                }
+                output.push(TaggedDataUnionMatchArm {
+                    catch_all_binding: binding,
+                    otherwise: true,
+                    variants: Vec::new(),
+                });
+                has_catch_all = true;
+            }
+            TaggedDataUnionPatternAnalysis::Ordinary => {
+                return Err(compile_error(
+                    "tagged data union match cannot mix data union and ordinary patterns",
+                ));
+            }
+            TaggedDataUnionPatternAnalysis::Variants(patterns) => {
+                let expected_bindings = patterns
+                    .first()
+                    .map(|pattern| pattern.bindings.keys().cloned().collect::<BTreeSet<_>>())
+                    .unwrap_or_default();
+                for pattern in &patterns {
+                    if let Some(expected) = &owner {
+                        if expected != &pattern.owner {
+                            return Err(compile_error(format!(
+                                "tagged data union match cannot mix `{expected}` and `{}` variants",
+                                pattern.owner
+                            )));
+                        }
+                    } else {
+                        owner = Some(pattern.owner.clone());
+                    }
+                    let bindings = pattern.bindings.keys().cloned().collect::<BTreeSet<_>>();
+                    if bindings != expected_bindings {
+                        return Err(compile_error(
+                            "tagged data union alternatives must bind the same field names",
+                        ));
+                    }
+                    let label = format!("{}::{}", pattern.owner, pattern.variant);
+                    if let Some(previous) = handled.insert(pattern.variant.clone(), label.clone()) {
+                        return Err(compile_error(format!(
+                            "tagged data union match arm `{label}` is unreachable after `{previous}`"
+                        )));
+                    }
+                }
+                output.push(TaggedDataUnionMatchArm {
+                    catch_all_binding: None,
+                    otherwise: false,
+                    variants: patterns,
+                });
+            }
+        }
+    }
+    if !has_catch_all {
+        let owner = owner.expect("tagged data union match has a tagged variant");
+        let missing = tagged_data_union_variants(entities, &owner)
+            .into_iter()
+            .filter(|variant| !handled.contains_key(variant))
+            .collect::<Vec<_>>();
+        if !missing.is_empty() {
+            return Err(compile_error(format!(
+                "tagged data union match is not exhaustive; missing {}",
+                missing
+                    .iter()
+                    .map(|variant| format!("`{owner}::{variant}`"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )));
+        }
+        output
+            .last_mut()
+            .expect("tagged data union match has an arm")
+            .otherwise = true;
+    }
+    return Ok(Some(output));
+}
+
+fn tagged_data_union_predicate(patterns: &[TaggedDataUnionPattern], value: &str) -> String {
+    return patterns
+        .iter()
+        .map(|pattern| {
+            format!(
+                "{value}.kind === {:?}",
+                lower_camel_from_upper_camel(&pattern.variant)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(" || ");
+}
+
+fn tagged_data_union_bindings(
+    patterns: &[TaggedDataUnionPattern],
+    value: &str,
+) -> Vec<(String, String)> {
+    let Some(first) = patterns.first() else {
+        return Vec::new();
+    };
+    return first
+        .bindings
+        .keys()
+        .map(|binding| {
+            let fields = patterns
+                .iter()
+                .map(|pattern| {
+                    (
+                        lower_camel_from_upper_camel(&pattern.variant),
+                        pattern
+                            .bindings
+                            .get(binding)
+                            .expect("tagged alternatives have identical binding names"),
+                    )
+                })
+                .collect::<Vec<_>>();
+            let expression = if fields.iter().all(|(_, field)| *field == fields[0].1) {
+                format!("{value}.{}", fields[0].1)
+            } else {
+                let mut expression = format!(
+                    "{value}.{}",
+                    fields.last().expect("tagged match arm has a variant").1
+                );
+                for (variant, field) in fields.iter().rev().skip(1) {
+                    expression =
+                        format!("{value}.kind === {variant:?} ? {value}.{field} : {expression}");
+                }
+                expression
+            };
+            (binding.clone(), expression)
+        })
+        .collect();
+}
+
 struct DataUnionPattern {
     binding: Option<String>,
     categories: BTreeSet<RuntimeCategory>,
@@ -2466,6 +2817,45 @@ fn emit_match_expression(
     expression: &syn::ExprMatch,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
+    if let Some(arms) = analyze_tagged_data_union_match(&expression.arms, entities)? {
+        let mut out = String::new();
+        out.push_str("(() => {\n  const matchValue = ");
+        out.push_str(&emit_expression(&expression.expr, entities)?);
+        out.push_str(";\n");
+        for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
+            if arm.guard.is_some() {
+                return Err(compile_error("portable Rust match arms cannot use guards"));
+            }
+            if info.otherwise {
+                if index == 0 {
+                    out.push_str("  {\n");
+                } else {
+                    out.push_str("  else {\n");
+                }
+            } else {
+                let prefix = if index == 0 { "if" } else { "else if" };
+                writeln!(
+                    out,
+                    "  {prefix} ({}) {{",
+                    tagged_data_union_predicate(&info.variants, "matchValue")
+                )
+                .expect("writing to a String cannot fail");
+            }
+            if let Some(binding) = info.catch_all_binding {
+                writeln!(out, "    const {binding} = matchValue;")
+                    .expect("writing to a String cannot fail");
+            }
+            for (binding, value) in tagged_data_union_bindings(&info.variants, "matchValue") {
+                writeln!(out, "    const {binding} = {value};")
+                    .expect("writing to a String cannot fail");
+            }
+            writeln!(out, "    return {};", emit_expression(&arm.body, entities)?)
+                .expect("writing to a String cannot fail");
+            out.push_str("  }\n");
+        }
+        out.push_str("})()");
+        return Ok(out);
+    }
     if let Some(arms) = analyze_data_union_match(&expression.arms, entities)? {
         let mut out = String::new();
         out.push_str("(() => {\n  const matchValue = ");
@@ -2534,6 +2924,62 @@ fn emit_match_statement(
     entities: &HashSet<String>,
     indent: usize,
 ) -> Result<(), CompileError> {
+    if let Some(arms) = analyze_tagged_data_union_match(&expression.arms, entities)? {
+        write_indent(out, indent);
+        out.push_str("{\n");
+        write_indent(out, indent + 1);
+        writeln!(
+            out,
+            "const matchValue = {};",
+            emit_expression(&expression.expr, entities)?
+        )
+        .expect("writing to a String cannot fail");
+        for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
+            if arm.guard.is_some() {
+                return Err(compile_error("portable Rust match arms cannot use guards"));
+            }
+            write_indent(out, indent + 1);
+            if info.otherwise {
+                if index == 0 {
+                    out.push_str("{\n");
+                } else {
+                    out.push_str("else {\n");
+                }
+            } else {
+                let prefix = if index == 0 { "if" } else { "else if" };
+                writeln!(
+                    out,
+                    "{prefix} ({}) {{",
+                    tagged_data_union_predicate(&info.variants, "matchValue")
+                )
+                .expect("writing to a String cannot fail");
+            }
+            if let Some(binding) = info.catch_all_binding {
+                write_indent(out, indent + 2);
+                writeln!(out, "const {binding} = matchValue;")
+                    .expect("writing to a String cannot fail");
+            }
+            for (binding, value) in tagged_data_union_bindings(&info.variants, "matchValue") {
+                write_indent(out, indent + 2);
+                writeln!(out, "const {binding} = {value};")
+                    .expect("writing to a String cannot fail");
+            }
+            match arm.body.as_ref() {
+                Expr::Block(block) => emit_block(out, &block.block.stmts, entities, indent + 2)?,
+                expression => emit_statement(
+                    out,
+                    &Stmt::Expr(expression.clone(), None),
+                    entities,
+                    indent + 2,
+                )?,
+            }
+            write_indent(out, indent + 1);
+            out.push_str("}\n");
+        }
+        write_indent(out, indent);
+        out.push_str("}\n");
+        return Ok(());
+    }
     if let Some(arms) = analyze_data_union_match(&expression.arms, entities)? {
         write_indent(out, indent);
         out.push_str("{\n");

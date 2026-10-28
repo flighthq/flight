@@ -1068,7 +1068,9 @@ pub enum LogDataOrProvider {
 
 pub enum PathSegment {
     MoveTo { x: f64, y: f64 },
+    LineTo { x: f64, y: f64 },
     QuadraticCurveTo { control_x: f64, control_y: f64, x: f64, y: f64 },
+    CubicCurveTo { control_x1: f64, control_y1: f64, control_x2: f64, control_y2: f64, x: f64, y: f64 },
     Close,
 }
 "#;
@@ -1079,9 +1081,164 @@ pub enum PathSegment {
         assert!(output.contains("export type LogValue = unknown;"));
         assert!(output.contains("export type LogDataOrProvider = LogData | LogDataProvider;"));
         assert!(output.contains(
-            "export type PathSegment = { readonly kind: \"moveTo\"; readonly x: number; readonly y: number } | { readonly kind: \"quadraticCurveTo\"; readonly controlX: number; readonly controlY: number; readonly x: number; readonly y: number } | { readonly kind: \"close\" };"
+            "export type PathSegment = { readonly kind: \"moveTo\"; readonly x: number; readonly y: number } | { readonly kind: \"lineTo\"; readonly x: number; readonly y: number } | { readonly kind: \"quadraticCurveTo\"; readonly controlX: number; readonly controlY: number; readonly x: number; readonly y: number } | { readonly kind: \"cubicCurveTo\"; readonly controlX1: number; readonly controlY1: number; readonly controlX2: number; readonly controlY2: number; readonly x: number; readonly y: number } | { readonly kind: \"close\" };"
         ));
         assert!(!output.contains("number | number"));
+    }
+
+    #[test]
+    fn lowers_tagged_data_union_constructors_and_matches_exact_kinds() {
+        let source = r#"
+//! flight-compiler: data-union PathSegment
+
+pub enum PathSegment {
+    MoveTo { x: f64, y: f64 },
+    LineTo { x: f64, y: f64 },
+    QuadraticCurveTo { control_x: f64, control_y: f64, x: f64, y: f64 },
+    CubicCurveTo { control_x1: f64, control_y1: f64, control_x2: f64, control_y2: f64, x: f64, y: f64 },
+    Close,
+}
+
+pub fn move_to(x: f64, y: f64) -> PathSegment {
+    return PathSegment::MoveTo { x, y };
+}
+
+pub fn line_to(x: f64, y: f64) -> PathSegment {
+    return PathSegment::LineTo { x, y };
+}
+
+pub fn quadratic_curve_to(control_x: f64, control_y: f64, x: f64, y: f64) -> PathSegment {
+    return PathSegment::QuadraticCurveTo { control_x, control_y, x, y };
+}
+
+pub fn cubic_curve_to(
+    control_x1: f64,
+    control_y1: f64,
+    control_x2: f64,
+    control_y2: f64,
+    x: f64,
+    y: f64,
+) -> PathSegment {
+    return PathSegment::CubicCurveTo {
+        control_x1,
+        control_y1,
+        control_x2,
+        control_y2,
+        x,
+        y,
+    };
+}
+
+pub fn close() -> PathSegment {
+    return PathSegment::Close;
+}
+
+pub fn terminal_x(segment: PathSegment) -> f64 {
+    return match segment {
+        PathSegment::MoveTo { x, .. } | PathSegment::LineTo { x, .. } => x,
+        PathSegment::QuadraticCurveTo { x, .. } => x,
+        PathSegment::CubicCurveTo { x, .. } => x,
+        PathSegment::Close => 0.0,
+    };
+}
+
+pub fn append_terminal_y(out: &mut Vec<f64>, segment: PathSegment) {
+    match segment {
+        PathSegment::MoveTo { y, .. } | PathSegment::LineTo { y, .. } => out.push(y),
+        PathSegment::QuadraticCurveTo { y, .. } => out.push(y),
+        PathSegment::CubicCurveTo { y, .. } => out.push(y),
+        PathSegment::Close => {}
+    }
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("{ kind: \"moveTo\" as const, x: x, y: y }"));
+        assert!(output.contains("{ kind: \"lineTo\" as const, x: x, y: y }"));
+        assert!(output.contains("kind: \"quadraticCurveTo\" as const"));
+        assert!(output.contains("kind: \"cubicCurveTo\" as const"));
+        assert!(output.contains("return { kind: \"close\" as const };"));
+        assert!(
+            output.contains("matchValue.kind === \"moveTo\" || matchValue.kind === \"lineTo\"")
+        );
+        assert!(output.contains("matchValue.kind === \"quadraticCurveTo\""));
+        assert!(output.contains("matchValue.kind === \"cubicCurveTo\""));
+        assert!(output.contains("else {\n    return 0.0;"));
+        assert!(output.contains("const x = matchValue.x;"));
+        assert!(output.contains("const y = matchValue.y;"));
+        assert!(!output.contains("PathSegment.MoveTo"));
+        assert!(!output.contains("PathSegment.Close"));
+    }
+
+    #[test]
+    fn lowers_the_real_path_segment_constructors() {
+        let path = include_str!("../../flight-path/src/path.rs");
+        let for_each_path_segment = include_str!("../../flight-path/src/for_each_path_segment.rs");
+
+        let output =
+            compile_typescript_with_alias_sources(for_each_path_segment, None, &[path]).unwrap();
+
+        assert!(output.contains("visitor({ kind: \"moveTo\" as const, x: x, y: y });"));
+        assert!(output.contains("visitor({ kind: \"lineTo\" as const, x: x, y: y });"));
+        assert!(output.contains("kind: \"quadraticCurveTo\" as const"));
+        assert!(output.contains("kind: \"cubicCurveTo\" as const"));
+        assert!(output.contains("visitor({ kind: \"close\" as const });"));
+        assert!(!output.contains("PathSegment.MoveTo"));
+        assert!(!output.contains("PathSegment.Close"));
+    }
+
+    #[test]
+    fn rejects_repeated_tagged_data_union_match_variants() {
+        let source = r#"
+//! flight-compiler: data-union PathSegment
+
+pub enum PathSegment {
+    MoveTo { x: f64, y: f64 },
+    Close,
+}
+
+pub fn terminal_x(segment: PathSegment) -> f64 {
+    return match segment {
+        PathSegment::MoveTo { x, .. } => x,
+        PathSegment::MoveTo { x, .. } => x,
+        PathSegment::Close => 0.0,
+    };
+}
+"#;
+
+        let error = compile_typescript(source, None).unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "tagged data union match arm `PathSegment::MoveTo` is unreachable after `PathSegment::MoveTo`"
+        );
+    }
+
+    #[test]
+    fn rejects_nonexhaustive_tagged_data_union_matches() {
+        let source = r#"
+//! flight-compiler: data-union PathSegment
+
+pub enum PathSegment {
+    MoveTo { x: f64, y: f64 },
+    LineTo { x: f64, y: f64 },
+    Close,
+}
+
+pub fn terminal_x(segment: PathSegment) -> f64 {
+    return match segment {
+        PathSegment::MoveTo { x, .. } => x,
+    };
+}
+"#;
+
+        let error = compile_typescript(source, None).unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "tagged data union match is not exhaustive; missing `PathSegment::Close`, `PathSegment::LineTo`"
+        );
     }
 
     #[test]
@@ -1734,6 +1891,42 @@ mod rectangle_ids {
         assert!(output.contains("typeof matchValue === \"string\""));
         assert!(!output.contains("  RectangleId,"));
         assert!(!output.contains("RectangleId.Number"));
+    }
+
+    #[test]
+    fn inherits_tagged_data_union_runtime_lowering_from_production_sources() {
+        let production = include_str!("../../flight-path/src/path.rs");
+        let source = r#"
+use flight_path::*;
+
+mod path_segments {
+    use super::*;
+
+    #[test]
+    fn constructs_and_matches_a_segment() {
+        let segment = PathSegment::MoveTo { x: 4.0, y: 5.0 };
+        let x = match segment {
+            PathSegment::MoveTo { x, .. } => x,
+            PathSegment::LineTo { x, .. } => x,
+            PathSegment::QuadraticCurveTo { x, .. } => x,
+            PathSegment::CubicCurveTo { x, .. } => x,
+            PathSegment::Close => 0.0,
+        };
+        assert_eq!(x, 4.0);
+    }
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/path/contract", &[production])
+                .unwrap();
+
+        assert!(output.contains("const segment = { kind: \"moveTo\" as const, x: 4.0, y: 5.0 };"));
+        assert!(output.contains("matchValue.kind === \"moveTo\""));
+        assert!(output.contains("else {\n"));
+        assert!(output.contains("return 0.0;"));
+        assert!(!output.contains("  PathSegment,"));
+        assert!(!output.contains("PathSegment.MoveTo"));
     }
 
     #[test]

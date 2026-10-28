@@ -1,3 +1,5 @@
+//! flight-compiler: data-union PathSegment
+
 use flight_entity::{EntityRuntimeSlot, Float32Array, Uint32Array, allocate_entity};
 
 #[cfg(test)]
