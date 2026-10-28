@@ -24,7 +24,7 @@ export const COLOR_MATRIX_LENGTH = 20;
  * math, no surface operations. Input bytes are normalized before applying the matrix; the result is
  * clamped to 0–1 and repacked as `0xRRGGBBAA`.
  */
-export function applyColorMatrixToColor(matrix: Readonly<number[]>, packedRgba: number): number {
+export function applyColorMatrixToColor(matrix: Readonly<Float32Array>, packedRgba: number): number {
   const r = ((packedRgba >>> 24) & 0xff) / 255;
   const g = ((packedRgba >>> 16) & 0xff) / 255;
   const b = ((packedRgba >>> 8) & 0xff) / 255;
@@ -41,7 +41,7 @@ export function applyColorMatrixToColor(matrix: Readonly<number[]>, packedRgba: 
  * then target). Matches OpenFL color-matrix `concat` semantics. Alias-safe: `source` may be
  * `target`.
  */
-export function concatColorMatrix(target: number[], source: Readonly<number[]>): void {
+export function concatColorMatrix(target: Float32Array, source: Readonly<Float32Array>): void {
   multiplyColorMatrix(target, source, target);
 }
 
@@ -49,14 +49,14 @@ export function concatColorMatrix(target: number[], source: Readonly<number[]>):
  * Returns a color matrix that adds `amount` to the brightness offset of each channel. Positive
  * `amount` brightens; negative darkens. `amount` is normalized-linear. Allocates a new array.
  */
-export function createBrightnessColorMatrix(amount: number): number[] {
+export function createBrightnessColorMatrix(amount: number): Float32Array {
   // prettier-ignore
-  return [
+  return new Float32Array([
     1, 0, 0, 0, amount,
     0, 1, 0, 0, amount,
     0, 0, 1, 0, amount,
     0, 0, 0, 1, 0,
-  ];
+  ]);
 }
 
 /**
@@ -71,14 +71,14 @@ export function createChannelMixerColorMatrix(
   redOut: Readonly<[number, number, number]>,
   greenOut: Readonly<[number, number, number]>,
   blueOut: Readonly<[number, number, number]>,
-): number[] {
+): Float32Array {
   // prettier-ignore
-  return [
+  return new Float32Array([
     redOut[0], redOut[1], redOut[2], 0, 0,
     greenOut[0], greenOut[1], greenOut[2], 0, 0,
     blueOut[0], blueOut[1], blueOut[2], 0, 0,
     0, 0, 0, 1, 0,
-  ];
+  ]);
 }
 
 /**
@@ -96,7 +96,7 @@ export function createColorBalanceColorMatrix(
   shadows: Readonly<[number, number, number]>,
   midtones: Readonly<[number, number, number]>,
   highlights: Readonly<[number, number, number]>,
-): number[] {
+): Float32Array {
   // Map each band's [-100,100] range to normalized biases [-1,1] and weight by band contribution.
   // Shadows weight 0.25, midtones 0.5, highlights 0.25 — ensures the total offset range matches
   // a single-band full swing without clipping the combined result beyond ±255.
@@ -105,53 +105,53 @@ export function createColorBalanceColorMatrix(
   const gOff = (shadows[1] * 0.25 + midtones[1] * 0.5 + highlights[1] * 0.25) * scale;
   const bOff = (shadows[2] * 0.25 + midtones[2] * 0.5 + highlights[2] * 0.25) * scale;
   // prettier-ignore
-  return [
+  return new Float32Array([
     1, 0, 0, 0, rOff,
     0, 1, 0, 0, gOff,
     0, 0, 1, 0, bOff,
     0, 0, 0, 1, 0,
-  ];
+  ]);
 }
 
 /**
  * Returns a color matrix that tints toward `packedRgba` (0xRRGGBBAA) by `amount` (0 = original,
  * 1 = solid tint color). Allocates a new array.
  */
-export function createColorMatrixFromTint(packedRgba: number, amount: number): number[] {
+export function createColorMatrixFromTint(packedRgba: number, amount: number): Float32Array {
   const tr = (((packedRgba >>> 24) & 0xff) / 255) * amount;
   const tg = (((packedRgba >>> 16) & 0xff) / 255) * amount;
   const tb = (((packedRgba >>> 8) & 0xff) / 255) * amount;
   const keep = 1 - amount;
   // prettier-ignore
-  return [
+  return new Float32Array([
     keep, 0, 0, 0, tr,
     0, keep, 0, 0, tg,
     0, 0, keep, 0, tb,
     0, 0, 0, 1, 0,
-  ];
+  ]);
 }
 
 /**
  * Returns a color matrix that scales contrast by `amount` (1 = original, 0 = flat mid-grey, >1 =
  * increased contrast). Allocates a new array.
  */
-export function createContrastColorMatrix(amount: number): number[] {
+export function createContrastColorMatrix(amount: number): Float32Array {
   // Translate to midpoint, scale, translate back: bias = 0.5 * (1 - amount).
   const offset = 0.5 * (1 - amount);
   // prettier-ignore
-  return [
+  return new Float32Array([
     amount, 0, 0, 0, offset,
     0, amount, 0, 0, offset,
     0, 0, amount, 0, offset,
     0, 0, 0, 1, 0,
-  ];
+  ]);
 }
 
 /**
  * Returns a color matrix that desaturates by `amount` (0 = no change, 1 = fully desaturated /
  * grayscale). Allocates a new array. Equivalent to `createSaturationColorMatrix(1 - amount)`.
  */
-export function createDesaturateColorMatrix(amount: number): number[] {
+export function createDesaturateColorMatrix(amount: number): Float32Array {
   return createSaturationColorMatrix(1 - amount);
 }
 
@@ -159,24 +159,24 @@ export function createDesaturateColorMatrix(amount: number): number[] {
  * Returns a grayscale color matrix using luma-weighted ITU-R BT.601 coefficients
  * (R=0.299, G=0.587, B=0.114). Allocates a new array.
  */
-export function createGrayscaleColorMatrix(): number[] {
+export function createGrayscaleColorMatrix(): Float32Array {
   const r = 0.299;
   const g = 0.587;
   const b = 0.114;
   // prettier-ignore
-  return [
+  return new Float32Array([
     r, g, b, 0, 0,
     r, g, b, 0, 0,
     r, g, b, 0, 0,
     0, 0, 0, 1, 0,
-  ];
+  ]);
 }
 
 /**
  * Returns a hue-rotation color matrix that rotates the hue wheel by `degrees`. Allocates a new
  * array.
  */
-export function createHueRotateColorMatrix(degrees: number): number[] {
+export function createHueRotateColorMatrix(degrees: number): Float32Array {
   const rad = (degrees * Math.PI) / 180;
   const cos = Math.cos(rad);
   const sin = Math.sin(rad);
@@ -185,40 +185,40 @@ export function createHueRotateColorMatrix(degrees: number): number[] {
   const lumG = 0.715;
   const lumB = 0.072;
   // prettier-ignore
-  return [
+  return new Float32Array([
     lumR + cos * (1 - lumR) + sin * -lumR, lumG + cos * -lumG + sin * -lumG, lumB + cos * -lumB + sin * (1 - lumB), 0, 0,
     lumR + cos * -lumR + sin * 0.143, lumG + cos * (1 - lumG) + sin * 0.140, lumB + cos * -lumB + sin * -0.283, 0, 0,
     lumR + cos * -lumR + sin * -(1 - lumR), lumG + cos * -lumG + sin * lumG, lumB + cos * (1 - lumB) + sin * lumB, 0, 0,
     0, 0, 0, 1, 0,
-  ];
+  ]);
 }
 
 /**
  * Returns the identity color matrix. Applying it leaves colors unchanged.
  * Allocates a new array.
  */
-export function createIdentityColorMatrix(): number[] {
+export function createIdentityColorMatrix(): Float32Array {
   // prettier-ignore
-  return [
+  return new Float32Array([
     1, 0, 0, 0, 0,
     0, 1, 0, 0, 0,
     0, 0, 1, 0, 0,
     0, 0, 0, 1, 0,
-  ];
+  ]);
 }
 
 /**
  * Returns an invert color matrix that produces `1 - channel` per RGB channel. Alpha is
  * unchanged. Allocates a new array.
  */
-export function createInvertColorMatrix(): number[] {
+export function createInvertColorMatrix(): Float32Array {
   // prettier-ignore
-  return [
+  return new Float32Array([
     -1, 0, 0, 0, 1,
     0, -1, 0, 0, 1,
     0, 0, -1, 0, 1,
     0, 0, 0, 1, 0,
-  ];
+  ]);
 }
 
 /**
@@ -238,7 +238,7 @@ export function createLevelsColorMatrix(
   outBlack: number,
   outWhite: number,
   gamma = 1,
-): number[] {
+): Float32Array {
   // Guard against degenerate input range.
   const inRange = inWhite - inBlack;
   const scale = inRange === 0 ? 1 : (outWhite - outBlack) / inRange;
@@ -246,26 +246,26 @@ export function createLevelsColorMatrix(
   const gammaCorrectedScale = scale * (gamma === 1 ? 1 : Math.pow(0.5, 1 / gamma - 1));
   const offset = outBlack - inBlack * gammaCorrectedScale;
   // prettier-ignore
-  return [
+  return new Float32Array([
     gammaCorrectedScale, 0, 0, 0, offset,
     0, gammaCorrectedScale, 0, 0, offset,
     0, 0, gammaCorrectedScale, 0, offset,
     0, 0, 0, 1, 0,
-  ];
+  ]);
 }
 
 /**
  * Returns a color matrix that scales the alpha channel by `alpha` (0 = transparent, 1 = opaque).
  * RGB channels are unchanged. Allocates a new array.
  */
-export function createOpacityColorMatrix(alpha: number): number[] {
+export function createOpacityColorMatrix(alpha: number): Float32Array {
   // prettier-ignore
-  return [
+  return new Float32Array([
     1, 0, 0, 0, 0,
     0, 1, 0, 0, 0,
     0, 0, 1, 0, 0,
     0, 0, 0, alpha, 0,
-  ];
+  ]);
 }
 
 /**
@@ -273,75 +273,75 @@ export function createOpacityColorMatrix(alpha: number): number[] {
  * Allocates a new array. This is a data constant exposed as a factory for
  * consistent API shape with the other presets.
  */
-export function createPolaroidColorMatrix(): number[] {
+export function createPolaroidColorMatrix(): Float32Array {
   // Warm highlight, slightly desaturated mid-tones, lifted blacks.
   // prettier-ignore
-  return [
+  return new Float32Array([
     1.438, -0.062, -0.062, 0, -31.8 / 255,
     -0.122, 1.378, -0.122, 0, 16.2 / 255,
     -0.016, -0.016, 1.484, 0, -47.6 / 255,
     0, 0, 0, 1, 0,
-  ];
+  ]);
 }
 
 /**
  * Returns a color matrix that scales color saturation by `amount` (0 = grayscale, 1 = original,
  * >1 = oversaturated). Allocates a new array.
  */
-export function createSaturationColorMatrix(amount: number): number[] {
+export function createSaturationColorMatrix(amount: number): Float32Array {
   const r = 0.299 * (1 - amount);
   const g = 0.587 * (1 - amount);
   const b = 0.114 * (1 - amount);
   // prettier-ignore
-  return [
+  return new Float32Array([
     r + amount, g, b, 0, 0,
     r, g + amount, b, 0, 0,
     r, g, b + amount, 0, 0,
     0, 0, 0, 1, 0,
-  ];
+  ]);
 }
 
 /**
  * Returns a sepia-tone color matrix. Allocates a new array.
  */
-export function createSepiaColorMatrix(): number[] {
+export function createSepiaColorMatrix(): Float32Array {
   // Standard sepia values widely used in CSS/Flash.
   // prettier-ignore
-  return [
+  return new Float32Array([
     0.393, 0.769, 0.189, 0, 0,
     0.349, 0.686, 0.168, 0, 0,
     0.272, 0.534, 0.131, 0, 0,
     0, 0, 0, 1, 0,
-  ];
+  ]);
 }
 
 /**
  * Returns a color matrix approximating the Technicolor two-strip process: warm reds/oranges
  * with cyan shadows and a slight green cross-process. Allocates a new array.
  */
-export function createTechnicolorColorMatrix(): number[] {
+export function createTechnicolorColorMatrix(): Float32Array {
   // Derived from the classic Technicolor look formula widely cited in colour grading literature.
   // prettier-ignore
-  return [
+  return new Float32Array([
     1.9126, -0.8, -0.09, 0, 11.79 / 255,
     -0.2, 1.7, -0.27, 0, -14.69 / 255,
     -0.14, -0.21, 1.62, 0, -3.38 / 255,
     0, 0, 0, 1, 0,
-  ];
+  ]);
 }
 
 /**
  * Returns a vintage/faded-film color matrix: desaturated, warm tones, lifted blacks.
  * Allocates a new array.
  */
-export function createVintageColorMatrix(): number[] {
+export function createVintageColorMatrix(): Float32Array {
   // prettier-ignore
-  return [
+  return new Float32Array([
     0.9, 0.05, 0.05, 0, 10 / 255,
     0.0, 0.85, 0.0, 0, 5 / 255,
     0.0, 0.0, 0.75, 0, 0,
     0, 0, 0, 1, 0,
-  ];
+  ]);
 }
 
 /**
@@ -353,7 +353,7 @@ export function createVintageColorMatrix(): number[] {
  * Tint shifts are modelled as G channel gain (more G = green, less G = magenta). This matches the
  * Lightroom/Camera3D Raw slider convention.
  */
-export function createWhiteBalanceColorMatrix(temperature: number, tint: number): number[] {
+export function createWhiteBalanceColorMatrix(temperature: number, tint: number): Float32Array {
   // Map [-100, 100] to multiplicative gain adjustments centred at 1.
   // Max temperature shift = ±0.3 gain on R/B; max tint shift = ±0.15 gain on G.
   const tempScale = temperature / 100;
@@ -362,12 +362,12 @@ export function createWhiteBalanceColorMatrix(temperature: number, tint: number)
   const gGain = 1 + tintScale * 0.15;
   const bGain = 1 - tempScale * 0.3;
   // prettier-ignore
-  return [
+  return new Float32Array([
     rGain, 0, 0, 0, 0,
     0, gGain, 0, 0, 0,
     0, 0, bGain, 0, 0,
     0, 0, 0, 1, 0,
-  ];
+  ]);
 }
 
 /**
@@ -377,7 +377,7 @@ export function createWhiteBalanceColorMatrix(temperature: number, tint: number)
  * Order matters (matrix composition is not commutative); an empty list yields the identity. Allocates
  * the result array.
  */
-export function fuseColorMatrices(matrices: ReadonlyArray<Readonly<number[]>>): number[] {
+export function fuseColorMatrices(matrices: ReadonlyArray<Readonly<Float32Array>>): Float32Array {
   if (matrices.length === 0) return createIdentityColorMatrix();
   const out = matrices[0].slice();
   for (let i = 1; i < matrices.length; i++) multiplyColorMatrix(matrices[i], out, out);
@@ -389,7 +389,11 @@ export function fuseColorMatrices(matrices: ReadonlyArray<Readonly<number[]>>): 
  * color and then `a` to the result. When `out` is provided the result is written there (alias-safe:
  * `out` may be `a` or `b`). Returns the output array (either `out` or a freshly allocated array).
  */
-export function multiplyColorMatrix(a: Readonly<number[]>, b: Readonly<number[]>, out?: number[]): number[] {
+export function multiplyColorMatrix(
+  a: Readonly<Float32Array>,
+  b: Readonly<Float32Array>,
+  out?: Float32Array,
+): Float32Array {
   // Read all inputs into locals before writing to `out` (alias-safe).
   const a0 = a[0],
     a1 = a[1],
@@ -431,7 +435,7 @@ export function multiplyColorMatrix(a: Readonly<number[]>, b: Readonly<number[]>
     b17 = b[17],
     b18 = b[18],
     b19 = b[19];
-  const result = out ?? new Array(20);
+  const result = out ?? new Float32Array(COLOR_MATRIX_LENGTH);
   // Row 0 (R output)
   result[0] = a0 * b0 + a1 * b5 + a2 * b10 + a3 * b15;
   result[1] = a0 * b1 + a1 * b6 + a2 * b11 + a3 * b16;

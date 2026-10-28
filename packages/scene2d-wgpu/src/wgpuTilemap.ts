@@ -113,7 +113,7 @@ function submitWgpuTilemap(state: WgpuRenderState, tilemapNode: RenderProxy2D): 
         (perTileColorScaleBias?.[row * columns + col] as
           | ColorScaleBias
           | TintMaterialData
-          | readonly number[]
+          | Readonly<Float32Array>
           | null) ??
         nodeColorMatrix ??
         nodeColorScaleBias;

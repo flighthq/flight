@@ -25,12 +25,12 @@ export function initializeGrayscaleAdjustment(
   const lg = 0.7152 * k;
   const lb = 0.0722 * k;
   // prettier-ignore
-  const colorMatrix = [
+  const colorMatrix = new Float32Array([
     j + lr, lg, lb, 0, 0,
     lr, j + lg, lb, 0, 0,
     lr, lg, j + lb, 0, 0,
     0, 0, 0, 1, 0,
-  ];
+  ]);
   initializeColorMatrixAdjustment(out, 'GrayscaleAdjustment', colorMatrix);
   out.intensity = intensity;
 }

@@ -8,6 +8,6 @@ export interface ColorAdjustmentRuntime {
   // True only when the stack contains a non-matrix operation that neither compact nor 4×5 data can carry.
   colorAdjustmentsUnsupported: boolean;
   // Full fused 4×5 matrix when the stack mixes channels; null for the common diagonal-affine path.
-  resolvedColorMatrix: readonly number[] | null;
+  resolvedColorMatrix: Readonly<Float32Array> | null;
   resolvedColorScaleBias: ColorScaleBias | null;
 }

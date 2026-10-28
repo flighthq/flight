@@ -7,5 +7,5 @@ import type { Adjustment } from './Adjustment.ts';
 // (concatColorMatrix) and folds into a single generic color-matrix pass, never one pass per op. A
 // third-party adjustment that contributes a `colorMatrix` fuses through the same path.
 export interface ColorMatrixAdjustment extends Adjustment {
-  colorMatrix: readonly number[];
+  colorMatrix: Readonly<Float32Array>;
 }

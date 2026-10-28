@@ -21,12 +21,12 @@ export function initializeSepiaAdjustment(
   const k = intensity;
   const j = 1 - k;
   // prettier-ignore
-  const colorMatrix = [
+  const colorMatrix = new Float32Array([
     j + 0.393 * k, 0.769 * k, 0.189 * k, 0, 0,
     0.349 * k, j + 0.686 * k, 0.168 * k, 0, 0,
     0.272 * k, 0.534 * k, j + 0.131 * k, 0, 0,
     0, 0, 0, 1, 0,
-  ];
+  ]);
   initializeColorMatrixAdjustment(out, 'SepiaAdjustment', colorMatrix);
   out.intensity = intensity;
 }

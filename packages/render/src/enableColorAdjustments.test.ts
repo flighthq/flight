@@ -60,7 +60,7 @@ describe('enableColorAdjustments', () => {
   it('resolves channel mixing onto the render node as a complete matrix', () => {
     const state = createEnabledRenderState();
     const node = createDisplayObject();
-    const matrix = [1, 0.5, 0, 0, 0.1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
+    const matrix = new Float32Array([1, 0.5, 0, 0, 0.1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]);
     setNodeColorAdjustments(node, [createColorMatrixAdjustment(matrix)]);
     const data = createRenderProxy(state, node as unknown as NodeAny);
     resolveColorAdjustments(state, data);
@@ -175,7 +175,7 @@ describe('enableColorAdjustments', () => {
       alphaScale: 1,
       alphaBias: 0,
     });
-    const childMatrix = [0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
+    const childMatrix = new Float32Array([0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]);
     setNodeColorAdjustments(parent, [parentAdjustment]);
     setNodeColorAdjustments(child, [createColorMatrixAdjustment(childMatrix)]);
     const parentData = createRenderProxy(state, parent as unknown as NodeAny);
@@ -195,7 +195,7 @@ describe('enableColorAdjustments', () => {
     const state = createEnabledRenderState();
     const parent = createDisplayObject();
     const child = createDisplayObject();
-    const parentMatrix = [1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0];
+    const parentMatrix = new Float32Array([1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0]);
     const childAdjustment = createColorScaleBiasAdjustment({
       redScale: 0.5,
       redBias: 0.1,

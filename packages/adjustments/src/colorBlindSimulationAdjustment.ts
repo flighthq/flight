@@ -32,12 +32,12 @@ export function initializeColorBlindSimulationAdjustment(
   const type: ColorBlindType = options.type ?? 'deuteranopia';
   const m = COLOR_BLIND_MATRICES[type];
   // prettier-ignore
-  const colorMatrix = [
+  const colorMatrix = new Float32Array([
     m[0], m[1], m[2], 0, 0,
     m[3], m[4], m[5], 0, 0,
     m[6], m[7], m[8], 0, 0,
     0, 0, 0, 1, 0,
-  ];
+  ]);
   initializeColorMatrixAdjustment(out, 'ColorBlindSimulationAdjustment', colorMatrix);
   out.type = type;
 }

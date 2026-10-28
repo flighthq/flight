@@ -22,12 +22,12 @@ export function initializeInvertAdjustment(
   const s = 1 - 2 * intensity;
   const o = intensity;
   // prettier-ignore
-  const colorMatrix = [
+  const colorMatrix = new Float32Array([
     s, 0, 0, 0, o,
     0, s, 0, 0, o,
     0, 0, s, 0, o,
     0, 0, 0, 1, 0,
-  ];
+  ]);
   initializeColorMatrixAdjustment(out, 'InvertAdjustment', colorMatrix);
   out.intensity = intensity;
 }

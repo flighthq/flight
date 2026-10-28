@@ -140,7 +140,7 @@ export function endWgpuEffectPass(
     if (pending.some(isColorLutAdjustment)) {
       applyColorLutPassToWgpu(state, source, dest, bakeColorLutForRun(pipeline.lutCache, pending), pipeline.lutTexture);
     } else {
-      const matrices: (readonly number[])[] = [];
+      const matrices: Readonly<Float32Array>[] = [];
       for (const op of pending) {
         const matrix = getAdjustmentColorMatrix(op);
         if (matrix !== null) matrices.push(matrix);

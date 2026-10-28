@@ -15,12 +15,12 @@ export function initializeColorScaleBiasAdjustment(
 ): void {
   const value = { ...colorScaleBias };
   // prettier-ignore
-  const colorMatrix = [
+  const colorMatrix = new Float32Array([
     value.redScale, 0, 0, 0, value.redBias,
     0, value.greenScale, 0, 0, value.greenBias,
     0, 0, value.blueScale, 0, value.blueBias,
     0, 0, 0, value.alphaScale, value.alphaBias,
-  ];
+  ]);
   initializeColorMatrixAdjustment(out, 'ColorScaleBiasAdjustment', colorMatrix);
   out.colorScaleBias = value;
 }

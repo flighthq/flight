@@ -12,7 +12,7 @@ export const COLOR_ADJUSTMENT_CHANNEL_MIXING = 2; // a full matrix or unsupporte
 // an 8-float ColorScaleBias can represent exactly. A diagonal-affine matrix is `[m0,·,·,·,bias, ·,m6,·,·,
 // bias, ·,·,m12,·,bias, ·,·,·,m18,bias]`. Fusing diagonal matrices stays diagonal, so this stays an exact
 // zero check.
-export function isAffineColorMatrix(matrix: Readonly<number[]>): boolean {
+export function isAffineColorMatrix(matrix: Readonly<Float32Array>): boolean {
   return (
     matrix[1] === 0 &&
     matrix[2] === 0 &&
@@ -31,9 +31,9 @@ export function isAffineColorMatrix(matrix: Readonly<number[]>): boolean {
 
 // Resolves a stack to its complete fused 4×5 matrix when every member is matrix-tier. Returns null
 // for an empty stack or when a non-matrix operation (for example a LUT) prevents exact inline fusion.
-export function resolveColorAdjustmentsColorMatrix(adjustments: readonly Adjustment[] | null): number[] | null {
+export function resolveColorAdjustmentsColorMatrix(adjustments: readonly Adjustment[] | null): Float32Array | null {
   if (adjustments === null || adjustments.length === 0) return null;
-  const matrices: Readonly<number[]>[] = [];
+  const matrices: Readonly<Float32Array>[] = [];
   for (let i = 0; i < adjustments.length; i++) {
     const matrix = getAdjustmentColorMatrix(adjustments[i]);
     if (matrix === null) return null;
@@ -60,7 +60,7 @@ export function resolveColorAdjustmentsColorScaleBias(
 ): number {
   if (adjustments === null || adjustments.length === 0) return COLOR_ADJUSTMENT_NONE;
 
-  const matrices: Readonly<number[]>[] = [];
+  const matrices: Readonly<Float32Array>[] = [];
   let inlineable = true;
   for (let i = 0; i < adjustments.length; i++) {
     const matrix = getAdjustmentColorMatrix(adjustments[i]);

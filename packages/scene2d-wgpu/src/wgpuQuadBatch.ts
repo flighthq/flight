@@ -111,7 +111,7 @@ function submitWgpuQuadBatch(state: WgpuRenderState, quadBatch: RenderProxy2D): 
     packWgpuQuadBatchMaterialInstance(state, nodeMaterialData, startInstance + drawCount);
     // Per-quad tint overrides the node-level tint (null → the node's, itself possibly null → untinted).
     const colorScaleBias =
-      (perQuadColorScaleBias?.[i] as ColorScaleBias | TintMaterialData | readonly number[] | null) ??
+      (perQuadColorScaleBias?.[i] as ColorScaleBias | TintMaterialData | Readonly<Float32Array> | null) ??
       nodeColorMatrix ??
       nodeColorScaleBias;
     recordWgpuQuadBatchColorScaleBias(state, colorScaleBias, startInstance + drawCount);

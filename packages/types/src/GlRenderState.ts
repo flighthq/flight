@@ -111,14 +111,14 @@ export interface GlColorAdjustmentMaterialFeature {
   flush(state: GlRenderState, count: number): boolean;
   record(
     runtime: GlRenderStateRuntime,
-    colorScaleBias: ColorScaleBias | TintMaterialData | readonly number[] | null | undefined,
+    colorScaleBias: ColorScaleBias | TintMaterialData | Readonly<Float32Array> | null | undefined,
     instanceIndex: number,
   ): void;
 }
 
 export type GlColorAdjustmentMaterialFeatureGuard = (
   state: GlRenderState,
-  colorScaleBias: Readonly<ColorScaleBias | TintMaterialData | readonly number[]>,
+  colorScaleBias: Readonly<ColorScaleBias | TintMaterialData | Float32Array>,
 ) => void;
 
 // Package-private GPU state for a GlRenderState entity. Lives in the runtime tier (not on the
@@ -167,7 +167,7 @@ export interface GlRenderStateRuntime extends RenderStateRuntime {
   // Color-transform fold state for the active quad-batch writer. Mode 0 = no tint, 1 = one uniform
   // tint for the whole batch, 2 = per-instance tints. A batch promotes upward, never splits.
   quadBatchWriterColorScaleBiasMode?: number;
-  quadBatchWriterUniformColorScaleBias?: ColorScaleBias | TintMaterialData | readonly number[] | null;
+  quadBatchWriterUniformColorScaleBias?: ColorScaleBias | TintMaterialData | Readonly<Float32Array> | null;
   quadBatchWriterColorScaleBiasData?: Float32Array;
   quadBatchWriterColorMatrixData?: Float32Array;
   quadBatchWriterColorTintData?: Uint32Array;

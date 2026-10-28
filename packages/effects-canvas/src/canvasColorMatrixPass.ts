@@ -9,7 +9,7 @@ import { drawCanvasImageDataPass } from './canvasEffectCompositing.ts';
 export function applyColorMatrixPassToCanvas(
   source: Readonly<CanvasTextureRenderTarget>,
   dest: Readonly<CanvasTextureRenderTarget>,
-  matrix: ReadonlyArray<number>,
+  matrix: Readonly<Float32Array>,
 ): void {
   drawCanvasImageDataPass(dest, source, (data, pixelCount) => {
     applyColorMatrixToImageDataBytes(data, pixelCount, matrix);
@@ -23,7 +23,7 @@ export function applyColorMatrixPassToCanvas(
 export function applyColorMatrixToImageDataBytes(
   data: Uint8ClampedArray,
   pixelCount: number,
-  matrix: ReadonlyArray<number>,
+  matrix: Readonly<Float32Array>,
 ): void {
   const m0 = matrix[0] ?? 0;
   const m1 = matrix[1] ?? 0;

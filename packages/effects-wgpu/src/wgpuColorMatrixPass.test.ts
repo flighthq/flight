@@ -33,7 +33,7 @@ function packed(matrix: ReadonlyArray<number>): readonly number[] {
   uniformState.uploads.length = 0;
   vi.mocked(wgpuEffectProgramCacheModule.getWgpuEffectPipeline).mockClear();
   const target = {} as unknown as WgpuTextureRenderTarget;
-  applyColorMatrixPassToWgpu({} as unknown as WgpuRenderState, target, target, matrix);
+  applyColorMatrixPassToWgpu({} as unknown as WgpuRenderState, target, target, new Float32Array(matrix));
   return uniformState.uploads[0]!;
 }
 

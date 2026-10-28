@@ -41,7 +41,7 @@ function createStubTargets(pixels: ReadonlyArray<number>): {
   return { dest, source, written };
 }
 
-const BIAS_MATRIX = [1, 0, 0, 0, 0.5, 0, 1, 0, 0, 0.25, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
+const BIAS_MATRIX = new Float32Array([1, 0, 0, 0, 0.5, 0, 1, 0, 0, 0.25, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]);
 
 describe('applyColorMatrixPassToCanvas', () => {
   it('is a function', () => {
@@ -71,7 +71,7 @@ describe('applyColorMatrixToImageDataBytes', () => {
 
   it('treats absent matrix entries as zero', () => {
     const data = new Uint8ClampedArray([200, 200, 200, 255]);
-    applyColorMatrixToImageDataBytes(data, 1, []);
+    applyColorMatrixToImageDataBytes(data, 1, new Float32Array());
     expect(Array.from(data)).toEqual([0, 0, 0, 0]);
   });
 });

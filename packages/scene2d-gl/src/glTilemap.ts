@@ -114,7 +114,7 @@ function submitGlTilemap(state: GlRenderState, tilemapNode: RenderProxy2D): void
         (perTileColorScaleBias?.[row * columns + col] as
           | ColorScaleBias
           | TintMaterialData
-          | readonly number[]
+          | Readonly<Float32Array>
           | null) ??
         nodeColorMatrix ??
         nodeColorScaleBias;

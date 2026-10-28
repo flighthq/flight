@@ -363,7 +363,7 @@ export function prepareWgpuQuadBatchWrite(
 // is null/undefined for an untinted instance, which is a no-op whether or not the fold is enabled.
 export function recordWgpuQuadBatchColorScaleBias(
   state: WgpuRenderState,
-  colorScaleBias: ColorScaleBias | TintMaterialData | readonly number[] | null | undefined,
+  colorScaleBias: ColorScaleBias | TintMaterialData | Readonly<Float32Array> | null | undefined,
   instanceIndex: number,
 ): void {
   const runtime = getWgpuRenderStateRuntime(state);

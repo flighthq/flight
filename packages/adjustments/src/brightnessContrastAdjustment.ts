@@ -27,12 +27,12 @@ export function initializeBrightnessContrastAdjustment(
   const s = contrast;
   const o = brightness * contrast + 0.5 * (1 - contrast);
   // prettier-ignore
-  const colorMatrix = [
+  const colorMatrix = new Float32Array([
     s, 0, 0, 0, o,
     0, s, 0, 0, o,
     0, 0, s, 0, o,
     0, 0, 0, 1, 0,
-  ];
+  ]);
   initializeColorMatrixAdjustment(out, 'BrightnessContrastAdjustment', colorMatrix);
   out.brightness = brightness;
   out.contrast = contrast;

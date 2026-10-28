@@ -403,7 +403,7 @@ function compareBlendedEntriesDescending(a: GlScene3DDrawEntry, b: GlScene3DDraw
 // the header to remain free of scene-gl-internal types.
 interface DrawEntry {
   alpha: number;
-  colorMatrix: readonly number[] | null;
+  colorMatrix: Readonly<Float32Array> | null;
   colorScaleBias: Readonly<ColorScaleBias> | null;
   depth: number;
   lightBlock: Readonly<Scene3DLightBlock>;

@@ -239,7 +239,7 @@ describe('setNodeColorAdjustments', () => {
   });
 
   it('caches a complete channel-mixing matrix without marking it unsupported', () => {
-    const matrix = [1, 0.5, 0, 0, 0.1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
+    const matrix = new Float32Array([1, 0.5, 0, 0, 0.1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]);
     setNodeColorAdjustments(obj, [createColorMatrixAdjustment(matrix)]);
     expect(getNode2DRuntime(obj).resolvedColorMatrix).toEqual(matrix);
     expect(getNode2DRuntime(obj).colorAdjustmentsUnsupported).toBe(false);

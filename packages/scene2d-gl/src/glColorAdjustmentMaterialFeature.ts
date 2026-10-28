@@ -58,7 +58,7 @@ const CT_MODE_PACKED_TINT = 2;
 const CT_MODE_PER_INSTANCE = 3;
 const CT_MODE_MATRIX = 4;
 
-type ColorAdjustmentData = ColorScaleBias | TintMaterialData | readonly number[];
+type ColorAdjustmentData = ColorScaleBias | TintMaterialData | Readonly<Float32Array>;
 
 // The backend's single color-adjustment shader chunk. The registered feature carries this source to
 // every participating material compiler (Standard 2D and the promoted 3D family variants), so the
@@ -831,8 +831,8 @@ function getPackedTint(value: Readonly<ColorScaleBias | TintMaterialData> | null
   );
 }
 
-function isColorMatrixData(value: Readonly<ColorAdjustmentData> | null): value is readonly number[] {
-  return Array.isArray(value);
+function isColorMatrixData(value: Readonly<ColorAdjustmentData> | null): value is Readonly<Float32Array> {
+  return value instanceof Float32Array;
 }
 
 function rgbaToNativeByteWord(rgba: number): number {

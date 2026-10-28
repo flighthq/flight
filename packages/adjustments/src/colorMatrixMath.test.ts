@@ -216,8 +216,10 @@ describe('createHueRotateColorMatrix', () => {
 });
 
 describe('createIdentityColorMatrix', () => {
-  it('returns a 20-element array', () => {
-    expect(createIdentityColorMatrix()).toHaveLength(COLOR_MATRIX_LENGTH);
+  it('returns a 20-element Float32Array', () => {
+    const matrix = createIdentityColorMatrix();
+    expect(matrix).toBeInstanceOf(Float32Array);
+    expect(matrix).toHaveLength(COLOR_MATRIX_LENGTH);
   });
 
   it('leaves red unchanged', () => {
@@ -404,7 +406,7 @@ describe('multiplyColorMatrix', () => {
 
   it('writes to out when provided', () => {
     const identity = createIdentityColorMatrix();
-    const out = new Array(20).fill(0);
+    const out = new Float32Array(20);
     const returned = multiplyColorMatrix(identity, identity, out);
     expect(returned).toBe(out);
   });

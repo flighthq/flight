@@ -138,7 +138,7 @@ export function endCanvasEffectPass(
     if (pending.some(isColorLutAdjustment)) {
       applyColorLutPassToCanvas(source, dest, bakeColorLutForRun(pipeline.lutCache, pending));
     } else {
-      const matrices: (readonly number[])[] = [];
+      const matrices: Readonly<Float32Array>[] = [];
       for (const op of pending) {
         const matrix = getAdjustmentColorMatrix(op);
         if (matrix !== null) matrices.push(matrix);

@@ -67,18 +67,24 @@ describe('resolveColorAdjustmentsColorScaleBias', () => {
   });
 
   it('resolves a single generic affine matrix exactly', () => {
-    const adjustment = createColorMatrixAdjustment([0.5, 0, 0, 0, 0.4, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]);
+    const adjustment = createColorMatrixAdjustment(
+      new Float32Array([0.5, 0, 0, 0, 0.4, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]),
+    );
     const out = makeColorScaleBias();
     expect(resolveColorAdjustmentsColorScaleBias([adjustment], out)).toBe(COLOR_ADJUSTMENT_AFFINE);
     expect(out.redScale).toBe(0.5);
     expect(out.greenScale).toBe(0);
-    expect(out.redBias).toBe(0.4);
+    expect(out.redBias).toBeCloseTo(0.4);
     expect(out.alphaScale).toBe(1);
   });
 
   it('fuses two affine adjustments (multipliers compose)', () => {
-    const a = createColorMatrixAdjustment([0.5, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]);
-    const b = createColorMatrixAdjustment([0.5, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]);
+    const a = createColorMatrixAdjustment(
+      new Float32Array([0.5, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]),
+    );
+    const b = createColorMatrixAdjustment(
+      new Float32Array([0.5, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]),
+    );
     const out = makeColorScaleBias();
     expect(resolveColorAdjustmentsColorScaleBias([a, b], out)).toBe(COLOR_ADJUSTMENT_AFFINE);
     expect(out.redScale).toBe(0.25);

@@ -19,11 +19,11 @@ export function initializeTintAdjustment(out: EntityConstruction<TintAdjustment>
   const blueScale = ((rgba >>> 8) & 0xff) / 255;
   const alphaScale = (rgba & 0xff) / 255;
   // prettier-ignore
-  const colorMatrix = [
+  const colorMatrix = new Float32Array([
     redScale, 0, 0, 0, 0,
     0, greenScale, 0, 0, 0,
     0, 0, blueScale, 0, 0,
     0, 0, 0, alphaScale, 0,
-  ];
+  ]);
   initializeColorMatrixAdjustment(out, 'TintAdjustment', colorMatrix);
 }

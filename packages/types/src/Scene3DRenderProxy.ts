@@ -33,7 +33,7 @@ export interface Scene3DRenderProxy {
   // Fused pointwise color adjustment for this object. Null keeps the lean base material variant;
   // presence promotes the material renderer to its registered post-shade adjustment variant.
   colorScaleBias?: Readonly<ColorScaleBias> | null;
-  colorMatrix?: readonly number[] | null;
+  colorMatrix?: Readonly<Float32Array> | null;
   // GPU instance count for an instanced draw. Absent or 0 means a single-instance draw (the common
   // case); a positive value triggers `drawElementsInstanced` and expects `instanceMatrices` to carry
   // the flattened per-instance model matrices (column-major, 16 floats each). Exclusive with skin —

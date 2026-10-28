@@ -1118,7 +1118,7 @@ describe('writeWgpuDrawUniform', () => {
   it('packs a full color matrix into the existing 256-byte draw slot', () => {
     const { state } = makeWgpuScene3DState();
     const proxy = makeProxy();
-    proxy.colorMatrix = [1, 0.5, 0, 0, 0.1, 0, 1, 0, 0, 0.2, 0, 0, 1, 0, 0.3, 0, 0, 0, 1, 0.4];
+    proxy.colorMatrix = new Float32Array([1, 0.5, 0, 0, 0.1, 0, 1, 0, 0, 0.2, 0, 0, 1, 0, 0.3, 0, 0, 0, 1, 0.4]);
     writeWgpuDrawUniform(state, proxy);
     const u = getWgpuRenderStateRuntime(state).uniformData;
     expect(Array.from(u.slice(44, 48))).toEqual([1, 0.5, 0, 0]);

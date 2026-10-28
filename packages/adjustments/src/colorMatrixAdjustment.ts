@@ -4,12 +4,12 @@ import type { AdjustmentKind, ColorMatrixAdjustment, EntityConstruction } from '
 import { initializeAdjustment } from './adjustment.ts';
 import { COLOR_MATRIX_LENGTH } from './colorMatrixMath.ts';
 
-export function createColorMatrixAdjustment(colorMatrix: readonly number[]): ColorMatrixAdjustment {
+export function createColorMatrixAdjustment(colorMatrix: Readonly<Float32Array>): ColorMatrixAdjustment {
   if (colorMatrix.length !== COLOR_MATRIX_LENGTH) {
     throw new Error(`Color matrix must contain ${COLOR_MATRIX_LENGTH} values.`);
   }
   const out = allocateEntity<ColorMatrixAdjustment>();
-  initializeColorMatrixAdjustment(out, 'ColorMatrixAdjustment', [...colorMatrix]);
+  initializeColorMatrixAdjustment(out, 'ColorMatrixAdjustment', new Float32Array(colorMatrix));
   return finishEntity(out);
 }
 
@@ -17,15 +17,15 @@ export function createColorMatrixAdjustment(colorMatrix: readonly number[]): Col
 // it is not a matrix-tier adjustment (a spatial/composite Effect, or a LUT-tier adjustment). Lets
 // a pipeline recognise which stack entries fold into the single generic color-matrix pass without a
 // per-kind switch: any operation carrying a valid 4×5 `colorMatrix` fuses, third-party ones included.
-export function getAdjustmentColorMatrix(operation: Readonly<{ kind: string }>): readonly number[] | null {
+export function getAdjustmentColorMatrix(operation: Readonly<{ kind: string }>): Readonly<Float32Array> | null {
   const matrix = (operation as Readonly<Partial<ColorMatrixAdjustment>>).colorMatrix;
-  return Array.isArray(matrix) && matrix.length === COLOR_MATRIX_LENGTH ? matrix : null;
+  return matrix instanceof Float32Array && matrix.length === COLOR_MATRIX_LENGTH ? matrix : null;
 }
 
 export function initializeColorMatrixAdjustment<T extends ColorMatrixAdjustment>(
   out: EntityConstruction<T>,
   kind: AdjustmentKind,
-  colorMatrix: number[],
+  colorMatrix: Float32Array,
 ): void {
   initializeAdjustment(out, kind);
   out.colorMatrix = colorMatrix;

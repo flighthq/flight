@@ -98,7 +98,7 @@ export interface WgpuColorAdjustmentMaterialFeature {
   ): void;
   record(
     runtime: WgpuRenderStateRuntime,
-    colorScaleBias: ColorScaleBias | TintMaterialData | readonly number[] | null | undefined,
+    colorScaleBias: ColorScaleBias | TintMaterialData | Readonly<Float32Array> | null | undefined,
     instanceIndex: number,
   ): void;
   resolveFlush(state: WgpuRenderState, count: number): WgpuColorAdjustmentFlush | null;
@@ -106,7 +106,7 @@ export interface WgpuColorAdjustmentMaterialFeature {
 
 export type WgpuColorAdjustmentMaterialFeatureGuard = (
   state: WgpuRenderState,
-  colorScaleBias: Readonly<ColorScaleBias | TintMaterialData | readonly number[]>,
+  colorScaleBias: Readonly<ColorScaleBias | TintMaterialData | Float32Array>,
 ) => void;
 
 // The per-flush realization of a tinted batch: the per-instance storage data (`data`, `floats` floats
@@ -245,7 +245,7 @@ export interface WgpuRenderStateRuntime extends RenderStateRuntime {
   // quadBatchWriterUniformColorScaleBias holds the shared value while a batch stays whole-batch uniform,
   // deferring the per-instance fill until (and if) tints diverge.
   quadBatchWriterColorScaleBiasMode?: number;
-  quadBatchWriterUniformColorScaleBias?: ColorScaleBias | TintMaterialData | readonly number[] | null;
+  quadBatchWriterUniformColorScaleBias?: ColorScaleBias | TintMaterialData | Readonly<Float32Array> | null;
   quadBatchWriterColorScaleBiasData?: Float32Array;
   quadBatchWriterColorMatrixData?: Float32Array;
   quadBatchWriterColorTintData?: Uint32Array;

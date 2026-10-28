@@ -77,12 +77,12 @@ function resolveInheritedColorScaleBias(
 }
 
 function resolveInheritedColorMatrix(
-  previous: readonly number[] | null | undefined,
-  parentMatrix: readonly number[] | null,
+  previous: Readonly<Float32Array> | null | undefined,
+  parentMatrix: Readonly<Float32Array> | null,
   parentColorScaleBias: Readonly<ColorScaleBias> | null,
-  localMatrix: readonly number[] | null,
+  localMatrix: Readonly<Float32Array> | null,
   localColorScaleBias: Readonly<ColorScaleBias> | null,
-): readonly number[] {
+): Readonly<Float32Array> {
   if (parentMatrix === null && parentColorScaleBias === null) return localMatrix!;
   if (localMatrix === null && localColorScaleBias === null) return parentMatrix!;
 
@@ -94,12 +94,12 @@ function resolveInheritedColorMatrix(
     previous !== null &&
     previous !== undefined &&
     inheritedColorMatrices.has(previous)
-      ? (previous as number[])
+      ? (previous as Float32Array)
       : createInheritedColorMatrix();
   return multiplyColorMatrix(parent, local, out);
 }
 
-function writeColorScaleBiasMatrix(out: number[], value: Readonly<ColorScaleBias>): number[] {
+function writeColorScaleBiasMatrix(out: Float32Array, value: Readonly<ColorScaleBias>): Float32Array {
   out[0] = value.redScale;
   out[1] = 0;
   out[2] = 0;
@@ -129,13 +129,13 @@ function createInheritedColorScaleBias(): ColorScaleBias {
   return value;
 }
 
-function createInheritedColorMatrix(): number[] {
-  const value = new Array<number>(20);
+function createInheritedColorMatrix(): Float32Array {
+  const value = new Float32Array(20);
   inheritedColorMatrices.add(value);
   return value;
 }
 
 const inheritedColorScaleBiases = new WeakSet<ColorScaleBias>();
-const inheritedColorMatrices = new WeakSet<readonly number[]>();
-const parentColorMatrixScratch = new Array<number>(20);
-const localColorMatrixScratch = new Array<number>(20);
+const inheritedColorMatrices = new WeakSet<Readonly<Float32Array>>();
+const parentColorMatrixScratch = new Float32Array(20);
+const localColorMatrixScratch = new Float32Array(20);

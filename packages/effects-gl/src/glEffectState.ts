@@ -136,7 +136,7 @@ export function endGlEffectPass(
     if (pending.some(isColorLutAdjustment)) {
       applyColorLutPassToGl(state, source, dest, bakeColorLutForRun(pipeline.lutCache, pending), pipeline.lutTexture);
     } else {
-      const matrices: (readonly number[])[] = [];
+      const matrices: Readonly<Float32Array>[] = [];
       for (const op of pending) {
         const matrix = getAdjustmentColorMatrix(op);
         if (matrix !== null) matrices.push(matrix);

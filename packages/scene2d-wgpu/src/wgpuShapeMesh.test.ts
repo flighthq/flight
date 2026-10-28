@@ -318,7 +318,7 @@ describe('drawWgpuShapeMeshes', () => {
     const buffers = makeBuffers();
     registerWgpuColorAdjustmentMaterialFeature(state);
 
-    drawWgpuShapeMeshes(state, makeProxy({ colorMatrix: new Array(20).fill(0) }), [TRIANGLE], buffers);
+    drawWgpuShapeMeshes(state, makeProxy({ colorMatrix: new Float32Array(20) }), [TRIANGLE], buffers);
 
     expect(buffers.uniformBuffers).toHaveLength(1);
     expect(buffers.colorScaleBiasUniformBuffers).toHaveLength(0);

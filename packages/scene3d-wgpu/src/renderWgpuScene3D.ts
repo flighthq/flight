@@ -282,7 +282,7 @@ function compareBlendedEntriesDescending(a: WgpuScene3DDrawEntry, b: WgpuScene3D
 
 interface DrawEntry {
   alpha: number;
-  colorMatrix: readonly number[] | null;
+  colorMatrix: Readonly<Float32Array> | null;
   colorScaleBias: Readonly<ColorScaleBias> | null;
   depth: number;
   lightBlock: Readonly<Scene3DLightBlock>;

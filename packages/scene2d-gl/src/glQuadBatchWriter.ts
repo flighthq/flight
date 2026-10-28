@@ -317,7 +317,7 @@ export function prepareGlQuadBatchWrite(
 // untinted instance, which is a no-op whether or not the fold is enabled.
 export function recordGlQuadBatchColorScaleBias(
   state: GlRenderState,
-  colorScaleBias: ColorScaleBias | TintMaterialData | readonly number[] | null | undefined,
+  colorScaleBias: ColorScaleBias | TintMaterialData | Readonly<Float32Array> | null | undefined,
   instanceIndex: number,
 ): void {
   const runtime = getGlRenderStateRuntime(state);

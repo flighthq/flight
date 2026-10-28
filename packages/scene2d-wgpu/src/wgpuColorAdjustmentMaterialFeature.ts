@@ -46,7 +46,7 @@ const CT_MODE_PACKED_TINT = 2;
 const CT_MODE_PER_INSTANCE = 3;
 const CT_MODE_MATRIX = 4;
 
-type ColorAdjustmentData = ColorScaleBias | TintMaterialData | readonly number[];
+type ColorAdjustmentData = ColorScaleBias | TintMaterialData | Readonly<Float32Array>;
 
 // The backend's single color-adjustment shader chunk. The registered feature carries it to Standard
 // 2D and promoted 3D family variants without making their lean compilers statically own the code.
@@ -250,7 +250,7 @@ function fillWgpuQuadBatchWriterUniformPackedTint(runtime: WgpuRenderStateRuntim
 
 function fillWgpuQuadBatchWriterUniformColorMatrix(
   runtime: WgpuRenderStateRuntime,
-  matrix: readonly number[],
+  matrix: Readonly<Float32Array>,
   count: number,
 ): void {
   for (let i = 0; i < count; i++) writeWgpuColorMatrixInstance(runtime, matrix, i);
@@ -496,8 +496,8 @@ function getPackedTint(value: Readonly<ColorScaleBias | TintMaterialData> | null
   );
 }
 
-function isColorMatrixData(value: Readonly<ColorAdjustmentData> | null): value is readonly number[] {
-  return Array.isArray(value);
+function isColorMatrixData(value: Readonly<ColorAdjustmentData> | null): value is Readonly<Float32Array> {
+  return value instanceof Float32Array;
 }
 
 function rgbaToNativeByteWord(rgba: number): number {

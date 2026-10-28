@@ -25,7 +25,7 @@ export interface RenderProxy extends Entity {
   colorScaleBias: ColorScaleBias | null;
   // Full inherited 4×5 pointwise matrix for the uncommon channel-mixing path. Mutually exclusive with
   // colorScaleBias; presence widens only the promoted adjustment stream.
-  colorMatrix?: readonly number[] | null;
+  colorMatrix?: Readonly<Float32Array> | null;
   // Resolved material the backend renderer draws this node with, and its per-node data. Null →
   // default pipeline. Populated by the material hook during the render walk; the batcher keys on
   // `material` by reference, and material renderers read `materialData`.

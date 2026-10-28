@@ -34,7 +34,7 @@ function apply(matrix: ReadonlyArray<number>): void {
   programMock.getGlEffectProgram.mockClear();
   glMock.uniform1fv.mockClear();
   const target = { height: 8, texture: {}, width: 8 } as unknown as GlTextureRenderTarget;
-  applyColorMatrixPassToGl({ gl: {} } as unknown as GlRenderState, target, target, matrix);
+  applyColorMatrixPassToGl({ gl: {} } as unknown as GlRenderState, target, target, new Float32Array(matrix));
 }
 
 function uploadedMatrix(matrix: ReadonlyArray<number>): Float32Array {

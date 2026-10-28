@@ -43,7 +43,7 @@ const CT_MODE_UNIFORM = 1;
 const CT_MODE_PACKED_TINT = 2;
 const CT_MODE_PER_INSTANCE = 3;
 const CT_MODE_MATRIX = 4;
-const MIX_RED_GREEN = [1, 0.5, 0, 0, 0.25, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0] as const;
+const MIX_RED_GREEN = new Float32Array([1, 0.5, 0, 0, 0.25, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0]);
 
 describe('registerGlColorAdjustmentMaterialFeature', () => {
   it('installs the fold so recorded tints drive the color-adjustment state machine', () => {

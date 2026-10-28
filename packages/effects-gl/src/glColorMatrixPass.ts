@@ -12,7 +12,7 @@ export function applyColorMatrixPassToGl(
   state: GlRenderState,
   source: Readonly<GlTextureRenderTarget>,
   dest: Readonly<GlTextureRenderTarget>,
-  matrix: ReadonlyArray<number>,
+  matrix: Readonly<Float32Array>,
 ): void {
   const m = new Float32Array(20);
   for (let i = 0; i < 20; i++) m[i] = matrix[i] ?? 0;

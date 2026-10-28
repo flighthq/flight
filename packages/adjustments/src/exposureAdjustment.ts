@@ -24,12 +24,12 @@ export function initializeExposureAdjustment(
   const exposure = options.exposure ?? 0;
   const m = Math.pow(2, exposure);
   // prettier-ignore
-  const colorMatrix = [
+  const colorMatrix = new Float32Array([
     m, 0, 0, 0, 0,
     0, m, 0, 0, 0,
     0, 0, m, 0, 0,
     0, 0, 0, 1, 0,
-  ];
+  ]);
   initializeColorMatrixAdjustment(out, 'ExposureAdjustment', colorMatrix);
   out.exposure = exposure;
 }
