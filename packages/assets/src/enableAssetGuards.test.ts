@@ -1,25 +1,46 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import type { LogEntry } from '@flighthq/types/contract';
+import type { LogState } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  createLogState,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import { acquireAsset, createAssetLibrary, registerAssetDescriptor } from './assetLibrary.ts';
 import { areAssetGuardsEnabled, disableAssetGuards, enableAssetGuards } from './enableAssetGuards.ts';
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
+  addLogSink(logState, sink.sink);
   try {
     run();
-    return getMemoryLogSinkEntries(sink);
+    return readLogEntries(sink);
   } finally {
-    removeLogSink(sink.sink);
+    removeLogSink(logState, sink.sink);
   }
 }
+
+function clock(): number {
+  return 0;
+}
+
+function readLogEntries(sink: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
+}
+
+beforeEach(() => {
+  logState = createLogState();
+});
 
 describe('areAssetGuardsEnabled', () => {
   it('reports guard state per library', () => {
     const guarded = createAssetLibrary();
     const unguarded = createAssetLibrary();
-    enableAssetGuards(guarded);
+    enableAssetGuards(guarded, logState, clock);
     expect(areAssetGuardsEnabled(guarded)).toBe(true);
     expect(areAssetGuardsEnabled(unguarded)).toBe(false);
   });
@@ -28,7 +49,7 @@ describe('areAssetGuardsEnabled', () => {
 describe('disableAssetGuards', () => {
   it('restores terse rejection without a warning', async () => {
     const library = createAssetLibrary();
-    enableAssetGuards(library);
+    enableAssetGuards(library, logState, clock);
     disableAssetGuards(library);
     let rejection!: Promise<unknown>;
     const entries = captureLog(() => {
@@ -42,7 +63,7 @@ describe('disableAssetGuards', () => {
 describe('enableAssetGuards', () => {
   it('warns once with descriptor registration guidance while preserving the rejection', async () => {
     const library = createAssetLibrary();
-    enableAssetGuards(library);
+    enableAssetGuards(library, logState, clock);
     let first!: Promise<unknown>;
     let second!: Promise<unknown>;
     const entries = captureLog(() => {
@@ -60,7 +81,7 @@ describe('enableAssetGuards', () => {
   it('identifies an unregistered loader type and names its fixing call', async () => {
     const library = createAssetLibrary();
     registerAssetDescriptor(library, { id: 'guard-missing-loader', type: 'acme.custom', url: 'asset.bin' });
-    enableAssetGuards(library);
+    enableAssetGuards(library, logState, clock);
     let rejection!: Promise<unknown>;
     const entries = captureLog(() => {
       rejection = acquireAsset(library, 'guard-missing-loader');
@@ -71,3 +92,5 @@ describe('enableAssetGuards', () => {
     expect(String((entries[0].data as Record<string, unknown>).message)).toContain('registerAssetLoader');
   });
 });
+
+let logState: LogState = createLogState();
