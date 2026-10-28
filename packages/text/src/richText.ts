@@ -3,6 +3,7 @@ import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { createSignal } from '@flighthq/signals/contract';
 import { createTextFormatRange, mergeTextFormat } from '@flighthq/textformat/contract';
+import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
 import {
   computeRichTextBottomScrollV,
   computeRichTextCharIndexAtPoint,
@@ -32,7 +33,6 @@ import type {
   TextFieldScrollEvent,
   TextFieldSignals,
   TextFormat,
-  TextFormatRange,
   TextLabel,
   TextLayoutParams,
   TextLayoutResult,

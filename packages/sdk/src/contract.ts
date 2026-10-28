@@ -124,6 +124,21 @@ export * from '@flighthq/text';
 export * from '@flighthq/text-markup';
 export * from '@flighthq/textbidi';
 export * from '@flighthq/textformat/contract';
+export {
+  FontVariationItalic,
+  FontVariationOpticalSize,
+  FontVariationSlant,
+  FontVariationWeight,
+  FontVariationWidth,
+  TextFormatRange,
+} from '@flighthq/textformat/contract';
+export type {
+  FontVariation,
+  TextFormat,
+  TextFormatAlign,
+  TextFormatListMarker,
+  TextFormatRangeRaw,
+} from '@flighthq/textformat/contract';
 export * from '@flighthq/textinput';
 export * from '@flighthq/textlayout';
 export * from '@flighthq/textsegment';

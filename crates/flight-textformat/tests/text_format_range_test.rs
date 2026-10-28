@@ -52,14 +52,22 @@ mod initialize_text_format_range {
     use super::*;
 
     #[test]
-    fn copies_fields_without_normalizing_or_replacing_the_entity_slot() {
+    fn copies_fields_without_normalizing() {
         let original = Arc::new(RwLock::new(empty_text_format()));
         let mut range = create_text_format_range(original, 0, 10);
-        flight_entity::set_entity_uid(&mut range, "existing-range".to_string());
         let replacement = Arc::new(RwLock::new(empty_text_format()));
         initialize_text_format_range(&mut range, replacement.clone(), 9, 2);
         assert_eq!((range.start, range.end), (9, 2));
         assert!(Arc::ptr_eq(&range.format, &replacement));
+    }
+
+    #[test]
+    fn preserves_the_entity_slot() {
+        let original = Arc::new(RwLock::new(empty_text_format()));
+        let mut range = create_text_format_range(original, 0, 10);
+        flight_entity::set_entity_uid(&mut range, "existing-range".to_string());
+        let replacement = Arc::new(RwLock::new(empty_text_format()));
+        initialize_text_format_range(&mut range, replacement, 9, 2);
         assert_eq!(flight_entity::get_entity_uid(&mut range), "existing-range");
     }
 }

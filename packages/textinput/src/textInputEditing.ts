@@ -1,6 +1,7 @@
 import { invalidateNodeAppearance, invalidateNodeLocalContent } from '@flighthq/node/contract';
 import { setRichTextScrollH, setRichTextScrollV } from '@flighthq/text/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
+import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
 import { getRichTextSelectionRectangles, TEXT_BOUNDS_GUTTER } from '@flighthq/textlayout/contract';
 import type {
   HandleTextInputKeyboardOptions,
@@ -8,7 +9,6 @@ import type {
   ReplaceTextInputOptions,
   RichText,
   RichTextData,
-  TextFormatRange,
   TextInputState,
   TextLayoutGroup,
   TextLayoutResult,

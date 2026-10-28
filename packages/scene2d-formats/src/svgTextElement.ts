@@ -3,13 +3,13 @@ import { createMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createRichText, createTextLabel } from '@flighthq/text/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
+import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
 import type {
   Node2D,
   SvgElementContext,
   SvgImportContext,
   SvgStyle,
   TextFormat,
-  TextFormatRange,
   XmlElement,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';

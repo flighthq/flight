@@ -17,10 +17,10 @@ mod font_variation_constants {
     use super::*;
     #[test]
     fn uses_all_five_exact_source_tags() {
-        assert_eq!(FONT_VARIATION_ITALIC, "ital");
-        assert_eq!(FONT_VARIATION_OPTICAL_SIZE, "opsz");
-        assert_eq!(FONT_VARIATION_SLANT, "slnt");
-        assert_eq!(FONT_VARIATION_WEIGHT, "wght");
-        assert_eq!(FONT_VARIATION_WIDTH, "wdth");
+        assert_eq!(FontVariationItalic, "ital");
+        assert_eq!(FontVariationOpticalSize, "opsz");
+        assert_eq!(FontVariationSlant, "slnt");
+        assert_eq!(FontVariationWeight, "wght");
+        assert_eq!(FontVariationWidth, "wdth");
     }
 }

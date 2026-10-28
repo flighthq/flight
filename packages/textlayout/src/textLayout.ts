@@ -5,11 +5,11 @@ import {
   getTextFormatLeading,
   mergeTextFormat,
 } from '@flighthq/textformat/contract';
+import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
 import type {
   EntityConstruction,
   TextDirection,
   TextFormat,
-  TextFormatRange,
   TextJustification,
   TextLayoutGroup,
   TextLayoutParams,

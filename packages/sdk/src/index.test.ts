@@ -1,3 +1,5 @@
+import { TextFormatRange as ContractTextFormatRange } from './contract.ts';
+import type { TextFormatRangeRaw as ContractTextFormatRangeRaw } from './contract.ts';
 import * as sdk from './index.ts';
 
 describe('package exports', () => {
@@ -88,6 +90,26 @@ describe('package exports', () => {
 
     it('exports TextLabelKind with expected value', () => {
       expect(sdk.TextLabelKind).toBe('TextLabel');
+    });
+
+    it('prefers the Textformat wrapper class over the Types raw compatibility alias', () => {
+      const range = new sdk.TextFormatRange({ bold: true }, 1, 3);
+
+      expect(range.raw).toMatchObject({ end: 3, format: { bold: true }, start: 1 });
+      expectTypeOf(range.raw).toEqualTypeOf<sdk.TextFormatRangeRaw>();
+      expectTypeOf(range.raw.format).toEqualTypeOf<sdk.TextFormat>();
+      expectTypeOf(range.raw.start).toEqualTypeOf<number>();
+      expectTypeOf(range.raw.end).toEqualTypeOf<number>();
+    });
+
+    it('prefers the same wrapper class from the aggregate contract lane', () => {
+      const range = new ContractTextFormatRange({}, 2, 4);
+
+      expect(range.raw).toMatchObject({ end: 4, format: {}, start: 2 });
+      expectTypeOf(range.raw).toEqualTypeOf<ContractTextFormatRangeRaw>();
+      expectTypeOf(range.raw.format).toEqualTypeOf<sdk.TextFormat>();
+      expectTypeOf(range.raw.start).toEqualTypeOf<number>();
+      expectTypeOf(range.raw.end).toEqualTypeOf<number>();
     });
   });
 

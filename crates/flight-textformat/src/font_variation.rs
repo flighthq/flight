@@ -1,3 +1,5 @@
+//! flight-compiler: readonly-fields FontVariation
+
 /// One readonly OpenType tag/value record. Custom tags remain strings, as in the source.
 #[derive(Clone, Debug, PartialEq)]
 pub struct FontVariation {
@@ -5,8 +7,13 @@ pub struct FontVariation {
     pub value: f32,
 }
 
-pub const FONT_VARIATION_ITALIC: &str = "ital";
-pub const FONT_VARIATION_OPTICAL_SIZE: &str = "opsz";
-pub const FONT_VARIATION_SLANT: &str = "slnt";
-pub const FONT_VARIATION_WEIGHT: &str = "wght";
-pub const FONT_VARIATION_WIDTH: &str = "wdth";
+#[allow(non_upper_case_globals)]
+pub const FontVariationItalic: &str = "ital";
+#[allow(non_upper_case_globals)]
+pub const FontVariationOpticalSize: &str = "opsz";
+#[allow(non_upper_case_globals)]
+pub const FontVariationSlant: &str = "slnt";
+#[allow(non_upper_case_globals)]
+pub const FontVariationWeight: &str = "wght";
+#[allow(non_upper_case_globals)]
+pub const FontVariationWidth: &str = "wdth";

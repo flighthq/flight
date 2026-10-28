@@ -1,3 +1,6 @@
+//! flight-compiler: companion textFormatRange.ts
+//! flight-compiler: root TextFormatRangeRaw
+
 use crate::TextFormat;
 use flight_entity::{EntityRuntimeSlot, Ref, allocate_entity};
 

@@ -1,5 +1,6 @@
 use crate::common::empty_text_format;
 use flight_textformat::contract::*;
+use std::sync::Arc;
 
 mod get_text_format_align_string {
     use super::*;
@@ -270,7 +271,7 @@ mod text_format_fields {
         explicit.target = Some(String::new());
         explicit.url = Some(String::new());
         explicit.tab_stops = Some(vec![]);
-        explicit.variations = Some(vec![]);
+        explicit.variations = Some(Arc::new(vec![]));
         explicit.align = Some(TextFormatAlign::Start);
         explicit.list_marker = Some(TextFormatListMarker::None);
         assert_ne!(explicit, absent);
@@ -282,7 +283,7 @@ mod text_format_fields {
         assert_eq!(explicit.target.as_deref(), Some(""));
         assert_eq!(explicit.url.as_deref(), Some(""));
         assert_eq!(explicit.tab_stops, Some(vec![]));
-        assert_eq!(explicit.variations, Some(vec![]));
+        assert_eq!(explicit.variations, Some(Arc::new(vec![])));
         assert_eq!(explicit.list_marker, Some(TextFormatListMarker::None));
     }
 
@@ -290,20 +291,20 @@ mod text_format_fields {
     fn keeps_plain_tab_stop_and_variation_order_without_deduplication() {
         let mut format = empty_text_format();
         format.tab_stops = Some(vec![24.0, 8.0, 24.0]);
-        format.variations = Some(vec![
+        format.variations = Some(Arc::new(vec![
             FontVariation {
-                axis: FONT_VARIATION_WEIGHT.to_string(),
+                axis: FontVariationWeight.to_string(),
                 value: 400.0,
             },
             FontVariation {
-                axis: FONT_VARIATION_WIDTH.to_string(),
+                axis: FontVariationWidth.to_string(),
                 value: 125.0,
             },
             FontVariation {
-                axis: FONT_VARIATION_WEIGHT.to_string(),
+                axis: FontVariationWeight.to_string(),
                 value: 450.0,
             },
-        ]);
+        ]));
         let stops: &Vec<f32> = format.tab_stops.as_ref().unwrap();
         assert_eq!(stops, &[24.0, 8.0, 24.0]);
         let variations = format.variations.as_ref().unwrap();

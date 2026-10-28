@@ -2,4 +2,4 @@
 
 pub use crate::font_variation::*;
 pub use crate::text_format::*;
-pub use crate::text_format_range::*;
+pub use crate::text_format_range_raw::*;

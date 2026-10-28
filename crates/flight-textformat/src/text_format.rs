@@ -1,3 +1,7 @@
+//! flight-compiler: string-union TextFormatAlign TextFormatListMarker
+
+use std::sync::Arc;
+
 use crate::FontVariation;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -45,7 +49,7 @@ pub struct TextFormat {
     pub underline: Option<bool>,
     pub url: Option<String>,
     /// Readonly source record sequence, preserving order and repeated axis tags.
-    pub variations: Option<Vec<FontVariation>>,
+    pub variations: Option<Arc<Vec<FontVariation>>>,
 }
 
 // flight-lint: allow(conform-extra) D9 exact string table for types/TextFormat.ts TextFormatAlign; no source helper function exists
