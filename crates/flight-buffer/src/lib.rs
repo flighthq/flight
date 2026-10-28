@@ -3,24 +3,12 @@ mod types;
 
 pub mod contract;
 
-pub use contract::ArrayBuffer;
-pub use contract::ArrayBufferView;
-pub use contract::ArrayBufferViewKind;
-pub use contract::Blob;
-pub use contract::BlobArrayBufferReader;
+// Preserve the complete Rust crate-root surface through the wildcard while the explicit exports
+// below define the generated TypeScript lane. ArrayBuffer, ArrayBufferView, and Blob are supplied
+// natively by the TypeScript host, so only ByteReader has package output.
 pub use contract::ByteReader;
-pub use contract::create_array_buffer;
-pub use contract::create_array_buffer_from_bytes;
-pub use contract::create_array_buffer_view;
-pub use contract::create_blob;
 pub use contract::create_byte_reader;
-pub use contract::equals_array_buffer;
-pub use contract::get_array_buffer_byte_length;
-pub use contract::get_array_buffer_storage;
-pub use contract::get_array_buffer_view_kind_string;
 pub use contract::has_byte_reader_bytes;
-pub use contract::parse_array_buffer_view_kind;
-pub use contract::read_blob_array_buffer;
 pub use contract::read_byte_reader_u8;
 pub use contract::read_byte_reader_u16;
 pub use contract::read_byte_reader_u24;
@@ -29,3 +17,4 @@ pub use contract::read_byte_reader_u32;
 pub use contract::read_byte_reader_u32_big_endian;
 pub use contract::read_byte_reader_u64;
 pub use contract::skip_byte_reader;
+pub use contract::*;

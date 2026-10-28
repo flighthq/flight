@@ -1,3 +1,6 @@
+//! flight-compiler: rust-only — TypeScript uses host-native ArrayBuffer, ArrayBufferView, and Blob directly.
+// flight-lint: allow-file(conform-extra) approved native boundary: TypeScript consumes host ArrayBuffer, ArrayBufferView, and Blob instead of package exports
+
 use std::fmt;
 use std::future::Future;
 use std::pin::Pin;

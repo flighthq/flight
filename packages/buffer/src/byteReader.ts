@@ -1,61 +1,90 @@
-export type { ByteReader } from '@flighthq/types/contract';
+// Generated from crates/flight-buffer/src/byte_reader.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-import type { ByteReader, NonEntityCreateResult } from '@flighthq/types/contract';
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
+
+/**
+ * A forward-only little/big-endian cursor over a byte view (TS `ByteReader`), shared by the
+ * binary format parsers.
+ */
+export interface ByteReader {
+  view: Readonly<Uint8Array>;
+  offset: number;
+}
 
 export function createByteReader(
   bytes: Readonly<Uint8Array>,
-  offset = 0,
+  offset?: number,
 ): NonEntityCreateResult<ByteReader, 'descriptor'> {
-  return { view: new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength), offset };
+  return { view: bytes, offset: offset ?? 0 };
 }
 
 export function hasByteReaderBytes(reader: Readonly<ByteReader>, count: number): boolean {
-  return count >= 0 && reader.offset + count <= reader.view.byteLength;
+  return reader.offset <= reader.view.length && count <= reader.view.length - reader.offset;
 }
 
 export function readByteReaderU16(reader: ByteReader): number {
-  const value = reader.view.getUint16(reader.offset, true);
+  const offset = reader.offset;
+  const value = reader.view[offset] | (reader.view[offset + 1] << 8);
   reader.offset += 2;
   return value;
 }
 
 export function readByteReaderU24(reader: ByteReader): number {
-  const view = reader.view;
   const offset = reader.offset;
-  const value = view.getUint8(offset) | (view.getUint8(offset + 1) << 8) | (view.getUint8(offset + 2) << 16);
+  const value =
+    (reader.view[offset] >>> 0) | ((reader.view[offset + 1] >>> 0) << 8) | ((reader.view[offset + 2] >>> 0) << 16);
   reader.offset += 3;
-  return value;
+  return value >>> 0;
 }
 
 export function readByteReaderU24BigEndian(reader: ByteReader): number {
-  const view = reader.view;
   const offset = reader.offset;
-  const value = (view.getUint8(offset) << 16) | (view.getUint8(offset + 1) << 8) | view.getUint8(offset + 2);
+  const value =
+    ((reader.view[offset] >>> 0) << 16) | ((reader.view[offset + 1] >>> 0) << 8) | (reader.view[offset + 2] >>> 0);
   reader.offset += 3;
-  return value;
+  return value >>> 0;
 }
 
 export function readByteReaderU32(reader: ByteReader): number {
-  const value = reader.view.getUint32(reader.offset, true);
+  const offset = reader.offset;
+  const value = readByteReaderU32At(reader.view, offset);
   reader.offset += 4;
-  return value;
+  return value >>> 0;
+}
+
+function readByteReaderU32At(view: Readonly<Uint8Array>, offset: number): number {
+  return (
+    ((view[offset] >>> 0) |
+      ((view[offset + 1] >>> 0) << 8) |
+      ((view[offset + 2] >>> 0) << 16) |
+      ((view[offset + 3] >>> 0) << 24)) >>>
+    0
+  );
 }
 
 export function readByteReaderU32BigEndian(reader: ByteReader): number {
-  const value = reader.view.getUint32(reader.offset, false);
+  const offset = reader.offset;
+  const value =
+    ((reader.view[offset] >>> 0) << 24) |
+    ((reader.view[offset + 1] >>> 0) << 16) |
+    ((reader.view[offset + 2] >>> 0) << 8) |
+    (reader.view[offset + 3] >>> 0);
   reader.offset += 4;
-  return value;
+  return value >>> 0;
 }
 
 export function readByteReaderU64(reader: ByteReader): number {
-  const low = reader.view.getUint32(reader.offset, true);
-  const high = reader.view.getUint32(reader.offset + 4, true);
+  const offset = reader.offset;
+  const low = readByteReaderU32At(reader.view, offset);
+  const high = readByteReaderU32At(reader.view, offset + 4);
+  const value = high * 0x1_0000_0000 + low;
   reader.offset += 8;
-  return high * 0x1_0000_0000 + low;
+  return value;
 }
 
 export function readByteReaderU8(reader: ByteReader): number {
-  const value = reader.view.getUint8(reader.offset);
+  const value = reader.view[reader.offset];
   reader.offset += 1;
   return value;
 }

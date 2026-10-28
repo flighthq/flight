@@ -11,6 +11,9 @@
   },
   "references": [
     {
+      "path": "../buffer"
+    },
+    {
       "path": "../color"
     },
     {

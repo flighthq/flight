@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only — the host-native TypeScript buffer vocabulary has no package implementation.
+
 use std::sync::Arc;
 
 use flight_buffer::contract::*;

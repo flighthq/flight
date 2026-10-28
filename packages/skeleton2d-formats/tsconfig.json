@@ -13,6 +13,9 @@
       "path": "../animation"
     },
     {
+      "path": "../buffer"
+    },
+    {
       "path": "../easing"
     },
     {

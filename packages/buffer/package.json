@@ -32,13 +32,15 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
+    "generate": "tsx ../../scripts/generate-rust-package.ts --crate flight-buffer --package buffer",
+    "generate:check": "tsx ../../scripts/generate-rust-package.ts --crate flight-buffer --package buffer --check",
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --watch --config vitest.config.ts",
     "prepack": "npm run clean && npm run clean:dist && npm run build",
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/types": "*"
+    "@flighthq/entity": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"

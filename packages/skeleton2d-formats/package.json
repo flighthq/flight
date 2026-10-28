@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "@flighthq/animation": "*",
+    "@flighthq/buffer": "*",
     "@flighthq/easing": "*",
     "@flighthq/entity": "*",
     "@flighthq/importdiagnostics": "*",

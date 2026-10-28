@@ -1,4 +1,5 @@
-import type { ByteReader, NonEntityCreateResult } from '@flighthq/types/contract';
+import type { ByteReader } from '@flighthq/buffer/contract';
+import type { NonEntityCreateResult } from '@flighthq/entity/contract';
 
 // The wire primitives of Spine's `.skel` binary skeleton — the byte layer beneath `parseSpineSkeleton`'s
 // JSON. Spine writes the file with a Java `DataOutputStream`, so fixed-width numbers are BIG-ENDIAN, and it
@@ -19,7 +20,7 @@ import type { ByteReader, NonEntityCreateResult } from '@flighthq/types/contract
 // `byteLength + 1`: a cursor resting exactly ON `byteLength` is the legitimate end-of-stream state after
 // reading the final byte, and must not read as an error.
 export function createSpineBinaryReader(bytes: Readonly<Uint8Array>): NonEntityCreateResult<ByteReader, 'descriptor'> {
-  return { offset: 0, view: new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength) };
+  return { offset: 0, view: bytes };
 }
 
 // Whether `count` more bytes remain. False once the cursor is overrun, so a guarded read stays guarded.
@@ -41,13 +42,14 @@ export function readSpineBinaryBoolean(reader: ByteReader): boolean {
 // One unsigned byte.
 export function readSpineBinaryByte(reader: ByteReader): number {
   if (!hasSpineBinaryBytes(reader, 1)) return markSpineBinaryOverrun(reader, 0);
-  return reader.view.getUint8(reader.offset++);
+  return reader.view[reader.offset++];
 }
 
 // A big-endian 32-bit float.
 export function readSpineBinaryFloat(reader: ByteReader): number {
   if (!hasSpineBinaryBytes(reader, 4)) return markSpineBinaryOverrun(reader, 0);
-  const value = reader.view.getFloat32(reader.offset, false);
+  const view = getSpineBinaryDataView(reader);
+  const value = view.getFloat32(reader.offset, false);
   reader.offset += 4;
   return value;
 }
@@ -56,7 +58,8 @@ export function readSpineBinaryFloat(reader: ByteReader): number {
 // this for packed RGBA colors, where all four bytes are always present).
 export function readSpineBinaryInt(reader: ByteReader): number {
   if (!hasSpineBinaryBytes(reader, 4)) return markSpineBinaryOverrun(reader, 0);
-  const value = reader.view.getInt32(reader.offset, false);
+  const view = getSpineBinaryDataView(reader);
+  const value = view.getInt32(reader.offset, false);
   reader.offset += 4;
   return value;
 }
@@ -89,7 +92,8 @@ export function readSpineBinaryString(reader: ByteReader): string | null {
 // matches `MeshAttachment2D.triangles`' `Uint16Array` without a sign-conversion step.
 export function readSpineBinaryUnsignedShort(reader: ByteReader): number {
   if (!hasSpineBinaryBytes(reader, 2)) return markSpineBinaryOverrun(reader, 0);
-  const value = reader.view.getUint16(reader.offset, false);
+  const view = getSpineBinaryDataView(reader);
+  const value = view.getUint16(reader.offset, false);
   reader.offset += 2;
   return value;
 }
@@ -114,6 +118,10 @@ export function skipSpineBinaryBytes(reader: ByteReader, count: number): void {
 function markSpineBinaryOverrun<T>(reader: ByteReader, value: T): T {
   reader.offset = reader.view.byteLength + 1;
   return value;
+}
+
+function getSpineBinaryDataView(reader: Readonly<ByteReader>): DataView {
+  return new DataView(reader.view.buffer, reader.view.byteOffset, reader.view.byteLength);
 }
 
 // The shared varint core, returning the raw 32-bit pattern before either flavor interprets it. Up to five

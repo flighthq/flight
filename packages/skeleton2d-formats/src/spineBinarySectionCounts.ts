@@ -1,3 +1,4 @@
+import type { ByteReader } from '@flighthq/buffer/contract';
 import {
   SpineBinarySectionKind as SectionKind,
   SpineBinaryTimelineKind as TimelineKind,
@@ -69,12 +70,12 @@ function isSupportedCensusVersion(version: string): boolean {
   return CENSUS_SUPPORTED_LAYOUTS.includes(`${parts[0]}.${parts[1]}`);
 }
 
-function skipCensusStringTable(reader: { offset: number; view: DataView }): void {
+function skipCensusStringTable(reader: ByteReader): void {
   const count = readSpineBinaryVarint(reader);
   for (let i = 0; i < count && !isSpineBinaryReaderOverrun(reader); i++) readSpineBinaryString(reader);
 }
 
-function skipCensusBones(reader: { offset: number; view: DataView }, nonessential: boolean): number {
+function skipCensusBones(reader: ByteReader, nonessential: boolean): number {
   const count = readSpineBinaryVarint(reader);
   for (let i = 0; i < count && !isSpineBinaryReaderOverrun(reader); i++) {
     readSpineBinaryString(reader);
@@ -87,7 +88,7 @@ function skipCensusBones(reader: { offset: number; view: DataView }, nonessentia
   return count;
 }
 
-function skipCensusSlots(reader: { offset: number; view: DataView }): number {
+function skipCensusSlots(reader: ByteReader): number {
   const count = readSpineBinaryVarint(reader);
   for (let i = 0; i < count && !isSpineBinaryReaderOverrun(reader); i++) {
     readSpineBinaryString(reader);
@@ -99,7 +100,7 @@ function skipCensusSlots(reader: { offset: number; view: DataView }): number {
   return count;
 }
 
-function skipCensusConstraintHead(reader: { offset: number; view: DataView }): void {
+function skipCensusConstraintHead(reader: ByteReader): void {
   readSpineBinaryString(reader);
   readSpineBinaryVarint(reader);
   readSpineBinaryBoolean(reader);
@@ -107,7 +108,7 @@ function skipCensusConstraintHead(reader: { offset: number; view: DataView }): v
   for (let i = 0; i < bones && !isSpineBinaryReaderOverrun(reader); i++) readSpineBinaryVarint(reader);
 }
 
-function skipCensusIkConstraints(reader: { offset: number; view: DataView }): number {
+function skipCensusIkConstraints(reader: ByteReader): number {
   const count = readSpineBinaryVarint(reader);
   for (let i = 0; i < count && !isSpineBinaryReaderOverrun(reader); i++) {
     skipCensusConstraintHead(reader);
@@ -117,7 +118,7 @@ function skipCensusIkConstraints(reader: { offset: number; view: DataView }): nu
   return count;
 }
 
-function skipCensusTransformConstraints(reader: { offset: number; view: DataView }): number {
+function skipCensusTransformConstraints(reader: ByteReader): number {
   const count = readSpineBinaryVarint(reader);
   for (let i = 0; i < count && !isSpineBinaryReaderOverrun(reader); i++) {
     skipCensusConstraintHead(reader);
@@ -127,7 +128,7 @@ function skipCensusTransformConstraints(reader: { offset: number; view: DataView
   return count;
 }
 
-function skipCensusPathConstraints(reader: { offset: number; view: DataView }): number {
+function skipCensusPathConstraints(reader: ByteReader): number {
   const count = readSpineBinaryVarint(reader);
   for (let i = 0; i < count && !isSpineBinaryReaderOverrun(reader); i++) {
     skipCensusConstraintHead(reader);
@@ -140,7 +141,7 @@ function skipCensusPathConstraints(reader: { offset: number; view: DataView }): 
   return count;
 }
 
-function skipCensusSkins(reader: { offset: number; view: DataView }, nonessential: boolean): number {
+function skipCensusSkins(reader: ByteReader, nonessential: boolean): number {
   const defaultSlots = readSpineBinaryVarint(reader);
   let skinCount = 0;
   if (defaultSlots > 0) {
@@ -161,11 +162,7 @@ function skipCensusSkins(reader: { offset: number; view: DataView }, nonessentia
   return skinCount;
 }
 
-function skipCensusSkinBody(
-  reader: { offset: number; view: DataView },
-  slotCount: number,
-  nonessential: boolean,
-): void {
+function skipCensusSkinBody(reader: ByteReader, slotCount: number, nonessential: boolean): void {
   for (let i = 0; i < slotCount && !isSpineBinaryReaderOverrun(reader); i++) {
     readSpineBinaryVarint(reader);
     const entries = readSpineBinaryVarint(reader);
@@ -176,7 +173,7 @@ function skipCensusSkinBody(
   }
 }
 
-function skipCensusAttachment(reader: { offset: number; view: DataView }, nonessential: boolean): void {
+function skipCensusAttachment(reader: ByteReader, nonessential: boolean): void {
   readSpineBinaryVarint(reader);
   const ordinal = readSpineBinaryByte(reader);
   const type = ordinal < CENSUS_ATTACHMENT_TYPES.length ? CENSUS_ATTACHMENT_TYPES[ordinal] : null;
@@ -215,7 +212,7 @@ function skipCensusAttachment(reader: { offset: number; view: DataView }, noness
   }
 }
 
-function skipCensusMesh(reader: { offset: number; view: DataView }, nonessential: boolean): void {
+function skipCensusMesh(reader: ByteReader, nonessential: boolean): void {
   readSpineBinaryVarint(reader);
   skipSpineBinaryBytes(reader, CENSUS_COLOR_BYTES);
   const vertexCount = readSpineBinaryVarint(reader);
@@ -231,7 +228,7 @@ function skipCensusMesh(reader: { offset: number; view: DataView }, nonessential
   }
 }
 
-function skipCensusVertices(reader: { offset: number; view: DataView }, vertexCount: number): void {
+function skipCensusVertices(reader: ByteReader, vertexCount: number): void {
   if (!readSpineBinaryBoolean(reader)) {
     skipSpineBinaryBytes(reader, vertexCount * 8);
     return;
@@ -242,7 +239,7 @@ function skipCensusVertices(reader: { offset: number; view: DataView }, vertexCo
   }
 }
 
-function skipCensusSequence(reader: { offset: number; view: DataView }): void {
+function skipCensusSequence(reader: ByteReader): void {
   if (!readSpineBinaryBoolean(reader)) return;
   readSpineBinaryVarint(reader);
   readSpineBinaryVarint(reader);
@@ -250,7 +247,7 @@ function skipCensusSequence(reader: { offset: number; view: DataView }): void {
   readSpineBinaryVarint(reader);
 }
 
-function skipCensusEvents(reader: { offset: number; view: DataView }): number {
+function skipCensusEvents(reader: ByteReader): number {
   const count = readSpineBinaryVarint(reader);
   for (let i = 0; i < count && !isSpineBinaryReaderOverrun(reader); i++) {
     readSpineBinaryVarint(reader);
@@ -262,11 +259,7 @@ function skipCensusEvents(reader: { offset: number; view: DataView }): number {
   return count;
 }
 
-function skipCensusAnimations(
-  reader: { offset: number; view: DataView },
-  slotCount: number,
-  counts: Map<string, number>,
-): number {
+function skipCensusAnimations(reader: ByteReader, slotCount: number, counts: Map<string, number>): number {
   const animationCount = readSpineBinaryVarint(reader);
   for (let i = 0; i < animationCount && !isSpineBinaryReaderOverrun(reader); i++) {
     readSpineBinaryString(reader);
@@ -287,7 +280,7 @@ function tallyTimeline(counts: Map<string, number>, kind: string): void {
   counts.set(kind, (counts.get(kind) ?? 0) + 1);
 }
 
-function skipCensusSlotTimelines(reader: { offset: number; view: DataView }, counts: Map<string, number>): void {
+function skipCensusSlotTimelines(reader: ByteReader, counts: Map<string, number>): void {
   const slots = readSpineBinaryVarint(reader);
   for (let i = 0; i < slots && !isSpineBinaryReaderOverrun(reader); i++) {
     readSpineBinaryVarint(reader);
@@ -310,7 +303,7 @@ function skipCensusSlotTimelines(reader: { offset: number; view: DataView }, cou
   }
 }
 
-function skipCensusBoneTimelines(reader: { offset: number; view: DataView }, counts: Map<string, number>): void {
+function skipCensusBoneTimelines(reader: ByteReader, counts: Map<string, number>): void {
   const bones = readSpineBinaryVarint(reader);
   for (let i = 0; i < bones && !isSpineBinaryReaderOverrun(reader); i++) {
     readSpineBinaryVarint(reader);
@@ -330,7 +323,7 @@ function skipCensusBoneTimelines(reader: { offset: number; view: DataView }, cou
   }
 }
 
-function skipCensusIkTimelines(reader: { offset: number; view: DataView }, counts: Map<string, number>): void {
+function skipCensusIkTimelines(reader: ByteReader, counts: Map<string, number>): void {
   const ik = readSpineBinaryVarint(reader);
   for (let i = 0; i < ik && !isSpineBinaryReaderOverrun(reader); i++) {
     tallyTimeline(counts, TimelineKind.Ik);
@@ -347,7 +340,7 @@ function skipCensusIkTimelines(reader: { offset: number; view: DataView }, count
   }
 }
 
-function skipCensusTransformTimelines(reader: { offset: number; view: DataView }, counts: Map<string, number>): void {
+function skipCensusTransformTimelines(reader: ByteReader, counts: Map<string, number>): void {
   const transform = readSpineBinaryVarint(reader);
   for (let i = 0; i < transform && !isSpineBinaryReaderOverrun(reader); i++) {
     tallyTimeline(counts, TimelineKind.Transform);
@@ -358,7 +351,7 @@ function skipCensusTransformTimelines(reader: { offset: number; view: DataView }
   }
 }
 
-function skipCensusPathTimelines(reader: { offset: number; view: DataView }, counts: Map<string, number>): void {
+function skipCensusPathTimelines(reader: ByteReader, counts: Map<string, number>): void {
   const path = readSpineBinaryVarint(reader);
   for (let i = 0; i < path && !isSpineBinaryReaderOverrun(reader); i++) {
     readSpineBinaryVarint(reader);
@@ -374,7 +367,7 @@ function skipCensusPathTimelines(reader: { offset: number; view: DataView }, cou
   }
 }
 
-function skipCensusDeformTimelines(reader: { offset: number; view: DataView }, counts: Map<string, number>): void {
+function skipCensusDeformTimelines(reader: ByteReader, counts: Map<string, number>): void {
   const skins = readSpineBinaryVarint(reader);
   for (let i = 0; i < skins && !isSpineBinaryReaderOverrun(reader); i++) {
     readSpineBinaryVarint(reader);
@@ -409,11 +402,7 @@ function skipCensusDeformTimelines(reader: { offset: number; view: DataView }, c
   }
 }
 
-function skipCensusDrawOrderTimeline(
-  reader: { offset: number; view: DataView },
-  slotCount: number,
-  counts: Map<string, number>,
-): void {
+function skipCensusDrawOrderTimeline(reader: ByteReader, slotCount: number, counts: Map<string, number>): void {
   const frames = readSpineBinaryVarint(reader);
   if (frames > 0) tallyTimeline(counts, TimelineKind.DrawOrder);
   for (let i = 0; i < frames && !isSpineBinaryReaderOverrun(reader); i++) {
@@ -426,7 +415,7 @@ function skipCensusDrawOrderTimeline(
   }
 }
 
-function skipCensusEventTimelines(reader: { offset: number; view: DataView }, counts: Map<string, number>): void {
+function skipCensusEventTimelines(reader: ByteReader, counts: Map<string, number>): void {
   const frames = readSpineBinaryVarint(reader);
   if (frames > 0) tallyTimeline(counts, TimelineKind.Event);
   for (let i = 0; i < frames && !isSpineBinaryReaderOverrun(reader); i++) {
@@ -439,7 +428,7 @@ function skipCensusEventTimelines(reader: { offset: number; view: DataView }, co
 }
 
 function skipCensusCurveFrames(
-  reader: { offset: number; view: DataView },
+  reader: ByteReader,
   frameCount: number,
   payloadBytes: number,
   curveValues: number,
@@ -452,7 +441,7 @@ function skipCensusCurveFrames(
   }
 }
 
-function skipCensusCurveTag(reader: { offset: number; view: DataView }, curveValues: number): void {
+function skipCensusCurveTag(reader: ByteReader, curveValues: number): void {
   if (readSpineBinaryByte(reader) === CENSUS_CURVE_BEZIER) {
     skipSpineBinaryBytes(reader, curveValues * 16);
   }
