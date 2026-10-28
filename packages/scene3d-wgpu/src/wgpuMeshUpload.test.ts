@@ -4,9 +4,8 @@ import {
   createMeshGeometry,
   invalidateMeshGeometry,
   setMeshGeometrySkinBindPose,
-  updateMeshMorph,
 } from '@flighthq/meshgeometry/contract';
-import { createMesh } from '@flighthq/scene3d/contract';
+import { createMesh, updateMeshMorph } from '@flighthq/scene3d/contract';
 import type { MeshGeometryRuntime, MeshMorph, VertexAttributeLayout } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 

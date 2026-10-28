@@ -64,7 +64,7 @@ fn conform(root: &Path) -> (i32, String) {
     return (output.status.code().unwrap_or(-1), text);
 }
 
-fn conform_relocation(root: &Path) -> (i32, String) {
+fn conform_pair(root: &Path) -> (i32, String) {
     let output = Command::new(env!("CARGO_BIN_EXE_cargo-flight-lint"))
         .args([
             "conform",
@@ -85,9 +85,9 @@ fn conform_relocation(root: &Path) -> (i32, String) {
     return (output.status.code().unwrap_or(-1), text);
 }
 
-fn relocation_workspace(name: &str, mesh_rust: &str) -> PathBuf {
+fn paired_workspace(name: &str, meshgeometry_rust: &str) -> PathBuf {
     let root = std::env::temp_dir().join(format!(
-        "flight-conform-relocation-{}-{}",
+        "flight-conform-pair-{}-{}",
         name,
         std::process::id()
     ));
@@ -113,27 +113,27 @@ fn relocation_workspace(name: &str, mesh_rust: &str) -> PathBuf {
     .unwrap();
     fs::write(
         root.join("crates/flight-meshgeometry/src/lib.rs"),
-        mesh_rust,
+        meshgeometry_rust,
     )
     .unwrap();
 
-    let mesh = root.join("ts/mesh/src");
+    let meshgeometry = root.join("ts/meshgeometry/src");
     let scene3d = root.join("ts/scene3d/src");
-    fs::create_dir_all(&mesh).unwrap();
+    fs::create_dir_all(&meshgeometry).unwrap();
     fs::create_dir_all(&scene3d).unwrap();
     fs::write(
-        mesh.join("updateMeshMorph.ts"),
-        "export function updateMeshMorph(mesh: Readonly<Mesh>): void {}\n",
-    )
-    .unwrap();
-    fs::write(
-        mesh.join("keepMeshFunction.ts"),
+        meshgeometry.join("keepMeshFunction.ts"),
         "export function keepMeshFunction(value: number): void {}\n",
     )
     .unwrap();
     fs::write(
-        mesh.join("index.ts"),
-        "export * from './updateMeshMorph.ts';\nexport * from './keepMeshFunction.ts';\n",
+        meshgeometry.join("index.ts"),
+        "export * from './keepMeshFunction.ts';\n",
+    )
+    .unwrap();
+    fs::write(
+        scene3d.join("updateMeshMorph.ts"),
+        "export function updateMeshMorph(mesh: Readonly<Mesh>): void {}\n",
     )
     .unwrap();
     fs::write(
@@ -141,7 +141,11 @@ fn relocation_workspace(name: &str, mesh_rust: &str) -> PathBuf {
         "export function createScene3D(): Scene3D {}\n",
     )
     .unwrap();
-    fs::write(scene3d.join("index.ts"), "export * from './scene.ts';\n").unwrap();
+    fs::write(
+        scene3d.join("index.ts"),
+        "export * from './scene.ts';\nexport * from './updateMeshMorph.ts';\n",
+    )
+    .unwrap();
     return root;
 }
 
@@ -195,23 +199,23 @@ fn a_numeric_array_mismatch_behind_a_block_comment_still_fails() {
 }
 
 #[test]
-fn update_mesh_morph_relocation_accepts_the_new_owner() {
-    let root = relocation_workspace(
+fn paired_packages_accept_matching_owners() {
+    let root = paired_workspace(
         "accepts",
         "pub fn keep_mesh_function(value: i32) { let _ = value; }\n",
     );
-    let (code, text) = conform_relocation(&root);
+    let (code, text) = conform_pair(&root);
     assert_eq!(code, 0, "{text}");
     fs::remove_dir_all(&root).unwrap();
 }
 
 #[test]
-fn update_mesh_morph_relocation_keeps_old_and_other_functions_checked() {
-    let root = relocation_workspace(
+fn paired_packages_reject_cross_owned_functions() {
+    let root = paired_workspace(
         "rejects",
         "pub fn update_mesh_morph(mesh: &str) { let _ = mesh; }\n",
     );
-    let (code, text) = conform_relocation(&root);
+    let (code, text) = conform_pair(&root);
     assert_eq!(code, 1, "{text}");
     assert!(
         text.contains("conform-extra") && text.contains("extra `update_mesh_morph`"),

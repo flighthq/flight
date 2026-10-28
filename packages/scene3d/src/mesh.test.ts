@@ -1,6 +1,5 @@
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry, getMeshGeometryVertexCount } from '@flighthq/meshgeometry/contract';
-import { updateMeshMorph } from '@flighthq/meshgeometry/contract';
 import {
   addNodeChild,
   getNodeChildCount,
@@ -22,6 +21,7 @@ import {
   MeshKind,
 } from './mesh.ts';
 import { createNode3D } from './sceneNode.ts';
+import { updateMeshMorph } from './updateMeshMorph.ts';
 
 describe('cloneMesh', () => {
   it('shares the geometry by reference', () => {

@@ -32,4 +32,3 @@ export * from './meshGeometrySubset.ts';
 export * from './meshGeometryTransforms.ts';
 export * from './meshGeometryUvs.ts';
 export * from './morphMeshGeometry.ts';
-export * from './updateMeshMorph.ts';

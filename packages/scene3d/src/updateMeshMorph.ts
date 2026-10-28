@@ -1,24 +1,23 @@
+import {
+  blendMeshGeometryMorph,
+  captureMeshMorphBindPose,
+  getMeshGeometryMorphBindPose,
+  setMeshGeometryMorphBindPose,
+} from '@flighthq/meshgeometry/contract';
 import type { Mesh, MeshGeometry, MeshGeometryRuntime, MeshMorph } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
-
-import { getMeshGeometryMorphBindPose, setMeshGeometryMorphBindPose } from './meshGeometry.ts';
-import { blendMeshGeometryMorph, captureMeshMorphBindPose } from './morphMeshGeometry.ts';
 
 // Blends a morphed mesh into its geometry for the current weights — the explicit per-frame morph call,
 // sibling of updateMeshSkin. Run it after the weights are set (a Weights animation channel applied via
 // applyAnimationClipToScene3D, or manual mesh.morph.weights writes) and before rendering: it captures the
 // geometry's base pose once (lazily, onto the geometry runtime) and reuses it every frame, then blends
-// base + Σ wᵢ·targetᵢ into geometry.vertices and bumps the version so the GL backend re-uploads (the
+// base + Σ wᵢ·targetᵢ into geometry.vertices and bumps the version so the backend re-uploads (the
 // CPU-blend-then-upload morph path). A mesh with no morph is a no-op, so calling it over a whole scene's
 // meshes is safe. Steady-state morph allocates nothing.
 //
-// Lives here, not in @flighthq/scene3d, even though it takes a Mesh node: it reads only `mesh.geometry`
-// and `mesh.morph` and touches the GEOMETRY runtime slot, never the scene graph — so it sits at the
-// lowest layer that can host it. That placement is what lets the deform run below scene: skeleton3d's
-// updateMeshDeformation composes it with updateMeshSkin as two same-layer primitives, and the render
-// prepare pass drives it without @flighthq/render taking a @flighthq/scene3d dependency. @flighthq/scene3d
-// keeps the half that genuinely needs the graph — routing a Weights animation channel into
-// mesh.morph.weights. Unify at the channel target, split at the deformer.
+// This node-level operation lives with Mesh in @flighthq/scene3d. The geometry-only blending and bind-
+// pose primitives remain in @flighthq/meshgeometry so importers and geometry tools do not depend on the
+// scene graph.
 //
 // When a mesh carries both a skin and a morph (corrective shapes over skinning), call updateMeshMorph
 // first, then updateMeshSkin: morph writes the base-pose-plus-deltas into geometry.vertices, and the

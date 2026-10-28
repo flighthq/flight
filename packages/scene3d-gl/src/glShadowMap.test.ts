@@ -7,7 +7,7 @@ import {
 } from '@flighthq/camera/contract';
 import { createMatrix4, createVector3 } from '@flighthq/geometry/contract';
 import { createDirectionalLight } from '@flighthq/lighting/contract';
-import { createBoxMeshGeometry, createMeshGeometry, updateMeshMorph } from '@flighthq/meshgeometry/contract';
+import { createBoxMeshGeometry, createMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import {
   createInstancedMesh,
@@ -16,6 +16,7 @@ import {
   Node3DKind,
   setInstancedMeshInstanceCount,
   setInstancedMeshInstanceMatrix,
+  updateMeshMorph,
 } from '@flighthq/scene3d/contract';
 import type { Skin, VertexAttributeLayout } from '@flighthq/types/contract';
 import { DIRECTIONAL_SHADOW_MAP_SIZE, EntityRuntimeKey } from '@flighthq/types/contract';

@@ -17,3 +17,4 @@ export * from './sceneNodeBounds.ts';
 export * from './sceneNodeCulling.ts';
 export * from './sceneNodeDispose.ts';
 export * from './sceneNodeTransform.ts';
+export * from './updateMeshMorph.ts';
