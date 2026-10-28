@@ -1,7 +1,4 @@
-//! flight-compiler: target-native
 //! flight-compiler: nullable-options
-//! Target-native until the TS `contributeTransformVelocity` gains the `revisions` argument with
-//! Node's migration: the Rust node API takes caller-owned `NodeRevisionState` (D5), TS does not yet.
 
 use flight_geometry::copy_matrix;
 use flight_geometry::create_matrix;
@@ -24,7 +21,6 @@ use crate::velocity_store::ensure_node_velocity_sample;
 /// `explicit_frame_id` matches), but still have their previous transform updated, so order
 /// relative to explicit contributors does not matter. Run once per frame after
 /// `begin_velocity_frame`. Velocity is in node units; a producer scales by the render pixel ratio.
-// flight-lint: allow(conform-params) D5: caller-owned NodeRevisionState; the TS revisions argument migrates with Node
 pub fn contribute_transform_velocity(field: &mut VelocityField, root: &NodeRef) {
     visit_transform_velocity(field, root);
 }
