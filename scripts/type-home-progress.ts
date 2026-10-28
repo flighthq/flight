@@ -1,6 +1,8 @@
-// Structural meter for the staged D8 type-home migration. Package-owned exported types are the
-// target architecture; @flighthq/types remains a compatibility aggregator while that migration
-// lands. This reports owner-package declarations without maintaining an approval allowlist.
+// Structural meter for the D8/T4 type-home migration. Exported types belong to their defining
+// package; @flighthq/types is only the transitional compatibility facade. Report package-owned
+// declarations as progress and declarations still centralized in types as migration debt. This is
+// deliberately not an ownership gate and derives both populations from source, without a package
+// approval list or a frozen declaration manifest.
 //
 //   npx tsx scripts/type-home-progress.ts          # meter (always exit 0)
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
@@ -49,28 +51,27 @@ function exportedTypeNames(file: string): string[] {
   return names;
 }
 
-const perPackage: Array<{ pkg: string; count: number }> = [];
-let total = 0;
+const perOwnerPackage: Array<{ pkg: string; count: number }> = [];
+let ownerTypeCount = 0;
 for (const e of readdirSync(packagesDir, { withFileTypes: true })) {
-  // tool-*, vite-plugin-*, and *-wasm are build-side or bridge tiers: their exported types name
-  // bundler/Node/wasm surfaces that @flighthq/types must not depend on.
-  if (
-    !e.isDirectory() ||
-    e.name === 'types' ||
-    e.name.startsWith('tool-') ||
-    e.name.startsWith('vite-plugin-') ||
-    e.name.endsWith('-wasm')
-  )
-    continue;
+  if (!e.isDirectory() || e.name === 'types') continue;
   if (!selected.has(e.name)) continue;
   let count = 0;
   for (const f of sourceFiles(join(packagesDir, e.name, 'src'))) count += exportedTypeNames(f).length;
   if (count > 0) {
-    perPackage.push({ pkg: e.name, count });
-    total += count;
+    perOwnerPackage.push({ pkg: e.name, count });
+    ownerTypeCount += count;
   }
 }
 
-perPackage.sort((a, b) => b.count - a.count);
-for (const { pkg, count } of perPackage) console.log(`  ${String(count).padStart(4)}  @flighthq/${pkg}`);
-console.log(`\n  ${perPackage.length} owner packages, ${total} package-owned exported types`);
+perOwnerPackage.sort((a, b) => b.count - a.count || a.pkg.localeCompare(b.pkg));
+for (const { pkg, count } of perOwnerPackage) console.log(`  ${String(count).padStart(4)}  @flighthq/${pkg}`);
+
+console.log(`\n  ${perOwnerPackage.length} defining packages, ${ownerTypeCount} package-owned exported types`);
+if (selected.has('types')) {
+  let centralizedTypeCount = 0;
+  for (const f of sourceFiles(join(packagesDir, 'types', 'src'))) centralizedTypeCount += exportedTypeNames(f).length;
+  console.log(`  ${centralizedTypeCount} legacy exported type declarations remain in @flighthq/types`);
+} else {
+  console.log('  legacy @flighthq/types declarations not scanned by the current selector');
+}
