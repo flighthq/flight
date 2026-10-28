@@ -1,81 +1,124 @@
-import { allocateHsvColor, hsvToRgb, rgbToHsv } from './hsvColor.ts';
+// Generated from crates/flight-color/tests/hsv_color_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { describe, expect, it } from 'vitest';
+
+import { allocateHsvColor, hsvToRgb, rgbToHsv } from './contract.ts';
+
+function assertApprox(actual: number, expected: number): void {
+  const diff = Math.abs(actual - expected);
+  expect(diff < 1e-3, `expected ${expected}, got ${actual} (diff: ${diff})`).toBe(true);
+}
+
+function assertApproxTight(actual: number, expected: number): void {
+  const diff = Math.abs(actual - expected);
+  expect(diff < 1e-5, `expected ${expected}, got ${actual} (diff: ${diff})`).toBe(true);
+}
 
 describe('allocateHsvColor', () => {
-  it('allocates a zeroed three-component HSV color', () => {
-    expect(allocateHsvColor()).toEqual([0, 0, 0]);
+  it('allocates a zeroed three component hsv color', () => {
+    const c = allocateHsvColor();
+    expect(c.h).toEqual(0.0);
+    expect(c.s).toEqual(0.0);
+    expect(c.v).toEqual(0.0);
   });
 });
 
 describe('hsvToRgb', () => {
-  it('produces achromatic RGB for saturation = 0', () => {
-    const out: [number, number, number, number] = [0, 0, 0, 1];
-    hsvToRgb(out, 0, 0, 0.6);
-    expect(out[0]).toBeCloseTo(0.6);
-    expect(out[1]).toBeCloseTo(0.6);
-    expect(out[2]).toBeCloseTo(0.6);
+  it('produces achromatic rgb for saturation zero', () => {
+    let out = new Float32Array([0.0, 0.0, 0.0, 1.0]);
+    hsvToRgb(out, 0.0, 0.0, 0.6);
+    assertApprox(out[0], 0.6);
+    assertApprox(out[1], 0.6);
+    assertApprox(out[2], 0.6);
   });
-  it('produces pure red for h=0, s=1, v=1', () => {
-    const out: [number, number, number, number] = [0, 0, 0, 1];
-    hsvToRgb(out, 0, 1, 1);
-    expect(out[0]).toBeCloseTo(1, 5);
-    expect(out[1]).toBeCloseTo(0, 5);
-    expect(out[2]).toBeCloseTo(0, 5);
+  it('produces pure red for h0 s1 v1', () => {
+    let out = new Float32Array([0.0, 0.0, 0.0, 1.0]);
+    hsvToRgb(out, 0.0, 1.0, 1.0);
+    assertApproxTight(out[0], 1.0);
+    assertApproxTight(out[1], 0.0);
+    assertApproxTight(out[2], 0.0);
   });
-  it('round-trips with rgbToHsv for a pure green', () => {
-    const out: [number, number, number, number] = [0, 0, 0, 1];
-    hsvToRgb(out, 120, 1, 1);
-    expect(out[0]).toBeCloseTo(0, 5);
-    expect(out[1]).toBeCloseTo(1, 5);
-    expect(out[2]).toBeCloseTo(0, 5);
+  it('round trips with rgb to hsv for pure green', () => {
+    let out = new Float32Array([0.0, 0.0, 0.0, 1.0]);
+    hsvToRgb(out, 120.0, 1.0, 1.0);
+    assertApproxTight(out[0], 0.0);
+    assertApproxTight(out[1], 1.0);
+    assertApproxTight(out[2], 0.0);
   });
-  it.each([
-    [90, [0.5, 1, 0]],
-    [210, [0, 0.5, 1]],
-    [270, [0.5, 0, 1]],
-    [330, [1, 0, 0.5]],
-  ] as const)('converts hue %d through its color-wheel sector', (hue, expected) => {
-    const out: [number, number, number, number] = [0, 0, 0, 0.75];
-
-    hsvToRgb(out, hue, 1, 1);
-
-    expect(out[0]).toBeCloseTo(expected[0], 5);
-    expect(out[1]).toBeCloseTo(expected[1], 5);
-    expect(out[2]).toBeCloseTo(expected[2], 5);
-    expect(out[3]).toBe(0.75);
+  it('converts hue 90 through its color wheel sector', () => {
+    let out = new Float32Array([0.0, 0.0, 0.0, 0.75]);
+    hsvToRgb(out, 90.0, 1.0, 1.0);
+    assertApproxTight(out[0], 0.5);
+    assertApproxTight(out[1], 1.0);
+    assertApproxTight(out[2], 0.0);
+    expect(out[3]).toEqual(0.75);
+  });
+  it('converts hue 210 through its color wheel sector', () => {
+    let out = new Float32Array([0.0, 0.0, 0.0, 0.75]);
+    hsvToRgb(out, 210.0, 1.0, 1.0);
+    assertApproxTight(out[0], 0.0);
+    assertApproxTight(out[1], 0.5);
+    assertApproxTight(out[2], 1.0);
+    expect(out[3]).toEqual(0.75);
+  });
+  it('converts hue 270 through its color wheel sector', () => {
+    let out = new Float32Array([0.0, 0.0, 0.0, 0.75]);
+    hsvToRgb(out, 270.0, 1.0, 1.0);
+    assertApproxTight(out[0], 0.5);
+    assertApproxTight(out[1], 0.0);
+    assertApproxTight(out[2], 1.0);
+    expect(out[3]).toEqual(0.75);
+  });
+  it('converts hue 330 through its color wheel sector', () => {
+    let out = new Float32Array([0.0, 0.0, 0.0, 0.75]);
+    hsvToRgb(out, 330.0, 1.0, 1.0);
+    assertApproxTight(out[0], 1.0);
+    assertApproxTight(out[1], 0.0);
+    assertApproxTight(out[2], 0.5);
+    expect(out[3]).toEqual(0.75);
   });
 });
 
 describe('rgbToHsv', () => {
-  it('converts pure red to hue=0, s=1, v=1', () => {
-    const out: [number, number, number] = [0, 0, 0];
-    rgbToHsv(out, 0xff0000ff);
-    expect(out[0]).toBeCloseTo(0, 3);
-    expect(out[1]).toBeCloseTo(1, 5);
-    expect(out[2]).toBeCloseTo(1, 5);
+  it('converts pure red to hue 0 s 1 v 1', () => {
+    let out = allocateHsvColor();
+    rgbToHsv(out, 4278190335);
+    assertApprox(out.h, 0.0);
+    assertApproxTight(out.s, 1.0);
+    assertApproxTight(out.v, 1.0);
   });
-  it('converts black to s=0, v=0', () => {
-    const out: [number, number, number] = [0, 0, 0];
-    rgbToHsv(out, 0x000000ff);
-    expect(out[1]).toBe(0);
-    expect(out[2]).toBeCloseTo(0, 5);
+  it('converts black to s 0 v 0', () => {
+    let out = allocateHsvColor();
+    rgbToHsv(out, 255);
+    expect(out.s).toEqual(0.0);
+    assertApproxTight(out.v, 0.0);
   });
-  it('converts white to s=0, v=1', () => {
-    const out: [number, number, number] = [0, 0, 0];
-    rgbToHsv(out, 0xffffffff);
-    expect(out[1]).toBe(0);
-    expect(out[2]).toBeCloseTo(1, 5);
+  it('converts white to s 0 v 1', () => {
+    let out = allocateHsvColor();
+    rgbToHsv(out, 4294967295);
+    expect(out.s).toEqual(0.0);
+    assertApproxTight(out.v, 1.0);
   });
-  it.each([
-    [0x00ff00ff, 120],
-    [0x0000ffff, 240],
-    [0xff00ffff, 300],
-  ])('converts packed color 0x%s to hue %d', (color, expectedHue) => {
-    const out: [number, number, number] = [0, 0, 0];
-
-    rgbToHsv(out, color);
-
-    expect(out[0]).toBeCloseTo(expectedHue, 3);
-    expect(out[1]).toBeCloseTo(1, 5);
-    expect(out[2]).toBeCloseTo(1, 5);
+  it('converts pure green to hue 120', () => {
+    let out = allocateHsvColor();
+    rgbToHsv(out, 16711935);
+    assertApprox(out.h, 120.0);
+    assertApproxTight(out.s, 1.0);
+    assertApproxTight(out.v, 1.0);
+  });
+  it('converts pure blue to hue 240', () => {
+    let out = allocateHsvColor();
+    rgbToHsv(out, 65535);
+    assertApprox(out.h, 240.0);
+    assertApproxTight(out.s, 1.0);
+    assertApproxTight(out.v, 1.0);
+  });
+  it('converts magenta to hue 300', () => {
+    let out = allocateHsvColor();
+    rgbToHsv(out, 4278255615);
+    assertApprox(out.h, 300.0);
+    assertApproxTight(out.s, 1.0);
+    assertApproxTight(out.v, 1.0);
   });
 });
