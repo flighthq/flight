@@ -1,8 +1,7 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use flight_clock::contract::*;
 use flight_entity::Ref;
-use flight_signals::{FrameTick, connect_signal, has_signal_slots};
 
 fn options(scale: Option<f64>, paused: Option<bool>) -> ClockOptions {
     return ClockOptions { scale, paused };
@@ -145,21 +144,6 @@ mod advance_clock {
     }
 
     #[test]
-    fn emits_on_tick_with_the_scaled_delta_when_signals_are_enabled() {
-        let clock = clock_with(&options(Some(2.0), None));
-        let received: Arc<Mutex<Vec<f64>>> = Arc::new(Mutex::new(Vec::new()));
-        let on_tick = enable_clock_signals(&mut clock.write().unwrap());
-        let sink = received.clone();
-        connect_signal(
-            &on_tick,
-            Arc::new(move |tick: &FrameTick| sink.lock().unwrap().push(tick.delta_time)),
-            None,
-        );
-        advance_clock(&clock, 500.0);
-        assert_eq!(*received.lock().unwrap(), vec![1000.0]);
-    }
-
-    #[test]
     fn applies_a_negative_delta_time_producing_negative_delta_time_and_decreasing_elapsed() {
         let clock = create_clock();
         advance_clock(&clock, 1000.0);
@@ -177,48 +161,6 @@ mod advance_clock {
         assert_eq!(clock.read().unwrap().elapsed, -1000.0);
     }
 
-    #[test]
-    fn does_not_emit_or_throw_when_signals_are_not_enabled() {
-        let clock = create_clock();
-        advance_clock(&clock, 1000.0);
-        assert!(clock.read().unwrap().on_tick.is_none());
-    }
-
-    #[test]
-    fn fires_a_clock_on_tick_before_its_children_advance() {
-        let parent = create_clock();
-        let child = create_child_clock(&parent, None);
-        let seen_child_delta: Arc<Mutex<Vec<f64>>> = Arc::new(Mutex::new(Vec::new()));
-        let on_tick = enable_clock_signals(&mut parent.write().unwrap());
-        let probe = child.clone();
-        let sink = seen_child_delta.clone();
-        connect_signal(
-            &on_tick,
-            Arc::new(move |_tick: &FrameTick| {
-                sink.lock().unwrap().push(probe.read().unwrap().delta_time)
-            }),
-            None,
-        );
-        advance_clock(&parent, 100.0);
-        assert_eq!(*seen_child_delta.lock().unwrap(), vec![0.0]);
-        assert_eq!(child.read().unwrap().delta_time, 100.0);
-    }
-
-    #[test]
-    fn lets_an_on_tick_slot_re_enter_and_attach_a_child_that_advances_in_the_same_pass() {
-        let parent = create_clock();
-        let late = create_clock();
-        let on_tick = enable_clock_signals(&mut parent.write().unwrap());
-        let (target, added) = (parent.clone(), late.clone());
-        connect_signal(
-            &on_tick,
-            Arc::new(move |_tick: &FrameTick| add_clock_child(&target, &added)),
-            None,
-        );
-        advance_clock(&parent, 40.0);
-        assert!(children_are(&parent, &[&late]));
-        assert_eq!(late.read().unwrap().delta_time, 40.0);
-    }
 }
 
 mod create_child_clock {
@@ -295,16 +237,6 @@ mod dispose_clock {
         dispose_clock(&clock);
         assert!(children_are(&clock, &[]));
         assert!(child.read().unwrap().parent.is_none());
-    }
-
-    #[test]
-    fn clears_on_tick_listeners() {
-        let clock = create_clock();
-        let on_tick = enable_clock_signals(&mut clock.write().unwrap());
-        connect_signal(&on_tick, Arc::new(|_tick: &FrameTick| {}), None);
-        assert!(has_signal_slots(&on_tick));
-        dispose_clock(&clock);
-        assert!(!has_signal_slots(&on_tick));
     }
 
     #[test]

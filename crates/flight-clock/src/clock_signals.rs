@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_signals::{FrameTick, Signal, create_signal};
 
 use crate::types::Clock;

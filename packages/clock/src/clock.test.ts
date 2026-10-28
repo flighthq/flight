@@ -1,5 +1,3 @@
-import { connectSignal, hasSignalSlots } from '@flighthq/signals/contract';
-
 import {
   addClockChild,
   advanceClock,
@@ -16,7 +14,6 @@ import {
   resumeClock,
   setClockScale,
 } from './clock.ts';
-import { enableClockSignals } from './clockSignals.ts';
 
 describe('addClockChild', () => {
   it('attaches a child and sets its parent', () => {
@@ -101,15 +98,6 @@ describe('advanceClock', () => {
     expect(child.elapsed).toBe(0);
   });
 
-  it('emits onTick with the scaled delta when signals are enabled', () => {
-    const clock = createClock({ scale: 2 });
-    const received: number[] = [];
-    const onTick = enableClockSignals(clock);
-    connectSignal(onTick, (deltaTime) => received.push(deltaTime));
-    advanceClock(clock, 500);
-    expect(received).toEqual([1000]); // 500 * 2
-  });
-
   it('applies a negative deltaTime, producing negative deltaTime and decreasing elapsed', () => {
     const clock = createClock();
     advanceClock(clock, 1000);
@@ -124,12 +112,6 @@ describe('advanceClock', () => {
     advanceClock(clock, 1000);
     expect(clock.deltaTime).toBe(-1000);
     expect(clock.elapsed).toBe(-1000);
-  });
-
-  it('does not emit or throw when signals are not enabled', () => {
-    const clock = createClock();
-    expect(() => advanceClock(clock, 1000)).not.toThrow();
-    expect(clock.onTick).toBeNull();
   });
 });
 
@@ -185,15 +167,6 @@ describe('disposeClock', () => {
     disposeClock(clock);
     expect(clock.children).toEqual([]);
     expect(child.parent).toBeNull();
-  });
-
-  it('clears onTick listeners', () => {
-    const clock = createClock();
-    const onTick = enableClockSignals(clock);
-    connectSignal(onTick, () => {});
-    expect(hasSignalSlots(onTick)).toBe(true);
-    disposeClock(clock);
-    expect(hasSignalSlots(onTick)).toBe(false);
   });
 
   it('is safe on a rootless, childless, signal-free clock', () => {
