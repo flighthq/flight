@@ -1,8 +1,8 @@
+import { createByteReader, hasByteReaderBytes, readByteReaderU32, skipByteReader } from '@flighthq/buffer/contract';
 import type { TextureContainer } from '@flighthq/types/contract';
 import type { TextureContainerFormat } from '@flighthq/types/contract';
 import type { TextureContainerParseFailureReason } from '@flighthq/types/contract';
 
-import { createByteReader, hasByteReaderBytes, readByteReaderU32, skipByteReader } from './byteReader.ts';
 import { computeTextureContainerLevels } from './textureLevelLayout.ts';
 
 export function getDdsParseFailureReason(bytes: Readonly<Uint8Array>): TextureContainerParseFailureReason | null {

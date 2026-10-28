@@ -2,7 +2,7 @@ import { packColor } from '@flighthq/color/contract';
 import { createMatrix } from '@flighthq/geometry/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createRichText, createTextLabel } from '@flighthq/text/contract';
-import { createTextFormatRange } from '@flighthq/textlayout/contract';
+import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type {
   Node2D,
   SvgElementContext,

@@ -1,4 +1,4 @@
-import { createTextFormatRange } from '@flighthq/textlayout/contract';
+import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { RichTextContent, TextFormat } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';

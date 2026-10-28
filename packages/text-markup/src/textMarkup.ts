@@ -1,5 +1,6 @@
 import { getColorRgb } from '@flighthq/color/contract';
-import { createRichTextContent, createTextFormatRange } from '@flighthq/textlayout/contract';
+import { createTextFormatRange } from '@flighthq/textformat/contract';
+import { createRichTextContent } from '@flighthq/textlayout/contract';
 import type {
   MarkupTagEffect,
   MarkupTagHandler,

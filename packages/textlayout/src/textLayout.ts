@@ -1,4 +1,10 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import {
+  getTextFormatAscent,
+  getTextFormatDescent,
+  getTextFormatLeading,
+  mergeTextFormat,
+} from '@flighthq/textformat/contract';
 import type {
   EntityConstruction,
   TextDirection,
@@ -12,7 +18,6 @@ import type {
   TextVerticalAlign,
 } from '@flighthq/types/contract';
 
-import { getTextFormatAscent, getTextFormatDescent, getTextFormatLeading, mergeTextFormat } from './textFormat.ts';
 import { createTextLayoutGroup } from './textLayoutGroup.ts';
 import { getTextLineBreaks } from './textLineBreaks.ts';
 

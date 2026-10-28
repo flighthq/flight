@@ -1,14 +1,13 @@
-import type { TextureContainer } from '@flighthq/types/contract';
-import type { TextureContainerFormat } from '@flighthq/types/contract';
-import type { TextureContainerLevel } from '@flighthq/types/contract';
-import type { TextureContainerParseFailureReason } from '@flighthq/types/contract';
-
 import {
   createByteReader,
   hasByteReaderBytes,
   readByteReaderU24BigEndian,
   readByteReaderU32BigEndian,
-} from './byteReader.ts';
+} from '@flighthq/buffer/contract';
+import type { TextureContainer } from '@flighthq/types/contract';
+import type { TextureContainerFormat } from '@flighthq/types/contract';
+import type { TextureContainerLevel } from '@flighthq/types/contract';
+import type { TextureContainerParseFailureReason } from '@flighthq/types/contract';
 
 export function getAtfParseFailureReason(bytes: Readonly<Uint8Array>): TextureContainerParseFailureReason | null {
   const failure: ParseFailure = { reason: null };

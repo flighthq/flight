@@ -2,7 +2,8 @@ import { computeRgbaCssString } from '@flighthq/color/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getTextLabelRuntime } from '@flighthq/text/contract';
-import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
+import { createTextFormatRange } from '@flighthq/textformat/contract';
+import { computeTextLayout, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   DomRenderState,
   EntityConstruction,

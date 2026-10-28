@@ -2,8 +2,6 @@ export * from './richTextContent.ts';
 export * from './richTextMetrics.ts';
 export * from './richTextQuery.ts';
 export * from './textBounds.ts';
-export * from './textFormat.ts';
-export * from './textFormatRange.ts';
 export * from './textLayout.ts';
 export * from './textLayoutGroup.ts';
 export * from './textLayoutMeasure.ts';

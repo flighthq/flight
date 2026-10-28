@@ -7,7 +7,8 @@ import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getTextLabelRuntime } from '@flighthq/text/contract';
-import { computeTextLayout, createTextFormatRange, getTextLayoutResult } from '@flighthq/textlayout/contract';
+import { createTextFormatRange } from '@flighthq/textformat/contract';
+import { computeTextLayout, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   CanvasSurface,
   EntityConstruction,

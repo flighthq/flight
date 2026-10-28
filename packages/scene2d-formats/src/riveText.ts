@@ -1,7 +1,7 @@
 import { packColor } from '@flighthq/color/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createRichText } from '@flighthq/text/contract';
-import { createTextFormatRange } from '@flighthq/textlayout/contract';
+import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type {
   FontVariation,
   ImportDiagnostic,

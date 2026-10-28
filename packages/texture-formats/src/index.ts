@@ -1,4 +1,3 @@
-export * from './byteReader.ts';
 export * from './detectTextureContainer.ts';
 export * from './explainTextureContainerParse.ts';
 export * from './parseAtf.ts';

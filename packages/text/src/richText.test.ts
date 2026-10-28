@@ -6,7 +6,8 @@ import {
   getNodeLocalTransformRevision,
 } from '@flighthq/node/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import { createTextFormatRange, setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
+import { createTextFormatRange } from '@flighthq/textformat/contract';
+import { setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
 import type { Node, RichText, RichTextRuntime, TextFormatRange } from '@flighthq/types/contract';
 import { EntityRuntimeKey, RichTextKind } from '@flighthq/types/contract';
 

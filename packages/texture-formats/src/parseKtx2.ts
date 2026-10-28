@@ -1,16 +1,15 @@
-import type { TextureContainer } from '@flighthq/types/contract';
-import type { TextureContainerFormat } from '@flighthq/types/contract';
-import type { TextureContainerLevel } from '@flighthq/types/contract';
-import type { TextureContainerParseFailureReason } from '@flighthq/types/contract';
-import type { TextureContainerSupercompression } from '@flighthq/types/contract';
-
 import {
   createByteReader,
   hasByteReaderBytes,
   readByteReaderU32,
   readByteReaderU64,
   skipByteReader,
-} from './byteReader.ts';
+} from '@flighthq/buffer/contract';
+import type { TextureContainer } from '@flighthq/types/contract';
+import type { TextureContainerFormat } from '@flighthq/types/contract';
+import type { TextureContainerLevel } from '@flighthq/types/contract';
+import type { TextureContainerParseFailureReason } from '@flighthq/types/contract';
+import type { TextureContainerSupercompression } from '@flighthq/types/contract';
 
 export function getKtx2ParseFailureReason(bytes: Readonly<Uint8Array>): TextureContainerParseFailureReason | null {
   const failure: ParseFailure = { reason: null };

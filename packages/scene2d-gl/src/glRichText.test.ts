@@ -5,8 +5,8 @@
 } from '@flighthq/image/contract';
 import { getGlRenderStateRuntime } from '@flighthq/render-gl/contract';
 import { createRichText } from '@flighthq/text/contract';
+import { createTextFormatRange } from '@flighthq/textformat/contract';
 import { enableTextInput } from '@flighthq/textinput/contract';
-import { createTextFormatRange } from '@flighthq/textlayout/contract';
 import type {
   CanvasSurface,
   HostCanvasCapability,

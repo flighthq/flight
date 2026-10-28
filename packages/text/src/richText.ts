@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { createSignal } from '@flighthq/signals/contract';
+import { createTextFormatRange, mergeTextFormat } from '@flighthq/textformat/contract';
 import {
   computeRichTextBottomScrollV,
   computeRichTextCharIndexAtPoint,
@@ -13,10 +14,8 @@ import {
   computeRichTextTextHeight,
   computeRichTextTextWidth,
   computeTextBoundsRectangle,
-  createTextFormatRange,
   getRichTextContent,
   getRichTextLinkAtPoint,
-  mergeTextFormat,
 } from '@flighthq/textlayout/contract';
 import type {
   BoundsNode,

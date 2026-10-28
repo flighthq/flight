@@ -1,3 +1,4 @@
+import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { RichTextData, RichTextRuntime } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -8,7 +9,6 @@ import {
   getRichTextContent,
   initializeRichTextContent,
 } from './richTextContent.ts';
-import { createTextFormatRange } from './textFormatRange.ts';
 
 function createData(data: Partial<RichTextData> = {}): RichTextData {
   return {

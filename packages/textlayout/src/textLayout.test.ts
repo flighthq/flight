@@ -1,6 +1,6 @@
+import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextLayoutParams, TextLayoutResult } from '@flighthq/types/contract';
 
-import { createTextFormatRange } from './textFormatRange.ts';
 import {
   TEXT_LAYOUT_GUTTER,
   computeTextLayout,
