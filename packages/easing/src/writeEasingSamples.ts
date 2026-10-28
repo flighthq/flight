@@ -1,20 +1,28 @@
-import type { EasingFunction } from '@flighthq/types/contract';
+// Generated from crates/flight-easing/src/write_easing_samples.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-// Samples `ease` at uniformly spaced values of t in [0,1] and writes into the caller-owned `out`
-// array. The first sample is ease(0) and the last is ease(1) when the output has at least two entries;
-// a single-entry output samples ease(0.5). An empty output is a programmer error.
+import type { EasingFunction } from './easingTypes.ts';
+
+/**
+ * Samples `ease` uniformly over the caller's entire output buffer.
+ * The single-entry case samples the midpoint; larger buffers include both endpoints.
+ * Throws the source count error before invoking `ease` when `out` is empty.
+ */
 export function writeEasingSamples(out: Float32Array, ease: EasingFunction): void {
   const count = out.length;
-  if (count === 0) throw new Error('writeEasingSamples: out must not be empty');
+  if (count === 0) {
+    throw new Error('createEasingSamples: count must be a finite integer >= 1');
+  }
   if (count === 1) {
     out[0] = ease(0.5);
     return;
   }
-  const step = 1 / (count - 1);
-  for (let i = 0; i < count; i++) {
+  const step = 1.0 / (count - 1.0);
+  for (let i = 0; i < count; i += 1) {
     const t = i * step;
-    out[i] = ease(t < 0 ? 0 : t > 1 ? 1 : t);
+    const clampedT = t < 0.0 ? 0.0 : t > 1.0 ? 1.0 : t;
+    out[i] = ease(clampedT);
   }
-  out[0] = ease(0);
-  out[count - 1] = ease(1);
+  out[0] = ease(0.0);
+  out[count - 1] = ease(1.0);
 }

@@ -1,10 +1,35 @@
-import type { EasingFunction } from '@flighthq/types/contract';
+// Generated from crates/flight-easing/src/ease_exponential.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-export const easeInExponential: EasingFunction = (t) => (t === 0 ? 0 : Math.pow(2, 10 * t - 10));
+/**
+ * Ease-in exponential: very slow start, then rapid acceleration.
+ */
+export function easeInExponential(t: number): number {
+  if (t === 0.0) {
+    return 0.0;
+  }
+  return Math.pow(2.0, 10.0 * t - 10.0);
+}
 
-export const easeInOutExponential: EasingFunction = (t) => {
-  if (t === 0 || t === 1) return t;
-  return t < 0.5 ? Math.pow(2, 20 * t - 10) / 2 : (2 - Math.pow(2, -20 * t + 10)) / 2;
-};
+/**
+ * Ease-in-out exponential: exponential acceleration and deceleration.
+ */
+export function easeInOutExponential(t: number): number {
+  if (t === 0.0 || t === 1.0) {
+    return t;
+  }
+  if (t < 0.5) {
+    return Math.pow(2.0, 20.0 * t - 10.0) / 2.0;
+  }
+  return (2.0 - Math.pow(2.0, -20.0 * t + 10.0)) / 2.0;
+}
 
-export const easeOutExponential: EasingFunction = (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t));
+/**
+ * Ease-out exponential: fast start, then rapid deceleration.
+ */
+export function easeOutExponential(t: number): number {
+  if (t === 1.0) {
+    return 1.0;
+  }
+  return 1.0 - Math.pow(2.0, -10.0 * t);
+}

@@ -1,49 +1,46 @@
-import type { EasingFunction, EasingSegment } from '@flighthq/types/contract';
+// Generated from crates/flight-easing/src/ease_piecewise.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-// Returns an easing function that splices multiple EasingFunctions across the
-// [0,1] input range. Each segment is allocated a proportional slice of the
-// input domain based on its `weight` (default 1). Weights are relative — they
-// do not need to sum to any particular value; the function normalizes them.
-//
-// Example: `easePiecewise([{ ease: easeInCubic }, { ease: easeLinear, weight: 2 }])`
-// gives the first segment 1/3 of the input range and the second segment 2/3.
-//
-// An empty or weight-zero segments array is a programmer error and throws.
-// Allocates a closure and an internal segment table; cache the result.
-export function easePiecewise(segments: Readonly<ReadonlyArray<Readonly<EasingSegment>>>): EasingFunction {
+import type { EasingFunction } from './easingTypes.ts';
+
+export interface EasingSegment {
+  readonly ease: EasingFunction;
+  readonly weight?: number;
+}
+
+/**
+ * Returns an easing function that splices multiple easing functions across the
+ * [0,1] input range. Each segment is allocated a proportional slice of the
+ * input domain based on its `weight` (default 1). Weights are relative.
+ */
+export function easePiecewise(segments: Readonly<EasingSegment[]>): EasingFunction {
   if (segments.length === 0) {
     throw new Error('easePiecewise: segments array must not be empty');
   }
-
-  // Resolve weights and compute cumulative breakpoints.
-  const totalWeight = segments.reduce((sum, seg) => sum + (seg.weight ?? 1), 0);
-  if (totalWeight <= 0) {
+  const totalWeight: number = segments.map((s) => s.weight ?? 1.0).reduce((sum, value) => sum + value, 0);
+  if (totalWeight <= 0.0) {
     throw new Error('easePiecewise: total segment weight must be greater than zero');
   }
-
-  // Precompute per-segment [start, end] breakpoints in [0,1] space.
-  const breakpoints: { ease: EasingFunction; end: number; start: number }[] = [];
-  let accumulated = 0;
-  for (const seg of segments) {
-    const weight = seg.weight ?? 1;
+  let breakpoints: Array<readonly [EasingFunction, number, number]> = [] as never[];
+  let accumulated = 0.0;
+  for (const segment of segments) {
+    const weight = segment.weight ?? 1.0;
     const start = accumulated / totalWeight;
     accumulated += weight;
     const end = accumulated / totalWeight;
-    breakpoints.push({ ease: seg.ease, end, start });
+    breakpoints.push([segment.ease, start, end]);
   }
-
-  return (t) => {
-    // Walk breakpoints to find the active segment.
-    for (let i = 0; i < breakpoints.length; i++) {
-      const bp = breakpoints[i];
-      if (t <= bp.end || i === breakpoints.length - 1) {
-        // Remap t into the local [0,1] range of this segment.
-        const span = bp.end - bp.start;
-        const localT = span > 0 ? (t - bp.start) / span : 1;
-        const clampedT = localT < 0 ? 0 : localT > 1 ? 1 : localT;
-        return bp.ease(clampedT);
+  const lastEase = segments[segments.length - 1].ease;
+  return (t: number): number => {
+    for (let i = 0; i < breakpoints.length; i += 1) {
+      const [ease, start, end] = breakpoints[i];
+      if (t <= end || i === breakpoints.length - 1) {
+        const span = end - start;
+        const localT = span > 0.0 ? (t - start) / span : 1.0;
+        const clampedT = localT < 0.0 ? 0.0 : localT > 1.0 ? 1.0 : localT;
+        return ease(clampedT);
       }
     }
-    return segments[segments.length - 1].ease(1);
+    return lastEase(1.0);
   };
 }

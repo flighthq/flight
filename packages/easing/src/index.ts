@@ -1,22 +1,60 @@
-export * from './easeBack.ts';
-export * from './easeBounce.ts';
-export * from './easeCircular.ts';
-export * from './easeCombinators.ts';
-export * from './easeCubic.ts';
-export * from './easeCubicBezier.ts';
-export * from './easeDampedSine.ts';
-export * from './easeElastic.ts';
-export * from './easeExponential.ts';
-export * from './easeLinear.ts';
-export * from './easePiecewise.ts';
-export * from './easePower.ts';
-export * from './easeQuadratic.ts';
-export * from './easeQuartic.ts';
-export * from './easeQuintic.ts';
-export * from './easeSine.ts';
-export * from './easeSmoothstep.ts';
-export { easeSteps } from './easeSteps.ts';
-export * from './enableEasingGuards.ts';
-export * from './getEasingDerivative.ts';
-export * from './writeEasingSamples.ts';
-export type { EasingFunction, EasingSegment, ScalarRemap, StepPosition } from '@flighthq/types/contract';
+// Generated from crates/flight-easing/src/lib.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+export {
+  disableEasingGuards,
+  easeClamp,
+  easeClampOutput,
+  easeCubicBezier,
+  easeInBack,
+  easeInBounce,
+  easeInCircular,
+  easeInCubic,
+  easeInDampedSine,
+  easeInElastic,
+  easeInExponential,
+  easeInOutBack,
+  easeInOutBounce,
+  easeInOutCircular,
+  easeInOutCubic,
+  easeInOutDampedSine,
+  easeInOutElastic,
+  easeInOutExponential,
+  easeInOutPower,
+  easeInOutQuadratic,
+  easeInOutQuartic,
+  easeInOutQuintic,
+  easeInOutSine,
+  easeInPower,
+  easeInQuadratic,
+  easeInQuartic,
+  easeInQuintic,
+  easeInSine,
+  easeInvert,
+  easeLinear,
+  easeMirror,
+  easeOutBack,
+  easeOutBounce,
+  easeOutCircular,
+  easeOutCubic,
+  easeOutDampedSine,
+  easeOutElastic,
+  easeOutExponential,
+  easeOutPower,
+  easeOutQuadratic,
+  easeOutQuartic,
+  easeOutQuintic,
+  easeOutSine,
+  easePiecewise,
+  easeReverse,
+  easeScaleOutput,
+  easeSmootherstep,
+  easeSmoothstep,
+  easeSmoothstepRange,
+  easeSteps,
+  enableEasingGuards,
+  getEasingDerivative,
+  writeEasingSamples,
+} from './contract.ts';
+
+export type { EasingFunction, EasingSegment, ScalarRemap, StepPosition } from './contract.ts';

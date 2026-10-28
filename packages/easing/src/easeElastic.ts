@@ -1,22 +1,49 @@
-import type { EasingFunction } from '@flighthq/types/contract';
+// Generated from crates/flight-easing/src/ease_elastic.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-export const easeInElastic: EasingFunction = (t) => {
-  if (t === 0 || t === 1) return t;
-  return -(Math.pow(2, 10 * (t -= 1)) * Math.sin(((t - s) * (2 * Math.PI)) / p));
-};
+const PI = Math.PI;
 
-export const easeInOutElastic: EasingFunction = (t) => {
-  if (t === 0 || t === 1) return t;
-  if ((t *= 2) < 1) return -0.5 * (Math.pow(2, 10 * (t -= 1)) * Math.sin(((t - s2) * (2 * Math.PI)) / p2));
-  return 0.5 * Math.pow(2, -10 * (t -= 1)) * Math.sin(((t - s2) * (2 * Math.PI)) / p2) + 1;
-};
+const P: number = 0.4;
 
-export const easeOutElastic: EasingFunction = (t) => {
-  if (t === 0 || t === 1) return t;
-  return Math.pow(2, -10 * t) * Math.sin(((t - s) * (2 * Math.PI)) / p) + 1;
-};
+const P2: number = 0.45;
 
-const p = 0.4;
-const p2 = 0.45;
-const s = (p / (2 * Math.PI)) * Math.asin(1);
-const s2 = (p2 / (2 * Math.PI)) * Math.asin(1);
+const S: number = P / 4.0;
+
+const S2: number = P2 / 4.0;
+
+/**
+ * Ease-in elastic: oscillates below zero before reaching the target.
+ */
+export function easeInElastic(t: number): number {
+  if (t === 0.0 || t === 1.0) {
+    return t;
+  }
+  const time = t - 1.0;
+  return -(Math.pow(2.0, 10.0 * time) * Math.sin(((time - S) * (2.0 * PI)) / P));
+}
+
+/**
+ * Ease-in-out elastic: oscillates at both ends.
+ */
+export function easeInOutElastic(t: number): number {
+  if (t === 0.0 || t === 1.0) {
+    return t;
+  }
+  let t2 = t * 2.0;
+  if (t2 < 1.0) {
+    t2 = t2 - 1.0;
+    return -0.5 * (Math.pow(2.0, 10.0 * t2) * Math.sin(((t2 - S2) * (2.0 * PI)) / P2));
+  }
+  t2 = t2 - 1.0;
+  return 0.5 * Math.pow(2.0, -10.0 * t2) * Math.sin(((t2 - S2) * (2.0 * PI)) / P2) + 1.0;
+}
+
+/**
+ * Ease-out elastic: overshoots past 1 and oscillates back.
+ */
+export function easeOutElastic(t: number): number {
+  if (t === 0.0 || t === 1.0) {
+    return t;
+  }
+  return Math.pow(2.0, -10.0 * t) * Math.sin(((t - S) * (2.0 * PI)) / P) + 1.0;
+}

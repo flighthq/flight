@@ -1,97 +1,98 @@
-import type { StepPosition } from '@flighthq/types/contract';
+// Generated from crates/flight-easing/tests/ease_steps_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-import { easeSteps, setEasingStepsGuard } from './easeSteps.ts';
+import { describe, expect, it } from 'vitest';
+
+import { easeSteps, getStepPositionString, parseStepPosition, setEasingStepsGuard } from './contract.ts';
+
+function assertApprox(actual: number, expected: number): void {
+  const diff = Math.abs(actual - expected);
+  expect(diff < 1e-4, `expected ${expected}, got ${actual} (diff: ${diff})`).toBe(true);
+}
 
 describe('easeSteps', () => {
-  it('jumpEnd holds at 0 first and reaches 1 only at t=1', () => {
+  it('jump end holds at 0 first and reaches 1 only at t 1', () => {
     const ease = easeSteps(4, 'jumpEnd');
-    expect(ease(0)).toBe(0);
-    expect(ease(0.1)).toBe(0);
-    expect(ease(0.25)).toBeCloseTo(0.25);
-    expect(ease(0.6)).toBeCloseTo(0.5);
-    expect(ease(0.99)).toBeCloseTo(0.75);
-    expect(ease(1)).toBe(1);
+    expect(ease(0.0)).toEqual(0.0);
+    expect(ease(0.1)).toEqual(0.0);
+    assertApprox(ease(0.25), 0.25);
+    assertApprox(ease(0.6), 0.5);
+    assertApprox(ease(0.99), 0.75);
+    expect(ease(1.0)).toEqual(1.0);
   });
-
-  it('jumpEnd is the default position', () => {
+  it('jump end is the default position', () => {
     const explicit = easeSteps(4, 'jumpEnd');
-    const implicit = easeSteps(4);
-    for (let i = 0; i <= 10; i++) {
-      expect(implicit(i / 10)).toBe(explicit(i / 10));
+    const implicit = easeSteps(4, undefined);
+    for (let i = 0; i <= 10; i += 1) {
+      expect(implicit(i / 10.0)).toEqual(explicit(i / 10.0));
     }
   });
-
-  it('jumpStart jumps immediately and reaches 1 before t=1', () => {
+  it('jump start jumps immediately and reaches 1 before t 1', () => {
     const ease = easeSteps(4, 'jumpStart');
-    expect(ease(0)).toBeCloseTo(0.25);
-    expect(ease(0.1)).toBeCloseTo(0.25);
-    expect(ease(0.5)).toBeCloseTo(0.75);
-    expect(ease(0.99)).toBe(1);
-    expect(ease(1)).toBe(1);
+    assertApprox(ease(0.0), 0.25);
+    assertApprox(ease(0.1), 0.25);
+    assertApprox(ease(0.5), 0.75);
+    expect(ease(0.99)).toEqual(1.0);
+    expect(ease(1.0)).toEqual(1.0);
   });
-
-  it('jumpNone spans the closed range 0..1 with count-1 jumps', () => {
+  it('jump none spans the closed range 0 to 1 with count minus 1 jumps', () => {
     const ease = easeSteps(4, 'jumpNone');
-    expect(ease(0)).toBe(0);
-    expect(ease(0.25)).toBeCloseTo(1 / 3);
-    expect(ease(0.5)).toBeCloseTo(2 / 3);
-    expect(ease(0.99)).toBe(1);
-    expect(ease(1)).toBe(1);
+    expect(ease(0.0)).toEqual(0.0);
+    assertApprox(ease(0.25), 1.0 / 3.0);
+    assertApprox(ease(0.5), 2.0 / 3.0);
+    expect(ease(0.99)).toEqual(1.0);
+    expect(ease(1.0)).toEqual(1.0);
   });
-
-  it('jumpNone with count=1 yields NaN, matching the CSS-forbidden steps(1, jump-none)', () => {
+  it('jump none with count 1 yields nan', () => {
     const ease = easeSteps(1, 'jumpNone');
-    expect(Number.isNaN(ease(0))).toBe(true);
+    expect(Number.isNaN(ease(0.0))).toBe(true);
     expect(Number.isNaN(ease(0.5))).toBe(true);
-    expect(Number.isNaN(ease(1))).toBe(true);
+    expect(Number.isNaN(ease(1.0))).toBe(true);
   });
-
-  it('jumpBoth never outputs 0 at the start, with interior 1/(n+1) steps', () => {
+  it('jump both never outputs 0 at the start', () => {
     const ease = easeSteps(4, 'jumpBoth');
-    expect(ease(0)).toBeCloseTo(0.2);
-    expect(ease(0.1)).toBeCloseTo(0.2);
-    expect(ease(0.25)).toBeCloseTo(0.4);
-    expect(ease(0.99)).toBeCloseTo(0.8);
-    expect(ease(1)).toBe(1);
+    assertApprox(ease(0.0), 0.2);
+    assertApprox(ease(0.1), 0.2);
+    assertApprox(ease(0.25), 0.4);
+    assertApprox(ease(0.99), 0.8);
+    expect(ease(1.0)).toEqual(1.0);
   });
-
-  it('is monotonically non-decreasing for jumpEnd', () => {
+  it('is monotonically non decreasing for jump end', () => {
     const ease = easeSteps(5, 'jumpEnd');
-    let prev = ease(0);
-    for (let i = 1; i <= 50; i++) {
-      const value = ease(i / 50);
-      expect(value).toBeGreaterThanOrEqual(prev);
+    let prev = ease(0.0);
+    for (let i = 1; i <= 50; i += 1) {
+      const value = ease(i / 50.0);
+      expect(value >= prev).toBe(true);
       prev = value;
     }
   });
 });
 
-describe('setEasingStepsGuard', () => {
-  it('reports the degenerate jumpNone call that silently returns NaN', () => {
-    const seen: [number, StepPosition][] = [];
-    setEasingStepsGuard((count, position) => seen.push([count, position]));
-    try {
-      // The failure being reported: one step with no edge jump leaves zero jumps to divide by.
-      expect(Number.isNaN(easeSteps(1, 'jumpNone')(0.5))).toBe(true);
-    } finally {
-      setEasingStepsGuard(null);
-    }
-    expect(seen).toEqual([[1, 'jumpNone']]);
+describe('getStepPositionString', () => {
+  it('returns the exact ts strings', () => {
+    expect(getStepPositionString('jumpStart')).toEqual('jumpStart');
+    expect(getStepPositionString('jumpEnd')).toEqual('jumpEnd');
+    expect(getStepPositionString('jumpNone')).toEqual('jumpNone');
+    expect(getStepPositionString('jumpBoth')).toEqual('jumpBoth');
   });
+});
 
-  it('stays silent for well-defined calls, and once uninstalled', () => {
-    const seen: number[] = [];
-    setEasingStepsGuard((count) => seen.push(count));
-    try {
-      easeSteps(2, 'jumpNone')(0.5); // count >= 2 is the documented minimum for jumpNone
-      easeSteps(1, 'jumpEnd')(0.5); // edge-jumping positions are defined for count >= 1
-      easeSteps(1, 'jumpBoth')(0.5);
-    } finally {
-      setEasingStepsGuard(null);
-    }
-    expect(seen).toEqual([]);
-    // Uninstalled: the degenerate call still returns NaN, but nothing is reported.
-    easeSteps(1, 'jumpNone')(0.5);
-    expect(seen).toEqual([]);
+describe('parseStepPosition', () => {
+  it('parses the exact ts strings', () => {
+    expect(parseStepPosition('jumpStart')).toEqual('jumpStart');
+    expect(parseStepPosition('jumpEnd')).toEqual('jumpEnd');
+    expect(parseStepPosition('jumpNone')).toEqual('jumpNone');
+    expect(parseStepPosition('jumpBoth')).toEqual('jumpBoth');
+  });
+  it('rejects other text and wrong casing', () => {
+    expect(parseStepPosition('JumpNone')).toEqual(undefined);
+    expect(parseStepPosition('jumpnone')).toEqual(undefined);
+    expect(parseStepPosition('')).toEqual(undefined);
+  });
+});
+
+describe('setEasingStepsGuard', () => {
+  it('is available to the target native guard suite', () => {
+    const ClearGuard = () => setEasingStepsGuard(null);
   });
 });

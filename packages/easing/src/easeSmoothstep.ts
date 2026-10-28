@@ -1,20 +1,32 @@
-import type { EasingFunction, ScalarRemap } from '@flighthq/types/contract';
+// Generated from crates/flight-easing/src/ease_smoothstep.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-// Perlin's smootherstep: a higher-order variant with zero first- and
-// second-derivatives at both endpoints, for a gentler approach to 0 and 1.
-// Like the other families here, input is assumed pre-clamped to [0,1].
-export const easeSmootherstep: EasingFunction = (t) => t * t * t * (t * (t * 6 - 15) + 10);
+import type { ScalarRemap } from './easingTypes.ts';
 
-// Hermite smoothstep: a sigmoid-like ease with zero first-derivative at both endpoints.
-export const easeSmoothstep: EasingFunction = (t) => t * t * (3 - 2 * t);
+/**
+ * Perlin's smootherstep: a higher-order variant with zero first- and
+ * second-derivatives at both endpoints.
+ */
+export function easeSmootherstep(t: number): number {
+  return t * t * t * (t * (t * 6.0 - 15.0) + 10.0);
+}
 
-// Returns a smoothstep remap over an arbitrary domain [edge0, edge1].
-// The returned function clamps its input to [edge0, edge1], maps to [0, 1],
-// and applies the Hermite smoothstep. Unlike EasingFunction (domain [0,1]),
-// the result is a ScalarRemap whose domain is [edge0, edge1].
+/**
+ * Hermite smoothstep: a sigmoid-like ease with zero first-derivative at both endpoints.
+ */
+export function easeSmoothstep(t: number): number {
+  return t * t * (3.0 - 2.0 * t);
+}
+
+/**
+ * Returns a smoothstep remap over an arbitrary domain [edge0, edge1].
+ * The returned function clamps its input to [edge0, edge1], maps to [0, 1],
+ * and applies the Hermite smoothstep.
+ */
 export function easeSmoothstepRange(edge0: number, edge1: number): ScalarRemap {
-  return (x) => {
-    const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
-    return t * t * (3 - 2 * t);
+  return (x: number): number => {
+    const raw = (x - edge0) / (edge1 - edge0);
+    const t = raw < 0.0 ? 0.0 : raw > 1.0 ? 1.0 : raw;
+    return t * t * (3.0 - 2.0 * t);
   };
 }

@@ -1,7 +1,25 @@
-import type { EasingFunction } from '@flighthq/types/contract';
+// Generated from crates/flight-easing/src/ease_sine.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-export const easeInOutSine: EasingFunction = (t) => -(Math.cos(Math.PI * t) - 1) / 2;
+const PI = Math.PI;
 
-export const easeInSine: EasingFunction = (t) => 1 - Math.cos((t * Math.PI) / 2);
+/**
+ * Ease-in-out sine: sinusoidal acceleration and deceleration.
+ */
+export function easeInOutSine(t: number): number {
+  return -(Math.cos(PI * t) - 1.0) / 2.0;
+}
 
-export const easeOutSine: EasingFunction = (t) => Math.sin((t * Math.PI) / 2);
+/**
+ * Ease-in sine: sinusoidal slow start.
+ */
+export function easeInSine(t: number): number {
+  return 1.0 - Math.cos((t * PI) / 2.0);
+}
+
+/**
+ * Ease-out sine: sinusoidal fast start.
+ */
+export function easeOutSine(t: number): number {
+  return Math.sin((t * PI) / 2.0);
+}

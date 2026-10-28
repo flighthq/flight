@@ -1,81 +1,95 @@
-import { easeInOutCubic } from './easeCubic.ts';
-import { easeInOutPower, easeInPower, easeOutPower } from './easePower.ts';
-import { easeInQuadratic, easeOutQuadratic } from './easeQuadratic.ts';
-import { easeInQuintic } from './easeQuintic.ts';
+// Generated from crates/flight-easing/tests/ease_power_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { describe, expect, it } from 'vitest';
+
+import {
+  easeInOutCubic,
+  easeInOutPower,
+  easeInPower,
+  easeInQuadratic,
+  easeInQuintic,
+  easeOutPower,
+  easeOutQuadratic,
+} from './contract.ts';
+
+function assertApprox(actual: number, expected: number): void {
+  const diff = Math.abs(actual - expected);
+  expect(diff < 1e-4, `expected ${expected}, got ${actual} (diff: ${diff})`).toBe(true);
+}
 
 describe('easeInOutPower', () => {
-  it('returns 0 at t=0 and 1 at t=1', () => {
-    const fn = easeInOutPower(3);
-    expect(fn(0)).toBeCloseTo(0);
-    expect(fn(1)).toBeCloseTo(1);
+  it('returns 0 at t 0 and 1 at t 1', () => {
+    const f = easeInOutPower(3.0);
+    assertApprox(f(0.0), 0.0);
+    assertApprox(f(1.0), 1.0);
   });
-  it('passes through 0.5 at t=0.5', () => {
-    const fn = easeInOutPower(3);
-    expect(fn(0.5)).toBeCloseTo(0.5);
+  it('passes through 0 5 at t 0 5', () => {
+    const f = easeInOutPower(3.0);
+    assertApprox(f(0.5), 0.5);
   });
-  it('matches easeInOutCubic at exponent=3', () => {
-    const fn = easeInOutPower(3);
-    expect(fn(0.3)).toBeCloseTo(easeInOutCubic(0.3), 10);
-    expect(fn(0.7)).toBeCloseTo(easeInOutCubic(0.7), 10);
+  it('matches ease in out cubic at exponent 3', () => {
+    const f = easeInOutPower(3.0);
+    assertApprox(f(0.3), easeInOutCubic(0.3));
+    assertApprox(f(0.7), easeInOutCubic(0.7));
   });
-  it('is symmetric: f(t) + f(1-t) = 1', () => {
-    const fn = easeInOutPower(4);
-    expect(fn(0.3) + fn(0.7)).toBeCloseTo(1);
-    expect(fn(0.1) + fn(0.9)).toBeCloseTo(1);
+  it('is symmetric', () => {
+    const f = easeInOutPower(4.0);
+    assertApprox(f(0.3) + f(0.7), 1.0);
+    assertApprox(f(0.1) + f(0.9), 1.0);
   });
 });
 
 describe('easeInPower', () => {
-  it('returns 0 at t=0 and 1 at t=1 for any exponent', () => {
-    for (const exp of [0.5, 1, 2, 3, 5]) {
-      const fn = easeInPower(exp);
-      expect(fn(0)).toBeCloseTo(0);
-      expect(fn(1)).toBeCloseTo(1);
+  it('returns 0 at t 0 and 1 at t 1 for any exponent', () => {
+    for (const exp of [0.5, 1.0, 2.0, 3.0, 5.0]) {
+      const f = easeInPower(exp);
+      assertApprox(f(0.0), 0.0);
+      assertApprox(f(1.0), 1.0);
     }
   });
-  it('matches easeInQuadratic at exponent=2', () => {
-    const fn = easeInPower(2);
-    expect(fn(0.5)).toBeCloseTo(easeInQuadratic(0.5), 10);
-    expect(fn(0.3)).toBeCloseTo(easeInQuadratic(0.3), 10);
+  it('matches ease in quadratic at exponent 2', () => {
+    const f = easeInPower(2.0);
+    assertApprox(f(0.5), easeInQuadratic(0.5));
+    assertApprox(f(0.3), easeInQuadratic(0.3));
   });
-  it('matches easeInQuintic at exponent=5', () => {
-    const fn = easeInPower(5);
-    expect(fn(0.5)).toBeCloseTo(easeInQuintic(0.5), 10);
-    expect(fn(0.7)).toBeCloseTo(easeInQuintic(0.7), 10);
+  it('matches ease in quintic at exponent 5', () => {
+    const f = easeInPower(5.0);
+    assertApprox(f(0.5), easeInQuintic(0.5));
+    assertApprox(f(0.7), easeInQuintic(0.7));
   });
-  it('sub-linear at exponent < 1', () => {
-    const fn = easeInPower(0.5);
-    // sqrt(0.25) = 0.5, so output should be 0.5 at t=0.25
-    expect(fn(0.25)).toBeCloseTo(0.5, 10);
+  it('sub linear at exponent less than 1', () => {
+    const f = easeInPower(0.5);
+    assertApprox(f(0.25), 0.5);
   });
   it('is monotonically increasing', () => {
-    const fn = easeInPower(2.5);
-    let prev = fn(0);
-    for (let i = 1; i <= 20; i++) {
-      const v = fn(i / 20);
-      expect(v).toBeGreaterThan(prev);
+    const f = easeInPower(2.5);
+    let prev = f(0.0);
+    for (let i = 1; i <= 20; i += 1) {
+      const v = f(i / 20.0);
+      expect(v > prev).toBe(true);
       prev = v;
     }
   });
 });
 
 describe('easeOutPower', () => {
-  it('returns 0 at t=0 and 1 at t=1', () => {
-    const fn = easeOutPower(2);
-    expect(fn(0)).toBeCloseTo(0);
-    expect(fn(1)).toBeCloseTo(1);
+  it('returns 0 at t 0 and 1 at t 1', () => {
+    const f = easeOutPower(2.0);
+    assertApprox(f(0.0), 0.0);
+    assertApprox(f(1.0), 1.0);
   });
-  it('matches easeOutQuadratic at exponent=2', () => {
-    const fn = easeOutPower(2);
-    expect(fn(0.5)).toBeCloseTo(easeOutQuadratic(0.5), 10);
-    expect(fn(0.8)).toBeCloseTo(easeOutQuadratic(0.8), 10);
+  it('matches ease out quadratic at exponent 2', () => {
+    const f = easeOutPower(2.0);
+    assertApprox(f(0.5), easeOutQuadratic(0.5));
+    assertApprox(f(0.8), easeOutQuadratic(0.8));
   });
   it('is monotonically increasing', () => {
-    const fn = easeOutPower(3);
-    let prev = fn(0);
-    for (let i = 1; i <= 20; i++) {
-      const v = fn(i / 20);
-      expect(v).toBeGreaterThan(prev);
+    const f = easeOutPower(3.0);
+    let prev = f(0.0);
+    for (let i = 1; i <= 20; i += 1) {
+      const v = f(i / 20.0);
+      expect(v > prev).toBe(true);
       prev = v;
     }
   });

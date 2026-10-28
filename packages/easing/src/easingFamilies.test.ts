@@ -1,13 +1,8 @@
-import type { EasingFunction } from '@flighthq/types/contract';
+// Generated from crates/flight-easing/tests/easing_families_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
 
-// Cross-family invariants: relationships BETWEEN the In/Out/InOut siblings, which is where this package's
-// real defects live. A per-curve value assertion is close to blind here — `easeInQuadratic(0.5) === 0.25`
-// also accepts curves that are not easeInQuadratic, and every easing function satisfies f(0)=0 and f(1)=1,
-// so endpoint assertions accept nearly everything. In ten families of near-identical arithmetic the likely
-// defect is a copy-paste between neighbours, and only a relationship between siblings can see it.
-//
-// This file is cross-family by construction, which is why it has no single source sibling: each assertion
-// is about a PAIR or the whole set. Per-curve behaviour stays in each family's own test file.
+import { describe, expect, it } from 'vitest';
+
 import {
   easeInBack,
   easeInBounce,
@@ -41,236 +36,264 @@ import {
   easeOutSine,
 } from './contract.ts';
 
+type Ease = (arg0: number) => number;
+
 interface Family {
-  easeIn: EasingFunction;
-  easeInOut: EasingFunction;
-  easeOut: EasingFunction;
-  // Whether easeInOut is the two halves of easeIn/easeOut scaled into place. FALSE for the two families
-  // whose canonical definition gives the InOut variant a DIFFERENT constant — Back scales its overshoot
-  // by 1.525 and Elastic widens its period from 0.4 to 0.45 — so forcing the relation here would be
-  // asserting a curve the family does not have.
+  easeIn: Ease;
+  easeInOut: Ease;
+  easeOut: Ease;
   halvesMatch: boolean;
-  // Whether easeIn rises without ever stepping back. False where the shape is the point: Back undershoots
-  // below 0, Elastic oscillates, Bounce bounces.
   monotonic: boolean;
   name: string;
 }
 
-const FAMILIES: readonly Family[] = [
-  {
-    easeIn: easeInBack,
-    easeInOut: easeInOutBack,
-    easeOut: easeOutBack,
-    halvesMatch: false,
-    monotonic: false,
-    name: 'Back',
-  },
-  {
-    easeIn: easeInBounce,
-    easeInOut: easeInOutBounce,
-    easeOut: easeOutBounce,
-    halvesMatch: true,
-    monotonic: false,
-    name: 'Bounce',
-  },
-  {
-    easeIn: easeInCircular,
-    easeInOut: easeInOutCircular,
-    easeOut: easeOutCircular,
-    halvesMatch: true,
-    monotonic: true,
-    name: 'Circular',
-  },
-  {
-    easeIn: easeInCubic,
-    easeInOut: easeInOutCubic,
-    easeOut: easeOutCubic,
-    halvesMatch: true,
-    monotonic: true,
-    name: 'Cubic',
-  },
-  {
-    easeIn: easeInElastic,
-    easeInOut: easeInOutElastic,
-    easeOut: easeOutElastic,
-    halvesMatch: false,
-    monotonic: false,
-    name: 'Elastic',
-  },
-  {
-    easeIn: easeInExponential,
-    easeInOut: easeInOutExponential,
-    easeOut: easeOutExponential,
-    halvesMatch: true,
-    monotonic: true,
-    name: 'Exponential',
-  },
-  {
-    easeIn: easeInQuadratic,
-    easeInOut: easeInOutQuadratic,
-    easeOut: easeOutQuadratic,
-    halvesMatch: true,
-    monotonic: true,
-    name: 'Quadratic',
-  },
-  {
-    easeIn: easeInQuartic,
-    easeInOut: easeInOutQuartic,
-    easeOut: easeOutQuartic,
-    halvesMatch: true,
-    monotonic: true,
-    name: 'Quartic',
-  },
-  {
-    easeIn: easeInQuintic,
-    easeInOut: easeInOutQuintic,
-    easeOut: easeOutQuintic,
-    halvesMatch: true,
-    monotonic: true,
-    name: 'Quintic',
-  },
-  {
-    easeIn: easeInSine,
-    easeInOut: easeInOutSine,
-    easeOut: easeOutSine,
-    halvesMatch: true,
-    monotonic: true,
-    name: 'Sine',
-  },
-];
+const RELATION_EPSILON: number = 1e-5;
 
-// 201 points rather than a handful: a copy-paste between neighbours can agree at the sample points a
-// hand-picked list would choose, and cannot agree across the whole unit interval.
-const SAMPLES: readonly number[] = Array.from({ length: 201 }, (_, index) => index / 200);
+const SEPARATION_EPSILON: number = 0.005;
 
-// The measured worst reflection error across every family is 1.1e-15, so this bound is roughly three
-// orders of magnitude tighter than the smallest real difference a wrong constant could produce, and
-// still far above double-precision noise.
-const EPSILON = 1e-12;
+function families(): Family[] {
+  return [
+    {
+      easeIn: easeInBack,
+      easeInOut: easeInOutBack,
+      easeOut: easeOutBack,
+      halvesMatch: false,
+      monotonic: false,
+      name: 'Back',
+    },
+    {
+      easeIn: easeInBounce,
+      easeInOut: easeInOutBounce,
+      easeOut: easeOutBounce,
+      halvesMatch: true,
+      monotonic: false,
+      name: 'Bounce',
+    },
+    {
+      easeIn: easeInCircular,
+      easeInOut: easeInOutCircular,
+      easeOut: easeOutCircular,
+      halvesMatch: true,
+      monotonic: true,
+      name: 'Circular',
+    },
+    {
+      easeIn: easeInCubic,
+      easeInOut: easeInOutCubic,
+      easeOut: easeOutCubic,
+      halvesMatch: true,
+      monotonic: true,
+      name: 'Cubic',
+    },
+    {
+      easeIn: easeInElastic,
+      easeInOut: easeInOutElastic,
+      easeOut: easeOutElastic,
+      halvesMatch: false,
+      monotonic: false,
+      name: 'Elastic',
+    },
+    {
+      easeIn: easeInExponential,
+      easeInOut: easeInOutExponential,
+      easeOut: easeOutExponential,
+      halvesMatch: true,
+      monotonic: true,
+      name: 'Exponential',
+    },
+    {
+      easeIn: easeInQuadratic,
+      easeInOut: easeInOutQuadratic,
+      easeOut: easeOutQuadratic,
+      halvesMatch: true,
+      monotonic: true,
+      name: 'Quadratic',
+    },
+    {
+      easeIn: easeInQuartic,
+      easeInOut: easeInOutQuartic,
+      easeOut: easeOutQuartic,
+      halvesMatch: true,
+      monotonic: true,
+      name: 'Quartic',
+    },
+    {
+      easeIn: easeInQuintic,
+      easeInOut: easeInOutQuintic,
+      easeOut: easeOutQuintic,
+      halvesMatch: true,
+      monotonic: true,
+      name: 'Quintic',
+    },
+    {
+      easeIn: easeInSine,
+      easeInOut: easeInOutSine,
+      easeOut: easeOutSine,
+      halvesMatch: true,
+      monotonic: true,
+      name: 'Sine',
+    },
+  ];
+}
 
-describe('easing family distinctness', () => {
-  // The direct test for the copy-paste defect, and the only one that can see it: two families whose
-  // bodies were pasted from each other agree everywhere, and every other assertion in this file passes
-  // for both. The measured closest pair is Quadratic against Sine at 5.6e-2, so this bound sits an order
-  // of magnitude below the nearest real neighbours and far above any rounding difference.
-  it.each(['easeIn', 'easeInOut', 'easeOut'] as const)('%s curves are pairwise distinct', (direction) => {
-    for (let a = 0; a < FAMILIES.length; a += 1) {
-      for (let b = a + 1; b < FAMILIES.length; b += 1) {
-        const first = FAMILIES[a][direction];
-        const second = FAMILIES[b][direction];
-        const separation = SAMPLES.reduce((worst, t) => Math.max(worst, Math.abs(first(t) - second(t))), 0);
-        expect({ pair: `${FAMILIES[a].name}/${FAMILIES[b].name}`, separated: separation > 0.005 }).toEqual({
-          pair: `${FAMILIES[a].name}/${FAMILIES[b].name}`,
-          separated: true,
-        });
+function samples(): number[] {
+  return Array.from({ length: 200 - 0 + 1 }, (_, index) => 0 + index).map((index) => index / 200.0);
+}
+
+function normalizeZero(value: number): number {
+  return value === 0.0 ? 0.0 : value;
+}
+
+function assertPairwiseDistinct(curves: Readonly<Array<readonly [string, Ease]>>): void {
+  const points = samples();
+  for (let a = 0; a < curves.length; a += 1) {
+    for (let b = a + 1; b < curves.length; b += 1) {
+      const first = curves[a][1];
+      const second = curves[b][1];
+      let worst = 0.0;
+      for (const t of points) {
+        const separation = Math.abs(first(t) - second(t));
+        if (separation > worst) {
+          worst = separation;
+        }
       }
+      expect(worst > SEPARATION_EPSILON, `${curves[a][0]} and ${curves[b][0]} are not distinct: ${worst}`).toBe(true);
+    }
+  }
+}
+
+describe('easingFamilyDistinctness', () => {
+  it('ease in curves are pairwise distinct', () => {
+    const curves: Array<readonly [string, Ease]> = families().map((family) => [family.name, family.easeIn]);
+    assertPairwiseDistinct(curves);
+  });
+  it('ease in out curves are pairwise distinct', () => {
+    const curves: Array<readonly [string, Ease]> = families().map((family) => [family.name, family.easeInOut]);
+    assertPairwiseDistinct(curves);
+  });
+  it('ease out curves are pairwise distinct', () => {
+    const curves: Array<readonly [string, Ease]> = families().map((family) => [family.name, family.easeOut]);
+    assertPairwiseDistinct(curves);
+  });
+});
+
+describe('easingFamilyEndpoints', () => {
+  it('starts at exactly 0', () => {
+    for (const family of families()) {
+      expect(normalizeZero(family.easeIn(0.0)), `${family.name} easeIn`).toEqual(0.0);
+      expect(normalizeZero(family.easeInOut(0.0)), `${family.name} easeInOut`).toEqual(0.0);
+      expect(Math.abs(family.easeOut(0.0)) < RELATION_EPSILON, `${family.name} easeOut does not start at 0`).toBe(true);
     }
   });
-});
-
-describe('easing family endpoints', () => {
-  // EXACT, not approximate — except where the formula itself cannot be exact in binary floating point,
-  // and those two are named rather than folded into a loose tolerance for everyone. easeInSine(1) is
-  // 1 - cos(pi/2) and cos(pi/2) is 6.1e-17 rather than 0; easeInBack(1) is (s + 1) - s, which cancels to
-  // 0.9999999999999998 for s = 1.70158. Both are one ulp, both are properties of the arithmetic, and
-  // special-casing the code to force a rounder number would be making the curve fit the test.
-  const INEXACT_AT_ONE = new Set(['Back', 'Sine']);
-
-  // OBSERVED, and harmless: easeInBack(0) and easeInOutSine(0) return NEGATIVE zero, because both bodies
-  // end in a multiplication by zero with a negative factor. It is numerically equal to 0 and behaves
-  // identically everywhere an easing value is consumed; only Object.is separates them, which is what
-  // `toBe` uses. Normalising rather than loosening keeps the assertion EXACT for every other value.
-  it.each(FAMILIES)('$name: starts at exactly 0', ({ easeIn, easeInOut, easeOut }) => {
-    expect(normalizeZero(easeIn(0))).toBe(0);
-    expect(normalizeZero(easeInOut(0))).toBe(0);
-    expect(Math.abs(easeOut(0))).toBeLessThan(EPSILON);
-  });
-
-  it.each(FAMILIES)('$name: ends at 1, exactly where the arithmetic allows', ({ easeIn, easeInOut, easeOut }) => {
-    expect(easeOut(1)).toBe(1);
-    expect(easeInOut(1)).toBe(1);
-    if (INEXACT_AT_ONE.has(name(easeIn))) expect(easeIn(1)).toBeCloseTo(1, 15);
-    else expect(easeIn(1)).toBe(1);
-  });
-
-  function normalizeZero(value: number): number {
-    return value === 0 ? 0 : value;
-  }
-
-  function name(easeIn: EasingFunction): string {
-    return FAMILIES.find((family) => family.easeIn === easeIn)!.name;
-  }
-});
-
-describe('easing family halves', () => {
-  it.each(FAMILIES.filter((family) => family.halvesMatch))(
-    '$name: easeInOut is easeIn on the first half and easeOut on the second',
-    ({ easeIn, easeInOut, easeOut }) => {
-      for (const t of SAMPLES) {
-        const expected = t <= 0.5 ? easeIn(t * 2) / 2 : 0.5 + easeOut(t * 2 - 1) / 2;
-        expect(Math.abs(easeInOut(t) - expected)).toBeLessThan(EPSILON);
-      }
-    },
-  );
-
-  // The two exceptions are asserted as exceptions rather than skipped, so a later edit that "fixes" one
-  // of them into the scaled-halves shape fails here and has to be a deliberate change to the curve.
-  it.each(FAMILIES.filter((family) => !family.halvesMatch))(
-    '$name: easeInOut deliberately differs from the scaled halves, because its canonical constant differs',
-    ({ easeIn, easeInOut }) => {
-      const worst = SAMPLES.filter((t) => t <= 0.5).reduce(
-        (accumulated, t) => Math.max(accumulated, Math.abs(easeInOut(t) - easeIn(t * 2) / 2)),
-        0,
+  it('ends at 1 where the arithmetic allows', () => {
+    for (const family of families()) {
+      expect(Math.abs(family.easeOut(1.0) - 1.0) < RELATION_EPSILON, `${family.name} easeOut does not end at 1`).toBe(
+        true,
       );
-      expect(worst).toBeGreaterThan(0.01);
-    },
-  );
-
-  // Continuity asserted as the gap SHRINKING with the interval, not as the gap being small. A small-gap
-  // test is the wrong instrument here: Circular has a vertical tangent at the midpoint by construction —
-  // it is a quarter circle — so its slope there measures ~1000 against 0.58 at t=0.25, and any fixed
-  // bound either fails a correct curve or is loose enough to accept a real step. A genuine discontinuity
-  // has a gap that stops shrinking; a steep one has a gap that keeps going.
-  it.each(FAMILIES)('$name: easeInOut passes through the midpoint without a step', ({ easeInOut }) => {
-    expect(easeInOut(0.5)).toBeCloseTo(0.5, 12);
-    const wide = Math.abs(easeInOut(0.5 + 1e-4) - easeInOut(0.5 - 1e-4));
-    const narrow = Math.abs(easeInOut(0.5 + 1e-6) - easeInOut(0.5 - 1e-6));
-    expect(narrow).toBeLessThan(Math.max(wide / 2, 1e-9));
-  });
-});
-
-describe('easing family reflection', () => {
-  // The workhorse. easeOut is easeIn rotated 180 degrees about the centre of the unit square, and that
-  // holds BY DEFINITION for every family here — so a constant that differs between the two, or a body
-  // pasted from the wrong neighbour, breaks it at once.
-  it.each(FAMILIES)('$name: easeOut(t) is 1 - easeIn(1 - t) across the interval', ({ easeIn, easeOut }) => {
-    for (const t of SAMPLES) {
-      expect(Math.abs(easeOut(t) - (1 - easeIn(1 - t)))).toBeLessThan(EPSILON);
+      expect(
+        Math.abs(family.easeInOut(1.0) - 1.0) < RELATION_EPSILON,
+        `${family.name} easeInOut does not end at 1`,
+      ).toBe(true);
+      expect(Math.abs(family.easeIn(1.0) - 1.0) < RELATION_EPSILON, `${family.name} easeIn does not end at 1`).toBe(
+        true,
+      );
     }
   });
 });
 
-describe('easing family shape', () => {
-  it.each(FAMILIES.filter((family) => family.monotonic))('$name: easeIn never steps back', ({ easeIn }) => {
-    for (let index = 1; index < SAMPLES.length; index += 1) {
-      expect(easeIn(SAMPLES[index])).toBeGreaterThanOrEqual(easeIn(SAMPLES[index - 1]));
+describe('easingFamilyHalves', () => {
+  it('ease in out matches the scaled halves where the constant matches', () => {
+    const points = samples();
+    for (const family of families().filter((family) => family.halvesMatch)) {
+      for (const t of points) {
+        const expected = t <= 0.5 ? family.easeIn(t * 2.0) / 2.0 : 0.5 + family.easeOut(t * 2.0 - 1.0) / 2.0;
+        const actual = family.easeInOut(t);
+        expect(
+          Math.abs(actual - expected) < RELATION_EPSILON,
+          `${family.name} halves differ at ${t}: ${actual} vs ${expected}`,
+        ).toBe(true);
+      }
     }
   });
-
-  // The overshoot IS the family. A wrong constant removes it silently and leaves a curve that still runs
-  // 0 to 1 monotonically — which every endpoint assertion in this package would happily accept.
-  it.each([
-    { easeIn: easeInBack, easeOut: easeOutBack, name: 'Back' },
-    { easeIn: easeInElastic, easeOut: easeOutElastic, name: 'Elastic' },
-  ])('$name: easeIn dips below 0 and easeOut rises above 1', ({ easeIn, easeOut }) => {
-    expect(Math.min(...SAMPLES.map(easeIn))).toBeLessThan(-0.05);
-    expect(Math.max(...SAMPLES.map(easeOut))).toBeGreaterThan(1.05);
+  it('ease in out deliberately differs where the canonical constant differs', () => {
+    const points = samples();
+    for (const family of families().filter((family) => !family.halvesMatch)) {
+      let worst = 0.0;
+      for (const t of points.filter((t) => t <= 0.5)) {
+        const difference = Math.abs(family.easeInOut(t) - family.easeIn(t * 2.0) / 2.0);
+        if (difference > worst) {
+          worst = difference;
+        }
+      }
+      expect(worst > 0.01, `${family.name} unexpectedly matches its scaled halves`).toBe(true);
+    }
   });
+  it('ease in out passes through the midpoint without a step', () => {
+    for (const family of families()) {
+      const midpoint = family.easeInOut(0.5);
+      expect(Math.abs(midpoint - 0.5) < RELATION_EPSILON, `${family.name} does not pass through 0.5`).toBe(true);
+      const wide = Math.abs(family.easeInOut(0.5 + 1e-4) - family.easeInOut(0.5 - 1e-4));
+      const narrow = Math.abs(family.easeInOut(0.5 + 1e-6) - family.easeInOut(0.5 - 1e-6));
+      expect(narrow < Math.max(wide / 2.0, 1e-9), `${family.name} has a step at the midpoint`).toBe(true);
+    }
+  });
+});
 
-  it('Bounce reverses without ever leaving the unit interval', () => {
-    const values = SAMPLES.map(easeInBounce);
-    expect(Math.min(...values)).toBeGreaterThanOrEqual(0);
-    expect(Math.max(...values)).toBeLessThanOrEqual(1);
-    expect(values.some((value, index) => index > 0 && value < values[index - 1])).toBe(true);
+describe('easingFamilyReflection', () => {
+  it('ease out is the reflection of ease in across the interval', () => {
+    const points = samples();
+    for (const family of families()) {
+      for (const t of points) {
+        const reflected = 1.0 - family.easeIn(1.0 - t);
+        const actual = family.easeOut(t);
+        expect(
+          Math.abs(actual - reflected) < RELATION_EPSILON,
+          `${family.name} is not reflected at ${t}: ${actual} vs ${reflected}`,
+        ).toBe(true);
+      }
+    }
+  });
+});
+
+describe('easingFamilyShape', () => {
+  it('ease in never steps back for monotonic families', () => {
+    const points = samples();
+    for (const family of families().filter((family) => family.monotonic)) {
+      let previous = family.easeIn(points[0]);
+      for (const t of points.slice(1)) {
+        const value = family.easeIn(t);
+        expect(value >= previous - RELATION_EPSILON, `${family.name} steps back at ${t}`).toBe(true);
+        previous = value;
+      }
+    }
+  });
+  it('back and elastic overshoot the unit interval', () => {
+    const points = samples();
+    for (const name of ['Back', 'Elastic']) {
+      const family = (() => {
+        const value = families().find((family) => family.name === name);
+        if (value === undefined) throw new Error('family exists');
+        return value;
+      })();
+      const minimum = points
+        .map((t) => family.easeIn(t))
+        .reduce((left, right) => Math.min(left, right), Number.POSITIVE_INFINITY);
+      const maximum = points
+        .map((t) => family.easeOut(t))
+        .reduce((left, right) => Math.max(left, right), Number.NEGATIVE_INFINITY);
+      expect(minimum < -0.05, `${name} easeIn does not dip below 0`).toBe(true);
+      expect(maximum > 1.05, `${name} easeOut does not rise above 1`).toBe(true);
+    }
+  });
+  it('bounce reverses without leaving the unit interval', () => {
+    const points = samples();
+    const values: number[] = points.map((t) => easeInBounce(t));
+    expect(values.every((value) => value >= 0.0 && value <= 1.0)).toBe(true);
+    expect(
+      Array.from({ length: Math.max(0, values.length - 2 + 1) }, (_, index) => values.slice(index, index + 2)).some(
+        (pair) => pair[1] < pair[0],
+      ),
+      `Bounce must reverse somewhere`,
+    ).toBe(true);
   });
 });
