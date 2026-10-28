@@ -1,5 +1,6 @@
 mod flow;
 mod flow_guards;
+mod sugar;
 mod types;
 
 pub mod contract;

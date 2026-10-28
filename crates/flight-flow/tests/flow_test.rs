@@ -60,6 +60,19 @@ fn labeled_state(name: &str, log: &Arc<Mutex<Vec<String>>>) -> Ref<FlowState> {
     });
 }
 
+fn panicking_on_enter() -> Ref<FlowState> {
+    return state(FlowState {
+        name: Some("panics".to_string()),
+        on_enter: Some(Arc::new(|| panic!("on_enter failed"))),
+        on_exit: None,
+        on_pause: None,
+        on_resume: None,
+        on_update: None,
+        render_below: None,
+        update_below: None,
+    });
+}
+
 fn plain(name: &str) -> Ref<FlowState> {
     return state(FlowState {
         name: Some(name.to_string()),
@@ -94,6 +107,38 @@ mod clear_flow_stack {
     fn is_a_no_op_on_an_empty_stack() {
         let stack = create_flow_stack();
         clear_flow_stack(&stack);
+        assert_eq!(get_flow_stack_depth(&stack), 0);
+    }
+
+    // TS clearFlowStack runs each onExit while the states are still on the stack; an exit that
+    // queries the stack sees it as it stood.
+    #[test]
+    fn exits_while_the_states_are_still_on_the_stack() {
+        let stack = create_flow_stack();
+        let guards = guard_state();
+        let seen = Arc::new(Mutex::new(Vec::new()));
+        for name in ["A", "B"] {
+            let observer = stack.clone();
+            let depths = seen.clone();
+            push_flow_state(
+                &stack,
+                state(FlowState {
+                    name: Some(name.to_string()),
+                    on_enter: None,
+                    on_exit: Some(Arc::new(move || {
+                        depths.lock().unwrap().push(get_flow_stack_depth(&observer));
+                    })),
+                    on_pause: None,
+                    on_resume: None,
+                    on_update: None,
+                    render_below: None,
+                    update_below: None,
+                }),
+                &guards,
+            );
+        }
+        clear_flow_stack(&stack);
+        assert_eq!(*seen.lock().unwrap(), vec![2, 2]);
         assert_eq!(get_flow_stack_depth(&stack), 0);
     }
 }
@@ -439,6 +484,18 @@ mod push_flow_state {
         assert_eq!(guards.read().unwrap().transition_depth, 0);
         let _ = log;
     }
+
+    // TS wraps the transition in try/finally; the Rust depth guard releases on unwind the same way.
+    #[test]
+    fn restores_the_transition_depth_when_a_callback_panics() {
+        let stack = create_flow_stack();
+        let guards = guard_state();
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            push_flow_state(&stack, panicking_on_enter(), &guards);
+        }));
+        assert!(result.is_err());
+        assert_eq!(guards.read().unwrap().transition_depth, 0);
+    }
 }
 
 mod replace_flow_state {
@@ -476,6 +533,18 @@ mod replace_flow_state {
         let guards = guard_state();
         replace_flow_state(&stack, plain("B"), &guards);
         assert_eq!(get_flow_stack_depth(&stack), 1);
+    }
+
+    // TS wraps the transition in try/finally; the Rust depth guard releases on unwind the same way.
+    #[test]
+    fn restores_the_transition_depth_when_a_callback_panics() {
+        let stack = create_flow_stack();
+        let guards = guard_state();
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            replace_flow_state(&stack, panicking_on_enter(), &guards);
+        }));
+        assert!(result.is_err());
+        assert_eq!(guards.read().unwrap().transition_depth, 0);
     }
 }
 

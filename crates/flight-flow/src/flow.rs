@@ -5,149 +5,12 @@ use flight_entity::{Ref, allocate_entity};
 use crate::flow_guards::report_flow_guard;
 use crate::types::{FlowGuardKind, FlowGuardStateRef, FlowStack, FlowState};
 
-#[cfg(test)]
-mod sugar_tests {
-    use super::*;
-    use crate::types::{FlowGuardState, FlowGuardStateRef};
-    use std::sync::{Arc, Mutex, RwLock};
-
-    fn guard_state() -> FlowGuardStateRef {
-        return Arc::new(RwLock::new(FlowGuardState {
-            enabled: false,
-            transition_depth: 0,
-            context: None,
-        }));
-    }
-
-    fn plain(name: &str) -> Ref<FlowState> {
-        return Arc::new(RwLock::new(FlowState {
-            name: Some(name.to_string()),
-            on_enter: None,
-            on_exit: None,
-            on_pause: None,
-            on_resume: None,
-            on_update: None,
-            render_below: None,
-            update_below: None,
-        }));
-    }
-
-    #[test]
-    fn flow_stack_new_matches_create_flow_stack() {
-        let via_new = FlowStack::new();
-        let via_free = create_flow_stack();
-        assert_eq!(via_new.stack_depth(), via_free.stack_depth());
-    }
-
-    #[test]
-    fn flow_stack_active_state_matches_the_free_function() {
-        let stack = create_flow_stack();
-        let guards = guard_state();
-        stack.push_state(plain("A"), &guards);
-        assert!(Arc::ptr_eq(
-            &stack.active_state().unwrap(),
-            &get_active_flow_state(&stack).unwrap()
-        ));
-    }
-
-    #[test]
-    fn flow_stack_clear_matches_the_free_function() {
-        let stack = create_flow_stack();
-        let other = create_flow_stack();
-        let guards = guard_state();
-        stack.push_state(plain("A"), &guards);
-        other.push_state(plain("A"), &guards);
-        stack.clear_stack();
-        clear_flow_stack(&other);
-        assert_eq!(stack.stack_depth(), other.stack_depth());
-    }
-
-    #[test]
-    fn flow_stack_depth_matches_the_free_function() {
-        let stack = create_flow_stack();
-        let guards = guard_state();
-        stack.push_state(plain("A"), &guards);
-        assert_eq!(stack.stack_depth(), get_flow_stack_depth(&stack));
-    }
-
-    #[test]
-    fn flow_stack_pop_matches_the_free_function() {
-        let stack = create_flow_stack();
-        let other = create_flow_stack();
-        let guards = guard_state();
-        stack.push_state(plain("A"), &guards);
-        other.push_state(plain("A"), &guards);
-        assert_eq!(
-            stack.pop_state().unwrap().read().unwrap().name,
-            pop_flow_state(&other).unwrap().read().unwrap().name
-        );
-    }
-
-    #[test]
-    fn flow_stack_push_matches_the_free_function() {
-        let stack = create_flow_stack();
-        let other = create_flow_stack();
-        let guards = guard_state();
-        stack.push_state(plain("A"), &guards);
-        push_flow_state(&other, plain("A"), &guards);
-        assert_eq!(stack.stack_depth(), other.stack_depth());
-    }
-
-    #[test]
-    fn flow_stack_replace_matches_the_free_function() {
-        let stack = create_flow_stack();
-        let other = create_flow_stack();
-        let guards = guard_state();
-        stack.push_state(plain("A"), &guards);
-        other.push_state(plain("A"), &guards);
-        stack.replace_state(plain("B"), &guards);
-        replace_flow_state(&other, plain("B"), &guards);
-        assert_eq!(
-            stack.active_state().unwrap().read().unwrap().name,
-            get_active_flow_state(&other).unwrap().read().unwrap().name
-        );
-    }
-
-    #[test]
-    fn flow_stack_update_matches_the_free_function() {
-        let log: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
-        let stack = create_flow_stack();
-        let other = create_flow_stack();
-        let guards = guard_state();
-        let mut state = FlowState {
-            name: Some("A".to_string()),
-            on_enter: None,
-            on_exit: None,
-            on_pause: None,
-            on_resume: None,
-            on_update: None,
-            render_below: None,
-            update_below: None,
-        };
-        let update_log = log.clone();
-        state.on_update = Some(Arc::new(move |_dt: f32| {
-            update_log.lock().unwrap().push("tick".to_string())
-        }));
-        let state = Arc::new(RwLock::new(state));
-        stack.push_state(state.clone(), &guards);
-        other.push_state(state, &guards);
-        stack.update_stack(0.5);
-        update_flow_stack(&other, 0.5);
-        assert_eq!(*log.lock().unwrap(), vec!["tick", "tick"]);
-    }
-
-    #[test]
-    fn flow_stack_visible_states_matches_the_free_function() {
-        let stack = create_flow_stack();
-        let guards = guard_state();
-        stack.push_state(plain("A"), &guards);
-        let mut via_method = Vec::new();
-        let mut via_free = Vec::new();
-        stack.visible_states(&mut via_method);
-        get_flow_stack_visible_states(&mut via_free, &stack);
-        assert_eq!(via_method.len(), via_free.len());
-        assert!(Arc::ptr_eq(&via_method[0], &via_free[0]));
-    }
+// Holds one level of `transition_depth` for the length of a push or replace. Releasing it in `Drop`
+// is what keeps the depth balanced when a lifecycle callback panics: the unwind still runs the
+// decrement, so later transitions are not reported as nested (the TS source's try/finally).
+struct FlowTransition<'a> {
+    depth: u32,
+    guards: &'a FlowGuardStateRef,
 }
 
 pub fn create_flow_stack() -> Ref<FlowStack> {
@@ -161,21 +24,45 @@ pub fn initialize_flow_stack(out: &mut FlowStack) {
     out.states = Vec::new();
 }
 
+// Opens one transition level on `guards` and returns the depth it found, held until the returned
+// value drops.
+fn begin_flow_transition(guards: &FlowGuardStateRef) -> FlowTransition<'_> {
+    let mut guard_state = guards.write().unwrap();
+    let depth = guard_state.transition_depth;
+    guard_state.transition_depth += 1;
+    return FlowTransition { depth, guards };
+}
+
 /// Empty the stack, exiting every state top-to-bottom. Callbacks run after the stack write lock is
 /// released, so they may re-enter other flow operations.
 pub fn clear_flow_stack(stack: &Ref<FlowStack>) {
-    let states = {
-        let mut current = stack.write().unwrap();
-        let states = current.states.clone();
-        current.states.clear();
-        states
-    };
-    for state in states.iter().rev() {
-        let on_exit = state.read().unwrap().on_exit.clone();
+    // Exit top-to-bottom while the states are still on the stack, so an `on_exit` that queries the
+    // stack sees it as it stood; empty it only after every exit has run. No lock is held across a
+    // callback, and each index is re-read so a callback that shrinks the stack is skipped past.
+    let mut index = stack.read().unwrap().states.len();
+    while index > 0 {
+        index -= 1;
+        let on_exit = {
+            let current = stack.read().unwrap();
+            current
+                .states
+                .get(index)
+                .and_then(|state| state.read().unwrap().on_exit.clone())
+        };
         if let Some(on_exit) = on_exit {
             on_exit();
         }
     }
+    stack.write().unwrap().states.clear();
+}
+
+// Closes one transition level. Runs from `Drop`, so it also runs while a callback panic unwinds; a
+// poisoned lock is still released rather than abandoning the depth.
+fn end_flow_transition(guards: &FlowGuardStateRef) {
+    let mut guard_state = guards
+        .write()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    guard_state.transition_depth -= 1;
 }
 
 /// The active top of the stack, or None when the stack is empty.
@@ -240,12 +127,8 @@ pub fn pop_flow_state(stack: &Ref<FlowStack>) -> Option<Ref<FlowState>> {
 /// run with no stack or guard lock held, so a callback may re-enter push/replace on the same stack.
 // flight-lint: allow(conform-params) D5: callback state is the shared FlowGuardState; the source stack remains the first argument
 pub fn push_flow_state(stack: &Ref<FlowStack>, state: Ref<FlowState>, guards: &FlowGuardStateRef) {
-    let depth = {
-        let mut guard_state = guards.write().unwrap();
-        let depth = guard_state.transition_depth;
-        guard_state.transition_depth += 1;
-        depth
-    };
+    let transition = begin_flow_transition(guards);
+    let depth = transition.depth;
     if depth > 0 {
         report_flow_guard(guards, FlowGuardKind::TransitionDuringTransition);
     }
@@ -269,7 +152,7 @@ pub fn push_flow_state(stack: &Ref<FlowStack>, state: Ref<FlowState>, guards: &F
     if let Some(on_enter) = on_enter {
         on_enter();
     }
-    guards.write().unwrap().transition_depth -= 1;
+    drop(transition);
 }
 
 /// Swap the active top for a shared state in place; the state beneath is untouched and callbacks run
@@ -280,12 +163,8 @@ pub fn replace_flow_state(
     state: Ref<FlowState>,
     guards: &FlowGuardStateRef,
 ) {
-    let depth = {
-        let mut guard_state = guards.write().unwrap();
-        let depth = guard_state.transition_depth;
-        guard_state.transition_depth += 1;
-        depth
-    };
+    let transition = begin_flow_transition(guards);
+    let depth = transition.depth;
     if depth > 0 {
         report_flow_guard(guards, FlowGuardKind::TransitionDuringTransition);
     }
@@ -308,7 +187,7 @@ pub fn replace_flow_state(
     if let Some(on_enter) = on_enter {
         on_enter();
     }
-    guards.write().unwrap().transition_depth -= 1;
+    drop(transition);
 }
 
 /// Tick one frame: the active top updates; each visited state with `update_below` also ticks the
@@ -338,52 +217,8 @@ pub fn update_flow_stack(stack: &Ref<FlowStack>, delta_time: f32) {
     }
 }
 
-// ============================================================================
-// D18 sugar: extension methods on the shared entity handle delegate to the contract
-// ============================================================================
-
-/// Sugar for the shared FlowStack handle (TS `FlowStack` object). Rust entity operations take the
-/// shared `Ref<FlowStack>` handle, so methods live on that handle rather than on the value type.
-pub trait FlowStackMethods {
-    fn active_state(&self) -> Option<Ref<FlowState>>;
-    fn clear_stack(&self);
-    fn pop_state(&self) -> Option<Ref<FlowState>>;
-    fn push_state(&self, state: Ref<FlowState>, guards: &FlowGuardStateRef);
-    fn replace_state(&self, state: Ref<FlowState>, guards: &FlowGuardStateRef);
-    fn stack_depth(&self) -> usize;
-    fn update_stack(&self, delta_time: f32);
-    fn visible_states(&self, out: &mut Vec<Ref<FlowState>>);
-}
-
-impl FlowStackMethods for Ref<FlowStack> {
-    fn active_state(&self) -> Option<Ref<FlowState>> {
-        return get_active_flow_state(self);
-    }
-    fn clear_stack(&self) {
-        clear_flow_stack(self);
-    }
-    fn pop_state(&self) -> Option<Ref<FlowState>> {
-        return pop_flow_state(self);
-    }
-    fn push_state(&self, state: Ref<FlowState>, guards: &FlowGuardStateRef) {
-        push_flow_state(self, state, guards);
-    }
-    fn replace_state(&self, state: Ref<FlowState>, guards: &FlowGuardStateRef) {
-        replace_flow_state(self, state, guards);
-    }
-    fn stack_depth(&self) -> usize {
-        return get_flow_stack_depth(self);
-    }
-    fn update_stack(&self, delta_time: f32) {
-        update_flow_stack(self, delta_time);
-    }
-    fn visible_states(&self, out: &mut Vec<Ref<FlowState>>) {
-        get_flow_stack_visible_states(out, self);
-    }
-}
-
-impl FlowStack {
-    pub fn new() -> Ref<FlowStack> {
-        return create_flow_stack();
+impl Drop for FlowTransition<'_> {
+    fn drop(&mut self) {
+        end_flow_transition(self.guards);
     }
 }

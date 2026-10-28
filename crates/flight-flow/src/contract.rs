@@ -2,4 +2,5 @@
 
 pub use crate::flow::*;
 pub use crate::flow_guards::*;
+pub use crate::sugar::*;
 pub use crate::types::*;

@@ -5,53 +5,6 @@ use std::collections::HashMap;
 
 use crate::types::{FlowGuardKind, FlowGuardStateRef};
 
-#[cfg(test)]
-mod sugar_tests {
-    use super::*;
-    use crate::types::FlowGuardState;
-    use std::sync::RwLock;
-
-    fn guard_state() -> FlowGuardStateRef {
-        return Arc::new(RwLock::new(FlowGuardState {
-            enabled: false,
-            transition_depth: 0,
-            context: None,
-        }));
-    }
-
-    fn log_state() -> flight_log::LogStateRef {
-        return Arc::new(RwLock::new(flight_log::create_log_state()));
-    }
-
-    #[test]
-    fn guard_enable_matches_the_free_function() {
-        let via_method = guard_state();
-        let via_free = guard_state();
-        let state = log_state();
-        via_method.enable_guards(&state, Arc::new(|| 0.0));
-        enable_flow_guards(&via_free, &state, Arc::new(|| 0.0));
-        assert_eq!(
-            via_method.read().unwrap().enabled,
-            via_free.read().unwrap().enabled
-        );
-    }
-
-    #[test]
-    fn guard_disable_matches_the_free_function() {
-        let via_method = guard_state();
-        let via_free = guard_state();
-        let state = log_state();
-        enable_flow_guards(&via_method, &state, Arc::new(|| 0.0));
-        enable_flow_guards(&via_free, &state, Arc::new(|| 0.0));
-        via_method.disable_guards();
-        disable_flow_guards(&via_free);
-        assert_eq!(
-            via_method.read().unwrap().enabled,
-            via_free.read().unwrap().enabled
-        );
-    }
-}
-
 // flight-lint: allow(conform-params) D5: caller-owned guard state replaces the hidden module flag
 pub fn disable_flow_guards(state: &FlowGuardStateRef) {
     let mut guard_state = state.write().unwrap();
@@ -120,35 +73,4 @@ pub fn report_flow_guard(state: &FlowGuardStateRef, kind: FlowGuardKind) {
         LogData::Record(data).into(),
         Some("flow".to_string()),
     );
-}
-
-// ============================================================================
-// D18 sugar: extension methods on the shared guard handle
-// ============================================================================
-
-/// Sugar for the shared guard state handle; delegates to the contract.
-pub trait FlowGuardStateMethods {
-    fn disable_guards(&self);
-    // flight-lint: allow(f64) D1: the injected clock returns millisecond operation time
-    // flight-lint: allow(f64) D1: the injected clock returns millisecond operation time
-    fn enable_guards(
-        &self,
-        log_state: &flight_log::LogStateRef,
-        clock: Arc<dyn Fn() -> f64 + Send + Sync>,
-    );
-}
-
-impl FlowGuardStateMethods for FlowGuardStateRef {
-    fn disable_guards(&self) {
-        disable_flow_guards(self);
-    }
-
-    // flight-lint: allow(f64) D1: the injected clock returns millisecond operation time
-    fn enable_guards(
-        &self,
-        log_state: &flight_log::LogStateRef,
-        clock: Arc<dyn Fn() -> f64 + Send + Sync>,
-    ) {
-        enable_flow_guards(self, log_state, clock);
-    }
 }
