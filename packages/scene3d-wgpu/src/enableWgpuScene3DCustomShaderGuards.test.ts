@@ -31,6 +31,18 @@ describe('enableWgpuScene3DCustomShaderGuards', () => {
     enableWgpuScene3DCustomShaderGuards(state, null);
     expect(areWgpuScene3DCustomShaderGuardsEnabled(state)).toBe(true);
   });
+
+  it('stays silent after a later enable with null replaces an earlier log state', () => {
+    const { state } = makeWgpuScene3DState();
+    const logState = createLogState();
+    const sink = createMemoryLogSink(16);
+    addLogSink(logState, sink.sink);
+    enableWgpuScene3DCustomShaderGuards(state, logState);
+    enableWgpuScene3DCustomShaderGuards(state, null);
+    runWgpuCustomShaderGuards(state, 'null-replaces-log-state', '', createCustomShaderMaterial());
+    expect(readMemoryLogEntries(sink)).toHaveLength(0);
+    expect(areWgpuScene3DCustomShaderGuardsEnabled(state)).toBe(true);
+  });
 });
 
 describe('runWgpuCustomShaderGuards', () => {

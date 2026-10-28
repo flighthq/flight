@@ -11,9 +11,11 @@ export function areWgpuScene3DCustomShaderGuardsEnabled(state: WgpuRenderState):
   return getWgpuScene3DRuntime(state).customShaderGuard != null;
 }
 
-// Enables actionable, warn-once diagnostics for the fixed custom-material WGSL binding ABI.
+// Enables actionable, warn-once diagnostics for the fixed custom-material WGSL binding ABI. Every call
+// records `logState` for `state`, so a later call with null silences the guard rather than keeping an
+// earlier log state.
 export function enableWgpuScene3DCustomShaderGuards(state: WgpuRenderState, logState: LogState | null): void {
-  if (logState !== null) _guardLogStates.set(state, logState);
+  _guardLogStates.set(state, logState);
   getWgpuScene3DRuntime(state).customShaderGuard = runWgpuCustomShaderGuards;
 }
 
@@ -26,8 +28,8 @@ export function runWgpuCustomShaderGuards(
   material: Readonly<CustomShaderMaterial>,
 ): void {
   if (getWgpuScene3DRuntime(state).customShaderGuard == null) return;
-  const logState = _guardLogStates.get(state);
-  if (logState === undefined) return;
+  const logState = _guardLogStates.get(state) ?? null;
+  if (logState === null) return;
 
   const uniforms = material.uniforms ?? {};
   const uniformNames = Object.keys(uniforms).sort();
@@ -91,6 +93,6 @@ function warn(logState: LogState, key: string, message: string): void {
   logOnce(logState, 0, `scene-wgpu:custom-shader:${key}`, LogLevel.Warn, { message }, 'scene-wgpu');
 }
 
-// The log state each render state's guard reports into, recorded by enableWgpuScene3DCustomShaderGuards.
-// A null log state on a later enable keeps the one already recorded.
-const _guardLogStates = new WeakMap<WgpuRenderState, LogState>();
+// The log state each render state's guard reports into, as last recorded by
+// enableWgpuScene3DCustomShaderGuards; null means the guard is installed but silent.
+const _guardLogStates = new WeakMap<WgpuRenderState, LogState | null>();
