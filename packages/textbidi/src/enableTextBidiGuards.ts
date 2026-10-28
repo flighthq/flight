@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -9,12 +10,14 @@ export function disableTextBidiGuards(): void {
 }
 
 /** Installs an opt-in warning for code points outside the bundled compact class table. */
-export function enableTextBidiGuards(): void {
-  setTextBidiGuard(warnOnCompactTableMiss);
+export function enableTextBidiGuards(logState: LogState, clock: () => number): void {
+  setTextBidiGuard((codepoint: number): void => warnOnCompactTableMiss(logState, clock(), codepoint));
 }
 
-function warnOnCompactTableMiss(codepoint: number): void {
+function warnOnCompactTableMiss(logState: LogState, nowMs: number, codepoint: number): void {
   logOnce(
+    logState,
+    nowMs,
     'textbidi:compact-table-miss',
     LogLevel.Warn,
     {
