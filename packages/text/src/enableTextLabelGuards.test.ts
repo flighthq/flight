@@ -1,4 +1,5 @@
-import { setLogSink } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
+import { createLogState, setLogSink } from '@flighthq/log/contract';
 import { setTextLayoutMeasureProvider } from '@flighthq/textlayout/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 
@@ -9,16 +10,18 @@ import { ensureTextLayout } from './textLabelLayout.ts';
 const measure = (text: string) => text.length * 7;
 
 let entries: LogEntry[];
+let logState: LogState;
 
 beforeEach(() => {
   entries = [];
-  setLogSink((entry) => entries.push(entry));
+  logState = createLogState();
+  setLogSink(logState, (entry) => entries.push(entry));
   setTextLayoutMeasureProvider(measure);
 });
 
 afterEach(() => {
   disableTextLabelGuards();
-  setLogSink(null);
+  setLogSink(logState, null);
   setTextLayoutMeasureProvider(null);
 });
 
@@ -28,7 +31,7 @@ function messages(): string {
 
 describe('disableTextLabelGuards', () => {
   it('stops the warning a previously-installed guard would emit', () => {
-    enableTextLabelGuards();
+    enableTextLabelGuards(logState, () => 0);
     disableTextLabelGuards();
 
     const label = createTextLabel();
@@ -43,7 +46,7 @@ describe('disableTextLabelGuards', () => {
 
 describe('enableTextLabelGuards', () => {
   it('warns with both the live and rasterized strings when data.text is mutated directly', () => {
-    enableTextLabelGuards();
+    enableTextLabelGuards(logState, () => 0);
 
     const label = createTextLabel();
     setTextLabelString(label, 'original text');
@@ -58,7 +61,7 @@ describe('enableTextLabelGuards', () => {
   });
 
   it('stays silent when text is changed via setTextLabelString', () => {
-    enableTextLabelGuards();
+    enableTextLabelGuards(logState, () => 0);
 
     const label = createTextLabel();
     setTextLabelString(label, 'first');

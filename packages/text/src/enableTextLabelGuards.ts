@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -7,14 +8,23 @@ export function disableTextLabelGuards(): void {
   setTextLabelGuard(null);
 }
 
-export function enableTextLabelGuards(): void {
-  setTextLabelGuard(warnOnStaleTextLabelContent);
+export function enableTextLabelGuards(logState: LogState, clock: () => number): void {
+  setTextLabelGuard((liveString: string, rasterizedString: string): void =>
+    warnOnStaleTextLabelContent(logState, clock(), liveString, rasterizedString),
+  );
 }
 
-function warnOnStaleTextLabelContent(liveString: string, rasterizedString: string): void {
+function warnOnStaleTextLabelContent(
+  logState: LogState,
+  nowMs: number,
+  liveString: string,
+  rasterizedString: string,
+): void {
   const livePreview = liveString.length > 40 ? liveString.slice(0, 40) + '...' : liveString;
   const rasterPreview = rasterizedString.length > 40 ? rasterizedString.slice(0, 40) + '...' : rasterizedString;
   logOnce(
+    logState,
+    nowMs,
     'text:stale-text-label-content',
     LogLevel.Warn,
     {
