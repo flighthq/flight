@@ -24,8 +24,10 @@ interface Example {
 const projectRoot = resolve(__dirname, '../../..');
 const examplesDir = join(projectRoot, 'examples', 'packages');
 
-// The examples is the listener app: it installs @flighthq/log's console-capture sink, then loads the
-// example. The example is the emit app — it only ever imports the lightweight log/log* helpers,
+// The examples is the listener app: it creates the page's one LogState, installs @flighthq/log's
+// console-capture sink on it, publishes it as window.__flightLogState, then loads the example. The
+// example is the emit app — it only ever imports the lightweight log/log* helpers and logs into that
+// published state,
 // so its own build (e.g. under the size suite) tree-shakes the sink machinery away. The example is
 // imported dynamically so the synchronous setLogSink call runs first — before the example's
 // module-init logs fire (a static import would hoist and run the example before this body).
@@ -46,8 +48,10 @@ function entryWithLogCapture(name: string, render: string): string {
   // therefore yields the identical exported render state.
   const renderPath = join(examplesDir, name, 'src', `render.${render}.ts`);
   const lines = [
-    `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
-    `setLogSink(createConsoleCaptureSink());`,
+    `import { createConsoleCaptureSink, createLogState, setLogSink } from '@flighthq/log';`,
+    `const __logState = createLogState();`,
+    `setLogSink(__logState, createConsoleCaptureSink(__logState));`,
+    `window.__flightLogState = __logState;`,
   ];
   if (!VERIFY_SKIP.has(name) && render === 'dom') {
     // DOM render states do not have a GPU/canvas readback path that can self-register with the capture

@@ -1,4 +1,5 @@
-import { addLogSink, createConsoleLogSink, logInfo } from '@flighthq/log';
+import { addLogSink, createConsoleLogSink, createLogState, logInfo } from '@flighthq/log';
 
-addLogSink(createConsoleLogSink());
-logInfo('ready', 'size');
+const logState = createLogState();
+addLogSink(logState, createConsoleLogSink(logState));
+logInfo(logState, performance.now(), 'ready', 'size');

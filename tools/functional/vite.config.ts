@@ -58,14 +58,17 @@ function discoverTests(): FunctionalScene3D[] {
   return discoverFunctionalScene3Ds(scenesDir);
 }
 
-// The per-cell entry: install the log-capture sink, declare the backend the page renders (a
+// The per-cell entry: install the log-capture sink on the page's one LogState and publish that state as
+// window.__flightLogState for the scene to log into, declare the backend the page renders (a
 // backend-agnostic scene reads window.__ftBackend to pick its target; a backend-specific scene
 // ignores it), dynamically import the scene so both run before its module-init, then verify.
 function entryModule(name: string, backend: string): string {
   const scenePath = functionalScene3DFile(scenesDir, name, backend);
   return [
-    `import { createConsoleCaptureSink, setLogSink } from '@flighthq/log';`,
-    `setLogSink(createConsoleCaptureSink());`,
+    `import { createConsoleCaptureSink, createLogState, setLogSink } from '@flighthq/log';`,
+    `const __logState = createLogState();`,
+    `setLogSink(__logState, createConsoleCaptureSink(__logState));`,
+    `window.__flightLogState = __logState;`,
     `window.__ftBackend = ${JSON.stringify(backend)};`,
     `const { failCaptureTargetVerification, verifyCaptureTarget } = await import('@ft/capture');`,
     `let __testModule;`,

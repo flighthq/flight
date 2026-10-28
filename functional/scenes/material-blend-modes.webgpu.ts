@@ -5,6 +5,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
+import type { LogState } from '@flighthq/log';
 import { logInfo } from '@flighthq/log';
 import { createScene3D } from '@flighthq/scene3d';
 import { renderWgpuScene3D } from '@flighthq/scene3d-wgpu';
@@ -255,7 +256,9 @@ function assertBlendModeCoverage(bitmap: Readonly<Bitmap>, tag: string): void {
 
   // Every sampled value, so a failure report shows the whole grid rather than only the first inequality
   // that tripped. Lands in logs.jsonl next to the screenshot.
-  logInfo({ backdrop, full, quarter, zero }, 'test');
+  // The harness entry publishes its LogState; run standalone, there is no listener and nothing to log.
+  const logState = (window as { __flightLogState?: LogState }).__flightLogState;
+  if (logState !== undefined) logInfo(logState, performance.now(), { backdrop, full, quarter, zero }, 'test');
 
   // Guards the guard: if the backdrop or the patches did not render at all, every comparison below would
   // be between two blanks and would pass vacuously.
