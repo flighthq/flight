@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type { Host, HostCapabilityExplanation } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -19,12 +20,15 @@ import {
 // There is no seam to install and therefore no disableHostGuards or areHostGuardsEnabled: a host is a
 // value built once and never mutated, so the moment of misuse is the moment it is handed over. Auditing
 // it here is the earliest a warning can fire, and logOnce keys per slot, so calling this for two hosts
-// missing the same capability warns once.
-export function enableHostGuards(host: Readonly<Host>): void {
+// missing the same capability warns once. Warnings go to the caller-owned `logState`, stamped with the
+// caller's clock reading `nowMs` (the per-feature Rust host guards take the same three arguments).
+export function enableHostGuards(logState: LogState, nowMs: number, host: Readonly<Host>): void {
   for (const explain of _GUARDED) {
     const explanation = explain(host);
     if (explanation.isPresent) continue;
     logOnce(
+      logState,
+      nowMs,
       `host:missing:${explanation.group}.${explanation.slot}`,
       LogLevel.Warn,
       {

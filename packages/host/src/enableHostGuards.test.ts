@@ -1,23 +1,30 @@
+import type { LogState } from '@flighthq/log/contract';
 import {
   addLogSink,
-  clearLogOnceKeys,
+  createLogState,
   createMemoryLogSink,
   getMemoryLogSinkEntries,
   removeLogSink,
 } from '@flighthq/log/contract';
-import type { EntityWithoutRuntime, Host, LogEntry } from '@flighthq/types/contract';
+import type { EntityWithoutRuntime, Host, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import { enableHostGuards } from './enableHostGuards.ts';
 import { createHost } from './host.ts';
 
+function readLogEntries(sink: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
+}
+
 beforeEach(() => {
-  clearLogOnceKeys();
+  logState = createLogState();
 });
 
 describe('enableHostGuards', () => {
   it('warns once per commonly needed capability a host is missing', () => {
-    const entries = captureLog(() => enableHostGuards(createHost()));
+    const entries = captureLog(() => enableHostGuards(logState, 0, createHost()));
 
     expect(entries.length).toBe(GUARDED_SLOTS.length);
     expect(entries.every((entry) => entry.level === LogLevel.Warn)).toBe(true);
@@ -25,7 +32,7 @@ describe('enableHostGuards', () => {
   });
 
   it('stays silent about a capability the host actually carries', () => {
-    const entries = captureLog(() => enableHostGuards(hostWith({ video: { playback: CAPABILITY } })));
+    const entries = captureLog(() => enableHostGuards(logState, 0, hostWith({ video: { playback: CAPABILITY } })));
 
     expect(entries.map((entry) => slotOf(entry))).not.toContain('video.playback');
     expect(entries.length).toBe(GUARDED_SLOTS.length - 1);
@@ -34,6 +41,8 @@ describe('enableHostGuards', () => {
   it('says nothing at all when every guarded capability is present', () => {
     const entries = captureLog(() =>
       enableHostGuards(
+        logState,
+        0,
         hostWith({
           audio: { device: CAPABILITY, mixer: CAPABILITY },
           image: { loader: CAPABILITY },
@@ -50,15 +59,15 @@ describe('enableHostGuards', () => {
 
   it('warns once across hosts, because the logOnce key is the slot rather than the host', () => {
     const entries = captureLog(() => {
-      enableHostGuards(createHost());
-      enableHostGuards(createHost());
+      enableHostGuards(logState, 0, createHost());
+      enableHostGuards(logState, 0, createHost());
     });
 
     expect(entries.length).toBe(GUARDED_SLOTS.length);
   });
 
   it('carries the remedy and its backends as structured data, not only as prose', () => {
-    const entries = captureLog(() => enableHostGuards(createHost()));
+    const entries = captureLog(() => enableHostGuards(logState, 0, createHost()));
     const video = entries.find((entry) => slotOf(entry) === 'video.playback');
     const data = video?.data as Readonly<Record<string, unknown>>;
 
@@ -84,12 +93,12 @@ const GUARDED_SLOTS = [
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(32);
-  addLogSink(sink.sink);
+  addLogSink(logState, sink.sink);
   try {
     run();
-    return getMemoryLogSinkEntries(sink);
+    return readLogEntries(sink);
   } finally {
-    removeLogSink(sink.sink);
+    removeLogSink(logState, sink.sink);
   }
 }
 
@@ -103,3 +112,5 @@ function slotOf(entry: Readonly<LogEntry>): string {
   const data = entry.data as Readonly<Record<string, unknown>>;
   return `${String(data.group)}.${String(data.slot)}`;
 }
+
+let logState: LogState = createLogState();
