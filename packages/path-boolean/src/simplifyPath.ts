@@ -4,12 +4,12 @@ import type { PathBooleanKernel, Path, PathBooleanOptions } from '@flighthq/type
 import { resolvePathRegions } from './resolvePathRegions.ts';
 
 export function simplifyPath(
+  out: Path,
   pathBooleanKernel: Readonly<PathBooleanKernel>,
   path: Readonly<Path>,
   options?: Readonly<PathBooleanOptions>,
-  out?: Path,
-): Path {
+): void {
   const fillRule = options?.fillRule ?? 'nonZero';
   const contours = flattenPath(path, options?.tolerance);
-  return resolvePathRegions(pathBooleanKernel, contours, fillRule, out);
+  resolvePathRegions(out, pathBooleanKernel, contours, fillRule);
 }

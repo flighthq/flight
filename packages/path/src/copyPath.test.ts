@@ -22,22 +22,12 @@ describe('clonePath', () => {
 });
 
 describe('copyPath', () => {
-  it('allocates a new path when out is omitted', () => {
-    const source = createPath();
-    appendPathMoveTo(source, 5, 10);
-    const result = copyPath(source);
-    expect(result).not.toBe(source);
-    expect(result.commands).toStrictEqual(source.commands);
-    expect(result.data).toStrictEqual(source.data);
-  });
-
-  it('writes into out when provided', () => {
+  it('writes into out', () => {
     const source = createPath();
     appendPathMoveTo(source, 1, 2);
     appendPathLineTo(source, 3, 4);
     const out = createPath('evenOdd');
-    const result = copyPath(source, out);
-    expect(result).toBe(out);
+    copyPath(out, source);
     expect(out.commands).toStrictEqual(source.commands);
     expect(out.data).toStrictEqual(source.data);
     expect(out.winding).toBe('nonZero');
@@ -48,8 +38,7 @@ describe('copyPath', () => {
     appendPathMoveTo(source, 7, 8);
     const cmdsBefore = source.commands.slice();
     const dataBefore = source.data.slice();
-    const result = copyPath(source, source);
-    expect(result).toBe(source);
+    copyPath(source, source);
     expect(source.commands).toStrictEqual(cmdsBefore);
     expect(source.data).toStrictEqual(dataBefore);
   });

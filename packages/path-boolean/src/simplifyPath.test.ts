@@ -63,15 +63,15 @@ const UNIT_SQUARE = [0, 0, 3, 0, 3, 3, 0, 3];
 describe('simplifyPath', () => {
   it('writes into an existing output and is alias-safe', () => {
     const path = polygonPath(BOWTIE);
-    const result = simplifyPath(kernel, path, undefined, path);
+    simplifyPath(path, kernel, path);
 
-    expect(result).toBe(path);
     expect(ringCount(path)).toBe(2);
     expect(pathArea(path)).toBeCloseTo(2, 6);
   });
 
   it('resolves a self-intersecting bowtie into two triangles', () => {
-    const result = simplifyPath(kernel, polygonPath(BOWTIE));
+    const result = createPath();
+    simplifyPath(result, kernel, polygonPath(BOWTIE));
     expect(ringCount(result)).toBe(2);
     expect(pathArea(result)).toBeCloseTo(2, 6);
   });
@@ -88,7 +88,8 @@ describe('simplifyPath', () => {
     appendPathLineTo(path, 6, 6);
     appendPathLineTo(path, 2, 6);
     appendPathClose(path);
-    const result = simplifyPath(kernel, path, { fillRule: 'nonZero' });
+    const result = createPath();
+    simplifyPath(result, kernel, path, { fillRule: 'nonZero' });
     expect(ringCount(result)).toBe(1);
     expect(pathArea(result)).toBeCloseTo(28, 6);
   });
@@ -105,14 +106,17 @@ describe('simplifyPath', () => {
     appendPathLineTo(path, 6, 6);
     appendPathLineTo(path, 2, 6);
     appendPathClose(path);
-    const result = simplifyPath(kernel, path, { fillRule: 'evenOdd' });
+    const result = createPath();
+    simplifyPath(result, kernel, path, { fillRule: 'evenOdd' });
     expect(pathArea(result)).toBeCloseTo(24, 6);
     expect(ringCount(result)).toBeGreaterThan(1);
   });
 
   it('fills a self-overlapping star solid under nonZero but hollow under evenOdd', () => {
-    const solid = simplifyPath(kernel, pentagramPath(10, 'nonZero'), { fillRule: 'nonZero' });
-    const hollow = simplifyPath(kernel, pentagramPath(10, 'evenOdd'), { fillRule: 'evenOdd' });
+    const solid = createPath();
+    const hollow = createPath();
+    simplifyPath(solid, kernel, pentagramPath(10, 'nonZero'), { fillRule: 'nonZero' });
+    simplifyPath(hollow, kernel, pentagramPath(10, 'evenOdd'), { fillRule: 'evenOdd' });
     expect(ringCount(solid)).toBe(1);
     expect(pathArea(solid)).toBeCloseTo(112.257, 2);
     expect(ringCount(hollow)).toBeGreaterThan(1);
@@ -121,7 +125,8 @@ describe('simplifyPath', () => {
   });
 
   it('passes an already-simple convex path through unchanged', () => {
-    const result = simplifyPath(kernel, polygonPath(UNIT_SQUARE));
+    const result = createPath();
+    simplifyPath(result, kernel, polygonPath(UNIT_SQUARE));
     expect(ringCount(result)).toBe(1);
     expect(pathArea(result)).toBeCloseTo(9, 6);
     const bounds = pathBounds(result);
@@ -132,13 +137,15 @@ describe('simplifyPath', () => {
   });
 
   it('returns an empty path for empty input', () => {
-    const result = simplifyPath(kernel, createPath('nonZero'));
+    const result = createPath();
+    simplifyPath(result, kernel, createPath('nonZero'));
     expect(result.commands).toHaveLength(0);
     expect(result.data).toHaveLength(0);
   });
 
   it('returns an empty path for a degenerate zero-area contour', () => {
-    const result = simplifyPath(kernel, polygonPath([0, 0, 5, 0, 10, 0]));
+    const result = createPath();
+    simplifyPath(result, kernel, polygonPath([0, 0, 5, 0, 10, 0]));
     expect(result.commands).toHaveLength(0);
     expect(result.data).toHaveLength(0);
   });

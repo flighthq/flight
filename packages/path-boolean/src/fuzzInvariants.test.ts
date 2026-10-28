@@ -109,8 +109,10 @@ describe('fuzz invariants', () => {
         for (let i = start; i < vertices.length; i += 2) appendPathLineTo(path, vertices[i], vertices[i + 1]);
       }
       appendPathClose(path);
-      const nonZero = simplifyPath(kernel, path, { fillRule: 'nonZero' });
-      const evenOdd = simplifyPath(kernel, path, { fillRule: 'evenOdd' });
+      const nonZero = createPath();
+      const evenOdd = createPath();
+      simplifyPath(nonZero, kernel, path, { fillRule: 'nonZero' });
+      simplifyPath(evenOdd, kernel, path, { fillRule: 'evenOdd' });
       expect(pathArea(nonZero)).toBeGreaterThan(0);
       expect(pathArea(evenOdd)).toBeCloseTo(0, 6);
     }
@@ -121,8 +123,10 @@ describe('fuzz invariants', () => {
     for (let iteration = 0; iteration < 40; iteration++) {
       const a = polygonPath(randomSimplePolygon(random, 3 + (iteration % 6)));
       const b = polygonPath(randomSimplePolygon(random, 3 + ((iteration + 3) % 6)));
-      const ab = unionPaths(kernel, a, b);
-      const ba = unionPaths(kernel, b, a);
+      const ab = createPath();
+      const ba = createPath();
+      unionPaths(ab, kernel, a, b);
+      unionPaths(ba, kernel, b, a);
       expect(areasClose(pathArea(ab), pathArea(ba))).toBe(true);
       expect(ringCount(ab)).toBe(ringCount(ba));
     }
@@ -132,7 +136,8 @@ describe('fuzz invariants', () => {
     const random = makeRandom(0x55aa33cc);
     for (let iteration = 0; iteration < 40; iteration++) {
       const a = polygonPath(randomMessyPolygon(random, 4 + (iteration % 5)));
-      const result = differencePaths(kernel, a, a);
+      const result = createPath();
+      differencePaths(result, kernel, a, a);
       expect(pathArea(result)).toBeCloseTo(0, 6);
     }
   });
@@ -141,8 +146,10 @@ describe('fuzz invariants', () => {
     const random = makeRandom(0x0f0f0f0f);
     for (let iteration = 0; iteration < 40; iteration++) {
       const a = polygonPath(randomSimplePolygon(random, 3 + (iteration % 6)));
-      const union = unionPaths(kernel, a, a);
-      const simplified = simplifyPath(kernel, a);
+      const union = createPath();
+      const simplified = createPath();
+      unionPaths(union, kernel, a, a);
+      simplifyPath(simplified, kernel, a);
       expect(areasClose(pathArea(union), pathArea(simplified))).toBe(true);
       expect(ringCount(union)).toBe(ringCount(simplified));
     }
@@ -152,8 +159,10 @@ describe('fuzz invariants', () => {
     const random = makeRandom(0x7e577e57);
     for (let iteration = 0; iteration < 40; iteration++) {
       const a = polygonPath(randomMessyPolygon(random, 4 + (iteration % 6)));
-      const once = simplifyPath(kernel, a);
-      const twice = simplifyPath(kernel, once);
+      const once = createPath();
+      const twice = createPath();
+      simplifyPath(once, kernel, a);
+      simplifyPath(twice, kernel, once);
       expect(areasClose(pathArea(once), pathArea(twice))).toBe(true);
       expect(ringCount(once)).toBe(ringCount(twice));
     }
@@ -163,8 +172,10 @@ describe('fuzz invariants', () => {
     const random = makeRandom(0x13571357);
     for (let iteration = 0; iteration < 40; iteration++) {
       const a = polygonPath(randomMessyPolygon(random, 4 + (iteration % 6)));
-      const union = unionAllPaths(kernel, [a]);
-      const simplified = simplifyPath(kernel, a);
+      const union = createPath();
+      const simplified = createPath();
+      unionAllPaths(union, kernel, [a]);
+      simplifyPath(simplified, kernel, a);
       expect(areasClose(pathArea(union), pathArea(simplified))).toBe(true);
       expect(ringCount(union)).toBe(ringCount(simplified));
     }
@@ -175,7 +186,8 @@ describe('fuzz invariants', () => {
     for (let iteration = 0; iteration < 40; iteration++) {
       const vertices = randomSimplePolygon(random, 3 + (iteration % 6));
       const a = polygonPath(vertices);
-      const zeroOffset = offsetPath(kernel, a, 0);
+      const zeroOffset = createPath();
+      offsetPath(zeroOffset, kernel, a, 0);
       expect(areasClose(pathArea(zeroOffset), pathArea(a), 1e-2, 1e-2)).toBe(true);
       expect(ringCount(zeroOffset)).toBe(1);
     }
@@ -189,8 +201,10 @@ describe('fuzz invariants', () => {
       const a = polygonPath(vertices);
       const baseArea = pathArea(a);
       if (baseArea < 50) continue;
-      const grown = offsetPath(kernel, a, 3, { join: 'miter', miterLimit: 100 });
-      const recovered = offsetPath(kernel, grown, -3, { join: 'miter', miterLimit: 100 });
+      const grown = createPath();
+      const recovered = createPath();
+      offsetPath(grown, kernel, a, 3, { join: 'miter', miterLimit: 100 });
+      offsetPath(recovered, kernel, grown, -3, { join: 'miter', miterLimit: 100 });
       expect(ringCount(recovered)).toBe(1);
       expect(areasClose(pathArea(recovered), baseArea, 3e-2, 1)).toBe(true);
     }
@@ -200,9 +214,11 @@ describe('fuzz invariants', () => {
     const random = makeRandom(0x0c0ffee0);
     for (let iteration = 0; iteration < 40; iteration++) {
       const a = polygonPath(randomSimplePolygon(random, 5 + (iteration % 8)));
-      const offset = offsetPath(kernel, a, 4);
+      const offset = createPath();
+      offsetPath(offset, kernel, a, 4);
       if (offset.commands.length === 0) continue;
-      const simplified = simplifyPath(kernel, offset, { fillRule: 'nonZero' });
+      const simplified = createPath();
+      simplifyPath(simplified, kernel, offset, { fillRule: 'nonZero' });
       expect(areasClose(pathArea(simplified), pathArea(offset), 1e-2, 1e-2)).toBe(true);
       expect(ringCount(simplified)).toBe(ringCount(offset));
     }

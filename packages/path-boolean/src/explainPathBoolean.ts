@@ -1,4 +1,4 @@
-import { flattenPath } from '@flighthq/path/contract';
+import { createPath, flattenPath } from '@flighthq/path/contract';
 import type {
   PathBooleanKernel,
   Path,
@@ -18,9 +18,9 @@ export function explainOffsetPath(
 ): PathBooleanExplanation | null {
   if (!Number.isFinite(delta)) return { operation: 'offset', reason: 'non-finite-delta' };
   if (flattenPath(path, options?.tolerance).length === 0) return { operation: 'offset', reason: 'empty-input' };
-  return offsetPath(pathBooleanKernel, path, delta, options).commands.length === 0
-    ? { operation: 'offset', reason: 'collapsed-or-degenerate' }
-    : null;
+  const out = createPath('nonZero');
+  offsetPath(out, pathBooleanKernel, path, delta, options);
+  return out.commands.length === 0 ? { operation: 'offset', reason: 'collapsed-or-degenerate' } : null;
 }
 
 export function explainSimplifyPath(
@@ -29,7 +29,7 @@ export function explainSimplifyPath(
   options?: Readonly<PathBooleanOptions>,
 ): PathBooleanExplanation | null {
   if (flattenPath(path, options?.tolerance).length === 0) return { operation: 'simplify', reason: 'empty-input' };
-  return simplifyPath(pathBooleanKernel, path, options).commands.length === 0
-    ? { operation: 'simplify', reason: 'collapsed-or-degenerate' }
-    : null;
+  const out = createPath('nonZero');
+  simplifyPath(out, pathBooleanKernel, path, options);
+  return out.commands.length === 0 ? { operation: 'simplify', reason: 'collapsed-or-degenerate' } : null;
 }

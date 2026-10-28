@@ -49,7 +49,8 @@ appendPathRectangle(pathA, 50, 50, 100, 100);
 const pathB = createPath();
 appendPathRectangle(pathB, 100, 100, 100, 100);
 
-const result = intersectPaths(martinezPathBooleanKernel, pathA, pathB);
+const result = createPath();
+intersectPaths(result, martinezPathBooleanKernel, pathA, pathB);
 
 const root = createDisplayObject();
 const shape = createShape();

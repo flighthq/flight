@@ -51,7 +51,8 @@ appendPathRectangle(pathA, 50, 50, 100, 100);
 const pathB = createPath();
 appendPathRectangle(pathB, 100, 100, 100, 100);
 
-const result = xorPaths(martinezPathBooleanKernel, pathA, pathB);
+const result = createPath();
+xorPaths(result, martinezPathBooleanKernel, pathA, pathB);
 
 const root = createDisplayObject();
 const shape = createShape();

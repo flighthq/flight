@@ -10,7 +10,7 @@ import type {
 import { resolvePathRegions } from './resolvePathRegions.ts';
 
 // Offsets a path outward (positive `delta`, inflate) or inward (negative `delta`, deflate) by a signed
-// distance, returning a fresh polygon-outline `Path`. The input is flattened to polygon contours at the
+// distance, writing a polygon outline into `out`. The input is flattened to polygon contours at the
 // option tolerance; each closed contour is offset into a grown/shrunk ring and each open contour is
 // offset into a closed slab outline capped at both terminals. Corner style on the convex side of a
 // vertex is chosen by `options.join` (miter/bevel/round/square); open-path terminals by `options.end`
@@ -20,12 +20,12 @@ import { resolvePathRegions } from './resolvePathRegions.ts';
 // grows regardless of input winding. Over-deflating a region past self-collapse drops it, so the result
 // can be an empty path (no commands).
 export function offsetPath(
+  out: Path,
   pathBooleanKernel: Readonly<PathBooleanKernel>,
   path: Readonly<Path>,
   delta: number,
   options?: Readonly<PathOffsetOptions>,
-  out?: Path,
-): Path {
+): void {
   const join = options?.join ?? 'miter';
   const end = options?.end ?? 'butt';
   const miterLimit = options?.miterLimit ?? DEFAULT_MITER_LIMIT;
@@ -72,7 +72,7 @@ export function offsetPath(
   // corner's inner-miter emission overshoots on a feature narrower than 2·|delta|, it dissolves the
   // negatively-wound self-overlap that non-zero fill would have kept; it also merges touching rings and
   // emits a clean, hole-correct outline (empty ring set → empty path).
-  return resolvePathRegions(pathBooleanKernel, rawRings, 'positive', out);
+  resolvePathRegions(out, pathBooleanKernel, rawRings, 'positive');
 }
 
 // Assembles one offset ring for a closed vertex loop by walking its vertices and emitting, at each, the

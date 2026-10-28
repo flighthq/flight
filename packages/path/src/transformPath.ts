@@ -12,7 +12,7 @@ import { copyPath } from './copyPath.ts';
 export function transformPath(source: Readonly<Path>, matrix: Readonly<MatrixLike>, out: Path): void {
   const { a, b, c, d, tx, ty } = matrix;
   // Copy commands and winding first (handles the alias case for the data array below).
-  copyPath(source, out);
+  copyPath(out, source);
   const data = out.data;
   const commands = source.commands;
   let di = 0;

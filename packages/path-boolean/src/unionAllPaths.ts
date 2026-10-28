@@ -4,11 +4,11 @@ import type { PathBooleanKernel, Path, PathBooleanContour, PathBooleanOptions } 
 import { writePathBooleanContours } from './writePathBooleanContours.ts';
 
 export function unionAllPaths(
+  out: Path,
   pathBooleanKernel: Readonly<PathBooleanKernel>,
   paths: readonly Readonly<Path>[],
-  out?: Path,
   options?: Readonly<PathBooleanOptions>,
-): Path {
+): void {
   const fillRule = options?.fillRule ?? 'nonZero';
   const contours: PathBooleanContour[] = [];
   for (const path of paths) {
@@ -19,7 +19,7 @@ export function unionAllPaths(
       ? EMPTY_CONTOURS
       : pathBooleanKernel.computePathBoolean(contours, EMPTY_CONTOURS, 'union', fillRule);
 
-  return writePathBooleanContours(result, out);
+  writePathBooleanContours(out, result);
 }
 
 const EMPTY_CONTOURS: readonly PathBooleanContour[] = [];

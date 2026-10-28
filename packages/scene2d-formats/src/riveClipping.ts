@@ -61,7 +61,8 @@ export function applyRiveClipping(
     }
     const next = createRiveClipPath(pathBooleanKernel, paths, relative[owner], relative[source], object);
     const current = clips.get(target);
-    clips.set(target, current === undefined ? next : intersectPaths(pathBooleanKernel, current, next));
+    if (current === undefined) clips.set(target, next);
+    else intersectPaths(current, pathBooleanKernel, current, next);
   }
   for (const [target, path] of clips) target.clip = createClipRegionFromPath(path);
 }
@@ -91,7 +92,9 @@ function createRiveClipPath(
   // Resolve every clipping shape under its own fill rule before intersections. `intersectPaths`
   // accepts contour sets, but its fill-rule option applies to both operands; normalizing each one to
   // a non-zero outline first preserves a mixed even-odd/non-zero stack without conflating the two.
-  return simplifyPath(pathBooleanKernel, path, { fillRule: path.winding });
+  const out = createPath('nonZero');
+  simplifyPath(out, pathBooleanKernel, path, { fillRule: path.winding });
+  return out;
 }
 
 /**

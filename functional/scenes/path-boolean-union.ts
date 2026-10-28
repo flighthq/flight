@@ -54,7 +54,8 @@ appendPathRectangle(pathA, 50, 50, 100, 100);
 const pathB = createPath();
 appendPathRectangle(pathB, 100, 100, 100, 100);
 
-const result = unionPaths(martinezPathBooleanKernel, pathA, pathB);
+const result = createPath();
+unionPaths(result, martinezPathBooleanKernel, pathA, pathB);
 
 const root = createDisplayObject();
 const shape = createShape();

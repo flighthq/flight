@@ -105,7 +105,8 @@ function rebuild(): void {
   const operations = [unionPaths, intersectPaths, differencePaths, xorPaths];
 
   for (let i = 0; i < 4; i++) {
-    const resultPath = operations[i](martinezPathBooleanKernel, pathA, pathB);
+    const resultPath = createPath('nonZero');
+    operations[i](resultPath, martinezPathBooleanKernel, pathA, pathB);
 
     clearShapeCommands(resultShapes[i]);
     drawBooleanResult(resultShapes[i], resultPath, FILL_COLORS[i]);

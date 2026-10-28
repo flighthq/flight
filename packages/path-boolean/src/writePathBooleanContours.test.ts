@@ -6,7 +6,7 @@ import { writePathBooleanContours } from './writePathBooleanContours.ts';
 describe('writePathBooleanContours', () => {
   it('rebuilds into a supplied path without allocation', () => {
     const out = createPath('evenOdd');
-    expect(writePathBooleanContours([[0, 0, 1, 0, 0, 1]], out)).toBe(out);
+    writePathBooleanContours(out, [[0, 0, 1, 0, 0, 1]]);
     expect(out.winding).toBe('nonZero');
     expect(out.commands.length).toBe(4);
   });
