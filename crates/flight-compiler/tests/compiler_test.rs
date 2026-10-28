@@ -365,6 +365,108 @@ pub fn scaled(r#override: Option<f32>) -> f32 {
     }
 
     #[test]
+    fn preserves_record_clone_and_shared_readonly_collection_semantics() {
+        let source = r#"
+use std::sync::Arc;
+
+pub struct Variation {
+    pub value: f32,
+}
+
+pub struct Format {
+    pub name: Option<String>,
+    pub variations: Option<Arc<Vec<Variation>>>,
+}
+
+pub fn clone_format(base: &Format) -> Format {
+    let mut result = base.clone();
+    result.name = Some("copy".to_string());
+    return result;
+}
+
+pub fn clone_shared(base: Arc<Format>) -> Arc<Format> {
+    return base.clone();
+}
+
+pub fn has_empty_name(value: Option<String>) -> bool {
+    return value.as_deref() == Some("");
+}
+
+pub fn maximum_color() -> u32 {
+    return u32::MAX;
+}
+
+pub fn high_byte(color: u32) -> u32 {
+    return color >> 24;
+}
+
+pub fn local_high_byte() -> u32 {
+    let color: u32 = 0xf00000ff;
+    return color >> 24;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("variations?: Readonly<Variation[]>;"));
+        assert!(output.contains("let result = { ...base };"));
+        assert!(output.contains("return base;"));
+        assert!(!output.contains("return { ...base };"));
+        assert!(output.contains("return value === \"\";"));
+        assert!(output.contains("return 0xffffffff;"));
+        assert!(output.contains("return color >>> 24;"));
+    }
+
+    #[test]
+    fn lowers_statement_match_arms_without_requiring_values() {
+        let source = r#"
+pub fn hsv(out: &mut [f32; 4], i: i32, value: f32) {
+    match i {
+        0 => {
+            out[0] = value;
+        }
+        _ => {
+            out[0] = 0.0;
+        }
+    }
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("switch (i) {"));
+        assert!(output.contains("case 0:"));
+        assert!(output.contains("out[0] = value;"));
+        assert!(output.contains("default:"));
+        assert!(output.contains("out[0] = 0.0;"));
+    }
+
+    #[test]
+    fn lowers_utf16_code_unit_iteration() {
+        let source = r#"
+pub fn utf16_units(value: &str) -> Vec<u16> {
+    return value.encode_utf16().collect();
+}
+
+pub fn slice_units(value: &Vec<u16>, start: usize, end: usize) -> Vec<u16> {
+    return value[start..end].to_vec();
+}
+
+pub fn empty_string() -> String {
+    return String::new();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(
+            "return Array.from({ length: value.length }, (_, index) => value.charCodeAt(index));"
+        ));
+        assert!(output.contains("return [...value.slice(start, end)];"));
+        assert!(output.contains("return '';"));
+    }
+
+    #[test]
     fn reuses_callable_aliases_declared_by_sibling_sources() {
         let aliases = r#"
 use std::sync::Arc;
@@ -578,6 +680,41 @@ mod normalize_vector2 {
             output
                 .contains("expect(() => {\n      normalizeVector2(undefined);\n    }).toThrow();")
         );
+    }
+
+    #[test]
+    fn lowers_shared_ref_reads_writes_and_identity_checks() {
+        let source = r#"
+use std::sync::{Arc, RwLock};
+
+struct Value {
+    count: i32,
+}
+
+mod shared_ref {
+    use super::*;
+
+    #[test]
+    fn preserves_one_object() {
+        let value = Arc::new(RwLock::new(Value { count: 1 }));
+        let alias = value.clone();
+        value.write().unwrap().count = 2;
+        assert_eq!(value.read().unwrap().count, 2);
+        assert!(Arc::ptr_eq(&value, &alias));
+        let uid = flight_entity::get_entity_uid(&mut value);
+        assert_eq!(flight_entity::get_entity_uid(&mut value), uid);
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/example/contract").unwrap();
+
+        assert!(output.contains("const value = { count: 1 };"));
+        assert!(output.contains("value!.count = 2;"));
+        assert!(output.contains("expect(value!.count).toEqual(2);"));
+        assert!(output.contains("expect(value === alias).toBe(true);"));
+        assert!(output.contains("import * as flightEntity from \"@flighthq/entity/contract\";"));
+        assert!(output.contains("const uid = flightEntity.getEntityUid(value);"));
     }
 
     #[test]

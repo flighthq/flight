@@ -18,6 +18,9 @@ const CLOSURE_PARAMETER_MARKER: &str = "@closure-parameter:";
 const FIXED_BUFFER_ARGUMENT_MARKER: &str = "@fixed-buffer-argument:";
 const FIXED_BUFFER_LOCAL_MARKER: &str = "@fixed-buffer-local:";
 const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
+const RECORD_CLONE_ARGUMENT_MARKER: &str = "@record-clone-argument:";
+const RECORD_CLONE_LOCAL_MARKER: &str = "@record-clone-local:";
+const UNSIGNED_INTEGER_LOCAL_MARKER: &str = "@unsigned-integer-local:";
 
 fn argument_is_option(argument: &FnArg) -> bool {
     let FnArg::Typed(argument) = argument else {
@@ -165,6 +168,16 @@ fn inferred_fixed_buffer_type(entities: &HashSet<String>, local: &str) -> Option
 
 pub(crate) fn generation_context(programs: &[&Program]) -> Result<HashSet<String>, CompileError> {
     let mut context = HashSet::new();
+    let record_types = programs
+        .iter()
+        .flat_map(|program| {
+            program
+                .structs
+                .iter()
+                .filter(|structure| !program.entities.contains(&structure.ident.to_string()))
+                .map(|structure| structure.ident.to_string())
+        })
+        .collect::<HashSet<_>>();
     for program in programs {
         context.extend(program.entities.iter().cloned());
         for function in &program.functions {
@@ -178,6 +191,14 @@ pub(crate) fn generation_context(programs: &[&Program]) -> Result<HashSet<String
                 let FnArg::Typed(argument) = argument else {
                     continue;
                 };
+                if let Pat::Ident(pattern) = argument.pat.as_ref()
+                    && named_type(&argument.ty).is_some_and(|name| record_types.contains(&name))
+                {
+                    context.insert(format!(
+                        "{RECORD_CLONE_ARGUMENT_MARKER}{function_name}:{}",
+                        pattern.ident
+                    ));
+                }
                 if let Some(typescript_type) = fixed_buffer_type(&argument.ty) {
                     context.insert(format!(
                         "{FIXED_BUFFER_ARGUMENT_MARKER}{function_name}:{argument_index}:{typescript_type}"
@@ -239,6 +260,17 @@ pub(crate) fn function_expression_context(
             }
             syn::visit::visit_expr_call(self, call);
         }
+
+        fn visit_local(&mut self, local: &'ast syn::Local) {
+            if let Pat::Type(typed) = &local.pat
+                && type_is_unsigned_integer(&typed.ty)
+                && let Pat::Ident(pattern) = typed.pat.as_ref()
+            {
+                self.context
+                    .insert(format!("{UNSIGNED_INTEGER_LOCAL_MARKER}{}", pattern.ident));
+            }
+            syn::visit::visit_local(self, local);
+        }
     }
 
     fn referenced_identifier(expression: &Expr) -> Option<String> {
@@ -256,6 +288,24 @@ pub(crate) fn function_expression_context(
     }
 
     let mut context = base.clone();
+    let function_name = function.sig.ident.to_string();
+    for argument in &function.sig.inputs {
+        let FnArg::Typed(argument) = argument else {
+            continue;
+        };
+        let Pat::Ident(pattern) = argument.pat.as_ref() else {
+            continue;
+        };
+        if context.contains(&format!(
+            "{RECORD_CLONE_ARGUMENT_MARKER}{function_name}:{}",
+            pattern.ident
+        )) {
+            context.insert(format!("{RECORD_CLONE_LOCAL_MARKER}{}", pattern.ident));
+        }
+        if type_is_unsigned_integer(&argument.ty) {
+            context.insert(format!("{UNSIGNED_INTEGER_LOCAL_MARKER}{}", pattern.ident));
+        }
+    }
     syn::visit::Visit::visit_block(
         &mut CallbackUseCollector {
             context: &mut context,
@@ -566,6 +616,22 @@ pub(crate) fn emit_expression(
                     emit_expression(&binary.right, entities)?
                 ));
             }
+            if matches!(binary.op, BinOp::Shr(_) | BinOp::ShrAssign(_))
+                && referenced_path_identifier(&binary.left).is_some_and(|identifier| {
+                    entities.contains(&format!("{UNSIGNED_INTEGER_LOCAL_MARKER}{identifier}"))
+                })
+            {
+                let operator = if matches!(binary.op, BinOp::ShrAssign(_)) {
+                    ">>>="
+                } else {
+                    ">>>"
+                };
+                return Ok(format!(
+                    "{} {operator} {}",
+                    emit_expression(&binary.left, entities)?,
+                    emit_expression(&binary.right, entities)?
+                ));
+            }
             Ok(format!(
                 "{} {} {}",
                 emit_expression(&binary.left, entities)?,
@@ -580,6 +646,19 @@ pub(crate) fn emit_expression(
             }
             if expression_is_associated_path(&call.func, "Arc", "new") && call.args.len() == 1 {
                 return emit_expression(&call.args[0], entities);
+            }
+            if expression_is_associated_path(&call.func, "Arc", "ptr_eq") && call.args.len() == 2 {
+                return Ok(format!(
+                    "{} === {}",
+                    emit_expression(&call.args[0], entities)?,
+                    emit_expression(&call.args[1], entities)?
+                ));
+            }
+            if expression_is_associated_path(&call.func, "RwLock", "new") && call.args.len() == 1 {
+                return emit_expression(&call.args[0], entities);
+            }
+            if expression_is_associated_path(&call.func, "String", "new") && call.args.is_empty() {
+                return Ok("''".to_string());
             }
             if expression_is_associated_path(&call.func, "Vec", "new") && call.args.is_empty() {
                 return Ok("[] as never[]".to_string());
@@ -666,11 +745,34 @@ pub(crate) fn emit_expression(
             }
         }
         Expr::Group(group) => emit_expression(&group.expr, entities),
-        Expr::Index(index) => Ok(format!(
-            "{}[{}]",
-            emit_expression(&index.expr, entities)?,
-            emit_expression(&index.index, entities)?
-        )),
+        Expr::Index(index) => {
+            let receiver = emit_expression(&index.expr, entities)?;
+            if let Expr::Range(range) = index.index.as_ref() {
+                let start = range
+                    .start
+                    .as_deref()
+                    .map(|start| emit_expression(start, entities))
+                    .transpose()?
+                    .unwrap_or_default();
+                let mut end = range
+                    .end
+                    .as_deref()
+                    .map(|end| emit_expression(end, entities))
+                    .transpose()?;
+                if matches!(range.limits, syn::RangeLimits::Closed(_)) {
+                    end = end.map(|end| format!("{end} + 1"));
+                }
+                return Ok(match end {
+                    Some(end) => format!("{receiver}.slice({start}, {end})"),
+                    None if start.is_empty() => format!("{receiver}.slice()"),
+                    None => format!("{receiver}.slice({start})"),
+                });
+            }
+            Ok(format!(
+                "{receiver}[{}]",
+                emit_expression(&index.index, entities)?
+            ))
+        }
         Expr::If(expression) => emit_if_expression(expression, entities),
         Expr::Lit(literal) => emit_literal(&literal.lit),
         Expr::Macro(expression) => emit_macro_expression(&expression.mac, entities),
@@ -713,6 +815,9 @@ pub(crate) fn emit_expression(
             }
             if path_is_float_constant(&path.path, "MAX") {
                 return Ok("Number.MAX_VALUE".to_string());
+            }
+            if path_is_type_constant(&path.path, "u32", "MAX") {
+                return Ok("0xffffffff".to_string());
             }
             if path_is_float_constant(&path.path, "MIN_POSITIVE") {
                 return Ok("2.2250738585072014e-308".to_string());
@@ -1352,6 +1457,48 @@ fn emit_match_expression(
     return Ok(out);
 }
 
+fn emit_match_statement(
+    out: &mut String,
+    expression: &syn::ExprMatch,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    write_indent(out, indent);
+    writeln!(
+        out,
+        "switch ({}) {{",
+        emit_expression(&expression.expr, entities)?
+    )
+    .expect("writing to a String cannot fail");
+    for arm in &expression.arms {
+        if arm.guard.is_some() {
+            return Err(compile_error("portable Rust match arms cannot use guards"));
+        }
+        for pattern in emit_match_patterns(&arm.pat, entities)? {
+            write_indent(out, indent + 1);
+            if pattern == "default" {
+                out.push_str("default:\n");
+            } else {
+                writeln!(out, "case {pattern}:").expect("writing to a String cannot fail");
+            }
+        }
+        match arm.body.as_ref() {
+            Expr::Block(block) => emit_block(out, &block.block.stmts, entities, indent + 2)?,
+            expression => emit_statement(
+                out,
+                &Stmt::Expr(expression.clone(), None),
+                entities,
+                indent + 2,
+            )?,
+        }
+        write_indent(out, indent + 2);
+        out.push_str("break;\n");
+    }
+    write_indent(out, indent);
+    out.push_str("}\n");
+    return Ok(());
+}
+
 fn emit_match_patterns(
     pattern: &Pat,
     entities: &HashSet<String>,
@@ -1438,9 +1585,20 @@ fn emit_method_call(
         "clone" if arguments.is_empty() && expression_contains_method(&call.receiver, "lock") => {
             Ok(format!("{receiver}.value"))
         }
+        "clone"
+            if arguments.is_empty()
+                && referenced_path_identifier(&call.receiver).is_some_and(|identifier| {
+                    entities.contains(&format!("{RECORD_CLONE_LOCAL_MARKER}{identifier}"))
+                }) =>
+        {
+            Ok(format!("{{ ...{receiver} }}"))
+        }
         "clone" if arguments.is_empty() => Ok(receiver),
         "collect" if arguments.is_empty() => Ok(receiver),
         "contains" if arguments.len() == 1 => Ok(format!("{receiver}.includes({})", arguments[0])),
+        "encode_utf16" if arguments.is_empty() => Ok(format!(
+            "Array.from({{ length: {receiver}.length }}, (_, index) => {receiver}.charCodeAt(index))"
+        )),
         "exp" if arguments.is_empty() => Ok(format!("Math.exp({receiver})")),
         "expect" if arguments.len() == 1 => Ok(format!(
             "(() => {{ const value = {receiver}; if (value === undefined) throw new Error({}); return value; }})()",
@@ -1462,6 +1620,7 @@ fn emit_method_call(
         "into_iter" if arguments.is_empty() => Ok(receiver),
         "iter" if arguments.is_empty() => Ok(receiver),
         "as_ref" if arguments.is_empty() => Ok(receiver),
+        "as_deref" if arguments.is_empty() => Ok(receiver),
         "len" if arguments.is_empty() => Ok(format!("{receiver}.length")),
         "get" if arguments.is_empty() => Ok(format!("{receiver}.value")),
         "ln" if arguments.is_empty() => Ok(format!("Math.log({receiver})")),
@@ -1506,6 +1665,7 @@ fn emit_method_call(
             arguments[0], arguments[0]
         )),
         "lock" if arguments.is_empty() => Ok(receiver),
+        "read" | "write" if arguments.is_empty() => Ok(receiver),
         "unwrap_or_else"
             if arguments.len() == 1 && expression_contains_method(&call.receiver, "lock") =>
         {
@@ -1679,7 +1839,9 @@ fn emit_type_with_aliases(
             "Option" => format!("{inner} | undefined"),
             "Vec" => array_type(inner),
             "Mutex" => format!("{{ value: {inner} }}"),
-            "Arc" | "Ref" => inner,
+            "Arc" if is_primitive_typescript_type(&inner) => inner,
+            "Arc" => format!("Readonly<{inner}>"),
+            "Ref" => inner,
             _ => unreachable!(),
         });
     }
@@ -1976,6 +2138,9 @@ fn emit_statement(
             write_indent(out, indent);
             out.push_str("}\n");
         }
+        Stmt::Expr(Expr::Match(match_expression), _) => {
+            emit_match_statement(out, match_expression, entities, indent)?;
+        }
         Stmt::Expr(Expr::Break(_), _) => {
             write_indent(out, indent);
             out.push_str("break;\n");
@@ -2129,7 +2294,15 @@ pub(crate) fn emit_type(
                     emit_single_generic_type(segment, entities)?
                 )),
                 "AtomicU32" => Ok("{ value: number }".to_string()),
-                "Arc" | "Ref" => emit_single_generic_type(segment, entities),
+                "Arc" => {
+                    let inner = emit_single_generic_type(segment, entities)?;
+                    if is_primitive_typescript_type(&inner) {
+                        Ok(inner)
+                    } else {
+                        Ok(format!("Readonly<{inner}>"))
+                    }
+                }
+                "Ref" => emit_single_generic_type(segment, entities),
                 _ if entities.contains(&name) => Ok(format!("{name}Raw")),
                 _ => {
                     if matches!(segment.arguments, PathArguments::None) {
@@ -2656,6 +2829,50 @@ fn option_inner_type(rust_type: &Type) -> Option<&Type> {
     });
     let inner = types.next()?;
     return types.next().is_none().then_some(inner);
+}
+
+fn named_type(rust_type: &Type) -> Option<String> {
+    return match rust_type {
+        Type::Group(group) => named_type(&group.elem),
+        Type::Paren(paren) => named_type(&paren.elem),
+        Type::Reference(reference) => named_type(&reference.elem),
+        Type::Path(path) => path
+            .path
+            .segments
+            .last()
+            .map(|segment| segment.ident.to_string()),
+        _ => None,
+    };
+}
+
+fn path_is_type_constant(path: &syn::Path, rust_type: &str, constant: &str) -> bool {
+    let mut segments = path.segments.iter().rev();
+    return segments
+        .next()
+        .is_some_and(|segment| segment.ident == constant)
+        && segments
+            .next()
+            .is_some_and(|segment| segment.ident == rust_type);
+}
+
+fn type_is_unsigned_integer(rust_type: &Type) -> bool {
+    return ["u8", "u16", "u32", "u64", "usize"]
+        .iter()
+        .any(|name| type_is_named(rust_type, name));
+}
+
+fn referenced_path_identifier(expression: &Expr) -> Option<String> {
+    return match expression {
+        Expr::Group(group) => referenced_path_identifier(&group.expr),
+        Expr::Paren(paren) => referenced_path_identifier(&paren.expr),
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => path
+            .path
+            .segments
+            .first()
+            .map(|segment| segment.ident.to_string()),
+        Expr::Reference(reference) => referenced_path_identifier(&reference.expr),
+        _ => None,
+    };
 }
 
 fn path_is_float_constant(path: &syn::Path, constant: &str) -> bool {

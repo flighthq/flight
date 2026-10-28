@@ -74,12 +74,14 @@ fn assertion_message(
     return Ok(Some(format!("`{rendered}`")));
 }
 
-fn collect_contract_symbols(program: &TestProgram) -> Vec<String> {
+fn collect_contract_symbols(program: &TestProgram) -> (Vec<String>, Vec<String>, Vec<String>) {
     struct ContractSymbolCollector<'a> {
         declared: HashSet<String>,
         helper_names: &'a HashSet<String>,
         standard_constants: &'a HashSet<String>,
         symbols: Vec<String>,
+        type_symbols: Vec<String>,
+        external_modules: Vec<String>,
     }
 
     impl ContractSymbolCollector<'_> {
@@ -121,6 +123,25 @@ fn collect_contract_symbols(program: &TestProgram) -> Vec<String> {
                 self.symbols.push(name);
             }
         }
+
+        fn record_type_identifier(&mut self, identifier: &syn::Ident) {
+            let name = identifier.to_string();
+            if !self.declared.contains(&name)
+                && !self.helper_names.contains(&name)
+                && !self.standard_constants.contains(&name)
+                && !self.symbols.contains(&name)
+                && !self.type_symbols.contains(&name)
+            {
+                self.type_symbols.push(name);
+            }
+        }
+
+        fn record_external_module(&mut self, identifier: &syn::Ident) {
+            let name = identifier.to_string();
+            if name.starts_with("flight_") && !self.external_modules.contains(&name) {
+                self.external_modules.push(name);
+            }
+        }
     }
 
     impl<'ast> Visit<'ast> for ContractSymbolCollector<'_> {
@@ -135,6 +156,11 @@ fn collect_contract_symbols(program: &TestProgram) -> Vec<String> {
         fn visit_expr_path(&mut self, expression: &'ast syn::ExprPath) {
             if expression.qself.is_none() {
                 let segments = &expression.path.segments;
+                if segments.len() > 1
+                    && let Some(segment) = segments.first()
+                {
+                    self.record_external_module(&segment.ident);
+                }
                 if segments.len() == 1
                     && let Some(segment) = segments.first()
                 {
@@ -148,7 +174,15 @@ fn collect_contract_symbols(program: &TestProgram) -> Vec<String> {
                         .is_some_and(|character| character.is_ascii_uppercase())
                     && !matches!(
                         segment.ident.to_string().as_str(),
-                        "Arc" | "Box" | "Option" | "Result" | "String" | "Vec"
+                        "Arc"
+                            | "Box"
+                            | "Mutex"
+                            | "Option"
+                            | "Ref"
+                            | "Result"
+                            | "RwLock"
+                            | "String"
+                            | "Vec"
                     )
                 {
                     // Rust enum variants are paths (`Type::Variant`) while the generated TypeScript
@@ -157,6 +191,33 @@ fn collect_contract_symbols(program: &TestProgram) -> Vec<String> {
                 }
             }
             syn::visit::visit_expr_path(self, expression);
+        }
+
+        fn visit_type_path(&mut self, rust_type: &'ast syn::TypePath) {
+            if rust_type.qself.is_none()
+                && let Some(segment) = rust_type.path.segments.first()
+                && segment
+                    .ident
+                    .to_string()
+                    .chars()
+                    .next()
+                    .is_some_and(|character| character.is_ascii_uppercase())
+                && !matches!(
+                    segment.ident.to_string().as_str(),
+                    "Arc"
+                        | "Box"
+                        | "Mutex"
+                        | "Option"
+                        | "Ref"
+                        | "Result"
+                        | "RwLock"
+                        | "String"
+                        | "Vec"
+                )
+            {
+                self.record_type_identifier(&segment.ident);
+            }
+            syn::visit::visit_type_path(self, rust_type);
         }
 
         fn visit_macro(&mut self, rust_macro: &'ast syn::Macro) {
@@ -193,6 +254,8 @@ fn collect_contract_symbols(program: &TestProgram) -> Vec<String> {
         )
         .collect::<HashSet<_>>();
     let mut symbols = Vec::new();
+    let mut type_symbols = Vec::new();
+    let mut external_modules = Vec::new();
     for function in program
         .helpers
         .iter()
@@ -208,13 +271,23 @@ fn collect_contract_symbols(program: &TestProgram) -> Vec<String> {
             helper_names: &helper_names,
             standard_constants: &program.standard_constants,
             symbols: Vec::new(),
+            type_symbols: Vec::new(),
+            external_modules: Vec::new(),
         };
+        collector.visit_signature(&function.sig);
         collector.visit_block(&function.block);
         symbols.extend(collector.symbols);
+        type_symbols.extend(collector.type_symbols);
+        external_modules.extend(collector.external_modules);
     }
     symbols.sort_by_key(|symbol| emit_path_name(symbol));
     symbols.dedup();
-    return symbols;
+    type_symbols.sort_by_key(|symbol| emit_path_name(symbol));
+    type_symbols.dedup();
+    type_symbols.retain(|symbol| !symbols.contains(symbol));
+    external_modules.sort();
+    external_modules.dedup();
+    return (symbols, type_symbols, external_modules);
 }
 
 fn collect_declared_names(function: &ItemFn) -> HashSet<String> {
@@ -656,7 +729,8 @@ pub(crate) fn emit_test_program(
     contract_module: &str,
     context: &HashSet<String>,
 ) -> Result<String, CompileError> {
-    let contract_symbols = collect_contract_symbols(program);
+    let (contract_symbols, contract_type_symbols, external_modules) =
+        collect_contract_symbols(program);
     let mut out = String::new();
     out.push_str("import { describe, expect, it } from 'vitest';\n");
     if !contract_symbols.is_empty() {
@@ -666,6 +740,27 @@ pub(crate) fn emit_test_program(
                 .expect("writing to a String cannot fail");
         }
         writeln!(out, "}} from {contract_module:?};").expect("writing to a String cannot fail");
+    }
+    if !contract_type_symbols.is_empty() {
+        out.push_str("\nimport type {\n");
+        for symbol in &contract_type_symbols {
+            writeln!(out, "  {},", emit_path_name(symbol))
+                .expect("writing to a String cannot fail");
+        }
+        writeln!(out, "}} from {contract_module:?};").expect("writing to a String cannot fail");
+    }
+    for module in external_modules {
+        let Some(package) = module.strip_prefix("flight_") else {
+            continue;
+        };
+        let package = package.replace('_', "-");
+        writeln!(
+            out,
+            "\nimport * as {} from {:?};",
+            snake_to_lower_camel(&module),
+            format!("@flighthq/{package}/contract")
+        )
+        .expect("writing to a String cannot fail");
     }
     if program.standard_constants.contains("PI") {
         out.push_str("\nconst PI = Math.PI;\n");

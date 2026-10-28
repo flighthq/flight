@@ -101,7 +101,8 @@ try {
       requireTargetNative(fileName, rustPath);
       continue;
     }
-    let typescript = compile('generate-tests', rustPath, join(rawRoot, fileName), ['./contract.ts'], aliasSources);
+    const compilePath = testSourceWithSupport(rustPath, join(rawRoot, `${rustTest}.source.rs`));
+    let typescript = compile('generate-tests', compilePath, join(rawRoot, fileName), ['./contract.ts'], aliasSources);
     if (typescript.includes('crate.')) {
       typescript = addRustTestSupportImport(typescript);
     }
@@ -476,6 +477,19 @@ function testFiles(crateRoot: string): string[] {
   return readdirSync(join(crateRoot, 'tests'))
     .filter((fileName) => fileName.endsWith('_test.rs'))
     .sort();
+}
+
+function testSourceWithSupport(rustPath: string, out: string): string {
+  const source = readFileSync(rustPath, 'utf8');
+  if (!/^use crate::common(?:::[^;]+)?;/m.test(source)) return rustPath;
+
+  const supportPath = join(dirname(rustPath), 'common.rs');
+  if (!existsSync(supportPath)) {
+    throw new Error(`${relative(repositoryRoot, rustPath)} imports crate::common but tests/common.rs is missing`);
+  }
+  const testSource = source.replace(/^use crate::common(?:::[^;]+)?;\r?\n/gm, '');
+  writeFileSync(out, `${readFileSync(supportPath, 'utf8')}\n${testSource}`);
+  return out;
 }
 
 function tsxPath(): string {
