@@ -14,11 +14,11 @@ const STEPS_GUARD: { value: EasingStepsGuard | null } = { value: null };
 
 /**
  * Returns a stepped easing function that quantizes [0,1] into `count` equal
- * intervals, jumping at the position(s) selected by `position`. A missing
- * position defaults to `'jumpEnd'`.
+ * intervals, jumping at the position(s) selected by `position`. An omitted
+ * position jumps at each interval end.
  *
- * Sharp edge: `easeSteps(1, 'jumpNone')` has jumps = count - 1 = 0,
- * so the returned function divides by zero and yields NaN for every input.
+ * Sharp edge: a count of 1 with no jumps at either edge has zero jumps, so the
+ * returned function divides by zero and yields NaN for every input.
  */
 export function easeSteps(count: number, position?: StepPosition): EasingFunction {
   position = position ?? 'jumpEnd';
@@ -100,8 +100,8 @@ export function parseStepPosition(value: string): StepPosition | undefined {
 }
 
 /**
- * Sets or clears the diagnostics callback for degenerate `easeSteps` calls.
- * Pass `null` to uninstall the guard.
+ * Sets or clears the diagnostics callback for degenerate step-easing calls.
+ * Providing no guard removes the installed guard.
  */
 export function setEasingStepsGuard(guard: EasingStepsGuard | null): void {
   let slot = STEPS_GUARD;
