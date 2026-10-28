@@ -1,5 +1,6 @@
 mod clock;
 mod clock_signals;
+mod sugar;
 mod types;
 
 pub mod contract;
@@ -7,7 +8,6 @@ pub mod contract;
 // Public lane: the 14 functions the pinned TS `index.ts` names, plus the types their signatures
 // require and the D18 handle trait. `initialize_clock` stays in `contract`.
 pub use contract::Clock;
-pub use contract::ClockMethods;
 pub use contract::ClockOptions;
 pub use contract::add_clock_child;
 pub use contract::advance_clock;
@@ -23,3 +23,4 @@ pub use contract::remove_clock_child;
 pub use contract::reset_clock;
 pub use contract::resume_clock;
 pub use contract::set_clock_scale;
+pub use sugar::*;

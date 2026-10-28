@@ -4,4 +4,5 @@
 
 pub use super::clock::*;
 pub use super::clock_signals::*;
+pub use super::sugar::*;
 pub use super::types::*;
