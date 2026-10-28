@@ -40,6 +40,7 @@
     "@flighthq/clock": "*",
     "@flighthq/color": "*",
     "@flighthq/entity": "*",
+    "@flighthq/haptics": "*",
     "@flighthq/math": "*",
     "@flighthq/resource": "*",
     "@flighthq/signals": "*",

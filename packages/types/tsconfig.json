@@ -23,6 +23,9 @@
       "path": "../entity"
     },
     {
+      "path": "../haptics"
+    },
+    {
       "path": "../math"
     },
     {

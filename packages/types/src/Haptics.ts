@@ -1,41 +1,26 @@
-// Haptic feedback seam. Free functions in @flighthq/haptics delegate to the active HostHapticsCapability
-// (web default over navigator.vibrate, or a native host's). Each trigger returns false when the host
-// lacks haptics or denies the request rather than throwing.
-export type HapticImpactStyle = 'light' | 'medium' | 'heavy' | 'soft' | 'rigid';
-export type HapticNotificationType = 'success' | 'warning' | 'error';
+import type {
+  HapticImpactStyle as HapticImpactStyleOwned,
+  HapticNotificationType as HapticNotificationTypeOwned,
+  HapticsCapabilities as HapticsCapabilitiesOwned,
+  HapticsOperation as HapticsOperationOwned,
+  HostHapticsCapabilities as HostHapticsCapabilitiesOwned,
+  HostHapticsCapability as HostHapticsCapabilityOwned,
+} from '@flighthq/haptics/contract';
 
-// Snapshot of what the supplied provider supports. Filled into a caller-owned `out` value; absent
-// features resolve to false rather than throwing.
-export interface HapticsCapabilities {
-  amplitudeControl: boolean;
-  customEvents: boolean;
-  intensity: boolean;
-  patterns: boolean;
-  supported: boolean;
-}
+/** @deprecated Import `HapticImpactStyle` from `@flighthq/haptics/contract`. */
+export type HapticImpactStyle = HapticImpactStyleOwned;
 
-export interface HostHapticsCapability {
-  // Cancels any in-progress vibration. Returns false when haptics are unavailable.
-  cancel(): boolean;
-  // Fills `out` with the provider's capabilities.
-  capabilities(out: HapticsCapabilities): void;
-  // Triggers a physical impact, with optional continuous intensity (0..1).
-  impact(style: HapticImpactStyle, intensity?: number): boolean;
-  // Reports whether haptics are available on the current device.
-  isSupported(): boolean;
-  notification(type: HapticNotificationType): boolean;
-  // Warm-up hint to reduce first-trigger latency. Optional; no-op on providers without pre-allocation.
-  prepare?(): void;
-  selection(): boolean;
-  vibrate(durationMs: number): boolean;
-  // Vibrates with a pattern [onMs, offMs, ...]. Returns false on empty pattern or when unavailable.
-  vibratePattern(pattern: Readonly<number[]>): boolean;
-  // Amplitude-aware waveform (Android VibrationEffect.createWaveform). Optional; callers fall back to
-  // vibratePattern(timings) when absent. repeat is the loop index into timings, or -1 for no repeat.
-  vibrateWaveform?(timings: Readonly<number[]>, amplitudes: Readonly<number[]>, repeat?: number): boolean;
-}
+/** @deprecated Import `HapticNotificationType` from `@flighthq/haptics/contract`. */
+export type HapticNotificationType = HapticNotificationTypeOwned;
 
-// Every operation name on the provider, DERIVED from the interface rather than listed. A hand-written
-// roster would be a second source of truth that drifts the moment an operation is added or renamed;
-// `keyof` cannot.
-export type HapticsOperation = keyof HostHapticsCapability;
+/** @deprecated Import `HapticsCapabilities` from `@flighthq/haptics/contract`. */
+export type HapticsCapabilities = HapticsCapabilitiesOwned;
+
+/** @deprecated Import `HapticsOperation` from `@flighthq/haptics/contract`. */
+export type HapticsOperation = HapticsOperationOwned;
+
+/** @deprecated Import `HostHapticsCapabilities` from `@flighthq/haptics/contract`. */
+export type HostHapticsCapabilities = HostHapticsCapabilitiesOwned;
+
+/** @deprecated Import `HostHapticsCapability` from `@flighthq/haptics/contract`. */
+export type HostHapticsCapability = HostHapticsCapabilityOwned;

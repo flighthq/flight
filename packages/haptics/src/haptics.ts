@@ -1,25 +1,20 @@
-import type {
-  HapticImpactStyle,
-  HapticNotificationType,
-  HapticsCapabilities,
-  HostHapticsCapability,
-} from '@flighthq/types/contract';
+// Generated from crates/flight-haptics/src/haptics.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import type { HapticImpactStyle, HapticNotificationType, HapticsCapabilities, HostHapticsCapability } from './types.ts';
 
 export function cancelDeviceVibration(hostHaptics: Readonly<HostHapticsCapability>): boolean {
   return hostHaptics.cancel();
 }
 
-export function getHapticsCapabilities(hostHaptics: Readonly<HostHapticsCapability>, out: HapticsCapabilities): void {
+export function getHapticsCapabilities(out: HapticsCapabilities, hostHaptics: Readonly<HostHapticsCapability>): void {
   hostHaptics.capabilities(out);
-  return;
 }
 
 export function isHapticsSupported(hostHaptics: Readonly<HostHapticsCapability>): boolean {
   return hostHaptics.isSupported();
 }
 
-// Warm-up hint. `prepare` is optional on the backend, so a host whose provider does not pre-allocate
-// simply does nothing here — that is the absence of a capability, not a failure.
 export function prepareHaptics(hostHaptics: Readonly<HostHapticsCapability>): void {
   hostHaptics.prepare?.();
 }
@@ -29,7 +24,7 @@ export function triggerHapticImpact(
   style: HapticImpactStyle,
   intensity?: number,
 ): boolean {
-  return hostHaptics.impact(style, intensity ?? 1);
+  return hostHaptics.impact(style, intensity ?? 1.0);
 }
 
 export function triggerHapticNotification(
@@ -51,22 +46,23 @@ export function vibrateDevicePattern(
   hostHaptics: Readonly<HostHapticsCapability>,
   pattern: Readonly<number[]>,
 ): boolean {
-  if (pattern.length === 0) return false;
+  if (pattern.length === 0) {
+    return false;
+  }
   return hostHaptics.vibratePattern(pattern);
 }
 
-// Amplitude-aware waveform, falling back to a plain timing pattern when the selected provider does not
-// implement one. The fallback drops amplitudes rather than failing: every backend can express timings.
 export function vibrateDeviceWaveform(
   hostHaptics: Readonly<HostHapticsCapability>,
   timings: Readonly<number[]>,
   amplitudes: Readonly<number[]>,
-  repeat = -1,
+  repeat?: number,
 ): boolean {
-  const backend = hostHaptics;
-  if (timings.length === 0) return false;
-  if (backend.vibrateWaveform !== undefined) {
-    return backend.vibrateWaveform(timings, amplitudes, repeat);
+  if (timings.length === 0) {
+    return false;
   }
-  return backend.vibratePattern(timings);
+  if (hostHaptics.vibrateWaveform !== undefined) {
+    return hostHaptics.vibrateWaveform(timings, amplitudes, repeat ?? -1);
+  }
+  return hostHaptics.vibratePattern(timings);
 }

@@ -1,3 +1,6 @@
+// Generated from crates/flight-haptics/src/lib.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 export {
   cancelDeviceVibration,
   getHapticsCapabilities,
@@ -9,4 +12,13 @@ export {
   vibrateDevice,
   vibrateDevicePattern,
   vibrateDeviceWaveform,
+} from './contract.ts';
+
+export type {
+  HapticImpactStyle,
+  HapticNotificationType,
+  HapticsCapabilities,
+  HapticsOperation,
+  HostHapticsCapabilities,
+  HostHapticsCapability,
 } from './contract.ts';

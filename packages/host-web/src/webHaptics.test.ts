@@ -13,7 +13,7 @@ describe('webHostHaptics', () => {
     expect(webHostHaptics.vibrate(10)).toBe(false);
     expect(webHostHaptics.cancel()).toBe(false);
     expect(webHostHaptics.selection()).toBe(false);
-    expect(webHostHaptics.impact('heavy')).toBe(false);
+    expect(webHostHaptics.impact('heavy', undefined)).toBe(false);
     expect(webHostHaptics.notification('error')).toBe(false);
   });
 

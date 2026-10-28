@@ -33,8 +33,8 @@ describe('capacitorHostHaptics', () => {
   it('maps impact styles onto Capacitor enums', () => {
     const { capacitor, calls } = fakeCapacitor();
     const backend = capacitorHostHaptics(capacitor);
-    expect(backend.impact('soft')).toBe(true);
-    expect(backend.impact('rigid')).toBe(true);
+    expect(backend.impact('soft', undefined)).toBe(true);
+    expect(backend.impact('rigid', undefined)).toBe(true);
     expect(calls[0].arg).toEqual({ style: 'LIGHT' });
     expect(calls[1].arg).toEqual({ style: 'HEAVY' });
   });

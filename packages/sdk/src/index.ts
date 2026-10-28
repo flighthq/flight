@@ -51,6 +51,14 @@ export * from '@flighthq/glyphatlas';
 export * from '@flighthq/gui';
 export * from '@flighthq/gizmo';
 export * from '@flighthq/haptics';
+export type {
+  HapticImpactStyle,
+  HapticNotificationType,
+  HapticsCapabilities,
+  HapticsOperation,
+  HostHapticsCapabilities,
+  HostHapticsCapability,
+} from '@flighthq/haptics';
 export * from '@flighthq/host';
 export * from './sdkHost.ts';
 export * from '@flighthq/image';

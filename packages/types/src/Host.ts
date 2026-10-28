@@ -66,7 +66,7 @@ import type { Entity } from './Entity.ts';
 import type { HostFileSystemCapability } from './FileSystem.ts';
 import type { HostGeolocationCapability } from './Geolocation.ts';
 import type { HostGlyphRasterizerCapability } from './GlyphSource.ts';
-import type { HostHapticsCapability } from './Haptics.ts';
+import type { HostHapticsCapabilities } from './Haptics.ts';
 import type { HostAppExitCapability } from './HostAppExit.ts';
 import type { HostAppLoopCapability } from './HostAppLoop.ts';
 import type { HostAudioCodecCapability } from './HostAudioCodec.ts';
@@ -372,10 +372,6 @@ export interface HostGlCapabilities {
 
 export interface HostGlyphCapabilities {
   readonly rasterizer?: HostGlyphRasterizerCapability;
-}
-
-export interface HostHapticsCapabilities {
-  readonly engine?: HostHapticsCapability;
 }
 
 export interface HostImageCapabilities {

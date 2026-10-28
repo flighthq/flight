@@ -49,6 +49,14 @@ export * from '@flighthq/glyphatlas';
 export * from '@flighthq/gui/contract';
 export * from '@flighthq/gizmo/contract';
 export * from '@flighthq/haptics';
+export type {
+  HapticImpactStyle,
+  HapticNotificationType,
+  HapticsCapabilities,
+  HapticsOperation,
+  HostHapticsCapabilities,
+  HostHapticsCapability,
+} from '@flighthq/haptics';
 export * from '@flighthq/image';
 export * from '@flighthq/image-codec';
 export * from '@flighthq/importdiagnostics';

@@ -1,3 +1,4 @@
+import type { HostHapticsCapabilities } from './Haptics.ts';
 import type {
   Host,
   HostAccessibilityCapabilities,
@@ -14,7 +15,6 @@ import type {
   HostGeolocationCapabilities,
   HostGlCapabilities,
   HostGlyphCapabilities,
-  HostHapticsCapabilities,
   HostImageCapabilities,
   HostInputCapabilities,
   HostLifecycleCapabilities,

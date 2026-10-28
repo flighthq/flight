@@ -1,6 +1,7 @@
 import type { MobileOsProfile } from './App.ts';
 import type { CapacitorAppCapabilitiesFor } from './CapacitorAppCapabilitiesFor.ts';
 import type { CapacitorProtocolCapabilities } from './CapacitorProtocolCapabilities.ts';
+import type { HostHapticsCapabilities } from './Haptics.ts';
 import type {
   Host,
   HostClipboardCapabilities,
@@ -9,7 +10,6 @@ import type {
   HostDialogCapabilities,
   HostFileSystemCapabilities,
   HostGeolocationCapabilities,
-  HostHapticsCapabilities,
   HostShareCapabilities,
   HostSoftKeyboardCapabilities,
   HostStatusBarCapabilities,
