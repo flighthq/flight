@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use std::cell::RefCell;
 use std::sync::Arc;
 
