@@ -2,12 +2,12 @@ use std::collections::HashSet;
 use std::sync::{Arc, RwLock};
 
 use flight_entity::allocate_entity;
-use flight_textformat::{TextFormat, TextFormatAlign, TextFormatListMarker, TextFormatRange};
+use flight_textformat::{
+    TextFormat, TextFormatAlign, TextFormatListMarker, TextFormatRange, get_text_format_ascent,
+    get_text_format_descent, get_text_format_leading, merge_text_format,
+};
 use flight_textshaper::{TextDirection, TextMeasureFunction};
 
-use crate::text_format::{
-    get_text_format_ascent, get_text_format_descent, get_text_format_leading, merge_text_format,
-};
 use crate::text_layout_group::create_text_layout_group;
 use crate::text_line_breaks::get_text_line_breaks;
 use crate::text_units::{js_max, utf16_code_point_len, utf16_slice};

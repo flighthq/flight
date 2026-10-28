@@ -4,7 +4,6 @@
 pub use crate::rich_text_content::*;
 pub use crate::rich_text_query::*;
 pub use crate::text_bounds::*;
-pub use crate::text_format::*;
 pub use crate::text_layout::*;
 pub use crate::text_layout_group::*;
 pub use crate::text_layout_measure::*;
