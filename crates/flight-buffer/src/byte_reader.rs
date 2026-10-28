@@ -1,7 +1,5 @@
 use flight_entity::{NonEntityCreateResult, Uint8Array};
 
-use crate::types::ByteReader;
-
 #[cfg(test)]
 mod sugar_tests {
     use super::*;
@@ -107,6 +105,14 @@ mod sugar_tests {
     }
 }
 
+/// A forward-only little/big-endian cursor over a byte view (TS `ByteReader`), shared by the
+/// binary format parsers.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ByteReader<'a> {
+    pub view: &'a Uint8Array,
+    pub offset: usize,
+}
+
 pub fn create_byte_reader<'a>(
     bytes: &'a Uint8Array,
     offset: Option<usize>,
@@ -118,18 +124,12 @@ pub fn create_byte_reader<'a>(
 }
 
 pub fn has_byte_reader_bytes(reader: &ByteReader<'_>, count: usize) -> bool {
-    return reader
-        .offset
-        .checked_add(count)
-        .is_some_and(|end| end <= reader.view.len());
+    return reader.offset <= reader.view.len() && count <= reader.view.len() - reader.offset;
 }
 
 pub fn read_byte_reader_u16(reader: &mut ByteReader<'_>) -> u16 {
-    let value = u16::from_le_bytes(
-        reader.view[reader.offset..reader.offset + 2]
-            .try_into()
-            .unwrap(),
-    );
+    let offset = reader.offset;
+    let value = reader.view[offset] as u16 | (reader.view[offset + 1] as u16) << 8;
     reader.offset += 2;
     return value;
 }
@@ -153,32 +153,35 @@ pub fn read_byte_reader_u24_big_endian(reader: &mut ByteReader<'_>) -> u32 {
 }
 
 pub fn read_byte_reader_u32(reader: &mut ByteReader<'_>) -> u32 {
-    let value = u32::from_le_bytes(
-        reader.view[reader.offset..reader.offset + 4]
-            .try_into()
-            .unwrap(),
-    );
+    let offset = reader.offset;
+    let value = read_byte_reader_u32_at(reader.view, offset);
     reader.offset += 4;
     return value;
 }
 
+fn read_byte_reader_u32_at(view: &Uint8Array, offset: usize) -> u32 {
+    return view[offset] as u32
+        | (view[offset + 1] as u32) << 8
+        | (view[offset + 2] as u32) << 16
+        | (view[offset + 3] as u32) << 24;
+}
+
 pub fn read_byte_reader_u32_big_endian(reader: &mut ByteReader<'_>) -> u32 {
-    let value = u32::from_be_bytes(
-        reader.view[reader.offset..reader.offset + 4]
-            .try_into()
-            .unwrap(),
-    );
+    let offset = reader.offset;
+    let value = (reader.view[offset] as u32) << 24
+        | (reader.view[offset + 1] as u32) << 16
+        | (reader.view[offset + 2] as u32) << 8
+        | reader.view[offset + 3] as u32;
     reader.offset += 4;
     return value;
 }
 
 // flight-lint: allow(contract-vocabulary) KTX2 offsets and lengths are unsigned 64-bit fields, but the JS source contract is exact only through 2^53 - 1
 pub fn read_byte_reader_u64(reader: &mut ByteReader<'_>) -> u64 {
-    let value = u64::from_le_bytes(
-        reader.view[reader.offset..reader.offset + 8]
-            .try_into()
-            .unwrap(),
-    );
+    let offset = reader.offset;
+    let low = read_byte_reader_u32_at(reader.view, offset);
+    let high = read_byte_reader_u32_at(reader.view, offset + 4);
+    let value = high as u64 * 0x1_0000_0000 + low as u64;
     reader.offset += 8;
     return value;
 }
