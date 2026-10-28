@@ -811,6 +811,11 @@ pub fn append_path_tangent_arc_to(
     let bx = (n1x + n2x) / 2.0;
     let by = (n1y + n2y) / 2.0;
     let blen = (bx * bx + by * by).sqrt();
+    // Collinear continuation (cos = -1): the bisector vanishes and there is no arc centre, so the
+    // corner is just the line already appended (TS emits no cubic here either).
+    if blen < 1e-10 {
+        return;
+    }
     let dist_to_center = radius / half_angle.sin();
     let ocx = x1 + (bx / blen) * dist_to_center;
     let ocy = y1 + (by / blen) * dist_to_center;
