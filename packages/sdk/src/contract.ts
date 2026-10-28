@@ -30,6 +30,7 @@ export * from '@flighthq/scene2d-resources/contract';
 export * from '@flighthq/scene2d-gl';
 export * from '@flighthq/scene2d-wgpu';
 export * from '@flighthq/easing';
+export type { EasingFunction, EasingSegment, ScalarRemap, StepPosition } from '@flighthq/easing';
 export * from '@flighthq/effects';
 export * from '@flighthq/effects-canvas';
 export * from '@flighthq/effects-gl';
