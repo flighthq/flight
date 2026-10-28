@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type { TextMarkupIssue } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -10,14 +11,16 @@ export function disableTextMarkupGuards(): void {
 }
 
 /** Installs opt-in diagnostics for tags and attributes that parsing drops or ignores. */
-export function enableTextMarkupGuards(): void {
-  setTextMarkupGuard(warnOnTextMarkupIssue);
+export function enableTextMarkupGuards(logState: LogState, clock: () => number): void {
+  setTextMarkupGuard((issue: Readonly<TextMarkupIssue>): void => warnOnTextMarkupIssue(logState, clock(), issue));
 }
 
-function warnOnTextMarkupIssue(issue: Readonly<TextMarkupIssue>): void {
+function warnOnTextMarkupIssue(logState: LogState, nowMs: number, issue: Readonly<TextMarkupIssue>): void {
   switch (issue.kind) {
     case 'unknown-tag':
       logOnce(
+        logState,
+        nowMs,
         `text-markup:unknown-tag:${issue.tag}`,
         LogLevel.Warn,
         {
@@ -28,6 +31,8 @@ function warnOnTextMarkupIssue(issue: Readonly<TextMarkupIssue>): void {
       break;
     case 'unresolved-font-color':
       logOnce(
+        logState,
+        nowMs,
         `text-markup:unresolved-font-color:${issue.value ?? ''}`,
         LogLevel.Warn,
         {
@@ -38,6 +43,8 @@ function warnOnTextMarkupIssue(issue: Readonly<TextMarkupIssue>): void {
       break;
     case 'unsafe-href':
       logOnce(
+        logState,
+        nowMs,
         `text-markup:unsafe-href:${issue.value ?? ''}`,
         LogLevel.Warn,
         {
