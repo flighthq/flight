@@ -2,12 +2,6 @@ use flight_node::contract::*;
 
 use crate::support::create_test_node;
 
-fn revisions() -> NodeRevisionState {
-    return NodeRevisionState {
-        world_transform_revision: 0,
-    };
-}
-
 mod compute_node_world_transform_revision {
     use super::*;
 
@@ -15,9 +9,8 @@ mod compute_node_world_transform_revision {
     fn updates_world_transform_id_from_local_and_parent_transform_ids() {
         let node = create_test_node("Test");
         node.write().unwrap().node_runtime_mut().local_transform_id = 3;
-        let mut state = revisions();
         let mut guard = node.write().unwrap();
-        compute_node_world_transform_revision(&mut *guard, None, &mut state);
+        compute_node_world_transform_revision(&mut *guard, None, None);
         let runtime = guard.node_runtime();
         assert_eq!(runtime.world_transform_using_local_transform_id, 3);
         assert_eq!(runtime.world_transform_using_parent_transform_id, 0);
@@ -26,17 +19,15 @@ mod compute_node_world_transform_revision {
 
     #[test]
     fn incorporates_the_parent_world_transform_id() {
-        let parent = create_test_node("Test");
-        parent
-            .write()
-            .unwrap()
-            .node_runtime_mut()
-            .world_transform_id = 7;
+        let root = create_test_node("Test");
         let node = create_test_node("Test");
-        let mut state = revisions();
-        let parent_guard = parent.read().unwrap();
+        let mut root_guard = root.write().unwrap();
         let mut guard = node.write().unwrap();
-        compute_node_world_transform_revision(&mut *guard, Some(&*parent_guard), &mut state);
+        compute_node_world_transform_revision(
+            &mut *guard,
+            Some(7),
+            Some(root_guard.node_runtime_mut()),
+        );
         assert_eq!(
             guard
                 .node_runtime()
@@ -48,16 +39,61 @@ mod compute_node_world_transform_revision {
     #[test]
     fn assigns_the_next_monotonic_revision_on_every_recompute() {
         let node = create_test_node("Test");
-        let mut state = revisions();
         let mut guard = node.write().unwrap();
-        compute_node_world_transform_revision(&mut *guard, None, &mut state);
+        compute_node_world_transform_revision(&mut *guard, None, None);
         let first = guard.node_runtime().world_transform_id;
-        compute_node_world_transform_revision(&mut *guard, None, &mut state);
+        compute_node_world_transform_revision(&mut *guard, None, None);
         let next = first.wrapping_add(1);
         assert_eq!(
             guard.node_runtime().world_transform_id,
             if next == 0 { 1 } else { next }
         );
+    }
+
+    #[test]
+    fn mints_from_the_root_counter_not_the_target() {
+        let root = create_test_node("Test");
+        let node = create_test_node("Test");
+        let mut root_guard = root.write().unwrap();
+        let mut guard = node.write().unwrap();
+        compute_node_world_transform_revision(
+            &mut *guard,
+            Some(1),
+            Some(root_guard.node_runtime_mut()),
+        );
+        assert_eq!(
+            root_guard.node_runtime().world_transform_revision_counter,
+            1
+        );
+        assert_eq!(guard.node_runtime().world_transform_revision_counter, 0);
+        assert_eq!(guard.node_runtime().world_transform_id, 1);
+    }
+
+    #[test]
+    fn keeps_independent_roots_on_independent_counters() {
+        let first = create_test_node("Test");
+        let second = create_test_node("Test");
+        let mut first_guard = first.write().unwrap();
+        for _ in 0..3 {
+            compute_node_world_transform_revision(&mut *first_guard, None, None);
+        }
+        let mut second_guard = second.write().unwrap();
+        compute_node_world_transform_revision(&mut *second_guard, None, None);
+        assert_eq!(
+            first_guard.node_runtime().world_transform_revision_counter,
+            3
+        );
+        assert_eq!(second_guard.node_runtime().world_transform_id, 1);
+    }
+
+    #[test]
+    fn steps_past_zero_when_the_root_counter_wraps() {
+        let node = create_test_node("Test");
+        let mut guard = node.write().unwrap();
+        guard.node_runtime_mut().world_transform_revision_counter = u32::MAX;
+        compute_node_world_transform_revision(&mut *guard, None, None);
+        assert_eq!(guard.node_runtime().world_transform_id, 1);
+        assert_eq!(guard.node_runtime().world_transform_revision_counter, 1);
     }
 }
 

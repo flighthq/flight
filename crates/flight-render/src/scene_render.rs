@@ -94,7 +94,7 @@ fn collect_visible_meshes<S: RenderState>(
             }
         };
         if kind == 2 {
-            if is_instanced_mesh_visible(state, &node, frustum, world_bounds) {
+            if is_instanced_mesh_visible(&node, frustum, world_bounds) {
                 out_instanced_meshes.push(node.clone());
             }
         } else if kind == 1 && is_mesh_visible(state, &node, frustum, world_bounds) {
@@ -106,8 +106,7 @@ fn collect_visible_meshes<S: RenderState>(
     }
 }
 
-fn is_instanced_mesh_visible<S: RenderState>(
-    state: &mut S,
+fn is_instanced_mesh_visible(
     source: &NodeRef,
     frustum: &flight_geometry::Frustum,
     world_bounds: &mut Aabb,
@@ -142,7 +141,7 @@ fn is_instanced_mesh_visible<S: RenderState>(
         }
         out
     };
-    let world = get_node_world_matrix4(source, &mut state.render_runtime_mut().node_revisions);
+    let world = get_node_world_matrix4(source);
     transform_aabb_by_matrix4(world_bounds, &local_bounds, &world);
     return is_frustum_intersecting_aabb(frustum, world_bounds);
 }
@@ -176,7 +175,7 @@ fn is_mesh_visible<S: RenderState>(
     let Some(bounds) = bounds else {
         return true;
     };
-    let world = get_node_world_matrix4(source, &mut state.render_runtime_mut().node_revisions);
+    let world = get_node_world_matrix4(source);
     transform_aabb_by_matrix4(world_bounds, &bounds, &world);
     return is_frustum_intersecting_aabb(frustum, world_bounds);
 }

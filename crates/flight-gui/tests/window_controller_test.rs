@@ -1,6 +1,5 @@
 use flight_gui::contract::*;
 use flight_interaction::contract::InteractionSignalName;
-use flight_node::contract::NodeRevisionState;
 use std::sync::{Arc, RwLock};
 #[path = "gui_pointer_fixture.rs"]
 mod gui_pointer_fixture;
@@ -20,12 +19,7 @@ fn options(frame: flight_scene2d::Node2DRef) -> WindowControllerOptions {
     };
 }
 fn controller(options: &WindowControllerOptions) -> WindowController {
-    return create_window_controller(
-        options,
-        Arc::new(RwLock::new(NodeRevisionState {
-            world_transform_revision: 0,
-        })),
-    );
+    return create_window_controller(options);
 }
 mod create_window_controller {
     use super::*;
@@ -144,13 +138,7 @@ mod initialize_window_controller {
     fn preserves_controller_identity_and_releases_runtime_before_move_signals() {
         let mut controller: WindowController = flight_entity::allocate_entity();
         let id = flight_entity::get_entity_id(&controller);
-        initialize_window_controller(
-            &mut controller,
-            &options(create_gui_test_node(None, None)),
-            Arc::new(RwLock::new(NodeRevisionState {
-                world_transform_revision: 0,
-            })),
-        );
+        initialize_window_controller(&mut controller, &options(create_gui_test_node(None, None)));
         assert_eq!(flight_entity::get_entity_id(&controller), id);
         let runtime = get_gui_controller_runtime(&controller);
         let copy = runtime.clone();

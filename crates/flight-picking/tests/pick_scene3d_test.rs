@@ -105,7 +105,7 @@ mod pick_scene3d {
         let (scene, _) = scene_with_centered_box();
         let mut out = create_scene3d_hit();
 
-        let hit = pick_scene3d(&mut out, &scene, &camera, 0.0, 0.0, None, &mut revisions());
+        let hit = pick_scene3d(&mut out, &scene, &camera, 0.0, 0.0, None);
 
         assert!(hit);
         close(out.u + out.v + out.w, 1.0, 5);
@@ -117,15 +117,7 @@ mod pick_scene3d {
         let (scene, _) = scene_with_centered_box();
         let mut out = create_scene3d_hit();
 
-        assert!(pick_scene3d(
-            &mut out,
-            &scene,
-            &camera,
-            0.0,
-            0.0,
-            None,
-            &mut revisions()
-        ));
+        assert!(pick_scene3d(&mut out, &scene, &camera, 0.0, 0.0, None));
 
         // Front face of the box points at +Z (toward the camera at z = 5).
         close(out.normal_z, 1.0, 5);
@@ -143,15 +135,7 @@ mod pick_scene3d {
         add_node_child(&scene, &child);
         let mut out = create_scene3d_hit();
 
-        assert!(!pick_scene3d(
-            &mut out,
-            &scene,
-            &camera,
-            0.0,
-            0.0,
-            None,
-            &mut revisions()
-        ));
+        assert!(!pick_scene3d(&mut out, &scene, &camera, 0.0, 0.0, None));
     }
 
     #[test]
@@ -161,15 +145,7 @@ mod pick_scene3d {
         let mut out = create_scene3d_hit();
 
         // Far corner of the viewport points away from the small centred box.
-        assert!(!pick_scene3d(
-            &mut out,
-            &scene,
-            &camera,
-            0.99,
-            0.99,
-            None,
-            &mut revisions()
-        ));
+        assert!(!pick_scene3d(&mut out, &scene, &camera, 0.99, 0.99, None));
     }
 
     #[test]
@@ -178,15 +154,7 @@ mod pick_scene3d {
         let scene = group();
         let mut out = create_scene3d_hit();
 
-        assert!(!pick_scene3d(
-            &mut out,
-            &scene,
-            &camera,
-            0.0,
-            0.0,
-            None,
-            &mut revisions()
-        ));
+        assert!(!pick_scene3d(&mut out, &scene, &camera, 0.0, 0.0, None));
     }
 
     #[test]
@@ -195,7 +163,7 @@ mod pick_scene3d {
         let (scene, mesh) = scene_with_centered_box();
         let mut out = create_scene3d_hit();
 
-        let hit = pick_scene3d(&mut out, &scene, &camera, 0.0, 0.0, None, &mut revisions());
+        let hit = pick_scene3d(&mut out, &scene, &camera, 0.0, 0.0, None);
 
         assert!(hit);
         assert!(is_hit_node(&out, &mesh));
@@ -215,7 +183,7 @@ mod pick_scene3d {
         let (scene, _, mesh_near) = overlapping_boxes();
         let mut out = create_scene3d_hit();
 
-        let hit = pick_scene3d(&mut out, &scene, &camera, 0.0, 0.0, None, &mut revisions());
+        let hit = pick_scene3d(&mut out, &scene, &camera, 0.0, 0.0, None);
 
         assert!(hit);
         assert!(is_hit_node(&out, &mesh_near));
@@ -232,15 +200,7 @@ mod pick_scene3d {
         mesh.write().unwrap().enabled = false;
         let mut out = create_scene3d_hit();
 
-        assert!(!pick_scene3d(
-            &mut out,
-            &scene,
-            &camera,
-            0.0,
-            0.0,
-            None,
-            &mut revisions()
-        ));
+        assert!(!pick_scene3d(&mut out, &scene, &camera, 0.0, 0.0, None));
     }
 
     #[test]
@@ -253,15 +213,7 @@ mod pick_scene3d {
         add_node_child(&scene, &disabled);
         let mut out = create_scene3d_hit();
 
-        assert!(!pick_scene3d(
-            &mut out,
-            &scene,
-            &camera,
-            0.0,
-            0.0,
-            None,
-            &mut revisions()
-        ));
+        assert!(!pick_scene3d(&mut out, &scene, &camera, 0.0, 0.0, None));
     }
 
     #[test]
@@ -282,15 +234,7 @@ mod pick_scene3d {
             })),
         };
 
-        let hit = pick_scene3d(
-            &mut out,
-            &scene,
-            &camera,
-            0.0,
-            0.0,
-            Some(&options),
-            &mut revisions(),
-        );
+        let hit = pick_scene3d(&mut out, &scene, &camera, 0.0, 0.0, Some(&options));
 
         assert!(hit);
         assert!(is_hit_node(&out, &mesh_far));
@@ -316,8 +260,7 @@ mod pick_scene3d {
             &camera,
             0.0,
             0.0,
-            Some(&within(3.0)),
-            &mut revisions()
+            Some(&within(3.0))
         ));
         assert!(pick_scene3d(
             &mut out,
@@ -325,8 +268,7 @@ mod pick_scene3d {
             &camera,
             0.0,
             0.0,
-            Some(&within(4.5)),
-            &mut revisions()
+            Some(&within(4.5))
         ));
     }
 
@@ -344,22 +286,14 @@ mod pick_scene3d {
         let mut out = create_scene3d_hit();
 
         // screen_x = 0.75 → world x = 0.75 * half_width(4) = 3.
-        let hit = pick_scene3d(&mut out, &scene, &camera, 0.75, 0.0, None, &mut revisions());
+        let hit = pick_scene3d(&mut out, &scene, &camera, 0.75, 0.0, None);
 
         assert!(hit);
         assert!(is_hit_node(&out, &mesh));
         close(out.point_x, 3.0, 3);
         close(out.point_z, 1.0, 3);
         // A pick past the horizontal extent misses.
-        assert!(!pick_scene3d(
-            &mut out,
-            &scene,
-            &camera,
-            1.1,
-            0.0,
-            None,
-            &mut revisions()
-        ));
+        assert!(!pick_scene3d(&mut out, &scene, &camera, 1.1, 0.0, None));
     }
 
     #[test]
@@ -383,7 +317,7 @@ mod pick_scene3d {
         add_node_child(&scene, &node(&mesh));
         let mut out = create_scene3d_hit();
 
-        let hit = pick_scene3d(&mut out, &scene, &camera, 0.0, 0.0, None, &mut revisions());
+        let hit = pick_scene3d(&mut out, &scene, &camera, 0.0, 0.0, None);
 
         assert!(hit);
         assert!(is_hit_node(&out, &mesh));
@@ -403,15 +337,7 @@ mod pick_scene3d_all {
         let (scene, _, mesh_near) = overlapping_boxes();
         let mut out_array: Vec<Scene3DHit> = Vec::new();
 
-        pick_scene3d_all(
-            &mut out_array,
-            &scene,
-            &camera,
-            0.0,
-            0.0,
-            None,
-            &mut revisions(),
-        );
+        pick_scene3d_all(&mut out_array, &scene, &camera, 0.0, 0.0, None);
 
         // Each box contributes a front-face hit (a 2x2x2 box's front quad is two triangles, but the
         // center ray crosses one triangle per box). Nearest first.
@@ -429,15 +355,7 @@ mod pick_scene3d_all {
         let (scene, _) = scene_with_centered_box();
         let mut out_array = vec![create_scene3d_hit(), create_scene3d_hit()];
 
-        pick_scene3d_all(
-            &mut out_array,
-            &scene,
-            &camera,
-            0.99,
-            0.99,
-            None,
-            &mut revisions(),
-        );
+        pick_scene3d_all(&mut out_array, &scene, &camera, 0.99, 0.99, None);
 
         assert_eq!(out_array.len(), 0);
     }
@@ -452,7 +370,7 @@ mod pick_scene3d_all_with_ray3d {
         let ray = make_center_ray();
         let mut out_array: Vec<Scene3DHit> = Vec::new();
 
-        pick_scene3d_all_with_ray3d(&mut out_array, &scene, &ray, None, &mut revisions());
+        pick_scene3d_all_with_ray3d(&mut out_array, &scene, &ray, None);
 
         // The center ray runs along the shared diagonal of each quad, so it grazes both triangles
         // of the front face (z = 1) and both of the back face (z = -1): four hits, sorted
@@ -477,13 +395,7 @@ mod pick_scene3d_all_with_ray3d {
             predicate: None,
         };
 
-        pick_scene3d_all_with_ray3d(
-            &mut out_array,
-            &scene,
-            &ray,
-            Some(&options),
-            &mut revisions(),
-        );
+        pick_scene3d_all_with_ray3d(&mut out_array, &scene, &ray, Some(&options));
 
         // Only the two front-face triangles survive; both point at +Z (toward the ray origin).
         assert_eq!(out_array.len(), 2);
@@ -501,7 +413,7 @@ mod pick_scene3d_all_with_ray3d {
         let uid = flight_entity::get_entity_uid(&mut retained);
         let mut out_array = vec![retained];
 
-        pick_scene3d_all_with_ray3d(&mut out_array, &scene, &ray, None, &mut revisions());
+        pick_scene3d_all_with_ray3d(&mut out_array, &scene, &ray, None);
 
         assert_eq!(out_array.len(), 4);
         assert_eq!(flight_entity::get_entity_uid(&mut out_array[0]), uid);
@@ -524,7 +436,7 @@ mod pick_scene3d_with_ray3d {
             predicate: None,
         };
 
-        let hit = pick_scene3d_with_ray3d(&mut out, &scene, &ray, Some(&options), &mut revisions());
+        let hit = pick_scene3d_with_ray3d(&mut out, &scene, &ray, Some(&options));
 
         assert!(hit);
         assert!(is_hit_node(&out, &mesh));
@@ -548,23 +460,20 @@ mod pick_scene3d_with_ray3d {
             &mut out,
             &front,
             &make_center_ray(),
-            Some(&cull),
-            &mut revisions()
+            Some(&cull)
         ));
         assert!(!pick_scene3d_with_ray3d(
             &mut out,
             &back,
             &make_center_ray(),
-            Some(&cull),
-            &mut revisions()
+            Some(&cull)
         ));
         // Double-sided (default) hits either winding.
         assert!(pick_scene3d_with_ray3d(
             &mut out,
             &back,
             &make_center_ray(),
-            None,
-            &mut revisions()
+            None
         ));
     }
 
@@ -595,13 +504,7 @@ mod pick_scene3d_with_ray3d {
             predicate: None,
         };
 
-        assert!(pick_scene3d_with_ray3d(
-            &mut out,
-            &scene,
-            &ray,
-            Some(&cull),
-            &mut revisions()
-        ));
+        assert!(pick_scene3d_with_ray3d(&mut out, &scene, &ray, Some(&cull)));
 
         assert_eq!(out.triangle_index, 1);
         close(out.normal_z, 1.0, 2);
@@ -630,13 +533,7 @@ mod pick_scene3d_with_ray3d {
         let ray = make_center_ray();
         let mut out = create_scene3d_hit();
 
-        assert!(!pick_scene3d_with_ray3d(
-            &mut out,
-            &scene,
-            &ray,
-            None,
-            &mut revisions()
-        ));
+        assert!(!pick_scene3d_with_ray3d(&mut out, &scene, &ray, None));
         update_mesh_morph(&mesh.read().unwrap());
 
         // Bounds are a dirty-gated cache; the morph marks them stale and the ensure recomputes them
@@ -645,13 +542,7 @@ mod pick_scene3d_with_ray3d {
         let bounds = ensure_mesh_geometry_bounds(&mut geometry.write().unwrap()).cloned();
         assert_eq!(bounds.as_ref().map(|b| b.min.x), Some(-1.0));
         assert_eq!(bounds.as_ref().map(|b| b.max.x), Some(1.0));
-        assert!(pick_scene3d_with_ray3d(
-            &mut out,
-            &scene,
-            &ray,
-            None,
-            &mut revisions()
-        ));
+        assert!(pick_scene3d_with_ray3d(&mut out, &scene, &ray, None));
         assert!(is_hit_node(&out, &mesh));
     }
 
@@ -665,13 +556,7 @@ mod pick_scene3d_with_ray3d {
         let ray = make_center_ray();
         let mut out = create_scene3d_hit();
 
-        assert!(pick_scene3d_with_ray3d(
-            &mut out,
-            &scene,
-            &ray,
-            None,
-            &mut revisions()
-        ));
+        assert!(pick_scene3d_with_ray3d(&mut out, &scene, &ray, None));
         assert!(is_hit_node(&out, &mesh));
 
         // Simulate a deform pass (prepare_scene3d_skinning) writing a posed local box far off the
@@ -686,26 +571,14 @@ mod pick_scene3d_with_ray3d {
                 .deformed_local_bounds
                 .is_some()
         );
-        assert!(!pick_scene3d_with_ray3d(
-            &mut out,
-            &scene,
-            &ray,
-            None,
-            &mut revisions()
-        ));
+        assert!(!pick_scene3d_with_ray3d(&mut out, &scene, &ray, None));
 
         // Clearing the slot falls back to the bind-pose world bounds, and the pick lands again.
         mesh.write()
             .unwrap()
             .mesh_runtime_mut()
             .deformed_local_bounds = None;
-        assert!(pick_scene3d_with_ray3d(
-            &mut out,
-            &scene,
-            &ray,
-            None,
-            &mut revisions()
-        ));
+        assert!(pick_scene3d_with_ray3d(&mut out, &scene, &ray, None));
         assert!(is_hit_node(&out, &mesh));
     }
 
@@ -717,8 +590,7 @@ mod pick_scene3d_with_ray3d {
             &mut out,
             &scene,
             &make_center_ray(),
-            None,
-            &mut revisions()
+            None
         ));
         let before = (out.distance, out.triangle_index, out.point_z, out.u);
         let mut miss = create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
@@ -728,13 +600,7 @@ mod pick_scene3d_with_ray3d {
             &create_vector3(0.0, 0.0, -1.0),
         );
 
-        assert!(!pick_scene3d_with_ray3d(
-            &mut out,
-            &scene,
-            &miss,
-            None,
-            &mut revisions()
-        ));
+        assert!(!pick_scene3d_with_ray3d(&mut out, &scene, &miss, None));
 
         assert!(is_hit_node(&out, &mesh));
         assert_eq!(

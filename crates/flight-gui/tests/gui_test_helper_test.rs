@@ -7,17 +7,8 @@ mod create_gui_test_node {
     #[test]
     fn retains_the_source_dimensions_on_the_actual_display_object_runtime() {
         let node: Node2DRef = create_gui_test_node(None, None);
-        let mut revisions = flight_node::contract::NodeRevisionState {
-            world_transform_revision: 0,
-        };
-        assert_eq!(
-            get_gui_length(&node, GuiOrientation::Horizontal, &mut revisions),
-            100.0
-        );
-        assert_eq!(
-            get_gui_length(&node, GuiOrientation::Vertical, &mut revisions),
-            20.0
-        );
+        assert_eq!(get_gui_length(&node, GuiOrientation::Horizontal), 100.0);
+        assert_eq!(get_gui_length(&node, GuiOrientation::Vertical), 20.0);
     }
 }
 mod emit_gui_keyboard {

@@ -5,7 +5,6 @@ use flight_entity::{UnknownValue, allocate_entity, get_record_value};
 use flight_geometry::contract::create_transform3d;
 use flight_lighting::create_ambient_light;
 use flight_node::NodeRef;
-use flight_node::contract::NodeRevisionState;
 use flight_registry::with_kind_map_entry;
 use flight_scene_document::contract::*;
 use flight_scene2d::{DISPLAY_OBJECT_KIND, create_display_object};
@@ -125,14 +124,12 @@ fn materialize3d(
     resolvers: Option<&FlightDocumentResourceResolverRegistry>,
     scene_index: Option<i64>,
 ) -> Option<FlightDocumentScene3DMaterialization> {
-    let mut revisions = defaults::<NodeRevisionState>();
     let guards = Arc::new(RwLock::new(defaults::<CameraGuardState>()));
     return create_flight_document_scene3d_materialization(
         document,
         schemas,
         resolvers,
         scene_index,
-        &mut revisions,
         &guards,
     );
 }
@@ -142,15 +139,9 @@ fn materialize3d_text(
     schemas: &FlightDocumentSchemaRegistry,
     resolvers: Option<&FlightDocumentResourceResolverRegistry>,
 ) -> Option<FlightDocumentScene3DMaterialization> {
-    let mut revisions = defaults::<NodeRevisionState>();
     let guards = Arc::new(RwLock::new(defaults::<CameraGuardState>()));
     return create_flight_document_scene3d_materialization_from_text(
-        text,
-        schemas,
-        resolvers,
-        None,
-        &mut revisions,
-        &guards,
+        text, schemas, resolvers, None, &guards,
     );
 }
 

@@ -347,7 +347,7 @@ pub fn render_gl_scene3d(
                 guard(state, mesh);
             }
         }
-        let world_matrix = get_node_world_matrix4(mesh_node, &mut state.runtime.node_revisions);
+        let world_matrix = get_node_world_matrix4(mesh_node);
         // The mesh origin's projected depth: larger Z/W = farther from the camera in GL NDC.
         let wx = world_matrix.m[12];
         let wy = world_matrix.m[13];
@@ -498,8 +498,7 @@ pub fn render_gl_scene3d(
         let mut flat_colors: Vec<f32> = Vec::new();
         let mut normal_matrix = create_matrix3();
         for mesh_node in &visible_instanced_meshes {
-            let world_matrix: Matrix4 =
-                get_node_world_matrix4(mesh_node, &mut state.runtime.node_revisions);
+            let world_matrix: Matrix4 = get_node_world_matrix4(mesh_node);
             set_matrix3_normal_from_matrix4(&mut normal_matrix, &world_matrix);
             let object_alpha = {
                 let mut runtime = get_gl_scene3d_runtime(state);

@@ -90,21 +90,15 @@ mod sugar_tests {
             document.explain_scene3d_refusal(&schemas, None),
             explain_flight_document_scene3d_refusal(&document, &schemas, None)
         );
-        let mut revisions = flight_node::contract::NodeRevisionState::default();
         let guards = std::sync::Arc::new(std::sync::RwLock::new(
             flight_camera::CameraGuardState::default(),
         ));
         assert_eq!(
             document
-                .create_scene3d_materialization(&schemas, None, None, &mut revisions, &guards)
+                .create_scene3d_materialization(&schemas, None, None, &guards)
                 .is_none(),
             create_flight_document_scene3d_materialization(
-                &document,
-                &schemas,
-                None,
-                None,
-                &mut revisions,
-                &guards
+                &document, &schemas, None, None, &guards
             )
             .is_none()
         );
@@ -126,13 +120,12 @@ impl FlightDocument {
         );
     }
 
-    // flight-lint: allow(conform-params) D5 caller-owned node revisions and camera guard state replace the source module state
+    // flight-lint: allow(conform-params) D5 caller-owned camera guard state replaces the source module state
     pub fn create_scene3d_materialization(
         &self,
         schemas: &FlightDocumentSchemaRegistry,
         resolvers: Option<&FlightDocumentResourceResolverRegistry>,
         scene_index: Option<i64>,
-        revisions: &mut flight_node::contract::NodeRevisionState,
         camera_guards: &flight_camera::CameraGuardStateRef,
     ) -> Option<FlightDocumentScene3DMaterialization> {
         return create_flight_document_scene3d_materialization(
@@ -140,7 +133,6 @@ impl FlightDocument {
             schemas,
             resolvers,
             scene_index,
-            revisions,
             camera_guards,
         );
     }

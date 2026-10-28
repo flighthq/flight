@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use flight_geometry::{create_matrix, create_rectangle};
-use flight_node::contract::NodeRevisionState;
 use flight_node::{
     NodeRef, add_node_child, create_viewport, invalidate_node_local_bounds,
     invalidate_node_local_transform,
@@ -46,11 +45,7 @@ mod compute_render_proxy_world_bounds {
     fn world_bounds_are_written_for_node2d() {
         let source = object_with_bounds(10.0, 20.0, 50.0, 30.0);
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        compute_render_proxy_world_bounds(
-            &mut out,
-            &source,
-            &mut crate::support::test_default::<NodeRevisionState>(),
-        );
+        compute_render_proxy_world_bounds(&mut out, &source);
         assert_eq!(
             (out.x, out.y, out.width, out.height),
             (10.0, 20.0, 50.0, 30.0)
@@ -61,11 +56,7 @@ mod compute_render_proxy_world_bounds {
     fn world_bounds_writer_only_requires_rectangle_fields() {
         let source = object_with_bounds(7.0, 9.0, 11.0, 13.0);
         let mut out = crate::support::test_default::<flight_geometry::Rectangle>();
-        compute_render_proxy_world_bounds(
-            &mut out,
-            &source,
-            &mut crate::support::test_default::<NodeRevisionState>(),
-        );
+        compute_render_proxy_world_bounds(&mut out, &source);
         assert_eq!(
             (out.x, out.y, out.width, out.height),
             (7.0, 9.0, 11.0, 13.0)
@@ -81,11 +72,7 @@ mod compute_render_proxy_world_bounds {
         let child = object_with_bounds(0.0, 0.0, 50.0, 50.0);
         add_node_child(&parent, &child);
         let mut out = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        compute_render_proxy_world_bounds(
-            &mut out,
-            &child,
-            &mut crate::support::test_default::<NodeRevisionState>(),
-        );
+        compute_render_proxy_world_bounds(&mut out, &child);
         assert_eq!(out.x, 100.0);
         assert_eq!(out.width, 50.0);
     }
@@ -102,8 +89,7 @@ mod is_render_proxy_in_viewport {
         assert!(!is_render_proxy_in_viewport(
             &proxy,
             &viewport(0.0, 0.0, 100.0, 100.0),
-            None,
-            &mut crate::support::test_default::<NodeRevisionState>()
+            None
         ));
     }
 
@@ -115,8 +101,7 @@ mod is_render_proxy_in_viewport {
         assert!(is_render_proxy_in_viewport(
             &proxy,
             &viewport(0.0, 0.0, 800.0, 600.0),
-            None,
-            &mut crate::support::test_default::<NodeRevisionState>()
+            None
         ));
     }
 }
@@ -130,8 +115,7 @@ mod is_renderable_in_viewport {
         assert!(is_renderable_in_viewport(
             &source,
             &viewport(0.0, 0.0, 800.0, 600.0),
-            None,
-            &mut crate::support::test_default::<NodeRevisionState>()
+            None
         ));
     }
 
@@ -141,8 +125,7 @@ mod is_renderable_in_viewport {
         assert!(!is_renderable_in_viewport(
             &source,
             &viewport(2000.0, 2000.0, 100.0, 100.0),
-            None,
-            &mut crate::support::test_default::<NodeRevisionState>()
+            None
         ));
     }
 
@@ -158,18 +141,15 @@ mod is_renderable_in_viewport {
         invalidate_node_local_transform(&parent);
         let child = object_with_bounds(0.0, 0.0, 20.0, 20.0);
         add_node_child(&parent, &child);
-        let mut revisions = crate::support::test_default::<NodeRevisionState>();
         assert!(!is_renderable_in_viewport(
             &child,
             &viewport(0.0, 0.0, 100.0, 100.0),
-            None,
-            &mut revisions
+            None
         ));
         assert!(is_renderable_in_viewport(
             &child,
             &viewport(0.0, 0.0, 600.0, 600.0),
-            None,
-            &mut revisions
+            None
         ));
     }
 
@@ -179,8 +159,7 @@ mod is_renderable_in_viewport {
         assert!(!is_renderable_in_viewport(
             &source,
             &viewport(5000.0, 5000.0, 100.0, 100.0),
-            None,
-            &mut crate::support::test_default::<NodeRevisionState>()
+            None
         ));
     }
 
@@ -190,8 +169,7 @@ mod is_renderable_in_viewport {
         assert!(is_renderable_in_viewport(
             &source,
             &viewport(100.0, 100.0, 100.0, 100.0),
-            None,
-            &mut crate::support::test_default::<NodeRevisionState>()
+            None
         ));
     }
 
@@ -199,27 +177,11 @@ mod is_renderable_in_viewport {
     fn optional_render_transform_is_applied() {
         let source = object_with_bounds(0.0, 0.0, 50.0, 50.0);
         let vp = viewport(0.0, 0.0, 60.0, 60.0);
-        let mut revisions = crate::support::test_default::<NodeRevisionState>();
-        assert!(is_renderable_in_viewport(
-            &source,
-            &vp,
-            None,
-            &mut revisions
-        ));
+        assert!(is_renderable_in_viewport(&source, &vp, None));
         let scale = create_matrix(2.0, 0.0, 0.0, 2.0, 0.0, 0.0);
-        assert!(is_renderable_in_viewport(
-            &source,
-            &vp,
-            Some(&scale),
-            &mut revisions
-        ));
+        assert!(is_renderable_in_viewport(&source, &vp, Some(&scale)));
         let offset = create_matrix(1.0, 0.0, 0.0, 1.0, 200.0, 200.0);
-        assert!(!is_renderable_in_viewport(
-            &source,
-            &vp,
-            Some(&offset),
-            &mut revisions
-        ));
+        assert!(!is_renderable_in_viewport(&source, &vp, Some(&offset)));
     }
 
     #[test]
@@ -228,8 +190,7 @@ mod is_renderable_in_viewport {
         assert!(is_renderable_in_viewport(
             &source,
             &viewport(0.0, 0.0, 800.0, 600.0),
-            None,
-            &mut crate::support::test_default::<NodeRevisionState>()
+            None
         ));
     }
 
@@ -245,18 +206,15 @@ mod is_renderable_in_viewport {
         invalidate_node_local_transform(&parent);
         let child = object_with_bounds(0.0, 0.0, 50.0, 50.0);
         add_node_child(&parent, &child);
-        let mut revisions = crate::support::test_default::<NodeRevisionState>();
         assert!(is_renderable_in_viewport(
             &child,
             &viewport(80.0, 80.0, 50.0, 50.0),
-            None,
-            &mut revisions
+            None
         ));
         assert!(!is_renderable_in_viewport(
             &child,
             &viewport(200.0, 200.0, 50.0, 50.0),
-            None,
-            &mut revisions
+            None
         ));
     }
 }

@@ -74,13 +74,9 @@ mod disable_node_guards {
         let mut fixture = fixture();
         enable(&mut fixture);
         disable_node_guards(&mut fixture.guards);
-        let mut revisions = NodeRevisionState {
-            world_transform_revision: 0,
-        };
         assert!(!reparent_node(
             &create_test_node_2d("Test"),
             &collapsed_parent("gone"),
-            &mut revisions,
             Some(&fixture.guards)
         ));
         assert!(fixture.entries.lock().unwrap().is_empty());
@@ -96,13 +92,9 @@ mod enable_node_guards {
         enable(&mut fixture);
         let child = create_test_node_2d("Test");
         child.write().unwrap().node_fields_mut().name = Some(String::from("child"));
-        let mut revisions = NodeRevisionState {
-            world_transform_revision: 0,
-        };
         assert!(!reparent_node(
             &child,
             &collapsed_parent("collapsed-warns"),
-            &mut revisions,
             Some(&fixture.guards)
         ));
         let entries = fixture.entries.lock().unwrap();
@@ -124,13 +116,9 @@ mod enable_node_guards {
         let mut fixture = fixture();
         enable(&mut fixture);
         let healthy = create_test_node_2d("Test");
-        let mut revisions = NodeRevisionState {
-            world_transform_revision: 0,
-        };
         assert!(reparent_node(
             &create_test_node_2d("Test"),
             &healthy,
-            &mut revisions,
             Some(&fixture.guards)
         ));
         assert!(fixture.entries.lock().unwrap().is_empty());

@@ -52,25 +52,11 @@ export function ensureNodeLocalMatrix<Fields extends object>(target: Transform2D
   }
 }
 
+// Resolves the graph root once, then walks the ancestor chain with it: every recompute along the chain
+// mints its revision from the same root counter without re-walking to the root per node.
 export function ensureNodeWorldMatrix<Fields extends object>(target: Transform2DNode<Fields>): void {
   const runtime = getEntityRuntime(target) as NodeRuntime<Fields> & HasTransform2DRuntime;
-  const parent = runtime.parent as Transform2DNode<Fields>;
-
-  let parentRuntime: (NodeRuntime<Fields> & HasTransform2DRuntime) | undefined;
-  let parentWorldTransformId = 0;
-
-  if (parent !== null) {
-    ensureNodeWorldMatrix(parent);
-    parentRuntime = getEntityRuntime(parent) as NodeRuntime<Fields> & HasTransform2DRuntime;
-    parentWorldTransformId = parentRuntime.worldTransformId;
-  }
-
-  if (
-    runtime.worldTransformUsingLocalTransformId !== runtime.localTransformId ||
-    runtime.worldTransformUsingParentTransformId !== parentWorldTransformId
-  ) {
-    recomputeWorldTransform2D(target, runtime, parentRuntime);
-  }
+  ensureWorldTransform2D(target, runtime, resolveRootRuntime(runtime));
 }
 
 export function getNodeLocalMatrix<Fields extends object>(target: Transform2DNode<Fields>): Readonly<Matrix> {
@@ -124,6 +110,30 @@ export function setNodeTransform2D<Fields extends object>(
   invalidateNodeLocalTransform(target);
 }
 
+function ensureWorldTransform2D<Fields extends object>(
+  target: Transform2DNode<Fields>,
+  runtime: NodeRuntime<Fields> & HasTransform2DRuntime,
+  rootRuntime: NodeRuntime<Fields>,
+): void {
+  const parent = runtime.parent as Transform2DNode<Fields> | null;
+
+  let parentRuntime: (NodeRuntime<Fields> & HasTransform2DRuntime) | undefined;
+  let parentWorldTransformId = 0;
+
+  if (parent !== null) {
+    parentRuntime = getEntityRuntime(parent) as NodeRuntime<Fields> & HasTransform2DRuntime;
+    ensureWorldTransform2D(parent, parentRuntime, rootRuntime);
+    parentWorldTransformId = parentRuntime.worldTransformId;
+  }
+
+  if (
+    runtime.worldTransformUsingLocalTransformId !== runtime.localTransformId ||
+    runtime.worldTransformUsingParentTransformId !== parentWorldTransformId
+  ) {
+    recomputeWorldTransform2D(target, runtime, parentRuntime, rootRuntime);
+  }
+}
+
 function recomputeLocalTransform2D<Fields extends object>(
   target: Transform2DNode<Fields>,
   runtime: NodeRuntime<Fields> & HasTransform2DRuntime,
@@ -167,7 +177,8 @@ function recomputeLocalTransform2D<Fields extends object>(
 function recomputeWorldTransform2D<Fields extends object>(
   target: Transform2DNode<Fields>,
   runtime: NodeRuntime<Fields> & HasTransform2DRuntime,
-  parentRuntime?: Readonly<NodeRuntime<Fields> & HasTransform2DRuntime>,
+  parentRuntime: Readonly<NodeRuntime<Fields> & HasTransform2DRuntime> | undefined,
+  rootRuntime: NodeRuntime<Fields>,
 ): void {
   if (runtime.worldMatrix === null) runtime.worldMatrix = createMatrix();
   ensureNodeLocalMatrix(target);
@@ -176,5 +187,11 @@ function recomputeWorldTransform2D<Fields extends object>(
   } else {
     copyMatrix(runtime.worldMatrix, runtime.localMatrix!);
   }
-  computeNodeWorldTransformRevision(runtime, parentRuntime);
+  computeNodeWorldTransformRevision(runtime, parentRuntime, rootRuntime);
+}
+
+function resolveRootRuntime<Fields extends object>(runtime: NodeRuntime<Fields>): NodeRuntime<Fields> {
+  let current = runtime;
+  while (current.parent !== null) current = getEntityRuntime(current.parent) as NodeRuntime<Fields>;
+  return current;
 }

@@ -46,11 +46,6 @@ pub fn translation(x: f32, y: f32, z: f32) -> Vec<f32> {
     m.m[14] = z;
     return m.m.to_vec();
 }
-pub fn revisions() -> flight_node::contract::NodeRevisionState {
-    return flight_node::contract::NodeRevisionState {
-        world_transform_revision: 0,
-    };
-}
 pub fn guards() -> flight_skeleton3d::Skeleton3DGuardStateRef {
     return std::sync::Arc::new(std::sync::RwLock::new(
         flight_skeleton3d::Skeleton3DGuardState {
@@ -71,7 +66,6 @@ pub fn skeleton(joints: Vec<flight_scene3d::Node3DRef>, names: Option<Vec<String
     let mut out = flight_skeleton3d::create_skeleton3d(
         std::sync::Arc::new(std::sync::RwLock::new(joints)),
         None,
-        &mut revisions(),
         &guards(),
     );
     out.names = names;

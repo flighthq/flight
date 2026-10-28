@@ -8,40 +8,24 @@ use flight_geometry::{Aabb, Frustum, Matrix4, Vector3};
 use flight_log::LogStateRef;
 use flight_materials::Material3D;
 use flight_meshgeometry::MeshGeometry;
-use flight_node::contract::NodeRevisionState;
 use flight_node::{NodeRef, NodeSignals};
 
 pub trait Node3DMethods {
     fn clone_subtree(&self, material_override: Option<Scene3DMaterialOverride>) -> NodeRef;
-    fn cull_by_frustum(
-        &self,
-        out: &mut Vec<NodeRef>,
-        frustum: &Frustum,
-        revisions: &mut NodeRevisionState,
-    );
+    fn cull_by_frustum(&self, out: &mut Vec<NodeRef>, frustum: &Frustum);
     fn dispose_scene3d(&self);
     fn enable_billboard_signals(&self) -> Ref<NodeSignals>;
     fn enable_mesh_signals(&self) -> Ref<NodeSignals>;
     fn enable_scene3d_signals(&self) -> Ref<NodeSignals>;
     fn find_material_by_name(&self, name: &str) -> Option<Ref<dyn Material3D>>;
     fn materials(&self, out: &mut Vec<Ref<dyn Material3D>>);
-    fn orient_billboards(
-        &self,
-        camera: &Camera3D,
-        state: &Scene3DGuardStateRef,
-        revisions: &mut NodeRevisionState,
-    ) -> bool;
-    fn orient_to_camera(
-        &self,
-        camera: &Camera3D,
-        state: &Scene3DGuardStateRef,
-        revisions: &mut NodeRevisionState,
-    ) -> bool;
+    fn orient_billboards(&self, camera: &Camera3D, state: &Scene3DGuardStateRef) -> bool;
+    fn orient_to_camera(&self, camera: &Camera3D, state: &Scene3DGuardStateRef) -> bool;
     fn prepare_morph(&self);
     fn set_alpha(&self, alpha: f32);
     fn set_look_at(&self, eye: &Vector3, target: &Vector3, up: &Vector3);
     fn world_alpha(&self, state: &mut Scene3DAppearanceState) -> f32;
-    fn world_bounds(&self, out: &mut Aabb, revisions: &mut NodeRevisionState);
+    fn world_bounds(&self, out: &mut Aabb);
 }
 pub trait InstancedMeshMethods {
     fn append_instance(&self, matrix: &Matrix4) -> i32;
@@ -101,11 +85,6 @@ mod sugar_tests {
             billboard_camera_basis_guard: None,
         }));
     }
-    fn revisions() -> NodeRevisionState {
-        return NodeRevisionState {
-            world_transform_revision: 0,
-        };
-    }
     fn bounds() -> Aabb {
         return create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     }
@@ -148,16 +127,14 @@ mod sugar_tests {
         flight_node::add_node_child(&b, &mb);
         let mut ba = bounds();
         let mut bb = bounds();
-        let mut ra = revisions();
-        let mut rb = revisions();
-        a.world_bounds(&mut ba, &mut ra);
-        get_node3d_world_bounds(&mut bb, &b, &mut rb);
+        a.world_bounds(&mut ba);
+        get_node3d_world_bounds(&mut bb, &b);
         assert_eq!(ba, bb);
         let f = create_frustum();
         let mut oa = Vec::new();
         let mut ob = Vec::new();
-        a.cull_by_frustum(&mut oa, &f, &mut ra);
-        cull_node3d_by_frustum(&mut ob, &b, &f, &mut rb);
+        a.cull_by_frustum(&mut oa, &f);
+        cull_node3d_by_frustum(&mut ob, &b, &f);
         assert_eq!(oa.len(), ob.len());
         a.prepare_morph();
         prepare_scene3d_morph(&b);
@@ -448,16 +425,14 @@ mod sugar_tests {
             &get_billboard_signals(&b.read().unwrap()).unwrap()
         ));
         let camera = camera();
-        let mut ra = revisions();
-        let mut rb = revisions();
         assert_eq!(
-            an.orient_to_camera(&camera, &guards(), &mut ra),
-            orient_billboard_to_camera(&bn, &camera, &guards(), &mut rb)
+            an.orient_to_camera(&camera, &guards()),
+            orient_billboard_to_camera(&bn, &camera, &guards())
         );
         assert_eq!(get_node_local_matrix4(&an).m, get_node_local_matrix4(&bn).m);
         assert_eq!(
-            an.orient_billboards(&camera, &guards(), &mut ra),
-            orient_scene3d_billboards_to_camera(&bn, &camera, &guards(), &mut rb)
+            an.orient_billboards(&camera, &guards()),
+            orient_scene3d_billboards_to_camera(&bn, &camera, &guards())
         );
         assert_eq!(get_node_local_matrix4(&an).m, get_node_local_matrix4(&bn).m);
         let ma = Mesh::new(geometry(), materials());
@@ -565,13 +540,8 @@ impl Node3DMethods for NodeRef {
     fn clone_subtree(&self, material_override: Option<Scene3DMaterialOverride>) -> NodeRef {
         return clone_node3d_subtree(self, material_override);
     }
-    fn cull_by_frustum(
-        &self,
-        out: &mut Vec<NodeRef>,
-        frustum: &Frustum,
-        revisions: &mut NodeRevisionState,
-    ) {
-        cull_node3d_by_frustum(out, self, frustum, revisions);
+    fn cull_by_frustum(&self, out: &mut Vec<NodeRef>, frustum: &Frustum) {
+        cull_node3d_by_frustum(out, self, frustum);
     }
     fn dispose_scene3d(&self) {
         dispose_node3d(self);
@@ -591,21 +561,11 @@ impl Node3DMethods for NodeRef {
     fn materials(&self, out: &mut Vec<Ref<dyn Material3D>>) {
         get_scene3d_materials(out, self);
     }
-    fn orient_billboards(
-        &self,
-        camera: &Camera3D,
-        state: &Scene3DGuardStateRef,
-        revisions: &mut NodeRevisionState,
-    ) -> bool {
-        return orient_scene3d_billboards_to_camera(self, camera, state, revisions);
+    fn orient_billboards(&self, camera: &Camera3D, state: &Scene3DGuardStateRef) -> bool {
+        return orient_scene3d_billboards_to_camera(self, camera, state);
     }
-    fn orient_to_camera(
-        &self,
-        camera: &Camera3D,
-        state: &Scene3DGuardStateRef,
-        revisions: &mut NodeRevisionState,
-    ) -> bool {
-        return orient_billboard_to_camera(self, camera, state, revisions);
+    fn orient_to_camera(&self, camera: &Camera3D, state: &Scene3DGuardStateRef) -> bool {
+        return orient_billboard_to_camera(self, camera, state);
     }
     fn prepare_morph(&self) {
         prepare_scene3d_morph(self);
@@ -619,8 +579,8 @@ impl Node3DMethods for NodeRef {
     fn world_alpha(&self, state: &mut Scene3DAppearanceState) -> f32 {
         return get_node3d_world_alpha(self, state);
     }
-    fn world_bounds(&self, out: &mut Aabb, revisions: &mut NodeRevisionState) {
-        get_node3d_world_bounds(out, self, revisions);
+    fn world_bounds(&self, out: &mut Aabb) {
+        get_node3d_world_bounds(out, self);
     }
 }
 impl InstancedMeshMethods for Ref<InstancedMesh> {

@@ -80,16 +80,8 @@ mod empty_scene3d_hit_attribute_queries {
         assert!(get_scene3d_hit_material(&hit).is_none());
         assert_eq!(get_scene3d_hit_subset_index(&hit), -1);
         assert!(!get_scene3d_hit_uv0(&mut uv, &hit));
-        assert!(!get_scene3d_hit_vertex_normal(
-            &mut normal,
-            &hit,
-            &mut revisions()
-        ));
-        assert!(!get_scene3d_hit_vertex_tangent(
-            &mut tangent,
-            &hit,
-            &mut revisions()
-        ));
+        assert!(!get_scene3d_hit_vertex_normal(&mut normal, &hit));
+        assert!(!get_scene3d_hit_vertex_tangent(&mut tangent, &hit));
         assert_eq!((uv.x, uv.y), (7.0, 8.0));
         assert_eq!((normal.x, normal.y, normal.z), (7.0, 8.0, 9.0));
         assert_eq!(
@@ -174,11 +166,7 @@ mod get_scene3d_hit_vertex_normal {
         set_vector3(&mut mesh.write().unwrap().scale, 2.0, 1.0, 1.0);
         invalidate_node_local_transform(&node(&mesh));
         let mut out = create_vector3(0.0, 0.0, 0.0);
-        assert!(get_scene3d_hit_vertex_normal(
-            &mut out,
-            &hit,
-            &mut revisions()
-        ));
+        assert!(get_scene3d_hit_vertex_normal(&mut out, &hit));
         let inverse_length = 1.0 / 1.25f32.sqrt();
         close(out.x, 0.5 * inverse_length, 2);
         close(out.y, inverse_length, 2);
@@ -190,8 +178,7 @@ mod get_scene3d_hit_vertex_normal {
         let mut out = create_vector3(7.0, 8.0, 9.0);
         assert!(!get_scene3d_hit_vertex_normal(
             &mut out,
-            &position_only_hit(),
-            &mut revisions()
+            &position_only_hit()
         ));
         assert_eq!((out.x, out.y, out.z), (7.0, 8.0, 9.0));
     }
@@ -206,11 +193,7 @@ mod get_scene3d_hit_vertex_tangent {
         set_vector3(&mut mesh.write().unwrap().scale, -1.0, 1.0, 1.0);
         invalidate_node_local_transform(&node(&mesh));
         let mut out = create_vector4(0.0, 0.0, 0.0, 0.0);
-        assert!(get_scene3d_hit_vertex_tangent(
-            &mut out,
-            &hit,
-            &mut revisions()
-        ));
+        assert!(get_scene3d_hit_vertex_tangent(&mut out, &hit));
         close(out.x, -1.0, 2);
         close(out.y, 0.0, 2);
         close(out.z, 0.0, 2);
@@ -222,8 +205,7 @@ mod get_scene3d_hit_vertex_tangent {
         let mut out = create_vector4(1.0, 2.0, 3.0, 4.0);
         assert!(!get_scene3d_hit_vertex_tangent(
             &mut out,
-            &position_only_hit(),
-            &mut revisions()
+            &position_only_hit()
         ));
         assert_eq!((out.w, out.x, out.y, out.z), (4.0, 1.0, 2.0, 3.0));
     }

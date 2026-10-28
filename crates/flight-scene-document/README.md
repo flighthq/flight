@@ -27,9 +27,8 @@ schema and resolver callbacks.
 
 ## Caller-owned state (D5, D25)
 
-The 3D materializers take the node revisions (`&mut NodeRevisionState`) used to resolve bound world
-matrices and the camera guard state (`&CameraGuardStateRef`) that setting a camera view consults,
-in place of the source's module state. Camera placement brackets its two working matrices with the
+The 3D materializers take the camera guard state (`&CameraGuardStateRef`) that setting a camera
+view consults, in place of the source's module state. Camera placement brackets its two working matrices with the
 canonical geometry pool (`acquire_matrix4`/`release_matrix4`) exactly as the source does.
 
 ## Precision (D1)

@@ -44,6 +44,13 @@ beforeEach(() => {
   childB = createNode(NodeKind);
 });
 
+function createTransformTestNode(): Node<HasTransform2D> & HasTransform2D {
+  const node = createNode('TransformTest') as Node<HasTransform2D> & HasTransform2D;
+  initTransform2DTrait(node);
+  initTransform2DRuntimeTrait(getRawEntityRuntime(node) as HasTransform2DRuntime);
+  return node;
+}
+
 function getChildren(source: Node) {
   return getNodeRuntime(source).children as Node[];
 }
@@ -53,6 +60,37 @@ function getEntityRuntime(source: Node) {
 }
 
 describe('addNodeChild', () => {
+  // A and B each mint world-transform ids from their own root counter. B is warmed only to 1, so the
+  // first recompute of the moved node under B mints 2: exactly the id the moved node held under A,
+  // which is what its child stored as its parent's id. Without the subtree invalidation on attach the
+  // descendants would match that stale stamp and keep A's world matrices.
+  it('invalidates the moved subtree so ids stored under the old root never match the new one', () => {
+    const rootA = createTransformTestNode();
+    const moved = createTransformTestNode();
+    const middle = createTransformTestNode();
+    const leaf = createTransformTestNode();
+    addNodeChild(rootA, moved);
+    addNodeChild(moved, middle);
+    addNodeChild(middle, leaf);
+    rootA.x = 100;
+    middle.x = 1;
+    leaf.x = 2;
+    invalidateNodeLocalTransform(rootA);
+    invalidateNodeLocalTransform(middle);
+    invalidateNodeLocalTransform(leaf);
+    expect(getNodeWorldMatrix(leaf).tx).toBe(103);
+    const rootB = createTransformTestNode();
+    getNodeWorldMatrix(rootB);
+
+    addNodeChild(rootB, moved);
+    moved.x = 5;
+    invalidateNodeLocalTransform(moved);
+
+    expect(getNodeWorldMatrix(moved).tx).toBe(5);
+    expect(getNodeWorldMatrix(middle).tx).toBe(6);
+    expect(getNodeWorldMatrix(leaf).tx).toBe(8);
+  });
+
   it('addNodeChild adds a child to the end of the list', () => {
     addNodeChild(container, childA);
 
@@ -514,6 +552,34 @@ describe('isNodeAncestorOf', () => {
 });
 
 describe('removeNodeChild', () => {
+  // The detached node becomes its own root and mints from its own counter, warmed here to 1 while it
+  // was a root earlier, so its next id equals the one it held under the old root.
+  it('invalidates the detached subtree so it re-resolves against its own root counter', () => {
+    const detached = createTransformTestNode();
+    getNodeWorldMatrix(detached);
+    const rootA = createTransformTestNode();
+    const middle = createTransformTestNode();
+    const leaf = createTransformTestNode();
+    addNodeChild(rootA, detached);
+    addNodeChild(detached, middle);
+    addNodeChild(middle, leaf);
+    rootA.x = 100;
+    middle.x = 1;
+    leaf.x = 2;
+    invalidateNodeLocalTransform(rootA);
+    invalidateNodeLocalTransform(middle);
+    invalidateNodeLocalTransform(leaf);
+    expect(getNodeWorldMatrix(leaf).tx).toBe(103);
+
+    removeNodeChild(rootA, detached);
+    detached.x = 5;
+    invalidateNodeLocalTransform(detached);
+
+    expect(getNodeWorldMatrix(detached).tx).toBe(5);
+    expect(getNodeWorldMatrix(middle).tx).toBe(6);
+    expect(getNodeWorldMatrix(leaf).tx).toBe(8);
+  });
+
   it('advances structural revisions when detaching a child', () => {
     addNodeChild(container, childA);
     const childrenId = getNodeChildrenRevision(container);

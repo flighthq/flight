@@ -1,6 +1,6 @@
 //! 2D local/world transform resolution (TS `nodeTransform2d.ts`).
 
-// flight-lint: allow-file(contract-vocabulary, conform-params) D16 open node trait objects are contract dispatch; D5 caller-owned revision state replaces the TS module-level counter
+// flight-lint: allow-file(contract-vocabulary) D16 open node trait objects are contract dispatch
 
 use flight_geometry::contract::{
     Matrix, Transform2D, Vector2, copy_matrix, create_matrix, decompose_matrix_to_transform2d,
@@ -8,30 +8,19 @@ use flight_geometry::contract::{
 };
 use flight_math::DEG_TO_RAD;
 
-use crate::revision::{
-    NodeRevisionState, compute_node_world_transform_revision, invalidate_node_local_transform,
-};
+use crate::hierarchy::get_node_root;
+use crate::revision::{compute_node_world_transform_revision, invalidate_node_local_transform};
 use crate::types::*;
 
 /// Converts a global point to the node's local coordinates (TS `convertNodeVector2GlobalToLocal`).
-pub fn convert_node_vector2_global_to_local(
-    out: &mut Vector2,
-    source: &NodeRef,
-    vector: &Vector2,
-    revisions: &mut NodeRevisionState,
-) {
-    let matrix = get_node_world_matrix(source, revisions);
+pub fn convert_node_vector2_global_to_local(out: &mut Vector2, source: &NodeRef, vector: &Vector2) {
+    let matrix = get_node_world_matrix(source);
     inverse_matrix_transform_point_xy(out, &matrix, vector.x, vector.y);
 }
 
 /// Converts a local point to global coordinates (TS `convertNodeVector2LocalToGlobal`).
-pub fn convert_node_vector2_local_to_global(
-    out: &mut Vector2,
-    source: &NodeRef,
-    vector: &Vector2,
-    revisions: &mut NodeRevisionState,
-) {
-    let matrix = get_node_world_matrix(source, revisions);
+pub fn convert_node_vector2_local_to_global(out: &mut Vector2, source: &NodeRef, vector: &Vector2) {
+    let matrix = get_node_world_matrix(source);
     matrix_transform_point_xy(out, &matrix, vector.x, vector.y);
 }
 
@@ -52,11 +41,18 @@ fn ensure_node_local_matrix_internal(node: &mut dyn Transform2DNode) {
 }
 
 /// Ensures the node's cached world matrix is current (TS `ensureNodeWorldMatrix`).
-pub fn ensure_node_world_matrix(target: &NodeRef, revisions: &mut NodeRevisionState) {
+pub fn ensure_node_world_matrix(target: &NodeRef) {
+    let root = get_node_root(target);
+    ensure_node_world_matrix_in_root(target, &root);
+}
+
+/// Resolves the ancestor chain against an already-resolved graph `root`, so every recompute along
+/// the chain mints from that root's counter without re-walking to the root per node.
+pub(crate) fn ensure_node_world_matrix_in_root(target: &NodeRef, root: &NodeRef) {
     let parent = node_parent(target);
     let mut parent_guard = None;
     let parent_world_transform_id = if let Some(parent) = &parent {
-        ensure_node_world_matrix(parent, revisions);
+        ensure_node_world_matrix_in_root(parent, root);
         let guard = parent.read().unwrap();
         let id = guard.node_runtime().world_transform_id as i32;
         parent_guard = Some(guard);
@@ -105,9 +101,19 @@ pub fn ensure_node_world_matrix(target: &NodeRef, revisions: &mut NodeRevisionSt
                 None => copy_matrix(world_matrix, &local_matrix),
             }
         }
-        let parent_dyn: Option<&dyn Node> = parent_guard.as_ref().map(|guard| &**guard);
+        // The root may be the parent, so its read guard is released before the root lends its counter.
+        drop(parent_guard);
         let base: &mut dyn Node = node;
-        compute_node_world_transform_revision(base, parent_dyn, revisions);
+        if parent.is_some() {
+            let mut root_guard = root.write().unwrap();
+            compute_node_world_transform_revision(
+                base,
+                Some(parent_world_transform_id as u32),
+                Some(root_guard.node_runtime_mut()),
+            );
+        } else {
+            compute_node_world_transform_revision(base, None, None);
+        }
     }
 }
 
@@ -144,8 +150,8 @@ pub fn get_node_transform2d(out: &mut Transform2D, source: &NodeRef) {
 }
 
 /// Reads the node's world matrix, resolving it first (TS `getNodeWorldMatrix`).
-pub fn get_node_world_matrix(target: &NodeRef, revisions: &mut NodeRevisionState) -> Matrix {
-    ensure_node_world_matrix(target, revisions);
+pub fn get_node_world_matrix(target: &NodeRef) -> Matrix {
+    ensure_node_world_matrix(target);
     return target
         .read()
         .unwrap()

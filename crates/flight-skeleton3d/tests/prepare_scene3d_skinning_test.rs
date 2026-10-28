@@ -16,7 +16,7 @@ mod prepare_mesh_skinning {
         let geometry = mesh.read().unwrap().geometry.clone();
         let before = geometry.read().unwrap().version;
         let node: NodeRef = mesh.clone();
-        prepare_mesh_skinning(&node, &mut revisions());
+        prepare_mesh_skinning(&node);
         assert!(get_mesh_geometry_skin_bind_pose(&geometry.read().unwrap()).is_some());
         assert_eq!(geometry.read().unwrap().vertices[0], 1.0);
         assert_eq!(geometry.read().unwrap().vertices[1], 0.0);
@@ -35,19 +35,19 @@ mod prepare_mesh_skinning {
     fn leaves_rigid_mesh_runtime_empty_and_reuses_the_original_cached_bounds_storage() {
         let mesh = skinned_mesh();
         let node: NodeRef = mesh.clone();
-        prepare_mesh_skinning(&node, &mut revisions());
+        prepare_mesh_skinning(&node);
         assert!(
             get_mesh_runtime(&mesh.read().unwrap())
                 .deformed_local_bounds
                 .is_none()
         );
         bind(&mesh, joint(0.0, 0.0, 0.0));
-        prepare_mesh_skinning(&node, &mut revisions());
+        prepare_mesh_skinning(&node);
         let first = get_mesh_runtime(&mesh.read().unwrap())
             .deformed_local_bounds
             .as_ref()
             .unwrap() as *const _;
-        prepare_mesh_skinning(&node, &mut revisions());
+        prepare_mesh_skinning(&node);
         let second = get_mesh_runtime(&mesh.read().unwrap())
             .deformed_local_bounds
             .as_ref()
@@ -59,7 +59,7 @@ mod prepare_mesh_skinning {
         let mesh = skinned_mesh();
         bind(&mesh, mesh.clone());
         let node: NodeRef = mesh.clone();
-        prepare_mesh_skinning(&node, &mut revisions());
+        prepare_mesh_skinning(&node);
         assert!(
             get_mesh_runtime(&mesh.read().unwrap())
                 .deformed_local_bounds
@@ -85,7 +85,7 @@ mod prepare_scene3d_skinning {
         let hidden_ref: NodeRef = hidden.clone();
         add_node_child(&disabled, &hidden_ref);
         add_node_child(&root, &disabled);
-        prepare_scene3d_skinning(&root, &mut revisions());
+        prepare_scene3d_skinning(&root);
         assert!(
             get_mesh_runtime(&mesh.read().unwrap())
                 .deformed_local_bounds

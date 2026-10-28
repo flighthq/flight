@@ -3,7 +3,6 @@ use flight_gui::contract::*;
 use flight_interaction::contract::{
     HitArea, InteractionSignalName, get_node_interaction_state, is_node_hit_test_enabled,
 };
-use flight_node::contract::NodeRevisionState;
 use flight_scene2d::Node2DRef;
 use flight_signals::{create_signal, emit_signal};
 use std::sync::{Arc, RwLock};
@@ -184,13 +183,10 @@ mod get_gui_length {
     #[test]
     fn reads_the_requested_bounded_axis() {
         let node: Node2DRef = create_gui_test_node(Some(30.0), Some(40.0));
-        let mut revisions = NodeRevisionState {
-            world_transform_revision: 0,
-        };
         assert_eq!(
             [
-                get_gui_length(&node, GuiOrientation::Horizontal, &mut revisions),
-                get_gui_length(&node, GuiOrientation::Vertical, &mut revisions)
+                get_gui_length(&node, GuiOrientation::Horizontal),
+                get_gui_length(&node, GuiOrientation::Vertical)
             ],
             [30.0, 40.0]
         );

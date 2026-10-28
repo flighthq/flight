@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use flight_entity::Ref;
-use flight_node::contract::NodeRevisionState;
 use flight_node::{NodeRef, get_node_parent, get_node_world_bounds_rectangle};
 use flight_signals::{connect_signal, disconnect_signal, emit_signal};
 
@@ -180,8 +179,7 @@ pub fn focus_node_in_direction(
         None => return None,
     };
     let order = get_focus_order(manager);
-    let mut revisions = NodeRevisionState::default();
-    let current_bounds = get_node_world_bounds_rectangle(&current, &mut revisions);
+    let current_bounds = get_node_world_bounds_rectangle(&current);
     let origin_x = current_bounds.x + current_bounds.width / 2.0;
     let origin_y = current_bounds.y + current_bounds.height / 2.0;
     let mut best: Option<NodeRef> = None;
@@ -190,7 +188,7 @@ pub fn focus_node_in_direction(
         if Arc::ptr_eq(candidate, &current) {
             continue;
         }
-        let cand_bounds = get_node_world_bounds_rectangle(candidate, &mut revisions);
+        let cand_bounds = get_node_world_bounds_rectangle(candidate);
         let cx = cand_bounds.x + cand_bounds.width / 2.0;
         let cy = cand_bounds.y + cand_bounds.height / 2.0;
         let score = direction_score(direction, origin_x, origin_y, cx, cy);

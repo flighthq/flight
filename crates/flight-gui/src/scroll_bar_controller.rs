@@ -2,7 +2,6 @@ use crate::gui_controller::*;
 use flight_entity::{Ref, allocate_entity};
 use flight_host::{HostTimerCapability, TimerHandle};
 use flight_interaction::contract::InteractionSignalName;
-use flight_node::contract::NodeRevisionState;
 use flight_scene2d::Node2DRef;
 use flight_signals::{Signal, create_signal};
 use std::sync::{Arc, RwLock};
@@ -35,7 +34,6 @@ pub struct ScrollBarControllerFields {
     pub thumb: Option<Node2DRef>,
     pub track: Option<Node2DRef>,
     pub value: f32,
-    pub revisions: Ref<NodeRevisionState>,
     pub down_button: Option<Node2DRef>,
     pub up_button: Option<Node2DRef>,
     pub line_size: f32,
@@ -44,22 +42,20 @@ pub struct ScrollBarControllerFields {
     pub repeat_timer: Option<TimerHandle>,
     pub timer: Arc<HostTimerCapability>,
 }
-// flight-lint: allow(conform-params) D5 explicit caller-owned NodeRevisionState supplies actual node bounds and HostTimerCapability replaces source setInterval
+// flight-lint: allow(conform-params) D5 HostTimerCapability replaces source setInterval
 pub fn create_scroll_bar_controller(
     options: &ScrollBarControllerOptions,
-    revisions: Ref<NodeRevisionState>,
     timer: Arc<HostTimerCapability>,
 ) -> ScrollBarController {
     let mut out: ScrollBarController = allocate_entity();
-    initialize_scroll_bar_controller(&mut out, options, revisions, timer);
+    initialize_scroll_bar_controller(&mut out, options, timer);
     return out;
 }
 
-// flight-lint: allow(conform-extra) D12 construction derives source subscriptions and configured range from required visual handles; D5 explicit bounds/timer contexts
+// flight-lint: allow(conform-extra) D12 construction derives source subscriptions and configured range from required visual handles; D5 explicit timer context
 pub fn initialize_scroll_bar_controller(
     out: &mut ScrollBarController,
     options: &ScrollBarControllerOptions,
-    revisions: Ref<NodeRevisionState>,
     timer: Arc<HostTimerCapability>,
 ) {
     let minimum = options.minimum.unwrap_or(0.0);
@@ -83,7 +79,6 @@ pub fn initialize_scroll_bar_controller(
             thumb: Some(options.thumb.clone()),
             track: Some(options.track.clone()),
             value: clamp_gui_value(options.value.unwrap_or(minimum), minimum, maximum),
-            revisions,
             down_button: options.down_button.clone(),
             up_button: options.up_button.clone(),
             line_size: options.line_size.unwrap_or(1.0).abs(),
@@ -121,20 +116,18 @@ pub fn initialize_scroll_bar_controller(
                 } else {
                     data.local_y
                 };
-                let (thumb, track, page, revisions) = {
+                let (thumb, track, page) = {
                     let s = r.read().unwrap();
                     (
                         s.fields.thumb.clone(),
                         s.fields.track.clone(),
                         s.fields.page_size,
-                        s.fields.revisions.clone(),
                     )
                 };
                 if let (Some(thumb), Some(track)) = (thumb, track) {
                     let position = get_gui_position(&thumb, orientation)
                         - get_gui_position(&track, orientation);
-                    let length =
-                        get_gui_length(&thumb, orientation, &mut revisions.write().unwrap());
+                    let length = get_gui_length(&thumb, orientation);
                     let delta = if coordinate < position {
                         -page
                     } else if coordinate > position + length {
@@ -312,21 +305,18 @@ pub fn get_scroll_bar_controller_value(controller: &ScrollBarController) -> f32 
 }
 
 fn get_travel(r: &Ref<GuiControllerRuntime<ScrollBarControllerFields>>) -> f32 {
-    let (track, thumb, orientation, revisions) = {
+    let (track, thumb, orientation) = {
         let s = r.read().unwrap();
         (
             s.fields.track.clone(),
             s.fields.thumb.clone(),
             s.fields.orientation,
-            s.fields.revisions.clone(),
         )
     };
     let (Some(track), Some(thumb)) = (track, thumb) else {
         return 0.0;
     };
-    let mut revisions = revisions.write().unwrap();
-    let travel = get_gui_length(&track, orientation, &mut revisions)
-        - get_gui_length(&thumb, orientation, &mut revisions);
+    let travel = get_gui_length(&track, orientation) - get_gui_length(&thumb, orientation);
     return if travel.is_nan() {
         travel
     } else {
@@ -388,11 +378,7 @@ fn update_visual(r: &Ref<GuiControllerRuntime<ScrollBarControllerFields>>) {
     set_gui_position(r, thumb.as_ref(), orientation, position);
 }
 impl ScrollBarController {
-    pub fn new(
-        options: &ScrollBarControllerOptions,
-        revisions: Ref<NodeRevisionState>,
-        timer: Arc<HostTimerCapability>,
-    ) -> Self {
-        return create_scroll_bar_controller(options, revisions, timer);
+    pub fn new(options: &ScrollBarControllerOptions, timer: Arc<HostTimerCapability>) -> Self {
+        return create_scroll_bar_controller(options, timer);
     }
 }

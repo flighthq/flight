@@ -22,29 +22,25 @@ mod orient_billboard_to_camera {
         b.write().unwrap().position = create_vector3(1.0, 2.0, 3.0);
         let n = as_node_ref(&b);
         invalidate_node_local_transform(&n);
-        let mut revisions = revision_state();
-        let before = get_node_world_matrix4(&n, &mut revisions).m;
+        let before = get_node_world_matrix4(&n).m;
         assert!(!orient_billboard_to_camera(
             &n,
             &singular_camera(),
-            &guard_state(),
-            &mut revisions
+            &guard_state()
         ));
-        let after = get_node_world_matrix4(&n, &mut revisions).m;
+        let after = get_node_world_matrix4(&n).m;
         assert_eq!(after, before);
         assert!(after.iter().all(|n| n.is_finite()));
     }
     #[test]
     fn faces_a_positive_z_camera_with_an_identity_basis_and_reports_success() {
         let b = as_node_ref(&billboard(BillboardMode::Full));
-        let mut revisions = revision_state();
         assert!(orient_billboard_to_camera(
             &b,
             &camera_looking_from(0.0, 0.0, 10.0),
-            &guard_state(),
-            &mut revisions
+            &guard_state()
         ));
-        let m = get_node_world_matrix4(&b, &mut revisions).m;
+        let m = get_node_world_matrix4(&b).m;
         for i in [0, 5, 10] {
             close(m[i], 1.0);
         }
@@ -60,16 +56,10 @@ mod orient_billboard_to_camera {
         let n = as_node_ref(&b);
         invalidate_node_local_transform(&n);
         let camera = camera_looking_from(0.0, 0.0, 10.0);
-        let mut revisions = revision_state();
         for _ in 0..3 {
-            assert!(orient_billboard_to_camera(
-                &n,
-                &camera,
-                &guard_state(),
-                &mut revisions
-            ));
+            assert!(orient_billboard_to_camera(&n, &camera, &guard_state()));
         }
-        let m = get_node_world_matrix4(&n, &mut revisions).m;
+        let m = get_node_world_matrix4(&n).m;
         close(m[12], 3.0);
         close(m[13], 0.0);
         close(m[14], 0.0);
@@ -83,15 +73,9 @@ mod orient_billboard_to_camera {
     }
     #[test]
     fn axis_y_yaws_without_tilting_and_screen_aligned_adopts_camera_basis() {
-        let mut revisions = revision_state();
         let axis = as_node_ref(&billboard(BillboardMode::AxisY));
-        orient_billboard_to_camera(
-            &axis,
-            &camera_looking_from(10.0, 5.0, 0.0),
-            &guard_state(),
-            &mut revisions,
-        );
-        let m = get_node_world_matrix4(&axis, &mut revisions).m;
+        orient_billboard_to_camera(&axis, &camera_looking_from(10.0, 5.0, 0.0), &guard_state());
+        let m = get_node_world_matrix4(&axis).m;
         for (i, value) in [
             (8, 1.0),
             (9, 0.0),
@@ -108,13 +92,8 @@ mod orient_billboard_to_camera {
         b.write().unwrap().position = create_vector3(5.0, 3.0, 0.0);
         let b = as_node_ref(&b);
         invalidate_node_local_transform(&b);
-        orient_billboard_to_camera(
-            &b,
-            &camera_looking_from(0.0, 0.0, 10.0),
-            &guard_state(),
-            &mut revisions,
-        );
-        let m = get_node_world_matrix4(&b, &mut revisions).m;
+        orient_billboard_to_camera(&b, &camera_looking_from(0.0, 0.0, 10.0), &guard_state());
+        let m = get_node_world_matrix4(&b).m;
         for i in [0, 5, 10] {
             close(m[i], 1.0);
         }
@@ -135,17 +114,15 @@ mod orient_scene3d_billboards_to_camera {
         let b = as_node_ref(&billboard(BillboardMode::Full));
         add_node_child(&root, &m);
         add_node_child(&root, &b);
-        let mut revisions = revision_state();
         assert!(orient_scene3d_billboards_to_camera(
             &root,
             &camera_looking_from(0.0, 0.0, 10.0),
-            &guard_state(),
-            &mut revisions
+            &guard_state()
         ));
-        let matrix = get_node_world_matrix4(&b, &mut revisions).m;
+        let matrix = get_node_world_matrix4(&b).m;
         close(matrix[0], 1.0);
         close(matrix[10], 1.0);
-        close(get_node_world_matrix4(&m, &mut revisions).m[12], 7.0);
+        close(get_node_world_matrix4(&m).m[12], 7.0);
     }
     #[test]
     fn compensates_parent_rotation_in_world_space() {
@@ -161,14 +138,12 @@ mod orient_scene3d_billboards_to_camera {
         invalidate_node_local_transform(&p);
         let b = as_node_ref(&billboard(BillboardMode::Full));
         add_node_child(&p, &b);
-        let mut revisions = revision_state();
         orient_scene3d_billboards_to_camera(
             &p,
             &camera_looking_from(0.0, 0.0, 10.0),
             &guard_state(),
-            &mut revisions,
         );
-        let m = get_node_world_matrix4(&b, &mut revisions).m;
+        let m = get_node_world_matrix4(&b).m;
         for i in [0, 5, 10] {
             close(m[i], 1.0);
         }
@@ -191,17 +166,11 @@ mod set_billboard_camera_basis_guard {
             })),
         );
         let b = as_node_ref(&billboard(BillboardMode::Full));
-        let mut revisions = revision_state();
-        orient_billboard_to_camera(&b, &singular_camera(), &state, &mut revisions);
-        orient_billboard_to_camera(
-            &b,
-            &camera_looking_from(0.0, 0.0, 10.0),
-            &state,
-            &mut revisions,
-        );
+        orient_billboard_to_camera(&b, &singular_camera(), &state);
+        orient_billboard_to_camera(&b, &camera_looking_from(0.0, 0.0, 10.0), &state);
         assert_eq!(*seen.lock().unwrap(), vec![0.0]);
         set_billboard_camera_basis_guard(&state, None);
-        orient_billboard_to_camera(&b, &singular_camera(), &state, &mut revisions);
+        orient_billboard_to_camera(&b, &singular_camera(), &state);
         assert_eq!(seen.lock().unwrap().len(), 1);
     }
 }

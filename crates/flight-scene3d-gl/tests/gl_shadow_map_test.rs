@@ -15,7 +15,6 @@ use flight_meshgeometry::{
     VertexFormat, VertexSemantic, create_box_mesh_geometry, create_mesh_geometry,
 };
 use flight_node::NodeRef;
-use flight_node::contract::NodeRevisionState;
 use flight_render_gl::GlRenderState;
 use flight_scene3d::{
     Skin, create_instanced_mesh, set_instanced_mesh_instance_count,
@@ -422,9 +421,6 @@ mod render_gl_scene3d_shadow_map {
         let mut skeleton = create_skeleton3d(
             Arc::new(RwLock::new(Vec::new())),
             None,
-            &mut NodeRevisionState {
-                world_transform_revision: 0,
-            },
             &Arc::new(RwLock::new(Skeleton3DGuardState {
                 enabled: false,
                 bind_pose_guard: None,

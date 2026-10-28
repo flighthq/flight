@@ -11,7 +11,7 @@ use flight_geometry::{Matrix, create_matrix, create_rectangle, multiply_matrix};
 use flight_node::{NodeRef, compute_node_bounds_rectangle};
 use flight_render::{
     NodeRenderer, RenderCache, RenderCacheRefreshOptions, RenderProxies2D, RenderProxy2D,
-    RenderState, RenderTargetPadding, RenderTargetSize, compute_render_cache_transform,
+    RenderTargetPadding, RenderTargetSize, compute_render_cache_transform,
     compute_render_target_size, compute_scene_2d_render_target_transform, get_render_proxy_cache,
     noop_renderer_data, prepare_scene_2d_render, register_render_cache_node_renderer,
 };
@@ -196,12 +196,7 @@ pub fn refresh_wgpu_render_cache(
         .unwrap_or(1.0);
 
     let mut bounds = create_rectangle(0.0, 0.0, 0.0, 0.0);
-    compute_node_bounds_rectangle(
-        &mut bounds,
-        source,
-        Some(source),
-        &mut cache_state.render_runtime_mut().node_revisions,
-    );
+    compute_node_bounds_rectangle(&mut bounds, source, Some(source));
     let mut target_size = RenderTargetSize::default();
     let (width, height) = {
         let size = compute_render_target_size(

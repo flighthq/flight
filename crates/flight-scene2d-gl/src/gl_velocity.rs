@@ -164,7 +164,7 @@ pub fn gl_node2d_velocity_writer(ctx: &mut GlVelocityContext<'_>, node: &NodeRef
     if velocity.x == 0.0 && velocity.y == 0.0 {
         return;
     }
-    let bounds = get_node_world_bounds_rectangle(node, &mut ctx.state.runtime.node_revisions);
+    let bounds = get_node_world_bounds_rectangle(node);
     draw_gl_velocity_quad(
         ctx,
         bounds.x,
@@ -191,7 +191,7 @@ pub fn gl_particle_emitter2d_velocity_writer(ctx: &mut GlVelocityContext<'_>, no
     };
     let (mut wa, mut wb, mut wc, mut wd, mut wtx, mut wty) = (1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
     if !world_space {
-        let transform = get_node_world_matrix(node, &mut ctx.state.runtime.node_revisions);
+        let transform = get_node_world_matrix(node);
         wa = transform.a;
         wb = transform.b;
         wc = transform.c;
@@ -299,7 +299,7 @@ pub fn gl_quad_batch_velocity_writer(ctx: &mut GlVelocityContext<'_>, node: &Nod
 
     // Precise per-instance path: requires the velocity array and a resolvable region per instance.
     if has_instances {
-        let transform = get_node_world_matrix(node, &mut ctx.state.runtime.node_revisions);
+        let transform = get_node_world_matrix(node);
         let (pa, pb, pc, pd, ptx, pty) = (
             transform.a,
             transform.b,

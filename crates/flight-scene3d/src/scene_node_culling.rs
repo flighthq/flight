@@ -4,18 +4,13 @@ use flight_geometry::{
     transform_aabb_by_matrix4,
 };
 use flight_meshgeometry::compute_mesh_geometry_bounds;
+use flight_node::contract::NodeRef;
 use flight_node::contract::get_node_world_matrix4;
-use flight_node::contract::{NodeRef, NodeRevisionState};
 
 pub fn build_scene3d_frustum(out: &mut Frustum, view_projection: &Matrix4) {
     set_frustum_from_matrix4(out, view_projection);
 }
-fn cull_node(
-    out: &mut Vec<NodeRef>,
-    node: &NodeRef,
-    frustum: &Frustum,
-    revisions: &mut NodeRevisionState,
-) {
+fn cull_node(out: &mut Vec<NodeRef>, node: &NodeRef, frustum: &Frustum) {
     let (geometry, children) = {
         let n = node.read().unwrap();
         if !n.node_fields().enabled {
@@ -40,7 +35,7 @@ fn cull_node(
             }
         };
         if local.min.x <= local.max.x {
-            let matrix = get_node_world_matrix4(node, revisions);
+            let matrix = get_node_world_matrix4(node);
             let mut world: Aabb = create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
             transform_aabb_by_matrix4(&mut world, &local, &matrix);
             if is_frustum_intersecting_aabb(frustum, &world) {
@@ -49,15 +44,10 @@ fn cull_node(
         }
     }
     for child in children {
-        cull_node(out, &child, frustum, revisions);
+        cull_node(out, &child, frustum);
     }
 }
 // flight-lint: allow(conform-params) D5 caller-owned canonical node revision source; D9 mutating out-first operation returns unit
-pub fn cull_node3d_by_frustum(
-    out: &mut Vec<NodeRef>,
-    root: &NodeRef,
-    frustum: &Frustum,
-    revisions: &mut NodeRevisionState,
-) {
-    cull_node(out, root, frustum, revisions);
+pub fn cull_node3d_by_frustum(out: &mut Vec<NodeRef>, root: &NodeRef, frustum: &Frustum) {
+    cull_node(out, root, frustum);
 }

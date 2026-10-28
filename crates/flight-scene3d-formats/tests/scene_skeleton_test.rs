@@ -1,6 +1,5 @@
 use flight_entity::Ref;
 use flight_meshgeometry::{MeshGeometryOptions, create_mesh_geometry};
-use flight_node::contract::NodeRevisionState;
 use flight_node::{NodeRef, add_node_child};
 use flight_scene3d::{
     Mesh, Node3DFields, Node3DRef, Skeleton3D, Skin, create_mesh, create_node3d, create_scene3d,
@@ -42,9 +41,6 @@ fn create_test_skeleton(joints: Ref<Vec<Node3DRef>>) -> Ref<Skeleton3D> {
         Some(Arc::new(RwLock::new(
             vec![0.0; count * 16].into_boxed_slice(),
         ))),
-        &mut NodeRevisionState {
-            world_transform_revision: 0,
-        },
         &Arc::new(RwLock::new(Skeleton3DGuardState {
             enabled: false,
             bind_pose_guard: None,

@@ -19,10 +19,16 @@ fn edit(node: &NodeRef, apply: impl FnOnce(Transform2DMut<'_>)) {
     invalidate_node_local_transform(node);
 }
 
-fn revisions() -> NodeRevisionState {
-    return NodeRevisionState {
-        world_transform_revision: 0,
-    };
+fn set_world_test_x(node: &NodeRef, x: f32) {
+    {
+        let mut guard = node.write().unwrap();
+        *guard
+            .as_transform2d_node_mut()
+            .expect("test node is a Transform2D node")
+            .transform2d_mut()
+            .x = x;
+    }
+    invalidate_node_local_transform(node);
 }
 
 mod convert_node_vector2_global_to_local {
@@ -39,7 +45,7 @@ mod convert_node_vector2_global_to_local {
         });
         let mut out = flight_geometry::create_vector2(999.0, 999.0);
         let world = flight_geometry::create_vector2(10.0, 20.0);
-        convert_node_vector2_global_to_local(&mut out, &node, &world, &mut revisions());
+        convert_node_vector2_global_to_local(&mut out, &node, &world);
         close(out.x, 0.0);
         close(out.y, 0.0);
     }
@@ -57,12 +63,12 @@ mod convert_node_vector2_global_to_local {
         });
         let mut out = flight_geometry::create_vector2(999.0, 999.0);
         let world = flight_geometry::create_vector2(14.0, 24.0);
-        convert_node_vector2_global_to_local(&mut out, &node, &world, &mut revisions());
+        convert_node_vector2_global_to_local(&mut out, &node, &world);
         close(out.x, 2.0);
         close(out.y, 2.0);
         let mut origin = flight_geometry::create_vector2(0.0, 0.0);
         let local_origin = flight_geometry::create_vector2(10.0, 20.0);
-        convert_node_vector2_global_to_local(&mut origin, &node, &local_origin, &mut revisions());
+        convert_node_vector2_global_to_local(&mut origin, &node, &local_origin);
         close(origin.x, 0.0);
         close(origin.y, 0.0);
     }
@@ -79,7 +85,6 @@ mod convert_node_vector2_local_to_global {
             &mut out,
             &node,
             &flight_geometry::create_vector2(5.0, 5.0),
-            &mut revisions(),
         );
         close(out.x, 5.0);
         close(out.y, 5.0);
@@ -92,7 +97,6 @@ mod convert_node_vector2_local_to_global {
             &mut translated,
             &node,
             &flight_geometry::create_vector2(10.0, 20.0),
-            &mut revisions(),
         );
         close(translated.x, 60.0);
         close(translated.y, 50.0);
@@ -111,13 +115,11 @@ mod convert_node_vector2_local_to_global {
             &mut first,
             &node,
             &flight_geometry::create_vector2(1.0, 1.0),
-            &mut revisions(),
         );
         convert_node_vector2_local_to_global(
             &mut second,
             &node,
             &flight_geometry::create_vector2(2.0, 2.0),
-            &mut revisions(),
         );
         close(first.x, 2.0);
         close(first.y, 3.0);
@@ -217,12 +219,73 @@ mod ensure_node_local_matrix {
 mod ensure_node_world_matrix {
     use super::*;
 
+    // Regression for the removed caller-owned revision state: a fresh counter per query restarted
+    // at 0 and re-minted the parent's old id, so the child kept a stale world matrix. The counter
+    // now lives on the graph root and persists across queries.
+    #[test]
+    fn a_later_query_sees_a_parent_change() {
+        let parent = create_test_node_2d("Test");
+        let child = create_test_node_2d("Test");
+        add_node_child(&parent, &child);
+        set_world_test_x(&parent, 10.0);
+        assert_eq!(get_node_world_matrix(&child).tx, 10.0);
+        set_world_test_x(&parent, 50.0);
+        assert_eq!(get_node_world_matrix(&child).tx, 50.0);
+    }
+
+    #[test]
+    fn mints_every_revision_in_a_chain_from_the_root_counter() {
+        let root = create_test_node_2d("Test");
+        let middle = create_test_node_2d("Test");
+        let leaf = create_test_node_2d("Test");
+        add_node_child(&root, &middle);
+        add_node_child(&middle, &leaf);
+        ensure_node_world_matrix(&leaf);
+        let counter = |node: &NodeRef| {
+            node.read()
+                .unwrap()
+                .node_runtime()
+                .world_transform_revision_counter
+        };
+        assert_eq!(counter(&root), 3);
+        assert_eq!(counter(&middle), 0);
+        assert_eq!(counter(&leaf), 0);
+    }
+
+    // Each root owns its counter, so two graphs mint overlapping ids; that is safe because an id is
+    // only ever compared against ids minted by the same root.
+    #[test]
+    fn keeps_independent_roots_from_interfering() {
+        let root_a = create_test_node_2d("Test");
+        let child_a = create_test_node_2d("Test");
+        let root_b = create_test_node_2d("Test");
+        let child_b = create_test_node_2d("Test");
+        add_node_child(&root_a, &child_a);
+        add_node_child(&root_b, &child_b);
+        set_world_test_x(&root_a, 10.0);
+        set_world_test_x(&root_b, 20.0);
+        get_node_world_matrix(&child_a);
+        get_node_world_matrix(&child_b);
+        let id = |node: &NodeRef| node.read().unwrap().node_runtime().world_transform_id;
+        assert_eq!(id(&child_a), id(&child_b));
+        let child_b_revision = id(&child_b);
+        for step in 0..5 {
+            set_world_test_x(&root_a, 50.0 + step as f32);
+            get_node_world_matrix(&child_a);
+        }
+        assert_eq!(get_node_world_matrix(&child_a).tx, 54.0);
+        assert_eq!(get_node_world_matrix(&child_b).tx, 20.0);
+        assert_eq!(id(&child_b), child_b_revision);
+        set_world_test_x(&root_b, 30.0);
+        assert_eq!(get_node_world_matrix(&child_b).tx, 30.0);
+    }
+
     #[test]
     fn computes_world_transform_the_first_time_and_for_a_parent() {
         let parent = create_test_node_2d("Test");
         let node = create_test_node_2d("Test");
         add_node_child(&parent, &node);
-        ensure_node_world_matrix(&node, &mut revisions());
+        ensure_node_world_matrix(&node);
         assert!(
             node.read()
                 .unwrap()
@@ -247,8 +310,7 @@ mod ensure_node_world_matrix {
     #[test]
     fn recomputes_when_the_local_transform_revision_changes() {
         let node = create_test_node_2d("Test");
-        let mut state = revisions();
-        ensure_node_world_matrix(&node, &mut state);
+        ensure_node_world_matrix(&node);
         let cached = node
             .read()
             .unwrap()
@@ -275,7 +337,7 @@ mod ensure_node_world_matrix {
             stale.tx = -1.0;
             stale.ty = -1.0;
         }
-        ensure_node_world_matrix(&node, &mut state);
+        ensure_node_world_matrix(&node);
         assert_eq!(
             node.read()
                 .unwrap()
@@ -292,8 +354,7 @@ mod ensure_node_world_matrix {
         let parent = create_test_node_2d("Test");
         let node = create_test_node_2d("Test");
         add_node_child(&parent, &node);
-        let mut state = revisions();
-        ensure_node_world_matrix(&node, &mut state);
+        ensure_node_world_matrix(&node);
         let cached = node
             .read()
             .unwrap()
@@ -308,7 +369,7 @@ mod ensure_node_world_matrix {
             .unwrap()
             .node_runtime_mut()
             .world_transform_id += 1;
-        ensure_node_world_matrix(&node, &mut state);
+        ensure_node_world_matrix(&node);
         assert_eq!(
             node.read()
                 .unwrap()
@@ -434,7 +495,7 @@ mod get_node_world_matrix {
                 .world_matrix
                 .is_none()
         );
-        let matrix = get_node_world_matrix(&node, &mut revisions());
+        let matrix = get_node_world_matrix(&node);
         assert_eq!(matrix.a, 1.0);
         let cached = node
             .read()
@@ -607,7 +668,7 @@ mod skew {
         let child_local = get_node_local_matrix(&child);
         let mut expected = flight_geometry::create_matrix(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
         flight_geometry::multiply_matrix(&mut expected, &parent_local, &child_local);
-        let world = get_node_world_matrix(&child, &mut revisions());
+        let world = get_node_world_matrix(&child);
         close(world.a, expected.a);
         close(world.b, expected.b);
         close(world.c, expected.c);

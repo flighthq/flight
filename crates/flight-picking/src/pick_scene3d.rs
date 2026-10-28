@@ -20,7 +20,7 @@ use flight_meshgeometry::{
     MeshTriangleVertexIndices, get_mesh_geometry_triangle_count,
     get_mesh_geometry_triangle_vertex_indices, get_mesh_geometry_vertex_position,
 };
-use flight_node::contract::{NodeRevisionState, get_node_world_matrix4};
+use flight_node::contract::get_node_world_matrix4;
 use flight_node::{Node, NodeRef};
 use flight_scene3d::contract::{get_mesh_runtime, get_node3d_world_bounds};
 use flight_scene3d::{Mesh, NODE3D_TRAITS_KEY, Node3DNarrow};
@@ -99,7 +99,6 @@ fn for_each_scene3d_ray_hit(
     scene: &NodeRef,
     ray: &Ray3D,
     options: Option<&Scene3DPickOptions>,
-    revisions: &mut NodeRevisionState,
     on_hit: &mut dyn FnMut(&Scene3DHit),
 ) {
     let predicate = options.and_then(|o| o.predicate.as_ref());
@@ -114,7 +113,6 @@ fn for_each_scene3d_ray_hit(
         predicate,
         max_distance,
         cull_backfaces,
-        revisions,
         &mut hit,
         on_hit,
     );
@@ -138,7 +136,6 @@ fn intersect_mesh_triangles(
     ray: &Ray3D,
     max_distance: f32,
     cull_backfaces: bool,
-    revisions: &mut NodeRevisionState,
     hit: &mut Scene3DHit,
     on_hit: &mut dyn FnMut(&Scene3DHit),
 ) {
@@ -154,16 +151,16 @@ fn intersect_mesh_triangles(
     };
     let mut world_bounds = create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     if let Some(posed_local_bounds) = &posed_local_bounds {
-        let world_matrix = get_node_world_matrix4(node, revisions);
+        let world_matrix = get_node_world_matrix4(node);
         transform_aabb_by_matrix4(&mut world_bounds, posed_local_bounds, &world_matrix);
     } else {
-        get_node3d_world_bounds(&mut world_bounds, node, revisions);
+        get_node3d_world_bounds(&mut world_bounds, node);
     }
     if intersect_ray3d_aabb(ray, &world_bounds) < 0.0 {
         return;
     }
 
-    let world_matrix = get_node_world_matrix4(node, revisions);
+    let world_matrix = get_node_world_matrix4(node);
     let mut inverse_world = world_matrix.clone();
     if !inverse_matrix4(&mut inverse_world, &world_matrix) {
         return;
@@ -256,7 +253,6 @@ fn pick_node(
     predicate: Option<&Arc<dyn Fn(&Mesh) -> bool + Send + Sync>>,
     max_distance: f32,
     cull_backfaces: bool,
-    revisions: &mut NodeRevisionState,
     hit: &mut Scene3DHit,
     on_hit: &mut dyn FnMut(&Scene3DHit),
 ) {
@@ -271,15 +267,7 @@ fn pick_node(
         (test_mesh, guard.node_runtime().children.clone())
     };
     if test_mesh {
-        intersect_mesh_triangles(
-            node,
-            ray,
-            max_distance,
-            cull_backfaces,
-            revisions,
-            hit,
-            on_hit,
-        );
+        intersect_mesh_triangles(node, ray, max_distance, cull_backfaces, hit, on_hit);
     }
     if let Some(children) = children {
         for child in &children {
@@ -289,7 +277,6 @@ fn pick_node(
                 predicate,
                 max_distance,
                 cull_backfaces,
-                revisions,
                 hit,
                 on_hit,
             );
@@ -304,7 +291,7 @@ fn pick_node(
 /// then delegates to `pick_scene3d_with_ray3d`.
 ///
 /// Alias-safe: `out` is only written when a hit is found; on a miss `out` is untouched.
-// flight-lint: allow(conform-params) D9b out-first; D5 caller-owned node revisions resolve world matrices
+// flight-lint: allow(conform-params) D9b out-first
 pub fn pick_scene3d(
     out: &mut Scene3DHit,
     scene: &NodeRef,
@@ -312,19 +299,18 @@ pub fn pick_scene3d(
     screen_x: f32,
     screen_y: f32,
     options: Option<&Scene3DPickOptions>,
-    revisions: &mut NodeRevisionState,
 ) -> bool {
     let mut camera_ray = create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     if !build_camera_pick_ray(&mut camera_ray, camera, screen_x, screen_y) {
         return false;
     }
-    return pick_scene3d_with_ray3d(out, scene, &camera_ray, options, revisions);
+    return pick_scene3d_with_ray3d(out, scene, &camera_ray, options);
 }
 
 /// Collects every Mesh hit by a camera pick ray into `out_array`, sorted by ascending distance (TS
 /// `pickScene3DAll`). A thin wrapper over `pick_scene3d_all_with_ray3d` that first unprojects the
 /// camera ray; on an unprojectable camera the array is emptied.
-// flight-lint: allow(conform-params) D9b out-first; D5 caller-owned node revisions resolve world matrices
+// flight-lint: allow(conform-params) D9b out-first
 pub fn pick_scene3d_all(
     out_array: &mut Vec<Scene3DHit>,
     scene: &NodeRef,
@@ -332,14 +318,13 @@ pub fn pick_scene3d_all(
     screen_x: f32,
     screen_y: f32,
     options: Option<&Scene3DPickOptions>,
-    revisions: &mut NodeRevisionState,
 ) {
     let mut camera_ray = create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     if !build_camera_pick_ray(&mut camera_ray, camera, screen_x, screen_y) {
         out_array.clear();
         return;
     }
-    pick_scene3d_all_with_ray3d(out_array, scene, &camera_ray, options, revisions);
+    pick_scene3d_all_with_ray3d(out_array, scene, &camera_ray, options);
 }
 
 /// Collects every Mesh hit by a world-space `ray` into `out_array`, sorted by ascending distance
@@ -347,16 +332,15 @@ pub fn pick_scene3d_all(
 /// slots are reused and new ones allocated as needed, so the array can be kept and refilled across
 /// picks. The general primitive behind `pick_scene3d_all`; the ray need not be unit-length (see
 /// `Scene3DPickOptions`).
-// flight-lint: allow(conform-params) D9b out-first; D5 caller-owned node revisions resolve world matrices
+// flight-lint: allow(conform-params) D9b out-first
 pub fn pick_scene3d_all_with_ray3d(
     out_array: &mut Vec<Scene3DHit>,
     scene: &NodeRef,
     ray: &Ray3D,
     options: Option<&Scene3DPickOptions>,
-    revisions: &mut NodeRevisionState,
 ) {
     let mut count = 0;
-    for_each_scene3d_ray_hit(scene, ray, options, revisions, &mut |hit| {
+    for_each_scene3d_ray_hit(scene, ray, options, &mut |hit| {
         if count == out_array.len() {
             out_array.push(create_scene3d_hit());
         }
@@ -379,17 +363,16 @@ pub fn pick_scene3d_all_with_ray3d(
 /// un-normalized so the parametric `t` stays in world-ray units and is comparable across meshes.
 ///
 /// Alias-safe: `out` is only written when a nearer hit is found; on a miss `out` is untouched.
-// flight-lint: allow(conform-params) D9b out-first; D5 caller-owned node revisions resolve world matrices
+// flight-lint: allow(conform-params) D9b out-first
 pub fn pick_scene3d_with_ray3d(
     out: &mut Scene3DHit,
     scene: &NodeRef,
     ray: &Ray3D,
     options: Option<&Scene3DPickOptions>,
-    revisions: &mut NodeRevisionState,
 ) -> bool {
     let mut found = false;
     let mut best_t = f32::INFINITY;
-    for_each_scene3d_ray_hit(scene, ray, options, revisions, &mut |hit| {
+    for_each_scene3d_ray_hit(scene, ray, options, &mut |hit| {
         if hit.distance >= best_t {
             return;
         }

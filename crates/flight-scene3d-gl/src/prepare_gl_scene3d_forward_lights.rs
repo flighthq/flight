@@ -9,7 +9,7 @@ use flight_lighting::{
     Scene3DLightBlock, Scene3DLightsLike, create_scene_3d_lights, select_scene_3d_forward_lights,
 };
 use flight_node::NodeRef;
-use flight_node::contract::{NodeRevisionState, get_node_world_matrix4};
+use flight_node::contract::get_node_world_matrix4;
 use flight_render::{Scene3DRenderList, pack_scene_3d_light_block};
 use flight_render_gl::GlRenderState;
 use flight_scene3d::get_node3d_world_bounds;
@@ -59,7 +59,7 @@ pub fn prepare_gl_scene3d_forward_lights(
 
     for mesh_index in 0..scene_render_list.mesh_count {
         let mesh = &scene_render_list.visible_meshes[mesh_index];
-        set_mesh_world_bounding_sphere(&mut world_sphere, mesh, &mut state.runtime.node_revisions);
+        set_mesh_world_bounding_sphere(&mut world_sphere, mesh);
         select_scene_3d_forward_lights(&mut prepared.selection, lights, &world_sphere, None);
 
         let block_index = match find_prepared_block(&prepared, &prepared.selection.indices) {
@@ -97,16 +97,12 @@ pub fn prepare_gl_scene3d_forward_lights(
     get_gl_scene3d_runtime(state).prepared_forward_lights = Some(prepared);
 }
 
-fn set_mesh_world_bounding_sphere(
-    out: &mut BoundingSphere,
-    mesh: &NodeRef,
-    revisions: &mut NodeRevisionState,
-) {
+fn set_mesh_world_bounding_sphere(out: &mut BoundingSphere, mesh: &NodeRef) {
     let mut world_bounds = create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
-    get_node3d_world_bounds(&mut world_bounds, mesh, revisions);
+    get_node3d_world_bounds(&mut world_bounds, mesh);
     set_bounding_sphere_from_aabb(out, &world_bounds);
     if out.radius < 0.0 {
-        let world = get_node_world_matrix4(mesh, revisions).m;
+        let world = get_node_world_matrix4(mesh).m;
         out.center.x = world[12];
         out.center.y = world[13];
         out.center.z = world[14];

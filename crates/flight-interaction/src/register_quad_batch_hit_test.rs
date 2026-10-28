@@ -3,7 +3,6 @@ use std::sync::Arc;
 use flight_geometry::{
     create_matrix, create_vector2, inverse_matrix_transform_point_xy, set_matrix_from_float32_array,
 };
-use flight_node::contract::NodeRevisionState;
 use flight_node::{NodeRef, get_node_world_matrix};
 use flight_quadbatch::contract::QUAD_BATCH_KIND;
 use flight_quadbatch::{QuadBatch, QuadTransformType};
@@ -38,9 +37,7 @@ fn resolve_quad_batch_instance_index(source: &NodeRef, x: f32, y: f32) -> i32 {
     let transform_type = data.transform_type;
     let instance_count = data.instance_count;
     drop(node);
-
-    let mut revisions = NodeRevisionState::default();
-    let matrix = get_node_world_matrix(source, &mut revisions);
+    let matrix = get_node_world_matrix(source);
     let mut local_point = create_vector2(0.0, 0.0);
     inverse_matrix_transform_point_xy(&mut local_point, &matrix, x, y);
     let lx = local_point.x;

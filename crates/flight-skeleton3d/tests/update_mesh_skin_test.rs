@@ -27,11 +27,11 @@ mod update_mesh_skin {
         let geometry = mesh.read().unwrap().geometry.clone();
         let node: NodeRef = mesh.clone();
         flight_scene3d::update_mesh_morph(&mesh.read().unwrap());
-        update_mesh_skin(&node, &mut revisions());
+        update_mesh_skin(&node);
         assert_eq!(&geometry.read().unwrap().vertices[..3], &[3.0, 5.0, 0.0]);
         morph.write().unwrap().weights[0] = 3.0;
         flight_scene3d::update_mesh_morph(&mesh.read().unwrap());
-        update_mesh_skin(&node, &mut revisions());
+        update_mesh_skin(&node);
         assert_eq!(&geometry.read().unwrap().vertices[..3], &[7.0, 5.0, 0.0]);
     }
     #[test]
@@ -46,7 +46,7 @@ mod update_mesh_skin {
         let version = geometry.read().unwrap().version;
         assert!(get_mesh_geometry_skin_bind_pose(&geometry.read().unwrap()).is_none());
         let node: NodeRef = mesh;
-        update_mesh_skin(&node, &mut revisions());
+        update_mesh_skin(&node);
         let mut geometry = geometry.write().unwrap();
         close(geometry.vertices[1], 5.0);
         assert_eq!(geometry.version, version + 1);
@@ -65,11 +65,11 @@ mod update_mesh_skin {
         invalidate_node_local_transform(&joint);
         let geometry = mesh.read().unwrap().geometry.clone();
         let node: NodeRef = mesh;
-        update_mesh_skin(&node, &mut revisions());
+        update_mesh_skin(&node);
         let first = get_mesh_geometry_skin_bind_pose(&geometry.read().unwrap())
             .unwrap()
             .clone();
-        update_mesh_skin(&node, &mut revisions());
+        update_mesh_skin(&node);
         assert!(Arc::ptr_eq(
             &first,
             get_mesh_geometry_skin_bind_pose(&geometry.read().unwrap()).unwrap()
@@ -82,7 +82,7 @@ mod update_mesh_skin {
         let geometry = mesh.read().unwrap().geometry.clone();
         let before = geometry.read().unwrap().version;
         let node: NodeRef = mesh;
-        update_mesh_skin(&node, &mut revisions());
+        update_mesh_skin(&node);
         assert_eq!(geometry.read().unwrap().version, before);
         assert!(get_mesh_geometry_skin_bind_pose(&geometry.read().unwrap()).is_none());
     }

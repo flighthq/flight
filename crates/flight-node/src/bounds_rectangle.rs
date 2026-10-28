@@ -1,7 +1,7 @@
 //! Local, parent-space and world bounds resolution for spatial 2D nodes
 //! (TS `boundsRectangle.ts`).
 
-// flight-lint: allow-file(contract-vocabulary, conform-params) D16 open node trait objects are contract dispatch; D5 caller-owned revision state replaces the TS module-level counter
+// flight-lint: allow-file(contract-vocabulary) D16 open node trait objects are contract dispatch
 
 use flight_geometry::{
     Matrix, Rectangle, acquire_matrix, copy_matrix, copy_rectangle, create_rectangle,
@@ -9,9 +9,11 @@ use flight_geometry::{
     set_empty_rectangle,
 };
 
-use crate::hierarchy::{get_node_child_count, get_node_parent};
-use crate::node_transform2d::{ensure_node_world_matrix, get_node_local_matrix};
-use crate::revision::{NodeRevisionState, invalidate_node_local_transform};
+use crate::hierarchy::{get_node_child_count, get_node_parent, get_node_root};
+use crate::node_transform2d::{
+    ensure_node_world_matrix_in_root, get_node_local_matrix, get_node_world_matrix,
+};
+use crate::revision::invalidate_node_local_transform;
 use crate::types::*;
 
 // D1: the source's 1e-12 threshold is a double-precision cos near 90 degrees. Rotation is stored as
@@ -27,7 +29,6 @@ pub fn compute_node_bounds_rectangle(
     out: &mut Rectangle,
     source: &NodeRef,
     target_coordinate_space: Option<&NodeRef>,
-    revisions: &mut NodeRevisionState,
 ) {
     let target = target_coordinate_space.unwrap_or(source);
     let mut bounds: Option<Rectangle> = None;
@@ -43,8 +44,8 @@ pub fn compute_node_bounds_rectangle(
     match bounds {
         Some(bounds) => copy_rectangle(out, &bounds),
         None => {
-            let world_bounds = get_node_world_bounds_rectangle(source, revisions);
-            let target_world = get_node_world_matrix_value(target, revisions);
+            let world_bounds = get_node_world_bounds_rectangle(source);
+            let target_world = get_node_world_matrix(target);
             let mut transform: Matrix = acquire_matrix();
             inverse_matrix(&mut transform, &target_world);
             matrix_transform_rectangle(out, &transform, &world_bounds);
@@ -63,10 +64,7 @@ pub fn compute_node_root_local_bounds_rectangle(out: &mut Rectangle, root: &Node
 
 /// Ensures the node's own bounds are current (TS `ensureNodeLocalBoundsRectangle`).
 
-fn ensure_node_child_world_bounds_rectangles(
-    target: &NodeRef,
-    revisions: &mut NodeRevisionState,
-) -> bool {
+fn ensure_node_child_world_bounds_rectangles(target: &NodeRef, root: &NodeRef) -> bool {
     let children = {
         let guard = target.read().unwrap();
         guard.node_runtime().children.clone()
@@ -84,7 +82,7 @@ fn ensure_node_child_world_bounds_rectangles(
             .unwrap()
             .as_bounds_node()
             .and_then(|bounds| bounds.bounds_runtime().world_bounds_rectangle.clone());
-        ensure_node_world_bounds_rectangle(&child, revisions);
+        ensure_node_world_bounds_rectangle_in_root(&child, root);
         let current = child
             .read()
             .unwrap()
@@ -133,7 +131,14 @@ pub fn ensure_node_parent_bounds_rectangle(target: &NodeRef) {
 /// Ensures the world bounds (including children) are current (TS
 /// `ensureNodeWorldBoundsRectangle`).
 
-pub fn ensure_node_world_bounds_rectangle(target: &NodeRef, revisions: &mut NodeRevisionState) {
+pub fn ensure_node_world_bounds_rectangle(target: &NodeRef) {
+    let root = get_node_root(target);
+    ensure_node_world_bounds_rectangle_in_root(target, &root);
+}
+
+// The subtree walk shares one resolved graph root, so each node's world-matrix resolve mints from it
+// without re-walking to the root.
+fn ensure_node_world_bounds_rectangle_in_root(target: &NodeRef, root: &NodeRef) {
     // TS: `!isNodeLocalBoundsRectangleValid(target, runtime) ||
     //      runtime.worldBoundsUsingLocalBoundsId !== runtime.localBoundsId`. The second term is the
     // world-bounds stamp that `invalidateNodeWorldBounds` clears; without it a translate-only fast
@@ -150,18 +155,15 @@ pub fn ensure_node_world_bounds_rectangle(target: &NodeRef, revisions: &mut Node
     };
     let has_children = get_node_child_count(target) != 0;
     let mut force_recompute = false;
-    if !has_children
-        && !local_invalid
-        && try_fast_recompute_world_bounds_rectangle(target, revisions)
-    {
+    if !has_children && !local_invalid && try_fast_recompute_world_bounds_rectangle(target, root) {
         return;
     }
     if !has_children && !local_invalid {
         force_recompute = true;
     }
-    ensure_node_world_matrix(target, revisions);
+    ensure_node_world_matrix_in_root(target, root);
     let child_bounds_changed =
-        has_children && ensure_node_child_world_bounds_rectangles(target, revisions);
+        has_children && ensure_node_child_world_bounds_rectangles(target, root);
     let stale = {
         let guard = target.read().unwrap();
         let Some(bounds) = guard.as_bounds_node() else {
@@ -171,16 +173,16 @@ pub fn ensure_node_world_bounds_rectangle(target: &NodeRef, revisions: &mut Node
             != bounds.node_runtime().world_transform_id as i32
     };
     if force_recompute || local_invalid || child_bounds_changed || stale {
-        recompute_world_bounds_rectangle(target, revisions);
+        recompute_world_bounds_rectangle(target, root);
     }
 }
 
 /// The node's height in its parent's coordinate space (TS `getNodeHeight`).
 
-pub fn get_node_height(source: &NodeRef, revisions: &mut NodeRevisionState) -> f32 {
+pub fn get_node_height(source: &NodeRef) -> f32 {
     let parent = get_node_parent(source);
     let mut bounds: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
-    compute_node_bounds_rectangle(&mut bounds, source, parent.as_ref(), revisions);
+    compute_node_bounds_rectangle(&mut bounds, source, parent.as_ref());
     return bounds.height;
 }
 
@@ -216,36 +218,25 @@ pub fn get_node_parent_bounds_rectangle(target: &NodeRef) -> Rectangle {
 
 /// The node's width in its parent's coordinate space (TS `getNodeWidth`).
 
-pub fn get_node_width(source: &NodeRef, revisions: &mut NodeRevisionState) -> f32 {
+pub fn get_node_width(source: &NodeRef) -> f32 {
     let parent = get_node_parent(source);
     let mut bounds: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
-    compute_node_bounds_rectangle(&mut bounds, source, parent.as_ref(), revisions);
+    compute_node_bounds_rectangle(&mut bounds, source, parent.as_ref());
     return bounds.width;
 }
 
 /// The node's world bounds, including enabled children (TS `getNodeWorldBoundsRectangle`).
 
-pub fn get_node_world_bounds_rectangle(
-    target: &NodeRef,
-    revisions: &mut NodeRevisionState,
-) -> Rectangle {
-    ensure_node_world_bounds_rectangle(target, revisions);
-    return target
-        .read()
-        .unwrap()
-        .as_bounds_node()
-        .expect("getNodeWorldBoundsRectangle: target has no bounds")
-        .bounds_runtime()
-        .world_bounds_rectangle
-        .clone()
-        .expect("world bounds are ensured");
+pub fn get_node_world_bounds_rectangle(target: &NodeRef) -> Rectangle {
+    ensure_node_world_bounds_rectangle(target);
+    return read_node_world_bounds_rectangle(target);
 }
 
 /// Sets the node's height through its scale, declining when no finite scale can express it (TS
 /// `setNodeHeight`).
 
-fn get_node_world_matrix_value(target: &NodeRef, revisions: &mut NodeRevisionState) -> Matrix {
-    ensure_node_world_matrix(target, revisions);
+fn get_node_world_matrix_in_root(target: &NodeRef, root: &NodeRef) -> Matrix {
+    ensure_node_world_matrix_in_root(target, root);
     return target
         .read()
         .unwrap()
@@ -308,6 +299,18 @@ fn merge_root_local_bounds(out: &mut Rectangle, node: &NodeRef, transform: Optio
     }
 }
 
+fn read_node_world_bounds_rectangle(target: &NodeRef) -> Rectangle {
+    return target
+        .read()
+        .unwrap()
+        .as_bounds_node()
+        .expect("getNodeWorldBoundsRectangle: target has no bounds")
+        .bounds_runtime()
+        .world_bounds_rectangle
+        .clone()
+        .expect("world bounds are ensured");
+}
+
 fn recompute_local_bounds_rectangle(target: &NodeRef) {
     let (compute, existing) = {
         let guard = target.read().unwrap();
@@ -359,8 +362,8 @@ fn recompute_node_bounds_rectangle(target: &NodeRef) {
     node_runtime.bounds_using_local_transform_id = local_transform_id;
 }
 
-fn recompute_world_bounds_rectangle(target: &NodeRef, revisions: &mut NodeRevisionState) {
-    let world_matrix = get_node_world_matrix_value(target, revisions);
+fn recompute_world_bounds_rectangle(target: &NodeRef, root: &NodeRef) {
+    let world_matrix = get_node_world_matrix_in_root(target, root);
     let local_bounds = get_node_local_bounds_rectangle(target);
     let mut rectangle = target
         .read()
@@ -378,7 +381,8 @@ fn recompute_world_bounds_rectangle(target: &NodeRef, revisions: &mut NodeRevisi
             if !child.read().unwrap().node_fields().enabled {
                 continue;
             }
-            let child_bounds = get_node_world_bounds_rectangle(&child, revisions);
+            ensure_node_world_bounds_rectangle_in_root(&child, root);
+            let child_bounds = read_node_world_bounds_rectangle(&child);
             if child_bounds.width != 0.0 && child_bounds.height != 0.0 {
                 let mut merged = rectangle.clone();
                 merge_rectangle(&mut merged, &rectangle, &child_bounds);
@@ -477,12 +481,16 @@ fn sign_of(value: f32) -> f32 {
     return if value < 0.0 { -1.0 } else { 1.0 };
 }
 
-fn try_fast_recompute_world_bounds_rectangle(
-    target: &NodeRef,
-    revisions: &mut NodeRevisionState,
-) -> bool {
+// The translate-only shortcut is valid only while the cached world bounds were derived from the cached
+// world matrix (the stamp matches). A stamp cleared by a reparent, or a world matrix re-resolved by
+// another query since the bounds were derived, falls through to a full recompute.
+fn try_fast_recompute_world_bounds_rectangle(target: &NodeRef, root: &NodeRef) -> bool {
     let previous = {
         let guard = target.read().unwrap();
+        let runtime = guard.node_runtime();
+        if runtime.world_bounds_using_world_transform_id != runtime.world_transform_id as i32 {
+            return false;
+        }
         let Some(bounds) = guard.as_bounds_node() else {
             return false;
         };
@@ -500,7 +508,7 @@ fn try_fast_recompute_world_bounds_rectangle(
     let Some((mut rectangle, previous_matrix)) = previous else {
         return false;
     };
-    ensure_node_world_matrix(target, revisions);
+    ensure_node_world_matrix_in_root(target, root);
     let current_matrix = target
         .read()
         .unwrap()
@@ -526,6 +534,9 @@ fn try_fast_recompute_world_bounds_rectangle(
                 .bounds_runtime_mut()
                 .world_bounds_rectangle = Some(rectangle);
         }
+        let mut guard = target.write().unwrap();
+        let runtime = guard.node_runtime_mut();
+        runtime.world_bounds_using_world_transform_id = runtime.world_transform_id as i32;
         return true;
     }
     return false;

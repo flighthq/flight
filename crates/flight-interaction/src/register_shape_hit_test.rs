@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use flight_geometry::{create_vector2, inverse_matrix_transform_point_xy};
-use flight_node::contract::NodeRevisionState;
 use flight_node::{NodeRef, get_node_world_matrix};
 use flight_path::contains_path_point;
 use flight_shape::contract::{MORPH_SHAPE_KIND, SCALE9_SHAPE_KIND, SHAPE_KIND};
@@ -27,9 +26,7 @@ fn hit_test_shape_fill(source: &NodeRef, x: f32, y: f32) -> i32 {
         Some(r) => r,
         None => return -1,
     };
-
-    let mut revisions = NodeRevisionState::default();
-    let matrix = get_node_world_matrix(source, &mut revisions);
+    let matrix = get_node_world_matrix(source);
     let mut local_point = create_vector2(0.0, 0.0);
     inverse_matrix_transform_point_xy(&mut local_point, &matrix, x, y);
 

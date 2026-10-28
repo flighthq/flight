@@ -11,8 +11,7 @@ mod hit_test_area_query {
         let root = interaction_fixture::node();
         let rect = create_rectangle(-10.0, -10.0, 20.0, 20.0);
         let mut out = Vec::new();
-        let mut revisions = interaction_fixture::revisions();
-        hit_test_area_query(&root, &rect, &mut out, &mut revisions);
+        hit_test_area_query(&root, &rect, &mut out);
         assert_eq!(out.len(), 1);
     }
 
@@ -25,8 +24,7 @@ mod hit_test_area_query {
         }
         let rect = create_rectangle(-10.0, -10.0, 20.0, 20.0);
         let mut out = Vec::new();
-        let mut revisions = interaction_fixture::revisions();
-        hit_test_area_query(&root, &rect, &mut out, &mut revisions);
+        hit_test_area_query(&root, &rect, &mut out);
         assert!(out.is_empty());
     }
 }
@@ -38,8 +36,7 @@ mod hit_test_area_query_circle {
     fn includes_node_in_circle() {
         let root = interaction_fixture::node();
         let mut out = Vec::new();
-        let mut revisions = interaction_fixture::revisions();
-        hit_test_area_query_circle(&root, 0.0, 0.0, 10.0, &mut out, &mut revisions);
+        hit_test_area_query_circle(&root, 0.0, 0.0, 10.0, &mut out);
         assert_eq!(out.len(), 1);
     }
 }

@@ -24,7 +24,7 @@ fn collapse(state: &Skeleton3DGuardStateRef) {
     node.write().unwrap().scale.x = 0.0;
     let node: NodeRef = node;
     invalidate_node_local_transform(&node);
-    set_skeleton3d_bind_pose(&mut rig, &mut revisions(), state);
+    set_skeleton3d_bind_pose(&mut rig, state);
 }
 mod are_skeleton3d_guards_enabled {
     use super::*;
@@ -81,11 +81,7 @@ mod enable_skeleton3d_guards {
         let state = guards();
         let (log, entries) = capture();
         enable_skeleton3d_guards(&state, &log, Arc::new(|| 0.0));
-        set_skeleton3d_bind_pose(
-            &mut skeleton(vec![joint(0.0, 0.0, 0.0)], None),
-            &mut revisions(),
-            &state,
-        );
+        set_skeleton3d_bind_pose(&mut skeleton(vec![joint(0.0, 0.0, 0.0)], None), &state);
         collapse(&guards());
         assert!(entries.lock().unwrap().is_empty());
     }

@@ -1,7 +1,7 @@
 use flight_entity::Ref;
 use flight_geometry::{Aabb, Matrix4, create_aabb, create_matrix4};
 use flight_meshgeometry::{MeshGeometry, create_box_mesh_geometry};
-use flight_node::contract::{Node, NodeRef, NodeRevisionState};
+use flight_node::contract::{Node, NodeRef};
 use flight_scene3d::contract::*;
 use std::sync::{Arc, RwLock};
 
@@ -33,11 +33,6 @@ pub fn empty_materials() -> MeshMaterials {
 }
 pub fn node3d() -> Ref<Node3DFields> {
     return publish_node3d(create_node3d::<Node3DFields>(None));
-}
-pub fn revision_state() -> NodeRevisionState {
-    return NodeRevisionState {
-        world_transform_revision: 0,
-    };
 }
 pub fn test_geometry() -> Ref<MeshGeometry> {
     return Arc::new(RwLock::new(create_box_mesh_geometry(None, None, None)));

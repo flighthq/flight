@@ -7,12 +7,12 @@ mod get_node3d_world_bounds {
     fn writes_an_empty_box_for_bare_nodes_and_group_only_subtrees() {
         let root = as_node_ref(&node3d());
         let mut out = empty_bounds();
-        get_node3d_world_bounds(&mut out, &root, &mut revision_state());
+        get_node3d_world_bounds(&mut out, &root);
         assert_eq!(out.min.x, f32::INFINITY);
         assert_eq!(out.max.x, f32::NEG_INFINITY);
         add_node_child(&root, &as_node_ref(&node3d()));
         add_node_child(&root, &as_node_ref(&node3d()));
-        get_node3d_world_bounds(&mut out, &root, &mut revision_state());
+        get_node3d_world_bounds(&mut out, &root);
         assert_eq!(out.min.x, f32::INFINITY);
     }
     #[test]
@@ -20,8 +20,7 @@ mod get_node3d_world_bounds {
         let mesh = test_mesh();
         let node = as_node_ref(&mesh);
         let mut out = empty_bounds();
-        let mut state = revision_state();
-        get_node3d_world_bounds(&mut out, &node, &mut state);
+        get_node3d_world_bounds(&mut out, &node);
         for v in [out.min.x, out.min.y, out.min.z] {
             close(v, -0.5);
         }
@@ -30,7 +29,7 @@ mod get_node3d_world_bounds {
         }
         mesh.write().unwrap().position.x = 10.0;
         invalidate_node_local_transform(&node);
-        get_node3d_world_bounds(&mut out, &node, &mut state);
+        get_node3d_world_bounds(&mut out, &node);
         close(out.min.x, 9.5);
         close(out.max.x, 10.5);
     }
@@ -51,12 +50,12 @@ mod get_node3d_world_bounds {
         add_node_child(&group, &br);
         add_node_child(&root, &group);
         let mut out = empty_bounds();
-        get_node3d_world_bounds(&mut out, &root, &mut revision_state());
+        get_node3d_world_bounds(&mut out, &root);
         close(out.min.x, -5.5);
         close(out.max.x, 5.5);
         b.write().unwrap().position.x = 3.0;
         invalidate_node_local_transform(&br);
-        get_node3d_world_bounds(&mut out, &group, &mut revision_state());
+        get_node3d_world_bounds(&mut out, &group);
         close(out.min.x, 2.5);
         close(out.max.x, 3.5);
     }

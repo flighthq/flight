@@ -3,36 +3,32 @@
 //! Each revision is a wrapping 32-bit counter. `-1` marks a derived value that has never been
 //! computed for that axis.
 
-// flight-lint: allow-file(contract-vocabulary, conform-params) D16 open node trait objects are contract dispatch; D5 caller-owned revision state replaces the TS module-level counter
-// flight-lint: allow-file(hidden-state) D5: the world-transform revision source is explicit caller-owned state
+// flight-lint: allow-file(contract-vocabulary, conform-params) D16 open node trait objects are contract dispatch; Rust passes the parent revision by value and the root runtime explicitly because a held parent guard cannot also lend the root mutably when they are the same node
 
-use crate::types::NodeRef;
-
-/// Caller-owned source of world-transform revisions (D5). TS keeps one module-level counter; here
-/// the caller creates and passes it, so no semantic global exists.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct NodeRevisionState {
-    pub world_transform_revision: u32,
-}
+use crate::types::{NodeRef, NodeRuntime};
 
 /// Records that the node's world transform was just recomputed (TS
 /// `computeNodeWorldTransformRevision`). A fresh monotonic id per recompute is what propagates
 /// through every descendant, however deep.
+///
+/// The id is minted from the graph root's `world_transform_revision_counter`: `root` is the root's
+/// runtime, or `None` when `target` is itself the root (has no parent). `parent_world_transform_id`
+/// is the parent's current `world_transform_id`, or `None` for a root.
 pub fn compute_node_world_transform_revision(
     target: &mut dyn crate::types::Node,
-    parent: Option<&dyn crate::types::Node>,
-    revisions: &mut NodeRevisionState,
+    parent_world_transform_id: Option<u32>,
+    root: Option<&mut NodeRuntime>,
 ) {
+    let local_transform_id = target.node_runtime().local_transform_id;
+    let revision = match root {
+        Some(root) => next_world_transform_revision(root),
+        None => next_world_transform_revision(target.node_runtime_mut()),
+    };
     let runtime = target.node_runtime_mut();
-    runtime.world_transform_using_local_transform_id = runtime.local_transform_id as i32;
-    runtime.world_transform_using_parent_transform_id = parent
-        .map(|parent| parent.node_runtime().world_transform_id as i32)
-        .unwrap_or(0);
-    revisions.world_transform_revision = revisions.world_transform_revision.wrapping_add(1);
-    if revisions.world_transform_revision == 0 {
-        revisions.world_transform_revision = 1;
-    }
-    runtime.world_transform_id = revisions.world_transform_revision;
+    runtime.world_transform_using_local_transform_id = local_transform_id as i32;
+    runtime.world_transform_using_parent_transform_id =
+        parent_world_transform_id.map(|id| id as i32).unwrap_or(0);
+    runtime.world_transform_id = revision;
 }
 
 /// The node's appearance revision (TS `getNodeAppearanceRevision`).
@@ -141,4 +137,14 @@ pub fn invalidate_node_world_bounds(target: &NodeRef) {
         };
         current = next.and_then(|parent| parent.upgrade());
     }
+}
+
+// 0 is the fresh-runtime sentinel (never a live revision), so step past a wrap back to 0.
+fn next_world_transform_revision(root: &mut NodeRuntime) -> u32 {
+    let mut revision = root.world_transform_revision_counter.wrapping_add(1);
+    if revision == 0 {
+        revision = 1;
+    }
+    root.world_transform_revision_counter = revision;
+    return revision;
 }

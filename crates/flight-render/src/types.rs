@@ -10,7 +10,6 @@ use flight_host::CanvasRenderingContext2D;
 use flight_lighting::Scene3DLightBlock;
 use flight_log::LogStateRef;
 use flight_materials::{BlendMode, ColorScaleBias, Material2D, MaterialData};
-use flight_node::contract::NodeRevisionState;
 use flight_node::{NodeRef, RendererDataRef};
 use flight_path::{Path, PathMesh, StrokeStyle};
 use flight_registry::KindMap;
@@ -155,7 +154,6 @@ pub struct RenderStateRuntime<S: RenderState> {
     pub color_adjustment_guard_log: Option<LogStateRef>,
     pub scene_render_guard_log: Option<LogStateRef>,
     pub renderer_map_id: u32,
-    pub node_revisions: NodeRevisionState,
     pub prepared_scene3d: Option<PreparedScene3D>,
 }
 
@@ -787,7 +785,6 @@ impl<S: RenderState> Default for RenderStateRuntime<S> {
             color_adjustment_guard_log: None,
             scene_render_guard_log: None,
             renderer_map_id: 0,
-            node_revisions: NodeRevisionState::default(),
             prepared_scene3d: None,
         };
     }

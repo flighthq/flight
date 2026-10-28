@@ -1,11 +1,10 @@
 //! D18 Rust-only delegates; the free functions remain the canonical contract.
 use crate::contract::*;
 use flight_entity::Ref;
-use flight_node::contract::NodeRevisionState;
 use flight_scene2d::Node2DRef;
 
 pub trait GuiNodeMethods {
-    fn gui_length(&self, orientation: GuiOrientation, revisions: &mut NodeRevisionState) -> f32;
+    fn gui_length(&self, orientation: GuiOrientation) -> f32;
     fn gui_position(&self, orientation: GuiOrientation) -> f32;
     fn emit_gui_keyboard(
         &self,
@@ -25,11 +24,6 @@ mod sugar_tests {
     use std::sync::{Arc, RwLock};
     fn node() -> Node2DRef {
         return create_gui_test_node(None, None);
-    }
-    fn revisions() -> Ref<NodeRevisionState> {
-        return Arc::new(RwLock::new(NodeRevisionState {
-            world_transform_revision: 0,
-        }));
     }
     fn timer() -> Arc<flight_host::HostTimerCapability> {
         return Arc::new(flight_host::HostTimerCapability {
@@ -455,13 +449,13 @@ mod sugar_tests {
     }
     fn slider() -> SliderController {
         let options = slider_options();
-        return create_slider_controller(&options, revisions());
+        return create_slider_controller(&options);
     }
     #[test]
     fn slider_controller_new_matches_free() {
         let options = slider_options();
-        let method = SliderController::new(&options, revisions());
-        let free = create_slider_controller(&options, revisions());
+        let method = SliderController::new(&options);
+        let free = create_slider_controller(&options);
         let method = get_gui_controller_runtime(&method);
         let free = get_gui_controller_runtime(&free);
         assert_eq!(
@@ -535,13 +529,13 @@ mod sugar_tests {
     }
     fn scroll_bar() -> ScrollBarController {
         let options = scroll_bar_options();
-        return create_scroll_bar_controller(&options, revisions(), timer());
+        return create_scroll_bar_controller(&options, timer());
     }
     #[test]
     fn scroll_bar_controller_new_matches_free() {
         let options = scroll_bar_options();
-        let method = ScrollBarController::new(&options, revisions(), timer());
-        let free = create_scroll_bar_controller(&options, revisions(), timer());
+        let method = ScrollBarController::new(&options, timer());
+        let free = create_scroll_bar_controller(&options, timer());
         let method = get_gui_controller_runtime(&method);
         let free = get_gui_controller_runtime(&free);
         assert_eq!(
@@ -785,13 +779,13 @@ mod sugar_tests {
     }
     fn scroll_view() -> ScrollViewController {
         let options = scroll_view_options();
-        return create_scroll_view_controller(&options, revisions());
+        return create_scroll_view_controller(&options);
     }
     #[test]
     fn scroll_view_controller_new_matches_free() {
         let options = scroll_view_options();
-        let method = ScrollViewController::new(&options, revisions());
-        let free = create_scroll_view_controller(&options, revisions());
+        let method = ScrollViewController::new(&options);
+        let free = create_scroll_view_controller(&options);
         let method = get_gui_controller_runtime(&method);
         let free = get_gui_controller_runtime(&free);
         assert_eq!(
@@ -868,13 +862,13 @@ mod sugar_tests {
     }
     fn split_pane() -> SplitPaneController {
         let options = split_pane_options();
-        return create_split_pane_controller(&options, revisions());
+        return create_split_pane_controller(&options);
     }
     #[test]
     fn split_pane_controller_new_matches_free() {
         let options = split_pane_options();
-        let method = SplitPaneController::new(&options, revisions());
-        let free = create_split_pane_controller(&options, revisions());
+        let method = SplitPaneController::new(&options);
+        let free = create_split_pane_controller(&options);
         let method = get_gui_controller_runtime(&method);
         let free = get_gui_controller_runtime(&free);
         assert_eq!(
@@ -949,13 +943,13 @@ mod sugar_tests {
     }
     fn window() -> WindowController {
         let options = window_options();
-        return create_window_controller(&options, revisions());
+        return create_window_controller(&options);
     }
     #[test]
     fn window_controller_new_matches_free() {
         let options = window_options();
-        let method = WindowController::new(&options, revisions());
-        let free = create_window_controller(&options, revisions());
+        let method = WindowController::new(&options);
+        let free = create_window_controller(&options);
         let method = get_gui_controller_runtime(&method);
         let free = get_gui_controller_runtime(&free);
         assert_eq!(
@@ -1608,12 +1602,9 @@ mod sugar_tests {
     #[test]
     fn node_gui_length_matches_free() {
         let node = node();
-        let mut revisions = NodeRevisionState {
-            world_transform_revision: 0,
-        };
         assert_eq!(
-            node.gui_length(GuiOrientation::Horizontal, &mut revisions),
-            get_gui_length(&node, GuiOrientation::Horizontal, &mut revisions)
+            node.gui_length(GuiOrientation::Horizontal),
+            get_gui_length(&node, GuiOrientation::Horizontal)
         );
     }
     #[test]
@@ -1702,8 +1693,8 @@ impl GuiNodeMethods for Node2DRef {
     ) {
         emit_gui_pointer(self, name, fields);
     }
-    fn gui_length(&self, orientation: GuiOrientation, revisions: &mut NodeRevisionState) -> f32 {
-        return get_gui_length(self, orientation, revisions);
+    fn gui_length(&self, orientation: GuiOrientation) -> f32 {
+        return get_gui_length(self, orientation);
     }
     fn gui_position(&self, orientation: GuiOrientation) -> f32 {
         return get_gui_position(self, orientation);

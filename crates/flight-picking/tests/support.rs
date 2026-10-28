@@ -10,7 +10,6 @@ use flight_meshgeometry::{
     MeshGeometry, MeshGeometryFromAttributesOptions, create_box_mesh_geometry,
     create_mesh_geometry_from_attributes,
 };
-use flight_node::contract::NodeRevisionState;
 use flight_node::{NodeRef, add_node_child};
 use flight_scene3d::{Mesh, Node3DFields, create_mesh, create_node3d};
 
@@ -45,12 +44,6 @@ pub fn node(mesh: &Ref<Mesh>) -> NodeRef {
 
 pub fn group() -> NodeRef {
     return Arc::new(RwLock::new(create_node3d::<Node3DFields>(None)));
-}
-
-pub fn revisions() -> NodeRevisionState {
-    return NodeRevisionState {
-        world_transform_revision: 0,
-    };
 }
 
 pub fn make_camera() -> Camera3D {

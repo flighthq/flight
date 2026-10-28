@@ -304,11 +304,18 @@ function recomputeWorldBoundsRectangle<Fields extends object>(
   runtime.worldBoundsUsingLocalBoundsId = runtime.localBoundsId;
 }
 
+// The translate-only shortcut is valid only while the cached world bounds were derived from the cached
+// world matrix (the stamp matches). A stamp cleared by a reparent, or a world matrix re-resolved by
+// another query since the bounds were derived, falls through to a full recompute.
 function tryFastRecomputeWorldBoundsRectangle<Fields extends object>(
   target: Spatial2DNode<Fields>,
-  runtime: HasBoundsRectangleRuntime<Fields> & HasTransform2DRuntime,
+  runtime: NodeRuntime<Fields> & HasBoundsRectangleRuntime<Fields> & HasTransform2DRuntime,
 ): boolean {
-  if (runtime.worldBoundsRectangle !== null && runtime.worldMatrix !== null) {
+  if (
+    runtime.worldBoundsRectangle !== null &&
+    runtime.worldMatrix !== null &&
+    runtime.worldBoundsUsingWorldTransformId === runtime.worldTransformId
+  ) {
     const { a: _a, b: _b, c: _c, d: _d, tx: _tx, ty: _ty } = runtime.worldMatrix;
     ensureNodeWorldMatrix(target);
     const { a, b, c, d, tx, ty } = runtime.worldMatrix;
@@ -319,6 +326,7 @@ function tryFastRecomputeWorldBoundsRectangle<Fields extends object>(
         runtime.worldBoundsRectangle.x += tx - _tx;
         runtime.worldBoundsRectangle.y += ty - _ty;
       }
+      runtime.worldBoundsUsingWorldTransformId = runtime.worldTransformId;
       return true;
     }
   }

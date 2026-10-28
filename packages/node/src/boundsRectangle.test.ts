@@ -10,6 +10,7 @@ import {
   addNodeChild,
   createNode,
   ensureNodeLocalMatrix,
+  getNodeWorldMatrix,
   initTransform2DRuntimeTrait,
   initTransform2DTrait,
   invalidateNodeLocalTransform,
@@ -553,6 +554,80 @@ describe('getNodeWidth', () => {
 });
 
 describe('getNodeWorldBoundsRectangle', () => {
+  // Reparenting changes only which root mints world-transform ids, so only the two root-minted stamps
+  // are cleared; the node's own local bounds and local-transform stamps survive and are not recomputed.
+  it('keeps root-independent caches across a reparent while refreshing world state', () => {
+    const rootA = createTestNode();
+    const moved = createTestNode();
+    const leaf = createTestNode();
+    addNodeChild(rootA, moved);
+    addNodeChild(moved, leaf);
+    let computes = 0;
+    getEntityRuntime(leaf).computeLocalBoundsRectangle = (out) => {
+      computes++;
+      setRectangle(out as Rectangle, 0, 0, 4, 4);
+    };
+    rootA.x = 100;
+    leaf.x = 2;
+    invalidateNodeLocalTransform(rootA);
+    invalidateNodeLocalTransform(leaf);
+    expect(getNodeWorldBoundsRectangle(leaf).x).toBe(102);
+    const runtime = getEntityRuntime(leaf);
+    const localBoundsId = runtime.localBoundsId;
+    const localBoundsUsingLocalBoundsId = runtime.localBoundsUsingLocalBoundsId;
+    const worldBoundsUsingLocalBoundsId = runtime.worldBoundsUsingLocalBoundsId;
+    const worldTransformUsingLocalTransformId = runtime.worldTransformUsingLocalTransformId;
+    const localBoundsRectangle = runtime.localBoundsRectangle;
+    const rootB = createTestNode();
+    rootB.x = 7;
+    invalidateNodeLocalTransform(rootB);
+    getNodeWorldMatrix(rootB);
+
+    addNodeChild(rootB, moved);
+
+    expect(runtime.worldTransformUsingParentTransformId).toBe(-1);
+    expect(runtime.worldBoundsUsingWorldTransformId).toBe(-1);
+    expect(runtime.localBoundsId).toBe(localBoundsId);
+    expect(runtime.localBoundsUsingLocalBoundsId).toBe(localBoundsUsingLocalBoundsId);
+    expect(runtime.worldBoundsUsingLocalBoundsId).toBe(worldBoundsUsingLocalBoundsId);
+    expect(runtime.worldTransformUsingLocalTransformId).toBe(worldTransformUsingLocalTransformId);
+    expect(getNodeWorldMatrix(leaf).tx).toBe(9);
+    expect(getNodeWorldBoundsRectangle(leaf).x).toBe(9);
+    expect(runtime.localBoundsRectangle).toBe(localBoundsRectangle);
+    expect(computes).toBe(1);
+  });
+
+  // The bounds analog of the hierarchy reparent regression: world bounds of the moved subtree must be
+  // re-derived under the new root, never reused through a stamp minted by the old root's counter.
+  it('re-derives the moved subtree world bounds under its new root', () => {
+    const rootA = createTestNode();
+    const moved = createTestNode();
+    const middle = createTestNode();
+    const leaf = createTestNode();
+    addNodeChild(rootA, moved);
+    addNodeChild(moved, middle);
+    addNodeChild(middle, leaf);
+    getEntityRuntime(leaf).computeLocalBoundsRectangle = (out) => setRectangle(out as Rectangle, 0, 0, 4, 4);
+    rootA.x = 100;
+    middle.x = 1;
+    leaf.x = 2;
+    invalidateNodeLocalTransform(rootA);
+    invalidateNodeLocalTransform(middle);
+    invalidateNodeLocalTransform(leaf);
+    expect(getNodeWorldBoundsRectangle(leaf).x).toBe(103);
+    expect(getNodeWorldBoundsRectangle(middle).x).toBe(103);
+    const rootB = createTestNode();
+    getNodeWorldBoundsRectangle(rootB);
+
+    addNodeChild(rootB, moved);
+    moved.x = 5;
+    invalidateNodeLocalTransform(moved);
+
+    expect(getNodeWorldBoundsRectangle(middle).x).toBe(8);
+    expect(getNodeWorldBoundsRectangle(leaf).x).toBe(8);
+    expect(getNodeWorldBoundsRectangle(moved).x).toBe(8);
+  });
+
   it('should call ensure and return worldBoundsRectangle', () => {
     const object = createTestNode();
     const runtime = getEntityRuntime(object);

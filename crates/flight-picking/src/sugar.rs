@@ -7,7 +7,6 @@ use flight_entity::Ref;
 use flight_geometry::{Ray3D, Vector2, Vector3, Vector4};
 use flight_materials::Material3D;
 use flight_node::NodeRef;
-use flight_node::contract::NodeRevisionState;
 
 use crate::pick_scene3d::{
     pick_scene3d, pick_scene3d_all, pick_scene3d_all_with_ray3d, pick_scene3d_with_ray3d,
@@ -36,12 +35,6 @@ mod sugar_tests {
 
     use super::*;
     use crate::pick_scene3d::create_scene3d_hit;
-
-    fn revisions() -> NodeRevisionState {
-        return NodeRevisionState {
-            world_transform_revision: 0,
-        };
-    }
 
     // Two boxes on the -Z axis; the nearer one is scaled so normals and tangents are non-trivial.
     fn scene() -> NodeRef {
@@ -90,13 +83,7 @@ mod sugar_tests {
         let scene = scene();
         let ray = create_ray3d(0.1, 0.1, 5.0, 0.0, 0.0, -1.0);
         let mut hit = create_scene3d_hit();
-        assert!(pick_scene3d_with_ray3d(
-            &mut hit,
-            &scene,
-            &ray,
-            None,
-            &mut revisions()
-        ));
+        assert!(pick_scene3d_with_ray3d(&mut hit, &scene, &ray, None));
 
         assert_eq!(hit.subset_index(), get_scene3d_hit_subset_index(&hit));
         assert_eq!(
@@ -119,8 +106,8 @@ mod sugar_tests {
         let mut method_normal = create_vector3(7.0, 8.0, 9.0);
         let mut free_normal = create_vector3(7.0, 8.0, 9.0);
         assert_eq!(
-            hit.vertex_normal(&mut method_normal, &mut revisions()),
-            get_scene3d_hit_vertex_normal(&mut free_normal, &hit, &mut revisions())
+            hit.vertex_normal(&mut method_normal),
+            get_scene3d_hit_vertex_normal(&mut free_normal, &hit)
         );
         assert_eq!(
             (method_normal.x, method_normal.y, method_normal.z),
@@ -130,8 +117,8 @@ mod sugar_tests {
         let mut method_tangent = create_vector4(1.0, 2.0, 3.0, 4.0);
         let mut free_tangent = create_vector4(1.0, 2.0, 3.0, 4.0);
         assert_eq!(
-            hit.vertex_tangent(&mut method_tangent, &mut revisions()),
-            get_scene3d_hit_vertex_tangent(&mut free_tangent, &hit, &mut revisions())
+            hit.vertex_tangent(&mut method_tangent),
+            get_scene3d_hit_vertex_tangent(&mut free_tangent, &hit)
         );
         assert_eq!(
             (
@@ -187,23 +174,8 @@ mod sugar_tests {
         let mut method_hit = create_scene3d_hit();
         let mut free_hit = create_scene3d_hit();
         assert_eq!(
-            scene.pick(
-                &mut method_hit,
-                &camera,
-                0.0,
-                0.0,
-                Some(&options),
-                &mut revisions()
-            ),
-            pick_scene3d(
-                &mut free_hit,
-                &scene,
-                &camera,
-                0.0,
-                0.0,
-                Some(&options),
-                &mut revisions()
-            )
+            scene.pick(&mut method_hit, &camera, 0.0, 0.0, Some(&options)),
+            pick_scene3d(&mut free_hit, &scene, &camera, 0.0, 0.0, Some(&options))
         );
         assert_eq!(signature(&method_hit), signature(&free_hit));
         assert!(Arc::ptr_eq(
@@ -214,23 +186,15 @@ mod sugar_tests {
         let mut method_ray_hit = create_scene3d_hit();
         let mut free_ray_hit = create_scene3d_hit();
         assert_eq!(
-            scene.pick_with_ray3d(&mut method_ray_hit, &ray, None, &mut revisions()),
-            pick_scene3d_with_ray3d(&mut free_ray_hit, &scene, &ray, None, &mut revisions())
+            scene.pick_with_ray3d(&mut method_ray_hit, &ray, None),
+            pick_scene3d_with_ray3d(&mut free_ray_hit, &scene, &ray, None)
         );
         assert_eq!(signature(&method_ray_hit), signature(&free_ray_hit));
 
         let mut method_all = Vec::new();
         let mut free_all = Vec::new();
-        scene.pick_all(&mut method_all, &camera, 0.0, 0.0, None, &mut revisions());
-        pick_scene3d_all(
-            &mut free_all,
-            &scene,
-            &camera,
-            0.0,
-            0.0,
-            None,
-            &mut revisions(),
-        );
+        scene.pick_all(&mut method_all, &camera, 0.0, 0.0, None);
+        pick_scene3d_all(&mut free_all, &scene, &camera, 0.0, 0.0, None);
         assert_eq!(
             method_all.iter().map(signature).collect::<Vec<_>>(),
             free_all.iter().map(signature).collect::<Vec<_>>()
@@ -238,14 +202,8 @@ mod sugar_tests {
 
         let mut method_ray_all = Vec::new();
         let mut free_ray_all = Vec::new();
-        scene.pick_all_with_ray3d(&mut method_ray_all, &ray, Some(&options), &mut revisions());
-        pick_scene3d_all_with_ray3d(
-            &mut free_ray_all,
-            &scene,
-            &ray,
-            Some(&options),
-            &mut revisions(),
-        );
+        scene.pick_all_with_ray3d(&mut method_ray_all, &ray, Some(&options));
+        pick_scene3d_all_with_ray3d(&mut free_ray_all, &scene, &ray, Some(&options));
         assert!(!free_ray_all.is_empty());
         assert_eq!(
             method_ray_all.iter().map(signature).collect::<Vec<_>>(),
@@ -263,7 +221,6 @@ pub trait Scene3DPickMethods {
         screen_x: f32,
         screen_y: f32,
         options: Option<&Scene3DPickOptions>,
-        revisions: &mut NodeRevisionState,
     ) -> bool;
     fn pick_all(
         &self,
@@ -272,21 +229,18 @@ pub trait Scene3DPickMethods {
         screen_x: f32,
         screen_y: f32,
         options: Option<&Scene3DPickOptions>,
-        revisions: &mut NodeRevisionState,
     );
     fn pick_all_with_ray3d(
         &self,
         out_array: &mut Vec<Scene3DHit>,
         ray: &Ray3D,
         options: Option<&Scene3DPickOptions>,
-        revisions: &mut NodeRevisionState,
     );
     fn pick_with_ray3d(
         &self,
         out: &mut Scene3DHit,
         ray: &Ray3D,
         options: Option<&Scene3DPickOptions>,
-        revisions: &mut NodeRevisionState,
     ) -> bool;
 }
 
@@ -307,12 +261,12 @@ impl Scene3DHit {
         return get_scene3d_hit_uv0(out, self);
     }
 
-    pub fn vertex_normal(&self, out: &mut Vector3, revisions: &mut NodeRevisionState) -> bool {
-        return get_scene3d_hit_vertex_normal(out, self, revisions);
+    pub fn vertex_normal(&self, out: &mut Vector3) -> bool {
+        return get_scene3d_hit_vertex_normal(out, self);
     }
 
-    pub fn vertex_tangent(&self, out: &mut Vector4, revisions: &mut NodeRevisionState) -> bool {
-        return get_scene3d_hit_vertex_tangent(out, self, revisions);
+    pub fn vertex_tangent(&self, out: &mut Vector4) -> bool {
+        return get_scene3d_hit_vertex_tangent(out, self);
     }
 }
 
@@ -324,9 +278,8 @@ impl Scene3DPickMethods for NodeRef {
         screen_x: f32,
         screen_y: f32,
         options: Option<&Scene3DPickOptions>,
-        revisions: &mut NodeRevisionState,
     ) -> bool {
-        return pick_scene3d(out, self, camera, screen_x, screen_y, options, revisions);
+        return pick_scene3d(out, self, camera, screen_x, screen_y, options);
     }
 
     fn pick_all(
@@ -336,11 +289,8 @@ impl Scene3DPickMethods for NodeRef {
         screen_x: f32,
         screen_y: f32,
         options: Option<&Scene3DPickOptions>,
-        revisions: &mut NodeRevisionState,
     ) {
-        pick_scene3d_all(
-            out_array, self, camera, screen_x, screen_y, options, revisions,
-        );
+        pick_scene3d_all(out_array, self, camera, screen_x, screen_y, options);
     }
 
     fn pick_all_with_ray3d(
@@ -348,9 +298,8 @@ impl Scene3DPickMethods for NodeRef {
         out_array: &mut Vec<Scene3DHit>,
         ray: &Ray3D,
         options: Option<&Scene3DPickOptions>,
-        revisions: &mut NodeRevisionState,
     ) {
-        pick_scene3d_all_with_ray3d(out_array, self, ray, options, revisions);
+        pick_scene3d_all_with_ray3d(out_array, self, ray, options);
     }
 
     fn pick_with_ray3d(
@@ -358,8 +307,7 @@ impl Scene3DPickMethods for NodeRef {
         out: &mut Scene3DHit,
         ray: &Ray3D,
         options: Option<&Scene3DPickOptions>,
-        revisions: &mut NodeRevisionState,
     ) -> bool {
-        return pick_scene3d_with_ray3d(out, self, ray, options, revisions);
+        return pick_scene3d_with_ray3d(out, self, ray, options);
     }
 }

@@ -17,8 +17,7 @@ fn orient_singular(state: &Scene3DGuardStateRef) {
     assert!(!orient_billboard_to_camera(
         &as_node_ref(&b),
         &singular_camera(),
-        state,
-        &mut revision_state()
+        state
     ));
 }
 mod are_scene3d_guards_enabled {

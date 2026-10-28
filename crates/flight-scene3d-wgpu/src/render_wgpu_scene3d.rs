@@ -242,8 +242,7 @@ fn draw_wgpu_scene3d_prepared(
     }
 
     for (mesh_index, mesh_node) in list.visible_meshes.iter().take(list.mesh_count).enumerate() {
-        let world_matrix =
-            get_node_world_matrix4(mesh_node, &mut state.render_runtime_mut().node_revisions);
+        let world_matrix = get_node_world_matrix4(mesh_node);
         let wx = world_matrix.m[12];
         let wy = world_matrix.m[13];
         let wz = world_matrix.m[14];
@@ -343,8 +342,7 @@ fn draw_wgpu_scene3d_prepared(
         .iter()
         .take(list.instanced_mesh_count)
     {
-        let world_matrix =
-            get_node_world_matrix4(mesh_node, &mut state.render_runtime_mut().node_revisions);
+        let world_matrix = get_node_world_matrix4(mesh_node);
         let mut normal_matrix = create_matrix3();
         set_matrix3_normal_from_matrix4(&mut normal_matrix, &world_matrix);
         let object_alpha =

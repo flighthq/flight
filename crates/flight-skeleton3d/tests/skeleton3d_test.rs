@@ -116,8 +116,8 @@ mod clone_skeleton3d_joint_hierarchy {
             .position
             .x = 6.0;
         invalidate_node_local_transform(&r);
-        compute_skeleton3d_joint_matrices(&mut source, &mut revisions());
-        compute_skeleton3d_joint_matrices(&mut clone, &mut revisions());
+        compute_skeleton3d_joint_matrices(&mut source);
+        compute_skeleton3d_joint_matrices(&mut clone);
         close(source.joint_matrices.read().unwrap()[12], 0.0);
         close(source.joint_matrices.read().unwrap()[28], 0.0);
         close(clone.joint_matrices.read().unwrap()[12], 5.0);
@@ -139,7 +139,7 @@ mod compute_skeleton3d_joint_matrices {
         let mut aliased = skeleton(vec![first, second], None);
         aliased.inverse_bind_matrices = shared.clone();
         aliased.joint_matrices = shared.clone();
-        compute_skeleton3d_joint_matrices(&mut aliased, &mut revisions());
+        compute_skeleton3d_joint_matrices(&mut aliased);
         assert!(Arc::ptr_eq(&aliased.inverse_bind_matrices, &shared));
         assert!(Arc::ptr_eq(&aliased.joint_matrices, &shared));
         assert!(shared.try_write().is_ok());
@@ -154,7 +154,7 @@ mod compute_skeleton3d_joint_matrices {
         rig.joint_matrices =
             std::sync::Arc::new(std::sync::RwLock::new(vec![0.0; 15].into_boxed_slice()));
         let error = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            compute_skeleton3d_joint_matrices(&mut rig, &mut revisions())
+            compute_skeleton3d_joint_matrices(&mut rig)
         }))
         .unwrap_err();
         let error = error.downcast_ref::<flight_entity::FlightError>().unwrap();
@@ -164,21 +164,21 @@ mod compute_skeleton3d_joint_matrices {
             std::sync::Arc::new(std::sync::RwLock::new(vec![0.0; 16].into_boxed_slice()));
         rig.normal_matrices =
             std::sync::Arc::new(std::sync::RwLock::new(vec![17.0; 1].into_boxed_slice()));
-        compute_skeleton3d_joint_matrices(&mut rig, &mut revisions());
+        compute_skeleton3d_joint_matrices(&mut rig);
         assert_eq!(rig.normal_matrices.read().unwrap().as_ref(), &[1.0]);
     }
     #[test]
     fn encodes_pose_delta_and_rest_identity_for_every_joint() {
         let node = joint(5.0, 0.0, 0.0);
         let mut rig = skeleton(vec![node.clone()], None);
-        compute_skeleton3d_joint_matrices(&mut rig, &mut revisions());
+        compute_skeleton3d_joint_matrices(&mut rig);
         close(rig.joint_matrices.read().unwrap()[0], 1.0);
         close(rig.joint_matrices.read().unwrap()[12], 0.0);
         close(rig.joint_matrices.read().unwrap()[13], 0.0);
         node.write().unwrap().position.y = 3.0;
         let erased: NodeRef = node;
         invalidate_node_local_transform(&erased);
-        compute_skeleton3d_joint_matrices(&mut rig, &mut revisions());
+        compute_skeleton3d_joint_matrices(&mut rig);
         close(rig.joint_matrices.read().unwrap()[12], 0.0);
         close(rig.joint_matrices.read().unwrap()[13], 3.0);
         let a = joint(1.0, 0.0, 0.0);
@@ -188,7 +188,7 @@ mod compute_skeleton3d_joint_matrices {
         b.write().unwrap().position.y = 2.0;
         let erased: NodeRef = b;
         invalidate_node_local_transform(&erased);
-        compute_skeleton3d_joint_matrices(&mut rig, &mut revisions());
+        compute_skeleton3d_joint_matrices(&mut rig);
         for (index, expected) in [
             (12, 0.0),
             (13, 0.0),
@@ -210,7 +210,7 @@ mod compute_skeleton3d_joint_matrices {
         node.write().unwrap().scale.x = 2.0;
         let erased: NodeRef = node;
         invalidate_node_local_transform(&erased);
-        compute_skeleton3d_joint_matrices(&mut rig, &mut revisions());
+        compute_skeleton3d_joint_matrices(&mut rig);
         assert_eq!(rig.normal_matrices.read().unwrap().len(), 12);
         assert_eq!(
             rig.normal_matrices.read().unwrap().as_ref(),
@@ -224,7 +224,7 @@ mod create_skeleton3d {
     fn retains_input_joint_array_mutations_and_dispose_clears_all_aliases() {
         let first: flight_scene3d::Node3DRef = joint(0.0, 0.0, 0.0);
         let joints = Arc::new(std::sync::RwLock::new(vec![first.clone()]));
-        let mut rig = create_skeleton3d(joints.clone(), None, &mut revisions(), &guards());
+        let mut rig = create_skeleton3d(joints.clone(), None, &guards());
         rig.names = Some(vec!["first".to_string()]);
         assert!(Arc::ptr_eq(&rig.joints, &joints));
         let second: flight_scene3d::Node3DRef = joint(1.0, 0.0, 0.0);
@@ -259,7 +259,6 @@ mod create_skeleton3d {
         let rig = create_skeleton3d(
             Arc::new(std::sync::RwLock::new(vec![joint(99.0, 0.0, 0.0)])),
             Some(supplied),
-            &mut revisions(),
             &guards(),
         );
         assert!(Arc::ptr_eq(&rig.inverse_bind_matrices, &original));
@@ -337,26 +336,11 @@ mod get_skeleton3d_joint_world_matrix {
     fn copies_original_joint_world_pose_and_leaves_invalid_output_unchanged() {
         let rig = skeleton(vec![joint(5.0, 3.0, 0.0)], None);
         let mut out = create_matrix4();
-        assert!(get_skeleton3d_joint_world_matrix(
-            &mut out,
-            &rig,
-            0,
-            &mut revisions()
-        ));
+        assert!(get_skeleton3d_joint_world_matrix(&mut out, &rig, 0));
         assert_eq!(&out.m[12..15], &[5.0, 3.0, 0.0]);
         let before = out.m;
-        assert!(!get_skeleton3d_joint_world_matrix(
-            &mut out,
-            &rig,
-            5,
-            &mut revisions()
-        ));
-        assert!(!get_skeleton3d_joint_world_matrix(
-            &mut out,
-            &rig,
-            -1,
-            &mut revisions()
-        ));
+        assert!(!get_skeleton3d_joint_world_matrix(&mut out, &rig, 5));
+        assert!(!get_skeleton3d_joint_world_matrix(&mut out, &rig, -1));
         assert_eq!(out.m, before);
     }
 }
@@ -370,17 +354,11 @@ mod get_skeleton3d_joint_world_matrix_by_name {
         );
         let mut out = create_matrix4();
         assert!(get_skeleton3d_joint_world_matrix_by_name(
-            &mut out,
-            &rig,
-            "hand",
-            &mut revisions()
+            &mut out, &rig, "hand"
         ));
         close(out.m[12], 7.0);
         assert!(!get_skeleton3d_joint_world_matrix_by_name(
-            &mut out,
-            &rig,
-            "missing",
-            &mut revisions()
+            &mut out, &rig, "missing"
         ));
         close(out.m[12], 7.0);
     }
@@ -513,7 +491,7 @@ mod set_skeleton3d_bind_pose {
                 skeleton.joints.try_write().unwrap().clear();
             })),
         );
-        set_skeleton3d_bind_pose(&mut rig, &mut revisions(), &state);
+        set_skeleton3d_bind_pose(&mut rig, &state);
         assert_eq!(*seen.lock().unwrap(), [0]);
         assert!(shared.read().unwrap().is_empty());
     }
@@ -528,7 +506,7 @@ mod set_skeleton3d_bind_pose {
         let h: NodeRef = healthy;
         invalidate_node_local_transform(&c);
         invalidate_node_local_transform(&h);
-        set_skeleton3d_bind_pose(&mut rig, &mut revisions(), &guards());
+        set_skeleton3d_bind_pose(&mut rig, &guards());
         assert!(
             rig.inverse_bind_matrices
                 .read()
@@ -549,8 +527,8 @@ mod set_skeleton3d_bind_pose {
         node.write().unwrap().position.x = 2.0;
         let erased: NodeRef = node;
         invalidate_node_local_transform(&erased);
-        set_skeleton3d_bind_pose(&mut rig, &mut revisions(), &guards());
-        compute_skeleton3d_joint_matrices(&mut rig, &mut revisions());
+        set_skeleton3d_bind_pose(&mut rig, &guards());
+        compute_skeleton3d_joint_matrices(&mut rig);
         close(rig.joint_matrices.read().unwrap()[12], 0.0);
     }
 }
@@ -574,10 +552,10 @@ mod set_skeleton3d_bind_pose_guard {
         collapsed.write().unwrap().scale.x = 0.0;
         let erased: NodeRef = collapsed;
         invalidate_node_local_transform(&erased);
-        set_skeleton3d_bind_pose(&mut rig, &mut revisions(), &state);
+        set_skeleton3d_bind_pose(&mut rig, &state);
         assert_eq!(*seen.lock().unwrap(), vec![1]);
         set_skeleton3d_bind_pose_guard(&state, None);
-        set_skeleton3d_bind_pose(&mut rig, &mut revisions(), &state);
+        set_skeleton3d_bind_pose(&mut rig, &state);
         assert_eq!(*seen.lock().unwrap(), vec![1]);
     }
 }

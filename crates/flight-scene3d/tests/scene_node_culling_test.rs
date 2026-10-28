@@ -47,15 +47,14 @@ mod cull_node3d_by_frustum {
         let mut f = create_frustum();
         build_scene3d_frustum(&mut f, &view_projection());
         let mut out = Vec::new();
-        let mut revisions = revision_state();
-        cull_node3d_by_frustum(&mut out, &node, &f, &mut revisions);
+        cull_node3d_by_frustum(&mut out, &node, &f);
         assert_eq!(out.len(), 1);
         let mut bounds = empty_bounds();
-        get_node3d_world_bounds(&mut bounds, &node, &mut revisions);
+        get_node3d_world_bounds(&mut bounds, &node);
         close(bounds.min.x, 99.5);
         close(bounds.max.x, 100.5);
         out.clear();
-        cull_node3d_by_frustum(&mut out, &node, &f, &mut revisions);
+        cull_node3d_by_frustum(&mut out, &node, &f);
         assert!(out.is_empty());
     }
     #[test]
@@ -64,8 +63,7 @@ mod cull_node3d_by_frustum {
         let mut f = create_frustum();
         build_scene3d_frustum(&mut f, &view_projection());
         let mut out = Vec::new();
-        let mut state = revision_state();
-        cull_node3d_by_frustum(&mut out, &root, &f, &mut state);
+        cull_node3d_by_frustum(&mut out, &root, &f);
         assert!(out.is_empty());
         let visible = test_mesh();
         visible.write().unwrap().position.z = -5.0;
@@ -79,7 +77,7 @@ mod cull_node3d_by_frustum {
         add_node_child(&root, &b);
         let existing = as_node_ref(&node3d());
         out.push(existing.clone());
-        cull_node3d_by_frustum(&mut out, &root, &f, &mut state);
+        cull_node3d_by_frustum(&mut out, &root, &f);
         assert_eq!(out.len(), 2);
         assert!(Arc::ptr_eq(&out[0], &existing));
         assert!(Arc::ptr_eq(&out[1], &v));
@@ -100,7 +98,7 @@ mod cull_node3d_by_frustum {
         let mut f = create_frustum();
         build_scene3d_frustum(&mut f, &view_projection());
         let mut out = Vec::new();
-        cull_node3d_by_frustum(&mut out, &root, &f, &mut revision_state());
+        cull_node3d_by_frustum(&mut out, &root, &f);
         assert!(out.is_empty());
     }
 }

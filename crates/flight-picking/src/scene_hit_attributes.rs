@@ -16,7 +16,7 @@ use flight_meshgeometry::{
     get_mesh_geometry_triangle_vertex_indices, get_mesh_geometry_vertex_normal,
     get_mesh_geometry_vertex_tangent, get_mesh_geometry_vertex_uv0,
 };
-use flight_node::contract::{NodeRevisionState, get_node_world_matrix4};
+use flight_node::contract::get_node_world_matrix4;
 
 use crate::pick_scene3d::narrow_mesh;
 use crate::types::Scene3DHit;
@@ -106,12 +106,7 @@ pub fn get_scene3d_hit_uv0(out: &mut Vector2, hit: &Scene3DHit) -> bool {
 /// non-uniform scale remains correct (TS `getScene3DHitVertexNormal`). This is distinct from
 /// `Scene3DHit.normal_*`, the geometric face normal used for culling. Returns false without
 /// changing `out` when unavailable or degenerate.
-// flight-lint: allow(conform-params) D5 caller-owned node revisions resolve the world matrix
-pub fn get_scene3d_hit_vertex_normal(
-    out: &mut Vector3,
-    hit: &Scene3DHit,
-    revisions: &mut NodeRevisionState,
-) -> bool {
+pub fn get_scene3d_hit_vertex_normal(out: &mut Vector3, hit: &Scene3DHit) -> bool {
     let (Some(node), Some(geometry)) = (hit.node.as_ref(), get_hit_geometry(hit)) else {
         return false;
     };
@@ -142,7 +137,7 @@ pub fn get_scene3d_hit_vertex_normal(
     let nx = hit.u * normal0.x + hit.v * normal1.x + hit.w * normal2.x;
     let ny = hit.u * normal0.y + hit.v * normal1.y + hit.w * normal2.y;
     let nz = hit.u * normal0.z + hit.v * normal1.z + hit.w * normal2.z;
-    let world_matrix = get_node_world_matrix4(node, revisions);
+    let world_matrix = get_node_world_matrix4(node);
     let mut inverse_world = world_matrix.clone();
     if !inverse_matrix4(&mut inverse_world, &world_matrix) {
         return false;
@@ -160,12 +155,7 @@ pub fn get_scene3d_hit_vertex_normal(
 /// the interpolated world normal, and flips handedness under a mirrored world transform (TS
 /// `getScene3DHitVertexTangent`). Returns false without changing `out` when normal/tangent data is
 /// unavailable or degenerate.
-// flight-lint: allow(conform-params) D5 caller-owned node revisions resolve the world matrix
-pub fn get_scene3d_hit_vertex_tangent(
-    out: &mut Vector4,
-    hit: &Scene3DHit,
-    revisions: &mut NodeRevisionState,
-) -> bool {
+pub fn get_scene3d_hit_vertex_tangent(out: &mut Vector4, hit: &Scene3DHit) -> bool {
     let (Some(node), Some(geometry)) = (hit.node.as_ref(), get_hit_geometry(hit)) else {
         return false;
     };
@@ -193,7 +183,7 @@ pub fn get_scene3d_hit_vertex_tangent(
         }
     }
     let mut world_normal = create_vector3(0.0, 0.0, 0.0);
-    if !get_scene3d_hit_vertex_normal(&mut world_normal, hit, revisions) {
+    if !get_scene3d_hit_vertex_normal(&mut world_normal, hit) {
         return false;
     }
 
@@ -201,7 +191,7 @@ pub fn get_scene3d_hit_vertex_tangent(
     let ty = hit.u * tangent0.y + hit.v * tangent1.y + hit.w * tangent2.y;
     let tz = hit.u * tangent0.z + hit.v * tangent1.z + hit.w * tangent2.z;
     let tw = hit.u * tangent0.w + hit.v * tangent1.w + hit.w * tangent2.w;
-    let world_matrix = get_node_world_matrix4(node, revisions);
+    let world_matrix = get_node_world_matrix4(node);
     let m = &world_matrix.m;
     let mut wx = m[0] * tx + m[4] * ty + m[8] * tz;
     let mut wy = m[1] * tx + m[5] * ty + m[9] * tz;

@@ -76,12 +76,6 @@ fn local_bounds(node: &NodeRef) -> Rectangle {
     return get_node_local_bounds_rectangle(node);
 }
 
-fn revisions() -> NodeRevisionState {
-    return NodeRevisionState {
-        world_transform_revision: 0,
-    };
-}
-
 fn set_position(node: &NodeRef, x: f32, y: f32) {
     {
         let mut guard = node.write().unwrap();
@@ -102,7 +96,7 @@ mod compute_node_bounds_rectangle {
     fn uses_local_bounds_when_the_target_is_the_source() {
         let node = bounds_node(1.0, 2.0, 3.0, 4.0);
         let mut out: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        compute_node_bounds_rectangle(&mut out, &node, Some(&node), &mut revisions());
+        compute_node_bounds_rectangle(&mut out, &node, Some(&node));
         assert_eq!((out.x, out.y, out.width, out.height), (1.0, 2.0, 3.0, 4.0));
     }
 
@@ -112,7 +106,7 @@ mod compute_node_bounds_rectangle {
         let grandchild = bounds_node(5.0, 5.0, 100.0, 100.0);
         add_node_child(&child, &grandchild);
         let mut out: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        compute_node_bounds_rectangle(&mut out, &child, Some(&child), &mut revisions());
+        compute_node_bounds_rectangle(&mut out, &child, Some(&child));
         assert_eq!(
             (out.x, out.y, out.width, out.height),
             (0.0, 0.0, 105.0, 105.0)
@@ -125,7 +119,7 @@ mod compute_node_bounds_rectangle {
         let grandchild = bounds_node(1.0, 2.0, 3.0, 4.0);
         add_node_child(&child, &grandchild);
         let mut out: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        compute_node_bounds_rectangle(&mut out, &child, None, &mut revisions());
+        compute_node_bounds_rectangle(&mut out, &child, None);
         assert_eq!(
             (out.x, out.y, out.width, out.height),
             (0.0, 0.0, 10.0, 20.0)
@@ -144,12 +138,12 @@ mod compute_node_bounds_rectangle {
             *transform.scale_y = 3.0;
         });
         let mut out: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        compute_node_bounds_rectangle(&mut out, &child, Some(&parent), &mut revisions());
+        compute_node_bounds_rectangle(&mut out, &child, Some(&parent));
         assert!((out.width - 100.0).abs() <= 1e-3);
         assert!((out.height - 150.0).abs() <= 1e-3);
         edit_transform(&child, |transform| *transform.rotation = 90.0);
         let mut rotated: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        compute_node_bounds_rectangle(&mut rotated, &child, Some(&parent), &mut revisions());
+        compute_node_bounds_rectangle(&mut rotated, &child, Some(&parent));
         assert!((rotated.width - 150.0).abs() <= 1e-3);
         assert!((rotated.height - 100.0).abs() <= 1e-3);
     }
@@ -162,11 +156,11 @@ mod compute_node_bounds_rectangle {
         set_position(&unrelated, 5.0, 5.0);
         clear_matrix_pool();
         let mut out: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        compute_node_bounds_rectangle(&mut out, &child, Some(&unrelated), &mut revisions());
+        compute_node_bounds_rectangle(&mut out, &child, Some(&unrelated));
         let scratch = acquire_matrix();
         assert_eq!((scratch.tx, scratch.ty), (-5.0, -5.0));
         release_matrix(scratch);
-        let world = get_node_world_bounds_rectangle(&child, &mut revisions());
+        let world = get_node_world_bounds_rectangle(&child);
         assert_eq!(
             (out.x, out.y, out.width, out.height),
             (world.x - 5.0, world.y - 5.0, world.width, world.height)
@@ -184,7 +178,7 @@ mod compute_node_bounds_rectangle {
         });
         add_node_child(&root, &child);
         let mut out: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        compute_node_bounds_rectangle(&mut out, &child, Some(&root), &mut revisions());
+        compute_node_bounds_rectangle(&mut out, &child, Some(&root));
         assert_eq!(
             (out.x, out.y, out.width, out.height),
             (100.0, 100.0, 100.0, 100.0)
@@ -198,7 +192,7 @@ mod compute_node_bounds_rectangle {
         add_node_child(&parent, &node);
         set_position(&node, 10.0, 20.0);
         let mut out: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        compute_node_bounds_rectangle(&mut out, &node, Some(&parent), &mut revisions());
+        compute_node_bounds_rectangle(&mut out, &node, Some(&parent));
         assert_eq!(
             (out.x, out.y, out.width, out.height),
             (10.0, 20.0, 10.0, 10.0)
@@ -212,7 +206,7 @@ mod compute_node_bounds_rectangle {
         let node = bounds_node(0.0, 0.0, 10.0, 10.0);
         set_position(&node, 15.0, 15.0);
         let mut out: Rectangle = create_rectangle(0.0, 0.0, 0.0, 0.0);
-        compute_node_bounds_rectangle(&mut out, &node, Some(&other), &mut revisions());
+        compute_node_bounds_rectangle(&mut out, &node, Some(&other));
         assert_eq!(
             (out.x, out.y, out.width, out.height),
             (10.0, 10.0, 10.0, 10.0)
@@ -428,8 +422,8 @@ mod ensure_node_world_bounds_rectangle {
                 .world_bounds_rectangle = Some(create_rectangle(5.0, 5.0, 10.0, 10.0));
             guard.node_runtime_mut().world_bounds_using_local_bounds_id = local_bounds_id as i32;
         }
-        ensure_node_world_bounds_rectangle(&object, &mut revisions());
-        let world = get_node_world_bounds_rectangle(&object, &mut revisions());
+        ensure_node_world_bounds_rectangle(&object);
+        let world = get_node_world_bounds_rectangle(&object);
         assert_eq!(
             (world.x, world.y, world.width, world.height),
             (0.0, 0.0, 0.0, 0.0)
@@ -441,18 +435,17 @@ mod ensure_node_world_bounds_rectangle {
         let parent = bounds_node(0.0, 0.0, 0.0, 0.0);
         let node = mutable_bounds_node(Arc::new(std::sync::Mutex::new((0.0, 0.0, 0.0, 0.0))));
         add_node_child(&parent, &node);
-        let mut state = revisions();
-        ensure_node_world_bounds_rectangle(&node, &mut state);
+        ensure_node_world_bounds_rectangle(&node);
         invalidate_node_local_bounds(&node);
-        ensure_node_world_bounds_rectangle(&node, &mut state);
+        ensure_node_world_bounds_rectangle(&node);
         set_position(&parent, 100.0, 0.0);
-        ensure_node_world_bounds_rectangle(&node, &mut state);
-        let translated = get_node_world_bounds_rectangle(&node, &mut state);
+        ensure_node_world_bounds_rectangle(&node);
+        let translated = get_node_world_bounds_rectangle(&node);
         assert_eq!(translated.x, 100.0);
         let scaled = mutable_bounds_node(Arc::new(std::sync::Mutex::new((0.0, 0.0, 10.0, 0.0))));
         edit_transform(&scaled, |transform| *transform.scale_x = 2.0);
-        ensure_node_world_bounds_rectangle(&scaled, &mut state);
-        let width = get_node_world_bounds_rectangle(&scaled, &mut state).width;
+        ensure_node_world_bounds_rectangle(&scaled);
+        let width = get_node_world_bounds_rectangle(&scaled).width;
         assert!((width - 20.0).abs() <= 1e-3);
     }
 
@@ -463,8 +456,8 @@ mod ensure_node_world_bounds_rectangle {
         let node = bounds_node(0.0, 0.0, 10.0, 10.0);
         add_node_child(&parent, &node);
         set_position(&node, 10.0, 10.0);
-        ensure_node_world_bounds_rectangle(&node, &mut revisions());
-        let bounds = get_node_world_bounds_rectangle(&node, &mut revisions());
+        ensure_node_world_bounds_rectangle(&node);
+        let bounds = get_node_world_bounds_rectangle(&node);
         assert_eq!(
             (bounds.x, bounds.y, bounds.width, bounds.height),
             (15.0, 15.0, 10.0, 10.0)
@@ -480,7 +473,7 @@ mod get_node_height {
         let parent = bounds_node(0.0, 0.0, 0.0, 0.0);
         let node = bounds_node(0.0, 0.0, 10.0, 20.0);
         add_node_child(&parent, &node);
-        assert_eq!(get_node_height(&node, &mut revisions()), 20.0);
+        assert_eq!(get_node_height(&node), 20.0);
     }
 
     #[test]
@@ -489,7 +482,7 @@ mod get_node_height {
         let node = bounds_node(0.0, 0.0, 10.0, 20.0);
         add_node_child(&parent, &node);
         edit_transform(&node, |transform| *transform.scale_y = 2.0);
-        assert_eq!(get_node_height(&node, &mut revisions()), 40.0);
+        assert_eq!(get_node_height(&node), 40.0);
     }
 }
 
@@ -530,7 +523,7 @@ mod get_node_width {
         let parent = bounds_node(0.0, 0.0, 0.0, 0.0);
         let node = bounds_node(0.0, 0.0, 10.0, 20.0);
         add_node_child(&parent, &node);
-        assert_eq!(get_node_width(&node, &mut revisions()), 10.0);
+        assert_eq!(get_node_width(&node), 10.0);
     }
 
     #[test]
@@ -539,12 +532,108 @@ mod get_node_width {
         let node = bounds_node(0.0, 0.0, 10.0, 20.0);
         add_node_child(&parent, &node);
         edit_transform(&node, |transform| *transform.scale_x = 3.0);
-        assert_eq!(get_node_width(&node, &mut revisions()), 30.0);
+        assert_eq!(get_node_width(&node), 30.0);
     }
 }
 
 mod get_node_world_bounds_rectangle {
     use super::*;
+
+    // Reparenting changes only which root mints world-transform ids, so only the two root-minted
+    // stamps are cleared; the node's own local bounds and local-transform stamps survive and are not
+    // recomputed.
+    #[test]
+    fn keeps_root_independent_caches_across_a_reparent_while_refreshing_world_state() {
+        let root_a = create_test_node_2d("A");
+        let moved = create_test_node_2d("Moved");
+        let leaf = create_test_node_2d("Leaf");
+        add_node_child(&root_a, &moved);
+        add_node_child(&moved, &leaf);
+        let computes = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let counter = computes.clone();
+        let callback: NodeLocalBoundsComputer =
+            Arc::new(move |out: &mut Rectangle, _source: &dyn Node| {
+                counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                out.x = 0.0;
+                out.y = 0.0;
+                out.width = 4.0;
+                out.height = 4.0;
+            });
+        leaf.write()
+            .unwrap()
+            .as_bounds_node_mut()
+            .expect("test node has bounds")
+            .bounds_runtime_mut()
+            .compute_local_bounds_rectangle = callback;
+        set_position(&root_a, 100.0, 0.0);
+        set_position(&leaf, 2.0, 0.0);
+        assert_eq!(get_node_world_bounds_rectangle(&leaf).x, 102.0);
+        let stamps = |node: &NodeRef| {
+            let guard = node.read().unwrap();
+            let runtime = guard.node_runtime();
+            (
+                runtime.local_bounds_id,
+                runtime.local_bounds_using_local_bounds_id,
+                runtime.world_bounds_using_local_bounds_id,
+                runtime.world_transform_using_local_transform_id,
+            )
+        };
+        let before = stamps(&leaf);
+        let root_b = create_test_node_2d("B");
+        set_position(&root_b, 7.0, 0.0);
+        get_node_world_matrix(&root_b);
+
+        add_node_child(&root_b, &moved);
+
+        {
+            let guard = leaf.read().unwrap();
+            let runtime = guard.node_runtime();
+            assert_eq!(runtime.world_transform_using_parent_transform_id, -1);
+            assert_eq!(runtime.world_bounds_using_world_transform_id, -1);
+        }
+        assert_eq!(stamps(&leaf), before);
+        assert_eq!(get_node_world_matrix(&leaf).tx, 9.0);
+        assert_eq!(get_node_world_bounds_rectangle(&leaf).x, 9.0);
+        assert_eq!(computes.load(std::sync::atomic::Ordering::SeqCst), 1);
+    }
+
+    // Regression for the removed caller-owned revision state (the stale-bounds analog): a fresh
+    // counter per query re-minted the parent's old id and the child's world bounds stayed put.
+    #[test]
+    fn a_later_query_sees_a_parent_change() {
+        let parent = create_test_node_2d("Test");
+        let child = bounds_node(0.0, 0.0, 4.0, 4.0);
+        add_node_child(&parent, &child);
+        set_position(&parent, 10.0, 0.0);
+        assert_eq!(get_node_world_bounds_rectangle(&child).x, 10.0);
+        set_position(&parent, 50.0, 0.0);
+        assert_eq!(get_node_world_bounds_rectangle(&child).x, 50.0);
+    }
+
+    #[test]
+    fn re_derives_the_moved_subtree_world_bounds_under_its_new_root() {
+        let root_a = create_test_node_2d("A");
+        let moved = create_test_node_2d("Moved");
+        let middle = create_test_node_2d("Middle");
+        let leaf = bounds_node(0.0, 0.0, 4.0, 4.0);
+        add_node_child(&root_a, &moved);
+        add_node_child(&moved, &middle);
+        add_node_child(&middle, &leaf);
+        set_position(&root_a, 100.0, 0.0);
+        set_position(&middle, 1.0, 0.0);
+        set_position(&leaf, 2.0, 0.0);
+        assert_eq!(get_node_world_bounds_rectangle(&leaf).x, 103.0);
+        assert_eq!(get_node_world_bounds_rectangle(&middle).x, 103.0);
+        let root_b = create_test_node_2d("B");
+        get_node_world_bounds_rectangle(&root_b);
+
+        add_node_child(&root_b, &moved);
+        set_position(&moved, 5.0, 0.0);
+
+        assert_eq!(get_node_world_bounds_rectangle(&middle).x, 8.0);
+        assert_eq!(get_node_world_bounds_rectangle(&leaf).x, 8.0);
+        assert_eq!(get_node_world_bounds_rectangle(&moved).x, 8.0);
+    }
 
     #[test]
     fn includes_enabled_children_and_skips_disabled_ones() {
@@ -552,14 +641,14 @@ mod get_node_world_bounds_rectangle {
         let child = bounds_node(0.0, 0.0, 10.0, 10.0);
         add_node_child(&parent, &child);
         set_position(&child, 20.0, 0.0);
-        let world = get_node_world_bounds_rectangle(&parent, &mut revisions());
+        let world = get_node_world_bounds_rectangle(&parent);
         assert_eq!(
             (world.x, world.y, world.width, world.height),
             (0.0, 0.0, 30.0, 10.0)
         );
         child.write().unwrap().node_fields_mut().enabled = false;
         invalidate_node_world_bounds(&parent);
-        let world = get_node_world_bounds_rectangle(&parent, &mut revisions());
+        let world = get_node_world_bounds_rectangle(&parent);
         assert_eq!(world.width, 10.0);
     }
 
@@ -569,27 +658,15 @@ mod get_node_world_bounds_rectangle {
         let child = bounds_node(0.0, 0.0, 20.0, 20.0);
         add_node_child(&parent, &child);
         set_position(&child, 30.0, 0.0);
-        assert_eq!(
-            get_node_world_bounds_rectangle(&parent, &mut revisions()).width,
-            50.0
-        );
+        assert_eq!(get_node_world_bounds_rectangle(&parent).width, 50.0);
         set_position(&child, 80.0, 0.0);
-        assert_eq!(
-            get_node_world_bounds_rectangle(&parent, &mut revisions()).width,
-            100.0
-        );
+        assert_eq!(get_node_world_bounds_rectangle(&parent).width, 100.0);
         set_node_enabled(&child, false);
-        assert_eq!(
-            get_node_world_bounds_rectangle(&parent, &mut revisions()).width,
-            10.0
-        );
+        assert_eq!(get_node_world_bounds_rectangle(&parent).width, 10.0);
         set_node_enabled(&child, true);
-        assert_eq!(
-            get_node_world_bounds_rectangle(&parent, &mut revisions()).width,
-            100.0
-        );
+        assert_eq!(get_node_world_bounds_rectangle(&parent).width, 100.0);
         remove_node_child(&parent, &child);
-        let bounds = get_node_world_bounds_rectangle(&parent, &mut revisions());
+        let bounds = get_node_world_bounds_rectangle(&parent);
         assert_eq!(
             (bounds.x, bounds.y, bounds.width, bounds.height),
             (0.0, 0.0, 10.0, 10.0)
@@ -602,7 +679,7 @@ mod get_node_world_bounds_rectangle {
         let child = bounds_node(0.0, 0.0, 0.0, 5.0);
         add_node_child(&parent, &child);
         set_position(&child, 100.0, 0.0);
-        let bounds = get_node_world_bounds_rectangle(&parent, &mut revisions());
+        let bounds = get_node_world_bounds_rectangle(&parent);
         assert_eq!(
             (bounds.x, bounds.y, bounds.width, bounds.height),
             (0.0, 0.0, 10.0, 10.0)
@@ -613,10 +690,10 @@ mod get_node_world_bounds_rectangle {
     fn offsets_cached_world_bounds_when_only_translation_changes() {
         let node = bounds_node(0.0, 0.0, 10.0, 10.0);
         set_position(&node, 5.0, 5.0);
-        let first = get_node_world_bounds_rectangle(&node, &mut revisions());
+        let first = get_node_world_bounds_rectangle(&node);
         assert_eq!((first.x, first.y), (5.0, 5.0));
         set_position(&node, 15.0, 25.0);
-        let second = get_node_world_bounds_rectangle(&node, &mut revisions());
+        let second = get_node_world_bounds_rectangle(&node);
         assert_eq!(
             (second.x, second.y, second.width, second.height),
             (15.0, 25.0, 10.0, 10.0)
@@ -641,7 +718,7 @@ mod set_node_height {
             .scale_y
             .signum();
         set_node_height(&node, 100.0);
-        assert!((get_node_height(&node, &mut revisions()) - 100.0).abs() <= 1e-3);
+        assert!((get_node_height(&node) - 100.0).abs() <= 1e-3);
         assert_eq!(
             node.read()
                 .unwrap()
@@ -736,7 +813,7 @@ mod set_node_height {
         add_node_child(&near_parent, &near);
         edit_transform(&near, |transform| *transform.rotation = 89.999);
         set_node_height(&near, 50.0);
-        assert!((get_node_height(&near, &mut revisions()) - 50.0).abs() <= 1e-2);
+        assert!((get_node_height(&near) - 50.0).abs() <= 1e-2);
     }
 
     #[test]
@@ -753,7 +830,7 @@ mod set_node_height {
             .transform2d()
             .scale_y;
         assert_eq!(scale_y, 3.0);
-        assert_eq!(get_node_height(&node, &mut revisions()), 60.0);
+        assert_eq!(get_node_height(&node), 60.0);
     }
 }
 
@@ -774,7 +851,7 @@ mod set_node_width {
             .scale_x
             .signum();
         set_node_width(&node, 100.0);
-        assert!((get_node_width(&node, &mut revisions()) - 100.0).abs() <= 1e-3);
+        assert!((get_node_width(&node) - 100.0).abs() <= 1e-3);
         assert_eq!(
             node.read()
                 .unwrap()
@@ -858,7 +935,7 @@ mod set_node_width {
             .transform2d()
             .scale_x;
         assert_eq!(scale_x, 4.0);
-        assert_eq!(get_node_width(&node, &mut revisions()), 40.0);
+        assert_eq!(get_node_width(&node), 40.0);
     }
 
     #[test]

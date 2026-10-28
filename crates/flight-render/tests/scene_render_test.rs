@@ -573,7 +573,7 @@ mod prepare_scene_3d_render {
         prepare_scene_3d_render(&mut state, &scene, &camera, &empty_lights(), None);
         mesh.write().unwrap().position.x = 3.0;
         prepare_scene_3d_render(&mut state, &scene, &camera, &empty_lights(), None);
-        let world = get_node_world_matrix4(&mesh_node, &mut state.runtime.node_revisions);
+        let world = get_node_world_matrix4(&mesh_node);
         assert!((world.m[12] - 3.0).abs() < 1e-6);
     }
 
@@ -586,7 +586,7 @@ mod prepare_scene_3d_render {
         set_node_local_matrix4(&mesh_node, &local);
         let mut state = create_render_state();
         prepare_scene_3d_render(&mut state, &scene, &front_camera(), &empty_lights(), None);
-        let world = get_node_world_matrix4(&mesh_node, &mut state.runtime.node_revisions);
+        let world = get_node_world_matrix4(&mesh_node);
         assert!((world.m[12] - 3.0).abs() < 1e-6);
     }
 
@@ -602,16 +602,10 @@ mod prepare_scene_3d_render {
         prepare_scene_3d_render(&mut state, &scene, &camera, &empty_lights(), None);
         mesh.write().unwrap().position.x = 3.0;
         prepare_scene_3d_render(&mut state, &scene, &camera, &empty_lights(), None);
-        assert_eq!(
-            get_node_world_matrix4(&mesh_node, &mut state.runtime.node_revisions).m[12],
-            0.0
-        );
+        assert_eq!(get_node_world_matrix4(&mesh_node).m[12], 0.0);
         invalidate_node_local_transform(&mesh_node);
         prepare_scene_3d_render(&mut state, &scene, &camera, &empty_lights(), None);
-        assert_eq!(
-            get_node_world_matrix4(&mesh_node, &mut state.runtime.node_revisions).m[12],
-            3.0
-        );
+        assert_eq!(get_node_world_matrix4(&mesh_node).m[12], 3.0);
     }
 
     #[test]

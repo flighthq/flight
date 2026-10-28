@@ -141,6 +141,38 @@ describe('ensureNodeLocalMatrix4', () => {
 });
 
 describe('ensureNodeWorldMatrix4', () => {
+  it('mints every revision in a chain from the graph root counter', () => {
+    const root = createTestNode();
+    const middle = createTestNode();
+    const leaf = createTestNode();
+    addNodeChild(root, middle);
+    addNodeChild(middle, leaf);
+
+    ensureNodeWorldMatrix4(leaf);
+
+    expect(getNodeRuntime(root).worldTransformRevisionCounter).toBe(3);
+    expect(getNodeRuntime(middle).worldTransformRevisionCounter).toBe(0);
+    expect(getNodeRuntime(leaf).worldTransformRevisionCounter).toBe(0);
+  });
+
+  it('re-resolves a moved subtree against its new root', () => {
+    const rootA = createTestNode();
+    const moved = createTestNode();
+    const leaf = createTestNode();
+    addNodeChild(rootA, moved);
+    addNodeChild(moved, leaf);
+    setNodeTranslation(rootA, 100, 0, 0);
+    setNodeTranslation(leaf, 2, 0, 0);
+    expect(getNodeWorldMatrix4(leaf).m[12]).toBeCloseTo(102);
+    const rootB = createTestNode();
+    ensureNodeWorldMatrix4(rootB);
+
+    addNodeChild(rootB, moved);
+    setNodeTranslation(moved, 5, 0, 0);
+
+    expect(getNodeWorldMatrix4(leaf).m[12]).toBeCloseTo(7);
+  });
+
   it('computes the world matrix for a root node', () => {
     const node = createTestNode();
     setNodeTranslation(node, 5, 0, 0);

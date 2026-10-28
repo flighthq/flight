@@ -6,7 +6,7 @@ Controllers adopt caller-owned visuals and derive source subscriptions and priva
 
 Callbacks and transitions run without GUI or node guards. Disposal disconnects stored SlotIds in reverse order, restores prior hit-test/hit-area state, and runs clear once. The cleanup list remains live during its callbacks. Composed controllers use the actual child runtime after releasing the child's outer guard. TextInput connects the original canonical signals through their retained groups. GuiDialog uses the accepted Interaction shared-manager focus setter for activation and restoration, including nested close callbacks.
 
-Native dependencies follow D5. Slider, ScrollBar, ScrollView, SplitPane and Window take the caller's shared `NodeRevisionState` for actual bounds. ScrollBar and Tooltip take the canonical `HostTimerCapability`; scheduling uses its queued callbacks and cancellation handles. Tests supply a deterministic scheduler through that actual capability. Geometry, Interaction, Text and TextInput remain owned by their existing crates.
+Native dependencies follow D5. ScrollBar and Tooltip take the canonical `HostTimerCapability`; scheduling uses its queued callbacks and cancellation handles. Tests supply a deterministic scheduler through that actual capability. Geometry, Interaction, Text and TextInput remain owned by their existing crates.
 
 The two source packages-external tree-shaking cases have native implementation graph counterparts: starting at Button or GuiDialog, traverse actual crate-qualified implementation dependencies and keep external packages external. They check the same excluded controller/application/tween dependencies. These are graph checks, not linked artifact or bundle size measurements.
 

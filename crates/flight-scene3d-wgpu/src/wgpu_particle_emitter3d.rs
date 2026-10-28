@@ -13,7 +13,7 @@ use flight_materials::{BLEND_MODE_ADD, BLEND_MODE_MULTIPLY, BLEND_MODE_NORMAL, B
 use flight_node::NodeRef;
 use flight_node::contract::get_node_world_matrix4;
 use flight_particleemitter::{PARTICLE_EMITTER_3D_KIND, ParticleEmitter3D};
-use flight_render::{RenderState, prepare_scene_3d_render};
+use flight_render::prepare_scene_3d_render;
 use flight_render_wgpu::{
     WgpuRenderState, WgpuScene3DPass, create_wgpu_bind_group, create_wgpu_bind_group_layout,
     create_wgpu_buffer, create_wgpu_pipeline_layout_recorded, create_wgpu_render_pipeline,
@@ -134,7 +134,7 @@ pub fn destroy_wgpu_particle_emitter3d_resources(state: &mut WgpuRenderState) {
 }
 
 fn draw_particle_emitter3d_node(state: &mut WgpuRenderState, node: &NodeRef) {
-    let world_matrix = get_node_world_matrix4(node, &mut state.render_runtime_mut().node_revisions);
+    let world_matrix = get_node_world_matrix4(node);
     let guard = node.read().unwrap();
     let Some(emitter) = guard.as_any().downcast_ref::<ParticleEmitter3D>() else {
         return;

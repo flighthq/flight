@@ -122,7 +122,7 @@ mod skin_mesh_geometry {
         );
         let node: flight_node::NodeRef = joint;
         flight_node::invalidate_node_local_transform(&node);
-        compute_skeleton3d_joint_matrices(&mut skeleton, &mut revisions());
+        compute_skeleton3d_joint_matrices(&mut skeleton);
         skin_mesh_geometry(&mut geometry, &skeleton, &mut pose);
         close(geometry.vertices[6], 0.0);
         close(geometry.vertices[7], 1.0);

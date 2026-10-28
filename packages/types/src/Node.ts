@@ -49,6 +49,10 @@ export interface NodeRuntime<Fields extends object = NodeFields> extends EntityR
   worldBoundsUsingLocalBoundsId: number;
   worldBoundsUsingWorldTransformId: number;
   worldTransformId: number;
+  // Monotonic source of world-transform revisions for the graph this node roots. Read and advanced
+  // only while the node has no parent; every world-transform id stored anywhere in its graph was
+  // minted here, which is why reparenting clears the moved subtree's stored ids. Wraps at 32 bits.
+  worldTransformRevisionCounter: number;
   worldTransformUsingLocalTransformId: number;
   worldTransformUsingParentTransformId: number;
 }

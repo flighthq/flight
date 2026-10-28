@@ -1,7 +1,6 @@
 use crate::gui_controller::*;
 use flight_entity::{Ref, allocate_entity};
 use flight_interaction::contract::InteractionSignalName;
-use flight_node::contract::NodeRevisionState;
 use flight_scene2d::Node2DRef;
 use flight_signals::{Signal, create_signal};
 use std::sync::{Arc, RwLock};
@@ -40,31 +39,24 @@ pub struct SplitPaneControllerFields {
     pub second_region: Option<Node2DRef>,
     pub signals: Ref<SplitPaneControllerSignals>,
     pub total_size: f32,
-    pub revisions: Ref<NodeRevisionState>,
 }
-// flight-lint: allow(conform-params) D5 explicit caller-owned NodeRevisionState supplies actual divider and region bounds
-pub fn create_split_pane_controller(
-    options: &SplitPaneControllerOptions,
-    revisions: Ref<NodeRevisionState>,
-) -> SplitPaneController {
+pub fn create_split_pane_controller(options: &SplitPaneControllerOptions) -> SplitPaneController {
     let mut out: SplitPaneController = allocate_entity();
-    initialize_split_pane_controller(&mut out, options, revisions);
+    initialize_split_pane_controller(&mut out, options);
     return out;
 }
 
-// flight-lint: allow(conform-extra) D12 construction derives source lengths/scales, constraints and pointer subscriptions from defining references with explicit D5 revisions
+// flight-lint: allow(conform-extra) D12 construction derives source lengths/scales, constraints and pointer subscriptions from defining references
 pub fn initialize_split_pane_controller(
     out: &mut SplitPaneController,
     options: &SplitPaneControllerOptions,
-    revisions: Ref<NodeRevisionState>,
 ) {
     let orientation = options.orientation.unwrap_or(GuiOrientation::Horizontal);
     let (divider_length, first_length, second_length) = {
-        let mut revisions = revisions.write().unwrap();
         (
-            get_gui_length(&options.divider, orientation, &mut revisions),
-            get_gui_length(&options.first_region, orientation, &mut revisions),
-            get_gui_length(&options.second_region, orientation, &mut revisions),
+            get_gui_length(&options.divider, orientation),
+            get_gui_length(&options.first_region, orientation),
+            get_gui_length(&options.second_region, orientation),
         )
     };
     let total_size = maximum(
@@ -108,7 +100,6 @@ pub fn initialize_split_pane_controller(
                 on_change: Arc::new(RwLock::new(create_signal())),
             })),
             total_size,
-            revisions,
         },
         options.transition.clone(),
     );
@@ -244,17 +235,13 @@ pub fn set_split_pane_controller_position(controller: &SplitPaneController, posi
 }
 
 fn update_visual(r: &Ref<GuiControllerRuntime<SplitPaneControllerFields>>) {
-    let (divider, orientation, revisions) = {
+    let (divider, orientation) = {
         let s = r.read().unwrap();
-        (
-            s.fields.divider.clone(),
-            s.fields.orientation,
-            s.fields.revisions.clone(),
-        )
+        (s.fields.divider.clone(), s.fields.orientation)
     };
     let divider_length = divider
         .as_ref()
-        .map(|divider| get_gui_length(divider, orientation, &mut revisions.write().unwrap()))
+        .map(|divider| get_gui_length(divider, orientation))
         .unwrap_or(0.0);
     let second_length = {
         let s = r.read().unwrap();
@@ -313,7 +300,7 @@ fn update_visual(r: &Ref<GuiControllerRuntime<SplitPaneControllerFields>>) {
     }
 }
 impl SplitPaneController {
-    pub fn new(options: &SplitPaneControllerOptions, revisions: Ref<NodeRevisionState>) -> Self {
-        return create_split_pane_controller(options, revisions);
+    pub fn new(options: &SplitPaneControllerOptions) -> Self {
+        return create_split_pane_controller(options);
     }
 }

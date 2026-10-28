@@ -1,7 +1,7 @@
 //! Node graph hierarchy: attachment, ordering, traversal of ancestors and child lists
 //! (TS `hierarchy.ts`).
 
-// flight-lint: allow-file(contract-vocabulary, conform-params) D16 open node trait objects are contract dispatch; D5 caller-owned guard and revision state replace TS module-level state
+// flight-lint: allow-file(contract-vocabulary, conform-params) D16 open node trait objects are contract dispatch; D5 caller-owned guard state replaces TS module-level state
 
 use std::sync::Arc;
 
@@ -15,8 +15,7 @@ use flight_signals::emit_signal;
 use crate::node::get_node_runtime;
 use crate::node_transform2d::{ensure_node_world_matrix, get_node_world_matrix};
 use crate::revision::{
-    NodeRevisionState, invalidate_node_local_transform, invalidate_node_parent_reference,
-    invalidate_node_world_bounds,
+    invalidate_node_local_transform, invalidate_node_parent_reference, invalidate_node_world_bounds,
 };
 use crate::types::*;
 
@@ -94,6 +93,7 @@ pub fn add_node_child_at(target: &NodeRef, child: &NodeRef, index: i32) -> NodeR
 
     if !parent_is_target {
         child.write().unwrap().node_runtime_mut().parent = Some(Arc::downgrade(target));
+        invalidate_node_subtree_world_revisions(child);
         emit_node_signal(target, |signals| signals.on_child_added.clone(), child);
         emit_unit_signal(child, |signals| signals.on_parent_changed.clone());
         invalidate_node_parent_reference(child);
@@ -278,8 +278,25 @@ pub fn get_node_root(source: &NodeRef) -> NodeRef {
     return current;
 }
 
-/// True when `ancestor` is `descendant` or above it in the hierarchy (TS `isNodeAncestorOf`).
+// World-transform ids are minted per graph root, so an id the moved subtree stored under its old root
+// says nothing about the new root's counter and could equal a fresh one by coincidence. Only the two
+// stamps that hold a root-minted id are cleared to the never-matching -1, for every node in the
+// subtree: the parent world-transform id each node derived its world matrix from, and the own
+// world-transform id its world bounds were derived from. Root-independent revisions (local transform,
+// local bounds, content, appearance, children) and the caches keyed on them are untouched.
+fn invalidate_node_subtree_world_revisions(node: &NodeRef) {
+    let mut guard = node.write().unwrap();
+    let runtime = guard.node_runtime_mut();
+    runtime.world_transform_using_parent_transform_id = -1;
+    runtime.world_bounds_using_world_transform_id = -1;
+    if let Some(children) = &runtime.children {
+        for child in children {
+            invalidate_node_subtree_world_revisions(child);
+        }
+    }
+}
 
+/// True when `ancestor` is `descendant` or above it in the hierarchy (TS `isNodeAncestorOf`).
 pub fn is_node_ancestor_of(ancestor: &NodeRef, descendant: &NodeRef) -> bool {
     let mut current = Some(descendant.clone());
     while let Some(node) = current {
@@ -305,6 +322,7 @@ pub fn remove_node_child(target: &NodeRef, child: &NodeRef) -> NodeRef {
     let has_children = target.read().unwrap().node_runtime().children.is_some();
     if is_child && has_children {
         child.write().unwrap().node_runtime_mut().parent = None;
+        invalidate_node_subtree_world_revisions(child);
         emit_unit_signal(child, |signals| signals.on_parent_changed.clone());
         invalidate_node_parent_reference(child);
         let removed = {
@@ -367,15 +385,14 @@ pub fn remove_node_children(target: &NodeRef, begin_index: Option<i32>, end_inde
 pub fn reparent_node(
     child: &NodeRef,
     new_parent: &NodeRef,
-    revisions: &mut NodeRevisionState,
     guards: Option<&NodeGuardState>,
 ) -> bool {
-    ensure_node_world_matrix(child, revisions);
-    ensure_node_world_matrix(new_parent, revisions);
+    ensure_node_world_matrix(child);
+    ensure_node_world_matrix(new_parent);
     let mut old_world: Matrix = acquire_matrix();
     let mut local: Matrix = acquire_matrix();
-    copy_matrix(&mut old_world, &get_node_world_matrix(child, revisions));
-    let parent_world = get_node_world_matrix(new_parent, revisions);
+    copy_matrix(&mut old_world, &get_node_world_matrix(child));
+    let parent_world = get_node_world_matrix(new_parent);
     if !inverse_matrix(&mut local, &parent_world) {
         if let Some(guards) = guards
             && let Some(guard) = &guards.reparent_node_guard

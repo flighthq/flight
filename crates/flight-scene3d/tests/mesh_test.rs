@@ -158,10 +158,7 @@ mod create_mesh {
         invalidate_node_local_transform(&ar);
         invalidate_node_local_transform(&br);
         assert_eq!(get_node_child_count(&ar), 1);
-        close(
-            get_node_world_matrix4(&br, &mut revision_state()).m[12],
-            7.0,
-        );
+        close(get_node_world_matrix4(&br).m[12], 7.0);
     }
 }
 

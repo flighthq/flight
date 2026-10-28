@@ -6,7 +6,6 @@
 use flight_geometry::copy_matrix;
 use flight_geometry::create_matrix;
 use flight_node::contract::NodeRef;
-use flight_node::contract::NodeRevisionState;
 use flight_node::contract::ensure_node_world_matrix;
 use flight_node::contract::get_node_child_at;
 use flight_node::contract::get_node_child_count;
@@ -26,21 +25,13 @@ use crate::velocity_store::ensure_node_velocity_sample;
 /// relative to explicit contributors does not matter. Run once per frame after
 /// `begin_velocity_frame`. Velocity is in node units; a producer scales by the render pixel ratio.
 // flight-lint: allow(conform-params) D5: caller-owned NodeRevisionState; the TS revisions argument migrates with Node
-pub fn contribute_transform_velocity(
-    field: &mut VelocityField,
-    root: &NodeRef,
-    revisions: &mut NodeRevisionState,
-) {
-    visit_transform_velocity(field, root, revisions);
+pub fn contribute_transform_velocity(field: &mut VelocityField, root: &NodeRef) {
+    visit_transform_velocity(field, root);
 }
 
-fn visit_transform_velocity(
-    field: &mut VelocityField,
-    node: &NodeRef,
-    revisions: &mut NodeRevisionState,
-) {
-    ensure_node_world_matrix(node, revisions);
-    let world = get_node_world_matrix(node, revisions);
+fn visit_transform_velocity(field: &mut VelocityField, node: &NodeRef) {
+    ensure_node_world_matrix(node);
+    let world = get_node_world_matrix(node);
     let frame_id = field.frame_id;
     let sample = ensure_node_velocity_sample(field, node);
 
@@ -65,7 +56,7 @@ fn visit_transform_velocity(
     let count = get_node_child_count(node);
     for i in 0..count {
         if let Some(child) = get_node_child_at(node, i as i32) {
-            visit_transform_velocity(field, &child, revisions);
+            visit_transform_velocity(field, &child);
         }
     }
 }

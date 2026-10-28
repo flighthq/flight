@@ -4,7 +4,6 @@ use crate::scroll_bar_controller::{
 };
 use flight_entity::{Ref, allocate_entity};
 use flight_interaction::contract::InteractionSignalName;
-use flight_node::contract::NodeRevisionState;
 use flight_scene2d::Node2DRef;
 use flight_signals::{Signal, create_signal};
 use std::sync::{Arc, RwLock};
@@ -36,23 +35,19 @@ pub struct ScrollViewControllerFields {
     pub viewport: Option<Node2DRef>,
     pub x: f32,
     pub y: f32,
-    pub revisions: Ref<NodeRevisionState>,
 }
-// flight-lint: allow(conform-params) D5 caller-owned NodeRevisionState supplies canonical content and viewport bounds
 pub fn create_scroll_view_controller(
     options: &ScrollViewControllerOptions,
-    revisions: Ref<NodeRevisionState>,
 ) -> ScrollViewController {
     let mut out: ScrollViewController = allocate_entity();
-    initialize_scroll_view_controller(&mut out, options, revisions);
+    initialize_scroll_view_controller(&mut out, options);
     return out;
 }
 
-// flight-lint: allow(conform-extra) D12 construction captures content origins and derives source input/composed scrollbar subscriptions with explicit D5 bounds context
+// flight-lint: allow(conform-extra) D12 construction captures content origins and derives source input/composed scrollbar subscriptions
 pub fn initialize_scroll_view_controller(
     out: &mut ScrollViewController,
     options: &ScrollViewControllerOptions,
-    revisions: Ref<NodeRevisionState>,
 ) {
     let (base_content_x, base_content_y) = {
         let content = options.content.read().unwrap();
@@ -77,7 +72,6 @@ pub fn initialize_scroll_view_controller(
             viewport: Some(options.viewport.clone()),
             x: 0.0,
             y: 0.0,
-            revisions,
         },
         options.transition.clone(),
     );
@@ -223,15 +217,8 @@ pub fn get_scroll_view_controller_y(controller: &ScrollViewController) -> f32 {
         .y;
 }
 
-fn maximum_extent(
-    content: &Node2DRef,
-    viewport: &Node2DRef,
-    orientation: GuiOrientation,
-    revisions: &Ref<NodeRevisionState>,
-) -> f32 {
-    let mut revisions = revisions.write().unwrap();
-    let length = get_gui_length(content, orientation, &mut revisions)
-        - get_gui_length(viewport, orientation, &mut revisions);
+fn maximum_extent(content: &Node2DRef, viewport: &Node2DRef, orientation: GuiOrientation) -> f32 {
+    let length = get_gui_length(content, orientation) - get_gui_length(viewport, orientation);
     return if length.is_nan() {
         length
     } else {
@@ -240,23 +227,19 @@ fn maximum_extent(
 }
 
 fn set_position_runtime(r: &Ref<GuiControllerRuntime<ScrollViewControllerFields>>, x: f32, y: f32) {
-    let (content, viewport, revisions) = {
+    let (content, viewport) = {
         let s = r.read().unwrap();
         if s.disposed {
             return;
         }
-        (
-            s.fields.content.clone(),
-            s.fields.viewport.clone(),
-            s.fields.revisions.clone(),
-        )
+        (s.fields.content.clone(), s.fields.viewport.clone())
     };
     let (Some(content), Some(viewport)) = (content, viewport) else {
         return;
     };
-    let maximum_x = maximum_extent(&content, &viewport, GuiOrientation::Horizontal, &revisions);
+    let maximum_x = maximum_extent(&content, &viewport, GuiOrientation::Horizontal);
     let next_x = clamp_gui_value(x, 0.0, maximum_x);
-    let maximum_y = maximum_extent(&content, &viewport, GuiOrientation::Vertical, &revisions);
+    let maximum_y = maximum_extent(&content, &viewport, GuiOrientation::Vertical);
     let next_y = clamp_gui_value(y, 0.0, maximum_y);
     {
         let mut s = r.write().unwrap();
@@ -311,7 +294,7 @@ fn update_visual(r: &Ref<GuiControllerRuntime<ScrollViewControllerFields>>) {
     }
 }
 impl ScrollViewController {
-    pub fn new(options: &ScrollViewControllerOptions, revisions: Ref<NodeRevisionState>) -> Self {
-        return create_scroll_view_controller(options, revisions);
+    pub fn new(options: &ScrollViewControllerOptions) -> Self {
+        return create_scroll_view_controller(options);
     }
 }

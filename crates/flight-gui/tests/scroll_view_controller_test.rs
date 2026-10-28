@@ -1,6 +1,5 @@
 use flight_gui::contract::*;
 use flight_interaction::contract::InteractionSignalName;
-use flight_node::contract::NodeRevisionState;
 use std::sync::{Arc, RwLock};
 #[path = "gui_pointer_fixture.rs"]
 mod gui_pointer_fixture;
@@ -19,12 +18,7 @@ fn options(
     };
 }
 fn controller(options: &ScrollViewControllerOptions) -> ScrollViewController {
-    return create_scroll_view_controller(
-        options,
-        Arc::new(RwLock::new(NodeRevisionState {
-            world_transform_revision: 0,
-        })),
-    );
+    return create_scroll_view_controller(options);
 }
 mod create_scroll_view_controller {
     use super::*;
@@ -141,13 +135,7 @@ mod initialize_scroll_view_controller {
         let options = options(content.clone(), create_gui_test_node(None, None));
         let mut controller: ScrollViewController = flight_entity::allocate_entity();
         let id = flight_entity::get_entity_id(&controller);
-        initialize_scroll_view_controller(
-            &mut controller,
-            &options,
-            Arc::new(RwLock::new(NodeRevisionState {
-                world_transform_revision: 0,
-            })),
-        );
+        initialize_scroll_view_controller(&mut controller, &options);
         assert_eq!(flight_entity::get_entity_id(&controller), id);
         set_scroll_view_controller_position(&controller, 5.0, 0.0);
         assert_eq!(content.read().unwrap().x, 2.0);

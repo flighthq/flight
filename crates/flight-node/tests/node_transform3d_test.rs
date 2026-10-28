@@ -64,12 +64,6 @@ fn cached_world_matrix(node: &NodeRef) -> Option<flight_geometry::Matrix4> {
         .clone();
 }
 
-fn revisions() -> NodeRevisionState {
-    return NodeRevisionState {
-        world_transform_revision: 0,
-    };
-}
-
 mod convert_node_vector3_global_to_local {
     use super::*;
 
@@ -81,7 +75,6 @@ mod convert_node_vector3_global_to_local {
             &mut out,
             &node,
             &flight_geometry::create_vector3(4.0, 5.0, 6.0),
-            &mut revisions(),
         );
         close(out.x, 4.0);
         close(out.y, 5.0);
@@ -98,7 +91,6 @@ mod convert_node_vector3_global_to_local {
             &mut out,
             &node,
             &flight_geometry::create_vector3(11.0, 21.0, 31.0),
-            &mut revisions(),
         );
         let scratch = acquire_matrix4();
         assert_eq!(
@@ -124,7 +116,6 @@ mod convert_node_vector3_local_to_global {
             &mut out,
             &node,
             &flight_geometry::create_vector3(1.0, 1.0, 1.0),
-            &mut revisions(),
         );
         close(out.x, 11.0);
         close(out.y, 21.0);
@@ -143,7 +134,6 @@ mod convert_node_vector3_local_to_global {
             &mut out,
             &child,
             &flight_geometry::create_vector3(0.0, 0.0, 0.0),
-            &mut revisions(),
         );
         close(out.x, 8.0);
     }
@@ -174,11 +164,48 @@ mod ensure_node_world_matrix4 {
     use super::*;
 
     #[test]
+    fn mints_every_revision_in_a_chain_from_the_root_counter() {
+        let root = create_test_node_3d("Test");
+        let middle = create_test_node_3d("Test");
+        let leaf = create_test_node_3d("Test");
+        add_node_child(&root, &middle);
+        add_node_child(&middle, &leaf);
+        ensure_node_world_matrix4(&leaf);
+        let counter = |node: &NodeRef| {
+            node.read()
+                .unwrap()
+                .node_runtime()
+                .world_transform_revision_counter
+        };
+        assert_eq!(counter(&root), 3);
+        assert_eq!(counter(&middle), 0);
+        assert_eq!(counter(&leaf), 0);
+    }
+
+    #[test]
+    fn re_resolves_a_moved_subtree_against_its_new_root() {
+        let root_a = create_test_node_3d("A");
+        let moved = create_test_node_3d("Moved");
+        let leaf = create_test_node_3d("Leaf");
+        add_node_child(&root_a, &moved);
+        add_node_child(&moved, &leaf);
+        set_translation(&root_a, 100.0, 0.0, 0.0);
+        set_translation(&leaf, 2.0, 0.0, 0.0);
+        close(get_node_world_matrix4(&leaf).m[12], 102.0);
+        let root_b = create_test_node_3d("B");
+        ensure_node_world_matrix4(&root_b);
+
+        add_node_child(&root_b, &moved);
+        set_translation(&moved, 5.0, 0.0, 0.0);
+
+        close(get_node_world_matrix4(&leaf).m[12], 7.0);
+    }
+
+    #[test]
     fn computes_the_world_matrix_for_a_root_node() {
         let node = create_test_node_3d("Test");
         set_translation(&node, 5.0, 0.0, 0.0);
-        let mut state = revisions();
-        ensure_node_world_matrix4(&node, &mut state);
+        ensure_node_world_matrix4(&node);
         let world = cached_world_matrix(&node).expect("world matrix is cached");
         close(world.m[12], 5.0);
     }
@@ -186,10 +213,9 @@ mod ensure_node_world_matrix4 {
     #[test]
     fn reuses_a_cached_world_matrix_when_nothing_was_invalidated() {
         let node = create_test_node_3d("Test");
-        let mut state = revisions();
-        ensure_node_world_matrix4(&node, &mut state);
+        ensure_node_world_matrix4(&node);
         let first = cached_world_matrix(&node).expect("world matrix is cached");
-        ensure_node_world_matrix4(&node, &mut state);
+        ensure_node_world_matrix4(&node);
         let second = cached_world_matrix(&node).expect("world matrix is cached");
         assert_eq!(first.m, second.m);
     }
@@ -204,11 +230,10 @@ mod ensure_node_world_matrix4 {
         set_translation(&root, 1.0, 0.0, 0.0);
         set_translation(&parent, 2.0, 0.0, 0.0);
         set_translation(&child, 3.0, 0.0, 0.0);
-        let mut state = revisions();
-        ensure_node_world_matrix4(&child, &mut state);
-        close(get_node_world_matrix4(&child, &mut state).m[12], 6.0);
+        ensure_node_world_matrix4(&child);
+        close(get_node_world_matrix4(&child).m[12], 6.0);
         set_translation(&parent, 20.0, 0.0, 0.0);
-        close(get_node_world_matrix4(&child, &mut state).m[12], 24.0);
+        close(get_node_world_matrix4(&child).m[12], 24.0);
     }
 }
 
@@ -254,7 +279,7 @@ mod get_node_world_matrix4 {
         add_node_child(&parent, &child);
         set_translation(&parent, 10.0, 0.0, 0.0);
         set_translation(&child, 5.0, 0.0, 0.0);
-        close(get_node_world_matrix4(&child, &mut revisions()).m[12], 15.0);
+        close(get_node_world_matrix4(&child).m[12], 15.0);
     }
 
     #[test]
@@ -262,10 +287,9 @@ mod get_node_world_matrix4 {
         let parent = create_test_node_3d("Test");
         let child = create_test_node_3d("Test");
         add_node_child(&parent, &child);
-        let mut state = revisions();
-        get_node_world_matrix4(&child, &mut state);
+        get_node_world_matrix4(&child);
         set_translation(&parent, 7.0, 0.0, 0.0);
-        close(get_node_world_matrix4(&child, &mut state).m[12], 7.0);
+        close(get_node_world_matrix4(&child).m[12], 7.0);
     }
 
     #[test]
@@ -275,7 +299,7 @@ mod get_node_world_matrix4 {
         add_node_child(&parent, &child);
         set_rotation_z(&parent, std::f32::consts::FRAC_PI_2);
         set_translation(&child, 1.0, 0.0, 0.0);
-        let world = get_node_world_matrix4(&child, &mut revisions());
+        let world = get_node_world_matrix4(&child);
         close(world.m[12], 0.0);
         close(world.m[13], 1.0);
         close(world.m[14], 0.0);
@@ -289,7 +313,7 @@ mod get_node_world_matrix4 {
         set_translation(&parent, 10.0, 0.0, 0.0);
         set_rotation_z(&parent, std::f32::consts::FRAC_PI_2);
         set_translation(&child, 1.0, 0.0, 0.0);
-        let world = get_node_world_matrix4(&child, &mut revisions());
+        let world = get_node_world_matrix4(&child);
         close(world.m[12], 10.0);
         close(world.m[13], 1.0);
         close(world.m[14], 0.0);
@@ -302,7 +326,7 @@ mod get_node_world_matrix4 {
         add_node_child(&parent, &child);
         set_scale(&parent, 2.0, 2.0, 2.0);
         set_translation(&child, 3.0, 0.0, 0.0);
-        let world = get_node_world_matrix4(&child, &mut revisions());
+        let world = get_node_world_matrix4(&child);
         close(world.m[12], 6.0);
         close(world.m[0], 2.0);
     }
@@ -358,7 +382,7 @@ mod get_node_world_matrix4 {
         flight_geometry::multiply_matrix4(&mut root_times_parent, &local_root, &local_parent);
         let mut expected = flight_geometry::create_matrix4();
         flight_geometry::multiply_matrix4(&mut expected, &root_times_parent, &local_child);
-        let world = get_node_world_matrix4(&child, &mut revisions());
+        let world = get_node_world_matrix4(&child);
         for index in 0..16 {
             close(world.m[index], expected.m[index]);
         }
@@ -373,10 +397,9 @@ mod get_node_world_matrix4 {
         add_node_child(&mid, &leaf);
         set_translation(&root, 1.0, 0.0, 0.0);
         set_translation(&leaf, 2.0, 0.0, 0.0);
-        let mut state = revisions();
-        close(get_node_world_matrix4(&leaf, &mut state).m[12], 3.0);
+        close(get_node_world_matrix4(&leaf).m[12], 3.0);
         set_translation(&root, 100.0, 0.0, 0.0);
-        close(get_node_world_matrix4(&leaf, &mut state).m[12], 102.0);
+        close(get_node_world_matrix4(&leaf).m[12], 102.0);
     }
 
     #[test]
@@ -388,12 +411,11 @@ mod get_node_world_matrix4 {
         set_translation(&parent_b, 0.0, 20.0, 0.0);
         set_translation(&child, 1.0, 0.0, 0.0);
         add_node_child(&parent_a, &child);
-        let mut state = revisions();
-        close(get_node_world_matrix4(&child, &mut state).m[12], 11.0);
-        close(get_node_world_matrix4(&child, &mut state).m[13], 0.0);
+        close(get_node_world_matrix4(&child).m[12], 11.0);
+        close(get_node_world_matrix4(&child).m[13], 0.0);
         remove_node_child(&parent_a, &child);
         add_node_child(&parent_b, &child);
-        let world = get_node_world_matrix4(&child, &mut state);
+        let world = get_node_world_matrix4(&child);
         close(world.m[12], 1.0);
         close(world.m[13], 20.0);
     }
@@ -423,7 +445,7 @@ mod set_node_local_matrix4 {
         add_node_child(&parent, &child);
         set_node_local_matrix4(&parent, &translation_matrix(4.0, 0.0, 0.0));
         set_node_local_matrix4(&child, &translation_matrix(3.0, 0.0, 0.0));
-        close(get_node_world_matrix4(&child, &mut revisions()).m[12], 7.0);
+        close(get_node_world_matrix4(&child).m[12], 7.0);
     }
 
     #[test]

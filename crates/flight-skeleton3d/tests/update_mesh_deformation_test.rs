@@ -28,7 +28,7 @@ mod update_mesh_deformation {
         let geometry = mesh.read().unwrap().geometry.clone();
         let node: NodeRef = mesh.clone();
         let initial_version = geometry.read().unwrap().version;
-        update_mesh_deformation(&node, &mut revisions());
+        update_mesh_deformation(&node);
         assert_eq!(&geometry.read().unwrap().vertices[..3], &[3.0, 5.0, 0.0]);
         assert_eq!(geometry.read().unwrap().version, initial_version + 2);
         let pose = flight_meshgeometry::get_mesh_geometry_skin_bind_pose(&geometry.read().unwrap())
@@ -38,7 +38,7 @@ mod update_mesh_deformation {
         joint.write().unwrap().position.y = 2.0;
         invalidate_node_local_transform(&joint_ref);
         let version = geometry.read().unwrap().version;
-        update_mesh_deformation(&node, &mut revisions());
+        update_mesh_deformation(&node);
         assert_eq!(&geometry.read().unwrap().vertices[..3], &[3.0, 2.0, 0.0]);
         assert_eq!(geometry.read().unwrap().version, version + 1);
         assert!(Arc::ptr_eq(
@@ -48,7 +48,7 @@ mod update_mesh_deformation {
         ));
         assert_eq!(pose.read().unwrap().positions.as_ptr(), input_pointer);
         assert_eq!(pose.read().unwrap().positions.as_ref(), &[3.0, 0.0, 0.0]);
-        update_mesh_deformation(&node, &mut revisions());
+        update_mesh_deformation(&node);
         assert_eq!(&geometry.read().unwrap().vertices[..3], &[3.0, 2.0, 0.0]);
     }
     #[test]
@@ -63,10 +63,10 @@ mod update_mesh_deformation {
         invalidate_node_local_transform(&joint);
         let geometry = mesh.read().unwrap().geometry.clone();
         let node: NodeRef = mesh;
-        update_mesh_deformation(&node, &mut revisions());
+        update_mesh_deformation(&node);
         assert_eq!(&geometry.read().unwrap().vertices[..3], &[3.0, 5.0, 0.0]);
         morph.write().unwrap().weights[0] = 3.0;
-        update_mesh_deformation(&node, &mut revisions());
+        update_mesh_deformation(&node);
         assert_eq!(&geometry.read().unwrap().vertices[..3], &[7.0, 5.0, 0.0]);
     }
     #[test]
@@ -76,7 +76,7 @@ mod update_mesh_deformation {
         mesh.write().unwrap().morph = Some(morph());
         let geometry = mesh.read().unwrap().geometry.clone();
         let node: NodeRef = mesh;
-        update_mesh_deformation(&node, &mut revisions());
+        update_mesh_deformation(&node);
         assert_eq!(geometry.read().unwrap().vertices[0], 2.0);
         let mesh = skinned_mesh();
         let joint = joint(0.0, 0.0, 0.0);
@@ -86,7 +86,7 @@ mod update_mesh_deformation {
         invalidate_node_local_transform(&joint);
         let geometry = mesh.read().unwrap().geometry.clone();
         let node: NodeRef = mesh;
-        update_mesh_deformation(&node, &mut revisions());
+        update_mesh_deformation(&node);
         assert_eq!(geometry.read().unwrap().vertices[1], 2.0);
     }
 }

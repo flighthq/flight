@@ -5,7 +5,6 @@ use flight_bitmap::{Bitmap, HostBitmapReadbackCapability, ImageChannel, get_bitm
 use flight_entity::get_entity_id;
 use flight_geometry::{create_vector2, inverse_matrix_transform_point_xy};
 use flight_image::{as_image_resource_ref, capture_bitmap_from_image_resource};
-use flight_node::contract::NodeRevisionState;
 use flight_node::{NodeRef, get_node_world_matrix};
 use flight_scene2d::{SPRITE_KIND, Sprite};
 use flight_texture::{Texture, TextureSource, TextureSourceRef};
@@ -123,9 +122,7 @@ fn hit_test_sprite_alpha(
     let Some(capture) = bitmap_for_image(host_bitmap_readback, &texture_source, cache) else {
         return 0;
     };
-
-    let mut revisions = NodeRevisionState::default();
-    let matrix = get_node_world_matrix(source, &mut revisions);
+    let matrix = get_node_world_matrix(source);
     let mut local_point = create_vector2(0.0, 0.0);
     inverse_matrix_transform_point_xy(&mut local_point, &matrix, x, y);
 

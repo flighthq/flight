@@ -1,4 +1,3 @@
-use flight_node::contract::NodeRevisionState;
 use flight_node::{NodeRef, get_node_world_bounds_rectangle};
 use flight_spatial::{
     SpatialAabb2D, clear_spatial_index_2d, insert_spatial_object_2d, query_spatial_point_2d,
@@ -88,7 +87,6 @@ pub fn refresh_interaction_spatial_index(
 
     let mut idx = index_ref.write().unwrap();
     clear_spatial_index_2d(&mut idx);
-    let mut revisions = NodeRevisionState::default();
     let mut aabb = SpatialAabb2D {
         min_x: 0.0,
         min_y: 0.0,
@@ -96,7 +94,7 @@ pub fn refresh_interaction_spatial_index(
         max_y: 0.0,
     };
     for (rank, node) in candidates.iter().enumerate() {
-        let bounds = get_node_world_bounds_rectangle(node, &mut revisions);
+        let bounds = get_node_world_bounds_rectangle(node);
         aabb.min_x = bounds.x;
         aabb.min_y = bounds.y;
         aabb.max_x = bounds.x + bounds.width;

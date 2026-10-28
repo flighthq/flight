@@ -58,6 +58,7 @@ export function createNodeRuntime<Fields extends object = NodeFields>(
   out.worldBoundsUsingLocalBoundsId = -1;
   out.worldBoundsUsingWorldTransformId = -1;
   out.worldTransformId = 0;
+  out.worldTransformRevisionCounter = 0;
   out.worldTransformUsingLocalTransformId = -1;
   out.worldTransformUsingParentTransformId = -1;
   return out;

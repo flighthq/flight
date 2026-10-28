@@ -1,8 +1,6 @@
 use flight_entity::Ref;
 use flight_node::NodeRef;
-use flight_node::contract::{
-    NodeRevisionState, get_node_world_matrix, invalidate_node_local_bounds,
-};
+use flight_node::contract::{get_node_world_matrix, invalidate_node_local_bounds};
 use flight_particles::contract::{
     ensure_particle_emitter_state_capacity, get_particle_emitter_signals,
     write_particle_spawn_offset,
@@ -83,8 +81,7 @@ pub fn update_particle_emitter_2d(
 ) {
     let (world_transform, local_x, local_y) = if config.world_space {
         let node_ref: NodeRef = emitter.clone();
-        let mut revisions = NodeRevisionState::default();
-        let matrix = get_node_world_matrix(&node_ref, &mut revisions);
+        let matrix = get_node_world_matrix(&node_ref);
         (
             Some([matrix.a, matrix.b, matrix.c, matrix.d, matrix.tx, matrix.ty]),
             0.0,

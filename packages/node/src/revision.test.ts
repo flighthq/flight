@@ -64,6 +64,43 @@ describe('computeNodeWorldTransformRevision', () => {
     const next = (first + 1) >>> 0;
     expect(runtime.worldTransformId).toBe(next === 0 ? 1 : next);
   });
+
+  it('mints from the graph root counter, resolving the root when none is passed', () => {
+    const child = createTestNode();
+    addNodeChild(node, child);
+    const rootRuntime = getEntityRuntime(node);
+    const childRuntime = getEntityRuntime(child);
+
+    computeNodeWorldTransformRevision(childRuntime, rootRuntime);
+
+    expect(rootRuntime.worldTransformRevisionCounter).toBe(1);
+    expect(childRuntime.worldTransformRevisionCounter).toBe(0);
+    expect(childRuntime.worldTransformId).toBe(1);
+  });
+
+  it('keeps independent roots on independent counters', () => {
+    const other = createTestNode();
+    const runtime = getEntityRuntime(node);
+    const otherRuntime = getEntityRuntime(other);
+    computeNodeWorldTransformRevision(runtime);
+    computeNodeWorldTransformRevision(runtime);
+    computeNodeWorldTransformRevision(runtime);
+
+    computeNodeWorldTransformRevision(otherRuntime);
+
+    expect(runtime.worldTransformRevisionCounter).toBe(3);
+    expect(otherRuntime.worldTransformId).toBe(1);
+  });
+
+  it('steps past 0 when the root counter wraps', () => {
+    const runtime = getEntityRuntime(node);
+    runtime.worldTransformRevisionCounter = 0xffffffff;
+
+    computeNodeWorldTransformRevision(runtime, undefined, runtime);
+
+    expect(runtime.worldTransformId).toBe(1);
+    expect(runtime.worldTransformRevisionCounter).toBe(1);
+  });
 });
 
 describe('getNodeAppearanceRevision', () => {

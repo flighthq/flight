@@ -4,7 +4,7 @@ use flight_entity::{Float32Array, Ref};
 use flight_geometry::{Aabb, Matrix4};
 use flight_log::LogStateRef;
 use flight_meshgeometry::{MeshGeometry, MeshSkinBindPose};
-use flight_node::{NodeRef, contract::NodeRevisionState};
+use flight_node::NodeRef;
 use flight_scene3d::{Node3DRef, Skeleton3D};
 
 #[cfg(test)]
@@ -16,11 +16,6 @@ mod sugar_tests {
     };
     use flight_scene3d::{Node3DFields, Skin, create_mesh, create_node3d};
     use std::sync::{Arc, RwLock};
-    fn revisions() -> NodeRevisionState {
-        return NodeRevisionState {
-            world_transform_revision: 0,
-        };
-    }
     fn guards() -> Skeleton3DGuardStateRef {
         return Arc::new(RwLock::new(Skeleton3DGuardState {
             enabled: false,
@@ -64,26 +59,16 @@ mod sugar_tests {
     fn skeleton_receivers_match_free_construction_clone_palette_bind_lookup_validation_and_disposal()
      {
         let joint = node();
-        let mut a = Skeleton3D::new(
-            Arc::new(RwLock::new(vec![joint.clone()])),
-            None,
-            &mut revisions(),
-            &guards(),
-        );
+        let mut a = Skeleton3D::new(Arc::new(RwLock::new(vec![joint.clone()])), None, &guards());
         a.names = Some(vec!["root".to_string()]);
-        let mut b = create_skeleton3d(
-            Arc::new(RwLock::new(vec![joint.clone()])),
-            None,
-            &mut revisions(),
-            &guards(),
-        );
+        let mut b = create_skeleton3d(Arc::new(RwLock::new(vec![joint.clone()])), None, &guards());
         b.names = Some(vec!["root".to_string()]);
         same_palettes(&a, &b);
         joint.write().unwrap().node3d_fields_mut().position.x = 3.0;
         let erased: NodeRef = joint;
         flight_node::invalidate_node_local_transform(&erased);
-        a.compute_joint_matrices(&mut revisions());
-        compute_skeleton3d_joint_matrices(&mut b, &mut revisions());
+        a.compute_joint_matrices();
+        compute_skeleton3d_joint_matrices(&mut b);
         same_palettes(&a, &b);
         same_palettes(&a.clone_skeleton(), &clone_skeleton3d(&b));
         assert_eq!(a.equals(&b), equals_skeleton3d(&a, &b));
@@ -94,17 +79,17 @@ mod sugar_tests {
         let mut ma = create_matrix4();
         let mut mb = create_matrix4();
         assert_eq!(
-            a.joint_world_matrix(&mut ma, 0, &mut revisions()),
-            get_skeleton3d_joint_world_matrix(&mut mb, &b, 0, &mut revisions())
+            a.joint_world_matrix(&mut ma, 0),
+            get_skeleton3d_joint_world_matrix(&mut mb, &b, 0)
         );
         assert_eq!(ma.m, mb.m);
         assert_eq!(
-            a.joint_world_matrix_by_name(&mut ma, "root", &mut revisions()),
-            get_skeleton3d_joint_world_matrix_by_name(&mut mb, &b, "root", &mut revisions())
+            a.joint_world_matrix_by_name(&mut ma, "root"),
+            get_skeleton3d_joint_world_matrix_by_name(&mut mb, &b, "root")
         );
         assert_eq!(ma.m, mb.m);
-        a.set_bind_pose(&mut revisions(), &guards());
-        set_skeleton3d_bind_pose(&mut b, &mut revisions(), &guards());
+        a.set_bind_pose(&guards());
+        set_skeleton3d_bind_pose(&mut b, &guards());
         same_palettes(&a, &b);
         assert_eq!(a.validate(), validate_skeleton3d(&b));
         let ca = a.clone_joint_hierarchy(Arc::new(|_, _| node()));
@@ -130,13 +115,8 @@ mod sugar_tests {
         let mut pa = a.capture_skin_bind_pose();
         let mut pb = capture_mesh_skin_bind_pose(&b);
         assert_eq!(pa.positions, pb.positions);
-        let mut skeleton = create_skeleton3d(
-            Arc::new(RwLock::new(vec![node()])),
-            None,
-            &mut revisions(),
-            &guards(),
-        );
-        compute_skeleton3d_joint_matrices(&mut skeleton, &mut revisions());
+        let mut skeleton = create_skeleton3d(Arc::new(RwLock::new(vec![node()])), None, &guards());
+        compute_skeleton3d_joint_matrices(&mut skeleton);
         a.skin(&skeleton, &mut pa);
         skin_mesh_geometry(&mut b, &skeleton, &mut pb);
         assert_eq!(a.vertices, b.vertices);
@@ -153,13 +133,8 @@ mod sugar_tests {
         let geometry = geometry();
         let mut pose = capture_mesh_skin_bind_pose(&geometry);
         let mut free = capture_mesh_skin_bind_pose(&geometry);
-        let mut skeleton = create_skeleton3d(
-            Arc::new(RwLock::new(vec![node()])),
-            None,
-            &mut revisions(),
-            &guards(),
-        );
-        compute_skeleton3d_joint_matrices(&mut skeleton, &mut revisions());
+        let mut skeleton = create_skeleton3d(Arc::new(RwLock::new(vec![node()])), None, &guards());
+        compute_skeleton3d_joint_matrices(&mut skeleton);
         let mut a = create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         let mut b = create_aabb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         a.skin_conservative_bounds(&pose, &skeleton);
@@ -225,7 +200,6 @@ mod sugar_tests {
             skeleton: Arc::new(RwLock::new(create_skeleton3d(
                 Arc::new(RwLock::new(vec![joint.clone()])),
                 None,
-                &mut revisions(),
                 &guards(),
             ))),
             skeleton_root: None,
@@ -237,22 +211,22 @@ mod sugar_tests {
         flight_node::invalidate_node_local_transform(&joint);
         let ar: NodeRef = a.clone();
         let br: NodeRef = b.clone();
-        ar.update_skin(&mut revisions());
-        update_mesh_skin(&br, &mut revisions());
+        ar.update_skin();
+        update_mesh_skin(&br);
         assert_eq!(
             a.read().unwrap().geometry.read().unwrap().vertices,
             b.read().unwrap().geometry.read().unwrap().vertices
         );
-        ar.update_deformation(&mut revisions());
-        update_mesh_deformation(&br, &mut revisions());
+        ar.update_deformation();
+        update_mesh_deformation(&br);
         assert_eq!(
             a.read().unwrap().geometry.read().unwrap().vertices,
             b.read().unwrap().geometry.read().unwrap().vertices
         );
-        ar.prepare_skinning(&mut revisions());
-        prepare_mesh_skinning(&br, &mut revisions());
-        ar.prepare_scene_skinning(&mut revisions());
-        prepare_scene3d_skinning(&br, &mut revisions());
+        ar.prepare_skinning();
+        prepare_mesh_skinning(&br);
+        ar.prepare_scene_skinning();
+        prepare_scene3d_skinning(&br);
         assert_eq!(
             flight_scene3d::contract::get_mesh_runtime(&a.read().unwrap()).deformed_local_bounds,
             flight_scene3d::contract::get_mesh_runtime(&b.read().unwrap()).deformed_local_bounds
@@ -278,39 +252,24 @@ pub trait Skeleton3DMethods {
     fn new(
         joints: Ref<Vec<Node3DRef>>,
         inverse_bind_matrices: Option<Ref<Box<Float32Array>>>,
-        revisions: &mut NodeRevisionState,
         guards: &Skeleton3DGuardStateRef,
     ) -> Self;
     fn clone_joint_hierarchy(&self, clone_joint: Skeleton3DJointCloner) -> Skeleton3D;
     fn clone_skeleton(&self) -> Skeleton3D;
-    fn compute_joint_matrices(&mut self, revisions: &mut NodeRevisionState);
+    fn compute_joint_matrices(&mut self);
     fn dispose(&mut self);
     fn equals(&self, other: &Skeleton3D) -> bool;
     fn joint_index_by_name(&self, name: &str) -> i32;
-    fn joint_world_matrix(
-        &self,
-        out: &mut Matrix4,
-        index: i32,
-        revisions: &mut NodeRevisionState,
-    ) -> bool;
-    fn joint_world_matrix_by_name(
-        &self,
-        out: &mut Matrix4,
-        name: &str,
-        revisions: &mut NodeRevisionState,
-    ) -> bool;
-    fn set_bind_pose(
-        &mut self,
-        revisions: &mut NodeRevisionState,
-        guards: &Skeleton3DGuardStateRef,
-    );
+    fn joint_world_matrix(&self, out: &mut Matrix4, index: i32) -> bool;
+    fn joint_world_matrix_by_name(&self, out: &mut Matrix4, name: &str) -> bool;
+    fn set_bind_pose(&mut self, guards: &Skeleton3DGuardStateRef);
     fn validate(&self) -> Option<Skeleton3DValidationDiagnostic>;
 }
 pub trait Skeleton3DNodeMethods {
-    fn prepare_scene_skinning(&self, revisions: &mut NodeRevisionState);
-    fn prepare_skinning(&self, revisions: &mut NodeRevisionState);
-    fn update_deformation(&self, revisions: &mut NodeRevisionState);
-    fn update_skin(&self, revisions: &mut NodeRevisionState);
+    fn prepare_scene_skinning(&self);
+    fn prepare_skinning(&self);
+    fn update_deformation(&self);
+    fn update_skin(&self);
 }
 pub trait MeshGeometrySkinMethods {
     fn capture_skin_bind_pose(&self) -> MeshSkinBindPose;
@@ -351,10 +310,9 @@ impl Skeleton3DMethods for Skeleton3D {
     fn new(
         joints: Ref<Vec<Node3DRef>>,
         inverse_bind_matrices: Option<Ref<Box<Float32Array>>>,
-        revisions: &mut NodeRevisionState,
         guards: &Skeleton3DGuardStateRef,
     ) -> Self {
-        return create_skeleton3d(joints, inverse_bind_matrices, revisions, guards);
+        return create_skeleton3d(joints, inverse_bind_matrices, guards);
     }
     fn clone_joint_hierarchy(&self, clone_joint: Skeleton3DJointCloner) -> Skeleton3D {
         return clone_skeleton3d_joint_hierarchy(self, clone_joint);
@@ -362,8 +320,8 @@ impl Skeleton3DMethods for Skeleton3D {
     fn clone_skeleton(&self) -> Skeleton3D {
         return clone_skeleton3d(self);
     }
-    fn compute_joint_matrices(&mut self, revisions: &mut NodeRevisionState) {
-        compute_skeleton3d_joint_matrices(self, revisions);
+    fn compute_joint_matrices(&mut self) {
+        compute_skeleton3d_joint_matrices(self);
     }
     fn dispose(&mut self) {
         dispose_skeleton3d(self);
@@ -374,45 +332,31 @@ impl Skeleton3DMethods for Skeleton3D {
     fn joint_index_by_name(&self, name: &str) -> i32 {
         return get_skeleton3d_joint_index_by_name(self, name);
     }
-    fn joint_world_matrix(
-        &self,
-        out: &mut Matrix4,
-        index: i32,
-        revisions: &mut NodeRevisionState,
-    ) -> bool {
-        return get_skeleton3d_joint_world_matrix(out, self, index, revisions);
+    fn joint_world_matrix(&self, out: &mut Matrix4, index: i32) -> bool {
+        return get_skeleton3d_joint_world_matrix(out, self, index);
     }
-    fn joint_world_matrix_by_name(
-        &self,
-        out: &mut Matrix4,
-        name: &str,
-        revisions: &mut NodeRevisionState,
-    ) -> bool {
-        return get_skeleton3d_joint_world_matrix_by_name(out, self, name, revisions);
+    fn joint_world_matrix_by_name(&self, out: &mut Matrix4, name: &str) -> bool {
+        return get_skeleton3d_joint_world_matrix_by_name(out, self, name);
     }
-    fn set_bind_pose(
-        &mut self,
-        revisions: &mut NodeRevisionState,
-        guards: &Skeleton3DGuardStateRef,
-    ) {
-        set_skeleton3d_bind_pose(self, revisions, guards);
+    fn set_bind_pose(&mut self, guards: &Skeleton3DGuardStateRef) {
+        set_skeleton3d_bind_pose(self, guards);
     }
     fn validate(&self) -> Option<Skeleton3DValidationDiagnostic> {
         return validate_skeleton3d(self);
     }
 }
 impl Skeleton3DNodeMethods for NodeRef {
-    fn prepare_scene_skinning(&self, revisions: &mut NodeRevisionState) {
-        prepare_scene3d_skinning(self, revisions);
+    fn prepare_scene_skinning(&self) {
+        prepare_scene3d_skinning(self);
     }
-    fn prepare_skinning(&self, revisions: &mut NodeRevisionState) {
-        prepare_mesh_skinning(self, revisions);
+    fn prepare_skinning(&self) {
+        prepare_mesh_skinning(self);
     }
-    fn update_deformation(&self, revisions: &mut NodeRevisionState) {
-        update_mesh_deformation(self, revisions);
+    fn update_deformation(&self) {
+        update_mesh_deformation(self);
     }
-    fn update_skin(&self, revisions: &mut NodeRevisionState) {
-        update_mesh_skin(self, revisions);
+    fn update_skin(&self) {
+        update_mesh_skin(self);
     }
 }
 impl MeshGeometrySkinMethods for MeshGeometry {

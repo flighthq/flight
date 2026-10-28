@@ -107,14 +107,48 @@ fn assert_world_close(actual: &flight_geometry::Matrix, expected: &flight_geomet
     );
 }
 
-fn revisions() -> NodeRevisionState {
-    return NodeRevisionState {
-        world_transform_revision: 0,
-    };
+fn set_world_test_x(node: &NodeRef, x: f32) {
+    {
+        let mut guard = node.write().unwrap();
+        *guard
+            .as_transform2d_node_mut()
+            .expect("test node is a Transform2D node")
+            .transform2d_mut()
+            .x = x;
+    }
+    invalidate_node_local_transform(node);
 }
 
 mod add_node_child {
     use super::*;
+
+    // A and B each mint world-transform ids from their own root counter. B is warmed only to 1, so
+    // the first recompute of the moved node under B mints 2: exactly the id the moved node held under
+    // A, which is what its child stored as its parent's id. Without the subtree invalidation on attach
+    // the descendants would match that stale stamp and keep A's world matrices.
+    #[test]
+    fn invalidates_the_moved_subtree_so_old_root_ids_never_match_the_new_root() {
+        let root_a = create_test_node_2d("A");
+        let moved = create_test_node_2d("Moved");
+        let middle = create_test_node_2d("Middle");
+        let leaf = create_test_node_2d("Leaf");
+        add_node_child(&root_a, &moved);
+        add_node_child(&moved, &middle);
+        add_node_child(&middle, &leaf);
+        set_world_test_x(&root_a, 100.0);
+        set_world_test_x(&middle, 1.0);
+        set_world_test_x(&leaf, 2.0);
+        assert_eq!(get_node_world_matrix(&leaf).tx, 103.0);
+        let root_b = create_test_node_2d("B");
+        get_node_world_matrix(&root_b);
+
+        add_node_child(&root_b, &moved);
+        set_world_test_x(&moved, 5.0);
+
+        assert_eq!(get_node_world_matrix(&moved).tx, 5.0);
+        assert_eq!(get_node_world_matrix(&middle).tx, 6.0);
+        assert_eq!(get_node_world_matrix(&leaf).tx, 8.0);
+    }
 
     #[test]
     fn adds_a_child_to_the_end_of_the_list() {
@@ -578,6 +612,31 @@ mod is_node_ancestor_of {
 mod remove_node_child {
     use super::*;
 
+    // The detached node becomes its own root and mints from its own counter, warmed here to 1 while
+    // it was a root earlier, so its next id equals the one it held under the old root.
+    #[test]
+    fn invalidates_the_detached_subtree_against_its_own_root_counter() {
+        let detached = create_test_node_2d("Detached");
+        get_node_world_matrix(&detached);
+        let root_a = create_test_node_2d("A");
+        let middle = create_test_node_2d("Middle");
+        let leaf = create_test_node_2d("Leaf");
+        add_node_child(&root_a, &detached);
+        add_node_child(&detached, &middle);
+        add_node_child(&middle, &leaf);
+        set_world_test_x(&root_a, 100.0);
+        set_world_test_x(&middle, 1.0);
+        set_world_test_x(&leaf, 2.0);
+        assert_eq!(get_node_world_matrix(&leaf).tx, 103.0);
+
+        remove_node_child(&root_a, &detached);
+        set_world_test_x(&detached, 5.0);
+
+        assert_eq!(get_node_world_matrix(&detached).tx, 5.0);
+        assert_eq!(get_node_world_matrix(&middle).tx, 6.0);
+        assert_eq!(get_node_world_matrix(&leaf).tx, 8.0);
+    }
+
     #[test]
     fn removes_the_child_clears_its_parent_and_advances_revisions() {
         let f = fixture();
@@ -747,7 +806,7 @@ mod reparent_node {
             .scale_x = 0.0;
         invalidate_node_local_transform(&collapsed);
         clear_matrix_pool();
-        assert!(!reparent_node(&child, &collapsed, &mut revisions(), None));
+        assert!(!reparent_node(&child, &collapsed, None));
         let local_scratch = acquire_matrix();
         let old_world_scratch = acquire_matrix();
         assert_eq!(
@@ -784,14 +843,14 @@ mod reparent_node {
             *transform.y = 10.0;
         });
         add_node_child(&parent_a, &child);
-        let before = get_node_world_matrix(&child, &mut revisions());
+        let before = get_node_world_matrix(&child);
         let parent_b = create_test_node_2d("TransformTest");
         edit_transform(&parent_b, |transform| {
             *transform.x = 200.0;
             *transform.y = 100.0;
         });
-        assert!(reparent_node(&child, &parent_b, &mut revisions(), None));
-        let after = get_node_world_matrix(&child, &mut revisions());
+        assert!(reparent_node(&child, &parent_b, None));
+        let after = get_node_world_matrix(&child);
         assert_world_close(&after, &before);
     }
 
@@ -810,15 +869,10 @@ mod reparent_node {
             *transform.pivot_y = 5.0;
         });
         add_node_child(&parent_a, &child);
-        let before = get_node_world_matrix(&child, &mut revisions());
+        let before = get_node_world_matrix(&child);
         let identity_parent = create_test_node_2d("TransformTest");
-        assert!(reparent_node(
-            &child,
-            &identity_parent,
-            &mut revisions(),
-            None
-        ));
-        let after = get_node_world_matrix(&child, &mut revisions());
+        assert!(reparent_node(&child, &identity_parent, None));
+        let after = get_node_world_matrix(&child);
         assert_world_close(&after, &before);
     }
 
@@ -831,15 +885,15 @@ mod reparent_node {
             *transform.rotation = 60.0;
             *transform.scale_x = 1.5;
         });
-        let before = get_node_world_matrix(&child, &mut revisions());
+        let before = get_node_world_matrix(&child);
         let parent_b = create_test_node_2d("TransformTest");
         edit_transform(&parent_b, |transform| {
             *transform.x = 50.0;
             *transform.y = 25.0;
             *transform.rotation = 10.0;
         });
-        assert!(reparent_node(&child, &parent_b, &mut revisions(), None));
-        let after = get_node_world_matrix(&child, &mut revisions());
+        assert!(reparent_node(&child, &parent_b, None));
+        let after = get_node_world_matrix(&child);
         assert_world_close(&after, &before);
         let reflected_parent = create_test_node_2d("TransformTest");
         edit_transform(&reflected_parent, |transform| *transform.scale_x = -1.0);
@@ -849,16 +903,11 @@ mod reparent_node {
             *transform.y = 20.0;
         });
         add_node_child(&reflected_parent, &reflected_child);
-        let reflected_before = get_node_world_matrix(&reflected_child, &mut revisions());
+        let reflected_before = get_node_world_matrix(&reflected_child);
         let target = create_test_node_2d("TransformTest");
         edit_transform(&target, |transform| *transform.x = 100.0);
-        assert!(reparent_node(
-            &reflected_child,
-            &target,
-            &mut revisions(),
-            None
-        ));
-        let reflected_after = get_node_world_matrix(&reflected_child, &mut revisions());
+        assert!(reparent_node(&reflected_child, &target, None));
+        let reflected_after = get_node_world_matrix(&reflected_child);
         assert_world_close(&reflected_after, &reflected_before);
     }
 
@@ -875,7 +924,7 @@ mod reparent_node {
             .x = 20.0;
         invalidate_node_local_transform(&child);
         add_node_child(&parent_a, &child);
-        let before = get_node_world_matrix(&child, &mut revisions());
+        let before = get_node_world_matrix(&child);
         let parent_b = create_test_node_2d("TransformTest");
         *parent_b
             .write()
@@ -886,7 +935,7 @@ mod reparent_node {
             .x = 200.0;
         invalidate_node_local_transform(&parent_b);
         clear_matrix_pool();
-        assert!(reparent_node(&child, &parent_b, &mut revisions(), None));
+        assert!(reparent_node(&child, &parent_b, None));
         let local_scratch = acquire_matrix();
         let old_world_scratch = acquire_matrix();
         assert_eq!((local_scratch.tx, local_scratch.ty), (-180.0, 0.0));
@@ -894,7 +943,7 @@ mod reparent_node {
         release_matrix(old_world_scratch);
         release_matrix(local_scratch);
         assert!(node_eq(&get_node_parent(&child).unwrap(), &parent_b));
-        let after = get_node_world_matrix(&child, &mut revisions());
+        let after = get_node_world_matrix(&child);
         assert!((after.tx - before.tx).abs() < 1e-3);
         assert!((after.ty - before.ty).abs() < 1e-3);
     }
@@ -1014,8 +1063,8 @@ mod set_reparent_node_guard {
         invalidate_node_local_transform(&collapsed);
         let healthy = create_test_node_2d("TransformTest");
         name_child(&healthy, "healthy");
-        reparent_node(&child, &collapsed, &mut revisions(), Some(&guards));
-        reparent_node(&child, &healthy, &mut revisions(), Some(&guards));
+        reparent_node(&child, &collapsed, Some(&guards));
+        reparent_node(&child, &healthy, Some(&guards));
         assert_eq!(*seen.lock().unwrap(), vec![String::from("collapsed")]);
         set_reparent_node_guard(&mut guards, None);
         assert!(guards.reparent_node_guard.is_none());

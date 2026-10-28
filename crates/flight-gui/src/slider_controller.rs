@@ -1,7 +1,6 @@
 use crate::gui_controller::*;
 use flight_entity::{Ref, allocate_entity};
 use flight_interaction::contract::InteractionSignalName;
-use flight_node::contract::NodeRevisionState;
 use flight_scene2d::Node2DRef;
 use flight_signals::{Signal, create_signal};
 use std::sync::{Arc, RwLock};
@@ -30,25 +29,16 @@ pub struct SliderControllerFields {
     pub thumb: Option<Node2DRef>,
     pub track: Option<Node2DRef>,
     pub value: f32,
-    pub revisions: Ref<NodeRevisionState>,
     pub step: Option<f32>,
 }
-// flight-lint: allow(conform-params) D5 explicit caller-owned NodeRevisionState supplies actual node bounds
-pub fn create_slider_controller(
-    options: &SliderControllerOptions,
-    revisions: Ref<NodeRevisionState>,
-) -> SliderController {
+pub fn create_slider_controller(options: &SliderControllerOptions) -> SliderController {
     let mut out: SliderController = allocate_entity();
-    initialize_slider_controller(&mut out, options, revisions);
+    initialize_slider_controller(&mut out, options);
     return out;
 }
 
-// flight-lint: allow(conform-extra) D12 construction derives source subscriptions and configured range from required visual handles; D5 explicit bounds/timer contexts
-pub fn initialize_slider_controller(
-    out: &mut SliderController,
-    options: &SliderControllerOptions,
-    revisions: Ref<NodeRevisionState>,
-) {
+// flight-lint: allow(conform-extra) D12 construction derives source subscriptions and configured range from required visual handles
+pub fn initialize_slider_controller(out: &mut SliderController, options: &SliderControllerOptions) {
     let minimum = options.minimum.unwrap_or(0.0);
     let requested = options.maximum.unwrap_or(1.0);
     let maximum = if minimum.is_nan() || requested.is_nan() {
@@ -70,7 +60,6 @@ pub fn initialize_slider_controller(
             thumb: Some(options.thumb.clone()),
             track: Some(options.track.clone()),
             value: clamp_gui_value(options.value.unwrap_or(minimum), minimum, maximum),
-            revisions,
             step: options.step,
         },
         options.transition.clone(),
@@ -232,21 +221,18 @@ pub fn get_slider_controller_value(controller: &SliderController) -> f32 {
 }
 
 fn get_travel(r: &Ref<GuiControllerRuntime<SliderControllerFields>>) -> f32 {
-    let (track, thumb, orientation, revisions) = {
+    let (track, thumb, orientation) = {
         let s = r.read().unwrap();
         (
             s.fields.track.clone(),
             s.fields.thumb.clone(),
             s.fields.orientation,
-            s.fields.revisions.clone(),
         )
     };
     let (Some(track), Some(thumb)) = (track, thumb) else {
         return 0.0;
     };
-    let mut revisions = revisions.write().unwrap();
-    let travel = get_gui_length(&track, orientation, &mut revisions)
-        - get_gui_length(&thumb, orientation, &mut revisions);
+    let travel = get_gui_length(&track, orientation) - get_gui_length(&thumb, orientation);
     return if travel.is_nan() {
         travel
     } else {
@@ -255,12 +241,11 @@ fn get_travel(r: &Ref<GuiControllerRuntime<SliderControllerFields>>) -> f32 {
 }
 
 fn set_from_track(r: &Ref<GuiControllerRuntime<SliderControllerFields>>, coordinate: f32) {
-    let (track, orientation, revisions, minimum, maximum) = {
+    let (track, orientation, minimum, maximum) = {
         let s = r.read().unwrap();
         (
             s.fields.track.clone(),
             s.fields.orientation,
-            s.fields.revisions.clone(),
             s.fields.minimum,
             s.fields.maximum,
         )
@@ -268,7 +253,7 @@ fn set_from_track(r: &Ref<GuiControllerRuntime<SliderControllerFields>>, coordin
     let Some(track) = track else {
         return;
     };
-    let length = get_gui_length(&track, orientation, &mut revisions.write().unwrap());
+    let length = get_gui_length(&track, orientation);
     let ratio = if length <= 0.0 {
         0.0
     } else {
@@ -324,7 +309,7 @@ fn update_visual(r: &Ref<GuiControllerRuntime<SliderControllerFields>>) {
     set_gui_position(r, thumb.as_ref(), orientation, position);
 }
 impl SliderController {
-    pub fn new(options: &SliderControllerOptions, revisions: Ref<NodeRevisionState>) -> Self {
-        return create_slider_controller(options, revisions);
+    pub fn new(options: &SliderControllerOptions) -> Self {
+        return create_slider_controller(options);
     }
 }

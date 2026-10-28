@@ -78,6 +78,7 @@ export function addNodeChildAt<Fields extends object>(target: Node<Fields>, chil
 
   if (parent !== target) {
     childRuntime.parent = targetNode;
+    invalidateNodeSubtreeWorldRevisions(childNode);
     if (targetSignals !== null) emitSignal(targetSignals.onChildAdded, child);
     const childSignals = childRuntime.nodeSignals;
     if (childSignals !== null) emitSignal(childSignals.onParentChanged);
@@ -268,6 +269,7 @@ export function removeNodeChild<Fields extends object>(target: Node<Fields>, chi
   const children = targetRuntime.children;
   if (children !== null && childRuntime.parent === target) {
     childRuntime.parent = null;
+    invalidateNodeSubtreeWorldRevisions(childNode);
     const childSignals = childRuntime.nodeSignals;
     if (childSignals !== null) emitSignal(childSignals.onParentChanged);
     invalidateNodeParentReference(child);
@@ -490,6 +492,21 @@ export function swapNodeChildrenAt<Fields extends object>(target: Node<Fields>, 
 // rasterizable payload.
 function invalidateNodeChildren<Fields extends object>(runtime: NodeRuntime<Fields>): void {
   runtime.childrenId = (runtime.childrenId + 1) >>> 0;
+}
+
+// World-transform ids are minted per graph root, so an id the moved subtree stored under its old root
+// says nothing about the new root's counter and could equal a fresh one by coincidence. Only the two
+// stamps that hold a root-minted id are cleared to the never-matching -1, for every node in the
+// subtree: the parent world-transform id each node derived its world matrix from, and the own
+// world-transform id its world bounds were derived from. Root-independent revisions (local transform,
+// local bounds, content, appearance, children) and the caches keyed on them are untouched.
+function invalidateNodeSubtreeWorldRevisions<Fields extends object>(node: NodeOf<Fields>): void {
+  const runtime = getNodeRuntime(node) as NodeRuntime<Fields>;
+  runtime.worldTransformUsingParentTransformId = -1;
+  runtime.worldBoundsUsingWorldTransformId = -1;
+  const children = runtime.children;
+  if (children === null) return;
+  for (let i = 0; i < children.length; i++) invalidateNodeSubtreeWorldRevisions(children[i]);
 }
 
 function throwOutOfBoundsError(): void {

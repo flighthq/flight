@@ -2,40 +2,23 @@ use flight_geometry::{
     Rectangle, compute_rectangle_intersection, contains_rectangle_point_xy, encloses_rectangle,
     intersects_rectangle,
 };
-use flight_node::contract::NodeRevisionState;
 use flight_node::{NodeRef, get_node_world_bounds_rectangle};
 
-// flight-lint: allow(conform-params) D1: explicit revision state per caller-owned clock
-pub fn contains_node2d(
-    outer: &NodeRef,
-    inner: &NodeRef,
-    revisions: &mut NodeRevisionState,
-) -> bool {
-    let outer_bounds = get_node_world_bounds_rectangle(outer, revisions);
-    let inner_bounds = get_node_world_bounds_rectangle(inner, revisions);
+pub fn contains_node2d(outer: &NodeRef, inner: &NodeRef) -> bool {
+    let outer_bounds = get_node_world_bounds_rectangle(outer);
+    let inner_bounds = get_node_world_bounds_rectangle(inner);
     return encloses_rectangle(&outer_bounds, &inner_bounds);
 }
 
-// flight-lint: allow(conform-params) D1: explicit revision state and out-parameter per convention
-pub fn get_node2d_overlap_rectangle(
-    out: &mut Rectangle,
-    source: &NodeRef,
-    other: &NodeRef,
-    revisions: &mut NodeRevisionState,
-) {
-    let source_bounds = get_node_world_bounds_rectangle(source, revisions);
-    let other_bounds = get_node_world_bounds_rectangle(other, revisions);
+pub fn get_node2d_overlap_rectangle(out: &mut Rectangle, source: &NodeRef, other: &NodeRef) {
+    let source_bounds = get_node_world_bounds_rectangle(source);
+    let other_bounds = get_node_world_bounds_rectangle(other);
     compute_rectangle_intersection(out, &source_bounds, &other_bounds);
 }
 
-// flight-lint: allow(conform-params) D1: explicit revision state per caller-owned clock
-pub fn hit_test_node2ds_shape(
-    source: &NodeRef,
-    other: &NodeRef,
-    revisions: &mut NodeRevisionState,
-) -> bool {
-    let a = get_node_world_bounds_rectangle(source, revisions);
-    let b = get_node_world_bounds_rectangle(other, revisions);
+pub fn hit_test_node2ds_shape(source: &NodeRef, other: &NodeRef) -> bool {
+    let a = get_node_world_bounds_rectangle(source);
+    let b = get_node_world_bounds_rectangle(other);
     if !intersects_rectangle(&a, &b) {
         return false;
     }

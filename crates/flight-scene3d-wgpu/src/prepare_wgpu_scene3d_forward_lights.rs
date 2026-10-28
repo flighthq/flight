@@ -8,7 +8,7 @@ use flight_lighting::{
     SCENE_LIGHT_BLOCK_FLOATS, Scene3DLightBlock, Scene3DLightsLike, select_scene_3d_forward_lights,
 };
 use flight_node::contract::get_node_world_matrix4;
-use flight_render::{RenderState, Scene3DRenderList, pack_scene_3d_light_block};
+use flight_render::{Scene3DRenderList, pack_scene_3d_light_block};
 use flight_render_wgpu::WgpuRenderState;
 use flight_scene3d::get_node3d_world_bounds;
 
@@ -79,11 +79,10 @@ pub fn prepare_wgpu_scene3d_forward_lights(
         .iter()
         .take(scene_render_list.mesh_count)
     {
-        let revisions = &mut state.render_runtime_mut().node_revisions;
-        get_node3d_world_bounds(&mut bounds, mesh, revisions);
+        get_node3d_world_bounds(&mut bounds, mesh);
         set_bounding_sphere_from_aabb(&mut sphere, &bounds);
         if sphere.radius < 0.0 {
-            let world = get_node_world_matrix4(mesh, revisions);
+            let world = get_node_world_matrix4(mesh);
             sphere.center.x = world.m[12];
             sphere.center.y = world.m[13];
             sphere.center.z = world.m[14];

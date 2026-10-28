@@ -322,7 +322,7 @@ pub fn render_gl_scene3d_shadow_map(
             }
             bound_program = Some(program.clone());
         }
-        let world_matrix = get_node_world_matrix4(node, &mut state.runtime.node_revisions);
+        let world_matrix = get_node_world_matrix4(node);
         // SAFETY: the bound program belongs to this context.
         unsafe {
             gl.uniform_matrix_4_f32_slice(program.loc_model.as_ref(), false, &world_matrix.m)

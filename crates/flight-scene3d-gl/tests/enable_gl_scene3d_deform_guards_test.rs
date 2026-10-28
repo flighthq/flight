@@ -5,7 +5,6 @@ use flight_meshgeometry::{
     create_box_mesh_geometry, create_mesh_geometry,
 };
 use flight_node::NodeRef;
-use flight_node::contract::NodeRevisionState;
 use flight_scene3d::{
     Mesh, Node3DFields, Skin, create_node3d, prepare_scene3d_morph, publish_node3d,
 };
@@ -56,9 +55,6 @@ fn skinned_mesh() -> flight_entity::Ref<Mesh> {
     let skeleton = create_skeleton3d(
         Arc::new(RwLock::new(vec![joint])),
         None,
-        &mut NodeRevisionState {
-            world_transform_revision: 0,
-        },
         &Arc::new(RwLock::new(Skeleton3DGuardState {
             enabled: false,
             bind_pose_guard: None,
@@ -110,12 +106,7 @@ mod enable_gl_scene3d_deform_guards {
         add_child(&scene, skinned_mesh());
         // Ready both deformers, exactly as an app would before prepare_scene_3d_render.
         prepare_scene3d_morph(&scene);
-        prepare_scene3d_skinning(
-            &scene,
-            &mut NodeRevisionState {
-                world_transform_revision: 0,
-            },
-        );
+        prepare_scene3d_skinning(&scene);
         assert_eq!(draw_with_guard(&scene), 0);
     }
 

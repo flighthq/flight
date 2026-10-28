@@ -138,6 +138,10 @@ pub struct NodeRuntime {
     pub world_bounds_using_local_bounds_id: i32,
     pub world_bounds_using_world_transform_id: i32,
     pub world_transform_id: u32,
+    /// Monotonic source of world-transform revisions for the graph this node roots. Read and
+    /// advanced only while the node has no parent; every world-transform id stored in its graph was
+    /// minted here, which is why reparenting clears the moved subtree's stored ids.
+    pub world_transform_revision_counter: u32,
     pub world_transform_using_local_transform_id: i32,
     pub world_transform_using_parent_transform_id: i32,
 }
@@ -501,6 +505,7 @@ pub(crate) fn create_node_runtime_internal(
         world_bounds_using_local_bounds_id: -1,
         world_bounds_using_world_transform_id: -1,
         world_transform_id: 0,
+        world_transform_revision_counter: 0,
         world_transform_using_local_transform_id: -1,
         world_transform_using_parent_transform_id: -1,
     };

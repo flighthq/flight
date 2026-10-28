@@ -8,16 +8,23 @@ import { getNodeRuntime } from './node.ts';
 // it is lossy (an ancestor two-plus levels up changes a node's world matrix without changing the node's
 // own composite id, since the ancestor's contribution does not survive into the low bits), so the change
 // never reaches grandchildren. A fresh monotonic revision per recompute is unconditionally propagating.
+//
+// The revision is minted from the graph root's `worldTransformRevisionCounter`, so ids are unique within
+// one graph and two graphs never share a counter. `rootRuntime` is the runtime of the node's root (the
+// node itself when it has no parent); callers that already resolved it pass it to skip the parent walk.
 export function computeNodeWorldTransformRevision<Fields extends object>(
   runtime: NodeRuntime<Fields>,
   parentRuntime?: Readonly<NodeRuntime<Fields>>,
+  rootRuntime?: NodeRuntime<Fields>,
 ): void {
+  const root = rootRuntime ?? resolveNodeRootRuntime(runtime);
   runtime.worldTransformUsingLocalTransformId = runtime.localTransformId;
   runtime.worldTransformUsingParentTransformId = parentRuntime ? parentRuntime.worldTransformId : 0;
-  _worldTransformRevisionCounter = (_worldTransformRevisionCounter + 1) >>> 0;
+  let revision = (root.worldTransformRevisionCounter + 1) >>> 0;
   // 0 is the fresh-runtime sentinel (never a live revision), so step past a wrap back to 0.
-  if (_worldTransformRevisionCounter === 0) _worldTransformRevisionCounter = 1;
-  runtime.worldTransformId = _worldTransformRevisionCounter;
+  if (revision === 0) revision = 1;
+  root.worldTransformRevisionCounter = revision;
+  runtime.worldTransformId = revision;
 }
 
 export function getNodeAppearanceRevision<Fields extends object>(source: Readonly<Node<Fields>>): number {
@@ -135,6 +142,8 @@ export function invalidateNodeWorldBounds<Fields extends object>(target: Node<Fi
   }
 }
 
-// Monotonic source of world-transform revisions, shared across all nodes so a parent recompute always
-// yields an id its children have not seen. Runtime-only (never serialized); wraps at 32 bits.
-let _worldTransformRevisionCounter = 0;
+function resolveNodeRootRuntime<Fields extends object>(runtime: NodeRuntime<Fields>): NodeRuntime<Fields> {
+  let current = runtime;
+  while (current.parent !== null) current = getNodeRuntime(current.parent) as NodeRuntime<Fields>;
+  return current;
+}

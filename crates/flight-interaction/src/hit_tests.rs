@@ -6,7 +6,6 @@ use flight_geometry::{
     contains_rectangle_point_xy, create_vector2, intersects_rectangle,
     inverse_matrix_transform_point_xy,
 };
-use flight_node::contract::NodeRevisionState;
 use flight_node::{
     NodeRef, get_node_local_bounds_rectangle, get_node_parent, get_node_world_bounds_rectangle,
     get_node_world_matrix,
@@ -144,8 +143,7 @@ fn contains_node_clip_point(node: &NodeRef, x: f32, y: f32) -> bool {
     let Some(clip) = clip else {
         return true;
     };
-    let mut revisions = NodeRevisionState::default();
-    let matrix = get_node_world_matrix(node, &mut revisions);
+    let matrix = get_node_world_matrix(node);
     let mut scratch = create_vector2(0.0, 0.0);
     inverse_matrix_transform_point_xy(&mut scratch, &matrix, x, y);
     let clip_state = flight_clip::ClipRegionState::default();
@@ -161,8 +159,7 @@ pub fn describe_graph_hit(
     out: &mut HitTestResult,
 ) {
     out.node = Some(node.clone());
-    let mut revisions = NodeRevisionState::default();
-    let matrix = get_node_world_matrix(node, &mut revisions);
+    let matrix = get_node_world_matrix(node);
     let mut scratch = create_vector2(0.0, 0.0);
     inverse_matrix_transform_point_xy(&mut scratch, &matrix, x, y);
     out.local_x = scratch.x;
@@ -307,8 +304,7 @@ fn hit_area_contains_point(ctx: &HitTestContext, node: &NodeRef, x: f32, y: f32)
         HitArea::Path(path_ref) => {
             let path_ref = path_ref.clone();
             drop(state_guard);
-            let mut revisions = NodeRevisionState::default();
-            let matrix = get_node_world_matrix(node, &mut revisions);
+            let matrix = get_node_world_matrix(node);
             let mut scratch = create_vector2(0.0, 0.0);
             inverse_matrix_transform_point_xy(&mut scratch, &matrix, x, y);
             let path_guard = path_ref.read().unwrap();
@@ -317,8 +313,7 @@ fn hit_area_contains_point(ctx: &HitTestContext, node: &NodeRef, x: f32, y: f32)
         HitArea::Rect(rect) => {
             let rect = rect.clone();
             drop(state_guard);
-            let mut revisions = NodeRevisionState::default();
-            let matrix = get_node_world_matrix(node, &mut revisions);
+            let matrix = get_node_world_matrix(node);
             let mut scratch = create_vector2(0.0, 0.0);
             inverse_matrix_transform_point_xy(&mut scratch, &matrix, x, y);
             return contains_rectangle_point_xy(&rect, scratch.x, scratch.y);
@@ -327,8 +322,7 @@ fn hit_area_contains_point(ctx: &HitTestContext, node: &NodeRef, x: f32, y: f32)
 }
 
 pub fn hit_test_graph_local_bounds(source: &NodeRef, x: f32, y: f32) -> bool {
-    let mut revisions = NodeRevisionState::default();
-    let matrix = get_node_world_matrix(source, &mut revisions);
+    let matrix = get_node_world_matrix(source);
     let mut scratch = create_vector2(0.0, 0.0);
     inverse_matrix_transform_point_xy(&mut scratch, &matrix, x, y);
     return contains_rectangle_point_xy(
@@ -355,10 +349,9 @@ pub fn hit_test_graph_point_precise(
 
 pub fn hit_test_node2ds(source: &NodeRef, other: &NodeRef) -> bool {
     if get_node_parent(source).is_some() && get_node_parent(other).is_some() {
-        let mut revisions = NodeRevisionState::default();
         return intersects_rectangle(
-            &get_node_world_bounds_rectangle(source, &mut revisions),
-            &get_node_world_bounds_rectangle(other, &mut revisions),
+            &get_node_world_bounds_rectangle(source),
+            &get_node_world_bounds_rectangle(other),
         );
     }
     return false;

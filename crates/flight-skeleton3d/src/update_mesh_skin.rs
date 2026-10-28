@@ -7,7 +7,6 @@ use flight_meshgeometry::{
     MeshGeometry, MeshMorph, MeshSkinBindPose, get_mesh_geometry_skin_bind_pose,
     set_mesh_geometry_skin_bind_pose,
 };
-use flight_node::contract::NodeRevisionState;
 use flight_node::{Node, NodeRef};
 use flight_scene3d::{Mesh, NODE3D_TRAITS_KEY, Node3DNarrow, Skin};
 use std::sync::{Arc, RwLock};
@@ -59,16 +58,12 @@ pub(crate) fn mesh_ref(node: &dyn Node) -> Option<&Mesh> {
     return (narrow.as_node3d)(node)?.as_mesh();
 }
 
-// flight-lint: allow(conform-params) D5 caller-owned canonical transform revisions; D16 native NodeRef preserves the original open Mesh allocation and releases node guards before palette resolution
-pub fn update_mesh_skin(mesh: &NodeRef, revisions: &mut NodeRevisionState) {
-    update_mesh_skin_with_refresh(mesh, revisions, true);
+// flight-lint: allow(conform-params) D16 native NodeRef preserves the original open Mesh allocation and releases node guards before palette resolution
+pub fn update_mesh_skin(mesh: &NodeRef) {
+    update_mesh_skin_with_refresh(mesh, true);
 }
 
-pub(crate) fn update_mesh_skin_with_refresh(
-    mesh: &NodeRef,
-    revisions: &mut NodeRevisionState,
-    refresh_deform_input: bool,
-) {
+pub(crate) fn update_mesh_skin_with_refresh(mesh: &NodeRef, refresh_deform_input: bool) {
     let Some(input) = mesh_inputs(mesh) else {
         return;
     };
@@ -76,7 +71,7 @@ pub(crate) fn update_mesh_skin_with_refresh(
         return;
     };
     let skeleton = skin.read().unwrap().skeleton.clone();
-    compute_skeleton3d_joint_matrices(&mut skeleton.write().unwrap(), revisions);
+    compute_skeleton3d_joint_matrices(&mut skeleton.write().unwrap());
     let mut geometry = input.geometry.write().unwrap();
     let existing = get_mesh_geometry_skin_bind_pose(&geometry).is_some();
     let bind_pose = cached_bind_pose(&mut geometry);

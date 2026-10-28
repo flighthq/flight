@@ -4,7 +4,6 @@ use flight_interaction::contract::{
     enable_interaction_signals, enable_node_interaction_state, is_node_hit_test_enabled,
     set_node_hit_area, set_node_hit_test_enabled,
 };
-use flight_node::contract::NodeRevisionState;
 use flight_node::{
     NodeRef, get_node_height, get_node_width, invalidate_node_appearance,
     invalidate_node_local_transform,
@@ -243,17 +242,12 @@ pub fn get_gui_controller_runtime<F>(
         .clone();
 }
 
-// flight-lint: allow(conform-params) D5: bounds queries consume the actual caller-owned canonical NodeRevisionState instead of the source module-global revision counter
-pub fn get_gui_length(
-    target: &Node2DRef,
-    orientation: GuiOrientation,
-    revisions: &mut NodeRevisionState,
-) -> f32 {
+pub fn get_gui_length(target: &Node2DRef, orientation: GuiOrientation) -> f32 {
     let node: NodeRef = target.clone();
     return if orientation == GuiOrientation::Horizontal {
-        get_node_width(&node, revisions)
+        get_node_width(&node)
     } else {
-        get_node_height(&node, revisions)
+        get_node_height(&node)
     };
 }
 

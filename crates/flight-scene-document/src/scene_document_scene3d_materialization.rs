@@ -13,7 +13,7 @@ use flight_geometry::contract::{
     decompose_matrix4_to_transform3d, inverse_matrix4,
 };
 use flight_lighting::{AMBIENT_LIGHT_KIND, DIRECTIONAL_LIGHT_KIND, Scene3DLights};
-use flight_node::contract::{NodeRevisionState, get_node_world_matrix4};
+use flight_node::contract::get_node_world_matrix4;
 use flight_node::{NodeRef, get_node_children};
 use flight_scene3d::{
     Scene3D, Scene3DDocument, Scene3DDocumentCamera, Scene3DDocumentLight, as_node3d_ref,
@@ -81,16 +81,14 @@ pub fn create_flight_document_from_scene3d(
 }
 
 /// Materializes the selected 3D scene entry into a live Scene3D with runtime cameras and lights (TS
-/// `createFlightDocumentScene3DMaterialization`), or `None` when any validation refuses. World
-/// matrices resolve through the caller-owned node revisions, and camera views are set through the
-/// caller-owned camera guards (D5).
-// flight-lint: allow(conform-params) D5 caller-owned node revisions and camera guard state replace the source module state
+/// `createFlightDocumentScene3DMaterialization`), or `None` when any validation refuses. Camera
+/// views are set through the caller-owned camera guards (D5).
+// flight-lint: allow(conform-params) D5 caller-owned camera guard state replaces the source module state
 pub fn create_flight_document_scene3d_materialization(
     document: &FlightDocument,
     schemas: &FlightDocumentSchemaRegistry,
     resolvers: Option<&FlightDocumentResourceResolverRegistry>,
     scene_index: Option<i64>,
-    revisions: &mut NodeRevisionState,
     camera_guards: &flight_camera::CameraGuardStateRef,
 ) -> Option<FlightDocumentScene3DMaterialization> {
     let selection =
@@ -143,13 +141,8 @@ pub fn create_flight_document_scene3d_materialization(
     let layout_bindings =
         create_flight_document_layout_bindings(&document_scene.layouts, root, &materialized_nodes)?;
     let flat_nodes = get_materialized_nodes(&live_root);
-    let cameras = materialize_cameras(
-        &document_scene.cameras,
-        &flat_nodes,
-        revisions,
-        camera_guards,
-    );
-    let lights = materialize_lights(&document_scene.lights, &flat_nodes, revisions);
+    let cameras = materialize_cameras(&document_scene.cameras, &flat_nodes, camera_guards);
+    let lights = materialize_lights(&document_scene.lights, &flat_nodes);
     let mut out: FlightDocumentScene3DMaterialization = allocate_entity();
     initialize_flight_document_scene3d_materialization(
         &mut out,
@@ -164,13 +157,12 @@ pub fn create_flight_document_scene3d_materialization(
 
 /// Reads `text` and materializes its selected 3D scene (TS
 /// `createFlightDocumentScene3DMaterializationFromText`), or `None` on any refusal.
-// flight-lint: allow(conform-params) D5 caller-owned node revisions and camera guard state replace the source module state
+// flight-lint: allow(conform-params) D5 caller-owned camera guard state replaces the source module state
 pub fn create_flight_document_scene3d_materialization_from_text(
     text: &str,
     schemas: &FlightDocumentSchemaRegistry,
     resolvers: Option<&FlightDocumentResourceResolverRegistry>,
     scene_index: Option<i64>,
-    revisions: &mut NodeRevisionState,
     camera_guards: &flight_camera::CameraGuardStateRef,
 ) -> Option<FlightDocumentScene3DMaterialization> {
     let document = parse_flight_document_text(text)?;
@@ -179,7 +171,6 @@ pub fn create_flight_document_scene3d_materialization_from_text(
         schemas,
         resolvers,
         scene_index,
-        revisions,
         camera_guards,
     );
 }
@@ -386,7 +377,6 @@ fn get_materialized_nodes(root: &NodeRef) -> Vec<NodeRef> {
 fn materialize_cameras(
     cameras: &[Scene3DDocumentCamera],
     materialized_nodes: &[NodeRef],
-    revisions: &mut NodeRevisionState,
     camera_guards: &flight_camera::CameraGuardStateRef,
 ) -> Vec<Camera3D> {
     // D25: the two working matrices come from the canonical geometry pool and return to it.
@@ -406,7 +396,7 @@ fn materialize_cameras(
                 }
             }
             Some(bound) => {
-                let world = get_node_world_matrix4(bound, revisions);
+                let world = get_node_world_matrix4(bound);
                 if inverse_matrix4(&mut view, &world) {
                     set_camera_3d_view_matrix4_from_matrix4(camera_guards, &mut camera, &view);
                 }
@@ -422,7 +412,6 @@ fn materialize_cameras(
 fn materialize_lights(
     lights: &[Scene3DDocumentLight],
     materialized_nodes: &[NodeRef],
-    revisions: &mut NodeRevisionState,
 ) -> Scene3DLights {
     let resolved_lights = lights
         .iter()
@@ -437,10 +426,7 @@ fn materialize_lights(
                 return decoded;
             };
             let mut transform = create_transform3d();
-            decompose_matrix4_to_transform3d(
-                &mut transform,
-                &get_node_world_matrix4(bound, revisions),
-            );
+            decompose_matrix4_to_transform3d(&mut transform, &get_node_world_matrix4(bound));
             return copy_document_light(&decoded, transform);
         })
         .collect();

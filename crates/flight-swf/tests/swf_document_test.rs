@@ -20,7 +20,6 @@ use flight_image_codec::ImageDecodeOptions;
 use flight_importdiagnostics::{ImportDiagnosticDetailValue, ImportDiagnosticSeverity};
 use flight_materials::{BLEND_MODE_MULTIPLY, BLEND_MODE_NORMAL};
 use flight_movieclip::{MOVIE_CLIP_KIND, MovieClip};
-use flight_node::contract::NodeRevisionState;
 use flight_node::{
     Node, NodeRef, get_node_children, get_node_color_adjustments, get_node_local_bounds_rectangle,
     get_node_local_matrix, get_node_parent, get_node_runtime, get_node_world_matrix,
@@ -115,12 +114,6 @@ fn movie_clip_timeline(node: &NodeRef) -> TimelineRef {
         .timeline
         .clone()
         .unwrap();
-}
-
-fn node_revisions() -> NodeRevisionState {
-    return NodeRevisionState {
-        world_transform_revision: 0,
-    };
 }
 
 fn embedded_audio_reference(
@@ -5020,7 +5013,7 @@ mod create_scene2d_from_swf {
         assert_eq!(reference.name, "legacyChild");
         assert_eq!(reference.linkage.as_deref(), Some("Game.LegacyChild"));
         let target: NodeRef = reference.target.clone();
-        let world = get_node_world_matrix(&target, &mut node_revisions());
+        let world = get_node_world_matrix(&target);
         assert_eq!(
             (world.a, world.d, world.tx, world.ty),
             (2.0, 3.0, 5.0, -2.0),
@@ -5164,7 +5157,7 @@ mod create_scene2d_from_swf {
             &get_node_parent(&intermediate).unwrap(),
             &panel,
         ));
-        let world = get_node_world_matrix(&avatar, &mut node_revisions());
+        let world = get_node_world_matrix(&avatar);
         assert_eq!(
             (world.a, world.d, world.tx, world.ty),
             (4.0, 9.0, 15.0, 32.0),

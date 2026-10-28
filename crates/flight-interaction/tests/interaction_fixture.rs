@@ -2,7 +2,6 @@
 
 use std::sync::{Arc, RwLock};
 
-use flight_node::contract::NodeRevisionState;
 use flight_node::{NodeRef, add_node_child};
 use flight_scene2d::create_display_object;
 
@@ -63,12 +62,6 @@ pub fn manager_with_hit_tests(root: &NodeRef) -> InteractionManager {
 
 pub fn signals_for(node: &NodeRef) -> Arc<RwLock<InteractionSignals>> {
     return enable_interaction_signals(node);
-}
-
-pub fn revisions() -> NodeRevisionState {
-    return NodeRevisionState {
-        world_transform_revision: 0,
-    };
 }
 
 pub fn empty_document_fields() -> flight_scene_document::FlightDocumentFields {

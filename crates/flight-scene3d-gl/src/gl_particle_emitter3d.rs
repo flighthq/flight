@@ -305,7 +305,7 @@ fn draw_particle_emitter_3d_node(
         _ => (0.0, 0.0),
     };
 
-    let world_matrix = get_node_world_matrix4(emitter_node, &mut state.runtime.node_revisions);
+    let world_matrix = get_node_world_matrix4(emitter_node);
     let wm = &world_matrix.m;
 
     let emitter_guard = emitter_node.read().unwrap();

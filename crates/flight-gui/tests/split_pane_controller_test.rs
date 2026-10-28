@@ -1,6 +1,5 @@
 use flight_gui::contract::*;
 use flight_interaction::contract::InteractionSignalName;
-use flight_node::contract::NodeRevisionState;
 use std::sync::{Arc, RwLock};
 #[path = "gui_pointer_fixture.rs"]
 mod gui_pointer_fixture;
@@ -24,12 +23,7 @@ fn options(
     };
 }
 fn controller(options: &SplitPaneControllerOptions) -> SplitPaneController {
-    return create_split_pane_controller(
-        options,
-        Arc::new(RwLock::new(NodeRevisionState {
-            world_transform_revision: 0,
-        })),
-    );
+    return create_split_pane_controller(options);
 }
 fn default_options() -> SplitPaneControllerOptions {
     return options(
@@ -135,13 +129,7 @@ mod initialize_split_pane_controller {
         );
         let mut controller: SplitPaneController = flight_entity::allocate_entity();
         let id = flight_entity::get_entity_id(&controller);
-        initialize_split_pane_controller(
-            &mut controller,
-            &options,
-            Arc::new(RwLock::new(NodeRevisionState {
-                world_transform_revision: 0,
-            })),
-        );
+        initialize_split_pane_controller(&mut controller, &options);
         assert_eq!(flight_entity::get_entity_id(&controller), id);
         set_split_pane_controller_position(&controller, 50.0);
         // Source getNodeWidth uses self space for an unparented leaf: 2 * 50 / 100.

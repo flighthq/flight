@@ -1,14 +1,7 @@
 use flight_geometry::{Rectangle, intersects_rectangle};
-use flight_node::contract::NodeRevisionState;
 use flight_node::{NodeRef, get_node_world_bounds_rectangle};
 
-// flight-lint: allow(conform-params) D1: explicit revision state per caller-owned clock
-pub fn hit_test_area_query(
-    root: &NodeRef,
-    rect: &Rectangle,
-    out: &mut Vec<NodeRef>,
-    revisions: &mut NodeRevisionState,
-) {
+pub fn hit_test_area_query(root: &NodeRef, rect: &Rectangle, out: &mut Vec<NodeRef>) {
     {
         let node = root.read().unwrap();
         if !node.node_fields().enabled {
@@ -16,7 +9,7 @@ pub fn hit_test_area_query(
         }
     }
 
-    let world_bounds = get_node_world_bounds_rectangle(root, revisions);
+    let world_bounds = get_node_world_bounds_rectangle(root);
     if intersects_rectangle(&world_bounds, rect) {
         out.push(root.clone());
     }
@@ -27,19 +20,17 @@ pub fn hit_test_area_query(
     };
     if let Some(children) = children {
         for child in &children {
-            hit_test_area_query(child, rect, out, revisions);
+            hit_test_area_query(child, rect, out);
         }
     }
 }
 
-// flight-lint: allow(conform-params) D1: explicit revision state per caller-owned clock
 pub fn hit_test_area_query_circle(
     root: &NodeRef,
     cx: f32,
     cy: f32,
     radius: f32,
     out: &mut Vec<NodeRef>,
-    revisions: &mut NodeRevisionState,
 ) {
     {
         let node = root.read().unwrap();
@@ -48,7 +39,7 @@ pub fn hit_test_area_query_circle(
         }
     }
 
-    let b = get_node_world_bounds_rectangle(root, revisions);
+    let b = get_node_world_bounds_rectangle(root);
     let near_x = cx.max(b.x).min(b.x + b.width);
     let near_y = cy.max(b.y).min(b.y + b.height);
     let dx = cx - near_x;
@@ -63,7 +54,7 @@ pub fn hit_test_area_query_circle(
     };
     if let Some(children) = children {
         for child in &children {
-            hit_test_area_query_circle(child, cx, cy, radius, out, revisions);
+            hit_test_area_query_circle(child, cx, cy, radius, out);
         }
     }
 }

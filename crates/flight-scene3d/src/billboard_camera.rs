@@ -4,7 +4,7 @@ use flight_geometry::{
     Matrix4, Vector3, create_matrix4, create_quaternion, create_vector3, decompose_matrix4,
     inverse_matrix4, multiply_matrix4,
 };
-use flight_node::contract::{NodeRef, NodeRevisionState};
+use flight_node::contract::NodeRef;
 use flight_node::contract::{get_node_world_matrix4, set_node_local_matrix4};
 use std::sync::Arc;
 
@@ -16,13 +16,8 @@ struct CameraBasis {
     back: [f32; 3],
 }
 
-fn apply_billboard_facing(
-    billboard: &NodeRef,
-    mode: BillboardMode,
-    basis: &CameraBasis,
-    revisions: &mut NodeRevisionState,
-) {
-    let world = get_node_world_matrix4(billboard, revisions);
+fn apply_billboard_facing(billboard: &NodeRef, mode: BillboardMode, basis: &CameraBasis) {
+    let world = get_node_world_matrix4(billboard);
     let mut position = create_vector3(0.0, 0.0, 0.0);
     let mut rotation = create_quaternion(0.0, 0.0, 0.0, 1.0);
     let mut scale = create_vector3(1.0, 1.0, 1.0);
@@ -37,7 +32,7 @@ fn apply_billboard_facing(
         .and_then(|p| p.upgrade());
     let mut local = facing.clone();
     if let Some(parent) = parent {
-        let parent_world = get_node_world_matrix4(&parent, revisions);
+        let parent_world = get_node_world_matrix4(&parent);
         let mut inverse = create_matrix4();
         if inverse_matrix4(&mut inverse, &parent_world) {
             multiply_matrix4(&mut local, &inverse, &facing);
@@ -56,14 +51,10 @@ fn normalize_camera_axis(v: [f32; 3]) -> [f32; 3] {
     return [v[0] / len, v[1] / len, v[2] / len];
 }
 
-fn orient_billboard_subtree(
-    node: &NodeRef,
-    basis: &CameraBasis,
-    revisions: &mut NodeRevisionState,
-) {
+fn orient_billboard_subtree(node: &NodeRef, basis: &CameraBasis) {
     let mode = as_node3d(&*node.read().unwrap()).and_then(|n| n.billboard_mode());
     if let Some(mode) = mode {
-        apply_billboard_facing(node, mode, basis, revisions);
+        apply_billboard_facing(node, mode, basis);
     }
     let children = node
         .read()
@@ -73,7 +64,7 @@ fn orient_billboard_subtree(
         .clone()
         .unwrap_or_default();
     for child in children {
-        orient_billboard_subtree(&child, basis, revisions);
+        orient_billboard_subtree(&child, basis);
     }
 }
 
@@ -82,7 +73,6 @@ pub fn orient_billboard_to_camera(
     billboard: &NodeRef,
     camera: &Camera3D,
     guard_state: &Scene3DGuardStateRef,
-    revisions: &mut NodeRevisionState,
 ) -> bool {
     let Some(basis) = set_billboard_camera_basis(camera, guard_state) else {
         return false;
@@ -90,7 +80,7 @@ pub fn orient_billboard_to_camera(
     let mode = as_node3d(&*billboard.read().unwrap())
         .and_then(|n| n.billboard_mode())
         .expect("Billboard.mode");
-    apply_billboard_facing(billboard, mode, &basis, revisions);
+    apply_billboard_facing(billboard, mode, &basis);
     return true;
 }
 
@@ -99,12 +89,11 @@ pub fn orient_scene3d_billboards_to_camera(
     scene: &NodeRef,
     camera: &Camera3D,
     guard_state: &Scene3DGuardStateRef,
-    revisions: &mut NodeRevisionState,
 ) -> bool {
     let Some(basis) = set_billboard_camera_basis(camera, guard_state) else {
         return false;
     };
-    orient_billboard_subtree(scene, &basis, revisions);
+    orient_billboard_subtree(scene, &basis);
     return true;
 }
 

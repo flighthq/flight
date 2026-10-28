@@ -1,6 +1,6 @@
 //! Node allocation, runtime, signals and disposal (TS `node.ts`).
 
-// flight-lint: allow-file(contract-vocabulary) D16 open node trait objects and the caller-owned revision state are contract dispatch, not vocabulary types
+// flight-lint: allow-file(contract-vocabulary) D16 open node trait objects are contract dispatch, not vocabulary types
 
 use std::any::Any;
 use std::sync::{Arc, RwLock};

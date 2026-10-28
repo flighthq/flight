@@ -6,7 +6,6 @@ use std::sync::{Arc, RwLock};
 use flight_clip::create_clip_region_from_rectangle;
 use flight_geometry::contract::{create_rectangle, create_transform2d};
 use flight_materials::contract::{Material2D, create_standard_material};
-use flight_node::contract::NodeRevisionState;
 use flight_node::{
     NodeRef, add_node_child, get_node_local_matrix, get_node_parent_bounds_rectangle,
     get_node_transform2d, get_node_world_bounds_rectangle, get_node_world_matrix,
@@ -15,12 +14,6 @@ use flight_node::{
 use flight_scene2d::contract::*;
 
 use crate::scene2d_fixture::*;
-
-fn revisions() -> NodeRevisionState {
-    return NodeRevisionState {
-        world_transform_revision: 0,
-    };
-}
 
 fn custom_node(x: f32) -> Node2DRef {
     let mut node: Node2DTest = create_node2d("Custom".to_string(), None);
@@ -120,7 +113,7 @@ mod get_node_world_bounds_rectangle {
         let parent = custom_node(100.0);
         let child = sprite_node(16, 12, 5.0);
         add_node_child(&as_node(&parent), &as_node(&child));
-        let bounds = get_node_world_bounds_rectangle(&as_node(&child), &mut revisions());
+        let bounds = get_node_world_bounds_rectangle(&as_node(&child));
         assert_eq!((bounds.x, bounds.width, bounds.height), (105.0, 16.0, 12.0));
     }
 }
@@ -133,7 +126,7 @@ mod get_node_world_matrix {
         let parent = custom_node(5.0);
         let child = sprite_node(1, 1, 3.0);
         add_node_child(&as_node(&parent), &as_node(&child));
-        let world = get_node_world_matrix(&as_node(&child), &mut revisions());
+        let world = get_node_world_matrix(&as_node(&child));
         assert_eq!((world.tx, world.ty), (8.0, 0.0));
     }
 }

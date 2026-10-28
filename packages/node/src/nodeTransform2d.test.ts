@@ -227,6 +227,54 @@ describe('ensureNodeWorldMatrix', () => {
     ensureNodeWorldMatrix(node);
     expect(equalsMatrix(runtime.worldMatrix, cache)).toBe(true);
   });
+
+  it('mints every revision in a chain from the graph root counter', () => {
+    const root = createTestNode();
+    const middle = createTestNode();
+    addNodeChild(root, middle);
+    addNodeChild(middle, node);
+
+    ensureNodeWorldMatrix(node);
+
+    expect((getEntityRuntime(root) as NodeRuntime).worldTransformRevisionCounter).toBe(3);
+    expect((getEntityRuntime(middle) as NodeRuntime).worldTransformRevisionCounter).toBe(0);
+    expect((getEntityRuntime(node) as NodeRuntime).worldTransformRevisionCounter).toBe(0);
+  });
+
+  // Each root owns its counter, so two graphs mint overlapping ids; that is safe because an id is only
+  // ever compared against ids minted by the same root.
+  it('keeps independent roots from interfering', () => {
+    const rootA = createTestNode();
+    const childA = createTestNode();
+    const rootB = createTestNode();
+    const childB = createTestNode();
+    addNodeChild(rootA, childA);
+    addNodeChild(rootB, childB);
+    rootA.x = 10;
+    rootB.x = 20;
+    invalidateNodeLocalTransform(rootA);
+    invalidateNodeLocalTransform(rootB);
+    getNodeWorldMatrix(childA);
+    getNodeWorldMatrix(childB);
+    expect((getEntityRuntime(childA) as NodeRuntime).worldTransformId).toBe(
+      (getEntityRuntime(childB) as NodeRuntime).worldTransformId,
+    );
+    const childBRevision = (getEntityRuntime(childB) as NodeRuntime).worldTransformId;
+
+    rootA.x = 50;
+    invalidateNodeLocalTransform(rootA);
+    for (let i = 0; i < 5; i++) {
+      invalidateNodeLocalTransform(rootA);
+      getNodeWorldMatrix(childA);
+    }
+
+    expect(getNodeWorldMatrix(childA).tx).toBe(50);
+    expect(getNodeWorldMatrix(childB).tx).toBe(20);
+    expect((getEntityRuntime(childB) as NodeRuntime).worldTransformId).toBe(childBRevision);
+    rootB.x = 30;
+    invalidateNodeLocalTransform(rootB);
+    expect(getNodeWorldMatrix(childB).tx).toBe(30);
+  });
 });
 
 describe('getNodeLocalMatrix', () => {

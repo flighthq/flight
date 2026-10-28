@@ -2,7 +2,6 @@ use crate::button_controller::{ButtonController, get_button_controller_signals};
 use crate::gui_controller::*;
 use flight_entity::{Ref, allocate_entity};
 use flight_interaction::contract::InteractionSignalName;
-use flight_node::contract::NodeRevisionState;
 use flight_scene2d::Node2DRef;
 use flight_signals::{Signal, create_signal};
 use std::sync::{Arc, RwLock};
@@ -49,29 +48,19 @@ pub struct WindowControllerFields {
     pub resizable: bool,
     pub signals: Ref<WindowControllerSignals>,
     pub title_bar: Option<Node2DRef>,
-    pub revisions: Ref<NodeRevisionState>,
 }
-// flight-lint: allow(conform-params) D5 actual frame bounds use the caller-owned NodeRevisionState
-pub fn create_window_controller(
-    options: &WindowControllerOptions,
-    revisions: Ref<NodeRevisionState>,
-) -> WindowController {
+pub fn create_window_controller(options: &WindowControllerOptions) -> WindowController {
     let mut out: WindowController = allocate_entity();
-    initialize_window_controller(&mut out, options, revisions);
+    initialize_window_controller(&mut out, options);
     return out;
 }
 
-// flight-lint: allow(conform-extra) D12 construction derives source frame bounds/scales, drag closures and composed button subscriptions with explicit D5 revisions
-pub fn initialize_window_controller(
-    out: &mut WindowController,
-    options: &WindowControllerOptions,
-    revisions: Ref<NodeRevisionState>,
-) {
+// flight-lint: allow(conform-extra) D12 construction derives source frame bounds/scales, drag closures and composed button subscriptions
+pub fn initialize_window_controller(out: &mut WindowController, options: &WindowControllerOptions) {
     let (width, height) = {
-        let mut revisions = revisions.write().unwrap();
         (
-            get_gui_length(&options.frame, GuiOrientation::Horizontal, &mut revisions),
-            get_gui_length(&options.frame, GuiOrientation::Vertical, &mut revisions),
+            get_gui_length(&options.frame, GuiOrientation::Horizontal),
+            get_gui_length(&options.frame, GuiOrientation::Vertical),
         )
     };
     let (scale_x, scale_y) = {
@@ -108,7 +97,6 @@ pub fn initialize_window_controller(
                 on_resize: Arc::new(RwLock::new(create_signal())),
             })),
             title_bar: options.title_bar.clone(),
-            revisions,
         },
         options.transition.clone(),
     );
@@ -147,7 +135,7 @@ fn connect_pointer_region(
         InteractionSignalName::OnPointerDown,
         GuiInteractionSlot::Pointer(GuiPointerSlot {
             callback: Arc::new(move |data| {
-                let (frame, revisions) = {
+                let frame = {
                     let s = r.read().unwrap();
                     if if resize {
                         !s.fields.resizable
@@ -156,7 +144,7 @@ fn connect_pointer_region(
                     } {
                         return;
                     }
-                    (s.fields.frame.clone(), s.fields.revisions.clone())
+                    s.fields.frame.clone()
                 };
                 let Some(frame) = frame else {
                     return;
@@ -168,17 +156,9 @@ fn connect_pointer_region(
                         s.fields.resize_start_world_x = data.world_x;
                         s.fields.resize_start_world_y = data.world_y;
                     }
-                    let width = get_gui_length(
-                        &frame,
-                        GuiOrientation::Horizontal,
-                        &mut revisions.write().unwrap(),
-                    );
+                    let width = get_gui_length(&frame, GuiOrientation::Horizontal);
                     r.write().unwrap().fields.resize_start_width = width;
-                    let height = get_gui_length(
-                        &frame,
-                        GuiOrientation::Vertical,
-                        &mut revisions.write().unwrap(),
-                    );
+                    let height = get_gui_length(&frame, GuiOrientation::Vertical);
                     r.write().unwrap().fields.resize_start_height = height;
                 } else {
                     let (x, y) = {
@@ -373,7 +353,7 @@ pub fn set_window_controller_size(controller: &WindowController, width: f32, hei
     set_size_runtime(&get_gui_controller_runtime(controller), width, height);
 }
 impl WindowController {
-    pub fn new(options: &WindowControllerOptions, revisions: Ref<NodeRevisionState>) -> Self {
-        return create_window_controller(options, revisions);
+    pub fn new(options: &WindowControllerOptions) -> Self {
+        return create_window_controller(options);
     }
 }

@@ -13,7 +13,6 @@ use flight_lighting::{
     SpotLightOptions, create_ambient_light, create_directional_light, create_hemisphere_light,
     create_point_light, create_spot_light,
 };
-use flight_node::contract::NodeRevisionState;
 use flight_node::{NodeRef, get_node_children, invalidate_node_local_transform};
 use flight_registry::with_kind_map_entry;
 use flight_scene_document::contract::*;
@@ -33,13 +32,11 @@ fn materialize(
     document: &FlightDocument,
     schemas: &FlightDocumentSchemaRegistry,
 ) -> Option<FlightDocumentScene3DMaterialization> {
-    let mut revisions = defaults::<NodeRevisionState>();
     return create_flight_document_scene3d_materialization(
         document,
         schemas,
         None,
         None,
-        &mut revisions,
         &camera_guards(),
     );
 }
@@ -48,13 +45,11 @@ fn materialize_text(
     text: &str,
     schemas: &FlightDocumentSchemaRegistry,
 ) -> Option<FlightDocumentScene3DMaterialization> {
-    let mut revisions = defaults::<NodeRevisionState>();
     return create_flight_document_scene3d_materialization_from_text(
         text,
         schemas,
         None,
         None,
-        &mut revisions,
         &camera_guards(),
     );
 }

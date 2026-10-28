@@ -1,6 +1,5 @@
 use flight_gui::contract::*;
 use flight_interaction::contract::InteractionSignalName;
-use flight_node::contract::NodeRevisionState;
 use std::sync::{Arc, RwLock};
 #[path = "gui_pointer_fixture.rs"]
 mod gui_pointer_fixture;
@@ -29,13 +28,7 @@ fn options(
 }
 fn controller(options: &ScrollBarControllerOptions) -> ScrollBarController {
     let (timer, _) = timer_fixture();
-    return create_scroll_bar_controller(
-        options,
-        Arc::new(RwLock::new(NodeRevisionState {
-            world_transform_revision: 0,
-        })),
-        timer,
-    );
+    return create_scroll_bar_controller(options, timer);
 }
 mod create_scroll_bar_controller {
     use super::*;
@@ -66,13 +59,7 @@ mod create_scroll_bar_controller {
         options.down_button = Some(down.clone());
         options.maximum = Some(10.0);
         let (timer, time) = timer_fixture();
-        let controller = create_scroll_bar_controller(
-            &options,
-            Arc::new(RwLock::new(NodeRevisionState {
-                world_transform_revision: 0,
-            })),
-            timer,
-        );
+        let controller = create_scroll_bar_controller(&options, timer);
         emit_gui_pointer(
             &options.down_button.clone().unwrap(),
             InteractionSignalName::OnPointerDown,
@@ -99,13 +86,7 @@ mod dispose_scroll_bar_controller {
         );
         options.down_button = Some(create_gui_test_node(None, None));
         let (timer, time) = timer_fixture();
-        let controller = create_scroll_bar_controller(
-            &options,
-            Arc::new(RwLock::new(NodeRevisionState {
-                world_transform_revision: 0,
-            })),
-            timer,
-        );
+        let controller = create_scroll_bar_controller(&options, timer);
         emit_gui_pointer(
             &options.down_button.clone().unwrap(),
             InteractionSignalName::OnPointerDown,
@@ -160,14 +141,7 @@ mod initialize_scroll_bar_controller {
         let mut controller: ScrollBarController = flight_entity::allocate_entity();
         let id = flight_entity::get_entity_id(&controller);
         let (timer, _) = timer_fixture();
-        initialize_scroll_bar_controller(
-            &mut controller,
-            &options,
-            Arc::new(RwLock::new(NodeRevisionState {
-                world_transform_revision: 0,
-            })),
-            timer,
-        );
+        initialize_scroll_bar_controller(&mut controller, &options, timer);
         assert_eq!(flight_entity::get_entity_id(&controller), id);
         let runtime = get_gui_controller_runtime(&controller);
         assert!(Arc::ptr_eq(

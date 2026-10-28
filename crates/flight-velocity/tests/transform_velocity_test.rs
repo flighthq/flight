@@ -5,12 +5,6 @@ use flight_node::contract::*;
 use flight_scene2d::create_display_object;
 use flight_velocity::contract::*;
 
-fn create_test_revisions() -> NodeRevisionState {
-    return NodeRevisionState {
-        world_transform_revision: 0,
-    };
-}
-
 fn create_display_node() -> NodeRef {
     return create_display_object();
 }
@@ -44,9 +38,8 @@ mod contribute_transform_velocity {
     #[test]
     fn reports_zero_velocity_on_the_first_frame() {
         let mut field = create_velocity_field();
-        let mut revisions = create_test_revisions();
         let obj = create_display_node();
-        contribute_transform_velocity(&mut field, &obj, &mut revisions);
+        contribute_transform_velocity(&mut field, &obj);
         let velocity = read_node_velocity(&field, &obj);
         assert_eq!(velocity.x, 0.0);
         assert_eq!(velocity.y, 0.0);
@@ -59,13 +52,12 @@ mod contribute_transform_velocity {
     #[test]
     fn derives_velocity_from_the_world_transform_delta_between_frames() {
         let mut field = create_velocity_field();
-        let mut revisions = create_test_revisions();
         let obj = create_display_node();
-        contribute_transform_velocity(&mut field, &obj, &mut revisions);
+        contribute_transform_velocity(&mut field, &obj);
 
         move_node(&obj, 10.0, -5.0);
         begin_velocity_frame(&mut field);
-        contribute_transform_velocity(&mut field, &obj, &mut revisions);
+        contribute_transform_velocity(&mut field, &obj);
 
         let velocity = read_node_velocity(&field, &obj);
         assert_eq!(velocity.x, 10.0);
@@ -75,14 +67,13 @@ mod contribute_transform_velocity {
     #[test]
     fn lets_an_explicit_contribution_override_the_derived_delta_regardless_of_call_order() {
         let mut field = create_velocity_field();
-        let mut revisions = create_test_revisions();
         let obj = create_display_node();
-        contribute_transform_velocity(&mut field, &obj, &mut revisions);
+        contribute_transform_velocity(&mut field, &obj);
 
         move_node(&obj, 100.0, 0.0);
         begin_velocity_frame(&mut field);
         contribute_velocity(&mut field, source_of(&obj), 2.0, 2.0);
-        contribute_transform_velocity(&mut field, &obj, &mut revisions);
+        contribute_transform_velocity(&mut field, &obj);
 
         let velocity = read_node_velocity(&field, &obj);
         assert_eq!(velocity.x, 2.0);
@@ -92,15 +83,14 @@ mod contribute_transform_velocity {
     #[test]
     fn walks_children_and_derives_velocity_for_each_node_in_the_subtree() {
         let mut field = create_velocity_field();
-        let mut revisions = create_test_revisions();
         let parent = create_display_node();
         let child = create_display_node();
         add_node_child(&parent, &child);
-        contribute_transform_velocity(&mut field, &parent, &mut revisions);
+        contribute_transform_velocity(&mut field, &parent);
 
         move_node(&parent, 5.0, 0.0);
         begin_velocity_frame(&mut field);
-        contribute_transform_velocity(&mut field, &parent, &mut revisions);
+        contribute_transform_velocity(&mut field, &parent);
 
         assert_eq!(read_node_velocity(&field, &parent).x, 5.0);
         assert_eq!(read_node_velocity(&field, &child).x, 5.0);
@@ -109,16 +99,15 @@ mod contribute_transform_velocity {
     #[test]
     fn honors_an_explicit_override_on_a_child_while_the_parent_derives_from_transforms() {
         let mut field = create_velocity_field();
-        let mut revisions = create_test_revisions();
         let parent = create_display_node();
         let child = create_display_node();
         add_node_child(&parent, &child);
-        contribute_transform_velocity(&mut field, &parent, &mut revisions);
+        contribute_transform_velocity(&mut field, &parent);
 
         move_node(&parent, 10.0, 0.0);
         begin_velocity_frame(&mut field);
         contribute_velocity(&mut field, source_of(&child), 99.0, 99.0);
-        contribute_transform_velocity(&mut field, &parent, &mut revisions);
+        contribute_transform_velocity(&mut field, &parent);
 
         assert_eq!(read_node_velocity(&field, &parent).x, 10.0);
         let child_velocity = read_node_velocity(&field, &child);
@@ -129,13 +118,12 @@ mod contribute_transform_velocity {
     #[test]
     fn still_updates_previous_world_transform_when_an_explicit_override_is_in_effect() {
         let mut field = create_velocity_field();
-        let mut revisions = create_test_revisions();
         let obj = create_display_node();
-        contribute_transform_velocity(&mut field, &obj, &mut revisions);
+        contribute_transform_velocity(&mut field, &obj);
         move_node(&obj, 10.0, 0.0);
         begin_velocity_frame(&mut field);
         contribute_velocity(&mut field, source_of(&obj), 99.0, 99.0);
-        contribute_transform_velocity(&mut field, &obj, &mut revisions);
+        contribute_transform_velocity(&mut field, &obj);
         assert_eq!(
             find_velocity_sample(&field, source_of(&obj))
                 .unwrap()
@@ -148,7 +136,7 @@ mod contribute_transform_velocity {
 
         // No movement between frame 2 and frame 3: velocity is zero.
         begin_velocity_frame(&mut field);
-        contribute_transform_velocity(&mut field, &obj, &mut revisions);
+        contribute_transform_velocity(&mut field, &obj);
         let velocity = read_node_velocity(&field, &obj);
         assert_eq!(velocity.x, 0.0);
         assert_eq!(velocity.y, 0.0);

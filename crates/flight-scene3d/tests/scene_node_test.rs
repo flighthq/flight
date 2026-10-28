@@ -488,26 +488,25 @@ mod source_transform_and_hierarchy {
         let child = node3d();
         let p = as_node_ref(&parent);
         let c = as_node_ref(&child);
-        let mut state = revision_state();
         child.write().unwrap().position = flight_geometry::create_vector3(10.0, 20.0, 30.0);
         invalidate_node_local_transform(&c);
-        let world = get_node_world_matrix4(&c, &mut state);
+        let world = get_node_world_matrix4(&c);
         assert_eq!(&world.m[12..15], &[10.0, 20.0, 30.0]);
         add_node_child(&p, &c);
         parent.write().unwrap().position.x = 5.0;
         child.write().unwrap().position.x = 3.0;
         invalidate_node_local_transform(&p);
         invalidate_node_local_transform(&c);
-        close(get_node_world_matrix4(&c, &mut state).m[12], 8.0);
+        close(get_node_world_matrix4(&c).m[12], 8.0);
         let before = child.read().unwrap().node_runtime().world_transform_id;
-        ensure_node_world_matrix4(&c, &mut state);
+        ensure_node_world_matrix4(&c);
         assert_eq!(
             child.read().unwrap().node_runtime().world_transform_id,
             before
         );
         child.write().unwrap().position.x = 99.0;
         invalidate_node_local_transform(&c);
-        ensure_node_world_matrix4(&c, &mut state);
+        ensure_node_world_matrix4(&c);
         assert_ne!(
             child.read().unwrap().node_runtime().world_transform_id,
             before
@@ -516,6 +515,6 @@ mod source_transform_and_hierarchy {
         parent.write().unwrap().position.x = 7.0;
         invalidate_node_local_transform(&p);
         invalidate_node_local_transform(&c);
-        close(get_node_world_matrix4(&c, &mut state).m[12], 7.0);
+        close(get_node_world_matrix4(&c).m[12], 7.0);
     }
 }

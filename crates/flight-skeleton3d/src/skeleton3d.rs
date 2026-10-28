@@ -8,17 +8,16 @@ use flight_geometry::{
     Matrix4, copy_matrix4, create_matrix3, create_matrix4, inverse_matrix4, multiply_matrix4,
     set_matrix3_normal_from_matrix4,
 };
-use flight_node::contract::{NodeRevisionState, get_node_world_matrix4};
+use flight_node::contract::get_node_world_matrix4;
 use flight_node::{NodeRef, add_node_child, get_node_parent};
 use flight_scene3d::{Node3DRef, Skeleton3D};
 use std::sync::{Arc, RwLock};
 
 // D23 KEEP: joints define the skeleton; optional inverse-bind data determines palette allocation and bind-pose capture.
-// flight-lint: allow(conform-params) D23 B: names are assigned after construction; D5 revisions and guard are explicit
+// flight-lint: allow(conform-params) D23 B: names are assigned after construction; D5 guard is explicit
 pub fn create_skeleton3d(
     joints: Ref<Vec<Node3DRef>>,
     inverse_bind_matrices: Option<Ref<Box<Float32Array>>>,
-    revisions: &mut NodeRevisionState,
     guard_state: &Skeleton3DGuardStateRef,
 ) -> Skeleton3D {
     let count = joints.read().unwrap().len();
@@ -33,7 +32,7 @@ pub fn create_skeleton3d(
         Arc::new(RwLock::new(vec![0.0; count * 12].into_boxed_slice())),
     );
     if capture {
-        set_skeleton3d_bind_pose(&mut out, revisions, guard_state);
+        set_skeleton3d_bind_pose(&mut out, guard_state);
     }
     return out;
 }
@@ -138,10 +137,7 @@ pub fn clone_skeleton3d_joint_hierarchy(
     return out;
 }
 // flight-lint: allow(conform-params) D5 caller-owned canonical node revision source replaces TS semantic transform state
-pub fn compute_skeleton3d_joint_matrices(
-    skeleton: &mut Skeleton3D,
-    revisions: &mut NodeRevisionState,
-) {
+pub fn compute_skeleton3d_joint_matrices(skeleton: &mut Skeleton3D) {
     let mut inverse = create_matrix4();
     let mut result = create_matrix4();
     let mut normal = create_matrix3();
@@ -159,11 +155,7 @@ pub fn compute_skeleton3d_joint_matrices(
             }
         }
         let node: NodeRef = joint.clone();
-        multiply_matrix4(
-            &mut result,
-            &get_node_world_matrix4(&node, revisions),
-            &inverse,
-        );
+        multiply_matrix4(&mut result, &get_node_world_matrix4(&node), &inverse);
         set_array_from(&skeleton.joint_matrices, &result.m, j * 16);
         set_matrix3_normal_from_matrix4(&mut normal, &result);
         let mut normal_palette = skeleton.normal_matrices.write().unwrap();
@@ -218,7 +210,6 @@ pub fn get_skeleton3d_joint_world_matrix(
     out: &mut Matrix4,
     skeleton: &Skeleton3D,
     joint_index: i32,
-    revisions: &mut NodeRevisionState,
 ) -> bool {
     if joint_index < 0 {
         return false;
@@ -235,7 +226,7 @@ pub fn get_skeleton3d_joint_world_matrix(
         return false;
     };
     let node: NodeRef = joint.clone();
-    copy_matrix4(out, &get_node_world_matrix4(&node, revisions));
+    copy_matrix4(out, &get_node_world_matrix4(&node));
     return true;
 }
 // flight-lint: allow(conform-params) D5 caller-owned canonical node transform revision source
@@ -243,13 +234,11 @@ pub fn get_skeleton3d_joint_world_matrix_by_name(
     out: &mut Matrix4,
     skeleton: &Skeleton3D,
     name: &str,
-    revisions: &mut NodeRevisionState,
 ) -> bool {
     return get_skeleton3d_joint_world_matrix(
         out,
         skeleton,
         get_skeleton3d_joint_index_by_name(skeleton, name),
-        revisions,
     );
 }
 fn set_array_from(out: &Ref<Box<Float32Array>>, source: &[f32], offset: usize) {
@@ -259,12 +248,8 @@ fn set_array_from(out: &Ref<Box<Float32Array>>, source: &[f32], offset: usize) {
     }
     out.write().unwrap()[offset..offset + source.len()].copy_from_slice(source);
 }
-// flight-lint: allow(conform-params) D5 caller-owned canonical node revisions and guard slot replace TS module state
-pub fn set_skeleton3d_bind_pose(
-    skeleton: &mut Skeleton3D,
-    revisions: &mut NodeRevisionState,
-    guard_state: &Skeleton3DGuardStateRef,
-) {
+// flight-lint: allow(conform-params) D5 caller-owned guard slot replaces TS module state
+pub fn set_skeleton3d_bind_pose(skeleton: &mut Skeleton3D, guard_state: &Skeleton3DGuardStateRef) {
     let mut result = create_matrix4();
     let joints = skeleton.joints.clone();
     let mut j = 0;
@@ -274,7 +259,7 @@ pub fn set_skeleton3d_bind_pose(
             break;
         };
         let node: NodeRef = joint;
-        if inverse_matrix4(&mut result, &get_node_world_matrix4(&node, revisions)) {
+        if inverse_matrix4(&mut result, &get_node_world_matrix4(&node)) {
             set_array_from(&skeleton.inverse_bind_matrices, &result.m, j * 16);
         } else {
             result = create_matrix4();

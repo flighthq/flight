@@ -15,7 +15,7 @@ use flight_lighting::{
 use flight_meshgeometry::MeshSubset;
 use flight_node::NodeRef;
 use flight_node::contract::{for_each_node_descendant, get_node_world_matrix4};
-use flight_render::{RenderState, Scene3DRenderProxy};
+use flight_render::Scene3DRenderProxy;
 use flight_render_wgpu::{
     WgpuCommandRecord, WgpuDepthRenderPassBeginRecord, WgpuRenderState,
     create_wgpu_pipeline_layout_recorded, create_wgpu_render_pipeline, create_wgpu_shader_module,
@@ -419,7 +419,7 @@ pub fn render_wgpu_scene3d_shadow_map(
 
         // The depth VS multiplies position by draw.world alone, so the light view-projection is baked
         // into the per-mesh world matrix (lightMatrix * nodeWorld).
-        let world = get_node_world_matrix4(&node, &mut state.render_runtime_mut().node_revisions);
+        let world = get_node_world_matrix4(&node);
         let mut world_matrix = create_matrix4();
         multiply_matrix4(&mut world_matrix, &light_matrix, &world);
         let skeleton = if skinned {

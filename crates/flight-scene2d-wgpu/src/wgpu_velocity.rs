@@ -362,8 +362,7 @@ pub fn wgpu_node2d_velocity_writer(ctx: &mut WgpuVelocityContext<'_>, node: &Nod
     if velocity.x == 0.0 && velocity.y == 0.0 {
         return;
     }
-    let bounds =
-        get_node_world_bounds_rectangle(node, &mut ctx.state.render_runtime_mut().node_revisions);
+    let bounds = get_node_world_bounds_rectangle(node);
     draw_wgpu_velocity_quad(
         ctx,
         bounds.x,
@@ -397,8 +396,7 @@ pub fn wgpu_particle_emitter2d_velocity_writer(ctx: &mut WgpuVelocityContext<'_>
 
     let (mut wa, mut wb, mut wc, mut wd, mut wtx, mut wty) = (1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
     if !world_space {
-        let transform =
-            get_node_world_matrix(node, &mut ctx.state.render_runtime_mut().node_revisions);
+        let transform = get_node_world_matrix(node);
         (wa, wb, wc, wd, wtx, wty) = (
             transform.a,
             transform.b,
@@ -494,8 +492,7 @@ pub fn wgpu_quad_batch_velocity_writer(ctx: &mut WgpuVelocityContext<'_>, node: 
     };
 
     if has_instances {
-        let transform =
-            get_node_world_matrix(node, &mut ctx.state.render_runtime_mut().node_revisions);
+        let transform = get_node_world_matrix(node);
         let (pa, pb, pc, pd, ptx, pty) = (
             transform.a,
             transform.b,
