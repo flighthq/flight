@@ -1034,6 +1034,47 @@ pub fn impossible_statement() {
     }
 
     #[test]
+    fn preserves_receivers_for_optional_member_calls() {
+        let source = r#"
+use std::sync::Arc;
+
+pub struct Backend {
+    pub prepare: Option<Arc<dyn Fn() + Send + Sync>>,
+    pub run: Option<Arc<dyn Fn(i32) -> bool + Send + Sync>>,
+}
+
+pub fn prepare(backend: &Backend) {
+    if let Some(prepare) = &backend.prepare {
+        prepare();
+    }
+}
+
+pub fn run(backend: &Backend) -> bool {
+    if let Some(run) = &backend.run {
+        return run(2);
+    }
+    return false;
+}
+
+pub fn invoke_local(callback: Option<Arc<dyn Fn() + Send + Sync>>) {
+    if let Some(value) = callback {
+        value();
+    }
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("backend.prepare?.();"));
+        assert!(
+            output.contains("if (backend.run !== undefined) {\n    return backend.run(2);\n  }")
+        );
+        assert!(output.contains(
+            "if (callback !== undefined) {\n    const value = callback;\n    value();\n  }"
+        ));
+    }
+
+    #[test]
     fn preserves_unsupported_macro_diagnostics_around_unreachable_lowering() {
         let invalid_unreachable = r#"
 pub fn impossible(message: &str) {

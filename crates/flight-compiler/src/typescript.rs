@@ -3481,6 +3481,75 @@ fn emit_option_binding(
     )));
 }
 
+fn emit_receiver_preserving_optional_call(
+    out: &mut String,
+    expression: &syn::ExprIf,
+    binding: &(String, String, &'static str),
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<bool, CompileError> {
+    if expression.else_branch.is_some() {
+        return Ok(false);
+    }
+    let Expr::Let(condition) = expression.cond.as_ref() else {
+        return Ok(false);
+    };
+    if !expression_is_field_reference(&condition.expr) {
+        return Ok(false);
+    }
+    let (call, returns) = match expression.then_branch.stmts.as_slice() {
+        [Stmt::Expr(Expr::Call(call), _)] => (call, false),
+        [Stmt::Expr(Expr::Return(return_expression), _)] => {
+            let Some(Expr::Call(call)) = return_expression.expr.as_deref() else {
+                return Ok(false);
+            };
+            (call, true)
+        }
+        _ => return Ok(false),
+    };
+    let Expr::Path(function) = call.func.as_ref() else {
+        return Ok(false);
+    };
+    if function.qself.is_some() || function.path.segments.len() != 1 {
+        return Ok(false);
+    }
+    let Some(function) = function.path.segments.first() else {
+        return Ok(false);
+    };
+    if snake_to_lower_camel(&function.ident.to_string()) != binding.0 {
+        return Ok(false);
+    }
+    let arguments = call
+        .args
+        .iter()
+        .map(|argument| emit_expression(argument, entities))
+        .collect::<Result<Vec<_>, _>>()?
+        .join(", ");
+    write_indent(out, indent);
+    if returns {
+        writeln!(out, "if ({} !== {}) {{", binding.1, binding.2)
+            .expect("writing to a String cannot fail");
+        write_indent(out, indent + 1);
+        writeln!(out, "return {}({arguments});", binding.1)
+            .expect("writing to a String cannot fail");
+        write_indent(out, indent);
+        out.push_str("}\n");
+    } else {
+        writeln!(out, "{}?.({arguments});", binding.1).expect("writing to a String cannot fail");
+    }
+    return Ok(true);
+}
+
+fn expression_is_field_reference(expression: &Expr) -> bool {
+    return match expression {
+        Expr::Field(_) => true,
+        Expr::Group(group) => expression_is_field_reference(&group.expr),
+        Expr::Paren(paren) => expression_is_field_reference(&paren.expr),
+        Expr::Reference(reference) => expression_is_field_reference(&reference.expr),
+        _ => false,
+    };
+}
+
 pub(crate) fn emit_parameter(
     argument: &FnArg,
     entities: &HashSet<String>,
@@ -3947,6 +4016,17 @@ fn emit_statement(
         }
         Stmt::Expr(Expr::If(if_expression), _) => {
             let option_binding = emit_option_binding(&if_expression.cond, entities)?;
+            if let Some(binding) = &option_binding
+                && emit_receiver_preserving_optional_call(
+                    out,
+                    if_expression,
+                    binding,
+                    entities,
+                    indent,
+                )?
+            {
+                return Ok(());
+            }
             write_indent(out, indent);
             if let Some((_, value, absent)) = &option_binding {
                 writeln!(out, "if ({value} !== {absent}) {{")
