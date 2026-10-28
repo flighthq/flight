@@ -1,9 +1,10 @@
+import type { LogState } from '@flighthq/log/contract';
 import {
   addLogSink,
-  clearLogOnceKeys,
+  clearMemoryLogSink,
+  createLogState,
   createMemoryLogSink,
   getMemoryLogSinkEntries,
-  removeLogSink,
 } from '@flighthq/log/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 
@@ -21,15 +22,19 @@ import { acquireVector2, clearVector2Pool, releaseVector2 } from './vector2Pool.
 import { acquireVector3, clearVector3Pool, releaseVector3 } from './vector3Pool.ts';
 import { acquireVector4, clearVector4Pool, releaseVector4 } from './vector4Pool.ts';
 
+// Each test gets its own caller-owned log state, so once-keys never leak between tests.
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(16);
-  addLogSink(sink.sink);
-  try {
-    run();
-    return getMemoryLogSinkEntries(sink);
-  } finally {
-    removeLogSink(sink.sink);
-  }
+  addLogSink(logState, sink.sink);
+  run();
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  clearMemoryLogSink(sink);
+  return entries;
+}
+
+function clock(): number {
+  return 0;
 }
 
 function clearPools(): void {
@@ -55,7 +60,7 @@ function messageOf(entry: Readonly<LogEntry>): string {
 }
 
 beforeEach(() => {
-  clearLogOnceKeys();
+  logState = createLogState();
   clearPools();
 });
 
@@ -67,7 +72,7 @@ afterEach(() => {
 describe('areGeometryPoolGuardsEnabled', () => {
   it('reports whether the pool release diagnostic is installed', () => {
     expect(areGeometryPoolGuardsEnabled()).toBe(false);
-    enableGeometryPoolGuards();
+    enableGeometryPoolGuards(logState, clock);
     expect(areGeometryPoolGuardsEnabled()).toBe(true);
     disableGeometryPoolGuards();
     expect(areGeometryPoolGuardsEnabled()).toBe(false);
@@ -76,7 +81,7 @@ describe('areGeometryPoolGuardsEnabled', () => {
 
 describe('disableGeometryPoolGuards', () => {
   it('restores the production-default silent release path', () => {
-    enableGeometryPoolGuards();
+    enableGeometryPoolGuards(logState, clock);
     disableGeometryPoolGuards();
     const entries = captureLog(() => doubleRelease(acquireVector2, releaseVector2));
     expect(entries).toHaveLength(0);
@@ -84,9 +89,9 @@ describe('disableGeometryPoolGuards', () => {
 });
 
 describe('enableGeometryPoolGuards', () => {
-  // ONE firing test deliberately consumes all eight process-lifetime logOnce keys.
+  // ONE firing test deliberately consumes all eight logOnce keys of this test's log state.
   it('warns once for a double release from every geometry pool and stays silent for valid brackets', () => {
-    enableGeometryPoolGuards();
+    enableGeometryPoolGuards(logState, clock);
 
     const pairedEntries = captureLog(() => {
       releaseMatrix(acquireMatrix());
@@ -128,3 +133,5 @@ describe('enableGeometryPoolGuards', () => {
     }
   });
 });
+
+let logState: LogState = createLogState();

@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -15,14 +16,17 @@ export function disableGeometryPoolGuards(): void {
 
 // Installs opt-in diagnostics for unbalanced geometry-pool brackets. The ordinary release path keeps a
 // null callback and performs no membership scan; importing neither this module nor @flighthq/log keeps
-// the warning prose and logging dependency outside production bundles.
-export function enableGeometryPoolGuards(): void {
-  setGeometryPoolReleaseGuard(warnOnDoubleRelease);
+// the warning prose and logging dependency outside production bundles. Warnings go to the caller-owned
+// `logState`, stamped with `clock()` read at the moment of misuse.
+export function enableGeometryPoolGuards(logState: LogState, clock: () => number): void {
+  setGeometryPoolReleaseGuard((releaseFunction) => warnOnDoubleRelease(logState, clock(), releaseFunction));
 }
 
-function warnOnDoubleRelease(releaseFunction: GeometryPoolReleaseFunction): void {
+function warnOnDoubleRelease(logState: LogState, nowMs: number, releaseFunction: GeometryPoolReleaseFunction): void {
   const acquireFunctions = acquireFunctionsByReleaseFunction[releaseFunction];
   logOnce(
+    logState,
+    nowMs,
     `geometry:double-release:${releaseFunction}`,
     LogLevel.Warn,
     {
