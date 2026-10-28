@@ -43,6 +43,13 @@ mod source_modes {
         );
         assert_eq!(
             source_mode(
+                "//! flight-compiler: frozen-object SPRING_PRESET_BOUNCY SpringPresetBouncy\npub const SPRING_PRESET_BOUNCY: SpringConfig = SpringConfig { frequency: 2.0 };\n"
+            )
+            .unwrap(),
+            SourceMode::Generate
+        );
+        assert_eq!(
+            source_mode(
                 "//! flight-compiler: target-native\n//! flight-compiler: identity-alias Marker descriptor\npub type Marker<T> = T;\n"
             )
             .unwrap(),
@@ -506,6 +513,116 @@ pub type ScalarRemap = Arc<dyn Fn(f32, f32) -> f32 + Send + Sync>;
             (
                 "//! flight-compiler: callable-parameters Remap x x\npub type Remap = fn(f32, f32) -> f32;\n",
                 "`flight-compiler: callable-parameters Remap` repeats parameter name `x`",
+            ),
+        ];
+
+        for (source, expected) in cases {
+            assert_eq!(
+                compile_typescript(source, None).unwrap_err().to_string(),
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn emits_explicitly_named_frozen_object_constants_and_rewrites_references() {
+        let source = r#"
+//! flight-compiler: frozen-object SPRING_PRESET_BOUNCY SpringPresetBouncy
+//! flight-compiler: frozen-object SPRING_PRESET_GENTLE SpringPresetGentle
+//! flight-compiler: frozen-object SPRING_PRESET_STIFF SpringPresetStiff
+
+pub struct SpringConfig {
+    pub damping_ratio: f32,
+    pub frequency: f32,
+}
+
+pub const SPRING_PRESET_BOUNCY: SpringConfig = SpringConfig {
+    damping_ratio: 0.35,
+    frequency: 2.0,
+};
+
+pub const SPRING_PRESET_GENTLE: SpringConfig = SpringConfig {
+    damping_ratio: 0.8,
+    frequency: 1.5,
+};
+
+pub const SPRING_PRESET_STIFF: SpringConfig = SpringConfig {
+    damping_ratio: 1.0,
+    frequency: 4.0,
+};
+
+pub fn default_spring_preset() -> SpringConfig {
+    return SPRING_PRESET_BOUNCY;
+}
+
+pub fn customized_spring_preset() -> SpringConfig {
+    let mut customized = SPRING_PRESET_GENTLE;
+    customized.frequency = 3.0;
+    return customized;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(
+            "export const SpringPresetBouncy: Readonly<SpringConfig> = Object.freeze({ dampingRatio: 0.35, frequency: 2.0 });"
+        ));
+        assert!(output.contains(
+            "export const SpringPresetGentle: Readonly<SpringConfig> = Object.freeze({ dampingRatio: 0.8, frequency: 1.5 });"
+        ));
+        assert!(output.contains(
+            "export const SpringPresetStiff: Readonly<SpringConfig> = Object.freeze({ dampingRatio: 1.0, frequency: 4.0 });"
+        ));
+        assert_eq!(output.matches("Object.freeze(").count(), 3);
+        assert!(output.contains("return SpringPresetBouncy;"));
+        assert!(output.contains("let customized = { ...SpringPresetGentle };"));
+        assert!(!output.contains("SPRING_PRESET_BOUNCY"));
+        assert!(!output.contains("SPRING_PRESET_GENTLE"));
+        assert!(!output.contains("SPRING_PRESET_STIFF"));
+    }
+
+    #[test]
+    fn rejects_malformed_frozen_object_directives() {
+        let cases = [
+            (
+                "//! flight-compiler: frozen-object\n",
+                "`flight-compiler: frozen-object` requires a constant name and TypeScript name",
+            ),
+            (
+                "//! flight-compiler: frozen-object PRESET\n",
+                "`flight-compiler: frozen-object PRESET` requires a TypeScript name",
+            ),
+            (
+                "//! flight-compiler: frozen-object PRESET Preset extra\n",
+                "`flight-compiler: frozen-object PRESET` accepts exactly one TypeScript name",
+            ),
+            (
+                "//! flight-compiler: frozen-object PRE-SET Preset\n",
+                "`flight-compiler: frozen-object` constant name `PRE-SET` is not a valid identifier",
+            ),
+            (
+                "//! flight-compiler: frozen-object PRESET Pre-set\n",
+                "`flight-compiler: frozen-object PRESET` TypeScript name `Pre-set` is not a valid identifier",
+            ),
+            (
+                "//! flight-compiler: frozen-object PRESET Preset\n//! flight-compiler: frozen-object PRESET OtherPreset\npub struct Config { pub value: f32 }\npub const PRESET: Config = Config { value: 1.0 };\n",
+                "duplicate `flight-compiler: frozen-object` directive for constant `PRESET`",
+            ),
+            (
+                "//! flight-compiler: frozen-object FIRST Preset\n//! flight-compiler: frozen-object SECOND Preset\npub struct Config { pub value: f32 }\npub const FIRST: Config = Config { value: 1.0 };\npub const SECOND: Config = Config { value: 2.0 };\n",
+                "`flight-compiler: frozen-object` TypeScript name `Preset` is assigned more than once",
+            ),
+            (
+                "//! flight-compiler: frozen-object MISSING Preset\n",
+                "`flight-compiler: frozen-object` constant `MISSING` does not exist",
+            ),
+            (
+                "//! flight-compiler: frozen-object PRESET Preset\npub struct Config { pub value: f32 }\nconst PRESET: Config = Config { value: 1.0 };\n",
+                "`flight-compiler: frozen-object` constant `PRESET` must be public",
+            ),
+            (
+                "//! flight-compiler: frozen-object PRESET Preset\npub const PRESET: f32 = 1.0;\n",
+                "`flight-compiler: frozen-object` constant `PRESET` must be initialized with a struct literal",
             ),
         ];
 
@@ -1852,6 +1969,50 @@ mod ease_steps {
         assert!(!output.contains("  StepPosition,"));
         assert!(output.contains("easeSteps(4, \"jumpEnd\")"));
         assert!(!output.contains("StepPosition.JumpEnd"));
+    }
+
+    #[test]
+    fn imports_frozen_objects_by_their_explicit_typescript_names() {
+        let production = r#"
+//! flight-compiler: frozen-object SPRING_PRESET_BOUNCY SpringPresetBouncy
+
+pub struct SpringConfig {
+    pub damping_ratio: f32,
+    pub frequency: f32,
+}
+
+pub const SPRING_PRESET_BOUNCY: SpringConfig = SpringConfig {
+    damping_ratio: 0.35,
+    frequency: 2.0,
+};
+"#;
+        let source = r#"
+use flight_spring::*;
+
+mod spring_presets {
+    use super::*;
+
+    #[test]
+    fn exposes_the_bouncy_frequency() {
+        assert_eq!(SPRING_PRESET_BOUNCY.frequency, 2.0);
+        let mut customized = SPRING_PRESET_BOUNCY;
+        customized.frequency = 3.0;
+        assert_eq!(customized.frequency, 3.0);
+    }
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/spring/contract", &[production])
+                .unwrap();
+
+        assert!(output.contains("  SpringPresetBouncy,"));
+        assert!(
+            output.contains("expect(SpringPresetBouncy.frequency).toEqual(2.0);"),
+            "{output}"
+        );
+        assert!(output.contains("let customized = { ...SpringPresetBouncy };"));
+        assert!(!output.contains("SPRING_PRESET_BOUNCY"));
     }
 
     #[test]

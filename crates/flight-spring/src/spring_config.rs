@@ -1,3 +1,7 @@
+//! flight-compiler: frozen-object SPRING_PRESET_BOUNCY SpringPresetBouncy
+//! flight-compiler: frozen-object SPRING_PRESET_GENTLE SpringPresetGentle
+//! flight-compiler: frozen-object SPRING_PRESET_STIFF SpringPresetStiff
+
 /// A spring configuration defined by frequency and damping ratio.
 ///
 /// - `damping_ratio`: 0 = undamped, <1 = underdamped (overshoots), 1 = critically damped

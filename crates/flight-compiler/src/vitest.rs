@@ -9,8 +9,8 @@ use syn::{BinOp, Expr, Fields, FnArg, ItemFn, Pat, ReturnType, Stmt, Token};
 use crate::model::{TestCase, TestProgram, TestSuite};
 use crate::typescript::{
     emit_expression, emit_for_header, emit_format_template, emit_local, emit_local_with_shadow,
-    emit_parameter, emit_type, function_expression_context, is_data_union_variant,
-    numeric_literal_spelling, snake_to_lower_camel, write_indent,
+    emit_parameter, emit_type, frozen_object_name, function_expression_context,
+    is_data_union_variant, numeric_literal_spelling, snake_to_lower_camel, write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -773,8 +773,10 @@ pub(crate) fn emit_test_program(
     if !contract_symbols.is_empty() {
         out.push_str("\nimport {\n");
         for symbol in &contract_symbols {
-            writeln!(out, "  {},", emit_path_name(symbol))
-                .expect("writing to a String cannot fail");
+            let name = frozen_object_name(context, symbol)
+                .map(str::to_string)
+                .unwrap_or_else(|| emit_path_name(symbol));
+            writeln!(out, "  {name},").expect("writing to a String cannot fail");
         }
         writeln!(out, "}} from {contract_module:?};").expect("writing to a String cannot fail");
     }

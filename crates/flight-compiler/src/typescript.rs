@@ -24,6 +24,7 @@ const ENTITY_DEFAULT_FIELD_MARKER: &str = "@entity-default-field:";
 const ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER: &str = "@entity-unsupported-default-field:";
 const FIXED_BUFFER_ARGUMENT_MARKER: &str = "@fixed-buffer-argument:";
 const FIXED_BUFFER_LOCAL_MARKER: &str = "@fixed-buffer-local:";
+const FROZEN_OBJECT_MARKER: &str = "@frozen-object:";
 const IDENTITY_ALIAS_MARKER: &str = "@identity-alias:";
 const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
 const RECORD_CLONE_ARGUMENT_MARKER: &str = "@record-clone-argument:";
@@ -559,6 +560,35 @@ fn insert_data_union_context(
     return Ok(());
 }
 
+// flight-lint: allow(hashmap-iteration) frozen-object validation guarantees one target name per Rust constant
+pub(crate) fn frozen_object_name<'a>(
+    context: &'a HashSet<String>,
+    rust_name: &str,
+) -> Option<&'a str> {
+    let prefix = format!("{FROZEN_OBJECT_MARKER}{rust_name}:");
+    return context
+        .iter()
+        .find_map(|marker| marker.strip_prefix(&prefix));
+}
+
+fn frozen_object_expression_name<'a>(
+    expression: &Expr,
+    context: &'a HashSet<String>,
+) -> Option<&'a str> {
+    return match expression {
+        Expr::Group(group) => frozen_object_expression_name(&group.expr, context),
+        Expr::Paren(paren) => frozen_object_expression_name(&paren.expr, context),
+        Expr::Path(path)
+            if path.qself.is_none()
+                && path.path.leading_colon.is_none()
+                && path.path.segments.len() == 1 =>
+        {
+            frozen_object_name(context, &path.path.segments[0].ident.to_string())
+        }
+        _ => None,
+    };
+}
+
 pub(crate) fn generation_context(programs: &[&Program]) -> Result<HashSet<String>, CompileError> {
     return generation_context_with_types(programs, &HashSet::new());
 }
@@ -606,6 +636,14 @@ fn generation_context_with_types(
         .collect::<HashMap<_, _>>();
     for program in programs {
         context.extend(program.entities.iter().cloned());
+        context.extend(
+            program
+                .frozen_objects
+                .iter()
+                .map(|(rust_name, typescript_name)| {
+                    format!("{FROZEN_OBJECT_MARKER}{rust_name}:{typescript_name}")
+                }),
+        );
         for structure in &program.structs {
             let entity = structure.ident.to_string();
             if !entity_types.contains(&entity) {
@@ -1072,6 +1110,7 @@ fn emit_constant(
     out: &mut String,
     constant: &syn::ItemConst,
     entities: &HashSet<String>,
+    frozen_name: Option<&str>,
 ) -> Result<(), CompileError> {
     emit_documentation(out, &constant.attrs, 0);
     let export = if is_public(&constant.vis) {
@@ -1080,6 +1119,15 @@ fn emit_constant(
         ""
     };
     let value = emit_expression_for_type(&constant.expr, &constant.ty, entities)?;
+    if let Some(name) = frozen_name {
+        writeln!(
+            out,
+            "{export}const {name}: Readonly<{}> = Object.freeze({value});",
+            emit_type(&constant.ty, entities)?,
+        )
+        .expect("writing to a String cannot fail");
+        return Ok(());
+    }
     if matches!(constant.expr.as_ref(), Expr::Lit(value) if matches!(&value.lit, Lit::Str(_)))
         && matches!(constant.ty.as_ref(), Type::Reference(reference) if type_is_named(&reference.elem, "str"))
     {
@@ -1574,6 +1622,14 @@ pub(crate) fn emit_expression(
             }
             if path.path.is_ident("None") {
                 return Ok("undefined".to_string());
+            }
+            if path.qself.is_none()
+                && path.path.leading_colon.is_none()
+                && path.path.segments.len() == 1
+                && let Some(name) =
+                    frozen_object_name(entities, &path.path.segments[0].ident.to_string())
+            {
+                return Ok(name.to_string());
             }
             if expression_is_associated_path(expression, "f32", "min")
                 || expression_is_associated_path(expression, "f64", "min")
@@ -2170,6 +2226,9 @@ pub(crate) fn emit_local_with_shadow(
     } else {
         emit_expression(&initializer.expr, entities)?
     };
+    if mutable && let Some(name) = frozen_object_expression_name(&initializer.expr, entities) {
+        value = format!("{{ ...{name} }}");
+    }
     if typescript_type.as_deref() == Some("Float32Array") && !value.starts_with("new Float32Array(")
     {
         value = format!("new Float32Array({value})");
@@ -3710,7 +3769,15 @@ pub(crate) fn emit_program(
         out.push('\n');
     }
     for constant in &program.constants {
-        emit_constant(&mut out, constant, &expression_context)?;
+        emit_constant(
+            &mut out,
+            constant,
+            &expression_context,
+            program
+                .frozen_objects
+                .get(&constant.ident.to_string())
+                .map(String::as_str),
+        )?;
         out.push('\n');
     }
     for rust_static in &program.statics {

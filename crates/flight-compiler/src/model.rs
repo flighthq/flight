@@ -13,6 +13,7 @@ pub(crate) struct Program {
     pub(crate) data_unions: HashSet<String>,
     pub(crate) entities: HashSet<String>,
     pub(crate) enums: Vec<ItemEnum>,
+    pub(crate) frozen_objects: BTreeMap<String, String>,
     pub(crate) functions: Vec<ItemFn>,
     pub(crate) standard_constants: HashSet<String>,
     pub(crate) statics: Vec<ItemStatic>,
@@ -117,6 +118,7 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
             | "companion"
             | "contract"
             | "data-union"
+            | "frozen-object"
             | "identity-alias"
             | "readonly-fields"
             | "root"
@@ -172,6 +174,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
     let callable_parameters = parse_callable_parameters(&file.attrs)?;
     let data_unions = parse_data_unions(&file.attrs)?;
+    let frozen_objects = parse_frozen_objects(&file.attrs)?;
     let identity_alias_directives = parse_identity_aliases(&file.attrs)?;
     let mut constants = Vec::new();
     let mut entities = HashSet::new();
@@ -239,6 +242,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
 
     validate_callable_parameters(&callable_parameters, &type_aliases)?;
     validate_data_union_directives(&data_unions, &enums, &string_unions)?;
+    validate_frozen_objects(&frozen_objects, &constants)?;
     validate_identity_aliases(&identity_alias_directives, &type_aliases)?;
 
     return Ok(Program {
@@ -247,6 +251,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         data_unions,
         entities,
         enums,
+        frozen_objects,
         functions,
         standard_constants,
         statics,
@@ -255,6 +260,96 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         string_unions,
         type_aliases,
     });
+}
+
+fn parse_frozen_objects(
+    attributes: &[Attribute],
+) -> Result<BTreeMap<String, String>, CompileError> {
+    let mut directives = BTreeMap::new();
+    let mut target_names = HashSet::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("frozen-object") {
+            continue;
+        }
+        let Some(constant) = fields.next() else {
+            return Err(compile_error(
+                "`flight-compiler: frozen-object` requires a constant name and TypeScript name",
+            ));
+        };
+        let Some(target) = fields.next() else {
+            return Err(compile_error(format!(
+                "`flight-compiler: frozen-object {constant}` requires a TypeScript name"
+            )));
+        };
+        if fields.next().is_some() {
+            return Err(compile_error(format!(
+                "`flight-compiler: frozen-object {constant}` accepts exactly one TypeScript name"
+            )));
+        }
+        if syn::parse_str::<syn::Ident>(constant).is_err() || constant.starts_with("r#") {
+            return Err(compile_error(format!(
+                "`flight-compiler: frozen-object` constant name `{constant}` is not a valid identifier"
+            )));
+        }
+        if syn::parse_str::<syn::Ident>(target).is_err() || target.starts_with("r#") {
+            return Err(compile_error(format!(
+                "`flight-compiler: frozen-object {constant}` TypeScript name `{target}` is not a valid identifier"
+            )));
+        }
+        if directives.contains_key(constant) {
+            return Err(compile_error(format!(
+                "duplicate `flight-compiler: frozen-object` directive for constant `{constant}`"
+            )));
+        }
+        if !target_names.insert(target.to_string()) {
+            return Err(compile_error(format!(
+                "`flight-compiler: frozen-object` TypeScript name `{target}` is assigned more than once"
+            )));
+        }
+        directives.insert(constant.to_string(), target.to_string());
+    }
+    return Ok(directives);
+}
+
+fn is_struct_literal(expression: &syn::Expr) -> bool {
+    return match expression {
+        syn::Expr::Group(group) => is_struct_literal(&group.expr),
+        syn::Expr::Paren(paren) => is_struct_literal(&paren.expr),
+        syn::Expr::Struct(_) => true,
+        _ => false,
+    };
+}
+
+// flight-lint: allow(hashmap-iteration) frozen directives are a BTreeMap and constants retain Rust source order in a Vec
+fn validate_frozen_objects(
+    directives: &BTreeMap<String, String>,
+    constants: &[ItemConst],
+) -> Result<(), CompileError> {
+    for constant_name in directives.keys() {
+        let Some(constant) = constants
+            .iter()
+            .find(|constant| constant.ident == constant_name.as_str())
+        else {
+            return Err(compile_error(format!(
+                "`flight-compiler: frozen-object` constant `{constant_name}` does not exist"
+            )));
+        };
+        if !is_public(&constant.vis) {
+            return Err(compile_error(format!(
+                "`flight-compiler: frozen-object` constant `{constant_name}` must be public"
+            )));
+        }
+        if !is_struct_literal(&constant.expr) {
+            return Err(compile_error(format!(
+                "`flight-compiler: frozen-object` constant `{constant_name}` must be initialized with a struct literal"
+            )));
+        }
+    }
+    return Ok(());
 }
 
 fn parse_data_unions(attributes: &[Attribute]) -> Result<HashSet<String>, CompileError> {
