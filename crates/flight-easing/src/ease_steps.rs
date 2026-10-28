@@ -17,9 +17,9 @@ pub type EasingStepsGuard = Arc<dyn Fn(i32, StepPosition) + Send + Sync>;
 
 /// Returns a stepped easing function that quantizes [0,1] into `count` equal
 /// intervals, jumping at the position(s) selected by `position`. A missing
-/// position defaults to `JumpEnd`.
+/// position defaults to `'jumpEnd'`.
 ///
-/// Sharp edge: `ease_steps(1, Some(StepPosition::JumpNone))` has jumps = count - 1 = 0,
+/// Sharp edge: `easeSteps(1, 'jumpNone')` has jumps = count - 1 = 0,
 /// so the returned function divides by zero and yields NaN for every input.
 pub fn ease_steps(count: i32, position: Option<StepPosition>) -> EasingFunction {
     let position = position.unwrap_or(StepPosition::JumpEnd);
@@ -79,7 +79,7 @@ pub fn parse_step_position(value: &str) -> Option<StepPosition> {
 }
 
 /// Sets or clears the diagnostics callback for degenerate `ease_steps` calls.
-/// Pass `None` to uninstall the guard.
+/// Pass `null` to uninstall the guard.
 pub fn set_easing_steps_guard(guard: Option<EasingStepsGuard>) {
     let mut slot = STEPS_GUARD.lock().unwrap_or_else(PoisonError::into_inner);
     *slot = guard;
