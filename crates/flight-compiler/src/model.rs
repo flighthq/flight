@@ -20,8 +20,14 @@ pub(crate) struct Program {
     pub(crate) statics: Vec<ItemStatic>,
     pub(crate) structs: Vec<ItemStruct>,
     pub(crate) readonly_structs: HashSet<String>,
-    pub(crate) string_unions: HashSet<String>,
+    pub(crate) string_unions: BTreeMap<String, StringUnionStyle>,
     pub(crate) type_aliases: Vec<ItemType>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum StringUnionStyle {
+    KebabCase,
+    LowerCamel,
 }
 
 pub(crate) struct TestProgram {
@@ -188,7 +194,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let mut structs = Vec::new();
     let mut type_aliases = Vec::new();
     let readonly_structs = directive_names(source, "readonly-fields");
-    let string_unions = directive_names(source, "string-union");
+    let string_unions = parse_string_unions(&file.attrs)?;
 
     for item in &file.items {
         if let Item::Struct(structure) = item
@@ -245,6 +251,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
 
     validate_callable_parameters(&callable_parameters, &type_aliases)?;
     validate_data_union_directives(&data_unions, &enums, &string_unions)?;
+    validate_string_union_directives(&string_unions, &enums)?;
     validate_frozen_objects(&frozen_objects, &constants)?;
     validate_identity_aliases(&identity_alias_directives, &type_aliases)?;
 
@@ -289,6 +296,69 @@ fn parse_flag_directive(attributes: &[Attribute], expected: &str) -> Result<bool
         found = true;
     }
     return Ok(found);
+}
+
+fn parse_string_unions(
+    attributes: &[Attribute],
+) -> Result<BTreeMap<String, StringUnionStyle>, CompileError> {
+    let mut directives = BTreeMap::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let Some(specifications) = directive.strip_prefix("string-union") else {
+            continue;
+        };
+        if !specifications.is_empty()
+            && !specifications.starts_with(|character: char| character.is_whitespace())
+        {
+            continue;
+        }
+        let specifications = specifications
+            .split(|character: char| character == ',' || character.is_whitespace())
+            .filter(|specification| !specification.is_empty())
+            .collect::<Vec<_>>();
+        if specifications.is_empty() {
+            return Err(compile_error(
+                "`flight-compiler: string-union` requires at least one enum name",
+            ));
+        }
+        for specification in specifications {
+            let (name, style) = if let Some((name, style)) = specification.split_once('=') {
+                let style = match style {
+                    "kebab-case" => StringUnionStyle::KebabCase,
+                    "lower-camel" => StringUnionStyle::LowerCamel,
+                    _ => {
+                        return Err(compile_error(format!(
+                            "`flight-compiler: string-union` enum `{name}` has unknown style `{style}`"
+                        )));
+                    }
+                };
+                (name, style)
+            } else {
+                (specification, StringUnionStyle::LowerCamel)
+            };
+            if syn::parse_str::<syn::Ident>(name).is_err() || name.starts_with("r#") {
+                return Err(compile_error(format!(
+                    "`flight-compiler: string-union` enum name `{name}` is not a valid identifier"
+                )));
+            }
+            if directives.insert(name.to_string(), style).is_some() {
+                return Err(compile_error(format!(
+                    "duplicate `flight-compiler: string-union` directive for enum `{name}`"
+                )));
+            }
+        }
+    }
+    return Ok(directives);
+}
+
+pub(crate) fn parse_string_union_metadata(
+    source: &str,
+) -> Result<BTreeMap<String, StringUnionStyle>, CompileError> {
+    let file = syn::parse_file(source)
+        .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    return parse_string_unions(&file.attrs);
 }
 
 fn parse_frozen_objects(
@@ -816,12 +886,12 @@ fn unsupported_public(kind: &str, name: &str) -> CompileError {
 fn validate_data_union_directives(
     data_unions: &HashSet<String>,
     enums: &[ItemEnum],
-    string_unions: &HashSet<String>,
+    string_unions: &BTreeMap<String, StringUnionStyle>,
 ) -> Result<(), CompileError> {
     let mut names = data_unions.iter().collect::<Vec<_>>();
     names.sort();
     for name in names {
-        if string_unions.contains(name) {
+        if string_unions.contains_key(name) {
             return Err(compile_error(format!(
                 "enum `{name}` cannot use both `flight-compiler: data-union` and `flight-compiler: string-union`"
             )));
@@ -829,6 +899,20 @@ fn validate_data_union_directives(
         if !enums.iter().any(|rust_enum| rust_enum.ident == name) {
             return Err(compile_error(format!(
                 "`flight-compiler: data-union` enum `{name}` does not exist"
+            )));
+        }
+    }
+    return Ok(());
+}
+
+fn validate_string_union_directives(
+    string_unions: &BTreeMap<String, StringUnionStyle>,
+    enums: &[ItemEnum],
+) -> Result<(), CompileError> {
+    for name in string_unions.keys() {
+        if !enums.iter().any(|rust_enum| rust_enum.ident == name) {
+            return Err(compile_error(format!(
+                "`flight-compiler: string-union` enum `{name}` does not exist"
             )));
         }
     }

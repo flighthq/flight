@@ -642,6 +642,79 @@ static STEPS_GUARD: Mutex<Option<EasingStepsGuard>> = Mutex::new(None);
     }
 
     #[test]
+    fn preserves_explicit_kebab_case_string_union_literals() {
+        let source = r#"
+//! flight-compiler: string-union ResultReason=kebab-case
+
+pub enum ResultReason {
+    NoSample,
+    HTTPError,
+    Ok,
+}
+
+pub fn default_reason() -> ResultReason {
+    return ResultReason::NoSample;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("export type ResultReason = \"no-sample\" | \"http-error\" | \"ok\";")
+        );
+        assert!(output.contains("return \"no-sample\";"));
+        assert!(!output.contains("noSample"));
+    }
+
+    #[test]
+    fn rejects_malformed_string_union_styles() {
+        for (source, expected) in [
+            (
+                "//! flight-compiler: string-union\n",
+                "`flight-compiler: string-union` requires at least one enum name",
+            ),
+            (
+                "//! flight-compiler: string-union ResultReason=snake-case\npub enum ResultReason { Ok }\n",
+                "`flight-compiler: string-union` enum `ResultReason` has unknown style `snake-case`",
+            ),
+            (
+                "//! flight-compiler: string-union Result-Reason=kebab-case\npub enum ResultReason { Ok }\n",
+                "`flight-compiler: string-union` enum name `Result-Reason` is not a valid identifier",
+            ),
+            (
+                "//! flight-compiler: string-union ResultReason ResultReason=kebab-case\npub enum ResultReason { Ok }\n",
+                "duplicate `flight-compiler: string-union` directive for enum `ResultReason`",
+            ),
+            (
+                "//! flight-compiler: string-union Missing=kebab-case\npub enum ResultReason { Ok }\n",
+                "`flight-compiler: string-union` enum `Missing` does not exist",
+            ),
+        ] {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn lowers_real_velocity_reason_literals_in_sources_and_tests() {
+        let production = include_str!("../../flight-velocity/src/velocity_explanation.rs");
+        let output = compile_typescript(production, None).unwrap();
+        assert!(output.contains(
+            "export type VelocityReason = \"no-sample\" | \"stale\" | \"explicit-zero\" | \"derived-zero\" | \"ok\";"
+        ));
+        assert!(output.contains("case \"no-sample\":"));
+        assert!(output.contains("return \"explicit-zero\";"));
+
+        let tests = include_str!("../../flight-velocity/tests/velocity_explanation_test.rs");
+        let test_output =
+            compile_vitest_with_alias_sources(tests, "@flighthq/velocity/contract", &[production])
+                .unwrap();
+        assert!(test_output.contains("getVelocityReasonString(\"no-sample\")"));
+        assert!(test_output.contains("parseVelocityReason(\"derived-zero\")"));
+        assert!(!test_output.contains("VelocityReason.NoSample"));
+    }
+
+    #[test]
     fn preserves_default_callable_parameter_names_without_a_directive() {
         let source = r#"
 use std::sync::Arc;

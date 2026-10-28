@@ -43,7 +43,9 @@ pub(crate) fn compile_error(message: impl Into<String>) -> CompileError {
 /// layer. The compiler never synthesizes structural `Like` types. Sources whose
 /// `Option` values represent explicit API data can use
 /// `//! flight-compiler: nullable-options` to emit `T | null`; other sources keep
-/// optional properties and `undefined` absence.
+/// optional properties and `undefined` absence. String unions default to
+/// lower-camel literals and can select kebab-case per enum with
+/// `//! flight-compiler: string-union Reason=kebab-case`.
 // flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
 pub fn compile_typescript(
     source: &str,
@@ -99,7 +101,11 @@ pub fn compile_typescript_with_external_alias_sources(
         &alias_programs,
         &external_alias_programs,
     )?;
-    return Ok(lower_string_union_variants(output, source, false));
+    return Ok(lower_string_union_variants(
+        output,
+        &program.string_unions,
+        false,
+    ));
 }
 
 /// Compiles one canonical Rust contract-test module into a Vitest suite.
@@ -127,19 +133,20 @@ pub fn compile_vitest_with_alias_sources(
     let alias_program_refs = alias_programs.iter().collect::<Vec<_>>();
     let context = typescript::generation_context(&alias_program_refs)?;
     let mut output = vitest::emit_test_program(&program, contract_module, &context)?;
-    output = lower_string_union_variants(output, source, true);
-    for alias_source in alias_sources {
-        output = lower_string_union_variants(output, alias_source, true);
+    let string_unions = model::parse_string_union_metadata(source)?;
+    output = lower_string_union_variants(output, &string_unions, true);
+    for alias_program in &alias_programs {
+        output = lower_string_union_variants(output, &alias_program.string_unions, true);
     }
     return Ok(output);
 }
 
 fn lower_string_union_variants(
     mut output: String,
-    source: &str,
+    string_unions: &std::collections::BTreeMap<String, model::StringUnionStyle>,
     remove_runtime_imports: bool,
 ) -> String {
-    for owner in model::directive_names(source, "string-union") {
+    for (owner, style) in string_unions {
         if remove_runtime_imports {
             output = output.replace(&format!("  {owner},\n"), "");
         }
@@ -160,7 +167,7 @@ fn lower_string_union_variants(
             let end = variant_start + variant_length;
             let literal = format!(
                 "{:?}",
-                typescript::lower_camel_from_upper_camel(&output[variant_start..end])
+                typescript::string_union_literal(&output[variant_start..end], *style)
             );
             output.replace_range(start..end, &literal);
             cursor = start + literal.len();

@@ -1,3 +1,5 @@
+//! flight-compiler: string-union VelocityReason=kebab-case
+
 /// The reason for a velocity explanation result.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum VelocityReason {

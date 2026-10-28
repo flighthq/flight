@@ -10,7 +10,7 @@ use syn::{
     ReturnType, Stmt, Token, Type, UnOp, Visibility,
 };
 
-use crate::model::Program;
+use crate::model::{Program, StringUnionStyle};
 use crate::{CompileError, compile_error};
 
 type PreferredAliases = HashMap<String, String>;
@@ -1218,7 +1218,7 @@ fn emit_documentation(out: &mut String, attributes: &[Attribute], indent: usize)
 fn emit_enum(
     out: &mut String,
     rust_enum: &syn::ItemEnum,
-    string_union: bool,
+    string_union: Option<StringUnionStyle>,
     data_union: bool,
     entities: &HashSet<String>,
 ) -> Result<(), CompileError> {
@@ -1279,7 +1279,7 @@ fn emit_enum(
             .expect("writing to a String cannot fail");
         return Ok(());
     }
-    if string_union {
+    if let Some(style) = string_union {
         if rust_enum
             .variants
             .iter()
@@ -1296,7 +1296,7 @@ fn emit_enum(
             .map(|variant| {
                 format!(
                     "{:?}",
-                    lower_camel_from_upper_camel(&variant.ident.to_string())
+                    string_union_literal(&variant.ident.to_string(), style)
                 )
             })
             .collect::<Vec<_>>();
@@ -3934,7 +3934,10 @@ pub(crate) fn emit_program(
         emit_enum(
             &mut out,
             rust_enum,
-            program.string_unions.contains(&rust_enum.ident.to_string()),
+            program
+                .string_unions
+                .get(&rust_enum.ident.to_string())
+                .copied(),
             program.data_unions.contains(&rust_enum.ident.to_string()),
             &source_context,
         )?;
@@ -4880,6 +4883,35 @@ pub(crate) fn lower_camel_from_upper_camel(name: &str) -> String {
         return String::new();
     };
     return first.to_lowercase().chain(characters).collect();
+}
+
+pub(crate) fn string_union_literal(name: &str, style: StringUnionStyle) -> String {
+    if style == StringUnionStyle::LowerCamel {
+        return lower_camel_from_upper_camel(name);
+    }
+    let characters = name.chars().collect::<Vec<_>>();
+    let mut literal = String::new();
+    for (index, character) in characters.iter().copied().enumerate() {
+        if character == '_' {
+            if !literal.is_empty() && !literal.ends_with('-') {
+                literal.push('-');
+            }
+            continue;
+        }
+        if character.is_ascii_uppercase()
+            && index > 0
+            && !literal.ends_with('-')
+            && (characters[index - 1].is_ascii_lowercase()
+                || characters[index - 1].is_ascii_digit()
+                || characters
+                    .get(index + 1)
+                    .is_some_and(|next| next.is_ascii_lowercase()))
+        {
+            literal.push('-');
+        }
+        literal.extend(character.to_lowercase());
+    }
+    return literal;
 }
 
 fn option_inner_type(rust_type: &Type) -> Option<&Type> {
