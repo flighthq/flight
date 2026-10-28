@@ -8,8 +8,8 @@ use syn::{BinOp, Expr, Fields, FnArg, ItemFn, Pat, ReturnType, Stmt, Token};
 
 use crate::model::{TestCase, TestProgram, TestSuite};
 use crate::typescript::{
-    emit_expression, emit_for_header, emit_local, emit_local_with_shadow, emit_parameter,
-    emit_type, function_expression_context, snake_to_lower_camel, write_indent,
+    emit_expression, emit_for_header, emit_format_template, emit_local, emit_local_with_shadow,
+    emit_parameter, emit_type, function_expression_context, snake_to_lower_camel, write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -32,46 +32,14 @@ fn assertion_message(
             "portable assertion messages must be string literals",
         ));
     };
-    let mut template = message
-        .value()
-        .replace('\\', "\\\\")
-        .replace('`', "\\`")
-        .replace("${", "\\${");
     let values = arguments.iter().skip(message_index + 1).collect::<Vec<_>>();
-    let mut value_index = 0;
-    let mut rendered = String::new();
-    while let Some(start) = template.find('{') {
-        let Some(relative_end) = template[start + 1..].find('}') else {
-            break;
-        };
-        let end = start + 1 + relative_end;
-        rendered.push_str(&template[..start]);
-        let placeholder = &template[start + 1..end];
-        if placeholder.is_empty() {
-            let Some(value) = values.get(value_index) else {
-                return Err(compile_error(
-                    "portable assertion message has too few formatting values",
-                ));
-            };
-            rendered.push_str("${");
-            rendered.push_str(&emit_expression(value, context)?);
-            rendered.push('}');
-            value_index += 1;
-        } else {
-            let name = placeholder.split(':').next().unwrap_or(placeholder);
-            rendered.push_str("${");
-            rendered.push_str(&snake_to_lower_camel(name));
-            rendered.push('}');
-        }
-        template = template[end + 1..].to_string();
-    }
-    rendered.push_str(&template);
-    if value_index != values.len() {
-        return Err(compile_error(
-            "portable assertion message has unused formatting values",
-        ));
-    }
-    return Ok(Some(format!("`{rendered}`")));
+    return emit_format_template(
+        &message.value(),
+        &values,
+        context,
+        "portable assertion message",
+    )
+    .map(Some);
 }
 
 fn collect_contract_symbols(program: &TestProgram) -> (Vec<String>, Vec<String>, Vec<String>) {
