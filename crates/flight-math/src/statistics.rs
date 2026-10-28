@@ -19,7 +19,7 @@ fn finite_absolute_scale(values: &[f64]) -> f64 {
 
 /// Return the arithmetic mean of `values`.
 ///
-/// Returns `NaN` for an empty slice. No allocation beyond the accumulator.
+/// Returns `NaN` for empty input. No allocation beyond the accumulator.
 // flight-lint: allow(f64) preserve double inputs and compensated cancellation residuals, including f64::EPSILON / 6
 // flight-lint: allow(conform-array) read-only statistic input widened to ArrayLike (negotiated)
 pub fn mean(values: &[f64]) -> f64 {
@@ -39,7 +39,7 @@ pub fn mean(values: &[f64]) -> f64 {
 /// Return the median of `values`.
 ///
 /// Allocates a sorted copy — does not mutate the input. Returns `NaN` for an
-/// empty slice.
+/// empty input.
 // flight-lint: allow(f64) preserve double middle values and avoid overflow at f64::MAX or premature underflow
 // flight-lint: allow(conform-array) read-only statistic input widened to ArrayLike (negotiated)
 pub fn median(values: &[f64]) -> f64 {
@@ -108,7 +108,7 @@ fn scaled_variance(values: &[f64], scale: f64) -> f64 {
 
 /// Return the population standard deviation of `values`.
 ///
-/// Returns `NaN` for an empty slice.
+/// Returns `NaN` for empty input.
 // flight-lint: allow(f64) preserve double input range and normalized squared-deviation precision
 // flight-lint: allow(conform-array) read-only statistic input widened to ArrayLike (negotiated)
 pub fn standard_deviation(values: &[f64]) -> f64 {
@@ -168,7 +168,7 @@ fn unscaled_weighted_average(values: &[f64], weights: &[f64]) -> f64 {
 
 /// Return the population variance of `values`.
 ///
-/// Returns `NaN` for an empty slice, `0` for a single element.
+/// Returns `NaN` for empty input, `0` for a single element.
 // flight-lint: allow(f64) preserve double input range and compensated squared-deviation accumulation
 // flight-lint: allow(conform-array) read-only statistic input widened to ArrayLike (negotiated)
 pub fn variance(values: &[f64]) -> f64 {
@@ -191,8 +191,8 @@ pub fn variance(values: &[f64]) -> f64 {
 
 /// Return the weighted average of `values` using `weights`.
 ///
-/// Each `values[i]` is weighted by `weights[i]`. The slices must have the same
-/// length. Returns `NaN` for an empty slice or if total weight is `0`. Panics
+/// Each `values[i]` is weighted by `weights[i]`. The inputs must have the same
+/// length. Returns `NaN` for empty input or if total weight is `0`. Panics
 /// if `values.len() != weights.len()`.
 // flight-lint: allow(f64) preserve double values and weights through normalized compensated accumulation
 // flight-lint: allow(conform-array) read-only statistic input widened to ArrayLike (negotiated)

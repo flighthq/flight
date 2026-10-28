@@ -1,15 +1,43 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 
 use syn::parse::Parser;
 use syn::punctuated::Punctuated;
 use syn::{
-    BinOp, Expr, FnArg, GenericArgument, ItemFn, ItemStruct, Lit, Pat, PathArguments, ReturnType,
-    Stmt, Token, Type, UnOp, Visibility,
+    Attribute, BinOp, Expr, FnArg, GenericArgument, ItemFn, ItemStruct, Lit, Pat, PathArguments,
+    ReturnType, Stmt, Token, Type, UnOp, Visibility,
 };
 
 use crate::model::Program;
 use crate::{CompileError, compile_error};
+
+type PreferredAliases = HashMap<String, String>;
+
+fn argument_is_option(argument: &FnArg) -> bool {
+    let FnArg::Typed(argument) = argument else {
+        return false;
+    };
+    return option_inner_type(&argument.ty).is_some();
+}
+
+fn documentation(attributes: &[Attribute]) -> Vec<String> {
+    return attributes
+        .iter()
+        .filter(|attribute| attribute.path().is_ident("doc"))
+        .filter_map(|attribute| {
+            let syn::Meta::NameValue(meta) = &attribute.meta else {
+                return None;
+            };
+            let Expr::Lit(value) = &meta.value else {
+                return None;
+            };
+            let Lit::Str(value) = &value.lit else {
+                return None;
+            };
+            Some(rewrite_documentation(value.value().trim_start()))
+        })
+        .collect();
+}
 
 fn emit_binary_operator(operator: &BinOp) -> Result<&'static str, CompileError> {
     return match operator {
@@ -51,13 +79,24 @@ fn emit_block(
     entities: &HashSet<String>,
     indent: usize,
 ) -> Result<(), CompileError> {
+    let mut declaration_counts = HashMap::new();
+    for statement in statements {
+        if let Stmt::Local(local) = statement
+            && let Some(name) = local_pattern_name(&local.pat)
+        {
+            *declaration_counts.entry(name).or_insert(0_usize) += 1;
+        }
+    }
     let mut declared = HashSet::new();
     for statement in statements {
         if let Stmt::Local(local) = statement
             && let Some(name) = local_pattern_name(&local.pat)
         {
+            let rebound = declaration_counts
+                .get(&name)
+                .is_some_and(|count| *count > 1);
             let shadowed = !declared.insert(name);
-            emit_local_with_shadow(out, local, entities, indent, shadowed)?;
+            emit_local_with_shadow(out, local, entities, indent, shadowed, rebound)?;
         } else {
             emit_statement(out, statement, entities, indent)?;
         }
@@ -124,6 +163,7 @@ fn emit_constant(
     constant: &syn::ItemConst,
     entities: &HashSet<String>,
 ) -> Result<(), CompileError> {
+    emit_documentation(out, &constant.attrs, 0);
     let export = if is_public(&constant.vis) {
         "export "
     } else {
@@ -140,7 +180,28 @@ fn emit_constant(
     return Ok(());
 }
 
+fn emit_documentation(out: &mut String, attributes: &[Attribute], indent: usize) {
+    let lines = documentation(attributes);
+    if lines.is_empty() {
+        return;
+    }
+    write_indent(out, indent);
+    out.push_str("/**\n");
+    for line in lines {
+        write_indent(out, indent);
+        if line.is_empty() {
+            out.push_str(" *\n");
+        } else {
+            writeln!(out, " * {}", line.replace("*/", "*\\/"))
+                .expect("writing to a String cannot fail");
+        }
+    }
+    write_indent(out, indent);
+    out.push_str(" */\n");
+}
+
 fn emit_enum(out: &mut String, rust_enum: &syn::ItemEnum) {
+    emit_documentation(out, &rust_enum.attrs, 0);
     let export = if is_public(&rust_enum.vis) {
         "export "
     } else {
@@ -148,6 +209,7 @@ fn emit_enum(out: &mut String, rust_enum: &syn::ItemEnum) {
     };
     writeln!(out, "{export}enum {} {{", rust_enum.ident).expect("writing to a String cannot fail");
     for variant in &rust_enum.variants {
+        emit_documentation(out, &variant.attrs, 1);
         writeln!(
             out,
             "  {} = {:?},",
@@ -186,6 +248,9 @@ pub(crate) fn emit_expression(
             ))
         }
         Expr::Binary(binary) => {
+            if let Some(comparison) = emit_inclusive_comparison(binary, entities)? {
+                return Ok(comparison);
+            }
             if matches!(binary.op, BinOp::Eq(_) | BinOp::Ne(_))
                 && let Some((left, right)) = float_bit_comparison(binary, entities)?
             {
@@ -307,7 +372,7 @@ pub(crate) fn emit_expression(
         Expr::Paren(paren) => Ok(format!("({})", emit_expression(&paren.expr, entities)?)),
         Expr::Path(path) => {
             if path.path.is_ident("None") {
-                return Ok("null".to_string());
+                return Ok("undefined".to_string());
             }
             if path_is_float_constant(&path.path, "NAN") {
                 return Ok("Number.NaN".to_string());
@@ -489,7 +554,9 @@ fn emit_function(
     out: &mut String,
     function: &ItemFn,
     entities: &HashSet<String>,
+    aliases: &PreferredAliases,
 ) -> Result<(), CompileError> {
+    emit_documentation(out, &function.attrs, 0);
     let export = if is_public(&function.vis) {
         "export "
     } else {
@@ -497,15 +564,29 @@ fn emit_function(
     };
     let name = snake_to_lower_camel(&function.sig.ident.to_string());
     let type_parameters = emit_type_parameters(&function.sig.generics);
+    let trailing_optional_start = function
+        .sig
+        .inputs
+        .iter()
+        .rposition(|argument| !argument_is_option(argument))
+        .map_or(0, |index| index + 1);
     let parameters = function
         .sig
         .inputs
         .iter()
-        .map(|argument| emit_parameter(argument, entities))
+        .enumerate()
+        .map(|(index, argument)| {
+            emit_parameter_with_aliases(
+                argument,
+                entities,
+                aliases,
+                index >= trailing_optional_start,
+            )
+        })
         .collect::<Result<Vec<_>, _>>()?;
     let return_type = match &function.sig.output {
         ReturnType::Default => "void".to_string(),
-        ReturnType::Type(_, rust_type) => emit_type(rust_type, entities)?,
+        ReturnType::Type(_, rust_type) => emit_preferred_type(rust_type, entities, aliases)?,
     };
     writeln!(
         out,
@@ -582,6 +663,43 @@ fn emit_if_expression(
     return Ok(format!("{condition} ? {then_value} : {otherwise}"));
 }
 
+fn emit_inclusive_comparison(
+    binary: &syn::ExprBinary,
+    entities: &HashSet<String>,
+) -> Result<Option<String>, CompileError> {
+    if !matches!(binary.op, BinOp::Or(_)) {
+        return Ok(None);
+    }
+    let (Expr::Binary(left), Expr::Binary(right)) = (binary.left.as_ref(), binary.right.as_ref())
+    else {
+        return Ok(None);
+    };
+    let (strict, equal) = if matches!(left.op, BinOp::Gt(_) | BinOp::Lt(_))
+        && matches!(right.op, BinOp::Eq(_))
+    {
+        (left, right)
+    } else if matches!(right.op, BinOp::Gt(_) | BinOp::Lt(_)) && matches!(left.op, BinOp::Eq(_)) {
+        (right, left)
+    } else {
+        return Ok(None);
+    };
+    let strict_left = emit_expression(&strict.left, entities)?;
+    let strict_right = emit_expression(&strict.right, entities)?;
+    let equal_left = emit_expression(&equal.left, entities)?;
+    let equal_right = emit_expression(&equal.right, entities)?;
+    if !((strict_left == equal_left && strict_right == equal_right)
+        || (strict_left == equal_right && strict_right == equal_left))
+    {
+        return Ok(None);
+    }
+    let operator = if matches!(strict.op, BinOp::Gt(_)) {
+        ">="
+    } else {
+        "<="
+    };
+    return Ok(Some(format!("{strict_left} {operator} {strict_right}")));
+}
+
 fn emit_literal(literal: &Lit) -> Result<String, CompileError> {
     return match literal {
         Lit::Bool(value) => Ok(value.value.to_string()),
@@ -601,7 +719,7 @@ pub(crate) fn emit_local(
     entities: &HashSet<String>,
     indent: usize,
 ) -> Result<(), CompileError> {
-    return emit_local_with_shadow(out, local, entities, indent, false);
+    return emit_local_with_shadow(out, local, entities, indent, false, false);
 }
 
 pub(crate) fn emit_local_with_shadow(
@@ -610,7 +728,9 @@ pub(crate) fn emit_local_with_shadow(
     entities: &HashSet<String>,
     indent: usize,
     shadowed: bool,
+    rebound: bool,
 ) -> Result<(), CompileError> {
+    let mutable = pattern_is_mutable(&local.pat);
     let (pattern, rust_type, discard) = match &local.pat {
         Pat::Ident(_) | Pat::Reference(_) | Pat::Tuple(_) => {
             (emit_pattern(&local.pat)?, None, false)
@@ -677,7 +797,8 @@ pub(crate) fn emit_local_with_shadow(
     if rebind {
         write!(out, "{pattern}").expect("writing to a String cannot fail");
     } else {
-        write!(out, "let {pattern}").expect("writing to a String cannot fail");
+        let declaration = if mutable || rebound { "let" } else { "const" };
+        write!(out, "{declaration} {pattern}").expect("writing to a String cannot fail");
     }
     if !rebind && let Some(typescript_type) = typescript_type {
         write!(out, ": {typescript_type}").expect("writing to a String cannot fail");
@@ -812,6 +933,21 @@ fn emit_method_call(
     call: &syn::ExprMethodCall,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
+    if call.method == "wrapping_add"
+        && call.args.len() == 1
+        && let Expr::MethodCall(fetch) = call.receiver.as_ref()
+        && fetch.method == "fetch_add"
+        && fetch.args.len() == 2
+    {
+        let increment = emit_expression(&fetch.args[0], entities)?;
+        let wrapped_increment = emit_expression(&call.args[0], entities)?;
+        if increment == wrapped_increment {
+            let state = emit_expression(&fetch.receiver, entities)?;
+            return Ok(format!(
+                "({state}.value = ({state}.value + {increment}) >>> 0)"
+            ));
+        }
+    }
     let receiver = emit_expression(&call.receiver, entities)?;
     let arguments = call
         .args
@@ -846,8 +982,8 @@ fn emit_method_call(
         )),
         "is_nan" if arguments.is_empty() => Ok(format!("Number.isNaN({receiver})")),
         "is_finite" if arguments.is_empty() => Ok(format!("Number.isFinite({receiver})")),
-        "is_none" if arguments.is_empty() => Ok(format!("{receiver} === null")),
-        "is_some" if arguments.is_empty() => Ok(format!("{receiver} !== null")),
+        "is_none" if arguments.is_empty() => Ok(format!("{receiver} === undefined")),
+        "is_some" if arguments.is_empty() => Ok(format!("{receiver} !== undefined")),
         "is_empty" if arguments.is_empty() => Ok(format!("{receiver}.length === 0")),
         "into" if arguments.is_empty() => Ok(receiver),
         "iter" if arguments.is_empty() => Ok(receiver),
@@ -942,6 +1078,15 @@ pub(crate) fn emit_parameter(
     argument: &FnArg,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
+    return emit_parameter_with_aliases(argument, entities, &PreferredAliases::new(), false);
+}
+
+fn emit_parameter_with_aliases(
+    argument: &FnArg,
+    entities: &HashSet<String>,
+    aliases: &PreferredAliases,
+    optional: bool,
+) -> Result<String, CompileError> {
     let FnArg::Typed(argument) = argument else {
         return Err(compile_error(
             "free-function contract cannot contain a self receiver",
@@ -952,10 +1097,21 @@ pub(crate) fn emit_parameter(
             "unsupported destructuring in function parameter",
         ));
     };
+    let name = snake_to_lower_camel(&pattern.ident.to_string());
+    if optional {
+        let Some(inner) = option_inner_type(&argument.ty) else {
+            return Err(compile_error(
+                "only trailing Option parameters can be emitted as optional",
+            ));
+        };
+        return Ok(format!(
+            "{name}?: {}",
+            emit_preferred_type(inner, entities, aliases)?
+        ));
+    }
     return Ok(format!(
-        "{}: {}",
-        snake_to_lower_camel(&pattern.ident.to_string()),
-        emit_type(&argument.ty, entities)?
+        "{name}: {}",
+        emit_preferred_type(&argument.ty, entities, aliases)?
     ));
 }
 
@@ -985,6 +1141,15 @@ pub(crate) fn emit_pattern(pattern: &Pat) -> Result<String, CompileError> {
     };
 }
 
+fn emit_preferred_type(
+    rust_type: &Type,
+    entities: &HashSet<String>,
+    aliases: &PreferredAliases,
+) -> Result<String, CompileError> {
+    let rendered = emit_type(rust_type, entities)?;
+    return Ok(aliases.get(&rendered).cloned().unwrap_or(rendered));
+}
+
 // flight-lint: allow(hashmap-iteration) Program constants are a Vec retained in Rust source order; the rule's name heuristic cannot see the field type across modules
 pub(crate) fn emit_program(
     program: &Program,
@@ -994,6 +1159,7 @@ pub(crate) fn emit_program(
         .functions
         .iter()
         .any(|function| expression_contains_path(&function.block, "allocate_entity"));
+    let aliases = preferred_aliases(program)?;
     let mut out = String::new();
 
     let entity_module = if uses_allocate_entity || !program.entities.is_empty() {
@@ -1049,7 +1215,7 @@ pub(crate) fn emit_program(
         out.push('\n');
     }
     for (index, function) in program.functions.iter().enumerate() {
-        emit_function(&mut out, function, &program.entities)?;
+        emit_function(&mut out, function, &program.entities, &aliases)?;
         if index + 1 < program.functions.len() {
             out.push('\n');
         }
@@ -1104,11 +1270,22 @@ fn emit_statement(
 ) -> Result<(), CompileError> {
     match statement {
         Stmt::Local(local) => emit_local(out, local, entities, indent)?,
+        Stmt::Expr(Expr::Call(call), _) if throw_call(call).is_some() => {
+            let (constructor, message) = throw_call(call).expect("guarded by the match condition");
+            write_indent(out, indent);
+            writeln!(
+                out,
+                "throw new {constructor}({});",
+                emit_expression(message, entities)?
+            )
+            .expect("writing to a String cannot fail");
+        }
         Stmt::Expr(Expr::If(if_expression), _) => {
             let option_binding = emit_option_binding(&if_expression.cond, entities)?;
             write_indent(out, indent);
             if let Some((_, value)) = &option_binding {
-                writeln!(out, "if ({value} !== null) {{").expect("writing to a String cannot fail");
+                writeln!(out, "if ({value} !== undefined) {{")
+                    .expect("writing to a String cannot fail");
             } else {
                 writeln!(
                     out,
@@ -1220,6 +1397,7 @@ fn emit_static(
     rust_static: &syn::ItemStatic,
     entities: &HashSet<String>,
 ) -> Result<(), CompileError> {
+    emit_documentation(out, &rust_static.attrs, 0);
     let export = if is_public(&rust_static.vis) {
         "export "
     } else {
@@ -1241,6 +1419,7 @@ fn emit_struct(
     structure: &ItemStruct,
     entities: &HashSet<String>,
 ) -> Result<(), CompileError> {
+    emit_documentation(out, &structure.attrs, 0);
     let rust_name = structure.ident.to_string();
     let entity = entities.contains(&rust_name);
     let name = if entity {
@@ -1260,6 +1439,7 @@ fn emit_struct(
         if !is_public(&field.vis) {
             continue;
         }
+        emit_documentation(out, &field.attrs, 1);
         let Some(field_name) = &field.ident else {
             return Err(compile_error(format!(
                 "unnamed field on `{}` cannot be transpiled",
@@ -1298,9 +1478,9 @@ pub(crate) fn emit_type(
                 "Option" => {
                     let inner = emit_single_generic_type(segment, entities)?;
                     if inner.contains("=>") {
-                        Ok(format!("({inner}) | null"))
+                        Ok(format!("({inner}) | undefined"))
                     } else {
-                        Ok(format!("{inner} | null"))
+                        Ok(format!("{inner} | undefined"))
                     }
                 }
                 "Vec" => Ok(format!(
@@ -1387,6 +1567,7 @@ fn emit_type_alias(
     type_alias: &syn::ItemType,
     entities: &HashSet<String>,
 ) -> Result<(), CompileError> {
+    emit_documentation(out, &type_alias.attrs, 0);
     let export = if is_public(&type_alias.vis) {
         "export "
     } else {
@@ -1661,12 +1842,112 @@ fn lower_camel_from_upper_camel(name: &str) -> String {
     return first.to_lowercase().chain(characters).collect();
 }
 
+fn option_inner_type(rust_type: &Type) -> Option<&Type> {
+    let Type::Path(path) = rust_type else {
+        return None;
+    };
+    let segment = path.path.segments.last()?;
+    if segment.ident != "Option" {
+        return None;
+    }
+    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+        return None;
+    };
+    let mut types = arguments.args.iter().filter_map(|argument| match argument {
+        GenericArgument::Type(rust_type) => Some(rust_type),
+        _ => None,
+    });
+    let inner = types.next()?;
+    return types.next().is_none().then_some(inner);
+}
+
 fn path_is_float_constant(path: &syn::Path, constant: &str) -> bool {
     return float_constant_type(path).is_some()
         && path
             .segments
             .last()
             .is_some_and(|segment| segment.ident == constant);
+}
+
+fn pattern_is_mutable(pattern: &Pat) -> bool {
+    return match pattern {
+        Pat::Ident(identifier) => identifier.mutability.is_some(),
+        Pat::Reference(reference) => {
+            reference.mutability.is_some() || pattern_is_mutable(&reference.pat)
+        }
+        Pat::Tuple(tuple) => tuple.elems.iter().any(pattern_is_mutable),
+        Pat::Type(typed) => pattern_is_mutable(&typed.pat),
+        _ => false,
+    };
+}
+
+fn preferred_aliases(program: &Program) -> Result<PreferredAliases, CompileError> {
+    let mut aliases = PreferredAliases::new();
+    for type_alias in &program.type_aliases {
+        if !is_public(&type_alias.vis) || !type_alias.generics.params.is_empty() {
+            continue;
+        }
+        let rendered = emit_type(&type_alias.ty, &program.entities)?;
+        if rendered.contains("=>") {
+            aliases
+                .entry(rendered)
+                .or_insert_with(|| type_alias.ident.to_string());
+        }
+    }
+    return Ok(aliases);
+}
+
+fn rewrite_code_span(value: &str) -> String {
+    let mut out = String::new();
+    let mut token = String::new();
+    let flush = |out: &mut String, token: &mut String| {
+        if token.is_empty() {
+            return;
+        }
+        if token == "None" {
+            out.push_str("undefined");
+        } else if token.contains('_')
+            && token
+                .chars()
+                .any(|character| character.is_ascii_lowercase())
+            && token
+                .chars()
+                .all(|character| character.is_ascii_alphanumeric() || character == '_')
+        {
+            out.push_str(&snake_to_lower_camel(token));
+        } else {
+            out.push_str(token);
+        }
+        token.clear();
+    };
+    for character in value.chars() {
+        if character.is_ascii_alphanumeric() || character == '_' {
+            token.push(character);
+        } else {
+            flush(&mut out, &mut token);
+            out.push(character);
+        }
+    }
+    flush(&mut out, &mut token);
+    return out;
+}
+
+fn rewrite_documentation(value: &str) -> String {
+    let value = value
+        .replace("Panics", "Throws")
+        .replace("panics", "throws");
+    let mut out = String::new();
+    for (index, segment) in value.split('`').enumerate() {
+        if index > 0 {
+            out.push('`');
+        }
+        if index % 2 == 0 {
+            out.push_str(segment);
+        } else {
+            out.push_str(&rewrite_code_span(segment));
+        }
+    }
+    return out;
 }
 
 pub(crate) fn snake_to_lower_camel(name: &str) -> String {
@@ -1684,6 +1965,20 @@ pub(crate) fn snake_to_lower_camel(name: &str) -> String {
         }
     }
     return out;
+}
+
+fn throw_call(call: &syn::ExprCall) -> Option<(&'static str, &Expr)> {
+    if call.args.len() != 1 {
+        return None;
+    }
+    let constructor = if expression_path_ends_with(&call.func, "throw_range_error") {
+        "RangeError"
+    } else if expression_path_ends_with(&call.func, "throw_error") {
+        "Error"
+    } else {
+        return None;
+    };
+    return Some((constructor, &call.args[0]));
 }
 
 fn type_is_named(rust_type: &Type, expected: &str) -> bool {

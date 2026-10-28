@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 
 use syn::parse::Parser;
@@ -243,13 +243,24 @@ fn emit_assertion(
 }
 
 fn emit_block(out: &mut String, statements: &[Stmt], indent: usize) -> Result<(), CompileError> {
+    let mut declaration_counts = HashMap::new();
+    for statement in statements {
+        if let Stmt::Local(local) = statement
+            && let Some(name) = local_name(&local.pat)
+        {
+            *declaration_counts.entry(name).or_insert(0_usize) += 1;
+        }
+    }
     let mut declared = HashSet::new();
     for statement in statements {
         if let Stmt::Local(local) = statement
             && let Some(name) = local_name(&local.pat)
         {
+            let rebound = declaration_counts
+                .get(&name)
+                .is_some_and(|count| *count > 1);
             let shadowed = !declared.insert(name);
-            emit_local_with_shadow(out, local, &HashSet::new(), indent, shadowed)?;
+            emit_local_with_shadow(out, local, &HashSet::new(), indent, shadowed, rebound)?;
         } else {
             emit_statement(out, statement, indent)?;
         }

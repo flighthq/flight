@@ -12,7 +12,7 @@ pub fn ceil_to(value: f32, step: f32) -> f32 {
 
 /// True non-negative modulo: `euclidean_mod(value, divisor)`.
 ///
-/// Unlike Rust's `%` operator on floats, the result is always in `[0, divisor)`
+/// Unlike the remainder operator, the result is always in `[0, divisor)`
 /// regardless of the sign of `value`. Panics when `divisor == 0`.
 pub fn euclidean_mod(value: f32, divisor: f32) -> f32 {
     if divisor == 0.0 {

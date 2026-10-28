@@ -3,7 +3,7 @@ use flight_entity::throw_range_error;
 /// Return the factorial of non-negative integer `n`.
 ///
 /// `factorial(0)` -> `1` by convention. Panics for negative inputs.
-/// Returns `f64::INFINITY` for `n > 170` (above IEEE 754 double precision range).
+/// Returns positive infinity for `n > 170` (above the IEEE 754 double-precision range).
 // flight-lint: allow(f64) factorials through 170 need double range; f32 overflows at 35!
 pub fn factorial(n: i32) -> f64 {
     if n < 0 {
@@ -42,7 +42,7 @@ pub fn gcd(a: i32, b: i32) -> i32 {
 
 /// Return the squared distance `x^2 + y^2`.
 ///
-/// Allocation-free substitute for `hypot(x, y).powi(2)` when you only need
+/// Allocation-free substitute for squaring `hypot(x, y)` when you only need
 /// to compare distances.
 pub fn hypot2(x: f32, y: f32) -> f32 {
     return x * x + y * y;

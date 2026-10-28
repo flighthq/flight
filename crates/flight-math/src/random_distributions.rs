@@ -3,7 +3,7 @@ use flight_entity::throw_range_error;
 // TypeScript Number.EPSILON is exactly 2^-52, also representable in f32.
 const ZERO_SAMPLE_EPSILON: f32 = 1.0 / 4_503_599_627_370_496.0;
 
-/// Pick a random element from `items`, returning `None` for an empty slice.
+/// Pick a random element from `items`, returning `None` when `items` is empty.
 ///
 /// Does not mutate `items`. Deterministic: same random sequence -> same picks.
 pub fn pick<T: Clone>(random: &dyn Fn() -> f32, items: &[T]) -> Option<T> {
