@@ -71,7 +71,7 @@ if (target.kind === 'webgl') {
   registerGlCompressedImageTextureResolver(target.state);
   registerGlCompressedTextureUpload(target.state);
   registerGlCompressedTextureDecoder(target.state, (_format, w, h) => {
-    const rgba = new Uint8ClampedArray(w * h * 4);
+    const rgba = new Uint8Array(w * h * 4);
     for (let i = 0; i < rgba.length; i += 4) {
       rgba[i] = 0;
       rgba[i + 1] = 0;

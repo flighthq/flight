@@ -71,7 +71,8 @@ function blit(bitmap: Readonly<Bitmap>, x: number): void {
   const canvas = document.createElement('canvas');
   canvas.width = TILE;
   canvas.height = TILE;
-  canvas.getContext('2d')!.putImageData(new ImageData(bitmap.data, TILE, TILE), 0, 0);
+  const pixels = new Uint8ClampedArray(bitmap.data.buffer, bitmap.data.byteOffset, bitmap.data.byteLength);
+  canvas.getContext('2d')!.putImageData(new ImageData(pixels, TILE, TILE), 0, 0);
   const bmp = createSprite();
   bmp.data.texture = createTexture({
     sampler: createPixelArtSampler(),
