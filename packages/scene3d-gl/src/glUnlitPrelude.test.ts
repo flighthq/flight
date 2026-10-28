@@ -1,3 +1,5 @@
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor } from '@flighthq/color/contract';
 import {
   createImageResource,
   registerTestImageDimensionResolver,
@@ -240,5 +242,3 @@ describe('getGlUnlitVertexSourceForKey', () => {
     expect(flat).not.toContain('a_joints0');
   });
 });
-import type { LinearColorRaw } from '@flighthq/color/contract';
-import { allocateLinearColor } from '@flighthq/color/contract';

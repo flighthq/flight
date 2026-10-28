@@ -1,4 +1,3 @@
-import type { EntityRaw } from '@flighthq/entity/contract';
 import { Entity, getEntityWrapperAs } from '@flighthq/entity/contract';
 
 import { lerpLinearColor } from './lerpColor.ts';
@@ -16,9 +15,9 @@ export class LinearColor extends Entity {
     return new LinearColor();
   }
 
-  static override from(raw: EntityRaw): LinearColor {
+  static override from(raw: LinearColorRaw): LinearColor {
     const wrapper = getEntityWrapperAs<Entity>(raw);
-    if (wrapper === null) return new LinearColor(raw as LinearColorRaw);
+    if (wrapper === null) return new LinearColor(raw);
     if (wrapper instanceof LinearColor) return wrapper;
     throw new TypeError('Cannot create LinearColor: the EntityRaw object already has a different wrapper');
   }

@@ -1,4 +1,3 @@
-import type { EntityRaw } from '@flighthq/entity/contract';
 import { Entity, getEntityWrapperAs } from '@flighthq/entity/contract';
 
 import type { HslColorRaw } from './hslColorRaw.ts';
@@ -15,9 +14,9 @@ export class HslColor extends Entity {
     return new HslColor();
   }
 
-  static override from(raw: EntityRaw): HslColor {
+  static override from(raw: HslColorRaw): HslColor {
     const wrapper = getEntityWrapperAs<Entity>(raw);
-    if (wrapper === null) return new HslColor(raw as HslColorRaw);
+    if (wrapper === null) return new HslColor(raw);
     if (wrapper instanceof HslColor) return wrapper;
     throw new TypeError('Cannot create HslColor: the EntityRaw object already has a different wrapper');
   }
