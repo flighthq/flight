@@ -102,7 +102,7 @@ describe('variance', () => {
     expect(variance([Number.MAX_VALUE, Number.MAX_VALUE])).toEqual(0.0);
   });
   it('compensates the sum of squared deviations', () => {
-    expect(variance([-1.0, 1000000000000.0, 1000000000000.0])).toEqual(2.2222222222266665e23);
+    expect(variance([-1.0, 1_000_000_000_000.0, 1_000_000_000_000.0])).toEqual(2.2222222222266665e23);
   });
   it('handles zero and preserves non finite propagation', () => {
     expect(variance([0.0, 0.0])).toEqual(0.0);
@@ -133,9 +133,9 @@ describe('weightedAverage', () => {
     expect(weightedAverage([2.0, 10.0], [1.0, 3.0])).toEqual(8.0);
   });
   it('retains small weighted terms across cancellation', () => {
-    expect(weightedAverage([10000000000000000.0, -1000000000000000.0, -10000000000000000.0], [2.0, 1.0, 1.0])).toEqual(
-      2250000000000000.0,
-    );
+    expect(
+      weightedAverage([10_000_000_000_000_000.0, -1_000_000_000_000_000.0, -10_000_000_000_000_000.0], [2.0, 1.0, 1.0]),
+    ).toEqual(2_250_000_000_000_000.0);
   });
   it('handles zero values and cancelling non zero weights', () => {
     expect(weightedAverage([0.0, 0.0], [1.0, 1.0])).toEqual(0.0);

@@ -12,18 +12,16 @@ import { EntityRuntimeWriteSlot } from './types.ts';
 export function explainEntityRuntimeWrite(slot: EntityRuntimeWriteSlot): EntityRuntimeWriteExplanation {
   if (slot === EntityRuntimeWriteSlot.BindingSlot) {
     return {
-      message: String(
+      message:
         'EntityRuntime.binding was written directly. The write was allowed but is not tracked, so the binding and the runtime can disagree.',
-      ),
       slot: slot,
-      useInstead: [String('attachEntityBinding'), String('detachEntityBinding')],
+      useInstead: ['attachEntityBinding', 'detachEntityBinding'],
     };
   }
   return {
-    message: String(
+    message:
       "An entity's runtime slot was written directly. The write was allowed, but bypassing the helper is how a runtime ends up on the wrong entity.",
-    ),
     slot: slot,
-    useInstead: [String('attachEntityBinding')],
+    useInstead: ['attachEntityBinding'],
   };
 }

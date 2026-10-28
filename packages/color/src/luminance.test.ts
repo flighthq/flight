@@ -22,30 +22,30 @@ function assertApproxTight(actual: number, expected: number): void {
 
 describe('getColorContrastRatio', () => {
   it('returns 21 for black on white', () => {
-    assertApprox(getColorContrastRatio(4294967295, 255), 21.0);
+    assertApprox(getColorContrastRatio(0xffffffff, 0x000000ff), 21.0);
   });
   it('returns 1 for identical colors', () => {
-    assertApprox(getColorContrastRatio(2155905279, 2155905279), 1.0);
+    assertApprox(getColorContrastRatio(0x808080ff, 0x808080ff), 1.0);
   });
   it('is symmetric order of arguments does not matter', () => {
-    const ratio1 = getColorContrastRatio(4294967295, 2155905279);
-    const ratio2 = getColorContrastRatio(2155905279, 4294967295);
+    const ratio1 = getColorContrastRatio(0xffffffff, 0x808080ff);
+    const ratio2 = getColorContrastRatio(0x808080ff, 0xffffffff);
     assertApproxTight(ratio1, ratio2);
   });
 });
 
 describe('getColorLuminance', () => {
   it('returns 1 for white', () => {
-    assertApproxTight(getColorLuminance(4294967295), 1.0);
+    assertApproxTight(getColorLuminance(0xffffffff), 1.0);
   });
   it('returns 0 for black', () => {
-    assertApproxTight(getColorLuminance(255), 0.0);
+    assertApproxTight(getColorLuminance(0x000000ff), 0.0);
   });
   it('ignores the alpha channel', () => {
-    expect(getColorLuminance(4294967295)).toEqual(getColorLuminance(4294967040));
+    expect(getColorLuminance(0xffffffff)).toEqual(getColorLuminance(0xffffff00));
   });
   it('matches expected rec 709 value for mid gray srgb', () => {
-    assertApprox(getColorLuminance(2155905279), 0.21586);
+    assertApprox(getColorLuminance(0x808080ff), 0.21586);
   });
 });
 

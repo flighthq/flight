@@ -3,7 +3,7 @@
 
 import type { RandomSource } from './random.ts';
 
-const ZERO_SAMPLE_EPSILON: number = 1.0 / 4503599627370496.0;
+const ZERO_SAMPLE_EPSILON: number = 1.0 / 4_503_599_627_370_496.0;
 
 /**
  * Pick a random element from `items`, returning `undefined` when `items` is empty.

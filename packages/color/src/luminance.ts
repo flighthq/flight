@@ -22,9 +22,9 @@ export function getColorContrastRatio(a: number, b: number): number {
  * value in [0, 1] where 0 is black and 1 is white.
  */
 export function getColorLuminance(color: number): number {
-  const r = srgbChannelToLinear(((color >>> 24) & 255) / 255.0);
-  const g = srgbChannelToLinear(((color >>> 16) & 255) / 255.0);
-  const b = srgbChannelToLinear(((color >>> 8) & 255) / 255.0);
+  const r = srgbChannelToLinear(((color >>> 24) & 0xff) / 255.0);
+  const g = srgbChannelToLinear(((color >>> 16) & 0xff) / 255.0);
+  const b = srgbChannelToLinear(((color >>> 8) & 0xff) / 255.0);
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 

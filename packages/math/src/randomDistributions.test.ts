@@ -38,7 +38,7 @@ describe('pick', () => {
   });
   it('returns an element from the slice', () => {
     const items = [1, 2, 3, 4, 5];
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     for (let _ = 0; _ < 50; _ += 1) {
       const result = pick(random, items);
       expect(result !== undefined).toBe(true);
@@ -47,18 +47,18 @@ describe('pick', () => {
   });
   it('returns none for an empty slice', () => {
     const empty: Readonly<number[]> = [];
-    expect(pick(createRandomSource(11259375), empty) === undefined).toBe(true);
+    expect(pick(createRandomSource(0xabcdef), empty) === undefined).toBe(true);
   });
   it('always returns the only element in a single item slice', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     for (let _ = 0; _ < 20; _ += 1) {
       expect(pick(random, [42])).toEqual(42);
     }
   });
   it('is deterministic for the same seed', () => {
     const items = ['a', 'b', 'c', 'd'];
-    const a = createRandomSource(11259375);
-    const b = createRandomSource(11259375);
+    const a = createRandomSource(0xabcdef);
+    const b = createRandomSource(0xabcdef);
     for (let _ = 0; _ < 20; _ += 1) {
       expect(pick(a, items)).toEqual(pick(b, items));
     }
@@ -70,13 +70,13 @@ describe('pick', () => {
 
 describe('randomExponential', () => {
   it('returns a non negative value', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     for (let _ = 0; _ < 200; _ += 1) {
       expect(randomExponential(random, undefined) >= 0.0).toBe(true);
     }
   });
   it('mean approximates 1 over rate for rate 1', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     let sum = 0.0;
     const n = 5000;
     for (let _ = 0; _ < n; _ += 1) {
@@ -86,7 +86,7 @@ describe('randomExponential', () => {
     expect(Math.abs(avg - 1.0) < 0.2).toBe(true);
   });
   it('mean approximates 1 over rate for rate 2', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     let sum = 0.0;
     const n = 5000;
     for (let _ = 0; _ < n; _ += 1) {
@@ -97,27 +97,27 @@ describe('randomExponential', () => {
   });
   it('throws for rate zero', () => {
     crate.assertRangeError(() => {
-      randomExponential(createRandomSource(11259375), 0.0);
+      randomExponential(createRandomSource(0xabcdef), 0.0);
     }, 'randomExponential: rate must be finite and > 0');
   });
   it('throws for negative rate', () => {
     crate.assertRangeError(() => {
-      randomExponential(createRandomSource(11259375), -1.0);
+      randomExponential(createRandomSource(0xabcdef), -1.0);
     }, 'randomExponential: rate must be finite and > 0');
   });
   it('rejects nan rate', () => {
     crate.assertRangeError(() => {
-      randomExponential(createRandomSource(11259375), Number.NaN);
+      randomExponential(createRandomSource(0xabcdef), Number.NaN);
     }, 'randomExponential: rate must be finite and > 0');
   });
   it('rejects infinite rate', () => {
     crate.assertRangeError(() => {
-      randomExponential(createRandomSource(11259375), Number.POSITIVE_INFINITY);
+      randomExponential(createRandomSource(0xabcdef), Number.POSITIVE_INFINITY);
     }, 'randomExponential: rate must be finite and > 0');
   });
   it('is deterministic for the same seed', () => {
-    const a = createRandomSource(11259375);
-    const b = createRandomSource(11259375);
+    const a = createRandomSource(0xabcdef);
+    const b = createRandomSource(0xabcdef);
     for (let _ = 0; _ < 20; _ += 1) {
       expect(randomExponential(a, undefined)).toEqual(randomExponential(b, undefined));
     }
@@ -129,13 +129,13 @@ describe('randomExponential', () => {
 
 describe('randomGaussian', () => {
   it('produces finite values', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     for (let _ = 0; _ < 100; _ += 1) {
       expect(Number.isFinite(randomGaussian(random, undefined, undefined))).toBe(true);
     }
   });
   it('centers around the mean', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     let sum = 0.0;
     const n = 2000;
     for (let _ = 0; _ < n; _ += 1) {
@@ -145,8 +145,8 @@ describe('randomGaussian', () => {
     expect(Math.abs(avg - 5.0) < 0.5).toBe(true);
   });
   it('is deterministic for the same seed', () => {
-    const a = createRandomSource(11259375);
-    const b = createRandomSource(11259375);
+    const a = createRandomSource(0xabcdef);
+    const b = createRandomSource(0xabcdef);
     for (let _ = 0; _ < 20; _ += 1) {
       expect(randomGaussian(a, undefined, undefined)).toEqual(randomGaussian(b, undefined, undefined));
     }
@@ -167,13 +167,13 @@ describe('randomGaussian', () => {
 
 describe('randomGaussianPair', () => {
   it('returns a tuple of two finite values', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     const [z0, z1] = randomGaussianPair(random, undefined, undefined);
     expect(Number.isFinite(z0)).toBe(true);
     expect(Number.isFinite(z1)).toBe(true);
   });
   it('produces values matching the requested mean', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     let sum = 0.0;
     const n = 2000;
     for (let _ = 0; _ < n; _ += 1) {
@@ -200,7 +200,7 @@ describe('randomGaussianPair', () => {
 
 describe('randomInsideUnitDisc', () => {
   it('produces points inside the unit disc', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     let out = new Float32Array(2).fill(0.0);
     for (let _ = 0; _ < 200; _ += 1) {
       randomInsideUnitDisc(out, random);
@@ -208,8 +208,8 @@ describe('randomInsideUnitDisc', () => {
     }
   });
   it('is deterministic for the same seed', () => {
-    const a = createRandomSource(11259375);
-    const b = createRandomSource(11259375);
+    const a = createRandomSource(0xabcdef);
+    const b = createRandomSource(0xabcdef);
     let outA = new Float32Array(2).fill(0.0);
     let outB = new Float32Array(2).fill(0.0);
     for (let _ = 0; _ < 20; _ += 1) {
@@ -220,7 +220,7 @@ describe('randomInsideUnitDisc', () => {
     }
   });
   it('is alias safe when out is the same object as input', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     let out = new Float32Array(2).fill(0.0);
     randomInsideUnitDisc(out, random);
     expect(Number.isFinite(out[0])).toBe(true);
@@ -236,7 +236,7 @@ describe('randomInsideUnitDisc', () => {
 
 describe('randomInsideUnitSphere', () => {
   it('produces points with radius less than or equal to 1', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     let out = new Float32Array(3).fill(0.0);
     for (let _ = 0; _ < 200; _ += 1) {
       randomInsideUnitSphere(out, random);
@@ -244,8 +244,8 @@ describe('randomInsideUnitSphere', () => {
     }
   });
   it('is deterministic for the same seed', () => {
-    const a = createRandomSource(11259375);
-    const b = createRandomSource(11259375);
+    const a = createRandomSource(0xabcdef);
+    const b = createRandomSource(0xabcdef);
     let outA = new Float32Array(3).fill(0.0);
     let outB = new Float32Array(3).fill(0.0);
     for (let _ = 0; _ < 20; _ += 1) {
@@ -257,7 +257,7 @@ describe('randomInsideUnitSphere', () => {
     }
   });
   it('is alias safe when out is the same object as input', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     let out = new Float32Array(3).fill(0.0);
     randomInsideUnitSphere(out, random);
     expect(Number.isFinite(out[0])).toBe(true);
@@ -274,7 +274,7 @@ describe('randomInsideUnitSphere', () => {
 
 describe('randomOnUnitCircle', () => {
   it('produces points on the unit circle', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     let out = new Float32Array(2).fill(0.0);
     for (let _ = 0; _ < 100; _ += 1) {
       randomOnUnitCircle(out, random);
@@ -282,8 +282,8 @@ describe('randomOnUnitCircle', () => {
     }
   });
   it('is deterministic for the same seed', () => {
-    const a = createRandomSource(11259375);
-    const b = createRandomSource(11259375);
+    const a = createRandomSource(0xabcdef);
+    const b = createRandomSource(0xabcdef);
     let outA = new Float32Array(2).fill(0.0);
     let outB = new Float32Array(2).fill(0.0);
     for (let _ = 0; _ < 20; _ += 1) {
@@ -294,7 +294,7 @@ describe('randomOnUnitCircle', () => {
     }
   });
   it('is alias safe when out is the same object as input', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     let out = new Float32Array(2).fill(0.0);
     randomOnUnitCircle(out, random);
     expect(Number.isFinite(out[0])).toBe(true);
@@ -310,7 +310,7 @@ describe('randomOnUnitCircle', () => {
 
 describe('randomOnUnitSphere', () => {
   it('produces points on the unit sphere', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     let out = new Float32Array(3).fill(0.0);
     for (let _ = 0; _ < 100; _ += 1) {
       randomOnUnitSphere(out, random);
@@ -319,8 +319,8 @@ describe('randomOnUnitSphere', () => {
     }
   });
   it('is deterministic for the same seed', () => {
-    const a = createRandomSource(11259375);
-    const b = createRandomSource(11259375);
+    const a = createRandomSource(0xabcdef);
+    const b = createRandomSource(0xabcdef);
     let outA = new Float32Array(3).fill(0.0);
     let outB = new Float32Array(3).fill(0.0);
     for (let _ = 0; _ < 20; _ += 1) {
@@ -332,7 +332,7 @@ describe('randomOnUnitSphere', () => {
     }
   });
   it('is alias safe when out is the same object as input', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     let out = new Float32Array(3).fill(0.0);
     randomOnUnitSphere(out, random);
     expect(Number.isFinite(out[0])).toBe(true);
@@ -357,14 +357,14 @@ describe('randomOnUnitSphere', () => {
 
 describe('randomPoisson', () => {
   it('returns a non negative integer', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     for (let _ = 0; _ < 200; _ += 1) {
       const k = randomPoisson(random, 3.0);
       expect(k >= 0).toBe(true);
     }
   });
   it('mean approximates lambda 1', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     let sum = 0;
     const n = 5000;
     for (let _ = 0; _ < n; _ += 1) {
@@ -374,7 +374,7 @@ describe('randomPoisson', () => {
     expect(Math.abs(avg - 1.0) < 0.2).toBe(true);
   });
   it('mean approximates lambda 5', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     let sum = 0;
     const n = 5000;
     for (let _ = 0; _ < n; _ += 1) {
@@ -385,27 +385,27 @@ describe('randomPoisson', () => {
   });
   it('throws for lambda zero', () => {
     crate.assertRangeError(() => {
-      randomPoisson(createRandomSource(11259375), 0.0);
+      randomPoisson(createRandomSource(0xabcdef), 0.0);
     }, 'randomPoisson: lambda must be finite and > 0');
   });
   it('throws for negative lambda', () => {
     crate.assertRangeError(() => {
-      randomPoisson(createRandomSource(11259375), -1.0);
+      randomPoisson(createRandomSource(0xabcdef), -1.0);
     }, 'randomPoisson: lambda must be finite and > 0');
   });
   it('rejects nan lambda', () => {
     crate.assertRangeError(() => {
-      randomPoisson(createRandomSource(11259375), Number.NaN);
+      randomPoisson(createRandomSource(0xabcdef), Number.NaN);
     }, 'randomPoisson: lambda must be finite and > 0');
   });
   it('rejects infinite lambda', () => {
     crate.assertRangeError(() => {
-      randomPoisson(createRandomSource(11259375), Number.POSITIVE_INFINITY);
+      randomPoisson(createRandomSource(0xabcdef), Number.POSITIVE_INFINITY);
     }, 'randomPoisson: lambda must be finite and > 0');
   });
   it('is deterministic for the same seed', () => {
-    const a = createRandomSource(11259375);
-    const b = createRandomSource(11259375);
+    const a = createRandomSource(0xabcdef);
+    const b = createRandomSource(0xabcdef);
     for (let _ = 0; _ < 20; _ += 1) {
       expect(randomPoisson(a, 3.0)).toEqual(randomPoisson(b, 3.0));
     }
@@ -418,7 +418,7 @@ describe('randomPoisson', () => {
 
 describe('randomWeighted', () => {
   it('returns indices within the weights slice', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     const weights = [1.0, 2.0, 3.0];
     for (let _ = 0; _ < 100; _ += 1) {
       const idx = randomWeighted(random, weights);
@@ -427,20 +427,20 @@ describe('randomWeighted', () => {
     }
   });
   it('returns negative 1 for an empty slice', () => {
-    expect(randomWeighted(createRandomSource(11259375), [])).toEqual(-1);
+    expect(randomWeighted(createRandomSource(0xabcdef), [])).toEqual(-1);
   });
   it('returns negative 1 for an all zero weight slice', () => {
-    expect(randomWeighted(createRandomSource(11259375), [0.0, 0.0, 0.0])).toEqual(-1);
+    expect(randomWeighted(createRandomSource(0xabcdef), [0.0, 0.0, 0.0])).toEqual(-1);
   });
   it('always returns the only non zero index when all others are zero', () => {
-    const random = createRandomSource(11259375);
+    const random = createRandomSource(0xabcdef);
     for (let _ = 0; _ < 20; _ += 1) {
       expect(randomWeighted(random, [0.0, 10.0, 0.0])).toEqual(1);
     }
   });
   it('is deterministic for the same seed', () => {
-    const a = createRandomSource(11259375);
-    const b = createRandomSource(11259375);
+    const a = createRandomSource(0xabcdef);
+    const b = createRandomSource(0xabcdef);
     const weights = [1.0, 2.0, 3.0, 4.0];
     for (let _ = 0; _ < 20; _ += 1) {
       expect(randomWeighted(a, weights)).toEqual(randomWeighted(b, weights));
@@ -459,7 +459,7 @@ describe('shuffle', () => {
   it('clears stale output and fills the same length', () => {
     const items = [1, 2, 3, 4, 5];
     let out = [99, 98, 97, 96, 95, 94];
-    shuffle(out, createRandomSource(11259375), items);
+    shuffle(out, createRandomSource(0xabcdef), items);
     expect(out.length).toEqual(items.length);
     expect(!out.includes(99)).toBe(true);
   });
@@ -467,14 +467,14 @@ describe('shuffle', () => {
     const items = [1, 2, 3, 4, 5, 6, 7, 8];
     let a = [] as never[];
     let b = [] as never[];
-    shuffle(a, createRandomSource(11259375), items);
-    shuffle(b, createRandomSource(11259375), items);
+    shuffle(a, createRandomSource(0xabcdef), items);
+    shuffle(b, createRandomSource(0xabcdef), items);
     expect(a).toEqual(b);
   });
   it('does not mutate the original array', () => {
     const items = [1, 2, 3, 4, 5];
     const original = items;
-    shuffle([] as never[], createRandomSource(11259375), items);
+    shuffle([] as never[], createRandomSource(0xabcdef), items);
     expect(items).toEqual(original);
   });
 });
@@ -484,21 +484,21 @@ describe('shuffleInPlace', () => {
     let items = [1, 2, 3, 4, 5];
     let expected = [...items];
     expected.sort((a, b) => a - b);
-    shuffleInPlace(createRandomSource(11259375), items);
+    shuffleInPlace(createRandomSource(0xabcdef), items);
     items.sort((a, b) => a - b);
     expect(items).toEqual(expected);
   });
   it('is deterministic for the same seed', () => {
     let a = [1, 2, 3, 4, 5, 6, 7, 8];
     let b = [1, 2, 3, 4, 5, 6, 7, 8];
-    shuffleInPlace(createRandomSource(11259375), a);
-    shuffleInPlace(createRandomSource(11259375), b);
+    shuffleInPlace(createRandomSource(0xabcdef), a);
+    shuffleInPlace(createRandomSource(0xabcdef), b);
     expect(a).toEqual(b);
   });
   it('mutates the original array', () => {
     let items = [1, 2, 3, 4, 5, 6, 7, 8];
     const copy = [...items];
-    shuffleInPlace(createRandomSource(11259375), items);
+    shuffleInPlace(createRandomSource(0xabcdef), items);
     expect(items.length).toEqual(copy.length);
   });
   it('pins the swaps and consumes exactly one sample per fisher yates step', () => {

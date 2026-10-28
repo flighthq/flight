@@ -22,8 +22,8 @@ describe('createRandomSource', () => {
     }
   });
   it('is deterministic same seed yields the same sequence', () => {
-    const a = createRandomSource(12648430);
-    const b = createRandomSource(12648430);
+    const a = createRandomSource(0xc0ffee);
+    const b = createRandomSource(0xc0ffee);
     for (let _ = 0; _ < 100; _ += 1) {
       expect(a()).toEqual(b());
     }
@@ -40,7 +40,7 @@ describe('createRandomSource', () => {
     expect(differs).toBe(true);
   });
   it('pins the mulberry32 transform with a known answer sequence', () => {
-    const random = createRandomSource(12648430);
+    const random = createRandomSource(0xc0ffee);
     expect(Array.from([random(), random(), random(), random()])).toEqual(
       Array.from([0.021141508361324668, 0.6661099966149777, 0.7799714196007699, 0.7395844468846917]),
     );

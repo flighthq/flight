@@ -12,21 +12,21 @@ function assertApprox(actual: number, expected: number): void {
 
 describe('lerpColor', () => {
   it('returns start at t 0', () => {
-    expect(lerpColor(4278190335, 65535, 0.0)).toEqual(4278190335);
+    expect(lerpColor(0xff0000ff, 0x0000ffff, 0.0)).toEqual(0xff0000ff);
   });
   it('returns end at t 1', () => {
-    expect(lerpColor(4278190335, 65535, 1.0)).toEqual(65535);
+    expect(lerpColor(0xff0000ff, 0x0000ffff, 1.0)).toEqual(0x0000ffff);
   });
   it('clamps t below 0 to 0', () => {
-    expect(lerpColor(4278190335, 65535, -1.0)).toEqual(4278190335);
+    expect(lerpColor(0xff0000ff, 0x0000ffff, -1.0)).toEqual(0xff0000ff);
   });
   it('clamps t above 1 to 1', () => {
-    expect(lerpColor(4278190335, 65535, 2.0)).toEqual(65535);
+    expect(lerpColor(0xff0000ff, 0x0000ffff, 2.0)).toEqual(0x0000ffff);
   });
   it('midpoint between black and white is approximately mid gray', () => {
-    const mid = lerpColor(255, 4294967295, 0.5);
-    const r = (mid >> 24) & 255;
-    expect(Math.abs((r | 0) - 188) < 5, `expected red near 0xbc, got 0x${r.toString(16).padStart(2, '0')}`).toBe(true);
+    const mid = lerpColor(0x000000ff, 0xffffffff, 0.5);
+    const r = (mid >> 24) & 0xff;
+    expect(Math.abs((r | 0) - 0xbc) < 5, `expected red near 0xbc, got 0x${r.toString(16).padStart(2, '0')}`).toBe(true);
   });
 });
 

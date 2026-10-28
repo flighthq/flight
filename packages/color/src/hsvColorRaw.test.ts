@@ -83,40 +83,40 @@ describe('hsvToRgb', () => {
 describe('rgbToHsv', () => {
   it('converts pure red to hue 0 s 1 v 1', () => {
     let out = allocateHsvColor();
-    rgbToHsv(out, 4278190335);
+    rgbToHsv(out, 0xff0000ff);
     assertApprox(out.h, 0.0);
     assertApproxTight(out.s, 1.0);
     assertApproxTight(out.v, 1.0);
   });
   it('converts black to s 0 v 0', () => {
     let out = allocateHsvColor();
-    rgbToHsv(out, 255);
+    rgbToHsv(out, 0x000000ff);
     expect(out.s).toEqual(0.0);
     assertApproxTight(out.v, 0.0);
   });
   it('converts white to s 0 v 1', () => {
     let out = allocateHsvColor();
-    rgbToHsv(out, 4294967295);
+    rgbToHsv(out, 0xffffffff);
     expect(out.s).toEqual(0.0);
     assertApproxTight(out.v, 1.0);
   });
   it('converts pure green to hue 120', () => {
     let out = allocateHsvColor();
-    rgbToHsv(out, 16711935);
+    rgbToHsv(out, 0x00ff00ff);
     assertApprox(out.h, 120.0);
     assertApproxTight(out.s, 1.0);
     assertApproxTight(out.v, 1.0);
   });
   it('converts pure blue to hue 240', () => {
     let out = allocateHsvColor();
-    rgbToHsv(out, 65535);
+    rgbToHsv(out, 0x0000ffff);
     assertApprox(out.h, 240.0);
     assertApproxTight(out.s, 1.0);
     assertApproxTight(out.v, 1.0);
   });
   it('converts magenta to hue 300', () => {
     let out = allocateHsvColor();
-    rgbToHsv(out, 4278255615);
+    rgbToHsv(out, 0xff00ffff);
     assertApprox(out.h, 300.0);
     assertApproxTight(out.s, 1.0);
     assertApproxTight(out.v, 1.0);

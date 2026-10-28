@@ -7,15 +7,15 @@ import { colorFromKelvin } from './contract.ts';
 
 describe('colorFromKelvin', () => {
   it('returns opaque alpha for all temperatures', () => {
-    expect(colorFromKelvin(3000.0) & 255).toEqual(255);
-    expect(colorFromKelvin(6500.0) & 255).toEqual(255);
-    expect(colorFromKelvin(10000.0) & 255).toEqual(255);
+    expect(colorFromKelvin(3000.0) & 0xff).toEqual(0xff);
+    expect(colorFromKelvin(6500.0) & 0xff).toEqual(0xff);
+    expect(colorFromKelvin(10000.0) & 0xff).toEqual(0xff);
   });
   it('returns white for d65 daylight 6500k', () => {
     const color = colorFromKelvin(6500.0);
-    const r = (color >> 24) & 255;
-    const g = (color >> 16) & 255;
-    const b = (color >> 8) & 255;
+    const r = (color >> 24) & 0xff;
+    const g = (color >> 16) & 0xff;
+    const b = (color >> 8) & 0xff;
     expect(r > 240, `red channel ${r} should be > 240`).toBe(true);
     expect(g > 240, `green channel ${g} should be > 240`).toBe(true);
     expect(b > 230, `blue channel ${b} should be > 230`).toBe(true);
@@ -23,10 +23,10 @@ describe('colorFromKelvin', () => {
   it('produces warmer more red less blue color for lower temperatures', () => {
     const warm = colorFromKelvin(2000.0);
     const cool = colorFromKelvin(10000.0);
-    const warmR = (warm >> 24) & 255;
-    const warmB = (warm >> 8) & 255;
-    const coolR = (cool >> 24) & 255;
-    const coolB = (cool >> 8) & 255;
+    const warmR = (warm >> 24) & 0xff;
+    const warmB = (warm >> 8) & 0xff;
+    const coolR = (cool >> 24) & 0xff;
+    const coolB = (cool >> 8) & 0xff;
     expect(warmR >= coolR).toBe(true);
     expect(warmB <= coolB).toBe(true);
   });

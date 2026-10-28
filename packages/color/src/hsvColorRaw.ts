@@ -74,9 +74,9 @@ export function hsvToRgb(out: Float32Array, h: number, s: number, v: number): vo
  * Alpha is ignored. The conversion operates in sRGB (non-linear) space.
  */
 export function rgbToHsv(out: HsvColorRaw, color: number): void {
-  const r = ((color >>> 24) & 255) / 255.0;
-  const g = ((color >>> 16) & 255) / 255.0;
-  const b = ((color >>> 8) & 255) / 255.0;
+  const r = ((color >>> 24) & 0xff) / 255.0;
+  const g = ((color >>> 16) & 0xff) / 255.0;
+  const b = ((color >>> 8) & 0xff) / 255.0;
   const max = Math.max(Math.max(r, g), b);
   const min = Math.min(Math.min(r, g), b);
   const d = max - min;

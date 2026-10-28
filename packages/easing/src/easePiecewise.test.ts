@@ -35,7 +35,7 @@ describe('easePiecewise', () => {
     assertApprox(f(0.5), easeInCubic(0.5));
     assertApprox(f(1.0), easeInCubic(1.0));
   });
-  it('two equal weight segments split the range at t 0 5', () => {
+  it('two equal weight segments split the range at t 0.5', () => {
     const f = easePiecewise([
       { ease: easeLinear, weight: 1.0 },
       { ease: constantZero, weight: 1.0 },

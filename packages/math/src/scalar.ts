@@ -10,7 +10,7 @@ import { nextPowerOfTwo, previousPowerOfTwo } from './nextPowerOfTwo.ts';
  * sites where the direction is important.
  */
 export function ceilPowerOfTwo(n: number): number {
-  return nextPowerOfTwo(n);
+  return nextPowerOfTwo(n) >>> 0;
 }
 
 /**
@@ -20,7 +20,7 @@ export function ceilPowerOfTwo(n: number): number {
  * call sites where the direction is important.
  */
 export function floorPowerOfTwo(n: number): number {
-  return previousPowerOfTwo(n);
+  return previousPowerOfTwo(n) >>> 0;
 }
 
 /**

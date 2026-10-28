@@ -35,7 +35,7 @@ describe('srgbChannelToLinear', () => {
     assertApproxTight(srgbChannelToLinear(1.0), 1.0);
   });
   it('decodes mid srgb below the linear midpoint', () => {
-    assertApprox(srgbChannelToLinear(128 / 255), 0.21586);
+    assertApprox(srgbChannelToLinear(0x80 / 0xff), 0.21586);
   });
   it('round trips with linear channel to srgb', () => {
     const srgb = 0.25;

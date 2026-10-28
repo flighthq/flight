@@ -16,7 +16,7 @@ export type RandomSource = () => number;
 export function createRandomSource(seed: number): RandomSource {
   const state = { value: seed >>> 0 };
   return () => {
-    const a = (state.value = (state.value + 1831565813) >>> 0);
+    const a = (state.value = (state.value + 0x6d2b79f5) >>> 0);
     let t = Math.imul((a ^ (a >>> 15)) >>> 0, 1 | a) >>> 0;
     t = ((((t + Math.imul((t ^ (t >>> 7)) >>> 0, 61 | t)) >>> 0) >>> 0) ^ t) >>> 0;
     const sample = ((t ^ (t >>> 14)) >>> 0) / 4294967296.0;

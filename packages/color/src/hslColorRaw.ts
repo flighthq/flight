@@ -61,9 +61,9 @@ function hueToRgbChannel(p: number, q: number, t: number): number {
  * artist-facing HSL color pickers.
  */
 export function rgbToHsl(out: HslColorRaw, color: number): void {
-  const r = ((color >>> 24) & 255) / 255.0;
-  const g = ((color >>> 16) & 255) / 255.0;
-  const b = ((color >>> 8) & 255) / 255.0;
+  const r = ((color >>> 24) & 0xff) / 255.0;
+  const g = ((color >>> 16) & 0xff) / 255.0;
+  const b = ((color >>> 8) & 0xff) / 255.0;
   const max = Math.max(Math.max(r, g), b);
   const min = Math.min(Math.min(r, g), b);
   const l = (max + min) / 2.0;

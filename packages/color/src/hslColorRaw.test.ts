@@ -49,59 +49,59 @@ describe('hslToRgb', () => {
 describe('rgbToHsl', () => {
   it('converts pure red to hue 0 s 1 l half', () => {
     let out = allocateHslColor();
-    rgbToHsl(out, 4278190335);
+    rgbToHsl(out, 0xff0000ff);
     assertApprox(out.h, 0.0);
     assertApproxTight(out.s, 1.0);
     assertApproxTight(out.l, 0.5);
   });
   it('converts white to hue 0 s 0 l 1', () => {
     let out = allocateHslColor();
-    rgbToHsl(out, 4294967295);
+    rgbToHsl(out, 0xffffffff);
     expect(out.h).toEqual(0.0);
     expect(out.s).toEqual(0.0);
     assertApproxTight(out.l, 1.0);
   });
   it('converts black to hue 0 s 0 l 0', () => {
     let out = allocateHslColor();
-    rgbToHsl(out, 255);
+    rgbToHsl(out, 0x000000ff);
     expect(out.h).toEqual(0.0);
     expect(out.s).toEqual(0.0);
     assertApproxTight(out.l, 0.0);
   });
   it('converts a green dominant color', () => {
     let out = allocateHslColor();
-    rgbToHsl(out, 16711935);
+    rgbToHsl(out, 0x00ff00ff);
     assertApprox(out.h, 120.0);
     assertApproxTight(out.s, 1.0);
     assertApproxTight(out.l, 0.5);
   });
   it('wraps a red dominant hue when blue exceeds green', () => {
     let out = allocateHslColor();
-    rgbToHsl(out, 4278255615);
+    rgbToHsl(out, 0xff00ffff);
     assertApprox(out.h, 300.0);
     assertApproxTight(out.s, 1.0);
     assertApproxTight(out.l, 0.5);
   });
   it('uses the high lightness saturation formula', () => {
     let out = allocateHslColor();
-    rgbToHsl(out, 4286611711);
+    rgbToHsl(out, 0xff8080ff);
     assertApprox(out.h, 0.0);
     assertApproxTight(out.s, 1.0);
     assertApproxTight(out.l, 0.75098);
   });
   it('round trips with hsl to rgb within 1 lsb', () => {
     let hsl = allocateHslColor();
-    rgbToHsl(hsl, 1015723519);
+    rgbToHsl(hsl, 0x3c8ab5ff);
     let rgb = new Float32Array([0.0, 0.0, 0.0, 1.0]);
     hslToRgb(rgb, hsl.h, hsl.s, hsl.l);
     const repacked =
       ((Math.round(rgb[0] * 255.0) >>> 0) << 24) |
       ((Math.round(rgb[1] * 255.0) >>> 0) << 16) |
       ((Math.round(rgb[2] * 255.0) >>> 0) << 8) |
-      255;
-    const orig: number = 1015723519;
-    const origR = (orig >>> 24) & 255;
-    const repR = (repacked >> 24) & 255;
+      0xff;
+    const orig: number = 0x3c8ab5ff;
+    const origR = (orig >>> 24) & 0xff;
+    const repR = (repacked >> 24) & 0xff;
     expect(Math.abs((repR | 0) - (origR | 0)) <= 1, `expected within 1 LSB, got orig=${origR} rep=${repR}`).toBe(true);
   });
 });

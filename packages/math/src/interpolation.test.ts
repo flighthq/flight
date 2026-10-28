@@ -18,7 +18,7 @@ describe('inverseLerp', () => {
   it('returns 1 when value equals b', () => {
     expect(inverseLerp(0.0, 10.0, 10.0)).toEqual(1.0);
   });
-  it('returns 0 5 for the midpoint', () => {
+  it('returns 0.5 for the midpoint', () => {
     expect(inverseLerp(0.0, 10.0, 5.0)).toEqual(0.5);
   });
   it('returns 0 when a equals b to avoid division by zero', () => {
@@ -73,7 +73,7 @@ describe('smoothStep', () => {
   it('returns 1 at the upper edge', () => {
     expect(smoothStep(0.0, 1.0, 1.0)).toEqual(1.0);
   });
-  it('returns 0 5 at the midpoint', () => {
+  it('returns 0.5 at the midpoint', () => {
     expect(smoothStep(0.0, 1.0, 0.5)).toEqual(0.5);
   });
   it('returns 0 for x below the lower edge', () => {

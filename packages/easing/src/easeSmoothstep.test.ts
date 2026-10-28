@@ -39,7 +39,7 @@ describe('easeSmoothstep', () => {
   it('is symmetric about the midpoint', () => {
     assertApprox(easeSmoothstep(0.5), 0.5);
   });
-  it('matches the known cubic value at t 0 25', () => {
+  it('matches the known cubic value at t 0.25', () => {
     assertApprox(easeSmoothstep(0.25), 0.15625);
   });
   it('is monotonically increasing', () => {

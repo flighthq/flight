@@ -37,5 +37,5 @@ export function colorFromKelvin(kelvin: number): number {
   const ri = Math.min(Math.max(Math.round(r), 0.0), 255.0) >>> 0;
   const gi = Math.min(Math.max(Math.round(g), 0.0), 255.0) >>> 0;
   const bi = Math.min(Math.max(Math.round(b), 0.0), 255.0) >>> 0;
-  return ((ri << 24) | (gi << 16) | (bi << 8) | 255) >>> 0;
+  return ((ri << 24) | (gi << 16) | (bi << 8) | 0xff) >>> 0;
 }

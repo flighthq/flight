@@ -24,7 +24,7 @@ describe('easeInOutPower', () => {
     assertApprox(f(0.0), 0.0);
     assertApprox(f(1.0), 1.0);
   });
-  it('passes through 0 5 at t 0 5', () => {
+  it('passes through 0.5 at t 0.5', () => {
     const f = easeInOutPower(3.0);
     assertApprox(f(0.5), 0.5);
   });

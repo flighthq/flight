@@ -26,10 +26,10 @@ export function allocateLinearColor(): LinearColorRaw {
  */
 export function computeRgbaCssString(color: number): string {
   const packed = color;
-  const red = (packed >> 24) & 255;
-  const green = (packed >> 16) & 255;
-  const blue = (packed >> 8) & 255;
-  const alpha = (packed & 255) / 255.0;
+  const red = (packed >> 24) & 0xff;
+  const green = (packed >> 16) & 0xff;
+  const blue = (packed >> 8) & 0xff;
+  const alpha = (packed & 0xff) / 255.0;
   return `rgba(${red},${green},${blue},${alpha})`;
 }
 
@@ -40,7 +40,7 @@ export function computeRgbaCssString(color: number): string {
  * `computeRgbaCssString`, which carries the alpha, or `getColorRgb` to drop it first.
  */
 export function computeRgbHexString(color: number): string {
-  return `#${(color & 16777215).toString(16).padStart(6, '0')}`;
+  return `#${(color & 0xffffff).toString(16).padStart(6, '0')}`;
 }
 
 /**
@@ -49,7 +49,7 @@ export function computeRgbHexString(color: number): string {
  * gamma decode (unlike `unpackColorToLinear`, which decodes the RGB channels).
  */
 export function getColorAlpha(color: number): number {
-  return (color & 255) / 255.0;
+  return (color & 0xff) / 255.0;
 }
 
 /**
@@ -58,7 +58,7 @@ export function getColorAlpha(color: number): number {
  * alpha-less form (a CSS `#RRGGBB` via `computeRgbHexString`, a 24-bit format field).
  */
 export function getColorRgb(color: number): number {
-  return ((color >>> 8) & 16777215) >>> 0;
+  return ((color >>> 8) & 0xffffff) >>> 0;
 }
 
 /**
@@ -102,7 +102,7 @@ export function packLinearToColor(color: Readonly<LinearColorRaw>): number {
  * `getColorRgb`; use `setColorAlpha` afterward for a non-opaque alpha.
  */
 export function packOpaqueColor(rgb: number): number {
-  return (((rgb & 16777215) << 8) | 255) >>> 0;
+  return (((rgb & 0xffffff) << 8) | 0xff) >>> 0;
 }
 
 /**
@@ -112,7 +112,7 @@ export function packOpaqueColor(rgb: number): number {
  */
 export function setColorAlpha(color: number, alpha: number): number {
   const a = Math.round(Math.min(Math.max(alpha, 0.0), 1.0) * 255.0) >>> 0;
-  return ((color & 4294967040) | a) >>> 0;
+  return ((color & 0xffffff00) | a) >>> 0;
 }
 
 /**
@@ -120,10 +120,10 @@ export function setColorAlpha(color: number, alpha: number): number {
  * writes them to `out`. Does NOT gamma-decode -- use `unpackColorToLinear` for linear space.
  */
 export function unpackColorRgba(out: Float32Array, color: number): void {
-  out[0] = ((color >>> 24) & 255) / 255.0;
-  out[1] = ((color >>> 16) & 255) / 255.0;
-  out[2] = ((color >>> 8) & 255) / 255.0;
-  out[3] = (color & 255) / 255.0;
+  out[0] = ((color >>> 24) & 0xff) / 255.0;
+  out[1] = ((color >>> 16) & 0xff) / 255.0;
+  out[2] = ((color >>> 8) & 0xff) / 255.0;
+  out[3] = (color & 0xff) / 255.0;
 }
 
 /**
@@ -135,8 +135,8 @@ export function unpackColorRgba(out: Float32Array, color: number): void {
  * Backends must not re-decode packed colors; they consume this output.
  */
 export function unpackColorToLinear(out: LinearColorRaw, color: number): void {
-  out.r = srgbChannelToLinear(((color >>> 24) & 255) / 255.0);
-  out.g = srgbChannelToLinear(((color >>> 16) & 255) / 255.0);
-  out.b = srgbChannelToLinear(((color >>> 8) & 255) / 255.0);
-  out.a = (color & 255) / 255.0;
+  out.r = srgbChannelToLinear(((color >>> 24) & 0xff) / 255.0);
+  out.g = srgbChannelToLinear(((color >>> 16) & 0xff) / 255.0);
+  out.b = srgbChannelToLinear(((color >>> 8) & 0xff) / 255.0);
+  out.a = (color & 0xff) / 255.0;
 }

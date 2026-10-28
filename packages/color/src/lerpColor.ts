@@ -13,14 +13,14 @@ import { srgbChannelToLinear } from './srgbTransfer.ts';
  */
 export function lerpColor(start: number, end: number, t: number): number {
   const tc = Math.min(Math.max(t, 0.0), 1.0);
-  const sr = srgbChannelToLinear(((start >>> 24) & 255) / 255.0);
-  const sg = srgbChannelToLinear(((start >>> 16) & 255) / 255.0);
-  const sb = srgbChannelToLinear(((start >>> 8) & 255) / 255.0);
-  const sa = (start & 255) / 255.0;
-  const er = srgbChannelToLinear(((end >>> 24) & 255) / 255.0);
-  const eg = srgbChannelToLinear(((end >>> 16) & 255) / 255.0);
-  const eb = srgbChannelToLinear(((end >>> 8) & 255) / 255.0);
-  const ea = (end & 255) / 255.0;
+  const sr = srgbChannelToLinear(((start >>> 24) & 0xff) / 255.0);
+  const sg = srgbChannelToLinear(((start >>> 16) & 0xff) / 255.0);
+  const sb = srgbChannelToLinear(((start >>> 8) & 0xff) / 255.0);
+  const sa = (start & 0xff) / 255.0;
+  const er = srgbChannelToLinear(((end >>> 24) & 0xff) / 255.0);
+  const eg = srgbChannelToLinear(((end >>> 16) & 0xff) / 255.0);
+  const eb = srgbChannelToLinear(((end >>> 8) & 0xff) / 255.0);
+  const ea = (end & 0xff) / 255.0;
   const r = sr + (er - sr) * tc;
   const g = sg + (eg - sg) * tc;
   const b = sb + (eb - sb) * tc;

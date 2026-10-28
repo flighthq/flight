@@ -22,7 +22,7 @@ export function randomInt(random: RandomSource, min: number, max: number): numbe
   if (min > max) {
     throw new RangeError('randomInt: min must be <= max');
   }
-  return (min + Math.floor(random() * (max - min + 1))) | 0;
+  return min + (Math.floor(random() * (max - min + 1)) | 0);
 }
 
 /**

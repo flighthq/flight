@@ -84,7 +84,7 @@ describe('pingPong', () => {
   it('reaches length at t equals length', () => {
     expect(pingPong(1.0, 1.0)).toEqual(1.0);
   });
-  it('bounces back at t 1 5 times length', () => {
+  it('bounces back at t 1.5 times length', () => {
     assertClose(pingPong(1.5, 1.0), 0.5, 10);
   });
   it('propagates nan when length is 0', () => {
@@ -119,7 +119,7 @@ describe('smootherStep', () => {
   it('returns 1 at the upper edge', () => {
     expect(smootherStep(0.0, 1.0, 1.0)).toEqual(1.0);
   });
-  it('returns 0 5 at the midpoint', () => {
+  it('returns 0.5 at the midpoint', () => {
     expect(smootherStep(0.0, 1.0, 0.5)).toEqual(0.5);
   });
   it('returns 0 for x below the lower edge', () => {

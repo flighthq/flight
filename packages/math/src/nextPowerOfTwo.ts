@@ -31,7 +31,7 @@ export function nextMultipleOf(value: number, multiple: number): number {
  */
 export function nextPowerOfTwo(n: number): number {
   if (n <= 1) {
-    return 1;
+    return 1 >>> 0;
   }
   let v = (n - 1) >>> 0;
   v |= v >>> 1;
@@ -39,7 +39,7 @@ export function nextPowerOfTwo(n: number): number {
   v |= v >>> 4;
   v |= v >>> 8;
   v |= v >>> 16;
-  return (v + 1) >>> 0;
+  return ((v + 1) >>> 0) >>> 0;
 }
 
 /**
@@ -49,7 +49,7 @@ export function nextPowerOfTwo(n: number): number {
  */
 export function previousPowerOfTwo(n: number): number {
   if (n <= 1) {
-    return 1;
+    return 1 >>> 0;
   }
   let v = n;
   v |= v >> 1;
@@ -57,5 +57,5 @@ export function previousPowerOfTwo(n: number): number {
   v |= v >> 4;
   v |= v >> 8;
   v |= v >> 16;
-  return (((v >>> 0) + 1) >>> 0) >>> 1;
+  return ((((v >>> 0) + 1) >>> 0) >>> 1) >>> 0;
 }

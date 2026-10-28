@@ -21,14 +21,14 @@ export function createRandomSourceFromHash(x: number, y: number): RandomSource {
  * tile/cell content and gradient noise seed generation.
  */
 export function hash2D(x: number, y: number): number {
-  return hashCombine(hashUint32(x >>> 0), y >>> 0);
+  return hashCombine(hashUint32(x >>> 0), y >>> 0) >>> 0;
 }
 
 /**
  * Stateless position-seeded hash over a 3D integer grid.
  */
 export function hash3D(x: number, y: number, z: number): number {
-  return hashCombine(hash2D(x, y), z >>> 0);
+  return hashCombine(hash2D(x, y), z >>> 0) >>> 0;
 }
 
 /**
@@ -38,8 +38,8 @@ export function hash3D(x: number, y: number, z: number): number {
  */
 export function hashCombine(seed: number, value: number): number {
   const seedI = seed | 0;
-  const inner = (((((((value + 2654435769) >>> 0) + (seedI << 6)) >>> 0) >>> 0) + (seedI >> 2)) >>> 0) >>> 0;
-  return hashUint32((seed ^ inner) >>> 0);
+  const inner = (((((((value + 0x9e3779b9) >>> 0) + (seedI << 6)) >>> 0) >>> 0) + (seedI >> 2)) >>> 0) >>> 0;
+  return hashUint32((seed ^ inner) >>> 0) >>> 0;
 }
 
 /**
@@ -51,9 +51,9 @@ export function hashCombine(seed: number, value: number): number {
 export function hashUint32(value: number): number {
   let h = value;
   h = (h ^ (h >>> 16)) >>> 0;
-  h = Math.imul(h, 2246822507) >>> 0;
+  h = Math.imul(h, 0x85ebca6b) >>> 0;
   h = (h ^ (h >>> 13)) >>> 0;
-  h = Math.imul(h, 3266489909) >>> 0;
+  h = Math.imul(h, 0xc2b2ae35) >>> 0;
   h = (h ^ (h >>> 16)) >>> 0;
-  return h;
+  return h >>> 0;
 }
