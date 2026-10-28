@@ -1,4 +1,7 @@
-use flight_compiler::{SourceMode, compile_typescript, compile_vitest, source_mode};
+use flight_compiler::{
+    SourceMode, compile_typescript, compile_typescript_with_alias_sources, compile_vitest,
+    source_mode,
+};
 
 mod source_modes {
     use super::*;
@@ -174,7 +177,7 @@ pub fn create_vector2() -> Vector2 {
     #[test]
     fn emits_documented_native_signatures_aliases_and_throws() {
         let source = r#"
-use std::sync::Arc;
+use std::sync::{Arc, Mutex, PoisonError};
 
 /// A callable random source.
 pub type RandomSource = Arc<dyn Fn() -> f32 + Send + Sync>;
@@ -226,15 +229,23 @@ pub struct EasingSegment {
 
 pub type EasingStepsGuard = Arc<dyn Fn(i32, StepPosition) + Send + Sync>;
 
+pub fn run_easing_steps_guard() {
+    let guard = STEPS_GUARD.lock().unwrap_or_else(PoisonError::into_inner).clone();
+    if let Some(guard) = guard {
+        guard(2, StepPosition::JumpEnd);
+    }
+}
+
 pub fn ease_steps(count: i32, position: Option<StepPosition>) -> [f32; 2] {
     return [0.0_f32; 2];
 }
 
 pub fn set_easing_steps_guard(guard: Option<EasingStepsGuard>) {
-    if let Some(guard) = guard {
-        guard(2, StepPosition::JumpEnd);
-    }
+    let mut slot = STEPS_GUARD.lock().unwrap_or_else(PoisonError::into_inner);
+    *slot = guard;
 }
+
+static STEPS_GUARD: Mutex<Option<EasingStepsGuard>> = Mutex::new(None);
 "#;
 
         let output = compile_typescript(source, None).unwrap();
@@ -252,6 +263,12 @@ pub fn set_easing_steps_guard(guard: Option<EasingStepsGuard>) {
             )
         );
         assert!(output.contains("if (guard !== null) {"));
+        assert!(
+            output.contains(
+                "const STEPS_GUARD: { value: EasingStepsGuard | null } = { value: null };"
+            )
+        );
+        assert!(output.contains("slot.value = guard;"));
         assert!(output.contains("guard(2, \"jumpEnd\");"));
         assert!(!output.contains("StepPosition.JumpEnd"));
     }
@@ -269,6 +286,26 @@ pub fn scaled(r#override: Option<f32>) -> f32 {
         assert!(output.contains("export function scaled(override?: number): number"));
         assert!(output.contains("return (override ?? 12.0) * 0.185;"));
         assert!(!output.contains("r#override"));
+    }
+
+    #[test]
+    fn reuses_callable_aliases_declared_by_sibling_sources() {
+        let aliases = r#"
+use std::sync::Arc;
+
+pub type EasingFunction = Arc<dyn Fn(f32) -> f32 + Send + Sync>;
+"#;
+        let source = r#"
+pub fn get_easing_derivative(ease: &dyn Fn(f32) -> f32, t: f32) -> f32 {
+    return ease(t);
+}
+"#;
+
+        let output = compile_typescript_with_alias_sources(source, None, &[aliases]).unwrap();
+
+        assert!(output.contains(
+            "export function getEasingDerivative(ease: EasingFunction, t: number): number"
+        ));
     }
 
     #[test]
@@ -323,6 +360,16 @@ mod equals_vector2 {
         assert!(equals_vector2(Some(&a), Some(&a)));
     }
 }
+
+mod create_vector2_tests {
+    use super::*;
+
+    #[test]
+    fn creates_coordinates() {
+        let value = create_vector2(1.0, 2.0);
+        assert_eq!(value.x, 1.0);
+    }
+}
 "#;
 
         let output = compile_vitest(source, "@flighthq/geometry/contract").unwrap();
@@ -358,8 +405,35 @@ describe("equalsVector2", () => {
     expect(equalsVector2(a, a)).toBe(true);
   });
 });
+
+describe("createVector2", () => {
+  it("creates coordinates", () => {
+    const value = createVector2(1.0, 2.0);
+    expect(value.x).toEqual(1.0);
+  });
+});
 "#
         );
+    }
+
+    #[test]
+    fn preserves_a_callable_name_that_genuinely_ends_in_tests() {
+        let source = r#"
+use flight_interaction::*;
+
+mod register_default_hit_tests {
+    use super::*;
+
+    #[test]
+    fn registers_defaults() {
+        register_default_hit_tests();
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/interaction/contract").unwrap();
+
+        assert!(output.contains("describe(\"registerDefaultHitTests\""));
     }
 
     #[test]
@@ -421,6 +495,8 @@ mod write_vector2_to_float32_array {
             let mut out = [0.0_f32; 2];
             write_vector2_to_float32_array(&mut out, 0, &create_vector2(value[0], value[1]));
             assert_eq!(out[0] + out[1], expected);
+            assert_eq!(out, [1.0, 2.0]);
+            assert!((out[0] - 3.0_f32.sqrt() / 2.0).abs() < 5e-13);
             assert!(f32::NAN.is_nan());
         }
     }
@@ -434,6 +510,10 @@ mod write_vector2_to_float32_array {
         ));
         assert!(output.contains("for (const [value, expected] of cases) {"));
         assert!(output.contains("let out = new Float32Array(2).fill(0.0);"));
+        assert!(output.contains("expect(Array.from(out)).toEqual([1.0, 2.0]);"));
+        assert!(output.contains(
+            "expect(Math.abs(out[0] - Math.fround(Math.sqrt(3.0) / 2.0)) < 5e-13).toBe(true);"
+        ));
         assert!(output.contains("expect(Number.isNaN(Number.NaN)).toBe(true);"));
     }
 
@@ -538,5 +618,81 @@ mod nested_helper {
         assert!(output.contains("  function doubled(value: number): number"));
         assert!(output.contains("expect(doubled(3)).toEqual(6);"));
         assert!(!output.contains("doubled,"));
+    }
+
+    #[test]
+    fn lowers_top_level_portable_test_aliases_records_and_constants() {
+        let source = r#"
+use std::sync::Arc;
+use flight_easing::*;
+
+type Ease = Arc<dyn Fn(f32) -> f32 + Send + Sync>;
+
+struct Family {
+    ease_in: Ease,
+    name: &'static str,
+}
+
+const EPSILON: f32 = 1e-5;
+
+fn family() -> Family {
+    return Family { ease_in: Arc::new(ease_linear), name: "Linear" };
+}
+
+fn samples() -> Vec<f32> {
+    let values: Vec<f32> = (0..=2).map(|index| index as f32).collect();
+    return values.iter().map(|&value| value / 2.0).collect();
+}
+
+mod easing_family {
+    use super::*;
+
+    #[test]
+    fn describes_the_family() {
+        let value = family();
+        assert_eq!(value.name, "Linear");
+        assert!((value.ease_in)(0.0) < EPSILON);
+        let positive = samples().into_iter().filter(|value| *value > 0.0).collect();
+        assert_eq!(positive.iter().skip(1).collect(), vec![1.0]);
+        assert!(positive.iter().all(|value| *value > 0.0));
+        assert!(positive.iter().any(|value| *value == 1.0));
+        assert_eq!(*positive.iter().find(|value| **value == 1.0).expect("sample"), 1.0);
+        assert_eq!(positive.iter().fold(0.0, |sum, value| sum + value), 1.5);
+        assert_eq!(samples().windows(2).len(), 2);
+        let curves = vec![("Linear", value.ease_in.clone())];
+        assert_eq!(curves[0].0, "Linear");
+        let family = curves.iter().find(|family| family.0 == "Linear").expect("family");
+        let minimum = samples().iter().fold(f32::INFINITY, f32::min);
+        let maximum = samples().iter().fold(f32::NEG_INFINITY, f32::max);
+        assert!(minimum <= maximum);
+        assert!(samples().windows(2).any(|pair| pair[1] >= pair[0]));
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/easing/contract").unwrap();
+
+        assert!(output.contains("type Ease = (arg0: number) => number;"));
+        assert!(output.contains("interface Family {\n  easeIn: Ease;\n  name: string;\n}"));
+        assert!(output.contains("const EPSILON: number = 1e-5;"));
+        assert!(output.contains("function family(): Family"));
+        assert!(output.contains(
+            "const values: number[] = (Array.from({ length: 2 - 0 + 1 }, (_, index) => 0 + index)).map((index) => index);"
+        ));
+        assert!(output.contains("return values.map((value) => value / 2.0);"));
+        assert!(output.contains("expect(value.name).toEqual(\"Linear\");"));
+        assert!(output.contains("const positive = samples().filter((value) => value > 0.0);"));
+        assert!(output.contains("expect(positive.slice(1)).toEqual([1.0]);"));
+        assert!(output.contains("expect(curves[0][0]).toEqual(\"Linear\");"));
+        assert!(output.contains("const family = (() => { const value = curves.find((family) => family[0] === \"Linear\");"));
+        assert!(output.contains(
+            "samples().reduce((left, right) => Math.min(left, right), Number.POSITIVE_INFINITY)"
+        ));
+        assert!(output.contains(
+            "samples().reduce((left, right) => Math.max(left, right), Number.NEGATIVE_INFINITY)"
+        ));
+        assert!(!output.contains("  pair,"));
+        assert!(!output.contains("  EPSILON,"));
+        assert!(!output.contains("  Family,"));
     }
 }

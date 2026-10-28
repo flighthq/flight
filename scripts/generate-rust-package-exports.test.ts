@@ -1,17 +1,42 @@
+import { build } from 'esbuild';
 import { describe, expect, it } from 'vitest';
 
 import {
   collectCompanionFileNames,
   collectContractModuleNames,
   collectExportSymbols,
+  collectReferencedExportNames,
   collectPublicRootNames,
   collectRustPublicUses,
   collectStaleGeneratedFileNames,
   hasGeneratedProvenanceHeader,
+  renderCompanionContractExports,
   renderPublicExports,
 } from './generate-rust-package-exports.ts';
 
 describe('renderPublicExports', () => {
+  it('discovers cross-module generated type references without matching comments', () => {
+    const symbols = new Map([
+      ['EasingFunction', { fileName: 'easingTypes.ts', hasType: true, hasValue: false }],
+      ['getEasingDerivative', { fileName: 'getEasingDerivative.ts', hasType: false, hasValue: true }],
+      ['mean', { fileName: 'statistics.ts', hasType: false, hasValue: true }],
+      ['sign', { fileName: 'scalar.ts', hasType: false, hasValue: true }],
+    ]);
+
+    expect(
+      collectReferencedExportNames(
+        `// EasingFunction is documented here.
+export function getEasingDerivative(ease: EasingFunction, mean: number): number {
+  const local = mean;
+  return ease(local) + Math.sign(local) + Number('getEasingDerivative and EasingFunction are string data');
+}
+`,
+        'getEasingDerivative.ts',
+        symbols,
+      ),
+    ).toEqual(['EasingFunction']);
+  });
+
   it('routes target-native OOP wrappers to companions and raw functions through the contract lane', () => {
     const source = `//! flight-compiler: companion widget.ts
 `;
@@ -43,10 +68,12 @@ pub use contract::*;
     const symbols = collectExportSymbols(modules);
     const output = renderPublicExports(modules, symbols, ['RootOnly', 'Widget', 'WidgetRaw', 'createWidget']);
 
-    expect(symbols.get('Widget')).toEqual({ fileName: 'widget.ts', hasType: true, hasValue: true });
+    expect(symbols.get('Widget')).toEqual({ fileName: 'widget.ts', hasType: true, hasValue: true, isClass: true });
     expect(collectContractModuleNames(contract)).toEqual(new Set(['support', 'widget_raw']));
     expect(collectPublicRootNames(crateRoot)).toEqual(['RootOnly', 'WidgetRaw', 'createWidget']);
     expect(collectRustPublicUses(crateRoot)).toContainEqual({ moduleName: 'contract', wildcard: true });
+
+    expect(renderCompanionContractExports(modules, symbols)).toBe("export { Widget } from './widget.ts';\n");
 
     expect(output).toBe(`export {
   createWidget,
@@ -58,6 +85,61 @@ export {
   Widget,
 } from './widget.ts';
 `);
+  });
+
+  it('keeps a companion wrapper out of a bundle that imports only a free function from the full contract lane', async () => {
+    const modules = [
+      {
+        fileName: 'widgetRaw.ts',
+        mode: 'generate' as const,
+        typescript: `export interface WidgetRaw {}
+export function createWidget(): WidgetRaw { console.log('FREE_FUNCTION_MARKER'); return {}; }
+`,
+      },
+      {
+        directPublicExports: true,
+        fileName: 'widget.ts',
+        mode: 'target-native' as const,
+        typescript: `export class Widget { marker = 'WRAPPER_CLASS_MARKER'; }
+`,
+      },
+    ];
+    const symbols = collectExportSymbols(modules);
+    const contract =
+      `export { createWidget } from './widgetRaw.ts';\n` + renderCompanionContractExports(modules, symbols);
+    const sources = new Map([
+      ['entry.ts', `import { createWidget } from './contract.ts'; createWidget();`],
+      ['contract.ts', contract],
+      ...modules.map((module) => [module.fileName, module.typescript] as const),
+    ]);
+
+    const result = await build({
+      bundle: true,
+      entryPoints: ['entry.ts'],
+      format: 'esm',
+      logLevel: 'silent',
+      plugins: [
+        {
+          name: 'virtual-companion-package',
+          setup(buildApi) {
+            buildApi.onResolve({ filter: /.*/ }, ({ path, importer }) => ({
+              namespace: 'companion-test',
+              path: path.startsWith('./') ? new URL(path, `file:///${importer}`).pathname.slice(1) : path,
+            }));
+            buildApi.onLoad({ filter: /.*/, namespace: 'companion-test' }, ({ path }) => ({
+              contents: sources.get(path),
+              loader: 'ts',
+            }));
+          },
+        },
+      ],
+      treeShaking: true,
+      write: false,
+    });
+    const output = result.outputFiles[0].text;
+
+    expect(output).toContain('FREE_FUNCTION_MARKER');
+    expect(output).not.toContain('WRAPPER_CLASS_MARKER');
   });
 
   it('identifies only header-owned obsolete generated artifacts', () => {

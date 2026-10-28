@@ -1,21 +1,45 @@
 import { attachEntityBinding, getEntityBinding } from './binding.ts';
 import { cloneEntity } from './clone.ts';
-import { allocateEntity, Entity, finishEntity, writeEntityRuntime } from './entity.ts';
+import {
+  allocateEntity,
+  attachEntityWrapper,
+  Entity,
+  finishEntity,
+  getEntityWrapperAs,
+  readEntityRuntime,
+  writeEntityRuntime,
+} from './entity.ts';
 import { createEntityRuntime, hasEntityRuntime } from './runtime.ts';
-import type { EntityRaw } from './types.ts';
+import type { EntityRaw, EntityRuntime } from './types.ts';
 import { EntityRuntimeKey } from './types.ts';
 
 describe('allocateEntity', () => {
   it('returns an object with an undefined runtime', () => {
     const out = allocateEntity();
+    expectTypeOf(out).toMatchTypeOf<{ [EntityRuntimeKey]: EntityRuntime | undefined }>();
     expect(out).not.toBeNull();
-    expect(out[EntityRuntimeKey]).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(out, EntityRuntimeKey)).toBe(true);
+    expect(Object.getOwnPropertyDescriptor(out, EntityRuntimeKey)).toMatchObject({
+      enumerable: false,
+      value: undefined,
+    });
+  });
+});
+
+describe('attachEntityWrapper', () => {
+  it('accepts an idempotent attachment and rejects a second wrapper', () => {
+    const raw = finishEntity(allocateEntity<EntityRaw>());
+    const wrapper = Entity.from(raw);
+
+    expect(() => attachEntityWrapper(raw, wrapper)).not.toThrow();
+    expect(() => attachEntityWrapper(raw, new Entity())).toThrow(TypeError);
   });
 });
 
 describe('Entity', () => {
   it('keeps primitive values outside the raw entity contract', () => {
     expectTypeOf<string>().not.toMatchTypeOf<Parameters<typeof Entity.from>[0]>();
+    expectTypeOf<keyof EntityRaw>().toEqualTypeOf<never>();
   });
 
   it('returns one stable wrapper when the same raw object is wrapped twice', () => {
@@ -53,9 +77,11 @@ describe('Entity', () => {
 
   it('attaches runtime metadata to external raws non-enumerably', () => {
     const raw: EntityRaw = {};
-    writeEntityRuntime(raw, createEntityRuntime());
+    const runtime = createEntityRuntime();
+    writeEntityRuntime(raw, runtime);
 
     expect(hasEntityRuntime(raw)).toBe(true);
+    expect(readEntityRuntime(raw)).toBe(runtime);
     expect(Object.getOwnPropertySymbols(raw).every((symbol) => !Object.propertyIsEnumerable.call(raw, symbol))).toBe(
       true,
     );
@@ -68,5 +94,36 @@ describe('finishEntity', () => {
     const out = allocateEntity();
     const entity = finishEntity(out);
     expect(entity).toBe(out);
+  });
+});
+
+describe('getEntityWrapperAs', () => {
+  it('returns the attached wrapper and otherwise returns null', () => {
+    const raw = finishEntity(allocateEntity<EntityRaw>());
+    expect(getEntityWrapperAs(raw)).toBeNull();
+
+    const wrapper = Entity.from(raw);
+    expect(getEntityWrapperAs(raw)).toBe(wrapper);
+  });
+});
+
+describe('readEntityRuntime', () => {
+  it('reads compatibility runtime metadata from an external raw', () => {
+    const runtime = createEntityRuntime();
+    const raw = { [EntityRuntimeKey]: runtime };
+
+    expect(readEntityRuntime(raw)).toBe(runtime);
+  });
+});
+
+describe('writeEntityRuntime', () => {
+  it('writes runtime metadata without making it enumerable', () => {
+    const runtime = createEntityRuntime();
+    const raw: EntityRaw = {};
+
+    writeEntityRuntime(raw, runtime);
+
+    expect(readEntityRuntime(raw)).toBe(runtime);
+    expect(Object.getOwnPropertyDescriptor(raw, EntityRuntimeKey)?.enumerable).toBe(false);
   });
 });

@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::process;
 
 const USAGE: &str = "\
-Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--check]
+Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--check]
        flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--check]
        flight-compile source-mode --source <rust-file>
 ";
@@ -16,6 +16,7 @@ enum GenerateKind {
 }
 
 struct GenerateOptions {
+    alias_sources: Vec<PathBuf>,
     check: bool,
     contract_module: Option<String>,
     entity_module: Option<String>,
@@ -28,7 +29,19 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
         .map_err(|error| format!("{}: {error}", options.source.display()))?;
     let output = match kind {
         GenerateKind::Source => {
-            flight_compiler::compile_typescript(&source, options.entity_module.as_deref())
+            let alias_sources = options
+                .alias_sources
+                .iter()
+                .map(|path| {
+                    fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let alias_source_refs = alias_sources.iter().map(String::as_str).collect::<Vec<_>>();
+            flight_compiler::compile_typescript_with_alias_sources(
+                &source,
+                options.entity_module.as_deref(),
+                &alias_source_refs,
+            )
         }
         GenerateKind::Tests => flight_compiler::compile_vitest(
             &source,
@@ -100,6 +113,7 @@ fn parse_generate_options(
     kind: GenerateKind,
 ) -> Result<GenerateOptions, String> {
     let mut check = false;
+    let mut alias_sources = Vec::new();
     let mut contract_module = None;
     let mut entity_module = None;
     let mut out = None;
@@ -108,6 +122,13 @@ fn parse_generate_options(
     while index < arguments.len() {
         match arguments[index].as_str() {
             "--check" => check = true,
+            "--alias-source" => {
+                index += 1;
+                let path = arguments
+                    .get(index)
+                    .ok_or_else(|| format!("--alias-source requires a path\n\n{USAGE}"))?;
+                alias_sources.push(PathBuf::from(path));
+            }
             "--contract-module" => {
                 index += 1;
                 contract_module = arguments.get(index).cloned();
@@ -139,9 +160,15 @@ fn parse_generate_options(
                 "--entity-module is only valid for generate\n\n{USAGE}"
             ));
         }
+        GenerateKind::Tests if !alias_sources.is_empty() => {
+            return Err(format!(
+                "--alias-source is only valid for generate\n\n{USAGE}"
+            ));
+        }
         GenerateKind::Source | GenerateKind::Tests => {}
     }
     return Ok(GenerateOptions {
+        alias_sources,
         check,
         contract_module,
         entity_module,

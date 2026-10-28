@@ -29,6 +29,21 @@ export function getSourceValueExports(source: string, filePath = 'source.ts'): s
   return getSourceValueExportInventory(source, filePath).ownedNames;
 }
 
+export function getGeneratedExportLane(
+  name: string,
+  contractNames: ReadonlySet<string>,
+  publicNames: ReadonlySet<string>,
+): 'public' | 'protected' | 'exclude' {
+  if (publicNames.has(name)) return 'public';
+  if (contractNames.has(name)) return 'protected';
+  return 'exclude';
+}
+
+export function isTestSupportSource(source: string, filePath = 'source.ts'): boolean {
+  const parsed = parseSource(source, filePath);
+  return parsed.module.staticImports.some((statement) => statement.moduleRequest.value === 'vitest');
+}
+
 interface SourceValueExportInventory {
   ownedNames: string[];
   publishedNames: string[];
@@ -37,9 +52,7 @@ interface SourceValueExportInventory {
 function getSourceValueExportInventory(source: string, filePath: string): SourceValueExportInventory {
   const ownedNames: string[] = [];
   const publishedNames: string[] = [];
-  const parsed = parseSync(filePath, source, { lang: 'ts', sourceType: 'module' });
-  if (parsed.errors.length > 0)
-    throw new Error(`Could not parse ${filePath}: ${parsed.errors[0]?.message ?? 'unknown parse error'}`);
+  const parsed = parseSource(source, filePath);
 
   const localValues = new Set<string>();
   for (const statement of parsed.program.body) {
@@ -81,6 +94,13 @@ function getSourceValueExportInventory(source: string, filePath: string): Source
     ownedNames: [...new Set(ownedNames)],
     publishedNames: [...new Set(publishedNames)],
   };
+}
+
+function parseSource(source: string, filePath: string): ReturnType<typeof parseSync> {
+  const parsed = parseSync(filePath, source, { lang: 'ts', sourceType: 'module' });
+  if (parsed.errors.length > 0)
+    throw new Error(`Could not parse ${filePath}: ${parsed.errors[0]?.message ?? 'unknown parse error'}`);
+  return parsed;
 }
 
 function addBindingNames(pattern: BindingPattern, names: Set<string>): void {

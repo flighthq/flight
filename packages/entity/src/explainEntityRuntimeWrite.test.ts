@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { EntityRuntimeWriteSlot, explainEntityRuntimeWrite } from './contract.ts';
 
-describe('explainEntityRuntimeWriteTests', () => {
+describe('explainEntityRuntimeWrite', () => {
   it('names both binding helpers for a binding slot write', () => {
     const explanation = explainEntityRuntimeWrite(EntityRuntimeWriteSlot.BindingSlot);
     expect(explanation.slot).toEqual(EntityRuntimeWriteSlot.BindingSlot);

@@ -1,13 +1,8 @@
 export type Kind = string;
 
-declare const EntityRawMarker: unique symbol;
-
-// Generated entity records extend this runtime-free marker. Their JavaScript identity is the raw
-// object itself; the runtime lives behind entity.ts's package-private symbol and therefore never
-// becomes a generated value field.
-export interface EntityRaw {
-  readonly [EntityRawMarker]?: never;
-}
+// Generated entity records extend this runtime-free structural base. `object` rejects primitives
+// without adding a phantom property to `keyof` every Entity-derived record.
+export type EntityRaw = object;
 
 export interface EntityRuntime {
   binding: object | null;

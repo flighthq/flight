@@ -1,6 +1,29 @@
 import { describe, expect, it } from 'vitest';
 
-import { getSourcePublishedValueExports, getSourceValueExports } from './export-lane-source.ts';
+import {
+  getGeneratedExportLane,
+  getSourcePublishedValueExports,
+  getSourceValueExports,
+  isTestSupportSource,
+} from './export-lane-source.ts';
+
+describe('isTestSupportSource', () => {
+  it('identifies helper modules by their direct Vitest dependency rather than an export manifest name', () => {
+    expect(isTestSupportSource("import { expect } from 'vitest';\nexport const rustTestSupport = {};\n")).toBe(true);
+    expect(isTestSupportSource("import { value } from './value.ts';\nexport { value };\n")).toBe(false);
+  });
+});
+
+describe('getGeneratedExportLane', () => {
+  it('derives public, protected, and excluded names from generated Rust barrels', () => {
+    const contractNames = new Set(['attachEntityWrapper', 'Entity', 'finishEntity']);
+    const publicNames = new Set(['Entity', 'finishEntity']);
+
+    expect(getGeneratedExportLane('Entity', contractNames, publicNames)).toBe('public');
+    expect(getGeneratedExportLane('attachEntityWrapper', contractNames, publicNames)).toBe('protected');
+    expect(getGeneratedExportLane('readEntityRuntime', contractNames, publicNames)).toBe('exclude');
+  });
+});
 
 describe('getSourceValueExports', () => {
   it('owns exported classes as runtime values', () => {

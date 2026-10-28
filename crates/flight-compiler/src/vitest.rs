@@ -4,7 +4,7 @@ use std::fmt::Write;
 use syn::parse::Parser;
 use syn::punctuated::Punctuated;
 use syn::visit::Visit;
-use syn::{Expr, FnArg, ItemFn, Pat, ReturnType, Stmt, Token};
+use syn::{BinOp, Expr, Fields, FnArg, ItemFn, Pat, ReturnType, Stmt, Token};
 
 use crate::model::{TestCase, TestProgram, TestSuite};
 use crate::typescript::{
@@ -83,7 +83,30 @@ fn collect_contract_symbols(program: &TestProgram) -> Vec<String> {
 
     impl ContractSymbolCollector<'_> {
         fn collect_expression(&mut self, expression: &Expr) {
+            struct ExpressionBindingCollector {
+                names: HashSet<String>,
+            }
+
+            impl<'ast> Visit<'ast> for ExpressionBindingCollector {
+                fn visit_pat_ident(&mut self, pattern: &'ast syn::PatIdent) {
+                    self.names.insert(pattern.ident.to_string());
+                    syn::visit::visit_pat_ident(self, pattern);
+                }
+            }
+
+            let mut bindings = ExpressionBindingCollector {
+                names: HashSet::new(),
+            };
+            bindings.visit_expr(expression);
+            let newly_declared = bindings
+                .names
+                .into_iter()
+                .filter(|name| self.declared.insert(name.clone()))
+                .collect::<Vec<_>>();
             self.visit_expr(expression);
+            for name in newly_declared {
+                self.declared.remove(&name);
+            }
         }
 
         fn record_identifier(&mut self, identifier: &syn::Ident) {
@@ -159,6 +182,24 @@ fn collect_contract_symbols(program: &TestProgram) -> Vec<String> {
         .iter()
         .chain(program.suites.iter().flat_map(|suite| suite.helpers.iter()))
         .map(|function| function.sig.ident.to_string())
+        .chain(
+            program
+                .constants
+                .iter()
+                .map(|constant| constant.ident.to_string()),
+        )
+        .chain(
+            program
+                .structs
+                .iter()
+                .map(|structure| structure.ident.to_string()),
+        )
+        .chain(
+            program
+                .type_aliases
+                .iter()
+                .map(|type_alias| type_alias.ident.to_string()),
+        )
         .collect::<HashSet<_>>();
     let mut symbols = Vec::new();
     for function in program
@@ -225,21 +266,21 @@ fn emit_assertion(
         return Err(compile_error("assertion macro has an empty path"));
     };
     let arguments = parse_macro_arguments(rust_macro)?;
-    let (actual, matcher, expected) = match name.as_str() {
+    let (mut actual, matcher, mut expected) = match name.as_str() {
         "assert" if !arguments.is_empty() => (
-            emit_expression(&arguments[0], &HashSet::new())?,
+            emit_assertion_expression(&arguments[0])?,
             "toBe",
             "true".to_string(),
         ),
         "assert_eq" if arguments.len() >= 2 => (
-            emit_expression(&arguments[0], &HashSet::new())?,
+            emit_assertion_expression(&arguments[0])?,
             "toEqual",
-            emit_expression(&arguments[1], &HashSet::new())?,
+            emit_assertion_expression(&arguments[1])?,
         ),
         "assert_ne" if arguments.len() >= 2 => (
-            emit_expression(&arguments[0], &HashSet::new())?,
+            emit_assertion_expression(&arguments[0])?,
             "not.toEqual",
-            emit_expression(&arguments[1], &HashSet::new())?,
+            emit_assertion_expression(&arguments[1])?,
         ),
         "assert" | "assert_eq" | "assert_ne" => {
             return Err(compile_error(format!(
@@ -252,6 +293,14 @@ fn emit_assertion(
             )));
         }
     };
+    if matches!(name.as_str(), "assert_eq" | "assert_ne") && arguments.len() >= 2 {
+        if is_array_expression(&arguments[1]) {
+            actual = format!("Array.from({actual})");
+        }
+        if is_array_expression(&arguments[0]) {
+            expected = format!("Array.from({expected})");
+        }
+    }
     let message = assertion_message(&arguments, name.as_str())?;
     write_indent(out, indent);
     if let Some(message) = message {
@@ -262,6 +311,61 @@ fn emit_assertion(
             .expect("writing to a String cannot fail");
     }
     return Ok(());
+}
+
+fn emit_assertion_expression(expression: &Expr) -> Result<String, CompileError> {
+    if let Expr::Binary(comparison) = expression
+        && matches!(comparison.op, BinOp::Lt(_))
+        && let Expr::MethodCall(absolute) = comparison.left.as_ref()
+        && absolute.method == "abs"
+        && absolute.args.is_empty()
+    {
+        let difference = unparenthesized(&absolute.receiver);
+        if let Expr::Binary(difference) = difference
+            && matches!(difference.op, BinOp::Sub(_))
+            && matches!(unparenthesized(&difference.left), Expr::Index(_))
+            && expression_contains_suffixed_f32(&difference.right)
+        {
+            return Ok(format!(
+                "Math.abs({} - Math.fround({})) < {}",
+                emit_expression(&difference.left, &HashSet::new())?,
+                emit_expression(&difference.right, &HashSet::new())?,
+                emit_expression(&comparison.right, &HashSet::new())?
+            ));
+        }
+    }
+    return emit_expression(expression, &HashSet::new());
+}
+
+fn expression_contains_suffixed_f32(expression: &Expr) -> bool {
+    struct F32Finder {
+        found: bool,
+    }
+
+    impl<'ast> Visit<'ast> for F32Finder {
+        fn visit_lit_float(&mut self, literal: &'ast syn::LitFloat) {
+            self.found |= literal.suffix() == "f32";
+            syn::visit::visit_lit_float(self, literal);
+        }
+    }
+
+    let mut finder = F32Finder { found: false };
+    finder.visit_expr(expression);
+    return finder.found;
+}
+
+fn is_array_expression(expression: &Expr) -> bool {
+    return matches!(
+        unparenthesized(expression),
+        Expr::Array(_) | Expr::Repeat(_)
+    );
+}
+
+fn unparenthesized(mut expression: &Expr) -> &Expr {
+    while let Expr::Paren(parenthesized) = expression {
+        expression = &parenthesized.expr;
+    }
+    return expression;
 }
 
 fn emit_block(out: &mut String, statements: &[Stmt], indent: usize) -> Result<(), CompileError> {
@@ -318,6 +422,56 @@ fn emit_helper(out: &mut String, function: &ItemFn, indent: usize) -> Result<(),
     emit_block(out, &function.block.stmts, indent + 1)?;
     write_indent(out, indent);
     out.push_str("}\n");
+    return Ok(());
+}
+
+fn emit_test_constant(out: &mut String, constant: &syn::ItemConst) -> Result<(), CompileError> {
+    writeln!(
+        out,
+        "const {}: {} = {};",
+        constant.ident,
+        emit_type(&constant.ty, &HashSet::new())?,
+        emit_expression(&constant.expr, &HashSet::new())?
+    )
+    .expect("writing to a String cannot fail");
+    return Ok(());
+}
+
+fn emit_test_struct(out: &mut String, structure: &syn::ItemStruct) -> Result<(), CompileError> {
+    let Fields::Named(fields) = &structure.fields else {
+        return Err(compile_error(format!(
+            "portable test struct `{}` must use named fields",
+            structure.ident
+        )));
+    };
+    writeln!(out, "interface {} {{", structure.ident).expect("writing to a String cannot fail");
+    for field in &fields.named {
+        let Some(name) = &field.ident else {
+            return Err(compile_error(format!(
+                "portable test struct `{}` has an unnamed field",
+                structure.ident
+            )));
+        };
+        writeln!(
+            out,
+            "  {}: {};",
+            snake_to_lower_camel(&name.to_string()),
+            emit_type(&field.ty, &HashSet::new())?
+        )
+        .expect("writing to a String cannot fail");
+    }
+    out.push_str("}\n");
+    return Ok(());
+}
+
+fn emit_test_type_alias(out: &mut String, type_alias: &syn::ItemType) -> Result<(), CompileError> {
+    writeln!(
+        out,
+        "type {} = {};",
+        type_alias.ident,
+        emit_type(&type_alias.ty, &HashSet::new())?
+    )
+    .expect("writing to a String cannot fail");
     return Ok(());
 }
 
@@ -407,13 +561,14 @@ fn emit_statement(out: &mut String, statement: &Stmt, indent: usize) -> Result<(
     return Ok(());
 }
 
-fn emit_suite(out: &mut String, suite: &TestSuite) -> Result<(), CompileError> {
-    writeln!(
-        out,
-        "describe({:?}, () => {{",
-        snake_to_lower_camel(&suite.name)
-    )
-    .expect("writing to a String cannot fail");
+fn emit_suite(
+    out: &mut String,
+    suite: &TestSuite,
+    contract_symbols: &[String],
+) -> Result<(), CompileError> {
+    let name = resolve_suite_name(&suite.name, contract_symbols);
+    writeln!(out, "describe({:?}, () => {{", snake_to_lower_camel(name))
+        .expect("writing to a String cannot fail");
     for helper in &suite.helpers {
         emit_helper(out, helper, 1)?;
     }
@@ -426,6 +581,18 @@ fn emit_suite(out: &mut String, suite: &TestSuite) -> Result<(), CompileError> {
     }
     out.push_str("});\n");
     return Ok(());
+}
+
+fn resolve_suite_name<'a>(name: &'a str, contract_symbols: &'a [String]) -> &'a str {
+    if contract_symbols.iter().any(|symbol| symbol == name) {
+        return name;
+    }
+    if let Some(callable) = name.strip_suffix("_tests")
+        && contract_symbols.iter().any(|symbol| symbol == callable)
+    {
+        return callable;
+    }
+    return name;
 }
 
 fn emit_test(out: &mut String, test: &TestCase) -> Result<(), CompileError> {
@@ -464,7 +631,7 @@ pub(crate) fn emit_test_program(
     out.push_str("import { describe, expect, it } from 'vitest';\n");
     if !contract_symbols.is_empty() {
         out.push_str("\nimport {\n");
-        for symbol in contract_symbols {
+        for symbol in &contract_symbols {
             writeln!(out, "  {},", emit_path_name(&symbol))
                 .expect("writing to a String cannot fail");
         }
@@ -473,13 +640,25 @@ pub(crate) fn emit_test_program(
     if program.standard_constants.contains("PI") {
         out.push_str("\nconst PI = Math.PI;\n");
     }
+    for type_alias in &program.type_aliases {
+        out.push('\n');
+        emit_test_type_alias(&mut out, type_alias)?;
+    }
+    for structure in &program.structs {
+        out.push('\n');
+        emit_test_struct(&mut out, structure)?;
+    }
+    for constant in &program.constants {
+        out.push('\n');
+        emit_test_constant(&mut out, constant)?;
+    }
     for helper in &program.helpers {
         out.push('\n');
         emit_helper(&mut out, helper, 0)?;
     }
     for suite in &program.suites {
         out.push('\n');
-        emit_suite(&mut out, suite)?;
+        emit_suite(&mut out, suite, &contract_symbols)?;
     }
     return Ok(out);
 }

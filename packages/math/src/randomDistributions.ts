@@ -1,6 +1,8 @@
 // Generated from crates/flight-math/src/random_distributions.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
+import type { RandomSource } from './random.ts';
+
 const ZERO_SAMPLE_EPSILON: number = 1.0 / 4503599627370496.0;
 
 /**
@@ -8,7 +10,7 @@ const ZERO_SAMPLE_EPSILON: number = 1.0 / 4503599627370496.0;
  *
  * Does not mutate `items`. Deterministic: same random sequence -> same picks.
  */
-export function pick<T>(random: () => number, items: Readonly<T[]>): T | undefined {
+export function pick<T>(random: RandomSource, items: Readonly<T[]>): T | undefined {
   if (items.length === 0) {
     return undefined;
   }
@@ -24,7 +26,7 @@ export function pick<T>(random: () => number, items: Readonly<T[]>): T | undefin
  * The result is always non-negative. Throws if `rate` is not finite or not
  * positive.
  */
-export function randomExponential(random: () => number, rate?: number): number {
+export function randomExponential(random: RandomSource, rate?: number): number {
   rate = rate ?? 1.0;
   if (!Number.isFinite(rate) || rate <= 0.0) {
     throw new RangeError('randomExponential: rate must be finite and > 0');
@@ -40,7 +42,7 @@ export function randomExponential(random: () => number, rate?: number): number {
  *
  * Each call consumes two values from `random` and discards one.
  */
-export function randomGaussian(random: () => number, mean?: number, standardDeviation?: number): number {
+export function randomGaussian(random: RandomSource, mean?: number, standardDeviation?: number): number {
   mean = mean ?? 0.0;
   standardDeviation = standardDeviation ?? 1.0;
   const u1 = random();
@@ -59,7 +61,7 @@ export function randomGaussian(random: () => number, mean?: number, standardDevi
  * needed — it consumes exactly 2 values from `random` instead of 4.
  */
 export function randomGaussianPair(
-  random: () => number,
+  random: RandomSource,
   mean?: number,
   standardDeviation?: number,
 ): readonly [number, number] {
@@ -82,7 +84,7 @@ export function randomGaussianPair(
  * Uses rejection sampling to avoid the over-dense centre that polar-radius
  * sampling without a square-root correction produces.
  */
-export function randomInsideUnitDisc(out: Float32Array, random: () => number): void {
+export function randomInsideUnitDisc(out: Float32Array, random: RandomSource): void {
   for (;;) {
     const x = random() * 2.0 - 1.0;
     const y = random() * 2.0 - 1.0;
@@ -100,7 +102,7 @@ export function randomInsideUnitDisc(out: Float32Array, random: () => number): v
  *
  * Uses 3D box rejection sampling.
  */
-export function randomInsideUnitSphere(out: Float32Array, random: () => number): void {
+export function randomInsideUnitSphere(out: Float32Array, random: RandomSource): void {
   for (;;) {
     const x = random() * 2.0 - 1.0;
     const y = random() * 2.0 - 1.0;
@@ -118,7 +120,7 @@ export function randomInsideUnitSphere(out: Float32Array, random: () => number):
  * Sample a uniformly-distributed point on the unit circle and write it into
  * `out[0]` / `out[1]`. The result has unit length.
  */
-export function randomOnUnitCircle(out: Float32Array, random: () => number): void {
+export function randomOnUnitCircle(out: Float32Array, random: RandomSource): void {
   const angle = random() * Math.PI * 2;
   const x = Math.cos(angle);
   const y = Math.sin(angle);
@@ -132,7 +134,7 @@ export function randomOnUnitCircle(out: Float32Array, random: () => number): voi
  *
  * Uses the Marsaglia (1972) method.
  */
-export function randomOnUnitSphere(out: Float32Array, random: () => number): void {
+export function randomOnUnitSphere(out: Float32Array, random: RandomSource): void {
   let x: number;
   let y: number;
   let s: number;
@@ -159,7 +161,7 @@ export function randomOnUnitSphere(out: Float32Array, random: () => number): voi
  * Uses Knuth's multiplicative algorithm. Accurate and simple for small
  * lambda (lambda <= ~30). Throws if `lambda` is not finite or not positive.
  */
-export function randomPoisson(random: () => number, lambda?: number): number {
+export function randomPoisson(random: RandomSource, lambda?: number): number {
   lambda = lambda ?? 1.0;
   if (!Number.isFinite(lambda) || lambda <= 0.0) {
     throw new RangeError('randomPoisson: lambda must be finite and > 0');
@@ -180,7 +182,7 @@ export function randomPoisson(random: () => number, lambda?: number): number {
  *
  * Returns `-1` for an empty or all-zero weight array.
  */
-export function randomWeighted(random: () => number, weights: Readonly<number[]>): number {
+export function randomWeighted(random: RandomSource, weights: Readonly<number[]>): number {
   let total = 0.0;
   let i = 0;
   while (i < weights.length) {
@@ -206,7 +208,7 @@ export function randomWeighted(random: () => number, weights: Readonly<number[]>
  * Clear and fill `out` with the elements of `items` shuffled in a random order
  * (Fisher-Yates / Knuth shuffle). Reuses the caller's allocation and does not mutate `items`.
  */
-export function shuffle<T>(out: T[], random: () => number, items: Readonly<T[]>): void {
+export function shuffle<T>(out: T[], random: RandomSource, items: Readonly<T[]>): void {
   out.length = 0;
   out.push(...items);
   shuffleInPlace(random, out);
@@ -217,7 +219,7 @@ export function shuffle<T>(out: T[], random: () => number, items: Readonly<T[]>)
  *
  * Mutates `items`. Deterministic: same random state -> same shuffled order.
  */
-export function shuffleInPlace<T>(random: () => number, items: T[]): void {
+export function shuffleInPlace<T>(random: RandomSource, items: T[]): void {
   const len = items.length;
   if (len <= 1) {
     return;

@@ -39,9 +39,23 @@ pub fn compile_typescript(
     source: &str,
     entity_module: Option<&str>,
 ) -> Result<String, CompileError> {
+    return compile_typescript_with_alias_sources(source, entity_module, &[]);
+}
+
+/// Compiles one Rust module while reusing canonical callable aliases declared by sibling sources.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_typescript_with_alias_sources(
+    source: &str,
+    entity_module: Option<&str>,
+    alias_sources: &[&str],
+) -> Result<String, CompileError> {
     require_generated_source(source)?;
     let program = model::parse_program(source)?;
-    let output = typescript::emit_program(&program, entity_module)?;
+    let alias_programs = alias_sources
+        .iter()
+        .map(|alias_source| model::parse_program(alias_source))
+        .collect::<Result<Vec<_>, _>>()?;
+    let output = typescript::emit_program(&program, entity_module, &alias_programs)?;
     return Ok(lower_string_union_variants(output, source, false));
 }
 

@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from './entity.ts';
+import { allocateEntity, finishEntity, writeEntityRuntime } from './entity.ts';
 import type { EntityRaw, EntityWithoutRuntime } from './types.ts';
 import { EntityRuntimeKey } from './types.ts';
 
@@ -8,7 +8,7 @@ import { EntityRuntimeKey } from './types.ts';
 export function cloneEntity<Type extends EntityRaw>(source: Readonly<Type>): Type {
   const copy = allocateEntity<Type>();
   Object.assign(copy, source);
-  delete (copy as Record<PropertyKey, unknown>)[EntityRuntimeKey];
+  writeEntityRuntime(copy, undefined);
   return finishEntity(copy);
 }
 

@@ -125,24 +125,7 @@ fn emit_closure(
     let parameters = closure
         .inputs
         .iter()
-        .map(|pattern| match pattern {
-            Pat::Ident(identifier) => Ok(snake_to_lower_camel(&identifier.ident.to_string())),
-            Pat::Type(pattern) => {
-                let Pat::Ident(identifier) = pattern.pat.as_ref() else {
-                    return Err(compile_error(
-                        "unsupported destructuring in closure parameter",
-                    ));
-                };
-                Ok(format!(
-                    "{}: {}",
-                    snake_to_lower_camel(&identifier.ident.to_string()),
-                    emit_type(&pattern.ty, entities)?
-                ))
-            }
-            _ => Err(compile_error(
-                "unsupported destructuring in closure parameter",
-            )),
-        })
+        .map(|pattern| emit_closure_parameter(pattern, entities))
         .collect::<Result<Vec<_>, _>>()?;
     let return_type = match &closure.output {
         ReturnType::Default => String::new(),
@@ -170,6 +153,24 @@ fn emit_closure(
         "({}){return_type} => {body}",
         parameters.join(", ")
     ));
+}
+
+fn emit_closure_parameter(
+    pattern: &Pat,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    return match pattern {
+        Pat::Ident(identifier) => Ok(snake_to_lower_camel(&identifier.ident.to_string())),
+        Pat::Reference(reference) => emit_closure_parameter(&reference.pat, entities),
+        Pat::Type(pattern) => Ok(format!(
+            "{}: {}",
+            emit_closure_parameter(&pattern.pat, entities)?,
+            emit_type(&pattern.ty, entities)?
+        )),
+        _ => Err(compile_error(
+            "unsupported destructuring in closure parameter",
+        )),
+    };
 }
 
 fn emit_constant(
@@ -388,11 +389,16 @@ pub(crate) fn emit_expression(
         }
         Expr::Cast(cast) => emit_expression(&cast.expr, entities),
         Expr::Closure(closure) => emit_closure(closure, entities),
-        Expr::Field(field) => Ok(format!(
-            "{}.{}",
-            emit_expression(&field.base, entities)?,
-            emit_member(&field.member)
-        )),
+        Expr::Field(field) => {
+            let base = emit_expression(&field.base, entities)?;
+            match &field.member {
+                syn::Member::Named(identifier) => Ok(format!(
+                    "{base}.{}",
+                    snake_to_lower_camel(&identifier.to_string())
+                )),
+                syn::Member::Unnamed(index) => Ok(format!("{base}[{}]", index.index)),
+            }
+        }
         Expr::Group(group) => emit_expression(&group.expr, entities),
         Expr::Index(index) => Ok(format!(
             "{}[{}]",
@@ -408,6 +414,16 @@ pub(crate) fn emit_expression(
         Expr::Path(path) => {
             if path.path.is_ident("None") {
                 return Ok("undefined".to_string());
+            }
+            if expression_is_associated_path(expression, "f32", "min")
+                || expression_is_associated_path(expression, "f64", "min")
+            {
+                return Ok("Math.min".to_string());
+            }
+            if expression_is_associated_path(expression, "f32", "max")
+                || expression_is_associated_path(expression, "f64", "max")
+            {
+                return Ok("Math.max".to_string());
             }
             if path_is_float_constant(&path.path, "NAN") {
                 return Ok("Number.NaN".to_string());
@@ -451,6 +467,24 @@ pub(crate) fn emit_expression(
             Ok(rendered)
         }
         Expr::Reference(reference) => emit_expression(&reference.expr, entities),
+        Expr::Range(range) => {
+            let Some(start) = &range.start else {
+                return Err(compile_error("portable Rust range needs a start"));
+            };
+            let Some(end) = &range.end else {
+                return Err(compile_error("portable Rust range needs an end"));
+            };
+            let start = emit_expression(start, entities)?;
+            let end = emit_expression(end, entities)?;
+            let inclusive = if matches!(range.limits, syn::RangeLimits::Closed(_)) {
+                " + 1"
+            } else {
+                ""
+            };
+            Ok(format!(
+                "Array.from({{ length: {end} - {start}{inclusive} }}, (_, index) => {start} + index)"
+            ))
+        }
         Expr::Repeat(repeat) => {
             let value = emit_expression(&repeat.expr, entities)?;
             let length = emit_expression(&repeat.len, entities)?;
@@ -625,6 +659,7 @@ fn emit_function(
     function: &ItemFn,
     entities: &HashSet<String>,
     aliases: &PreferredAliases,
+    nullable_static_names: &HashSet<String>,
 ) -> Result<(), CompileError> {
     emit_documentation(out, &function.attrs, 0);
     let export = if is_public(&function.vis) {
@@ -674,6 +709,17 @@ fn emit_function(
             && let Pat::Ident(pattern) = argument.pat.as_ref()
         {
             function_context.insert(format!("@nullable:{}", pattern.ident));
+        }
+    }
+    for statement in &function.block.stmts {
+        if let Stmt::Local(local) = statement
+            && let Some(initializer) = &local.init
+            && nullable_static_names
+                .iter()
+                .any(|name| expression_contains_identifier(&initializer.expr, name))
+            && let Some(name) = local_pattern_name(&local.pat)
+        {
+            function_context.insert(format!("@nullable:{name}"));
         }
     }
     emit_block(out, &function.block.stmts, &function_context, 1)?;
@@ -1037,9 +1083,19 @@ fn emit_method_call(
         .map(|argument| emit_expression(argument, entities))
         .collect::<Result<Vec<_>, _>>()?;
     let method = call.method.to_string();
+    if method == "fold" && arguments.len() == 2 {
+        let reducer = match arguments[1].as_str() {
+            "Math.max" => "(left, right) => Math.max(left, right)",
+            "Math.min" => "(left, right) => Math.min(left, right)",
+            reducer => reducer,
+        };
+        return Ok(format!("{receiver}.reduce({reducer}, {})", arguments[0]));
+    }
     return match method.as_str() {
         "abs" if arguments.is_empty() => Ok(format!("Math.abs({receiver})")),
         "acos" if arguments.is_empty() => Ok(format!("Math.acos({receiver})")),
+        "all" if arguments.len() == 1 => Ok(format!("{receiver}.every({})", arguments[0])),
+        "any" if arguments.len() == 1 => Ok(format!("{receiver}.some({})", arguments[0])),
         "asin" if arguments.is_empty() => Ok(format!("Math.asin({receiver})")),
         "atan" if arguments.is_empty() => Ok(format!("Math.atan({receiver})")),
         "atan2" if arguments.len() == 1 => Ok(format!("Math.atan2({receiver}, {})", arguments[0])),
@@ -1055,9 +1111,16 @@ fn emit_method_call(
             Ok(format!("{receiver}.value"))
         }
         "clone" if arguments.is_empty() => Ok(receiver),
+        "collect" if arguments.is_empty() => Ok(receiver),
         "contains" if arguments.len() == 1 => Ok(format!("{receiver}.includes({})", arguments[0])),
         "exp" if arguments.is_empty() => Ok(format!("Math.exp({receiver})")),
+        "expect" if arguments.len() == 1 => Ok(format!(
+            "(() => {{ const value = {receiver}; if (value === undefined) throw new Error({}); return value; }})()",
+            arguments[0]
+        )),
+        "find" if arguments.len() == 1 => Ok(format!("{receiver}.find({})", arguments[0])),
         "floor" if arguments.is_empty() => Ok(format!("Math.floor({receiver})")),
+        "filter" if arguments.len() == 1 => Ok(format!("{receiver}.filter({})", arguments[0])),
         "fetch_add" if arguments.len() == 2 => Ok(format!(
             "(() => {{ const previous = {receiver}.value; {receiver}.value = ({receiver}.value + {}) >>> 0; return previous; }})()",
             arguments[0]
@@ -1068,6 +1131,7 @@ fn emit_method_call(
         "is_some" if arguments.is_empty() => Ok(format!("{receiver} !== undefined")),
         "is_empty" if arguments.is_empty() => Ok(format!("{receiver}.length === 0")),
         "into" if arguments.is_empty() => Ok(receiver),
+        "into_iter" if arguments.is_empty() => Ok(receiver),
         "iter" if arguments.is_empty() => Ok(receiver),
         "as_ref" if arguments.is_empty() => Ok(receiver),
         "len" if arguments.is_empty() => Ok(format!("{receiver}.length")),
@@ -1084,6 +1148,7 @@ fn emit_method_call(
         "set" if arguments.len() == 1 => Ok(format!("{receiver}.value = {}", arguments[0])),
         "signum" if arguments.is_empty() => Ok(format!("Math.sign({receiver})")),
         "sin" if arguments.is_empty() => Ok(format!("Math.sin({receiver})")),
+        "skip" if arguments.len() == 1 => Ok(format!("{receiver}.slice({})", arguments[0])),
         "sqrt" if arguments.is_empty() => Ok(format!("Math.sqrt({receiver})")),
         "sum" if arguments.is_empty() => {
             Ok(format!("{receiver}.reduce((sum, value) => sum + value, 0)"))
@@ -1108,6 +1173,10 @@ fn emit_method_call(
             Ok(format!("Math.imul(({receiver}), {}) >>> 0", arguments[0]))
         }
         "wrapping_shr" if arguments.len() == 1 => Ok(format!("({receiver}) >>> {}", arguments[0])),
+        "windows" if arguments.len() == 1 => Ok(format!(
+            "Array.from({{ length: Math.max(0, {receiver}.length - {} + 1) }}, (_, index) => {receiver}.slice(index, index + {}))",
+            arguments[0], arguments[0]
+        )),
         "lock" if arguments.is_empty() => Ok(receiver),
         "unwrap_or_else"
             if arguments.len() == 1 && expression_contains_method(&call.receiver, "lock") =>
@@ -1253,16 +1322,98 @@ fn emit_preferred_type(
     return Ok(aliases.get(&rendered).cloned().unwrap_or(rendered));
 }
 
+fn emit_type_with_aliases(
+    rust_type: &Type,
+    entities: &HashSet<String>,
+    aliases: &PreferredAliases,
+    nullable_types: &HashSet<String>,
+) -> Result<String, CompileError> {
+    let Type::Path(path) = rust_type else {
+        return emit_preferred_type(rust_type, entities, aliases);
+    };
+    let Some(segment) = path.path.segments.last() else {
+        return Err(compile_error("empty Rust type path"));
+    };
+    let name = segment.ident.to_string();
+    if matches!(name.as_str(), "Option" | "Vec" | "Mutex" | "Arc" | "Ref") {
+        let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+            return emit_preferred_type(rust_type, entities, aliases);
+        };
+        let Some(inner) = arguments.args.iter().find_map(|argument| match argument {
+            GenericArgument::Type(rust_type) => Some(rust_type),
+            _ => None,
+        }) else {
+            return emit_preferred_type(rust_type, entities, aliases);
+        };
+        let inner = emit_type_with_aliases(inner, entities, aliases, nullable_types)?;
+        return Ok(match name.as_str() {
+            "Option" if nullable_types.contains(&inner) => format!("{inner} | null"),
+            "Option" => format!("{inner} | undefined"),
+            "Vec" => format!("{inner}[]"),
+            "Mutex" => format!("{{ value: {inner} }}"),
+            "Arc" | "Ref" => inner,
+            _ => unreachable!(),
+        });
+    }
+    return emit_preferred_type(rust_type, entities, aliases);
+}
+
+fn nullable_guard_types(
+    program: &Program,
+    aliases: &PreferredAliases,
+) -> Result<HashSet<String>, CompileError> {
+    let mut types = HashSet::new();
+    for function in &program.functions {
+        for argument in &function.sig.inputs {
+            if argument_is_nullable_guard(function, argument)
+                && let FnArg::Typed(argument) = argument
+                && let Some(inner) = option_inner_type(&argument.ty)
+            {
+                types.insert(emit_preferred_type(inner, &program.entities, aliases)?);
+            }
+        }
+    }
+    return Ok(types);
+}
+
+fn type_contains_nullable(
+    rust_type: &Type,
+    entities: &HashSet<String>,
+    aliases: &PreferredAliases,
+    nullable_types: &HashSet<String>,
+) -> Result<bool, CompileError> {
+    return Ok(
+        emit_type_with_aliases(rust_type, entities, aliases, nullable_types)?.contains(" | null"),
+    );
+}
+
 // flight-lint: allow(hashmap-iteration) Program constants are a Vec retained in Rust source order; the rule's name heuristic cannot see the field type across modules
 pub(crate) fn emit_program(
     program: &Program,
     entity_module: Option<&str>,
+    alias_programs: &[Program],
 ) -> Result<String, CompileError> {
     let uses_allocate_entity = program
         .functions
         .iter()
         .any(|function| expression_contains_path(&function.block, "allocate_entity"));
-    let aliases = preferred_aliases(program)?;
+    let aliases = preferred_aliases(program, alias_programs)?;
+    let nullable_types = nullable_guard_types(program, &aliases)?;
+    let nullable_static_names = program
+        .statics
+        .iter()
+        .filter_map(|rust_static| {
+            type_contains_nullable(
+                &rust_static.ty,
+                &program.entities,
+                &aliases,
+                &nullable_types,
+            )
+            .ok()
+            .filter(|contains| *contains)
+            .map(|_| rust_static.ident.to_string())
+        })
+        .collect::<HashSet<_>>();
     let mut out = String::new();
 
     let entity_module = if uses_allocate_entity || !program.entities.is_empty() {
@@ -1326,11 +1477,23 @@ pub(crate) fn emit_program(
         out.push('\n');
     }
     for rust_static in &program.statics {
-        emit_static(&mut out, rust_static, &program.entities)?;
+        emit_static(
+            &mut out,
+            rust_static,
+            &program.entities,
+            &aliases,
+            &nullable_types,
+        )?;
         out.push('\n');
     }
     for (index, function) in program.functions.iter().enumerate() {
-        emit_function(&mut out, function, &program.entities, &aliases)?;
+        emit_function(
+            &mut out,
+            function,
+            &program.entities,
+            &aliases,
+            &nullable_static_names,
+        )?;
         if index + 1 < program.functions.len() {
             out.push('\n');
         }
@@ -1511,6 +1674,8 @@ fn emit_static(
     out: &mut String,
     rust_static: &syn::ItemStatic,
     entities: &HashSet<String>,
+    aliases: &PreferredAliases,
+    nullable_types: &HashSet<String>,
 ) -> Result<(), CompileError> {
     emit_documentation(out, &rust_static.attrs, 0);
     let export = if is_public(&rust_static.vis) {
@@ -1518,12 +1683,16 @@ fn emit_static(
     } else {
         ""
     };
+    let typescript_type =
+        emit_type_with_aliases(&rust_static.ty, entities, aliases, nullable_types)?;
+    let mut value = emit_expression(&rust_static.expr, entities)?;
+    if typescript_type.contains(" | null") {
+        value = value.replace("undefined", "null");
+    }
     writeln!(
         out,
         "{export}const {}: {} = {};",
-        rust_static.ident,
-        emit_type(&rust_static.ty, entities)?,
-        emit_expression(&rust_static.expr, entities)?
+        rust_static.ident, typescript_type, value
     )
     .expect("writing to a String cannot fail");
     return Ok(());
@@ -1782,6 +1951,17 @@ fn expression_contains_identifier(expression: &Expr, expected: &str) -> bool {
     }
 
     impl<'ast> syn::visit::Visit<'ast> for IdentifierFinder<'_> {
+        fn visit_expr_closure(&mut self, closure: &'ast syn::ExprClosure) {
+            if closure
+                .inputs
+                .iter()
+                .any(|pattern| pattern_binds_identifier(pattern, self.expected))
+            {
+                return;
+            }
+            syn::visit::visit_expr_closure(self, closure);
+        }
+
         fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
             if path.path.is_ident(self.expected) {
                 self.found = true;
@@ -1795,6 +1975,29 @@ fn expression_contains_identifier(expression: &Expr, expected: &str) -> bool {
         found: false,
     };
     syn::visit::Visit::visit_expr(&mut finder, expression);
+    return finder.found;
+}
+
+fn pattern_binds_identifier(pattern: &Pat, expected: &str) -> bool {
+    struct PatternFinder<'a> {
+        expected: &'a str,
+        found: bool,
+    }
+
+    impl<'ast> syn::visit::Visit<'ast> for PatternFinder<'_> {
+        fn visit_pat_ident(&mut self, pattern: &'ast syn::PatIdent) {
+            if pattern.ident == self.expected {
+                self.found = true;
+            }
+            syn::visit::visit_pat_ident(self, pattern);
+        }
+    }
+
+    let mut finder = PatternFinder {
+        expected,
+        found: false,
+    };
+    syn::visit::Visit::visit_pat(&mut finder, pattern);
     return finder.found;
 }
 
@@ -2048,17 +2251,22 @@ fn pattern_is_mutable(pattern: &Pat) -> bool {
     };
 }
 
-fn preferred_aliases(program: &Program) -> Result<PreferredAliases, CompileError> {
+fn preferred_aliases(
+    program: &Program,
+    alias_programs: &[Program],
+) -> Result<PreferredAliases, CompileError> {
     let mut aliases = PreferredAliases::new();
-    for type_alias in &program.type_aliases {
-        if !is_public(&type_alias.vis) || !type_alias.generics.params.is_empty() {
-            continue;
-        }
-        let rendered = emit_type(&type_alias.ty, &program.entities)?;
-        if rendered.contains("=>") {
-            aliases
-                .entry(rendered)
-                .or_insert_with(|| type_alias.ident.to_string());
+    for alias_program in std::iter::once(program).chain(alias_programs) {
+        for type_alias in &alias_program.type_aliases {
+            if !is_public(&type_alias.vis) || !type_alias.generics.params.is_empty() {
+                continue;
+            }
+            let rendered = emit_type(&type_alias.ty, &alias_program.entities)?;
+            if rendered.contains("=>") {
+                aliases
+                    .entry(rendered)
+                    .or_insert_with(|| type_alias.ident.to_string());
+            }
         }
     }
     return Ok(aliases);

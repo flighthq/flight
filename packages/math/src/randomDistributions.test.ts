@@ -34,7 +34,7 @@ describe('pick', () => {
     let items = [0, 1, 2, 3];
     shuffleInPlace(random, items);
     items.sort((a, b) => a - b);
-    expect(items).toEqual([0, 1, 2, 3]);
+    expect(Array.from(items)).toEqual([0, 1, 2, 3]);
   });
   it('returns an element from the slice', () => {
     const items = [1, 2, 3, 4, 5];
@@ -230,7 +230,7 @@ describe('randomInsideUnitDisc', () => {
     const random = crate.sequenceRandom([1.0, 0.5, 0.5, 0.5]);
     let out = new Float32Array(2).fill(0.0);
     randomInsideUnitDisc(out, random);
-    expect(out).toEqual([1.0, 0.0]);
+    expect(Array.from(out)).toEqual([1.0, 0.0]);
   });
 });
 
@@ -268,7 +268,7 @@ describe('randomInsideUnitSphere', () => {
     const random = crate.sequenceRandom([1.0, 0.5, 0.5, 0.5, 0.5, 0.5]);
     let out = new Float32Array(3).fill(0.0);
     randomInsideUnitSphere(out, random);
-    expect(out).toEqual([1.0, 0.0, 0.0]);
+    expect(Array.from(out)).toEqual([1.0, 0.0, 0.0]);
   });
 });
 
@@ -343,7 +343,7 @@ describe('randomOnUnitSphere', () => {
     let out = new Float32Array(3).fill(0.0);
     const random = crate.sequenceRandom([0.75, 0.5]);
     randomOnUnitSphere(out, random);
-    expect(Math.abs(out[0] - Math.sqrt(3.0) / 2.0) < 5e-13).toBe(true);
+    expect(Math.abs(out[0] - Math.fround(Math.sqrt(3.0) / 2.0)) < 5e-13).toBe(true);
     expect(out[1]).toEqual(0.0);
     expect(out[2]).toEqual(0.5);
   });
@@ -351,7 +351,7 @@ describe('randomOnUnitSphere', () => {
     let out = new Float32Array(3).fill(0.0);
     const random = crate.sequenceRandom([1.0, 0.5, 0.5, 0.5]);
     randomOnUnitSphere(out, random);
-    expect(out).toEqual([0.0, 0.0, 1.0]);
+    expect(Array.from(out)).toEqual([0.0, 0.0, 1.0]);
   });
 });
 
@@ -511,7 +511,7 @@ describe('shuffleInPlace', () => {
     };
     let items = ['a', 'b', 'c', 'd'];
     shuffleInPlace(random, items);
-    expect(items).toEqual(['c', 'a', 'b', 'd']);
+    expect(Array.from(items)).toEqual(['c', 'a', 'b', 'd']);
     expect(calls.value).toEqual(3);
   });
 });

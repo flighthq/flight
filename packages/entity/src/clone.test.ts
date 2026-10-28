@@ -33,7 +33,21 @@ describe('cloneEntity', () => {
     const source = createTestEntity();
     const clone = cloneEntity(source);
     expect(clone[EntityRuntimeKey]).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(clone, EntityRuntimeKey)).toBe(true);
+    expect(Object.getOwnPropertyDescriptor(clone, EntityRuntimeKey)?.enumerable).toBe(false);
     expect(clone).not.toBe(source);
+  });
+
+  it('resets an enumerable compatibility runtime without leaking it into object spreads', () => {
+    const source = { [EntityRuntimeKey]: { binding: {}, uid: 'legacy' }, name: 'source' } as TestEntity & {
+      name: string;
+    };
+
+    const clone = cloneEntity(source);
+
+    expect(clone[EntityRuntimeKey]).toBeUndefined();
+    expect(Object.getOwnPropertyDescriptor(clone, EntityRuntimeKey)?.enumerable).toBe(false);
+    expect(Object.getOwnPropertySymbols({ ...clone })).not.toContain(EntityRuntimeKey);
   });
 
   it('returns a new object reference', () => {

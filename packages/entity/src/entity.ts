@@ -29,12 +29,18 @@ export class Entity {
   }
 }
 
-export function allocateEntity(): EntityConstruction<EntityWithCompatibilityRuntime>;
-export function allocateEntity<Type extends EntityRaw>(): EntityConstruction<Type>;
-export function allocateEntity<Type extends EntityRaw>(): EntityConstruction<Type> {
-  const out = {} as EntityConstruction<Type> & EntityWithPrivateRuntime;
+export function allocateEntity<
+  Type extends EntityRaw = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined },
+>(): EntityConstruction<Type> {
+  const out = {} as EntityConstruction<Type> & EntityWithCompatibilityRuntime & EntityWithPrivateRuntime;
   Object.defineProperty(out, EntityRuntimePrivate, {
     configurable: false,
+    enumerable: false,
+    value: undefined,
+    writable: true,
+  });
+  Object.defineProperty(out, EntityRuntimeKey, {
+    configurable: true,
     enumerable: false,
     value: undefined,
     writable: true,

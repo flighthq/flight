@@ -38,6 +38,7 @@ export * from '@flighthq/effects-canvas';
 export * from '@flighthq/effects-gl';
 export * from '@flighthq/effects-wgpu';
 export * from '@flighthq/entity';
+export { Entity } from './entity.ts';
 export * from '@flighthq/filesystem';
 export * from '@flighthq/flow';
 export * from '@flighthq/font';

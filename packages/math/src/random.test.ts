@@ -41,9 +41,9 @@ describe('createRandomSource', () => {
   });
   it('pins the mulberry32 transform with a known answer sequence', () => {
     const random = createRandomSource(12648430);
-    expect([random(), random(), random(), random()]).toEqual([
-      0.021141508361324668, 0.6661099966149777, 0.7799714196007699, 0.7395844468846917,
-    ]);
+    expect(Array.from([random(), random(), random(), random()])).toEqual(
+      Array.from([0.021141508361324668, 0.6661099966149777, 0.7799714196007699, 0.7395844468846917]),
+    );
   });
   it('repeats the sequence when constructed with the same seed', () => {
     const rng = createRandomSource(42);

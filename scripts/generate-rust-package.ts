@@ -7,9 +7,11 @@ import { fileURLToPath } from 'node:url';
 import {
   collectCompanionFileNames,
   collectExportSymbols,
+  collectReferencedExportNames,
   collectRustPublicUses,
   collectStaleGeneratedFileNames,
   hasGeneratedProvenanceHeader,
+  renderCompanionContractExports,
   renderPublicExports,
   snakeToLowerCamel,
 } from './generate-rust-package-exports.ts';
@@ -34,6 +36,7 @@ interface SymbolOwner {
   fileName: string;
   hasType: boolean;
   hasValue: boolean;
+  isClass?: boolean;
 }
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -60,8 +63,12 @@ mkdirSync(stagingSourceRoot, { recursive: true });
 mkdirSync(rawRoot, { recursive: true });
 
 try {
-  const modules = sourceFiles(crateRoot)
-    .map(loadModule)
+  const rustSources = sourceFiles(crateRoot);
+  const aliasSources = rustSources
+    .map((rustSource) => join(crateRoot, 'src', rustSource))
+    .filter((rustPath) => sourceMode(rustPath) === 'generate');
+  const modules = rustSources
+    .map((rustSource) => loadModule(rustSource, aliasSources))
     .filter((module): module is PackageModule => module !== null);
   const companions = loadCompanions(modules);
   const symbolModules = [...modules, ...companions];
@@ -70,7 +77,12 @@ try {
 
   for (const module of modules) {
     if (module.mode !== 'generate') continue;
-    const imports = crateImports(join(crateRoot, 'src', module.rustSource), module.fileName, symbols);
+    const imports = crateImports(
+      join(crateRoot, 'src', module.rustSource),
+      module.fileName,
+      module.typescript,
+      symbols,
+    );
     writeGenerated(
       join(stagingSourceRoot, module.fileName),
       imports + module.typescript,
@@ -98,7 +110,7 @@ try {
 
   writeGenerated(
     join(stagingSourceRoot, 'contract.ts'),
-    contractExports(crateRoot, modules, symbols),
+    contractExports(crateRoot, modules, symbolModules, symbols),
     join(crateRoot, 'src', 'lib.rs'),
   );
   writeGenerated(
@@ -136,10 +148,25 @@ function addRustTestSupportImport(typescript: string): string {
   return typescript.replace(vitestImportEnd, (match) => `${match}\n${importLine}`);
 }
 
-function compile(command: string, source: string, out: string, trailing: string[] = []): string {
+function compile(
+  command: string,
+  source: string,
+  out: string,
+  trailing: string[] = [],
+  aliasSources: string[] = [],
+): string {
   execFileSync(
     compilerPath,
-    [command, '--source', source, '--out', out, ...entityArguments(command), ...contractArguments(command, trailing)],
+    [
+      command,
+      '--source',
+      source,
+      '--out',
+      out,
+      ...entityArguments(command),
+      ...aliasArguments(command, aliasSources),
+      ...contractArguments(command, trailing),
+    ],
     {
       cwd: repositoryRoot,
       stdio: ['ignore', 'ignore', 'inherit'],
@@ -148,12 +175,22 @@ function compile(command: string, source: string, out: string, trailing: string[
   return readFileSync(out, 'utf8');
 }
 
+function aliasArguments(command: string, aliasSources: string[]): string[] {
+  if (command !== 'generate') return [];
+  return aliasSources.flatMap((source) => ['--alias-source', source]);
+}
+
 function contractArguments(command: string, trailing: string[]): string[] {
   if (command !== 'generate-tests') return trailing;
   return ['--contract-module', ...trailing];
 }
 
-function contractExports(crateRoot: string, modules: PackageModule[], symbols: Map<string, SymbolOwner>): string {
+function contractExports(
+  crateRoot: string,
+  modules: PackageModule[],
+  symbolModules: PackageModule[],
+  symbols: Map<string, SymbolOwner>,
+): string {
   const contractPath = join(crateRoot, 'src', 'contract.rs');
   if (!existsSync(contractPath)) {
     throw new Error(`${relative(repositoryRoot, contractPath)} is required to derive contract exports`);
@@ -188,10 +225,15 @@ function contractExports(crateRoot: string, modules: PackageModule[], symbols: M
       output += `export type { ${types.join(', ')} } from './${module.fileName}';\n`;
     }
   }
-  return output;
+  return output + renderCompanionContractExports(symbolModules, symbols);
 }
 
-function crateImports(rustPath: string, outputFileName: string, symbols: Map<string, SymbolOwner>): string {
+function crateImports(
+  rustPath: string,
+  outputFileName: string,
+  typescript: string,
+  symbols: Map<string, SymbolOwner>,
+): string {
   const rust = readFileSync(rustPath, 'utf8');
   const importedNames = new Set<string>();
   for (const match of rust.matchAll(/^use crate::(?:[A-Za-z0-9_]+::)?([A-Za-z0-9_]+);$/gm)) {
@@ -202,6 +244,9 @@ function crateImports(rustPath: string, outputFileName: string, symbols: Map<str
       const trimmed = name.trim();
       if (/^[A-Za-z0-9_]+$/.test(trimmed)) importedNames.add(snakeToLowerCamel(trimmed));
     }
+  }
+  for (const name of collectReferencedExportNames(typescript, outputFileName, symbols)) {
+    importedNames.add(name);
   }
 
   const imports = new Map<string, { types: string[]; values: string[] }>();
@@ -300,7 +345,7 @@ function formatterPath(): string {
   return join(repositoryRoot, 'node_modules', '.bin', process.platform === 'win32' ? 'oxfmt.cmd' : 'oxfmt');
 }
 
-function loadModule(rustSource: string): PackageModule | null {
+function loadModule(rustSource: string, aliasSources: string[]): PackageModule | null {
   const rustPath = join(crateRoot, 'src', rustSource);
   const fileName = `${snakeToLowerCamel(rustSource.slice(0, -3))}.ts`;
   const mode = sourceMode(rustPath);
@@ -317,7 +362,7 @@ function loadModule(rustSource: string): PackageModule | null {
     fileName,
     mode,
     rustSource,
-    typescript: compile('generate', rustPath, join(rawRoot, fileName)),
+    typescript: compile('generate', rustPath, join(rawRoot, fileName), [], aliasSources),
   };
 }
 

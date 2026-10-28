@@ -4,7 +4,12 @@ import { fileURLToPath } from 'node:url';
 
 import pc from 'picocolors';
 
-import { getModulePublishedValueExports, getModuleValueExports } from './export-lane-source.ts';
+import {
+  getGeneratedExportLane,
+  getModulePublishedValueExports,
+  getModuleValueExports,
+  isTestSupportSource,
+} from './export-lane-source.ts';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES_DIR = join(ROOT, 'packages');
@@ -302,6 +307,7 @@ function getSourceModules(srcDir: string): string[] {
       (f) =>
         f.endsWith('.ts') && !f.endsWith('.test.ts') && !f.endsWith('.d.ts') && f !== 'index.ts' && f !== 'contract.ts',
     )
+    .filter((fileName) => !isTestSupportSource(readFileSync(join(srcDir, fileName), 'utf8'), join(srcDir, fileName)))
     .map((f) => f.replace('.ts', ''))
     .sort();
 }
@@ -395,6 +401,24 @@ function classifyExports(exportsByModule: ModuleExports[], policy: ExportsPolicy
   return classification;
 }
 
+function classifyGeneratedExports(
+  exportsByModule: ModuleExports[],
+  contractNames: ReadonlySet<string>,
+  publicNames: ReadonlySet<string>,
+): Map<string, Classification> {
+  const classification = new Map<string, Classification>();
+  for (const { module, names } of exportsByModule) {
+    for (const name of names) {
+      classification.set(name, {
+        lane: getGeneratedExportLane(name, contractNames, publicNames),
+        module,
+        source: 'generated Rust lane',
+      });
+    }
+  }
+  return classification;
+}
+
 // ── Parse current file state ─────────────────────────────────────────
 
 function getModulesFromFile(filePath: string): Set<string> | null {
@@ -437,6 +461,10 @@ function getExportNamesFromFile(filePath: string, srcDir: string): Set<string> |
   }
 
   return names;
+}
+
+function hasGeneratedRustProvenance(filePath: string): boolean {
+  return existsSync(filePath) && readFileSync(filePath, 'utf8').startsWith('// Generated from crates/flight-');
 }
 
 function getIndexDuplicateNames(filePath: string, srcDir: string): string[] {
@@ -604,7 +632,16 @@ for (const pkg of GOVERNED_PACKAGES) {
   const policyWarnings = validatePolicy(policy, allExports);
   for (const w of policyWarnings) console.log(pc.yellow(`⚠  ${pkg}: ${w}`));
 
-  const classification = classifyExports(exportsByModule, policy);
+  const derivedContractNames = getExportNamesFromFile(contractPath, srcDir);
+  const derivedPublicNames = getExportNamesFromFile(indexPath, srcDir);
+  const generatedLanes =
+    hasGeneratedRustProvenance(contractPath) &&
+    hasGeneratedRustProvenance(indexPath) &&
+    derivedContractNames instanceof Set &&
+    derivedPublicNames instanceof Set;
+  const classification = generatedLanes
+    ? classifyGeneratedExports(exportsByModule, derivedContractNames, derivedPublicNames)
+    : classifyExports(exportsByModule, policy);
 
   const counts = { public: 0, protected: 0, exclude: 0 };
   for (const { lane } of classification.values()) counts[lane]++;

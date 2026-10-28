@@ -21,9 +21,12 @@ pub(crate) struct Program {
 }
 
 pub(crate) struct TestProgram {
+    pub(crate) constants: Vec<ItemConst>,
     pub(crate) helpers: Vec<ItemFn>,
     pub(crate) standard_constants: HashSet<String>,
+    pub(crate) structs: Vec<ItemStruct>,
     pub(crate) suites: Vec<TestSuite>,
+    pub(crate) type_aliases: Vec<ItemType>,
 }
 
 pub(crate) struct TestSuite {
@@ -252,9 +255,12 @@ pub(crate) fn directive_names(source: &str, directive: &str) -> HashSet<String> 
 pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileError> {
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust test source: {error}")))?;
+    let mut constants = Vec::new();
     let mut helpers = Vec::new();
     let mut standard_constants = HashSet::new();
+    let mut structs = Vec::new();
     let mut suites = Vec::new();
+    let mut type_aliases = Vec::new();
     let mut top_level_skipped_tests = Vec::new();
     let mut top_level_tests = Vec::new();
 
@@ -283,16 +289,16 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
             Item::Use(item_use) => {
                 collect_standard_constant(&item_use.tree, &mut Vec::new(), &mut standard_constants);
             }
-            Item::Const(_)
-            | Item::Enum(_)
+            Item::Const(constant) => constants.push(constant),
+            Item::Struct(structure) => structs.push(structure),
+            Item::Type(type_alias) => type_aliases.push(type_alias),
+            Item::Enum(_)
             | Item::ExternCrate(_)
             | Item::ForeignMod(_)
             | Item::Macro(_)
             | Item::Static(_)
-            | Item::Struct(_)
             | Item::Trait(_)
             | Item::TraitAlias(_)
-            | Item::Type(_)
             | Item::Union(_)
             | Item::Verbatim(_) => {
                 return Err(compile_error(
@@ -316,9 +322,12 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
     }
 
     return Ok(TestProgram {
+        constants,
         helpers,
         standard_constants,
+        structs,
         suites,
+        type_aliases,
     });
 }
 
