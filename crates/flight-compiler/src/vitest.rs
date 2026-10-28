@@ -704,7 +704,7 @@ pub(crate) fn emit_test_program(
     if !contract_symbols.is_empty() {
         out.push_str("\nimport {\n");
         for symbol in &contract_symbols {
-            writeln!(out, "  {},", emit_path_name(&symbol))
+            writeln!(out, "  {},", emit_path_name(symbol))
                 .expect("writing to a String cannot fail");
         }
         writeln!(out, "}} from {contract_module:?};").expect("writing to a String cannot fail");
