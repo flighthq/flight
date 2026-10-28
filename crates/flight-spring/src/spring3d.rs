@@ -12,7 +12,10 @@ mod sugar_tests {
 
     #[test]
     fn spring3d_new_matches_create_spring3d() {
-        assert_eq!(Spring3D::new(), create_spring3d());
+        assert_eq!(
+            Spring3D::new(1.0, 2.0, 3.0, 4.0, 5.0, 6.0),
+            create_spring3d(1.0, 2.0, 3.0, 4.0, 5.0, 6.0)
+        );
     }
 }
 
@@ -25,21 +28,36 @@ pub struct Spring3D {
     runtime: EntityRuntimeSlot,
 }
 
-/// Allocate a 3D spring as three scalar springs at value and velocity zero. Assign a requested
-/// initial state after construction.
-// flight-lint: allow(conform-params) D23 (B) zero-field create (foreman-c374f347): assign axis values and velocities after create
-pub fn create_spring3d() -> Spring3D {
+/// Allocate a 3D spring as three scalar springs: each axis starts at its `value_*` with its
+/// `velocity_*`.
+pub fn create_spring3d(
+    value_x: f32,
+    value_y: f32,
+    value_z: f32,
+    velocity_x: f32,
+    velocity_y: f32,
+    velocity_z: f32,
+) -> Spring3D {
     let mut out: Spring3D = allocate_entity();
-    initialize_spring3d(&mut out);
+    initialize_spring3d(
+        &mut out, value_x, value_y, value_z, velocity_x, velocity_y, velocity_z,
+    );
     return out;
 }
 
-/// Writes the canonical zero state into all existing axes of a pre-allocated `Spring3D`.
-// flight-lint: allow(conform-params) D23 (B) zero-field initializer (foreman-c374f347)
-pub fn initialize_spring3d(out: &mut Spring3D) {
-    initialize_spring(&mut out.x);
-    initialize_spring(&mut out.y);
-    initialize_spring(&mut out.z);
+/// Writes per-axis values and velocities into all existing axes of a pre-allocated `Spring3D`.
+pub fn initialize_spring3d(
+    out: &mut Spring3D,
+    value_x: f32,
+    value_y: f32,
+    value_z: f32,
+    velocity_x: f32,
+    velocity_y: f32,
+    velocity_z: f32,
+) {
+    initialize_spring(&mut out.x, value_x, velocity_x);
+    initialize_spring(&mut out.y, value_y, velocity_y);
+    initialize_spring(&mut out.z, value_z, velocity_z);
 }
 
 /// Add independent velocity impulses to all three axes without changing their values.
@@ -101,8 +119,17 @@ pub fn update_spring3d(
 }
 
 impl Spring3D {
-    pub fn new() -> Self {
-        return create_spring3d();
+    pub fn new(
+        value_x: f32,
+        value_y: f32,
+        value_z: f32,
+        velocity_x: f32,
+        velocity_y: f32,
+        velocity_z: f32,
+    ) -> Self {
+        return create_spring3d(
+            value_x, value_y, value_z, velocity_x, velocity_y, velocity_z,
+        );
     }
 
     pub fn add_impulse(&mut self, velocity_x: f32, velocity_y: f32, velocity_z: f32) {

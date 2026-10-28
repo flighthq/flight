@@ -15,24 +15,18 @@ mod create_spring_config {
 
     #[test]
     fn stores_frequency_and_damping_ratio_verbatim() {
-        let config = create_spring_config(Some(&SpringConfigOptions {
-            damping_ratio: Some(0.4),
-            frequency: Some(2.5),
-        }));
+        let config = create_spring_config(2.5, 0.4);
         assert_eq!(config.frequency, 2.5);
         assert_eq!(config.damping_ratio, 0.4);
     }
 
     #[test]
-    fn applies_only_supplied_overrides_to_the_documented_defaults() {
-        let config = create_spring_config(Some(&SpringConfigOptions {
-            damping_ratio: None,
-            frequency: Some(3.0),
-        }));
+    fn stores_explicit_zero_values() {
+        let config = create_spring_config(3.0, 0.0);
         assert_eq!(config.frequency, 3.0);
         assert_eq!(config.damping_ratio, 0.0);
         assert_eq!(
-            create_spring_config(None),
+            create_spring_config(0.0, 0.0),
             SpringConfig {
                 damping_ratio: 0.0,
                 frequency: 0.0,
@@ -93,15 +87,11 @@ mod initialize_spring_config {
 
     #[test]
     fn matches_create_and_overwrites_existing_values() {
-        let options = SpringConfigOptions {
-            damping_ratio: Some(0.75),
-            frequency: Some(6.0),
-        };
         let mut out = SpringConfig {
             damping_ratio: 99.0,
             frequency: 99.0,
         };
-        initialize_spring_config(&mut out, Some(&options));
-        assert_eq!(out, create_spring_config(Some(&options)));
+        initialize_spring_config(&mut out, 6.0, 0.75);
+        assert_eq!(out, create_spring_config(6.0, 0.75));
     }
 }

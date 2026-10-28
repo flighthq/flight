@@ -12,7 +12,10 @@ mod sugar_tests {
 
     #[test]
     fn spring2d_new_matches_create_spring2d() {
-        assert_eq!(Spring2D::new(), create_spring2d());
+        assert_eq!(
+            Spring2D::new(1.0, 2.0, 3.0, 4.0),
+            create_spring2d(1.0, 2.0, 3.0, 4.0)
+        );
     }
 }
 
@@ -24,20 +27,24 @@ pub struct Spring2D {
     runtime: EntityRuntimeSlot,
 }
 
-/// Allocate a 2D spring as a pair of scalar springs at value and velocity zero. Assign a requested
-/// initial state after construction.
-// flight-lint: allow(conform-params) D23 (B) zero-field create (foreman-c374f347): assign axis values and velocities after create
-pub fn create_spring2d() -> Spring2D {
+/// Allocate a 2D spring as a pair of scalar springs: the x axis at `value_x` with `velocity_x`, the
+/// y axis at `value_y` with `velocity_y`.
+pub fn create_spring2d(value_x: f32, value_y: f32, velocity_x: f32, velocity_y: f32) -> Spring2D {
     let mut out: Spring2D = allocate_entity();
-    initialize_spring2d(&mut out);
+    initialize_spring2d(&mut out, value_x, value_y, velocity_x, velocity_y);
     return out;
 }
 
-/// Writes the canonical zero state into both existing axes of a pre-allocated `Spring2D`.
-// flight-lint: allow(conform-params) D23 (B) zero-field initializer (foreman-c374f347)
-pub fn initialize_spring2d(out: &mut Spring2D) {
-    initialize_spring(&mut out.x);
-    initialize_spring(&mut out.y);
+/// Writes per-axis values and velocities into both existing axes of a pre-allocated `Spring2D`.
+pub fn initialize_spring2d(
+    out: &mut Spring2D,
+    value_x: f32,
+    value_y: f32,
+    velocity_x: f32,
+    velocity_y: f32,
+) {
+    initialize_spring(&mut out.x, value_x, velocity_x);
+    initialize_spring(&mut out.y, value_y, velocity_y);
 }
 
 /// Add independent velocity impulses to both axes without changing either value.
@@ -88,8 +95,8 @@ pub fn update_spring2d(
 }
 
 impl Spring2D {
-    pub fn new() -> Self {
-        return create_spring2d();
+    pub fn new(value_x: f32, value_y: f32, velocity_x: f32, velocity_y: f32) -> Self {
+        return create_spring2d(value_x, value_y, velocity_x, velocity_y);
     }
 
     pub fn add_impulse(&mut self, velocity_x: f32, velocity_y: f32) {
