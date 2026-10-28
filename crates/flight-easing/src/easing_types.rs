@@ -1,3 +1,6 @@
+//! flight-compiler: callable-parameters EasingFunction t
+//! flight-compiler: callable-parameters ScalarRemap x
+
 use std::sync::Arc;
 
 /// A scalar easing function over the normalized unit interval.

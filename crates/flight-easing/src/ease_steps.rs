@@ -1,3 +1,4 @@
+//! flight-compiler: callable-parameters EasingStepsGuard count position
 //! flight-compiler: string-union StepPosition
 
 use std::sync::{Arc, Mutex, PoisonError};

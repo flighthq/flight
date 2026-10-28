@@ -8,16 +8,16 @@ export type StepPosition = 'jumpStart' | 'jumpEnd' | 'jumpNone' | 'jumpBoth';
 /**
  * Reports a degenerate stepped-easing call before it silently produces NaN.
  */
-export type EasingStepsGuard = (arg0: number, arg1: StepPosition) => void;
+export type EasingStepsGuard = (count: number, position: StepPosition) => void;
 
 const STEPS_GUARD: { value: EasingStepsGuard | null } = { value: null };
 
 /**
  * Returns a stepped easing function that quantizes [0,1] into `count` equal
  * intervals, jumping at the position(s) selected by `position`. A missing
- * position defaults to `JumpEnd`.
+ * position defaults to `'jumpEnd'`.
  *
- * Sharp edge: `easeSteps(1, Some(StepPosition::JumpNone))` has jumps = count - 1 = 0,
+ * Sharp edge: `easeSteps(1, 'jumpNone')` has jumps = count - 1 = 0,
  * so the returned function divides by zero and yields NaN for every input.
  */
 export function easeSteps(count: number, position?: StepPosition): EasingFunction {
@@ -101,7 +101,7 @@ export function parseStepPosition(value: string): StepPosition | undefined {
 
 /**
  * Sets or clears the diagnostics callback for degenerate `easeSteps` calls.
- * Pass `undefined` to uninstall the guard.
+ * Pass `null` to uninstall the guard.
  */
 export function setEasingStepsGuard(guard: EasingStepsGuard | null): void {
   let slot = STEPS_GUARD;
