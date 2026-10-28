@@ -15,7 +15,9 @@ interface PackResult {
 }
 
 let consumerRoot: string;
-let packedTypesManifest: Readonly<{ dependencies?: Readonly<Record<string, string>> }>;
+let packedTypesManifest: Readonly<{
+  dependencies?: Readonly<Record<string, string>>;
+}>;
 
 function packIntoExternalNodeModules(packageName: string, packageDirectory: string, tarballDirectory: string): void {
   const output = execFileSync('npm', ['pack', '--json', '--ignore-scripts', '--pack-destination', tarballDirectory], {
@@ -111,34 +113,65 @@ describe('packed Types Textformat compatibility', { timeout: TIMEOUT_MS }, () =>
   });
 
   it('keeps workspace consumers off deprecated Types compatibility aliases', () => {
-    const ownedTypes = new Set([
-      'FontVariation',
-      'TextFormat',
-      'TextFormatAlign',
-      'TextFormatListMarker',
-      'TextFormatRange',
-    ]);
-    const files = execFileSync('rg', ['--files', 'packages', '-g', '*.ts'], { cwd: ROOT, encoding: 'utf8' })
+    const files = execFileSync('rg', ['--files', 'packages', '-g', '*.ts', '-g', '*.tsx'], {
+      cwd: ROOT,
+      encoding: 'utf8',
+    })
       .trim()
       .split('\n')
       .filter(Boolean);
+    const sources = new Map<string, ts.SourceFile>();
+    for (const file of files) {
+      sources.set(
+        file,
+        ts.createSourceFile(
+          file,
+          readFileSync(resolve(ROOT, file), 'utf8'),
+          ts.ScriptTarget.Latest,
+          true,
+          file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+        ),
+      );
+    }
+    const compatibilityDefinitionFiles = new Set<string>();
+    const ownedTypes = new Set<string>();
+
+    for (const [file, source] of sources) {
+      if (!file.startsWith('packages/types/src/')) continue;
+      for (const statement of source.statements) {
+        if (
+          !ts.isExportDeclaration(statement) ||
+          !ts.isStringLiteral(statement.moduleSpecifier) ||
+          statement.moduleSpecifier.text !== '@flighthq/textformat/contract' ||
+          statement.exportClause === undefined ||
+          !ts.isNamedExports(statement.exportClause)
+        ) {
+          continue;
+        }
+        compatibilityDefinitionFiles.add(resolve(ROOT, file));
+        for (const element of statement.exportClause.elements) ownedTypes.add(element.name.text);
+      }
+    }
+
+    expect(compatibilityDefinitionFiles.size).toBeGreaterThan(0);
+    expect(ownedTypes.size).toBeGreaterThan(0);
     const staleImports: string[] = [];
 
-    for (const file of files) {
-      const source = ts.createSourceFile(
-        file,
-        readFileSync(resolve(ROOT, file), 'utf8'),
-        ts.ScriptTarget.Latest,
-        true,
-        ts.ScriptKind.TS,
-      );
+    for (const [file, source] of sources) {
       for (const statement of source.statements) {
         if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
         const isTypesBarrel = statement.moduleSpecifier.text === '@flighthq/types/contract';
+        const localImportPath = resolve(dirname(resolve(ROOT, file)), statement.moduleSpecifier.text);
         const isTypesLocalCompatibility =
           file.startsWith('packages/types/src/') &&
-          ['./FontVariation.ts', './TextFormat.ts', './TextFormatRange.ts'].includes(statement.moduleSpecifier.text);
+          statement.moduleSpecifier.text.startsWith('.') &&
+          (compatibilityDefinitionFiles.has(localImportPath) ||
+            compatibilityDefinitionFiles.has(`${localImportPath}.ts`));
         if (!isTypesBarrel && !isTypesLocalCompatibility) continue;
+        if (isTypesLocalCompatibility) {
+          staleImports.push(`${file}: ${statement.moduleSpecifier.text}`);
+          continue;
+        }
         const bindings = statement.importClause?.namedBindings;
         if (bindings === undefined || !ts.isNamedImports(bindings)) continue;
         for (const element of bindings.elements) {
