@@ -990,13 +990,73 @@ pub fn select_value(pair: (i32, bool)) -> i32 {
     let select = |(value, _): (i32, bool)| value;
     return select(pair);
 }
+
+pub fn ignore_values() -> i32 {
+    let ignore = |_, _| 1;
+    return ignore(false, true);
+}
 "#;
 
         let output = compile_typescript(source, None).unwrap();
 
-        assert!(output.contains("return values.map(([value, _]) => value);"));
+        assert!(output.contains("return values.map(([value, _unused0]) => value);"));
         assert!(
-            output.contains("const select = ([value, _]: readonly [number, boolean]) => value;")
+            output.contains(
+                "const select = ([value, _unused0]: readonly [number, boolean]) => value;"
+            )
+        );
+        assert!(output.contains("const ignore = (_unused0, _unused1) => 1;"));
+    }
+
+    #[test]
+    fn lowers_unreachable_macros_to_deterministic_errors() {
+        let source = r#"
+pub fn impossible_value(code: i32) -> i32 {
+    return match code {
+        0 => 0,
+        _ => unreachable!("unexpected code {}", code),
+    };
+}
+
+pub fn impossible_statement() {
+    unreachable!();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(
+            "throw new Error(`internal error: entered unreachable code: unexpected code ${code}`);"
+        ));
+        assert!(output.contains(
+            "export function impossibleStatement(): void {\n  throw new Error(\"internal error: entered unreachable code\");\n}"
+        ));
+    }
+
+    #[test]
+    fn preserves_unsupported_macro_diagnostics_around_unreachable_lowering() {
+        let invalid_unreachable = r#"
+pub fn impossible(message: &str) {
+    unreachable!(message);
+}
+"#;
+        let unsupported_macro = r#"
+pub fn unfinished() {
+    todo!();
+}
+"#;
+
+        assert_eq!(
+            compile_typescript(invalid_unreachable, None)
+                .unwrap_err()
+                .to_string(),
+            "portable `unreachable!` needs a string literal template"
+        );
+        assert_eq!(
+            compile_typescript(unsupported_macro, None)
+                .unwrap_err()
+                .to_string(),
+            "unsupported macro statement inside function body"
         );
     }
 

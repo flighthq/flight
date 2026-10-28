@@ -1045,12 +1045,18 @@ fn emit_closure_with_parameter_types(
             closure_context.insert(RETURNS_U32_MARKER.to_string());
         }
     }
+    let mut parameter_names = HashSet::new();
+    for pattern in &closure.inputs {
+        collect_closure_parameter_names(pattern, &mut parameter_names);
+    }
+    let mut unused_index = 0_usize;
     let parameters = closure
         .inputs
         .iter()
         .enumerate()
         .map(|(index, pattern)| {
-            let parameter = emit_closure_parameter(pattern, entities)?;
+            let parameter =
+                emit_closure_parameter(pattern, entities, &mut parameter_names, &mut unused_index)?;
             if matches!(pattern, Pat::Type(_)) {
                 return Ok(parameter);
             }
@@ -1091,28 +1097,56 @@ fn emit_closure_with_parameter_types(
 fn emit_closure_parameter(
     pattern: &Pat,
     entities: &HashSet<String>,
+    parameter_names: &mut HashSet<String>,
+    unused_index: &mut usize,
 ) -> Result<String, CompileError> {
     return match pattern {
         Pat::Ident(identifier) => Ok(snake_to_lower_camel(&identifier.ident.to_string())),
-        Pat::Reference(reference) => emit_closure_parameter(&reference.pat, entities),
+        Pat::Reference(reference) => {
+            emit_closure_parameter(&reference.pat, entities, parameter_names, unused_index)
+        }
         Pat::Tuple(tuple) => {
             let elements = tuple
                 .elems
                 .iter()
-                .map(|element| emit_closure_parameter(element, entities))
+                .map(|element| {
+                    emit_closure_parameter(element, entities, parameter_names, unused_index)
+                })
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(format!("[{}]", elements.join(", ")))
         }
         Pat::Type(pattern) => Ok(format!(
             "{}: {}",
-            emit_closure_parameter(&pattern.pat, entities)?,
+            emit_closure_parameter(&pattern.pat, entities, parameter_names, unused_index,)?,
             emit_type(&pattern.ty, entities)?
         )),
-        Pat::Wild(_) => Ok("_".to_string()),
+        Pat::Wild(_) => loop {
+            let name = format!("_unused{unused_index}");
+            *unused_index += 1;
+            if parameter_names.insert(name.clone()) {
+                break Ok(name);
+            }
+        },
         _ => Err(compile_error(
             "unsupported destructuring in closure parameter",
         )),
     };
+}
+
+fn collect_closure_parameter_names(pattern: &Pat, names: &mut HashSet<String>) {
+    match pattern {
+        Pat::Ident(identifier) => {
+            names.insert(snake_to_lower_camel(&identifier.ident.to_string()));
+        }
+        Pat::Reference(reference) => collect_closure_parameter_names(&reference.pat, names),
+        Pat::Tuple(tuple) => {
+            for element in &tuple.elems {
+                collect_closure_parameter_names(element, names);
+            }
+        }
+        Pat::Type(pattern) => collect_closure_parameter_names(&pattern.pat, names),
+        _ => {}
+    }
 }
 
 fn emit_constant(
@@ -2369,6 +2403,12 @@ fn emit_macro_expression(
             .collect::<Result<Vec<_>, _>>()?;
         return Ok(format!("[{}]", values.join(", ")));
     }
+    if name.ident == "unreachable" {
+        return Ok(format!(
+            "(() => {{ throw new Error({}); }})()",
+            emit_unreachable_message(rust_macro, entities)?
+        ));
+    }
     if name.ident != "format" {
         return Err(compile_error(format!(
             "unsupported Rust macro expression `{}!`",
@@ -2390,6 +2430,40 @@ fn emit_macro_expression(
     };
     let values = arguments.iter().skip(1).collect::<Vec<_>>();
     return emit_format_template(&template.value(), &values, entities, "portable `format!`");
+}
+
+fn emit_unreachable_message(
+    rust_macro: &syn::Macro,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    const DEFAULT_MESSAGE: &str = "internal error: entered unreachable code";
+
+    let arguments = Punctuated::<Expr, Token![,]>::parse_terminated
+        .parse2(rust_macro.tokens.clone())
+        .map_err(|error| {
+            compile_error(format!("failed to parse `unreachable!` arguments: {error}"))
+        })?;
+    let Some(Expr::Lit(template)) = arguments.first() else {
+        if arguments.is_empty() {
+            return Ok(format!("{DEFAULT_MESSAGE:?}"));
+        }
+        return Err(compile_error(
+            "portable `unreachable!` needs a string literal template",
+        ));
+    };
+    let Lit::Str(template) = &template.lit else {
+        return Err(compile_error(
+            "portable `unreachable!` needs a string literal template",
+        ));
+    };
+    let template = format!("{DEFAULT_MESSAGE}: {}", template.value());
+    let values = arguments.iter().skip(1).collect::<Vec<_>>();
+    return emit_format_template(
+        &template,
+        &values,
+        entities,
+        "portable `unreachable!` message",
+    );
 }
 
 struct TaggedDataUnionPattern {
@@ -3989,6 +4063,22 @@ fn emit_statement(
             return Err(compile_error(
                 "unsupported item declaration inside function body",
             ));
+        }
+        Stmt::Macro(statement)
+            if statement
+                .mac
+                .path
+                .segments
+                .last()
+                .is_some_and(|name| name.ident == "unreachable") =>
+        {
+            write_indent(out, indent);
+            writeln!(
+                out,
+                "throw new Error({});",
+                emit_unreachable_message(&statement.mac, entities)?
+            )
+            .expect("writing to a String cannot fail");
         }
         Stmt::Macro(_) => {
             return Err(compile_error(
