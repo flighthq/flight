@@ -1,13 +1,11 @@
-// Generated from crates/flight-textformat/tests/text_format_range_test.rs by flight-compiler.
+// Generated from crates/flight-textformat/tests/text_format_range_raw_test.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
+import * as flightEntity from '@flighthq/entity/contract';
 import { describe, expect, it } from 'vitest';
 
 import { createTextFormatRange, initializeTextFormatRange } from './contract.ts';
-
 import type { TextFormat } from './contract.ts';
-
-import * as flightEntity from '@flighthq/entity/contract';
 
 function emptyTextFormat(): TextFormat {
   return {

@@ -1,6 +1,5 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -57,7 +56,10 @@ execFileSync('cargo', ['build', '--quiet', '--package', 'flight-compiler'], {
   stdio: 'inherit',
 });
 
-const stagingRoot = mkdtempSync(join(tmpdir(), 'flight-generate-'));
+// Stage under packages/<name>/src so the repository orderer applies the same package-source rules
+// as it does to the destination. A system-temp staging path is outside order.ts's repository walk,
+// which made its --fix pass a silent no-op and let generated imports diverge from the order gate.
+const stagingRoot = mkdtempSync(join(repositoryRoot, 'packages', '.flight-generate-'));
 const stagingSourceRoot = join(stagingRoot, 'src');
 const rawRoot = join(stagingRoot, 'raw');
 mkdirSync(stagingSourceRoot, { recursive: true });
