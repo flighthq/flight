@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type { ClipRegion, ClipRegionContoursExplanation } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -18,14 +19,20 @@ export function disableClipGuards(): void {
 // release" was not enough. The guard warns once through @flighthq/log. Not importing this module costs
 // production nothing: the message text and the @flighthq/log dependency live only here, and the O(pool)
 // membership scan that detects the double release runs only while this guard is installed. Idempotent.
-export function enableClipGuards(): void {
-  setClipRegionContoursGuard(warnOnInvalidContours);
-  setClipRegionReleaseGuard(warnOnDoubleRelease);
-  setClipRegionUseGuard(warnOnUseAfterRelease);
+export function enableClipGuards(logState: LogState, clock: () => number): void {
+  setClipRegionContoursGuard((explanation) => warnOnInvalidContours(logState, clock, explanation));
+  setClipRegionReleaseGuard((clip) => warnOnDoubleRelease(logState, clock, clip));
+  setClipRegionUseGuard((clip) => warnOnUseAfterRelease(logState, clock, clip));
 }
 
-function warnOnInvalidContours(explanation: Readonly<ClipRegionContoursExplanation>): void {
+function warnOnInvalidContours(
+  logState: LogState,
+  clock: () => number,
+  explanation: Readonly<ClipRegionContoursExplanation>,
+): void {
   logOnce(
+    logState,
+    clock(),
     `clip:invalid-contour:${explanation.reason}`,
     LogLevel.Warn,
     {
@@ -35,8 +42,10 @@ function warnOnInvalidContours(explanation: Readonly<ClipRegionContoursExplanati
   );
 }
 
-function warnOnDoubleRelease(_clip: Readonly<ClipRegion>): void {
+function warnOnDoubleRelease(logState: LogState, clock: () => number, _clip: Readonly<ClipRegion>): void {
   logOnce(
+    logState,
+    clock(),
     'clip:double-release',
     LogLevel.Warn,
     {
@@ -47,8 +56,10 @@ function warnOnDoubleRelease(_clip: Readonly<ClipRegion>): void {
   );
 }
 
-function warnOnUseAfterRelease(_clip: Readonly<ClipRegion>): void {
+function warnOnUseAfterRelease(logState: LogState, clock: () => number, _clip: Readonly<ClipRegion>): void {
   logOnce(
+    logState,
+    clock(),
     'clip:use-after-release',
     LogLevel.Warn,
     {

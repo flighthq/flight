@@ -1,6 +1,13 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import type { LogEntry } from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
+import type { LogState } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  createLogState,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/types/contract';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import {
   acquireClipRegion,
@@ -12,19 +19,40 @@ import { disableClipGuards, enableClipGuards } from './enableClipGuards.ts';
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
+  addLogSink(logState, sink.sink);
   try {
     run();
-    return getMemoryLogSinkEntries(sink);
+    return readLogEntries(sink);
   } finally {
-    removeLogSink(sink.sink);
+    removeLogSink(logState, sink.sink);
   }
 }
+
+function clock(): number {
+  return 0;
+}
+
+// A double release leaves the same region pooled twice. Acquiring both copies restores a clean pool, so
+// the next test's acquire/release pairs are not handed one object twice.
+function drainDoubleReleasedRegion(): void {
+  acquireClipRegion();
+  acquireClipRegion();
+}
+
+function readLogEntries(sink: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
+}
+
+beforeEach(() => {
+  logState = createLogState();
+});
 
 describe('disableClipGuards', () => {
   it('uninstalls the guard, so a double release goes back to being silent', () => {
     const entries = captureLog(() => {
-      enableClipGuards();
+      enableClipGuards(logState, clock);
       disableClipGuards();
       const region = acquireClipRegion();
       releaseClipRegion(region);
@@ -40,7 +68,7 @@ describe('disableClipGuards', () => {
 describe('enableClipGuards', () => {
   it('reports malformed contours', () => {
     const entries = captureLog(() => {
-      enableClipGuards();
+      enableClipGuards(logState, clock);
       createClipRegionFromContours([[0, 0, 1]], 'nonZero');
       disableClipGuards();
     });
@@ -53,7 +81,7 @@ describe('enableClipGuards', () => {
 
   it('reports use after release', () => {
     const entries = captureLog(() => {
-      enableClipGuards();
+      enableClipGuards(logState, clock);
       const region = acquireClipRegion();
       releaseClipRegion(region);
       clipRegionContainsPoint(region, 0, 0);
@@ -69,7 +97,7 @@ describe('enableClipGuards', () => {
 
   it('WARNS when a region is released twice, which would otherwise alias silently', () => {
     const entries = captureLog(() => {
-      enableClipGuards();
+      enableClipGuards(logState, clock);
       try {
         const region = acquireClipRegion();
         releaseClipRegion(region);
@@ -78,6 +106,7 @@ describe('enableClipGuards', () => {
         disableClipGuards();
       }
     });
+    drainDoubleReleasedRegion();
     expect(entries.length).toBe(1);
     // LogData is a string-or-record union, so narrow before reading the field.
     const data = entries[0].data;
@@ -86,7 +115,7 @@ describe('enableClipGuards', () => {
 
   it('stays SILENT for correctly paired acquire/release, and without the guard at all', () => {
     const paired = captureLog(() => {
-      enableClipGuards();
+      enableClipGuards(logState, clock);
       try {
         const a = acquireClipRegion();
         const b = acquireClipRegion();
@@ -106,6 +135,9 @@ describe('enableClipGuards', () => {
       releaseClipRegion(region);
       releaseClipRegion(region);
     });
+    drainDoubleReleasedRegion();
     expect(unguarded.length).toBe(0);
   });
 });
+
+let logState: LogState = createLogState();
