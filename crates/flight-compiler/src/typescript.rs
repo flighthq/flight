@@ -2238,6 +2238,35 @@ pub(crate) fn emit_local_with_shadow(
     shadowed: bool,
     rebound: bool,
 ) -> Result<(), CompileError> {
+    return emit_local_with_shadow_and_else(
+        out, entities, local, indent, shadowed, rebound, emit_block,
+    );
+}
+
+pub(crate) fn emit_local_with_shadow_and_else(
+    out: &mut String,
+    entities: &HashSet<String>,
+    local: &syn::Local,
+    indent: usize,
+    shadowed: bool,
+    rebound: bool,
+    emit_else_block: fn(&mut String, &[Stmt], &HashSet<String>, usize) -> Result<(), CompileError>,
+) -> Result<(), CompileError> {
+    if local
+        .init
+        .as_ref()
+        .is_some_and(|init| init.diverge.is_some())
+    {
+        return emit_let_else_local(
+            out,
+            local,
+            entities,
+            indent,
+            shadowed,
+            rebound,
+            emit_else_block,
+        );
+    }
     let mutable = pattern_is_mutable(&local.pat);
     let (pattern, rust_type, discard) = match &local.pat {
         Pat::Ident(_) | Pat::Reference(_) | Pat::Tuple(_) => {
@@ -2262,9 +2291,6 @@ pub(crate) fn emit_local_with_shadow(
         out.push_str(";\n");
         return Ok(());
     };
-    if initializer.diverge.is_some() {
-        return Err(compile_error("unsupported let-else local binding"));
-    }
     let local_name = local_pattern_name(&local.pat);
     let typescript_type = rust_type
         .map(|rust_type| emit_type(rust_type, entities))
@@ -2346,6 +2372,75 @@ pub(crate) fn emit_local_with_shadow(
         write!(out, ": {typescript_type}").expect("writing to a String cannot fail");
     }
     writeln!(out, " = {value};").expect("writing to a String cannot fail");
+    return Ok(());
+}
+
+fn emit_let_else_local(
+    out: &mut String,
+    local: &syn::Local,
+    entities: &HashSet<String>,
+    indent: usize,
+    shadowed: bool,
+    rebound: bool,
+    emit_else_block: fn(&mut String, &[Stmt], &HashSet<String>, usize) -> Result<(), CompileError>,
+) -> Result<(), CompileError> {
+    let Pat::TupleStruct(pattern) = &local.pat else {
+        return Err(compile_error(
+            "portable `let-else` supports only a `Some(name)` pattern",
+        ));
+    };
+    if !pattern.path.is_ident("Some") || pattern.elems.len() != 1 {
+        return Err(compile_error(
+            "portable `let-else` supports only a `Some(name)` pattern",
+        ));
+    }
+    let Pat::Ident(identifier) = &pattern.elems[0] else {
+        return Err(compile_error(
+            "portable `let Some` binding needs an identifier",
+        ));
+    };
+    let initializer = local
+        .init
+        .as_ref()
+        .expect("let-else bindings always have an initializer");
+    let (_, otherwise) = initializer
+        .diverge
+        .as_ref()
+        .expect("let-else bindings always have a diverging branch");
+    let Expr::Block(otherwise) = otherwise.as_ref() else {
+        return Err(compile_error(
+            "portable `let-else` divergence must use a block",
+        ));
+    };
+    let rust_name = identifier.ident.to_string();
+    let name = snake_to_lower_camel(&rust_name);
+    let same_binding = referenced_path_identifier(&initializer.expr).as_deref() == Some(&rust_name);
+    if !same_binding {
+        let value = emit_expression(&initializer.expr, entities)?;
+        let rebind = shadowed || expression_contains_identifier(&initializer.expr, &rust_name);
+        write_indent(out, indent);
+        if rebind {
+            write!(out, "{name}").expect("writing to a String cannot fail");
+        } else {
+            let declaration = if identifier.mutability.is_some() || rebound {
+                "let"
+            } else {
+                "const"
+            };
+            write!(out, "{declaration} {name}").expect("writing to a String cannot fail");
+        }
+        writeln!(out, " = {value};").expect("writing to a String cannot fail");
+    }
+    write_indent(out, indent);
+    writeln!(
+        out,
+        "if ({name} === {}) {{",
+        option_absent_value(&initializer.expr, entities)
+    )
+    .expect("writing to a String cannot fail");
+    emit_else_block(out, &otherwise.block.stmts, entities, indent + 1)?;
+    write_indent(out, indent);
+    out.push_str("}\n");
     return Ok(());
 }
 
@@ -3403,6 +3498,13 @@ fn emit_method_call(
             "(() => {{ const previous = {receiver}.value; {receiver}.value = ({receiver}.value + {}) >>> 0; return previous; }})()",
             arguments[0]
         )),
+        "first" if arguments.is_empty() => {
+            if entities.contains(NULLABLE_OPTIONS_MARKER) {
+                Ok(format!("({receiver}[0] ?? null)"))
+            } else {
+                Ok(format!("{receiver}[0]"))
+            }
+        }
         "is_nan" if arguments.is_empty() => Ok(format!("Number.isNaN({receiver})")),
         "is_finite" if arguments.is_empty() => Ok(format!("Number.isFinite({receiver})")),
         "is_none" if arguments.is_empty() => Ok(format!(
@@ -3531,23 +3633,21 @@ fn emit_option_binding(
             "portable `if let Some` binding needs an identifier",
         ));
     };
-    let absent = if entities.contains(NULLABLE_OPTIONS_MARKER) {
-        "null"
-    } else if let Expr::Path(path) = binding.expr.as_ref()
-        && path.qself.is_none()
-        && path.path.segments.len() == 1
-        && let Some(segment) = path.path.segments.first()
-        && entities.contains(&format!("@nullable:{}", segment.ident))
-    {
-        "null"
-    } else {
-        "undefined"
-    };
     return Ok(Some((
         snake_to_lower_camel(&identifier.ident.to_string()),
         emit_expression(&binding.expr, entities)?,
-        absent,
+        option_absent_value(&binding.expr, entities),
     )));
+}
+
+fn option_absent_value(expression: &Expr, entities: &HashSet<String>) -> &'static str {
+    if entities.contains(NULLABLE_OPTIONS_MARKER)
+        || referenced_path_identifier(expression)
+            .is_some_and(|name| entities.contains(&format!("@nullable:{name}")))
+    {
+        return "null";
+    }
+    return "undefined";
 }
 
 fn emit_receiver_preserving_optional_call(
@@ -5168,6 +5268,12 @@ fn is_public(visibility: &Visibility) -> bool {
 fn local_pattern_name(pattern: &Pat) -> Option<String> {
     return match pattern {
         Pat::Ident(identifier) => Some(identifier.ident.to_string()),
+        Pat::TupleStruct(tuple) if tuple.path.is_ident("Some") && tuple.elems.len() == 1 => {
+            let Pat::Ident(identifier) = &tuple.elems[0] else {
+                return None;
+            };
+            Some(identifier.ident.to_string())
+        }
         Pat::Type(typed) => local_pattern_name(&typed.pat),
         _ => None,
     };
@@ -5288,6 +5394,7 @@ fn pattern_is_mutable(pattern: &Pat) -> bool {
             reference.mutability.is_some() || pattern_is_mutable(&reference.pat)
         }
         Pat::Tuple(tuple) => tuple.elems.iter().any(pattern_is_mutable),
+        Pat::TupleStruct(tuple) => tuple.elems.iter().any(pattern_is_mutable),
         Pat::Type(typed) => pattern_is_mutable(&typed.pat),
         _ => false,
     };

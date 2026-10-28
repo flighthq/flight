@@ -8,10 +8,10 @@ use syn::{BinOp, Expr, Fields, FnArg, ItemFn, Pat, ReturnType, Stmt, Token};
 
 use crate::model::{TestCase, TestProgram, TestSuite};
 use crate::typescript::{
-    emit_expression, emit_for_header, emit_format_template, emit_local, emit_local_with_shadow,
-    emit_parameter, emit_type, frozen_object_name, function_expression_context,
-    is_data_union_variant, is_string_union, numeric_literal_spelling, snake_to_lower_camel,
-    write_indent,
+    emit_expression, emit_for_header, emit_format_template, emit_local,
+    emit_local_with_shadow_and_else, emit_parameter, emit_type, frozen_object_name,
+    function_expression_context, is_data_union_variant, is_string_union, numeric_literal_spelling,
+    snake_to_lower_camel, write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -470,7 +470,9 @@ fn emit_block(
                 .get(&name)
                 .is_some_and(|count| *count > 1);
             let shadowed = !declared.insert(name);
-            emit_local_with_shadow(out, local, context, indent, shadowed, rebound)?;
+            emit_local_with_shadow_and_else(
+                out, context, local, indent, shadowed, rebound, emit_block,
+            )?;
         } else {
             emit_statement(out, statement, context, indent)?;
         }
@@ -856,6 +858,12 @@ pub(crate) fn emit_test_program(
 fn local_name(pattern: &Pat) -> Option<String> {
     return match pattern {
         Pat::Ident(identifier) => Some(identifier.ident.to_string()),
+        Pat::TupleStruct(tuple) if tuple.path.is_ident("Some") && tuple.elems.len() == 1 => {
+            let Pat::Ident(identifier) = &tuple.elems[0] else {
+                return None;
+            };
+            Some(identifier.ident.to_string())
+        }
         Pat::Type(typed) => local_name(&typed.pat),
         _ => None,
     };

@@ -352,6 +352,75 @@ import type { NodeRef, NodeRevisionState } from "@flighthq/node/contract";
     }
 
     #[test]
+    fn lowers_some_let_else_bindings_and_real_requirement_collection() {
+        let source = r#"
+pub fn first_or(values: &[i32], fallback: i32) -> i32 {
+    let Some(first) = values.first() else {
+        return fallback;
+    };
+    return *first;
+}
+
+pub fn required(value: Option<i32>) -> i32 {
+    let Some(value) = value else {
+        return -1;
+    };
+    return value;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(
+            "const first = values[0];\n  if (first === undefined) {\n    return fallback;\n  }"
+        ));
+        assert!(
+            output.contains("if (value === undefined) {\n    return -1;\n  }\n  return value;")
+        );
+        assert!(!output.contains("const value = value;"));
+
+        let nullable_source = r#"
+//! flight-compiler: nullable-options
+
+pub fn required(value: Option<i32>) -> i32 {
+    let Some(value) = value else {
+        return -1;
+    };
+    return value;
+}
+"#;
+        let nullable_output = compile_typescript(nullable_source, None).unwrap();
+        assert!(nullable_output.contains("if (value === null) {"));
+
+        let requirement_collector =
+            include_str!("../../flight-requirement/src/requirement_collector.rs");
+        let requirement_output = compile_typescript(requirement_collector, None).unwrap();
+        assert!(requirement_output.contains(
+            "if (sink === undefined) {\n    return;\n  }\n  sink.push({ facet: facet, key: String(key) });"
+        ));
+        assert!(!requirement_output.contains("sink = sink;"));
+    }
+
+    #[test]
+    fn rejects_non_option_let_else_patterns_deterministically() {
+        let source = r#"
+pub fn required(value: Result<i32, i32>) -> i32 {
+    let Ok(value) = value else {
+        return -1;
+    };
+    return value;
+}
+"#;
+
+        let error = compile_typescript(source, None).unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "portable `let-else` supports only a `Some(name)` pattern"
+        );
+    }
+
+    #[test]
     fn emits_private_fields_on_module_private_plain_data_structs() {
         let source = r#"
 struct DecoderState {
@@ -2244,6 +2313,31 @@ mod shared_ref {
         assert!(output.contains("expect(value === alias).toBe(true);"));
         assert!(output.contains("import * as flightEntity from \"@flighthq/entity/contract\";"));
         assert!(output.contains("const uid = flightEntity.getEntityUid(value);"));
+    }
+
+    #[test]
+    fn lowers_some_let_else_in_portable_tests() {
+        let source = r#"
+mod required {
+    #[test]
+    fn narrows_the_existing_binding() {
+        let value: Option<i32> = Some(2);
+        let Some(value) = value else {
+            assert!(false);
+            return;
+        };
+        assert_eq!(value, 2);
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/example/contract").unwrap();
+
+        assert!(output.contains(
+            "let value: number | undefined = 2;\n    if (value === undefined) {\n      expect(false).toBe(true);\n      return;\n    }"
+        ));
+        assert!(output.contains("expect(value).toEqual(2);"));
+        assert!(!output.contains("value = value;"));
     }
 
     #[test]
