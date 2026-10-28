@@ -1,21 +1,13 @@
+//! flight-compiler: target-native
+//!
+//! `KindMap<T>` is the Rust IR carrier for the JavaScript built-in `Map<Kind, T>`: Rust tracks the
+//! insertion order a JS Map keeps natively. The TypeScript twin (`kindMap.ts`) operates on the built-in
+//! Map itself, so this module is target-native rather than generated.
+
 use std::cmp::Ordering;
 use std::collections::HashMap;
 
-use flight_entity::{Kind, NonEntityCreateResult};
-
-#[cfg(test)]
-mod sugar_tests {
-    use super::*;
-
-    #[test]
-    fn new_matches_create_ordinal_table() {
-        let vocabulary = vec!["Tag0".to_string(), "Tag1".to_string()];
-        assert_eq!(
-            OrdinalTable::<String>::new(&vocabulary),
-            create_ordinal_table::<String>(&vocabulary)
-        );
-    }
-}
+use flight_entity::Kind;
 
 /// The Rust IR carrier for a TS `Map<Kind, T>`. The lookup map is never iterated; `key_order`
 /// preserves the insertion order that JavaScript exposes to callers.
@@ -23,29 +15,6 @@ mod sugar_tests {
 pub struct KindMap<T> {
     pub entries: HashMap<Kind, T>,
     pub key_order: Vec<Kind>,
-}
-
-/// A dense table indexed by an ordinal already present in the wire format.
-#[derive(Clone, Debug, PartialEq)]
-pub struct OrdinalTable<T> {
-    pub entries: Vec<Option<T>>,
-    pub vocabulary: Vec<Kind>,
-}
-
-/// Creates an empty dense table with one slot for each vocabulary entry.
-pub fn create_ordinal_table<T>(vocabulary: &[Kind]) -> NonEntityCreateResult<OrdinalTable<T>> {
-    return OrdinalTable {
-        entries: (0..vocabulary.len()).map(|_| None).collect(),
-        vocabulary: vocabulary.to_vec(),
-    };
-}
-
-/// Clones a dense table (D23 value type: copy and clone).
-// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): value types carry copy and clone
-pub fn clone_ordinal_table<T: Clone>(source: &OrdinalTable<T>) -> OrdinalTable<T> {
-    let mut out = create_ordinal_table(&[]);
-    copy_ordinal_table(&mut out, source);
-    return out;
 }
 
 fn compare_utf16(a: &str, b: &str) -> Ordering {
@@ -69,23 +38,11 @@ pub fn concat_kind_map<T: Clone>(base: &KindMap<T>, overlay: &KindMap<T>) -> Kin
     return KindMap { entries, key_order };
 }
 
-/// Copies the vocabulary and every slot of `source` into `out`, reusing `out`'s storage.
-// flight-lint: allow(conform-extra) D23 sweep (Principal 21f7557f): value types carry copy and clone
-pub fn copy_ordinal_table<T: Clone>(out: &mut OrdinalTable<T>, source: &OrdinalTable<T>) {
-    out.entries.clone_from(&source.entries);
-    out.vocabulary.clone_from(&source.vocabulary);
-}
-
 /// Writes all keys to `out`, sorted with JavaScript's default UTF-16 code-unit ordering.
 pub fn get_kind_map_keys<T>(out: &mut Vec<Kind>, map: &KindMap<T>) {
     out.clear();
     out.extend(map.key_order.iter().cloned());
     out.sort_by(|a, b| compare_utf16(a, b));
-}
-
-/// Returns the value at `ordinal`, or `None` when the ordinal is outside the dense table.
-pub fn get_ordinal_table_entry<T>(table: &OrdinalTable<T>, ordinal: usize) -> Option<&T> {
-    return table.entries.get(ordinal).and_then(Option::as_ref);
 }
 
 /// Returns a copy with `key` inserted or replaced. Replacing a key retains its original position.
@@ -107,10 +64,4 @@ pub fn without_kind_map_entry<T: Clone>(map: &KindMap<T>, key: Kind) -> KindMap<
         key_order.retain(|candidate| candidate != &key);
     }
     return KindMap { entries, key_order };
-}
-
-impl<T> OrdinalTable<T> {
-    pub fn new(vocabulary: &[Kind]) -> NonEntityCreateResult<Self> {
-        return create_ordinal_table(vocabulary);
-    }
 }

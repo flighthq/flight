@@ -1,1 +1,2 @@
-export * from './registryTable.ts';
+export * from './kindMap.ts';
+export * from './ordinalTable.ts';

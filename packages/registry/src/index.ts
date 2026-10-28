@@ -1,8 +1,2 @@
-export {
-  concatKindMap,
-  createOrdinalTable,
-  getKindMapKeys,
-  getOrdinalTableEntry,
-  withKindMapEntry,
-  withoutKindMapEntry,
-} from './registryTable.ts';
+export { concatKindMap, getKindMapKeys, withKindMapEntry, withoutKindMapEntry } from './kindMap.ts';
+export { createOrdinalTable, getOrdinalTableEntry } from './ordinalTable.ts';

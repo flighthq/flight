@@ -1,4 +1,6 @@
-mod registry_table;
+mod kind_map;
+mod ordinal_table;
+mod sugar;
 
 pub mod contract;
 
