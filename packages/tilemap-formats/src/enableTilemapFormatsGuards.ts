@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type { TiledCompression, TiledLayerDataFailure } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -17,13 +18,22 @@ export function disableTilemapFormatsGuards(): void {
 //
 // Not calling this — the production default — costs the parse nothing: the messages and the
 // `@flighthq/log` dependency live only in this separately-imported module. Idempotent.
-export function enableTilemapFormatsGuards(): void {
-  setTiledLayerDataGuard(warnTiledLayerDataFailure);
+export function enableTilemapFormatsGuards(logState: LogState, clock: () => number): void {
+  setTiledLayerDataGuard((reason: TiledLayerDataFailure, compression: TiledCompression): void =>
+    warnTiledLayerDataFailure(logState, clock(), reason, compression),
+  );
 }
 
-function warnTiledLayerDataFailure(reason: TiledLayerDataFailure, compression: TiledCompression): void {
+function warnTiledLayerDataFailure(
+  logState: LogState,
+  nowMs: number,
+  reason: TiledLayerDataFailure,
+  compression: TiledCompression,
+): void {
   if (reason === 'compressed-without-inflate') {
     logOnce(
+      logState,
+      nowMs,
       'tilemap-formats:layer-compressed-without-inflate',
       LogLevel.Warn,
       {
@@ -34,6 +44,8 @@ function warnTiledLayerDataFailure(reason: TiledLayerDataFailure, compression: T
     return;
   }
   logOnce(
+    logState,
+    nowMs,
     'tilemap-formats:layer-inflate-failed',
     LogLevel.Warn,
     {

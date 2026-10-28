@@ -1,6 +1,7 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
+import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
 import type { LogEntry } from '@flighthq/types/contract';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { disableTilemapFormatsGuards, enableTilemapFormatsGuards } from './enableTilemapFormatsGuards.ts';
 import { decodeTiledBase64Layer } from './tiledLayerData.ts';
@@ -11,15 +12,19 @@ afterEach(() => disableTilemapFormatsGuards());
 // the failing case needs a seam that returns null rather than real compressed bytes.
 const payload = 'AQAAAAIAAAA=';
 
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
+
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
-  try {
-    run();
-    return getMemoryLogSinkEntries(sink);
-  } finally {
-    removeLogSink(sink.sink);
-  }
+  addLogSink(logState, sink.sink);
+  run();
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
 }
 
 function messageOf(entry: Readonly<LogEntry>): string {
@@ -30,7 +35,7 @@ function messageOf(entry: Readonly<LogEntry>): string {
 describe('disableTilemapFormatsGuards', () => {
   it('uninstalls the guard, restoring the silent parse', () => {
     const entries = captureLog(() => {
-      enableTilemapFormatsGuards();
+      enableTilemapFormatsGuards(logState, () => 0);
       disableTilemapFormatsGuards();
       decodeTiledBase64Layer(payload, 'zlib');
     });
@@ -41,7 +46,7 @@ describe('disableTilemapFormatsGuards', () => {
 describe('enableTilemapFormatsGuards', () => {
   it('WARNS that a compressed layer had no inflate seam, naming the option that fixes it', () => {
     const entries = captureLog(() => {
-      enableTilemapFormatsGuards();
+      enableTilemapFormatsGuards(logState, () => 0);
       decodeTiledBase64Layer(payload, 'zlib');
     });
     expect(entries).toHaveLength(1);
@@ -52,7 +57,7 @@ describe('enableTilemapFormatsGuards', () => {
 
   it('WARNS DIFFERENTLY when the supplied seam fails, because the fix is the opposite one', () => {
     const entries = captureLog(() => {
-      enableTilemapFormatsGuards();
+      enableTilemapFormatsGuards(logState, () => 0);
       decodeTiledBase64Layer(payload, 'gzip', () => null);
     });
     expect(entries).toHaveLength(1);
@@ -63,7 +68,7 @@ describe('enableTilemapFormatsGuards', () => {
 
   it('stays SILENT on an uncompressed layer and on a seam that succeeds', () => {
     const entries = captureLog(() => {
-      enableTilemapFormatsGuards();
+      enableTilemapFormatsGuards(logState, () => 0);
       decodeTiledBase64Layer(payload, null);
       decodeTiledBase64Layer(payload, 'zlib', (bytes) => bytes);
     });
