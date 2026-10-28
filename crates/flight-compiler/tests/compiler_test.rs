@@ -116,7 +116,7 @@ export interface Vector2Raw extends EntityRaw {
 }
 
 export function createVector2(x: number, y: number): Vector2Raw {
-  let out: Vector2Raw = allocateEntity<Vector2Raw>();
+  let out: Vector2Raw = Object.assign(allocateEntity<Vector2Raw>(), { x: 0, y: 0 });
   initializeVector2(out, x, y);
   return out;
 }
@@ -181,8 +181,10 @@ pub fn allocate_vector2() -> Vector2 {
         let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
 
         assert!(output.contains("import { allocateEntity } from \"@flighthq/entity/contract\";"));
-        assert!(output.contains("const out: Vector2Raw = allocateEntity<Vector2Raw>();"));
-        assert!(output.contains("return allocateEntity<Vector2Raw>();"));
+        assert!(output.contains(
+            "const out: Vector2Raw = Object.assign(allocateEntity<Vector2Raw>(), { x: 0 });"
+        ));
+        assert!(output.contains("return Object.assign(allocateEntity<Vector2Raw>(), { x: 0 });"));
         assert!(!output.contains("flightEntity.allocateEntity"));
     }
 
@@ -213,8 +215,34 @@ pub fn allocate_linear_color() -> LinearColor {
 
         assert!(output.contains("import { allocateEntity } from \"@flighthq/entity/contract\";"));
         assert!(output.contains("export function allocateLinearColor(): LinearColorRaw"));
-        assert!(output.contains("return allocateEntity<LinearColorRaw>();"));
+        assert!(
+            output.contains("return Object.assign(allocateEntity<LinearColorRaw>(), { red: 0 });")
+        );
         assert!(!output.contains("flightEntity.allocateEntity"));
+    }
+
+    #[test]
+    fn initializes_entity_allocations_with_portable_rust_defaults() {
+        let source = r#"
+pub struct Defaults {
+    runtime: EntityRuntimeSlot,
+    pub enabled: bool,
+    pub label: String,
+    pub values: Vec<u32>,
+    pub current: Option<u32>,
+    pub pair: (u32, bool),
+}
+
+pub fn allocate_defaults() -> Defaults {
+    return flight_entity::allocate_entity();
+}
+"#;
+
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+
+        assert!(output.contains(
+            "return Object.assign(allocateEntity<DefaultsRaw>(), { current: undefined, enabled: false, label: \"\", pair: [0, false], values: [] });"
+        ));
     }
 
     #[test]

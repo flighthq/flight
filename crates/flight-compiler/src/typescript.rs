@@ -15,6 +15,7 @@ type PreferredAliases = HashMap<String, String>;
 
 const CALLBACK_ARGUMENT_MARKER: &str = "@callback-argument:";
 const CLOSURE_PARAMETER_MARKER: &str = "@closure-parameter:";
+const ENTITY_DEFAULT_FIELD_MARKER: &str = "@entity-default-field:";
 const FIXED_BUFFER_ARGUMENT_MARKER: &str = "@fixed-buffer-argument:";
 const FIXED_BUFFER_LOCAL_MARKER: &str = "@fixed-buffer-local:";
 const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
@@ -215,6 +216,59 @@ fn rust_type_is_string(rust_type: &Type) -> bool {
     return matches!(named_type(rust_type).as_deref(), Some("String" | "str"));
 }
 
+fn rust_default_expression(rust_type: &Type) -> Option<String> {
+    return match rust_type {
+        Type::Group(group) => rust_default_expression(&group.elem),
+        Type::Paren(paren) => rust_default_expression(&paren.elem),
+        Type::Path(path) => {
+            let segment = path.path.segments.last()?;
+            let name = segment.ident.to_string();
+            match name.as_str() {
+                "bool" => Some("false".to_string()),
+                "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "isize" | "u8" | "u16" | "u32"
+                | "u64" | "usize" => Some("0".to_string()),
+                "String" => Some(r#""""#.to_string()),
+                "Option" => Some("undefined".to_string()),
+                "Vec" => Some("[]".to_string()),
+                "Arc" | "Ref" => {
+                    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                        return None;
+                    };
+                    arguments.args.iter().find_map(|argument| match argument {
+                        GenericArgument::Type(rust_type) => rust_default_expression(rust_type),
+                        _ => None,
+                    })
+                }
+                _ => None,
+            }
+        }
+        Type::Reference(reference) => rust_default_expression(&reference.elem),
+        Type::Tuple(tuple) => tuple
+            .elems
+            .iter()
+            .map(rust_default_expression)
+            .collect::<Option<Vec<_>>>()
+            .map(|elements| format!("[{}]", elements.join(", "))),
+        _ => None,
+    };
+}
+
+fn entity_allocation(typescript_type: &str, entities: &HashSet<String>) -> String {
+    let prefix = format!("{ENTITY_DEFAULT_FIELD_MARKER}{typescript_type}:");
+    let mut fields = entities
+        .iter()
+        .filter_map(|marker| marker.strip_prefix(&prefix))
+        .filter_map(|field| field.split_once(':'))
+        .map(|(field, value)| format!("{field}: {value}"))
+        .collect::<Vec<_>>();
+    fields.sort();
+    let allocation = format!("allocateEntity<{typescript_type}>()");
+    if fields.is_empty() {
+        return allocation;
+    }
+    return format!("Object.assign({allocation}, {{ {} }})", fields.join(", "));
+}
+
 fn vec_clone_optional(rust_type: &Type) -> Option<bool> {
     if let Some(inner) = option_inner_type(rust_type) {
         return (named_type(inner).as_deref() == Some("Vec")).then_some(true);
@@ -224,6 +278,11 @@ fn vec_clone_optional(rust_type: &Type) -> Option<bool> {
 
 pub(crate) fn generation_context(programs: &[&Program]) -> Result<HashSet<String>, CompileError> {
     let mut context = HashSet::new();
+    let entity_types = programs
+        .iter()
+        .flat_map(|program| &program.entities)
+        .cloned()
+        .collect::<HashSet<_>>();
     let record_types = programs
         .iter()
         .flat_map(|program| {
@@ -254,6 +313,28 @@ pub(crate) fn generation_context(programs: &[&Program]) -> Result<HashSet<String
         .collect::<HashMap<_, _>>();
     for program in programs {
         context.extend(program.entities.iter().cloned());
+        for structure in &program.structs {
+            let entity = structure.ident.to_string();
+            if !entity_types.contains(&entity) {
+                continue;
+            }
+            let typescript_type = format!("{entity}Raw");
+            for field in &structure.fields {
+                if !is_public(&field.vis) {
+                    continue;
+                }
+                let Some(field_name) = &field.ident else {
+                    continue;
+                };
+                let Some(value) = rust_default_expression(&field.ty) else {
+                    continue;
+                };
+                context.insert(format!(
+                    "{ENTITY_DEFAULT_FIELD_MARKER}{typescript_type}:{}:{value}",
+                    snake_to_lower_camel(&field_name.to_string())
+                ));
+            }
+        }
         for (record, fields) in &record_vec_fields {
             context.insert(format!("{RECORD_CLONE_TYPE_MARKER}{record}"));
             for (field, optional) in fields {
@@ -1543,7 +1624,7 @@ pub(crate) fn emit_local_with_shadow(
                 "allocate_entity local needs an explicit Rust type",
             ));
         };
-        format!("allocateEntity<{typescript_type}>()")
+        entity_allocation(typescript_type, entities)
     } else if let Some(rust_type) = rust_type {
         emit_expression_for_type(&initializer.expr, rust_type, entities)?
     } else if let Expr::Repeat(repeat) = initializer.expr.as_ref()
@@ -2473,7 +2554,7 @@ fn emit_statement(
                         .ok_or_else(|| {
                             compile_error("allocate_entity return needs an explicit Rust type")
                         })?;
-                    format!("allocateEntity<{return_type}>()")
+                    entity_allocation(return_type, entities)
                 } else {
                     emit_expression(value, entities)?
                 };
