@@ -8,7 +8,7 @@ use crate::stl_features::parse_stl_number;
 use flight_camera::Projection;
 use flight_camera::contract::{create_orthographic_projection, create_perspective_projection};
 use flight_entity::Ref;
-use flight_geometry::{create_transform3d, decompose_matrix4_to_transform3d};
+use flight_geometry::contract::{create_transform3d, decompose_matrix4_to_transform3d};
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
 };

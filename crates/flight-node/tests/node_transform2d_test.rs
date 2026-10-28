@@ -407,8 +407,9 @@ mod get_node_transform2d {
             *transform.scale_x = 2.0;
             *transform.skew_y = 5.0;
         });
-        let mut out =
-            flight_geometry::create_transform2d(0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
+        let mut out = flight_geometry::contract::create_transform2d(
+            0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+        );
         get_node_transform2d(&mut out, &node);
         assert_eq!(out.x, 3.0);
         assert_eq!(out.y, 4.0);
@@ -523,8 +524,9 @@ mod set_node_transform2d {
     #[test]
     fn copies_carrier_fields_into_the_node_and_rebuilds_the_matrix() {
         let node = create_test_node_2d("Test");
-        let source =
-            flight_geometry::create_transform2d(10.0, 20.0, 0.0, 2.0, 4.0, 0.0, 0.0, 0.0, 0.0);
+        let source = flight_geometry::contract::create_transform2d(
+            10.0, 20.0, 0.0, 2.0, 4.0, 0.0, 0.0, 0.0, 0.0,
+        );
         set_node_transform2d(&node, &source);
         let matrix = get_node_local_matrix(&node);
         close(matrix.a, 2.0);

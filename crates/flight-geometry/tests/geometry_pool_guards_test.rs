@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use flight_geometry::*;
+use flight_geometry::contract::*;
 
 mod set_geometry_pool_release_guard {
     use super::*;

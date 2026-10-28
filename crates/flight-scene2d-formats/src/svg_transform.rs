@@ -1,6 +1,6 @@
 use std::sync::OnceLock;
 
-use flight_geometry::{
+use flight_geometry::contract::{
     Matrix, Transform2D, create_matrix, create_transform2d, decompose_matrix_to_transform2d,
     multiply_matrix,
 };

@@ -38,9 +38,9 @@ pub fn initialize_node3d<T: Node3D>(out: &mut T, kind: Option<Kind>) {
     });
     let f = out.node3d_fields_mut();
     *f.node3d_runtime_mut() = create_node3d_runtime();
-    flight_geometry::initialize_vector3(&mut f.position, 0.0, 0.0, 0.0);
-    flight_geometry::initialize_quaternion(&mut f.rotation, 0.0, 0.0, 0.0, 1.0);
-    flight_geometry::initialize_vector3(&mut f.scale, 1.0, 1.0, 1.0);
+    flight_geometry::contract::initialize_vector3(&mut f.position, 0.0, 0.0, 0.0);
+    flight_geometry::contract::initialize_quaternion(&mut f.rotation, 0.0, 0.0, 0.0, 1.0);
+    flight_geometry::contract::initialize_vector3(&mut f.scale, 1.0, 1.0, 1.0);
     f.alpha = 1.0;
     f.visible = true;
 }

@@ -6,7 +6,7 @@ use crate::three_ds_read::{read_three_ds_f32, read_three_ds_u16};
 use crate::three_ds_schema::*;
 use crate::three_ds_types::{ThreeDsChunkHandler, ThreeDsDropTallyEntry};
 use flight_entity::{Ref, Uint8Array};
-use flight_geometry::{
+use flight_geometry::contract::{
     Vector3, clone_vector3, create_transform3d, create_vector3, normalize_vector3,
     set_quaternion_from_unit_vectors, subtract_vector3,
 };

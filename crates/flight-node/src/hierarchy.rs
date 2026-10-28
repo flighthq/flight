@@ -6,7 +6,7 @@
 use std::sync::Arc;
 
 use flight_geometry::Transform2D;
-use flight_geometry::{
+use flight_geometry::contract::{
     Matrix, acquire_matrix, copy_matrix, decompose_matrix_to_transform2d, inverse_matrix,
     multiply_matrix, release_matrix,
 };
@@ -401,8 +401,9 @@ pub fn reparent_node(
             let fields = transform.transform2d();
             (*fields.pivot_x, *fields.pivot_y)
         };
-        let mut decomposed: Transform2D =
-            flight_geometry::create_transform2d(0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
+        let mut decomposed: Transform2D = flight_geometry::contract::create_transform2d(
+            0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0,
+        );
         decompose_matrix_to_transform2d(&mut decomposed, &local);
         let fields = transform.transform2d_mut();
         *fields.pivot_x = pivot_x;

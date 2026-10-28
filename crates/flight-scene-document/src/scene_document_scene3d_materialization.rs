@@ -8,7 +8,7 @@ use std::collections::HashSet;
 
 use flight_camera::{Camera3D, create_camera_3d, set_camera_3d_view_matrix4_from_matrix4};
 use flight_entity::allocate_entity;
-use flight_geometry::{
+use flight_geometry::contract::{
     Transform3D, compose_matrix4_from_transform3d, create_transform3d,
     decompose_matrix4_to_transform3d, inverse_matrix4,
 };

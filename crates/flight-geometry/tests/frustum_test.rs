@@ -1,4 +1,4 @@
-use flight_geometry::*;
+use flight_geometry::contract::*;
 use std::collections::HashSet;
 
 fn create_test_view_projection() -> Matrix4 {

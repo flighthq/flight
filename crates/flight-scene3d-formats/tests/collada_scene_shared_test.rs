@@ -1,5 +1,5 @@
 use flight_entity::Ref;
-use flight_geometry::create_transform3d;
+use flight_geometry::contract::create_transform3d;
 use flight_meshgeometry::{MeshGeometryOptions, create_mesh_geometry};
 use flight_scene3d::{
     NODE3D_KIND, Scene3DDocument, Scene3DDocumentMesh, Scene3DDocumentNode, Scene3DMetadata,

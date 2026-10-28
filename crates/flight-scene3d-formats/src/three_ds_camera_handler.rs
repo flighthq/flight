@@ -5,7 +5,7 @@ use crate::three_ds_schema::*;
 use crate::three_ds_types::{ThreeDsChunkHandler, ThreeDsDropTallyEntry};
 use flight_camera::{Projection, create_perspective_projection};
 use flight_entity::{Ref, Uint8Array};
-use flight_geometry::{
+use flight_geometry::contract::{
     Vector3, clone_quaternion, clone_vector3, create_quaternion, create_transform3d,
     create_vector3, multiply_quaternion, normalize_vector3, set_quaternion_from_axis_angle,
     set_quaternion_from_unit_vectors, subtract_vector3,

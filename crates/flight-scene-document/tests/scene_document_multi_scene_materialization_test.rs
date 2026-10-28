@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex, RwLock};
 
 use flight_camera::CameraGuardState;
 use flight_entity::{UnknownValue, allocate_entity, get_record_value};
-use flight_geometry::create_transform3d;
+use flight_geometry::contract::create_transform3d;
 use flight_lighting::create_ambient_light;
 use flight_node::NodeRef;
 use flight_node::contract::NodeRevisionState;

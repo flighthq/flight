@@ -6,7 +6,9 @@ use crate::obj_features::is_obj_whitespace;
 use crate::stl_features::parse_stl_number;
 use flight_color::{allocate_linear_color, pack_linear_to_color};
 use flight_entity::Ref;
-use flight_geometry::{create_transform3d, create_vector3, decompose_matrix4_to_transform3d};
+use flight_geometry::contract::{
+    create_transform3d, create_vector3, decompose_matrix4_to_transform3d,
+};
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
 };

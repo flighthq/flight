@@ -1,4 +1,4 @@
-use flight_geometry::*;
+use flight_geometry::contract::*;
 
 const DEG_TO_RAD: f32 = std::f32::consts::PI / 180.0;
 

@@ -224,7 +224,7 @@ mod awd2_camera_handler {
                             kind: flight_scene3d::NODE3D_KIND.to_string(),
                             mesh: None,
                             name: Some("Parent".to_string()),
-                            transform: flight_geometry::create_transform3d(),
+                            transform: flight_geometry::contract::create_transform3d(),
                         },
                     );
                     state

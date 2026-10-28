@@ -7,7 +7,7 @@ use crate::collada_xml::{
     walk_collada_element,
 };
 use flight_entity::Ref;
-use flight_geometry::{
+use flight_geometry::contract::{
     Matrix4, Transform3D, compose_matrix4_from_transform3d, copy_matrix4, create_matrix4,
     create_transform3d, decompose_matrix4_to_transform3d, multiply_matrix4,
 };

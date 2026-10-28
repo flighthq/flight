@@ -2,7 +2,7 @@
 
 // flight-lint: allow-file(contract-vocabulary, conform-params) D16 open node trait objects are contract dispatch; D5 caller-owned revision state replaces the TS module-level counter
 
-use flight_geometry::{
+use flight_geometry::contract::{
     Matrix, Transform2D, Vector2, copy_matrix, create_matrix, decompose_matrix_to_transform2d,
     inverse_matrix_transform_point_xy, matrix_transform_point_xy, multiply_matrix,
 };
@@ -212,7 +212,7 @@ fn recompute_local_matrix(node: &mut dyn Transform2DNode) {
 /// Sets the node's local transform from a matrix, decomposing it (TS `setNodeLocalMatrix`).
 pub fn set_node_local_matrix(target: &NodeRef, source: &Matrix) {
     let mut decomposed: Transform2D =
-        flight_geometry::create_transform2d(0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
+        flight_geometry::contract::create_transform2d(0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
     decompose_matrix_to_transform2d(&mut decomposed, source);
     let mut guard = target.write().unwrap();
     let transform = guard

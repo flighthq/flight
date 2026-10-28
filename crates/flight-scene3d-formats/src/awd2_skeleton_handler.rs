@@ -8,7 +8,7 @@ use crate::awd2_types::*;
 use crate::three_ds_read::{read_three_ds_u16, read_three_ds_u32};
 use flight_animation::create_animation_track;
 use flight_entity::{Ref, Uint8Array};
-use flight_geometry::{
+use flight_geometry::contract::{
     copy_matrix4, create_matrix4, create_transform3d, decompose_matrix4_to_transform3d,
     inverse_matrix4, multiply_matrix4, set_matrix4_identity,
 };

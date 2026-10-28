@@ -76,7 +76,7 @@ pub fn document_node(name: Option<&str>) -> Scene3DDocumentNode {
         kind: NODE3D_KIND.to_string(),
         mesh: None,
         name: name.map(str::to_string),
-        transform: flight_geometry::create_transform3d(),
+        transform: flight_geometry::contract::create_transform3d(),
     };
 }
 pub fn test_track() -> Ref<flight_animation::AnimationTrack> {

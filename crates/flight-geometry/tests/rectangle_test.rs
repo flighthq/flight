@@ -1,4 +1,4 @@
-use flight_geometry::*;
+use flight_geometry::contract::*;
 
 mod clone_rectangle {
     use super::*;

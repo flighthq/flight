@@ -2,7 +2,7 @@ use crate::md5_parse::tally_md5_drop;
 use crate::md5_types::{MD5_SKELETON_FEATURE, Md5DropTallyEntry, Md5Joint, Md5SectionHandler};
 use crate::shared::{convert_positions_z_up_to_y_up, convert_quaternions_z_up_to_y_up};
 use flight_entity::Ref;
-use flight_geometry::{
+use flight_geometry::contract::{
     compose_matrix4, conjugate_quaternion, create_matrix4, create_quaternion, create_transform3d,
     create_vector3, inverse_matrix4, multiply_quaternion, rotate_vector3_by_quaternion,
     set_quaternion, set_vector3,

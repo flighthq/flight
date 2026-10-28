@@ -235,7 +235,7 @@ mod get_node_transform3d {
             transform.position.z = 3.0;
             transform.scale.y = 4.0;
         });
-        let mut out = flight_geometry::create_transform3d();
+        let mut out = flight_geometry::contract::create_transform3d();
         get_node_transform3d(&mut out, &node);
         close(out.position.x, 1.0);
         close(out.position.y, 2.0);
@@ -462,7 +462,7 @@ mod set_node_transform3d {
     #[test]
     fn copies_carrier_fields_into_the_node_and_reattaches_trs() {
         let node = create_test_node_3d("Test");
-        let mut source = flight_geometry::create_transform3d();
+        let mut source = flight_geometry::contract::create_transform3d();
         source.position.x = 7.0;
         source.scale.z = 2.0;
         set_node_transform3d(&node, &source);

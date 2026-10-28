@@ -151,7 +151,7 @@ fn build_awd_document_camera(
         node: node_index,
         projection,
         transform: {
-            let mut output = flight_geometry::create_transform3d();
+            let mut output = flight_geometry::contract::create_transform3d();
             awd_transform_to_transform3d(&mut output, &camera.transform);
             output
         },

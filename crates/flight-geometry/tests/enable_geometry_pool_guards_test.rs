@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::sync::RwLock;
 
-use flight_geometry::*;
+use flight_geometry::contract::*;
 use flight_log::create_log_state;
 
 mod are_geometry_pool_guards_enabled {

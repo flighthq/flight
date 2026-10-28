@@ -9,7 +9,7 @@ use crate::three_ds_types::{
     ThreeDsChunkHandler, ThreeDsDropTallyEntry, ThreeDsMaterialEntry, ThreeDsPivotEntry,
 };
 use flight_entity::{Float64Array, Ref, Uint8Array};
-use flight_geometry::{
+use flight_geometry::contract::{
     Matrix4, Transform3D, clone_matrix4, clone_vector3, create_matrix4, create_transform3d,
     create_vector3, decompose_matrix4_to_transform3d, inverse_matrix4, matrix4_transform_point,
     multiply_matrix4, set_matrix4,

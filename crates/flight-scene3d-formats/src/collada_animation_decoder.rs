@@ -3,7 +3,9 @@ use crate::collada_xml::{collada_child, collada_descendants, collada_id_of, coll
 use crate::obj_features::is_obj_whitespace;
 use flight_animation::{AnimationInterpolation, create_animation_track};
 use flight_entity::Ref;
-use flight_geometry::{create_matrix4, create_transform3d, decompose_matrix4_to_transform3d};
+use flight_geometry::contract::{
+    create_matrix4, create_transform3d, decompose_matrix4_to_transform3d,
+};
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
     report_import_diagnostic,

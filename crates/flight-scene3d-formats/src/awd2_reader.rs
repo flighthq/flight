@@ -3,7 +3,9 @@ use crate::shared::convert_transform_lh_to_rh;
 use crate::three_ds_read::{read_three_ds_f32, read_three_ds_u16, read_three_ds_u32};
 use flight_encoding::decode_utf8;
 use flight_entity::{Float64Array, Uint8Array, throw_range_error};
-use flight_geometry::{Matrix4, Transform3D, create_matrix4, decompose_matrix4_to_transform3d};
+use flight_geometry::contract::{
+    Matrix4, Transform3D, create_matrix4, decompose_matrix4_to_transform3d,
+};
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Awd2PropertyEntry {

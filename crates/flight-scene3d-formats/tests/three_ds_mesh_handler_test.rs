@@ -1,5 +1,5 @@
 use super::three_ds_test_helper::*;
-use flight_geometry::{
+use flight_geometry::contract::{
     compose_matrix4_from_transform3d, create_matrix4, create_vector3, matrix4_transform_point,
 };
 use flight_importdiagnostics::{

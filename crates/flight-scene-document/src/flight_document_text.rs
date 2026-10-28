@@ -14,7 +14,7 @@ use flight_entity::{
     Record, allocate_entity, entries, get_record_keys, get_record_value, set_record_value,
     throw_range_error, throw_type_error, unknown_to_js_string,
 };
-use flight_geometry::{Transform3D, Vector3, create_transform3d};
+use flight_geometry::contract::{Transform3D, Vector3, create_transform3d};
 use flight_scene3d::{Scene3DDocumentCamera, Scene3DDocumentLight};
 
 use crate::flight_document_light::{canonical_number, get_flight_document_light_fields};

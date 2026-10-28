@@ -1,5 +1,5 @@
 use crate::support::*;
-use flight_geometry::{create_transform3d, create_vector3};
+use flight_geometry::contract::{create_transform3d, create_vector3};
 use flight_lighting::contract::*;
 use flight_scene3d::contract::*;
 use std::sync::{Arc, RwLock};

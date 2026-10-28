@@ -20,7 +20,7 @@ use crate::gltf_source::GltfSource;
 use crate::gltf_types::*;
 use flight_buffer::ArrayBufferView;
 use flight_entity::Ref;
-use flight_geometry::{Transform3D, create_transform3d};
+use flight_geometry::contract::{Transform3D, create_transform3d};
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
 };

@@ -1,6 +1,6 @@
 use crate::collada_xml::{collada_child, collada_children};
 use flight_entity::Ref;
-use flight_geometry::{
+use flight_geometry::contract::{
     Matrix4, compose_matrix4_from_transform3d, copy_matrix4, create_matrix4, multiply_matrix4,
 };
 use flight_scene3d::{Scene3DDocument, Scene3DDocumentMesh, Scene3DDocumentNode};

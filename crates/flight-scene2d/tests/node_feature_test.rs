@@ -4,7 +4,7 @@
 use std::sync::{Arc, RwLock};
 
 use flight_clip::create_clip_region_from_rectangle;
-use flight_geometry::{create_rectangle, create_transform2d};
+use flight_geometry::contract::{create_rectangle, create_transform2d};
 use flight_materials::contract::{Material2D, create_standard_material};
 use flight_node::contract::NodeRevisionState;
 use flight_node::{

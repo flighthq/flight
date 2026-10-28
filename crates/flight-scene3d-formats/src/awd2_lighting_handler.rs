@@ -10,7 +10,7 @@ use crate::awd2_types::{
 };
 use crate::three_ds_read::{read_three_ds_u16, read_three_ds_u32};
 use flight_entity::{Ref, Uint8Array};
-use flight_geometry::{
+use flight_geometry::contract::{
     create_transform3d, create_vector3, normalize_vector3, set_quaternion_from_unit_vectors,
 };
 use flight_importdiagnostics::{

@@ -51,7 +51,7 @@ mod awd_transform_to_transform3d {
     #[test]
     fn decomposes_translation_and_uniform_scale_without_hidden_scratch_state() {
         let transform = {
-            let mut output = flight_geometry::create_transform3d();
+            let mut output = flight_geometry::contract::create_transform3d();
             awd_transform_to_transform3d(
                 &mut output,
                 &[1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 4.0],
@@ -67,7 +67,7 @@ mod awd_transform_to_transform3d {
             [2.0, 3.0, 4.0]
         );
         let scaled = {
-            let mut output = flight_geometry::create_transform3d();
+            let mut output = flight_geometry::contract::create_transform3d();
             awd_transform_to_transform3d(
                 &mut output,
                 &[2.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0],
@@ -93,7 +93,7 @@ mod awd_transform_to_transform3d {
     }
     #[test]
     fn replaces_translation_rotation_and_scale_when_reusing_a_previously_decomposed_output() {
-        let mut out = flight_geometry::create_transform3d();
+        let mut out = flight_geometry::contract::create_transform3d();
         awd_transform_to_transform3d(
             &mut out,
             &[2.0, 0.0, 0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 2.0, 1.0, 2.0, 3.0],

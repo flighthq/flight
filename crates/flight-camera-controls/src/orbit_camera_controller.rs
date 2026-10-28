@@ -2,7 +2,7 @@
 
 use flight_camera::contract::{Camera3D, set_camera_3d_view_matrix4_from_look_at};
 use flight_entity::allocate_entity;
-use flight_geometry::{create_vector3, initialize_vector3};
+use flight_geometry::contract::{create_vector3, initialize_vector3};
 use flight_math::{clamp, damp, delta_angle};
 
 use crate::types::*;

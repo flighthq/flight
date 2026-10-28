@@ -2,7 +2,7 @@ use crate::gltf_diagnostics::{GltfDropTally, tally_gltf_numbers};
 use crate::gltf_json::{GltfJsonMetadata, gltf_original_array_number};
 use crate::gltf_schema::GltfNode;
 use flight_entity::Ref;
-use flight_geometry::{
+use flight_geometry::contract::{
     Transform3D, compose_matrix4_from_transform3d, create_matrix4, create_transform3d,
     decompose_matrix4_to_transform3d, multiply_matrix4,
 };

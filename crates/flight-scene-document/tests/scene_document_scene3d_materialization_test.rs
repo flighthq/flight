@@ -5,7 +5,7 @@ use flight_camera::{
     CameraGuardState, CameraGuardStateRef, Projection, create_perspective_projection,
 };
 use flight_entity::{allocate_entity, get_record_keys, get_record_value};
-use flight_geometry::{
+use flight_geometry::contract::{
     Transform3D, create_transform3d, create_vector3, set_quaternion_from_axis_angle,
 };
 use flight_lighting::{

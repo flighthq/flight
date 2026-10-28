@@ -5,7 +5,7 @@ use crate::md2_schema::{
 use crate::md2_types::{Md2Frame, Md2ParseContext, Md2SectionHandler};
 use crate::shared::{CANONICAL_LAYOUT, reverse_triangle_winding};
 use flight_entity::{Float32Array, Ref, Uint8Array};
-use flight_geometry::create_transform3d;
+use flight_geometry::contract::create_transform3d;
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
     report_import_diagnostic,

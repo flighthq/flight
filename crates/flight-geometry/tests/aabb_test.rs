@@ -1,4 +1,4 @@
-use flight_geometry::*;
+use flight_geometry::contract::*;
 use std::f32::consts::{FRAC_1_SQRT_2, SQRT_2};
 
 fn assert_approx(actual: f32, expected: f32) {

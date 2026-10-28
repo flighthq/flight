@@ -1,6 +1,6 @@
 use super::awd2_test_helper::{block, empty_document, file, scene_header};
 use flight_entity::Ref;
-use flight_geometry::create_transform3d;
+use flight_geometry::contract::create_transform3d;
 use flight_importdiagnostics::{ImportDiagnosticDetailValue, ImportDiagnosticSeverity};
 use flight_meshgeometry::{MeshGeometry, MeshGeometryOptions, create_mesh_geometry};
 use flight_scene3d::{MESH_KIND, NODE3D_KIND, Scene3DDocument};

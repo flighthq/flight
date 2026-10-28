@@ -8,7 +8,7 @@ use crate::shared::{
     pack_skin_influences, reverse_triangle_winding,
 };
 use flight_entity::Ref;
-use flight_geometry::create_transform3d;
+use flight_geometry::contract::create_transform3d;
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
     report_import_diagnostic,

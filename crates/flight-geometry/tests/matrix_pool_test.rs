@@ -1,7 +1,7 @@
 use flight_entity::{
     attach_entity_binding, get_entity_binding, has_entity_runtime, set_entity_uid,
 };
-use flight_geometry::*;
+use flight_geometry::contract::*;
 
 fn components(m: &Matrix) -> (f32, f32, f32, f32, f32, f32) {
     return (m.a, m.b, m.c, m.d, m.tx, m.ty);

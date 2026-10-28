@@ -4,7 +4,7 @@ use crate::obj_schema::ObjMaterialLibrary;
 use crate::obj_types::ObjMaterialHandler;
 use crate::shared::{CANONICAL_FLOATS_PER_VERTEX, CANONICAL_LAYOUT};
 use flight_entity::Ref;
-use flight_geometry::create_transform3d;
+use flight_geometry::contract::create_transform3d;
 use flight_importdiagnostics::{
     ImportDiagnostic, ImportDiagnosticDetailValue, ImportDiagnosticSeverity,
     report_import_diagnostic,

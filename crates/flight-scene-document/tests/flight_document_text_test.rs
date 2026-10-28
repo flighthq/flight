@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 
 use flight_camera::contract::{Projection, create_perspective_projection};
 use flight_entity::{allocate_entity, get_record_value};
-use flight_geometry::create_transform3d;
+use flight_geometry::contract::create_transform3d;
 use flight_lighting::contract::create_ambient_light;
 use flight_scene_document::contract::*;
 use flight_scene3d::{Scene3DDocumentCamera, Scene3DDocumentLight};
