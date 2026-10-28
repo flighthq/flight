@@ -37,6 +37,9 @@ const RETURNS_U32_MARKER: &str = "@returns-u32";
 const STRING_EXPRESSION_MARKER: &str = "@string-expression:";
 const STRING_RETURN_MARKER: &str = "@string-return:";
 const STRING_UNION_MARKER: &str = "@string-union:";
+const VITEST_STRUCT_LOCAL_MARKER: &str = "@vitest-struct-local:";
+const VITEST_STRUCT_VEC_CALLBACK_MARKER: &str = "@vitest-struct-vec-callback:";
+const VITEST_STRUCT_TYPE_MARKER: &str = "@vitest-struct-type:";
 const VEC_CLONE_ARGUMENT_MARKER: &str = "@vec-clone-argument:";
 const VEC_CLONE_EXPRESSION_MARKER: &str = "@vec-clone-expression:";
 const UNSIGNED_INTEGER_LOCAL_MARKER: &str = "@unsigned-integer-local:";
@@ -121,26 +124,36 @@ fn callable_parameter_types(
     rust_type: &Type,
     entities: &HashSet<String>,
 ) -> Result<Option<Vec<String>>, CompileError> {
+    let Some(parameter_types) = callable_parameter_rust_types(rust_type) else {
+        return Ok(None);
+    };
+    return parameter_types
+        .iter()
+        .map(|rust_type| emit_type(rust_type, entities))
+        .collect::<Result<Vec<_>, _>>()
+        .map(Some);
+}
+
+fn callable_parameter_rust_types(rust_type: &Type) -> Option<Vec<&Type>> {
     return match rust_type {
-        Type::Paren(paren) => callable_parameter_types(&paren.elem, entities),
-        Type::Reference(reference) => callable_parameter_types(&reference.elem, entities),
+        Type::Paren(paren) => callable_parameter_rust_types(&paren.elem),
+        Type::Reference(reference) => callable_parameter_rust_types(&reference.elem),
         Type::Path(path) => {
-            let Some(segment) = path.path.segments.last() else {
-                return Ok(None);
-            };
-            if !matches!(segment.ident.to_string().as_str(), "Arc" | "Box" | "Ref") {
-                return Ok(None);
+            let segment = path.path.segments.last()?;
+            if !matches!(
+                segment.ident.to_string().as_str(),
+                "Arc" | "Box" | "Option" | "Ref"
+            ) {
+                return None;
             }
             let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
-                return Ok(None);
+                return None;
             };
-            let Some(inner) = arguments.args.iter().find_map(|argument| match argument {
+            let inner = arguments.args.iter().find_map(|argument| match argument {
                 GenericArgument::Type(rust_type) => Some(rust_type),
                 _ => None,
-            }) else {
-                return Ok(None);
-            };
-            callable_parameter_types(inner, entities)
+            })?;
+            callable_parameter_rust_types(inner)
         }
         Type::TraitObject(object) => {
             for bound in &object.bounds {
@@ -157,18 +170,13 @@ fn callable_parameter_types(
                     continue;
                 }
                 let PathArguments::Parenthesized(arguments) = &segment.arguments else {
-                    return Ok(None);
+                    return None;
                 };
-                return arguments
-                    .inputs
-                    .iter()
-                    .map(|rust_type| emit_type(rust_type, entities))
-                    .collect::<Result<Vec<_>, _>>()
-                    .map(Some);
+                return Some(arguments.inputs.iter().collect());
             }
-            Ok(None)
+            None
         }
-        _ => Ok(None),
+        _ => None,
     };
 }
 
@@ -602,6 +610,32 @@ pub(crate) fn insert_string_union_context<'a>(
     context.extend(names.map(|name| format!("{STRING_UNION_MARKER}{name}")));
 }
 
+pub(crate) fn insert_vitest_struct_context<'a>(
+    context: &mut HashSet<String>,
+    structures: impl Iterator<Item = &'a ItemStruct>,
+) {
+    for structure in structures {
+        let structure_name = structure.ident.to_string();
+        context.insert(format!("{VITEST_STRUCT_TYPE_MARKER}{structure_name}"));
+        for field in &structure.fields {
+            let Some(field_name) = &field.ident else {
+                continue;
+            };
+            let Some(parameter_types) = callable_parameter_rust_types(&field.ty) else {
+                continue;
+            };
+            let field_name = snake_to_lower_camel(&field_name.to_string());
+            for (index, rust_type) in parameter_types.iter().enumerate() {
+                if let Some(optional) = vec_clone_optional(rust_type) {
+                    context.insert(format!(
+                        "{VITEST_STRUCT_VEC_CALLBACK_MARKER}{structure_name}:{field_name}:{index}:{optional}"
+                    ));
+                }
+            }
+        }
+    }
+}
+
 pub(crate) fn is_string_union(context: &HashSet<String>, name: &str) -> bool {
     return context.contains(&format!("{STRING_UNION_MARKER}{name}"));
 }
@@ -799,6 +833,15 @@ pub(crate) fn function_expression_context(
         }
 
         fn visit_local(&mut self, local: &'ast syn::Local) {
+            if let Some(initializer) = &local.init
+                && let Some(local_name) = local_pattern_name(&local.pat)
+                && let Some(structure) =
+                    inferred_vitest_struct_literal_name(&initializer.expr, self.context)
+            {
+                self.context.insert(format!(
+                    "{VITEST_STRUCT_LOCAL_MARKER}{local_name}:{structure}"
+                ));
+            }
             if let Pat::Type(typed) = &local.pat
                 && let Pat::Ident(pattern) = typed.pat.as_ref()
             {
@@ -873,6 +916,14 @@ pub(crate) fn function_expression_context(
         let Pat::Ident(pattern) = argument.pat.as_ref() else {
             continue;
         };
+        if let Some(structure) = named_type(&argument.ty)
+            && context.contains(&format!("{VITEST_STRUCT_TYPE_MARKER}{structure}"))
+        {
+            context.insert(format!(
+                "{VITEST_STRUCT_LOCAL_MARKER}{}:{structure}",
+                pattern.ident
+            ));
+        }
         if context.contains(&format!(
             "{RECORD_CLONE_ARGUMENT_MARKER}{function_name}:{}",
             pattern.ident
@@ -1449,9 +1500,10 @@ pub(crate) fn emit_expression(
             } else {
                 emit_expression(&assign.left, entities)?
             };
+            let right_context = contextual_assignment_field_context(assign, entities);
             Ok(format!(
                 "{left} = {}",
-                emit_expression(&assign.right, entities)?
+                emit_expression(&assign.right, &right_context)?
             ))
         }
         Expr::Binary(binary) => {
@@ -1945,6 +1997,224 @@ fn emit_expression_for_type(
     };
 }
 
+fn emit_contextual_struct_literal_expression(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    match expression {
+        Expr::Call(call) if call.args.len() == 1 => {
+            if expression_is_associated_path(&call.func, "Arc", "new") {
+                return emit_contextual_struct_literal_expression(&call.args[0], entities);
+            }
+            if expression_is_associated_path(&call.func, "Mutex", "new") {
+                return Ok(format!(
+                    "{{ value: {} }}",
+                    emit_contextual_struct_literal_expression(&call.args[0], entities)?
+                ));
+            }
+        }
+        Expr::Group(group) => {
+            return emit_contextual_struct_literal_expression(&group.expr, entities);
+        }
+        Expr::Paren(paren) => {
+            return Ok(format!(
+                "({})",
+                emit_contextual_struct_literal_expression(&paren.expr, entities)?
+            ));
+        }
+        Expr::Reference(reference) => {
+            return emit_contextual_struct_literal_expression(&reference.expr, entities);
+        }
+        Expr::Struct(structure)
+            if structure.path.segments.len() == 1
+                && structure.path.segments.first().is_some_and(|segment| {
+                    entities.contains(&format!("{VITEST_STRUCT_TYPE_MARKER}{}", segment.ident))
+                }) =>
+        {
+            if structure.rest.is_some() {
+                return Err(compile_error(
+                    "unsupported struct update expression; refusing a lossy object literal",
+                ));
+            }
+            let fields = structure
+                .fields
+                .iter()
+                .map(|field| {
+                    let value = if expression_is_empty_vec(&field.expr) {
+                        "[]".to_string()
+                    } else {
+                        let field_context = contextual_struct_field_context(
+                            entities,
+                            &structure.path.segments[0].ident.to_string(),
+                            &field.member,
+                            &field.expr,
+                        );
+                        emit_expression(&field.expr, &field_context)?
+                    };
+                    Ok(format!("{}: {value}", emit_member(&field.member)))
+                })
+                .collect::<Result<Vec<_>, CompileError>>()?;
+            return Ok(format!("{{ {} }}", fields.join(", ")));
+        }
+        _ => {}
+    }
+    return emit_expression(expression, entities);
+}
+
+fn contextual_struct_field_context(
+    entities: &HashSet<String>,
+    structure: &str,
+    member: &syn::Member,
+    expression: &Expr,
+) -> HashSet<String> {
+    let mut context = entities.clone();
+    let Some(closure) = contextual_field_closure(expression) else {
+        return context;
+    };
+    let field = emit_member(member);
+    for (index, pattern) in closure.inputs.iter().enumerate() {
+        let Some(parameter) = closure_parameter_identifier(pattern) else {
+            continue;
+        };
+        let prefix = format!("{VITEST_STRUCT_VEC_CALLBACK_MARKER}{structure}:{field}:{index}:");
+        let markers = context
+            .iter()
+            .filter_map(|marker| marker.strip_prefix(&prefix))
+            .map(|optional| {
+                format!(
+                    "{VEC_CLONE_EXPRESSION_MARKER}{}:{optional}",
+                    snake_to_lower_camel(&parameter)
+                )
+            })
+            .collect::<Vec<_>>();
+        context.extend(markers);
+    }
+    return context;
+}
+
+fn contextual_assignment_field_context(
+    assignment: &syn::ExprAssign,
+    entities: &HashSet<String>,
+) -> HashSet<String> {
+    let Expr::Field(field) = assignment.left.as_ref() else {
+        return entities.clone();
+    };
+    let Some(local) = referenced_path_identifier(&field.base) else {
+        return entities.clone();
+    };
+    let prefix = format!("{VITEST_STRUCT_LOCAL_MARKER}{local}:");
+    let mut structures = entities
+        .iter()
+        .filter_map(|marker| marker.strip_prefix(&prefix))
+        .collect::<Vec<_>>();
+    structures.sort_unstable();
+    let Some(structure) = structures.first() else {
+        return entities.clone();
+    };
+    return contextual_struct_field_context(entities, structure, &field.member, &assignment.right);
+}
+
+fn contextual_field_closure(expression: &Expr) -> Option<&syn::ExprClosure> {
+    return match expression {
+        Expr::Call(call)
+            if call.args.len() == 1
+                && (expression_is_associated_path(&call.func, "Arc", "new")
+                    || expression_is_associated_path(&call.func, "Box", "new")) =>
+        {
+            contextual_field_closure(&call.args[0])
+        }
+        Expr::Call(call) if call.args.len() == 1 && expression_is_path(&call.func, "Some") => {
+            contextual_field_closure(&call.args[0])
+        }
+        Expr::Closure(closure) => Some(closure),
+        Expr::Group(group) => contextual_field_closure(&group.expr),
+        Expr::Paren(paren) => contextual_field_closure(&paren.expr),
+        Expr::Reference(reference) => contextual_field_closure(&reference.expr),
+        _ => None,
+    };
+}
+
+fn closure_parameter_identifier(pattern: &Pat) -> Option<String> {
+    return match pattern {
+        Pat::Ident(identifier) => Some(identifier.ident.to_string()),
+        Pat::Reference(reference) => closure_parameter_identifier(&reference.pat),
+        Pat::Type(typed) => closure_parameter_identifier(&typed.pat),
+        _ => None,
+    };
+}
+
+fn expression_is_empty_vec(expression: &Expr) -> bool {
+    return match expression {
+        Expr::Call(call) => {
+            call.args.is_empty() && expression_is_associated_path(&call.func, "Vec", "new")
+        }
+        Expr::Group(group) => expression_is_empty_vec(&group.expr),
+        Expr::Paren(paren) => expression_is_empty_vec(&paren.expr),
+        _ => false,
+    };
+}
+
+fn inferred_vitest_struct_literal_type(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> Option<String> {
+    return match expression {
+        Expr::Call(call) if call.args.len() == 1 => {
+            let inner = inferred_vitest_struct_literal_type(&call.args[0], entities)?;
+            if expression_is_associated_path(&call.func, "Arc", "new") {
+                Some(if is_primitive_typescript_type(&inner) {
+                    inner
+                } else {
+                    format!("Readonly<{inner}>")
+                })
+            } else if expression_is_associated_path(&call.func, "Mutex", "new") {
+                Some(format!("{{ value: {inner} }}"))
+            } else {
+                None
+            }
+        }
+        Expr::Group(group) => inferred_vitest_struct_literal_type(&group.expr, entities),
+        Expr::Paren(paren) => inferred_vitest_struct_literal_type(&paren.expr, entities),
+        Expr::Reference(reference) => {
+            inferred_vitest_struct_literal_type(&reference.expr, entities)
+        }
+        Expr::Struct(structure) if structure.path.segments.len() == 1 => {
+            let name = structure.path.segments.first()?.ident.to_string();
+            entities
+                .contains(&format!("{VITEST_STRUCT_TYPE_MARKER}{name}"))
+                .then_some(name)
+        }
+        _ => None,
+    };
+}
+
+fn inferred_vitest_struct_literal_name(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> Option<String> {
+    return match expression {
+        Expr::Call(call)
+            if call.args.len() == 1
+                && (expression_is_associated_path(&call.func, "Arc", "new")
+                    || expression_is_associated_path(&call.func, "Mutex", "new")) =>
+        {
+            inferred_vitest_struct_literal_name(&call.args[0], entities)
+        }
+        Expr::Group(group) => inferred_vitest_struct_literal_name(&group.expr, entities),
+        Expr::Paren(paren) => inferred_vitest_struct_literal_name(&paren.expr, entities),
+        Expr::Reference(reference) => {
+            inferred_vitest_struct_literal_name(&reference.expr, entities)
+        }
+        Expr::Struct(structure) if structure.path.segments.len() == 1 => {
+            let name = structure.path.segments.first()?.ident.to_string();
+            entities
+                .contains(&format!("{VITEST_STRUCT_TYPE_MARKER}{name}"))
+                .then_some(name)
+        }
+        _ => None,
+    };
+}
+
 pub(crate) fn emit_for_header(
     pattern: &Pat,
     expression: &Expr,
@@ -2292,6 +2562,11 @@ pub(crate) fn emit_local_with_shadow_and_else(
         return Ok(());
     };
     let local_name = local_pattern_name(&local.pat);
+    let inferred_struct_type = if rust_type.is_none() {
+        inferred_vitest_struct_literal_type(&initializer.expr, entities)
+    } else {
+        None
+    };
     let typescript_type = rust_type
         .map(|rust_type| emit_type(rust_type, entities))
         .transpose()?
@@ -2299,7 +2574,8 @@ pub(crate) fn emit_local_with_shadow_and_else(
             local_name
                 .as_deref()
                 .and_then(|name| inferred_fixed_buffer_type(entities, name))
-        });
+        })
+        .or_else(|| inferred_struct_type.clone());
     let closure_parameter_types = local_name
         .as_deref()
         .map(|name| closure_parameter_types(entities, name))
@@ -2313,6 +2589,8 @@ pub(crate) fn emit_local_with_shadow_and_else(
         entity_allocation(typescript_type, entities)?
     } else if let Some(rust_type) = rust_type {
         emit_expression_for_type(&initializer.expr, rust_type, entities)?
+    } else if inferred_struct_type.is_some() {
+        emit_contextual_struct_literal_expression(&initializer.expr, entities)?
     } else if let Expr::Repeat(repeat) = initializer.expr.as_ref()
         && let Some(array_type) = typescript_type
             .as_deref()
@@ -2366,7 +2644,7 @@ pub(crate) fn emit_local_with_shadow_and_else(
         write!(out, "{declaration} {pattern}").expect("writing to a String cannot fail");
     }
     if !rebind
-        && rust_type.is_some()
+        && (rust_type.is_some() || inferred_struct_type.is_some())
         && let Some(typescript_type) = typescript_type
     {
         write!(out, ": {typescript_type}").expect("writing to a String cannot fail");

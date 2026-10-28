@@ -134,6 +134,13 @@ pub fn compile_vitest_with_alias_sources(
     let string_unions = model::parse_string_union_metadata(source)?;
     let mut context = typescript::generation_context(&alias_program_refs)?;
     typescript::insert_string_union_context(&mut context, string_unions.keys());
+    typescript::insert_vitest_struct_context(
+        &mut context,
+        alias_programs
+            .iter()
+            .flat_map(|program| &program.structs)
+            .chain(&program.structs),
+    );
     let mut output = vitest::emit_test_program(&program, contract_module, &context)?;
     output = lower_string_union_variants(output, &string_unions, false);
     for alias_program in &alias_programs {

@@ -2341,6 +2341,51 @@ mod required {
     }
 
     #[test]
+    fn contextualizes_declared_struct_literal_bindings() {
+        let source = r#"
+use std::sync::Arc;
+
+struct Fixture {
+    pairs: Vec<(String, String)>,
+    record: Arc<dyn Fn(&mut Vec<(String, String)>, &Vec<f32>) + Send + Sync>,
+}
+
+fn make_fixture() -> Fixture {
+    let fixture = Fixture {
+        pairs: Vec::new(),
+        record: Arc::new(|pairs, values| {
+            pairs.push(("left".to_string(), values.clone().len().to_string()));
+        }),
+    };
+    return fixture;
+}
+
+mod fixture {
+    use super::*;
+
+    #[test]
+    fn records_a_pair() {
+        let fixture = make_fixture();
+        (fixture.record)(&mut fixture.pairs, &vec![1.0]);
+        assert_eq!(fixture.pairs, vec![("left".to_string(), "1".to_string())]);
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/example/contract").unwrap();
+
+        assert!(output.contains("pairs: Array<readonly [string, string]>;"));
+        assert!(output.contains(
+            "record: (arg0: Array<readonly [string, string]>, arg1: Readonly<number[]>) => void;"
+        ));
+        assert!(
+            output.contains("const fixture: Fixture = { pairs: [], record: (pairs, values) => {")
+        );
+        assert!(output.contains("pairs.push([\"left\", String(values.slice().length)]);"));
+        assert!(!output.contains("[] as never[]"));
+    }
+
+    #[test]
     fn lowers_shared_test_state_and_string_union_case_tables() {
         let production = r#"
 //! flight-compiler: string-union Status
@@ -2430,6 +2475,16 @@ mod read_status {
         assert!(haptics_output.contains("cancelCalls.value.names.push(\"cancel\");"));
         assert!(haptics_output.contains("let calls = impactCalls.value;"));
         assert!(haptics_output.contains("let [, host] = makeHost();"));
+        assert!(haptics_output.contains(
+            "const calls: Readonly<{ value: RecordedCalls }> = { value: { impacts: [], names: [], notifications: [], patterns: [], vibrations: [], waveforms: [] } };"
+        ));
+        assert!(haptics_output.contains("const host: HostHapticsCapability = { cancel: () => {"));
+        assert!(haptics_output.contains("capabilities: (out) => {"));
+        assert!(haptics_output.contains("calls.patterns.push(pattern.slice());"));
+        assert!(
+            haptics_output
+                .contains("calls.waveforms.push([timings.slice(), amplitudes.slice(), repeat]);")
+        );
         assert!(haptics_output.contains(
             "const styles = [\"heavy\", \"light\", \"medium\", \"rigid\", \"soft\"] as const;"
         ));
