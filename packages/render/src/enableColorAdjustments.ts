@@ -96,7 +96,8 @@ function resolveInheritedColorMatrix(
     inheritedColorMatrices.has(previous)
       ? (previous as Float32Array)
       : createInheritedColorMatrix();
-  return multiplyColorMatrix(parent, local, out);
+  multiplyColorMatrix(out, parent, local);
+  return out;
 }
 
 function writeColorScaleBiasMatrix(out: Float32Array, value: Readonly<ColorScaleBias>): Float32Array {

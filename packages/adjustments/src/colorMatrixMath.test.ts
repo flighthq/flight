@@ -371,7 +371,10 @@ describe('fuseColorMatrices', () => {
     const b = createGrayscaleColorMatrix();
     const c = createContrastColorMatrix(1.5);
     // Applying `a` then `b` then `c` = c × b × a as a single composed matrix (no per-scene2d rounding).
-    const expected = multiplyColorMatrix(c, multiplyColorMatrix(b, a));
+    const ba = new Float32Array(20);
+    const expected = new Float32Array(20);
+    multiplyColorMatrix(ba, b, a);
+    multiplyColorMatrix(expected, c, ba);
     const fused = fuseColorMatrices([a, b, c]);
     for (let i = 0; i < 20; i++) expect(fused[i]).toBeCloseTo(expected[i], 10);
   });
@@ -398,7 +401,8 @@ describe('fuseColorMatrices', () => {
 describe('multiplyColorMatrix', () => {
   it('identity ∘ identity = identity', () => {
     const identity = createIdentityColorMatrix();
-    const result = multiplyColorMatrix(identity, identity);
+    const result = new Float32Array(20);
+    multiplyColorMatrix(result, identity, identity);
     for (let i = 0; i < 20; i++) {
       expect(result[i]).toBeCloseTo(identity[i]);
     }
@@ -407,15 +411,16 @@ describe('multiplyColorMatrix', () => {
   it('writes to out when provided', () => {
     const identity = createIdentityColorMatrix();
     const out = new Float32Array(20);
-    const returned = multiplyColorMatrix(identity, identity, out);
-    expect(returned).toBe(out);
+    multiplyColorMatrix(out, identity, identity);
+    expect(out).toEqual(identity);
   });
 
   it('is alias-safe when out === a', () => {
     const a = createGrayscaleColorMatrix();
     const b = createIdentityColorMatrix();
-    const expected = multiplyColorMatrix(a, b);
-    multiplyColorMatrix(a, b, a);
+    const expected = new Float32Array(20);
+    multiplyColorMatrix(expected, a, b);
+    multiplyColorMatrix(a, a, b);
     for (let i = 0; i < 20; i++) {
       expect(a[i]).toBeCloseTo(expected[i]);
     }
@@ -424,8 +429,9 @@ describe('multiplyColorMatrix', () => {
   it('is alias-safe when out === b', () => {
     const a = createIdentityColorMatrix();
     const b = createGrayscaleColorMatrix();
-    const expected = multiplyColorMatrix(a, b);
-    multiplyColorMatrix(a, b, b);
+    const expected = new Float32Array(20);
+    multiplyColorMatrix(expected, a, b);
+    multiplyColorMatrix(b, a, b);
     for (let i = 0; i < 20; i++) {
       expect(b[i]).toBeCloseTo(expected[i]);
     }

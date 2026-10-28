@@ -77,7 +77,8 @@ const pool = createWgpuRenderTexturePool();
 registerWgpuBlurEffect(offscreenState);
 registerBlurEffectPaddingResolver(offscreenState);
 const effects: ReadonlyArray<Readonly<Effect>> = [createBlurEffect({ blurX: 8, blurY: 6 })];
-const padding = computeEffectPadding(offscreenState, effects);
+const padding = { bottom: 0, left: 0, right: 0, top: 0 };
+computeEffectPadding(padding, offscreenState, effects);
 const _targetSize = { width: 0, height: 0 };
 
 // The selected subtree is a detached root of the offscreen pipeline. Its dramatic root transform is

@@ -1,4 +1,3 @@
-export * from './createEasingSamples.ts';
 export * from './easeBack.ts';
 export * from './easeBounce.ts';
 export * from './easeCircular.ts';
@@ -19,3 +18,4 @@ export * from './easeSmoothstep.ts';
 export * from './easeSteps.ts';
 export * from './enableEasingGuards.ts';
 export * from './getEasingDerivative.ts';
+export * from './writeEasingSamples.ts';

@@ -14,20 +14,11 @@ import { RenderRegistryTable } from '@flighthq/types/contract';
 // directional footprints per side; pointwise effects register the zero resolver. An unregistered kind
 // contributes the silent zero sentinel and emits only through the opt-in shared registry-miss signal.
 export function computeEffectPadding(
+  out: EffectPadding,
   state: RenderState,
   effects: Readonly<Effect> | ReadonlyArray<Readonly<Effect>>,
-  out?: EffectPadding,
-): EffectPadding {
-  if (out !== undefined) {
-    writeEffectPadding(out, state, effects, null, getRenderStateRuntime(state).registryMiss);
-    return out;
-  }
-  const list = Array.isArray(effects) ? effects : [effects];
-  const explanation = explainEffectPadding(state, list);
-  const emitMiss = getRenderStateRuntime(state).registryMiss;
-  if (emitMiss !== null)
-    for (const kind of explanation.missingKinds) emitMiss(RenderRegistryTable.EffectPaddingResolver, kind);
-  return explanation.padding;
+): void {
+  writeEffectPadding(out, state, effects, null, getRenderStateRuntime(state).registryMiss);
 }
 
 export function explainEffectPadding(

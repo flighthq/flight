@@ -20,7 +20,7 @@ export function computeEffectCaptureGeometry(
   computeNodeRootLocalBoundsRectangle(_bounds, source);
   if (isEmptyRectangle(_bounds)) return false;
 
-  computeEffectPadding(state, effects, _padding);
+  computeEffectPadding(_padding, state, effects);
   computeRenderTargetSize(_targetSize, _bounds, _padding);
   computeScene2DRenderTargetTransform(_captureTransform, source, _bounds, _padding.left, _padding.top);
 

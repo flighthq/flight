@@ -145,7 +145,8 @@ describe('computeEffectCaptureGeometry', () => {
 
     const bounds = createRectangle();
     computeNodeRootLocalBoundsRectangle(bounds, source);
-    const padding = computeEffectPadding(state, effects);
+    const padding = { bottom: 0, left: 0, right: 0, top: 0 };
+    computeEffectPadding(padding, state, effects);
     const targetSize = { height: 0, width: 0 };
     computeRenderTargetSize(targetSize, bounds, padding);
     const captureTransform = createMatrix();

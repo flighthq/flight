@@ -28,17 +28,17 @@ describe('computeEffectPadding', () => {
   });
 
   it('adds each side across a sequential effect chain while pointwise effects add zero', () => {
-    expect(
-      computeEffectPadding(state, [
-        createBlurEffect({ blurX: 2, blurY: 1 }),
-        (() => {
-          const out = allocateEntity<any>();
-          out.kind = 'acme.Pointwise';
-          return finishEntity(out) as Effect;
-        })(),
-        createBlurEffect({ blurX: 1, blurY: 4 }),
-      ]),
-    ).toEqual({ bottom: 15, left: 9, right: 9, top: 15 });
+    const out = { bottom: 0, left: 0, right: 0, top: 0 };
+    computeEffectPadding(out, state, [
+      createBlurEffect({ blurX: 2, blurY: 1 }),
+      (() => {
+        const out = allocateEntity<any>();
+        out.kind = 'acme.Pointwise';
+        return finishEntity(out) as Effect;
+      })(),
+      createBlurEffect({ blurX: 1, blurY: 4 }),
+    ]);
+    expect(out).toEqual({ bottom: 15, left: 9, right: 9, top: 15 });
   });
 
   it('returns a zero sentinel for an unregistered kind', () => {
@@ -47,19 +47,18 @@ describe('computeEffectPadding', () => {
       out.kind = 'acme.Missing';
       return finishEntity(out) as Effect;
     })();
-    expect(computeEffectPadding(state, effect)).toEqual({ bottom: 0, left: 0, right: 0, top: 0 });
+    const out = { bottom: -1, left: -1, right: -1, top: -1 };
+    computeEffectPadding(out, state, effect);
+    expect(out).toEqual({ bottom: 0, left: 0, right: 0, top: 0 });
   });
 
-  it('writes into a caller-owned output object when supplied', () => {
+  it('writes into the required caller-owned output object', () => {
     const out = { bottom: -1, left: -1, right: -1, top: -1 };
 
-    expect(
-      computeEffectPadding(
-        state,
-        [createBlurEffect({ blurX: 2, blurY: 1 }), createBlurEffect({ blurX: 1, blurY: 4 })],
-        out,
-      ),
-    ).toBe(out);
+    computeEffectPadding(out, state, [
+      createBlurEffect({ blurX: 2, blurY: 1 }),
+      createBlurEffect({ blurX: 1, blurY: 4 }),
+    ]);
     expect(out).toEqual({ bottom: 15, left: 9, right: 9, top: 15 });
   });
 
@@ -68,21 +67,17 @@ describe('computeEffectPadding', () => {
     connectSignal(enableRenderRegistrySignals(state).onRegistryMiss, (registry, kind) => {
       misses.push([registry, kind]);
     });
-    expect(
-      computeEffectPadding(
-        state,
-        (() => {
-          const out = allocateEntity<any>();
-          out.kind = 'acme.Missing';
-          return finishEntity(out) as Effect;
-        })(),
-      ),
-    ).toEqual({
-      bottom: 0,
-      left: 0,
-      right: 0,
-      top: 0,
-    });
+    const out = { bottom: -1, left: -1, right: -1, top: -1 };
+    computeEffectPadding(
+      out,
+      state,
+      (() => {
+        const out = allocateEntity<any>();
+        out.kind = 'acme.Missing';
+        return finishEntity(out) as Effect;
+      })(),
+    );
+    expect(out).toEqual({ bottom: 0, left: 0, right: 0, top: 0 });
     expect(misses).toEqual([[RenderRegistryTable.EffectPaddingResolver, 'acme.Missing']]);
   });
 });

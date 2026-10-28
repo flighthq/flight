@@ -88,8 +88,10 @@ const shadow = createDropShadowEffect({
   distance: 18,
   strength: 1,
 });
-const glowPadding = computeEffectPadding(offscreenState, [glow]);
-const shadowPadding = computeEffectPadding(offscreenState, [shadow]);
+const glowPadding = { bottom: 0, left: 0, right: 0, top: 0 };
+const shadowPadding = { bottom: 0, left: 0, right: 0, top: 0 };
+computeEffectPadding(glowPadding, offscreenState, [glow]);
+computeEffectPadding(shadowPadding, offscreenState, [shadow]);
 const glowTexture = capture(glow, glowPadding);
 const shadowTexture = capture(shadow, shadowPadding);
 

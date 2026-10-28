@@ -42,7 +42,7 @@ export function applyColorMatrixToColor(matrix: Readonly<Float32Array>, packedRg
  * `target`.
  */
 export function concatColorMatrix(target: Float32Array, source: Readonly<Float32Array>): void {
-  multiplyColorMatrix(target, source, target);
+  multiplyColorMatrix(target, target, source);
 }
 
 /**
@@ -380,20 +380,15 @@ export function createWhiteBalanceColorMatrix(temperature: number, tint: number)
 export function fuseColorMatrices(matrices: ReadonlyArray<Readonly<Float32Array>>): Float32Array {
   if (matrices.length === 0) return createIdentityColorMatrix();
   const out = matrices[0].slice();
-  for (let i = 1; i < matrices.length; i++) multiplyColorMatrix(matrices[i], out, out);
+  for (let i = 1; i < matrices.length; i++) multiplyColorMatrix(out, matrices[i], out);
   return out;
 }
 
 /**
  * Composes matrix `b` applied first and then `a`. The result is equivalent to applying `b` to a
- * color and then `a` to the result. When `out` is provided the result is written there (alias-safe:
- * `out` may be `a` or `b`). Returns the output array (either `out` or a freshly allocated array).
+ * color and then `a` to the result, writing into `out`. Alias-safe: `out` may be `a` or `b`.
  */
-export function multiplyColorMatrix(
-  a: Readonly<Float32Array>,
-  b: Readonly<Float32Array>,
-  out?: Float32Array,
-): Float32Array {
+export function multiplyColorMatrix(out: Float32Array, a: Readonly<Float32Array>, b: Readonly<Float32Array>): void {
   // Read all inputs into locals before writing to `out` (alias-safe).
   const a0 = a[0],
     a1 = a[1],
@@ -435,32 +430,30 @@ export function multiplyColorMatrix(
     b17 = b[17],
     b18 = b[18],
     b19 = b[19];
-  const result = out ?? new Float32Array(COLOR_MATRIX_LENGTH);
   // Row 0 (R output)
-  result[0] = a0 * b0 + a1 * b5 + a2 * b10 + a3 * b15;
-  result[1] = a0 * b1 + a1 * b6 + a2 * b11 + a3 * b16;
-  result[2] = a0 * b2 + a1 * b7 + a2 * b12 + a3 * b17;
-  result[3] = a0 * b3 + a1 * b8 + a2 * b13 + a3 * b18;
-  result[4] = a0 * b4 + a1 * b9 + a2 * b14 + a3 * b19 + a4;
+  out[0] = a0 * b0 + a1 * b5 + a2 * b10 + a3 * b15;
+  out[1] = a0 * b1 + a1 * b6 + a2 * b11 + a3 * b16;
+  out[2] = a0 * b2 + a1 * b7 + a2 * b12 + a3 * b17;
+  out[3] = a0 * b3 + a1 * b8 + a2 * b13 + a3 * b18;
+  out[4] = a0 * b4 + a1 * b9 + a2 * b14 + a3 * b19 + a4;
   // Row 1 (G output)
-  result[5] = a5 * b0 + a6 * b5 + a7 * b10 + a8 * b15;
-  result[6] = a5 * b1 + a6 * b6 + a7 * b11 + a8 * b16;
-  result[7] = a5 * b2 + a6 * b7 + a7 * b12 + a8 * b17;
-  result[8] = a5 * b3 + a6 * b8 + a7 * b13 + a8 * b18;
-  result[9] = a5 * b4 + a6 * b9 + a7 * b14 + a8 * b19 + a9;
+  out[5] = a5 * b0 + a6 * b5 + a7 * b10 + a8 * b15;
+  out[6] = a5 * b1 + a6 * b6 + a7 * b11 + a8 * b16;
+  out[7] = a5 * b2 + a6 * b7 + a7 * b12 + a8 * b17;
+  out[8] = a5 * b3 + a6 * b8 + a7 * b13 + a8 * b18;
+  out[9] = a5 * b4 + a6 * b9 + a7 * b14 + a8 * b19 + a9;
   // Row 2 (B output)
-  result[10] = a10 * b0 + a11 * b5 + a12 * b10 + a13 * b15;
-  result[11] = a10 * b1 + a11 * b6 + a12 * b11 + a13 * b16;
-  result[12] = a10 * b2 + a11 * b7 + a12 * b12 + a13 * b17;
-  result[13] = a10 * b3 + a11 * b8 + a12 * b13 + a13 * b18;
-  result[14] = a10 * b4 + a11 * b9 + a12 * b14 + a13 * b19 + a14;
+  out[10] = a10 * b0 + a11 * b5 + a12 * b10 + a13 * b15;
+  out[11] = a10 * b1 + a11 * b6 + a12 * b11 + a13 * b16;
+  out[12] = a10 * b2 + a11 * b7 + a12 * b12 + a13 * b17;
+  out[13] = a10 * b3 + a11 * b8 + a12 * b13 + a13 * b18;
+  out[14] = a10 * b4 + a11 * b9 + a12 * b14 + a13 * b19 + a14;
   // Row 3 (A output)
-  result[15] = a15 * b0 + a16 * b5 + a17 * b10 + a18 * b15;
-  result[16] = a15 * b1 + a16 * b6 + a17 * b11 + a18 * b16;
-  result[17] = a15 * b2 + a16 * b7 + a17 * b12 + a18 * b17;
-  result[18] = a15 * b3 + a16 * b8 + a17 * b13 + a18 * b18;
-  result[19] = a15 * b4 + a16 * b9 + a17 * b14 + a18 * b19 + a19;
-  return result;
+  out[15] = a15 * b0 + a16 * b5 + a17 * b10 + a18 * b15;
+  out[16] = a15 * b1 + a16 * b6 + a17 * b11 + a18 * b16;
+  out[17] = a15 * b2 + a16 * b7 + a17 * b12 + a18 * b17;
+  out[18] = a15 * b3 + a16 * b8 + a17 * b13 + a18 * b18;
+  out[19] = a15 * b4 + a16 * b9 + a17 * b14 + a18 * b19 + a19;
 }
 
 function clampNormalizedByte(v: number): number {
