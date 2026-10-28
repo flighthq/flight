@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_geometry::contract::*;
 
 mod reserve_float32_array {
