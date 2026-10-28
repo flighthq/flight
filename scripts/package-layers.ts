@@ -5,6 +5,7 @@ export type PackageLayer = 'core' | 'feature' | 'backend' | 'application' | 'hos
 const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
   core: [
     '@flighthq/abc',
+    '@flighthq/buffer',
     '@flighthq/color',
     '@flighthq/compression',
     '@flighthq/easing',
@@ -20,6 +21,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/requirement-catalog',
     '@flighthq/requirement-codegen',
     '@flighthq/requirement',
+    '@flighthq/resource',
     '@flighthq/signals',
     '@flighthq/spatial',
     '@flighthq/surface',
@@ -128,6 +130,7 @@ const packageNamesByLayer: Readonly<Record<PackageLayer, readonly string[]>> = {
     '@flighthq/text',
     '@flighthq/text-markup',
     '@flighthq/textbidi',
+    '@flighthq/textformat',
     '@flighthq/textinput',
     '@flighthq/textlayout',
     '@flighthq/textsegment',

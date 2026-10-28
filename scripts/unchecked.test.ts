@@ -78,7 +78,7 @@ describe('explainOverbroadSelection', () => {
     const matched = selectPackages(['text']);
     expect(matched).toContain('text');
     expect(matched.length).toBeGreaterThan(5);
-    expect(selectPackages(['geometry'])).toEqual(['geometry']);
+    expect(selectPackages(['buffer'])).toEqual(['buffer']);
   });
 });
 

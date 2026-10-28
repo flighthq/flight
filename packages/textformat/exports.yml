@@ -1,0 +1,7 @@
+public:
+  - file: src/fontVariation.ts
+  - file: src/textFormat.ts
+  - createTextFormatRange
+
+protected:
+  - initializeTextFormatRange

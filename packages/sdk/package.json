@@ -68,6 +68,10 @@
       "types": "./dist/bitmaptext.d.ts",
       "default": "./dist/bitmaptext.js"
     },
+    "./buffer": {
+      "types": "./dist/buffer.d.ts",
+      "default": "./dist/buffer.js"
+    },
     "./camera": {
       "types": "./dist/camera.d.ts",
       "default": "./dist/camera.js"
@@ -268,9 +272,9 @@
       "types": "./dist/menu.d.ts",
       "default": "./dist/menu.js"
     },
-    "./mesh": {
-      "types": "./dist/mesh.d.ts",
-      "default": "./dist/mesh.js"
+    "./meshgeometry": {
+      "types": "./dist/meshgeometry.d.ts",
+      "default": "./dist/meshgeometry.js"
     },
     "./midi": {
       "types": "./dist/midi.d.ts",
@@ -387,6 +391,10 @@
     "./render-wgpu": {
       "types": "./dist/render-wgpu.d.ts",
       "default": "./dist/render-wgpu.js"
+    },
+    "./resource": {
+      "types": "./dist/resource.d.ts",
+      "default": "./dist/resource.js"
     },
     "./requirement": {
       "types": "./dist/requirement.d.ts",
@@ -548,6 +556,10 @@
       "types": "./dist/textbidi.d.ts",
       "default": "./dist/textbidi.js"
     },
+    "./textformat": {
+      "types": "./dist/textformat.d.ts",
+      "default": "./dist/textformat.js"
+    },
     "./textinput": {
       "types": "./dist/textinput.d.ts",
       "default": "./dist/textinput.js"
@@ -662,6 +674,7 @@
     "@flighthq/bitmapfont": "*",
     "@flighthq/bitmapfont-formats": "*",
     "@flighthq/bitmaptext": "*",
+    "@flighthq/buffer": "*",
     "@flighthq/camera": "*",
     "@flighthq/camera-controls": "*",
     "@flighthq/capture": "*",
@@ -741,6 +754,7 @@
     "@flighthq/render": "*",
     "@flighthq/render-gl": "*",
     "@flighthq/render-wgpu": "*",
+    "@flighthq/resource": "*",
     "@flighthq/requirement": "*",
     "@flighthq/scene-document": "*",
     "@flighthq/scene2d": "*",
@@ -782,6 +796,7 @@
     "@flighthq/text": "*",
     "@flighthq/text-markup": "*",
     "@flighthq/textbidi": "*",
+    "@flighthq/textformat": "*",
     "@flighthq/textinput": "*",
     "@flighthq/textlayout": "*",
     "@flighthq/textsegment": "*",
