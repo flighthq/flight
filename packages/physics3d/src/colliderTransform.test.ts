@@ -33,11 +33,26 @@ function collider(local: CollisionBuiltInShape3D): Physics3DCollider {
 
 describe('createPhysics3DColliderWorldShape', () => {
   it('keeps the kind for shapes a rigid transform cannot change', () => {
-    const sphere = createPhysics3DColliderWorldShape({ kind: 'sphere', x: 1, y: 2, z: 3, radius: 4 });
+    const sphere = createPhysics3DColliderWorldShape({
+      kind: 'sphere',
+      x: 1,
+      y: 2,
+      z: 3,
+      radius: 4,
+    });
     expect(EntityRuntimeKey in sphere).toBe(true);
     expect(sphere.kind).toBe('sphere');
     expect(
-      createPhysics3DColliderWorldShape({ kind: 'capsule', x0: 0, y0: 0, z0: 0, x1: 0, y1: 1, z1: 0, radius: 1 }).kind,
+      createPhysics3DColliderWorldShape({
+        kind: 'capsule',
+        x0: 0,
+        y0: 0,
+        z0: 0,
+        x1: 0,
+        y1: 1,
+        z1: 0,
+        radius: 1,
+      }).kind,
     ).toBe('capsule');
     expect(createPhysics3DColliderWorldShape({ kind: 'convex', points: [0, 0, 0] }).kind).toBe('convex');
   });
@@ -58,13 +73,19 @@ describe('createPhysics3DColliderWorldShape', () => {
   });
 
   it('sizes hull storage from the local shape so the transform can write in place', () => {
-    const local: CollisionBuiltInShape3D = { kind: 'convex', points: [1, 2, 3, 4, 5, 6] };
+    const local: CollisionBuiltInShape3D = {
+      kind: 'convex',
+      points: [1, 2, 3, 4, 5, 6],
+    };
     const world = createPhysics3DColliderWorldShape(local);
     expect(world.kind === 'convex' && world.points).toHaveLength(6);
   });
 
   it('does not alias the local hull points', () => {
-    const local: CollisionBuiltInShape3D = { kind: 'convex', points: [1, 2, 3] };
+    const local: CollisionBuiltInShape3D = {
+      kind: 'convex',
+      points: [1, 2, 3],
+    };
     const world = createPhysics3DColliderWorldShape(local);
     expect(world.kind === 'convex' && world.points).not.toBe(local.points);
   });
@@ -115,7 +136,13 @@ describe('updatePhysics3DColliderWorldShape', () => {
 
     updatePhysics3DColliderWorldShape(held, body);
 
-    expect(held.world).toMatchObject({ kind: 'sphere', x: 11, y: 20, z: 30, radius: 2 });
+    expect(held.world).toMatchObject({
+      kind: 'sphere',
+      x: 11,
+      y: 20,
+      z: 30,
+      radius: 2,
+    });
   });
 
   it('rotates a sphere offset about the body origin', () => {
@@ -130,7 +157,15 @@ describe('updatePhysics3DColliderWorldShape', () => {
 
   it('carries the body orientation onto a promoted aabb', () => {
     const body = spunBody();
-    const held = collider({ kind: 'aabb', minX: -1, minY: -2, minZ: -3, maxX: 1, maxY: 2, maxZ: 3 });
+    const held = collider({
+      kind: 'aabb',
+      minX: -1,
+      minY: -2,
+      minZ: -3,
+      maxX: 1,
+      maxY: 2,
+      maxZ: 3,
+    });
 
     updatePhysics3DColliderWorldShape(held, body);
 
@@ -164,7 +199,16 @@ describe('updatePhysics3DColliderWorldShape', () => {
   it('moves both capsule endpoints', () => {
     const body = createRigidBody3D('dynamic');
     body.y = 5;
-    const held = collider({ kind: 'capsule', x0: 0, y0: -1, z0: 0, x1: 0, y1: 1, z1: 0, radius: 0.5 });
+    const held = collider({
+      kind: 'capsule',
+      x0: 0,
+      y0: -1,
+      z0: 0,
+      x1: 0,
+      y1: 1,
+      z1: 0,
+      radius: 0.5,
+    });
 
     updatePhysics3DColliderWorldShape(held, body);
 
@@ -175,7 +219,10 @@ describe('updatePhysics3DColliderWorldShape', () => {
   it('moves every hull point', () => {
     const body = createRigidBody3D('dynamic');
     body.x = 100;
-    const held = collider({ kind: 'convex', points: [0, 0, 0, 1, 0, 0, 0, 1, 0] });
+    const held = collider({
+      kind: 'convex',
+      points: [0, 0, 0, 1, 0, 0, 0, 1, 0],
+    });
 
     updatePhysics3DColliderWorldShape(held, body);
 
@@ -204,12 +251,27 @@ describe('writePhysics3DColliderBounds', () => {
 
     writePhysics3DColliderBounds(held, out);
 
-    expect(out).toEqual({ minX: -3, minY: -2, minZ: -1, maxX: 5, maxY: 6, maxZ: 7 });
+    expect(out).toEqual({
+      minX: -3,
+      minY: -2,
+      minZ: -1,
+      maxX: 5,
+      maxY: 6,
+      maxZ: 7,
+    });
   });
 
   it('grows an oriented box to the extent its rotation sweeps', () => {
     const out = bounds();
-    const held = collider({ kind: 'aabb', minX: -1, minY: -1, minZ: -1, maxX: 1, maxY: 1, maxZ: 1 });
+    const held = collider({
+      kind: 'aabb',
+      minX: -1,
+      minY: -1,
+      minZ: -1,
+      maxX: 1,
+      maxY: 1,
+      maxZ: 1,
+    });
     const body = createRigidBody3D('dynamic');
     // An eighth turn about +Y, where a unit box's x/z extent grows to sqrt(2).
     body.orientationY = Math.sin(Math.PI / 8);
@@ -226,32 +288,73 @@ describe('writePhysics3DColliderBounds', () => {
 
   it('leaves an unrotated box at its own extent rather than inflating it', () => {
     const out = bounds();
-    const held = collider({ kind: 'aabb', minX: -1, minY: -2, minZ: -3, maxX: 1, maxY: 2, maxZ: 3 });
+    const held = collider({
+      kind: 'aabb',
+      minX: -1,
+      minY: -2,
+      minZ: -3,
+      maxX: 1,
+      maxY: 2,
+      maxZ: 3,
+    });
     updatePhysics3DColliderWorldShape(held, createRigidBody3D('dynamic'));
 
     writePhysics3DColliderBounds(held, out);
 
-    expect(out).toEqual({ minX: -1, minY: -2, minZ: -3, maxX: 1, maxY: 2, maxZ: 3 });
+    expect(out).toEqual({
+      minX: -1,
+      minY: -2,
+      minZ: -3,
+      maxX: 1,
+      maxY: 2,
+      maxZ: 3,
+    });
   });
 
   it('bounds a capsule by both endpoints plus the radius', () => {
     const out = bounds();
-    const held = collider({ kind: 'capsule', x0: -2, y0: 0, z0: 0, x1: 2, y1: 0, z1: 0, radius: 0.5 });
+    const held = collider({
+      kind: 'capsule',
+      x0: -2,
+      y0: 0,
+      z0: 0,
+      x1: 2,
+      y1: 0,
+      z1: 0,
+      radius: 0.5,
+    });
     updatePhysics3DColliderWorldShape(held, createRigidBody3D('dynamic'));
 
     writePhysics3DColliderBounds(held, out);
 
-    expect(out).toEqual({ minX: -2.5, minY: -0.5, minZ: -0.5, maxX: 2.5, maxY: 0.5, maxZ: 0.5 });
+    expect(out).toEqual({
+      minX: -2.5,
+      minY: -0.5,
+      minZ: -0.5,
+      maxX: 2.5,
+      maxY: 0.5,
+      maxZ: 0.5,
+    });
   });
 
   it('bounds a hull by its extreme points', () => {
     const out = bounds();
-    const held = collider({ kind: 'convex', points: [-1, 0, 0, 3, 0, 0, 0, 7, 0, 0, 0, -2] });
+    const held = collider({
+      kind: 'convex',
+      points: [-1, 0, 0, 3, 0, 0, 0, 7, 0, 0, 0, -2],
+    });
     updatePhysics3DColliderWorldShape(held, createRigidBody3D('dynamic'));
 
     writePhysics3DColliderBounds(held, out);
 
-    expect(out).toEqual({ minX: -1, minY: 0, minZ: -2, maxX: 3, maxY: 7, maxZ: 0 });
+    expect(out).toEqual({
+      minX: -1,
+      minY: 0,
+      minZ: -2,
+      maxX: 3,
+      maxY: 7,
+      maxZ: 0,
+    });
   });
 
   it('zeroes the bounds of an empty hull rather than reporting infinities', () => {
@@ -260,6 +363,13 @@ describe('writePhysics3DColliderBounds', () => {
 
     writePhysics3DColliderBounds(held, out);
 
-    expect(out).toEqual({ minX: 0, minY: 0, minZ: 0, maxX: 0, maxY: 0, maxZ: 0 });
+    expect(out).toEqual({
+      minX: 0,
+      minY: 0,
+      minZ: 0,
+      maxX: 0,
+      maxY: 0,
+      maxZ: 0,
+    });
   });
 });

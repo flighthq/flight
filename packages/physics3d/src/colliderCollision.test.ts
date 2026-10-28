@@ -23,7 +23,13 @@ beforeEach(() => {
 describe('collidePhysics3DColliderShapes', () => {
   it('preserves argument-oriented normals when the mesh is first', () => {
     const mesh = createFloorMesh();
-    const sphere: CollisionShape3D = { kind: 'sphere', x: 0, y: 0.4, z: 0, radius: 0.5 };
+    const sphere: CollisionShape3D = {
+      kind: 'sphere',
+      x: 0,
+      y: 0.4,
+      z: 0,
+      radius: 0.5,
+    };
     const manifold = createCollisionContactManifold3D();
 
     expect(collidePhysics3DColliderShapes(mesh, sphere, manifold)).toBe(true);
@@ -44,7 +50,13 @@ describe('raycastPhysics3DColliderShape', () => {
 describe('sweepPhysics3DColliderShapes', () => {
   it('preserves argument-oriented normals when the mesh is first', () => {
     const mesh = createFloorMesh();
-    const sphere: CollisionShape3D = { kind: 'sphere', x: 0, y: 2, z: 0, radius: 0.25 };
+    const sphere: CollisionShape3D = {
+      kind: 'sphere',
+      x: 0,
+      y: 2,
+      z: 0,
+      radius: 0.25,
+    };
     const hit = createCollisionTimeOfImpact3D();
 
     expect(sweepPhysics3DColliderShapes(mesh, 0, 0, 0, sphere, 0, -4, 0, hit, 1)).toBe(true);

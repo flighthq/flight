@@ -188,7 +188,14 @@ function writePolygonMassData(points: readonly number[], density: number, out: P
 }
 
 function acquirePhysics2DMassScratch(): Physics2DMassData {
-  return physics2DMassScratchPool.pop() ?? { mass: 0, inertia: 0, centerX: 0, centerY: 0 };
+  return (
+    physics2DMassScratchPool.pop() ?? {
+      mass: 0,
+      inertia: 0,
+      centerX: 0,
+      centerY: 0,
+    }
+  );
 }
 
 function releasePhysics2DMassScratch(scratch: Physics2DMassData): void {

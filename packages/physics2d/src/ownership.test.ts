@@ -10,7 +10,8 @@ import { addPhysics2DBody, createPhysics2DWorld, createRigidBody2D } from './wor
 describe('assertPhysics2DBodyNotStepping', () => {
   it('resolves an owned body to its active world while leaving detached authoring data available', () => {
     const world = createPhysics2DWorld();
-    const owned = addPhysics2DBody(world, createRigidBody2D('dynamic', 0, 0));
+    const owned = createRigidBody2D('dynamic', 0, 0);
+    addPhysics2DBody(world, owned);
     const detached = createRigidBody2D('dynamic', 0, 0);
     steppingPhysics2DWorlds.add(world);
     try {

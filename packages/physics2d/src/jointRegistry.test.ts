@@ -23,7 +23,8 @@ const STONE = { density: 1, friction: 0.3, restitution: 0 };
 function body(world: ReturnType<typeof createPhysics2DWorld>, x: number, y: number) {
   const made = createRigidBody2D('dynamic', x, y);
   made.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 }, STONE));
-  return addPhysics2DBody(world, made);
+  addPhysics2DBody(world, made);
+  return made;
 }
 
 function joint(kind: string, bodyA: number, bodyB: number, anchorAX = 0, anchorBX = 0): Physics2DJoint {
@@ -66,7 +67,10 @@ describe('addPhysics2DJoint', () => {
 
   it('wakes both bodies when an active constraint is added', () => {
     const world = createPhysics2DWorld();
-    registerPhysics2DJointSolver(world, 'Test', { prepare: () => {}, solve: () => {} });
+    registerPhysics2DJointSolver(world, 'Test', {
+      prepare: () => {},
+      solve: () => {},
+    });
     const first = body(world, 0, 0);
     const second = body(world, 2, 0);
     first.sleeping = true;
@@ -88,10 +92,14 @@ describe('addPhysics2DJoint', () => {
     // anchors have to travel with the bodies — a joint whose ends were exchanged without its anchors
     // would attach to the wrong points and hold the pair in a pose nobody asked for.
     const world = createPhysics2DWorld();
-    registerPhysics2DJointSolver(world, 'Test', { prepare: () => {}, solve: () => {} });
+    registerPhysics2DJointSolver(world, 'Test', {
+      prepare: () => {},
+      solve: () => {},
+    });
     const first = body(world, 0, 0);
     const second = body(world, 2, 0);
-    const added = addPhysics2DJoint(world, joint('Test', second.index, first.index, 7, 9));
+    const added = joint('Test', second.index, first.index, 7, 9);
+    addPhysics2DJoint(world, added);
 
     expect(added.bodyA).toBe(first.index);
     expect(added.bodyB).toBe(second.index);
@@ -108,7 +116,8 @@ describe('addPhysics2DJoint', () => {
     const first = body(world, 0, 0);
     const second = body(world, 2, 0);
 
-    const added = addPhysics2DJoint(world, joint('Unknown', second.index, first.index, 7, 9));
+    const added = joint('Unknown', second.index, first.index, 7, 9);
+    addPhysics2DJoint(world, added);
 
     expect(added.bodyA).toBe(second.index);
     expect(added.localAnchorAX).toBe(7);
@@ -127,7 +136,10 @@ describe('addPhysics2DJoint', () => {
     expect(first.sleeping).toBe(true);
     expect(second.sleeping).toBe(true);
 
-    registerPhysics2DJointSolver(world, 'Deferred', { prepare: () => {}, solve: () => {} });
+    registerPhysics2DJointSolver(world, 'Deferred', {
+      prepare: () => {},
+      solve: () => {},
+    });
     expect(first.sleeping).toBe(false);
     expect(first.sleepTimer).toBe(0);
     expect(second.sleeping).toBe(false);
@@ -141,10 +153,11 @@ describe('addPhysics2DJoint', () => {
     const world = createPhysics2DWorld();
     const first = body(world, 0, 0);
     const second = body(world, 2, 0);
-    const added = addPhysics2DJoint(world, {
+    const added = {
       ...joint('Directional', second.index, first.index, 7, 9),
       direction: 1,
-    } as Physics2DJoint & { direction: number });
+    } as Physics2DJoint & { direction: number };
+    addPhysics2DJoint(world, added);
 
     registerPhysics2DJointSolver(world, 'Directional', {
       prepare: () => {},
@@ -166,7 +179,8 @@ describe('addPhysics2DJoint', () => {
     const world = createPhysics2DWorld();
     const first = body(world, 0, 0);
     const second = body(world, 2, 0);
-    const added = addPhysics2DJoint(world, joint('Vetoing', second.index, first.index, 7, 9));
+    const added = joint('Vetoing', second.index, first.index, 7, 9);
+    addPhysics2DJoint(world, added);
 
     registerPhysics2DJointSolver(world, 'Vetoing', {
       prepare: () => {},
@@ -182,7 +196,8 @@ describe('addPhysics2DJoint', () => {
     const world = createPhysics2DWorld();
     const first = body(world, 0, 0);
     const second = body(world, 2, 0);
-    const added = addPhysics2DJoint(world, joint('Test', first.index, second.index, 7, 9));
+    const added = joint('Test', first.index, second.index, 7, 9);
+    addPhysics2DJoint(world, added);
     expect(added.bodyA).toBe(first.index);
     expect(added.localAnchorAX).toBe(7);
   });
@@ -219,7 +234,8 @@ describe('invalidatePhysics2DJoint', () => {
     });
     const first = body(world, 0, 0);
     const second = body(world, 2, 0);
-    const added = addPhysics2DJoint(world, joint('Test', first.index, second.index));
+    const added = joint('Test', first.index, second.index);
+    addPhysics2DJoint(world, added);
     added.impulse0 = 10;
     added.impulse1 = 20;
     added.impulse2 = 30;
@@ -243,7 +259,8 @@ describe('invalidatePhysics2DJoint', () => {
     const other = createPhysics2DWorld();
     const first = body(owner, 0, 0);
     const second = body(owner, 2, 0);
-    const added = addPhysics2DJoint(owner, joint('Unknown', first.index, second.index));
+    const added = joint('Unknown', first.index, second.index);
+    addPhysics2DJoint(owner, added);
     added.impulse0 = 10;
 
     expect(invalidatePhysics2DJoint(other, added)).toBe(false);
@@ -252,10 +269,14 @@ describe('invalidatePhysics2DJoint', () => {
 
   it('reindexes collision suppression after an authored flag changes', () => {
     const world = createPhysics2DWorld();
-    registerPhysics2DJointSolver(world, 'Test', { prepare: () => {}, solve: () => {} });
+    registerPhysics2DJointSolver(world, 'Test', {
+      prepare: () => {},
+      solve: () => {},
+    });
     const first = body(world, 0, 0);
     const second = body(world, 2, 0);
-    const added = addPhysics2DJoint(world, joint('Test', first.index, second.index));
+    const added = joint('Test', first.index, second.index);
+    addPhysics2DJoint(world, added);
     expect(world.jointCollisionSuppressions.get(first.index)?.get(second.index)).toBe(1);
 
     added.collideConnected = true;
@@ -286,7 +307,10 @@ describe('registerPhysics2DJointSolver', () => {
   it('is scoped to its world, so two worlds can register different kinds', () => {
     const first = createPhysics2DWorld();
     const second = createPhysics2DWorld();
-    registerPhysics2DJointSolver(first, 'acme.One', { prepare: () => {}, solve: () => {} });
+    registerPhysics2DJointSolver(first, 'acme.One', {
+      prepare: () => {},
+      solve: () => {},
+    });
     expect(getPhysics2DJointSolver(first, 'acme.One')).not.toBeNull();
     expect(getPhysics2DJointSolver(second, 'acme.One')).toBeNull();
   });
@@ -294,7 +318,10 @@ describe('registerPhysics2DJointSolver', () => {
   it('lets a later registration replace an earlier one', () => {
     const world = createPhysics2DWorld();
     const replacement = { prepare: () => {}, solve: () => {} };
-    registerPhysics2DJointSolver(world, 'acme.One', { prepare: () => {}, solve: () => {} });
+    registerPhysics2DJointSolver(world, 'acme.One', {
+      prepare: () => {},
+      solve: () => {},
+    });
     registerPhysics2DJointSolver(world, 'acme.One', replacement);
     expect(getPhysics2DJointSolver(world, 'acme.One')).toBe(replacement);
   });
@@ -306,18 +333,20 @@ describe('removePhysics2DJoint', () => {
     const secondWorld = createPhysics2DWorld();
     const first = body(firstWorld, 0, 0);
     const second = body(firstWorld, 2, 0);
-    const added = addPhysics2DJoint(firstWorld, joint('Unknown', first.index, second.index));
+    const added = joint('Unknown', first.index, second.index);
+    addPhysics2DJoint(firstWorld, added);
 
     removePhysics2DJoint(firstWorld, added);
 
-    expect(addPhysics2DJoint(secondWorld, added)).toBe(added);
+    addPhysics2DJoint(secondWorld, added);
   });
 
   it('removes the joint and reports false for one the world does not hold', () => {
     const world = createPhysics2DWorld();
     const first = body(world, 0, 0);
     const second = body(world, 2, 0);
-    const added = addPhysics2DJoint(world, joint('Test', first.index, second.index));
+    const added = joint('Test', first.index, second.index);
+    addPhysics2DJoint(world, added);
     expect(removePhysics2DJoint(world, added)).toBe(true);
     expect(world.joints).toHaveLength(0);
     expect(removePhysics2DJoint(world, added)).toBe(false);
@@ -334,10 +363,14 @@ describe('removePhysics2DJoint', () => {
 
   it('wakes both ends when an active constraint is removed', () => {
     const world = createPhysics2DWorld();
-    registerPhysics2DJointSolver(world, 'Test', { prepare: () => {}, solve: () => {} });
+    registerPhysics2DJointSolver(world, 'Test', {
+      prepare: () => {},
+      solve: () => {},
+    });
     const first = body(world, 0, 0);
     const second = body(world, 2, 0);
-    const added = addPhysics2DJoint(world, joint('Test', first.index, second.index));
+    const added = joint('Test', first.index, second.index);
+    addPhysics2DJoint(world, added);
     first.sleeping = true;
     first.sleepTimer = 5;
     second.sleeping = true;
@@ -353,11 +386,16 @@ describe('removePhysics2DJoint', () => {
 
   it('keeps a pair suppressed until its final suppressing joint is removed', () => {
     const world = createPhysics2DWorld();
-    registerPhysics2DJointSolver(world, 'Test', { prepare: () => {}, solve: () => {} });
+    registerPhysics2DJointSolver(world, 'Test', {
+      prepare: () => {},
+      solve: () => {},
+    });
     const first = body(world, 0, 0);
     const second = body(world, 2, 0);
-    const one = addPhysics2DJoint(world, joint('Test', first.index, second.index));
-    const two = addPhysics2DJoint(world, joint('Test', first.index, second.index));
+    const one = joint('Test', first.index, second.index);
+    addPhysics2DJoint(world, one);
+    const two = joint('Test', first.index, second.index);
+    addPhysics2DJoint(world, two);
     expect(world.jointCollisionSuppressions.get(first.index)?.get(second.index)).toBe(2);
 
     removePhysics2DJoint(world, one);
@@ -368,7 +406,10 @@ describe('removePhysics2DJoint', () => {
 
   it('wakes the surviving end when its joint neighbour is removed from the world', () => {
     const world = createPhysics2DWorld();
-    registerPhysics2DJointSolver(world, 'Test', { prepare: () => {}, solve: () => {} });
+    registerPhysics2DJointSolver(world, 'Test', {
+      prepare: () => {},
+      solve: () => {},
+    });
     const removed = body(world, 0, 0);
     const survivor = body(world, 2, 0);
     addPhysics2DJoint(world, joint('Test', removed.index, survivor.index));

@@ -21,7 +21,15 @@ beforeEach(() => {
 });
 
 function box(halfX: number, halfY: number, halfZ: number): CollisionBuiltInShape3D {
-  return { kind: 'aabb', minX: -halfX, minY: -halfY, minZ: -halfZ, maxX: halfX, maxY: halfY, maxZ: halfZ };
+  return {
+    kind: 'aabb',
+    minX: -halfX,
+    minY: -halfY,
+    minZ: -halfZ,
+    maxX: halfX,
+    maxY: halfY,
+    maxZ: halfZ,
+  };
 }
 
 // A floor at y=0 spanning enough ground that nothing in these tests walks off it.
@@ -155,7 +163,11 @@ describe('buildPhysics3DContacts', () => {
     addPhysics3DCollider(
       world,
       floor,
-      createPhysics3DCollider(box(20, 1, 20), undefined, { categoryBits: 1, maskBits: 1, groupIndex: 0 }),
+      createPhysics3DCollider(box(20, 1, 20), undefined, {
+        categoryBits: 1,
+        maskBits: 1,
+        groupIndex: 0,
+      }),
     );
     const crate = createRigidBody3D('dynamic');
     crate.y = 0.45;
@@ -163,7 +175,11 @@ describe('buildPhysics3DContacts', () => {
     addPhysics3DCollider(
       world,
       crate,
-      createPhysics3DCollider(box(0.5, 0.5, 0.5), undefined, { categoryBits: 2, maskBits: 2, groupIndex: 0 }),
+      createPhysics3DCollider(box(0.5, 0.5, 0.5), undefined, {
+        categoryBits: 2,
+        maskBits: 2,
+        groupIndex: 0,
+      }),
     );
 
     buildPhysics3DContacts(world);
@@ -194,12 +210,28 @@ describe('buildPhysics3DContacts', () => {
     addPhysics3DCollider(
       world,
       barbell,
-      createPhysics3DCollider({ kind: 'aabb', minX: -3.5, minY: -0.5, minZ: -0.5, maxX: -2.5, maxY: 0.5, maxZ: 0.5 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: -3.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: -2.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      }),
     );
     addPhysics3DCollider(
       world,
       barbell,
-      createPhysics3DCollider({ kind: 'aabb', minX: 2.5, minY: -0.5, minZ: -0.5, maxX: 3.5, maxY: 0.5, maxZ: 0.5 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: 2.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: 3.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      }),
     );
 
     buildPhysics3DContacts(world);
@@ -232,7 +264,15 @@ describe('buildPhysics3DContacts', () => {
     addPhysics3DCollider(
       world,
       crate,
-      createPhysics3DCollider({ kind: 'aabb', minX: 0.5, minY: -0.5, minZ: -0.5, maxX: 1.5, maxY: 0.5, maxZ: 0.5 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: 0.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: 1.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      }),
     );
 
     expect(crate.centerX).toBeCloseTo(1, 9);

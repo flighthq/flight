@@ -15,11 +15,11 @@ import { steppingPhysics3DWorlds } from './ownership.ts';
 import { addPhysics3DBody, createPhysics3DWorld, createRigidBody3D } from './world.ts';
 
 describe('addPhysics3DJoint', () => {
-  it('returns the joint it was given and records it on the world', () => {
+  it('records the joint on the world', () => {
     const world = createTestWorld();
     const joint = createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 });
 
-    expect(addPhysics3DJoint(world, joint)).toBe(joint);
+    addPhysics3DJoint(world, joint);
     expect(world.joints).toEqual([joint]);
   });
 
@@ -55,7 +55,12 @@ describe('addPhysics3DJoint', () => {
 
   it('leaves an unknown kind in its authored order', () => {
     const world = createTestWorld();
-    const joint = createPhysics3DHingeJoint({ bodyA: 1, bodyB: 0, lowerAngle: -0.25, upperAngle: 1.5 });
+    const joint = createPhysics3DHingeJoint({
+      bodyA: 1,
+      bodyB: 0,
+      lowerAngle: -0.25,
+      upperAngle: 1.5,
+    });
 
     addPhysics3DJoint(world, joint);
 
@@ -114,7 +119,8 @@ describe('invalidatePhysics3DJoint', () => {
   it('clears every common accumulator and the kind-specific ones', () => {
     const world = createTestWorld();
     registerPhysics3DJointSolver(world, Physics3DHingeJointKind, physics3DHingeJointSolver);
-    const joint = addPhysics3DJoint(world, createPhysics3DHingeJoint({ bodyA: 0, bodyB: 1 }));
+    const joint = createPhysics3DHingeJoint({ bodyA: 0, bodyB: 1 });
+    addPhysics3DJoint(world, joint);
     joint.impulse0 = 1;
     joint.impulse5 = 2;
     (joint as ReturnType<typeof createPhysics3DHingeJoint>).motorImpulse = 3;
@@ -144,10 +150,13 @@ describe('isPhysics3DPairOrdered', () => {
 describe('registerPhysics3DJointSolver', () => {
   it('canonicalizes joints that were added before their solver existed', () => {
     const world = createTestWorld();
-    const joint = addPhysics3DJoint(
-      world,
-      createPhysics3DHingeJoint({ bodyA: 1, bodyB: 0, lowerAngle: -0.25, upperAngle: 1.5 }),
-    );
+    const joint = createPhysics3DHingeJoint({
+      bodyA: 1,
+      bodyB: 0,
+      lowerAngle: -0.25,
+      upperAngle: 1.5,
+    });
+    addPhysics3DJoint(world, joint);
 
     registerPhysics3DJointSolver(world, Physics3DHingeJointKind, physics3DHingeJointSolver);
 
@@ -159,7 +168,10 @@ describe('registerPhysics3DJointSolver', () => {
 
   it('lets a later registration replace an earlier one', () => {
     const world = createTestWorld();
-    const replacement: Physics3DJointSolver = { prepare(): void {}, solve(): void {} };
+    const replacement: Physics3DJointSolver = {
+      prepare(): void {},
+      solve(): void {},
+    };
     registerPhysics3DJointSolver(world, Physics3DHingeJointKind, physics3DHingeJointSolver);
     registerPhysics3DJointSolver(world, Physics3DHingeJointKind, replacement);
 
@@ -182,7 +194,8 @@ describe('registerPhysics3DJointSolver', () => {
 describe('removePhysics3DJoint', () => {
   it('drops the joint and reports it', () => {
     const world = createTestWorld();
-    const joint = addPhysics3DJoint(world, createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 }));
+    const joint = createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 });
+    addPhysics3DJoint(world, joint);
 
     expect(removePhysics3DJoint(world, joint)).toBe(true);
     expect(world.joints).toEqual([]);
@@ -196,7 +209,8 @@ describe('removePhysics3DJoint', () => {
 
   it('releases ownership so the joint can be added again', () => {
     const world = createTestWorld();
-    const joint = addPhysics3DJoint(world, createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 }));
+    const joint = createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 });
+    addPhysics3DJoint(world, joint);
     removePhysics3DJoint(world, joint);
 
     expect(() => addPhysics3DJoint(world, joint)).not.toThrow();
@@ -205,7 +219,8 @@ describe('removePhysics3DJoint', () => {
   it('wakes both bodies when a live constraint is taken away', () => {
     const world = createTestWorld();
     registerPhysics3DJointSolver(world, Physics3DHingeJointKind, physics3DHingeJointSolver);
-    const joint = addPhysics3DJoint(world, createPhysics3DHingeJoint({ bodyA: 0, bodyB: 1 }));
+    const joint = createPhysics3DHingeJoint({ bodyA: 0, bodyB: 1 });
+    addPhysics3DJoint(world, joint);
     world.bodies[0].sleeping = true;
 
     removePhysics3DJoint(world, joint);

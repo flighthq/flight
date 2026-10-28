@@ -115,7 +115,13 @@ describe('writePhysics2DDebugGeometry', () => {
     writePhysics2DDebugGeometry(world, out, ONLY_COLLIDERS);
 
     expect(out.circleCount).toBe(1);
-    expect(out.circles[0]).toMatchObject({ bodyA: circle.index, feature: 'collider', radius: 0.5, x: 3, y: 3 });
+    expect(out.circles[0]).toMatchObject({
+      bodyA: circle.index,
+      feature: 'collider',
+      radius: 0.5,
+      x: 3,
+      y: 3,
+    });
     expect(out.lineCount).toBe(7);
     expect(out.lines.slice(0, out.lineCount).filter((line) => line.bodyA === box.index)).toHaveLength(4);
     expect(out.lines.slice(0, out.lineCount).filter((line) => line.bodyA === polygon.index)).toHaveLength(3);
@@ -193,9 +199,14 @@ describe('writePhysics2DDebugGeometry', () => {
 
   it('draws ordinary, mouse, and pulley joints using the anchors each solver constrains', () => {
     const world = createPhysics2DWorld(0, 0);
-    const first = addPhysics2DBody(world, createRigidBody2D('dynamic', 0, 0));
-    const second = addPhysics2DBody(world, createRigidBody2D('dynamic', 4, 0));
-    addPhysics2DJoint(world, { ...baseJoint('acme.Custom', first.index, second.index), localAnchorAX: 1 });
+    const first = createRigidBody2D('dynamic', 0, 0);
+    addPhysics2DBody(world, first);
+    const second = createRigidBody2D('dynamic', 4, 0);
+    addPhysics2DBody(world, second);
+    addPhysics2DJoint(world, {
+      ...baseJoint('acme.Custom', first.index, second.index),
+      localAnchorAX: 1,
+    });
     addPhysics2DJoint(world, {
       ...baseJoint('Mouse', 999, second.index),
       targetX: 8,
@@ -220,7 +231,13 @@ describe('writePhysics2DDebugGeometry', () => {
     });
 
     expect(out.lineCount).toBe(5);
-    expect(out.lines[0]).toMatchObject({ feature: 'joint', x0: 1, x1: 4, y0: 0, y1: 0 });
+    expect(out.lines[0]).toMatchObject({
+      feature: 'joint',
+      x0: 1,
+      x1: 4,
+      y0: 0,
+      y1: 0,
+    });
     expect(out.lines[1]).toMatchObject({ x0: 8, x1: 4, y0: 3, y1: 0 });
     expect(out.lines[2]).toMatchObject({ x0: 0, x1: 0, y0: 2, y1: 0 });
     expect(out.lines[3]).toMatchObject({ x0: 4, x1: 4, y0: 2, y1: 0 });
@@ -243,7 +260,12 @@ describe('writePhysics2DDebugGeometry', () => {
     });
 
     expect(out.circleCount).toBe(1);
-    expect(out.circles[0]).toMatchObject({ feature: 'center-of-mass', radius: 0.25, x: 10, y: 7 });
+    expect(out.circles[0]).toMatchObject({
+      feature: 'center-of-mass',
+      radius: 0.25,
+      x: 10,
+      y: 7,
+    });
   });
 
   it('reuses its high-water primitive objects and exposes only entries below each count', () => {

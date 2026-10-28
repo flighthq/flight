@@ -42,7 +42,8 @@ describe('explainPhysics3DJoints', () => {
   it('reports a joint outliving one of its bodies', () => {
     const world = createTestWorld();
     registerBuiltInPhysics3DJointSolvers(world);
-    const joint = addPhysics3DJoint(world, createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 }));
+    const joint = createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 });
+    addPhysics3DJoint(world, joint);
     // Removing a body drops the joints that named it, so this is the state a world reconstructed by a
     // format layer reaches rather than one the lifecycle produces: an endpoint that resolves to nothing.
     joint.bodyB = 99;
@@ -56,9 +57,14 @@ describe('explainPhysics3DJoints', () => {
 
   it('does not fault a one-body kind for its unused first end', () => {
     const world = createTestWorld();
-    const oneBody: Physics3DJointSolver = { prepare(): void {}, solve(): void {}, usesBodyA: false };
+    const oneBody: Physics3DJointSolver = {
+      prepare(): void {},
+      solve(): void {},
+      usesBodyA: false,
+    };
     registerPhysics3DJointSolver(world, Physics3DBallAndSocketJointKind, oneBody);
-    const joint = addPhysics3DJoint(world, createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 }));
+    const joint = createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 });
+    addPhysics3DJoint(world, joint);
     joint.bodyA = 404;
 
     const [explanation] = explainPhysics3DJoints(world);
@@ -83,7 +89,8 @@ describe('explainPhysics3DJoints', () => {
   it('changes nothing it looks at', () => {
     const world = createTestWorld();
     registerBuiltInPhysics3DJointSolvers(world);
-    const joint = addPhysics3DJoint(world, createPhysics3DHingeJoint({ bodyA: 0, bodyB: 1 }));
+    const joint = createPhysics3DHingeJoint({ bodyA: 0, bodyB: 1 });
+    addPhysics3DJoint(world, joint);
     joint.impulse0 = 7;
 
     explainPhysics3DJoints(world);

@@ -29,7 +29,15 @@ beforeEach(() => {
 });
 
 function unitBox(): CollisionBuiltInShape3D {
-  return { kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 };
+  return {
+    kind: 'aabb',
+    minX: -0.5,
+    minY: -0.5,
+    minZ: -0.5,
+    maxX: 0.5,
+    maxY: 0.5,
+    maxZ: 0.5,
+  };
 }
 
 function addBoxBody(
@@ -64,7 +72,10 @@ describe('createPhysics3DQueryFilter', () => {
 
 describe('createPhysics3DQueryResult', () => {
   it('starts empty', () => {
-    expect(createPhysics3DQueryResult()).toMatchObject({ hits: [], hitCount: 0 });
+    expect(createPhysics3DQueryResult()).toMatchObject({
+      hits: [],
+      hitCount: 0,
+    });
   });
 });
 
@@ -181,7 +192,11 @@ describe('queryPhysics3DPoint', () => {
     addPhysics3DCollider(
       world,
       body,
-      createPhysics3DCollider(unitBox(), undefined, { categoryBits: 2, maskBits: 2, groupIndex: 0 }),
+      createPhysics3DCollider(unitBox(), undefined, {
+        categoryBits: 2,
+        maskBits: 2,
+        groupIndex: 0,
+      }),
     );
     const filter = createPhysics3DQueryFilter();
     filter.categoryBits = 1;
@@ -391,12 +406,28 @@ describe('queryPhysics3DRegion', () => {
     addPhysics3DCollider(
       world,
       body,
-      createPhysics3DCollider({ kind: 'aabb', minX: -10.5, minY: -0.5, minZ: -0.5, maxX: -9.5, maxY: 0.5, maxZ: 0.5 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: -10.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: -9.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      }),
     );
     addPhysics3DCollider(
       world,
       body,
-      createPhysics3DCollider({ kind: 'aabb', minX: 9.5, minY: -0.5, minZ: -0.5, maxX: 10.5, maxY: 0.5, maxZ: 0.5 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: 9.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: 10.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      }),
     );
     const out = createPhysics3DQueryResult();
 
@@ -412,12 +443,28 @@ describe('queryPhysics3DRegion', () => {
     addPhysics3DCollider(
       world,
       body,
-      createPhysics3DCollider({ kind: 'aabb', minX: -2.5, minY: -0.5, minZ: -0.5, maxX: -1.5, maxY: 0.5, maxZ: 0.5 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: -2.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: -1.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      }),
     );
     addPhysics3DCollider(
       world,
       body,
-      createPhysics3DCollider({ kind: 'aabb', minX: 1.5, minY: -0.5, minZ: -0.5, maxX: 2.5, maxY: 0.5, maxZ: 0.5 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: 1.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: 2.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      }),
     );
     const out = createPhysics3DQueryResult();
 
@@ -461,7 +508,13 @@ describe('queryPhysics3DShapeCast', () => {
     );
     addPhysics3DBody(world, terrain);
     const out = createPhysics3DShapeCastResult();
-    const sphere: CollisionBuiltInShape3D = { kind: 'sphere', x: 0, y: 2, z: 0, radius: 0.25 };
+    const sphere: CollisionBuiltInShape3D = {
+      kind: 'sphere',
+      x: 0,
+      y: 2,
+      z: 0,
+      radius: 0.25,
+    };
 
     queryPhysics3DShapeCast(world, sphere, 0, -4, 0, out);
 

@@ -113,7 +113,17 @@ describe('integratePhysics3DContinuous', () => {
     world.config.maxCcdRotationSubsteps = 128;
     const peg = createRigidBody3D('static');
     addPhysics3DBody(world, peg);
-    addPhysics3DCollider(world, peg, createPhysics3DCollider({ kind: 'sphere', x: 4, y: 0, z: 0, radius: 0.25 }));
+    addPhysics3DCollider(
+      world,
+      peg,
+      createPhysics3DCollider({
+        kind: 'sphere',
+        x: 4,
+        y: 0,
+        z: 0,
+        radius: 0.25,
+      }),
+    );
     const blade = createRigidBody3D('dynamic');
     blade.orientationZ = -Math.sin(Math.PI / 8);
     blade.orientationW = Math.cos(Math.PI / 8);
@@ -124,7 +134,15 @@ describe('integratePhysics3DContinuous', () => {
     addPhysics3DCollider(
       world,
       blade,
-      createPhysics3DCollider({ kind: 'aabb', minX: -5, minY: -0.1, minZ: -0.1, maxX: 5, maxY: 0.1, maxZ: 0.1 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: -5,
+        minY: -0.1,
+        minZ: -0.1,
+        maxX: 5,
+        maxY: 0.1,
+        maxZ: 0.1,
+      }),
     );
 
     stepPhysics3D(world, 1 / 60);
@@ -138,7 +156,17 @@ describe('integratePhysics3DContinuous', () => {
     world.config.maxCcdRotationSubsteps = 0;
     const peg = createRigidBody3D('static');
     addPhysics3DBody(world, peg);
-    addPhysics3DCollider(world, peg, createPhysics3DCollider({ kind: 'sphere', x: 4, y: 0, z: 0, radius: 0.25 }));
+    addPhysics3DCollider(
+      world,
+      peg,
+      createPhysics3DCollider({
+        kind: 'sphere',
+        x: 4,
+        y: 0,
+        z: 0,
+        radius: 0.25,
+      }),
+    );
     const blade = createRigidBody3D('dynamic');
     blade.orientationZ = -Math.sin(Math.PI / 8);
     blade.orientationW = Math.cos(Math.PI / 8);
@@ -149,7 +177,15 @@ describe('integratePhysics3DContinuous', () => {
     addPhysics3DCollider(
       world,
       blade,
-      createPhysics3DCollider({ kind: 'aabb', minX: -5, minY: -0.1, minZ: -0.1, maxX: 5, maxY: 0.1, maxZ: 0.1 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: -5,
+        minY: -0.1,
+        minZ: -0.1,
+        maxX: 5,
+        maxY: 0.1,
+        maxZ: 0.1,
+      }),
     );
 
     stepPhysics3D(world, 1 / 60);
@@ -172,7 +208,15 @@ describe('integratePhysics3DContinuous', () => {
     addPhysics3DCollider(
       world,
       bullet,
-      createPhysics3DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: -0.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: 0.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      }),
     );
 
     stepPhysics3D(world, 1 / 60);
@@ -370,7 +414,11 @@ describe('integratePhysics3DContinuous', () => {
     addPhysics3DCollider(
       world,
       wall,
-      createPhysics3DCollider(THIN_WALL, { density: 1, friction: 0.2, restitution: 0.8 }),
+      createPhysics3DCollider(THIN_WALL, {
+        density: 1,
+        friction: 0.2,
+        restitution: 0.8,
+      }),
     );
     const bullet = createRigidBody3D('dynamic');
     bullet.x = -5;
@@ -500,7 +548,11 @@ describe('integratePhysics3DContinuous', () => {
     addPhysics3DCollider(
       world,
       wall,
-      createPhysics3DCollider(THIN_WALL, undefined, { categoryBits: 2, maskBits: 2, groupIndex: 0 }),
+      createPhysics3DCollider(THIN_WALL, undefined, {
+        categoryBits: 2,
+        maskBits: 2,
+        groupIndex: 0,
+      }),
     );
     const bullet = createRigidBody3D('dynamic');
     bullet.x = -5;
@@ -571,7 +623,15 @@ describe('integratePhysics3DContinuous', () => {
     addPhysics3DCollider(
       world,
       bullet,
-      createPhysics3DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: -0.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: 0.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      }),
     );
 
     stepPhysics3D(world, 1 / 60);

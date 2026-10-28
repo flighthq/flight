@@ -159,7 +159,11 @@ describe('computePhysics3DCapsuleMassData', () => {
 
 describe('computePhysics3DColliderMassData', () => {
   function colliderOf(local: CollisionBuiltInShape3D, density = 1): Physics3DCollider {
-    return createPhysics3DCollider(local, { density, friction: 0.2, restitution: 0 });
+    return createPhysics3DCollider(local, {
+      density,
+      friction: 0.2,
+      restitution: 0,
+    });
   }
 
   it('places the centroid at an offset collider rather than at the body origin', () => {
@@ -174,7 +178,15 @@ describe('computePhysics3DColliderMassData', () => {
     const collider = createPhysics3DMassData();
     const box = createPhysics3DMassData();
     computePhysics3DColliderMassData(
-      colliderOf({ kind: 'aabb', minX: -1, minY: -2, minZ: -3, maxX: 1, maxY: 2, maxZ: 3 }),
+      colliderOf({
+        kind: 'aabb',
+        minX: -1,
+        minY: -2,
+        minZ: -3,
+        maxX: 1,
+        maxY: 2,
+        maxZ: 3,
+      }),
       collider,
     );
     computePhysics3DBoxMassData(1, 2, 3, 1, box);
@@ -210,7 +222,16 @@ describe('computePhysics3DColliderMassData', () => {
     // moment on x, not on y.
     const out = createPhysics3DMassData();
     computePhysics3DColliderMassData(
-      colliderOf({ kind: 'capsule', x0: -2, y0: 0, z0: 0, x1: 2, y1: 0, z1: 0, radius: 0.5 }),
+      colliderOf({
+        kind: 'capsule',
+        x0: -2,
+        y0: 0,
+        z0: 0,
+        x1: 2,
+        y1: 0,
+        z1: 0,
+        radius: 0.5,
+      }),
       out,
     );
     expect(out.inertiaXX).toBeLessThan(out.inertiaYY);
@@ -219,7 +240,13 @@ describe('computePhysics3DColliderMassData', () => {
 
   it('integrates a convex hull rather than zeroing it', () => {
     const out = createPhysics3DMassData();
-    computePhysics3DColliderMassData(colliderOf({ kind: 'convex', points: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1] }), out);
+    computePhysics3DColliderMassData(
+      colliderOf({
+        kind: 'convex',
+        points: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+      }),
+      out,
+    );
     expect(out.mass).toBeCloseTo(1 / 6, 9);
   });
 });
@@ -509,7 +536,15 @@ describe('updateRigidBody3DMassData', () => {
     const body = createRigidBody3D('dynamic');
     addPhysics3DBody(world, body);
     body.colliders.push(
-      createPhysics3DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: -0.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: 0.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      }),
     );
 
     updateRigidBody3DMassData(body);
@@ -554,7 +589,15 @@ describe('updateRigidBody3DMassData', () => {
   it('gives a static body zero inverse mass while keeping its forward mass', () => {
     const body = createRigidBody3D('static');
     body.colliders.push(
-      createPhysics3DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: -0.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: 0.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      }),
     );
 
     updateRigidBody3DMassData(body);

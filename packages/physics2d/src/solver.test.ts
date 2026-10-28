@@ -26,7 +26,8 @@ function restingWorld() {
   const floor = createRigidBody2D('static', 0, 0);
   floor.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -50, minY: -1, maxX: 50, maxY: 0 }, STONE));
   addPhysics2DBody(world, floor);
-  const crate = addPhysics2DBody(world, body('dynamic', 0, 0.499));
+  const crate = body('dynamic', 0, 0.499);
+  addPhysics2DBody(world, crate);
   return { world, crate };
 }
 
@@ -35,8 +36,10 @@ describe('applyPhysics2DImpulse', () => {
     // The normal separates A out of B, so a positive impulse must move A along it. Reversed, the solver
     // drives bodies together and a resting box settles below the floor rather than on it.
     const world = createPhysics2DWorld();
-    const a = addPhysics2DBody(world, body('dynamic', 0, 0));
-    const b = addPhysics2DBody(world, body('dynamic', 0, 1));
+    const a = body('dynamic', 0, 0);
+    addPhysics2DBody(world, a);
+    const b = body('dynamic', 0, 1);
+    addPhysics2DBody(world, b);
     applyPhysics2DImpulse(a, b, 0, 0, 0, 0, 0, 1);
     expect(a.velocityY).toBeGreaterThan(0);
     expect(b.velocityY).toBeLessThan(0);
@@ -44,16 +47,20 @@ describe('applyPhysics2DImpulse', () => {
 
   it('spins a body when the impulse acts off its centre of mass', () => {
     const world = createPhysics2DWorld();
-    const a = addPhysics2DBody(world, body('dynamic', 0, 0));
-    const b = addPhysics2DBody(world, body('dynamic', 0, 1));
+    const a = body('dynamic', 0, 0);
+    addPhysics2DBody(world, a);
+    const b = body('dynamic', 0, 1);
+    addPhysics2DBody(world, b);
     applyPhysics2DImpulse(a, b, 0.5, 0, 0, 0, 0, 1);
     expect(a.angularVelocity).not.toBe(0);
   });
 
   it('leaves a static body untouched through its zero inverse mass, with no branch', () => {
     const world = createPhysics2DWorld();
-    const floor = addPhysics2DBody(world, body('static', 0, 0));
-    const crate = addPhysics2DBody(world, body('dynamic', 0, 1));
+    const floor = body('static', 0, 0);
+    addPhysics2DBody(world, floor);
+    const crate = body('dynamic', 0, 1);
+    addPhysics2DBody(world, crate);
     applyPhysics2DImpulse(floor, crate, 0.3, 0.2, 0, 0, 5, 7);
     expect(floor.velocityX).toBe(0);
     expect(floor.velocityY).toBe(0);
@@ -80,8 +87,10 @@ describe('relativeNormalVelocity', () => {
 
   it('is negative while the pair is closing along the separating normal', () => {
     const world = createPhysics2DWorld();
-    const a = addPhysics2DBody(world, body('dynamic', 0, 0));
-    const b = addPhysics2DBody(world, body('dynamic', 0, 1));
+    const a = body('dynamic', 0, 0);
+    addPhysics2DBody(world, a);
+    const b = body('dynamic', 0, 1);
+    addPhysics2DBody(world, b);
     b.velocityY = -1; // B falling toward A
     expect(relativeNormalVelocity(a, b, point, 0, 1)).toBeGreaterThan(0);
     b.velocityY = 1; // B moving away
@@ -90,8 +99,10 @@ describe('relativeNormalVelocity', () => {
 
   it('includes the angular contribution at the lever arm', () => {
     const world = createPhysics2DWorld();
-    const a = addPhysics2DBody(world, body('dynamic', 0, 0));
-    const b = addPhysics2DBody(world, body('dynamic', 0, 1));
+    const a = body('dynamic', 0, 0);
+    addPhysics2DBody(world, a);
+    const b = body('dynamic', 0, 1);
+    addPhysics2DBody(world, b);
     const spinning = { ...point, rAX: 1, rAY: 0 };
     a.angularVelocity = 2;
     expect(relativeNormalVelocity(a, b, spinning, 0, 1)).toBeCloseTo(2);

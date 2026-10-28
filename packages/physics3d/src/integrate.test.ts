@@ -259,7 +259,11 @@ describe('refreshRigidBody3DWorldInertia', () => {
   });
 });
 
-function getWorldCenter(body: Readonly<RigidBody3D>): { x: number; y: number; z: number } {
+function getWorldCenter(body: Readonly<RigidBody3D>): {
+  x: number;
+  y: number;
+  z: number;
+} {
   const center = createVector3(body.centerX, body.centerY, body.centerZ);
   const orientation = createQuaternion(body.orientationX, body.orientationY, body.orientationZ, body.orientationW);
   rotateVector3ByQuaternion(center, center, orientation);

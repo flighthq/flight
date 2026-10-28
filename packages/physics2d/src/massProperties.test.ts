@@ -10,7 +10,11 @@ import { computePhysics2DColliderMassData, updateRigidBody2DMassData } from './m
 import { createPhysics2DCollider, createRigidBody2D } from './world.ts';
 
 function collider(local: CollisionBuiltInShape2D, density = 1): Physics2DCollider {
-  return createPhysics2DCollider(local, { density, friction: 0.2, restitution: 0 });
+  return createPhysics2DCollider(local, {
+    density,
+    friction: 0.2,
+    restitution: 0,
+  });
 }
 
 // The constructor, not a literal that happens to match the fields: a body grows fields (sleep state, for
@@ -141,7 +145,13 @@ describe('computePhysics2DColliderMassData', () => {
       asBox,
     );
     computePhysics2DColliderMassData(
-      collider({ kind: 'polygon', points: [-1.5, -0.5, 1.5, -0.5, 1.5, 0.5, -1.5, 0.5] }, 2),
+      collider(
+        {
+          kind: 'polygon',
+          points: [-1.5, -0.5, 1.5, -0.5, 1.5, 0.5, -1.5, 0.5],
+        },
+        2,
+      ),
       asPolygon,
     );
     expect(asPolygon.mass).toBeCloseTo(asBox.mass);
@@ -220,8 +230,20 @@ describe('updateRigidBody2DMassData', () => {
   });
 
   it('combines two colliders into one centre of mass and shifts their inertia onto it', () => {
-    const left = collider({ kind: 'aabb', minX: -3, minY: -1, maxX: -1, maxY: 1 });
-    const right = collider({ kind: 'aabb', minX: 1, minY: -1, maxX: 3, maxY: 1 });
+    const left = collider({
+      kind: 'aabb',
+      minX: -3,
+      minY: -1,
+      maxX: -1,
+      maxY: 1,
+    });
+    const right = collider({
+      kind: 'aabb',
+      minX: 1,
+      minY: -1,
+      maxX: 3,
+      maxY: 1,
+    });
     const target = body([left, right]);
     updateRigidBody2DMassData(target);
 

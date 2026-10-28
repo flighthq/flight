@@ -106,12 +106,24 @@ describe('isPhysics3DJointBreakable', () => {
   });
 
   it('is true once either threshold is finite', () => {
-    expect(isPhysics3DJointBreakable(createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1, breakForce: 5 }))).toBe(
-      true,
-    );
-    expect(isPhysics3DJointBreakable(createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1, breakTorque: 5 }))).toBe(
-      true,
-    );
+    expect(
+      isPhysics3DJointBreakable(
+        createPhysics3DBallAndSocketJoint({
+          bodyA: 0,
+          bodyB: 1,
+          breakForce: 5,
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      isPhysics3DJointBreakable(
+        createPhysics3DBallAndSocketJoint({
+          bodyA: 0,
+          bodyB: 1,
+          breakTorque: 5,
+        }),
+      ),
+    ).toBe(true);
   });
 });
 
@@ -137,7 +149,11 @@ function createHangingScene(mass: number, gravity: number, breakForce: number): 
   setRigidBody3DMassData(body, data);
   addPhysics3DBody(world, body);
 
-  const joint = createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1, breakForce });
+  const joint = createPhysics3DBallAndSocketJoint({
+    bodyA: 0,
+    bodyB: 1,
+    breakForce,
+  });
   addPhysics3DJoint(world, joint);
   return { world, body, joint };
 }

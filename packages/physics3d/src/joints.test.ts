@@ -59,7 +59,12 @@ describe('Physics3DBallAndSocketJointKind', () => {
 describe('physics3DBallAndSocketJointSolver', () => {
   it('cancels the velocity separating the two anchors', () => {
     const scene = createScene();
-    const joint = createPhysics3DFixedJoint({ bodyA: 0, bodyB: 1, localAnchorAX: 1, localAnchorBX: -1 });
+    const joint = createPhysics3DFixedJoint({
+      bodyA: 0,
+      bodyB: 1,
+      localAnchorAX: 1,
+      localAnchorBX: -1,
+    });
     joint.kind = Physics3DBallAndSocketJointKind;
     scene.bodyB.velocityX = 4;
     scene.bodyB.velocityY = -2;
@@ -84,7 +89,12 @@ describe('physics3DBallAndSocketJointSolver', () => {
 
   it('pulls a separated pair back together', () => {
     const scene = createScene();
-    const joint = createPhysics3DFixedJoint({ bodyA: 0, bodyB: 1, localAnchorAX: 1, localAnchorBX: -1 });
+    const joint = createPhysics3DFixedJoint({
+      bodyA: 0,
+      bodyB: 1,
+      localAnchorAX: 1,
+      localAnchorBX: -1,
+    });
     joint.kind = Physics3DBallAndSocketJointKind;
     scene.bodyB.x = 4;
 
@@ -99,7 +109,12 @@ describe('physics3DBallAndSocketJointSolver', () => {
 describe('physics3DConeTwistJointSolver', () => {
   it('leaves a swing inside the cone alone', () => {
     const scene = createScene();
-    const joint = createPhysics3DConeTwistJoint({ bodyA: 0, bodyB: 1, swingLimitY: 1, swingLimitZ: 1 });
+    const joint = createPhysics3DConeTwistJoint({
+      bodyA: 0,
+      bodyB: 1,
+      swingLimitY: 1,
+      swingLimitZ: 1,
+    });
     scene.bodyB.angularVelocityZ = 0.5;
 
     solveJoint(scene.world, joint, physics3DConeTwistJointSolver, 16);
@@ -112,7 +127,12 @@ describe('physics3DConeTwistJointSolver', () => {
     const scene = createScene();
     // Half a radian of tilt about Z, well past a cone of 0.2.
     setAxisAngle(scene.bodyB, 0, 0, 1, 0.5);
-    const joint = createPhysics3DConeTwistJoint({ bodyA: 0, bodyB: 1, swingLimitY: 0.2, swingLimitZ: 0.2 });
+    const joint = createPhysics3DConeTwistJoint({
+      bodyA: 0,
+      bodyB: 1,
+      swingLimitY: 0.2,
+      swingLimitZ: 0.2,
+    });
 
     solveJoint(scene.world, joint, physics3DConeTwistJointSolver, 16);
 
@@ -124,12 +144,22 @@ describe('physics3DConeTwistJointSolver', () => {
     const wide = createScene();
     setAxisAngle(wide.bodyB, 0, 0, 1, 0.5);
     // A tilt about +z carries the twist axis toward frame Y, so swingLimitY is the bound that applies.
-    const wideJoint = createPhysics3DConeTwistJoint({ bodyA: 0, bodyB: 1, swingLimitY: 1.2, swingLimitZ: 0.05 });
+    const wideJoint = createPhysics3DConeTwistJoint({
+      bodyA: 0,
+      bodyB: 1,
+      swingLimitY: 1.2,
+      swingLimitZ: 0.05,
+    });
     solveJoint(wide.world, wideJoint, physics3DConeTwistJointSolver, 16);
 
     const narrow = createScene();
     setAxisAngle(narrow.bodyB, 0, 0, 1, 0.5);
-    const narrowJoint = createPhysics3DConeTwistJoint({ bodyA: 0, bodyB: 1, swingLimitY: 0.05, swingLimitZ: 1.2 });
+    const narrowJoint = createPhysics3DConeTwistJoint({
+      bodyA: 0,
+      bodyB: 1,
+      swingLimitY: 0.05,
+      swingLimitZ: 1.2,
+    });
     solveJoint(narrow.world, narrowJoint, physics3DConeTwistJointSolver, 16);
 
     expect(wide.bodyB.angularVelocityZ).toBeCloseTo(0, 9);
@@ -163,7 +193,11 @@ describe('physics3DConeTwistJointSolver', () => {
 describe('physics3DDistanceJointSolver', () => {
   it('cancels the velocity changing the separation', () => {
     const scene = createScene();
-    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 2 });
+    const joint = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      length: 2,
+    });
     scene.bodyB.velocityX = 4;
 
     solveJoint(scene.world, joint, physics3DDistanceJointSolver, 8);
@@ -176,7 +210,11 @@ describe('physics3DDistanceJointSolver', () => {
     // distance, so the joint has nothing to resist, and a kind that quietly constrained the other two axes
     // would turn a pendulum into a rigid rod right here.
     const scene = createScene();
-    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 2 });
+    const joint = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      length: 2,
+    });
     scene.bodyB.velocityY = 3;
 
     solveJoint(scene.world, joint, physics3DDistanceJointSolver, 8);
@@ -186,7 +224,11 @@ describe('physics3DDistanceJointSolver', () => {
 
   it('leaves relative rotation free', () => {
     const scene = createScene();
-    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 2 });
+    const joint = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      length: 2,
+    });
     scene.bodyB.angularVelocityY = 3;
 
     solveJoint(scene.world, joint, physics3DDistanceJointSolver, 8);
@@ -197,14 +239,22 @@ describe('physics3DDistanceJointSolver', () => {
   it('pulls a stretched pair together and pushes a compressed pair apart', () => {
     const stretched = createScene();
     stretched.bodyB.x = 4;
-    const stretchedJoint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 2 });
+    const stretchedJoint = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      length: 2,
+    });
     solveJoint(stretched.world, stretchedJoint, physics3DDistanceJointSolver, 8);
     expect(stretched.bodyB.velocityX).toBeLessThan(0);
     expect(stretched.bodyA.velocityX).toBeGreaterThan(0);
 
     const compressed = createScene();
     compressed.bodyB.x = 1;
-    const compressedJoint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 2 });
+    const compressedJoint = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      length: 2,
+    });
     solveJoint(compressed.world, compressedJoint, physics3DDistanceJointSolver, 8);
     expect(compressed.bodyB.velocityX).toBeGreaterThan(0);
     expect(compressed.bodyA.velocityX).toBeLessThan(0);
@@ -214,7 +264,13 @@ describe('physics3DDistanceJointSolver', () => {
     // The behaviour a cable exists for, and the reason enabling the limit drops the rest-length row: a joint
     // that still held `length` here would be a strut wearing a rope's parameters.
     const scene = createScene();
-    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 2, enableLimit: true, maxLength: 5 });
+    const joint = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      length: 2,
+      enableLimit: true,
+      maxLength: 5,
+    });
     scene.bodyB.velocityX = 4;
 
     solveJoint(scene.world, joint, physics3DDistanceJointSolver, 8);
@@ -226,7 +282,12 @@ describe('physics3DDistanceJointSolver', () => {
   it('catches the pair at its maximum length', () => {
     const scene = createScene();
     scene.bodyB.x = 6;
-    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, enableLimit: true, maxLength: 5 });
+    const joint = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      enableLimit: true,
+      maxLength: 5,
+    });
     scene.bodyB.velocityX = 4;
 
     solveJoint(scene.world, joint, physics3DDistanceJointSolver, 8);
@@ -236,7 +297,13 @@ describe('physics3DDistanceJointSolver', () => {
 
   it('holds the pair apart at its minimum length', () => {
     const scene = createScene();
-    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, enableLimit: true, minLength: 4, maxLength: 9 });
+    const joint = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      enableLimit: true,
+      minLength: 4,
+      maxLength: 9,
+    });
 
     solveJoint(scene.world, joint, physics3DDistanceJointSolver, 8);
 
@@ -251,7 +318,13 @@ describe('physics3DDistanceJointSolver', () => {
     const scene = createScene();
     scene.bodyB.x = 3;
     scene.bodyB.velocityX = -4;
-    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, enableLimit: true, minLength: 0, maxLength: 5 });
+    const joint = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      enableLimit: true,
+      minLength: 0,
+      maxLength: 5,
+    });
 
     solveJoint(scene.world, joint, physics3DDistanceJointSolver, 8);
 
@@ -263,7 +336,11 @@ describe('physics3DDistanceJointSolver', () => {
     // compliance means it cannot remove the whole approach at once, and the rigid one can.
     const rigid = createScene();
     rigid.bodyB.x = 4;
-    const rigidJoint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 2 });
+    const rigidJoint = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      length: 2,
+    });
     solveJoint(rigid.world, rigidJoint, physics3DDistanceJointSolver, 8);
 
     const soft = createScene();
@@ -369,7 +446,12 @@ describe('physics3DDistanceJointSolver', () => {
   });
 
   it('clears its limit accumulators on request', () => {
-    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, enableLimit: true, maxLength: 1 });
+    const joint = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      enableLimit: true,
+      maxLength: 1,
+    });
     joint.impulse0 = 5;
     joint.lowerLimitImpulse = 3;
     joint.upperLimitImpulse = 7;
@@ -384,7 +466,11 @@ describe('physics3DDistanceJointSolver', () => {
   it('accepts an exchange of ends, having nothing signed to reverse', () => {
     // A length reads the same from either end, which is why this kind's `swapEnds` reverses nothing. If it
     // ever grows a signed quantity, this is the test that should stop being true.
-    const joint = createPhysics3DDistanceJoint({ bodyA: 1, bodyB: 0, length: 2 });
+    const joint = createPhysics3DDistanceJoint({
+      bodyA: 1,
+      bodyB: 0,
+      length: 2,
+    });
 
     expect(physics3DDistanceJointSolver.swapEnds?.(joint)).toBe(true);
   });
@@ -394,7 +480,11 @@ describe('physics3DDistanceJointSolver', () => {
     // in a solver never leaves — it spreads to every body the island touches.
     const scene = createScene();
     scene.bodyB.x = 0;
-    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 2 });
+    const joint = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      length: 2,
+    });
 
     solveJoint(scene.world, joint, physics3DDistanceJointSolver, 8);
 
@@ -421,7 +511,12 @@ describe('physics3DFixedJointSolver', () => {
 
   it('cancels relative anchor motion as well as rotation', () => {
     const scene = createScene();
-    const joint = createPhysics3DFixedJoint({ bodyA: 0, bodyB: 1, localAnchorAX: 1, localAnchorBX: -1 });
+    const joint = createPhysics3DFixedJoint({
+      bodyA: 0,
+      bodyB: 1,
+      localAnchorAX: 1,
+      localAnchorBX: -1,
+    });
     scene.bodyB.velocityZ = 3;
     scene.bodyB.angularVelocityY = 1;
 
@@ -686,7 +781,13 @@ describe('physics3DHingeJointSolver', () => {
   });
 
   it('exchanges rather than negates the limit accumulators when its ends are swapped', () => {
-    const joint = createPhysics3DHingeJoint({ bodyA: 1, bodyB: 0, enableLimit: true, lowerAngle: -1, upperAngle: 1 });
+    const joint = createPhysics3DHingeJoint({
+      bodyA: 1,
+      bodyB: 0,
+      enableLimit: true,
+      lowerAngle: -1,
+      upperAngle: 1,
+    });
     joint.lowerLimitImpulse = 3;
     joint.upperLimitImpulse = 7;
 
@@ -699,7 +800,11 @@ describe('physics3DHingeJointSolver', () => {
   });
 
   it('rescales carried limit accumulators with the timestep', () => {
-    const joint = createPhysics3DHingeJoint({ bodyA: 0, bodyB: 1, enableLimit: true });
+    const joint = createPhysics3DHingeJoint({
+      bodyA: 0,
+      bodyB: 1,
+      enableLimit: true,
+    });
     joint.lowerLimitImpulse = 2;
     joint.upperLimitImpulse = 5;
 

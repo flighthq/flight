@@ -53,7 +53,8 @@ describe('addPhysics2DBody', () => {
   it('rejects duplicate and cross-world insertion without corrupting either world', () => {
     const firstWorld = createPhysics2DWorld();
     const secondWorld = createPhysics2DWorld();
-    const body = addPhysics2DBody(firstWorld, boxBody(0, 0));
+    const body = boxBody(0, 0);
+    addPhysics2DBody(firstWorld, body);
     const index = body.index;
 
     expect(() => addPhysics2DBody(firstWorld, body)).toThrow();
@@ -81,10 +82,13 @@ describe('addPhysics2DBody', () => {
     // Reusing an array slot as identity would let a stale contact be revived against whichever body
     // inherited it, warm-starting a pair with a force that belonged to something else.
     const world = createPhysics2DWorld();
-    const first = addPhysics2DBody(world, boxBody(0, 0));
-    const second = addPhysics2DBody(world, boxBody(1, 0));
+    const first = boxBody(0, 0);
+    addPhysics2DBody(world, first);
+    const second = boxBody(1, 0);
+    addPhysics2DBody(world, second);
     removePhysics2DBody(world, first);
-    const third = addPhysics2DBody(world, boxBody(2, 0));
+    const third = boxBody(2, 0);
+    addPhysics2DBody(world, third);
 
     expect(second.index).toBe(1);
     expect(third.index).toBe(2);
@@ -95,7 +99,8 @@ describe('addPhysics2DBody', () => {
 
   it('derives mass properties on insertion so a body is never simulated massless', () => {
     const world = createPhysics2DWorld();
-    const body = addPhysics2DBody(world, boxBody(0, 0));
+    const body = boxBody(0, 0);
+    addPhysics2DBody(world, body);
     expect(body.mass).toBeCloseTo(1);
     expect(body.inverseMass).toBeCloseTo(1);
     expect(body.inertia).toBeGreaterThan(0);
@@ -106,13 +111,12 @@ describe('addPhysics2DCollider', () => {
   it('rejects duplicate, shared, and foreign-world collider mutation', () => {
     const firstWorld = createPhysics2DWorld();
     const secondWorld = createPhysics2DWorld();
-    const first = addPhysics2DBody(firstWorld, createRigidBody2D('dynamic', 0, 0));
-    const second = addPhysics2DBody(firstWorld, createRigidBody2D('dynamic', 2, 0));
-    const collider = addPhysics2DCollider(
-      firstWorld,
-      first,
-      createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE),
-    );
+    const first = createRigidBody2D('dynamic', 0, 0);
+    addPhysics2DBody(firstWorld, first);
+    const second = createRigidBody2D('dynamic', 2, 0);
+    addPhysics2DBody(firstWorld, second);
+    const collider = createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE);
+    addPhysics2DCollider(firstWorld, first, collider);
 
     expect(() => addPhysics2DCollider(firstWorld, first, collider)).toThrow();
     expect(() => addPhysics2DCollider(firstWorld, second, collider)).toThrow();
@@ -129,12 +133,13 @@ describe('addPhysics2DCollider', () => {
 
   it('recomputes mass, wakes the body, and publishes bounds immediately', () => {
     const world = createPhysics2DWorld(0, 0);
-    const body = addPhysics2DBody(world, createRigidBody2D('dynamic', 3, 4));
+    const body = createRigidBody2D('dynamic', 3, 4);
+    addPhysics2DBody(world, body);
     body.sleeping = true;
     body.sleepTimer = 5;
     const collider = createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE);
 
-    expect(addPhysics2DCollider(world, body, collider)).toBe(collider);
+    addPhysics2DCollider(world, body, collider);
 
     const found: number[] = [];
     world.index.querySpatialPoint(3, 4, found);
@@ -145,8 +150,10 @@ describe('addPhysics2DCollider', () => {
 
   it('invalidates old contact impulses and events while waking both solid ends', () => {
     const world = createPhysics2DWorld(0, 0);
-    const first = addPhysics2DBody(world, boxBody(0, 0));
-    const second = addPhysics2DBody(world, boxBody(0.75, 0));
+    const first = boxBody(0, 0);
+    addPhysics2DBody(world, first);
+    const second = boxBody(0.75, 0);
+    addPhysics2DBody(world, second);
     stepPhysics2D(world, 1 / 60);
     expect(world.contacts).toHaveLength(1);
     expect(world.events.began).toHaveLength(1);
@@ -174,7 +181,8 @@ describe('addPhysics2DCollider', () => {
 describe('applyPhysics2DForce', () => {
   it('accumulates force and wakes a dynamic body', () => {
     const world = createPhysics2DWorld(0, 0);
-    const body = addPhysics2DBody(world, boxBody(10, 20));
+    const body = boxBody(10, 20);
+    addPhysics2DBody(world, body);
     body.sleeping = true;
     body.sleepTimer = 5;
 
@@ -195,7 +203,8 @@ describe('applyPhysics2DForce', () => {
 describe('applyPhysics2DForceAtPoint', () => {
   it('accumulates force and its moment from a world-space point', () => {
     const world = createPhysics2DWorld(0, 0);
-    const body = addPhysics2DBody(world, boxBody(10, 20));
+    const body = boxBody(10, 20);
+    addPhysics2DBody(world, body);
     expect(applyPhysics2DForceAtPoint(body, 2, 0, 10, 21)).toBe(true);
     expect(body.forceX).toBe(2);
     expect(body.torque).toBeCloseTo(-2);
@@ -205,7 +214,8 @@ describe('applyPhysics2DForceAtPoint', () => {
 describe('applyPhysics2DLinearImpulse', () => {
   it('changes linear velocity immediately from derived inverse mass', () => {
     const world = createPhysics2DWorld(0, 0);
-    const body = addPhysics2DBody(world, boxBody(0, 0));
+    const body = boxBody(0, 0);
+    addPhysics2DBody(world, body);
     expect(applyPhysics2DLinearImpulse(body, 1, 2)).toBe(true);
     expect(body.velocityX).toBeCloseTo(1);
     expect(body.velocityY).toBeCloseTo(2);
@@ -215,7 +225,8 @@ describe('applyPhysics2DLinearImpulse', () => {
 describe('applyPhysics2DLinearImpulseAtPoint', () => {
   it('changes linear and angular velocity from a world-space point', () => {
     const world = createPhysics2DWorld(0, 0);
-    const body = addPhysics2DBody(world, boxBody(10, 20));
+    const body = boxBody(10, 20);
+    addPhysics2DBody(world, body);
     expect(applyPhysics2DLinearImpulseAtPoint(body, 1, 0, 10, 21)).toBe(true);
     expect(body.velocityX).toBeCloseTo(1);
     expect(body.angularVelocity).toBeCloseTo(-6);
@@ -247,7 +258,11 @@ describe('createPhysics2DCollider', () => {
 
   it('owns a permissive default collision filter and clones a supplied one', () => {
     const defaulted = createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE);
-    expect(defaulted.filter).toEqual({ categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 });
+    expect(defaulted.filter).toEqual({
+      categoryBits: 1,
+      maskBits: 0xffffffff,
+      groupIndex: 0,
+    });
 
     const supplied = { categoryBits: 2, maskBits: 4, groupIndex: -3 };
     const filtered = createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE, false, supplied);
@@ -280,7 +295,11 @@ describe('createPhysics2DCollider', () => {
     expect(first.local.points[0]).toBe(0);
     expect(second.local.points).toEqual([0, 0, 2, 0, 0, 2]);
     expect(first.material.density).toBe(1);
-    expect(second.material).toEqual({ density: 1, friction: 0.25, restitution: 0.5 });
+    expect(second.material).toEqual({
+      density: 1,
+      friction: 0.25,
+      restitution: 0.5,
+    });
   });
 });
 
@@ -324,8 +343,10 @@ describe('createRigidBody2D', () => {
 describe('findPhysics2DBody', () => {
   it('resolves a contact stored index back to its body', () => {
     const world = createPhysics2DWorld();
-    const first = addPhysics2DBody(world, boxBody(0, 0));
-    const second = addPhysics2DBody(world, boxBody(1, 0));
+    const first = boxBody(0, 0);
+    addPhysics2DBody(world, first);
+    const second = boxBody(1, 0);
+    addPhysics2DBody(world, second);
     expect(findPhysics2DBody(world, first.index)).toBe(first);
     expect(findPhysics2DBody(world, second.index)).toBe(second);
   });
@@ -334,7 +355,8 @@ describe('findPhysics2DBody', () => {
     // Contacts hold indices, not references, so a lookup after removal has to fail cleanly — returning
     // whatever now occupies the position would warm-start a pair with a stranger's impulse.
     const world = createPhysics2DWorld();
-    const first = addPhysics2DBody(world, boxBody(0, 0));
+    const first = boxBody(0, 0);
+    addPhysics2DBody(world, first);
     addPhysics2DBody(world, boxBody(1, 0));
     removePhysics2DBody(world, first);
     expect(findPhysics2DBody(world, first.index)).toBeNull();
@@ -345,10 +367,15 @@ describe('findPhysics2DBody', () => {
 describe('hydratePhysics2DWorld', () => {
   it('upgrades pre-CCD body and solver records with canonical defaults', () => {
     const world = createPhysics2DWorld(0, 0);
-    const body = addPhysics2DBody(world, boxBody(0, 0));
+    const body = boxBody(0, 0);
+    addPhysics2DBody(world, body);
     const legacyWorld = world as unknown as {
       version?: number;
-      config: { continuousCollision?: boolean; maxCcdRotationSubsteps?: number; maxCcdSubsteps?: number };
+      config: {
+        continuousCollision?: boolean;
+        maxCcdRotationSubsteps?: number;
+        maxCcdSubsteps?: number;
+      };
     };
     const legacyBody = body as unknown as {
       bullet?: boolean;
@@ -411,7 +438,8 @@ describe('initializeRigidBody2D', () => {
 describe('invalidatePhysics2DCollider', () => {
   it('rebuilds changed shape storage, mass data, and broadphase bounds', () => {
     const world = createPhysics2DWorld(0, 0);
-    const body = addPhysics2DBody(world, boxBody(0, 0));
+    const body = boxBody(0, 0);
+    addPhysics2DBody(world, body);
     const collider = body.colliders[0];
     const oldWorldShape = collider.world;
     collider.local = { kind: 'circle', x: 4, y: 0, radius: 2 };
@@ -436,8 +464,10 @@ describe('invalidatePhysics2DCollider', () => {
 
   it('invalidates contacts after filter and sensor changes', () => {
     const world = createPhysics2DWorld(0, 0);
-    const first = addPhysics2DBody(world, boxBody(0, 0));
-    const second = addPhysics2DBody(world, boxBody(0.75, 0));
+    const first = boxBody(0, 0);
+    addPhysics2DBody(world, first);
+    const second = boxBody(0.75, 0);
+    addPhysics2DBody(world, second);
     stepPhysics2D(world, 1 / 60);
     expect(world.contacts).toHaveLength(1);
 
@@ -456,7 +486,8 @@ describe('invalidatePhysics2DCollider', () => {
 
   it('reports false when the body does not own the collider', () => {
     const world = createPhysics2DWorld();
-    const body = addPhysics2DBody(world, boxBody(0, 0));
+    const body = boxBody(0, 0);
+    addPhysics2DBody(world, body);
     const absent = createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE);
     expect(invalidatePhysics2DCollider(world, body, absent)).toBe(false);
   });
@@ -465,8 +496,10 @@ describe('invalidatePhysics2DCollider', () => {
 describe('isPhysics2DPairOrdered', () => {
   it('orders by persistent index, which is the only key that survives motion', () => {
     const world = createPhysics2DWorld();
-    const first = addPhysics2DBody(world, boxBody(0, 0));
-    const second = addPhysics2DBody(world, boxBody(1, 0));
+    const first = boxBody(0, 0);
+    addPhysics2DBody(world, first);
+    const second = boxBody(1, 0);
+    addPhysics2DBody(world, second);
     expect(isPhysics2DPairOrdered(first, second)).toBe(true);
     expect(isPhysics2DPairOrdered(second, first)).toBe(false);
 
@@ -479,7 +512,8 @@ describe('isPhysics2DPairOrdered', () => {
 describe('removePhysics2DBody', () => {
   it('releases ownership and assigns a fresh persistent identity when reinserted', () => {
     const world = createPhysics2DWorld();
-    const body = addPhysics2DBody(world, boxBody(0, 0));
+    const body = boxBody(0, 0);
+    addPhysics2DBody(world, body);
     const firstIndex = body.index;
 
     removePhysics2DBody(world, body);
@@ -496,7 +530,8 @@ describe('removePhysics2DBody', () => {
     const floor = createRigidBody2D('static', 0, 0);
     floor.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -5, minY: -1, maxX: 5, maxY: 0 }, STONE));
     addPhysics2DBody(world, floor);
-    const crate = addPhysics2DBody(world, boxBody(0, 0.4));
+    const crate = boxBody(0, 0.4);
+    addPhysics2DBody(world, crate);
     stepPhysics2D(world, 1 / 60);
     expect(world.contacts.length).toBeGreaterThan(0);
 
@@ -511,31 +546,35 @@ describe('removePhysics2DBody', () => {
 
   it('retains a one-body joint when only its unused bodyA placeholder is removed', () => {
     const world = createPhysics2DWorld();
-    registerPhysics2DJointSolver(world, 'OneBody', { prepare: () => {}, solve: () => {}, usesBodyA: false });
-    const placeholder = addPhysics2DBody(world, boxBody(0, 0));
-    const constrained = addPhysics2DBody(world, boxBody(2, 0));
-    const joint = addPhysics2DJoint(
-      world,
-      entityJoint({
-        kind: 'OneBody',
-        bodyA: placeholder.index,
-        bodyB: constrained.index,
-        localAnchorAX: 0,
-        localAnchorAY: 0,
-        localAnchorBX: 0,
-        localAnchorBY: 0,
-        collideConnected: false,
-        breakForce: Number.POSITIVE_INFINITY,
-        breakTorque: Number.POSITIVE_INFINITY,
-        impulse0: 0,
-        impulse1: 0,
-        impulse2: 0,
-        rAX: 0,
-        rAY: 0,
-        rBX: 0,
-        rBY: 0,
-      }),
-    );
+    registerPhysics2DJointSolver(world, 'OneBody', {
+      prepare: () => {},
+      solve: () => {},
+      usesBodyA: false,
+    });
+    const placeholder = boxBody(0, 0);
+    addPhysics2DBody(world, placeholder);
+    const constrained = boxBody(2, 0);
+    addPhysics2DBody(world, constrained);
+    const joint = entityJoint({
+      kind: 'OneBody',
+      bodyA: placeholder.index,
+      bodyB: constrained.index,
+      localAnchorAX: 0,
+      localAnchorAY: 0,
+      localAnchorBX: 0,
+      localAnchorBY: 0,
+      collideConnected: false,
+      breakForce: Number.POSITIVE_INFINITY,
+      breakTorque: Number.POSITIVE_INFINITY,
+      impulse0: 0,
+      impulse1: 0,
+      impulse2: 0,
+      rAX: 0,
+      rAY: 0,
+      rBX: 0,
+      rBY: 0,
+    });
+    addPhysics2DJoint(world, joint);
 
     removePhysics2DBody(world, placeholder);
 
@@ -547,7 +586,8 @@ describe('removePhysics2DBody', () => {
     const floor = createRigidBody2D('static', 0, 0);
     floor.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -5, minY: -1, maxX: 5, maxY: 0 }, STONE));
     addPhysics2DBody(world, floor);
-    const crate = addPhysics2DBody(world, boxBody(0, 0.5));
+    const crate = boxBody(0, 0.5);
+    addPhysics2DBody(world, crate);
     for (let i = 0; i < 180; i++) stepPhysics2D(world, 1 / 60);
     expect(crate.sleeping).toBe(true);
     const restingY = crate.y;
@@ -567,7 +607,8 @@ describe('removePhysics2DBody', () => {
       createPhysics2DCollider({ kind: 'aabb', minX: -1, minY: -1, maxX: 1, maxY: 1 }, STONE, true),
     );
     addPhysics2DBody(world, trigger);
-    const crate = addPhysics2DBody(world, boxBody(0, 0));
+    const crate = boxBody(0, 0);
+    addPhysics2DBody(world, crate);
     stepPhysics2D(world, 1 / 60);
     expect(world.contacts[0].sensor).toBe(true);
     crate.sleeping = true;
@@ -604,7 +645,8 @@ describe('removePhysics2DCollider', () => {
 
   it('reports false without changing mass when the collider is absent', () => {
     const world = createPhysics2DWorld();
-    const body = addPhysics2DBody(world, boxBody(0, 0));
+    const body = boxBody(0, 0);
+    addPhysics2DBody(world, body);
     const mass = body.mass;
     const absent = createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 1 }, STONE);
     expect(removePhysics2DCollider(world, body, absent)).toBe(false);
@@ -615,7 +657,8 @@ describe('removePhysics2DCollider', () => {
 describe('setPhysics2DBodyBullet', () => {
   it('changes CCD policy and wakes the owned body', () => {
     const world = createPhysics2DWorld();
-    const body = addPhysics2DBody(world, boxBody(0, 0));
+    const body = boxBody(0, 0);
+    addPhysics2DBody(world, body);
     body.sleeping = true;
     body.sleepTimer = 5;
 
@@ -634,8 +677,10 @@ describe('setPhysics2DBodyBullet', () => {
 describe('setPhysics2DBodyFixedRotation', () => {
   it('preserves linear mass while clearing spin, torque, angular response, and cached contacts', () => {
     const world = createPhysics2DWorld(0, 0);
-    const body = addPhysics2DBody(world, boxBody(0, 0));
-    const other = addPhysics2DBody(world, boxBody(0.75, 0));
+    const body = boxBody(0, 0);
+    addPhysics2DBody(world, body);
+    const other = boxBody(0.75, 0);
+    addPhysics2DBody(world, other);
     stepPhysics2D(world, 1 / 60);
     body.angularVelocity = 4;
     body.torque = 7;
@@ -673,7 +718,8 @@ describe('setPhysics2DBodyFixedRotation', () => {
 describe('setPhysics2DBodySleepEnabled', () => {
   it('wakes on either transition and requires a new stillness interval when re-enabled', () => {
     const world = createPhysics2DWorld(0, 0);
-    const body = addPhysics2DBody(world, boxBody(0, 0));
+    const body = boxBody(0, 0);
+    addPhysics2DBody(world, body);
     body.sleeping = true;
     body.sleepTimer = 5;
 
@@ -696,31 +742,34 @@ describe('setPhysics2DBodySleepEnabled', () => {
 describe('setPhysics2DBodyTransform', () => {
   it('invalidates pose caches, wakes connected bodies, and republishes bounds', () => {
     const world = createPhysics2DWorld(0, 0);
-    registerPhysics2DJointSolver(world, 'Cached', { prepare: () => {}, solve: () => {} });
-    const first = addPhysics2DBody(world, boxBody(0, 0));
-    const second = addPhysics2DBody(world, boxBody(0.75, 0));
-    const joint = addPhysics2DJoint(
-      world,
-      entityJoint({
-        kind: 'Cached',
-        bodyA: first.index,
-        bodyB: second.index,
-        localAnchorAX: 0,
-        localAnchorAY: 0,
-        localAnchorBX: 0,
-        localAnchorBY: 0,
-        collideConnected: true,
-        breakForce: Number.POSITIVE_INFINITY,
-        breakTorque: Number.POSITIVE_INFINITY,
-        impulse0: 3,
-        impulse1: 4,
-        impulse2: 5,
-        rAX: 0,
-        rAY: 0,
-        rBX: 0,
-        rBY: 0,
-      }),
-    );
+    registerPhysics2DJointSolver(world, 'Cached', {
+      prepare: () => {},
+      solve: () => {},
+    });
+    const first = boxBody(0, 0);
+    addPhysics2DBody(world, first);
+    const second = boxBody(0.75, 0);
+    addPhysics2DBody(world, second);
+    const joint = entityJoint({
+      kind: 'Cached',
+      bodyA: first.index,
+      bodyB: second.index,
+      localAnchorAX: 0,
+      localAnchorAY: 0,
+      localAnchorBX: 0,
+      localAnchorBY: 0,
+      collideConnected: true,
+      breakForce: Number.POSITIVE_INFINITY,
+      breakTorque: Number.POSITIVE_INFINITY,
+      impulse0: 3,
+      impulse1: 4,
+      impulse2: 5,
+      rAX: 0,
+      rAY: 0,
+      rBX: 0,
+      rBY: 0,
+    });
+    addPhysics2DJoint(world, joint);
     stepPhysics2D(world, 1 / 60);
     joint.impulse0 = 3;
     joint.impulse1 = 4;
@@ -742,7 +791,8 @@ describe('setPhysics2DBodyTransform', () => {
 
   it('reports invalid transforms without changing the body', () => {
     const world = createPhysics2DWorld();
-    const body = addPhysics2DBody(world, boxBody(1, 2));
+    const body = boxBody(1, 2);
+    addPhysics2DBody(world, body);
     expect(setPhysics2DBodyTransform(world, body, Number.NaN, 3, 0)).toBe(false);
     expect(setPhysics2DBodyTransform(createPhysics2DWorld(), body, 4, 5, 0)).toBe(false);
     expect([body.x, body.y, body.angle]).toEqual([1, 2, 0]);
@@ -752,8 +802,10 @@ describe('setPhysics2DBodyTransform', () => {
 describe('setPhysics2DBodyType', () => {
   it('rebuilds mass and clears incompatible state across type transitions', () => {
     const world = createPhysics2DWorld(0, 0);
-    const body = addPhysics2DBody(world, boxBody(0, 0));
-    const other = addPhysics2DBody(world, boxBody(0.75, 0));
+    const body = boxBody(0, 0);
+    addPhysics2DBody(world, body);
+    const other = boxBody(0.75, 0);
+    addPhysics2DBody(world, other);
     stepPhysics2D(world, 1 / 60);
     body.velocityX = 2;
     body.velocityY = 3;

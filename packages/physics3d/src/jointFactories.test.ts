@@ -93,7 +93,11 @@ describe('createPhysics3DConeTwistJoint', () => {
 
 describe('createPhysics3DDistanceJoint', () => {
   it('defaults to a RIGID strut with no spring and no limit', () => {
-    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 3 });
+    const joint = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      length: 3,
+    });
 
     expect(joint.kind).toBe(Physics3DDistanceJointKind);
     expect(joint.length).toBe(3);
@@ -153,7 +157,12 @@ describe('createPhysics3DFixedJoint', () => {
 
   it('carries the frames it was given', () => {
     const half = Math.SQRT1_2;
-    const joint = createPhysics3DFixedJoint({ bodyA: 0, bodyB: 1, localRotationAZ: half, localRotationAW: half });
+    const joint = createPhysics3DFixedJoint({
+      bodyA: 0,
+      bodyB: 1,
+      localRotationAZ: half,
+      localRotationAW: half,
+    });
 
     expect(joint.localRotationAZ).toBeCloseTo(half, 12);
     expect(joint.localRotationAW).toBeCloseTo(half, 12);

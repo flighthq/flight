@@ -34,7 +34,11 @@ export function explainPhysics2DJoints(world: Readonly<Physics2DWorld>): Physics
       status,
     });
   }
-  return { joints, readyCount, status: readyCount === joints.length ? 'complete' : 'unresolved-joints' };
+  return {
+    joints,
+    readyCount,
+    status: readyCount === joints.length ? 'complete' : 'unresolved-joints',
+  };
 }
 
 function getJointResolutionStatus(

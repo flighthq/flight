@@ -23,18 +23,49 @@ function bounds() {
 
 describe('createPhysics2DColliderWorldShape', () => {
   it('promotes an axis-aligned box to an oriented box, since a rotated box is not axis-aligned', () => {
-    expect(createPhysics2DColliderWorldShape({ kind: 'aabb', minX: 0, minY: 0, maxX: 1, maxY: 1 }).kind).toBe('obb');
+    expect(
+      createPhysics2DColliderWorldShape({
+        kind: 'aabb',
+        minX: 0,
+        minY: 0,
+        maxX: 1,
+        maxY: 1,
+      }).kind,
+    ).toBe('obb');
   });
 
   it('keeps the kind for shapes a rigid transform preserves', () => {
-    expect(createPhysics2DColliderWorldShape({ kind: 'circle', x: 0, y: 0, radius: 1 }).kind).toBe('circle');
-    expect(createPhysics2DColliderWorldShape({ kind: 'polygon', points: [0, 0, 1, 0, 0, 1] }).kind).toBe('polygon');
-    expect(createPhysics2DColliderWorldShape({ kind: 'segment', x0: 0, y0: 0, x1: 1, y1: 0 }).kind).toBe('segment');
+    expect(
+      createPhysics2DColliderWorldShape({
+        kind: 'circle',
+        x: 0,
+        y: 0,
+        radius: 1,
+      }).kind,
+    ).toBe('circle');
+    expect(
+      createPhysics2DColliderWorldShape({
+        kind: 'polygon',
+        points: [0, 0, 1, 0, 0, 1],
+      }).kind,
+    ).toBe('polygon');
+    expect(
+      createPhysics2DColliderWorldShape({
+        kind: 'segment',
+        x0: 0,
+        y0: 0,
+        x1: 1,
+        y1: 0,
+      }).kind,
+    ).toBe('segment');
     expect(createPhysics2DColliderWorldShape({ kind: 'point', x: 0, y: 0 }).kind).toBe('point');
   });
 
   it('gives a polygon its own points array so the per-step transform cannot write through to the local shape', () => {
-    const local: CollisionBuiltInShape2D = { kind: 'polygon', points: [0, 0, 1, 0, 0, 1] };
+    const local: CollisionBuiltInShape2D = {
+      kind: 'polygon',
+      points: [0, 0, 1, 0, 0, 1],
+    };
     const world = createPhysics2DColliderWorldShape(local);
     expect(world.kind === 'polygon' && world.points).not.toBe(local.points);
     expect(EntityRuntimeKey in world).toBe(true);

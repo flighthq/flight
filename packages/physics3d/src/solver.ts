@@ -742,7 +742,11 @@ function acquirePhysics3DPositionScratch(): Physics3DPositionScratch {
 }
 
 function createPhysics3DPositionScratch(): Physics3DPositionScratch {
-  return { manifold: createCollisionContactManifold3D(), centerA: [0, 0, 0], centerB: [0, 0, 0] };
+  return {
+    manifold: createCollisionContactManifold3D(),
+    centerA: [0, 0, 0],
+    centerB: [0, 0, 0],
+  };
 }
 
 function releasePhysics3DPositionScratch(scratch: Physics3DPositionScratch): void {

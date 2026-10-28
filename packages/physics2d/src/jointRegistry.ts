@@ -19,7 +19,7 @@ import { findPhysics2DBody, isPhysics2DPairOrdered } from './world.ts';
 // pair sort; joints have no broadphase, so it is enforced here, at the one place a joint enters the
 // world. The anchors and lever arms swap with the bodies — a joint whose ends were exchanged without its
 // anchors would attach to the wrong points and hold the pair in a pose nobody asked for.
-export function addPhysics2DJoint(world: Physics2DWorld, joint: Physics2DJoint): Physics2DJoint {
+export function addPhysics2DJoint(world: Physics2DWorld, joint: Physics2DJoint): void {
   assertPhysics2DWorldNotStepping(world);
   if (physics2DJointOwners.has(joint) || world.joints.includes(joint)) {
     throw new Error('Cannot add a physics joint that already belongs to a physics world');
@@ -41,7 +41,6 @@ export function addPhysics2DJoint(world: Physics2DWorld, joint: Physics2DJoint):
   // prepare and solve forever unless something unrelated happened to wake it. Unknown kinds remain
   // inert until registration, and are woken on that activation path instead.
   if (active) _wakePhysics2DJointBodies(world, joint);
-  return joint;
 }
 
 // Exchanges `joint`'s ends when the pair is out of canonical order and the kind consents. The kind is

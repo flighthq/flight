@@ -41,7 +41,8 @@ const MATERIAL = { density: 1, friction: 0, restitution: 0 };
 function ball(world: Physics2DWorld, type: RigidBody2D['type'], x: number, y: number, offsetX = 0): RigidBody2D {
   const body = createRigidBody2D(type, x, y);
   body.colliders.push(createPhysics2DCollider({ kind: 'circle', x: offsetX, y: 0, radius: 0.4 }, MATERIAL));
-  return addPhysics2DBody(world, body);
+  addPhysics2DBody(world, body);
+  return body;
 }
 
 function base(kind: string, bodyA: number, bodyB: number): Physics2DJoint {
@@ -231,7 +232,9 @@ describe('writePhysics2DJointReaction', () => {
     const arm = ball(world, 'dynamic', 0, 0, 1.5);
     const reaction = settle(
       world,
-      Object.assign(base(Physics2DWeldJointKind, post.index, arm.index), { referenceAngle: 0 }),
+      Object.assign(base(Physics2DWeldJointKind, post.index, arm.index), {
+        referenceAngle: 0,
+      }),
     );
 
     expect(reaction.torque).toBeCloseTo(-(arm.mass * GRAVITY * 1.5), 6);
@@ -302,7 +305,9 @@ describe('writePhysics2DJointReaction', () => {
     addPhysics2DBody(world, floor);
     const reaction = settle(
       world,
-      Object.assign(base(Physics2DRopeJointKind, anchor.index, bob.index), { maxLength: 8 }),
+      Object.assign(base(Physics2DRopeJointKind, anchor.index, bob.index), {
+        maxLength: 8,
+      }),
     );
 
     // Closeness rather than identity only because a zero impulse times a negative axis component is

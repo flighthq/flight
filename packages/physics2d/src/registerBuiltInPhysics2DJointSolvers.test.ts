@@ -64,11 +64,20 @@ describe('registerBuiltInPhysics2DJointSolvers', () => {
 
   it('activates factory-created joints that were loaded before the bank', () => {
     const world = createPhysics2DWorld();
-    const first = addPhysics2DBody(world, createRigidBody2D('dynamic', 0, 0));
-    const second = addPhysics2DBody(world, createRigidBody2D('dynamic', 1, 0));
+    const first = createRigidBody2D('dynamic', 0, 0);
+    addPhysics2DBody(world, first);
+    const second = createRigidBody2D('dynamic', 1, 0);
+    addPhysics2DBody(world, second);
     first.sleeping = true;
     second.sleeping = true;
-    addPhysics2DJoint(world, createPhysics2DDistanceJoint({ bodyA: first.index, bodyB: second.index, length: 1 }));
+    addPhysics2DJoint(
+      world,
+      createPhysics2DDistanceJoint({
+        bodyA: first.index,
+        bodyB: second.index,
+        length: 1,
+      }),
+    );
 
     registerBuiltInPhysics2DJointSolvers(world);
 

@@ -81,7 +81,14 @@ describe('clearPhysics3DJointReaction', () => {
 
     clearPhysics3DJointReaction(out);
 
-    expect(out).toMatchObject({ forceX: 0, forceY: 0, forceZ: 0, torqueX: 0, torqueY: 0, torqueZ: 0 });
+    expect(out).toMatchObject({
+      forceX: 0,
+      forceY: 0,
+      forceZ: 0,
+      torqueX: 0,
+      torqueY: 0,
+      torqueZ: 0,
+    });
   });
 });
 
@@ -233,7 +240,11 @@ describe('writePhysics3DJointReaction', () => {
     const hanging = createUnitBody(2);
     hanging.y = -3;
     addPhysics3DBody(world, hanging);
-    const joint = createPhysics3DDistanceJoint({ bodyA: 0, bodyB: 1, length: 3 });
+    const joint = createPhysics3DDistanceJoint({
+      bodyA: 0,
+      bodyB: 1,
+      length: 3,
+    });
     addPhysics3DJoint(world, joint);
 
     stepPhysics3D(world, 1 / 60);

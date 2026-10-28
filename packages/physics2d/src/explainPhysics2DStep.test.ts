@@ -47,8 +47,18 @@ describe('explainPhysics2DStep', () => {
     made.index = 0;
     world.bodies.push(made);
     world.bodyByIndex.set(0, made);
-    world.contacts.push({ normalX: Number.NaN, pointCount: 0, points: [] } as never);
-    world.joints.push({ bodyA: 0, bodyB: 0, collideConnected: false, impulse0: Number.NaN, kind: 'Test' } as never);
+    world.contacts.push({
+      normalX: Number.NaN,
+      pointCount: 0,
+      points: [],
+    } as never);
+    world.joints.push({
+      bodyA: 0,
+      bodyB: 0,
+      collideConnected: false,
+      impulse0: Number.NaN,
+      kind: 'Test',
+    } as never);
 
     expect(explainPhysics2DStep(world, 1 / 60)).toMatchObject({
       bodyStateValid: false,

@@ -22,7 +22,12 @@ describe('synchronizePhysics2DBroadphase', () => {
     world.index.updateSpatialObject = (_id, bounds) => {
       nestedCalls++;
       synchronizePhysics2DBroadphase(nestedWorld);
-      published = { minX: bounds.minX, minY: bounds.minY, maxX: bounds.maxX, maxY: bounds.maxY };
+      published = {
+        minX: bounds.minX,
+        minY: bounds.minY,
+        maxX: bounds.maxX,
+        maxY: bounds.maxY,
+      };
       return true;
     };
 

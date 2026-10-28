@@ -30,10 +30,22 @@ beforeEach(() => {
   registerBuiltInCollisionFaceQueries3D();
 });
 
-const MATERIAL: Physics3DMaterial = { density: 1, friction: 0.4, restitution: 0 };
+const MATERIAL: Physics3DMaterial = {
+  density: 1,
+  friction: 0.4,
+  restitution: 0,
+};
 
 function boxShape(halfX: number, halfY: number, halfZ: number): CollisionBuiltInShape3D {
-  return { kind: 'aabb', minX: -halfX, minY: -halfY, minZ: -halfZ, maxX: halfX, maxY: halfY, maxZ: halfZ };
+  return {
+    kind: 'aabb',
+    minX: -halfX,
+    minY: -halfY,
+    minZ: -halfZ,
+    maxX: halfX,
+    maxY: halfY,
+    maxZ: halfZ,
+  };
 }
 
 function addCuboid(
@@ -295,7 +307,11 @@ describe('physics3d stress qualification', () => {
   it('keeps restitution energy and a centred contact torque bounded over sixty seconds', () => {
     const world = createPhysics3DWorld();
     world.gravityY = 0;
-    const elastic: Physics3DMaterial = { density: 1, friction: 0, restitution: 1 };
+    const elastic: Physics3DMaterial = {
+      density: 1,
+      friction: 0,
+      restitution: 1,
+    };
     addCuboid(world, 'static', -5.25, 0, 0, 0.25, 5, 5, elastic);
     addCuboid(world, 'static', 5.25, 0, 0, 0.25, 5, 5, elastic);
     const ball = createRigidBody3D('dynamic');

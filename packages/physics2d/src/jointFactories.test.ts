@@ -24,7 +24,11 @@ import {
 
 describe('createPhysics2DDistanceJoint', () => {
   it('owns common defaults and solver scratch', () => {
-    const joint = createPhysics2DDistanceJoint({ bodyA: 1, bodyB: 2, length: 3 });
+    const joint = createPhysics2DDistanceJoint({
+      bodyA: 1,
+      bodyB: 2,
+      length: 3,
+    });
     expect(Object.hasOwn(joint, EntityRuntimeKey)).toBe(true);
     expect(joint).toMatchObject({
       kind: 'Distance',
@@ -61,14 +65,32 @@ describe('createPhysics2DGearJoint', () => {
         coordinateB: 'linear',
         constant: 0,
       }),
-    ).toMatchObject({ axisAX: 1, axisAY: 0, axisBX: 1, axisBY: 0, kind: 'Gear', ratio: 1 });
+    ).toMatchObject({
+      axisAX: 1,
+      axisAY: 0,
+      axisBX: 1,
+      axisBY: 0,
+      kind: 'Gear',
+      ratio: 1,
+    });
   });
 });
 
 describe('createPhysics2DMouseJoint', () => {
   it('hides the dummy endpoint and owns stable drag defaults', () => {
-    const joint = createPhysics2DMouseJoint({ body: 7, targetX: 3, targetY: 4, maxForce: 100 });
-    expect(joint).toMatchObject({ bodyA: 7, bodyB: 7, dampingRatio: 0.7, kind: 'Mouse', frequencyHz: 5 });
+    const joint = createPhysics2DMouseJoint({
+      body: 7,
+      targetX: 3,
+      targetY: 4,
+      maxForce: 100,
+    });
+    expect(joint).toMatchObject({
+      bodyA: 7,
+      bodyB: 7,
+      dampingRatio: 0.7,
+      kind: 'Mouse',
+      frequencyHz: 5,
+    });
   });
 });
 
@@ -118,7 +140,12 @@ describe('createPhysics2DPulleyJoint', () => {
         groundAnchorBY: 2,
         constant: 6,
       }),
-    ).toMatchObject({ groundAnchorAX: -1, groundAnchorBX: 1, kind: 'Pulley', ratio: 1 });
+    ).toMatchObject({
+      groundAnchorAX: -1,
+      groundAnchorBX: 1,
+      kind: 'Pulley',
+      ratio: 1,
+    });
   });
 });
 

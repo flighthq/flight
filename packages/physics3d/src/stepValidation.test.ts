@@ -94,13 +94,25 @@ describe('isPhysics3DColliderStateValid', () => {
 
   it('rejects degenerate authored geometry and a poisoned material', () => {
     const shape = createTestWorld();
-    const shapeCollider = createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 1 });
+    const shapeCollider = createPhysics3DCollider({
+      kind: 'sphere',
+      x: 0,
+      y: 0,
+      z: 0,
+      radius: 1,
+    });
     addPhysics3DCollider(shape, shape.bodies[0], shapeCollider);
     if (shapeCollider.local.kind === 'sphere') shapeCollider.local.radius = 0;
     expect(isPhysics3DColliderStateValid(shape)).toBe(false);
 
     const material = createTestWorld();
-    const materialCollider = createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 1 });
+    const materialCollider = createPhysics3DCollider({
+      kind: 'sphere',
+      x: 0,
+      y: 0,
+      z: 0,
+      radius: 1,
+    });
     addPhysics3DCollider(material, material.bodies[0], materialCollider);
     materialCollider.material.friction = Number.NaN;
     expect(isPhysics3DColliderStateValid(material)).toBe(false);
@@ -108,9 +120,23 @@ describe('isPhysics3DColliderStateValid', () => {
 
   it('rejects an incompatible derived kind and a fractional filter bitfield', () => {
     const world = createTestWorld();
-    const collider = createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 1 });
+    const collider = createPhysics3DCollider({
+      kind: 'sphere',
+      x: 0,
+      y: 0,
+      z: 0,
+      radius: 1,
+    });
     addPhysics3DCollider(world, world.bodies[0], collider);
-    collider.world = { kind: 'aabb', minX: -1, minY: -1, minZ: -1, maxX: 1, maxY: 1, maxZ: 1 };
+    collider.world = {
+      kind: 'aabb',
+      minX: -1,
+      minY: -1,
+      minZ: -1,
+      maxX: 1,
+      maxY: 1,
+      maxZ: 1,
+    };
     expect(isPhysics3DColliderStateValid(world)).toBe(false);
 
     collider.world = { kind: 'sphere', x: 0, y: 0, z: 0, radius: 1 };
@@ -227,17 +253,22 @@ describe('isPhysics3DJointStateValid', () => {
 
   it('rejects a joint with an empty kind or a non-integer endpoint', () => {
     const kind = createTestWorld();
-    addPhysics3DJoint(kind, createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 })).kind = '';
+    const invalidKind = createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 });
+    addPhysics3DJoint(kind, invalidKind);
+    invalidKind.kind = '';
     expect(isPhysics3DJointStateValid(kind)).toBe(false);
 
     const endpoint = createTestWorld();
-    addPhysics3DJoint(endpoint, createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 })).bodyB = 1.5;
+    const invalidEndpoint = createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 });
+    addPhysics3DJoint(endpoint, invalidEndpoint);
+    invalidEndpoint.bodyB = 1.5;
     expect(isPhysics3DJointStateValid(endpoint)).toBe(false);
   });
 
   it('rejects a non-finite field a kind added, not only the common ones', () => {
     const world = createTestWorld();
-    const joint = addPhysics3DJoint(world, createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 }));
+    const joint = createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 });
+    addPhysics3DJoint(world, joint);
     (joint as unknown as Record<string, number>).acmeSuspensionTravel = Number.NaN;
 
     // Walking the object rather than a fixed key list is what makes this cover a user's own joint kind,

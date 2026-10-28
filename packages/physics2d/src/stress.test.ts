@@ -14,13 +14,15 @@ function addBox(world: Physics2DWorld, type: RigidBody2D['type'], x: number, y: 
   body.colliders.push(
     createPhysics2DCollider({ kind: 'aabb', minX: -half, minY: -half, maxX: half, maxY: half }, MATERIAL),
   );
-  return addPhysics2DBody(world, body);
+  addPhysics2DBody(world, body);
+  return body;
 }
 
 function addCircle(world: Physics2DWorld, type: RigidBody2D['type'], x: number, y: number, radius = 0.2): RigidBody2D {
   const body = createRigidBody2D(type, x, y);
   body.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius }, MATERIAL));
-  return addPhysics2DBody(world, body);
+  addPhysics2DBody(world, body);
+  return body;
 }
 
 function run(world: Physics2DWorld, steps: number): void {
@@ -77,7 +79,11 @@ describe('physics2d stress qualification', () => {
       links.push(link);
       addPhysics2DJoint(
         world,
-        createPhysics2DDistanceJoint({ bodyA: links[i - 1].index, bodyB: link.index, length: 1 }),
+        createPhysics2DDistanceJoint({
+          bodyA: links[i - 1].index,
+          bodyB: link.index,
+          length: 1,
+        }),
       );
     }
     links[links.length - 1].velocityX = 4;
@@ -102,7 +108,14 @@ describe('physics2d stress qualification', () => {
       addPhysics2DBody(world, floor);
       const first = addBox(world, 'dynamic', -1, 0.5);
       const second = addBox(world, 'dynamic', -1, 1.5);
-      addPhysics2DJoint(world, createPhysics2DDistanceJoint({ bodyA: first.index, bodyB: second.index, length: 1 }));
+      addPhysics2DJoint(
+        world,
+        createPhysics2DDistanceJoint({
+          bodyA: first.index,
+          bodyB: second.index,
+          length: 1,
+        }),
+      );
       addBox(world, 'dynamic', 2, 0.5);
       const bullet = addCircle(world, 'dynamic', -8, 3, 0.25);
       bullet.bullet = true;

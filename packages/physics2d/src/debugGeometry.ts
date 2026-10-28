@@ -288,7 +288,15 @@ function writeLine(
   let line: Physics2DDebugLine;
   if (out.lineCount < out.lines.length) line = out.lines[out.lineCount];
   else {
-    line = { bodyA: -1, bodyB: -1, feature: 'collider', x0: 0, x1: 0, y0: 0, y1: 0 };
+    line = {
+      bodyA: -1,
+      bodyB: -1,
+      feature: 'collider',
+      x0: 0,
+      x1: 0,
+      y0: 0,
+      y1: 0,
+    };
     out.lines.push(line);
   }
   out.lineCount++;
@@ -313,7 +321,14 @@ function writeCircle(
   let circle: Physics2DDebugCircle;
   if (out.circleCount < out.circles.length) circle = out.circles[out.circleCount];
   else {
-    circle = { bodyA: -1, bodyB: -1, feature: 'collider', radius: 0, x: 0, y: 0 };
+    circle = {
+      bodyA: -1,
+      bodyB: -1,
+      feature: 'collider',
+      radius: 0,
+      x: 0,
+      y: 0,
+    };
     out.circles.push(circle);
   }
   out.circleCount++;

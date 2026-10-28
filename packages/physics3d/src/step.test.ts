@@ -101,7 +101,13 @@ describe('stepPhysics3D', () => {
   it('declines before an invalid collider can generate a poisoned contact', () => {
     const world = createTestWorld();
     const body = addUnitBody(world);
-    const collider = createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 1 });
+    const collider = createPhysics3DCollider({
+      kind: 'sphere',
+      x: 0,
+      y: 0,
+      z: 0,
+      radius: 1,
+    });
     addPhysics3DCollider(world, body, collider);
     collider.material.friction = Number.NaN;
 
@@ -165,7 +171,10 @@ describe('stepPhysics3D', () => {
   });
 
   it('refreshes contacts between substeps just like separate half-steps', () => {
-    function impactScene(): { readonly world: Physics3DWorld; readonly body: RigidBody3D } {
+    function impactScene(): {
+      readonly world: Physics3DWorld;
+      readonly body: RigidBody3D;
+    } {
       const world = createTestWorld();
       const ground = addUnitBody(world);
       ground.y = -0.5;
@@ -217,7 +226,11 @@ describe('stepPhysics3D', () => {
     hanging.x = 1;
     addPhysics3DJoint(
       world,
-      createPhysics3DFixedJoint({ bodyA: anchor.index, bodyB: hanging.index, localAnchorBX: -1 }),
+      createPhysics3DFixedJoint({
+        bodyA: anchor.index,
+        bodyB: hanging.index,
+        localAnchorBX: -1,
+      }),
     );
 
     for (let i = 0; i < 120; i += 1) stepPhysics3D(world, 1 / 60);
@@ -331,10 +344,12 @@ describe('stepPhysics3D', () => {
     addRestingContact(world, box, ground);
     // `collideConnected` matters here: a joint suppresses its own pair's contact by default, and this test
     // needs BOTH a joint to remove and a contact for the hook to run over.
-    const joint = addPhysics3DJoint(
-      world,
-      createPhysics3DFixedJoint({ bodyA: ground.index, bodyB: box.index, collideConnected: true }),
-    );
+    const joint = createPhysics3DFixedJoint({
+      bodyA: ground.index,
+      bodyB: box.index,
+      collideConnected: true,
+    });
+    addPhysics3DJoint(world, joint);
     world.contactHooks.preSolve = (inner) => removePhysics3DJoint(inner, joint);
 
     expect(() => stepPhysics3D(world, 1 / 60)).toThrow(/stepping/);
@@ -454,7 +469,15 @@ function attachUnitBoxCollider(world: Physics3DWorld, body: RigidBody3D, frictio
     world,
     body,
     createPhysics3DCollider(
-      { kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 },
+      {
+        kind: 'aabb',
+        minX: -0.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: 0.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      },
       {
         density: 1,
         friction,

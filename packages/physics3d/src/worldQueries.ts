@@ -570,7 +570,11 @@ function releasePhysics3DQueryScratch(scratch: Physics3DQueryScratch): void {
 // that function; the rest is filled to keep the object one shape rather than a partial.
 function createShapeCastProbe(): Physics3DCollider {
   const out = allocateEntity<Physics3DCollider>();
-  out.filter = { categoryBits: 0xffffffff, groupIndex: 0, maskBits: 0xffffffff };
+  out.filter = {
+    categoryBits: 0xffffffff,
+    groupIndex: 0,
+    maskBits: 0xffffffff,
+  };
   out.local = { kind: 'sphere', radius: 0, x: 0, y: 0, z: 0 };
   out.material = { density: 0, friction: 0, restitution: 0 };
   out.sensor = false;

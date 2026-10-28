@@ -32,11 +32,14 @@ function link(world: Physics2DWorld, a: Readonly<RigidBody2D>, b: Readonly<Rigid
 }
 
 function still(world: Physics2DWorld, x = 0): RigidBody2D {
-  return addPhysics2DBody(world, createRigidBody2D('dynamic', x, 0));
+  const body = createRigidBody2D('dynamic', x, 0);
+  addPhysics2DBody(world, body);
+  return body;
 }
 
 function moving(world: Physics2DWorld, x = 0): RigidBody2D {
-  const body = addPhysics2DBody(world, createRigidBody2D('dynamic', x, 0));
+  const body = createRigidBody2D('dynamic', x, 0);
+  addPhysics2DBody(world, body);
   body.velocityX = 5;
   return body;
 }
@@ -72,7 +75,8 @@ describe('buildPhysics2DSolveIslands', () => {
 
   it('does not admit sleeping bodies or their constraints to the solve lists', () => {
     const world = createPhysics2DWorld();
-    const ground = addPhysics2DBody(world, createRigidBody2D('static', 0, 0));
+    const ground = createRigidBody2D('static', 0, 0);
+    addPhysics2DBody(world, ground);
     const settled = still(world);
     link(world, ground, settled);
 
@@ -89,7 +93,8 @@ describe('buildPhysics2DSolveIslands', () => {
 describe('isRigidBody2DPairAwake', () => {
   it('reports a pair awake when one end is an awake dynamic body', () => {
     const world = createPhysics2DWorld();
-    const anchor = addPhysics2DBody(world, createRigidBody2D('static', 0, 0));
+    const anchor = createRigidBody2D('static', 0, 0);
+    addPhysics2DBody(world, anchor);
     const crate = still(world);
 
     expect(isRigidBody2DPairAwake(anchor, crate)).toBe(true);
@@ -107,7 +112,8 @@ describe('isRigidBody2DPairAwake', () => {
 
   it('reports a sleeper anchored to static scenery asleep', () => {
     const world = createPhysics2DWorld();
-    const anchor = addPhysics2DBody(world, createRigidBody2D('static', 0, 0));
+    const anchor = createRigidBody2D('static', 0, 0);
+    addPhysics2DBody(world, anchor);
     const crate = still(world);
     crate.sleeping = true;
 
@@ -244,10 +250,18 @@ describe('updatePhysics2DSleep', () => {
 
   it('keeps a joint island awake while any one member is moving', () => {
     const world = createPhysics2DWorld();
-    registerPhysics2DJointSolver(world, 'test', { prepare: () => {}, solve: () => {} });
+    registerPhysics2DJointSolver(world, 'test', {
+      prepare: () => {},
+      solve: () => {},
+    });
     const settled = still(world, 0);
     const shoved = moving(world, 1);
-    world.joints.push({ kind: 'test', bodyA: settled.index, bodyB: shoved.index, collideConnected: false } as never);
+    world.joints.push({
+      kind: 'test',
+      bodyA: settled.index,
+      bodyB: shoved.index,
+      collideConnected: false,
+    } as never);
 
     updatePhysics2DSleep(world, world.config.timeToSleep + 0.01);
 
@@ -256,7 +270,11 @@ describe('updatePhysics2DSleep', () => {
 
   it('does not island-connect a one-body joint through its unused bodyA', () => {
     const world = createPhysics2DWorld();
-    registerPhysics2DJointSolver(world, 'one-body', { prepare: () => {}, solve: () => {}, usesBodyA: false });
+    registerPhysics2DJointSolver(world, 'one-body', {
+      prepare: () => {},
+      solve: () => {},
+      usesBodyA: false,
+    });
     const settled = still(world, 0);
     const shoved = moving(world, 1);
     world.joints.push({
@@ -304,7 +322,8 @@ describe('updatePhysics2DSleep', () => {
     // The failure this prevents is world-sized: every crate in a level rests on the same ground, so a
     // static bridge would make the whole level one island that sleeps only when nothing anywhere moves.
     const world = createPhysics2DWorld();
-    const ground = addPhysics2DBody(world, createRigidBody2D('static', 0, 0));
+    const ground = createRigidBody2D('static', 0, 0);
+    addPhysics2DBody(world, ground);
     const settled = still(world, 0);
     const shoved = moving(world, 20);
     link(world, ground, settled);
@@ -331,7 +350,8 @@ describe('updatePhysics2DSleep', () => {
 
   it('leaves static bodies neither asleep nor accumulating a timer', () => {
     const world = createPhysics2DWorld();
-    const ground = addPhysics2DBody(world, createRigidBody2D('static', 0, 0));
+    const ground = createRigidBody2D('static', 0, 0);
+    addPhysics2DBody(world, ground);
 
     updatePhysics2DSleep(world, world.config.timeToSleep + 0.01);
 

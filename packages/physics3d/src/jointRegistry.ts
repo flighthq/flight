@@ -16,7 +16,7 @@ import { findPhysics3DBody, wakePhysics3DBody } from './world.ts';
 // obligation: each impulse lands on the velocities the previous one left, and an ordering that varied with
 // construction history would make the result vary with it. Contacts get their order from the broadphase pair
 // sort; joints have no broadphase, so it is enforced here, at the one place a joint enters a world.
-export function addPhysics3DJoint<T extends Physics3DJoint>(world: Physics3DWorld, joint: T): T {
+export function addPhysics3DJoint<T extends Physics3DJoint>(world: Physics3DWorld, joint: T): void {
   assertPhysics3DWorldNotStepping(world);
   if (physics3DJointOwners.has(joint) || world.joints.includes(joint)) {
     throw new Error('Cannot add a physics joint that already belongs to a physics world');
@@ -36,7 +36,6 @@ export function addPhysics3DJoint<T extends Physics3DJoint>(world: Physics3DWorl
   // Adding an active constraint changes what both bodies may do THIS step. A sleeping pair would skip
   // prepare and solve forever unless something unrelated happened to wake it.
   if (active) wakeJointBodies(world, joint);
-  return joint;
 }
 
 // The solver registered for `kind` on this world, or null when none is. A missing solver is an expected

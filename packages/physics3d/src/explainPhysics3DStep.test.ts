@@ -44,7 +44,13 @@ describe('explainPhysics3DStep', () => {
 
   it('names an invalid collider independently from body state', () => {
     const world = createTestWorld();
-    const collider = createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 1 });
+    const collider = createPhysics3DCollider({
+      kind: 'sphere',
+      x: 0,
+      y: 0,
+      z: 0,
+      radius: 1,
+    });
     addPhysics3DCollider(world, world.bodies[0], collider);
     collider.material.friction = Number.NaN;
 
@@ -73,7 +79,8 @@ describe('explainPhysics3DStep', () => {
 
   it('names a joint carrying a non-finite field', () => {
     const world = createTestWorld();
-    const joint = addPhysics3DJoint(world, createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 }));
+    const joint = createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 });
+    addPhysics3DJoint(world, joint);
     joint.localAnchorAX = Number.POSITIVE_INFINITY;
 
     expect(explainPhysics3DStep(world, 1 / 60).jointStateValid).toBe(false);

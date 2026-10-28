@@ -1374,6 +1374,10 @@ let physics2DContactIntakeGuard: Physics2DContactIntakeGuard | null = null;
 let physics2DJointResolutionGuard: Physics2DJointResolutionGuard | null = null;
 let physics2DStepGuard: Physics2DStepGuard | null = null;
 const physics2DStepScratchPool: Physics2DStepScratch[] = [createPhysics2DStepScratch()];
-const defaultCollisionFilter = { categoryBits: 1, maskBits: 0xffffffff, groupIndex: 0 };
+const defaultCollisionFilter = {
+  categoryBits: 1,
+  maskBits: 0xffffffff,
+  groupIndex: 0,
+};
 const CCD_ROTATION_INCREMENT = Math.PI / 90;
 const CCD_ROTATION_BISECTION_ITERATIONS = 12;

@@ -42,7 +42,8 @@ const STONE = { density: 1, friction: 0.3, restitution: 0 };
 function box(world: ReturnType<typeof createPhysics2DWorld>, type: 'dynamic' | 'static', x: number, y: number) {
   const body = createRigidBody2D(type, x, y);
   body.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 }, STONE));
-  return addPhysics2DBody(world, body);
+  addPhysics2DBody(world, body);
+  return body;
 }
 
 function baseJoint(kind: string, bodyA: number, bodyB: number) {
@@ -251,7 +252,11 @@ describe('joint warm starting', () => {
     };
     addPhysics2DJoint(world, joint);
     run(world, 120);
-    const settled = { angular: joint.impulse2, x: joint.impulse0, y: joint.impulse1 };
+    const settled = {
+      angular: joint.impulse2,
+      x: joint.impulse0,
+      y: joint.impulse1,
+    };
     expect(Math.abs(settled.y)).toBeGreaterThan(0.001);
     stepPhysics2D(world, 1 / 60);
     expect(joint.impulse0).toBeCloseTo(settled.x, 4);
@@ -427,7 +432,10 @@ describe('physics2DDistanceJointSolver', () => {
   // A hanging spring whose only dynamic body's mass is set by `density`. Everything else — the authored
   // frequency, the damping ratio, the stretch it starts from — is held identical between instances, so
   // any difference in how it moves is a difference the mass caused.
-  function springWorld(density: number): { world: Physics2DWorld; bob: ReturnType<typeof box> } {
+  function springWorld(density: number): {
+    world: Physics2DWorld;
+    bob: ReturnType<typeof box>;
+  } {
     const material = { density, friction: 0, restitution: 0 };
     const world = createPhysics2DWorld(0, 0);
     registerPhysics2DJointSolver(world, Physics2DDistanceJointKind, physics2DDistanceJointSolver);
@@ -1099,7 +1107,11 @@ describe('physics2DPrismaticJointSolver', () => {
     const slider = box(world, 'dynamic', 0, 0);
     addPhysics2DJoint(
       world,
-      prismaticJoint(rail.index, slider.index, { enableMotor: true, maxMotorForce: 1000, motorSpeed: 2 }),
+      prismaticJoint(rail.index, slider.index, {
+        enableMotor: true,
+        maxMotorForce: 1000,
+        motorSpeed: 2,
+      }),
     );
 
     run(world, 30);
@@ -1116,7 +1128,11 @@ describe('physics2DPrismaticJointSolver', () => {
     const maxMotorForce = 1;
     addPhysics2DJoint(
       world,
-      prismaticJoint(rail.index, slider.index, { enableMotor: true, maxMotorForce, motorSpeed: 100 }),
+      prismaticJoint(rail.index, slider.index, {
+        enableMotor: true,
+        maxMotorForce,
+        motorSpeed: 100,
+      }),
     );
 
     const dt = 0.01;
@@ -1407,7 +1423,11 @@ describe('physics2DRevoluteJointSolver motor and limits', () => {
     const { anchor, arm } = hinged(world);
     addPhysics2DJoint(
       world,
-      revoluteJoint(anchor.index, arm.index, { enableMotor: true, maxMotorTorque: 100, motorSpeed: 2 }),
+      revoluteJoint(anchor.index, arm.index, {
+        enableMotor: true,
+        maxMotorTorque: 100,
+        motorSpeed: 2,
+      }),
     );
     run(world, 30);
     expect(arm.angularVelocity).toBeCloseTo(2, 6);
@@ -1421,7 +1441,11 @@ describe('physics2DRevoluteJointSolver motor and limits', () => {
     const { anchor, arm } = hinged(world);
     addPhysics2DJoint(
       world,
-      revoluteJoint(anchor.index, arm.index, { enableMotor: true, maxMotorTorque: 100, motorSpeed: -2 }),
+      revoluteJoint(anchor.index, arm.index, {
+        enableMotor: true,
+        maxMotorTorque: 100,
+        motorSpeed: -2,
+      }),
     );
     run(world, 30);
     expect(arm.angularVelocity).toBeCloseTo(-2, 6);
@@ -1433,7 +1457,11 @@ describe('physics2DRevoluteJointSolver motor and limits', () => {
     const { anchor, arm } = hinged(world);
     addPhysics2DJoint(
       world,
-      revoluteJoint(anchor.index, arm.index, { enableMotor: false, maxMotorTorque: 100, motorSpeed: 2 }),
+      revoluteJoint(anchor.index, arm.index, {
+        enableMotor: false,
+        maxMotorTorque: 100,
+        motorSpeed: 2,
+      }),
     );
     run(world, 30);
     expect(arm.angularVelocity).toBeCloseTo(0, 9);
@@ -1447,7 +1475,11 @@ describe('physics2DRevoluteJointSolver motor and limits', () => {
     const maxMotorTorque = 0.01;
     addPhysics2DJoint(
       world,
-      revoluteJoint(anchor.index, arm.index, { enableMotor: true, maxMotorTorque, motorSpeed: 100 }),
+      revoluteJoint(anchor.index, arm.index, {
+        enableMotor: true,
+        maxMotorTorque,
+        motorSpeed: 100,
+      }),
     );
     const dt = 1 / 60;
     let previous = arm.angularVelocity;
@@ -1471,7 +1503,11 @@ describe('physics2DRevoluteJointSolver motor and limits', () => {
     const { anchor, arm } = hinged(world);
     addPhysics2DJoint(
       world,
-      revoluteJoint(anchor.index, arm.index, { enableMotor: true, maxMotorTorque: 0.01, motorSpeed: 100 }),
+      revoluteJoint(anchor.index, arm.index, {
+        enableMotor: true,
+        maxMotorTorque: 0.01,
+        motorSpeed: 100,
+      }),
     );
 
     stepPhysics2D(world, 1 / 60);
@@ -1489,7 +1525,11 @@ describe('physics2DRevoluteJointSolver motor and limits', () => {
     const { anchor, arm } = hinged(world);
     addPhysics2DJoint(
       world,
-      revoluteJoint(anchor.index, arm.index, { enableMotor: true, maxMotorTorque: 0.01, motorSpeed: 100 }),
+      revoluteJoint(anchor.index, arm.index, {
+        enableMotor: true,
+        maxMotorTorque: 0.01,
+        motorSpeed: 100,
+      }),
     );
 
     stepPhysics2D(world, 1 / 60);
@@ -1578,7 +1618,11 @@ describe('physics2DRevoluteJointSolver motor and limits', () => {
     arm.angle = 1;
     addPhysics2DJoint(
       world,
-      revoluteJoint(anchor.index, arm.index, { enableLimit: true, lowerAngle: -0.5, upperAngle: 0.5 }),
+      revoluteJoint(anchor.index, arm.index, {
+        enableLimit: true,
+        lowerAngle: -0.5,
+        upperAngle: 0.5,
+      }),
     );
 
     for (let i = 0; i < 30; i++) stepPhysics2D(world, 1 / 60);
@@ -1594,7 +1638,11 @@ describe('physics2DRevoluteJointSolver motor and limits', () => {
     arm.angle = -1;
     addPhysics2DJoint(
       world,
-      revoluteJoint(anchor.index, arm.index, { enableLimit: true, lowerAngle: -0.5, upperAngle: 0.5 }),
+      revoluteJoint(anchor.index, arm.index, {
+        enableLimit: true,
+        lowerAngle: -0.5,
+        upperAngle: 0.5,
+      }),
     );
 
     for (let i = 0; i < 30; i++) stepPhysics2D(world, 1 / 60);
@@ -1803,7 +1851,11 @@ describe('physics2DWheelJointSolver', () => {
     const wheel = box(world, 'dynamic', 0, 0);
     addPhysics2DJoint(
       world,
-      wheelJoint(chassis.index, wheel.index, { enableMotor: true, maxMotorTorque: 100, motorSpeed: 3 }),
+      wheelJoint(chassis.index, wheel.index, {
+        enableMotor: true,
+        maxMotorTorque: 100,
+        motorSpeed: 3,
+      }),
     );
 
     run(world, 30);
@@ -1819,7 +1871,11 @@ describe('physics2DWheelJointSolver', () => {
     const maxMotorTorque = 0.5;
     addPhysics2DJoint(
       world,
-      wheelJoint(chassis.index, wheel.index, { enableMotor: true, maxMotorTorque, motorSpeed: 100 }),
+      wheelJoint(chassis.index, wheel.index, {
+        enableMotor: true,
+        maxMotorTorque,
+        motorSpeed: 100,
+      }),
     );
 
     const dt = 0.01;

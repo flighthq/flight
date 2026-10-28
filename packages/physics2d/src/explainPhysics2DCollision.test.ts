@@ -27,7 +27,10 @@ describe('explainPhysics2DCollision', () => {
       { kind: 'capsule', x0: 0, y0: 0, x1: 1, y1: 0, radius: 0.5 },
       { kind: 'polygon', points: [0, 0, 1, 0, 1, 1] },
     );
-    expect(explainPhysics2DCollision(world)).toEqual({ status: 'ready', unsupportedKinds: [] });
+    expect(explainPhysics2DCollision(world)).toEqual({
+      status: 'ready',
+      unsupportedKinds: [],
+    });
   });
 
   it('reports ready for an empty world, which has nothing that can fail', () => {
@@ -38,8 +41,18 @@ describe('explainPhysics2DCollision', () => {
     // This test previously asserted the opposite, and the change is the point: the capsule was named
     // here while its pair functions were missing, and it stopped being named when they landed. That is
     // the seam doing its job in both directions rather than a list someone has to remember to edit.
-    const world = worldWith({ kind: 'capsule', x0: 0, y0: 0, x1: 1, y1: 0, radius: 0.5 });
-    expect(explainPhysics2DCollision(world)).toEqual({ status: 'ready', unsupportedKinds: [] });
+    const world = worldWith({
+      kind: 'capsule',
+      x0: 0,
+      y0: 0,
+      x1: 1,
+      y1: 0,
+      radius: 0.5,
+    });
+    expect(explainPhysics2DCollision(world)).toEqual({
+      status: 'ready',
+      unsupportedKinds: [],
+    });
   });
 
   it('names the area-less kinds too, since they are equally invisible to the solver', () => {

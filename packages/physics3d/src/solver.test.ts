@@ -370,7 +370,15 @@ function createOverlappingBoxWorld(depth: number): Physics3DWorld {
     addPhysics3DCollider(
       world,
       body,
-      createPhysics3DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: -0.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: 0.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      }),
     );
   }
   upper.y = 1 - depth;

@@ -39,7 +39,8 @@ function entityJoint(fields: Omit<Physics2DJoint, keyof Entity>): Physics2DJoint
 function ground(world: Physics2DWorld): RigidBody2D {
   const body = createRigidBody2D('static', 0, 0);
   body.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -50, minY: -1, maxX: 50, maxY: 0 }, STONE));
-  return addPhysics2DBody(world, body);
+  addPhysics2DBody(world, body);
+  return body;
 }
 
 function box(world: Physics2DWorld, x: number, y: number, half = 0.5): RigidBody2D {
@@ -47,7 +48,8 @@ function box(world: Physics2DWorld, x: number, y: number, half = 0.5): RigidBody
   body.colliders.push(
     createPhysics2DCollider({ kind: 'aabb', minX: -half, minY: -half, maxX: half, maxY: half }, STONE),
   );
-  return addPhysics2DBody(world, body);
+  addPhysics2DBody(world, body);
+  return body;
 }
 
 // A hash of every body's full state, which is what a determinism claim has to be made against — comparing
@@ -100,11 +102,17 @@ describe('a body the step declines leaves the broadphase', () => {
   function dynamicBox(world: Physics2DWorld, x: number): RigidBody2D {
     const body = createRigidBody2D('dynamic', x, 0);
     body.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 }, STONE));
-    return addPhysics2DBody(world, body);
+    addPhysics2DBody(world, body);
+    return body;
   }
 
   function widenPastLimit(body: RigidBody2D): void {
-    const local = body.colliders[0].local as { maxX: number; maxY: number; minX: number; minY: number };
+    const local = body.colliders[0].local as {
+      maxX: number;
+      maxY: number;
+      minX: number;
+      minY: number;
+    };
     local.minX = -1e8;
     local.minY = -1e8;
     local.maxX = 1e8;
@@ -188,7 +196,12 @@ describe('a body the step declines leaves the broadphase', () => {
     stepPhysics2D(world, 1 / 60);
     expect(world.contacts).toHaveLength(0);
 
-    const local = diverging.colliders[0].local as { maxX: number; maxY: number; minX: number; minY: number };
+    const local = diverging.colliders[0].local as {
+      maxX: number;
+      maxY: number;
+      minX: number;
+      minY: number;
+    };
     local.minX = -0.5;
     local.minY = -0.5;
     local.maxX = 0.5;
@@ -208,7 +221,8 @@ describe('bullet continuous collision detection', () => {
         sensor,
       ),
     );
-    return addPhysics2DBody(world, body);
+    addPhysics2DBody(world, body);
+    return body;
   }
 
   function projectile(world: Physics2DWorld, speed: number, restitution = 0, bullet = true): RigidBody2D {
@@ -218,7 +232,8 @@ describe('bullet continuous collision detection', () => {
     body.colliders.push(
       createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.5 }, { density: 1, friction: 0, restitution }),
     );
-    return addPhysics2DBody(world, body);
+    addPhysics2DBody(world, body);
+    return body;
   }
 
   it('stops a bullet at a thin wall that the discrete path tunnels through', () => {
@@ -397,7 +412,8 @@ describe('centre of mass integration', () => {
   function offCentreBody(world: Physics2DWorld, offsetX: number, offsetY: number): RigidBody2D {
     const body = createRigidBody2D('dynamic', 0, 0);
     body.colliders.push(createPhysics2DCollider({ kind: 'circle', x: offsetX, y: offsetY, radius: 0.25 }, STONE));
-    return addPhysics2DBody(world, body);
+    addPhysics2DBody(world, body);
+    return body;
   }
 
   function centreOfMassX(body: Readonly<RigidBody2D>): number {
@@ -492,7 +508,13 @@ describe('centre of mass integration', () => {
     const body = createRigidBody2D('dynamic', 0, 0.5);
     body.angle = 0.3;
     body.colliders.push(
-      createPhysics2DCollider({ kind: 'polygon', points: [-0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5] }, slick),
+      createPhysics2DCollider(
+        {
+          kind: 'polygon',
+          points: [-0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5],
+        },
+        slick,
+      ),
     );
     body.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: 3, minY: 3, maxX: 4, maxY: 4 }, slick));
     addPhysics2DBody(world, body);
@@ -545,7 +567,8 @@ describe('collision filtering', () => {
         groupIndex,
       }),
     );
-    return addPhysics2DBody(world, body);
+    addPhysics2DBody(world, body);
+    return body;
   }
 
   it('requires each collider mask to include the other collider category', () => {
@@ -685,7 +708,7 @@ describe('contact solve hooks', () => {
     expect(world.bodies).toHaveLength(2);
 
     world.contactHooks.preSolve = null;
-    expect(addPhysics2DBody(world, pending)).toBe(pending);
+    addPhysics2DBody(world, pending);
   });
 
   it('rejects body actions from hooks instead of applying them at a phase-dependent time', () => {
@@ -777,7 +800,8 @@ describe('sensor reporting between immovable bodies', () => {
     body.colliders.push(
       createPhysics2DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 }, STONE, sensor),
     );
-    return addPhysics2DBody(world, body);
+    addPhysics2DBody(world, body);
+    return body;
   }
 
   it('reports a static sensor overlapping a static collider', () => {
@@ -813,7 +837,8 @@ describe('sensor reporting between immovable bodies', () => {
     body.colliders.push(
       createPhysics2DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 }, STONE, false),
     );
-    return addPhysics2DBody(world, body);
+    addPhysics2DBody(world, body);
+    return body;
   }
 
   it('reports nothing when the overlapping colliders are both solid and both bodies are immovable', () => {
@@ -1390,7 +1415,10 @@ describe('stepPhysics2D contact cache identity', () => {
       const point = contact.points[i];
       point.normalImpulse = i + 1;
       point.tangentImpulse = -(i + 1);
-      expected.set(point.featureId, { normal: point.normalImpulse, tangent: point.tangentImpulse });
+      expected.set(point.featureId, {
+        normal: point.normalImpulse,
+        tangent: point.tangentImpulse,
+      });
     }
     contact.points.reverse();
 
@@ -1453,7 +1481,11 @@ describe('stepPhysics2D contact events', () => {
     stepPhysics2D(world, 1 / 60);
 
     expect(world.events.began).toHaveLength(1);
-    expect(world.contacts[0]).toMatchObject({ pointCount: 0, sensor: true, touching: true });
+    expect(world.contacts[0]).toMatchObject({
+      pointCount: 0,
+      sensor: true,
+      touching: true,
+    });
 
     target.x = 2;
     stepPhysics2D(world, 1 / 60);
@@ -1474,7 +1506,11 @@ describe('stepPhysics2D contact events', () => {
     stepPhysics2D(world, 1 / 60);
 
     expect(world.events.began).toHaveLength(1);
-    expect(world.contacts[0]).toMatchObject({ pointCount: 0, sensor: true, touching: true });
+    expect(world.contacts[0]).toMatchObject({
+      pointCount: 0,
+      sensor: true,
+      touching: true,
+    });
   });
 });
 
@@ -1734,7 +1770,8 @@ describe('stepPhysics2D with joints', () => {
     anchorBody.colliders.push(
       createPhysics2DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 }, STONE),
     );
-    const anchor = addPhysics2DBody(world, anchorBody);
+    const anchor = anchorBody;
+    addPhysics2DBody(world, anchor);
     const left = box(world, -1, 2);
     const right = box(world, 1, 2);
     for (const bob of [left, right]) {
@@ -1780,7 +1817,7 @@ describe('stepPhysics2D with joints', () => {
       solve: () => {},
       warmStart: () => {},
     });
-    const added = addPhysics2DJoint(world, {
+    const added = {
       kind: 'Scaled',
       bodyA: first.index,
       bodyB: second.index,
@@ -1799,7 +1836,8 @@ describe('stepPhysics2D with joints', () => {
       rAY: 0,
       rBX: 0,
       rBY: 0,
-    } as Physics2DJoint & { motorImpulse: number }) as Physics2DJoint & { motorImpulse: number };
+    } as Physics2DJoint & { motorImpulse: number };
+    addPhysics2DJoint(world, added);
     stepPhysics2D(world, 1 / 60);
     added.impulse0 = 2;
     added.impulse1 = 3;
@@ -1873,7 +1911,11 @@ describe('stepPhysics2D with joints', () => {
 
   it('does not suppress collision through a one-body joint placeholder', () => {
     const world = createPhysics2DWorld(0, 0);
-    registerPhysics2DJointSolver(world, 'OneBody', { prepare: () => {}, solve: () => {}, usesBodyA: false });
+    registerPhysics2DJointSolver(world, 'OneBody', {
+      prepare: () => {},
+      solve: () => {},
+      usesBodyA: false,
+    });
     const placeholder = box(world, 0, 0);
     const constrained = box(world, 0.2, 0);
     addPhysics2DJoint(
@@ -1960,7 +2002,8 @@ describe('stepPhysics2D with sleeping', () => {
     const world = createPhysics2DWorld();
     registerPhysics2DJointSolver(world, 'Distance', physics2DDistanceJointSolver);
     const anchorBody = createRigidBody2D('static', 0, 4);
-    const anchor = addPhysics2DBody(world, anchorBody);
+    const anchor = anchorBody;
+    addPhysics2DBody(world, anchor);
     const bob = box(world, 0, 2);
     addPhysics2DJoint(world, {
       kind: 'Distance',

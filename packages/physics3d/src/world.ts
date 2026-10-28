@@ -86,17 +86,12 @@ export function addPhysics3DBody(world: Physics3DWorld, body: RigidBody3D): numb
   return body.index;
 }
 
-// Attaches a collider to a body and rebuilds the mass properties that follow from it. Returns the
-// collider.
+// Attaches a collider to a body and rebuilds the mass properties that follow from it.
 //
 // Mass, centre of mass, and inertia are all derived from collider geometry, so adding one changes what
 // the body weighs and where it balances. Republishing the broadphase bounds in the same breath is what
 // keeps a query made between two steps from missing geometry that already exists.
-export function addPhysics3DCollider(
-  world: Physics3DWorld,
-  body: RigidBody3D,
-  collider: Physics3DCollider,
-): Physics3DCollider {
+export function addPhysics3DCollider(world: Physics3DWorld, body: RigidBody3D, collider: Physics3DCollider): void {
   assertPhysics3DWorldNotStepping(world);
   const bodyOwner = physics3DBodyOwners.get(body);
   if (bodyOwner !== undefined && bodyOwner !== world) {
@@ -124,7 +119,6 @@ export function addPhysics3DCollider(
     wakePhysics3DBody(body);
     synchronizePhysics3DBroadphase(world);
   }
-  return collider;
 }
 
 // Applies an instantaneous angular momentum change at the centre of mass.
@@ -790,7 +784,11 @@ export const Physics3DWorldVersion = 4;
 function cloneCollisionColliderShape3D(shape: Readonly<CollisionColliderShape3D>): CollisionColliderShape3D {
   if (shape.kind === 'convex') return { kind: 'convex', points: shape.points.slice() };
   if (shape.kind === 'triangle-mesh') {
-    return { ...shape, points: shape.points.slice(), indices: shape.indices.slice() };
+    return {
+      ...shape,
+      points: shape.points.slice(),
+      indices: shape.indices.slice(),
+    };
   }
   if (shape.kind === 'heightfield') return { ...shape, heights: shape.heights.slice() };
   return { ...shape };

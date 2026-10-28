@@ -40,7 +40,10 @@ describe('explainPhysics3DCollision', () => {
   });
 
   it('reports ready for an empty world, which cannot fail to detect anything', () => {
-    expect(explainPhysics3DCollision(createPhysics3DWorld())).toEqual({ unsupportedKinds: [], status: 'ready' });
+    expect(explainPhysics3DCollision(createPhysics3DWorld())).toEqual({
+      unsupportedKinds: [],
+      status: 'ready',
+    });
   });
 
   it('deduplicates and sorts, so the value is stable however the bodies were inserted', () => {
@@ -51,7 +54,16 @@ describe('explainPhysics3DCollision', () => {
     addPhysics3DCollider(
       world,
       capsule,
-      createPhysics3DCollider({ kind: 'capsule', x0: 0, y0: 0, z0: 0, x1: 0, y1: 1, z1: 0, radius: 1 }),
+      createPhysics3DCollider({
+        kind: 'capsule',
+        x0: 0,
+        y0: 0,
+        z0: 0,
+        x1: 0,
+        y1: 1,
+        z1: 0,
+        radius: 1,
+      }),
     );
     addSphereBody(world, 2);
 
@@ -65,7 +77,15 @@ describe('explainPhysics3DCollision', () => {
     addPhysics3DCollider(
       world,
       body,
-      createPhysics3DCollider({ kind: 'aabb', minX: -1, minY: -1, minZ: -1, maxX: 1, maxY: 1, maxZ: 1 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: -1,
+        minY: -1,
+        minZ: -1,
+        maxX: 1,
+        maxY: 1,
+        maxZ: 1,
+      }),
     );
 
     expect(explainPhysics3DCollision(world).unsupportedKinds).toEqual(['box']);
@@ -78,6 +98,9 @@ describe('explainPhysics3DCollision', () => {
 
     registerBuiltInCollisionSupports3D();
 
-    expect(explainPhysics3DCollision(world)).toEqual({ unsupportedKinds: [], status: 'ready' });
+    expect(explainPhysics3DCollision(world)).toEqual({
+      unsupportedKinds: [],
+      status: 'ready',
+    });
   });
 });

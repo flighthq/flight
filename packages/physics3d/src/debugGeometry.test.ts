@@ -57,7 +57,12 @@ function liveSpheres(out: ReturnType<typeof createPhysics3DDebugGeometry>) {
 
 describe('createPhysics3DDebugGeometry', () => {
   it('starts empty', () => {
-    expect(createPhysics3DDebugGeometry()).toMatchObject({ lines: [], lineCount: 0, spheres: [], sphereCount: 0 });
+    expect(createPhysics3DDebugGeometry()).toMatchObject({
+      lines: [],
+      lineCount: 0,
+      spheres: [],
+      sphereCount: 0,
+    });
   });
 });
 
@@ -77,7 +82,10 @@ describe('writePhysics3DDebugGeometry', () => {
     addPhysics3DBody(world, heightfield);
     const out = createPhysics3DDebugGeometry();
 
-    writePhysics3DDebugGeometry(world, out, { drawColliders: true, drawCentersOfMass: false });
+    writePhysics3DDebugGeometry(world, out, {
+      drawColliders: true,
+      drawCentersOfMass: false,
+    });
 
     expect(liveLines(out).filter((line) => line.feature === 'collider')).toHaveLength(8);
   });
@@ -87,7 +95,10 @@ describe('writePhysics3DDebugGeometry', () => {
     addBody(world, unitBox);
     const out = createPhysics3DDebugGeometry();
 
-    writePhysics3DDebugGeometry(world, out, { drawColliders: true, drawCentersOfMass: false });
+    writePhysics3DDebugGeometry(world, out, {
+      drawColliders: true,
+      drawCentersOfMass: false,
+    });
 
     expect(liveLines(out).filter((line) => line.feature === 'collider')).toHaveLength(12);
   });
@@ -98,7 +109,10 @@ describe('writePhysics3DDebugGeometry', () => {
     addBody(world, unitBox);
     const out = createPhysics3DDebugGeometry();
 
-    writePhysics3DDebugGeometry(world, out, { drawCentersOfMass: false, drawContacts: false });
+    writePhysics3DDebugGeometry(world, out, {
+      drawCentersOfMass: false,
+      drawContacts: false,
+    });
 
     for (const line of liveLines(out)) {
       expect(Math.hypot(line.x1 - line.x0, line.y1 - line.y0, line.z1 - line.z0)).toBeCloseTo(1, 9);
@@ -147,7 +161,16 @@ describe('writePhysics3DDebugGeometry', () => {
 
   it('draws a capsule as two caps joined by its axis', () => {
     const world = createPhysics3DWorld();
-    addBody(world, { kind: 'capsule', x0: -2, y0: 0, z0: 0, x1: 2, y1: 0, z1: 0, radius: 0.5 });
+    addBody(world, {
+      kind: 'capsule',
+      x0: -2,
+      y0: 0,
+      z0: 0,
+      x1: 2,
+      y1: 0,
+      z1: 0,
+      radius: 0.5,
+    });
     const out = createPhysics3DDebugGeometry();
 
     writePhysics3DDebugGeometry(world, out, { drawCentersOfMass: false });
@@ -160,7 +183,10 @@ describe('writePhysics3DDebugGeometry', () => {
 
   it('draws a hull as the wireframe of its own triangulation', () => {
     const world = createPhysics3DWorld();
-    addBody(world, { kind: 'convex', points: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1] });
+    addBody(world, {
+      kind: 'convex',
+      points: [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+    });
     const out = createPhysics3DDebugGeometry();
 
     writePhysics3DDebugGeometry(world, out, { drawCentersOfMass: false });
@@ -173,7 +199,10 @@ describe('writePhysics3DDebugGeometry', () => {
   it('falls back to vertices for a DEGENERATE hull, which has no surface to wire', () => {
     // Coplanar: there is no solid, so any edge drawn would bound a face the simulation does not have.
     const world = createPhysics3DWorld();
-    addBody(world, { kind: 'convex', points: [0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0] });
+    addBody(world, {
+      kind: 'convex',
+      points: [0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0],
+    });
     const out = createPhysics3DDebugGeometry();
 
     writePhysics3DDebugGeometry(world, out, { drawCentersOfMass: false });
@@ -190,7 +219,15 @@ describe('writePhysics3DDebugGeometry', () => {
     addPhysics3DCollider(
       world,
       floor,
-      createPhysics3DCollider({ kind: 'aabb', minX: -10, minY: -1, minZ: -10, maxX: 10, maxY: 1, maxZ: 10 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: -10,
+        minY: -1,
+        minZ: -10,
+        maxX: 10,
+        maxY: 1,
+        maxZ: 10,
+      }),
     );
     addBody(world, unitBox, -0.05);
     buildPhysics3DContacts(world);
@@ -216,10 +253,19 @@ describe('writePhysics3DDebugGeometry', () => {
     const first = addBody(world, unitBox);
     const second = addBody(world, unitBox);
     second.x = 5;
-    addPhysics3DJoint(world, createPhysics3DBallAndSocketJoint({ bodyA: first.index, bodyB: second.index }));
+    addPhysics3DJoint(
+      world,
+      createPhysics3DBallAndSocketJoint({
+        bodyA: first.index,
+        bodyB: second.index,
+      }),
+    );
     const out = createPhysics3DDebugGeometry();
 
-    writePhysics3DDebugGeometry(world, out, { drawColliders: false, drawCentersOfMass: false });
+    writePhysics3DDebugGeometry(world, out, {
+      drawColliders: false,
+      drawCentersOfMass: false,
+    });
 
     const joints = liveLines(out).filter((line) => line.feature === 'joint');
     expect(joints).toHaveLength(1);
@@ -236,7 +282,15 @@ describe('writePhysics3DDebugGeometry', () => {
     addPhysics3DCollider(
       world,
       body,
-      createPhysics3DCollider({ kind: 'aabb', minX: 1.5, minY: -0.5, minZ: -0.5, maxX: 2.5, maxY: 0.5, maxZ: 0.5 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: 1.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: 2.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      }),
     );
     const out = createPhysics3DDebugGeometry();
 

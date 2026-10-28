@@ -32,7 +32,8 @@ function captureLog(run: () => void): readonly LogEntry[] {
 function ball(world: Physics2DWorld, type: RigidBody2D['type'], x: number, y: number): RigidBody2D {
   const body = createRigidBody2D(type, x, y);
   body.colliders.push(createPhysics2DCollider({ kind: 'circle', x: 0, y: 0, radius: 0.5 }, STONE));
-  return addPhysics2DBody(world, body);
+  addPhysics2DBody(world, body);
+  return body;
 }
 
 // A world with one distance joint and NO solver registered for it — the exact shape of the mistake the
@@ -114,7 +115,11 @@ describe('enablePhysics2DGuards', () => {
     const entries = captureLog(() => stepPhysics2D(world, 1 / 60));
 
     expect(entries).toHaveLength(1);
-    const data = entries[0].data as { kinds: string[]; message: string; status: string };
+    const data = entries[0].data as {
+      kinds: string[];
+      message: string;
+      status: string;
+    };
     expect(data.status).toBe('missing-contact-support');
     expect(data.kinds).toEqual(['segment']);
     expect(data.message).toContain('no area');

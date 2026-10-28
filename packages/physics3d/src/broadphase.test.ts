@@ -23,7 +23,15 @@ afterEach(() => {
 });
 
 function unitBox(): CollisionBuiltInShape3D {
-  return { kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 };
+  return {
+    kind: 'aabb',
+    minX: -0.5,
+    minY: -0.5,
+    minZ: -0.5,
+    maxX: 0.5,
+    maxY: 0.5,
+    maxZ: 0.5,
+  };
 }
 
 function addBoxBody(world: Physics3DWorld, x: number, y: number, z: number): RigidBody3D {
@@ -139,7 +147,15 @@ describe('synchronizePhysics3DBroadphase', () => {
     addPhysics3DCollider(
       world,
       huge,
-      createPhysics3DCollider({ kind: 'aabb', minX: -1e9, minY: -1, minZ: -1, maxX: 1e9, maxY: 1, maxZ: 1 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: -1e9,
+        minY: -1,
+        minZ: -1,
+        maxX: 1e9,
+        maxY: 1,
+        maxZ: 1,
+      }),
     );
 
     synchronizePhysics3DBroadphase(world);
@@ -165,7 +181,15 @@ describe('synchronizePhysics3DBroadphase', () => {
     addPhysics3DCollider(
       world,
       compound,
-      createPhysics3DCollider({ kind: 'aabb', minX: 9.5, minY: -0.5, minZ: -0.5, maxX: 10.5, maxY: 0.5, maxZ: 0.5 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: 9.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: 10.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      }),
     );
     // Sits beside the FAR collider, which is only a candidate if the body's bounds covered both.
     addBoxBody(world, 10, 0, 0);
@@ -238,7 +262,15 @@ describe('synchronizePhysics3DSweptBroadphase', () => {
     addPhysics3DCollider(
       world,
       spinner,
-      createPhysics3DCollider({ kind: 'aabb', minX: -0.25, minY: -0.25, minZ: -0.25, maxX: 4, maxY: 0.25, maxZ: 0.25 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: -0.25,
+        minY: -0.25,
+        minZ: -0.25,
+        maxX: 4,
+        maxY: 0.25,
+        maxZ: 0.25,
+      }),
     );
     spinner.angularVelocityY = 30;
     addBoxBody(world, 0, 0, 3.5);

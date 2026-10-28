@@ -120,7 +120,13 @@ describe('enablePhysics3DGuards', () => {
   it('names invalid collider state before contact intake can consume it', () => {
     enablePhysics3DGuards();
     const world = createTestWorld();
-    const collider = createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 1 });
+    const collider = createPhysics3DCollider({
+      kind: 'sphere',
+      x: 0,
+      y: 0,
+      z: 0,
+      radius: 1,
+    });
     addPhysics3DCollider(world, world.bodies[0], collider);
     collider.material.restitution = Number.NaN;
 
@@ -137,7 +143,8 @@ describe('enablePhysics3DGuards', () => {
     unregistered.kind = 'guard.unregistered';
     addPhysics3DJoint(world, unregistered);
     registerBuiltInPhysics3DJointSolvers(world);
-    const invalidBodies = addPhysics3DJoint(world, createPhysics3DHingeJoint({ bodyA: 0, bodyB: 1 }));
+    const invalidBodies = createPhysics3DHingeJoint({ bodyA: 0, bodyB: 1 });
+    addPhysics3DJoint(world, invalidBodies);
     invalidBodies.bodyB = 99;
 
     const entries = captureLog(() => {
@@ -158,7 +165,15 @@ describe('enablePhysics3DGuards', () => {
 
     const entries = captureLog(() => {
       const ordinary = createRigidBody3D('dynamic');
-      ordinary.colliders.push(createPhysics3DCollider({ kind: 'sphere', x: 0, y: 0, z: 0, radius: 0.5 }));
+      ordinary.colliders.push(
+        createPhysics3DCollider({
+          kind: 'sphere',
+          x: 0,
+          y: 0,
+          z: 0,
+          radius: 0.5,
+        }),
+      );
       addPhysics3DBody(world, ordinary);
       addPhysics3DBody(world, createOverflowBody());
       addPhysics3DBody(world, createOverflowBody());
@@ -200,7 +215,15 @@ function createTestWorld(): Physics3DWorld {
 function createOverflowBody() {
   const body = createRigidBody3D('static');
   body.colliders.push(
-    createPhysics3DCollider({ kind: 'aabb', minX: -16, minY: -16, minZ: -16, maxX: 16, maxY: 16, maxZ: 16 }),
+    createPhysics3DCollider({
+      kind: 'aabb',
+      minX: -16,
+      minY: -16,
+      minZ: -16,
+      maxX: 16,
+      maxY: 16,
+      maxZ: 16,
+    }),
   );
   return body;
 }

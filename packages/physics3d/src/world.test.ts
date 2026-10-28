@@ -151,19 +151,13 @@ describe('addPhysics3DCollider', () => {
     const body = addColliderTestBody(world);
     expect(body.mass).toBe(0);
 
-    const collider = addPhysics3DCollider(world, body, createPhysics3DCollider(colliderUnitBox()));
+    const collider = createPhysics3DCollider(colliderUnitBox());
+    addPhysics3DCollider(world, body, collider);
 
     expect(body.colliders).toEqual([collider]);
     // A unit box of density 1 has volume 1.
     expect(body.mass).toBeCloseTo(1, 12);
     expect(body.inverseMass).toBeCloseTo(1, 12);
-  });
-
-  it('returns the collider it was given', () => {
-    const world = createPhysics3DWorld();
-    const body = addColliderTestBody(world);
-    const collider = createPhysics3DCollider(colliderUnitBox());
-    expect(addPhysics3DCollider(world, body, collider)).toBe(collider);
   });
 
   it('moves the centre of mass to an offset collider', () => {
@@ -173,7 +167,15 @@ describe('addPhysics3DCollider', () => {
     addPhysics3DCollider(
       world,
       body,
-      createPhysics3DCollider({ kind: 'aabb', minX: 1.5, minY: -0.5, minZ: -0.5, maxX: 2.5, maxY: 0.5, maxZ: 0.5 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: 1.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: 2.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      }),
     );
 
     expect(body.centerX).toBeCloseTo(2, 12);
@@ -186,12 +188,28 @@ describe('addPhysics3DCollider', () => {
     addPhysics3DCollider(
       world,
       body,
-      createPhysics3DCollider({ kind: 'aabb', minX: -2.5, minY: -0.5, minZ: -0.5, maxX: -1.5, maxY: 0.5, maxZ: 0.5 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: -2.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: -1.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      }),
     );
     addPhysics3DCollider(
       world,
       body,
-      createPhysics3DCollider({ kind: 'aabb', minX: 1.5, minY: -0.5, minZ: -0.5, maxX: 2.5, maxY: 0.5, maxZ: 0.5 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: 1.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: 2.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      }),
     );
 
     expect(body.mass).toBeCloseTo(2, 12);
@@ -403,8 +421,16 @@ describe('applyPhysics3DTorque', () => {
 describe('createPhysics3DCollider', () => {
   it('defaults to a solid, mildly frictional, non-bouncing surface that collides with everything', () => {
     const collider = createPhysics3DCollider(colliderUnitBox());
-    expect(collider.material).toEqual({ density: 1, friction: 0.2, restitution: 0 });
-    expect(collider.filter).toEqual({ categoryBits: 1, maskBits: 0xffff, groupIndex: 0 });
+    expect(collider.material).toEqual({
+      density: 1,
+      friction: 0.2,
+      restitution: 0,
+    });
+    expect(collider.filter).toEqual({
+      categoryBits: 1,
+      maskBits: 0xffff,
+      groupIndex: 0,
+    });
     expect(collider.sensor).toBe(false);
   });
 
@@ -430,7 +456,10 @@ describe('createPhysics3DCollider', () => {
   });
 
   it('clones hull points rather than aliasing the array', () => {
-    const local: CollisionBuiltInShape3D = { kind: 'convex', points: [0, 0, 0, 1, 1, 1] };
+    const local: CollisionBuiltInShape3D = {
+      kind: 'convex',
+      points: [0, 0, 0, 1, 1, 1],
+    };
     const collider = createPhysics3DCollider(local);
     expect(collider.local.kind === 'convex' && collider.local.points).not.toBe(local.points);
   });
@@ -528,8 +557,13 @@ describe('hydratePhysics3DWorld', () => {
         constraintByPair?: Map<number, unknown>;
       };
     };
-    const legacyBody = first as unknown as { colliders?: RigidBody3D['colliders'] };
-    const legacyContact = world.contacts[0] as unknown as { colliderA?: number; colliderB?: number };
+    const legacyBody = first as unknown as {
+      colliders?: RigidBody3D['colliders'];
+    };
+    const legacyContact = world.contacts[0] as unknown as {
+      colliderA?: number;
+      colliderB?: number;
+    };
     legacyWorld.version = 1;
     delete legacyWorld.index;
     delete legacyWorld.jointEvents;
@@ -589,7 +623,8 @@ describe('invalidatePhysics3DCollider', () => {
   it('rebuilds the mass properties after the local shape is edited in place', () => {
     const world = createPhysics3DWorld();
     const body = addColliderTestBody(world);
-    const collider = addPhysics3DCollider(world, body, createPhysics3DCollider(colliderUnitBox()));
+    const collider = createPhysics3DCollider(colliderUnitBox());
+    addPhysics3DCollider(world, body, collider);
     expect(body.mass).toBeCloseTo(1, 12);
 
     const local = collider.local;
@@ -606,7 +641,11 @@ describe('invalidatePhysics3DCollider', () => {
   it('resizes the world shape when the edit changed the hull point count', () => {
     const world = createPhysics3DWorld();
     const body = addColliderTestBody(world);
-    const collider = addPhysics3DCollider(world, body, createPhysics3DCollider({ kind: 'convex', points: [0, 0, 0] }));
+    const collider = createPhysics3DCollider({
+      kind: 'convex',
+      points: [0, 0, 0],
+    });
+    addPhysics3DCollider(world, body, collider);
 
     const local = collider.local;
     if (local.kind === 'convex') local.points.push(1, 1, 1);
@@ -627,7 +666,8 @@ describe('invalidatePhysics3DCollider', () => {
     const floor = addColliderTestBody(world, -1);
     addPhysics3DCollider(world, floor, createPhysics3DCollider(colliderUnitBox()));
     const box = addColliderTestBody(world, -0.25);
-    const collider = addPhysics3DCollider(world, box, createPhysics3DCollider(colliderUnitBox()));
+    const collider = createPhysics3DCollider(colliderUnitBox());
+    addPhysics3DCollider(world, box, collider);
     buildPhysics3DContacts(world);
     expect(world.contacts).toHaveLength(1);
 
@@ -678,10 +718,11 @@ describe('removePhysics3DBody', () => {
     const hanging = createRigidBody3D('dynamic');
     addPhysics3DBody(world, anchor);
     addPhysics3DBody(world, hanging);
-    const joint = addPhysics3DJoint(
-      world,
-      createPhysics3DBallAndSocketJoint({ bodyA: anchor.index, bodyB: hanging.index }),
-    );
+    const joint = createPhysics3DBallAndSocketJoint({
+      bodyA: anchor.index,
+      bodyB: hanging.index,
+    });
+    addPhysics3DJoint(world, joint);
 
     removePhysics3DBody(world, hanging);
 
@@ -698,7 +739,13 @@ describe('removePhysics3DBody', () => {
     const second = createRigidBody3D('dynamic');
     addPhysics3DBody(world, first);
     addPhysics3DBody(world, second);
-    addPhysics3DJoint(world, createPhysics3DBallAndSocketJoint({ bodyA: first.index, bodyB: second.index }));
+    addPhysics3DJoint(
+      world,
+      createPhysics3DBallAndSocketJoint({
+        bodyA: first.index,
+        bodyB: second.index,
+      }),
+    );
     expect(isPhysics3DPairJointSuppressed(world, first.index, second.index)).toBe(true);
 
     removePhysics3DBody(world, second);
@@ -731,7 +778,10 @@ describe('removePhysics3DBody', () => {
     const b = createRigidBody3D();
     addPhysics3DBody(world, a);
     addPhysics3DBody(world, b);
-    const joint = createPhysics3DBallAndSocketJoint({ bodyA: a.index, bodyB: b.index });
+    const joint = createPhysics3DBallAndSocketJoint({
+      bodyA: a.index,
+      bodyB: b.index,
+    });
     joint.kind = 'Physics3DBallJoint';
     world.joints.push(joint);
 
@@ -760,7 +810,8 @@ describe('removePhysics3DCollider', () => {
   it('detaches the collider and rederives the mass', () => {
     const world = createPhysics3DWorld();
     const body = addColliderTestBody(world);
-    const collider = addPhysics3DCollider(world, body, createPhysics3DCollider(colliderUnitBox()));
+    const collider = createPhysics3DCollider(colliderUnitBox());
+    addPhysics3DCollider(world, body, collider);
 
     expect(removePhysics3DCollider(world, body, collider)).toBe(true);
 
@@ -783,11 +834,20 @@ describe('removePhysics3DCollider', () => {
     const floor = addColliderTestBody(world, -1);
     addPhysics3DCollider(world, floor, createPhysics3DCollider(colliderUnitBox()));
     const box = addColliderTestBody(world, -0.25);
-    const first = addPhysics3DCollider(world, box, createPhysics3DCollider(colliderUnitBox()));
+    const first = createPhysics3DCollider(colliderUnitBox());
+    addPhysics3DCollider(world, box, first);
     addPhysics3DCollider(
       world,
       box,
-      createPhysics3DCollider({ kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 }),
+      createPhysics3DCollider({
+        kind: 'aabb',
+        minX: -0.5,
+        minY: -0.5,
+        minZ: -0.5,
+        maxX: 0.5,
+        maxY: 0.5,
+        maxZ: 0.5,
+      }),
     );
     buildPhysics3DContacts(world);
     expect(world.contacts.length).toBeGreaterThan(0);
@@ -800,7 +860,8 @@ describe('removePhysics3DCollider', () => {
   it('lets the same collider be attached to another body once detached', () => {
     const world = createPhysics3DWorld();
     const first = addColliderTestBody(world);
-    const collider = addPhysics3DCollider(world, first, createPhysics3DCollider(colliderUnitBox()));
+    const collider = createPhysics3DCollider(colliderUnitBox());
+    addPhysics3DCollider(world, first, collider);
     removePhysics3DCollider(world, first, collider);
 
     expect(() => addPhysics3DCollider(world, addColliderTestBody(world), collider)).not.toThrow();
@@ -829,7 +890,15 @@ beforeEach(() => {
 });
 
 function colliderUnitBox(): CollisionBuiltInShape3D {
-  return { kind: 'aabb', minX: -0.5, minY: -0.5, minZ: -0.5, maxX: 0.5, maxY: 0.5, maxZ: 0.5 };
+  return {
+    kind: 'aabb',
+    minX: -0.5,
+    minY: -0.5,
+    minZ: -0.5,
+    maxX: 0.5,
+    maxY: 0.5,
+    maxZ: 0.5,
+  };
 }
 
 function addColliderTestBody(world: Physics3DWorld, y = 0): RigidBody3D {
@@ -978,10 +1047,11 @@ describe('setPhysics3DBodyTransform', () => {
     addPhysics3DBody(world, body);
     addPhysics3DBody(world, neighbour);
     world.contacts.push(contact(body.index, neighbour.index));
-    const joint = addPhysics3DJoint(
-      world,
-      createPhysics3DBallAndSocketJoint({ bodyA: body.index, bodyB: neighbour.index }),
-    );
+    const joint = createPhysics3DBallAndSocketJoint({
+      bodyA: body.index,
+      bodyB: neighbour.index,
+    });
+    addPhysics3DJoint(world, joint);
     joint.impulse0 = 9;
     neighbour.sleeping = true;
 

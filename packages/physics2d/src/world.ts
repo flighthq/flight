@@ -25,11 +25,11 @@ import {
   physics2DJointOwners,
 } from './ownership.ts';
 
-// Adds `body` to `world`, assigning it the persistent index every contact is keyed and ordered by, and
-// returns it. The index comes from a monotonic counter rather than the array position, so removing a
+// Adds `body` to `world`, assigning it the persistent index every contact is keyed and ordered by. The
+// index comes from a monotonic counter rather than the array position, so removing a
 // body can never hand its identity to a later one — a stale contact would otherwise be revived against
 // whichever body inherited the slot, warm-starting it with a force that belonged to something else.
-export function addPhysics2DBody(world: Physics2DWorld, body: RigidBody2D): RigidBody2D {
+export function addPhysics2DBody(world: Physics2DWorld, body: RigidBody2D): void {
   assertPhysics2DWorldNotStepping(world);
   if (physics2DBodyOwners.has(body) || body.index !== -1 || world.bodies.includes(body)) {
     throw new Error('Cannot add a rigid body that already belongs to a physics world');
@@ -50,18 +50,13 @@ export function addPhysics2DBody(world: Physics2DWorld, body: RigidBody2D): Rigi
   physics2DBodyOwners.set(body, world);
   for (const collider of colliders) physics2DColliderOwners.set(collider, body);
   updateRigidBody2DMassData(body);
-  return body;
 }
 
 // Adds a collider while keeping every derived world structure coherent. A body may still be authored
 // before insertion: in that case only its collider list and mass data change. Once it belongs to the
 // world, topology mutation also discards stale contact impulses, wakes affected bodies, and republishes
 // bounds immediately rather than waiting for the next step.
-export function addPhysics2DCollider(
-  world: Physics2DWorld,
-  body: RigidBody2D,
-  collider: Physics2DCollider,
-): Physics2DCollider {
+export function addPhysics2DCollider(world: Physics2DWorld, body: RigidBody2D, collider: Physics2DCollider): void {
   assertPhysics2DWorldNotStepping(world);
   const bodyOwner = physics2DBodyOwners.get(body);
   if (bodyOwner !== undefined && bodyOwner !== world) {
@@ -83,7 +78,6 @@ export function addPhysics2DCollider(
     _wakePhysics2DBodyFromTopology(body);
     synchronizePhysics2DBroadphase(world);
   }
-  return collider;
 }
 
 // Accumulates a world-space force at the centre of mass for the next step. Forces belong only to
@@ -198,7 +192,13 @@ function clonePhysics2DLocalShape(local: Readonly<CollisionBuiltInShape2D>): Col
     case 'circle':
       return { kind: 'circle', x: local.x, y: local.y, radius: local.radius };
     case 'aabb':
-      return { kind: 'aabb', minX: local.minX, minY: local.minY, maxX: local.maxX, maxY: local.maxY };
+      return {
+        kind: 'aabb',
+        minX: local.minX,
+        minY: local.minY,
+        maxX: local.maxX,
+        maxY: local.maxY,
+      };
     case 'obb':
       return {
         kind: 'obb',
@@ -209,11 +209,24 @@ function clonePhysics2DLocalShape(local: Readonly<CollisionBuiltInShape2D>): Col
         rotation: local.rotation,
       };
     case 'capsule':
-      return { kind: 'capsule', x0: local.x0, y0: local.y0, x1: local.x1, y1: local.y1, radius: local.radius };
+      return {
+        kind: 'capsule',
+        x0: local.x0,
+        y0: local.y0,
+        x1: local.x1,
+        y1: local.y1,
+        radius: local.radius,
+      };
     case 'polygon':
       return { kind: 'polygon', points: local.points.slice() };
     case 'segment':
-      return { kind: 'segment', x0: local.x0, y0: local.y0, x1: local.x1, y1: local.y1 };
+      return {
+        kind: 'segment',
+        x0: local.x0,
+        y0: local.y0,
+        x1: local.x1,
+        y1: local.y1,
+      };
     case 'point':
       return { kind: 'point', x: local.x, y: local.y };
   }

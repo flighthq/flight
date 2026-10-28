@@ -127,7 +127,11 @@ describe('queryPhysics2DPoint', () => {
     queryPhysics2DPoint(world, 1, 1, out);
 
     expect(out.hitCount).toBe(1);
-    expect(out.hits[0]).toEqual({ body, collider: body.colliders[0], colliderIndex: 0 });
+    expect(out.hits[0]).toEqual({
+      body,
+      collider: body.colliders[0],
+      colliderIndex: 0,
+    });
   });
 
   it('observes current poses and reuses its high-water hit object', () => {
@@ -229,7 +233,14 @@ describe('queryPhysics2DRay', () => {
 
     expect(out.hitCount).toBe(2);
     expect(out.hits.slice(0, out.hitCount).map((hit) => hit.body)).toEqual([near, far]);
-    expect(out.hits[0]).toMatchObject({ colliderIndex: 0, fraction: 1.5, normalX: -1, normalY: 0, x: 1.5, y: 0 });
+    expect(out.hits[0]).toMatchObject({
+      colliderIndex: 0,
+      fraction: 1.5,
+      normalX: -1,
+      normalY: 0,
+      x: 1.5,
+      y: 0,
+    });
     expect(out.hits[1].fraction).toBeCloseTo(4);
   });
 
@@ -272,7 +283,14 @@ describe('queryPhysics2DRay', () => {
     queryPhysics2DRay(world, 3, 4, 0, 0, out);
 
     expect(out.hitCount).toBe(1);
-    expect(out.hits[0]).toMatchObject({ body, fraction: 0, normalX: 0, normalY: 0, x: 3, y: 4 });
+    expect(out.hits[0]).toMatchObject({
+      body,
+      fraction: 0,
+      normalX: 0,
+      normalY: 0,
+      x: 3,
+      y: 4,
+    });
   });
 });
 describe('queryPhysics2DRayClosest', () => {
@@ -323,7 +341,11 @@ describe('queryPhysics2DRegion', () => {
 
     queryPhysics2DRegion(world, { minX: 4.5, minY: -0.5, maxX: 5.5, maxY: 0.5 }, out);
     expect(out.hitCount).toBe(1);
-    expect(out.hits[0]).toEqual({ body, collider: body.colliders[1], colliderIndex: 1 });
+    expect(out.hits[0]).toEqual({
+      body,
+      collider: body.colliders[1],
+      colliderIndex: 1,
+    });
   });
 
   it('uses current poses and preserves deterministic body/collider order', () => {
@@ -394,7 +416,13 @@ describe('queryPhysics2DShapeCast', () => {
     return world;
   }
 
-  const unitBox = { kind: 'aabb', minX: -0.5, minY: -0.5, maxX: 0.5, maxY: 0.5 } as const;
+  const unitBox = {
+    kind: 'aabb',
+    minX: -0.5,
+    minY: -0.5,
+    maxX: 0.5,
+    maxY: 0.5,
+  } as const;
 
   it('stops the sweep exactly where the shape first touches', () => {
     // The box's leading face starts at x = 0.5 and the wall's near face is at x = 5, so it is free for
@@ -465,7 +493,12 @@ describe('queryPhysics2DShapeCast', () => {
     let marchedFraction = -1;
     for (let sample = 0; sample <= SAMPLES && marchedFraction < 0; sample += 1) {
       const fraction = sample / SAMPLES;
-      const probe = { kind: 'circle', x: 12 * fraction, y: 0, radius: 0.3 } as const;
+      const probe = {
+        kind: 'circle',
+        x: 12 * fraction,
+        y: 0,
+        radius: 0.3,
+      } as const;
       const region = createPhysics2DQueryResult();
       queryPhysics2DRegion(world, { minX: probe.x - 0.3, minY: -0.3, maxX: probe.x + 0.3, maxY: 0.3 }, region);
       for (let at = 0; at < region.hitCount; at += 1) {
@@ -492,7 +525,13 @@ describe('queryPhysics2DShapeCast', () => {
       wall.colliders.push(createPhysics2DCollider({ kind: 'aabb', minX: 5, minY: y - 1, maxX: 6, maxY: y + 1 }, STONE));
       addPhysics2DBody(world, wall);
     }
-    const tall = { kind: 'aabb', minX: -0.5, minY: -3, maxX: 0.5, maxY: 3 } as const;
+    const tall = {
+      kind: 'aabb',
+      minX: -0.5,
+      minY: -3,
+      maxX: 0.5,
+      maxY: 3,
+    } as const;
     const out = createPhysics2DShapeCastResult();
 
     queryPhysics2DShapeCast(world, tall, 10, 0, out);

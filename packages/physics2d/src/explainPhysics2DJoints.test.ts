@@ -11,9 +11,18 @@ describe('explainPhysics2DJoints', () => {
   it('reports a fully resolvable world as complete', () => {
     const world = createPhysics2DWorld();
     registerPhysics2DJointSolver(world, 'Distance', NOOP_SOLVER);
-    const first = addPhysics2DBody(world, createRigidBody2D('dynamic', 0, 0));
-    const second = addPhysics2DBody(world, createRigidBody2D('dynamic', 1, 0));
-    addPhysics2DJoint(world, createPhysics2DDistanceJoint({ bodyA: first.index, bodyB: second.index, length: 1 }));
+    const first = createRigidBody2D('dynamic', 0, 0);
+    addPhysics2DBody(world, first);
+    const second = createRigidBody2D('dynamic', 1, 0);
+    addPhysics2DBody(world, second);
+    addPhysics2DJoint(
+      world,
+      createPhysics2DDistanceJoint({
+        bodyA: first.index,
+        bodyB: second.index,
+        length: 1,
+      }),
+    );
 
     expect(explainPhysics2DJoints(world)).toEqual({
       joints: [
@@ -36,20 +45,33 @@ describe('explainPhysics2DJoints', () => {
 
   it('makes an unregistered kind and every missing endpoint observable', () => {
     const world = createPhysics2DWorld();
-    const body = addPhysics2DBody(world, createRigidBody2D('dynamic', 0, 0));
+    const body = createRigidBody2D('dynamic', 0, 0);
+    addPhysics2DBody(world, body);
     addPhysics2DJoint(world, {
-      ...createPhysics2DDistanceJoint({ bodyA: body.index, bodyB: 99, length: 1 }),
+      ...createPhysics2DDistanceJoint({
+        bodyA: body.index,
+        bodyB: 99,
+        length: 1,
+      }),
       kind: 'acme.Unknown',
     });
     registerPhysics2DJointSolver(world, 'MissingA', NOOP_SOLVER);
     registerPhysics2DJointSolver(world, 'MissingB', NOOP_SOLVER);
     registerPhysics2DJointSolver(world, 'MissingBoth', NOOP_SOLVER);
     addPhysics2DJoint(world, {
-      ...createPhysics2DDistanceJoint({ bodyA: 98, bodyB: body.index, length: 1 }),
+      ...createPhysics2DDistanceJoint({
+        bodyA: 98,
+        bodyB: body.index,
+        length: 1,
+      }),
       kind: 'MissingA',
     });
     addPhysics2DJoint(world, {
-      ...createPhysics2DDistanceJoint({ bodyA: body.index, bodyB: 99, length: 1 }),
+      ...createPhysics2DDistanceJoint({
+        bodyA: body.index,
+        bodyB: 99,
+        length: 1,
+      }),
       kind: 'MissingB',
     });
     addPhysics2DJoint(world, {
@@ -67,30 +89,53 @@ describe('explainPhysics2DJoints', () => {
       'body-b-missing',
       'bodies-missing',
     ]);
-    expect(explanation.joints[0]).toMatchObject({ bodyAFound: true, bodyBFound: false, solverRegistered: false });
+    expect(explanation.joints[0]).toMatchObject({
+      bodyAFound: true,
+      bodyBFound: false,
+      solverRegistered: false,
+    });
   });
 
   it('reports an unused missing bodyA as ready', () => {
     const world = createPhysics2DWorld();
-    const body = addPhysics2DBody(world, createRigidBody2D('dynamic', 0, 0));
-    registerPhysics2DJointSolver(world, 'OneBody', { prepare: () => {}, solve: () => {}, usesBodyA: false });
+    const body = createRigidBody2D('dynamic', 0, 0);
+    addPhysics2DBody(world, body);
+    registerPhysics2DJointSolver(world, 'OneBody', {
+      prepare: () => {},
+      solve: () => {},
+      usesBodyA: false,
+    });
     addPhysics2DJoint(world, {
-      ...createPhysics2DDistanceJoint({ bodyA: 999, bodyB: body.index, length: 1 }),
+      ...createPhysics2DDistanceJoint({
+        bodyA: 999,
+        bodyB: body.index,
+        length: 1,
+      }),
       kind: 'OneBody',
     });
 
     const explanation = explainPhysics2DJoints(world);
 
-    expect(explanation.joints[0]).toMatchObject({ bodyAFound: false, bodyAUsed: false, status: 'ready' });
+    expect(explanation.joints[0]).toMatchObject({
+      bodyAFound: false,
+      bodyAUsed: false,
+      status: 'ready',
+    });
     expect(explanation.status).toBe('complete');
   });
 
   it('recomputes current state without retaining earlier failures', () => {
     const world = createPhysics2DWorld();
-    const first = addPhysics2DBody(world, createRigidBody2D('dynamic', 0, 0));
-    const second = addPhysics2DBody(world, createRigidBody2D('dynamic', 1, 0));
+    const first = createRigidBody2D('dynamic', 0, 0);
+    addPhysics2DBody(world, first);
+    const second = createRigidBody2D('dynamic', 1, 0);
+    addPhysics2DBody(world, second);
     addPhysics2DJoint(world, {
-      ...createPhysics2DDistanceJoint({ bodyA: first.index, bodyB: second.index, length: 1 }),
+      ...createPhysics2DDistanceJoint({
+        bodyA: first.index,
+        bodyB: second.index,
+        length: 1,
+      }),
       kind: 'acme.Deferred',
     });
     const before = explainPhysics2DJoints(world);

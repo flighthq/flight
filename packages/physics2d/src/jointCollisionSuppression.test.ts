@@ -21,14 +21,36 @@ describe('isPhysics2DPairJointSuppressed', () => {
 describe('rebuildPhysics2DJointCollisionSuppressions', () => {
   it('counts every active suppressing joint while ignoring unknown and one-body kinds', () => {
     const world = createPhysics2DWorld();
-    registerPhysics2DJointSolver(world, 'two-body', { prepare: () => {}, solve: () => {} });
-    registerPhysics2DJointSolver(world, 'one-body', { prepare: () => {}, solve: () => {}, usesBodyA: false });
+    registerPhysics2DJointSolver(world, 'two-body', {
+      prepare: () => {},
+      solve: () => {},
+    });
+    registerPhysics2DJointSolver(world, 'one-body', {
+      prepare: () => {},
+      solve: () => {},
+      usesBodyA: false,
+    });
     world.joints.push(
-      { kind: 'two-body', bodyA: 9, bodyB: 3, collideConnected: false } as never,
-      { kind: 'two-body', bodyA: 3, bodyB: 9, collideConnected: false } as never,
+      {
+        kind: 'two-body',
+        bodyA: 9,
+        bodyB: 3,
+        collideConnected: false,
+      } as never,
+      {
+        kind: 'two-body',
+        bodyA: 3,
+        bodyB: 9,
+        collideConnected: false,
+      } as never,
       { kind: 'two-body', bodyA: 3, bodyB: 9, collideConnected: true } as never,
       { kind: 'unknown', bodyA: 3, bodyB: 9, collideConnected: false } as never,
-      { kind: 'one-body', bodyA: 3, bodyB: 9, collideConnected: false } as never,
+      {
+        kind: 'one-body',
+        bodyA: 3,
+        bodyB: 9,
+        collideConnected: false,
+      } as never,
     );
 
     rebuildPhysics2DJointCollisionSuppressions(world);

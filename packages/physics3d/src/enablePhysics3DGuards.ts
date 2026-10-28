@@ -111,7 +111,11 @@ function warnOnUnresolvedPhysics3DJoints(world: Readonly<Physics3DWorld>): void 
   const joints: Pick<Physics3DJointExplanation, 'index' | 'kind' | 'status'>[] = [];
   for (const explanation of explanations) {
     if (explanation.status === 'solvable') continue;
-    joints.push({ index: explanation.index, kind: explanation.kind, status: explanation.status });
+    joints.push({
+      index: explanation.index,
+      kind: explanation.kind,
+      status: explanation.status,
+    });
   }
   if (joints.length === 0) return;
 

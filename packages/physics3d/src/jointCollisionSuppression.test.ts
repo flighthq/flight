@@ -27,7 +27,14 @@ describe('isPhysics3DPairJointSuppressed', () => {
 
   it('leaves a pair alone when the joint opts into colliding', () => {
     const world = createTestWorld();
-    addPhysics3DJoint(world, createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1, collideConnected: true }));
+    addPhysics3DJoint(
+      world,
+      createPhysics3DBallAndSocketJoint({
+        bodyA: 0,
+        bodyB: 1,
+        collideConnected: true,
+      }),
+    );
 
     expect(isPhysics3DPairJointSuppressed(world, 0, 1)).toBe(false);
   });
@@ -52,7 +59,8 @@ describe('isPhysics3DPairJointSuppressed', () => {
   it('keeps a pair suppressed while a second joint still holds it', () => {
     const world = createTestWorld();
     addPhysics3DJoint(world, createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 }));
-    const second = addPhysics3DJoint(world, createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 }));
+    const second = createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 });
+    addPhysics3DJoint(world, second);
 
     removePhysics3DJoint(world, second);
 
@@ -64,7 +72,8 @@ describe('isPhysics3DPairJointSuppressed', () => {
 describe('rebuildPhysics3DJointCollisionSuppressions', () => {
   it('picks up an endpoint edited in place', () => {
     const world = createTestWorld();
-    const joint = addPhysics3DJoint(world, createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 }));
+    const joint = createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 });
+    addPhysics3DJoint(world, joint);
     joint.bodyB = 2;
 
     rebuildPhysics3DJointCollisionSuppressions(world);
@@ -75,7 +84,8 @@ describe('rebuildPhysics3DJointCollisionSuppressions', () => {
 
   it('drops every suppression when the joint list empties', () => {
     const world = createTestWorld();
-    const joint = addPhysics3DJoint(world, createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 }));
+    const joint = createPhysics3DBallAndSocketJoint({ bodyA: 0, bodyB: 1 });
+    addPhysics3DJoint(world, joint);
     world.joints.splice(world.joints.indexOf(joint), 1);
 
     rebuildPhysics3DJointCollisionSuppressions(world);

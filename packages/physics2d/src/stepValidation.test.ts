@@ -58,7 +58,11 @@ describe('isPhysics2DContactStateValid', () => {
   it('accepts an empty cache and rejects a non-finite cached contact', () => {
     const world = createPhysics2DWorld();
     expect(isPhysics2DContactStateValid(world)).toBe(true);
-    world.contacts.push({ normalX: Number.NaN, pointCount: 0, points: [] } as never);
+    world.contacts.push({
+      normalX: Number.NaN,
+      pointCount: 0,
+      points: [],
+    } as never);
     expect(isPhysics2DContactStateValid(world)).toBe(false);
   });
 });
@@ -99,28 +103,26 @@ describe('isPhysics2DGravityValid', () => {
 describe('isPhysics2DJointStateValid', () => {
   it('rejects a non-finite authored or accumulated joint number', () => {
     const { body, world } = bodyWorld();
-    const joint = addPhysics2DJoint(
-      world,
-      entityJoint({
-        kind: 'Unknown',
-        bodyA: body.index,
-        bodyB: body.index,
-        localAnchorAX: 0,
-        localAnchorAY: 0,
-        localAnchorBX: 0,
-        localAnchorBY: 0,
-        collideConnected: false,
-        breakForce: Number.POSITIVE_INFINITY,
-        breakTorque: Number.POSITIVE_INFINITY,
-        impulse0: 0,
-        impulse1: 0,
-        impulse2: 0,
-        rAX: 0,
-        rAY: 0,
-        rBX: 0,
-        rBY: 0,
-      }),
-    );
+    const joint = entityJoint({
+      kind: 'Unknown',
+      bodyA: body.index,
+      bodyB: body.index,
+      localAnchorAX: 0,
+      localAnchorAY: 0,
+      localAnchorBX: 0,
+      localAnchorBY: 0,
+      collideConnected: false,
+      breakForce: Number.POSITIVE_INFINITY,
+      breakTorque: Number.POSITIVE_INFINITY,
+      impulse0: 0,
+      impulse1: 0,
+      impulse2: 0,
+      rAX: 0,
+      rAY: 0,
+      rBX: 0,
+      rBY: 0,
+    });
+    addPhysics2DJoint(world, joint);
     expect(isPhysics2DJointStateValid(world)).toBe(true);
     joint.impulse0 = Number.NaN;
     expect(isPhysics2DJointStateValid(world)).toBe(false);
