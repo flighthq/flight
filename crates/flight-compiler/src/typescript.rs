@@ -22,6 +22,11 @@ const RECORD_CLONE_ARGUMENT_MARKER: &str = "@record-clone-argument:";
 const RECORD_CLONE_LOCAL_MARKER: &str = "@record-clone-local:";
 const RECORD_CLONE_TYPE_MARKER: &str = "@record-clone-type:";
 const RECORD_VEC_FIELD_MARKER: &str = "@record-vec-field:";
+const RETURN_TYPE_MARKER: &str = "@return-type:";
+const RETURNS_U32_MARKER: &str = "@returns-u32";
+const STRING_ARGUMENT_MARKER: &str = "@string-argument:";
+const STRING_EXPRESSION_MARKER: &str = "@string-expression:";
+const STRING_RETURN_MARKER: &str = "@string-return:";
 const VEC_CLONE_ARGUMENT_MARKER: &str = "@vec-clone-argument:";
 const VEC_CLONE_EXPRESSION_MARKER: &str = "@vec-clone-expression:";
 const UNSIGNED_INTEGER_LOCAL_MARKER: &str = "@unsigned-integer-local:";
@@ -170,6 +175,47 @@ fn inferred_fixed_buffer_type(entities: &HashSet<String>, local: &str) -> Option
         .find_map(|marker| marker.strip_prefix(&prefix).map(str::to_string));
 }
 
+fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> bool {
+    return match expression {
+        Expr::Call(call) => match call.func.as_ref() {
+            Expr::Path(path) => {
+                let mut segments = path.path.segments.iter().rev();
+                let Some(function) = segments.next() else {
+                    return false;
+                };
+                entities.contains(&format!("{STRING_RETURN_MARKER}{}", function.ident))
+                    || (function.ident == "new"
+                        && segments.next().is_some_and(|owner| owner.ident == "String"))
+            }
+            _ => false,
+        },
+        Expr::Group(group) => expression_is_known_string(&group.expr, entities),
+        Expr::Lit(literal) => matches!(&literal.lit, Lit::Str(_)),
+        Expr::Macro(expression) => expression
+            .mac
+            .path
+            .segments
+            .last()
+            .is_some_and(|segment| segment.ident == "format"),
+        Expr::MethodCall(call) => {
+            call.method == "to_string"
+                || (call.method == "clone" && expression_is_known_string(&call.receiver, entities))
+        }
+        Expr::Paren(paren) => expression_is_known_string(&paren.expr, entities),
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            path.path.segments.first().is_some_and(|segment| {
+                entities.contains(&format!("{STRING_EXPRESSION_MARKER}{}", segment.ident))
+            })
+        }
+        Expr::Reference(reference) => expression_is_known_string(&reference.expr, entities),
+        _ => false,
+    };
+}
+
+fn rust_type_is_string(rust_type: &Type) -> bool {
+    return matches!(named_type(rust_type).as_deref(), Some("String" | "str"));
+}
+
 fn vec_clone_optional(rust_type: &Type) -> Option<bool> {
     if let Some(inner) = option_inner_type(rust_type) {
         return (named_type(inner).as_deref() == Some("Vec")).then_some(true);
@@ -219,6 +265,10 @@ pub(crate) fn generation_context(programs: &[&Program]) -> Result<HashSet<String
         }
         for function in &program.functions {
             let function_name = function.sig.ident.to_string();
+            if matches!(&function.sig.output, ReturnType::Type(_, rust_type) if rust_type_is_string(rust_type))
+            {
+                context.insert(format!("{STRING_RETURN_MARKER}{function_name}"));
+            }
             for (argument_index, argument) in function.sig.inputs.iter().enumerate() {
                 if argument_is_nullable_guard(function, argument) {
                     context.insert(format!(
@@ -230,6 +280,12 @@ pub(crate) fn generation_context(programs: &[&Program]) -> Result<HashSet<String
                 };
                 if let Pat::Ident(pattern) = argument.pat.as_ref() {
                     let local = snake_to_lower_camel(&pattern.ident.to_string());
+                    if rust_type_is_string(&argument.ty) {
+                        context.insert(format!(
+                            "{STRING_ARGUMENT_MARKER}{function_name}:{}",
+                            pattern.ident
+                        ));
+                    }
                     if let Some(record) = named_type(&argument.ty)
                         && record_types.contains(&record)
                     {
@@ -326,6 +382,10 @@ pub(crate) fn function_expression_context(
                     self.context
                         .insert(format!("{VEC_CLONE_EXPRESSION_MARKER}{local}:{optional}"));
                 }
+                if rust_type_is_string(&typed.ty) {
+                    self.context
+                        .insert(format!("{STRING_EXPRESSION_MARKER}{}", pattern.ident));
+                }
                 if let Some(record) = named_type(&typed.ty)
                     && self
                         .context
@@ -342,6 +402,13 @@ pub(crate) fn function_expression_context(
                         .collect::<Vec<_>>();
                     self.context.extend(fields);
                 }
+            }
+            if let Some(initializer) = &local.init
+                && expression_is_known_string(&initializer.expr, self.context)
+                && let Some(name) = local_pattern_name(&local.pat)
+            {
+                self.context
+                    .insert(format!("{STRING_EXPRESSION_MARKER}{name}"));
             }
             syn::visit::visit_local(self, local);
         }
@@ -370,6 +437,13 @@ pub(crate) fn function_expression_context(
         .map(|suffix| format!("{VEC_CLONE_EXPRESSION_MARKER}{suffix}"))
         .collect::<Vec<_>>();
     context.extend(vec_markers);
+    let string_prefix = format!("{STRING_ARGUMENT_MARKER}{function_name}:");
+    let string_markers = context
+        .iter()
+        .filter_map(|marker| marker.strip_prefix(&string_prefix))
+        .map(|local| format!("{STRING_EXPRESSION_MARKER}{local}"))
+        .collect::<Vec<_>>();
+    context.extend(string_markers);
     for argument in &function.sig.inputs {
         let FnArg::Typed(argument) = argument else {
             continue;
@@ -1759,6 +1833,14 @@ fn emit_method_call(
         "sin" if arguments.is_empty() => Ok(format!("Math.sin({receiver})")),
         "skip" if arguments.len() == 1 => Ok(format!("{receiver}.slice({})", arguments[0])),
         "sqrt" if arguments.is_empty() => Ok(format!("Math.sqrt({receiver})")),
+        "starts_with"
+            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!("{receiver}.startsWith({})", arguments[0]))
+        }
+        "starts_with" if arguments.len() == 1 => Err(compile_error(
+            "portable `.starts_with()` requires a receiver known to be `String` or `str`",
+        )),
         "sum" if arguments.is_empty() => {
             Ok(format!("{receiver}.reduce((sum, value) => sum + value, 0)"))
         }
