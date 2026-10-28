@@ -9,13 +9,14 @@ use syn::{BinOp, Expr, Fields, FnArg, ItemFn, Pat, ReturnType, Stmt, Token};
 use crate::model::{TestCase, TestProgram, TestSuite};
 use crate::typescript::{
     emit_expression, emit_for_header, emit_local, emit_local_with_shadow, emit_parameter,
-    emit_type, snake_to_lower_camel, write_indent,
+    emit_type, function_expression_context, snake_to_lower_camel, write_indent,
 };
 use crate::{CompileError, compile_error};
 
 fn assertion_message(
     arguments: &Punctuated<Expr, Token![,]>,
     name: &str,
+    context: &HashSet<String>,
 ) -> Result<Option<String>, CompileError> {
     let message_index = if name == "assert" { 1 } else { 2 };
     let Some(message) = arguments.get(message_index) else {
@@ -53,7 +54,7 @@ fn assertion_message(
                 ));
             };
             rendered.push_str("${");
-            rendered.push_str(&emit_expression(value, &HashSet::new())?);
+            rendered.push_str(&emit_expression(value, context)?);
             rendered.push('}');
             value_index += 1;
         } else {
@@ -158,16 +159,6 @@ fn collect_contract_symbols(program: &TestProgram) -> Vec<String> {
             syn::visit::visit_expr_path(self, expression);
         }
 
-        fn visit_expr_struct(&mut self, expression: &'ast syn::ExprStruct) {
-            if expression.qself.is_none()
-                && expression.path.segments.len() == 1
-                && let Some(segment) = expression.path.segments.first()
-            {
-                self.record_identifier(&segment.ident);
-            }
-            syn::visit::visit_expr_struct(self, expression);
-        }
-
         fn visit_macro(&mut self, rust_macro: &'ast syn::Macro) {
             if let Ok(arguments) = parse_macro_arguments(rust_macro) {
                 for argument in &arguments {
@@ -256,6 +247,7 @@ fn emit_assertion(
     out: &mut String,
     rust_macro: &syn::Macro,
     indent: usize,
+    context: &HashSet<String>,
 ) -> Result<(), CompileError> {
     let Some(name) = rust_macro
         .path
@@ -268,19 +260,19 @@ fn emit_assertion(
     let arguments = parse_macro_arguments(rust_macro)?;
     let (mut actual, matcher, mut expected) = match name.as_str() {
         "assert" if !arguments.is_empty() => (
-            emit_assertion_expression(&arguments[0])?,
+            emit_assertion_expression(&arguments[0], context)?,
             "toBe",
             "true".to_string(),
         ),
         "assert_eq" if arguments.len() >= 2 => (
-            emit_assertion_expression(&arguments[0])?,
+            emit_assertion_expression(&arguments[0], context)?,
             "toEqual",
-            emit_assertion_expression(&arguments[1])?,
+            emit_assertion_expression(&arguments[1], context)?,
         ),
         "assert_ne" if arguments.len() >= 2 => (
-            emit_assertion_expression(&arguments[0])?,
+            emit_assertion_expression(&arguments[0], context)?,
             "not.toEqual",
-            emit_assertion_expression(&arguments[1])?,
+            emit_assertion_expression(&arguments[1], context)?,
         ),
         "assert" | "assert_eq" | "assert_ne" => {
             return Err(compile_error(format!(
@@ -301,7 +293,7 @@ fn emit_assertion(
             expected = format!("Array.from({expected})");
         }
     }
-    let message = assertion_message(&arguments, name.as_str())?;
+    let message = assertion_message(&arguments, name.as_str(), context)?;
     write_indent(out, indent);
     if let Some(message) = message {
         writeln!(out, "expect({actual}, {message}).{matcher}({expected});")
@@ -313,7 +305,10 @@ fn emit_assertion(
     return Ok(());
 }
 
-fn emit_assertion_expression(expression: &Expr) -> Result<String, CompileError> {
+fn emit_assertion_expression(
+    expression: &Expr,
+    context: &HashSet<String>,
+) -> Result<String, CompileError> {
     if let Expr::Binary(comparison) = expression
         && matches!(comparison.op, BinOp::Lt(_))
         && let Expr::MethodCall(absolute) = comparison.left.as_ref()
@@ -328,13 +323,13 @@ fn emit_assertion_expression(expression: &Expr) -> Result<String, CompileError> 
         {
             return Ok(format!(
                 "Math.abs({} - Math.fround({})) < {}",
-                emit_expression(&difference.left, &HashSet::new())?,
-                emit_expression(&difference.right, &HashSet::new())?,
-                emit_expression(&comparison.right, &HashSet::new())?
+                emit_expression(&difference.left, context)?,
+                emit_expression(&difference.right, context)?,
+                emit_expression(&comparison.right, context)?
             ));
         }
     }
-    return emit_expression(expression, &HashSet::new());
+    return emit_expression(expression, context);
 }
 
 fn expression_contains_suffixed_f32(expression: &Expr) -> bool {
@@ -368,7 +363,12 @@ fn unparenthesized(mut expression: &Expr) -> &Expr {
     return expression;
 }
 
-fn emit_block(out: &mut String, statements: &[Stmt], indent: usize) -> Result<(), CompileError> {
+fn emit_block(
+    out: &mut String,
+    statements: &[Stmt],
+    context: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
     let mut declaration_counts = HashMap::new();
     for statement in statements {
         if let Stmt::Local(local) = statement
@@ -386,30 +386,36 @@ fn emit_block(out: &mut String, statements: &[Stmt], indent: usize) -> Result<()
                 .get(&name)
                 .is_some_and(|count| *count > 1);
             let shadowed = !declared.insert(name);
-            emit_local_with_shadow(out, local, &HashSet::new(), indent, shadowed, rebound)?;
+            emit_local_with_shadow(out, local, context, indent, shadowed, rebound)?;
         } else {
-            emit_statement(out, statement, indent)?;
+            emit_statement(out, statement, context, indent)?;
         }
     }
     return Ok(());
 }
 
-fn emit_helper(out: &mut String, function: &ItemFn, indent: usize) -> Result<(), CompileError> {
+fn emit_helper(
+    out: &mut String,
+    function: &ItemFn,
+    context: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
     if function.sig.asyncness.is_some() {
         return Err(compile_error(format!(
             "async portable helper `{}` is not supported yet",
             function.sig.ident
         )));
     }
+    let context = function_expression_context(function, context);
     let parameters = function
         .sig
         .inputs
         .iter()
-        .map(|argument| emit_parameter(argument, &HashSet::new()))
+        .map(|argument| emit_parameter(argument, &context))
         .collect::<Result<Vec<_>, _>>()?;
     let return_type = match &function.sig.output {
         ReturnType::Default => "void".to_string(),
-        ReturnType::Type(_, rust_type) => emit_type(rust_type, &HashSet::new())?,
+        ReturnType::Type(_, rust_type) => emit_type(rust_type, &context)?,
     };
     write_indent(out, indent);
     writeln!(
@@ -419,25 +425,33 @@ fn emit_helper(out: &mut String, function: &ItemFn, indent: usize) -> Result<(),
         parameters.join(", ")
     )
     .expect("writing to a String cannot fail");
-    emit_block(out, &function.block.stmts, indent + 1)?;
+    emit_block(out, &function.block.stmts, &context, indent + 1)?;
     write_indent(out, indent);
     out.push_str("}\n");
     return Ok(());
 }
 
-fn emit_test_constant(out: &mut String, constant: &syn::ItemConst) -> Result<(), CompileError> {
+fn emit_test_constant(
+    out: &mut String,
+    constant: &syn::ItemConst,
+    context: &HashSet<String>,
+) -> Result<(), CompileError> {
     writeln!(
         out,
         "const {}: {} = {};",
         constant.ident,
-        emit_type(&constant.ty, &HashSet::new())?,
-        emit_expression(&constant.expr, &HashSet::new())?
+        emit_type(&constant.ty, context)?,
+        emit_expression(&constant.expr, context)?
     )
     .expect("writing to a String cannot fail");
     return Ok(());
 }
 
-fn emit_test_struct(out: &mut String, structure: &syn::ItemStruct) -> Result<(), CompileError> {
+fn emit_test_struct(
+    out: &mut String,
+    structure: &syn::ItemStruct,
+    context: &HashSet<String>,
+) -> Result<(), CompileError> {
     let Fields::Named(fields) = &structure.fields else {
         return Err(compile_error(format!(
             "portable test struct `{}` must use named fields",
@@ -456,7 +470,7 @@ fn emit_test_struct(out: &mut String, structure: &syn::ItemStruct) -> Result<(),
             out,
             "  {}: {};",
             snake_to_lower_camel(&name.to_string()),
-            emit_type(&field.ty, &HashSet::new())?
+            emit_type(&field.ty, context)?
         )
         .expect("writing to a String cannot fail");
     }
@@ -464,12 +478,16 @@ fn emit_test_struct(out: &mut String, structure: &syn::ItemStruct) -> Result<(),
     return Ok(());
 }
 
-fn emit_test_type_alias(out: &mut String, type_alias: &syn::ItemType) -> Result<(), CompileError> {
+fn emit_test_type_alias(
+    out: &mut String,
+    type_alias: &syn::ItemType,
+    context: &HashSet<String>,
+) -> Result<(), CompileError> {
     writeln!(
         out,
         "type {} = {};",
         type_alias.ident,
-        emit_type(&type_alias.ty, &HashSet::new())?
+        emit_type(&type_alias.ty, context)?
     )
     .expect("writing to a String cannot fail");
     return Ok(());
@@ -484,18 +502,23 @@ fn emit_path_name(name: &str) -> String {
     return snake_to_lower_camel(name);
 }
 
-fn emit_statement(out: &mut String, statement: &Stmt, indent: usize) -> Result<(), CompileError> {
+fn emit_statement(
+    out: &mut String,
+    statement: &Stmt,
+    context: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
     match statement {
-        Stmt::Local(local) => emit_local(out, local, &HashSet::new(), indent)?,
+        Stmt::Local(local) => emit_local(out, local, context, indent)?,
         Stmt::Expr(Expr::If(expression), _) => {
             write_indent(out, indent);
             writeln!(
                 out,
                 "if ({}) {{",
-                emit_expression(&expression.cond, &HashSet::new())?
+                emit_expression(&expression.cond, context)?
             )
             .expect("writing to a String cannot fail");
-            emit_block(out, &expression.then_branch.stmts, indent + 1)?;
+            emit_block(out, &expression.then_branch.stmts, context, indent + 1)?;
             write_indent(out, indent);
             if let Some((_, otherwise)) = &expression.else_branch {
                 out.push_str("} else {\n");
@@ -504,7 +527,7 @@ fn emit_statement(out: &mut String, statement: &Stmt, indent: usize) -> Result<(
                         "portable test else branches must use a block",
                     ));
                 };
-                emit_block(out, &otherwise.block.stmts, indent + 1)?;
+                emit_block(out, &otherwise.block.stmts, context, indent + 1)?;
                 write_indent(out, indent);
             }
             out.push_str("}\n");
@@ -514,10 +537,10 @@ fn emit_statement(out: &mut String, statement: &Stmt, indent: usize) -> Result<(
             writeln!(
                 out,
                 "for ({}) {{",
-                emit_for_header(&expression.pat, &expression.expr, &HashSet::new())?
+                emit_for_header(&expression.pat, &expression.expr, context)?
             )
             .expect("writing to a String cannot fail");
-            emit_block(out, &expression.body.stmts, indent + 1)?;
+            emit_block(out, &expression.body.stmts, context, indent + 1)?;
             write_indent(out, indent);
             out.push_str("}\n");
         }
@@ -526,10 +549,10 @@ fn emit_statement(out: &mut String, statement: &Stmt, indent: usize) -> Result<(
             writeln!(
                 out,
                 "while ({}) {{",
-                emit_expression(&expression.cond, &HashSet::new())?
+                emit_expression(&expression.cond, context)?
             )
             .expect("writing to a String cannot fail");
-            emit_block(out, &expression.body.stmts, indent + 1)?;
+            emit_block(out, &expression.body.stmts, context, indent + 1)?;
             write_indent(out, indent);
             out.push_str("}\n");
         }
@@ -540,7 +563,7 @@ fn emit_statement(out: &mut String, statement: &Stmt, indent: usize) -> Result<(
         Stmt::Expr(Expr::Return(expression), _) => {
             write_indent(out, indent);
             if let Some(value) = &expression.expr {
-                writeln!(out, "return {};", emit_expression(value, &HashSet::new())?)
+                writeln!(out, "return {};", emit_expression(value, context)?)
                     .expect("writing to a String cannot fail");
             } else {
                 out.push_str("return;\n");
@@ -548,10 +571,10 @@ fn emit_statement(out: &mut String, statement: &Stmt, indent: usize) -> Result<(
         }
         Stmt::Expr(expression, _) => {
             write_indent(out, indent);
-            writeln!(out, "{};", emit_expression(expression, &HashSet::new())?)
+            writeln!(out, "{};", emit_expression(expression, context)?)
                 .expect("writing to a String cannot fail");
         }
-        Stmt::Macro(statement) => emit_assertion(out, &statement.mac, indent)?,
+        Stmt::Macro(statement) => emit_assertion(out, &statement.mac, indent, context)?,
         Stmt::Item(_) => {
             return Err(compile_error(
                 "unsupported item declaration inside portable test function",
@@ -565,19 +588,20 @@ fn emit_suite(
     out: &mut String,
     suite: &TestSuite,
     contract_symbols: &[String],
+    context: &HashSet<String>,
 ) -> Result<(), CompileError> {
     let name = resolve_suite_name(&suite.name, contract_symbols);
     writeln!(out, "describe({:?}, () => {{", snake_to_lower_camel(name))
         .expect("writing to a String cannot fail");
     for helper in &suite.helpers {
-        emit_helper(out, helper, 1)?;
+        emit_helper(out, helper, context, 1)?;
     }
     for test in &suite.skipped_tests {
         writeln!(out, "  // Rust-only: {}", test.replace('_', " "))
             .expect("writing to a String cannot fail");
     }
     for test in &suite.tests {
-        emit_test(out, test)?;
+        emit_test(out, test, context)?;
     }
     out.push_str("});\n");
     return Ok(());
@@ -595,7 +619,11 @@ fn resolve_suite_name<'a>(name: &'a str, contract_symbols: &'a [String]) -> &'a 
     return name;
 }
 
-fn emit_test(out: &mut String, test: &TestCase) -> Result<(), CompileError> {
+fn emit_test(
+    out: &mut String,
+    test: &TestCase,
+    context: &HashSet<String>,
+) -> Result<(), CompileError> {
     let function = &test.function;
     if function.sig.asyncness.is_some() {
         return Err(compile_error(format!(
@@ -603,6 +631,7 @@ fn emit_test(out: &mut String, test: &TestCase) -> Result<(), CompileError> {
             function.sig.ident
         )));
     }
+    let context = function_expression_context(function, context);
     if !function.sig.inputs.is_empty() || !matches!(function.sig.output, ReturnType::Default) {
         return Err(compile_error(format!(
             "portable test `{}` must have signature `fn name()`",
@@ -613,10 +642,10 @@ fn emit_test(out: &mut String, test: &TestCase) -> Result<(), CompileError> {
     writeln!(out, "  it({name:?}, () => {{").expect("writing to a String cannot fail");
     if test.should_panic {
         out.push_str("    expect(() => {\n");
-        emit_block(out, &function.block.stmts, 3)?;
+        emit_block(out, &function.block.stmts, &context, 3)?;
         out.push_str("    }).toThrow();\n");
     } else {
-        emit_block(out, &function.block.stmts, 2)?;
+        emit_block(out, &function.block.stmts, &context, 2)?;
     }
     out.push_str("  });\n");
     return Ok(());
@@ -625,6 +654,7 @@ fn emit_test(out: &mut String, test: &TestCase) -> Result<(), CompileError> {
 pub(crate) fn emit_test_program(
     program: &TestProgram,
     contract_module: &str,
+    context: &HashSet<String>,
 ) -> Result<String, CompileError> {
     let contract_symbols = collect_contract_symbols(program);
     let mut out = String::new();
@@ -642,23 +672,23 @@ pub(crate) fn emit_test_program(
     }
     for type_alias in &program.type_aliases {
         out.push('\n');
-        emit_test_type_alias(&mut out, type_alias)?;
+        emit_test_type_alias(&mut out, type_alias, context)?;
     }
     for structure in &program.structs {
         out.push('\n');
-        emit_test_struct(&mut out, structure)?;
+        emit_test_struct(&mut out, structure, context)?;
     }
     for constant in &program.constants {
         out.push('\n');
-        emit_test_constant(&mut out, constant)?;
+        emit_test_constant(&mut out, constant, context)?;
     }
     for helper in &program.helpers {
         out.push('\n');
-        emit_helper(&mut out, helper, 0)?;
+        emit_helper(&mut out, helper, context, 0)?;
     }
     for suite in &program.suites {
         out.push('\n');
-        emit_suite(&mut out, suite, &contract_symbols)?;
+        emit_suite(&mut out, suite, &contract_symbols, context)?;
     }
     return Ok(out);
 }

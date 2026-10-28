@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   collectCompanionFileNames,
+  compilerAliasArguments,
   collectContractModuleNames,
   collectExportSymbols,
   collectReferencedExportNames,
@@ -15,6 +16,12 @@ import {
 } from './generate-rust-package-exports.ts';
 
 describe('renderPublicExports', () => {
+  it('passes production source hints to contract and test generation', () => {
+    expect(compilerAliasArguments('generate', ['ease_steps.rs'])).toEqual(['--alias-source', 'ease_steps.rs']);
+    expect(compilerAliasArguments('generate-tests', ['ease_steps.rs'])).toEqual(['--alias-source', 'ease_steps.rs']);
+    expect(compilerAliasArguments('source-mode', ['ease_steps.rs'])).toEqual([]);
+  });
+
   it('discovers cross-module generated type references without matching comments', () => {
     const symbols = new Map([
       ['EasingFunction', { fileName: 'easingTypes.ts', hasType: true, hasValue: false }],

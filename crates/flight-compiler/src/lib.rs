@@ -65,10 +65,30 @@ pub fn compile_typescript_with_alias_sources(
 /// are rejected, while target-specific TypeScript tests remain handwritten.
 // flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
 pub fn compile_vitest(source: &str, contract_module: &str) -> Result<String, CompileError> {
+    return compile_vitest_with_alias_sources(source, contract_module, &[]);
+}
+
+/// Compiles one Rust test module with signature and directive hints from production sources.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_vitest_with_alias_sources(
+    source: &str,
+    contract_module: &str,
+    alias_sources: &[&str],
+) -> Result<String, CompileError> {
     require_generated_source(source)?;
     let program = model::parse_test_program(source)?;
-    let output = vitest::emit_test_program(&program, contract_module)?;
-    return Ok(lower_string_union_variants(output, source, true));
+    let alias_programs = alias_sources
+        .iter()
+        .map(|alias_source| model::parse_program(alias_source))
+        .collect::<Result<Vec<_>, _>>()?;
+    let alias_program_refs = alias_programs.iter().collect::<Vec<_>>();
+    let context = typescript::generation_context(&alias_program_refs)?;
+    let mut output = vitest::emit_test_program(&program, contract_module, &context)?;
+    output = lower_string_union_variants(output, source, true);
+    for alias_source in alias_sources {
+        output = lower_string_union_variants(output, alias_source, true);
+    }
+    return Ok(output);
 }
 
 fn lower_string_union_variants(

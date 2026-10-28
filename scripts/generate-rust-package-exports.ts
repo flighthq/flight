@@ -25,6 +25,11 @@ export interface RustPublicUse {
   wildcard: boolean;
 }
 
+export function compilerAliasArguments(command: string, aliasSources: readonly string[]): string[] {
+  if (command !== 'generate' && command !== 'generate-tests') return [];
+  return aliasSources.flatMap((source) => ['--alias-source', source]);
+}
+
 export function collectExportSymbols(modules: readonly ExportModule[]): Map<string, ExportSymbolOwner> {
   const symbols = new Map<string, ExportSymbolOwner>();
   for (const module of modules) {

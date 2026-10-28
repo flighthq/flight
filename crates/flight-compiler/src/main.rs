@@ -5,7 +5,7 @@ use std::process;
 
 const USAGE: &str = "\
 Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--check]
-       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--check]
+       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--alias-source <rust-file> ...] [--check]
        flight-compile source-mode --source <rust-file>
 ";
 
@@ -43,13 +43,24 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 &alias_source_refs,
             )
         }
-        GenerateKind::Tests => flight_compiler::compile_vitest(
-            &source,
-            options
-                .contract_module
-                .as_deref()
-                .ok_or_else(|| format!("--contract-module is required\n\n{USAGE}"))?,
-        ),
+        GenerateKind::Tests => {
+            let alias_sources = options
+                .alias_sources
+                .iter()
+                .map(|path| {
+                    fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let alias_source_refs = alias_sources.iter().map(String::as_str).collect::<Vec<_>>();
+            flight_compiler::compile_vitest_with_alias_sources(
+                &source,
+                options
+                    .contract_module
+                    .as_deref()
+                    .ok_or_else(|| format!("--contract-module is required\n\n{USAGE}"))?,
+                &alias_source_refs,
+            )
+        }
     }
     .map_err(|error| error.to_string())?;
     if options.check {
@@ -158,11 +169,6 @@ fn parse_generate_options(
         GenerateKind::Tests if entity_module.is_some() => {
             return Err(format!(
                 "--entity-module is only valid for generate\n\n{USAGE}"
-            ));
-        }
-        GenerateKind::Tests if !alias_sources.is_empty() => {
-            return Err(format!(
-                "--alias-source is only valid for generate\n\n{USAGE}"
             ));
         }
         GenerateKind::Source | GenerateKind::Tests => {}

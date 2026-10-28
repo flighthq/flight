@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import {
   collectCompanionFileNames,
+  compilerAliasArguments,
   collectExportSymbols,
   collectReferencedExportNames,
   collectRustPublicUses,
@@ -100,7 +101,7 @@ try {
       requireTargetNative(fileName, rustPath);
       continue;
     }
-    let typescript = compile('generate-tests', rustPath, join(rawRoot, fileName), ['./contract.ts']);
+    let typescript = compile('generate-tests', rustPath, join(rawRoot, fileName), ['./contract.ts'], aliasSources);
     if (typescript.includes('crate.')) {
       typescript = addRustTestSupportImport(typescript);
     }
@@ -164,7 +165,7 @@ function compile(
       '--out',
       out,
       ...entityArguments(command),
-      ...aliasArguments(command, aliasSources),
+      ...compilerAliasArguments(command, aliasSources),
       ...contractArguments(command, trailing),
     ],
     {
@@ -173,11 +174,6 @@ function compile(
     },
   );
   return readFileSync(out, 'utf8');
-}
-
-function aliasArguments(command: string, aliasSources: string[]): string[] {
-  if (command !== 'generate') return [];
-  return aliasSources.flatMap((source) => ['--alias-source', source]);
 }
 
 function contractArguments(command: string, trailing: string[]): string[] {

@@ -1,6 +1,6 @@
 use flight_compiler::{
     SourceMode, compile_typescript, compile_typescript_with_alias_sources, compile_vitest,
-    source_mode,
+    compile_vitest_with_alias_sources, source_mode,
 };
 
 mod source_modes {
@@ -230,9 +230,11 @@ pub struct EasingSegment {
 pub type EasingStepsGuard = Arc<dyn Fn(i32, StepPosition) + Send + Sync>;
 
 pub fn run_easing_steps_guard() {
-    let guard = STEPS_GUARD.lock().unwrap_or_else(PoisonError::into_inner).clone();
-    if let Some(guard) = guard {
-        guard(2, StepPosition::JumpEnd);
+    if true {
+        let guard = STEPS_GUARD.lock().unwrap_or_else(PoisonError::into_inner).clone();
+        if let Some(guard) = guard {
+            guard(2, StepPosition::JumpEnd);
+        }
     }
 }
 
@@ -263,6 +265,7 @@ static STEPS_GUARD: Mutex<Option<EasingStepsGuard>> = Mutex::new(None);
             )
         );
         assert!(output.contains("if (guard !== null) {"));
+        assert!(!output.contains("if (guard !== undefined) {"));
         assert!(
             output.contains(
                 "const STEPS_GUARD: { value: EasingStepsGuard | null } = { value: null };"
@@ -306,6 +309,50 @@ pub fn get_easing_derivative(ease: &dyn Fn(f32) -> f32, t: f32) -> f32 {
         assert!(output.contains(
             "export function getEasingDerivative(ease: EasingFunction, t: number): number"
         ));
+    }
+
+    #[test]
+    fn keeps_vec_containers_mutable_when_their_elements_are_readonly_tuples() {
+        let source = r#"
+use std::sync::Arc;
+
+pub type EasingFunction = Arc<dyn Fn(f32) -> f32 + Send + Sync>;
+
+pub fn append_segment(
+    segments: &mut Vec<(EasingFunction, f32, f32)>,
+    segment: (EasingFunction, f32, f32),
+) {
+    segments.push(segment);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("segments: Array<readonly [EasingFunction, number, number]>"));
+        assert!(output.contains("segment: readonly [EasingFunction, number, number]"));
+        assert!(output.contains("segments.push(segment);"));
+        assert!(!output.contains("readonly [EasingFunction, number, number][]"));
+    }
+
+    #[test]
+    fn passes_null_to_nullable_contracts_declared_by_sibling_sources() {
+        let aliases = r#"
+use std::sync::Arc;
+
+pub type EasingStepsGuard = Arc<dyn Fn(i32) + Send + Sync>;
+
+pub fn set_easing_steps_guard(guard: Option<EasingStepsGuard>) {}
+"#;
+        let source = r#"
+pub fn disable_easing_guards() {
+    set_easing_steps_guard(None);
+}
+"#;
+
+        let output = compile_typescript_with_alias_sources(source, None, &[aliases]).unwrap();
+
+        assert!(output.contains("setEasingStepsGuard(null);"));
+        assert!(!output.contains("setEasingStepsGuard(undefined);"));
     }
 
     #[test]
@@ -582,6 +629,91 @@ mod ease_steps {
         assert!(!output.contains("  StepPosition,"));
         assert!(output.contains("easeSteps(4, \"jumpEnd\")"));
         assert!(!output.contains("StepPosition.JumpEnd"));
+    }
+
+    #[test]
+    fn inherits_string_union_directives_from_production_sources() {
+        let production = r#"
+//! flight-compiler: string-union StepPosition
+
+pub enum StepPosition {
+    JumpStart,
+    JumpEnd,
+}
+"#;
+        let source = r#"
+use flight_easing::*;
+
+mod ease_steps {
+    use super::*;
+
+    #[test]
+    fn accepts_a_qualified_position() {
+        assert_eq!(ease_steps(4, Some(StepPosition::JumpEnd)), 1.0);
+    }
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/easing/contract", &[production])
+                .unwrap();
+
+        assert!(!output.contains("  StepPosition,"));
+        assert!(output.contains("easeSteps(4, \"jumpEnd\")"));
+        assert!(!output.contains("StepPosition.JumpEnd"));
+    }
+
+    #[test]
+    fn infers_fixed_f32_buffers_and_assigned_callback_parameters() {
+        let production = r#"
+pub fn write_easing_samples(out: &mut [f32], ease: &dyn Fn(f32) -> f32) {}
+"#;
+        let source = r#"
+use flight_easing::*;
+
+mod write_easing_samples {
+    use super::*;
+
+    #[test]
+    fn writes_samples() {
+        let mut out = [0.0; 4];
+        let ease = |t| t * t;
+        write_easing_samples(&mut out, &ease);
+        assert_eq!(out[0], 0.0);
+    }
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/easing/contract", &[production])
+                .unwrap();
+
+        assert!(output.contains("let out = new Float32Array(4).fill(0.0);"));
+        assert!(output.contains("const ease = (t: number) => t * t;"));
+        assert!(output.contains("writeEasingSamples(out, ease);"));
+    }
+
+    #[test]
+    fn does_not_import_struct_names_for_plain_object_literals() {
+        let source = r#"
+use flight_easing::*;
+
+mod ease_piecewise {
+    use super::*;
+
+    #[test]
+    fn accepts_segments() {
+        let segment = EasingSegment { ease: ease_linear, weight: Some(1.0) };
+        assert_eq!(segment.weight, Some(1.0));
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/easing/contract").unwrap();
+
+        assert!(!output.contains("  EasingSegment,"));
+        assert!(output.contains("const segment = { ease: easeLinear, weight: 1.0 };"));
+        assert!(output.contains("  easeLinear,"));
     }
 
     #[test]

@@ -13,6 +13,12 @@ use crate::{CompileError, compile_error};
 
 type PreferredAliases = HashMap<String, String>;
 
+const CALLBACK_ARGUMENT_MARKER: &str = "@callback-argument:";
+const CLOSURE_PARAMETER_MARKER: &str = "@closure-parameter:";
+const FIXED_BUFFER_ARGUMENT_MARKER: &str = "@fixed-buffer-argument:";
+const FIXED_BUFFER_LOCAL_MARKER: &str = "@fixed-buffer-local:";
+const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
+
 fn argument_is_option(argument: &FnArg) -> bool {
     let FnArg::Typed(argument) = argument else {
         return false;
@@ -32,6 +38,211 @@ fn argument_is_nullable_guard(function: &ItemFn, argument: &FnArg) -> bool {
         && name.ends_with("_guard")
         && pattern.ident == "guard"
         && option_inner_type(&argument.ty).is_some();
+}
+
+fn array_type(inner: String) -> String {
+    if inner.starts_with("readonly [") {
+        return format!("Array<{inner}>");
+    }
+    return format!("{inner}[]");
+}
+
+fn nullable_type(inner: String) -> String {
+    if inner.contains("=>") {
+        return format!("({inner}) | null");
+    }
+    return format!("{inner} | null");
+}
+
+fn callable_parameter_types(
+    rust_type: &Type,
+    entities: &HashSet<String>,
+) -> Result<Option<Vec<String>>, CompileError> {
+    return match rust_type {
+        Type::Paren(paren) => callable_parameter_types(&paren.elem, entities),
+        Type::Reference(reference) => callable_parameter_types(&reference.elem, entities),
+        Type::Path(path) => {
+            let Some(segment) = path.path.segments.last() else {
+                return Ok(None);
+            };
+            if !matches!(segment.ident.to_string().as_str(), "Arc" | "Box" | "Ref") {
+                return Ok(None);
+            }
+            let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                return Ok(None);
+            };
+            let Some(inner) = arguments.args.iter().find_map(|argument| match argument {
+                GenericArgument::Type(rust_type) => Some(rust_type),
+                _ => None,
+            }) else {
+                return Ok(None);
+            };
+            callable_parameter_types(inner, entities)
+        }
+        Type::TraitObject(object) => {
+            for bound in &object.bounds {
+                let syn::TypeParamBound::Trait(bound) = bound else {
+                    continue;
+                };
+                let Some(segment) = bound.path.segments.last() else {
+                    continue;
+                };
+                if !matches!(
+                    segment.ident.to_string().as_str(),
+                    "Fn" | "FnMut" | "FnOnce"
+                ) {
+                    continue;
+                }
+                let PathArguments::Parenthesized(arguments) = &segment.arguments else {
+                    return Ok(None);
+                };
+                return arguments
+                    .inputs
+                    .iter()
+                    .map(|rust_type| emit_type(rust_type, entities))
+                    .collect::<Result<Vec<_>, _>>()
+                    .map(Some);
+            }
+            Ok(None)
+        }
+        _ => Ok(None),
+    };
+}
+
+fn closure_parameter_types(entities: &HashSet<String>, local: &str) -> Vec<String> {
+    let prefix = format!("{CLOSURE_PARAMETER_MARKER}{local}:");
+    let mut parameters = entities
+        .iter()
+        .filter_map(|marker| {
+            let suffix = marker.strip_prefix(&prefix)?;
+            let (index, typescript_type) = suffix.split_once(':')?;
+            Some((index.parse::<usize>().ok()?, typescript_type.to_string()))
+        })
+        .collect::<Vec<_>>();
+    parameters.sort_by_key(|(index, _)| *index);
+    return parameters
+        .into_iter()
+        .map(|(_, typescript_type)| typescript_type)
+        .collect();
+}
+
+fn fixed_buffer_type(rust_type: &Type) -> Option<&'static str> {
+    return match rust_type {
+        Type::Array(array) => typed_array_for_type(&array.elem),
+        Type::Paren(paren) => fixed_buffer_type(&paren.elem),
+        Type::Reference(reference) => fixed_buffer_type(&reference.elem),
+        Type::Slice(slice) => typed_array_for_type(&slice.elem),
+        _ => None,
+    };
+}
+
+fn inferred_fixed_buffer_type(entities: &HashSet<String>, local: &str) -> Option<String> {
+    let prefix = format!("{FIXED_BUFFER_LOCAL_MARKER}{local}:");
+    return entities
+        .iter()
+        .find_map(|marker| marker.strip_prefix(&prefix).map(str::to_string));
+}
+
+pub(crate) fn generation_context(programs: &[&Program]) -> Result<HashSet<String>, CompileError> {
+    let mut context = HashSet::new();
+    for program in programs {
+        context.extend(program.entities.iter().cloned());
+        for function in &program.functions {
+            let function_name = function.sig.ident.to_string();
+            for (argument_index, argument) in function.sig.inputs.iter().enumerate() {
+                if argument_is_nullable_guard(function, argument) {
+                    context.insert(format!(
+                        "{NULLABLE_CALL_MARKER}{function_name}:{argument_index}"
+                    ));
+                }
+                let FnArg::Typed(argument) = argument else {
+                    continue;
+                };
+                if let Some(typescript_type) = fixed_buffer_type(&argument.ty) {
+                    context.insert(format!(
+                        "{FIXED_BUFFER_ARGUMENT_MARKER}{function_name}:{argument_index}:{typescript_type}"
+                    ));
+                }
+                let Some(parameters) = callable_parameter_types(&argument.ty, &program.entities)?
+                else {
+                    continue;
+                };
+                for (parameter_index, typescript_type) in parameters.iter().enumerate() {
+                    context.insert(format!(
+                        "{CALLBACK_ARGUMENT_MARKER}{function_name}:{argument_index}:{parameter_index}:{typescript_type}"
+                    ));
+                }
+            }
+        }
+    }
+    return Ok(context);
+}
+
+pub(crate) fn function_expression_context(
+    function: &ItemFn,
+    base: &HashSet<String>,
+) -> HashSet<String> {
+    struct CallbackUseCollector<'a> {
+        context: &'a mut HashSet<String>,
+    }
+
+    impl<'ast> syn::visit::Visit<'ast> for CallbackUseCollector<'_> {
+        fn visit_expr_call(&mut self, call: &'ast syn::ExprCall) {
+            if let Expr::Path(path) = call.func.as_ref()
+                && let Some(function) = path.path.segments.last()
+            {
+                let function = function.ident.to_string();
+                for (argument_index, argument) in call.args.iter().enumerate() {
+                    let Some(local) = referenced_identifier(argument) else {
+                        continue;
+                    };
+                    let prefix = format!("{CALLBACK_ARGUMENT_MARKER}{function}:{argument_index}:");
+                    let markers = self
+                        .context
+                        .iter()
+                        .filter_map(|marker| marker.strip_prefix(&prefix))
+                        .map(|suffix| format!("{CLOSURE_PARAMETER_MARKER}{local}:{suffix}"))
+                        .collect::<Vec<_>>();
+                    self.context.extend(markers);
+                    let prefix =
+                        format!("{FIXED_BUFFER_ARGUMENT_MARKER}{function}:{argument_index}:");
+                    let markers = self
+                        .context
+                        .iter()
+                        .filter_map(|marker| marker.strip_prefix(&prefix))
+                        .map(|typescript_type| {
+                            format!("{FIXED_BUFFER_LOCAL_MARKER}{local}:{typescript_type}")
+                        })
+                        .collect::<Vec<_>>();
+                    self.context.extend(markers);
+                }
+            }
+            syn::visit::visit_expr_call(self, call);
+        }
+    }
+
+    fn referenced_identifier(expression: &Expr) -> Option<String> {
+        return match expression {
+            Expr::Group(group) => referenced_identifier(&group.expr),
+            Expr::Paren(paren) => referenced_identifier(&paren.expr),
+            Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => path
+                .path
+                .segments
+                .first()
+                .map(|segment| segment.ident.to_string()),
+            Expr::Reference(reference) => referenced_identifier(&reference.expr),
+            _ => None,
+        };
+    }
+
+    let mut context = base.clone();
+    syn::visit::Visit::visit_block(
+        &mut CallbackUseCollector {
+            context: &mut context,
+        },
+        &function.block,
+    );
+    return context;
 }
 
 fn documentation(attributes: &[Attribute]) -> Vec<String> {
@@ -122,10 +333,28 @@ fn emit_closure(
     closure: &syn::ExprClosure,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
+    return emit_closure_with_parameter_types(closure, entities, &[]);
+}
+
+fn emit_closure_with_parameter_types(
+    closure: &syn::ExprClosure,
+    entities: &HashSet<String>,
+    parameter_types: &[String],
+) -> Result<String, CompileError> {
     let parameters = closure
         .inputs
         .iter()
-        .map(|pattern| emit_closure_parameter(pattern, entities))
+        .enumerate()
+        .map(|(index, pattern)| {
+            let parameter = emit_closure_parameter(pattern, entities)?;
+            if matches!(pattern, Pat::Type(_)) {
+                return Ok(parameter);
+            }
+            return Ok(match parameter_types.get(index) {
+                Some(typescript_type) => format!("{parameter}: {typescript_type}"),
+                None => parameter,
+            });
+        })
         .collect::<Result<Vec<_>, _>>()?;
     let return_type = match &closure.output {
         ReturnType::Default => String::new(),
@@ -373,10 +602,27 @@ pub(crate) fn emit_expression(
                 ));
             }
             let function = emit_expression(&call.func, entities)?;
+            let function_name = match call.func.as_ref() {
+                Expr::Path(path) => path
+                    .path
+                    .segments
+                    .last()
+                    .map(|segment| segment.ident.to_string()),
+                _ => None,
+            };
             let arguments = call
                 .args
                 .iter()
-                .map(|argument| emit_expression(argument, entities))
+                .enumerate()
+                .map(|(index, argument)| {
+                    if function_name.as_ref().is_some_and(|function_name| {
+                        entities.contains(&format!("{NULLABLE_CALL_MARKER}{function_name}:{index}"))
+                    }) && expression_is_none(argument)
+                    {
+                        return Ok("null".to_string());
+                    }
+                    emit_expression(argument, entities)
+                })
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(format!("{function}({})", arguments.join(", ")))
         }
@@ -711,17 +957,35 @@ fn emit_function(
             function_context.insert(format!("@nullable:{}", pattern.ident));
         }
     }
-    for statement in &function.block.stmts {
-        if let Stmt::Local(local) = statement
-            && let Some(initializer) = &local.init
-            && nullable_static_names
-                .iter()
-                .any(|name| expression_contains_identifier(&initializer.expr, name))
-            && let Some(name) = local_pattern_name(&local.pat)
-        {
-            function_context.insert(format!("@nullable:{name}"));
+    struct NullableLocalCollector<'a> {
+        names: HashSet<String>,
+        nullable_static_names: &'a HashSet<String>,
+    }
+
+    impl<'ast> syn::visit::Visit<'ast> for NullableLocalCollector<'_> {
+        fn visit_local(&mut self, local: &'ast syn::Local) {
+            if let Some(initializer) = &local.init
+                && self
+                    .nullable_static_names
+                    .iter()
+                    .any(|name| expression_contains_identifier(&initializer.expr, name))
+                && let Some(name) = local_pattern_name(&local.pat)
+            {
+                self.names.insert(name);
+            }
+            syn::visit::visit_local(self, local);
         }
     }
+
+    let mut nullable_locals = NullableLocalCollector {
+        names: HashSet::new(),
+        nullable_static_names,
+    };
+    syn::visit::Visit::visit_block(&mut nullable_locals, &function.block);
+    for name in nullable_locals.names {
+        function_context.insert(format!("@nullable:{name}"));
+    }
+    let function_context = function_expression_context(function, &function_context);
     emit_block(out, &function.block.stmts, &function_context, 1)?;
     out.push_str("}\n");
     return Ok(());
@@ -885,9 +1149,19 @@ pub(crate) fn emit_local_with_shadow(
     if initializer.diverge.is_some() {
         return Err(compile_error("unsupported let-else local binding"));
     }
+    let local_name = local_pattern_name(&local.pat);
     let typescript_type = rust_type
         .map(|rust_type| emit_type(rust_type, entities))
-        .transpose()?;
+        .transpose()?
+        .or_else(|| {
+            local_name
+                .as_deref()
+                .and_then(|name| inferred_fixed_buffer_type(entities, name))
+        });
+    let closure_parameter_types = local_name
+        .as_deref()
+        .map(|name| closure_parameter_types(entities, name))
+        .unwrap_or_default();
     let mut value = if expression_is_path_call(&initializer.expr, "allocate_entity") {
         let Some(typescript_type) = &typescript_type else {
             return Err(compile_error(
@@ -897,6 +1171,18 @@ pub(crate) fn emit_local_with_shadow(
         format!("allocateEntity<{typescript_type}>()")
     } else if let Some(rust_type) = rust_type {
         emit_expression_for_type(&initializer.expr, rust_type, entities)?
+    } else if let Expr::Repeat(repeat) = initializer.expr.as_ref()
+        && let Some(array_type) = typescript_type
+            .as_deref()
+            .filter(|typescript_type| typescript_type.ends_with("Array"))
+    {
+        format!(
+            "new {array_type}({}).fill({})",
+            emit_expression(&repeat.len, entities)?,
+            emit_expression(&repeat.expr, entities)?
+        )
+    } else if let Expr::Closure(closure) = initializer.expr.as_ref() {
+        emit_closure_with_parameter_types(closure, entities, &closure_parameter_types)?
     } else {
         emit_expression(&initializer.expr, entities)?
     };
@@ -928,7 +1214,10 @@ pub(crate) fn emit_local_with_shadow(
         let declaration = if mutable || rebound { "let" } else { "const" };
         write!(out, "{declaration} {pattern}").expect("writing to a String cannot fail");
     }
-    if !rebind && let Some(typescript_type) = typescript_type {
+    if !rebind
+        && rust_type.is_some()
+        && let Some(typescript_type) = typescript_type
+    {
         write!(out, ": {typescript_type}").expect("writing to a String cannot fail");
     }
     writeln!(out, " = {value};").expect("writing to a String cannot fail");
@@ -1277,8 +1566,8 @@ fn emit_parameter_with_aliases(
             return Err(compile_error("nullable guard parameter must use Option"));
         };
         return Ok(format!(
-            "{name}: {} | null",
-            emit_preferred_type(inner, entities, aliases)?
+            "{name}: {}",
+            nullable_type(emit_preferred_type(inner, entities, aliases)?)
         ));
     }
     return Ok(format!(
@@ -1347,9 +1636,9 @@ fn emit_type_with_aliases(
         };
         let inner = emit_type_with_aliases(inner, entities, aliases, nullable_types)?;
         return Ok(match name.as_str() {
-            "Option" if nullable_types.contains(&inner) => format!("{inner} | null"),
+            "Option" if nullable_types.contains(&inner) => nullable_type(inner),
             "Option" => format!("{inner} | undefined"),
-            "Vec" => format!("{inner}[]"),
+            "Vec" => array_type(inner),
             "Mutex" => format!("{{ value: {inner} }}"),
             "Arc" | "Ref" => inner,
             _ => unreachable!(),
@@ -1359,17 +1648,19 @@ fn emit_type_with_aliases(
 }
 
 fn nullable_guard_types(
-    program: &Program,
+    programs: &[&Program],
     aliases: &PreferredAliases,
 ) -> Result<HashSet<String>, CompileError> {
     let mut types = HashSet::new();
-    for function in &program.functions {
-        for argument in &function.sig.inputs {
-            if argument_is_nullable_guard(function, argument)
-                && let FnArg::Typed(argument) = argument
-                && let Some(inner) = option_inner_type(&argument.ty)
-            {
-                types.insert(emit_preferred_type(inner, &program.entities, aliases)?);
+    for program in programs {
+        for function in &program.functions {
+            for argument in &function.sig.inputs {
+                if argument_is_nullable_guard(function, argument)
+                    && let FnArg::Typed(argument) = argument
+                    && let Some(inner) = option_inner_type(&argument.ty)
+                {
+                    types.insert(emit_preferred_type(inner, &program.entities, aliases)?);
+                }
             }
         }
     }
@@ -1393,12 +1684,16 @@ pub(crate) fn emit_program(
     entity_module: Option<&str>,
     alias_programs: &[Program],
 ) -> Result<String, CompileError> {
+    let programs = std::iter::once(program)
+        .chain(alias_programs)
+        .collect::<Vec<_>>();
     let uses_allocate_entity = program
         .functions
         .iter()
         .any(|function| expression_contains_path(&function.block, "allocate_entity"));
     let aliases = preferred_aliases(program, alias_programs)?;
-    let nullable_types = nullable_guard_types(program, &aliases)?;
+    let expression_context = generation_context(&programs)?;
+    let nullable_types = nullable_guard_types(&programs, &aliases)?;
     let nullable_static_names = program
         .statics
         .iter()
@@ -1490,7 +1785,7 @@ pub(crate) fn emit_program(
         emit_function(
             &mut out,
             function,
-            &program.entities,
+            &expression_context,
             &aliases,
             &nullable_static_names,
         )?;
@@ -1781,10 +2076,7 @@ pub(crate) fn emit_type(
                         Ok(format!("{inner} | undefined"))
                     }
                 }
-                "Vec" => Ok(format!(
-                    "{}[]",
-                    emit_single_generic_type(segment, entities)?
-                )),
+                "Vec" => Ok(array_type(emit_single_generic_type(segment, entities)?)),
                 "Mutex" => Ok(format!(
                     "{{ value: {} }}",
                     emit_single_generic_type(segment, entities)?
@@ -1963,7 +2255,12 @@ fn expression_contains_identifier(expression: &Expr, expected: &str) -> bool {
         }
 
         fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
-            if path.path.is_ident(self.expected) {
+            if path
+                .path
+                .segments
+                .last()
+                .is_some_and(|segment| segment.ident == self.expected)
+            {
                 self.found = true;
             }
             syn::visit::visit_expr_path(self, path);
@@ -2073,6 +2370,17 @@ fn expression_is_method(expression: &Expr, expected: &str) -> bool {
         return false;
     };
     return call.method == expected && call.args.is_empty();
+}
+
+fn expression_is_none(expression: &Expr) -> bool {
+    let Expr::Path(path) = expression else {
+        return false;
+    };
+    return path
+        .path
+        .segments
+        .last()
+        .is_some_and(|segment| segment.ident == "None");
 }
 
 fn expression_is_path(expression: &Expr, expected: &str) -> bool {
