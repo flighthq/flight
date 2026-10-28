@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { Signal, SignalConnectOptions, SignalData } from '@flighthq/types/contract';
-
 import { nullSignalEmit } from './internal.ts';
+import type { Signal, SignalConnectOptions, SignalData } from './signalTypes.ts';
 
 export function clearSignal<T extends (...args: any[]) => void>(signal: Signal<T>): void {
   signal.emit = nullSignalEmit as unknown as T;

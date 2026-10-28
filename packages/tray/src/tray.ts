@@ -1,5 +1,6 @@
 import { allocateEntity, createEntityRuntime, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
+import type { Signal } from '@flighthq/signals/contract';
 import type {
   Entity,
   EntityConstruction,
@@ -19,7 +20,6 @@ import type {
   HostTrayTitleCapability,
   HostTrayTooltipCapability,
   MenuItemTemplate,
-  Signal,
   TrayAnimationStartResult,
   TrayAnimationStopResult,
   TrayBalloonDisplayResult,

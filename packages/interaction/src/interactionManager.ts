@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { inverseMatrixTransformPointXY } from '@flighthq/geometry/contract';
 import { getNodeParent, getNodeRuntime, getNodeWorldMatrix } from '@flighthq/node/contract';
 import { connectSignal, createSignal, disconnectSignal, emitSignal, isSlotConnected } from '@flighthq/signals/contract';
+import type { Signal, SignalConnectOptions } from '@flighthq/signals/contract';
 import type {
   AnyInteractionSignalSlot,
   Cursor,
@@ -23,8 +24,6 @@ import type {
   NodeAny,
   NodeRuntime,
   PointerEventData,
-  Signal,
-  SignalConnectOptions,
   Transform2DNode,
   EntityConstruction,
 } from '@flighthq/types/contract';

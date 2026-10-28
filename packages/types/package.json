@@ -41,6 +41,7 @@
     "@flighthq/entity": "*",
     "@flighthq/math": "*",
     "@flighthq/resource": "*",
+    "@flighthq/signals": "*",
     "@flighthq/textformat": "*"
   },
   "peerDependencies": {

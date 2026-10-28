@@ -26,6 +26,9 @@
       "path": "../resource"
     },
     {
+      "path": "../signals"
+    },
+    {
       "path": "../textformat"
     }
   ],

@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { Signal, SignalConnection, SignalTrackedConnectOptions } from '@flighthq/types/contract';
-
+import type { Signal, SignalConnection, SignalTrackedConnectOptions } from './signalTypes.ts';
 import { connectSignal, disconnectSignal } from './slot.ts';
 
 // Connects through a wrapper so pause state costs only consumers that request a tracked handle. Tracked

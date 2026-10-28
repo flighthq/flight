@@ -1,4 +1,5 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { Signal } from '@flighthq/signals/contract';
 import type {
   DesktopOsProfile,
   ElectronApi,
@@ -9,7 +10,6 @@ import type {
   ElectronTrayCapabilitiesFor,
   HostTrayCapabilities,
   MenuItemTemplate,
-  Signal,
   HostTrayBalloonCapability,
   TrayBalloonEvent,
   HostTrayBalloonEventsCapability,

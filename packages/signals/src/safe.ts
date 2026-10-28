@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { Signal, SignalData } from '@flighthq/types/contract';
-
 import { nullSignalEmit } from './internal.ts';
+import type { Signal, SignalData } from './signalTypes.ts';
 
 /**
  * Emits to the priority-ordered listener set captured at emission start.

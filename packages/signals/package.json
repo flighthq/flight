@@ -38,8 +38,7 @@
     "clean:dist": "tsx ../../scripts/clean-package-dist.ts"
   },
   "dependencies": {
-    "@flighthq/entity": "*",
-    "@flighthq/types": "*"
+    "@flighthq/entity": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"

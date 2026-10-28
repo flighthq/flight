@@ -1,4 +1,1 @@
-export interface SignalConnectOptions {
-  once?: boolean;
-  priority?: number;
-}
+export type { SignalConnectOptions } from '@flighthq/signals/contract';

@@ -1,4 +1,5 @@
 import { emitSignal } from '@flighthq/signals/contract';
+import type { Signal } from '@flighthq/signals/contract';
 import type {
   HostNetCapability,
   NetProgress,
@@ -6,7 +7,6 @@ import type {
   NetResponse,
   NetResponseBody,
   NetResponseType,
-  Signal,
 } from '@flighthq/types/contract';
 
 function createWebNetBackend(): HostNetCapability {

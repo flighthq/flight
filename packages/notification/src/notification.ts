@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { clearSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { Signal } from '@flighthq/signals/contract';
 import type {
   Entity,
   HostNotificationActionCapability,
@@ -36,7 +37,6 @@ import type {
   NotificationSubscriptionDetachOutcome,
   NotificationSubscriptionDisposeOutcome,
   ScheduledNotification,
-  Signal,
   EntityConstruction,
 } from '@flighthq/types/contract';
 

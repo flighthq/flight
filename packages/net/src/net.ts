@@ -1,3 +1,4 @@
+import type { Signal } from '@flighthq/signals/contract';
 import type {
   HostNetCapability,
   NetGuard,
@@ -5,7 +6,6 @@ import type {
   NetRequestOptions,
   NetResponse,
   NetResponseExplanation,
-  Signal,
 } from '@flighthq/types/contract';
 
 // Explains the sentinel encoded in a response without formatting or logging it. Status 0 takes

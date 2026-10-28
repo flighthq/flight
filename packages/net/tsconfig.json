@@ -13,6 +13,9 @@
       "path": "../log"
     },
     {
+      "path": "../signals"
+    },
+    {
       "path": "../types"
     }
   ],

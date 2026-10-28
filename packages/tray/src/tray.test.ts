@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createSignal } from '@flighthq/signals/contract';
+import type { Signal } from '@flighthq/signals/contract';
 import type {
   HostTrayBalloonCapability,
   HostTrayBalloonEventsCapability,
@@ -17,7 +18,6 @@ import type {
   HostTrayTitleCapability,
   HostTrayTooltipCapability,
   RectangleLike,
-  Signal,
   TrayBalloonEvent,
   TrayDropEvent,
   TrayIcon,

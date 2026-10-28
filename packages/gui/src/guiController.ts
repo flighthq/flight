@@ -14,6 +14,7 @@ import {
   invalidateNodeLocalTransform,
 } from '@flighthq/node/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
+import type { Signal } from '@flighthq/signals/contract';
 import type {
   Entity,
   EntityRuntime,
@@ -23,7 +24,6 @@ import type {
   GuiTransitionValue,
   InteractionSignals,
   Node2D,
-  Signal,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 

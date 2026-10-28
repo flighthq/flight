@@ -1,19 +1,12 @@
-import { EntityRuntimeKey } from './Entity.ts';
-import type { Signal, SignalData } from './Signal.ts';
+import { createSignal } from './signal.ts';
+import type { SignalData } from './signalTypes.ts';
 
 describe('Signal', () => {
   describe('Signal', () => {
     it('parameterizes emit by the slot function type', () => {
       type PointSlot = (x: number, y: number) => void;
-      // types has no dependency to reach createEntity with, so the runtime slot is written literally.
-      // This is a type-shape test, not construction of an SDK object.
-      const signal: Signal<PointSlot> = {
-        [EntityRuntimeKey]: undefined,
-        data: null,
-        emit: (_x, _y) => {},
-      };
+      const signal = createSignal<PointSlot>();
 
-      // emit accepts exactly the slot signature
       signal.emit(1, 2);
       expect(signal.data).toBeNull();
     });
@@ -27,7 +20,8 @@ describe('Signal', () => {
         cancelled: false,
         depth: 0,
       };
-      const signal: Signal<Slot> = { [EntityRuntimeKey]: undefined, data, emit: (_value) => {} };
+      const signal = createSignal<Slot>();
+      signal.data = data;
       expect(signal.data?.slots.length).toBe(1);
     });
   });

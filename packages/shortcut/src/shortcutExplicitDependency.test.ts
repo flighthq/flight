@@ -1,5 +1,6 @@
 import { connectSignal } from '@flighthq/signals/contract';
-import type { AcceleratorParseError, Entity, Signal } from '@flighthq/types/contract';
+import type { Signal } from '@flighthq/signals/contract';
+import type { AcceleratorParseError, Entity } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 import * as shortcutExports from './shortcutExplicitDependency.ts';

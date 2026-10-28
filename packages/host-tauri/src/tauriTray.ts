@@ -1,4 +1,5 @@
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { Signal } from '@flighthq/signals/contract';
 import type {
   DesktopOsProfile,
   HostTrayImageCapability,
@@ -10,7 +11,6 @@ import type {
   HostTrayTitleCapability,
   HostTrayTooltipCapability,
   MenuItemTemplate,
-  Signal,
   TauriApi,
   TauriMenu,
   TauriMenuItemHandle,

@@ -1,5 +1,6 @@
 import { createSignal } from '@flighthq/signals/contract';
-import type { CommandHistory, Signal } from '@flighthq/types/contract';
+import type { Signal } from '@flighthq/signals/contract';
+import type { CommandHistory } from '@flighthq/types/contract';
 
 // Opts the history into its onChange signal, allocating it on first call and returning it (idempotent — a
 // second call returns the same signal). onChange emits after any execute, undo, redo, clear, or transaction
