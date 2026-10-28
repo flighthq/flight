@@ -131,12 +131,13 @@ pub fn compile_vitest_with_alias_sources(
         .map(|alias_source| model::parse_program(alias_source))
         .collect::<Result<Vec<_>, _>>()?;
     let alias_program_refs = alias_programs.iter().collect::<Vec<_>>();
-    let context = typescript::generation_context(&alias_program_refs)?;
-    let mut output = vitest::emit_test_program(&program, contract_module, &context)?;
     let string_unions = model::parse_string_union_metadata(source)?;
-    output = lower_string_union_variants(output, &string_unions, true);
+    let mut context = typescript::generation_context(&alias_program_refs)?;
+    typescript::insert_string_union_context(&mut context, string_unions.keys());
+    let mut output = vitest::emit_test_program(&program, contract_module, &context)?;
+    output = lower_string_union_variants(output, &string_unions, false);
     for alias_program in &alias_programs {
-        output = lower_string_union_variants(output, &alias_program.string_unions, true);
+        output = lower_string_union_variants(output, &alias_program.string_unions, false);
     }
     return Ok(output);
 }

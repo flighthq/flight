@@ -2247,6 +2247,110 @@ mod shared_ref {
     }
 
     #[test]
+    fn lowers_shared_test_state_and_string_union_case_tables() {
+        let production = r#"
+//! flight-compiler: string-union Status
+
+pub enum Status {
+    Ready,
+    Waiting,
+}
+
+pub fn read_status(value: Status) -> Status {
+    return value;
+}
+"#;
+        let source = r#"
+use std::sync::{Arc, Mutex};
+use flight_example::*;
+
+struct Recorded {
+    values: Vec<Status>,
+}
+
+type Calls = Arc<Mutex<Recorded>>;
+
+fn make_calls() -> Calls {
+    return Arc::new(Mutex::new(Recorded { values: Vec::new() }));
+}
+
+mod read_status {
+    use super::*;
+
+    #[test]
+    fn preserves_shared_state_and_literal_types() {
+        let calls = make_calls();
+        let alias = Arc::clone(&calls);
+        alias.lock().unwrap().values.push(Status::Ready);
+        let (_, selected) = (0, Status::Ready);
+        let cases = [
+            (Status::Ready, "ready"),
+            (Status::Waiting, "waiting"),
+        ];
+        for (value, expected) in cases {
+            assert_eq!(read_status(value), expected);
+        }
+        assert_eq!(calls.lock().unwrap().values, vec![selected]);
+    }
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/example/contract", &[production])
+                .unwrap();
+
+        assert!(output.contains("import type {\n  Status,\n}"));
+        assert!(!output.contains("Arc.clone"));
+        assert!(output.contains("alias.value.values.push(\"ready\");"));
+        assert!(output.contains("const [, selected] = [0, \"ready\"] as const;"));
+        assert!(output.contains(
+            "const cases = [[\"ready\", \"ready\"], [\"waiting\", \"waiting\"]] as const;"
+        ));
+        assert!(output.contains("expect(calls.value.values).toEqual([selected]);"));
+    }
+
+    #[test]
+    fn lowers_real_haptics_shared_state_and_union_tables() {
+        let types = include_str!("../../flight-haptics/src/types.rs");
+        let haptics = include_str!("../../flight-haptics/src/haptics.rs");
+        let haptics_tests = include_str!("../../flight-haptics/tests/haptics_test.rs");
+        let types_tests = include_str!("../../flight-haptics/tests/types_test.rs");
+
+        let haptics_output = compile_vitest_with_alias_sources(
+            haptics_tests,
+            "@flighthq/haptics/contract",
+            &[types, haptics],
+        )
+        .unwrap();
+        let types_output = compile_vitest_with_alias_sources(
+            types_tests,
+            "@flighthq/haptics/contract",
+            &[types, haptics],
+        )
+        .unwrap();
+
+        assert!(haptics_output.contains(
+            "import type {\n  HapticImpactStyle,\n  HapticNotificationType,\n  HapticsCapabilities,\n  HostHapticsCapability,\n}"
+        ));
+        assert!(!haptics_output.contains("Arc.clone"));
+        assert!(haptics_output.contains("cancelCalls.value.names.push(\"cancel\");"));
+        assert!(haptics_output.contains("let calls = impactCalls.value;"));
+        assert!(haptics_output.contains("let [, host] = makeHost();"));
+        assert!(haptics_output.contains(
+            "const styles = [\"heavy\", \"light\", \"medium\", \"rigid\", \"soft\"] as const;"
+        ));
+        assert!(
+            haptics_output.contains(
+                "const notificationTypes = [\"error\", \"success\", \"warning\"] as const;"
+            )
+        );
+        assert!(types_output.contains(
+            "const cases = [[\"cancel\", \"cancel\"], [\"capabilities\", \"capabilities\"]"
+        ));
+        assert_eq!(types_output.matches("]] as const;").count(), 2);
+    }
+
+    #[test]
     fn refuses_impl_sugar_tests() {
         let source = r#"
 use flight_geometry::*;

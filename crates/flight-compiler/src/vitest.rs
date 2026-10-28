@@ -10,7 +10,8 @@ use crate::model::{TestCase, TestProgram, TestSuite};
 use crate::typescript::{
     emit_expression, emit_for_header, emit_format_template, emit_local, emit_local_with_shadow,
     emit_parameter, emit_type, frozen_object_name, function_expression_context,
-    is_data_union_variant, numeric_literal_spelling, snake_to_lower_camel, write_indent,
+    is_data_union_variant, is_string_union, numeric_literal_spelling, snake_to_lower_camel,
+    write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -158,6 +159,10 @@ fn collect_contract_symbols(
                             | "Vec"
                     )
                 {
+                    if is_string_union(self.context, &segment.ident.to_string()) {
+                        syn::visit::visit_expr_path(self, expression);
+                        return;
+                    }
                     if segments.len() == 2
                         && let Some(variant) = segments.last()
                         && is_data_union_variant(
@@ -265,6 +270,27 @@ fn collect_contract_symbols(
         type_symbols.extend(collector.type_symbols);
         external_modules.extend(collector.external_modules);
     }
+    let mut collector = ContractSymbolCollector {
+        declared: HashSet::new(),
+        helper_names: &helper_names,
+        standard_constants: &program.standard_constants,
+        context,
+        symbols: Vec::new(),
+        type_symbols: Vec::new(),
+        external_modules: Vec::new(),
+    };
+    for constant in &program.constants {
+        collector.visit_item_const(constant);
+    }
+    for structure in &program.structs {
+        collector.visit_item_struct(structure);
+    }
+    for type_alias in &program.type_aliases {
+        collector.visit_item_type(type_alias);
+    }
+    symbols.extend(collector.symbols);
+    type_symbols.extend(collector.type_symbols);
+    external_modules.extend(collector.external_modules);
     symbols.sort_by_key(|symbol| emit_path_name(symbol));
     symbols.dedup();
     type_symbols.sort_by_key(|symbol| emit_path_name(symbol));

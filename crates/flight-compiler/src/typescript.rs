@@ -36,6 +36,7 @@ const RETURN_TYPE_MARKER: &str = "@return-type:";
 const RETURNS_U32_MARKER: &str = "@returns-u32";
 const STRING_EXPRESSION_MARKER: &str = "@string-expression:";
 const STRING_RETURN_MARKER: &str = "@string-return:";
+const STRING_UNION_MARKER: &str = "@string-union:";
 const VEC_CLONE_ARGUMENT_MARKER: &str = "@vec-clone-argument:";
 const VEC_CLONE_EXPRESSION_MARKER: &str = "@vec-clone-expression:";
 const UNSIGNED_INTEGER_LOCAL_MARKER: &str = "@unsigned-integer-local:";
@@ -594,6 +595,17 @@ pub(crate) fn generation_context(programs: &[&Program]) -> Result<HashSet<String
     return generation_context_with_types(programs, &HashSet::new());
 }
 
+pub(crate) fn insert_string_union_context<'a>(
+    context: &mut HashSet<String>,
+    names: impl Iterator<Item = &'a String>,
+) {
+    context.extend(names.map(|name| format!("{STRING_UNION_MARKER}{name}")));
+}
+
+pub(crate) fn is_string_union(context: &HashSet<String>, name: &str) -> bool {
+    return context.contains(&format!("{STRING_UNION_MARKER}{name}"));
+}
+
 fn generation_context_with_types(
     programs: &[&Program],
     type_context: &HashSet<String>,
@@ -645,6 +657,7 @@ fn generation_context_with_types(
                     format!("{FROZEN_OBJECT_MARKER}{rust_name}:{typescript_name}")
                 }),
         );
+        insert_string_union_context(&mut context, program.string_unions.keys());
         for structure in &program.structs {
             let entity = structure.ident.to_string();
             if !entity_types.contains(&entity) {
@@ -1516,6 +1529,9 @@ pub(crate) fn emit_expression(
             if expression_is_associated_path(&call.func, "Arc", "new") && call.args.len() == 1 {
                 return emit_expression(&call.args[0], entities);
             }
+            if expression_is_associated_path(&call.func, "Arc", "clone") && call.args.len() == 1 {
+                return emit_expression(&call.args[0], entities);
+            }
             if expression_is_associated_path(&call.func, "Arc", "ptr_eq") && call.args.len() == 2 {
                 return Ok(format!(
                     "{} === {}",
@@ -2286,6 +2302,12 @@ pub(crate) fn emit_local_with_shadow(
     } else {
         emit_expression(&initializer.expr, entities)?
     };
+    if !mutable
+        && rust_type.is_none()
+        && expression_contains_string_union_variant(&initializer.expr, entities)
+    {
+        value = format!("{value} as const");
+    }
     if mutable && let Some(name) = frozen_object_expression_name(&initializer.expr, entities) {
         value = format!("{{ ...{name} }}");
     }
@@ -3309,7 +3331,11 @@ fn emit_method_call(
             arguments[1], arguments[0]
         )),
         "cos" if arguments.is_empty() => Ok(format!("Math.cos({receiver})")),
-        "clone" if arguments.is_empty() && expression_contains_method(&call.receiver, "lock") => {
+        "clone"
+            if arguments.is_empty()
+                && expression_contains_method(&call.receiver, "lock")
+                && expression_contains_method(&call.receiver, "unwrap_or_else") =>
+        {
             Ok(format!("{receiver}.value"))
         }
         "clone"
@@ -3473,6 +3499,9 @@ fn emit_method_call(
             Ok(receiver)
         }
         "unwrap_or" if arguments.len() == 1 => Ok(format!("({receiver} ?? {})", arguments[0])),
+        "unwrap" if arguments.is_empty() && expression_contains_method(&call.receiver, "lock") => {
+            Ok(format!("{receiver}.value"))
+        }
         "unwrap" if arguments.is_empty() => Ok(format!("{receiver}!")),
         _ => Err(compile_error(format!(
             "unsupported Rust method call `.{method}()`; impl sugar is not a transpilation source"
@@ -3658,7 +3687,13 @@ pub(crate) fn emit_pattern(pattern: &Pat) -> Result<String, CompileError> {
             let elements = tuple
                 .elems
                 .iter()
-                .map(emit_pattern)
+                .map(|element| {
+                    if matches!(element, Pat::Wild(_)) {
+                        Ok(String::new())
+                    } else {
+                        emit_pattern(element)
+                    }
+                })
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(format!("[{}]", elements.join(", ")))
         }
@@ -4902,6 +4937,48 @@ fn expression_contains_method(expression: &Expr, expected: &str) -> bool {
         found: false,
     };
     syn::visit::Visit::visit_expr(&mut finder, expression);
+    return finder.found;
+}
+
+fn expression_contains_string_union_variant(expression: &Expr, context: &HashSet<String>) -> bool {
+    struct StringUnionVariantFinder<'a> {
+        context: &'a HashSet<String>,
+        found: bool,
+    }
+
+    impl<'ast> Visit<'ast> for StringUnionVariantFinder<'_> {
+        fn visit_expr_macro(&mut self, expression: &'ast syn::ExprMacro) {
+            if expression
+                .mac
+                .path
+                .segments
+                .last()
+                .is_some_and(|segment| segment.ident == "vec")
+                && let Ok(values) = Punctuated::<Expr, Token![,]>::parse_terminated
+                    .parse2(expression.mac.tokens.clone())
+            {
+                for value in &values {
+                    self.visit_expr(value);
+                }
+            }
+        }
+
+        fn visit_expr_path(&mut self, expression: &'ast syn::ExprPath) {
+            if expression.qself.is_none()
+                && let Some((owner, _)) = path_owner_and_member(&expression.path)
+                && is_string_union(self.context, &owner)
+            {
+                self.found = true;
+            }
+            syn::visit::visit_expr_path(self, expression);
+        }
+    }
+
+    let mut finder = StringUnionVariantFinder {
+        context,
+        found: false,
+    };
+    finder.visit_expr(expression);
     return finder.found;
 }
 
