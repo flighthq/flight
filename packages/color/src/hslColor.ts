@@ -16,7 +16,10 @@ export class HslColor extends Entity {
   }
 
   static override from(raw: EntityRaw): HslColor {
-    return getEntityWrapperAs<HslColor>(raw) ?? new HslColor(raw as HslColorRaw);
+    const wrapper = getEntityWrapperAs<Entity>(raw);
+    if (wrapper === null) return new HslColor(raw as HslColorRaw);
+    if (wrapper instanceof HslColor) return wrapper;
+    throw new TypeError('Cannot create HslColor: the EntityRaw object already has a different wrapper');
   }
 
   get h(): number {

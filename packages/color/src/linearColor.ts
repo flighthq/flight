@@ -17,7 +17,10 @@ export class LinearColor extends Entity {
   }
 
   static override from(raw: EntityRaw): LinearColor {
-    return getEntityWrapperAs<LinearColor>(raw) ?? new LinearColor(raw as LinearColorRaw);
+    const wrapper = getEntityWrapperAs<Entity>(raw);
+    if (wrapper === null) return new LinearColor(raw as LinearColorRaw);
+    if (wrapper instanceof LinearColor) return wrapper;
+    throw new TypeError('Cannot create LinearColor: the EntityRaw object already has a different wrapper');
   }
 
   get r(): number {
