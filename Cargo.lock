@@ -2207,6 +2207,8 @@ version = "0.6.0"
 dependencies = [
  "flight-entity",
  "flight-geometry",
+ "flight-node",
+ "flight-scene2d",
 ]
 
 [[package]]

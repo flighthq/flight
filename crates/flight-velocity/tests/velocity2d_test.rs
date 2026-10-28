@@ -31,18 +31,6 @@ mod add_velocity {
     }
 }
 
-mod begin_velocity_frame {
-    use super::*;
-
-    #[test]
-    fn advances_the_frame_id() {
-        let mut field = create_velocity_field();
-        let before = field.frame_id;
-        begin_velocity_frame(&mut field);
-        assert_eq!(field.frame_id, before + 1);
-    }
-}
-
 mod clamp_velocity {
     use super::*;
 
@@ -99,32 +87,6 @@ mod clone_velocity2d {
     }
 }
 
-mod contribute_velocity {
-    use super::*;
-
-    #[test]
-    fn records_an_explicit_velocity_readable_this_frame() {
-        let mut field = create_velocity_field();
-        let source_id: u64 = 1;
-        contribute_velocity(&mut field, source_id, 3.0, -4.0);
-        let mut out = Velocity2D { x: 0.0, y: 0.0 };
-        get_velocity(&field, source_id, &mut out);
-        assert_eq!(out.x, 3.0);
-        assert_eq!(out.y, -4.0);
-    }
-
-    #[test]
-    fn accepts_any_source_id() {
-        let mut field = create_velocity_field();
-        let source_id: u64 = 42;
-        contribute_velocity(&mut field, source_id, 1.0, 2.0);
-        let mut out = Velocity2D { x: 0.0, y: 0.0 };
-        get_velocity(&field, source_id, &mut out);
-        assert_eq!(out.x, 1.0);
-        assert_eq!(out.y, 2.0);
-    }
-}
-
 mod copy_velocity {
     use super::*;
 
@@ -144,20 +106,6 @@ mod copy_velocity {
         copy_velocity(&mut v, &v_clone);
         assert_eq!(v.x, 7.0);
         assert_eq!(v.y, 2.0);
-    }
-}
-
-mod create_velocity_field {
-    use super::*;
-
-    #[test]
-    fn starts_at_frame_zero_and_returns_zero_for_unknown_sources() {
-        let field = create_velocity_field();
-        assert_eq!(field.frame_id, 0);
-        let mut out = Velocity2D { x: 0.0, y: 0.0 };
-        get_velocity(&field, 999, &mut out);
-        assert_eq!(out.x, 0.0);
-        assert_eq!(out.y, 0.0);
     }
 }
 
@@ -215,161 +163,6 @@ mod damp_velocity {
         );
         assert_eq!(current.x, 5.0);
         assert_eq!(current.y, 0.0);
-    }
-}
-
-mod ensure_velocity_sample {
-    use super::*;
-
-    #[test]
-    fn returns_the_same_sample_on_repeat_calls() {
-        let mut field = create_velocity_field();
-        let source_id: u64 = 1;
-        {
-            let sample = ensure_velocity_sample(&mut field, source_id);
-            sample.velocity.x = 42.0;
-        }
-        {
-            let sample = ensure_velocity_sample(&mut field, source_id);
-            assert_eq!(sample.velocity.x, 42.0);
-        }
-    }
-}
-
-mod explain_velocity {
-    use super::*;
-
-    #[test]
-    fn reports_no_sample_for_an_unknown_source() {
-        let field = create_velocity_field();
-        let result = explain_velocity(&field, 999);
-        assert_eq!(result.reason, VelocityReason::NoSample);
-    }
-
-    #[test]
-    fn reports_stale_when_the_sample_was_not_touched_this_frame() {
-        let mut field = create_velocity_field();
-        let source_id: u64 = 1;
-        contribute_velocity(&mut field, source_id, 5.0, 5.0);
-        begin_velocity_frame(&mut field);
-        let result = explain_velocity(&field, source_id);
-        assert_eq!(result.reason, VelocityReason::Stale);
-    }
-
-    #[test]
-    fn reports_explicit_zero_for_a_suppressed_velocity() {
-        let mut field = create_velocity_field();
-        let source_id: u64 = 1;
-        suppress_velocity(&mut field, source_id);
-        let result = explain_velocity(&field, source_id);
-        assert_eq!(result.reason, VelocityReason::ExplicitZero);
-        assert_eq!(result.explicit, true);
-    }
-
-    #[test]
-    fn reports_derived_zero_when_the_transform_baseline_produces_zero() {
-        let mut field = create_velocity_field();
-        let source_id: u64 = 1;
-        let frame_id = field.frame_id;
-        let sample = ensure_velocity_sample(&mut field, source_id);
-        sample.velocity.x = 0.0;
-        sample.velocity.y = 0.0;
-        sample.last_frame_id = frame_id;
-        let result = explain_velocity(&field, source_id);
-        assert_eq!(result.reason, VelocityReason::DerivedZero);
-        assert_eq!(result.explicit, false);
-    }
-
-    #[test]
-    fn reports_ok_with_velocity_values_for_a_contributing_source() {
-        let mut field = create_velocity_field();
-        let source_id: u64 = 1;
-        contribute_velocity(&mut field, source_id, 3.0, -4.0);
-        let result = explain_velocity(&field, source_id);
-        assert_eq!(result.reason, VelocityReason::Ok);
-        assert_eq!(result.x, 3.0);
-        assert_eq!(result.y, -4.0);
-        assert_eq!(result.explicit, true);
-    }
-
-    #[test]
-    fn reports_ok_with_explicit_false_for_a_derived_nonzero_velocity() {
-        let mut field = create_velocity_field();
-        let source_id: u64 = 1;
-        let frame_id = field.frame_id;
-        let sample = ensure_velocity_sample(&mut field, source_id);
-        sample.velocity.x = 7.0;
-        sample.velocity.y = -2.0;
-        sample.last_frame_id = frame_id;
-        let result = explain_velocity(&field, source_id);
-        assert_eq!(result.reason, VelocityReason::Ok);
-        assert_eq!(result.x, 7.0);
-        assert_eq!(result.y, -2.0);
-        assert_eq!(result.explicit, false);
-    }
-}
-
-mod get_velocity {
-    use super::*;
-
-    #[test]
-    fn returns_zero_once_the_sample_is_stale_after_the_frame_advances() {
-        let mut field = create_velocity_field();
-        let source_id: u64 = 1;
-        contribute_velocity(&mut field, source_id, 5.0, 5.0);
-        begin_velocity_frame(&mut field);
-        let mut out = Velocity2D { x: 0.0, y: 0.0 };
-        get_velocity(&field, source_id, &mut out);
-        assert_eq!(out.x, 0.0);
-        assert_eq!(out.y, 0.0);
-    }
-}
-
-mod get_velocity_reason_string {
-    use super::*;
-
-    #[test]
-    fn returns_the_exact_ts_strings() {
-        assert_eq!(
-            get_velocity_reason_string(VelocityReason::NoSample),
-            "no-sample"
-        );
-        assert_eq!(get_velocity_reason_string(VelocityReason::Stale), "stale");
-        assert_eq!(
-            get_velocity_reason_string(VelocityReason::ExplicitZero),
-            "explicit-zero"
-        );
-        assert_eq!(
-            get_velocity_reason_string(VelocityReason::DerivedZero),
-            "derived-zero"
-        );
-        assert_eq!(get_velocity_reason_string(VelocityReason::Ok), "ok");
-    }
-}
-
-mod has_velocity {
-    use super::*;
-
-    #[test]
-    fn is_true_for_nonzero_velocity_and_false_for_suppressed() {
-        let mut field = create_velocity_field();
-        let moving_id: u64 = 1;
-        let still_id: u64 = 2;
-        contribute_velocity(&mut field, moving_id, 1.0, 0.0);
-        suppress_velocity(&mut field, still_id);
-        assert_eq!(has_velocity(&field, moving_id), true);
-        assert_eq!(has_velocity(&field, still_id), false);
-    }
-}
-
-mod initialize_velocity_field {
-    use super::*;
-
-    #[test]
-    fn is_the_construction_initializer_of_create_velocity_field() {
-        let mut field = create_velocity_field();
-        initialize_velocity_field(&mut field);
-        assert_eq!(field.frame_id, 0);
     }
 }
 
@@ -510,35 +303,6 @@ mod normalize_velocity {
     }
 }
 
-mod parse_velocity_reason {
-    use super::*;
-
-    #[test]
-    fn parses_the_exact_ts_strings() {
-        assert_eq!(
-            parse_velocity_reason("no-sample"),
-            Some(VelocityReason::NoSample)
-        );
-        assert_eq!(parse_velocity_reason("stale"), Some(VelocityReason::Stale));
-        assert_eq!(
-            parse_velocity_reason("explicit-zero"),
-            Some(VelocityReason::ExplicitZero)
-        );
-        assert_eq!(
-            parse_velocity_reason("derived-zero"),
-            Some(VelocityReason::DerivedZero)
-        );
-        assert_eq!(parse_velocity_reason("ok"), Some(VelocityReason::Ok));
-    }
-
-    #[test]
-    fn rejects_other_text_and_wrong_casing() {
-        assert_eq!(parse_velocity_reason("OK"), None);
-        assert_eq!(parse_velocity_reason("no_sample"), None);
-        assert_eq!(parse_velocity_reason(""), None);
-    }
-}
-
 mod scale_velocity {
     use super::*;
 
@@ -582,22 +346,6 @@ mod subtract_velocity {
         subtract_velocity(&mut a, &a_clone, &Velocity2D { x: 2.0, y: 1.0 });
         assert_eq!(a.x, 3.0);
         assert_eq!(a.y, 2.0);
-    }
-}
-
-mod suppress_velocity {
-    use super::*;
-
-    #[test]
-    fn zeroes_a_previously_set_velocity() {
-        let mut field = create_velocity_field();
-        let source_id: u64 = 1;
-        contribute_velocity(&mut field, source_id, 9.0, 9.0);
-        suppress_velocity(&mut field, source_id);
-        let mut out = Velocity2D { x: 0.0, y: 0.0 };
-        get_velocity(&field, source_id, &mut out);
-        assert_eq!(out.x, 0.0);
-        assert_eq!(out.y, 0.0);
     }
 }
 

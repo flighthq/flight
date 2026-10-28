@@ -19,6 +19,10 @@ path = "tests/main.rs"
 [dependencies]
 flight-entity = { workspace = true }
 flight-geometry = { workspace = true }
+flight-node = { workspace = true }
+
+[dev-dependencies]
+flight-scene2d = { workspace = true }
 
 [lints]
 workspace = true

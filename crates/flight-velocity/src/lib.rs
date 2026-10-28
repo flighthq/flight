@@ -1,16 +1,19 @@
-mod velocity_field;
+mod transform_velocity;
+mod velocity2d;
+mod velocity_explanation;
 mod velocity_sample;
+mod velocity_store;
 
 pub mod contract;
 
-// Public lane: the exports of the pinned TS `index.ts` (the selected velocityField functions,
-// transformVelocity's contributor, and all of velocitySample), plus the public type exports.
-// Contract-only seams (ensure_velocity_sample, initialize_*, the Rust-only plain-data
-// constructors and clone helper, and the D9e string conversions) stay in `contract`.
-// `contribute_transform_velocity` is not ported yet: it requires the node graph (Phase 4).
+// Public lane: exactly the values of the pinned TS `index.ts` (all of transformVelocity, the
+// selected velocityField functions, and all of velocitySample), plus the public type exports.
+// Contract-only seams (ensure/find sample lookups, initialize_*, the pure sample rules, the
+// Rust-only clone helper, and the D9e string conversions) stay in `contract`.
 pub use contract::add_velocity;
 pub use contract::begin_velocity_frame;
 pub use contract::clamp_velocity;
+pub use contract::contribute_transform_velocity;
 pub use contract::contribute_velocity;
 pub use contract::copy_velocity;
 pub use contract::create_velocity_field;
