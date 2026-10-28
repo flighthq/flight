@@ -11,7 +11,7 @@ const TWO_PI = Math.PI * 2;
  * Shapes with a 3D interpretation are left at the origin for their caller to
  * handle. */
 export function writeParticleSpawnOffset(
-  out: number[] | Float32Array,
+  out: Float32Array,
   offset: number,
   config: Readonly<ParticleEmitterConfig>,
   random: RandomSource,

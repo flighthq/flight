@@ -2432,7 +2432,7 @@ describe('gltf document build animations', () => {
     const clip = Object.values(createScene3DFromGltf(doc).animations)[0];
     expect((clip.channels[0].targetRef as Scene3DAnimationTarget).path).toBe('Scale');
     expect(clip.channels[0].track.components).toBe(3);
-    const out = [0, 0, 0];
+    const out = new Float32Array(3);
     sampleAnimationTrack(out, clip.channels[0].track, 0.5);
     expect(out[0]).toBeCloseTo(1.5, 5);
     expect(out[1]).toBeCloseTo(1.5, 5);
@@ -2451,9 +2451,9 @@ describe('gltf document build animations', () => {
     });
     const track = Object.values(createScene3DFromGltf(doc).animations)[0].channels[0].track;
     expect(track.interpolation).toBe('Step');
-    const out = [0, 0, 0, 0];
+    const out = new Float32Array(4);
     sampleAnimationTrack(out, track, 0.5);
-    expect(out).toEqual([0, 0, 0, 1]); // frozen at keyframe 0, not interpolated toward keyframe 1
+    expect(Array.from(out)).toEqual([0, 0, 0, 1]); // frozen at keyframe 0, not interpolated toward keyframe 1
   });
 
   it('maps the CUBICSPLINE sampler interpolation to a Cubic Hermite track that samples correctly', () => {
@@ -2490,7 +2490,7 @@ describe('gltf document build animations', () => {
     });
     const track = Object.values(createScene3DFromGltf(doc).animations)[0].channels[0].track;
     expect(track.interpolation).toBe('Cubic');
-    const out = [0, 0, 0];
+    const out = new Float32Array(3);
     sampleAnimationTrack(out, track, 0.5);
     expect(out[0]).toBeCloseTo(5, 5);
     expect(out[1]).toBeCloseTo(0, 5);

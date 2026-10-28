@@ -101,10 +101,10 @@ export function initializeAnimationClipEvent(
 // re-implementing the per-channel walk. `out` must be at least as wide as the widest channel's
 // `components`; it is overwritten per channel, so `visit` must consume it before returning. Alloc-free.
 export function sampleAnimationClip(
-  out: number[] | Float32Array,
+  out: Float32Array,
   clip: Readonly<AnimationClip>,
   time: number,
-  visit: (sampled: Readonly<number[] | Float32Array>, channel: Readonly<AnimationChannel>, index: number) => void,
+  visit: (sampled: Readonly<Float32Array>, channel: Readonly<AnimationChannel>, index: number) => void,
 ): void {
   const channels = clip.channels;
   for (let i = 0; i < channels.length; i++) {

@@ -108,7 +108,7 @@ describe('applyMorphShapeAnimationSample', () => {
     );
     const tree = createAnimationBlendTree([createAnimationBlendTreeInput(a, 1), createAnimationBlendTreeInput(b, 1)]);
 
-    sampleAnimationBlendTree([0], tree, applyMorphShapeAnimationSample);
+    sampleAnimationBlendTree(new Float32Array(1), tree, applyMorphShapeAnimationSample);
 
     expect(shape.data.progress).toBeCloseTo(0.3);
   });

@@ -97,9 +97,9 @@ export function initializeAnimationBlendTreeInput(
 // Samples every target in stable first-appearance order. The visitor must consume `out` before returning
 // because it is overwritten for the next target. Targets with no positive-weight leaf are skipped.
 export function sampleAnimationBlendTree(
-  out: number[] | Float32Array,
+  out: Float32Array,
   tree: Readonly<AnimationBlendTree>,
-  visit: (sampled: Readonly<number[] | Float32Array>, channel: Readonly<AnimationChannel>, index: number) => void,
+  visit: (sampled: Readonly<Float32Array>, channel: Readonly<AnimationChannel>, index: number) => void,
 ): void {
   for (let index = 0; index < tree.channels.length; index++) {
     if (sampleAnimationBlendTreeChannel(out, tree, index)) visit(out, tree.channels[index].channel, index);
@@ -109,7 +109,7 @@ export function sampleAnimationBlendTree(
 // Samples one precomputed target channel. Override leaves use normalized weighted accumulation; additive
 // leaves then compose weighted deltas in input order. Returns false without changing `out` when empty.
 export function sampleAnimationBlendTreeChannel(
-  out: number[] | Float32Array,
+  out: Float32Array,
   tree: Readonly<AnimationBlendTree>,
   channelIndex: number,
 ): boolean {
@@ -184,7 +184,7 @@ function assertUniqueAnimationBlendTreeTargets(
   }
 }
 
-function writeAnimationBlendTreeIdentity(out: number[] | Float32Array, components: number, quaternion: boolean): void {
+function writeAnimationBlendTreeIdentity(out: Float32Array, components: number, quaternion: boolean): void {
   const width = Math.min(out.length, components);
   for (let component = 0; component < width; component++) out[component] = 0;
   if (quaternion && width >= 4) out[3] = 1;

@@ -38,4 +38,4 @@ export function applyAnimationClipToScene3D(clip: Readonly<AnimationClip>, time:
   }
 }
 
-const _scratch = [0, 0, 0, 0];
+const _scratch = new Float32Array(4);

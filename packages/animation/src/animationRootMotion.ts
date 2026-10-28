@@ -16,7 +16,7 @@ export function createAnimationRootMotionExtractor(
 // any number of repeat boundaries or run backward. Vector deltas add complete-cycle displacement;
 // quaternion deltas compose complete-cycle rotation. Returns false without changing `out` if too short.
 export function extractAnimationRootMotion(
-  out: number[] | Float32Array,
+  out: Float32Array,
   extractor: AnimationRootMotionExtractor,
   startTime: number,
   endTime: number,
@@ -67,11 +67,7 @@ export function initializeAnimationRootMotionExtractor(
   );
 }
 
-function multiplyAnimationRootMotionQuaternion(
-  out: number[] | Float32Array,
-  a: ArrayLike<number>,
-  b: ArrayLike<number>,
-): void {
+function multiplyAnimationRootMotionQuaternion(out: Float32Array, a: ArrayLike<number>, b: ArrayLike<number>): void {
   const ax = a[0],
     ay = a[1],
     az = a[2],
@@ -116,7 +112,7 @@ function writeAnimationRootMotionAt(
 }
 
 function writeAnimationRootMotionDelta(
-  out: number[] | Float32Array,
+  out: Float32Array,
   from: ArrayLike<number>,
   to: ArrayLike<number>,
   quaternion: boolean,
@@ -135,7 +131,7 @@ function writeAnimationRootMotionDelta(
   );
 }
 
-function writeAnimationRootMotionIdentity(out: number[] | Float32Array, components: number, quaternion: boolean): void {
+function writeAnimationRootMotionIdentity(out: Float32Array, components: number, quaternion: boolean): void {
   const width = Math.min(out.length, components);
   for (let component = 0; component < width; component++) out[component] = 0;
   if (quaternion && width >= 4) out[3] = 1;
@@ -166,7 +162,7 @@ function writeAnimationRootMotionQuaternionPower(
 }
 
 function writeNormalizedAnimationRootMotionQuaternion(
-  out: number[] | Float32Array,
+  out: Float32Array,
   x: number,
   y: number,
   z: number,

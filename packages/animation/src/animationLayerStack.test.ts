@@ -128,7 +128,7 @@ describe('sampleAnimationLayerStack', () => {
     ]);
     const seen: Array<{ target: unknown; value: number }> = [];
 
-    sampleAnimationLayerStack([0], stack, (sampled, channel) =>
+    sampleAnimationLayerStack(new Float32Array(1), stack, (sampled, channel) =>
       seen.push({ target: channel.targetRef, value: sampled[0] }),
     );
 
@@ -148,8 +148,10 @@ describe('sampleAnimationLayerStack', () => {
     machine.transitionElapsed = 1;
     machine.transitionWeight = 0.5;
     const seen: number[] = [];
-    sampleAnimationLayerStack([0], createAnimationLayerStack([createAnimationStateMachineLayer(machine)]), (sampled) =>
-      seen.push(sampled[0]),
+    sampleAnimationLayerStack(
+      new Float32Array(1),
+      createAnimationLayerStack([createAnimationStateMachineLayer(machine)]),
+      (sampled) => seen.push(sampled[0]),
     );
     expect(seen).toEqual([10]);
   });
@@ -160,11 +162,11 @@ describe('sampleAnimationLayerStackChannel', () => {
     const stack = createAnimationLayerStack([
       createAnimationBlendTreeLayer(tree(player({}, 8)), { additive: true, weight: 0.25 }),
     ]);
-    const out = [99];
+    const out = new Float32Array([99]);
     expect(sampleAnimationLayerStackChannel(out, stack, 0)).toBe(true);
-    expect(out).toEqual([2]);
+    expect(Array.from(out)).toEqual([2]);
     expect(sampleAnimationLayerStackChannel(out, stack, 4)).toBe(false);
-    expect(out).toEqual([2]);
+    expect(Array.from(out)).toEqual([2]);
   });
 });
 describe('setAnimationLayerWeight', () => {

@@ -502,7 +502,7 @@ describe('createRiveAnimationClips', () => {
     // At t=0.1 the stated damped-sine formula gives 150 for period 0.2 and 61.6977778440511 for 0.9.
     // Fixed constants, ignored properties, or a linear fallback cannot produce this pair.
     expect(sampled(narrow, 0.1)).toBeCloseTo(150, 6);
-    expect(sampled(wide, 0.1)).toBeCloseTo(61.6977778440511, 6);
+    expect(sampled(wide, 0.1)).toBe(Math.fround(61.6977778440511));
   });
 
   // ScriptedInterpolator runs Rive's own scripting language, which a codec does not execute. Its
@@ -640,7 +640,7 @@ describe('createRiveAnimationClips', () => {
       { frame: 0, interpolation: 1, value: 0 },
       { frame: 30, interpolation: 1, value: 100 },
     ]);
-    const out = [0];
+    const out = new Float32Array(1);
 
     sampleAnimationTrack(out, held.clips[0].clip.channels[0].track, 0.5);
     expect(out[0]).toBe(0);
@@ -667,7 +667,7 @@ describe('createRiveAnimationClips', () => {
       emptyArtboard(),
       new Map(),
     );
-    const out = [0];
+    const out = new Float32Array(1);
 
     sampleAnimationTrack(out, clips[0].clip.channels[0].track, 0.5);
     expect(out[0]).toBeCloseTo(2.401618414996858, 6);
@@ -979,4 +979,4 @@ function buildRiveBytes(objects: Array<[number, number[][]]>): Uint8Array {
   return new Uint8Array(out);
 }
 
-const _scratch = new Array<number>(8).fill(0);
+const _scratch = new Float32Array(8);

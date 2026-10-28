@@ -20,7 +20,7 @@ import { reserveParticleEmitter2D } from './particleEmitter.ts';
 export type { ParticleEmitterCallbacks };
 
 const PARTICLE_TRANSFORM_STRIDE = 4; // must match ./particleEmitter
-const PARTICLE_SPAWN_OFFSET = [0, 0];
+const PARTICLE_SPAWN_OFFSET = new Float32Array(2);
 const TWO_PI = Math.PI * 2;
 
 /** True once a finite, non-looping emitter has finished emitting AND all of its

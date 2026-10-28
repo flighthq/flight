@@ -209,7 +209,7 @@ export function appendPathMoveTo(path: Path, x: number, y: number): void {
 // Appends a closed polygon from a flat array of [x0, y0, x1, y1, ...] coordinate pairs. Emits a
 // MOVE_TO at the first point, LINE_TO for each subsequent point, and a CLOSE at the end.
 // Requires at least 3 points (6 values); returns immediately if fewer are provided.
-export function appendPathPolygon(path: Path, points: Readonly<number[]>): void {
+export function appendPathPolygon(path: Path, points: ArrayLike<number>): void {
   if (points.length < 6) return;
   appendPathMoveTo(path, points[0], points[1]);
   for (let i = 2; i < points.length; i += 2) {
@@ -221,7 +221,7 @@ export function appendPathPolygon(path: Path, points: Readonly<number[]>): void 
 // Appends an open polyline from a flat array of [x0, y0, x1, y1, ...] coordinate pairs. Emits a
 // MOVE_TO at the first point and LINE_TO for each subsequent point. No CLOSE is appended.
 // Requires at least 2 points (4 values); returns immediately if fewer are provided.
-export function appendPathPolyline(path: Path, points: Readonly<number[]>): void {
+export function appendPathPolyline(path: Path, points: ArrayLike<number>): void {
   if (points.length < 4) return;
   appendPathMoveTo(path, points[0], points[1]);
   for (let i = 2; i < points.length; i += 2) {

@@ -135,7 +135,7 @@ describe('sampleAnimationStateMachine', () => {
     ]);
     const machine = createAnimationStateMachine([createAnimationStateMachineState('locomotion', tree)]);
     const seen: number[] = [];
-    sampleAnimationStateMachine([0], machine, (sampled) => seen.push(sampled[0]));
+    sampleAnimationStateMachine(new Float32Array(1), machine, (sampled) => seen.push(sampled[0]));
     expect(seen).toEqual([15]);
   });
 
@@ -150,7 +150,7 @@ describe('sampleAnimationStateMachine', () => {
     transitionAnimationStateMachine(machine, 'to', 2);
     advanceAnimationStateMachine(machine, 1);
     const seen: Array<{ target: unknown; value: number }> = [];
-    sampleAnimationStateMachine([0], machine, (sampled, channel) =>
+    sampleAnimationStateMachine(new Float32Array(1), machine, (sampled, channel) =>
       seen.push({ target: channel.targetRef, value: sampled[0] }),
     );
     expect(seen).toEqual([
@@ -163,11 +163,11 @@ describe('sampleAnimationStateMachine', () => {
 describe('sampleAnimationStateMachineChannel', () => {
   it('samples one global channel and preserves output for an absent index', () => {
     const machine = createAnimationStateMachine([state('only', player({}, 7))]);
-    const out = [99];
+    const out = new Float32Array([99]);
     expect(sampleAnimationStateMachineChannel(out, machine, 0)).toBe(true);
-    expect(out).toEqual([7]);
+    expect(Array.from(out)).toEqual([7]);
     expect(sampleAnimationStateMachineChannel(out, machine, 3)).toBe(false);
-    expect(out).toEqual([7]);
+    expect(Array.from(out)).toEqual([7]);
   });
 });
 

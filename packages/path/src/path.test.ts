@@ -203,7 +203,7 @@ describe('appendPathMoveTo', () => {
 describe('appendPathPolygon', () => {
   it('appends a closed polygon from a flat coordinate array', () => {
     const path = createPath();
-    appendPathPolygon(path, [0, 0, 100, 0, 100, 100]);
+    appendPathPolygon(path, new Float64Array([0, 0, 100, 0, 100, 100]));
     expect(path.commands[0]).toBe(PathCommand.MOVE_TO);
     expect(path.commands[path.commands.length - 1]).toBe(PathCommand.CLOSE);
     expect(path.data[0]).toBe(0);
@@ -220,7 +220,7 @@ describe('appendPathPolygon', () => {
 describe('appendPathPolyline', () => {
   it('appends an open polyline with no CLOSE', () => {
     const path = createPath();
-    appendPathPolyline(path, [0, 0, 10, 0, 10, 10]);
+    appendPathPolyline(path, new Float64Array([0, 0, 10, 0, 10, 10]));
     expect(path.commands).toStrictEqual([PathCommand.MOVE_TO, PathCommand.LINE_TO, PathCommand.LINE_TO]);
     expect(path.commands).not.toContain(PathCommand.CLOSE);
   });

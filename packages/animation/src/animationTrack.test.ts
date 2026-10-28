@@ -73,7 +73,7 @@ describe('initializeAnimationTrack', () => {
 describe('sampleAnimationTrack', () => {
   it('linearly interpolates a scalar mid-segment', () => {
     const track = createAnimationTrack({ times: [0, 1], values: [0, 10] });
-    const out = [0];
+    const out = new Float32Array(1);
     sampleAnimationTrack(out, track, 0.5);
     expect(out[0]).toBeCloseTo(5);
   });
@@ -82,16 +82,16 @@ describe('sampleAnimationTrack', () => {
     // A monotonically increasing ramp: value == time * 10 everywhere, so any sample must land on the
     // right segment for the linear result to match. Exercises the binary search across many segments.
     const track = createAnimationTrack({ times: [0, 1, 2, 3, 4, 5], values: [0, 10, 20, 30, 40, 50] });
-    const out = [0];
+    const out = new Float32Array(1);
     for (const t of [0.25, 0.99, 1, 1.5, 2.5, 3.75, 4.999]) {
       sampleAnimationTrack(out, track, t);
-      expect(out[0]).toBeCloseTo(t * 10, 6);
+      expect(out[0]).toBe(Math.fround(t * 10));
     }
   });
 
   it('clamps before the first and after the last keyframe', () => {
     const track = createAnimationTrack({ times: [1, 2], values: [3, 9] });
-    const out = [0];
+    const out = new Float32Array(1);
     sampleAnimationTrack(out, track, -5);
     expect(out[0]).toBe(3);
     sampleAnimationTrack(out, track, 99);
@@ -100,16 +100,16 @@ describe('sampleAnimationTrack', () => {
 
   it('holds the previous keyframe for step interpolation', () => {
     const track = createAnimationTrack({ interpolation: AnimationInterpolationStep, times: [0, 1], values: [0, 10] });
-    const out = [0];
+    const out = new Float32Array(1);
     sampleAnimationTrack(out, track, 0.9);
     expect(out[0]).toBe(0);
   });
 
   it('interpolates a Vector3 component-wise', () => {
     const track = createAnimationTrack({ components: 3, times: [0, 1], values: [0, 0, 0, 2, 4, 6] });
-    const out = [0, 0, 0];
+    const out = new Float32Array(3);
     sampleAnimationTrack(out, track, 0.5);
-    expect(out).toEqual([1, 2, 3]);
+    expect(Array.from(out)).toEqual([1, 2, 3]);
   });
 
   it('slerps a quaternion track to the half-angle', () => {
@@ -122,7 +122,7 @@ describe('sampleAnimationTrack', () => {
       times: [0, 1],
       values: [0, 0, 0, 1, 0, 0, s, c],
     });
-    const out = [0, 0, 0, 0];
+    const out = new Float32Array(4);
     sampleAnimationTrack(out, track, 0.5);
     expect(out[2]).toBeCloseTo(Math.sin(Math.PI / 8), 5);
     expect(out[3]).toBeCloseTo(Math.cos(Math.PI / 8), 5);
@@ -136,14 +136,14 @@ describe('sampleAnimationTrack', () => {
       times: [0, 1],
       values: [0, 0, 0, 0, 10, 0],
     });
-    const out = [0];
+    const out = new Float32Array(1);
     sampleAnimationTrack(out, track, 0.5);
     expect(out[0]).toBeCloseTo(5);
   });
 
   it('applies a non-null easing to the segment alpha', () => {
     const track = createAnimationTrack({ easing: () => 0, times: [0, 1], values: [0, 10] });
-    const out = [0];
+    const out = new Float32Array(1);
     sampleAnimationTrack(out, track, 0.75);
     // easing forces alpha to 0 -> first keyframe value regardless of t.
     expect(out[0]).toBe(0);
@@ -156,7 +156,7 @@ describe('sampleAnimationTrack', () => {
       times: [0, 1, 2],
       values: [0, 10, 20],
     });
-    const out = [0];
+    const out = new Float32Array(1);
     sampleAnimationTrack(out, track, 0.75);
     expect(out[0]).toBe(0);
     sampleAnimationTrack(out, track, 1.75);
@@ -165,28 +165,28 @@ describe('sampleAnimationTrack', () => {
 
   it('returns the first value when t is exactly on the first keyframe', () => {
     const track = createAnimationTrack({ times: [2, 5], values: [7, 42] });
-    const out = [0];
+    const out = new Float32Array(1);
     sampleAnimationTrack(out, track, 2);
     expect(out[0]).toBe(7);
   });
 
   it('returns the last value when t is exactly on the last keyframe', () => {
     const track = createAnimationTrack({ times: [2, 5], values: [7, 42] });
-    const out = [0];
+    const out = new Float32Array(1);
     sampleAnimationTrack(out, track, 5);
     expect(out[0]).toBe(42);
   });
 
   it('returns zeros for all components when the track is empty', () => {
     const track = createAnimationTrack({ components: 3, times: [], values: [] });
-    const out = [9, 9, 9];
+    const out = new Float32Array([9, 9, 9]);
     sampleAnimationTrack(out, track, 0);
-    expect(out).toEqual([0, 0, 0]);
+    expect(Array.from(out)).toEqual([0, 0, 0]);
   });
 
   it('returns the only keyframe value for a single-keyframe track', () => {
     const track = createAnimationTrack({ times: [5], values: [99] });
-    const out = [0];
+    const out = new Float32Array(1);
     sampleAnimationTrack(out, track, 0);
     expect(out[0]).toBe(99);
     sampleAnimationTrack(out, track, 5);

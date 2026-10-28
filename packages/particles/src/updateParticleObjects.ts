@@ -9,7 +9,7 @@ import { sampleParticleCurve } from './curve.ts';
 import { ensureParticleObjectsStateCapacity } from './particleObjectsState.ts';
 import { writeParticleSpawnOffset } from './particleSpawnOffset.ts';
 
-const PARTICLE_SPAWN_OFFSET = [0, 0];
+const PARTICLE_SPAWN_OFFSET = new Float32Array(2);
 
 /** True once a finite, non-looping object emitter has finished emitting AND all of
  *  its objects are dead (invisible) — a one-shot effect that is safe to recycle.

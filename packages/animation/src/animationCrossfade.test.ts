@@ -155,7 +155,7 @@ describe('sampleAnimationCrossfade', () => {
     const target = {};
     const state = createAnimationCrossfade(player(target, [0, 10]), player(target, [20, 40]), 2);
     advanceAnimationCrossfade(state, 0.5);
-    const out = [0];
+    const out = new Float32Array(1);
     const seen: number[] = [];
     sampleAnimationCrossfade(out, state, (sampled) => seen.push(sampled[0]));
     expect(seen).toEqual([11.25]);
@@ -191,7 +191,7 @@ describe('sampleAnimationCrossfade', () => {
     const state = createAnimationCrossfade(from, to, 2);
     advanceAnimationCrossfade(state, 1);
     const seen: Array<{ index: number; target: unknown; value: number }> = [];
-    sampleAnimationCrossfade([0], state, (sampled, channel, index) => {
+    sampleAnimationCrossfade(new Float32Array(1), state, (sampled, channel, index) => {
       seen.push({ index, target: channel.targetRef, value: sampled[0] });
     });
     expect(seen).toEqual([
@@ -207,9 +207,9 @@ describe('sampleAnimationCrossfade', () => {
     const fromSample = state.fromSample;
     const toSample = state.toSample;
     const values: number[] = [];
-    sampleAnimationCrossfade([0], state, (sampled) => values.push(sampled[0]));
+    sampleAnimationCrossfade(new Float32Array(1), state, (sampled) => values.push(sampled[0]));
     advanceAnimationCrossfade(state, 2);
-    sampleAnimationCrossfade([0], state, (sampled) => values.push(sampled[0]));
+    sampleAnimationCrossfade(new Float32Array(1), state, (sampled) => values.push(sampled[0]));
     expect(values).toEqual([0, 20]);
     expect(state.fromSample).toBe(fromSample);
     expect(state.toSample).toBe(toSample);
@@ -221,7 +221,7 @@ describe('sampleAnimationCrossfade', () => {
     const to = player(target, [0, 0, -1, 0, 0, 0, -1, 0], { components: 4, quaternion: true });
     const state = createAnimationCrossfade(from, to, 1);
     advanceAnimationCrossfade(state, 0.5);
-    sampleAnimationCrossfade([0, 0, 0, 0], state, (sampled) => {
+    sampleAnimationCrossfade(new Float32Array(4), state, (sampled) => {
       expect(Math.abs(sampled[2])).toBeCloseTo(Math.SQRT1_2);
       expect(Math.abs(sampled[3])).toBeCloseTo(Math.SQRT1_2);
     });

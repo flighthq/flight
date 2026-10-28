@@ -46,4 +46,4 @@ export function initializeMorphShapeAnimationTarget(
   out.shape = shape;
 }
 
-const morphShapeAnimationScratch: number[] = [0];
+const morphShapeAnimationScratch = new Float32Array(1);

@@ -102,9 +102,9 @@ export function isAnimationStateMachineTransitioning(machine: Readonly<Animation
 // Samples the current state or blends both sides of an active transition by target identity. One-sided
 // targets pass through, preserving AnimationCrossfade behavior. Allocation-free after construction.
 export function sampleAnimationStateMachine(
-  out: number[] | Float32Array,
+  out: Float32Array,
   machine: Readonly<AnimationStateMachine>,
-  visit: (sampled: Readonly<number[] | Float32Array>, channel: Readonly<AnimationChannel>, index: number) => void,
+  visit: (sampled: Readonly<Float32Array>, channel: Readonly<AnimationChannel>, index: number) => void,
 ): void {
   for (let index = 0; index < machine.channels.length; index++) {
     if (sampleAnimationStateMachineChannel(out, machine, index)) visit(out, machine.channels[index].channel, index);
@@ -115,7 +115,7 @@ export function sampleAnimationStateMachine(
 // seam used by target-free animation layers. Returns false without changing `out` when no active pose
 // contributes to the requested channel.
 export function sampleAnimationStateMachineChannel(
-  out: number[] | Float32Array,
+  out: Float32Array,
   machine: Readonly<AnimationStateMachine>,
   channelIndex: number,
 ): boolean {

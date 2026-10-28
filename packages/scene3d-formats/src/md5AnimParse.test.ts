@@ -148,7 +148,7 @@ describe('parseMd5Anim', () => {
     expect(target.path).toBe(Scene3DAnimationPathTranslation);
 
     // Baseframe (5, 10, 15) in Z-up → (5, 15, -10) in Y-up.
-    const out = [0, 0, 0];
+    const out = new Float32Array(3);
     sampleAnimationTrack(out, translationChannel.track, 0);
     expect(out[0]).toBeCloseTo(5);
     expect(out[1]).toBeCloseTo(15);
@@ -175,7 +175,7 @@ describe('parseMd5Anim', () => {
     const rootTranslation = clip.channels[0];
 
     // Frame 0: (0, 0, 0) Z-up -> (0, 0, 0) Y-up.
-    const out = [0, 0, 0];
+    const out = new Float32Array(3);
     sampleAnimationTrack(out, rootTranslation.track, 0);
     expect(out[0]).toBeCloseTo(0);
     expect(out[1]).toBeCloseTo(0);
@@ -209,7 +209,7 @@ describe('parseMd5Anim', () => {
     // Second joint (child) has flags=0, so all values come from baseframe (1, 2, 3).
     // Z-up to Y-up: (1, 3, -2).
     const childTranslation = clip.channels[2];
-    const out = [0, 0, 0];
+    const out = new Float32Array(3);
 
     sampleAnimationTrack(out, childTranslation.track, 0);
     expect(out[0]).toBeCloseTo(1);
@@ -228,7 +228,7 @@ describe('parseMd5Anim', () => {
     const clip = parseMd5Anim(ANIMATED_ROTATION, joints)!;
 
     const rotationChannel = clip.channels[1];
-    const out = [0, 0, 0, 0];
+    const out = new Float32Array(4);
 
     // Frame 0: orientation (0, 0, 0), W = -sqrt(1 - 0) = -1.
     // Z-up to Y-up: (qx, qy, qz, qw) → (qx, qz, -qy, qw) = (0, 0, 0, -1).
@@ -396,7 +396,7 @@ describe('parseMd5Anim', () => {
     expect(clip).not.toBeNull();
 
     // Translation: (100, 200, 300) Z-up → (100, 300, -200) Y-up.
-    const out = [0, 0, 0];
+    const out = new Float32Array(3);
     sampleAnimationTrack(out, clip.channels[0].track, 0);
     expect(out[0]).toBeCloseTo(100);
     expect(out[1]).toBeCloseTo(300);
@@ -434,7 +434,7 @@ describe('parseMd5Anim', () => {
     const clip = parseMd5Anim(TWO_JOINT_TWO_FRAME, joints)!;
 
     const rootTranslation = clip.channels[0];
-    const out = [0, 0, 0];
+    const out = new Float32Array(3);
 
     // Midpoint: t = 0.5 * (1/30).
     const midTime = 0.5 / 30;
@@ -744,7 +744,7 @@ describe('parseMd5Anim frame alignment', () => {
     expect(clip).not.toBeNull();
     // Joint 1's translation channel must carry ITS authored values, not joint 0's shifted tail.
     // Z-up (70,80,90) becomes Y-up (70,90,-80).
-    const out = [0, 0, 0];
+    const out = new Float32Array(3);
     sampleAnimationTrack(out, clip!.channels[2].track, 0);
     expect(out[0]).toBeCloseTo(70);
     expect(out[1]).toBeCloseTo(90);

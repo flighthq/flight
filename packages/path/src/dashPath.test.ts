@@ -9,7 +9,7 @@ describe('dashPath', () => {
     appendPathMoveTo(source, 0, 0);
     appendPathLineTo(source, 100, 0);
     const out = createPath();
-    dashPath(source, [10, 5], 0, out);
+    dashPath(source, new Float64Array([10, 5]), 0, out);
 
     // Each dash-on segment starts with MOVE_TO and has LINE_TOs.
     const moves = out.commands.filter((c) => c === PathCommand.MOVE_TO);

@@ -65,7 +65,7 @@ export function initializeAnimationTrack(
 // last). Step holds the previous keyframe; Linear interpolates component-wise (or slerps a quaternion
 // track); Cubic is a glTF-style Hermite spline over the per-keyframe in/out tangents. A non-null
 // `track.easing` reshapes the per-segment alpha first. Alloc-free; safe for hot loops.
-export function sampleAnimationTrack(out: number[] | Float32Array, track: Readonly<AnimationTrack>, t: number): void {
+export function sampleAnimationTrack(out: Float32Array, track: Readonly<AnimationTrack>, t: number): void {
   const { components, times, values } = track;
   const count = times.length;
   if (count === 0) {
@@ -203,7 +203,7 @@ function cloneNumberBuffer(src: ArrayLike<number>): number[] | Float32Array {
   return out;
 }
 
-function copyKeyframeValue(out: number[] | Float32Array, track: Readonly<AnimationTrack>, k: number): void {
+function copyKeyframeValue(out: Float32Array, track: Readonly<AnimationTrack>, k: number): void {
   const off = keyframeValueOffset(track, k);
   for (let c = 0; c < track.components; c++) out[c] = track.values[off + c];
 }
@@ -221,7 +221,7 @@ function keyframeValueOffset(track: Readonly<AnimationTrack>, k: number): number
   return track.interpolation === 'Cubic' ? k * stride + track.components : k * stride;
 }
 
-function normalizeFlatQuaternion(out: number[] | Float32Array): void {
+function normalizeFlatQuaternion(out: Float32Array): void {
   const x = out[0],
     y = out[1],
     z = out[2],
@@ -240,7 +240,7 @@ function normalizeFlatQuaternion(out: number[] | Float32Array): void {
 // duration (tangents are derivatives, scaled by dt). Quaternion tracks are interpolated component-wise
 // then renormalized.
 function sampleCubicSegment(
-  out: number[] | Float32Array,
+  out: Float32Array,
   track: Readonly<AnimationTrack>,
   i: number,
   alpha: number,
@@ -269,7 +269,7 @@ function sampleCubicSegment(
 // Spherical-linear interpolation of two unit quaternions stored flat at `oa`/`ob` in `values`, written
 // to `out[0..3]`. Picks the shorter arc; falls back to normalized-lerp for nearly-parallel quaternions.
 function slerpFlatQuaternion(
-  out: number[] | Float32Array,
+  out: Float32Array,
   values: ArrayLike<number>,
   oa: number,
   ob: number,

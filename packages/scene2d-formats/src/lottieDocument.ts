@@ -283,8 +283,8 @@ function appendLottieAutoOrientation(
     rotation !== undefined && isAnimatedLottieProperty(rotation)
       ? createLottieTrack(rotation.k, 1, context, (value) => lottieNumericValue(value, 1), 0)
       : null;
-  const previous = [0, 0];
-  const current = [0, 0];
+  const previous = new Float32Array(2);
+  const current = new Float32Array(2);
   const frameStep = Math.abs(context.frameScale) / context.document.fr;
 
   const applyOrientation = (time: number): void => {
@@ -322,7 +322,7 @@ interface LottiePositionSampler {
   carrier: AnimationTrack;
   firstTime: number;
   lastTime: number;
-  sample(out: number[], time: number): void;
+  sample(out: Float32Array, time: number): void;
   separated: boolean;
 }
 
@@ -811,9 +811,9 @@ export function reportLottieDrop(
   reportImportDiagnostic(context.diagnostics, ImportDiagnosticSeverity.Drop, kind, origin, detail);
 }
 
-const _sampleScratch = new Array<number>(256).fill(0);
-const _autoOrientRotationScratch = [0];
-const _autoOrientScalarScratch = [0];
+const _sampleScratch = new Float32Array(256);
+const _autoOrientRotationScratch = new Float32Array(1);
+const _autoOrientScalarScratch = new Float32Array(1);
 const _holdEasing: EasingFunction = () => 0;
 
 // Bodymovin's own numbering. The five that fold into blend state:

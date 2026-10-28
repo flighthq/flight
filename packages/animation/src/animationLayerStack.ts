@@ -93,9 +93,9 @@ export function initializeAnimationLayerStack(
 // Samples all composed targets in stable first-appearance order. The visitor must consume `out`
 // before returning because it is overwritten for the next target.
 export function sampleAnimationLayerStack(
-  out: number[] | Float32Array,
+  out: Float32Array,
   stack: Readonly<AnimationLayerStack>,
-  visit: (sampled: Readonly<number[] | Float32Array>, channel: Readonly<AnimationChannel>, index: number) => void,
+  visit: (sampled: Readonly<Float32Array>, channel: Readonly<AnimationChannel>, index: number) => void,
 ): void {
   for (let index = 0; index < stack.channels.length; index++) {
     if (sampleAnimationLayerStackChannel(out, stack, index)) visit(out, stack.channels[index].channel, index);
@@ -105,7 +105,7 @@ export function sampleAnimationLayerStack(
 // Samples one globally matched target. Override layers blend in order; additive layers compose weighted
 // deltas. The first present override passes through because the target-free core owns no default pose.
 export function sampleAnimationLayerStackChannel(
-  out: number[] | Float32Array,
+  out: Float32Array,
   stack: Readonly<AnimationLayerStack>,
   channelIndex: number,
 ): boolean {
@@ -152,7 +152,7 @@ function assertCompatibleAnimationLayerChannels(
   }
 }
 
-function copyAnimationLayerSample(out: number[] | Float32Array, sample: ArrayLike<number>, components: number): void {
+function copyAnimationLayerSample(out: Float32Array, sample: ArrayLike<number>, components: number): void {
   const width = Math.min(out.length, sample.length, components);
   for (let component = 0; component < width; component++) out[component] = sample[component];
 }
@@ -196,16 +196,12 @@ function getAnimationLayerChannels(
   return layer.blendTree?.channels ?? layer.stateMachine!.channels;
 }
 
-function sampleAnimationLayer(
-  out: number[] | Float32Array,
-  layer: Readonly<AnimationLayer>,
-  channelIndex: number,
-): boolean {
+function sampleAnimationLayer(out: Float32Array, layer: Readonly<AnimationLayer>, channelIndex: number): boolean {
   if (layer.blendTree !== null) return sampleAnimationBlendTreeChannel(out, layer.blendTree, channelIndex);
   return sampleAnimationStateMachineChannel(out, layer.stateMachine!, channelIndex);
 }
 
-function writeAnimationLayerIdentity(out: number[] | Float32Array, components: number, quaternion: boolean): void {
+function writeAnimationLayerIdentity(out: Float32Array, components: number, quaternion: boolean): void {
   const width = Math.min(out.length, components);
   for (let component = 0; component < width; component++) out[component] = 0;
   if (quaternion && width >= 4) out[3] = 1;

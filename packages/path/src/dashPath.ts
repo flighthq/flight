@@ -10,7 +10,7 @@ import { flattenPath } from './flattenPath.ts';
 // An empty or all-zero dash array copies the source unchanged (solid stroke). Alias-safe.
 export function dashPath(
   source: Readonly<Path>,
-  dash: Readonly<number[]>,
+  dash: ArrayLike<number>,
   dashOffset: number,
   out: Path,
   tolerance = 0.25,
@@ -34,7 +34,7 @@ export function dashPath(
 
 function applyDashToContour(
   pts: Readonly<number[]>,
-  dash: Readonly<number[]>,
+  dash: ArrayLike<number>,
   dashOffset: number,
   totalDashLength: number,
   out: Path,
@@ -126,7 +126,7 @@ function copyCommands(source: Readonly<Path>, out: Path): void {
   }
 }
 
-function dashTotal(dash: Readonly<number[]>): number {
+function dashTotal(dash: ArrayLike<number>): number {
   let total = 0;
   for (let i = 0; i < dash.length; i++) total += dash[i];
   return total;

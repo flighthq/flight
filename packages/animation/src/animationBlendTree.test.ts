@@ -111,7 +111,9 @@ describe('sampleAnimationBlendTree', () => {
       createAnimationBlendTreeInput(player(target, 20), 1),
     ]);
     const seen: Array<{ channel: Readonly<AnimationChannel>; value: number }> = [];
-    sampleAnimationBlendTree([0], tree, (sampled, channel) => seen.push({ channel, value: sampled[0] }));
+    sampleAnimationBlendTree(new Float32Array(1), tree, (sampled, channel) =>
+      seen.push({ channel, value: sampled[0] }),
+    );
     expect(seen).toHaveLength(1);
     expect(seen[0].channel.targetRef).toBe(target);
     expect(seen[0].value).toBe(10);
@@ -125,7 +127,7 @@ describe('sampleAnimationBlendTree', () => {
       createAnimationBlendTreeInput(player(b, 7)),
     ]);
     const seen: Array<{ target: unknown; value: number }> = [];
-    sampleAnimationBlendTree([0], tree, (sampled, channel) =>
+    sampleAnimationBlendTree(new Float32Array(1), tree, (sampled, channel) =>
       seen.push({ target: channel.targetRef, value: sampled[0] }),
     );
     expect(seen).toEqual([
@@ -141,7 +143,7 @@ describe('sampleAnimationBlendTree', () => {
       createAnimationBlendTreeInput(player(target, 4), 0.5, true),
     ]);
     const seen: number[] = [];
-    sampleAnimationBlendTree([0], tree, (sampled) => seen.push(sampled[0]));
+    sampleAnimationBlendTree(new Float32Array(1), tree, (sampled) => seen.push(sampled[0]));
     expect(seen).toEqual([12]);
   });
 
@@ -160,7 +162,7 @@ describe('sampleAnimationBlendTree', () => {
       createAnimationBlendTreeInput(quaternionPlayer(target, halfTurn), 0.5, true),
     ]);
     const seen: number[][] = [];
-    sampleAnimationBlendTree([0, 0, 0, 0], tree, (sampled) => seen.push(Array.from(sampled).slice(0, 4)));
+    sampleAnimationBlendTree(new Float32Array(4), tree, (sampled) => seen.push(Array.from(sampled).slice(0, 4)));
     expect(seen).toHaveLength(1);
     expect(Math.hypot(...seen[0])).toBeCloseTo(1);
     expect(Math.abs(seen[0][3])).toBeCloseTo(0);
@@ -170,22 +172,22 @@ describe('sampleAnimationBlendTree', () => {
     const target = {};
     const tree = createAnimationBlendTree([createAnimationBlendTreeInput(player(target, 8), 0.25, true)]);
     const seen: number[] = [];
-    sampleAnimationBlendTree([99], tree, (sampled) => seen.push(sampled[0]));
+    sampleAnimationBlendTree(new Float32Array([99]), tree, (sampled) => seen.push(sampled[0]));
     expect(seen).toEqual([2]);
   });
 
   it('skips targets whose weights are all non-positive', () => {
     const tree = createAnimationBlendTree([createAnimationBlendTreeInput(player({}, 8), 0)]);
     const visit = vi.fn();
-    sampleAnimationBlendTree([99], tree, visit);
+    sampleAnimationBlendTree(new Float32Array([99]), tree, visit);
     expect(visit).not.toHaveBeenCalled();
   });
 });
 describe('sampleAnimationBlendTreeChannel', () => {
   it('returns false and preserves output for an absent channel', () => {
-    const out = [9];
+    const out = new Float32Array([9]);
     expect(sampleAnimationBlendTreeChannel(out, createAnimationBlendTree([]), 0)).toBe(false);
-    expect(out).toEqual([9]);
+    expect(Array.from(out)).toEqual([9]);
   });
 });
 

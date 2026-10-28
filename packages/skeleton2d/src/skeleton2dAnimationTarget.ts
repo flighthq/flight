@@ -257,7 +257,7 @@ function getSkeleton2DAnimationTargetBinderRegistry(): ReadonlyMap<Kind, Skeleto
 }
 
 let _binders: ReadonlyMap<Kind, Skeleton2DAnimationTargetBinder> | null = null;
-const _scratch = [0, 0, 0, 0];
+const _scratch = new Float32Array(4);
 
 // The walk every non-blendable channel is forced onto, named once so the guard and the walk agree.
 const STEP_INTERPOLATION = 'Step';

@@ -86,12 +86,12 @@ describe('extractAnimationRootMotion', () => {
       createAnimationChannel(createAnimationTrack({ components: 2, times: [0], values: [4, 8] }), {}),
     ]);
     const extractor = createAnimationRootMotionExtractor(clip, 0);
-    const out = [9, 9];
+    const out = new Float32Array([9, 9]);
     expect(extractAnimationRootMotion(out, extractor, 0, 3)).toBe(true);
-    expect(out).toEqual([0, 0]);
-    const short = [7];
+    expect(Array.from(out)).toEqual([0, 0]);
+    const short = new Float32Array([7]);
     expect(extractAnimationRootMotion(short, extractor, 0, 1)).toBe(false);
-    expect(short).toEqual([7]);
+    expect(Array.from(short)).toEqual([7]);
   });
 
   it('rejects non-finite quaternion ranges before mutating output', () => {

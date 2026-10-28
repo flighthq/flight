@@ -718,7 +718,7 @@ const RIVE_INTERPOLATION_HOLD = 0;
 const RIVE_INTERPOLATION_LINEAR = 1;
 
 const _holdEasing: EasingFunction = () => 0;
-const _sampleScratch = new Array<number>(8).fill(0);
+const _sampleScratch = new Float32Array(8);
 // Coalesces the rebuilds a single sample triggers, so a shape regenerates once however many of its
 // vertices moved.
 const _pendingRebuilds = new Set<() => void>();

@@ -70,9 +70,9 @@ export function isAnimationCrossfadeComplete(state: Readonly<AnimationCrossfade>
 // pass their existing clip value through unchanged. The visitor must consume `out` before returning
 // because the same buffer is overwritten for the next channel. Allocation-free after construction.
 export function sampleAnimationCrossfade(
-  out: number[] | Float32Array,
+  out: Float32Array,
   state: Readonly<AnimationCrossfade>,
-  visit: (sampled: Readonly<number[] | Float32Array>, channel: Readonly<AnimationChannel>, index: number) => void,
+  visit: (sampled: Readonly<Float32Array>, channel: Readonly<AnimationChannel>, index: number) => void,
 ): void {
   const fromChannels = state.from.clip.channels;
   const toChannels = state.to.clip.channels;

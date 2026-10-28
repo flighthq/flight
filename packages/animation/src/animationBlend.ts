@@ -28,7 +28,7 @@ export function accumulateAnimationSample(
 // normalized; this keeps additive rotation compositional rather than treating quaternion components
 // as a vector. `out` may alias either input.
 export function addAnimationSample(
-  out: number[] | Float32Array,
+  out: Float32Array,
   base: ArrayLike<number>,
   delta: ArrayLike<number>,
   weight: number,
@@ -63,7 +63,7 @@ export function addAnimationSample(
 // Blends two samples by `alpha` (clamped to [0,1]). Scalar/vector components lerp; quaternion inputs
 // slerp over the shortest arc and normalize. `out` may alias either input.
 export function blendAnimationSamples(
-  out: number[] | Float32Array,
+  out: Float32Array,
   a: ArrayLike<number>,
   b: ArrayLike<number>,
   alpha: number,
@@ -91,10 +91,7 @@ export function createAnimationSampleAccumulator(components: number, quaternion 
 
 // Writes a normalized weighted result. Returns false without changing `out` for an empty
 // accumulator. Scalar/vector sums divide by total weight; quaternion sums normalize geometrically.
-export function finishAnimationSample(
-  out: number[] | Float32Array,
-  accumulator: Readonly<AnimationSampleAccumulator>,
-): boolean {
+export function finishAnimationSample(out: Float32Array, accumulator: Readonly<AnimationSampleAccumulator>): boolean {
   if (!(accumulator.weight > 0)) return false;
   const components = Math.min(out.length, accumulator.components, accumulator.values.length);
   if (accumulator.quaternion && components >= 4) {
@@ -126,12 +123,7 @@ export function resetAnimationSampleAccumulator(accumulator: AnimationSampleAccu
   accumulator.weight = 0;
 }
 
-function slerpQuaternion(
-  out: number[] | Float32Array,
-  a: ArrayLike<number>,
-  b: ArrayLike<number>,
-  alpha: number,
-): void {
+function slerpQuaternion(out: Float32Array, a: ArrayLike<number>, b: ArrayLike<number>, alpha: number): void {
   const ax = a[0],
     ay = a[1],
     az = a[2],
@@ -168,7 +160,7 @@ function slerpQuaternion(
   );
 }
 
-function writeNormalizedQuaternion(out: number[] | Float32Array, x: number, y: number, z: number, w: number): void {
+function writeNormalizedQuaternion(out: Float32Array, x: number, y: number, z: number, w: number): void {
   const length = Math.hypot(x, y, z, w);
   if (length === 0) {
     out[0] = 0;

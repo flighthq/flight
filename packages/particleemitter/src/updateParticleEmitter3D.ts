@@ -18,7 +18,7 @@ import type {
 import { reserveParticleEmitter3D } from './particleEmitter3D.ts';
 
 const PARTICLE_TRANSFORM_STRIDE = 4;
-const PARTICLE_SPAWN_OFFSET = [0, 0];
+const PARTICLE_SPAWN_OFFSET = new Float32Array(2);
 const TWO_PI = Math.PI * 2;
 
 export function isParticleEmitter3DComplete(

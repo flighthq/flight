@@ -121,7 +121,7 @@ describe('sampleAnimationClip', () => {
     const targetA = { id: 'a' };
     const targetB = { id: 'b' };
     const clip = createAnimationClip([createAnimationChannel(a, targetA), createAnimationChannel(b, targetB)]);
-    const out = [0];
+    const out = new Float32Array(1);
     const seen: Array<{ index: number; target: unknown; value: number }> = [];
     sampleAnimationClip(out, clip, 0.5, (sampled, channel, index) => {
       seen.push({ index, target: channel.targetRef, value: sampled[0] });
@@ -135,7 +135,7 @@ describe('sampleAnimationClip', () => {
   it('does not invoke the visitor for a channel-less clip', () => {
     const clip = createAnimationClip([], 1);
     let calls = 0;
-    sampleAnimationClip([0], clip, 0, () => {
+    sampleAnimationClip(new Float32Array(1), clip, 0, () => {
       calls++;
     });
     expect(calls).toBe(0);

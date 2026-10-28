@@ -24,7 +24,7 @@ export function buildParticleCurve(f: (t: number) => number, samples = 33): numb
 /** Linearly interpolate two sRGB colors through HSV space, writing into `out[offset..+3]`.
  *  Used by the `colorInterpolation: 'hsv'` path in updateParticleEmitter2D. */
 export function lerpHsvDirect(
-  out: Float32Array | number[],
+  out: Float32Array,
   offset: number,
   r0: number,
   g0: number,
@@ -48,10 +48,10 @@ export function lerpHsvDirect(
 
 /** Interpolate through HSV space using per-particle birth/death color arrays. */
 export function lerpHsvInPlace(
-  colorsOut: Float32Array | number[],
+  colorsOut: Float32Array,
   offset: number,
-  birth: Float32Array,
-  death: Float32Array,
+  birth: ArrayLike<number>,
+  death: ArrayLike<number>,
   t: number,
 ): void {
   lerpHsvDirect(

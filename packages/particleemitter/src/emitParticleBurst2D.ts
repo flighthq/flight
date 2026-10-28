@@ -11,7 +11,7 @@ import type { ParticleEmitterConfig, ParticleEmitterState } from '@flighthq/type
 import { reserveParticleEmitter2D } from './particleEmitter.ts';
 
 const PARTICLE_TRANSFORM_STRIDE = 4;
-const PARTICLE_SPAWN_OFFSET = [0, 0];
+const PARTICLE_SPAWN_OFFSET = new Float32Array(2);
 
 /** Emit `count` particles immediately at an arbitrary point (in the emitter's
  *  simulation space), independent of the emitter's own spawn rate, bursts, or

@@ -3058,7 +3058,7 @@ describe('parseAwd2 skeleton animations', () => {
     const clip = firstAwdAnimation(awd)!;
     const track = clip.channels[0].track;
 
-    const out = [0, 0, 0];
+    const out = new Float32Array(3);
     sampleAnimationTrack(out, track, 0);
     expect(out[0]).toBeCloseTo(0);
     expect(out[1]).toBeCloseTo(0);
@@ -3108,11 +3108,11 @@ describe('parseAwd2 skeleton animations', () => {
     expect(scaleChannel).toBeDefined();
     expect(scaleChannel!.track.components).toBe(3);
 
-    const out = [0, 0, 0];
+    const out = new Float32Array(3);
     sampleAnimationTrack(out, scaleChannel!.track, 0);
-    expect(out.map((v) => Number(v.toFixed(3)))).toEqual([1, 1, 1]);
+    expect(Array.from(out, (value) => Number(value.toFixed(3)))).toEqual([1, 1, 1]);
     sampleAnimationTrack(out, scaleChannel!.track, 1);
-    expect(out.map((v) => Number(v.toFixed(3)))).toEqual([2, 3, 4]);
+    expect(Array.from(out, (value) => Number(value.toFixed(3)))).toEqual([2, 3, 4]);
   });
 
   it('omits the scale channel for identity-scale skeletons', () => {
@@ -3163,9 +3163,9 @@ describe('parseAwd2 skeleton animations', () => {
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
     const clip = firstAwdAnimation(awd)!;
-    const out = [0, 0, 0];
+    const out = new Float32Array(3);
     sampleAnimationTrack(out, clip.channels[0].track, 0);
-    expect(out).toEqual([0, 0, 0]);
+    expect(Array.from(out)).toEqual([0, 0, 0]);
   });
 
   it('returns null and records a diagnostic for truncated input', () => {
@@ -3285,7 +3285,7 @@ describe('parseAwd2 skeleton animations', () => {
     const awd = concatBytes(buildAwdHeader(body.length), body);
 
     const sampleX = (animation: Scene3DDocumentAnimation): number => {
-      const out = [0, 0, 0];
+      const out = new Float32Array(3);
       sampleAnimationTrack(out, animation.channels[0].track, 0);
       return out[0];
     };
