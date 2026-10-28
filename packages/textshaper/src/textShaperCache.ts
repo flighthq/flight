@@ -1,11 +1,11 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
 import type {
   EntityConstruction,
   EntityRuntime,
   HostTextShaperCapability,
   ShapeRunOptions,
   ShapedRun,
-  TextFormat,
   TextShaperCache,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';

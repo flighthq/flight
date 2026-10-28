@@ -3,6 +3,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getTextLabelRuntime } from '@flighthq/text/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
 import { computeTextLayout, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   DomRenderState,
@@ -12,7 +13,6 @@ import type {
   NodeAny,
   RendererData,
   Scene2DRenderer,
-  TextFormat,
   TextLabel,
   TextLabelRuntime,
 } from '@flighthq/types/contract';

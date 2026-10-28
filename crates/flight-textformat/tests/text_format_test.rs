@@ -156,6 +156,29 @@ mod merge_text_format {
         assert_eq!(result.size, Some(12.0));
         assert_eq!(result.bold, None);
     }
+
+    #[test]
+    fn clones_tab_stops_from_both_base_and_override() {
+        let mut base = empty_text_format();
+        base.tab_stops = Some(vec![8.0]);
+        base.variations = Some(Arc::new(vec![FontVariation {
+            axis: FontVariationWeight.to_string(),
+            value: 400.0,
+        }]));
+        let mut from_base = merge_text_format(&base, &empty_text_format());
+        from_base.tab_stops.as_mut().unwrap()[0] = 12.0;
+        assert_eq!(base.tab_stops, Some(vec![8.0]));
+        assert!(Arc::ptr_eq(
+            base.variations.as_ref().unwrap(),
+            from_base.variations.as_ref().unwrap()
+        ));
+
+        let mut overrides = empty_text_format();
+        overrides.tab_stops = Some(vec![16.0]);
+        let mut from_override = merge_text_format(&base, &overrides);
+        from_override.tab_stops.as_mut().unwrap()[0] = 20.0;
+        assert_eq!(overrides.tab_stops, Some(vec![16.0]));
+    }
 }
 
 mod parse_text_format_align {

@@ -1,4 +1,5 @@
-import type { MarkupTagRegistry, RichTextContent, TextFormat } from '@flighthq/types/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
+import type { MarkupTagRegistry, RichTextContent } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import {

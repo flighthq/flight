@@ -1,10 +1,5 @@
-import type {
-  HostTextShaperCapability,
-  ShapedRun,
-  TextFormat,
-  TextItem,
-  TextShaperOptions,
-} from '@flighthq/types/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
+import type { HostTextShaperCapability, ShapedRun, TextItem, TextShaperOptions } from '@flighthq/types/contract';
 
 import { shapeTextRun } from './textShaperRun.ts';
 

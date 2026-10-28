@@ -1,6 +1,7 @@
 ﻿import { computeRgbaCssString } from '@flighthq/color/contract';
 import { noopRendererData } from '@flighthq/render/contract';
 import { computeTextFormatFontString, getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
 import {
   computeRichTextContent,
   computeTextBoundsHeight,
@@ -19,7 +20,6 @@ import type {
   RenderProxy2D,
   RichText,
   RichTextRuntime,
-  TextFormat,
   TextLabelRuntime,
 } from '@flighthq/types/contract';
 

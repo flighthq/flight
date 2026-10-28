@@ -1,4 +1,5 @@
-import type { HostTextShaperCapability, ShapedRun, ShapeRunOptions, TextFormat } from '@flighthq/types/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
+import type { HostTextShaperCapability, ShapedRun, ShapeRunOptions } from '@flighthq/types/contract';
 
 import { itemizeText, shapeTextRuns } from './textShaperItemize.ts';
 

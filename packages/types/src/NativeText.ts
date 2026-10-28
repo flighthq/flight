@@ -1,6 +1,7 @@
+import type { TextFormatAlign } from '@flighthq/textformat/contract';
+
 import type { Node2D, Node2DData, Node2DRuntime } from './Node2D.ts';
 import type { TextAutoSize } from './TextAutoSize.ts';
-import type { TextFormatAlign } from './TextFormat.ts';
 import type { TextVerticalAlign } from './TextVerticalAlign.ts';
 
 // NativeText is the platform/DOM-backed text type. It opts OUT of the TextLayout spine entirely (no

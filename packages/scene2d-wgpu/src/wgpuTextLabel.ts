@@ -7,6 +7,7 @@ import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/ren
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getTextLabelRuntime } from '@flighthq/text/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
 import { computeTextLayout, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   CanvasSurface,
@@ -16,7 +17,6 @@ import type {
   RenderProxy2D,
   RenderState,
   Scene2DRenderer,
-  TextFormat,
   TextLabel,
   TextLabelRuntime,
   WgpuRenderState,

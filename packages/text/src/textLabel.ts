@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { invalidateNodeLocalBounds, invalidateNodeLocalContent } from '@flighthq/node/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
 import { computeTextBoundsRectangle } from '@flighthq/textlayout/contract';
 import type {
   BoundsNode,
@@ -10,7 +11,6 @@ import type {
   Node2DFields,
   Rectangle,
   TextAutoSize,
-  TextFormat,
   TextLabel,
   TextLabelData,
   TextLabelRuntime,

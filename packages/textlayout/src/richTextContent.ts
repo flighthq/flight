@@ -1,13 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createTextFormatRange, mergeTextFormat } from '@flighthq/textformat/contract';
 import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
-import type {
-  EntityConstruction,
-  RichTextContent,
-  RichTextData,
-  RichTextRuntime,
-  TextFormat,
-} from '@flighthq/types/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
+import type { EntityConstruction, RichTextContent, RichTextData, RichTextRuntime } from '@flighthq/types/contract';
 
 export function clearRichTextContent(runtime: RichTextRuntime): void {
   runtime.richTextContent = null;

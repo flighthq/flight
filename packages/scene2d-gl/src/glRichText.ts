@@ -6,6 +6,7 @@ import { getGlRenderStateRuntime, resolveGlShader } from '@flighthq/render-gl/co
 import { createCanvasHostSurface, destroyCanvasHostSurface } from '@flighthq/render/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
 import {
   computeRichTextContent,
   computeTextBoundsHeight,
@@ -28,7 +29,6 @@ import type {
   RichText,
   RichTextRuntime,
   Scene2DRenderer,
-  TextFormat,
   TextLabelRuntime,
 } from '@flighthq/types/contract';
 

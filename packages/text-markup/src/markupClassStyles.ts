@@ -1,4 +1,5 @@
-import type { MarkupClassResolver, MarkupTagRegistry, TextFormat } from '@flighthq/types/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
+import type { MarkupClassResolver, MarkupTagRegistry } from '@flighthq/types/contract';
 
 /**
  * Opts a registry's `<span class>` styling into a caller-provided class → format map — the Tier-1

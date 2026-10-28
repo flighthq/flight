@@ -1,8 +1,8 @@
+import type { TextFormat, TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
+
 import type { RichTextContent } from './RichTextContent.ts';
 import type { TextAutoSize } from './TextAutoSize.ts';
 import type { TextFieldSignals } from './TextFieldSignals.ts';
-import type { TextFormat } from './TextFormat.ts';
-import type { TextFormatRange } from './TextFormatRange.ts';
 import type { TextInputState } from './TextInputState.ts';
 import type { TextLabel, TextLabelData, TextLabelRuntime } from './TextLabel.ts';
 

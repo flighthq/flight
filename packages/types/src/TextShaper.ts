@@ -1,8 +1,9 @@
+import type { TextFormat } from '@flighthq/textformat/contract';
+
 import type { FontMetrics } from './FontMetrics.ts';
 import type { GlyphExtents } from './GlyphExtents.ts';
 import type { ShapedRun } from './ShapedRun.ts';
 import type { TextDirection } from './TextDirection.ts';
-import type { TextFormat } from './TextFormat.ts';
 import type { TextMeasureFunction } from './TextLayout.ts';
 
 // Text-shaping seam. Free functions in @flighthq/textshaper accept an explicit

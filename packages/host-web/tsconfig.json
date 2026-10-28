@@ -43,6 +43,7 @@
     { "path": "../signals" },
     { "path": "../statusbar" },
     { "path": "../text" },
+    { "path": "../textformat" },
     { "path": "../texture" },
     { "path": "../textureatlas" },
     { "path": "../surface" },

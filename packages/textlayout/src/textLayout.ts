@@ -6,10 +6,10 @@ import {
   mergeTextFormat,
 } from '@flighthq/textformat/contract';
 import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
 import type {
   EntityConstruction,
   TextDirection,
-  TextFormat,
   TextJustification,
   TextLayoutGroup,
   TextLayoutParams,

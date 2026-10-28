@@ -1,7 +1,7 @@
+import type { TextFormat } from '@flighthq/textformat/contract';
 import type {
   BackendOperationExplanation,
   HostTextShaperCapability,
-  TextFormat,
   TextShaperOperation,
 } from '@flighthq/types/contract';
 

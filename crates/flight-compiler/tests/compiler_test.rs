@@ -375,17 +375,31 @@ pub struct Variation {
 
 pub struct Format {
     pub name: Option<String>,
+    pub tab_stops: Option<Vec<f32>>,
     pub variations: Option<Arc<Vec<Variation>>>,
 }
 
-pub fn clone_format(base: &Format) -> Format {
+pub fn clone_format(base: &Format, override_stops: &Format) -> Format {
     let mut result = base.clone();
     result.name = Some("copy".to_string());
+    if override_stops.tab_stops.is_some() {
+        result.tab_stops = override_stops.tab_stops.clone();
+    }
     return result;
 }
 
 pub fn clone_shared(base: Arc<Format>) -> Arc<Format> {
     return base.clone();
+}
+
+pub fn clone_typed_locals() -> (Format, Vec<f32>) {
+    let format: Format = Format {
+        name: None,
+        tab_stops: Some(vec![1.0]),
+        variations: None,
+    };
+    let stops: Vec<f32> = vec![2.0];
+    return (format.clone(), stops.clone());
 }
 
 pub fn has_empty_name(value: Option<String>) -> bool {
@@ -409,12 +423,32 @@ pub fn local_high_byte() -> u32 {
         let output = compile_typescript(source, None).unwrap();
 
         assert!(output.contains("variations?: Readonly<Variation[]>;"));
-        assert!(output.contains("let result = { ...base };"));
+        assert!(
+            output.contains("let result = { ...base, tabStops: base.tabStops?.slice() };"),
+            "{output}"
+        );
+        assert!(output.contains("result.tabStops = overrideStops.tabStops?.slice();"));
         assert!(output.contains("return base;"));
         assert!(!output.contains("return { ...base };"));
+        assert!(output.contains(
+            "return [{ ...format, tabStops: format.tabStops?.slice() }, stops.slice()];"
+        ));
         assert!(output.contains("return value === \"\";"));
         assert!(output.contains("return 0xffffffff;"));
         assert!(output.contains("return color >>> 24;"));
+    }
+
+    #[test]
+    fn preserves_string_constant_literal_types() {
+        let source = r#"
+pub const Axis: &str = "ital";
+pub const Count: u32 = 3;
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("export const Axis = \"ital\" as const;"));
+        assert!(output.contains("export const Count: number = 3;"));
     }
 
     #[test]

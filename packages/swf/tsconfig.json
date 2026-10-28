@@ -89,6 +89,9 @@
       "path": "../text-markup"
     },
     {
+      "path": "../textformat"
+    },
+    {
       "path": "../texture"
     },
     {

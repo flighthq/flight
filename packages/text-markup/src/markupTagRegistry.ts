@@ -1,13 +1,11 @@
 import { packOpaqueColor } from '@flighthq/color/contract';
+import type { TextFormat, TextFormatAlign, TextFormatListMarker } from '@flighthq/textformat/contract';
 import type {
   MarkupClassResolver,
   MarkupColorResolver,
   MarkupTagHandler,
   MarkupTagRegistry,
   NonEntityCreateResult,
-  TextFormat,
-  TextFormatAlign,
-  TextFormatListMarker,
 } from '@flighthq/types/contract';
 
 /**

@@ -100,7 +100,7 @@ export function getTextFormatListMarkerString(value: TextFormatListMarker): stri
 }
 
 export function mergeTextFormat(base: Readonly<TextFormat>, override: Readonly<TextFormat>): TextFormat {
-  let result = { ...base };
+  let result = { ...base, tabStops: base.tabStops?.slice() };
   if (override.align !== undefined) {
     result.align = override.align;
   }
@@ -150,7 +150,7 @@ export function mergeTextFormat(base: Readonly<TextFormat>, override: Readonly<T
     result.strikethrough = override.strikethrough;
   }
   if (override.tabStops !== undefined) {
-    result.tabStops = override.tabStops;
+    result.tabStops = override.tabStops?.slice();
   }
   if (override.target !== undefined) {
     result.target = override.target;

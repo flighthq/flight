@@ -62,6 +62,7 @@
     "@flighthq/shape": "*",
     "@flighthq/text": "*",
     "@flighthq/text-markup": "*",
+    "@flighthq/textformat": "*",
     "@flighthq/texture": "*",
     "@flighthq/types": "*"
   },

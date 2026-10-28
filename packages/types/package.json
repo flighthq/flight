@@ -38,7 +38,8 @@
   "dependencies": {
     "@flighthq/entity": "*",
     "@flighthq/math": "*",
-    "@flighthq/resource": "*"
+    "@flighthq/resource": "*",
+    "@flighthq/textformat": "*"
   },
   "peerDependencies": {
     "@webgpu/types": "^0.1.70"

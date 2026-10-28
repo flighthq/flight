@@ -140,6 +140,20 @@ describe('mergeTextFormat', () => {
     expect(result.size).toEqual(12.0);
     expect(result.bold).toEqual(undefined);
   });
+  it('clones tab stops from both base and override', () => {
+    let base = emptyTextFormat();
+    base.tabStops = [8.0];
+    base.variations = [{ axis: String(FontVariationWeight), value: 400.0 }];
+    let fromBase = mergeTextFormat(base, emptyTextFormat());
+    fromBase.tabStops![0] = 12.0;
+    expect(base.tabStops).toEqual([8.0]);
+    expect(base.variations! === fromBase.variations!).toBe(true);
+    let overrides = emptyTextFormat();
+    overrides.tabStops = [16.0];
+    let fromOverride = mergeTextFormat(base, overrides);
+    fromOverride.tabStops![0] = 20.0;
+    expect(overrides.tabStops).toEqual([16.0]);
+  });
 });
 
 describe('parseTextFormatAlign', () => {

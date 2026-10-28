@@ -1,5 +1,6 @@
 import { computeTextFormatFontString } from '@flighthq/text/contract';
-import type { CanvasSurface, NonEntityCreateResult, TextFormat, TextMeasureFunction } from '@flighthq/types/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
+import type { CanvasSurface, NonEntityCreateResult, TextMeasureFunction } from '@flighthq/types/contract';
 
 // Builds a TextMeasureFunction backed by a private offscreen 2D canvas — the measurement battery for
 // setTextLayoutMeasureProvider. Register it once during setup

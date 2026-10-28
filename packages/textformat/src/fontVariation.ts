@@ -9,12 +9,12 @@ export interface FontVariation {
   readonly value: number;
 }
 
-export const FontVariationItalic: string = 'ital';
+export const FontVariationItalic = 'ital' as const;
 
-export const FontVariationOpticalSize: string = 'opsz';
+export const FontVariationOpticalSize = 'opsz' as const;
 
-export const FontVariationSlant: string = 'slnt';
+export const FontVariationSlant = 'slnt' as const;
 
-export const FontVariationWeight: string = 'wght';
+export const FontVariationWeight = 'wght' as const;
 
-export const FontVariationWidth: string = 'wdth';
+export const FontVariationWidth = 'wdth' as const;

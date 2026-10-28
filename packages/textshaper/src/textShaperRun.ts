@@ -1,4 +1,5 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
 import type {
   Entity,
   EntityConstruction,
@@ -7,7 +8,6 @@ import type {
   HostTextShaperCapability,
   ShapeRunOptions,
   ShapedRun,
-  TextFormat,
 } from '@flighthq/types/contract';
 
 export function clearShapedRun(run: ShapedRun): void {

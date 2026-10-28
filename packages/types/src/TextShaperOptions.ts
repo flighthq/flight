@@ -1,4 +1,5 @@
-import type { FontVariation } from './FontVariation.ts';
+import type { FontVariation } from '@flighthq/textformat/contract';
+
 import type { TextDirection } from './TextDirection.ts';
 import type { TextFeature } from './TextFeature.ts';
 export interface TextShaperOptions {

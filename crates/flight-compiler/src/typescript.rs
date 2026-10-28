@@ -20,6 +20,10 @@ const FIXED_BUFFER_LOCAL_MARKER: &str = "@fixed-buffer-local:";
 const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
 const RECORD_CLONE_ARGUMENT_MARKER: &str = "@record-clone-argument:";
 const RECORD_CLONE_LOCAL_MARKER: &str = "@record-clone-local:";
+const RECORD_CLONE_TYPE_MARKER: &str = "@record-clone-type:";
+const RECORD_VEC_FIELD_MARKER: &str = "@record-vec-field:";
+const VEC_CLONE_ARGUMENT_MARKER: &str = "@vec-clone-argument:";
+const VEC_CLONE_EXPRESSION_MARKER: &str = "@vec-clone-expression:";
 const UNSIGNED_INTEGER_LOCAL_MARKER: &str = "@unsigned-integer-local:";
 
 fn argument_is_option(argument: &FnArg) -> bool {
@@ -166,6 +170,13 @@ fn inferred_fixed_buffer_type(entities: &HashSet<String>, local: &str) -> Option
         .find_map(|marker| marker.strip_prefix(&prefix).map(str::to_string));
 }
 
+fn vec_clone_optional(rust_type: &Type) -> Option<bool> {
+    if let Some(inner) = option_inner_type(rust_type) {
+        return (named_type(inner).as_deref() == Some("Vec")).then_some(true);
+    }
+    return (named_type(rust_type).as_deref() == Some("Vec")).then_some(false);
+}
+
 pub(crate) fn generation_context(programs: &[&Program]) -> Result<HashSet<String>, CompileError> {
     let mut context = HashSet::new();
     let record_types = programs
@@ -178,8 +189,34 @@ pub(crate) fn generation_context(programs: &[&Program]) -> Result<HashSet<String
                 .map(|structure| structure.ident.to_string())
         })
         .collect::<HashSet<_>>();
+    let record_vec_fields = programs
+        .iter()
+        .flat_map(|program| &program.structs)
+        .filter(|structure| record_types.contains(&structure.ident.to_string()))
+        .map(|structure| {
+            let fields = structure
+                .fields
+                .iter()
+                .filter(|field| is_public(&field.vis))
+                .filter_map(|field| {
+                    let optional = vec_clone_optional(&field.ty)?;
+                    let name = snake_to_lower_camel(&field.ident.as_ref()?.to_string());
+                    Some((name, optional))
+                })
+                .collect::<Vec<_>>();
+            (structure.ident.to_string(), fields)
+        })
+        .collect::<HashMap<_, _>>();
     for program in programs {
         context.extend(program.entities.iter().cloned());
+        for (record, fields) in &record_vec_fields {
+            context.insert(format!("{RECORD_CLONE_TYPE_MARKER}{record}"));
+            for (field, optional) in fields {
+                context.insert(format!(
+                    "{RECORD_VEC_FIELD_MARKER}{record}:{field}:{optional}"
+                ));
+            }
+        }
         for function in &program.functions {
             let function_name = function.sig.ident.to_string();
             for (argument_index, argument) in function.sig.inputs.iter().enumerate() {
@@ -191,13 +228,28 @@ pub(crate) fn generation_context(programs: &[&Program]) -> Result<HashSet<String
                 let FnArg::Typed(argument) = argument else {
                     continue;
                 };
-                if let Pat::Ident(pattern) = argument.pat.as_ref()
-                    && named_type(&argument.ty).is_some_and(|name| record_types.contains(&name))
-                {
-                    context.insert(format!(
-                        "{RECORD_CLONE_ARGUMENT_MARKER}{function_name}:{}",
-                        pattern.ident
-                    ));
+                if let Pat::Ident(pattern) = argument.pat.as_ref() {
+                    let local = snake_to_lower_camel(&pattern.ident.to_string());
+                    if let Some(record) = named_type(&argument.ty)
+                        && record_types.contains(&record)
+                    {
+                        context.insert(format!(
+                            "{RECORD_CLONE_ARGUMENT_MARKER}{function_name}:{}",
+                            pattern.ident
+                        ));
+                        if let Some(fields) = record_vec_fields.get(&record) {
+                            for (field, optional) in fields {
+                                context.insert(format!(
+                                    "{VEC_CLONE_ARGUMENT_MARKER}{function_name}:{local}.{field}:{optional}"
+                                ));
+                            }
+                        }
+                    }
+                    if let Some(optional) = vec_clone_optional(&argument.ty) {
+                        context.insert(format!(
+                            "{VEC_CLONE_ARGUMENT_MARKER}{function_name}:{local}:{optional}"
+                        ));
+                    }
                 }
                 if let Some(typescript_type) = fixed_buffer_type(&argument.ty) {
                     context.insert(format!(
@@ -263,11 +315,33 @@ pub(crate) fn function_expression_context(
 
         fn visit_local(&mut self, local: &'ast syn::Local) {
             if let Pat::Type(typed) = &local.pat
-                && type_is_unsigned_integer(&typed.ty)
                 && let Pat::Ident(pattern) = typed.pat.as_ref()
             {
-                self.context
-                    .insert(format!("{UNSIGNED_INTEGER_LOCAL_MARKER}{}", pattern.ident));
+                let local = snake_to_lower_camel(&pattern.ident.to_string());
+                if type_is_unsigned_integer(&typed.ty) {
+                    self.context
+                        .insert(format!("{UNSIGNED_INTEGER_LOCAL_MARKER}{}", pattern.ident));
+                }
+                if let Some(optional) = vec_clone_optional(&typed.ty) {
+                    self.context
+                        .insert(format!("{VEC_CLONE_EXPRESSION_MARKER}{local}:{optional}"));
+                }
+                if let Some(record) = named_type(&typed.ty)
+                    && self
+                        .context
+                        .contains(&format!("{RECORD_CLONE_TYPE_MARKER}{record}"))
+                {
+                    self.context
+                        .insert(format!("{RECORD_CLONE_LOCAL_MARKER}{}", pattern.ident));
+                    let prefix = format!("{RECORD_VEC_FIELD_MARKER}{record}:");
+                    let fields = self
+                        .context
+                        .iter()
+                        .filter_map(|marker| marker.strip_prefix(&prefix))
+                        .map(|field| format!("{VEC_CLONE_EXPRESSION_MARKER}{local}.{field}"))
+                        .collect::<Vec<_>>();
+                    self.context.extend(fields);
+                }
             }
             syn::visit::visit_local(self, local);
         }
@@ -289,6 +363,13 @@ pub(crate) fn function_expression_context(
 
     let mut context = base.clone();
     let function_name = function.sig.ident.to_string();
+    let vec_prefix = format!("{VEC_CLONE_ARGUMENT_MARKER}{function_name}:");
+    let vec_markers = context
+        .iter()
+        .filter_map(|marker| marker.strip_prefix(&vec_prefix))
+        .map(|suffix| format!("{VEC_CLONE_EXPRESSION_MARKER}{suffix}"))
+        .collect::<Vec<_>>();
+    context.extend(vec_markers);
     for argument in &function.sig.inputs {
         let FnArg::Typed(argument) = argument else {
             continue;
@@ -483,12 +564,20 @@ fn emit_constant(
     } else {
         ""
     };
+    let value = emit_expression(&constant.expr, entities)?;
+    if matches!(constant.expr.as_ref(), Expr::Lit(value) if matches!(&value.lit, Lit::Str(_)))
+        && matches!(constant.ty.as_ref(), Type::Reference(reference) if type_is_named(&reference.elem, "str"))
+    {
+        writeln!(out, "{export}const {} = {value} as const;", constant.ident)
+            .expect("writing to a String cannot fail");
+        return Ok(());
+    }
     writeln!(
         out,
         "{export}const {}: {} = {};",
         constant.ident,
         emit_type(&constant.ty, entities)?,
-        emit_expression(&constant.expr, entities)?
+        value
     )
     .expect("writing to a String cannot fail");
     return Ok(());
@@ -1587,11 +1676,43 @@ fn emit_method_call(
         }
         "clone"
             if arguments.is_empty()
+                && entities.contains(&format!("{VEC_CLONE_EXPRESSION_MARKER}{receiver}:true")) =>
+        {
+            Ok(format!("{receiver}?.slice()"))
+        }
+        "clone"
+            if arguments.is_empty()
+                && entities.contains(&format!("{VEC_CLONE_EXPRESSION_MARKER}{receiver}:false")) =>
+        {
+            Ok(format!("{receiver}.slice()"))
+        }
+        "clone"
+            if arguments.is_empty()
                 && referenced_path_identifier(&call.receiver).is_some_and(|identifier| {
                     entities.contains(&format!("{RECORD_CLONE_LOCAL_MARKER}{identifier}"))
                 }) =>
         {
-            Ok(format!("{{ ...{receiver} }}"))
+            let prefix = format!("{VEC_CLONE_EXPRESSION_MARKER}{receiver}.");
+            let mut fields = entities
+                .iter()
+                .filter_map(|marker| marker.strip_prefix(&prefix))
+                .filter_map(|suffix| suffix.rsplit_once(':'))
+                .map(|(field, optional)| {
+                    let clone = if optional == "true" {
+                        format!("{receiver}.{field}?.slice()")
+                    } else {
+                        format!("{receiver}.{field}.slice()")
+                    };
+                    format!("{field}: {clone}")
+                })
+                .collect::<Vec<_>>();
+            fields.sort();
+            let fields = if fields.is_empty() {
+                String::new()
+            } else {
+                format!(", {}", fields.join(", "))
+            };
+            Ok(format!("{{ ...{receiver}{fields} }}"))
         }
         "clone" if arguments.is_empty() => Ok(receiver),
         "collect" if arguments.is_empty() => Ok(receiver),
@@ -1620,6 +1741,7 @@ fn emit_method_call(
         "into_iter" if arguments.is_empty() => Ok(receiver),
         "iter" if arguments.is_empty() => Ok(receiver),
         "as_ref" if arguments.is_empty() => Ok(receiver),
+        "as_mut" if arguments.is_empty() => Ok(receiver),
         "as_deref" if arguments.is_empty() => Ok(receiver),
         "len" if arguments.is_empty() => Ok(format!("{receiver}.length")),
         "get" if arguments.is_empty() => Ok(format!("{receiver}.value")),

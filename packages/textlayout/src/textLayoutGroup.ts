@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type { TextFormat, TextLayoutGroup, EntityConstruction } from '@flighthq/types/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
+import type { TextLayoutGroup, EntityConstruction } from '@flighthq/types/contract';
 
 export function createTextLayoutGroup(format: TextFormat, startIndex: number, endIndex: number): TextLayoutGroup {
   const out = allocateEntity<TextLayoutGroup>();

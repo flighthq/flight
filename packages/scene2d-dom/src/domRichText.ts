@@ -2,6 +2,7 @@ import { computeRgbaCssString } from '@flighthq/color/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { computeTextFormatFontString } from '@flighthq/text/contract';
 import { getRichTextPasswordCharacter, getRichTextRuntime } from '@flighthq/text/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
 import {
   computeRichTextContent,
   computeTextBoundsHeight,
@@ -23,7 +24,6 @@ import type {
   RichText,
   RichTextRuntime,
   Scene2DRenderer,
-  TextFormat,
   TextLabelRuntime,
 } from '@flighthq/types/contract';
 

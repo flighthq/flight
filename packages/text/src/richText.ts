@@ -4,6 +4,7 @@ import { createNode2D, createNode2DRuntime, getNode2DRuntime } from '@flighthq/s
 import { createSignal } from '@flighthq/signals/contract';
 import { createTextFormatRange, mergeTextFormat } from '@flighthq/textformat/contract';
 import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
 import {
   computeRichTextBottomScrollV,
   computeRichTextCharIndexAtPoint,
@@ -32,7 +33,6 @@ import type {
   TextFieldLinkEvent,
   TextFieldScrollEvent,
   TextFieldSignals,
-  TextFormat,
   TextLabel,
   TextLayoutParams,
   TextLayoutResult,

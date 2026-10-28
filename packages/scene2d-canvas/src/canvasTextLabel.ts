@@ -3,6 +3,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { computeTextFormatFontString, getTextLabelRuntime } from '@flighthq/text/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
+import type { TextFormat } from '@flighthq/textformat/contract';
 import { computeTextLayout, getTextLayoutResult } from '@flighthq/textlayout/contract';
 import type {
   CanvasRenderState,
@@ -11,7 +12,6 @@ import type {
   NodeAny,
   RendererData,
   Scene2DRenderer,
-  TextFormat,
   TextLabel,
   TextLabelRuntime,
 } from '@flighthq/types/contract';

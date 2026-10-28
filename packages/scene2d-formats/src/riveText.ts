@@ -3,8 +3,8 @@ import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createRichText } from '@flighthq/text/contract';
 import { createTextFormatRange } from '@flighthq/textformat/contract';
 import type { TextFormatRangeRaw as TextFormatRange } from '@flighthq/textformat/contract';
+import type { FontVariation, TextFormat } from '@flighthq/textformat/contract';
 import type {
-  FontVariation,
   ImportDiagnostic,
   RichText,
   DisplayObject,
@@ -12,7 +12,6 @@ import type {
   RiveArtboardImportContext,
   RiveCoreObject,
   RiveImportRegistry,
-  TextFormat,
 } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 

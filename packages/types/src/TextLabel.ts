@@ -1,6 +1,7 @@
+import type { TextFormat } from '@flighthq/textformat/contract';
+
 import type { Node2D, Node2DData, Node2DRuntime } from './Node2D.ts';
 import type { TextAutoSize } from './TextAutoSize.ts';
-import type { TextFormat } from './TextFormat.ts';
 import type { TextLayoutParams, TextLayoutResult, TextMeasureFunction } from './TextLayout.ts';
 import type { TextVerticalAlign } from './TextVerticalAlign.ts';
 

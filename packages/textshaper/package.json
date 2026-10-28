@@ -41,6 +41,7 @@
     "@flighthq/entity": "*",
     "@flighthq/log": "*",
     "@flighthq/signals": "*",
+    "@flighthq/textformat": "*",
     "@flighthq/types": "*"
   },
   "devDependencies": {

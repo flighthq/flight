@@ -7,6 +7,30 @@ import type { TextFormatRangeRaw } from './textFormatRangeRaw.ts';
 export class TextFormatRange extends Entity {
   declare readonly raw: TextFormatRangeRaw;
 
+  get format(): TextFormat {
+    return this.raw.format;
+  }
+
+  set format(value: TextFormat) {
+    this.raw.format = value;
+  }
+
+  get start(): number {
+    return this.raw.start;
+  }
+
+  set start(value: number) {
+    this.raw.start = value;
+  }
+
+  get end(): number {
+    return this.raw.end;
+  }
+
+  set end(value: number) {
+    this.raw.end = value;
+  }
+
   constructor();
   constructor(format: TextFormat, start: number, end: number);
   constructor(format: TextFormat = {}, start = 0, end = start) {

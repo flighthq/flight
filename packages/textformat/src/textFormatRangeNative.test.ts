@@ -54,6 +54,30 @@ describe('TextFormatRange', () => {
     expectTypeOf(wrapper.raw.format).toEqualTypeOf<TextFormat>();
     expectTypeOf(wrapper.raw.start).toEqualTypeOf<number>();
     expectTypeOf(wrapper.raw.end).toEqualTypeOf<number>();
+    expectTypeOf(wrapper.format).toEqualTypeOf<TextFormat>();
+    expectTypeOf(wrapper.start).toEqualTypeOf<number>();
+    expectTypeOf(wrapper.end).toEqualTypeOf<number>();
+  });
+
+  it('forwards direct field reads and writes to the narrowed raw value', () => {
+    const raw = createTextFormatRange({ italic: true }, 2, 5);
+    const wrapper = TextFormatRange.from(raw);
+
+    expect(wrapper.format).toBe(raw.format);
+    expect(wrapper.start).toBe(2);
+    expect(wrapper.end).toBe(5);
+
+    const replacement = { bold: true };
+    wrapper.format = replacement;
+    wrapper.start = 7;
+    wrapper.end = 11;
+
+    expect(raw.format).toBe(replacement);
+    expect(raw.start).toBe(7);
+    expect(raw.end).toBe(11);
+
+    raw.start = 13;
+    expect(wrapper.start).toBe(13);
   });
 
   it('preserves a typed-first wrapper through the generic conversion', () => {
