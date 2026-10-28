@@ -150,7 +150,8 @@ pub struct RenderStateRuntime<S: RenderState> {
     pub registry_guard_enabled: bool,
     pub registry_misses: Ref<Vec<RenderRegistriesMiss>>,
     // Each guard family owns its log destination; a None enable silences only that family.
-    pub registry_guard_log: Option<LogStateRef>,
+    // Shared with the installed miss listener, which reads the current destination at event time.
+    pub registry_guard_log: Ref<Option<LogStateRef>>,
     pub color_adjustment_guard_log: Option<LogStateRef>,
     pub scene_render_guard_log: Option<LogStateRef>,
     pub renderer_map_id: u32,
@@ -782,7 +783,7 @@ impl<S: RenderState> Default for RenderStateRuntime<S> {
             registry_signals: None,
             registry_guard_enabled: false,
             registry_misses: Ref::default(),
-            registry_guard_log: None,
+            registry_guard_log: Ref::default(),
             color_adjustment_guard_log: None,
             scene_render_guard_log: None,
             renderer_map_id: 0,

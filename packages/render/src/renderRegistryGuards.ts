@@ -15,13 +15,17 @@ export function areRenderRegistriesGuardsEnabled(state: RenderState): boolean {
   return _stateIds.has(state);
 }
 
+// Every call selects (non-null) or clears (null) the destination this state's registry guard warns
+// into. Installation happens once; the installed listener reads the destination when a miss arrives,
+// so a later call redirects or silences future warnings without discarding the recorded misses.
 export function enableRenderRegistriesGuards(state: RenderState, logState: LogState | null): void {
+  _stateLogStates.set(state, logState);
   if (_stateIds.has(state)) return;
   const stateId = ++_nextStateId;
   _stateIds.set(state, stateId);
   _stateMisses.set(state, []);
   connectSignal(enableRenderRegistrySignals(state).onRegistryMiss, (registry, kind) => {
-    recordRenderRegistriesMiss(state, logState, stateId, registry, kind);
+    recordRenderRegistriesMiss(state, _stateLogStates.get(state) ?? null, stateId, registry, kind);
   });
 }
 
@@ -111,5 +115,6 @@ function recordRenderRegistriesMiss(
 }
 
 const _stateIds = new WeakMap<RenderState, number>();
+const _stateLogStates = new WeakMap<RenderState, LogState | null>();
 const _stateMisses = new WeakMap<RenderState, RenderRegistriesMiss[]>();
 let _nextStateId = 0;

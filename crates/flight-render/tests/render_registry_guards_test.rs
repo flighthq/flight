@@ -55,6 +55,58 @@ mod enable_render_registries_guards {
         get_memory_log_sink_entries(&mut entries, &sink);
         assert!(entries.is_empty());
     }
+
+    fn emit_miss(state: &mut BaseRenderState, kind: &str) {
+        let signals = enable_render_registry_signals(state);
+        emit_signal(
+            &signals.on_registry_miss,
+            &(RenderRegistryTable::TextureResolver, kind.to_string()),
+        );
+    }
+
+    fn entry_count(sink: &flight_log::MemoryLogSink) -> usize {
+        let mut entries = Vec::new();
+        get_memory_log_sink_entries(&mut entries, sink);
+        return entries.len();
+    }
+
+    // Every enable overwrites the destination: re-enabling with None silences later misses while
+    // the installed listener and the recorded miss history stay.
+    #[test]
+    fn re_enabling_with_none_silences_future_warnings_and_keeps_miss_history() {
+        let mut state = create_render_state();
+        let log_state = Arc::new(RwLock::new(create_log_state()));
+        let sink = create_memory_log_sink(8);
+        add_log_sink(&log_state, sink.sink.clone());
+        enable_render_registries_guards(&mut state, Some(log_state));
+        emit_miss(&mut state, "acme.First");
+        assert_eq!(entry_count(&sink), 1);
+        enable_render_registries_guards(&mut state, None);
+        emit_miss(&mut state, "acme.Second");
+        assert_eq!(entry_count(&sink), 1);
+        assert!(are_render_registries_guards_enabled(&state));
+        assert_eq!(explain_render_registries_misses(&state).misses.len(), 2);
+    }
+
+    // The installed listener reads the current destination when a miss arrives, so a later enable
+    // with a different log state redirects warnings without reinstalling.
+    #[test]
+    fn re_enabling_with_another_log_state_redirects_future_warnings() {
+        let mut state = create_render_state();
+        let first = Arc::new(RwLock::new(create_log_state()));
+        let first_sink = create_memory_log_sink(8);
+        add_log_sink(&first, first_sink.sink.clone());
+        let second = Arc::new(RwLock::new(create_log_state()));
+        let second_sink = create_memory_log_sink(8);
+        add_log_sink(&second, second_sink.sink.clone());
+        enable_render_registries_guards(&mut state, None);
+        enable_render_registries_guards(&mut state, Some(first));
+        emit_miss(&mut state, "acme.First");
+        enable_render_registries_guards(&mut state, Some(second));
+        emit_miss(&mut state, "acme.Second");
+        assert_eq!(entry_count(&first_sink), 1);
+        assert_eq!(entry_count(&second_sink), 1);
+    }
 }
 
 mod explain_render_registries_misses {

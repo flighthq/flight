@@ -60,7 +60,7 @@ pub fn destroy_render_state<S: RenderState>(state: &mut S, proxies: &mut RenderP
     runtime.render_proxy_adapter_map.clear();
     runtime.registry_guard_enabled = false;
     runtime.registry_misses.write().unwrap().clear();
-    runtime.registry_guard_log = None;
+    *runtime.registry_guard_log.write().unwrap() = None;
     runtime.color_adjustment_guard_log = None;
     runtime.scene_render_guard_log = None;
     runtime.prepared_scene3d = None;

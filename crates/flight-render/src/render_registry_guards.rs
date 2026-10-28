@@ -19,6 +19,9 @@ pub fn enable_render_registries_guards<S: RenderState>(
     state: &mut S,
     log_state: Option<LogStateRef>,
 ) {
+    // Every enable selects (Some) or clears (None) this guard's destination; installation itself
+    // happens once, and the installed listener reads the destination when a miss arrives.
+    *state.render_runtime().registry_guard_log.write().unwrap() = log_state;
     if state.render_runtime().registry_guard_enabled {
         return;
     }
@@ -29,13 +32,14 @@ pub fn enable_render_registries_guards<S: RenderState>(
     let misses = state.render_runtime().registry_misses.clone();
     misses.write().unwrap().clear();
     let listener_misses = misses.clone();
-    let listener_log = log_state.clone();
+    let listener_log = state.render_runtime().registry_guard_log.clone();
     connect_signal(
         &signals.on_registry_miss,
         Arc::new(move |(registry, kind)| {
+            let log_state = listener_log.read().unwrap().clone();
             record_render_registries_miss_shared(
                 &listener_misses,
-                listener_log.as_ref(),
+                log_state.as_ref(),
                 state_id,
                 backend,
                 *registry,
@@ -44,9 +48,7 @@ pub fn enable_render_registries_guards<S: RenderState>(
         }),
         None,
     );
-    let runtime = state.render_runtime_mut();
-    runtime.registry_guard_enabled = true;
-    runtime.registry_guard_log = log_state;
+    state.render_runtime_mut().registry_guard_enabled = true;
 }
 
 pub fn explain_render_registries_misses<S: RenderState>(
@@ -143,9 +145,10 @@ pub fn record_render_registries_miss<S: RenderState>(
     kind: Kind,
 ) {
     let runtime = state.render_runtime();
+    let log_state = runtime.registry_guard_log.read().unwrap().clone();
     record_render_registries_miss_shared(
         &runtime.registry_misses,
-        runtime.registry_guard_log.as_ref(),
+        log_state.as_ref(),
         get_entity_id(state),
         state.render_backend(),
         registry,

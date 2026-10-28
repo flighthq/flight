@@ -69,6 +69,37 @@ describe('enableRenderRegistriesGuards', () => {
     }
   });
 
+  it('silences future warnings after a re-enable with null and keeps the miss history', () => {
+    const state = createRenderState();
+    const sink = createMemoryLogSink(8);
+    addLogSink(logState, sink.sink);
+    enableRenderRegistriesGuards(state, logState);
+    emitSignal(enableRenderRegistrySignals(state).onRegistryMiss, RenderRegistryTable.TextureResolver, 'acme.First');
+    expect(readMemoryLogEntries(sink)).toHaveLength(1);
+    enableRenderRegistriesGuards(state, null);
+    emitSignal(enableRenderRegistrySignals(state).onRegistryMiss, RenderRegistryTable.TextureResolver, 'acme.Second');
+    expect(readMemoryLogEntries(sink)).toHaveLength(1);
+    expect(areRenderRegistriesGuardsEnabled(state)).toBe(true);
+    expect(explainRenderRegistriesMisses(state).misses).toHaveLength(2);
+  });
+
+  it('redirects future warnings when re-enabled with another log state', () => {
+    const state = createRenderState();
+    const first = createLogState();
+    const firstSink = createMemoryLogSink(8);
+    addLogSink(first, firstSink.sink);
+    const second = createLogState();
+    const secondSink = createMemoryLogSink(8);
+    addLogSink(second, secondSink.sink);
+    enableRenderRegistriesGuards(state, null);
+    enableRenderRegistriesGuards(state, first);
+    emitSignal(enableRenderRegistrySignals(state).onRegistryMiss, RenderRegistryTable.TextureResolver, 'acme.First');
+    enableRenderRegistriesGuards(state, second);
+    emitSignal(enableRenderRegistrySignals(state).onRegistryMiss, RenderRegistryTable.TextureResolver, 'acme.Second');
+    expect(readMemoryLogEntries(firstSink)).toHaveLength(1);
+    expect(readMemoryLogEntries(secondSink)).toHaveLength(1);
+  });
+
   it('stays silent when the node renderer is registered', () => {
     const state = createRenderState();
     const sink = createMemoryLogSink(1);
