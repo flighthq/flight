@@ -10,10 +10,10 @@ import { blurBitmapPixelsHorizontal, blurBitmapPixelsVertical } from './bitmapBl
  * interpolated.
  */
 export function buildBitmapGradientRamp(
-  out: Uint8ClampedArray,
-  colors: ReadonlyArray<number>,
-  alphas: ReadonlyArray<number>,
-  ratios: ReadonlyArray<number>,
+  out: Uint8Array,
+  colors: ArrayLike<number>,
+  alphas: ArrayLike<number>,
+  ratios: ArrayLike<number>,
 ): void {
   const n = ratios.length;
   if (n === 0) {
@@ -71,7 +71,7 @@ export function gradientBevelBitmap(
   out: Uint8ClampedArray,
   scratch: Uint8ClampedArray,
   source: Readonly<BitmapRegion>,
-  ramp: Readonly<Uint8ClampedArray>,
+  ramp: Readonly<Uint8Array>,
   options: Readonly<BitmapGradientBevelOptions> = {},
 ): void {
   const w = source.width;
@@ -130,7 +130,7 @@ export function gradientGlowBitmap(
   out: Uint8ClampedArray,
   scratch: Uint8ClampedArray,
   source: Readonly<BitmapRegion>,
-  ramp: Readonly<Uint8ClampedArray>,
+  ramp: Readonly<Uint8Array>,
   options: Readonly<BitmapGradientGlowOptions> = {},
 ): void {
   const w = source.width;

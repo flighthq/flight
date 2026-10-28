@@ -64,11 +64,11 @@ export function blurBitmapPixelsHorizontal(
  * `source`, writes to `out`. `out` must not alias `source`.
  */
 export function blurBitmapPixelsHorizontalWeighted(
-  out: Uint8ClampedArray,
-  source: Readonly<Uint8ClampedArray>,
+  out: Uint8Array,
+  source: ArrayLike<number>,
   width: number,
   height: number,
-  kernel: Readonly<Float32Array>,
+  kernel: ArrayLike<number>,
 ): void {
   const radius = (kernel.length - 1) >> 1;
   for (let y = 0; y < height; y++) {
@@ -87,10 +87,10 @@ export function blurBitmapPixelsHorizontalWeighted(
         a += source[i + 3] * w;
       }
       const di = (y * width + x) * 4;
-      out[di] = Math.round(r);
-      out[di + 1] = Math.round(g);
-      out[di + 2] = Math.round(b);
-      out[di + 3] = Math.round(a);
+      out[di] = clampByte(r);
+      out[di + 1] = clampByte(g);
+      out[di + 2] = clampByte(b);
+      out[di + 3] = clampByte(a);
     }
   }
 }
@@ -156,11 +156,11 @@ export function blurBitmapPixelsVertical(
  * `source`, writes to `out`. `out` must not alias `source`.
  */
 export function blurBitmapPixelsVerticalWeighted(
-  out: Uint8ClampedArray,
-  source: Readonly<Uint8ClampedArray>,
+  out: Uint8Array,
+  source: ArrayLike<number>,
   width: number,
   height: number,
-  kernel: Readonly<Float32Array>,
+  kernel: ArrayLike<number>,
 ): void {
   const radius = (kernel.length - 1) >> 1;
   for (let y = 0; y < height; y++) {
@@ -179,10 +179,10 @@ export function blurBitmapPixelsVerticalWeighted(
         a += source[i + 3] * w;
       }
       const di = (y * width + x) * 4;
-      out[di] = Math.round(r);
-      out[di + 1] = Math.round(g);
-      out[di + 2] = Math.round(b);
-      out[di + 3] = Math.round(a);
+      out[di] = clampByte(r);
+      out[di + 1] = clampByte(g);
+      out[di + 2] = clampByte(b);
+      out[di + 3] = clampByte(a);
     }
   }
 }
@@ -290,8 +290,10 @@ export function gaussianBlurBitmap(
 
   extractBitmapPixels(out, source);
 
-  let a = out;
-  let b = scratch;
+  const outBytes = new Uint8Array(out.buffer, out.byteOffset, out.byteLength);
+  const scratchBytes = new Uint8Array(scratch.buffer, scratch.byteOffset, scratch.byteLength);
+  let a = outBytes;
+  let b = scratchBytes;
 
   for (let pass = 0; pass < passCount; pass++) {
     if (kernelX) {
@@ -308,7 +310,11 @@ export function gaussianBlurBitmap(
     }
   }
 
-  if (a !== out) {
+  if (a !== outBytes) {
     out.set(a.subarray(0, source.width * source.height * 4));
   }
+}
+
+function clampByte(value: number): number {
+  return Math.max(0, Math.min(255, Math.round(value)));
 }

@@ -51,6 +51,7 @@ describe('createBitmapFingerprint', () => {
   it('averages a solid bitmap to that colour in every cell', () => {
     const fp = createBitmapFingerprint(createBitmap(8, 8, 0x336699ff), 4);
     expect(fp.gridSize).toBe(4);
+    expect(Array.isArray(fp.cells)).toBe(true);
     expect(fp.cells.length).toBe(4 * 4 * 3);
     expect([fp.cells[0], fp.cells[1], fp.cells[2]]).toEqual([0x33, 0x66, 0x99]);
     expect([fp.cells[fp.cells.length - 3], fp.cells[fp.cells.length - 2], fp.cells[fp.cells.length - 1]]).toEqual([

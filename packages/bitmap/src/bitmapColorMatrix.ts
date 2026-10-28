@@ -99,11 +99,7 @@ export function buildBitmapSepiaColorMatrix(out: number[]): void {
  * full bitmap — each pixel's input channels are read before any channel
  * of that pixel is written.
  */
-export function colorMatrixBitmap(
-  out: Uint8ClampedArray,
-  source: Readonly<BitmapRegion>,
-  matrix: ReadonlyArray<number>,
-): void {
+export function colorMatrixBitmap(out: Uint8Array, source: Readonly<BitmapRegion>, matrix: ArrayLike<number>): void {
   if (matrix.length < 20) throw new Error('Color matrix filter requires 20 values');
 
   for (let py = 0; py < source.height; py++) {

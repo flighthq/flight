@@ -97,10 +97,10 @@ export function applyBitmapLevels(
 export function applyBitmapPaletteMap(
   dest: Readonly<BitmapRegion>,
   source: Readonly<BitmapRegion>,
-  redMap: Readonly<Uint8Array | Uint8ClampedArray | null>,
-  greenMap: Readonly<Uint8Array | Uint8ClampedArray | null>,
-  blueMap: Readonly<Uint8Array | Uint8ClampedArray | null>,
-  alphaMap: Readonly<Uint8Array | Uint8ClampedArray | null>,
+  redMap: ArrayLike<number> | null,
+  greenMap: ArrayLike<number> | null,
+  blueMap: ArrayLike<number> | null,
+  alphaMap: ArrayLike<number> | null,
 ): void {
   ensureBitmapWasm();
   apply_bitmap_palette_map_wasm(
@@ -146,11 +146,7 @@ export function buildBitmapSepiaColorMatrix(out: number[]): void {
   runMatrixWriter(out, (typed) => build_bitmap_sepia_color_matrix_wasm(typed));
 }
 
-export function colorMatrixBitmap(
-  out: Uint8ClampedArray,
-  source: Readonly<BitmapRegion>,
-  matrix: ReadonlyArray<number>,
-): void {
+export function colorMatrixBitmap(out: Uint8Array, source: Readonly<BitmapRegion>, matrix: ArrayLike<number>): void {
   ensureBitmapWasm();
   color_matrix_bitmap_wasm(asUint8(out), asUint8(source.bitmap.data), descriptorOf(source), Float64Array.from(matrix));
 }
@@ -475,6 +471,8 @@ function descriptorOf(region: Readonly<BitmapRegion>): Float64Array {
   return Float64Array.of(region.bitmap.width, region.bitmap.height, region.x, region.y, region.width, region.height);
 }
 
-function byteChannelMap(values: Readonly<Uint8Array | Uint8ClampedArray | null>): Uint8Array {
-  return values ? asUint8(values) : EMPTY_BYTE_CHANNEL_MAP;
+function byteChannelMap(values: ArrayLike<number> | null): Uint8Array {
+  if (values === null) return EMPTY_BYTE_CHANNEL_MAP;
+  if (values instanceof Uint8Array || values instanceof Uint8ClampedArray) return asUint8(values);
+  return Uint8Array.from(values);
 }

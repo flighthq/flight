@@ -40,7 +40,7 @@ export function compareBitmapFingerprints(a: Readonly<BitmapFingerprint>, b: Rea
 export function createBitmapFingerprint(source: Readonly<Bitmap>, gridSize: number = 16): BitmapFingerprint {
   if (gridSize < 1) throw new Error(`createBitmapFingerprint: gridSize must be >= 1 (got ${gridSize})`);
 
-  const cells = new Uint8Array(gridSize * gridSize * 3);
+  const cells = new Array<number>(gridSize * gridSize * 3).fill(0);
   const { width, height, data } = source;
   if (width === 0 || height === 0)
     return (() => {
@@ -96,7 +96,7 @@ export function formatBitmapFingerprint(fingerprint: Readonly<BitmapFingerprint>
 export function initializeBitmapFingerprint(
   out: EntityConstruction<BitmapFingerprint>,
   gridSize: number,
-  cells: Uint8Array,
+  cells: number[],
 ): void {
   out.gridSize = gridSize;
   out.cells = cells;
@@ -116,7 +116,7 @@ export function parseBitmapFingerprint(text: string): BitmapFingerprint | null {
   const hex = text.slice(colon + 1);
   if (hex.length !== gridSize * gridSize * 3 * 2) return null;
 
-  const cells = new Uint8Array(hex.length / 2);
+  const cells = new Array<number>(hex.length / 2).fill(0);
   for (let i = 0; i < cells.length; i++) {
     const hi = HEX.indexOf(hex[i * 2]);
     const lo = HEX.indexOf(hex[i * 2 + 1]);

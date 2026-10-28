@@ -17,9 +17,9 @@ function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = b
 }
 
 // Build a 1x1 bitmap, apply `matrix`, and return its RGBA bytes.
-function applyTo(rgba: number, matrix: ReadonlyArray<number>): Uint8ClampedArray {
+function applyTo(rgba: number, matrix: ReadonlyArray<number>): Uint8Array {
   const bitmap = createBitmap(1, 1, rgba);
-  const out = new Uint8ClampedArray(4);
+  const out = new Uint8Array(4);
   colorMatrixBitmap(out, region(bitmap), matrix);
   return out;
 }
@@ -132,7 +132,7 @@ describe('buildBitmapSepiaColorMatrix', () => {
 describe('colorMatrixBitmap', () => {
   it('applies a 4x5 color matrix to the source region', () => {
     const source = createBitmap(1, 1, 0x204060ff);
-    const out = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
     colorMatrixBitmap(out, region(source), [0, 0, 0, 0, 10, 0, 0, 0, 0, 20, 0, 0, 0, 0, 30, 0, 0, 0, 1, 0]);
     expect(out[0]).toBe(10);
     expect(out[1]).toBe(20);
@@ -142,7 +142,8 @@ describe('colorMatrixBitmap', () => {
 
   it('is safe when out aliases source.bitmap.data for a full-bitmap region', () => {
     const bitmap = createBitmap(1, 1, 0x010203ff);
-    colorMatrixBitmap(bitmap.data, region(bitmap), [1, 0, 0, 0, 10, 0, 1, 0, 0, 20, 0, 0, 1, 0, 30, 0, 0, 0, 1, 0]);
+    const aliasedOut = new Uint8Array(bitmap.data.buffer, bitmap.data.byteOffset, bitmap.data.byteLength);
+    colorMatrixBitmap(aliasedOut, region(bitmap), [1, 0, 0, 0, 10, 0, 1, 0, 0, 20, 0, 0, 1, 0, 30, 0, 0, 0, 1, 0]);
     expect(bitmap.data[0]).toBe(11);
     expect(bitmap.data[1]).toBe(22);
     expect(bitmap.data[2]).toBe(33);
@@ -151,7 +152,7 @@ describe('colorMatrixBitmap', () => {
 
   it('clamps output to [0, 255]', () => {
     const source = createBitmap(1, 1, 0xff0000ff);
-    const out = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
     colorMatrixBitmap(out, region(source), [10, 0, 0, 0, 100, 0, 0, 0, 0, -50, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0]);
     expect(out[0]).toBe(255);
     expect(out[1]).toBe(0);
@@ -159,13 +160,13 @@ describe('colorMatrixBitmap', () => {
 
   it('throws when the matrix is too short', () => {
     const source = createBitmap(1, 1);
-    const out = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
     expect(() => colorMatrixBitmap(out, region(source), [])).toThrow('Color matrix filter requires 20 values');
   });
 
   it('silently skips pixels outside source bounds', () => {
     const source = createBitmap(1, 1, 0xff0000ff);
-    const out = new Uint8ClampedArray(4 * 4);
+    const out = new Uint8Array(4 * 4);
     const identity = [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0];
     colorMatrixBitmap(out, region(source, -1, -1, 2, 2), identity);
     // only bottom-right pixel of the 2x2 region is in-bounds

@@ -1,4 +1,4 @@
-import type { BitmapEdgeMode, BitmapRegion, BitmapResizeMode, BitmapResizeOptions } from '@flighthq/types/contract';
+import type { BitmapEdgeMode, BitmapRegion, BitmapResizeMode } from '@flighthq/types/contract';
 
 import { invalidateBitmap } from './bitmap.ts';
 
@@ -10,22 +10,19 @@ import { invalidateBitmap } from './bitmap.ts';
  *   - `'bicubic'`: high quality, Catmull-Rom interpolation over 4×4 neighbourhood
  *
  * `edgeMode` controls how boundary interpolation handles out-of-bounds
- * coordinates (default `'clamp'`).
+ * coordinates.
  *
- * Set `premultiplied: true` to avoid dark-halo bleed at transparent edges.
+ * Set `premultiplied` to true to avoid dark-halo bleed at transparent edges.
  *
  * `dest` must not alias `source` — output pixels read arbitrary source positions.
  */
 export function resizeBitmap(
   dest: Readonly<BitmapRegion>,
   source: Readonly<BitmapRegion>,
-  options: BitmapResizeMode | Readonly<BitmapResizeOptions> = 'bilinear',
+  mode: BitmapResizeMode,
+  edgeMode: BitmapEdgeMode,
+  premultiplied: boolean,
 ): void {
-  const opts: Readonly<BitmapResizeOptions> = typeof options === 'string' ? { mode: options } : options;
-  const mode = opts.mode ?? 'bilinear';
-  const edgeMode = opts.edgeMode ?? 'clamp';
-  const premultiplied = opts.premultiplied ?? false;
-
   const sw = source.width;
   const sh = source.height;
   const dw = dest.width;

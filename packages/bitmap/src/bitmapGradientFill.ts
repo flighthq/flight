@@ -17,7 +17,7 @@ import { invalidateBitmap } from './bitmap.ts';
  */
 export function fillBitmapLinearGradient(
   dest: Readonly<BitmapRegion>,
-  ramp: Readonly<Uint8ClampedArray>,
+  ramp: Readonly<Uint8Array>,
   x0: number,
   y0: number,
   x1: number,
@@ -70,7 +70,7 @@ export function fillBitmapLinearGradient(
  */
 export function fillBitmapRadialGradient(
   dest: Readonly<BitmapRegion>,
-  ramp: Readonly<Uint8ClampedArray>,
+  ramp: Readonly<Uint8Array>,
   cx: number,
   cy: number,
   radius: number,

@@ -67,7 +67,7 @@ describe('blurBitmapPixelsHorizontalWeighted', () => {
     const kernel = new Float32Array(3);
     computeGaussianKernel(kernel, 1, 0.8);
     const source = new Uint8ClampedArray([0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0]);
-    const out = new Uint8ClampedArray(12);
+    const out = new Uint8Array(12);
     blurBitmapPixelsHorizontalWeighted(out, source, 3, 1, kernel);
     // center weight >> edge; center alpha should be highest
     expect(out[7]).toBeGreaterThan(out[3]);
@@ -77,10 +77,16 @@ describe('blurBitmapPixelsHorizontalWeighted', () => {
   it('with an identity kernel [1] leaves source unchanged', () => {
     const kernel = new Float32Array([1]);
     const source = new Uint8ClampedArray([0x11, 0x22, 0x33, 0xff]);
-    const out = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
     blurBitmapPixelsHorizontalWeighted(out, source, 1, 1, kernel);
     expect(out[0]).toBe(0x11);
     expect(out[3]).toBe(0xff);
+  });
+
+  it('saturates byte writes instead of wrapping Uint8Array values', () => {
+    const out = new Uint8Array(4);
+    blurBitmapPixelsHorizontalWeighted(out, [200, 100, 50, 255], 1, 1, [2]);
+    expect(Array.from(out)).toEqual([255, 200, 100, 255]);
   });
 });
 
@@ -99,7 +105,7 @@ describe('blurBitmapPixelsVerticalWeighted', () => {
     const kernel = new Float32Array(3);
     computeGaussianKernel(kernel, 1, 0.8);
     const source = new Uint8ClampedArray([0, 0, 0, 0, 0, 0, 0, 255, 0, 0, 0, 0]);
-    const out = new Uint8ClampedArray(12);
+    const out = new Uint8Array(12);
     blurBitmapPixelsVerticalWeighted(out, source, 1, 3, kernel);
     expect(out[7]).toBeGreaterThan(out[3]);
   });

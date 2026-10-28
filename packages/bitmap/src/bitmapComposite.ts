@@ -157,7 +157,7 @@ export function writeBitmapPixels(dest: Readonly<BitmapRegion>, pixels: Readonly
  * row-major order. `pixels` must hold at least `dest.width * dest.height`
  * entries. This is the color-per-element counterpart to `writeBitmapPixels`.
  */
-export function writeBitmapPixels32(dest: Readonly<BitmapRegion>, pixels: Readonly<Uint32Array>): void {
+export function writeBitmapPixels32(dest: Readonly<BitmapRegion>, pixels: ArrayLike<number>): void {
   for (let py = 0; py < dest.height; py++) {
     const y = dest.y + py;
     if (y < 0 || y >= dest.bitmap.height) continue;

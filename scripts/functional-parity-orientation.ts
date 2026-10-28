@@ -47,10 +47,11 @@ export interface FunctionalOrientationReport {
 export function mirrorBitmapFingerprintVertically(fingerprint: Readonly<BitmapFingerprint>): BitmapFingerprint {
   const { gridSize } = fingerprint;
   const rowBytes = gridSize * 3;
-  const cells = new Uint8Array(fingerprint.cells.length);
+  const cells = new Array<number>(fingerprint.cells.length).fill(0);
   for (let row = 0; row < gridSize; row++) {
-    const source = fingerprint.cells.subarray(row * rowBytes, (row + 1) * rowBytes);
-    cells.set(source, (gridSize - 1 - row) * rowBytes);
+    const source = fingerprint.cells.slice(row * rowBytes, (row + 1) * rowBytes);
+    const targetOffset = (gridSize - 1 - row) * rowBytes;
+    for (let i = 0; i < rowBytes; i++) cells[targetOffset + i] = source[i];
   }
   const out = allocateEntity<BitmapFingerprint>();
   out.cells = cells;

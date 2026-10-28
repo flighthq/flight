@@ -19,10 +19,10 @@ import { invalidateBitmap } from './bitmap.ts';
 export function applyBitmapPaletteMap(
   dest: Readonly<BitmapRegion>,
   source: Readonly<BitmapRegion>,
-  redMap: ReadonlyArray<number> | null,
-  greenMap: ReadonlyArray<number> | null,
-  blueMap: ReadonlyArray<number> | null,
-  alphaMap: ReadonlyArray<number> | null,
+  redMap: ArrayLike<number> | null,
+  greenMap: ArrayLike<number> | null,
+  blueMap: ArrayLike<number> | null,
+  alphaMap: ArrayLike<number> | null,
 ): void {
   const w = Math.min(dest.width, source.width);
   const h = Math.min(dest.height, source.height);

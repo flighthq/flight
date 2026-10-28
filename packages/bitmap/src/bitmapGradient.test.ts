@@ -7,7 +7,7 @@ function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = b
 
 describe('buildBitmapGradientRamp', () => {
   it('places endpoints exactly and interpolates the middle', () => {
-    const ramp = new Uint8ClampedArray(256 * 4);
+    const ramp = new Uint8Array(256 * 4);
     buildBitmapGradientRamp(ramp, [0xff0000, 0x0000ff], [0, 1], [0, 255]);
     expect(Array.from(ramp.subarray(0, 4))).toEqual([255, 0, 0, 0]);
     expect(Array.from(ramp.subarray(255 * 4, 256 * 4))).toEqual([0, 0, 255, 255]);
@@ -15,7 +15,7 @@ describe('buildBitmapGradientRamp', () => {
   });
 
   it('zero-fills when there are no stops', () => {
-    const ramp = new Uint8ClampedArray(256 * 4).fill(99);
+    const ramp = new Uint8Array(256 * 4).fill(99);
     buildBitmapGradientRamp(ramp, [], [], []);
     expect(ramp.every((v) => v === 0)).toBe(true);
   });
@@ -27,7 +27,7 @@ describe('gradientBevelBitmap', () => {
     // transparent middle at 128, highlight white at 255.
     const source = createBitmap(5, 1);
     for (let x = 2; x < 5; x++) source.data[x * 4 + 3] = 255;
-    const ramp = new Uint8ClampedArray(256 * 4);
+    const ramp = new Uint8Array(256 * 4);
     buildBitmapGradientRamp(ramp, [0x000000, 0x808080, 0xffffff], [1, 0, 1], [0, 128, 255]);
     const out = new Uint8ClampedArray(5 * 4);
     const scratch = new Uint8ClampedArray(5 * 4);
@@ -50,7 +50,7 @@ describe('gradientBevelBitmap', () => {
 describe('gradientGlowBitmap', () => {
   it('indexes the ramp by the blurred alpha', () => {
     // ramp: index 0 transparent green, 255 opaque green.
-    const ramp = new Uint8ClampedArray(256 * 4);
+    const ramp = new Uint8Array(256 * 4);
     buildBitmapGradientRamp(ramp, [0x00ff00, 0x00ff00], [0, 1], [0, 255]);
     const source = createBitmap(1, 1, 0xffffffff);
     const out = new Uint8ClampedArray(4);
@@ -64,7 +64,7 @@ describe('gradientGlowBitmap', () => {
   });
 
   it('scales the ramp alpha by intensity', () => {
-    const ramp = new Uint8ClampedArray(256 * 4);
+    const ramp = new Uint8Array(256 * 4);
     buildBitmapGradientRamp(ramp, [0x00ff00, 0x00ff00], [1, 1], [0, 255]);
     const source = createBitmap(1, 1, 0xffffffff);
     const out = new Uint8ClampedArray(4);
@@ -74,7 +74,7 @@ describe('gradientGlowBitmap', () => {
   });
 
   it('source.bitmap.data can be used as out for a full-bitmap region', () => {
-    const ramp = new Uint8ClampedArray(256 * 4);
+    const ramp = new Uint8Array(256 * 4);
     buildBitmapGradientRamp(ramp, [0x00ff00, 0x00ff00], [0, 1], [0, 255]);
     const bitmap = createBitmap(1, 1, 0xffffffff);
     const scratch = new Uint8ClampedArray(4);

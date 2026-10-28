@@ -236,7 +236,7 @@ describe('writeBitmapPixels', () => {
 describe('writeBitmapPixels32', () => {
   it('unpacks each 0xRRGGBBAA entry into the destination region', () => {
     const dest = createBitmap(3, 3);
-    writeBitmapPixels32(region(dest, 1, 1, 1, 1), new Uint32Array([0x33669900 | 0xff]));
+    writeBitmapPixels32(region(dest, 1, 1, 1, 1), [0x33669900 | 0xff]);
     const i = (1 * 3 + 1) * 4;
     expect(dest.data[i]).toBe(0x33);
     expect(dest.data[i + 1]).toBe(0x66);

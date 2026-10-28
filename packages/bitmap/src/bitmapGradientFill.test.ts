@@ -4,8 +4,8 @@ import { fillBitmapLinearGradient, fillBitmapRadialGradient } from './bitmapGrad
 import { getBitmapPixel } from './bitmapPixel.ts';
 import { createBitmapRegion } from './bitmapRegion.ts';
 
-function buildTwoStopRamp(colorA: number, colorB: number): Uint8ClampedArray {
-  const ramp = new Uint8ClampedArray(1024);
+function buildTwoStopRamp(colorA: number, colorB: number): Uint8Array {
+  const ramp = new Uint8Array(1024);
   const aR = (colorA >>> 24) & 0xff;
   const aG = (colorA >> 16) & 0xff;
   const aB = (colorA >> 8) & 0xff;
