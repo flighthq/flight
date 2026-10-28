@@ -1,4 +1,5 @@
 //! flight-compiler: string-union HapticImpactStyle HapticNotificationType HapticsOperation
+//! flight-compiler: readonly-fields HostHapticsCapabilities
 
 use std::sync::Arc;
 
