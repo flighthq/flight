@@ -5,7 +5,8 @@ import {
 } from '@flighthq/camera/contract';
 import { createAabb } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
-import { setLogSink } from '@flighthq/log/contract';
+import { createLogState, setLogSink } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import { computeMeshGeometryBounds, createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
@@ -16,16 +17,23 @@ import { disableSceneRenderGuards, enableSceneRenderGuards } from './enableScene
 import { createRenderState } from './renderState.ts';
 import { prepareScene3DRender } from './sceneRender.ts';
 
+// Each test logs into a fresh caller-owned state, so logOnce keys never leak between tests.
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
+
 let entries: LogEntry[];
 
 beforeEach(() => {
   entries = [];
-  setLogSink((entry) => entries.push(entry));
+  setLogSink(logState, (entry) => entries.push(entry));
 });
 
 afterEach(() => {
   disableSceneRenderGuards();
-  setLogSink(null);
+  setLogSink(logState, null);
 });
 
 function messages(): string {
@@ -62,7 +70,7 @@ function prepareWith(mesh: Mesh): void {
 
 describe('disableSceneRenderGuards', () => {
   it('stops the guard reporting later frames', () => {
-    enableSceneRenderGuards();
+    enableSceneRenderGuards(logState);
     disableSceneRenderGuards();
     const mesh = createMesh(boundedBox(), [null]);
     mesh.skin = {} as Skin;
@@ -75,7 +83,7 @@ describe('enableSceneRenderGuards', () => {
   // A rigid mesh legitimately has no posed bounds — it never deforms — so warning about it would make
   // the guard noise on the common path and train people to ignore it.
   it('says nothing for a rigid mesh with no posed bounds', () => {
-    enableSceneRenderGuards();
+    enableSceneRenderGuards(logState);
     prepareWith(createMesh(boundedBox(), [null]));
     expect(messages()).toBe('');
   });
@@ -84,7 +92,7 @@ describe('enableSceneRenderGuards', () => {
   // a swung limb is removed from the frame, which reads as a culling or camera bug rather than a
   // missing call in the frame loop.
   it('warns when a skinned mesh reaches culling with no posed bounds', () => {
-    enableSceneRenderGuards();
+    enableSceneRenderGuards(logState);
     const mesh = createMesh(boundedBox(), [null]);
     mesh.skin = {} as Skin;
 

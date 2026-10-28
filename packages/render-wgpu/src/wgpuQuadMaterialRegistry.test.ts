@@ -1,6 +1,19 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  createLogState,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import { enableRenderRegistriesGuards, explainRenderRegistriesMisses } from '@flighthq/render/contract';
-import type { Material, WgpuQuadMaterialRenderer, WgpuRenderState } from '@flighthq/types/contract';
+import type {
+  LogEntry,
+  Material,
+  MemoryLogSink,
+  WgpuQuadMaterialRenderer,
+  WgpuRenderState,
+} from '@flighthq/types/contract';
 import { StandardMaterialKind, EntityRuntimeKey, RenderRegistryTable } from '@flighthq/types/contract';
 
 import {
@@ -9,6 +22,13 @@ import {
   resolveWgpuQuadMaterialRenderer,
 } from './wgpuQuadMaterialRegistry.ts';
 import { createWgpuDeviceState, createWgpuRenderStateRuntime, getWgpuRenderStateRuntime } from './wgpuRenderState.ts';
+
+// Each test logs into a fresh caller-owned state, so logOnce keys never leak between tests.
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
 
 const TestKind = 'TestMaterial';
 const testRenderer: WgpuQuadMaterialRenderer = {
@@ -80,9 +100,9 @@ describe('resolveWgpuQuadMaterialRenderer', () => {
 
   it('reports the missing kind against the wgpu registrar, not the gl one', () => {
     const state = makeState();
-    enableRenderRegistriesGuards(state);
+    enableRenderRegistriesGuards(state, logState);
     const sink = createMemoryLogSink(4);
-    addLogSink(sink.sink);
+    addLogSink(logState, sink.sink);
 
     try {
       resolveWgpuQuadMaterialRenderer(state, makeMaterial(TestKind));
@@ -90,14 +110,20 @@ describe('resolveWgpuQuadMaterialRenderer', () => {
       expect(explainRenderRegistriesMisses(state).misses).toEqual([
         { kind: TestKind, registry: RenderRegistryTable.MaterialRenderer },
       ]);
-      expect(getMemoryLogSinkEntries(sink)[0]?.data).toMatchObject({
+      expect(readMemoryLogEntries(sink)[0]?.data).toMatchObject({
         kind: TestKind,
         message:
           'resolveWgpuQuadMaterialRenderer: material kind has no registered renderer, so nodes using it do not draw — call registerWgpuQuadMaterialRenderer(state, kind, renderer)',
         registry: RenderRegistryTable.MaterialRenderer,
       });
     } finally {
-      removeLogSink(sink.sink);
+      removeLogSink(logState, sink.sink);
     }
   });
 });
+
+function readMemoryLogEntries(handle: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, handle);
+  return entries;
+}

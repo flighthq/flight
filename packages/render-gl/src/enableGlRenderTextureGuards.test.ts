@@ -6,7 +6,7 @@ describe('areGlRenderTextureGuardsEnabled', () => {
     const { state } = createGlState();
     expect(areGlRenderTextureGuardsEnabled(state)).toBe(false);
 
-    enableGlRenderTextureGuards(state);
+    enableGlRenderTextureGuards(state, null);
 
     expect(areGlRenderTextureGuardsEnabled(state)).toBe(true);
   });
@@ -15,8 +15,8 @@ describe('areGlRenderTextureGuardsEnabled', () => {
 describe('enableGlRenderTextureGuards', () => {
   it('is idempotent', () => {
     const { state } = createGlState();
-    enableGlRenderTextureGuards(state);
-    enableGlRenderTextureGuards(state);
+    enableGlRenderTextureGuards(state, null);
+    enableGlRenderTextureGuards(state, null);
     expect(areGlRenderTextureGuardsEnabled(state)).toBe(true);
   });
 });

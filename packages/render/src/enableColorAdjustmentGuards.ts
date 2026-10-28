@@ -1,4 +1,5 @@
 import { logOnce } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import type { RenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -14,14 +15,26 @@ export function areColorAdjustmentGuardsEnabled(state: RenderState): boolean {
 // path nor the full 4×5 path can represent, the resolver reaches this guard through its independent
 // optional persistent registry slot and warns once. This does not enable accumulation or backend realization.
 // Idempotent.
-export function enableColorAdjustmentGuards(state: RenderState): void {
-  const runtime = getRenderStateRuntime(state);
-  if (runtime.registries.colorAdjustmentUnsupportedGuard === warnUnsupportedColorAdjustment) return;
-  runtime.registries.colorAdjustmentUnsupportedGuard = warnUnsupportedColorAdjustment;
+export function enableColorAdjustmentGuards(state: RenderState, logState: LogState | null): void {
+  const registries = getRenderStateRuntime(state).registries;
+  const installed = _installedGuards.get(state);
+  if (
+    installed !== undefined &&
+    installed.logState === logState &&
+    registries.colorAdjustmentUnsupportedGuard === installed.guard
+  )
+    return;
+  const guard = (): void => warnUnsupportedColorAdjustment(logState);
+  _installedGuards.set(state, { guard, logState });
+  registries.colorAdjustmentUnsupportedGuard = guard;
 }
 
-function warnUnsupportedColorAdjustment(): void {
+function warnUnsupportedColorAdjustment(logState: LogState | null): void {
+  if (logState === null) return;
+  // The render guards take no clock, so the warning is stamped at time zero.
   logOnce(
+    logState,
+    0,
     'render:unsupported-color-adjustment',
     LogLevel.Warn,
     {
@@ -31,3 +44,7 @@ function warnUnsupportedColorAdjustment(): void {
     'render',
   );
 }
+
+// The guard installed per render state and the log state it reports to, so enabling again with the same
+// log state keeps the installed guard.
+const _installedGuards = new WeakMap<RenderState, { guard: () => void; logState: LogState | null }>();

@@ -1,17 +1,31 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  createLogState,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import { createTexture } from '@flighthq/texture/contract';
-import type { ImageResource } from '@flighthq/types/contract';
+import type { ImageResource, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import { areGlTextureResolverGuardsEnabled, enableGlTextureResolverGuards } from './enableGlTextureResolverGuards.ts';
 import { createGlState } from './glTestHelper.ts';
 import { registerGlTextureResolver, resolveGlTexture } from './glTextureResolver.ts';
+
+// Each test logs into a fresh caller-owned state, so logOnce keys never leak between tests.
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
 
 describe('areGlTextureResolverGuardsEnabled', () => {
   it('reports whether diagnostics were installed for the state', () => {
     const { state } = createGlState();
     expect(areGlTextureResolverGuardsEnabled(state)).toBe(false);
 
-    enableGlTextureResolverGuards(state);
+    enableGlTextureResolverGuards(state, logState);
     expect(areGlTextureResolverGuardsEnabled(state)).toBe(true);
   });
 });
@@ -19,8 +33,8 @@ describe('areGlTextureResolverGuardsEnabled', () => {
 describe('enableGlTextureResolverGuards', () => {
   it('is idempotent', () => {
     const { state } = createGlState();
-    enableGlTextureResolverGuards(state);
-    enableGlTextureResolverGuards(state);
+    enableGlTextureResolverGuards(state, logState);
+    enableGlTextureResolverGuards(state, logState);
     expect(areGlTextureResolverGuardsEnabled(state)).toBe(true);
   });
 
@@ -29,15 +43,15 @@ describe('enableGlTextureResolverGuards', () => {
     const missing = textureWithKind('acme.missing.gl');
     const registered = textureWithKind('acme.registered.gl');
     const sink = createMemoryLogSink(4);
-    addLogSink(sink.sink);
-    enableGlTextureResolverGuards(state);
+    addLogSink(logState, sink.sink);
+    enableGlTextureResolverGuards(state, logState);
     registerGlTextureResolver(state, 'acme.registered.gl', () => null);
     try {
       expect(resolveGlTexture(state, missing)).toBeNull();
       expect(resolveGlTexture(state, missing)).toBeNull();
       expect(resolveGlTexture(state, registered)).toBeNull();
 
-      const entries = getMemoryLogSinkEntries(sink);
+      const entries = readMemoryLogEntries(sink);
       expect(entries).toHaveLength(1);
       expect(entries[0]?.data).toMatchObject({
         kind: 'acme.missing.gl',
@@ -45,7 +59,7 @@ describe('enableGlTextureResolverGuards', () => {
           'resolveGlTexture: texture source kind has no registered resolver — rebuild the GlRenderRegistries with the required resolver and create the render state from that registry',
       });
     } finally {
-      removeLogSink(sink.sink);
+      removeLogSink(logState, sink.sink);
     }
   });
 });
@@ -55,4 +69,10 @@ function textureWithKind(kind: string) {
     dimension: '2d',
     source: { kind } as ImageResource,
   });
+}
+
+function readMemoryLogEntries(handle: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, handle);
+  return entries;
 }

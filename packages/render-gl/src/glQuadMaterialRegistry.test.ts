@@ -69,7 +69,7 @@ describe('resolveGlQuadMaterialRenderer', () => {
 
   it('reports the missing kind, so an unresolved material is not an invisible node with clean logs', () => {
     const { state } = createGlState();
-    enableRenderRegistriesGuards(state);
+    enableRenderRegistriesGuards(state, null);
 
     resolveGlQuadMaterialRenderer(state, makeMaterial(TestKind));
     resolveGlQuadMaterialRenderer(state, null);
@@ -85,7 +85,7 @@ describe('resolveGlQuadMaterialRenderer', () => {
 
   it('reports a kind that StandardMaterialKind silently stood in for', () => {
     const { state } = createGlState();
-    enableRenderRegistriesGuards(state);
+    enableRenderRegistriesGuards(state, null);
     registerGlQuadMaterialRenderer(state, StandardMaterialKind, testRenderer);
 
     // Substituting a different shading family draws something, but not what was asked for, so it is
@@ -99,7 +99,7 @@ describe('resolveGlQuadMaterialRenderer', () => {
 
   it('records nothing once the kind resolves', () => {
     const { state } = createGlState();
-    enableRenderRegistriesGuards(state);
+    enableRenderRegistriesGuards(state, null);
     registerGlQuadMaterialRenderer(state, TestKind, testRenderer);
 
     resolveGlQuadMaterialRenderer(state, makeMaterial(TestKind));

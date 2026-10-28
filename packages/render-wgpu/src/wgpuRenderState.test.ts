@@ -251,7 +251,7 @@ describe('createWgpuOffscreenRenderState', () => {
     registerWgpuQuadMaterialRenderer(screen, 'acme.Material', materialRenderer);
     registerWgpuTextureResolver(screen, 'acme.Texture', textureResolver);
     enableColorAdjustments(screen);
-    enableColorAdjustmentGuards(screen);
+    enableColorAdjustmentGuards(screen, null);
     registerPaddingResolver(screen, 'acme.Effect', paddingResolver);
     getWgpuRenderStateRuntime(screen).registries.colorAdjustmentFeature = colorAdjustmentFeature;
     getWgpuRenderStateRuntime(screen).registries.colorAdjustmentFeatureGuard = colorAdjustmentFeatureGuard;

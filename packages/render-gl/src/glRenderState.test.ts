@@ -1,5 +1,12 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  createLogState,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import { withKindMapEntry } from '@flighthq/registry/contract';
 import {
   enableColorAdjustmentGuards,
@@ -11,11 +18,13 @@ import {
 } from '@flighthq/render/contract';
 import { createDisplayObject } from '@flighthq/scene2d/contract';
 import type {
+  EffectPaddingResolver,
   GlBitmapShader,
   GlColorAdjustmentMaterialFeature,
   GlColorAdjustmentMaterialFeatureGuard,
   GlRenderStateOptions,
-  EffectPaddingResolver,
+  LogEntry,
+  MemoryLogSink,
   RenderState,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -42,6 +51,13 @@ import {
 import { ensureDefaultGlBitmapShader } from './glShader.ts';
 import { makeGL } from './glTestHelper.ts';
 import { registerGlTextureResolver } from './glTextureResolver.ts';
+
+// Each test logs into a fresh caller-owned state, so logOnce keys never leak between tests.
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
 
 function makeContext() {
   return { gl: makeGL() };
@@ -280,8 +296,8 @@ describe('createGlRenderState (context sharing)', () => {
     registerGlQuadMaterialRenderer(screen, 'acme.Material', materialRenderer);
     registerGlTextureResolver(screen, 'acme.Texture', textureResolver);
     enableColorAdjustments(screen);
-    enableColorAdjustmentGuards(screen);
-    enableGlRenderStateGuards(screen);
+    enableColorAdjustmentGuards(screen, logState);
+    enableGlRenderStateGuards(screen, logState);
     getGlRenderStateRuntime(screen).registries.effects = withKindMapEntry(
       getGlRenderStateRuntime(screen).registries.effects,
       'acme.Effect',
@@ -540,16 +556,16 @@ describe('enableGlRenderStateGuards', () => {
     const { gl } = makeContext();
     const state = createTestGlRenderState(gl);
     const sink = createMemoryLogSink(4);
-    addLogSink(sink.sink);
-    enableGlRenderStateGuards(state);
+    addLogSink(logState, sink.sink);
+    enableGlRenderStateGuards(state, logState);
     try {
       prepareScene2DRender(state, createDisplayObject());
       prepareScene2DRender(state, createDisplayObject());
-      const entries = getMemoryLogSinkEntries(sink);
+      const entries = readMemoryLogEntries(sink);
       expect(entries).toHaveLength(1);
       expect((entries[0].data as { message: string }).message).toContain('createGlRenderState');
     } finally {
-      removeLogSink(sink.sink);
+      removeLogSink(logState, sink.sink);
     }
   });
 });
@@ -743,3 +759,9 @@ describe('registerGlRenderStateTeardown', () => {
     expect(teardown).toHaveBeenCalledWith(state);
   });
 });
+
+function readMemoryLogEntries(handle: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, handle);
+  return entries;
+}

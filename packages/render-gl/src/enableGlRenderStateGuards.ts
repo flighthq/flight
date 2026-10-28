@@ -1,4 +1,5 @@
 import { logOnce } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
 import type { GlRenderState, NodeAny, RenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -13,7 +14,8 @@ export function areGlRenderStateGuardsEnabled(state: GlRenderState): boolean {
 // Installs the GL pipeline-policy guard. A render state derives proxy transforms relative to one root;
 // preparing another root on that state can reuse stale relative transforms. Give each independently
 // rendered root its own createGlRenderState(gl, pipeline) state.
-export function enableGlRenderStateGuards(state: GlRenderState): void {
+export function enableGlRenderStateGuards(state: GlRenderState, logState: LogState | null): void {
+  _guardLogStates.set(state, logState);
   const runtime = getRenderStateRuntime(state);
   if (runtime.registries.renderRootGuard !== warnOnSecondRenderRoot) {
     runtime.registries.renderRootGuard = warnOnSecondRenderRoot;
@@ -33,7 +35,12 @@ export function enableGlRenderStateGuards(state: GlRenderState): void {
 function warnOnForeignGlBinding(state: GlRenderState, expectedProgram: WebGLProgram): void {
   const actual = state.gl.getParameter(state.gl.CURRENT_PROGRAM) as WebGLProgram | null;
   if (actual === expectedProgram) return;
+  const logState = _guardLogStates.get(state) ?? null;
+  if (logState === null) return;
+  // The render guards take no clock, so the warning is stamped at time zero.
   logOnce(
+    logState,
+    0,
     'render-gl:foreign-gl-binding',
     LogLevel.Warn,
     {
@@ -55,7 +62,11 @@ function warnOnSecondRenderRoot(state: RenderState, root: NodeAny): void {
     return;
   }
   if (previous === root) return;
+  const logState = _guardLogStates.get(glState) ?? null;
+  if (logState === null) return;
   logOnce(
+    logState,
+    0,
     'render-gl:multiple-roots-one-state',
     LogLevel.Warn,
     {
@@ -70,3 +81,5 @@ function warnOnSecondRenderRoot(state: RenderState, root: NodeAny): void {
 }
 
 const _firstRoots = new WeakMap<GlRenderState, NodeAny>();
+// The caller-owned log state each render state's guards report to; null installs them silently.
+const _guardLogStates = new WeakMap<GlRenderState, LogState | null>();

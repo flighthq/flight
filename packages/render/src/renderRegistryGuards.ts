@@ -1,4 +1,5 @@
 import { logOnce } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type {
   Kind,
@@ -14,13 +15,13 @@ export function areRenderRegistriesGuardsEnabled(state: RenderState): boolean {
   return _stateIds.has(state);
 }
 
-export function enableRenderRegistriesGuards(state: RenderState): void {
+export function enableRenderRegistriesGuards(state: RenderState, logState: LogState | null): void {
   if (_stateIds.has(state)) return;
   const stateId = ++_nextStateId;
   _stateIds.set(state, stateId);
   _stateMisses.set(state, []);
   connectSignal(enableRenderRegistrySignals(state).onRegistryMiss, (registry, kind) => {
-    recordRenderRegistriesMiss(state, stateId, registry, kind);
+    recordRenderRegistriesMiss(state, logState, stateId, registry, kind);
   });
 }
 
@@ -85,6 +86,7 @@ function getRenderRegistriesMissMessage(state: RenderState, registry: RenderRegi
 
 function recordRenderRegistriesMiss(
   state: RenderState,
+  logState: LogState | null,
   stateId: number,
   registry: RenderRegistryTable,
   kind: Kind,
@@ -92,7 +94,11 @@ function recordRenderRegistriesMiss(
   const misses = _stateMisses.get(state);
   if (misses === undefined || misses.some((miss) => miss.registry === registry && miss.kind === kind)) return;
   misses.push({ kind, registry });
+  if (logState === null) return;
+  // The render guards take no clock, so a miss is stamped at time zero.
   logOnce(
+    logState,
+    0,
     `render:registry-miss:${stateId}:${registry}:${kind}`,
     LogLevel.Warn,
     {

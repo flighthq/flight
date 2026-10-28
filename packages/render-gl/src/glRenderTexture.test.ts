@@ -1,5 +1,12 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import type { RenderTargetClear, RenderTexture } from '@flighthq/types/contract';
+import {
+  addLogSink,
+  createLogState,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink, RenderTargetClear, RenderTexture } from '@flighthq/types/contract';
 import { RenderTargetTextureSourceKind } from '@flighthq/types/contract';
 
 import { enableGlRenderTextureGuards } from './enableGlRenderTextureGuards.ts';
@@ -18,6 +25,13 @@ import {
   writeGlRenderTextureTarget,
 } from './glRenderTexture.ts';
 import { createGlState } from './glTestHelper.ts';
+
+// Each test logs into a fresh caller-owned state, so logOnce keys never leak between tests.
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
 
 describe('bindGlRenderTexture', () => {
   it('binds the existing target texture without uploading pixels', () => {
@@ -72,8 +86,8 @@ describe('enableGlRenderTextureGuards', () => {
     const unrendered = createRenderTexture({ height: 8, width: 8 });
     const writing = createRenderTexture({ height: 8, width: 8 });
     const sink = createMemoryLogSink(8);
-    addLogSink(sink.sink);
-    enableGlRenderTextureGuards(state);
+    addLogSink(logState, sink.sink);
+    enableGlRenderTextureGuards(state, logState);
     try {
       bindGlRenderTexture(state, unrendered);
       renderIntoGlRenderTexture(
@@ -85,11 +99,11 @@ describe('enableGlRenderTextureGuards', () => {
         TRANSPARENT_CLEAR,
       );
 
-      const entries = getMemoryLogSinkEntries(sink);
+      const entries = readMemoryLogEntries(sink);
       expect(entries).toHaveLength(2);
       expect(entries.map((entry) => (entry.data as { status: string }).status)).toEqual(['unrendered', 'writing']);
     } finally {
-      removeLogSink(sink.sink);
+      removeLogSink(logState, sink.sink);
     }
   });
 });
@@ -351,3 +365,9 @@ function createRenderTexture(options: { depth?: boolean; height: number; width: 
 }
 
 const TRANSPARENT_CLEAR: Readonly<RenderTargetClear> = { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 };
+
+function readMemoryLogEntries(handle: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, handle);
+  return entries;
+}

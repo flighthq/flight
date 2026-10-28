@@ -1,4 +1,5 @@
-import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
+import { createLogState, setLogSink } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import { getRenderStateRuntime } from '@flighthq/render/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 
@@ -7,19 +8,24 @@ import { useGlProgram } from './glDraw.ts';
 import { createGlRenderState, getGlRenderStateRuntime } from './glRenderState.ts';
 import { makeGL } from './glTestHelper.ts';
 
+// Each test logs into a fresh caller-owned state, so logOnce keys never leak between tests.
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
+
 function createState() {
   const canvas = document.createElement('canvas');
   canvas.getContext = vi.fn().mockReturnValue(makeGL()) as typeof canvas.getContext;
   return createGlRenderState(makeGL());
 }
 
-beforeEach(() => clearLogOnceKeys());
-
 describe('areGlRenderStateGuardsEnabled', () => {
   it('reports whether the state-local multiple-root guard is installed', () => {
     const state = createState();
     expect(areGlRenderStateGuardsEnabled(state)).toBe(false);
-    enableGlRenderStateGuards(state);
+    enableGlRenderStateGuards(state, logState);
     expect(areGlRenderStateGuardsEnabled(state)).toBe(true);
   });
 });
@@ -27,23 +33,23 @@ describe('areGlRenderStateGuardsEnabled', () => {
 describe('enableGlRenderStateGuards', () => {
   it('installs the state-local multiple-root guard idempotently', () => {
     const state = createState();
-    enableGlRenderStateGuards(state);
+    enableGlRenderStateGuards(state, logState);
     const guard = getRenderStateRuntime(state).registries.renderRootGuard;
     expect(guard).not.toBeNull();
-    enableGlRenderStateGuards(state);
+    enableGlRenderStateGuards(state, logState);
     expect(areGlRenderStateGuardsEnabled(state)).toBe(true);
     expect(getRenderStateRuntime(state).registries.renderRootGuard).toBe(guard);
   });
 });
 
 describe('foreign GL binding guard', () => {
-  afterEach(() => setLogSink(null));
+  afterEach(() => setLogSink(logState, null));
 
   function messages(entries: LogEntry[]): string {
     return entries.map((e) => String((e.data as { message?: unknown } | undefined)?.message ?? '')).join('\n');
   }
 
-  // Both directions live in ONE test on purpose: logOnce suppresses a key for the process, so a
+  // Both directions live in ONE test on purpose: logOnce suppresses a key for the life of its log state, so a
   // separate silence test would pass whether or not the guard checks anything, once the warn test has
   // consumed the key. Silence is asserted FIRST, while the key is still unconsumed.
   //
@@ -53,9 +59,9 @@ describe('foreign GL binding guard', () => {
   // uniform call in render-gl rather than on the renderer that changed the binding.
   it('warns only when the bound program differs from the one render-gl cached', () => {
     const entries: LogEntry[] = [];
-    setLogSink((entry) => entries.push(entry));
+    setLogSink(logState, (entry) => entries.push(entry));
     const state = createState();
-    enableGlRenderStateGuards(state);
+    enableGlRenderStateGuards(state, logState);
     const runtime = getGlRenderStateRuntime(state);
     const cached = {} as WebGLProgram;
 

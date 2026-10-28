@@ -1,4 +1,5 @@
 import { logOnce } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
 import type { GlContext, GlRenderState, GlRenderTextureExplanation, RenderTexture } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -14,7 +15,8 @@ export function areGlRenderTextureGuardsEnabled(state: GlRenderState): boolean {
 
 // Installs diagnostics for the two silent sentinel cases: sampling before the first completed
 // renderInto, and sampling the same attachment while it is bound for writing.
-export function enableGlRenderTextureGuards(state: GlRenderState): void {
+export function enableGlRenderTextureGuards(state: GlRenderState, logState: LogState | null): void {
+  _guardLogStates.set(state, logState);
   setGlRenderTextureGuard(state, warnGlRenderTextureUnavailable);
   _guardedContexts.add(state.gl);
 }
@@ -24,12 +26,17 @@ function setGlRenderTextureGuardProbe(state: GlRenderState, onEnabled: () => voi
 }
 
 function warnGlRenderTextureUnavailable(
-  _state: GlRenderState,
+  state: GlRenderState,
   renderTexture: Readonly<RenderTexture>,
   explanation: Readonly<GlRenderTextureExplanation>,
 ): void {
+  const logState = _guardLogStates.get(state) ?? null;
+  if (logState === null) return;
   const writing = explanation.status === 'writing';
+  // The render guards take no clock, so the warning is stamped at time zero.
   logOnce(
+    logState,
+    0,
     `render-gl:render-texture-${explanation.status}`,
     LogLevel.Warn,
     {
@@ -46,3 +53,5 @@ function warnGlRenderTextureUnavailable(
 }
 
 const _guardedContexts = new WeakSet<GlContext>();
+// The caller-owned log state each render state's guard reports to; null installs it silently.
+const _guardLogStates = new WeakMap<GlRenderState, LogState | null>();
