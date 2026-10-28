@@ -48,5 +48,7 @@ mod flight_easing_easing_families_test;
 mod flight_easing_enable_easing_guards_test;
 #[path = "get_easing_derivative_test.rs"]
 mod flight_easing_get_easing_derivative_test;
+#[path = "write_easing_samples_native_test.rs"]
+mod flight_easing_write_easing_samples_native_test;
 #[path = "write_easing_samples_test.rs"]
 mod flight_easing_write_easing_samples_test;
