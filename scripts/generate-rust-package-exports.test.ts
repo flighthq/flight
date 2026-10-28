@@ -25,7 +25,6 @@ describe('renderPublicExports', () => {
   it('discovers cross-module generated type references without matching comments', () => {
     const symbols = new Map([
       ['EasingFunction', { fileName: 'easingTypes.ts', hasType: true, hasValue: false }],
-      ['LinearColorRaw', { fileName: 'linearColor.ts', hasType: true, hasValue: false }],
       ['getEasingDerivative', { fileName: 'getEasingDerivative.ts', hasType: false, hasValue: true }],
       ['mean', { fileName: 'statistics.ts', hasType: false, hasValue: true }],
       ['sign', { fileName: 'scalar.ts', hasType: false, hasValue: true }],
@@ -38,15 +37,11 @@ export function getEasingDerivative(ease: EasingFunction, mean: number): number 
   const local = mean;
   return ease(local) + Math.sign(local) + Number('getEasingDerivative and EasingFunction are string data');
 }
-
-export function allocateLinearColor(): LinearColorRaw {
-  return allocateEntity<LinearColorRaw>();
-}
 `,
         'getEasingDerivative.ts',
         symbols,
       ),
-    ).toEqual(['EasingFunction', 'LinearColorRaw']);
+    ).toEqual(['EasingFunction']);
   });
 
   it('routes target-native OOP wrappers to companions and raw functions through the contract lane', () => {

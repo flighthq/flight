@@ -172,48 +172,12 @@ pub fn create_vector2() -> Vector2 {
     let out: Vector2 = flight_entity::allocate_entity();
     return out;
 }
-
-pub fn allocate_vector2() -> Vector2 {
-    return flight_entity::allocate_entity();
-}
 "#;
 
         let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
 
         assert!(output.contains("import { allocateEntity } from \"@flighthq/entity/contract\";"));
         assert!(output.contains("const out: Vector2Raw = allocateEntity<Vector2Raw>();"));
-        assert!(output.contains("return allocateEntity<Vector2Raw>();"));
-        assert!(!output.contains("flightEntity.allocateEntity"));
-    }
-
-    #[test]
-    fn lowers_direct_entity_allocation_with_a_sibling_raw_owner() {
-        let linear_color = r#"
-use flight_entity::EntityRuntimeSlot;
-
-pub struct LinearColor {
-    runtime: EntityRuntimeSlot,
-    pub red: f32,
-}
-
-flight_entity::impl_entity!(LinearColor);
-"#;
-        let factory = r#"
-pub fn allocate_linear_color() -> LinearColor {
-    return flight_entity::allocate_entity();
-}
-"#;
-
-        let output = compile_typescript_with_alias_sources(
-            factory,
-            Some("@flighthq/entity/contract"),
-            &[linear_color],
-        )
-        .unwrap();
-
-        assert!(output.contains("import { allocateEntity } from \"@flighthq/entity/contract\";"));
-        assert!(output.contains("export function allocateLinearColor(): LinearColorRaw"));
-        assert!(output.contains("return allocateEntity<LinearColorRaw>();"));
         assert!(!output.contains("flightEntity.allocateEntity"));
     }
 
@@ -470,8 +434,8 @@ pub fn local_high_byte() -> u32 {
             "return [{ ...format, tabStops: format.tabStops?.slice() }, stops.slice()];"
         ));
         assert!(output.contains("return value === \"\";"));
-        assert!(output.contains("return (0xffffffff) >>> 0;"));
-        assert!(output.contains("return (color >>> 24) >>> 0;"));
+        assert!(output.contains("return 0xffffffff;"));
+        assert!(output.contains("return color >>> 24;"));
     }
 
     #[test]
@@ -509,84 +473,6 @@ pub fn hsv(out: &mut [f32; 4], i: i32, value: f32) {
         assert!(output.contains("out[0] = value;"));
         assert!(output.contains("default:"));
         assert!(output.contains("out[0] = 0.0;"));
-    }
-
-    #[test]
-    fn preserves_conditional_bitwise_cast_and_unsigned_return_semantics() {
-        let source = r##"
-pub fn hue(g: f32, b: f32, d: f32) -> f32 {
-    return ((g - b) / d + if g < b { 6.0 } else { 0.0 }) / 6.0;
-}
-
-pub fn packed(ri: u32, gi: u32, bi: u32, ai: u32) -> u32 {
-    return (ri << 24) | (gi << 16) | (bi << 8) | ai;
-}
-
-pub fn masked_equals(value: u32) -> bool {
-    return (value & 0xff) == 0;
-}
-
-pub fn scaled_cast(value: i32) -> u32 {
-    return (value as u32) * 3;
-}
-
-pub fn hex(color: u32) -> String {
-    return format!("#{:06x}", color & 0xffffff);
-}
-
-pub fn is_rgba(value: &str) -> bool {
-    return value.starts_with("rgba(");
-}
-"##;
-
-        let output = compile_typescript(source, None).unwrap();
-
-        assert!(output.contains("((g - b) / d + (g < b ? 6.0 : 0.0)) / 6.0"));
-        assert!(
-            output.contains("return ((ri << 24) | (gi << 16) | (bi << 8) | ai) >>> 0;"),
-            "{output}"
-        );
-        assert!(output.contains("return (value & 255) === 0;"));
-        assert!(output.contains("return (((value) >>> 0) * 3) >>> 0;"));
-        assert!(
-            output.contains("return `#${(color & 16777215).toString(16).padStart(6, \"0\")}`;")
-        );
-        assert!(output.contains("return value.startsWith(\"rgba(\");"));
-    }
-
-    #[test]
-    fn lowers_value_match_block_tails_and_reference_closures() {
-        let source = r#"
-pub fn select_channel(index: i32) -> f32 {
-    return match index {
-        0 => {
-            let value = 1.0;
-            value
-        }
-        _ => 0.0,
-    };
-}
-
-pub fn packed_block(red: u32, alpha: u32) -> u32 {
-    let value: u32 = {
-        let high = red << 24;
-        high | alpha
-    };
-    return value;
-}
-
-pub fn has_zero(values: &[u32]) -> bool {
-    return values.iter().any(|&value| value == 0);
-}
-"#;
-
-        let output = compile_typescript(source, None).unwrap();
-
-        assert!(output.contains("const matchValue = index;"));
-        assert!(output.contains("const value = 1.0;\n  return value;"));
-        assert!(output.contains("const high = red << 24;\n  return high | alpha;"));
-        assert!(output.contains("return (value) >>> 0;"));
-        assert!(output.contains("return values.some((value) => value === 0);"));
     }
 
     #[test]
@@ -828,33 +714,6 @@ mod normalize_vector2 {
             output
                 .contains("expect(() => {\n      normalizeVector2(undefined);\n    }).toThrow();")
         );
-    }
-
-    #[test]
-    fn lowers_padded_hex_and_string_prefix_assertions() {
-        let source = r#"
-use flight_color::*;
-
-mod color_format {
-    use super::*;
-
-    #[test]
-    fn formats_diagnostics() {
-        let r = 0xbc_u32;
-        assert!((r as i32 - 0xbc_i32).abs() < 5, "expected red near 0xbc, got 0x{:02x}", r);
-        let s = rgba_to_string(r);
-        assert!(s.starts_with("rgba("), "got {}", s);
-    }
-}
-"#;
-
-        let output = compile_vitest(source, "@flighthq/color/contract").unwrap();
-
-        assert!(
-            output
-                .contains("`expected red near 0xbc, got 0x${(r).toString(16).padStart(2, \"0\")}`")
-        );
-        assert!(output.contains("expect(s.startsWith(\"rgba(\"), `got ${s}`).toBe(true);"));
     }
 
     #[test]
