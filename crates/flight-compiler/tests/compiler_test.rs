@@ -1085,6 +1085,149 @@ pub enum PathSegment {
     }
 
     #[test]
+    fn erases_transparent_data_union_constructors_and_matches_runtime_categories() {
+        let source = r#"
+//! flight-compiler: data-union LogData LogValue LogDataOrProvider RectangleId
+
+use std::collections::HashMap;
+use std::sync::Arc;
+
+pub enum LogData {
+    Message(String),
+    Record(HashMap<String, LogValue>),
+}
+
+pub enum LogValue {
+    Null,
+    Bool(bool),
+    Int(i64),
+    Float(f64),
+    Str(String),
+    Record(HashMap<String, LogValue>),
+    Array(Vec<LogValue>),
+    Object(UnknownValue),
+}
+
+pub type LogDataProvider = Arc<dyn Fn() -> LogData + Send + Sync>;
+
+pub enum LogDataOrProvider {
+    Data(LogData),
+    Provider(LogDataProvider),
+}
+
+pub enum RectangleId {
+    Number(i32),
+    Text(String),
+}
+
+pub fn message(value: String) -> LogData {
+    return LogData::Message(value);
+}
+
+pub fn null_value() -> LogValue {
+    return LogValue::Null;
+}
+
+pub fn string_values(values: Vec<String>) -> Vec<LogValue> {
+    return values.into_iter().map(LogValue::Str).collect();
+}
+
+pub fn resolve_data(value: LogDataOrProvider) -> LogData {
+    return match value {
+        LogDataOrProvider::Data(data) => data,
+        LogDataOrProvider::Provider(provider) => provider(),
+    };
+}
+
+pub fn data_kind(value: LogData) -> String {
+    return match value {
+        LogData::Message(_) => "message".to_string(),
+        LogData::Record(_) => "record".to_string(),
+    };
+}
+
+pub fn value_kind(value: LogValue) -> String {
+    return match value {
+        LogValue::Null => "null".to_string(),
+        LogValue::Bool(_) => "boolean".to_string(),
+        LogValue::Int(_) | LogValue::Float(_) => "number".to_string(),
+        LogValue::Str(_) => "string".to_string(),
+        LogValue::Array(_) => "array".to_string(),
+        LogValue::Record(_) => "record".to_string(),
+        LogValue::Object(_) => "object".to_string(),
+    };
+}
+
+pub fn append_value_kind(out: &mut Vec<String>, value: LogValue) {
+    match value {
+        LogValue::Null => out.push("null".to_string()),
+        _ => out.push("value".to_string()),
+    }
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("return value;"));
+        assert!(output.contains("return null;"));
+        assert!(output.contains("values.map((value) => value)"));
+        assert!(output.contains("typeof matchValue === \"function\""));
+        assert!(output.contains("typeof matchValue === \"number\""));
+        assert!(output.contains("Array.isArray(matchValue)"));
+        assert!(output.contains("Object.getPrototypeOf(matchValue) === Object.prototype"));
+        assert!(output.contains("Object.getPrototypeOf(matchValue) !== Object.prototype"));
+        assert!(output.contains("const provider = matchValue;"));
+        assert!(output.contains("const matchValue = value;"));
+        assert!(!output.contains("LogData.Message(value)"));
+        assert!(!output.contains("LogValue.Null"));
+        assert!(!output.contains("LogValue.Str"));
+    }
+
+    #[test]
+    fn rejects_overlapping_transparent_data_union_match_arms() {
+        let source = r#"
+//! flight-compiler: data-union LogValue
+
+pub enum LogValue {
+    Int(i64),
+    Float(f64),
+}
+
+pub fn value_kind(value: LogValue) -> &'static str {
+    return match value {
+        LogValue::Int(_) => "integer",
+        LogValue::Float(_) => "float",
+    };
+}
+"#;
+
+        let error = compile_typescript(source, None).unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "transparent data union match arm `LogValue::Float` is unreachable after `LogValue::Int` because both lower to the TypeScript `number` runtime category"
+        );
+    }
+
+    #[test]
+    fn rejects_transparent_data_union_payloads_without_runtime_categories() {
+        let source = r#"
+//! flight-compiler: data-union Value
+
+pub enum Value {
+    Opaque(ExternalThing),
+}
+"#;
+
+        let error = compile_typescript(source, None).unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "cannot determine the TypeScript runtime category of data union payload type `ExternalThing`"
+        );
+    }
+
+    #[test]
     fn rejects_ambiguous_data_union_shapes() {
         let cases = [
             (
@@ -1552,6 +1695,45 @@ mod ease_steps {
         assert!(!output.contains("  StepPosition,"));
         assert!(output.contains("easeSteps(4, \"jumpEnd\")"));
         assert!(!output.contains("StepPosition.JumpEnd"));
+    }
+
+    #[test]
+    fn inherits_data_union_runtime_lowering_from_production_sources() {
+        let production = r#"
+//! flight-compiler: data-union RectangleId
+
+pub enum RectangleId {
+    Number(i32),
+    Text(String),
+}
+"#;
+        let source = r#"
+use flight_binpack::*;
+
+mod rectangle_ids {
+    use super::*;
+
+    #[test]
+    fn constructs_and_matches_an_id() {
+        let id = RectangleId::Number(4);
+        let number = match id {
+            RectangleId::Number(value) => value,
+            RectangleId::Text(_) => 0,
+        };
+        assert_eq!(number, 4);
+    }
+}
+"#;
+
+        let output =
+            compile_vitest_with_alias_sources(source, "@flighthq/binpack/contract", &[production])
+                .unwrap();
+
+        assert!(output.contains("const id = 4;"));
+        assert!(output.contains("typeof matchValue === \"number\""));
+        assert!(output.contains("typeof matchValue === \"string\""));
+        assert!(!output.contains("  RectangleId,"));
+        assert!(!output.contains("RectangleId.Number"));
     }
 
     #[test]

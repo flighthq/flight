@@ -9,8 +9,8 @@ use syn::{BinOp, Expr, Fields, FnArg, ItemFn, Pat, ReturnType, Stmt, Token};
 use crate::model::{TestCase, TestProgram, TestSuite};
 use crate::typescript::{
     emit_expression, emit_for_header, emit_format_template, emit_local, emit_local_with_shadow,
-    emit_parameter, emit_type, function_expression_context, numeric_literal_spelling,
-    snake_to_lower_camel, write_indent,
+    emit_parameter, emit_type, function_expression_context, is_transparent_data_union_variant,
+    numeric_literal_spelling, snake_to_lower_camel, write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -43,11 +43,15 @@ fn assertion_message(
     .map(Some);
 }
 
-fn collect_contract_symbols(program: &TestProgram) -> (Vec<String>, Vec<String>, Vec<String>) {
+fn collect_contract_symbols(
+    program: &TestProgram,
+    context: &HashSet<String>,
+) -> (Vec<String>, Vec<String>, Vec<String>) {
     struct ContractSymbolCollector<'a> {
         declared: HashSet<String>,
         helper_names: &'a HashSet<String>,
         standard_constants: &'a HashSet<String>,
+        context: &'a HashSet<String>,
         symbols: Vec<String>,
         type_symbols: Vec<String>,
         external_modules: Vec<String>,
@@ -154,6 +158,17 @@ fn collect_contract_symbols(program: &TestProgram) -> (Vec<String>, Vec<String>,
                             | "Vec"
                     )
                 {
+                    if segments.len() == 2
+                        && let Some(variant) = segments.last()
+                        && is_transparent_data_union_variant(
+                            self.context,
+                            &segment.ident.to_string(),
+                            &variant.ident.to_string(),
+                        )
+                    {
+                        syn::visit::visit_expr_path(self, expression);
+                        return;
+                    }
                     // Rust enum variants are paths (`Type::Variant`) while the generated TypeScript
                     // test needs the owning enum object imported from the contract lane.
                     self.record_identifier(&segment.ident);
@@ -239,6 +254,7 @@ fn collect_contract_symbols(program: &TestProgram) -> (Vec<String>, Vec<String>,
             declared: collect_declared_names(function),
             helper_names: &helper_names,
             standard_constants: &program.standard_constants,
+            context,
             symbols: Vec::new(),
             type_symbols: Vec::new(),
             external_modules: Vec::new(),
@@ -751,7 +767,7 @@ pub(crate) fn emit_test_program(
     context: &HashSet<String>,
 ) -> Result<String, CompileError> {
     let (contract_symbols, contract_type_symbols, external_modules) =
-        collect_contract_symbols(program);
+        collect_contract_symbols(program, context);
     let mut out = String::new();
     out.push_str("import { describe, expect, it } from 'vitest';\n");
     if !contract_symbols.is_empty() {

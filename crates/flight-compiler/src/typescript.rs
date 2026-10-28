@@ -17,6 +17,8 @@ type PreferredAliases = HashMap<String, String>;
 
 const CALLBACK_ARGUMENT_MARKER: &str = "@callback-argument:";
 const CLOSURE_PARAMETER_MARKER: &str = "@closure-parameter:";
+const DATA_UNION_UNIT_MARKER: &str = "@data-union-unit:";
+const DATA_UNION_VARIANT_MARKER: &str = "@data-union-variant:";
 const ENTITY_DEFAULT_FIELD_MARKER: &str = "@entity-default-field:";
 const ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER: &str = "@entity-unsupported-default-field:";
 const FIXED_BUFFER_ARGUMENT_MARKER: &str = "@fixed-buffer-argument:";
@@ -34,6 +36,47 @@ const STRING_RETURN_MARKER: &str = "@string-return:";
 const VEC_CLONE_ARGUMENT_MARKER: &str = "@vec-clone-argument:";
 const VEC_CLONE_EXPRESSION_MARKER: &str = "@vec-clone-expression:";
 const UNSIGNED_INTEGER_LOCAL_MARKER: &str = "@unsigned-integer-local:";
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum RuntimeCategory {
+    Null,
+    Boolean,
+    Number,
+    String,
+    Array,
+    Record,
+    Function,
+    Object,
+}
+
+impl RuntimeCategory {
+    fn name(self) -> &'static str {
+        return match self {
+            Self::Null => "null",
+            Self::Boolean => "boolean",
+            Self::Number => "number",
+            Self::String => "string",
+            Self::Array => "array",
+            Self::Record => "record",
+            Self::Function => "function",
+            Self::Object => "object",
+        };
+    }
+
+    fn parse(name: &str) -> Option<Self> {
+        return match name {
+            "null" => Some(Self::Null),
+            "boolean" => Some(Self::Boolean),
+            "number" => Some(Self::Number),
+            "string" => Some(Self::String),
+            "array" => Some(Self::Array),
+            "record" => Some(Self::Record),
+            "function" => Some(Self::Function),
+            "object" => Some(Self::Object),
+            _ => None,
+        };
+    }
+}
 
 fn argument_is_option(argument: &FnArg) -> bool {
     let FnArg::Typed(argument) = argument else {
@@ -309,6 +352,200 @@ fn vec_clone_optional(rust_type: &Type) -> Option<bool> {
     return (named_type(rust_type).as_deref() == Some("Vec")).then_some(false);
 }
 
+fn transparent_data_union(rust_enum: &syn::ItemEnum) -> bool {
+    return !rust_enum
+        .variants
+        .iter()
+        .any(|variant| matches!(variant.fields, syn::Fields::Named(_)));
+}
+
+fn runtime_categories_for_type(
+    rust_type: &Type,
+    programs: &[&Program],
+    resolving: &mut BTreeSet<String>,
+) -> Result<BTreeSet<RuntimeCategory>, CompileError> {
+    return match rust_type {
+        Type::Group(group) => runtime_categories_for_type(&group.elem, programs, resolving),
+        Type::Paren(paren) => runtime_categories_for_type(&paren.elem, programs, resolving),
+        Type::Reference(reference) => {
+            runtime_categories_for_type(&reference.elem, programs, resolving)
+        }
+        Type::BareFn(_) => Ok(BTreeSet::from([RuntimeCategory::Function])),
+        Type::TraitObject(object)
+            if object.bounds.iter().any(|bound| {
+                let syn::TypeParamBound::Trait(bound) = bound else {
+                    return false;
+                };
+                return bound.path.segments.last().is_some_and(|segment| {
+                    matches!(
+                        segment.ident.to_string().as_str(),
+                        "Fn" | "FnMut" | "FnOnce"
+                    )
+                });
+            }) =>
+        {
+            Ok(BTreeSet::from([RuntimeCategory::Function]))
+        }
+        Type::Path(path) => {
+            let Some(segment) = path.path.segments.last() else {
+                return Err(compile_error("empty Rust type path"));
+            };
+            let name = segment.ident.to_string();
+            match name.as_str() {
+                "bool" => Ok(BTreeSet::from([RuntimeCategory::Boolean])),
+                "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "isize" | "u8" | "u16" | "u32"
+                | "u64" | "usize" => Ok(BTreeSet::from([RuntimeCategory::Number])),
+                "String" | "str" => Ok(BTreeSet::from([RuntimeCategory::String])),
+                "Vec" => Ok(BTreeSet::from([RuntimeCategory::Array])),
+                "HashMap" => Ok(BTreeSet::from([RuntimeCategory::Record])),
+                "UnknownValue" => Ok(BTreeSet::from([RuntimeCategory::Object])),
+                "Arc" | "Box" | "Ref" => {
+                    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                        return Err(compile_error(format!(
+                            "`{name}` data union payload needs one type argument"
+                        )));
+                    };
+                    let types = arguments
+                        .args
+                        .iter()
+                        .filter_map(|argument| match argument {
+                            GenericArgument::Type(rust_type) => Some(rust_type),
+                            _ => None,
+                        })
+                        .collect::<Vec<_>>();
+                    if types.len() != 1 {
+                        return Err(compile_error(format!(
+                            "`{name}` data union payload needs exactly one type argument"
+                        )));
+                    }
+                    runtime_categories_for_type(types[0], programs, resolving)
+                }
+                _ => {
+                    if !resolving.insert(name.clone()) {
+                        return Err(compile_error(format!(
+                            "data union runtime category contains a recursive alias through `{name}`"
+                        )));
+                    }
+                    let result = if let Some(rust_enum) = programs.iter().find_map(|program| {
+                        program
+                            .data_unions
+                            .contains(&name)
+                            .then(|| {
+                                program
+                                    .enums
+                                    .iter()
+                                    .find(|rust_enum| rust_enum.ident == name)
+                            })
+                            .flatten()
+                    }) {
+                        if !transparent_data_union(rust_enum) {
+                            Err(compile_error(format!(
+                                "tagged data union `{name}` cannot be erased as a transparent payload"
+                            )))
+                        } else {
+                            let mut categories = BTreeSet::new();
+                            for variant in &rust_enum.variants {
+                                match &variant.fields {
+                                    syn::Fields::Unit => {
+                                        categories.insert(RuntimeCategory::Null);
+                                    }
+                                    syn::Fields::Unnamed(fields) => {
+                                        categories.extend(runtime_categories_for_type(
+                                            &fields.unnamed[0].ty,
+                                            programs,
+                                            resolving,
+                                        )?);
+                                    }
+                                    syn::Fields::Named(_) => unreachable!(
+                                        "transparent data union changed after directive validation"
+                                    ),
+                                }
+                            }
+                            Ok(categories)
+                        }
+                    } else if let Some(type_alias) = programs.iter().find_map(|program| {
+                        program
+                            .type_aliases
+                            .iter()
+                            .find(|type_alias| type_alias.ident == name)
+                    }) {
+                        runtime_categories_for_type(&type_alias.ty, programs, resolving)
+                    } else if programs.iter().any(|program| {
+                        program
+                            .structs
+                            .iter()
+                            .any(|structure| structure.ident == name)
+                    }) {
+                        Ok(BTreeSet::from([RuntimeCategory::Record]))
+                    } else {
+                        Err(compile_error(format!(
+                            "cannot determine the TypeScript runtime category of data union payload type `{name}`"
+                        )))
+                    };
+                    resolving.remove(&name);
+                    result
+                }
+            }
+        }
+        _ => Err(compile_error(format!(
+            "cannot determine the TypeScript runtime category of data union payload `{}`",
+            rust_type_description(rust_type)
+        ))),
+    };
+}
+
+fn data_union_variant_marker(
+    owner: &str,
+    variant: &str,
+    categories: &BTreeSet<RuntimeCategory>,
+) -> String {
+    return format!(
+        "{DATA_UNION_VARIANT_MARKER}{owner}:{variant}:{}",
+        categories
+            .iter()
+            .map(|category| category.name())
+            .collect::<Vec<_>>()
+            .join(",")
+    );
+}
+
+fn insert_data_union_context(
+    context: &mut HashSet<String>,
+    programs: &[&Program],
+) -> Result<(), CompileError> {
+    for program in programs {
+        for rust_enum in &program.enums {
+            let owner = rust_enum.ident.to_string();
+            if !program.data_unions.contains(&owner) || !transparent_data_union(rust_enum) {
+                continue;
+            }
+            for variant in &rust_enum.variants {
+                let categories = match &variant.fields {
+                    syn::Fields::Unit => BTreeSet::from([RuntimeCategory::Null]),
+                    syn::Fields::Unnamed(fields) => runtime_categories_for_type(
+                        &fields.unnamed[0].ty,
+                        programs,
+                        &mut BTreeSet::new(),
+                    )?,
+                    syn::Fields::Named(_) => {
+                        unreachable!("transparent data union changed after directive validation")
+                    }
+                };
+                let variant_name = variant.ident.to_string();
+                context.insert(data_union_variant_marker(
+                    &owner,
+                    &variant_name,
+                    &categories,
+                ));
+                if matches!(variant.fields, syn::Fields::Unit) {
+                    context.insert(format!("{DATA_UNION_UNIT_MARKER}{owner}:{variant_name}"));
+                }
+            }
+        }
+    }
+    return Ok(());
+}
+
 pub(crate) fn generation_context(programs: &[&Program]) -> Result<HashSet<String>, CompileError> {
     return generation_context_with_types(programs, &HashSet::new());
 }
@@ -318,6 +555,7 @@ fn generation_context_with_types(
     type_context: &HashSet<String>,
 ) -> Result<HashSet<String>, CompileError> {
     let mut context = type_context.clone();
+    insert_data_union_context(&mut context, programs)?;
     let entity_types = programs
         .iter()
         .flat_map(|program| &program.entities)
@@ -994,6 +1232,56 @@ fn emit_enum(
     return Ok(());
 }
 
+fn path_owner_and_member(path: &syn::Path) -> Option<(String, String)> {
+    let mut segments = path.segments.iter().rev();
+    let member = segments.next()?.ident.to_string();
+    let owner = segments.next()?.ident.to_string();
+    return Some((owner, member));
+}
+
+fn associated_owner_and_member(expression: &Expr) -> Option<(String, String)> {
+    let Expr::Path(path) = expression else {
+        return None;
+    };
+    return path_owner_and_member(&path.path);
+}
+
+fn data_union_variant_categories(
+    entities: &HashSet<String>,
+    owner: &str,
+    variant: &str,
+) -> Option<BTreeSet<RuntimeCategory>> {
+    let prefix = format!("{DATA_UNION_VARIANT_MARKER}{owner}:{variant}:");
+    let categories = entities
+        .iter()
+        .find_map(|marker| marker.strip_prefix(&prefix))?;
+    return categories
+        .split(',')
+        .map(RuntimeCategory::parse)
+        .collect::<Option<BTreeSet<_>>>();
+}
+
+pub(crate) fn is_transparent_data_union_variant(
+    entities: &HashSet<String>,
+    owner: &str,
+    variant: &str,
+) -> bool {
+    return data_union_variant_categories(entities, owner, variant).is_some();
+}
+
+fn data_union_expression_variant(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> Option<(String, String, BTreeSet<RuntimeCategory>)> {
+    let (owner, variant) = associated_owner_and_member(expression)?;
+    let categories = data_union_variant_categories(entities, &owner, &variant)?;
+    return Some((owner, variant, categories));
+}
+
+fn data_union_unit(entities: &HashSet<String>, owner: &str, variant: &str) -> bool {
+    return entities.contains(&format!("{DATA_UNION_UNIT_MARKER}{owner}:{variant}"));
+}
+
 pub(crate) fn emit_expression(
     expression: &Expr,
     entities: &HashSet<String>,
@@ -1081,6 +1369,14 @@ pub(crate) fn emit_expression(
         }
         Expr::Block(block) => emit_block_expression(&block.block, entities),
         Expr::Call(call) => {
+            if let Some((owner, variant, _)) = data_union_expression_variant(&call.func, entities) {
+                if data_union_unit(entities, &owner, &variant) || call.args.len() != 1 {
+                    return Err(compile_error(format!(
+                        "transparent data union constructor `{owner}::{variant}` expects exactly one payload"
+                    )));
+                }
+                return emit_expression(&call.args[0], entities);
+            }
             if expression_is_path(&call.func, "Some") && call.args.len() == 1 {
                 return emit_expression(&call.args[0], entities);
             }
@@ -1220,6 +1516,13 @@ pub(crate) fn emit_expression(
         Expr::MethodCall(call) => emit_method_call(call, entities),
         Expr::Paren(paren) => Ok(format!("({})", emit_expression(&paren.expr, entities)?)),
         Expr::Path(path) => {
+            if let Some((owner, variant, _)) = data_union_expression_variant(expression, entities) {
+                return if data_union_unit(entities, &owner, &variant) {
+                    Ok("null".to_string())
+                } else {
+                    Ok("(value) => value".to_string())
+                };
+            }
             if path.path.is_ident("None") {
                 return Ok("undefined".to_string());
             }
@@ -1940,10 +2243,264 @@ fn emit_macro_expression(
     return emit_format_template(&template.value(), &values, entities, "portable `format!`");
 }
 
+struct DataUnionPattern {
+    binding: Option<String>,
+    categories: BTreeSet<RuntimeCategory>,
+    owner: String,
+    variant: String,
+}
+
+enum DataUnionPatternAnalysis {
+    CatchAll(Option<String>),
+    Ordinary,
+    Variants(Vec<DataUnionPattern>),
+}
+
+struct DataUnionMatchArm {
+    binding: Option<String>,
+    categories: BTreeSet<RuntimeCategory>,
+    catch_all: bool,
+}
+
+fn data_union_payload_binding(pattern: &Pat) -> Result<Option<String>, CompileError> {
+    return match pattern {
+        Pat::Ident(identifier) if identifier.subpat.is_none() => {
+            Ok(Some(snake_to_lower_camel(&identifier.ident.to_string())))
+        }
+        Pat::Reference(reference) => data_union_payload_binding(&reference.pat),
+        Pat::Rest(_) | Pat::Wild(_) => Ok(None),
+        _ => Err(compile_error(
+            "transparent data union payload pattern must be an identifier or `_`",
+        )),
+    };
+}
+
+fn analyze_data_union_pattern(
+    pattern: &Pat,
+    entities: &HashSet<String>,
+) -> Result<DataUnionPatternAnalysis, CompileError> {
+    return match pattern {
+        Pat::Ident(identifier) if identifier.subpat.is_none() => {
+            Ok(DataUnionPatternAnalysis::CatchAll(Some(
+                snake_to_lower_camel(&identifier.ident.to_string()),
+            )))
+        }
+        Pat::Or(or_pattern) => {
+            let mut variants = Vec::new();
+            for pattern in &or_pattern.cases {
+                match analyze_data_union_pattern(pattern, entities)? {
+                    DataUnionPatternAnalysis::Variants(patterns) => variants.extend(patterns),
+                    DataUnionPatternAnalysis::CatchAll(_) => {
+                        return Err(compile_error(
+                            "transparent data union `|` pattern cannot contain a catch-all",
+                        ));
+                    }
+                    DataUnionPatternAnalysis::Ordinary => {
+                        return Ok(DataUnionPatternAnalysis::Ordinary);
+                    }
+                }
+            }
+            Ok(DataUnionPatternAnalysis::Variants(variants))
+        }
+        Pat::Paren(paren) => analyze_data_union_pattern(&paren.pat, entities),
+        Pat::Path(path) => {
+            let Some((owner, variant)) = path_owner_and_member(&path.path) else {
+                return Ok(DataUnionPatternAnalysis::Ordinary);
+            };
+            let Some(categories) = data_union_variant_categories(entities, &owner, &variant) else {
+                return Ok(DataUnionPatternAnalysis::Ordinary);
+            };
+            if !data_union_unit(entities, &owner, &variant) {
+                return Err(compile_error(format!(
+                    "transparent data union payload variant `{owner}::{variant}` needs a payload pattern"
+                )));
+            }
+            Ok(DataUnionPatternAnalysis::Variants(vec![DataUnionPattern {
+                binding: None,
+                categories,
+                owner,
+                variant,
+            }]))
+        }
+        Pat::Reference(reference) => analyze_data_union_pattern(&reference.pat, entities),
+        Pat::TupleStruct(pattern) => {
+            let Some((owner, variant)) = path_owner_and_member(&pattern.path) else {
+                return Ok(DataUnionPatternAnalysis::Ordinary);
+            };
+            let Some(categories) = data_union_variant_categories(entities, &owner, &variant) else {
+                return Ok(DataUnionPatternAnalysis::Ordinary);
+            };
+            if data_union_unit(entities, &owner, &variant) || pattern.elems.len() != 1 {
+                return Err(compile_error(format!(
+                    "transparent data union pattern `{owner}::{variant}` expects exactly one payload"
+                )));
+            }
+            Ok(DataUnionPatternAnalysis::Variants(vec![DataUnionPattern {
+                binding: data_union_payload_binding(&pattern.elems[0])?,
+                categories,
+                owner,
+                variant,
+            }]))
+        }
+        Pat::Wild(_) => Ok(DataUnionPatternAnalysis::CatchAll(None)),
+        _ => Ok(DataUnionPatternAnalysis::Ordinary),
+    };
+}
+
+fn analyze_data_union_match(
+    arms: &[syn::Arm],
+    entities: &HashSet<String>,
+) -> Result<Option<Vec<DataUnionMatchArm>>, CompileError> {
+    let analyses = arms
+        .iter()
+        .map(|arm| analyze_data_union_pattern(&arm.pat, entities))
+        .collect::<Result<Vec<_>, _>>()?;
+    if !analyses
+        .iter()
+        .any(|analysis| matches!(analysis, DataUnionPatternAnalysis::Variants(_)))
+    {
+        return Ok(None);
+    }
+    let mut owner = None;
+    let mut handled = BTreeMap::<RuntimeCategory, String>::new();
+    let mut output = Vec::new();
+    for (arm_index, analysis) in analyses.into_iter().enumerate() {
+        match analysis {
+            DataUnionPatternAnalysis::CatchAll(binding) => {
+                if arm_index + 1 != arms.len() {
+                    return Err(compile_error(
+                        "transparent data union catch-all match arm must be last",
+                    ));
+                }
+                output.push(DataUnionMatchArm {
+                    binding,
+                    categories: BTreeSet::new(),
+                    catch_all: true,
+                });
+            }
+            DataUnionPatternAnalysis::Ordinary => {
+                return Err(compile_error(
+                    "transparent data union match cannot mix data union and ordinary patterns",
+                ));
+            }
+            DataUnionPatternAnalysis::Variants(patterns) => {
+                let mut categories = BTreeSet::new();
+                let mut binding = None::<Option<String>>;
+                let mut labels = BTreeMap::<RuntimeCategory, String>::new();
+                for pattern in patterns {
+                    if let Some(expected) = &owner {
+                        if expected != &pattern.owner {
+                            return Err(compile_error(format!(
+                                "transparent data union match cannot mix `{expected}` and `{}` variants",
+                                pattern.owner
+                            )));
+                        }
+                    } else {
+                        owner = Some(pattern.owner.clone());
+                    }
+                    if binding
+                        .as_ref()
+                        .is_some_and(|binding| binding != &pattern.binding)
+                    {
+                        return Err(compile_error(
+                            "transparent data union alternatives must bind the same payload name",
+                        ));
+                    }
+                    binding.get_or_insert(pattern.binding);
+                    let label = format!("{}::{}", pattern.owner, pattern.variant);
+                    for category in pattern.categories {
+                        categories.insert(category);
+                        labels.entry(category).or_insert_with(|| label.clone());
+                    }
+                }
+                for category in &categories {
+                    let label = labels
+                        .get(category)
+                        .expect("every data union runtime category has a source variant");
+                    if let Some(previous) = handled.get(category) {
+                        return Err(compile_error(format!(
+                            "transparent data union match arm `{label}` is unreachable after `{previous}` because both lower to the TypeScript `{}` runtime category",
+                            category.name()
+                        )));
+                    }
+                    handled.insert(*category, label.clone());
+                }
+                output.push(DataUnionMatchArm {
+                    binding: binding.flatten(),
+                    categories,
+                    catch_all: false,
+                });
+            }
+        }
+    }
+    return Ok(Some(output));
+}
+
+fn runtime_category_predicate(category: RuntimeCategory, value: &str) -> String {
+    return match category {
+        RuntimeCategory::Null => format!("{value} === null"),
+        RuntimeCategory::Boolean => format!("typeof {value} === \"boolean\""),
+        RuntimeCategory::Number => format!("typeof {value} === \"number\""),
+        RuntimeCategory::String => format!("typeof {value} === \"string\""),
+        RuntimeCategory::Array => format!("Array.isArray({value})"),
+        RuntimeCategory::Record => format!(
+            "typeof {value} === \"object\" && {value} !== null && !Array.isArray({value}) && (Object.getPrototypeOf({value}) === Object.prototype || Object.getPrototypeOf({value}) === null)"
+        ),
+        RuntimeCategory::Function => format!("typeof {value} === \"function\""),
+        RuntimeCategory::Object => format!(
+            "typeof {value} === \"object\" && {value} !== null && !Array.isArray({value}) && Object.getPrototypeOf({value}) !== Object.prototype && Object.getPrototypeOf({value}) !== null"
+        ),
+    };
+}
+
+fn runtime_categories_predicate(categories: &BTreeSet<RuntimeCategory>, value: &str) -> String {
+    return categories
+        .iter()
+        .map(|category| runtime_category_predicate(*category, value))
+        .map(|predicate| format!("({predicate})"))
+        .collect::<Vec<_>>()
+        .join(" || ");
+}
+
 fn emit_match_expression(
     expression: &syn::ExprMatch,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
+    if let Some(arms) = analyze_data_union_match(&expression.arms, entities)? {
+        let mut out = String::new();
+        out.push_str("(() => {\n  const matchValue = ");
+        out.push_str(&emit_expression(&expression.expr, entities)?);
+        out.push_str(";\n");
+        for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
+            if arm.guard.is_some() {
+                return Err(compile_error("portable Rust match arms cannot use guards"));
+            }
+            if info.catch_all {
+                if index == 0 {
+                    out.push_str("  {\n");
+                } else {
+                    out.push_str("  else {\n");
+                }
+            } else {
+                let prefix = if index == 0 { "if" } else { "else if" };
+                writeln!(
+                    out,
+                    "  {prefix} ({}) {{",
+                    runtime_categories_predicate(&info.categories, "matchValue")
+                )
+                .expect("writing to a String cannot fail");
+            }
+            if let Some(binding) = info.binding {
+                writeln!(out, "    const {binding} = matchValue;")
+                    .expect("writing to a String cannot fail");
+            }
+            writeln!(out, "    return {};", emit_expression(&arm.body, entities)?)
+                .expect("writing to a String cannot fail");
+            out.push_str("  }\n");
+        }
+        out.push_str("})()");
+        return Ok(out);
+    }
     let mut out = String::new();
     out.push_str("(() => {\n  const matchValue = ");
     out.push_str(&emit_expression(&expression.expr, entities)?);
@@ -1977,6 +2534,57 @@ fn emit_match_statement(
     entities: &HashSet<String>,
     indent: usize,
 ) -> Result<(), CompileError> {
+    if let Some(arms) = analyze_data_union_match(&expression.arms, entities)? {
+        write_indent(out, indent);
+        out.push_str("{\n");
+        write_indent(out, indent + 1);
+        writeln!(
+            out,
+            "const matchValue = {};",
+            emit_expression(&expression.expr, entities)?
+        )
+        .expect("writing to a String cannot fail");
+        for (index, (arm, info)) in expression.arms.iter().zip(arms).enumerate() {
+            if arm.guard.is_some() {
+                return Err(compile_error("portable Rust match arms cannot use guards"));
+            }
+            write_indent(out, indent + 1);
+            if info.catch_all {
+                if index == 0 {
+                    out.push_str("{\n");
+                } else {
+                    out.push_str("else {\n");
+                }
+            } else {
+                let prefix = if index == 0 { "if" } else { "else if" };
+                writeln!(
+                    out,
+                    "{prefix} ({}) {{",
+                    runtime_categories_predicate(&info.categories, "matchValue")
+                )
+                .expect("writing to a String cannot fail");
+            }
+            if let Some(binding) = info.binding {
+                write_indent(out, indent + 2);
+                writeln!(out, "const {binding} = matchValue;")
+                    .expect("writing to a String cannot fail");
+            }
+            match arm.body.as_ref() {
+                Expr::Block(block) => emit_block(out, &block.block.stmts, entities, indent + 2)?,
+                expression => emit_statement(
+                    out,
+                    &Stmt::Expr(expression.clone(), None),
+                    entities,
+                    indent + 2,
+                )?,
+            }
+            write_indent(out, indent + 1);
+            out.push_str("}\n");
+        }
+        write_indent(out, indent);
+        out.push_str("}\n");
+        return Ok(());
+    }
     write_indent(out, indent);
     writeln!(
         out,
