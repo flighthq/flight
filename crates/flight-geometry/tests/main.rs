@@ -10,6 +10,8 @@ mod flight_geometry_enable_geometry_pool_guards_test;
 mod flight_geometry_frustum_test;
 #[path = "geometry_pool_guards_test.rs"]
 mod flight_geometry_geometry_pool_guards_test;
+#[path = "lanes_test.rs"]
+mod flight_geometry_lanes_test;
 #[path = "matrix3_pool_test.rs"]
 mod flight_geometry_matrix3_pool_test;
 #[path = "matrix3_test.rs"]

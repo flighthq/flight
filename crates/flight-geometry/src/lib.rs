@@ -30,8 +30,8 @@ mod vector4_pool;
 pub mod contract;
 
 // Public lane: the names exported by TS `index.ts`, plus the geometry types those signatures
-// require. Contract-only seams (initialize_*, transform2d/transform3d, the pool guard slot)
-// stay in `contract`, which other Flight crates import.
+// require. Contract-only seams (initialize_* and the pool guard slot) stay in `contract`, which
+// other Flight crates import. tests/lanes_test.rs checks this lane against TS `index.ts`.
 pub use contract::MATRIX_IDENTITY;
 pub use contract::VECTOR2_X_AXIS;
 pub use contract::VECTOR2_Y_AXIS;
@@ -89,6 +89,7 @@ pub use contract::clone_vector2;
 pub use contract::clone_vector3;
 pub use contract::clone_vector4;
 pub use contract::compose_matrix4;
+pub use contract::compose_matrix4_from_transform3d;
 pub use contract::compute_rectangle_intersection;
 pub use contract::conjugate_quaternion;
 pub use contract::contains_aabb_point;
@@ -137,6 +138,8 @@ pub use contract::create_quaternion;
 pub use contract::create_ray3d;
 pub use contract::create_rectangle;
 pub use contract::create_transform_matrix;
+pub use contract::create_transform2d;
+pub use contract::create_transform3d;
 pub use contract::create_vector2;
 pub use contract::create_vector2_from_polar;
 pub use contract::create_vector3;
@@ -144,7 +147,9 @@ pub use contract::create_vector3_from_spherical;
 pub use contract::create_vector4;
 pub use contract::cross_vector2;
 pub use contract::cross_vector3;
+pub use contract::decompose_matrix_to_transform2d;
 pub use contract::decompose_matrix4;
+pub use contract::decompose_matrix4_to_transform3d;
 pub use contract::disable_geometry_pool_guards;
 pub use contract::divide_vector2;
 pub use contract::divide_vector3;
