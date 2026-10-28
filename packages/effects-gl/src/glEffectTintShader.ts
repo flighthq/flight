@@ -113,4 +113,4 @@ function getGlTintShader(state: GlRenderState): TintShaderLocations {
 }
 
 // Reused across passes: the unpack writes into it on every draw, so it never escapes this module.
-const scratchTint: [number, number, number, number] = [0, 0, 0, 0];
+const scratchTint = new Float32Array(4);

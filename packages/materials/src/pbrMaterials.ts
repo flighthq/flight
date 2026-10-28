@@ -1,4 +1,4 @@
-import { unpackColorToLinear } from '@flighthq/color/contract';
+import { allocateLinearColor, packLinearChannelsToColor, unpackColorToLinear } from '@flighthq/color/contract';
 import type {
   MaterialConversionExplanation,
   MaterialConversionGuard,
@@ -45,9 +45,9 @@ export function convertSpecularGlossinessToStandardPbr(
   // Unpack the specular color to linear to compute F0 luminance for the metallic estimate.
   const specLinear = scratchLinear;
   unpackColorToLinear(specLinear, specular);
-  const specR = specLinear[0];
-  const specG = specLinear[1];
-  const specB = specLinear[2];
+  const specR = specLinear.r;
+  const specG = specLinear.g;
+  const specB = specLinear.b;
   // Perceived luminance of the specular F0 (Rec. 709 weights).
   const specLuma = 0.2126 * specR + 0.7152 * specG + 0.0722 * specB;
   // The dielectric F0 threshold: ~0.04 (4% reflectance). A specular luma above this is
@@ -58,15 +58,15 @@ export function convertSpecularGlossinessToStandardPbr(
   // Blend: baseColor = lerp(diffuse * (1 - specLuma), diffuse, metallic).
   const diffLinear = scratchLinear2;
   unpackColorToLinear(diffLinear, diffuse);
-  const diffR = diffLinear[0];
-  const diffG = diffLinear[1];
-  const diffB = diffLinear[2];
-  const diffA = diffLinear[3];
+  const diffR = diffLinear.r;
+  const diffG = diffLinear.g;
+  const diffB = diffLinear.b;
+  const diffA = diffLinear.a;
   // Approximate base color in linear, then repack to sRGB RGBA.
   const baseR = diffR * (1 - specLuma * (1 - metallic));
   const baseG = diffG * (1 - specLuma * (1 - metallic));
   const baseB = diffB * (1 - specLuma * (1 - metallic));
-  const baseColor = packLinear(baseR, baseG, baseB, diffA);
+  const baseColor = packLinearChannelsToColor(baseR, baseG, baseB, diffA);
   // Specular-glossiness carries no dedicated coverage map; leave the standard block's alpha map
   // empty so the converted material's alpha comes from baseColor/baseColorMap alone.
   out.alphaMap = null;
@@ -152,25 +152,8 @@ function assignStandardPbrMaterialProperties(
   target.roughness = opts?.roughness ?? 1;
 }
 
-// IEC 61966-2-1 inverse OETF for a single linear channel in [0, 1] → 8-bit sRGB.
-function linearChannelToSrgb8(value: number): number {
-  const srgb = value <= 0.0031308 ? value * 12.92 : 1.055 * value ** (1 / 2.4) - 0.055;
-  return Math.round(Math.min(1, Math.max(0, srgb)) * 0xff);
-}
-
-// Pack four linear [0,1] channels back to a 0xRRGGBBAA packed sRGB integer.
-function packLinear(r: number, g: number, b: number, a: number): number {
-  return (
-    ((linearChannelToSrgb8(r) << 24) |
-      (linearChannelToSrgb8(g) << 16) |
-      (linearChannelToSrgb8(b) << 8) |
-      Math.round(a * 0xff)) >>>
-    0
-  );
-}
-
-const scratchLinear: [number, number, number, number] = [0, 0, 0, 0];
-const scratchLinear2: [number, number, number, number] = [0, 0, 0, 0];
+const scratchLinear = allocateLinearColor();
+const scratchLinear2 = allocateLinearColor();
 
 // Routes one dropped-map explanation to the installed guard, or nowhere when none is installed. Both
 // converters report through this rather than reaching for the module slot themselves, so the seam has

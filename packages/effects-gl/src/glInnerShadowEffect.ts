@@ -154,4 +154,4 @@ function getInvertTintEdgeColor(
 }
 
 // Reused per draw by the edge-color computation above; never escapes this module.
-const scratchEdge: [number, number, number, number] = [0, 0, 0, 0];
+const scratchEdge = new Float32Array(4);

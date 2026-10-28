@@ -157,8 +157,14 @@ export function bindWgpuShadedSurface(
 
   const data = binding.data;
   data.fill(0);
-  data.set(diffuse, 0);
-  data.set(specular, 4);
+  data[0] = diffuse.r;
+  data[1] = diffuse.g;
+  data[2] = diffuse.b;
+  data[3] = diffuse.a;
+  data[4] = specular.r;
+  data[5] = specular.g;
+  data[6] = specular.b;
+  data[7] = specular.a;
   data[8] = material.shininess;
   data[9] = material.alphaCutoff;
   data[10] = getWgpuScene3DTime(state);

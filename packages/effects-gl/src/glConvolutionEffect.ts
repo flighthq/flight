@@ -117,4 +117,4 @@ void main() {
 }`;
 
 // Reused across passes: the unpack writes into it on every draw, so it never escapes this module.
-const scratchEdgeColor: [number, number, number, number] = [0, 0, 0, 0];
+const scratchEdgeColor = new Float32Array(4);

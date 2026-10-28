@@ -3,7 +3,7 @@ import {
   createPerspectiveProjection,
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/camera/contract';
-import { unpackColorToLinear } from '@flighthq/color/contract';
+import { allocateLinearColor, unpackColorToLinear } from '@flighthq/color/contract';
 import { createAabb, createMatrix4 } from '@flighthq/geometry/contract';
 import {
   createAmbientLight,
@@ -122,11 +122,11 @@ describe('packScene3DLightBlock', () => {
     expect(block.data[0]).toBeCloseTo(0);
     expect(block.data[1]).toBeCloseTo(-1);
     expect(block.data[2]).toBeCloseTo(0);
-    const expected: [number, number, number, number] = [0, 0, 0, 0];
+    const expected = allocateLinearColor();
     unpackColorToLinear(expected, 0xffffffff);
-    expect(block.data[4]).toBeCloseTo(expected[0] * 2);
-    expect(block.data[5]).toBeCloseTo(expected[1] * 2);
-    expect(block.data[6]).toBeCloseTo(expected[2] * 2);
+    expect(block.data[4]).toBeCloseTo(expected.r * 2);
+    expect(block.data[5]).toBeCloseTo(expected.g * 2);
+    expect(block.data[6]).toBeCloseTo(expected.b * 2);
   });
 
   it('packs the ambient radiance into the ambient slot', () => {
@@ -134,11 +134,11 @@ describe('packScene3DLightBlock', () => {
     const ambient = createAmbientLight({ color: 0xffffffff, intensity: 0.5 });
     packScene3DLightBlock(block, { ambient, directional: null });
     expect(block.ambientCount).toBe(1);
-    const expected: [number, number, number, number] = [0, 0, 0, 0];
+    const expected = allocateLinearColor();
     unpackColorToLinear(expected, 0xffffffff);
-    expect(block.data[8]).toBeCloseTo(expected[0] * 0.5);
-    expect(block.data[9]).toBeCloseTo(expected[1] * 0.5);
-    expect(block.data[10]).toBeCloseTo(expected[2] * 0.5);
+    expect(block.data[8]).toBeCloseTo(expected.r * 0.5);
+    expect(block.data[9]).toBeCloseTo(expected.g * 0.5);
+    expect(block.data[10]).toBeCloseTo(expected.b * 0.5);
   });
 
   it('bumps version when the packed block changes', () => {
@@ -179,9 +179,9 @@ describe('packScene3DLightBlock', () => {
     expect(block.data[o + 1]).toBeCloseTo(2);
     expect(block.data[o + 2]).toBeCloseTo(3);
     expect(block.data[o + 3]).toBeCloseTo(10);
-    const expected: [number, number, number, number] = [0, 0, 0, 0];
+    const expected = allocateLinearColor();
     unpackColorToLinear(expected, 0xffffffff);
-    expect(block.data[o + 4]).toBeCloseTo(expected[0] * 3);
+    expect(block.data[o + 4]).toBeCloseTo(expected.r * 3);
     expect(block.data[o + 7]).toBeCloseTo(1 / (10 * 10));
   });
 
@@ -220,9 +220,9 @@ describe('packScene3DLightBlock', () => {
     packScene3DLightBlock(block, { ambient: null, directional: null, hemisphere: [hemisphere] });
     expect(block.hemisphereCount).toBe(1);
     const o = SCENE_LIGHT_HEMISPHERE_OFFSET;
-    const sky: [number, number, number, number] = [0, 0, 0, 0];
+    const sky = allocateLinearColor();
     unpackColorToLinear(sky, 0xffffffff);
-    expect(block.data[o + 0]).toBeCloseTo(sky[0] * 2);
+    expect(block.data[o + 0]).toBeCloseTo(sky.r * 2);
     expect(block.data[o + 4]).toBeCloseTo(0);
     // Packed world-up (0, 1, 0).
     expect(block.data[o + 8]).toBeCloseTo(0);

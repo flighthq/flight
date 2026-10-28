@@ -1,3 +1,4 @@
+import { allocateLinearColor } from '@flighthq/color/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { getWgpuRenderStateRuntime, registerWgpuImageTextureResolver } from '@flighthq/render-wgpu/contract';
 import {
@@ -45,6 +46,12 @@ import {
   vertexDisplaceWgpuModifierSnippet,
 } from './wgpuShadedPrelude.ts';
 
+const LINEAR_WHITE = allocateLinearColor();
+LINEAR_WHITE.r = 1;
+LINEAR_WHITE.g = 1;
+LINEAR_WHITE.b = 1;
+LINEAR_WHITE.a = 1;
+
 const COLOR_FEATURE: WgpuColorAdjustmentMaterialFeature = {
   fragmentShaderChunk: 'fn applyFlightColorAdjustment(c : vec4f, m : vec4f, o : vec4f) -> vec4f { return c; }',
   matrixFragmentShaderChunk:
@@ -60,7 +67,7 @@ describe('bindWgpuShadedSurface', () => {
     registerBuiltInWgpuModifierSnippets(state);
     const material = createShadedMaterial({ modifiers: [createRimModifier({ color: 0xffffffff })] });
     const pipeline = ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
-    bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    bindWgpuShadedSurface(state, pipeline, material, LINEAR_WHITE, LINEAR_WHITE);
     expect(fake.calls.some((call) => call.name === 'createBindGroup')).toBe(true);
     expect(fake.calls.some((call) => call.name === 'writeBuffer')).toBe(true);
   });
@@ -353,11 +360,11 @@ describe('shaded binding cache', () => {
     const firstPipeline = ensureWgpuShadedPipeline(first.state, material, 'bgra8unorm');
     const secondPipeline = ensureWgpuShadedPipeline(second.state, material, 'bgra8unorm');
 
-    const firstGroup = bindWgpuShadedSurface(first.state, firstPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    const firstGroup = bindWgpuShadedSurface(first.state, firstPipeline, material, LINEAR_WHITE, LINEAR_WHITE);
     const firstBufferCount = first.fake.calls.filter((call) => call.name === 'createBuffer').length;
     const firstGroupCount = first.fake.calls.filter((call) => call.name === 'createBindGroup').length;
-    const secondGroup = bindWgpuShadedSurface(second.state, secondPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
-    const firstAgain = bindWgpuShadedSurface(first.state, firstPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    const secondGroup = bindWgpuShadedSurface(second.state, secondPipeline, material, LINEAR_WHITE, LINEAR_WHITE);
+    const firstAgain = bindWgpuShadedSurface(first.state, firstPipeline, material, LINEAR_WHITE, LINEAR_WHITE);
 
     expect(firstGroup).not.toBe(secondGroup);
     expect(firstAgain).toBe(firstGroup);
@@ -375,11 +382,11 @@ describe('shaded binding cache', () => {
     });
     const material = createShadedMaterial({ diffuseMap: first });
     const pipeline = ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
-    bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    bindWgpuShadedSurface(state, pipeline, material, LINEAR_WHITE, LINEAR_WHITE);
     const buffers = fake.calls.filter((call) => call.name === 'createBuffer').length;
     const groups = fake.calls.filter((call) => call.name === 'createBindGroup').length;
 
-    bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    bindWgpuShadedSurface(state, pipeline, material, LINEAR_WHITE, LINEAR_WHITE);
     expect(fake.calls.filter((call) => call.name === 'createBuffer')).toHaveLength(buffers);
     expect(fake.calls.filter((call) => call.name === 'createBindGroup')).toHaveLength(groups);
 
@@ -387,7 +394,7 @@ describe('shaded binding cache', () => {
       dimension: '2d',
       source: makeImageResource(),
     });
-    bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    bindWgpuShadedSurface(state, pipeline, material, LINEAR_WHITE, LINEAR_WHITE);
     expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(groups);
     expect(fake.calls.filter((call) => call.name === 'createBuffer')).toHaveLength(buffers);
 
@@ -395,20 +402,20 @@ describe('shaded binding cache', () => {
     const emissive = createEmissiveModifier({ color: 0xffffffff, mask: modifierTexture, strength: 1 });
     material.modifiers = [emissive];
     const modifierPipeline = ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
-    bindWgpuShadedSurface(state, modifierPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    bindWgpuShadedSurface(state, modifierPipeline, material, LINEAR_WHITE, LINEAR_WHITE);
     const beforeModifierSwap = fake.calls.filter((call) => call.name === 'createBindGroup').length;
     emissive.mask = createTexture({ dimension: '2d', source: makeImageResource() });
-    bindWgpuShadedSurface(state, modifierPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    bindWgpuShadedSurface(state, modifierPipeline, material, LINEAR_WHITE, LINEAR_WHITE);
     expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(beforeModifierSwap);
 
     emissive.mask = createTexture();
-    bindWgpuShadedSurface(state, modifierPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    bindWgpuShadedSurface(state, modifierPipeline, material, LINEAR_WHITE, LINEAR_WHITE);
     const beforeReady = fake.calls.filter((call) => call.name === 'createBindGroup').length;
     const readyingTexture = emissive.mask;
     expect(readyingTexture).toBeDefined();
     if (readyingTexture!.dimension !== '2d') throw new Error('test texture must be 2d');
     readyingTexture!.source = makeImageResource();
-    bindWgpuShadedSurface(state, modifierPipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    bindWgpuShadedSurface(state, modifierPipeline, material, LINEAR_WHITE, LINEAR_WHITE);
     expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(beforeReady);
   });
 
@@ -420,17 +427,17 @@ describe('shaded binding cache', () => {
     const texture = createTexture({ dimension: '2d', source: firstImage });
     const material = createShadedMaterial({ diffuseMap: texture });
     const pipeline = ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
-    bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    bindWgpuShadedSurface(state, pipeline, material, LINEAR_WHITE, LINEAR_WHITE);
 
     const beforeSwap = fake.calls.filter((call) => call.name === 'createBindGroup').length;
     if (texture.dimension !== '2d') throw new Error('test texture must be 2d');
     texture.source = makeImageResource();
-    bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    bindWgpuShadedSurface(state, pipeline, material, LINEAR_WHITE, LINEAR_WHITE);
     expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(beforeSwap);
 
     const beforeVersion = fake.calls.filter((call) => call.name === 'createBindGroup').length;
     getTextureSource(texture)!.version++;
-    bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    bindWgpuShadedSurface(state, pipeline, material, LINEAR_WHITE, LINEAR_WHITE);
     expect(fake.calls.filter((call) => call.name === 'createBindGroup').length).toBeGreaterThan(beforeVersion);
   });
 
@@ -453,12 +460,12 @@ describe('shaded binding cache', () => {
     });
     const material = createShadedMaterial({ modifiers: [modifier] });
     const pipeline = ensureWgpuShadedPipeline(state, material, 'bgra8unorm');
-    bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    bindWgpuShadedSurface(state, pipeline, material, LINEAR_WHITE, LINEAR_WHITE);
     const buffers = fake.calls.filter((call) => call.name === 'createBuffer').length;
     const groups = fake.calls.filter((call) => call.name === 'createBindGroup').length;
     const compiled = contributions;
 
-    bindWgpuShadedSurface(state, pipeline, material, [1, 1, 1, 1], [1, 1, 1, 1]);
+    bindWgpuShadedSurface(state, pipeline, material, LINEAR_WHITE, LINEAR_WHITE);
     expect(contributions).toBe(compiled);
     expect(fake.calls.filter((call) => call.name === 'createBuffer')).toHaveLength(buffers);
     expect(fake.calls.filter((call) => call.name === 'createBindGroup')).toHaveLength(groups);

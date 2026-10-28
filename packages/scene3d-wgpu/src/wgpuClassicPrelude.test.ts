@@ -1,3 +1,5 @@
+import type { LinearColorRaw } from '@flighthq/color/contract';
+import { allocateLinearColor } from '@flighthq/color/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type {
   ImageResource,
@@ -16,6 +18,19 @@ import {
 } from './wgpuClassicPrelude.ts';
 import { getWgpuScene3DRuntime } from './wgpuScene3DRuntime.ts';
 import { makeWgpuScene3DState, makeWgpuSkinningAdapter } from './wgpuScene3DTestHelper.ts';
+
+function makeLinearColor(r: number, g: number, b: number, a: number): LinearColorRaw {
+  const color = allocateLinearColor();
+  color.r = r;
+  color.g = g;
+  color.b = b;
+  color.a = a;
+  return color;
+}
+
+const LINEAR_RED = makeLinearColor(1, 0, 0, 1);
+const LINEAR_GREEN = makeLinearColor(0, 1, 0, 1);
+const LINEAR_WHITE = makeLinearColor(1, 1, 1, 1);
 
 function makeKey(lightingModel: WgpuClassicLightingModel): WgpuClassicDefineKey {
   return {
@@ -41,8 +56,8 @@ describe('bindWgpuClassicSurface', () => {
     const { fake, state } = makeWgpuScene3DState();
     const pipeline = ensureWgpuClassicPipeline(state, makeKey('phong'), 'bgra8unorm');
     const key = {};
-    bindWgpuClassicSurface(state, pipeline, key, [1, 0, 0, 1], [1, 1, 1, 1], 32, 0.5, null, null, null, null);
-    bindWgpuClassicSurface(state, pipeline, key, [0, 1, 0, 1], [1, 1, 1, 1], 64, 0.5, null, null, null, null);
+    bindWgpuClassicSurface(state, pipeline, key, LINEAR_RED, LINEAR_WHITE, 32, 0.5, null, null, null, null);
+    bindWgpuClassicSurface(state, pipeline, key, LINEAR_GREEN, LINEAR_WHITE, 64, 0.5, null, null, null, null);
 
     expect(fake.calls.filter((c) => c.name === 'createBindGroup').length).toBe(1);
     expect(fake.calls.filter((c) => c.name === 'writeBuffer').length).toBe(2);
@@ -63,7 +78,7 @@ describe('bindWgpuClassicSurface', () => {
       dimension: '2d',
       source: { source: {} } as unknown as ImageResource,
     });
-    bindWgpuClassicSurface(state, pipeline, key, [1, 0, 0, 1], [1, 1, 1, 1], 32, 0.5, diffuseMap, null, null, null);
+    bindWgpuClassicSurface(state, pipeline, key, LINEAR_RED, LINEAR_WHITE, 32, 0.5, diffuseMap, null, null, null);
     const count = (name: string) => fake.calls.filter((c) => c.name === name).length;
     const [samplers, bindGroups, buffers] = [count('createSampler'), count('createBindGroup'), count('createBuffer')];
     expect(samplers).toBeGreaterThanOrEqual(1); // the primary sampler was built once on first bind
@@ -71,8 +86,8 @@ describe('bindWgpuClassicSurface', () => {
     // Re-bind the unchanged textured material: the sampler + view resolution run again (getWgpuSampler
     // cache hit via its packed-number key), but no new GPUSampler / bind group / buffer is constructed —
     // steady state builds nothing beyond the per-bind uniform write.
-    bindWgpuClassicSurface(state, pipeline, key, [1, 0, 0, 1], [1, 1, 1, 1], 32, 0.5, diffuseMap, null, null, null);
-    bindWgpuClassicSurface(state, pipeline, key, [1, 0, 0, 1], [1, 1, 1, 1], 32, 0.5, diffuseMap, null, null, null);
+    bindWgpuClassicSurface(state, pipeline, key, LINEAR_RED, LINEAR_WHITE, 32, 0.5, diffuseMap, null, null, null);
+    bindWgpuClassicSurface(state, pipeline, key, LINEAR_RED, LINEAR_WHITE, 32, 0.5, diffuseMap, null, null, null);
     expect(count('createSampler')).toBe(samplers);
     expect(count('createBindGroup')).toBe(bindGroups);
     expect(count('createBuffer')).toBe(buffers);
