@@ -4,7 +4,7 @@
 // open architecture question without manufacturing per-backend copies that appear to agree.
 
 import { getRenderProxy2D } from '@flighthq/render/contract';
-import type { Bitmap, ColorScaleBias, Shape, WgpuShapeRendererData } from '@flighthq/sdk';
+import type { Bitmap, ColorScaleBias, LogState, Shape, WgpuShapeRendererData } from '@flighthq/sdk';
 import {
   getBitmapPixelRgb,
   getNodeChildren,
@@ -16,6 +16,9 @@ import {
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 import { createSwfColorTransformMovieClip } from '../helpers/swfTransformFixture.ts';
+
+// The harness entry publishes its LogState; run standalone, there is no listener and nothing to log.
+const sceneLogState = (window as { __flightLogState?: LogState }).__flightLogState;
 
 const WIDTH = 220;
 const HEIGHT = 220;
@@ -36,15 +39,18 @@ export function assertRender(frame: Readonly<Bitmap>): void {
     Math.round((X + SQUARE / 2) * scale),
     Math.round((Y + SQUARE / 2) * scale),
   );
-  logInfo(
-    {
-      backend,
-      rgbTransform: hex(rgbTransform),
-      wgpuMeshCount,
-      wgpuRasterSurfaceAllocated,
-    },
-    'test',
-  );
+  if (sceneLogState !== undefined)
+    logInfo(
+      sceneLogState,
+      performance.now(),
+      {
+        backend,
+        rgbTransform: hex(rgbTransform),
+        wgpuMeshCount,
+        wgpuRasterSurfaceAllocated,
+      },
+      'test',
+    );
 
   const expectsGreen = backend === 'webgl' || backend === 'webgpu';
   if (expectsGreen ? !isGreen(rgbTransform) : !isWhite(rgbTransform)) {
@@ -136,4 +142,5 @@ if (target.kind === 'webgpu') {
     );
   }
 }
-logInfo({ backend, wgpuMeshCount, wgpuRasterSurfaceAllocated }, 'test');
+if (sceneLogState !== undefined)
+  logInfo(sceneLogState, performance.now(), { backend, wgpuMeshCount, wgpuRasterSurfaceAllocated }, 'test');

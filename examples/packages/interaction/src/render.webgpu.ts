@@ -8,20 +8,25 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web/contract';
-import type { Node2D } from '@flighthq/sdk';
+import type { LogState, Node2D } from '@flighthq/sdk';
 import {
+  ShapeKind,
+  TextLabelKind,
   beginWgpuRenderPass,
-  connectCanvasTextureResolverMisses,
-  createCanvasShapeRasterizer,
-  createCanvasTextureResolvers,
-  createWgpuRenderState,
-  createWgpuScreenRenderTarget,
   canvasShapeCommands,
   canvasTextureShapeCommands,
-  wgpuShapeRenderer,
-  wgpuTextLabelRenderer,
+  connectCanvasTextureResolverMisses,
+  createAppWindow,
+  createCanvasShapeRasterizer,
+  createCanvasTextureResolvers,
+  createDebugState,
+  createLogState,
+  createWgpuRenderState,
+  createWgpuScreenRenderTarget,
+  createWgpuSurface,
   enableFlightDiagnostics,
   endWgpuRenderPass,
+  openWindow,
   prepareScene2DRender,
   registerCanvasBitmapTextureResolver,
   registerCanvasImageTextureResolver,
@@ -29,13 +34,10 @@ import {
   registerNodeRenderer,
   registerWgpuShapeRasterizer,
   renderWgpuScene2D,
-  wgpuScene3DRenderPreset,
-  ShapeKind,
-  TextLabelKind,
-  createWgpuSurface,
   setSurfaceDisplaySize,
-  createAppWindow,
-  openWindow,
+  wgpuScene3DRenderPreset,
+  wgpuShapeRenderer,
+  wgpuTextLabelRenderer,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -60,7 +62,9 @@ export const state = createWgpuRenderState(acquisition.device, {
 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x22 / 0xff, 0x22 / 0xff, 0x33 / 0xff, 1], depth: 1.0 } as const;
-enableFlightDiagnostics(state);
+// The runner publishes the page's LogState; a standalone build logs into a private one.
+const logState = (window as { __flightLogState?: LogState }).__flightLogState ?? createLogState();
+enableFlightDiagnostics(createDebugState(), logState, state);
 registerNodeRenderer(state, ShapeKind, wgpuShapeRenderer);
 
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill

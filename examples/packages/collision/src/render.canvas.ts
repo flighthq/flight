@@ -1,10 +1,8 @@
 import { webHostCanvas } from '@flighthq/host-web/contract';
-import type { Node2D } from '@flighthq/sdk';
+import type { LogState, Node2D } from '@flighthq/sdk';
 import {
+  ShapeKind,
   beginCanvasRenderPass,
-  createCanvasElement,
-  createCanvasRenderState,
-  createCanvasScreenRenderTarget,
   canvasBeginFill,
   canvasDrawCircle,
   canvasDrawRectangle,
@@ -12,15 +10,19 @@ import {
   canvasLineStyle,
   canvasLineTo,
   canvasMoveTo,
+  canvasScene2DRenderPreset,
   canvasShapeRenderer,
+  createCanvasElement,
+  createCanvasRenderState,
+  createCanvasScreenRenderTarget,
+  createDebugState,
+  createLogState,
   enableFlightDiagnostics,
   endCanvasRenderPass,
   prepareScene2DRender,
   registerCanvasShapeCommands,
   registerNodeRenderer,
   renderCanvasScene2D,
-  canvasScene2DRenderPreset,
-  ShapeKind,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -36,7 +38,9 @@ export const state = createCanvasRenderState({
 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x1a / 0xff, 0x1a / 0xff, 0x2e / 0xff, 1] } as const;
-enableFlightDiagnostics(state);
+// The runner publishes the page's LogState; a standalone build logs into a private one.
+const logState = (window as { __flightLogState?: LogState }).__flightLogState ?? createLogState();
+enableFlightDiagnostics(createDebugState(), logState, state);
 registerNodeRenderer(state, ShapeKind, canvasShapeRenderer);
 registerCanvasShapeCommands(state, [
   canvasBeginFill,

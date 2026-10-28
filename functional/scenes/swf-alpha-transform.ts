@@ -5,11 +5,14 @@
 // swf-color-transform.
 
 import { getRenderProxy2D } from '@flighthq/render/contract';
-import type { Bitmap, Shape } from '@flighthq/sdk';
+import type { Bitmap, LogState, Shape } from '@flighthq/sdk';
 import { getBitmapPixelRgb, getNodeChildren, logInfo, ShapeKind } from '@flighthq/sdk';
 import { createFunctionalTarget, declareAntialiasingPolicy } from '@ft/render';
 
 import { createSwfAlphaTransformMovieClip } from '../helpers/swfTransformFixture.ts';
+
+// The harness entry publishes its LogState; run standalone, there is no listener and nothing to log.
+const sceneLogState = (window as { __flightLogState?: LogState }).__flightLogState;
 
 const WIDTH = 490;
 const HEIGHT = 220;
@@ -30,15 +33,18 @@ export function assertRender(frame: Readonly<Bitmap>): void {
   const control = at(0);
   const halfMultiply = at(1);
   const zeroMultiplyWithAdd = at(2);
-  logInfo(
-    {
-      backend,
-      control: hex(control),
-      halfMultiply: hex(halfMultiply),
-      zeroMultiplyWithAdd: hex(zeroMultiplyWithAdd),
-    },
-    'test',
-  );
+  if (sceneLogState !== undefined)
+    logInfo(
+      sceneLogState,
+      performance.now(),
+      {
+        backend,
+        control: hex(control),
+        halfMultiply: hex(halfMultiply),
+        zeroMultiplyWithAdd: hex(zeroMultiplyWithAdd),
+      },
+      'test',
+    );
 
   if (!isRed(control)) {
     throw new Error(`[swf-alpha-transform/${backend}] opaque control is not red — got #${hex(control)}`);
@@ -125,12 +131,15 @@ if (target.kind === 'dom') {
     throw new Error(`[swf-alpha-transform/dom] shape renderer did not apply opacity 0.5 — got ${domHalfOpacity}`);
   }
 }
-logInfo(
-  {
-    backend,
-    domHalfOpacity,
-    importedHalfAlpha: halfAlpha.alpha,
-    importedZeroAlpha: zeroAlphaAdd.alpha,
-  },
-  'test',
-);
+if (sceneLogState !== undefined)
+  logInfo(
+    sceneLogState,
+    performance.now(),
+    {
+      backend,
+      domHalfOpacity,
+      importedHalfAlpha: halfAlpha.alpha,
+      importedZeroAlpha: zeroAlphaAdd.alpha,
+    },
+    'test',
+  );

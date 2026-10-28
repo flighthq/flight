@@ -8,18 +8,26 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web/contract';
-import type { Node2D } from '@flighthq/sdk';
+import type { LogState, Node2D } from '@flighthq/sdk';
 import {
-  createGlSurface,
-  glScene3DRenderPreset,
-  connectCanvasTextureResolverMisses,
-  createCanvasTextureResolvers,
-  createCanvasShapeRasterizer,
-  createGlRenderState,
+  ShapeKind,
+  beginGlRenderPass,
   canvasShapeCommands,
   canvasTextureShapeCommands,
-  glShapeRenderer,
+  connectCanvasTextureResolverMisses,
+  createAppWindow,
+  createCanvasShapeRasterizer,
+  createCanvasTextureResolvers,
+  createDebugState,
+  createGlRenderState,
+  createGlScreenRenderTarget,
+  createGlSurface,
+  createLogState,
   enableFlightDiagnostics,
+  endGlRenderPass,
+  glScene3DRenderPreset,
+  glShapeRenderer,
+  openWindow,
   prepareScene2DRender,
   registerCanvasBitmapTextureResolver,
   registerCanvasImageTextureResolver,
@@ -27,13 +35,7 @@ import {
   registerGlShapeRasterizer,
   registerNodeRenderer,
   renderGlScene2D,
-  ShapeKind,
-  beginGlRenderPass,
-  endGlRenderPass,
-  createGlScreenRenderTarget,
   setSurfaceDisplaySize,
-  createAppWindow,
-  openWindow,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -53,7 +55,9 @@ export const state = createGlRenderState(glSurface.context, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
-enableFlightDiagnostics(state);
+// The runner publishes the page's LogState; a standalone build logs into a private one.
+const logState = (window as { __flightLogState?: LogState }).__flightLogState ?? createLogState();
+enableFlightDiagnostics(createDebugState(), logState, state);
 registerNodeRenderer(state, ShapeKind, glShapeRenderer);
 
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill
