@@ -4,6 +4,7 @@ import {
   createAabb,
   createBoundingSphere,
   createMatrix4,
+  createMatrix4FromValues,
   createVector3,
   expandAabbByPoint,
   expandAabbBySphere,
@@ -351,7 +352,7 @@ describe('transformAabbByMatrix4', () => {
     const a = createAabb(-1, -1, -1, 1, 1, 1);
     // Column-major 45-degree z rotation.
     const c = Math.SQRT1_2;
-    const m = createMatrix4(c, c, 0, 0, -c, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+    const m = createMatrix4FromValues(c, c, 0, 0, -c, c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
     const out = createAabb();
     transformAabbByMatrix4(out, a, m);
     // Rotated unit box spans +/- sqrt(2) in x and y.

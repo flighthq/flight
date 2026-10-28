@@ -1,4 +1,4 @@
-import { createMatrix4, createRectangle } from '@flighthq/geometry/contract';
+import { createMatrix4, createMatrix4FromValues, createRectangle } from '@flighthq/geometry/contract';
 import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import type { Camera2D, LogEntry } from '@flighthq/types/contract';
 import { afterEach, describe, expect, test } from 'vitest';
@@ -49,7 +49,10 @@ describe('enableCameraGuards', () => {
         near: 0.1,
         projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
       });
-      setCamera3DViewMatrix4FromMatrix4(camera, createMatrix4(3, 0, 0, 0, 0, 3, 0, 0, 0, 0, 3, 0, 0, 0, 0, 1));
+      setCamera3DViewMatrix4FromMatrix4(
+        camera,
+        createMatrix4FromValues(3, 0, 0, 0, 0, 3, 0, 0, 0, 0, 3, 0, 0, 0, 0, 1),
+      );
     });
     expect(entries).toHaveLength(1);
     expect(String((entries[0].data as { message: string }).message)).toContain('not orthonormal');
@@ -65,7 +68,10 @@ describe('enableCameraGuards', () => {
         near: 0.1,
         projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
       });
-      setCamera3DViewMatrix4FromMatrix4(camera, createMatrix4(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 2, 3, 4, 1));
+      setCamera3DViewMatrix4FromMatrix4(
+        camera,
+        createMatrix4FromValues(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 2, 3, 4, 1),
+      );
     });
     expect(entries).toHaveLength(0);
   });

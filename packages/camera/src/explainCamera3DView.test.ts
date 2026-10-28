@@ -1,4 +1,4 @@
-import { createMatrix4 } from '@flighthq/geometry/contract';
+import { createMatrix4, createMatrix4FromValues } from '@flighthq/geometry/contract';
 import { describe, expect, test } from 'vitest';
 
 import { createCamera3D, setCamera3DViewMatrix4FromLookAt, setCamera3DViewMatrix4FromMatrix4 } from './camera.ts';
@@ -20,7 +20,7 @@ describe('explainCamera3DView', () => {
   // transpose is lost. It must not be reported as a violation.
   test('accepts a reflection view and reports it as one', () => {
     const camera = perspectiveCamera();
-    setCamera3DViewMatrix4FromMatrix4(camera, createMatrix4(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 5, 7, 9, 1));
+    setCamera3DViewMatrix4FromMatrix4(camera, createMatrix4FromValues(-1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 5, 7, 9, 1));
     const explanation = explainCamera3DView(camera);
     expect(explanation.isOrthonormal).toBe(true);
     expect(explanation.isReflection).toBe(true);
@@ -29,7 +29,7 @@ describe('explainCamera3DView', () => {
 
   test('reports a scaled view as non-orthonormal, with the deviation', () => {
     const camera = perspectiveCamera();
-    setCamera3DViewMatrix4FromMatrix4(camera, createMatrix4(2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1));
+    setCamera3DViewMatrix4FromMatrix4(camera, createMatrix4FromValues(2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1));
     const explanation = explainCamera3DView(camera);
     expect(explanation.isOrthonormal).toBe(false);
     expect(explanation.scaleDeviation).toBeCloseTo(1, 6);
@@ -37,7 +37,10 @@ describe('explainCamera3DView', () => {
 
   test('reports a sheared view as non-orthonormal', () => {
     const camera = perspectiveCamera();
-    setCamera3DViewMatrix4FromMatrix4(camera, createMatrix4(1, 0, 0, 0, 0.5, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1));
+    setCamera3DViewMatrix4FromMatrix4(
+      camera,
+      createMatrix4FromValues(1, 0, 0, 0, 0.5, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1),
+    );
     const explanation = explainCamera3DView(camera);
     expect(explanation.isOrthonormal).toBe(false);
     expect(explanation.shearDeviation).toBeGreaterThan(0.1);

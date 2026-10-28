@@ -1,5 +1,6 @@
 import {
   createMatrix4,
+  createMatrix4FromValues,
   createPlane,
   createVector3,
   inverseMatrix4,
@@ -237,7 +238,10 @@ describe('setCamera3DViewGuard', () => {
         projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
       });
       expect(seen).toEqual([]);
-      setCamera3DViewMatrix4FromMatrix4(camera, createMatrix4(4, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1));
+      setCamera3DViewMatrix4FromMatrix4(
+        camera,
+        createMatrix4FromValues(4, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1),
+      );
       expect(seen).toEqual([4]);
     } finally {
       setCamera3DViewGuard(null);

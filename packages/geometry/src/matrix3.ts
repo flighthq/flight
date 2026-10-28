@@ -104,32 +104,28 @@ export function copyMatrix3RowToVector3(out: Vector3Like, row: number, source: R
  *
  * Storage is column-major: element (row r, column c) lives at m[3 * c + r]. This matches Matrix4 and
  * the GL/GLSL/WGSL uniform ABI, so a Matrix3 uploads through `uniformMatrix3fv(loc, false, m)` with no
- * transpose. The constructor still takes its nine arguments in reading (row-major) order.
+ * transpose.
  */
-export function createMatrix3(
-  m00?: number,
-  m01?: number,
-  m02?: number,
-  m10?: number,
-  m11?: number,
-  m12?: number,
-  m20?: number,
-  m21?: number,
-  m22?: number,
-): Matrix3 {
-  const m = new Float32Array(__identity);
-  if (m00 !== undefined) m[0] = m00;
-  if (m01 !== undefined) m[3] = m01;
-  if (m02 !== undefined) m[6] = m02;
-  if (m10 !== undefined) m[1] = m10;
-  if (m11 !== undefined) m[4] = m11;
-  if (m12 !== undefined) m[7] = m12;
-  if (m20 !== undefined) m[2] = m20;
-  if (m21 !== undefined) m[5] = m21;
-  if (m22 !== undefined) m[8] = m22;
+export function createMatrix3(): Matrix3 {
   const out = allocateEntity<Matrix3>();
-  initializeMatrix3(out, m);
+  initializeMatrix3(out);
   return finishEntity(out);
+}
+
+export function createMatrix3FromValues(
+  m00: number,
+  m01: number,
+  m02: number,
+  m10: number,
+  m11: number,
+  m12: number,
+  m20: number,
+  m21: number,
+  m22: number,
+): Matrix3 {
+  const out = createMatrix3();
+  setMatrix3(out, m00, m01, m02, m10, m11, m12, m20, m21, m22);
+  return out;
 }
 
 export function equalsMatrix3(
@@ -164,8 +160,8 @@ export function getMatrix3Element(source: Readonly<Matrix3Like>, row: number, co
   return source.m[column * 3 + row];
 }
 
-export function initializeMatrix3(out: EntityConstruction<Matrix3>, m: Float32Array): void {
-  out.m = m;
+export function initializeMatrix3(out: EntityConstruction<Matrix3>): void {
+  out.m = new Float32Array(__identity);
 }
 
 /**

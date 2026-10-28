@@ -7,6 +7,7 @@ import {
 import {
   copyQuaternion,
   createMatrix4,
+  createMatrix4FromValues,
   createQuaternion,
   setQuaternionFromAxisAngle,
   setVector3,
@@ -51,7 +52,7 @@ describe('orientBillboardToCamera', () => {
       near: 0.1,
       projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
     });
-    setCamera3DViewMatrix4FromMatrix4(camera, createMatrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    setCamera3DViewMatrix4FromMatrix4(camera, createMatrix4FromValues(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
 
     expect(orientBillboardToCamera(billboard, camera)).toBe(false);
     expect(Array.from(getNodeWorldMatrix4(billboard).m)).toEqual(before);
@@ -202,7 +203,10 @@ describe('setBillboardCameraBasisGuard', () => {
         near: 0.1,
         projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
       });
-      setCamera3DViewMatrix4FromMatrix4(camera, createMatrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+      setCamera3DViewMatrix4FromMatrix4(
+        camera,
+        createMatrix4FromValues(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+      );
       orientBillboardToCamera(createBillboard(createPlaneMeshGeometry(), [null], 'full'), camera);
       orientBillboardToCamera(createBillboard(createPlaneMeshGeometry(), [null], 'full'), cameraLookingFrom(0, 0, 10));
       expect(seen).toEqual([0]);

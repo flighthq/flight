@@ -4,6 +4,7 @@ import {
   createAabb,
   createBoundingSphere,
   createMatrix4,
+  createMatrix4FromValues,
   createVector3,
   containsBoundingSpherePoint,
   getClosestPointOnBoundingSphere,
@@ -264,7 +265,7 @@ describe('transformBoundingSphereByMatrix4', () => {
   it('scales the radius by the largest axis scale', () => {
     const s = createBoundingSphere(0, 0, 0, 1);
     // Column-major non-uniform scale diag(2,3,4).
-    const m = createMatrix4(2, 0, 0, 0, 0, 3, 0, 0, 0, 0, 4, 0, 0, 0, 0, 1);
+    const m = createMatrix4FromValues(2, 0, 0, 0, 0, 3, 0, 0, 0, 0, 4, 0, 0, 0, 0, 1);
     const out = createBoundingSphere();
     transformBoundingSphereByMatrix4(out, s, m);
     expect(out.radius).toBeCloseTo(4, 6);
@@ -285,7 +286,7 @@ describe('transformBoundingSphereByMatrix4', () => {
     // move it further from zero and, under a scale below 1, could carry it up past zero into a
     // real sphere that was never there.
     const empty = createBoundingSphere(0, 0, 0, -1);
-    const m = createMatrix4(3, 0, 0, 0, 0, 3, 0, 0, 0, 0, 3, 0, 0, 0, 0, 1);
+    const m = createMatrix4FromValues(3, 0, 0, 0, 0, 3, 0, 0, 0, 0, 3, 0, 0, 0, 0, 1);
     const out = createBoundingSphere();
     transformBoundingSphereByMatrix4(out, empty, m);
     expect(out.radius).toBe(-1);

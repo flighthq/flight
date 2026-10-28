@@ -1,5 +1,6 @@
 import {
   createMatrix4,
+  createMatrix4FromValues,
   createTransform3D,
   createVector3,
   decomposeMatrix4ToTransform3D,
@@ -570,7 +571,7 @@ function localizeThreeDsPositions(
 ): boolean {
   // The file's four contiguous 3-vectors are exactly Matrix4's four columns (m[column * 4 + row]), so the
   // twelve floats copy straight into the basis and translation slots with no transpose.
-  const placement = createMatrix4(
+  const placement = createMatrix4FromValues(
     localMatrix[0],
     localMatrix[1],
     localMatrix[2],
@@ -618,7 +619,24 @@ function localizeThreeDsPositions(
       positions[i + 1] -= pivot[1];
       positions[i + 2] -= pivot[2];
     }
-    const pivotTranslation = createMatrix4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, pivot[0], pivot[1], pivot[2], 1);
+    const pivotTranslation = createMatrix4FromValues(
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      pivot[0],
+      pivot[1],
+      pivot[2],
+      1,
+    );
     multiplyMatrix4(placement, placement, pivotTranslation);
   }
 
@@ -724,5 +742,5 @@ function threeDsMaterialToBlinnPhong(material: Readonly<ThreeDsMaterial>, docume
 // The RH Z-up → RH Y-up rotation as a Matrix4, and its inverse. This is convertPositionsZUpToYUp's
 // -90°-about-X, (x, y, z) → (x, z, -y), in the form a placement matrix can be conjugated by; the columns
 // are the images of the basis vectors. Being a rotation, the inverse is the transpose. Read-only.
-const THREE_DS_Z_UP_TO_Y_UP = createMatrix4(1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1);
-const THREE_DS_Y_UP_TO_Z_UP = createMatrix4(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1);
+const THREE_DS_Z_UP_TO_Y_UP = createMatrix4FromValues(1, 0, 0, 0, 0, 0, -1, 0, 0, 1, 0, 0, 0, 0, 0, 1);
+const THREE_DS_Y_UP_TO_Z_UP = createMatrix4FromValues(1, 0, 0, 0, 0, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1);

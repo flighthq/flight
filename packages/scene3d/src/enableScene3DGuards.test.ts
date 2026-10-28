@@ -3,7 +3,7 @@ import {
   createPerspectiveProjection,
   setCamera3DViewMatrix4FromMatrix4,
 } from '@flighthq/camera/contract';
-import { createMatrix4 } from '@flighthq/geometry/contract';
+import { createMatrix4, createMatrix4FromValues } from '@flighthq/geometry/contract';
 import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
 import { createPlaneMeshGeometry } from '@flighthq/meshgeometry/contract';
 import type { Camera3D, LogEntry } from '@flighthq/types/contract';
@@ -69,6 +69,6 @@ function singularCamera(): Camera3D {
     near: 0.1,
     projection: createPerspectiveProjection({ aspect: 1, fovY: 1 }),
   });
-  setCamera3DViewMatrix4FromMatrix4(camera, createMatrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+  setCamera3DViewMatrix4FromMatrix4(camera, createMatrix4FromValues(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
   return camera;
 }

@@ -339,43 +339,9 @@ export function copyMatrix4RowToVector4(out: Vector4Like, row: number, source: R
  * This matrix assumes column vectors, multiplied on the right:
  * v' = M · v
  */
-export function createMatrix4(
-  m00?: number,
-  m01?: number,
-  m02?: number,
-  m03?: number,
-  m10?: number,
-  m11?: number,
-  m12?: number,
-  m13?: number,
-  m20?: number,
-  m21?: number,
-  m22?: number,
-  m23?: number,
-  m30?: number,
-  m31?: number,
-  m32?: number,
-  m33?: number,
-): Matrix4 {
-  const m = new Float32Array(__identity);
-  if (m00 !== undefined) m[0] = m00;
-  if (m01 !== undefined) m[1] = m01;
-  if (m02 !== undefined) m[2] = m02;
-  if (m03 !== undefined) m[3] = m03;
-  if (m10 !== undefined) m[4] = m10;
-  if (m11 !== undefined) m[5] = m11;
-  if (m12 !== undefined) m[6] = m12;
-  if (m13 !== undefined) m[7] = m13;
-  if (m20 !== undefined) m[8] = m20;
-  if (m21 !== undefined) m[9] = m21;
-  if (m22 !== undefined) m[10] = m22;
-  if (m23 !== undefined) m[11] = m23;
-  if (m30 !== undefined) m[12] = m30;
-  if (m31 !== undefined) m[13] = m31;
-  if (m32 !== undefined) m[14] = m32;
-  if (m33 !== undefined) m[15] = m33;
+export function createMatrix4(): Matrix4 {
   const out = allocateEntity<Matrix4>();
-  initializeMatrix4(out, m);
+  initializeMatrix4(out);
   return finishEntity(out);
 }
 
@@ -385,6 +351,29 @@ export function createMatrix4(
 export function createMatrix4From2D(a: number, b: number, c: number, d: number, tx?: number, ty?: number): Matrix4 {
   const out = createMatrix4();
   setMatrix4From2D(out, a, b, c, d, tx, ty);
+  return out;
+}
+
+export function createMatrix4FromValues(
+  m00: number,
+  m01: number,
+  m02: number,
+  m03: number,
+  m10: number,
+  m11: number,
+  m12: number,
+  m13: number,
+  m20: number,
+  m21: number,
+  m22: number,
+  m23: number,
+  m30: number,
+  m31: number,
+  m32: number,
+  m33: number,
+): Matrix4 {
+  const out = createMatrix4();
+  setMatrix4(out, m00, m01, m02, m03, m10, m11, m12, m13, m20, m21, m22, m23, m30, m31, m32, m33);
   return out;
 }
 
@@ -539,8 +528,8 @@ export function getMatrix4Position(out: Vector3Like, source: Readonly<Matrix4Lik
   out.z = _source[14];
 }
 
-export function initializeMatrix4(out: EntityConstruction<Matrix4>, m: Float32Array): void {
-  out.m = m;
+export function initializeMatrix4(out: EntityConstruction<Matrix4>): void {
+  out.m = new Float32Array(__identity);
 }
 
 /**

@@ -3,6 +3,7 @@ import {
   createBoundingSphere,
   createFrustum,
   createMatrix4,
+  createMatrix4FromValues,
   createPerspectiveMatrix4,
   createVector3,
   getFrustumCorners,
@@ -89,7 +90,7 @@ describe('getFrustumCorners', () => {
     // point at infinity. Passing the coordinates through undivided keeps the corner finite, so a
     // caller fitting bounds around these corners gets a wrong box rather than an infinite one.
     const corners = Array.from({ length: 8 }, () => createVector3());
-    getFrustumCorners(corners, createMatrix4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0));
+    getFrustumCorners(corners, createMatrix4FromValues(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0));
     for (const corner of corners) {
       expect(Number.isFinite(corner.x)).toBe(true);
       expect(Number.isFinite(corner.y)).toBe(true);
@@ -219,7 +220,7 @@ describe('setFrustumFromMatrix4', () => {
     // culls against this frustum gets consistent rejections instead of NaN comparisons, which are
     // false in both directions and would let a box pass and fail the same test.
     const f = createFrustum();
-    setFrustumFromMatrix4(f, createMatrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
+    setFrustumFromMatrix4(f, createMatrix4FromValues(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
     for (const plane of [f.near, f.far, f.left, f.right, f.top, f.bottom]) {
       expect(Number.isFinite(plane.a)).toBe(true);
       expect(Number.isFinite(plane.b)).toBe(true);

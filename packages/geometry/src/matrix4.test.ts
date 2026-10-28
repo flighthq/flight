@@ -12,8 +12,10 @@ import {
   copyMatrix4RowToVector4,
   createMatrix,
   createMatrix3,
+  createMatrix3FromValues,
   createMatrix4,
   createMatrix4From2D,
+  createMatrix4FromValues,
   createOrthographicMatrix4,
   createPerspectiveMatrix4,
   createQuaternion,
@@ -287,7 +289,7 @@ describe('appendTranslationMatrix4', () => {
   it('copies the whole source matrix when out is a distinct object', () => {
     const source = discriminatingMatrix4();
     const before = Array.from(source.m);
-    const out = createMatrix4(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9);
+    const out = createMatrix4FromValues(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9);
     const aliased = cloneMatrix4(source);
 
     appendTranslationMatrix4(out, source, 1, 2, 3);
@@ -308,7 +310,7 @@ describe('cloneMatrix4', () => {
   });
 
   it('copies all values from the source matrix', () => {
-    const source = createMatrix4(2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53);
+    const source = createMatrix4FromValues(2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53);
 
     const clone = cloneMatrix4(source);
 
@@ -368,7 +370,7 @@ describe('composeMatrix4', () => {
 
 describe('copyMatrix4', () => {
   it('copies all values from source into out', () => {
-    const source = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const source = createMatrix4FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
     const out = createMatrix4();
     copyMatrix4(out, source);
@@ -434,7 +436,7 @@ describe('copyMatrix4ColumnFromVector4', () => {
   // column catches a row/column transposition or a stray write that a single-index check misses.
   it('writes column c into elements 4c..4c+3 for every column', () => {
     for (let column = 0; column < 4; column++) {
-      const m = createMatrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+      const m = createMatrix4FromValues(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
       copyMatrix4ColumnFromVector4(m, column, { x: 1, y: 2, z: 3, w: 4 });
 
@@ -450,7 +452,7 @@ describe('copyMatrix4ColumnFromVector4', () => {
 
 describe('copyMatrix4ColumnToVector4', () => {
   it('copies values from column 1 into a vector', () => {
-    const m = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const m = createMatrix4FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
     const out = { x: 0, y: 0, z: 0, w: 0 };
 
@@ -473,7 +475,7 @@ describe('copyMatrix4ColumnToVector4', () => {
   });
 
   it('reads column c from elements 4c..4c+3 for every column', () => {
-    const m = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const m = createMatrix4FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
     for (let column = 0; column < 4; column++) {
       const out = { x: 0, y: 0, z: 0, w: 0 };
@@ -527,7 +529,7 @@ describe('copyMatrix4RowFromVector4', () => {
   // column write in column-major storage.
   it('writes row r with a stride of four for every row', () => {
     for (let row = 0; row < 4; row++) {
-      const m = createMatrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+      const m = createMatrix4FromValues(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
       copyMatrix4RowFromVector4(m, row, { x: 1, y: 2, z: 3, w: 4 });
 
@@ -543,7 +545,7 @@ describe('copyMatrix4RowFromVector4', () => {
 
 describe('copyMatrix4RowToVector4', () => {
   it('copies values from row 2 into a vector', () => {
-    const m = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const m = createMatrix4FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
     const out = { x: 0, y: 0, z: 0, w: 0 };
 
@@ -566,7 +568,7 @@ describe('copyMatrix4RowToVector4', () => {
   });
 
   it('reads row r with a stride of four for every row', () => {
-    const m = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const m = createMatrix4FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
     for (let row = 0; row < 4; row++) {
       const out = { x: 0, y: 0, z: 0, w: 0 };
@@ -591,34 +593,6 @@ describe('createMatrix4', () => {
     expect(m.m).toBeInstanceOf(Float32Array);
     expect(m.m.length).toBe(16);
   });
-
-  it('overrides only the provided constructor values', () => {
-    const m = createMatrix4(
-      2, // m00
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      3, // m11
-    );
-
-    expect(Array.from(m.m)).toEqual([2, 0, 0, 0, 0, 3, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
-  });
-
-  it('maps constructor arguments to correct column-major indices', () => {
-    const m = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
-
-    expect(Array.from(m.m)).toEqual([
-      // column 0
-      1, 2, 3, 4,
-      // column 1
-      5, 6, 7, 8,
-      // column 2
-      9, 10, 11, 12,
-      // column 3
-      13, 14, 15, 16,
-    ]);
-  });
 });
 
 describe('createMatrix4From2D', () => {
@@ -641,6 +615,23 @@ describe('createMatrix4From2D', () => {
 
     expect(a.m[0]).toBe(1);
     expect(b.m[0]).toBe(42);
+  });
+});
+
+describe('createMatrix4FromValues', () => {
+  it('maps constructor arguments to correct column-major indices', () => {
+    const m = createMatrix4FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+
+    expect(Array.from(m.m)).toEqual([
+      // column 0
+      1, 2, 3, 4,
+      // column 1
+      5, 6, 7, 8,
+      // column 2
+      9, 10, 11, 12,
+      // column 3
+      13, 14, 15, 16,
+    ]);
   });
 });
 
@@ -780,9 +771,9 @@ describe('equalsMatrix4', () => {
   });
 
   it('returns true for two matrices with identical values', () => {
-    const a = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const a = createMatrix4FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
-    const b = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const b = createMatrix4FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
     expect(equalsMatrix4(a, b)).toBe(true);
   });
@@ -806,7 +797,7 @@ describe('getMatrix4Determinant', () => {
 
 describe('getMatrix4Element', () => {
   it('returns the element at the given row and column', () => {
-    const m = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const m = createMatrix4FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
     expect(getMatrix4Element(m, 0, 0)).toBe(1);
     expect(getMatrix4Element(m, 1, 0)).toBe(2);
     expect(getMatrix4Element(m, 0, 1)).toBe(5);
@@ -1154,8 +1145,8 @@ describe('multiplyMatrix4', () => {
     });
 
     it('supports out === a', () => {
-      const a = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
-      const b = createMatrix4(17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79);
+      const a = createMatrix4FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+      const b = createMatrix4FromValues(17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79);
       const expected = createMatrix4();
       multiplyMatrix4(expected, a, b);
 
@@ -1164,8 +1155,8 @@ describe('multiplyMatrix4', () => {
     });
 
     it('supports out === b', () => {
-      const a = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
-      const b = createMatrix4(17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79);
+      const a = createMatrix4FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+      const b = createMatrix4FromValues(17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79);
       const expected = createMatrix4();
       multiplyMatrix4(expected, a, b);
 
@@ -1581,7 +1572,7 @@ describe('setMatrix4', () => {
   });
 
   it('overwrites existing matrix values completely', () => {
-    const m = createMatrix4(99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99);
+    const m = createMatrix4FromValues(99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99);
 
     setMatrix4(m, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 
@@ -1738,7 +1729,7 @@ describe('setMatrix4FromMatrix3', () => {
 
   it('should handle scaling and translation', () => {
     // scale(2,3), translate(5,10)
-    const mat3 = createMatrix3(2, 0, 5, 0, 3, 10, 0, 0, 1);
+    const mat3 = createMatrix3FromValues(2, 0, 5, 0, 3, 10, 0, 0, 1);
 
     const mat = createMatrix4();
     setMatrix4FromMatrix3(mat, mat3);
@@ -1767,7 +1758,7 @@ describe('setMatrix4FromMatrix3', () => {
 
 describe('setMatrix4FromQuaternion', () => {
   it('identity quaternion writes the identity matrix', () => {
-    const m = createMatrix4(2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2);
+    const m = createMatrix4FromValues(2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2);
     setMatrix4FromQuaternion(m, createQuaternion());
     expect(Array.from(m.m)).toEqual([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
   });
@@ -1787,7 +1778,7 @@ describe('setMatrix4FromQuaternion', () => {
 
 describe('setMatrix4Identity', () => {
   it('resets a matrix to identity', () => {
-    const m = createMatrix4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
+    const m = createMatrix4FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16);
 
     setMatrix4Identity(m);
 
@@ -1964,7 +1955,7 @@ describe('translateMatrix4', () => {
   it('copies the whole source matrix when out is a distinct object', () => {
     const source = createMatrix4();
     setMatrix4(source, 0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 7, 8, 9, 1);
-    const out = createMatrix4(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9);
+    const out = createMatrix4FromValues(9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9, 9);
     const aliased = cloneMatrix4(source);
 
     translateMatrix4(out, source, 1, 2, 3);

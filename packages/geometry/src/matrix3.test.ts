@@ -7,7 +7,9 @@ import {
   copyMatrix3RowToVector3,
   createMatrix,
   createMatrix3,
+  createMatrix3FromValues,
   createMatrix4,
+  createMatrix4FromValues,
   createVector3,
   equalsMatrix3,
   getMatrix3Determinant,
@@ -39,7 +41,7 @@ import { initializeMatrix3 } from './matrix3.ts';
 
 describe('cloneMatrix3', () => {
   it('should clone the matrix correctly', () => {
-    const m1 = createMatrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
+    const m1 = createMatrix3FromValues(2, 3, 4, 5, 6, 7, 8, 9, 10);
     const m2 = cloneMatrix3(m1);
     expect(getMatrix3Element(m2, 0, 0)).toBe(2);
     expect(getMatrix3Element(m2, 0, 1)).toBe(3);
@@ -76,7 +78,7 @@ describe('cloneMatrix3', () => {
 
 describe('copyMatrix3', () => {
   it('should copy matrix values from another matrix', () => {
-    const m1 = createMatrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
+    const m1 = createMatrix3FromValues(2, 3, 4, 5, 6, 7, 8, 9, 10);
     const m2 = createMatrix3();
     copyMatrix3(m2, m1);
     expect(getMatrix3Element(m2, 0, 0)).toBe(2);
@@ -91,7 +93,7 @@ describe('copyMatrix3', () => {
   });
 
   it('supports out === source', () => {
-    const matrix = createMatrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
+    const matrix = createMatrix3FromValues(2, 3, 4, 5, 6, 7, 8, 9, 10);
     copyMatrix3(matrix, matrix);
     expect(Array.from(matrix.m)).toEqual([2, 5, 8, 3, 6, 9, 4, 7, 10]);
   });
@@ -135,7 +137,7 @@ describe('copyMatrix3ColumnFromVector3', () => {
 
 describe('copyMatrix3ColumnToVector3', () => {
   it('should copy column to a Vector3 from a Matrix3', () => {
-    const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const m = createMatrix3FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9);
     const v = createVector3();
     copyMatrix3ColumnToVector3(v, 0, m); // column 0
     expect(v.x).toBe(1);
@@ -144,7 +146,7 @@ describe('copyMatrix3ColumnToVector3', () => {
   });
 
   it('should copy column 1 into Vector3', () => {
-    const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const m = createMatrix3FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9);
     const v = createVector3();
     copyMatrix3ColumnToVector3(v, 1, m);
     expect(v.x).toBe(2);
@@ -153,7 +155,7 @@ describe('copyMatrix3ColumnToVector3', () => {
   });
 
   it('should copy column 2 into Vector3', () => {
-    const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const m = createMatrix3FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9);
     const v = createVector3();
     copyMatrix3ColumnToVector3(v, 2, m);
     expect(v.x).toBe(3);
@@ -217,7 +219,7 @@ describe('copyMatrix3RowFromVector3', () => {
 
 describe('copyMatrix3RowToVector3', () => {
   it('should copy row to a Vector3 from a Matrix3', () => {
-    const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const m = createMatrix3FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9);
     const v = createVector3();
     copyMatrix3RowToVector3(v, 0, m); // row 0
     expect(v.x).toBe(1); // m.a
@@ -226,7 +228,7 @@ describe('copyMatrix3RowToVector3', () => {
   });
 
   it('should copy row 1 (b, d, ty)', () => {
-    const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const m = createMatrix3FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9);
     const v = createVector3();
     copyMatrix3RowToVector3(v, 1, m);
     expect(v.x).toBe(4);
@@ -262,8 +264,15 @@ describe('copyMatrix3RowToVector3', () => {
 });
 
 describe('createMatrix3', () => {
-  it('should initialize matrix with provided values', () => {
-    const m = createMatrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
+  it('initializes to identity', () => {
+    const m = createMatrix3();
+    expect(Array.from(m.m)).toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
+  });
+});
+
+describe('createMatrix3FromValues', () => {
+  it('initializes matrix with provided values', () => {
+    const m = createMatrix3FromValues(2, 3, 4, 5, 6, 7, 8, 9, 10);
     expect(getMatrix3Element(m, 0, 0)).toBe(2);
     expect(getMatrix3Element(m, 0, 1)).toBe(3);
     expect(getMatrix3Element(m, 0, 2)).toBe(4);
@@ -276,21 +285,8 @@ describe('createMatrix3', () => {
   });
 
   it('stores its (row, column) arguments column-major', () => {
-    const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const m = createMatrix3FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9);
     expect(Array.from(m.m)).toEqual([1, 4, 7, 2, 5, 8, 3, 6, 9]);
-  });
-
-  it('should default to identity matrix when no values are provided', () => {
-    const m = createMatrix3();
-    expect(getMatrix3Element(m, 0, 0)).toBe(1);
-    expect(getMatrix3Element(m, 0, 1)).toBe(0);
-    expect(getMatrix3Element(m, 0, 2)).toBe(0);
-    expect(getMatrix3Element(m, 1, 0)).toBe(0);
-    expect(getMatrix3Element(m, 1, 1)).toBe(1);
-    expect(getMatrix3Element(m, 1, 2)).toBe(0);
-    expect(getMatrix3Element(m, 2, 0)).toBe(0);
-    expect(getMatrix3Element(m, 2, 1)).toBe(0);
-    expect(getMatrix3Element(m, 2, 2)).toBe(1);
   });
 });
 
@@ -325,7 +321,7 @@ describe('equalsMatrix3', () => {
   });
 
   it('should return true if one object is matrix-like and one is not', () => {
-    const mat1 = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const mat1 = createMatrix3FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9);
     // Column-major storage of the same matrix.
     const mat2 = { m: new Float32Array([1, 4, 7, 2, 5, 8, 3, 6, 9]) };
     expect(equalsMatrix3(mat1, mat2)).toBe(true);
@@ -345,18 +341,18 @@ describe('getMatrix3Determinant', () => {
 
   it('returns 0 for a singular matrix', () => {
     // Two identical rows → determinant = 0.
-    expect(getMatrix3Determinant(createMatrix3(1, 2, 3, 1, 2, 3, 4, 5, 6))).toBeCloseTo(0, 6);
+    expect(getMatrix3Determinant(createMatrix3FromValues(1, 2, 3, 1, 2, 3, 4, 5, 6))).toBeCloseTo(0, 6);
   });
 
   it('returns a negative value when a row is negated (sign flip)', () => {
     // Negate one row flips sign of det. Identity det = 1, negate row 0 → -1.
-    expect(getMatrix3Determinant(createMatrix3(-1, 0, 0, 0, 1, 0, 0, 0, 1))).toBeCloseTo(-1, 6);
+    expect(getMatrix3Determinant(createMatrix3FromValues(-1, 0, 0, 0, 1, 0, 0, 0, 1))).toBeCloseTo(-1, 6);
   });
 });
 
 describe('getMatrix3Element', () => {
   it('returns the element at the given row and column', () => {
-    const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const m = createMatrix3FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9);
     expect(getMatrix3Element(m, 0, 0)).toBe(1);
     expect(getMatrix3Element(m, 0, 1)).toBe(2);
     expect(getMatrix3Element(m, 0, 2)).toBe(3);
@@ -374,7 +370,7 @@ describe('initializeMatrix3', () => {
 describe('inverseMatrix3', () => {
   it('should invert the matrix correctly', () => {
     // A scale of 2 with translation of (5, 3): rows [2,0,5],[0,2,3],[0,0,1].
-    const m = createMatrix3(2, 0, 5, 0, 2, 3, 0, 0, 1);
+    const m = createMatrix3FromValues(2, 0, 5, 0, 2, 3, 0, 0, 1);
 
     const out = createMatrix3();
     inverseMatrix3(out, m);
@@ -389,8 +385,8 @@ describe('inverseMatrix3', () => {
   });
 
   it('should not depend on initial out matrix values', () => {
-    const source = createMatrix3(2, 1, 5, 3, 4, 6, 0, 0, 1);
-    const out = createMatrix3(9, 9, 9, 9, 9, 9, 0, 0, 1);
+    const source = createMatrix3FromValues(2, 1, 5, 3, 4, 6, 0, 0, 1);
+    const out = createMatrix3FromValues(9, 9, 9, 9, 9, 9, 0, 0, 1);
 
     inverseMatrix3(out, source);
 
@@ -417,7 +413,7 @@ describe('inverseMatrix3', () => {
   });
 
   it('supports out === source for affine matrices', () => {
-    const matrix = createMatrix3(2, 1, 5, 3, 4, 6, 0, 0, 1);
+    const matrix = createMatrix3FromValues(2, 1, 5, 3, 4, 6, 0, 0, 1);
     const expected = createMatrix3();
     inverseMatrix3(expected, matrix);
 
@@ -427,7 +423,7 @@ describe('inverseMatrix3', () => {
   });
 
   it('supports out === source for non-affine matrices', () => {
-    const matrix = createMatrix3(1, 2, 3, 0, 1, 4, 5, 6, 0);
+    const matrix = createMatrix3FromValues(1, 2, 3, 0, 1, 4, 5, 6, 0);
     const expected = createMatrix3();
     inverseMatrix3(expected, matrix);
 
@@ -437,13 +433,13 @@ describe('inverseMatrix3', () => {
   });
 
   it('returns true on success', () => {
-    const m = createMatrix3(2, 0, 5, 0, 2, 3, 0, 0, 1);
+    const m = createMatrix3FromValues(2, 0, 5, 0, 2, 3, 0, 0, 1);
     const out = createMatrix3();
     expect(inverseMatrix3(out, m)).toBe(true);
   });
 
   it('returns false and fills NaN for a singular affine matrix', () => {
-    const m = createMatrix3(0, 0, 5, 0, 0, 3, 0, 0, 1); // zero linear part -> det 0
+    const m = createMatrix3FromValues(0, 0, 5, 0, 0, 3, 0, 0, 1); // zero linear part -> det 0
     const out = createMatrix3();
     expect(inverseMatrix3(out, m)).toBe(false);
     expect(out.m[0]).toBeNaN();
@@ -451,14 +447,14 @@ describe('inverseMatrix3', () => {
   });
 
   it('returns false and fills NaN for a singular non-affine matrix', () => {
-    const m = createMatrix3(1, 2, 3, 2, 4, 6, 1, 1, 1); // rows 0,1 linearly dependent -> det 0
+    const m = createMatrix3FromValues(1, 2, 3, 2, 4, 6, 1, 1, 1); // rows 0,1 linearly dependent -> det 0
     const out = createMatrix3();
     expect(inverseMatrix3(out, m)).toBe(false);
     expect(out.m[0]).toBeNaN();
   });
 
   it('returns false for a singular matrix with out === source', () => {
-    const m = createMatrix3(0, 0, 5, 0, 0, 3, 0, 0, 1);
+    const m = createMatrix3FromValues(0, 0, 5, 0, 0, 3, 0, 0, 1);
     expect(inverseMatrix3(m, m)).toBe(false);
     expect(m.m[0]).toBeNaN();
   });
@@ -471,21 +467,21 @@ describe('isAffineMatrix3', () => {
   });
 
   it('returns false when last row is not (0, 0, 1)', () => {
-    const m = createMatrix3(1, 0, 0, 0, 1, 0, 1, 0, 1);
+    const m = createMatrix3FromValues(1, 0, 0, 0, 1, 0, 1, 0, 1);
     expect(isAffineMatrix3(m)).toBe(false);
   });
 
   it('returns true for a matrix with translation', () => {
-    const m = createMatrix3(1, 0, 5, 0, 1, 10, 0, 0, 1);
+    const m = createMatrix3FromValues(1, 0, 5, 0, 1, 10, 0, 0, 1);
     expect(isAffineMatrix3(m)).toBe(true);
   });
 });
 
 describe('multiplyMatrix3', () => {
   it('multiplies a non-affine matrix into distinct and aliased outputs', () => {
-    const a = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 10);
-    const b = createMatrix3(2, 0, 1, 1, 3, 0, 0, 2, 4);
-    const expected = createMatrix3(4, 12, 13, 13, 27, 28, 22, 44, 47);
+    const a = createMatrix3FromValues(1, 2, 3, 4, 5, 6, 7, 8, 10);
+    const b = createMatrix3FromValues(2, 0, 1, 1, 3, 0, 0, 2, 4);
+    const expected = createMatrix3FromValues(4, 12, 13, 13, 27, 28, 22, 44, 47);
     const out = createMatrix3();
     multiplyMatrix3(out, a, b);
     expect(equalsMatrix3(out, expected)).toBe(true);
@@ -495,8 +491,8 @@ describe('multiplyMatrix3', () => {
   });
 
   it('should support out === a', () => {
-    const a = createMatrix3(2, 3, 4, 5, 7, 8, 0, 0, 1);
-    const b = createMatrix3(11, 13, 17, 19, 23, 29, 0, 0, 1);
+    const a = createMatrix3FromValues(2, 3, 4, 5, 7, 8, 0, 0, 1);
+    const b = createMatrix3FromValues(11, 13, 17, 19, 23, 29, 0, 0, 1);
     const expected = createMatrix3();
     multiplyMatrix3(expected, a, b);
 
@@ -505,8 +501,8 @@ describe('multiplyMatrix3', () => {
   });
 
   it('should support out === b', () => {
-    const a = createMatrix3(2, 3, 4, 5, 7, 8, 0, 0, 1);
-    const b = createMatrix3(11, 13, 17, 19, 23, 29, 0, 0, 1);
+    const a = createMatrix3FromValues(2, 3, 4, 5, 7, 8, 0, 0, 1);
+    const b = createMatrix3FromValues(11, 13, 17, 19, 23, 29, 0, 0, 1);
     const expected = createMatrix3();
     multiplyMatrix3(expected, a, b);
 
@@ -516,7 +512,7 @@ describe('multiplyMatrix3', () => {
 
   it('should multiply identity correctly', () => {
     const a = createMatrix3();
-    const b = createMatrix3(2, 3, 4, 5, 6, 7);
+    const b = createMatrix3FromValues(2, 3, 4, 5, 6, 7, 0, 0, 1);
     const out = createMatrix3();
     multiplyMatrix3(out, a, b);
     expect(equalsMatrix3(out, b)).toBe(true);
@@ -524,8 +520,8 @@ describe('multiplyMatrix3', () => {
 
   it('composes an affine scale then translate (row/column semantics)', () => {
     // a = scale(2,2), b = translate(5,5). a * b applies b then a to a column vector.
-    const a = createMatrix3(2, 0, 0, 0, 2, 0, 0, 0, 1);
-    const b = createMatrix3(1, 0, 5, 0, 1, 5, 0, 0, 1);
+    const a = createMatrix3FromValues(2, 0, 0, 0, 2, 0, 0, 0, 1);
+    const b = createMatrix3FromValues(1, 0, 5, 0, 1, 5, 0, 0, 1);
     multiplyMatrix3(a, a, b);
     expect(getMatrix3Element(a, 0, 2)).toBe(10);
     expect(getMatrix3Element(a, 1, 2)).toBe(10);
@@ -543,7 +539,7 @@ describe('multiplyMatrix3', () => {
 
 describe('rotateMatrix3', () => {
   it('should rotate the matrix correctly', () => {
-    const m = createMatrix3(1, 0, 0, 0, 1, 0, 0, 0, 1);
+    const m = createMatrix3FromValues(1, 0, 0, 0, 1, 0, 0, 0, 1);
     const out = createMatrix3();
     rotateMatrix3(out, m, Math.PI / 2); // 90 degrees
     // Rotation (0,1)-plane: (0,0)=0, (0,1)=-1, (1,0)=1, (1,1)=0.
@@ -567,7 +563,7 @@ describe('rotateMatrix3', () => {
   });
 
   it('supports out === source', () => {
-    const matrix = createMatrix3(2, 3, 4, 5, 7, 8, 11, 13, 17);
+    const matrix = createMatrix3FromValues(2, 3, 4, 5, 7, 8, 11, 13, 17);
     const expected = createMatrix3();
     rotateMatrix3(expected, matrix, Math.PI / 2);
 
@@ -594,7 +590,7 @@ describe('scaleMatrix3', () => {
   });
 
   it('supports out === source', () => {
-    const matrix = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const matrix = createMatrix3FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9);
     scaleMatrix3(matrix, matrix, 2, 3);
     expect(Array.from(matrix.m)).toEqual([2, 8, 14, 6, 15, 24, 3, 6, 9]);
   });
@@ -744,7 +740,7 @@ describe('setMatrix3FromMatrix4', () => {
 
 describe('setMatrix3Identity', () => {
   it('resets a matrix to the identity', () => {
-    const m = createMatrix3(2, 3, 4, 5, 6, 7, 8, 9, 10);
+    const m = createMatrix3FromValues(2, 3, 4, 5, 6, 7, 8, 9, 10);
     setMatrix3Identity(m);
     expect(getMatrix3Element(m, 0, 0)).toBe(1);
     expect(getMatrix3Element(m, 1, 1)).toBe(1);
@@ -757,7 +753,7 @@ describe('setMatrix3Identity', () => {
 describe('setMatrix3NormalFromMatrix4', () => {
   it('equals the rotation basis for an orthonormal matrix', () => {
     // A 90-degree rotation about z (column-major Matrix4): +x -> +y.
-    const m4 = createMatrix4(0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+    const m4 = createMatrix4FromValues(0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
     const out = createMatrix3();
     setMatrix3NormalFromMatrix4(out, m4);
     // For a pure rotation, normal matrix == rotation R (+x -> +y): (0,0)=0,(0,1)=-1,(1,0)=1,(1,1)=0.
@@ -771,7 +767,7 @@ describe('setMatrix3NormalFromMatrix4', () => {
   it('uploads column-major so a GL upload needs no transpose', () => {
     // The whole point of the migration: the normal matrix' storage matches uniformMatrix3fv(false).
     // 90-degree rotation about z, column-major storage: R = [[0,-1,0],[1,0,0],[0,0,1]] -> [0,1,0,-1,0,0,0,0,1].
-    const m4 = createMatrix4(0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+    const m4 = createMatrix4FromValues(0, 1, 0, 0, -1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
     const out = createMatrix3();
     setMatrix3NormalFromMatrix4(out, m4);
     expect(out.m[0]).toBeCloseTo(0, 5);
@@ -782,7 +778,7 @@ describe('setMatrix3NormalFromMatrix4', () => {
 
   it('keeps a normal perpendicular under non-uniform scale', () => {
     // Scale x by 2, y by 1: a surface normal (1,1,0) on a plane should stay perpendicular.
-    const m4 = createMatrix4(2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+    const m4 = createMatrix4FromValues(2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
     const normalMatrix = createMatrix3();
     setMatrix3NormalFromMatrix4(normalMatrix, m4);
     // Inverse-transpose of diag(2,1,1) = diag(0.5,1,1).
@@ -810,7 +806,7 @@ describe('translateMatrix3', () => {
   });
 
   it('supports out === source', () => {
-    const matrix = createMatrix3(1, 2, 3, 4, 5, 6, 0, 0, 1);
+    const matrix = createMatrix3FromValues(1, 2, 3, 4, 5, 6, 0, 0, 1);
     translateMatrix3(matrix, matrix, 2, 3);
     expect(Array.from(matrix.m)).toEqual([1, 4, 0, 2, 5, 0, 11, 29, 1]);
   });
@@ -818,7 +814,7 @@ describe('translateMatrix3', () => {
 
 describe('transposeMatrix3', () => {
   it('swaps rows and columns', () => {
-    const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const m = createMatrix3FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9);
     const out = createMatrix3();
     transposeMatrix3(out, m);
     // Transpose of rows [1,2,3],[4,5,6],[7,8,9] is rows [1,4,7],[2,5,8],[3,6,9];
@@ -829,7 +825,7 @@ describe('transposeMatrix3', () => {
   });
 
   it('supports out === source', () => {
-    const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const m = createMatrix3FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9);
     transposeMatrix3(m, m);
     expect(Array.from(m.m)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
   });
@@ -843,7 +839,7 @@ describe('transposeMatrix3', () => {
 });
 describe('writeMatrix3ToFloat32Array', () => {
   it('writes 9 values starting at the given offset', () => {
-    const m = createMatrix3(1, 2, 3, 4, 5, 6, 7, 8, 9);
+    const m = createMatrix3FromValues(1, 2, 3, 4, 5, 6, 7, 8, 9);
     const data = new Float32Array(10);
     writeMatrix3ToFloat32Array(data, 1, m);
     // Column-major storage of the matrix, written verbatim.
@@ -851,7 +847,7 @@ describe('writeMatrix3ToFloat32Array', () => {
   });
 
   it('round-trips through setMatrix3FromFloat32Array', () => {
-    const m = createMatrix3(9, 8, 7, 6, 5, 4, 3, 2, 1);
+    const m = createMatrix3FromValues(9, 8, 7, 6, 5, 4, 3, 2, 1);
     const data = new Float32Array(9);
     writeMatrix3ToFloat32Array(data, 0, m);
     const m2 = createMatrix3();

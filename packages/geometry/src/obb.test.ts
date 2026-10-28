@@ -1,6 +1,7 @@
 import {
   createAabb,
   createMatrix4,
+  createMatrix4FromValues,
   createObb,
   createRay3D,
   createVector3,
@@ -424,7 +425,7 @@ describe('transformObbByMatrix4', () => {
 
   it('scales half-extents by a uniform scale matrix', () => {
     const o = createObb(0, 0, 0, 1, 1, 1, 0, 0, 0, 1);
-    const m = createMatrix4(2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1);
+    const m = createMatrix4FromValues(2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1);
     const out = createObb(0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
     transformObbByMatrix4(out, o, m);
     expect(out.halfExtentX).toBeCloseTo(2, 6);
@@ -464,7 +465,7 @@ describe('transformObbByMatrix4', () => {
     // A zero-length column has no direction to read, so that axis falls back to its identity
     // direction rather than dividing by zero, and the half-extent along it goes to zero.
     const o = createObb(0, 0, 0, 2, 3, 4, 0, 0, 0, 1);
-    const m = createMatrix4(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+    const m = createMatrix4FromValues(0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
     const out = createObb(0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
     transformObbByMatrix4(out, o, m);
     expect(out.halfExtentX).toBe(0);
@@ -478,7 +479,7 @@ describe('transformObbByMatrix4', () => {
     // orientation it came in with — the transform contributes nothing but the translation.
     const tilt = orientationFromAxisAngle(1, 1, 1, 0.6);
     const o = createObb(1, 2, 3, 2, 3, 4, ...tilt);
-    const m = createMatrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 6, 7, 1);
+    const m = createMatrix4FromValues(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5, 6, 7, 1);
     const out = createObb(0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
     transformObbByMatrix4(out, o, m);
     expect(out.centerX).toBeCloseTo(5, 6);
