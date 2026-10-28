@@ -5,7 +5,6 @@ export {
   enableDebug,
   enableFlightDiagnostics,
   endDebugSpan,
-  initializeDebugState,
   isDebugEnabled,
   markDebugFrame,
   measureDebugSpan,

@@ -26,6 +26,7 @@ import {
   disableDebug,
   enableDebug,
   enableFlightDiagnostics,
+  initializeDebugState,
   isDebugEnabled,
   registerDebugSubsystem,
   unregisterDebugSubsystem,
@@ -67,6 +68,22 @@ afterEach(() => {
   clearLogSinks(logState);
   clearLogChannelLevels(logState);
   setLogLevel(logState, LogLevel.Verbose);
+});
+
+describe('createDebugState', () => {
+  it('starts disabled with no frame, sink, saved levels, or subsystems', () => {
+    const state = createDebugState();
+    expect(state.enabled).toBe(false);
+    expect(state.enabledSubsystems).toEqual([]);
+    expect(state.frameNumber).toBe(0);
+    expect(state.installedSink).toBeNull();
+    expect(state.savedChannelLevels.size).toBe(0);
+    expect(state.subsystems.size).toBe(0);
+  });
+
+  it('returns independent states', () => {
+    expect(createDebugState().subsystems).not.toBe(createDebugState().subsystems);
+  });
 });
 
 describe('disableDebug', () => {
@@ -262,6 +279,20 @@ describe('enableFlightDiagnostics', () => {
     expect(isDebugEnabled(debugState)).toBe(true);
     expect(areColorAdjustmentGuardsEnabled(state)).toBe(true);
     expect(areRenderRegistriesGuardsEnabled(state)).toBe(true);
+  });
+});
+
+describe('initializeDebugState', () => {
+  it('resets a used state to the fresh baseline', () => {
+    const state = createDebugState();
+    state.enabled = true;
+    state.frameNumber = 12;
+    state.savedChannelLevels.set('render', null);
+    initializeDebugState(state);
+    expect(state.enabled).toBe(false);
+    expect(state.frameNumber).toBe(0);
+    expect(state.savedChannelLevels.size).toBe(0);
+    expect(state.savedGlobalLevel).toBe(LogLevel.Verbose);
   });
 });
 
