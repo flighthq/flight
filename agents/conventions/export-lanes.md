@@ -94,20 +94,17 @@ internal file name — so renaming a file becomes a breaking change for no gain.
 files: `contract.ts` = `export *`, `index.ts` = the full promoted list. That is not
 ceremony — `index.ts` _is_ the package's public-API manifest (see below).
 
-## Types keep their single home
+## Type ownership follows the defining package
 
-The "all exported types live in `@flighthq/types`" rule is preserved verbatim — the
-`types` package simply gains the same two lanes:
+Each exported type belongs to the package that defines it, matching Rust crate structure.
+`@flighthq/types` is a transitional compatibility aggregator that re-exports types from
+their owning packages — not the canonical home. It will be dissolved once the
+flight-compiler transpilation pipeline covers all packages.
 
-- `@flighthq/types` (`.`) — public types (the app-facing header).
-- `@flighthq/types/contract` — contract-only types (`RenderProxy`, `RenderProxyVisitor`,
-  `RenderProxy2D`, …).
+Both the owning package and `@flighthq/types` carry the two-lane structure:
 
-Contract types are still physically in the `types` package, so the port still maps them
-`flighthq.types.*`, collision-free — the load-bearing half of the type-home rule is
-untouched. `type-home:check` keeps enforcing "no exported types outside `@flighthq/types`";
-it only learns that `types` has two lanes. Contract types drop out of the public header
-because `.` no longer names them and `export *` in the SDK barrel skips the subpath.
+- `.` — public types (the app-facing surface).
+- `./contract` — contract-only types consumed by sibling packages and backend authors.
 
 Hideability is **per-type**, and the test is **audience, not raw signature reachability**:
 a type is contract-only when no _app_ needs to name it — only the package itself, a sibling,
@@ -115,12 +112,8 @@ or an extension author acting as a backend does. A public type may legitimately 
 contract type in a method an app never implements. `Renderer` is public (apps register
 renderers), yet `Renderer.draw`/`submit` takes `RenderProxy`, which stays contract-only: a
 custom renderer's `draw` is backend work, so its author is a contract-tier consumer and names
-`RenderProxy` via `@flighthq/types/contract`. The emitted `.d.ts` referencing the contract
-lane is correct-by-design, not a leak — `contract` is a real published entry. The bar is that
-no _named_ SDK export leaks a contract symbol; transitive references from a public type into
-`/contract` are expected. `RenderProxy` passes the audience test cleanly — every
-`registerRenderer` call passes a pre-built renderer object; only the runner harness names the
-type.
+`RenderProxy` via the owning package's contract lane. The emitted `.d.ts` referencing the
+contract lane is correct-by-design, not a leak — `contract` is a real published entry.
 
 ## Foreign host APIs: Flight authors the seam, not the implementation
 
@@ -236,8 +229,8 @@ The general rule is worth stating beyond export lanes, because several agents ca
   `packages/**/src` importing another `@flighthq/*` must use the `/contract` specifier —
   the sole exception is `packages/sdk/src` (the barrel, which re-exports the `.` public
   lanes); (4) emit the un-promoted-exports report (contract-minus-index, per package).
-- **`type-home:check`** — accept contract types in `@flighthq/types/contract`; keep
-  rejecting exported types anywhere outside the `types` package.
+- **`type-home`** — a non-gating source-derived meter of type placement progress. Types
+  belong in their owning package; `@flighthq/types` is a transitional re-export aggregator.
 - **`order` / `api` / `exports:check`** — teach them the two barrels; a function's
   colocated test is unchanged by which barrel names it.
 
