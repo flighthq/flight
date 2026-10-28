@@ -1,4 +1,4 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { allocateEntity, attachEntityBinding, finishEntity, getEntityBinding } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
 import type { InteractionSignals, Node, NodeData, NodeRuntime } from '@flighthq/types/contract';
 import { NodeKind } from '@flighthq/types/contract';
@@ -72,6 +72,17 @@ describe('createNode', () => {
     const node = createNode(NodeTestKind, undefined, createGraphNodeTestRuntime);
     const runtime = getNodeRuntime(node);
     expect((runtime as NodeTestRuntime).testRuntimeField).toBe('testRuntimeField');
+  });
+
+  it('keeps its package runtime usable after an Entity binding is attached', () => {
+    const node = createNode(NodeTestKind);
+    const runtime = getNodeRuntime(node);
+    const binding = {};
+
+    attachEntityBinding(node, binding);
+
+    expect(getNodeRuntime(node)).toBe(runtime);
+    expect(getEntityBinding(node)).toBe(binding);
   });
 });
 

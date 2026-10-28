@@ -24,7 +24,7 @@ describe('attachEntityBinding', () => {
     expect(getEntityRuntime(entity)).not.toBeUndefined();
   });
 
-  it('assigns to the binding slot', () => {
+  it('keeps the private binding authoritative when compatibility state is replaced', () => {
     const entity = createTestEntity();
     const binding = {};
     attachEntityBinding(entity, binding);
@@ -32,8 +32,8 @@ describe('attachEntityBinding', () => {
     forgedRuntime.binding = { forged: true };
     entity[EntityRuntimeKey] = forgedRuntime;
 
-    expect(getEntityRuntime(entity).binding).toStrictEqual(binding);
-    expect(getEntityRuntime(entity)).not.toBe(forgedRuntime);
+    expect(getEntityBinding(entity)).toBe(binding);
+    expect(getEntityRuntime(entity)).toBe(forgedRuntime);
   });
 
   it('preserves an existing runtime while assigning its binding', () => {
@@ -58,7 +58,7 @@ describe('attachEntityBinding', () => {
 
     expect(entity[EntityRuntimeKey]).toBe(packageRuntime);
     expect((entity[EntityRuntimeKey] as typeof packageRuntime).packageState).toBe(7);
-    expect(getEntityRuntime(entity)).not.toBe(packageRuntime);
+    expect(packageRuntime.binding).toBeNull();
     expect(getEntityBinding(entity)).toBe(binding);
 
     detachEntityBinding(entity);
