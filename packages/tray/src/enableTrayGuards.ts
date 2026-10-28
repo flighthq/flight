@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type { TrayIcon } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -22,13 +23,23 @@ export function disableTrayGuards(): void {
  * Not importing this module costs production nothing: the message and the `@flighthq/log` dependency
  * live only here.
  */
-export function enableTrayGuards(): void {
-  setTrayAnimationGuard(warnOnUnboundedTrayAnimation);
+export function enableTrayGuards(logState: LogState, clock: () => number): void {
+  setTrayAnimationGuard((tray: TrayIcon, frameCount: number, intervalMs: number): void =>
+    warnOnUnboundedTrayAnimation(logState, clock(), tray, frameCount, intervalMs),
+  );
 }
 
-function warnOnUnboundedTrayAnimation(_tray: TrayIcon, _frameCount: number, intervalMs: number): void {
+function warnOnUnboundedTrayAnimation(
+  logState: LogState,
+  nowMs: number,
+  _tray: TrayIcon,
+  _frameCount: number,
+  intervalMs: number,
+): void {
   if (intervalMs > 0) return;
   logOnce(
+    logState,
+    nowMs,
     'tray:non-positive-animation-interval',
     LogLevel.Warn,
     {

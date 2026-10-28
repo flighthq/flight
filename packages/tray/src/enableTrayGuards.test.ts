@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
+import { createLogState, setLogSink } from '@flighthq/log/contract';
 import type { LogEntry, TrayIcon } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -7,17 +8,18 @@ import { disableTrayGuards, enableTrayGuards } from './enableTrayGuards.ts';
 import { createTrayIcon, destroyTrayIcon, startTrayIconAnimation } from './tray.ts';
 
 let entries: LogEntry[];
+let logState: LogState;
 
 beforeEach(() => {
-  clearLogOnceKeys();
   vi.useFakeTimers();
   entries = [];
-  setLogSink((entry) => entries.push(entry));
+  logState = createLogState();
+  setLogSink(logState, (entry) => entries.push(entry));
 });
 
 afterEach(() => {
   disableTrayGuards();
-  setLogSink(null);
+  setLogSink(logState, null);
   vi.useRealTimers();
 });
 
@@ -63,7 +65,7 @@ function messages(): string {
 
 describe('disableTrayGuards', () => {
   it('stops inspecting later animations', async () => {
-    enableTrayGuards();
+    enableTrayGuards(logState, () => 0);
     disableTrayGuards();
     const { icon, image } = await tray();
     const started = await startTrayIconAnimation(image, icon, ['a'], 0);
@@ -75,7 +77,7 @@ describe('disableTrayGuards', () => {
 
 describe('enableTrayGuards', () => {
   it('warns without refusing a non-positive interval', async () => {
-    enableTrayGuards();
+    enableTrayGuards(logState, () => 0);
     const { icon, image } = await tray();
     const started = await startTrayIconAnimation(image, icon, ['a'], 0);
     expect(started.outcome).toBe('started');
