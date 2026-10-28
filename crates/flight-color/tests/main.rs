@@ -2,10 +2,10 @@
 mod flight_color_color_from_kelvin_test;
 #[path = "contract_test.rs"]
 mod flight_color_contract_test;
-#[path = "hsl_color_test.rs"]
-mod flight_color_hsl_color_test;
-#[path = "hsv_color_test.rs"]
-mod flight_color_hsv_color_test;
+#[path = "hsl_color_raw_test.rs"]
+mod flight_color_hsl_color_raw_test;
+#[path = "hsv_color_raw_test.rs"]
+mod flight_color_hsv_color_raw_test;
 #[path = "lerp_color_test.rs"]
 mod flight_color_lerp_color_test;
 #[path = "luminance_test.rs"]

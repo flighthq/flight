@@ -87,6 +87,17 @@ describe('packColor', () => {
   });
 });
 
+describe('packLinearChannelsToColor', () => {
+  it('matches the entity pack path without allocating', () => {
+    let color = allocateLinearColor();
+    color.r = 0.25;
+    color.g = 0.5;
+    color.b = 0.75;
+    color.a = 0.875;
+    expect(packLinearChannelsToColor(color.r, color.g, color.b, color.a)).toEqual(packLinearToColor(color));
+  });
+});
+
 describe('packLinearToColor', () => {
   it('is the inverse of unpack color to linear for white', () => {
     let out = allocateLinearColor();
