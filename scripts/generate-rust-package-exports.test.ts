@@ -12,6 +12,7 @@ import {
   collectStaleGeneratedFileNames,
   hasGeneratedProvenanceHeader,
   renderCompanionContractExports,
+  renderGeneratedImports,
   renderPublicExports,
 } from './generate-rust-package-exports.ts';
 
@@ -97,6 +98,43 @@ export {
   Widget,
 } from './widget.ts';
 `);
+  });
+
+  it('imports only emitted Raw consumers when Rust signatures name a companion wrapper', () => {
+    const modules = [
+      {
+        fileName: 'packColor.ts',
+        mode: 'generate' as const,
+        typescript: `export interface LinearColorRaw {}
+export function packLinearToColor(color: Readonly<LinearColorRaw>): number { return 0; }
+`,
+      },
+      {
+        directPublicExports: true,
+        fileName: 'linearColor.ts',
+        mode: 'target-native' as const,
+        typescript: `export class LinearColor {}
+`,
+      },
+    ];
+    const symbols = collectExportSymbols(modules);
+    const rust = `use crate::{pack_linear_to_color, LinearColor};
+`;
+    const typescript = `export function lerpLinearColor(
+  out: LinearColorRaw,
+  start: Readonly<LinearColorRaw>,
+  end: Readonly<LinearColorRaw>,
+): number {
+  return packLinearToColor(out);
+}
+`;
+
+    expect(renderGeneratedImports(rust, typescript, 'lerpColor.ts', symbols)).toBe(
+      `import type { LinearColorRaw } from './packColor.ts';
+import { packLinearToColor } from './packColor.ts';
+
+`,
+    );
   });
 
   it('keeps a companion wrapper out of a bundle that imports only a free function from the full contract lane', async () => {

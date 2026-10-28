@@ -7,11 +7,11 @@ import {
   collectCompanionFileNames,
   compilerAliasArguments,
   collectExportSymbols,
-  collectReferencedExportNames,
   collectRustPublicUses,
   collectStaleGeneratedFileNames,
   hasGeneratedProvenanceHeader,
   renderCompanionContractExports,
+  renderGeneratedImports,
   renderPublicExports,
   snakeToLowerCamel,
 } from './generate-rust-package-exports.ts';
@@ -234,40 +234,7 @@ function crateImports(
   symbols: Map<string, SymbolOwner>,
 ): string {
   const rust = readFileSync(rustPath, 'utf8');
-  const importedNames = new Set<string>();
-  for (const match of rust.matchAll(/^use crate::(?:[A-Za-z0-9_]+::)?([A-Za-z0-9_]+);$/gm)) {
-    importedNames.add(snakeToLowerCamel(match[1]));
-  }
-  for (const match of rust.matchAll(/^use crate::(?:[A-Za-z0-9_]+::)?\{([^}]+)\};$/gm)) {
-    for (const name of match[1].split(',')) {
-      const trimmed = name.trim();
-      if (/^[A-Za-z0-9_]+$/.test(trimmed)) importedNames.add(snakeToLowerCamel(trimmed));
-    }
-  }
-  for (const name of collectReferencedExportNames(typescript, outputFileName, symbols)) {
-    importedNames.add(name);
-  }
-
-  const imports = new Map<string, { types: string[]; values: string[] }>();
-  for (const name of importedNames) {
-    const owner = symbols.get(name);
-    if (!owner || owner.fileName === outputFileName) continue;
-    const entry = imports.get(owner.fileName) ?? { types: [], values: [] };
-    if (owner.hasValue) entry.values.push(name);
-    else entry.types.push(name);
-    imports.set(owner.fileName, entry);
-  }
-
-  let output = '';
-  for (const [fileName, names] of [...imports].sort(([left], [right]) => left.localeCompare(right))) {
-    if (names.types.length > 0) {
-      output += `import type { ${names.types.sort().join(', ')} } from './${fileName}';\n`;
-    }
-    if (names.values.length > 0) {
-      output += `import { ${names.values.sort().join(', ')} } from './${fileName}';\n`;
-    }
-  }
-  return output.length === 0 ? output : output + '\n';
+  return renderGeneratedImports(rust, typescript, outputFileName, symbols);
 }
 
 function entityArguments(command: string): string[] {

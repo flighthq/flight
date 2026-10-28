@@ -81,11 +81,7 @@ export function collectReferencedExportNames(
   ownFileName: string,
   symbols: ReadonlyMap<string, ExportSymbolOwner>,
 ): string[] {
-  const code = typescript
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/\/\/.*$/gm, '')
-    .replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`/g, '')
-    .replace(/\.\s*[A-Za-z_$][A-Za-z0-9_$]*/g, '');
+  const code = referencedCode(typescript);
   const localBindings = collectLocalBindingNames(typescript);
   return [...symbols]
     .filter(([, owner]) => owner.fileName !== ownFileName)
@@ -93,6 +89,58 @@ export function collectReferencedExportNames(
     .filter(([name]) => new RegExp(`\\b${name}\\b`).test(code))
     .map(([name]) => name)
     .sort();
+}
+
+export function renderGeneratedImports(
+  rust: string,
+  typescript: string,
+  ownFileName: string,
+  symbols: ReadonlyMap<string, ExportSymbolOwner>,
+): string {
+  const code = referencedCode(typescript);
+  const importedNames = new Set(collectReferencedExportNames(typescript, ownFileName, symbols));
+  const rustImports = new Set<string>();
+  for (const match of rust.matchAll(/^use crate::(?:[A-Za-z0-9_]+::)?([A-Za-z0-9_]+);$/gm)) {
+    rustImports.add(snakeToLowerCamel(match[1]));
+  }
+  for (const match of rust.matchAll(/^use crate::(?:[A-Za-z0-9_]+::)?\{([^}]+)\};$/gm)) {
+    for (const name of match[1].split(',')) {
+      const trimmed = name.trim();
+      if (/^[A-Za-z0-9_]+$/.test(trimmed)) rustImports.add(snakeToLowerCamel(trimmed));
+    }
+  }
+  for (const name of rustImports) {
+    if (new RegExp(`\\b${name}\\b`).test(code)) importedNames.add(name);
+  }
+
+  const imports = new Map<string, { types: string[]; values: string[] }>();
+  for (const name of importedNames) {
+    const owner = symbols.get(name);
+    if (!owner || owner.fileName === ownFileName) continue;
+    const entry = imports.get(owner.fileName) ?? { types: [], values: [] };
+    if (owner.hasValue) entry.values.push(name);
+    else entry.types.push(name);
+    imports.set(owner.fileName, entry);
+  }
+
+  let output = '';
+  for (const [fileName, names] of [...imports].sort(([left], [right]) => left.localeCompare(right))) {
+    if (names.types.length > 0) {
+      output += `import type { ${names.types.sort().join(', ')} } from './${fileName}';\n`;
+    }
+    if (names.values.length > 0) {
+      output += `import { ${names.values.sort().join(', ')} } from './${fileName}';\n`;
+    }
+  }
+  return output.length === 0 ? output : output + '\n';
+}
+
+function referencedCode(typescript: string): string {
+  return typescript
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/.*$/gm, '')
+    .replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`/g, '')
+    .replace(/\.\s*[A-Za-z_$][A-Za-z0-9_$]*/g, '');
 }
 
 function collectLocalBindingNames(typescript: string): Set<string> {
