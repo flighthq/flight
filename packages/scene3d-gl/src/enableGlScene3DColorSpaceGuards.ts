@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type { GlRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -15,12 +16,15 @@ export function areGlScene3DColorSpaceGuardsEnabled(state: GlRenderState): boole
 // nullable scene-runtime slot and warns once. Not calling this — the production default — costs the draw
 // path nothing: the message and the @flighthq/log dependency live only in this separately-imported
 // module. Idempotent.
-export function enableGlScene3DColorSpaceGuards(state: GlRenderState): void {
-  getGlScene3DRuntime(state).colorSpaceGuard = warnGlScene3DDrawnToCanvas;
+export function enableGlScene3DColorSpaceGuards(state: GlRenderState, logState: LogState | null): void {
+  getGlScene3DRuntime(state).colorSpaceGuard = (): void => warnGlScene3DDrawnToCanvas(logState);
 }
 
-function warnGlScene3DDrawnToCanvas(): void {
+function warnGlScene3DDrawnToCanvas(logState: LogState | null): void {
+  if (logState === null) return;
   logOnce(
+    logState,
+    0,
     'scene-gl:scene-drawn-to-canvas-unencoded',
     LogLevel.Warn,
     {

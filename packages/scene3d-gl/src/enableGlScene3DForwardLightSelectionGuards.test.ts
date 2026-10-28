@@ -4,13 +4,26 @@ import {
   setCamera3DViewMatrix4FromLookAt,
 } from '@flighthq/camera/contract';
 import { createPointLight } from '@flighthq/lighting/contract';
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  createLogState,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { prepareScene3DRender } from '@flighthq/render/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
-import type { Camera3D, GlRenderPass, GlRenderTarget, Scene3DLightsLike } from '@flighthq/types/contract';
+import type {
+  Camera3D,
+  GlRenderPass,
+  GlRenderTarget,
+  LogEntry,
+  MemoryLogSink,
+  Scene3DLightsLike,
+} from '@flighthq/types/contract';
 
 import {
   areGlScene3DForwardLightSelectionGuardsEnabled,
@@ -43,7 +56,7 @@ describe('areGlScene3DForwardLightSelectionGuardsEnabled', () => {
   it('reports false until guards are installed, then true', () => {
     const { state } = makeGlScene3DState();
     expect(areGlScene3DForwardLightSelectionGuardsEnabled(state)).toBe(false);
-    enableGlScene3DForwardLightSelectionGuards(state);
+    enableGlScene3DForwardLightSelectionGuards(state, createLogState());
     expect(areGlScene3DForwardLightSelectionGuardsEnabled(state)).toBe(true);
   });
 });
@@ -52,39 +65,47 @@ describe('enableGlScene3DForwardLightSelectionGuards', () => {
   it('warns when excess punctual lights draw without a prepared selection', () => {
     const { state } = makeGlScene3DState();
     registerGlStandardPbrMaterial(state);
-    enableGlScene3DForwardLightSelectionGuards(state);
+    const logState = createLogState();
+    enableGlScene3DForwardLightSelectionGuards(state, logState);
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
     const sink = createMemoryLogSink(8);
-    addLogSink(sink.sink);
+    addLogSink(logState, sink.sink);
     try {
       const mockPass = { gl: state.gl, state, target: {} as GlRenderTarget } as GlRenderPass;
       renderGlScene3D(mockPass, scene, camera(), excessLights());
-      const entries = getMemoryLogSinkEntries(sink);
+      const entries = readMemoryLogEntries(sink);
       expect(entries).toHaveLength(1);
       expect(String((entries[0].data as Record<string, unknown>).message)).toContain('prepareGlScene3DForwardLights');
     } finally {
-      removeLogSink(sink.sink);
+      removeLogSink(logState, sink.sink);
     }
   });
 
   it('stays silent when the explicit per-object selection is supplied', () => {
     const { state } = makeGlScene3DState();
     registerGlStandardPbrMaterial(state);
-    enableGlScene3DForwardLightSelectionGuards(state);
+    const logState = createLogState();
+    enableGlScene3DForwardLightSelectionGuards(state, logState);
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
     const view = camera();
     const lights = excessLights();
     const selected = prepareGlScene3DForwardLights(state, prepareScene3DRender(state, scene, view, lights), lights);
     const sink = createMemoryLogSink(8);
-    addLogSink(sink.sink);
+    addLogSink(logState, sink.sink);
     try {
       const mockPass = { gl: state.gl, state, target: {} as GlRenderTarget } as GlRenderPass;
       renderGlScene3D(mockPass, scene, view, lights, selected);
-      expect(getMemoryLogSinkEntries(sink)).toHaveLength(0);
+      expect(readMemoryLogEntries(sink)).toHaveLength(0);
     } finally {
-      removeLogSink(sink.sink);
+      removeLogSink(logState, sink.sink);
     }
   });
 });
+
+function readMemoryLogEntries(sink: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
+}

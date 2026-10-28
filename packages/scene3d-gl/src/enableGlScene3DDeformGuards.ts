@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import { getMeshGeometryMorphBindPose, hasMeshGeometrySkin } from '@flighthq/meshgeometry/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
@@ -19,8 +20,8 @@ export function areGlScene3DDeformGuardsEnabled(state: GlRenderState): boolean {
 // guard only through its nullable scene-runtime slot; not calling this — the production default — costs
 // the draw nothing, since the messages and the @flighthq/log dependency live only in this
 // separately-imported module. Idempotent.
-export function enableGlScene3DDeformGuards(state: GlRenderState): void {
-  getGlScene3DRuntime(state).deformGuard = warnGlScene3DMeshDrawnUndeformed;
+export function enableGlScene3DDeformGuards(state: GlRenderState, logState: LogState | null): void {
+  getGlScene3DRuntime(state).deformGuard = (mesh): void => warnGlScene3DMeshDrawnUndeformed(logState, mesh);
 }
 
 // A morphed mesh whose base pose was never captured has never been blended: prepareScene3DMorph did not
@@ -29,9 +30,12 @@ export function enableGlScene3DDeformGuards(state: GlRenderState): void {
 // palette collapses every skinned vertex to the origin). One warning per key, so a per-frame draw loop
 // cannot spam. Keyed by neither mesh nor frame — the message names the fix, and once it is fixed it
 // never fires again.
-function warnGlScene3DMeshDrawnUndeformed(mesh: Mesh): void {
+function warnGlScene3DMeshDrawnUndeformed(logState: LogState | null, mesh: Mesh): void {
+  if (logState === null) return;
   if (mesh.morph != null && getMeshGeometryMorphBindPose(mesh.geometry) === null) {
     logOnce(
+      logState,
+      0,
       'scene-gl:morph-drawn-without-prepare',
       LogLevel.Warn,
       {
@@ -46,6 +50,8 @@ function warnGlScene3DMeshDrawnUndeformed(mesh: Mesh): void {
     const runtime = getNodeRuntime(mesh as NodeAny) as MeshRuntime;
     if (runtime.deformedLocalBounds == null) {
       logOnce(
+        logState,
+        0,
         'scene-gl:skin-drawn-without-prepare',
         LogLevel.Warn,
         {

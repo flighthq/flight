@@ -7,7 +7,7 @@ import { createVector3 } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
 import {
   addLogSink,
-  clearLogOnceKeys,
+  createLogState,
   createMemoryLogSink,
   getMemoryLogSinkEntries,
   removeLogSink,
@@ -20,16 +20,19 @@ import {
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createNode3D, prepareScene3DMorph, Node3DKind } from '@flighthq/scene3d/contract';
 import { createSkeleton3D, prepareScene3DSkinning } from '@flighthq/skeleton3d/contract';
-import type { Camera3D, GlRenderPass, GlRenderTarget, MeshMorph, Scene3DLightsLike } from '@flighthq/types/contract';
-import { beforeEach } from 'vitest';
+import type {
+  Camera3D,
+  GlRenderPass,
+  GlRenderTarget,
+  LogEntry,
+  MemoryLogSink,
+  MeshMorph,
+  Scene3DLightsLike,
+} from '@flighthq/types/contract';
 
 import { areGlScene3DDeformGuardsEnabled, enableGlScene3DDeformGuards } from './enableGlScene3DDeformGuards.ts';
 import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 import { renderGlScene3D } from './renderGlScene3D.ts';
-
-beforeEach(() => {
-  clearLogOnceKeys();
-});
 
 function makeCamera(): Camera3D {
   const camera = createCamera3D({
@@ -70,15 +73,16 @@ function skinnedMesh() {
 
 function drawWithGuard(scene: ReturnType<typeof createNode3D>): number {
   const { state } = makeGlScene3DState();
-  enableGlScene3DDeformGuards(state);
+  const logState = createLogState();
+  enableGlScene3DDeformGuards(state, logState);
   const mockPass = { gl: state.gl, state, target: {} as GlRenderTarget } as GlRenderPass;
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
+  addLogSink(logState, sink.sink);
   try {
     renderGlScene3D(mockPass, scene, makeCamera(), LIGHTS);
-    return getMemoryLogSinkEntries(sink).length;
+    return readMemoryLogEntries(sink).length;
   } finally {
-    removeLogSink(sink.sink);
+    removeLogSink(logState, sink.sink);
   }
 }
 
@@ -86,7 +90,7 @@ describe('areGlScene3DDeformGuardsEnabled', () => {
   it('reports false until guards are installed, then true', () => {
     const { state } = makeGlScene3DState();
     expect(areGlScene3DDeformGuardsEnabled(state)).toBe(false);
-    enableGlScene3DDeformGuards(state);
+    enableGlScene3DDeformGuards(state, createLogState());
     expect(areGlScene3DDeformGuardsEnabled(state)).toBe(true);
   });
 });
@@ -114,3 +118,9 @@ describe('enableGlScene3DDeformGuards', () => {
     expect(drawWithGuard(scene)).toBe(1);
   });
 });
+
+function readMemoryLogEntries(sink: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
+}

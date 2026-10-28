@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type { GlContext, GlRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -16,8 +17,9 @@ export function areGlScene3DCustomShaderGuardsEnabled(state: GlRenderState): boo
 // so a shader declaring `mat4 u_normalMatrix` raises a silent GL_INVALID_OPERATION on every draw and
 // renders nothing. The custom-shader renderer reaches this guard only through a nullable runtime slot, so
 // the production draw path references no message and no @flighthq/log dependency. Idempotent.
-export function enableGlScene3DCustomShaderGuards(state: GlRenderState): void {
-  getGlScene3DRuntime(state).customShaderGuard = warnGlCustomShaderUniformTypes;
+export function enableGlScene3DCustomShaderGuards(state: GlRenderState, logState: LogState | null): void {
+  getGlScene3DRuntime(state).customShaderGuard = (guardState, program, shaderKey): void =>
+    warnGlCustomShaderUniformTypes(logState, guardState, program, shaderKey);
 }
 
 // Maps a GL uniform-type enum to its GLSL type keyword, so a warning names the type a shader must declare
@@ -49,7 +51,13 @@ function glUniformTypeName(gl: Readonly<GlContext>, type: number): string {
 // uniforms are reported by getActiveUniform, so a declared-but-unused u_normalMatrix — which the renderer
 // skips anyway (its location resolves null) — never trips the guard. Programs are checked once (cached in
 // a WeakSet) so repeated per-frame binds do not re-introspect.
-function warnGlCustomShaderUniformTypes(state: GlRenderState, program: WebGLProgram, shaderKey: string): void {
+function warnGlCustomShaderUniformTypes(
+  logState: LogState | null,
+  state: GlRenderState,
+  program: WebGLProgram,
+  shaderKey: string,
+): void {
+  if (logState === null) return;
   if (_checkedPrograms.has(program)) return;
   _checkedPrograms.add(program);
 
@@ -68,6 +76,8 @@ function warnGlCustomShaderUniformTypes(state: GlRenderState, program: WebGLProg
     const want = expected.get(info.name);
     if (want === undefined || info.type === want) continue;
     logOnce(
+      logState,
+      0,
       `scene-gl:custom-shader-uniform-type:${shaderKey}:${info.name}`,
       LogLevel.Warn,
       {

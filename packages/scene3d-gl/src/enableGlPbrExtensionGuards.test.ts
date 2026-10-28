@@ -1,11 +1,17 @@
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  createLogState,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
 import {
   createAnisotropyPbrExtension,
   createClearcoatPbrExtension,
   createExtendedPbrMaterial,
 } from '@flighthq/materials/contract';
-import type { Camera3D, Scene3DLightBlock } from '@flighthq/types/contract';
+import type { Camera3D, LogEntry, MemoryLogSink, Scene3DLightBlock } from '@flighthq/types/contract';
 
 import { areGlPbrExtensionGuardsEnabled, enableGlPbrExtensionGuards } from './enableGlPbrExtensionGuards.ts';
 import { glExtendedPbrMeshMaterialRenderer } from './glExtendedPbrMeshMaterialRenderer.ts';
@@ -32,14 +38,15 @@ function createCamera(): Camera3D {
 
 function getGuardMessages(material: ReturnType<typeof createExtendedPbrMaterial>): string[] {
   const { state } = makeGlScene3DState();
-  enableGlPbrExtensionGuards(state);
+  const logState = createLogState();
+  enableGlPbrExtensionGuards(state, logState);
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
+  addLogSink(logState, sink.sink);
   try {
     glExtendedPbrMeshMaterialRenderer.bind(state, material, NO_LIGHTS, createCamera());
-    return getMemoryLogSinkEntries(sink).map((entry) => String((entry.data as Record<string, unknown>).message));
+    return readMemoryLogEntries(sink).map((entry) => String((entry.data as Record<string, unknown>).message));
   } finally {
-    removeLogSink(sink.sink);
+    removeLogSink(logState, sink.sink);
   }
 }
 
@@ -47,7 +54,7 @@ describe('areGlPbrExtensionGuardsEnabled', () => {
   it('reports false until guards are installed, then true', () => {
     const { state } = makeGlScene3DState();
     expect(areGlPbrExtensionGuardsEnabled(state)).toBe(false);
-    enableGlPbrExtensionGuards(state);
+    enableGlPbrExtensionGuards(state, createLogState());
     expect(areGlPbrExtensionGuardsEnabled(state)).toBe(true);
   });
 });
@@ -62,13 +69,16 @@ describe('enableGlPbrExtensionGuards', () => {
   it('warns when the material repeats an extension kind', () => {
     const extension = createAnisotropyPbrExtension();
     const messages = getGuardMessages(createExtendedPbrMaterial({ extensions: [extension, extension] }));
-    expect(messages).toHaveLength(1);
+    // Each test owns a fresh LogState, so the unregistered kind's own warning is reported here too.
+    expect(messages).toHaveLength(2);
     expect(messages.some((message) => message.includes('at most once'))).toBe(true);
+    expect(messages.some((message) => message.includes('registerGlPbrExtension'))).toBe(true);
   });
 
   it('stays silent when every extension has one supported registration', () => {
     const { state } = makeGlScene3DState();
-    enableGlPbrExtensionGuards(state);
+    const logState = createLogState();
+    enableGlPbrExtensionGuards(state, logState);
     registerGlPbrExtension(state, createClearcoatPbrExtension().kind, {
       bind(): void {},
       createShaderContribution: () => ({
@@ -84,7 +94,7 @@ describe('enableGlPbrExtensionGuards', () => {
       isSupported: () => true,
     });
     const sink = createMemoryLogSink(8);
-    addLogSink(sink.sink);
+    addLogSink(logState, sink.sink);
     try {
       glExtendedPbrMeshMaterialRenderer.bind(
         state,
@@ -92,9 +102,15 @@ describe('enableGlPbrExtensionGuards', () => {
         NO_LIGHTS,
         createCamera(),
       );
-      expect(getMemoryLogSinkEntries(sink)).toHaveLength(0);
+      expect(readMemoryLogEntries(sink)).toHaveLength(0);
     } finally {
-      removeLogSink(sink.sink);
+      removeLogSink(logState, sink.sink);
     }
   });
 });
+
+function readMemoryLogEntries(sink: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
+}

@@ -1,7 +1,13 @@
 import { createCamera3D, createPerspectiveProjection } from '@flighthq/camera/contract';
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  createLogState,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
 import { createCustomShaderMaterial } from '@flighthq/materials/contract';
-import type { Camera3D, Scene3DLightBlock } from '@flighthq/types/contract';
+import type { Camera3D, LogEntry, MemoryLogSink, Scene3DLightBlock } from '@flighthq/types/contract';
 
 import {
   areGlScene3DCustomShaderGuardsEnabled,
@@ -42,16 +48,17 @@ const SOURCE = { fragment: 'frag', vertex: 'vert' };
 function bindWithGuard(shaderKey: string, activeUniforms: readonly { name: string; type: number }[]): string[] {
   const { state } = makeGlScene3DState(makeFakeGl2({ activeUniforms }));
   registerGlCustomMaterialShader(state, shaderKey, SOURCE);
-  enableGlScene3DCustomShaderGuards(state);
+  const logState = createLogState();
+  enableGlScene3DCustomShaderGuards(state, logState);
 
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
+  addLogSink(logState, sink.sink);
   try {
     glCustomShaderMeshMaterialRenderer.bind(state, createCustomShaderMaterial({ shaderKey }), NO_LIGHTS, makeCamera());
     glCustomShaderMeshMaterialRenderer.bind(state, createCustomShaderMaterial({ shaderKey }), NO_LIGHTS, makeCamera());
-    return getMemoryLogSinkEntries(sink).map((e) => String((e.data as Record<string, unknown>).message));
+    return readMemoryLogEntries(sink).map((e) => String((e.data as Record<string, unknown>).message));
   } finally {
-    removeLogSink(sink.sink);
+    removeLogSink(logState, sink.sink);
   }
 }
 
@@ -59,7 +66,7 @@ describe('areGlScene3DCustomShaderGuardsEnabled', () => {
   it('reports false until guards are installed, then true', () => {
     const { state } = makeGlScene3DState();
     expect(areGlScene3DCustomShaderGuardsEnabled(state)).toBe(false);
-    enableGlScene3DCustomShaderGuards(state);
+    enableGlScene3DCustomShaderGuards(state, createLogState());
     expect(areGlScene3DCustomShaderGuardsEnabled(state)).toBe(true);
   });
 });
@@ -87,3 +94,9 @@ describe('enableGlScene3DCustomShaderGuards', () => {
     expect(messages).toHaveLength(0);
   });
 });
+
+function readMemoryLogEntries(sink: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
+}

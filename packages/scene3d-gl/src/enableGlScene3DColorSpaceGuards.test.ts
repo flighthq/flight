@@ -5,12 +5,25 @@ import {
 } from '@flighthq/camera/contract';
 import { createVector3 } from '@flighthq/geometry/contract';
 import { createAmbientLight, createDirectionalLight } from '@flighthq/lighting/contract';
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  createLogState,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
 import { createStandardPbrMaterial } from '@flighthq/materials/contract';
 import { createBoxMeshGeometry } from '@flighthq/meshgeometry/contract';
 import { addNodeChild } from '@flighthq/node/contract';
 import { createMesh, createNode3D, Node3DKind } from '@flighthq/scene3d/contract';
-import type { Camera3D, GlRenderPass, GlRenderTarget, Scene3DLightsLike } from '@flighthq/types/contract';
+import type {
+  Camera3D,
+  GlRenderPass,
+  GlRenderTarget,
+  LogEntry,
+  MemoryLogSink,
+  Scene3DLightsLike,
+} from '@flighthq/types/contract';
 
 import {
   areGlScene3DColorSpaceGuardsEnabled,
@@ -39,7 +52,7 @@ describe('areGlScene3DColorSpaceGuardsEnabled', () => {
   it('reports false until guards are installed, then true', () => {
     const { state } = makeGlScene3DState();
     expect(areGlScene3DColorSpaceGuardsEnabled(state)).toBe(false);
-    enableGlScene3DColorSpaceGuards(state);
+    enableGlScene3DColorSpaceGuards(state, createLogState());
     expect(areGlScene3DColorSpaceGuardsEnabled(state)).toBe(true);
   });
 });
@@ -51,18 +64,26 @@ describe('enableGlScene3DColorSpaceGuards', () => {
     const scene = createNode3D(Node3DKind);
     addNodeChild(scene, createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]));
 
+    const logState = createLogState();
+
     const sink = createMemoryLogSink(8);
-    addLogSink(sink.sink);
+    addLogSink(logState, sink.sink);
     try {
-      enableGlScene3DColorSpaceGuards(state);
+      enableGlScene3DColorSpaceGuards(state, logState);
       // No beginGlRenderPass: currentRenderTarget is null, so the scene draws straight to the canvas.
       const mockPass = { gl: state.gl, state, target: {} as GlRenderTarget } as GlRenderPass;
       renderGlScene3D(mockPass, scene, makeCamera(), LIGHTS);
-      const entries = getMemoryLogSinkEntries(sink);
+      const entries = readMemoryLogEntries(sink);
       expect(entries.length).toBe(1);
       expect(String((entries[0].data as Record<string, unknown>).message)).toContain('renderGlScene3D');
     } finally {
-      removeLogSink(sink.sink);
+      removeLogSink(logState, sink.sink);
     }
   });
 });
+
+function readMemoryLogEntries(sink: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
+}

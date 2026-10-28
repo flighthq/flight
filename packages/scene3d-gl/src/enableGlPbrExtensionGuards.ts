@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type { GlPbrExtensionIssue, GlRenderState, PbrExtension } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -9,9 +10,9 @@ export function areGlPbrExtensionGuardsEnabled(state: GlRenderState): boolean {
   return getGlScene3DRuntime(state).pbrExtensionGuard !== null;
 }
 
-export function enableGlPbrExtensionGuards(state: GlRenderState): void {
+export function enableGlPbrExtensionGuards(state: GlRenderState, logState: LogState | null): void {
   getGlScene3DRuntime(state).pbrExtensionGuard = (extensions): void => {
-    warnGlPbrExtensionIssues(state, extensions);
+    warnGlPbrExtensionIssues(logState, state, extensions);
   };
 }
 
@@ -30,11 +31,18 @@ function getGlPbrExtensionIssueMessage(issue: Readonly<GlPbrExtensionIssue>): st
   }
 }
 
-function warnGlPbrExtensionIssues(state: GlRenderState, extensions: readonly PbrExtension[]): void {
+function warnGlPbrExtensionIssues(
+  logState: LogState | null,
+  state: GlRenderState,
+  extensions: readonly PbrExtension[],
+): void {
+  if (logState === null) return;
   const issues = explainGlPbrExtensions(state, extensions);
   for (let i = 0; i < issues.length; i++) {
     const issue = issues[i];
     logOnce(
+      logState,
+      0,
       `scene-gl:pbr-extension:${issue.code}:${issue.kind}`,
       LogLevel.Warn,
       { code: issue.code, kind: issue.kind, message: getGlPbrExtensionIssueMessage(issue) },

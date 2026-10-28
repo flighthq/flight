@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type { GlRenderState, Scene3DLightsLike } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -12,12 +13,19 @@ export function areGlScene3DForwardLightSelectionGuardsEnabled(state: GlRenderSt
 // Installs the shakeable forward-light selection guard on `state`. renderGlScene3D reaches this guard
 // only when point or spot input exceeds MAX_FORWARD_LIGHTS and no prepared per-object selection list
 // was supplied. The message and @flighthq/log dependency remain outside the core draw module.
-export function enableGlScene3DForwardLightSelectionGuards(state: GlRenderState): void {
-  getGlScene3DRuntime(state).forwardLightSelectionGuard = warnGlScene3DForwardLightSelectionRequired;
+export function enableGlScene3DForwardLightSelectionGuards(state: GlRenderState, logState: LogState | null): void {
+  getGlScene3DRuntime(state).forwardLightSelectionGuard = (lights): void =>
+    warnGlScene3DForwardLightSelectionRequired(logState, lights);
 }
 
-function warnGlScene3DForwardLightSelectionRequired(lights: Readonly<Scene3DLightsLike>): void {
+function warnGlScene3DForwardLightSelectionRequired(
+  logState: LogState | null,
+  lights: Readonly<Scene3DLightsLike>,
+): void {
+  if (logState === null) return;
   logOnce(
+    logState,
+    0,
     'scene-gl:forward-light-selection-required',
     LogLevel.Warn,
     {
