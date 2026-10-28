@@ -518,6 +518,40 @@ pub fn scaled(r#override: Option<f32>) -> f32 {
     }
 
     #[test]
+    fn preserves_numeric_literal_spelling_without_rust_suffixes() {
+        let source = r#"
+pub fn numeric_literals() -> (u32, u32, f64, f64) {
+    let hex: u32 = 0xAB_CD_u32;
+    let grouped: u32 = 1_000_u32;
+    let decimal: f64 = 1.250_0_f64;
+    let scientific: f64 = 5e-13_f64;
+    return (hex, grouped, decimal, scientific);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("const hex: number = 0xAB_CD;"));
+        assert!(output.contains("const grouped: number = 1_000;"));
+        assert!(output.contains("const decimal: number = 1.250_0;"));
+        assert!(output.contains("const scientific: number = 5e-13;"));
+    }
+
+    #[test]
+    fn keeps_string_literal_to_string_bare_without_changing_numeric_conversion() {
+        let source = r#"
+pub fn string_values(value: u32) -> (String, String) {
+    return ("ready".to_string(), value.to_string());
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("return [\"ready\", String(value)];"));
+        assert!(!output.contains("String(\"ready\")"));
+    }
+
+    #[test]
     fn preserves_record_clone_and_shared_readonly_collection_semantics() {
         let source = r#"
 use std::sync::Arc;
@@ -589,6 +623,9 @@ pub fn local_high_byte() -> u32 {
         assert!(output.contains("return value === \"\";"));
         assert!(output.contains("return (0xffffffff) >>> 0;"));
         assert!(output.contains("return (color >>> 24) >>> 0;"));
+        assert!(output.contains("const color: number = 0xf00000ff;"));
+        assert!(output.contains("result.name = \"copy\";"));
+        assert!(!output.contains("String(\"copy\")"));
     }
 
     #[test]
@@ -663,10 +700,10 @@ pub fn is_rgba(value: &str) -> bool {
             output.contains("return ((ri << 24) | (gi << 16) | (bi << 8) | ai) >>> 0;"),
             "{output}"
         );
-        assert!(output.contains("return (value & 255) === 0;"));
+        assert!(output.contains("return (value & 0xff) === 0;"));
         assert!(output.contains("return (((value) >>> 0) * 3) >>> 0;"));
         assert!(
-            output.contains("return `#${(color & 16777215).toString(16).padStart(6, \"0\")}`;")
+            output.contains("return `#${(color & 0xffffff).toString(16).padStart(6, \"0\")}`;")
         );
         assert!(output.contains("return value.startsWith(\"rgba(\");"));
     }
@@ -937,6 +974,38 @@ mod register_default_hit_tests {
         let output = compile_vitest(source, "@flighthq/interaction/contract").unwrap();
 
         assert!(output.contains("describe(\"registerDefaultHitTests\""));
+    }
+
+    #[test]
+    fn reconstructs_test_name_decimals_only_with_matching_body_literals() {
+        let source = r#"
+use flight_math::*;
+
+mod sample {
+    use super::*;
+
+    #[test]
+    fn returns_0_5_at_the_midpoint() {
+        assert_eq!(sample(0.5), 0.5);
+    }
+
+    #[test]
+    fn stays_in_the_0_1_range() {
+        assert!(sample(0.0) <= 1.0);
+    }
+
+    #[test]
+    fn returns_axis_0_0_1() {
+        assert_eq!(axis(), [0.0, 0.0, 1.0]);
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/math/contract").unwrap();
+
+        assert!(output.contains("it(\"returns 0.5 at the midpoint\""));
+        assert!(output.contains("it(\"stays in the 0 1 range\""));
+        assert!(output.contains("it(\"returns axis 0 0 1\""));
     }
 
     #[test]

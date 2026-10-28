@@ -9,7 +9,8 @@ use syn::{BinOp, Expr, Fields, FnArg, ItemFn, Pat, ReturnType, Stmt, Token};
 use crate::model::{TestCase, TestProgram, TestSuite};
 use crate::typescript::{
     emit_expression, emit_for_header, emit_format_template, emit_local, emit_local_with_shadow,
-    emit_parameter, emit_type, function_expression_context, snake_to_lower_camel, write_indent,
+    emit_parameter, emit_type, function_expression_context, numeric_literal_spelling,
+    snake_to_lower_camel, write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -679,7 +680,7 @@ fn emit_test(
             function.sig.ident
         )));
     }
-    let name = function.sig.ident.to_string().replace('_', " ");
+    let name = test_display_name(function);
     writeln!(out, "  it({name:?}, () => {{").expect("writing to a String cannot fail");
     if test.should_panic {
         out.push_str("    expect(() => {\n");
@@ -690,6 +691,58 @@ fn emit_test(
     }
     out.push_str("  });\n");
     return Ok(());
+}
+
+fn test_display_name(function: &ItemFn) -> String {
+    struct DecimalLiteralCollector {
+        literals: HashSet<(String, String)>,
+    }
+
+    impl<'ast> Visit<'ast> for DecimalLiteralCollector {
+        fn visit_lit_float(&mut self, literal: &'ast syn::LitFloat) {
+            let spelling = numeric_literal_spelling(&literal.to_string(), literal.suffix());
+            let Some((whole, fraction)) = spelling.split_once('.') else {
+                return;
+            };
+            let fractional_digits = fraction.replace('_', "");
+            if !whole
+                .chars()
+                .all(|character| character.is_ascii_digit() || character == '_')
+                || fractional_digits.is_empty()
+                || !fractional_digits
+                    .chars()
+                    .all(|character| character.is_ascii_digit())
+                || !fractional_digits.chars().any(|character| character != '0')
+            {
+                return;
+            }
+            self.literals.insert((
+                spelling.replace('.', "_"),
+                format!("{}.{}", whole.replace('_', ""), fractional_digits),
+            ));
+        }
+
+        fn visit_macro(&mut self, rust_macro: &'ast syn::Macro) {
+            if let Ok(arguments) = parse_macro_arguments(rust_macro) {
+                for argument in &arguments {
+                    self.visit_expr(argument);
+                }
+            }
+        }
+    }
+
+    let mut collector = DecimalLiteralCollector {
+        literals: HashSet::new(),
+    };
+    collector.visit_block(&function.block);
+    let mut literals = collector.literals.into_iter().collect::<Vec<_>>();
+    literals.sort_by_key(|(encoded, _)| std::cmp::Reverse(encoded.len()));
+
+    let mut name = format!("_{}_", function.sig.ident);
+    for (encoded, display) in literals {
+        name = name.replace(&format!("_{encoded}_"), &format!("_{display}_"));
+    }
+    return name.trim_matches('_').replace('_', " ");
 }
 
 pub(crate) fn emit_test_program(

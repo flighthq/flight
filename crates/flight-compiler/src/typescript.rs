@@ -1589,11 +1589,22 @@ fn emit_literal(literal: &Lit) -> Result<String, CompileError> {
         Lit::Byte(value) => Ok(value.value().to_string()),
         Lit::ByteStr(value) => Ok(format!("new Uint8Array({:?})", value.value())),
         Lit::Char(value) => Ok(format!("{:?}", value.value().to_string())),
-        Lit::Float(value) => Ok(value.base10_digits().to_string()),
-        Lit::Int(value) => Ok(value.base10_digits().to_string()),
+        Lit::Float(value) => Ok(numeric_literal_spelling(&value.to_string(), value.suffix())),
+        Lit::Int(value) => Ok(numeric_literal_spelling(&value.to_string(), value.suffix())),
         Lit::Str(value) => Ok(format!("{:?}", value.value())),
         _ => Err(compile_error("unsupported Rust literal")),
     };
+}
+
+pub(crate) fn numeric_literal_spelling(spelling: &str, suffix: &str) -> String {
+    if suffix.is_empty() {
+        return spelling.to_string();
+    }
+    return spelling
+        .strip_suffix(suffix)
+        .unwrap_or(spelling)
+        .trim_end_matches('_')
+        .to_string();
 }
 
 pub(crate) fn emit_local(
@@ -2077,6 +2088,12 @@ fn emit_method_call(
             arguments[0], arguments[1], arguments[1], arguments[0]
         )),
         "tan" if arguments.is_empty() => Ok(format!("Math.tan({receiver})")),
+        "to_string"
+            if arguments.is_empty()
+                && matches!(call.receiver.as_ref(), Expr::Lit(literal) if matches!(&literal.lit, Lit::Str(_))) =>
+        {
+            Ok(receiver)
+        }
         "to_string" if arguments.is_empty() => Ok(format!("String({receiver})")),
         "trunc" if arguments.is_empty() => Ok(format!("Math.trunc({receiver})")),
         "to_vec" if arguments.is_empty() => Ok(format!("[...{receiver}]")),
