@@ -40,7 +40,10 @@ pub(crate) fn compile_error(message: impl Into<String>) -> CompileError {
 ///
 /// Rust `impl` blocks are deliberately ignored. Entity structs receive a `Raw`
 /// suffix so the unsuffixed target-language name remains available to its class
-/// layer. The compiler never synthesizes structural `Like` types.
+/// layer. The compiler never synthesizes structural `Like` types. Sources whose
+/// `Option` values represent explicit API data can use
+/// `//! flight-compiler: nullable-options` to emit `T | null`; other sources keep
+/// optional properties and `undefined` absence.
 // flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
 pub fn compile_typescript(
     source: &str,

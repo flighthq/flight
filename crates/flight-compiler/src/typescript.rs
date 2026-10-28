@@ -27,6 +27,7 @@ const FIXED_BUFFER_LOCAL_MARKER: &str = "@fixed-buffer-local:";
 const FROZEN_OBJECT_MARKER: &str = "@frozen-object:";
 const IDENTITY_ALIAS_MARKER: &str = "@identity-alias:";
 const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
+const NULLABLE_OPTIONS_MARKER: &str = "@nullable-options";
 const RECORD_CLONE_ARGUMENT_MARKER: &str = "@record-clone-argument:";
 const RECORD_CLONE_LOCAL_MARKER: &str = "@record-clone-local:";
 const RECORD_CLONE_TYPE_MARKER: &str = "@record-clone-type:";
@@ -658,13 +659,16 @@ fn generation_context_with_types(
                     continue;
                 };
                 let field_name = snake_to_lower_camel(&field_name.to_string());
-                let Some(value) = rust_default_expression(&field.ty) else {
+                let Some(mut value) = rust_default_expression(&field.ty) else {
                     context.insert(format!(
                         "{ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER}{typescript_type}:{field_name}:{}",
                         rust_type_description(&field.ty)
                     ));
                     continue;
                 };
+                if program.nullable_options && option_inner_type(&field.ty).is_some() {
+                    value = "null".to_string();
+                }
                 context.insert(format!(
                     "{ENTITY_DEFAULT_FIELD_MARKER}{typescript_type}:{field_name}:{value}"
                 ));
@@ -685,7 +689,9 @@ fn generation_context_with_types(
                 context.insert(format!("{STRING_RETURN_MARKER}{function_name}"));
             }
             for (argument_index, argument) in function.sig.inputs.iter().enumerate() {
-                if argument_is_nullable_guard(function, argument) {
+                if argument_is_nullable_guard(function, argument)
+                    || (program.nullable_options && argument_is_option(argument))
+                {
                     context.insert(format!(
                         "{NULLABLE_CALL_MARKER}{function_name}:{argument_index}"
                     ));
@@ -1664,7 +1670,11 @@ pub(crate) fn emit_expression(
                 };
             }
             if path.path.is_ident("None") {
-                return Ok("undefined".to_string());
+                return Ok(if entities.contains(NULLABLE_OPTIONS_MARKER) {
+                    "null".to_string()
+                } else {
+                    "undefined".to_string()
+                });
             }
             if path.qself.is_none()
                 && path.path.leading_colon.is_none()
@@ -1963,12 +1973,15 @@ fn emit_function(
     };
     let name = snake_to_lower_camel(&function.sig.ident.to_string());
     let type_parameters = emit_type_parameters(&function.sig.generics);
+    let nullable_options = entities.contains(NULLABLE_OPTIONS_MARKER);
     let trailing_optional_start = function
         .sig
         .inputs
         .iter()
         .rposition(|argument| {
-            !argument_is_option(argument) || argument_is_nullable_guard(function, argument)
+            !argument_is_option(argument)
+                || argument_is_nullable_guard(function, argument)
+                || nullable_options
         })
         .map_or(0, |index| index + 1);
     let parameters = function
@@ -1981,8 +1994,11 @@ fn emit_function(
                 argument,
                 entities,
                 aliases,
-                index >= trailing_optional_start && !argument_is_nullable_guard(function, argument),
-                argument_is_nullable_guard(function, argument),
+                index >= trailing_optional_start
+                    && !argument_is_nullable_guard(function, argument)
+                    && !nullable_options,
+                argument_is_nullable_guard(function, argument)
+                    || (nullable_options && argument_is_option(argument)),
             )
         })
         .collect::<Result<Vec<_>, _>>()?;
@@ -1998,7 +2014,8 @@ fn emit_function(
     .expect("writing to a String cannot fail");
     let mut function_context = entities.clone();
     for argument in &function.sig.inputs {
-        if argument_is_nullable_guard(function, argument)
+        if (argument_is_nullable_guard(function, argument)
+            || (nullable_options && argument_is_option(argument)))
             && let FnArg::Typed(argument) = argument
             && let Pat::Ident(pattern) = argument.pat.as_ref()
         {
@@ -3342,10 +3359,17 @@ fn emit_method_call(
             "Array.from({{ length: {receiver}.length }}, (_, index) => {receiver}.charCodeAt(index))"
         )),
         "exp" if arguments.is_empty() => Ok(format!("Math.exp({receiver})")),
-        "expect" if arguments.len() == 1 => Ok(format!(
-            "(() => {{ const value = {receiver}; if (value === undefined) throw new Error({}); return value; }})()",
-            arguments[0]
-        )),
+        "expect" if arguments.len() == 1 => {
+            let absent = if entities.contains(NULLABLE_OPTIONS_MARKER) {
+                "null"
+            } else {
+                "undefined"
+            };
+            Ok(format!(
+                "(() => {{ const value = {receiver}; if (value === {absent}) throw new Error({}); return value; }})()",
+                arguments[0]
+            ))
+        }
         "find" if arguments.len() == 1 => Ok(format!("{receiver}.find({})", arguments[0])),
         "floor" if arguments.is_empty() => Ok(format!("Math.floor({receiver})")),
         "filter" if arguments.len() == 1 => Ok(format!("{receiver}.filter({})", arguments[0])),
@@ -3355,8 +3379,22 @@ fn emit_method_call(
         )),
         "is_nan" if arguments.is_empty() => Ok(format!("Number.isNaN({receiver})")),
         "is_finite" if arguments.is_empty() => Ok(format!("Number.isFinite({receiver})")),
-        "is_none" if arguments.is_empty() => Ok(format!("{receiver} === undefined")),
-        "is_some" if arguments.is_empty() => Ok(format!("{receiver} !== undefined")),
+        "is_none" if arguments.is_empty() => Ok(format!(
+            "{receiver} === {}",
+            if entities.contains(NULLABLE_OPTIONS_MARKER) {
+                "null"
+            } else {
+                "undefined"
+            }
+        )),
+        "is_some" if arguments.is_empty() => Ok(format!(
+            "{receiver} !== {}",
+            if entities.contains(NULLABLE_OPTIONS_MARKER) {
+                "null"
+            } else {
+                "undefined"
+            }
+        )),
         "is_empty" if arguments.is_empty() => Ok(format!("{receiver}.length === 0")),
         "into" if arguments.is_empty() => Ok(receiver),
         "into_iter" if arguments.is_empty() => Ok(receiver),
@@ -3464,7 +3502,9 @@ fn emit_option_binding(
             "portable `if let Some` binding needs an identifier",
         ));
     };
-    let absent = if let Expr::Path(path) = binding.expr.as_ref()
+    let absent = if entities.contains(NULLABLE_OPTIONS_MARKER) {
+        "null"
+    } else if let Expr::Path(path) = binding.expr.as_ref()
         && path.qself.is_none()
         && path.path.segments.len() == 1
         && let Some(segment) = path.path.segments.first()
@@ -3661,7 +3701,12 @@ fn emit_type_with_aliases(
         };
         let inner = emit_type_with_aliases(inner, entities, aliases, nullable_types)?;
         return Ok(match name.as_str() {
-            "Option" if nullable_types.contains(&inner) => nullable_type(inner),
+            "Option"
+                if entities.contains(NULLABLE_OPTIONS_MARKER)
+                    || nullable_types.contains(&inner) =>
+            {
+                nullable_type(inner)
+            }
             "Option" => format!("{inner} | undefined"),
             "Vec" => array_type(inner),
             "Mutex" => format!("{{ value: {inner} }}"),
@@ -3815,20 +3860,19 @@ pub(crate) fn emit_program(
         identity_context.insert(identity_alias_marker(name, &alias.tag));
     }
     let expression_context = generation_context_with_types(&programs, &identity_context)?;
+    let mut source_context = expression_context.clone();
+    if program.nullable_options {
+        source_context.insert(NULLABLE_OPTIONS_MARKER.to_string());
+    }
     let nullable_types = nullable_guard_types(&programs, &aliases, &expression_context)?;
     let nullable_static_names = program
         .statics
         .iter()
         .filter_map(|rust_static| {
-            type_contains_nullable(
-                &rust_static.ty,
-                &expression_context,
-                &aliases,
-                &nullable_types,
-            )
-            .ok()
-            .filter(|contains| *contains)
-            .map(|_| rust_static.ident.to_string())
+            type_contains_nullable(&rust_static.ty, &source_context, &aliases, &nullable_types)
+                .ok()
+                .filter(|contains| *contains)
+                .map(|_| rust_static.ident.to_string())
         })
         .collect::<HashSet<_>>();
     let mut out = String::new();
@@ -3892,7 +3936,7 @@ pub(crate) fn emit_program(
             rust_enum,
             program.string_unions.contains(&rust_enum.ident.to_string()),
             program.data_unions.contains(&rust_enum.ident.to_string()),
-            &expression_context,
+            &source_context,
         )?;
         out.push('\n');
     }
@@ -3900,7 +3944,7 @@ pub(crate) fn emit_program(
         emit_type_alias(
             &mut out,
             type_alias,
-            &expression_context,
+            &source_context,
             program
                 .callable_parameters
                 .get(&type_alias.ident.to_string())
@@ -3912,7 +3956,7 @@ pub(crate) fn emit_program(
         emit_struct(
             &mut out,
             structure,
-            &expression_context,
+            &source_context,
             &aliases,
             program
                 .readonly_structs
@@ -3924,7 +3968,7 @@ pub(crate) fn emit_program(
         emit_constant(
             &mut out,
             constant,
-            &expression_context,
+            &source_context,
             program
                 .frozen_objects
                 .get(&constant.ident.to_string())
@@ -3936,7 +3980,7 @@ pub(crate) fn emit_program(
         emit_static(
             &mut out,
             rust_static,
-            &expression_context,
+            &source_context,
             &aliases,
             &nullable_types,
         )?;
@@ -3946,7 +3990,7 @@ pub(crate) fn emit_program(
         emit_function(
             &mut out,
             function,
-            &expression_context,
+            &source_context,
             &aliases,
             &nullable_static_names,
         )?;
@@ -4234,7 +4278,9 @@ fn emit_struct(
         };
         let name = snake_to_lower_camel(&field_name.to_string());
         let prefix = if readonly { "readonly " } else { "" };
-        let (optional, rust_type) = if let Some(inner) = option_inner_type(&field.ty) {
+        let (optional, rust_type) = if entities.contains(NULLABLE_OPTIONS_MARKER) {
+            ("", &field.ty)
+        } else if let Some(inner) = option_inner_type(&field.ty) {
             ("?", inner)
         } else {
             ("", &field.ty)
@@ -4300,7 +4346,9 @@ pub(crate) fn emit_type(
                 "UnknownValue" => Ok("unknown".to_string()),
                 "Option" => {
                     let inner = emit_single_generic_type(segment, entities)?;
-                    if inner.contains("=>") {
+                    if entities.contains(NULLABLE_OPTIONS_MARKER) {
+                        Ok(nullable_type(inner))
+                    } else if inner.contains("=>") {
                         Ok(format!("({inner}) | undefined"))
                     } else {
                         Ok(format!("{inner} | undefined"))

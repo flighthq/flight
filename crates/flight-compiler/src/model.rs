@@ -15,6 +15,7 @@ pub(crate) struct Program {
     pub(crate) enums: Vec<ItemEnum>,
     pub(crate) frozen_objects: BTreeMap<String, String>,
     pub(crate) functions: Vec<ItemFn>,
+    pub(crate) nullable_options: bool,
     pub(crate) standard_constants: HashSet<String>,
     pub(crate) statics: Vec<ItemStatic>,
     pub(crate) structs: Vec<ItemStruct>,
@@ -120,6 +121,7 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
             | "data-union"
             | "frozen-object"
             | "identity-alias"
+            | "nullable-options"
             | "readonly-fields"
             | "root"
             | "string-union" => {}
@@ -176,6 +178,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let data_unions = parse_data_unions(&file.attrs)?;
     let frozen_objects = parse_frozen_objects(&file.attrs)?;
     let identity_alias_directives = parse_identity_aliases(&file.attrs)?;
+    let nullable_options = parse_flag_directive(&file.attrs, "nullable-options")?;
     let mut constants = Vec::new();
     let mut entities = HashSet::new();
     let mut enums = Vec::new();
@@ -253,6 +256,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         enums,
         frozen_objects,
         functions,
+        nullable_options,
         standard_constants,
         statics,
         structs,
@@ -260,6 +264,31 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         string_unions,
         type_aliases,
     });
+}
+
+fn parse_flag_directive(attributes: &[Attribute], expected: &str) -> Result<bool, CompileError> {
+    let mut found = false;
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some(expected) {
+            continue;
+        }
+        if fields.next().is_some() {
+            return Err(compile_error(format!(
+                "`flight-compiler: {expected}` does not accept arguments"
+            )));
+        }
+        if found {
+            return Err(compile_error(format!(
+                "duplicate `flight-compiler: {expected}` directive"
+            )));
+        }
+        found = true;
+    }
+    return Ok(found);
 }
 
 fn parse_frozen_objects(

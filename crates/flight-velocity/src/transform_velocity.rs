@@ -1,4 +1,5 @@
 //! flight-compiler: target-native
+//! flight-compiler: nullable-options
 //! Target-native until the TS `contributeTransformVelocity` gains the `revisions` argument with
 //! Node's migration: the Rust node API takes caller-owned `NodeRevisionState` (D5), TS does not yet.
 

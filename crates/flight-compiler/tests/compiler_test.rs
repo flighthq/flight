@@ -55,6 +55,13 @@ mod source_modes {
             .unwrap(),
             SourceMode::TargetNative
         );
+        assert_eq!(
+            source_mode(
+                "//! flight-compiler: nullable-options\npub fn nullable(value: Option<i32>) {}\n"
+            )
+            .unwrap(),
+            SourceMode::Generate
+        );
     }
 
     #[test]
@@ -180,6 +187,105 @@ pub fn equals_vector2(a: Option<&Vector2>, b: Option<&Vector2>) -> bool {
         assert!(output.contains(
             "export function equalsVector2(a?: Readonly<Vector2Raw>, b?: Readonly<Vector2Raw>): boolean"
         ));
+    }
+
+    #[test]
+    fn maps_opted_in_options_to_explicit_nullable_values() {
+        let source = r#"
+//! flight-compiler: nullable-options
+
+pub struct Sample {
+    pub previous: Option<Matrix>,
+}
+
+pub fn create_sample() -> Sample {
+    return Sample { previous: None };
+}
+
+pub fn has_previous(sample: &Sample) -> bool {
+    return sample.previous.is_some();
+}
+
+pub fn keep_sample(sample: Option<&Sample>) -> Option<&Sample> {
+    if let Some(value) = sample {
+        return Some(value);
+    }
+    return None;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("previous: Matrix | null;"));
+        assert!(!output.contains("previous?: Matrix;"));
+        assert!(output.contains("return { previous: null };"));
+        assert!(output.contains("sample.previous !== null"));
+        assert!(output.contains(
+            "export function keepSample(sample: Readonly<Sample> | null): Readonly<Sample> | null"
+        ));
+        assert!(output.contains("if (sample !== null)"));
+        assert!(output.contains("return null;"));
+    }
+
+    #[test]
+    fn rejects_malformed_nullable_option_directives() {
+        for (source, expected) in [
+            (
+                "//! flight-compiler: nullable-options extra\n",
+                "`flight-compiler: nullable-options` does not accept arguments",
+            ),
+            (
+                "//! flight-compiler: nullable-options\n//! flight-compiler: nullable-options\n",
+                "duplicate `flight-compiler: nullable-options` directive",
+            ),
+        ] {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected);
+        }
+    }
+
+    #[test]
+    fn keeps_undefined_options_local_to_sources_without_nullable_opt_in() {
+        let aliases = r#"
+//! flight-compiler: nullable-options
+
+pub fn accept_value(value: Option<i32>) {}
+"#;
+        let source = r#"
+pub struct Settings {
+    pub value: Option<i32>,
+}
+
+pub static DEFAULT_VALUE: Option<i32> = None;
+
+pub fn call_nullable_contract() {
+    accept_value(None);
+}
+"#;
+
+        let output = compile_typescript_with_alias_sources(source, None, &[aliases]).unwrap();
+
+        assert!(output.contains("value?: number;"));
+        assert!(output.contains("DEFAULT_VALUE: number | undefined = undefined;"));
+        assert!(output.contains("acceptValue(null);"));
+        assert!(!output.contains("value: number | null;"));
+    }
+
+    #[test]
+    fn lowers_real_velocity_sources_with_nullable_option_semantics() {
+        let sample_source = include_str!("../../flight-velocity/src/velocity_sample.rs");
+        let sample_output = compile_typescript(sample_source, None).unwrap();
+        assert!(sample_output.contains("previousWorldTransform: Matrix | null;"));
+        assert!(sample_output.contains("sample: Readonly<VelocitySample> | null, frameId: number"));
+        assert!(sample_output.contains("if (sample !== null)"));
+        assert!(sample_output.contains("previousWorldTransform: null"));
+
+        let transform_source = include_str!("../../flight-velocity/src/transform_velocity.rs")
+            .replacen("//! flight-compiler: target-native\n", "", 1);
+        let transform_output = compile_typescript(&transform_source, None).unwrap();
+        assert!(transform_output.contains("sample.previousWorldTransform !== null"));
+        assert!(transform_output.contains("sample.previousWorldTransform === null"));
+        assert!(transform_output.contains("getNodeChildAt(node, (i) | 0) !== null"));
     }
 
     #[test]

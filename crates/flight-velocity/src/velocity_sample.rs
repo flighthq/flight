@@ -1,3 +1,5 @@
+//! flight-compiler: nullable-options
+
 use crate::Velocity2D;
 use crate::VelocityExplanation;
 use crate::VelocityReason;
