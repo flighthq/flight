@@ -172,12 +172,48 @@ pub fn create_vector2() -> Vector2 {
     let out: Vector2 = flight_entity::allocate_entity();
     return out;
 }
+
+pub fn allocate_vector2() -> Vector2 {
+    return flight_entity::allocate_entity();
+}
 "#;
 
         let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
 
         assert!(output.contains("import { allocateEntity } from \"@flighthq/entity/contract\";"));
         assert!(output.contains("const out: Vector2Raw = allocateEntity<Vector2Raw>();"));
+        assert!(output.contains("return allocateEntity<Vector2Raw>();"));
+        assert!(!output.contains("flightEntity.allocateEntity"));
+    }
+
+    #[test]
+    fn lowers_direct_entity_allocation_with_a_sibling_raw_owner() {
+        let linear_color = r#"
+use flight_entity::EntityRuntimeSlot;
+
+pub struct LinearColor {
+    runtime: EntityRuntimeSlot,
+    pub red: f32,
+}
+
+flight_entity::impl_entity!(LinearColor);
+"#;
+        let factory = r#"
+pub fn allocate_linear_color() -> LinearColor {
+    return flight_entity::allocate_entity();
+}
+"#;
+
+        let output = compile_typescript_with_alias_sources(
+            factory,
+            Some("@flighthq/entity/contract"),
+            &[linear_color],
+        )
+        .unwrap();
+
+        assert!(output.contains("import { allocateEntity } from \"@flighthq/entity/contract\";"));
+        assert!(output.contains("export function allocateLinearColor(): LinearColorRaw"));
+        assert!(output.contains("return allocateEntity<LinearColorRaw>();"));
         assert!(!output.contains("flightEntity.allocateEntity"));
     }
 
@@ -434,8 +470,8 @@ pub fn local_high_byte() -> u32 {
             "return [{ ...format, tabStops: format.tabStops?.slice() }, stops.slice()];"
         ));
         assert!(output.contains("return value === \"\";"));
-        assert!(output.contains("return 0xffffffff;"));
-        assert!(output.contains("return color >>> 24;"));
+        assert!(output.contains("return (0xffffffff) >>> 0;"));
+        assert!(output.contains("return (color >>> 24) >>> 0;"));
     }
 
     #[test]
