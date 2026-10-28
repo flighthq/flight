@@ -980,6 +980,27 @@ pub fn has_zero(values: &[u32]) -> bool {
     }
 
     #[test]
+    fn lowers_tuple_destructuring_in_closure_parameters() {
+        let source = r#"
+pub fn first_values(values: &Vec<(i32, bool)>) -> Vec<i32> {
+    return values.iter().map(|&(value, _)| value).collect();
+}
+
+pub fn select_value(pair: (i32, bool)) -> i32 {
+    let select = |(value, _): (i32, bool)| value;
+    return select(pair);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("return values.map(([value, _]) => value);"));
+        assert!(
+            output.contains("const select = ([value, _]: readonly [number, boolean]) => value;")
+        );
+    }
+
+    #[test]
     fn lowers_utf16_code_unit_iteration() {
         let source = r#"
 pub fn utf16_units(value: &str) -> Vec<u16> {

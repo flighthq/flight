@@ -1095,11 +1095,20 @@ fn emit_closure_parameter(
     return match pattern {
         Pat::Ident(identifier) => Ok(snake_to_lower_camel(&identifier.ident.to_string())),
         Pat::Reference(reference) => emit_closure_parameter(&reference.pat, entities),
+        Pat::Tuple(tuple) => {
+            let elements = tuple
+                .elems
+                .iter()
+                .map(|element| emit_closure_parameter(element, entities))
+                .collect::<Result<Vec<_>, _>>()?;
+            Ok(format!("[{}]", elements.join(", ")))
+        }
         Pat::Type(pattern) => Ok(format!(
             "{}: {}",
             emit_closure_parameter(&pattern.pat, entities)?,
             emit_type(&pattern.ty, entities)?
         )),
+        Pat::Wild(_) => Ok("_".to_string()),
         _ => Err(compile_error(
             "unsupported destructuring in closure parameter",
         )),
