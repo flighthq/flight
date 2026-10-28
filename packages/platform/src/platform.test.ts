@@ -108,10 +108,10 @@ describe('getPlatformEngine', () => {
 });
 
 describe('getPlatformInfo', () => {
-  it('fills and returns the out parameter', () => {
+  it('fills the out parameter', () => {
     const host = fakeHost({ arch: 'arm64', kind: 'mobile', name: 'ios' });
     const out = createPlatformInfo();
-    expect(getPlatformInfo(host.system.platform, out)).toBe(out);
+    getPlatformInfo(host.system.platform, out);
     expect(out.name).toBe('ios');
     expect(out.arch).toBe('arm64');
   });

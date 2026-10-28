@@ -44,8 +44,8 @@ export interface HostStatusBarChangeCapability {
 }
 
 export interface HostStatusBarInfoCapability {
-  // Fills `out` with the current status bar state snapshot and returns it.
-  getInfo(out: StatusBarInfo): StatusBarInfo;
+  // Fills `out` with the current status bar state snapshot.
+  getInfo(out: StatusBarInfo): void;
 }
 
 export interface HostStatusBarOverlaysCapability {

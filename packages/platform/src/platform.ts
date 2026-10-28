@@ -37,28 +37,33 @@ export function createPlatformInfo(): PlatformInfo {
 // The browser rendering engine — 'blink' | 'gecko' | 'webkit' | 'unknown'. Convenience over
 // getPlatformInfo. 'unknown' on native hosts where no browser engine is present.
 export function getPlatformEngine(hostPlatform: Readonly<HostPlatformCapability>): PlatformEngine {
-  return getPlatformInfo(hostPlatform, _scratch).engine;
+  getPlatformInfo(hostPlatform, _scratch);
+  return _scratch.engine;
 }
 
-// Fills `out` with the running platform's identity through the supplied provider and returns it.
-export function getPlatformInfo(hostPlatform: Readonly<HostPlatformCapability>, out: PlatformInfo): PlatformInfo {
-  return hostPlatform.getInfo(out);
+// Fills `out` with the running platform's identity through the supplied provider.
+export function getPlatformInfo(hostPlatform: Readonly<HostPlatformCapability>, out: PlatformInfo): void {
+  hostPlatform.getInfo(out);
+  return;
 }
 
 // The platform family — 'desktop' | 'mobile' | 'web' | 'unknown'. Convenience over getPlatformInfo.
 export function getPlatformKind(hostPlatform: Readonly<HostPlatformCapability>): PlatformKind {
-  return getPlatformInfo(hostPlatform, _scratch).kind;
+  getPlatformInfo(hostPlatform, _scratch);
+  return _scratch.kind;
 }
 
 // The specific OS/runtime name — 'windows' | 'macos' | 'ios' | 'android' | 'linux' | 'web' | 'unknown'.
 export function getPlatformName(hostPlatform: Readonly<HostPlatformCapability>): PlatformName {
-  return getPlatformInfo(hostPlatform, _scratch).name;
+  getPlatformInfo(hostPlatform, _scratch);
+  return _scratch.name;
 }
 
 // The host shell / runtime environment — 'web' | 'electron' | 'tauri' | 'capacitor' | 'native' |
 // 'unknown'. Convenience over getPlatformInfo. Distinguishes plain web from a host shell.
 export function getPlatformRuntime(hostPlatform: Readonly<HostPlatformCapability>): PlatformRuntime {
-  return getPlatformInfo(hostPlatform, _scratch).runtime;
+  getPlatformInfo(hostPlatform, _scratch);
+  return _scratch.runtime;
 }
 
 // Allocates a zeroed PlatformInfo; use as the `out` for getPlatformInfo or when building a provider.
@@ -98,14 +103,16 @@ export function isPlatformNative(hostPlatform: Readonly<HostPlatformCapability>)
 
 // True on a touch-primary device, independent of desktop/mobile classification.
 export function isPlatformTouch(hostPlatform: Readonly<HostPlatformCapability>): boolean {
-  return getPlatformInfo(hostPlatform, _scratch).isTouch;
+  getPlatformInfo(hostPlatform, _scratch);
+  return _scratch.isTouch;
 }
 
 // True when the running platform's OS version is at or above `minimum`. Reads the live version via
 // getPlatformInfo. Returns false when the version is '' (unknown). The comparison is numeric and
 // segment-wise (see comparePlatformVersions).
 export function isPlatformVersionAtLeast(hostPlatform: Readonly<HostPlatformCapability>, minimum: string): boolean {
-  const version = getPlatformInfo(hostPlatform, _scratch).version;
+  getPlatformInfo(hostPlatform, _scratch);
+  const version = _scratch.version;
   if (version === '') return false;
   return comparePlatformVersions(version, minimum) >= 0;
 }

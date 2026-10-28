@@ -123,7 +123,7 @@ export interface HostWindowFullscreenCapability {
 
 export interface HostWindowGeometryCapability {
   center?(win: AppWindow): void;
-  getBounds(win: AppWindow, out: WindowBounds): WindowBounds;
+  getBounds(win: AppWindow, out: WindowBounds): void;
   setPosition(win: AppWindow, x: number, y: number): void;
   setSize(win: AppWindow, width: number, height: number): void;
   subscribeMove?(listener: (x: number, y: number) => void): () => void;

@@ -48,6 +48,6 @@ export interface PlatformInfo extends Entity {
 
 // The root environment-identification capability passed directly to the package's free functions.
 export interface HostPlatformCapability {
-  getInfo(out: PlatformInfo): PlatformInfo;
+  getInfo(out: PlatformInfo): void;
 }
 import type { Entity } from './Entity.ts';

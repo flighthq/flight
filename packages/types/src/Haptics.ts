@@ -17,8 +17,8 @@ export interface HapticsCapabilities {
 export interface HostHapticsCapability {
   // Cancels any in-progress vibration. Returns false when haptics are unavailable.
   cancel(): boolean;
-  // Fills `out` with the provider's capabilities and returns it.
-  capabilities(out: HapticsCapabilities): HapticsCapabilities;
+  // Fills `out` with the provider's capabilities.
+  capabilities(out: HapticsCapabilities): void;
   // Triggers a physical impact, with optional continuous intensity (0..1).
   impact(style: HapticImpactStyle, intensity?: number): boolean;
   // Reports whether haptics are available on the current device.

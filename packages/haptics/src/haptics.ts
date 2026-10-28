@@ -9,11 +9,9 @@ export function cancelDeviceVibration(hostHaptics: Readonly<HostHapticsCapabilit
   return hostHaptics.cancel();
 }
 
-export function getHapticsCapabilities(
-  hostHaptics: Readonly<HostHapticsCapability>,
-  out: HapticsCapabilities,
-): HapticsCapabilities {
-  return hostHaptics.capabilities(out);
+export function getHapticsCapabilities(hostHaptics: Readonly<HostHapticsCapability>, out: HapticsCapabilities): void {
+  hostHaptics.capabilities(out);
+  return;
 }
 
 export function isHapticsSupported(hostHaptics: Readonly<HostHapticsCapability>): boolean {

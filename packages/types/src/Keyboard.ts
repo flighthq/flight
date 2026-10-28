@@ -34,7 +34,7 @@ export const SoftKeyboardAttachOkKind = 'ok';
 export const SoftKeyboardAttachAcquisitionFailedKind = 'acquisition-failed';
 
 export interface HostSoftKeyboardInfoCapability {
-  getInfo(out: SoftKeyboardInfo): SoftKeyboardInfo;
+  getInfo(out: SoftKeyboardInfo): void;
 }
 
 export interface SoftKeyboardChangeSubscription {

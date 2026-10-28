@@ -75,22 +75,22 @@ export function dipToScreenPoint(
   screen: Readonly<ScreenInfo>,
   point: Readonly<Vector2Like>,
   out: { x: number; y: number },
-): { x: number; y: number } {
+): void {
   out.x = (point.x - screen.x) * screen.scaleFactor;
   out.y = (point.y - screen.y) * screen.scaleFactor;
-  return out;
+  return;
 }
 
 export function dipToScreenRect(
   screen: Readonly<ScreenInfo>,
   rect: Readonly<RectangleLike>,
   out: { x: number; y: number; width: number; height: number },
-): { x: number; y: number; width: number; height: number } {
+): void {
   out.x = (rect.x - screen.x) * screen.scaleFactor;
   out.y = (rect.y - screen.y) * screen.scaleFactor;
   out.width = rect.width * screen.scaleFactor;
   out.height = rect.height * screen.scaleFactor;
-  return out;
+  return;
 }
 
 export function disposeScreenPermissionChange(permissionChange: ScreenPermissionChange): void {
@@ -105,19 +105,20 @@ export function disposeScreenSignals(signals: ScreenSignals): void {
   clearSignal(signals.onScreenRemoved);
 }
 
-export function getPrimaryScreen(hostScreenQuery: Readonly<HostScreenQueryCapability>, out: ScreenInfo): ScreenInfo {
-  return hostScreenQuery.getPrimaryScreen(out);
+export function getPrimaryScreen(hostScreenQuery: Readonly<HostScreenQueryCapability>, out: ScreenInfo): void {
+  hostScreenQuery.getPrimaryScreen(out);
+  return;
 }
 
 export function getScreenBounds(
   screen: Readonly<ScreenInfo>,
   out: { x: number; y: number; width: number; height: number },
-): { x: number; y: number; width: number; height: number } {
+): void {
   out.x = screen.x;
   out.y = screen.y;
   out.width = screen.width;
   out.height = screen.height;
-  return out;
+  return;
 }
 
 export function getScreenById(
@@ -138,11 +139,14 @@ export function getScreenContainingRect(
   hostScreenQuery: Readonly<HostScreenQueryCapability>,
   rect: Readonly<RectangleLike>,
   out: ScreenInfo,
-): ScreenInfo {
+): void {
   const screens = _scratchScreens;
   screens.length = 0;
   getScreens(hostScreenQuery, screens);
-  if (screens.length === 0) return fillDefaultScreenInfo(out);
+  if (screens.length === 0) {
+    fillDefaultScreenInfo(out);
+    return;
+  }
   let best = screens[0];
   let bestOverlap = -1;
   for (const screen of screens) {
@@ -154,33 +158,35 @@ export function getScreenContainingRect(
       bestOverlap = overlap;
     }
   }
-  if (bestOverlap <= 0) return getScreenNearestPoint(hostScreenQuery, rectCenter(rect), out);
+  if (bestOverlap <= 0) {
+    getScreenNearestPoint(hostScreenQuery, rectCenter(rect), out);
+    return;
+  }
   copyScreenInfo(best, out);
-  return out;
+  return;
 }
 
-export function getScreenCurrentMode(screen: Readonly<ScreenInfo>, out: ScreenMode): ScreenMode {
+export function getScreenCurrentMode(screen: Readonly<ScreenInfo>, out: ScreenMode): void {
   out.width = screen.width;
   out.height = screen.height;
   out.refreshRate = screen.refreshRate;
   out.colorDepth = screen.colorDepth;
   out.pixelFormat = '';
-  return out;
+  return;
 }
 
 export function getScreenCursorPosition(
   hostScreenQuery: Readonly<HostScreenQueryCapability>,
   out: { x: number; y: number },
-): { x: number; y: number } {
-  return hostScreenQuery.getCursorPosition(out);
+): void {
+  hostScreenQuery.getCursorPosition(out);
+  return;
 }
 
-export function getScreenCursorScreen(
-  hostScreenQuery: Readonly<HostScreenQueryCapability>,
-  out: ScreenInfo,
-): ScreenInfo {
+export function getScreenCursorScreen(hostScreenQuery: Readonly<HostScreenQueryCapability>, out: ScreenInfo): void {
   getScreenCursorPosition(hostScreenQuery, _scratchPoint);
-  return getScreenNearestPoint(hostScreenQuery, _scratchPoint, out);
+  getScreenNearestPoint(hostScreenQuery, _scratchPoint, out);
+  return;
 }
 
 export function getScreenDetailPermission(
@@ -193,11 +199,14 @@ export function getScreenNearestPoint(
   hostScreenQuery: Readonly<HostScreenQueryCapability>,
   point: Readonly<Vector2Like>,
   out: ScreenInfo,
-): ScreenInfo {
+): void {
   const screens = _scratchScreens;
   screens.length = 0;
   getScreens(hostScreenQuery, screens);
-  if (screens.length === 0) return fillDefaultScreenInfo(out);
+  if (screens.length === 0) {
+    fillDefaultScreenInfo(out);
+    return;
+  }
   for (const screen of screens) {
     if (
       point.x >= screen.x &&
@@ -206,7 +215,7 @@ export function getScreenNearestPoint(
       point.y < screen.y + screen.height
     ) {
       copyScreenInfo(screen, out);
-      return out;
+      return;
     }
   }
   let best = screens[0];
@@ -221,14 +230,14 @@ export function getScreenNearestPoint(
     }
   }
   copyScreenInfo(best, out);
-  return out;
+  return;
 }
 
 export function getScreenNearestRect(
   hostScreenQuery: Readonly<HostScreenQueryCapability>,
   rect: Readonly<RectangleLike>,
   out: ScreenInfo,
-): ScreenInfo {
+): void {
   const screens = _scratchScreens;
   screens.length = 0;
   getScreens(hostScreenQuery, screens);
@@ -241,24 +250,26 @@ export function getScreenNearestRect(
   );
   if (containing !== undefined) {
     copyScreenInfo(containing, out);
-    return out;
+    return;
   }
-  return getScreenNearestPoint(hostScreenQuery, rectCenter(rect), out);
+  getScreenNearestPoint(hostScreenQuery, rectCenter(rect), out);
+  return;
 }
 
-export function getScreens(hostScreenQuery: Readonly<HostScreenQueryCapability>, out: ScreenInfo[]): ScreenInfo[] {
-  return hostScreenQuery.getScreens(out);
+export function getScreens(hostScreenQuery: Readonly<HostScreenQueryCapability>, out: ScreenInfo[]): void {
+  hostScreenQuery.getScreens(out);
+  return;
 }
 
 export function getScreenWorkArea(
   screen: Readonly<ScreenInfo>,
   out: { x: number; y: number; width: number; height: number },
-): { x: number; y: number; width: number; height: number } {
+): void {
   out.x = screen.x;
   out.y = screen.y;
   out.width = screen.workWidth;
   out.height = screen.workHeight;
-  return out;
+  return;
 }
 
 export function initializeScreenInfo(out: EntityConstruction<ScreenInfo>): void {
@@ -315,22 +326,22 @@ export function screenToDipPoint(
   screen: Readonly<ScreenInfo>,
   point: Readonly<Vector2Like>,
   out: { x: number; y: number },
-): { x: number; y: number } {
+): void {
   out.x = point.x / screen.scaleFactor + screen.x;
   out.y = point.y / screen.scaleFactor + screen.y;
-  return out;
+  return;
 }
 
 export function screenToDipRect(
   screen: Readonly<ScreenInfo>,
   rect: Readonly<RectangleLike>,
   out: { x: number; y: number; width: number; height: number },
-): { x: number; y: number; width: number; height: number } {
+): void {
   out.x = rect.x / screen.scaleFactor + screen.x;
   out.y = rect.y / screen.scaleFactor + screen.y;
   out.width = rect.width / screen.scaleFactor;
   out.height = rect.height / screen.scaleFactor;
-  return out;
+  return;
 }
 
 const _permissionSubscriptions = new WeakMap<ScreenPermissionChange, () => void>();
@@ -342,9 +353,8 @@ function copyScreenInfo(src: Readonly<ScreenInfo>, dst: ScreenInfo): void {
   Object.assign(dst, stripEntityRuntime(src));
 }
 
-function fillDefaultScreenInfo(out: ScreenInfo): ScreenInfo {
+function fillDefaultScreenInfo(out: ScreenInfo): void {
   copyScreenInfo(createScreenInfo(), out);
-  return out;
 }
 
 function rectCenter(rect: Readonly<RectangleLike>): Vector2Like {

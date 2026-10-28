@@ -27,10 +27,11 @@ export async function attachSoftKeyboard(
   detachSoftKeyboard(keyboard);
   const change = hostSoftKeyboardChange;
   const info = hostSoftKeyboardInfo;
-  let prevHeight = info.getInfo(_scratch).height;
+  info.getInfo(_scratch);
+  let prevHeight = _scratch.height;
   const subscription = await change.subscribe(() => {
-    const nowInfo = info.getInfo(_scratch);
-    const nowHeight = nowInfo.height;
+    info.getInfo(_scratch);
+    const nowHeight = _scratch.height;
     const wasVisible = prevHeight > 0;
     const nowVisible = nowHeight > 0;
     if (nowVisible && !wasVisible) {
@@ -68,14 +69,16 @@ export function disposeSoftKeyboard(keyboard: SoftKeyboard): void {
 }
 
 export function getSoftKeyboardHeight(hostSoftKeyboardInfo: Readonly<HostSoftKeyboardInfoCapability>): number {
-  return hostSoftKeyboardInfo.getInfo(_scratch).height;
+  hostSoftKeyboardInfo.getInfo(_scratch);
+  return _scratch.height;
 }
 
 export function getSoftKeyboardInfo(
   hostSoftKeyboardInfo: Readonly<HostSoftKeyboardInfoCapability>,
   out: SoftKeyboardInfo,
-): SoftKeyboardInfo {
-  return hostSoftKeyboardInfo.getInfo(out);
+): void {
+  hostSoftKeyboardInfo.getInfo(out);
+  return;
 }
 
 export function hideSoftKeyboard(
@@ -91,7 +94,8 @@ export function initializeSoftKeyboard(out: EntityConstruction<SoftKeyboard & En
 }
 
 export function isSoftKeyboardVisible(hostSoftKeyboardInfo: Readonly<HostSoftKeyboardInfoCapability>): boolean {
-  return hostSoftKeyboardInfo.getInfo(_scratch).visible;
+  hostSoftKeyboardInfo.getInfo(_scratch);
+  return _scratch.visible;
 }
 
 export function setSoftKeyboardAccessoryBarVisible(

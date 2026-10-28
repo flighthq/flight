@@ -81,10 +81,10 @@ describe('cancelDeviceVibration', () => {
 });
 
 describe('getHapticsCapabilities', () => {
-  it('fills and returns the caller-owned out parameter', () => {
+  it('fills the caller-owned out parameter', () => {
     const { host } = makeHost();
     const out = makeCapabilities();
-    expect(getHapticsCapabilities(host.input.haptics, out)).toBe(out);
+    getHapticsCapabilities(host.input.haptics, out);
     expect(out.supported).toBe(true);
     expect(out.patterns).toBe(true);
   });
@@ -101,8 +101,12 @@ describe('getHapticsCapabilities', () => {
       },
     });
 
-    expect(getHapticsCapabilities(supported.host.input.haptics, makeCapabilities()).supported).toBe(true);
-    expect(getHapticsCapabilities(unsupported.host.input.haptics, makeCapabilities()).supported).toBe(false);
+    const supportedOut = makeCapabilities();
+    const unsupportedOut = makeCapabilities();
+    getHapticsCapabilities(supported.host.input.haptics, supportedOut);
+    getHapticsCapabilities(unsupported.host.input.haptics, unsupportedOut);
+    expect(supportedOut.supported).toBe(true);
+    expect(unsupportedOut.supported).toBe(false);
   });
 });
 

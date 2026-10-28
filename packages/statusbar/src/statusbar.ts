@@ -25,7 +25,9 @@ export function attachStatusBar(
   const changeProvider = hostStatusBarChange;
   const infoProvider = hostStatusBarInfo;
   const unsubscribe = changeProvider.subscribe(() => {
-    emitSignal(bar.onChange, infoProvider.getInfo(createStatusBarInfo()));
+    const info = createStatusBarInfo();
+    infoProvider.getInfo(info);
+    emitSignal(bar.onChange, info);
   });
   _subscriptions.set(bar, unsubscribe);
 }
@@ -61,14 +63,13 @@ export function disposeStatusBar(bar: StatusBar): void {
 }
 
 export function getStatusBarHeight(hostStatusBarInfo: Readonly<HostStatusBarInfoCapability>): number {
-  return hostStatusBarInfo.getInfo(_scratchInfo).height;
+  hostStatusBarInfo.getInfo(_scratchInfo);
+  return _scratchInfo.height;
 }
 
-export function getStatusBarInfo(
-  hostStatusBarInfo: Readonly<HostStatusBarInfoCapability>,
-  out: StatusBarInfo,
-): StatusBarInfo {
-  return hostStatusBarInfo.getInfo(out);
+export function getStatusBarInfo(hostStatusBarInfo: Readonly<HostStatusBarInfoCapability>, out: StatusBarInfo): void {
+  hostStatusBarInfo.getInfo(out);
+  return;
 }
 
 export function hasStatusBarStyleEntry(
@@ -120,7 +121,8 @@ export function pushStatusBarStyleEntry(
   let state = _styleStacks.get(hostStatusBarInfo);
   if (state === undefined) {
     const infoProvider = hostStatusBarInfo;
-    const baseline = infoProvider.getInfo(createStatusBarInfo());
+    const baseline = createStatusBarInfo();
+    infoProvider.getInfo(baseline);
     state = {
       applied: { ...baseline },
       baseline,

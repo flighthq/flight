@@ -144,11 +144,10 @@ describe('createSafeAreaInsets', () => {
 });
 
 describe('getDeviceCapabilities', () => {
-  it('fills and returns out via the host backend', () => {
+  it('fills out via the host backend', () => {
     const host = fakeHost();
     const out = createDeviceCapabilities();
-    const result = getDeviceCapabilities(host.system.device, out);
-    expect(result).toBe(out);
+    getDeviceCapabilities(host.system.device, out);
     expect(out.hasKeyboard).toBe(true);
     expect(out.hasMouse).toBe(true);
     expect(out.hasStylus).toBe(false);
@@ -156,11 +155,10 @@ describe('getDeviceCapabilities', () => {
 });
 
 describe('getDeviceDisplayMetrics', () => {
-  it('fills and returns out via the host backend', () => {
+  it('fills out via the host backend', () => {
     const host = fakeHost();
     const out = createDeviceDisplayMetrics();
-    const result = getDeviceDisplayMetrics(host.system.device, out);
-    expect(result).toBe(out);
+    getDeviceDisplayMetrics(host.system.device, out);
     expect(out.colorDepth).toBe(8);
     expect(out.densityDpi).toBe(440);
     expect(out.logicalHeight).toBe(800);
@@ -179,11 +177,10 @@ describe('getDeviceId', () => {
 });
 
 describe('getDeviceInfo', () => {
-  it('fills and returns out via the host backend', () => {
+  it('fills out via the host backend', () => {
     const host = fakeHost();
     const out = createDeviceInfo();
-    const result = getDeviceInfo(host.system.device, out);
-    expect(result).toBe(out);
+    getDeviceInfo(host.system.device, out);
     expect(out.arch).toBe('arm64');
     expect(out.availableMemory).toBe(3_000_000_000);
     expect(out.boardName).toBe('msm8998');
@@ -213,11 +210,10 @@ describe('getDeviceInfo', () => {
 });
 
 describe('getSafeAreaInsets', () => {
-  it('fills and returns out via the host backend', () => {
+  it('fills out via the host backend', () => {
     const host = fakeHost();
     const out = createSafeAreaInsets();
-    const result = getSafeAreaInsets(host.system.device, out);
-    expect(result).toBe(out);
+    getSafeAreaInsets(host.system.device, out);
     expect(out.top).toBe(24);
     expect(out.bottom).toBe(16);
   });

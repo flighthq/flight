@@ -22,12 +22,14 @@ export function attachConnectivity(
 ): boolean {
   detachConnectivity(connectivity);
   const statusBackend = hostConnectivityStatus;
-  const initial = statusBackend.getStatus(connectivityStatusOut());
+  const initial = connectivityStatusOut();
+  statusBackend.getStatus(initial);
   let wasOnline = initial.online;
   let wasType = initial.type;
   let wasMetered = initial.metered;
   const unsubscribe = hostConnectivityChange.subscribe(() => {
-    const status = statusBackend.getStatus(connectivityStatusOut());
+    const status = connectivityStatusOut();
+    statusBackend.getStatus(status);
     emitSignal(connectivity.onChange, status);
     if (status.online !== wasOnline) {
       wasOnline = status.online;
@@ -89,14 +91,17 @@ export function disposeConnectivity(connectivity: Connectivity): void {
 export function getConnectivityOnline(
   hostConnectivityStatus: Readonly<HostConnectivityStatusCapability>,
 ): boolean | null {
-  return hostConnectivityStatus.getStatus(connectivityStatusOut()).online;
+  const out = connectivityStatusOut();
+  hostConnectivityStatus.getStatus(out);
+  return out.online;
 }
 
 export function getConnectivityStatus(
   hostConnectivityStatus: Readonly<HostConnectivityStatusCapability>,
   out: ConnectivityStatus,
-): ConnectivityStatus {
-  return hostConnectivityStatus.getStatus(out);
+): void {
+  hostConnectivityStatus.getStatus(out);
+  return;
 }
 
 export function hasConnectivityStatusChanged(
@@ -124,13 +129,17 @@ export function initializeConnectivity(out: EntityConstruction<Connectivity>): v
 }
 
 export function isConnectivityMetered(hostConnectivityStatus: Readonly<HostConnectivityStatusCapability>): boolean {
-  return hostConnectivityStatus.getStatus(connectivityStatusOut()).metered;
+  const out = connectivityStatusOut();
+  hostConnectivityStatus.getStatus(out);
+  return out.metered;
 }
 
 export function isConnectivitySaveDataEnabled(
   hostConnectivityStatus: Readonly<HostConnectivityStatusCapability>,
 ): boolean {
-  return hostConnectivityStatus.getStatus(connectivityStatusOut()).saveData;
+  const out = connectivityStatusOut();
+  hostConnectivityStatus.getStatus(out);
+  return out.saveData;
 }
 
 // ConnectivityStatus is a provider-produced query/out snapshot, not a user-created identity. Keep its

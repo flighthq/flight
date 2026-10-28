@@ -266,10 +266,10 @@ export function closeWindow(hostWindowLifecycle: Readonly<HostWindowLifecycleCap
   return true;
 }
 
-// Writes the window's device transform — a uniform scale by devicePixelRatio — into out and returns
-// it. DPI is a device concern, passed to render*Scene2D at draw time to leave the scene authored in
+// Writes the window's device transform — a uniform scale by devicePixelRatio — into out. DPI is a
+// device concern, passed to render*Scene2D at draw time to leave the scene authored in
 // logical units. Reads win before writing out, so out may alias an input.
-export function computeWindowDeviceTransform(win: Readonly<AppWindow>, out: Matrix): Matrix {
+export function computeWindowDeviceTransform(win: Readonly<AppWindow>, out: Matrix): void {
   const scale = win.devicePixelRatio;
   out.a = scale;
   out.b = 0;
@@ -277,7 +277,7 @@ export function computeWindowDeviceTransform(win: Readonly<AppWindow>, out: Matr
   out.d = scale;
   out.tx = 0;
   out.ty = 0;
-  return out;
+  return;
 }
 
 export function createAppWindow(): AppWindow {
@@ -383,13 +383,14 @@ export function focusWindow(hostWindowFocus: Readonly<HostWindowFocusCapability>
   hostWindowFocus.focus(win);
 }
 
-// Fills `out` with the host window's current screen bounds and returns it.
+// Fills `out` with the host window's current screen bounds.
 export function getWindowBounds(
   hostWindowGeometry: Readonly<HostWindowGeometryCapability>,
   win: Readonly<AppWindow>,
   out: WindowBounds,
-): WindowBounds {
-  return hostWindowGeometry.getBounds(win as AppWindow, out);
+): void {
+  hostWindowGeometry.getBounds(win as AppWindow, out);
+  return;
 }
 
 // Hides the window without closing it.

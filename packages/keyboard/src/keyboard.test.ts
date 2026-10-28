@@ -329,11 +329,10 @@ describe('getSoftKeyboardHeight', () => {
 });
 
 describe('getSoftKeyboardInfo', () => {
-  it('writes into the out parameter and returns it', () => {
+  it('writes into the out parameter', () => {
     const host = infoHost({ visible: true, height: 300, x: 10, y: 20, width: 400 });
     const out: SoftKeyboardInfo = { visible: false, height: 0, x: 0, y: 0, width: 0 };
-    const result = getSoftKeyboardInfo(host.input.softKeyboardInfo, out);
-    expect(result).toBe(out);
+    getSoftKeyboardInfo(host.input.softKeyboardInfo, out);
     expect(out.visible).toBe(true);
     expect(out.height).toBe(300);
     expect(out.x).toBe(10);

@@ -50,8 +50,7 @@ export interface ScreenInfo extends Entity {
   monochrome: boolean;
 }
 
-// The provider every screen query takes directly, filling caller-owned `out` values. The
-// fill methods return the same `out` they were given so callers can chain or read inline.
+// The provider every screen query takes directly, filling caller-owned `out` values.
 // The window-management permission states a screen host can report. Deliberately the three the web
 // Permissions API uses, with no `'unsupported'` member: a host that cannot answer omits the operation
 // entirely, which is the absence-of-an-export ruling, so there is nothing for a fourth state to mean.
@@ -59,9 +58,9 @@ export type ScreenPermissionState = 'denied' | 'granted' | 'prompt';
 
 export interface HostScreenQueryCapability {
   destroy?(): void;
-  getScreens(out: ScreenInfo[]): ScreenInfo[];
-  getPrimaryScreen(out: ScreenInfo): ScreenInfo;
-  getCursorPosition(out: { x: number; y: number }): { x: number; y: number };
+  getScreens(out: ScreenInfo[]): void;
+  getPrimaryScreen(out: ScreenInfo): void;
+  getCursorPosition(out: { x: number; y: number }): void;
 }
 
 export interface HostScreenChangeCapability {

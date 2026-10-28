@@ -957,12 +957,11 @@ describe('closeWindow', () => {
 });
 
 describe('computeWindowDeviceTransform', () => {
-  it('writes a uniform devicePixelRatio scale into out and returns it', () => {
+  it('writes a uniform devicePixelRatio scale into out', () => {
     const win = createAppWindow();
     win.devicePixelRatio = 3;
     const out = { a: 0, b: 0, c: 0, d: 0, tx: 9, ty: 9 } as unknown as Matrix;
-    const result = computeWindowDeviceTransform(win, out);
-    expect(result).toBe(out);
+    computeWindowDeviceTransform(win, out);
     expect(out.a).toBe(3);
     expect(out.d).toBe(3);
     expect(out.b).toBe(0);
@@ -977,8 +976,7 @@ describe('computeWindowDeviceTransform', () => {
     // out's only input is win (a different object), so out cannot alias an input here; this asserts
     // the read-before-write guarantee by handing the function a fully-populated out it must clobber.
     const out = { a: 99, b: 99, c: 99, d: 99, tx: 99, ty: 99 } as unknown as Matrix;
-    const result = computeWindowDeviceTransform(win, out);
-    expect(result).toBe(out);
+    computeWindowDeviceTransform(win, out);
     expect(out.a).toBe(2);
     expect(out.b).toBe(0);
     expect(out.c).toBe(0);
@@ -1273,7 +1271,7 @@ describe('getWindowBounds', () => {
   it('fills the out bounds from the backend', () => {
     host = createTestHost();
     const out = { x: 0, y: 0, width: 0, height: 0 };
-    expect(getWindowBounds(host.window, createAppWindow(), out)).toBe(out);
+    getWindowBounds(host.window, createAppWindow(), out);
     expect(out.width).toBe(3);
     expect(host.window.calls).toEqual(['getBounds']);
   });

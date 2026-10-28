@@ -280,7 +280,7 @@ describe('getConnectivityStatus', () => {
     const provider = fakeProvider({ metered: true, online: false, saveData: true });
     const host = hostFor(provider);
     const out = status();
-    expect(getConnectivityStatus(host.connectivity.status, out)).toBe(out);
+    getConnectivityStatus(host.connectivity.status, out);
     expect(out.type).toBe('wifi');
   });
 });

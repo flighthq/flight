@@ -53,7 +53,7 @@ export interface ConnectivityReachabilityOptions {
 // command shapes do not. A host therefore exposes them as separate slots even when one provider
 // object implements more than one facet.
 export interface HostConnectivityStatusCapability {
-  getStatus(out: ConnectivityStatus): ConnectivityStatus;
+  getStatus(out: ConnectivityStatus): void;
 }
 
 export interface HostConnectivityChangeCapability {

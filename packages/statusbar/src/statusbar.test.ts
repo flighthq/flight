@@ -88,9 +88,9 @@ describe('getStatusBarHeight', () => {
 });
 
 describe('getStatusBarInfo', () => {
-  it('fills and returns the caller out object', () => {
+  it('fills the caller out object', () => {
     const out = statusbar.createStatusBarInfo();
-    expect(statusbar.getStatusBarInfo(fakeHost('dark').host.ui.statusBarInfo, out)).toBe(out);
+    statusbar.getStatusBarInfo(fakeHost('dark').host.ui.statusBarInfo, out);
     expect(out.style).toBe('dark');
   });
 });

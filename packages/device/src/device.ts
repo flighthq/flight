@@ -60,30 +60,28 @@ export function createSafeAreaInsets(): NonEntityCreateResult<SafeAreaInsets, 'd
   return { bottom: 0, left: 0, right: 0, top: 0 };
 }
 
-export function getDeviceCapabilities(
-  hostDevice: Readonly<HostDeviceCapability>,
-  out: DeviceCapabilities,
-): DeviceCapabilities {
-  return hostDevice.getCapabilities(out);
+export function getDeviceCapabilities(hostDevice: Readonly<HostDeviceCapability>, out: DeviceCapabilities): void {
+  hostDevice.getCapabilities(out);
+  return;
 }
 
-export function getDeviceDisplayMetrics(
-  hostDevice: Readonly<HostDeviceCapability>,
-  out: DeviceDisplayMetrics,
-): DeviceDisplayMetrics {
-  return hostDevice.getDisplayMetrics(out);
+export function getDeviceDisplayMetrics(hostDevice: Readonly<HostDeviceCapability>, out: DeviceDisplayMetrics): void {
+  hostDevice.getDisplayMetrics(out);
+  return;
 }
 
 export function getDeviceId(hostDevice: Readonly<HostDeviceCapability>): string {
   return hostDevice.getId();
 }
 
-export function getDeviceInfo(hostDevice: Readonly<HostDeviceCapability>, out: DeviceInfo): DeviceInfo {
-  return hostDevice.getInfo(out);
+export function getDeviceInfo(hostDevice: Readonly<HostDeviceCapability>, out: DeviceInfo): void {
+  hostDevice.getInfo(out);
+  return;
 }
 
-export function getSafeAreaInsets(hostDevice: Readonly<HostDeviceCapability>, out: SafeAreaInsets): SafeAreaInsets {
-  return hostDevice.getSafeAreaInsets(out);
+export function getSafeAreaInsets(hostDevice: Readonly<HostDeviceCapability>, out: SafeAreaInsets): void {
+  hostDevice.getSafeAreaInsets(out);
+  return;
 }
 
 export function refreshDeviceInfo(hostDevice: Readonly<HostDeviceCapability>): void {

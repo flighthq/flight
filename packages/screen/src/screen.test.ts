@@ -43,6 +43,12 @@ import {
   screenToDipRect,
 } from './screen.ts';
 
+function queryScreen(write: (out: ScreenInfo) => void): ScreenInfo {
+  const out = createScreenInfo();
+  write(out);
+  return out;
+}
+
 describe('attachScreenPermissionChange', () => {
   it('forwards permission states from the supplied host', () => {
     const harness = createPermissionChangeHarness();
@@ -177,11 +183,11 @@ describe('detachScreenSignals', () => {
 });
 
 describe('dipToScreenPoint', () => {
-  it('converts from desktop DIPs to screen-local pixels and returns out', () => {
+  it('converts from desktop DIPs to screen-local pixels', () => {
     const screen = createTestScreen(1, 100, 50, 800, 600, { scaleFactor: 2 });
     const out = { x: -1, y: -1 };
 
-    expect(dipToScreenPoint(screen, { x: 112, y: 73 }, out)).toBe(out);
+    dipToScreenPoint(screen, { x: 112, y: 73 }, out);
     expect(out).toEqual({ x: 24, y: 46 });
   });
 
@@ -196,11 +202,11 @@ describe('dipToScreenPoint', () => {
 });
 
 describe('dipToScreenRect', () => {
-  it('converts position and extent to screen-local pixels and returns out', () => {
+  it('converts position and extent to screen-local pixels', () => {
     const screen = createTestScreen(1, 100, 50, 800, 600, { scaleFactor: 2 });
     const out = { x: -1, y: -1, width: -1, height: -1 };
 
-    expect(dipToScreenRect(screen, { x: 112, y: 73, width: 30, height: 40 }, out)).toBe(out);
+    dipToScreenRect(screen, { x: 112, y: 73, width: 30, height: 40 }, out);
     expect(out).toEqual({ x: 24, y: 46, width: 60, height: 80 });
   });
 
@@ -252,18 +258,18 @@ describe('getPrimaryScreen', () => {
     const host = createScreenQueryHost([primary]);
     const out = createScreenInfo();
 
-    expect(getPrimaryScreen(host.screen.query, out)).toBe(out);
+    getPrimaryScreen(host.screen.query, out);
     expect(host.screen.query.getPrimaryScreen).toHaveBeenCalledWith(out);
     expect(out).toMatchObject({ id: 3, x: 10, y: 20, width: 1920, height: 1080, isPrimary: true });
   });
 });
 
 describe('getScreenBounds', () => {
-  it('extracts desktop bounds into and returns the supplied output', () => {
+  it('extracts desktop bounds into the supplied output', () => {
     const screen = createTestScreen(1, -1280, 120, 1280, 720);
     const out = { x: 0, y: 0, width: 0, height: 0 };
 
-    expect(getScreenBounds(screen, out)).toBe(out);
+    getScreenBounds(screen, out);
     expect(out).toEqual({ x: -1280, y: 120, width: 1280, height: 720 });
   });
 });
@@ -320,10 +326,8 @@ describe('getScreenContainingRect', () => {
     const lowerRight = createTestScreen(2, 100, 80, 100, 100);
     const host = createScreenQueryHost([left, lowerRight]);
 
-    const result = getScreenContainingRect(
-      host.screen.query,
-      { x: 50, y: 50, width: 100, height: 60 },
-      createScreenInfo(),
+    const result = queryScreen((out) =>
+      getScreenContainingRect(host.screen.query, { x: 50, y: 50, width: 100, height: 60 }, out),
     );
 
     expect(result.id).toBe(1);
@@ -332,10 +336,8 @@ describe('getScreenContainingRect', () => {
   it('falls back to the screen nearest the rectangle center when none overlap', () => {
     const host = createScreenQueryHost(createSeparatedScreens());
 
-    const result = getScreenContainingRect(
-      host.screen.query,
-      { x: 230, y: 20, width: 20, height: 20 },
-      createScreenInfo(),
+    const result = queryScreen((out) =>
+      getScreenContainingRect(host.screen.query, { x: 230, y: 20, width: 20, height: 20 }, out),
     );
 
     expect(result.id).toBe(2);
@@ -344,9 +346,7 @@ describe('getScreenContainingRect', () => {
   it('fills the documented default when no screens exist', () => {
     const out = createTestScreen(99, 10, 20, 30, 40);
 
-    expect(
-      getScreenContainingRect(createScreenQueryHost([]).screen.query, { x: 0, y: 0, width: 10, height: 10 }, out),
-    ).toBe(out);
+    getScreenContainingRect(createScreenQueryHost([]).screen.query, { x: 0, y: 0, width: 10, height: 10 }, out);
     expect(Object.entries(out)).toEqual(Object.entries(createScreenInfo()));
   });
 });
@@ -357,7 +357,7 @@ describe('getScreenCurrentMode', () => {
     const out = createScreenMode();
     out.pixelFormat = 'stale';
 
-    expect(getScreenCurrentMode(screen, out)).toBe(out);
+    getScreenCurrentMode(screen, out);
     expect(out).toMatchObject({ width: 1920, height: 1080, refreshRate: 144, colorDepth: 30, pixelFormat: '' });
   });
 });
@@ -367,7 +367,7 @@ describe('getScreenCursorPosition', () => {
     const host = createScreenQueryHost([], { x: -20, y: 45 });
     const out = { x: 0, y: 0 };
 
-    expect(getScreenCursorPosition(host.screen.query, out)).toBe(out);
+    getScreenCursorPosition(host.screen.query, out);
     expect(out).toEqual({ x: -20, y: 45 });
     expect(host.screen.query.getCursorPosition).toHaveBeenCalledWith(out);
   });
@@ -378,7 +378,7 @@ describe('getScreenCursorScreen', () => {
     const host = createScreenQueryHost(createSeparatedScreens(), { x: 340, y: 25 });
     const out = createScreenInfo();
 
-    expect(getScreenCursorScreen(host.screen.query, out)).toBe(out);
+    getScreenCursorScreen(host.screen.query, out);
     expect(out.id).toBe(2);
   });
 });
@@ -403,9 +403,9 @@ describe('getScreenNearestPoint', () => {
       createTestScreen(2, 0, 100, 100, 200),
     ]);
 
-    expect(getScreenNearestPoint(horizontalHost.screen.query, { x: 20, y: 30 }, createScreenInfo()).id).toBe(1);
-    expect(getScreenNearestPoint(horizontalHost.screen.query, { x: 100, y: 30 }, createScreenInfo()).id).toBe(2);
-    expect(getScreenNearestPoint(verticalHost.screen.query, { x: 30, y: 100 }, createScreenInfo()).id).toBe(2);
+    expect(queryScreen((out) => getScreenNearestPoint(horizontalHost.screen.query, { x: 20, y: 30 }, out)).id).toBe(1);
+    expect(queryScreen((out) => getScreenNearestPoint(horizontalHost.screen.query, { x: 100, y: 30 }, out)).id).toBe(2);
+    expect(queryScreen((out) => getScreenNearestPoint(verticalHost.screen.query, { x: 30, y: 100 }, out)).id).toBe(2);
   });
 
   it('selects the nearest screen center when the point is outside every screen', () => {
@@ -415,22 +415,22 @@ describe('getScreenNearestPoint', () => {
       createTestScreen(2, 300, 200, 100, 100),
     ]);
 
-    expect(getScreenNearestPoint(host.screen.query, { x: 180, y: 50 }, createScreenInfo()).id).toBe(1);
-    expect(getScreenNearestPoint(host.screen.query, { x: 240, y: 50 }, createScreenInfo()).id).toBe(2);
-    expect(getScreenNearestPoint(diagonalHost.screen.query, { x: 200, y: 100 }, createScreenInfo()).id).toBe(1);
-    expect(getScreenNearestPoint(diagonalHost.screen.query, { x: 200, y: 180 }, createScreenInfo()).id).toBe(2);
+    expect(queryScreen((out) => getScreenNearestPoint(host.screen.query, { x: 180, y: 50 }, out)).id).toBe(1);
+    expect(queryScreen((out) => getScreenNearestPoint(host.screen.query, { x: 240, y: 50 }, out)).id).toBe(2);
+    expect(queryScreen((out) => getScreenNearestPoint(diagonalHost.screen.query, { x: 200, y: 100 }, out)).id).toBe(1);
+    expect(queryScreen((out) => getScreenNearestPoint(diagonalHost.screen.query, { x: 200, y: 180 }, out)).id).toBe(2);
   });
 
   it('keeps the first screen when center distances tie', () => {
     const host = createScreenQueryHost(createSeparatedScreens());
 
-    expect(getScreenNearestPoint(host.screen.query, { x: 200, y: 50 }, createScreenInfo()).id).toBe(1);
+    expect(queryScreen((out) => getScreenNearestPoint(host.screen.query, { x: 200, y: 50 }, out)).id).toBe(1);
   });
 
   it('fills the documented default when no screens exist', () => {
     const out = createTestScreen(99, 10, 20, 30, 40);
 
-    expect(getScreenNearestPoint(createScreenQueryHost([]).screen.query, { x: 5, y: 5 }, out)).toBe(out);
+    getScreenNearestPoint(createScreenQueryHost([]).screen.query, { x: 5, y: 5 }, out);
     expect(Object.entries(out)).toEqual(Object.entries(createScreenInfo()));
   });
 });
@@ -439,10 +439,8 @@ describe('getScreenNearestRect', () => {
   it('prefers a screen that fully contains the rectangle', () => {
     const host = createScreenQueryHost(createSeparatedScreens());
 
-    const result = getScreenNearestRect(
-      host.screen.query,
-      { x: 320, y: 20, width: 40, height: 50 },
-      createScreenInfo(),
+    const result = queryScreen((out) =>
+      getScreenNearestRect(host.screen.query, { x: 320, y: 20, width: 40, height: 50 }, out),
     );
 
     expect(result.id).toBe(2);
@@ -451,10 +449,8 @@ describe('getScreenNearestRect', () => {
   it('falls back to the screen nearest the rectangle center', () => {
     const host = createScreenQueryHost(createSeparatedScreens());
 
-    const result = getScreenNearestRect(
-      host.screen.query,
-      { x: 170, y: 20, width: 20, height: 20 },
-      createScreenInfo(),
+    const result = queryScreen((out) =>
+      getScreenNearestRect(host.screen.query, { x: 170, y: 20, width: 20, height: 20 }, out),
     );
 
     expect(result.id).toBe(1);
@@ -466,8 +462,8 @@ describe('getScreenNearestRect', () => {
     const host = createScreenQueryHost([left, right]);
     const rect = { x: 50, y: 10, width: 100, height: 50 };
 
-    expect(getScreenContainingRect(host.screen.query, rect, createScreenInfo()).id).toBe(1);
-    expect(getScreenNearestRect(host.screen.query, rect, createScreenInfo()).id).toBe(2);
+    expect(queryScreen((out) => getScreenContainingRect(host.screen.query, rect, out)).id).toBe(1);
+    expect(queryScreen((out) => getScreenNearestRect(host.screen.query, rect, out)).id).toBe(2);
   });
 
   it('honors inclusive rectangle boundaries and full extents when testing containment', () => {
@@ -485,38 +481,36 @@ describe('getScreenNearestRect', () => {
     ]);
 
     expect(
-      getScreenNearestRect(boundsHost.screen.query, { x: 0, y: 0, width: 100, height: 100 }, createScreenInfo()).id,
+      queryScreen((out) => getScreenNearestRect(boundsHost.screen.query, { x: 0, y: 0, width: 100, height: 100 }, out))
+        .id,
     ).toBe(1);
     expect(
-      getScreenNearestRect(
-        horizontalExtentHost.screen.query,
-        { x: 40, y: 0, width: 60, height: 100 },
-        createScreenInfo(),
+      queryScreen((out) =>
+        getScreenNearestRect(horizontalExtentHost.screen.query, { x: 40, y: 0, width: 60, height: 100 }, out),
       ).id,
     ).toBe(2);
     expect(
-      getScreenNearestRect(verticalExtentHost.screen.query, { x: 0, y: 40, width: 100, height: 60 }, createScreenInfo())
-        .id,
+      queryScreen((out) =>
+        getScreenNearestRect(verticalExtentHost.screen.query, { x: 0, y: 40, width: 100, height: 60 }, out),
+      ).id,
     ).toBe(2);
   });
 
   it('fills the documented default when no screens exist', () => {
     const out = createTestScreen(99, 10, 20, 30, 40);
 
-    expect(
-      getScreenNearestRect(createScreenQueryHost([]).screen.query, { x: 0, y: 0, width: 10, height: 10 }, out),
-    ).toBe(out);
+    getScreenNearestRect(createScreenQueryHost([]).screen.query, { x: 0, y: 0, width: 10, height: 10 }, out);
     expect(Object.entries(out)).toEqual(Object.entries(createScreenInfo()));
   });
 });
 
 describe('getScreens', () => {
-  it('delegates enumeration into and returns the caller-owned array', () => {
+  it('delegates enumeration into the caller-owned array', () => {
     const screen = createTestScreen(5, 0, 0, 1920, 1080);
     const host = createScreenQueryHost([screen]);
     const out: ScreenInfo[] = [];
 
-    expect(getScreens(host.screen.query, out)).toBe(out);
+    getScreens(host.screen.query, out);
     expect(out).toEqual([screen]);
     expect(host.screen.query.getScreens).toHaveBeenCalledWith(out);
   });
@@ -527,7 +521,7 @@ describe('getScreenWorkArea', () => {
     const screen = createTestScreen(1, 100, -50, 1920, 1080, { workWidth: 1900, workHeight: 1040 });
     const out = { x: 0, y: 0, width: 0, height: 0 };
 
-    expect(getScreenWorkArea(screen, out)).toBe(out);
+    getScreenWorkArea(screen, out);
     expect(out).toEqual({ x: 100, y: -50, width: 1900, height: 1040 });
   });
 });
@@ -662,11 +656,11 @@ describe('requestScreenDetails', () => {
 });
 
 describe('screenToDipPoint', () => {
-  it('converts screen-local pixels to desktop DIPs and returns out', () => {
+  it('converts screen-local pixels to desktop DIPs', () => {
     const screen = createTestScreen(1, 100, 50, 800, 600, { scaleFactor: 2 });
     const out = { x: -1, y: -1 };
 
-    expect(screenToDipPoint(screen, { x: 24, y: 46 }, out)).toBe(out);
+    screenToDipPoint(screen, { x: 24, y: 46 }, out);
     expect(out).toEqual({ x: 112, y: 73 });
   });
 
@@ -681,11 +675,11 @@ describe('screenToDipPoint', () => {
 });
 
 describe('screenToDipRect', () => {
-  it('converts screen-local position and extent to desktop DIPs and returns out', () => {
+  it('converts screen-local position and extent to desktop DIPs', () => {
     const screen = createTestScreen(1, 100, 50, 800, 600, { scaleFactor: 2 });
     const out = { x: -1, y: -1, width: -1, height: -1 };
 
-    expect(screenToDipRect(screen, { x: 24, y: 46, width: 60, height: 80 }, out)).toBe(out);
+    screenToDipRect(screen, { x: 24, y: 46, width: 60, height: 80 }, out);
     expect(out).toEqual({ x: 112, y: 73, width: 30, height: 40 });
   });
 
