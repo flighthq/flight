@@ -108,7 +108,7 @@ fn log_missing_statechart_region_duration(
     let mut data = HashMap::new();
     data.insert(
         "exitTimeRatio".to_string(),
-        LogValue::Float(exit_time_ratio),
+        LogValue::Number(exit_time_ratio),
     );
     data.insert(
         "message".to_string(),
@@ -121,15 +121,15 @@ fn log_missing_statechart_region_duration(
     );
     data.insert(
         "regionDuration".to_string(),
-        LogValue::Float(region_duration),
+        LogValue::Number(region_duration),
     );
     data.insert(
         "regionIndex".to_string(),
-        LogValue::Int(explanation.region_index as i64),
+        LogValue::Number((explanation.region_index as i64) as f64),
     );
     data.insert(
         "sourceStateIndex".to_string(),
-        LogValue::Int(explanation.source_state_index as i64),
+        LogValue::Number((explanation.source_state_index as i64) as f64),
     );
     data.insert(
         "status".to_string(),
@@ -137,11 +137,11 @@ fn log_missing_statechart_region_duration(
     );
     data.insert(
         "targetStateIndex".to_string(),
-        LogValue::Int(explanation.target_state_index as i64),
+        LogValue::Number((explanation.target_state_index as i64) as f64),
     );
     data.insert(
         "transitionIndex".to_string(),
-        LogValue::Int(explanation.transition_index as i64),
+        LogValue::Number((explanation.transition_index as i64) as f64),
     );
 
     let _ = log_once(

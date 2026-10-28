@@ -129,11 +129,11 @@ fn warn_wgpu_effect_application(
     );
     data.insert(
         "registeredCount".to_string(),
-        LogValue::Int(explanation.registered_count as i64),
+        LogValue::Number((explanation.registered_count as i64) as f64),
     );
     data.insert(
         "requestedCount".to_string(),
-        LogValue::Int(explanation.requested_count as i64),
+        LogValue::Number((explanation.requested_count as i64) as f64),
     );
     data.insert(
         "status".to_string(),
@@ -155,7 +155,7 @@ fn warn_wgpu_effect_application(
             explanation
                 .unresolved_indexes
                 .iter()
-                .map(|index| LogValue::Int(*index as i64))
+                .map(|index| LogValue::Number((*index as i64) as f64))
                 .collect(),
         ),
     );
@@ -179,7 +179,7 @@ fn warn_wgpu_effect_state_sample_count(log_state: &LogStateRef, requested: f32, 
     let mut data = HashMap::new();
     data.insert(
         "appliedSampleCount".to_string(),
-        LogValue::Float(applied as f64),
+        LogValue::Number(applied as f64),
     );
     data.insert(
         "message".to_string(),
@@ -189,7 +189,7 @@ fn warn_wgpu_effect_state_sample_count(log_state: &LogStateRef, requested: f32, 
     );
     data.insert(
         "requestedSampleCount".to_string(),
-        LogValue::Float(requested as f64),
+        LogValue::Number(requested as f64),
     );
     log_once(
         log_state,

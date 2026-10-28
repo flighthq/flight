@@ -183,7 +183,10 @@ fn record_render_registries_miss_shared(
         "message".to_string(),
         LogValue::Str(get_render_registries_miss_message(backend, registry).to_string()),
     );
-    data.insert("registry".to_string(), LogValue::Int(registry as i64));
+    data.insert(
+        "registry".to_string(),
+        LogValue::Number((registry as i64) as f64),
+    );
     log_once(
         &log_state,
         0.0,

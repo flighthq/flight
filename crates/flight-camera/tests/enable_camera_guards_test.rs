@@ -48,7 +48,7 @@ fn field(entry: &LogEntry, key: &str) -> String {
 fn numeric_field(entry: &LogEntry, key: &str) -> f64 {
     return match &entry.data {
         LogData::Record(record) => match record.get(key) {
-            Some(LogValue::Float(value)) => *value,
+            Some(LogValue::Number(value)) => *value,
             _ => -1.0,
         },
         LogData::Message(_) => -1.0,

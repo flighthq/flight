@@ -69,9 +69,9 @@ fn data_as_str(data: &LogData) -> Option<&str> {
 }
 
 /// Helper: extract a record field value as i64.
-fn record_int(data: &LogData, key: &str) -> Option<i64> {
+fn record_number(data: &LogData, key: &str) -> Option<f64> {
     if let LogData::Record(map) = data {
-        if let Some(LogValue::Int(n)) = map.get(key) {
+        if let Some(LogValue::Number(n)) = map.get(key) {
             return Some(*n);
         }
     }
@@ -165,7 +165,7 @@ mod begin_log_group {
         assert_eq!(e.len(), 1);
         assert_eq!(e[0].level, LogLevel::Debug);
         assert_eq!(record_str(&e[0].data, "group"), Some("begin".to_string()));
-        assert_eq!(record_int(&e[0].data, "depth"), Some(1));
+        assert_eq!(record_number(&e[0].data, "depth"), Some(1.0));
         clear_log_groups(&state);
     }
 
@@ -177,7 +177,7 @@ mod begin_log_group {
         begin_log_group(&state, 0.0, "outer", None);
         begin_log_group(&state, 0.0, "inner", None);
         let e = entries.lock().unwrap();
-        assert_eq!(record_int(&e[1].data, "depth"), Some(2));
+        assert_eq!(record_number(&e[1].data, "depth"), Some(2.0));
         clear_log_groups(&state);
     }
 
@@ -317,7 +317,7 @@ mod clear_log_serializers {
         let fmt = create_json_log_formatter(&state);
         let mut inner = HashMap::new();
         inner.insert("__kind".to_string(), LogValue::Str("acme.Foo".to_string()));
-        inner.insert("x".to_string(), LogValue::Int(1));
+        inner.insert("x".to_string(), LogValue::Number(1.0));
         let mut data = HashMap::new();
         data.insert("obj".to_string(), LogValue::Record(inner));
         let entry = LogEntry {
@@ -483,26 +483,26 @@ mod create_child_log_context {
         let state = test_state();
         reset_log_state(&state);
         let mut parent_fields = HashMap::new();
-        parent_fields.insert("a".to_string(), LogValue::Int(1));
-        parent_fields.insert("b".to_string(), LogValue::Int(2));
+        parent_fields.insert("a".to_string(), LogValue::Number(1.0));
+        parent_fields.insert("b".to_string(), LogValue::Number(2.0));
         let parent = context_of(Some("chan".to_string()), Some(parent_fields));
         let mut child_fields = HashMap::new();
-        child_fields.insert("b".to_string(), LogValue::Int(99));
-        child_fields.insert("c".to_string(), LogValue::Int(3));
+        child_fields.insert("b".to_string(), LogValue::Number(99.0));
+        child_fields.insert("c".to_string(), LogValue::Number(3.0));
         let child = create_child_log_context(&parent, child_fields, None);
 
-        if let Some(LogValue::Int(a)) = child.fields.get("a") {
-            assert_eq!(*a, 1);
+        if let Some(LogValue::Number(a)) = child.fields.get("a") {
+            assert_eq!(*a, 1.0);
         } else {
             panic!("expected field a=1");
         }
-        if let Some(LogValue::Int(b)) = child.fields.get("b") {
-            assert_eq!(*b, 99);
+        if let Some(LogValue::Number(b)) = child.fields.get("b") {
+            assert_eq!(*b, 99.0);
         } else {
             panic!("expected field b=99");
         }
-        if let Some(LogValue::Int(c)) = child.fields.get("c") {
-            assert_eq!(*c, 3);
+        if let Some(LogValue::Number(c)) = child.fields.get("c") {
+            assert_eq!(*c, 3.0);
         } else {
             panic!("expected field c=3");
         }
@@ -594,6 +594,33 @@ mod create_json_log_formatter_tests {
         assert!(result.contains("\"msg\":\"msg\""));
     }
 
+    // log.test.ts: the TS envelope is JSON.stringify output, so numbers follow JSON: one numeric
+    // kind, an integral value with no fraction, and a non-finite value as null.
+    #[test]
+    fn serializes_numbers_as_json_does() {
+        let state = test_state();
+        reset_log_state(&state);
+        let fmt = create_json_log_formatter(&state);
+        let mut data = HashMap::new();
+        data.insert("count".to_string(), LogValue::Number(1.0));
+        data.insert("half".to_string(), LogValue::Number(0.5));
+        data.insert("negative".to_string(), LogValue::Number(-3.0));
+        data.insert("missing".to_string(), LogValue::Number(f64::NAN));
+        data.insert("unbounded".to_string(), LogValue::Number(f64::INFINITY));
+        let result = fmt(&LogEntry {
+            level: LogLevel::Info,
+            channel: None,
+            data: LogData::Record(data),
+            timestamp_ms: 2.0,
+        });
+        assert!(result.contains("\"t\":2,"), "{result}");
+        assert!(result.contains("\"count\":1,"), "{result}");
+        assert!(result.contains("\"half\":0.5"), "{result}");
+        assert!(result.contains("\"negative\":-3"), "{result}");
+        assert!(result.contains("\"missing\":null"), "{result}");
+        assert!(result.contains("\"unbounded\":null"), "{result}");
+    }
+
     #[test]
     fn renders_retained_objects_through_the_canonical_unknown_projection() {
         let state = test_state();
@@ -620,8 +647,8 @@ mod create_json_log_formatter_tests {
             Arc::new(|v| {
                 let mut m = HashMap::new();
                 m.insert("serialized".to_string(), LogValue::Bool(true));
-                if let Some(LogValue::Int(id)) = v.get("id") {
-                    m.insert("id".to_string(), LogValue::Int(*id));
+                if let Some(LogValue::Number(id)) = v.get("id") {
+                    m.insert("id".to_string(), LogValue::Number(*id));
                 }
                 return m;
             }),
@@ -632,7 +659,7 @@ mod create_json_log_formatter_tests {
             "__kind".to_string(),
             LogValue::Str("acme.Widget".to_string()),
         );
-        inner.insert("id".to_string(), LogValue::Int(42));
+        inner.insert("id".to_string(), LogValue::Number(42.0));
         let mut data = HashMap::new();
         data.insert("widget".to_string(), LogValue::Record(inner));
         let entry = LogEntry {
@@ -683,13 +710,13 @@ mod create_log_context_tests {
         let state = test_state();
         reset_log_state(&state);
         let mut fields = HashMap::new();
-        fields.insert("version".to_string(), LogValue::Int(1));
+        fields.insert("version".to_string(), LogValue::Number(1.0));
         let mut ctx = create_log_context();
         ctx.channel = Some("render".to_string());
         ctx.fields = fields;
         assert_eq!(ctx.channel, Some("render".to_string()));
-        if let Some(LogValue::Int(v)) = ctx.fields.get("version") {
-            assert_eq!(*v, 1);
+        if let Some(LogValue::Number(v)) = ctx.fields.get("version") {
+            assert_eq!(*v, 1.0);
         } else {
             panic!("expected version=1");
         }
@@ -713,15 +740,15 @@ mod create_log_span_tests {
         let state = test_state();
         reset_log_state(&state);
         let mut fields = HashMap::new();
-        fields.insert("frame".to_string(), LogValue::Int(1));
+        fields.insert("frame".to_string(), LogValue::Number(1.0));
         let mut span = create_log_span(&state);
         span.name = "render-frame".to_string();
         span.fields = fields;
         span.channel = Some("perf".to_string());
         assert_eq!(span.name, "render-frame");
         assert_eq!(span.channel, Some("perf".to_string()));
-        if let Some(LogValue::Int(v)) = span.fields.get("frame") {
-            assert_eq!(*v, 1);
+        if let Some(LogValue::Number(v)) = span.fields.get("frame") {
+            assert_eq!(*v, 1.0);
         } else {
             panic!("expected frame=1");
         }
@@ -1044,7 +1071,7 @@ mod create_text_log_formatter_tests {
             }),
         );
         let mut data = HashMap::new();
-        data.insert("value".to_string(), LogValue::Int(3));
+        data.insert("value".to_string(), LogValue::Number(3.0));
         let entry = LogEntry {
             level: LogLevel::Info,
             channel: None,
@@ -1286,10 +1313,10 @@ mod enter_log_span {
         reset_log_state(&state);
         let (entries, _sink) = recording_sink(&state);
         let mut fields1 = HashMap::new();
-        fields1.insert("x".to_string(), LogValue::Int(1));
-        fields1.insert("y".to_string(), LogValue::Int(10));
+        fields1.insert("x".to_string(), LogValue::Number(1.0));
+        fields1.insert("y".to_string(), LogValue::Number(10.0));
         let mut fields2 = HashMap::new();
-        fields2.insert("x".to_string(), LogValue::Int(2));
+        fields2.insert("x".to_string(), LogValue::Number(2.0));
         let span1 = span_of(&state, "outer", Some(fields1), None);
         let span2 = span_of(&state, "inner", Some(fields2), None);
         enter_log_span(&state, &span1);
@@ -1298,8 +1325,8 @@ mod enter_log_span {
         exit_log_span(&state, &span2);
         exit_log_span(&state, &span1);
         let e = entries.lock().unwrap();
-        assert_eq!(record_int(&e[0].data, "x"), Some(2));
-        assert_eq!(record_int(&e[0].data, "y"), Some(10));
+        assert_eq!(record_number(&e[0].data, "x"), Some(2.0));
+        assert_eq!(record_number(&e[0].data, "y"), Some(10.0));
     }
 
     #[test]
@@ -1321,12 +1348,12 @@ mod enter_log_span {
         reset_log_state(&state);
         let (entries, _sink) = recording_sink(&state);
         let mut span_fields = HashMap::new();
-        span_fields.insert("inherited".to_string(), LogValue::Int(1));
+        span_fields.insert("inherited".to_string(), LogValue::Number(1.0));
         span_fields.insert("winner".to_string(), LogValue::Str("span".to_string()));
         let span = span_of(&state, "record", Some(span_fields), None);
         enter_log_span(&state, &span);
         let mut data = HashMap::new();
-        data.insert("direct".to_string(), LogValue::Int(2));
+        data.insert("direct".to_string(), LogValue::Number(2.0));
         data.insert("winner".to_string(), LogValue::Str("data".to_string()));
         log(
             &state,
@@ -1338,8 +1365,8 @@ mod enter_log_span {
         exit_log_span(&state, &span);
 
         let e = entries.lock().unwrap();
-        assert_eq!(record_int(&e[0].data, "direct"), Some(2));
-        assert_eq!(record_int(&e[0].data, "inherited"), Some(1));
+        assert_eq!(record_number(&e[0].data, "direct"), Some(2.0));
+        assert_eq!(record_number(&e[0].data, "inherited"), Some(1.0));
         assert_eq!(record_str(&e[0].data, "winner"), Some("data".to_string()));
     }
 }
@@ -1353,7 +1380,7 @@ mod exit_log_span {
         reset_log_state(&state);
         let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
-        fields.insert("z".to_string(), LogValue::Int(1));
+        fields.insert("z".to_string(), LogValue::Number(1.0));
         let span = span_of(&state, "phantom", Some(fields), None);
         exit_log_span(&state, &span);
         log(&state, 0.0, LogLevel::Info, "clean".into(), None);
@@ -1367,9 +1394,9 @@ mod exit_log_span {
         reset_log_state(&state);
         let (entries, _sink) = recording_sink(&state);
         let mut fields1 = HashMap::new();
-        fields1.insert("a".to_string(), LogValue::Int(1));
+        fields1.insert("a".to_string(), LogValue::Number(1.0));
         let mut fields2 = HashMap::new();
-        fields2.insert("b".to_string(), LogValue::Int(2));
+        fields2.insert("b".to_string(), LogValue::Number(2.0));
         let span1 = span_of(&state, "a", Some(fields1), None);
         let span2 = span_of(&state, "b", Some(fields2), None);
         enter_log_span(&state, &span1);
@@ -1379,7 +1406,7 @@ mod exit_log_span {
         log(&state, 0.0, LogLevel::Info, "after-a-exit".into(), None);
         exit_log_span(&state, &span2);
         let e = entries.lock().unwrap();
-        assert_eq!(record_int(&e[0].data, "b"), Some(2));
+        assert_eq!(record_number(&e[0].data, "b"), Some(2.0));
         // "a" should not be present
         if let LogData::Record(ref map) = e[0].data {
             assert!(!map.contains_key("a"));
@@ -1524,7 +1551,7 @@ mod initialize_log_context {
     #[test]
     fn resets_the_channel_and_base_fields() {
         let mut fields = HashMap::new();
-        fields.insert("k".to_string(), LogValue::Int(1));
+        fields.insert("k".to_string(), LogValue::Number(1.0));
         let mut context = context_of(Some("old".to_string()), Some(fields));
 
         initialize_log_context(&mut context);
@@ -1757,13 +1784,13 @@ mod log_info_with_tests {
         reset_log_state(&state);
         let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
-        fields.insert("v".to_string(), LogValue::Int(2));
+        fields.insert("v".to_string(), LogValue::Number(2.0));
         let ctx = context_of(Some("ch".to_string()), Some(fields));
         let mut data = HashMap::new();
         data.insert("extra".to_string(), LogValue::Bool(true));
         log_info_with(&state, 0.0, &ctx, LogData::Record(data).into());
         let e = entries.lock().unwrap();
-        assert_eq!(record_int(&e[0].data, "v"), Some(2));
+        assert_eq!(record_number(&e[0].data, "v"), Some(2.0));
         if let LogData::Record(ref map) = e[0].data {
             assert!(matches!(map.get("extra"), Some(LogValue::Bool(true))));
         }
@@ -1828,7 +1855,7 @@ mod log_tests {
         reset_log_state(&state);
         let (entries, _sink) = recording_sink(&state);
         let mut data = HashMap::new();
-        data.insert("k".to_string(), LogValue::Int(1));
+        data.insert("k".to_string(), LogValue::Number(1.0));
         log(
             &state,
             0.0,
@@ -1839,7 +1866,7 @@ mod log_tests {
         let e = entries.lock().unwrap();
         assert_eq!(e[0].level, LogLevel::Warn);
         assert_eq!(e[0].channel, Some("shader".to_string()));
-        assert_eq!(record_int(&e[0].data, "k"), Some(1));
+        assert_eq!(record_number(&e[0].data, "k"), Some(1.0));
     }
 
     #[test]
@@ -2026,14 +2053,14 @@ mod log_with_tests {
         reset_log_state(&state);
         let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
-        fields.insert("frame".to_string(), LogValue::Int(1));
+        fields.insert("frame".to_string(), LogValue::Number(1.0));
         let ctx = context_of(Some("render".to_string()), Some(fields));
         log_with(&state, 0.0, &ctx, LogLevel::Info, "update".into());
         let e = entries.lock().unwrap();
         assert_eq!(e[0].level, LogLevel::Info);
         assert_eq!(e[0].channel, Some("render".to_string()));
         assert_eq!(record_str(&e[0].data, "msg"), Some("update".to_string()));
-        assert_eq!(record_int(&e[0].data, "frame"), Some(1));
+        assert_eq!(record_number(&e[0].data, "frame"), Some(1.0));
     }
 
     #[test]
@@ -2042,10 +2069,10 @@ mod log_with_tests {
         reset_log_state(&state);
         let (entries, _sink) = recording_sink(&state);
         let mut fields = HashMap::new();
-        fields.insert("base".to_string(), LogValue::Int(1));
+        fields.insert("base".to_string(), LogValue::Number(1.0));
         let ctx = context_of(None, Some(fields));
         let mut data = HashMap::new();
-        data.insert("extra".to_string(), LogValue::Int(2));
+        data.insert("extra".to_string(), LogValue::Number(2.0));
         log_with(
             &state,
             0.0,
@@ -2054,8 +2081,8 @@ mod log_with_tests {
             LogData::Record(data).into(),
         );
         let e = entries.lock().unwrap();
-        assert_eq!(record_int(&e[0].data, "base"), Some(1));
-        assert_eq!(record_int(&e[0].data, "extra"), Some(2));
+        assert_eq!(record_number(&e[0].data, "base"), Some(1.0));
+        assert_eq!(record_number(&e[0].data, "extra"), Some(2.0));
     }
 
     #[test]
@@ -2115,7 +2142,9 @@ mod register_log_serializer_tests {
             "acme.Point",
             Arc::new(|v| {
                 let mut m = HashMap::new();
-                if let (Some(LogValue::Int(x)), Some(LogValue::Int(y))) = (v.get("x"), v.get("y")) {
+                if let (Some(LogValue::Number(x)), Some(LogValue::Number(y))) =
+                    (v.get("x"), v.get("y"))
+                {
                     m.insert(
                         "serialized".to_string(),
                         LogValue::Str(format!("({},{})", x, y)),
@@ -2130,8 +2159,8 @@ mod register_log_serializer_tests {
             "__kind".to_string(),
             LogValue::Str("acme.Point".to_string()),
         );
-        inner.insert("x".to_string(), LogValue::Int(3));
-        inner.insert("y".to_string(), LogValue::Int(4));
+        inner.insert("x".to_string(), LogValue::Number(3.0));
+        inner.insert("y".to_string(), LogValue::Number(4.0));
         let mut data = HashMap::new();
         data.insert("pt".to_string(), LogValue::Record(inner));
         let entry = LogEntry {
@@ -2163,13 +2192,13 @@ mod register_log_serializer_tests {
             "__kind".to_string(),
             LogValue::Str("acme.Unknown".to_string()),
         );
-        unknown_kind.insert("value".to_string(), LogValue::Int(4));
+        unknown_kind.insert("value".to_string(), LogValue::Number(4.0));
         let mut no_kind = HashMap::new();
-        no_kind.insert("value".to_string(), LogValue::Int(1));
+        no_kind.insert("value".to_string(), LogValue::Number(1.0));
         let mut data = HashMap::new();
         data.insert("missingKind".to_string(), LogValue::Record(no_kind));
         data.insert("unknownKind".to_string(), LogValue::Record(unknown_kind));
-        data.insert("primitive".to_string(), LogValue::Int(3));
+        data.insert("primitive".to_string(), LogValue::Number(3.0));
         let entry = LogEntry {
             level: LogLevel::Info,
             channel: None,
@@ -2364,7 +2393,7 @@ mod set_log_redaction_paths_tests {
             "items".to_string(),
             LogValue::Array(vec![LogValue::Str("secret".to_string())]),
         );
-        data.insert("primitive".to_string(), LogValue::Int(7));
+        data.insert("primitive".to_string(), LogValue::Number(7.0));
         let entry = LogEntry {
             level: LogLevel::Info,
             channel: None,

@@ -70,20 +70,20 @@ fn harness() -> Harness {
     }
 }
 
-fn integers_field(entry: &LogEntry, name: &str) -> Vec<i64> {
+fn numbers_field(entry: &LogEntry, name: &str) -> Vec<f64> {
     let Some(LogValue::Array(values)) = record(entry).get(name) else {
         panic!("expected an array field {name}");
     };
     return values
         .iter()
         .map(|value| match value {
-            LogValue::Int(number) => *number,
-            _ => panic!("expected integers"),
+            LogValue::Number(number) => *number,
+            _ => panic!("expected numbers"),
         })
         .collect();
 }
 
-fn joint_issues(entry: &LogEntry) -> Vec<(i64, String, String)> {
+fn joint_issues(entry: &LogEntry) -> Vec<(f64, String, String)> {
     let Some(LogValue::Array(values)) = record(entry).get("joints") else {
         panic!("expected a joints array");
     };
@@ -93,7 +93,7 @@ fn joint_issues(entry: &LogEntry) -> Vec<(i64, String, String)> {
             let LogValue::Record(joint) = value else {
                 panic!("expected a joint record");
             };
-            let Some(LogValue::Int(index)) = joint.get("index") else {
+            let Some(LogValue::Number(index)) = joint.get("index") else {
                 panic!("expected a joint index");
             };
             let Some(LogValue::Str(kind)) = joint.get("kind") else {
@@ -271,11 +271,11 @@ mod enable_physics_3d_guards {
             joint_issues(&entries[0]),
             vec![
                 (
-                    0,
+                    0.0,
                     "guard.unregistered".to_string(),
                     "unregistered-kind".to_string(),
                 ),
-                (1, "Hinge".to_string(), "invalid-bodies".to_string()),
+                (1.0, "Hinge".to_string(), "invalid-bodies".to_string()),
             ]
         );
     }
@@ -331,7 +331,7 @@ mod enable_physics_3d_guards {
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].channel.as_deref(), Some("physics3d"));
         assert_eq!(string_field(&entries[0], "status"), "spatial-overflow");
-        assert_eq!(integers_field(&entries[0], "bodyIndices"), vec![1]);
+        assert_eq!(numbers_field(&entries[0], "bodyIndices"), vec![1.0]);
     }
 
     #[test]

@@ -100,7 +100,10 @@ mod enable_movie_clip_guards {
         let LogData::Record(data) = &entries[0].data else {
             panic!("expected a record");
         };
-        assert!(matches!(data.get("repeatCount"), Some(LogValue::Int(2))));
+        assert!(matches!(
+            data.get("repeatCount"),
+            Some(LogValue::Number(2.0))
+        ));
         match data.get("unsupportedFields") {
             Some(LogValue::Array(values)) => {
                 assert_eq!(values.len(), 2);

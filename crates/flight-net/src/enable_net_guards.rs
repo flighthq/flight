@@ -83,7 +83,7 @@ mod message_tests {
         assert!(
             matches!(fields.get("reason"), Some(LogValue::Str(value)) if value == "body-on-get-or-head")
         );
-        assert!(matches!(fields.get("timeoutMs"), Some(LogValue::Float(value)) if *value == -1.0));
+        assert!(matches!(fields.get("timeoutMs"), Some(LogValue::Number(value)) if *value == -1.0));
         assert!(matches!(fields.get("url"), Some(LogValue::Str(value)) if value == "u"));
         assert!(
             matches!(fields.get("message"), Some(LogValue::Str(value)) if value == "sendNetRequest: GET requests do not carry a body — remove request.body or use a body-bearing method")
@@ -317,7 +317,7 @@ pub(crate) fn warn_on_net_misuse(
     if let Some(timeout_ms) = timeout_ms {
         data.insert(
             "timeoutMs".to_string(),
-            LogValue::Float(f64::from(timeout_ms)),
+            LogValue::Number(f64::from(timeout_ms)),
         );
     }
     let _ = log_once(

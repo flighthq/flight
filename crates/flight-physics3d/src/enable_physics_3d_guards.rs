@@ -144,7 +144,10 @@ fn warn_joints(log: &LogStateRef, now: f64, world: &Physics3DWorld) {
         .iter()
         .map(|joint| {
             let mut record = HashMap::new();
-            record.insert("index".to_string(), LogValue::Int(joint.index as i64));
+            record.insert(
+                "index".to_string(),
+                LogValue::Number((joint.index as i64) as f64),
+            );
             record.insert("kind".to_string(), LogValue::Str(joint.kind.clone()));
             record.insert(
                 "status".to_string(),
@@ -191,7 +194,7 @@ fn warn_spatial(log: &LogStateRef, now: f64, world: &Physics3DWorld) {
         "bodyIndices",
         bodies
             .iter()
-            .map(|index| LogValue::Int(i64::from(*index)))
+            .map(|index| LogValue::Number((i64::from(*index)) as f64))
             .collect(),
         format!(
             "synchronizePhysics3DBroadphase: {} {} held in the spatial backend's overflow path, so broadphase queries scan {} linearly — pass createBvhSpatialBackend3D() to createPhysics3DWorld(index) for a mixed-scale world, or tune createUniformGridSpatialBackend3D(cellSize) to the workload's typical body size.",

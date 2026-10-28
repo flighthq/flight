@@ -57,8 +57,7 @@ fn record_number(entry: &flight_log::LogEntry, key: &str) -> Option<f64> {
         return None;
     };
     return match record.get(key) {
-        Some(LogValue::Float(value)) => Some(*value),
-        Some(LogValue::Int(value)) => Some(*value as f64),
+        Some(LogValue::Number(value)) => Some(*value),
         _ => None,
     };
 }

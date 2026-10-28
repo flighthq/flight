@@ -68,7 +68,10 @@ mod enable_skeleton3d_guards {
             panic!("record expected");
         };
         assert!(matches!(data.get("joint"),Some(LogValue::Str(name)) if name=="hip"));
-        assert!(matches!(data.get("jointIndex"), Some(LogValue::Int(0))));
+        assert!(matches!(
+            data.get("jointIndex"),
+            Some(LogValue::Number(0.0))
+        ));
         assert!(
             matches!(data.get("message"),Some(LogValue::Str(message)) if message.contains("will not deform"))
         );

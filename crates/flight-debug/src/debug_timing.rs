@@ -57,7 +57,7 @@ pub fn mark_debug_frame(
         None => {
             let mut current = state.write().unwrap();
             current.frame_number += 1;
-            LogValue::Int(current.frame_number)
+            LogValue::Number((current.frame_number) as f64)
         }
     };
     let mut data = HashMap::new();

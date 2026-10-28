@@ -29,7 +29,10 @@ pub fn enable_skeleton3d_guards(
                 .unwrap_or_else(|| "<unnamed>".to_string());
             let mut data = HashMap::new();
             data.insert("joint".to_string(), LogValue::Str(name));
-            data.insert("jointIndex".to_string(), LogValue::Int(index as i64));
+            data.insert(
+                "jointIndex".to_string(),
+                LogValue::Number((index as i64) as f64),
+            );
             data.insert("message".to_string(),LogValue::Str("setSkeleton3DBindPose: a joint has no invertible world matrix, so its inverse-bind entry was set to identity and that joint will not deform — a zero scale on the joint or an ancestor is the usual cause, and an imported rig can carry one.".to_string()));
             let _ = log_once(
                 &log,

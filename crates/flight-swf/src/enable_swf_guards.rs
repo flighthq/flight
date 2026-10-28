@@ -45,10 +45,13 @@ fn warn_on_unknown_swf_filter(
     filter_index: u32,
 ) {
     let mut data = HashMap::new();
-    data.insert("filterId".to_string(), LogValue::Int(i64::from(filter_id)));
+    data.insert(
+        "filterId".to_string(),
+        LogValue::Number((i64::from(filter_id)) as f64),
+    );
     data.insert(
         "filterIndex".to_string(),
-        LogValue::Int(i64::from(filter_index)),
+        LogValue::Number((i64::from(filter_index)) as f64),
     );
     data.insert(
         "message".to_string(),

@@ -128,7 +128,10 @@ mod enable_collision_guards {
                 assert!(
                     matches!(data.get("kind"), Some(LogValue::Str(value)) if value == "segment")
                 );
-                assert!(matches!(data.get("shapeIndex"), Some(LogValue::Int(0))));
+                assert!(matches!(
+                    data.get("shapeIndex"),
+                    Some(LogValue::Number(0.0))
+                ));
                 assert!(
                     matches!(data.get("status"), Some(LogValue::Str(value)) if value == "unsupported-shape-kind")
                 );
@@ -233,7 +236,10 @@ mod enable_collision_guards {
             panic!("expected collision guard record");
         };
         assert_eq!((calls.load(Ordering::SeqCst), entries.len()), (1, 1));
-        assert!(matches!(data.get("shapeIndex"), Some(LogValue::Int(1))));
+        assert!(matches!(
+            data.get("shapeIndex"),
+            Some(LogValue::Number(1.0))
+        ));
         assert!(matches!(
             data.get("status"),
             Some(LogValue::Str(value)) if value == "non-convex-polygon"

@@ -44,7 +44,7 @@ fn integer_field(entry: &LogEntry, key: &str) -> i64 {
     let LogData::Record(data) = &entry.data else {
         panic!("expected record log data");
     };
-    let Some(LogValue::Int(value)) = data.get(key) else {
+    let Some(LogValue::Number(value)) = data.get(key) else {
         panic!("expected integer field {key}");
     };
     return *value;

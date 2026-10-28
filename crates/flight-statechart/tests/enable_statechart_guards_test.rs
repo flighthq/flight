@@ -114,19 +114,19 @@ mod enable_statechart_guards {
         match &entries[0].data {
             LogData::Record(record) => {
                 match record.get("exitTimeRatio") {
-                    Some(LogValue::Float(value)) => assert_eq!(*value, 0.5),
+                    Some(LogValue::Number(value)) => assert_eq!(*value, 0.5),
                     _ => panic!("expected exitTimeRatio"),
                 }
                 match record.get("regionDuration") {
-                    Some(LogValue::Float(value)) => assert_eq!(*value, 0.0),
+                    Some(LogValue::Number(value)) => assert_eq!(*value, 0.0),
                     _ => panic!("expected regionDuration"),
                 }
                 match record.get("regionIndex") {
-                    Some(LogValue::Int(value)) => assert_eq!(*value, 0),
+                    Some(LogValue::Number(value)) => assert_eq!(*value, 0.0),
                     _ => panic!("expected regionIndex"),
                 }
                 match record.get("transitionIndex") {
-                    Some(LogValue::Int(value)) => assert_eq!(*value, 0),
+                    Some(LogValue::Number(value)) => assert_eq!(*value, 0.0),
                     _ => panic!("expected transitionIndex"),
                 }
                 match record.get("status") {

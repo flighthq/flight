@@ -71,7 +71,7 @@ mod end_debug_span {
         let data = entry_data(&memory);
         assert_eq!(data.len(), 1);
         assert!(matches!(field(&data[0], "label"), LogValue::Str(label) if label == "draw"));
-        assert!(matches!(field(&data[0], "elapsedMs"), LogValue::Float(ms) if ms == 2.5));
+        assert!(matches!(field(&data[0], "elapsedMs"), LogValue::Number(ms) if ms == 2.5));
     }
 }
 
@@ -106,7 +106,7 @@ mod mark_debug_frame {
         mark_debug_frame(&state, &log_state, 0.0, None, None);
         mark_debug_frame(&state, &log_state, 0.0, None, None);
         let data = entry_data(&memory);
-        let (LogValue::Int(a), LogValue::Int(b)) =
+        let (LogValue::Number(a), LogValue::Number(b)) =
             (field(&data[0], "frame"), field(&data[1], "frame"))
         else {
             panic!("numeric frame markers");
@@ -161,7 +161,7 @@ mod measure_debug_span {
         let data = entry_data(&memory);
         assert_eq!(data.len(), 1);
         assert!(matches!(field(&data[0], "label"), LogValue::Str(label) if label == "compute"));
-        assert!(matches!(field(&data[0], "elapsedMs"), LogValue::Float(ms) if ms == 2.5));
+        assert!(matches!(field(&data[0], "elapsedMs"), LogValue::Number(ms) if ms == 2.5));
     }
 
     #[test]

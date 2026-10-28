@@ -94,10 +94,13 @@ fn warn_on_scene2d_resource_failure(
         "reason".to_string(),
         LogValue::Str(reason_string(notice.reason).to_string()),
     );
-    data.insert("total".to_string(), LogValue::Int(notice.total as i64));
+    data.insert(
+        "total".to_string(),
+        LogValue::Number((notice.total as i64) as f64),
+    );
     data.insert(
         "unresolved".to_string(),
-        LogValue::Int(notice.unresolved as i64),
+        LogValue::Number((notice.unresolved as i64) as f64),
     );
     data.insert(
         "url".to_string(),

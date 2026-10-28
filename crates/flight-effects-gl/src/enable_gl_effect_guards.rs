@@ -150,11 +150,11 @@ fn warn_gl_effect_application(
     );
     record.insert(
         "registeredCount".to_string(),
-        LogValue::Int(explanation.registered_count as i64),
+        LogValue::Number((explanation.registered_count as i64) as f64),
     );
     record.insert(
         "requestedCount".to_string(),
-        LogValue::Int(explanation.requested_count as i64),
+        LogValue::Number((explanation.requested_count as i64) as f64),
     );
     record.insert("status".to_string(), LogValue::Str(status.to_string()));
     record.insert(

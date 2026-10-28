@@ -64,7 +64,7 @@ fn warn_on_degenerate_camera_2d_visible_bounds(
                 .to_string(),
         ),
     );
-    data.insert("zoom".to_string(), LogValue::Float(camera.zoom as f64));
+    data.insert("zoom".to_string(), LogValue::Number(camera.zoom as f64));
     let key = format!("camera:degenerate-visible-bounds:{}", camera.zoom);
     let _ = log_once(
         log_state,
@@ -92,11 +92,11 @@ fn warn_on_non_orthonormal_camera_3d_view(log_state: &LogStateRef, now_ms: f64, 
     );
     data.insert(
         "scaleDeviation".to_string(),
-        LogValue::Float(explanation.scale_deviation as f64),
+        LogValue::Number(explanation.scale_deviation as f64),
     );
     data.insert(
         "shearDeviation".to_string(),
-        LogValue::Float(explanation.shear_deviation as f64),
+        LogValue::Number(explanation.shear_deviation as f64),
     );
     let _ = log_once(
         log_state,

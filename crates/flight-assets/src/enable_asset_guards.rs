@@ -65,7 +65,7 @@ fn warn_on_asset_acquire_failure(
     data.insert("id".to_string(), LogValue::Str(explanation.id.clone()));
     data.insert(
         "refCount".to_string(),
-        LogValue::Int(explanation.ref_count as i64),
+        LogValue::Number((explanation.ref_count as i64) as f64),
     );
     data.insert("status".to_string(), LogValue::Str(status.to_string()));
     data.insert(

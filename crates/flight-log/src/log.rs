@@ -1,3 +1,4 @@
+//! flight-compiler: data-union LogData LogValue LogDataOrProvider
 //! flight-compiler: companion fileLogSink.ts
 // flight-lint: allow-file(f64) D1: log timestamps, timer instants and throttle intervals are millisecond durations
 use std::collections::{HashMap, HashSet};
@@ -29,13 +30,14 @@ pub enum LogData {
     Record(HashMap<String, LogValue>),
 }
 
-/// Values that can appear inside a LogData::Record.
+/// Values that can appear inside a LogData::Record. A log value has one numeric kind, as JSON does:
+/// integer and fractional values are both `Number`, and an integral value serializes without a
+/// fractional part (`1`, not `1.0`), so every target writes the same envelope.
 #[derive(Clone)]
 pub enum LogValue {
     Null,
     Bool(bool),
-    Int(i64),
-    Float(f64),
+    Number(f64),
     Str(String),
     Record(HashMap<String, LogValue>),
     Array(Vec<LogValue>),
@@ -285,7 +287,10 @@ pub fn create_json_log_formatter(state: &LogStateRef) -> LogFormatter {
         let data_json = log_value_to_json(&LogValue::Record(redacted));
         return format!(
             "{{\"__flight\":true,\"t\":{},\"level\":\"{}\",\"channel\":{},\"data\":{}}}",
-            entry.timestamp_ms, level_str, channel_str, data_json
+            log_number_to_json(entry.timestamp_ms),
+            level_str,
+            channel_str,
+            data_json
         );
     });
 }
@@ -620,7 +625,7 @@ pub fn begin_log_group(state: &LogStateRef, now_ms: f64, label: &str, channel: O
     let mut data = HashMap::new();
     data.insert("msg".to_string(), LogValue::Str(label.to_string()));
     data.insert("group".to_string(), LogValue::Str("begin".to_string()));
-    data.insert("depth".to_string(), LogValue::Int(depth as i64));
+    data.insert("depth".to_string(), LogValue::Number(depth as f64));
     emit_to_sinks(
         state,
         &LogEntry {
@@ -773,7 +778,7 @@ pub fn end_log_group(state: &LogStateRef, now_ms: f64, channel: Option<String>) 
     }
     let mut data = HashMap::new();
     data.insert("group".to_string(), LogValue::Str("end".to_string()));
-    data.insert("depth".to_string(), LogValue::Int(depth as i64));
+    data.insert("depth".to_string(), LogValue::Number(depth as f64));
     emit_to_sinks(
         state,
         &LogEntry {
@@ -791,7 +796,7 @@ pub fn end_log_timer(state: &LogStateRef, now_ms: f64, timer: &LogTimer) -> f64 
     let elapsed = now_ms - timer.started_at;
     let mut data = HashMap::new();
     data.insert("label".to_string(), LogValue::Str(timer.label.clone()));
-    data.insert("elapsedMs".to_string(), LogValue::Float(elapsed));
+    data.insert("elapsedMs".to_string(), LogValue::Number(elapsed));
     log_debug(
         state,
         now_ms,
@@ -1034,6 +1039,15 @@ pub fn log_info_with(
     emit_level(state, now_ms, LogLevel::Info, Some(context), data);
 }
 
+// JSON has no NaN or infinity, so a non-finite number serializes as `null`, as JSON.stringify does.
+// A finite number uses the shortest round-trip form, which writes an integral value with no fraction.
+fn log_number_to_json(value: f64) -> String {
+    if !value.is_finite() {
+        return "null".to_string();
+    }
+    return value.to_string();
+}
+
 /// Emits a given key at most once per state lifetime.
 // flight-lint: allow(conform-params) D5: caller-owned LogState and injected now_ms replace the hidden singleton and clock
 pub fn log_once(
@@ -1070,14 +1084,7 @@ fn log_value_to_json(value: &LogValue) -> String {
                 "false".to_string()
             }
         }
-        LogValue::Int(n) => n.to_string(),
-        LogValue::Float(f) => {
-            if f.fract() == 0.0 && f.is_finite() {
-                format!("{:.1}", f)
-            } else {
-                f.to_string()
-            }
-        }
+        LogValue::Number(value) => log_number_to_json(*value),
         LogValue::Str(s) => format!("\"{}\"", escape_json_string(s)),
         LogValue::Record(map) => {
             let mut entries: Vec<String> = Vec::new();
@@ -1363,8 +1370,7 @@ impl fmt::Debug for LogValue {
         return match self {
             LogValue::Null => formatter.write_str("Null"),
             LogValue::Bool(value) => formatter.debug_tuple("Bool").field(value).finish(),
-            LogValue::Int(value) => formatter.debug_tuple("Int").field(value).finish(),
-            LogValue::Float(value) => formatter.debug_tuple("Float").field(value).finish(),
+            LogValue::Number(value) => formatter.debug_tuple("Number").field(value).finish(),
             LogValue::Str(value) => formatter.debug_tuple("Str").field(value).finish(),
             LogValue::Record(value) => formatter.debug_tuple("Record").field(value).finish(),
             LogValue::Array(value) => formatter.debug_tuple("Array").field(value).finish(),

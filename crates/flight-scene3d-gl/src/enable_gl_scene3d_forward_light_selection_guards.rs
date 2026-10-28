@@ -46,11 +46,11 @@ fn warn_gl_scene3d_forward_light_selection_required(
     );
     data.insert(
         "pointLightCount".to_string(),
-        LogValue::Int(lights.point.len() as i64),
+        LogValue::Number((lights.point.len() as i64) as f64),
     );
     data.insert(
         "spotLightCount".to_string(),
-        LogValue::Int(lights.spot.len() as i64),
+        LogValue::Number((lights.spot.len() as i64) as f64),
     );
     log_once(
         &log_state,

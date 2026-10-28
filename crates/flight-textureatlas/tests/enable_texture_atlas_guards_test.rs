@@ -98,7 +98,10 @@ mod enable_texture_atlas_guards {
         assert!(Arc::ptr_eq(&retained, &atlas));
         assert_eq!(record.len(), 4);
         assert!(message.contains("uvRotation"));
-        assert!(matches!(record.get("regionId"), Some(LogValue::Int(0))));
+        assert!(matches!(
+            record.get("regionId"),
+            Some(LogValue::Number(0.0))
+        ));
         assert!(
             matches!(record.get("status"), Some(LogValue::Str(status)) if status == "rotated-page")
         );

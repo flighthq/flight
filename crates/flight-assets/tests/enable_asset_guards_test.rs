@@ -85,7 +85,7 @@ mod enable_asset_guards {
         assert!(matches!(&data["id"],LogValue::Str(value)if value=="guard-missing-descriptor"));
         assert!(matches!(&data["status"],LogValue::Str(value)if value=="missing-descriptor"));
         assert!(matches!(&data["type"], LogValue::Null));
-        assert!(matches!(&data["refCount"], LogValue::Int(0)));
+        assert!(matches!(&data["refCount"], LogValue::Number(0.0)));
         assert!(
             matches!(&data["message"],LogValue::Str(value)if value=="acquireAsset: no descriptor is registered for id \"guard-missing-descriptor\"; call registerAssetDescriptor or registerAssetManifest before acquiring it.")
         );

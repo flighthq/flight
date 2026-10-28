@@ -77,11 +77,11 @@ fn record_str(entry: &LogEntry, key: &str) -> Option<String> {
     return Some(value.clone());
 }
 
-fn record_int(entry: &LogEntry, key: &str) -> Option<i64> {
+fn record_number(entry: &LogEntry, key: &str) -> Option<f64> {
     let LogData::Record(record) = &entry.data else {
         return None;
     };
-    let Some(LogValue::Int(value)) = record.get(key) else {
+    let Some(LogValue::Number(value)) = record.get(key) else {
         return None;
     };
     return Some(*value);
@@ -211,8 +211,8 @@ mod resolve_wgpu_quad_material_renderer {
             )
         );
         assert_eq!(
-            record_int(entry, "registry"),
-            Some(RenderRegistryTable::MaterialRenderer as i64)
+            record_number(entry, "registry"),
+            Some(RenderRegistryTable::MaterialRenderer as i64 as f64)
         );
     }
 }

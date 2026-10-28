@@ -45,7 +45,10 @@ pub fn enable_texture_atlas_guards(
                     .to_string(),
             ),
         );
-        record.insert("regionId".to_string(), LogValue::Int(i64::from(region_id)));
+        record.insert(
+            "regionId".to_string(),
+            LogValue::Number((i64::from(region_id)) as f64),
+        );
         record.insert(
             "status".to_string(),
             LogValue::Str(

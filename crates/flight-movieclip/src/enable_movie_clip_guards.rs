@@ -102,7 +102,7 @@ fn warn_on_unsupported_spritesheet_timeline_fields(
     );
     data.insert(
         String::from("repeatCount"),
-        LogValue::Int(i64::from(repeat_count)),
+        LogValue::Number((i64::from(repeat_count)) as f64),
     );
     data.insert(
         String::from("unsupportedFields"),

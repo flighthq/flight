@@ -289,7 +289,10 @@ fn warn_on_invalid_collision_status(
     let data = LogData::Record(HashMap::from([
         ("kind".to_string(), LogValue::Str(kind.to_string())),
         ("message".to_string(), LogValue::Str(message.to_string())),
-        ("shapeIndex".to_string(), LogValue::Int(shape_index as i64)),
+        (
+            "shapeIndex".to_string(),
+            LogValue::Number((shape_index as i64) as f64),
+        ),
         (
             "status".to_string(),
             LogValue::Str(status_string.to_string()),
