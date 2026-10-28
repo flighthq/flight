@@ -24,7 +24,6 @@ const RECORD_CLONE_TYPE_MARKER: &str = "@record-clone-type:";
 const RECORD_VEC_FIELD_MARKER: &str = "@record-vec-field:";
 const RETURN_TYPE_MARKER: &str = "@return-type:";
 const RETURNS_U32_MARKER: &str = "@returns-u32";
-const STRING_ARGUMENT_MARKER: &str = "@string-argument:";
 const STRING_EXPRESSION_MARKER: &str = "@string-expression:";
 const STRING_RETURN_MARKER: &str = "@string-return:";
 const VEC_CLONE_ARGUMENT_MARKER: &str = "@vec-clone-argument:";
@@ -280,12 +279,6 @@ pub(crate) fn generation_context(programs: &[&Program]) -> Result<HashSet<String
                 };
                 if let Pat::Ident(pattern) = argument.pat.as_ref() {
                     let local = snake_to_lower_camel(&pattern.ident.to_string());
-                    if rust_type_is_string(&argument.ty) {
-                        context.insert(format!(
-                            "{STRING_ARGUMENT_MARKER}{function_name}:{}",
-                            pattern.ident
-                        ));
-                    }
                     if let Some(record) = named_type(&argument.ty)
                         && record_types.contains(&record)
                     {
@@ -437,13 +430,6 @@ pub(crate) fn function_expression_context(
         .map(|suffix| format!("{VEC_CLONE_EXPRESSION_MARKER}{suffix}"))
         .collect::<Vec<_>>();
     context.extend(vec_markers);
-    let string_prefix = format!("{STRING_ARGUMENT_MARKER}{function_name}:");
-    let string_markers = context
-        .iter()
-        .filter_map(|marker| marker.strip_prefix(&string_prefix))
-        .map(|local| format!("{STRING_EXPRESSION_MARKER}{local}"))
-        .collect::<Vec<_>>();
-    context.extend(string_markers);
     for argument in &function.sig.inputs {
         let FnArg::Typed(argument) = argument else {
             continue;
@@ -459,6 +445,9 @@ pub(crate) fn function_expression_context(
         }
         if type_is_unsigned_integer(&argument.ty) {
             context.insert(format!("{UNSIGNED_INTEGER_LOCAL_MARKER}{}", pattern.ident));
+        }
+        if rust_type_is_string(&argument.ty) {
+            context.insert(format!("{STRING_EXPRESSION_MARKER}{}", pattern.ident));
         }
     }
     syn::visit::Visit::visit_block(
