@@ -390,8 +390,8 @@ fn swf_shape_create_morph_segment_paths(
     let mut indices: Vec<u32> = segments.keys().copied().collect();
     indices.sort_unstable();
     for index in indices {
-        let mut start_path = create_path();
-        let mut end_path = create_path();
+        let mut start_path = create_path(flight_path::PathWinding::NonZero);
+        let mut end_path = create_path(flight_path::PathWinding::NonZero);
         for contour in swf_shape_stitch_segments(&segments[&index]) {
             append_path_move_to(
                 &mut start_path,

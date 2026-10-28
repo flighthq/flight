@@ -40,7 +40,7 @@ fn create_rive_clip_path(
     } else {
         PathWinding::NonZero
     };
-    let mut path = create_path();
+    let mut path = create_path(flight_path::PathWinding::NonZero);
     path.winding = winding;
     for record in paths {
         path.commands.extend_from_slice(&record.commands);
@@ -54,7 +54,7 @@ fn create_rive_clip_path(
         }
     }
 
-    let mut resolved = create_path();
+    let mut resolved = create_path(flight_path::PathWinding::NonZero);
     simplify_path(
         &mut resolved,
         path_boolean_kernel,
@@ -219,7 +219,7 @@ pub fn apply_rive_clipping(
             .iter_mut()
             .find(|(candidate, _)| Arc::ptr_eq(candidate, &target))
         {
-            let mut intersection = create_path();
+            let mut intersection = create_path(flight_path::PathWinding::NonZero);
             intersect_paths(&mut intersection, path_boolean_kernel, current, &next, None);
             *current = intersection;
         } else {

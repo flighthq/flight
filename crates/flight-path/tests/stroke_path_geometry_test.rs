@@ -5,7 +5,7 @@ mod build_stroke_path_geometry {
 
     #[test]
     fn returns_invalid_style_for_zero_width() {
-        let mut path = create_path();
+        let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut style = StrokeStyle {
@@ -23,7 +23,7 @@ mod build_stroke_path_geometry {
 
     #[test]
     fn returns_ok_for_valid_line() {
-        let mut path = create_path();
+        let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let style = StrokeStyle {
@@ -41,7 +41,7 @@ mod build_stroke_path_geometry {
 
     #[test]
     fn builds_paired_closed_ring_sections_and_reports_pathological_centerlines() {
-        let mut rectangle = create_path();
+        let mut rectangle = create_path(PathWinding::NonZero);
         append_path_rectangle(&mut rectangle, 0.0, 0.0, 100.0, 50.0);
         let mut style = StrokeStyle {
             width: 1.0,
@@ -58,7 +58,7 @@ mod build_stroke_path_geometry {
         assert!(valid.pieces[0].closed);
         assert_eq!(valid.pieces[0].left.len(), valid.pieces[0].right.len());
 
-        let mut crossing = create_path();
+        let mut crossing = create_path(PathWinding::NonZero);
         append_path_move_to(&mut crossing, 0.0, 0.0);
         append_path_line_to(&mut crossing, 40.0, 40.0);
         append_path_line_to(&mut crossing, 0.0, 40.0);
@@ -82,7 +82,7 @@ mod build_stroke_path_geometry {
 
     #[test]
     fn produces_left_and_right_sides() {
-        let mut path = create_path();
+        let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let style = StrokeStyle {

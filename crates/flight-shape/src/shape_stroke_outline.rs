@@ -36,7 +36,7 @@ fn flush_outline(
         *deferred = true;
         return;
     }
-    let mut outline = flight_path::contract::create_path();
+    let mut outline = flight_path::contract::create_path(flight_path::PathWinding::NonZero);
     compact_stroke_path(&mut outline, &current, &current_style, None);
     if !outline.commands.is_empty() {
         regions.push(ShapeFillRegion {
@@ -99,7 +99,9 @@ pub fn get_shape_stroke_outline_regions(
                     miter_limit: number_at(commands, argument_index + 7),
                     width: thickness,
                 });
-                centerline = Some(flight_path::contract::create_path());
+                centerline = Some(flight_path::contract::create_path(
+                    flight_path::PathWinding::NonZero,
+                ));
             } else {
                 style = None;
                 centerline = None;

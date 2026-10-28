@@ -85,7 +85,7 @@ fn path_command_count(shape: &Ref<Shape>) -> usize {
 }
 
 fn square() -> Ref<Path> {
-    let mut path = create_path();
+    let mut path = create_path(flight_path::PathWinding::NonZero);
     append_path_rectangle(&mut path, 0.0, 0.0, 10.0, 10.0);
     return Arc::new(RwLock::new(path));
 }

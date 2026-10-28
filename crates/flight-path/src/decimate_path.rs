@@ -6,7 +6,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path();
+        let mut out = create_path(PathWinding::NonZero);
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -17,8 +17,8 @@ mod sugar_tests {
 
     #[test]
     fn path_decimate_matches_decimate_path() {
-        let mut oa1 = create_path();
-        let mut ob1 = create_path();
+        let mut oa1 = create_path(PathWinding::NonZero);
+        let mut ob1 = create_path(PathWinding::NonZero);
         let s = test_path();
         s.decimate(0.5, &mut oa1, Some(0.5));
         decimate_path(&s, 0.5, &mut ob1, Some(0.5));

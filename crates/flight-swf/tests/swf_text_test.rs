@@ -166,7 +166,7 @@ mod read_swf_font_glyph_outline_source {
         ]);
         let mut source = reader(bytes);
         let font = read_swf_font_glyph_outline_source(&mut source, 2, None, None).unwrap();
-        let mut outline = create_path();
+        let mut outline = create_path(flight_path::PathWinding::NonZero);
         assert_eq!((font.get_glyph_outline_index_for_code_point)(0x41), 0);
         assert_eq!((font.get_glyph_outline_index_for_code_point)(0x42), -1);
         assert_eq!((font.get_glyph_outline_advance)(0), 600.0);

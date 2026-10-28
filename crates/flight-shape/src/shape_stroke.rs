@@ -78,7 +78,8 @@ pub fn get_shape_stroke_regions(commands: &[ShapeCommandToken]) -> Option<Vec<Sh
                     miter_limit: number_at(commands, argument_index + 7),
                     width: thickness,
                 });
-                let mut path = flight_path::contract::create_path();
+                let mut path =
+                    flight_path::contract::create_path(flight_path::PathWinding::NonZero);
                 path.winding = PathWinding::NonZero;
                 centerline = Some(path);
             } else {

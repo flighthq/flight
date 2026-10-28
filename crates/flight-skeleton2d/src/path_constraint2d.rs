@@ -85,7 +85,7 @@ pub fn solve_path_constraint_with(
     };
     let slot_bone_index =
         skeleton.slots.as_ref().unwrap()[path_constraint.target_slot_index as usize].bone_index;
-    let mut path: Path = create_path();
+    let mut path: Path = create_path(flight_path::PathWinding::NonZero);
     deform_skeleton_2d_path_attachment(
         &mut path,
         &attachment,

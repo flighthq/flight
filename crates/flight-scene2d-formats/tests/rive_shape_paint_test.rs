@@ -843,7 +843,7 @@ fn stroked_lengths(shape: &Ref<Shape>) -> Vec<f64> {
         if token.as_str() != Some("drawPath") {
             continue;
         }
-        let mut path: Path = create_path();
+        let mut path: Path = create_path(flight_path::PathWinding::NonZero);
         path.commands = numbers_at(&commands, index + 2)
             .iter()
             .map(|value| *value as u8)

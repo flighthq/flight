@@ -51,7 +51,7 @@ pub fn initialize_morph_shape(out: &mut MorphShape, morph: &Ref<PathMorph>) {
 pub fn initialize_morph_shape_data(out: &mut MorphShapeData, morph: &Ref<PathMorph>) {
     let progress = 0.0;
     let winding = morph.read().unwrap().winding;
-    let mut path_value = create_path();
+    let mut path_value = create_path(flight_path::PathWinding::NonZero);
     path_value.winding = winding;
     let path: Ref<Path> = Arc::new(RwLock::new(path_value));
     let path_bindings: Vec<MorphShapePathBinding> = vec![MorphShapePathBinding {
@@ -90,7 +90,7 @@ pub fn append_morph_shape_path(shape: &Ref<MorphShape>, morph: &Ref<PathMorph>) 
             Some(path) => path,
             None => {
                 let winding = morph.read().unwrap().winding;
-                let mut value = create_path();
+                let mut value = create_path(flight_path::PathWinding::NonZero);
                 value.winding = winding;
                 let path: Ref<Path> = Arc::new(RwLock::new(value));
                 let progress = guard.data.progress;

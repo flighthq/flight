@@ -23,7 +23,7 @@ fn create_lottie_polystar_path(
     outer_roundness: f32,
     inner_roundness: f32,
 ) -> Ref<Path> {
-    let mut path = create_path();
+    let mut path = create_path(flight_path::PathWinding::NonZero);
     let points = point_count.round().max(2.0) as usize;
     let rotation = f64::from(rotation_degrees - 90.0).to_radians();
     let count = if kind == 1 { points * 2 } else { points };

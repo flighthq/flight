@@ -642,7 +642,7 @@ fn to_rive_joints(value: f64, diagnostics: Option<&mut Vec<ImportDiagnostic>>) -
 }
 
 fn to_rive_path(record: &RivePathRecord) -> Path {
-    let mut path = create_path();
+    let mut path = create_path(flight_path::PathWinding::NonZero);
     path.winding = record.winding;
     path.commands.clone_from(&record.commands);
     path.data = record.data.iter().copied().map(f64::from).collect();
@@ -679,7 +679,7 @@ fn trim_rive_path_to_windows(
         if end <= start {
             continue;
         }
-        let mut trimmed = create_path();
+        let mut trimmed = create_path(flight_path::PathWinding::NonZero);
         trimmed.winding = record.winding;
         dash_path(
             &path,

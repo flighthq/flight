@@ -15,7 +15,7 @@ fn read_glyph(glyphs: Vec<SyntheticGlyph>, glyph_index: i32) -> (bool, Path) {
         read_open_type_loca_format(&font, &directory),
     )
     .unwrap();
-    let mut path = create_path();
+    let mut path = create_path(flight_path::PathWinding::NonZero);
     path.winding = PathWinding::EvenOdd;
     let ok = read_open_type_glyph_outline(&mut path, &font, &directory, &ranges, glyph_index);
     return (ok, path);
@@ -145,7 +145,7 @@ mod read_open_type_glyph_outline {
         }));
         let directory = read_sfnt_table_directory(&font).unwrap();
         let ranges = read_open_type_glyph_ranges(&font, &directory, 2, 1).unwrap();
-        let mut path = create_path();
+        let mut path = create_path(flight_path::PathWinding::NonZero);
         assert!(read_open_type_glyph_outline(
             &mut path, &font, &directory, &ranges, 1
         ));
@@ -182,7 +182,7 @@ mod read_open_type_glyph_outline {
             }],
         );
         let directory = read_sfnt_table_directory(&font).unwrap();
-        let mut path = create_path();
+        let mut path = create_path(flight_path::PathWinding::NonZero);
         path.winding = PathWinding::EvenOdd;
         assert!(read_open_type_glyph_outline(
             &mut path, &font, &directory, &ranges, 0
@@ -214,7 +214,7 @@ mod read_open_type_glyph_outline {
                 tag: pack_sfnt_tag("glyf"),
             }],
         );
-        let mut path = create_path();
+        let mut path = create_path(flight_path::PathWinding::NonZero);
         assert!(read_open_type_glyph_outline(
             &mut path,
             &font,

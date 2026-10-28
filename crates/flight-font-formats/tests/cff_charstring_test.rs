@@ -2,7 +2,7 @@ use flight_font_formats::*;
 use flight_path::{Path, PathWinding, create_path};
 
 fn run(bytes: &[u8]) -> (bool, Path) {
-    let mut path = create_path();
+    let mut path = create_path(flight_path::PathWinding::NonZero);
     path.winding = PathWinding::EvenOdd;
     let ok = run_cff_charstring(
         &mut path,
@@ -112,7 +112,7 @@ mod run_cff_charstring {
     #[test]
     fn calls_biased_local_subroutines_and_returns_to_the_caller() {
         let bytes = [139, 139, 21, 32, 10, 14, 149, 139, 5, 11];
-        let mut path = create_path();
+        let mut path = create_path(flight_path::PathWinding::NonZero);
         assert!(run_cff_charstring(
             &mut path,
             &bytes,
@@ -143,7 +143,7 @@ mod run_cff_charstring {
             start: 0,
             end: bytes.len(),
         };
-        let mut path = create_path();
+        let mut path = create_path(flight_path::PathWinding::NonZero);
         assert!(run_cff_charstring(&mut path, &bytes, &entry, &[], &[]));
         let first = path.commands.clone();
         assert!(run_cff_charstring(&mut path, &bytes, &entry, &[], &[]));
@@ -158,7 +158,7 @@ mod run_cff_charstring {
     #[test]
     fn invokes_global_pools_and_refuses_recursive_calls_past_the_depth_limit() {
         let bytes = [139, 139, 21, 32, 29, 14, 149, 139, 5, 11];
-        let mut path = create_path();
+        let mut path = create_path(flight_path::PathWinding::NonZero);
         assert!(run_cff_charstring(
             &mut path,
             &bytes,
@@ -240,7 +240,7 @@ mod run_cff_charstring {
     fn uses_view_relative_ranges_without_copying_or_rewriting_the_byte_stream() {
         let storage = [99, 139, 139, 21, 149, 139, 5, 14, 88];
         let view = &storage[1..8];
-        let mut path = create_path();
+        let mut path = create_path(flight_path::PathWinding::NonZero);
         assert!(run_cff_charstring(
             &mut path,
             view,

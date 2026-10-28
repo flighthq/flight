@@ -10,7 +10,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path();
+        let mut out = create_path(PathWinding::NonZero);
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -21,8 +21,8 @@ mod sugar_tests {
 
     #[test]
     fn path_transform_matches_transform_path() {
-        let mut oa1 = create_path();
-        let mut ob1 = create_path();
+        let mut oa1 = create_path(PathWinding::NonZero);
+        let mut ob1 = create_path(PathWinding::NonZero);
         let s = test_path();
         s.transform(&create_matrix(2.0, 0.0, 0.0, 2.0, 1.0, 1.0), &mut oa1);
         transform_path(&s, &create_matrix(2.0, 0.0, 0.0, 2.0, 1.0, 1.0), &mut ob1);
@@ -31,8 +31,8 @@ mod sugar_tests {
 
     #[test]
     fn path_translate_matches_translate_path() {
-        let mut oa2 = create_path();
-        let mut ob2 = create_path();
+        let mut oa2 = create_path(PathWinding::NonZero);
+        let mut ob2 = create_path(PathWinding::NonZero);
         let s = test_path();
         s.translate(2.0, -1.0, &mut oa2);
         translate_path(&s, 2.0, -1.0, &mut ob2);

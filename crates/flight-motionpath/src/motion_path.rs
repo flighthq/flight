@@ -24,7 +24,7 @@ pub fn initialize_motion_path(out: &mut MotionPath) {
     out.distance = 0.0;
     out.length = 0.0;
     out.loop_mode = MotionPathLoopMode::Clamp;
-    out.path = Ref::new(RwLock::new(create_path()));
+    out.path = Ref::new(RwLock::new(create_path(flight_path::PathWinding::NonZero)));
     out.speed = 0.0;
 }
 

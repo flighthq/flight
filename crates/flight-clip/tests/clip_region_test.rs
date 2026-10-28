@@ -206,7 +206,7 @@ mod create_clip_region_from_path {
 
     #[test]
     fn flattens_path_geometry_and_uses_its_winding() {
-        let mut path = create_path();
+        let mut path = create_path(flight_path::PathWinding::NonZero);
         path.winding = PathWinding::EvenOdd;
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 0.0);
@@ -343,7 +343,7 @@ mod initialize_clip_region_from_path {
 
     #[test]
     fn initializes_preallocated_entity_storage() {
-        let mut path = create_path();
+        let mut path = create_path(flight_path::PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 3.0, 4.0);
         append_path_line_to(&mut path, 6.0, 0.0);

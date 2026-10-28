@@ -1,7 +1,7 @@
 use flight_path::contract::*;
 
 fn rectangle_path(x: f64, y: f64, w: f64, h: f64) -> Path {
-    let mut path = create_path();
+    let mut path = create_path(PathWinding::NonZero);
     append_path_rectangle(&mut path, x, y, w, h);
     return path;
 }
@@ -29,7 +29,7 @@ mod tessellate_path_typed {
 
     #[test]
     fn returns_empty_typed_arrays_for_an_empty_path() {
-        let mesh = tessellate_path_typed(&create_path(), None);
+        let mesh = tessellate_path_typed(&create_path(PathWinding::NonZero), None);
         assert_eq!(mesh.vertices.len(), 0);
         assert_eq!(mesh.indices.len(), 0);
     }

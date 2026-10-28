@@ -5,8 +5,8 @@ mod explain_path_morph_creation {
 
     #[test]
     fn reports_compatible_pair() {
-        let start = create_path();
-        let end = create_path();
+        let start = create_path(PathWinding::NonZero);
+        let end = create_path(PathWinding::NonZero);
         let result = explain_path_morph_creation(&start, &end);
         assert!(result.supported);
         assert_eq!(result.reason, PathMorphCreationReason::Ok);
@@ -15,8 +15,8 @@ mod explain_path_morph_creation {
 
     #[test]
     fn reports_winding_mismatch() {
-        let start = create_path();
-        let mut end = create_path();
+        let start = create_path(PathWinding::NonZero);
+        let mut end = create_path(PathWinding::NonZero);
         end.winding = PathWinding::EvenOdd;
         let result = explain_path_morph_creation(&start, &end);
         assert!(!result.supported);
@@ -25,9 +25,9 @@ mod explain_path_morph_creation {
 
     #[test]
     fn reports_contour_count_mismatch() {
-        let mut start = create_path();
+        let mut start = create_path(PathWinding::NonZero);
         append_path_move_to(&mut start, 0.0, 0.0);
-        let end = create_path();
+        let end = create_path(PathWinding::NonZero);
         let result = explain_path_morph_creation(&start, &end);
         assert!(!result.supported);
         assert_eq!(result.reason, PathMorphCreationReason::ContourCountMismatch);
@@ -35,13 +35,13 @@ mod explain_path_morph_creation {
 
     #[test]
     fn reports_first_contour_with_different_closedness() {
-        let mut start = create_path();
+        let mut start = create_path(PathWinding::NonZero);
         append_path_move_to(&mut start, 0.0, 0.0);
         append_path_line_to(&mut start, 1.0, 0.0);
         append_path_move_to(&mut start, 10.0, 10.0);
         append_path_line_to(&mut start, 11.0, 10.0);
         append_path_close(&mut start);
-        let mut end = create_path();
+        let mut end = create_path(PathWinding::NonZero);
         append_path_move_to(&mut end, 0.0, 0.0);
         append_path_line_to(&mut end, 1.0, 0.0);
         append_path_move_to(&mut end, 10.0, 10.0);
@@ -57,7 +57,7 @@ mod explain_path_morph_creation {
 
     #[test]
     fn reports_contour_orientation_mismatch_for_reversed_subset() {
-        let mut start = create_path();
+        let mut start = create_path(PathWinding::NonZero);
         append_path_move_to(&mut start, 0.0, 0.0);
         append_path_line_to(&mut start, 20.0, 0.0);
         append_path_line_to(&mut start, 20.0, 20.0);
@@ -68,7 +68,7 @@ mod explain_path_morph_creation {
         append_path_line_to(&mut start, 15.0, 15.0);
         append_path_line_to(&mut start, 5.0, 15.0);
         append_path_close(&mut start);
-        let mut end = create_path();
+        let mut end = create_path(PathWinding::NonZero);
         append_path_move_to(&mut end, 0.0, 0.0);
         append_path_line_to(&mut end, 20.0, 0.0);
         append_path_line_to(&mut end, 20.0, 20.0);

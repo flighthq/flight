@@ -40,7 +40,7 @@ pub fn create_swf_text_shape(
     }
 
     let shape = create_shape();
-    let mut glyph_outline = create_path();
+    let mut glyph_outline = create_path(flight_path::PathWinding::NonZero);
     let mut font: Option<Arc<GlyphOutlineSource>> = None;
     let mut units_per_em = f64::from(DEFAULT_FONT_UNITS_PER_EM);
     let mut color = 0x000000ff;
@@ -307,12 +307,12 @@ fn swf_text_append_glyph_outline(
 fn swf_text_create_glyph_outline_path(glyph: &Option<Ref<Shape>>) -> Option<Path> {
     let glyph = glyph.as_ref()?;
     let regions = get_shape_fill_regions(&glyph.read().unwrap().data.commands)?;
-    let mut outline = create_path();
+    let mut outline = create_path(flight_path::PathWinding::NonZero);
     outline.winding = PathWinding::NonZero;
     let matrix = create_matrix(20.0, 0.0, 0.0, 20.0, 0.0, 0.0);
     for region in regions {
         let guard = region.path.read().unwrap();
-        let mut restored = create_path();
+        let mut restored = create_path(flight_path::PathWinding::NonZero);
         restored.winding = guard.winding;
         transform_path(&guard, &matrix, &mut restored);
         outline.commands.extend_from_slice(&restored.commands);

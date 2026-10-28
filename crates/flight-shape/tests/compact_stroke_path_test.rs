@@ -8,8 +8,8 @@ mod compact_stroke_path {
 
     #[test]
     fn writes_an_empty_path_for_an_empty_stroke() {
-        let path = create_path();
-        let mut compacted = create_path();
+        let path = create_path(flight_path::PathWinding::NonZero);
+        let mut compacted = create_path(flight_path::PathWinding::NonZero);
         compact_stroke_path(&mut compacted, &path, &stroke_style(), None);
         assert!(compacted.commands.is_empty());
     }
@@ -21,7 +21,7 @@ mod compact_stroke_path_source_parity {
 
     #[test]
     fn converts_an_open_centerline_into_a_closed_fill_outline() {
-        let mut centerline: flight_path::Path = create_path();
+        let mut centerline: flight_path::Path = create_path(flight_path::PathWinding::NonZero);
         centerline.commands = vec![PathCommand::MoveTo as u8, PathCommand::LineTo as u8];
         centerline.data = vec![0.0, 0.0, 20.0, 0.0];
         let style = flight_path::StrokeStyle {
@@ -32,7 +32,7 @@ mod compact_stroke_path_source_parity {
             dash: Vec::new(),
             dash_offset: 0.0,
         };
-        let mut compacted = create_path();
+        let mut compacted = create_path(flight_path::PathWinding::NonZero);
         compact_stroke_path(&mut compacted, &centerline, &style, None);
         assert_eq!(
             compacted.commands.first(),
@@ -45,7 +45,7 @@ mod compact_stroke_path_source_parity {
 
     #[test]
     fn returns_an_empty_path_for_a_centerline_without_a_segment() {
-        let mut centerline: flight_path::Path = create_path();
+        let mut centerline: flight_path::Path = create_path(flight_path::PathWinding::NonZero);
         centerline.commands = vec![PathCommand::MoveTo as u8];
         centerline.data = vec![0.0, 0.0];
         let style = flight_path::StrokeStyle {
@@ -56,7 +56,7 @@ mod compact_stroke_path_source_parity {
             dash: Vec::new(),
             dash_offset: 0.0,
         };
-        let mut compacted = create_path();
+        let mut compacted = create_path(flight_path::PathWinding::NonZero);
         compact_stroke_path(&mut compacted, &centerline, &style, None);
         assert!(compacted.commands.is_empty());
     }

@@ -63,7 +63,7 @@ pub fn lottie_trim_path_shape_item_handler(context: &mut LottieShapeItemContext<
             let trimmed = {
                 let path = path.read().unwrap();
                 let length = get_path_length(&path, None);
-                let mut trimmed = create_path();
+                let mut trimmed = create_path(flight_path::PathWinding::NonZero);
                 trimmed.winding = path.winding;
                 if length > 0.0 && visible > 0.0 {
                     dash_path(

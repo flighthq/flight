@@ -6,7 +6,7 @@ mod get_path_nearest_point {
 
     #[test]
     fn returns_negative_one_for_empty_path() {
-        let path = create_path();
+        let path = create_path(PathWinding::NonZero);
         let mut out = create_vector2(0.0, 0.0);
         let dist = get_path_nearest_point(&path, 5.0, 5.0, &mut out, Some(0.25));
         assert_eq!(dist, -1.0);
@@ -14,7 +14,7 @@ mod get_path_nearest_point {
 
     #[test]
     fn returns_zero_for_point_on_path() {
-        let mut path = create_path();
+        let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut out = create_vector2(0.0, 0.0);
@@ -26,7 +26,7 @@ mod get_path_nearest_point {
 
     #[test]
     fn returns_perpendicular_distance_for_point_off_path() {
-        let mut path = create_path();
+        let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let mut out = create_vector2(0.0, 0.0);
@@ -38,7 +38,7 @@ mod get_path_nearest_point {
 
     #[test]
     fn picks_closest_contour_in_multi_contour_path() {
-        let mut path = create_path();
+        let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         append_path_move_to(&mut path, 0.0, 10.0);
@@ -51,7 +51,7 @@ mod get_path_nearest_point {
 
     #[test]
     fn clamps_to_endpoint_when_projection_falls_outside() {
-        let mut path = create_path();
+        let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 10.0, 0.0);
         append_path_line_to(&mut path, 90.0, 0.0);
         let mut out = create_vector2(0.0, 0.0);
@@ -63,7 +63,7 @@ mod get_path_nearest_point {
 
     #[test]
     fn works_with_curved_paths() {
-        let mut path = create_path();
+        let mut path = create_path(PathWinding::NonZero);
         append_path_circle(&mut path, 0.0, 0.0, 50.0);
         let mut out = create_vector2(0.0, 0.0);
         let dist = get_path_nearest_point(&path, 100.0, 0.0, &mut out, Some(0.25));

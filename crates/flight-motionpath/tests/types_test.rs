@@ -84,7 +84,7 @@ mod path_identity {
 
     #[test]
     fn retains_the_source_path_object_reference() {
-        let mut path = create_path();
+        let mut path = create_path(flight_path::PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 0.0);
         let handle = Ref::new(RwLock::new(path));

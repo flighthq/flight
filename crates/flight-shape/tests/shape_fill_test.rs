@@ -8,7 +8,7 @@ mod append_shape_geometry_command {
 
     #[test]
     fn appends_move_and_line_verbs() {
-        let mut path = create_path();
+        let mut path = create_path(flight_path::PathWinding::NonZero);
         let commands = vec![number(3.0), number(4.0)];
         append_shape_geometry_command(&mut path, "moveTo", &commands, 0);
         assert_eq!(path.commands.len(), 1);
@@ -22,7 +22,7 @@ mod fill_source_parity {
 
     #[test]
     fn append_geometry_appends_polyline_verbs_and_expands_primitives_ignoring_non_geometry_names() {
-        let mut path = create_path();
+        let mut path = create_path(flight_path::PathWinding::NonZero);
         append_shape_geometry_command(&mut path, "moveTo", &[number(5.0), number(6.0)], 0);
         append_shape_geometry_command(&mut path, "lineTo", &[number(7.0), number(8.0)], 0);
         assert_eq!(
@@ -31,7 +31,7 @@ mod fill_source_parity {
         );
         assert_eq!(path.data, vec![5.0, 6.0, 7.0, 8.0]);
 
-        let mut rectangle = create_path();
+        let mut rectangle = create_path(flight_path::PathWinding::NonZero);
         append_shape_geometry_command(
             &mut rectangle,
             "drawRectangle",
@@ -49,14 +49,14 @@ mod fill_source_parity {
             ]
         );
 
-        let mut noop = create_path();
+        let mut noop = create_path(flight_path::PathWinding::NonZero);
         append_shape_geometry_command(&mut noop, "beginFill", &[number(0.0), number(1.0)], 0);
         assert!(noop.commands.is_empty());
     }
 
     #[test]
     fn append_geometry_keeps_the_data_cursor_aligned_across_a_raw_close() {
-        let mut path = create_path();
+        let mut path = create_path(flight_path::PathWinding::NonZero);
         let verbs = [
             PathCommand::MoveTo as u8,
             PathCommand::LineTo as u8,

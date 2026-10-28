@@ -70,7 +70,7 @@ impl Default for MotionPath {
             distance: 0.0,
             length: 0.0,
             loop_mode: MotionPathLoopMode::Clamp,
-            path: Ref::new(RwLock::new(create_path())),
+            path: Ref::new(RwLock::new(create_path(flight_path::PathWinding::NonZero))),
             speed: 0.0,
         };
     }

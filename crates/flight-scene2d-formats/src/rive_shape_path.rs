@@ -41,7 +41,7 @@ fn create_rive_parametric_path(
     source: &RiveCoreObject,
     diagnostics: Option<&mut Vec<ImportDiagnostic>>,
 ) -> Path {
-    let mut path = create_path();
+    let mut path = create_path(flight_path::PathWinding::NonZero);
     let width = read_rive_double(source, RIVE_PARAMETRIC_WIDTH, 0.0);
     let height = read_rive_double(source, RIVE_PARAMETRIC_HEIGHT, 0.0);
     let left = -read_rive_double(source, RIVE_PARAMETRIC_ORIGIN_X, 0.5) * width;
@@ -174,7 +174,7 @@ fn create_rive_points_path(
     index: usize,
 ) -> Path {
     let mut vertices = collect_rive_vertices(artboard, index);
-    let mut path = create_path();
+    let mut path = create_path(flight_path::PathWinding::NonZero);
     if vertices.is_empty() {
         return path;
     }

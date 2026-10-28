@@ -35,7 +35,7 @@ fn create_svg_clip_region(
     context: &mut SvgImportContext<'_>,
 ) -> Ref<ClipRegion> {
     let clip_style = resolve_svg_definition_style(element, context);
-    let mut out = create_path();
+    let mut out = create_path(flight_path::PathWinding::NonZero);
     out.winding = clip_style.clip_rule;
     let mut geometries = Vec::new();
     collect_svg_clip_geometry(element, &clip_style, None, context, &mut geometries);
@@ -249,7 +249,7 @@ fn collect_svg_clip_geometry_element(
             return;
         }
         let transformed_path = transform.as_ref().map_or(path.clone(), |transform| {
-            let mut transformed = create_path();
+            let mut transformed = create_path(flight_path::PathWinding::NonZero);
             transformed.winding = path.winding;
             transform_path(&path, transform, &mut transformed);
             return transformed;

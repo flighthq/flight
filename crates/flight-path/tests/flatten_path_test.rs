@@ -7,7 +7,7 @@ fn flattened_path(path: &Path, tolerance: Option<f64>) -> Vec<Vec<f64>> {
 }
 
 fn ts_wire_path(commands: Vec<u8>, data: Vec<f64>) -> Path {
-    let mut path = create_path();
+    let mut path = create_path(PathWinding::NonZero);
     path.commands = commands;
     path.data = data;
     return path;
@@ -22,7 +22,7 @@ mod flatten_path {
             vec![1, 2, 0, 2, 2, 7],
             vec![0.0, 0.0, 10.0, 0.0, 10.0, 10.0, 0.0, 10.0],
         );
-        let mut built = create_path();
+        let mut built = create_path(PathWinding::NonZero);
         append_path_move_to(&mut built, 0.0, 0.0);
         append_path_line_to(&mut built, 10.0, 0.0);
         append_path_line_to(&mut built, 10.0, 10.0);
@@ -34,14 +34,14 @@ mod flatten_path {
 
     #[test]
     fn returns_empty_for_empty_path() {
-        let path = create_path();
+        let path = create_path(PathWinding::NonZero);
         let contours = flattened_path(&path, Some(0.25));
         assert!(contours.is_empty());
     }
 
     #[test]
     fn clears_and_reuses_the_callers_outer_contour_buffer() {
-        let mut path = create_path();
+        let mut path = create_path(PathWinding::NonZero);
         append_path_rectangle(&mut path, 0.0, 0.0, 10.0, 20.0);
         let mut out = Vec::with_capacity(4);
         out.push(vec![999.0]);
@@ -58,14 +58,14 @@ mod flatten_path {
         assert_eq!(out.as_ptr(), allocation);
         assert_eq!(out.capacity(), capacity);
 
-        flight_path::flatten_path(&mut out, &create_path(), Some(0.25));
+        flight_path::flatten_path(&mut out, &create_path(PathWinding::NonZero), Some(0.25));
         assert!(out.is_empty());
         assert_eq!(out.as_ptr(), allocation);
     }
 
     #[test]
     fn flattens_straight_line_to_its_two_endpoints() {
-        let mut path = create_path();
+        let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         let contours = flattened_path(&path, Some(0.25));
@@ -74,7 +74,7 @@ mod flatten_path {
 
     #[test]
     fn produces_one_contour_per_subpath() {
-        let mut path = create_path();
+        let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 10.0, 0.0);
         append_path_move_to(&mut path, 0.0, 10.0);
@@ -88,7 +88,7 @@ mod flatten_path {
 
     #[test]
     fn collapses_quadratic_on_chord_to_just_the_endpoint() {
-        let mut path = create_path();
+        let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_quadratic_curve_to(&mut path, 50.0, 0.0, 100.0, 0.0);
         let contours = flattened_path(&path, Some(0.25));
@@ -97,7 +97,7 @@ mod flatten_path {
 
     #[test]
     fn reads_second_coordinate_pair_for_wide_verbs() {
-        let mut path = create_path();
+        let mut path = create_path(PathWinding::NonZero);
         path.commands.push(PathCommand::WideMoveTo as u8);
         path.data.push(0.0);
         path.data.push(0.0);
@@ -114,7 +114,7 @@ mod flatten_path {
 
     #[test]
     fn subdivides_genuinely_curved_quadratic_keeping_endpoints() {
-        let mut path = create_path();
+        let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_quadratic_curve_to(&mut path, 50.0, 50.0, 100.0, 0.0);
         let contour = &flattened_path(&path, Some(0.25))[0];
@@ -127,7 +127,7 @@ mod flatten_path {
 
     #[test]
     fn emits_fewer_points_at_coarser_tolerance() {
-        let mut path = create_path();
+        let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_quadratic_curve_to(&mut path, 50.0, 50.0, 100.0, 0.0);
         let fine = flattened_path(&path, Some(0.1))[0].len();
@@ -137,7 +137,7 @@ mod flatten_path {
 
     #[test]
     fn appends_start_point_when_close_verb_is_present() {
-        let mut path = create_path();
+        let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         append_path_line_to(&mut path, 100.0, 100.0);
@@ -149,7 +149,7 @@ mod flatten_path {
 
     #[test]
     fn does_not_duplicate_start_when_close_at_same_position() {
-        let mut path = create_path();
+        let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_line_to(&mut path, 100.0, 0.0);
         append_path_line_to(&mut path, 0.0, 0.0);
@@ -160,7 +160,7 @@ mod flatten_path {
 
     #[test]
     fn subdivides_cubic_curves() {
-        let mut path = create_path();
+        let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_cubic_curve_to(&mut path, 33.0, 100.0, 66.0, 100.0, 100.0, 0.0);
         let contours = flattened_path(&path, Some(0.25));

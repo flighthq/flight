@@ -75,7 +75,6 @@ pub use contract::clean_path;
 pub use contract::clone_path;
 pub use contract::contains_path_point;
 pub use contract::copy_path;
-pub use contract::copy_path_into;
 pub use contract::create_path;
 pub use contract::create_path_mesh_pool;
 pub use contract::create_path_morph;

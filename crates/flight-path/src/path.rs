@@ -5,7 +5,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path();
+        let mut out = create_path(PathWinding::NonZero);
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -163,7 +163,7 @@ mod sugar_tests {
     #[test]
     fn path_new_matches_create_path() {
         let ra = Path::new();
-        let rb = create_path();
+        let rb = create_path(PathWinding::NonZero);
         assert_eq!(format!("{:?}", ra), format!("{:?}", rb));
     }
 }
@@ -335,21 +335,19 @@ pub enum PathSegment {
     Close,
 }
 
-/// Creates an empty path with the canonical non-zero winding rule. Assign a different winding rule
-/// after construction.
-// flight-lint: allow(conform-params) D23 (B) zero-field create: assign winding after create
-pub fn create_path() -> Path {
+/// Creates an empty path with the given winding rule (TS `createPath(winding = 'nonZero')`).
+pub fn create_path(winding: PathWinding) -> Path {
     let mut out: Path = allocate_entity();
-    initialize_path(&mut out);
+    initialize_path(&mut out, winding);
     return out;
 }
 
-/// Writes the canonical empty, non-zero-winding state into a pre-allocated `Path`.
-// flight-lint: allow(conform-params) D23 (B) zero-field initializer
-pub fn initialize_path(out: &mut Path) {
+/// Writes the empty command and data streams and the given winding rule into a pre-allocated
+/// `Path` (TS `initializePath(out, winding = 'nonZero')`).
+pub fn initialize_path(out: &mut Path, winding: PathWinding) {
     out.commands = Vec::new();
     out.data = Vec::new();
-    out.winding = PathWinding::NonZero;
+    out.winding = winding;
 }
 
 // flight-lint: allow(f64) path coordinates are f64 (Path.data, TS number); D1 names path as an f64 candidate; f32 sufficiency not measured
@@ -1034,7 +1032,7 @@ impl Default for StrokeStyle {
 
 impl Path {
     pub fn new() -> Self {
-        return create_path();
+        return create_path(PathWinding::NonZero);
     }
 
     // flight-lint: allow(f64) operates on f64 Path.data coordinates (TS number); f32 sufficiency not measured

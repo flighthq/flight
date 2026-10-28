@@ -7,7 +7,7 @@ mod sugar_tests {
     use crate::contract::*;
 
     fn test_path() -> Path {
-        let mut out = create_path();
+        let mut out = create_path(PathWinding::NonZero);
         append_path_move_to(&mut out, 0.0, 0.0);
         append_path_line_to(&mut out, 10.0, 0.0);
         append_path_quadratic_curve_to(&mut out, 14.0, 4.0, 10.0, 10.0);
@@ -27,24 +27,14 @@ mod sugar_tests {
     #[test]
     fn path_copy_matches_copy_path() {
         let s = test_path();
-        let mut a = create_path();
-        let mut b = create_path();
+        let mut a = create_path(PathWinding::NonZero);
+        let mut b = create_path(PathWinding::NonZero);
         a.copy(&s);
         copy_path(&mut b, &s);
         assert_eq!(a.commands, s.commands);
         assert_eq!(a.data, s.data);
         assert_eq!(a.winding, s.winding);
         assert_eq!(a, b);
-    }
-
-    #[test]
-    fn path_copy_into_matches_copy_path_into() {
-        let mut oa0 = create_path();
-        let mut ob0 = create_path();
-        let s = test_path();
-        oa0.copy_into(&s);
-        copy_path_into(&mut ob0, &s);
-        assert_eq!(format!("{:?}", oa0), format!("{:?}", ob0));
     }
 }
 
@@ -68,12 +58,6 @@ pub fn copy_path(out: &mut Path, source: &Path) {
     out.winding = winding;
 }
 
-// flight-lint: allow(conform-extra) D24: retained required-out compatibility delegate to copy_path; allocation is explicitly clone_path
-/// Copies into `out` through the required-out `copy_path` writer.
-pub fn copy_path_into(out: &mut Path, source: &Path) {
-    return copy_path(out, source);
-}
-
 impl Path {
     pub fn clone_path(&self) -> Path {
         return clone_path(self);
@@ -81,10 +65,5 @@ impl Path {
 
     pub fn copy(&mut self, source: &Path) {
         return copy_path(self, source);
-    }
-
-    /// Copies `source` into this path (D18 receiver is the `out` argument).
-    pub fn copy_into(&mut self, source: &Path) {
-        return copy_path_into(self, source);
     }
 }

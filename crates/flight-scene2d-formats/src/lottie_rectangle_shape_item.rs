@@ -24,7 +24,7 @@ fn build_rectangle(
     let radius = radius.read().unwrap()[0];
     let x = position[0] - size[0] / 2.0;
     let y = position[1] - size[1] / 2.0;
-    let mut path = create_path();
+    let mut path = create_path(flight_path::PathWinding::NonZero);
     if radius > 0.0 {
         append_path_rounded_rectangle(
             &mut path,

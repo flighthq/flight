@@ -158,7 +158,7 @@ fn append_svg_shape_paint(
     if dash.len() % 2 != 0 {
         dash.extend(dash.clone());
     }
-    let mut dashed = create_path();
+    let mut dashed = create_path(flight_path::PathWinding::NonZero);
     dashed.winding = path.winding;
     dash_path(
         path,

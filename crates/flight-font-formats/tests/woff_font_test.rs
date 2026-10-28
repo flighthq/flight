@@ -101,8 +101,8 @@ mod read_woff_font {
             None,
         )
         .unwrap();
-        let mut a = create_path();
-        let mut b = create_path();
+        let mut a = create_path(flight_path::PathWinding::NonZero);
+        let mut b = create_path(flight_path::PathWinding::NonZero);
         assert!((before.get_glyph_outline)(&mut a, 1));
         assert!((after.get_glyph_outline)(&mut b, 1));
         assert_eq!(b.commands, a.commands);

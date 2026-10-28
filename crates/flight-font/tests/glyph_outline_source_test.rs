@@ -263,7 +263,10 @@ mod create_glyph_outline_source {
             &metrics_callback,
             &source.get_glyph_outline_metrics
         ));
-        assert!((source.get_glyph_outline)(&mut create_path(), 3));
+        assert!((source.get_glyph_outline)(
+            &mut create_path(flight_path::PathWinding::NonZero),
+            3
+        ));
         assert_eq!((source.get_glyph_outline_advance)(3), 4.0);
         assert_eq!((source.get_glyph_outline_index_for_code_point)(4), 3);
         let first = (source.get_glyph_outline_metrics)();

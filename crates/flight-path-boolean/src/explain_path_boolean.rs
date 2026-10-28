@@ -15,7 +15,7 @@ mod sugar_tests {
     fn kernel_explain_offset_path_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
         let ra = k.explain_offset_path(
-            &create_path(),
+            &create_path(flight_path::PathWinding::NonZero),
             2.0,
             Some(&PathOffsetOptions {
                 join: Some(PathOffsetJoin::Round),
@@ -27,7 +27,7 @@ mod sugar_tests {
         );
         let rb = explain_offset_path(
             &k,
-            &create_path(),
+            &create_path(flight_path::PathWinding::NonZero),
             2.0,
             Some(&PathOffsetOptions {
                 join: Some(PathOffsetJoin::Round),
@@ -48,7 +48,7 @@ mod sugar_tests {
     fn kernel_explain_simplify_path_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
         let ra = k.explain_simplify_path(
-            &create_path(),
+            &create_path(flight_path::PathWinding::NonZero),
             Some(&PathBooleanOptions {
                 fill_rule: Some(PathWinding::EvenOdd),
                 tolerance: Some(0.5),
@@ -56,7 +56,7 @@ mod sugar_tests {
         );
         let rb = explain_simplify_path(
             &k,
-            &create_path(),
+            &create_path(flight_path::PathWinding::NonZero),
             Some(&PathBooleanOptions {
                 fill_rule: Some(PathWinding::EvenOdd),
                 tolerance: Some(0.5),
@@ -123,7 +123,7 @@ pub fn explain_offset_path(
             reason: PathBooleanExplanationReason::EmptyInput,
         });
     }
-    let mut result = create_path();
+    let mut result = create_path(flight_path::PathWinding::NonZero);
     offset_path(&mut result, path_boolean_kernel, path, delta, options);
     if result.commands.is_empty() {
         return Some(PathBooleanExplanation {
@@ -153,7 +153,7 @@ pub fn explain_simplify_path(
             reason: PathBooleanExplanationReason::EmptyInput,
         });
     }
-    let mut result = create_path();
+    let mut result = create_path(flight_path::PathWinding::NonZero);
     simplify_path(&mut result, path_boolean_kernel, path, options);
     if result.commands.is_empty() {
         return Some(PathBooleanExplanation {

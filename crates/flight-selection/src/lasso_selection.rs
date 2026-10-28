@@ -71,7 +71,7 @@ pub fn create_lasso_selection() -> LassoSelection {
 }
 
 pub fn initialize_lasso_selection(out: &mut LassoSelection) {
-    let mut path = create_path();
+    let mut path = create_path(flight_path::PathWinding::NonZero);
     path.winding = PathWinding::EvenOdd;
     out.state = LassoSelectionRuntime {
         active: false,

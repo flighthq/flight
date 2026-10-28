@@ -51,7 +51,7 @@ fn ring_areas(reverse_counter: bool, flip_both: bool) -> Vec<f64> {
     let source =
         create_glyph_outline_source_from_open_type_font(&font, &SDK_HOST_DECOMPRESS_DEFLATE, None)
             .unwrap();
-    let mut path = create_path();
+    let mut path = create_path(flight_path::PathWinding::NonZero);
     assert!((source.get_glyph_outline)(&mut path, 1));
     return signed_contour_areas(&path);
 }

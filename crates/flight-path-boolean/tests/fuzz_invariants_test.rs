@@ -18,7 +18,7 @@ fn make_random(seed: u32) -> impl FnMut() -> f64 {
 }
 
 fn polygon_path(vertices: &[f64]) -> Path {
-    let mut path = create_path();
+    let mut path = create_path(flight_path::PathWinding::NonZero);
     append_path_move_to(&mut path, vertices[0], vertices[1]);
     let mut i = 2;
     while i < vertices.len() {
@@ -134,7 +134,7 @@ mod fuzz_invariants {
             if vertices.len() < 6 {
                 continue;
             }
-            let mut path = create_path();
+            let mut path = create_path(flight_path::PathWinding::NonZero);
             append_path_move_to(&mut path, vertices[0], vertices[1]);
             for repeat in 0..2 {
                 let start = if repeat == 0 { 2 } else { 0 };
@@ -153,9 +153,9 @@ mod fuzz_invariants {
                 fill_rule: Some(PathWinding::EvenOdd),
                 tolerance: None,
             };
-            let mut non_zero = create_path();
+            let mut non_zero = create_path(flight_path::PathWinding::NonZero);
             simplify_path(&mut non_zero, &kernel, &path, Some(&nz_opts));
-            let mut even_odd = create_path();
+            let mut even_odd = create_path(flight_path::PathWinding::NonZero);
             simplify_path(&mut even_odd, &kernel, &path, Some(&eo_opts));
             assert!(path_area(&non_zero) > 0.0);
             assert!(path_area(&even_odd) < 1e-6);
@@ -172,9 +172,9 @@ mod fuzz_invariants {
                 &mut random,
                 3 + ((iteration + 3) % 6),
             ));
-            let mut ab = create_path();
+            let mut ab = create_path(flight_path::PathWinding::NonZero);
             union_paths(&mut ab, &kernel, &a, &b, None);
-            let mut ba = create_path();
+            let mut ba = create_path(flight_path::PathWinding::NonZero);
             union_paths(&mut ba, &kernel, &b, &a, None);
             assert!(areas_close(path_area(&ab), path_area(&ba), 1e-3, 1e-3));
             assert_eq!(ring_count(&ab), ring_count(&ba));
@@ -187,7 +187,7 @@ mod fuzz_invariants {
         let mut random = make_random(0x55aa33cc);
         for iteration in 0..40 {
             let a = polygon_path(&random_messy_polygon(&mut random, 4 + (iteration % 5)));
-            let mut result = create_path();
+            let mut result = create_path(flight_path::PathWinding::NonZero);
             difference_paths(&mut result, &kernel, &a, &a, None);
             assert!(path_area(&result) < 1e-6);
         }
@@ -199,9 +199,9 @@ mod fuzz_invariants {
         let mut random = make_random(0x0f0f0f0f);
         for iteration in 0..40 {
             let a = polygon_path(&random_simple_polygon(&mut random, 3 + (iteration % 6)));
-            let mut union_result = create_path();
+            let mut union_result = create_path(flight_path::PathWinding::NonZero);
             union_paths(&mut union_result, &kernel, &a, &a, None);
-            let mut simplified = create_path();
+            let mut simplified = create_path(flight_path::PathWinding::NonZero);
             simplify_path(&mut simplified, &kernel, &a, None);
             assert!(areas_close(
                 path_area(&union_result),
@@ -219,9 +219,9 @@ mod fuzz_invariants {
         let mut random = make_random(0x7e577e57);
         for iteration in 0..40 {
             let a = polygon_path(&random_messy_polygon(&mut random, 4 + (iteration % 6)));
-            let mut once = create_path();
+            let mut once = create_path(flight_path::PathWinding::NonZero);
             simplify_path(&mut once, &kernel, &a, None);
-            let mut twice = create_path();
+            let mut twice = create_path(flight_path::PathWinding::NonZero);
             simplify_path(&mut twice, &kernel, &once, None);
             assert!(areas_close(path_area(&once), path_area(&twice), 1e-3, 1e-3));
             assert_eq!(ring_count(&once), ring_count(&twice));
@@ -234,9 +234,9 @@ mod fuzz_invariants {
         let mut random = make_random(0x13571357);
         for iteration in 0..40 {
             let a = polygon_path(&random_messy_polygon(&mut random, 4 + (iteration % 6)));
-            let mut union_result = create_path();
+            let mut union_result = create_path(flight_path::PathWinding::NonZero);
             union_all_paths(&mut union_result, &kernel, &[&a], None);
-            let mut simplified = create_path();
+            let mut simplified = create_path(flight_path::PathWinding::NonZero);
             simplify_path(&mut simplified, &kernel, &a, None);
             assert!(areas_close(
                 path_area(&union_result),
@@ -255,7 +255,7 @@ mod fuzz_invariants {
         for iteration in 0..40 {
             let vertices = random_simple_polygon(&mut random, 3 + (iteration % 6));
             let a = polygon_path(&vertices);
-            let mut zero_offset = create_path();
+            let mut zero_offset = create_path(flight_path::PathWinding::NonZero);
             offset_path(&mut zero_offset, &kernel, &a, 0.0, None);
             assert!(areas_close(
                 path_area(&zero_offset),
@@ -288,7 +288,7 @@ mod fuzz_invariants {
                 tolerance: None,
                 arc_tolerance: None,
             };
-            let mut grown = create_path();
+            let mut grown = create_path(flight_path::PathWinding::NonZero);
             offset_path(&mut grown, &kernel, &a, 3.0, Some(&grow_opts));
             let shrink_opts = PathOffsetOptions {
                 join: Some(PathOffsetJoin::Miter),
@@ -297,7 +297,7 @@ mod fuzz_invariants {
                 tolerance: None,
                 arc_tolerance: None,
             };
-            let mut recovered = create_path();
+            let mut recovered = create_path(flight_path::PathWinding::NonZero);
             offset_path(&mut recovered, &kernel, &grown, -3.0, Some(&shrink_opts));
             assert_eq!(ring_count(&recovered), 1);
             assert!(areas_close(path_area(&recovered), base_area, 3e-2, 1.0));
@@ -310,7 +310,7 @@ mod fuzz_invariants {
         let mut random = make_random(0x0c0ffee0);
         for iteration in 0..40 {
             let a = polygon_path(&random_simple_polygon(&mut random, 5 + (iteration % 8)));
-            let mut offset_result = create_path();
+            let mut offset_result = create_path(flight_path::PathWinding::NonZero);
             offset_path(&mut offset_result, &kernel, &a, 4.0, None);
             if offset_result.commands.is_empty() {
                 continue;
@@ -319,7 +319,7 @@ mod fuzz_invariants {
                 fill_rule: Some(PathWinding::NonZero),
                 tolerance: None,
             };
-            let mut simplified = create_path();
+            let mut simplified = create_path(flight_path::PathWinding::NonZero);
             simplify_path(&mut simplified, &kernel, &offset_result, Some(&nz_opts));
             assert!(areas_close(
                 path_area(&simplified),

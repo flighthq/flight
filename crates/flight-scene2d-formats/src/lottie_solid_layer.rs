@@ -22,7 +22,7 @@ pub fn lottie_solid_layer_handler(context: &mut LottieLayerContext<'_, '_>) {
         .unwrap_or(0x000000ff);
     append_shape_begin_fill(&shape, color, Some(1.0));
 
-    let mut path = create_path();
+    let mut path = create_path(flight_path::PathWinding::NonZero);
     let width = lottie_layer_number(context.layer.get("sw"));
     let height = lottie_layer_number(context.layer.get("sh"));
     append_path_rectangle(&mut path, 0.0, 0.0, width, height);

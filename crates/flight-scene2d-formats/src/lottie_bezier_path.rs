@@ -8,7 +8,7 @@ use crate::types::LottieShapePath;
 
 // flight-lint: allow(f64) flight-path stores path coordinates as f64 under the approved D1 path candidate
 pub fn create_lottie_bezier_path(value: &LottieShapePath) -> Path {
-    let mut path = create_path();
+    let mut path = create_path(flight_path::PathWinding::NonZero);
     let count = value.v.len();
     if count == 0 {
         return path;

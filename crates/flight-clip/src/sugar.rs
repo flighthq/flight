@@ -465,7 +465,7 @@ macro_rules! sugar_tests_module {
                     &ClipRegion::new_from_ellipse(&rectangle, None),
                     &create_clip_region_from_ellipse(&rectangle, None),
                 ));
-                let path = create_path();
+                let path = create_path(flight_path::PathWinding::NonZero);
                 assert!(same(
                     &ClipRegion::new_from_path(&path, None),
                     &create_clip_region_from_path(&path, None),
