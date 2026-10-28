@@ -1,9 +1,8 @@
-import type { Entity, EntityRuntime } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
+import { readEntityRuntime, writeEntityRuntime } from './entity.ts';
 import { createEntityRuntime } from './runtime.ts';
+import type { EntityRaw, EntityRuntime } from './types.ts';
 
-export function getEntityUid(source: Entity): string {
+export function getEntityUid(source: EntityRaw): string {
   const runtime = ensureEntityRuntime(source);
   if (runtime.uid !== undefined) return runtime.uid;
   const uid = generateEntityUid();
@@ -11,16 +10,15 @@ export function getEntityUid(source: Entity): string {
   return uid;
 }
 
-export function setEntityUid(source: Entity, uid: string): void {
+export function setEntityUid(source: EntityRaw, uid: string): void {
   const runtime = ensureEntityRuntime(source);
   runtime.uid = uid;
 }
 
-function ensureEntityRuntime(source: Entity): EntityRuntime {
-  if (source[EntityRuntimeKey] === undefined) {
-    source[EntityRuntimeKey] = createEntityRuntime();
-  }
-  return source[EntityRuntimeKey]!;
+function ensureEntityRuntime(source: EntityRaw): EntityRuntime {
+  const runtime = readEntityRuntime(source) ?? createEntityRuntime();
+  writeEntityRuntime(source, runtime);
+  return runtime;
 }
 
 function generateEntityUid(): string {

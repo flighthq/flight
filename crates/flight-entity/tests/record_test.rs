@@ -1,3 +1,6 @@
+//! flight-compiler: rust-only
+//! Rust-only because Record behavior is a compiler intrinsic covered by target packages.
+
 use std::sync::Arc;
 
 use flight_entity::*;

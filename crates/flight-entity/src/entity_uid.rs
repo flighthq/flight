@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+//! flight-compiler: contract getEntityUid setEntityUid
+//! flight-compiler: root getEntityUid setEntityUid
+
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::runtime::ensure_entity_runtime;

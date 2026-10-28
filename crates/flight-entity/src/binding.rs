@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+//! flight-compiler: contract attachEntityBinding attachEntityWrapper detachEntityBinding getEntityBinding getEntityBindingAs getEntityWrapperAs hasEntityBinding
+//! flight-compiler: root attachEntityBinding detachEntityBinding getEntityBinding getEntityBindingAs hasEntityBinding
+
 use std::any::Any;
 
 use crate::runtime::ensure_entity_runtime;

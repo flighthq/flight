@@ -1,3 +1,6 @@
+//! flight-compiler: rust-only
+//! Rust-only because erased-value downcasting implements target compiler intrinsics.
+
 use std::sync::Arc;
 
 use flight_entity::*;

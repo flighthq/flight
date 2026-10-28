@@ -2,6 +2,8 @@
 //! the error class, so the transpiler can emit `throw new Error(...)`, `RangeError`, `TypeError`,
 //! `NotReadableError` / `NotSupportedError` DOMExceptions, and an FFI boundary can catch it and
 //! return a status.
+//! flight-compiler: rust-only
+//! Rust-only because typed panics lower directly to target-language throws rather than package functions.
 
 use std::any::Any;
 use std::sync::{Arc, Mutex, MutexGuard};

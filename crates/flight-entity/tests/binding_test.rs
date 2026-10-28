@@ -1,3 +1,5 @@
+//! flight-compiler: target-native
+
 use flight_entity::*;
 
 #[derive(Clone, Debug, Default, PartialEq)]

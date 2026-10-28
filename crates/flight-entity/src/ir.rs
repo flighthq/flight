@@ -1,5 +1,7 @@
 //! IR vocabulary aliases (agents/rust/ir-vocabulary.md). Each alias has exactly one mapping per
 //! transpile target; contract code names the alias, never the type behind it.
+//! flight-compiler: rust-only
+//! Rust-only because these aliases are Rust IR vocabulary lowered by consuming packages, not Entity exports.
 
 use std::any::Any;
 use std::sync::{Arc, RwLock};

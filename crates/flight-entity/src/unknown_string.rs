@@ -1,3 +1,6 @@
+//! flight-compiler: rust-only
+//! Rust-only because these helpers implement compiler intrinsics for erased Rust values.
+
 use crate::{FlightError, Unknown, get_flight_error_kind_string};
 
 fn unknown_boolean(value: &crate::UnknownValue) -> Option<bool> {

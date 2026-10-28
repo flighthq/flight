@@ -1,3 +1,6 @@
+//! flight-compiler: rust-only
+//! Rust-only because TypeScript uses raw object identity rather than the native numeric id.
+
 use std::collections::HashSet;
 use std::sync::Arc;
 use std::thread;

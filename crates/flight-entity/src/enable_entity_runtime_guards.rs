@@ -1,3 +1,7 @@
+//! flight-compiler: target-native
+//! flight-compiler: contract disableEntityRuntimeGuards enableEntityRuntimeGuards
+//! flight-compiler: root disableEntityRuntimeGuards enableEntityRuntimeGuards
+
 use crate::guards::{set_entity_runtime_guard_mode, set_entity_runtime_write_guard};
 use crate::types::EntityRuntimeWriteGuard;
 

@@ -1,0 +1,9 @@
+protected:
+  - EntityRuntimeKey
+  - EntityRuntimeWriteSlot
+  - attachEntityWrapper
+  - getEntityWrapperAs
+
+exclude:
+  - readEntityRuntime
+  - writeEntityRuntime

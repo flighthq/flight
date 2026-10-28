@@ -1,6 +1,8 @@
 //! The numeric entity id (D12, Principal c92ee207): a process-wide sequence assigned when an
 //! entity's runtime slot is allocated. It is identity, not data: never reused, never persisted
 //! or serialized, and independent of the string uid.
+//! flight-compiler: rust-only
+//! Rust-only because the numeric allocation id is native identity machinery, not a TypeScript package export.
 
 use std::sync::atomic::{AtomicU64, Ordering};
 

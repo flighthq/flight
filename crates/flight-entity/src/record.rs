@@ -1,3 +1,6 @@
+//! flight-compiler: rust-only
+//! Rust-only because this is the compiler's JavaScript Record intrinsic, not an Entity package export.
+
 use std::collections::HashMap;
 
 /// A TypeScript `Record<string, V>` / plain dictionary. Values retain insertion storage while

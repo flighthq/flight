@@ -1,10 +1,9 @@
-import type { Entity } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
-import { attachEntityBinding } from './binding.ts';
+import { attachEntityBinding, attachEntityWrapper, getEntityWrapperAs } from './binding.ts';
 import { cloneEntity, stripEntityRuntime } from './clone.ts';
 import { allocateEntity, finishEntity } from './entity.ts';
 import { hasEntityRuntime } from './runtime.ts';
+import type { Entity } from './types.ts';
+import { EntityRuntimeKey } from './types.ts';
 
 function createTestEntity(fields?: Record<string, unknown>): Entity & Record<string, unknown> {
   const out = allocateEntity<Entity>();
@@ -48,6 +47,17 @@ describe('cloneEntity', () => {
     expect(hasEntityRuntime(clone)).toBe(false);
     expect(clone.name).toBe('test');
   });
+
+  it('clone of a wrapped entity has a fresh unwrapped identity', () => {
+    const source = createTestEntity({ name: 'source' });
+    const wrapper = { source };
+    attachEntityWrapper(source, wrapper);
+
+    const clone = cloneEntity(source);
+
+    expect(getEntityWrapperAs(source)).toBe(wrapper);
+    expect(getEntityWrapperAs(clone)).toBeNull();
+  });
 });
 
 describe('stripEntityRuntime', () => {
@@ -76,6 +86,15 @@ describe('stripEntityRuntime', () => {
     const stripped = stripEntityRuntime(entity);
     expect((stripped as Record<PropertyKey, unknown>)[EntityRuntimeKey]).toBeUndefined();
     expect(stripped.label).toBe('hello');
+  });
+
+  it('does not carry private OOP wrapper identity into the stripped value', () => {
+    const entity = createTestEntity({ label: 'wrapped' });
+    attachEntityWrapper(entity, { entity });
+
+    const stripped = stripEntityRuntime(entity);
+
+    expect(getEntityWrapperAs(stripped)).toBeNull();
   });
 
   it('round-trips: stripEntityRuntime then allocateEntity yields a valid unbound entity', () => {

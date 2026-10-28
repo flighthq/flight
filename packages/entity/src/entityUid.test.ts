@@ -1,9 +1,8 @@
-import type { Entity } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
 import { allocateEntity, finishEntity } from './entity.ts';
 import { getEntityUid, setEntityUid } from './entityUid.ts';
 import { createEntityRuntime } from './runtime.ts';
+import type { Entity } from './types.ts';
+import { EntityRuntimeKey } from './types.ts';
 
 function createTestEntity(): Entity {
   return finishEntity(allocateEntity<Entity>());

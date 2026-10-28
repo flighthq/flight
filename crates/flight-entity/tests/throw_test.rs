@@ -1,3 +1,6 @@
+//! flight-compiler: rust-only
+//! Rust-only because typed panic payload behavior has no emitted Entity package API.
+
 use flight_entity::*;
 
 use std::cell::Cell;

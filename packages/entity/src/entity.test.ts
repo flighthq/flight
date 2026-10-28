@@ -1,7 +1,6 @@
-import type { Entity } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
-
 import { allocateEntity, finishEntity } from './entity.ts';
+import type { Entity } from './types.ts';
+import { EntityRuntimeKey } from './types.ts';
 
 describe('allocateEntity', () => {
   it('returns an object with an undefined runtime', () => {

@@ -1,8 +1,23 @@
-export * from './binding.ts';
-export * from './clone.ts';
-export * from './enableEntityRuntimeGuards.ts';
-export * from './entity.ts';
-export * from './entityUid.ts';
-export * from './explainEntityRuntimeWrite.ts';
-export { areEntityRuntimeGuardsEnabled, createGuardedEntity, setEntityRuntimeGuardMode } from './guards.ts';
-export { hasEntityRuntime } from './runtime.ts';
+// Generated from crates/flight-entity/src/lib.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+export {
+  allocateEntity,
+  areEntityRuntimeGuardsEnabled,
+  attachEntityBinding,
+  cloneEntity,
+  createGuardedEntity,
+  detachEntityBinding,
+  disableEntityRuntimeGuards,
+  enableEntityRuntimeGuards,
+  explainEntityRuntimeWrite,
+  finishEntity,
+  getEntityBinding,
+  getEntityBindingAs,
+  getEntityUid,
+  hasEntityBinding,
+  hasEntityRuntime,
+  setEntityRuntimeGuardMode,
+  setEntityUid,
+  stripEntityRuntime,
+} from './contract.ts';

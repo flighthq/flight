@@ -1,5 +1,5 @@
-import type { Entity, EntityRuntime, EntityRuntimeWriteGuard, EntityRuntimeWriteSlot } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import type { EntityRaw, EntityRuntime, EntityRuntimeWriteGuard, EntityRuntimeWriteSlot } from './types.ts';
+import { EntityRuntimeKey } from './types.ts';
 
 // Returns true if entity runtime guards have been enabled via enableEntityRuntimeGuards.
 export function areEntityRuntimeGuardsEnabled(): boolean {
@@ -9,7 +9,7 @@ export function areEntityRuntimeGuardsEnabled(): boolean {
 // Creates a guarded entity that warns when the runtime slot is written directly rather
 // than through a public helper such as attachEntityBinding. Only active when guards are
 // enabled via enableEntityRuntimeGuards.
-export function createGuardedEntity<Type extends object>(entity: Type & Entity): Type & Entity {
+export function createGuardedEntity<Type extends EntityRaw>(entity: Type): Type {
   if (!_guardsEnabled || typeof Proxy === 'undefined') return entity;
   return new Proxy(entity, {
     set(target, prop, value) {
