@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -18,12 +19,15 @@ export function disableEasingGuards(): void {
 // sanctioned exception: it is separately importable and shakeable, so a build that never imports it never
 // pulls @flighthq/log, and the layer rule's actual concern — feature weight in core's always-loaded graph —
 // does not arise. `packages:check` enforces that the import appears in guard modules only. Idempotent.
-export function enableEasingGuards(): void {
-  setEasingStepsGuard(warnOnDegenerateSteps);
+// Warnings go to the caller-owned `logState`, stamped with `clock()` read at the moment of misuse.
+export function enableEasingGuards(logState: LogState, clock: () => number): void {
+  setEasingStepsGuard((count, position) => warnOnDegenerateSteps(logState, clock(), count, position));
 }
 
-function warnOnDegenerateSteps(count: number, position: StepPosition): void {
+function warnOnDegenerateSteps(logState: LogState, nowMs: number, count: number, position: StepPosition): void {
   logOnce(
+    logState,
+    nowMs,
     'easing:degenerate-steps',
     LogLevel.Warn,
     {
