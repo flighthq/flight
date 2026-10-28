@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -32,15 +33,17 @@ export function disableGlyphAtlasGuards(): void {
  * Pair with `explainGlyphAtlasEntry` for a pull-style answer about one codepoint. Not importing this
  * module costs production nothing: the messages and the `@flighthq/log` dependency live only here.
  */
-export function enableGlyphAtlasGuards(): void {
-  setGlyphAtlasEntryGuard(warnOnGlyphAtlasEntryBlocked);
+export function enableGlyphAtlasGuards(logState: LogState, clock: () => number): void {
+  setGlyphAtlasEntryGuard((...args) => warnOnGlyphAtlasEntryBlocked(logState, clock, ...args));
 }
 
-function warnOnGlyphAtlasEntryBlocked(reason: string, subject: number): void {
+function warnOnGlyphAtlasEntryBlocked(logState: LogState, clock: () => number, reason: string, subject: number): void {
   if (reason === 'repack') {
     _repacks++;
     if (_repacks < REPACK_THRASHING_THRESHOLD) return;
     logOnce(
+      logState,
+      clock(),
       'glyphatlas:repack-thrashing',
       LogLevel.Warn,
       {
@@ -58,6 +61,8 @@ function warnOnGlyphAtlasEntryBlocked(reason: string, subject: number): void {
   const printable = `U+${codepoint.toString(16).toUpperCase().padStart(4, '0')}`;
   if (reason === 'rasterizer-returned-null') {
     logOnce(
+      logState,
+      clock(),
       'glyphatlas:rasterizer-returned-null',
       LogLevel.Warn,
       {
@@ -71,6 +76,8 @@ function warnOnGlyphAtlasEntryBlocked(reason: string, subject: number): void {
   }
   if (reason === 'glyph-larger-than-atlas') {
     logOnce(
+      logState,
+      clock(),
       'glyphatlas:glyph-larger-than-atlas',
       LogLevel.Warn,
       {
@@ -84,6 +91,8 @@ function warnOnGlyphAtlasEntryBlocked(reason: string, subject: number): void {
     return;
   }
   logOnce(
+    logState,
+    clock(),
     'glyphatlas:repack-dropped',
     LogLevel.Warn,
     {

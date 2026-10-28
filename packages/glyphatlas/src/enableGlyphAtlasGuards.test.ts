@@ -1,5 +1,6 @@
-import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
-import type { HostGlyphRasterizerCapability, LogEntry } from '@flighthq/types/contract';
+import type { LogState } from '@flighthq/log/contract';
+import { clearLogOnceKeys, createLogState, getMemoryLogSinkEntries, setLogSink } from '@flighthq/log/contract';
+import type { HostGlyphRasterizerCapability, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { disableGlyphAtlasGuards, enableGlyphAtlasGuards } from './enableGlyphAtlasGuards.ts';
@@ -8,15 +9,26 @@ import { getGlyphAtlasEntry } from './glyphAtlasEntry.ts';
 
 let entries: LogEntry[];
 
+function clock(): number {
+  return 0;
+}
+
+function readLogEntries(sink: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
+}
+
 beforeEach(() => {
-  clearLogOnceKeys();
+  logState = createLogState();
+  clearLogOnceKeys(logState);
   entries = [];
-  setLogSink((entry) => entries.push(entry));
+  setLogSink(logState, (entry) => entries.push(entry));
 });
 
 afterEach(() => {
   disableGlyphAtlasGuards();
-  setLogSink(null);
+  setLogSink(logState, null);
 });
 
 function messages(): string {
@@ -38,7 +50,7 @@ function backendProducing(width: number, height: number): HostGlyphRasterizerCap
 
 describe('disableGlyphAtlasGuards', () => {
   it('stops the guard reporting later lookups', () => {
-    enableGlyphAtlasGuards();
+    enableGlyphAtlasGuards(logState, clock);
     disableGlyphAtlasGuards();
     getGlyphAtlasEntry(
       createGlyphAtlas({
@@ -56,7 +68,7 @@ describe('disableGlyphAtlasGuards', () => {
 
 describe('enableGlyphAtlasGuards', () => {
   it('says nothing when the glyph renders', () => {
-    enableGlyphAtlasGuards();
+    enableGlyphAtlasGuards(logState, clock);
     getGlyphAtlasEntry(
       createGlyphAtlas({
         fontFamily: 'm',
@@ -71,7 +83,7 @@ describe('enableGlyphAtlasGuards', () => {
   });
 
   it('warns when the rasterizer produces nothing', () => {
-    enableGlyphAtlasGuards();
+    enableGlyphAtlasGuards(logState, clock);
     getGlyphAtlasEntry(
       createGlyphAtlas({
         fontFamily: 'm',
@@ -87,7 +99,7 @@ describe('enableGlyphAtlasGuards', () => {
   });
 
   it('warns distinctly when the glyph is larger than the atlas', () => {
-    enableGlyphAtlasGuards();
+    enableGlyphAtlasGuards(logState, clock);
     getGlyphAtlasEntry(
       createGlyphAtlas({
         fontFamily: 'm',
@@ -103,7 +115,7 @@ describe('enableGlyphAtlasGuards', () => {
   });
 
   it('says nothing about the first repacks an atlas needs to settle', () => {
-    enableGlyphAtlasGuards();
+    enableGlyphAtlasGuards(logState, clock);
     const atlas = createGlyphAtlas({
       fontFamily: 'm',
       fontSize: 8,
@@ -118,7 +130,7 @@ describe('enableGlyphAtlasGuards', () => {
   });
 
   it('warns once the repacks pass the point of an atlas settling', () => {
-    enableGlyphAtlasGuards();
+    enableGlyphAtlasGuards(logState, clock);
     const atlas = createGlyphAtlas({
       fontFamily: 'm',
       fontSize: 8,
@@ -132,3 +144,5 @@ describe('enableGlyphAtlasGuards', () => {
     expect(messages()).toContain('refreshBitmapTextGlyphLayout');
   });
 });
+
+let logState: LogState = createLogState();
