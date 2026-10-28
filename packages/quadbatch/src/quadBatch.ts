@@ -9,7 +9,6 @@ import type {
   EntityConstruction,
   MethodsOf,
   Node2DFields,
-  PartialNode,
   QuadBatch,
   QuadBatchData,
   QuadBatchRuntime,
@@ -61,16 +60,17 @@ export function clearQuadBatch(target: QuadBatch): void {
  */
 export function cloneQuadBatch(source: Readonly<QuadBatch>): QuadBatch {
   const src = source.data;
-  return createQuadBatch({
-    data: {
+  return ((created) => {
+    Object.assign(created.data, {
       atlas: src.atlas,
       ids: src.ids.slice(),
       instanceCount: src.instanceCount,
       materialData: src.materialData !== null ? src.materialData.slice() : null,
       transforms: src.transforms.slice(),
       transformType: src.transformType,
-    },
-  });
+    });
+    return created;
+  })(createQuadBatch());
 }
 
 function copyLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DFields>>): void {
@@ -195,13 +195,13 @@ export function computeQuadBatchLocalBoundsRectangle(out: Rectangle, source: Rea
   }
 }
 
-export function createQuadBatch(obj?: Readonly<PartialNode<QuadBatch>>): QuadBatch {
-  return createNode2D(QuadBatchKind, obj, createQuadBatchData, createQuadBatchRuntime) as QuadBatch;
+export function createQuadBatch(): QuadBatch {
+  return createNode2D(QuadBatchKind, createQuadBatchData, createQuadBatchRuntime) as QuadBatch;
 }
 
-export function createQuadBatchData(data?: Readonly<Partial<QuadBatchData>>): QuadBatchData {
+export function createQuadBatchData(): QuadBatchData {
   const out = allocateEntity<QuadBatchData>();
-  initializeQuadBatchData(out, data);
+  initializeQuadBatchData(out);
   return finishEntity(out);
 }
 
@@ -406,16 +406,13 @@ export function hitTestQuadBatchPointXY(source: Readonly<QuadBatch>, x: number, 
   return -1;
 }
 
-export function initializeQuadBatchData(
-  out: EntityConstruction<QuadBatchData>,
-  data?: Readonly<Partial<QuadBatchData>>,
-): void {
-  out.atlas = data?.atlas ?? null;
-  out.ids = data?.ids ?? new Uint16Array();
-  out.instanceCount = data?.instanceCount ?? 0;
-  out.materialData = data?.materialData ?? null;
-  out.transforms = data?.transforms ?? new Float32Array();
-  out.transformType = data?.transformType ?? 'vector2';
+export function initializeQuadBatchData(out: EntityConstruction<QuadBatchData>): void {
+  out.atlas = null;
+  out.ids = new Uint16Array();
+  out.instanceCount = 0;
+  out.materialData = null;
+  out.transforms = new Float32Array();
+  out.transformType = 'vector2';
 }
 
 export function initializeQuadBatchSignals(out: EntityConstruction<QuadBatchSignals>): void {

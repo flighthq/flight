@@ -86,7 +86,10 @@ function createRiveArtboardImport(
   const width = readRiveNumber(source, RIVE_WIDTH, 0);
   const height = readRiveNumber(source, RIVE_HEIGHT, 0);
   const name = readRiveText(source, RIVE_NAME, '');
-  const root = createDisplayObject({ name });
+  const root = ((created) => {
+    Object.assign(created, { name });
+    return created;
+  })(createDisplayObject());
   applyRiveTransform(root, source);
   // The artboard's origin is stated in normalized coordinates, so 0.5 means its centre. That is a
   // pivot in Flight's vocabulary, which is why it converts to one rather than to a translation.
@@ -168,7 +171,10 @@ function createRiveUnregisteredNode(
       { typeKey: object.typeKey },
     );
   }
-  return createDisplayObject({ name: readRiveText(object, RIVE_NAME, '') });
+  return ((created) => {
+    Object.assign(created, { name: readRiveText(object, RIVE_NAME, '') });
+    return created;
+  })(createDisplayObject());
 }
 
 function findRiveDisplayParent(

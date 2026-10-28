@@ -25,12 +25,11 @@ import type {
   MethodsOf,
   NodeAny,
   NodeRuntimeFactory,
-  PartialNode,
 } from '@flighthq/types/contract';
 import { DisplayObjectKind, Node2DFieldsKey } from '@flighthq/types/contract';
 
-export function createDisplayObject(obj?: Readonly<PartialNode<DisplayObject>>): DisplayObject {
-  return createNode2D(DisplayObjectKind, obj, undefined, createDisplayObjectRuntime) as DisplayObject;
+export function createDisplayObject(): DisplayObject {
+  return createNode2D(DisplayObjectKind, undefined, createDisplayObjectRuntime) as DisplayObject;
 }
 
 export function createDisplayObjectRuntime(): DisplayObjectRuntime {
@@ -39,7 +38,6 @@ export function createDisplayObjectRuntime(): DisplayObjectRuntime {
 
 export function createNode2D<R extends Node2DRuntime>(
   kind: Kind,
-  obj?: Readonly<PartialNode<Node2D>>,
   createData?: Node2DDataFactory,
   createNode2DRuntimeFactory?: Node2DRuntimeFactory<R>,
 ): Node2D {
@@ -47,16 +45,15 @@ export function createNode2D<R extends Node2DRuntime>(
   initializeNode(
     out,
     kind,
-    obj,
     createData,
     createNode2DRuntimeFactory ?? (createNode2DRuntime as unknown as NodeRuntimeFactory<R>),
   );
-  initTransform2DTrait(out, obj);
-  initBoundsRectangleTrait(out, obj);
-  initAppearanceTrait(out, obj);
-  initBlendModeTrait(out, obj);
-  initMaterialTrait(out, obj);
-  initClipTrait(out, obj);
+  initTransform2DTrait(out);
+  initBoundsRectangleTrait(out);
+  initAppearanceTrait(out);
+  initBlendModeTrait(out);
+  initMaterialTrait(out);
+  initClipTrait(out);
   return finishEntity(out);
 }
 

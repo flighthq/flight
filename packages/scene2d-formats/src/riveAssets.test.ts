@@ -186,7 +186,7 @@ function contextOf(components: RiveCoreObject[]): RiveArtboardImportContext {
     streamEnd: objects.length,
     streamStart: 0,
   };
-  return createRiveArtboardImportContext(createRiveImportRegistry(), graph, objects, createDisplayObject({}), []);
+  return createRiveArtboardImportContext(createRiveImportRegistry(), graph, objects, createDisplayObject(), []);
 }
 
 function object(typeKey: number, properties: Readonly<Record<number, number>>): RiveCoreObject {

@@ -81,24 +81,22 @@ function createSvgTextNode(
     name: svgAttribute(element, 'id'),
     visible: style.display !== 'none' && style.visibility === 'visible',
   };
-  const label =
+  const label = ranges.length === 0 ? createTextLabel() : createRichText();
+  Object.assign(label, common);
+  Object.assign(
+    label.data,
     ranges.length === 0
-      ? createTextLabel({
-          ...common,
-          data: { autoSize: 'left', height: style.fontSize * 1.25, text, textFormat: format, width: 10000 },
-        })
-      : createRichText({
-          ...common,
-          data: {
-            autoSize: 'left',
-            defaultTextFormat: format,
-            height: style.fontSize * 1.25,
-            text,
-            textFormat: format,
-            textFormatRanges: ranges,
-            width: 10000,
-          },
-        });
+      ? { autoSize: 'left' as const, height: style.fontSize * 1.25, text, textFormat: format, width: 10000 }
+      : {
+          autoSize: 'left' as const,
+          defaultTextFormat: format,
+          height: style.fontSize * 1.25,
+          text,
+          textFormat: format,
+          textFormatRanges: ranges,
+          width: 10000,
+        },
+  );
   if (hasFlattenedSvgTextPosition(tspans, firstTspan)) {
     reportImportDiagnostic(
       context.diagnostics,

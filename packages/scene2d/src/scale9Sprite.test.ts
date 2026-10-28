@@ -33,7 +33,10 @@ describe('createScale9Sprite', () => {
 
   it('allows a pre-defined texture', () => {
     const imageTexture = texture(64, 32);
-    const sprite = createScale9Sprite(grid, { data: { texture: imageTexture } });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture: imageTexture });
+      return created;
+    })(createScale9Sprite(grid));
     expect(sprite.data.texture).toBe(imageTexture);
   });
 
@@ -55,7 +58,7 @@ describe('createScale9SpriteData', () => {
 
   it('uses provided texture when given', () => {
     const imageTexture = texture(10, 10);
-    const data = createScale9SpriteData(grid, { texture: imageTexture });
+    const data = Object.assign(createScale9SpriteData(grid), { texture: imageTexture });
     expect(data.texture).toBe(imageTexture);
   });
 });
@@ -97,12 +100,18 @@ function texture(width: number, height: number) {
 }
 describe('Scale9Sprite local bounds', () => {
   it('derives bounds from the texture like a plain Sprite', () => {
-    const sprite = createScale9Sprite(grid, { data: { texture: texture(100, 50) } });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture: texture(100, 50) });
+      return created;
+    })(createScale9Sprite(grid));
     expect(getNodeLocalBoundsRectangle(sprite)).toMatchObject({ height: 50, width: 100 });
   });
 
   it('refreshes bounds after bare texture assignment', () => {
-    const sprite = createScale9Sprite(grid, { data: { texture: texture(16, 12) } });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture: texture(16, 12) });
+      return created;
+    })(createScale9Sprite(grid));
     expect(getNodeLocalBoundsRectangle(sprite)).toMatchObject({ height: 12, width: 16 });
     const runtime = getEntityRuntime(sprite) as SpriteRuntime;
     const localBoundsId = runtime.localBoundsId;

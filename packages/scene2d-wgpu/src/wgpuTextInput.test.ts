@@ -20,7 +20,10 @@ describe('drawWgpuTextInputOverlay', () => {
     enableWgpuTextInput();
     const state = await createWgpuRenderStateForTest();
     beginWgpuScreenRenderPassForTest(state);
-    const input = createRichText({ data: { height: 40, text: 'hi', width: 100 } });
+    const input = ((created) => {
+      Object.assign(created.data, { height: 40, text: 'hi', width: 100 });
+      return created;
+    })(createRichText());
     enableTextInput(input).focused = true;
     prepareScene2DRender(state, input);
     const renderProxy = getOrCreateRenderProxy2D(state, input);

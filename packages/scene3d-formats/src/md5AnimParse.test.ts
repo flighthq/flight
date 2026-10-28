@@ -104,7 +104,12 @@ const ANIMATED_ROTATION = [
 function makeJoints(count: number): Node3D[] {
   const nodes: Node3D[] = [];
   for (let i = 0; i < count; i++) {
-    nodes.push(createNode3D(undefined, { name: `joint${i}` }));
+    nodes.push(
+      ((created) => {
+        Object.assign(created, { name: `joint${i}` });
+        return created;
+      })(createNode3D(undefined)),
+    );
   }
   return nodes;
 }
@@ -193,8 +198,14 @@ describe('parseMd5Anim', () => {
     // would bind the root channel to the child node; name binding must resolve each to its named node —
     // the fix for a caller that collects joints in a different order than MD5 (e.g. depth-first over a
     // nested skeleton, which reorders branches like finger chains).
-    const child = createNode3D(undefined, { name: 'child' });
-    const root = createNode3D(undefined, { name: 'root' });
+    const child = ((created) => {
+      Object.assign(created, { name: 'child' });
+      return created;
+    })(createNode3D(undefined));
+    const root = ((created) => {
+      Object.assign(created, { name: 'root' });
+      return created;
+    })(createNode3D(undefined));
     const clip = parseMd5Anim(TWO_JOINT_TWO_FRAME, [child, root])!;
 
     // Channels are [root-translation, root-rotation, child-translation, child-rotation] (hierarchy order).

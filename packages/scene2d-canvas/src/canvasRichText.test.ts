@@ -93,7 +93,10 @@ describe('drawCanvasRichTextMask', () => {
   // through pushCanvasClipContours (the clip hooks), not through per-kind draw-mask functions.
   it('does not throw', () => {
     const state = makeState();
-    const node = createRichText({ data: { text: 'hello' } });
+    const node = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createRichText());
     const renderProxy = getOrCreateRenderProxy2D(state, node);
     expect(() => drawCanvasRichTextMask(state, renderProxy)).not.toThrow();
   });
@@ -105,11 +108,17 @@ describe('registerCanvasTextInputOverlay', () => {
     registerCanvasTextInputOverlay(overlay);
     const state = makeState();
 
-    const plain = createRichText({ data: { text: 'x' } });
+    const plain = ((created) => {
+      Object.assign(created.data, { text: 'x' });
+      return created;
+    })(createRichText());
     drawCanvasRichText(state, getOrCreateRenderProxy2D(state, plain));
     expect(overlay).not.toHaveBeenCalled();
 
-    const editable = createRichText({ data: { text: 'x' } });
+    const editable = ((created) => {
+      Object.assign(created.data, { text: 'x' });
+      return created;
+    })(createRichText());
     enableTextInput(editable);
     drawCanvasRichText(state, getOrCreateRenderProxy2D(state, editable));
     expect(overlay).toHaveBeenCalled();

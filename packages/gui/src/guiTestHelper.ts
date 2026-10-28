@@ -30,7 +30,7 @@ export function createGuiTestNode(width = 100, height = 20): Node2D {
     out.width = width;
     out.height = height;
   };
-  const node = createNode(DisplayObjectKind, undefined, undefined, () => runtime) as Node2D;
+  const node = createNode(DisplayObjectKind, undefined, () => runtime) as Node2D;
   initTransform2DTrait(node);
   initBoundsRectangleTrait(node);
   initAppearanceTrait(node);

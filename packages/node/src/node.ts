@@ -11,7 +11,6 @@ import type {
   NodeRuntimeFactory,
   NodeSignals,
   NodeFields,
-  PartialNode,
 } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
@@ -24,12 +23,11 @@ export function createNode<
   Runtime extends NodeRuntime<Fields> = NodeRuntime<Fields>,
 >(
   nodeKind: Kind,
-  obj?: Readonly<PartialNode<Node<Fields>>>,
   createData?: NodeDataFactory<Data>,
   createNodeRuntimeFactory?: NodeRuntimeFactory<Runtime>,
 ): Node<Fields> & Fields {
   const out = allocateEntity<Node<Fields> & Fields>();
-  initializeNode(out, nodeKind, obj, createData, createNodeRuntimeFactory);
+  initializeNode(out, nodeKind, createData, createNodeRuntimeFactory);
   return finishEntity(out);
 }
 
@@ -152,17 +150,16 @@ export function initializeNode<
 >(
   out: EntityConstruction<Node<Fields> & Fields>,
   nodeKind: Kind,
-  obj?: Readonly<PartialNode<Node<Fields>>>,
   createData?: NodeDataFactory<Data>,
   createNodeRuntimeFactory?: NodeRuntimeFactory<Runtime>,
 ): void {
   const runtimeFactory = createNodeRuntimeFactory ?? (createNodeRuntime as unknown as NodeRuntimeFactory<Runtime>);
   const node = out as EntityConstruction<Node<Fields>>;
   (node as { [EntityRuntimeKey]?: unknown })[EntityRuntimeKey] = runtimeFactory();
-  node.data = createData !== undefined ? createData(obj?.data as Partial<Data>) : null;
-  node.name = obj?.name ?? null;
+  node.data = createData !== undefined ? createData() : null;
+  node.name = null;
   node.kind = nodeKind;
-  node.enabled = obj?.enabled ?? true;
+  node.enabled = true;
 }
 
 export function initializeNodeSignals(out: EntityConstruction<NodeSignals>): void {

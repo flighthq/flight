@@ -100,7 +100,7 @@ describe('getLassoSelectionPath', () => {
 });
 
 function createBoundedNode(name: string, rectangle: Readonly<RectangleLike>): BoundsNodeAny {
-  return createNode('SelectionBoundsTestNode', { name }, undefined, () => {
+  const node = createNode('SelectionBoundsTestNode', undefined, () => {
     const runtime = createNodeRuntime() as NodeRuntime & HasBoundsRectangleRuntime;
     initBoundsRectangleRuntimeTrait(runtime, {
       computeLocalBoundsRectangle(out) {
@@ -112,6 +112,8 @@ function createBoundedNode(name: string, rectangle: Readonly<RectangleLike>): Bo
     });
     return runtime;
   }) as BoundsNodeAny;
+  node.name = name;
+  return node;
 }
 describe('initializeLassoSelection', () => {
   it('is the construction initializer of createLassoSelection', () => {

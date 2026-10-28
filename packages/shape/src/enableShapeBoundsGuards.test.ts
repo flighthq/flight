@@ -59,6 +59,9 @@ function captureLog(run: () => void): readonly LogEntry[] {
 }
 
 function computeMissingBounds(): void {
-  const shape = createShape({ data: { commands: ['__test.guard-miss__', 0] } });
+  const shape = ((created) => {
+    Object.assign(created.data, { commands: ['__test.guard-miss__', 0] });
+    return created;
+  })(createShape());
   computeShapeBoundsRectangle(createRectangle(), shape);
 }

@@ -97,7 +97,10 @@ describe('clearParticleEmitter2D', () => {
 describe('cloneParticleEmitter2D', () => {
   it('copies count, atlas, and worldSpace into a new emitter', () => {
     const atlas = makeAtlas(makeAtlasRegion(0));
-    const source = createParticleEmitter2D({ data: { atlas, worldSpace: true } });
+    const source = ((created) => {
+      Object.assign(created.data, { atlas, worldSpace: true });
+      return created;
+    })(createParticleEmitter2D());
     appendParticleEmitter2DParticle(source, 0, 10, 20, 0.5, 2);
     setParticleEmitter2DParticleColor(source, 0, 0.1, 0.2, 0.3);
     setParticleEmitter2DParticleAlpha(source, 0, 0.4);
@@ -169,7 +172,10 @@ describe('computeParticleEmitter2DLocalBoundsRectangle', () => {
 
   it('returns zero bounds when particleCount is 0', () => {
     const atlas = makeAtlas(makeAtlasRegion());
-    const emitter = createParticleEmitter2D({ data: { atlas } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas });
+      return created;
+    })(createParticleEmitter2D());
     const out = createRectangle(1, 2, 3, 4);
     computeParticleEmitter2DLocalBoundsRectangle(out, emitter);
     expect(out.width).toBe(0);
@@ -178,7 +184,10 @@ describe('computeParticleEmitter2DLocalBoundsRectangle', () => {
 
   it('computes AABB for a single axis-aligned particle', () => {
     const atlas = makeAtlas(makeAtlasRegion(0, 0, 0, 10, 20));
-    const emitter = createParticleEmitter2D({ data: { atlas, particleCount: 1 } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas, particleCount: 1 });
+      return created;
+    })(createParticleEmitter2D());
     emitter.data.ids = new Uint16Array([0]);
     // [x=5, y=10, rotation=0, scale=1]
     emitter.data.transforms = new Float32Array([5, 10, 0, 1]);
@@ -193,7 +202,10 @@ describe('computeParticleEmitter2DLocalBoundsRectangle', () => {
   it('uses the upright logical extent of a rotated atlas region', () => {
     const region = makeAtlasRegion(0, 0, 0, 10, 20);
     region.rotation = TextureAtlasRotation.Clockwise90;
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas(region), particleCount: 1 } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas(region), particleCount: 1 });
+      return created;
+    })(createParticleEmitter2D());
     emitter.data.ids = new Uint16Array([0]);
     emitter.data.transforms = new Float32Array([5, 10, 0, 1]);
     const out = createRectangle();
@@ -203,7 +215,10 @@ describe('computeParticleEmitter2DLocalBoundsRectangle', () => {
 
   it('computes AABB over multiple particles', () => {
     const atlas = makeAtlas(makeAtlasRegion(0, 0, 0, 10, 10));
-    const emitter = createParticleEmitter2D({ data: { atlas, particleCount: 2 } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas, particleCount: 2 });
+      return created;
+    })(createParticleEmitter2D());
     emitter.data.ids = new Uint16Array([0, 0]);
     // particle 0 at (0,0), particle 1 at (50,50)
     emitter.data.transforms = new Float32Array([0, 0, 0, 1, 50, 50, 0, 1]);
@@ -217,7 +232,10 @@ describe('computeParticleEmitter2DLocalBoundsRectangle', () => {
 
   it('skips particles with out-of-range region ids', () => {
     const atlas = makeAtlas(makeAtlasRegion(0, 0, 0, 10, 10));
-    const emitter = createParticleEmitter2D({ data: { atlas, particleCount: 2 } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas, particleCount: 2 });
+      return created;
+    })(createParticleEmitter2D());
     emitter.data.ids = new Uint16Array([0, 99]);
     emitter.data.transforms = new Float32Array([0, 0, 0, 1, 1000, 1000, 0, 1]);
     const out = createRectangle();
@@ -228,7 +246,10 @@ describe('computeParticleEmitter2DLocalBoundsRectangle', () => {
 
   it('does not store the result on the emitter', () => {
     const atlas = makeAtlas(makeAtlasRegion(0, 0, 0, 10, 10));
-    const emitter = createParticleEmitter2D({ data: { atlas, particleCount: 1 } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas, particleCount: 1 });
+      return created;
+    })(createParticleEmitter2D());
     emitter.data.ids = new Uint16Array([0]);
     emitter.data.transforms = new Float32Array([0, 0, 0, 1]);
     const revisionBefore = getNodeLocalBoundsRevision(emitter);
@@ -264,14 +285,22 @@ describe('createParticleEmitter2D', () => {
         alphas: new Float32Array([1, 0.5]),
       },
     };
-    const obj = createParticleEmitter2D(base);
+    const obj = ((created, fields) => {
+      const entityData = created.data;
+      Object.assign(created, fields);
+      if (fields.data !== undefined) {
+        Object.assign(entityData, fields.data);
+        Object.assign(created, { data: entityData });
+      }
+      return created;
+    })(createParticleEmitter2D(), base);
     expect(obj.data.atlas).toStrictEqual(base.data.atlas);
     expect(obj.data.particleCount).toBe(2);
   });
 
   it('returns a new object', () => {
     const base = {};
-    const obj = createParticleEmitter2D(base);
+    const obj = createParticleEmitter2D();
     expect(obj).not.toStrictEqual(base);
   });
 });
@@ -299,7 +328,7 @@ describe('createParticleEmitterData', () => {
   });
 
   it('allows pre-defined values', () => {
-    const data = createParticleEmitterData({ particleCount: 5 });
+    const data = Object.assign(createParticleEmitterData(), { particleCount: 5 });
     expect(data.particleCount).toBe(5);
   });
 });

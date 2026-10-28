@@ -55,9 +55,10 @@ function createSvgImageNode(
   const height = svgNumberAttribute(element, 'height', image.height);
   const x = svgNumberAttribute(element, 'x', 0);
   const y = svgNumberAttribute(element, 'y', 0);
-  const bitmap = createSprite({
-    data: { texture: createTexture({ dimension: '2d', source: image }) },
-  });
+  const bitmap = ((created) => {
+    Object.assign(created.data, { texture: createTexture({ dimension: '2d', source: image }) });
+    return created;
+  })(createSprite());
   const geometry =
     image.width > 0 && image.height > 0 && width >= 0 && height >= 0
       ? createSvgViewBoxMatrix(

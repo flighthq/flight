@@ -63,7 +63,10 @@ describe('clearParticleEmitter3D', () => {
 
 describe('cloneParticleEmitter3D', () => {
   it('deep-copies particle buffers and preserves blendMode and worldSpace', () => {
-    const emitter = createParticleEmitter3D({ blendMode: 'add' });
+    const emitter = ((created) => {
+      Object.assign(created, { blendMode: 'add' });
+      return created;
+    })(createParticleEmitter3D());
     emitter.data.worldSpace = true;
     appendParticleEmitter3DParticle(emitter, 7, 1, 2, 3, 0.5, 2);
     setParticleEmitter3DParticleVelocity(emitter, 0, 4, 5, 6);
@@ -152,10 +155,11 @@ describe('createParticleEmitter3D', () => {
   });
 
   it('accepts initial data', () => {
-    const emitter = createParticleEmitter3D({
-      data: { particleCount: 0, worldSpace: true },
-      name: 'fire',
-    });
+    const emitter = ((created) => {
+      Object.assign(created, { name: 'fire' });
+      Object.assign(created.data, { particleCount: 0, worldSpace: true });
+      return created;
+    })(createParticleEmitter3D());
     expect(emitter.name).toBe('fire');
     expect(emitter.data.worldSpace).toBe(true);
   });
@@ -168,7 +172,12 @@ describe('createParticleEmitter3D', () => {
 
   it('defaults blendMode to normal and accepts an override', () => {
     expect(createParticleEmitter3D().blendMode).toBe('normal');
-    expect(createParticleEmitter3D({ blendMode: 'add' }).blendMode).toBe('add');
+    expect(
+      ((created) => {
+        Object.assign(created, { blendMode: 'add' });
+        return created;
+      })(createParticleEmitter3D()).blendMode,
+    ).toBe('add');
   });
 });
 

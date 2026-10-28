@@ -6,7 +6,6 @@ import type {
   EntityConstruction,
   MethodsOf,
   Node2DFields,
-  PartialNode,
   Rectangle,
   Tilemap,
   TilemapData,
@@ -31,17 +30,15 @@ export function clearTilemap(tilemap: Tilemap): void {
  */
 export function cloneTilemap(source: Readonly<Tilemap>): Tilemap {
   const src = source.data;
-  return createTilemap({
-    data: {
-      atlas: src.atlas,
-      columns: src.columns,
-      materialData: src.materialData !== null ? src.materialData.slice() : null,
-      rows: src.rows,
-      tileHeight: src.tileHeight,
-      tileWidth: src.tileWidth,
-      tiles: src.tiles.slice(),
-    },
-  });
+  const clone = createTilemap();
+  clone.data.atlas = src.atlas;
+  clone.data.columns = src.columns;
+  clone.data.materialData = src.materialData !== null ? src.materialData.slice() : null;
+  clone.data.rows = src.rows;
+  clone.data.tileHeight = src.tileHeight;
+  clone.data.tileWidth = src.tileWidth;
+  clone.data.tiles = src.tiles.slice();
+  return clone;
 }
 
 export function computeTilemapLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DFields>>): void {
@@ -53,13 +50,13 @@ export function computeTilemapLocalBoundsRectangle(out: Rectangle, source: Reado
   out.height = atlas !== null ? rows * tileHeight : 0;
 }
 
-export function createTilemap(obj?: Readonly<PartialNode<Tilemap>>): Tilemap {
-  return createNode2D(TilemapKind, obj, createTilemapData, createTilemapRuntime) as Tilemap;
+export function createTilemap(): Tilemap {
+  return createNode2D(TilemapKind, createTilemapData, createTilemapRuntime) as Tilemap;
 }
 
-export function createTilemapData(data?: Readonly<Partial<TilemapData>>): TilemapData {
+export function createTilemapData(): TilemapData {
   const out = allocateEntity<TilemapData>();
-  initializeTilemapData(out, data);
+  initializeTilemapData(out);
   return finishEntity(out);
 }
 
@@ -173,19 +170,16 @@ export function getTilemapTileRect(out: Rectangle, source: Readonly<Tilemap>, co
   return true;
 }
 
-export function initializeTilemapData(
-  out: EntityConstruction<TilemapData>,
-  data?: Readonly<Partial<TilemapData>>,
-): void {
-  const columns = data?.columns ?? 0;
-  const rows = data?.rows ?? 0;
-  out.atlas = data?.atlas ?? null;
+export function initializeTilemapData(out: EntityConstruction<TilemapData>): void {
+  const columns = 0;
+  const rows = 0;
+  out.atlas = null;
   out.columns = columns;
-  out.materialData = data?.materialData ?? null;
+  out.materialData = null;
   out.rows = rows;
-  out.tileHeight = data?.tileHeight ?? 0;
-  out.tileWidth = data?.tileWidth ?? 0;
-  out.tiles = data?.tiles ?? new Int16Array(columns * rows).fill(-1);
+  out.tileHeight = 0;
+  out.tileWidth = 0;
+  out.tiles = new Int16Array(columns * rows).fill(-1);
 }
 
 export function initializeTilemapSignals(out: EntityConstruction<TilemapSignals>): void {

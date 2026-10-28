@@ -41,7 +41,10 @@ describe('prepareScene3DMorph', () => {
 
   it('skips disabled subtrees', () => {
     const scene = createNode3D();
-    const disabled = createNode3D(undefined, { enabled: false });
+    const disabled = ((created) => {
+      Object.assign(created, { enabled: false });
+      return created;
+    })(createNode3D(undefined));
     const mesh = morphedMesh([0, 0, 0], [5, 0, 0], 1);
     addNodeChild(disabled, mesh);
     addNodeChild(scene, disabled);

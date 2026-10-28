@@ -123,7 +123,10 @@ function contextFor(components: RiveCoreObject[], diagnostics?: ImportDiagnostic
     createRiveImportRegistry(),
     graph,
     objects,
-    createDisplayObject({ name: 'Board' }),
+    ((created) => {
+      Object.assign(created, { name: 'Board' });
+      return created;
+    })(createDisplayObject()),
     [],
     diagnostics,
   );

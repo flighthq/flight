@@ -232,5 +232,8 @@ function createTestMorphShape(progress = 0) {
   const end = createPath();
   appendPathMoveTo(end, 20, 30);
   appendPathLineTo(end, 40, 30);
-  return createMorphShape(createPathMorph(start, end)!, { data: { progress } });
+  return ((created) => {
+    Object.assign(created.data, { progress });
+    return created;
+  })(createMorphShape(createPathMorph(start, end)!));
 }

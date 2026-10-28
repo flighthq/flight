@@ -23,7 +23,6 @@ import type {
   MovieClipData,
   MovieClipRuntime,
   MovieClipSignals,
-  PartialNode,
   TimelineLabel,
   TimelineSource,
 } from '@flighthq/types/contract';
@@ -36,13 +35,13 @@ export function addMovieClipFrameScript(clip: MovieClip, frame: number | string,
   addTimelineFrameScript(clip.data.timeline, frame, script);
 }
 
-export function createMovieClip(obj?: Readonly<PartialNode<MovieClip>>): MovieClip {
-  return createNode2D(MovieClipKind, obj, createMovieClipData, createMovieClipRuntime) as MovieClip;
+export function createMovieClip(): MovieClip {
+  return createNode2D(MovieClipKind, createMovieClipData, createMovieClipRuntime) as MovieClip;
 }
 
-export function createMovieClipData(data?: Readonly<Partial<MovieClipData>>): MovieClipData {
+export function createMovieClipData(): MovieClipData {
   const out = allocateEntity<MovieClipData>();
-  initializeMovieClipData(out, data);
+  initializeMovieClipData(out);
   return finishEntity(out);
 }
 
@@ -108,11 +107,8 @@ export function gotoAndStopMovieClip(clip: MovieClip, frame: number | string): v
   gotoAndStopTimeline(clip.data.timeline, frame);
 }
 
-export function initializeMovieClipData(
-  out: EntityConstruction<MovieClipData>,
-  data?: Readonly<Partial<MovieClipData>>,
-): void {
-  out.timeline = data?.timeline ?? null;
+export function initializeMovieClipData(out: EntityConstruction<MovieClipData>): void {
+  out.timeline = null;
 }
 
 export function isMovieClipPlaying(clip: MovieClip): boolean {

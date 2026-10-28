@@ -1,12 +1,7 @@
 import { createRectangle } from '@flighthq/geometry/contract';
 import { getNodeLocalContentRevision } from '@flighthq/node/contract';
 import { appendPathLineTo, appendPathMoveTo, createPath, createPathMorph } from '@flighthq/path/contract';
-import type {
-  MorphShapePaintBinding,
-  MorphShapePathBinding,
-  PathMorph,
-  ShapeCommandToken,
-} from '@flighthq/types/contract';
+import type { PathMorph, ShapeCommandToken } from '@flighthq/types/contract';
 import { EntityRuntimeKey, MorphShapeKind } from '@flighthq/types/contract';
 
 import {
@@ -98,10 +93,14 @@ describe('createMorphShape', () => {
     expect(shape.data.progress).toBe(0);
   });
 
-  it('uses initial progress and a provided command buffer', () => {
+  it('supports assigning commands and then sampling progress', () => {
     const commands: ShapeCommandToken[] = ['beginFill', 2, 0xff0000ff, 1];
 
-    const shape = createMorphShape(createTestMorph(), { data: { commands, progress: 0.5 } });
+    const shape = ((created) => {
+      Object.assign(created.data, { commands });
+      return created;
+    })(createMorphShape(createTestMorph()));
+    setMorphShapeProgress(shape, 0.5);
 
     expect(shape.data.commands).toBe(commands);
     expect(shape.data.path.data).toStrictEqual([5, 10, 10, 10, 15, 10, 20, 10]);
@@ -122,28 +121,24 @@ describe('createMorphShape', () => {
 });
 
 describe('createMorphShapeData', () => {
-  it('owns its mutable binding registries without replacing retained values', () => {
+  it('owns distinct mutable binding registries', () => {
     const morph = createTestMorph();
-    const paintBindings: MorphShapePaintBinding[] = [];
-    const pathBindings: MorphShapePathBinding[] = [];
+    const data = createMorphShapeData(morph);
+    const other = createMorphShapeData(morph);
 
-    const data = createMorphShapeData(morph, { paintBindings, pathBindings });
-
-    expect(data.paintBindings).not.toBe(paintBindings);
-    expect(data.pathBindings).not.toBe(pathBindings);
-    expect(paintBindings).toStrictEqual([]);
-    expect(pathBindings).toStrictEqual([]);
+    expect(data.paintBindings).not.toBe(other.paintBindings);
+    expect(data.pathBindings).not.toBe(other.pathBindings);
     expect(data.pathBindings).toStrictEqual([{ morph, path: data.path }]);
     expect(Object.hasOwn(data, EntityRuntimeKey)).toBe(true);
     expect(data[EntityRuntimeKey]).toBeUndefined();
   });
 
-  it('samples the requested initial endpoint exactly', () => {
+  it('samples the initial endpoint exactly', () => {
     const morph = createTestMorph();
 
-    const data = createMorphShapeData(morph, { progress: 1 });
+    const data = createMorphShapeData(morph);
 
-    expect(data.path.data).toStrictEqual(morph.endData);
+    expect(data.path.data).toStrictEqual(morph.startData);
   });
 });
 

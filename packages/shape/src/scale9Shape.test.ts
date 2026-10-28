@@ -47,7 +47,7 @@ describe('createScale9ShapeData', () => {
 
   it('uses provided commands when given', () => {
     const commands: ShapeCommandToken[] = ['endFill', 0];
-    const data = createScale9ShapeData(grid, { commands });
+    const data = Object.assign(createScale9ShapeData(grid), { commands });
     expect(data.commands).toBe(commands);
   });
 });

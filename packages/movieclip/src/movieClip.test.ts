@@ -63,13 +63,21 @@ describe('createMovieClip', () => {
 
   it('allows pre-defined values', () => {
     const base = { data: { timeline: {} as Timeline } };
-    const obj = createMovieClip(base);
+    const obj = ((created, fields) => {
+      const entityData = created.data;
+      Object.assign(created, fields);
+      if (fields.data !== undefined) {
+        Object.assign(entityData, fields.data);
+        Object.assign(created, { data: entityData });
+      }
+      return created;
+    })(createMovieClip(), base);
     expect(obj.data.timeline).toStrictEqual(base.data.timeline);
   });
 
   it('returns a new object for better hidden-class performance', () => {
     const base = {};
-    const obj = createMovieClip(base);
+    const obj = createMovieClip();
     expect(obj).not.toStrictEqual(base);
   });
 });
@@ -81,7 +89,7 @@ describe('createMovieClipData', () => {
 
   it('allows pre-defined values', () => {
     const timeline = {} as Timeline;
-    expect(createMovieClipData({ timeline }).timeline).toBe(timeline);
+    expect(Object.assign(createMovieClipData(), { timeline }).timeline).toBe(timeline);
   });
 });
 

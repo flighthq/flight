@@ -15,7 +15,10 @@ function makeState() {
 }
 
 function makeFocusedInput(text: string): RichText {
-  const node = createRichText({ data: { text, width: 100, height: 40 } });
+  const node = ((created) => {
+    Object.assign(created.data, { text, width: 100, height: 40 });
+    return created;
+  })(createRichText());
   enableTextInput(node).focused = true;
   return node;
 }

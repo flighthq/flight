@@ -42,7 +42,10 @@ describe('orientBillboardToCamera', () => {
   // (setMatrix4LookAt reseeds both degenerate bases), so the only way in is an arbitrary view matrix
   // copied through setCamera3DViewMatrix4FromMatrix4, which validates nothing.
   it('declines and leaves the billboard untouched when the view matrix has no inverse', () => {
-    const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
+    const billboard = ((created) => {
+      created.mode = 'full';
+      return created;
+    })(createBillboard(createPlaneMeshGeometry(), [null]));
     setVector3(billboard.position, 1, 2, 3);
     invalidateNodeLocalTransform(billboard);
     const before = Array.from(getNodeWorldMatrix4(billboard).m);
@@ -60,12 +63,18 @@ describe('orientBillboardToCamera', () => {
   });
 
   it('reports true for an invertible view', () => {
-    const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
+    const billboard = ((created) => {
+      created.mode = 'full';
+      return created;
+    })(createBillboard(createPlaneMeshGeometry(), [null]));
     expect(orientBillboardToCamera(billboard, cameraLookingFrom(0, 0, 10))).toBe(true);
   });
 
   it('full mode at the origin faces a +Z camera with an identity basis', () => {
-    const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
+    const billboard = ((created) => {
+      created.mode = 'full';
+      return created;
+    })(createBillboard(createPlaneMeshGeometry(), [null]));
     orientBillboardToCamera(billboard, cameraLookingFrom(0, 0, 10));
     const m = getNodeWorldMatrix4(billboard).m;
     // right = +X, up = +Y, normal(+Z) toward the camera.
@@ -78,7 +87,10 @@ describe('orientBillboardToCamera', () => {
   });
 
   it('full mode points the normal at the camera eye and preserves world position', () => {
-    const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
+    const billboard = ((created) => {
+      created.mode = 'full';
+      return created;
+    })(createBillboard(createPlaneMeshGeometry(), [null]));
     setVector3(billboard.position, 3, 0, 0);
     invalidateNodeLocalTransform(billboard);
     orientBillboardToCamera(billboard, cameraLookingFrom(0, 0, 10));
@@ -95,7 +107,10 @@ describe('orientBillboardToCamera', () => {
   });
 
   it('full mode preserves world scale in the facing basis', () => {
-    const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
+    const billboard = ((created) => {
+      created.mode = 'full';
+      return created;
+    })(createBillboard(createPlaneMeshGeometry(), [null]));
     setVector3(billboard.scale, 2, 2, 2);
     invalidateNodeLocalTransform(billboard);
     orientBillboardToCamera(billboard, cameraLookingFrom(0, 0, 10));
@@ -106,7 +121,10 @@ describe('orientBillboardToCamera', () => {
   });
 
   it('axisY mode yaws about world +Y and stays upright', () => {
-    const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'axisY');
+    const billboard = ((created) => {
+      created.mode = 'axisY';
+      return created;
+    })(createBillboard(createPlaneMeshGeometry(), [null]));
     orientBillboardToCamera(billboard, cameraLookingFrom(10, 5, 0));
     const m = getNodeWorldMatrix4(billboard).m;
     // Normal projected onto XZ toward the camera = +X; up stays world +Y; right = up x normal = -Z.
@@ -121,7 +139,10 @@ describe('orientBillboardToCamera', () => {
   });
 
   it('screenAligned mode adopts the camera basis regardless of position', () => {
-    const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'screenAligned');
+    const billboard = ((created) => {
+      created.mode = 'screenAligned';
+      return created;
+    })(createBillboard(createPlaneMeshGeometry(), [null]));
     setVector3(billboard.position, 5, 3, 0);
     invalidateNodeLocalTransform(billboard);
     orientBillboardToCamera(billboard, cameraLookingFrom(0, 0, 10));
@@ -135,7 +156,10 @@ describe('orientBillboardToCamera', () => {
   });
 
   it('is stable across repeated orientation (no scale or position drift)', () => {
-    const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
+    const billboard = ((created) => {
+      created.mode = 'full';
+      return created;
+    })(createBillboard(createPlaneMeshGeometry(), [null]));
     setVector3(billboard.position, 3, 0, 0);
     invalidateNodeLocalTransform(billboard);
     setVector3(billboard.scale, 2, 2, 2);
@@ -157,7 +181,10 @@ describe('orientScene3DBillboardsToCamera', () => {
     const mesh = createMesh(createPlaneMeshGeometry(), [null]);
     setVector3(mesh.position, 7, 0, 0);
     invalidateNodeLocalTransform(mesh);
-    const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
+    const billboard = ((created) => {
+      created.mode = 'full';
+      return created;
+    })(createBillboard(createPlaneMeshGeometry(), [null]));
     addNodeChild(root, mesh);
     addNodeChild(root, billboard);
 
@@ -178,7 +205,10 @@ describe('orientScene3DBillboardsToCamera', () => {
     setQuaternionFromAxisAngle(rotation, { x: 0, y: 1, z: 0 }, Math.PI / 2);
     copyQuaternion(parent.rotation, rotation);
     invalidateNodeLocalTransform(parent);
-    const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'full');
+    const billboard = ((created) => {
+      created.mode = 'full';
+      return created;
+    })(createBillboard(createPlaneMeshGeometry(), [null]));
     addNodeChild(parent, billboard);
 
     orientScene3DBillboardsToCamera(parent, cameraLookingFrom(0, 0, 10));
@@ -207,8 +237,20 @@ describe('setBillboardCameraBasisGuard', () => {
         camera,
         createMatrix4FromValues(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
       );
-      orientBillboardToCamera(createBillboard(createPlaneMeshGeometry(), [null], 'full'), camera);
-      orientBillboardToCamera(createBillboard(createPlaneMeshGeometry(), [null], 'full'), cameraLookingFrom(0, 0, 10));
+      orientBillboardToCamera(
+        ((created) => {
+          created.mode = 'full';
+          return created;
+        })(createBillboard(createPlaneMeshGeometry(), [null])),
+        camera,
+      );
+      orientBillboardToCamera(
+        ((created) => {
+          created.mode = 'full';
+          return created;
+        })(createBillboard(createPlaneMeshGeometry(), [null])),
+        cameraLookingFrom(0, 0, 10),
+      );
       expect(seen).toEqual([0]);
     } finally {
       setBillboardCameraBasisGuard(null);

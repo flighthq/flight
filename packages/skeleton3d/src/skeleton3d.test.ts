@@ -57,7 +57,11 @@ describe('cloneSkeleton3DJointHierarchy', () => {
     const source = createSkeleton3D([root, child], undefined, ['root', 'child']);
 
     const clone = cloneSkeleton3DJointHierarchy(source, (joint) => {
-      const out = createNode3D(joint.kind, joint);
+      const out = createNode3D(joint.kind);
+      out.alpha = joint.alpha;
+      out.enabled = joint.enabled;
+      out.name = joint.name;
+      out.visible = joint.visible;
       setNodeTransform3D(out, joint);
       return out;
     });

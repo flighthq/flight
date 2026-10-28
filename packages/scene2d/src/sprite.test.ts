@@ -20,7 +20,10 @@ import {
 
 describe('cloneSprite', () => {
   it('shares the texture through a fresh sprite', () => {
-    const source = createSprite({ data: { texture: texture(10, 20) } });
+    const source = ((created) => {
+      Object.assign(created.data, { texture: texture(10, 20) });
+      return created;
+    })(createSprite());
     const copy = cloneSprite(source);
     expect(copy).not.toBe(source);
     expect(copy.data.texture).toBe(source.data.texture);
@@ -31,7 +34,10 @@ describe('computeSpriteLocalBoundsRectangle', () => {
   it('uses texture dimensions multiplied by its uv window', () => {
     const imageTexture = texture(100, 200);
     setTextureUvFromPixelRect(imageTexture, 10, 20, 30, 40);
-    const sprite = createSprite({ data: { texture: imageTexture } });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture: imageTexture });
+      return created;
+    })(createSprite());
     const out = createRectangle();
     computeSpriteLocalBoundsRectangle(out, sprite);
     expect(out.width).toBe(30);
@@ -52,7 +58,13 @@ describe('computeSpriteLocalBoundsRectangle', () => {
     imageTexture.uvScale.y = 0.2;
     imageTexture.uvRotation = -Math.PI / 2;
     const out = createRectangle();
-    computeSpriteLocalBoundsRectangle(out, createSprite({ data: { texture: imageTexture } }));
+    computeSpriteLocalBoundsRectangle(
+      out,
+      ((created) => {
+        Object.assign(created.data, { texture: imageTexture });
+        return created;
+      })(createSprite()),
+    );
     expect(out.width).toBeCloseTo(15);
     expect(out.height).toBeCloseTo(20);
   });
@@ -72,13 +84,16 @@ describe('createSprite', () => {
 
   it('allows pre-defined values', () => {
     const imageTexture = texture(10, 10);
-    const obj = createSprite({ data: { texture: imageTexture } });
+    const obj = ((created) => {
+      Object.assign(created.data, { texture: imageTexture });
+      return created;
+    })(createSprite());
     expect(obj.data.texture).toBe(imageTexture);
   });
 
   it('returns a new object for better hidden-class performance', () => {
     const base = {};
-    const obj = createSprite(base);
+    const obj = createSprite();
     expect(obj).not.toStrictEqual(base);
   });
 });
@@ -90,13 +105,16 @@ describe('createSpriteData', () => {
 
   it('allows pre-defined values', () => {
     const imageTexture = texture(10, 10);
-    expect(createSpriteData({ texture: imageTexture }).texture).toBe(imageTexture);
+    expect(Object.assign(createSpriteData(), { texture: imageTexture }).texture).toBe(imageTexture);
   });
 });
 
 describe('createSpriteRendererData', () => {
   it('creates a clean per-state stamp for the current texture', () => {
-    const sprite = createSprite({ data: { texture: texture(16, 16) } });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture: texture(16, 16) });
+      return created;
+    })(createSprite());
     const data = createSpriteRendererData({} as never, sprite);
 
     expect(isSpriteRendererDirty({} as never, sprite, data)).toBe(false);
@@ -144,7 +162,10 @@ function texture(width: number, height: number) {
 }
 describe('isSpriteRendererDirty', () => {
   it('detects same-size bare texture assignment once without node invalidation', () => {
-    const sprite = createSprite({ data: { texture: texture(64, 64) } });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture: texture(64, 64) });
+      return created;
+    })(createSprite());
     const data = createSpriteRendererData({} as never, sprite);
     const runtime = getEntityRuntime(sprite) as SpriteRuntime;
     const contentId = runtime.localContentId;
@@ -157,7 +178,10 @@ describe('isSpriteRendererDirty', () => {
   });
 
   it('detects a version bump on the same texture identity', () => {
-    const sprite = createSprite({ data: { texture: texture(64, 64) } });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture: texture(64, 64) });
+      return created;
+    })(createSprite());
     const data = createSpriteRendererData({} as never, sprite);
     sprite.data.texture!.version++;
 
@@ -167,7 +191,10 @@ describe('isSpriteRendererDirty', () => {
 
 describe('Sprite local bounds validity', () => {
   it('refreshes bounds after bare texture assignment without changing localBoundsId', () => {
-    const sprite = createSprite({ data: { texture: texture(16, 12) } });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture: texture(16, 12) });
+      return created;
+    })(createSprite());
     expect(getNodeLocalBoundsRectangle(sprite)).toMatchObject({ width: 16, height: 12 });
     const runtime = getEntityRuntime(sprite) as SpriteRuntime;
     const localBoundsId = runtime.localBoundsId;

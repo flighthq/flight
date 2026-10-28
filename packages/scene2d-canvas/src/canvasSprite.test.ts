@@ -57,7 +57,10 @@ describe('canvasSpriteRenderer', () => {
       sceneGraphSyncPolicy: 'requiresInvalidation',
     });
     registerNodeRenderer(state, SpriteKind, canvasSpriteRenderer);
-    const sprite = createSprite({ data: { texture: makeTexture() } });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture: makeTexture() });
+      return created;
+    })(createSprite());
     prepareScene2DRender(state, sprite);
     expect(prepareScene2DRender(state, sprite)).toBe(false);
 
@@ -72,7 +75,10 @@ describe('drawCanvasSprite', () => {
     const state = makeState();
     const texture = makeTexture();
     setTextureUvFromPixelRect(texture, 10, 20, 32, 16);
-    const sprite = createSprite({ data: { texture } });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture });
+      return created;
+    })(createSprite());
     const draw = vi.spyOn(state.context, 'drawImage');
     drawCanvasSprite(state, getOrCreateRenderProxy2D(state, sprite));
     expect(draw).toHaveBeenCalledOnce();
@@ -83,7 +89,16 @@ describe('drawCanvasSprite', () => {
     const state = makeState();
     const texture = makeTexture();
     texture.sampler = createPixelArtSampler();
-    drawCanvasSprite(state, getOrCreateRenderProxy2D(state, createSprite({ data: { texture } })));
+    drawCanvasSprite(
+      state,
+      getOrCreateRenderProxy2D(
+        state,
+        ((created) => {
+          Object.assign(created.data, { texture });
+          return created;
+        })(createSprite()),
+      ),
+    );
     expect(state.context.imageSmoothingEnabled).toBe(true);
   });
 
@@ -92,7 +107,16 @@ describe('drawCanvasSprite', () => {
     const texture = createRenderTexture({ height: 24, width: 48 });
     renderIntoCanvasRenderTexture(state, state, texture, () => {});
     const draw = vi.spyOn(state.context, 'drawImage');
-    drawCanvasSprite(state, getOrCreateRenderProxy2D(state, createSprite({ data: { texture } })));
+    drawCanvasSprite(
+      state,
+      getOrCreateRenderProxy2D(
+        state,
+        ((created) => {
+          Object.assign(created.data, { texture });
+          return created;
+        })(createSprite()),
+      ),
+    );
     expect(draw).toHaveBeenCalledOnce();
     expect(draw.mock.calls[0].slice(1, 5)).toEqual([0, 0, 48, 24]);
   });
@@ -112,7 +136,16 @@ describe('drawCanvasSprite', () => {
     const transform = vi.spyOn(state.context, 'transform');
     const createElement = vi.spyOn(document, 'createElement');
 
-    drawCanvasSprite(state, getOrCreateRenderProxy2D(state, createSprite({ data: { texture } })));
+    drawCanvasSprite(
+      state,
+      getOrCreateRenderProxy2D(
+        state,
+        ((created) => {
+          Object.assign(created.data, { texture });
+          return created;
+        })(createSprite()),
+      ),
+    );
 
     expect(draw).toHaveBeenCalledOnce();
     const args = draw.mock.calls[0].slice(1) as number[];

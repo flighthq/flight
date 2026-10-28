@@ -202,7 +202,10 @@ describe('copyShapeCommands', () => {
     const path = createPath();
     const target = createMorphShape(createPathMorph(path, path)!);
     appendMorphShapeBeginFill(target, { color: 0x000000ff }, { color: 0xffffffff });
-    const source = createShape({ data: { commands: ['beginFill', 2, 0x123456ff, 1] } });
+    const source = ((created) => {
+      Object.assign(created.data, { commands: ['beginFill', 2, 0x123456ff, 1] });
+      return created;
+    })(createShape());
 
     copyShapeCommands(target, source);
     setMorphShapeProgress(target, 1);
@@ -267,7 +270,10 @@ describe('createShape', () => {
 
   it('allows pre-defined commands', () => {
     const commands: ShapeCommandToken[] = ['endFill', 0];
-    const shape = createShape({ data: { commands } });
+    const shape = ((created) => {
+      Object.assign(created.data, { commands });
+      return created;
+    })(createShape());
     expect(shape.data.commands).toBe(commands);
   });
 
@@ -321,9 +327,12 @@ describe('getShapeBounds', () => {
   });
 
   it('rejects a partial result when any command has no bounds contribution', () => {
-    const shape = createShape({
-      data: { commands: ['drawRectangle', 4, 5, 10, 200, 80, '__test.incomplete-public-bounds__', 0] },
-    });
+    const shape = ((created) => {
+      Object.assign(created.data, {
+        commands: ['drawRectangle', 4, 5, 10, 200, 80, '__test.incomplete-public-bounds__', 0],
+      });
+      return created;
+    })(createShape());
     const out = createRectangle(1, 2, 3, 4);
 
     expect(getShapeBounds(out, shape)).toBe(false);

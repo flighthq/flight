@@ -85,15 +85,16 @@ describe('glQuadBatchVelocityWriter', () => {
     const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
     // Two vector2 instances at distinct positions, each moving independently.
-    const batch = createQuadBatch({
-      data: {
+    const batch = ((created) => {
+      Object.assign(created.data, {
         atlas,
         ids: new Uint16Array([0, 0]),
         instanceCount: 2,
         transforms: new Float32Array([0, 0, 40, 10]),
         transformType: 'vector2',
-      },
-    });
+      });
+      return created;
+    })(createQuadBatch());
     // The batch owns its per-instance velocity (NOT the VelocityField); whatever drives the quads fills it.
     (getQuadBatchRuntime(batch) as QuadBatchRuntime).instanceVelocities = new Float32Array([3, -2, -1, 4]);
 
@@ -109,9 +110,15 @@ describe('glQuadBatchVelocityWriter', () => {
     const target = createGlVelocityTarget(state, 128, 64);
     const region = { id: 0, x: 0, y: 0, width: 32, height: 32, pivotX: null, pivotY: null } as TextureAtlasRegion;
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
-    const batch = createQuadBatch({
-      data: { atlas, ids: new Uint16Array([0]), instanceCount: 1, transforms: new Float32Array([0, 0]) },
-    });
+    const batch = ((created) => {
+      Object.assign(created.data, {
+        atlas,
+        ids: new Uint16Array([0]),
+        instanceCount: 1,
+        transforms: new Float32Array([0, 0]),
+      });
+      return created;
+    })(createQuadBatch());
 
     registerGlVelocityWriter(state, QuadBatchKind, glQuadBatchVelocityWriter);
     const field = createVelocityField();

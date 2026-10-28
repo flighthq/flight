@@ -108,7 +108,10 @@ describe('clearQuadBatch', () => {
 describe('cloneQuadBatch', () => {
   it('copies atlas, count, transformType, and instance data', () => {
     const atlas = makeQuadAtlas(makeQuadRegion(0));
-    const source = createQuadBatch({ data: { atlas } });
+    const source = ((created) => {
+      Object.assign(created.data, { atlas });
+      return created;
+    })(createQuadBatch());
     appendQuadBatchInstance(source, 0, 10, 20);
     const clone = cloneQuadBatch(source);
     expect(clone).not.toBe(source);
@@ -184,7 +187,10 @@ describe('computeQuadBatchLocalBoundsRectangle', () => {
   it('returns zero bounds when instanceCount is 0', () => {
     const region = makeQuadRegion();
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
-    const quadBatch = createQuadBatch({ data: { atlas } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas });
+      return created;
+    })(createQuadBatch());
     const out = createRectangle(1, 2, 3, 4);
     computeQuadBatchLocalBoundsRectangle(out, quadBatch);
     expect(out.width).toBe(0);
@@ -194,7 +200,10 @@ describe('computeQuadBatchLocalBoundsRectangle', () => {
   it('computes AABB over all quads for vector2 transforms', () => {
     const region = makeQuadRegion(0, 32, 16);
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
-    const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 2 } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas, instanceCount: 2 });
+      return created;
+    })(createQuadBatch());
     quadBatch.data.ids = new Uint16Array([0, 0]);
     quadBatch.data.transforms = new Float32Array([10, 20, 50, 100]);
     const out = createRectangle();
@@ -208,7 +217,10 @@ describe('computeQuadBatchLocalBoundsRectangle', () => {
   it('uses the upright logical extent of a rotated region for bounds', () => {
     const region = makeQuadRegion(0, 10, 20);
     region.rotation = TextureAtlasRotation.Clockwise90;
-    const quadBatch = createQuadBatch({ data: { atlas: makeQuadAtlas(region), instanceCount: 1 } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas: makeQuadAtlas(region), instanceCount: 1 });
+      return created;
+    })(createQuadBatch());
     quadBatch.data.ids = new Uint16Array([0]);
     quadBatch.data.transforms = new Float32Array([5, 7]);
     const out = createRectangle();
@@ -219,7 +231,10 @@ describe('computeQuadBatchLocalBoundsRectangle', () => {
   it('skips quads with out-of-range region ids for vector2 transforms', () => {
     const region = makeQuadRegion();
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
-    const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 2 } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas, instanceCount: 2 });
+      return created;
+    })(createQuadBatch());
     quadBatch.data.ids = new Uint16Array([0, 99]);
     quadBatch.data.transforms = new Float32Array([0, 0, 1000, 1000]);
     const out = createRectangle();
@@ -231,7 +246,10 @@ describe('computeQuadBatchLocalBoundsRectangle', () => {
   it('computes AABB over all quads for matrix3x2 transforms', () => {
     const region = makeQuadRegion(0, 10, 10);
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
-    const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1, transformType: 'matrix3x2' } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas, instanceCount: 1, transformType: 'matrix3x2' });
+      return created;
+    })(createQuadBatch());
     quadBatch.data.ids = new Uint16Array([0]);
     // identity matrix at offset (5, 5): [1, 0, 0, 1, 5, 5]
     quadBatch.data.transforms = new Float32Array([1, 0, 0, 1, 5, 5]);
@@ -246,7 +264,10 @@ describe('computeQuadBatchLocalBoundsRectangle', () => {
   it('does not store the result on the batch', () => {
     const region = makeQuadRegion(0, 32, 16);
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
-    const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1 } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas, instanceCount: 1 });
+      return created;
+    })(createQuadBatch());
     quadBatch.data.ids = new Uint16Array([0]);
     quadBatch.data.transforms = new Float32Array([10, 20]);
     const revisionBefore = getNodeLocalBoundsRevision(quadBatch);
@@ -282,7 +303,15 @@ describe('createQuadBatch', () => {
         transformType: 'matrix3x2' as QuadTransformType,
       },
     };
-    const obj = createQuadBatch(base);
+    const obj = ((created, fields) => {
+      const entityData = created.data;
+      Object.assign(created, fields);
+      if (fields.data !== undefined) {
+        Object.assign(entityData, fields.data);
+        Object.assign(created, { data: entityData });
+      }
+      return created;
+    })(createQuadBatch(), base);
     expect(obj.data.atlas).toStrictEqual(base.data.atlas);
     expect(obj.data.ids).toStrictEqual(base.data.ids);
     expect(obj.data.instanceCount).toStrictEqual(base.data.instanceCount);
@@ -292,7 +321,7 @@ describe('createQuadBatch', () => {
 
   it('returns a new object for better hidden-class performance', () => {
     const base = {};
-    const obj = createQuadBatch(base);
+    const obj = createQuadBatch();
     expect(obj).not.toStrictEqual(base);
   });
 });
@@ -309,7 +338,7 @@ describe('createQuadBatchData', () => {
   });
 
   it('allows pre-defined values', () => {
-    const data = createQuadBatchData({ instanceCount: 10 });
+    const data = Object.assign(createQuadBatchData(), { instanceCount: 10 });
     expect(data.instanceCount).toBe(10);
   });
 });
@@ -448,7 +477,10 @@ describe('getQuadBatchInstanceTransform', () => {
   });
 
   it('writes tx/ty (offset 4/5) for matrix3x2 batch', () => {
-    const qb = createQuadBatch({ data: { transformType: 'matrix3x2' } });
+    const qb = ((created) => {
+      Object.assign(created.data, { transformType: 'matrix3x2' });
+      return created;
+    })(createQuadBatch());
     resizeQuadBatch(qb, 1);
     // [a, b, c, d, tx, ty]
     qb.data.transforms.set([1, 0, 0, 1, 55, 66]);
@@ -504,7 +536,10 @@ describe('hitTestQuadBatchPoint', () => {
   it('delegates to hitTestQuadBatchPointXY', () => {
     const region = makeQuadRegion();
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
-    const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1 } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas, instanceCount: 1 });
+      return created;
+    })(createQuadBatch());
     quadBatch.data.ids = new Uint16Array([0]);
     quadBatch.data.transforms = new Float32Array([10, 20]);
     expect(hitTestQuadBatchPoint(quadBatch, { x: 15, y: 25 })).toBe(0);
@@ -515,7 +550,10 @@ describe('hitTestQuadBatchPoint', () => {
 describe('hitTestQuadBatchPointExact', () => {
   it('delegates to hitTestQuadBatchPointExactXY', () => {
     const atlas = makeQuadAtlas(makeQuadRegion(0));
-    const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1 } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas, instanceCount: 1 });
+      return created;
+    })(createQuadBatch());
     quadBatch.data.ids = new Uint16Array([0]);
     quadBatch.data.transforms = new Float32Array([10, 20]);
     expect(hitTestQuadBatchPointExact(quadBatch, { x: 15, y: 25 })).toBe(0);
@@ -527,12 +565,24 @@ describe('hitTestQuadBatchPointExactXY', () => {
   it('returns -1 when atlas is null or empty', () => {
     expect(hitTestQuadBatchPointExactXY(createQuadBatch(), 0, 0)).toBe(-1);
     const atlas = makeQuadAtlas(makeQuadRegion(0));
-    expect(hitTestQuadBatchPointExactXY(createQuadBatch({ data: { atlas } }), 0, 0)).toBe(-1);
+    expect(
+      hitTestQuadBatchPointExactXY(
+        ((created) => {
+          Object.assign(created.data, { atlas });
+          return created;
+        })(createQuadBatch()),
+        0,
+        0,
+      ),
+    ).toBe(-1);
   });
 
   it('hits an axis-aligned vector2 quad like the AABB variant', () => {
     const atlas = makeQuadAtlas(makeQuadRegion(0, 32, 32));
-    const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1 } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas, instanceCount: 1 });
+      return created;
+    })(createQuadBatch());
     quadBatch.data.ids = new Uint16Array([0]);
     quadBatch.data.transforms = new Float32Array([10, 20]);
     expect(hitTestQuadBatchPointExactXY(quadBatch, 15, 25)).toBe(0);
@@ -542,7 +592,10 @@ describe('hitTestQuadBatchPointExactXY', () => {
   it('hit-tests the upright logical extent of a rotated region', () => {
     const region = makeQuadRegion(0, 10, 20);
     region.rotation = TextureAtlasRotation.Clockwise90;
-    const quadBatch = createQuadBatch({ data: { atlas: makeQuadAtlas(region), instanceCount: 1 } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas: makeQuadAtlas(region), instanceCount: 1 });
+      return created;
+    })(createQuadBatch());
     quadBatch.data.ids = new Uint16Array([0]);
     quadBatch.data.transforms = new Float32Array([0, 0]);
     expect(hitTestQuadBatchPointExactXY(quadBatch, 15, 5)).toBe(0);
@@ -555,7 +608,10 @@ describe('hitTestQuadBatchPointExactXY', () => {
     // 45-degree rotation of a 100x100 quad. cos45 = sin45 ≈ 0.7071.
     const s = Math.SQRT1_2;
     const atlas = makeQuadAtlas(makeQuadRegion(0, 100, 100));
-    const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1, transformType: 'matrix3x2' } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas, instanceCount: 1, transformType: 'matrix3x2' });
+      return created;
+    })(createQuadBatch());
     quadBatch.data.ids = new Uint16Array([0]);
     // [a, b, c, d, tx, ty] = rotate 45 about origin, no translation.
     quadBatch.data.transforms = new Float32Array([s, s, -s, s, 0, 0]);
@@ -570,7 +626,10 @@ describe('hitTestQuadBatchPointExactXY', () => {
 
   it('returns -1 for out-of-range region ids', () => {
     const atlas = makeQuadAtlas(makeQuadRegion(0));
-    const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1, transformType: 'matrix3x2' } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas, instanceCount: 1, transformType: 'matrix3x2' });
+      return created;
+    })(createQuadBatch());
     quadBatch.data.ids = new Uint16Array([99]);
     quadBatch.data.transforms = new Float32Array([1, 0, 0, 1, 0, 0]);
     expect(hitTestQuadBatchPointExactXY(quadBatch, 5, 5)).toBe(-1);
@@ -586,14 +645,20 @@ describe('hitTestQuadBatchPointXY', () => {
   it('returns -1 when instanceCount is 0', () => {
     const region = makeQuadRegion();
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
-    const quadBatch = createQuadBatch({ data: { atlas } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas });
+      return created;
+    })(createQuadBatch());
     expect(hitTestQuadBatchPointXY(quadBatch, 0, 0)).toBe(-1);
   });
 
   it('returns the index of a hit quad for vector2 transforms', () => {
     const region = makeQuadRegion();
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
-    const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 2 } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas, instanceCount: 2 });
+      return created;
+    })(createQuadBatch());
     quadBatch.data.ids = new Uint16Array([0, 0]);
     quadBatch.data.transforms = new Float32Array([10, 20, 100, 200]);
     expect(hitTestQuadBatchPointXY(quadBatch, 15, 25)).toBe(0);
@@ -603,7 +668,10 @@ describe('hitTestQuadBatchPointXY', () => {
   it('returns -1 when point is outside all quads for vector2 transforms', () => {
     const region = makeQuadRegion();
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
-    const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1 } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas, instanceCount: 1 });
+      return created;
+    })(createQuadBatch());
     quadBatch.data.ids = new Uint16Array([0]);
     quadBatch.data.transforms = new Float32Array([10, 20]);
     expect(hitTestQuadBatchPointXY(quadBatch, 0, 0)).toBe(-1);
@@ -613,7 +681,10 @@ describe('hitTestQuadBatchPointXY', () => {
   it('returns the first hit index when quads overlap for vector2 transforms', () => {
     const region = makeQuadRegion();
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
-    const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 2 } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas, instanceCount: 2 });
+      return created;
+    })(createQuadBatch());
     quadBatch.data.ids = new Uint16Array([0, 0]);
     quadBatch.data.transforms = new Float32Array([0, 0, 0, 0]);
     expect(hitTestQuadBatchPointXY(quadBatch, 10, 10)).toBe(0);
@@ -622,7 +693,10 @@ describe('hitTestQuadBatchPointXY', () => {
   it('returns -1 for out-of-range region id for vector2 transforms', () => {
     const region = makeQuadRegion();
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
-    const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1 } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas, instanceCount: 1 });
+      return created;
+    })(createQuadBatch());
     quadBatch.data.ids = new Uint16Array([99]);
     quadBatch.data.transforms = new Float32Array([0, 0]);
     expect(hitTestQuadBatchPointXY(quadBatch, 5, 5)).toBe(-1);
@@ -631,7 +705,10 @@ describe('hitTestQuadBatchPointXY', () => {
   it('returns the index of a hit quad for matrix3x2 transforms', () => {
     const region = makeQuadRegion();
     const atlas = { texture: null, regions: [region] } as TextureAtlas;
-    const quadBatch = createQuadBatch({ data: { atlas, instanceCount: 1, transformType: 'matrix3x2' } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas, instanceCount: 1, transformType: 'matrix3x2' });
+      return created;
+    })(createQuadBatch());
     quadBatch.data.ids = new Uint16Array([0]);
     // identity matrix at offset (50, 60): [1, 0, 0, 1, 50, 60]
     quadBatch.data.transforms = new Float32Array([1, 0, 0, 1, 50, 60]);
@@ -668,7 +745,10 @@ describe('iterateQuadBatchInstances', () => {
   });
 
   it('provides a stride-length view for matrix3x2 batches', () => {
-    const qb = createQuadBatch({ data: { transformType: 'matrix3x2' } });
+    const qb = ((created) => {
+      Object.assign(created.data, { transformType: 'matrix3x2' });
+      return created;
+    })(createQuadBatch());
     resizeQuadBatch(qb, 1);
     qb.data.ids[0] = 2;
     qb.data.transforms.set([1, 0, 0, 1, 9, 10]);
@@ -764,7 +844,10 @@ describe('resizeQuadBatch', () => {
     const texture = {} as Texture2D;
     const atlas = makeQuadAtlas(makeQuadRegion());
     atlas.texture = texture;
-    const quadBatch = createQuadBatch({ data: { atlas } });
+    const quadBatch = ((created) => {
+      Object.assign(created.data, { atlas });
+      return created;
+    })(createQuadBatch());
 
     resizeQuadBatch(quadBatch, 300_000);
 
@@ -811,7 +894,10 @@ describe('setQuadBatchInstance', () => {
 
 describe('setQuadBatchInstanceMatrix', () => {
   it('writes id and all 6 matrix components', () => {
-    const qb = createQuadBatch({ data: { transformType: 'matrix3x2' } });
+    const qb = ((created) => {
+      Object.assign(created.data, { transformType: 'matrix3x2' });
+      return created;
+    })(createQuadBatch());
     resizeQuadBatch(qb, 1);
     setQuadBatchInstanceMatrix(qb, 0, 3, 1, 2, 3, 4, 5, 6);
     expect(qb.data.ids[0]).toBe(3);
@@ -824,7 +910,10 @@ describe('setQuadBatchInstanceMatrix', () => {
   });
 
   it('no-ops for out-of-range index', () => {
-    const qb = createQuadBatch({ data: { transformType: 'matrix3x2' } });
+    const qb = ((created) => {
+      Object.assign(created.data, { transformType: 'matrix3x2' });
+      return created;
+    })(createQuadBatch());
     resizeQuadBatch(qb, 1);
     qb.data.ids[0] = 0;
     setQuadBatchInstanceMatrix(qb, 1, 9, 1, 0, 0, 1, 0, 0);
@@ -847,7 +936,10 @@ describe('setQuadBatchInstanceRange', () => {
   });
 
   it('writes matrix3x2 transforms using the 6-float stride', () => {
-    const qb = createQuadBatch({ data: { transformType: 'matrix3x2' } });
+    const qb = ((created) => {
+      Object.assign(created.data, { transformType: 'matrix3x2' });
+      return created;
+    })(createQuadBatch());
     resizeQuadBatch(qb, 1);
     setQuadBatchInstanceRange(qb, 0, 1, new Float32Array([1, 0, 0, 1, 7, 8]));
     expect(qb.data.transforms[4]).toBe(7);
@@ -872,7 +964,10 @@ describe('setQuadBatchInstanceRange', () => {
 
 describe('setQuadBatchInstanceTint', () => {
   it('lazily allocates per-item data and stores packed RGBA', () => {
-    const batch = createQuadBatch({ data: { instanceCount: 3 } });
+    const batch = ((created) => {
+      Object.assign(created.data, { instanceCount: 3 });
+      return created;
+    })(createQuadBatch());
     expect(batch.data.materialData).toBeNull();
     setQuadBatchInstanceTint(batch, 1, 0x12345678);
     expect(batch.data.materialData).toHaveLength(3);
@@ -882,7 +977,10 @@ describe('setQuadBatchInstanceTint', () => {
   });
 
   it('ignores an out-of-range instance without allocating', () => {
-    const batch = createQuadBatch({ data: { instanceCount: 1 } });
+    const batch = ((created) => {
+      Object.assign(created.data, { instanceCount: 1 });
+      return created;
+    })(createQuadBatch());
     setQuadBatchInstanceTint(batch, 2, 0xffffffff);
     expect(batch.data.materialData).toBeNull();
   });
@@ -944,7 +1042,10 @@ describe('setQuadBatchTransformType', () => {
   });
 
   it('collapses matrix3x2 to vector2 keeping only translation', () => {
-    const qb = createQuadBatch({ data: { transformType: 'matrix3x2' } });
+    const qb = ((created) => {
+      Object.assign(created.data, { transformType: 'matrix3x2' });
+      return created;
+    })(createQuadBatch());
     resizeQuadBatch(qb, 2);
     setQuadBatchInstanceMatrix(qb, 0, 0, 2, 0, 0, 2, 10, 20);
     setQuadBatchInstanceMatrix(qb, 1, 1, 2, 0, 0, 2, 30, 40);

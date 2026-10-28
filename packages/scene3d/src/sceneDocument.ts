@@ -209,10 +209,18 @@ function buildDocumentNode(
   meshes: Readonly<Scene3DDocument['meshes']>,
   materials: readonly Material3D[],
 ): Node3D {
-  if (node.mesh === undefined) return createNode3D(node.kind, { name: node.name });
+  if (node.mesh === undefined)
+    return ((created) => {
+      Object.assign(created, { name: node.name });
+      return created;
+    })(createNode3D(node.kind));
   const documentMesh = meshes[node.mesh];
   const meshMaterials: (Material3D | null)[] = documentMesh.materials.map((index) => materials[index] ?? null);
-  const mesh = createMesh(documentMesh.geometry, meshMaterials, node.kind, { name: node.name });
+  const mesh = ((created) => {
+    created.kind = node.kind;
+    Object.assign(created, { name: node.name });
+    return created;
+  })(createMesh(documentMesh.geometry, meshMaterials));
   if (documentMesh.morph != null) mesh.morph = documentMesh.morph;
   return mesh as unknown as Node3D;
 }

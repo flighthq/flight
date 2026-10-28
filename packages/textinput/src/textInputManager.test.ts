@@ -24,7 +24,10 @@ import {
 } from './textInputManager.ts';
 
 function createInput(data: Partial<RichTextData> = {}): RichText {
-  const text = createRichText({ data });
+  const text = ((created) => {
+    Object.assign(created.data, data);
+    return created;
+  })(createRichText());
   enableTextInput(text);
   return text;
 }

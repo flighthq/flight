@@ -2,7 +2,6 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { createNode2D, getNode2DRuntime } from '@flighthq/scene2d/contract';
 import type {
   EntityConstruction,
-  PartialNode,
   RectangleLike,
   Scale9Shape,
   Scale9ShapeData,
@@ -12,24 +11,17 @@ import { Scale9ShapeKind } from '@flighthq/types/contract';
 
 import { createShapeRuntime } from './shape.ts';
 
-export function createScale9Shape(
-  scale9Grid: Readonly<RectangleLike>,
-  obj?: Readonly<PartialNode<Scale9Shape>>,
-): Scale9Shape {
+export function createScale9Shape(scale9Grid: Readonly<RectangleLike>): Scale9Shape {
   return createNode2D(
     Scale9ShapeKind,
-    obj as Readonly<PartialNode<Scale9Shape>>,
-    (data) => createScale9ShapeData(scale9Grid, data),
+    () => createScale9ShapeData(scale9Grid),
     createScale9ShapeRuntime,
   ) as Scale9Shape;
 }
 
-export function createScale9ShapeData(
-  scale9Grid: Readonly<RectangleLike>,
-  data?: Readonly<Partial<Scale9ShapeData>>,
-): Scale9ShapeData {
+export function createScale9ShapeData(scale9Grid: Readonly<RectangleLike>): Scale9ShapeData {
   const out = allocateEntity<Scale9ShapeData>();
-  initializeScale9ShapeData(out, scale9Grid, data);
+  initializeScale9ShapeData(out, scale9Grid);
   return finishEntity(out);
 }
 
@@ -44,8 +36,7 @@ export function getScale9ShapeRuntime(source: Readonly<Scale9Shape>): Readonly<S
 export function initializeScale9ShapeData(
   out: EntityConstruction<Scale9ShapeData>,
   scale9Grid: Readonly<RectangleLike>,
-  data?: Readonly<Partial<Scale9ShapeData>>,
 ): void {
-  out.commands = data?.commands ?? [];
+  out.commands = [];
   out.scale9Grid = scale9Grid;
 }

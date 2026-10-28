@@ -6,7 +6,6 @@ import type {
   MorphShape,
   MorphShapeData,
   MorphShapeRuntime,
-  PartialNode,
   Path,
   PathMorph,
   EntityConstruction,
@@ -37,21 +36,13 @@ export function appendMorphShapePath(shape: MorphShape, morph: Readonly<PathMorp
 // like createShape; use appendMorphShapePath after the desired fill/stroke commands. Playback is
 // intentionally absent—animation/timeline code drives setMorphShapeProgress explicitly. Backends expose
 // their default MorphShape renderer as an explicit alias of their Shape command-stream renderer.
-export function createMorphShape(morph: Readonly<PathMorph>, obj?: Readonly<PartialNode<MorphShape>>): MorphShape {
-  return createNode2D(
-    MorphShapeKind,
-    obj,
-    (data) => createMorphShapeData(morph, data),
-    createMorphShapeRuntime,
-  ) as MorphShape;
+export function createMorphShape(morph: Readonly<PathMorph>): MorphShape {
+  return createNode2D(MorphShapeKind, () => createMorphShapeData(morph), createMorphShapeRuntime) as MorphShape;
 }
 
-export function createMorphShapeData(
-  morph: Readonly<PathMorph>,
-  data?: Readonly<Partial<MorphShapeData>>,
-): MorphShapeData {
+export function createMorphShapeData(morph: Readonly<PathMorph>): MorphShapeData {
   const out = allocateEntity<MorphShapeData>();
-  initializeMorphShapeData(out, morph, data);
+  initializeMorphShapeData(out, morph);
   return out;
 }
 
@@ -63,25 +54,16 @@ export function getMorphShapeRuntime(source: Readonly<MorphShape>): Readonly<Mor
   return getNode2DRuntime(source) as MorphShapeRuntime;
 }
 
-export function initializeMorphShapeData(
-  out: EntityConstruction<MorphShapeData>,
-  morph: Readonly<PathMorph>,
-  data?: Readonly<Partial<MorphShapeData>>,
-): void {
-  const progress = data?.progress ?? 0;
-  const path = data?.path ?? createPath(morph.winding);
+export function initializeMorphShapeData(out: EntityConstruction<MorphShapeData>, morph: Readonly<PathMorph>): void {
+  const progress = 0;
+  const path = createPath(morph.winding);
   const pathBindings = [{ morph, path }];
-  const inputPathBindings = data?.pathBindings ?? [];
-  for (let i = 0; i < inputPathBindings.length; i++) {
-    const binding = inputPathBindings[i];
-    if (binding.morph !== morph && binding.path !== path) pathBindings.push(binding);
-  }
   for (let i = 0; i < pathBindings.length; i++) {
     samplePathMorph(pathBindings[i].path, pathBindings[i].morph, progress);
   }
-  out.commands = data?.commands ?? [];
+  out.commands = [];
   out.morph = morph;
-  out.paintBindings = [...(data?.paintBindings ?? [])];
+  out.paintBindings = [];
   out.path = path;
   out.pathBindings = pathBindings;
   out.progress = progress;

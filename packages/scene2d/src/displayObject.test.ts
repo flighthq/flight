@@ -6,15 +6,7 @@ import {
   setNodeColorAdjustments,
   setNodeColorAdjustmentsTint,
 } from '@flighthq/node/contract';
-import type {
-  BoundsNode,
-  ClipRegion,
-  Node2D,
-  Node2DData,
-  Node2DRuntime,
-  PartialNode,
-  Rectangle,
-} from '@flighthq/types/contract';
+import type { BoundsNode, ClipRegion, Node2D, Node2DData, Node2DRuntime, Rectangle } from '@flighthq/types/contract';
 import { BlendMode, DisplayObjectKind, Node2DFieldsKey } from '@flighthq/types/contract';
 
 import {
@@ -72,7 +64,7 @@ describe('createDisplayObject', () => {
     expect(displayObject.kind).toBe(DisplayObjectKind);
   });
 
-  it('allows pre-defined values', () => {
+  it('allows fields to be assigned after creation', () => {
     const base = {
       alpha: 2,
       blendMode: BlendMode.Darken,
@@ -84,7 +76,8 @@ describe('createDisplayObject', () => {
       x: 100,
       y: 200,
     };
-    const obj = createDisplayObject(base);
+    const obj = createDisplayObject();
+    Object.assign(obj, base);
     expect(obj.alpha).toStrictEqual(base.alpha);
     expect(obj.blendMode).toStrictEqual(base.blendMode);
     expect(obj.name).toStrictEqual(base.name);
@@ -97,9 +90,9 @@ describe('createDisplayObject', () => {
   });
 
   it('returns a new object for better hidden-class performance', () => {
-    const base = {};
-    const obj = createDisplayObject(base);
-    expect(obj).not.toStrictEqual(base);
+    const first = createDisplayObject();
+    const obj = createDisplayObject();
+    expect(obj).not.toBe(first);
   });
 });
 
@@ -115,23 +108,20 @@ describe('createNode2D', () => {
     expect(displayObject).not.toBeNull();
   });
 
-  it('allows a custom type', () => {
-    const data: PartialNode<Node2DTest> = {
-      x: 100,
-    };
-    const displayObject = createNode2D(DisplayObjectKind, data);
-    expect(displayObject.x).toBe(data.x);
+  it('allows fields to be assigned after creation', () => {
+    const displayObject = createNode2D(DisplayObjectKind);
+    displayObject.x = 100;
+    expect(displayObject.x).toBe(100);
   });
 
   it('returns a new object', () => {
-    const data: PartialNode<Node2DTest> = {};
-    const displayObject = createNode2D(DisplayObjectKind, data);
-    expect(displayObject).not.toStrictEqual(data);
+    const first = createNode2D(DisplayObjectKind);
+    const displayObject = createNode2D(DisplayObjectKind);
+    expect(displayObject).not.toBe(first);
   });
 
   it('allows use of a data initializer', () => {
-    const data: PartialNode<Node2DTest> = {};
-    const displayObject = createNode2D(DisplayObjectKind, data, createNode2DTestData);
+    const displayObject = createNode2D(DisplayObjectKind, createNode2DTestData);
     expect((displayObject.data as Node2DTestData).foo).toBe('bar');
   });
 });
@@ -270,8 +260,8 @@ interface Node2DTestData extends Node2DData {
   foo: string;
 }
 
-function createNode2DTestData(data?: Partial<Node2DTestData>): Node2DTestData {
+function createNode2DTestData(): Node2DTestData {
   const out = allocateEntity<any>();
-  out.foo = data?.foo ?? 'bar';
+  out.foo = 'bar';
   return finishEntity(out);
 }

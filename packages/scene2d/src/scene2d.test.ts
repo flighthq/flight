@@ -37,7 +37,7 @@ describe('createScene2D', () => {
   });
 
   it('allows pre-defined values', () => {
-    const obj = createScene2D({ color: 0xff0000ff, scene2dHeight: 1000, scene2dWidth: 2000 });
+    const obj = Object.assign(createScene2D(), { color: 0xff0000ff, scene2dHeight: 1000, scene2dWidth: 2000 });
     expect(obj.color).toStrictEqual(0xff0000ff);
     expect(obj.scene2dHeight).toStrictEqual(1000);
     expect(obj.scene2dWidth).toStrictEqual(2000);
@@ -162,7 +162,7 @@ describe('setScene2DSize', () => {
   });
 
   it('does not emit onResize when dimensions are unchanged', () => {
-    const scene2d = createScene2D({ scene2dWidth: 400, scene2dHeight: 300 });
+    const scene2d = Object.assign(createScene2D(), { scene2dWidth: 400, scene2dHeight: 300 });
     let called = false;
     connectSignal(enableScene2DSignals(scene2d).onResize, () => {
       called = true;

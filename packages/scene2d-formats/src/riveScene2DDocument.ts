@@ -110,7 +110,10 @@ export function createScene2DDocumentFromRiveDocument(
   const imported = createScene2DFromRiveDocument(pathBooleanKernel, source, diagnostics);
   if (imported.artboards.length === 0) return null;
 
-  const root = createDisplayObject({ name: 'Rive' });
+  const root = ((created) => {
+    Object.assign(created, { name: 'Rive' });
+    return created;
+  })(createDisplayObject());
   for (const artboard of imported.artboards) addNodeChild(root, artboard.root);
 
   const out = allocateEntity<RiveScene2DDocumentResult>();

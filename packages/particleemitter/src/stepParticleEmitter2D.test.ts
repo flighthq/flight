@@ -13,7 +13,10 @@ function makeAtlas(): TextureAtlas {
 
 describe('stepParticleEmitter2D', () => {
   it('spawns particles when called with no forces or colliders', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 10, maxParticles: 100 });
     stepParticleEmitter2D(emitter, state, config, 1);
@@ -21,7 +24,10 @@ describe('stepParticleEmitter2D', () => {
   });
 
   it('applies wind force before update — particle receives velocity from wind', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 1,
@@ -45,7 +51,10 @@ describe('stepParticleEmitter2D', () => {
   });
 
   it('resolves collisions after update — particle stays above a plane at y=0', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 1,
@@ -68,7 +77,10 @@ describe('stepParticleEmitter2D', () => {
   });
 
   it('passes callbacks down to updateParticleEmitter2D', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 3, lifetimeMin: 10, lifetimeMax: 10 });
     let spawnCount = 0;
@@ -77,7 +89,10 @@ describe('stepParticleEmitter2D', () => {
   });
 
   it('is a no-op for zero deltaTime', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 10, lifetimeMin: 10, lifetimeMax: 10 });
     stepParticleEmitter2D(emitter, state, config, 0);

@@ -419,7 +419,7 @@ function contextOf(
     createRiveImportRegistry(),
     graph,
     objects,
-    createDisplayObject({}),
+    createDisplayObject(),
     [],
     diagnostics,
   );

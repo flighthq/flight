@@ -1,9 +1,7 @@
 import { enableNodeSignals, getNodeSignals } from '@flighthq/node/contract';
 import type {
   Billboard,
-  BillboardMode,
   BillboardRuntime,
-  Kind,
   Material3D,
   MeshGeometry,
   NodeSignals,
@@ -28,17 +26,11 @@ export { BillboardKind } from '@flighthq/types/contract';
 // and `materials` are stored by reference, not copied. The node starts with an identity localMatrix
 // (unit scale at the origin) until placed and oriented; its authored position and scale are the world
 // translation and scale the facing pass preserves.
-export function createBillboard(
-  geometry: MeshGeometry,
-  materials: (Material3D | null)[],
-  mode: BillboardMode = 'full',
-  kind: Kind = BillboardKind,
-  obj?: Readonly<Partial<Pick<Billboard, 'enabled' | 'name'>>>,
-): Billboard {
-  const billboard = createNode3D(kind, obj) as Billboard;
+export function createBillboard(geometry: MeshGeometry, materials: (Material3D | null)[]): Billboard {
+  const billboard = createNode3D(BillboardKind) as Billboard;
   billboard.geometry = geometry;
   billboard.materials = materials;
-  billboard.mode = mode;
+  billboard.mode = 'full';
   return billboard;
 }
 

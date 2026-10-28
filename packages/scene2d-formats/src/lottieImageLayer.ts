@@ -35,7 +35,13 @@ function appendLottieImage(parent: DisplayObject, layer: Readonly<LottieLayer>, 
     reportLottieSkip(context, 'lottie.unresolved-image', 'appendLottieImage', { id: asset.id });
     return;
   }
-  addNodeChild(parent, createSprite({ data: { texture: createTexture({ dimension: '2d', source: image }) } }));
+  addNodeChild(
+    parent,
+    ((created) => {
+      Object.assign(created.data, { texture: createTexture({ dimension: '2d', source: image }) });
+      return created;
+    })(createSprite()),
+  );
 }
 
 function isImageAsset(asset: Readonly<LottieAsset>): asset is Readonly<LottieImageAsset> {

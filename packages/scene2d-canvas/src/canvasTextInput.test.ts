@@ -15,7 +15,10 @@ function makeState() {
 }
 
 function makeFocusedInput(text: string): RichText {
-  const node = createRichText({ data: { text, width: 100, height: 40 } });
+  const node = ((created) => {
+    Object.assign(created.data, { text, width: 100, height: 40 });
+    return created;
+  })(createRichText());
   enableTextInput(node).focused = true;
   return node;
 }
@@ -60,7 +63,10 @@ describe('enableCanvasTextInput', () => {
   it('leaves a static RichText (no input slot) free of overlay drawing', () => {
     enableCanvasTextInput();
     const state = makeState();
-    const node = createRichText({ data: { text: 'plain', width: 100, height: 40 } });
+    const node = ((created) => {
+      Object.assign(created.data, { text: 'plain', width: 100, height: 40 });
+      return created;
+    })(createRichText());
     const renderProxy = getOrCreateRenderProxy2D(state, node);
     expect(() => drawCanvasRichText(state, renderProxy)).not.toThrow();
   });

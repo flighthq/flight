@@ -26,7 +26,10 @@ function makeAtlas(): TextureAtlas {
 
 describe('attractor forces via updateParticleEmitter2D', () => {
   it('integrates with the core update so attractors curve trajectories', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const spawnConfig = createParticleEmitterConfig({
       spawnRate: 1,
@@ -56,7 +59,10 @@ describe('attractor forces via updateParticleEmitter2D', () => {
 
 describe('collision settling via updateParticleEmitter2D', () => {
   it('settles a falling particle onto a floor over multiple frames', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const spawnConfig = createParticleEmitterConfig({
       spawnRate: 1,
@@ -84,7 +90,10 @@ describe('collision settling via updateParticleEmitter2D', () => {
 
 describe('lifetime curves in updateParticleEmitter2D', () => {
   function spawnOne(configOverrides: Parameters<typeof createParticleEmitterConfig>[0]) {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 1,
@@ -144,7 +153,10 @@ describe('normalized config simulates via updateParticleEmitter2D', () => {
       speedMax: NaN,
     });
     const safe = normalizeParticleEmitterConfig(corrupt);
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     for (let i = 0; i < 30; i++) updateParticleEmitter2D(emitter, state, safe, 1 / 60);
     expect(emitter.data.particleCount).toBeGreaterThan(0);
@@ -156,7 +168,10 @@ describe('normalized config simulates via updateParticleEmitter2D', () => {
 
 describe('onEmitterComplete signal', () => {
   it('fires once when a finite non-looping emitter completes', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       duration: 0.5,
@@ -176,7 +191,10 @@ describe('onEmitterComplete signal', () => {
   });
 
   it('does not fire for infinite emitters', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       duration: 0,
@@ -197,7 +215,10 @@ describe('onEmitterComplete signal', () => {
 
 describe('onParticleDeath signal', () => {
   it('fires with the particle position when a particle dies', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 1,
@@ -220,7 +241,10 @@ describe('onParticleDeath signal', () => {
 
 describe('onParticleSpawn signal', () => {
   it('fires with spawn position and velocity when a particle is spawned', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       spawnRate: 1,
@@ -248,7 +272,10 @@ describe('seeded state determinism via updateParticleEmitter2D', () => {
   // Runs a short emitter simulation seeded from `seed` and returns the live particle transforms, so
   // a seeded state can be shown to simulate reproducibly (the seeded RNG lives in @flighthq/math).
   function simulate(seed: number): number[] {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState(createRandomSource(seed));
     const config = createParticleEmitterConfig({
       spawnRate: 20,

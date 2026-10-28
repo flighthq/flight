@@ -30,10 +30,16 @@ describe('deterministic replay', () => {
       gravityY: 100,
     });
 
-    const emitterA = createParticleEmitter2D({ data: { atlas } });
+    const emitterA = ((created) => {
+      Object.assign(created.data, { atlas });
+      return created;
+    })(createParticleEmitter2D());
     const stateA = createParticleEmitterState(createRandomSource(42));
 
-    const emitterB = createParticleEmitter2D({ data: { atlas } });
+    const emitterB = ((created) => {
+      Object.assign(created.data, { atlas });
+      return created;
+    })(createParticleEmitter2D());
     const stateB = createParticleEmitterState(createRandomSource(42));
 
     const steps = [0.016, 0.033, 0.016, 0.05, 0.016, 0.016, 0.033, 0.016];

@@ -36,7 +36,10 @@ function makeKeyData(data: Partial<InputKeyboardData> = {}): InputKeyboardData {
 describe('blurSelectableRichText', () => {
   it('clears the focused target and resets selection', () => {
     const manager = createSelectableRichTextManager();
-    const richText = createRichText({ data: { text: 'hello' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createRichText());
     focusSelectableRichText(manager, richText);
     const runtime = getRichTextRuntime(richText) as RichTextRuntime;
     runtime.selectionBeginIndex = 1;
@@ -66,7 +69,10 @@ describe('dispatchSelectableRichTextKeyDown', () => {
 
   it('selects all on ctrl-a', () => {
     const manager = createSelectableRichTextManager();
-    const richText = createRichText({ data: { text: 'hello' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createRichText());
     focusSelectableRichText(manager, richText);
     const result = dispatchSelectableRichTextKeyDown(
       manager,
@@ -80,7 +86,10 @@ describe('dispatchSelectableRichTextKeyDown', () => {
 
   it('invokes onCopy callback for copy command', () => {
     const manager = createSelectableRichTextManager();
-    const richText = createRichText({ data: { text: 'hello world' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello world' });
+      return created;
+    })(createRichText());
     focusSelectableRichText(manager, richText);
     const runtime = getRichTextRuntime(richText) as RichTextRuntime;
     runtime.selectionBeginIndex = 6;
@@ -97,7 +106,10 @@ describe('dispatchSelectableRichTextKeyDown', () => {
 
   it('does not invoke onCopy when selection is empty', () => {
     const manager = createSelectableRichTextManager();
-    const richText = createRichText({ data: { text: 'hello' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createRichText());
     focusSelectableRichText(manager, richText);
     const copied: string[] = [];
     dispatchSelectableRichTextKeyDown(manager, makeKeyData({ ctrlKey: true, key: 'c', keyCode: KeyCode.C }), (text) =>
@@ -116,7 +128,10 @@ describe('dispatchSelectableRichTextKeyDown', () => {
 describe('dispatchSelectableRichTextPointerDown', () => {
   it('sets focus and collapses selection when layout is null', () => {
     const manager = createSelectableRichTextManager();
-    const richText = createRichText({ data: { text: 'hello' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createRichText());
     const runtime = getRichTextRuntime(richText) as RichTextRuntime;
     runtime.selectionBeginIndex = 2;
     runtime.selectionEndIndex = 2;
@@ -128,7 +143,10 @@ describe('dispatchSelectableRichTextPointerDown', () => {
 
   it('extends the selection end when extend is true', () => {
     const manager = createSelectableRichTextManager();
-    const richText = createRichText({ data: { text: 'hello' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createRichText());
     const runtime = getRichTextRuntime(richText) as RichTextRuntime;
     runtime.selectionBeginIndex = 1;
     dispatchSelectableRichTextPointerDown(manager, richText, 0, 0, true);
@@ -143,7 +161,10 @@ describe('dispatchSelectableRichTextPointerMove', () => {
 
   it('does nothing when focused target has no layout', () => {
     const manager = createSelectableRichTextManager();
-    const richText = createRichText({ data: { text: 'hello' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createRichText());
     focusSelectableRichText(manager, richText);
     expect(() => dispatchSelectableRichTextPointerMove(manager, 10, 5)).not.toThrow();
   });
@@ -156,7 +177,10 @@ describe('dispatchSelectableRichTextWheel', () => {
 
   it('advances scrollV by the given delta', () => {
     const manager = createSelectableRichTextManager();
-    const richText = createRichText({ data: { text: 'hello' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createRichText());
     focusSelectableRichText(manager, richText);
     expect(richText.data.scrollV).toBe(1);
     dispatchSelectableRichTextWheel(manager, 2);
@@ -167,7 +191,10 @@ describe('dispatchSelectableRichTextWheel', () => {
 describe('focusSelectableRichText', () => {
   it('sets the focused target', () => {
     const manager = createSelectableRichTextManager();
-    const richText = createRichText({ data: { text: 'hello' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createRichText());
     focusSelectableRichText(manager, richText);
     expect(manager.focused).toBe(richText);
   });
@@ -180,7 +207,10 @@ describe('getSelectableRichTextSelectionText', () => {
 
   it('returns the selected slice of text', () => {
     const manager = createSelectableRichTextManager();
-    const richText = createRichText({ data: { text: 'hello world' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello world' });
+      return created;
+    })(createRichText());
     focusSelectableRichText(manager, richText);
     const runtime = getRichTextRuntime(richText) as RichTextRuntime;
     runtime.selectionBeginIndex = 6;

@@ -123,7 +123,13 @@ describe('createBitmapTextData', () => {
   });
 
   it('honors provided overrides', () => {
-    const data = createBitmapTextData({ align: 'right', ellipsis: '...', maxLines: 2, text: 'x', wrapWidth: 50 });
+    const data = Object.assign(createBitmapTextData(), {
+      align: 'right',
+      ellipsis: '...',
+      maxLines: 2,
+      text: 'x',
+      wrapWidth: 50,
+    });
     expect(data.align).toBe('right');
     expect(data.ellipsis).toBe('...');
     expect(data.maxLines).toBe(2);

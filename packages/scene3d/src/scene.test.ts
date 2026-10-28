@@ -24,7 +24,10 @@ describe('createScene3D', () => {
   });
 
   it('passes partial initial values to the root', () => {
-    const scene = createScene3D({ enabled: false, name: 'world' });
+    const scene = ((created) => {
+      Object.assign(created.root, { enabled: false, name: 'world' });
+      return created;
+    })(createScene3D());
     expect(scene.root.enabled).toBe(false);
     expect(scene.root.name).toBe('world');
   });

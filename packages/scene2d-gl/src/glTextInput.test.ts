@@ -28,7 +28,10 @@ afterEach(() => {
 });
 
 function makeFocusedInputProxy(state: Parameters<typeof createGlRichTextData>[0]): RenderProxy2D {
-  const node = createRichText({ data: { height: 40, text: 'hello', width: 100 } });
+  const node = ((created) => {
+    Object.assign(created.data, { height: 40, text: 'hello', width: 100 });
+    return created;
+  })(createRichText());
   enableTextInput(node).focused = true;
   return {
     source: node,

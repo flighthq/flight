@@ -14,7 +14,10 @@ import {
 
 describe('computeHtmlViewLocalBoundsRectangle', () => {
   it('sets out dimensions from data width and height', () => {
-    const htmlView = createHtmlView({ data: { width: 320, height: 240 } });
+    const htmlView = ((created) => {
+      Object.assign(created.data, { width: 320, height: 240 });
+      return created;
+    })(createHtmlView());
     const out = createRectangle();
     computeHtmlViewLocalBoundsRectangle(out, htmlView);
     expect(out.width).toBe(320);
@@ -45,7 +48,15 @@ describe('createHtmlView', () => {
         height: 480,
       },
     };
-    const obj = createHtmlView(base);
+    const obj = ((created, fields) => {
+      const entityData = created.data;
+      Object.assign(created, fields);
+      if (fields.data !== undefined) {
+        Object.assign(entityData, fields.data);
+        Object.assign(created, { data: entityData });
+      }
+      return created;
+    })(createHtmlView(), base);
     expect(obj.data.element).toStrictEqual(element);
     expect(obj.data.width).toBe(640);
     expect(obj.data.height).toBe(480);
@@ -53,7 +64,7 @@ describe('createHtmlView', () => {
 
   it('returns a new object for better hidden-class performance', () => {
     const base = {};
-    const obj = createHtmlView(base);
+    const obj = createHtmlView();
     expect(obj).not.toStrictEqual(base);
   });
 });
@@ -68,7 +79,7 @@ describe('createHtmlViewData', () => {
 
   it('allows pre-defined values', () => {
     const element = {} as HTMLImageElement;
-    const data = createHtmlViewData({ element, width: 200, height: 150 });
+    const data = Object.assign(createHtmlViewData(), { element, width: 200, height: 150 });
     expect(data.element).toBe(element);
     expect(data.width).toBe(200);
     expect(data.height).toBe(150);
@@ -109,7 +120,10 @@ describe('setHtmlViewSize', () => {
   });
 
   it('is a no-op when dimensions are unchanged', () => {
-    const htmlView = createHtmlView({ data: { width: 200, height: 150 } });
+    const htmlView = ((created) => {
+      Object.assign(created.data, { width: 200, height: 150 });
+      return created;
+    })(createHtmlView());
     setHtmlViewSize(htmlView, 200, 150);
     expect(htmlView.data.width).toBe(200);
     expect(htmlView.data.height).toBe(150);

@@ -28,20 +28,29 @@ import {
 
 describe('appendTextLabelString', () => {
   it('appends the value to the existing text', () => {
-    const text = createTextLabel({ data: { text: 'hello' } });
+    const text = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createTextLabel());
     appendTextLabelString(text, ' world');
     expect(text.data.text).toBe('hello world');
   });
 
   it('invalidates local content after append', () => {
-    const text = createTextLabel({ data: { text: 'hi' } });
+    const text = ((created) => {
+      Object.assign(created.data, { text: 'hi' });
+      return created;
+    })(createTextLabel());
     const content = getNodeLocalContentRevision(text);
     appendTextLabelString(text, '!');
     expect(getNodeLocalContentRevision(text)).toBe(content + 1);
   });
 
   it('does not invalidate when value is empty', () => {
-    const text = createTextLabel({ data: { text: 'hi' } });
+    const text = ((created) => {
+      Object.assign(created.data, { text: 'hi' });
+      return created;
+    })(createTextLabel());
     const content = getNodeLocalContentRevision(text);
     appendTextLabelString(text, '');
     expect(getNodeLocalContentRevision(text)).toBe(content);
@@ -54,7 +63,10 @@ describe('computeTextLabelLocalBoundsRectangle', () => {
   });
 
   it('sets out dimensions from data width and height when autoSize is none', () => {
-    const text = createTextLabel({ data: { width: 200, height: 50 } });
+    const text = ((created) => {
+      Object.assign(created.data, { width: 200, height: 50 });
+      return created;
+    })(createTextLabel());
     const out = createRectangle();
     computeTextLabelLocalBoundsRectangle(out, text);
     expect(out.x).toBe(0);
@@ -64,7 +76,10 @@ describe('computeTextLabelLocalBoundsRectangle', () => {
 
   it('grows to the measured single run under autoSize left, anchored at the origin', () => {
     setTextLayoutMeasureProvider((value) => value.length * 7);
-    const text = createTextLabel({ data: { autoSize: 'left', width: 200, height: 50 } });
+    const text = ((created) => {
+      Object.assign(created.data, { autoSize: 'left', width: 200, height: 50 });
+      return created;
+    })(createTextLabel());
     setTextLabelString(text, 'hi');
     const out = createRectangle();
     computeTextLabelLocalBoundsRectangle(out, text);
@@ -74,7 +89,10 @@ describe('computeTextLabelLocalBoundsRectangle', () => {
   });
 
   it('falls back to the fixed box under autoSize when no measure provider exists', () => {
-    const text = createTextLabel({ data: { autoSize: 'left', width: 200, height: 50 } });
+    const text = ((created) => {
+      Object.assign(created.data, { autoSize: 'left', width: 200, height: 50 });
+      return created;
+    })(createTextLabel());
     setTextLabelString(text, 'hi');
     const out = createRectangle();
     computeTextLabelLocalBoundsRectangle(out, text);
@@ -108,7 +126,15 @@ describe('createTextLabel', () => {
         height: 40,
       },
     };
-    const obj = createTextLabel(base);
+    const obj = ((created, fields) => {
+      const entityData = created.data;
+      Object.assign(created, fields);
+      if (fields.data !== undefined) {
+        Object.assign(entityData, fields.data);
+        Object.assign(created, { data: entityData });
+      }
+      return created;
+    })(createTextLabel(), base);
     expect(obj.data.autoSize).toStrictEqual(base.data!.autoSize);
     expect(obj.data.text).toStrictEqual(base.data!.text);
     expect(obj.data.width).toBe(300);
@@ -117,7 +143,7 @@ describe('createTextLabel', () => {
 
   it('returns a new object for better hidden-class performance', () => {
     const base = {};
-    const obj = createTextLabel(base);
+    const obj = createTextLabel();
     expect(obj).not.toStrictEqual(base);
   });
 });
@@ -133,7 +159,7 @@ describe('createTextLabelData', () => {
   });
 
   it('allows pre-defined values', () => {
-    const data = createTextLabelData({ autoSize: 'left', text: 'hello', width: 250, height: 30 });
+    const data = Object.assign(createTextLabelData(), { autoSize: 'left', text: 'hello', width: 250, height: 30 });
     expect(data.autoSize).toBe('left');
     expect(data.text).toBe('hello');
     expect(data.width).toBe(250);
@@ -161,7 +187,10 @@ describe('createTextLabelRuntime', () => {
 describe('getTextLabelFormat', () => {
   it('returns the textFormat field', () => {
     const format = { size: 24, bold: true };
-    const text = createTextLabel({ data: { textFormat: format } });
+    const text = ((created) => {
+      Object.assign(created.data, { textFormat: format });
+      return created;
+    })(createTextLabel());
     expect(getTextLabelFormat(text)).toBe(text.data.textFormat);
   });
 });
@@ -176,7 +205,10 @@ describe('getTextLabelRuntime', () => {
 
 describe('getTextLabelString', () => {
   it('returns the text field', () => {
-    const text = createTextLabel({ data: { text: 'hello' } });
+    const text = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createTextLabel());
     expect(getTextLabelString(text)).toBe('hello');
   });
 });
@@ -250,14 +282,20 @@ describe('setTextLabelString', () => {
   });
 
   it('also invalidates bounds under autoSize (the box is measured from the text)', () => {
-    const text = createTextLabel({ data: { autoSize: 'left' } });
+    const text = ((created) => {
+      Object.assign(created.data, { autoSize: 'left' });
+      return created;
+    })(createTextLabel());
     const bounds = getNodeLocalBoundsRevision(text);
     setTextLabelString(text, 'hello');
     expect(getNodeLocalBoundsRevision(text)).not.toBe(bounds);
   });
 
   it('does not bump content when the value is unchanged', () => {
-    const text = createTextLabel({ data: { text: 'same' } });
+    const text = ((created) => {
+      Object.assign(created.data, { text: 'same' });
+      return created;
+    })(createTextLabel());
     const content = getNodeLocalContentRevision(text);
     setTextLabelString(text, 'same');
     expect(getNodeLocalContentRevision(text)).toBe(content);
@@ -280,7 +318,10 @@ describe('setTextLabelVerticalAlign', () => {
   });
 
   it('does not bump content when the value is unchanged', () => {
-    const text = createTextLabel({ data: { verticalAlign: 'bottom' } });
+    const text = ((created) => {
+      Object.assign(created.data, { verticalAlign: 'bottom' });
+      return created;
+    })(createTextLabel());
     const content = getNodeLocalContentRevision(text);
     setTextLabelVerticalAlign(text, 'bottom');
     expect(getNodeLocalContentRevision(text)).toBe(content);

@@ -9,7 +9,6 @@ import type {
   MethodsOf,
   Node2D,
   Node2DFields,
-  PartialNode,
   ParticleEmitter2D,
   ParticleEmitter2DRuntime,
   ParticleEmitterData,
@@ -81,19 +80,17 @@ export function clearParticleEmitter2D(target: ParticleEmitter2D): void {
  */
 export function cloneParticleEmitter2D(source: Readonly<ParticleEmitter2D>): ParticleEmitter2D {
   const src = source.data;
-  return createParticleEmitter2D({
-    data: {
-      alphas: src.alphas.slice(),
-      atlas: src.atlas,
-      colors: src.colors.slice(),
-      ids: src.ids.slice(),
-      particleCount: src.particleCount,
-      positionsZ: src.positionsZ.slice(),
-      transforms: src.transforms.slice(),
-      velocities: src.velocities.slice(),
-      worldSpace: src.worldSpace,
-    },
-  });
+  const clone = createParticleEmitter2D();
+  clone.data.alphas = src.alphas.slice();
+  clone.data.atlas = src.atlas;
+  clone.data.colors = src.colors.slice();
+  clone.data.ids = src.ids.slice();
+  clone.data.particleCount = src.particleCount;
+  clone.data.positionsZ = src.positionsZ.slice();
+  clone.data.transforms = src.transforms.slice();
+  clone.data.velocities = src.velocities.slice();
+  clone.data.worldSpace = src.worldSpace;
+  return clone;
 }
 
 /**
@@ -199,10 +196,9 @@ export function computeParticleEmitter2DLocalBoundsRectangle(
   }
 }
 
-export function createParticleEmitter2D(obj?: Readonly<PartialNode<ParticleEmitter2D>>): ParticleEmitter2D {
+export function createParticleEmitter2D(): ParticleEmitter2D {
   return createNode2D(
     ParticleEmitter2DKind,
-    obj,
     createParticleEmitterData,
     createParticleEmitter2DRuntime,
   ) as ParticleEmitter2D;
@@ -214,9 +210,9 @@ export function createParticleEmitter2DRuntime(): ParticleEmitter2DRuntime {
   return runtime;
 }
 
-export function createParticleEmitterData(data?: Readonly<Partial<ParticleEmitterData>>): ParticleEmitterData {
+export function createParticleEmitterData(): ParticleEmitterData {
   const out = allocateEntity<ParticleEmitterData>();
-  initializeParticleEmitterData(out, data);
+  initializeParticleEmitterData(out);
   return finishEntity(out);
 }
 
@@ -264,19 +260,16 @@ export function getParticleEmitter2DRuntime(source: Readonly<ParticleEmitter2D>)
   return getNode2DRuntime(source) as ParticleEmitter2DRuntime;
 }
 
-export function initializeParticleEmitterData(
-  out: EntityConstruction<ParticleEmitterData>,
-  data?: Readonly<Partial<ParticleEmitterData>>,
-): void {
-  out.alphas = data?.alphas ?? new Float32Array();
-  out.atlas = data?.atlas ?? null;
-  out.colors = data?.colors ?? new Float32Array();
-  out.ids = data?.ids ?? new Uint16Array();
-  out.particleCount = data?.particleCount ?? 0;
-  out.positionsZ = data?.positionsZ ?? new Float32Array();
-  out.transforms = data?.transforms ?? new Float32Array();
-  out.velocities = data?.velocities ?? new Float32Array();
-  out.worldSpace = data?.worldSpace ?? false;
+export function initializeParticleEmitterData(out: EntityConstruction<ParticleEmitterData>): void {
+  out.alphas = new Float32Array();
+  out.atlas = null;
+  out.colors = new Float32Array();
+  out.ids = new Uint16Array();
+  out.particleCount = 0;
+  out.positionsZ = new Float32Array();
+  out.transforms = new Float32Array();
+  out.velocities = new Float32Array();
+  out.worldSpace = false;
 }
 
 /**

@@ -73,7 +73,10 @@ describe('applyRiveDocumentHandlers', () => {
 
 describe('createRiveArtboardImportContext', () => {
   it('numbers the root as component zero, so nodes stay index-for-index with the artboard', () => {
-    const root = createDisplayObject({ name: 'Board' });
+    const root = ((created) => {
+      Object.assign(created, { name: 'Board' });
+      return created;
+    })(createDisplayObject());
     const context = createRiveArtboardImportContext(createRiveImportRegistry(), artboard(), [], root, []);
 
     expect(context.nodes).toEqual([root]);
@@ -81,13 +84,9 @@ describe('createRiveArtboardImportContext', () => {
   });
 
   it('starts every collected output empty', () => {
-    const context = createRiveArtboardImportContext(
-      createRiveImportRegistry(),
-      artboard(),
-      [],
-      createDisplayObject({}),
-      ['Inter'],
-    );
+    const context = createRiveArtboardImportContext(createRiveImportRegistry(), artboard(), [], createDisplayObject(), [
+      'Inter',
+    ]);
 
     expect(context.advancedBlends).toEqual([]);
     expect(context.layouts).toEqual([]);
@@ -168,7 +167,7 @@ describe('importRiveCoreObjectAsData', () => {
 
 describe('initializeRiveArtboardImportContext', () => {
   it('fills every field of a freshly allocated context', () => {
-    const root = createDisplayObject({});
+    const root = createDisplayObject();
     const out = {} as ReturnType<typeof createRiveArtboardImportContext>;
     const registry = createRiveImportRegistry();
     initializeRiveArtboardImportContext(out, registry, artboard(), [], root, [], []);
@@ -219,5 +218,5 @@ function artboard(): RiveArtboardGraph {
 }
 
 function artboardContext(registry: RiveImportRegistry): ReturnType<typeof createRiveArtboardImportContext> {
-  return createRiveArtboardImportContext(registry, artboard(), [], createDisplayObject({}), []);
+  return createRiveArtboardImportContext(registry, artboard(), [], createDisplayObject(), []);
 }

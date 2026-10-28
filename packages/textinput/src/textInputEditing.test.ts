@@ -50,7 +50,10 @@ import {
 // Editing operates on a RichText with the input capability enabled. Field/maxChars/multiline live on
 // RichTextData; restrict/password live on the enableTextInput options (the TextInputState slot).
 function createInput(data: Partial<RichTextData> = {}, options: TextInputOptions = {}): RichText {
-  const text = createRichText({ data });
+  const text = ((created) => {
+    Object.assign(created.data, data);
+    return created;
+  })(createRichText());
   enableTextInput(text, options);
   return text;
 }

@@ -37,7 +37,10 @@ describe('getShapeBoundsCommand', () => {
 describe('getShapeBoundsCommandRegistryRevision', () => {
   it('invalidates an already-cached Shape when a missing key becomes bound', () => {
     const key = '__test.late-bounds__';
-    const shape = createShape({ data: { commands: [key, 2, 10, 20] } });
+    const shape = ((created) => {
+      Object.assign(created.data, { commands: [key, 2, 10, 20] });
+      return created;
+    })(createShape());
     const before = getNodeLocalBoundsRectangle(shape);
     expect(before).toMatchObject({ height: 0, width: 0, x: 0, y: 0 });
 

@@ -22,7 +22,6 @@ import type {
   EntityConstruction,
   MethodsOf,
   Node2DFields,
-  PartialNode,
   Rectangle,
   RichText,
   RichTextContent,
@@ -112,29 +111,29 @@ export function computeRichTextLocalBoundsRectangle(out: Rectangle, source: Read
   computeTextBoundsRectangle(out, data, layout);
 }
 
-export function createRichText(obj?: Readonly<PartialNode<RichText>>): RichText {
-  return createNode2D(RichTextKind, obj, createRichTextData, createRichTextRuntime) as RichText;
+export function createRichText(): RichText {
+  return createNode2D(RichTextKind, createRichTextData, createRichTextRuntime) as RichText;
 }
 
-export function createRichTextData(data?: Readonly<Partial<RichTextData>>): RichTextData {
-  const _data = createTextLabelData(data) as RichTextData;
-  _data.background = data?.background ?? false;
-  _data.backgroundColor = data?.backgroundColor ?? 0xffffffff;
-  _data.border = data?.border ?? false;
-  _data.borderColor = data?.borderColor ?? 0x000000ff;
-  _data.height = data?.height ?? 100;
-  _data.width = data?.width ?? 100;
-  _data.condenseWhite = data?.condenseWhite ?? false;
-  _data.defaultTextFormat = data?.defaultTextFormat ?? {};
-  _data.maxChars = data?.maxChars ?? -1;
-  _data.mouseWheelEnabled = data?.mouseWheelEnabled ?? true;
-  _data.multiline = data?.multiline ?? true;
-  _data.scrollH = data?.scrollH ?? 0;
-  _data.scrollV = data?.scrollV ?? 1;
-  _data.selectable = data?.selectable ?? true;
-  _data.textColor = data?.textColor ?? 0x000000ff;
-  _data.textFormatRanges = data?.textFormatRanges ? data.textFormatRanges.map((range) => ({ ...range })) : [];
-  _data.wordWrap = data?.wordWrap ?? false;
+export function createRichTextData(): RichTextData {
+  const _data = createTextLabelData() as RichTextData;
+  _data.background = false;
+  _data.backgroundColor = 0xffffffff;
+  _data.border = false;
+  _data.borderColor = 0x000000ff;
+  _data.height = 100;
+  _data.width = 100;
+  _data.condenseWhite = false;
+  _data.defaultTextFormat = {};
+  _data.maxChars = -1;
+  _data.mouseWheelEnabled = true;
+  _data.multiline = true;
+  _data.scrollH = 0;
+  _data.scrollV = 1;
+  _data.selectable = true;
+  _data.textColor = 0x000000ff;
+  _data.textFormatRanges = [];
+  _data.wordWrap = false;
   return _data;
 }
 

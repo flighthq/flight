@@ -45,12 +45,7 @@ export function computeBitmapTextLocalBoundsRectangle(out: Rectangle, source: Re
 // `updateBitmapText` to lay out the current `text`, which binds each page's atlas image and grows the set
 // for a multi-page source.
 export function createBitmapText(glyphSource: GlyphSource | null, options?: Readonly<BitmapTextOptions>): BitmapText {
-  const bitmapText = createNode2D(
-    BitmapTextKind,
-    undefined,
-    createBitmapTextData,
-    createBitmapTextRuntime,
-  ) as BitmapText;
+  const bitmapText = createNode2D(BitmapTextKind, createBitmapTextData, createBitmapTextRuntime) as BitmapText;
   const data = bitmapText.data;
   data.glyphSource = glyphSource;
   if (options !== undefined) applyBitmapTextOptions(data, options);
@@ -59,9 +54,9 @@ export function createBitmapText(glyphSource: GlyphSource | null, options?: Read
   return bitmapText;
 }
 
-export function createBitmapTextData(data?: Readonly<Partial<BitmapTextData>>): BitmapTextData {
+export function createBitmapTextData(): BitmapTextData {
   const out = allocateEntity<BitmapTextData>();
-  initializeBitmapTextData(out, data);
+  initializeBitmapTextData(out);
   return finishEntity(out);
 }
 
@@ -95,18 +90,15 @@ export function getBitmapTextPages(source: Readonly<BitmapText>): readonly Bitma
   return (getNode2DRuntime(source) as BitmapTextRuntime).pages;
 }
 
-export function initializeBitmapTextData(
-  out: EntityConstruction<BitmapTextData>,
-  data?: Readonly<Partial<BitmapTextData>>,
-): void {
-  out.align = data?.align ?? 'left';
-  out.ellipsis = data?.ellipsis ?? '';
-  out.glyphSource = data?.glyphSource ?? null;
-  out.letterSpacing = data?.letterSpacing ?? 0;
-  out.lineHeight = data?.lineHeight ?? 1;
-  out.maxLines = data?.maxLines ?? null;
-  out.text = data?.text ?? '';
-  out.wrapWidth = data?.wrapWidth ?? null;
+export function initializeBitmapTextData(out: EntityConstruction<BitmapTextData>): void {
+  out.align = 'left';
+  out.ellipsis = '';
+  out.glyphSource = null;
+  out.letterSpacing = 0;
+  out.lineHeight = 1;
+  out.maxLines = null;
+  out.text = '';
+  out.wrapWidth = null;
 }
 
 // True when the page regions baked by the last `updateBitmapText` no longer describe the glyphs they

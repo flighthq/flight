@@ -46,7 +46,10 @@ describe('createFlightDocumentFromScene2D', () => {
 
   it('elides default-valued fields', () => {
     const scene = createScene2D();
-    const obj = createDisplayObject({ name: 'default' });
+    const obj = ((created) => {
+      Object.assign(created, { name: 'default' });
+      return created;
+    })(createDisplayObject());
     addNodeChild(scene.root, obj);
     const schemas = createTestSchemas();
     const document = createFlightDocumentFromScene2D(scene, schemas);
@@ -60,7 +63,10 @@ describe('createFlightDocumentFromScene2D', () => {
 
   it('preserves transform fields', () => {
     const scene = createScene2D();
-    const obj = createDisplayObject({ name: 'moved' });
+    const obj = ((created) => {
+      Object.assign(created, { name: 'moved' });
+      return created;
+    })(createDisplayObject());
     obj.x = 100;
     obj.y = 200;
     obj.scaleX = 2;
@@ -114,7 +120,10 @@ describe('createFlightDocumentFromScene2D', () => {
 
   it('serializes children into nested nodes', () => {
     const scene = createScene2D();
-    const sprite = createSprite({ name: 'hero' });
+    const sprite = ((created) => {
+      Object.assign(created, { name: 'hero' });
+      return created;
+    })(createSprite());
     addNodeChild(scene.root, sprite);
     const schemas = createTestSchemas();
     const document = createFlightDocumentFromScene2D(scene, schemas);
@@ -125,7 +134,10 @@ describe('createFlightDocumentFromScene2D', () => {
   it('writes layouts only from explicit inert bindings and preserves unknown kinds and styles', () => {
     const scene = createScene2D();
     scene.root.name = 'root';
-    const child = createDisplayObject({ name: 'child' });
+    const child = ((created) => {
+      Object.assign(created, { name: 'child' });
+      return created;
+    })(createDisplayObject());
     addNodeChild(scene.root, child);
     const tree = {
       nodes: [
@@ -143,7 +155,10 @@ describe('createFlightDocumentFromScene2D', () => {
   it('rejects foreign, unnamed, ambiguous, and structurally invalid explicit layout bindings', () => {
     const scene = createScene2D();
     scene.root.name = 'root';
-    const duplicate = createDisplayObject({ name: 'root' });
+    const duplicate = ((created) => {
+      Object.assign(created, { name: 'root' });
+      return created;
+    })(createDisplayObject());
     addNodeChild(scene.root, duplicate);
     const tree = { nodes: [{ containerStyle: null, itemStyle: null, kind: 'acme.Leaf', parentIndex: -1 }] };
 
@@ -152,7 +167,17 @@ describe('createFlightDocumentFromScene2D', () => {
         scene,
         createTestSchemas(),
         [],
-        [{ targets: [createDisplayObject({ name: 'foreign' })], tree }],
+        [
+          {
+            targets: [
+              ((created) => {
+                Object.assign(created, { name: 'foreign' });
+                return created;
+              })(createDisplayObject()),
+            ],
+            tree,
+          },
+        ],
       ),
     ).toThrow(RangeError);
     expect(() =>
@@ -564,7 +589,10 @@ describe('formatFlightDocumentText', () => {
 
   it('round-trips a Scene2D with children through text', () => {
     const scene = createScene2D();
-    const sprite = createSprite({ name: 'hero' });
+    const sprite = ((created) => {
+      Object.assign(created, { name: 'hero' });
+      return created;
+    })(createSprite());
     sprite.x = 50;
     sprite.y = 100;
     addNodeChild(scene.root, sprite);

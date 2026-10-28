@@ -32,7 +32,11 @@ import {
 
 describe('clearTilemap', () => {
   it('fills all cells with -1', () => {
-    const tilemap = createTilemap({ data: { columns: 3, rows: 2 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 3, rows: 2 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     fillTilemapTiles(tilemap, 5);
     clearTilemap(tilemap);
     expect(Array.from(tilemap.data.tiles)).toEqual([-1, -1, -1, -1, -1, -1]);
@@ -42,7 +46,11 @@ describe('clearTilemap', () => {
 describe('cloneTilemap', () => {
   it('copies grid, atlas, and tiles into a new tilemap', () => {
     const atlas = {} as TextureAtlas;
-    const source = createTilemap({ data: { atlas, columns: 3, rows: 2, tileHeight: 16, tileWidth: 32 } });
+    const source = ((created) => {
+      Object.assign(created.data, { atlas, columns: 3, rows: 2, tileHeight: 16, tileWidth: 32 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     setTilemapTile(source, 1, 1, 9);
     const clone = cloneTilemap(source);
     expect(clone).not.toBe(source);
@@ -54,7 +62,11 @@ describe('cloneTilemap', () => {
   });
 
   it('clones the tiles buffer so mutations do not leak back', () => {
-    const source = createTilemap({ data: { columns: 2, rows: 2 } });
+    const source = ((created) => {
+      Object.assign(created.data, { columns: 2, rows: 2 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     const clone = cloneTilemap(source);
     expect(clone.data.tiles).not.toBe(source.data.tiles);
     setTilemapTile(clone, 0, 0, 5);
@@ -65,7 +77,11 @@ describe('cloneTilemap', () => {
 describe('computeTilemapLocalBoundsRectangle', () => {
   it('sets out dimensions from atlas and grid size', () => {
     const atlas = {} as TextureAtlas;
-    const tilemap = createTilemap({ data: { atlas, columns: 5, rows: 4, tileHeight: 16, tileWidth: 32 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { atlas, columns: 5, rows: 4, tileHeight: 16, tileWidth: 32 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     const out = createRectangle();
     computeTilemapLocalBoundsRectangle(out, tilemap);
     expect(out.width).toBe(160);
@@ -73,7 +89,11 @@ describe('computeTilemapLocalBoundsRectangle', () => {
   });
 
   it('sets zero dimensions when atlas is null', () => {
-    const tilemap = createTilemap({ data: { columns: 5, rows: 4 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 5, rows: 4 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     const out = createRectangle(0, 0, 99, 99);
     computeTilemapLocalBoundsRectangle(out, tilemap);
     expect(out.width).toBe(0);
@@ -92,14 +112,26 @@ describe('createTilemap', () => {
   });
 
   it('initializes tiles to -1 (empty)', () => {
-    const tilemap = createTilemap({ data: { columns: 3, rows: 2 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 3, rows: 2 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     expect(tilemap.data.tiles.length).toBe(6);
     expect(Array.from(tilemap.data.tiles)).toEqual([-1, -1, -1, -1, -1, -1]);
   });
 
   it('allows pre-defined values', () => {
     const base = { data: { columns: 10, rows: 5, atlas: {} as TextureAtlas, tileHeight: 16, tileWidth: 16 } };
-    const obj = createTilemap(base);
+    const obj = ((created, fields) => {
+      const entityData = created.data;
+      Object.assign(created, fields);
+      if (fields.data !== undefined) {
+        Object.assign(entityData, fields.data);
+        Object.assign(created, { data: entityData });
+      }
+      return created;
+    })(createTilemap(), base);
     expect(obj.data.columns).toBe(10);
     expect(obj.data.rows).toBe(5);
     expect(obj.data.atlas).toBe(base.data.atlas);
@@ -107,7 +139,7 @@ describe('createTilemap', () => {
 
   it('returns a new object for better hidden-class performance', () => {
     const base = {};
-    const obj = createTilemap(base);
+    const obj = createTilemap();
     expect(obj).not.toStrictEqual(base);
   });
 });
@@ -121,8 +153,11 @@ describe('createTilemapData', () => {
     expect(data.tiles).toBeInstanceOf(Int16Array);
   });
 
-  it('fills tiles with -1', () => {
-    const data = createTilemapData({ columns: 2, rows: 3 });
+  it('allows a tile buffer to be assigned after creation', () => {
+    const data = createTilemapData();
+    data.columns = 2;
+    data.rows = 3;
+    data.tiles = new Int16Array(data.columns * data.rows).fill(-1);
     expect(Array.from(data.tiles)).toEqual([-1, -1, -1, -1, -1, -1]);
   });
 });
@@ -172,7 +207,11 @@ describe('enableTilemapSignals', () => {
   });
 
   it('makes setTilemapTile fire onTileChanged', () => {
-    const tilemap = createTilemap({ data: { columns: 3, rows: 3 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 3, rows: 3 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     const signals = enableTilemapSignals(tilemap);
     let received: readonly number[] = [];
     connectSignal(signals.onTileChanged, (c, r, id) => {
@@ -183,7 +222,11 @@ describe('enableTilemapSignals', () => {
   });
 
   it('makes clearTilemap fire onCleared', () => {
-    const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 2, rows: 2 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     const signals = enableTilemapSignals(tilemap);
     let cleared = false;
     connectSignal(signals.onCleared, () => {
@@ -196,13 +239,21 @@ describe('enableTilemapSignals', () => {
 
 describe('fillTilemapTiles', () => {
   it('fills all cells with the given id', () => {
-    const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 2, rows: 2 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     fillTilemapTiles(tilemap, 3);
     expect(Array.from(tilemap.data.tiles)).toEqual([3, 3, 3, 3]);
   });
 
   it('clears all tiles with -1', () => {
-    const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 2, rows: 2 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     fillTilemapTiles(tilemap, 5);
     fillTilemapTiles(tilemap, -1);
     expect(Array.from(tilemap.data.tiles)).toEqual([-1, -1, -1, -1]);
@@ -211,13 +262,21 @@ describe('fillTilemapTiles', () => {
 
 describe('getTilemapColumnAtX', () => {
   it('returns -1 when atlas is null', () => {
-    const tilemap = createTilemap({ data: { columns: 4, rows: 4 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 4, rows: 4 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     expect(getTilemapColumnAtX(tilemap, 10)).toBe(-1);
   });
 
   it('returns the floored column for an in-bounds x', () => {
     const atlas = {} as TextureAtlas;
-    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     expect(getTilemapColumnAtX(tilemap, 0)).toBe(0);
     expect(getTilemapColumnAtX(tilemap, 31)).toBe(1);
     expect(getTilemapColumnAtX(tilemap, 48)).toBe(3);
@@ -225,7 +284,11 @@ describe('getTilemapColumnAtX', () => {
 
   it('returns -1 for x outside the grid', () => {
     const atlas = {} as TextureAtlas;
-    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     expect(getTilemapColumnAtX(tilemap, -1)).toBe(-1);
     expect(getTilemapColumnAtX(tilemap, 64)).toBe(-1);
   });
@@ -234,7 +297,11 @@ describe('getTilemapColumnAtX', () => {
 describe('getTilemapColumnRowAtPoint', () => {
   it('writes column and row for an in-bounds point', () => {
     const atlas = {} as TextureAtlas;
-    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     const out = createVector2(99, 99);
     expect(getTilemapColumnRowAtPoint(out, tilemap, 33, 17)).toBe(true);
     expect(out.x).toBe(2);
@@ -243,7 +310,11 @@ describe('getTilemapColumnRowAtPoint', () => {
 
   it('returns false and does not modify out for an out-of-bounds point', () => {
     const atlas = {} as TextureAtlas;
-    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     const out = createVector2(7, 8);
     expect(getTilemapColumnRowAtPoint(out, tilemap, -1, 0)).toBe(false);
     expect(out.x).toBe(7);
@@ -253,20 +324,32 @@ describe('getTilemapColumnRowAtPoint', () => {
 
 describe('getTilemapRowAtY', () => {
   it('returns -1 when atlas is null', () => {
-    const tilemap = createTilemap({ data: { columns: 4, rows: 4 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 4, rows: 4 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     expect(getTilemapRowAtY(tilemap, 10)).toBe(-1);
   });
 
   it('returns the floored row for an in-bounds y', () => {
     const atlas = {} as TextureAtlas;
-    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     expect(getTilemapRowAtY(tilemap, 0)).toBe(0);
     expect(getTilemapRowAtY(tilemap, 31)).toBe(1);
   });
 
   it('returns -1 for y outside the grid', () => {
     const atlas = {} as TextureAtlas;
-    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     expect(getTilemapRowAtY(tilemap, -1)).toBe(-1);
     expect(getTilemapRowAtY(tilemap, 64)).toBe(-1);
   });
@@ -295,7 +378,11 @@ describe('getTilemapSignals', () => {
 
 describe('getTilemapTile', () => {
   it('returns -1 for out-of-bounds coordinates', () => {
-    const tilemap = createTilemap({ data: { columns: 3, rows: 3 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 3, rows: 3 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     expect(getTilemapTile(tilemap, -1, 0)).toBe(-1);
     expect(getTilemapTile(tilemap, 3, 0)).toBe(-1);
     expect(getTilemapTile(tilemap, 0, -1)).toBe(-1);
@@ -303,12 +390,20 @@ describe('getTilemapTile', () => {
   });
 
   it('returns -1 for empty cells', () => {
-    const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 2, rows: 2 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     expect(getTilemapTile(tilemap, 0, 0)).toBe(-1);
   });
 
   it('reads back what setTilemapTile wrote', () => {
-    const tilemap = createTilemap({ data: { columns: 4, rows: 4 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 4, rows: 4 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     setTilemapTile(tilemap, 2, 1, 7);
     expect(getTilemapTile(tilemap, 2, 1)).toBe(7);
   });
@@ -317,14 +412,22 @@ describe('getTilemapTile', () => {
 describe('getTilemapTileAtPoint', () => {
   it('returns the cell value at a local-space point', () => {
     const atlas = {} as TextureAtlas;
-    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     setTilemapTile(tilemap, 2, 1, 8);
     expect(getTilemapTileAtPoint(tilemap, createVector2(33, 17))).toBe(8);
   });
 
   it('returns -1 for an out-of-bounds point', () => {
     const atlas = {} as TextureAtlas;
-    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     expect(getTilemapTileAtPoint(tilemap, createVector2(-5, 0))).toBe(-1);
   });
 });
@@ -332,13 +435,21 @@ describe('getTilemapTileAtPoint', () => {
 describe('getTilemapTileAtPointXY', () => {
   it('returns the cell value at (x, y)', () => {
     const atlas = {} as TextureAtlas;
-    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     setTilemapTile(tilemap, 0, 0, 3);
     expect(getTilemapTileAtPointXY(tilemap, 5, 5)).toBe(3);
   });
 
   it('returns -1 when atlas is null', () => {
-    const tilemap = createTilemap({ data: { columns: 4, rows: 4 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 4, rows: 4 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     expect(getTilemapTileAtPointXY(tilemap, 5, 5)).toBe(-1);
   });
 });
@@ -346,7 +457,11 @@ describe('getTilemapTileAtPointXY', () => {
 describe('getTilemapTileRect', () => {
   it('writes the cell rectangle for an in-bounds cell', () => {
     const atlas = {} as TextureAtlas;
-    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 24, tileWidth: 16 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { atlas, columns: 4, rows: 4, tileHeight: 24, tileWidth: 16 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     const out = createRectangle();
     expect(getTilemapTileRect(out, tilemap, 2, 1)).toBe(true);
     expect(out.x).toBe(32);
@@ -357,7 +472,11 @@ describe('getTilemapTileRect', () => {
 
   it('returns false and does not modify out for an out-of-bounds cell', () => {
     const atlas = {} as TextureAtlas;
-    const tilemap = createTilemap({ data: { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { atlas, columns: 4, rows: 4, tileHeight: 16, tileWidth: 16 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     const out = createRectangle(1, 2, 3, 4);
     expect(getTilemapTileRect(out, tilemap, 5, 0)).toBe(false);
     expect(out.x).toBe(1);
@@ -367,7 +486,11 @@ describe('getTilemapTileRect', () => {
   });
 
   it('returns false when atlas is null', () => {
-    const tilemap = createTilemap({ data: { columns: 4, rows: 4 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 4, rows: 4 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     const out = createRectangle();
     expect(getTilemapTileRect(out, tilemap, 0, 0)).toBe(false);
   });
@@ -387,14 +510,22 @@ describe('initializeTilemapSignals', () => {
 
 describe('resizeTilemap', () => {
   it('updates columns and rows', () => {
-    const tilemap = createTilemap({ data: { columns: 3, rows: 3 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 3, rows: 3 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     resizeTilemap(tilemap, 5, 4);
     expect(tilemap.data.columns).toBe(5);
     expect(tilemap.data.rows).toBe(4);
   });
 
   it('copies surviving cells when shrinking', () => {
-    const tilemap = createTilemap({ data: { columns: 3, rows: 3 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 3, rows: 3 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     setTilemapTile(tilemap, 0, 0, 1);
     setTilemapTile(tilemap, 1, 1, 2);
     resizeTilemap(tilemap, 2, 2);
@@ -403,7 +534,11 @@ describe('resizeTilemap', () => {
   });
 
   it('fills new cells with -1 when growing', () => {
-    const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 2, rows: 2 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     setTilemapTile(tilemap, 0, 0, 5);
     resizeTilemap(tilemap, 4, 4);
     expect(getTilemapTile(tilemap, 0, 0)).toBe(5);
@@ -411,7 +546,11 @@ describe('resizeTilemap', () => {
   });
 
   it('correctly re-indexes tiles after resize', () => {
-    const tilemap = createTilemap({ data: { columns: 3, rows: 2 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 3, rows: 2 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     // row 1, column 2 -> raw index = 1*3 + 2 = 5
     setTilemapTile(tilemap, 2, 1, 9);
     resizeTilemap(tilemap, 4, 3);
@@ -422,13 +561,21 @@ describe('resizeTilemap', () => {
 
 describe('setTilemapTile', () => {
   it('stores tiles in row-major order', () => {
-    const tilemap = createTilemap({ data: { columns: 3, rows: 3 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 3, rows: 3 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     setTilemapTile(tilemap, 1, 0, 42); // index = row(0) * cols(3) + column(1) = 1
     expect(tilemap.data.tiles[1]).toBe(42);
   });
 
   it('silently ignores out-of-bounds writes', () => {
-    const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 2, rows: 2 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     setTilemapTile(tilemap, -1, 0, 5);
     setTilemapTile(tilemap, 2, 0, 5);
     setTilemapTile(tilemap, 0, -1, 5);
@@ -437,7 +584,11 @@ describe('setTilemapTile', () => {
   });
 
   it('can set the empty sentinel -1', () => {
-    const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 2, rows: 2 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     setTilemapTile(tilemap, 0, 0, 3);
     setTilemapTile(tilemap, 0, 0, -1);
     expect(getTilemapTile(tilemap, 0, 0)).toBe(-1);
@@ -445,7 +596,11 @@ describe('setTilemapTile', () => {
 });
 describe('setTilemapTiles', () => {
   it('blits a sub-grid at offset (0, 0)', () => {
-    const tilemap = createTilemap({ data: { columns: 4, rows: 3 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 4, rows: 3 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     const ids = new Int16Array([1, 2, 3, 4, 5, 6]);
     setTilemapTiles(tilemap, ids, 0, 0, 3, 2);
     expect(getTilemapTile(tilemap, 0, 0)).toBe(1);
@@ -459,7 +614,11 @@ describe('setTilemapTiles', () => {
   });
 
   it('blits at a non-zero offset', () => {
-    const tilemap = createTilemap({ data: { columns: 4, rows: 4 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 4, rows: 4 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     const ids = [10, 11, 12, 13];
     setTilemapTiles(tilemap, ids, 1, 2, 2, 2);
     expect(getTilemapTile(tilemap, 1, 2)).toBe(10);
@@ -471,7 +630,11 @@ describe('setTilemapTiles', () => {
   });
 
   it('clips writes that extend outside the tilemap', () => {
-    const tilemap = createTilemap({ data: { columns: 2, rows: 2 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 2, rows: 2 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     const ids = [1, 2, 3, 4, 5, 6, 7, 8, 9];
     // 3x3 blit at offset (1, 1): only (1,1) is in-bounds
     setTilemapTiles(tilemap, ids, 1, 1, 3, 3);
@@ -482,7 +645,11 @@ describe('setTilemapTiles', () => {
   });
 
   it('handles negative offsets by clipping', () => {
-    const tilemap = createTilemap({ data: { columns: 3, rows: 3 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 3, rows: 3 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     const ids = [10, 20, 30, 40, 50, 60, 70, 80, 90];
     // 3x3 blit at offset (-1, -1): only the bottom-right 2x2 of the source lands in bounds
     setTilemapTiles(tilemap, ids, -1, -1, 3, 3);
@@ -496,7 +663,11 @@ describe('setTilemapTiles', () => {
 
 describe('setTilemapTileTint', () => {
   it('lazily allocates row-major per-tile data and stores packed RGBA', () => {
-    const tilemap = createTilemap({ data: { columns: 3, rows: 2 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 3, rows: 2 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     expect(tilemap.data.materialData).toBeNull();
     setTilemapTileTint(tilemap, 1, 1, 0x12345678);
     expect(tilemap.data.materialData).toHaveLength(6);
@@ -504,7 +675,11 @@ describe('setTilemapTileTint', () => {
   });
 
   it('ignores out-of-range coordinates without allocating', () => {
-    const tilemap = createTilemap({ data: { columns: 1, rows: 1 } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 1, rows: 1 });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     setTilemapTileTint(tilemap, 1, 0, 0xffffffff);
     expect(tilemap.data.materialData).toBeNull();
   });

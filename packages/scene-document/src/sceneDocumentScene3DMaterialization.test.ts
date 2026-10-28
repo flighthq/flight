@@ -101,7 +101,10 @@ describe('createFlightDocumentFromScene3D', () => {
   });
 
   it('writes layouts only from the optional explicit binding argument after interactive bindings', () => {
-    const scene = createScene3D({ name: 'world' });
+    const scene = ((created) => {
+      Object.assign(created.root, { name: 'world' });
+      return created;
+    })(createScene3D());
     const tree = {
       nodes: [{ containerStyle: { custom: true }, itemStyle: null, kind: 'acme.World', parentIndex: -1 }],
     };

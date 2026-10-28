@@ -35,12 +35,18 @@ export function importRiveNSlicedNodeComponent(
     'importRiveNSlicedNodeComponent',
     { substitutedAs: 'container', typeKey: object.typeKey },
   );
-  return createDisplayObject({ name: readRiveShapeName(object) });
+  return ((created) => {
+    Object.assign(created, { name: readRiveShapeName(object) });
+    return created;
+  })(createDisplayObject());
 }
 
 /** A shape carries its children's geometry as one command stream, filled once the artboard is read. */
 export function importRiveShapeComponent(context: RiveArtboardImportContext, index: number): DisplayObject | null {
-  return createShape({ name: readRiveShapeName(context.artboard.objects[index]) });
+  return ((created) => {
+    Object.assign(created, { name: readRiveShapeName(context.artboard.objects[index]) });
+    return created;
+  })(createShape());
 }
 
 /**

@@ -8,7 +8,6 @@ import type {
   HtmlViewRuntime,
   MethodsOf,
   Node2DFields,
-  PartialNode,
   Rectangle,
 } from '@flighthq/types/contract';
 import { HtmlViewKind } from '@flighthq/types/contract';
@@ -21,13 +20,13 @@ export function computeHtmlViewLocalBoundsRectangle(out: Rectangle, source: Read
   out.height = data.height;
 }
 
-export function createHtmlView(obj?: Readonly<PartialNode<HtmlView>>): HtmlView {
-  return createNode2D(HtmlViewKind, obj, createHtmlViewData, createHtmlViewRuntime) as HtmlView;
+export function createHtmlView(): HtmlView {
+  return createNode2D(HtmlViewKind, createHtmlViewData, createHtmlViewRuntime) as HtmlView;
 }
 
-export function createHtmlViewData(data?: Readonly<Partial<HtmlViewData>>): HtmlViewData {
+export function createHtmlViewData(): HtmlViewData {
   const out = allocateEntity<HtmlViewData>();
-  initializeHtmlViewData(out, data);
+  initializeHtmlViewData(out);
   return finishEntity(out);
 }
 
@@ -39,13 +38,10 @@ export function getHtmlViewRuntime(source: Readonly<HtmlView>): Readonly<HtmlVie
   return getNode2DRuntime(source) as HtmlViewRuntime;
 }
 
-export function initializeHtmlViewData(
-  out: EntityConstruction<HtmlViewData>,
-  data?: Readonly<Partial<HtmlViewData>>,
-): void {
-  out.element = data?.element ?? null;
-  out.height = data?.height ?? 100;
-  out.width = data?.width ?? 100;
+export function initializeHtmlViewData(out: EntityConstruction<HtmlViewData>): void {
+  out.element = null;
+  out.height = 100;
+  out.width = 100;
 }
 
 export function setHtmlViewSize(source: HtmlView, width: number, height: number): void {

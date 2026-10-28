@@ -33,12 +33,15 @@ function cloneNode3DShallow(
     }
     return clone;
   }
-  const clone = createNode3D(source.kind, {
-    alpha: source.alpha,
-    enabled: source.enabled,
-    name: source.name,
-    visible: source.visible,
-  });
+  const clone = ((created) => {
+    Object.assign(created, {
+      alpha: source.alpha,
+      enabled: source.enabled,
+      name: source.name,
+      visible: source.visible,
+    });
+    return created;
+  })(createNode3D(source.kind));
   setNodeTransform3D(clone, source);
   if (isNodeLocalMatrix4Detached(source)) {
     setNodeLocalMatrix4(clone, getNodeLocalMatrix4(source));

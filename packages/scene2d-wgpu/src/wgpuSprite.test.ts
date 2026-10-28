@@ -37,7 +37,10 @@ async function drawSpriteOverNewTexture(
 ): Promise<void> {
   const texture = createRenderTexture({ height: size, width: size });
   renderIntoWgpuRenderTexture(state, texture, () => {}, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
-  const sprite = createSprite({ data: { texture } });
+  const sprite = ((created) => {
+    Object.assign(created.data, { texture });
+    return created;
+  })(createSprite());
   prepareScene2DRender(state, sprite);
   const proxy = getOrCreateRenderProxy2D(state, sprite);
   (proxy as { colorScaleBias: unknown }).colorScaleBias = colorScaleBias;
@@ -82,7 +85,10 @@ describe('drawWgpuSprite', () => {
     const renderTexture = createRenderTexture({ height: 480, width: 720 });
     setTextureUvFromPixelRect(renderTexture, 140, 160, 100, 80);
     renderIntoWgpuRenderTexture(state, renderTexture, () => {}, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
-    const sprite = createSprite({ data: { texture: renderTexture } });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture: renderTexture });
+      return created;
+    })(createSprite());
     prepareScene2DRender(state, sprite);
 
     drawWgpuSprite(state, getOrCreateRenderProxy2D(state, sprite));
@@ -109,7 +115,10 @@ describe('drawWgpuSprite', () => {
     texture.uvScale.x = 0.3;
     texture.uvScale.y = 0.2;
     texture.uvRotation = -Math.PI / 2;
-    const sprite = createSprite({ data: { texture } });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture });
+      return created;
+    })(createSprite());
     prepareScene2DRender(state, sprite);
 
     drawWgpuSprite(state, getOrCreateRenderProxy2D(state, sprite));

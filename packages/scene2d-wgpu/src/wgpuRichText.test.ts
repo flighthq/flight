@@ -107,7 +107,10 @@ describe('destroyWgpuRichTextData', () => {
       order.push('surface');
       if (trackedImage !== null) expect(cache.has(trackedImage)).toBe(false);
     });
-    const source = createRichText({ data: { height: 40, text: 'owned', width: 100 } });
+    const source = ((created) => {
+      Object.assign(created.data, { height: 40, text: 'owned', width: 100 });
+      return created;
+    })(createRichText());
     prepareScene2DRender(state, source);
     const proxy = getOrCreateRenderProxy2D(state, source);
     proxy.rendererData = createWgpuRichTextData(state, source);
@@ -137,8 +140,14 @@ describe('drawWgpuRichText', () => {
     const state = await createWgpuRenderStateForTest();
     setTestHosts(state);
     beginWgpuScreenRenderPassForTest(state);
-    const first = createRichText({ data: { height: 40, text: 'first', width: 100 } });
-    const second = createRichText({ data: { height: 40, text: 'second', width: 100 } });
+    const first = ((created) => {
+      Object.assign(created.data, { height: 40, text: 'first', width: 100 });
+      return created;
+    })(createRichText());
+    const second = ((created) => {
+      Object.assign(created.data, { height: 40, text: 'second', width: 100 });
+      return created;
+    })(createRichText());
     prepareScene2DRender(state, first);
     prepareScene2DRender(state, second);
     const firstProxy = getOrCreateRenderProxy2D(state, first);
@@ -206,14 +215,20 @@ describe('registerWgpuTextInputOverlay', () => {
     setTestHosts(state);
     beginWgpuScreenRenderPassForTest(state);
 
-    const plain = createRichText({ data: { height: 40, text: 'x', width: 100 } });
+    const plain = ((created) => {
+      Object.assign(created.data, { height: 40, text: 'x', width: 100 });
+      return created;
+    })(createRichText());
     prepareScene2DRender(state, plain);
     const plainProxy = getOrCreateRenderProxy2D(state, plain);
     plainProxy.rendererData = createWgpuRichTextData(state, plain);
     drawWgpuRichText(state, plainProxy);
     expect(overlay).not.toHaveBeenCalled();
 
-    const editable = createRichText({ data: { height: 40, text: 'x', width: 100 } });
+    const editable = ((created) => {
+      Object.assign(created.data, { height: 40, text: 'x', width: 100 });
+      return created;
+    })(createRichText());
     enableTextInput(editable);
     prepareScene2DRender(state, editable);
     const editableProxy = getOrCreateRenderProxy2D(state, editable);

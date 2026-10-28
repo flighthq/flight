@@ -195,5 +195,7 @@ describe('toggleNodeSelection', () => {
 });
 
 function createTestNode(name: string): HierarchyNodeAny {
-  return createNode('SelectionTestNode', { name });
+  const node = createNode('SelectionTestNode');
+  node.name = name;
+  return node;
 }

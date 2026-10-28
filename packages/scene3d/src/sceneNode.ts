@@ -15,13 +15,10 @@ import { Node3DKind, Node3DFieldsKey } from '@flighthq/types/contract';
 
 export { Node3DKind } from '@flighthq/types/contract';
 
-export function createNode3D(
-  kind: Kind = Node3DKind,
-  obj?: Readonly<Partial<Pick<Node3D, 'alpha' | 'enabled' | 'name' | 'visible'>>>,
-): Node3D {
+export function createNode3D(kind: Kind = Node3DKind): Node3D {
   const out = allocateEntity<Node3D>();
-  initializeNode(out, kind, obj, undefined, createNode3DRuntime);
-  initAppearanceTrait(out, obj);
+  initializeNode(out, kind, undefined, createNode3DRuntime);
+  initAppearanceTrait(out);
   initTransform3DTrait(out);
   return finishEntity(out);
 }

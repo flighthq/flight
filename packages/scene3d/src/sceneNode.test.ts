@@ -54,7 +54,10 @@ describe('createNode3D', () => {
   });
 
   it('accepts partial initial values', () => {
-    const node = createNode3D(Node3DKind, { enabled: false, name: 'root' });
+    const node = ((created) => {
+      Object.assign(created, { enabled: false, name: 'root' });
+      return created;
+    })(createNode3D(Node3DKind));
     expect(node.enabled).toBe(false);
     expect(node.name).toBe('root');
   });
@@ -64,7 +67,12 @@ describe('createNode3D', () => {
   });
 
   it('accepts an initial alpha', () => {
-    expect(createNode3D(Node3DKind, { alpha: 0.4 }).alpha).toBeCloseTo(0.4);
+    expect(
+      ((created) => {
+        Object.assign(created, { alpha: 0.4 });
+        return created;
+      })(createNode3D(Node3DKind)).alpha,
+    ).toBeCloseTo(0.4);
   });
 });
 

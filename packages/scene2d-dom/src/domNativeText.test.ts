@@ -28,7 +28,10 @@ describe('domNativeTextRenderer', () => {
 describe('drawDomNativeText', () => {
   it('produces a div carrying the text content', () => {
     const state = makeState();
-    const node = createNativeText({ data: { text: 'hello' } });
+    const node = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createNativeText());
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
     const el = drawGetEl(state, () => drawDomNativeText(state, renderProxy));
@@ -40,7 +43,10 @@ describe('drawDomNativeText', () => {
 
   it('reuses the same element across multiple draws', () => {
     const state = makeState();
-    const node = createNativeText({ data: { text: 'hello' } });
+    const node = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createNativeText());
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
     const first = drawGetEl(state, () => drawDomNativeText(state, renderProxy));
@@ -51,7 +57,10 @@ describe('drawDomNativeText', () => {
 
   it('sets a fixed box under autoSize none', () => {
     const state = makeState();
-    const node = createNativeText({ data: { text: 'hi', width: 120, height: 40 } });
+    const node = ((created) => {
+      Object.assign(created.data, { text: 'hi', width: 120, height: 40 });
+      return created;
+    })(createNativeText());
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
     const div = drawGetEl(state, () => drawDomNativeText(state, renderProxy))!;
@@ -62,7 +71,10 @@ describe('drawDomNativeText', () => {
 
   it('publishes the dimensions laid out by the DOM element', () => {
     const state = makeState();
-    const node = createNativeText({ data: { text: 'measured', width: 137, height: 41 } });
+    const node = ((created) => {
+      Object.assign(created.data, { text: 'measured', width: 137, height: 41 });
+      return created;
+    })(createNativeText());
     const renderProxy = getOrCreateRenderProxy2D(state, node);
     const measure = vi
       .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
@@ -85,7 +97,10 @@ describe('drawDomNativeText', () => {
 
   it('positions the block vertically via the flexbox on a fixed box', () => {
     const state = makeState();
-    const node = createNativeText({ data: { text: 'hi', verticalAlign: 'middle' } });
+    const node = ((created) => {
+      Object.assign(created.data, { text: 'hi', verticalAlign: 'middle' });
+      return created;
+    })(createNativeText());
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
     const div = drawGetEl(state, () => drawDomNativeText(state, renderProxy))!;
@@ -96,8 +111,14 @@ describe('drawDomNativeText', () => {
 
   it('maps top and bottom to the box ends', () => {
     const state = makeState();
-    const top = createNativeText({ data: { text: 'hi', verticalAlign: 'top' } });
-    const bottom = createNativeText({ data: { text: 'hi', verticalAlign: 'bottom' } });
+    const top = ((created) => {
+      Object.assign(created.data, { text: 'hi', verticalAlign: 'top' });
+      return created;
+    })(createNativeText());
+    const bottom = ((created) => {
+      Object.assign(created.data, { text: 'hi', verticalAlign: 'bottom' });
+      return created;
+    })(createNativeText());
     const topDiv = drawGetEl(state, () => drawDomNativeText(state, getOrCreateRenderProxy2D(state, top)))!;
     const bottomDiv = drawGetEl(state, () => drawDomNativeText(state, getOrCreateRenderProxy2D(state, bottom)))!;
     expect(topDiv.style.justifyContent).toBe('flex-start');
@@ -110,7 +131,10 @@ describe('drawDomNativeText', () => {
   // `0x44ffee` under an RGBA field means r=0x00, and nothing draws where the scene expects ink.
   it('converts the packed RGBA style color channel-correctly, alpha included', () => {
     const state = makeState();
-    const node = createNativeText({ data: { text: 'hi', style: { color: 0x44ffee80 } } });
+    const node = ((created) => {
+      Object.assign(created.data, { text: 'hi', style: { color: 0x44ffee80 } });
+      return created;
+    })(createNativeText());
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
     // The expected strings are what the CSS engine serializes back, not what the renderer wrote: alpha
@@ -121,7 +145,10 @@ describe('drawDomNativeText', () => {
 
   it('defaults an unset style color to opaque black rather than transparent', () => {
     const state = makeState();
-    const node = createNativeText({ data: { text: 'hi' } });
+    const node = ((created) => {
+      Object.assign(created.data, { text: 'hi' });
+      return created;
+    })(createNativeText());
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
     const div = drawGetEl(state, () => drawDomNativeText(state, renderProxy))!;
@@ -132,7 +159,10 @@ describe('drawDomNativeText', () => {
 
   it('drops the flexbox framing under autoSize (no slack to align within)', () => {
     const state = makeState();
-    const node = createNativeText({ data: { text: 'hi', autoSize: 'left', verticalAlign: 'middle' } });
+    const node = ((created) => {
+      Object.assign(created.data, { text: 'hi', autoSize: 'left', verticalAlign: 'middle' });
+      return created;
+    })(createNativeText());
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
     const div = drawGetEl(state, () => drawDomNativeText(state, renderProxy))!;
@@ -144,7 +174,10 @@ describe('drawDomNativeText', () => {
 describe('drawDomNativeTextMask', () => {
   it('does not throw', () => {
     const state = makeState();
-    const node = createNativeText({ data: { text: 'hi' } });
+    const node = ((created) => {
+      Object.assign(created.data, { text: 'hi' });
+      return created;
+    })(createNativeText());
     const renderProxy = getOrCreateRenderProxy2D(state, node);
     expect(() => drawDomNativeTextMask(state, renderProxy)).not.toThrow();
   });

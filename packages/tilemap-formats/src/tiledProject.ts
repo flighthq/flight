@@ -99,7 +99,7 @@ export function buildTilemapLayersFromTiled(
   if (!anyResolved) return null;
 
   return groups.map((group) =>
-    createTilemapData({
+    Object.assign(createTilemapData(), {
       atlas: group.layout.atlas,
       columns: width,
       rows: height,

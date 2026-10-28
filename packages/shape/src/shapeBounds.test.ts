@@ -43,7 +43,10 @@ beforeAll(() => {
 
 describe('computeShapeBoundsRectangle', () => {
   it('returns false for an unknown command without inventing geometry', () => {
-    const shape = createShape({ data: { commands: ['__test.missing__', 2, 1, 2] } });
+    const shape = ((created) => {
+      Object.assign(created.data, { commands: ['__test.missing__', 2, 1, 2] });
+      return created;
+    })(createShape());
     const out = createRectangle(10, 20, 30, 40);
 
     expect(computeShapeBoundsRectangle(out, shape)).toBe(false);
@@ -188,7 +191,10 @@ describe('computeShapeBoundsRectangle', () => {
       key: key as never,
       strokeBounds: null,
     });
-    const shape = createShape({ data: { commands: [key, 2, 7, 9, 'drawRectangle', 4, 0, 0, 1, 1] } });
+    const shape = ((created) => {
+      Object.assign(created.data, { commands: [key, 2, 7, 9, 'drawRectangle', 4, 0, 0, 1, 1] });
+      return created;
+    })(createShape());
     const out = createRectangle();
 
     computeShapeBoundsRectangle(out, shape, 'fill');
@@ -272,9 +278,10 @@ describe('defaultShapeBoundsQuadraticCurveTo', () => {
 
 describe('explainShapeBounds', () => {
   it('reports each missing key once without diagnostic prose in the core traversal', () => {
-    const shape = createShape({
-      data: { commands: ['__test.a__', 0, '__test.b__', 0, '__test.a__', 0] },
-    });
+    const shape = ((created) => {
+      Object.assign(created.data, { commands: ['__test.a__', 0, '__test.b__', 0, '__test.a__', 0] });
+      return created;
+    })(createShape());
 
     expect(explainShapeBounds(shape, 'fill')).toEqual({
       complete: false,
@@ -311,7 +318,13 @@ describe('setShapeBoundsGuard', () => {
     const misses: string[] = [];
     setShapeBoundsGuard((_shape, _mode, key) => misses.push(key));
 
-    computeShapeBoundsRectangle(createRectangle(), createShape({ data: { commands: ['__test.guard-callback__', 0] } }));
+    computeShapeBoundsRectangle(
+      createRectangle(),
+      ((created) => {
+        Object.assign(created.data, { commands: ['__test.guard-callback__', 0] });
+        return created;
+      })(createShape()),
+    );
 
     expect(misses).toEqual(['__test.guard-callback__']);
   });

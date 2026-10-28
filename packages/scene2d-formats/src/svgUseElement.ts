@@ -85,7 +85,10 @@ function createSvgSymbolNode(
   parentStyle: Readonly<SvgStyle>,
   context: SvgImportContext,
 ): DisplayObject {
-  const container = createDisplayObject({ name: svgAttribute(element, 'id') });
+  const container = ((created) => {
+    Object.assign(created, { name: svgAttribute(element, 'id') });
+    return created;
+  })(createDisplayObject());
   const useWidth = svgOptionalNumberAttribute(useElement, 'width');
   const useHeight = svgOptionalNumberAttribute(useElement, 'height');
   const viewport = createSvgViewportMatrix(element, {

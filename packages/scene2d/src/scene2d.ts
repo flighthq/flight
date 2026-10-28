@@ -18,12 +18,10 @@ import { createDisplayObject } from './displayObject.ts';
 // the bedrock `Viewport` is a drawable rect, not a base of Scene2D — plus the view dimensions and background
 // color. The entity runtime stays unbound; the root's runtime carries a back-pointer so getScene2DRoot
 // resolves membership by a lazy walk to the root.
-export function createScene2D(
-  obj?: Readonly<Partial<Pick<Scene2D, 'align' | 'color' | 'scaleMode' | 'scene2dHeight' | 'scene2dWidth'>>>,
-): Scene2D {
+export function createScene2D(): Scene2D {
   const root = createDisplayObject();
   const scene2d = allocateEntity<Scene2D>();
-  initializeScene2D(scene2d, root, obj);
+  initializeScene2D(scene2d, root);
   (getNodeRuntime(root) as Node2DRuntime).scene2d = scene2d;
   return scene2d;
 }
@@ -64,17 +62,13 @@ export function getScene2DSignals(source: Readonly<Scene2D>): Scene2DSignals | n
   return runtime?.scene2dSignals ?? null;
 }
 
-export function initializeScene2D(
-  out: EntityConstruction<Scene2D>,
-  root: Node2D,
-  obj?: Readonly<Partial<Pick<Scene2D, 'align' | 'color' | 'scaleMode' | 'scene2dHeight' | 'scene2dWidth'>>>,
-): void {
-  out.align = obj?.align ?? 'topleft';
-  out.color = obj?.color ?? null;
+export function initializeScene2D(out: EntityConstruction<Scene2D>, root: Node2D): void {
+  out.align = 'topleft';
+  out.color = null;
   out.root = root;
-  out.scaleMode = obj?.scaleMode ?? 'noscale';
-  out.scene2dHeight = obj?.scene2dHeight ?? 550;
-  out.scene2dWidth = obj?.scene2dWidth ?? 400;
+  out.scaleMode = 'noscale';
+  out.scene2dHeight = 550;
+  out.scene2dWidth = 400;
 }
 
 export function initializeScene2DSignals(out: EntityConstruction<Scene2DSignals>): void {

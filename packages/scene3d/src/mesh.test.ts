@@ -49,7 +49,11 @@ describe('cloneMesh', () => {
   });
 
   it('copies alpha, enabled, name, and kind', () => {
-    const source = createMesh(createBoxMeshGeometry(), [], 'Custom', { enabled: false, name: 'hero' });
+    const source = ((created) => {
+      created.kind = 'Custom';
+      Object.assign(created, { enabled: false, name: 'hero' });
+      return created;
+    })(createMesh(createBoxMeshGeometry(), []));
     source.alpha = 0.25;
     const clone = cloneMesh(source);
     expect(clone.alpha).toBe(0.25);
@@ -118,7 +122,10 @@ describe('createMesh', () => {
 
   it('accepts a custom kind', () => {
     const MyKind = 'MyKind';
-    const mesh = createMesh(createBoxMeshGeometry(), [], MyKind);
+    const mesh = ((created) => {
+      created.kind = MyKind;
+      return created;
+    })(createMesh(createBoxMeshGeometry(), []));
     expect(mesh.kind).toBe(MyKind);
   });
 
@@ -146,7 +153,11 @@ describe('createMesh', () => {
   });
 
   it('accepts partial initial values', () => {
-    const mesh = createMesh(createBoxMeshGeometry(), [], MeshKind, { enabled: false, name: 'crate' });
+    const mesh = ((created) => {
+      created.kind = MeshKind;
+      Object.assign(created, { enabled: false, name: 'crate' });
+      return created;
+    })(createMesh(createBoxMeshGeometry(), []));
     expect(mesh.enabled).toBe(false);
     expect(mesh.name).toBe('crate');
   });

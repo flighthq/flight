@@ -8,7 +8,6 @@ import type {
   EntityConstruction,
   MethodsOf,
   Node2DFields,
-  PartialNode,
   Rectangle,
   TextAutoSize,
   TextFormat,
@@ -75,13 +74,13 @@ export function computeTextLabelLocalBoundsRectangle(out: Rectangle, source: Rea
   computeTextBoundsRectangle(out, data, layout);
 }
 
-export function createTextLabel(obj?: Readonly<PartialNode<TextLabel>>): TextLabel {
-  return createNode2D(TextLabelKind, obj, createTextLabelData, createTextLabelRuntime) as TextLabel;
+export function createTextLabel(): TextLabel {
+  return createNode2D(TextLabelKind, createTextLabelData, createTextLabelRuntime) as TextLabel;
 }
 
-export function createTextLabelData(data?: Readonly<Partial<TextLabelData>>): TextLabelData {
+export function createTextLabelData(): TextLabelData {
   const out = allocateEntity<TextLabelData>();
-  initializeTextLabelData(out, data);
+  initializeTextLabelData(out);
   return finishEntity(out);
 }
 
@@ -108,16 +107,13 @@ export function getTextLabelString(source: Readonly<TextLabel>): string {
   return source.data.text;
 }
 
-export function initializeTextLabelData(
-  out: EntityConstruction<TextLabelData>,
-  data?: Readonly<Partial<TextLabelData>>,
-): void {
-  out.autoSize = data?.autoSize ?? 'none';
-  out.height = data?.height ?? 100;
-  out.text = data?.text ?? '';
-  out.textFormat = data?.textFormat ?? {};
-  out.verticalAlign = data?.verticalAlign ?? 'top';
-  out.width = data?.width ?? 100;
+export function initializeTextLabelData(out: EntityConstruction<TextLabelData>): void {
+  out.autoSize = 'none';
+  out.height = 100;
+  out.text = '';
+  out.textFormat = {};
+  out.verticalAlign = 'top';
+  out.width = 100;
 }
 
 export function setTextLabelAutoSize(source: TextLabel, value: TextAutoSize): void {

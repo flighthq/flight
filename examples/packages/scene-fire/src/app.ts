@@ -256,7 +256,10 @@ for (let i = 0; i < firePositions.length; i++) {
     [0, flameConfig, fireAtlas],
     [1, sparkConfig, sparkAtlas],
   ] as const) {
-    const emitter = createParticleEmitter3D({ blendMode: 'add' });
+    const emitter = ((created) => {
+      Object.assign(created, { blendMode: 'add' });
+      return created;
+    })(createParticleEmitter3D());
     emitter.data.atlas = atlas;
     emitter.position.x = position.x;
     emitter.position.y = position.y;

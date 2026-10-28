@@ -7,7 +7,6 @@ import type {
   MethodsOf,
   MorphShape,
   Node2DFields,
-  PartialNode,
   Rectangle,
   Shape,
   ShapeBoundsMode,
@@ -44,13 +43,13 @@ export function copyShapeCommands(out: Shape, source: Readonly<Shape>): void {
   invalidateContent(out);
 }
 
-export function createShape(obj?: Readonly<PartialNode<Shape>>): Shape {
-  return createNode2D(ShapeKind, obj, createShapeData, createShapeRuntime) as Shape;
+export function createShape(): Shape {
+  return createNode2D(ShapeKind, createShapeData, createShapeRuntime) as Shape;
 }
 
-export function createShapeData(data?: Readonly<Partial<ShapeData>>): ShapeData {
+export function createShapeData(): ShapeData {
   const out = allocateEntity<ShapeData>();
-  initializeShapeData(out, data);
+  initializeShapeData(out);
   return finishEntity(out);
 }
 
@@ -92,8 +91,8 @@ export function getShapeRuntime(source: Readonly<Shape>): Readonly<ShapeRuntime>
   return getNode2DRuntime(source) as ShapeRuntime;
 }
 
-export function initializeShapeData(out: EntityConstruction<ShapeData>, data?: Readonly<Partial<ShapeData>>): void {
-  out.commands = data?.commands ?? [];
+export function initializeShapeData(out: EntityConstruction<ShapeData>): void {
+  out.commands = [];
 }
 
 // True when the shape has no drawing commands in its command stream.

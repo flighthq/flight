@@ -41,7 +41,10 @@ describe('drawDomHtmlView', () => {
   it('produces the source element', () => {
     const state = makeState();
     const inner = document.createElement('span');
-    const node = createHtmlView({ data: { element: inner } });
+    const node = ((created) => {
+      Object.assign(created.data, { element: inner });
+      return created;
+    })(createHtmlView());
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
     const el = drawGetEl(state, () => drawDomHtmlView(state, renderProxy));
@@ -52,7 +55,10 @@ describe('drawDomHtmlView', () => {
   it('initializes position and overflow styles on first draw', () => {
     const state = makeState();
     const inner = document.createElement('div');
-    const node = createHtmlView({ data: { element: inner } });
+    const node = ((created) => {
+      Object.assign(created.data, { element: inner });
+      return created;
+    })(createHtmlView());
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
     drawDomHtmlView(state, renderProxy);
@@ -69,7 +75,10 @@ describe('drawDomHtmlView', () => {
     const inner = document.createElement('div');
     inner.style.position = 'absolute';
     inner.style.left = '50px';
-    const node = createHtmlView({ data: { element: inner } });
+    const node = ((created) => {
+      Object.assign(created.data, { element: inner });
+      return created;
+    })(createHtmlView());
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
     drawDomHtmlView(state, renderProxy);
@@ -80,7 +89,10 @@ describe('drawDomHtmlView', () => {
   it('applies width and height from data', () => {
     const state = makeState();
     const inner = document.createElement('div');
-    const node = createHtmlView({ data: { element: inner, width: 320, height: 240 } });
+    const node = ((created) => {
+      Object.assign(created.data, { element: inner, width: 320, height: 240 });
+      return created;
+    })(createHtmlView());
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
     drawDomHtmlView(state, renderProxy);
@@ -92,7 +104,10 @@ describe('drawDomHtmlView', () => {
   it('updates width and height when data changes between draws', () => {
     const state = makeState();
     const inner = document.createElement('div');
-    const node = createHtmlView({ data: { element: inner, width: 100, height: 100 } });
+    const node = ((created) => {
+      Object.assign(created.data, { element: inner, width: 100, height: 100 });
+      return created;
+    })(createHtmlView());
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
     drawDomHtmlView(state, renderProxy);
@@ -107,7 +122,10 @@ describe('drawDomHtmlView', () => {
   it('applies transform from the render node', () => {
     const state = makeState();
     const inner = document.createElement('div');
-    const node = createHtmlView({ data: { element: inner } });
+    const node = ((created) => {
+      Object.assign(created.data, { element: inner });
+      return created;
+    })(createHtmlView());
     const renderProxy = getOrCreateRenderProxy2D(state, node);
 
     drawDomHtmlView(state, renderProxy);

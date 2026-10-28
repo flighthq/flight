@@ -10,7 +10,10 @@ import { createNode3D } from './sceneNode.ts';
 
 describe('cloneNode3DSubtree', () => {
   it('clones a plain Node3D', () => {
-    const source = createNode3D(undefined, { name: 'root' });
+    const source = ((created) => {
+      Object.assign(created, { name: 'root' });
+      return created;
+    })(createNode3D(undefined));
     const clone = cloneNode3DSubtree(source);
     expect(clone).not.toBe(source);
     expect(clone.name).toBe('root');
@@ -30,13 +33,25 @@ describe('cloneNode3DSubtree', () => {
   });
 
   it('clones children recursively', () => {
-    const root = createNode3D(undefined, { name: 'root' });
-    const childA = createNode3D(undefined, { name: 'a' });
+    const root = ((created) => {
+      Object.assign(created, { name: 'root' });
+      return created;
+    })(createNode3D(undefined));
+    const childA = ((created) => {
+      Object.assign(created, { name: 'a' });
+      return created;
+    })(createNode3D(undefined));
     const childB = createMesh(createBoxMeshGeometry(), [createStandardPbrMaterial()]);
     childB.name = 'b';
     addNodeChild(root, childA);
     addNodeChild(root, childB);
-    addNodeChild(childA, createNode3D(undefined, { name: 'grandchild' }));
+    addNodeChild(
+      childA,
+      ((created) => {
+        Object.assign(created, { name: 'grandchild' });
+        return created;
+      })(createNode3D(undefined)),
+    );
 
     const clone = cloneNode3DSubtree(root);
     expect(clone).not.toBe(root);
@@ -72,7 +87,10 @@ describe('cloneNode3DSubtree', () => {
   });
 
   it('copies transform from source', () => {
-    const source = createNode3D(undefined, { name: 'moved' });
+    const source = ((created) => {
+      Object.assign(created, { name: 'moved' });
+      return created;
+    })(createNode3D(undefined));
     source.position.x = 5;
     source.position.y = 10;
     source.position.z = 15;
@@ -83,7 +101,10 @@ describe('cloneNode3DSubtree', () => {
   });
 
   it('preserves alpha and visibility', () => {
-    const source = createNode3D(undefined, { alpha: 0.5, visible: false });
+    const source = ((created) => {
+      Object.assign(created, { alpha: 0.5, visible: false });
+      return created;
+    })(createNode3D(undefined));
     const clone = cloneNode3DSubtree(source);
     expect(clone.alpha).toBe(0.5);
     expect(clone.visible).toBe(false);

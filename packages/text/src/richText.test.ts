@@ -69,13 +69,19 @@ import {
 
 describe('appendRichTextString', () => {
   it('appends the value to the existing text', () => {
-    const richText = createRichText({ data: { text: 'hello' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createRichText());
     appendRichTextString(richText, ' world');
     expect(richText.data.text).toBe('hello world');
   });
 
   it('invalidates local content after append', () => {
-    const richText = createRichText({ data: { text: 'hi' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hi' });
+      return created;
+    })(createRichText());
     const runtime = getEntityRuntime(richText) as RichTextRuntime;
     const idBefore = runtime.localContentId;
     appendRichTextString(richText, '!');
@@ -83,7 +89,10 @@ describe('appendRichTextString', () => {
   });
 
   it('does not invalidate when value is empty', () => {
-    const richText = createRichText({ data: { text: 'hi' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hi' });
+      return created;
+    })(createRichText());
     const runtime = getEntityRuntime(richText) as RichTextRuntime;
     const idBefore = runtime.localContentId;
     appendRichTextString(richText, '');
@@ -93,7 +102,10 @@ describe('appendRichTextString', () => {
 
 describe('buildRichTextLayoutParams', () => {
   it('assembles content and wrap/multiline constraints for the layout engine', () => {
-    const richText = createRichText({ data: { multiline: true, width: 120, wordWrap: true } });
+    const richText = ((created) => {
+      Object.assign(created.data, { multiline: true, width: 120, wordWrap: true });
+      return created;
+    })(createRichText());
     setRichTextString(richText, 'hello');
     const measure = (text: string) => text.length * 7;
     const params = buildRichTextLayoutParams(richText, measure);
@@ -120,7 +132,10 @@ describe('computeRichTextLocalBoundsRectangle', () => {
   });
 
   it('sets out.width and out.height from data dimensions when autoSize is none', () => {
-    const richText = createRichText({ data: { width: 200, height: 150 } });
+    const richText = ((created) => {
+      Object.assign(created.data, { width: 200, height: 150 });
+      return created;
+    })(createRichText());
     const out = createRectangle();
     computeRichTextLocalBoundsRectangle(out, richText);
     expect(out.x).toBe(0);
@@ -129,7 +144,10 @@ describe('computeRichTextLocalBoundsRectangle', () => {
   });
 
   it('falls back to the fixed field box when autoSize is set but no measure provider exists', () => {
-    const richText = createRichText({ data: { autoSize: 'left', width: 200, height: 150 } });
+    const richText = ((created) => {
+      Object.assign(created.data, { autoSize: 'left', width: 200, height: 150 });
+      return created;
+    })(createRichText());
     setRichTextString(richText, 'hello');
     const out = createRectangle();
     computeRichTextLocalBoundsRectangle(out, richText);
@@ -139,7 +157,10 @@ describe('computeRichTextLocalBoundsRectangle', () => {
 
   it('shrinks to the measured content under autoSize left, anchored at the origin', () => {
     setTextLayoutMeasureProvider((text) => text.length * 7);
-    const richText = createRichText({ data: { autoSize: 'left', width: 200, height: 150 } });
+    const richText = ((created) => {
+      Object.assign(created.data, { autoSize: 'left', width: 200, height: 150 });
+      return created;
+    })(createRichText());
     setRichTextString(richText, 'hi');
     const out = createRectangle();
     computeRichTextLocalBoundsRectangle(out, richText);
@@ -150,7 +171,10 @@ describe('computeRichTextLocalBoundsRectangle', () => {
 
   it('keeps the right edge fixed under autoSize right (x = width - fieldWidth)', () => {
     setTextLayoutMeasureProvider((text) => text.length * 7);
-    const richText = createRichText({ data: { autoSize: 'right', width: 200, height: 150 } });
+    const richText = ((created) => {
+      Object.assign(created.data, { autoSize: 'right', width: 200, height: 150 });
+      return created;
+    })(createRichText());
     setRichTextString(richText, 'hi');
     const out = createRectangle();
     computeRichTextLocalBoundsRectangle(out, richText);
@@ -184,7 +208,7 @@ describe('createRichText', () => {
     expect(richText.kind).toStrictEqual(RichTextKind);
   });
 
-  it('allows pre-defined values', () => {
+  it('allows fields to be assigned after creation', () => {
     const base = {
       data: {
         background: true,
@@ -202,7 +226,15 @@ describe('createRichText', () => {
         wordWrap: true,
       },
     };
-    const obj = createRichText(base);
+    const obj = ((created, fields) => {
+      const entityData = created.data;
+      Object.assign(created, fields);
+      if (fields.data !== undefined) {
+        Object.assign(entityData, fields.data);
+        Object.assign(created, { data: entityData });
+      }
+      return created;
+    })(createRichText(), base);
     expect(obj.data.background).toStrictEqual(base.data.background);
     expect(obj.data.backgroundColor).toStrictEqual(base.data.backgroundColor);
     expect(obj.data.border).toStrictEqual(base.data.border);
@@ -215,13 +247,13 @@ describe('createRichText', () => {
     expect(obj.data.selectable).toStrictEqual(base.data.selectable);
     expect(obj.data.textColor).toStrictEqual(base.data.textColor);
     expect(obj.data.textFormatRanges).toStrictEqual(base.data.textFormatRanges);
-    expect(obj.data.textFormatRanges).not.toBe(base.data.textFormatRanges);
+    expect(obj.data.textFormatRanges).toBe(base.data.textFormatRanges);
     expect(obj.data.wordWrap).toStrictEqual(base.data.wordWrap);
   });
 
   it('returns a new object for better hidden-class performance', () => {
     const base = {};
-    const obj = createRichText(base);
+    const obj = createRichText();
     expect(obj).not.toStrictEqual(base);
   });
 });
@@ -236,7 +268,7 @@ describe('createRichTextData', () => {
   });
 
   it('allows pre-defined values', () => {
-    const data = createRichTextData({ width: 300, height: 200, maxChars: 12 });
+    const data = Object.assign(createRichTextData(), { width: 300, height: 200, maxChars: 12 });
     expect(data.width).toBe(300);
     expect(data.height).toBe(200);
     expect(data.maxChars).toBe(12);
@@ -291,7 +323,10 @@ describe('dispatchRichTextLinkAtPoint', () => {
 
   it('returns null and emits nothing when the point is not over a link', () => {
     setTextLayoutMeasureProvider((text) => text.length * 7);
-    const richText = createRichText({ data: { width: 200, height: 50 } });
+    const richText = ((created) => {
+      Object.assign(created.data, { width: 200, height: 50 });
+      return created;
+    })(createRichText());
     setRichTextString(richText, 'no links here');
     const signals = enableTextFieldSignals(richText);
     let emitted = false;
@@ -304,7 +339,10 @@ describe('dispatchRichTextLinkAtPoint', () => {
 
   it('emits onTextFieldLink with the url and point when a link is hit', () => {
     setTextLayoutMeasureProvider((text) => text.length * 7);
-    const richText = createRichText({ data: { width: 400, height: 50 } });
+    const richText = ((created) => {
+      Object.assign(created.data, { width: 400, height: 50 });
+      return created;
+    })(createRichText());
     setRichTextString(richText, 'click');
     setRichTextFormatRange(richText, { url: 'https://example.com' }, 0, 5);
     const signals = enableTextFieldSignals(richText);
@@ -347,7 +385,10 @@ describe('enableTextFieldSignals', () => {
   });
 
   it('enables onTextFieldChange emission from setters', () => {
-    const richText = createRichText({ data: { text: 'a' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'a' });
+      return created;
+    })(createRichText());
     const signals = enableTextFieldSignals(richText);
     const changes: string[] = [];
     connectSignal(signals.onTextFieldChange, (event) => {
@@ -371,7 +412,10 @@ describe('getRichTextBottomScrollV', () => {
 
   it('returns a value >= 1 when layout is available', () => {
     setTextLayoutMeasureProvider((text) => text.length * 7);
-    const richText = createRichText({ data: { height: 20 } });
+    const richText = ((created) => {
+      Object.assign(created.data, { height: 20 });
+      return created;
+    })(createRichText());
     setRichTextString(richText, 'line1\nline2\nline3');
     expect(getRichTextBottomScrollV(richText)).toBeGreaterThanOrEqual(1);
   });
@@ -390,7 +434,10 @@ describe('getRichTextCharIndexAtPoint', () => {
 
   it('returns a valid index when layout is available and point is past last line', () => {
     setTextLayoutMeasureProvider((text) => text.length * 7);
-    const richText = createRichText({ data: { width: 200, height: 50 } });
+    const richText = ((created) => {
+      Object.assign(created.data, { width: 200, height: 50 });
+      return created;
+    })(createRichText());
     setRichTextString(richText, 'hello');
     // Use a y well beyond the text height to hit the end-of-field code path (avoids a known
     // textlayout bug in the mid-line hit-test branch that references `text` instead of `_text`).
@@ -402,7 +449,10 @@ describe('getRichTextCharIndexAtPoint', () => {
 describe('getRichTextDefaultTextFormat', () => {
   it('returns the default text format', () => {
     const format = { size: 16, bold: true };
-    const richText = createRichText({ data: { defaultTextFormat: format } });
+    const richText = ((created) => {
+      Object.assign(created.data, { defaultTextFormat: format });
+      return created;
+    })(createRichText());
     expect(getRichTextDefaultTextFormat(richText)).toBe(richText.data.defaultTextFormat);
   });
 });
@@ -416,12 +466,13 @@ describe('getRichTextFormatRangeAt', () => {
   });
 
   it('merges defaultTextFormat with overlapping ranges', () => {
-    const richText = createRichText({
-      data: {
+    const richText = ((created) => {
+      Object.assign(created.data, {
         defaultTextFormat: { size: 12, color: 0xff0000ff },
         text: 'hello world',
-      },
-    });
+      });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { bold: true }, 0, 5);
     const out: Record<string, unknown> = {};
     getRichTextFormatRangeAt(out, richText, 2);
@@ -431,7 +482,10 @@ describe('getRichTextFormatRangeAt', () => {
   });
 
   it('does not apply a range that does not cover the index', () => {
-    const richText = createRichText({ data: { text: 'hello world' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello world' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { bold: true }, 0, 3);
     const out: Record<string, unknown> = {};
     getRichTextFormatRangeAt(out, richText, 5);
@@ -447,7 +501,10 @@ describe('getRichTextFormatRangeByIndex', () => {
   });
 
   it('returns true and fills out with range data for a valid index', () => {
-    const richText = createRichText({ data: { text: 'hello' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { italic: true }, 1, 4);
     const out = createTextFormatRange({}, 0, 0);
     expect(getRichTextFormatRangeByIndex(out, richText, 0)).toBe(true);
@@ -464,7 +521,10 @@ describe('getRichTextFormatRangeCount', () => {
   });
 
   it('returns the number of pushed ranges', () => {
-    const richText = createRichText({ data: { text: 'hello' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { bold: true }, 0, 2);
     setRichTextFormatRange(richText, { italic: true }, 2, 5);
     expect(getRichTextFormatRangeCount(richText)).toBe(2);
@@ -473,7 +533,10 @@ describe('getRichTextFormatRangeCount', () => {
 
 describe('getRichTextFormatRangesIn', () => {
   it('clears out and leaves it empty when no ranges overlap the span', () => {
-    const richText = createRichText({ data: { text: 'hello world' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello world' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { bold: true }, 6, 11);
     const out: TextFormatRange[] = [createTextFormatRange({}, 99, 99)];
     getRichTextFormatRangesIn(out, richText, 0, 5);
@@ -481,7 +544,10 @@ describe('getRichTextFormatRangesIn', () => {
   });
 
   it('collects every range overlapping the half-open span in stored order', () => {
-    const richText = createRichText({ data: { text: 'hello world' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello world' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { bold: true }, 0, 5);
     setRichTextFormatRange(richText, { italic: true }, 4, 8);
     setRichTextFormatRange(richText, { underline: true }, 8, 11);
@@ -493,7 +559,10 @@ describe('getRichTextFormatRangesIn', () => {
   });
 
   it('excludes a range that only touches the span boundaries (half-open)', () => {
-    const richText = createRichText({ data: { text: 'hello world' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello world' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { bold: true }, 5, 8);
     const out: TextFormatRange[] = [];
     // span [0, 5): range starting at 5 does not overlap.
@@ -502,7 +571,10 @@ describe('getRichTextFormatRangesIn', () => {
   });
 
   it('pushes ranges by reference', () => {
-    const richText = createRichText({ data: { text: 'hello' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { bold: true }, 0, 5);
     const out: TextFormatRange[] = [];
     getRichTextFormatRangesIn(out, richText, 0, 5);
@@ -516,7 +588,10 @@ describe('getRichTextLength', () => {
   });
 
   it('returns the character count of the text', () => {
-    const richText = createRichText({ data: { text: 'hello' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createRichText());
     expect(getRichTextLength(richText)).toBe(5);
   });
 });
@@ -534,7 +609,10 @@ describe('getRichTextLineCount', () => {
 
   it('returns >= 1 when layout is available', () => {
     setTextLayoutMeasureProvider((text) => text.length * 7);
-    const richText = createRichText({ data: { width: 200 } });
+    const richText = ((created) => {
+      Object.assign(created.data, { width: 200 });
+      return created;
+    })(createRichText());
     setRichTextString(richText, 'hello');
     expect(getRichTextLineCount(richText)).toBeGreaterThanOrEqual(1);
   });
@@ -553,7 +631,10 @@ describe('getRichTextLineMetrics', () => {
 
   it('returns metrics for line 0 when layout is available', () => {
     setTextLayoutMeasureProvider((text) => text.length * 7);
-    const richText = createRichText({ data: { width: 200 } });
+    const richText = ((created) => {
+      Object.assign(created.data, { width: 200 });
+      return created;
+    })(createRichText());
     setRichTextString(richText, 'hello');
     const metrics = getRichTextLineMetrics(richText, 0);
     expect(metrics).not.toBeNull();
@@ -645,7 +726,10 @@ describe('getRichTextRuntime', () => {
 
 describe('getRichTextString', () => {
   it('returns the text field', () => {
-    const richText = createRichText({ data: { text: 'hello' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createRichText());
     expect(getRichTextString(richText)).toBe('hello');
   });
 });
@@ -663,7 +747,10 @@ describe('getRichTextTextHeight', () => {
 
   it('returns a positive value when layout is available', () => {
     setTextLayoutMeasureProvider((text) => text.length * 7);
-    const richText = createRichText({ data: { width: 200 } });
+    const richText = ((created) => {
+      Object.assign(created.data, { width: 200 });
+      return created;
+    })(createRichText());
     setRichTextString(richText, 'hello');
     expect(getRichTextTextHeight(richText)).toBeGreaterThan(0);
   });
@@ -682,7 +769,10 @@ describe('getRichTextTextWidth', () => {
 
   it('returns a positive value when layout is available', () => {
     setTextLayoutMeasureProvider((text) => text.length * 7);
-    const richText = createRichText({ data: { width: 200 } });
+    const richText = ((created) => {
+      Object.assign(created.data, { width: 200 });
+      return created;
+    })(createRichText());
     setRichTextString(richText, 'hello');
     expect(getRichTextTextWidth(richText)).toBeGreaterThan(0);
   });
@@ -708,13 +798,19 @@ describe('initializeTextFieldSignals', () => {
 
 describe('insertRichTextString', () => {
   it('inserts the value at the clamped index', () => {
-    const richText = createRichText({ data: { text: 'held' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'held' });
+      return created;
+    })(createRichText());
     insertRichTextString(richText, 2, 'LLO wor');
     expect(richText.data.text).toBe('heLLO world');
   });
 
   it('clamps the index into [0, text.length]', () => {
-    const richText = createRichText({ data: { text: 'abc' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'abc' });
+      return created;
+    })(createRichText());
     insertRichTextString(richText, 999, 'XYZ');
     expect(richText.data.text).toBe('abcXYZ');
     insertRichTextString(richText, -5, 'Q');
@@ -722,7 +818,10 @@ describe('insertRichTextString', () => {
   });
 
   it('does nothing for an empty value', () => {
-    const richText = createRichText({ data: { text: 'abc' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'abc' });
+      return created;
+    })(createRichText());
     const runtime = getEntityRuntime(richText) as RichTextRuntime;
     const idBefore = runtime.localContentId;
     insertRichTextString(richText, 1, '');
@@ -731,7 +830,10 @@ describe('insertRichTextString', () => {
   });
 
   it('shifts ranges starting at or after the insertion point', () => {
-    const richText = createRichText({ data: { text: 'abcdef' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'abcdef' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { bold: true }, 3, 5);
     insertRichTextString(richText, 0, 'XX');
     const range = richText.data.textFormatRanges[0];
@@ -740,7 +842,10 @@ describe('insertRichTextString', () => {
   });
 
   it('extends a range that straddles the insertion point', () => {
-    const richText = createRichText({ data: { text: 'abcdef' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'abcdef' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { bold: true }, 1, 5);
     insertRichTextString(richText, 3, 'XX');
     const range = richText.data.textFormatRanges[0];
@@ -749,7 +854,10 @@ describe('insertRichTextString', () => {
   });
 
   it('emits onTextFieldChange with the previous text when signals are enabled', () => {
-    const richText = createRichText({ data: { text: 'abc' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'abc' });
+      return created;
+    })(createRichText());
     const signals = enableTextFieldSignals(richText);
     let previous = '';
     connectSignal(signals.onTextFieldChange, (event) => {
@@ -763,7 +871,10 @@ describe('insertRichTextString', () => {
 
 describe('removeRichTextFormatRangesIn', () => {
   it('removes ranges that overlap the given span', () => {
-    const richText = createRichText({ data: { text: 'hello world' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello world' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { bold: true }, 0, 5);
     setRichTextFormatRange(richText, { italic: true }, 6, 11);
     removeRichTextFormatRangesIn(richText, 0, 5);
@@ -772,7 +883,10 @@ describe('removeRichTextFormatRangesIn', () => {
   });
 
   it('does not invalidate when no ranges overlap', () => {
-    const richText = createRichText({ data: { text: 'hello world' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello world' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { bold: true }, 6, 11);
     const runtime = getEntityRuntime(richText) as RichTextRuntime;
     const idBefore = runtime.localContentId;
@@ -783,20 +897,29 @@ describe('removeRichTextFormatRangesIn', () => {
 
 describe('replaceRichTextString', () => {
   it('replaces the substring in [beginIndex, endIndex)', () => {
-    const richText = createRichText({ data: { text: 'hello world' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello world' });
+      return created;
+    })(createRichText());
     replaceRichTextString(richText, 0, 5, 'goodbye');
     expect(richText.data.text).toBe('goodbye world');
   });
 
   it('clamps indices and degenerates to an insert when begin >= end', () => {
-    const richText = createRichText({ data: { text: 'abc' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'abc' });
+      return created;
+    })(createRichText());
     replaceRichTextString(richText, 5, 1, 'XYZ');
     // begin clamps to 3, end clamps to max(begin, 1) = 3 -> insert at 3.
     expect(richText.data.text).toBe('abcXYZ');
   });
 
   it('shifts ranges entirely after the replaced span by the net delta', () => {
-    const richText = createRichText({ data: { text: 'abcdefgh' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'abcdefgh' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { bold: true }, 6, 8);
     replaceRichTextString(richText, 0, 2, 'X');
     const range = richText.data.textFormatRanges[0];
@@ -805,7 +928,10 @@ describe('replaceRichTextString', () => {
   });
 
   it('leaves ranges entirely before the span unchanged', () => {
-    const richText = createRichText({ data: { text: 'abcdefgh' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'abcdefgh' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { bold: true }, 0, 2);
     replaceRichTextString(richText, 4, 6, 'XXXX');
     const range = richText.data.textFormatRanges[0];
@@ -814,14 +940,20 @@ describe('replaceRichTextString', () => {
   });
 
   it('removes ranges fully inside the replaced span', () => {
-    const richText = createRichText({ data: { text: 'abcdefgh' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'abcdefgh' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { bold: true }, 2, 5);
     replaceRichTextString(richText, 1, 6, 'X');
     expect(richText.data.textFormatRanges).toHaveLength(0);
   });
 
   it('shrinks a range that spans both boundaries by the net delta', () => {
-    const richText = createRichText({ data: { text: 'abcdefgh' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'abcdefgh' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { bold: true }, 0, 8);
     replaceRichTextString(richText, 2, 4, 'X');
     const range = richText.data.textFormatRanges[0];
@@ -830,7 +962,10 @@ describe('replaceRichTextString', () => {
   });
 
   it('trims a left-overlapping range to the end of the inserted text', () => {
-    const richText = createRichText({ data: { text: 'abcdefgh' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'abcdefgh' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { bold: true }, 0, 4);
     replaceRichTextString(richText, 2, 6, 'XYZ');
     const range = richText.data.textFormatRanges[0];
@@ -839,7 +974,10 @@ describe('replaceRichTextString', () => {
   });
 
   it('trims a right-overlapping range to after the inserted text', () => {
-    const richText = createRichText({ data: { text: 'abcdefgh' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'abcdefgh' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { bold: true }, 4, 8);
     replaceRichTextString(richText, 2, 6, 'XYZ');
     const range = richText.data.textFormatRanges[0];
@@ -848,7 +986,10 @@ describe('replaceRichTextString', () => {
   });
 
   it('emits onTextFieldChange only when the text actually changed', () => {
-    const richText = createRichText({ data: { text: 'abc' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'abc' });
+      return created;
+    })(createRichText());
     const signals = enableTextFieldSignals(richText);
     const changes: string[] = [];
     connectSignal(signals.onTextFieldChange, (event) => {
@@ -969,7 +1110,10 @@ describe('setRichTextContent', () => {
   });
 
   it('emits onTextFieldChange when the text changes', () => {
-    const richText = createRichText({ data: { text: 'old' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'old' });
+      return created;
+    })(createRichText());
     const signals = enableTextFieldSignals(richText);
     let seen = '';
     connectSignal(signals.onTextFieldChange, (event) => {
@@ -980,9 +1124,10 @@ describe('setRichTextContent', () => {
   });
 
   it('does not copy or invalidate structurally unchanged content', () => {
-    const richText = createRichText({
-      data: { text: 'same', textFormatRanges: [createTextFormatRange({ bold: true }, 0, 4)] },
-    });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'same', textFormatRanges: [createTextFormatRange({ bold: true }, 0, 4)] });
+      return created;
+    })(createRichText());
     const ranges = richText.data.textFormatRanges;
     const revision = getNodeLocalContentRevision(richText);
     setRichTextContent(richText, {
@@ -1006,7 +1151,10 @@ describe('setRichTextDefaultTextFormat', () => {
   });
 
   it('does not invalidate for a structurally equal format', () => {
-    const richText = createRichText({ data: { defaultTextFormat: { size: 18, tabStops: [4, 8] } } });
+    const richText = ((created) => {
+      Object.assign(created.data, { defaultTextFormat: { size: 18, tabStops: [4, 8] } });
+      return created;
+    })(createRichText());
     const content = getNodeLocalContentRevision(richText);
     setRichTextDefaultTextFormat(richText, { size: 18, tabStops: [4, 8] });
     expect(getNodeLocalContentRevision(richText)).toBe(content);
@@ -1015,13 +1163,19 @@ describe('setRichTextDefaultTextFormat', () => {
 
 describe('setRichTextFormatRange', () => {
   it('adds a serialized format range', () => {
-    const richText = createRichText({ data: { text: 'hello' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { italic: true }, 1, 4);
     expect(richText.data.textFormatRanges).toMatchObject([{ start: 1, end: 4, format: { italic: true } }]);
   });
 
   it('does not append or invalidate an exact repeat of the most recent range', () => {
-    const richText = createRichText({ data: { text: 'hello' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { italic: true }, 1, 4);
     const revision = getNodeLocalContentRevision(richText);
     setRichTextFormatRange(richText, { italic: true }, 1, 4);
@@ -1030,7 +1184,10 @@ describe('setRichTextFormatRange', () => {
   });
 
   it('appends a new override when an equal older range was superseded', () => {
-    const richText = createRichText({ data: { text: 'hello' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createRichText());
     setRichTextFormatRange(richText, { italic: true }, 1, 4);
     setRichTextFormatRange(richText, { italic: false }, 1, 4);
     setRichTextFormatRange(richText, { italic: true }, 1, 4);
@@ -1171,7 +1328,10 @@ describe('setRichTextString', () => {
   });
 
   it('does not invalidate bounds when the field is fixed (autoSize none)', () => {
-    const richText = createRichText({ data: { autoSize: 'none' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { autoSize: 'none' });
+      return created;
+    })(createRichText());
     const runtime = getEntityRuntime(richText) as RichTextRuntime;
     const boundsBefore = runtime.localBoundsId;
     setRichTextString(richText, 'hello');
@@ -1179,7 +1339,10 @@ describe('setRichTextString', () => {
   });
 
   it('invalidates bounds when autoSize resizes the field', () => {
-    const richText = createRichText({ data: { autoSize: 'left' } });
+    const richText = ((created) => {
+      Object.assign(created.data, { autoSize: 'left' });
+      return created;
+    })(createRichText());
     const runtime = getEntityRuntime(richText) as RichTextRuntime;
     const boundsBefore = runtime.localBoundsId;
     setRichTextString(richText, 'hello');

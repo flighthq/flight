@@ -1,6 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { connectSignal } from '@flighthq/signals/contract';
-import type { InteractionSignals, Node, NodeData, NodeRuntime, PartialNode } from '@flighthq/types/contract';
+import type { InteractionSignals, Node, NodeData, NodeRuntime } from '@flighthq/types/contract';
 import { NodeKind } from '@flighthq/types/contract';
 
 import { addNodeChild, getNodeChildCount, getNodeParent } from './hierarchy.ts';
@@ -29,20 +29,16 @@ describe('createNode', () => {
     expect(node.enabled).toBe(true);
   });
 
-  it('allows pre-defined values', () => {
-    const base = {
-      parent: createNode(NodeTestKind),
-      children: [],
-      enabled: false,
-    };
-    node = createNode(NodeTestKind, base);
-    expect(node.enabled).toStrictEqual(base.enabled);
+  it('allows fields to be assigned after creation', () => {
+    node = createNode(NodeTestKind);
+    node.enabled = false;
+    expect(node.enabled).toBe(false);
   });
 
   it('returns a new object for better hidden-class performance', () => {
-    const base = {};
-    node = createNode(NodeTestKind, base);
-    expect(node).not.toStrictEqual(base);
+    const first = createNode(NodeTestKind);
+    node = createNode(NodeTestKind);
+    expect(node).not.toBe(first);
   });
 
   it('allows creation of a type without a data field', () => {
@@ -62,20 +58,18 @@ describe('createNode', () => {
   });
 
   it('returns a new object', () => {
-    const obj: PartialNode<NodeTest> = {};
-    const node: NodeTest = createNode(NodeTestKind, obj) as NodeTest;
-    expect(node).not.toStrictEqual(obj);
+    const first = createNode(NodeTestKind);
+    const node: NodeTest = createNode(NodeTestKind) as NodeTest;
+    expect(node).not.toBe(first);
   });
 
   it('allows use of a data initializer', () => {
-    const obj: PartialNode<NodeTest> = {};
-    const node: NodeTest = createNode(NodeTestKind, obj, createGraphNodeTestData) as NodeTest;
+    const node: NodeTest = createNode(NodeTestKind, createGraphNodeTestData) as NodeTest;
     expect((node.data as NodeTestData).testDataField).toBe('testDataField');
   });
 
   it('allows use of a runtime initializer', () => {
-    const obj: PartialNode<NodeTest> = {};
-    const node = createNode(NodeTestKind, obj, undefined, createGraphNodeTestRuntime);
+    const node = createNode(NodeTestKind, undefined, createGraphNodeTestRuntime);
     const runtime = getNodeRuntime(node);
     expect((runtime as NodeTestRuntime).testRuntimeField).toBe('testRuntimeField');
   });
@@ -239,11 +233,11 @@ describe('getNodeSignals', () => {
 describe('initializeNode', () => {
   it('populates fields on an allocated entity', () => {
     const out = allocateEntity<Node>();
-    initializeNode(out, NodeTestKind, { name: 'test', enabled: false });
+    initializeNode(out, NodeTestKind);
     const node = finishEntity(out);
     expect(node.kind).toBe(NodeTestKind);
-    expect(node.name).toBe('test');
-    expect(node.enabled).toBe(false);
+    expect(node.name).toBeNull();
+    expect(node.enabled).toBe(true);
     expect(node.data).toBeNull();
   });
 });
@@ -268,9 +262,9 @@ interface NodeTestRuntime extends NodeRuntime {
   testRuntimeField: string;
 }
 
-function createGraphNodeTestData(data?: Partial<NodeTestData>): NodeTestData {
+function createGraphNodeTestData(): NodeTestData {
   const out = allocateEntity<NodeTestData>();
-  out.testDataField = data?.testDataField ?? 'testDataField';
+  out.testDataField = 'testDataField';
   return finishEntity(out);
 }
 

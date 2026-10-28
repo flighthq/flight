@@ -137,7 +137,10 @@ export function createRiveLayoutImports(
  * by the style objects hanging off it, and resolved once the whole artboard exists.
  */
 export function importRiveLayoutComponent(context: RiveArtboardImportContext, index: number): DisplayObject | null {
-  return createDisplayObject({ name: readRiveLayoutName(context.artboard.objects[index]) });
+  return ((created) => {
+    Object.assign(created, { name: readRiveLayoutName(context.artboard.objects[index]) });
+    return created;
+  })(createDisplayObject());
 }
 
 /**

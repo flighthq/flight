@@ -13,7 +13,10 @@ function makeAtlas(): TextureAtlas {
 
 describe('prewarmParticleEmitter2D', () => {
   it('produces live particles after warming for one lifetime', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 20, lifetimeMin: 1, lifetimeMax: 1 });
     prewarmParticleEmitter2D(emitter, state, config, 1);
@@ -21,7 +24,10 @@ describe('prewarmParticleEmitter2D', () => {
   });
 
   it('does not exceed maxParticles', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 1000, maxParticles: 10, lifetimeMin: 10, lifetimeMax: 10 });
     prewarmParticleEmitter2D(emitter, state, config, 5);
@@ -29,7 +35,10 @@ describe('prewarmParticleEmitter2D', () => {
   });
 
   it('accepts a custom stepDeltaTime and still produces particles', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 10, lifetimeMin: 5, lifetimeMax: 5 });
     prewarmParticleEmitter2D(emitter, state, config, 1, 1 / 30);
@@ -37,7 +46,10 @@ describe('prewarmParticleEmitter2D', () => {
   });
 
   it('fires onSpawn callback during warm-up', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 5, lifetimeMin: 10, lifetimeMax: 10 });
     let spawned = 0;
@@ -50,7 +62,10 @@ describe('prewarmParticleEmitter2D', () => {
   });
 
   it('leaves emitter unmodified when duration is zero', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 100, lifetimeMin: 1, lifetimeMax: 1 });
     prewarmParticleEmitter2D(emitter, state, config, 0);
@@ -58,7 +73,10 @@ describe('prewarmParticleEmitter2D', () => {
   });
 
   it('does not hang when stepDeltaTime is zero (falls back to a single step)', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ spawnRate: 10, lifetimeMin: 10, lifetimeMax: 10 });
     prewarmParticleEmitter2D(emitter, state, config, 1, 0);

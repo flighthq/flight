@@ -13,7 +13,11 @@ import type { DisplayObject, Node2D, Texture } from '@flighthq/types/contract';
  */
 export function createRiveImageSprite(name: string, assetIndex: number): DisplayObject {
   const texture = createTexture({ dimension: '2d', source: null });
-  const sprite = createSprite({ data: { texture }, name });
+  const sprite = ((created) => {
+    Object.assign(created, { name });
+    Object.assign(created.data, { texture });
+    return created;
+  })(createSprite());
   _imageTextures.set(sprite, texture);
   _imageAssetIndices.set(sprite, assetIndex);
   return sprite;

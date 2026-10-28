@@ -55,7 +55,10 @@ export function applyRiveSolo(
 
 /** A Solo is an ordinary container until the pass below hides the children it does not name. */
 export function importRiveSoloComponent(context: RiveArtboardImportContext, index: number): DisplayObject | null {
-  return createDisplayObject({ name: readRiveSoloName(context.artboard.objects[index]) });
+  return ((created) => {
+    Object.assign(created, { name: readRiveSoloName(context.artboard.objects[index]) });
+    return created;
+  })(createDisplayObject());
 }
 
 /**

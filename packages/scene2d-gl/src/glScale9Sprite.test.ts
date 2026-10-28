@@ -26,7 +26,10 @@ const INSTANCE_FLOATS = 13;
 
 function createTestScale9Sprite(width = 40, height = 30): Scale9Sprite {
   const texture = createTexture({ dimension: '2d', source: createBitmap(width, height) });
-  return createScale9Sprite(createRectangle(10, 5, 15, 10), { data: { texture } });
+  return ((created) => {
+    Object.assign(created.data, { texture });
+    return created;
+  })(createScale9Sprite(createRectangle(10, 5, 15, 10)));
 }
 
 function prepareScale9Sprite(state: GlRenderState, source: Scale9Sprite): RenderProxy2D {

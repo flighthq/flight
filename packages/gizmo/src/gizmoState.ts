@@ -127,9 +127,18 @@ export function createGizmoState<NodeType extends HierarchyNodeAny>(
   const state = {
     [EntityRuntimeKey]: undefined,
   } as GizmoState<NodeType>;
-  const overlayRoot = createDisplayObject({ name: 'GizmoRoot' });
-  const outline = createShape({ name: 'GizmoSelectionOutline' });
-  const handleRoot = createDisplayObject({ name: 'GizmoHandleRoot' });
+  const overlayRoot = ((created) => {
+    Object.assign(created, { name: 'GizmoRoot' });
+    return created;
+  })(createDisplayObject());
+  const outline = ((created) => {
+    Object.assign(created, { name: 'GizmoSelectionOutline' });
+    return created;
+  })(createShape());
+  const handleRoot = ((created) => {
+    Object.assign(created, { name: 'GizmoHandleRoot' });
+    return created;
+  })(createDisplayObject());
   const runtime: GizmoRuntime<NodeType> = {
     binding: null,
     bounds: createRectangle(),
@@ -359,7 +368,10 @@ function connectGizmoHandles<NodeType extends HierarchyNodeAny>(runtime: GizmoRu
 }
 
 function createGizmoHandle(kind: GizmoHandleKind, placement: GizmoHandlePlacement): GizmoHandle {
-  const node = createShape({ name: `Gizmo${toGizmoHandleName(placement)}Handle` });
+  const node = ((created) => {
+    Object.assign(created, { name: `Gizmo${toGizmoHandleName(placement)}Handle` });
+    return created;
+  })(createShape());
   setNodeHitTestEnabled(node, true);
   setNodeCursor(node, getGizmoHandleCursor(kind));
   drawGizmoHandle(node, kind);

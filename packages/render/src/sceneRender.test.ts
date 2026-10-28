@@ -351,7 +351,10 @@ describe('prepareScene3DRender', () => {
   it('skips disabled subtrees', () => {
     const state = createRenderState();
     const scene = createNode3D(Node3DKind);
-    const group = createNode3D(Node3DKind, { enabled: false });
+    const group = ((created) => {
+      Object.assign(created, { enabled: false });
+      return created;
+    })(createNode3D(Node3DKind));
     const mesh = createMesh(boundedBox(), [null]);
     addNodeChild(group, mesh);
     addNodeChild(scene, group);

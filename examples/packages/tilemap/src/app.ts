@@ -188,27 +188,29 @@ const atlas = createTextureAtlasFromGrid(
   },
   texture,
 );
-const tilemap = createTilemap({
-  data: {
+const tilemap = ((created) => {
+  Object.assign(created.data, {
     atlas,
     columns: MAP_COLUMNS,
     rows: MAP_ROWS,
     tileHeight: TILE_SIZE,
     tileWidth: TILE_SIZE,
     tiles: createTerrainTiles(),
-  },
-});
+  });
+  return created;
+})(createTilemap());
 addNodeChild(world, tilemap);
 
-const cursor = createSprite({
-  data: {
+const cursor = ((created) => {
+  Object.assign(created.data, {
     texture: createTexture({
       dimension: '2d',
       sampler: createPixelArtSampler(),
       source: createWebImageResourceFromCanvas(createSelectionCanvas()),
     }),
-  },
-});
+  });
+  return created;
+})(createSprite());
 addNodeChild(world, cursor);
 
 const camera = createCamera2D({

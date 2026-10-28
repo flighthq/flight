@@ -134,12 +134,13 @@ describe('drawDomRichText', () => {
 
   it('renders an uninterrupted underline like the raster text backends', () => {
     const state = makeState();
-    const node = createRichText({
-      data: {
+    const node = ((created) => {
+      Object.assign(created.data, {
         text: 'underlined',
         textFormatRanges: [createTextFormatRange({ underline: true }, 0, 10)],
-      },
-    });
+      });
+      return created;
+    })(createRichText());
 
     const div = drawGetEl(state, () => drawDomRichText(state, getOrCreateRenderProxy2D(state, node)))!;
 
@@ -151,12 +152,13 @@ describe('drawDomRichText', () => {
     const state = makeState();
     const fontSize = 37;
     const cssAscentRatio = 0.75;
-    const node = createRichText({
-      data: {
+    const node = ((created) => {
+      Object.assign(created.data, {
         defaultTextFormat: { font: 'flight-baseline-probe', size: fontSize },
         text: 'baseline',
-      },
-    });
+      });
+      return created;
+    })(createRichText());
     const measure = vi
       .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
       .mockImplementation(function (this: HTMLElement): DOMRect {
@@ -205,7 +207,10 @@ describe('drawDomRichText', () => {
 describe('drawDomRichTextMask', () => {
   it('does not throw and produces a DOM element', () => {
     const state = makeState();
-    const node = createRichText({ data: { text: 'mask text' } });
+    const node = ((created) => {
+      Object.assign(created.data, { text: 'mask text' });
+      return created;
+    })(createRichText());
     const renderProxy = getOrCreateRenderProxy2D(state, node);
     const el = drawGetEl(state, () => drawDomRichTextMask(state, renderProxy));
     expect(el).not.toBeNull();
@@ -223,11 +228,17 @@ describe('registerDomTextInputOverlay', () => {
     registerDomTextInputOverlay(overlay);
     const state = makeState();
 
-    const plain = createRichText({ data: { text: 'x' } });
+    const plain = ((created) => {
+      Object.assign(created.data, { text: 'x' });
+      return created;
+    })(createRichText());
     drawDomRichText(state, getOrCreateRenderProxy2D(state, plain));
     expect(overlay).not.toHaveBeenCalled();
 
-    const editable = createRichText({ data: { text: 'x' } });
+    const editable = ((created) => {
+      Object.assign(created.data, { text: 'x' });
+      return created;
+    })(createRichText());
     enableTextInput(editable);
     drawDomRichText(state, getOrCreateRenderProxy2D(state, editable));
     expect(overlay).toHaveBeenCalled();

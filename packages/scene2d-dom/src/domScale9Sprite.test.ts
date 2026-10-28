@@ -46,14 +46,11 @@ describe('drawDomScale9Sprite', () => {
     const state = createDomRenderState(document.createElement('div'));
     registerDomImageTextureResolver(state);
     registerNodeRenderer(state, Scale9SpriteKind, domScale9SpriteRenderer);
-    const sprite = createScale9Sprite(
-      { x: 20, y: 20, width: 60, height: 60 },
-      {
-        data: { texture: createTexture({ dimension: '2d', source: createImageResource(canvas) }) },
-        scaleX: 2,
-        scaleY: 2,
-      },
-    );
+    const sprite = ((created) => {
+      Object.assign(created, { scaleX: 2, scaleY: 2 });
+      Object.assign(created.data, { texture: createTexture({ dimension: '2d', source: createImageResource(canvas) }) });
+      return created;
+    })(createScale9Sprite({ x: 20, y: 20, width: 60, height: 60 }));
     drawDomScale9Sprite(state, getOrCreateRenderProxy2D(state, sprite));
     const element = getDomRenderStateRuntime(state).domCurrentElement;
     expect(element?.children).toHaveLength(9);

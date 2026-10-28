@@ -36,7 +36,10 @@ function appendLottieShapeItems(
   context: LottieImportContext,
   name: string | null = null,
 ): void {
-  const group = createDisplayObject({ name });
+  const group = ((created) => {
+    Object.assign(created, { name });
+    return created;
+  })(createDisplayObject());
   const transform = items.find((item) => item.ty === 'tr');
   if (transform?.ty === 'tr') applyLottieTransform(group, transform as Readonly<LottieTransform>, context);
   const shape = createShape();

@@ -58,8 +58,14 @@ describe('createFlightDocumentLayoutBindings', () => {
   it('replaces authored names with index-matched live node identities', () => {
     const child = createDocumentNode('child');
     const root = createDocumentNode('root', [child]);
-    const liveRoot = createDisplayObject({ name: 'root' });
-    const liveChild = createDisplayObject({ name: 'child' });
+    const liveRoot = ((created) => {
+      Object.assign(created, { name: 'root' });
+      return created;
+    })(createDisplayObject());
+    const liveChild = ((created) => {
+      Object.assign(created, { name: 'child' });
+      return created;
+    })(createDisplayObject());
     addNodeChild(liveRoot, liveChild);
     const layout = createLayout('root', 'child');
 
@@ -79,8 +85,14 @@ describe('createFlightDocumentLayoutBindings', () => {
 
 describe('writeFlightDocumentLayoutBindings', () => {
   it('writes Node.name references and clones the document-safe tree', () => {
-    const root = createDisplayObject({ name: 'root' });
-    const child = createDisplayObject({ name: 'child' });
+    const root = ((created) => {
+      Object.assign(created, { name: 'root' });
+      return created;
+    })(createDisplayObject());
+    const child = ((created) => {
+      Object.assign(created, { name: 'child' });
+      return created;
+    })(createDisplayObject());
     addNodeChild(root, child);
     const documentRoot = createDocumentNode('root');
     const documentChild = createDocumentNode('child');
@@ -101,8 +113,14 @@ describe('writeFlightDocumentLayoutBindings', () => {
   });
 
   it('rejects duplicate and foreign live targets as writer misuse', () => {
-    const root = createDisplayObject({ name: 'root' });
-    const foreign = createDisplayObject({ name: 'foreign' });
+    const root = ((created) => {
+      Object.assign(created, { name: 'root' });
+      return created;
+    })(createDisplayObject());
+    const foreign = ((created) => {
+      Object.assign(created, { name: 'foreign' });
+      return created;
+    })(createDisplayObject());
     const documentRoot = createDocumentNode('root');
     const written = new Map<Readonly<NodeAny>, Readonly<FlightDocumentNode>>([[root, documentRoot]]);
 

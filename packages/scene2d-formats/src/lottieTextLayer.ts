@@ -29,15 +29,16 @@ function appendLottieText(parent: DisplayObject, layer: Readonly<LottieLayer>, c
     reportLottieDrop(context, 'lottie.text-missing-document', 'appendLottieText', { layer: layer.nm ?? '' });
     return;
   }
-  const label = createTextLabel({
-    data: {
+  const label = ((created) => {
+    Object.assign(created.data, {
       autoSize: 'left',
       height: (first.s ?? 16) * 1.25,
       text: first.t,
       textFormat: createLottieTextFormat(first),
       width: context.document.w,
-    },
-  });
+    });
+    return created;
+  })(createTextLabel());
   addNodeChild(parent, label);
 }
 

@@ -7,15 +7,7 @@ import {
   setNodeLocalMatrix4,
   setNodeTransform3D,
 } from '@flighthq/node/contract';
-import type {
-  Kind,
-  Material3D,
-  Mesh,
-  MeshDeformer,
-  MeshGeometry,
-  MeshRuntime,
-  NodeSignals,
-} from '@flighthq/types/contract';
+import type { Material3D, Mesh, MeshDeformer, MeshGeometry, MeshRuntime, NodeSignals } from '@flighthq/types/contract';
 import { MeshDeformerMorph, MeshDeformerNone, MeshDeformerSkeletal, MeshKind } from '@flighthq/types/contract';
 
 import { createNode3D, getNode3DRuntime } from './sceneNode.ts';
@@ -35,10 +27,10 @@ export { MeshKind } from '@flighthq/types/contract';
 export function cloneMesh(source: Readonly<Mesh>): Mesh {
   const hasDeformation = source.skin != null || source.morph != null;
   const geometry = hasDeformation ? cloneMeshGeometryForDeformation(source.geometry) : source.geometry;
-  const clone = createMesh(geometry, source.materials.slice(), source.kind, {
-    enabled: source.enabled,
-    name: source.name,
-  });
+  const clone = createMesh(geometry, source.materials.slice());
+  clone.kind = source.kind;
+  clone.enabled = source.enabled;
+  clone.name = source.name;
   clone.alpha = source.alpha;
   // Copy the authored TRS; if the source authored its matrix directly, carry that detached matrix too.
   setNodeTransform3D(clone, source);
@@ -55,13 +47,8 @@ export function cloneMesh(source: Readonly<Mesh>): Mesh {
 // positionally; a missing or null slot resolves to StandardMaterialKind at draw time). The node has
 // an identity localMatrix — its model matrix once placed in the hierarchy — and no children.
 // `geometry` and `materials` are stored by reference, not copied.
-export function createMesh(
-  geometry: MeshGeometry,
-  materials: (Material3D | null)[],
-  kind: Kind = MeshKind,
-  obj?: Readonly<Partial<Pick<Mesh, 'enabled' | 'name'>>>,
-): Mesh {
-  const mesh = createNode3D(kind, obj) as Mesh;
+export function createMesh(geometry: MeshGeometry, materials: (Material3D | null)[]): Mesh {
+  const mesh = createNode3D(MeshKind) as Mesh;
   mesh.geometry = geometry;
   mesh.materials = materials;
   return mesh;

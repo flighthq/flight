@@ -5,7 +5,6 @@ import type {
   EntityConstruction,
   MethodsOf,
   Node2DFields,
-  PartialNode,
   Rectangle,
   NodeAny,
   RendererData,
@@ -20,7 +19,10 @@ import { SpriteKind } from '@flighthq/types/contract';
 import { createNode2D, createNode2DRuntime, getNode2DRuntime } from './displayObject.ts';
 
 export function cloneSprite(source: Readonly<Sprite>): Sprite {
-  return createSprite({ data: { texture: source.data.texture } });
+  return ((created) => {
+    Object.assign(created.data, { texture: source.data.texture });
+    return created;
+  })(createSprite());
 }
 
 export function computeSpriteLocalBoundsRectangle(out: Rectangle, source: Readonly<BoundsNode<Node2DFields>>): void {
@@ -39,13 +41,13 @@ export function computeSpriteLocalBoundsRectangle(out: Rectangle, source: Readon
   runtime.localBoundsTextureVersion = texture?.version ?? -1;
 }
 
-export function createSprite(obj?: Readonly<PartialNode<Sprite>>): Sprite {
-  return createNode2D(SpriteKind, obj, createSpriteData, createSpriteRuntime) as Sprite;
+export function createSprite(): Sprite {
+  return createNode2D(SpriteKind, createSpriteData, createSpriteRuntime) as Sprite;
 }
 
-export function createSpriteData(data?: Readonly<Partial<SpriteData>>): SpriteData {
+export function createSpriteData(): SpriteData {
   const out = allocateEntity<SpriteData>();
-  initializeSpriteData(out, data);
+  initializeSpriteData(out);
   return finishEntity(out);
 }
 
@@ -66,8 +68,8 @@ export function getSpriteRuntime(source: Readonly<Sprite>): Readonly<SpriteRunti
   return getNode2DRuntime(source) as SpriteRuntime;
 }
 
-export function initializeSpriteData(out: EntityConstruction<SpriteData>, data?: Readonly<Partial<SpriteData>>): void {
-  out.texture = data?.texture ?? null;
+export function initializeSpriteData(out: EntityConstruction<SpriteData>): void {
+  out.texture = null;
 }
 
 // Creates the per-state identity stamp used by a Sprite renderer's optional dirty hook. The data is

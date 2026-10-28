@@ -81,7 +81,10 @@ describe('prepareScene3DSkinning', () => {
     invalidateNodeLocalTransform(joint);
     addNodeChild(scene, skinned);
 
-    const disabledGroup = createNode3D(undefined, { enabled: false });
+    const disabledGroup = ((created) => {
+      Object.assign(created, { enabled: false });
+      return created;
+    })(createNode3D(undefined));
     const hidden = createOneVertexSkinnedMesh();
     hidden.skin = { skeleton: createSkeleton3D([createNode3D()]) };
     addNodeChild(disabledGroup, hidden);

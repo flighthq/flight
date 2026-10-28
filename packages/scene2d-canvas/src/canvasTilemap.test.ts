@@ -59,7 +59,11 @@ describe('drawCanvasTilemap', () => {
   it('draws each non-empty tile with drawImage', () => {
     const state = makeState();
     const layout = makeTilesetAtlas(32, 32, 2, 1);
-    const tilemap = createTilemap({ data: { columns: 2, rows: 1, ...layout } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 2, rows: 1, ...layout });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     setTilemapTile(tilemap, 0, 0, 0);
     setTilemapTile(tilemap, 1, 0, 1);
     prepareScene2DRender(state, tilemap);
@@ -72,7 +76,11 @@ describe('drawCanvasTilemap', () => {
   it('skips cells with id -1', () => {
     const state = makeState();
     const layout = makeTilesetAtlas(32, 32, 2, 1);
-    const tilemap = createTilemap({ data: { columns: 2, rows: 1, ...layout } });
+    const tilemap = ((created) => {
+      Object.assign(created.data, { columns: 2, rows: 1, ...layout });
+      created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+      return created;
+    })(createTilemap());
     setTilemapTile(tilemap, 0, 0, 0);
     // cell (1,0) remains -1
     prepareScene2DRender(state, tilemap);

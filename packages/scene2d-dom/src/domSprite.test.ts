@@ -27,9 +27,10 @@ function drawElement(source: CanvasImageSource): HTMLElement | null {
   const image = createImageResource(source);
   image.width = 64;
   image.height = 64;
-  const sprite = createSprite({
-    data: { texture: createTexture({ dimension: '2d', source: image }) },
-  });
+  const sprite = ((created) => {
+    Object.assign(created.data, { texture: createTexture({ dimension: '2d', source: image }) });
+    return created;
+  })(createSprite());
   drawDomSprite(state, getOrCreateRenderProxy2D(state, sprite));
   return getDomRenderStateRuntime(state).domCurrentElement;
 }
@@ -57,9 +58,10 @@ describe('drawDomSprite', () => {
     const state = createDomRenderState(document.createElement('div'));
     registerDomImageTextureResolver(state);
     registerNodeRenderer(state, SpriteKind, domSpriteRenderer);
-    const sprite = createSprite({
-      data: { texture: createTexture({ dimension: '2d', source: image }) },
-    });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture: createTexture({ dimension: '2d', source: image }) });
+      return created;
+    })(createSprite());
     drawDomSprite(state, getOrCreateRenderProxy2D(state, sprite));
     expect(getDomRenderStateRuntime(state).domCurrentElement?.tagName).toBe('CANVAS');
   });
@@ -72,11 +74,12 @@ describe('drawDomSprite', () => {
     const state = createDomRenderState(document.createElement('div'));
     registerDomImageTextureResolver(state);
     registerNodeRenderer(state, SpriteKind, domSpriteRenderer);
-    const sprite = createSprite({
-      data: {
+    const sprite = ((created) => {
+      Object.assign(created.data, {
         texture: createTexture({ dimension: '2d', sampler: createPixelArtSampler(), source: image }),
-      },
-    });
+      });
+      return created;
+    })(createSprite());
 
     drawDomSprite(state, getOrCreateRenderProxy2D(state, sprite));
 
@@ -101,7 +104,16 @@ describe('drawDomSprite', () => {
     texture.uvScale.y = 0.2;
     texture.uvRotation = -Math.PI / 2;
 
-    drawDomSprite(state, getOrCreateRenderProxy2D(state, createSprite({ data: { texture } })));
+    drawDomSprite(
+      state,
+      getOrCreateRenderProxy2D(
+        state,
+        ((created) => {
+          Object.assign(created.data, { texture });
+          return created;
+        })(createSprite()),
+      ),
+    );
 
     const element = getDomRenderStateRuntime(state).domCurrentElement as HTMLCanvasElement;
     expect(element.tagName).toBe('CANVAS');

@@ -129,7 +129,10 @@ export function applyLottieTransform(
 }
 
 function createLottieLayerNode(layer: Readonly<LottieLayer>, context: LottieImportContext): DisplayObject {
-  const container = createDisplayObject({ name: layer.nm ?? null });
+  const container = ((created) => {
+    Object.assign(created, { name: layer.nm ?? null });
+    return created;
+  })(createDisplayObject());
   const hidden = layer.hd === true;
   // A hidden layer still contributes its spatial transform when another layer parents to it. Its
   // opacity, visibility window, paint, and masks affect only its own content, so none may leak onto

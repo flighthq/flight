@@ -15,7 +15,10 @@ function makeAtlas(): TextureAtlas {
 
 describe('emitParticleBurst2D', () => {
   it('spawns the requested count at the given point', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ speedMin: 0, speedMax: 0, lifetimeMin: 10, lifetimeMax: 10 });
     const n = emitParticleBurst2D(emitter, state, config, 8, 200, 300);
@@ -29,7 +32,10 @@ describe('emitParticleBurst2D', () => {
   });
 
   it('respects maxParticles and returns the actual spawn count', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ maxParticles: 5, lifetimeMin: 10, lifetimeMax: 10 });
     expect(emitParticleBurst2D(emitter, state, config, 100, 0, 0)).toBe(5);
@@ -37,7 +43,10 @@ describe('emitParticleBurst2D', () => {
   });
 
   it('adds to existing particles rather than replacing them', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ maxParticles: 100, lifetimeMin: 10, lifetimeMax: 10 });
     emitParticleBurst2D(emitter, state, config, 3, 0, 0);
@@ -46,7 +55,10 @@ describe('emitParticleBurst2D', () => {
   });
 
   it("does not touch the emitter's continuous-emission bookkeeping", () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ lifetimeMin: 10, lifetimeMax: 10 });
     emitParticleBurst2D(emitter, state, config, 3, 0, 0);
@@ -56,7 +68,10 @@ describe('emitParticleBurst2D', () => {
 
   it('is deterministic with a seeded state', () => {
     const run = (): number[] => {
-      const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+      const emitter = ((created) => {
+        Object.assign(created.data, { atlas: makeAtlas() });
+        return created;
+      })(createParticleEmitter2D());
       const state = createParticleEmitterState(createRandomSource(99));
       const config = createParticleEmitterConfig({
         speedMin: 10,
@@ -72,7 +87,10 @@ describe('emitParticleBurst2D', () => {
   });
 
   it('modulates spawn color and alpha by a packed tint', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     // Default config color is white, so a tint alone sets the per-particle color.
     const config = createParticleEmitterConfig({ lifetimeMin: 10, lifetimeMax: 10, alphaStart: 1 });
@@ -86,7 +104,10 @@ describe('emitParticleBurst2D', () => {
   });
 
   it('multiplies a non-white config color by the tint (composes, not replaces)', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({
       lifetimeMin: 10,
@@ -105,7 +126,10 @@ describe('emitParticleBurst2D', () => {
   });
 
   it('leaves color untinted when no tint is passed', () => {
-    const emitter = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const emitter = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const state = createParticleEmitterState();
     const config = createParticleEmitterConfig({ lifetimeMin: 10, lifetimeMax: 10 });
     emitParticleBurst2D(emitter, state, config, 1, 0, 0);
@@ -116,7 +140,10 @@ describe('emitParticleBurst2D', () => {
 
   it('composes into a death sub-emitter via onDeath (explosion on expiry)', () => {
     // Parent: short-lived particles. Child: a burst spawned where each parent dies.
-    const parent = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const parent = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const parentState = createParticleEmitterState();
     const parentConfig = createParticleEmitterConfig({
       spawnRate: 5,
@@ -126,7 +153,10 @@ describe('emitParticleBurst2D', () => {
       speedMax: 0,
     });
 
-    const child = createParticleEmitter2D({ data: { atlas: makeAtlas() } });
+    const child = ((created) => {
+      Object.assign(created.data, { atlas: makeAtlas() });
+      return created;
+    })(createParticleEmitter2D());
     const childState = createParticleEmitterState();
     const childConfig = createParticleEmitterConfig({ maxParticles: 1000, lifetimeMin: 10, lifetimeMax: 10 });
 

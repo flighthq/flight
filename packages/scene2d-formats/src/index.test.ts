@@ -105,7 +105,11 @@ describe('scene2d-formats Rive registry overrides', () => {
     registerAllRiveHandlers(kernel, registry);
     // The shape family already claims this key, so a plain Shape is what the import would produce.
     registerRiveCoreObjectHandler(registry, RIVE_SHAPE_TYPE_KEY, {
-      importComponent: (_context, index): DisplayObject | null => createDisplayObject({ name: `replaced:${index}` }),
+      importComponent: (_context, index): DisplayObject | null =>
+        ((created) => {
+          Object.assign(created, { name: `replaced:${index}` });
+          return created;
+        })(createDisplayObject()),
     });
 
     const imported = createRiveDocumentImportResult(registry, riveWithOneShape());
@@ -130,7 +134,11 @@ describe('scene2d-formats Rive registry overrides', () => {
     // No family at all: without this registration the shape falls to the unregistered arm and imports
     // as a plain container, which is exactly what the caller's handler is replacing.
     registerRiveCoreObjectHandler(registry, RIVE_SHAPE_TYPE_KEY, {
-      importComponent: (): DisplayObject | null => createDisplayObject({ name: 'mine' }),
+      importComponent: (): DisplayObject | null =>
+        ((created) => {
+          Object.assign(created, { name: 'mine' });
+          return created;
+        })(createDisplayObject()),
     });
 
     const imported = createRiveDocumentImportResult(registry, riveWithOneShape());

@@ -12,7 +12,10 @@ afterEach(() => {
 
 describe('explainTextLabelContent', () => {
   it('reports agreement when no layout has been computed yet', () => {
-    const label = createTextLabel({ data: { text: 'hello' } });
+    const label = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createTextLabel());
 
     const explanation = explainTextLabelContent(label);
     expect(explanation.agreement).toBe(true);

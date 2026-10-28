@@ -84,7 +84,10 @@ export function importRiveNestedArtboardComponent(
   index: number,
 ): DisplayObject | null {
   const object = context.artboard.objects[index];
-  const node = createDisplayObject({ name: readRiveText(object, RIVE_NAME, '') });
+  const node = ((created) => {
+    Object.assign(created, { name: readRiveText(object, RIVE_NAME, '') });
+    return created;
+  })(createDisplayObject());
   markRiveNestedArtboard(node, readRiveNumber(object, RIVE_NESTED_ARTBOARD_ID, -1));
   return node;
 }

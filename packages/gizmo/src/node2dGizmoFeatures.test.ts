@@ -16,8 +16,14 @@ describe('createNode2DGizmoFeatures', () => {
   it('adapts Node2D world bounds, pivot origin, and composed rotation in degrees', () => {
     registerDefaultShapeBoundsCommands();
     const scene = createScene2D();
-    const parent = createDisplayObject({ rotation: 15, x: 10, y: 20 });
-    const node = createShape({ pivotX: 2, pivotY: 3, rotation: 30, x: 8, y: 9 });
+    const parent = ((created) => {
+      Object.assign(created, { rotation: 15, x: 10, y: 20 });
+      return created;
+    })(createDisplayObject());
+    const node = ((created) => {
+      Object.assign(created, { pivotX: 2, pivotY: 3, rotation: 30, x: 8, y: 9 });
+      return created;
+    })(createShape());
     appendShapeBeginFill(node, 0xffffff);
     appendShapeRectangle(node, 0, 0, 10, 20);
     appendShapeEndFill(node);

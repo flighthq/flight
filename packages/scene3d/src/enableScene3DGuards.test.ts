@@ -49,7 +49,10 @@ afterEach(() => {
 });
 
 function billboard(): ReturnType<typeof createBillboard> {
-  return createBillboard(createPlaneMeshGeometry(), [null], 'full');
+  return ((created) => {
+    created.mode = 'full';
+    return created;
+  })(createBillboard(createPlaneMeshGeometry(), [null]));
 }
 
 function captureLog(run: () => void): LogEntry[] {

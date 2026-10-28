@@ -713,17 +713,20 @@ interface ProjectedWorldGesture {
 }
 
 function runProjectedWorldGesture(gesture: ProjectedWorldGesture, transformedCamera: boolean) {
-  const node = createShape({
-    pivotX: 2,
-    pivotY: -3,
-    rotation: 17,
-    scaleX: 1.25,
-    scaleY: 0.75,
-    skewX: 4,
-    skewY: -6,
-    x: 12,
-    y: -8,
-  });
+  const node = ((created) => {
+    Object.assign(created, {
+      pivotX: 2,
+      pivotY: -3,
+      rotation: 17,
+      scaleX: 1.25,
+      scaleY: 0.75,
+      skewX: 4,
+      skewY: -6,
+      x: 12,
+      y: -8,
+    });
+    return created;
+  })(createShape());
   const context = createTestContext({ mode: gesture.mode }, [node]);
   if (transformedCamera) {
     context.camera.x = 12;
@@ -847,7 +850,7 @@ function createTestContext(
   nodes: readonly HierarchyNodeAny[] = [createTestNode()],
 ): TestContext {
   const camera = createCamera2D();
-  const overlay = createScene2D({ scene2dHeight: 100, scene2dWidth: 200 });
+  const overlay = Object.assign(createScene2D(), { scene2dHeight: 100, scene2dWidth: 200 });
   const selection = createSelectionState<HierarchyNodeAny>();
   const featuresByNode = new Map<HierarchyNodeAny, TestNodeFeatures>();
   for (let i = 0; i < nodes.length; i++) {

@@ -30,7 +30,10 @@ beforeAll(() => {
 
 describe('registerQuadBatchHitTest', () => {
   it('resolves the point to the instance whose region rect covers it', () => {
-    const batch = createQuadBatch({ data: { atlas: quadAtlas(quadRegion(0, 10, 10)) } });
+    const batch = ((created) => {
+      Object.assign(created.data, { atlas: quadAtlas(quadRegion(0, 10, 10)) });
+      return created;
+    })(createQuadBatch());
     appendQuadBatchInstance(batch, 0, 0, 0);
     appendQuadBatchInstance(batch, 0, 40, 40);
     expect(subIndexAt(batch, 5, 5)).toBe(0);
@@ -40,7 +43,10 @@ describe('registerQuadBatchHitTest', () => {
   });
 
   it('returns the frontmost instance when quads overlap', () => {
-    const batch = createQuadBatch({ data: { atlas: quadAtlas(quadRegion(0, 20, 20)) } });
+    const batch = ((created) => {
+      Object.assign(created.data, { atlas: quadAtlas(quadRegion(0, 20, 20)) });
+      return created;
+    })(createQuadBatch());
     appendQuadBatchInstance(batch, 0, 0, 0);
     appendQuadBatchInstance(batch, 0, 5, 5);
     // Both cover (10, 10); the later instance draws on top, so it owns the point.
@@ -50,9 +56,10 @@ describe('registerQuadBatchHitTest', () => {
   });
 
   it('swaps width and height for a packer quarter-turn', () => {
-    const batch = createQuadBatch({
-      data: { atlas: quadAtlas(quadRegion(0, 40, 10, TextureAtlasRotation.Clockwise90)) },
-    });
+    const batch = ((created) => {
+      Object.assign(created.data, { atlas: quadAtlas(quadRegion(0, 40, 10, TextureAtlasRotation.Clockwise90)) });
+      return created;
+    })(createQuadBatch());
     appendQuadBatchInstance(batch, 0, 0, 0);
     // Packed 40x10, so the drawn quad is 10 wide by 40 tall — the opposite of the packed extent.
     expect(subIndexAt(batch, 5, 35)).toBe(0);
@@ -60,7 +67,10 @@ describe('registerQuadBatchHitTest', () => {
   });
 
   it('inverts a per-instance matrix rather than offsetting, so a rotated quad picks correctly', () => {
-    const batch = createQuadBatch({ data: { atlas: quadAtlas(quadRegion(0, 20, 10)) } });
+    const batch = ((created) => {
+      Object.assign(created.data, { atlas: quadAtlas(quadRegion(0, 20, 10)) });
+      return created;
+    })(createQuadBatch());
     appendQuadBatchInstance(batch, 0, 0, 0);
     setQuadBatchTransformType(batch, 'matrix3x2');
     // A quarter turn about the origin: the quad's local +x runs down the node's +y.
@@ -73,9 +83,15 @@ describe('registerQuadBatchHitTest', () => {
 
   it('misses a batch with no atlas, no instances, or a degenerate region', () => {
     expect(subIndexAt(createQuadBatch(), 0, 0)).toBe(-1);
-    const empty = createQuadBatch({ data: { atlas: quadAtlas(quadRegion(0, 10, 10)) } });
+    const empty = ((created) => {
+      Object.assign(created.data, { atlas: quadAtlas(quadRegion(0, 10, 10)) });
+      return created;
+    })(createQuadBatch());
     expect(subIndexAt(empty, 0, 0)).toBe(-1);
-    const degenerate = createQuadBatch({ data: { atlas: quadAtlas(quadRegion(0, 0, 10)) } });
+    const degenerate = ((created) => {
+      Object.assign(created.data, { atlas: quadAtlas(quadRegion(0, 0, 10)) });
+      return created;
+    })(createQuadBatch());
     appendQuadBatchInstance(degenerate, 0, 0, 0);
     expect(subIndexAt(degenerate, 0, 0)).toBe(-1);
   });

@@ -29,12 +29,19 @@ describe('createBillboard', () => {
   });
 
   it('accepts an explicit facing mode', () => {
-    const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'axisY');
+    const billboard = ((created) => {
+      created.mode = 'axisY';
+      return created;
+    })(createBillboard(createPlaneMeshGeometry(), [null]));
     expect(billboard.mode).toBe('axisY');
   });
 
   it('accepts a custom kind', () => {
-    const billboard = createBillboard(createPlaneMeshGeometry(), [null], 'screenAligned', 'acme.Billboard');
+    const billboard = ((created) => {
+      created.mode = 'screenAligned';
+      created.kind = 'acme.Billboard';
+      return created;
+    })(createBillboard(createPlaneMeshGeometry(), [null]));
     expect(billboard.kind).toBe('acme.Billboard');
     expect(isBillboard(billboard)).toBe(true);
   });

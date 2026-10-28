@@ -6,9 +6,11 @@ import { registerTilemapHitTest } from './registerTilemapHitTest.ts';
 
 // A 3x2 grid of 32x16 cells, every cell filled — the atlas is only a non-null presence check here.
 function filledTilemap(): Tilemap {
-  const tilemap = createTilemap({
-    data: { atlas: {} as TextureAtlas, columns: 3, rows: 2, tileHeight: 16, tileWidth: 32 },
-  });
+  const tilemap = ((created) => {
+    Object.assign(created.data, { atlas: {} as TextureAtlas, columns: 3, rows: 2, tileHeight: 16, tileWidth: 32 });
+    created.data.tiles = new Int16Array(created.data.columns * created.data.rows).fill(-1);
+    return created;
+  })(createTilemap());
   fillTilemapTiles(tilemap, 7);
   return tilemap;
 }

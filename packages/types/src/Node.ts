@@ -8,8 +8,8 @@ export type NodeFieldsKey<T extends object> = symbol & {
   readonly [NodeFieldsKey]?: T;
 };
 export interface NodeData extends Entity {}
-export type NodeDataFactory<D extends NodeData> = (obj?: Readonly<Partial<D>>) => D;
-export type NodeRuntimeFactory<R extends EntityRuntime> = (obj?: Readonly<Partial<R>>) => R;
+export type NodeDataFactory<D extends NodeData> = () => D;
+export type NodeRuntimeFactory<R extends EntityRuntime> = () => R;
 export interface NodeFields {
   readonly data: NodeData | null;
   enabled: boolean;

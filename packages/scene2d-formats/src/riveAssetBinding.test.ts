@@ -38,7 +38,7 @@ describe('getRiveImageAssetIndex', () => {
   });
 
   it('reports -1 for a node that is not an image sprite', () => {
-    expect(getRiveImageAssetIndex(createDisplayObject({}))).toBe(-1);
+    expect(getRiveImageAssetIndex(createDisplayObject())).toBe(-1);
   });
 });
 
@@ -48,20 +48,20 @@ describe('getRiveImageTexture', () => {
   });
 
   it('returns null for a node that is not an image sprite', () => {
-    expect(getRiveImageTexture(createDisplayObject({}))).toBeNull();
+    expect(getRiveImageTexture(createDisplayObject())).toBeNull();
   });
 });
 
 describe('getRiveNestedArtboardIndex', () => {
   it('returns the artboard a marked site names', () => {
-    const node: Node2D = createDisplayObject({});
+    const node: Node2D = createDisplayObject();
     markRiveNestedArtboard(node, 4);
 
     expect(getRiveNestedArtboardIndex(node)).toBe(4);
   });
 
   it('returns -1 for a node that names no nested artboard', () => {
-    expect(getRiveNestedArtboardIndex(createDisplayObject({}))).toBe(-1);
+    expect(getRiveNestedArtboardIndex(createDisplayObject())).toBe(-1);
   });
 
   it('separates a nested-artboard site from an image sprite', () => {
@@ -73,7 +73,7 @@ describe('getRiveNestedArtboardIndex', () => {
 
 describe('markRiveNestedArtboard', () => {
   it('records a slot site without putting format knowledge on the node', () => {
-    const node: Node2D = createDisplayObject({});
+    const node: Node2D = createDisplayObject();
     markRiveNestedArtboard(node, 0);
 
     // The mark is side data; the node itself gains no field.
@@ -82,7 +82,7 @@ describe('markRiveNestedArtboard', () => {
   });
 
   it('replaces an earlier mark rather than keeping both', () => {
-    const node: Node2D = createDisplayObject({});
+    const node: Node2D = createDisplayObject();
     markRiveNestedArtboard(node, 1);
     markRiveNestedArtboard(node, 2);
 

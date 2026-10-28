@@ -70,7 +70,10 @@ describe('canvasScale9SpriteRenderer', () => {
     registerCanvasImageTextureResolver(getCanvasRenderStateTextureResolvers(state));
     registerNodeRenderer(state, SpriteKind, canvasSpriteRenderer);
     const draw = vi.spyOn(state.context, 'drawImage');
-    const sprite = createSprite({ data: { texture: makeTexture() } });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture: makeTexture() });
+      return created;
+    })(createSprite());
     canvasSpriteRenderer.submit(state, getOrCreateRenderProxy2D(state, sprite));
     // A plain Sprite is unsliced whatever this file registers — the proof that the grid did not leak
     // into the shared path is that the sprite still costs one drawImage.
@@ -81,7 +84,10 @@ describe('canvasScale9SpriteRenderer', () => {
 describe('drawCanvasScale9Sprite', () => {
   it('blits the texture in nine pieces when the grid applies', () => {
     const state = makeState();
-    const sprite = createScale9Sprite(createRectangle(16, 16, 32, 32), { data: { texture: makeTexture() } });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture: makeTexture() });
+      return created;
+    })(createScale9Sprite(createRectangle(16, 16, 32, 32)));
     sprite.scaleX = 2;
     sprite.scaleY = 2;
     const draw = vi.spyOn(state.context, 'drawImage');
@@ -91,7 +97,10 @@ describe('drawCanvasScale9Sprite', () => {
 
   it('keeps the corner blits at their source size rather than scaling them', () => {
     const state = makeState();
-    const sprite = createScale9Sprite(createRectangle(16, 16, 32, 32), { data: { texture: makeTexture() } });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture: makeTexture() });
+      return created;
+    })(createScale9Sprite(createRectangle(16, 16, 32, 32)));
     sprite.scaleX = 2;
     sprite.scaleY = 2;
     const draw = vi.spyOn(state.context, 'drawImage');
@@ -107,7 +116,10 @@ describe('drawCanvasScale9Sprite', () => {
   // has to be asserted.
   it('strips the node scale from the canvas transform so the slices are not scaled twice', () => {
     const state = makeState();
-    const sprite = createScale9Sprite(createRectangle(16, 16, 32, 32), { data: { texture: makeTexture() } });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture: makeTexture() });
+      return created;
+    })(createScale9Sprite(createRectangle(16, 16, 32, 32)));
     sprite.scaleX = 2;
     sprite.scaleY = 4;
     // The update pass is what puts the node's scale on the proxy transform; without it the renderer
@@ -120,7 +132,10 @@ describe('drawCanvasScale9Sprite', () => {
 
   it('keeps the unsliced fallback at the node scale, which it must not strip', () => {
     const state = makeState();
-    const sprite = createScale9Sprite(createRectangle(0, 0, 999, 999), { data: { texture: makeTexture() } });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture: makeTexture() });
+      return created;
+    })(createScale9Sprite(createRectangle(0, 0, 999, 999)));
     sprite.scaleX = 2;
     sprite.scaleY = 4;
     prepareScene2DRender(state, sprite);
@@ -135,7 +150,10 @@ describe('drawCanvasScale9Sprite', () => {
     const state = makeState();
     // A grid wider than the texture cannot be applied; the contract is to draw the texture whole, not to
     // draw nothing, so a bad grid degrades to a plain sprite rather than to an invisible node.
-    const sprite = createScale9Sprite(createRectangle(0, 0, 999, 999), { data: { texture: makeTexture() } });
+    const sprite = ((created) => {
+      Object.assign(created.data, { texture: makeTexture() });
+      return created;
+    })(createScale9Sprite(createRectangle(0, 0, 999, 999)));
     const draw = vi.spyOn(state.context, 'drawImage');
     drawCanvasScale9Sprite(state, getOrCreateRenderProxy2D(state, sprite));
     expect(draw).toHaveBeenCalledOnce();

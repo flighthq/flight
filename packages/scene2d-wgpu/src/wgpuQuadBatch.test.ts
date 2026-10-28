@@ -84,8 +84,8 @@ describe('wgpuQuadBatchRenderer.submit', () => {
     registerWgpuStandardMaterial(state);
     const texture = createRenderTexture({ height: 64, width: 64 });
     renderIntoWgpuRenderTexture(state, texture, () => {}, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
-    const batch = createQuadBatch({
-      data: {
+    const batch = ((created) => {
+      Object.assign(created.data, {
         atlas: createTextureAtlas({
           regions: [
             createTextureAtlasRegion({
@@ -99,8 +99,9 @@ describe('wgpuQuadBatchRenderer.submit', () => {
           ],
           texture,
         }),
-      },
-    });
+      });
+      return created;
+    })(createQuadBatch());
     reserveQuadBatch(batch, 1);
     batch.data.instanceCount = 1;
     batch.data.ids[0] = 0;
@@ -127,8 +128,8 @@ describe('wgpuQuadBatchRenderer.submit', () => {
     registerWgpuStandardMaterial(state);
     const texture = createRenderTexture({ height: 64, width: 64 });
     renderIntoWgpuRenderTexture(state, texture, () => {}, { color: [0, 0, 0, 0], depth: 1.0, stencil: 0 });
-    const batch = createQuadBatch({
-      data: {
+    const batch = ((created) => {
+      Object.assign(created.data, {
         atlas: createTextureAtlas({
           regions: [
             createTextureAtlasRegion({
@@ -142,8 +143,9 @@ describe('wgpuQuadBatchRenderer.submit', () => {
           ],
           texture,
         }),
-      },
-    });
+      });
+      return created;
+    })(createQuadBatch());
     reserveQuadBatch(batch, 1);
     batch.data.instanceCount = 1;
     batch.data.ids[0] = 0;

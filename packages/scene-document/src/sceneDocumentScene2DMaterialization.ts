@@ -88,7 +88,7 @@ export function createFlightDocumentScene2DMaterialization(
     selection.sceneIndex,
   );
   if (layoutRefusal !== null) return null;
-  const scene = createScene2D({ color: documentScene.backgroundColor });
+  const scene = Object.assign(createScene2D(), { color: documentScene.backgroundColor });
   const resources = resolveResources(document.resources, resolvers);
   // The authored root carries a kind and fields like any other node; materializing only its children
   // discarded both, so a document whose root was a Sprite at (100, 200) came back a bare DisplayObject at

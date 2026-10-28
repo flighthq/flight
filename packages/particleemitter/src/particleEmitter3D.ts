@@ -5,8 +5,6 @@ import type {
   Matrix4Like,
   ParticleEmitter3D,
   ParticleEmitter3DRuntime,
-  ParticleEmitterData,
-  PartialNode,
   Node3D,
   Vector3Like,
 } from '@flighthq/types/contract';
@@ -63,9 +61,9 @@ export function clearParticleEmitter3D(target: ParticleEmitter3D): void {
 
 export function cloneParticleEmitter3D(source: Readonly<ParticleEmitter3D>): ParticleEmitter3D {
   const src = source.data;
-  return createParticleEmitter3D({
-    blendMode: source.blendMode,
-    data: {
+  return ((created) => {
+    Object.assign(created, { blendMode: source.blendMode });
+    Object.assign(created.data, {
       alphas: src.alphas.slice(),
       atlas: src.atlas,
       colors: src.colors.slice(),
@@ -75,8 +73,9 @@ export function cloneParticleEmitter3D(source: Readonly<ParticleEmitter3D>): Par
       transforms: src.transforms.slice(),
       velocities: src.velocities.slice(),
       worldSpace: src.worldSpace,
-    },
-  });
+    });
+    return created;
+  })(createParticleEmitter3D());
 }
 
 export function compactParticleEmitter3D(target: ParticleEmitter3D): void {
@@ -152,10 +151,10 @@ export function computeParticleEmitter3DLocalBoundsAabb(out: AabbLike, source: R
   out.max.z = maxZ;
 }
 
-export function createParticleEmitter3D(obj?: Readonly<PartialNode<ParticleEmitter3D>>): ParticleEmitter3D {
-  const node = createNode3D(ParticleEmitter3DKind, obj) as unknown as ParticleEmitter3D;
-  node.data = createParticleEmitterData(obj?.data as Readonly<Partial<ParticleEmitterData>> | undefined);
-  node.blendMode = obj?.blendMode ?? 'normal';
+export function createParticleEmitter3D(): ParticleEmitter3D {
+  const node = createNode3D(ParticleEmitter3DKind) as unknown as ParticleEmitter3D;
+  node.data = createParticleEmitterData();
+  node.blendMode = 'normal';
   return node;
 }
 

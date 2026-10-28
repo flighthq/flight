@@ -592,7 +592,10 @@ describe('createRiveAnimationClips', () => {
   });
 
   it('binds each keyed property to the node the keyed object names', () => {
-    const node = createDisplayObject({ name: 'target' });
+    const node = ((created) => {
+      Object.assign(created, { name: 'target' });
+      return created;
+    })(createDisplayObject());
     const { clips } = build(30, 13, [{ frame: 0, value: 5 }], [null, node], 1);
     const target = clips[0].clip.channels[0].targetRef as { node: DisplayObject; path: string };
 

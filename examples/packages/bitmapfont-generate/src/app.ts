@@ -99,9 +99,10 @@ if (atlasImage === null) {
   }
 
   // Preview the exact finalized atlas image sampled by every BitmapText quad batch.
-  const atlasPreview = createSprite({
-    data: { texture: createTexture({ dimension: '2d', source: atlasImage }) },
-  });
+  const atlasPreview = ((created) => {
+    Object.assign(created.data, { texture: createTexture({ dimension: '2d', source: atlasImage }) });
+    return created;
+  })(createSprite());
   atlasPreview.x = 536;
   atlasPreview.y = 438;
   // Scaled down in step with the enlarged atlas above, so the preview keeps its on-screen footprint.

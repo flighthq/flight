@@ -29,7 +29,10 @@ import {
 
 describe('computeNativeTextLocalBoundsRectangle', () => {
   it('sets out dimensions from data width and height when autoSize is none', () => {
-    const native = createNativeText({ data: { width: 200, height: 50 } });
+    const native = ((created) => {
+      Object.assign(created.data, { width: 200, height: 50 });
+      return created;
+    })(createNativeText());
     const out = createRectangle();
     computeNativeTextLocalBoundsRectangle(out, native);
     expect(out.x).toBe(0);
@@ -38,7 +41,10 @@ describe('computeNativeTextLocalBoundsRectangle', () => {
   });
 
   it('falls back to the fixed box under autoSize until the element has been measured', () => {
-    const native = createNativeText({ data: { autoSize: 'left', width: 200, height: 50 } });
+    const native = ((created) => {
+      Object.assign(created.data, { autoSize: 'left', width: 200, height: 50 });
+      return created;
+    })(createNativeText());
     const out = createRectangle();
     computeNativeTextLocalBoundsRectangle(out, native);
     expect(out.width).toBe(200);
@@ -46,7 +52,10 @@ describe('computeNativeTextLocalBoundsRectangle', () => {
   });
 
   it('uses the measured size the platform renderer wrote back under autoSize', () => {
-    const native = createNativeText({ data: { autoSize: 'left', width: 200, height: 50 } });
+    const native = ((created) => {
+      Object.assign(created.data, { autoSize: 'left', width: 200, height: 50 });
+      return created;
+    })(createNativeText());
     const runtime = getNativeTextRuntime(native) as NativeTextRuntime;
     runtime.measuredWidth = 80;
     runtime.measuredHeight = 24;
@@ -82,7 +91,15 @@ describe('createNativeText', () => {
         height: 40,
       },
     };
-    const obj = createNativeText(base);
+    const obj = ((created, fields) => {
+      const entityData = created.data;
+      Object.assign(created, fields);
+      if (fields.data !== undefined) {
+        Object.assign(entityData, fields.data);
+        Object.assign(created, { data: entityData });
+      }
+      return created;
+    })(createNativeText(), base);
     expect(obj.data.autoSize).toStrictEqual(base.data!.autoSize);
     expect(obj.data.text).toStrictEqual(base.data!.text);
     expect(obj.data.width).toBe(300);
@@ -102,7 +119,7 @@ describe('createNativeTextData', () => {
   });
 
   it('allows pre-defined values', () => {
-    const data = createNativeTextData({ autoSize: 'left', text: 'hello', width: 250, height: 30 });
+    const data = Object.assign(createNativeTextData(), { autoSize: 'left', text: 'hello', width: 250, height: 30 });
     expect(data.autoSize).toBe('left');
     expect(data.text).toBe('hello');
     expect(data.width).toBe(250);
@@ -161,7 +178,10 @@ describe('getNativeTextRuntime', () => {
 
 describe('getNativeTextString', () => {
   it('returns the text field', () => {
-    const native = createNativeText({ data: { text: 'hello' } });
+    const native = ((created) => {
+      Object.assign(created.data, { text: 'hello' });
+      return created;
+    })(createNativeText());
     expect(getNativeTextString(native)).toBe('hello');
   });
 });
@@ -169,7 +189,10 @@ describe('getNativeTextString', () => {
 describe('getNativeTextStyle', () => {
   it('returns the style field', () => {
     const style = { size: 16, bold: true };
-    const native = createNativeText({ data: { style } });
+    const native = ((created) => {
+      Object.assign(created.data, { style });
+      return created;
+    })(createNativeText());
     expect(getNativeTextStyle(native)).toBe(native.data.style);
   });
 });
@@ -182,7 +205,10 @@ describe('initializeNativeTextData', () => {
 
 describe('patchNativeTextStyle', () => {
   it('merges the patch into the existing style', () => {
-    const native = createNativeText({ data: { style: { size: 14, bold: false } } });
+    const native = ((created) => {
+      Object.assign(created.data, { style: { size: 14, bold: false } });
+      return created;
+    })(createNativeText());
     patchNativeTextStyle(native, { bold: true, color: 0xff0000ff });
     expect(native.data.style.size).toBe(14);
     expect(native.data.style.bold).toBe(true);
@@ -238,7 +264,10 @@ describe('setNativeTextString', () => {
   });
 
   it('does not bump content when the value is unchanged', () => {
-    const native = createNativeText({ data: { text: 'same' } });
+    const native = ((created) => {
+      Object.assign(created.data, { text: 'same' });
+      return created;
+    })(createNativeText());
     const content = getNodeLocalContentRevision(native);
     setNativeTextString(native, 'same');
     expect(getNodeLocalContentRevision(native)).toBe(content);
@@ -272,7 +301,10 @@ describe('setNativeTextVerticalAlign', () => {
   });
 
   it('does not bump content when the value is unchanged', () => {
-    const native = createNativeText({ data: { verticalAlign: 'bottom' } });
+    const native = ((created) => {
+      Object.assign(created.data, { verticalAlign: 'bottom' });
+      return created;
+    })(createNativeText());
     const content = getNodeLocalContentRevision(native);
     setNativeTextVerticalAlign(native, 'bottom');
     expect(getNodeLocalContentRevision(native)).toBe(content);
