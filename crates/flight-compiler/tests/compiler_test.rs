@@ -135,33 +135,6 @@ pub fn sample(random: &dyn Fn() -> f32, mean: Option<f32>) -> Option<f32> {
     }
 
     #[test]
-    fn reexports_canonical_typescript_types_without_redeclaring_them() {
-        let source = r#"
-use std::sync::Arc;
-
-/// A callable random source.
-/// flight-compiler: typescript-import @flighthq/types/contract
-pub type RandomSource = Arc<dyn Fn() -> f32 + Send + Sync>;
-
-pub fn reuse_random_source(random: RandomSource) -> RandomSource {
-    return random;
-}
-"#;
-
-        let output = compile_typescript(source, None).unwrap();
-
-        assert!(output.contains(
-            "import type { RandomSource } from \"@flighthq/types/contract\";\n\n/**\n * A callable random source.\n */\nexport type { RandomSource };"
-        ));
-        assert!(
-            output
-                .contains("export function reuseRandomSource(random: RandomSource): RandomSource")
-        );
-        assert!(!output.contains("export type RandomSource ="));
-        assert!(!output.contains("flight-compiler:"));
-    }
-
-    #[test]
     fn refuses_unsupported_public_contract_items() {
         let source = r#"
 pub enum Axis {

@@ -20,30 +20,6 @@ fn argument_is_option(argument: &FnArg) -> bool {
     return option_inner_type(&argument.ty).is_some();
 }
 
-fn compiler_directive(attributes: &[Attribute], name: &str) -> Option<String> {
-    let prefix = format!("flight-compiler: {name} ");
-    return attributes.iter().find_map(|attribute| {
-        if !attribute.path().is_ident("doc") {
-            return None;
-        }
-        let syn::Meta::NameValue(meta) = &attribute.meta else {
-            return None;
-        };
-        let Expr::Lit(value) = &meta.value else {
-            return None;
-        };
-        let Lit::Str(value) = &value.lit else {
-            return None;
-        };
-        return value
-            .value()
-            .trim()
-            .strip_prefix(&prefix)
-            .filter(|value| !value.is_empty())
-            .map(str::to_string);
-    });
-}
-
 fn documentation(attributes: &[Attribute]) -> Vec<String> {
     return attributes
         .iter()
@@ -58,12 +34,7 @@ fn documentation(attributes: &[Attribute]) -> Vec<String> {
             let Lit::Str(value) = &value.lit else {
                 return None;
             };
-            let value = value.value();
-            let value = value.trim_start();
-            if value.starts_with("flight-compiler: ") {
-                return None;
-            }
-            Some(rewrite_documentation(value))
+            Some(rewrite_documentation(value.value().trim_start()))
         })
         .collect();
 }
@@ -1596,21 +1567,6 @@ fn emit_type_alias(
     type_alias: &syn::ItemType,
     entities: &HashSet<String>,
 ) -> Result<(), CompileError> {
-    if let Some(module) = compiler_directive(&type_alias.attrs, "typescript-import") {
-        writeln!(
-            out,
-            "import type {{ {} }} from {module:?};",
-            type_alias.ident
-        )
-        .expect("writing to a String cannot fail");
-        out.push('\n');
-        emit_documentation(out, &type_alias.attrs, 0);
-        if is_public(&type_alias.vis) {
-            writeln!(out, "export type {{ {} }};", type_alias.ident)
-                .expect("writing to a String cannot fail");
-        }
-        return Ok(());
-    }
     emit_documentation(out, &type_alias.attrs, 0);
     let export = if is_public(&type_alias.vis) {
         "export "
