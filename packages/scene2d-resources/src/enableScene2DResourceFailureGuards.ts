@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type { Scene2DResourceFailureNotice } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -14,13 +15,18 @@ export function disableScene2DResourceFailureGuards(): void {
 }
 
 // Installs opt-in warnings for expected document/resource sentinels. Importers and loaders keep their
-// existing null/unresolved outcomes; omitting this module sheds the messages and log dependency.
-export function enableScene2DResourceFailureGuards(): void {
-  setScene2DResourceFailureGuard(warnOnScene2DResourceFailure);
+// existing null/unresolved outcomes; omitting this module sheds the messages and log dependency. Each
+// warning goes to the caller-owned `logState`, stamped with `clock()` at the moment it is reported.
+export function enableScene2DResourceFailureGuards(logState: LogState, clock: () => number): void {
+  setScene2DResourceFailureGuard((notice) => warnOnScene2DResourceFailure(logState, clock(), notice));
   _enabled = true;
 }
 
-function warnOnScene2DResourceFailure(notice: Readonly<Scene2DResourceFailureNotice>): void {
+function warnOnScene2DResourceFailure(
+  logState: LogState,
+  nowMs: number,
+  notice: Readonly<Scene2DResourceFailureNotice>,
+): void {
   let message: string;
   if (notice.reason === 'audio-resources-unresolved') {
     message =
@@ -38,7 +44,14 @@ function warnOnScene2DResourceFailure(notice: Readonly<Scene2DResourceFailureNot
     message =
       'Scene2D slot resolution left required slots unresolved — inspect result.unresolved and supply content for each required reference';
   }
-  logOnce(`scene2d-resources:${notice.reason}`, LogLevel.Warn, { message, ...notice }, 'scene2d-resources');
+  logOnce(
+    logState,
+    nowMs,
+    `scene2d-resources:${notice.reason}`,
+    LogLevel.Warn,
+    { message, ...notice },
+    'scene2d-resources',
+  );
 }
 
 let _enabled = false;

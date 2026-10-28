@@ -1,4 +1,5 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
+import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
 import type { LogEntry, Scene2DResourceFailureNotice } from '@flighthq/types/contract';
 
 import {
@@ -8,15 +9,19 @@ import {
 } from './enableScene2DResourceFailureGuards.ts';
 import { reportScene2DResourceFailure } from './scene2DResourceDiagnostics.ts';
 
+let logState: LogState;
+
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
-  try {
-    run();
-    return getMemoryLogSinkEntries(sink);
-  } finally {
-    removeLogSink(sink.sink);
-  }
+  addLogSink(logState, sink.sink);
+  run();
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
+}
+
+function clock(): number {
+  return 0;
 }
 
 function notice(): Scene2DResourceFailureNotice {
@@ -29,6 +34,10 @@ function notice(): Scene2DResourceFailureNotice {
   };
 }
 
+beforeEach(() => {
+  logState = createLogState();
+});
+
 afterEach(() => {
   disableScene2DResourceFailureGuards();
 });
@@ -36,7 +45,7 @@ afterEach(() => {
 describe('areScene2DResourceFailureGuardsEnabled', () => {
   it('tracks the global opt-in hook', () => {
     expect(areScene2DResourceFailureGuardsEnabled()).toBe(false);
-    enableScene2DResourceFailureGuards();
+    enableScene2DResourceFailureGuards(logState, clock);
     expect(areScene2DResourceFailureGuardsEnabled()).toBe(true);
     disableScene2DResourceFailureGuards();
     expect(areScene2DResourceFailureGuardsEnabled()).toBe(false);
@@ -45,7 +54,7 @@ describe('areScene2DResourceFailureGuardsEnabled', () => {
 
 describe('disableScene2DResourceFailureGuards', () => {
   it('restores silent sentinel handling', () => {
-    enableScene2DResourceFailureGuards();
+    enableScene2DResourceFailureGuards(logState, clock);
     disableScene2DResourceFailureGuards();
     expect(captureLog(() => reportScene2DResourceFailure(notice()))).toEqual([]);
   });
@@ -53,7 +62,7 @@ describe('disableScene2DResourceFailureGuards', () => {
 
 describe('enableScene2DResourceFailureGuards', () => {
   it('warns with aggregate counts while preserving sentinel behavior', () => {
-    enableScene2DResourceFailureGuards();
+    enableScene2DResourceFailureGuards(logState, clock);
     const entries = captureLog(() => reportScene2DResourceFailure(notice()));
     expect(entries).toHaveLength(1);
     expect(entries[0]).toMatchObject({ channel: 'scene2d-resources' });

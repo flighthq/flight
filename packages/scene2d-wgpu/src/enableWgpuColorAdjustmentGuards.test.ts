@@ -1,7 +1,13 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  createLogState,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
 import { createWgpuRenderStateForTest, installWgpuMock } from '@flighthq/render-wgpu/contract';
 import { getWgpuRenderStateRuntime } from '@flighthq/render-wgpu/contract';
-import type { ColorScaleBias } from '@flighthq/types/contract';
+import type { ColorScaleBias, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import {
   areWgpuColorAdjustmentGuardsEnabled,
@@ -31,11 +37,11 @@ describe('areWgpuColorAdjustmentGuardsEnabled', () => {
   it('reports false until guards are installed, then true', async () => {
     const state = await createWgpuRenderStateForTest();
     expect(areWgpuColorAdjustmentGuardsEnabled(state)).toBe(false);
-    enableWgpuColorAdjustmentGuards(state);
+    enableWgpuColorAdjustmentGuards(state, createLogState());
     expect(areWgpuColorAdjustmentGuardsEnabled(state)).toBe(true);
     const guard = getWgpuRenderStateRuntime(state).registries.colorAdjustmentFeatureGuard;
     expect(guard).not.toBeNull();
-    enableWgpuColorAdjustmentGuards(state);
+    enableWgpuColorAdjustmentGuards(state, null);
     expect(getWgpuRenderStateRuntime(state).registries.colorAdjustmentFeatureGuard).toBe(guard);
   });
 });
@@ -43,44 +49,53 @@ describe('areWgpuColorAdjustmentGuardsEnabled', () => {
 describe('enableWgpuColorAdjustmentGuards', () => {
   it('warns once when a color adjustment is recorded but color adjustment was never enabled', async () => {
     const state = await createWgpuRenderStateForTest();
+    const logState = createLogState();
     const sink = createMemoryLogSink(8);
-    addLogSink(sink.sink);
+    addLogSink(logState, sink.sink);
     try {
-      enableWgpuColorAdjustmentGuards(state);
+      enableWgpuColorAdjustmentGuards(state, logState);
       recordWgpuQuadBatchColorScaleBias(state, ct(), 0);
-      const entries = getMemoryLogSinkEntries(sink);
+      const entries = readMemoryLogEntries(sink);
       expect(entries.length).toBe(1);
       const data = entries[0].data as Record<string, unknown>;
       expect(String(data.message)).toContain('registerWgpuColorAdjustmentMaterialFeature');
     } finally {
-      removeLogSink(sink.sink);
+      removeLogSink(logState, sink.sink);
     }
   });
 
   it('stays silent for an untinted instance', async () => {
     const state = await createWgpuRenderStateForTest();
+    const logState = createLogState();
     const sink = createMemoryLogSink(8);
-    addLogSink(sink.sink);
+    addLogSink(logState, sink.sink);
     try {
-      enableWgpuColorAdjustmentGuards(state);
+      enableWgpuColorAdjustmentGuards(state, logState);
       recordWgpuQuadBatchColorScaleBias(state, null, 0);
-      expect(getMemoryLogSinkEntries(sink).length).toBe(0);
+      expect(readMemoryLogEntries(sink).length).toBe(0);
     } finally {
-      removeLogSink(sink.sink);
+      removeLogSink(logState, sink.sink);
     }
   });
 
   it('does not warn when the guard slot is present but color adjustment is also enabled', async () => {
     const state = await createWgpuRenderStateForTest();
+    const logState = createLogState();
     const sink = createMemoryLogSink(8);
-    addLogSink(sink.sink);
+    addLogSink(logState, sink.sink);
     try {
-      enableWgpuColorAdjustmentGuards(state);
+      enableWgpuColorAdjustmentGuards(state, logState);
       registerWgpuColorAdjustmentMaterialFeature(state);
       recordWgpuQuadBatchColorScaleBias(state, ct(), 0);
-      expect(getMemoryLogSinkEntries(sink).length).toBe(0);
+      expect(readMemoryLogEntries(sink).length).toBe(0);
     } finally {
-      removeLogSink(sink.sink);
+      removeLogSink(logState, sink.sink);
     }
   });
 });
+
+function readMemoryLogEntries(sink: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
+}
