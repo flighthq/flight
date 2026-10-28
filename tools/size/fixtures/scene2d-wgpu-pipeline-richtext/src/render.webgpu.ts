@@ -46,16 +46,17 @@ export const state = createWgpuRenderState(acquisition.device, {
 export const screenClear = { color: [0x10 / 0xff, 0x15 / 0xff, 0x22 / 0xff, 1], depth: 1.0 } as const;
 
 const root = createDisplayObject();
-const text = createRichText({
-  data: {
+const text = ((created) => {
+  Object.assign(created.data, {
     background: true,
     backgroundColor: 0x24324a,
     defaultTextFormat: { color: 0xffffffff, font: 'sans-serif', size: 30 },
     height: 100,
     text: 'Rich WebGPU',
     width: 230,
-  },
-});
+  });
+  return created;
+})(createRichText());
 text.x = 45;
 text.y = 70;
 addNodeChild(root, text);

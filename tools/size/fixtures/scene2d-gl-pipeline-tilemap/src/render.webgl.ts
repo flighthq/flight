@@ -64,16 +64,17 @@ const atlas = createTextureAtlas({
 });
 
 const root = createDisplayObject();
-const tilemap = createTilemap({
-  data: {
+const tilemap = ((created) => {
+  Object.assign(created.data, {
     atlas,
     columns: 4,
     rows: 3,
     tileHeight: 32,
     tileWidth: 32,
     tiles: new Int16Array([0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 0, 1]),
-  },
-});
+  });
+  return created;
+})(createTilemap());
 tilemap.x = 90;
 tilemap.y = 70;
 addNodeChild(root, tilemap);

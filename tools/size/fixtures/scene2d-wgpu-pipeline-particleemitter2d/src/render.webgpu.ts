@@ -53,7 +53,10 @@ const atlas = createTextureAtlas({
   texture: createTexture({ dimension: '2d', source: createBitmap(48, 48, 0x5b8cffff) }),
 });
 const root = createDisplayObject();
-const emitter = createParticleEmitter2D({ data: { atlas } });
+const emitter = ((created) => {
+  Object.assign(created.data, { atlas });
+  return created;
+})(createParticleEmitter2D());
 appendParticleEmitter2DParticle(emitter, 0, 70, 60, -0.2, 1.2);
 appendParticleEmitter2DParticle(emitter, 0, 135, 95, 0.25, 0.9);
 appendParticleEmitter2DParticle(emitter, 0, 195, 45, 0.1, 1.1);

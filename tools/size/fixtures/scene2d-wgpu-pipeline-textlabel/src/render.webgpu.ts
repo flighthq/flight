@@ -48,14 +48,15 @@ export const state = createWgpuRenderState(acquisition.device, {
 export const screenClear = { color: [0x10 / 0xff, 0x15 / 0xff, 0x22 / 0xff, 1], depth: 1.0 } as const;
 
 const root = createDisplayObject();
-const text = createTextLabel({
-  data: {
+const text = ((created) => {
+  Object.assign(created.data, {
     height: 80,
     text: 'TextLabel',
     textFormat: { color: 0xffd166ff, font: 'sans-serif', size: 36 },
     width: 220,
-  },
-});
+  });
+  return created;
+})(createTextLabel());
 text.x = 52;
 text.y = 78;
 addNodeChild(root, text);

@@ -58,16 +58,17 @@ const atlas = createTextureAtlas({
 });
 
 const root = createDisplayObject();
-const emitter = createParticleEmitter2D({
-  data: {
+const emitter = ((created) => {
+  Object.assign(created.data, {
     alphas: new Float32Array([1, 0.8, 0.65]),
     atlas,
     colors: new Float32Array([1, 0.5, 0.2, 0.3, 0.8, 1, 1, 0.3, 0.7]),
     ids: new Uint16Array([0, 0, 0]),
     particleCount: 3,
     transforms: new Float32Array([0, 0, 0, 1, 48, 22, 0.2, 0.85, 92, -2, -0.2, 1.1]),
-  },
-});
+  });
+  return created;
+})(createParticleEmitter2D());
 emitter.x = 90;
 emitter.y = 90;
 addNodeChild(root, emitter);

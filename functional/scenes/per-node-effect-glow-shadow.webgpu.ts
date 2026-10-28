@@ -162,7 +162,10 @@ function capture(effect: Readonly<Effect>, padding: Readonly<EffectPadding>): Re
 }
 
 function addResult(parent: ReturnType<typeof createDisplayObject>, texture: RenderTexture, x: number, y: number): void {
-  const sprite = createSprite({ data: { texture } });
+  const sprite = ((created) => {
+    Object.assign(created.data, { texture });
+    return created;
+  })(createSprite());
   sprite.x = x;
   sprite.y = y;
   invalidateNodeLocalTransform(sprite);

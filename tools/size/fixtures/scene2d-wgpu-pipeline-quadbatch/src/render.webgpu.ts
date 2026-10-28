@@ -55,7 +55,10 @@ const atlas = createTextureAtlas({
   texture: createTexture({ dimension: '2d', source: createBitmap(52, 52, 0xff7138ff) }),
 });
 const root = createDisplayObject();
-const batch = createQuadBatch({ data: { atlas } });
+const batch = ((created) => {
+  Object.assign(created.data, { atlas });
+  return created;
+})(createQuadBatch());
 appendQuadBatchInstance(batch, 0, 48, 46);
 appendQuadBatchInstance(batch, 0, 120, 92);
 appendQuadBatchInstance(batch, 0, 192, 54);

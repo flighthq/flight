@@ -46,8 +46,8 @@ for (const [kind, renderer] of registries.nodeRenderers) {
 }
 
 const root = createDisplayObject();
-const richText = createRichText({
-  data: {
+const richText = ((created) => {
+  Object.assign(created.data, {
     background: true,
     backgroundColor: 0x163b63,
     border: true,
@@ -56,8 +56,9 @@ const richText = createRichText({
     height: 72,
     text: 'Rich text',
     width: 180,
-  },
-});
+  });
+  return created;
+})(createRichText());
 richText.x = 80;
 richText.y = 70;
 addNodeChild(root, richText);

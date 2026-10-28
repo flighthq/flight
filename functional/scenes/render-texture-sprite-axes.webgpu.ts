@@ -96,7 +96,10 @@ submitWgpuFrame(state);
 
 const root = createDisplayObject();
 addRect(root, SPRITE_X - 15, SPRITE_Y - 15, SPRITE_WIDTH + 30, SPRITE_HEIGHT + 30, BACKING);
-const sprite = createSprite({ data: { texture: renderTexture } });
+const sprite = ((created) => {
+  Object.assign(created.data, { texture: renderTexture });
+  return created;
+})(createSprite());
 sprite.x = SPRITE_X;
 sprite.y = SPRITE_Y;
 invalidateNodeLocalTransform(sprite);

@@ -79,9 +79,17 @@ const atlas = createTextureAtlasFromGrid(
 
 const root = createDisplayObject();
 
-const tilemap = createTilemap({
-  data: { atlas, columns: COLS, rows: ROWS, tileHeight: TILE_H, tileWidth: TILE_W },
-});
+const tilemap = ((created) => {
+  Object.assign(created.data, {
+    atlas,
+    columns: COLS,
+    rows: ROWS,
+    tileHeight: TILE_H,
+    tileWidth: TILE_W,
+    tiles: new Int16Array(COLS * ROWS).fill(-1),
+  });
+  return created;
+})(createTilemap());
 tilemap.x = MAP_X;
 tilemap.y = MAP_Y;
 invalidateNodeLocalTransform(tilemap);

@@ -144,7 +144,10 @@ appendShapeRectangle(backing, 235, 170, 330, 240);
 appendShapeEndFill(backing);
 addNodeChild(displayRoot, backing);
 
-const result = createSprite({ data: { texture: second.destTexture } });
+const result = ((created) => {
+  Object.assign(created.data, { texture: second.destTexture });
+  return created;
+})(createSprite());
 result.x = RESULT_X;
 result.y = RESULT_Y;
 invalidateNodeLocalTransform(result);

@@ -74,12 +74,20 @@ addTextureAtlasRegion(atlas, 0, 0, 32, 32);
 addTextureAtlasRegion(atlas, 32, 0, 32, 32);
 
 const root = createDisplayObject();
-// The grid is described as a partial on the public constructor rather than by building a TilemapData
-// directly: `createTilemapData` is contract-only, and a size fixture stands in for an end-user app, so
-// it must stay on the public `.` lane the way a consumer would.
-const tilemap = createTilemap({
-  data: { atlas, columns: 4, rows: 3, tileHeight: 32, tileWidth: 32 },
-});
+// `createTilemapData` is contract-only, so this end-user fixture creates the public Tilemap and assigns
+// its authored data afterward. The tile buffer stays explicit because the field-free constructor has no
+// dimensions from which to size it.
+const tilemap = ((created) => {
+  Object.assign(created.data, {
+    atlas,
+    columns: 4,
+    rows: 3,
+    tileHeight: 32,
+    tileWidth: 32,
+    tiles: new Int16Array(12).fill(-1),
+  });
+  return created;
+})(createTilemap());
 for (let row = 0; row < 3; row += 1) {
   for (let column = 0; column < 4; column += 1) {
     setTilemapTile(tilemap, column, row, (column + row) % 2);

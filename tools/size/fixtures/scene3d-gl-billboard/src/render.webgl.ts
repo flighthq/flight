@@ -41,7 +41,13 @@ const geometry = createMeshGeometry({
   ]),
 });
 const scene = createScene3D().root;
-addNodeChild(scene, createBillboard(geometry, [createUnlitMaterial({ baseColor: 0x43c8ffff })], 'screenAligned'));
+addNodeChild(
+  scene,
+  ((created) => {
+    created.mode = 'screenAligned';
+    return created;
+  })(createBillboard(geometry, [createUnlitMaterial({ baseColor: 0x43c8ffff })])),
+);
 const camera = createCamera3D({
   far: 10,
   near: 0.1,

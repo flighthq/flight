@@ -47,14 +47,15 @@ for (const [kind, renderer] of registries.nodeRenderers) {
 registerGlStandardMaterial(state);
 
 const root = createDisplayObject();
-const textLabel = createTextLabel({
-  data: {
+const textLabel = ((created) => {
+  Object.assign(created.data, {
     height: 64,
     text: 'Text label',
     textFormat: { color: 0xffca5bff, font: 'sans-serif', size: 32 },
     width: 220,
-  },
-});
+  });
+  return created;
+})(createTextLabel());
 textLabel.x = 80;
 textLabel.y = 80;
 addNodeChild(root, textLabel);

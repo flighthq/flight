@@ -56,7 +56,10 @@ const renderTexture = createRenderTexture({
   width: NODE_WIDTH,
   height: NODE_HEIGHT,
 });
-const renderTargetNode = createSprite({ data: { texture: renderTexture } });
+const renderTargetNode = ((created) => {
+  Object.assign(created.data, { texture: renderTexture });
+  return created;
+})(createSprite());
 renderTargetNode.x = NODE_X;
 renderTargetNode.y = NODE_Y;
 invalidateNodeLocalTransform(renderTargetNode);

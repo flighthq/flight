@@ -55,16 +55,17 @@ const atlas = createTextureAtlas({
   texture: createTexture({ dimension: '2d', source: createBitmap(40, 40, 0x3ddc97ff) }),
 });
 const root = createDisplayObject();
-const tilemap = createTilemap({
-  data: {
+const tilemap = ((created) => {
+  Object.assign(created.data, {
     atlas,
     columns: 5,
     rows: 3,
     tileHeight: 40,
     tileWidth: 40,
     tiles: new Int16Array(15).fill(0),
-  },
-});
+  });
+  return created;
+})(createTilemap());
 tilemap.x = 60;
 tilemap.y = 60;
 addNodeChild(root, tilemap);
