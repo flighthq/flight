@@ -1,3 +1,4 @@
+import { attachEntityBinding } from '@flighthq/entity/contract';
 import { emitSignal } from '@flighthq/signals/contract';
 import type { RenderState, RenderTargetDimensions, Viewport } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
@@ -23,6 +24,17 @@ describe('attachAppRenderView', () => {
 
     expect(resize).toHaveBeenCalledTimes(1);
     expect(target.width).toBe(80);
+  });
+
+  it('keeps its package runtime usable after an Entity binding is attached', () => {
+    const { resize, view } = makeView();
+    attachEntityBinding(view, { provider: true });
+    resize.mockClear();
+
+    synchronizeAppRenderView(view);
+
+    expect(resize).toHaveBeenCalledOnce();
+    expect(view[EntityRuntimeKey]).toBeDefined();
   });
 });
 

@@ -8,6 +8,12 @@ import { EntityRuntimeKey } from './types.ts';
 export function cloneEntity<Type extends EntityRaw>(source: Readonly<Type>): Type {
   const copy = allocateEntity<Type>();
   Object.assign(copy, source);
+  Object.defineProperty(copy, EntityRuntimeKey, {
+    configurable: true,
+    enumerable: false,
+    value: undefined,
+    writable: true,
+  });
   writeEntityRuntime(copy, undefined);
   return finishEntity(copy);
 }

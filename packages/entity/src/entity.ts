@@ -68,16 +68,18 @@ export function readEntityRuntime(source: Readonly<EntityRaw>): EntityRuntime | 
 }
 
 export function writeEntityRuntime(source: EntityRaw, runtime: EntityRuntime | undefined): void {
+  const hasPrivateRuntime = EntityRuntimes.has(source);
   let privateRuntime = runtime;
   if (
     runtime !== undefined &&
-    !EntityRuntimes.has(source) &&
+    !hasPrivateRuntime &&
     Object.prototype.hasOwnProperty.call(source, EntityRuntimeKey) &&
     (source as EntityWithCompatibilityRuntime)[EntityRuntimeKey] === runtime
   ) {
     privateRuntime = { ...runtime };
   }
   EntityRuntimes.set(source, privateRuntime);
+  if (hasPrivateRuntime) return;
   Object.defineProperty(source, EntityRuntimeKey, {
     configurable: true,
     enumerable: false,

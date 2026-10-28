@@ -307,14 +307,12 @@ describe('getScreenById', () => {
     const outBinding = { owner: 'out' };
     attachEntityBinding(source, sourceBinding);
     attachEntityBinding(out, outBinding);
-    const sourceRuntime = source[EntityRuntimeKey];
-    const outRuntime = out[EntityRuntimeKey];
 
     expect(getScreenById(createScreenQueryHost([source]).screen.query, source.id, out)).toBe(out);
 
     expect(Object.entries(out)).toEqual(Object.entries(source));
-    expect(out[EntityRuntimeKey]).toBe(outRuntime);
-    expect(out[EntityRuntimeKey]).not.toBe(sourceRuntime);
+    expect(out[EntityRuntimeKey]).toBeUndefined();
+    expect(source[EntityRuntimeKey]).toBeUndefined();
     expect(getEntityBinding(out)).toBe(outBinding);
     expect(getEntityBinding(source)).toBe(sourceBinding);
   });

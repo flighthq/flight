@@ -47,6 +47,25 @@ describe('attachEntityBinding', () => {
     expect(getEntityRuntime(entity)).toBe(runtime);
     expect(runtime.binding).toBe(binding);
   });
+
+  it('preserves package-owned compatibility state on a privately tracked entity', () => {
+    const entity = createTestEntity();
+    const packageRuntime = Object.assign(createEntityRuntime(), { packageState: 7 });
+    const binding = {};
+    entity[EntityRuntimeKey] = packageRuntime;
+
+    attachEntityBinding(entity, binding);
+
+    expect(entity[EntityRuntimeKey]).toBe(packageRuntime);
+    expect((entity[EntityRuntimeKey] as typeof packageRuntime).packageState).toBe(7);
+    expect(getEntityRuntime(entity)).not.toBe(packageRuntime);
+    expect(getEntityBinding(entity)).toBe(binding);
+
+    detachEntityBinding(entity);
+
+    expect(entity[EntityRuntimeKey]).toBe(packageRuntime);
+    expect(getEntityBinding(entity)).toBeNull();
+  });
 });
 
 describe('detachEntityBinding', () => {
