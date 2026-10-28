@@ -183,6 +183,73 @@ pub fn equals_vector2(a: Option<&Vector2>, b: Option<&Vector2>) -> bool {
     }
 
     #[test]
+    fn emits_private_fields_on_module_private_plain_data_structs() {
+        let source = r#"
+struct DecoderState {
+    bytes: Vec<u8>,
+    position: usize,
+    limit: Option<usize>,
+}
+
+pub fn advance_decoder(bytes: Vec<u8>) -> usize {
+    let mut state = DecoderState {
+        bytes,
+        position: 0,
+        limit: None,
+    };
+    state.position += 1;
+    return state.position;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(
+            "interface DecoderState {\n  bytes: number[];\n  position: number;\n  limit?: number;\n}"
+        ));
+        assert!(!output.contains("export interface DecoderState"));
+        assert!(
+            output.contains("let state = { bytes: bytes, position: 0, limit: undefined };"),
+            "{output}"
+        );
+        assert!(output.contains("state.position += 1;"));
+    }
+
+    #[test]
+    fn keeps_private_fields_invalid_on_exported_structs_and_entities() {
+        let cases = [
+            (
+                r#"
+pub struct PublicRecord {
+    hidden: f32,
+}
+"#,
+                "unsupported private field `hidden` on `PublicRecord`; only the EntityRuntimeSlot is target-private",
+            ),
+            (
+                r#"
+struct InternalEntity {
+    runtime: EntityRuntimeSlot,
+    hidden: f32,
+}
+
+flight_entity::impl_entity!(InternalEntity);
+"#,
+                "unsupported private field `hidden` on `InternalEntity`; only the EntityRuntimeSlot is target-private",
+            ),
+        ];
+
+        for (source, expected) in cases {
+            assert_eq!(
+                compile_typescript(source, Some("@flighthq/entity/contract"))
+                    .unwrap_err()
+                    .to_string(),
+                expected
+            );
+        }
+    }
+
+    #[test]
     fn lowers_fully_qualified_entity_allocation_to_the_imported_hook() {
         let source = r#"
 pub struct Vector2 {

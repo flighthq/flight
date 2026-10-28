@@ -925,8 +925,10 @@ fn validate_fields(structure: &ItemStruct) -> Result<(), CompileError> {
             structure.ident
         )));
     };
+    let module_private_plain_data = !is_public(&structure.vis) && !has_entity_runtime(structure);
     for field in &fields.named {
-        if !(is_public(&field.vis)
+        if !(module_private_plain_data
+            || is_public(&field.vis)
             || field.ident.as_ref().is_some_and(|ident| ident == "runtime")
                 && type_name(&field.ty).as_deref() == Some("EntityRuntimeSlot"))
         {

@@ -4038,11 +4038,12 @@ fn emit_struct(
     } else {
         ""
     };
+    let module_private_plain_data = !is_public(&structure.vis) && !entity;
     let extension = if entity { " extends EntityRaw" } else { "" };
     writeln!(out, "{export}interface {name}{extension} {{")
         .expect("writing to a String cannot fail");
     for field in &structure.fields {
-        if !is_public(&field.vis) {
+        if !module_private_plain_data && !is_public(&field.vis) {
             continue;
         }
         emit_documentation(out, &field.attrs, 1);
