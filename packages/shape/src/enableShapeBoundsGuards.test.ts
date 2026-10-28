@@ -1,5 +1,6 @@
 import { createRectangle } from '@flighthq/geometry/contract';
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
+import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 
 import {
@@ -10,6 +11,12 @@ import {
 import { createShape } from './shape.ts';
 import { computeShapeBoundsRectangle } from './shapeBounds.ts';
 
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
+
 afterEach(() => {
   disableShapeBoundsGuards();
 });
@@ -17,14 +24,14 @@ afterEach(() => {
 describe('areShapeBoundsGuardsEnabled', () => {
   it('reports whether the module guard is installed', () => {
     expect(areShapeBoundsGuardsEnabled()).toBe(false);
-    enableShapeBoundsGuards();
+    enableShapeBoundsGuards(logState, 0);
     expect(areShapeBoundsGuardsEnabled()).toBe(true);
   });
 });
 
 describe('disableShapeBoundsGuards', () => {
   it('restores the silent production default', () => {
-    enableShapeBoundsGuards();
+    enableShapeBoundsGuards(logState, 0);
     disableShapeBoundsGuards();
 
     expect(captureLog(() => computeMissingBounds())).toHaveLength(0);
@@ -33,7 +40,7 @@ describe('disableShapeBoundsGuards', () => {
 
 describe('enableShapeBoundsGuards', () => {
   it('names a missing key once and points to the plain explanation query', () => {
-    enableShapeBoundsGuards();
+    enableShapeBoundsGuards(logState, 0);
 
     const entries = captureLog(() => {
       computeMissingBounds();
@@ -49,13 +56,11 @@ describe('enableShapeBoundsGuards', () => {
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
-  try {
-    run();
-    return getMemoryLogSinkEntries(sink);
-  } finally {
-    removeLogSink(sink.sink);
-  }
+  addLogSink(logState, sink.sink);
+  run();
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
 }
 
 function computeMissingBounds(): void {

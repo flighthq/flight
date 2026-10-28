@@ -1,5 +1,6 @@
 import { setVector3 } from '@flighthq/geometry/contract';
-import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
+import { createLogState, setLogSink } from '@flighthq/log/contract';
 import { invalidateNodeLocalTransform } from '@flighthq/node/contract';
 import { createNode3D } from '@flighthq/scene3d/contract';
 import type { LogEntry } from '@flighthq/types/contract';
@@ -12,12 +13,16 @@ import {
 } from './enableSkeleton3DGuards.ts';
 import { createSkeleton3D, setSkeleton3DBindPose } from './skeleton3d.ts';
 
-beforeEach(() => clearLogOnceKeys());
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
 
 describe('areSkeleton3DGuardsEnabled', () => {
   test('reports whether the guards are installed', () => {
     expect(areSkeleton3DGuardsEnabled()).toBe(false);
-    enableSkeleton3DGuards();
+    enableSkeleton3DGuards(logState, () => 0);
     expect(areSkeleton3DGuardsEnabled()).toBe(true);
     disableSkeleton3DGuards();
     expect(areSkeleton3DGuardsEnabled()).toBe(false);
@@ -26,17 +31,17 @@ describe('areSkeleton3DGuardsEnabled', () => {
 
 describe('disableSkeleton3DGuards', () => {
   test('leaves the core silent again once removed', () => {
-    enableSkeleton3DGuards();
+    enableSkeleton3DGuards(logState, () => 0);
     disableSkeleton3DGuards();
     expect(captureLog(() => setSkeleton3DBindPose(collapsedSkeleton()))).toHaveLength(0);
   });
 });
 
 describe('enableSkeleton3DGuards', () => {
-  // `logOnce` keys on the joint index and has no reset, so only ONE test may trigger a given index — a
-  // repeat would be deduplicated away and assert nothing while still looking green.
+  // `logOnce` keys on the joint index for the LogState's lifetime; beforeEach hands every test a fresh
+  // state, so no test is deduplicated away by another.
   test('warns, naming the joint, when a bind pose cannot be captured', () => {
-    enableSkeleton3DGuards();
+    enableSkeleton3DGuards(logState, () => 0);
     const entries = captureLog(() => setSkeleton3DBindPose(collapsedSkeleton()));
     expect(entries).toHaveLength(1);
     expect(entries[0].data).toMatchObject({ jointIndex: 0 });
@@ -44,7 +49,7 @@ describe('enableSkeleton3DGuards', () => {
   });
 
   test('stays silent for a rig whose joints all invert', () => {
-    enableSkeleton3DGuards();
+    enableSkeleton3DGuards(logState, () => 0);
     expect(captureLog(() => setSkeleton3DBindPose(createSkeleton3D([createNode3D()])))).toHaveLength(0);
   });
 });
@@ -55,11 +60,11 @@ afterEach(() => {
 
 function captureLog(run: () => void): LogEntry[] {
   const entries: LogEntry[] = [];
-  setLogSink((entry) => entries.push(entry));
+  setLogSink(logState, (entry) => entries.push(entry));
   try {
     run();
   } finally {
-    setLogSink(null);
+    setLogSink(logState, null);
   }
   return entries;
 }

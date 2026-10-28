@@ -1,28 +1,29 @@
-import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
+import { createLogState, setLogSink } from '@flighthq/log/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 
 import { disableSkeleton2DGuards, enableSkeleton2DGuards } from './enableSkeleton2DGuards.ts';
 import { reportSkeleton2DCoercedInterpolation, reportSkeleton2DDeformLengthMismatch } from './skeleton2dGuards.ts';
 
-// Each case uses its own subject string. `logOnce` keys are process-wide with no reset, which is the
-// behaviour a shipped app wants — one warning per subject, not one per frame — but it means two cases
-// sharing a subject would have the second silently suppressed by the first.
+// Each case uses its own subject string. `logOnce` keys last for the LogState's lifetime, which is the
+// behaviour a shipped app wants — one warning per subject, not one per frame. Every case gets a fresh
+// state here, so no case can be silently suppressed by another.
 const entries: LogEntry[] = [];
+let logState: LogState;
 
 beforeEach(() => {
-  clearLogOnceKeys();
+  logState = createLogState();
   entries.length = 0;
-  setLogSink((entry) => void entries.push(entry));
+  setLogSink(logState, (entry) => void entries.push(entry));
 });
 
 afterEach(() => {
   disableSkeleton2DGuards();
-  setLogSink(null);
 });
 
 describe('disableSkeleton2DGuards', () => {
   it('silences both cases again', () => {
-    enableSkeleton2DGuards();
+    enableSkeleton2DGuards(logState, 0);
     disableSkeleton2DGuards();
 
     reportSkeleton2DCoercedInterpolation('DisabledChannel', 'Linear', 'Step');
@@ -40,7 +41,7 @@ describe('enableSkeleton2DGuards', () => {
   });
 
   it('names what was stated and what actually happens to a coerced channel', () => {
-    enableSkeleton2DGuards();
+    enableSkeleton2DGuards(logState, 0);
 
     reportSkeleton2DCoercedInterpolation('StatedAndApplied', 'Linear', 'Step');
 
@@ -52,7 +53,7 @@ describe('enableSkeleton2DGuards', () => {
   });
 
   it('reports both lengths on a deform mismatch, and why nothing was applied', () => {
-    enableSkeleton2DGuards();
+    enableSkeleton2DGuards(logState, 0);
 
     reportSkeleton2DDeformLengthMismatch('BothLengths', 6, 8);
 
@@ -63,7 +64,7 @@ describe('enableSkeleton2DGuards', () => {
   });
 
   it('keys the coercion message per subject, so two families both get heard', () => {
-    enableSkeleton2DGuards();
+    enableSkeleton2DGuards(logState, 0);
 
     reportSkeleton2DCoercedInterpolation('PerSubjectOne', 'Linear', 'Step');
     reportSkeleton2DCoercedInterpolation('PerSubjectTwo', 'Linear', 'Step');
@@ -74,8 +75,8 @@ describe('enableSkeleton2DGuards', () => {
   });
 
   it('installs one guard however many times it is enabled', () => {
-    enableSkeleton2DGuards();
-    enableSkeleton2DGuards();
+    enableSkeleton2DGuards(logState, 0);
+    enableSkeleton2DGuards(logState, 0);
 
     reportSkeleton2DDeformLengthMismatch('EnabledTwice', 6, 8);
 

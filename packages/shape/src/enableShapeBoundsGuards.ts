@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type { Shape, ShapeBoundsMode } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -15,17 +16,24 @@ export function disableShapeBoundsGuards(): void {
 
 // Installs opt-in missing-command diagnostics. The traversal and its sentinel stay logger-free; an
 // application that omits this module sheds both @flighthq/log and every byte of the warning text.
-export function enableShapeBoundsGuards(): void {
-  setShapeBoundsGuard(warnOnMissingShapeBoundsCommand);
+// Warnings go to the caller-owned `logState`, stamped with `nowMs`, the caller's clock reading at enable.
+export function enableShapeBoundsGuards(logState: LogState, nowMs: number): void {
+  setShapeBoundsGuard((source, mode, missingCommandKey) =>
+    warnOnMissingShapeBoundsCommand(logState, nowMs, source, mode, missingCommandKey),
+  );
   _enabled = true;
 }
 
 function warnOnMissingShapeBoundsCommand(
+  logState: LogState,
+  nowMs: number,
   _source: Readonly<Shape>,
   mode: ShapeBoundsMode,
   missingCommandKey: string,
 ): void {
   logOnce(
+    logState,
+    nowMs,
     `shape:bounds-command-missing:${mode}:${missingCommandKey}`,
     LogLevel.Warn,
     {

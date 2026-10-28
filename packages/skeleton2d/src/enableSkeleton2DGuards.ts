@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type { Skeleton2DCoercedInterpolation, Skeleton2DDeformLengthMismatch } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -28,14 +29,22 @@ export function disableSkeleton2DGuards(): void {
  * The messages live here rather than beside the code that knows the fact, so a shipped build that never
  * imports this module carries neither them nor `@flighthq/log`. Every case also has a `has*`/`explain*`
  * query for a caller that wants the fact as data instead of a log line.
+ *
+ * Warnings go to the caller-owned `logState`, stamped with `nowMs`, the caller's clock reading at enable.
  */
-export function enableSkeleton2DGuards(): void {
-  setSkeleton2DCoercedInterpolationGuard(warnOnCoercedInterpolation);
-  setSkeleton2DDeformLengthGuard(warnOnDeformLengthMismatch);
+export function enableSkeleton2DGuards(logState: LogState, nowMs: number): void {
+  setSkeleton2DCoercedInterpolationGuard((report) => warnOnCoercedInterpolation(logState, nowMs, report));
+  setSkeleton2DDeformLengthGuard((report) => warnOnDeformLengthMismatch(logState, nowMs, report));
 }
 
-function warnOnCoercedInterpolation(report: Readonly<Skeleton2DCoercedInterpolation>): void {
+function warnOnCoercedInterpolation(
+  logState: LogState,
+  nowMs: number,
+  report: Readonly<Skeleton2DCoercedInterpolation>,
+): void {
   logOnce(
+    logState,
+    nowMs,
     `skeleton2d:coerced-interpolation:${report.subject}`,
     LogLevel.Warn,
     {
@@ -45,8 +54,14 @@ function warnOnCoercedInterpolation(report: Readonly<Skeleton2DCoercedInterpolat
   );
 }
 
-function warnOnDeformLengthMismatch(report: Readonly<Skeleton2DDeformLengthMismatch>): void {
+function warnOnDeformLengthMismatch(
+  logState: LogState,
+  nowMs: number,
+  report: Readonly<Skeleton2DDeformLengthMismatch>,
+): void {
   logOnce(
+    logState,
+    nowMs,
     `skeleton2d:deform-length:${report.subject}`,
     LogLevel.Warn,
     {
