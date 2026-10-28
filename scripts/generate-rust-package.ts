@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { renderPublicExports } from './generate-rust-package-exports.ts';
+
 interface Options {
   check: boolean;
   crateName: string;
@@ -116,7 +118,7 @@ try {
 function collectSymbols(modules: PackageModule[]): Map<string, SymbolOwner> {
   const symbols = new Map<string, SymbolOwner>();
   for (const module of modules) {
-    const pattern = /^export (function|const|enum|interface|type) ([A-Za-z0-9_]+)/gm;
+    const pattern = /^export (class|function|const|enum|interface|type) ([A-Za-z0-9_]+)/gm;
     for (const match of module.typescript.matchAll(pattern)) {
       const owner = symbols.get(match[2]) ?? {
         fileName: module.fileName,
@@ -127,8 +129,8 @@ function collectSymbols(modules: PackageModule[]): Map<string, SymbolOwner> {
         throw new Error(`duplicate generated symbol ${match[2]} in ${owner.fileName} and ${module.fileName}`);
       }
       const kind = match[1];
-      owner.hasType ||= kind === 'enum' || kind === 'interface' || kind === 'type';
-      owner.hasValue ||= kind === 'const' || kind === 'enum' || kind === 'function';
+      owner.hasType ||= kind === 'class' || kind === 'enum' || kind === 'interface' || kind === 'type';
+      owner.hasValue ||= kind === 'class' || kind === 'const' || kind === 'enum' || kind === 'function';
       symbols.set(match[2], owner);
     }
   }
@@ -301,17 +303,7 @@ function publicExports(crateRoot: string, modules: PackageModule[], symbols: Map
     }
   }
 
-  const types: string[] = [];
-  const values: string[] = [];
-  for (const name of [...new Set(roots)].sort()) {
-    const owner = symbols.get(name);
-    if (!owner) throw new Error(`root export ${name} has no TypeScript contract symbol`);
-    (owner.hasValue ? values : types).push(name);
-  }
-  let output = '';
-  if (values.length > 0) output += `export {\n  ${values.join(',\n  ')},\n} from './contract.ts';\n`;
-  if (types.length > 0) output += `\nexport type { ${types.join(', ')} } from './contract.ts';\n`;
-  return output;
+  return renderPublicExports(modules, symbols, roots);
 }
 
 function sourceDirective(crateRoot: string, module: PackageModule, directive: string): string[] {

@@ -419,6 +419,9 @@ pub(crate) fn emit_expression(
         Expr::Repeat(repeat) => {
             let value = emit_expression(&repeat.expr, entities)?;
             let length = emit_expression(&repeat.len, entities)?;
+            if let Some(array_type) = typed_array_for_literal(&repeat.expr) {
+                return Ok(format!("new {array_type}({length}).fill({value})"));
+            }
             Ok(format!("new Array({length}).fill({value})"))
         }
         Expr::Struct(structure) => {
@@ -476,12 +479,21 @@ fn emit_expression_for_type(
                     .iter()
                     .map(|element| emit_expression_for_type(element, &array_type.elem, entities))
                     .collect::<Result<Vec<_>, _>>()?;
-                Ok(format!("[{}]", elements.join(", ")))
+                let value = format!("[{}]", elements.join(", "));
+                if let Some(array_type) = typed_array_for_type(&array_type.elem) {
+                    Ok(format!("new {array_type}({value})"))
+                } else {
+                    Ok(value)
+                }
             }
             Expr::Repeat(repeat) => {
                 let value = emit_expression_for_type(&repeat.expr, &array_type.elem, entities)?;
                 let length = emit_expression(&repeat.len, entities)?;
-                Ok(format!("new Array({length}).fill({value})"))
+                if let Some(array_type) = typed_array_for_type(&array_type.elem) {
+                    Ok(format!("new {array_type}({length}).fill({value})"))
+                } else {
+                    Ok(format!("new Array({length}).fill({value})"))
+                }
             }
             _ => emit_expression(expression, entities),
         },
@@ -1463,7 +1475,13 @@ pub(crate) fn emit_type(
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
     return match rust_type {
-        Type::Array(array) => Ok(format!("{}[]", emit_type(&array.elem, entities)?)),
+        Type::Array(array) => {
+            if let Some(array_type) = typed_array_for_type(&array.elem) {
+                Ok(array_type.to_string())
+            } else {
+                Ok(format!("{}[]", emit_type(&array.elem, entities)?))
+            }
+        }
         Type::Paren(paren) => emit_type(&paren.elem, entities),
         Type::Path(path) => {
             let Some(segment) = path.path.segments.last() else {
@@ -1559,6 +1577,44 @@ pub(crate) fn emit_type(
             "unsupported Rust type `{}`",
             type_kind(rust_type)
         ))),
+    };
+}
+
+fn typed_array_for_literal(expression: &Expr) -> Option<&'static str> {
+    let Expr::Lit(literal) = expression else {
+        return None;
+    };
+    let suffix = match &literal.lit {
+        Lit::Float(value) => value.suffix(),
+        Lit::Int(value) => value.suffix(),
+        _ => return None,
+    };
+    return typed_array_for_primitive(suffix);
+}
+
+fn typed_array_for_type(rust_type: &Type) -> Option<&'static str> {
+    return match rust_type {
+        Type::Paren(paren) => typed_array_for_type(&paren.elem),
+        Type::Path(path) => path
+            .path
+            .segments
+            .last()
+            .and_then(|segment| typed_array_for_primitive(&segment.ident.to_string())),
+        _ => None,
+    };
+}
+
+fn typed_array_for_primitive(name: &str) -> Option<&'static str> {
+    return match name {
+        "f32" => Some("Float32Array"),
+        "f64" => Some("Float64Array"),
+        "i8" => Some("Int8Array"),
+        "i16" => Some("Int16Array"),
+        "i32" => Some("Int32Array"),
+        "u8" => Some("Uint8Array"),
+        "u16" => Some("Uint16Array"),
+        "u32" => Some("Uint32Array"),
+        _ => None,
     };
 }
 

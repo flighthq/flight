@@ -347,10 +347,10 @@ mod write_vector2_to_float32_array {
         let output = compile_vitest(source, "@flighthq/geometry/contract").unwrap();
 
         assert!(output.contains(
-            "const cases: Readonly<readonly [number[], number][]> = [[[1.0, 2.0], 3.0]];"
+            "const cases: Readonly<readonly [Float32Array, number][]> = [[new Float32Array([1.0, 2.0]), 3.0]];"
         ));
         assert!(output.contains("for (const [value, expected] of cases) {"));
-        assert!(output.contains("let out = new Array(2).fill(0.0);"));
+        assert!(output.contains("let out = new Float32Array(2).fill(0.0);"));
         assert!(output.contains("expect(Number.isNaN(Number.NaN)).toBe(true);"));
     }
 
