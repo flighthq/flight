@@ -177,4 +177,23 @@ mod enable_gl_pbr_extension_guards {
         );
         assert_eq!(messages(&sink).len(), 0);
     }
+
+    // Re-enabling with None keeps the guard installed but silent (one rule across render guards).
+    #[test]
+    fn stays_silent_after_a_later_enable_with_none_replaces_the_log() {
+        let (mut state, sink) = make_guarded_state();
+        enable_gl_pbr_extension_guards(&state, None);
+        let extension = Arc::new(RwLock::new(PbrExtension::Anisotropy(
+            create_anisotropy_pbr_extension(),
+        )));
+        let material = make_material(vec![extension]);
+        (GL_EXTENDED_PBR_MESH_MATERIAL_RENDERER.bind)(
+            &mut state,
+            Some(&material),
+            &no_lights(),
+            &create_camera(),
+        );
+        assert!(are_gl_pbr_extension_guards_enabled(&state));
+        assert_eq!(messages(&sink).len(), 0);
+    }
 }

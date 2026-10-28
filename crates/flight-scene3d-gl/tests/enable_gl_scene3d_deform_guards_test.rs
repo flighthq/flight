@@ -132,4 +132,27 @@ mod enable_gl_scene3d_deform_guards {
         add_child(&scene, skinned_mesh());
         assert_eq!(draw_with_guard(&scene), 1);
     }
+
+    // Re-enabling with None keeps the guard installed but silent (one rule across render guards).
+    #[test]
+    fn stays_silent_after_a_later_enable_with_none_replaces_the_log() {
+        let scene = make_test_scene();
+        add_child(&scene, morph_mesh());
+        let mut state = make_gl_scene3d_state();
+        let (log, sink) = make_test_log();
+        enable_gl_scene3d_deform_guards(&state, Some(log));
+        enable_gl_scene3d_deform_guards(&state, None);
+        let pass = make_test_pass(&state);
+        render_gl_scene3d(
+            &mut state,
+            &pass,
+            None,
+            &scene,
+            &make_test_look_at_camera(),
+            &make_test_lights(),
+            None,
+        );
+        assert!(are_gl_scene3d_deform_guards_enabled(&state));
+        assert!(log_messages(&sink).is_empty());
+    }
 }

@@ -109,4 +109,34 @@ mod enable_gl_scene3d_forward_light_selection_guards {
 
         assert!(log_messages(&sink).is_empty());
     }
+
+    // Re-enabling with None keeps the guard installed but silent (one rule across render guards).
+    #[test]
+    fn stays_silent_after_a_later_enable_with_none_replaces_the_log() {
+        let mut state = make_gl_scene3d_state();
+        register_gl_standard_pbr_material(&mut state);
+        let (log, sink) = make_test_log();
+        enable_gl_scene3d_forward_light_selection_guards(&state, Some(log));
+        enable_gl_scene3d_forward_light_selection_guards(&state, None);
+        let scene = make_test_scene();
+        add_test_mesh(
+            &scene,
+            create_box_mesh_geometry(None, None, None),
+            vec![Some(material_ref(create_standard_pbr_material()))],
+        );
+        let pass = make_test_pass(&state);
+        render_gl_scene3d(
+            &mut state,
+            &pass,
+            None,
+            &scene,
+            &make_test_look_at_camera(),
+            &excess_lights(),
+            None,
+        );
+        assert!(are_gl_scene3d_forward_light_selection_guards_enabled(
+            &state
+        ));
+        assert!(log_messages(&sink).is_empty());
+    }
 }
