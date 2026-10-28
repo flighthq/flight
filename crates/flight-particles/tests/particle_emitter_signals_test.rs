@@ -1,7 +1,7 @@
 use flight_particles::contract::*;
 use flight_signals::{connect_signal, emit_signal};
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 mod create_particle_emitter_signals {
     use super::*;

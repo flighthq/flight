@@ -145,7 +145,11 @@ pub fn read_bodies(
 
         copy_u32_to_js(ids, &out.ids, out.count);
         copy_u32_to_js(flags, &out.flags, out.count);
-        copy_f64_to_js(values, &out.values, out.count * PHYSICS2D_ABI_BODY_VALUE_STRIDE);
+        copy_f64_to_js(
+            values,
+            &out.values,
+            out.count * PHYSICS2D_ABI_BODY_VALUE_STRIDE,
+        );
         counts.set_index(0, out.count as u32);
         counts.set_index(1, out.required_count as u32);
         success
@@ -186,7 +190,11 @@ pub fn read_joints(
 
         copy_u32_to_js(ids, &out.ids, out.count);
         copy_u32_to_js(flags, &out.flags, out.count);
-        copy_f64_to_js(values, &out.values, out.count * PHYSICS2D_ABI_JOINT_VALUE_STRIDE);
+        copy_f64_to_js(
+            values,
+            &out.values,
+            out.count * PHYSICS2D_ABI_JOINT_VALUE_STRIDE,
+        );
         counts.set_index(0, out.count as u32);
         counts.set_index(1, out.required_count as u32);
         success

@@ -31,10 +31,7 @@ fn bitmap_from_raw(data: &[u8], width: f64, height: f64) -> flight_bitmap::Bitma
     bmp
 }
 
-fn region_from_raw(
-    data: &[u8],
-    descriptor: &[f64],
-) -> flight_bitmap::BitmapRegion {
+fn region_from_raw(data: &[u8], descriptor: &[f64]) -> flight_bitmap::BitmapRegion {
     assert_eq!(
         descriptor.len(),
         6,
@@ -92,7 +89,11 @@ fn parse_edge_mode(s: &str) -> BitmapEdgeMode {
 }
 
 fn optional_u8_map(values: &[u8]) -> Option<&[u8]> {
-    if values.is_empty() { None } else { Some(values) }
+    if values.is_empty() {
+        None
+    } else {
+        Some(values)
+    }
 }
 
 // --- Alpha operations ---
@@ -223,7 +224,11 @@ pub fn convolve_bitmap_wasm(
     let options = BitmapConvolutionOptions {
         bias: Some(bias as f32),
         edge: Some(parse_edge_mode(&edge)),
-        divisor: if divisor.is_nan() { None } else { Some(divisor as f32) },
+        divisor: if divisor.is_nan() {
+            None
+        } else {
+            Some(divisor as f32)
+        },
         matrix: f64_slice_to_f32_vec(matrix),
         matrix_x: matrix_x as i32,
         matrix_y: matrix_y as i32,
@@ -476,9 +481,12 @@ pub fn get_bitmap_color_bounds_rectangle_wasm(
     find_color: bool,
 ) -> bool {
     assert_eq!(out.len(), 4, "rectangle output must contain four values");
-    let Some(rectangle) =
-        get_bitmap_color_bounds_rectangle(&region_from_raw(data, descriptor), mask as u32, color as u32, find_color)
-    else {
+    let Some(rectangle) = get_bitmap_color_bounds_rectangle(
+        &region_from_raw(data, descriptor),
+        mask as u32,
+        color as u32,
+        find_color,
+    ) else {
         return false;
     };
     out.copy_from_slice(&[rectangle.x, rectangle.y, rectangle.width, rectangle.height]);

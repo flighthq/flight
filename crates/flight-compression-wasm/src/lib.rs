@@ -1,6 +1,9 @@
 use wasm_bindgen::prelude::*;
 
-use flight_compression::{CompressionFraming, compress_deflate, compress_deflate_zlib, compress_lzma, decompress_deflate, decompress_lzma};
+use flight_compression::{
+    CompressionFraming, compress_deflate, compress_deflate_zlib, compress_lzma, decompress_deflate,
+    decompress_lzma,
+};
 
 #[wasm_bindgen]
 pub fn compress_deflate_wasm(bytes: &[u8]) -> Vec<u8> {

@@ -7,7 +7,11 @@ use crate::physics2d_abi_layout::*;
 use crate::types::*;
 
 /// The largest capacity a TS caller can express (TS `Number.isSafeInteger`).
-const MAX_SAFE_CAPACITY: usize = if usize::BITS >= 64 { (1usize << 53) - 1 } else { usize::MAX };
+const MAX_SAFE_CAPACITY: usize = if usize::BITS >= 64 {
+    (1usize << 53) - 1
+} else {
+    usize::MAX
+};
 
 /// Allocates a body readback buffer for `capacity` bodies (TS `createPhysics2DAbiBodyBuffer`).
 pub fn create_physics2d_abi_body_buffer(capacity: usize) -> Physics2DAbiBodyBuffer {
