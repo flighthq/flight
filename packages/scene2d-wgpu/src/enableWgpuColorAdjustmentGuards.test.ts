@@ -64,6 +64,18 @@ describe('enableWgpuColorAdjustmentGuards', () => {
     }
   });
 
+  it('stays silent after a later enable with null replaces an earlier log state', async () => {
+    const state = await createWgpuRenderStateForTest();
+    const logState = createLogState();
+    const sink = createMemoryLogSink(8);
+    addLogSink(logState, sink.sink);
+    enableWgpuColorAdjustmentGuards(state, logState);
+    enableWgpuColorAdjustmentGuards(state, null);
+    recordWgpuQuadBatchColorScaleBias(state, ct(), 0);
+    expect(readMemoryLogEntries(sink)).toHaveLength(0);
+    expect(areWgpuColorAdjustmentGuardsEnabled(state)).toBe(true);
+  });
+
   it('stays silent for an untinted instance', async () => {
     const state = await createWgpuRenderStateForTest();
     const logState = createLogState();

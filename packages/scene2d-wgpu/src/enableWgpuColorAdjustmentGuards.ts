@@ -12,9 +12,10 @@ export function areWgpuColorAdjustmentGuardsEnabled(state: WgpuRenderState): boo
 // Installs the shakeable color-adjustment guard on `state`: when a node carries a color adjustment but
 // registerWgpuColorAdjustmentMaterialFeature was never called, recordWgpuQuadBatchColorScaleBias reaches this guard
 // through its optional persistent registry slot and warns once into `logState` (the tint is skipped, drawn
-// untinted — the sentinel behavior, never a throw). A null `logState` keeps the one recorded by an earlier call;
-// with none recorded the guard stays silent. Not calling this — the production default — costs the batch
-// nothing, since the message and @flighthq/log dependency live only in this separately-imported module.
+// untinted — the sentinel behavior, never a throw). Every call records `logState`, so a null `logState`
+// leaves the guard installed but silent, including after an earlier non-null call. Not calling this — the
+// production default — costs the batch nothing, since the message and @flighthq/log dependency live only
+// in this separately-imported module.
 // Idempotent: the installed guard is the same function on every call.
 export function enableWgpuColorAdjustmentGuards(state: WgpuRenderState, logState: LogState | null): void {
   let slot = _guardSlots.get(state);
@@ -23,7 +24,7 @@ export function enableWgpuColorAdjustmentGuards(state: WgpuRenderState, logState
     slot = created;
     _guardSlots.set(state, slot);
   }
-  if (logState !== null) slot.logState = logState;
+  slot.logState = logState;
   const runtime = getWgpuRenderStateRuntime(state);
   if (runtime.registries.colorAdjustmentFeatureGuard !== slot.guard) {
     runtime.registries.colorAdjustmentFeatureGuard = slot.guard;
