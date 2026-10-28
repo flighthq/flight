@@ -1,5 +1,12 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  createLogState,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
 import { createCustomShaderMaterial } from '@flighthq/materials/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import {
   areWgpuScene3DCustomShaderGuardsEnabled,
@@ -12,7 +19,7 @@ describe('areWgpuScene3DCustomShaderGuardsEnabled', () => {
   it('reports installation state', () => {
     const { state } = makeWgpuScene3DState();
     expect(areWgpuScene3DCustomShaderGuardsEnabled(state)).toBe(false);
-    enableWgpuScene3DCustomShaderGuards(state);
+    enableWgpuScene3DCustomShaderGuards(state, createLogState());
     expect(areWgpuScene3DCustomShaderGuardsEnabled(state)).toBe(true);
   });
 });
@@ -20,8 +27,8 @@ describe('areWgpuScene3DCustomShaderGuardsEnabled', () => {
 describe('enableWgpuScene3DCustomShaderGuards', () => {
   it('is idempotent', () => {
     const { state } = makeWgpuScene3DState();
-    enableWgpuScene3DCustomShaderGuards(state);
-    enableWgpuScene3DCustomShaderGuards(state);
+    enableWgpuScene3DCustomShaderGuards(state, createLogState());
+    enableWgpuScene3DCustomShaderGuards(state, null);
     expect(areWgpuScene3DCustomShaderGuardsEnabled(state)).toBe(true);
   });
 });
@@ -29,7 +36,8 @@ describe('enableWgpuScene3DCustomShaderGuards', () => {
 describe('runWgpuCustomShaderGuards', () => {
   it('warns on bad vector lengths, capacity overflow, and missing reserved bindings', () => {
     const { state } = makeWgpuScene3DState();
-    enableWgpuScene3DCustomShaderGuards(state);
+    const logState = createLogState();
+    enableWgpuScene3DCustomShaderGuards(state, logState);
     const uniforms: Record<string, number[]> = {};
     for (let i = 0; i < 33; i++) uniforms[`value${i}`] = [i];
     uniforms['invalid'] = [1, 2, 3, 4, 5];
@@ -39,7 +47,7 @@ describe('runWgpuCustomShaderGuards', () => {
       uniforms,
     });
     const sink = createMemoryLogSink(16);
-    addLogSink(sink.sink);
+    addLogSink(logState, sink.sink);
     try {
       runWgpuCustomShaderGuards(
         state,
@@ -47,7 +55,7 @@ describe('runWgpuCustomShaderGuards', () => {
         '@group(0) @binding(0) var<uniform> frame: vec4f;',
         material,
       );
-      const messages = getMemoryLogSinkEntries(sink).map((entry) =>
+      const messages = readMemoryLogEntries(sink).map((entry) =>
         String((entry.data as Record<string, unknown>).message),
       );
       expect(messages.some((message) => message.includes('1–4 components'))).toBe(true);
@@ -55,19 +63,26 @@ describe('runWgpuCustomShaderGuards', () => {
       expect(messages.some((message) => message.includes('@group(1) @binding(0)'))).toBe(true);
       expect(messages.some((message) => message.includes('@group(3) @binding(1)'))).toBe(true);
     } finally {
-      removeLogSink(sink.sink);
+      removeLogSink(logState, sink.sink);
     }
   });
 
   it('does nothing until enabled', () => {
     const { state } = makeWgpuScene3DState();
+    const logState = createLogState();
     const sink = createMemoryLogSink(2);
-    addLogSink(sink.sink);
+    addLogSink(logState, sink.sink);
     try {
       runWgpuCustomShaderGuards(state, 'disabled-guard-test', '', createCustomShaderMaterial());
-      expect(getMemoryLogSinkEntries(sink)).toHaveLength(0);
+      expect(readMemoryLogEntries(sink)).toHaveLength(0);
     } finally {
-      removeLogSink(sink.sink);
+      removeLogSink(logState, sink.sink);
     }
   });
 });
+
+function readMemoryLogEntries(sink: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
+}

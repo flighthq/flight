@@ -1,5 +1,12 @@
 import { createPointLight } from '@flighthq/lighting/contract';
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  createLogState,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
+import type { LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import {
   areWgpuScene3DForwardLightSelectionGuardsEnabled,
@@ -12,7 +19,7 @@ describe('areWgpuScene3DForwardLightSelectionGuardsEnabled', () => {
   it('reports false before installation and true afterward', () => {
     const { state } = makeWgpuScene3DState();
     expect(areWgpuScene3DForwardLightSelectionGuardsEnabled(state)).toBe(false);
-    enableWgpuScene3DForwardLightSelectionGuards(state);
+    enableWgpuScene3DForwardLightSelectionGuards(state, createLogState());
     expect(areWgpuScene3DForwardLightSelectionGuardsEnabled(state)).toBe(true);
   });
 });
@@ -20,20 +27,27 @@ describe('areWgpuScene3DForwardLightSelectionGuardsEnabled', () => {
 describe('enableWgpuScene3DForwardLightSelectionGuards', () => {
   it('installs the opt-in warning with actionable selection guidance', () => {
     const { state } = makeWgpuScene3DState();
-    enableWgpuScene3DForwardLightSelectionGuards(state);
+    const logState = createLogState();
+    enableWgpuScene3DForwardLightSelectionGuards(state, logState);
     const sink = createMemoryLogSink(4);
-    addLogSink(sink.sink);
+    addLogSink(logState, sink.sink);
     try {
       getWgpuScene3DRuntime(state).forwardLightSelectionGuard!({
         ambient: null,
         directional: null,
         point: Array.from({ length: 5 }, () => createPointLight()),
       });
-      const entries = getMemoryLogSinkEntries(sink);
+      const entries = readMemoryLogEntries(sink);
       expect(entries).toHaveLength(1);
       expect(String((entries[0].data as Record<string, unknown>).message)).toContain('prepareWgpuScene3DForwardLights');
     } finally {
-      removeLogSink(sink.sink);
+      removeLogSink(logState, sink.sink);
     }
   });
 });
+
+function readMemoryLogEntries(sink: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
+}

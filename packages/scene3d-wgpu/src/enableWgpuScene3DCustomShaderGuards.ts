@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type { CustomShaderMaterial, WgpuCustomMaterialShaderSource, WgpuRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -11,7 +12,8 @@ export function areWgpuScene3DCustomShaderGuardsEnabled(state: WgpuRenderState):
 }
 
 // Enables actionable, warn-once diagnostics for the fixed custom-material WGSL binding ABI.
-export function enableWgpuScene3DCustomShaderGuards(state: WgpuRenderState): void {
+export function enableWgpuScene3DCustomShaderGuards(state: WgpuRenderState, logState: LogState | null): void {
+  if (logState !== null) _guardLogStates.set(state, logState);
   getWgpuScene3DRuntime(state).customShaderGuard = runWgpuCustomShaderGuards;
 }
 
@@ -24,6 +26,8 @@ export function runWgpuCustomShaderGuards(
   material: Readonly<CustomShaderMaterial>,
 ): void {
   if (getWgpuScene3DRuntime(state).customShaderGuard == null) return;
+  const logState = _guardLogStates.get(state);
+  if (logState === undefined) return;
 
   const uniforms = material.uniforms ?? {};
   const uniformNames = Object.keys(uniforms).sort();
@@ -31,6 +35,7 @@ export function runWgpuCustomShaderGuards(
     const value = uniforms[name];
     if (typeof value !== 'number' && (value.length < 1 || value.length > 4)) {
       warn(
+        logState,
         `uniform-length:${shaderKey}:${name}:${value.length}`,
         `shader "${shaderKey}" uniform "${name}" has ${value.length} components; WebGPU custom material uniforms must be scalars or vectors with 1–4 components.`,
       );
@@ -38,6 +43,7 @@ export function runWgpuCustomShaderGuards(
   }
   if (uniformNames.length > WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY) {
     warn(
+      logState,
       `uniform-overflow:${shaderKey}`,
       `shader "${shaderKey}" has ${uniformNames.length} uniforms, exceeding the fixed ${WGPU_CUSTOM_SHADER_USER_VEC4_CAPACITY}-vec4 UserBlock capacity; extra alphabetically sorted fields are not uploaded.`,
     );
@@ -46,6 +52,7 @@ export function runWgpuCustomShaderGuards(
   const textureCount = Object.keys(material.textures ?? {}).length;
   if (textureCount > WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY) {
     warn(
+      logState,
       `texture-overflow:${shaderKey}`,
       `shader "${shaderKey}" has ${textureCount} textures, exceeding the fixed ${WGPU_CUSTOM_SHADER_TEXTURE_CAPACITY}-texture binding capacity; extra bag-order textures are not bound.`,
     );
@@ -63,6 +70,7 @@ export function runWgpuCustomShaderGuards(
   for (const [group, binding, label] of required) {
     if (hasBinding(source, group, binding)) continue;
     warn(
+      logState,
       `missing-binding:${shaderKey}:${group}:${binding}`,
       `shader "${shaderKey}" is missing reserved @group(${group}) @binding(${binding}) (${label}); declare the fixed scene-wgpu custom material ABI binding.`,
     );
@@ -79,6 +87,10 @@ function hasBinding(source: string, group: number, binding: number): boolean {
   return groupFirst.test(source) || bindingFirst.test(source);
 }
 
-function warn(key: string, message: string): void {
-  logOnce(`scene-wgpu:custom-shader:${key}`, LogLevel.Warn, { message }, 'scene-wgpu');
+function warn(logState: LogState, key: string, message: string): void {
+  logOnce(logState, 0, `scene-wgpu:custom-shader:${key}`, LogLevel.Warn, { message }, 'scene-wgpu');
 }
+
+// The log state each render state's guard reports into, recorded by enableWgpuScene3DCustomShaderGuards.
+// A null log state on a later enable keeps the one already recorded.
+const _guardLogStates = new WeakMap<WgpuRenderState, LogState>();

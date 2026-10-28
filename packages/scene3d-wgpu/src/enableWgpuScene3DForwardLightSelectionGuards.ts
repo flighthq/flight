@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type { Scene3DLightsLike, WgpuRenderState } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -8,12 +9,15 @@ export function areWgpuScene3DForwardLightSelectionGuardsEnabled(state: WgpuRend
   return getWgpuScene3DRuntime(state).forwardLightSelectionGuard != null;
 }
 
-export function enableWgpuScene3DForwardLightSelectionGuards(state: WgpuRenderState): void {
-  getWgpuScene3DRuntime(state).forwardLightSelectionGuard = warnSelectionRequired;
+export function enableWgpuScene3DForwardLightSelectionGuards(state: WgpuRenderState, logState: LogState | null): void {
+  getWgpuScene3DRuntime(state).forwardLightSelectionGuard = (lights): void => warnSelectionRequired(logState, lights);
 }
 
-function warnSelectionRequired(lights: Readonly<Scene3DLightsLike>): void {
+function warnSelectionRequired(logState: LogState | null, lights: Readonly<Scene3DLightsLike>): void {
+  if (logState === null) return;
   logOnce(
+    logState,
+    0,
     'scene-wgpu:forward-light-selection-required',
     LogLevel.Warn,
     {
