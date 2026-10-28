@@ -1,5 +1,4 @@
 use flight_binpack::contract::*;
-use flight_binpack::*;
 use std::collections::HashMap;
 
 fn is_power_of_two(value: f32) -> bool {
@@ -113,8 +112,8 @@ mod pack_rectangles {
     use super::*;
 
     #[test]
-    fn bin_pack_default_max_extent_is_the_cap_the_packer_actually_applies_when_the_caller_names_none()
-     {
+    fn bin_pack_default_max_extent_is_the_cap_the_packer_actually_applies_when_the_caller_names_none(
+    ) {
         let over = pack_rectangles(
             &[PackableRectangle {
                 id: RectangleId::Text("over".to_string()),

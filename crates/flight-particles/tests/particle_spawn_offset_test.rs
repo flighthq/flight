@@ -1,9 +1,8 @@
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 
 use flight_math::*;
 use flight_particles::contract::*;
-use flight_particles::*;
 
 // D1 f32 bound (TS: toBeCloseTo(x, 5) → 5e-6)
 fn d1_bound_5(expected: f32) -> f32 {

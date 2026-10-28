@@ -1,5 +1,4 @@
 use flight_velocity::contract::*;
-use flight_velocity::*;
 
 fn assert_approx(actual: f32, expected: f32) {
     let diff = (actual - expected).abs();

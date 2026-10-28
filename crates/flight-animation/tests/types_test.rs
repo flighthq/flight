@@ -1,5 +1,4 @@
 use flight_animation::contract::*;
-use flight_animation::*;
 
 mod create_state_ref_from_index {
     use super::*;

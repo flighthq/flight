@@ -1,5 +1,4 @@
 use flight_binpack::contract::*;
-use flight_binpack::*;
 use std::collections::HashMap;
 
 // D24 out collector: each call fills a fresh caller-owned Vec.
@@ -312,8 +311,8 @@ mod explain_unpacked_rectangles {
     }
 
     #[test]
-    fn agrees_with_pack_rectangles_across_seeded_inputs_counting_ids_rather_than_assuming_uniqueness()
-     {
+    fn agrees_with_pack_rectangles_across_seeded_inputs_counting_ids_rather_than_assuming_uniqueness(
+    ) {
         for seed in (1..=30_i32).step_by(1) {
             let mut rng = make_random(seed);
             let count = 1 + (next_random(&mut rng) * 12.0).floor() as i32;

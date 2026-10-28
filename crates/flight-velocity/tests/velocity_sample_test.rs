@@ -1,6 +1,5 @@
 use flight_geometry::*;
 use flight_velocity::contract::*;
-use flight_velocity::*;
 
 mod get_velocity_sample_at {
     use super::*;

@@ -1,6 +1,5 @@
 use flight_math::create_random_source;
 use flight_particles::contract::*;
-use flight_particles::*;
 
 mod create_particle_objects_state {
     use super::*;

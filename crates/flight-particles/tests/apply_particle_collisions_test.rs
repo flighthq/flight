@@ -1,5 +1,4 @@
 use flight_particles::contract::*;
-use flight_particles::*;
 
 struct BufferFixture {
     transforms: Vec<f32>,

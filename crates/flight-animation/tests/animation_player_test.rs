@@ -1,7 +1,6 @@
 use std::sync::{Arc, Mutex};
 
 use flight_animation::contract::*;
-use flight_animation::*;
 use flight_signals::connect_signal;
 
 // The source passes these as createAnimationPlayer options; D23 assigns them after create
