@@ -228,7 +228,7 @@ describe('createWgpuCacheState', () => {
     screenRuntime.registries.colorAdjustmentFeature = colorAdjustmentFeature;
     screenRuntime.registries.colorAdjustmentFeatureGuard = colorAdjustmentFeatureGuard;
     screenRuntime.registries.renderRootGuard = renderRootGuard;
-    enableColorAdjustmentGuards(screen);
+    enableColorAdjustmentGuards(screen, null);
     enableWgpuRenderCache(screen);
     const cacheState = createCacheState(screen);
     expect(renderWgpu.getWgpuRenderStateRuntime(cacheState).registries.nodeRenderers.get(RenderCacheKind)).toEqual(

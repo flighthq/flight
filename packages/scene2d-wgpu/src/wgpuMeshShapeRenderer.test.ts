@@ -153,7 +153,7 @@ describe('wgpuMeshShapeRenderer', () => {
     const state = await createWgpuRenderStateForTest();
     beginWgpuScreenRenderPassForTest(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
-    enableRenderRegistriesGuards(state);
+    enableRenderRegistriesGuards(state, null);
 
     wgpuMeshShapeRenderer.submit!(state, makeShapeProxy({ commands: gradientShape().data.commands, version: 1 }));
 

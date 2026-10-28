@@ -190,7 +190,7 @@ describe('drawWgpuRasterShape', () => {
     setTestHosts(state);
     beginWgpuScreenRenderPassForTest(state);
     getWgpuRenderStateRuntime(state).renderPass = makeMeshPassSpy();
-    enableRenderRegistriesGuards(state);
+    enableRenderRegistriesGuards(state, null);
 
     drawWgpuRasterShape(state, makeShapeProxy({ commands: solidShape().data.commands, version: 1 }));
 
