@@ -368,6 +368,7 @@ dependencies = [
 name = "flight-compiler"
 version = "0.6.0"
 dependencies = [
+ "quote",
  "syn 2.0.119",
 ]
 

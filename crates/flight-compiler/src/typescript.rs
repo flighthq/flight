@@ -1,6 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::fmt::Write;
 
+use quote::ToTokens;
 use syn::parse::Parser;
 use syn::punctuated::Punctuated;
 use syn::{
@@ -16,6 +17,7 @@ type PreferredAliases = HashMap<String, String>;
 const CALLBACK_ARGUMENT_MARKER: &str = "@callback-argument:";
 const CLOSURE_PARAMETER_MARKER: &str = "@closure-parameter:";
 const ENTITY_DEFAULT_FIELD_MARKER: &str = "@entity-default-field:";
+const ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER: &str = "@entity-unsupported-default-field:";
 const FIXED_BUFFER_ARGUMENT_MARKER: &str = "@fixed-buffer-argument:";
 const FIXED_BUFFER_LOCAL_MARKER: &str = "@fixed-buffer-local:";
 const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
@@ -253,7 +255,33 @@ fn rust_default_expression(rust_type: &Type) -> Option<String> {
     };
 }
 
-fn entity_allocation(typescript_type: &str, entities: &HashSet<String>) -> String {
+fn rust_type_description(rust_type: &Type) -> String {
+    return rust_type
+        .to_token_stream()
+        .to_string()
+        .replace(" :: ", "::")
+        .replace(" < ", "<")
+        .replace(" >", ">")
+        .replace(" ; ", "; ");
+}
+
+fn entity_allocation(
+    typescript_type: &str,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    let unsupported_prefix = format!("{ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER}{typescript_type}:");
+    let mut unsupported_fields = entities
+        .iter()
+        .filter_map(|marker| marker.strip_prefix(&unsupported_prefix))
+        .filter_map(|field| field.split_once(':'))
+        .collect::<Vec<_>>();
+    unsupported_fields.sort();
+    if let Some((field, rust_type)) = unsupported_fields.first() {
+        return Err(compile_error(format!(
+            "cannot lower `allocate_entity` default for `{typescript_type}.{field}`: unsupported Rust field type `{rust_type}`"
+        )));
+    }
+
     let prefix = format!("{ENTITY_DEFAULT_FIELD_MARKER}{typescript_type}:");
     let mut fields = entities
         .iter()
@@ -264,9 +292,12 @@ fn entity_allocation(typescript_type: &str, entities: &HashSet<String>) -> Strin
     fields.sort();
     let allocation = format!("allocateEntity<{typescript_type}>()");
     if fields.is_empty() {
-        return allocation;
+        return Ok(allocation);
     }
-    return format!("Object.assign({allocation}, {{ {} }})", fields.join(", "));
+    return Ok(format!(
+        "Object.assign({allocation}, {{ {} }})",
+        fields.join(", ")
+    ));
 }
 
 fn vec_clone_optional(rust_type: &Type) -> Option<bool> {
@@ -326,12 +357,16 @@ pub(crate) fn generation_context(programs: &[&Program]) -> Result<HashSet<String
                 let Some(field_name) = &field.ident else {
                     continue;
                 };
+                let field_name = snake_to_lower_camel(&field_name.to_string());
                 let Some(value) = rust_default_expression(&field.ty) else {
+                    context.insert(format!(
+                        "{ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER}{typescript_type}:{field_name}:{}",
+                        rust_type_description(&field.ty)
+                    ));
                     continue;
                 };
                 context.insert(format!(
-                    "{ENTITY_DEFAULT_FIELD_MARKER}{typescript_type}:{}:{value}",
-                    snake_to_lower_camel(&field_name.to_string())
+                    "{ENTITY_DEFAULT_FIELD_MARKER}{typescript_type}:{field_name}:{value}"
                 ));
             }
         }
@@ -1624,7 +1659,7 @@ pub(crate) fn emit_local_with_shadow(
                 "allocate_entity local needs an explicit Rust type",
             ));
         };
-        entity_allocation(typescript_type, entities)
+        entity_allocation(typescript_type, entities)?
     } else if let Some(rust_type) = rust_type {
         emit_expression_for_type(&initializer.expr, rust_type, entities)?
     } else if let Expr::Repeat(repeat) = initializer.expr.as_ref()
@@ -2554,7 +2589,7 @@ fn emit_statement(
                         .ok_or_else(|| {
                             compile_error("allocate_entity return needs an explicit Rust type")
                         })?;
-                    entity_allocation(return_type, entities)
+                    entity_allocation(return_type, entities)?
                 } else {
                     emit_expression(value, entities)?
                 };

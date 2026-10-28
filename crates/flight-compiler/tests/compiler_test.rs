@@ -196,6 +196,9 @@ use flight_entity::EntityRuntimeSlot;
 pub struct LinearColor {
     runtime: EntityRuntimeSlot,
     pub red: f32,
+    pub green: f32,
+    pub blue: f32,
+    pub alpha: f32,
 }
 
 flight_entity::impl_entity!(LinearColor);
@@ -216,7 +219,9 @@ pub fn allocate_linear_color() -> LinearColor {
         assert!(output.contains("import { allocateEntity } from \"@flighthq/entity/contract\";"));
         assert!(output.contains("export function allocateLinearColor(): LinearColorRaw"));
         assert!(
-            output.contains("return Object.assign(allocateEntity<LinearColorRaw>(), { red: 0 });")
+            output.contains(
+                "return Object.assign(allocateEntity<LinearColorRaw>(), { alpha: 0, blue: 0, green: 0, red: 0 });"
+            )
         );
         assert!(!output.contains("flightEntity.allocateEntity"));
     }
@@ -243,6 +248,90 @@ pub fn allocate_defaults() -> Defaults {
         assert!(output.contains(
             "return Object.assign(allocateEntity<DefaultsRaw>(), { current: undefined, enabled: false, label: \"\", pair: [0, false], values: [] });"
         ));
+    }
+
+    #[test]
+    fn rejects_unsupported_entity_default_shapes_at_direct_allocation() {
+        let cases = [
+            (
+                "array",
+                r#"
+pub struct Unsupported {
+    runtime: EntityRuntimeSlot,
+    pub samples: [u32; 4],
+}
+
+pub fn allocate_unsupported() -> Unsupported {
+    let value: Unsupported = flight_entity::allocate_entity();
+    return value;
+}
+"#,
+                "cannot lower `allocate_entity` default for `UnsupportedRaw.samples`: unsupported Rust field type `[u32; 4]`",
+            ),
+            (
+                "enum",
+                r#"
+pub enum Mode {
+    Disabled,
+    Enabled,
+}
+
+pub struct Unsupported {
+    runtime: EntityRuntimeSlot,
+    pub mode: Mode,
+}
+
+pub fn allocate_unsupported() -> Unsupported {
+    return flight_entity::allocate_entity();
+}
+"#,
+                "cannot lower `allocate_entity` default for `UnsupportedRaw.mode`: unsupported Rust field type `Mode`",
+            ),
+            (
+                "nested record",
+                r#"
+pub struct Settings {
+    pub scale: f32,
+}
+
+pub struct Unsupported {
+    runtime: EntityRuntimeSlot,
+    pub settings: Settings,
+}
+
+pub fn allocate_unsupported() -> Unsupported {
+    return flight_entity::allocate_entity();
+}
+"#,
+                "cannot lower `allocate_entity` default for `UnsupportedRaw.settings`: unsupported Rust field type `Settings`",
+            ),
+        ];
+
+        for (shape, source, expected) in cases {
+            let error = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap_err();
+            assert_eq!(error.to_string(), expected, "{shape}");
+        }
+    }
+
+    #[test]
+    fn permits_unsupported_entity_default_shapes_until_direct_allocation() {
+        let source = r#"
+pub struct Buffered {
+    runtime: EntityRuntimeSlot,
+    pub samples: [u32; 4],
+}
+
+pub fn first_sample(value: &Buffered) -> u32 {
+    return value.samples[0];
+}
+"#;
+
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+
+        assert!(output.contains("samples: Uint32Array;"));
+        assert!(
+            output.contains("export function firstSample(value: Readonly<BufferedRaw>): number")
+        );
     }
 
     #[test]
