@@ -10,6 +10,7 @@ use crate::{CompileError, SourceMode, compile_error};
 pub(crate) struct Program {
     pub(crate) callable_parameters: BTreeMap<String, Vec<String>>,
     pub(crate) constants: Vec<ItemConst>,
+    pub(crate) data_unions: HashSet<String>,
     pub(crate) entities: HashSet<String>,
     pub(crate) enums: Vec<ItemEnum>,
     pub(crate) functions: Vec<ItemFn>,
@@ -115,6 +116,7 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
             "callable-parameters"
             | "companion"
             | "contract"
+            | "data-union"
             | "identity-alias"
             | "readonly-fields"
             | "root"
@@ -169,6 +171,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
     let callable_parameters = parse_callable_parameters(&file.attrs)?;
+    let data_unions = parse_data_unions(&file.attrs)?;
     let identity_alias_directives = parse_identity_aliases(&file.attrs)?;
     let mut constants = Vec::new();
     let mut entities = HashSet::new();
@@ -208,7 +211,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         match item {
             Item::Const(item) => constants.push(item),
             Item::Enum(item) => {
-                validate_enum(&item)?;
+                validate_enum(&item, data_unions.contains(&item.ident.to_string()))?;
                 enums.push(item);
             }
             Item::Fn(function) => functions.push(function),
@@ -235,11 +238,13 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     }
 
     validate_callable_parameters(&callable_parameters, &type_aliases)?;
+    validate_data_union_directives(&data_unions, &enums, &string_unions)?;
     validate_identity_aliases(&identity_alias_directives, &type_aliases)?;
 
     return Ok(Program {
         callable_parameters,
         constants,
+        data_unions,
         entities,
         enums,
         functions,
@@ -250,6 +255,38 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         string_unions,
         type_aliases,
     });
+}
+
+fn parse_data_unions(attributes: &[Attribute]) -> Result<HashSet<String>, CompileError> {
+    let mut data_unions = HashSet::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("data-union") {
+            continue;
+        }
+        let names = fields.collect::<Vec<_>>();
+        if names.is_empty() {
+            return Err(compile_error(
+                "`flight-compiler: data-union` requires at least one enum name",
+            ));
+        }
+        for name in names {
+            if syn::parse_str::<syn::Ident>(name).is_err() || name.starts_with("r#") {
+                return Err(compile_error(format!(
+                    "`flight-compiler: data-union` enum name `{name}` is not a valid identifier"
+                )));
+            }
+            if !data_unions.insert(name.to_string()) {
+                return Err(compile_error(format!(
+                    "duplicate `flight-compiler: data-union` directive for enum `{name}`"
+                )));
+            }
+        }
+    }
+    return Ok(data_unions);
 }
 
 fn parse_identity_aliases(
@@ -652,7 +689,32 @@ fn unsupported_public(kind: &str, name: &str) -> CompileError {
     ));
 }
 
-fn validate_enum(rust_enum: &ItemEnum) -> Result<(), CompileError> {
+fn validate_data_union_directives(
+    data_unions: &HashSet<String>,
+    enums: &[ItemEnum],
+    string_unions: &HashSet<String>,
+) -> Result<(), CompileError> {
+    let mut names = data_unions.iter().collect::<Vec<_>>();
+    names.sort();
+    for name in names {
+        if string_unions.contains(name) {
+            return Err(compile_error(format!(
+                "enum `{name}` cannot use both `flight-compiler: data-union` and `flight-compiler: string-union`"
+            )));
+        }
+        if !enums.iter().any(|rust_enum| rust_enum.ident == name) {
+            return Err(compile_error(format!(
+                "`flight-compiler: data-union` enum `{name}` does not exist"
+            )));
+        }
+    }
+    return Ok(());
+}
+
+fn validate_enum(rust_enum: &ItemEnum, data_union: bool) -> Result<(), CompileError> {
+    if data_union {
+        return validate_data_union(rust_enum);
+    }
     for variant in &rust_enum.variants {
         if !matches!(variant.fields, Fields::Unit) {
             return Err(compile_error(format!(
@@ -668,6 +730,83 @@ fn validate_enum(rust_enum: &ItemEnum) -> Result<(), CompileError> {
                 rust_enum.ident, variant.ident
             )));
         }
+    }
+    return Ok(());
+}
+
+fn validate_data_union(rust_enum: &ItemEnum) -> Result<(), CompileError> {
+    let has_named = rust_enum
+        .variants
+        .iter()
+        .any(|variant| matches!(variant.fields, Fields::Named(_)));
+    let mut has_unnamed = false;
+    let mut tags = HashSet::new();
+    let mut unit_count = 0;
+    for variant in &rust_enum.variants {
+        if variant.discriminant.is_some() {
+            return Err(compile_error(format!(
+                "data union `{}::{}` cannot declare an explicit discriminant",
+                rust_enum.ident, variant.ident
+            )));
+        }
+        if has_named {
+            let name = variant.ident.to_string();
+            let tag = name
+                .chars()
+                .next()
+                .into_iter()
+                .flat_map(char::to_lowercase)
+                .chain(name.chars().skip(1))
+                .collect::<String>();
+            if !tags.insert(tag.clone()) {
+                return Err(compile_error(format!(
+                    "data union `{}` has more than one variant with discriminator `{tag}`",
+                    rust_enum.ident
+                )));
+            }
+        }
+        match &variant.fields {
+            Fields::Named(fields) => {
+                if fields
+                    .named
+                    .iter()
+                    .any(|field| field.ident.as_ref().is_some_and(|ident| ident == "kind"))
+                {
+                    return Err(compile_error(format!(
+                        "data union variant `{}::{}` cannot declare the reserved discriminator field `kind`",
+                        rust_enum.ident, variant.ident
+                    )));
+                }
+            }
+            Fields::Unnamed(fields) => {
+                has_unnamed = true;
+                if fields.unnamed.len() != 1 {
+                    return Err(compile_error(format!(
+                        "untagged data union variant `{}::{}` must contain exactly one field",
+                        rust_enum.ident, variant.ident
+                    )));
+                }
+            }
+            Fields::Unit => unit_count += 1,
+        }
+    }
+    if has_named && has_unnamed {
+        return Err(compile_error(format!(
+            "data union `{}` cannot mix named and unnamed variant fields",
+            rust_enum.ident
+        )));
+    }
+    if !has_named && unit_count > 1 {
+        return Err(compile_error(format!(
+            "untagged data union `{}` can contain at most one unit variant because every unit variant lowers to `null`",
+            rust_enum.ident
+        )));
+    }
+    if !has_named && !has_unnamed {
+        return Err(compile_error(format!(
+            "data union `{}` has no payload variants; use `flight-compiler: string-union` instead",
+            rust_enum.ident
+        )));
     }
     return Ok(());
 }

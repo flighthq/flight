@@ -871,6 +871,8 @@ fn emit_enum(
     out: &mut String,
     rust_enum: &syn::ItemEnum,
     string_union: bool,
+    data_union: bool,
+    entities: &HashSet<String>,
 ) -> Result<(), CompileError> {
     emit_documentation(out, &rust_enum.attrs, 0);
     let export = if is_public(&rust_enum.vis) {
@@ -878,6 +880,57 @@ fn emit_enum(
     } else {
         ""
     };
+    if data_union {
+        let named = rust_enum
+            .variants
+            .iter()
+            .any(|variant| matches!(variant.fields, syn::Fields::Named(_)));
+        let mut seen = HashSet::new();
+        let mut variants = Vec::new();
+        for variant in &rust_enum.variants {
+            let rendered = if named {
+                let mut fields = vec![format!(
+                    "readonly kind: {:?}",
+                    lower_camel_from_upper_camel(&variant.ident.to_string())
+                )];
+                if let syn::Fields::Named(named) = &variant.fields {
+                    for field in &named.named {
+                        let name = snake_to_lower_camel(
+                            &field
+                                .ident
+                                .as_ref()
+                                .expect("named data union field has an identifier")
+                                .to_string(),
+                        );
+                        fields.push(format!(
+                            "readonly {name}: {}",
+                            emit_type(&field.ty, entities)?
+                        ));
+                    }
+                }
+                format!("{{ {} }}", fields.join("; "))
+            } else {
+                match &variant.fields {
+                    syn::Fields::Unit => "null".to_string(),
+                    syn::Fields::Unnamed(fields) => emit_type(&fields.unnamed[0].ty, entities)?,
+                    syn::Fields::Named(_) => {
+                        unreachable!("data union representation changed after directive validation")
+                    }
+                }
+            };
+            if seen.insert(rendered.clone()) {
+                variants.push(rendered);
+            }
+        }
+        let rendered = if variants.iter().any(|variant| variant == "unknown") {
+            "unknown".to_string()
+        } else {
+            variants.join(" | ")
+        };
+        writeln!(out, "{export}type {} = {rendered};", rust_enum.ident)
+            .expect("writing to a String cannot fail");
+        return Ok(());
+    }
     if string_union {
         if rust_enum
             .variants
@@ -2573,6 +2626,8 @@ pub(crate) fn emit_program(
             &mut out,
             rust_enum,
             program.string_unions.contains(&rust_enum.ident.to_string()),
+            program.data_unions.contains(&rust_enum.ident.to_string()),
+            &expression_context,
         )?;
         out.push('\n');
     }
@@ -2941,6 +2996,7 @@ pub(crate) fn emit_type(
                 "f32" | "f64" | "i8" | "i16" | "i32" | "i64" | "isize" | "u8" | "u16" | "u32"
                 | "u64" | "usize" => Ok("number".to_string()),
                 "String" | "str" => Ok("string".to_string()),
+                "UnknownValue" => Ok("unknown".to_string()),
                 "Option" => {
                     let inner = emit_single_generic_type(segment, entities)?;
                     if inner.contains("=>") {

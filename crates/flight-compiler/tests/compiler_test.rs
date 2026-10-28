@@ -36,6 +36,13 @@ mod source_modes {
         );
         assert_eq!(
             source_mode(
+                "//! flight-compiler: data-union RectangleId\npub enum RectangleId { Number(i32), Text(String) }\n"
+            )
+            .unwrap(),
+            SourceMode::Generate
+        );
+        assert_eq!(
+            source_mode(
                 "//! flight-compiler: target-native\n//! flight-compiler: identity-alias Marker descriptor\npub type Marker<T> = T;\n"
             )
             .unwrap(),
@@ -1030,6 +1037,112 @@ pub enum Level {
             error.to_string(),
             "unsupported enum discriminant `Level::Error`; explicit discriminants must be integer literals"
         );
+    }
+
+    #[test]
+    fn emits_transparent_and_discriminated_data_unions() {
+        let source = r#"
+//! flight-compiler: data-union RectangleId LogValue LogDataOrProvider PathSegment
+
+use std::sync::Arc;
+
+pub enum RectangleId {
+    Number(i32),
+    Text(String),
+}
+
+pub enum LogValue {
+    Null,
+    Int(i64),
+    Float(f64),
+    Object(UnknownValue),
+}
+
+pub type LogData = String;
+pub type LogDataProvider = Arc<dyn Fn() -> LogData + Send + Sync>;
+
+pub enum LogDataOrProvider {
+    Data(LogData),
+    Provider(LogDataProvider),
+}
+
+pub enum PathSegment {
+    MoveTo { x: f64, y: f64 },
+    QuadraticCurveTo { control_x: f64, control_y: f64, x: f64, y: f64 },
+    Close,
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("export type RectangleId = number | string;"));
+        assert!(output.contains("export type LogValue = unknown;"));
+        assert!(output.contains("export type LogDataOrProvider = LogData | LogDataProvider;"));
+        assert!(output.contains(
+            "export type PathSegment = { readonly kind: \"moveTo\"; readonly x: number; readonly y: number } | { readonly kind: \"quadraticCurveTo\"; readonly controlX: number; readonly controlY: number; readonly x: number; readonly y: number } | { readonly kind: \"close\" };"
+        ));
+        assert!(!output.contains("number | number"));
+    }
+
+    #[test]
+    fn rejects_ambiguous_data_union_shapes() {
+        let cases = [
+            (
+                "//! flight-compiler: data-union\npub enum Value { Number(i32) }\n",
+                "`flight-compiler: data-union` requires at least one enum name",
+            ),
+            (
+                "//! flight-compiler: data-union Value\n//! flight-compiler: data-union Value\npub enum Value { Number(i32) }\n",
+                "duplicate `flight-compiler: data-union` directive for enum `Value`",
+            ),
+            (
+                "//! flight-compiler: data-union Value-name\npub enum Value { Number(i32) }\n",
+                "`flight-compiler: data-union` enum name `Value-name` is not a valid identifier",
+            ),
+            (
+                "//! flight-compiler: data-union Missing\npub enum Present { Value }\n",
+                "`flight-compiler: data-union` enum `Missing` does not exist",
+            ),
+            (
+                "//! flight-compiler: data-union Value\n//! flight-compiler: string-union Value\npub enum Value { Number(i32) }\n",
+                "enum `Value` cannot use both `flight-compiler: data-union` and `flight-compiler: string-union`",
+            ),
+            (
+                "//! flight-compiler: data-union Value\npub enum Value { First, Second, Number(i32) }\n",
+                "untagged data union `Value` can contain at most one unit variant because every unit variant lowers to `null`",
+            ),
+            (
+                "//! flight-compiler: data-union Value\npub enum Value { Only }\n",
+                "data union `Value` has no payload variants; use `flight-compiler: string-union` instead",
+            ),
+            (
+                "//! flight-compiler: data-union Value\npub enum Value { Pair(i32, i32) }\n",
+                "untagged data union variant `Value::Pair` must contain exactly one field",
+            ),
+            (
+                "//! flight-compiler: data-union Value\npub enum Value { Tuple(i32), Named { value: i32 } }\n",
+                "data union `Value` cannot mix named and unnamed variant fields",
+            ),
+            (
+                "//! flight-compiler: data-union Value\npub enum Value { Named { kind: i32 } }\n",
+                "data union variant `Value::Named` cannot declare the reserved discriminator field `kind`",
+            ),
+            (
+                "//! flight-compiler: data-union Value\npub enum Value { Named { value: i32 }, named }\n",
+                "data union `Value` has more than one variant with discriminator `named`",
+            ),
+            (
+                "//! flight-compiler: data-union Value\npub enum Value { Number(i32) = 1 }\n",
+                "data union `Value::Number` cannot declare an explicit discriminant",
+            ),
+        ];
+
+        for (source, expected) in cases {
+            assert_eq!(
+                compile_typescript(source, None).unwrap_err().to_string(),
+                expected
+            );
+        }
     }
 
     #[test]
