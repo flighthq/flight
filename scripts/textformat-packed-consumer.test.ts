@@ -141,6 +141,7 @@ describe('packed Types Textformat compatibility', { timeout: TIMEOUT_MS }, () =>
       for (const statement of source.statements) {
         if (
           !ts.isExportDeclaration(statement) ||
+          statement.moduleSpecifier === undefined ||
           !ts.isStringLiteral(statement.moduleSpecifier) ||
           statement.moduleSpecifier.text !== '@flighthq/textformat/contract' ||
           statement.exportClause === undefined ||
