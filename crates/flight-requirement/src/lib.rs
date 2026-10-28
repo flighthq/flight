@@ -1,5 +1,6 @@
 mod requirement_collector;
 mod requirement_set;
+mod sugar;
 mod types;
 
 pub mod contract;

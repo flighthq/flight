@@ -4,41 +4,6 @@ use flight_entity::allocate_entity;
 
 use crate::types::{Requirement, RequirementFacet, RequirementSet, get_requirement_facet_string};
 
-#[cfg(test)]
-mod sugar_tests {
-    use super::*;
-
-    fn requirement(facet: RequirementFacet, key: &str) -> Requirement {
-        return Requirement {
-            facet,
-            key: key.to_string(),
-        };
-    }
-
-    #[test]
-    fn requirement_set_diff_matches_the_free_function() {
-        let requirements = RequirementSet::new(
-            &[RequirementFacet::SceneNodeKind],
-            &[requirement(RequirementFacet::SceneNodeKind, "Shape")],
-        );
-        let baseline = RequirementSet::new(&[RequirementFacet::SceneNodeKind], &[]);
-        assert_eq!(
-            requirements.diff(&baseline),
-            diff_requirement_sets(&requirements, &baseline)
-        );
-    }
-
-    #[test]
-    fn requirement_set_new_matches_create_requirement_set() {
-        let covers = [RequirementFacet::SceneNodeKind];
-        let requirements = [requirement(RequirementFacet::SceneNodeKind, "Shape")];
-        assert_eq!(
-            RequirementSet::new(&covers, &requirements),
-            create_requirement_set(&covers, &requirements)
-        );
-    }
-}
-
 pub fn create_requirement_set(
     covers: &[RequirementFacet],
     requirements: &[Requirement],
@@ -144,14 +109,4 @@ pub fn merge_requirement_sets(requirement_sets: &[&RequirementSet]) -> Requireme
 
 fn requirement_identity(requirement: &Requirement) -> (RequirementFacet, &str) {
     return (requirement.facet, &requirement.key);
-}
-
-impl RequirementSet {
-    pub fn new(covers: &[RequirementFacet], requirements: &[Requirement]) -> Self {
-        return create_requirement_set(covers, requirements);
-    }
-
-    pub fn diff(&self, baseline: &RequirementSet) -> Self {
-        return diff_requirement_sets(self, baseline);
-    }
 }

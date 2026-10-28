@@ -1,3 +1,5 @@
+//! flight-compiler: readonly-fields Requirement RequirementSet
+
 use flight_entity::EntityRuntimeSlot;
 
 /// The exact requirement facet string union from pinned TypeScript.
