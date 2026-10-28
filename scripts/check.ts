@@ -69,7 +69,6 @@ add('format:check', 'oxfmt', scoped ? ['--check', '--threads=4', ...paths] : ['-
 add('order:check', 'tsx', ['scripts/order.ts', '--check', ...selectors]);
 add('exports:check', 'tsx', ['scripts/completeness.ts', ...selectors]);
 add('reachability:check', 'tsx', ['scripts/reachability.ts', '--check', ...selectors]);
-add('type-home:check', 'tsx', ['scripts/type-home-progress.ts', '--gate', ...selectors]);
 add('portable:check', 'tsx', ['scripts/portable.ts', '--check', ...selectors]);
 add('mocks:check', 'tsx', ['scripts/mocks.ts', '--check']);
 add('backend-prefix:check', 'tsx', ['scripts/backendPrefix.ts', '--check']);

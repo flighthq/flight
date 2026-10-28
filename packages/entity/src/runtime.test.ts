@@ -1,8 +1,8 @@
 import { attachEntityBinding } from './binding.ts';
-import { allocateEntity, finishEntity } from './entity.ts';
+import { allocateEntity, finishEntity, writeEntityRuntime } from './entity.ts';
 import { createEntityRuntime, getEntityRuntime, hasEntityRuntime } from './runtime.ts';
 import type { EntityRaw, EntityRuntime } from './types.ts';
-import { EntityRuntimeKey } from './types.ts';
+import type { EntityRuntimeKey } from './types.ts';
 
 type TestEntity = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined };
 
@@ -27,7 +27,7 @@ describe('getEntityRuntime', () => {
     const entity = createTestEntity();
     expect(getEntityRuntime(entity)).toBeUndefined();
     const runtime = {} as EntityRuntime;
-    entity[EntityRuntimeKey] = runtime;
+    writeEntityRuntime(entity, runtime);
     expect(getEntityRuntime(entity)).toStrictEqual(runtime);
   });
 });

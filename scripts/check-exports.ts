@@ -129,7 +129,8 @@ const GOVERNED_PACKAGES = [
   'scene3d-resources',
   'scene3d-wgpu',
   'screen',
-  'sdk',
+  // sdk is the aggregate barrel, not an owner lane. Its root package re-exports and one-line
+  // per-package subpath barrels are derived and enforced by check-sdk-subpaths.ts.
   'selection',
   'sensors',
   'shading',

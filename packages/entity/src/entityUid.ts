@@ -18,7 +18,7 @@ export function setEntityUid(source: EntityRaw, uid: string): void {
 function ensureEntityRuntime(source: EntityRaw): EntityRuntime {
   const runtime = readEntityRuntime(source) ?? createEntityRuntime();
   writeEntityRuntime(source, runtime);
-  return runtime;
+  return readEntityRuntime(source)!;
 }
 
 function generateEntityUid(): string {

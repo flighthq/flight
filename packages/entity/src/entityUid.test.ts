@@ -1,6 +1,6 @@
-import { allocateEntity, finishEntity } from './entity.ts';
+import { allocateEntity, finishEntity, writeEntityRuntime } from './entity.ts';
 import { getEntityUid, setEntityUid } from './entityUid.ts';
-import { createEntityRuntime } from './runtime.ts';
+import { createEntityRuntime, getEntityRuntime } from './runtime.ts';
 import type { EntityRaw, EntityRuntime } from './types.ts';
 import { EntityRuntimeKey } from './types.ts';
 
@@ -13,8 +13,8 @@ function createTestEntity(): TestEntity {
 describe('getEntityUid', () => {
   it('has no uid property on an untouched runtime before any access', () => {
     const entity = createTestEntity();
-    entity[EntityRuntimeKey] = createEntityRuntime();
-    expect('uid' in entity[EntityRuntimeKey]!).toBe(false);
+    writeEntityRuntime(entity, createEntityRuntime());
+    expect('uid' in getEntityRuntime(entity)).toBe(false);
   });
 
   it('lazily generates a uid on first access', () => {
@@ -41,7 +41,8 @@ describe('getEntityUid', () => {
     const entity = createTestEntity();
     expect(entity[EntityRuntimeKey]).toBeUndefined();
     getEntityUid(entity);
-    expect(entity[EntityRuntimeKey]).toBeDefined();
+    expect(entity[EntityRuntimeKey]).toBeUndefined();
+    expect(getEntityRuntime(entity)).toBeDefined();
   });
 });
 
@@ -49,6 +50,10 @@ describe('setEntityUid', () => {
   it('sets a stable id before any get', () => {
     const entity = createTestEntity();
     setEntityUid(entity, 'my-stable-id');
+    const forgedRuntime = createEntityRuntime();
+    forgedRuntime.uid = 'forged';
+    entity[EntityRuntimeKey] = forgedRuntime;
+
     expect(getEntityUid(entity)).toBe('my-stable-id');
   });
 
@@ -64,7 +69,8 @@ describe('setEntityUid', () => {
     const entity = createTestEntity();
     expect(entity[EntityRuntimeKey]).toBeUndefined();
     setEntityUid(entity, 'pre-bind');
-    expect(entity[EntityRuntimeKey]).toBeDefined();
+    expect(entity[EntityRuntimeKey]).toBeUndefined();
+    expect(getEntityRuntime(entity)).toBeDefined();
     expect(getEntityUid(entity)).toBe('pre-bind');
   });
 });

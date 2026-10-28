@@ -5,7 +5,7 @@ import {
   getEntityBindingAs,
   hasEntityBinding,
 } from './binding.ts';
-import { allocateEntity, finishEntity } from './entity.ts';
+import { allocateEntity, finishEntity, writeEntityRuntime } from './entity.ts';
 import { createEntityRuntime, getEntityRuntime } from './runtime.ts';
 import type { EntityRaw, EntityRuntime } from './types.ts';
 import { EntityRuntimeKey } from './types.ts';
@@ -28,14 +28,19 @@ describe('attachEntityBinding', () => {
     const entity = createTestEntity();
     const binding = {};
     attachEntityBinding(entity, binding);
+    const forgedRuntime = createEntityRuntime();
+    forgedRuntime.binding = { forged: true };
+    entity[EntityRuntimeKey] = forgedRuntime;
+
     expect(getEntityRuntime(entity).binding).toStrictEqual(binding);
+    expect(getEntityRuntime(entity)).not.toBe(forgedRuntime);
   });
 
   it('preserves an existing runtime while assigning its binding', () => {
     const entity = createTestEntity();
     const runtime = createEntityRuntime();
     const binding = {};
-    entity[EntityRuntimeKey] = runtime;
+    writeEntityRuntime(entity, runtime);
 
     attachEntityBinding(entity, binding);
 
@@ -49,11 +54,12 @@ describe('detachEntityBinding', () => {
     const entity = createTestEntity();
     const runtime = createEntityRuntime();
     runtime.binding = {};
-    entity[EntityRuntimeKey] = runtime;
+    writeEntityRuntime(entity, runtime);
 
     detachEntityBinding(entity);
 
-    expect(entity[EntityRuntimeKey]).toBe(runtime);
+    expect(entity[EntityRuntimeKey]).toBeUndefined();
+    expect(getEntityRuntime(entity)).toBe(runtime);
     expect(runtime.binding).toBeNull();
   });
 
@@ -74,7 +80,7 @@ describe('getEntityBinding', () => {
 
   it('returns null if the binding slot is empty', () => {
     const entity = createTestEntity();
-    entity[EntityRuntimeKey] = createEntityRuntime();
+    writeEntityRuntime(entity, createEntityRuntime());
     expect(getEntityBinding(entity)).toBeNull();
   });
 
@@ -82,7 +88,7 @@ describe('getEntityBinding', () => {
     const entity = createTestEntity();
     const runtime = createEntityRuntime();
     runtime.binding = {};
-    entity[EntityRuntimeKey] = runtime;
+    writeEntityRuntime(entity, runtime);
     expect(getEntityBinding(entity)).toStrictEqual(runtime.binding);
   });
 
@@ -118,7 +124,7 @@ describe('hasEntityBinding', () => {
 
   it('returns false if the binding slot is empty', () => {
     const entity = createTestEntity();
-    entity[EntityRuntimeKey] = createEntityRuntime();
+    writeEntityRuntime(entity, createEntityRuntime());
     expect(hasEntityBinding(entity)).toBe(false);
   });
 
@@ -126,5 +132,20 @@ describe('hasEntityBinding', () => {
     const entity = createTestEntity();
     attachEntityBinding(entity, {});
     expect(hasEntityBinding(entity)).toBe(true);
+  });
+});
+
+describe('legacy compatibility runtime', () => {
+  it('promotes an external runtime before mutating it and clears the bridge', () => {
+    const legacyRuntime = createEntityRuntime();
+    const entity = { [EntityRuntimeKey]: legacyRuntime };
+    const binding = {};
+
+    attachEntityBinding(entity, binding);
+
+    expect(entity[EntityRuntimeKey]).toBeUndefined();
+    expect(legacyRuntime.binding).toBeNull();
+    expect(getEntityRuntime(entity)).not.toBe(legacyRuntime);
+    expect(getEntityRuntime(entity).binding).toBe(binding);
   });
 });

@@ -21,4 +21,6 @@ export {
   setEntityUid,
   stripEntityRuntime,
 } from './contract.ts';
+
+export type { EntityRaw } from './contract.ts';
 export { Entity } from './entity.ts';

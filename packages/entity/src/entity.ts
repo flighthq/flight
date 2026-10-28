@@ -1,12 +1,8 @@
 import type { EntityConstruction, EntityRaw, EntityRuntime } from './types.ts';
 import { EntityRuntimeKey } from './types.ts';
 
-const EntityRuntimePrivate = Symbol('EntityRuntimePrivate');
-const EntityWrappers = new WeakMap<EntityRaw, Entity>();
-
-type EntityWithPrivateRuntime = EntityRaw & {
-  [EntityRuntimePrivate]: EntityRuntime | undefined;
-};
+const EntityRuntimes = /* @__PURE__ */ new WeakMap<EntityRaw, EntityRuntime | undefined>();
+const EntityWrappers = /* @__PURE__ */ new WeakMap<EntityRaw, Entity>();
 
 type EntityWithCompatibilityRuntime = EntityRaw & {
   [EntityRuntimeKey]: EntityRuntime | undefined;
@@ -32,13 +28,8 @@ export class Entity {
 export function allocateEntity<
   Type extends EntityRaw = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined },
 >(): EntityConstruction<Type> {
-  const out = {} as EntityConstruction<Type> & EntityWithCompatibilityRuntime & EntityWithPrivateRuntime;
-  Object.defineProperty(out, EntityRuntimePrivate, {
-    configurable: false,
-    enumerable: false,
-    value: undefined,
-    writable: true,
-  });
+  const out = {} as EntityConstruction<Type> & EntityWithCompatibilityRuntime;
+  EntityRuntimes.set(out, undefined);
   Object.defineProperty(out, EntityRuntimeKey, {
     configurable: true,
     enumerable: false,
@@ -66,31 +57,31 @@ export function getEntityWrapperAs<Type extends Entity>(source: Readonly<EntityR
   return (EntityWrappers.get(source) as Type | undefined) ?? null;
 }
 
-// Package-private compiler seam. These functions are intentionally omitted from contract.ts; keeping
-// the symbol in this module lets the deprecated EntityRuntimeKey bridge disappear later without
-// changing EntityRaw or any generated record field.
+// Package-private compiler seam. These functions are intentionally omitted from contract.ts; the
+// WeakMap is the live runtime store while EntityRuntimeKey remains an undefined compatibility bridge.
 export function readEntityRuntime(source: Readonly<EntityRaw>): EntityRuntime | undefined {
+  if (EntityRuntimes.has(source)) return EntityRuntimes.get(source);
   if (Object.prototype.hasOwnProperty.call(source, EntityRuntimeKey)) {
     return (source as Readonly<EntityWithCompatibilityRuntime>)[EntityRuntimeKey];
   }
-  return (source as Readonly<EntityWithPrivateRuntime>)[EntityRuntimePrivate];
+  return undefined;
 }
 
 export function writeEntityRuntime(source: EntityRaw, runtime: EntityRuntime | undefined): void {
-  if (Object.prototype.hasOwnProperty.call(source, EntityRuntimePrivate)) {
-    (source as EntityWithPrivateRuntime)[EntityRuntimePrivate] = runtime;
-  } else {
-    Object.defineProperty(source, EntityRuntimePrivate, {
-      configurable: false,
-      enumerable: false,
-      value: runtime,
-      writable: true,
-    });
+  let privateRuntime = runtime;
+  if (
+    runtime !== undefined &&
+    !EntityRuntimes.has(source) &&
+    Object.prototype.hasOwnProperty.call(source, EntityRuntimeKey) &&
+    (source as EntityWithCompatibilityRuntime)[EntityRuntimeKey] === runtime
+  ) {
+    privateRuntime = { ...runtime };
   }
+  EntityRuntimes.set(source, privateRuntime);
   Object.defineProperty(source, EntityRuntimeKey, {
     configurable: true,
     enumerable: false,
-    value: runtime,
+    value: undefined,
     writable: true,
   });
 }

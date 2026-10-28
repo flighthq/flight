@@ -52,6 +52,20 @@ describe('checkEntityContracts', () => {
     expect(report.issues).toEqual([]);
   });
 
+  it('resolves EntityRuntime through the compatibility type re-export', () => {
+    const report = checkFixture({
+      'packages/entity/src/types.ts': "export interface EntityRuntime { readonly __runtime: 'runtime' }",
+      'packages/types/src/Entity.ts': [
+        "export type { EntityRuntime } from '../../entity/src/types';",
+        "import type { EntityRuntime } from '../../entity/src/types';",
+        "export interface Entity { readonly __entity: 'entity'; readonly runtime: EntityRuntime }",
+      ].join('\n'),
+    });
+
+    expect(report.exportedCreateFunctions).toBe(0);
+    expect(report.issues).toEqual([]);
+  });
+
   it('rejects exported create candidates and excludes clone functions', () => {
     const files = {
       'packages/example/src/contract.ts': "export { clonePlain, createPlain } from './example';",
@@ -475,30 +489,40 @@ function checkFixture(files: Readonly<Record<string, string>>) {
   });
   const entitySource = project.createSourceFile(
     '/packages/types/src/Entity.ts',
-    [
-      "export interface EntityRuntime { readonly __runtime: 'runtime' }",
-      "export interface Entity { readonly __entity: 'entity'; readonly runtime: EntityRuntime }",
-    ].join('\n'),
+    files['packages/types/src/Entity.ts'] ??
+      [
+        "export interface EntityRuntime { readonly __runtime: 'runtime' }",
+        "export interface Entity { readonly __entity: 'entity'; readonly runtime: EntityRuntime }",
+      ].join('\n'),
   );
   const markerSource = project.createSourceFile(
     '/packages/types/src/NonEntityCreateResult.ts',
-    [
-      "export type NonEntityCreateResult<Type, Kind extends 'descriptor' | 'options' | 'type-only'> =",
-      "  Kind extends 'descriptor' | 'options' | 'type-only' ? Type : never;",
-    ].join('\n'),
+    files['packages/types/src/NonEntityCreateResult.ts'] ??
+      [
+        "export type NonEntityCreateResult<Type, Kind extends 'descriptor' | 'options' | 'type-only'> =",
+        "  Kind extends 'descriptor' | 'options' | 'type-only' ? Type : never;",
+      ].join('\n'),
   );
   const createEntitySource = project.createSourceFile(
     '/packages/entity/src/entity.ts',
-    [
-      "import type { Entity } from '../../types/src/Entity';",
-      'export declare function createEntity<Type extends object>(obj: Type): Type & Entity;',
-    ].join('\n'),
+    files['packages/entity/src/entity.ts'] ??
+      [
+        "import type { Entity } from '../../types/src/Entity';",
+        'export declare function createEntity<Type extends object>(obj: Type): Type & Entity;',
+      ].join('\n'),
   );
+  const reservedPaths = new Set([
+    'packages/entity/src/entity.ts',
+    'packages/types/src/Entity.ts',
+    'packages/types/src/NonEntityCreateResult.ts',
+  ]);
   const sourceFiles = [
     entitySource,
     markerSource,
     createEntitySource,
-    ...Object.entries(files).map(([path, text]) => project.createSourceFile(`/${path}`, text)),
+    ...Object.entries(files)
+      .filter(([path]) => !reservedPaths.has(path))
+      .map(([path, text]) => project.createSourceFile(`/${path}`, text)),
   ];
   project.resolveSourceFileDependencies();
   return checkEntityContracts({ project, root: '/', sourceFiles });

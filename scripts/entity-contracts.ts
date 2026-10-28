@@ -175,8 +175,8 @@ export function checkEntityContracts(scope: Readonly<EntityContractScope>): Enti
     normalizePath(source.getFilePath()).endsWith('/types/src/Entity.ts'),
   );
   if (entitySource === undefined) throw new Error('Entity contract gate could not find packages/types/src/Entity.ts');
-  const entityType = entitySource.getInterfaceOrThrow('Entity').getType();
-  const entityRuntimeType = entitySource.getInterfaceOrThrow('EntityRuntime').getType();
+  const entityType = exportedType(entitySource, 'Entity');
+  const entityRuntimeType = exportedType(entitySource, 'EntityRuntime');
   const markerSource = scope.sourceFiles.find((source) =>
     normalizePath(source.getFilePath()).endsWith('/types/src/NonEntityCreateResult.ts'),
   );
@@ -307,6 +307,14 @@ export function checkEntityContracts(scope: Readonly<EntityContractScope>): Enti
     runtimeCreateExceptions: [...new Set(exportedCreateCensus.runtimeNames)].sort(),
     scannedFiles: scope.sourceFiles.length,
   };
+}
+
+function exportedType(source: SourceFile, name: string): Type {
+  const declaration = source.getExportedDeclarations().get(name)?.[0];
+  if (declaration === undefined) {
+    throw new Error(`Entity contract gate could not resolve exported ${name} from packages/types/src/Entity.ts`);
+  }
+  return declaration.getType();
 }
 
 export function formatEntityContractReport(report: Readonly<EntityContractReport>, root: string): string {

@@ -4,13 +4,15 @@ import type { EntityRaw } from './types.ts';
 
 export function attachEntityBinding(entity: EntityRaw, binding: object): void {
   const runtime = readEntityRuntime(entity) ?? createEntityRuntime();
-  runtime.binding = binding;
   writeEntityRuntime(entity, runtime);
+  readEntityRuntime(entity)!.binding = binding;
 }
 
 export function detachEntityBinding(entity: EntityRaw): void {
   const runtime = readEntityRuntime(entity);
-  if (runtime !== undefined) runtime.binding = null;
+  if (runtime === undefined) return;
+  writeEntityRuntime(entity, runtime);
+  readEntityRuntime(entity)!.binding = null;
 }
 
 export function getEntityBinding(source: Readonly<EntityRaw>): object | null {

@@ -1,4 +1,5 @@
 //! flight-compiler: target-native
+//! flight-compiler: root EntityRaw
 
 use std::fmt;
 

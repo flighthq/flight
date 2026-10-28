@@ -23,6 +23,7 @@ describe('allocateEntity', () => {
       enumerable: false,
       value: undefined,
     });
+    expect(Object.getOwnPropertySymbols(out)).toEqual([EntityRuntimeKey]);
   });
 });
 
@@ -75,13 +76,14 @@ describe('Entity', () => {
     expect(Entity.from(clone)).not.toBe(wrapper);
   });
 
-  it('attaches runtime metadata to external raws non-enumerably', () => {
+  it('stores runtime metadata for external raws without exposing it through a symbol', () => {
     const raw: EntityRaw = {};
     const runtime = createEntityRuntime();
     writeEntityRuntime(raw, runtime);
 
     expect(hasEntityRuntime(raw)).toBe(true);
     expect(readEntityRuntime(raw)).toBe(runtime);
+    expect((raw as Record<PropertyKey, unknown>)[EntityRuntimeKey]).toBeUndefined();
     expect(Object.getOwnPropertySymbols(raw).every((symbol) => !Object.propertyIsEnumerable.call(raw, symbol))).toBe(
       true,
     );
@@ -114,16 +116,28 @@ describe('readEntityRuntime', () => {
 
     expect(readEntityRuntime(raw)).toBe(runtime);
   });
+
+  it('ignores a forged compatibility runtime when private state is present', () => {
+    const raw = allocateEntity();
+    const forged = createEntityRuntime();
+
+    raw[EntityRuntimeKey] = forged;
+
+    expect(readEntityRuntime(raw)).toBeUndefined();
+  });
 });
 
 describe('writeEntityRuntime', () => {
-  it('writes runtime metadata without making it enumerable', () => {
+  it('writes runtime metadata while keeping the compatibility bridge undefined', () => {
     const runtime = createEntityRuntime();
     const raw: EntityRaw = {};
 
     writeEntityRuntime(raw, runtime);
 
     expect(readEntityRuntime(raw)).toBe(runtime);
-    expect(Object.getOwnPropertyDescriptor(raw, EntityRuntimeKey)?.enumerable).toBe(false);
+    expect(Object.getOwnPropertyDescriptor(raw, EntityRuntimeKey)).toMatchObject({
+      enumerable: false,
+      value: undefined,
+    });
   });
 });

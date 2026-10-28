@@ -1,3 +1,4 @@
+import { readEntityRuntime, writeEntityRuntime } from './entity.ts';
 import type { EntityRaw, EntityRuntime, EntityRuntimeWriteGuard, EntityRuntimeWriteSlot } from './types.ts';
 import { EntityRuntimeKey } from './types.ts';
 
@@ -9,9 +10,14 @@ export function areEntityRuntimeGuardsEnabled(): boolean {
 // Creates a guarded entity that warns when the runtime slot is written directly rather
 // than through a public helper such as attachEntityBinding. Only active when guards are
 // enabled via enableEntityRuntimeGuards.
-export function createGuardedEntity<Type extends EntityRaw>(entity: Type): Type {
-  if (!_guardsEnabled || typeof Proxy === 'undefined') return entity;
-  return new Proxy(entity, {
+export function createGuardedEntity<Type extends EntityRaw>(
+  entity: Type,
+): Type & { [EntityRuntimeKey]: EntityRuntime | undefined } {
+  writeEntityRuntime(entity, readEntityRuntime(entity));
+  if (!_guardsEnabled || typeof Proxy === 'undefined') {
+    return entity as Type & { [EntityRuntimeKey]: EntityRuntime | undefined };
+  }
+  const guarded = new Proxy(entity, {
     set(target, prop, value) {
       if (prop === EntityRuntimeKey && _guardsEnabled) {
         // The write is reported and then ALLOWED: the stack cannot be inspected reliably across
@@ -24,6 +30,8 @@ export function createGuardedEntity<Type extends EntityRaw>(entity: Type): Type 
       return true;
     },
   });
+  writeEntityRuntime(guarded, readEntityRuntime(entity));
+  return guarded as Type & { [EntityRuntimeKey]: EntityRuntime | undefined };
 }
 
 // Returns a guarded proxy over an existing EntityRuntime that warns when the binding slot

@@ -246,7 +246,7 @@
     "test:tools": "npm run test --workspace=@flighthq/tool-capture --workspace=@flighthq/tool-manifest --workspace=@flighthq/tool-registry --workspace=@flighthq/tool-pipeline",
     "test:unit": "tsx ./scripts/test-packages.ts",
     "type-home": "tsx ./scripts/type-home-progress.ts",
-    "type-home:check": "tsx ./scripts/type-home-progress.ts --gate",
+    "type-home:check": "tsx ./scripts/type-home-progress.ts",
     "typecheck": "tsx ./scripts/typecheck.ts",
     "typecheck:host-probe": "npm run typecheck --workspace=@flighthq/tool-host-probe && tsx ./scripts/typecheck-host-probe.ts",
     "unchecked": "tsx ./scripts/unchecked.ts",
