@@ -6,9 +6,12 @@
 //   2. typecheck              — unless every changed file is Markdown documentation
 //   3. lane routing           — changed paths select which test runners to invoke:
 //        packages/<sdk>/src/  → vitest run --changed (SDK unit tests)
-//        scripts/             → npm run test:scripts
 //        packages/host-*/src/ → npm run test:host
 //        packages/tool-*/src/ → npm run test:tools
+//
+// The repository-wide script suite is deliberately CI-only here. Its source gates build bundles,
+// create TypeScript programs, and scan the whole tree, so even a changed-path trigger is too coarse
+// for an interactive push hook. Run `npm run test:scripts` explicitly while changing scripts.
 //
 // For SDK units, vitest derives the affected test set from its module graph (`--changed <base>`)
 // rather than rerunning everything. A module-graph edge it can't see (e.g. a computed dynamic
@@ -94,10 +97,6 @@ export function affectsSharedPackageTests(changedFiles: readonly string[]): bool
   );
 }
 
-export function affectsScripts(changedFiles: readonly string[]): boolean {
-  return changedFiles.some((file) => file.startsWith('scripts/') && file.endsWith('.ts'));
-}
-
 export function affectsHostBackends(changedFiles: readonly string[]): boolean {
   return changedFiles.some((file) => /^packages\/host-[^/]+\/src\/.+\.(ts|tsx)$/.test(file));
 }
@@ -161,12 +160,6 @@ function main(): void {
     );
   } else {
     console.log(pc.dim('pre-push: no SDK package source changed — skipping unit tests'));
-  }
-
-  if (affectsScripts(changed)) {
-    run('npm run test:scripts');
-  } else {
-    console.log(pc.dim('pre-push: no scripts/ source changed — skipping test:scripts'));
   }
 
   if (affectsHostBackends(changed)) {

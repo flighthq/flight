@@ -1,6 +1,5 @@
 import {
   affectsHostBackends,
-  affectsScripts,
   affectsSharedPackageTests,
   affectsTools,
   resolveChangedTestArguments,
@@ -66,20 +65,6 @@ describe('affectsHostBackends', () => {
 
   it('ignores SDK packages', () => {
     expect(affectsHostBackends(['packages/mesh/src/mesh.ts'])).toBe(false);
-  });
-});
-
-describe('affectsScripts', () => {
-  it('matches scripts/ TypeScript files', () => {
-    expect(affectsScripts(['scripts/check-exports.ts'])).toBe(true);
-  });
-
-  it('ignores non-TypeScript in scripts/', () => {
-    expect(affectsScripts(['scripts/README.md'])).toBe(false);
-  });
-
-  it('ignores package source', () => {
-    expect(affectsScripts(['packages/mesh/src/mesh.ts'])).toBe(false);
   });
 });
 
