@@ -70,9 +70,12 @@ describe('capacitorHostDevice', () => {
   it('fills DeviceInfo from the prefetched Capacitor info once it resolves', async () => {
     const backend = capacitorHostDevice(fakeCapacitor().capacitor);
     // Sentinels until the construction-time prefetch settles.
-    expect(backend.getInfo(blankInfo()).model).toBe('');
+    const pendingInfo = blankInfo();
+    backend.getInfo(pendingInfo);
+    expect(pendingInfo.model).toBe('');
     await flush();
-    const info = backend.getInfo(blankInfo());
+    const info = blankInfo();
+    backend.getInfo(info);
     expect(info.model).toBe('iPhone15,2');
     expect(info.manufacturer).toBe('Apple');
     expect(info.osName).toBe('ios');
@@ -95,14 +98,17 @@ describe('capacitorHostDevice', () => {
       physicalWidth: 1,
       pixelRatio: 1,
     };
-    expect(backend.getDisplayMetrics(metrics).pixelRatio).toBe(-1);
+    backend.getDisplayMetrics(metrics);
+    expect(metrics.pixelRatio).toBe(-1);
     const caps: DeviceCapabilities = {
       hasKeyboard: true,
       hasMouse: true,
       hasStylus: true,
     };
-    expect(backend.getCapabilities(caps)).toMatchObject({ hasKeyboard: false, hasMouse: false, hasStylus: false });
+    backend.getCapabilities(caps);
+    expect(caps).toMatchObject({ hasKeyboard: false, hasMouse: false, hasStylus: false });
     const insets: SafeAreaInsets = { top: 9, right: 9, bottom: 9, left: 9 };
-    expect(backend.getSafeAreaInsets(insets)).toMatchObject({ top: 0, right: 0, bottom: 0, left: 0 });
+    backend.getSafeAreaInsets(insets);
+    expect(insets).toMatchObject({ top: 0, right: 0, bottom: 0, left: 0 });
   });
 });

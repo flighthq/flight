@@ -109,11 +109,14 @@ describe('capacitorHostSoftKeyboardInfo', () => {
     const backend = capacitorHostSoftKeyboardInfo(capacitor);
     await Promise.resolve();
     fire('keyboardWillShow', { keyboardHeight: 320 });
-    const shown = backend.getInfo(blankInfo());
+    const shown = blankInfo();
+    backend.getInfo(shown);
     expect(shown.visible).toBe(true);
     expect(shown.height).toBe(320);
     fire('keyboardWillHide');
-    expect(backend.getInfo(blankInfo()).visible).toBe(false);
+    const hidden = blankInfo();
+    backend.getInfo(hidden);
+    expect(hidden.visible).toBe(false);
   });
 });
 

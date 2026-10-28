@@ -83,7 +83,8 @@ describe('capacitorHostStatusBarGroup', () => {
   it('fills the info snapshot from the prefetch once it resolves', async () => {
     const backend = capacitorHostStatusBarGroup(fakeCapacitor().capacitor).info;
     await flush();
-    const info = backend.getInfo(blankInfo());
+    const info = blankInfo();
+    backend.getInfo(info);
     expect(info.visible).toBe(true);
     expect(info.style).toBe('dark');
     expect(info.color).toBe(0x112233ff);

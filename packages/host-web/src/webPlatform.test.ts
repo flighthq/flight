@@ -251,9 +251,8 @@ describe('web backend UA detection', () => {
 describe('webHostPlatform', () => {
   it('produces a backend that fills the out info', () => {
     const out = createPlatformInfo();
-    const result = webHostPlatform.getInfo(out);
-    expect(result).toBe(out);
-    expect(typeof result.name).toBe('string');
+    webHostPlatform.getInfo(out);
+    expect(typeof out.name).toBe('string');
   });
 
   it('sets engine to a known canonical value', () => {

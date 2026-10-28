@@ -52,7 +52,8 @@ describe('createWebScreenCapabilities', () => {
     const descriptor = Object.getOwnPropertyDescriptor(window.screen, 'orientation');
     Object.defineProperty(window.screen, 'orientation', { configurable: true, value: undefined });
     try {
-      const out = createWebScreenCapabilities().query.getPrimaryScreen(createScreenInfo());
+      const out = createScreenInfo();
+      createWebScreenCapabilities().query.getPrimaryScreen(out);
       expect(out.orientation).toBe('Landscape');
       expect(out.rotation).toBe(-1);
     } finally {

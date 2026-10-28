@@ -18,7 +18,8 @@ describe('enableWebSafeAreaInsets', () => {
 
 describe('webHostDevice', () => {
   it('fills the snapshot with sentinels without throwing (jsdom)', () => {
-    const info = webHostDevice.getInfo(createDeviceInfo());
+    const info = createDeviceInfo();
+    webHostDevice.getInfo(info);
     expect(info.model).toBe('');
     expect(info.manufacturer).toBe('');
     expect(info.marketingName).toBe('');
@@ -42,7 +43,9 @@ describe('webHostDevice', () => {
   });
 
   it('returns zero safe-area insets on plain web (no CSS probe)', () => {
-    expect(webHostDevice.getSafeAreaInsets(createSafeAreaInsets())).toMatchObject({
+    const insets = createSafeAreaInsets();
+    webHostDevice.getSafeAreaInsets(insets);
+    expect(insets).toMatchObject({
       bottom: 0,
       left: 0,
       right: 0,
@@ -64,7 +67,8 @@ describe('webHostDevice', () => {
   });
 
   it('returns display metrics with a valid pixel ratio from jsdom', () => {
-    const metrics = webHostDevice.getDisplayMetrics(createDeviceDisplayMetrics());
+    const metrics = createDeviceDisplayMetrics();
+    webHostDevice.getDisplayMetrics(metrics);
     expect(typeof metrics.pixelRatio).toBe('number');
     expect(typeof metrics.logicalWidth).toBe('number');
   });
@@ -74,7 +78,8 @@ describe('webHostDevice', () => {
     const original = nav['deviceMemory'];
     try {
       Object.defineProperty(navigator, 'deviceMemory', { configurable: true, value: 4 });
-      const info = webHostDevice.getInfo(createDeviceInfo());
+      const info = createDeviceInfo();
+      webHostDevice.getInfo(info);
       expect(info.totalMemory).toBe(4 * 1024 * 1024 * 1024);
     } finally {
       if (original !== undefined) {
@@ -86,19 +91,22 @@ describe('webHostDevice', () => {
   });
 
   it('osVersion parses Android version from UA', () => {
-    const result = webHostDevice.getInfo(createDeviceInfo());
-    expect(typeof result.osVersion).toBe('string');
+    const info = createDeviceInfo();
+    webHostDevice.getInfo(info);
+    expect(typeof info.osVersion).toBe('string');
   });
 
   it('getCapabilities returns a capability snapshot without throwing', () => {
-    const caps = webHostDevice.getCapabilities(createDeviceCapabilities());
+    const caps = createDeviceCapabilities();
+    webHostDevice.getCapabilities(caps);
     expect(typeof caps.hasKeyboard).toBe('boolean');
     expect(typeof caps.hasMouse).toBe('boolean');
     expect(caps.hasStylus).toBe(false);
   });
 
   it('web backend returns Desktop formFactor for desktop UA', () => {
-    const info = webHostDevice.getInfo(createDeviceInfo());
+    const info = createDeviceInfo();
+    webHostDevice.getInfo(info);
     expect([DeviceFormFactorDesktop, DeviceFormFactorUnknown]).toContain(info.formFactor);
   });
 });

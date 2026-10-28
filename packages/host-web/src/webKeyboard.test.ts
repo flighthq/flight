@@ -114,7 +114,8 @@ describe('webHostSoftKeyboardChange', () => {
 describe('webHostSoftKeyboardInfo', () => {
   it('reads info without throwing', () => {
     const out = blankInfo();
-    expect(typeof webHostSoftKeyboardInfo.getInfo(out).visible).toBe('boolean');
+    webHostSoftKeyboardInfo.getInfo(out);
+    expect(typeof out.visible).toBe('boolean');
   });
 
   it('returns rect fields with height 0 when no keyboard is present', () => {

@@ -18,8 +18,7 @@ describe('tauriHostPlatform', () => {
     const backend = tauriHostPlatform(fakeTauri('macos'));
     await Promise.resolve();
     const out = {} as PlatformInfo;
-    const result = backend.getInfo(out);
-    expect(result).toBe(out);
+    backend.getInfo(out);
     expect(out.name).toBe('macos');
     expect(out.kind).toBe('desktop');
     expect(out.version).toBe('14.2.1');
@@ -59,6 +58,8 @@ describe('tauriHostPlatformGroup', () => {
   it('constructs exactly the platform info slot', () => {
     const group = tauriHostPlatformGroup(fakeTauri('linux'));
     expect(Object.keys(group)).toEqual(['info']);
-    expect(group.info.getInfo({} as PlatformInfo).name).toBe('linux');
+    const out = {} as PlatformInfo;
+    group.info.getInfo(out);
+    expect(out.name).toBe('linux');
   });
 });
