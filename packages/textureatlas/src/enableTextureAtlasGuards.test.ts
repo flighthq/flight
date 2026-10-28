@@ -1,5 +1,6 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
 import { createTexture } from '@flighthq/texture/contract';
+import type { LogEntry } from '@flighthq/types/contract';
 import type { ImageResource } from '@flighthq/types/contract';
 
 import {
@@ -17,14 +18,14 @@ afterEach(() => {
 describe('areTextureAtlasGuardsEnabled', () => {
   it('reports the current guard state', () => {
     expect(areTextureAtlasGuardsEnabled()).toBe(false);
-    enableTextureAtlasGuards();
+    enableTextureAtlasGuards(createLogState(), () => 0);
     expect(areTextureAtlasGuardsEnabled()).toBe(true);
   });
 });
 
 describe('disableTextureAtlasGuards', () => {
   it('removes an enabled guard', () => {
-    enableTextureAtlasGuards();
+    enableTextureAtlasGuards(createLogState(), () => 0);
     disableTextureAtlasGuards();
     expect(areTextureAtlasGuardsEnabled()).toBe(false);
   });
@@ -40,18 +41,16 @@ describe('enableTextureAtlasGuards', () => {
       }),
     });
     addTextureAtlasRegion(atlas, 0, 0, 10, 10);
+    const logState = createLogState();
     const sink = createMemoryLogSink(8);
-    addLogSink(sink.sink);
-    try {
-      enableTextureAtlasGuards();
+    addLogSink(logState, sink.sink);
+    enableTextureAtlasGuards(logState, () => 0);
 
-      expect(getTextureAtlasRegionTexture(atlas, 0)).toBeNull();
-      expect(getTextureAtlasRegionTexture(atlas, 0)).toBeNull();
-      const entries = getMemoryLogSinkEntries(sink);
-      expect(entries).toHaveLength(1);
-      expect(String((entries[0].data as Record<string, unknown>).message)).toContain('uvRotation');
-    } finally {
-      removeLogSink(sink.sink);
-    }
+    expect(getTextureAtlasRegionTexture(atlas, 0)).toBeNull();
+    expect(getTextureAtlasRegionTexture(atlas, 0)).toBeNull();
+    const entries: LogEntry[] = [];
+    getMemoryLogSinkEntries(entries, sink);
+    expect(entries).toHaveLength(1);
+    expect(String((entries[0].data as Record<string, unknown>).message)).toContain('uvRotation');
   });
 });

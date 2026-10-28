@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type { TextureAtlas, TextureAtlasRegionTextureExplanation } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -13,18 +14,28 @@ export function disableTextureAtlasGuards(): void {
   textureAtlasGuardsEnabled = false;
 }
 
-export function enableTextureAtlasGuards(): void {
-  setTextureAtlasRegionTextureGuard(warnTextureAtlasRegionTextureUnavailable);
+export function enableTextureAtlasGuards(logState: LogState, clock: () => number): void {
+  setTextureAtlasRegionTextureGuard(
+    (
+      atlas: Readonly<TextureAtlas>,
+      regionId: number,
+      explanation: Readonly<TextureAtlasRegionTextureExplanation>,
+    ): void => warnTextureAtlasRegionTextureUnavailable(logState, clock(), atlas, regionId, explanation),
+  );
   textureAtlasGuardsEnabled = true;
 }
 
 function warnTextureAtlasRegionTextureUnavailable(
+  logState: LogState,
+  nowMs: number,
   atlas: Readonly<TextureAtlas>,
   regionId: number,
   explanation: Readonly<TextureAtlasRegionTextureExplanation>,
 ): void {
   if (explanation.status !== 'rotated-page') return;
   logOnce(
+    logState,
+    nowMs,
     'textureatlas:region-texture-rotated-page',
     LogLevel.Warn,
     {
