@@ -2,6 +2,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicU32, Ordering};
 
 /// A callable random source. Cloning it shares the stream, as a TS function reference does.
+/// flight-compiler: typescript-import @flighthq/types/contract
 pub type RandomSource = Arc<dyn Fn() -> f32 + Send + Sync>;
 
 /// Create a fast, deterministic pseudo-random generator seeded by an integer.

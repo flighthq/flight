@@ -88,6 +88,9 @@ function collectSymbols(modules: GeneratedModule[]): Map<string, { fileName: str
         typeOnly: match[1] === 'interface' || match[1] === 'type',
       });
     }
+    for (const match of module.typescript.matchAll(/^export type \{ ([A-Za-z0-9_]+) \};$/gm)) {
+      symbols.set(match[1], { fileName: module.fileName, typeOnly: true });
+    }
   }
   return symbols;
 }

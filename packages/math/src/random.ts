@@ -1,10 +1,12 @@
 // Generated from crates/flight-math/src/random.rs by flight-compiler.
 // Rust is authoritative; run `npm run generate` after changing it.
 
+import type { RandomSource } from '@flighthq/types/contract';
+
 /**
  * A callable random source. Cloning it shares the stream, as a TS function reference does.
  */
-export type RandomSource = () => number;
+export type { RandomSource };
 
 /**
  * Create a fast, deterministic pseudo-random generator seeded by an integer.
