@@ -22,6 +22,8 @@ const RECORD_CLONE_ARGUMENT_MARKER: &str = "@record-clone-argument:";
 const RECORD_CLONE_LOCAL_MARKER: &str = "@record-clone-local:";
 const RECORD_CLONE_TYPE_MARKER: &str = "@record-clone-type:";
 const RECORD_VEC_FIELD_MARKER: &str = "@record-vec-field:";
+const RETURN_TYPE_MARKER: &str = "@return-type:";
+const RETURNS_U32_MARKER: &str = "@returns-u32";
 const VEC_CLONE_ARGUMENT_MARKER: &str = "@vec-clone-argument:";
 const VEC_CLONE_EXPRESSION_MARKER: &str = "@vec-clone-expression:";
 const UNSIGNED_INTEGER_LOCAL_MARKER: &str = "@unsigned-integer-local:";
@@ -449,6 +451,63 @@ fn emit_binary_operator(operator: &BinOp) -> Result<&'static str, CompileError> 
     };
 }
 
+fn binary_precedence(operator: &BinOp) -> u8 {
+    return match operator {
+        BinOp::Add(_) | BinOp::Sub(_) => 11,
+        BinOp::And(_) => 4,
+        BinOp::BitAnd(_) => 7,
+        BinOp::BitOr(_) => 5,
+        BinOp::BitXor(_) => 6,
+        BinOp::Div(_) | BinOp::Mul(_) | BinOp::Rem(_) => 12,
+        BinOp::Eq(_) | BinOp::Ne(_) => 8,
+        BinOp::Ge(_) | BinOp::Gt(_) | BinOp::Le(_) | BinOp::Lt(_) => 9,
+        BinOp::Or(_) => 3,
+        BinOp::Shl(_) | BinOp::Shr(_) => 10,
+        BinOp::AddAssign(_)
+        | BinOp::BitAndAssign(_)
+        | BinOp::BitOrAssign(_)
+        | BinOp::BitXorAssign(_)
+        | BinOp::DivAssign(_)
+        | BinOp::MulAssign(_)
+        | BinOp::RemAssign(_)
+        | BinOp::ShlAssign(_)
+        | BinOp::ShrAssign(_)
+        | BinOp::SubAssign(_) => 1,
+        _ => 0,
+    };
+}
+
+fn expression_precedence(expression: &Expr) -> u8 {
+    return match expression {
+        Expr::Assign(_) => 1,
+        Expr::Binary(binary) => binary_precedence(&binary.op),
+        Expr::Cast(cast) if type_is_named(&cast.ty, "i32") => 5,
+        Expr::Cast(cast) if type_is_named(&cast.ty, "u32") => 10,
+        Expr::Cast(cast) => expression_precedence(&cast.expr),
+        Expr::Group(group) => expression_precedence(&group.expr),
+        Expr::If(_) => 2,
+        Expr::Reference(reference) => expression_precedence(&reference.expr),
+        Expr::Unary(_) => 13,
+        _ => 15,
+    };
+}
+
+fn emit_binary_operand(
+    expression: &Expr,
+    entities: &HashSet<String>,
+    parent_precedence: u8,
+    right: bool,
+) -> Result<String, CompileError> {
+    let value = emit_expression(expression, entities)?;
+    let precedence = expression_precedence(expression);
+    if precedence < parent_precedence
+        || (right && precedence == parent_precedence && matches!(expression, Expr::Binary(_)))
+    {
+        return Ok(format!("({value})"));
+    }
+    return Ok(value);
+}
+
 fn emit_block(
     out: &mut String,
     statements: &[Stmt],
@@ -492,6 +551,22 @@ fn emit_closure_with_parameter_types(
     entities: &HashSet<String>,
     parameter_types: &[String],
 ) -> Result<String, CompileError> {
+    let mut closure_context = entities
+        .iter()
+        .filter(|marker| {
+            !marker.starts_with(RETURN_TYPE_MARKER) && marker.as_str() != RETURNS_U32_MARKER
+        })
+        .cloned()
+        .collect::<HashSet<_>>();
+    if let ReturnType::Type(_, rust_type) = &closure.output {
+        closure_context.insert(format!(
+            "{RETURN_TYPE_MARKER}{}",
+            emit_type(rust_type, entities)?
+        ));
+        if type_is_named(rust_type, "u32") {
+            closure_context.insert(RETURNS_U32_MARKER.to_string());
+        }
+    }
     let parameters = closure
         .inputs
         .iter()
@@ -515,7 +590,7 @@ fn emit_closure_with_parameter_types(
         Expr::Block(block) => {
             let mut body = String::new();
             body.push_str("{\n");
-            emit_block(&mut body, &block.block.stmts, entities, 1)?;
+            emit_block(&mut body, &block.block.stmts, &closure_context, 1)?;
             body.push('}');
             body
         }
@@ -525,9 +600,9 @@ fn emit_closure_with_parameter_types(
                     "portable expression closure cannot return without a value",
                 ));
             };
-            emit_expression(value, entities)?
+            emit_expression(value, &closure_context)?
         }
-        expression => emit_expression(expression, entities)?,
+        expression => emit_expression(expression, &closure_context)?,
     };
     return Ok(format!(
         "({}){return_type} => {body}",
@@ -671,6 +746,7 @@ pub(crate) fn emit_expression(
             ))
         }
         Expr::Binary(binary) => {
+            let precedence = binary_precedence(&binary.op);
             if let Some(comparison) = emit_inclusive_comparison(binary, entities)? {
                 return Ok(comparison);
             }
@@ -694,8 +770,8 @@ pub(crate) fn emit_expression(
             if matches!(binary.op, BinOp::BitXor(_)) {
                 return Ok(format!(
                     "({} ^ {}) >>> 0",
-                    emit_expression(&binary.left, entities)?,
-                    emit_expression(&binary.right, entities)?
+                    emit_binary_operand(&binary.left, entities, precedence, false)?,
+                    emit_binary_operand(&binary.right, entities, precedence, true)?
                 ));
             }
             if matches!(binary.op, BinOp::BitXorAssign(_)) {
@@ -717,15 +793,15 @@ pub(crate) fn emit_expression(
                 };
                 return Ok(format!(
                     "{} {operator} {}",
-                    emit_expression(&binary.left, entities)?,
-                    emit_expression(&binary.right, entities)?
+                    emit_binary_operand(&binary.left, entities, precedence, false)?,
+                    emit_binary_operand(&binary.right, entities, precedence, true)?
                 ));
             }
             Ok(format!(
                 "{} {} {}",
-                emit_expression(&binary.left, entities)?,
+                emit_binary_operand(&binary.left, entities, precedence, false)?,
                 emit_binary_operator(&binary.op)?,
-                emit_expression(&binary.right, entities)?
+                emit_binary_operand(&binary.right, entities, precedence, true)?
             ))
         }
         Expr::Block(block) => emit_block_expression(&block.block, entities),
@@ -1199,7 +1275,12 @@ fn emit_function(
     for name in nullable_locals.names {
         function_context.insert(format!("@nullable:{name}"));
     }
-    let function_context = function_expression_context(function, &function_context);
+    let mut function_context = function_expression_context(function, &function_context);
+    function_context.insert(format!("{RETURN_TYPE_MARKER}{return_type}"));
+    if matches!(&function.sig.output, ReturnType::Type(_, rust_type) if type_is_named(rust_type, "u32"))
+    {
+        function_context.insert(RETURNS_U32_MARKER.to_string());
+    }
     emit_block(out, &function.block.stmts, &function_context, 1)?;
     out.push_str("}\n");
     return Ok(());
@@ -1457,6 +1538,66 @@ pub(crate) fn emit_local_with_shadow(
     return Ok(());
 }
 
+pub(crate) fn emit_format_template(
+    template: &str,
+    values: &[&Expr],
+    entities: &HashSet<String>,
+    error_prefix: &str,
+) -> Result<String, CompileError> {
+    let mut template = template
+        .replace('\\', "\\\\")
+        .replace('`', "\\`")
+        .replace("${", "\\${");
+    let mut value_index = 0;
+    let mut rendered = String::new();
+    while let Some(start) = template.find('{') {
+        let Some(relative_end) = template[start + 1..].find('}') else {
+            break;
+        };
+        let end = start + 1 + relative_end;
+        rendered.push_str(&template[..start]);
+        let placeholder = &template[start + 1..end];
+        let (name, specifier) = placeholder.split_once(':').unwrap_or((placeholder, ""));
+        let value = if name.is_empty() {
+            let Some(value) = values.get(value_index) else {
+                return Err(compile_error(format!(
+                    "{error_prefix} has too few formatting values"
+                )));
+            };
+            value_index += 1;
+            emit_expression(value, entities)?
+        } else {
+            snake_to_lower_camel(name)
+        };
+        let value = if specifier.is_empty() {
+            value
+        } else if specifier == "x" {
+            format!("({value}).toString(16)")
+        } else if let Some(width) = specifier
+            .strip_prefix('0')
+            .and_then(|value| value.strip_suffix('x'))
+            .and_then(|value| value.parse::<usize>().ok())
+        {
+            format!("({value}).toString(16).padStart({width}, \"0\")")
+        } else {
+            return Err(compile_error(format!(
+                "{error_prefix} uses unsupported format specifier `:{specifier}`"
+            )));
+        };
+        rendered.push_str("${");
+        rendered.push_str(&value);
+        rendered.push('}');
+        template = template[end + 1..].to_string();
+    }
+    rendered.push_str(&template);
+    if value_index != values.len() {
+        return Err(compile_error(format!(
+            "{error_prefix} has unused formatting values"
+        )));
+    }
+    return Ok(format!("`{rendered}`"));
+}
+
 fn emit_macro_expression(
     rust_macro: &syn::Macro,
     entities: &HashSet<String>,
@@ -1493,26 +1634,8 @@ fn emit_macro_expression(
             "portable `format!` expression needs a string literal template",
         ));
     };
-    let mut template = template
-        .value()
-        .replace('\\', "\\\\")
-        .replace('`', "\\`")
-        .replace("${", "\\${");
-    for argument in arguments.iter().skip(1) {
-        let replacement = format!("${{{}}}", emit_expression(argument, entities)?);
-        let Some(index) = template.find("{}") else {
-            return Err(compile_error(
-                "portable `format!` has more values than positional placeholders",
-            ));
-        };
-        template.replace_range(index..index + 2, &replacement);
-    }
-    if template.contains("{}") {
-        return Err(compile_error(
-            "portable `format!` has fewer values than positional placeholders",
-        ));
-    }
-    return Ok(format!("`{template}`"));
+    let values = arguments.iter().skip(1).collect::<Vec<_>>();
+    return emit_format_template(&template.value(), &values, entities, "portable `format!`");
 }
 
 fn emit_match_expression(
@@ -1759,6 +1882,9 @@ fn emit_method_call(
         "sin" if arguments.is_empty() => Ok(format!("Math.sin({receiver})")),
         "skip" if arguments.len() == 1 => Ok(format!("{receiver}.slice({})", arguments[0])),
         "sqrt" if arguments.is_empty() => Ok(format!("Math.sqrt({receiver})")),
+        "starts_with" if arguments.len() == 1 => {
+            Ok(format!("{receiver}.startsWith({})", arguments[0]))
+        }
         "sum" if arguments.is_empty() => {
             Ok(format!("{receiver}.reduce((sum, value) => sum + value, 0)"))
         }
@@ -2274,8 +2400,21 @@ fn emit_statement(
         Stmt::Expr(Expr::Return(return_expression), _) => {
             write_indent(out, indent);
             if let Some(value) = &return_expression.expr {
-                writeln!(out, "return {};", emit_expression(value, entities)?)
-                    .expect("writing to a String cannot fail");
+                let mut value = if expression_is_path_call(value, "allocate_entity") {
+                    let return_type = entities
+                        .iter()
+                        .find_map(|marker| marker.strip_prefix(RETURN_TYPE_MARKER))
+                        .ok_or_else(|| {
+                            compile_error("allocate_entity return needs an explicit Rust type")
+                        })?;
+                    format!("allocateEntity<{return_type}>()")
+                } else {
+                    emit_expression(value, entities)?
+                };
+                if entities.contains(RETURNS_U32_MARKER) {
+                    value = format!("({value}) >>> 0");
+                }
+                writeln!(out, "return {value};").expect("writing to a String cannot fail");
             } else {
                 out.push_str("return;\n");
             }
