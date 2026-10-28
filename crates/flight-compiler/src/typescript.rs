@@ -128,9 +128,29 @@ fn closure_parameter_types(entities: &HashSet<String>, local: &str) -> Vec<Strin
 
 fn fixed_buffer_type(rust_type: &Type) -> Option<&'static str> {
     return match rust_type {
-        Type::Array(array) => typed_array_for_type(&array.elem),
         Type::Paren(paren) => fixed_buffer_type(&paren.elem),
-        Type::Reference(reference) => fixed_buffer_type(&reference.elem),
+        Type::Reference(reference) if reference.mutability.is_some() => {
+            fixed_buffer_value_type(&reference.elem)
+        }
+        _ => None,
+    };
+}
+
+fn fixed_buffer_value_type(rust_type: &Type) -> Option<&'static str> {
+    return match rust_type {
+        Type::Array(array) => typed_array_for_type(&array.elem),
+        Type::Paren(paren) => fixed_buffer_value_type(&paren.elem),
+        Type::Path(path) => match path.path.segments.last()?.ident.to_string().as_str() {
+            "Float32Array" => Some("Float32Array"),
+            "Float64Array" => Some("Float64Array"),
+            "Int8Array" => Some("Int8Array"),
+            "Int16Array" => Some("Int16Array"),
+            "Int32Array" => Some("Int32Array"),
+            "Uint8Array" => Some("Uint8Array"),
+            "Uint16Array" => Some("Uint16Array"),
+            "Uint32Array" => Some("Uint32Array"),
+            _ => None,
+        },
         Type::Slice(slice) => typed_array_for_type(&slice.elem),
         _ => None,
     };
@@ -2054,7 +2074,7 @@ pub(crate) fn emit_type(
             if let Some(array_type) = typed_array_for_type(&array.elem) {
                 Ok(array_type.to_string())
             } else {
-                Ok(format!("{}[]", emit_type(&array.elem, entities)?))
+                Ok(array_type(emit_type(&array.elem, entities)?))
             }
         }
         Type::Paren(paren) => emit_type(&paren.elem, entities),
@@ -2116,7 +2136,7 @@ pub(crate) fn emit_type(
                 Ok(format!("Readonly<{inner}>"))
             }
         }
-        Type::Slice(slice) => Ok(format!("{}[]", emit_type(&slice.elem, entities)?)),
+        Type::Slice(slice) => Ok(array_type(emit_type(&slice.elem, entities)?)),
         Type::Tuple(tuple) if tuple.elems.is_empty() => Ok("void".to_string()),
         Type::Tuple(tuple) => {
             let elements = tuple

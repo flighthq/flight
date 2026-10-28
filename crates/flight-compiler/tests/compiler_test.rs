@@ -553,7 +553,7 @@ mod write_vector2_to_float32_array {
         let output = compile_vitest(source, "@flighthq/geometry/contract").unwrap();
 
         assert!(output.contains(
-            "const cases: Readonly<readonly [Float32Array, number][]> = [[new Float32Array([1.0, 2.0]), 3.0]];"
+            "const cases: Readonly<Array<readonly [Float32Array, number]>> = [[new Float32Array([1.0, 2.0]), 3.0]];"
         ));
         assert!(output.contains("for (const [value, expected] of cases) {"));
         assert!(output.contains("let out = new Float32Array(2).fill(0.0);"));
@@ -666,7 +666,8 @@ mod ease_steps {
     #[test]
     fn infers_fixed_f32_buffers_and_assigned_callback_parameters() {
         let production = r#"
-pub fn write_easing_samples(out: &mut [f32], ease: &dyn Fn(f32) -> f32) {}
+pub fn write_easing_samples(out: &mut Float32Array, ease: &dyn Fn(f32) -> f32) {}
+pub fn read_easing_samples(samples: &[f32]) {}
 "#;
         let source = r#"
 use flight_easing::*;
@@ -679,6 +680,9 @@ mod write_easing_samples {
         let mut out = [0.0; 4];
         let ease = |t| t * t;
         write_easing_samples(&mut out, &ease);
+
+        let samples = [0.0, 0.5, 1.0];
+        read_easing_samples(&samples);
         assert_eq!(out[0], 0.0);
     }
 }
@@ -691,6 +695,40 @@ mod write_easing_samples {
         assert!(output.contains("let out = new Float32Array(4).fill(0.0);"));
         assert!(output.contains("const ease = (t: number) => t * t;"));
         assert!(output.contains("writeEasingSamples(out, ease);"));
+        assert!(output.contains("const samples = [0.0, 0.5, 1.0];"));
+        assert!(output.contains("readEasingSamples(samples);"));
+        assert!(!output.contains("const samples = new Float32Array"));
+    }
+
+    #[test]
+    fn preserves_readonly_tuple_elements_inside_readonly_slice_parameters() {
+        let source = r#"
+use std::sync::Arc;
+use flight_easing::*;
+
+type Ease = Arc<dyn Fn(f32) -> f32 + Send + Sync>;
+
+fn assert_families(families: &[(&str, Ease)]) {
+    assert_eq!(families.len(), 1);
+}
+
+mod easing_families {
+    use super::*;
+
+    #[test]
+    fn accepts_a_family_table() {
+        let families = [("Linear", Arc::new(|t: f32| t))];
+        assert_families(&families);
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/easing/contract").unwrap();
+
+        assert!(output.contains(
+            "function assertFamilies(families: Readonly<Array<readonly [string, Ease]>>): void"
+        ));
+        assert!(!output.contains("Readonly<readonly [string, Ease][]>"));
     }
 
     #[test]
