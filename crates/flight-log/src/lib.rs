@@ -1,3 +1,4 @@
+mod console_log_sink;
 mod log;
 mod warn_missing_host_capability;
 
