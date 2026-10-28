@@ -1,21 +1,33 @@
-import { clearLogOnceKeys, setLogSink } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
+import { clearLogOnceKeys, createLogState, getMemoryLogSinkEntries, setLogSink } from '@flighthq/log/contract';
 import { createTextureAtlas } from '@flighthq/textureatlas/contract';
-import type { BitmapFontData, LogEntry } from '@flighthq/types/contract';
+import type { BitmapFontData, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import { createBitmapFont } from './bitmapFont.ts';
 import { disableBitmapFontGuards, enableBitmapFontGuards } from './enableBitmapFontGuards.ts';
 
 let entries: LogEntry[];
 
+function clock(): number {
+  return 0;
+}
+
+function readLogEntries(sink: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
+}
+
 beforeEach(() => {
-  clearLogOnceKeys();
+  logState = createLogState();
+  clearLogOnceKeys(logState);
   entries = [];
-  setLogSink((entry) => entries.push(entry));
+  setLogSink(logState, (entry) => entries.push(entry));
 });
 
 afterEach(() => {
   disableBitmapFontGuards();
-  setLogSink(null);
+  setLogSink(logState, null);
 });
 
 function messages(): string {
@@ -32,7 +44,7 @@ function fontData(page: number, pages = 1): BitmapFontData {
 
 describe('disableBitmapFontGuards', () => {
   it('stops the warning a previously-installed guard would emit', () => {
-    enableBitmapFontGuards();
+    enableBitmapFontGuards(logState, clock);
     disableBitmapFontGuards();
 
     createBitmapFont(fontData(4));
@@ -46,7 +58,7 @@ describe('enableBitmapFontGuards', () => {
     // ONE test for the whole message, deliberately. logOnce suppresses a key for the life of the
     // PROCESS, so a second test asserting a second phrase would observe nothing and pass vacuously —
     // the key is a single-use observation, so every assertion about it belongs in one place.
-    enableBitmapFontGuards();
+    enableBitmapFontGuards(logState, clock);
 
     createBitmapFont(fontData(4));
 
@@ -62,7 +74,7 @@ describe('enableBitmapFontGuards', () => {
   it('stays silent for a glyph whose page exists', () => {
     // Guards the guard: every assertion above would pass just as well against a guard that fired
     // unconditionally, which would make the warning noise on every well-formed font.
-    enableBitmapFontGuards();
+    enableBitmapFontGuards(logState, clock);
 
     createBitmapFont(fontData(1, 2));
 
@@ -75,3 +87,5 @@ describe('enableBitmapFontGuards', () => {
     expect(entries).toEqual([]);
   });
 });
+
+let logState: LogState = createLogState();

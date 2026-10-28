@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -22,18 +23,26 @@ export function disableBitmapFontGuards(): void {
  * Pair with `explainBitmapFontGlyph` for a pull-style answer about one codepoint. Not importing this
  * module costs production nothing: the messages and the `@flighthq/log` dependency live only here.
  */
-export function enableBitmapFontGuards(): void {
-  setBitmapFontGuard(warnOnBitmapFontRepair);
+export function enableBitmapFontGuards(logState: LogState, clock: () => number): void {
+  setBitmapFontGuard((...args) => warnOnBitmapFontRepair(logState, clock, ...args));
 }
 
 // Dispatched per reason rather than filtered, matching the glyph-atlas guard: a reason with no branch
 // here logs nothing, which is the safe default when the core grows a repair this module has not been
 // taught to describe. There is one reason today, so the no-match path is unreachable by construction and
 // carries no test — a second reason adds its own branch rather than reusing this one's wording.
-function warnOnBitmapFontRepair(reason: string, codepoint: number, page: number): void {
+function warnOnBitmapFontRepair(
+  logState: LogState,
+  clock: () => number,
+  reason: string,
+  codepoint: number,
+  page: number,
+): void {
   if (reason !== 'page-out-of-range') return;
   const printable = `U+${codepoint.toString(16).toUpperCase().padStart(4, '0')}`;
   logOnce(
+    logState,
+    clock(),
     'bitmapfont:page-out-of-range',
     LogLevel.Warn,
     {
