@@ -15,14 +15,10 @@ fn assert_close(actual: f32, expected: f32, digits: i32) {
     );
 }
 
-fn assert_accumulated_close(actual: f32, expected: f32, digits: i32, evaluations: usize) {
-    let diff = (actual - expected).abs();
-    let ts_bound = 0.5 * 10.0_f32.powi(-digits);
-    let limit = ts_bound.max(evaluations as f32 * f32::EPSILON * expected.abs().max(1.0));
-    assert!(
-        diff <= limit,
-        "expected {expected}, got {actual} (diff: {diff}, limit: {limit})"
-    );
+fn step_critical_band_spring(damping_ratio: f32) -> Spring {
+    let mut spring = create_spring(4.0, -3.0);
+    update_spring(&mut spring, -2.0, &spring_config(3.0, damping_ratio), 0.2);
+    return spring;
 }
 
 mod add_spring_impulse {
@@ -147,53 +143,31 @@ mod update_spring {
     use super::*;
 
     #[test]
-    fn preserves_oscillation_energy_when_damping_ratio_is_exactly_zero() {
-        let frequency: f32 = 2.0;
-        let target: f32 = 3.0;
-        let mut spring = create_spring(7.0, -4.0);
-        let config = spring_config(frequency, 0.0);
-        let omega = std::f32::consts::TAU * frequency;
-        let initial_energy = spring.velocity * spring.velocity
-            + omega * omega * (spring.value - target) * (spring.value - target);
-
-        for _ in 0..600 {
-            update_spring(&mut spring, target, &config, 1.0 / 60.0);
-        }
-
-        let final_energy = spring.velocity * spring.velocity
-            + omega * omega * (spring.value - target) * (spring.value - target);
-        // D1 f32 bound (TS: 5e-9)
-        assert_accumulated_close(final_energy, initial_energy, 8, 600);
-    }
-
-    #[test]
     fn uses_the_critical_solution_exactly_at_and_inside_critical_band() {
         let critical_band: f32 = 1e-4;
 
-        fn step(damping_ratio: f32) -> (f32, f32) {
-            let mut spring = create_spring(4.0, -3.0);
-            update_spring(&mut spring, -2.0, &spring_config(3.0, damping_ratio), 0.2);
-            (spring.value, spring.velocity)
-        }
+        let critical = step_critical_band_spring(1.0);
+        let lower_edge = step_critical_band_spring(1.0 - critical_band);
+        assert_eq!(lower_edge.value, critical.value);
+        assert_eq!(lower_edge.velocity, critical.velocity);
+        let lower_inside = step_critical_band_spring(1.0 - critical_band * 0.5);
+        assert_eq!(lower_inside.value, critical.value);
+        assert_eq!(lower_inside.velocity, critical.velocity);
+        let upper_inside = step_critical_band_spring(1.0 + critical_band * 0.5);
+        assert_eq!(upper_inside.value, critical.value);
+        assert_eq!(upper_inside.velocity, critical.velocity);
+        let upper_edge = step_critical_band_spring(1.0 + critical_band);
+        assert_eq!(upper_edge.value, critical.value);
+        assert_eq!(upper_edge.velocity, critical.velocity);
 
-        let critical = step(1.0);
-        assert_eq!(step(1.0 - critical_band), critical);
-        assert_eq!(step(1.0 - critical_band * 0.5), critical);
-        assert_eq!(step(1.0 + critical_band * 0.5), critical);
-        assert_eq!(step(1.0 + critical_band), critical);
-
-        let underdamped = step(1.0 - critical_band * 2.0);
-        let overdamped = step(1.0 + critical_band * 2.0);
-        assert_ne!(underdamped, critical);
-        assert_ne!(overdamped, critical);
-        // D1 f32 bound (TS: 0.0005)
-        assert_close(underdamped.0, critical.0, 3);
-        // D1 f32 bound (TS: 0.005)
-        assert_close(underdamped.1, critical.1, 2);
-        // D1 f32 bound (TS: 0.0005)
-        assert_close(overdamped.0, critical.0, 3);
-        // D1 f32 bound (TS: 0.005)
-        assert_close(overdamped.1, critical.1, 2);
+        let underdamped = step_critical_band_spring(1.0 - critical_band * 2.0);
+        let overdamped = step_critical_band_spring(1.0 + critical_band * 2.0);
+        assert!(underdamped.value != critical.value || underdamped.velocity != critical.velocity);
+        assert!(overdamped.value != critical.value || overdamped.velocity != critical.velocity);
+        assert_close(underdamped.value, critical.value, 3);
+        assert_close(underdamped.velocity, critical.velocity, 2);
+        assert_close(overdamped.value, critical.value, 3);
+        assert_close(overdamped.velocity, critical.velocity, 2);
     }
 
     #[test]
@@ -219,7 +193,6 @@ mod update_spring {
             );
             previous = spring.value;
         }
-        // D1 f32 bound (TS: 0.0005)
         assert_close(spring.value, target, 3);
         assert!(is_spring_settled(&spring, target, None, None));
     }
@@ -282,10 +255,8 @@ mod update_spring {
         update_spring(&mut spring, target, &config, 1.0);
         assert!(spring.value.is_finite());
         assert!(spring.velocity.is_finite());
-        // D1 f32 bound (TS: 5e-7)
-        assert_close(spring.value, target, 6);
-        // D1 f32 bound (TS: 5e-7)
-        assert_close(spring.velocity, 0.0, 6);
+        assert_eq!(spring.value, target);
+        assert_eq!(spring.velocity, 0.0);
     }
 
     #[test]
@@ -316,10 +287,7 @@ mod update_spring {
         let mut coarse = create_spring(0.0, 3.0);
         update_spring(&mut coarse, target, &config, 1.0);
 
-        // D1 f32 bound (TS: 5e-7)
-        assert_accumulated_close(fine.value, coarse.value, 6, 60);
-        // D1 f32 bound (TS: 5e-7)
-        assert_accumulated_close(fine.velocity, coarse.velocity, 6, 60);
+        assert!((fine.value - coarse.value).abs() <= 5e-7);
     }
 
     #[test]
@@ -370,19 +338,15 @@ mod update_spring_angle {
         let mut forward_reference = create_spring(359.0, 0.0);
         update_spring_angle(&mut forward, 1.0, 360.0, &config, 1.0 / 60.0);
         update_spring(&mut forward_reference, 361.0, &config, 1.0 / 60.0);
-        // D1 f32 bound (TS: 5e-13)
-        assert_close(forward.value, forward_reference.value, 12);
-        // D1 f32 bound (TS: 5e-13)
-        assert_close(forward.velocity, forward_reference.velocity, 12);
+        assert_eq!(forward.value, forward_reference.value);
+        assert_eq!(forward.velocity, forward_reference.velocity);
 
         let mut reverse = create_spring(1.0, 0.0);
         let mut reverse_reference = create_spring(1.0, 0.0);
         update_spring_angle(&mut reverse, 359.0, 360.0, &config, 1.0 / 60.0);
         update_spring(&mut reverse_reference, -1.0, &config, 1.0 / 60.0);
-        // D1 f32 bound (TS: 5e-13)
-        assert_close(reverse.value, reverse_reference.value, 12);
-        // D1 f32 bound (TS: 5e-13)
-        assert_close(reverse.velocity, reverse_reference.velocity, 12);
+        assert_eq!(reverse.value, reverse_reference.value);
+        assert_eq!(reverse.velocity, reverse_reference.velocity);
     }
 
     #[test]
@@ -394,9 +358,7 @@ mod update_spring_angle {
         update_spring_angle(&mut spring, -0.5, 1.0, &config, 1.0 / 60.0);
         update_spring(&mut reference, 0.5, &config, 1.0 / 60.0);
 
-        // D1 f32 bound (TS: 5e-13)
-        assert_close(spring.value, reference.value, 12);
-        // D1 f32 bound (TS: 5e-13)
-        assert_close(spring.velocity, reference.velocity, 12);
+        assert_eq!(spring.value, reference.value);
+        assert_eq!(spring.velocity, reference.velocity);
     }
 }

@@ -1,15 +1,5 @@
 use flight_spring::contract::*;
 
-fn assert_close(actual: f32, expected: f32, digits: i32) {
-    let diff = (actual - expected).abs();
-    let ts_bound = 0.5 * 10.0_f32.powi(-digits);
-    let limit = ts_bound.max(4.0 * f32::EPSILON * expected.abs().max(1.0));
-    assert!(
-        diff <= limit,
-        "expected {expected}, got {actual} (diff: {diff}, limit: {limit})"
-    );
-}
-
 mod create_spring_config {
     use super::*;
 
@@ -25,13 +15,9 @@ mod create_spring_config {
         let config = create_spring_config(3.0, 0.0);
         assert_eq!(config.frequency, 3.0);
         assert_eq!(config.damping_ratio, 0.0);
-        assert_eq!(
-            create_spring_config(0.0, 0.0),
-            SpringConfig {
-                damping_ratio: 0.0,
-                frequency: 0.0,
-            }
-        );
+        let zero = create_spring_config(0.0, 0.0);
+        assert_eq!(zero.frequency, 0.0);
+        assert_eq!(zero.damping_ratio, 0.0);
     }
 
     #[test]
@@ -53,6 +39,15 @@ mod create_spring_config {
     }
 
     #[test]
+    fn presets_can_be_customized_by_copy_without_changing_the_shared_profile() {
+        let mut customized = SPRING_PRESET_GENTLE;
+        customized.frequency = 3.0;
+        assert_eq!(customized.damping_ratio, SPRING_PRESET_GENTLE.damping_ratio);
+        assert_eq!(customized.frequency, 3.0);
+        assert_ne!(SPRING_PRESET_GENTLE.frequency, 3.0);
+    }
+
+    #[test]
     fn provides_distinct_bouncy_gentle_and_stiff_response_profiles() {
         assert!(SPRING_PRESET_BOUNCY.damping_ratio < SPRING_PRESET_GENTLE.damping_ratio);
         assert!(SPRING_PRESET_GENTLE.frequency < SPRING_PRESET_STIFF.frequency);
@@ -66,19 +61,15 @@ mod create_spring_config_from_physical {
     #[test]
     fn maps_k100_c20_m1_to_critical_damping() {
         let config = create_spring_config_from_physical(100.0, 20.0, 1.0);
-        // D1 f32 bound (TS: 5e-10)
-        assert_close(config.frequency, 10.0 / std::f32::consts::TAU, 9);
-        // D1 f32 bound (TS: 5e-13)
-        assert_close(config.damping_ratio, 1.0, 12);
+        assert_eq!(config.frequency, 10.0 / std::f32::consts::TAU);
+        assert_eq!(config.damping_ratio, 1.0);
     }
 
     #[test]
     fn accounts_for_mass_in_both_frequency_and_damping_ratio() {
         let config = create_spring_config_from_physical(100.0, 20.0, 4.0);
-        // D1 f32 bound (TS: 5e-10)
-        assert_close(config.frequency, 5.0 / std::f32::consts::TAU, 9);
-        // D1 f32 bound (TS: 5e-13)
-        assert_close(config.damping_ratio, 0.5, 12);
+        assert_eq!(config.frequency, 5.0 / std::f32::consts::TAU);
+        assert_eq!(config.damping_ratio, 0.5);
     }
 }
 
@@ -92,6 +83,8 @@ mod initialize_spring_config {
             frequency: 99.0,
         };
         initialize_spring_config(&mut out, 6.0, 0.75);
-        assert_eq!(out, create_spring_config(6.0, 0.75));
+        let expected = create_spring_config(6.0, 0.75);
+        assert_eq!(out.frequency, expected.frequency);
+        assert_eq!(out.damping_ratio, expected.damping_ratio);
     }
 }

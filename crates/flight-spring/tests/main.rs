@@ -4,5 +4,7 @@ mod flight_spring_spring2d_test;
 mod flight_spring_spring3d_test;
 #[path = "spring_config_test.rs"]
 mod flight_spring_spring_config_test;
+#[path = "spring_precision_native_test.rs"]
+mod flight_spring_spring_precision_native_test;
 #[path = "spring_test.rs"]
 mod flight_spring_spring_test;

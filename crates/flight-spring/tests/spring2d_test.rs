@@ -84,8 +84,12 @@ mod reset_spring2d {
     #[test]
     fn mirrors_scalar_reset_for_values_explicit_velocities_and_zero_defaults() {
         let mut spring = create_spring2d(1.0, 2.0, 3.0, 4.0);
+        let x_id = get_entity_id(&spring.x);
+        let y_id = get_entity_id(&spring.y);
 
         reset_spring2d(&mut spring, 10.0, 20.0, Some(30.0), Some(40.0));
+        assert_eq!(get_entity_id(&spring.x), x_id);
+        assert_eq!(get_entity_id(&spring.y), y_id);
         assert_eq!(spring.x.value, 10.0);
         assert_eq!(spring.x.velocity, 30.0);
         assert_eq!(spring.y.value, 20.0);

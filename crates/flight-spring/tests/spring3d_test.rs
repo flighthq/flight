@@ -94,6 +94,9 @@ mod reset_spring3d {
     #[test]
     fn mirrors_scalar_reset_for_values_explicit_velocities_and_zero_defaults() {
         let mut spring = create_spring3d(1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
+        let x_id = get_entity_id(&spring.x);
+        let y_id = get_entity_id(&spring.y);
+        let z_id = get_entity_id(&spring.z);
 
         reset_spring3d(
             &mut spring,
@@ -104,6 +107,9 @@ mod reset_spring3d {
             Some(50.0),
             Some(60.0),
         );
+        assert_eq!(get_entity_id(&spring.x), x_id);
+        assert_eq!(get_entity_id(&spring.y), y_id);
+        assert_eq!(get_entity_id(&spring.z), z_id);
         assert_eq!(spring.x.value, 10.0);
         assert_eq!(spring.x.velocity, 40.0);
         assert_eq!(spring.y.value, 20.0);
