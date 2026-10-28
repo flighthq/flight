@@ -1,17 +1,24 @@
 use std::collections::HashSet;
 
-use syn::{Attribute, Fields, Item, ItemFn, ItemStruct, Type, UseTree, Visibility};
+use syn::{
+    Attribute, Fields, Item, ItemConst, ItemEnum, ItemFn, ItemStatic, ItemStruct, ItemType, Type,
+    UseTree, Visibility,
+};
 
 use crate::{CompileError, compile_error};
 
 pub(crate) struct Program {
+    pub(crate) constants: Vec<ItemConst>,
     pub(crate) entities: HashSet<String>,
+    pub(crate) enums: Vec<ItemEnum>,
     pub(crate) functions: Vec<ItemFn>,
+    pub(crate) standard_constants: HashSet<String>,
+    pub(crate) statics: Vec<ItemStatic>,
     pub(crate) structs: Vec<ItemStruct>,
+    pub(crate) type_aliases: Vec<ItemType>,
 }
 
 pub(crate) struct TestProgram {
-    pub(crate) contract_package: String,
     pub(crate) helpers: Vec<ItemFn>,
     pub(crate) standard_constants: HashSet<String>,
     pub(crate) suites: Vec<TestSuite>,
@@ -19,6 +26,7 @@ pub(crate) struct TestProgram {
 
 pub(crate) struct TestSuite {
     pub(crate) name: String,
+    pub(crate) skipped_tests: Vec<String>,
     pub(crate) tests: Vec<TestCase>,
 }
 
@@ -66,6 +74,24 @@ fn has_entity_runtime(structure: &ItemStruct) -> bool {
     });
 }
 
+fn has_rust_only_directive(attributes: &[Attribute]) -> bool {
+    return attributes.iter().any(|attribute| {
+        if !attribute.path().is_ident("doc") {
+            return false;
+        }
+        let syn::Meta::NameValue(meta) = &attribute.meta else {
+            return false;
+        };
+        let syn::Expr::Lit(value) = &meta.value else {
+            return false;
+        };
+        let syn::Lit::Str(value) = &value.lit else {
+            return false;
+        };
+        return value.value().contains("flight-compiler: rust-only");
+    });
+}
+
 fn is_public(visibility: &Visibility) -> bool {
     return matches!(visibility, Visibility::Public(_));
 }
@@ -73,9 +99,14 @@ fn is_public(visibility: &Visibility) -> bool {
 pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    let mut constants = Vec::new();
     let mut entities = HashSet::new();
+    let mut enums = Vec::new();
     let mut functions = Vec::new();
+    let mut standard_constants = HashSet::new();
+    let mut statics = Vec::new();
     let mut structs = Vec::new();
+    let mut type_aliases = Vec::new();
 
     for item in &file.items {
         if let Item::Struct(structure) = item
@@ -98,26 +129,24 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     }
 
     for item in file.items {
+        if let Item::Use(item_use) = &item {
+            collect_standard_constant(&item_use.tree, &mut Vec::new(), &mut standard_constants);
+        }
         match item {
+            Item::Const(item) => constants.push(item),
+            Item::Enum(item) => {
+                validate_enum(&item)?;
+                enums.push(item);
+            }
             Item::Fn(function) => functions.push(function),
+            Item::Static(item) => statics.push(item),
             Item::Struct(structure) => {
                 validate_fields(&structure)?;
                 structs.push(structure);
             }
-            Item::Const(item) if is_public(&item.vis) => {
-                return Err(unsupported_public("constant", &item.ident.to_string()));
-            }
-            Item::Enum(item) if is_public(&item.vis) => {
-                return Err(unsupported_public("enum", &item.ident.to_string()));
-            }
-            Item::Static(item) if is_public(&item.vis) => {
-                return Err(unsupported_public("static", &item.ident.to_string()));
-            }
+            Item::Type(item) => type_aliases.push(item),
             Item::Trait(item) if is_public(&item.vis) => {
                 return Err(unsupported_public("trait", &item.ident.to_string()));
-            }
-            Item::Type(item) if is_public(&item.vis) => {
-                return Err(unsupported_public("type alias", &item.ident.to_string()));
             }
             Item::Union(item) if is_public(&item.vis) => {
                 return Err(unsupported_public("union", &item.ident.to_string()));
@@ -133,16 +162,20 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     }
 
     return Ok(Program {
+        constants,
         entities,
+        enums,
         functions,
+        standard_constants,
+        statics,
         structs,
+        type_aliases,
     });
 }
 
 pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileError> {
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust test source: {error}")))?;
-    let mut contract_crates = Vec::new();
     let mut helpers = Vec::new();
     let mut standard_constants = HashSet::new();
     let mut suites = Vec::new();
@@ -163,11 +196,6 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
             }
             Item::Mod(module) => suites.push(parse_test_suite(module)?),
             Item::Use(item_use) => {
-                if let Some(crate_name) = wildcard_crate(&item_use.tree)
-                    && crate_name.starts_with("flight_")
-                {
-                    contract_crates.push(crate_name);
-                }
                 collect_standard_constant(&item_use.tree, &mut Vec::new(), &mut standard_constants);
             }
             Item::Const(_)
@@ -190,27 +218,7 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
         }
     }
 
-    contract_crates.sort();
-    contract_crates.dedup();
-    let contract_crate = match contract_crates.as_slice() {
-        [contract_crate] => contract_crate,
-        [] => {
-            return Err(compile_error(
-                "portable Rust test source needs one `use flight_package::*;` contract import",
-            ));
-        }
-        _ => {
-            return Err(compile_error(
-                "portable Rust test source has multiple wildcard Flight imports; symbol ownership is ambiguous",
-            ));
-        }
-    };
-    let contract_package = contract_crate
-        .strip_prefix("flight_")
-        .expect("validated Flight crate prefix")
-        .replace('_', "-");
     return Ok(TestProgram {
-        contract_package: format!("@flighthq/{contract_package}/contract"),
         helpers,
         standard_constants,
         suites,
@@ -224,9 +232,16 @@ fn parse_test_suite(module: syn::ItemMod) -> Result<TestSuite, CompileError> {
             module.ident
         )));
     };
+    let mut skipped_tests = Vec::new();
     let mut tests = Vec::new();
     for item in items {
         match item {
+            Item::Fn(function)
+                if has_attribute(&function.attrs, "test")
+                    && has_rust_only_directive(&function.attrs) =>
+            {
+                skipped_tests.push(function.sig.ident.to_string());
+            }
             Item::Fn(function) if has_attribute(&function.attrs, "test") => {
                 let should_panic = has_attribute(&function.attrs, "should_panic");
                 tests.push(TestCase {
@@ -249,7 +264,7 @@ fn parse_test_suite(module: syn::ItemMod) -> Result<TestSuite, CompileError> {
             }
         }
     }
-    if tests.is_empty() {
+    if tests.is_empty() && skipped_tests.is_empty() {
         return Err(compile_error(format!(
             "portable test module `{}` contains no `#[test]` functions",
             module.ident
@@ -257,6 +272,7 @@ fn parse_test_suite(module: syn::ItemMod) -> Result<TestSuite, CompileError> {
     }
     return Ok(TestSuite {
         name: module.ident.to_string(),
+        skipped_tests,
         tests,
     });
 }
@@ -276,6 +292,18 @@ fn unsupported_public(kind: &str, name: &str) -> CompileError {
     return compile_error(format!(
         "unsupported public {kind} `{name}`; refusing to emit an incomplete TypeScript contract"
     ));
+}
+
+fn validate_enum(rust_enum: &ItemEnum) -> Result<(), CompileError> {
+    for variant in &rust_enum.variants {
+        if !matches!(variant.fields, Fields::Unit) || variant.discriminant.is_some() {
+            return Err(compile_error(format!(
+                "unsupported enum variant `{}::{}`; only unit variants without explicit discriminants are portable",
+                rust_enum.ident, variant.ident
+            )));
+        }
+    }
+    return Ok(());
 }
 
 fn validate_fields(structure: &ItemStruct) -> Result<(), CompileError> {
@@ -302,14 +330,4 @@ fn validate_fields(structure: &ItemStruct) -> Result<(), CompileError> {
         }
     }
     return Ok(());
-}
-
-fn wildcard_crate(tree: &UseTree) -> Option<String> {
-    let UseTree::Path(root) = tree else {
-        return None;
-    };
-    let UseTree::Glob(_) = root.tree.as_ref() else {
-        return None;
-    };
-    return Some(root.ident.to_string());
 }

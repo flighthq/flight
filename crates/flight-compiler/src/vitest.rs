@@ -8,7 +8,8 @@ use syn::{Expr, FnArg, ItemFn, Pat, ReturnType, Stmt, Token};
 
 use crate::model::{TestCase, TestProgram, TestSuite};
 use crate::typescript::{
-    emit_expression, emit_local, emit_parameter, emit_type, snake_to_lower_camel, write_indent,
+    emit_expression, emit_for_header, emit_local, emit_local_with_shadow, emit_parameter,
+    emit_type, snake_to_lower_camel, write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -30,7 +31,46 @@ fn assertion_message(
             "portable assertion messages must be string literals",
         ));
     };
-    return Ok(Some(format!("{:?}", message.value())));
+    let mut template = message
+        .value()
+        .replace('\\', "\\\\")
+        .replace('`', "\\`")
+        .replace("${", "\\${");
+    let values = arguments.iter().skip(message_index + 1).collect::<Vec<_>>();
+    let mut value_index = 0;
+    let mut rendered = String::new();
+    while let Some(start) = template.find('{') {
+        let Some(relative_end) = template[start + 1..].find('}') else {
+            break;
+        };
+        let end = start + 1 + relative_end;
+        rendered.push_str(&template[..start]);
+        let placeholder = &template[start + 1..end];
+        if placeholder.is_empty() {
+            let Some(value) = values.get(value_index) else {
+                return Err(compile_error(
+                    "portable assertion message has too few formatting values",
+                ));
+            };
+            rendered.push_str("${");
+            rendered.push_str(&emit_expression(value, &HashSet::new())?);
+            rendered.push('}');
+            value_index += 1;
+        } else {
+            let name = placeholder.split(':').next().unwrap_or(placeholder);
+            rendered.push_str("${");
+            rendered.push_str(&snake_to_lower_camel(name));
+            rendered.push('}');
+        }
+        template = template[end + 1..].to_string();
+    }
+    rendered.push_str(&template);
+    if value_index != values.len() {
+        return Err(compile_error(
+            "portable assertion message has unused formatting values",
+        ));
+    }
+    return Ok(Some(format!("`{rendered}`")));
 }
 
 fn collect_contract_symbols(program: &TestProgram) -> Vec<String> {
@@ -164,17 +204,17 @@ fn emit_assertion(
     };
     let arguments = parse_macro_arguments(rust_macro)?;
     let (actual, matcher, expected) = match name.as_str() {
-        "assert" if arguments.len() == 1 || arguments.len() == 2 => (
+        "assert" if !arguments.is_empty() => (
             emit_expression(&arguments[0], &HashSet::new())?,
             "toBe",
             "true".to_string(),
         ),
-        "assert_eq" if arguments.len() == 2 || arguments.len() == 3 => (
+        "assert_eq" if arguments.len() >= 2 => (
             emit_expression(&arguments[0], &HashSet::new())?,
             "toEqual",
             emit_expression(&arguments[1], &HashSet::new())?,
         ),
-        "assert_ne" if arguments.len() == 2 || arguments.len() == 3 => (
+        "assert_ne" if arguments.len() >= 2 => (
             emit_expression(&arguments[0], &HashSet::new())?,
             "not.toEqual",
             emit_expression(&arguments[1], &HashSet::new())?,
@@ -203,8 +243,16 @@ fn emit_assertion(
 }
 
 fn emit_block(out: &mut String, statements: &[Stmt], indent: usize) -> Result<(), CompileError> {
+    let mut declared = HashSet::new();
     for statement in statements {
-        emit_statement(out, statement, indent)?;
+        if let Stmt::Local(local) = statement
+            && let Some(name) = local_name(&local.pat)
+        {
+            let shadowed = !declared.insert(name);
+            emit_local_with_shadow(out, local, &HashSet::new(), indent, shadowed)?;
+        } else {
+            emit_statement(out, statement, indent)?;
+        }
     }
     return Ok(());
 }
@@ -247,24 +295,6 @@ fn emit_path_name(name: &str) -> String {
     return snake_to_lower_camel(name);
 }
 
-fn emit_pattern(pattern: &Pat) -> Result<String, CompileError> {
-    return match pattern {
-        Pat::Ident(identifier) => Ok(snake_to_lower_camel(&identifier.ident.to_string())),
-        Pat::Reference(reference) => emit_pattern(&reference.pat),
-        Pat::Tuple(tuple) => {
-            let elements = tuple
-                .elems
-                .iter()
-                .map(emit_pattern)
-                .collect::<Result<Vec<_>, _>>()?;
-            Ok(format!("[{}]", elements.join(", ")))
-        }
-        _ => Err(compile_error(
-            "unsupported destructuring pattern in portable test loop",
-        )),
-    };
-}
-
 fn emit_statement(out: &mut String, statement: &Stmt, indent: usize) -> Result<(), CompileError> {
     match statement {
         Stmt::Local(local) => emit_local(out, local, &HashSet::new(), indent)?,
@@ -294,14 +324,29 @@ fn emit_statement(out: &mut String, statement: &Stmt, indent: usize) -> Result<(
             write_indent(out, indent);
             writeln!(
                 out,
-                "for (const {} of {}) {{",
-                emit_pattern(&expression.pat)?,
-                emit_expression(&expression.expr, &HashSet::new())?
+                "for ({}) {{",
+                emit_for_header(&expression.pat, &expression.expr, &HashSet::new())?
             )
             .expect("writing to a String cannot fail");
             emit_block(out, &expression.body.stmts, indent + 1)?;
             write_indent(out, indent);
             out.push_str("}\n");
+        }
+        Stmt::Expr(Expr::While(expression), _) => {
+            write_indent(out, indent);
+            writeln!(
+                out,
+                "while ({}) {{",
+                emit_expression(&expression.cond, &HashSet::new())?
+            )
+            .expect("writing to a String cannot fail");
+            emit_block(out, &expression.body.stmts, indent + 1)?;
+            write_indent(out, indent);
+            out.push_str("}\n");
+        }
+        Stmt::Expr(Expr::Break(_), _) => {
+            write_indent(out, indent);
+            out.push_str("break;\n");
         }
         Stmt::Expr(Expr::Return(expression), _) => {
             write_indent(out, indent);
@@ -334,6 +379,10 @@ fn emit_suite(out: &mut String, suite: &TestSuite) -> Result<(), CompileError> {
         snake_to_lower_camel(&suite.name)
     )
     .expect("writing to a String cannot fail");
+    for test in &suite.skipped_tests {
+        writeln!(out, "  // Rust-only: {}", test.replace('_', " "))
+            .expect("writing to a String cannot fail");
+    }
     for test in &suite.tests {
         emit_test(out, test)?;
     }
@@ -368,7 +417,10 @@ fn emit_test(out: &mut String, test: &TestCase) -> Result<(), CompileError> {
     return Ok(());
 }
 
-pub(crate) fn emit_test_program(program: &TestProgram) -> Result<String, CompileError> {
+pub(crate) fn emit_test_program(
+    program: &TestProgram,
+    contract_module: &str,
+) -> Result<String, CompileError> {
     let contract_symbols = collect_contract_symbols(program);
     let mut out = String::new();
     out.push_str("import { describe, expect, it } from 'vitest';\n");
@@ -378,8 +430,7 @@ pub(crate) fn emit_test_program(program: &TestProgram) -> Result<String, Compile
             writeln!(out, "  {},", emit_path_name(&symbol))
                 .expect("writing to a String cannot fail");
         }
-        writeln!(out, "}} from '{}';", program.contract_package)
-            .expect("writing to a String cannot fail");
+        writeln!(out, "}} from {contract_module:?};").expect("writing to a String cannot fail");
     }
     if program.standard_constants.contains("PI") {
         out.push_str("\nconst PI = Math.PI;\n");
@@ -393,6 +444,14 @@ pub(crate) fn emit_test_program(program: &TestProgram) -> Result<String, Compile
         emit_suite(&mut out, suite)?;
     }
     return Ok(out);
+}
+
+fn local_name(pattern: &Pat) -> Option<String> {
+    return match pattern {
+        Pat::Ident(identifier) => Some(identifier.ident.to_string()),
+        Pat::Type(typed) => local_name(&typed.pat),
+        _ => None,
+    };
 }
 
 fn parse_macro_arguments(

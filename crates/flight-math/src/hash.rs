@@ -40,10 +40,10 @@ pub fn hash_combine(seed: u32, value: u32) -> u32 {
 /// input. Useful as a stateless hash function for individual values.
 pub fn hash_uint32(value: u32) -> u32 {
     let mut h = value;
-    h ^= h >> 16;
+    h ^= h.wrapping_shr(16);
     h = h.wrapping_mul(0x85ebca6b);
-    h ^= h >> 13;
+    h ^= h.wrapping_shr(13);
     h = h.wrapping_mul(0xc2b2ae35);
-    h ^= h >> 16;
+    h ^= h.wrapping_shr(16);
     return h;
 }

@@ -633,6 +633,7 @@ mod shuffle {
     }
 
     #[test]
+    /// flight-compiler: rust-only — JavaScript arrays expose no allocation capacity.
     fn contains_all_original_elements_and_reuses_caller_capacity() {
         let items = [1, 2, 3, 4, 5];
         let mut out = Vec::with_capacity(16);
@@ -674,7 +675,7 @@ mod shuffle_in_place {
     #[test]
     fn retains_all_original_elements() {
         let mut items = vec![1, 2, 3, 4, 5];
-        let mut expected = items.clone();
+        let mut expected = items.to_vec();
         expected.sort();
         shuffle_in_place(create_random_source(0xabcdef).as_ref(), &mut items);
         items.sort();
@@ -693,7 +694,7 @@ mod shuffle_in_place {
     #[test]
     fn mutates_the_original_array() {
         let mut items = vec![1, 2, 3, 4, 5, 6, 7, 8];
-        let copy = items.clone();
+        let copy = items.to_vec();
         shuffle_in_place(create_random_source(0xabcdef).as_ref(), &mut items);
         assert_eq!(items.len(), copy.len());
     }

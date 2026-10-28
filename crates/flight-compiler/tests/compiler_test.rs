@@ -44,12 +44,12 @@ impl Vector2 {
 flight_entity::impl_entity!(Vector2);
 "#;
 
-        let output = compile_typescript(source).unwrap();
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
 
         assert_eq!(
             output,
-            r#"import { allocateEntity } from '@flighthq/entity/contract';
-import type { EntityRaw } from '@flighthq/entity/contract';
+            r#"import { allocateEntity } from "@flighthq/entity/contract";
+import type { EntityRaw } from "@flighthq/entity/contract";
 
 export interface Vector2Raw extends EntityRaw {
   x: number;
@@ -94,7 +94,7 @@ pub fn equals_vector2(a: Option<&Vector2>, b: Option<&Vector2>) -> bool {
 }
 "#;
 
-        let output = compile_typescript(source).unwrap();
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
 
         assert!(output.contains(
             "export function equalsVector2(a: Readonly<Vector2Raw> | null, b: Readonly<Vector2Raw> | null): boolean"
@@ -105,16 +105,15 @@ pub fn equals_vector2(a: Option<&Vector2>, b: Option<&Vector2>) -> bool {
     fn refuses_unsupported_public_contract_items() {
         let source = r#"
 pub enum Axis {
-    X,
-    Y,
+    Named { value: i32 },
 }
 "#;
 
-        let error = compile_typescript(source).unwrap_err();
+        let error = compile_typescript(source, None).unwrap_err();
 
         assert_eq!(
             error.to_string(),
-            "unsupported public enum `Axis`; refusing to emit an incomplete TypeScript contract"
+            "unsupported enum variant `Axis::Named`; only unit variants without explicit discriminants are portable"
         );
     }
 }
@@ -156,7 +155,7 @@ mod equals_vector2 {
 }
 "#;
 
-        let output = compile_vitest(source).unwrap();
+        let output = compile_vitest(source, "@flighthq/geometry/contract").unwrap();
 
         assert_eq!(
             output,
@@ -166,7 +165,7 @@ import {
   addVector2,
   createVector2,
   equalsVector2,
-} from '@flighthq/geometry/contract';
+} from "@flighthq/geometry/contract";
 
 function assertPositive(value: number): void {
   expect(value > 0.0).toBe(true);
@@ -209,7 +208,7 @@ mod normalize_vector2 {
 }
 "#;
 
-        let output = compile_vitest(source).unwrap();
+        let output = compile_vitest(source, "@flighthq/geometry/contract").unwrap();
 
         assert!(
             output.contains("expect(() => {\n      normalizeVector2(null);\n    }).toThrow();")
@@ -226,7 +225,7 @@ impl Vector2 {
 }
 "#;
 
-        let error = compile_vitest(source).unwrap_err();
+        let error = compile_vitest(source, "@flighthq/geometry/contract").unwrap_err();
 
         assert_eq!(
             error.to_string(),
@@ -257,13 +256,15 @@ mod write_vector2_to_float32_array {
 }
 "#;
 
-        let output = compile_vitest(source).unwrap();
+        let output = compile_vitest(source, "@flighthq/geometry/contract").unwrap();
 
-        assert!(output.contains(
-            "let cases: Readonly<readonly [Float32Array, number][]> = [[new Float32Array([1.0, 2.0]), 3.0]];"
-        ));
+        assert!(
+            output.contains(
+                "let cases: Readonly<readonly [number[], number][]> = [[[1.0, 2.0], 3.0]];"
+            )
+        );
         assert!(output.contains("for (const [value, expected] of cases) {"));
-        assert!(output.contains("let out = new Float32Array(2).fill(0.0);"));
+        assert!(output.contains("let out = new Array(2).fill(0.0);"));
         assert!(output.contains("expect(Number.isNaN(Number.NaN)).toBe(true);"));
     }
 }

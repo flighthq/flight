@@ -29,11 +29,11 @@ pub fn next_power_of_two(n: i32) -> u32 {
         return 1;
     }
     let mut v = (n - 1) as u32;
-    v |= v >> 1;
-    v |= v >> 2;
-    v |= v >> 4;
-    v |= v >> 8;
-    v |= v >> 16;
+    v |= v.wrapping_shr(1);
+    v |= v.wrapping_shr(2);
+    v |= v.wrapping_shr(4);
+    v |= v.wrapping_shr(8);
+    v |= v.wrapping_shr(16);
     return v.wrapping_add(1);
 }
 
@@ -50,5 +50,5 @@ pub fn previous_power_of_two(n: i32) -> u32 {
     v |= v >> 4;
     v |= v >> 8;
     v |= v >> 16;
-    return ((v as u32).wrapping_add(1)) >> 1;
+    return (v as u32).wrapping_add(1).wrapping_shr(1);
 }

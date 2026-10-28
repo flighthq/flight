@@ -4,10 +4,11 @@ use std::path::{Path, PathBuf};
 use std::process;
 
 const USAGE: &str = "\
-Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--check]
-       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> [--check]
+Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--check]
+       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--check]
 ";
 
+#[derive(Clone, Copy)]
 enum GenerateKind {
     Source,
     Tests,
@@ -15,6 +16,8 @@ enum GenerateKind {
 
 struct GenerateOptions {
     check: bool,
+    contract_module: Option<String>,
+    entity_module: Option<String>,
     out: PathBuf,
     source: PathBuf,
 }
@@ -23,8 +26,16 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
     let source = fs::read_to_string(&options.source)
         .map_err(|error| format!("{}: {error}", options.source.display()))?;
     let output = match kind {
-        GenerateKind::Source => flight_compiler::compile_typescript(&source),
-        GenerateKind::Tests => flight_compiler::compile_vitest(&source),
+        GenerateKind::Source => {
+            flight_compiler::compile_typescript(&source, options.entity_module.as_deref())
+        }
+        GenerateKind::Tests => flight_compiler::compile_vitest(
+            &source,
+            options
+                .contract_module
+                .as_deref()
+                .ok_or_else(|| format!("--contract-module is required\n\n{USAGE}"))?,
+        ),
     }
     .map_err(|error| error.to_string())?;
     if options.check {
@@ -44,9 +55,9 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
 fn main() {
     let arguments = env::args().skip(1).collect::<Vec<_>>();
     let result = match arguments.first().map(String::as_str) {
-        Some("generate") => parse_generate_options(&arguments[1..])
+        Some("generate") => parse_generate_options(&arguments[1..], GenerateKind::Source)
             .and_then(|options| generate(&options, GenerateKind::Source)),
-        Some("generate-tests") => parse_generate_options(&arguments[1..])
+        Some("generate-tests") => parse_generate_options(&arguments[1..], GenerateKind::Tests)
             .and_then(|options| generate(&options, GenerateKind::Tests)),
         Some("help" | "--help" | "-h") => {
             print!("{USAGE}");
@@ -60,14 +71,27 @@ fn main() {
     }
 }
 
-fn parse_generate_options(arguments: &[String]) -> Result<GenerateOptions, String> {
+fn parse_generate_options(
+    arguments: &[String],
+    kind: GenerateKind,
+) -> Result<GenerateOptions, String> {
     let mut check = false;
+    let mut contract_module = None;
+    let mut entity_module = None;
     let mut out = None;
     let mut source = None;
     let mut index = 0;
     while index < arguments.len() {
         match arguments[index].as_str() {
             "--check" => check = true,
+            "--contract-module" => {
+                index += 1;
+                contract_module = arguments.get(index).cloned();
+            }
+            "--entity-module" => {
+                index += 1;
+                entity_module = arguments.get(index).cloned();
+            }
             "--out" => {
                 index += 1;
                 out = arguments.get(index).map(PathBuf::from);
@@ -80,8 +104,23 @@ fn parse_generate_options(arguments: &[String]) -> Result<GenerateOptions, Strin
         }
         index += 1;
     }
+    match kind {
+        GenerateKind::Source if contract_module.is_some() => {
+            return Err(format!(
+                "--contract-module is only valid for generate-tests\n\n{USAGE}"
+            ));
+        }
+        GenerateKind::Tests if entity_module.is_some() => {
+            return Err(format!(
+                "--entity-module is only valid for generate\n\n{USAGE}"
+            ));
+        }
+        GenerateKind::Source | GenerateKind::Tests => {}
+    }
     return Ok(GenerateOptions {
         check,
+        contract_module,
+        entity_module,
         out: out.ok_or_else(|| format!("--out is required\n\n{USAGE}"))?,
         source: source.ok_or_else(|| format!("--source is required\n\n{USAGE}"))?,
     });

@@ -85,6 +85,7 @@ mod create_random_source {
     }
 
     #[test]
+    /// flight-compiler: rust-only — JavaScript has no shared atomic/thread execution equivalent.
     fn atomic_state_preserves_the_stream_across_threads() {
         let random = create_random_source(42);
         let workers: Vec<_> = (0..4)
