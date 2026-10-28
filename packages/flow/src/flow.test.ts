@@ -1,7 +1,5 @@
 import type { FlowState } from '@flighthq/types/contract';
 
-import type { FlowGuardState } from './types.ts';
-
 import {
   clearFlowStack,
   createFlowStack,
@@ -14,6 +12,7 @@ import {
   replaceFlowState,
   updateFlowStack,
 } from './flow.ts';
+import type { FlowGuardState } from './types.ts';
 
 // Fresh caller-owned guard state per test; transitions on one stack share it.
 let guards: FlowGuardState;
