@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type { ShapedRun } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
@@ -18,12 +19,14 @@ export function disableTextShaperGuards(): void {
  * The guard warns once through `@flighthq/log`. Not importing this module costs production nothing: the
  * message and logging dependency live only here, while the pool keeps a null callback by default.
  */
-export function enableTextShaperGuards(): void {
-  setShapedRunReleaseGuard(warnOnDoubleRelease);
+export function enableTextShaperGuards(logState: LogState, clock: () => number): void {
+  setShapedRunReleaseGuard((run: Readonly<ShapedRun>): void => warnOnDoubleRelease(logState, clock(), run));
 }
 
-function warnOnDoubleRelease(_run: Readonly<ShapedRun>): void {
+function warnOnDoubleRelease(logState: LogState, nowMs: number, _run: Readonly<ShapedRun>): void {
   logOnce(
+    logState,
+    nowMs,
     'textshaper:double-release',
     LogLevel.Warn,
     {

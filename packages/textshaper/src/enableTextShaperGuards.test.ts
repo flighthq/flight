@@ -1,25 +1,30 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
+import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
 import type { LogEntry } from '@flighthq/types/contract';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { disableTextShaperGuards, enableTextShaperGuards } from './enableTextShaperGuards.ts';
 import { acquireShapedRun, releaseShapedRun } from './textShaperPool.ts';
 
+let logState: LogState;
+
+beforeEach(() => {
+  logState = createLogState();
+});
+
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
-  try {
-    run();
-    return getMemoryLogSinkEntries(sink);
-  } finally {
-    removeLogSink(sink.sink);
-  }
+  addLogSink(logState, sink.sink);
+  run();
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
 }
 
 describe('disableTextShaperGuards', () => {
   it('stops repeated releases from reporting', () => {
     const entries = captureLog(() => {
-      enableTextShaperGuards();
+      enableTextShaperGuards(logState, () => 0);
       disableTextShaperGuards();
       const run = acquireShapedRun();
       releaseShapedRun(run);
@@ -32,7 +37,7 @@ describe('disableTextShaperGuards', () => {
 describe('enableTextShaperGuards', () => {
   it('warns when one acquired run is released twice', () => {
     const entries = captureLog(() => {
-      enableTextShaperGuards();
+      enableTextShaperGuards(logState, () => 0);
       try {
         const run = acquireShapedRun();
         releaseShapedRun(run);
@@ -48,7 +53,7 @@ describe('enableTextShaperGuards', () => {
 
   it('stays silent for correctly paired acquire and release calls', () => {
     const entries = captureLog(() => {
-      enableTextShaperGuards();
+      enableTextShaperGuards(logState, () => 0);
       try {
         const run = acquireShapedRun();
         releaseShapedRun(run);
