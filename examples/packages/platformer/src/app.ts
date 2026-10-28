@@ -1,5 +1,5 @@
 import { createWebImageResourceFromCanvas, webHostInputIngress } from '@flighthq/host-web';
-import type { CollisionAabb2D, CollisionManifold2D, FlowState, Node2D, Shape } from '@flighthq/sdk';
+import type { CollisionAabb2D, CollisionManifold2D, FlowGuardState, FlowState, Node2D, Shape } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -146,6 +146,8 @@ invalidateNodeLocalTransform(gameOverLabel);
 addNodeChild(uiContainer, gameOverLabel);
 
 const flow = createFlowStack();
+// Caller-owned guard state shared by every transition on this stack.
+const flowGuards: FlowGuardState = { enabled: false, transitionDepth: 0, context: null };
 const tweenManager = createTweenManager();
 
 function setVisible(node: Node2D, visible: boolean): void {
@@ -191,7 +193,7 @@ const gameOverState: FlowState = {
 
 document.addEventListener('click', () => {
   const active = getActiveFlowState(flow);
-  if (active === titleState || active === gameOverState) replaceFlowState(flow, playingState);
+  if (active === titleState || active === gameOverState) replaceFlowState(flow, playingState, flowGuards);
 });
 
 function resetPlayer(): void {
@@ -203,7 +205,7 @@ function resetPlayer(): void {
 }
 
 function triggerGameOver(): void {
-  replaceFlowState(flow, gameOverState);
+  replaceFlowState(flow, gameOverState, flowGuards);
 }
 
 const manifold: CollisionManifold2D = createCollisionManifold2D();
@@ -296,7 +298,7 @@ function updateGame(dt: number): void {
 }
 
 let lastTime = 0;
-pushFlowState(flow, captureMode ? playingState : titleState);
+pushFlowState(flow, captureMode ? playingState : titleState, flowGuards);
 
 function enterFrame(time: number): void {
   const dt = lastTime === 0 ? 1 / 60 : Math.min((time - lastTime) / 1000, 0.05);

@@ -1,4 +1,4 @@
-import type { Node2D, FlowState } from '@flighthq/sdk';
+import type { FlowGuardState, FlowState, Node2D } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -32,6 +32,8 @@ root.scaleX = scale;
 root.scaleY = scale;
 
 const stack = createFlowStack();
+// Caller-owned guard state shared by every transition on this stack.
+const flowGuards: FlowGuardState = { enabled: false, transitionDepth: 0, context: null };
 const visibleStates: FlowState[] = [];
 
 let score = 0;
@@ -95,7 +97,7 @@ const bootState: FlowState = {
     bootTimer += deltaTime;
     // After 1.5 seconds, replace Boot with Menu (Boot exits, Menu enters, stack depth stays 1).
     if (bootTimer >= 1500) {
-      replaceFlowState(stack, menuState);
+      replaceFlowState(stack, menuState, flowGuards);
     }
   },
 };
@@ -199,7 +201,7 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
 
   if (e.key === 'Enter' && activeName === 'Menu') {
     // Push: Menu is paused, Play enters. Stack: Menu > Play.
-    pushFlowState(stack, playState);
+    pushFlowState(stack, playState, flowGuards);
     return;
   }
 
@@ -211,7 +213,7 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
 
   if (e.key === 'Escape' && activeName === 'Play') {
     // Push: Play is paused, Pause enters. Stack: Menu > Play > Pause.
-    pushFlowState(stack, pauseState);
+    pushFlowState(stack, pauseState, flowGuards);
     return;
   }
 
@@ -223,27 +225,27 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
 
   if ((e.key === 'g' || e.key === 'G') && activeName === 'Play') {
     // Replace: Play exits, GameOver enters. Stack depth stays the same: Menu > GameOver.
-    replaceFlowState(stack, gameOverState);
+    replaceFlowState(stack, gameOverState, flowGuards);
     return;
   }
 
   if ((e.key === 'r' || e.key === 'R') && activeName === 'GameOver') {
     // Replace: GameOver exits, Play enters fresh. Stack: Menu > Play.
-    replaceFlowState(stack, playState);
+    replaceFlowState(stack, playState, flowGuards);
     return;
   }
 
   if ((e.key === 'm' || e.key === 'M') && activeName === 'GameOver') {
     // Clear + push: exits all states top-to-bottom, then pushes Menu fresh. Stack: Menu.
     clearFlowStack(stack);
-    pushFlowState(stack, menuState);
+    pushFlowState(stack, menuState, flowGuards);
     return;
   }
 
   if ((e.key === 'q' || e.key === 'Q') && activeName === 'Menu') {
     // Clear + push: demonstrates clearFlowStack tearing down and rebuilding. Stack: Menu.
     clearFlowStack(stack);
-    pushFlowState(stack, menuState);
+    pushFlowState(stack, menuState, flowGuards);
     return;
   }
 });
@@ -252,11 +254,11 @@ window.addEventListener('keydown', (e: KeyboardEvent) => {
 // smoke frames prove pause/resume layering (`renderBelow`) instead of only photographing a timer.
 const captureWindow = window as typeof window & { __flightCapture?: boolean };
 if (captureWindow.__flightCapture) {
-  pushFlowState(stack, menuState);
-  pushFlowState(stack, playState);
-  pushFlowState(stack, pauseState);
+  pushFlowState(stack, menuState, flowGuards);
+  pushFlowState(stack, playState, flowGuards);
+  pushFlowState(stack, pauseState, flowGuards);
 } else {
-  pushFlowState(stack, bootState);
+  pushFlowState(stack, bootState, flowGuards);
 }
 
 let lastTime = performance.now();

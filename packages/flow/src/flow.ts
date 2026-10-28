@@ -2,6 +2,7 @@ import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import type { FlowStack, FlowState, EntityConstruction } from '@flighthq/types/contract';
 
 import { reportFlowGuard } from './flowGuards.ts';
+import type { FlowGuardState } from './types.ts';
 
 // Empty the stack, exiting every state top-to-bottom (`onExit` on the active top first, down to the
 // bottom) so each unwinds in reverse of the order it entered. No `onPause`/`onResume` fire — the
@@ -77,48 +78,47 @@ export function popFlowState(stack: FlowStack): FlowState | null {
 
 // Push `state` onto the stack, making it the active top. The previous top (if any) is paused first
 // (`onPause`), then `state` is pushed and entered (`onEnter`) — pause-then-enter, so the outgoing
-// state is suspended before the incoming one starts.
-export function pushFlowState(stack: FlowStack, state: Readonly<FlowState>): void {
-  if (transitionDepth > 0) reportFlowGuard('transition-during-transition');
-  if (stack.states.includes(state as FlowState)) reportFlowGuard('duplicate-state-push');
+// state is suspended before the incoming one starts. `guards` is the caller-owned guard state shared
+// by every transition on this timeline; it tracks re-entrant transitions even when reporting is off.
+export function pushFlowState(stack: FlowStack, state: Readonly<FlowState>, guards: FlowGuardState): void {
+  if (guards.transitionDepth > 0) reportFlowGuard(guards, 'transition-during-transition');
+  if (stack.states.includes(state as FlowState)) reportFlowGuard(guards, 'duplicate-state-push');
   const states = stack.states;
   const previousTop = states.length > 0 ? states[states.length - 1] : null;
-  transitionDepth++;
+  guards.transitionDepth++;
   try {
     previousTop?.onPause?.();
     states.push(state);
     state.onEnter?.();
   } finally {
-    transitionDepth--;
+    guards.transitionDepth--;
   }
 }
 
 // Swap the active top for `state` in place, keeping the stack depth the same. The current top (if
 // any) exits (`onExit`) and `state` enters (`onEnter`); the state beneath is NOT paused or resumed,
 // because it stays covered throughout — replace swaps the top layer, it does not uncover the one
-// below. On an empty stack this is just a push-and-enter.
-export function replaceFlowState(stack: FlowStack, state: Readonly<FlowState>): void {
-  if (transitionDepth > 0) reportFlowGuard('transition-during-transition');
+// below. On an empty stack this is just a push-and-enter. `guards` is shared as in pushFlowState.
+export function replaceFlowState(stack: FlowStack, state: Readonly<FlowState>, guards: FlowGuardState): void {
+  if (guards.transitionDepth > 0) reportFlowGuard(guards, 'transition-during-transition');
   const states = stack.states;
   if (states.length > 0) {
     const previousTop = states.pop() as FlowState;
-    transitionDepth++;
+    guards.transitionDepth++;
     try {
       previousTop.onExit?.();
     } finally {
-      transitionDepth--;
+      guards.transitionDepth--;
     }
   }
   states.push(state);
-  transitionDepth++;
+  guards.transitionDepth++;
   try {
     state.onEnter?.();
   } finally {
-    transitionDepth--;
+    guards.transitionDepth--;
   }
 }
-
-let transitionDepth = 0;
 
 // Tick the stack for one frame (deltaTime is in milliseconds). The active top always updates (`onUpdate(deltaTime)`); then, walking
 // downward, each visited state that sets `updateBelow` also ticks the state immediately beneath it,

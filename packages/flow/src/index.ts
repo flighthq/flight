@@ -9,4 +9,5 @@ export {
   replaceFlowState,
   updateFlowStack,
 } from './flow.ts';
-export { disableFlowGuards, enableFlowGuards } from './flowGuards.ts';
+export { disableFlowGuards, enableFlowGuards, getFlowGuardKindString, parseFlowGuardKind } from './flowGuards.ts';
+export type { FlowGuardContext, FlowGuardKind, FlowGuardState } from './types.ts';
