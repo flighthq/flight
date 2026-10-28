@@ -1,6 +1,6 @@
+import type { ByteReader } from '@flighthq/buffer/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import type {
-  ByteReader,
   ImportDiagnostic,
   Skeleton2DDrawOrderTimeline,
   SpineBinaryTimelineContext,

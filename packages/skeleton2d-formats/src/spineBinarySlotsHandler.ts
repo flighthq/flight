@@ -1,5 +1,6 @@
+import type { ByteReader } from '@flighthq/buffer/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
-import type { ByteReader, ImportDiagnostic, Slot2D, SpineBinarySectionContext } from '@flighthq/types/contract';
+import type { ImportDiagnostic, Slot2D, SpineBinarySectionContext } from '@flighthq/types/contract';
 import { ImportDiagnosticSeverity } from '@flighthq/types/contract';
 
 import { SPINE_BINARY_NO_DARK_COLOR, readSpineBinaryStringReference } from './spineBinaryParseHelpers.ts';

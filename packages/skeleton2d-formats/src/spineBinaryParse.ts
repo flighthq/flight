@@ -1,7 +1,7 @@
+import type { ByteReader } from '@flighthq/buffer/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createSkeleton2D } from '@flighthq/skeleton2d/contract';
 import type {
-  ByteReader,
   ImportDiagnostic,
   Skeleton2DImport,
   SpineBinaryRegistry,

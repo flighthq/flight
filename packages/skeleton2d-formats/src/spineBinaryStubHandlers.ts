@@ -1,4 +1,5 @@
-import type { ByteReader, ImportDiagnostic, SpineBinarySectionContext } from '@flighthq/types/contract';
+import type { ByteReader } from '@flighthq/buffer/contract';
+import type { ImportDiagnostic, SpineBinarySectionContext } from '@flighthq/types/contract';
 
 import { reportSpineBinaryCrumb } from './spineBinaryParseHelpers.ts';
 import {

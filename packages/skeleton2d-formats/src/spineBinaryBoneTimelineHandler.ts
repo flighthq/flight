@@ -1,14 +1,10 @@
 import { createAnimationChannel, createAnimationTrack } from '@flighthq/animation/contract';
+import type { ByteReader } from '@flighthq/buffer/contract';
 import type { EasingFunction } from '@flighthq/easing/contract';
 import { easeCubicBezier } from '@flighthq/easing/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createSkeleton2DBoneAnimationTarget } from '@flighthq/skeleton2d/contract';
-import type {
-  AnimationChannel,
-  ByteReader,
-  ImportDiagnostic,
-  SpineBinaryTimelineContext,
-} from '@flighthq/types/contract';
+import type { AnimationChannel, ImportDiagnostic, SpineBinaryTimelineContext } from '@flighthq/types/contract';
 import {
   AnimationInterpolationLinear,
   ImportDiagnosticSeverity,

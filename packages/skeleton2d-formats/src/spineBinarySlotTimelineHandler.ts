@@ -1,10 +1,10 @@
 import { createAnimationChannel, createAnimationTrack } from '@flighthq/animation/contract';
+import type { ByteReader } from '@flighthq/buffer/contract';
 import { createSkeleton2DSlotAnimationTarget } from '@flighthq/skeleton2d/contract';
 import type {
   AnimationChannel,
   Attachment2D,
   AttachmentSkin2D,
-  ByteReader,
   SpineBinaryTimelineContext,
 } from '@flighthq/types/contract';
 import {

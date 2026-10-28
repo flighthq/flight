@@ -1,10 +1,10 @@
+import type { ByteReader } from '@flighthq/buffer/contract';
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { reportImportDiagnostic } from '@flighthq/importdiagnostics/contract';
 import { createSkin2D } from '@flighthq/skeleton2d/contract';
 import type {
   Attachment2D,
   AttachmentSkin2D,
-  ByteReader,
   EntityConstruction,
   ImportDiagnostic,
   MeshAttachment2D,

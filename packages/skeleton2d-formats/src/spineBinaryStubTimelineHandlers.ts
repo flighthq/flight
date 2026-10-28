@@ -1,4 +1,5 @@
-import type { ByteReader, SpineBinaryTimelineContext } from '@flighthq/types/contract';
+import type { ByteReader } from '@flighthq/buffer/contract';
+import type { SpineBinaryTimelineContext } from '@flighthq/types/contract';
 import { SpineBinaryTimelineKind as TimelineKind } from '@flighthq/types/contract';
 
 import {
