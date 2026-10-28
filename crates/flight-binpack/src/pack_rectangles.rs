@@ -1,3 +1,6 @@
+//! flight-compiler: data-union RectangleId
+//! flight-compiler: string-union BinPackHeuristic
+
 use std::cmp::Ordering;
 
 /// The heuristic used by the MaxRects bin packing algorithm.

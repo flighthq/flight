@@ -1,3 +1,6 @@
+//! flight-compiler: string-union UnpackedRectangleReason
+//! flight-compiler: readonly-fields UnpackedRectangleExplanation
+
 use std::collections::HashMap;
 
 use crate::pack_rectangles::{
