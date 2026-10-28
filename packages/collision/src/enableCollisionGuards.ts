@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import type {
   CollisionShape2D,
@@ -31,9 +32,9 @@ export function disableCollisionGuards(): void {
 // diagnostic posture rather than a dimension-specific capability, and a caller who wanted warnings and
 // got them for only half the package would have no way to notice. The two dispatchers keep separate
 // guard slots underneath; only the caller-facing verb is shared.
-export function enableCollisionGuards(): void {
-  setCollisionTestGuard2D(warnOnInvalidCollisionShapes);
-  setCollisionTestGuard3D(warnOnInvalidCollisionShapes3D);
+export function enableCollisionGuards(logState: LogState, clock: () => number): void {
+  setCollisionTestGuard2D((...args) => warnOnInvalidCollisionShapes(logState, clock, ...args));
+  setCollisionTestGuard3D((...args) => warnOnInvalidCollisionShapes3D(logState, clock, ...args));
   collisionGuardsEnabled = true;
 }
 
@@ -45,30 +46,60 @@ export function enableCollisionGuards(): void {
 // returns a silent `false` that is indistinguishable from two shapes genuinely not touching. A missed
 // collision is the worst sentinel this package can hand back, and it used to be the only one the
 // guard stayed quiet about.
-function warnOnInvalidCollisionShapes(a: Readonly<CollisionShape2D>, b: Readonly<CollisionShape2D>): void {
+function warnOnInvalidCollisionShapes(
+  logState: LogState,
+  clock: () => number,
+  a: Readonly<CollisionShape2D>,
+  b: Readonly<CollisionShape2D>,
+): void {
   const statusA = getCollisionShapeValidationStatus2D(a);
   if (isWarnableCollisionStatus(statusA)) {
-    warnOnInvalidCollisionShape({ kind: a.kind, overlapping: false, shapeIndex: 0, status: statusA }, '2D');
+    warnOnInvalidCollisionShape(
+      logState,
+      clock,
+      { kind: a.kind, overlapping: false, shapeIndex: 0, status: statusA },
+      '2D',
+    );
     return;
   }
   const statusB = getCollisionShapeValidationStatus2D(b);
   if (isWarnableCollisionStatus(statusB)) {
-    warnOnInvalidCollisionShape({ kind: b.kind, overlapping: false, shapeIndex: 1, status: statusB }, '2D');
+    warnOnInvalidCollisionShape(
+      logState,
+      clock,
+      { kind: b.kind, overlapping: false, shapeIndex: 1, status: statusB },
+      '2D',
+    );
   }
 }
 
 // The 3D twin. It reports one status fewer than the 2D form, because `'non-convex-polygon'` cannot
 // arise in 3D at all — a convex hull is reached only through its support scan, which never returns an
 // interior vertex. See `getCollisionShapeValidationStatus3D`.
-function warnOnInvalidCollisionShapes3D(a: Readonly<CollisionShape3D>, b: Readonly<CollisionShape3D>): void {
+function warnOnInvalidCollisionShapes3D(
+  logState: LogState,
+  clock: () => number,
+  a: Readonly<CollisionShape3D>,
+  b: Readonly<CollisionShape3D>,
+): void {
   const statusA = getCollisionShapeValidationStatus3D(a);
   if (isWarnableCollisionStatus(statusA)) {
-    warnOnInvalidCollisionShape({ kind: a.kind, overlapping: false, shapeIndex: 0, status: statusA }, '3D');
+    warnOnInvalidCollisionShape(
+      logState,
+      clock,
+      { kind: a.kind, overlapping: false, shapeIndex: 0, status: statusA },
+      '3D',
+    );
     return;
   }
   const statusB = getCollisionShapeValidationStatus3D(b);
   if (isWarnableCollisionStatus(statusB)) {
-    warnOnInvalidCollisionShape({ kind: b.kind, overlapping: false, shapeIndex: 1, status: statusB }, '3D');
+    warnOnInvalidCollisionShape(
+      logState,
+      clock,
+      { kind: b.kind, overlapping: false, shapeIndex: 1, status: statusB },
+      '3D',
+    );
   }
 }
 
@@ -84,12 +115,16 @@ function isWarnableCollisionStatus(
 // The dimension is carried in the log key as well as the message, so a caller running both 2D and 3D
 // worlds does not have one dimension's first warning suppress the other's.
 function warnOnInvalidCollisionShape(
+  logState: LogState,
+  clock: () => number,
   explanation: Readonly<CollisionTestExplanation2D | CollisionTestExplanation3D>,
   dimension: '2D' | '3D',
 ): void {
   const messages = dimension === '2D' ? collisionGuardMessages : collisionGuardMessages3D;
   const message = messages[explanation.status] ?? messages['degenerate-shape'];
   logOnce(
+    logState,
+    clock(),
     `collision:${dimension}:${explanation.status}:${explanation.shapeIndex}:${explanation.kind}`,
     LogLevel.Warn,
     {

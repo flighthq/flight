@@ -1,5 +1,12 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
-import type { CollisionShape2D, LogEntry } from '@flighthq/types/contract';
+import type { LogState } from '@flighthq/log/contract';
+import {
+  addLogSink,
+  createLogState,
+  createMemoryLogSink,
+  getMemoryLogSinkEntries,
+  removeLogSink,
+} from '@flighthq/log/contract';
+import type { CollisionShape2D, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 
 import { areCollisionGuardsEnabled, disableCollisionGuards, enableCollisionGuards } from './enableCollisionGuards.ts';
 import { createCollisionManifold2D } from './manifold2D.ts';
@@ -9,14 +16,28 @@ import { testCollision3D } from './testCollision3D.ts';
 
 function captureLog(run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
+  addLogSink(logState, sink.sink);
   try {
     run();
-    return getMemoryLogSinkEntries(sink);
+    return readLogEntries(sink);
   } finally {
-    removeLogSink(sink.sink);
+    removeLogSink(logState, sink.sink);
   }
 }
+
+function clock(): number {
+  return 0;
+}
+
+function readLogEntries(sink: Readonly<MemoryLogSink>): LogEntry[] {
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
+}
+
+beforeEach(() => {
+  logState = createLogState();
+});
 
 afterEach(() => {
   disableCollisionGuards();
@@ -25,14 +46,14 @@ afterEach(() => {
 describe('areCollisionGuardsEnabled', () => {
   it('reports the current module guard state', () => {
     expect(areCollisionGuardsEnabled()).toBe(false);
-    enableCollisionGuards();
+    enableCollisionGuards(logState, clock);
     expect(areCollisionGuardsEnabled()).toBe(true);
   });
 });
 
 describe('disableCollisionGuards', () => {
   it('uninstalls the guard', () => {
-    enableCollisionGuards();
+    enableCollisionGuards(logState, clock);
     disableCollisionGuards();
     const entries = captureLog(() => {
       testCollision2D(
@@ -47,7 +68,7 @@ describe('disableCollisionGuards', () => {
 
 describe('enableCollisionGuards', () => {
   it('stays silent for a supported pair, and warns once for a degenerate shape', () => {
-    enableCollisionGuards();
+    enableCollisionGuards(logState, clock);
     const out = createCollisionManifold2D();
     const valid: CollisionShape2D = { kind: 'circle', radius: 1, x: 0, y: 0 };
     const entries = captureLog(() => {
@@ -62,7 +83,7 @@ describe('enableCollisionGuards', () => {
   });
 
   it('warns for an area-less kind the manifold path cannot answer', () => {
-    enableCollisionGuards();
+    enableCollisionGuards(logState, clock);
     const entries = captureLog(() => {
       testCollision2D(
         { kind: 'point', x: 0, y: 0 },
@@ -80,7 +101,7 @@ describe('enableCollisionGuards', () => {
   });
 
   it('warns for a vendor kind nothing has registered', () => {
-    enableCollisionGuards();
+    enableCollisionGuards(logState, clock);
     const entries = captureLog(() => {
       testCollision2D(
         { kind: 'circle', radius: 1, x: 0, y: 0 },
@@ -98,7 +119,7 @@ describe('enableCollisionGuards', () => {
   });
 
   it('warns for a non-convex polygon and identifies its argument index', () => {
-    enableCollisionGuards();
+    enableCollisionGuards(logState, clock);
     const entries = captureLog(() => {
       testCollision2D(
         { kind: 'circle', radius: 1, x: 0, y: 0 },
@@ -123,7 +144,7 @@ describe('enableCollisionGuards', () => {
     // supports are registered here depends on which other files have run — a built-in shape is not a
     // reliable stand-in for "nothing is registered". A dotted kind nothing ever registers reaches the
     // same arm deterministically.
-    enableCollisionGuards();
+    enableCollisionGuards(logState, clock);
     const entries = captureLog(() => {
       testCollision3D(
         { kind: 'acme.unregistered' },
@@ -148,7 +169,7 @@ describe('enableCollisionGuards', () => {
   });
 
   it('warns for a degenerate 3D shape and points at the 3D explain seam', () => {
-    enableCollisionGuards();
+    enableCollisionGuards(logState, clock);
     const entries = captureLog(() => {
       testCollision3D(
         { kind: 'capsule', radius: 0, x0: 0, x1: 1, y0: 0, y1: 0, z0: 0, z1: 0 },
@@ -165,7 +186,7 @@ describe('enableCollisionGuards', () => {
     // logOnce dedupes by key, so the dimension has to be IN the key. Without it, a 2D degenerate-shape
     // warning would silence the first 3D one for a caller running both worlds — the guard going quiet
     // about a real fault because an unrelated one was already reported.
-    enableCollisionGuards();
+    enableCollisionGuards(logState, clock);
     const entries = captureLog(() => {
       testCollision2D(
         { kind: 'aabb', maxX: 0, maxY: 0, minX: 0, minY: 0 },
@@ -187,3 +208,5 @@ describe('enableCollisionGuards', () => {
     ]);
   });
 });
+
+let logState: LogState = createLogState();
