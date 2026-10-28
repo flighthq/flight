@@ -160,7 +160,6 @@ mod advance_clock {
         assert_eq!(clock.read().unwrap().delta_time, -1000.0);
         assert_eq!(clock.read().unwrap().elapsed, -1000.0);
     }
-
 }
 
 mod create_child_clock {
