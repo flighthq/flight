@@ -1,0 +1,23 @@
+[package]
+name = "flight-compiler"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+description = "Private Rust-first source compiler for Flight target packages"
+publish = false
+
+[lib]
+doctest = false
+
+[[bin]]
+name = "flight-compile"
+path = "src/main.rs"
+
+[dependencies]
+syn = { version = "2", features = ["full", "visit"] }
+
+[lints]
+workspace = true
