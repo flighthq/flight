@@ -1,4 +1,4 @@
-import type { Entity, EntityRuntime, EntityRuntimeWriteGuard } from '@flighthq/types/contract';
+import type { Entity, EntityRuntime, EntityRuntimeWriteGuard, EntityRuntimeWriteSlot } from '@flighthq/types/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 
 // Returns true if entity runtime guards have been enabled via enableEntityRuntimeGuards.
@@ -18,7 +18,7 @@ export function createGuardedEntity<Type extends object>(entity: Type & Entity):
         // environments, so trusted callers such as attachEntityBinding cannot be told apart from a raw
         // poke. Reporting goes through the seam rather than the console so it uses the standard sink — see
         // enableEntityRuntimeGuards.
-        _writeGuard?.('runtime-slot');
+        reportEntityRuntimeWrite('runtime-slot');
       }
       (target as unknown as Record<PropertyKey, unknown>)[prop] = value;
       return true;
@@ -34,12 +34,19 @@ export function createGuardedEntityRuntime(runtime: EntityRuntime): EntityRuntim
   return new Proxy(runtime, {
     set(target, prop, value) {
       if (prop === 'binding' && _guardsEnabled) {
-        _writeGuard?.('binding-slot');
+        reportEntityRuntimeWrite('binding-slot');
       }
       (target as unknown as Record<PropertyKey, unknown>)[prop] = value;
       return true;
     },
   });
+}
+
+// Fires the installed write guard for a direct runtime-slot write. This is also the explicit seam used
+// by runtimes that cannot intercept field writes with Proxy.
+export function reportEntityRuntimeWrite(slot: EntityRuntimeWriteSlot): void {
+  if (!_guardsEnabled) return;
+  _writeGuard?.(slot);
 }
 
 // Turns the guarding PROXIES on or off. This is the machinery seam, not the caller-facing entry point —

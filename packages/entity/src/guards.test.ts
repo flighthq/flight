@@ -7,6 +7,7 @@ import {
   areEntityRuntimeGuardsEnabled,
   createGuardedEntity,
   createGuardedEntityRuntime,
+  reportEntityRuntimeWrite,
   setEntityRuntimeGuardMode,
   setEntityRuntimeWriteGuard,
 } from './guards.ts';
@@ -36,6 +37,33 @@ describe('createGuardedEntityRuntime', () => {
   it('returns the runtime unchanged when guards are not enabled', () => {
     const runtime = createEntityRuntime();
     expect(createGuardedEntityRuntime(runtime)).toBe(runtime);
+  });
+});
+
+describe('reportEntityRuntimeWrite', () => {
+  it('fires the installed write guard when guard mode is enabled', () => {
+    const slots: EntityRuntimeWriteSlot[] = [];
+    setEntityRuntimeWriteGuard((slot) => slots.push(slot));
+    setEntityRuntimeGuardMode(true);
+    try {
+      reportEntityRuntimeWrite('runtime-slot');
+      reportEntityRuntimeWrite('binding-slot');
+      expect(slots).toEqual(['runtime-slot', 'binding-slot']);
+    } finally {
+      setEntityRuntimeWriteGuard(null);
+      setEntityRuntimeGuardMode(false);
+    }
+  });
+
+  it('is silent when guard mode is disabled', () => {
+    const slots: EntityRuntimeWriteSlot[] = [];
+    setEntityRuntimeWriteGuard((slot) => slots.push(slot));
+    try {
+      reportEntityRuntimeWrite('runtime-slot');
+      expect(slots).toEqual([]);
+    } finally {
+      setEntityRuntimeWriteGuard(null);
+    }
   });
 });
 
