@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import { getNodeRuntime } from '@flighthq/node/contract';
 import type { InteractionHitEligibility, InteractionSignalName, NodeAny } from '@flighthq/types/contract';
@@ -19,10 +20,11 @@ export function disableInteractionGuards(): void {
  *
  * Assumes opt-in precedes the connect (the recommended order); a node opted in *after* connecting a
  * listener would warn spuriously. Not importing this module costs production nothing — the message and
- * the `@flighthq/log` dependency live only here.
+ * the `@flighthq/log` dependency live only here. Warnings go to the caller-owned `logState`, stamped
+ * with `clock()` read at the moment of misuse.
  */
-export function enableInteractionGuards(): void {
-  setInteractionConnectGuard(warnOnInertInteractionTarget);
+export function enableInteractionGuards(logState: LogState, clock: () => number): void {
+  setInteractionConnectGuard((target, name) => warnOnInertInteractionTarget(logState, clock, target, name));
 }
 
 /** Reports whether a node is a hit candidate and whether any node in its subtree is — the seam a
@@ -56,7 +58,12 @@ function hasFocusableNodeInSubtree(node: Readonly<NodeAny>): boolean {
   return false;
 }
 
-function warnOnInertInteractionTarget(target: NodeAny, name: InteractionSignalName): void {
+function warnOnInertInteractionTarget(
+  logState: LogState,
+  clock: () => number,
+  target: NodeAny,
+  name: InteractionSignalName,
+): void {
   // Keyboard signals dispatch to the manager root regardless of eligibility, so they are exempt.
   if (name === 'onKeyDown' || name === 'onKeyUp') return;
 
@@ -65,6 +72,8 @@ function warnOnInertInteractionTarget(target: NodeAny, name: InteractionSignalNa
   if (name === 'onFocusIn' || name === 'onFocusOut') {
     if (hasFocusableNodeInSubtree(target)) return;
     logOnce(
+      logState,
+      clock(),
       'interaction:focus-listener-on-non-focusable',
       LogLevel.Warn,
       {
@@ -77,6 +86,8 @@ function warnOnInertInteractionTarget(target: NodeAny, name: InteractionSignalNa
 
   if (hasEligibleNodeInSubtree(target)) return;
   logOnce(
+    logState,
+    clock(),
     'interaction:listener-on-inert-node',
     LogLevel.Warn,
     {
