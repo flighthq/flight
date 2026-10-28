@@ -1,3 +1,4 @@
+import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -14,13 +15,17 @@ export function disableSwfGuards(): void {
 
 // Installs opt-in reporting for an unknown variable-width filter that forces the importer to stop before
 // later filter and blend bytes. The parser's safe stop is unconditional; only this message is optional.
-export function enableSwfGuards(): void {
-  setSwfFilterListGuard(warnOnUnknownSwfFilter);
+export function enableSwfGuards(logState: LogState, clock: () => number): void {
+  setSwfFilterListGuard((filterId: number, filterIndex: number): void =>
+    warnOnUnknownSwfFilter(logState, clock(), filterId, filterIndex),
+  );
   swfGuardsEnabled = true;
 }
 
-function warnOnUnknownSwfFilter(filterId: number, filterIndex: number): void {
+function warnOnUnknownSwfFilter(logState: LogState, nowMs: number, filterId: number, filterIndex: number): void {
   logOnce(
+    logState,
+    nowMs,
     `swf:unknown-filter:${filterId}`,
     LogLevel.Warn,
     {

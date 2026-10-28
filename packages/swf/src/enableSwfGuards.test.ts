@@ -1,19 +1,18 @@
-import { addLogSink, createMemoryLogSink, getMemoryLogSinkEntries, removeLogSink } from '@flighthq/log/contract';
+import type { LogState } from '@flighthq/log/contract';
+import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
 import type { LogEntry } from '@flighthq/types/contract';
 
 import { areSwfGuardsEnabled, disableSwfGuards, enableSwfGuards } from './enableSwfGuards.ts';
 import { readSwfFilterList } from './swfFilter.ts';
 import { SwfReader } from './swfReader.ts';
 
-function captureLog(run: () => void): readonly LogEntry[] {
+function captureLog(logState: LogState, run: () => void): readonly LogEntry[] {
   const sink = createMemoryLogSink(8);
-  addLogSink(sink.sink);
-  try {
-    run();
-    return getMemoryLogSinkEntries(sink);
-  } finally {
-    removeLogSink(sink.sink);
-  }
+  addLogSink(logState, sink.sink);
+  run();
+  const entries: LogEntry[] = [];
+  getMemoryLogSinkEntries(entries, sink);
+  return entries;
 }
 
 function readUnknownFilter(): boolean {
@@ -32,7 +31,7 @@ afterEach(() => {
 describe('areSwfGuardsEnabled', () => {
   it('reports whether unknown-filter diagnostics are installed', () => {
     expect(areSwfGuardsEnabled()).toBe(false);
-    enableSwfGuards();
+    enableSwfGuards(createLogState(), () => 0);
     expect(areSwfGuardsEnabled()).toBe(true);
     disableSwfGuards();
     expect(areSwfGuardsEnabled()).toBe(false);
@@ -41,9 +40,10 @@ describe('areSwfGuardsEnabled', () => {
 
 describe('disableSwfGuards', () => {
   it('restores silence without changing the safe incomplete-list result', () => {
-    enableSwfGuards();
+    const logState = createLogState();
+    enableSwfGuards(logState, () => 0);
     disableSwfGuards();
-    const entries = captureLog(() => expect(readUnknownFilter()).toBe(false));
+    const entries = captureLog(logState, () => expect(readUnknownFilter()).toBe(false));
 
     expect(entries).toHaveLength(0);
   });
@@ -51,8 +51,9 @@ describe('disableSwfGuards', () => {
 
 describe('enableSwfGuards', () => {
   it('WARNS once with the unknown filter identity and the trailing-field consequence', () => {
-    enableSwfGuards();
-    const entries = captureLog(() => {
+    const logState = createLogState();
+    enableSwfGuards(logState, () => 0);
+    const entries = captureLog(logState, () => {
       expect(readUnknownFilter()).toBe(false);
       expect(readUnknownFilter()).toBe(false);
     });
