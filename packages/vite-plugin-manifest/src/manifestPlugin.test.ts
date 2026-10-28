@@ -4,7 +4,9 @@ import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 
 import { sdkHostDecompressDeflate } from '@flighthq/compression/contract';
+import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
 import { createRequirementSet } from '@flighthq/requirement/contract';
+import type { LogEntry } from '@flighthq/types/contract';
 import { RequirementFacet } from '@flighthq/types/contract';
 
 import { MANIFEST_PARSER_BACKEND } from './manifestModuleSource.ts';
@@ -91,6 +93,21 @@ describe('createManifestPlugin', () => {
     const source = (await load(plugin, dir, 'a.swf'))!;
     expect(source).toContain('export const parserOptions = {};');
     expect(diagnostics.some((m) => m.includes('unreadable content') && m.includes('deflate/lzma'))).toBe(true);
+  });
+
+  it('defaults to a warning on the flight-manifest channel of the supplied log state', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'flight-vite-'));
+    await writeFile(join(dir, 'a.swf'), Buffer.from(compressedSwf()));
+    const logState = createLogState();
+    const memory = createMemoryLogSink(8);
+    addLogSink(logState, memory.sink);
+    const plugin = createManifestPlugin({ catalog: { entries: [] }, logState });
+    await load(plugin, dir, 'a.swf');
+    const entries: LogEntry[] = [];
+    getMemoryLogSinkEntries(entries, memory);
+    expect(
+      entries.some((entry) => entry.channel === 'flight-manifest' && String(entry.data).includes('unreadable content')),
+    ).toBe(true);
   });
 
   it('reads that same compressed file once a deflate capability is supplied', async () => {

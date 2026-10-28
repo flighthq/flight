@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { dirname, extname, isAbsolute, resolve } from 'node:path';
 
+import type { LogState } from '@flighthq/log/contract';
 import { logWarn } from '@flighthq/log/contract';
 import { createRequirementCodegenPlan } from '@flighthq/requirement-codegen/contract';
 import type {
@@ -35,10 +36,15 @@ export interface ManifestPluginOptions {
   /** Decodes a `ZWS` SWF body or an LZMA-compressed AWD2 body. Absent behaves as for `deflate`. */
   readonly lzma?: Readonly<HostDecompressLzmaCapability> | null;
   /**
+   * The build tool's log state, which receives the default diagnostics. Absent with no `onDiagnostic`,
+   * diagnostics have nowhere to go and are discarded.
+   */
+  readonly logState?: LogState | null;
+  /**
    * Called for every unsupported format, unreadable file, analyzer failure and unresolved requirement.
-   * Defaults to a warning on the `flight-manifest` channel through `@flighthq/log`. A requirement the
-   * build cannot place is reported rather than skipped: silently dropping one is how a bundle ends up
-   * missing an implementation it needed.
+   * Defaults to a warning on the `flight-manifest` channel of `logState` through `@flighthq/log`,
+   * stamped with the build host's clock. A requirement the build cannot place is reported rather than
+   * skipped: silently dropping one is how a bundle ends up missing an implementation it needed.
    */
   readonly onDiagnostic?: (message: string) => void;
 }
@@ -73,7 +79,12 @@ export interface ManifestPlugin {
 export function createManifestPlugin(
   options: Readonly<ManifestPluginOptions>,
 ): NonEntityCreateResult<ManifestPlugin, 'descriptor'> {
-  const report = options.onDiagnostic ?? ((message: string) => logWarn(message, MANIFEST_LOG_CHANNEL));
+  const logState = options.logState ?? null;
+  const report =
+    options.onDiagnostic ??
+    ((message: string): void => {
+      if (logState !== null) logWarn(logState, performance.now(), message, MANIFEST_LOG_CHANNEL);
+    });
   const decompressors = { deflate: options.deflate ?? null, lzma: options.lzma ?? null };
   // Keyed by the absolute content path, so invalidation is per imported source: editing one document
   // rebuilds that document's module and leaves every other file's cached module untouched.
