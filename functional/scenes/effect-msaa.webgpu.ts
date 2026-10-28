@@ -5,7 +5,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import type { Bitmap, Node2D } from '@flighthq/sdk';
+import type { Bitmap, Node2D, LogState } from '@flighthq/sdk';
 import {
   addNodeChild,
   appendShapeBeginFill,
@@ -32,6 +32,7 @@ import {
   setSurfaceDisplaySize,
   createAppWindow,
   openWindow,
+  createLogState,
 } from '@flighthq/sdk';
 import { declareExpectedImageDescription, declareAntialiasingPolicy } from '@ft/render';
 import { registerWgpuFunctionalTarget } from '@ft/verify';
@@ -67,7 +68,9 @@ export const state = createWgpuRenderState(acquisition.device, {
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0x10 / 0xff, 0x10 / 0xff, 0x14 / 0xff, 1], depth: 1.0 } as const;
 registerNodeRenderer(state, ShapeKind, wgpuShapeRenderer);
-enableWgpuEffectGuards(state);
+// The runner publishes the page's LogState; a standalone build logs into a private one.
+const logState = (window as { __flightLogState?: LogState }).__flightLogState ?? createLogState();
+enableWgpuEffectGuards(state, logState);
 
 const pipeline = createWgpuEffectState(state, { sampleCount: 4 });
 

@@ -8,7 +8,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web/contract';
-import type { Node2D } from '@flighthq/sdk';
+import type { Node2D, LogState } from '@flighthq/sdk';
 import {
   beginWgpuRenderPass,
   connectCanvasTextureResolverMisses,
@@ -34,6 +34,8 @@ import {
   setSurfaceDisplaySize,
   createAppWindow,
   openWindow,
+  createLogState,
+  createDebugState,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -56,7 +58,9 @@ export const state = createWgpuRenderState(acquisition.device, {
 });
 // What the frame is cleared to, named once: it is a per-pass value now, not a render-state field.
 const screenClear = { color: [0xf5 / 0xff, 0xf5 / 0xff, 0xf5 / 0xff, 1], depth: 1.0 } as const;
-enableFlightDiagnostics(state);
+// The runner publishes the page's LogState; a standalone build logs into a private one.
+const logState = (window as { __flightLogState?: LogState }).__flightLogState ?? createLogState();
+enableFlightDiagnostics(createDebugState(), logState, state);
 registerNodeRenderer(state, ShapeKind, wgpuShapeRenderer);
 
 // The GPU mesh lane covers solid fills and open strokes; a closed stroke, a gradient, or a texture fill

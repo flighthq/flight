@@ -6,7 +6,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web/contract';
-import type { Camera3D, GlEffectState, Node3D, Effect, Scene3DLightsLike } from '@flighthq/sdk';
+import type { Camera3D, GlEffectState, Node3D, Effect, Scene3DLightsLike, LogState } from '@flighthq/sdk';
 import {
   createGlSurface,
   glScene3DRenderPreset,
@@ -22,6 +22,8 @@ import {
   setSurfaceDisplaySize,
   createAppWindow,
   openWindow,
+  createLogState,
+  createDebugState,
 } from '@flighthq/sdk';
 import { registerGlParticleEmitter3DPass, renderGlScene3D } from '@flighthq/sdk/scene3d-gl';
 
@@ -40,7 +42,9 @@ export const canvas = getWebSurfaceElement(glSurface)!;
 export const state = createGlRenderState(glSurface.context, { ...glScene3DRenderPreset, pixelRatio });
 // The particle pass is opt-in: without this registration renderGlScene3D draws no emitters.
 registerGlParticleEmitter3DPass(state);
-enableFlightDiagnostics(state);
+// The runner publishes the page's LogState; a standalone build logs into a private one.
+const logState = (window as { __flightLogState?: LogState }).__flightLogState ?? createLogState();
+enableFlightDiagnostics(createDebugState(), logState, state);
 registerGlBloomEffect(state);
 registerGlToneMapEffect(state);
 registerGlVignetteEffect(state);

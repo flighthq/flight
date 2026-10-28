@@ -6,7 +6,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web/contract';
-import type { Node2D } from '@flighthq/sdk';
+import type { Node2D, LogState } from '@flighthq/sdk';
 import {
   createGlSurface,
   glScene3DRenderPreset,
@@ -25,6 +25,8 @@ import {
   setSurfaceDisplaySize,
   createAppWindow,
   openWindow,
+  createLogState,
+  createDebugState,
 } from '@flighthq/sdk';
 
 const pixelRatio = window.devicePixelRatio || 1;
@@ -44,7 +46,9 @@ export const state = createGlRenderState(glSurface.context, {
   sceneGraphSyncPolicy: 'requiresInvalidation',
 });
 const screenTarget = createGlScreenRenderTarget(state.gl);
-enableFlightDiagnostics(state);
+// The runner publishes the page's LogState; a standalone build logs into a private one.
+const logState = (window as { __flightLogState?: LogState }).__flightLogState ?? createLogState();
+enableFlightDiagnostics(createDebugState(), logState, state);
 registerNodeRenderer(state, SpriteKind, glSpriteRenderer);
 registerNodeRenderer(state, BitmapTextKind, glBitmapTextRenderer);
 

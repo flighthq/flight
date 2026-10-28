@@ -1,5 +1,5 @@
 import { webHostCanvas, webHostImage } from '@flighthq/host-web/contract';
-import type { Node2D } from '@flighthq/sdk';
+import type { Node2D, LogState } from '@flighthq/sdk';
 import {
   connectCanvasTextureResolverMisses,
   createCanvasShapeRasterizer,
@@ -22,6 +22,8 @@ import {
   RichTextKind,
   ShapeKind,
   TextLabelKind,
+  createLogState,
+  createDebugState,
 } from '@flighthq/sdk';
 
 const container = document.createElement('div');
@@ -35,7 +37,9 @@ export const state = createDomRenderState(container, { sceneGraphSyncPolicy: 're
 // DOM has no pass and no clear: the background is a CSS property on the element the caller
 // already holds, set once rather than reapplied by a render function every frame.
 container.style.backgroundColor = '#d0d0d0';
-enableFlightDiagnostics(state);
+// The runner publishes the page's LogState; a standalone build logs into a private one.
+const logState = (window as { __flightLogState?: LogState }).__flightLogState ?? createLogState();
+enableFlightDiagnostics(createDebugState(), logState, state);
 
 registerNodeRenderer(state, RichTextKind, domRichTextRenderer);
 registerNodeRenderer(state, ShapeKind, domShapeRenderer);

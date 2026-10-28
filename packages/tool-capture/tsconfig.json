@@ -14,6 +14,7 @@
     { "path": "../capture" },
     { "path": "../effects-wgpu" },
     { "path": "../host-web" },
+    { "path": "../log" },
     { "path": "../render-wgpu" },
     { "path": "../bitmap" },
     { "path": "../types" }

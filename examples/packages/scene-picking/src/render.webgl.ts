@@ -6,7 +6,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web/contract';
-import type { Camera3D, GlEffectState, Scene3DLightsLike, Node3D } from '@flighthq/sdk';
+import type { Camera3D, GlEffectState, Scene3DLightsLike, Node3D, LogState } from '@flighthq/sdk';
 import {
   createGlSurface,
   glScene3DRenderPreset,
@@ -19,6 +19,8 @@ import {
   setSurfaceDisplaySize,
   createAppWindow,
   openWindow,
+  createLogState,
+  createDebugState,
 } from '@flighthq/sdk';
 import { renderGlScene3D } from '@flighthq/sdk/scene3d-gl';
 
@@ -35,7 +37,9 @@ setSurfaceDisplaySize(webHostSurfaceDisplay, glSurface, width, height);
 appendWebSurface(glSurface, document.body);
 export const canvas = getWebSurfaceElement(glSurface)!;
 export const state = createGlRenderState(glSurface.context, { ...glScene3DRenderPreset, pixelRatio });
-enableFlightDiagnostics(state);
+// The runner publishes the page's LogState; a standalone build logs into a private one.
+const logState = (window as { __flightLogState?: LogState }).__flightLogState ?? createLogState();
+enableFlightDiagnostics(createDebugState(), logState, state);
 const pipeline: GlEffectState = createGlEffectState(state, {
   sampleCount: 4,
   format: 'rgba16f',

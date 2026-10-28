@@ -7,7 +7,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
+import type { Node2D, ShapeRasterizer, LogState } from '@flighthq/sdk';
 import {
   beginCanvasRenderPass,
   createCanvasRenderState,
@@ -59,6 +59,8 @@ import {
   setSurfaceDisplaySize,
   createAppWindow,
   openWindow,
+  createLogState,
+  createDebugState,
 } from '@flighthq/sdk';
 import { registerFunctionalTarget } from '@ft/verify';
 
@@ -98,8 +100,10 @@ export function createGlTarget(options: Readonly<FunctionalTargetOptions>): Func
 
   const dpiTransform = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
-  enableFlightDiagnostics(state);
-  enableGlEffectGuards(state);
+  // The runner publishes the page's LogState; a standalone build logs into a private one.
+  const logState = (window as { __flightLogState?: LogState }).__flightLogState ?? createLogState();
+  enableFlightDiagnostics(createDebugState(), logState, state);
+  enableGlEffectGuards(state, logState);
   for (const kind of options.kinds ?? []) {
     if (kind === ShapeKind) {
       registerNodeRenderer(state, ShapeKind, glShapeRenderer);

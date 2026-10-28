@@ -1,4 +1,15 @@
 import { webHostCanvas } from '@flighthq/host-web';
-import { createCanvasRenderState, enableFlightDiagnostics, canvasScene2DRenderPreset } from '@flighthq/sdk';
+import {
+  createCanvasRenderState,
+  enableFlightDiagnostics,
+  canvasScene2DRenderPreset,
+  createLogState,
+  createDebugState,
+} from '@flighthq/sdk';
 
-enableFlightDiagnostics(createCanvasRenderState({ ...canvasScene2DRenderPreset, canvasHost: webHostCanvas }));
+const logState = createLogState();
+enableFlightDiagnostics(
+  createDebugState(),
+  logState,
+  createCanvasRenderState({ ...canvasScene2DRenderPreset, canvasHost: webHostCanvas }),
+);

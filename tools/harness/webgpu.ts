@@ -7,7 +7,7 @@ import {
   webHostWindowGeometry,
   webHostWindowLifecycle,
 } from '@flighthq/host-web';
-import type { Node2D, ShapeRasterizer } from '@flighthq/sdk';
+import type { Node2D, ShapeRasterizer, LogState } from '@flighthq/sdk';
 import {
   beginCanvasRenderPass,
   beginWgpuRenderPass,
@@ -60,6 +60,8 @@ import {
   setSurfaceDisplaySize,
   createAppWindow,
   openWindow,
+  createLogState,
+  createDebugState,
 } from '@flighthq/sdk';
 import { registerFunctionalTarget } from '@ft/verify';
 
@@ -103,11 +105,13 @@ export async function createWgpuTarget(options: Readonly<FunctionalTargetOptions
 
   const dpiTransform = createMatrix(pixelRatio, 0, 0, pixelRatio, 0, 0);
 
-  enableFlightDiagnostics(state);
+  // The runner publishes the page's LogState; a standalone build logs into a private one.
+  const logState = (window as { __flightLogState?: LogState }).__flightLogState ?? createLogState();
+  enableFlightDiagnostics(createDebugState(), logState, state);
   // enableFlightDiagnostics lives in @flighthq/debug and cannot reach a backend package, so the WGPU
   // effect guards are wired here so a requested sample count outside WGPU's supported 1/4 values is
   // reported together with the applied substitution.
-  enableWgpuEffectGuards(state);
+  enableWgpuEffectGuards(state, logState);
   // Frame capture lets the verifier read the rendered frame back from the GPU; canvas presentation is
   // unavailable on the headless/software adapter, so this is the only path to the pixels.
   enableWgpuScreenRenderTargetCapture(screen);
