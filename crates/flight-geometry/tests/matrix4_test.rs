@@ -323,6 +323,17 @@ mod clone_matrix4 {
 
         assert_eq!(cloned.m, source.m);
     }
+
+    #[test]
+    fn does_not_share_internal_storage() {
+        let source = create_matrix4();
+        let mut cloned = clone_matrix4(&source);
+
+        cloned.m[5] = 42.0;
+
+        assert_eq!(source.m[5], 1.0);
+        assert_eq!(cloned.m[5], 42.0);
+    }
 }
 
 mod compose_matrix4 {
@@ -386,6 +397,19 @@ mod copy_matrix4 {
         copy_matrix4(&mut out, &source);
 
         assert_eq!(out.m, source.m);
+    }
+
+    #[test]
+    fn does_not_share_the_underlying_float32_array() {
+        let source = create_matrix4();
+        let mut out = create_matrix4();
+
+        copy_matrix4(&mut out, &source);
+
+        out.m[0] = 99.0;
+
+        assert_eq!(source.m[0], 1.0);
+        assert_eq!(out.m[0], 99.0);
     }
 
     #[test]
@@ -619,6 +643,44 @@ mod create_matrix4 {
     }
 
     #[test]
+    fn creates_a_float32_array_of_length_16() {
+        let m = create_matrix4();
+
+        assert_eq!(m.m.len(), 16);
+    }
+}
+
+mod create_matrix4_from_2d {
+    use super::*;
+
+    #[test]
+    fn does_not_share_internal_storage_with_other_matrices() {
+        let a = create_matrix4_from_2d(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+        let mut b = create_matrix4_from_2d(1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+
+        b.m[0] = 42.0;
+
+        assert_eq!(a.m[0], 1.0);
+        assert_eq!(b.m[0], 42.0);
+    }
+
+    #[test]
+    fn initializes_the_matrix_using_set_2d_semantics() {
+        let m = create_matrix4_from_2d(1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
+
+        assert_eq!(
+            m.m,
+            [
+                1.0, 2.0, 0.0, 0.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 5.0, 6.0, 0.0, 1.0
+            ]
+        );
+    }
+}
+
+mod create_matrix4_from_values {
+    use super::*;
+
+    #[test]
     fn maps_constructor_arguments_to_correct_column_major_indices() {
         let m = create_matrix4_from_values(
             1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0,
@@ -629,22 +691,6 @@ mod create_matrix4 {
             [
                 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0,
                 16.0
-            ]
-        );
-    }
-}
-
-mod create_matrix4_from_2d {
-    use super::*;
-
-    #[test]
-    fn initializes_the_matrix_using_set_2d_semantics() {
-        let m = create_matrix4_from_2d(1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
-
-        assert_eq!(
-            m.m,
-            [
-                1.0, 2.0, 0.0, 0.0, 3.0, 4.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 5.0, 6.0, 0.0, 1.0
             ]
         );
     }
@@ -916,6 +962,17 @@ mod get_matrix4_position {
     use super::*;
 
     #[test]
+    fn does_not_mutate_the_source_matrix() {
+        let m = create_matrix4();
+        let snapshot: [f32; 16] = m.m;
+
+        let mut out = create_vector3(0.0, 0.0, 0.0);
+        get_matrix4_position(&mut out, &m);
+
+        assert_eq!(m.m, snapshot);
+    }
+
+    #[test]
     fn extracts_translation_components_from_the_matrix() {
         let mut m = create_matrix4();
         m.m[12] = 10.0;
@@ -928,6 +985,22 @@ mod get_matrix4_position {
         assert_eq!(out.x, 10.0);
         assert_eq!(out.y, 20.0);
         assert_eq!(out.z, 30.0);
+    }
+}
+
+mod initialize_matrix4 {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_initializer_of_create_matrix4() {
+        let mut m = create_matrix4_from_values(
+            2.0, 3.0, 5.0, 7.0, 11.0, 13.0, 17.0, 19.0, 23.0, 29.0, 31.0, 37.0, 41.0, 43.0, 47.0,
+            53.0,
+        );
+
+        initialize_matrix4(&mut m);
+
+        assert_eq!(m.m, create_matrix4().m);
     }
 }
 
@@ -1257,10 +1330,63 @@ mod matrix4_transform_vectors {
         matrix4_transform_vectors(&mut out, &m, &vectors_copy);
         assert_eq!(out, [1.0, 2.0, 3.0, 2.0, 2.0, 3.0]);
     }
+
+    #[test]
+    fn supports_out_equals_vectors() {
+        let mut m = create_matrix4();
+        let m_copy = clone_matrix4(&m);
+        translate_matrix4(&mut m, &m_copy, 1.0, 2.0, 3.0);
+        let mut vectors: [f32; 6] = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0];
+        let vectors_clone = vectors.clone();
+        matrix4_transform_vectors(&mut vectors, &m, &vectors_clone);
+        assert_eq!(vectors, [1.0, 2.0, 3.0, 2.0, 2.0, 3.0]);
+    }
 }
 
 mod multiply_matrix4 {
     use super::*;
+
+    #[test]
+    fn append_translation_equals_multiply_by_translation_matrix() {
+        let mut m1 = create_matrix4();
+        let m1_copy = clone_matrix4(&m1);
+        translate_matrix4(&mut m1, &m1_copy, 1.0, 2.0, 3.0);
+        let mut m2 = create_matrix4();
+        let m2_copy = clone_matrix4(&m2);
+        translate_matrix4(&mut m2, &m2_copy, 1.0, 2.0, 3.0);
+
+        let mut t = create_matrix4();
+        let t_copy = clone_matrix4(&t);
+        translate_matrix4(&mut t, &t_copy, 4.0, 5.0, 6.0);
+
+        let m1_source = clone_matrix4(&m1);
+        append_translation_matrix4(&mut m1, &m1_source, 4.0, 5.0, 6.0);
+        let m2_source = clone_matrix4(&m2);
+        multiply_matrix4(&mut m2, &m2_source, &t);
+
+        assert!(equals_matrix4(Some(&m1), Some(&m2)));
+    }
+
+    #[test]
+    fn prepend_scale_equals_multiplying_the_scale_on_the_right() {
+        let mut m1 = create_matrix4();
+        let m1_copy = clone_matrix4(&m1);
+        translate_matrix4(&mut m1, &m1_copy, 10.0, 0.0, 0.0);
+        let mut m2 = create_matrix4();
+        let m2_copy = clone_matrix4(&m2);
+        translate_matrix4(&mut m2, &m2_copy, 10.0, 0.0, 0.0);
+
+        let mut s = create_matrix4();
+        let s_copy = clone_matrix4(&s);
+        scale_matrix4(&mut s, &s_copy, 2.0, 2.0, 2.0);
+
+        let m1_source = clone_matrix4(&m1);
+        prepend_scale_matrix4(&mut m1, &m1_source, 2.0, 2.0, 2.0);
+        let m2_source = clone_matrix4(&m2);
+        multiply_matrix4(&mut m2, &m2_source, &s);
+
+        assert!(equals_matrix4(Some(&m1), Some(&m2)));
+    }
 
     #[test]
     fn returns_the_right_hand_operand_when_left_is_identity() {
@@ -1868,6 +1994,46 @@ mod scale_matrix4 {
     }
 }
 
+mod set_matrix4 {
+    use super::*;
+
+    #[test]
+    fn overwrites_existing_matrix_values_completely() {
+        let mut m = create_matrix4_from_values(
+            99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0,
+            99.0, 99.0,
+        );
+
+        set_matrix4(
+            &mut m, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+        );
+
+        assert_eq!(
+            m.m,
+            [
+                1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0
+            ]
+        );
+    }
+
+    #[test]
+    fn sets_all_16_values_in_column_major_order() {
+        let mut m = create_matrix4();
+        set_matrix4(
+            &mut m, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0,
+            15.0, 16.0,
+        );
+
+        assert_eq!(
+            m.m,
+            [
+                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0,
+                16.0
+            ]
+        );
+    }
+}
+
 mod set_matrix4_element {
     use super::*;
 
@@ -2200,46 +2366,6 @@ mod set_matrix4_position {
         assert_eq!(m.m[12], -1.0);
         assert_eq!(m.m[13], -2.0);
         assert_eq!(m.m[14], -3.0);
-    }
-}
-
-mod set_matrix4_tests {
-    use super::*;
-
-    #[test]
-    fn sets_all_16_values_in_column_major_order() {
-        let mut m = create_matrix4();
-        set_matrix4(
-            &mut m, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0,
-            15.0, 16.0,
-        );
-
-        assert_eq!(
-            m.m,
-            [
-                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0,
-                16.0
-            ]
-        );
-    }
-
-    #[test]
-    fn overwrites_existing_matrix_values_completely() {
-        let mut m = create_matrix4_from_values(
-            99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0, 99.0,
-            99.0, 99.0,
-        );
-
-        set_matrix4(
-            &mut m, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-        );
-
-        assert_eq!(
-            m.m,
-            [
-                1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0
-            ]
-        );
     }
 }
 

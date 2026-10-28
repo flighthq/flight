@@ -21,11 +21,13 @@ mod clone_aabb {
     use super::*;
 
     #[test]
-    fn creates_an_independent_copy() {
+    fn creates_an_independent_copy_with_independent_corner_vectors() {
         let a = create_aabb(-1.0, -2.0, -3.0, 4.0, 5.0, 6.0);
-        let c = clone_aabb(&a);
+        let mut c = clone_aabb(&a);
         assert_eq!(c.min.x, -1.0);
         assert_eq!(c.max.z, 6.0);
+        c.min.x = 99.0;
+        assert_eq!(a.min.x, -1.0);
     }
 }
 

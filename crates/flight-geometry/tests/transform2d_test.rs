@@ -153,17 +153,35 @@ mod decompose_matrix_to_transform2d {
             for &b in values {
                 for &c in values {
                     for &d in values {
-                        if (a * d - b * c).abs() < 1e-9 {
-                            continue;
+                        if (a * d - b * c).abs() >= 1e-9 {
+                            if a * d - b * c < 0.0 {
+                                negative_determinant_count += 1;
+                            }
+                            expect_round_trip(&create_matrix(a, b, c, d, 0.0, 0.0));
                         }
-                        if a * d - b * c < 0.0 {
-                            negative_determinant_count += 1;
-                        }
-                        expect_round_trip(&create_matrix(a, b, c, d, 0.0, 0.0));
                     }
                 }
             }
         }
         assert_eq!(negative_determinant_count, 572);
+    }
+}
+
+mod initialize_transform2d {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_initializer_of_create_transform2d() {
+        let mut out = create_transform2d(0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0);
+        initialize_transform2d(&mut out, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
+        assert_eq!(out.x, 1.0);
+        assert_eq!(out.y, 2.0);
+        assert_eq!(out.rotation, 3.0);
+        assert_eq!(out.scale_x, 4.0);
+        assert_eq!(out.scale_y, 5.0);
+        assert_eq!(out.skew_x, 6.0);
+        assert_eq!(out.skew_y, 7.0);
+        assert_eq!(out.pivot_x, 8.0);
+        assert_eq!(out.pivot_y, 9.0);
     }
 }

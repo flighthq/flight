@@ -1075,6 +1075,17 @@ mod set_vector4_from_vector3 {
     }
 
     #[test]
+    fn is_safe_when_out_aliases_a_part_of_source_via_a_plain_object() {
+        let src = create_vector3(5.0, 6.0, 7.0);
+        let mut out = create_vector4(0.0, 0.0, 0.0, 0.0);
+        set_vector4_from_vector3(&mut out, &src, 0.0);
+        assert_eq!(out.x, 5.0);
+        assert_eq!(out.y, 6.0);
+        assert_eq!(out.z, 7.0);
+        assert_eq!(out.w, 0.0);
+    }
+
+    #[test]
     fn sets_w_to_the_provided_value() {
         let src = create_vector3(1.0, 2.0, 3.0);
         let mut out = create_vector4(0.0, 0.0, 0.0, 0.0);

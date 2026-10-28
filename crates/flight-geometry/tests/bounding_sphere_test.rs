@@ -22,9 +22,11 @@ mod clone_bounding_sphere {
     #[test]
     fn creates_an_independent_copy_with_an_independent_center() {
         let s = create_bounding_sphere(1.0, 2.0, 3.0, 4.0);
-        let c = clone_bounding_sphere(&s);
+        let mut c = clone_bounding_sphere(&s);
         assert_eq!(c.center.x, 1.0);
         assert_eq!(c.radius, 4.0);
+        c.center.x = 99.0;
+        assert_eq!(s.center.x, 1.0);
     }
 }
 

@@ -32,6 +32,16 @@ mod add_vector3 {
     }
 
     #[test]
+    fn modifies_target_when_same_object_is_passed_as_target() {
+        let mut a = create_vector3(1.0, 2.0, 3.0);
+        let a_clone = clone_vector3(&a);
+        add_vector3(&mut a, &a_clone, &a_clone);
+        assert_eq!(a.x, 2.0);
+        assert_eq!(a.y, 4.0);
+        assert_eq!(a.z, 6.0);
+    }
+
+    #[test]
     fn works_correctly_if_first_vector_is_out() {
         let mut a = create_vector3(1.0, 2.0, 3.0);
         let b = create_vector3(4.0, 5.0, 6.0);

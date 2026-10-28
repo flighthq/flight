@@ -232,11 +232,12 @@ mod initialize_ray3d {
         let direction = create_vector3(0.0, 0.0, 1.0);
         let mut out = create_ray3d(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
         initialize_ray3d(&mut out, &origin, &direction);
-        assert_eq!((out.origin.x, out.origin.y, out.origin.z), (1.0, 2.0, 3.0));
-        assert_eq!(
-            (out.direction.x, out.direction.y, out.direction.z),
-            (0.0, 0.0, 1.0)
-        );
+        assert_eq!(out.origin.x, 1.0);
+        assert_eq!(out.origin.y, 2.0);
+        assert_eq!(out.origin.z, 3.0);
+        assert_eq!(out.direction.x, 0.0);
+        assert_eq!(out.direction.y, 0.0);
+        assert_eq!(out.direction.z, 1.0);
     }
 }
 
@@ -672,6 +673,8 @@ mod set_ray3d {
         assert_eq!(ray.origin.y, 2.0);
         assert_eq!(ray.origin.z, 3.0);
         assert_eq!(ray.direction.x, 1.0);
+        assert_eq!(ray.direction.y, 0.0);
+        assert_eq!(ray.direction.z, 0.0);
     }
 
     #[test]
@@ -685,6 +688,7 @@ mod set_ray3d {
         assert_eq!(ray.origin.z, 7.0);
         assert_eq!(ray.direction.x, 0.0);
         assert_eq!(ray.direction.y, 1.0);
+        assert_eq!(ray.direction.z, 0.0);
     }
 }
 

@@ -184,17 +184,13 @@ fn expect_transformed_obb_matches_rotated_points(m: &Matrix4, obb: &Obb) {
     let mut actual = create_vector3(0.0, 0.0, 0.0);
     let mut probe = create_vector3(0.0, 0.0, 0.0);
 
-    let points: &[[f32; 3]] = &[
-        [10.0, 0.0, 0.0],
-        [0.0, 10.0, 0.0],
-        [0.0, 0.0, 10.0],
-        [4.0, -6.0, 2.0],
-        [-5.0, 3.0, 8.0],
-        [7.0, 7.0, -7.0],
+    let points: [f32; 18] = [
+        10.0, 0.0, 0.0, 0.0, 10.0, 0.0, 0.0, 0.0, 10.0, 4.0, -6.0, 2.0, -5.0, 3.0, 8.0, 7.0, 7.0,
+        -7.0,
     ];
 
-    for &[px, py, pz] in points {
-        let p = create_vector3(px, py, pz);
+    for i in 0..6 {
+        let p = create_vector3(points[i * 3], points[i * 3 + 1], points[i * 3 + 2]);
         get_closest_point_on_obb(&mut expected, obb, &p);
         let expected_copy = expected.clone();
         matrix4_transform_point(&mut expected, m, &expected_copy);
@@ -267,6 +263,26 @@ mod get_closest_point_on_obb {
         let snap = p.clone();
         get_closest_point_on_obb(&mut p, &o, &snap);
         assert_approx(p.x, 1.0);
+    }
+}
+
+mod initialize_obb {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_initializer_of_create_obb() {
+        let mut out = create_obb(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
+        initialize_obb(&mut out, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 0.1, 0.2, 0.3, 0.9);
+        assert_eq!(out.center_x, 1.0);
+        assert_eq!(out.center_y, 2.0);
+        assert_eq!(out.center_z, 3.0);
+        assert_eq!(out.half_extent_x, 4.0);
+        assert_eq!(out.half_extent_y, 5.0);
+        assert_eq!(out.half_extent_z, 6.0);
+        assert_eq!(out.orientation_x, 0.1);
+        assert_eq!(out.orientation_y, 0.2);
+        assert_eq!(out.orientation_z, 0.3);
+        assert_eq!(out.orientation_w, 0.9);
     }
 }
 

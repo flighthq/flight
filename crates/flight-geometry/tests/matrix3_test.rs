@@ -218,6 +218,24 @@ mod create_matrix3 {
     use super::*;
 
     #[test]
+    fn defaults_to_identity_matrix_when_no_values_are_provided() {
+        let m = create_matrix3();
+        assert_eq!(get_matrix3_element(&m, 0, 0), 1.0);
+        assert_eq!(get_matrix3_element(&m, 0, 1), 0.0);
+        assert_eq!(get_matrix3_element(&m, 0, 2), 0.0);
+        assert_eq!(get_matrix3_element(&m, 1, 0), 0.0);
+        assert_eq!(get_matrix3_element(&m, 1, 1), 1.0);
+        assert_eq!(get_matrix3_element(&m, 1, 2), 0.0);
+        assert_eq!(get_matrix3_element(&m, 2, 0), 0.0);
+        assert_eq!(get_matrix3_element(&m, 2, 1), 0.0);
+        assert_eq!(get_matrix3_element(&m, 2, 2), 1.0);
+    }
+}
+
+mod create_matrix3_from_values {
+    use super::*;
+
+    #[test]
     fn initializes_matrix_with_provided_values() {
         let m = create_matrix3_from_values(2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0);
         assert_eq!(get_matrix3_element(&m, 0, 0), 2.0);
@@ -235,20 +253,6 @@ mod create_matrix3 {
     fn stores_row_column_arguments_column_major() {
         let m = create_matrix3_from_values(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0);
         assert_eq!(m.m, [1.0, 4.0, 7.0, 2.0, 5.0, 8.0, 3.0, 6.0, 9.0]);
-    }
-
-    #[test]
-    fn defaults_to_identity_matrix_when_no_values_are_provided() {
-        let m = create_matrix3();
-        assert_eq!(get_matrix3_element(&m, 0, 0), 1.0);
-        assert_eq!(get_matrix3_element(&m, 0, 1), 0.0);
-        assert_eq!(get_matrix3_element(&m, 0, 2), 0.0);
-        assert_eq!(get_matrix3_element(&m, 1, 0), 0.0);
-        assert_eq!(get_matrix3_element(&m, 1, 1), 1.0);
-        assert_eq!(get_matrix3_element(&m, 1, 2), 0.0);
-        assert_eq!(get_matrix3_element(&m, 2, 0), 0.0);
-        assert_eq!(get_matrix3_element(&m, 2, 1), 0.0);
-        assert_eq!(get_matrix3_element(&m, 2, 2), 1.0);
     }
 }
 
@@ -329,6 +333,19 @@ mod get_matrix3_element {
         assert_eq!(get_matrix3_element(&m, 0, 2), 3.0);
         assert_eq!(get_matrix3_element(&m, 1, 0), 4.0);
         assert_eq!(get_matrix3_element(&m, 2, 2), 9.0);
+    }
+}
+
+mod initialize_matrix3 {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_initializer_of_create_matrix3() {
+        let mut m = create_matrix3_from_values(2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0);
+        initialize_matrix3(&mut m);
+        let expected = create_matrix3();
+        assert!(equals_matrix3(Some(&m), Some(&expected)));
+        assert_eq!(m.m, [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]);
     }
 }
 

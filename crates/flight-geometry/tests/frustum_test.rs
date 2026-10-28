@@ -1,5 +1,4 @@
 use flight_geometry::contract::*;
-use std::collections::HashSet;
 
 fn create_test_view_projection() -> Matrix4 {
     let projection = create_perspective_matrix4(0.5, 1.0, 0.1, 100.0);
@@ -49,14 +48,17 @@ mod get_frustum_corners {
             create_vector3(0.0, 0.0, 0.0),
         ];
         get_frustum_corners(&mut corners, &inv);
-        let mut seen = HashSet::new();
-        for corner in &corners {
-            assert!(corner.x.is_finite());
-            assert!(corner.y.is_finite());
-            assert!(corner.z.is_finite());
-            seen.insert(format!("{:.4},{:.4},{:.4}", corner.x, corner.y, corner.z));
+        for i in 0..8 {
+            assert!(corners[i].x.is_finite());
+            assert!(corners[i].y.is_finite());
+            assert!(corners[i].z.is_finite());
+            for j in (i + 1)..8 {
+                let dx = (corners[i].x - corners[j].x).abs();
+                let dy = (corners[i].y - corners[j].y).abs();
+                let dz = (corners[i].z - corners[j].z).abs();
+                assert!(dx > 1e-4 || dy > 1e-4 || dz > 1e-4);
+            }
         }
-        assert_eq!(seen.len(), 8);
     }
 
     #[test]

@@ -146,6 +146,23 @@ mod get_closest_point_on_capsule {
     }
 }
 
+mod initialize_capsule {
+    use super::*;
+
+    #[test]
+    fn is_the_construction_initializer_of_create_capsule() {
+        let mut out = create_capsule(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+        initialize_capsule(&mut out, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 0.5);
+        assert_eq!(out.start_x, 1.0);
+        assert_eq!(out.start_y, 2.0);
+        assert_eq!(out.start_z, 3.0);
+        assert_eq!(out.end_x, 4.0);
+        assert_eq!(out.end_y, 5.0);
+        assert_eq!(out.end_z, 6.0);
+        assert_eq!(out.radius, 0.5);
+    }
+}
+
 mod intersect_ray3d_capsule {
     use super::*;
 

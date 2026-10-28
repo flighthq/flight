@@ -24,40 +24,6 @@ fn assert_quaternion_close(q: &Quaternion, x: f32, y: f32, z: f32, w: f32) {
     assert_approx_tight(q.w, w);
 }
 
-fn quaternion_to_matrix4(q: &Quaternion) -> Matrix4 {
-    let x = q.x;
-    let y = q.y;
-    let z = q.z;
-    let w = q.w;
-    let xx = x * x;
-    let yy = y * y;
-    let zz = z * z;
-    let xy = x * y;
-    let xz = x * z;
-    let yz = y * z;
-    let wx = w * x;
-    let wy = w * y;
-    let wz = w * z;
-    let mut m = create_matrix4();
-    m.m[0] = 1.0 - 2.0 * (yy + zz);
-    m.m[1] = 2.0 * (xy + wz);
-    m.m[2] = 2.0 * (xz - wy);
-    m.m[3] = 0.0;
-    m.m[4] = 2.0 * (xy - wz);
-    m.m[5] = 1.0 - 2.0 * (xx + zz);
-    m.m[6] = 2.0 * (yz + wx);
-    m.m[7] = 0.0;
-    m.m[8] = 2.0 * (xz + wy);
-    m.m[9] = 2.0 * (yz - wx);
-    m.m[10] = 1.0 - 2.0 * (xx + yy);
-    m.m[11] = 0.0;
-    m.m[12] = 0.0;
-    m.m[13] = 0.0;
-    m.m[14] = 0.0;
-    m.m[15] = 1.0;
-    return m;
-}
-
 mod clone_quaternion {
     use super::*;
 
@@ -665,11 +631,12 @@ mod set_quaternion_from_matrix4 {
     use super::*;
 
     #[test]
-    fn round_trips_through_quaternion_to_matrix4() {
+    fn round_trips_through_set_matrix4_from_quaternion() {
         let axis = create_vector3(0.0, 0.0, 1.0);
         let mut q = create_quaternion(0.0, 0.0, 0.0, 1.0);
         set_quaternion_from_axis_angle(&mut q, &axis, PI / 3.0);
-        let m = quaternion_to_matrix4(&q);
+        let mut m = create_matrix4();
+        set_matrix4_from_quaternion(&mut m, &q);
         let mut back = create_quaternion(0.0, 0.0, 0.0, 1.0);
         set_quaternion_from_matrix4(&mut back, &m);
         let dot = back.x * q.x + back.y * q.y + back.z * q.z + back.w * q.w;
@@ -687,10 +654,12 @@ mod set_quaternion_from_matrix4 {
     fn round_trips_a_half_turn_about_x() {
         let mut q = create_quaternion(0.0, 0.0, 0.0, 1.0);
         set_quaternion_from_axis_angle(&mut q, &create_vector3(1.0, 0.0, 0.0), PI);
-        let m = quaternion_to_matrix4(&q);
+        let mut m = create_matrix4();
+        set_matrix4_from_quaternion(&mut m, &q);
         let mut back = create_quaternion(0.0, 0.0, 0.0, 1.0);
         set_quaternion_from_matrix4(&mut back, &m);
-        let round_tripped = quaternion_to_matrix4(&back);
+        let mut round_tripped = create_matrix4();
+        set_matrix4_from_quaternion(&mut round_tripped, &back);
         for i in 0..16 {
             assert_approx_tight(round_tripped.m[i], m.m[i]);
         }
@@ -700,10 +669,12 @@ mod set_quaternion_from_matrix4 {
     fn round_trips_a_half_turn_about_y() {
         let mut q = create_quaternion(0.0, 0.0, 0.0, 1.0);
         set_quaternion_from_axis_angle(&mut q, &create_vector3(0.0, 1.0, 0.0), PI);
-        let m = quaternion_to_matrix4(&q);
+        let mut m = create_matrix4();
+        set_matrix4_from_quaternion(&mut m, &q);
         let mut back = create_quaternion(0.0, 0.0, 0.0, 1.0);
         set_quaternion_from_matrix4(&mut back, &m);
-        let round_tripped = quaternion_to_matrix4(&back);
+        let mut round_tripped = create_matrix4();
+        set_matrix4_from_quaternion(&mut round_tripped, &back);
         for i in 0..16 {
             assert_approx_tight(round_tripped.m[i], m.m[i]);
         }
@@ -713,10 +684,12 @@ mod set_quaternion_from_matrix4 {
     fn round_trips_a_half_turn_about_z() {
         let mut q = create_quaternion(0.0, 0.0, 0.0, 1.0);
         set_quaternion_from_axis_angle(&mut q, &create_vector3(0.0, 0.0, 1.0), PI);
-        let m = quaternion_to_matrix4(&q);
+        let mut m = create_matrix4();
+        set_matrix4_from_quaternion(&mut m, &q);
         let mut back = create_quaternion(0.0, 0.0, 0.0, 1.0);
         set_quaternion_from_matrix4(&mut back, &m);
-        let round_tripped = quaternion_to_matrix4(&back);
+        let mut round_tripped = create_matrix4();
+        set_matrix4_from_quaternion(&mut round_tripped, &back);
         for i in 0..16 {
             assert_approx_tight(round_tripped.m[i], m.m[i]);
         }
@@ -726,7 +699,8 @@ mod set_quaternion_from_matrix4 {
     fn writes_the_same_values_whether_out_is_fresh_or_already_holds_a_rotation() {
         let mut q = create_quaternion(0.0, 0.0, 0.0, 1.0);
         set_quaternion_from_axis_angle(&mut q, &create_vector3(0.0, 1.0, 0.0), PI / 3.0);
-        let m = quaternion_to_matrix4(&q);
+        let mut m = create_matrix4();
+        set_matrix4_from_quaternion(&mut m, &q);
         let mut fresh = create_quaternion(0.0, 0.0, 0.0, 1.0);
         let mut reused = create_quaternion(9.0, 9.0, 9.0, 9.0);
         set_quaternion_from_matrix4(&mut fresh, &m);
