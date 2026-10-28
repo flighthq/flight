@@ -1,9 +1,13 @@
 export type Kind = string;
 
+declare const EntityRawMarker: unique symbol;
+
 // Generated entity records extend this runtime-free marker. Their JavaScript identity is the raw
 // object itself; the runtime lives behind entity.ts's package-private symbol and therefore never
 // becomes a generated value field.
-export type EntityRaw = Record<never, never>;
+export interface EntityRaw {
+  readonly [EntityRawMarker]?: never;
+}
 
 export interface EntityRuntime {
   binding: object | null;
@@ -15,11 +19,6 @@ export interface EntityRuntime {
  * existing contract consumers that access the old symbol-keyed runtime slot directly.
  */
 export const EntityRuntimeKey = Symbol.for('EntityRuntime');
-
-/** @deprecated Compatibility shape for callers that still use EntityRuntimeKey directly. */
-export interface Entity extends EntityRaw {
-  [EntityRuntimeKey]: EntityRuntime | undefined;
-}
 
 export type EntityConstruction<Type extends EntityRaw> = { -readonly [Key in keyof Type]: Type[Key] };
 export type EntityWithoutRuntime<Type extends EntityRaw> = Omit<Type, typeof EntityRuntimeKey>;

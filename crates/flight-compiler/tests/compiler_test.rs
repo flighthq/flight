@@ -14,8 +14,24 @@ mod source_modes {
             SourceMode::TargetNative
         );
         assert_eq!(
-            source_mode("//! flight-compiler: rust-only\npub fn rust() {}\n").unwrap(),
+            source_mode("//! flight-compiler: rust-only — native threads\npub fn rust() {}\n")
+                .unwrap(),
             SourceMode::RustOnly
+        );
+        assert_eq!(
+            source_mode("//! flight-compiler: companion widget.ts\npub fn portable() {}\n")
+                .unwrap(),
+            SourceMode::Generate
+        );
+    }
+
+    #[test]
+    fn rejects_unknown_source_directives() {
+        let error =
+            source_mode("//! flight-compiler: targt-native\npub fn native() {}\n").unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "unknown `flight-compiler` source directive `targt-native`"
         );
     }
 
@@ -186,6 +202,73 @@ pub fn sample(random: &dyn Fn() -> f32, mean: Option<f32>) -> Option<f32> {
             "if (mean === undefined) {\n    throw new RangeError(\"sample: mean is required\");\n  }"
         ));
         assert!(!output.contains("(() =>"));
+    }
+
+    #[test]
+    fn lowers_easing_contract_shapes_without_package_postprocessing() {
+        let source = r#"
+//! flight-compiler: readonly-fields EasingSegment
+//! flight-compiler: string-union StepPosition
+
+use std::sync::Arc;
+
+pub type EasingFunction = Arc<dyn Fn(f32) -> f32 + Send + Sync>;
+
+pub enum StepPosition {
+    JumpStart,
+    JumpEnd,
+}
+
+pub struct EasingSegment {
+    pub ease: Arc<dyn Fn(f32) -> f32 + Send + Sync>,
+    pub weight: Option<f32>,
+}
+
+pub type EasingStepsGuard = Arc<dyn Fn(i32, StepPosition) + Send + Sync>;
+
+pub fn ease_steps(count: i32, position: Option<StepPosition>) -> [f32; 2] {
+    return [0.0_f32; 2];
+}
+
+pub fn set_easing_steps_guard(guard: Option<EasingStepsGuard>) {
+    if let Some(guard) = guard {
+        guard(2, StepPosition::JumpEnd);
+    }
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("export type StepPosition = \"jumpStart\" | \"jumpEnd\";"));
+        assert!(output.contains("  readonly ease: EasingFunction;"));
+        assert!(output.contains("  readonly weight?: number;"));
+        assert!(output.contains(
+            "export function easeSteps(count: number, position?: StepPosition): Float32Array"
+        ));
+        assert!(output.contains("return new Float32Array(2).fill(0.0);"));
+        assert!(
+            output.contains(
+                "export function setEasingStepsGuard(guard: EasingStepsGuard | null): void"
+            )
+        );
+        assert!(output.contains("if (guard !== null) {"));
+        assert!(output.contains("guard(2, \"jumpEnd\");"));
+        assert!(!output.contains("StepPosition.JumpEnd"));
+    }
+
+    #[test]
+    fn lowers_raw_identifiers_and_preserves_nullish_precedence() {
+        let source = r#"
+pub fn scaled(r#override: Option<f32>) -> f32 {
+    return r#override.unwrap_or(12.0) * 0.185;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("export function scaled(override?: number): number"));
+        assert!(output.contains("return (override ?? 12.0) * 0.185;"));
+        assert!(!output.contains("r#override"));
     }
 
     #[test]
@@ -395,5 +478,65 @@ mod explain {
 
         assert!(output.contains("  EntityRuntimeWriteSlot,"));
         assert!(output.contains("explain(EntityRuntimeWriteSlot.BindingSlot)"));
+    }
+
+    #[test]
+    fn lowers_qualified_string_union_variants_without_runtime_imports() {
+        let source = r#"
+//! flight-compiler: string-union StepPosition
+
+use flight_easing::*;
+
+mod ease_steps {
+    use super::*;
+
+    #[test]
+    fn accepts_a_qualified_position() {
+        assert_eq!(ease_steps(4, Some(StepPosition::JumpEnd)), 1.0);
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/easing/contract").unwrap();
+
+        assert!(!output.contains("  StepPosition,"));
+        assert!(output.contains("easeSteps(4, \"jumpEnd\")"));
+        assert!(!output.contains("StepPosition.JumpEnd"));
+    }
+
+    #[test]
+    fn lowers_top_level_tests_nested_helpers_and_value_blocks() {
+        let source = r#"
+use flight_math::*;
+
+#[test]
+fn accepts_a_top_level_test() {
+    assert_eq!({
+        let value = 2;
+        value * 2
+    }, 4);
+}
+
+mod nested_helper {
+    use super::*;
+
+    fn doubled(value: i32) -> i32 {
+        return value * 2;
+    }
+
+    #[test]
+    fn calls_the_scoped_helper() {
+        assert_eq!(doubled(3), 6);
+    }
+}
+"#;
+
+        let output = compile_vitest(source, "@flighthq/math/contract").unwrap();
+
+        assert!(output.contains("describe(\"portableTests\""));
+        assert!(output.contains("return value * 2;\n})()"));
+        assert!(output.contains("  function doubled(value: number): number"));
+        assert!(output.contains("expect(doubled(3)).toEqual(6);"));
+        assert!(!output.contains("doubled,"));
     }
 }

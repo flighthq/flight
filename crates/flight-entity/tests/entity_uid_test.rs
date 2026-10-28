@@ -1,4 +1,5 @@
-//! flight-compiler: target-native
+//! flight-compiler: rust-only
+//! Rust-only because native atomics and thread transfer differ from the focused target UID tests.
 
 use flight_entity::*;
 

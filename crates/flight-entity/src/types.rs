@@ -1,5 +1,4 @@
 //! flight-compiler: target-native
-//! flight-compiler: contract Entity EntityConstruction EntityRaw EntityRuntime EntityRuntimeKey EntityRuntimeWriteExplanation EntityRuntimeWriteGuard EntityRuntimeWriteSlot EntityWithoutRuntime Kind
 
 use std::fmt;
 

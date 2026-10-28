@@ -15,6 +15,8 @@ pub(crate) struct Program {
     pub(crate) standard_constants: HashSet<String>,
     pub(crate) statics: Vec<ItemStatic>,
     pub(crate) structs: Vec<ItemStruct>,
+    pub(crate) readonly_structs: HashSet<String>,
+    pub(crate) string_unions: HashSet<String>,
     pub(crate) type_aliases: Vec<ItemType>,
 }
 
@@ -25,6 +27,7 @@ pub(crate) struct TestProgram {
 }
 
 pub(crate) struct TestSuite {
+    pub(crate) helpers: Vec<ItemFn>,
     pub(crate) name: String,
     pub(crate) skipped_tests: Vec<String>,
     pub(crate) tests: Vec<TestCase>,
@@ -101,10 +104,16 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
         let Some(directive) = doc_directive(attribute) else {
             continue;
         };
-        match directive {
+        let name = directive.split_whitespace().next().unwrap_or_default();
+        match name {
             "rust-only" => rust_only = true,
             "target-native" => target_native = true,
-            _ => {}
+            "companion" | "contract" | "readonly-fields" | "root" | "string-union" => {}
+            _ => {
+                return Err(compile_error(format!(
+                    "unknown `flight-compiler` source directive `{name}`"
+                )));
+            }
         }
     }
     if rust_only && target_native {
@@ -121,7 +130,7 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
     });
 }
 
-fn doc_directive(attribute: &Attribute) -> Option<&str> {
+fn doc_directive(attribute: &Attribute) -> Option<String> {
     if !attribute.path().is_ident("doc") {
         return None;
     }
@@ -135,13 +144,11 @@ fn doc_directive(attribute: &Attribute) -> Option<&str> {
         return None;
     };
     let value = value.value();
-    let directive = value.trim().strip_prefix("flight-compiler:")?.trim();
-    // The returned value must outlive this function, so match the finite vocabulary here.
-    return match directive {
-        "rust-only" => Some("rust-only"),
-        "target-native" => Some("target-native"),
-        _ => None,
-    };
+    return value
+        .trim()
+        .strip_prefix("flight-compiler:")
+        .map(str::trim)
+        .map(str::to_string);
 }
 
 fn is_public(visibility: &Visibility) -> bool {
@@ -159,6 +166,8 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let mut statics = Vec::new();
     let mut structs = Vec::new();
     let mut type_aliases = Vec::new();
+    let readonly_structs = directive_names(source, "readonly-fields");
+    let string_unions = directive_names(source, "string-union");
 
     for item in &file.items {
         if let Item::Struct(structure) = item
@@ -221,8 +230,23 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         standard_constants,
         statics,
         structs,
+        readonly_structs,
+        string_unions,
         type_aliases,
     });
+}
+
+pub(crate) fn directive_names(source: &str, directive: &str) -> HashSet<String> {
+    let prefix = format!("//! flight-compiler: {directive} ");
+    return source
+        .lines()
+        .filter_map(|line| line.trim().strip_prefix(&prefix))
+        .flat_map(|names| {
+            names.split(|character: char| character == ',' || character.is_whitespace())
+        })
+        .filter(|name| !name.is_empty())
+        .map(str::to_string)
+        .collect();
 }
 
 pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileError> {
@@ -231,14 +255,23 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
     let mut helpers = Vec::new();
     let mut standard_constants = HashSet::new();
     let mut suites = Vec::new();
+    let mut top_level_skipped_tests = Vec::new();
+    let mut top_level_tests = Vec::new();
 
     for item in file.items {
         match item {
+            Item::Fn(function)
+                if has_attribute(&function.attrs, "test")
+                    && has_rust_only_directive(&function.attrs) =>
+            {
+                top_level_skipped_tests.push(function.sig.ident.to_string());
+            }
             Item::Fn(function) if has_attribute(&function.attrs, "test") => {
-                return Err(compile_error(format!(
-                    "top-level Rust test `{}` has no function module; portable tests need the module-per-function shape",
-                    function.sig.ident
-                )));
+                let should_panic = has_attribute(&function.attrs, "should_panic");
+                top_level_tests.push(TestCase {
+                    function,
+                    should_panic,
+                });
             }
             Item::Fn(function) => helpers.push(function),
             Item::Impl(_) => {
@@ -270,6 +303,18 @@ pub(crate) fn parse_test_program(source: &str) -> Result<TestProgram, CompileErr
         }
     }
 
+    if !top_level_tests.is_empty() || !top_level_skipped_tests.is_empty() {
+        suites.insert(
+            0,
+            TestSuite {
+                helpers: Vec::new(),
+                name: "portable_tests".to_string(),
+                skipped_tests: top_level_skipped_tests,
+                tests: top_level_tests,
+            },
+        );
+    }
+
     return Ok(TestProgram {
         helpers,
         standard_constants,
@@ -285,6 +330,7 @@ fn parse_test_suite(module: syn::ItemMod) -> Result<TestSuite, CompileError> {
         )));
     };
     let mut skipped_tests = Vec::new();
+    let mut helpers = Vec::new();
     let mut tests = Vec::new();
     for item in items {
         match item {
@@ -302,12 +348,7 @@ fn parse_test_suite(module: syn::ItemMod) -> Result<TestSuite, CompileError> {
                 });
             }
             Item::Use(_) => {}
-            Item::Fn(function) => {
-                return Err(compile_error(format!(
-                    "helper `{}` is nested in test module `{}`; portable helpers must be top-level",
-                    function.sig.ident, module.ident
-                )));
-            }
+            Item::Fn(function) => helpers.push(function),
             _ => {
                 return Err(compile_error(format!(
                     "unsupported item in portable test module `{}`",
@@ -323,6 +364,7 @@ fn parse_test_suite(module: syn::ItemMod) -> Result<TestSuite, CompileError> {
         )));
     }
     return Ok(TestSuite {
+        helpers,
         name: module.ident.to_string(),
         skipped_tests,
         tests,

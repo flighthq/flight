@@ -1,11 +1,13 @@
 import { allocateEntity, finishEntity } from './entity.ts';
 import { getEntityUid, setEntityUid } from './entityUid.ts';
 import { createEntityRuntime } from './runtime.ts';
-import type { Entity } from './types.ts';
+import type { EntityRaw, EntityRuntime } from './types.ts';
 import { EntityRuntimeKey } from './types.ts';
 
-function createTestEntity(): Entity {
-  return finishEntity(allocateEntity<Entity>());
+type TestEntity = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined };
+
+function createTestEntity(): TestEntity {
+  return finishEntity(allocateEntity<TestEntity>());
 }
 
 describe('getEntityUid', () => {

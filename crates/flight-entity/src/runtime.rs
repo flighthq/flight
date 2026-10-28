@@ -1,6 +1,4 @@
 //! flight-compiler: target-native
-//! flight-compiler: contract createEntityRuntime getEntityRuntime hasEntityRuntime
-//! flight-compiler: root hasEntityRuntime
 
 use crate::types::{Entity, EntityRuntime};
 

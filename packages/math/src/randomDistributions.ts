@@ -82,7 +82,7 @@ export function randomGaussianPair(
  * Uses rejection sampling to avoid the over-dense centre that polar-radius
  * sampling without a square-root correction produces.
  */
-export function randomInsideUnitDisc(out: number[], random: () => number): void {
+export function randomInsideUnitDisc(out: Float32Array, random: () => number): void {
   for (;;) {
     const x = random() * 2.0 - 1.0;
     const y = random() * 2.0 - 1.0;
@@ -100,7 +100,7 @@ export function randomInsideUnitDisc(out: number[], random: () => number): void 
  *
  * Uses 3D box rejection sampling.
  */
-export function randomInsideUnitSphere(out: number[], random: () => number): void {
+export function randomInsideUnitSphere(out: Float32Array, random: () => number): void {
   for (;;) {
     const x = random() * 2.0 - 1.0;
     const y = random() * 2.0 - 1.0;
@@ -118,7 +118,7 @@ export function randomInsideUnitSphere(out: number[], random: () => number): voi
  * Sample a uniformly-distributed point on the unit circle and write it into
  * `out[0]` / `out[1]`. The result has unit length.
  */
-export function randomOnUnitCircle(out: number[], random: () => number): void {
+export function randomOnUnitCircle(out: Float32Array, random: () => number): void {
   const angle = random() * Math.PI * 2;
   const x = Math.cos(angle);
   const y = Math.sin(angle);
@@ -132,7 +132,7 @@ export function randomOnUnitCircle(out: number[], random: () => number): void {
  *
  * Uses the Marsaglia (1972) method.
  */
-export function randomOnUnitSphere(out: number[], random: () => number): void {
+export function randomOnUnitSphere(out: Float32Array, random: () => number): void {
   let x: number;
   let y: number;
   let s: number;

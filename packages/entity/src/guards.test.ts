@@ -8,13 +8,15 @@ import {
   setEntityRuntimeWriteGuard,
 } from './guards.ts';
 import { createEntityRuntime } from './runtime.ts';
-import type { Entity, EntityRuntimeWriteSlot } from './types.ts';
+import type { EntityRaw, EntityRuntime, EntityRuntimeWriteSlot } from './types.ts';
 import { EntityRuntimeKey } from './types.ts';
 
-function createTestEntity(fields?: Record<string, unknown>): Entity & Record<string, unknown> {
-  const out = allocateEntity<Entity>();
+type TestEntity = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined };
+
+function createTestEntity(fields?: Record<string, unknown>): TestEntity & Record<string, unknown> {
+  const out = allocateEntity<TestEntity>();
   if (fields) Object.assign(out, fields);
-  return finishEntity(out) as Entity & Record<string, unknown>;
+  return finishEntity(out) as TestEntity & Record<string, unknown>;
 }
 
 describe('areEntityRuntimeGuardsEnabled', () => {

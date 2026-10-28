@@ -1,6 +1,4 @@
 //! flight-compiler: target-native
-//! flight-compiler: contract cloneEntity stripEntityRuntime
-//! flight-compiler: root cloneEntity stripEntityRuntime
 
 use crate::types::{Entity, EntityWithoutRuntime};
 

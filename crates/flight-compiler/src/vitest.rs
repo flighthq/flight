@@ -157,15 +157,20 @@ fn collect_contract_symbols(program: &TestProgram) -> Vec<String> {
     let helper_names = program
         .helpers
         .iter()
+        .chain(program.suites.iter().flat_map(|suite| suite.helpers.iter()))
         .map(|function| function.sig.ident.to_string())
         .collect::<HashSet<_>>();
     let mut symbols = Vec::new();
-    for function in program.helpers.iter().chain(
-        program
-            .suites
-            .iter()
-            .flat_map(|suite| suite.tests.iter().map(|test| &test.function)),
-    ) {
+    for function in program
+        .helpers
+        .iter()
+        .chain(program.suites.iter().flat_map(|suite| {
+            suite
+                .helpers
+                .iter()
+                .chain(suite.tests.iter().map(|test| &test.function))
+        }))
+    {
         let mut collector = ContractSymbolCollector {
             declared: collect_declared_names(function),
             helper_names: &helper_names,
@@ -285,7 +290,7 @@ fn emit_block(out: &mut String, statements: &[Stmt], indent: usize) -> Result<()
     return Ok(());
 }
 
-fn emit_helper(out: &mut String, function: &ItemFn) -> Result<(), CompileError> {
+fn emit_helper(out: &mut String, function: &ItemFn, indent: usize) -> Result<(), CompileError> {
     if function.sig.asyncness.is_some() {
         return Err(compile_error(format!(
             "async portable helper `{}` is not supported yet",
@@ -302,6 +307,7 @@ fn emit_helper(out: &mut String, function: &ItemFn) -> Result<(), CompileError> 
         ReturnType::Default => "void".to_string(),
         ReturnType::Type(_, rust_type) => emit_type(rust_type, &HashSet::new())?,
     };
+    write_indent(out, indent);
     writeln!(
         out,
         "function {}({}): {return_type} {{",
@@ -309,7 +315,8 @@ fn emit_helper(out: &mut String, function: &ItemFn) -> Result<(), CompileError> 
         parameters.join(", ")
     )
     .expect("writing to a String cannot fail");
-    emit_block(out, &function.block.stmts, 1)?;
+    emit_block(out, &function.block.stmts, indent + 1)?;
+    write_indent(out, indent);
     out.push_str("}\n");
     return Ok(());
 }
@@ -407,6 +414,9 @@ fn emit_suite(out: &mut String, suite: &TestSuite) -> Result<(), CompileError> {
         snake_to_lower_camel(&suite.name)
     )
     .expect("writing to a String cannot fail");
+    for helper in &suite.helpers {
+        emit_helper(out, helper, 1)?;
+    }
     for test in &suite.skipped_tests {
         writeln!(out, "  // Rust-only: {}", test.replace('_', " "))
             .expect("writing to a String cannot fail");
@@ -465,7 +475,7 @@ pub(crate) fn emit_test_program(
     }
     for helper in &program.helpers {
         out.push('\n');
-        emit_helper(&mut out, helper)?;
+        emit_helper(&mut out, helper, 0)?;
     }
     for suite in &program.suites {
         out.push('\n');

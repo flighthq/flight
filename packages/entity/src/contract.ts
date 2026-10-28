@@ -3,16 +3,14 @@
 
 export {
   attachEntityBinding,
-  attachEntityWrapper,
   detachEntityBinding,
   getEntityBinding,
   getEntityBindingAs,
-  getEntityWrapperAs,
   hasEntityBinding,
 } from './binding.ts';
 export { cloneEntity, stripEntityRuntime } from './clone.ts';
 export { disableEntityRuntimeGuards, enableEntityRuntimeGuards } from './enableEntityRuntimeGuards.ts';
-export { allocateEntity, finishEntity } from './entity.ts';
+export { Entity, allocateEntity, attachEntityWrapper, finishEntity, getEntityWrapperAs } from './entity.ts';
 export { getEntityUid, setEntityUid } from './entityUid.ts';
 export { explainEntityRuntimeWrite } from './explainEntityRuntimeWrite.ts';
 export {
@@ -26,7 +24,6 @@ export {
 export { createEntityRuntime, getEntityRuntime, hasEntityRuntime } from './runtime.ts';
 export { EntityRuntimeKey, EntityRuntimeWriteSlot } from './types.ts';
 export type {
-  Entity,
   EntityConstruction,
   EntityRaw,
   EntityRuntime,

@@ -21,3 +21,4 @@ export {
   setEntityUid,
   stripEntityRuntime,
 } from './contract.ts';
+export { Entity } from './entity.ts';

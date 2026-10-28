@@ -1,14 +1,16 @@
-import { attachEntityBinding, attachEntityWrapper, getEntityWrapperAs } from './binding.ts';
+import { attachEntityBinding } from './binding.ts';
 import { cloneEntity, stripEntityRuntime } from './clone.ts';
-import { allocateEntity, finishEntity } from './entity.ts';
+import { allocateEntity, Entity, finishEntity } from './entity.ts';
 import { hasEntityRuntime } from './runtime.ts';
-import type { Entity } from './types.ts';
+import type { EntityRaw, EntityRuntime } from './types.ts';
 import { EntityRuntimeKey } from './types.ts';
 
-function createTestEntity(fields?: Record<string, unknown>): Entity & Record<string, unknown> {
-  const out = allocateEntity<Entity>();
+type TestEntity = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined };
+
+function createTestEntity(fields?: Record<string, unknown>): TestEntity & Record<string, unknown> {
+  const out = allocateEntity<TestEntity>();
   if (fields) Object.assign(out, fields);
-  return finishEntity(out) as Entity & Record<string, unknown>;
+  return finishEntity(out) as TestEntity & Record<string, unknown>;
 }
 
 describe('cloneEntity', () => {
@@ -50,13 +52,12 @@ describe('cloneEntity', () => {
 
   it('clone of a wrapped entity has a fresh unwrapped identity', () => {
     const source = createTestEntity({ name: 'source' });
-    const wrapper = { source };
-    attachEntityWrapper(source, wrapper);
+    const wrapper = Entity.from(source);
 
     const clone = cloneEntity(source);
 
-    expect(getEntityWrapperAs(source)).toBe(wrapper);
-    expect(getEntityWrapperAs(clone)).toBeNull();
+    expect(Entity.from(source)).toBe(wrapper);
+    expect(Entity.from(clone)).not.toBe(wrapper);
   });
 });
 
@@ -90,18 +91,18 @@ describe('stripEntityRuntime', () => {
 
   it('does not carry private OOP wrapper identity into the stripped value', () => {
     const entity = createTestEntity({ label: 'wrapped' });
-    attachEntityWrapper(entity, { entity });
+    const wrapper = Entity.from(entity);
 
     const stripped = stripEntityRuntime(entity);
 
-    expect(getEntityWrapperAs(stripped)).toBeNull();
+    expect(Entity.from(stripped)).not.toBe(wrapper);
   });
 
   it('round-trips: stripEntityRuntime then allocateEntity yields a valid unbound entity', () => {
     const original = createTestEntity({ value: 99 });
     attachEntityBinding(original, {});
     const stripped = stripEntityRuntime(original);
-    const out = allocateEntity<Entity>();
+    const out = allocateEntity<TestEntity>();
     Object.assign(out, stripped);
     const restored = finishEntity(out);
     expect((restored as unknown as Record<string, unknown>).value).toBe(99);

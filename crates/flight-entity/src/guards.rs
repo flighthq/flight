@@ -1,6 +1,4 @@
 //! flight-compiler: target-native
-//! flight-compiler: contract areEntityRuntimeGuardsEnabled createGuardedEntity createGuardedEntityRuntime reportEntityRuntimeWrite setEntityRuntimeGuardMode setEntityRuntimeWriteGuard
-//! flight-compiler: root areEntityRuntimeGuardsEnabled createGuardedEntity setEntityRuntimeGuardMode
 
 use std::cell::Cell;
 

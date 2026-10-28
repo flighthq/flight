@@ -3,6 +3,17 @@ import { describe, expect, it } from 'vitest';
 import { getSourcePublishedValueExports, getSourceValueExports } from './export-lane-source.ts';
 
 describe('getSourceValueExports', () => {
+  it('owns exported classes as runtime values', () => {
+    const source = `
+export class Entity {}
+class LocalWrapper {}
+export { LocalWrapper };
+`;
+
+    expect(getSourceValueExports(source)).toEqual(['Entity', 'LocalWrapper']);
+    expect(getSourcePublishedValueExports(source)).toEqual(['Entity', 'LocalWrapper']);
+  });
+
   it('discovers local value aliases without exposing their private backing names', () => {
     const source = `
       const _standardResolvers = new Map();

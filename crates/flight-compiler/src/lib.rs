@@ -41,7 +41,8 @@ pub fn compile_typescript(
 ) -> Result<String, CompileError> {
     require_generated_source(source)?;
     let program = model::parse_program(source)?;
-    return typescript::emit_program(&program, entity_module);
+    let output = typescript::emit_program(&program, entity_module)?;
+    return Ok(lower_string_union_variants(output, source, false));
 }
 
 /// Compiles one canonical Rust contract-test module into a Vitest suite.
@@ -52,7 +53,43 @@ pub fn compile_typescript(
 pub fn compile_vitest(source: &str, contract_module: &str) -> Result<String, CompileError> {
     require_generated_source(source)?;
     let program = model::parse_test_program(source)?;
-    return vitest::emit_test_program(&program, contract_module);
+    let output = vitest::emit_test_program(&program, contract_module)?;
+    return Ok(lower_string_union_variants(output, source, true));
+}
+
+fn lower_string_union_variants(
+    mut output: String,
+    source: &str,
+    remove_runtime_imports: bool,
+) -> String {
+    for owner in model::directive_names(source, "string-union") {
+        if remove_runtime_imports {
+            output = output.replace(&format!("  {owner},\n"), "");
+        }
+        let prefix = format!("{owner}.");
+        let mut cursor = 0;
+        while let Some(relative_start) = output[cursor..].find(&prefix) {
+            let start = cursor + relative_start;
+            let variant_start = start + prefix.len();
+            let variant_length = output[variant_start..]
+                .chars()
+                .take_while(|character| character.is_ascii_alphanumeric() || *character == '_')
+                .map(char::len_utf8)
+                .sum::<usize>();
+            if variant_length == 0 {
+                cursor = variant_start;
+                continue;
+            }
+            let end = variant_start + variant_length;
+            let literal = format!(
+                "{:?}",
+                typescript::lower_camel_from_upper_camel(&output[variant_start..end])
+            );
+            output.replace_range(start..end, &literal);
+            cursor = start + literal.len();
+        }
+    }
+    return output;
 }
 
 /// Reads the source-local generation mode for a Rust module or test file.

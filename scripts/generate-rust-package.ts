@@ -4,7 +4,15 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { renderPublicExports } from './generate-rust-package-exports.ts';
+import {
+  collectCompanionFileNames,
+  collectExportSymbols,
+  collectRustPublicUses,
+  collectStaleGeneratedFileNames,
+  hasGeneratedProvenanceHeader,
+  renderPublicExports,
+  snakeToLowerCamel,
+} from './generate-rust-package-exports.ts';
 
 interface Options {
   check: boolean;
@@ -15,6 +23,7 @@ interface Options {
 type SourceMode = 'generate' | 'rust-only' | 'target-native';
 
 interface PackageModule {
+  directPublicExports?: boolean;
   fileName: string;
   mode: SourceMode;
   rustSource: string;
@@ -54,7 +63,9 @@ try {
   const modules = sourceFiles(crateRoot)
     .map(loadModule)
     .filter((module): module is PackageModule => module !== null);
-  const symbols = collectSymbols(modules);
+  const companions = loadCompanions(modules);
+  const symbolModules = [...modules, ...companions];
+  const symbols = collectExportSymbols(symbolModules);
   const generatedFiles: string[] = [];
 
   for (const module of modules) {
@@ -79,7 +90,7 @@ try {
     }
     let typescript = compile('generate-tests', rustPath, join(rawRoot, fileName), ['./contract.ts']);
     if (typescript.includes('crate.')) {
-      typescript = "import { rustTestSupport as crate } from './rustTestSupport.ts';\n\n" + typescript;
+      typescript = addRustTestSupportImport(typescript);
     }
     writeGenerated(join(stagingSourceRoot, fileName), typescript, rustPath);
     generatedFiles.push(fileName);
@@ -92,7 +103,7 @@ try {
   );
   writeGenerated(
     join(stagingSourceRoot, 'index.ts'),
-    publicExports(crateRoot, modules, symbols),
+    publicExports(crateRoot, modules, symbolModules, symbols),
     join(crateRoot, 'src', 'lib.rs'),
   );
   generatedFiles.push('contract.ts', 'index.ts');
@@ -115,26 +126,14 @@ try {
   rmSync(stagingRoot, { force: true, recursive: true });
 }
 
-function collectSymbols(modules: PackageModule[]): Map<string, SymbolOwner> {
-  const symbols = new Map<string, SymbolOwner>();
-  for (const module of modules) {
-    const pattern = /^export (class|function|const|enum|interface|type) ([A-Za-z0-9_]+)/gm;
-    for (const match of module.typescript.matchAll(pattern)) {
-      const owner = symbols.get(match[2]) ?? {
-        fileName: module.fileName,
-        hasType: false,
-        hasValue: false,
-      };
-      if (owner.fileName !== module.fileName) {
-        throw new Error(`duplicate generated symbol ${match[2]} in ${owner.fileName} and ${module.fileName}`);
-      }
-      const kind = match[1];
-      owner.hasType ||= kind === 'class' || kind === 'enum' || kind === 'interface' || kind === 'type';
-      owner.hasValue ||= kind === 'class' || kind === 'const' || kind === 'enum' || kind === 'function';
-      symbols.set(match[2], owner);
-    }
+function addRustTestSupportImport(typescript: string): string {
+  const importLine = "import { rustTestSupport as crate } from './rustTestSupport.ts';\n";
+  const contractImportEnd = /\} from ["']\.\/contract\.ts["'];\n/;
+  if (contractImportEnd.test(typescript)) {
+    return typescript.replace(contractImportEnd, (match) => `${match}${importLine}`);
   }
-  return symbols;
+  const vitestImportEnd = /import \{ describe, expect, it \} from ["']vitest["'];\n/;
+  return typescript.replace(vitestImportEnd, (match) => `${match}\n${importLine}`);
 }
 
 function compile(command: string, source: string, out: string, trailing: string[] = []): string {
@@ -155,16 +154,24 @@ function contractArguments(command: string, trailing: string[]): string[] {
 }
 
 function contractExports(crateRoot: string, modules: PackageModule[], symbols: Map<string, SymbolOwner>): string {
-  const directives = modules.map((module) => ({
-    module,
-    names: sourceDirective(crateRoot, module, 'contract'),
-  }));
-  if (directives.every(({ names }) => names.length === 0)) {
-    return modules.map((module) => `export * from './${module.fileName}';`).join('\n') + '\n';
+  const contractPath = join(crateRoot, 'src', 'contract.rs');
+  if (!existsSync(contractPath)) {
+    throw new Error(`${relative(repositoryRoot, contractPath)} is required to derive contract exports`);
   }
+  const contractUses = collectRustPublicUses(readFileSync(contractPath, 'utf8'));
 
   let output = '';
-  for (const { module, names } of directives) {
+  for (const module of modules) {
+    const rustModule = module.rustSource.slice(0, -3);
+    const moduleUses = contractUses.filter((rustUse) => rustUse.moduleName === rustModule);
+    if (moduleUses.length === 0) continue;
+    const overrides = sourceDirective(crateRoot, module, 'contract');
+    const names =
+      overrides.length > 0
+        ? overrides
+        : moduleUses.some((rustUse) => rustUse.wildcard)
+          ? [...symbols.entries()].filter(([, owner]) => owner.fileName === module.fileName).map(([name]) => name)
+          : moduleUses.map((rustUse) => resolveRustExportName(rustUse.name ?? '', symbols, module.fileName));
     const types: string[] = [];
     const values: string[] = [];
     for (const name of [...new Set(names)].sort()) {
@@ -227,6 +234,16 @@ function entityArguments(command: string): string[] {
 
 function finishGeneration(fileNames: string[]): void {
   const stale: string[] = [];
+  const expected = new Set(fileNames);
+  const generatedHeader = `// Generated from crates/${options.crateName}/`;
+  const existingFiles = existsSync(packageSourceRoot)
+    ? new Map(
+        readdirSync(packageSourceRoot)
+          .filter((fileName) => fileName.endsWith('.ts'))
+          .map((fileName) => [fileName, readFileSync(join(packageSourceRoot, fileName), 'utf8')]),
+      )
+    : new Map<string, string>();
+  const staleArtifacts = collectStaleGeneratedFileNames(existingFiles, expected, generatedHeader);
   for (const fileName of fileNames) {
     const stagedPath = join(stagingSourceRoot, fileName);
     const packagePath = join(packageSourceRoot, fileName);
@@ -237,9 +254,46 @@ function finishGeneration(fileNames: string[]): void {
       writeFileSync(packagePath, contents);
     }
   }
+  if (!options.check) {
+    for (const fileName of staleArtifacts) rmSync(join(packageSourceRoot, fileName));
+  }
+  if (staleArtifacts.length > 0 && options.check) {
+    stale.push(...staleArtifacts.map((fileName) => `${fileName} (stale artifact)`));
+  }
   if (stale.length > 0) {
     throw new Error(`generated output is stale: ${stale.join(', ')}; run npm run generate`);
   }
+}
+
+function loadCompanions(modules: PackageModule[]): PackageModule[] {
+  const companions: PackageModule[] = [];
+  const owners = new Map<string, string>();
+  for (const module of modules) {
+    const rustPath = join(crateRoot, 'src', module.rustSource);
+    const rust = readFileSync(rustPath, 'utf8');
+    for (const fileName of collectCompanionFileNames(rust)) {
+      if (!/^[A-Za-z0-9_-]+\.ts$/.test(fileName)) {
+        throw new Error(`invalid companion ${fileName} declared by ${module.rustSource}`);
+      }
+      const previousOwner = owners.get(fileName);
+      if (previousOwner && previousOwner !== module.rustSource) {
+        throw new Error(`companion ${fileName} is declared by both ${previousOwner} and ${module.rustSource}`);
+      }
+      owners.set(fileName, module.rustSource);
+      const path = join(packageSourceRoot, fileName);
+      if (!existsSync(path)) {
+        throw new Error(`${relative(repositoryRoot, rustPath)} declares missing target-native companion ${fileName}`);
+      }
+      companions.push({
+        directPublicExports: true,
+        fileName,
+        mode: 'target-native',
+        rustSource: module.rustSource,
+        typescript: readFileSync(path, 'utf8'),
+      });
+    }
+  }
+  return companions;
 }
 
 function formatterPath(): string {
@@ -291,19 +345,52 @@ function parseOptions(arguments_: string[]): Options {
   return { check, crateName, packageName };
 }
 
-function publicExports(crateRoot: string, modules: PackageModule[], symbols: Map<string, SymbolOwner>): string {
+function publicExports(
+  crateRoot: string,
+  modules: PackageModule[],
+  symbolModules: PackageModule[],
+  symbols: Map<string, SymbolOwner>,
+): string {
   const roots: string[] = [];
   for (const module of modules) {
     roots.push(...sourceDirective(crateRoot, module, 'root'));
   }
+  const rust = readFileSync(join(crateRoot, 'src', 'lib.rs'), 'utf8');
+  const publicUses = collectRustPublicUses(rust);
+  for (const rustUse of publicUses) {
+    if (rustUse.name !== undefined) roots.push(resolveRustExportName(rustUse.name, symbols));
+  }
   if (roots.length === 0) {
-    const rust = readFileSync(join(crateRoot, 'src', 'lib.rs'), 'utf8');
-    for (const match of rust.matchAll(/^pub use contract::([A-Za-z0-9_]+);$/gm)) {
-      roots.push(snakeToLowerCamel(match[1]));
+    for (const rustUse of publicUses.filter((candidate) => candidate.wildcard)) {
+      if (rustUse.moduleName === 'contract') {
+        roots.push(...symbols.keys());
+        continue;
+      }
+      const module = modules.find((candidate) => candidate.rustSource === `${rustUse.moduleName}.rs`);
+      if (!module) continue;
+      roots.push(
+        ...[...symbols.entries()].filter(([, owner]) => owner.fileName === module.fileName).map(([name]) => name),
+      );
     }
   }
+  if (roots.length === 0) {
+    throw new Error(`${relative(repositoryRoot, join(crateRoot, 'src', 'lib.rs'))} has no public root exports`);
+  }
 
-  return renderPublicExports(modules, symbols, roots);
+  return renderPublicExports(symbolModules, symbols, roots);
+}
+
+function resolveRustExportName(
+  rustName: string,
+  symbols: ReadonlyMap<string, SymbolOwner>,
+  ownerFileName?: string,
+): string {
+  const name = snakeToLowerCamel(rustName);
+  for (const candidate of [name, `${name}Raw`]) {
+    const owner = symbols.get(candidate);
+    if (owner && (ownerFileName === undefined || owner.fileName === ownerFileName)) return candidate;
+  }
+  throw new Error(`Rust export ${rustName} has no TypeScript symbol${ownerFileName ? ` in ${ownerFileName}` : ''}`);
 }
 
 function sourceDirective(crateRoot: string, module: PackageModule, directive: string): string[] {
@@ -321,15 +408,13 @@ function requireTargetNative(fileName: string, rustPath: string): string {
   if (!existsSync(path)) {
     throw new Error(`${relative(repositoryRoot, rustPath)} is target-native but ${fileName} does not exist`);
   }
-  return readFileSync(path, 'utf8');
-}
-
-function snakeToLowerCamel(value: string): string {
-  return value.replace(/_([a-z0-9][a-z0-9]*)/g, (_, word: string) => {
-    const letter = word.search(/[a-z]/);
-    if (letter === -1) return word;
-    return word.slice(0, letter) + word[letter].toUpperCase() + word.slice(letter + 1);
-  });
+  const contents = readFileSync(path, 'utf8');
+  if (hasGeneratedProvenanceHeader(contents)) {
+    throw new Error(
+      `${relative(repositoryRoot, rustPath)} is target-native but ${fileName} still has a generated provenance header`,
+    );
+  }
+  return contents;
 }
 
 function sourceFiles(crateRoot: string): string[] {

@@ -1,4 +1,5 @@
-//! flight-compiler: target-native
+//! flight-compiler: rust-only
+//! Rust-only because slot layout, Send/Sync, and opaque native debug behavior have no TypeScript equivalent.
 
 use flight_entity::*;
 

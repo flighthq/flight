@@ -201,7 +201,7 @@ describe('randomGaussianPair', () => {
 describe('randomInsideUnitDisc', () => {
   it('produces points inside the unit disc', () => {
     const random = createRandomSource(11259375);
-    let out = new Array(2).fill(0.0);
+    let out = new Float32Array(2).fill(0.0);
     for (let _ = 0; _ < 200; _ += 1) {
       randomInsideUnitDisc(out, random);
       expect(out[0] * out[0] + out[1] * out[1] <= 1.0 + 1e-9).toBe(true);
@@ -210,8 +210,8 @@ describe('randomInsideUnitDisc', () => {
   it('is deterministic for the same seed', () => {
     const a = createRandomSource(11259375);
     const b = createRandomSource(11259375);
-    let outA = new Array(2).fill(0.0);
-    let outB = new Array(2).fill(0.0);
+    let outA = new Float32Array(2).fill(0.0);
+    let outB = new Float32Array(2).fill(0.0);
     for (let _ = 0; _ < 20; _ += 1) {
       randomInsideUnitDisc(outA, a);
       randomInsideUnitDisc(outB, b);
@@ -221,14 +221,14 @@ describe('randomInsideUnitDisc', () => {
   });
   it('is alias safe when out is the same object as input', () => {
     const random = createRandomSource(11259375);
-    let out = new Array(2).fill(0.0);
+    let out = new Float32Array(2).fill(0.0);
     randomInsideUnitDisc(out, random);
     expect(Number.isFinite(out[0])).toBe(true);
     expect(Number.isFinite(out[1])).toBe(true);
   });
   it('accepts and preserves a deterministic boundary point', () => {
     const random = crate.sequenceRandom([1.0, 0.5, 0.5, 0.5]);
-    let out = new Array(2).fill(0.0);
+    let out = new Float32Array(2).fill(0.0);
     randomInsideUnitDisc(out, random);
     expect(out).toEqual([1.0, 0.0]);
   });
@@ -237,7 +237,7 @@ describe('randomInsideUnitDisc', () => {
 describe('randomInsideUnitSphere', () => {
   it('produces points with radius less than or equal to 1', () => {
     const random = createRandomSource(11259375);
-    let out = new Array(3).fill(0.0);
+    let out = new Float32Array(3).fill(0.0);
     for (let _ = 0; _ < 200; _ += 1) {
       randomInsideUnitSphere(out, random);
       expect(out[0] * out[0] + out[1] * out[1] + out[2] * out[2] <= 1.0 + 1e-9).toBe(true);
@@ -246,8 +246,8 @@ describe('randomInsideUnitSphere', () => {
   it('is deterministic for the same seed', () => {
     const a = createRandomSource(11259375);
     const b = createRandomSource(11259375);
-    let outA = new Array(3).fill(0.0);
-    let outB = new Array(3).fill(0.0);
+    let outA = new Float32Array(3).fill(0.0);
+    let outB = new Float32Array(3).fill(0.0);
     for (let _ = 0; _ < 20; _ += 1) {
       randomInsideUnitSphere(outA, a);
       randomInsideUnitSphere(outB, b);
@@ -258,7 +258,7 @@ describe('randomInsideUnitSphere', () => {
   });
   it('is alias safe when out is the same object as input', () => {
     const random = createRandomSource(11259375);
-    let out = new Array(3).fill(0.0);
+    let out = new Float32Array(3).fill(0.0);
     randomInsideUnitSphere(out, random);
     expect(Number.isFinite(out[0])).toBe(true);
     expect(Number.isFinite(out[1])).toBe(true);
@@ -266,7 +266,7 @@ describe('randomInsideUnitSphere', () => {
   });
   it('accepts and preserves a deterministic boundary point', () => {
     const random = crate.sequenceRandom([1.0, 0.5, 0.5, 0.5, 0.5, 0.5]);
-    let out = new Array(3).fill(0.0);
+    let out = new Float32Array(3).fill(0.0);
     randomInsideUnitSphere(out, random);
     expect(out).toEqual([1.0, 0.0, 0.0]);
   });
@@ -275,7 +275,7 @@ describe('randomInsideUnitSphere', () => {
 describe('randomOnUnitCircle', () => {
   it('produces points on the unit circle', () => {
     const random = createRandomSource(11259375);
-    let out = new Array(2).fill(0.0);
+    let out = new Float32Array(2).fill(0.0);
     for (let _ = 0; _ < 100; _ += 1) {
       randomOnUnitCircle(out, random);
       assertApprox(out[0] * out[0] + out[1] * out[1], 1.0);
@@ -284,8 +284,8 @@ describe('randomOnUnitCircle', () => {
   it('is deterministic for the same seed', () => {
     const a = createRandomSource(11259375);
     const b = createRandomSource(11259375);
-    let outA = new Array(2).fill(0.0);
-    let outB = new Array(2).fill(0.0);
+    let outA = new Float32Array(2).fill(0.0);
+    let outB = new Float32Array(2).fill(0.0);
     for (let _ = 0; _ < 20; _ += 1) {
       randomOnUnitCircle(outA, a);
       randomOnUnitCircle(outB, b);
@@ -295,13 +295,13 @@ describe('randomOnUnitCircle', () => {
   });
   it('is alias safe when out is the same object as input', () => {
     const random = createRandomSource(11259375);
-    let out = new Array(2).fill(0.0);
+    let out = new Float32Array(2).fill(0.0);
     randomOnUnitCircle(out, random);
     expect(Number.isFinite(out[0])).toBe(true);
     expect(Number.isFinite(out[1])).toBe(true);
   });
   it('maps a quarter turn sample to the top of the circle', () => {
-    let out = new Array(2).fill(0.0);
+    let out = new Float32Array(2).fill(0.0);
     randomOnUnitCircle(out, () => 0.25);
     expect(Math.abs(out[0]) < 5e-13, `TS quarter-turn x should be close to 0 at 12 digits, got ${out[0]}`).toBe(true);
     expect(Math.abs(out[1] - 1.0) < 5e-13).toBe(true);
@@ -311,7 +311,7 @@ describe('randomOnUnitCircle', () => {
 describe('randomOnUnitSphere', () => {
   it('produces points on the unit sphere', () => {
     const random = createRandomSource(11259375);
-    let out = new Array(3).fill(0.0);
+    let out = new Float32Array(3).fill(0.0);
     for (let _ = 0; _ < 100; _ += 1) {
       randomOnUnitSphere(out, random);
       const len2 = out[0] * out[0] + out[1] * out[1] + out[2] * out[2];
@@ -321,8 +321,8 @@ describe('randomOnUnitSphere', () => {
   it('is deterministic for the same seed', () => {
     const a = createRandomSource(11259375);
     const b = createRandomSource(11259375);
-    let outA = new Array(3).fill(0.0);
-    let outB = new Array(3).fill(0.0);
+    let outA = new Float32Array(3).fill(0.0);
+    let outB = new Float32Array(3).fill(0.0);
     for (let _ = 0; _ < 20; _ += 1) {
       randomOnUnitSphere(outA, a);
       randomOnUnitSphere(outB, b);
@@ -333,14 +333,14 @@ describe('randomOnUnitSphere', () => {
   });
   it('is alias safe when out is the same object as input', () => {
     const random = createRandomSource(11259375);
-    let out = new Array(3).fill(0.0);
+    let out = new Float32Array(3).fill(0.0);
     randomOnUnitSphere(out, random);
     expect(Number.isFinite(out[0])).toBe(true);
     expect(Number.isFinite(out[1])).toBe(true);
     expect(Number.isFinite(out[2])).toBe(true);
   });
   it('projects a deterministic disc sample onto the sphere', () => {
-    let out = new Array(3).fill(0.0);
+    let out = new Float32Array(3).fill(0.0);
     const random = crate.sequenceRandom([0.75, 0.5]);
     randomOnUnitSphere(out, random);
     expect(Math.abs(out[0] - Math.sqrt(3.0) / 2.0) < 5e-13).toBe(true);
@@ -348,7 +348,7 @@ describe('randomOnUnitSphere', () => {
     expect(out[2]).toEqual(0.5);
   });
   it('rejects a disc boundary sample before projecting', () => {
-    let out = new Array(3).fill(0.0);
+    let out = new Float32Array(3).fill(0.0);
     const random = crate.sequenceRandom([1.0, 0.5, 0.5, 0.5]);
     randomOnUnitSphere(out, random);
     expect(out).toEqual([0.0, 0.0, 1.0]);

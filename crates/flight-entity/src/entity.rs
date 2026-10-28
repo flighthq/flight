@@ -1,6 +1,6 @@
 //! flight-compiler: target-native
-//! flight-compiler: contract allocateEntity finishEntity
-//! flight-compiler: root allocateEntity finishEntity
+//! flight-compiler: contract Entity allocateEntity attachEntityWrapper finishEntity getEntityWrapperAs
+//! flight-compiler: root Entity finishEntity
 
 // flight-lint: conform-skip(finishEntity) D12: a type-only cast with no runtime effect; create_* is allocate_entity + initialize_*
 

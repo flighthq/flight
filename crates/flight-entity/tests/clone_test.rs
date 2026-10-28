@@ -1,4 +1,5 @@
-//! flight-compiler: target-native
+//! flight-compiler: rust-only
+//! Rust-only because derived clone impls and private runtime slots differ from the focused clone.ts tests.
 
 use flight_entity::*;
 

@@ -1,11 +1,13 @@
 import { attachEntityBinding } from './binding.ts';
 import { allocateEntity, finishEntity } from './entity.ts';
 import { createEntityRuntime, getEntityRuntime, hasEntityRuntime } from './runtime.ts';
-import type { Entity, EntityRuntime } from './types.ts';
+import type { EntityRaw, EntityRuntime } from './types.ts';
 import { EntityRuntimeKey } from './types.ts';
 
-function createTestEntity(): Entity {
-  return finishEntity(allocateEntity<Entity>());
+type TestEntity = EntityRaw & { [EntityRuntimeKey]: EntityRuntime | undefined };
+
+function createTestEntity(): TestEntity {
+  return finishEntity(allocateEntity<TestEntity>());
 }
 
 describe('createEntityRuntime', () => {

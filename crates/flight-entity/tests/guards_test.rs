@@ -1,4 +1,5 @@
-//! flight-compiler: target-native
+//! flight-compiler: rust-only
+//! Rust-only because native thread-local reporting replaces the Proxy behavior covered in guards.test.ts.
 
 use std::cell::RefCell;
 

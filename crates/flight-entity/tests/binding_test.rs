@@ -1,4 +1,5 @@
-//! flight-compiler: target-native
+//! flight-compiler: rust-only
+//! Rust-only because native `Any` downcasts and allocation identity differ from the focused binding.ts tests.
 
 use flight_entity::*;
 

@@ -20,6 +20,20 @@ fn argument_is_option(argument: &FnArg) -> bool {
     return option_inner_type(&argument.ty).is_some();
 }
 
+fn argument_is_nullable_guard(function: &ItemFn, argument: &FnArg) -> bool {
+    let name = function.sig.ident.to_string();
+    let FnArg::Typed(argument) = argument else {
+        return false;
+    };
+    let Pat::Ident(pattern) = argument.pat.as_ref() else {
+        return false;
+    };
+    return name.starts_with("set_")
+        && name.ends_with("_guard")
+        && pattern.ident == "guard"
+        && option_inner_type(&argument.ty).is_some();
+}
+
 fn documentation(attributes: &[Attribute]) -> Vec<String> {
     return attributes
         .iter()
@@ -200,13 +214,33 @@ fn emit_documentation(out: &mut String, attributes: &[Attribute], indent: usize)
     out.push_str(" */\n");
 }
 
-fn emit_enum(out: &mut String, rust_enum: &syn::ItemEnum) {
+fn emit_enum(out: &mut String, rust_enum: &syn::ItemEnum, string_union: bool) {
     emit_documentation(out, &rust_enum.attrs, 0);
     let export = if is_public(&rust_enum.vis) {
         "export "
     } else {
         ""
     };
+    if string_union {
+        let variants = rust_enum
+            .variants
+            .iter()
+            .map(|variant| {
+                format!(
+                    "{:?}",
+                    lower_camel_from_upper_camel(&variant.ident.to_string())
+                )
+            })
+            .collect::<Vec<_>>();
+        writeln!(
+            out,
+            "{export}type {} = {};",
+            rust_enum.ident,
+            variants.join(" | ")
+        )
+        .expect("writing to a String cannot fail");
+        return;
+    }
     writeln!(out, "{export}enum {} {{", rust_enum.ident).expect("writing to a String cannot fail");
     for variant in &rust_enum.variants {
         emit_documentation(out, &variant.attrs, 1);
@@ -289,6 +323,7 @@ pub(crate) fn emit_expression(
                 emit_expression(&binary.right, entities)?
             ))
         }
+        Expr::Block(block) => emit_block_expression(&block.block, entities),
         Expr::Call(call) => {
             if expression_is_path(&call.func, "Some") && call.args.len() == 1 {
                 return emit_expression(&call.args[0], entities);
@@ -463,6 +498,29 @@ pub(crate) fn emit_expression(
     };
 }
 
+fn emit_block_expression(
+    block: &syn::Block,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    let Some((last, preceding)) = block.stmts.split_last() else {
+        return Err(compile_error("portable value block cannot be empty"));
+    };
+    let Stmt::Expr(value, None) = last else {
+        return Err(compile_error(
+            "portable value block must end with an expression",
+        ));
+    };
+    let mut out = "(() => {\n".to_string();
+    for statement in preceding {
+        emit_statement(&mut out, statement, entities, 1)?;
+    }
+    write_indent(&mut out, 1);
+    writeln!(out, "return {};", emit_expression(value, entities)?)
+        .expect("writing to a String cannot fail");
+    out.push_str("})()");
+    return Ok(out);
+}
+
 fn emit_expression_for_type(
     expression: &Expr,
     rust_type: &Type,
@@ -580,7 +638,9 @@ fn emit_function(
         .sig
         .inputs
         .iter()
-        .rposition(|argument| !argument_is_option(argument))
+        .rposition(|argument| {
+            !argument_is_option(argument) || argument_is_nullable_guard(function, argument)
+        })
         .map_or(0, |index| index + 1);
     let parameters = function
         .sig
@@ -592,7 +652,8 @@ fn emit_function(
                 argument,
                 entities,
                 aliases,
-                index >= trailing_optional_start,
+                index >= trailing_optional_start && !argument_is_nullable_guard(function, argument),
+                argument_is_nullable_guard(function, argument),
             )
         })
         .collect::<Result<Vec<_>, _>>()?;
@@ -606,7 +667,16 @@ fn emit_function(
         parameters.join(", ")
     )
     .expect("writing to a String cannot fail");
-    emit_block(out, &function.block.stmts, entities, 1)?;
+    let mut function_context = entities.clone();
+    for argument in &function.sig.inputs {
+        if argument_is_nullable_guard(function, argument)
+            && let FnArg::Typed(argument) = argument
+            && let Pat::Ident(pattern) = argument.pat.as_ref()
+        {
+            function_context.insert(format!("@nullable:{}", pattern.ident));
+        }
+    }
+    emit_block(out, &function.block.stmts, &function_context, 1)?;
     out.push_str("}\n");
     return Ok(());
 }
@@ -1050,7 +1120,7 @@ fn emit_method_call(
         {
             Ok(receiver)
         }
-        "unwrap_or" if arguments.len() == 1 => Ok(format!("{receiver} ?? {}", arguments[0])),
+        "unwrap_or" if arguments.len() == 1 => Ok(format!("({receiver} ?? {})", arguments[0])),
         "unwrap" if arguments.is_empty() => Ok(format!("{receiver}!")),
         _ => Err(compile_error(format!(
             "unsupported Rust method call `.{method}()`; impl sugar is not a transpilation source"
@@ -1061,7 +1131,7 @@ fn emit_method_call(
 fn emit_option_binding(
     condition: &Expr,
     entities: &HashSet<String>,
-) -> Result<Option<(String, String)>, CompileError> {
+) -> Result<Option<(String, String, &'static str)>, CompileError> {
     let Expr::Let(binding) = condition else {
         return Ok(None);
     };
@@ -1080,9 +1150,20 @@ fn emit_option_binding(
             "portable `if let Some` binding needs an identifier",
         ));
     };
+    let absent = if let Expr::Path(path) = binding.expr.as_ref()
+        && path.qself.is_none()
+        && path.path.segments.len() == 1
+        && let Some(segment) = path.path.segments.first()
+        && entities.contains(&format!("@nullable:{}", segment.ident))
+    {
+        "null"
+    } else {
+        "undefined"
+    };
     return Ok(Some((
         snake_to_lower_camel(&identifier.ident.to_string()),
         emit_expression(&binding.expr, entities)?,
+        absent,
     )));
 }
 
@@ -1090,7 +1171,7 @@ pub(crate) fn emit_parameter(
     argument: &FnArg,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
-    return emit_parameter_with_aliases(argument, entities, &PreferredAliases::new(), false);
+    return emit_parameter_with_aliases(argument, entities, &PreferredAliases::new(), false, false);
 }
 
 fn emit_parameter_with_aliases(
@@ -1098,6 +1179,7 @@ fn emit_parameter_with_aliases(
     entities: &HashSet<String>,
     aliases: &PreferredAliases,
     optional: bool,
+    nullable: bool,
 ) -> Result<String, CompileError> {
     let FnArg::Typed(argument) = argument else {
         return Err(compile_error(
@@ -1118,6 +1200,15 @@ fn emit_parameter_with_aliases(
         };
         return Ok(format!(
             "{name}?: {}",
+            emit_preferred_type(inner, entities, aliases)?
+        ));
+    }
+    if nullable {
+        let Some(inner) = option_inner_type(&argument.ty) else {
+            return Err(compile_error("nullable guard parameter must use Option"));
+        };
+        return Ok(format!(
+            "{name}: {} | null",
             emit_preferred_type(inner, entities, aliases)?
         ));
     }
@@ -1207,7 +1298,11 @@ pub(crate) fn emit_program(
     }
 
     for rust_enum in &program.enums {
-        emit_enum(&mut out, rust_enum);
+        emit_enum(
+            &mut out,
+            rust_enum,
+            program.string_unions.contains(&rust_enum.ident.to_string()),
+        );
         out.push('\n');
     }
     for type_alias in &program.type_aliases {
@@ -1215,7 +1310,15 @@ pub(crate) fn emit_program(
         out.push('\n');
     }
     for structure in &program.structs {
-        emit_struct(&mut out, structure, &program.entities)?;
+        emit_struct(
+            &mut out,
+            structure,
+            &program.entities,
+            &aliases,
+            program
+                .readonly_structs
+                .contains(&structure.ident.to_string()),
+        )?;
         out.push('\n');
     }
     for constant in &program.constants {
@@ -1295,8 +1398,8 @@ fn emit_statement(
         Stmt::Expr(Expr::If(if_expression), _) => {
             let option_binding = emit_option_binding(&if_expression.cond, entities)?;
             write_indent(out, indent);
-            if let Some((_, value)) = &option_binding {
-                writeln!(out, "if ({value} !== undefined) {{")
+            if let Some((_, value, absent)) = &option_binding {
+                writeln!(out, "if ({value} !== {absent}) {{")
                     .expect("writing to a String cannot fail");
             } else {
                 writeln!(
@@ -1306,7 +1409,7 @@ fn emit_statement(
                 )
                 .expect("writing to a String cannot fail");
             }
-            if let Some((name, value)) = option_binding {
+            if let Some((name, value, _)) = option_binding {
                 write_indent(out, indent + 1);
                 writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
             }
@@ -1430,6 +1533,8 @@ fn emit_struct(
     out: &mut String,
     structure: &ItemStruct,
     entities: &HashSet<String>,
+    aliases: &PreferredAliases,
+    readonly: bool,
 ) -> Result<(), CompileError> {
     emit_documentation(out, &structure.attrs, 0);
     let rust_name = structure.ident.to_string();
@@ -1458,11 +1563,17 @@ fn emit_struct(
                 structure.ident
             )));
         };
+        let name = snake_to_lower_camel(&field_name.to_string());
+        let prefix = if readonly { "readonly " } else { "" };
+        let (optional, rust_type) = if let Some(inner) = option_inner_type(&field.ty) {
+            ("?", inner)
+        } else {
+            ("", &field.ty)
+        };
         writeln!(
             out,
-            "  {}: {};",
-            snake_to_lower_camel(&field_name.to_string()),
-            emit_type(&field.ty, entities)?
+            "  {prefix}{name}{optional}: {};",
+            emit_preferred_type(rust_type, entities, aliases)?
         )
         .expect("writing to a String cannot fail");
     }
@@ -1890,7 +2001,7 @@ fn local_pattern_name(pattern: &Pat) -> Option<String> {
     };
 }
 
-fn lower_camel_from_upper_camel(name: &str) -> String {
+pub(crate) fn lower_camel_from_upper_camel(name: &str) -> String {
     let mut characters = name.chars();
     let Some(first) = characters.next() else {
         return String::new();
@@ -2007,6 +2118,7 @@ fn rewrite_documentation(value: &str) -> String {
 }
 
 pub(crate) fn snake_to_lower_camel(name: &str) -> String {
+    let name = name.strip_prefix("r#").unwrap_or(name);
     let mut words = name.split('_');
     let mut out = words.next().unwrap_or_default().to_string();
     for word in words {

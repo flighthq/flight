@@ -1,6 +1,3 @@
-//! flight-compiler: contract explainEntityRuntimeWrite
-//! flight-compiler: root explainEntityRuntimeWrite
-
 use crate::types::{EntityRuntimeWriteExplanation, EntityRuntimeWriteSlot};
 
 /// Describes what a guarded direct write means, as plain data. The guard seam reports only

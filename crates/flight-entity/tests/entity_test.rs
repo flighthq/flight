@@ -1,4 +1,5 @@
 //! flight-compiler: target-native
+//! Target-native because the public Entity class and its private wrapper/runtime identity exist only in TypeScript.
 
 use flight_entity::*;
 

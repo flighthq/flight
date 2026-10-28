@@ -1,4 +1,5 @@
-//! flight-compiler: target-native
+//! flight-compiler: rust-only
+//! Rust-only because thread-local function pointers replace the Proxy behavior covered in TypeScript.
 
 use std::cell::RefCell;
 
