@@ -1,13 +1,14 @@
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 
 use syn::{
-    Attribute, Fields, Item, ItemConst, ItemEnum, ItemFn, ItemStatic, ItemStruct, ItemType, Type,
-    UseTree, Visibility,
+    Attribute, Fields, GenericArgument, Item, ItemConst, ItemEnum, ItemFn, ItemStatic, ItemStruct,
+    ItemType, PathArguments, Type, UseTree, Visibility,
 };
 
 use crate::{CompileError, SourceMode, compile_error};
 
 pub(crate) struct Program {
+    pub(crate) callable_parameters: BTreeMap<String, Vec<String>>,
     pub(crate) constants: Vec<ItemConst>,
     pub(crate) entities: HashSet<String>,
     pub(crate) enums: Vec<ItemEnum>,
@@ -111,7 +112,12 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
         match name {
             "rust-only" => rust_only = true,
             "target-native" => target_native = true,
-            "companion" | "contract" | "readonly-fields" | "root" | "string-union" => {}
+            "callable-parameters"
+            | "companion"
+            | "contract"
+            | "readonly-fields"
+            | "root"
+            | "string-union" => {}
             _ => {
                 return Err(compile_error(format!(
                     "unknown `flight-compiler` source directive `{name}`"
@@ -161,6 +167,7 @@ fn is_public(visibility: &Visibility) -> bool {
 pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    let callable_parameters = parse_callable_parameters(&file.attrs)?;
     let mut constants = Vec::new();
     let mut entities = HashSet::new();
     let mut enums = Vec::new();
@@ -225,7 +232,10 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         }
     }
 
+    validate_callable_parameters(&callable_parameters, &type_aliases)?;
+
     return Ok(Program {
+        callable_parameters,
         constants,
         entities,
         enums,
@@ -237,6 +247,122 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         string_unions,
         type_aliases,
     });
+}
+
+fn callable_arity(rust_type: &Type) -> Option<usize> {
+    return match rust_type {
+        Type::BareFn(function) => Some(function.inputs.len()),
+        Type::Paren(paren) => callable_arity(&paren.elem),
+        Type::Path(path) => {
+            let segment = path.path.segments.last()?;
+            if !matches!(segment.ident.to_string().as_str(), "Arc" | "Ref") {
+                return None;
+            }
+            let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                return None;
+            };
+            let mut types = arguments.args.iter().filter_map(|argument| match argument {
+                GenericArgument::Type(rust_type) => Some(rust_type),
+                _ => None,
+            });
+            let inner = types.next()?;
+            if types.next().is_some() {
+                return None;
+            }
+            callable_arity(inner)
+        }
+        Type::TraitObject(object) => object.bounds.iter().find_map(|bound| {
+            let syn::TypeParamBound::Trait(bound) = bound else {
+                return None;
+            };
+            let segment = bound.path.segments.last()?;
+            if !matches!(
+                segment.ident.to_string().as_str(),
+                "Fn" | "FnMut" | "FnOnce"
+            ) {
+                return None;
+            }
+            let PathArguments::Parenthesized(arguments) = &segment.arguments else {
+                return None;
+            };
+            Some(arguments.inputs.len())
+        }),
+        _ => None,
+    };
+}
+
+fn parse_callable_parameters(
+    attributes: &[Attribute],
+) -> Result<BTreeMap<String, Vec<String>>, CompileError> {
+    let mut directives = BTreeMap::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("callable-parameters") {
+            continue;
+        }
+        let Some(alias) = fields.next() else {
+            return Err(compile_error(
+                "`flight-compiler: callable-parameters` requires an alias name",
+            ));
+        };
+        if syn::parse_str::<syn::Ident>(alias).is_err() || alias.starts_with("r#") {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-parameters` alias name `{alias}` is not a valid identifier"
+            )));
+        }
+        let mut names = Vec::new();
+        let mut seen = HashSet::new();
+        for name in fields {
+            if syn::parse_str::<syn::Ident>(name).is_err() || name.starts_with("r#") {
+                return Err(compile_error(format!(
+                    "`flight-compiler: callable-parameters {alias}` parameter name `{name}` is not a valid identifier"
+                )));
+            }
+            if !seen.insert(name) {
+                return Err(compile_error(format!(
+                    "`flight-compiler: callable-parameters {alias}` repeats parameter name `{name}`"
+                )));
+            }
+            names.push(name.to_string());
+        }
+        if directives.insert(alias.to_string(), names).is_some() {
+            return Err(compile_error(format!(
+                "duplicate `flight-compiler: callable-parameters` directive for alias `{alias}`"
+            )));
+        }
+    }
+    return Ok(directives);
+}
+
+fn validate_callable_parameters(
+    directives: &BTreeMap<String, Vec<String>>,
+    type_aliases: &[ItemType],
+) -> Result<(), CompileError> {
+    for (alias, names) in directives {
+        let Some(type_alias) = type_aliases
+            .iter()
+            .find(|type_alias| type_alias.ident == alias.as_str())
+        else {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-parameters` alias `{alias}` does not exist"
+            )));
+        };
+        let Some(arity) = callable_arity(&type_alias.ty) else {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-parameters` alias `{alias}` is not callable"
+            )));
+        };
+        if names.len() != arity {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-parameters` alias `{alias}` expects {arity} parameter names, got {}",
+                names.len()
+            )));
+        }
+    }
+    return Ok(());
 }
 
 pub(crate) fn directive_names(source: &str, directive: &str) -> HashSet<String> {

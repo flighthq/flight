@@ -26,6 +26,13 @@ mod source_modes {
                 .unwrap(),
             SourceMode::Generate
         );
+        assert_eq!(
+            source_mode(
+                "//! flight-compiler: callable-parameters EasingFunction t\npub type EasingFunction = fn(f32) -> f32;\n"
+            )
+            .unwrap(),
+            SourceMode::Generate
+        );
     }
 
     #[test]
@@ -210,12 +217,17 @@ pub fn sample(random: &dyn Fn() -> f32, mean: Option<f32>) -> Option<f32> {
     #[test]
     fn lowers_easing_contract_shapes_without_package_postprocessing() {
         let source = r#"
+//! flight-compiler: callable-parameters EasingFunction t
+//! flight-compiler: callable-parameters ScalarRemap x
+//! flight-compiler: callable-parameters EasingStepsGuard count position
 //! flight-compiler: readonly-fields EasingSegment
 //! flight-compiler: string-union StepPosition
 
 use std::sync::Arc;
 
 pub type EasingFunction = Arc<dyn Fn(f32) -> f32 + Send + Sync>;
+
+pub type ScalarRemap = Arc<dyn Fn(f32) -> f32 + Send + Sync>;
 
 pub enum StepPosition {
     JumpStart,
@@ -252,6 +264,11 @@ static STEPS_GUARD: Mutex<Option<EasingStepsGuard>> = Mutex::new(None);
 
         let output = compile_typescript(source, None).unwrap();
 
+        assert!(output.contains("export type EasingFunction = (t: number) => number;"));
+        assert!(output.contains("export type ScalarRemap = (x: number) => number;"));
+        assert!(output.contains(
+            "export type EasingStepsGuard = (count: number, position: StepPosition) => void;"
+        ));
         assert!(output.contains("export type StepPosition = \"jumpStart\" | \"jumpEnd\";"));
         assert!(output.contains("  readonly ease: EasingFunction;"));
         assert!(output.contains("  readonly weight?: number;"));
@@ -274,6 +291,62 @@ static STEPS_GUARD: Mutex<Option<EasingStepsGuard>> = Mutex::new(None);
         assert!(output.contains("slot.value = guard;"));
         assert!(output.contains("guard(2, \"jumpEnd\");"));
         assert!(!output.contains("StepPosition.JumpEnd"));
+    }
+
+    #[test]
+    fn preserves_default_callable_parameter_names_without_a_directive() {
+        let source = r#"
+use std::sync::Arc;
+
+pub type ScalarRemap = Arc<dyn Fn(f32, f32) -> f32 + Send + Sync>;
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("export type ScalarRemap = (arg0: number, arg1: number) => number;")
+        );
+    }
+
+    #[test]
+    fn rejects_malformed_callable_parameter_directives() {
+        let cases = [
+            (
+                "//! flight-compiler: callable-parameters\npub type Remap = fn(f32) -> f32;\n",
+                "`flight-compiler: callable-parameters` requires an alias name",
+            ),
+            (
+                "//! flight-compiler: callable-parameters Missing x\npub type Remap = fn(f32) -> f32;\n",
+                "`flight-compiler: callable-parameters` alias `Missing` does not exist",
+            ),
+            (
+                "//! flight-compiler: callable-parameters Scalar value\npub type Scalar = f32;\n",
+                "`flight-compiler: callable-parameters` alias `Scalar` is not callable",
+            ),
+            (
+                "//! flight-compiler: callable-parameters Remap x\npub type Remap = fn(f32, f32) -> f32;\n",
+                "`flight-compiler: callable-parameters` alias `Remap` expects 2 parameter names, got 1",
+            ),
+            (
+                "//! flight-compiler: callable-parameters Remap x\n//! flight-compiler: callable-parameters Remap value\npub type Remap = fn(f32) -> f32;\n",
+                "duplicate `flight-compiler: callable-parameters` directive for alias `Remap`",
+            ),
+            (
+                "//! flight-compiler: callable-parameters Remap x-y\npub type Remap = fn(f32) -> f32;\n",
+                "`flight-compiler: callable-parameters Remap` parameter name `x-y` is not a valid identifier",
+            ),
+            (
+                "//! flight-compiler: callable-parameters Remap x x\npub type Remap = fn(f32, f32) -> f32;\n",
+                "`flight-compiler: callable-parameters Remap` repeats parameter name `x`",
+            ),
+        ];
+
+        for (source, expected) in cases {
+            assert_eq!(
+                compile_typescript(source, None).unwrap_err().to_string(),
+                expected
+            );
+        }
     }
 
     #[test]

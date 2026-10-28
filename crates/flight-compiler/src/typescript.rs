@@ -1015,6 +1015,14 @@ fn emit_function_trait_type(
     bounds: &syn::punctuated::Punctuated<syn::TypeParamBound, syn::token::Plus>,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
+    return emit_function_trait_type_with_parameter_names(bounds, entities, None);
+}
+
+fn emit_function_trait_type_with_parameter_names(
+    bounds: &syn::punctuated::Punctuated<syn::TypeParamBound, syn::token::Plus>,
+    entities: &HashSet<String>,
+    parameter_names: Option<&[String]>,
+) -> Result<String, CompileError> {
     for bound in bounds {
         let syn::TypeParamBound::Trait(bound) = bound else {
             continue;
@@ -1033,12 +1041,23 @@ fn emit_function_trait_type(
                 "Rust function trait needs parenthesized arguments",
             ));
         };
+        if let Some(parameter_names) = parameter_names
+            && parameter_names.len() != arguments.inputs.len()
+        {
+            return Err(compile_error(
+                "callable parameter name count changed after directive validation",
+            ));
+        }
         let parameters = arguments
             .inputs
             .iter()
             .enumerate()
             .map(|(index, rust_type)| {
-                Ok(format!("arg{index}: {}", emit_type(rust_type, entities)?))
+                let name = parameter_names
+                    .and_then(|parameter_names| parameter_names.get(index))
+                    .cloned()
+                    .unwrap_or_else(|| format!("arg{index}"));
+                Ok(format!("{name}: {}", emit_type(rust_type, entities)?))
             })
             .collect::<Result<Vec<_>, CompileError>>()?;
         let output = match &arguments.output {
@@ -1772,7 +1791,15 @@ pub(crate) fn emit_program(
         out.push('\n');
     }
     for type_alias in &program.type_aliases {
-        emit_type_alias(&mut out, type_alias, &program.entities)?;
+        emit_type_alias(
+            &mut out,
+            type_alias,
+            &program.entities,
+            program
+                .callable_parameters
+                .get(&type_alias.ident.to_string())
+                .map(Vec::as_slice),
+        )?;
         out.push('\n');
     }
     for structure in &program.structs {
@@ -2146,24 +2173,7 @@ pub(crate) fn emit_type(
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(format!("readonly [{}]", elements.join(", ")))
         }
-        Type::BareFn(function) => {
-            let parameters = function
-                .inputs
-                .iter()
-                .enumerate()
-                .map(|(index, argument)| {
-                    Ok(format!(
-                        "arg{index}: {}",
-                        emit_type(&argument.ty, entities)?
-                    ))
-                })
-                .collect::<Result<Vec<_>, CompileError>>()?;
-            let output = match &function.output {
-                ReturnType::Default => "void".to_string(),
-                ReturnType::Type(_, rust_type) => emit_type(rust_type, entities)?,
-            };
-            Ok(format!("({}) => {output}", parameters.join(", ")))
-        }
+        Type::BareFn(function) => emit_bare_function_type(function, entities, None),
         Type::TraitObject(object) => emit_function_trait_type(&object.bounds, entities),
         _ => Err(compile_error(format!(
             "unsupported Rust type `{}`",
@@ -2214,6 +2224,7 @@ fn emit_type_alias(
     out: &mut String,
     type_alias: &syn::ItemType,
     entities: &HashSet<String>,
+    parameter_names: Option<&[String]>,
 ) -> Result<(), CompileError> {
     emit_documentation(out, &type_alias.attrs, 0);
     let export = if is_public(&type_alias.vis) {
@@ -2221,15 +2232,103 @@ fn emit_type_alias(
     } else {
         ""
     };
+    let rendered = if let Some(parameter_names) = parameter_names {
+        emit_named_callable_type(&type_alias.ty, entities, parameter_names)?
+    } else {
+        emit_type(&type_alias.ty, entities)?
+    };
     writeln!(
         out,
         "{export}type {}{} = {};",
         type_alias.ident,
         emit_type_parameters(&type_alias.generics),
-        emit_type(&type_alias.ty, entities)?
+        rendered
     )
     .expect("writing to a String cannot fail");
     return Ok(());
+}
+
+fn emit_bare_function_type(
+    function: &syn::TypeBareFn,
+    entities: &HashSet<String>,
+    parameter_names: Option<&[String]>,
+) -> Result<String, CompileError> {
+    if let Some(parameter_names) = parameter_names
+        && parameter_names.len() != function.inputs.len()
+    {
+        return Err(compile_error(
+            "callable parameter name count changed after directive validation",
+        ));
+    }
+    let parameters = function
+        .inputs
+        .iter()
+        .enumerate()
+        .map(|(index, argument)| {
+            let name = parameter_names
+                .and_then(|parameter_names| parameter_names.get(index))
+                .cloned()
+                .unwrap_or_else(|| format!("arg{index}"));
+            Ok(format!("{name}: {}", emit_type(&argument.ty, entities)?))
+        })
+        .collect::<Result<Vec<_>, CompileError>>()?;
+    let output = match &function.output {
+        ReturnType::Default => "void".to_string(),
+        ReturnType::Type(_, rust_type) => emit_type(rust_type, entities)?,
+    };
+    return Ok(format!("({}) => {output}", parameters.join(", ")));
+}
+
+fn emit_named_callable_type(
+    rust_type: &Type,
+    entities: &HashSet<String>,
+    parameter_names: &[String],
+) -> Result<String, CompileError> {
+    return match rust_type {
+        Type::BareFn(function) => {
+            emit_bare_function_type(function, entities, Some(parameter_names))
+        }
+        Type::Paren(paren) => emit_named_callable_type(&paren.elem, entities, parameter_names),
+        Type::Path(path) => {
+            let Some(segment) = path.path.segments.last() else {
+                return Err(compile_error("empty Rust type path"));
+            };
+            if !matches!(segment.ident.to_string().as_str(), "Arc" | "Ref") {
+                return Err(compile_error(
+                    "callable alias shape changed after directive validation",
+                ));
+            }
+            let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+                return Err(compile_error(format!(
+                    "`{}` needs one type argument",
+                    segment.ident
+                )));
+            };
+            let types = arguments
+                .args
+                .iter()
+                .filter_map(|argument| match argument {
+                    GenericArgument::Type(rust_type) => Some(rust_type),
+                    _ => None,
+                })
+                .collect::<Vec<_>>();
+            if types.len() != 1 {
+                return Err(compile_error(format!(
+                    "`{}` needs exactly one type argument",
+                    segment.ident
+                )));
+            }
+            emit_named_callable_type(types[0], entities, parameter_names)
+        }
+        Type::TraitObject(object) => emit_function_trait_type_with_parameter_names(
+            &object.bounds,
+            entities,
+            Some(parameter_names),
+        ),
+        _ => Err(compile_error(
+            "callable alias shape changed after directive validation",
+        )),
+    };
 }
 
 fn emit_type_parameters(generics: &syn::Generics) -> String {
