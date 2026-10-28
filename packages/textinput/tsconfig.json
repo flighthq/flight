@@ -12,6 +12,7 @@
     { "path": "../node" },
     { "path": "../text" },
     { "path": "../signals" },
+    { "path": "../textformat" },
     { "path": "../textlayout" },
     { "path": "../entity" },
     { "path": "../types" }

@@ -12,6 +12,7 @@
     { "path": "../color" },
     { "path": "../entity" },
     { "path": "../log" },
+    { "path": "../textformat" },
     { "path": "../textlayout" },
     { "path": "../types" }
   ],

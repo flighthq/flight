@@ -50,6 +50,7 @@
     "@flighthq/signals": "*",
     "@flighthq/shape": "*",
     "@flighthq/text": "*",
+    "@flighthq/textformat": "*",
     "@flighthq/textinput": "*",
     "@flighthq/textlayout": "*",
     "@flighthq/texture": "*",

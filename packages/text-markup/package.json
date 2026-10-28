@@ -41,6 +41,7 @@
     "@flighthq/color": "*",
     "@flighthq/entity": "*",
     "@flighthq/log": "*",
+    "@flighthq/textformat": "*",
     "@flighthq/textlayout": "*",
     "@flighthq/types": "*"
   },

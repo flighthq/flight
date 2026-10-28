@@ -64,6 +64,9 @@
       "path": "../text"
     },
     {
+      "path": "../textformat"
+    },
+    {
       "path": "../textinput"
     },
     {

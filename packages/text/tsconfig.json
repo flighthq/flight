@@ -28,6 +28,9 @@
       "path": "../signals"
     },
     {
+      "path": "../textformat"
+    },
+    {
       "path": "../textlayout"
     },
     {

@@ -56,6 +56,7 @@
     "@flighthq/shape": "*",
     "@flighthq/skeleton2d": "*",
     "@flighthq/text": "*",
+    "@flighthq/textformat": "*",
     "@flighthq/textlayout": "*",
     "@flighthq/texture": "*",
     "@flighthq/types": "*",

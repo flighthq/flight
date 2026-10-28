@@ -42,6 +42,7 @@
     "@flighthq/node": "*",
     "@flighthq/signals": "*",
     "@flighthq/text": "*",
+    "@flighthq/textformat": "*",
     "@flighthq/textlayout": "*",
     "@flighthq/types": "*"
   },

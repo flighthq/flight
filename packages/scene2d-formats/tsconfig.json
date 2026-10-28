@@ -27,6 +27,7 @@
     { "path": "../shape" },
     { "path": "../skeleton2d" },
     { "path": "../text" },
+    { "path": "../textformat" },
     { "path": "../textlayout" },
     { "path": "../texture" },
     { "path": "../entity" },

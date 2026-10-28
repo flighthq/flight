@@ -52,6 +52,7 @@
     "@flighthq/render-wgpu": "*",
     "@flighthq/shape": "*",
     "@flighthq/text": "*",
+    "@flighthq/textformat": "*",
     "@flighthq/textinput": "*",
     "@flighthq/textlayout": "*",
     "@flighthq/texture": "*",
