@@ -9,7 +9,8 @@ Each exported type belongs to the package that defines it, matching Rust crate s
 - **Why.** Rust is authoritative. Each Rust crate owns its types; the generated TypeScript mirrors that. Centralized type-home enforcement is bookkeeping overhead that the transpiler eliminates.
 - A type used within a **single file** and never exported stays local.
 - `*Kind` string identifiers are **values**, not types — they are governed by the kind-identity model (defined in the owning package), not by this rule.
-- **Two exemptions** that cannot export types at all: (1) the **`tool-*` tooling tier**, whose types structurally embed non-portable deps; (2) **test-only mock types in `*TestHelper.ts`** files.
+- **`tool-*` types** stay locally owned in the tooling tier — they structurally embed non-portable deps (`@playwright/test`, `node:*`) and are excluded from the SDK barrel.
+- **Test-only mock types in `*TestHelper.ts`** files are test infrastructure, not shipped API.
 
 `npm run type-home` (or `npx tsx scripts/type-home-progress.ts`) prints a source-derived meter of type placement. It is non-gating — a progress indicator, not an enforcement gate.
 
@@ -27,13 +28,13 @@ Non-routine source basenames are unique SDK-wide, so both the Haxe module and a 
 
 - A concept that appears in a **base** and a **derived/backend** package is disambiguated by a package prefix: `displayObject.ts` (`scene2d`) vs `glDisplayObject.ts` (`scene2d-gl`). Backend prefixes are `gl` / `wgpu` / `dom` / `canvas`.
 - **Routine files are exempt** — `index.ts`, test helpers, `vitest.config.ts`.
-- **Generic names are disallowed** for exported source — `shared.ts`, `internal.ts`, `utils.ts`, `helpers.ts` name nothing. Name the concept. (Note: rule 1 dissolves most `internal.ts` files anyway — their types move to `@flighthq/types`.)
+- **Generic names are disallowed** for exported source — `shared.ts`, `internal.ts`, `utils.ts`, `helpers.ts` name nothing. Name the concept.
 
 ## Backend token placement
 
 **The render backend token prefixes the type.** A name that carries a backend is `Gl`/`Wgpu`/`Canvas`/`Dom` glued to the front of the type it targets — `GlTextureResolver`, `WgpuModifierSnippet`, `CanvasMaterialRenderer` — and a registrar is `register` plus that unit: `registerGlToonMaterial`, because the type is `ToonMaterial`.
 
-Words that are **not** part of the type name stay in front of that whole unit. `registerBuiltInGlModifierSnippets` is already correct: `BuiltIn` is an adjective on the set, and `GlModifierSnippet` is a real type with its backend in front. The test for any case is mechanical — take the segment from the backend token to the end of the name and ask whether it is a type in `@flighthq/types`. If it is, the backend is where it belongs. If it is not, the token is wedged inside a type name that has been split around it, which is what `registerToonGlMaterial` was doing to `ToonMaterial`.
+Words that are **not** part of the type name stay in front of that whole unit. `registerBuiltInGlModifierSnippets` is already correct: `BuiltIn` is an adjective on the set, and `GlModifierSnippet` is a real type with its backend in front. The test for any case is mechanical — take the segment from the backend token to the end of the name and ask whether it is a type in the owning package. If it is, the backend is where it belongs. If it is not, the token is wedged inside a type name that has been split around it, which is what `registerToonGlMaterial` was doing to `ToonMaterial`.
 
 The rule does **not** mean inserting a backend token where there is none. A registrar for something computed once for every backend carries no backend in its name: the effect padding resolvers (`registerBloomEffectPaddingResolver`) are one resolver per effect kind, shared by all four backends, because padding is geometry rather than rendering.
 
