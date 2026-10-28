@@ -10,20 +10,22 @@ mod decimate_path {
     use super::*;
 
     #[test]
-    fn keeps_straight_line_unchanged() {
+    fn keeps_a_straight_line_unchanged() {
         let mut source = create_path(PathWinding::NonZero);
         append_path_move_to(&mut source, 0.0, 0.0);
         append_path_line_to(&mut source, 50.0, 0.0);
         append_path_line_to(&mut source, 100.0, 0.0);
         let mut out = create_path(PathWinding::NonZero);
         decimate_path(&source, 1.0, &mut out, Some(0.25));
-        assert_eq!(out.commands.len(), 2);
-        assert_eq!(out.data[0], 0.0);
-        assert_eq!(out.data[out.data.len() - 2], 100.0);
+        assert_eq!(
+            out.commands,
+            vec![PathCommand::MoveTo as u8, PathCommand::LineTo as u8]
+        );
+        assert_eq!(out.data, vec![0.0, 0.0, 100.0, 0.0]);
     }
 
     #[test]
-    fn simplifies_noisy_straight_line() {
+    fn simplifies_a_noisy_straight_line() {
         let mut source = create_path(PathWinding::NonZero);
         append_path_move_to(&mut source, 0.0, 0.0);
         append_path_line_to(&mut source, 25.0, 0.1);
@@ -32,9 +34,12 @@ mod decimate_path {
         append_path_line_to(&mut source, 100.0, 0.0);
         let mut out = create_path(PathWinding::NonZero);
         decimate_path(&source, 1.0, &mut out, Some(0.25));
-        assert_eq!(out.commands.len(), 2);
+        assert_eq!(
+            out.commands,
+            vec![PathCommand::MoveTo as u8, PathCommand::LineTo as u8]
+        );
         assert_eq!(out.data[0], 0.0);
-        assert_eq!(out.data[out.data.len() - 2], 100.0);
+        assert_eq!(out.data[2], 100.0);
     }
 
     #[test]

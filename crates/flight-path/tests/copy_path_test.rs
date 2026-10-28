@@ -102,6 +102,23 @@ mod copy_path {
     }
 
     #[test]
+    fn writes_into_out() {
+        let mut source = create_path(PathWinding::NonZero);
+        append_path_move_to(&mut source, 1.0, 2.0);
+        append_path_line_to(&mut source, 3.0, 4.0);
+        let mut out = create_path(PathWinding::EvenOdd);
+        copy_path(&mut out, &source);
+        assert_eq!(out.commands.len(), 2);
+        assert_eq!(out.commands[0], PathCommand::MoveTo as u8);
+        assert_eq!(out.commands[1], PathCommand::LineTo as u8);
+        assert_eq!(out.data.len(), 4);
+        for i in 0..4 {
+            assert_eq!(out.data[i], source.data[i]);
+        }
+        assert_eq!(out.winding, PathWinding::NonZero);
+    }
+
+    #[test]
     fn writes_into_out_with_correct_winding() {
         let mut source = create_path(PathWinding::NonZero);
         source.winding = PathWinding::EvenOdd;

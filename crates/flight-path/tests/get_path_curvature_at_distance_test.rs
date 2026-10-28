@@ -20,12 +20,31 @@ mod get_path_curvature_at_distance {
     }
 
     #[test]
+    fn returns_nonzero_curvature_on_a_curved_path() {
+        let mut path = create_path(PathWinding::NonZero);
+        append_path_move_to(&mut path, 0.0, 0.0);
+        append_path_quadratic_curve_to(&mut path, 50.0, 100.0, 100.0, 0.0);
+        let k = get_path_curvature_at_distance(&path, 50.0, Some(0.25));
+        assert!(k != 0.0);
+    }
+
+    #[test]
     fn returns_nonzero_curvature_on_curved_path() {
         let mut path = create_path(PathWinding::NonZero);
         append_path_move_to(&mut path, 0.0, 0.0);
         append_path_quadratic_curve_to(&mut path, 50.0, 100.0, 100.0, 0.0);
         let k = get_path_curvature_at_distance(&path, 50.0, Some(0.01));
         assert!(k != 0.0);
+    }
+
+    #[test]
+    fn returns_approximately_1_r_for_a_circle_of_known_radius() {
+        let r = 50.0;
+        let mut path = create_path(PathWinding::NonZero);
+        append_path_circle(&mut path, 0.0, 0.0, r);
+        let circumference = 2.0 * std::f64::consts::PI * r;
+        let k = get_path_curvature_at_distance(&path, circumference / 4.0, Some(0.25));
+        assert!((k.abs() - 1.0 / r).abs() < 0.05);
     }
 
     #[test]

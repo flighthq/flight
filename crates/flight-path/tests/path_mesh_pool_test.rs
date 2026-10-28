@@ -4,6 +4,23 @@ mod acquire_path_mesh {
     use super::*;
 
     #[test]
+    fn pool_reuses_a_released_mesh_object_identity() {
+        let mut pool = create_path_mesh_pool();
+        let mut path = create_path(PathWinding::NonZero);
+        append_path_move_to(&mut path, 0.0, 0.0);
+        append_path_line_to(&mut path, 10.0, 0.0);
+        append_path_line_to(&mut path, 5.0, 10.0);
+        let first = acquire_path_mesh(&mut pool, &path, Some(0.25));
+        let vertices = first.vertices.as_ptr();
+        let indices = first.indices.as_ptr();
+        release_path_mesh(&mut pool, first);
+        let second = acquire_path_mesh(&mut pool, &path, Some(0.25));
+        assert_eq!(second.vertices.as_ptr(), vertices);
+        assert_eq!(second.indices.as_ptr(), indices);
+        release_path_mesh(&mut pool, second);
+    }
+
+    #[test]
     fn returns_mesh_for_empty_path() {
         let mut pool = create_path_mesh_pool();
         let path = create_path(PathWinding::NonZero);

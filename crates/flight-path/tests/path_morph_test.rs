@@ -101,18 +101,26 @@ mod create_path_morph {
     }
 
     #[test]
-    fn expands_closed_point_contour_without_inventing_orientation() {
+    fn expands_a_closed_point_contour_without_inventing_an_orientation() {
         let mut start = create_path(PathWinding::NonZero);
         append_path_move_to(&mut start, 3.0, 4.0);
         append_path_close(&mut start);
         let mut end = create_path(PathWinding::NonZero);
         append_path_rectangle(&mut end, 0.0, 0.0, 10.0, 10.0);
         let morph = create_path_morph(&start, &end).unwrap();
+        assert_eq!(morph.commands.len(), 6);
         assert_eq!(morph.commands[0], PathCommand::MoveTo as u8);
-        assert_eq!(*morph.commands.last().unwrap(), PathCommand::Close as u8);
-        assert!(morph.start_data.iter().enumerate().all(|(i, &v)| {
-            return if i % 2 == 0 { v == 3.0 } else { v == 4.0 };
-        }));
+        for i in 1..5 {
+            assert_eq!(morph.commands[i], PathCommand::CubicCurveTo as u8);
+        }
+        assert_eq!(morph.commands[5], PathCommand::Close as u8);
+        for i in 0..morph.start_data.len() {
+            if i % 2 == 0 {
+                assert_eq!(morph.start_data[i], 3.0);
+            } else {
+                assert_eq!(morph.start_data[i], 4.0);
+            }
+        }
     }
 
     #[test]
@@ -184,14 +192,18 @@ mod create_path_morph {
     }
 
     #[test]
-    fn prepares_closed_rectangle_against_closed_circle() {
+    fn prepares_a_closed_line_rectangle_against_a_closed_cubic_circle() {
         let mut start = create_path(PathWinding::NonZero);
         append_path_rectangle(&mut start, -10.0, -10.0, 20.0, 20.0);
         let mut end = create_path(PathWinding::NonZero);
         append_path_circle(&mut end, 0.0, 0.0, 10.0);
         let morph = create_path_morph(&start, &end).unwrap();
+        assert_eq!(morph.commands.len(), 6);
         assert_eq!(morph.commands[0], PathCommand::MoveTo as u8);
-        assert_eq!(*morph.commands.last().unwrap(), PathCommand::Close as u8);
+        for i in 1..5 {
+            assert_eq!(morph.commands[i], PathCommand::CubicCurveTo as u8);
+        }
+        assert_eq!(morph.commands[5], PathCommand::Close as u8);
     }
 
     #[test]

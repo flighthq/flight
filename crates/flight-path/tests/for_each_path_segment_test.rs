@@ -117,12 +117,13 @@ mod for_each_path_segment {
     }
 
     #[test]
-    fn normalizes_wide_move_to() {
+    fn normalizes_wide_move_to_to_move_to() {
         let mut path = create_path(PathWinding::NonZero);
         path.commands.push(PathCommand::WideMoveTo as u8);
         path.data.extend_from_slice(&[0.0, 0.0, 5.0, 6.0]);
         let mut segments: Vec<PathSegment> = Vec::new();
         for_each_path_segment(&path, &mut |segment| segments.push(segment));
+        assert_eq!(segments.len(), 1);
         assert_eq!(segments[0], PathSegment::MoveTo { x: 5.0, y: 6.0 });
     }
 

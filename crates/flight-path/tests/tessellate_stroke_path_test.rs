@@ -271,7 +271,7 @@ mod tessellate_stroke_path {
     }
 
     #[test]
-    fn normalizes_explicit_close_and_return_to_start_to_same_ring() {
+    fn normalizes_an_explicit_close_and_a_return_to_start_centerline_to_the_same_ring() {
         let mut closed = create_path(PathWinding::NonZero);
         append_path_rectangle(&mut closed, 0.0, 0.0, 100.0, 50.0);
         let mut returned = create_path(PathWinding::NonZero);
@@ -280,7 +280,7 @@ mod tessellate_stroke_path {
         append_path_line_to(&mut returned, 100.0, 50.0);
         append_path_line_to(&mut returned, 0.0, 50.0);
         append_path_line_to(&mut returned, 0.0, 0.0);
-        let style = StrokeStyle {
+        let mut style = StrokeStyle {
             width: 1.0,
             cap: StrokeCap::Butt,
             join: StrokeJoin::Miter,
@@ -288,13 +288,12 @@ mod tessellate_stroke_path {
             dash: Vec::new(),
             dash_offset: 0.0,
         };
-        let mesh_closed = tessellate_stroke_path(&closed, &style, Some(0.25));
-        let mesh_returned = tessellate_stroke_path(&returned, &style, Some(0.25));
-        assert_eq!(mesh_closed.is_some(), mesh_returned.is_some());
-        if let (Some(mc), Some(mr)) = (mesh_closed, mesh_returned) {
-            assert_eq!(mc.vertices, mr.vertices);
-            assert_eq!(mc.indices, mr.indices);
-        }
+        style.width = 10.0;
+        let mesh_closed = tessellate_stroke_path(&closed, &style, Some(0.25)).unwrap();
+        let mesh_returned = tessellate_stroke_path(&returned, &style, Some(0.25)).unwrap();
+        assert!(mesh_closed.vertices.len() > 0);
+        assert_eq!(mesh_closed.vertices, mesh_returned.vertices);
+        assert_eq!(mesh_closed.indices, mesh_returned.indices);
     }
 
     #[test]
