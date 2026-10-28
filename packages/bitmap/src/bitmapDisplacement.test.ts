@@ -17,7 +17,7 @@ describe('displaceBitmap', () => {
     const source = rgbStrip();
     const map = createBitmap(3, 1);
     map.data.fill(128);
-    const out = new Uint8ClampedArray(3 * 4);
+    const out = new Uint8Array(3 * 4);
     displaceBitmap(out, region(source), { map: region(map), scaleX: 0, scaleY: 0, mode: 'clamp' });
     // With zero scale, every output pixel samples from its exact position.
     expect(out[0]).toBe(255); // px0 = red
@@ -32,7 +32,7 @@ describe('displaceBitmap', () => {
     map.data[0] = 255;
     map.data[4] = 255;
     map.data[8] = 255;
-    const out = new Uint8ClampedArray(3 * 4);
+    const out = new Uint8Array(3 * 4);
     displaceBitmap(out, region(source), {
       map: region(map),
       componentX: 0,
@@ -51,7 +51,7 @@ describe('displaceBitmap', () => {
     const source = rgbStrip();
     const map = createBitmap(3, 1);
     map.data.fill(255);
-    const out = new Uint8ClampedArray(3 * 4);
+    const out = new Uint8Array(3 * 4);
     displaceBitmap(out, region(source), {
       map: region(map),
       scaleX: 4,
@@ -71,7 +71,7 @@ describe('displaceBitmap', () => {
     const source = rgbStrip();
     const map = createBitmap(3, 1);
     map.data.fill(255);
-    const out = new Uint8ClampedArray(3 * 4);
+    const out = new Uint8Array(3 * 4);
     displaceBitmap(out, region(source), {
       map: region(map),
       scaleX: 4,
@@ -89,7 +89,7 @@ describe('displaceBitmap', () => {
     map.data[0] = 255;
     map.data[4] = 255;
     map.data[8] = 255;
-    const out = new Uint8ClampedArray(3 * 4);
+    const out = new Uint8Array(3 * 4);
     displaceBitmap(out, region(source), {
       map: region(map),
       componentX: 0,
@@ -105,7 +105,7 @@ describe('displaceBitmap', () => {
     const source = rgbStrip();
     const map = createBitmap(3, 1);
     map.data.fill(255);
-    const out = new Uint8ClampedArray(3 * 4);
+    const out = new Uint8Array(3 * 4);
     displaceBitmap(out, region(source), {
       map: region(map),
       scaleX: 4,
@@ -121,7 +121,7 @@ describe('displaceBitmap', () => {
     const source = rgbStrip();
     const map = createBitmap(3, 1);
     map.data.fill(255);
-    const out = new Uint8ClampedArray(3 * 4);
+    const out = new Uint8Array(3 * 4);
     displaceBitmap(out, region(source), {
       map: region(map),
       scaleX: 1,
@@ -136,7 +136,7 @@ describe('displaceBitmap', () => {
     const source = rgbStrip();
     const map = createBitmap(3, 1);
     map.data.fill(255);
-    const out = new Uint8ClampedArray(3 * 4);
+    const out = new Uint8Array(3 * 4);
     displaceBitmap(out, region(source), {
       map: region(map),
       scaleX: 1,
@@ -151,7 +151,7 @@ describe('displaceBitmap', () => {
     const source = rgbStrip();
     const map = createBitmap(3, 1);
     map.data.fill(255);
-    const out = new Uint8ClampedArray(3 * 4);
+    const out = new Uint8Array(3 * 4);
     displaceBitmap(out, region(source), {
       map: region(map),
       scaleX: 3,
@@ -169,7 +169,7 @@ describe('displaceBitmap', () => {
     source.data.set([255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 255]);
     const map = createBitmap(2, 1);
     map.data.fill(128); // neutral — minimal displacement at scale=0
-    const out = new Uint8ClampedArray(2 * 4);
+    const out = new Uint8Array(2 * 4);
     displaceBitmap(out, region(source, 1, 0, 2, 1), {
       map: region(map),
       scaleX: 0,

@@ -26,7 +26,7 @@ import {
 
 const fakeSlot: HostImageDecodeFormatCapability = {
   decode: vi.fn().mockResolvedValue({
-    data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]),
+    data: new Uint8Array([0x11, 0x22, 0x33, 0x44]),
     height: 1,
     width: 1,
   }),
@@ -36,7 +36,7 @@ const caps: HostImageDecodeCapabilities = { png: fakeSlot };
 
 beforeEach(() => {
   vi.mocked(fakeSlot.decode).mockResolvedValue({
-    data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]),
+    data: new Uint8Array([0x11, 0x22, 0x33, 0x44]),
     height: 1,
     width: 1,
   });
@@ -127,7 +127,7 @@ describe('initializeExternalImageResourceReference', () => {
 function createTestBitmap(alphaType: Bitmap['alphaType']): Bitmap {
   const out = allocateEntity<Bitmap>();
   out.alphaType = alphaType;
-  out.data = new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]);
+  out.data = new Uint8Array([0x11, 0x22, 0x33, 0x44]);
   out.format = 'rgba8unorm';
   out.gamut = 'srgb';
   out.height = 1;
@@ -191,7 +191,7 @@ describe('resolveImageResourceReference', () => {
     const source = await resolveImageResourceReference(caps, ref, unusedFetch, new AbortController().signal);
     expect(source).toMatchObject({
       alphaType: 'straight',
-      data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]),
+      data: new Uint8Array([0x11, 0x22, 0x33, 0x44]),
       height: 1,
       kind: BitmapTextureSourceKind,
       width: 1,

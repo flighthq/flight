@@ -88,7 +88,7 @@ function createMockRasterizerBackend(): HostGlyphRasterizerCapability {
         bearingX: 1,
         bearingY: size,
         height: size,
-        pixels: new Uint8ClampedArray(size * size * 4),
+        pixels: new Uint8Array(size * size * 4),
         width: size,
       };
     },

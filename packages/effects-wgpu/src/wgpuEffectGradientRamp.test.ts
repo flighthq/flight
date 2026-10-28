@@ -12,9 +12,9 @@ beforeAll(() => installWgpuMock());
 function createState(): {
   createTexture: ReturnType<typeof vi.fn>;
   state: WgpuRenderState;
-  uploads: Uint8ClampedArray[];
+  uploads: Uint8Array[];
 } {
-  const uploads: Uint8ClampedArray[] = [];
+  const uploads: Uint8Array[] = [];
   let next = 0;
   const createTexture = vi.fn(() => ({ id: `ramp-${next++}` }));
   const state = {
@@ -22,7 +22,7 @@ function createState(): {
       createTexture,
       queue: {
         writeTexture: vi.fn((_destination: unknown, data: ArrayBuffer) => {
-          uploads.push(new Uint8ClampedArray(data));
+          uploads.push(new Uint8Array(data));
         }),
       },
     },
@@ -34,13 +34,13 @@ function rampFor(
   colors: ReadonlyArray<number>,
   alphas: ReadonlyArray<number>,
   ratios: ReadonlyArray<number>,
-): Uint8ClampedArray {
+): Uint8Array {
   const harness = createState();
   getWgpuEffectGradientRampTexture(harness.state, colors, alphas, ratios);
   return harness.uploads[0]!;
 }
 
-function entryAt(ramp: Readonly<Uint8ClampedArray>, index: number): readonly number[] {
+function entryAt(ramp: Readonly<Uint8Array>, index: number): readonly number[] {
   return [...ramp.slice(index * 4, index * 4 + 4)];
 }
 

@@ -19,7 +19,7 @@ export function cropBitmap(source: Readonly<Bitmap>, rect: Readonly<RectangleLik
   const ry = Math.round(rect.y);
   const rw = Math.max(0, Math.round(rect.width));
   const rh = Math.max(0, Math.round(rect.height));
-  const data = new Uint8ClampedArray(rw * rh * 4);
+  const data = new Uint8Array(rw * rh * 4);
   const sd = source.data;
   for (let py = 0; py < rh; py++) {
     const sy = ry + py;
@@ -66,7 +66,7 @@ export function extendBitmap(
   const sh = source.height;
   const dw = sw + left + right;
   const dh = sh + top + bottom;
-  const data = new Uint8ClampedArray(dw * dh * 4);
+  const data = new Uint8Array(dw * dh * 4);
   const sd = source.data;
   const fr = (fillColor >>> 24) & 0xff;
   const fg = (fillColor >> 16) & 0xff;
@@ -133,7 +133,7 @@ export function trimBitmap(source: Readonly<Bitmap>): Bitmap {
   }
   if (maxX < 0) {
     const out = allocateEntity<Bitmap>();
-    initializeBitmap(out, source.alphaType, new Uint8ClampedArray(4), source.format, source.gamut, 1, 1);
+    initializeBitmap(out, source.alphaType, new Uint8Array(4), source.format, source.gamut, 1, 1);
     return finishEntity(out);
   }
   return cropBitmap(source, { x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1 });

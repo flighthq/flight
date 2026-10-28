@@ -2,7 +2,7 @@ import type { ColorScaleBiasLike, Bitmap, BitmapRegion, ThresholdOperation } fro
 
 import { invalidateBitmap } from './bitmap.ts';
 
-let _scrollScratch: Uint8ClampedArray | null = null;
+let _scrollScratch: Uint8Array | null = null;
 
 /**
  * Applies normalized-linear color scale/bias to `source`, writing into `dest`. The transformed
@@ -146,7 +146,7 @@ export function mergeBitmap(
 export function scrollBitmap(out: Bitmap, dx: number, dy: number): void {
   const needed = out.data.length;
   if (_scrollScratch === null || _scrollScratch.length < needed) {
-    _scrollScratch = new Uint8ClampedArray(needed);
+    _scrollScratch = new Uint8Array(needed);
   }
   _scrollScratch.set(out.data, 0);
 

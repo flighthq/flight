@@ -123,7 +123,7 @@ describe('registerGlCompressedTextureDecoder', () => {
     const { state } = createGlState();
     const runtime = getGlRenderStateRuntime(state);
     const before = runtime.registries.compressedTextureDecoder;
-    const decode = vi.fn(() => new Uint8ClampedArray(4));
+    const decode = vi.fn(() => new Uint8Array(4));
     registerGlCompressedTextureDecoder(state, decode);
     expect(runtime.registries.compressedTextureDecoder).not.toBe(before);
     expect(runtime.registries.compressedTextureDecoder).toBe(decode);
@@ -146,7 +146,7 @@ describe('registerGlCompressedTextureUpload', () => {
 
   it('uploads a CompressedImageResource once installed, threading the registered decoder', () => {
     const { state, gl } = createGlState();
-    const rgba = new Uint8ClampedArray(4 * 4 * 4);
+    const rgba = new Uint8Array(4 * 4 * 4);
     const decode = vi.fn(() => rgba);
     registerGlCompressedTextureUpload(state);
     registerGlCompressedTextureDecoder(state, decode);
@@ -187,7 +187,7 @@ describe('uploadGlCompressedTextureContainer', () => {
   it('decodes to RGBA and uploads via texImage2D when native support is missing', () => {
     const gl = makeGl({});
     const payload = new Uint8Array(16);
-    const rgba = new Uint8ClampedArray(4 * 4 * 4);
+    const rgba = new Uint8Array(4 * 4 * 4);
     const decode = vi.fn(() => rgba);
     const ok = uploadGlCompressedTextureContainer(gl, makeContainer(), payload, decode);
     expect(ok).toBe(true);
@@ -329,7 +329,7 @@ describe('uploadGlCompressedTextureContainer', () => {
   it('returns false for a cubemap the device cannot upload natively (no face-by-face decode)', () => {
     const gl = makeGl({});
     const container: TextureContainer = { ...makeContainer(), faces: 6 };
-    const decode = vi.fn(() => new Uint8ClampedArray(4 * 4 * 4));
+    const decode = vi.fn(() => new Uint8Array(4 * 4 * 4));
     expect(uploadGlCompressedTextureContainer(gl, container, new Uint8Array(6 * 16), decode)).toBe(false);
     expect(decode).not.toHaveBeenCalled();
     expect(gl.texImage2D).not.toHaveBeenCalled();

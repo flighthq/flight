@@ -24,8 +24,8 @@ import { blurBitmapPixelsHorizontal, blurBitmapPixelsVertical } from './bitmapBl
  * and the source alpha is read again afterward for `inner`/`outer` clipping.
  */
 export function bevelBitmap(
-  out: Uint8ClampedArray,
-  scratch: Uint8ClampedArray,
+  out: Uint8Array,
+  scratch: Uint8Array,
   source: Readonly<BitmapRegion>,
   options: Readonly<BitmapBevelOptions> = {},
 ): void {
@@ -78,8 +78,8 @@ export function bevelBitmap(
 }
 
 function blurField(
-  field: Uint8ClampedArray,
-  scratch: Uint8ClampedArray,
+  field: Uint8Array,
+  scratch: Uint8Array,
   w: number,
   h: number,
   radiusX: number | undefined,
@@ -116,7 +116,7 @@ function readSourceAlpha(source: Readonly<BitmapRegion>, px: number, py: number)
 }
 
 // Returns the blurred alpha at (x, y) normalized to 0..1; 0 outside the field.
-function sampleField(field: Uint8ClampedArray, w: number, h: number, x: number, y: number): number {
+function sampleField(field: Uint8Array, w: number, h: number, x: number, y: number): number {
   if (x < 0 || x >= w || y < 0 || y >= h) return 0;
   return field[(y * w + x) * 4 + 3] / 255;
 }

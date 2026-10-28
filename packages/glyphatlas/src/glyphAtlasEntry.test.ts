@@ -236,7 +236,7 @@ describe('getGlyphAtlasEntry', () => {
         bearingX: 0,
         bearingY: 0,
         height: 0,
-        pixels: new Uint8ClampedArray(),
+        pixels: new Uint8Array(),
         width: 0,
       }),
     };
@@ -260,7 +260,7 @@ function createMockRasterizerBackend(
     rasterize(codepoint): GlyphRasterizedBitmap {
       calls.push(codepoint);
       const { width, height } = sizeFor(codepoint);
-      const pixels = new Uint8ClampedArray(width * height * 4);
+      const pixels = new Uint8Array(width * height * 4);
       for (let i = 0; i < width * height; i++) {
         pixels[i * 4] = codepoint & 0xff;
         pixels[i * 4 + 1] = 0x80;

@@ -17,7 +17,7 @@ import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 function dataFace(size: number): Bitmap {
   return {
     alphaType: 'straight',
-    data: new Uint8ClampedArray(size * size * 4),
+    data: new Uint8Array(size * size * 4),
     format: 'rgba8unorm',
     gamut: 'srgb',
     height: size,
@@ -105,7 +105,7 @@ describe('ensureGlEnvironmentSourceCube', () => {
       expect(upload.args[2]).toBe(gl.SRGB8_ALPHA8);
       expect(upload.args[3]).toBe(4);
       expect(upload.args[4]).toBe(4);
-      expect(upload.args[8]).toBeInstanceOf(Uint8ClampedArray);
+      expect(upload.args[8]).toBeInstanceOf(Uint8Array);
     }
   });
 

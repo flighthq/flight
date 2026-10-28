@@ -53,10 +53,10 @@ const EMPTY_BYTE_CHANNEL_MAP = new Uint8Array();
 export function applyBitmapCurve(
   out: Readonly<BitmapRegion>,
   source: Readonly<BitmapRegion>,
-  redLut: Readonly<Uint8Array | Uint8ClampedArray | null>,
-  greenLut: Readonly<Uint8Array | Uint8ClampedArray | null>,
-  blueLut: Readonly<Uint8Array | Uint8ClampedArray | null>,
-  alphaLut: Readonly<Uint8Array | Uint8ClampedArray | null> = null,
+  redLut: ArrayLike<number> | null,
+  greenLut: ArrayLike<number> | null,
+  blueLut: ArrayLike<number> | null,
+  alphaLut: ArrayLike<number> | null = null,
 ): void {
   ensureBitmapWasm();
   apply_bitmap_curve_wasm(
@@ -176,7 +176,7 @@ export function concatBitmapColorMatrix(
 }
 
 export function convolveBitmap(
-  out: Uint8ClampedArray,
+  out: Uint8Array,
   source: Readonly<BitmapRegion>,
   options: Readonly<BitmapConvolutionOptions>,
 ): void {
@@ -228,12 +228,12 @@ export function copyBitmapPixels(
 
 // --- Fill ---
 
-export function dilateBitmap(out: Uint8ClampedArray, source: Readonly<BitmapRegion>, radius: number): void {
+export function dilateBitmap(out: Uint8Array, source: Readonly<BitmapRegion>, radius: number): void {
   ensureBitmapWasm();
   dilate_bitmap_wasm(asUint8(out), asUint8(source.bitmap.data), descriptorOf(source), radius);
 }
 
-export function erodeBitmap(out: Uint8ClampedArray, source: Readonly<BitmapRegion>, radius: number): void {
+export function erodeBitmap(out: Uint8Array, source: Readonly<BitmapRegion>, radius: number): void {
   ensureBitmapWasm();
   erode_bitmap_wasm(asUint8(out), asUint8(source.bitmap.data), descriptorOf(source), radius);
 }
@@ -410,16 +410,12 @@ export function multiplyBitmapAlpha(out: Readonly<BitmapRegion>, factor: number)
   invalidateBitmap(out.bitmap);
 }
 
-export function pixelateBitmap(out: Uint8ClampedArray, source: Readonly<BitmapRegion>, blockSize: number): void {
+export function pixelateBitmap(out: Uint8Array, source: Readonly<BitmapRegion>, blockSize: number): void {
   ensureBitmapWasm();
   pixelate_bitmap_wasm(asUint8(out), asUint8(source.bitmap.data), descriptorOf(source), blockSize);
 }
 
-export function premultiplyBitmapPixels(
-  out: Uint8ClampedArray,
-  source: Readonly<Uint8ClampedArray>,
-  length: number,
-): void {
+export function premultiplyBitmapPixels(out: Uint8Array, source: Readonly<Uint8Array>, length: number): void {
   ensureBitmapWasm();
   premultiply_bitmap_pixels_wasm(asUint8(out), asUint8(source), length);
 }
@@ -438,11 +434,7 @@ export function setBitmapColorMatrixIdentity(out: number[]): void {
 
 // --- Merge channels ---
 
-export function unpremultiplyBitmapPixels(
-  out: Uint8ClampedArray,
-  source: Readonly<Uint8ClampedArray>,
-  length: number,
-): void {
+export function unpremultiplyBitmapPixels(out: Uint8Array, source: Readonly<Uint8Array>, length: number): void {
   ensureBitmapWasm();
   unpremultiply_bitmap_pixels_wasm(asUint8(out), asUint8(source), length);
 }
@@ -462,8 +454,8 @@ function runMatrixWriter(out: number[], operation: (typed: Float64Array) => void
   for (let i = 0; i < typed.length; i += 1) out[i] = typed[i]!;
 }
 
-function asUint8(data: Readonly<Uint8Array | Uint8ClampedArray>): Uint8Array {
-  const view = data as Uint8Array | Uint8ClampedArray;
+function asUint8(data: Readonly<Uint8Array>): Uint8Array {
+  const view = data as Uint8Array;
   return new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
 }
 
@@ -473,6 +465,6 @@ function descriptorOf(region: Readonly<BitmapRegion>): Float64Array {
 
 function byteChannelMap(values: ArrayLike<number> | null): Uint8Array {
   if (values === null) return EMPTY_BYTE_CHANNEL_MAP;
-  if (values instanceof Uint8Array || values instanceof Uint8ClampedArray) return asUint8(values);
+  if (values instanceof Uint8Array) return asUint8(values);
   return Uint8Array.from(values);
 }

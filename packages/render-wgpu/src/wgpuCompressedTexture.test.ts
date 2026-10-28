@@ -73,7 +73,7 @@ describe('registerWgpuCompressedTextureDecoder', () => {
     const state = await createWgpuRenderStateForTest();
     const runtime = getWgpuRenderStateRuntime(state);
     const before = runtime.registries.compressedTextureDecoder;
-    const decoder = vi.fn(() => new Uint8ClampedArray(64));
+    const decoder = vi.fn(() => new Uint8Array(64));
     registerWgpuCompressedTextureDecoder(state, decoder);
     expect(runtime.registries.compressedTextureDecoder).not.toBe(before);
     expect(runtime.registries.compressedTextureDecoder).toEqual(decoder);
@@ -98,7 +98,7 @@ describe('registerWgpuCompressedTextureUpload', () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuCompressedTextureUpload(state, true);
     registerWgpuCompressedTextureDecoder(state, (_format, width, height) => {
-      return new Uint8ClampedArray(width * height * 4);
+      return new Uint8Array(width * height * 4);
     });
     const writeTexture = vi.spyOn(state.device.queue, 'writeTexture');
     expect(bindWgpuCompressedImageTexture(state, compressedImage())?.view).toBeDefined();
@@ -109,7 +109,7 @@ describe('registerWgpuCompressedTextureUpload', () => {
     const state = await createWgpuRenderStateForTest();
     registerWgpuCompressedTextureUpload(state, true);
     registerWgpuCompressedTextureDecoder(state, (_format, width, height) => {
-      const rgba = new Uint8ClampedArray(width * height * 4);
+      const rgba = new Uint8Array(width * height * 4);
       for (let i = 0; i < rgba.length; i += 4) {
         rgba[i] = 255;
         rgba[i + 1] = 64;
@@ -122,7 +122,7 @@ describe('registerWgpuCompressedTextureUpload', () => {
     const entry = bindWgpuCompressedImageTexture(state, compressedImage())!;
 
     expect(entry.straightAlpha).toBe(false);
-    expect(Array.from(writeTexture.mock.calls[0][1] as Uint8ClampedArray).slice(0, 4)).toEqual([128, 32, 0, 128]);
+    expect(Array.from(writeTexture.mock.calls[0][1] as Uint8Array).slice(0, 4)).toEqual([128, 32, 0, 128]);
   });
 
   it('marks native straight-alpha blocks for display-shader premultiplication', async () => {
@@ -151,7 +151,7 @@ describe('uploadWgpuCompressedTextureContainer', () => {
 
   it('decodes plain 2D levels to RGBA when native support is absent', async () => {
     const state = await createWgpuRenderStateForTest();
-    const decoder = vi.fn(() => new Uint8ClampedArray(64));
+    const decoder = vi.fn(() => new Uint8Array(64));
     const createTexture = vi.spyOn(state.device, 'createTexture');
     expect(uploadWgpuCompressedTextureContainer(state, container(), new Uint8Array(8), decoder)).not.toBeNull();
     expect(decoder).toHaveBeenCalledWith('bc1', 4, 4, expect.any(Uint8Array));
@@ -165,9 +165,7 @@ describe('uploadWgpuCompressedTextureContainer', () => {
       { byteLength: 8, byteOffset: face * 40 + 32, height: 4, width: 4 },
     ]).flat();
     const cube = container({ faces: 6, height: 8, levels, mipLevels: 2, width: 8 });
-    expect(
-      uploadWgpuCompressedTextureContainer(state, cube, new Uint8Array(240), () => new Uint8ClampedArray(64)),
-    ).toBeNull();
+    expect(uploadWgpuCompressedTextureContainer(state, cube, new Uint8Array(240), () => new Uint8Array(64))).toBeNull();
     (state.device.features as Set<GPUFeatureName>).add('texture-compression-bc');
     const writeTexture = vi.spyOn(state.device.queue, 'writeTexture');
     expect(uploadWgpuCompressedTextureContainer(state, cube, new Uint8Array(240))).not.toBeNull();

@@ -44,8 +44,8 @@ export const webHostImage: HostImageCapability = {
   },
 };
 
-function unpremultiplyRgba8(source: Readonly<Uint8ClampedArray>): Uint8ClampedArray<ArrayBuffer> {
-  const data = new Uint8ClampedArray(source);
+function unpremultiplyRgba8(source: Readonly<Uint8Array>): Uint8Array<ArrayBuffer> {
+  const data = new Uint8Array(source);
   for (let i = 0; i < data.length; i += 4) {
     const alpha = data[i + 3];
     if (alpha === 0) {

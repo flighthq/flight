@@ -11,7 +11,7 @@ export function initializeStubGlyphRasterizerBackend(out: HostGlyphRasterizerCap
     const size = Math.max(1, Math.round(options.fontSize));
     const width = Math.max(1, Math.round(size * 0.6));
     const height = Math.max(1, Math.round(size * 0.7));
-    const pixels = new Uint8ClampedArray(width * height * 4);
+    const pixels = new Uint8Array(width * height * 4);
     pixels.fill(255);
     return {
       advance: width + Math.max(1, Math.round(size * 0.1)),

@@ -15,7 +15,7 @@ function makeGl(): WebGL2RenderingContext {
 describe('uploadGlTextureData', () => {
   it('drives the raw-pixel overload with width/height/border and the data buffer', () => {
     const gl = makeGl();
-    const data = new Uint8ClampedArray(2 * 2 * 4);
+    const data = new Uint8Array(2 * 2 * 4);
     uploadGlTextureData(gl, gl.TEXTURE_2D, 2, 2, data);
     expect(gl.texImage2D).toHaveBeenCalledWith(gl.TEXTURE_2D, 0, gl.RGBA, 2, 2, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
   });

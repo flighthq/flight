@@ -16,7 +16,7 @@ import { invalidateBitmap } from './bitmap.ts';
  */
 export function compositeBitmapPixels(
   dest: Readonly<BitmapRegion>,
-  pixels: Readonly<Uint8ClampedArray>,
+  pixels: Readonly<Uint8Array>,
   mode: BitmapCompositeMode = BitmapCompositeMode.Normal,
 ): void {
   for (let py = 0; py < dest.height; py++) {
@@ -83,7 +83,7 @@ export function compositeBitmapRegion(
  * full bitmap (x=0, y=0, width=source.bitmap.width,
  * height=source.bitmap.height).
  */
-export function extractBitmapPixels(out: Uint8ClampedArray, source: Readonly<BitmapRegion>): void {
+export function extractBitmapPixels(out: Uint8Array, source: Readonly<BitmapRegion>): void {
   for (let py = 0; py < source.height; py++) {
     const sourceY = source.y + py;
     if (sourceY < 0 || sourceY >= source.bitmap.height) continue;
@@ -133,7 +133,7 @@ export function extractBitmapPixels32(out: Uint32Array, source: Readonly<BitmapR
  * `pixels` must be at least `dest.width * dest.height * 4` bytes in
  * row-major RGBA order.
  */
-export function writeBitmapPixels(dest: Readonly<BitmapRegion>, pixels: Readonly<Uint8ClampedArray>): void {
+export function writeBitmapPixels(dest: Readonly<BitmapRegion>, pixels: Readonly<Uint8Array>): void {
   for (let py = 0; py < dest.height; py++) {
     const y = dest.y + py;
     if (y < 0 || y >= dest.bitmap.height) continue;
@@ -257,7 +257,7 @@ function softLightChannel(cb: number, cs: number): number {
 }
 
 function compositePixelInto(
-  dest: Uint8ClampedArray,
+  dest: Uint8Array,
   di: number,
   r: number,
   g: number,

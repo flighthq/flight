@@ -135,7 +135,7 @@ export function uploadWgpuCompressedTextureContainer(
   }
 
   if (decode === undefined || container.faces !== 1 || container.layers !== 1) return null;
-  const decoded: Uint8ClampedArray<ArrayBuffer>[] = [];
+  const decoded: Uint8Array<ArrayBuffer>[] = [];
   for (const level of container.levels) {
     const bytes = payload.subarray(level.byteOffset, level.byteOffset + level.byteLength);
     const rgba = decode(container.format, level.width, level.height, bytes);
@@ -187,8 +187,8 @@ function uploadWgpuCompressedImage(
   return finishEntity(out);
 }
 
-function premultiplyRgba8(data: Readonly<Uint8ClampedArray<ArrayBuffer>>): Uint8ClampedArray<ArrayBuffer> {
-  const out = new Uint8ClampedArray(data.length);
+function premultiplyRgba8(data: Readonly<Uint8Array<ArrayBuffer>>): Uint8Array<ArrayBuffer> {
+  const out = new Uint8Array(data.length);
   for (let i = 0; i < data.length; i += 4) {
     const alpha = data[i + 3];
     out[i] = (data[i] * alpha) / 255;

@@ -226,7 +226,7 @@ function packedRgbaToHex(packed: number): string {
 }
 
 function recomputeMatrix(): void {
-  const matrices: number[][] = [];
+  const matrices: Readonly<Float32Array>[] = [];
 
   if (brightness !== 0) matrices.push(createBrightnessColorMatrix(brightness));
   if (contrast !== 1) matrices.push(createContrastColorMatrix(contrast));

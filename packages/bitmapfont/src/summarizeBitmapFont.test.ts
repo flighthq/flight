@@ -12,7 +12,7 @@ function pageOfBytes(bytes: number): TextureAtlas {
   const image = {
     alphaType: 'straight',
     gamut: 'srgb',
-    data: new Uint8ClampedArray(bytes),
+    data: new Uint8Array(bytes),
     format: 'rgba8unorm',
     height: 1,
     kind: BitmapTextureSourceKind,

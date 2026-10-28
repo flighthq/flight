@@ -9,8 +9,8 @@ function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = b
 describe('dropShadowBitmap', () => {
   it('produces a tinted alpha mask in out', () => {
     const source = createBitmap(1, 1, 0xffffffff);
-    const out = new Uint8ClampedArray(4);
-    const scratch = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
+    const scratch = new Uint8Array(4);
     dropShadowBitmap(out, scratch, region(source), { radiusX: 0, radiusY: 0, color: 0x0000ffff });
     expect(out[0]).toBe(0);
     expect(out[2]).toBe(0xff);
@@ -20,8 +20,8 @@ describe('dropShadowBitmap', () => {
   it('compositing out at an offset places the shadow correctly', () => {
     const source = createBitmap(1, 1, 0xffffffff);
     const dest = createBitmap(4, 4);
-    const out = new Uint8ClampedArray(4);
-    const scratch = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
+    const scratch = new Uint8Array(4);
     dropShadowBitmap(out, scratch, region(source), { radiusX: 0, radiusY: 0, color: 0x0000ffff });
     const angle = (0 * Math.PI) / 180;
     const offsetX = Math.round(Math.cos(angle) * 1);
@@ -35,8 +35,8 @@ describe('dropShadowBitmap', () => {
   it('compositing shadow then source produces source-over-shadow', () => {
     const source = createBitmap(1, 1, 0xff0000ff);
     const dest = createBitmap(2, 1);
-    const out = new Uint8ClampedArray(4);
-    const scratch = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
+    const scratch = new Uint8Array(4);
     dropShadowBitmap(out, scratch, region(source), { radiusX: 0, radiusY: 0, color: 0x0000ffff });
     compositeBitmapPixels(region(dest, 1, 0, 1, 1), out);
     compositeBitmapRegion(region(dest, 0, 0, 1, 1), region(source));
@@ -46,7 +46,7 @@ describe('dropShadowBitmap', () => {
 
   it('source.bitmap.data can be used as out for a full-bitmap region', () => {
     const bitmap = createBitmap(1, 1, 0xffffffff);
-    const scratch = new Uint8ClampedArray(4);
+    const scratch = new Uint8Array(4);
     dropShadowBitmap(bitmap.data, scratch, region(bitmap), { radiusX: 0, radiusY: 0, color: 0x0000ffff });
     expect(bitmap.data[2]).toBe(0xff); // tinted blue
     expect(bitmap.data[3]).toBe(0xff); // alpha carried from source
@@ -56,8 +56,8 @@ describe('dropShadowBitmap', () => {
 describe('glowBitmap', () => {
   it('produces a tinted alpha mask in out', () => {
     const source = createBitmap(1, 1, 0xffffffff);
-    const out = new Uint8ClampedArray(4);
-    const scratch = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
+    const scratch = new Uint8Array(4);
     glowBitmap(out, scratch, region(source), { radiusX: 0, radiusY: 0, color: 0x00ff00ff });
     expect(out[1]).toBe(0xff);
     expect(out[3]).toBe(0xff);
@@ -66,8 +66,8 @@ describe('glowBitmap', () => {
   it('compositing out places the glow at the same position', () => {
     const source = createBitmap(1, 1, 0xffffffff);
     const dest = createBitmap(1, 1);
-    const out = new Uint8ClampedArray(4);
-    const scratch = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
+    const scratch = new Uint8Array(4);
     glowBitmap(out, scratch, region(source), { radiusX: 0, radiusY: 0, color: 0x00ff00ff });
     compositeBitmapPixels(region(dest), out);
     expect(dest.data[1]).toBe(0xff);
@@ -77,8 +77,8 @@ describe('glowBitmap', () => {
   it('compositing source over glow produces source-over-glow', () => {
     const source = createBitmap(1, 1, 0xff0000ff);
     const dest = createBitmap(1, 1);
-    const out = new Uint8ClampedArray(4);
-    const scratch = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
+    const scratch = new Uint8Array(4);
     glowBitmap(out, scratch, region(source), { radiusX: 0, radiusY: 0, color: 0x00ff00ff });
     compositeBitmapPixels(region(dest), out);
     compositeBitmapRegion(region(dest), region(source));
@@ -88,7 +88,7 @@ describe('glowBitmap', () => {
 
   it('source.bitmap.data can be used as out for a full-bitmap region', () => {
     const bitmap = createBitmap(1, 1, 0xffffffff);
-    const scratch = new Uint8ClampedArray(4);
+    const scratch = new Uint8Array(4);
     glowBitmap(bitmap.data, scratch, region(bitmap), { radiusX: 0, radiusY: 0, color: 0x00ff00ff });
     expect(bitmap.data[1]).toBe(0xff);
     expect(bitmap.data[3]).toBe(0xff);
@@ -101,8 +101,8 @@ describe('innerGlowBitmap', () => {
     // the opaque pixel; transparent pixels (outside the shape) stay at 0 alpha.
     const source = createBitmap(3, 1);
     source.data[1 * 4 + 3] = 255;
-    const out = new Uint8ClampedArray(3 * 4);
-    const scratch = new Uint8ClampedArray(3 * 4);
+    const out = new Uint8Array(3 * 4);
+    const scratch = new Uint8Array(3 * 4);
     innerGlowBitmap(out, scratch, region(source), { radiusX: 2, radiusY: 0, color: 0x00ff00ff });
     expect(out[0 * 4 + 3]).toBe(0);
     expect(out[2 * 4 + 3]).toBe(0);
@@ -114,8 +114,8 @@ describe('innerGlowBitmap', () => {
 
   it('produces no inner glow when blur is zero', () => {
     const source = createBitmap(1, 1, 0x0000ffff);
-    const out = new Uint8ClampedArray(4);
-    const scratch = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
+    const scratch = new Uint8Array(4);
     innerGlowBitmap(out, scratch, region(source), { radiusX: 0, radiusY: 0 });
     expect(out[3]).toBe(0);
   });
@@ -125,8 +125,8 @@ describe('innerShadowBitmap', () => {
   it('defaults to a black tint', () => {
     const source = createBitmap(3, 1);
     source.data[1 * 4 + 3] = 255;
-    const out = new Uint8ClampedArray(3 * 4);
-    const scratch = new Uint8ClampedArray(3 * 4);
+    const out = new Uint8Array(3 * 4);
+    const scratch = new Uint8Array(3 * 4);
     innerShadowBitmap(out, scratch, region(source), { radiusX: 2, radiusY: 0 });
     expect(out[1 * 4 + 0]).toBe(0);
     expect(out[1 * 4 + 1]).toBe(0);
@@ -139,8 +139,8 @@ describe('innerShadowBitmap', () => {
     const source = createBitmap(5, 1);
     for (let px = 1; px <= 3; px++) source.data[px * 4 + 3] = 255;
     const alphaAt = (offsetX: number): number[] => {
-      const out = new Uint8ClampedArray(5 * 4);
-      const scratch = new Uint8ClampedArray(5 * 4);
+      const out = new Uint8Array(5 * 4);
+      const scratch = new Uint8Array(5 * 4);
       innerShadowBitmap(out, scratch, region(source), { offsetX, radiusX: 1, radiusY: 0 });
       return [out[1 * 4 + 3], out[2 * 4 + 3], out[3 * 4 + 3]];
     };

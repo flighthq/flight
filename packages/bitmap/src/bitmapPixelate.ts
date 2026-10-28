@@ -10,7 +10,7 @@ import type { BitmapRegion } from '@flighthq/types/contract';
  * `source.bitmap.data` as `out` for a full-bitmap region — each cell is fully
  * read before it is written, and cells do not overlap.
  */
-export function pixelateBitmap(out: Uint8ClampedArray, source: Readonly<BitmapRegion>, blockSize: number): void {
+export function pixelateBitmap(out: Uint8Array, source: Readonly<BitmapRegion>, blockSize: number): void {
   const block = Math.max(1, Math.round(blockSize));
   const w = source.width;
   const h = source.height;

@@ -17,10 +17,10 @@ import { invalidateBitmap } from './bitmap.ts';
 export function applyBitmapCurve(
   out: Readonly<BitmapRegion>,
   source: Readonly<BitmapRegion>,
-  redLut: Readonly<Uint8Array | Uint8ClampedArray | null>,
-  greenLut: Readonly<Uint8Array | Uint8ClampedArray | null>,
-  blueLut: Readonly<Uint8Array | Uint8ClampedArray | null>,
-  alphaLut: Readonly<Uint8Array | Uint8ClampedArray | null> = null,
+  redLut: ArrayLike<number> | null,
+  greenLut: ArrayLike<number> | null,
+  blueLut: ArrayLike<number> | null,
+  alphaLut: ArrayLike<number> | null = null,
 ): void {
   const w = Math.min(out.width, source.width);
   const h = Math.min(out.height, source.height);
@@ -74,7 +74,7 @@ export function applyBitmapLevels(
   const span = wp - bp;
   const invGamma = gamma > 0 ? 1 / gamma : 1;
   // Build a 256-entry LUT so the pixel loop is a fast table lookup.
-  const lut = new Uint8ClampedArray(256);
+  const lut = new Uint8Array(256);
   for (let i = 0; i < 256; i++) {
     const normalized = Math.max(0, Math.min(1, (i - bp) / span));
     lut[i] = Math.round(Math.pow(normalized, invGamma) * 255);

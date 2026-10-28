@@ -19,7 +19,7 @@ const fetchedImage = { height: 4, width: 4 } as ImageResource;
 
 const fakeSlot: HostImageDecodeFormatCapability = {
   decode: vi.fn().mockResolvedValue({
-    data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0xff]),
+    data: new Uint8Array([0x11, 0x22, 0x33, 0xff]),
     height: 1,
     width: 1,
   }),
@@ -33,7 +33,7 @@ function externalResource(uri: string): ImageResourceReference {
 
 beforeEach(() => {
   vi.mocked(fakeSlot.decode).mockResolvedValue({
-    data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0xff]),
+    data: new Uint8Array([0x11, 0x22, 0x33, 0xff]),
     height: 1,
     width: 1,
   });

@@ -918,7 +918,7 @@ describe('isWgpuTextureReady', () => {
       isWgpuTextureReady({
         dimension: '2d',
         source: {
-          data: new Uint8ClampedArray(4),
+          data: new Uint8Array(4),
           height: 1,
           kind: BitmapTextureSourceKind,
           version: 0,

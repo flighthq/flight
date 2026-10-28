@@ -664,7 +664,7 @@ describe('pipeline-backed GL registrations', () => {
     let offscreen = createGlRenderState(screen.gl, screen.registries);
     const materialRenderer = { instanceFloatCount: 0, bind: vi.fn() } as never;
     const offscreenMaterialRenderer = { instanceFloatCount: 0, bind: vi.fn() } as never;
-    const decoder = vi.fn(() => new Uint8ClampedArray(4));
+    const decoder = vi.fn(() => new Uint8Array(4));
     const resolver = vi.fn(() => null);
     registerGlBlendMode(screen, 'acme.LateBlend', { src: 'ONE', dst: 'ZERO' });
     registerGlCompressedTextureDecoder(screen, decoder);

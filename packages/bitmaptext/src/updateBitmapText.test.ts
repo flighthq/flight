@@ -81,7 +81,7 @@ function createTwoPageGlyphSource(): { source: GlyphSource; page0Image: ImageRes
 function createCodepointColorRasterizerBackend(size: number): HostGlyphRasterizerCapability {
   return {
     rasterize(codepoint) {
-      const pixels = new Uint8ClampedArray(size * size * 4);
+      const pixels = new Uint8Array(size * size * 4);
       for (let i = 0; i < size * size; i++) {
         pixels[i * 4] = codepoint;
         pixels[i * 4 + 3] = 0xff;

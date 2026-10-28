@@ -20,7 +20,7 @@ import type { BitmapDisplacementMapOptions, BitmapEdgeMode, BitmapRegion } from 
  * alias `source.bitmap.data` — output pixels read arbitrary source positions.
  */
 export function displaceBitmap(
-  out: Uint8ClampedArray,
+  out: Uint8Array,
   source: Readonly<BitmapRegion>,
   options: Readonly<BitmapDisplacementMapOptions>,
 ): void {

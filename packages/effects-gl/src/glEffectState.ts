@@ -141,7 +141,7 @@ export function endGlEffectPass(
         const matrix = getAdjustmentColorMatrix(op);
         if (matrix !== null) matrices.push(matrix);
       }
-      applyColorMatrixPassToGl(state, source, dest, fuseColorMatrices(matrices));
+      applyColorMatrixPassToGl(state, source, dest, Array.from(fuseColorMatrices(matrices)));
     }
     source = dest;
     pending = [];

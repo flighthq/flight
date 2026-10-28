@@ -8,7 +8,7 @@ import { createSwfJpegAlphaBitmap, createSwfLosslessBitmap } from './swfBitmap.t
 describe('createSwfJpegAlphaBitmap', () => {
   it('replaces the decoded alpha plane with real deflate output while preserving straight RGB', () => {
     const decoded: DecodedImage = {
-      data: new Uint8ClampedArray([0x11, 0x12, 0x13, 0xaa, 0x21, 0x22, 0x23, 0xbb, 0x31, 0x32, 0x33, 0xcc]),
+      data: new Uint8Array([0x11, 0x12, 0x13, 0xaa, 0x21, 0x22, 0x23, 0xbb, 0x31, 0x32, 0x33, 0xcc]),
       height: 1,
       width: 3,
     };
@@ -26,7 +26,7 @@ describe('createSwfJpegAlphaBitmap', () => {
     });
     expect([...bitmap!.data]).toEqual(expected);
     // Mutation check: the oracle must distinguish a one-pixel shift of the authored alpha plane.
-    const shifted = new Uint8ClampedArray(bitmap!.data);
+    const shifted = new Uint8Array(bitmap!.data);
     for (let pixel = 0; pixel < alpha.length; pixel++) shifted[pixel * 4 + 3] = alpha[(pixel + 1) % alpha.length];
     expect([...shifted]).not.toEqual(expected);
   });
@@ -129,7 +129,7 @@ function payloadWithTable(
 }
 
 function decodedImage(width: number, height: number): DecodedImage {
-  return { data: new Uint8ClampedArray(width * height * 4), height, width };
+  return { data: new Uint8Array(width * height * 4), height, width };
 }
 
 function jpegAlphaPayload(width: number, height: number, alpha: readonly number[]): SwfJpegAlphaPayload {

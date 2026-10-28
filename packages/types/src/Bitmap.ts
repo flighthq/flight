@@ -7,7 +7,7 @@ import type { BitmapTextureSourceKind } from './TextureSourceKind.ts';
  * converting between raw pixels and a host-drawable image is an explicit allocating operation.
  */
 export interface Bitmap extends TextureSource {
-  readonly data: Uint8ClampedArray<ArrayBuffer>;
+  readonly data: Uint8Array<ArrayBuffer>;
   format: PixelFormat;
   readonly kind: typeof BitmapTextureSourceKind;
 }

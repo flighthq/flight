@@ -2,16 +2,16 @@ import { convertBitmapPixelOrder, premultiplyBitmapPixels, unpremultiplyBitmapPi
 
 describe('convertBitmapPixelOrder', () => {
   it('is a no-op when from === to and out !== source', () => {
-    const source = new Uint8ClampedArray([0x11, 0x22, 0x33, 0xff]);
-    const out = new Uint8ClampedArray(4);
+    const source = new Uint8Array([0x11, 0x22, 0x33, 0xff]);
+    const out = new Uint8Array(4);
     convertBitmapPixelOrder(out, source, 4, 'RGBA', 'RGBA');
     expect(out[0]).toBe(0x11);
     expect(out[1]).toBe(0x22);
   });
 
   it('converts RGBA to BGRA', () => {
-    const source = new Uint8ClampedArray([0xaa, 0xbb, 0xcc, 0xff]);
-    const out = new Uint8ClampedArray(4);
+    const source = new Uint8Array([0xaa, 0xbb, 0xcc, 0xff]);
+    const out = new Uint8Array(4);
     convertBitmapPixelOrder(out, source, 4, 'RGBA', 'BGRA');
     expect(out[0]).toBe(0xcc); // B
     expect(out[1]).toBe(0xbb); // G
@@ -20,8 +20,8 @@ describe('convertBitmapPixelOrder', () => {
   });
 
   it('converts RGBA to ARGB', () => {
-    const source = new Uint8ClampedArray([0xaa, 0xbb, 0xcc, 0xdd]);
-    const out = new Uint8ClampedArray(4);
+    const source = new Uint8Array([0xaa, 0xbb, 0xcc, 0xdd]);
+    const out = new Uint8Array(4);
     convertBitmapPixelOrder(out, source, 4, 'RGBA', 'ARGB');
     expect(out[0]).toBe(0xdd); // A
     expect(out[1]).toBe(0xaa); // R
@@ -30,9 +30,9 @@ describe('convertBitmapPixelOrder', () => {
   });
 
   it('round-trips RGBA → BGRA → RGBA', () => {
-    const source = new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]);
-    const tmp = new Uint8ClampedArray(4);
-    const out = new Uint8ClampedArray(4);
+    const source = new Uint8Array([0x11, 0x22, 0x33, 0x44]);
+    const tmp = new Uint8Array(4);
+    const out = new Uint8Array(4);
     convertBitmapPixelOrder(tmp, source, 4, 'RGBA', 'BGRA');
     convertBitmapPixelOrder(out, tmp, 4, 'BGRA', 'RGBA');
     expect(out[0]).toBe(0x11);
@@ -42,13 +42,13 @@ describe('convertBitmapPixelOrder', () => {
   });
 
   it('is safe in-place for the same format (no-op path)', () => {
-    const buf = new Uint8ClampedArray([0xaa, 0xbb, 0xcc, 0xff]);
+    const buf = new Uint8Array([0xaa, 0xbb, 0xcc, 0xff]);
     convertBitmapPixelOrder(buf, buf, 4, 'RGBA', 'RGBA');
     expect(buf[0]).toBe(0xaa);
   });
 
   it('is safe in-place for different formats', () => {
-    const buf = new Uint8ClampedArray([0xaa, 0xbb, 0xcc, 0xff]);
+    const buf = new Uint8Array([0xaa, 0xbb, 0xcc, 0xff]);
     convertBitmapPixelOrder(buf, buf, 4, 'RGBA', 'BGRA');
     expect(buf[0]).toBe(0xcc);
     expect(buf[2]).toBe(0xaa);
@@ -57,8 +57,8 @@ describe('convertBitmapPixelOrder', () => {
 
 describe('premultiplyBitmapPixels', () => {
   it('scales RGB by alpha/255', () => {
-    const source = new Uint8ClampedArray([0xff, 0x80, 0x00, 0x80]);
-    const out = new Uint8ClampedArray(4);
+    const source = new Uint8Array([0xff, 0x80, 0x00, 0x80]);
+    const out = new Uint8Array(4);
     premultiplyBitmapPixels(out, source, 4);
     expect(out[0]).toBeCloseTo(0x80, 0); // 255 * 128/255 ≈ 128
     expect(out[1]).toBeCloseTo(0x40, 0); // 128 * 128/255 ≈ 64
@@ -67,8 +67,8 @@ describe('premultiplyBitmapPixels', () => {
   });
 
   it('fully transparent pixel becomes all zeros', () => {
-    const source = new Uint8ClampedArray([0xff, 0xff, 0xff, 0x00]);
-    const out = new Uint8ClampedArray(4);
+    const source = new Uint8Array([0xff, 0xff, 0xff, 0x00]);
+    const out = new Uint8Array(4);
     premultiplyBitmapPixels(out, source, 4);
     expect(out[0]).toBe(0);
     expect(out[1]).toBe(0);
@@ -77,8 +77,8 @@ describe('premultiplyBitmapPixels', () => {
   });
 
   it('fully opaque pixel is unchanged', () => {
-    const source = new Uint8ClampedArray([0x11, 0x22, 0x33, 0xff]);
-    const out = new Uint8ClampedArray(4);
+    const source = new Uint8Array([0x11, 0x22, 0x33, 0xff]);
+    const out = new Uint8Array(4);
     premultiplyBitmapPixels(out, source, 4);
     expect(out[0]).toBe(0x11);
     expect(out[1]).toBe(0x22);
@@ -87,7 +87,7 @@ describe('premultiplyBitmapPixels', () => {
   });
 
   it('is safe in-place', () => {
-    const buf = new Uint8ClampedArray([0xff, 0x00, 0x00, 0x80]);
+    const buf = new Uint8Array([0xff, 0x00, 0x00, 0x80]);
     premultiplyBitmapPixels(buf, buf, 4);
     expect(buf[0]).toBeCloseTo(0x80, 0);
     expect(buf[3]).toBe(0x80);
@@ -97,9 +97,9 @@ describe('premultiplyBitmapPixels', () => {
 describe('unpremultiplyBitmapPixels', () => {
   it('recovers original RGB after premultiply round-trip within ±1', () => {
     // Integer premultiply introduces at most ±1 rounding error per channel.
-    const source = new Uint8ClampedArray([0xc0, 0x80, 0x40, 0x80]);
-    const premul = new Uint8ClampedArray(4);
-    const out = new Uint8ClampedArray(4);
+    const source = new Uint8Array([0xc0, 0x80, 0x40, 0x80]);
+    const premul = new Uint8Array(4);
+    const out = new Uint8Array(4);
     premultiplyBitmapPixels(premul, source, 4);
     unpremultiplyBitmapPixels(out, premul, 4);
     expect(Math.abs(out[0] - 0xc0)).toBeLessThanOrEqual(1);
@@ -108,15 +108,15 @@ describe('unpremultiplyBitmapPixels', () => {
   });
 
   it('fully transparent pixel remains all zeros', () => {
-    const source = new Uint8ClampedArray([0x00, 0x00, 0x00, 0x00]);
-    const out = new Uint8ClampedArray(4);
+    const source = new Uint8Array([0x00, 0x00, 0x00, 0x00]);
+    const out = new Uint8Array(4);
     unpremultiplyBitmapPixels(out, source, 4);
     expect(out[0]).toBe(0);
     expect(out[3]).toBe(0);
   });
 
   it('is safe in-place', () => {
-    const buf = new Uint8ClampedArray([0x80, 0x00, 0x00, 0x80]);
+    const buf = new Uint8Array([0x80, 0x00, 0x00, 0x80]);
     unpremultiplyBitmapPixels(buf, buf, 4);
     expect(buf[0]).toBeCloseTo(0xff, 0);
     expect(buf[3]).toBe(0x80);

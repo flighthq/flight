@@ -29,8 +29,8 @@ describe('gradientBevelBitmap', () => {
     for (let x = 2; x < 5; x++) source.data[x * 4 + 3] = 255;
     const ramp = new Uint8Array(256 * 4);
     buildBitmapGradientRamp(ramp, [0x000000, 0x808080, 0xffffff], [1, 0, 1], [0, 128, 255]);
-    const out = new Uint8ClampedArray(5 * 4);
-    const scratch = new Uint8ClampedArray(5 * 4);
+    const out = new Uint8Array(5 * 4);
+    const scratch = new Uint8Array(5 * 4);
     gradientBevelBitmap(out, scratch, region(source), ramp, {
       angle: Math.PI,
       distance: 1,
@@ -53,8 +53,8 @@ describe('gradientGlowBitmap', () => {
     const ramp = new Uint8Array(256 * 4);
     buildBitmapGradientRamp(ramp, [0x00ff00, 0x00ff00], [0, 1], [0, 255]);
     const source = createBitmap(1, 1, 0xffffffff);
-    const out = new Uint8ClampedArray(4);
-    const scratch = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
+    const scratch = new Uint8Array(4);
     gradientGlowBitmap(out, scratch, region(source), ramp, { radiusX: 0, radiusY: 0 });
     // Full alpha (255) → ramp[255] = opaque green.
     expect(out[0]).toBe(0);
@@ -67,8 +67,8 @@ describe('gradientGlowBitmap', () => {
     const ramp = new Uint8Array(256 * 4);
     buildBitmapGradientRamp(ramp, [0x00ff00, 0x00ff00], [1, 1], [0, 255]);
     const source = createBitmap(1, 1, 0xffffffff);
-    const out = new Uint8ClampedArray(4);
-    const scratch = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
+    const scratch = new Uint8Array(4);
     gradientGlowBitmap(out, scratch, region(source), ramp, { radiusX: 0, radiusY: 0, intensity: 0.5 });
     expect(out[3]).toBe(128);
   });
@@ -77,7 +77,7 @@ describe('gradientGlowBitmap', () => {
     const ramp = new Uint8Array(256 * 4);
     buildBitmapGradientRamp(ramp, [0x00ff00, 0x00ff00], [0, 1], [0, 255]);
     const bitmap = createBitmap(1, 1, 0xffffffff);
-    const scratch = new Uint8ClampedArray(4);
+    const scratch = new Uint8Array(4);
     gradientGlowBitmap(bitmap.data, scratch, region(bitmap), ramp, { radiusX: 0, radiusY: 0 });
     expect(bitmap.data[1]).toBe(0xff);
     expect(bitmap.data[3]).toBe(255);

@@ -126,9 +126,9 @@ export function warpBitmapQuad(
  * `dd[di..di+3]`.
  */
 function warpSampleBitmap(
-  dd: Uint8ClampedArray,
+  dd: Uint8Array,
   di: number,
-  sd: Readonly<Uint8ClampedArray>,
+  sd: Readonly<Uint8Array>,
   sw: number,
   sh: number,
   originX: number,
@@ -168,9 +168,9 @@ function warpSampleBitmap(
 }
 
 function warpSampleBilinear(
-  dd: Uint8ClampedArray,
+  dd: Uint8Array,
   di: number,
-  sd: Readonly<Uint8ClampedArray>,
+  sd: Readonly<Uint8Array>,
   sw: number,
   sh: number,
   originX: number,
@@ -201,9 +201,9 @@ function warpSampleBilinear(
 }
 
 function warpSampleBicubic(
-  dd: Uint8ClampedArray,
+  dd: Uint8Array,
   di: number,
-  sd: Readonly<Uint8ClampedArray>,
+  sd: Readonly<Uint8Array>,
   sw: number,
   sh: number,
   originX: number,

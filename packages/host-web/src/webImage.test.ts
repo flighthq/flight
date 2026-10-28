@@ -18,7 +18,7 @@ function createTestBitmap(): Bitmap {
   return {
     alphaType: 'straight',
     gamut: 'srgb',
-    data: new Uint8ClampedArray(4),
+    data: new Uint8Array(4),
     format: 'rgba8unorm',
     height: 1,
     kind: BitmapTextureSourceKind,

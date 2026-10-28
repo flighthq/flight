@@ -48,10 +48,10 @@ describe('bitmap-wasm wiring', () => {
   });
 
   it('round-trips premultiply/unpremultiply', () => {
-    const src = new Uint8ClampedArray([128, 64, 32, 128]);
-    const premul = new Uint8ClampedArray(4);
+    const src = new Uint8Array([128, 64, 32, 128]);
+    const premul = new Uint8Array(4);
     premultiplyBitmapPixels(premul, src, 4);
-    const unpremul = new Uint8ClampedArray(4);
+    const unpremul = new Uint8Array(4);
     unpremultiplyBitmapPixels(unpremul, premul, 4);
     expect(unpremul[3]).toBe(128);
   });

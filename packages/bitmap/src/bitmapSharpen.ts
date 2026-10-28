@@ -16,8 +16,8 @@ import { boxBlurBitmap } from './bitmapBlur.ts';
  * while the original source pixels are read again to form the mask.
  */
 export function sharpenBitmap(
-  out: Uint8ClampedArray,
-  scratch: Uint8ClampedArray,
+  out: Uint8Array,
+  scratch: Uint8Array,
   source: Readonly<BitmapRegion>,
   options: Readonly<BitmapSharpenOptions> = {},
 ): void {
@@ -44,10 +44,14 @@ export function sharpenBitmap(
       const r = data[si];
       const g = data[si + 1];
       const b = data[si + 2];
-      out[di] = r + amount * (r - out[di]);
-      out[di + 1] = g + amount * (g - out[di + 1]);
-      out[di + 2] = b + amount * (b - out[di + 2]);
+      out[di] = clampByte(r + amount * (r - out[di]));
+      out[di + 1] = clampByte(g + amount * (g - out[di + 1]));
+      out[di + 2] = clampByte(b + amount * (b - out[di + 2]));
       out[di + 3] = data[si + 3];
     }
   }
+}
+
+function clampByte(value: number): number {
+  return Math.max(0, Math.min(255, Math.round(value)));
 }

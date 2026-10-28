@@ -229,8 +229,8 @@ export function readSwfFilterList(
       continue;
     }
     if (id === FILTER_COLOR_MATRIX) {
-      const matrix: number[] = [];
-      for (let cell = 0; cell < COLOR_MATRIX_LENGTH && reader.valid; cell++) matrix.push(readSwfFilterFloat(reader));
+      const matrix = new Float32Array(COLOR_MATRIX_LENGTH);
+      for (let cell = 0; cell < COLOR_MATRIX_LENGTH && reader.valid; cell++) matrix[cell] = readSwfFilterFloat(reader);
       if (!reader.valid) return false;
       // SWF writes the offset column in the 0-255 byte domain; Flight's colour matrix takes a normalized
       // bias, so only that fifth column of each row converts.

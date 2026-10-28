@@ -40,7 +40,7 @@ describe('allocateGlyphRasterizerBackendFromGlyphOutlineSource', () => {
       bearingX: 0,
       bearingY: 0,
       height: 0,
-      pixels: new Uint8ClampedArray(),
+      pixels: new Uint8Array(),
       width: 0,
     });
   });

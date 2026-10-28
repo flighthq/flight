@@ -6,7 +6,7 @@ export function cloneBitmap(source: Readonly<Bitmap>): Bitmap {
   const out = allocateEntity<Bitmap>();
   out.alphaType = source.alphaType;
   out.gamut = source.gamut;
-  out.data = new Uint8ClampedArray(source.data);
+  out.data = new Uint8Array(source.data);
   out.format = source.format;
   out.height = source.height;
   out.kind = source.kind;
@@ -64,7 +64,7 @@ export function createBitmap(width: number, height: number, color: number = 0): 
 }
 
 function initializeBitmap(out: EntityConstruction<Bitmap>, width: number, height: number, color: number = 0): void {
-  const data = new Uint8ClampedArray(width * height * 4);
+  const data = new Uint8Array(width * height * 4);
   if (color !== 0) {
     const r = (color >>> 24) & 0xff;
     const g = (color >> 16) & 0xff;

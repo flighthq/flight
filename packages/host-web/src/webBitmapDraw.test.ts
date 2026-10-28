@@ -6,7 +6,7 @@ function region(bitmap: ReturnType<typeof createBitmap>, x = 0, y = 0, width = b
   return { bitmap, x, y, width, height };
 }
 
-function readExtractedPixel(buf: Uint8ClampedArray, regionWidth: number, x: number, y: number): number {
+function readExtractedPixel(buf: Uint8Array, regionWidth: number, x: number, y: number): number {
   const i = (y * regionWidth + x) * 4;
   return ((buf[i] << 24) | (buf[i + 1] << 16) | (buf[i + 2] << 8) | buf[i + 3]) >>> 0;
 }
@@ -68,7 +68,7 @@ describe('drawWebBitmap', () => {
   it('extracts correct pixels from a filled source', () => {
     const src = createBitmap(4, 4, 0xff0000ff);
     const r = region(src);
-    const buf = new Uint8ClampedArray(r.width * r.height * 4);
+    const buf = new Uint8Array(r.width * r.height * 4);
     extractBitmapPixels(buf, r);
     expect(readExtractedPixel(buf, r.width, 0, 0)).toBe(0xff0000ff);
     expect(readExtractedPixel(buf, r.width, 3, 3)).toBe(0xff0000ff);
@@ -79,7 +79,7 @@ describe('drawWebBitmap', () => {
     setBitmapPixel(src, 1, 1, 0xaabbccdd);
     setBitmapPixel(src, 2, 2, 0x11223344);
     const r = region(src, 1, 1, 2, 2);
-    const buf = new Uint8ClampedArray(r.width * r.height * 4);
+    const buf = new Uint8Array(r.width * r.height * 4);
     extractBitmapPixels(buf, r);
     expect(readExtractedPixel(buf, r.width, 0, 0)).toBe(0xaabbccdd);
     expect(readExtractedPixel(buf, r.width, 1, 1)).toBe(0x11223344);
@@ -88,7 +88,7 @@ describe('drawWebBitmap', () => {
   it('extracts zeroes from an empty bitmap', () => {
     const src = createBitmap(2, 2);
     const r = region(src);
-    const buf = new Uint8ClampedArray(r.width * r.height * 4);
+    const buf = new Uint8Array(r.width * r.height * 4);
     extractBitmapPixels(buf, r);
     expect(readExtractedPixel(buf, r.width, 0, 0)).toBe(0x00000000);
     expect(readExtractedPixel(buf, r.width, 1, 1)).toBe(0x00000000);

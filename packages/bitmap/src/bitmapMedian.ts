@@ -11,7 +11,7 @@ import type { BitmapRegion } from '@flighthq/types/contract';
  * alias `source.bitmap.data` — each output pixel reads a neighborhood of
  * source pixels.
  */
-export function medianBitmap(out: Uint8ClampedArray, source: Readonly<BitmapRegion>, radius: number): void {
+export function medianBitmap(out: Uint8Array, source: Readonly<BitmapRegion>, radius: number): void {
   const r = Math.max(0, Math.round(radius));
   const w = source.width;
   const h = source.height;

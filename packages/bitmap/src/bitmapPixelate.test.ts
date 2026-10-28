@@ -13,7 +13,7 @@ describe('pixelateBitmap', () => {
     source.data[4] = 100;
     source.data[3] = 255;
     source.data[7] = 255;
-    const out = new Uint8ClampedArray(2 * 4);
+    const out = new Uint8Array(2 * 4);
     pixelateBitmap(out, region(source), 2);
     expect(out[0]).toBe(50);
     expect(out[4]).toBe(50);
@@ -23,7 +23,7 @@ describe('pixelateBitmap', () => {
     const source = createBitmap(2, 1);
     source.data[0] = 10;
     source.data[4] = 200;
-    const out = new Uint8ClampedArray(2 * 4);
+    const out = new Uint8Array(2 * 4);
     pixelateBitmap(out, region(source), 1);
     expect(out[0]).toBe(10);
     expect(out[4]).toBe(200);

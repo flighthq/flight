@@ -66,7 +66,7 @@ async function decodeEmbeddedImageResourceReference(
   if (decoded === null) return null;
   const out = allocateEntity<Bitmap>();
   out.alphaType = ref.alphaType;
-  out.data = new Uint8ClampedArray(decoded.data);
+  out.data = new Uint8Array(decoded.data);
   out.format = 'rgba8unorm' as const;
   out.gamut = 'srgb' as const;
   out.height = decoded.height;

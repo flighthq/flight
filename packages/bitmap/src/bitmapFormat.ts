@@ -6,8 +6,8 @@ import type { PixelOrder } from '@flighthq/types/contract';
  * channels are read into locals before any write.
  */
 export function convertBitmapPixelOrder(
-  out: Uint8ClampedArray,
-  source: Readonly<Uint8ClampedArray>,
+  out: Uint8Array,
+  source: Readonly<Uint8Array>,
   length: number,
   from: PixelOrder,
   to: PixelOrder,
@@ -38,11 +38,7 @@ export function convertBitmapPixelOrder(
  * Operates on a raw buffer, not a Bitmap — if the buffer belongs to an
  * Image, set its `alphaType` to `premultiplied` to keep it truthful.
  */
-export function premultiplyBitmapPixels(
-  out: Uint8ClampedArray,
-  source: Readonly<Uint8ClampedArray>,
-  length: number,
-): void {
+export function premultiplyBitmapPixels(out: Uint8Array, source: Readonly<Uint8Array>, length: number): void {
   for (let i = 0; i < length; i += 4) {
     const a = source[i + 3] / 255;
     out[i] = Math.round(source[i] * a);
@@ -60,11 +56,7 @@ export function premultiplyBitmapPixels(
  * Operates on a raw buffer, not a Bitmap — if the buffer belongs to an
  * Image, set its `alphaType` to `straight` to keep it truthful.
  */
-export function unpremultiplyBitmapPixels(
-  out: Uint8ClampedArray,
-  source: Readonly<Uint8ClampedArray>,
-  length: number,
-): void {
+export function unpremultiplyBitmapPixels(out: Uint8Array, source: Readonly<Uint8Array>, length: number): void {
   for (let i = 0; i < length; i += 4) {
     const a = source[i + 3];
     if (a === 0) {

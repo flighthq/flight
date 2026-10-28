@@ -13,7 +13,7 @@ import type { BitmapRegion } from '@flighthq/types/contract';
  * alias `source.bitmap.data` — each output pixel reads a neighbourhood of
  * source pixels.
  */
-export function dilateBitmap(out: Uint8ClampedArray, source: Readonly<BitmapRegion>, radius: number): void {
+export function dilateBitmap(out: Uint8Array, source: Readonly<BitmapRegion>, radius: number): void {
   applyMorphological(out, source, radius, true);
 }
 
@@ -29,16 +29,11 @@ export function dilateBitmap(out: Uint8ClampedArray, source: Readonly<BitmapRegi
  * alias `source.bitmap.data` — each output pixel reads a neighbourhood of
  * source pixels.
  */
-export function erodeBitmap(out: Uint8ClampedArray, source: Readonly<BitmapRegion>, radius: number): void {
+export function erodeBitmap(out: Uint8Array, source: Readonly<BitmapRegion>, radius: number): void {
   applyMorphological(out, source, radius, false);
 }
 
-function applyMorphological(
-  out: Uint8ClampedArray,
-  source: Readonly<BitmapRegion>,
-  radius: number,
-  dilate: boolean,
-): void {
+function applyMorphological(out: Uint8Array, source: Readonly<BitmapRegion>, radius: number, dilate: boolean): void {
   const r = Math.max(0, Math.round(radius));
   const w = source.width;
   const h = source.height;

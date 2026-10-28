@@ -15,11 +15,11 @@ export function uploadWgpuTextureData(
   origin: GPUOrigin3D,
   width: number,
   height: number,
-  data: Readonly<Uint8ClampedArray<ArrayBuffer>>,
+  data: Readonly<Uint8Array<ArrayBuffer>>,
 ): void {
   device.queue.writeTexture(
     { texture, origin },
-    data as Uint8ClampedArray<ArrayBuffer>,
+    data as Uint8Array<ArrayBuffer>,
     { bytesPerRow: width * 4, rowsPerImage: height },
     [width, height, 1],
   );

@@ -18,7 +18,7 @@ function makeSprite(width = 64, height = 48): Sprite {
   const image = {
     alphaType: 'straight',
     colorSpace: 'srgb',
-    data: new Uint8ClampedArray(width * height * 4),
+    data: new Uint8Array(width * height * 4),
     format: 'rgba8unorm',
     height,
     kind: BitmapTextureSourceKind,

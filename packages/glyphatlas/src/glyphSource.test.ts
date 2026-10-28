@@ -14,7 +14,7 @@ describe('createGlyphSourceFromGlyphAtlas', () => {
         bearingX: 1,
         bearingY: 8,
         height: 8,
-        pixels: new Uint8ClampedArray(8 * 8 * 4),
+        pixels: new Uint8Array(8 * 8 * 4),
         width: 8,
       }),
     };
@@ -79,7 +79,7 @@ function createBlockRasterizerBackend(): HostGlyphRasterizerCapability {
       bearingX: 0,
       bearingY: 8,
       height: 8,
-      pixels: new Uint8ClampedArray(8 * 8 * 4),
+      pixels: new Uint8Array(8 * 8 * 4),
       width: 8,
     }),
   };

@@ -14,8 +14,9 @@ const decodeWithCanvas: HostImageDecodeFormatCapability = {
     const context = canvas.getContext('2d') as OffscreenCanvasRenderingContext2D;
     context.drawImage(bitmap, 0, 0);
     bitmap.close();
-    const data = context.getImageData(0, 0, width, height).data;
-    if (options?.premultiplyAlpha === true) premultiplyRgbaInPlace(data);
+    const canvasData = context.getImageData(0, 0, width, height).data;
+    if (options?.premultiplyAlpha === true) premultiplyRgbaInPlace(canvasData);
+    const data = new Uint8Array(canvasData.buffer, canvasData.byteOffset, canvasData.byteLength);
     return { data, width, height };
   },
 };

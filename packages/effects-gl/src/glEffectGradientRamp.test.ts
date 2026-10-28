@@ -5,10 +5,10 @@ import { createGlEffectGradientRampTexture } from './glEffectGradientRamp.ts';
 function createContext(): {
   gl: WebGL2RenderingContext;
   parameters: Map<number, number>;
-  uploads: Uint8ClampedArray[];
+  uploads: Uint8Array[];
 } {
   const parameters = new Map<number, number>();
-  const uploads: Uint8ClampedArray[] = [];
+  const uploads: Uint8Array[] = [];
   const gl = {
     CLAMP_TO_EDGE: 33071,
     LINEAR: 9729,
@@ -32,7 +32,7 @@ function createContext(): {
         _border: number,
         _format: number,
         _type: number,
-        data: Uint8ClampedArray,
+        data: Uint8Array,
       ) => {
         uploads.push(data);
       },
@@ -48,13 +48,13 @@ function rampFor(
   colors: ReadonlyArray<number>,
   alphas: ReadonlyArray<number>,
   ratios: ReadonlyArray<number>,
-): Uint8ClampedArray {
+): Uint8Array {
   const context = createContext();
   createGlEffectGradientRampTexture(context.gl, colors, alphas, ratios);
   return context.uploads[0]!;
 }
 
-function entryAt(ramp: Readonly<Uint8ClampedArray>, index: number): readonly number[] {
+function entryAt(ramp: Readonly<Uint8Array>, index: number): readonly number[] {
   return [...ramp.slice(index * 4, index * 4 + 4)];
 }
 

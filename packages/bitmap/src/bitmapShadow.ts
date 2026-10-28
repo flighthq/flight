@@ -31,8 +31,8 @@ interface BitmapInnerEffectOptions extends BitmapShadowBlurOptions {
  * full bitmap.
  */
 export function dropShadowBitmap(
-  out: Uint8ClampedArray,
-  scratch: Uint8ClampedArray,
+  out: Uint8Array,
+  scratch: Uint8Array,
   source: Readonly<BitmapRegion>,
   options: Readonly<BitmapDropShadowOptions> = {},
 ): void {
@@ -58,8 +58,8 @@ export function dropShadowBitmap(
  * full bitmap.
  */
 export function glowBitmap(
-  out: Uint8ClampedArray,
-  scratch: Uint8ClampedArray,
+  out: Uint8Array,
+  scratch: Uint8Array,
   source: Readonly<BitmapRegion>,
   options: Readonly<BitmapGlowOptions> = {},
 ): void {
@@ -85,8 +85,8 @@ export function glowBitmap(
  * again after blurring, so overwriting the source destroys the clip mask.
  */
 export function innerGlowBitmap(
-  out: Uint8ClampedArray,
-  scratch: Uint8ClampedArray,
+  out: Uint8Array,
+  scratch: Uint8Array,
   source: Readonly<BitmapRegion>,
   options: Readonly<BitmapInnerGlowOptions> = {},
 ): void {
@@ -110,8 +110,8 @@ export function innerGlowBitmap(
  * again after blurring to clip the result.
  */
 export function innerShadowBitmap(
-  out: Uint8ClampedArray,
-  scratch: Uint8ClampedArray,
+  out: Uint8Array,
+  scratch: Uint8Array,
   source: Readonly<BitmapRegion>,
   options: Readonly<BitmapInnerShadowOptions> = {},
 ): void {
@@ -127,8 +127,8 @@ export function innerShadowBitmap(
 }
 
 function applyBlurPasses(
-  out: Uint8ClampedArray,
-  scratch: Uint8ClampedArray,
+  out: Uint8Array,
+  scratch: Uint8Array,
   width: number,
   height: number,
   options: Readonly<BitmapShadowBlurOptions>,
@@ -161,8 +161,8 @@ function applyBlurPasses(
 }
 
 function applyInnerEffect(
-  out: Uint8ClampedArray,
-  scratch: Uint8ClampedArray,
+  out: Uint8Array,
+  scratch: Uint8Array,
   source: Readonly<BitmapRegion>,
   color: number,
   options: Readonly<BitmapInnerEffectOptions>,
@@ -217,12 +217,7 @@ function readSourceAlpha(source: Readonly<BitmapRegion>, px: number, py: number)
 }
 
 // Used internally by drop-shadow and glow effects.
-function tintBitmapAlphaMask(
-  out: Uint8ClampedArray,
-  source: Readonly<BitmapRegion>,
-  color: number,
-  intensity: number,
-): void {
+function tintBitmapAlphaMask(out: Uint8Array, source: Readonly<BitmapRegion>, color: number, intensity: number): void {
   const cr = (color >>> 24) & 0xff;
   const cg = (color >> 16) & 0xff;
   const cb = (color >> 8) & 0xff;

@@ -127,7 +127,7 @@ export function rotateBitmapCounterClockwise(dest: Readonly<BitmapRegion>, sourc
   invalidateBitmap(dest.bitmap);
 }
 
-function copyPixel(dest: Uint8ClampedArray, di: number, source: Readonly<Uint8ClampedArray>, si: number): void {
+function copyPixel(dest: Uint8Array, di: number, source: Readonly<Uint8Array>, si: number): void {
   dest[di] = source[si];
   dest[di + 1] = source[si + 1];
   dest[di + 2] = source[si + 2];
@@ -142,7 +142,7 @@ function isSameRegion(a: Readonly<BitmapRegion>, b: Readonly<BitmapRegion>): boo
   return a.bitmap === b.bitmap && a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 }
 
-function swapPixels(data: Uint8ClampedArray, a: number, b: number): void {
+function swapPixels(data: Uint8Array, a: number, b: number): void {
   for (let c = 0; c < 4; c++) {
     const t = data[a + c];
     data[a + c] = data[b + c];

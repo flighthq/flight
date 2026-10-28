@@ -517,10 +517,10 @@ export function warmWgpuPipelines(state: WgpuRenderState): void {
 // Converts an rgba8 buffer between straight and premultiplied alpha, in either direction. Allocates, but runs
 // only on a texture upload (cache miss or content change), never in the per-frame draw path.
 function convertRgba8AlphaEncoding(
-  data: Readonly<Uint8ClampedArray<ArrayBuffer>>,
+  data: Readonly<Uint8Array<ArrayBuffer>>,
   toPremultiplied: boolean,
-): Uint8ClampedArray<ArrayBuffer> {
-  const out = new Uint8ClampedArray(data.length);
+): Uint8Array<ArrayBuffer> {
+  const out = new Uint8Array(data.length);
   for (let i = 0; i < data.length; i += 4) {
     const a = data[i + 3];
     // The two directions differ only in this factor, so they share one loop rather than shipping two.

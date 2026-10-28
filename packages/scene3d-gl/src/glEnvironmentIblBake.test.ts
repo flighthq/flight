@@ -19,7 +19,7 @@ import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 function dataOnlyEnvironment(size: number): Environment & { environment: CubeTexture } {
   const face = {
     alphaType: 'straight',
-    data: new Uint8ClampedArray(size * size * 4),
+    data: new Uint8Array(size * size * 4),
     format: 'rgba8unorm',
     gamut: 'srgb',
     height: size,

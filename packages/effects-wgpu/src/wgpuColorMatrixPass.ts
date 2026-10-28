@@ -12,7 +12,7 @@ export function applyColorMatrixPassToWgpu(
   state: WgpuRenderState,
   source: Readonly<WgpuTextureRenderTarget>,
   dest: Readonly<WgpuTextureRenderTarget>,
-  matrix: Readonly<Float32Array>,
+  matrix: ReadonlyArray<number>,
 ): void {
   const pipeline = getWgpuEffectPipeline(state, 'adjustment.colorMatrix', COLOR_MATRIX_FRAGMENT_WGSL, 'replace');
   drawWgpuEffectPass(state, source as WgpuTextureRenderTarget, dest as WgpuTextureRenderTarget, pipeline, (f32) => {

@@ -9,8 +9,8 @@ describe('sharpenBitmap', () => {
   it('amount 0 returns the source RGB and preserves alpha', () => {
     const source = createBitmap(3, 1);
     source.data.set([10, 20, 30, 120], 4);
-    const out = new Uint8ClampedArray(3 * 4);
-    const scratch = new Uint8ClampedArray(3 * 4);
+    const out = new Uint8Array(3 * 4);
+    const scratch = new Uint8Array(3 * 4);
     sharpenBitmap(out, scratch, region(source), { amount: 0 });
     expect(out[4]).toBe(10);
     expect(out[5]).toBe(20);
@@ -22,8 +22,8 @@ describe('sharpenBitmap', () => {
     const source = createBitmap(5, 1);
     source.data[2 * 4] = 100;
     for (let i = 0; i < 5; i++) source.data[i * 4 + 3] = 255;
-    const out = new Uint8ClampedArray(5 * 4);
-    const scratch = new Uint8ClampedArray(5 * 4);
+    const out = new Uint8Array(5 * 4);
+    const scratch = new Uint8Array(5 * 4);
     sharpenBitmap(out, scratch, region(source), { amount: 1, radiusX: 4, radiusY: 0 });
     expect(out[2 * 4]).toBeGreaterThan(100);
   });
@@ -34,8 +34,8 @@ describe('sharpenBitmap', () => {
       source.data[i * 4] = i * 40;
       source.data[i * 4 + 3] = 77;
     }
-    const out = new Uint8ClampedArray(3 * 4);
-    const scratch = new Uint8ClampedArray(3 * 4);
+    const out = new Uint8Array(3 * 4);
+    const scratch = new Uint8Array(3 * 4);
     sharpenBitmap(out, scratch, region(source), { amount: 2 });
     expect(out[3]).toBe(77);
     expect(out[7]).toBe(77);

@@ -30,7 +30,7 @@ function completeEnvironment(): Environment {
 
 function dataFace(): Bitmap {
   return {
-    data: new Uint8ClampedArray(4 * 4 * 4),
+    data: new Uint8Array(4 * 4 * 4),
     height: 4,
     kind: BitmapTextureSourceKind,
     width: 4,
@@ -74,7 +74,7 @@ describe('ensureWgpuEnvironmentSourceCube', () => {
     expect(fake.calls.filter((c) => c.name === 'copyExternalImageToTexture').length).toBe(0);
     // rgba8 data face: tightly-packed rows of width*4 bytes.
     expect((writes[0].args[2] as { bytesPerRow: number }).bytesPerRow).toBe(16);
-    expect(writes[0].args[1]).toBeInstanceOf(Uint8ClampedArray);
+    expect(writes[0].args[1]).toBeInstanceOf(Uint8Array);
   });
 
   it('uses a linear GPU format for a linear source cube', () => {

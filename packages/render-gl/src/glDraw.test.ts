@@ -66,7 +66,7 @@ function bitmap(size: number, version: number): Bitmap {
   return {
     alphaType: 'straight',
     gamut: 'srgb',
-    data: new Uint8ClampedArray(size * size * 4),
+    data: new Uint8Array(size * size * 4),
     format: 'rgba8unorm',
     height: size,
     kind: BitmapTextureSourceKind,
@@ -294,7 +294,7 @@ describe('bindGlBitmapTexture', () => {
 function encodedBitmap(alphaType: 'straight' | 'premultiplied', rgba: readonly number[]): Bitmap {
   return {
     alphaType,
-    data: new Uint8ClampedArray(rgba),
+    data: new Uint8Array(rgba),
     format: 'rgba8unorm',
     gamut: 'srgb',
     height: 1,
@@ -309,8 +309,8 @@ function encodedBitmap(alphaType: 'straight' | 'premultiplied', rgba: readonly n
 // binds with premultiply=false and premultiplies in its fragment tail, so passing premultiplied rgb
 // straight through would square the coverage and darken every translucent texel.
 describe('bindGlBitmapTexture alpha encoding', () => {
-  const uploadedPixels = (gl: { texImage2D: unknown }): Uint8ClampedArray =>
-    (gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.at(-1)!.at(-1) as Uint8ClampedArray;
+  const uploadedPixels = (gl: { texImage2D: unknown }): Uint8Array =>
+    (gl.texImage2D as ReturnType<typeof vi.fn>).mock.calls.at(-1)!.at(-1) as Uint8Array;
 
   it('recovers straight rgb when a premultiplied source is bound for a straight realization', () => {
     const { state, gl } = createGlState();
@@ -340,7 +340,7 @@ describe('bindGlCompressedImageTexture', () => {
     // registered RGBA decoder and uploads via texImage2D — proving the real bind/draw path reaches the
     // installed compressed uploader.
     const { state, gl } = createGlState();
-    const rgba = new Uint8ClampedArray(4 * 4 * 4);
+    const rgba = new Uint8Array(4 * 4 * 4);
     const decode = vi.fn(() => rgba);
     registerGlCompressedTextureUpload(state);
     registerGlCompressedTextureDecoder(state, decode);
@@ -356,7 +356,7 @@ describe('bindGlCompressedImageTexture', () => {
     registerGlCompressedTextureUpload(state);
     registerGlCompressedTextureDecoder(
       state,
-      vi.fn(() => new Uint8ClampedArray(4 * 4 * 4)),
+      vi.fn(() => new Uint8Array(4 * 4 * 4)),
     );
     const image = compressedBc3Image();
     bindGlCompressedImageTexture(state, image);

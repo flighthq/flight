@@ -86,7 +86,7 @@ function _rasterizeGlyphOnContext(
     bearingX: -left,
     bearingY: ascent,
     height,
-    pixels: new Uint8ClampedArray(image.data),
+    pixels: new Uint8Array(image.data.buffer, image.data.byteOffset, image.data.byteLength),
     width,
   };
 }

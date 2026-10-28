@@ -12,14 +12,14 @@ function backendProducing(width: number, height: number): HostGlyphRasterizerCap
       bearingX: 0,
       bearingY: 0,
       height,
-      pixels: new Uint8ClampedArray(width * height * 4),
+      pixels: new Uint8Array(width * height * 4),
       width,
     }),
   };
 }
 
 function red4pxBackend(): HostGlyphRasterizerCapability {
-  const pixels = new Uint8ClampedArray(4 * 4 * 4);
+  const pixels = new Uint8Array(4 * 4 * 4);
   for (let offset = 0; offset < pixels.length; offset += 4) pixels.set([255, 0, 0, 255], offset);
   return {
     rasterize: () => ({ advance: 4, bearingX: 0, bearingY: 0, height: 4, pixels, width: 4 }),
@@ -61,7 +61,7 @@ describe('explainGlyphAtlasEntry', () => {
     expect(entry?.width).toBe(4);
     const firstPixelOffset = 4 * (entry!.y * subjectAtlas.runtime.bitmap.width + entry!.x);
     expect(subjectAtlas.runtime.bitmap.data.slice(firstPixelOffset, firstPixelOffset + 4)).toEqual(
-      new Uint8ClampedArray([255, 0, 0, 255]),
+      new Uint8Array([255, 0, 0, 255]),
     );
 
     expect(explainGlyphAtlasEntry(explanationAtlas, 65)).toEqual({

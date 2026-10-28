@@ -17,7 +17,7 @@ describe('uploadWgpuTextureData', () => {
   it('drives writeTexture with a tightly-packed rgba8 layout (bytesPerRow = width*4)', () => {
     const device = makeDevice();
     const texture = {} as GPUTexture;
-    const data = new Uint8ClampedArray(2 * 2 * 4);
+    const data = new Uint8Array(2 * 2 * 4);
     uploadWgpuTextureData(device, texture, [0, 0, 3], 2, 2, data);
     expect(device.queue.writeTexture).toHaveBeenCalledWith(
       { texture, origin: [0, 0, 3] },

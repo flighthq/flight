@@ -380,7 +380,8 @@ function encodeBitmapToDataUrl(bitmap: Readonly<Bitmap>): string {
   canvas.height = bitmap.height;
   const ctx = canvas.getContext('2d');
   if (ctx === null) return '';
-  ctx.putImageData(new ImageData(new Uint8ClampedArray(bitmap.data), bitmap.width, bitmap.height), 0, 0);
+  const pixels = new Uint8ClampedArray(bitmap.data.buffer, bitmap.data.byteOffset, bitmap.data.byteLength);
+  ctx.putImageData(new ImageData(pixels, bitmap.width, bitmap.height), 0, 0);
   return canvas.toDataURL('image/png');
 }
 

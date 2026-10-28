@@ -7,7 +7,7 @@ import { invalidateBitmap } from './bitmap.ts';
 export function initializeBitmap(
   out: EntityConstruction<Bitmap>,
   alphaType: Bitmap['alphaType'],
-  data: Uint8ClampedArray<ArrayBuffer>,
+  data: Uint8Array<ArrayBuffer>,
   format: Bitmap['format'],
   gamut: Bitmap['gamut'],
   height: number,
@@ -109,10 +109,10 @@ export function splitBitmapChannels(source: Readonly<Bitmap>): [Bitmap, Bitmap, 
   const w = source.width;
   const h = source.height;
   const sd = source.data;
-  const rData = new Uint8ClampedArray(w * h * 4);
-  const gData = new Uint8ClampedArray(w * h * 4);
-  const bData = new Uint8ClampedArray(w * h * 4);
-  const aData = new Uint8ClampedArray(w * h * 4);
+  const rData = new Uint8Array(w * h * 4);
+  const gData = new Uint8Array(w * h * 4);
+  const bData = new Uint8Array(w * h * 4);
+  const aData = new Uint8Array(w * h * 4);
   for (let i = 0; i < w * h; i++) {
     const si = i * 4;
     const r = sd[si];
@@ -146,12 +146,7 @@ export function splitBitmapChannels(source: Readonly<Bitmap>): [Bitmap, Bitmap, 
   ];
 }
 
-function makeBitmap(
-  data: Uint8ClampedArray<ArrayBuffer>,
-  width: number,
-  height: number,
-  source: Readonly<Bitmap>,
-): Bitmap {
+function makeBitmap(data: Uint8Array<ArrayBuffer>, width: number, height: number, source: Readonly<Bitmap>): Bitmap {
   const out = allocateEntity<Bitmap>();
   initializeBitmap(out, source.alphaType, data, source.format, source.gamut, height, width);
   return finishEntity(out);

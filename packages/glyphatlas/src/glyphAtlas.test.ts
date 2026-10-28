@@ -62,7 +62,7 @@ describe('createGlyphAtlas font style and weight', () => {
     const backend: HostGlyphRasterizerCapability = {
       rasterize: (_codepoint, options) => {
         seen = options;
-        return { advance: 4, bearingX: 0, bearingY: 0, height: 4, pixels: new Uint8ClampedArray(64), width: 4 };
+        return { advance: 4, bearingX: 0, bearingY: 0, height: 4, pixels: new Uint8Array(64), width: 4 };
       },
     };
     const atlas = createGlyphAtlas({
@@ -87,7 +87,7 @@ describe('createGlyphAtlas font style and weight', () => {
     const backend: HostGlyphRasterizerCapability = {
       rasterize: (_codepoint, options) => {
         seen = options;
-        return { advance: 4, bearingX: 0, bearingY: 0, height: 4, pixels: new Uint8ClampedArray(64), width: 4 };
+        return { advance: 4, bearingX: 0, bearingY: 0, height: 4, pixels: new Uint8Array(64), width: 4 };
       },
     };
     const atlas = createGlyphAtlas({
@@ -150,7 +150,7 @@ function createMockRasterizerBackend(): { backend: HostGlyphRasterizerCapability
   const backend: HostGlyphRasterizerCapability = {
     rasterize(codepoint) {
       calls.push(codepoint);
-      return { advance: 8, bearingX: 1, bearingY: 8, height: 8, pixels: new Uint8ClampedArray(8 * 8 * 4), width: 8 };
+      return { advance: 8, bearingX: 1, bearingY: 8, height: 8, pixels: new Uint8Array(8 * 8 * 4), width: 8 };
     },
   };
   return { backend, calls };

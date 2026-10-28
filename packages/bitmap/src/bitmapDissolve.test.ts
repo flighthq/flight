@@ -3,7 +3,7 @@ import { dissolveBitmapPixels } from './bitmapDissolve.ts';
 import { getBitmapPixel, setBitmapPixel } from './bitmapPixel.ts';
 import { createBitmapRegion } from './bitmapRegion.ts';
 
-function countChangedPixels(data: Readonly<Uint8ClampedArray>, original: Readonly<Uint8ClampedArray>): number {
+function countChangedPixels(data: Readonly<Uint8Array>, original: Readonly<Uint8Array>): number {
   let changed = 0;
   for (let i = 0; i < data.length; i += 4) {
     if (

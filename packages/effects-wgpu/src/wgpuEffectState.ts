@@ -145,7 +145,7 @@ export function endWgpuEffectPass(
         const matrix = getAdjustmentColorMatrix(op);
         if (matrix !== null) matrices.push(matrix);
       }
-      applyColorMatrixPassToWgpu(state, source, dest, fuseColorMatrices(matrices));
+      applyColorMatrixPassToWgpu(state, source, dest, Array.from(fuseColorMatrices(matrices)));
     }
     source = dest;
     pending = [];

@@ -12,4 +12,4 @@ export type GlCompressedTextureDecoder = (
   width: number,
   height: number,
   data: Readonly<Uint8Array>,
-) => Uint8ClampedArray<ArrayBuffer> | null;
+) => Uint8Array<ArrayBuffer> | null;

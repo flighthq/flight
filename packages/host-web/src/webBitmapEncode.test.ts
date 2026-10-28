@@ -9,7 +9,7 @@ function createTestBitmap(): Bitmap {
   const out = allocateEntity<Bitmap>();
   out.alphaType = 'straight';
   out.gamut = 'srgb';
-  out.data = new Uint8ClampedArray([1, 2, 3, 4, 5, 6, 7, 8]);
+  out.data = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
   out.format = 'rgba8unorm';
   out.height = 1;
   out.kind = BitmapTextureSourceKind;

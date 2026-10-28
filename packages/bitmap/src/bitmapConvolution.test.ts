@@ -11,7 +11,7 @@ describe('convolveBitmap', () => {
     source.data[0] = 10;
     source.data[4] = 20;
     source.data[8] = 30;
-    const out = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
     convolveBitmap(out, region(source, 1, 0, 1, 1), {
       matrix: [1, 1, 1],
       matrixX: 3,
@@ -24,7 +24,7 @@ describe('convolveBitmap', () => {
   it("'clamp' edge mode (default) repeats the nearest edge pixel", () => {
     // 1px source, 3-wide kernel: all three samples hit the single source pixel
     const source = createBitmap(1, 1, 0x606060ff);
-    const out = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
     convolveBitmap(out, region(source), {
       matrix: [1, 1, 1],
       matrixX: 3,
@@ -43,7 +43,7 @@ describe('convolveBitmap', () => {
     source.data[0] = 10;
     source.data[4] = 20;
     source.data[8] = 30;
-    const out = new Uint8ClampedArray(3 * 4);
+    const out = new Uint8Array(3 * 4);
     convolveBitmap(out, region(source), {
       edge: 'mirror',
       matrix: [1, 0, 0, 0, 0],
@@ -59,7 +59,7 @@ describe('convolveBitmap', () => {
     // 1px source (opaque black), 3-wide kernel [1, 0, 0] — leftmost sample
     // is out of bounds and contributes transparent black (all zeros).
     const source = createBitmap(1, 1, 0x000000ff);
-    const out = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
     convolveBitmap(out, region(source), {
       edge: 'transparent',
       divisor: 1,
@@ -78,7 +78,7 @@ describe('convolveBitmap', () => {
     source.data[0] = 10;
     source.data[4] = 20;
     source.data[8] = 30;
-    const out = new Uint8ClampedArray(3 * 4);
+    const out = new Uint8Array(3 * 4);
     convolveBitmap(out, region(source), {
       edge: 'wrap',
       matrix: [1, 0, 0], // picks left neighbor only
@@ -93,7 +93,7 @@ describe('convolveBitmap', () => {
 
   it('preserves source alpha by default', () => {
     const source = createBitmap(1, 1, 0x00000044);
-    const out = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
     convolveBitmap(out, region(source), {
       bias: 255,
       matrix: [1],
@@ -105,19 +105,19 @@ describe('convolveBitmap', () => {
 
   it('throws when matrix dimensions are not positive', () => {
     const source = createBitmap(1, 1);
-    const out = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
     expect(() => convolveBitmap(out, region(source), { matrix: [], matrixX: 0, matrixY: 1 })).toThrow();
   });
 
   it('throws when matrix is too short for its declared dimensions', () => {
     const source = createBitmap(1, 1);
-    const out = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
     expect(() => convolveBitmap(out, region(source), { matrix: [1], matrixX: 3, matrixY: 3 })).toThrow();
   });
 
   it('treats an explicit divisor of 0 as passthrough (no division by zero)', () => {
     const source = createBitmap(1, 1, 0x804020ff);
-    const out = new Uint8ClampedArray(4);
+    const out = new Uint8Array(4);
     convolveBitmap(out, region(source), {
       divisor: 0,
       matrix: [1],

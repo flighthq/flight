@@ -5,6 +5,7 @@ export function drawWebBitmap(dest: HTMLCanvasElement, source: Readonly<BitmapRe
   if (source.width <= 0 || source.height <= 0) return;
   const context = dest.getContext('2d')!;
   const domImageData = context.createImageData(source.width, source.height);
-  extractBitmapPixels(domImageData.data, source);
+  const data = new Uint8Array(domImageData.data.buffer, domImageData.data.byteOffset, domImageData.data.byteLength);
+  extractBitmapPixels(data, source);
   context.putImageData(domImageData, x, y);
 }

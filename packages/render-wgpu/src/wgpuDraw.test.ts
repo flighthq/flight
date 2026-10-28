@@ -53,7 +53,7 @@ function bitmap(size: number, version: number): Bitmap {
   return {
     alphaType: 'straight',
     colorSpace: 'srgb',
-    data: new Uint8ClampedArray(size * size * 4),
+    data: new Uint8Array(size * size * 4),
     format: 'rgba8unorm',
     height: size,
     kind: BitmapTextureSourceKind,
@@ -185,7 +185,7 @@ describe('bindWgpuBitmapTexture mip allocation identity', () => {
 describe('bindWgpuCompressedImageTexture', () => {
   it('routes through the registered compressed upload seam', async () => {
     const state = await createWgpuRenderStateForTest();
-    const decode = vi.fn(() => new Uint8ClampedArray(4 * 4 * 4));
+    const decode = vi.fn(() => new Uint8Array(4 * 4 * 4));
     registerWgpuCompressedTextureUpload(state, true);
     registerWgpuCompressedTextureDecoder(state, decode);
     const entry = bindWgpuCompressedImageTexture(state, compressedBc3Image());

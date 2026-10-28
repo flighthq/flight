@@ -115,7 +115,7 @@ describe('createImageResourceFromBitmap', () => {
     const bitmap = allocateEntity<Bitmap>();
     bitmap.alphaType = 'straight';
     bitmap.gamut = 'srgb';
-    bitmap.data = new Uint8ClampedArray(4 * 4 * 4);
+    bitmap.data = new Uint8Array(4 * 4 * 4);
     bitmap.format = 'rgba8unorm';
     bitmap.height = 4;
     bitmap.kind = BitmapTextureSourceKind;
@@ -134,7 +134,7 @@ function createTestBitmap(width: number, height: number): Bitmap {
   const out = allocateEntity<Bitmap>();
   out.alphaType = 'straight';
   out.gamut = 'srgb';
-  out.data = new Uint8ClampedArray(width * height * 4);
+  out.data = new Uint8Array(width * height * 4);
   out.format = 'rgba8unorm';
   out.height = height;
   out.kind = BitmapTextureSourceKind;

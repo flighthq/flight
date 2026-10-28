@@ -15,7 +15,7 @@ import type { BitmapConvolutionOptions, BitmapRegion } from '@flighthq/types/con
  *   - `'mirror'`: reflect the image at boundaries
  */
 export function convolveBitmap(
-  out: Uint8ClampedArray,
+  out: Uint8Array,
   source: Readonly<BitmapRegion>,
   options: Readonly<BitmapConvolutionOptions>,
 ): void {

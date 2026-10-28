@@ -123,7 +123,7 @@ describe('getTextureAtlasByteSize', () => {
     const image = {
       alphaType: 'straight',
       colorSpace: 'srgb',
-      data: new Uint8ClampedArray(256),
+      data: new Uint8Array(256),
       format: 'rgba8unorm',
       height: 8,
       kind: BitmapTextureSourceKind,

@@ -28,7 +28,7 @@ export function initializeWebBitmapFromCanvas(
   const raw = ctx.getImageData(x, y, w, h);
   out.alphaType = 'straight';
   out.gamut = raw.colorSpace as 'srgb' | 'display-p3';
-  out.data = raw.data;
+  out.data = new Uint8Array(raw.data.buffer, raw.data.byteOffset, raw.data.byteLength);
   out.format = 'rgba8unorm';
   out.height = raw.height;
   out.kind = BitmapTextureSourceKind;

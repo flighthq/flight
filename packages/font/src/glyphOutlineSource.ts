@@ -59,7 +59,7 @@ function rasterizeGlyphOutlineSource(
 
   const bounds: RectangleLike = { height: 0, width: 0, x: 0, y: 0 };
   if (!getPathBounds(path, bounds) || bounds.width === 0 || bounds.height === 0) {
-    return { advance, bearingX: 0, bearingY: 0, height: 0, pixels: new Uint8ClampedArray(), width: 0 };
+    return { advance, bearingX: 0, bearingY: 0, height: 0, pixels: new Uint8Array(), width: 0 };
   }
 
   const left = Math.floor(bounds.x * scale) - RASTER_GUARD;
@@ -73,7 +73,7 @@ function rasterizeGlyphOutlineSource(
   // Flatten once at quarter-pixel precision in design units. Sampling the Path helper directly would
   // flatten every curve again for every subpixel and turn raster cost into pixels × path decoding.
   const contours = flattenPath(path, 0.25 / scale);
-  const pixels = new Uint8ClampedArray(width * height * 4);
+  const pixels = new Uint8Array(width * height * 4);
   for (let pixelY = 0; pixelY < height; pixelY++) {
     for (let pixelX = 0; pixelX < width; pixelX++) {
       let covered = 0;

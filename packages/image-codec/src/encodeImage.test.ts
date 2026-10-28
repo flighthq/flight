@@ -8,7 +8,7 @@ import { vi } from 'vitest';
 import { encodeImage } from './encodeImage.ts';
 
 function fakeImage(): DecodedImage {
-  return { data: new Uint8ClampedArray([1, 2, 3, 4]), width: 1, height: 1 };
+  return { data: new Uint8Array([1, 2, 3, 4]), width: 1, height: 1 };
 }
 
 function fakeSlot(result: Uint8Array = new Uint8Array(0)): HostImageEncodeFormatCapability {

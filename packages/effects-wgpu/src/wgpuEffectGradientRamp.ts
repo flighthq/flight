@@ -38,8 +38,8 @@ function buildRampData(
   colors: ReadonlyArray<number>,
   alphas: ReadonlyArray<number>,
   ratios: ReadonlyArray<number>,
-): Uint8ClampedArray {
-  const out = new Uint8ClampedArray(256 * 4);
+): Uint8Array {
+  const out = new Uint8Array(256 * 4);
   if (colors.length === 0) return out;
 
   for (let i = 0; i < 256; i++) {

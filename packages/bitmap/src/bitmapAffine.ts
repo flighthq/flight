@@ -65,9 +65,9 @@ export function transformBitmap(
  * behaviour is controlled by `edgeMode`; sampling quality by `sampleMode`.
  */
 function sampleBitmap(
-  dd: Uint8ClampedArray,
+  dd: Uint8Array,
   di: number,
-  sd: Readonly<Uint8ClampedArray>,
+  sd: Readonly<Uint8Array>,
   sw: number,
   sh: number,
   originX: number,
@@ -104,9 +104,9 @@ function sampleBitmap(
 }
 
 function sampleBilinear(
-  dd: Uint8ClampedArray,
+  dd: Uint8Array,
   di: number,
-  sd: Readonly<Uint8ClampedArray>,
+  sd: Readonly<Uint8Array>,
   sw: number,
   sh: number,
   originX: number,
@@ -137,9 +137,9 @@ function sampleBilinear(
 }
 
 function sampleBicubic(
-  dd: Uint8ClampedArray,
+  dd: Uint8Array,
   di: number,
-  sd: Readonly<Uint8ClampedArray>,
+  sd: Readonly<Uint8Array>,
   sw: number,
   sh: number,
   originX: number,
@@ -199,7 +199,7 @@ function catmullRomWeight(t: number): number {
   return 1.5 * a * a * a - 2.5 * a * a + 1;
 }
 
-function writeTransparent(dd: Uint8ClampedArray, di: number): void {
+function writeTransparent(dd: Uint8Array, di: number): void {
   dd[di] = 0;
   dd[di + 1] = 0;
   dd[di + 2] = 0;

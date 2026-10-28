@@ -13,7 +13,7 @@ import { makeGlScene3DState } from './glScene3DTestHelper.ts';
 // return early, which is the state the teardown cases are about.
 function drawSkyboxOnce(state: ReturnType<typeof makeGlScene3DState>['state']): void {
   const face = {
-    data: new Uint8ClampedArray(4 * 4 * 4),
+    data: new Uint8Array(4 * 4 * 4),
     height: 4,
     kind: BitmapTextureSourceKind,
     width: 4,
@@ -92,7 +92,7 @@ describe('renderGlEnvironmentSkybox', () => {
   it('restores the depth test and blend bits the caller had', () => {
     const { state, gl } = makeGlScene3DState();
     const face = {
-      data: new Uint8ClampedArray(4 * 4 * 4),
+      data: new Uint8Array(4 * 4 * 4),
       height: 4,
       kind: BitmapTextureSourceKind,
       width: 4,
@@ -126,7 +126,7 @@ describe('renderGlEnvironmentSkybox', () => {
   it('refreshes and uploads Camera3D.inverseViewProjection', () => {
     const { state, gl } = makeGlScene3DState();
     const face = {
-      data: new Uint8ClampedArray(4 * 4 * 4),
+      data: new Uint8Array(4 * 4 * 4),
       height: 4,
       kind: BitmapTextureSourceKind,
       width: 4,

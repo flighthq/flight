@@ -5053,7 +5053,7 @@ async function resolveSwfLosslessImages(document: Scene2DDocument): Promise<void
     if (decoded === null) continue;
     const bitmap = allocateEntity<Bitmap>();
     bitmap.alphaType = ref.alphaType;
-    bitmap.data = new Uint8ClampedArray(decoded.data);
+    bitmap.data = new Uint8Array(decoded.data);
     bitmap.format = 'rgba8unorm';
     bitmap.gamut = 'srgb';
     bitmap.height = decoded.height;

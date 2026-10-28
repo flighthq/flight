@@ -147,7 +147,7 @@ describe('destroyGlScene3DRuntime skybox ownership', () => {
   it('reaches the skybox program, VAO and vertex buffer, which live outside the runtime', () => {
     const { state, gl } = makeGlScene3DState();
     const face = {
-      data: new Uint8ClampedArray(4 * 4 * 4),
+      data: new Uint8Array(4 * 4 * 4),
       height: 4,
       kind: BitmapTextureSourceKind,
       width: 4,

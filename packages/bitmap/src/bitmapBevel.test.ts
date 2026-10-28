@@ -18,8 +18,8 @@ describe('bevelBitmap', () => {
     // [0, 85, 170, 255, 255]; the gradient highlights the left edge of the
     // shape and shadows the right edge.
     const source = edgeStrip();
-    const out = new Uint8ClampedArray(5 * 4);
-    const scratch = new Uint8ClampedArray(5 * 4);
+    const out = new Uint8Array(5 * 4);
+    const scratch = new Uint8Array(5 * 4);
     bevelBitmap(out, scratch, region(source), {
       angle: Math.PI,
       distance: 1,
@@ -43,8 +43,8 @@ describe('bevelBitmap', () => {
 
   it("'inner' type clips the bevel to inside the shape", () => {
     const source = edgeStrip();
-    const out = new Uint8ClampedArray(5 * 4);
-    const scratch = new Uint8ClampedArray(5 * 4);
+    const out = new Uint8Array(5 * 4);
+    const scratch = new Uint8Array(5 * 4);
     bevelBitmap(out, scratch, region(source), {
       angle: Math.PI,
       distance: 1,

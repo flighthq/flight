@@ -25,7 +25,7 @@ const unusedFetch = (): Promise<null> => Promise.resolve(null);
 
 const fakeSlot: HostImageDecodeFormatCapability = {
   decode: vi.fn().mockResolvedValue({
-    data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]),
+    data: new Uint8Array([0x11, 0x22, 0x33, 0x44]),
     height: 1,
     width: 1,
   }),
@@ -37,7 +37,7 @@ beforeEach(() => {
   vi.mocked(fakeSlot.decode)
     .mockReset()
     .mockResolvedValue({
-      data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]),
+      data: new Uint8Array([0x11, 0x22, 0x33, 0x44]),
       height: 1,
       width: 1,
     });
@@ -51,7 +51,7 @@ afterEach(() => {
 function createTestBitmap(alphaType: 'straight' | 'opaque'): Bitmap {
   const out = allocateEntity<Bitmap>();
   out.alphaType = alphaType;
-  out.data = new Uint8ClampedArray(4);
+  out.data = new Uint8Array(4);
   out.format = 'rgba8unorm';
   out.gamut = 'srgb';
   out.height = 1;
@@ -113,7 +113,7 @@ describe('enableWebImageBitmapComposition', () => {
 
     expect(fakeSlot.decode).toHaveBeenCalledWith(ref.bytes);
     expect(composer).toHaveBeenCalledWith(
-      { data: new Uint8ClampedArray([0x11, 0x22, 0x33, 0x44]), height: 1, width: 1 },
+      { data: new Uint8Array([0x11, 0x22, 0x33, 0x44]), height: 1, width: 1 },
       payload,
     );
     expect(source).toBe(bitmap);

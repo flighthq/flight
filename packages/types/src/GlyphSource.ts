@@ -77,7 +77,7 @@ export interface GlyphRasterizedBitmap {
   bearingX: number;
   bearingY: number;
   height: number;
-  pixels: Uint8ClampedArray;
+  pixels: Uint8Array<ArrayBuffer>;
   width: number;
 }
 

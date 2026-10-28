@@ -867,7 +867,7 @@ describe('WgpuRenderRegistries snapshots', () => {
     const screen = await createWgpuRenderStateForTest();
     const materialRenderer = { instanceFloatCount: 0, getShaderModule: vi.fn() } as never;
     const offscreenMaterialRenderer = { instanceFloatCount: 0, getShaderModule: vi.fn() } as never;
-    const decoder = vi.fn(() => new Uint8ClampedArray(4));
+    const decoder = vi.fn(() => new Uint8Array(4));
     const resolver = vi.fn(() => null);
     registerWgpuCompressedTextureDecoder(screen, decoder);
     registerWgpuCompressedTextureUpload(screen, true);

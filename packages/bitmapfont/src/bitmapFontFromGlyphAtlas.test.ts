@@ -13,7 +13,7 @@ function backendProducing(width: number, height: number): HostGlyphRasterizerCap
       bearingX: 1,
       bearingY: 2,
       height,
-      pixels: new Uint8ClampedArray(width * height * 4),
+      pixels: new Uint8Array(width * height * 4),
       width,
     }),
   };

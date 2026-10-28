@@ -8,8 +8,8 @@ import { extractBitmapPixels } from './bitmapComposite.ts';
  * `out` must not alias `source`.
  */
 export function blurBitmapPixelsHorizontal(
-  out: Uint8ClampedArray,
-  source: Readonly<Uint8ClampedArray>,
+  out: Uint8Array,
+  source: Readonly<Uint8Array>,
   width: number,
   height: number,
   radius: number,
@@ -101,8 +101,8 @@ export function blurBitmapPixelsHorizontalWeighted(
  * `out` must not alias `source`.
  */
 export function blurBitmapPixelsVertical(
-  out: Uint8ClampedArray,
-  source: Readonly<Uint8ClampedArray>,
+  out: Uint8Array,
+  source: Readonly<Uint8Array>,
   width: number,
   height: number,
   radius: number,
@@ -199,8 +199,8 @@ export function blurBitmapPixelsVerticalWeighted(
  * full bitmap.
  */
 export function boxBlurBitmap(
-  out: Uint8ClampedArray,
-  scratch: Uint8ClampedArray,
+  out: Uint8Array,
+  scratch: Uint8Array,
   source: Readonly<BitmapRegion>,
   options: Readonly<BitmapBoxBlurOptions> = {},
 ): void {
@@ -272,8 +272,8 @@ export function computeGaussianKernel(out: Float32Array, radius: number, sigma: 
  * full bitmap.
  */
 export function gaussianBlurBitmap(
-  out: Uint8ClampedArray,
-  scratch: Uint8ClampedArray,
+  out: Uint8Array,
+  scratch: Uint8Array,
   source: Readonly<BitmapRegion>,
   sigmaX: number,
   sigmaY: number = sigmaX,

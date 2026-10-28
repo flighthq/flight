@@ -62,6 +62,7 @@ describe('convertBitmapAlphaType', () => {
 describe('createBitmap', () => {
   it('creates zeroed image data when no color provided', () => {
     const img = createBitmap(2, 2);
+    expect(img.data).toBeInstanceOf(Uint8Array);
     expect(img.width).toBe(2);
     expect(img.height).toBe(2);
     expect(img.data.length).toBe(16);

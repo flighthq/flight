@@ -14,7 +14,7 @@ export function uploadGlTextureData(
   target: number,
   width: number,
   height: number,
-  data: Readonly<Uint8ClampedArray<ArrayBuffer>>,
+  data: Readonly<Uint8Array<ArrayBuffer>>,
   internalFormat: number = gl.RGBA,
 ): void {
   gl.texImage2D(
@@ -26,7 +26,7 @@ export function uploadGlTextureData(
     0,
     gl.RGBA,
     gl.UNSIGNED_BYTE,
-    data as Uint8ClampedArray<ArrayBuffer>,
+    data as Uint8Array<ArrayBuffer>,
   );
 }
 
