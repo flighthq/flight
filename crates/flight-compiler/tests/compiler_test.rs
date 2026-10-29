@@ -3886,6 +3886,22 @@ pub fn positive(values: &Vec<i32>) -> Vec<i32> {
     }
 
     #[test]
+    fn lowers_unwrap_or_default_with_proven_payload() {
+        let source = r#"
+pub fn vec_default(value: Option<Vec<i32>>) -> Vec<i32> {
+    return value.unwrap_or_default();
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("?? []"),
+            "Vec default should be empty array: {output}"
+        );
+    }
+
+    #[test]
     fn lowers_dedup_on_sorted_sequences() {
         let source = r#"
 pub fn unique_sorted(values: &mut Vec<i32>) {

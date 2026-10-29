@@ -11732,6 +11732,15 @@ fn emit_method_call(
             Ok(receiver)
         }
         "unwrap_or" if arguments.len() == 1 => Ok(format!("({receiver} ?? {})", arguments[0])),
+        "unwrap_or_default" if arguments.is_empty() => {
+            let default_value = option_binding_fact_default(&call.receiver, entities);
+            match default_value {
+                Some(value) => Ok(format!("({receiver} ?? {value})")),
+                None => Err(compile_error(
+                    "portable `.unwrap_or_default()` needs a proven Option payload to determine Default; use `.unwrap_or(value)` with an explicit default",
+                )),
+            }
+        }
         "unwrap" if arguments.is_empty() && expression_contains_method(&call.receiver, "lock") => {
             Ok(format!("{receiver}.value"))
         }
@@ -15261,6 +15270,49 @@ fn option_expression_payload(expression: &Expr, entities: &HashSet<String>) -> O
         }
         Expr::Reference(reference) => option_expression_payload(&reference.expr, entities),
         _ => None,
+    };
+}
+
+fn option_binding_fact_default(expression: &Expr, entities: &HashSet<String>) -> Option<&'static str> {
+    let fact = match expression {
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            lexical_fact(entities, &path.path.segments[0].ident.to_string())
+        }
+        Expr::Reference(reference) => return option_binding_fact_default(&reference.expr, entities),
+        Expr::Paren(paren) => return option_binding_fact_default(&paren.expr, entities),
+        Expr::Group(group) => return option_binding_fact_default(&group.expr, entities),
+        _ => None,
+    };
+    let Some(BindingFact::Option(payload)) = fact else {
+        return None;
+    };
+    return binding_fact_default(&payload);
+}
+
+fn binding_fact_default(fact: &BindingFact) -> Option<&'static str> {
+    return match fact {
+        BindingFact::HashMap => Some("new Map()"),
+        BindingFact::HashSet => Some("new Set()"),
+        BindingFact::Sequence(_) => Some("[]"),
+        BindingFact::Structure(name) => match name.as_str() {
+            "String" | "str" => Some("\"\""),
+            _ => None,
+        },
+        BindingFact::TypedArray(array_type) => match array_type.as_str() {
+            "Float32Array" => Some("new Float32Array(0)"),
+            "Float64Array" => Some("new Float64Array(0)"),
+            "Int8Array" => Some("new Int8Array(0)"),
+            "Int16Array" => Some("new Int16Array(0)"),
+            "Int32Array" => Some("new Int32Array(0)"),
+            "Uint8Array" => Some("new Uint8Array(0)"),
+            "Uint16Array" => Some("new Uint16Array(0)"),
+            "Uint32Array" => Some("new Uint32Array(0)"),
+            _ => None,
+        },
+        BindingFact::Unknown => None,
+        BindingFact::Option(_) => None,
+        BindingFact::Tuple(_) => None,
+        BindingFact::UnresolvedPattern => None,
     };
 }
 
