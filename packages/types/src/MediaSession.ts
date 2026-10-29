@@ -128,5 +128,5 @@ export interface HostMediaSessionActionCapability {
 // so would advertise transport controls the application has not attached a handler to.
 export interface MediaSessionActionSignal extends Entity {
   readonly action: MediaSessionAction;
-  readonly onAction: Signal<(details: Readonly<MediaSessionActionDetails>) => void>;
+  readonly onAction: Signal<Readonly<MediaSessionActionDetails>>;
 }

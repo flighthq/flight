@@ -219,7 +219,7 @@ describe('observeWgpuDeviceLoss', () => {
     const deviceRuntime = {
       device,
       lost: null,
-      signals: { onDeviceLost: createSignal<(info: GPUDeviceLostInfo) => void>() },
+      signals: { onDeviceLost: createSignal<GPUDeviceLostInfo>() },
     } as unknown as WgpuDeviceRuntime;
     let emissions = 0;
     connectSignal(deviceRuntime.signals!.onDeviceLost, () => {

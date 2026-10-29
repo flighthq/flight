@@ -9,5 +9,5 @@ import type { Signal } from './Signal.ts';
 // orderly teardown, so it is recorded as the terminal fact but never announced here. Read the fact
 // with getWgpuDeviceLoss, which reports both kinds.
 export interface WgpuDeviceSignals {
-  onDeviceLost: Signal<(info: GPUDeviceLostInfo) => void>;
+  onDeviceLost: Signal<GPUDeviceLostInfo>;
 }
