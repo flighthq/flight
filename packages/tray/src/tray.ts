@@ -293,7 +293,7 @@ export function setTrayIconTooltip(
 }
 
 interface EventProvider<Event extends object> {
-  getSignal(tray: TrayIcon): Signal<(event: Readonly<Event>) => void> | null;
+  getSignal(tray: TrayIcon): Signal<Readonly<Event>> | null;
 }
 
 function attachTrayEvent<Event extends object>(
@@ -306,13 +306,13 @@ function attachTrayEvent<Event extends object>(
   try {
     const signal = provider.getSignal(tray);
     if (signal === null) return { outcome: 'tray-destroyed' };
-    connectSignal(signal, listener);
+    const slot = connectSignal(signal, listener);
     const release: TrayReleaseRuntime = {
       released: false,
       async release(): Promise<TrayReleaseResult> {
         if (release.released) return { outcome: 'already-released' };
         try {
-          disconnectSignal(signal, listener);
+          disconnectSignal(signal, slot);
           release.released = true;
           runtime.releases.delete(release);
           return { outcome: 'released' };

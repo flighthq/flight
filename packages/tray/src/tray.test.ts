@@ -78,14 +78,14 @@ type TestHost = { readonly tray: { readonly lifecycle: HostTrayLifecycleCapabili
 };
 
 interface TestState {
-  balloonEvents: WeakMap<TrayIcon, Signal<(event: Readonly<TrayBalloonEvent>) => void>>;
+  balloonEvents: WeakMap<TrayIcon, Signal<Readonly<TrayBalloonEvent>>>;
   destroyFailures: number;
   destroyed: WeakSet<TrayIcon>;
-  dropEvents: WeakMap<TrayIcon, Signal<(event: Readonly<TrayDropEvent>) => void>>;
+  dropEvents: WeakMap<TrayIcon, Signal<Readonly<TrayDropEvent>>>;
   images: string[];
-  interactionEvents: WeakMap<TrayIcon, Signal<(event: Readonly<TrayInteractionEvent>) => void>>;
+  interactionEvents: WeakMap<TrayIcon, Signal<Readonly<TrayInteractionEvent>>>;
   live: TrayIcon[];
-  menuSelectionEvents: WeakMap<TrayIcon, Signal<(event: Readonly<TrayMenuSelectionEvent>) => void>>;
+  menuSelectionEvents: WeakMap<TrayIcon, Signal<Readonly<TrayMenuSelectionEvent>>>;
   title: string;
   tooltip: string;
 }
@@ -104,9 +104,9 @@ function testHost(): { host: TestHost; state: TestState } {
     tooltip: '',
   };
   const signalFor = <Event extends object>(
-    map: WeakMap<TrayIcon, Signal<(event: Readonly<Event>) => void>>,
+    map: WeakMap<TrayIcon, Signal<Readonly<Event>>>,
     tray: TrayIcon,
-  ): Signal<(event: Readonly<Event>) => void> | null => map.get(tray) ?? null;
+  ): Signal<Readonly<Event>> | null => map.get(tray) ?? null;
   const host = {
     tray: {
       lifecycle: (() => {
@@ -382,6 +382,19 @@ describe('onTrayDrop', () => {
 });
 
 describe('onTrayInteraction', () => {
+  it('stops delivering to a released listener because its slot is disconnected', async () => {
+    const { host, state } = testHost();
+    const tray = await acquire(host);
+    const listener = vi.fn();
+    const attached = onTrayMenuSelection(host.tray.menuSelectionEvents, tray, listener);
+    expectTypeOf(state.menuSelectionEvents.get(tray)!).toEqualTypeOf<Signal<Readonly<TrayMenuSelectionEvent>>>();
+    state.menuSelectionEvents.get(tray)!.emit({ id: 'first' });
+    if (attached.outcome === 'attached') await attached.release.release();
+    state.menuSelectionEvents.get(tray)!.emit({ id: 'second' });
+    expect(listener).toHaveBeenCalledOnce();
+    expect(listener).toHaveBeenCalledWith({ id: 'first' });
+  });
+
   it('releases once and destroy releases a remaining subscription', async () => {
     const { host, state } = testHost();
     const tray = await acquire(host);

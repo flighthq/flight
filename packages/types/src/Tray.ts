@@ -222,17 +222,17 @@ export interface HostTrayBalloonCapability {
 }
 
 export interface HostTrayInteractionEventsCapability {
-  getSignal(tray: TrayIcon): Signal<(event: Readonly<TrayInteractionEvent>) => void> | null;
+  getSignal(tray: TrayIcon): Signal<Readonly<TrayInteractionEvent>> | null;
 }
 
 export interface HostTrayMenuSelectionEventsCapability {
-  getSignal(tray: TrayIcon): Signal<(event: Readonly<TrayMenuSelectionEvent>) => void> | null;
+  getSignal(tray: TrayIcon): Signal<Readonly<TrayMenuSelectionEvent>> | null;
 }
 
 export interface HostTrayBalloonEventsCapability {
-  getSignal(tray: TrayIcon): Signal<(event: Readonly<TrayBalloonEvent>) => void> | null;
+  getSignal(tray: TrayIcon): Signal<Readonly<TrayBalloonEvent>> | null;
 }
 
 export interface HostTrayDropEventsCapability {
-  getSignal(tray: TrayIcon): Signal<(event: Readonly<TrayDropEvent>) => void> | null;
+  getSignal(tray: TrayIcon): Signal<Readonly<TrayDropEvent>> | null;
 }

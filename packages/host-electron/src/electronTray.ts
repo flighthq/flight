@@ -43,13 +43,13 @@ interface NativeListener {
 
 interface TrayRecord {
   balloonActive: boolean;
-  balloonEvents: Signal<(event: Readonly<TrayBalloonEvent>) => void>;
-  dropEvents: Signal<(event: Readonly<TrayDropEvent>) => void>;
+  balloonEvents: Signal<Readonly<TrayBalloonEvent>>;
+  dropEvents: Signal<Readonly<TrayDropEvent>>;
   image: ElectronNativeImage;
-  interactionEvents: Signal<(event: Readonly<TrayInteractionEvent>) => void>;
+  interactionEvents: Signal<Readonly<TrayInteractionEvent>>;
   listeners: NativeListener[];
   menu: ElectronMenu | null;
-  menuSelectionEvents: Signal<(event: Readonly<TrayMenuSelectionEvent>) => void>;
+  menuSelectionEvents: Signal<Readonly<TrayMenuSelectionEvent>>;
   nativePending: boolean;
   title: string;
   tooltip: string;
