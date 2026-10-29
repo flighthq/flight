@@ -1689,6 +1689,179 @@ pub fn allocate_unsupported() -> Unsupported {
     }
 
     #[test]
+    fn rejects_unsupported_entity_defaults_the_initializer_does_not_definitely_assign() {
+        let declarations = r#"
+pub enum Mode {
+    Disabled,
+    Enabled,
+}
+
+pub struct Marker {
+    runtime: EntityRuntimeSlot,
+    pub label: Mode,
+    pub mode: Mode,
+}
+"#;
+        let cases = [
+            (
+                "one branch",
+                r#"
+pub fn create_marker(enabled: bool) -> Marker {
+    let mut out: Marker = flight_entity::allocate_entity();
+    initialize_marker(&mut out, enabled);
+    return out;
+}
+
+pub fn initialize_marker(out: &mut Marker, enabled: bool) {
+    out.label = Mode::Enabled;
+    if enabled {
+        out.mode = Mode::Enabled;
+    }
+}
+"#,
+                "mode",
+            ),
+            (
+                "after early return",
+                r#"
+pub fn create_marker(enabled: bool) -> Marker {
+    let mut out: Marker = flight_entity::allocate_entity();
+    initialize_marker(&mut out, enabled);
+    return out;
+}
+
+pub fn initialize_marker(out: &mut Marker, enabled: bool) {
+    out.label = Mode::Enabled;
+    if !enabled {
+        return;
+    }
+    out.mode = Mode::Enabled;
+}
+"#,
+                "mode",
+            ),
+            (
+                "not the next statement",
+                r#"
+pub fn create_marker(enabled: bool) -> Marker {
+    let mut out: Marker = flight_entity::allocate_entity();
+    let ready = enabled;
+    initialize_marker(&mut out, ready);
+    return out;
+}
+
+pub fn initialize_marker(out: &mut Marker, enabled: bool) {
+    out.label = Mode::Enabled;
+    out.mode = Mode::Disabled;
+}
+"#,
+                "label",
+            ),
+            (
+                "shared reference",
+                r#"
+pub fn create_marker() -> Marker {
+    let mut out: Marker = flight_entity::allocate_entity();
+    inspect_marker(&out);
+    return out;
+}
+
+pub fn inspect_marker(out: &Marker) {}
+"#,
+                "label",
+            ),
+            (
+                "another local",
+                r#"
+pub fn create_marker(other: &mut Marker) -> Marker {
+    let mut out: Marker = flight_entity::allocate_entity();
+    initialize_marker(other);
+    return out;
+}
+
+pub fn initialize_marker(out: &mut Marker) {
+    out.label = Mode::Enabled;
+    out.mode = Mode::Disabled;
+}
+"#,
+                "label",
+            ),
+            (
+                "one field unassigned",
+                r#"
+pub fn create_marker() -> Marker {
+    let mut out: Marker = flight_entity::allocate_entity();
+    initialize_marker(&mut out);
+    return out;
+}
+
+pub fn initialize_marker(out: &mut Marker) {
+    out.label = Mode::Enabled;
+}
+"#,
+                "mode",
+            ),
+        ];
+
+        for (shape, functions, field) in cases {
+            let source = format!("{declarations}{functions}");
+            let error = compile_typescript(&source, Some("@flighthq/entity/contract")).unwrap_err();
+            assert_eq!(
+                error.to_string(),
+                format!(
+                    "cannot lower `allocate_entity` default for `MarkerRaw.{field}`: unsupported Rust field type `Mode`"
+                ),
+                "{shape}"
+            );
+        }
+    }
+
+    #[test]
+    fn omits_unsupported_entity_defaults_the_next_initializer_definitely_assigns() {
+        let source = r#"
+use flight_entity::Ref;
+
+pub enum Mode {
+    Disabled,
+    Enabled,
+}
+
+pub struct Settings {
+    pub scale: f32,
+}
+
+pub struct Marker {
+    runtime: EntityRuntimeSlot,
+    pub mode: Mode,
+    pub settings: Ref<Settings>,
+    pub speed: f64,
+}
+
+pub fn create_marker(settings: Ref<Settings>, enabled: bool) -> Marker {
+    let mut out: Marker = flight_entity::allocate_entity();
+    initialize_marker(&mut out, settings, enabled);
+    return out;
+}
+
+pub fn initialize_marker(out: &mut Marker, settings: Ref<Settings>, enabled: bool) {
+    if enabled {
+        out.mode = Mode::Enabled;
+    } else {
+        out.mode = Mode::Disabled;
+    }
+    out.settings = settings;
+    out.speed = 1.0;
+}
+"#;
+
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+
+        assert!(output.contains(
+            "let out: MarkerRaw = Object.assign(allocateEntity<MarkerRaw>(), { speed: 0 });"
+        ));
+    }
+
+    #[test]
     fn permits_unsupported_entity_default_shapes_until_direct_allocation() {
         let source = r#"
 pub struct Buffered {

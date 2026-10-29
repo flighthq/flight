@@ -35,7 +35,13 @@ const CURRENT_SOURCE_MARKER: &str = "@current-source:";
 const DATA_UNION_UNIT_MARKER: &str = "@data-union-unit:";
 const DATA_UNION_VARIANT_MARKER: &str = "@data-union-variant:";
 const TAGGED_DATA_UNION_VARIANT_MARKER: &str = "@tagged-data-union-variant:";
+// A field an `allocate_entity` local may leave out of its default object because the construction
+// initializer called on it in the very next statement definitely assigns it (`type:field`).
+const ENTITY_ALLOCATION_INITIALIZED_FIELD_MARKER: &str = "@entity-allocation-initialized-field:";
 const ENTITY_DEFAULT_FIELD_MARKER: &str = "@entity-default-field:";
+// A field an initializer definitely assigns through its leading `&mut Entity` parameter on every
+// completing path (`function:type:field`).
+const ENTITY_DEFINITELY_INITIALIZED_FIELD_MARKER: &str = "@entity-definitely-initialized-field:";
 const ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER: &str = "@entity-unsupported-default-field:";
 const FIXED_BUFFER_ARGUMENT_MARKER: &str = "@fixed-buffer-argument:";
 const FIXED_BUFFER_LOCAL_MARKER: &str = "@fixed-buffer-local:";
@@ -220,6 +226,52 @@ impl RuntimeCategory {
     }
 }
 
+// The context for one `allocate_entity` local: when the next statement calls a construction
+// initializer with `&mut <local>` first, the fields that initializer definitely assigns may be left
+// out of the allocation's default object. Any other shape keeps the context unchanged (fail closed).
+// flight-lint: allow(hashmap-iteration) markers are only copied into another set, so visit order is unobservable
+fn allocation_initialized_context(
+    entities: &HashSet<String>,
+    local: &syn::Local,
+    name: &str,
+    next: Option<&Stmt>,
+) -> HashSet<String> {
+    let Some(initializer) = &local.init else {
+        return entities.clone();
+    };
+    if !expression_is_path_call(&initializer.expr, "allocate_entity") {
+        return entities.clone();
+    }
+    let Some(Stmt::Expr(Expr::Call(call), _)) = next else {
+        return entities.clone();
+    };
+    let Expr::Path(function) = call.func.as_ref() else {
+        return entities.clone();
+    };
+    let Some(function) = function.path.get_ident() else {
+        return entities.clone();
+    };
+    let Some(Expr::Reference(reference)) = call.args.first() else {
+        return entities.clone();
+    };
+    let Expr::Path(argument) = reference.expr.as_ref() else {
+        return entities.clone();
+    };
+    if reference.mutability.is_none() || !argument.path.is_ident(name) {
+        return entities.clone();
+    }
+    let prefix = format!("{ENTITY_DEFINITELY_INITIALIZED_FIELD_MARKER}{function}:");
+    let mut context = entities.clone();
+    for marker in entities {
+        if let Some(field) = marker.strip_prefix(&prefix) {
+            context.insert(format!(
+                "{ENTITY_ALLOCATION_INITIALIZED_FIELD_MARKER}{field}"
+            ));
+        }
+    }
+    return context;
+}
+
 fn argument_is_option(argument: &FnArg) -> bool {
     let FnArg::Typed(argument) = argument else {
         return false;
@@ -372,6 +424,78 @@ fn insert_export_name_context(
         context.insert(format!("{EXPORT_NAME_TARGET_MARKER}{item}:{target}"));
     }
     return Ok(());
+}
+
+// Adds every `parameter.field` that `statements` assign on all completing paths: a top-level
+// assignment, or an `if` whose branches all assign it. Scanning stops at the first statement that
+// can leave the body early (`return`, `?`, `break`, `continue`), so a field assigned only after a
+// possible early exit is not definitely assigned. Returns false when scanning stopped early.
+fn collect_definitely_assigned_fields(
+    statements: &[Stmt],
+    parameter: &str,
+    out: &mut BTreeSet<String>,
+) -> bool {
+    for statement in statements {
+        if statement_may_exit_early(statement) {
+            return false;
+        }
+        match statement {
+            Stmt::Expr(Expr::Assign(assign), _) => {
+                if let Expr::Field(field) = assign.left.as_ref()
+                    && let Expr::Path(base) = field.base.as_ref()
+                    && base.path.is_ident(parameter)
+                    && let syn::Member::Named(member) = &field.member
+                {
+                    out.insert(member.to_string());
+                }
+            }
+            Stmt::Expr(Expr::If(branch), _) => {
+                let Some((_, otherwise)) = &branch.else_branch else {
+                    continue;
+                };
+                let Expr::Block(otherwise) = otherwise.as_ref() else {
+                    continue;
+                };
+                let mut then_fields = BTreeSet::new();
+                let mut else_fields = BTreeSet::new();
+                collect_definitely_assigned_fields(
+                    &branch.then_branch.stmts,
+                    parameter,
+                    &mut then_fields,
+                );
+                collect_definitely_assigned_fields(
+                    &otherwise.block.stmts,
+                    parameter,
+                    &mut else_fields,
+                );
+                out.extend(then_fields.intersection(&else_fields).cloned());
+            }
+            _ => {}
+        }
+    }
+    return true;
+}
+
+// The name and entity type of a function's leading `name: &mut Entity` parameter.
+fn leading_mutable_entity_parameter(
+    function: &ItemFn,
+    entity_type_names: &HashSet<String>,
+) -> Option<(String, String)> {
+    let Some(FnArg::Typed(parameter)) = function.sig.inputs.first() else {
+        return None;
+    };
+    let Pat::Ident(name) = parameter.pat.as_ref() else {
+        return None;
+    };
+    let Type::Reference(reference) = parameter.ty.as_ref() else {
+        return None;
+    };
+    reference.mutability?;
+    let entity = named_type(&reference.elem)?;
+    if !entity_type_names.contains(&entity) {
+        return None;
+    }
+    return Some((name.ident.to_string(), entity));
 }
 
 fn nullable_type(inner: String) -> String {
@@ -824,6 +948,11 @@ fn entity_allocation(
         .iter()
         .filter_map(|marker| marker.strip_prefix(&unsupported_prefix))
         .filter_map(|field| field.split_once(':'))
+        .filter(|(field, _)| {
+            !entities.contains(&format!(
+                "{ENTITY_ALLOCATION_INITIALIZED_FIELD_MARKER}{typescript_type}:{field}"
+            ))
+        })
         .collect::<Vec<_>>();
     unsupported_fields.sort();
     if let Some((field, rust_type)) = unsupported_fields.first() {
@@ -848,6 +977,16 @@ fn entity_allocation(
         "Object.assign({allocation}, {{ {} }})",
         fields.join(", ")
     ));
+}
+
+// Whether a statement contains `return`, `?`, `break` or `continue` anywhere, closures included, so
+// a definite-assignment scan stops conservatively before it. Tokens print space-separated.
+fn statement_may_exit_early(statement: &Stmt) -> bool {
+    return statement
+        .to_token_stream()
+        .to_string()
+        .split(|character: char| character.is_whitespace())
+        .any(|token| matches!(token, "return" | "break" | "continue" | "?"));
 }
 
 // Both operands of `.extend()` / `.extend_from_slice()` must be declared as a Rust `Vec` (receiver) and
@@ -3360,6 +3499,26 @@ fn generation_context_with_types(
                 ));
             }
         }
+        for function in &program.functions {
+            let Some((parameter, entity)) =
+                leading_mutable_entity_parameter(function, &entity_types)
+            else {
+                continue;
+            };
+            let mut assigned_fields = BTreeSet::new();
+            collect_definitely_assigned_fields(
+                &function.block.stmts,
+                &parameter,
+                &mut assigned_fields,
+            );
+            for field in assigned_fields {
+                context.insert(format!(
+                    "{ENTITY_DEFINITELY_INITIALIZED_FIELD_MARKER}{}:{entity}Raw:{}",
+                    function.sig.ident,
+                    snake_to_lower_camel(&field)
+                ));
+            }
+        }
         for (record, fields) in &record_vec_fields {
             context.insert(format!("{RECORD_CLONE_TYPE_MARKER}{record}"));
             for (field, optional) in fields {
@@ -4014,15 +4173,21 @@ fn emit_block(
         }
     }
     let mut declared = HashSet::new();
-    for statement in statements {
+    for (index, statement) in statements.iter().enumerate() {
         if let Stmt::Local(local) = statement
             && let Some(name) = local_pattern_name(&local.pat)
         {
             let rebound = declaration_counts
                 .get(&name)
                 .is_some_and(|count| *count > 1);
+            let local_context = allocation_initialized_context(
+                &block_context,
+                local,
+                &name,
+                statements.get(index + 1),
+            );
             let shadowed = !declared.insert(name);
-            emit_local_with_shadow(out, local, &block_context, indent, shadowed, rebound)?;
+            emit_local_with_shadow(out, local, &local_context, indent, shadowed, rebound)?;
             update_vitest_struct_local_context(local, &mut block_context);
             update_vitest_local_function_context(local, &mut block_context);
         } else if let Stmt::Local(local) = statement {
