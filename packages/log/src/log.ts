@@ -64,6 +64,9 @@ export interface LogState extends Entity {
   nextSpanId: number;
 }
 
+// The name generated Rust packages lower `flight_log::LogState` to; the same shape as LogState.
+export type LogStateRaw = LogState;
+
 // Options for createRateLimitedLogSink. The window is measured on each entry's `timestampMs`.
 export interface RateLimitedLogSinkOptions {
   perChannel?: boolean;
