@@ -1,13 +1,8 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import type {
-  AabbLike,
-  BoundingSphereLike,
-  Capsule,
-  CapsuleLike,
-  EntityConstruction,
-  Ray3DLike,
-  Vector3Like,
-} from '@flighthq/types/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
+import type { AabbLike, BoundingSphereLike, Ray3DLike, Vector3Like } from '@flighthq/types/contract';
+
+import type { Capsule, CapsuleLike } from './types.ts';
 
 /**
  * Creates a capsule from a start point, end point, and radius. A negative radius conventionally

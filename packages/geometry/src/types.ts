@@ -1,6 +1,21 @@
 import type { EntityRuntimeKey } from '@flighthq/entity/contract';
 import type { EntityRaw, EntityRuntime, EntityWithoutRuntime } from '@flighthq/entity/contract';
 
+// A capsule: the set of all points within `radius` of the line segment from (startX, startY,
+// startZ) to (endX, endY, endZ). A negative radius conventionally marks an empty capsule.
+export interface Capsule extends EntityRaw {
+  [EntityRuntimeKey]: EntityRuntime | undefined;
+  endX: number;
+  endY: number;
+  endZ: number;
+  radius: number;
+  startX: number;
+  startY: number;
+  startZ: number;
+}
+
+export type CapsuleLike = EntityWithoutRuntime<Capsule>;
+
 // The order in which per-axis rotations are composed when converting between Euler angles and a
 // quaternion or matrix. Each value lists the axes in application order; 'XYZ' applies the X
 // rotation first, then Y, then Z. Matches the glTF / three.js intrinsic-rotation convention used

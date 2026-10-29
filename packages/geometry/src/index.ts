@@ -390,6 +390,8 @@ export {
 } from './vector4.ts';
 export * from './vector4Pool.ts';
 export type {
+  Capsule,
+  CapsuleLike,
   EulerOrder,
   Matrix,
   Matrix3,
