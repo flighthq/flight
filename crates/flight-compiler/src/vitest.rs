@@ -984,8 +984,48 @@ pub(crate) fn emit_test_program(
 ) -> Result<String, CompileError> {
     let (mut contract_symbols, mut contract_type_symbols, external_modules) =
         collect_contract_symbols(program, context);
-    let (cross_crate_values, cross_crate_types) =
-        crate::typescript::test_cross_crate_imports(program)?;
+    let (mut cross_crate_values, cross_crate_types) =
+        crate::typescript::test_cross_crate_imports(program, context)?;
+    let mixed_foreign_wildcards =
+        crate::typescript::test_mixed_foreign_wildcard_roots(program, context);
+    let unresolved_wildcard_values = contract_symbols
+        .iter()
+        .filter(|symbol| {
+            !is_vitest_function(context, symbol)
+                && frozen_object_name(context, symbol).is_none()
+                && !is_string_union(context, symbol)
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    if !mixed_foreign_wildcards.is_empty() && !unresolved_wildcard_values.is_empty() {
+        if mixed_foreign_wildcards.len() != 1 {
+            return Err(compile_error(format!(
+                "portable test values {} are unresolved between mixed foreign wildcard crates {}; use explicit Rust imports",
+                unresolved_wildcard_values.join(", "),
+                mixed_foreign_wildcards
+                    .iter()
+                    .cloned()
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )));
+        }
+        let foreign_root = mixed_foreign_wildcards
+            .first()
+            .expect("one foreign wildcard root exists");
+        let Some(package) = foreign_root.strip_prefix("flight_") else {
+            return Err(compile_error(format!(
+                "portable test values {} come from foreign wildcard crate `{foreign_root}`, which has no @flighthq contract mapping; use explicit Rust imports",
+                unresolved_wildcard_values.join(", ")
+            )));
+        };
+        let module = format!("@flighthq/{}/contract", package.replace('_', "-"));
+        cross_crate_values.entry(module).or_default().extend(
+            unresolved_wildcard_values
+                .iter()
+                .map(|symbol| emit_path_name(symbol)),
+        );
+        contract_symbols.retain(|symbol| !unresolved_wildcard_values.contains(symbol));
+    }
     let cross_crate_local_names = cross_crate_values
         .values()
         .chain(cross_crate_types.values())

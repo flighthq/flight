@@ -90,6 +90,7 @@ const VITEST_FUNCTION_RETURN_CANDIDATE_MARKER: &str = "@vitest-function-return-c
 const VITEST_FUNCTION_RETURN_UNRESOLVED_MARKER: &str = "@vitest-function-return-unresolved:";
 const VITEST_LOCAL_CRATE_ALIAS_MARKER: &str = "@vitest-local-crate-alias:";
 const VITEST_LOCAL_CRATE_MARKER: &str = "@vitest-local-crate:";
+const VITEST_LOCAL_MODULE_ALIAS_MARKER: &str = "@vitest-local-module-alias:";
 const VITEST_STRUCT_LOCAL_MARKER: &str = "@vitest-struct-local:";
 const VITEST_STRUCT_OWNER_MARKER: &str = "@vitest-struct-owner:";
 const VITEST_STRUCT_CANDIDATE_MARKER: &str = "@vitest-struct-candidate:";
@@ -1155,6 +1156,7 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                     BindingFact::Sequence(Box::new(element))
                 }
                 Expr::Paren(paren) => self.initializer_fact(&paren.expr),
+                Expr::Reference(reference) => self.initializer_fact(&reference.expr),
                 Expr::MethodCall(call)
                     if call.args.is_empty()
                         && matches!(
@@ -2424,6 +2426,12 @@ pub(crate) fn insert_vitest_import_alias_context<'a>(
 ) {
     let local_crates = marker_suffixes(context, VITEST_LOCAL_CRATE_MARKER);
     let all_rules = provenance_import_rules(uses, None);
+    for exported in all_rules.iter().filter_map(|rule| match rule {
+        ProvenanceImportRule::Explicit { exported, .. } => Some(exported),
+        ProvenanceImportRule::Wildcard { .. } => None,
+    }) {
+        context.remove(&format!("{VITEST_LOCAL_MODULE_ALIAS_MARKER}{exported}"));
+    }
     let mut crate_aliases = local_crates
         .iter()
         .map(|local| (local.clone(), local.clone()))
@@ -2459,8 +2467,10 @@ pub(crate) fn insert_vitest_import_alias_context<'a>(
                         target.push_str("::");
                         target.push_str(segment);
                     }
-                    target.push_str("::");
-                    target.push_str(imported);
+                    if imported != "self" {
+                        target.push_str("::");
+                        target.push_str(imported);
+                    }
                     Some(target)
                 }
             };
@@ -2484,6 +2494,33 @@ pub(crate) fn insert_vitest_import_alias_context<'a>(
                 format!("{VITEST_LOCAL_CRATE_ALIAS_MARKER}{alias}{PROVENANCE_SEPARATOR}{canonical}")
             }),
     );
+    let source_modules = [
+        VITEST_FUNCTION_CANDIDATE_MARKER,
+        VITEST_STRUCT_CANDIDATE_MARKER,
+    ]
+    .into_iter()
+    .flat_map(|marker| provenance_binding_table(context, marker).into_values())
+    .flatten()
+    .filter_map(|identity| {
+        identity
+            .split_once(PROVENANCE_SEPARATOR)
+            .map(|(module, _)| source_module_name(module))
+    })
+    .collect::<BTreeSet<_>>();
+    context.extend(
+        crate_aliases
+            .iter()
+            .filter(|(alias, canonical)| alias != canonical)
+            .filter(|(_, canonical)| {
+                local_crates.iter().any(|local| {
+                    canonical == &local
+                        || canonical
+                            .strip_prefix(&format!("{local}::"))
+                            .is_some_and(|module| source_modules.contains(module))
+                })
+            })
+            .map(|(alias, _)| format!("{VITEST_LOCAL_MODULE_ALIAS_MARKER}{alias}")),
+    );
     let module_is_local = |module: &str| {
         module == "crate"
             || crate_aliases
@@ -2503,7 +2540,7 @@ pub(crate) fn insert_vitest_import_alias_context<'a>(
                 exported,
                 imported,
                 module,
-            } if module.as_deref().is_none_or(&module_is_local) => {
+            } if module.as_deref().is_none_or(module_is_local) => {
                 Some((exported.clone(), imported.clone()))
             }
             ProvenanceImportRule::Explicit { .. } => None,
@@ -8074,6 +8111,58 @@ fn cross_crate_symbols(uses: &[syn::ItemUse]) -> BTreeMap<String, CrossCrateSymb
     return symbols;
 }
 
+fn test_cross_crate_symbols(
+    uses: &[syn::ItemUse],
+    context: &HashSet<String>,
+) -> BTreeMap<String, CrossCrateSymbol> {
+    let mut symbols = cross_crate_symbols(uses);
+    symbols.retain(|local, _| {
+        !context.contains(&format!("{VITEST_LOCAL_MODULE_ALIAS_MARKER}{local}"))
+    });
+    return symbols;
+}
+
+fn mixed_foreign_wildcard_roots(
+    uses: &[syn::ItemUse],
+    context: &HashSet<String>,
+) -> BTreeSet<String> {
+    let rules = provenance_import_rules(uses.iter(), None);
+    let is_local = |module: &str| {
+        module
+            .split("::")
+            .next()
+            .is_some_and(|root| vitest_current_path_prefix(context, root).is_some())
+    };
+    if !rules
+        .iter()
+        .any(|rule| matches!(rule, ProvenanceImportRule::Wildcard { module } if is_local(module)))
+    {
+        return BTreeSet::new();
+    }
+    return rules
+        .into_iter()
+        .filter_map(|rule| match rule {
+            ProvenanceImportRule::Wildcard { module } if !is_local(&module) => {
+                module.split("::").next().map(str::to_string)
+            }
+            ProvenanceImportRule::Wildcard { .. } | ProvenanceImportRule::Explicit { .. } => None,
+        })
+        .collect();
+}
+
+pub(crate) fn test_mixed_foreign_wildcard_roots(
+    program: &TestProgram,
+    context: &HashSet<String>,
+) -> BTreeSet<String> {
+    let mut roots = mixed_foreign_wildcard_roots(&program.uses, context);
+    for suite in &program.suites {
+        let mut suite_context = context.clone();
+        insert_vitest_import_alias_context(&mut suite_context, suite.uses.iter());
+        roots.extend(mixed_foreign_wildcard_roots(&suite.uses, &suite_context));
+    }
+    return roots;
+}
+
 fn finish_cross_crate_imports(
     collector: CrossCrateUsageCollector<'_>,
 ) -> (
@@ -8149,6 +8238,7 @@ fn cross_crate_imports(
 
 pub(crate) fn test_cross_crate_imports(
     program: &TestProgram,
+    context: &HashSet<String>,
 ) -> Result<
     (
         BTreeMap<String, BTreeSet<String>>,
@@ -8188,7 +8278,7 @@ pub(crate) fn test_cross_crate_imports(
         return Ok(());
     }
 
-    let top_level_symbols = cross_crate_symbols(&program.uses);
+    let top_level_symbols = test_cross_crate_symbols(&program.uses, context);
     let mut collector = CrossCrateUsageCollector {
         symbols: &top_level_symbols,
         struct_literals_are_types: true,
@@ -8212,8 +8302,10 @@ pub(crate) fn test_cross_crate_imports(
     record_bindings(&value_imports, &mut bindings)?;
     record_bindings(&type_imports, &mut bindings)?;
     for suite in &program.suites {
+        let mut suite_context = context.clone();
+        insert_vitest_import_alias_context(&mut suite_context, suite.uses.iter());
         let mut symbols = top_level_symbols.clone();
-        symbols.extend(cross_crate_symbols(&suite.uses));
+        symbols.extend(test_cross_crate_symbols(&suite.uses, &suite_context));
         let mut collector = CrossCrateUsageCollector {
             symbols: &symbols,
             struct_literals_are_types: true,

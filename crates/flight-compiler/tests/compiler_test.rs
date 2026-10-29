@@ -5977,6 +5977,236 @@ fn shadows_the_selected_factory_in_a_nested_pattern() {
     }
 
     #[test]
+    fn routes_unresolved_values_from_mixed_current_and_foreign_wildcards() {
+        let production = r#"
+//! flight-compiler: nullable-options
+
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+
+pub fn create_sample() -> Sample {
+    return Sample { previous: None };
+}
+"#;
+        let contract = "pub use crate::sample::{Sample, create_sample};\n";
+        let source = r#"
+use flight_geometry::*;
+use flight_example::*;
+
+#[test]
+fn uses_each_wildcard_contract() {
+    let sample = create_sample();
+    assert!(sample.previous.is_none());
+    let matrix = create_matrix();
+    assert_eq!(matrix, create_matrix());
+}
+"#;
+
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            contract,
+            &[VitestAliasSource {
+                source: production,
+                module: "src/sample.rs",
+            }],
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("import { createMatrix } from \"@flighthq/geometry/contract\";"),
+            "{output}"
+        );
+        assert!(
+            output.contains("  createSample,\n} from \"@flighthq/example/contract\";"),
+            "{output}"
+        );
+        assert!(!output.contains("  createMatrix,\n"), "{output}");
+    }
+
+    #[test]
+    fn rejects_unresolved_values_from_multiple_mixed_foreign_wildcards() {
+        let production = r#"
+pub fn create_sample() -> i32 {
+    return 1;
+}
+"#;
+        let contract = "pub use crate::sample::create_sample;\n";
+        let source = r#"
+use flight_example::*;
+use flight_geometry::*;
+use flight_math::*;
+
+#[test]
+fn ambiguous_foreign_wildcard_value() {
+    assert_eq!(create_sample(), 1);
+    assert_eq!(create_matrix(), create_matrix());
+}
+"#;
+        let compile = || {
+            compile_vitest_with_contract_alias_sources(
+                source,
+                "@flighthq/example/contract",
+                contract,
+                &[VitestAliasSource {
+                    source: production,
+                    module: "src/sample.rs",
+                }],
+            )
+            .unwrap_err()
+            .to_string()
+        };
+
+        let first = compile();
+        assert_eq!(first, compile());
+        assert!(first.contains("flight_geometry, flight_math"), "{first}");
+        assert!(first.contains("use explicit Rust imports"), "{first}");
+    }
+
+    #[test]
+    fn treats_grouped_current_submodule_aliases_as_qualifiers_not_contract_imports() {
+        let optional = r#"
+pub struct OptionalSample {
+    pub previous: Option<i32>,
+}
+"#;
+        let nullable = r#"
+//! flight-compiler: nullable-options
+
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+"#;
+        let contract = r#"
+pub use crate::optional::OptionalSample;
+pub use crate::root::Sample;
+"#;
+        let source = r#"
+use flight_example::{optional as storage, root as nullable};
+
+#[test]
+fn uses_grouped_module_aliases() {
+    let mut optional = storage::OptionalSample { previous: None };
+    optional.previous = None;
+    let mut sample = nullable::Sample { previous: None };
+    sample.previous = None;
+    assert!(sample.previous.is_none());
+}
+"#;
+
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            contract,
+            &[
+                VitestAliasSource {
+                    source: optional,
+                    module: "src/optional.rs",
+                },
+                VitestAliasSource {
+                    source: nullable,
+                    module: "src/root.rs",
+                },
+            ],
+        )
+        .unwrap();
+
+        assert!(output.contains("  OptionalSample,"), "{output}");
+        assert!(output.contains("  Sample,"), "{output}");
+        assert!(!output.contains("optional as storage"), "{output}");
+        assert!(!output.contains("root as nullable"), "{output}");
+        assert!(!output.contains("storage.OptionalSample"), "{output}");
+        assert!(!output.contains("nullable.Sample"), "{output}");
+        assert!(
+            output.contains("optional.previous = undefined;"),
+            "{output}"
+        );
+        assert!(output.contains("sample.previous = null;"), "{output}");
+    }
+
+    #[test]
+    fn canonicalizes_grouped_self_as_the_current_crate_root() {
+        let production = r#"
+//! flight-compiler: nullable-options
+
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+"#;
+        let contract = "pub use crate::root::Sample;\n";
+        let source = r#"
+use flight_example::{self as current};
+
+#[test]
+fn uses_the_grouped_crate_alias() {
+    let mut sample = current::Sample { previous: None };
+    sample.previous = None;
+    assert!(sample.previous.is_none());
+}
+"#;
+
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            contract,
+            &[VitestAliasSource {
+                source: production,
+                module: "src/root.rs",
+            }],
+        )
+        .unwrap();
+
+        assert!(output.contains("  Sample,"), "{output}");
+        assert!(!output.contains("self as current"), "{output}");
+        assert!(!output.contains("current.Sample"), "{output}");
+        assert!(output.contains("sample.previous = null;"), "{output}");
+    }
+
+    #[test]
+    fn preserves_sequence_element_provenance_through_mutable_references() {
+        let production = r#"
+//! flight-compiler: nullable-options
+
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+
+pub fn create_samples() -> Vec<Sample> {
+    return vec![Sample { previous: None }];
+}
+"#;
+        let contract = "pub use crate::root::{Sample, create_samples};\n";
+        let source = r#"
+use flight_example::*;
+
+#[test]
+fn mutates_samples_by_reference() {
+    let mut samples = create_samples();
+    for sample in &mut samples {
+        sample.previous = None;
+        assert!(sample.previous.is_none());
+    }
+}
+"#;
+
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            contract,
+            &[VitestAliasSource {
+                source: production,
+                module: "src/root.rs",
+            }],
+        )
+        .unwrap();
+
+        assert!(output.contains("sample.previous = null;"), "{output}");
+        assert!(output.contains("sample.previous === null"), "{output}");
+        assert!(!output.contains("sample.previous = undefined;"), "{output}");
+    }
+
+    #[test]
     fn contextualizes_declared_struct_literal_bindings() {
         let source = r#"
 use std::sync::Arc;
