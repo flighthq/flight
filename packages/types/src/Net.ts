@@ -95,7 +95,7 @@ export interface NetProgress {
 // Per-call transport options: an opt-in progress signal and a caller-supplied abort signal. Both are
 // optional; a request with neither still runs to completion.
 export interface NetRequestOptions {
-  progress?: Signal<(progress: Readonly<NetProgress>) => void>;
+  progress?: Signal<Readonly<NetProgress>>;
   signal?: AbortSignal;
 }
 

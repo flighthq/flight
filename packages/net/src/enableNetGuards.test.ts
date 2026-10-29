@@ -6,8 +6,8 @@ import {
   removeLogSink,
 } from '@flighthq/log/contract';
 import type { LogState } from '@flighthq/log/contract';
-import type { HostNetCapability, LogEntry, MemoryLogSink, NetResponse } from '@flighthq/types/contract';
-import { EntityRuntimeKey } from '@flighthq/types/contract';
+import { createSignal } from '@flighthq/signals/contract';
+import type { HostNetCapability, LogEntry, MemoryLogSink, NetProgress, NetResponse } from '@flighthq/types/contract';
 
 import { areNetGuardsEnabled, disableNetGuards, enableNetGuards } from './enableNetGuards.ts';
 import { sendNetRequest } from './net.ts';
@@ -84,11 +84,7 @@ describe('enableNetGuards', () => {
   it('warns when a successful provider ignores a supplied progress signal', async () => {
     enableNetGuards(logState, () => 0);
     const host = hostOf(async () => stubResponse());
-    const progress = {
-      [EntityRuntimeKey]: undefined,
-      data: null,
-      emit() {},
-    };
+    const progress = createSignal<Readonly<NetProgress>>();
     const entries = await captureLog(async () => {
       await sendNetRequest(host.net.http, { method: 'GET', url: 'u' }, { progress });
     });
@@ -99,11 +95,7 @@ describe('enableNetGuards', () => {
 
   it('stays silent when the provider emits progress', async () => {
     enableNetGuards(logState, () => 0);
-    const progress = {
-      [EntityRuntimeKey]: undefined,
-      data: null,
-      emit() {},
-    };
+    const progress = createSignal<Readonly<NetProgress>>();
     const host = hostOf(async (_request, options) => {
       options?.progress?.emit({ loaded: 1, phase: 'download', total: 1 });
       return stubResponse();

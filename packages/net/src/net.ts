@@ -2,6 +2,7 @@ import type { Signal } from '@flighthq/signals/contract';
 import type {
   HostNetCapability,
   NetGuard,
+  NetProgress,
   NetRequest,
   NetRequestOptions,
   NetResponse,
@@ -46,9 +47,9 @@ export function sendNetRequest(
   const progress = options?.progress;
   if (progress === undefined) return hostNet.sendNetRequest(request, options);
   let emitted = false;
-  const guardedProgress: Signal<typeof progress.emit> = {
+  const guardedProgress: Signal<Readonly<NetProgress>> = {
     ...progress,
-    emit(value) {
+    emit(value: Readonly<NetProgress>) {
       emitted = true;
       progress.emit(value);
     },
