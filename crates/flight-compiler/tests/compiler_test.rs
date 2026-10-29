@@ -72,6 +72,13 @@ mod source_modes {
             .unwrap(),
             SourceMode::Generate
         );
+        assert_eq!(
+            source_mode(
+                "//! flight-compiler: root-only Signal, createSignal\npub struct Signal {}\npub fn create_signal() -> Signal { Signal {} }\n"
+            )
+            .unwrap(),
+            SourceMode::Generate
+        );
     }
 
     #[test]
@@ -82,6 +89,26 @@ mod source_modes {
             error.to_string(),
             "unknown `flight-compiler` source directive `targt-native`"
         );
+    }
+
+    #[test]
+    fn rejects_malformed_root_only_targets() {
+        for (source, expected) in [
+            (
+                "//! flight-compiler: root-only\npub struct Signal {}\n",
+                "`flight-compiler: root-only` requires at least one TypeScript export name",
+            ),
+            (
+                "//! flight-compiler: root-only Signal,,createSignal\npub struct Signal {}\n",
+                "`flight-compiler: root-only` contains an empty export target",
+            ),
+            (
+                "//! flight-compiler: root-only Signal<T>\npub struct Signal<T> { pub value: T }\n",
+                "`flight-compiler: root-only` target `Signal<T>` is not a TypeScript identifier",
+            ),
+        ] {
+            assert_eq!(source_mode(source).unwrap_err().to_string(), expected);
+        }
     }
 
     #[test]

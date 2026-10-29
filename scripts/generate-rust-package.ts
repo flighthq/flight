@@ -30,7 +30,9 @@ import {
 interface Options {
   check: boolean;
   crateName: string;
+  crateRoot?: string;
   packageName: string;
+  packageRoot?: string;
 }
 
 type SourceMode = 'generate' | 'rust-only' | 'target-native';
@@ -52,8 +54,8 @@ interface SymbolOwner {
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const options = parseOptions(process.argv.slice(2));
-const crateRoot = join(repositoryRoot, 'crates', options.crateName);
-const packageRoot = join(repositoryRoot, 'packages', options.packageName);
+const crateRoot = options.crateRoot ?? join(repositoryRoot, 'crates', options.crateName);
+const packageRoot = options.packageRoot ?? join(repositoryRoot, 'packages', options.packageName);
 const packageSourceRoot = join(packageRoot, 'src');
 const compilerPath = join(
   repositoryRoot,
@@ -398,6 +400,7 @@ function moduleExportNames(module: PackageModule): Map<string, string> {
 
 function parseOptions(arguments_: string[]): Options {
   const values = new Map<string, string>();
+  const allowed = new Set(['--crate', '--crate-root', '--package', '--package-root']);
   let check = false;
   for (let index = 0; index < arguments_.length; index += 1) {
     const key = arguments_[index];
@@ -406,18 +409,28 @@ function parseOptions(arguments_: string[]): Options {
       continue;
     }
     const value = arguments_[index + 1];
-    if (!key?.startsWith('--') || !value) {
-      throw new Error('usage: --crate <crate> --package <package> [--check]');
+    if (!key || !allowed.has(key) || !value) {
+      throw new Error(
+        'usage: --crate <crate> --package <package> [--crate-root <path>] [--package-root <path>] [--check]',
+      );
     }
     values.set(key, value);
     index += 1;
   }
   const crateName = values.get('--crate');
   const packageName = values.get('--package');
-  if (!crateName || !packageName || values.size !== 2) {
-    throw new Error('usage: --crate <crate> --package <package> [--check]');
+  if (!crateName || !packageName) {
+    throw new Error(
+      'usage: --crate <crate> --package <package> [--crate-root <path>] [--package-root <path>] [--check]',
+    );
   }
-  return { check, crateName, packageName };
+  return {
+    check,
+    crateName,
+    crateRoot: values.get('--crate-root'),
+    packageName,
+    packageRoot: values.get('--package-root'),
+  };
 }
 
 function publicExports(

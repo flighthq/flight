@@ -503,6 +503,7 @@ pub(crate) fn parse_export_name_metadata(
 pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    validate_root_only_directives(&file.attrs)?;
     let mut rust_only = false;
     let mut target_native = false;
     for attribute in &file.attrs {
@@ -529,6 +530,7 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
             | "numeric-union"
             | "readonly-fields"
             | "root"
+            | "root-only"
             | "string-union"
             | "string-union-value" => {}
             _ => {
@@ -550,6 +552,49 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
     } else {
         SourceMode::Generate
     });
+}
+
+// `root-only` is consumed by package generation rather than TypeScript emission, but every source
+// passes through `source-mode` before the generator derives its package surface. Validate it here so
+// a typo cannot silently bypass the exact-root branch and fall back to inferred Rust exports.
+fn validate_root_only_directives(attributes: &[Attribute]) -> Result<(), CompileError> {
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let Some(targets) = directive.strip_prefix("root-only") else {
+            continue;
+        };
+        if targets
+            .chars()
+            .next()
+            .is_some_and(|character| !character.is_whitespace())
+        {
+            continue;
+        }
+        let targets = targets.trim();
+        if targets.is_empty() {
+            return Err(compile_error(
+                "`flight-compiler: root-only` requires at least one TypeScript export name",
+            ));
+        }
+        for group in targets.split(',') {
+            let group = group.trim();
+            if group.is_empty() {
+                return Err(compile_error(
+                    "`flight-compiler: root-only` contains an empty export target",
+                ));
+            }
+            for target in group.split_whitespace() {
+                if !is_typescript_identifier(target) {
+                    return Err(compile_error(format!(
+                        "`flight-compiler: root-only` target `{target}` is not a TypeScript identifier"
+                    )));
+                }
+            }
+        }
+    }
+    return Ok(());
 }
 
 fn doc_directive(attribute: &Attribute) -> Option<String> {
