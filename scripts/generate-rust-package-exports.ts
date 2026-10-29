@@ -181,8 +181,9 @@ function referencedCode(typescript: string): string {
 }
 
 // Names the module references in value positions. Identifiers under a type annotation, type argument or
-// other type node are type references, except the operand of `typeof`, which reads a value. Property
-// names (`a.name`, `{ name: ... }`) and import declarations are not references.
+// other type node are type references, including a `typeof` operand, which TypeScript erases and a type
+// import satisfies. The expression operand of `as`, `satisfies`, `!` and instantiation stays a value.
+// Property names (`a.name`, `{ name: ... }`) and import declarations are not references.
 function collectValueReferenceNames(typescript: string): Set<string> {
   const parsed = parseSync('generated.ts', typescript, { lang: 'ts', sourceType: 'module' });
   if (parsed.errors.length > 0) {
@@ -209,11 +210,6 @@ function collectValueReferenceNames(typescript: string): Set<string> {
     if (type === 'Identifier') {
       if (!inType) names.add(node.name as string);
       visit(node.typeAnnotation, true);
-      return;
-    }
-    if (type === 'TSTypeQuery') {
-      visit(node.exprName, false);
-      visit(node.typeArguments, true);
       return;
     }
     if (type !== undefined && expressionTypeNodes.has(type)) {

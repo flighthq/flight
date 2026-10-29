@@ -131,9 +131,9 @@ describe('renderGeneratedImports', () => {
     ).toBe("import { RequirementFacet } from './types.ts';\n\n");
   });
 
-  it('treats a typeof operand as a value reference and property names as non-references', () => {
+  it('treats a typeof operand and property names as type-only uses', () => {
     expect(render('export type Facets = typeof RequirementFacet;\n')).toBe(
-      "import { RequirementFacet } from './types.ts';\n\n",
+      "import type { RequirementFacet } from './types.ts';\n\n",
     );
     expect(
       render(
@@ -141,6 +141,19 @@ describe('renderGeneratedImports', () => {
           '  return source.RequirementFacet;\n}\n',
       ),
     ).toBe("import type { RequirementFacet } from './types.ts';\n\n");
+  });
+
+  it('keeps expression operands of as, satisfies, non-null and instantiation as value uses', () => {
+    for (const expression of [
+      'RequirementFacet as unknown',
+      'RequirementFacet satisfies object',
+      'RequirementFacet!',
+      'RequirementFacet<string>',
+    ]) {
+      expect(render(`export const facets = ${expression};\n`), expression).toBe(
+        "import { RequirementFacet } from './types.ts';\n\n",
+      );
+    }
   });
 });
 
