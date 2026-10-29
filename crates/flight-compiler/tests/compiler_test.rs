@@ -2820,6 +2820,11 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
             let error = compile_typescript(source, None).unwrap_err();
             assert_eq!(error.to_string(), expected);
         }
+
+        let source = "pub fn extend_from_iter(out: &mut Vec<String>, names: &[(u16, &str)]) {\n    out.extend(names.iter().map(|row| row.1.to_string()));\n}\n";
+        let output = compile_typescript(source, None).unwrap();
+        assert!(output.contains("names.map((row) => String(row[1]))"), "iterator chain argument should be accepted: {output}");
+        assert!(output.contains("out.push(source[index])"), "extend should emit for-loop: {output}");
     }
 
     // Value bindings resolve lexically: a binding takes effect after its declaration, shadows within its

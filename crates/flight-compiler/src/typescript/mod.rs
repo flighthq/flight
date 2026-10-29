@@ -12686,6 +12686,39 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
     };
 }
 
+fn expression_is_iterator_chain(expression: &Expr) -> bool {
+    return match expression {
+        Expr::MethodCall(call)
+            if call.args.is_empty()
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "collect" | "iter" | "into_iter" | "cloned" | "copied"
+                ) =>
+        {
+            true
+        }
+        Expr::MethodCall(call)
+            if call.args.len() == 1
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "filter" | "map" | "skip" | "take" | "flat_map" | "filter_map"
+                ) =>
+        {
+            true
+        }
+        Expr::MethodCall(call)
+            if call.args.is_empty()
+                && matches!(
+                    call.method.to_string().as_str(),
+                    "flatten" | "rev" | "enumerate" | "peekable"
+                ) =>
+        {
+            true
+        }
+        _ => false,
+    };
+}
+
 fn expression_is_vec_construction(expression: &Expr) -> bool {
     return matches!(
         expression,
@@ -15252,7 +15285,9 @@ fn emit_vec_extend_statement(
                 "portable `.{method}()` requires a receiver declared as Rust `Vec`"
             )));
         }
-        if !expression_is_sequence(&call.args[0], entities) {
+        if !expression_is_sequence(&call.args[0], entities)
+            && !expression_is_iterator_chain(&call.args[0])
+        {
             return Err(compile_error(format!(
                 "portable `.{method}()` requires an argument declared as Rust `Vec` or slice; iterator and Option arguments are not supported"
             )));
