@@ -140,7 +140,7 @@ describe('createScreenPermissionChange', () => {
     const permissionChange = createScreenPermissionChange();
 
     expect(EntityRuntimeKey in permissionChange).toBe(true);
-    expect(permissionChange.onChange.data).toBeNull();
+    expect(permissionChange.onChange.data).toBeUndefined();
   });
 });
 
@@ -150,9 +150,9 @@ describe('createScreenSignals', () => {
 
     expect(EntityRuntimeKey in signals).toBe(true);
     expect(signals.onScreenAdded).not.toBe(signals.onScreenRemoved);
-    expect(signals.onScreenAdded.data).toBeNull();
-    expect(signals.onScreenMetricsChanged.data).toBeNull();
-    expect(signals.onScreenRemoved.data).toBeNull();
+    expect(signals.onScreenAdded.data).toBeUndefined();
+    expect(signals.onScreenMetricsChanged.data).toBeUndefined();
+    expect(signals.onScreenRemoved.data).toBeUndefined();
   });
 });
 
@@ -230,7 +230,7 @@ describe('disposeScreenPermissionChange', () => {
     disposeScreenPermissionChange(permissionChange);
 
     expect(harness.unsubscribe).toHaveBeenCalledOnce();
-    expect(permissionChange.onChange.data).toBeNull();
+    expect(permissionChange.onChange.data).toBeUndefined();
   });
 });
 
@@ -246,9 +246,9 @@ describe('disposeScreenSignals', () => {
     disposeScreenSignals(signals);
 
     expect(harness.unsubscribe).toHaveBeenCalledOnce();
-    expect(signals.onScreenAdded.data).toBeNull();
-    expect(signals.onScreenMetricsChanged.data).toBeNull();
-    expect(signals.onScreenRemoved.data).toBeNull();
+    expect(signals.onScreenAdded.data).toBeUndefined();
+    expect(signals.onScreenMetricsChanged.data).toBeUndefined();
+    expect(signals.onScreenRemoved.data).toBeUndefined();
   });
 });
 
