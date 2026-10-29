@@ -63,11 +63,11 @@ export function revealScene3DResourcesOnResolve(
       }
     }
   };
-  connectSignal(signals.onResourceResolved, slot);
-  connectSignal(signals.onResourceFailed, slot);
+  const resolvedSlot = connectSignal(signals.onResourceResolved, slot);
+  const failedSlot = connectSignal(signals.onResourceFailed, slot);
   return () => {
-    disconnectSignal(signals.onResourceResolved, slot);
-    disconnectSignal(signals.onResourceFailed, slot);
+    disconnectSignal(signals.onResourceResolved, resolvedSlot);
+    disconnectSignal(signals.onResourceFailed, failedSlot);
   };
 }
 

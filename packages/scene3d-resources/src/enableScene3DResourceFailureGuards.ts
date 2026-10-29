@@ -2,6 +2,7 @@ import { explainImageResourceReferenceResolution } from '@flighthq/image/contrac
 import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
+import type { SlotId } from '@flighthq/signals/contract';
 import type { Scene3DResourceEvent, Scene3DResourceResolverWithRuntime } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
@@ -59,15 +60,16 @@ export function enableScene3DResourceFailureGuards(
   const resolved = (event: Readonly<Scene3DResourceEvent>): void => {
     warned.delete(event.ref);
   };
-  connectSignal(signals.onResourceFailed, failed);
-  connectSignal(signals.onResourceResolved, resolved);
-  _guards.set(resolver, { failed, resolved });
+  _guards.set(resolver, {
+    failed: connectSignal(signals.onResourceFailed, failed),
+    resolved: connectSignal(signals.onResourceResolved, resolved),
+  });
   return () => disableScene3DResourceFailureGuards(resolver);
 }
 
 interface Scene3DResourceFailureGuard {
-  failed: (event: Readonly<Scene3DResourceEvent>) => void;
-  resolved: (event: Readonly<Scene3DResourceEvent>) => void;
+  failed: SlotId;
+  resolved: SlotId;
 }
 
 const _guards = new WeakMap<Readonly<Scene3DResourceResolverWithRuntime>, Scene3DResourceFailureGuard>();

@@ -40,7 +40,7 @@ describe('loadScene3DDocumentBytesFromUrl', () => {
   it('forwards cancellation and identifies byte-progress events by URL', async () => {
     const controller = new AbortController();
     const events: Scene3DDocumentLoadProgress[] = [];
-    const progress = createSignal<(event: Readonly<Scene3DDocumentLoadProgress>) => void>();
+    const progress = createSignal<Readonly<Scene3DDocumentLoadProgress>>();
     connectSignal(progress, (event) => events.push({ ...event }));
     const host = fakeNetHost({
       sendNetRequest: async (_request, options) => {

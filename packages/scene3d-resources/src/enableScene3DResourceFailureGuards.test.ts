@@ -1,6 +1,6 @@
 import type { LogState } from '@flighthq/log/contract';
 import { addLogSink, createLogState, createMemoryLogSink, getMemoryLogSinkEntries } from '@flighthq/log/contract';
-import { emitSignal } from '@flighthq/signals/contract';
+import { emitSignal, hasSignalSlots } from '@flighthq/signals/contract';
 import { createTexture } from '@flighthq/texture/contract';
 import type { HostImageCapability, ImageResourceReference, LogEntry, MemoryLogSink } from '@flighthq/types/contract';
 import {
@@ -59,6 +59,18 @@ describe('areScene3DResourceFailureGuardsEnabled', () => {
 });
 
 describe('disableScene3DResourceFailureGuards', () => {
+  it('disconnects both guard slots by their SlotIds', () => {
+    const resolver = createScene3DResourceResolver(host.graphics.image);
+    const signals = enableScene3DResourceSignals(resolver);
+    enableScene3DResourceFailureGuards(resolver, logState, () => 0);
+    expect(hasSignalSlots(signals.onResourceFailed)).toBe(true);
+    expect(hasSignalSlots(signals.onResourceResolved)).toBe(true);
+    disableScene3DResourceFailureGuards(resolver);
+    expect(hasSignalSlots(signals.onResourceFailed)).toBe(false);
+    expect(hasSignalSlots(signals.onResourceResolved)).toBe(false);
+    disposeScene3DResourceResolver(resolver);
+  });
+
   it('is harmless when the guard is absent', () => {
     const resolver = createScene3DResourceResolver(host.graphics.image);
     expect(() => disableScene3DResourceFailureGuards(resolver)).not.toThrow();

@@ -27,8 +27,8 @@ export interface Scene3DResourceEvent {
 }
 
 export interface Scene3DResourceSignals extends Entity {
-  onResourceFailed: Signal<(event: Readonly<Scene3DResourceEvent>) => void>;
-  onResourceResolved: Signal<(event: Readonly<Scene3DResourceEvent>) => void>;
+  onResourceFailed: Signal<Readonly<Scene3DResourceEvent>>;
+  onResourceResolved: Signal<Readonly<Scene3DResourceEvent>>;
 }
 
 // The public, caller-composable resolver atom. Queueing, settled-source retention, subscribers, and
@@ -79,7 +79,7 @@ export interface Scene3DDocumentLoadProgress {
 }
 
 export interface Scene3DDocumentLoadOptions {
-  progress?: Signal<(progress: Readonly<Scene3DDocumentLoadProgress>) => void>;
+  progress?: Signal<Readonly<Scene3DDocumentLoadProgress>>;
   signal?: AbortSignal;
 }
 
@@ -97,7 +97,7 @@ export interface Scene3DResourceLoadProgress {
 }
 
 export interface LoadScene3DResourcesOptions extends UpdateScene3DResourceStreamingOptions {
-  progress?: Signal<(progress: Readonly<Scene3DResourceLoadProgress>) => void>;
+  progress?: Signal<Readonly<Scene3DResourceLoadProgress>>;
 }
 
 export interface ResolveScene3DResourcesOptions {

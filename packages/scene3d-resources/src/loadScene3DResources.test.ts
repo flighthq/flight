@@ -87,7 +87,7 @@ describe('loadScene3DResources', () => {
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: b })]));
     const resolver = createBuiltInScene3DResourceResolver(host.graphics.image, { fetch: async () => fakeImage });
     const events: Scene3DResourceLoadProgress[] = [];
-    const progress = createSignal<(event: Readonly<Scene3DResourceLoadProgress>) => void>();
+    const progress = createSignal<Readonly<Scene3DResourceLoadProgress>>();
     connectSignal(progress, (event) => events.push({ ...event }));
 
     await loadScene3DResources(scene, resolver, { progress });
@@ -104,7 +104,7 @@ describe('loadScene3DResources', () => {
     addNodeChild(scene.root, createMesh(createBoxMeshGeometry(), [createUnlitMaterial({ baseColorMap: texture })]));
     const resolver = createBuiltInScene3DResourceResolver(host.graphics.image, { fetch: async () => null });
     const events: Scene3DResourceLoadProgress[] = [];
-    const progress = createSignal<(event: Readonly<Scene3DResourceLoadProgress>) => void>();
+    const progress = createSignal<Readonly<Scene3DResourceLoadProgress>>();
     connectSignal(progress, (event) => events.push({ ...event }));
 
     await loadScene3DResources(scene, resolver, { progress });
@@ -128,7 +128,7 @@ describe('loadScene3DResources', () => {
     const fetch = vi.fn(async () => fakeImage);
     const resolver = createBuiltInScene3DResourceResolver(host.graphics.image, { fetch });
     const events: Scene3DResourceLoadProgress[] = [];
-    const progress = createSignal<(event: Readonly<Scene3DResourceLoadProgress>) => void>();
+    const progress = createSignal<Readonly<Scene3DResourceLoadProgress>>();
     connectSignal(progress, (event) => events.push({ ...event }));
 
     await loadScene3DResources(scene, resolver, { progress, select: (texture) => texture === selected });
