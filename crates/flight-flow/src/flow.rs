@@ -1,9 +1,55 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
-use flight_entity::{Ref, allocate_entity};
+use flight_entity::{EntityRuntimeSlot, Ref, allocate_entity};
 
 use crate::flow_guards::report_flow_guard;
-use crate::types::{FlowGuardKind, FlowGuardStateRef, FlowStack, FlowState};
+use crate::types::{FlowGuardKind, FlowGuardState};
+
+/// Shared caller-owned flow-guard state.
+pub type FlowGuardStateRef = Ref<FlowGuardState>;
+
+/// A lifecycle callback stored on a flow state (D9 stored capturing form).
+pub type FlowCallback = Arc<dyn Fn() + Send + Sync>;
+
+/// A per-frame update callback stored on a flow state.
+pub type FlowUpdateCallback = Arc<dyn Fn(f32) + Send + Sync>;
+
+/// A single application state in a flow stack. Plain data: callers construct it with a literal
+/// (TS `FlowState` does not extend Entity). The stack stores it behind `Ref`, matching TS object
+/// identity and enabling real re-entrant transitions.
+#[derive(Clone)]
+pub struct FlowState {
+    pub name: Option<String>,
+    pub on_enter: Option<FlowCallback>,
+    pub on_exit: Option<FlowCallback>,
+    pub on_pause: Option<FlowCallback>,
+    pub on_resume: Option<FlowCallback>,
+    pub on_update: Option<FlowUpdateCallback>,
+    pub render_below: Option<bool>,
+    pub update_below: Option<bool>,
+}
+
+/// The flow-state stack (TS `FlowStack` extends Entity). `states` is ordered bottom-to-top, so the
+/// last element is the active top; each state is a shared `Ref`, so duplicate detection is
+/// `Arc::ptr_eq` exactly as TS compares object references.
+#[derive(Clone)]
+pub struct FlowStack {
+    pub states: Vec<Ref<FlowState>>,
+    runtime: EntityRuntimeSlot,
+}
+
+flight_entity::impl_entity!(FlowStack);
+
+impl Default for FlowStack {
+    fn default() -> Self {
+        return FlowStack {
+            states: Vec::new(),
+            runtime: EntityRuntimeSlot::default(),
+        };
+    }
+}
 
 // Holds one level of `transition_depth` for the length of a push or replace. Releasing it in `Drop`
 // is what keeps the depth balanced when a lifecycle callback panics: the unwind still runs the
@@ -44,10 +90,11 @@ pub fn clear_flow_stack(stack: &Ref<FlowStack>) {
         index -= 1;
         let on_exit = {
             let current = stack.read().unwrap();
-            current
-                .states
-                .get(index)
-                .and_then(|state| state.read().unwrap().on_exit.clone())
+            if index < current.states.len() {
+                current.states[index].read().unwrap().on_exit.clone()
+            } else {
+                None
+            }
         };
         if let Some(on_exit) = on_exit {
             on_exit();
@@ -101,6 +148,7 @@ pub fn get_flow_stack_visible_states(out: &mut Vec<Ref<FlowState>>, stack: &Ref<
 }
 
 /// Pop the active top, exiting it and resuming the revealed state. None on an empty stack.
+#[allow(clippy::question_mark)] // let-else is portable to the generated TypeScript; `?` is not
 pub fn pop_flow_state(stack: &Ref<FlowStack>) -> Option<Ref<FlowState>> {
     let popped = {
         let mut current = stack.write().unwrap();

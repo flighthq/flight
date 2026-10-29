@@ -1,7 +1,9 @@
+//! flight-compiler: target-native
+
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_entity::Ref;
-use flight_flow::*;
+use flight_flow::contract::*;
 
 fn guard_state() -> FlowGuardStateRef {
     return Arc::new(RwLock::new(FlowGuardState {
@@ -315,7 +317,7 @@ mod initialize_flow_stack {
     fn is_the_construction_initializer_of_create_flow_stack() {
         let stack = create_flow_stack();
         stack.write().unwrap().states.push(plain("stale"));
-        flight_flow::contract::initialize_flow_stack(&mut *stack.write().unwrap());
+        flight_flow::contract::initialize_flow_stack(&mut stack.write().unwrap());
         assert!(stack.read().unwrap().states.is_empty());
     }
 }

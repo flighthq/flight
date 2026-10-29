@@ -7,7 +7,6 @@ use flight_entity::Ref;
 
 use crate::flow::*;
 use crate::flow_guards::{disable_flow_guards, enable_flow_guards};
-use crate::types::{FlowGuardStateRef, FlowStack, FlowState};
 
 #[cfg(test)]
 mod flow_guard_state_sugar_tests {
@@ -59,7 +58,7 @@ mod flow_guard_state_sugar_tests {
 #[cfg(test)]
 mod flow_stack_sugar_tests {
     use super::*;
-    use crate::types::{FlowGuardState, FlowGuardStateRef};
+    use crate::types::FlowGuardState;
     use std::sync::{Arc, Mutex, RwLock};
 
     fn guard_state() -> FlowGuardStateRef {

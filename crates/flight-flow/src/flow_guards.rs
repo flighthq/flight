@@ -1,9 +1,12 @@
+//! flight-compiler: target-native
+
 use std::sync::Arc;
 
-use flight_log::{LogData, LogLevel, LogValue, log_once};
+use flight_log::{LogData, LogLevel, LogStateRef, LogValue, log_once};
 use std::collections::HashMap;
 
-use crate::types::{FlowGuardKind, FlowGuardStateRef};
+use crate::flow::FlowGuardStateRef;
+use crate::types::{FlowGuardContext, FlowGuardKind};
 
 // flight-lint: allow(conform-params) D5: caller-owned guard state replaces the hidden module flag
 pub fn disable_flow_guards(state: &FlowGuardStateRef) {
@@ -18,12 +21,12 @@ pub fn disable_flow_guards(state: &FlowGuardStateRef) {
 // flight-lint: allow(conform-params) D5: approved enable-time log state and live clock capability
 pub fn enable_flow_guards(
     state: &FlowGuardStateRef,
-    log_state: &flight_log::LogStateRef,
+    log_state: &LogStateRef,
     clock: Arc<dyn Fn() -> f64 + Send + Sync>,
 ) {
     let mut guard_state = state.write().unwrap();
     guard_state.enabled = true;
-    guard_state.context = Some(crate::types::FlowGuardContext {
+    guard_state.context = Some(FlowGuardContext {
         log_state: log_state.clone(),
         clock,
     });
