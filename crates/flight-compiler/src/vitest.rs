@@ -1092,6 +1092,48 @@ pub(crate) fn emit_test_program(
         );
         contract_type_symbols.retain(|symbol| !unresolved_wildcard_types.contains(symbol));
     }
+    // The complete emitted value namespace, before contract symbols that are really the dependency's
+    // own items are folded into its import: the compiler's Vitest import, the generator's
+    // `rustTestSupport as crate` import, contract imports, cross-crate imports, and local helpers and
+    // constants.
+    let dependency_items = crate::typescript::dependency_export_name_local_items(context);
+    let mut emitted_imports = cross_crate_values.clone();
+    emitted_imports
+        .entry("vitest".to_string())
+        .or_default()
+        .extend(["describe", "expect", "it"].into_iter().map(str::to_string));
+    emitted_imports
+        .entry("./rustTestSupport.ts".to_string())
+        .or_default()
+        .insert("rustTestSupport as crate".to_string());
+    emitted_imports
+        .entry(contract_module.to_string())
+        .or_default()
+        .extend(
+            contract_symbols
+                .iter()
+                .filter(|symbol| !dependency_items.contains(*symbol))
+                .map(|symbol| {
+                    frozen_object_name(context, symbol)
+                        .map_or_else(|| emit_path_name(symbol, context), str::to_string)
+                }),
+        );
+    let local_values = program
+        .helpers
+        .iter()
+        .map(|helper| snake_to_lower_camel(&helper.sig.ident.to_string()))
+        .chain(
+            program
+                .constants
+                .iter()
+                .map(|constant| emit_path_name(&constant.ident.to_string(), context)),
+        )
+        .collect::<std::collections::BTreeSet<_>>();
+    crate::typescript::validate_dependency_export_name_bindings(
+        context,
+        &local_values,
+        &emitted_imports,
+    )?;
     contract_symbols
         .retain(|symbol| !cross_crate_local_names.contains(&emit_path_name(symbol, context)));
     contract_type_symbols

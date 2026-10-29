@@ -2843,7 +2843,7 @@ mod call_decoder {
             (
                 "use flight_codec::decode_utf8;\nuse flight_other::encode_utf8;\npub fn call() -> usize { encode_utf8(); return decode_utf8(1); }\n",
                 vec![codec_package[0], other],
-                "`flight-compiler: export-name` TypeScript name `decodeUTF8` imported from `@flighthq/codec/contract` collides with another import",
+                "`flight-compiler: export-name` TypeScript name `decodeUTF8` imported from `@flighthq/codec/contract` collides with another import from `@flighthq/other/contract`",
             ),
             (
                 "use flight_codec::decode_utf8;\npub fn call() -> usize { return decode_utf8(1); }\n",
@@ -2890,6 +2890,39 @@ mod call_decoder {
             error.to_string(),
             "`flight-compiler: export-name` item `decode_utf8` imported from `@flighthq/codec/contract` as `decodeUTF8` collides with the local mapping `decodeUtf8Text`"
         );
+    }
+
+    #[test]
+    fn maps_grouped_and_nested_foreign_wildcard_dependency_imports() {
+        let codec_package = [ExternalAliasSource {
+            source: "//! flight-compiler: export-name decode_utf8 decodeUTF8\npub fn decode_utf8(value: usize) -> usize {\n    return value;\n}\n",
+            module: "@flighthq/codec/contract",
+        }];
+        let production_sources = [VitestAliasSource {
+            source: "pub fn call_decoder(value: usize) -> usize {\n    return value;\n}\n",
+            module: "crates/flight-consumer/src/caller.rs",
+        }];
+        let expected = "import { describe, expect, it } from 'vitest';\n\nimport { decodeUTF8 } from \"@flighthq/codec/contract\";\n\nimport {\n  callDecoder,\n} from \"@flighthq/consumer/contract\";\n\ndescribe(\"portableTests\", () => {\n  it(\"decodes\", () => {\n    const decoded = decodeUTF8(1);\n    expect(decoded).toEqual(callDecoder(1));\n  });\n});\n";
+        for uses in [
+            "use {flight_codec::*, flight_consumer::*};\n",
+            "use flight_codec::{*};\nuse flight_consumer::*;\n",
+        ] {
+            let source = format!(
+                "{uses}\n#[test]\nfn decodes() {{\n    let decoded = decode_utf8(1);\n    assert_eq!(decoded, call_decoder(1));\n}}\n"
+            );
+            assert_eq!(
+                compile_vitest_with_external_alias_sources(
+                    &source,
+                    "@flighthq/consumer/contract",
+                    Some("pub use crate::caller::call_decoder;\n"),
+                    &production_sources,
+                    &codec_package,
+                )
+                .unwrap(),
+                expected,
+                "{uses}"
+            );
+        }
     }
 
     #[test]
@@ -2947,6 +2980,112 @@ pub fn customized_spring_preset() -> SpringConfig {
         assert!(!output.contains("SPRING_PRESET_BOUNCY"));
         assert!(!output.contains("SPRING_PRESET_GENTLE"));
         assert!(!output.contains("SPRING_PRESET_STIFF"));
+    }
+
+    #[test]
+    fn rejects_dependency_export_names_colliding_with_any_emitted_binding() {
+        let owner = |target: &str| {
+            format!(
+                "//! flight-compiler: export-name decode_utf8 {target}\npub fn decode_utf8(value: usize) -> usize {{\n    return value;\n}}\n"
+            )
+        };
+        let status_owner = owner("Status");
+        let status_package = [ExternalAliasSource {
+            source: &status_owner,
+            module: "@flighthq/codec/contract",
+        }];
+        let consumer = |declarations: &str| {
+            format!(
+                "use flight_codec::decode_utf8;\n\n{declarations}\npub fn call_decoder(value: usize) -> usize {{\n    return decode_utf8(value);\n}}\n"
+            )
+        };
+        let local_item = "`flight-compiler: export-name` TypeScript name `Status` imported from `@flighthq/codec/contract` collides with a local item";
+        for declarations in [
+            "pub enum Status {\n    Ready,\n}\n",
+            "//! flight-compiler: string-union Status=exact\n//! flight-compiler: string-union-value Status Ready \"ready\"\npub enum Status {\n    Ready,\n}\n",
+            "pub const Status: usize = 1;\n",
+        ] {
+            let (directives, items): (Vec<_>, Vec<_>) = declarations
+                .lines()
+                .partition(|line| line.starts_with("//!"));
+            let source = format!(
+                "{}{}",
+                directives
+                    .iter()
+                    .map(|line| format!("{line}\n"))
+                    .collect::<String>(),
+                consumer(&items.join("\n"))
+            );
+            let error =
+                compile_typescript_with_external_alias_sources(&source, None, &[], &status_package)
+                    .unwrap_err();
+            assert_eq!(error.to_string(), local_item, "{source}");
+        }
+        for declarations in [
+            "//! flight-compiler: string-union Status\npub enum Status {\n    Ready,\n}\n",
+            "//! flight-compiler: data-union Status\npub enum Status {\n    Ready(u32),\n    Done(String),\n}\n",
+        ] {
+            let (directives, items): (Vec<_>, Vec<_>) = declarations
+                .lines()
+                .partition(|line| line.starts_with("//!"));
+            let source = format!(
+                "{}{}",
+                directives
+                    .iter()
+                    .map(|line| format!("{line}\n"))
+                    .collect::<String>(),
+                consumer(&items.join("\n"))
+            );
+            let output =
+                compile_typescript_with_external_alias_sources(&source, None, &[], &status_package)
+                    .unwrap();
+            assert!(
+                output.contains("import { Status } from \"@flighthq/codec/contract\";"),
+                "{output}"
+            );
+            assert!(output.contains("  return Status(value);\n"), "{output}");
+        }
+
+        let production_sources = [VitestAliasSource {
+            source: "pub fn call_decoder(value: usize) -> usize {\n    return value;\n}\n\npub fn decode_u_t_f8() -> usize {\n    return 0;\n}\n",
+            module: "crates/flight-consumer/src/caller.rs",
+        }];
+        let test = |body: &str| {
+            format!(
+                "use flight_codec::decode_utf8;\nuse flight_consumer::*;\n\nmod call_decoder {{\n    use super::*;\n\n    #[test]\n    fn decodes() {{\n        let decoded = decode_utf8(1);\n{body}    }}\n}}\n"
+            )
+        };
+        for (target, body, expected) in [
+            (
+                "expect",
+                "        assert_eq!(decoded, call_decoder(1));\n",
+                "`flight-compiler: export-name` TypeScript name `expect` imported from `@flighthq/codec/contract` collides with another import from `vitest`",
+            ),
+            (
+                "describe",
+                "        assert_eq!(decoded, call_decoder(1));\n",
+                "`flight-compiler: export-name` TypeScript name `describe` imported from `@flighthq/codec/contract` collides with another import from `vitest`",
+            ),
+            (
+                "decodeUTF8",
+                "        assert_eq!(decoded, decode_u_t_f8());\n",
+                "`flight-compiler: export-name` TypeScript name `decodeUTF8` imported from `@flighthq/codec/contract` collides with another import from `@flighthq/consumer/contract`",
+            ),
+        ] {
+            let source = owner(target);
+            let error = compile_vitest_with_external_alias_sources(
+                &test(body),
+                "@flighthq/consumer/contract",
+                Some("pub use crate::caller::*;\n"),
+                &production_sources,
+                &[ExternalAliasSource {
+                    source: &source,
+                    module: "@flighthq/codec/contract",
+                }],
+            )
+            .unwrap_err();
+            assert_eq!(error.to_string(), expected, "{target}");
+        }
     }
 
     #[test]
