@@ -359,15 +359,15 @@ describe('createQuadBatchSignals', () => {
     connectSignal(signals.onInstanceAppended, (index) => {
       appended = index;
     });
-    connectSignal(signals.onInstanceRemoved, (index, swapSource) => {
+    connectSignal(signals.onInstanceRemoved, ([index, swapSource]) => {
       removed = [index, swapSource];
     });
     connectSignal(signals.onCleared, () => {
       cleared = true;
     });
     signals.onInstanceAppended.emit(4);
-    signals.onInstanceRemoved.emit(1, 2);
-    signals.onCleared.emit();
+    signals.onInstanceRemoved.emit([1, 2]);
+    signals.onCleared.emit(undefined);
     expect(appended).toBe(4);
     expect(removed).toEqual([1, 2]);
     expect(cleared).toBe(true);
@@ -405,7 +405,7 @@ describe('enableQuadBatchSignals', () => {
     appendQuadBatchInstance(qb, 1, 0, 0);
     const signals = enableQuadBatchSignals(qb);
     let received: readonly number[] = [];
-    connectSignal(signals.onInstanceRemoved, (index, swapSource) => {
+    connectSignal(signals.onInstanceRemoved, ([index, swapSource]) => {
       received = [index, swapSource];
     });
     removeQuadBatchInstance(qb, 0);

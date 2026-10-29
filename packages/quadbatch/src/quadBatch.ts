@@ -50,7 +50,7 @@ export function appendQuadBatchInstance(target: QuadBatch, id: number, x: number
 export function clearQuadBatch(target: QuadBatch): void {
   target.data.instanceCount = 0;
   const signals = getQuadBatchSignals(target);
-  if (signals !== null) signals.onCleared.emit();
+  if (signals !== null) signals.onCleared.emit(undefined);
 }
 
 /**
@@ -466,7 +466,7 @@ export function removeQuadBatchInstance(target: QuadBatch, index: number): void 
   }
   data.instanceCount = last;
   const signals = getQuadBatchSignals(target);
-  if (signals !== null) signals.onInstanceRemoved.emit(index, swapSource);
+  if (signals !== null) signals.onInstanceRemoved.emit([index, swapSource]);
 }
 
 export function reserveQuadBatch(target: QuadBatch, capacity: number): void {
