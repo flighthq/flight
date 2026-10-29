@@ -12,7 +12,7 @@
     { "path": "../interaction" },
     { "path": "../node" },
     { "path": "../signals" },
-    { "path": "../text" },
+    { "path": "../text/tsconfig.runtime.json" },
     { "path": "../textinput" },
     { "path": "../types" }
   ],

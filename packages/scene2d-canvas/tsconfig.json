@@ -26,7 +26,7 @@
       "path": "../entity"
     },
     {
-      "path": "../geometry"
+      "path": "../geometry/tsconfig.runtime.json"
     },
     {
       "path": "../image"
@@ -38,7 +38,7 @@
       "path": "../node"
     },
     {
-      "path": "../path"
+      "path": "../path/tsconfig.runtime.json"
     },
     {
       "path": "../quadbatch"
@@ -62,7 +62,7 @@
       "path": "../surface"
     },
     {
-      "path": "../text"
+      "path": "../text/tsconfig.runtime.json"
     },
     {
       "path": "../textformat"

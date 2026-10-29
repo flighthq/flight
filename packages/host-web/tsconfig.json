@@ -43,7 +43,7 @@
     { "path": "../share" },
     { "path": "../signals" },
     { "path": "../statusbar" },
-    { "path": "../text" },
+    { "path": "../text/tsconfig.runtime.json" },
     { "path": "../textformat" },
     { "path": "../texture" },
     { "path": "../textureatlas" },

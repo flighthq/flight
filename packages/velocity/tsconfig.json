@@ -2,7 +2,7 @@
   "files": [],
   "references": [
     { "path": "../entity" },
-    { "path": "../geometry" },
+    { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../node" },
     { "path": "../scene2d" },
     { "path": "./tsconfig.contract.json" },

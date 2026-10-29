@@ -8,6 +8,11 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "references": [{ "path": "../entity" }, { "path": "../geometry" }, { "path": "../types" }, { "path": "../video" }],
+  "references": [
+    { "path": "../entity" },
+    { "path": "../geometry/tsconfig.runtime.json" },
+    { "path": "../types" },
+    { "path": "../video" }
+  ],
   "include": ["src"]
 }

@@ -63,7 +63,7 @@
       "path": "../signals"
     },
     {
-      "path": "../tray"
+      "path": "../tray/tsconfig.runtime.json"
     },
     {
       "path": "../types"

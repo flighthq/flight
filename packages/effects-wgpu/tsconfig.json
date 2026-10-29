@@ -13,7 +13,7 @@
     { "path": "../color" },
     { "path": "../effects" },
     { "path": "../entity" },
-    { "path": "../geometry" },
+    { "path": "../geometry/tsconfig.runtime.json" },
     {
       "path": "../log"
     },

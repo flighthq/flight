@@ -16,7 +16,7 @@
     { "path": "../image-codec" },
     { "path": "../log" },
     { "path": "../node" },
-    { "path": "../path-boolean" },
+    { "path": "../path-boolean/tsconfig.runtime.json" },
     { "path": "../scene2d" },
     { "path": "../scene2d-formats" },
     { "path": "../signals" },

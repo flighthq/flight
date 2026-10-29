@@ -154,7 +154,7 @@
       "path": "../geolocation"
     },
     {
-      "path": "../geometry"
+      "path": "../geometry/tsconfig.runtime.json"
     },
     {
       "path": "../gui"
@@ -253,10 +253,10 @@
       "path": "../particles-formats"
     },
     {
-      "path": "../path"
+      "path": "../path/tsconfig.runtime.json"
     },
     {
-      "path": "../path-boolean"
+      "path": "../path-boolean/tsconfig.runtime.json"
     },
     {
       "path": "../path-formats"
@@ -379,7 +379,7 @@
       "path": "../spring"
     },
     {
-      "path": "../statechart"
+      "path": "../statechart/tsconfig.runtime.json"
     },
     {
       "path": "../quadbatch"
@@ -403,7 +403,7 @@
       "path": "../bitmap"
     },
     {
-      "path": "../text"
+      "path": "../text/tsconfig.runtime.json"
     },
     {
       "path": "../text-markup"
@@ -424,7 +424,7 @@
       "path": "../textsegment"
     },
     {
-      "path": "../textshaper"
+      "path": "../textshaper/tsconfig.runtime.json"
     },
     {
       "path": "../texture"
@@ -448,7 +448,7 @@
       "path": "../timeline"
     },
     {
-      "path": "../tray"
+      "path": "../tray/tsconfig.runtime.json"
     },
     {
       "path": "../tween"
@@ -463,7 +463,7 @@
       "path": "../useragent"
     },
     {
-      "path": "../velocity"
+      "path": "../velocity/tsconfig.runtime.json"
     },
     {
       "path": "../video"

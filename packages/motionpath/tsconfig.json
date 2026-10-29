@@ -16,7 +16,7 @@
       "path": "../geometry/tsconfig.runtime.json"
     },
     {
-      "path": "../path"
+      "path": "../path/tsconfig.runtime.json"
     },
     {
       "path": "../types"

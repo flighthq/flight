@@ -41,7 +41,7 @@
       "path": "../font"
     },
     {
-      "path": "../geometry"
+      "path": "../geometry/tsconfig.runtime.json"
     },
     {
       "path": "../glyphatlas"
@@ -68,7 +68,7 @@
       "path": "../node"
     },
     {
-      "path": "../path"
+      "path": "../path/tsconfig.runtime.json"
     },
     {
       "path": "../requirement"
@@ -83,7 +83,7 @@
       "path": "../shape"
     },
     {
-      "path": "../text"
+      "path": "../text/tsconfig.runtime.json"
     },
     {
       "path": "../text-markup"

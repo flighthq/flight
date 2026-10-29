@@ -16,7 +16,7 @@
       "path": "../scene2d"
     },
     {
-      "path": "../geometry"
+      "path": "../geometry/tsconfig.runtime.json"
     },
     {
       "path": "../node"

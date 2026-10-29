@@ -11,7 +11,7 @@
   "references": [
     { "path": "../entity" },
     { "path": "../scene2d" },
-    { "path": "../geometry" },
+    { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../math" },
     { "path": "../node" },
     { "path": "../particles" },

@@ -14,7 +14,7 @@
     { "path": "../color" },
     { "path": "../entity" },
     { "path": "../scene2d" },
-    { "path": "../geometry" },
+    { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../log" },
     { "path": "../render" },
     { "path": "../registry" },

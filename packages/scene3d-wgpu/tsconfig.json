@@ -19,7 +19,7 @@
       "path": "../entity"
     },
     {
-      "path": "../geometry"
+      "path": "../geometry/tsconfig.runtime.json"
     },
     {
       "path": "../image"
@@ -61,7 +61,7 @@
       "path": "../shading"
     },
     {
-      "path": "../text"
+      "path": "../text/tsconfig.runtime.json"
     },
     {
       "path": "../texture"

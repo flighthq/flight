@@ -10,12 +10,12 @@
   },
   "references": [
     { "path": "../entity" },
-    { "path": "../geometry" },
+    { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../node" },
     { "path": "../registry" },
     { "path": "../scene2d" },
     { "path": "../log" },
-    { "path": "../path" },
+    { "path": "../path/tsconfig.runtime.json" },
     { "path": "../shape" },
     { "path": "../signals" },
     { "path": "../spatial" },
@@ -23,7 +23,7 @@
     { "path": "../tilemap" },
     { "path": "../bitmap" },
     { "path": "../clip" },
-    { "path": "../text" },
+    { "path": "../text/tsconfig.runtime.json" },
     { "path": "../textlayout/tsconfig.runtime.json" },
     { "path": "../types" }
   ],

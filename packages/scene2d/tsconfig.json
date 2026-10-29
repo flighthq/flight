@@ -12,7 +12,7 @@
     { "path": "../adjustments" },
     { "path": "../animation" },
     { "path": "../entity" },
-    { "path": "../geometry" },
+    { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../materials" },
     { "path": "../node" },
     { "path": "../signals" },

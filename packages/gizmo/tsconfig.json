@@ -10,7 +10,7 @@
   },
   "references": [
     { "path": "../camera" },
-    { "path": "../geometry" },
+    { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../interaction" },
     { "path": "../math" },
     { "path": "../node" },

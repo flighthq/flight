@@ -11,11 +11,11 @@
   "references": [
     { "path": "../animation" },
     { "path": "../entity" },
-    { "path": "../geometry" },
+    { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../log" },
     { "path": "../math" },
     { "path": "../node" },
-    { "path": "../path" },
+    { "path": "../path/tsconfig.runtime.json" },
     { "path": "../scene2d" },
     { "path": "../types" }
   ],

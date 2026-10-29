@@ -27,7 +27,7 @@
       "path": "../scene2d-canvas"
     },
     {
-      "path": "../geometry"
+      "path": "../geometry/tsconfig.runtime.json"
     },
     {
       "path": "../image"
@@ -42,7 +42,7 @@
       "path": "../particleemitter"
     },
     {
-      "path": "../path"
+      "path": "../path/tsconfig.runtime.json"
     },
     {
       "path": "../registry"
@@ -63,7 +63,7 @@
       "path": "../tilemap"
     },
     {
-      "path": "../text"
+      "path": "../text/tsconfig.runtime.json"
     },
     {
       "path": "../textformat"
@@ -84,7 +84,7 @@
       "path": "../types"
     },
     {
-      "path": "../velocity"
+      "path": "../velocity/tsconfig.runtime.json"
     }
   ],
   "include": ["src"]

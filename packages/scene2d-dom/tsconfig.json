@@ -22,7 +22,7 @@
       "path": "../font"
     },
     {
-      "path": "../geometry"
+      "path": "../geometry/tsconfig.runtime.json"
     },
     {
       "path": "../image"
@@ -55,7 +55,7 @@
       "path": "../signals"
     },
     {
-      "path": "../text"
+      "path": "../text/tsconfig.runtime.json"
     },
     {
       "path": "../textformat"
