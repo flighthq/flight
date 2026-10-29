@@ -4746,6 +4746,132 @@ pub fn shared_present(shared: &Arc<Inner>) -> bool {
     }
 
     #[test]
+    fn resolves_nullable_fields_through_canonical_standard_arc_paths() {
+        let source = r#"//! flight-compiler: nullable-option Inner.contour
+
+extern crate alloc as heap;
+
+use std as standard;
+use std::sync as synchronization;
+
+pub struct Inner {
+    pub contour: Option<f64>,
+}
+
+pub struct Holder {
+    pub absolute: ::std::sync::Arc<Inner>,
+    pub allocated: heap::sync::Arc<Inner>,
+    pub module_alias: synchronization::Arc<Inner>,
+    pub root_alias: standard::sync::Arc<Inner>,
+}
+
+pub fn all_present(holder: &Holder) -> bool {
+    return holder.absolute.contour.is_some()
+        && holder.allocated.contour.is_some()
+        && holder.module_alias.contour.is_some()
+        && holder.root_alias.contour.is_some();
+}
+"#;
+        let output = compile_typescript_with_module_sources(
+            ModuleSource {
+                path: "crates/flight-share/src/share.rs",
+                source,
+            },
+            None,
+            &[],
+            &[],
+        )
+        .unwrap();
+        for field in ["absolute", "allocated", "moduleAlias", "rootAlias"] {
+            let expected = format!("((holder.{field}.contour) ?? undefined) !== undefined");
+            assert!(output.contains(&expected), "{expected}\n{output}");
+        }
+
+        for (binding, shared) in [
+            (
+                "use flight_cells as standard;",
+                "standard::sync::Arc<Inner>",
+            ),
+            (
+                "use flight_cells::sync as synchronization;",
+                "synchronization::Arc<Inner>",
+            ),
+        ] {
+            let source = format!(
+                "//! flight-compiler: nullable-option Inner.contour\n\n{binding}\n\npub struct Inner {{\n    pub contour: Option<f64>,\n}}\n\npub struct Holder {{\n    pub inner: {shared},\n}}\n\npub fn present(holder: &Holder) -> bool {{\n    return holder.inner.contour.is_some();\n}}\n"
+            );
+            let output = compile_typescript_with_module_sources(
+                ModuleSource {
+                    path: "crates/flight-share/src/foreign.rs",
+                    source: &source,
+                },
+                None,
+                &[],
+                &[],
+            )
+            .unwrap();
+            assert!(!output.contains("?? undefined"), "{source}\n{output}");
+        }
+    }
+
+    #[test]
+    fn resolves_nullable_alias_ownership_through_crate_visible_source_uses() {
+        let owner = r#"//! flight-compiler: nullable-option Inner.contour
+
+pub struct Inner {
+    pub contour: Option<f64>,
+}
+
+pub(crate) type SharedInner = std::sync::Arc<Inner>;
+"#;
+        let consumer = r#"use crate::owner as renamed_owner;
+use crate::owner::SharedInner as DirectShared;
+
+pub struct Holder {
+    pub direct: DirectShared,
+    pub renamed: renamed_owner::SharedInner,
+}
+
+pub fn all_present(holder: &Holder) -> bool {
+    return holder.direct.contour.is_some() && holder.renamed.contour.is_some();
+}
+"#;
+        let output = compile_typescript_with_module_sources(
+            ModuleSource {
+                path: "crates/flight-share/src/consumer.rs",
+                source: consumer,
+            },
+            None,
+            &[ModuleSource {
+                path: "crates/flight-share/src/owner.rs",
+                source: owner,
+            }],
+            &[],
+        )
+        .unwrap();
+        for field in ["direct", "renamed"] {
+            let expected = format!("((holder.{field}.contour) ?? undefined) !== undefined");
+            assert!(output.contains(&expected), "{expected}\n{output}");
+        }
+
+        let private_owner = owner.replace("pub(crate) type SharedInner", "type SharedInner");
+        let output = compile_typescript_with_module_sources(
+            ModuleSource {
+                path: "crates/flight-share/src/consumer.rs",
+                source: consumer,
+            },
+            None,
+            &[ModuleSource {
+                path: "crates/flight-share/src/owner.rs",
+                source: &private_owner,
+            }],
+            &[],
+        )
+        .unwrap();
+        assert!(!output.contains("?? undefined"), "{output}");
+    }
+
+    #[test]
     fn converts_between_nullable_and_ordinary_options_at_every_boundary() {
         let source = r#"
 //! flight-compiler: nullable-option find_scale nullable_from_ordinary Explanation.contour

@@ -102,9 +102,9 @@ const REFERENCE_PARAMETER_BINDING_MARKER: &str = "@reference-parameter-binding:"
 // A `const-group` member reference: `@const-group-member:<RUST_NAME>:<Owner>.<Member>`.
 const CONST_GROUP_MEMBER_MARKER: &str = "@const-group-member:";
 const FROZEN_OBJECT_MARKER: &str = "@frozen-object:";
-// Free functions and structs by declaring module (`module SEP name SEP public|private`). A name used
-// in a source resolves to that source's own declaration, else to the single public declaration in
-// another source, else to nothing; private declarations are never visible across sources.
+// Free functions, structs and type aliases by declaring module
+// (`module SEP name SEP public|crate|private`). A name used in a source resolves through Rust's
+// module visibility: private in its owner, crate-visible inside that crate, and public everywhere.
 const FUNCTION_OWNER_MARKER: &str = "@function-owner:";
 // A source's `use` bindings resolved to full module identities: explicit or renamed items
 // (`module SEP bound name SEP target module SEP item`) and globs (`module SEP target module`). Only
@@ -112,6 +112,9 @@ const FUNCTION_OWNER_MARKER: &str = "@function-owner:";
 // declarations alone.
 const USE_BINDING_MARKER: &str = "@use-binding:";
 const USE_GLOB_MARKER: &str = "@use-glob:";
+// The `pub` plus `pub(crate)` subset of those bindings, followed while resolving inside one crate.
+const CRATE_USE_BINDING_MARKER: &str = "@crate-use-binding:";
+const CRATE_USE_GLOB_MARKER: &str = "@crate-use-glob:";
 // The public subset of the same bindings. Resolution starts with all bindings in the source being
 // compiled, then follows only these markers through intermediate modules so a private import never
 // becomes an accidental re-export.
@@ -167,15 +170,14 @@ const STRING_FIELD_MARKER: &str = "@string-field:";
 const STRING_RETURN_MARKER: &str = "@string-return:";
 const STRING_UNION_MARKER: &str = "@string-union:";
 const STRUCT_OWNER_MARKER: &str = "@struct-owner:";
-// `{module}␟{name}` for each name a source proves resolves to the standard `Arc`, and `{module}␟{root}`
-// for each unshadowed `std` / `alloc` root whose qualified `sync::Arc` is the standard one. `Arc<T>` is
-// lowered to `T`, so a struct's identity is seen through it only under that provenance.
-const STD_ARC_NAME_MARKER: &str = "@std-arc-name:";
+// `{module}␟{type-path fact}` retains the source-local canonical type-path context in the aggregate
+// provenance context. This lets later alias expansion resolve every spelling of a proven standard
+// `Arc`, including absolute paths and renamed root or module imports.
+const SOURCE_TYPE_PATH_CONTEXT_MARKER: &str = "@source-type-path-context:";
 // Owner facts for each non-generic source type alias, and `{module}␟{alias}␟{type tokens}` for its
 // definition, so a struct identity is seen through alias chains across sources.
 const TYPE_ALIAS_DEFINITION_MARKER: &str = "@type-alias-definition:";
 const TYPE_ALIAS_OWNER_MARKER: &str = "@type-alias-owner:";
-const STD_ARC_ROOT_MARKER: &str = "@std-arc-root:";
 // Functions returning a resolved struct (`module SEP function SEP struct identity`).
 const STRUCT_RETURN_MARKER: &str = "@struct-return:";
 // `{struct identity}␟{field}␟{field struct identity}` for each field whose declared type is a struct of
@@ -1651,10 +1653,17 @@ fn reject_const_group_wildcard_imports(
     return Ok(());
 }
 
-// The declaration `name` refers to in the source `from`, as `(module, declared name)`: the source's own
-// declaration; else its explicit or renamed `use` bindings of `name`; else its glob imports. A binding
-// must reach a public declaration in a source with that full module identity. Anything missing,
-// private or ambiguous resolves to nothing, so callers fail closed rather than guess an owner, and a
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum SourceAccess {
+    Local,
+    Crate,
+    Public,
+}
+
+// The declaration `name` refers to in the source `from`, as `(module, declared name)`: the source's
+// own declaration; else its explicit or renamed `use` bindings of `name`; else its glob imports.
+// Each hop preserves whether Rust needs local, crate or public visibility. Anything missing, private
+// or ambiguous resolves to nothing, so callers fail closed rather than guess an owner, and a
 // same-named declaration in an unrelated source is never consulted.
 fn resolve_owner(
     entities: &HashSet<String>,
@@ -1662,7 +1671,14 @@ fn resolve_owner(
     from: &str,
     name: &str,
 ) -> Option<(String, String)> {
-    return resolve_owner_inner(entities, marker, from, name, false, &mut BTreeSet::new());
+    return resolve_owner_inner(
+        entities,
+        marker,
+        from,
+        name,
+        SourceAccess::Local,
+        &mut BTreeSet::new(),
+    );
 }
 
 fn resolve_owner_inner(
@@ -1670,8 +1686,8 @@ fn resolve_owner_inner(
     marker: &str,
     from: &str,
     name: &str,
-    public_only: bool,
-    visited: &mut BTreeSet<(String, String, bool)>,
+    access: SourceAccess,
+    visited: &mut BTreeSet<(String, String, SourceAccess)>,
 ) -> Option<(String, String)> {
     fn unique(mut candidates: BTreeSet<(String, String)>) -> Option<(String, String)> {
         return match (candidates.pop_first(), candidates.is_empty()) {
@@ -1680,18 +1696,21 @@ fn resolve_owner_inner(
         };
     }
 
-    if !visited.insert((from.to_string(), name.to_string(), public_only)) {
+    if !visited.insert((from.to_string(), name.to_string(), access)) {
         return None;
     }
-    if entities.contains(&owner_marker(marker, from, name, true))
-        || (!public_only && entities.contains(&owner_marker(marker, from, name, false)))
+    if entities.contains(&owner_marker(marker, from, name, SourceAccess::Public))
+        || access != SourceAccess::Public
+            && entities.contains(&owner_marker(marker, from, name, SourceAccess::Crate))
+        || access == SourceAccess::Local
+            && entities.contains(&owner_marker(marker, from, name, SourceAccess::Local))
     {
         return Some((from.to_string(), name.to_string()));
     }
-    let binding_marker = if public_only {
-        PUBLIC_USE_BINDING_MARKER
-    } else {
-        USE_BINDING_MARKER
+    let binding_marker = match access {
+        SourceAccess::Local => USE_BINDING_MARKER,
+        SourceAccess::Crate => CRATE_USE_BINDING_MARKER,
+        SourceAccess::Public => PUBLIC_USE_BINDING_MARKER,
     };
     let bindings = marker_suffixes(
         entities,
@@ -1704,15 +1723,22 @@ fn resolve_owner_inner(
                 .filter_map(|binding| {
                     let (target, item) = binding.split_once(PROVENANCE_SEPARATOR)?;
                     let mut branch = visited.clone();
-                    resolve_owner_inner(entities, marker, target, item, true, &mut branch)
+                    resolve_owner_inner(
+                        entities,
+                        marker,
+                        target,
+                        item,
+                        next_source_access(access, from, target),
+                        &mut branch,
+                    )
                 })
                 .collect(),
         );
     }
-    let glob_marker = if public_only {
-        PUBLIC_USE_GLOB_MARKER
-    } else {
-        USE_GLOB_MARKER
+    let glob_marker = match access {
+        SourceAccess::Local => USE_GLOB_MARKER,
+        SourceAccess::Crate => CRATE_USE_GLOB_MARKER,
+        SourceAccess::Public => PUBLIC_USE_GLOB_MARKER,
     };
     return unique(
         marker_suffixes(
@@ -1722,10 +1748,33 @@ fn resolve_owner_inner(
         .into_iter()
         .filter_map(|target| {
             let mut branch = visited.clone();
-            resolve_owner_inner(entities, marker, &target, name, true, &mut branch)
+            resolve_owner_inner(
+                entities,
+                marker,
+                &target,
+                name,
+                next_source_access(access, from, &target),
+                &mut branch,
+            )
         })
         .collect(),
     );
+}
+
+fn next_source_access(access: SourceAccess, from: &str, target: &str) -> SourceAccess {
+    if access == SourceAccess::Public {
+        return SourceAccess::Public;
+    }
+    let same_crate = module_identity_segments(from)
+        .and_then(|from| {
+            module_identity_segments(target).map(|target| from.first() == target.first())
+        })
+        .unwrap_or(false);
+    return if same_crate {
+        SourceAccess::Crate
+    } else {
+        SourceAccess::Public
+    };
 }
 
 // Resolve a Rust path from `from`. An unqualified name sees private bindings in its own source; a
@@ -1745,9 +1794,50 @@ fn resolve_path_owner(
     if segments.is_empty() {
         return resolve_owner(entities, marker, from, &name);
     }
-    let from = module_identity_segments(from)?;
-    let target = resolve_use_prefix(&from, &segments)?.join("::");
-    return resolve_owner_inner(entities, marker, &target, &name, true, &mut BTreeSet::new());
+    let target = resolve_source_use_prefix(entities, from, &segments)?.join("::");
+    return resolve_owner_inner(
+        entities,
+        marker,
+        &target,
+        &name,
+        next_source_access(SourceAccess::Local, from, &target),
+        &mut BTreeSet::new(),
+    );
+}
+
+// The module a qualified source path names. A leading source-local `use` binding can rename a
+// module (`use crate::owner as renamed;`); otherwise ordinary crate/self/super and external roots
+// resolve structurally.
+fn resolve_source_use_prefix(
+    entities: &HashSet<String>,
+    from: &str,
+    prefix: &[String],
+) -> Option<Vec<String>> {
+    let (first, rest) = prefix.split_first()?;
+    let binding_prefix =
+        format!("{USE_BINDING_MARKER}{from}{PROVENANCE_SEPARATOR}{first}{PROVENANCE_SEPARATOR}");
+    let bindings = marker_suffixes(entities, &binding_prefix);
+    if !bindings.is_empty() {
+        let mut targets = bindings
+            .into_iter()
+            .filter_map(|binding| {
+                let (target, item) = binding.split_once(PROVENANCE_SEPARATOR)?;
+                Some(
+                    target
+                        .split("::")
+                        .map(str::to_string)
+                        .chain(std::iter::once(item.to_string()))
+                        .chain(rest.iter().cloned())
+                        .collect::<Vec<_>>(),
+                )
+            })
+            .collect::<BTreeSet<_>>();
+        return match (targets.pop_first(), targets.is_empty()) {
+            (Some(target), true) => Some(target),
+            _ => None,
+        };
+    }
+    return resolve_use_prefix(&module_identity_segments(from)?, prefix);
 }
 
 // The full module a `use` prefix names, written in the module `from`: `crate::` from the crate root,
@@ -1806,21 +1896,17 @@ fn resolved_type_identity_at_depth(
         Type::Path(path) if path.qself.is_none() => &path.path,
         _ => return None,
     };
-    // A proven standard `Arc<T>` is `T` in TypeScript, so it has `T`'s identity.
-    let segments = path
-        .segments
-        .iter()
-        .map(|segment| segment.ident.to_string())
-        .collect::<Vec<_>>();
-    let standard_arc = match segments.as_slice() {
-        [name] if path.leading_colon.is_none() => entities.contains(&format!(
-            "{STD_ARC_NAME_MARKER}{from}{PROVENANCE_SEPARATOR}{name}"
-        )),
-        [root, module, name] if module == "sync" && name == "Arc" => entities.contains(&format!(
-            "{STD_ARC_ROOT_MARKER}{from}{PROVENANCE_SEPARATOR}{root}"
-        )),
-        _ => false,
-    };
+    // A proven standard `Arc<T>` is `T` in TypeScript, so it has `T`'s identity. Resolve the full
+    // source-local type path instead of recognizing selected spellings: renamed `std`/`alloc` roots,
+    // renamed `sync` modules and absolute paths must all reach the same canonical owner.
+    let type_context = marker_suffixes(
+        entities,
+        &format!("{SOURCE_TYPE_PATH_CONTEXT_MARKER}{from}{PROVENANCE_SEPARATOR}"),
+    )
+    .into_iter()
+    .collect::<HashSet<_>>();
+    let standard_arc = resolve_type_path(path, &type_context)
+        .is_some_and(|resolved| is_standard_arc_path(&resolved));
     if standard_arc {
         let PathArguments::AngleBracketed(arguments) = &path.segments.last()?.arguments else {
             return None;
@@ -4424,7 +4510,7 @@ fn resolved_qualified_vitest_identity(
             owner_marker_name,
             &module,
             declaration,
-            true,
+            SourceAccess::Public,
             &mut BTreeSet::new(),
         ) {
             identities.insert(format!("{owner}{PROVENANCE_SEPARATOR}{declaration}"));
@@ -5296,10 +5382,13 @@ fn generation_context_with_types(
                         continue;
                     };
                     let target = target.join("::");
-                    let (binding, public_binding) = match path.item {
+                    let (binding, crate_binding, public_binding) = match path.item {
                         Some((imported, exported)) => (
                             format!(
                                 "{USE_BINDING_MARKER}{module}{PROVENANCE_SEPARATOR}{exported}{PROVENANCE_SEPARATOR}{target}{PROVENANCE_SEPARATOR}{imported}"
+                            ),
+                            format!(
+                                "{CRATE_USE_BINDING_MARKER}{module}{PROVENANCE_SEPARATOR}{exported}{PROVENANCE_SEPARATOR}{target}{PROVENANCE_SEPARATOR}{imported}"
                             ),
                             format!(
                                 "{PUBLIC_USE_BINDING_MARKER}{module}{PROVENANCE_SEPARATOR}{exported}{PROVENANCE_SEPARATOR}{target}{PROVENANCE_SEPARATOR}{imported}"
@@ -5308,11 +5397,17 @@ fn generation_context_with_types(
                         None => (
                             format!("{USE_GLOB_MARKER}{module}{PROVENANCE_SEPARATOR}{target}"),
                             format!(
+                                "{CRATE_USE_GLOB_MARKER}{module}{PROVENANCE_SEPARATOR}{target}"
+                            ),
+                            format!(
                                 "{PUBLIC_USE_GLOB_MARKER}{module}{PROVENANCE_SEPARATOR}{target}"
                             ),
                         ),
                     };
                     context.insert(binding);
+                    if is_crate_wide(&rust_use.vis) {
+                        context.insert(crate_binding);
+                    }
                     if is_public(&rust_use.vis) {
                         context.insert(public_binding);
                     }
@@ -5330,6 +5425,9 @@ fn generation_context_with_types(
         }
         let mut type_path_context = HashSet::new();
         insert_program_type_path_context(&mut type_path_context, program);
+        context.extend(type_path_context.iter().map(|fact| {
+            format!("{SOURCE_TYPE_PATH_CONTEXT_MARKER}{module}{PROVENANCE_SEPARATOR}{fact}")
+        }));
         for (owner, fields) in &program.entity_clone_shared_fields {
             for field in fields {
                 let structure = program
@@ -5362,7 +5460,7 @@ fn generation_context_with_types(
                 STRUCT_OWNER_MARKER,
                 module,
                 &structure.ident.to_string(),
-                is_public(&structure.vis),
+                source_access_for_visibility(&structure.vis),
             ));
             if structure
                 .fields
@@ -5380,7 +5478,7 @@ fn generation_context_with_types(
                 FUNCTION_OWNER_MARKER,
                 module,
                 &function.sig.ident.to_string(),
-                is_public(&function.vis),
+                source_access_for_visibility(&function.vis),
             ));
         }
         for alias in program
@@ -5392,43 +5490,13 @@ fn generation_context_with_types(
                 TYPE_ALIAS_OWNER_MARKER,
                 module,
                 &alias.ident.to_string(),
-                is_public(&alias.vis),
+                source_access_for_visibility(&alias.vis),
             ));
             context.insert(format!(
                 "{TYPE_ALIAS_DEFINITION_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{}",
                 alias.ident,
                 alias.ty.to_token_stream()
             ));
-        }
-        let arc_names = std::iter::once("Arc".to_string()).chain(
-            marker_suffixes(&type_path_context, TYPE_USE_TARGET_MARKER)
-                .into_iter()
-                .filter_map(|binding| {
-                    let (local, target) = binding.split_once(PROVENANCE_SEPARATOR)?;
-                    return target.ends_with("::Arc").then(|| local.to_string());
-                }),
-        );
-        for name in arc_names.collect::<BTreeSet<_>>() {
-            if syn::parse_str::<syn::Path>(&name)
-                .ok()
-                .and_then(|path| resolve_type_path(&path, &type_path_context))
-                .is_some_and(|owner| is_standard_arc_path(&owner))
-            {
-                context.insert(format!(
-                    "{STD_ARC_NAME_MARKER}{module}{PROVENANCE_SEPARATOR}{name}"
-                ));
-            }
-        }
-        for root in ["std", "alloc"] {
-            if syn::parse_str::<syn::Path>(&format!("{root}::sync::Arc"))
-                .ok()
-                .and_then(|path| resolve_type_path(&path, &type_path_context))
-                .is_some_and(|owner| is_standard_arc_path(&owner))
-            {
-                context.insert(format!(
-                    "{STD_ARC_ROOT_MARKER}{module}{PROVENANCE_SEPARATOR}{root}"
-                ));
-            }
         }
     }
     for (module, program) in programs {
@@ -16244,6 +16312,21 @@ fn is_public(visibility: &Visibility) -> bool {
     return matches!(visibility, Visibility::Public(_));
 }
 
+fn is_crate_wide(visibility: &Visibility) -> bool {
+    return is_public(visibility)
+        || matches!(visibility, Visibility::Restricted(restricted) if restricted.path.is_ident("crate"));
+}
+
+fn source_access_for_visibility(visibility: &Visibility) -> SourceAccess {
+    return if is_public(visibility) {
+        SourceAccess::Public
+    } else if is_crate_wide(visibility) {
+        SourceAccess::Crate
+    } else {
+        SourceAccess::Local
+    };
+}
+
 // Rust `pub(crate)`/`pub(super)` items can cross source modules. Generated TypeScript preserves
 // that package-internal reachability with a named module export; contract/index generation still
 // decides the actual package surface from Rust's public re-exports.
@@ -16491,8 +16574,12 @@ fn ordering_variant_value(path: &syn::Path) -> Option<&'static str> {
     };
 }
 
-fn owner_marker(marker: &str, module: &str, name: &str, public: bool) -> String {
-    let visibility = if public { "public" } else { "private" };
+fn owner_marker(marker: &str, module: &str, name: &str, access: SourceAccess) -> String {
+    let visibility = match access {
+        SourceAccess::Local => "private",
+        SourceAccess::Crate => "crate",
+        SourceAccess::Public => "public",
+    };
     return format!(
         "{marker}{module}{PROVENANCE_SEPARATOR}{name}{PROVENANCE_SEPARATOR}{visibility}"
     );
