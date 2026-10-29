@@ -10743,6 +10743,12 @@ fn emit_method_call(
             option_absent_value(&call.receiver, entities)
         )),
         "is_empty" if arguments.is_empty() => Ok(format!("{receiver}.length === 0")),
+        "insert" if arguments.len() == 2 && expression_is_sequence(&call.receiver, entities) => {
+            Ok(format!(
+                "(<T>(items: T[], index: number, value: T): void => {{ if (index > items.length) {{ throw new RangeError(\"Vec insertion index out of bounds\"); }} items.splice(index, 0, value); }})({receiver}, {}, {})",
+                arguments[0], arguments[1]
+            ))
+        }
         "into" if arguments.is_empty() => Ok(receiver),
         "into_iter" if arguments.is_empty() => Ok(receiver),
         "iter" if arguments.is_empty() => Ok(receiver),
@@ -10766,6 +10772,12 @@ fn emit_method_call(
         ),
         "partial_cmp" if arguments.len() == 1 => Ok(format!("{receiver} - {}", arguments[0])),
         "push" if arguments.len() == 1 => Ok(format!("{receiver}.push({})", arguments[0])),
+        "remove" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
+            Ok(format!(
+                "(<T>(items: T[], index: number): T => {{ if (index >= items.length) {{ throw new RangeError(\"Vec removal index out of bounds\"); }} return items.splice(index, 1)[0]; }})({receiver}, {})",
+                arguments[0]
+            ))
+        }
         "round" if arguments.is_empty() => Ok(format!("Math.round({receiver})")),
         "set" if arguments.len() == 1 => Ok(format!("{receiver}.value = {}", arguments[0])),
         "signum" if arguments.is_empty() => Ok(format!("Math.sign({receiver})")),
@@ -10813,6 +10825,12 @@ fn emit_method_call(
         "to_string" if arguments.is_empty() => Ok(format!("String({receiver})")),
         "trunc" if arguments.is_empty() => Ok(format!("Math.trunc({receiver})")),
         "to_vec" if arguments.is_empty() => Ok(format!("[...{receiver}]")),
+        "truncate" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
+            Ok(format!(
+                "(<T>(items: T[], length: number): void => {{ items.length = Math.min(items.length, length); }})({receiver}, {})",
+                arguments[0]
+            ))
+        }
         "extend" => Err(compile_error(
             "portable `.extend()` is supported only as a statement",
         )),

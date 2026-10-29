@@ -1493,6 +1493,33 @@ mod retain {
     }
 
     #[test]
+    fn lowers_vec_truncate_without_growing_shorter_arrays() {
+        let source = "pub fn keep_prefix(values: &mut Vec<u32>, length: usize) { values.truncate(length); }\n";
+        assert_eq!(
+            compile_typescript(source, None).unwrap(),
+            "export function keepPrefix(values: number[], length: number): void {\n  (<T>(items: T[], length: number): void => { items.length = Math.min(items.length, length); })(values, length);\n}\n"
+        );
+    }
+
+    #[test]
+    fn lowers_vec_insert_with_rust_bounds() {
+        let source = "pub fn add(values: &mut Vec<u32>, index: usize, value: u32) { values.insert(index, value); }\n";
+        assert_eq!(
+            compile_typescript(source, None).unwrap(),
+            "export function add(values: number[], index: number, value: number): void {\n  (<T>(items: T[], index: number, value: T): void => { if (index > items.length) { throw new RangeError(\"Vec insertion index out of bounds\"); } items.splice(index, 0, value); })(values, index, value);\n}\n"
+        );
+    }
+
+    #[test]
+    fn lowers_vec_remove_with_rust_bounds_and_return_value() {
+        let source = "pub fn take(values: &mut Vec<u32>, index: usize) -> u32 { return values.remove(index); }\n";
+        assert_eq!(
+            compile_typescript(source, None).unwrap(),
+            "export function take(values: number[], index: number): number {\n  return ((<T>(items: T[], index: number): T => { if (index >= items.length) { throw new RangeError(\"Vec removal index out of bounds\"); } return items.splice(index, 1)[0]; })(values, index)) >>> 0;\n}\n"
+        );
+    }
+
+    #[test]
     fn lowers_vec_extend_over_declared_sequences() {
         let source = r#"
 //! flight-compiler: data-union Id
