@@ -12450,12 +12450,16 @@ fn emit_option_combinator(
             )));
         }
     };
-    let Some(parameter) = option_closure_parameter(&closure.inputs[0]) else {
-        return Err(compile_error(format!(
-            "portable Option `.{method}()` closure parameter must be an identifier"
-        )));
+    let parameter = option_closure_parameter(&closure.inputs[0]);
+    let parameter_name = match parameter {
+        Some(ident) => ident.to_string(),
+        None if closure_pattern_is_wildcard(&closure.inputs[0]) => "_unused0".to_string(),
+        None => {
+            return Err(compile_error(format!(
+                "portable Option `.{method}()` closure parameter must be an identifier"
+            )));
+        }
     };
-    let parameter_name = parameter.to_string();
     let mut closure_context = entities
         .iter()
         .filter(|marker| {
@@ -12467,10 +12471,12 @@ fn emit_option_combinator(
         .collect::<HashSet<_>>();
     // The parameter binds the receiver's payload; its site's fact is replaced so the closure body
     // resolves the parameter's fields through it.
-    if let Some(id) = unique_marker_suffix(
-        &closure_context,
-        &format!("{BINDING_SITE_MARKER}{}=", binding_site_key(parameter)),
-    ) {
+    if let Some(parameter) = parameter
+        && let Some(id) = unique_marker_suffix(
+            &closure_context,
+            &format!("{BINDING_SITE_MARKER}{}=", binding_site_key(parameter)),
+        )
+    {
         let prefix = format!("{BINDING_FACT_MARKER}{id}=");
         closure_context.retain(|marker| !marker.starts_with(&prefix));
         let fact = if payload.is_empty() {
@@ -12496,6 +12502,7 @@ fn emit_option_combinator(
         )));
     };
     if absent == "undefined"
+        && let Some(parameter) = parameter
         && expression_is_field_projection(&closure.body, parameter)
         && let Some(fields) = body.strip_prefix(&format!("{binding}."))
     {
@@ -16026,6 +16033,16 @@ fn option_closure_parameter(pattern: &Pat) -> Option<&syn::Ident> {
         Pat::Type(typed) => option_closure_parameter(&typed.pat),
         Pat::Paren(paren) => option_closure_parameter(&paren.pat),
         _ => None,
+    };
+}
+
+fn closure_pattern_is_wildcard(pattern: &Pat) -> bool {
+    return match pattern {
+        Pat::Wild(_) => true,
+        Pat::Reference(reference) => closure_pattern_is_wildcard(&reference.pat),
+        Pat::Type(typed) => closure_pattern_is_wildcard(&typed.pat),
+        Pat::Paren(paren) => closure_pattern_is_wildcard(&paren.pat),
+        _ => false,
     };
 }
 

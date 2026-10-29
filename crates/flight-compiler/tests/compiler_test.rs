@@ -1922,6 +1922,13 @@ pub fn widened(value: Option<f32>) -> f32 {
             "typed closure parameter should compile: {output}"
         );
 
+        let source = "pub fn discard(value: Option<f32>) -> f32 { return value.map(|_| 1.0).unwrap_or(0.0); }\n";
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("((_unused0) => _unused0 === undefined ? undefined : 1.0)"),
+            "wildcard closure parameter should compile: {output}"
+        );
+
         for (source, expected) in [
             (
                 "pub fn first(values: &Vec<f32>) -> Option<f32> { return values.iter().and_then(|v| Some(*v)); }\n",
