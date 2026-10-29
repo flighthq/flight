@@ -5,7 +5,7 @@ use std::process::{self, Command};
 
 const USAGE: &str = "\
 Usage: flight-compile generate --source <rust-file> --out <typescript-file> [--entity-module <specifier>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--visibility-source <rust-file> ...] [--crate-root <crate-name>=<rust-file> ...] [--check]
-       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--check]
+       flight-compile generate-tests --source <rust-test-file> --out <vitest-file> --contract-module <specifier> [--contract-source <rust-file>] [--alias-source <rust-file> ...] [--external-alias-source <rust-file> --external-alias-module <specifier> ...] [--visibility-source <rust-file> ...] [--check]
        flight-compile source-mode --source <rust-file>
        flight-compile root-only --source <rust-file>
 ";
@@ -296,12 +296,24 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 .zip(&options.external_alias_modules)
                 .map(|(source, module)| flight_compiler::ExternalAliasSource { source, module })
                 .collect::<Vec<_>>();
-            flight_compiler::compile_vitest_with_external_alias_sources(
+            let visibility_sources = options
+                .visibility_sources
+                .iter()
+                .map(|path| {
+                    fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))
+                })
+                .collect::<Result<Vec<_>, _>>()?;
+            let visibility_source_refs = visibility_sources
+                .iter()
+                .map(String::as_str)
+                .collect::<Vec<_>>();
+            flight_compiler::compile_vitest_with_visibility_sources(
                 &source,
                 contract_module,
                 contract_source.as_deref(),
                 &alias_source_refs,
                 &external_aliases,
+                &visibility_source_refs,
             )
         }
     }
@@ -445,11 +457,6 @@ fn parse_generate_options(
         GenerateKind::Source if contract_module.is_some() || contract_source.is_some() => {
             return Err(format!(
                 "contract options are only valid for generate-tests\n\n{USAGE}"
-            ));
-        }
-        GenerateKind::Tests if !visibility_sources.is_empty() => {
-            return Err(format!(
-                "--visibility-source is only valid for generate\n\n{USAGE}"
             ));
         }
         GenerateKind::Tests if !crate_roots.is_empty() => {

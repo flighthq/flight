@@ -424,6 +424,7 @@ pub fn compile_vitest_with_contract_alias_sources(
         Some(contract_source),
         alias_sources,
         &[],
+        &[],
     );
 }
 
@@ -433,6 +434,7 @@ fn compile_vitest_with_contract_alias_sources_internal(
     contract_source: Option<&str>,
     alias_sources: &[VitestAliasSource<'_>],
     external_alias_sources: &[ExternalAliasSource<'_>],
+    visibility_sources: &[&str],
 ) -> Result<String, CompileError> {
     require_generated_source(source)?;
     let program = model::parse_test_program(source)?;
@@ -509,6 +511,23 @@ fn compile_vitest_with_contract_alias_sources_internal(
                 .iter()
                 .chain(program.suites.iter().flat_map(|suite| &suite.helpers)),
         );
+    }
+    // A target-native sibling's hand-written TypeScript twin takes `T | null` for the Option parameters
+    // of a `nullable-options` module, so a `None` argument passed to its public functions lowers to `null`.
+    for visibility_source in visibility_sources {
+        if !matches!(source_mode(visibility_source)?, SourceMode::TargetNative) {
+            continue;
+        }
+        let visibility_program = model::parse_external_nullable_options(visibility_source)?;
+        if visibility_program.nullable_options {
+            typescript::insert_vitest_nullable_call_context(
+                &mut context,
+                visibility_program
+                    .functions
+                    .iter()
+                    .filter(|function| matches!(function.vis, syn::Visibility::Public(_))),
+            );
+        }
     }
     typescript::insert_vitest_local_crate_context(
         &mut context,
@@ -603,6 +622,7 @@ pub fn compile_vitest_with_external_alias_sources(
         contract_source,
         alias_sources,
         external_alias_sources,
+        &[],
     );
 }
 
@@ -619,6 +639,29 @@ pub fn compile_vitest_with_module_alias_sources(
         None,
         alias_sources,
         &[],
+        &[],
+    );
+}
+
+/// Compiles one Rust test module with production hints, dependency sources, and the crate's
+/// target-native sources, read only for the nullable Option parameters their `nullable-options`
+/// directive declares.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_vitest_with_visibility_sources(
+    source: &str,
+    contract_module: &str,
+    contract_source: Option<&str>,
+    alias_sources: &[VitestAliasSource<'_>],
+    external_alias_sources: &[ExternalAliasSource<'_>],
+    visibility_sources: &[&str],
+) -> Result<String, CompileError> {
+    return compile_vitest_with_contract_alias_sources_internal(
+        source,
+        contract_module,
+        contract_source,
+        alias_sources,
+        external_alias_sources,
+        visibility_sources,
     );
 }
 

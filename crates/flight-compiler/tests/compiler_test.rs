@@ -4,7 +4,7 @@ use flight_compiler::{
     compile_typescript_with_module_sources, compile_typescript_with_visibility_sources,
     compile_vitest, compile_vitest_with_alias_sources, compile_vitest_with_contract_alias_sources,
     compile_vitest_with_external_alias_sources, compile_vitest_with_module_alias_sources,
-    root_only_names, source_mode,
+    compile_vitest_with_visibility_sources, root_only_names, source_mode,
 };
 
 mod source_modes {
@@ -12635,6 +12635,58 @@ mod optional_value {
         assert!(output.contains("expect(optionalValue()).toEqual(null);"));
         assert!(output.contains("expect(passOptional(undefined)).toEqual(null);"));
         assert!(output.contains("expect(nullableHelper(null)).toEqual(null);"));
+    }
+
+    #[test]
+    fn honors_target_native_nullable_options_in_portable_tests() {
+        let nullable_wrapper = r#"
+//! flight-compiler: target-native
+//! flight-compiler: nullable-options
+
+pub fn apply_hit(hit: Option<i32>) {}
+
+fn apply_private_hit(hit: Option<i32>) {}
+"#;
+        let optional_wrapper = r#"
+//! flight-compiler: target-native
+
+pub fn apply_optional(hit: Option<i32>) {}
+"#;
+        let generated_sibling = r#"
+//! flight-compiler: nullable-options
+
+pub fn apply_generated(hit: Option<i32>) {}
+"#;
+        let source = r#"
+use flight_example::*;
+
+mod apply_hit {
+    use super::*;
+
+    #[test]
+    fn passes_no_hit() {
+        apply_hit(None);
+        apply_optional(None);
+        apply_generated(None);
+        apply_private_hit(None);
+    }
+}
+"#;
+
+        let output = compile_vitest_with_visibility_sources(
+            source,
+            "@flighthq/example/contract",
+            None,
+            &[],
+            &[],
+            &[nullable_wrapper, optional_wrapper, generated_sibling],
+        )
+        .unwrap();
+
+        assert!(output.contains("applyHit(null);"), "{output}");
+        assert!(output.contains("applyOptional(undefined);"), "{output}");
+        assert!(output.contains("applyGenerated(undefined);"), "{output}");
+        assert!(output.contains("applyPrivateHit(undefined);"), "{output}");
     }
 
     #[test]
