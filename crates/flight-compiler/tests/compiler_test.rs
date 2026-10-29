@@ -4388,7 +4388,15 @@ pub fn create_checked_kernel(count: i32, flag: bool) -> Kernel {
 
     #[test]
     fn proves_lazy_lock_defaults_across_the_whole_crate() {
+        let visibility_paths = (0..4)
+            .map(|index| format!("crates/flight-kernel/src/native_{index}.rs"))
+            .collect::<Vec<_>>();
         let compile = |source: &str, visibility: &[&str]| {
+            let visibility = visibility
+                .iter()
+                .zip(&visibility_paths)
+                .map(|(source, path)| ModuleSource { path, source })
+                .collect::<Vec<_>>();
             return compile_typescript_with_visibility_sources(
                 ModuleSource {
                     path: "crates/flight-kernel/src/kernel.rs",
@@ -4397,7 +4405,7 @@ pub fn create_checked_kernel(count: i32, flag: bool) -> Kernel {
                 Some("@flighthq/entity/contract"),
                 &[],
                 &[],
-                visibility,
+                &visibility,
             );
         };
         let unsafe_initializer = |reason: &str| {
@@ -4666,6 +4674,201 @@ pub fn get_defaults() -> u32 {
             "{stderr}"
         );
         assert!(!output.exists());
+        std::fs::remove_dir_all(&directory).unwrap();
+    }
+
+    #[test]
+    fn resolves_lazy_lock_callables_by_module_identity() {
+        let compile = |source: &str, visibility: &[(&str, &str)]| {
+            let other = ModuleSource {
+                path: "crates/flight-kernel/src/other.rs",
+                source: "pub fn make_value() -> f64 {\n    return 1.0;\n}\n",
+            };
+            let visibility = visibility
+                .iter()
+                .map(|(path, source)| ModuleSource { path, source })
+                .collect::<Vec<_>>();
+            return compile_typescript_with_visibility_sources(
+                ModuleSource {
+                    path: "crates/flight-kernel/src/kernel.rs",
+                    source,
+                },
+                None,
+                &[other],
+                &[],
+                &visibility,
+            );
+        };
+        let native = (
+            "crates/flight-kernel/src/native.rs",
+            "//! flight-compiler: target-native\n\nuse std::sync::atomic::{AtomicU32, Ordering};\n\nstatic MADE: AtomicU32 = AtomicU32::new(0);\n\npub fn make_value() -> f64 {\n    MADE.fetch_add(1, Ordering::SeqCst);\n    return 2.0;\n}\n",
+        );
+        let kernel = |imports: &str, value: &str| {
+            format!(
+                "use std::sync::LazyLock;\n{imports}\npub struct Kernel {{\n    pub scale: f64,\n}}\n\npub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| Kernel {{ scale: {value} }});\n"
+            )
+        };
+        let rejected = |path: &str| {
+            format!(
+                "`LazyLock` static `KERNEL` lowers to an eagerly initialized constant, so its initializer must be side-effect free and cannot panic; it calls `{path}`, which is not a side-effect-free function of this crate"
+            )
+        };
+
+        assert_eq!(
+            compile(
+                &kernel("use crate::native::make_value;\n", "make_value()"),
+                &[native]
+            )
+            .unwrap_err()
+            .to_string(),
+            rejected("make_value")
+        );
+        assert_eq!(
+            compile(&kernel("", "crate::native::make_value()"), &[native])
+                .unwrap_err()
+                .to_string(),
+            rejected("crate::native::make_value")
+        );
+        assert_eq!(
+            compile(
+                &kernel(
+                    "use crate::native::*;\nuse crate::other::*;\n",
+                    "make_value()"
+                ),
+                &[native]
+            )
+            .unwrap_err()
+            .to_string(),
+            rejected("make_value")
+        );
+        assert_eq!(
+            compile(&kernel("", "missing::make_value()"), &[native])
+                .unwrap_err()
+                .to_string(),
+            rejected("missing::make_value")
+        );
+        assert_eq!(
+            compile(&kernel("", "super::make_value()"), &[native])
+                .unwrap_err()
+                .to_string(),
+            rejected("super::make_value")
+        );
+
+        for (imports, value) in [
+            ("", "crate::other::make_value()"),
+            ("use crate::other::make_value;\n", "make_value()"),
+            (
+                "use crate::other::make_value as pure_value;\n",
+                "pure_value()",
+            ),
+            ("use crate::other;\n", "other::make_value()"),
+        ] {
+            let output = compile(&kernel(imports, value), &[native]).unwrap();
+            assert!(
+                output.contains("export const KERNEL: Kernel = { scale: "),
+                "{imports}{value}"
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_hidden_include_macro_and_path_module_sources_through_the_cli() {
+        let directory = std::env::temp_dir().join(format!(
+            "flight-compiler-lazy-lock-visibility-cli-{}",
+            std::process::id()
+        ));
+        let source_root = directory.join("flight-kernel").join("src");
+        std::fs::create_dir_all(&source_root).unwrap();
+        let outside = directory.join("outside");
+        std::fs::create_dir_all(&outside).unwrap();
+        let write = |path: std::path::PathBuf, source: &str| {
+            std::fs::write(&path, source).unwrap();
+            return path;
+        };
+        let kernel = write(
+            source_root.join("kernel.rs"),
+            "use std::sync::LazyLock;\n\nuse flight_entity::{EntityRuntimeSlot, allocate_entity};\n\n#[derive(Default)]\npub struct Kernel {\n    runtime: EntityRuntimeSlot,\n    pub scale: f64,\n}\n\nflight_entity::impl_entity!(Kernel);\n\npub static KERNEL: LazyLock<Kernel> = LazyLock::new(create_kernel);\n\npub fn create_kernel() -> Kernel {\n    let out: Kernel = allocate_entity();\n    return out;\n}\n",
+        );
+        let hidden_impls = [
+            "impl Default for crate::kernel::Kernel {\n    fn default() -> Self {\n        loop {}\n    }\n}\n",
+            "impl Drop for crate::kernel::Kernel {\n    fn drop(&mut self) {}\n}\n",
+            "impl std::ops::Deref for crate::kernel::Kernel {\n    type Target = f64;\n    fn deref(&self) -> &f64 {\n        return &self.scale;\n    }\n}\n",
+        ];
+        let prefix = "`LazyLock` static `KERNEL` lowers to an eagerly initialized constant, so its initializer must be side-effect free and cannot panic; ";
+        let run = |visibility: &[&std::path::PathBuf]| {
+            let output = kernel.with_extension("ts");
+            let _ = std::fs::remove_file(&output);
+            let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_flight-compile"));
+            command
+                .arg("generate")
+                .arg("--source")
+                .arg(&kernel)
+                .arg("--out")
+                .arg(&output)
+                .arg("--entity-module")
+                .arg("@flighthq/entity/contract");
+            for path in visibility {
+                command.arg("--visibility-source").arg(path);
+            }
+            let result = command.output().unwrap();
+            return (
+                result.status.code(),
+                String::from_utf8(result.stderr).unwrap(),
+                output.exists(),
+            );
+        };
+        let mut cases = Vec::new();
+        for (index, hidden) in hidden_impls.iter().enumerate() {
+            write(outside.join(format!("hidden_{index}.rs")), hidden);
+            cases.push((
+                format!("include!(\"../../outside/hidden_{index}.rs\");\n"),
+                "it cannot prove what the macro `include!` in this crate expands to, and a macro can generate any `impl`".to_string(),
+            ));
+            cases.push((
+                format!("#[path = \"../../outside/hidden_{index}.rs\"]\nmod hidden_{index};\n"),
+                format!("the crate declares `#[path = \"../../outside/hidden_{index}.rs\"] mod`, whose source is not among the sources the proof sees"),
+            ));
+        }
+        cases.push((
+            "external::make_drop!(crate::kernel::Kernel);\n".to_string(),
+            "it cannot prove what the macro `external::make_drop!` in this crate expands to, and a macro can generate any `impl`".to_string(),
+        ));
+        cases.push((
+            "pub fn probe() -> Vec<u8> {\n    return vec![external::make_drop!(crate::kernel::Kernel)];\n}\n".to_string(),
+            "it cannot prove what the macro `external::make_drop!` in this crate expands to, and a macro can generate any `impl`".to_string(),
+        ));
+        cases.push((
+            "std::thread_local! {\n    static CELLS: u32 = 0;\n}\n".to_string(),
+            "it cannot prove what the macro `std::thread_local!` in this crate expands to, and a macro can generate any `impl`".to_string(),
+        ));
+        for (source, reason) in &cases {
+            let native = write(
+                source_root.join("native.rs"),
+                &format!("//! flight-compiler: target-native\n\n{source}"),
+            );
+            let (code, stderr, emitted) = run(&[&native]);
+            assert_eq!(code, Some(2), "{source}: {stderr}");
+            assert!(
+                stderr.contains(&format!("{prefix}{reason}")),
+                "{source}: {stderr}"
+            );
+            assert!(!emitted, "{source} emitted TypeScript");
+        }
+
+        let inventoried = write(
+            source_root.join("native_impl.rs"),
+            "//! flight-compiler: target-native\n\npub fn describe(values: &[f64]) -> String {\n    assert!(!values.is_empty());\n    return format!(\"{}\", values.len());\n}\n",
+        );
+        let native = write(
+            source_root.join("native.rs"),
+            "//! flight-compiler: target-native\n\n#[path = \"native_impl.rs\"]\nmod renamed;\n\npub fn sizes() -> Vec<u32> {\n    return vec![1, 2];\n}\n",
+        );
+        let (code, stderr, emitted) = run(&[&native, &inventoried]);
+        assert_eq!(code, Some(0), "{stderr}");
+        assert!(emitted);
+        let output = std::fs::read_to_string(kernel.with_extension("ts")).unwrap();
+        assert!(output.contains("export const KERNEL: KernelRaw = createKernel();"));
+        assert!(!output.contains("describe") && !output.contains("sizes"));
         std::fs::remove_dir_all(&directory).unwrap();
     }
 

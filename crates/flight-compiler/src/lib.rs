@@ -77,7 +77,8 @@ fn compile_typescript_sources(
     alias_sources: &[&str],
     external_alias_sources: &[ExternalAliasSource<'_>],
     module_identities: Option<Vec<String>>,
-    visibility_sources: &[&str],
+    source_paths: &[&str],
+    visibility_sources: &[ModuleSource<'_>],
 ) -> Result<String, CompileError> {
     require_generated_source(source)?;
     let program = model::parse_program(source)?;
@@ -87,8 +88,12 @@ fn compile_typescript_sources(
         .collect::<Result<Vec<_>, _>>()?;
     let visibility_programs = visibility_sources
         .iter()
-        .map(|visibility_source| model::parse_visibility_program(visibility_source))
+        .map(|visibility_source| model::parse_visibility_program(visibility_source.source))
         .collect::<Result<Vec<_>, _>>()?;
+    let visibility_identities = visibility_sources
+        .iter()
+        .map(|visibility_source| module_identity_from_path(visibility_source.path))
+        .collect::<Vec<_>>();
     let external_alias_programs = external_alias_sources
         .iter()
         .map(|external| {
@@ -118,6 +123,15 @@ fn compile_typescript_sources(
         &dependency_export_names,
         module_identities.as_deref(),
         &visibility_programs,
+        &visibility_identities,
+        &(0..=alias_sources.len())
+            .map(|index| source_paths.get(index).map(|path| (*path).to_string()))
+            .chain(
+                visibility_sources
+                    .iter()
+                    .map(|visibility_source| Some(visibility_source.path.to_string())),
+            )
+            .collect::<Vec<_>>(),
     )?;
     output =
         lower_string_union_variants(output, &program.string_unions, &program.string_union_values)?;
@@ -164,6 +178,7 @@ pub fn compile_typescript_with_external_alias_sources(
         external_alias_sources,
         None,
         &[],
+        &[],
     );
 }
 
@@ -197,7 +212,7 @@ pub fn compile_typescript_with_visibility_sources(
     entity_module: Option<&str>,
     alias_sources: &[ModuleSource<'_>],
     external_alias_sources: &[ExternalAliasSource<'_>],
-    visibility_sources: &[&str],
+    visibility_sources: &[ModuleSource<'_>],
 ) -> Result<String, CompileError> {
     let identities = std::iter::once(&source)
         .chain(alias_sources)
@@ -220,6 +235,9 @@ pub fn compile_typescript_with_visibility_sources(
         &alias_source_texts,
         external_alias_sources,
         identities,
+        &std::iter::once(source.path)
+            .chain(alias_sources.iter().map(|module| module.path))
+            .collect::<Vec<_>>(),
         visibility_sources,
     );
 }

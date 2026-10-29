@@ -71,9 +71,15 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                     fs::read_to_string(path).map_err(|error| format!("{}: {error}", path.display()))
                 })
                 .collect::<Result<Vec<_>, _>>()?;
-            let visibility_source_refs = visibility_sources
+            let visibility_paths = options
+                .visibility_sources
                 .iter()
-                .map(String::as_str)
+                .map(|path| path.to_string_lossy())
+                .collect::<Vec<_>>();
+            let visibility_source_refs = visibility_paths
+                .iter()
+                .zip(&visibility_sources)
+                .map(|(path, source)| flight_compiler::ModuleSource { path, source })
                 .collect::<Vec<_>>();
             flight_compiler::compile_typescript_with_visibility_sources(
                 flight_compiler::ModuleSource {

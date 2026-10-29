@@ -6445,6 +6445,25 @@ pub(crate) fn is_transparent_data_union_variant(
     return data_union_variant_categories(entities, owner, variant).is_some();
 }
 
+// A source path with `.` and `..` segments resolved and `/` separators, so paths given in different
+// spellings compare equal.
+fn normalize_source_path(path: &str) -> String {
+    let mut segments: Vec<&str> = Vec::new();
+    for segment in path.split(['/', '\\']) {
+        match segment {
+            "" | "." if !segments.is_empty() => {}
+            ".." if segments
+                .last()
+                .is_some_and(|last| !last.is_empty() && *last != "..") =>
+            {
+                segments.pop();
+            }
+            segment => segments.push(segment),
+        }
+    }
+    return segments.join("/");
+}
+
 // Whether `op` is binary arithmetic (`+ - * / %`), which Rust dispatches through `Add` and its kin.
 fn is_eager_arithmetic(op: &BinOp) -> bool {
     return matches!(
@@ -7179,6 +7198,8 @@ fn reject_unsafe_lazy_lock_initializers(
     program: &Program,
     programs: &[&Program],
     visibility_programs: &[Program],
+    identities: &[Option<String>],
+    paths: &[Option<String>],
 ) -> Result<(), CompileError> {
     #[derive(Clone, Debug, PartialEq)]
     enum EagerType {
@@ -7287,8 +7308,14 @@ fn reject_unsafe_lazy_lock_initializers(
         }
     }
     // A source's resolution context: its type-namespace provenance and the value items it declares.
+    // `module` is the source's module path below the crate root (from its module identity, or a
+    // synthetic segment no path can name when the identity is unknown), so a callable resolves to
+    // `crate::<module>::<name>` and only the source declaring exactly that owner supplies its body.
     struct EagerScope<'a> {
         context: HashSet<String>,
+        module: Vec<String>,
+        // The source's file path, normalized, when known.
+        path: Option<String>,
         program: &'a Program,
         values: BTreeSet<String>,
     }
@@ -7312,6 +7339,8 @@ fn reject_unsafe_lazy_lock_initializers(
         self_type: Option<String>,
         static_name: &'a str,
         type_items: &'a BTreeSet<String>,
+        // Every source file the proof sees, normalized.
+        inventory: &'a BTreeSet<String>,
     }
     impl EagerSafety<'_> {
         // Types every local the body binds whose bindings all prove one type, to a least fixed point.
@@ -7442,12 +7471,15 @@ fn reject_unsafe_lazy_lock_initializers(
 
         // The free function of this crate a call path resolves to, through the calling source's
         // imports and local items.
+        // The canonical `crate::<module>::<name>` of the emitted free function a call path resolves to
+        // from the calling source. Only a function declared by the source whose module is exactly
+        // that owner qualifies; a visibility-only source supplies no verified body.
         fn crate_function(&self, path: &syn::ExprPath) -> Option<String> {
             if path.qself.is_some() {
                 return None;
             }
             let resolved = self.resolve(self.scope, &path.path)?;
-            let (name, modules) = resolved.split_last()?;
+            let (_, modules) = resolved.split_last()?;
             if modules.first().map(String::as_str) != Some("crate")
                 || modules[1..]
                     .iter()
@@ -7455,11 +7487,68 @@ fn reject_unsafe_lazy_lock_initializers(
             {
                 return None;
             }
+            let canonical = resolved.join("::");
             return self
                 .functions
                 .iter()
-                .any(|(_, function)| function.sig.ident == name.as_str())
-                .then(|| name.clone());
+                .any(|(index, function)| self.function_path(*index, function) == canonical)
+                .then_some(canonical);
+        }
+
+        // The canonical path of a function declared by `scope`.
+        fn function_path(&self, scope: usize, function: &ItemFn) -> String {
+            return std::iter::once("crate".to_string())
+                .chain(self.scopes[scope].module.iter().cloned())
+                .chain(std::iter::once(function.sig.ident.to_string()))
+                .collect::<Vec<_>>()
+                .join("::");
+        }
+
+        // `segments` as an absolute `crate::` path when it names this crate: through `crate::`,
+        // `self::` or `super::` relative to the source's module, or an item or module the source
+        // declares. `None` for a `super::` above the crate root; other paths are returned unchanged.
+        fn absolute(&self, scope: usize, segments: Vec<String>) -> Option<Vec<String>> {
+            let EagerScope {
+                context,
+                module,
+                values,
+                ..
+            } = &self.scopes[scope];
+            let first = segments.first()?.clone();
+            return match first.as_str() {
+                "crate" => Some(segments),
+                "self" => Some(
+                    std::iter::once("crate".to_string())
+                        .chain(module.iter().cloned())
+                        .chain(segments.into_iter().skip(1))
+                        .collect(),
+                ),
+                "super" => {
+                    let supers = segments
+                        .iter()
+                        .take_while(|segment| *segment == "super")
+                        .count();
+                    let parent = module.len().checked_sub(supers)?;
+                    Some(
+                        std::iter::once("crate".to_string())
+                            .chain(module[..parent].iter().cloned())
+                            .chain(segments.into_iter().skip(supers))
+                            .collect(),
+                    )
+                }
+                "Self" => None,
+                _ if context.contains(&format!("{TYPE_LOCAL_MARKER}{first}"))
+                    || values.contains(&first) =>
+                {
+                    Some(
+                        std::iter::once("crate".to_string())
+                            .chain(module.iter().cloned())
+                            .chain(segments)
+                            .collect(),
+                    )
+                }
+                _ => Some(segments),
+            };
         }
 
         // The struct, or the alias's target, this crate declares as `name`, if its declaration is
@@ -7609,7 +7698,7 @@ fn reject_unsafe_lazy_lock_initializers(
                     let signatures = self
                         .functions
                         .iter()
-                        .filter(|(_, function)| function.sig.ident == name.as_str())
+                        .filter(|(index, function)| self.function_path(*index, function) == name)
                         .collect::<Vec<_>>();
                     let (index, function) = signatures.first()?;
                     let signature = function.sig.to_token_stream().to_string();
@@ -7699,7 +7788,7 @@ fn reject_unsafe_lazy_lock_initializers(
             if nested.contains(first) || nested.contains("*") {
                 return None;
             }
-            let mut resolved = if path.leading_colon.is_some() {
+            let resolved = if path.leading_colon.is_some() {
                 canonical_type_path_root(segments.clone(), context)?
             } else if context.contains(&format!("{TYPE_USE_MARKER}{first}")) {
                 let mut imported = marker_suffixes(context, TYPE_USE_TARGET_MARKER)
@@ -7712,15 +7801,20 @@ fn reject_unsafe_lazy_lock_initializers(
                     .map(str::to_string)
                     .collect::<Vec<_>>();
                 imported.extend(rest.iter().cloned());
-                canonical_type_path_root(imported, context)?
-            } else if matches!(first.as_str(), "crate" | "self" | "super" | "Self") {
-                segments.clone()
-            } else if context.contains(&format!("{TYPE_LOCAL_MARKER}{first}"))
+                let imported_root = imported.first().cloned().unwrap_or_default();
+                if matches!(imported_root.as_str(), "crate" | "self" | "super")
+                    || context.contains(&format!("{TYPE_LOCAL_MARKER}{imported_root}"))
+                    || values.contains(&imported_root)
+                {
+                    self.absolute(scope, imported)?
+                } else {
+                    canonical_type_path_root(imported, context)?
+                }
+            } else if matches!(first.as_str(), "crate" | "self" | "super" | "Self")
+                || context.contains(&format!("{TYPE_LOCAL_MARKER}{first}"))
                 || values.contains(first)
             {
-                std::iter::once("crate".to_string())
-                    .chain(segments.iter().cloned())
-                    .collect()
+                self.absolute(scope, segments.clone())?
             } else if matches!(first.as_str(), "std" | "core" | "alloc")
                 || marker_suffixes(context, TYPE_EXTERN_CRATE_MARKER)
                     .iter()
@@ -7808,12 +7902,6 @@ fn reject_unsafe_lazy_lock_initializers(
                     .chain(rest.iter().cloned())
                     .collect()
             };
-            if matches!(
-                resolved.first().map(String::as_str),
-                Some("self" | "super" | "Self")
-            ) {
-                resolved[0] = "crate".to_string();
-            }
             return Some(resolved);
         }
 
@@ -7837,6 +7925,26 @@ fn reject_unsafe_lazy_lock_initializers(
                 }
                 for attribute in &facts.attributes {
                     self.check_meta(index, &attribute.meta)?;
+                }
+                for module in &facts.path_modules {
+                    let target = scope
+                        .path
+                        .as_deref()
+                        .filter(|_| !facts.nested_path_module)
+                        .and_then(|source| {
+                            let directory = std::path::Path::new(source).parent()?;
+                            return Some(normalize_source_path(
+                                &directory.join(module).to_string_lossy(),
+                            ));
+                        });
+                    if !target
+                        .as_ref()
+                        .is_some_and(|target| self.inventory.contains(target))
+                    {
+                        return Err(format!(
+                            "the crate declares `#[path = \"{module}\"] mod`, whose source is not among the sources the proof sees"
+                        ));
+                    }
                 }
                 for path in &facts.macros {
                     if !self.is_standard_macro(index, path, &macro_definitions, macro_use) {
@@ -8145,8 +8253,11 @@ fn reject_unsafe_lazy_lock_initializers(
             };
         }
 
-        // Whether `path` invokes a macro of the standard library (through its macro prelude or a
-        // resolved path) or `flight_entity::impl_entity`.
+        // Whether `path` invokes, through the standard macro prelude or a resolved path, one of the
+        // macros the proof knows cannot introduce an implicit-dispatch item: the standard library's
+        // expression, formatting, assertion and diagnostic macros (`include!`, `thread_local!` and
+        // every other standard macro fail closed), and `flight_entity::impl_entity`, which implements
+        // only `Entity`.
         fn is_standard_macro(
             &self,
             scope: usize,
@@ -8157,10 +8268,46 @@ fn reject_unsafe_lazy_lock_initializers(
             let EagerScope {
                 context, program, ..
             } = &self.scopes[scope];
+            const ITEMLESS: [&str; 32] = [
+                "assert",
+                "assert_eq",
+                "assert_ne",
+                "cfg",
+                "column",
+                "compile_error",
+                "concat",
+                "dbg",
+                "debug_assert",
+                "debug_assert_eq",
+                "debug_assert_ne",
+                "env",
+                "eprint",
+                "eprintln",
+                "file",
+                "format",
+                "format_args",
+                "include_bytes",
+                "include_str",
+                "line",
+                "matches",
+                "module_path",
+                "option_env",
+                "panic",
+                "print",
+                "println",
+                "stringify",
+                "todo",
+                "unimplemented",
+                "unreachable",
+                "vec",
+                "write",
+            ];
+            let itemless = |name: &str| ITEMLESS.contains(&name) || name == "writeln";
             if path.leading_colon.is_none() && path.segments.len() == 1 {
                 let name = path.segments[0].ident.to_string();
                 if !context.contains(&format!("{TYPE_USE_MARKER}{name}")) {
-                    return !definitions.contains(&name)
+                    return itemless(&name)
+                        && !definitions.contains(&name)
                         && !macro_use
                         && !program.facts.nested_use_names.contains(&name)
                         && !program.facts.nested_use_names.contains("*")
@@ -8170,6 +8317,7 @@ fn reject_unsafe_lazy_lock_initializers(
             return self.resolve(scope, path).is_some_and(|owner| {
                 let owner = owner.iter().map(String::as_str).collect::<Vec<_>>();
                 return matches!(owner.first(), Some(&("std" | "core" | "alloc")))
+                    && owner.last().is_some_and(|name| itemless(name))
                     || owner.as_slice() == ["flight_entity", "impl_entity"];
             });
         }
@@ -8732,11 +8880,25 @@ fn reject_unsafe_lazy_lock_initializers(
             ));
         }
     }
+    let crate_name = identities
+        .first()
+        .and_then(|identity| identity.as_deref())
+        .and_then(|identity| identity.split("::").next())
+        .map(str::to_string);
     let scopes = programs
         .iter()
         .copied()
         .chain(visibility_programs)
-        .map(|source| {
+        .enumerate()
+        .map(|(index, source)| {
+            let module = identities
+                .get(index)
+                .and_then(|identity| identity.as_deref())
+                .and_then(|identity| {
+                    let mut segments = identity.split("::").map(str::to_string);
+                    return (segments.next() == crate_name).then(|| segments.collect::<Vec<_>>());
+                })
+                .unwrap_or_else(|| vec![format!("#{index}")]);
             let mut context = HashSet::new();
             insert_program_type_path_context(&mut context, source);
             let values = source
@@ -8759,6 +8921,11 @@ fn reject_unsafe_lazy_lock_initializers(
                 .collect();
             return EagerScope {
                 context,
+                module,
+                path: paths
+                    .get(index)
+                    .and_then(|path| path.as_deref())
+                    .map(normalize_source_path),
                 program: source,
                 values,
             };
@@ -8805,6 +8972,10 @@ fn reject_unsafe_lazy_lock_initializers(
         .iter()
         .position(|source| std::ptr::eq(*source, program))
         .unwrap_or(0);
+    let inventory = scopes
+        .iter()
+        .filter_map(|scope| scope.path.clone())
+        .collect::<BTreeSet<_>>();
     let no_defaults = ManualDefaults::new();
     let mut manual_defaults = None;
     let mut readable_statics = BTreeSet::new();
@@ -8835,6 +9006,7 @@ fn reject_unsafe_lazy_lock_initializers(
                 self_type: None,
                 static_name: &name,
                 type_items: &type_items,
+                inventory: &inventory,
             };
             match checker.crate_dispatch() {
                 Ok(defaults) => manual_defaults = Some(defaults),
@@ -8860,6 +9032,7 @@ fn reject_unsafe_lazy_lock_initializers(
             self_type: None,
             static_name: &name,
             type_items: &type_items,
+            inventory: &inventory,
         };
         match initializer {
             Expr::Path(path) => {
@@ -8891,10 +9064,11 @@ fn reject_unsafe_lazy_lock_initializers(
             if !visited.insert(function_name.clone()) {
                 continue;
             }
-            for (index, function) in functions
+            let owners = functions
                 .iter()
-                .filter(|(_, function)| function.sig.ident == function_name.as_str())
-            {
+                .filter(|(index, function)| safety.function_path(*index, function) == function_name)
+                .collect::<Vec<_>>();
+            for (index, function) in owners {
                 safety.bind_function(*index, function);
                 safety.visit_block(&function.block);
             }
@@ -13121,6 +13295,8 @@ pub(crate) fn emit_program(
     dependency_export_names: &[(BTreeMap<String, String>, &str)],
     module_identities: Option<&[String]>,
     visibility_programs: &[Program],
+    visibility_identities: &[Option<String>],
+    source_paths: &[Option<String>],
 ) -> Result<String, CompileError> {
     let programs = std::iter::once(program)
         .chain(alias_programs)
@@ -13254,7 +13430,21 @@ pub(crate) fn emit_program(
             .insert(name);
     }
     reject_entity_runtime_state_store_collisions(program, &programs)?;
-    reject_unsafe_lazy_lock_initializers(program, &programs, visibility_programs)?;
+    let source_identities = (0..programs.len())
+        .map(|index| {
+            module_identities
+                .and_then(|identities| identities.get(index))
+                .cloned()
+        })
+        .chain(visibility_identities.iter().cloned())
+        .collect::<Vec<_>>();
+    reject_unsafe_lazy_lock_initializers(
+        program,
+        &programs,
+        visibility_programs,
+        &source_identities,
+        source_paths,
+    )?;
     reject_unsupported_array_like_uses(program, &expression_context)?;
     // The body is emitted before the imports so the package-internal state stores it actually reads
     // or writes can be imported from their declaring sibling modules.

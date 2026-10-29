@@ -87,6 +87,10 @@ pub(crate) struct SourceFacts {
     pub(crate) attributes: Vec<Attribute>,
     pub(crate) hidden_items: bool,
     pub(crate) nested_use_names: BTreeSet<String>,
+    // The `#[path = "…"]` values of `mod` declarations, and whether any sits inside an inline module
+    // (where the path is relative to a directory the proof does not model).
+    pub(crate) path_modules: Vec<String>,
+    pub(crate) nested_path_module: bool,
     pub(crate) impls: Vec<syn::ItemImpl>,
     pub(crate) macro_definitions: BTreeSet<String>,
     pub(crate) macro_use_extern_crate: bool,
@@ -139,7 +143,36 @@ pub(crate) fn collect_source_facts(file: &syn::File) -> SourceFacts {
                         ) = (tokens.get(index + 1), tokens.get(index + 2))
                             && bang.as_char() == '!'
                         {
-                            self.facts.macros.push(syn::Path::from(ident.clone()));
+                            // The invocation's complete path: `a::b::name!`, or `::a::name!`.
+                            let colons = |at: usize| {
+                                return matches!(
+                                    (tokens.get(at), tokens.get(at + 1)),
+                                    (
+                                        Some(proc_macro2::TokenTree::Punct(first)),
+                                        Some(proc_macro2::TokenTree::Punct(second)),
+                                    ) if first.as_char() == ':' && second.as_char() == ':'
+                                );
+                            };
+                            let mut segments = vec![ident.clone()];
+                            let mut start = index;
+                            while start >= 3
+                                && colons(start - 2)
+                                && let proc_macro2::TokenTree::Ident(previous) = &tokens[start - 3]
+                            {
+                                segments.insert(0, previous.clone());
+                                start -= 3;
+                            }
+                            let mut path = syn::Path {
+                                leading_colon: None,
+                                segments: segments
+                                    .into_iter()
+                                    .map(syn::PathSegment::from)
+                                    .collect(),
+                            };
+                            if start >= 2 && colons(start - 2) {
+                                path.leading_colon = Some(Default::default());
+                            }
+                            self.facts.macros.push(path);
                         }
                     }
                     proc_macro2::TokenTree::Punct(punct) if punct.as_char() == '#' => {
@@ -199,6 +232,21 @@ pub(crate) fn collect_source_facts(file: &syn::File) -> SourceFacts {
         }
 
         fn visit_item_mod(&mut self, module: &'ast syn::ItemMod) {
+            for attribute in &module.attrs {
+                if attribute.path().is_ident("path") {
+                    if let syn::Meta::NameValue(value) = &attribute.meta
+                        && let syn::Expr::Lit(literal) = &value.value
+                        && let syn::Lit::Str(path) = &literal.lit
+                    {
+                        self.facts.path_modules.push(path.value());
+                    } else {
+                        self.facts.path_modules.push(String::new());
+                    }
+                    if self.depth > 0 {
+                        self.facts.nested_path_module = true;
+                    }
+                }
+            }
             if !is_cfg_test(&module.attrs) {
                 self.depth += 1;
                 syn::visit::visit_item_mod(self, module);
