@@ -40,6 +40,13 @@ const STD_MEM_FUNCTIONS: &[&str] = &["replace", "swap", "take"];
 const STD_MEM_GLOB_MARKER: &str = "@std-mem-glob";
 const STD_MEM_MODULE_MARKER: &str = "@std-mem-module:";
 const STD_MEM_SHADOWED_MARKER: &str = "@std-mem-shadowed:";
+// Type-namespace provenance recorded from `use` items and local declarations (see
+// `insert_type_path_context`): a local name, the full path it imports, a glob's module path, and a
+// locally declared type-namespace name.
+const TYPE_USE_MARKER: &str = "@type-use:";
+const TYPE_USE_TARGET_MARKER: &str = "@type-use-target:";
+const TYPE_USE_GLOB_MARKER: &str = "@type-use-glob:";
+const TYPE_LOCAL_MARKER: &str = "@type-local:";
 const DEPENDENCY_EXPORT_NAME_TARGET_MARKER: &str = "@dependency-export-name-target:";
 // A dependency item the current source binds by its mapped name: `@dependency-export-name-binding:
 // Name|module|rust`. `@dependency-export-name-bindings` marks that at least one exists.
@@ -768,6 +775,67 @@ pub(crate) fn insert_std_mem_import_context<'a>(
     }
 }
 
+// Records what each `use` item brings into the type namespace (a named or renamed path, `self` of a
+// module, or a glob's module) and the names the source declares there itself.
+pub(crate) fn insert_type_path_context<'a>(
+    context: &mut HashSet<String>,
+    uses: impl Iterator<Item = &'a syn::ItemUse>,
+    local_names: impl Iterator<Item = String>,
+) {
+    fn record(context: &mut HashSet<String>, local: &str, path: &[String]) {
+        context.insert(format!("{TYPE_USE_MARKER}{local}"));
+        context.insert(format!(
+            "{TYPE_USE_TARGET_MARKER}{local}{PROVENANCE_SEPARATOR}{}",
+            path.join("::")
+        ));
+    }
+    fn collect(tree: &syn::UseTree, prefix: &mut Vec<String>, context: &mut HashSet<String>) {
+        match tree {
+            syn::UseTree::Path(path) => {
+                prefix.push(path.ident.to_string());
+                collect(&path.tree, prefix, context);
+                prefix.pop();
+            }
+            syn::UseTree::Group(group) => {
+                for item in &group.items {
+                    collect(item, prefix, context);
+                }
+            }
+            syn::UseTree::Name(name) if name.ident == "self" => {
+                if let Some(local) = prefix.last().cloned() {
+                    record(context, &local, prefix);
+                }
+            }
+            syn::UseTree::Name(name) => {
+                let local = name.ident.to_string();
+                prefix.push(local.clone());
+                record(context, &local, prefix);
+                prefix.pop();
+            }
+            syn::UseTree::Rename(rename) => {
+                let local = rename.rename.to_string();
+                if rename.ident == "self" {
+                    record(context, &local, prefix);
+                } else {
+                    prefix.push(rename.ident.to_string());
+                    record(context, &local, prefix);
+                    prefix.pop();
+                }
+            }
+            syn::UseTree::Glob(_) => {
+                context.insert(format!("{TYPE_USE_GLOB_MARKER}{}", prefix.join("::")));
+            }
+        }
+    }
+
+    for item_use in uses {
+        collect(&item_use.tree, &mut Vec::new(), context);
+    }
+    for name in local_names {
+        context.insert(format!("{TYPE_LOCAL_MARKER}{name}"));
+    }
+}
+
 // Records the dependency `export-name` mappings a Rust test module imports, across its top-level and
 // suite `use` items.
 // flight-lint: allow(hashmap-iteration) test items retain Rust source order in Vecs
@@ -1006,19 +1074,94 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
     };
 }
 
-// The `T` of exactly `Pin<Box<dyn Future<Output = T> [+ Send | + Sync | + 'a]...>>`.
-fn pinned_boxed_future_output(segment: &syn::PathSegment) -> Option<&Type> {
+// `Pin<Box<dyn Future<Output = T> [+ Send | + Sync | + 'a]>>`, accepted only when `Pin`, `Box`, `Future`
+// and every auto-trait bound resolve (see `resolve_type_path`) to the standard library. A path named
+// `Pin` that resolves elsewhere is an ordinary type unless it spells the future shape, which fails
+// closed; so does a standard `Pin` of any other shape and a `Pin` whose provenance is uncertain.
+fn pinned_boxed_future_output<'a>(
+    path: &'a syn::TypePath,
+    context: &HashSet<String>,
+) -> Result<Option<&'a Type>, CompileError> {
+    let Some(last) = path.path.segments.last() else {
+        return Ok(None);
+    };
+    let aliased = path
+        .path
+        .segments
+        .first()
+        .is_some_and(|first| context.contains(&format!("{TYPE_USE_MARKER}{}", first.ident)));
+    if path.qself.is_some() || (last.ident != "Pin" && !aliased) {
+        return Ok(None);
+    }
+    let resolved = resolve_type_path(&path.path, context);
+    let standard_pin = resolved
+        .as_deref()
+        .is_some_and(|resolved| is_standard_type_path(resolved, "Pin"));
+    let shape = pinned_boxed_future_shape(last);
+    if !standard_pin {
+        if last.ident != "Pin" || shape.is_none() {
+            return Ok(None);
+        }
+        return Err(compile_error(match resolved {
+            Some(resolved) => format!(
+                "portable `Pin` here resolves to `{}`, not `std::pin::Pin`; only the standard pinned boxed future lowers to `Promise`",
+                resolved.join("::")
+            ),
+            None => "cannot resolve the provenance of `Pin`; import it from `std::pin` to lower a pinned boxed future to `Promise`".to_string(),
+        }));
+    }
+    let Some((boxed, future, auto_traits, output)) = shape else {
+        return Err(compile_error(
+            "portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` in a type position",
+        ));
+    };
+    let standard = |path: &syn::Path, name: &str| {
+        return resolve_type_path(path, context)
+            .is_some_and(|resolved| is_standard_type_path(&resolved, name));
+    };
+    let other_standard_bound = auto_traits.iter().any(|bound| {
+        return resolve_type_path(bound, context).is_some_and(|resolved| {
+            matches!(
+                resolved.first().map(String::as_str),
+                Some("std" | "core" | "alloc")
+            ) && !is_standard_type_path(&resolved, "Send")
+                && !is_standard_type_path(&resolved, "Sync")
+        });
+    });
+    if other_standard_bound {
+        return Err(compile_error(
+            "portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` in a type position",
+        ));
+    }
+    if !standard(boxed, "Box")
+        || !standard(future, "Future")
+        || !auto_traits
+            .iter()
+            .all(|bound| standard(bound, "Send") || standard(bound, "Sync"))
+    {
+        return Err(compile_error(
+            "portable `Pin<Box<dyn Future<Output = T>>>` needs `Box`, `Future` and its auto-trait bounds to resolve to the standard library",
+        ));
+    }
+    return Ok(Some(output));
+}
+
+// The `Box` path, `Future` path, other trait-bound paths and `Output` type of
+// `Pin<Box<dyn Future<Output = T> + ...>>`, matched by structure alone; callers check provenance.
+fn pinned_boxed_future_shape(
+    segment: &syn::PathSegment,
+) -> Option<(&syn::Path, &syn::Path, Vec<&syn::Path>, &Type)> {
     let PathArguments::AngleBracketed(pin) = &segment.arguments else {
         return None;
     };
     let [GenericArgument::Type(Type::Path(boxed))] = pin.args.iter().collect::<Vec<_>>()[..] else {
         return None;
     };
-    let boxed = boxed.path.segments.last()?;
-    if boxed.ident != "Box" {
+    if boxed.qself.is_some() {
         return None;
     }
-    let PathArguments::AngleBracketed(boxed_arguments) = &boxed.arguments else {
+    let PathArguments::AngleBracketed(boxed_arguments) = &boxed.path.segments.last()?.arguments
+    else {
         return None;
     };
     let [GenericArgument::Type(Type::TraitObject(object))] =
@@ -1026,33 +1169,41 @@ fn pinned_boxed_future_output(segment: &syn::PathSegment) -> Option<&Type> {
     else {
         return None;
     };
-    let mut output = None;
+    let mut future = None;
+    let mut auto_traits = Vec::new();
     for bound in &object.bounds {
         match bound {
             syn::TypeParamBound::Trait(trait_bound) => {
-                let last = trait_bound.path.segments.last()?;
-                if last.ident == "Future" {
-                    let PathArguments::AngleBracketed(future) = &last.arguments else {
-                        return None;
-                    };
-                    let [GenericArgument::AssocType(associated)] =
-                        future.args.iter().collect::<Vec<_>>()[..]
-                    else {
-                        return None;
-                    };
-                    if associated.ident != "Output" || output.is_some() {
-                        return None;
-                    }
-                    output = Some(&associated.ty);
-                } else if last.ident != "Send" && last.ident != "Sync" {
+                if trait_bound.lifetimes.is_some()
+                    || !matches!(trait_bound.modifier, syn::TraitBoundModifier::None)
+                {
                     return None;
+                }
+                match &trait_bound.path.segments.last()?.arguments {
+                    PathArguments::None => auto_traits.push(&trait_bound.path),
+                    PathArguments::AngleBracketed(arguments) => {
+                        let [GenericArgument::AssocType(associated)] =
+                            arguments.args.iter().collect::<Vec<_>>()[..]
+                        else {
+                            return None;
+                        };
+                        if associated.ident != "Output"
+                            || associated.generics.is_some()
+                            || future.is_some()
+                        {
+                            return None;
+                        }
+                        future = Some((&trait_bound.path, &associated.ty));
+                    }
+                    PathArguments::Parenthesized(_) => return None,
                 }
             }
             syn::TypeParamBound::Lifetime(_) => {}
             _ => return None,
         }
     }
-    return output;
+    let (future, output) = future?;
+    return Some((&boxed.path, future, auto_traits, output));
 }
 
 // Every function, constant, static, and export-name directive of `program` as text, which identifies
@@ -1494,6 +1645,91 @@ fn vec_clone_optional(rust_type: &Type) -> Option<bool> {
         return (named_type(inner).as_deref() == Some("Vec")).then_some(true);
     }
     return (named_type(rust_type).as_deref() == Some("Vec")).then_some(false);
+}
+
+// Whether a resolved path names the standard-library item `name`: `Pin` in `std`/`core::pin`, `Box`
+// in `std`/`alloc::boxed`, `Future` in `std`/`core::future`, and `Send` / `Sync` in
+// `std`/`core::marker`.
+fn is_standard_type_path(path: &[String], name: &str) -> bool {
+    let (module, roots): (&str, &[&str]) = match name {
+        "Box" => ("boxed", &["std", "alloc"]),
+        "Future" => ("future", &["std", "core"]),
+        "Pin" => ("pin", &["std", "core"]),
+        "Send" | "Sync" => ("marker", &["std", "core"]),
+        _ => return false,
+    };
+    return matches!(path, [root, path_module, path_name] if roots.contains(&root.as_str()) && path_module == module && path_name == name);
+}
+
+// The full path a type path names, following Rust's precedence: an explicit `use` (named, renamed or
+// `self`), a local type-namespace declaration, a glob import, then the prelude (`Box`, `Future` and the
+// marker traits) or an extern `std` / `core` / `alloc` root. `None` when that cannot be decided from this
+// source: an unknown root, a prelude name it does not model, or a glob outside the standard library that
+// could supply the name.
+// flight-lint: allow(hashmap-iteration) each local name has at most one recorded import target
+fn resolve_type_path(path: &syn::Path, context: &HashSet<String>) -> Option<Vec<String>> {
+    let segments = path
+        .segments
+        .iter()
+        .map(|segment| segment.ident.to_string())
+        .collect::<Vec<_>>();
+    let (first, rest) = segments.split_first()?;
+    if path.leading_colon.is_some() {
+        return Some(segments);
+    }
+    if context.contains(&format!("{TYPE_USE_MARKER}{first}")) {
+        let prefix = format!("{TYPE_USE_TARGET_MARKER}{first}{PROVENANCE_SEPARATOR}");
+        let imported = context
+            .iter()
+            .find_map(|marker| marker.strip_prefix(&prefix))?;
+        let mut resolved = imported.split("::").map(str::to_string).collect::<Vec<_>>();
+        resolved.extend(rest.iter().cloned());
+        return Some(resolved);
+    }
+    if context.contains(&format!("{TYPE_LOCAL_MARKER}{first}"))
+        || matches!(first.as_str(), "crate" | "self" | "super" | "Self")
+    {
+        return Some(
+            std::iter::once("crate".to_string())
+                .chain(segments.iter().cloned())
+                .collect(),
+        );
+    }
+    let globs = context
+        .iter()
+        .filter_map(|marker| marker.strip_prefix(TYPE_USE_GLOB_MARKER))
+        .collect::<Vec<_>>();
+    let standard_root = |path: &str| {
+        return matches!(path.split("::").next(), Some("std" | "core" | "alloc"));
+    };
+    if globs.iter().any(|glob| !standard_root(glob)) {
+        return None;
+    }
+    if rest.is_empty() {
+        for glob in globs {
+            let candidate = format!("{glob}::{first}")
+                .split("::")
+                .map(str::to_string)
+                .collect::<Vec<_>>();
+            if is_standard_type_path(&candidate, first) {
+                return Some(candidate);
+            }
+        }
+        let prelude = match first.as_str() {
+            "Box" => "std::boxed::Box",
+            "Future" => "core::future::Future",
+            "Send" => "core::marker::Send",
+            "Sized" => "core::marker::Sized",
+            "Sync" => "core::marker::Sync",
+            "Unpin" => "core::marker::Unpin",
+            _ => return None,
+        };
+        return Some(prelude.split("::").map(str::to_string).collect());
+    }
+    if matches!(first.as_str(), "std" | "core" | "alloc") {
+        return Some(segments);
+    }
+    return None;
 }
 
 // The `std::mem` function a call path names: `std::mem::f` / `core::mem::f`; `mem::take` /
@@ -9758,6 +9994,11 @@ pub(crate) fn emit_program(
             .iter()
             .map(|function| function.sig.ident.to_string()),
     );
+    insert_type_path_context(
+        &mut expression_context,
+        program.uses.iter(),
+        program.type_names.iter().cloned(),
+    );
     let (mut value_imports, mut type_imports) = cross_crate_imports(program, &expression_context);
     let mut source_context = expression_context.clone();
     if program.nullable_options {
@@ -10317,6 +10558,11 @@ pub(crate) fn emit_type(
         }
         Type::Paren(paren) => emit_type(&paren.elem, entities),
         Type::Path(path) => {
+            // A pinned boxed future is the value of an asynchronous host operation: `Promise<T>` in a
+            // type position. Async bodies and `.await` stay unsupported.
+            if let Some(output) = pinned_boxed_future_output(path, entities)? {
+                return Ok(format!("Promise<{}>", emit_type(output, entities)?));
+            }
             let Some(segment) = path.path.segments.last() else {
                 return Err(compile_error("empty Rust type path"));
             };
@@ -10404,18 +10650,6 @@ pub(crate) fn emit_type(
                     }
                 }
                 "Ref" => emit_single_generic_type(segment, entities),
-                // A pinned boxed future is the value of an asynchronous host operation: `Promise<T>` in a
-                // type position. Async bodies and `.await` stay unsupported.
-                "Pin" if pinned_boxed_future_output(segment).is_some() => Ok(format!(
-                    "Promise<{}>",
-                    emit_type(
-                        pinned_boxed_future_output(segment).expect("checked above"),
-                        entities
-                    )?
-                )),
-                "Pin" => Err(compile_error(
-                    "portable `Pin` is supported only as `Pin<Box<dyn Future<Output = T> + Send>>` in a type position",
-                )),
                 _ if entities.contains(&name) => Ok(format!("{name}Raw")),
                 _ => {
                     if matches!(segment.arguments, PathArguments::None) {
@@ -11486,6 +11720,7 @@ fn pattern_is_mutable(pattern: &Pat) -> bool {
     };
 }
 
+// flight-lint: allow(hashmap-iteration) type namespace names only populate a HashSet context
 fn preferred_aliases(
     program: &Program,
     alias_programs: &[Program],
@@ -11496,7 +11731,13 @@ fn preferred_aliases(
             if !is_public(&type_alias.vis) || !type_alias.generics.params.is_empty() {
                 continue;
             }
-            let rendered = emit_type(&type_alias.ty, &alias_program.entities)?;
+            let mut context = alias_program.entities.clone();
+            insert_type_path_context(
+                &mut context,
+                alias_program.uses.iter(),
+                alias_program.type_names.iter().cloned(),
+            );
+            let rendered = emit_type(&type_alias.ty, &context)?;
             if rendered.contains("=>") {
                 aliases
                     .entry(rendered)

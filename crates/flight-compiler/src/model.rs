@@ -34,6 +34,9 @@ pub(crate) struct Program {
     pub(crate) string_unions: BTreeMap<String, StringUnionStyle>,
     pub(crate) string_union_values: BTreeMap<String, BTreeMap<String, String>>,
     pub(crate) type_aliases: Vec<ItemType>,
+    // Every item the source declares in the type namespace (structs, enums, unions, traits, aliases,
+    // modules), so `use`-path resolution can see local shadows of standard names.
+    pub(crate) type_names: HashSet<String>,
     pub(crate) uses: Vec<ItemUse>,
 }
 
@@ -333,6 +336,20 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let string_unions = string_union_metadata.styles;
     let string_union_values = string_union_metadata.values;
 
+    let type_names = file
+        .items
+        .iter()
+        .filter_map(|item| match item {
+            Item::Enum(item) => Some(item.ident.to_string()),
+            Item::Mod(item) => Some(item.ident.to_string()),
+            Item::Struct(item) => Some(item.ident.to_string()),
+            Item::Trait(item) => Some(item.ident.to_string()),
+            Item::TraitAlias(item) => Some(item.ident.to_string()),
+            Item::Type(item) => Some(item.ident.to_string()),
+            Item::Union(item) => Some(item.ident.to_string()),
+            _ => None,
+        })
+        .collect::<HashSet<_>>();
     for item in &file.items {
         if let Item::Struct(structure) = item
             && has_entity_runtime(structure)
@@ -433,6 +450,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         string_unions,
         string_union_values,
         type_aliases,
+        type_names,
         uses,
     });
 }

@@ -755,6 +755,79 @@ pub struct Capability {
     }
 
     #[test]
+    fn lowers_qualified_and_aliased_standard_pinned_futures() {
+        for source in [
+            "pub type P = std::pin::Pin<std::boxed::Box<dyn std::future::Future<Output = u32> + std::marker::Send>>;\n",
+            "pub type P = ::core::pin::Pin<alloc::boxed::Box<dyn core::future::Future<Output = u32> + core::marker::Send + Sync + 'static>>;\n",
+            "use std::boxed::Box as Owned;\nuse std::future::Future as Pending;\nuse std::marker::Send as Movable;\nuse std::pin::Pin as Pinned;\npub type P = Pinned<Owned<dyn Pending<Output = u32> + Movable>>;\n",
+            "use std as standard;\nuse std::pin;\npub type P = pin::Pin<standard::boxed::Box<dyn Future<Output = u32>>>;\n",
+            "use std::pin::{self as pinning};\npub type P = pinning::Pin<Box<dyn Future<Output = u32> + Send>>;\n",
+            "use std::pin::*;\npub type P = Pin<Box<dyn Future<Output = u32> + Send>>;\n",
+        ] {
+            assert_eq!(
+                compile_typescript(source, None).unwrap(),
+                "export type P = Promise<number>;\n\n",
+                "{source}"
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_pinned_future_shapes_without_standard_provenance() {
+        let not_standard = "portable `Pin<Box<dyn Future<Output = T>>>` needs `Box`, `Future` and its auto-trait bounds to resolve to the standard library";
+        let unresolved = "cannot resolve the provenance of `Pin`; import it from `std::pin` to lower a pinned boxed future to `Promise`";
+        for (source, expected) in [
+            (
+                "use future_shapes::{Box, Future, Pin};\n\npub type LocalPending = Pin<Box<dyn Future<Output = u32>>>;\n",
+                "portable `Pin` here resolves to `future_shapes::Pin`, not `std::pin::Pin`; only the standard pinned boxed future lowers to `Promise`",
+            ),
+            (
+                "pub struct Pin<T> {\n    pub value: T,\n}\npub type P = Pin<Box<dyn Future<Output = u32>>>;\n",
+                "portable `Pin` here resolves to `crate::Pin`, not `std::pin::Pin`; only the standard pinned boxed future lowers to `Promise`",
+            ),
+            (
+                "use std::pin::Pin;\nuse future_shapes::Box;\npub type P = Pin<Box<dyn Future<Output = u32>>>;\n",
+                not_standard,
+            ),
+            (
+                "use std::pin::Pin;\ntrait Future { type Output; }\npub type P = Pin<Box<dyn Future<Output = u32>>>;\n",
+                not_standard,
+            ),
+            (
+                "use std::pin::Pin;\nuse future_shapes::Send;\npub type P = Pin<Box<dyn Future<Output = u32> + Send>>;\n",
+                not_standard,
+            ),
+            (
+                "use std::pin::Pin;\nuse future_shapes::*;\npub type P = Pin<Box<dyn Future<Output = u32>>>;\n",
+                not_standard,
+            ),
+            (
+                "use future_shapes::*;\npub type P = Pin<Box<dyn Future<Output = u32>>>;\n",
+                unresolved,
+            ),
+            (
+                "pub type P = Pin<Box<dyn Future<Output = u32>>>;\n",
+                unresolved,
+            ),
+            (
+                "pub type P = shapes::Pin<Box<dyn Future<Output = u32>>>;\n",
+                unresolved,
+            ),
+        ] {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected, "{source}");
+        }
+        assert_eq!(
+            compile_typescript(
+                "use future_shapes::Pin;\npub struct Handle {\n    pub pin: Pin,\n}\n",
+                None
+            )
+            .unwrap(),
+            "export interface Handle {\n  pin: Pin;\n}\n\n"
+        );
+    }
+
+    #[test]
     fn lowers_vec_retain_in_place_and_rejects_std_mem_moves() {
         let retain = "(<T>(items: T[], keep: (item: T) => boolean): void => { let kept = 0; let index = 0; try { for (; index < items.length; index += 1) { const item = items[index]; if (keep(item)) { items[kept] = item; kept += 1; } } } finally { const length = items.length; for (let rest = index; rest < length; rest += 1) { items[kept + rest - index] = items[rest]; } items.length = kept + length - index; } })";
         let source = r#"

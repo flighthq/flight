@@ -309,6 +309,23 @@ fn compile_vitest_with_contract_alias_sources_internal(
             .iter()
             .map(|helper| helper.sig.ident.to_string()),
     );
+    typescript::insert_type_path_context(
+        &mut context,
+        program
+            .uses
+            .iter()
+            .chain(program.suites.iter().flat_map(|suite| &suite.uses)),
+        program
+            .structs
+            .iter()
+            .map(|structure| structure.ident.to_string())
+            .chain(
+                program
+                    .type_aliases
+                    .iter()
+                    .map(|type_alias| type_alias.ident.to_string()),
+            ),
+    );
     typescript::insert_vitest_struct_context(
         &mut context,
         alias_programs.iter().flat_map(|program| &program.structs),

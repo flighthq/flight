@@ -8,7 +8,9 @@ import ts from 'typescript';
 
 // Regressions for the compiler's type-position lowering of `Pin<Box<dyn Future<Output = T> + Send>>`
 // to `Promise<T>`, run through the real `flight-compile` CLI: the emitted capability types typecheck under
-// `strict`, accept a Promise-returning implementation, reject a synchronous one, and resolve when run.
+// `strict`, accept a Promise-returning implementation, reject a synchronous one, and resolve when run. Only
+// `Pin`, `Box`, `Future` and auto-trait paths that resolve to the standard library lower; an imported or
+// local look-alike fails closed.
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const compilerPath = join(
@@ -31,6 +33,37 @@ pub type Exit = Pin<Box<dyn Future<Output = Outcome> + Send>>;
 pub struct Capability {
     pub exit: Arc<dyn Fn() -> Exit + Send + Sync>,
 }
+`;
+
+// Valid Rust that declares unrelated `Pin`, `Box` and `Future` items, and a consumer crate importing them.
+const SHADOW_DEPENDENCY_FIXTURE = `use std::sync::Arc;
+
+pub trait Future {
+    type Output;
+}
+
+pub struct Box<T: ?Sized>(pub Arc<T>);
+pub struct Pin<T>(pub T);
+`;
+
+const SHADOW_CONSUMER_FIXTURE = `use future_shapes::{Box, Future, Pin};
+
+pub type LocalPending = Pin<Box<dyn Future<Output = u32>>>;
+`;
+
+const QUALIFIED_FIXTURE = `pub type Qualified = std::pin::Pin<std::boxed::Box<dyn std::future::Future<Output = u32> + std::marker::Send>>;
+
+pub type Rooted = ::core::pin::Pin<alloc::boxed::Box<dyn core::future::Future<Output = String> + Send + Sync>>;
+`;
+
+const ALIASED_FIXTURE = `use std::boxed::Box as Owned;
+use std::future::Future as Pending;
+use std::marker::Send as Movable;
+use std::pin::{self as pinning, Pin as Pinned};
+
+pub type Aliased = Pinned<Owned<dyn Pending<Output = bool> + Movable>>;
+
+pub type ModuleAliased = pinning::Pin<Owned<dyn Pending<Output = u32>>>;
 `;
 
 let workDirectory = '';
@@ -92,11 +125,102 @@ describe('flight-compile pinned future lowering', () => {
     const { typescript } = compileRust('capability', CAPABILITY_FIXTURE);
     const source = `${typescript}\nexport const capability: Capability = { exit: async () => ({ ok: true }) };\n`;
     const javascript = ts.transpileModule(source, {
-      compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+      compilerOptions: {
+        module: ts.ModuleKind.CommonJS,
+        target: ts.ScriptTarget.ES2022,
+      },
     }).outputText;
-    const module = { exports: {} as { capability: { exit: () => Promise<{ ok: boolean }> } } };
+    const module = {
+      exports: {} as { capability: { exit: () => Promise<{ ok: boolean }> } },
+    };
     new Function('exports', 'module', javascript)(module.exports, module);
-    await expect(module.exports.capability.exit()).resolves.toEqual({ ok: true });
+    await expect(module.exports.capability.exit()).resolves.toEqual({
+      ok: true,
+    });
+  });
+
+  it('lowers qualified and aliased standard paths, and the result typechecks and runs', async () => {
+    const qualified = compileRust('qualified', QUALIFIED_FIXTURE);
+    expect(qualified.error).toBe('');
+    expect(qualified.typescript).toBe(
+      'export type Qualified = Promise<number>;\n\nexport type Rooted = Promise<string>;\n\n',
+    );
+    const aliased = compileRust('aliased', ALIASED_FIXTURE);
+    expect(aliased.error).toBe('');
+    expect(aliased.typescript).toBe(
+      'export type Aliased = Promise<boolean>;\n\nexport type ModuleAliased = Promise<number>;\n\n',
+    );
+    const usage = `${qualified.typescript}${aliased.typescript}export const run = async (): Promise<[number, string, boolean, number]> => {\n  const q: Qualified = Promise.resolve(1);\n  const r: Rooted = (async () => 'r')();\n  const a: Aliased = Promise.resolve(true);\n  const m: ModuleAliased = Promise.resolve(2);\n  return [await q, await r, await a, await m];\n};\n`;
+    expect(strictDiagnostics('paths', usage)).toEqual([]);
+    expect(
+      strictDiagnostics('paths-rejected', `${aliased.typescript}export const a: Aliased = true;\n`).length,
+    ).toBeGreaterThan(0);
+    const javascript = ts.transpileModule(usage, {
+      compilerOptions: {
+        module: ts.ModuleKind.CommonJS,
+        target: ts.ScriptTarget.ES2022,
+      },
+    }).outputText;
+    const module = { exports: {} as { run: () => Promise<unknown> } };
+    new Function('exports', 'module', javascript)(module.exports, module);
+    await expect(module.exports.run()).resolves.toEqual([1, 'r', true, 2]);
+  });
+
+  it('fails closed for the two-crate look-alike Pin, Box and Future', () => {
+    // Both crates are valid Rust: rustc builds the dependency and the consumer against it.
+    const dependency = join(workDirectory, 'future_shapes.rs');
+    const consumer = join(workDirectory, 'consumer.rs');
+    writeFileSync(dependency, SHADOW_DEPENDENCY_FIXTURE);
+    writeFileSync(consumer, SHADOW_CONSUMER_FIXTURE);
+    execFileSync(
+      'rustc',
+      [
+        '--edition',
+        '2024',
+        '--crate-type',
+        'lib',
+        '--crate-name',
+        'future_shapes',
+        '--out-dir',
+        workDirectory,
+        dependency,
+      ],
+      { stdio: 'pipe' },
+    );
+    execFileSync(
+      'rustc',
+      [
+        '--edition',
+        '2024',
+        '--crate-type',
+        'lib',
+        '--crate-name',
+        'consumer',
+        '--out-dir',
+        workDirectory,
+        '--extern',
+        `future_shapes=${join(workDirectory, 'libfuture_shapes.rlib')}`,
+        '-A',
+        'warnings',
+        consumer,
+      ],
+      { stdio: 'pipe' },
+    );
+    expect(compileRust('consumer', SHADOW_CONSUMER_FIXTURE).error).toBe(
+      'error: portable `Pin` here resolves to `future_shapes::Pin`, not `std::pin::Pin`; only the standard pinned boxed future lowers to `Promise`',
+    );
+    for (const [rust, expected] of [
+      [
+        'use std::pin::Pin;\nuse future_shapes::{Box, Future};\npub type P = Pin<Box<dyn Future<Output = u32>>>;\n',
+        'error: portable `Pin<Box<dyn Future<Output = T>>>` needs `Box`, `Future` and its auto-trait bounds to resolve to the standard library',
+      ],
+      [
+        'use future_shapes::*;\npub type P = Pin<Box<dyn Future<Output = u32>>>;\n',
+        'error: cannot resolve the provenance of `Pin`; import it from `std::pin` to lower a pinned boxed future to `Promise`',
+      ],
+    ] as const) {
+      expect(compileRust('shadow', rust).error).toBe(expected);
+    }
   });
 
   it('fails closed for async bodies, await, and other Pin shapes', () => {
