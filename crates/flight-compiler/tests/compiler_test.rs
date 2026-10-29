@@ -697,6 +697,104 @@ pub fn move_distance(a: &Segment, b: &Segment) -> f64 {
         }
     }
 
+    // A statement `.extend()` over a receiver declared as a Rust `Vec` and an argument declared as a
+    // `Vec` or slice lowers to an element loop, so no argument count ceiling applies. Sequence facts
+    // follow private struct fields, same-program struct returns and bare moves, and a name counts only
+    // when every binding of it agrees.
+    #[test]
+    fn lowers_vec_extend_over_declared_sequences() {
+        let source = r#"
+//! flight-compiler: data-union Id
+pub enum Id {
+    Number(i32),
+    Text(String),
+}
+
+struct Attempt {
+    unpacked: Vec<Id>,
+}
+
+fn make(extra: Vec<Id>) -> Attempt {
+    return Attempt { unpacked: extra };
+}
+
+pub fn joined(mut a: Vec<i32>, b: Vec<i32>) -> Vec<i32> {
+    a.extend(b);
+    return a;
+}
+
+pub fn appended(a: &mut Vec<i32>, b: &[i32]) {
+    a.extend_from_slice(b);
+}
+
+pub fn combined(degenerate: Vec<Id>, extra: Vec<Id>) -> Vec<Id> {
+    let mut combined_unpacked = degenerate;
+    let attempt = make(extra);
+    combined_unpacked.extend(attempt.unpacked);
+    return combined_unpacked;
+}
+
+pub fn doubled(mut a: Vec<i32>) -> Vec<i32> {
+    a.extend(a.clone());
+    return a;
+}
+
+pub fn filled(out: &mut Vec<i32>, element: &Vec<i32>) {
+    out.extend(element);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(
+            "export function joined(a: number[], b: number[]): number[] {\n  for (const element of b) {\n    a.push(element);\n  }\n  return a;\n}"
+        ));
+        assert!(output.contains("  a.push(...b);\n"));
+        assert!(output.contains(
+            "  let combinedUnpacked = degenerate;\n  const attempt = make(extra);\n  for (const element of attempt.unpacked) {\n    combinedUnpacked.push(element);\n  }\n"
+        ));
+        assert!(
+            output.contains("  for (const element of a.slice()) {\n    a.push(element);\n  }\n")
+        );
+        assert!(
+            output.contains("  for (const element1 of element) {\n    out.push(element1);\n  }\n")
+        );
+
+        for (source, expected) in [
+            (
+                "pub fn f(a: &mut Vec<i32>, b: &Vec<i32>) { a.extend(b.iter().map(|x| x * 2)); }\n",
+                "portable `.extend()` requires an argument declared as Rust `Vec` or slice; iterator and Option arguments are not supported",
+            ),
+            (
+                "pub fn f(a: &mut Vec<i32>, x: Option<i32>) { a.extend(x); }\n",
+                "portable `.extend()` requires an argument declared as Rust `Vec` or slice; iterator and Option arguments are not supported",
+            ),
+            (
+                "fn other() -> Vec<i32> { return Vec::new(); }\npub fn f(b: Vec<i32>) -> Vec<i32> { let mut v = other(); v.extend(b); return v; }\n",
+                "portable `.extend()` requires a receiver declared as Rust `Vec`",
+            ),
+            (
+                "pub fn f(s: &mut String, t: &str) { s.extend(t.chars()); }\n",
+                "portable `.extend()` requires a receiver declared as Rust `Vec`",
+            ),
+            (
+                "pub fn f(a: &mut i32, b: &[i32]) { a.extend_from_slice(b); }\n",
+                "portable `.extend_from_slice()` requires a receiver declared as Rust `Vec`",
+            ),
+            (
+                "pub fn f(a: &mut Vec<i32>, b: Vec<i32>) -> usize { let n = { a.extend(b) }; return a.len(); }\n",
+                "portable `.extend()` is supported only as a statement",
+            ),
+            (
+                "pub fn f(a: &mut Vec<i32>, b: Vec<i32>) { let g = |a: i32| a; a.extend(b); }\n",
+                "portable `.extend()` requires a receiver declared as Rust `Vec`",
+            ),
+        ] {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected);
+        }
+    }
+
     #[test]
     fn maps_trailing_options_to_optional_undefined_contracts() {
         let source = r#"

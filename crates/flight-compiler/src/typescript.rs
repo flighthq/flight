@@ -46,11 +46,17 @@ const RECORD_CLONE_TYPE_MARKER: &str = "@record-clone-type:";
 const RECORD_VEC_FIELD_MARKER: &str = "@record-vec-field:";
 const RETURN_TYPE_MARKER: &str = "@return-type:";
 const RETURNS_U32_MARKER: &str = "@returns-u32";
+// Struct fields (`Struct:field`) and locals or parameters whose every binding is declared as a Rust
+// `Vec` or slice, the operand types `.extend()` and `.extend_from_slice()` lower over.
+const SEQUENCE_FIELD_MARKER: &str = "@sequence-field:";
+const SEQUENCE_LOCAL_MARKER: &str = "@sequence-local:";
 const STRING_EXPRESSION_MARKER: &str = "@string-expression:";
 const STRING_RETURN_MARKER: &str = "@string-return:";
 const STRING_UNION_MARKER: &str = "@string-union:";
 // Locals and parameters declared as a named, non-Option Rust type, for resolving Option field reads.
 const STRUCT_LOCAL_MARKER: &str = "@struct-local:";
+// Functions returning a struct declared in the same program (`function:Struct`).
+const STRUCT_RETURN_MARKER: &str = "@struct-return:";
 const VITEST_STRUCT_LOCAL_MARKER: &str = "@vitest-struct-local:";
 const VITEST_STRUCT_OWNER_MARKER: &str = "@vitest-struct-owner:";
 const VITEST_PUBLIC_FUNCTION_MARKER: &str = "@vitest-public-function:";
@@ -322,6 +328,21 @@ fn rust_type_is_ordered_primitive(rust_type: &Type) -> bool {
     );
 }
 
+fn rust_type_is_sequence(rust_type: &Type) -> bool {
+    return match rust_type {
+        Type::Group(group) => rust_type_is_sequence(&group.elem),
+        Type::Paren(paren) => rust_type_is_sequence(&paren.elem),
+        Type::Reference(reference) => rust_type_is_sequence(&reference.elem),
+        Type::Slice(_) => true,
+        Type::Path(path) => path
+            .path
+            .segments
+            .last()
+            .is_some_and(|segment| segment.ident == "Vec"),
+        _ => false,
+    };
+}
+
 fn rust_type_is_string(rust_type: &Type) -> bool {
     return matches!(named_type(rust_type).as_deref(), Some("String" | "str"));
 }
@@ -406,6 +427,31 @@ fn entity_allocation(
         "Object.assign({allocation}, {{ {} }})",
         fields.join(", ")
     ));
+}
+
+// Both operands of `.extend()` / `.extend_from_slice()` must be declared as a Rust `Vec` (receiver) and
+// a `Vec` or slice (argument); iterator, Option and string operands are rejected.
+fn validate_sequence_operands(
+    method: &str,
+    call: &syn::ExprMethodCall,
+    entities: &HashSet<String>,
+) -> Result<(), CompileError> {
+    if call.args.len() != 1 {
+        return Err(compile_error(format!(
+            "portable `.{method}()` takes exactly one argument"
+        )));
+    }
+    if !expression_is_sequence(&call.receiver, entities) {
+        return Err(compile_error(format!(
+            "portable `.{method}()` requires a receiver declared as Rust `Vec`"
+        )));
+    }
+    if !expression_is_sequence(&call.args[0], entities) {
+        return Err(compile_error(format!(
+            "portable `.{method}()` requires an argument declared as Rust `Vec` or slice; iterator and Option arguments are not supported"
+        )));
+    }
+    return Ok(());
 }
 
 fn vec_clone_optional(rust_type: &Type) -> Option<bool> {
@@ -619,6 +665,141 @@ fn insert_data_union_context(
         }
     }
     return Ok(());
+}
+
+// Records the locals and parameters that hold a Rust `Vec` or slice, and the untyped locals bound to a
+// struct returned by a same-program function. A name counts only when every binding of it in the
+// function agrees, so a closure parameter, loop or match binding, or differently typed `let` of the
+// same name leaves it unknown. An untyped `let x = y` moves `y`'s sequence fact to `x`.
+fn insert_sequence_context(function: &ItemFn, context: &mut HashSet<String>) {
+    #[derive(Clone, PartialEq)]
+    enum Binding {
+        Other,
+        Sequence,
+        Structure(String),
+    }
+
+    struct BindingCollector<'a> {
+        bindings: BTreeMap<String, Vec<Binding>>,
+        context: &'a HashSet<String>,
+    }
+
+    impl BindingCollector<'_> {
+        fn initializer_binding(&self, expression: &Expr) -> Binding {
+            let Some(name) = (match expression {
+                Expr::Call(call) => single_path_identifier(&call.func),
+                expression => single_path_identifier(expression),
+            }) else {
+                return Binding::Other;
+            };
+            if !matches!(expression, Expr::Call(_)) {
+                let is_sequence = self
+                    .bindings
+                    .get(&name)
+                    .is_some_and(|bindings| bindings.iter().all(|b| *b == Binding::Sequence));
+                return if is_sequence {
+                    Binding::Sequence
+                } else {
+                    Binding::Other
+                };
+            }
+            let mut structures =
+                marker_suffixes(self.context, &format!("{STRUCT_RETURN_MARKER}{name}:"));
+            return match (structures.pop_first(), structures.is_empty()) {
+                (Some(structure), true) => Binding::Structure(structure),
+                _ => Binding::Other,
+            };
+        }
+    }
+
+    impl<'ast> syn::visit::Visit<'ast> for BindingCollector<'_> {
+        fn visit_local(&mut self, local: &'ast syn::Local) {
+            if let Some(initializer) = &local.init {
+                self.visit_expr(&initializer.expr);
+                if let Some((_, diverge)) = &initializer.diverge {
+                    self.visit_expr(diverge);
+                }
+            }
+            let binding = match &local.pat {
+                Pat::Type(typed) if matches!(typed.pat.as_ref(), Pat::Ident(_)) => {
+                    Some(typed_binding(&typed.ty))
+                }
+                Pat::Ident(identifier) if identifier.subpat.is_none() => {
+                    Some(local.init.as_ref().map_or(Binding::Other, |initializer| {
+                        self.initializer_binding(&initializer.expr)
+                    }))
+                }
+                _ => None,
+            };
+            match (binding, local_pattern_name(&local.pat)) {
+                (Some(binding), Some(name)) => {
+                    self.bindings.entry(name).or_default().push(binding);
+                }
+                _ => self.visit_pat(&local.pat),
+            }
+        }
+
+        fn visit_pat_ident(&mut self, pattern: &'ast syn::PatIdent) {
+            self.bindings
+                .entry(pattern.ident.to_string())
+                .or_default()
+                .push(Binding::Other);
+            syn::visit::visit_pat_ident(self, pattern);
+        }
+    }
+
+    fn single_path_identifier(expression: &Expr) -> Option<String> {
+        let Expr::Path(path) = expression else {
+            return None;
+        };
+        if path.qself.is_some() || path.path.segments.len() != 1 {
+            return None;
+        }
+        return Some(path.path.segments[0].ident.to_string());
+    }
+
+    fn typed_binding(rust_type: &Type) -> Binding {
+        if rust_type_is_sequence(rust_type) {
+            return Binding::Sequence;
+        }
+        return named_type(rust_type).map_or(Binding::Other, Binding::Structure);
+    }
+
+    let mut collector = BindingCollector {
+        bindings: BTreeMap::new(),
+        context,
+    };
+    for argument in &function.sig.inputs {
+        let FnArg::Typed(argument) = argument else {
+            continue;
+        };
+        match argument.pat.as_ref() {
+            Pat::Ident(pattern) if pattern.subpat.is_none() => collector
+                .bindings
+                .entry(pattern.ident.to_string())
+                .or_default()
+                .push(typed_binding(&argument.ty)),
+            pattern => syn::visit::Visit::visit_pat(&mut collector, pattern),
+        }
+    }
+    syn::visit::Visit::visit_block(&mut collector, &function.block);
+    let mut markers = Vec::new();
+    for (name, bindings) in collector.bindings {
+        let Some(first) = bindings.first() else {
+            continue;
+        };
+        if bindings.iter().any(|binding| binding != first) {
+            continue;
+        }
+        match first {
+            Binding::Sequence => markers.push(format!("{SEQUENCE_LOCAL_MARKER}{name}")),
+            Binding::Structure(structure) => {
+                markers.push(format!("{STRUCT_LOCAL_MARKER}{name}:{structure}"));
+            }
+            Binding::Other => {}
+        }
+    }
+    context.extend(markers);
 }
 
 // flight-lint: allow(hashmap-iteration) frozen-object validation guarantees one target name per Rust constant
@@ -1183,6 +1364,14 @@ fn generation_context_with_types(
                         named_type(inner).unwrap_or_default()
                     ));
                 }
+                if rust_type_is_sequence(&field.ty)
+                    && let Some(field_name) = &field.ident
+                {
+                    context.insert(format!(
+                        "{SEQUENCE_FIELD_MARKER}{}:{field_name}",
+                        structure.ident
+                    ));
+                }
             }
         }
         if program.nullable_options {
@@ -1268,6 +1457,15 @@ fn generation_context_with_types(
             if matches!(&function.sig.output, ReturnType::Type(_, rust_type) if rust_type_is_string(rust_type))
             {
                 context.insert(format!("{STRING_RETURN_MARKER}{function_name}"));
+            }
+            if let ReturnType::Type(_, rust_type) = &function.sig.output
+                && let Some(structure) = named_type(rust_type)
+                && program
+                    .structs
+                    .iter()
+                    .any(|candidate| candidate.ident == structure.as_str())
+            {
+                context.insert(format!("{STRUCT_RETURN_MARKER}{function_name}:{structure}"));
             }
             if let ReturnType::Type(_, rust_type) = &function.sig.output
                 && let Some(inner) = option_inner_type(rust_type)
@@ -1514,6 +1712,7 @@ pub(crate) fn function_expression_context(
         },
         &function.block,
     );
+    insert_sequence_context(function, &mut context);
     return context;
 }
 
@@ -4829,7 +5028,11 @@ fn emit_method_call(
         "to_string" if arguments.is_empty() => Ok(format!("String({receiver})")),
         "trunc" if arguments.is_empty() => Ok(format!("Math.trunc({receiver})")),
         "to_vec" if arguments.is_empty() => Ok(format!("[...{receiver}]")),
+        "extend" => Err(compile_error(
+            "portable `.extend()` is supported only as a statement",
+        )),
         "extend_from_slice" if arguments.len() == 1 => {
+            validate_sequence_operands("extend_from_slice", call, entities)?;
             Ok(format!("{receiver}.push(...{})", arguments[0]))
         }
         "wrapping_add" if arguments.len() == 1 => {
@@ -5047,6 +5250,38 @@ fn expression_is_reusable(expression: &Expr) -> bool {
         Expr::Reference(reference) => expression_is_reusable(&reference.expr),
         Expr::Unary(unary) if matches!(unary.op, UnOp::Deref(_)) => {
             expression_is_reusable(&unary.expr)
+        }
+        _ => false,
+    };
+}
+
+// Whether `expression` is declared as a Rust `Vec` or slice: a sequence local or parameter, a sequence
+// field of a struct-typed local, or a `.clone()` / `.to_vec()` of one.
+fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool {
+    return match expression {
+        Expr::Field(field) => {
+            let syn::Member::Named(field_name) = &field.member else {
+                return false;
+            };
+            expression_struct_name(&field.base, entities).is_some_and(|structure| {
+                entities.contains(&format!("{SEQUENCE_FIELD_MARKER}{structure}:{field_name}"))
+            })
+        }
+        Expr::Group(group) => expression_is_sequence(&group.expr, entities),
+        Expr::MethodCall(call)
+            if call.args.is_empty() && (call.method == "clone" || call.method == "to_vec") =>
+        {
+            expression_is_sequence(&call.receiver, entities)
+        }
+        Expr::Paren(paren) => expression_is_sequence(&paren.expr, entities),
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => entities
+            .contains(&format!(
+                "{SEQUENCE_LOCAL_MARKER}{}",
+                path.path.segments[0].ident
+            )),
+        Expr::Reference(reference) => expression_is_sequence(&reference.expr, entities),
+        Expr::Unary(unary) if matches!(unary.op, UnOp::Deref(_)) => {
+            expression_is_sequence(&unary.expr, entities)
         }
         _ => false,
     };
@@ -6120,6 +6355,9 @@ fn emit_statement(
                 out.push_str("}\n");
             }
         }
+        Stmt::Expr(Expr::MethodCall(call), _) if call.method == "extend" => {
+            emit_vec_extend_statement(out, call, entities, indent)?;
+        }
         Stmt::Expr(Expr::ForLoop(loop_expression), _) => {
             write_indent(out, indent);
             writeln!(
@@ -6632,6 +6870,49 @@ fn emit_unary_operator(operator: &UnOp) -> Result<&'static str, CompileError> {
         UnOp::Not(_) => Ok("!"),
         _ => Err(compile_error("unsupported Rust unary operator")),
     };
+}
+
+// `Vec::extend` as a statement: an element loop, so no argument count ceiling applies. The argument is
+// evaluated once by `for...of`, before the first push; the receiver is a declared local or field path,
+// which is side-effect free to repeat. The element binding avoids every identifier the operands use.
+fn emit_vec_extend_statement(
+    out: &mut String,
+    call: &syn::ExprMethodCall,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    validate_sequence_operands("extend", call, entities)?;
+    let receiver = emit_expression(&call.receiver, entities)?;
+    let argument = emit_expression(&call.args[0], entities)?;
+    if receiver == argument {
+        return Err(compile_error(
+            "portable `.extend()` cannot extend a `Vec` with itself",
+        ));
+    }
+    let used = format!("{receiver} {argument}")
+        .split(|character: char| {
+            !(character.is_alphanumeric() || character == '_' || character == '$')
+        })
+        .map(str::to_string)
+        .collect::<HashSet<_>>();
+    let element = (0..)
+        .map(|index| {
+            if index == 0 {
+                "element".to_string()
+            } else {
+                format!("element{index}")
+            }
+        })
+        .find(|name| !used.contains(name))
+        .expect("an unbounded candidate sequence always yields an unused name");
+    write_indent(out, indent);
+    writeln!(out, "for (const {element} of {argument}) {{")
+        .expect("writing to a String cannot fail");
+    write_indent(out, indent + 1);
+    writeln!(out, "{receiver}.push({element});").expect("writing to a String cannot fail");
+    write_indent(out, indent);
+    out.push_str("}\n");
+    return Ok(());
 }
 
 fn expression_contains_identifier(expression: &Expr, expected: &str) -> bool {
