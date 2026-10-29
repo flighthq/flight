@@ -240,7 +240,7 @@ describe('webHostNet', () => {
         headers: { 'content-length': '5' },
         streamChunks: [new Uint8Array([104, 105]), new Uint8Array([33, 33, 33])],
       })) as unknown as typeof fetch;
-    const progress = createSignal<(progress: Readonly<NetProgress>) => void>();
+    const progress = createSignal<Readonly<NetProgress>>();
     const ticks: NetProgress[] = [];
     progress.emit = (tick) => ticks.push({ ...tick });
     const res = await webHostNet.sendNetRequest({ method: 'GET', url: 'u', responseType: 'text' }, { progress });
@@ -253,7 +253,7 @@ describe('webHostNet', () => {
   it('uses zero for an unknown total in the no-stream progress fallback', async () => {
     const bytes = new Uint8Array([1, 2, 3]);
     globalThis.fetch = (async () => fakeResponse({ arraybuffer: bytes.buffer })) as unknown as typeof fetch;
-    const progress = createSignal<(progress: Readonly<NetProgress>) => void>();
+    const progress = createSignal<Readonly<NetProgress>>();
     const ticks: NetProgress[] = [];
     progress.emit = (tick) => ticks.push({ ...tick });
     await webHostNet.sendNetRequest({ method: 'GET', responseType: 'arraybuffer', url: 'u' }, { progress });

@@ -77,7 +77,7 @@ function _decodeNetBuffer(buffer: ArrayBuffer, responseType: NetResponseType): N
 async function _readNetResponseBody(
   response: Response,
   responseType: NetResponseType,
-  progress: Signal<(progress: Readonly<NetProgress>) => void> | undefined,
+  progress: Signal<Readonly<NetProgress>> | undefined,
 ): Promise<NetResponseBody> {
   if (progress !== undefined) {
     const buffer = await _readNetResponseWithProgress(response, progress);
@@ -97,7 +97,7 @@ async function _readNetResponseBody(
 
 async function _readNetResponseWithProgress(
   response: Response,
-  progress: Signal<(progress: Readonly<NetProgress>) => void>,
+  progress: Signal<Readonly<NetProgress>>,
 ): Promise<ArrayBuffer> {
   const total = _netContentLength(response.headers);
   const stream = response.body;
