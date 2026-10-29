@@ -40,12 +40,12 @@ fn read_unknown_filter(guard_state: &SwfGuardStateRef) -> bool {
     );
 }
 
-fn integer_field(entry: &LogEntry, key: &str) -> i64 {
+fn number_field(entry: &LogEntry, key: &str) -> f64 {
     let LogData::Record(data) = &entry.data else {
         panic!("expected record log data");
     };
     let Some(LogValue::Number(value)) = data.get(key) else {
-        panic!("expected integer field {key}");
+        panic!("expected number field {key}");
     };
     return *value;
 }
@@ -103,8 +103,8 @@ mod enable_swf_guards {
         });
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].channel.as_deref(), Some("swf"));
-        assert_eq!(integer_field(&entries[0], "filterId"), 0xfe);
-        assert_eq!(integer_field(&entries[0], "filterIndex"), 0);
+        assert_eq!(number_field(&entries[0], "filterId"), f64::from(0xfe_u8));
+        assert_eq!(number_field(&entries[0], "filterIndex"), 0.0);
         assert!(string_field(&entries[0], "message").contains("trailing blend mode"));
         assert_eq!(entries[0].timestamp_ms, 12.0);
     }
