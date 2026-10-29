@@ -1,6 +1,7 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+import { createPath } from '@flighthq/path/contract';
 import type { Bone2D, Path, PathAttachment2D, Skeleton2DDeformLengthMismatch, Skin2D } from '@flighthq/types/contract';
-import { EntityRuntimeKey, PathAttachment2DKind, PathCommand, TransformMode2D } from '@flighthq/types/contract';
+import { PathAttachment2DKind, PathCommand, TransformMode2D } from '@flighthq/types/contract';
 import { describe, expect, it } from 'vitest';
 
 import { deformSkeleton2DPathAttachment } from './deformPathAttachment2D.ts';
@@ -26,7 +27,7 @@ function makeBone(overrides: Partial<Bone2D> = {}): Bone2D {
 }
 
 function emptyPath(): Path {
-  return { [EntityRuntimeKey]: undefined, commands: [], data: [], winding: 'nonZero' };
+  return createPath('nonZero');
 }
 
 function weightedPath(skin: Skin2D, pointCount: number, commands: number[]): PathAttachment2D {

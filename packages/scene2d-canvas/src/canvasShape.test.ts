@@ -1,10 +1,18 @@
-﻿import { createMatrix } from '@flighthq/geometry/contract';
+import { allocateEntity } from '@flighthq/entity/contract';
+import { createMatrix } from '@flighthq/geometry/contract';
 import {
   createImageResource,
   registerTestImageDimensionResolver,
   unregisterTestImageDimensionResolver,
 } from '@flighthq/image/contract';
-import { appendPathLineTo, appendPathMoveTo, createPath, createPathMorph } from '@flighthq/path/contract';
+import type { PathMorphRaw } from '@flighthq/path/contract';
+import {
+  appendPathLineTo,
+  appendPathMoveTo,
+  createPath,
+  createPathMorph,
+  initializePathMorph,
+} from '@flighthq/path/contract';
 import {
   enableRenderRegistriesGuards,
   explainRenderRegistriesMisses,
@@ -116,13 +124,9 @@ describe('drawCanvasShape', () => {
     const canvas = document.createElement('canvas');
     const state = makeShapeState(canvas);
     registerNodeRenderer(state, MorphShapeKind, canvasMorphShapeRenderer);
-    const shape = createMorphShape({
-      [EntityRuntimeKey]: undefined,
-      commands: [],
-      endData: [],
-      startData: [],
-      winding: 'nonZero',
-    });
+    const morph = allocateEntity<PathMorphRaw>();
+    initializePathMorph(morph, [], [], [], 'nonZero');
+    const shape = createMorphShape(morph);
     const data = getOrCreateRenderProxy2D(state, shape);
 
     expect(canvasMorphShapeRenderer).toBe(canvasShapeRenderer);

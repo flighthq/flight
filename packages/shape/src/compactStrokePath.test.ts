@@ -1,16 +1,13 @@
-import type { Path } from '@flighthq/types/contract';
-import { EntityRuntimeKey, PathCommand } from '@flighthq/types/contract';
+import { appendPathLineTo, appendPathMoveTo, createPath } from '@flighthq/path/contract';
+import { PathCommand } from '@flighthq/types/contract';
 
 import { compactStrokePath } from './compactStrokePath.ts';
 
 describe('compactStrokePath', () => {
   it('converts an open centerline into a closed fill outline', () => {
-    const centerline: Path = {
-      [EntityRuntimeKey]: undefined,
-      commands: [PathCommand.MOVE_TO, PathCommand.LINE_TO],
-      data: [0, 0, 20, 0],
-      winding: 'nonZero',
-    };
+    const centerline = createPath('nonZero');
+    appendPathMoveTo(centerline, 0, 0);
+    appendPathLineTo(centerline, 20, 0);
 
     const outline = compactStrokePath(centerline, { cap: 'square', width: 4 });
 
@@ -21,12 +18,8 @@ describe('compactStrokePath', () => {
   });
 
   it('returns an empty path for a centerline without a segment', () => {
-    const centerline: Path = {
-      [EntityRuntimeKey]: undefined,
-      commands: [PathCommand.MOVE_TO],
-      data: [0, 0],
-      winding: 'nonZero',
-    };
+    const centerline = createPath('nonZero');
+    appendPathMoveTo(centerline, 0, 0);
 
     expect(compactStrokePath(centerline, { width: 4 }).commands).toEqual([]);
   });
