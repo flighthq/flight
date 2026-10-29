@@ -37,6 +37,11 @@ const FUNCTION_OWNER_MARKER: &str = "@function-owner:";
 // declarations alone.
 const USE_BINDING_MARKER: &str = "@use-binding:";
 const USE_GLOB_MARKER: &str = "@use-glob:";
+// The public subset of the same bindings. Resolution starts with all bindings in the source being
+// compiled, then follows only these markers through intermediate modules so a private import never
+// becomes an accidental re-export.
+const PUBLIC_USE_BINDING_MARKER: &str = "@public-use-binding:";
+const PUBLIC_USE_GLOB_MARKER: &str = "@public-use-glob:";
 const IDENTITY_ALIAS_MARKER: &str = "@identity-alias:";
 const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
 const NULLABLE_OPTION_FIELD_MARKER: &str = "@nullable-option-field:";
@@ -137,6 +142,8 @@ impl ProvenanceIdentity {
 }
 
 type ProvenanceDeclarations = BTreeMap<String, BTreeSet<ProvenanceIdentity>>;
+type ProvenanceBindings = BTreeMap<String, BTreeSet<ProvenanceIdentity>>;
+type ProvenanceModuleBindings = BTreeMap<String, ProvenanceBindings>;
 
 #[derive(Clone, Debug)]
 enum ProvenanceImportRule {
@@ -376,6 +383,17 @@ fn resolve_owner(
     from: &str,
     name: &str,
 ) -> Option<(String, String)> {
+    return resolve_owner_inner(entities, marker, from, name, false, &mut BTreeSet::new());
+}
+
+fn resolve_owner_inner(
+    entities: &HashSet<String>,
+    marker: &str,
+    from: &str,
+    name: &str,
+    public_only: bool,
+    visited: &mut BTreeSet<(String, String, bool)>,
+) -> Option<(String, String)> {
     fn unique(mut candidates: BTreeSet<(String, String)>) -> Option<(String, String)> {
         return match (candidates.pop_first(), candidates.is_empty()) {
             (Some(candidate), true) => Some(candidate),
@@ -383,14 +401,22 @@ fn resolve_owner(
         };
     }
 
+    if !visited.insert((from.to_string(), name.to_string(), public_only)) {
+        return None;
+    }
     if entities.contains(&owner_marker(marker, from, name, true))
-        || entities.contains(&owner_marker(marker, from, name, false))
+        || (!public_only && entities.contains(&owner_marker(marker, from, name, false)))
     {
         return Some((from.to_string(), name.to_string()));
     }
+    let binding_marker = if public_only {
+        PUBLIC_USE_BINDING_MARKER
+    } else {
+        USE_BINDING_MARKER
+    };
     let bindings = marker_suffixes(
         entities,
-        &format!("{USE_BINDING_MARKER}{from}{PROVENANCE_SEPARATOR}{name}{PROVENANCE_SEPARATOR}"),
+        &format!("{binding_marker}{from}{PROVENANCE_SEPARATOR}{name}{PROVENANCE_SEPARATOR}"),
     );
     if !bindings.is_empty() {
         return unique(
@@ -398,23 +424,51 @@ fn resolve_owner(
                 .into_iter()
                 .filter_map(|binding| {
                     let (target, item) = binding.split_once(PROVENANCE_SEPARATOR)?;
-                    entities
-                        .contains(&owner_marker(marker, target, item, true))
-                        .then(|| (target.to_string(), item.to_string()))
+                    let mut branch = visited.clone();
+                    resolve_owner_inner(entities, marker, target, item, true, &mut branch)
                 })
                 .collect(),
         );
     }
+    let glob_marker = if public_only {
+        PUBLIC_USE_GLOB_MARKER
+    } else {
+        USE_GLOB_MARKER
+    };
     return unique(
         marker_suffixes(
             entities,
-            &format!("{USE_GLOB_MARKER}{from}{PROVENANCE_SEPARATOR}"),
+            &format!("{glob_marker}{from}{PROVENANCE_SEPARATOR}"),
         )
         .into_iter()
-        .filter(|target| entities.contains(&owner_marker(marker, target, name, true)))
-        .map(|target| (target, name.to_string()))
+        .filter_map(|target| {
+            let mut branch = visited.clone();
+            resolve_owner_inner(entities, marker, &target, name, true, &mut branch)
+        })
         .collect(),
     );
+}
+
+// Resolve a Rust path from `from`. An unqualified name sees private bindings in its own source; a
+// qualified path enters its target module through that module's public surface.
+fn resolve_path_owner(
+    entities: &HashSet<String>,
+    marker: &str,
+    from: &str,
+    path: &syn::Path,
+) -> Option<(String, String)> {
+    let mut segments = path
+        .segments
+        .iter()
+        .map(|segment| segment.ident.to_string())
+        .collect::<Vec<_>>();
+    let name = segments.pop()?;
+    if segments.is_empty() {
+        return resolve_owner(entities, marker, from, &name);
+    }
+    let from = module_identity_segments(from)?;
+    let target = resolve_use_prefix(&from, &segments)?.join("::");
+    return resolve_owner_inner(entities, marker, &target, &name, true, &mut BTreeSet::new());
 }
 
 // The canonical identity (`module SEP Struct`) of the struct `rust_type` names, resolved from the
@@ -447,8 +501,16 @@ fn resolved_type_identity(
     from: &str,
     rust_type: &Type,
 ) -> Option<String> {
-    let name = named_type(rust_type)?;
-    let (owner, declaration) = resolve_owner(entities, STRUCT_OWNER_MARKER, from, &name)?;
+    let path = match rust_type {
+        Type::Group(group) => return resolved_type_identity(entities, from, &group.elem),
+        Type::Paren(paren) => return resolved_type_identity(entities, from, &paren.elem),
+        Type::Reference(reference) => {
+            return resolved_type_identity(entities, from, &reference.elem);
+        }
+        Type::Path(path) if path.qself.is_none() => &path.path,
+        _ => return None,
+    };
+    let (owner, declaration) = resolve_path_owner(entities, STRUCT_OWNER_MARKER, from, path)?;
     return Some(format!("{owner}{PROVENANCE_SEPARATOR}{declaration}"));
 }
 
@@ -990,6 +1052,39 @@ fn function_fact(entities: &HashSet<String>, marker: &str, function_name: &str) 
             &format!("{VITEST_PUBLIC_FUNCTION_MARKER}{function_name}{PROVENANCE_SEPARATOR}"),
         )?,
     };
+    return function_identity_fact(entities, marker, &identity);
+}
+
+// The fact for a qualified or unqualified function path. The path resolver is deliberately neutral
+// about the fact being requested; sequence, Option and struct-return consumers all receive the same
+// canonical function identity.
+fn function_path_fact(
+    entities: &HashSet<String>,
+    marker: &str,
+    path: &syn::Path,
+) -> Option<String> {
+    let identity = match current_source(entities) {
+        Some(current) => {
+            let (owner, declaration) =
+                resolve_path_owner(entities, FUNCTION_OWNER_MARKER, &current, path)?;
+            format!("{owner}{PROVENANCE_SEPARATOR}{declaration}")
+        }
+        None => {
+            let function = vitest_path_binding_name(path, entities)?;
+            unique_marker_suffix(
+                entities,
+                &format!("{VITEST_PUBLIC_FUNCTION_MARKER}{function}{PROVENANCE_SEPARATOR}"),
+            )?
+        }
+    };
+    return function_identity_fact(entities, marker, &identity);
+}
+
+fn function_identity_fact(
+    entities: &HashSet<String>,
+    marker: &str,
+    identity: &str,
+) -> Option<String> {
     let mut facts = marker_suffixes(
         entities,
         &format!("{marker}{identity}{PROVENANCE_SEPARATOR}"),
@@ -1021,7 +1116,7 @@ fn frozen_object_expression_name<'a>(
 fn source_module_name(source: &str) -> String {
     let normalized = source.replace('\\', "/");
     let relative = normalized
-        .split_once("/src/")
+        .rsplit_once("/src/")
         .map(|(_, relative)| relative)
         .or_else(|| normalized.strip_prefix("src/"))
         .unwrap_or(&normalized);
@@ -1075,32 +1170,63 @@ fn use_tree_paths<'a>(uses: impl Iterator<Item = &'a ItemUse>) -> Vec<UsePath> {
 
 fn provenance_import_rules<'a>(
     uses: impl Iterator<Item = &'a ItemUse>,
+    source_module: Option<&str>,
 ) -> Vec<ProvenanceImportRule> {
-    fn module_name(prefix: &[String]) -> Option<String> {
-        let meaningful = prefix
-            .iter()
-            .filter(|segment| !matches!(segment.as_str(), "crate" | "self" | "super"))
-            .cloned()
-            .collect::<Vec<_>>();
-        if meaningful.is_empty() {
-            return prefix
-                .iter()
-                .any(|segment| segment == "crate")
-                .then(|| "crate".to_string());
+    fn module_name(prefix: &[String], source_module: Option<&str>) -> Option<String> {
+        let first = prefix.first()?;
+        if first == "crate" {
+            if prefix.len() == 1 {
+                return Some("crate".to_string());
+            }
+            let mut module = Vec::new();
+            if let Some(source_module) = source_module
+                && !source_module.contains(['/', '\\'])
+                && let Some(crate_name) = source_module_name(source_module).split("::").next()
+                && source_module.contains("::")
+            {
+                module.push(crate_name.to_string());
+            }
+            module.extend(prefix[1..].iter().cloned());
+            return Some(module.join("::"));
         }
-        return Some(meaningful.join("::"));
+        if first == "self" {
+            if prefix.len() == 1 {
+                return None;
+            }
+            let mut module = source_module
+                .map(source_module_name)
+                .filter(|module| !module.is_empty())
+                .map(|module| module.split("::").map(str::to_string).collect::<Vec<_>>())
+                .unwrap_or_default();
+            module.extend(prefix[1..].iter().cloned());
+            return (!module.is_empty()).then(|| module.join("::"));
+        }
+        if first == "super" {
+            let mut module = source_module
+                .map(source_module_name)
+                .filter(|module| !module.is_empty())
+                .map(|module| module.split("::").map(str::to_string).collect::<Vec<_>>())
+                .unwrap_or_default();
+            let mut index = 0;
+            while prefix.get(index).is_some_and(|segment| segment == "super") {
+                module.pop();
+                index += 1;
+            }
+            module.extend(prefix[index..].iter().cloned());
+            return (!module.is_empty()).then(|| module.join("::"));
+        }
+        return Some(prefix.join("::"));
     }
 
     return use_tree_paths(uses)
         .into_iter()
         .filter_map(|path| match path.item {
-            None => {
-                module_name(&path.prefix).map(|module| ProvenanceImportRule::Wildcard { module })
-            }
+            None => module_name(&path.prefix, source_module)
+                .map(|module| ProvenanceImportRule::Wildcard { module }),
             Some((imported, exported)) => Some(ProvenanceImportRule::Explicit {
                 exported,
                 imported,
-                module: module_name(&path.prefix),
+                module: module_name(&path.prefix, source_module),
             }),
         })
         .collect();
@@ -1109,14 +1235,15 @@ fn provenance_import_rules<'a>(
 fn contract_export_rules(source: &str) -> Result<Vec<ProvenanceImportRule>, CompileError> {
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust contract source: {error}")))?;
-    return Ok(provenance_import_rules(file.items.iter().filter_map(
-        |item| {
+    return Ok(provenance_import_rules(
+        file.items.iter().filter_map(|item| {
             let Item::Use(rust_use) = item else {
                 return None;
             };
             is_public(&rust_use.vis).then_some(rust_use)
-        },
-    )));
+        }),
+        None,
+    ));
 }
 
 fn identities_in_module(
@@ -1138,6 +1265,7 @@ fn resolved_production_type_identities(
     declarations: &ProvenanceDeclarations,
     local_bindings: &BTreeMap<String, BTreeSet<ProvenanceIdentity>>,
     crate_root: &BTreeMap<String, BTreeSet<ProvenanceIdentity>>,
+    module_bindings: &ProvenanceModuleBindings,
 ) -> BTreeSet<ProvenanceIdentity> {
     let rust_type = match rust_type {
         Type::Group(group) => {
@@ -1146,6 +1274,7 @@ fn resolved_production_type_identities(
                 declarations,
                 local_bindings,
                 crate_root,
+                module_bindings,
             );
         }
         Type::Paren(paren) => {
@@ -1154,6 +1283,7 @@ fn resolved_production_type_identities(
                 declarations,
                 local_bindings,
                 crate_root,
+                module_bindings,
             );
         }
         Type::Reference(reference) => {
@@ -1162,6 +1292,7 @@ fn resolved_production_type_identities(
                 declarations,
                 local_bindings,
                 crate_root,
+                module_bindings,
             );
         }
         Type::Path(path) if path.qself.is_none() => path,
@@ -1196,6 +1327,9 @@ fn resolved_production_type_identities(
     if module.is_empty() {
         return BTreeSet::new();
     }
+    if let Some(bindings) = module_bindings.get(&module) {
+        return bindings.get(declaration).cloned().unwrap_or_default();
+    }
     return identities_in_module(declarations, &module, Some(declaration));
 }
 
@@ -1204,21 +1338,29 @@ fn resolve_import_rules(
     rules: &[ProvenanceImportRule],
     seed: BTreeMap<String, BTreeSet<ProvenanceIdentity>>,
     crate_root: &BTreeMap<String, BTreeSet<ProvenanceIdentity>>,
+    module_bindings: &ProvenanceModuleBindings,
 ) -> BTreeMap<String, BTreeSet<ProvenanceIdentity>> {
     let mut bindings = seed;
     for rule in rules {
         match rule {
             ProvenanceImportRule::Wildcard { module } => {
-                let identities = if module == "crate" {
-                    crate_root.values().flatten().cloned().collect()
+                let exports = if module == "crate" {
+                    crate_root.clone()
+                } else if let Some(bindings) = module_bindings.get(module) {
+                    bindings.clone()
                 } else {
                     identities_in_module(declarations, module, None)
+                        .into_iter()
+                        .fold(ProvenanceBindings::new(), |mut bindings, identity| {
+                            bindings
+                                .entry(identity.declaration.clone())
+                                .or_default()
+                                .insert(identity);
+                            bindings
+                        })
                 };
-                for identity in identities {
-                    bindings
-                        .entry(identity.declaration.clone())
-                        .or_default()
-                        .insert(identity);
+                for (exported, identities) in exports {
+                    bindings.entry(exported).or_default().extend(identities);
                 }
             }
             ProvenanceImportRule::Explicit {
@@ -1228,6 +1370,8 @@ fn resolve_import_rules(
             } => {
                 let identities = if module == "crate" {
                     crate_root.get(imported).cloned().unwrap_or_default()
+                } else if let Some(bindings) = module_bindings.get(module) {
+                    bindings.get(imported).cloned().unwrap_or_default()
                 } else {
                     identities_in_module(declarations, module, Some(imported))
                 };
@@ -1263,14 +1407,75 @@ fn resolve_import_rules(
     return bindings;
 }
 
+fn public_module_bindings(
+    declarations: &ProvenanceDeclarations,
+    programs: &[(&str, &Program)],
+) -> ProvenanceModuleBindings {
+    let mut direct = ProvenanceModuleBindings::new();
+    for identity in declarations.values().flatten() {
+        direct
+            .entry(source_module_name(&identity.module))
+            .or_default()
+            .entry(identity.declaration.clone())
+            .or_default()
+            .insert(identity.clone());
+    }
+    let rules = programs
+        .iter()
+        .map(|(module, program)| {
+            (
+                source_module_name(module),
+                provenance_import_rules(
+                    program
+                        .uses
+                        .iter()
+                        .filter(|rust_use| is_public(&rust_use.vis)),
+                    Some(module),
+                ),
+            )
+        })
+        .collect::<BTreeMap<_, _>>();
+    let mut bindings = direct.clone();
+    loop {
+        let mut next = direct.clone();
+        for (module, rules) in &rules {
+            let seed = next.remove(module).unwrap_or_default();
+            let resolved =
+                resolve_import_rules(declarations, rules, seed, &BTreeMap::new(), &bindings);
+            next.insert(module.clone(), resolved);
+        }
+        if next == bindings {
+            return bindings;
+        }
+        bindings = next;
+    }
+}
+
 fn provenance_bindings(
     declarations: &ProvenanceDeclarations,
+    module_bindings: &ProvenanceModuleBindings,
     contract_rules: Option<&[ProvenanceImportRule]>,
     kind: &str,
 ) -> Result<BTreeMap<String, ProvenanceIdentity>, CompileError> {
     let candidates = contract_rules.map_or_else(
         || declarations.clone(),
-        |rules| resolve_import_rules(declarations, rules, BTreeMap::new(), &BTreeMap::new()),
+        |rules| {
+            let mut bindings = BTreeMap::new();
+            loop {
+                let next = resolve_import_rules(
+                    declarations,
+                    rules,
+                    bindings.clone(),
+                    &bindings,
+                    module_bindings,
+                );
+                if next == bindings {
+                    break;
+                }
+                bindings = next;
+            }
+            bindings
+        },
     );
     let mut bindings = BTreeMap::new();
     for (exported, matches) in candidates {
@@ -1485,7 +1690,10 @@ fn resolved_vitest_struct_binding(
     );
 }
 
-fn vitest_path_binding_name(path: &syn::Path, context: &HashSet<String>) -> Option<String> {
+pub(crate) fn vitest_path_binding_name(
+    path: &syn::Path,
+    context: &HashSet<String>,
+) -> Option<String> {
     let last = path.segments.last()?.ident.to_string();
     if path.segments.len() == 1 {
         return Some(last);
@@ -1533,6 +1741,14 @@ pub(crate) fn vitest_pattern_context(context: &HashSet<String>, pattern: &Pat) -
     for binding in provenance_pattern_bindings(pattern) {
         clear_provenance_binding(&mut scoped, VITEST_PUBLIC_FUNCTION_MARKER, &binding);
         clear_provenance_binding(&mut scoped, VITEST_FUNCTION_CANDIDATE_MARKER, &binding);
+        clear_provenance_binding(&mut scoped, VITEST_STRUCT_LOCAL_MARKER, &binding);
+    }
+    if let Pat::Type(typed) = pattern
+        && let Some(binding) = local_pattern_name(&typed.pat)
+        && let Some(structure) = vitest_named_type(&typed.ty, &scoped)
+        && let Some(identity) = vitest_struct_owner(&scoped, &structure)
+    {
+        insert_provenance_binding(&mut scoped, VITEST_STRUCT_LOCAL_MARKER, &binding, &identity);
     }
     return scoped;
 }
@@ -1586,7 +1802,19 @@ pub(crate) fn insert_vitest_import_alias_context<'a>(
     uses: impl Iterator<Item = &'a ItemUse>,
 ) {
     let local_crates = marker_suffixes(context, VITEST_LOCAL_CRATE_MARKER);
-    let all_rules = provenance_import_rules(uses);
+    let all_rules = provenance_import_rules(uses, None);
+    let module_is_local = |module: &str| {
+        module == "crate"
+            || local_crates
+                .iter()
+                .any(|local| module == local || module.starts_with(&format!("{local}::")))
+    };
+    let foreign_wildcard = all_rules.iter().any(|rule| {
+        matches!(rule, ProvenanceImportRule::Wildcard { module } if !module_is_local(module))
+    });
+    let local_wildcard = all_rules.iter().any(
+        |rule| matches!(rule, ProvenanceImportRule::Wildcard { module } if module_is_local(module)),
+    );
     let rules = all_rules
         .iter()
         .filter_map(|rule| match rule {
@@ -1594,13 +1822,7 @@ pub(crate) fn insert_vitest_import_alias_context<'a>(
                 exported,
                 imported,
                 module,
-            } if module.as_deref().is_none_or(|module| {
-                module == "crate"
-                    || local_crates
-                        .iter()
-                        .any(|local| module == local || module.starts_with(&format!("{local}::")))
-            }) =>
-            {
+            } if module.as_deref().is_none_or(&module_is_local) => {
                 Some((exported.clone(), imported.clone()))
             }
             ProvenanceImportRule::Explicit { .. } => None,
@@ -1621,9 +1843,20 @@ pub(crate) fn insert_vitest_import_alias_context<'a>(
         VITEST_STRUCT_CANDIDATE_MARKER,
     ] {
         let base = provenance_binding_table(context, marker);
+        let clear_current_selections = foreign_wildcard
+            && !local_wildcard
+            && matches!(
+                marker,
+                VITEST_PUBLIC_FUNCTION_MARKER | VITEST_STRUCT_OWNER_MARKER
+            );
+        let seed = if clear_current_selections {
+            BTreeMap::new()
+        } else {
+            base.clone()
+        };
         let mut bindings = base.clone();
         for _ in 0..=rules.len() {
-            let mut next = base.clone();
+            let mut next = seed.clone();
             for target in &targets {
                 next.remove(target);
             }
@@ -1805,10 +2038,10 @@ pub(crate) fn validate_vitest_function_provenance(
         }
 
         fn visit_expr_struct(&mut self, structure: &'ast syn::ExprStruct) {
-            if structure.path.segments.len() == 1
-                && let Some(owner) = structure.path.segments.first()
+            if structure.qself.is_none()
+                && let Some(owner) = vitest_path_binding_name(&structure.path, self.context)
             {
-                self.structures.insert(owner.ident.to_string());
+                self.record_struct_binding(owner);
             }
             syn::visit::visit_expr_struct(self, structure);
         }
@@ -1947,6 +2180,8 @@ fn generation_context_with_types(
             }
         }
     }
+    let public_struct_module_bindings = public_module_bindings(&public_struct_owners, programs);
+    let public_function_module_bindings = public_module_bindings(&public_function_owners, programs);
     if strict_vitest_provenance {
         for (declaration, identities) in &public_struct_owners {
             for identity in identities {
@@ -1971,11 +2206,13 @@ fn generation_context_with_types(
         let contract_rules = contract_source.map(contract_export_rules).transpose()?;
         let struct_bindings = provenance_bindings(
             &public_struct_owners,
+            &public_struct_module_bindings,
             contract_rules.as_deref(),
             "struct/type",
         )?;
         let function_bindings = provenance_bindings(
             &public_function_owners,
+            &public_function_module_bindings,
             contract_rules.as_deref(),
             "function",
         )?;
@@ -2029,17 +2266,33 @@ fn generation_context_with_types(
         .collect::<HashMap<_, _>>();
     for (module, program) in programs {
         if let Some(segments) = module_identity_segments(module) {
-            for path in use_tree_paths(program.uses.iter()) {
-                let Some(target) = resolve_use_prefix(&segments, &path.prefix) else {
-                    continue;
-                };
-                let target = target.join("::");
-                context.insert(match path.item {
-                    Some((imported, exported)) => format!(
-                        "{USE_BINDING_MARKER}{module}{PROVENANCE_SEPARATOR}{exported}{PROVENANCE_SEPARATOR}{target}{PROVENANCE_SEPARATOR}{imported}"
-                    ),
-                    None => format!("{USE_GLOB_MARKER}{module}{PROVENANCE_SEPARATOR}{target}"),
-                });
+            for rust_use in &program.uses {
+                for path in use_tree_paths(std::iter::once(rust_use)) {
+                    let Some(target) = resolve_use_prefix(&segments, &path.prefix) else {
+                        continue;
+                    };
+                    let target = target.join("::");
+                    let (binding, public_binding) = match path.item {
+                        Some((imported, exported)) => (
+                            format!(
+                                "{USE_BINDING_MARKER}{module}{PROVENANCE_SEPARATOR}{exported}{PROVENANCE_SEPARATOR}{target}{PROVENANCE_SEPARATOR}{imported}"
+                            ),
+                            format!(
+                                "{PUBLIC_USE_BINDING_MARKER}{module}{PROVENANCE_SEPARATOR}{exported}{PROVENANCE_SEPARATOR}{target}{PROVENANCE_SEPARATOR}{imported}"
+                            ),
+                        ),
+                        None => (
+                            format!("{USE_GLOB_MARKER}{module}{PROVENANCE_SEPARATOR}{target}"),
+                            format!(
+                                "{PUBLIC_USE_GLOB_MARKER}{module}{PROVENANCE_SEPARATOR}{target}"
+                            ),
+                        ),
+                    };
+                    context.insert(binding);
+                    if is_public(&rust_use.vis) {
+                        context.insert(public_binding);
+                    }
+                }
             }
         }
         for structure in &program.structs {
@@ -2092,9 +2345,10 @@ fn generation_context_with_types(
                 .collect::<BTreeMap<_, _>>();
         let production_struct_bindings = resolve_import_rules(
             &public_struct_owners,
-            &provenance_import_rules(program.uses.iter()),
+            &provenance_import_rules(program.uses.iter(), Some(module)),
             local_struct_bindings,
             &contract_struct_bindings,
+            &public_struct_module_bindings,
         );
         context.extend(program.entities.iter().cloned());
         context.extend(
@@ -2214,6 +2468,7 @@ fn generation_context_with_types(
                     &public_struct_owners,
                     &production_struct_bindings,
                     &contract_struct_bindings,
+                    &public_struct_module_bindings,
                 );
                 let function_identity = ProvenanceIdentity {
                     declaration: function_name.clone(),
@@ -2562,7 +2817,10 @@ pub(crate) fn update_vitest_local_function_context(
     local: &syn::Local,
     context: &mut HashSet<String>,
 ) {
-    *context = vitest_pattern_context(context, &local.pat);
+    for binding in provenance_pattern_bindings(&local.pat) {
+        clear_provenance_binding(context, VITEST_PUBLIC_FUNCTION_MARKER, &binding);
+        clear_provenance_binding(context, VITEST_FUNCTION_CANDIDATE_MARKER, &binding);
+    }
 }
 
 // The canonical identity of the struct `rust_type` names in the code being emitted: resolved from the
@@ -3734,18 +3992,17 @@ fn emit_contextual_struct_literal_expression(
         Expr::Reference(reference) => {
             return emit_contextual_struct_literal_expression(&reference.expr, entities);
         }
-        Expr::Struct(structure)
-            if structure.path.segments.len() == 1
-                && structure.path.segments.first().is_some_and(|segment| {
-                    is_vitest_struct(entities, &segment.ident.to_string())
-                }) =>
-        {
+        Expr::Struct(structure) if structure.qself.is_none() => {
+            let Some(structure_name) = vitest_path_binding_name(&structure.path, entities)
+                .filter(|name| is_vitest_struct(entities, name))
+            else {
+                return emit_expression(expression, entities);
+            };
             if structure.rest.is_some() {
                 return Err(compile_error(
                     "unsupported struct update expression; refusing a lossy object literal",
                 ));
             }
-            let structure_name = structure.path.segments[0].ident.to_string();
             let structure_identity = vitest_struct_owner(entities, &structure_name);
             let fields = structure
                 .fields
@@ -3902,8 +4159,8 @@ fn inferred_vitest_struct_literal_type(
         Expr::Reference(reference) => {
             inferred_vitest_struct_literal_type(&reference.expr, entities)
         }
-        Expr::Struct(structure) if structure.path.segments.len() == 1 => {
-            let name = structure.path.segments.first()?.ident.to_string();
+        Expr::Struct(structure) if structure.qself.is_none() => {
+            let name = vitest_path_binding_name(&structure.path, entities)?;
             is_vitest_struct(entities, &name).then_some(name)
         }
         _ => None,
@@ -3948,8 +4205,8 @@ fn inferred_vitest_struct_literal_name(
         Expr::Reference(reference) => {
             inferred_vitest_struct_literal_name(&reference.expr, entities)
         }
-        Expr::Struct(structure) if structure.path.segments.len() == 1 => {
-            let name = structure.path.segments.first()?.ident.to_string();
+        Expr::Struct(structure) if structure.qself.is_none() => {
+            let name = vitest_path_binding_name(&structure.path, entities)?;
             vitest_struct_owner(entities, &name)
         }
         _ => None,
@@ -8323,14 +8580,10 @@ fn option_expression_payload(expression: &Expr, entities: &HashSet<String>) -> O
             let Expr::Path(path) = call.func.as_ref() else {
                 return None;
             };
-            if path.qself.is_some() || path.path.segments.len() != 1 {
+            if path.qself.is_some() {
                 return None;
             }
-            function_fact(
-                entities,
-                OPTION_RETURN_MARKER,
-                &path.path.segments[0].ident.to_string(),
-            )
+            function_path_fact(entities, OPTION_RETURN_MARKER, &path.path)
         }
         Expr::Field(field) => {
             let syn::Member::Named(field_name) = &field.member else {
@@ -8599,5 +8852,48 @@ fn type_kind(rust_type: &Type) -> &'static str {
 pub(crate) fn write_indent(out: &mut String, indent: usize) {
     for _ in 0..indent {
         out.push_str("  ");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use syn::parse::Parser;
+
+    #[test]
+    fn pattern_scopes_clear_and_rebind_value_provenance_without_mutating_the_outer_scope() {
+        let outer_identity = "production|Sample";
+        let mut context = HashSet::from([
+            format!("{VITEST_STRUCT_LOCAL_MARKER}sample{PROVENANCE_SEPARATOR}{outer_identity}"),
+            format!("{VITEST_STRUCT_OWNER_MARKER}Sample{PROVENANCE_SEPARATOR}{outer_identity}"),
+        ]);
+        for (scope, source) in [
+            ("if let", "Some(sample)"),
+            ("while let", "Some(sample)"),
+            ("match", "Some(sample)"),
+            ("nested", "((sample,), _)"),
+        ] {
+            let pattern = Pat::parse_single.parse_str(source).unwrap();
+            let scoped = vitest_pattern_context(&context, &pattern);
+            assert_eq!(vitest_struct_local(&scoped, "sample"), None, "{scope}");
+            assert_eq!(
+                vitest_struct_local(&context, "sample"),
+                Some(outer_identity.to_string()),
+                "{scope} mutated its outer scope"
+            );
+        }
+
+        let statement: Stmt = syn::parse_str("let sample: Sample = value;").unwrap();
+        let Stmt::Local(local) = statement else {
+            unreachable!("the fixture is a let statement");
+        };
+        context.insert(format!(
+            "{VITEST_STRUCT_LOCAL_MARKER}sample{PROVENANCE_SEPARATOR}stale|Sample"
+        ));
+        let scoped = vitest_pattern_context(&context, &local.pat);
+        assert_eq!(
+            vitest_struct_local(&scoped, "sample"),
+            Some(outer_identity.to_string())
+        );
     }
 }

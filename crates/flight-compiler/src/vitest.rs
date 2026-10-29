@@ -14,7 +14,8 @@ use crate::typescript::{
     insert_vitest_import_alias_context, insert_vitest_rebound_struct_context,
     is_data_union_variant, is_string_union, is_vitest_struct, numeric_literal_spelling,
     snake_to_lower_camel, update_vitest_local_function_context, update_vitest_struct_local_context,
-    validate_vitest_function_provenance, vitest_pattern_context, write_indent,
+    validate_vitest_function_provenance, vitest_path_binding_name, vitest_pattern_context,
+    write_indent,
 };
 use crate::{CompileError, compile_error};
 
@@ -270,10 +271,14 @@ fn collect_contract_symbols(
 
         fn visit_expr_struct(&mut self, expression: &'ast syn::ExprStruct) {
             if expression.qself.is_none()
-                && expression.path.segments.len() == 1
-                && let Some(segment) = expression.path.segments.first()
-                && is_vitest_struct(self.context, &segment.ident.to_string())
+                && let Some(name) = vitest_path_binding_name(&expression.path, self.context)
+                && is_vitest_struct(self.context, &name)
             {
+                let segment = expression
+                    .path
+                    .segments
+                    .last()
+                    .expect("resolved struct path has a final segment");
                 self.record_type_identifier(&segment.ident);
             }
             syn::visit::visit_expr_struct(self, expression);

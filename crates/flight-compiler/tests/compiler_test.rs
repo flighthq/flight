@@ -1019,6 +1019,78 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
     }
 
     #[test]
+    fn resolves_qualified_paths_and_public_reexports_through_module_sources() {
+        let bucket = r#"
+pub struct Bucket {
+    pub previous: Option<i32>,
+}
+
+pub fn make_values() -> Option<i32> {
+    return None;
+}
+"#;
+        let prelude = "pub use crate::bucket::Bucket;\n";
+        let source = r#"
+pub fn doubled(bucket: crate::prelude::Bucket) -> i32 {
+    return bucket.previous.map(|value| value * 2).unwrap_or(0);
+}
+
+pub fn values_are_missing() -> bool {
+    return crate::bucket::make_values().is_none();
+}
+"#;
+        let output = compile_typescript_with_module_sources(
+            ModuleSource {
+                path: "crates/flight-demo/src/current.rs",
+                source,
+            },
+            None,
+            &[
+                ModuleSource {
+                    path: "crates/flight-demo/src/bucket.rs",
+                    source: bucket,
+                },
+                ModuleSource {
+                    path: "crates/flight-demo/src/prelude.rs",
+                    source: prelude,
+                },
+            ],
+            &[],
+        )
+        .unwrap();
+
+        assert!(output.contains(
+            "((value) => value === undefined ? undefined : value * 2)(bucket.previous) ?? 0"
+        ));
+        assert!(output.contains("crate.bucket.makeValues() === undefined"));
+
+        let private_prelude = "use crate::bucket::Bucket;\n";
+        let error = compile_typescript_with_module_sources(
+            ModuleSource {
+                path: "crates/flight-demo/src/current.rs",
+                source,
+            },
+            None,
+            &[
+                ModuleSource {
+                    path: "crates/flight-demo/src/bucket.rs",
+                    source: bucket,
+                },
+                ModuleSource {
+                    path: "crates/flight-demo/src/prelude.rs",
+                    source: private_prelude,
+                },
+            ],
+            &[],
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "portable `.map()` on a field requires the field to be declared as Rust `Option`"
+        );
+    }
+
+    #[test]
     fn maps_trailing_options_to_optional_undefined_contracts() {
         let source = r#"
 pub struct Vector2 {
@@ -4915,6 +4987,425 @@ fn keeps_foreign_provenance_foreign() {
         assert!(!output.contains("literal.previous = null;"));
         assert!(!output.contains("called.previous = null;"));
         assert!(!output.contains("typed.previous = null;"));
+    }
+
+    #[test]
+    fn rejects_foreign_wildcards_instead_of_borrowing_current_provenance() {
+        let production = r#"
+//! flight-compiler: nullable-options
+
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+
+pub fn create_sample() -> Sample {
+    return Sample { previous: None };
+}
+"#;
+        let contract = "pub use crate::sample::{Sample, create_sample};\n";
+        let sources = [
+            r#"
+use flight_other::*;
+
+#[test]
+fn foreign_wildcard_call_is_not_current() {
+    let sample = create_sample();
+    assert!(sample.previous.is_none());
+}
+"#,
+            r#"
+use flight_other::*;
+
+#[test]
+fn foreign_wildcard_literal_is_not_current() {
+    let sample = Sample { previous: None };
+    assert!(sample.previous.is_none());
+}
+"#,
+            r#"
+use flight_other::*;
+
+#[test]
+fn foreign_wildcard_type_is_not_current() {
+    let sample: Sample = Sample { previous: None };
+    assert!(sample.previous.is_none());
+}
+"#,
+        ];
+
+        for source in sources {
+            let compile = || {
+                compile_vitest_with_contract_alias_sources(
+                    source,
+                    "@flighthq/example/contract",
+                    contract,
+                    &[VitestAliasSource {
+                        source: production,
+                        module: "src/sample.rs",
+                    }],
+                )
+                .unwrap_err()
+                .to_string()
+            };
+            let first = compile();
+            assert_eq!(first, compile());
+            assert!(
+                first.contains("contract.rs does not select a unique public export"),
+                "{first}"
+            );
+        }
+    }
+
+    #[test]
+    fn pattern_scopes_clear_value_provenance_and_restore_the_outer_binding() {
+        let production = r#"
+//! flight-compiler: nullable-options
+
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+
+pub fn create_sample() -> Sample {
+    return Sample { previous: None };
+}
+"#;
+        let contract = "pub use crate::sample::{Sample, create_sample};\n";
+        let cases = [
+            r#"
+use flight_example::*;
+
+struct LocalSample { previous: Option<i32> }
+
+#[test]
+fn for_pattern() {
+    let mut sample = create_sample();
+    let locals = vec![LocalSample { previous: None }];
+    for sample in locals {
+        let mut inner = sample;
+        inner.previous = None;
+        assert!(inner.previous.is_none());
+    }
+    sample.previous = None;
+    assert!(sample.previous.is_none());
+}
+"#,
+            r#"
+use flight_example::*;
+
+struct LocalSample { previous: Option<i32> }
+
+#[test]
+fn nested_for_pattern() {
+    let mut sample = create_sample();
+    let locals = vec![((LocalSample { previous: None },), 0)];
+    for ((sample,), _) in locals {
+        let mut inner = sample;
+        inner.previous = None;
+        assert!(inner.previous.is_none());
+    }
+    sample.previous = None;
+    assert!(sample.previous.is_none());
+}
+"#,
+        ];
+
+        for source in cases {
+            let output = compile_vitest_with_contract_alias_sources(
+                source,
+                "@flighthq/example/contract",
+                contract,
+                &[VitestAliasSource {
+                    source: production,
+                    module: "src/sample.rs",
+                }],
+            )
+            .unwrap_or_else(|error| panic!("{error}: {source}"));
+
+            assert!(output.contains("inner.previous = undefined;"), "{output}");
+            assert!(
+                output.contains("expect(inner.previous === undefined).toBe(true);"),
+                "{output}"
+            );
+            assert!(output.contains("sample.previous = null;"), "{output}");
+            assert!(
+                output.contains("expect(sample.previous === null).toBe(true);"),
+                "{output}"
+            );
+            assert!(!output.contains("inner.previous = null;"), "{output}");
+        }
+    }
+
+    #[test]
+    fn resolves_qualified_current_package_struct_literals_through_the_local_lane() {
+        let production = r#"
+//! flight-compiler: nullable-options
+
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+
+pub fn create_sample() -> Sample {
+    return Sample { previous: None };
+}
+"#;
+        let contract = "pub use crate::sample::{Sample, create_sample};\n";
+        let source = r#"
+#[test]
+fn qualified_literal_uses_current_provenance() {
+    let mut sample = flight_example::Sample { previous: None };
+    sample.previous = None;
+    assert!(sample.previous.is_none());
+
+    let mut called = flight_example::create_sample();
+    called.previous = None;
+    assert!(called.previous.is_none());
+
+    let mut typed: flight_example::Sample = flight_example::create_sample();
+    typed.previous = None;
+    assert!(typed.previous.is_none());
+}
+"#;
+
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            contract,
+            &[VitestAliasSource {
+                source: production,
+                module: "src/sample.rs",
+            }],
+        )
+        .unwrap();
+
+        assert!(
+            output.contains("let sample: Sample = { previous: null };"),
+            "{output}"
+        );
+        assert!(output.contains("sample.previous = null;"));
+        assert!(output.contains("expect(sample.previous === null).toBe(true);"));
+        assert!(output.contains("called.previous = null;"));
+        assert!(output.contains("expect(called.previous === null).toBe(true);"));
+        assert!(output.contains("typed.previous = null;"));
+        assert!(output.contains("expect(typed.previous === null).toBe(true);"));
+        assert!(!output.contains("previous: undefined"));
+    }
+
+    #[test]
+    fn resolves_chained_crate_root_contract_aliases_to_a_fixed_point() {
+        let sample = r#"
+//! flight-compiler: nullable-options
+
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+"#;
+        let factory = r#"
+use crate::Sample;
+
+pub fn create_sample() -> Sample {
+    return Sample { previous: None };
+}
+"#;
+        let contract = r#"
+pub use crate::sample::Sample as PublicSample;
+pub use crate::PublicSample as Sample;
+pub use crate::factory::create_sample;
+"#;
+        let source = r#"
+use flight_example::*;
+
+#[test]
+fn follows_chained_root_aliases() {
+    let mut sample = create_sample();
+    sample.previous = None;
+    assert!(sample.previous.is_none());
+}
+"#;
+
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            contract,
+            &[
+                VitestAliasSource {
+                    source: factory,
+                    module: "src/factory.rs",
+                },
+                VitestAliasSource {
+                    source: sample,
+                    module: "src/sample.rs",
+                },
+            ],
+        )
+        .unwrap();
+
+        assert!(output.contains("sample.previous = null;"));
+        assert!(output.contains("sample.previous === null"));
+    }
+
+    #[test]
+    fn resolves_contract_globs_through_public_prelude_reexports() {
+        let bucket = r#"
+//! flight-compiler: nullable-options
+
+pub struct Bucket {
+    pub previous: Option<i32>,
+}
+
+pub fn create_bucket() -> Bucket {
+    return Bucket { previous: None };
+}
+"#;
+        let prelude =
+            "pub use crate::bucket::{Bucket as PublicBucket, create_bucket as make_bucket};\n";
+        let contract = "pub use crate::prelude::*;\n";
+        let source = r#"
+use flight_example::*;
+
+#[test]
+fn follows_the_public_prelude() {
+    let mut bucket: PublicBucket = make_bucket();
+    bucket.previous = None;
+    assert!(bucket.previous.is_none());
+}
+"#;
+
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            contract,
+            &[
+                VitestAliasSource {
+                    source: bucket,
+                    module: "src/bucket.rs",
+                },
+                VitestAliasSource {
+                    source: prelude,
+                    module: "src/prelude.rs",
+                },
+            ],
+        )
+        .unwrap();
+
+        assert!(output.contains("bucket.previous = null;"));
+        assert!(output.contains("bucket.previous === null"));
+    }
+
+    #[test]
+    fn resolves_relative_imports_from_the_complete_nested_module() {
+        let sample = r#"
+//! flight-compiler: nullable-options
+
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+"#;
+        let decoy = r#"
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+"#;
+        let factory = r#"
+use super::super::sample::Sample;
+
+pub fn create_nested_sample() -> Sample {
+    return Sample { previous: None };
+}
+"#;
+        let directory = r#"
+use self::sample::Sample;
+
+pub fn create_self_sample() -> Sample {
+    return Sample { previous: None };
+}
+"#;
+        let contract = r#"
+pub use crate::nested::create_self_sample;
+pub use crate::nested::deeper::factory::create_nested_sample;
+pub use crate::nested::sample::Sample;
+"#;
+        let source = r#"
+use flight_example::*;
+
+#[test]
+fn follows_nested_relative_import() {
+    let mut nested = create_nested_sample();
+    nested.previous = None;
+    assert!(nested.previous.is_none());
+    let mut sibling = create_self_sample();
+    sibling.previous = None;
+    assert!(sibling.previous.is_none());
+}
+"#;
+
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            contract,
+            &[
+                VitestAliasSource {
+                    source: factory,
+                    module: "src/nested/deeper/factory.rs",
+                },
+                VitestAliasSource {
+                    source: directory,
+                    module: "src/nested/mod.rs",
+                },
+                VitestAliasSource {
+                    source: decoy,
+                    module: "src/other/sample.rs",
+                },
+                VitestAliasSource {
+                    source: sample,
+                    module: "src/nested/sample.rs",
+                },
+            ],
+        )
+        .unwrap();
+
+        assert!(output.contains("nested.previous = null;"));
+        assert!(output.contains("nested.previous === null"));
+        assert!(output.contains("sibling.previous = null;"));
+        assert!(output.contains("sibling.previous === null"));
+    }
+
+    #[test]
+    fn normalizes_relative_and_absolute_modules_from_the_deepest_source_root() {
+        let production = r#"
+//! flight-compiler: nullable-options
+
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+"#;
+        let contract = "pub use crate::nested::Sample;\n";
+        let source = r#"
+use flight_example::*;
+
+#[test]
+fn uses_sample() {
+    let mut sample = Sample { previous: None };
+    sample.previous = None;
+    assert!(sample.previous.is_none());
+}
+"#;
+        let compile = |module| {
+            compile_vitest_with_contract_alias_sources(
+                source,
+                "@flighthq/example/contract",
+                contract,
+                &[VitestAliasSource {
+                    source: production,
+                    module,
+                }],
+            )
+            .unwrap()
+        };
+
+        let relative = compile("src/workspace/src/nested/mod.rs");
+        let absolute = compile("/tmp/ancestor/src/workspace/src/nested/mod.rs");
+        assert_eq!(relative, absolute);
+        assert!(relative.contains("sample.previous = null;"));
     }
 
     #[test]
