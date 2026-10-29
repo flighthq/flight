@@ -11389,6 +11389,138 @@ pub fn scientific_precision(value: f64) -> String {
     }
 
     #[test]
+    fn lowers_assert_eq_to_conditional_throw() {
+        let source = r#"
+pub fn check_equal(a: i32, b: i32) {
+    assert_eq!(a, b, "values differ: {} vs {}", a, b);
+}
+
+pub fn check_not_equal(x: i32, y: i32) {
+    assert_ne!(x, y);
+}
+
+pub fn debug_check(a: i32, b: i32) {
+    debug_assert_eq!(a, b);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("if (a !== b) {"),
+            "assert_eq should emit !== check: {output}"
+        );
+        assert!(
+            output.contains("throw new Error(`values differ: ${a} vs ${b}`);"),
+            "assert_eq should use format message: {output}"
+        );
+        assert!(
+            output.contains("if (x === y) {"),
+            "assert_ne should emit === check: {output}"
+        );
+        assert!(
+            output.contains("if (a !== b) {"),
+            "debug_assert_eq should emit !== check: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_range_without_start_to_zero() {
+        let source = r#"
+pub fn first_n(items: &[u32], n: usize) -> Vec<u32> {
+    return items[..n].to_vec();
+}
+
+pub fn loop_to(n: usize) -> u32 {
+    let mut sum: u32 = 0;
+    for i in ..n {
+        sum += i as u32;
+    }
+    return sum;
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("items.slice(0, n)"),
+            "range index without start should use 0: {output}"
+        );
+        assert!(
+            output.contains("let i = 0; i < n;"),
+            "for loop range without start should use 0: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_todo_to_throw_not_implemented() {
+        let source = r#"
+pub fn placeholder() {
+    todo!();
+}
+
+pub fn todo_value() -> i32 {
+    return if true { 1 } else { todo!() };
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("throw new Error(\"not implemented\");"),
+            "todo! statement should throw: {output}"
+        );
+        assert!(
+            output.contains("(() => { throw new Error(\"not implemented\"); })()"),
+            "todo! expression should use IIFE: {output}"
+        );
+    }
+
+    #[test]
+    fn lowers_try_operator_to_early_return_guard() {
+        let source = r#"
+pub fn simple_try(value: Option<u32>) -> Option<u32> {
+    let x = value?;
+    return Some(x + 1);
+}
+
+pub fn chained_try(a: Option<u32>, b: Option<u32>) -> Option<u32> {
+    let x = a?;
+    let y = b?;
+    return Some(x + y);
+}
+
+pub fn method_try(items: &[u32]) -> Option<u32> {
+    let first = items.first()?;
+    return Some(*first);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("const x = value;"),
+            "try operator should bind the inner expression: {output}"
+        );
+        assert!(
+            output.contains("if (x === undefined) {"),
+            "try operator should emit undefined guard: {output}"
+        );
+        assert!(
+            output.contains("return undefined;"),
+            "try operator should return undefined on failure: {output}"
+        );
+        assert!(
+            output.contains("const y = b;"),
+            "chained try should bind second variable: {output}"
+        );
+        assert!(
+            output.contains("const first = items[0];"),
+            "method try should bind slice first: {output}"
+        );
+    }
+
+    #[test]
     fn preserves_receivers_for_optional_member_calls() {
         let source = r#"
 use std::sync::Arc;
@@ -11437,8 +11569,8 @@ pub fn impossible(message: &str) {
 }
 "#;
         let unsupported_macro = r#"
-pub fn unfinished() {
-    todo!();
+pub fn custom() {
+    my_custom_macro!();
 }
 "#;
 

@@ -8298,17 +8298,12 @@ fn emit_expression_value(
                         "portable inclusive range index `a..=b` is not supported",
                     ));
                 }
-                if range.start.is_none() && range.end.is_some() {
-                    return Err(compile_error(
-                        "portable range index needs a start; write `0..end` instead of `..end`",
-                    ));
-                }
                 let start = range
                     .start
                     .as_deref()
                     .map(|start| emit_expression(start, entities))
                     .transpose()?
-                    .unwrap_or_default();
+                    .unwrap_or_else(|| "0".to_string());
                 let end = range
                     .end
                     .as_deref()
@@ -8499,13 +8494,15 @@ fn emit_expression_value(
         }
         Expr::Reference(reference) => emit_expression(&reference.expr, entities),
         Expr::Range(range) => {
-            let Some(start) = &range.start else {
-                return Err(compile_error("portable Rust range needs a start"));
-            };
             let Some(end) = &range.end else {
                 return Err(compile_error("portable Rust range needs an end"));
             };
-            let start = emit_expression(start, entities)?;
+            let start = range
+                .start
+                .as_deref()
+                .map(|start| emit_expression(start, entities))
+                .transpose()?
+                .unwrap_or_else(|| "0".to_string());
             let end = emit_expression(end, entities)?;
             let inclusive = if matches!(range.limits, syn::RangeLimits::Closed(_)) {
                 " + 1"
@@ -8617,6 +8614,7 @@ fn emit_expression_value(
                 .collect::<Result<Vec<_>, _>>()?;
             Ok(format!("[{}]", elements.join(", ")))
         }
+        Expr::Try(try_expr) => emit_expression(&try_expr.expr, entities),
         Expr::Unary(unary) => emit_unary_expression(unary, entities),
         _ => Err(compile_error(format!(
             "unsupported Rust expression `{}`",
@@ -8981,13 +8979,15 @@ pub(crate) fn emit_for_header(
         (expression, None)
     };
     if let Expr::Range(range) = peel_reference_and_paren(range_expr) {
-        let Some(start) = &range.start else {
-            return Err(compile_error("portable Rust range needs a start"));
-        };
         let Some(end) = &range.end else {
             return Err(compile_error("portable Rust range needs an end"));
         };
-        let start = emit_expression(start, entities)?;
+        let start = range
+            .start
+            .as_deref()
+            .map(|s| emit_expression(s, entities))
+            .transpose()?
+            .unwrap_or_else(|| "0".to_string());
         let end = emit_expression(end, entities)?;
         let comparison = match range.limits {
             syn::RangeLimits::HalfOpen(_) => "<",
@@ -9397,6 +9397,11 @@ pub(crate) fn emit_local_with_shadow_and_else(
             emit_else_block,
         );
     }
+    if let Some(initializer) = &local.init
+        && let Expr::Try(try_expr) = initializer.expr.as_ref()
+    {
+        return emit_try_local(out, local, try_expr, entities, indent);
+    }
     let mutable = pattern_is_mutable(&local.pat);
     let (pattern, rust_type, discard) = match &local.pat {
         Pat::Ident(_) | Pat::Reference(_) | Pat::Tuple(_) => {
@@ -9607,6 +9612,28 @@ pub(crate) fn emit_local_with_shadow_and_else(
     return Ok(());
 }
 
+fn emit_try_local(
+    out: &mut String,
+    local: &syn::Local,
+    try_expr: &syn::ExprTry,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let mutable = pattern_is_mutable(&local.pat);
+    let pattern = emit_pattern(&local.pat)?;
+    let inner_value = emit_expression(&try_expr.expr, entities)?;
+    let keyword = if mutable { "let" } else { "const" };
+    write_indent(out, indent);
+    writeln!(out, "{keyword} {pattern} = {inner_value};").expect("writing to a String cannot fail");
+    write_indent(out, indent);
+    writeln!(out, "if ({pattern} === undefined) {{").expect("writing to a String cannot fail");
+    write_indent(out, indent + 1);
+    writeln!(out, "return undefined;").expect("writing to a String cannot fail");
+    write_indent(out, indent);
+    writeln!(out, "}}").expect("writing to a String cannot fail");
+    return Ok(());
+}
+
 fn emit_let_else_local(
     out: &mut String,
     local: &syn::Local,
@@ -9809,6 +9836,11 @@ fn emit_macro_expression(
     if name.ident == "concat" {
         return emit_concat_macro(rust_macro, entities);
     }
+    if name.ident == "todo" {
+        return Ok(
+            "(() => { throw new Error(\"not implemented\"); })()".to_string(),
+        );
+    }
     if name.ident != "format" {
         return Err(compile_error(format!(
             "unsupported Rust macro expression `{}!`",
@@ -9953,6 +9985,62 @@ fn emit_assert_statement(
     };
     write_indent(out, indent);
     writeln!(out, "if (!({condition_text})) {{").expect("writing to a String cannot fail");
+    write_indent(out, indent + 1);
+    writeln!(out, "throw new Error({message});").expect("writing to a String cannot fail");
+    write_indent(out, indent);
+    writeln!(out, "}}").expect("writing to a String cannot fail");
+    return Ok(());
+}
+
+fn emit_assert_comparison_statement(
+    out: &mut String,
+    rust_macro: &syn::Macro,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let macro_name = rust_macro
+        .path
+        .segments
+        .last()
+        .map(|s| s.ident.to_string())
+        .unwrap_or_default();
+    let is_ne = macro_name.ends_with("_ne");
+    let arguments = Punctuated::<Expr, Token![,]>::parse_terminated
+        .parse2(rust_macro.tokens.clone())
+        .map_err(|error| {
+            compile_error(format!("failed to parse `{macro_name}!` arguments: {error}"))
+        })?;
+    if arguments.len() < 2 {
+        return Err(compile_error(format!(
+            "portable `{macro_name}!` needs two arguments"
+        )));
+    }
+    let left_text = emit_expression(&arguments[0], entities)?;
+    let right_text = emit_expression(&arguments[1], entities)?;
+    let operator = if is_ne { "===" } else { "!==" };
+    let verb = if is_ne { "not equal" } else { "equal" };
+    let message = if arguments.len() >= 3 {
+        if let Expr::Lit(literal) = &arguments[2]
+            && let Lit::Str(template) = &literal.lit
+        {
+            let values = arguments.iter().skip(3).collect::<Vec<_>>();
+            emit_format_template(
+                &template.value(),
+                &values,
+                entities,
+                &format!("portable `{macro_name}!` message"),
+            )?
+        } else {
+            format!("`${{{}}}`", emit_expression(&arguments[2], entities)?)
+        }
+    } else {
+        format!(
+            "`assertion failed: expected ${{JSON.stringify({left_text})}} to {verb} ${{JSON.stringify({right_text})}}`"
+        )
+    };
+    write_indent(out, indent);
+    writeln!(out, "if ({left_text} {operator} {right_text}) {{")
+        .expect("writing to a String cannot fail");
     write_indent(out, indent + 1);
     writeln!(out, "throw new Error({message});").expect("writing to a String cannot fail");
     write_indent(out, indent);
@@ -14268,6 +14356,33 @@ fn emit_statement(
                 .is_some_and(|name| name.ident == "assert" || name.ident == "debug_assert") =>
         {
             emit_assert_statement(out, &statement.mac, entities, indent)?;
+        }
+        Stmt::Macro(statement)
+            if statement
+                .mac
+                .path
+                .segments
+                .last()
+                .is_some_and(|name| {
+                    name.ident == "assert_eq"
+                        || name.ident == "assert_ne"
+                        || name.ident == "debug_assert_eq"
+                        || name.ident == "debug_assert_ne"
+                }) =>
+        {
+            emit_assert_comparison_statement(out, &statement.mac, entities, indent)?;
+        }
+        Stmt::Macro(statement)
+            if statement
+                .mac
+                .path
+                .segments
+                .last()
+                .is_some_and(|name| name.ident == "todo") =>
+        {
+            write_indent(out, indent);
+            writeln!(out, "throw new Error(\"not implemented\");")
+                .expect("writing to a String cannot fail");
         }
         Stmt::Macro(_) => {
             return Err(compile_error(
