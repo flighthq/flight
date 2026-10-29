@@ -9921,6 +9921,45 @@ fn emit_panic_message(
     );
 }
 
+fn emit_assert_statement(
+    out: &mut String,
+    rust_macro: &syn::Macro,
+    entities: &HashSet<String>,
+    indent: usize,
+) -> Result<(), CompileError> {
+    let arguments = Punctuated::<Expr, Token![,]>::parse_terminated
+        .parse2(rust_macro.tokens.clone())
+        .map_err(|error| compile_error(format!("failed to parse `assert!` arguments: {error}")))?;
+    let Some(condition) = arguments.first() else {
+        return Err(compile_error("portable `assert!` needs a condition"));
+    };
+    let condition_text = emit_expression(condition, entities)?;
+    let message = if arguments.len() >= 2 {
+        if let Expr::Lit(literal) = &arguments[1]
+            && let Lit::Str(template) = &literal.lit
+        {
+            let values = arguments.iter().skip(2).collect::<Vec<_>>();
+            emit_format_template(
+                &template.value(),
+                &values,
+                entities,
+                "portable `assert!` message",
+            )?
+        } else {
+            format!("`${{{}}}`", emit_expression(&arguments[1], entities)?)
+        }
+    } else {
+        format!("\"assertion failed: {}\"", condition_text.replace('"', "\\\""))
+    };
+    write_indent(out, indent);
+    writeln!(out, "if (!({condition_text})) {{").expect("writing to a String cannot fail");
+    write_indent(out, indent + 1);
+    writeln!(out, "throw new Error({message});").expect("writing to a String cannot fail");
+    write_indent(out, indent);
+    writeln!(out, "}}").expect("writing to a String cannot fail");
+    return Ok(());
+}
+
 fn emit_concat_macro(
     rust_macro: &syn::Macro,
     entities: &HashSet<String>,
@@ -14201,6 +14240,16 @@ fn emit_statement(
                 emit_panic_message(&statement.mac, entities)?
             )
             .expect("writing to a String cannot fail");
+        }
+        Stmt::Macro(statement)
+            if statement
+                .mac
+                .path
+                .segments
+                .last()
+                .is_some_and(|name| name.ident == "assert" || name.ident == "debug_assert") =>
+        {
+            emit_assert_statement(out, &statement.mac, entities, indent)?;
         }
         Stmt::Macro(_) => {
             return Err(compile_error(

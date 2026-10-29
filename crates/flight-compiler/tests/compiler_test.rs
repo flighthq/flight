@@ -11260,6 +11260,26 @@ pub fn panic_in_match(code: i32) -> i32 {
     }
 
     #[test]
+    fn lowers_assert_to_conditional_throw() {
+        let source = r#"
+pub fn check_bounds(index: usize, length: usize) {
+    assert!(index < length, "index {} out of bounds for length {}", index, length);
+}
+
+pub fn check_positive(value: i32) {
+    assert!(value > 0);
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("if (!(index < length)) {"));
+        assert!(output.contains("throw new Error(`index ${index} out of bounds for length ${length}`);"));
+        assert!(output.contains("if (!(value > 0)) {"));
+        assert!(output.contains("throw new Error(\"assertion failed: value > 0\");"));
+    }
+
+    #[test]
     fn lowers_concat_macro_to_string_join() {
         let source = r#"
 pub fn multipart() -> &'static str {
