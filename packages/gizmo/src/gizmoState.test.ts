@@ -6,6 +6,7 @@ import { createScene2D } from '@flighthq/scene2d/contract';
 import { createSelectionState, selectAllNodes } from '@flighthq/selection/contract';
 import { createShape } from '@flighthq/shape/contract';
 import { connectSignal, emitSignal } from '@flighthq/signals/contract';
+import type { Signal } from '@flighthq/signals/contract';
 import type {
   GizmoCreateOptions,
   GizmoMode,
@@ -151,6 +152,11 @@ describe('getGizmoSignals', () => {
     expectTypeOf<keyof GizmoSignals>().toEqualTypeOf<
       'onRotate' | 'onScale' | 'onTransformBegin' | 'onTransformEnd' | 'onTranslate'
     >();
+    expectTypeOf<GizmoSignals['onRotate']>().toEqualTypeOf<Signal<number>>();
+    expectTypeOf<GizmoSignals['onScale']>().toEqualTypeOf<Signal<readonly [scaleX: number, scaleY: number]>>();
+    expectTypeOf<GizmoSignals['onTransformBegin']>().toEqualTypeOf<Signal<void>>();
+    expectTypeOf<GizmoSignals['onTransformEnd']>().toEqualTypeOf<Signal<void>>();
+    expectTypeOf<GizmoSignals['onTranslate']>().toEqualTypeOf<Signal<readonly [deltaX: number, deltaY: number]>>();
     expect(getGizmoSignals(context.state)).toBe(getGizmoSignals(context.state));
     expect(getGizmoSignals(context.state)).toEqual({
       onRotate: expect.any(Object),
@@ -161,7 +167,7 @@ describe('getGizmoSignals', () => {
     });
   });
 
-  it('brackets one active transform command with zero-argument begin and end signals', () => {
+  it('brackets one active transform command with payload-less begin and end signals', () => {
     const context = createTestContext();
     const handle = getGizmoHandle(context.overlay, 'GizmoTranslateXHandle');
     const began = vi.fn();
@@ -173,13 +179,13 @@ describe('getGizmoSignals', () => {
     emitSignal(enableInteractionSignals(handle).onPointerDown, createPointerData(172, 50));
     emitSignal(enableInteractionSignals(handle).onPointerUp, createPointerData(172, 50, 2));
     expect(began).toHaveBeenCalledOnce();
-    expect(began).toHaveBeenCalledWith();
+    expect(began).toHaveBeenCalledWith(undefined);
     expect(ended).not.toHaveBeenCalled();
 
     emitSignal(enableInteractionSignals(handle).onPointerUp, createPointerData(172, 50));
     emitSignal(enableInteractionSignals(handle).onPointerUp, createPointerData(172, 50));
     expect(ended).toHaveBeenCalledOnce();
-    expect(ended).toHaveBeenCalledWith();
+    expect(ended).toHaveBeenCalledWith(undefined);
   });
 });
 
@@ -225,9 +231,9 @@ describe('overlay and document transform parity', () => {
       expect(transformed.delta).toEqual(identity.delta);
       for (const result of [identity, transformed]) {
         expect(result.began).toHaveBeenCalledOnce();
-        expect(result.began).toHaveBeenCalledWith();
+        expect(result.began).toHaveBeenCalledWith(undefined);
         expect(result.ended).toHaveBeenCalledOnce();
-        expect(result.ended).toHaveBeenCalledWith();
+        expect(result.ended).toHaveBeenCalledWith(undefined);
         expect(result.nodeAfter).toEqual(result.nodeBefore);
       }
     },
@@ -434,8 +440,8 @@ describe('updateGizmo', () => {
     emitSignal(enableInteractionSignals(handle).onPointerDown, createPointerData(172, 50));
     emitSignal(enableInteractionSignals(handle).onPointerMove, createPointerData(182, 50));
 
-    expect(translated.mock.calls.at(-1)?.[0]).toBeCloseTo(0, 8);
-    expect(translated.mock.calls.at(-1)?.[1]).toBeCloseTo(10, 8);
+    expect(translated.mock.calls.at(-1)?.[0][0]).toBeCloseTo(0, 8);
+    expect(translated.mock.calls.at(-1)?.[0][1]).toBeCloseTo(10, 8);
   });
 
   it('keeps the outline available in none mode and cancels the active command bracket', () => {
@@ -455,7 +461,7 @@ describe('updateGizmo', () => {
     expect(handleRoot.visible).toBe(false);
     expect(outline.visible).toBe(true);
     expect(ended).toHaveBeenCalledOnce();
-    expect(ended).toHaveBeenCalledWith();
+    expect(ended).toHaveBeenCalledWith(undefined);
     setGizmoMode(context.state, 'translate');
     selectAllNodes(context.selection, []);
     updateGizmo(context.state);
@@ -488,7 +494,7 @@ describe('updateGizmo', () => {
     updateGizmo(context.state);
 
     expect(ended).toHaveBeenCalledOnce();
-    expect(ended).toHaveBeenCalledWith();
+    expect(ended).toHaveBeenCalledWith(undefined);
     expect(getGizmoMode(context.state)).toBe('rotate');
   });
 
@@ -518,14 +524,14 @@ describe('updateGizmo', () => {
 
     emitSignal(enableInteractionSignals(handle).onPointerDown, createPointerData(172, 50));
     emitSignal(enableInteractionSignals(handle).onPointerMove, createPointerData(185, 74));
-    expect(translated).toHaveBeenLastCalledWith(10, 0);
+    expect(translated).toHaveBeenLastCalledWith([10, 0]);
     emitSignal(enableInteractionSignals(handle).onPointerUp, createPointerData(185, 74));
     setGizmoSpace(context.state, 'local');
     updateGizmo(context.state);
     emitSignal(enableInteractionSignals(handle).onPointerDown, createPointerData(100, 122));
     emitSignal(enableInteractionSignals(handle).onPointerMove, createPointerData(100, 135));
-    expect(translated.mock.calls.at(-1)?.[0]).toBeCloseTo(0, 8);
-    expect(translated.mock.calls.at(-1)?.[1]).toBeCloseTo(10, 8);
+    expect(translated.mock.calls.at(-1)?.[0][0]).toBeCloseTo(0, 8);
+    expect(translated.mock.calls.at(-1)?.[0][1]).toBeCloseTo(10, 8);
   });
 
   it('snaps the moved selection position to the grid in world and local axes', () => {
@@ -549,7 +555,7 @@ describe('updateGizmo', () => {
       enableInteractionSignals(xyHandle).onPointerMove,
       createProjectedPointerData(context.camera, { x: -15, y: 17 }),
     );
-    expect(translated).toHaveBeenLastCalledWith(-7, 7);
+    expect(translated).toHaveBeenLastCalledWith([-7, 7]);
     emitSignal(
       enableInteractionSignals(xyHandle).onPointerUp,
       createProjectedPointerData(context.camera, { x: -15, y: 17 }),
@@ -566,8 +572,8 @@ describe('updateGizmo', () => {
       enableInteractionSignals(xHandle).onPointerMove,
       createProjectedPointerData(context.camera, { x: -13, y: 17 }),
     );
-    expect(translated.mock.calls.at(-1)?.[0]).toBeCloseTo(0, 8);
-    expect(translated.mock.calls.at(-1)?.[1]).toBeCloseTo(7, 8);
+    expect(translated.mock.calls.at(-1)?.[0][0]).toBeCloseTo(0, 8);
+    expect(translated.mock.calls.at(-1)?.[0][1]).toBeCloseTo(7, 8);
   });
 
   it('supports free and y-axis translation without snapping', () => {
@@ -580,11 +586,11 @@ describe('updateGizmo', () => {
 
     emitSignal(enableInteractionSignals(yHandle).onPointerDown, createPointerData(100, -22));
     emitSignal(enableInteractionSignals(yHandle).onPointerMove, createPointerData(113, -34));
-    expect(translated).toHaveBeenLastCalledWith(0, -12);
+    expect(translated).toHaveBeenLastCalledWith([0, -12]);
     emitSignal(enableInteractionSignals(yHandle).onPointerUp, createPointerData(113, -34));
     emitSignal(enableInteractionSignals(xyHandle).onPointerDown, createPointerData(100, 50));
     emitSignal(enableInteractionSignals(xyHandle).onPointerMove, createPointerData(108, 61));
-    expect(translated).toHaveBeenLastCalledWith(8, 11);
+    expect(translated).toHaveBeenLastCalledWith([8, 11]);
   });
 
   it('emits rotation deltas in degrees only and applies degree snapping', () => {
@@ -644,19 +650,19 @@ describe('updateGizmo', () => {
 
     emitSignal(enableInteractionSignals(xHandle).onPointerDown, createPointerData(172, 50));
     emitSignal(enableInteractionSignals(xHandle).onPointerMove, createPointerData(208, 50));
-    expect(scaled).toHaveBeenLastCalledWith(1.5, 1);
+    expect(scaled).toHaveBeenLastCalledWith([1.5, 1]);
     emitSignal(enableInteractionSignals(xHandle).onPointerUp, createPointerData(208, 50));
     emitSignal(enableInteractionSignals(xHandle).onPointerDown, createPointerData(172, 50));
     emitSignal(enableInteractionSignals(xHandle).onPointerMove, createPointerData(208, 50, 1, true));
-    expect(scaled).toHaveBeenLastCalledWith(1.5, 1.5);
+    expect(scaled).toHaveBeenLastCalledWith([1.5, 1.5]);
     emitSignal(enableInteractionSignals(xHandle).onPointerUp, createPointerData(208, 50));
     emitSignal(enableInteractionSignals(yHandle).onPointerDown, createPointerData(100, -22));
     emitSignal(enableInteractionSignals(yHandle).onPointerMove, createPointerData(100, -58, 1, true));
-    expect(scaled).toHaveBeenLastCalledWith(1.5, 1.5);
+    expect(scaled).toHaveBeenLastCalledWith([1.5, 1.5]);
     emitSignal(enableInteractionSignals(yHandle).onPointerUp, createPointerData(100, -58));
     emitSignal(enableInteractionSignals(xyHandle).onPointerDown, createPointerData(107, 57));
     emitSignal(enableInteractionSignals(xyHandle).onPointerMove, createPointerData(114, 64));
-    expect(scaled).toHaveBeenLastCalledWith(2, 2);
+    expect(scaled).toHaveBeenLastCalledWith([2, 2]);
   });
 
   it('supports y-axis scale and ignores pointer traffic from another identity', () => {
@@ -670,7 +676,7 @@ describe('updateGizmo', () => {
     emitSignal(enableInteractionSignals(handle).onPointerMove, createPointerData(100, -58, 2));
     expect(scaled).not.toHaveBeenCalled();
     emitSignal(enableInteractionSignals(handle).onPointerMove, createPointerData(100, -58));
-    expect(scaled).toHaveBeenCalledWith(1, 1.5);
+    expect(scaled).toHaveBeenCalledWith([1, 1.5]);
   });
 
   it('keeps neutral scale factors for degenerate drag origins', () => {
@@ -684,7 +690,7 @@ describe('updateGizmo', () => {
     for (const handle of [xHandle, yHandle, xyHandle]) {
       emitSignal(enableInteractionSignals(handle).onPointerDown, createPointerData(100, 50));
       emitSignal(enableInteractionSignals(handle).onPointerMove, createPointerData(120, 70));
-      expect(scaled).toHaveBeenLastCalledWith(1, 1);
+      expect(scaled).toHaveBeenLastCalledWith([1, 1]);
       emitSignal(enableInteractionSignals(handle).onPointerUp, createPointerData(120, 70));
     }
   });
@@ -742,11 +748,11 @@ function runProjectedWorldGesture(gesture: ProjectedWorldGesture, transformedCam
   connectSignal(signals.onTransformBegin, began);
   connectSignal(signals.onTransformEnd, ended);
   if (gesture.mode === 'translate') {
-    connectSignal(signals.onTranslate, (x, y) => deltas.push([roundTransformValue(x), roundTransformValue(y)]));
+    connectSignal(signals.onTranslate, ([x, y]) => deltas.push([roundTransformValue(x), roundTransformValue(y)]));
   } else if (gesture.mode === 'rotate') {
     connectSignal(signals.onRotate, (degrees) => deltas.push([roundTransformValue(degrees)]));
   } else {
-    connectSignal(signals.onScale, (x, y) => deltas.push([roundTransformValue(x), roundTransformValue(y)]));
+    connectSignal(signals.onScale, ([x, y]) => deltas.push([roundTransformValue(x), roundTransformValue(y)]));
   }
   const nodeBefore = snapshotNodeTransform(node);
   const handle = getGizmoHandle(context.overlay, gesture.handleName);
@@ -809,7 +815,7 @@ function expectScaleDelta(context: Readonly<TestContext>, scale: number, expecte
   emitSignal(enableInteractionSignals(handle).onPointerDown, createPointerData(110, 50));
   emitSignal(enableInteractionSignals(handle).onPointerMove, createPointerData(100 + 10 * scale, 50));
   emitSignal(enableInteractionSignals(handle).onPointerUp, createPointerData(100, 50));
-  expect(scaled.mock.calls.at(-1)?.[0]).toBeCloseTo(expected, 8);
+  expect(scaled.mock.calls.at(-1)?.[0][0]).toBeCloseTo(expected, 8);
 }
 
 function expectTranslationDelta(context: Readonly<TestContext>, deltaX: number, expected: number): void {
@@ -819,7 +825,7 @@ function expectTranslationDelta(context: Readonly<TestContext>, deltaX: number, 
   emitSignal(enableInteractionSignals(handle).onPointerDown, createPointerData(172, 50));
   emitSignal(enableInteractionSignals(handle).onPointerMove, createPointerData(172 + deltaX, 50));
   emitSignal(enableInteractionSignals(handle).onPointerUp, createPointerData(100, 50));
-  expect(translated.mock.calls.at(-1)?.[0]).toBeCloseTo(expected, 8);
+  expect(translated.mock.calls.at(-1)?.[0][0]).toBeCloseTo(expected, 8);
 }
 
 function createPointerData(x: number, y: number, pointerId: number = 1, shiftKey: boolean = false): PointerEventData {

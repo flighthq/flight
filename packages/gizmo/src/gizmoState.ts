@@ -349,17 +349,17 @@ function connectGizmoHandle<NodeType extends HierarchyNodeAny>(
   const onPointerEnd = (data: Readonly<PointerEventData>) => {
     if (runtime.drag?.pointerId === data.pointerId) finishGizmoTransform(runtime);
   };
-  connectSignal(signals.onPointerDown, onPointerDown);
-  connectSignal(signals.onPointerMove, onPointerMove);
-  connectSignal(signals.onPointerUp, onPointerEnd);
-  connectSignal(signals.onPointerCancel, onPointerEnd);
-  connectSignal(signals.onReleaseOutside, onPointerEnd);
+  const pointerDownSlot = connectSignal(signals.onPointerDown, onPointerDown);
+  const pointerMoveSlot = connectSignal(signals.onPointerMove, onPointerMove);
+  const pointerUpSlot = connectSignal(signals.onPointerUp, onPointerEnd);
+  const pointerCancelSlot = connectSignal(signals.onPointerCancel, onPointerEnd);
+  const releaseOutsideSlot = connectSignal(signals.onReleaseOutside, onPointerEnd);
   runtime.cleanups.push(() => {
-    disconnectSignal(signals.onPointerDown, onPointerDown);
-    disconnectSignal(signals.onPointerMove, onPointerMove);
-    disconnectSignal(signals.onPointerUp, onPointerEnd);
-    disconnectSignal(signals.onPointerCancel, onPointerEnd);
-    disconnectSignal(signals.onReleaseOutside, onPointerEnd);
+    disconnectSignal(signals.onPointerDown, pointerDownSlot);
+    disconnectSignal(signals.onPointerMove, pointerMoveSlot);
+    disconnectSignal(signals.onPointerUp, pointerUpSlot);
+    disconnectSignal(signals.onPointerCancel, pointerCancelSlot);
+    disconnectSignal(signals.onReleaseOutside, releaseOutsideSlot);
   });
 }
 
@@ -486,7 +486,7 @@ function drawGizmoRotateHandle(shape: Shape, radius: number): void {
 function finishGizmoTransform<NodeType extends HierarchyNodeAny>(runtime: GizmoRuntime<NodeType>): void {
   if (runtime.drag === null) return;
   runtime.drag = null;
-  emitSignal(runtime.signals.onTransformEnd);
+  emitSignal(runtime.signals.onTransformEnd, undefined);
 }
 
 function getGizmoHandleCursor(
@@ -609,7 +609,7 @@ function startGizmoTransform<NodeType extends HierarchyNodeAny>(
     startWorldX: runtime.scratchPoint.x,
     startWorldY: runtime.scratchPoint.y,
   };
-  emitSignal(runtime.signals.onTransformBegin);
+  emitSignal(runtime.signals.onTransformBegin, undefined);
 }
 
 function toGizmoHandleName(placement: GizmoHandlePlacement): string {
@@ -776,11 +776,10 @@ function updateGizmoScale<NodeType extends HierarchyNodeAny>(
     scaleX = uniform;
     scaleY = uniform;
   }
-  emitSignal(
-    runtime.signals.onScale,
+  emitSignal(runtime.signals.onScale, [
     snapGizmoScale(scaleX, runtime.snapScale),
     snapGizmoScale(scaleY, runtime.snapScale),
-  );
+  ]);
 }
 
 function updateGizmoTransform<NodeType extends HierarchyNodeAny>(
@@ -827,7 +826,7 @@ function updateGizmoTranslation<NodeType extends HierarchyNodeAny>(
     if (drag.handle !== 'translate-y') localX = roundTo(pivotLocalX + localX, runtime.snapTranslate) - pivotLocalX;
     if (drag.handle !== 'translate-x') localY = roundTo(pivotLocalY + localY, runtime.snapTranslate) - pivotLocalY;
   }
-  emitSignal(runtime.signals.onTranslate, localX * cos - localY * sin, localX * sin + localY * cos);
+  emitSignal(runtime.signals.onTranslate, [localX * cos - localY * sin, localX * sin + localY * cos]);
 }
 
 const arrowSize = 7;

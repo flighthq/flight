@@ -47,12 +47,12 @@ export interface GizmoCreateOptions<NodeType extends HierarchyNodeAny = Hierarch
 
 export interface GizmoSignals {
   /** Rotation deltas are always authoring-layer degrees, including snapped values. */
-  onRotate: Signal<(degrees: number) => void>;
-  onScale: Signal<(scaleX: number, scaleY: number) => void>;
+  onRotate: Signal<number>;
+  onScale: Signal<readonly [scaleX: number, scaleY: number]>;
   /** Brackets exactly one transform command; operation details arrive on the delta signals. */
-  onTransformBegin: Signal<() => void>;
-  onTransformEnd: Signal<() => void>;
-  onTranslate: Signal<(deltaX: number, deltaY: number) => void>;
+  onTransformBegin: Signal<void>;
+  onTransformEnd: Signal<void>;
+  onTranslate: Signal<readonly [deltaX: number, deltaY: number]>;
 }
 
 /**
