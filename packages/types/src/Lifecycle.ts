@@ -29,16 +29,16 @@ export interface HostLifecycleCapability {
 // AppLoop lifecycle event entity. Enable delivery with attachAppLifecycle; the signals stay
 // inert until then.
 export interface AppLifecycle extends Entity {
-  onStateChange: Signal<(state: AppLifecycleState) => void>;
-  onResume: Signal<() => void>;
-  onPause: Signal<() => void>;
-  onBackButton: Signal<() => void>;
+  onStateChange: Signal<AppLifecycleState>;
+  onResume: Signal<void>;
+  onPause: Signal<void>;
+  onBackButton: Signal<void>;
   // Emitted on an OS memory-pressure change with the current pressure level.
-  onMemoryWarning: Signal<(level: AppMemoryPressure) => void>;
+  onMemoryWarning: Signal<AppMemoryPressure>;
   // Emitted when leaving 'active' so listeners can stash transient UI state into the bag for restore.
-  onSaveState: Signal<(state: Record<string, unknown>) => void>;
+  onSaveState: Signal<Record<string, unknown>>;
   // Emitted on warm resume with the previously saved state bag.
-  onRestoreState: Signal<(state: Readonly<Record<string, unknown>>) => void>;
+  onRestoreState: Signal<Readonly<Record<string, unknown>>>;
 }
 
 // Every operation name on the provider, DERIVED from the interface rather than listed. A hand-written

@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { cancelSignal, connectSignal } from '@flighthq/signals/contract';
+import { cancelSignal, connectSignal, disconnectSignal } from '@flighthq/signals/contract';
+import type { Signal, SlotId } from '@flighthq/signals/contract';
 import type {
   HostLifecycleCapability,
   AppLaunchKind,
@@ -67,6 +68,23 @@ function fakeBackend(): FakeBackend {
 }
 
 describe('attachAppLifecycle', () => {
+  it('stops a pause slot disconnected by its SlotId', () => {
+    const backend = fakeBackend();
+    const host = hostOf(backend);
+    const app = createAppLifecycle();
+    let pauses = 0;
+    const id: SlotId = connectSignal(app.onPause, () => pauses++);
+    attachAppLifecycle(host.system.lifecycle, app);
+    backend.state = 'background';
+    backend.fire();
+    disconnectSignal(app.onPause, id);
+    backend.state = 'active';
+    backend.fire();
+    backend.state = 'background';
+    backend.fire();
+    expect(pauses).toBe(1);
+  });
+
   it('emits onPause and onStateChange when leaving active for background', () => {
     const backend = fakeBackend();
     const host = hostOf(backend);
@@ -309,6 +327,17 @@ describe('attachAppLifecycle', () => {
 });
 
 describe('createAppLifecycle', () => {
+  it('types the lifecycle signals by their payload, void where there is none', () => {
+    const app = createAppLifecycle();
+    expectTypeOf(app.onStateChange).toEqualTypeOf<Signal<AppLifecycleState>>();
+    expectTypeOf(app.onResume).toEqualTypeOf<Signal<void>>();
+    expectTypeOf(app.onPause).toEqualTypeOf<Signal<void>>();
+    expectTypeOf(app.onBackButton).toEqualTypeOf<Signal<void>>();
+    expectTypeOf(app.onMemoryWarning).toEqualTypeOf<Signal<AppMemoryPressure>>();
+    expectTypeOf(app.onSaveState).toEqualTypeOf<Signal<Record<string, unknown>>>();
+    expectTypeOf(app.onRestoreState).toEqualTypeOf<Signal<Readonly<Record<string, unknown>>>>();
+  });
+
   it('creates an entity with all seven signals', () => {
     const app = createAppLifecycle();
     expect(app.onStateChange).toBeDefined();

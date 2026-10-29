@@ -28,14 +28,14 @@ export function attachAppLifecycle(hostLifecycle: Readonly<HostLifecycleCapabili
     const state = backend.getState();
     emitSignal(app.onStateChange, state);
     if (state === 'active' && previous !== 'active') {
-      emitSignal(app.onResume);
+      emitSignal(app.onResume, undefined);
       // Warm resume: restore saved state.
       const saved = _savedState.get(app);
       if (saved !== undefined) {
         emitSignal(app.onRestoreState, saved);
       }
     } else if (state !== 'active' && previous === 'active') {
-      emitSignal(app.onPause);
+      emitSignal(app.onPause, undefined);
       // Collect transient UI state for potential restore on next resume.
       const stateBag: Record<string, unknown> = {};
       emitSignal(app.onSaveState, stateBag);
@@ -145,7 +145,7 @@ export function isAppInactive(hostLifecycle: Readonly<HostLifecycleCapability>):
 // the default back action (navigate up or exit). Mirrors the onCloseRequest/requestCloseWindow
 // veto contract from @flighthq/app.
 export function requestAppBack(app: AppLifecycle): boolean {
-  emitSignal(app.onBackButton);
+  emitSignal(app.onBackButton, undefined);
   return app.onBackButton.data?.cancelled !== true;
 }
 
