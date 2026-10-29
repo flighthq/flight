@@ -2318,6 +2318,71 @@ pub fn default_facet() -> Facet {
     }
 
     #[test]
+    fn lowers_union_variant_references_only_in_code() {
+        let source = r#"
+//! flight-compiler: numeric-union Direction
+//! flight-compiler: string-union Mode
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Direction {
+    Forward = 1,
+    Backward = -1,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum Mode {
+    Fast,
+    Slow,
+}
+
+/// Names `Direction.Forward` and `Mode.Fast` in prose; neither is a reference.
+pub fn describe(direction: Direction, mode: Mode) -> String {
+    if direction == Direction::Forward && mode == Mode::Fast {
+        return format!("Direction.Forward Mode.Fast {}", direction_value(Direction::Backward));
+    }
+    let label = "Direction.Backward 'Mode.Slow' `Direction.Forward`";
+    return format!("{label} {}", mode_label(Mode::Slow));
+}
+
+pub fn direction_label() -> &'static str {
+    return "Direction.Forward";
+}
+
+pub fn direction_value(direction: Direction) -> i32 {
+    return match direction {
+        Direction::Forward => 1,
+        Direction::Backward => -1,
+    };
+}
+
+pub fn mode_label(mode: Mode) -> &'static str {
+    return match mode {
+        Mode::Fast => "Mode.Fast",
+        Mode::Slow => "Mode.Slow",
+    };
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains(
+            " * Names `Direction.Forward` and `Mode.Fast` in prose; neither is a reference.\n"
+        ));
+        assert!(output.contains("if (direction === 1 && mode === \"fast\") {"));
+        assert!(output.contains("return `Direction.Forward Mode.Fast ${directionValue(-1)}`;"));
+        assert!(
+            output
+                .contains("const label = \"Direction.Backward 'Mode.Slow' `Direction.Forward`\";")
+        );
+        assert!(output.contains("return `${label} ${modeLabel(\"slow\")}`;"));
+        assert!(output.contains("return \"Direction.Forward\";"));
+        assert!(output.contains("case 1:\n      return 1;"));
+        assert!(output.contains("case -1:\n      return -1;"));
+        assert!(output.contains("case \"fast\":\n      return \"Mode.Fast\";"));
+        assert!(output.contains("case \"slow\":\n      return \"Mode.Slow\";"));
+    }
+
+    #[test]
     fn emits_numeric_unions_as_type_only_integer_aliases() {
         let source = r#"
 //! flight-compiler: numeric-union Direction
@@ -7676,6 +7741,71 @@ mod ease_steps {
         assert!(!output.contains("  StepPosition,"));
         assert!(output.contains("easeSteps(4, \"jumpEnd\")"));
         assert!(!output.contains("StepPosition.JumpEnd"));
+    }
+
+    #[test]
+    fn lowers_inherited_union_variant_references_only_in_code() {
+        let production = r#"
+//! flight-compiler: numeric-union Direction
+//! flight-compiler: string-union Mode
+
+pub enum Direction {
+    Forward = 1,
+    Backward = -1,
+}
+
+pub enum Mode {
+    Fast,
+    Slow,
+}
+
+pub fn mode_label(mode: Mode) -> &'static str {
+    return match mode {
+        Mode::Fast => "Mode.Fast",
+        Mode::Slow => "Mode.Slow",
+    };
+}
+
+pub fn reverse(direction: Direction) -> Direction {
+    return match direction {
+        Direction::Forward => Direction::Backward,
+        Direction::Backward => Direction::Forward,
+    };
+}
+"#;
+        let source = r#"
+use flight_motionpath::*;
+
+mod reverse {
+    use super::*;
+
+    #[test]
+    fn keeps_variant_text_in_literals() {
+        assert_eq!(reverse(Direction::Forward), Direction::Backward);
+        assert_eq!(mode_label(Mode::Fast), "Mode.Fast");
+        assert_eq!(
+            format!("Direction.Forward {}", mode_label(Mode::Slow)),
+            "Direction.Forward Mode.Slow"
+        );
+        assert_eq!("Direction.Backward", "Direction.Backward");
+    }
+}
+"#;
+
+        let output = compile_vitest_with_alias_sources(
+            source,
+            "@flighthq/motionpath/contract",
+            &[production],
+        )
+        .unwrap();
+
+        assert!(output.contains("expect(reverse(1)).toEqual(-1);"));
+        assert!(output.contains("expect(modeLabel(\"fast\")).toEqual(\"Mode.Fast\");"));
+        assert!(output.contains(
+            "expect(`Direction.Forward ${modeLabel(\"slow\")}`).toEqual(\"Direction.Forward Mode.Slow\");"
+        ));
+        assert!(output.contains("expect(\"Direction.Backward\").toEqual(\"Direction.Backward\");"));
+        assert!(!output.contains("  Direction,"));
     }
 
     #[test]

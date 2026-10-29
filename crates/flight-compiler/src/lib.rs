@@ -105,19 +105,14 @@ fn compile_typescript_sources(
         &dependency_export_names,
         module_identities.as_deref(),
     )?;
-    output = lower_string_union_variants(
-        output,
-        &program.string_unions,
-        &program.string_union_values,
-        false,
-    )?;
+    output =
+        lower_string_union_variants(output, &program.string_unions, &program.string_union_values)?;
     output = lower_numeric_union_variants(output, &program.numeric_unions)?;
     for alias_program in &alias_programs {
         output = lower_string_union_variants(
             output,
             &alias_program.string_unions,
             &alias_program.string_union_values,
-            false,
         )?;
         output = lower_numeric_union_variants(output, &alias_program.numeric_unions)?;
     }
@@ -315,14 +310,12 @@ fn compile_vitest_with_contract_alias_sources_internal(
         program.helpers.iter(),
     );
     let mut output = vitest::emit_test_program(&program, contract_module, &context)?;
-    output =
-        lower_string_union_variants(output, &string_unions.styles, &string_unions.values, false)?;
+    output = lower_string_union_variants(output, &string_unions.styles, &string_unions.values)?;
     for alias_program in &alias_programs {
         output = lower_string_union_variants(
             output,
             &alias_program.string_unions,
             &alias_program.string_union_values,
-            false,
         )?;
         output = lower_numeric_union_variants(output, &alias_program.numeric_unions)?;
     }
@@ -348,53 +341,63 @@ fn dependency_export_names<'a>(
 
 // Replaces each emitted `Owner.Variant` reference to a numeric union with the variant's declared
 // integer discriminant and drops the owner from value import lists: the TypeScript declaration is a
-// type-only alias, so no runtime value exists. A reference to an undeclared variant, or one whose
-// replacement would read as a different expression (adjacent to an identifier, `.`, `+` or `-`),
-// fails closed.
+// type-only alias, so no runtime value exists. Only code is rewritten (see `typescript_code_ranges`);
+// string, comment, and template-literal text is data and stays byte-for-byte. A reference to an
+// undeclared variant, or one whose replacement would read as a different expression (adjacent to an
+// identifier, `.`, `+` or `-`), fails closed.
 fn lower_numeric_union_variants(
     mut output: String,
     numeric_unions: &std::collections::BTreeMap<String, Vec<(String, i64)>>,
 ) -> Result<String, CompileError> {
     for (owner, variants) in numeric_unions {
         let prefix = format!("{owner}.");
-        let mut cursor = 0;
-        while let Some(relative_start) = output[cursor..].find(&prefix) {
-            let start = cursor + relative_start;
-            let variant_start = start + prefix.len();
-            let preceding = output[..start].chars().next_back();
-            if preceding.is_some_and(|character| {
-                character.is_ascii_alphanumeric() || character == '_' || character == '.'
-            }) {
-                cursor = variant_start;
-                continue;
+        output = rewrite_typescript_code(&output, |code| {
+            let mut code = code.to_string();
+            let mut cursor = 0;
+            while let Some(relative_start) = code[cursor..].find(&prefix) {
+                let start = cursor + relative_start;
+                let variant_start = start + prefix.len();
+                let preceding = code[..start].chars().next_back();
+                if preceding.is_some_and(|character| {
+                    character.is_ascii_alphanumeric() || character == '_' || character == '.'
+                }) {
+                    cursor = variant_start;
+                    continue;
+                }
+                let variant_length = code[variant_start..]
+                    .chars()
+                    .take_while(|character| character.is_ascii_alphanumeric() || *character == '_')
+                    .map(char::len_utf8)
+                    .sum::<usize>();
+                let end = variant_start + variant_length;
+                let variant = &code[variant_start..end];
+                let Some((_, value)) = variants.iter().find(|(name, _)| name == variant) else {
+                    return Err(compile_error(format!(
+                        "numeric union `{owner}` has no variant `{variant}`"
+                    )));
+                };
+                let before = code[..start].trim_end().chars().next_back();
+                if *value < 0
+                    && before.is_some_and(|character| character == '-' || character == '+')
+                {
+                    return Err(compile_error(format!(
+                        "numeric union `{owner}::{variant}` cannot follow a unary or binary sign"
+                    )));
+                }
+                let literal = value.to_string();
+                code.replace_range(start..end, &literal);
+                cursor = start + literal.len();
             }
-            let variant_length = output[variant_start..]
-                .chars()
-                .take_while(|character| character.is_ascii_alphanumeric() || *character == '_')
-                .map(char::len_utf8)
-                .sum::<usize>();
-            let end = variant_start + variant_length;
-            let variant = &output[variant_start..end];
-            let Some((_, value)) = variants.iter().find(|(name, _)| name == variant) else {
-                return Err(compile_error(format!(
-                    "numeric union `{owner}` has no variant `{variant}`"
-                )));
-            };
-            let before = output[..start].trim_end().chars().next_back();
-            if *value < 0 && before.is_some_and(|character| character == '-' || character == '+') {
-                return Err(compile_error(format!(
-                    "numeric union `{owner}::{variant}` cannot follow a unary or binary sign"
-                )));
-            }
-            let literal = value.to_string();
-            output.replace_range(start..end, &literal);
-            cursor = start + literal.len();
-        }
+            return Ok(code);
+        })?;
         output = remove_numeric_union_value_import(output, owner);
     }
     return Ok(output);
 }
 
+// Replaces each emitted `Owner.Variant` reference to a string union with its string literal. Only
+// code is rewritten (see `typescript_code_ranges`); string, comment, and template-literal text is
+// data and stays byte-for-byte.
 fn lower_string_union_variants(
     mut output: String,
     string_unions: &std::collections::BTreeMap<String, model::StringUnionStyle>,
@@ -402,45 +405,45 @@ fn lower_string_union_variants(
         String,
         std::collections::BTreeMap<String, String>,
     >,
-    remove_runtime_imports: bool,
 ) -> Result<String, CompileError> {
     for (owner, style) in string_unions {
-        if remove_runtime_imports {
-            output = output.replace(&format!("  {owner},\n"), "");
-        }
         let prefix = format!("{owner}.");
-        let mut cursor = 0;
-        while let Some(relative_start) = output[cursor..].find(&prefix) {
-            let start = cursor + relative_start;
-            let variant_start = start + prefix.len();
-            let variant_length = output[variant_start..]
-                .chars()
-                .take_while(|character| character.is_ascii_alphanumeric() || *character == '_')
-                .map(char::len_utf8)
-                .sum::<usize>();
-            if variant_length == 0 {
-                cursor = variant_start;
-                continue;
+        output = rewrite_typescript_code(&output, |code| {
+            let mut code = code.to_string();
+            let mut cursor = 0;
+            while let Some(relative_start) = code[cursor..].find(&prefix) {
+                let start = cursor + relative_start;
+                let variant_start = start + prefix.len();
+                let variant_length = code[variant_start..]
+                    .chars()
+                    .take_while(|character| character.is_ascii_alphanumeric() || *character == '_')
+                    .map(char::len_utf8)
+                    .sum::<usize>();
+                if variant_length == 0 {
+                    cursor = variant_start;
+                    continue;
+                }
+                let end = variant_start + variant_length;
+                let variant = &code[variant_start..end];
+                let value = if *style == model::StringUnionStyle::Exact {
+                    string_union_values
+                        .get(owner)
+                        .and_then(|values| values.get(variant))
+                        .ok_or_else(|| {
+                            compile_error(format!(
+                                "exact string union `{owner}` has no value for referenced variant `{variant}`"
+                            ))
+                        })?
+                        .clone()
+                } else {
+                    typescript::string_union_literal(variant, *style)
+                };
+                let literal = format!("{value:?}");
+                code.replace_range(start..end, &literal);
+                cursor = start + literal.len();
             }
-            let end = variant_start + variant_length;
-            let variant = &output[variant_start..end];
-            let value = if *style == model::StringUnionStyle::Exact {
-                string_union_values
-                    .get(owner)
-                    .and_then(|values| values.get(variant))
-                    .ok_or_else(|| {
-                        compile_error(format!(
-                            "exact string union `{owner}` has no value for referenced variant `{variant}`"
-                        ))
-                    })?
-                    .clone()
-            } else {
-                typescript::string_union_literal(variant, *style)
-            };
-            let literal = format!("{value:?}");
-            output.replace_range(start..end, &literal);
-            cursor = start + literal.len();
-        }
+            return Ok(code);
+        })?;
     }
     return Ok(output);
 }
@@ -480,11 +483,20 @@ fn module_identity_from_path(path: &str) -> Option<String> {
 }
 
 // Removes `owner` from every value import list (the type-only alias has no runtime binding), and
-// drops an import declaration left empty. Type imports and export lists are left untouched.
+// drops an import declaration left empty. Type imports and export lists are left untouched, and a
+// line that begins inside string, comment, or template-literal text is never read as an import.
 fn remove_numeric_union_value_import(output: String, owner: &str) -> String {
+    let code_ranges = typescript_code_ranges(&output);
     let mut lines: Vec<String> = Vec::new();
     let mut block: Option<Vec<String>> = None;
+    let mut line_start = 0;
     for line in output.lines() {
+        let offset = line_start;
+        line_start += line.len() + 1;
+        if !code_ranges.iter().any(|range| range.contains(&offset)) {
+            lines.push(line.to_string());
+            continue;
+        }
         if let Some(names) = block.as_mut() {
             let trimmed = line.trim();
             if trimmed.starts_with('}') {
@@ -528,11 +540,6 @@ fn remove_numeric_union_value_import(output: String, owner: &str) -> String {
     return result;
 }
 
-/// Reads the source-local generation mode for a Rust module or test file.
-pub fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
-    return model::source_mode(source);
-}
-
 fn require_generated_source(source: &str) -> Result<(), CompileError> {
     return match source_mode(source)? {
         SourceMode::Generate => Ok(()),
@@ -543,6 +550,124 @@ fn require_generated_source(source: &str) -> Result<(), CompileError> {
             "source is marked `flight-compiler: target-native`; preserve its target-native TypeScript file",
         )),
     };
+}
+
+// Rebuilds `source` with each code range (see `typescript_code_ranges`) passed through `rewrite`;
+// string, comment, and template-literal text between them is copied byte-for-byte.
+fn rewrite_typescript_code(
+    source: &str,
+    mut rewrite: impl FnMut(&str) -> Result<String, CompileError>,
+) -> Result<String, CompileError> {
+    let mut result = String::with_capacity(source.len());
+    let mut copied = 0;
+    for range in typescript_code_ranges(source) {
+        result.push_str(&source[copied..range.start]);
+        result.push_str(&rewrite(&source[range.clone()])?);
+        copied = range.end;
+    }
+    result.push_str(&source[copied..]);
+    return Ok(result);
+}
+
+/// Reads the source-local generation mode for a Rust module or test file.
+pub fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
+    return model::source_mode(source);
+}
+
+// The byte ranges of emitted TypeScript `source` that are code rather than literal text: everything
+// outside `'…'` / `"…"` string literals, `//` and `/* … */` comments, and template-literal text. A
+// template's `${…}` interpolation is code again, nesting to any depth. The emitter writes no
+// regular-expression literals, so `/` is either a comment opener or the division operator.
+fn typescript_code_ranges(source: &str) -> Vec<std::ops::Range<usize>> {
+    // Each entry is an open template; its value is the brace depth of the interpolation being
+    // scanned, or `None` while scanning the template's own text.
+    let mut templates: Vec<Option<usize>> = Vec::new();
+    let mut ranges: Vec<std::ops::Range<usize>> = Vec::new();
+    let bytes = source.as_bytes();
+    let mut code_start = 0;
+    let mut index = 0;
+    while index < bytes.len() {
+        if let Some(None) = templates.last() {
+            match bytes[index] {
+                b'\\' => index += 2,
+                b'`' => {
+                    templates.pop();
+                    index += 1;
+                    code_start = index;
+                }
+                b'$' if bytes.get(index + 1) == Some(&b'{') => {
+                    *templates.last_mut().unwrap() = Some(0);
+                    index += 2;
+                    code_start = index;
+                }
+                _ => index += 1,
+            }
+            continue;
+        }
+        let literal_end = match bytes[index] {
+            b'/' if bytes.get(index + 1) == Some(&b'/') => Some(
+                source[index..]
+                    .find('\n')
+                    .map_or(bytes.len(), |offset| index + offset),
+            ),
+            b'/' if bytes.get(index + 1) == Some(&b'*') => Some(
+                source[index + 2..]
+                    .find("*/")
+                    .map_or(bytes.len(), |offset| index + 2 + offset + 2),
+            ),
+            quote @ (b'\'' | b'"') => {
+                let mut end = index + 1;
+                while end < bytes.len() && bytes[end] != quote && bytes[end] != b'\n' {
+                    end += if bytes[end] == b'\\' { 2 } else { 1 };
+                }
+                Some((end + 1).min(bytes.len()))
+            }
+            b'`' => {
+                if index > code_start {
+                    ranges.push(code_start..index);
+                }
+                templates.push(None);
+                index += 1;
+                continue;
+            }
+            b'{' => {
+                if let Some(Some(depth)) = templates.last_mut() {
+                    *depth += 1;
+                }
+                None
+            }
+            b'}' => match templates.last_mut() {
+                Some(Some(0)) => {
+                    if index > code_start {
+                        ranges.push(code_start..index);
+                    }
+                    *templates.last_mut().unwrap() = None;
+                    index += 1;
+                    continue;
+                }
+                Some(Some(depth)) => {
+                    *depth -= 1;
+                    None
+                }
+                _ => None,
+            },
+            _ => None,
+        };
+        match literal_end {
+            Some(end) => {
+                if index > code_start {
+                    ranges.push(code_start..index);
+                }
+                index = end;
+                code_start = end;
+            }
+            None => index += 1,
+        }
+    }
+    if templates.last().is_none_or(Option::is_some) && bytes.len() > code_start {
+        ranges.push(code_start..bytes.len());
+    }
+    return ranges;
 }
 
 impl fmt::Display for CompileError {
