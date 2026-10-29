@@ -31,6 +31,12 @@ const FROZEN_OBJECT_MARKER: &str = "@frozen-object:";
 // in a source resolves to that source's own declaration, else to the single public declaration in
 // another source, else to nothing; private declarations are never visible across sources.
 const FUNCTION_OWNER_MARKER: &str = "@function-owner:";
+// A source's `use` bindings resolved to full module identities: explicit or renamed items
+// (`module SEP bound name SEP target module SEP item`) and globs (`module SEP target module`). Only
+// sources with a full module identity (`crate::path`) record them; others resolve their own
+// declarations alone.
+const USE_BINDING_MARKER: &str = "@use-binding:";
+const USE_GLOB_MARKER: &str = "@use-glob:";
 const IDENTITY_ALIAS_MARKER: &str = "@identity-alias:";
 const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
 const NULLABLE_OPTION_FIELD_MARKER: &str = "@nullable-option-field:";
@@ -98,6 +104,13 @@ enum RuntimeCategory {
 struct DataUnionPatternTest {
     bindings: Vec<(String, String)>,
     predicate: Option<String>,
+}
+
+// One path introduced by a `use`: the prefix segments as written, and the imported item with the
+// name it binds (`None` for a glob).
+struct UsePath {
+    item: Option<(String, String)>,
+    prefix: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -352,42 +365,91 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
     };
 }
 
-// The module declaring `name` as seen from the source `from`: its own declaration, else the single
-// public declaration in another source. Private declarations of other sources are invisible, and two
-// public candidates are ambiguous, so both resolve to nothing.
+// The declaration `name` refers to in the source `from`, as `(module, declared name)`: the source's own
+// declaration; else its explicit or renamed `use` bindings of `name`; else its glob imports. A binding
+// must reach a public declaration in a source with that full module identity. Anything missing,
+// private or ambiguous resolves to nothing, so callers fail closed rather than guess an owner, and a
+// same-named declaration in an unrelated source is never consulted.
 fn resolve_owner(
     entities: &HashSet<String>,
     marker: &str,
     from: &str,
     name: &str,
-) -> Option<String> {
+) -> Option<(String, String)> {
+    fn unique(mut candidates: BTreeSet<(String, String)>) -> Option<(String, String)> {
+        return match (candidates.pop_first(), candidates.is_empty()) {
+            (Some(candidate), true) => Some(candidate),
+            _ => None,
+        };
+    }
+
     if entities.contains(&owner_marker(marker, from, name, true))
         || entities.contains(&owner_marker(marker, from, name, false))
     {
-        return Some(from.to_string());
+        return Some((from.to_string(), name.to_string()));
     }
-    let suffix = format!("{PROVENANCE_SEPARATOR}{name}{PROVENANCE_SEPARATOR}public");
-    let mut owners = marker_suffixes(entities, marker)
+    let bindings = marker_suffixes(
+        entities,
+        &format!("{USE_BINDING_MARKER}{from}{PROVENANCE_SEPARATOR}{name}{PROVENANCE_SEPARATOR}"),
+    );
+    if !bindings.is_empty() {
+        return unique(
+            bindings
+                .into_iter()
+                .filter_map(|binding| {
+                    let (target, item) = binding.split_once(PROVENANCE_SEPARATOR)?;
+                    entities
+                        .contains(&owner_marker(marker, target, item, true))
+                        .then(|| (target.to_string(), item.to_string()))
+                })
+                .collect(),
+        );
+    }
+    return unique(
+        marker_suffixes(
+            entities,
+            &format!("{USE_GLOB_MARKER}{from}{PROVENANCE_SEPARATOR}"),
+        )
         .into_iter()
-        .filter_map(|declaration| declaration.strip_suffix(&suffix).map(str::to_string))
-        .filter(|owner| owner != from)
-        .collect::<BTreeSet<_>>();
-    return match (owners.pop_first(), owners.is_empty()) {
-        (Some(owner), true) => Some(owner),
-        _ => None,
-    };
+        .filter(|target| entities.contains(&owner_marker(marker, target, name, true)))
+        .map(|target| (target, name.to_string()))
+        .collect(),
+    );
 }
 
 // The canonical identity (`module SEP Struct`) of the struct `rust_type` names, resolved from the
 // source `from`.
+// The full module a `use` prefix names, written in the module `from`: `crate::` from the crate root,
+// `self::` and `super::` relative to `from`, and anything else as an external crate path.
+fn resolve_use_prefix(from: &[String], prefix: &[String]) -> Option<Vec<String>> {
+    let (first, rest) = prefix.split_first()?;
+    let mut module = match first.as_str() {
+        "crate" => vec![from.first()?.clone()],
+        "self" => from.to_vec(),
+        "super" => from[..from.len().checked_sub(1).filter(|length| *length > 0)?].to_vec(),
+        _ => vec![first.replace('-', "_")],
+    };
+    for segment in rest {
+        if segment == "super" {
+            module.pop();
+            if module.is_empty() {
+                return None;
+            }
+        } else if segment != "self" {
+            module.push(segment.clone());
+        }
+    }
+    return Some(module);
+}
+
 fn resolved_type_identity(
     entities: &HashSet<String>,
     from: &str,
     rust_type: &Type,
 ) -> Option<String> {
     let name = named_type(rust_type)?;
-    let owner = resolve_owner(entities, STRUCT_OWNER_MARKER, from, &name)?;
-    return Some(format!("{owner}{PROVENANCE_SEPARATOR}{name}"));
+    let (owner, declaration) = resolve_owner(entities, STRUCT_OWNER_MARKER, from, &name)?;
+    return Some(format!("{owner}{PROVENANCE_SEPARATOR}{declaration}"));
 }
 
 fn rust_type_is_ordered_primitive(rust_type: &Type) -> bool {
@@ -846,8 +908,7 @@ fn insert_sequence_context(function: &ItemFn, context: &mut HashSet<String>) {
         if rust_type_is_sequence(rust_type) {
             return Binding::Sequence;
         }
-        return current_source(entities)
-            .and_then(|module| resolved_type_identity(entities, &module, rust_type))
+        return context_type_identity(entities, rust_type)
             .map_or(Binding::Other, Binding::Structure);
     }
 
@@ -918,11 +979,20 @@ pub(crate) fn frozen_object_name<'a>(
 // The fact `marker` records for the free function `function_name` called from the current source,
 // resolved to its declaring module; `None` when the function or its fact is unknown or ambiguous.
 fn function_fact(entities: &HashSet<String>, marker: &str, function_name: &str) -> Option<String> {
-    let current = current_source(entities)?;
-    let owner = resolve_owner(entities, FUNCTION_OWNER_MARKER, &current, function_name)?;
+    let identity = match current_source(entities) {
+        Some(current) => {
+            let (owner, declaration) =
+                resolve_owner(entities, FUNCTION_OWNER_MARKER, &current, function_name)?;
+            format!("{owner}{PROVENANCE_SEPARATOR}{declaration}")
+        }
+        None => unique_marker_suffix(
+            entities,
+            &format!("{VITEST_PUBLIC_FUNCTION_MARKER}{function_name}{PROVENANCE_SEPARATOR}"),
+        )?,
+    };
     let mut facts = marker_suffixes(
         entities,
-        &format!("{marker}{owner}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}"),
+        &format!("{marker}{identity}{PROVENANCE_SEPARATOR}"),
     );
     return match (facts.pop_first(), facts.is_empty()) {
         (Some(fact), true) => Some(fact),
@@ -962,6 +1032,47 @@ fn source_module_name(source: &str) -> String {
     return without_mod.replace('/', "::");
 }
 
+// Every path a `use` declaration introduces, in source order: the full prefix and either the imported
+// item and the name it is bound to, or `None` for a glob.
+fn use_tree_paths<'a>(uses: impl Iterator<Item = &'a ItemUse>) -> Vec<UsePath> {
+    fn collect(paths: &mut Vec<UsePath>, tree: &UseTree, prefix: &mut Vec<String>) {
+        match tree {
+            UseTree::Glob(_) => paths.push(UsePath {
+                item: None,
+                prefix: prefix.clone(),
+            }),
+            UseTree::Group(group) => {
+                for tree in &group.items {
+                    collect(paths, tree, prefix);
+                }
+            }
+            UseTree::Name(name) if name.ident != "self" => {
+                let name = name.ident.to_string();
+                paths.push(UsePath {
+                    item: Some((name.clone(), name)),
+                    prefix: prefix.clone(),
+                });
+            }
+            UseTree::Rename(rename) => paths.push(UsePath {
+                item: Some((rename.ident.to_string(), rename.rename.to_string())),
+                prefix: prefix.clone(),
+            }),
+            UseTree::Path(path) => {
+                prefix.push(path.ident.to_string());
+                collect(paths, &path.tree, prefix);
+                prefix.pop();
+            }
+            UseTree::Name(_) => {}
+        }
+    }
+
+    let mut paths = Vec::new();
+    for rust_use in uses {
+        collect(&mut paths, &rust_use.tree, &mut Vec::new());
+    }
+    return paths;
+}
+
 fn provenance_import_rules<'a>(
     uses: impl Iterator<Item = &'a ItemUse>,
 ) -> Vec<ProvenanceImportRule> {
@@ -980,47 +1091,19 @@ fn provenance_import_rules<'a>(
         return Some(meaningful.join("::"));
     }
 
-    fn collect(rules: &mut Vec<ProvenanceImportRule>, tree: &UseTree, prefix: &mut Vec<String>) {
-        match tree {
-            UseTree::Glob(_) => {
-                if let Some(module) = module_name(prefix) {
-                    rules.push(ProvenanceImportRule::Wildcard { module });
-                }
+    return use_tree_paths(uses)
+        .into_iter()
+        .filter_map(|path| match path.item {
+            None => {
+                module_name(&path.prefix).map(|module| ProvenanceImportRule::Wildcard { module })
             }
-            UseTree::Group(group) => {
-                for tree in &group.items {
-                    collect(rules, tree, prefix);
-                }
-            }
-            UseTree::Name(name) if name.ident != "self" => {
-                let name = name.ident.to_string();
-                rules.push(ProvenanceImportRule::Explicit {
-                    exported: name.clone(),
-                    imported: name,
-                    module: module_name(prefix),
-                });
-            }
-            UseTree::Rename(rename) => {
-                rules.push(ProvenanceImportRule::Explicit {
-                    exported: rename.rename.to_string(),
-                    imported: rename.ident.to_string(),
-                    module: module_name(prefix),
-                });
-            }
-            UseTree::Path(path) => {
-                prefix.push(path.ident.to_string());
-                collect(rules, &path.tree, prefix);
-                prefix.pop();
-            }
-            UseTree::Name(_) => {}
-        }
-    }
-
-    let mut rules = Vec::new();
-    for rust_use in uses {
-        collect(&mut rules, &rust_use.tree, &mut Vec::new());
-    }
-    return rules;
+            Some((imported, exported)) => Some(ProvenanceImportRule::Explicit {
+                exported,
+                imported,
+                module: module_name(&path.prefix),
+            }),
+        })
+        .collect();
 }
 
 fn contract_export_rules(source: &str) -> Result<Vec<ProvenanceImportRule>, CompileError> {
@@ -1945,6 +2028,20 @@ fn generation_context_with_types(
         })
         .collect::<HashMap<_, _>>();
     for (module, program) in programs {
+        if let Some(segments) = module_identity_segments(module) {
+            for path in use_tree_paths(program.uses.iter()) {
+                let Some(target) = resolve_use_prefix(&segments, &path.prefix) else {
+                    continue;
+                };
+                let target = target.join("::");
+                context.insert(match path.item {
+                    Some((imported, exported)) => format!(
+                        "{USE_BINDING_MARKER}{module}{PROVENANCE_SEPARATOR}{exported}{PROVENANCE_SEPARATOR}{target}{PROVENANCE_SEPARATOR}{imported}"
+                    ),
+                    None => format!("{USE_GLOB_MARKER}{module}{PROVENANCE_SEPARATOR}{target}"),
+                });
+            }
+        }
         for structure in &program.structs {
             context.insert(owner_marker(
                 STRUCT_OWNER_MARKER,
@@ -2468,6 +2565,16 @@ pub(crate) fn update_vitest_local_function_context(
     *context = vitest_pattern_context(context, &local.pat);
 }
 
+// The canonical identity of the struct `rust_type` names in the code being emitted: resolved from the
+// current source when emitting a program, or through the contract-selected struct binding when
+// emitting a Vitest suite (whose test module is not itself a program source).
+fn context_type_identity(entities: &HashSet<String>, rust_type: &Type) -> Option<String> {
+    if let Some(current) = current_source(entities) {
+        return resolved_type_identity(entities, &current, rust_type);
+    }
+    return vitest_struct_owner(entities, &named_type(rust_type)?);
+}
+
 // The module of the program being emitted, when exactly one is recorded.
 fn current_source(entities: &HashSet<String>) -> Option<String> {
     let mut modules = marker_suffixes(entities, CURRENT_SOURCE_MARKER);
@@ -2479,19 +2586,13 @@ fn current_source(entities: &HashSet<String>) -> Option<String> {
 
 // The Option and named-type markers for a local or parameter declared with `rust_type`.
 fn declared_type_markers(name: &str, rust_type: &Type, entities: &HashSet<String>) -> Vec<String> {
-    let current = current_source(entities);
-    let resolve = |rust_type: &Type| {
-        current
-            .as_deref()
-            .and_then(|module| resolved_type_identity(entities, module, rust_type))
-    };
     if let Some(inner) = option_inner_type(rust_type) {
         return vec![format!(
             "{OPTION_LOCAL_MARKER}{name}:{}",
-            resolve(inner).unwrap_or_default()
+            context_type_identity(entities, inner).unwrap_or_default()
         )];
     }
-    return resolve(rust_type)
+    return context_type_identity(entities, rust_type)
         .map(|identity| format!("{STRUCT_LOCAL_MARKER}{name}:{identity}"))
         .into_iter()
         .collect();
@@ -5775,10 +5876,9 @@ fn emit_method_call(
         "extend" => Err(compile_error(
             "portable `.extend()` is supported only as a statement",
         )),
-        "extend_from_slice" if arguments.len() == 1 => {
-            validate_sequence_operands("extend_from_slice", call, entities)?;
-            Ok(format!("{receiver}.push(...{})", arguments[0]))
-        }
+        "extend_from_slice" => Err(compile_error(
+            "portable `.extend_from_slice()` is supported only as a statement",
+        )),
         "wrapping_add" if arguments.len() == 1 => {
             Ok(format!("(({receiver}) + {}) >>> 0", arguments[0]))
         }
@@ -6019,7 +6119,15 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
             }
             _ => false,
         },
-        Expr::Index(index) if matches!(index.index.as_ref(), Expr::Range(_)) => {
+        // Only the range forms whose `.slice` emission is valid: a prefix `..end` and inclusive ranges
+        // are left unknown until range slices are lowered with Rust bounds.
+        Expr::Index(index)
+            if matches!(
+                index.index.as_ref(),
+                Expr::Range(range) if matches!(range.limits, syn::RangeLimits::HalfOpen(_))
+                    && (range.start.is_some() || range.end.is_none())
+            ) =>
+        {
             expression_is_sequence(&index.expr, entities)
         }
         Expr::Field(field) => {
@@ -6052,16 +6160,14 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
     };
 }
 
-// `Vec::new()`, `Vec::with_capacity(..)` or `vec![..]`, which are Rust `Vec`s whatever their element.
+// A non-empty `vec![..]`, the one untyped `Vec` construction whose emitted array carries its element
+// type. `Vec::new()`, `Vec::with_capacity(..)` and `vec![]` stay unknown until their element type can
+// be proven, so an untyped binding of them is never treated as a typed sequence.
 fn expression_is_vec_construction(expression: &Expr) -> bool {
-    return match expression {
-        Expr::Call(call) => {
-            expression_is_associated_path(&call.func, "Vec", "new")
-                || expression_is_associated_path(&call.func, "Vec", "with_capacity")
-        }
-        Expr::Macro(invocation) => invocation.mac.path.is_ident("vec"),
-        _ => false,
-    };
+    return matches!(
+        expression,
+        Expr::Macro(invocation) if invocation.mac.path.is_ident("vec") && !invocation.mac.tokens.is_empty()
+    );
 }
 
 // The named type of a local, parameter or closure parameter declared as a non-Option Rust type.
@@ -6821,6 +6927,7 @@ pub(crate) fn emit_program(
     entity_module: Option<&str>,
     alias_programs: &[Program],
     external_alias_programs: &[(BTreeMap<String, String>, &str)],
+    module_identities: Option<&[String]>,
 ) -> Result<String, CompileError> {
     let programs = std::iter::once(program)
         .chain(alias_programs)
@@ -6837,9 +6944,14 @@ pub(crate) fn emit_program(
     for (name, alias) in &external_identity_aliases {
         identity_context.insert(identity_alias_marker(name, &alias.tag));
     }
-    let program_modules = (0..programs.len())
-        .map(|index| format!("typescript-source/{index}"))
-        .collect::<Vec<_>>();
+    // Full module identities when the caller supplies them; otherwise synthetic keys, under which each
+    // source resolves only its own declarations.
+    let program_modules = match module_identities {
+        Some(identities) if identities.len() == programs.len() => identities.to_vec(),
+        _ => (0..programs.len())
+            .map(|index| format!("typescript-source/{index}"))
+            .collect::<Vec<_>>(),
+    };
     let program_sources = program_modules
         .iter()
         .zip(&programs)
@@ -7143,7 +7255,9 @@ fn emit_statement(
                 out.push_str("}\n");
             }
         }
-        Stmt::Expr(Expr::MethodCall(call), _) if call.method == "extend" => {
+        Stmt::Expr(Expr::MethodCall(call), _)
+            if call.method == "extend" || call.method == "extend_from_slice" =>
+        {
             emit_vec_extend_statement(out, call, entities, indent)?;
         }
         Stmt::Expr(Expr::ForLoop(loop_expression), _) => {
@@ -7683,18 +7797,18 @@ fn emit_unary_operator(operator: &UnOp) -> Result<&'static str, CompileError> {
     };
 }
 
-// `Vec::extend` as a statement: an index loop over the argument's initial length, so no argument
+// `Vec::extend` and `Vec::extend_from_slice` as statements: an index loop over the argument's initial length, so no argument
 // count ceiling applies and a TypeScript caller passing the receiver as the argument still terminates
-// (Rust ownership forbids that aliasing, the emitted signature does not). A non-reusable argument is
-// evaluated once into a block-scoped temporary; the receiver is a declared local or field path, which
-// is side-effect free to repeat. Every binding avoids the identifiers the operands use.
+// (Rust ownership forbids that aliasing, the emitted signature does not). A non-reusable receiver and
+// argument are each evaluated once, in that Rust order, into block-scoped temporaries. Every binding
+// avoids the identifiers the operands use.
 fn emit_vec_extend_statement(
     out: &mut String,
     call: &syn::ExprMethodCall,
     entities: &HashSet<String>,
     indent: usize,
 ) -> Result<(), CompileError> {
-    validate_sequence_operands("extend", call, entities)?;
+    validate_sequence_operands(&call.method.to_string(), call, entities)?;
     let receiver = emit_expression(&call.receiver, entities)?;
     let argument = emit_expression(&call.args[0], entities)?;
     let mut used = format!("{receiver} {argument}")
@@ -7703,7 +7817,13 @@ fn emit_vec_extend_statement(
         })
         .map(str::to_string)
         .collect::<HashSet<_>>();
+    let bind_target = !expression_is_reusable(&call.receiver);
     let bind_source = !expression_is_reusable(&call.args[0]);
+    let target = if bind_target {
+        fresh_identifier("target", &mut used)
+    } else {
+        receiver.clone()
+    };
     let source = if bind_source {
         fresh_identifier("source", &mut used)
     } else {
@@ -7712,10 +7832,16 @@ fn emit_vec_extend_statement(
     let index = fresh_identifier("index", &mut used);
     let count = fresh_identifier("count", &mut used);
     let mut loop_indent = indent;
-    if bind_source {
+    if bind_target || bind_source {
         write_indent(out, indent);
         out.push_str("{\n");
         loop_indent += 1;
+    }
+    if bind_target {
+        write_indent(out, loop_indent);
+        writeln!(out, "const {target} = {receiver};").expect("writing to a String cannot fail");
+    }
+    if bind_source {
         write_indent(out, loop_indent);
         writeln!(out, "const {source} = {argument};").expect("writing to a String cannot fail");
     }
@@ -7726,10 +7852,10 @@ fn emit_vec_extend_statement(
     )
     .expect("writing to a String cannot fail");
     write_indent(out, loop_indent + 1);
-    writeln!(out, "{receiver}.push({source}[{index}]);").expect("writing to a String cannot fail");
+    writeln!(out, "{target}.push({source}[{index}]);").expect("writing to a String cannot fail");
     write_indent(out, loop_indent);
     out.push_str("}\n");
-    if bind_source {
+    if bind_target || bind_source {
         write_indent(out, indent);
         out.push_str("}\n");
     }
@@ -8125,6 +8251,19 @@ fn marker_suffixes(entities: &HashSet<String>, prefix: &str) -> BTreeSet<String>
         .iter()
         .filter_map(|marker| marker.strip_prefix(prefix).map(str::to_string))
         .collect();
+}
+
+// The segments of a full module identity (`crate::path::to::module`), or `None` for any other source
+// key (a synthetic or path-shaped key carries no module identity).
+fn module_identity_segments(module: &str) -> Option<Vec<String>> {
+    let segments = module.split("::").map(str::to_string).collect::<Vec<_>>();
+    let valid = segments.iter().all(|segment| {
+        !segment.is_empty()
+            && segment
+                .chars()
+                .all(|character| character.is_ascii_alphanumeric() || character == '_')
+    });
+    return valid.then_some(segments);
 }
 
 pub(crate) fn string_union_literal(name: &str, style: StringUnionStyle) -> String {

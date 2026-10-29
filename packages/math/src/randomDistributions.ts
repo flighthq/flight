@@ -210,7 +210,9 @@ export function randomWeighted(random: RandomSource, weights: Readonly<number[]>
  */
 export function shuffle<T>(out: T[], random: RandomSource, items: Readonly<T[]>): void {
   out.length = 0;
-  out.push(...items);
+  for (let index = 0, count = items.length; index < count; index++) {
+    out.push(items[index]);
+  }
   shuffleInPlace(random, out);
 }
 

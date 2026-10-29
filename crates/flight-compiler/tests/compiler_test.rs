@@ -1,8 +1,9 @@
 use flight_compiler::{
-    ExternalAliasSource, SourceMode, VitestAliasSource, compile_typescript,
+    ExternalAliasSource, ModuleSource, SourceMode, VitestAliasSource, compile_typescript,
     compile_typescript_with_alias_sources, compile_typescript_with_external_alias_sources,
-    compile_vitest, compile_vitest_with_alias_sources, compile_vitest_with_contract_alias_sources,
-    compile_vitest_with_module_alias_sources, source_mode,
+    compile_typescript_with_module_sources, compile_vitest, compile_vitest_with_alias_sources,
+    compile_vitest_with_contract_alias_sources, compile_vitest_with_module_alias_sources,
+    source_mode,
 };
 
 mod source_modes {
@@ -697,11 +698,11 @@ pub fn move_distance(a: &Segment, b: &Segment) -> f64 {
         }
     }
 
-    // A statement `.extend()` over a receiver declared as a Rust `Vec` and an argument declared as a
-    // `Vec`, slice or array lowers to an index loop over the argument's initial length, so no argument
-    // count ceiling applies and a TypeScript caller aliasing the operands still terminates. Sequence
-    // facts follow private struct fields, same-program struct returns, bare moves and `Vec`
-    // constructions, and a name counts only when every binding of it agrees.
+    // Statement `.extend()` and `.extend_from_slice()` over a receiver declared as a Rust `Vec` and an
+    // argument declared as a `Vec`, slice or array lower to an index loop over the argument's initial
+    // length: no argument count ceiling, and a TypeScript caller aliasing the operands still
+    // terminates. A non-reusable receiver, then argument, are each bound once. Construction and range
+    // forms whose emission is not yet valid typed TypeScript fail closed.
     #[test]
     fn lowers_vec_extend_over_declared_sequences() {
         let source = r#"
@@ -734,7 +735,6 @@ pub fn appended(a: &mut Vec<i32>, b: &[i32]) {
 
 pub fn literal(values: &mut Vec<i32>) {
     values.extend_from_slice(&[1, 2]);
-    values.extend([3, 4]);
 }
 
 pub fn fixed(values: &mut Vec<i32>) {
@@ -757,8 +757,11 @@ pub fn doubled(mut a: Vec<i32>) -> Vec<i32> {
 pub fn constructed(source: &Vec<i32>, head: usize) -> usize {
     let mut values = vec![0];
     values.extend_from_slice(&source[head..]);
-    values.extend(pair());
     return values.len();
+}
+
+pub fn temporary(extra: Vec<i32>) {
+    pair().extend(extra.clone());
 }
 
 pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
@@ -771,43 +774,50 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
         assert!(output.contains(
             "export function joined(a: number[], b: number[]): number[] {\n  for (let index = 0, count = b.length; index < count; index++) {\n    a.push(b[index]);\n  }\n  return a;\n}"
         ));
-        assert!(output.contains("  a.push(...b);\n"));
         assert!(output.contains(
-            "  values.push(...[1, 2]);\n  {\n    const source = [3, 4];\n    for (let index = 0, count = source.length; index < count; index++) {\n      values.push(source[index]);\n    }\n  }\n"
+            "  for (let index = 0, count = b.length; index < count; index++) {\n    a.push(b[index]);\n  }\n}"
         ));
-        assert!(output.contains("  values.push(...pair);\n"));
+        assert!(output.contains(
+            "  {\n    const source = [1, 2];\n    for (let index = 0, count = source.length; index < count; index++) {\n      values.push(source[index]);\n    }\n  }\n"
+        ));
+        assert!(output.contains(
+            "  for (let index = 0, count = pair.length; index < count; index++) {\n    values.push(pair[index]);\n  }\n"
+        ));
         assert!(output.contains(
             "  let combinedUnpacked = degenerate;\n  const attempt = make(extra);\n  for (let index = 0, count = attempt.unpacked.length; index < count; index++) {\n    combinedUnpacked.push(attempt.unpacked[index]);\n  }\n"
         ));
         assert!(output.contains(
             "  {\n    const source = a.slice();\n    for (let index = 0, count = source.length; index < count; index++) {\n      a.push(source[index]);\n    }\n  }\n"
         ));
-        assert!(output.contains("  values.push(...source.slice(head));\n"));
         assert!(output.contains(
-            "  {\n    const source1 = pair();\n    for (let index = 0, count = source1.length; index < count; index++) {\n      values.push(source1[index]);\n    }\n  }\n"
-        ) || output.contains(
-            "  {\n    const source = pair();\n    for (let index = 0, count = source.length; index < count; index++) {\n      values.push(source[index]);\n    }\n  }\n"
+            "  {\n    const source1 = source.slice(head);\n    for (let index = 0, count = source1.length; index < count; index++) {\n      values.push(source1[index]);\n    }\n  }\n"
+        ));
+        assert!(output.contains(
+            "  {\n    const target = pair();\n    const source = extra.slice();\n    for (let index = 0, count = source.length; index < count; index++) {\n      target.push(source[index]);\n    }\n  }\n"
         ));
         assert!(output.contains(
             "  for (let index1 = 0, count1 = count.length; index1 < count1; index1++) {\n    index.push(count[index1]);\n  }\n"
         ));
+        assert!(!output.contains("push(..."));
 
+        let argument_error = "portable `.extend()` requires an argument declared as Rust `Vec` or slice; iterator and Option arguments are not supported";
+        let receiver_error = "portable `.extend()` requires a receiver declared as Rust `Vec`";
         for (source, expected) in [
             (
                 "pub fn f(a: &mut Vec<i32>, b: &Vec<i32>) { a.extend(b.iter().map(|x| x * 2)); }\n",
-                "portable `.extend()` requires an argument declared as Rust `Vec` or slice; iterator and Option arguments are not supported",
+                argument_error,
             ),
             (
                 "pub fn f(a: &mut Vec<i32>, x: Option<i32>) { a.extend(x); }\n",
-                "portable `.extend()` requires an argument declared as Rust `Vec` or slice; iterator and Option arguments are not supported",
+                argument_error,
             ),
             (
                 "pub fn f(b: Vec<i32>) -> Vec<i32> { let mut v = other(); v.extend(b); return v; }\n",
-                "portable `.extend()` requires a receiver declared as Rust `Vec`",
+                receiver_error,
             ),
             (
                 "pub fn f(s: &mut String, t: &str) { s.extend(t.chars()); }\n",
-                "portable `.extend()` requires a receiver declared as Rust `Vec`",
+                receiver_error,
             ),
             (
                 "pub fn f(a: &mut i32, b: &[i32]) { a.extend_from_slice(b); }\n",
@@ -818,12 +828,36 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
                 "portable `.extend_from_slice()` requires an argument declared as Rust `Vec` or slice; iterator and Option arguments are not supported",
             ),
             (
+                "pub fn f(extra: Vec<i32>) -> Vec<i32> { let mut values = Vec::new(); values.extend(extra); return values; }\n",
+                receiver_error,
+            ),
+            (
+                "pub fn f(extra: Vec<i32>) -> Vec<i32> { let mut values = Vec::with_capacity(extra.len()); values.extend(extra); return values; }\n",
+                receiver_error,
+            ),
+            (
+                "pub fn f(extra: Vec<i32>) -> Vec<i32> { let mut values = vec![]; values.extend(extra); return values; }\n",
+                receiver_error,
+            ),
+            (
+                "pub fn f(values: &mut Vec<i32>, source: &Vec<i32>, head: usize) { values.extend_from_slice(&source[..head]); }\n",
+                "portable `.extend_from_slice()` requires an argument declared as Rust `Vec` or slice; iterator and Option arguments are not supported",
+            ),
+            (
+                "pub fn f(values: &mut Vec<i32>, source: &Vec<i32>, end: usize) { values.extend_from_slice(&source[1..=end]); }\n",
+                "portable `.extend_from_slice()` requires an argument declared as Rust `Vec` or slice; iterator and Option arguments are not supported",
+            ),
+            (
                 "pub fn f(a: &mut Vec<i32>, b: Vec<i32>) -> usize { let n = { a.extend(b) }; return a.len(); }\n",
                 "portable `.extend()` is supported only as a statement",
             ),
             (
+                "pub fn f(a: &mut Vec<i32>, b: &[i32]) -> usize { let n = { a.extend_from_slice(b) }; return a.len(); }\n",
+                "portable `.extend_from_slice()` is supported only as a statement",
+            ),
+            (
                 "pub fn f(a: &mut Vec<i32>, b: Vec<i32>) { let g = |a: i32| a; a.extend(b); }\n",
-                "portable `.extend()` requires a receiver declared as Rust `Vec`",
+                receiver_error,
             ),
         ] {
             let error = compile_typescript(source, None).unwrap_err();
@@ -831,21 +865,16 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
         }
     }
 
-    // Struct and function facts resolve from the selected source: its own declarations first, then a
-    // single public declaration in an alias source. Private alias declarations never leak in, and two
-    // public candidates are ambiguous, so the extend is rejected rather than guessed.
+    // Struct and function facts resolve from the selected source's full module identity: its own
+    // declarations, then its explicit, grouped or renamed `use` bindings, then its globs, each reaching
+    // a public declaration in the source with exactly that identity. A same-named declaration in any
+    // other source is never consulted; private, absent, ambiguous or identity-less sources fail closed.
     #[test]
     fn lowers_vec_extend_with_source_owned_sequence_facts() {
-        let string_source = "struct SharedCollision { items: String }\nfn make_collision(items: String) -> SharedCollision { SharedCollision { items } }\npub fn extend_string(items: String, extra: Vec<&'static str>) -> String {\n    let mut shared = make_collision(items);\n    shared.items.extend(extra);\n    shared.items\n}\n";
-        let private_vec_alias = "struct SharedCollision { items: Vec<&'static str> }\nfn make_collision(items: Vec<&'static str>) -> SharedCollision { SharedCollision { items } }\n";
-        let vec_source = "struct SharedCollision { items: Vec<i32> }\nfn make_collision(items: Vec<i32>) -> SharedCollision { return SharedCollision { items: items }; }\npub fn extend_vec(items: Vec<i32>, extra: Vec<i32>) -> Vec<i32> {\n    let mut shared = make_collision(items);\n    shared.items.extend(extra);\n    return shared.items;\n}\n";
-        let public_string_alias = "pub struct SharedCollision { pub items: String }\npub fn make_collision(items: String) -> SharedCollision { return SharedCollision { items: items }; }\n";
-        let import_source = "pub fn extend_imported(items: Vec<i32>, extra: Vec<i32>) -> Vec<i32> {\n    let mut held = make_held(items);\n    held.items.extend(extra);\n    return held.items;\n}\n";
-        let public_held_alias = "pub struct Held { pub items: Vec<i32> }\npub fn make_held(items: Vec<i32>) -> Held { return Held { items: items }; }\n";
-        let private_held_alias = "struct Held { items: Vec<i32> }\nfn make_held(items: Vec<i32>) -> Held { return Held { items: items }; }\n";
-        let local_string_held_source = "struct Held { items: String }\npub fn extend_returned(items: Vec<i32>, extra: Vec<i32>, label: String) -> usize {\n    let local = Held { items: label };\n    let mut held = make_held(items);\n    held.items.extend(extra);\n    return held.items.len() + local.items.len();\n}\n";
-        let local_vec_held_source = "struct Held { items: Vec<i32> }\npub fn extend_returned(items: String, extra: Vec<&'static str>) -> String {\n    let mut held = make_held(items);\n    held.items.extend(extra);\n    return held.items;\n}\n";
-        let public_string_held_alias = "pub struct Held { pub items: String }\npub fn make_held(items: String) -> Held { return Held { items: items }; }\n";
+        let module = |path, source| ModuleSource { path, source };
+        let compile = |source: ModuleSource<'_>, aliases: &[ModuleSource<'_>]| {
+            compile_typescript_with_module_sources(source, None, aliases, &[])
+        };
         let lowered = |field: &str| {
             format!(
                 "  for (let index = 0, count = extra.length; index < count; index++) {{\n    {field}.items.push(extra[index]);\n  }}\n"
@@ -853,38 +882,134 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
         };
         let rejected = "portable `.extend()` requires a receiver declared as Rust `Vec`";
 
+        let string_source = "struct SharedCollision { items: String }\nfn make_collision(items: String) -> SharedCollision { SharedCollision { items } }\npub fn extend_string(items: String, extra: Vec<&'static str>) -> String {\n    let mut shared = make_collision(items);\n    shared.items.extend(extra);\n    shared.items\n}\n";
+        let private_vec_alias = "struct SharedCollision { items: Vec<&'static str> }\nfn make_collision(items: Vec<&'static str>) -> SharedCollision { SharedCollision { items } }\n";
+        let vec_source = "struct SharedCollision { items: Vec<i32> }\nfn make_collision(items: Vec<i32>) -> SharedCollision { return SharedCollision { items: items }; }\npub fn extend_vec(items: Vec<i32>, extra: Vec<i32>) -> Vec<i32> {\n    let mut shared = make_collision(items);\n    shared.items.extend(extra);\n    return shared.items;\n}\n";
+        let public_string_alias = "pub struct SharedCollision { pub items: String }\npub fn make_collision(items: String) -> SharedCollision { return SharedCollision { items: items }; }\n";
+        let held_vec = "pub struct Held { pub items: Vec<i32> }\npub fn make_held(items: Vec<i32>) -> Held { return Held { items: items }; }\n";
+        let held_string = "pub struct Held { pub items: String }\npub fn make_held(items: String) -> Held { return Held { items: items }; }\n";
+        let held_private = "struct Held { items: Vec<i32> }\nfn make_held(items: Vec<i32>) -> Held { return Held { items: items }; }\n";
+        let extend_body = "pub fn append(mut held: Held, extra: Vec<i32>) -> Held {\n    held.items.extend(extra);\n    return held;\n}\n";
+        let call_body = "pub fn extend_imported(items: Vec<i32>, extra: Vec<i32>) -> Vec<i32> {\n    let mut held = make_held(items);\n    held.items.extend(extra);\n    return held.items;\n}\n";
+        let with_use = |use_line: &str, body: &str| format!("{use_line}\n{body}");
+        let explicit = with_use("use crate::held::{Held, make_held};", call_body);
+        let grouped_type = with_use(
+            "use crate::{held::Held, spare::make_held as make_spare};",
+            extend_body,
+        );
+        let renamed = "use crate::held::Held as RenamedHeld;\npub fn append(mut held: RenamedHeld, extra: Vec<i32>) -> RenamedHeld {\n    held.items.extend(extra);\n    return held;\n}\n";
+        let glob = with_use("use crate::held::*;", call_body);
+        let two_globs = with_use("use crate::held::*;\nuse crate::spare::*;", extend_body);
+        let from_spare = with_use("use crate::spare::Held;", extend_body);
+        let unimported = call_body.to_string();
+        let super_import = with_use("use super::held::Held;", extend_body);
+        let local_string_held = "use crate::held::make_held;\nstruct Held { items: String }\npub fn extend_returned(items: Vec<i32>, extra: Vec<i32>, label: String) -> usize {\n    let local = Held { items: label };\n    let mut held = make_held(items);\n    held.items.extend(extra);\n    return held.items.len() + local.items.len();\n}\n";
+        let local_vec_held = "use crate::held::make_held;\nstruct Held { items: Vec<i32> }\npub fn extend_returned(items: String, extra: Vec<&'static str>) -> String {\n    let mut held = make_held(items);\n    held.items.extend(extra);\n    return held.items;\n}\n";
+
+        let current = "crates/flight-demo/src/current.rs";
+        let held = "crates/flight-demo/src/held.rs";
+        let spare = "crates/flight-demo/src/spare.rs";
+        let other_crate_held = "crates/flight-other/src/held.rs";
         for (source, aliases) in [
-            (string_source, vec![]),
-            (string_source, vec![private_vec_alias]),
-            (import_source, vec![private_held_alias]),
-            (import_source, vec![public_held_alias, public_held_alias]),
-            (local_vec_held_source, vec![public_string_held_alias]),
+            (module(current, string_source), vec![]),
+            (
+                module(current, string_source),
+                vec![module(spare, private_vec_alias)],
+            ),
+            (module(current, &explicit), vec![module(held, held_private)]),
+            (
+                module(current, &explicit),
+                vec![module(other_crate_held, held_vec)],
+            ),
+            (module(current, &explicit), vec![module(spare, held_vec)]),
+            (module(current, &unimported), vec![module(held, held_vec)]),
+            (
+                module(current, &two_globs),
+                vec![module(held, held_vec), module(spare, held_vec)],
+            ),
+            (
+                module(current, &from_spare),
+                vec![module(held, held_vec), module(spare, held_string)],
+            ),
+            (
+                module(current, local_vec_held),
+                vec![module(held, held_string)],
+            ),
+            (
+                module("current.rs", &explicit),
+                vec![module(held, held_vec)],
+            ),
+            (
+                module(current, &explicit),
+                vec![module(held, held_vec), module(held, held_vec)],
+            ),
         ] {
-            let error = compile_typescript_with_alias_sources(source, None, &aliases).unwrap_err();
-            assert_eq!(error.to_string(), rejected);
+            let error = compile(source, &aliases).unwrap_err();
+            assert_eq!(error.to_string(), rejected, "{}", source.source);
         }
         for (source, aliases, field) in [
-            (vec_source, vec![public_string_alias], "shared"),
-            (vec_source, vec![private_vec_alias], "shared"),
-            (import_source, vec![public_held_alias], "held"),
-            (local_string_held_source, vec![public_held_alias], "held"),
+            (
+                module(current, vec_source),
+                vec![module(spare, public_string_alias)],
+                "shared",
+            ),
+            (
+                module(current, vec_source),
+                vec![module(spare, private_vec_alias)],
+                "shared",
+            ),
+            (
+                module(current, &explicit),
+                vec![module(held, held_vec)],
+                "held",
+            ),
+            (
+                module(current, &grouped_type),
+                vec![module(held, held_vec), module(spare, held_string)],
+                "held",
+            ),
+            (
+                module(current, renamed),
+                vec![module(held, held_vec)],
+                "held",
+            ),
+            (module(current, &glob), vec![module(held, held_vec)], "held"),
+            (
+                module(current, &explicit),
+                vec![module(held, held_vec), module(spare, held_string)],
+                "held",
+            ),
+            (
+                module("crates/flight-demo/src/nested/current.rs", &super_import),
+                vec![module("crates/flight-demo/src/nested/held.rs", held_vec)],
+                "held",
+            ),
+            (
+                module(current, local_string_held),
+                vec![module(held, held_vec)],
+                "held",
+            ),
         ] {
-            let output = compile_typescript_with_alias_sources(source, None, &aliases).unwrap();
+            let output = compile(source, &aliases).unwrap();
             assert!(output.contains(&lowered(field)), "{output}");
         }
+        let error =
+            compile_typescript_with_alias_sources(&explicit, None, &[held_vec]).unwrap_err();
+        assert_eq!(error.to_string(), rejected);
 
-        let option_source = "pub fn width_of(options: Option<&Shape>) -> f32 {\n    return options.and_then(|o| o.width.map(|w| w * 2.0)).unwrap_or(0.0);\n}\n";
-        let public_shape_alias = "pub struct Shape { pub width: Option<f32> }\n";
-        let output =
-            compile_typescript_with_alias_sources(option_source, None, &[public_shape_alias])
-                .unwrap();
+        let option_source = "use crate::shape::Shape;\npub fn width_of(options: Option<&Shape>) -> f32 {\n    return options.and_then(|o| o.width.map(|w| w * 2.0)).unwrap_or(0.0);\n}\n";
+        let shape = "pub struct Shape { pub width: Option<f32> }\n";
+        let output = compile(
+            module(current, option_source),
+            &[module("crates/flight-demo/src/shape.rs", shape)],
+        )
+        .unwrap();
         assert!(output.contains(
             "return (((o) => o === undefined ? undefined : ((w) => w === undefined ? undefined : w * 2.0)(o.width))(options) ?? 0.0);"
         ));
-        let error = compile_typescript_with_alias_sources(
-            option_source,
-            None,
-            &[public_shape_alias, public_shape_alias],
+        let error = compile(
+            module(current, option_source),
+            &[module("crates/flight-demo/src/other.rs", shape)],
         )
         .unwrap_err();
         assert_eq!(
@@ -3579,6 +3704,62 @@ mod sample {
 
         assert!(output.contains("expect(sample.previous === null).toBe(true);"));
         assert!(!output.contains("sample.previous === undefined"));
+    }
+
+    // Option `.map()` / `.and_then()` on a field of a contract-selected struct resolve the field's
+    // Option fact through the Vitest owner binding; the test module is not itself a program source.
+    #[test]
+    fn lowers_option_combinators_on_contract_selected_struct_fields() {
+        let production = r#"
+pub struct Sample {
+    pub value: Option<i32>,
+}
+
+pub fn create_sample() -> Sample {
+    return Sample { value: Some(4) };
+}
+"#;
+        let contract = "pub use super::sample::{Sample, create_sample};\n";
+        let source = r#"
+use flight_example::*;
+
+fn doubled(sample: &Sample) -> i32 {
+    return sample.value.map(|value| value * 2).unwrap_or(0);
+}
+
+fn incremented(sample: &Sample) -> i32 {
+    return sample.value.and_then(|value| Some(value + 1)).unwrap_or(0);
+}
+
+mod sample {
+    use super::*;
+
+    #[test]
+    fn maps_contract_selected_option_fields() {
+        let sample = create_sample();
+        assert_eq!(doubled(&sample), 8);
+        assert_eq!(incremented(&sample), 5);
+    }
+}
+"#;
+
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            contract,
+            &[VitestAliasSource {
+                source: production,
+                module: "src/sample.rs",
+            }],
+        )
+        .unwrap();
+
+        assert!(output.contains(
+            "  return (((value) => value === undefined ? undefined : value * 2)(sample.value) ?? 0);\n"
+        ));
+        assert!(output.contains(
+            "  return (((value) => value === undefined ? undefined : value + 1)(sample.value) ?? 0);\n"
+        ));
     }
 
     #[test]

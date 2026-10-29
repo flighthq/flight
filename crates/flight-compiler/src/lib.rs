@@ -24,6 +24,14 @@ pub struct ExternalAliasSource<'a> {
     pub module: &'a str,
 }
 
+/// A Rust source file and its path. The path (`.../<crate>/src/<module path>.rs`) gives the source its
+/// full module identity (`<crate>::<module path>`), which `use` bindings resolve against.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ModuleSource<'a> {
+    pub path: &'a str,
+    pub source: &'a str,
+}
+
 /// A production source and its stable module path for Vitest provenance inference.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct VitestAliasSource<'a> {
@@ -63,28 +71,12 @@ pub fn compile_typescript(
     return compile_typescript_with_alias_sources(source, entity_module, &[]);
 }
 
-/// Compiles one Rust module while reusing canonical callable aliases declared by sibling sources.
-// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
-pub fn compile_typescript_with_alias_sources(
-    source: &str,
-    entity_module: Option<&str>,
-    alias_sources: &[&str],
-) -> Result<String, CompileError> {
-    return compile_typescript_with_external_alias_sources(
-        source,
-        entity_module,
-        alias_sources,
-        &[],
-    );
-}
-
-/// Compiles one Rust module with same-package aliases and externally owned identity aliases.
-// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
-pub fn compile_typescript_with_external_alias_sources(
+fn compile_typescript_sources(
     source: &str,
     entity_module: Option<&str>,
     alias_sources: &[&str],
     external_alias_sources: &[ExternalAliasSource<'_>],
+    module_identities: Option<Vec<String>>,
 ) -> Result<String, CompileError> {
     require_generated_source(source)?;
     let program = model::parse_program(source)?;
@@ -109,6 +101,7 @@ pub fn compile_typescript_with_external_alias_sources(
         entity_module,
         &alias_programs,
         &external_alias_programs,
+        module_identities.as_deref(),
     )?;
     output = lower_string_union_variants(
         output,
@@ -125,6 +118,73 @@ pub fn compile_typescript_with_external_alias_sources(
         )?;
     }
     return Ok(output);
+}
+
+/// Compiles one Rust module while reusing canonical callable aliases declared by sibling sources.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_typescript_with_alias_sources(
+    source: &str,
+    entity_module: Option<&str>,
+    alias_sources: &[&str],
+) -> Result<String, CompileError> {
+    return compile_typescript_with_external_alias_sources(
+        source,
+        entity_module,
+        alias_sources,
+        &[],
+    );
+}
+
+/// Compiles one Rust module with same-package aliases and externally owned identity aliases.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_typescript_with_external_alias_sources(
+    source: &str,
+    entity_module: Option<&str>,
+    alias_sources: &[&str],
+    external_alias_sources: &[ExternalAliasSource<'_>],
+) -> Result<String, CompileError> {
+    return compile_typescript_sources(
+        source,
+        entity_module,
+        alias_sources,
+        external_alias_sources,
+        None,
+    );
+}
+
+/// Compiles one Rust module with sibling sources identified by their file paths. Each source's full
+/// module identity follows from its path, so struct and function facts resolve through its `use`
+/// bindings. When any identity cannot be derived, or two sources share one, every source resolves
+/// only its own declarations.
+// flight-lint: allow(contract-vocabulary) compiler host tooling is not a transpilation contract
+pub fn compile_typescript_with_module_sources(
+    source: ModuleSource<'_>,
+    entity_module: Option<&str>,
+    alias_sources: &[ModuleSource<'_>],
+    external_alias_sources: &[ExternalAliasSource<'_>],
+) -> Result<String, CompileError> {
+    let identities = std::iter::once(&source)
+        .chain(alias_sources)
+        .map(|module| module_identity_from_path(module.path))
+        .collect::<Option<Vec<_>>>()
+        .filter(|identities| {
+            identities
+                .iter()
+                .collect::<std::collections::BTreeSet<_>>()
+                .len()
+                == identities.len()
+        });
+    let alias_source_texts = alias_sources
+        .iter()
+        .map(|module| module.source)
+        .collect::<Vec<_>>();
+    return compile_typescript_sources(
+        source.source,
+        entity_module,
+        &alias_source_texts,
+        external_alias_sources,
+        identities,
+    );
 }
 
 /// Compiles one canonical Rust contract-test module into a Vitest suite.
@@ -284,6 +344,40 @@ fn lower_string_union_variants(
         }
     }
     return Ok(output);
+}
+
+// The full module identity (`crate::module::path`) of a Rust source file at `path`: the crate directory
+// before the last `src` component (hyphens become underscores), then the module path below it, with
+// `lib.rs` / `main.rs` as the crate root and `mod.rs` as its directory. `None` when the path has no
+// such shape.
+fn module_identity_from_path(path: &str) -> Option<String> {
+    let segments = path
+        .split(['/', '\\'])
+        .filter(|segment| !segment.is_empty() && *segment != ".")
+        .collect::<Vec<_>>();
+    let source_index = segments.iter().rposition(|segment| *segment == "src")?;
+    let crate_name = segments
+        .get(source_index.checked_sub(1)?)?
+        .replace('-', "_");
+    let mut modules = segments[source_index + 1..]
+        .iter()
+        .map(|segment| (*segment).to_string())
+        .collect::<Vec<_>>();
+    let file = modules.pop()?;
+    let stem = file.strip_suffix(".rs")?;
+    if !(modules.is_empty() && matches!(stem, "lib" | "main")) && stem != "mod" {
+        modules.push(stem.to_string());
+    }
+    let identity = std::iter::once(crate_name)
+        .chain(modules)
+        .collect::<Vec<_>>();
+    let valid = identity.iter().all(|segment| {
+        !segment.is_empty()
+            && segment
+                .chars()
+                .all(|character| character.is_ascii_alphanumeric() || character == '_')
+    });
+    return valid.then(|| identity.join("::"));
 }
 
 /// Reads the source-local generation mode for a Rust module or test file.

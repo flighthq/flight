@@ -52,10 +52,24 @@ fn generate(options: &GenerateOptions, kind: GenerateKind) -> Result<(), String>
                 .zip(&options.external_alias_modules)
                 .map(|(source, module)| flight_compiler::ExternalAliasSource { source, module })
                 .collect::<Vec<_>>();
-            flight_compiler::compile_typescript_with_external_alias_sources(
-                &source,
+            let source_path = options.source.to_string_lossy();
+            let alias_paths = options
+                .alias_sources
+                .iter()
+                .map(|path| path.to_string_lossy())
+                .collect::<Vec<_>>();
+            let alias_modules = alias_paths
+                .iter()
+                .zip(&alias_source_refs)
+                .map(|(path, source)| flight_compiler::ModuleSource { path, source })
+                .collect::<Vec<_>>();
+            flight_compiler::compile_typescript_with_module_sources(
+                flight_compiler::ModuleSource {
+                    path: &source_path,
+                    source: &source,
+                },
                 options.entity_module.as_deref(),
-                &alias_source_refs,
+                &alias_modules,
                 &external_aliases,
             )
         }
