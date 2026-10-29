@@ -10,8 +10,8 @@
 
 use crate::js_pattern::*;
 use crate::user_agent_native::{
-    PlatformEndianness, PlatformEngine, PlatformKind, PlatformName, PlatformRuntime,
-    UserAgentRuntimeWindow, detect_endianness_native, parse_user_agent_runtime_native,
+    PlatformEndianness, PlatformEngine, PlatformKind, PlatformName, PlatformRuntime, Record,
+    Unknown, detect_endianness_native, parse_user_agent_runtime_native,
 };
 use crate::user_agent_parse::parse_user_agent_os_version;
 
@@ -194,12 +194,12 @@ pub fn parse_user_agent_pointer_width(arch: &str) -> UserAgentPointerWidth {
     return UserAgentPointerWidth::Unknown;
 }
 
-/// The host shell from browser-global probes on a window-like record (TS `Record<string, unknown>
-/// | null | undefined`; `None` is null/undefined). `Unknown` for no window; `Electron` when
-/// `process.versions.electron` is truthy; `Tauri` when `__TAURI__` is truthy; `Capacitor` when
-/// `Capacitor` is truthy; else `Web`. Truthiness and property access follow JS (see `is_truthy`):
-/// a nested object is a `Record<Unknown>` stored in the `Unknown`.
-pub fn parse_user_agent_runtime(win: UserAgentRuntimeWindow<'_>) -> PlatformRuntime {
+/// The host shell from browser-global probes on an optional window-like record (TS
+/// `win?: Readonly<Record<unknown>>`; `None` is omitted/undefined). `Unknown` for no window;
+/// `Electron` when `process.versions.electron` is truthy; `Tauri` when `__TAURI__` is truthy;
+/// `Capacitor` when `Capacitor` is truthy; else `Web`. Truthiness and property access follow JS (see
+/// `is_truthy`): a nested object is a `Record<Unknown>` stored in the `Unknown`.
+pub fn parse_user_agent_runtime(win: Option<&Record<Unknown>>) -> PlatformRuntime {
     return parse_user_agent_runtime_native(win);
 }
 

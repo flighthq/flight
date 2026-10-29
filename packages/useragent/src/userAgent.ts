@@ -11,7 +11,7 @@ import {
   matchesAt,
   positions,
 } from './jsPattern.ts';
-import type { PlatformEndianness, PlatformRuntime, UserAgentRuntimeWindow } from './userAgentNative.ts';
+import type { PlatformEndianness, PlatformRuntime, Record, Unknown } from './userAgentNative.ts';
 import {
   PlatformEngine,
   PlatformKind,
@@ -219,13 +219,13 @@ export function parseUserAgentPointerWidth(arch: string): UserAgentPointerWidth 
 }
 
 /**
- * The host shell from browser-global probes on a window-like record (TS `Record<string, unknown>
- * | null | undefined`; `None` is null/undefined). `Unknown` for no window; `Electron` when
- * `process.versions.electron` is truthy; `Tauri` when `__TAURI__` is truthy; `Capacitor` when
- * `Capacitor` is truthy; else `Web`. Truthiness and property access follow JS (see `isTruthy`):
- * a nested object is a `Record<Unknown>` stored in the `Unknown`.
+ * The host shell from browser-global probes on an optional window-like record (TS
+ * `win?: Readonly<Record<unknown>>`; `undefined` is omitted/undefined). `Unknown` for no window;
+ * `Electron` when `process.versions.electron` is truthy; `Tauri` when `__TAURI__` is truthy;
+ * `Capacitor` when `Capacitor` is truthy; else `Web`. Truthiness and property access follow JS (see
+ * `isTruthy`): a nested object is a `Record<Unknown>` stored in the `Unknown`.
  */
-export function parseUserAgentRuntime(win: UserAgentRuntimeWindow): PlatformRuntime {
+export function parseUserAgentRuntime(win?: Readonly<Record<Unknown>>): PlatformRuntime {
   return parseUserAgentRuntimeNative(win);
 }
 
