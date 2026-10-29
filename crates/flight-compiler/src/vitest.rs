@@ -992,10 +992,23 @@ pub(crate) fn emit_test_program(
         crate::typescript::test_cross_crate_imports(program, context)?;
     let mixed_foreign_wildcards =
         crate::typescript::test_mixed_foreign_wildcard_roots(program, context);
+    let mut cross_crate_local_names = cross_crate_values
+        .values()
+        .chain(cross_crate_types.values())
+        .flat_map(|names| names.iter())
+        .map(|specifier| {
+            specifier
+                .rsplit_once(" as ")
+                .map_or(specifier.as_str(), |(_, local)| local)
+                .to_string()
+        })
+        .collect::<HashSet<_>>();
     let unresolved_wildcard_values = contract_symbols
         .iter()
         .filter(|symbol| {
-            !is_vitest_function(context, symbol)
+            let local_name = emit_path_name(symbol, context);
+            !cross_crate_local_names.contains(&local_name)
+                && !is_vitest_function(context, symbol)
                 && frozen_object_name(context, symbol).is_none()
                 && !is_string_union(context, symbol)
         })
@@ -1028,11 +1041,21 @@ pub(crate) fn emit_test_program(
                 .iter()
                 .map(|symbol| emit_path_name(symbol, context)),
         );
+        cross_crate_local_names.extend(
+            unresolved_wildcard_values
+                .iter()
+                .map(|symbol| emit_path_name(symbol, context)),
+        );
         contract_symbols.retain(|symbol| !unresolved_wildcard_values.contains(symbol));
     }
     let unresolved_wildcard_types = contract_type_symbols
         .iter()
-        .filter(|symbol| !is_vitest_struct(context, symbol) && !is_string_union(context, symbol))
+        .filter(|symbol| {
+            let local_name = emit_path_name(symbol, context);
+            !cross_crate_local_names.contains(&local_name)
+                && !is_vitest_struct(context, symbol)
+                && !is_string_union(context, symbol)
+        })
         .cloned()
         .collect::<Vec<_>>();
     if !mixed_foreign_wildcards.is_empty() && !unresolved_wildcard_types.is_empty() {
@@ -1062,24 +1085,17 @@ pub(crate) fn emit_test_program(
                 .iter()
                 .map(|symbol| emit_path_name(symbol, context)),
         );
+        cross_crate_local_names.extend(
+            unresolved_wildcard_types
+                .iter()
+                .map(|symbol| emit_path_name(symbol, context)),
+        );
         contract_type_symbols.retain(|symbol| !unresolved_wildcard_types.contains(symbol));
     }
-    let cross_crate_local_names = cross_crate_values
-        .values()
-        .chain(cross_crate_types.values())
-        .flat_map(|names| names.iter())
-        .map(|specifier| {
-            specifier
-                .rsplit_once(" as ")
-                .map_or(specifier.as_str(), |(_, local)| local)
-        })
-        .collect::<HashSet<_>>();
-    contract_symbols.retain(|symbol| {
-        !cross_crate_local_names.contains(emit_path_name(symbol, context).as_str())
-    });
-    contract_type_symbols.retain(|symbol| {
-        !cross_crate_local_names.contains(emit_path_name(symbol, context).as_str())
-    });
+    contract_symbols
+        .retain(|symbol| !cross_crate_local_names.contains(&emit_path_name(symbol, context)));
+    contract_type_symbols
+        .retain(|symbol| !cross_crate_local_names.contains(&emit_path_name(symbol, context)));
     let mut out = String::new();
     out.push_str("import { describe, expect, it } from 'vitest';\n");
     for (module, names) in &cross_crate_values {

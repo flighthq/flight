@@ -6419,6 +6419,159 @@ fn shadows_the_selected_factory_in_a_nested_pattern() {
     }
 
     #[test]
+    fn preserves_explicit_cross_crate_bindings_with_an_unrelated_wildcard() {
+        let production = r#"
+//! flight-compiler: nullable-options
+
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+
+pub fn create_sample() -> Sample {
+    return Sample { previous: None };
+}
+"#;
+        let contract = "pub use crate::sample::{Sample, create_sample};\n";
+        let source = r#"
+use flight_binpack::*;
+use flight_example::*;
+use flight_geometry::{Matrix, create_matrix};
+
+fn read_matrix_a(matrix: &Matrix) -> f32 {
+    return matrix.a;
+}
+
+#[test]
+fn keeps_explicit_owners() {
+    let sample: Sample = create_sample();
+    let matrix = create_matrix(1.0, 0.0, 0.0, 1.0, 2.0, 3.0);
+    assert!(sample.previous.is_none());
+    assert_eq!(read_matrix_a(&matrix), 1.0);
+}
+"#;
+
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            contract,
+            &[VitestAliasSource {
+                source: production,
+                module: "src/sample.rs",
+            }],
+        )
+        .unwrap();
+
+        assert_eq!(
+            output,
+            r#"import { describe, expect, it } from 'vitest';
+
+import { createMatrix } from "@flighthq/geometry/contract";
+
+import type { Matrix } from "@flighthq/geometry/contract";
+
+import {
+  createSample,
+} from "@flighthq/example/contract";
+
+import type {
+  Sample,
+} from "@flighthq/example/contract";
+
+function readMatrixA(matrix: Readonly<Matrix>): number {
+  return matrix.a;
+}
+
+describe("portableTests", () => {
+  it("keeps explicit owners", () => {
+    const sample: Sample = createSample();
+    const matrix = createMatrix(1.0, 0.0, 0.0, 1.0, 2.0, 3.0);
+    expect(sample.previous === null).toBe(true);
+    expect(readMatrixA(matrix)).toEqual(1.0);
+  });
+});
+"#
+        );
+    }
+
+    #[test]
+    fn preserves_suite_local_cross_crate_aliases_with_an_unrelated_wildcard() {
+        let production = r#"
+//! flight-compiler: nullable-options
+
+pub struct Sample {
+    pub previous: Option<i32>,
+}
+
+pub fn create_sample() -> Sample {
+    return Sample { previous: None };
+}
+"#;
+        let contract = "pub use crate::sample::{Sample, create_sample};\n";
+        let source = r#"
+use flight_binpack::*;
+use flight_example::*;
+
+mod explicit_geometry_aliases {
+    use flight_geometry::{Matrix as GeometryMatrix, create_matrix as make_matrix};
+    use super::*;
+
+    fn read_matrix_a(matrix: &GeometryMatrix) -> f32 {
+        return matrix.a;
+    }
+
+    #[test]
+    fn keeps_explicit_alias_owners() {
+        let sample: Sample = create_sample();
+        let matrix = make_matrix(1.0, 0.0, 0.0, 1.0, 2.0, 3.0);
+        assert!(sample.previous.is_none());
+        assert_eq!(read_matrix_a(&matrix), 1.0);
+    }
+}
+"#;
+
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/example/contract",
+            contract,
+            &[VitestAliasSource {
+                source: production,
+                module: "src/sample.rs",
+            }],
+        )
+        .unwrap();
+
+        assert_eq!(
+            output,
+            r#"import { describe, expect, it } from 'vitest';
+
+import { createMatrix as makeMatrix } from "@flighthq/geometry/contract";
+
+import type { Matrix as GeometryMatrix } from "@flighthq/geometry/contract";
+
+import {
+  createSample,
+} from "@flighthq/example/contract";
+
+import type {
+  Sample,
+} from "@flighthq/example/contract";
+
+describe("explicitGeometryAliases", () => {
+  function readMatrixA(matrix: Readonly<GeometryMatrix>): number {
+    return matrix.a;
+  }
+  it("keeps explicit alias owners", () => {
+    const sample: Sample = createSample();
+    const matrix = makeMatrix(1.0, 0.0, 0.0, 1.0, 2.0, 3.0);
+    expect(sample.previous === null).toBe(true);
+    expect(readMatrixA(matrix)).toEqual(1.0);
+  });
+});
+"#
+        );
+    }
+
+    #[test]
     fn routes_unresolved_values_from_mixed_current_and_foreign_wildcards() {
         let production = r#"
 //! flight-compiler: nullable-options
