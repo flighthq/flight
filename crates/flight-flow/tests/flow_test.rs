@@ -601,4 +601,43 @@ mod update_flow_stack {
         stack.write().unwrap().states.push(plain("top"));
         update_flow_stack(&stack, 0.016);
     }
+
+    #[test]
+    fn snapshots_the_stack_before_a_reentrant_update_clears_it() {
+        let calls: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
+        let stack = create_flow_stack();
+        let lower_calls = calls.clone();
+        stack.write().unwrap().states.push(state(FlowState {
+            name: Some("lower".to_string()),
+            on_enter: None,
+            on_exit: None,
+            on_pause: None,
+            on_resume: None,
+            on_update: Some(Arc::new(move |_delta_time: f32| {
+                lower_calls.lock().unwrap().push("lower".to_string());
+            })),
+            render_below: None,
+            update_below: None,
+        }));
+        let top_calls = calls.clone();
+        let top_stack = stack.clone();
+        stack.write().unwrap().states.push(state(FlowState {
+            name: Some("top".to_string()),
+            on_enter: None,
+            on_exit: None,
+            on_pause: None,
+            on_resume: None,
+            on_update: Some(Arc::new(move |_delta_time: f32| {
+                top_calls.lock().unwrap().push("top".to_string());
+                clear_flow_stack(&top_stack);
+            })),
+            render_below: None,
+            update_below: Some(true),
+        }));
+
+        update_flow_stack(&stack, 0.016);
+
+        assert_eq!(*calls.lock().unwrap(), vec!["top", "lower"]);
+        assert_eq!(get_flow_stack_depth(&stack), 0);
+    }
 }

@@ -517,4 +517,43 @@ describe('updateFlowStack', () => {
     stack!.states.push(plain('top'));
     updateFlowStack(stack, 0.016);
   });
+  it('snapshots the stack before a reentrant update clears it', () => {
+    const calls: Readonly<{ value: string[] }> = { value: [] as never[] };
+    const stack = createFlowStack();
+    const lowerCalls = calls;
+    stack!.states.push(
+      state({
+        name: 'lower',
+        onEnter: undefined,
+        onExit: undefined,
+        onPause: undefined,
+        onResume: undefined,
+        onUpdate: (DeltaTime: number) => {
+          lowerCalls.value.push('lower');
+        },
+        renderBelow: undefined,
+        updateBelow: undefined,
+      }),
+    );
+    const topCalls = calls;
+    const topStack = stack;
+    stack!.states.push(
+      state({
+        name: 'top',
+        onEnter: undefined,
+        onExit: undefined,
+        onPause: undefined,
+        onResume: undefined,
+        onUpdate: (DeltaTime: number) => {
+          topCalls.value.push('top');
+          clearFlowStack(topStack);
+        },
+        renderBelow: undefined,
+        updateBelow: true,
+      }),
+    );
+    updateFlowStack(stack, 0.016);
+    expect(calls.value).toEqual(['top', 'lower']);
+    expect(getFlowStackDepth(stack)).toEqual(0);
+  });
 });

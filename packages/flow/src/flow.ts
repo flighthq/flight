@@ -229,7 +229,7 @@ function replaceFlowStateCore(
  * state beneath it. Callbacks run with no lock held.
  */
 export function updateFlowStack(stack: Readonly<FlowStackRaw>, deltaTime: number): void {
-  const states = stack!.states;
+  const states = [...stack!.states];
   let index = (states.length | 0) - 1;
   if (index < 0) {
     return;

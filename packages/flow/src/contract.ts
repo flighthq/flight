@@ -21,6 +21,6 @@ export {
   parseFlowGuardKind,
   reportFlowGuard,
 } from './flowGuards.ts';
-export type { FlowStack } from './flowStackCompat.ts';
+export { FlowStack } from './flowStackCompat.ts';
 export type { FlowCallback, FlowState, FlowUpdateCallback } from './flowTypes.ts';
 export type { FlowGuardContext, FlowGuardKind, FlowGuardState } from './types.ts';

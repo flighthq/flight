@@ -11,5 +11,5 @@
   },
   "references": [{ "path": "../entity" }, { "path": "../log" }, { "path": "./tsconfig.contract.json" }],
   "include": ["src/**/*.ts"],
-  "exclude": ["src/contract.flow-types.ts", "src/flowStackCompat.ts", "src/flowTypes.ts"]
+  "exclude": ["src/contract.flow-types.ts", "src/flowTypes.ts"]
 }

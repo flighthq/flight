@@ -10,5 +10,5 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [{ "path": "../entity" }],
-  "include": ["src/contract.flow-types.ts", "src/flowStackCompat.ts", "src/flowTypes.ts"]
+  "include": ["src/contract.flow-types.ts", "src/flowTypes.ts"]
 }

@@ -246,7 +246,7 @@ fn replace_flow_state_core(
 /// Tick one frame: the active top updates; each visited state with `update_below` also ticks the
 /// state beneath it. Callbacks run with no lock held.
 pub fn update_flow_stack(stack: &Ref<FlowStack>, delta_time: f32) {
-    let states = stack.read().unwrap().states.clone();
+    let states = stack.read().unwrap().states.to_vec();
     let mut index = states.len() as i32 - 1;
     if index < 0 {
         return;
