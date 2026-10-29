@@ -1,7 +1,7 @@
 //! Arc-length motion-path markers over a `Path` (TS `motionPath.ts`).
 
 use flight_entity::{Ref, allocate_entity};
-use flight_geometry::{Vector2, Vector2Like, create_vector2};
+use flight_geometry::{Vector2Like, create_vector2};
 use flight_path::{
     Path, get_path_length, get_path_position_at_distance, get_path_tangent_at_distance,
 };
