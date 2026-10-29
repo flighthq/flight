@@ -87,7 +87,7 @@ export function attachWindowClose(
     kClose,
     hostWindowLifecycle.subscribeClose(
       () => {
-        emitSignal(win.onCloseRequest);
+        emitSignal(win.onCloseRequest, undefined);
         return win.onCloseRequest.data?.cancelled === true;
       },
       () => notifyWindowClosed(win),
@@ -119,8 +119,8 @@ export function attachWindowFocus(
     kFocus,
     hostInputFocus.subscribe(
       target,
-      () => emitSignal(win.onFocusIn),
-      () => emitSignal(win.onFocusOut),
+      () => emitSignal(win.onFocusIn, undefined),
+      () => emitSignal(win.onFocusOut, undefined),
     ),
   );
 }
@@ -133,7 +133,7 @@ export function attachWindowFullscreen(
   observers.get(kFullscreen)?.();
   const handler = (fullscreen: boolean): void => {
     win.fullscreen = fullscreen;
-    emitSignal(win.onFullscreenChanged);
+    emitSignal(win.onFullscreenChanged, undefined);
   };
   observers.set(kFullscreen, hostFullscreen.subscribe(handler));
 }
@@ -153,7 +153,7 @@ export function attachWindowMove(
       if (win.x !== x || win.y !== y) {
         win.x = x;
         win.y = y;
-        emitSignal(win.onMove);
+        emitSignal(win.onMove, undefined);
       }
     }),
   );
@@ -168,7 +168,7 @@ export function attachWindowOrientation(hostScreenChange: Readonly<HostScreenCha
   observers.set(
     kOrientation,
     hostScreenChange.subscribe((event) => {
-      if (event.changedMetrics?.orientation === true) emitSignal(win.onOrientationChanged);
+      if (event.changedMetrics?.orientation === true) emitSignal(win.onOrientationChanged, undefined);
     }),
   );
 }
@@ -184,8 +184,8 @@ export function attachWindowRenderContext(
     kRenderContext,
     hostGl.subscribe(
       target,
-      () => emitSignal(win.onRenderContextLost),
-      () => emitSignal(win.onRenderContextRestored),
+      () => emitSignal(win.onRenderContextLost, undefined),
+      () => emitSignal(win.onRenderContextRestored, undefined),
     ),
   );
 }
@@ -210,8 +210,8 @@ export function attachWindowRenderState(
     );
   };
   apply();
-  connectSignal(win.onResize, apply);
-  observers.set(kRenderState, () => disconnectSignal(win.onResize, apply));
+  const resizeSlot = connectSignal(win.onResize, apply);
+  observers.set(kRenderState, () => disconnectSignal(win.onResize, resizeSlot));
 }
 
 export function attachWindowResize(
@@ -229,7 +229,7 @@ export function attachWindowResize(
       win.width = width;
       win.height = height;
       win.devicePixelRatio = devicePixelRatio;
-      emitSignal(win.onResize);
+      emitSignal(win.onResize, undefined);
     }),
   );
 }
@@ -245,7 +245,7 @@ export function attachWindowVisibility(
   observers.set(
     kVisibility,
     hostWindowVisibility.subscribeVisibility((visible) => {
-      emitSignal(visible ? win.onActivate : win.onDeactivate);
+      emitSignal(visible ? win.onActivate : win.onDeactivate, undefined);
     }),
   );
 }
@@ -461,7 +461,7 @@ export function maximizeWindow(hostWindowState: Readonly<HostWindowStateCapabili
   if (win.maximized) return;
   win.maximized = true;
   hostWindowState.maximize(win);
-  emitSignal(win.onMaximize);
+  emitSignal(win.onMaximize, undefined);
 }
 
 // Minimizes the window. Updates state and emits onMinimize when the state changes.
@@ -469,7 +469,7 @@ export function minimizeWindow(hostWindowState: Readonly<HostWindowStateCapabili
   if (win.minimized) return;
   win.minimized = true;
   hostWindowState.minimize(win);
-  emitSignal(win.onMinimize);
+  emitSignal(win.onMinimize, undefined);
 }
 
 // The single terminal-close choke point for both app-driven and host-driven closes. Native callbacks may
@@ -481,7 +481,7 @@ export function notifyWindowClosed(win: AppWindow): void {
   _terminalWindows.add(win);
   _windowBackends.delete(win);
   try {
-    emitSignal(win.onClose);
+    emitSignal(win.onClose, undefined);
   } finally {
     disposeAppWindow(win);
   }
@@ -549,7 +549,7 @@ export function requestWindowAttention(
 // Emits onCloseRequest and returns whether the close may proceed (false when a listener vetoed by
 // calling cancelSignal(win.onCloseRequest)). Use to gate an app-driven close without closing.
 export function requestWindowClose(win: AppWindow): boolean {
-  emitSignal(win.onCloseRequest);
+  emitSignal(win.onCloseRequest, undefined);
   return win.onCloseRequest.data?.cancelled !== true;
 }
 
@@ -559,7 +559,7 @@ export function restoreWindow(hostWindowState: Readonly<HostWindowStateCapabilit
   win.minimized = false;
   win.maximized = false;
   hostWindowState.restore(win);
-  emitSignal(win.onRestore);
+  emitSignal(win.onRestore, undefined);
 }
 
 // Sets whether the window floats above others.
@@ -592,7 +592,7 @@ export function setWindowFullscreen(
   if (win.fullscreen === fullscreen) return;
   win.fullscreen = fullscreen;
   hostWindowFullscreen.setFullscreen(win, fullscreen);
-  emitSignal(win.onFullscreenChanged);
+  emitSignal(win.onFullscreenChanged, undefined);
 }
 
 // Shows or hides the native drop shadow around the window when the host supports it.
@@ -680,7 +680,7 @@ export function setWindowPosition(
   win.x = x;
   win.y = y;
   hostWindowGeometry.setPosition(win, x, y);
-  emitSignal(win.onMove);
+  emitSignal(win.onMove, undefined);
 }
 
 // Sets the taskbar/dock progress indicator in [0, 1]; a negative value clears it.
@@ -714,7 +714,7 @@ export function setWindowSize(
   win.width = width;
   win.height = height;
   hostWindowGeometry.setSize(win, width, height);
-  emitSignal(win.onResize);
+  emitSignal(win.onResize, undefined);
 }
 
 // Sets whether the window is hidden from the taskbar/dock switcher.

@@ -55,7 +55,7 @@ export function attachAppActivate(hostAppActivate: Readonly<HostAppActivateCapab
   replaceAppSubscription(
     app,
     'activate',
-    hostAppActivate.subscribe(() => emitSignal(app.onActivate)),
+    hostAppActivate.subscribe(() => emitSignal(app.onActivate, undefined)),
   );
 }
 
@@ -66,7 +66,7 @@ export function attachAppAllWindowsClosed(
   replaceAppSubscription(
     app,
     'allWindowsClosed',
-    hostAppAllWindowsClosed.subscribe(() => emitSignal(app.onAllWindowsClosed)),
+    hostAppAllWindowsClosed.subscribe(() => emitSignal(app.onAllWindowsClosed, undefined)),
   );
 }
 
@@ -101,7 +101,7 @@ export function attachAppQuitRequest(hostAppQuitRequest: Readonly<HostAppQuitReq
     app,
     'quitRequest',
     hostAppQuitRequest.subscribe((cancelHost) => {
-      emitSignal(app.onQuitRequest);
+      emitSignal(app.onQuitRequest, undefined);
       if (app.onQuitRequest.data?.cancelled === true) cancelHost();
     }),
   );
@@ -111,7 +111,7 @@ export function attachAppReady(hostAppReady: Readonly<HostAppReadyCapability>, a
   replaceAppSubscription(
     app,
     'ready',
-    hostAppReady.subscribe(() => emitSignal(app.onReady)),
+    hostAppReady.subscribe(() => emitSignal(app.onReady, undefined)),
   );
 }
 

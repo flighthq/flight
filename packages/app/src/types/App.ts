@@ -35,13 +35,13 @@ export type AppPathKind = 'userData' | 'logs' | 'crashDumps';
 // App event entity. Enable delivery with attachAppEvents; the signals stay inert until then.
 export interface AppEvents extends EntityRaw {
   readonly [EntityRuntimeKey]: EntityRuntime | undefined;
-  onActivate: Signal<() => void>;
-  onAllWindowsClosed: Signal<() => void>;
-  onOpenFile: Signal<(path: string) => void>;
+  onActivate: Signal<void>;
+  onAllWindowsClosed: Signal<void>;
+  onOpenFile: Signal<string>;
   // Emitted before the app quits; a listener calls cancelSignal(app.onQuitRequest) to veto.
-  onQuitRequest: Signal<() => void>;
-  onReady: Signal<() => void>;
-  onSecondInstance: Signal<(argv: readonly string[]) => void>;
+  onQuitRequest: Signal<void>;
+  onReady: Signal<void>;
+  onSecondInstance: Signal<readonly string[]>;
 }
 
 export type MobileOsProfile = 'android' | 'ios';

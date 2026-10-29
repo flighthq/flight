@@ -1,4 +1,5 @@
-import { connectSignal, emitSignal } from '@flighthq/signals/contract';
+import { connectSignal, createSignal, emitSignal } from '@flighthq/signals/contract';
+import type { Signal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type { AppLifecycleState, HostLifecycleCapability } from '@flighthq/types/contract';
 
@@ -149,9 +150,33 @@ describe('attachAppLoopLifecycle', () => {
     attachAppLoopLifecycle(app, win);
 
     // Simulate window deactivation by emitting its signal directly.
-    emitSignal(win.onDeactivate);
+    emitSignal(win.onDeactivate, undefined);
     expect(app.isRunning).toBe(false);
     stopAppLoop(app);
+  });
+
+  it('replaces its window slots on reattach, disconnecting the previous ones by SlotId', () => {
+    const backend = makeManualLoopBackend();
+    const host = createLoopTestHost(backend);
+    const app = createAppLoop();
+    const win = createAppWindow();
+    startAppLoop(host.app.loop, host.app.lifecycle, app);
+    const deactivations: number[] = [];
+    app.onDeactivate = createSignal<void>();
+    connectSignal(app.onDeactivate, () => deactivations.push(1));
+    attachAppLoopLifecycle(app, win);
+    attachAppLoopLifecycle(app, win);
+    emitSignal(win.onDeactivate, undefined);
+    expect(deactivations).toEqual([1]);
+    stopAppLoop(app);
+  });
+
+  it('types the loop signals by their payload', () => {
+    const app = createAppLoop();
+    expectTypeOf(app.onUpdate).toEqualTypeOf<Signal<number>>();
+    expectTypeOf(app.onFixedUpdate).toEqualTypeOf<Signal<number> | null>();
+    expectTypeOf(app.onError).toEqualTypeOf<Signal<unknown> | null>();
+    expectTypeOf(app.onRender).toEqualTypeOf<Signal<void>>();
   });
 
   it('resumes the loop when the window activates', () => {
@@ -162,9 +187,9 @@ describe('attachAppLoopLifecycle', () => {
     startAppLoop(host.app.loop, host.app.lifecycle, app);
     attachAppLoopLifecycle(app, win);
 
-    emitSignal(win.onDeactivate);
+    emitSignal(win.onDeactivate, undefined);
     expect(app.isRunning).toBe(false);
-    emitSignal(win.onActivate);
+    emitSignal(win.onActivate, undefined);
     expect(app.isRunning).toBe(true);
     stopAppLoop(app);
   });

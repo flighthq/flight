@@ -25,7 +25,7 @@ const kPaused = Symbol();
 export function attachAppLoopExit(hostAppExit: Readonly<HostAppExitCapability>, app: AppLoop): void {
   const observers = getAppLoopObservers(app);
   observers.get(kExit)?.();
-  const handler = () => emitSignal(app.onExit);
+  const handler = () => emitSignal(app.onExit, undefined);
   observers.set(kExit, hostAppExit.subscribe(handler));
 }
 
@@ -44,18 +44,18 @@ export function attachAppLoopLifecycle(app: AppLoop, win: AppWindow): void {
 
   const onDeactivate = () => {
     pauseAppLoop(app);
-    if (app.onDeactivate !== null) emitSignal(app.onDeactivate);
+    if (app.onDeactivate !== null) emitSignal(app.onDeactivate, undefined);
   };
   const onActivate = () => {
     resumeAppLoop(app);
-    if (app.onActivate !== null) emitSignal(app.onActivate);
+    if (app.onActivate !== null) emitSignal(app.onActivate, undefined);
   };
 
-  connectSignal(win.onDeactivate, onDeactivate);
-  connectSignal(win.onActivate, onActivate);
+  const deactivateSlot = connectSignal(win.onDeactivate, onDeactivate);
+  const activateSlot = connectSignal(win.onActivate, onActivate);
   observers.set(kLifecycle, () => {
-    disconnectSignal(win.onDeactivate, onDeactivate);
-    disconnectSignal(win.onActivate, onActivate);
+    disconnectSignal(win.onDeactivate, deactivateSlot);
+    disconnectSignal(win.onActivate, activateSlot);
   });
 }
 
@@ -352,7 +352,7 @@ function applyAppLoopStep(
   }
 
   invokeWithAppLoopErrorHandling(app, () => emitSignal(app.onUpdate, clamped));
-  invokeWithAppLoopErrorHandling(app, () => emitSignal(app.onRender));
+  invokeWithAppLoopErrorHandling(app, () => emitSignal(app.onRender, undefined));
 }
 
 function configureFixedStep(loopState: LoopState, fixedTimeStep: number, maxUpdatesPerFrame: number): void {

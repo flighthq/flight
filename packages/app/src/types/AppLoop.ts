@@ -17,13 +17,13 @@ export interface AppLoop extends EntityRaw {
   // Whether the loop is currently running (not stopped or paused).
   isRunning: boolean;
   // Opt-in lifecycle signals, allocated by enableAppLoopLifecycleSignals; null until enabled.
-  onActivate: Signal<() => void> | null;
-  onDeactivate: Signal<() => void> | null;
-  onError: Signal<(error: unknown) => void> | null;
-  onExit: Signal<() => void>;
-  onFixedUpdate: Signal<(fixedDeltaTime: number) => void> | null;
-  onRender: Signal<() => void>;
-  onUpdate: Signal<(deltaTime: number) => void>;
+  onActivate: Signal<void> | null;
+  onDeactivate: Signal<void> | null;
+  onError: Signal<unknown> | null;
+  onExit: Signal<void>;
+  onFixedUpdate: Signal<number> | null;
+  onRender: Signal<void>;
+  onUpdate: Signal<number>;
   // Managed windows registered with registerAppLoopWindow.
   windows: AppWindow[];
 }

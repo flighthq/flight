@@ -32,24 +32,24 @@ export interface AppWindow extends EntityRaw {
   minHeight: number;
   maxWidth: number;
   maxHeight: number;
-  onActivate: Signal<() => void>;
-  onClose: Signal<() => void>;
+  onActivate: Signal<void>;
+  onClose: Signal<void>;
   // Emitted before the window closes; a listener calls cancelSignal(win.onCloseRequest) to veto.
   // closeWindow/requestWindowClose check the cancelled flag and abort the close when set.
-  onCloseRequest: Signal<() => void>;
-  onDeactivate: Signal<() => void>;
-  onDropFile: Signal<(path: string) => void>;
-  onFocusIn: Signal<() => void>;
-  onFocusOut: Signal<() => void>;
-  onFullscreenChanged: Signal<() => void>;
-  onMaximize: Signal<() => void>;
-  onMinimize: Signal<() => void>;
-  onMove: Signal<() => void>;
-  onOrientationChanged: Signal<() => void>;
-  onRenderContextLost: Signal<() => void>;
-  onRenderContextRestored: Signal<() => void>;
-  onResize: Signal<() => void>;
-  onRestore: Signal<() => void>;
+  onCloseRequest: Signal<void>;
+  onDeactivate: Signal<void>;
+  onDropFile: Signal<string>;
+  onFocusIn: Signal<void>;
+  onFocusOut: Signal<void>;
+  onFullscreenChanged: Signal<void>;
+  onMaximize: Signal<void>;
+  onMinimize: Signal<void>;
+  onMove: Signal<void>;
+  onOrientationChanged: Signal<void>;
+  onRenderContextLost: Signal<void>;
+  onRenderContextRestored: Signal<void>;
+  onResize: Signal<void>;
+  onRestore: Signal<void>;
 }
 
 // Initial state for openWindow. Omitted fields keep the window's current/default value.

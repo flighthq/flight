@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
 import { cancelSignal, connectSignal, emitSignal } from '@flighthq/signals/contract';
+import type { Signal } from '@flighthq/signals/contract';
 import { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   HostGlCapability,
@@ -812,8 +813,20 @@ describe('attachWindowRenderState', () => {
     attachWindowRenderState(host.graphics.renderSurface, win, state, createHostTarget());
     win.width = 400;
     win.devicePixelRatio = 2;
-    emitSignal(win.onResize);
+    emitSignal(win.onResize, undefined);
     expect(host.graphics.renderSurface.calls).toEqual(['resize:800,600', 'resize:800,1200']);
+  });
+
+  it('stops reapplying after detach disconnects its resize slot', () => {
+    const win = createAppWindow();
+    win.width = 100;
+    win.height = 100;
+    win.devicePixelRatio = 1;
+    attachWindowRenderState(host.graphics.renderSurface, win, makeRenderState(), createHostTarget());
+    detachWindowRenderState(win);
+    win.width = 200;
+    emitSignal(win.onResize, undefined);
+    expect(host.graphics.renderSurface.calls).toEqual(['resize:100,100']);
   });
 
   it('pins resize commands to the provider captured by the core signal attachment', () => {
@@ -827,7 +840,7 @@ describe('attachWindowRenderState', () => {
     attachWindowRenderState(origin.graphics.renderSurface, win, state, createHostTarget());
     host = active;
     win.width = 640;
-    emitSignal(win.onResize);
+    emitSignal(win.onResize, undefined);
 
     expect(origin.graphics.renderSurface.calls).toEqual(['resize:320,200', 'resize:640,200']);
     expect(active.graphics.renderSurface.calls).toEqual([]);
@@ -989,6 +1002,13 @@ describe('computeWindowDeviceTransform', () => {
 });
 
 describe('createAppWindow', () => {
+  it('types the window signals by their payload, void where there is none', () => {
+    const win = createAppWindow();
+    expectTypeOf(win.onDropFile).toEqualTypeOf<Signal<string>>();
+    expectTypeOf(win.onResize).toEqualTypeOf<Signal<void>>();
+    expectTypeOf(win.onCloseRequest).toEqualTypeOf<Signal<void>>();
+  });
+
   it('returns all signals with no side effects', () => {
     const win = createAppWindow();
     expect(EntityRuntimeKey in win).toBe(true);
@@ -1141,7 +1161,7 @@ describe('detachWindowRenderState', () => {
     attachWindowRenderState(host.graphics.renderSurface, win, state, createHostTarget());
     detachWindowRenderState(win);
     win.width = 400;
-    emitSignal(win.onResize);
+    emitSignal(win.onResize, undefined);
     expect(host.graphics.renderSurface.calls).toEqual(['resize:800,600']);
   });
 });
