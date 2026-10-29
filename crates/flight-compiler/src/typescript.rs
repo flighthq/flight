@@ -26,6 +26,10 @@ const BINDING_FACT_MARKER: &str = "@binding-fact:";
 const BINDING_SITE_MARKER: &str = "@binding-site:";
 const BINDING_FACT_SEPARATOR: char = '\u{1e}';
 const CLOSURE_PARAMETER_MARKER: &str = "@closure-parameter:";
+// `export-name` mappings: `@export-name:rust` marks a mapped item and `@export-name-target:rust:Name`
+// carries its TypeScript name.
+const EXPORT_NAME_MARKER: &str = "@export-name:";
+const EXPORT_NAME_TARGET_MARKER: &str = "@export-name-target:";
 // The module of the program being emitted; struct and function facts resolve against it.
 const CURRENT_SOURCE_MARKER: &str = "@current-source:";
 const DATA_UNION_UNIT_MARKER: &str = "@data-union-unit:";
@@ -244,6 +248,132 @@ fn array_type(inner: String) -> String {
     return format!("{inner}[]");
 }
 
+// The TypeScript name of a Rust item or path segment: SCREAMING_CASE constants keep their name, and
+// everything else is lower camel case.
+pub(crate) fn default_item_name(segment: &str) -> String {
+    return emit_path_segment(segment);
+}
+
+// The explicit TypeScript name an `export-name` directive gives the Rust item `rust_name`, if any.
+// flight-lint: allow(hashmap-iteration) export-name validation guarantees one target name per Rust item
+pub(crate) fn export_name<'a>(context: &'a HashSet<String>, rust_name: &str) -> Option<&'a str> {
+    if !context.contains(&format!("{EXPORT_NAME_MARKER}{rust_name}")) {
+        return None;
+    }
+    let prefix = format!("{EXPORT_NAME_TARGET_MARKER}{rust_name}:");
+    return context
+        .iter()
+        .find_map(|marker| marker.strip_prefix(&prefix));
+}
+
+// Records every `export-name` mapping of the combined sources. A mapped Rust name must be declared by
+// exactly one source, must not collide with another item's TypeScript name, and must not be reused as a
+// local binding, so every reference to it renders the same TypeScript name.
+// flight-lint: allow(hashmap-iteration) directives are BTreeMaps and items retain Rust source order in Vecs
+fn insert_export_name_context(
+    context: &mut HashSet<String>,
+    programs: &[(&str, &Program)],
+) -> Result<(), CompileError> {
+    let mut mappings = BTreeMap::<&str, &str>::new();
+    for (_, program) in programs {
+        for (item, target) in &program.export_names {
+            if mappings
+                .insert(item, target)
+                .is_some_and(|previous| previous != target)
+            {
+                return Err(compile_error(format!(
+                    "`flight-compiler: export-name` item `{item}` is given more than one TypeScript name"
+                )));
+            }
+        }
+    }
+    if mappings.is_empty() {
+        return Ok(());
+    }
+    // Declaring sources per name, identified by their items: a source may also arrive as one of its own
+    // alias sources, and that identical copy is the same declaration.
+    let mut declarations = BTreeMap::<String, BTreeSet<String>>::new();
+    for (_, program) in programs {
+        let names = program
+            .functions
+            .iter()
+            .map(|function| function.sig.ident.to_string())
+            .chain(
+                program
+                    .constants
+                    .iter()
+                    .map(|constant| constant.ident.to_string()),
+            )
+            .chain(program.statics.iter().map(|item| item.ident.to_string()))
+            .collect::<Vec<_>>();
+        let source = if names
+            .iter()
+            .any(|name| mappings.contains_key(name.as_str()))
+        {
+            program_item_tokens(program)
+        } else {
+            String::new()
+        };
+        for name in names {
+            declarations.entry(name).or_default().insert(source.clone());
+        }
+    }
+    for (item, target) in &mappings {
+        if declarations.get(*item).is_some_and(|items| items.len() > 1) {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name` item `{item}` is declared by more than one source"
+            )));
+        }
+        let collides = declarations.keys().any(|other| {
+            other != item
+                && mappings.get(other.as_str()).map_or_else(
+                    || default_item_name(other) == *target,
+                    |other_target| other_target == target,
+                )
+        });
+        if collides {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name {item}` TypeScript name `{target}` collides with another item"
+            )));
+        }
+    }
+    // Names bound by patterns (`let`, parameters, closures, `match` arms) anywhere in the sources.
+    #[derive(Default)]
+    struct BindingNameCollector {
+        names: HashSet<String>,
+    }
+
+    impl<'ast> Visit<'ast> for BindingNameCollector {
+        fn visit_pat_ident(&mut self, pattern: &'ast syn::PatIdent) {
+            self.names.insert(pattern.ident.to_string());
+            syn::visit::visit_pat_ident(self, pattern);
+        }
+    }
+
+    let mut bindings = BindingNameCollector::default();
+    for (_, program) in programs {
+        for function in &program.functions {
+            bindings.visit_item_fn(function);
+        }
+        for constant in &program.constants {
+            bindings.visit_item_const(constant);
+        }
+        for item in &program.statics {
+            bindings.visit_item_static(item);
+        }
+    }
+    for (item, target) in mappings {
+        if bindings.names.contains(item) {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name` item `{item}` is shadowed by a local binding of the same name"
+            )));
+        }
+        context.insert(format!("{EXPORT_NAME_MARKER}{item}"));
+        context.insert(format!("{EXPORT_NAME_TARGET_MARKER}{item}:{target}"));
+    }
+    return Ok(());
+}
+
 fn nullable_type(inner: String) -> String {
     if inner.contains("=>") {
         return format!("({inner}) | null");
@@ -400,6 +530,36 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
         Expr::Reference(reference) => expression_is_known_string(&reference.expr, entities),
         _ => false,
     };
+}
+
+// Every function, constant, static, and export-name directive of `program` as text, which identifies
+// the source.
+// flight-lint: allow(hashmap-iteration) items retain Rust source order in Vecs and directives are a BTreeMap
+fn program_item_tokens(program: &Program) -> String {
+    return program
+        .functions
+        .iter()
+        .map(|function| function.to_token_stream().to_string())
+        .chain(
+            program
+                .constants
+                .iter()
+                .map(|constant| constant.to_token_stream().to_string()),
+        )
+        .chain(
+            program
+                .statics
+                .iter()
+                .map(|item| item.to_token_stream().to_string()),
+        )
+        .chain(
+            program
+                .export_names
+                .iter()
+                .map(|(item, target)| format!("export-name {item} {target}")),
+        )
+        .collect::<Vec<_>>()
+        .join("\n");
 }
 
 // The declaration `name` refers to in the source `from`, as `(module, declared name)`: the source's own
@@ -2878,6 +3038,7 @@ fn generation_context_with_types(
     strict_vitest_provenance: bool,
 ) -> Result<HashSet<String>, CompileError> {
     let mut context = type_context.clone();
+    insert_export_name_context(&mut context, programs)?;
     let program_refs = programs
         .iter()
         .map(|(_, program)| *program)
@@ -4046,6 +4207,7 @@ fn emit_constant(
         ""
     };
     let value = emit_expression_for_type(&constant.expr, &constant.ty, entities)?;
+    let rust_name = constant.ident.to_string();
     if let Some(name) = frozen_name {
         writeln!(
             out,
@@ -4055,17 +4217,17 @@ fn emit_constant(
         .expect("writing to a String cannot fail");
         return Ok(());
     }
+    let name = export_name(entities, &rust_name).unwrap_or(&rust_name);
     if matches!(constant.expr.as_ref(), Expr::Lit(value) if matches!(&value.lit, Lit::Str(_)))
         && matches!(constant.ty.as_ref(), Type::Reference(reference) if type_is_named(&reference.elem, "str"))
     {
-        writeln!(out, "{export}const {} = {value} as const;", constant.ident)
+        writeln!(out, "{export}const {name} = {value} as const;")
             .expect("writing to a String cannot fail");
         return Ok(());
     }
     writeln!(
         out,
-        "{export}const {}: {} = {};",
-        constant.ident,
+        "{export}const {name}: {} = {};",
         emit_type(&constant.ty, entities)?,
         value
     )
@@ -4492,7 +4654,8 @@ pub(crate) fn emit_expression(
                 }) {
                 let binding = vitest_function_path_binding_name(&path.path, entities)?
                     .ok_or_else(|| compile_error("current-package function path has no binding"))?;
-                emit_path_segment(&binding)
+                export_name(entities, &binding)
+                    .map_or_else(|| emit_path_segment(&binding), str::to_string)
             } else {
                 emit_expression(&call.func, entities)?
             };
@@ -4669,11 +4832,19 @@ pub(crate) fn emit_expression(
             if path_is_float_constant(&path.path, "FRAC_1_SQRT_2") {
                 return Ok("Math.SQRT1_2".to_string());
             }
+            let last = path.path.segments.len() - 1;
             let rendered = path
                 .path
                 .segments
                 .iter()
-                .map(|segment| emit_path_segment(&segment.ident.to_string()))
+                .enumerate()
+                .map(|(index, segment)| {
+                    let segment = segment.ident.to_string();
+                    return (index == last)
+                        .then(|| export_name(entities, &segment))
+                        .flatten()
+                        .map_or_else(|| emit_path_segment(&segment), str::to_string);
+                })
                 .collect::<Vec<_>>()
                 .join(".");
             Ok(rendered)
@@ -5162,7 +5333,8 @@ fn inferred_vitest_struct_return_type(
     }
     let function = vitest_path_binding_name(&path.path, entities)?;
     let identity = inferred_vitest_struct_literal_name(expression, entities)?;
-    let typescript_function = snake_to_lower_camel(&function);
+    let typescript_function = export_name(entities, &function)
+        .map_or_else(|| snake_to_lower_camel(&function), str::to_string);
     return Some((
         identity,
         format!("ReturnType<typeof {typescript_function}>"),
@@ -5271,7 +5443,9 @@ fn emit_function(
     } else {
         ""
     };
-    let name = snake_to_lower_camel(&function.sig.ident.to_string());
+    let rust_name = function.sig.ident.to_string();
+    let name = export_name(entities, &rust_name)
+        .map_or_else(|| snake_to_lower_camel(&rust_name), str::to_string);
     let type_parameters = emit_type_parameters(&function.sig.generics);
     let nullable_options = entities.contains(NULLABLE_OPTIONS_MARKER);
     let trailing_optional_start = function
@@ -7613,7 +7787,10 @@ fn emit_receiver_preserving_optional_call(
     let Some(function) = function.path.segments.first() else {
         return Ok(false);
     };
-    if snake_to_lower_camel(&function.ident.to_string()) != binding.0 {
+    let function = function.ident.to_string();
+    let function = export_name(entities, &function)
+        .map_or_else(|| snake_to_lower_camel(&function), str::to_string);
+    if function != binding.0 {
         return Ok(false);
     }
     let arguments = call

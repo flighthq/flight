@@ -16,6 +16,8 @@ pub(crate) struct Program {
     pub(crate) data_unions: HashSet<String>,
     pub(crate) entities: HashSet<String>,
     pub(crate) enums: Vec<ItemEnum>,
+    // `export-name` directives: Rust item name to its explicit TypeScript name.
+    pub(crate) export_names: BTreeMap<String, String>,
     pub(crate) frozen_objects: BTreeMap<String, String>,
     pub(crate) functions: Vec<ItemFn>,
     pub(crate) nullable_options: bool,
@@ -121,6 +123,16 @@ fn has_rust_only_directive(attributes: &[Attribute]) -> bool {
     });
 }
 
+fn is_typescript_identifier(name: &str) -> bool {
+    let mut characters = name.chars();
+    return characters
+        .next()
+        .is_some_and(|first| first.is_ascii_alphabetic() || first == '_' || first == '$')
+        && characters.all(|character| {
+            character.is_ascii_alphanumeric() || character == '_' || character == '$'
+        });
+}
+
 pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
@@ -139,6 +151,7 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
             | "companion"
             | "contract"
             | "data-union"
+            | "export-name"
             | "frozen-object"
             | "identity-alias"
             | "nullable-options"
@@ -207,6 +220,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let callable_field_parameters = parse_callable_field_parameters(&file.attrs)?;
     let callable_parameters = parse_callable_parameters(&file.attrs)?;
     let data_unions = parse_data_unions(&file.attrs)?;
+    let export_names = parse_export_names(&file.attrs)?;
     let frozen_objects = parse_frozen_objects(&file.attrs)?;
     let identity_alias_directives = parse_identity_aliases(&file.attrs)?;
     let nullable_options = parse_flag_directive(&file.attrs, "nullable-options")?;
@@ -282,6 +296,13 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     validate_data_union_directives(&data_unions, &enums, &string_unions)?;
     validate_string_union_directives(&string_unions, &string_union_values, &enums)?;
     validate_frozen_objects(&frozen_objects, &constants)?;
+    validate_export_names(
+        &export_names,
+        &frozen_objects,
+        &functions,
+        &constants,
+        &statics,
+    )?;
     validate_identity_aliases(&identity_alias_directives, &type_aliases)?;
 
     return Ok(Program {
@@ -291,6 +312,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         data_unions,
         entities,
         enums,
+        export_names,
         frozen_objects,
         functions,
         nullable_options,
@@ -449,6 +471,67 @@ pub(crate) fn parse_string_union_metadata(
     return parse_string_union_metadata_from_attributes(&file.attrs);
 }
 
+// `//! flight-compiler: export-name <rust_item> <TypeScriptName>` names one public function or constant
+// explicitly in TypeScript, for acronyms that lower-camel conversion cannot spell (`decode_utf8` ->
+// `decodeUTF8`). Cross-module uniqueness and shadowing are validated when sources are combined.
+fn parse_export_names(attributes: &[Attribute]) -> Result<BTreeMap<String, String>, CompileError> {
+    let mut directives = BTreeMap::new();
+    let mut target_names = HashSet::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("export-name") {
+            continue;
+        }
+        let Some(item) = fields.next() else {
+            return Err(compile_error(
+                "`flight-compiler: export-name` requires a Rust item name and TypeScript name",
+            ));
+        };
+        let Some(target) = fields.next() else {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name {item}` requires a TypeScript name"
+            )));
+        };
+        if fields.next().is_some() {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name {item}` accepts exactly one TypeScript name"
+            )));
+        }
+        if syn::parse_str::<syn::Ident>(item).is_err() || item.starts_with("r#") {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name` Rust item name `{item}` is not a valid identifier"
+            )));
+        }
+        if !is_typescript_identifier(target) {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name {item}` TypeScript name `{target}` is not a valid identifier"
+            )));
+        }
+        if is_javascript_binding_reserved(target)
+            || matches!(target, "Infinity" | "NaN" | "undefined")
+        {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name {item}` TypeScript name `{target}` is reserved"
+            )));
+        }
+        if directives.contains_key(item) {
+            return Err(compile_error(format!(
+                "duplicate `flight-compiler: export-name` directive for `{item}`"
+            )));
+        }
+        if !target_names.insert(target.to_string()) {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name` TypeScript name `{target}` is assigned more than once"
+            )));
+        }
+        directives.insert(item.to_string(), target.to_string());
+    }
+    return Ok(directives);
+}
+
 fn parse_frozen_objects(
     attributes: &[Attribute],
 ) -> Result<BTreeMap<String, String>, CompileError> {
@@ -509,6 +592,66 @@ fn is_struct_literal(expression: &syn::Expr) -> bool {
         syn::Expr::Struct(_) => true,
         _ => false,
     };
+}
+
+// flight-lint: allow(hashmap-iteration) directives are BTreeMaps and items retain Rust source order in Vecs
+fn validate_export_names(
+    directives: &BTreeMap<String, String>,
+    frozen_objects: &BTreeMap<String, String>,
+    functions: &[ItemFn],
+    constants: &[ItemConst],
+    statics: &[ItemStatic],
+) -> Result<(), CompileError> {
+    for (item, target) in directives {
+        let visibility = functions
+            .iter()
+            .find(|function| function.sig.ident == item.as_str())
+            .map(|function| &function.vis)
+            .or_else(|| {
+                constants
+                    .iter()
+                    .find(|constant| constant.ident == item.as_str())
+                    .map(|constant| &constant.vis)
+            });
+        let Some(visibility) = visibility else {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name` item `{item}` is not a function or constant of this source"
+            )));
+        };
+        if !is_public(visibility) {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name` item `{item}` must be public"
+            )));
+        }
+        if frozen_objects.contains_key(item) {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name` item `{item}` is already named by `frozen-object`"
+            )));
+        }
+        if *target == crate::typescript::snake_to_lower_camel(item) {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name {item}` repeats the default TypeScript name `{target}`"
+            )));
+        }
+        let collides = functions
+            .iter()
+            .map(|function| function.sig.ident.to_string())
+            .chain(constants.iter().map(|constant| constant.ident.to_string()))
+            .chain(statics.iter().map(|item| item.ident.to_string()))
+            .filter(|other| other != item)
+            .any(|other| {
+                directives.get(&other).map_or_else(
+                    || crate::typescript::default_item_name(&other) == *target,
+                    |other_target| other_target == target,
+                )
+            });
+        if collides {
+            return Err(compile_error(format!(
+                "`flight-compiler: export-name {item}` TypeScript name `{target}` collides with another item"
+            )));
+        }
+    }
+    return Ok(());
 }
 
 // flight-lint: allow(hashmap-iteration) frozen directives are a BTreeMap and constants retain Rust source order in a Vec

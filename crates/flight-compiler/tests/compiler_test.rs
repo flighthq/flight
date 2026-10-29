@@ -2231,6 +2231,55 @@ pub struct Hooks {
     }
 
     #[test]
+    fn emits_explicit_export_names_at_every_reference() {
+        let utf8 = r#"//! flight-compiler: export-name decode_utf8 decodeUTF8
+//! flight-compiler: export-name encode_utf8 encodeUTF8
+//! flight-compiler: export-name MAX_UTF8_BYTES maxUTF8Bytes
+
+pub const MAX_UTF8_BYTES: usize = 4;
+
+pub fn decode_utf8(length: usize) -> usize {
+    return length + MAX_UTF8_BYTES;
+}
+
+pub fn encode_utf8(length: usize) -> usize {
+    return decode_utf8(length) * 2;
+}
+"#;
+        let user = r#"use super::utf8::decode_utf8;
+
+pub fn measure(length: usize) -> usize {
+    return decode_utf8(length);
+}
+"#;
+        let tests = r#"use flight_probe::*;
+
+mod decode_utf8 {
+    use super::*;
+
+    #[test]
+    fn adds_the_maximum() {
+        assert_eq!(decode_utf8(1), 1 + MAX_UTF8_BYTES);
+        assert_eq!(encode_utf8(1), 10);
+    }
+}
+"#;
+
+        assert_eq!(
+            compile_typescript_with_alias_sources(utf8, None, &[user]).unwrap(),
+            "export const maxUTF8Bytes: number = 4;\n\nexport function decodeUTF8(length: number): number {\n  return length + maxUTF8Bytes;\n}\n\nexport function encodeUTF8(length: number): number {\n  return decodeUTF8(length) * 2;\n}\n"
+        );
+        assert_eq!(
+            compile_typescript_with_alias_sources(user, None, &[utf8]).unwrap(),
+            "export function measure(length: number): number {\n  return decodeUTF8(length);\n}\n"
+        );
+        assert_eq!(
+            compile_vitest_with_alias_sources(tests, "./contract.ts", &[utf8]).unwrap(),
+            "import { describe, expect, it } from 'vitest';\n\nimport {\n  decodeUTF8,\n  encodeUTF8,\n  maxUTF8Bytes,\n} from \"./contract.ts\";\n\ndescribe(\"decodeUTF8\", () => {\n  it(\"adds the maximum\", () => {\n    expect(decodeUTF8(1)).toEqual(1 + maxUTF8Bytes);\n    expect(encodeUTF8(1)).toEqual(10);\n  });\n});\n"
+        );
+    }
+
+    #[test]
     fn emits_explicitly_named_frozen_object_constants_and_rewrites_references() {
         let source = r#"
 //! flight-compiler: frozen-object SPRING_PRESET_BOUNCY SpringPresetBouncy
@@ -2285,6 +2334,109 @@ pub fn customized_spring_preset() -> SpringConfig {
         assert!(!output.contains("SPRING_PRESET_BOUNCY"));
         assert!(!output.contains("SPRING_PRESET_GENTLE"));
         assert!(!output.contains("SPRING_PRESET_STIFF"));
+    }
+
+    #[test]
+    fn rejects_invalid_export_name_directives() {
+        let item = "pub fn decode_utf8() {}\n";
+        for (source, expected) in [
+            (
+                format!("//! flight-compiler: export-name\n{item}"),
+                "`flight-compiler: export-name` requires a Rust item name and TypeScript name",
+            ),
+            (
+                format!("//! flight-compiler: export-name decode_utf8\n{item}"),
+                "`flight-compiler: export-name decode_utf8` requires a TypeScript name",
+            ),
+            (
+                format!("//! flight-compiler: export-name decode_utf8 decodeUTF8 extra\n{item}"),
+                "`flight-compiler: export-name decode_utf8` accepts exactly one TypeScript name",
+            ),
+            (
+                format!("//! flight-compiler: export-name decode_utf8 decode-UTF8\n{item}"),
+                "`flight-compiler: export-name decode_utf8` TypeScript name `decode-UTF8` is not a valid identifier",
+            ),
+            (
+                format!("//! flight-compiler: export-name decode_utf8 9decode\n{item}"),
+                "`flight-compiler: export-name decode_utf8` TypeScript name `9decode` is not a valid identifier",
+            ),
+            (
+                format!("//! flight-compiler: export-name decode_utf8 delete\n{item}"),
+                "`flight-compiler: export-name decode_utf8` TypeScript name `delete` is reserved",
+            ),
+            (
+                format!("//! flight-compiler: export-name decode_utf8 undefined\n{item}"),
+                "`flight-compiler: export-name decode_utf8` TypeScript name `undefined` is reserved",
+            ),
+            (
+                format!(
+                    "//! flight-compiler: export-name decode_utf8 decodeUTF8\n//! flight-compiler: export-name decode_utf8 decodeUtf8Bytes\n{item}"
+                ),
+                "duplicate `flight-compiler: export-name` directive for `decode_utf8`",
+            ),
+            (
+                format!(
+                    "//! flight-compiler: export-name decode_utf8 decodeUTF8\n//! flight-compiler: export-name encode_utf8 decodeUTF8\n{item}pub fn encode_utf8() {{}}\n"
+                ),
+                "`flight-compiler: export-name` TypeScript name `decodeUTF8` is assigned more than once",
+            ),
+            (
+                format!("//! flight-compiler: export-name decode_utf16 decodeUTF16\n{item}"),
+                "`flight-compiler: export-name` item `decode_utf16` is not a function or constant of this source",
+            ),
+            (
+                "//! flight-compiler: export-name decode_utf8 decodeUTF8\nfn decode_utf8() {}\n"
+                    .to_string(),
+                "`flight-compiler: export-name` item `decode_utf8` must be public",
+            ),
+            (
+                format!("//! flight-compiler: export-name decode_utf8 decodeUtf8\n{item}"),
+                "`flight-compiler: export-name decode_utf8` repeats the default TypeScript name `decodeUtf8`",
+            ),
+            (
+                format!(
+                    "//! flight-compiler: export-name decode_utf8 decodeUTF8\n{item}pub fn decode_u_t_f8() {{}}\n"
+                ),
+                "`flight-compiler: export-name decode_utf8` TypeScript name `decodeUTF8` collides with another item",
+            ),
+            (
+                format!(
+                    "//! flight-compiler: export-name decode_utf8 decodeUTF8\n{item}pub fn measure(decode_utf8: usize) -> usize {{ return decode_utf8; }}\n"
+                ),
+                "`flight-compiler: export-name` item `decode_utf8` is shadowed by a local binding of the same name",
+            ),
+        ] {
+            let error = compile_typescript(&source, None).unwrap_err();
+            assert_eq!(error.to_string(), expected, "{source}");
+        }
+
+        let mapped =
+            "//! flight-compiler: export-name decode_utf8 decodeUTF8\npub fn decode_utf8() {}\n";
+        for (alias, expected) in [
+            (
+                "//! flight-compiler: export-name decode_utf8 decodeUtf8Text\npub fn decode_utf8() {}\n",
+                "`flight-compiler: export-name` item `decode_utf8` is given more than one TypeScript name",
+            ),
+            (
+                "pub fn decode_utf8() {}\npub fn encode_utf8() {}\n",
+                "`flight-compiler: export-name` item `decode_utf8` is declared by more than one source",
+            ),
+            (
+                "pub fn decode_u_t_f8() {}\n",
+                "`flight-compiler: export-name decode_utf8` TypeScript name `decodeUTF8` collides with another item",
+            ),
+            (
+                "pub fn measure() -> usize { let decode_utf8 = 1; return decode_utf8; }\n",
+                "`flight-compiler: export-name` item `decode_utf8` is shadowed by a local binding of the same name",
+            ),
+        ] {
+            let error = compile_typescript_with_alias_sources(mapped, None, &[alias]).unwrap_err();
+            assert_eq!(error.to_string(), expected, "{alias}");
+        }
+        assert_eq!(
+            compile_typescript_with_alias_sources(mapped, None, &[mapped]).unwrap(),
+            "export function decodeUTF8(): void {\n}\n"
+        );
     }
 
     #[test]

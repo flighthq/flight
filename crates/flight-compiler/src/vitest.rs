@@ -10,7 +10,7 @@ use crate::model::{TestCase, TestProgram, TestSuite};
 use crate::typescript::{
     emit_expression, emit_for_header, emit_format_template, emit_local,
     emit_local_with_shadow_and_else, emit_match_statement, emit_option_binding, emit_parameter,
-    emit_type, frozen_object_name, function_expression_context,
+    emit_type, export_name, frozen_object_name, function_expression_context,
     insert_vitest_helper_return_context, insert_vitest_import_alias_context,
     insert_vitest_rebound_struct_context, is_data_union_variant, is_string_union,
     is_vitest_function, is_vitest_struct, lexical_pattern_context, numeric_literal_spelling,
@@ -415,9 +415,9 @@ fn collect_contract_symbols(
     symbols.extend(collector.symbols);
     type_symbols.extend(collector.type_symbols);
     external_modules.extend(collector.external_modules);
-    symbols.sort_by_key(|symbol| emit_path_name(symbol));
+    symbols.sort_by_key(|symbol| emit_path_name(symbol, context));
     symbols.dedup();
-    type_symbols.sort_by_key(|symbol| emit_path_name(symbol));
+    type_symbols.sort_by_key(|symbol| emit_path_name(symbol, context));
     type_symbols.dedup();
     type_symbols.retain(|symbol| !symbols.contains(symbol));
     external_modules.sort();
@@ -720,7 +720,10 @@ fn emit_test_type_alias(
     return Ok(());
 }
 
-fn emit_path_name(name: &str) -> String {
+fn emit_path_name(name: &str, context: &HashSet<String>) -> String {
+    if let Some(target) = export_name(context, name) {
+        return target.to_string();
+    }
     if name.chars().all(|character| {
         character.is_ascii_uppercase() || character.is_ascii_digit() || character == '_'
     }) {
@@ -864,8 +867,9 @@ fn emit_suite(
         suite.helpers.iter(),
     );
     let name = resolve_suite_name(&suite.name, contract_symbols);
-    writeln!(out, "describe({:?}, () => {{", snake_to_lower_camel(name))
-        .expect("writing to a String cannot fail");
+    let name =
+        export_name(context, name).map_or_else(|| snake_to_lower_camel(name), str::to_string);
+    writeln!(out, "describe({name:?}, () => {{").expect("writing to a String cannot fail");
     for helper in &suite.helpers {
         emit_helper(out, helper, &suite_context, 1)?;
     }
@@ -1022,7 +1026,7 @@ pub(crate) fn emit_test_program(
         cross_crate_values.entry(module).or_default().extend(
             unresolved_wildcard_values
                 .iter()
-                .map(|symbol| emit_path_name(symbol)),
+                .map(|symbol| emit_path_name(symbol, context)),
         );
         contract_symbols.retain(|symbol| !unresolved_wildcard_values.contains(symbol));
     }
@@ -1056,7 +1060,7 @@ pub(crate) fn emit_test_program(
         cross_crate_types.entry(module).or_default().extend(
             unresolved_wildcard_types
                 .iter()
-                .map(|symbol| emit_path_name(symbol)),
+                .map(|symbol| emit_path_name(symbol, context)),
         );
         contract_type_symbols.retain(|symbol| !unresolved_wildcard_types.contains(symbol));
     }
@@ -1070,10 +1074,12 @@ pub(crate) fn emit_test_program(
                 .map_or(specifier.as_str(), |(_, local)| local)
         })
         .collect::<HashSet<_>>();
-    contract_symbols
-        .retain(|symbol| !cross_crate_local_names.contains(emit_path_name(symbol).as_str()));
-    contract_type_symbols
-        .retain(|symbol| !cross_crate_local_names.contains(emit_path_name(symbol).as_str()));
+    contract_symbols.retain(|symbol| {
+        !cross_crate_local_names.contains(emit_path_name(symbol, context).as_str())
+    });
+    contract_type_symbols.retain(|symbol| {
+        !cross_crate_local_names.contains(emit_path_name(symbol, context).as_str())
+    });
     let mut out = String::new();
     out.push_str("import { describe, expect, it } from 'vitest';\n");
     for (module, names) in &cross_crate_values {
@@ -1099,7 +1105,7 @@ pub(crate) fn emit_test_program(
         for symbol in &contract_symbols {
             let name = frozen_object_name(context, symbol)
                 .map(str::to_string)
-                .unwrap_or_else(|| emit_path_name(symbol));
+                .unwrap_or_else(|| emit_path_name(symbol, context));
             writeln!(out, "  {name},").expect("writing to a String cannot fail");
         }
         writeln!(out, "}} from {contract_module:?};").expect("writing to a String cannot fail");
@@ -1107,7 +1113,7 @@ pub(crate) fn emit_test_program(
     if !contract_type_symbols.is_empty() {
         out.push_str("\nimport type {\n");
         for symbol in &contract_type_symbols {
-            writeln!(out, "  {},", emit_path_name(symbol))
+            writeln!(out, "  {},", emit_path_name(symbol, context))
                 .expect("writing to a String cannot fail");
         }
         writeln!(out, "}} from {contract_module:?};").expect("writing to a String cannot fail");
