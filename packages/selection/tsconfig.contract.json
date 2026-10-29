@@ -10,9 +10,5 @@
     "tsBuildInfoFile": "dist/.tsbuildinfo.contract"
   },
   "references": [{ "path": "../entity" }, { "path": "../signals" }],
-  "include": [
-    "src/contract.selection-types.ts",
-    "src/selectionCompat.selection-types.ts",
-    "src/selectionStateNodeTypeKey.ts"
-  ]
+  "include": ["src/contract.selection-types.ts", "src/selectionCompatTypes.ts", "src/selectionStateNodeTypeKey.ts"]
 }

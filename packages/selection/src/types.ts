@@ -6,7 +6,7 @@ import type { Rectangle } from '@flighthq/geometry/contract';
 import type { NodeRef } from '@flighthq/node/contract';
 import type { Path } from '@flighthq/path/contract';
 
-import type { SelectionSignals } from './selectionCompat.ts';
+import type { SelectionSignals } from './selectionCompatTypes.ts';
 
 /**
  * Whether a marquee accepts intersecting bounds or only fully enclosed bounds.

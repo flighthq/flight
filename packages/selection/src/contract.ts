@@ -38,4 +38,4 @@ export type {
   SelectionModifierState,
   SelectionSignals,
   SelectionState,
-} from './selectionCompat.ts';
+} from './selectionCompatTypes.ts';

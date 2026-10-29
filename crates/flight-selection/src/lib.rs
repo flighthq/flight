@@ -7,6 +7,7 @@ mod node_compat;
 mod path_compat;
 mod pointer_selection_policy;
 mod selection_compat;
+mod selection_compat_types;
 mod selection_state;
 mod types;
 

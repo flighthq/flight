@@ -28,7 +28,7 @@ import type {
   SelectionModifierState,
   SelectionSignals,
   SelectionState,
-} from './selectionCompat.selection-types.ts';
+} from './selectionCompatTypes.ts';
 import {
   addNodeToSelectionCore,
   clearSelectionCore,
@@ -59,7 +59,7 @@ export type {
   SelectionModifierState,
   SelectionSignals,
   SelectionState,
-} from './selectionCompat.selection-types.ts';
+} from './selectionCompatTypes.ts';
 
 type BoundsNodeAny = Parameters<typeof getNodeLocalBoundsRectangle>[0];
 

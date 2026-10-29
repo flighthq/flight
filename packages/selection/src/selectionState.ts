@@ -6,7 +6,7 @@ import type { NodeRef } from '@flighthq/node/contract';
 import { createSignal, emitSignal } from '@flighthq/signals/contract';
 
 import { isSameSelectionNode } from './nodeCompat.ts';
-import type { SelectionSignals } from './selectionCompat.ts';
+import type { SelectionSignals } from './selectionCompatTypes.ts';
 import type { SelectionStateRaw, SelectionStateRuntime } from './types.ts';
 import { selectionStateStateStore } from './types.ts';
 

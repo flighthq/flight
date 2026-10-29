@@ -39,4 +39,4 @@ export type {
   MarqueeSelectionMode,
   SelectionModifierState,
   SelectionState,
-} from './selectionCompat.ts';
+} from './selectionCompatTypes.ts';

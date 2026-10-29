@@ -1,6 +1,5 @@
 //! flight-compiler: target-native
-//! flight-compiler: contract LassoSelection MarqueeSelection MarqueeSelectionMode SelectionModifierState
-//! flight-compiler: contract SelectionSignals SelectionState addNodeToSelection applyPointerSelectionPolicy
+//! flight-compiler: contract addNodeToSelection applyPointerSelectionPolicy
 //! flight-compiler: contract applyPointerUpSelectionPolicy clearSelection createSelectionState
 //! flight-compiler: contract addLassoSelectionPoint beginLassoSelection createLassoSelection
 //! flight-compiler: contract endLassoSelection getLassoSelectionPath initializeLassoSelection
