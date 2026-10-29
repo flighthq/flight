@@ -17,6 +17,8 @@ type PreferredAliases = HashMap<String, String>;
 
 const CALLBACK_ARGUMENT_MARKER: &str = "@callback-argument:";
 const CLOSURE_PARAMETER_MARKER: &str = "@closure-parameter:";
+// The module of the program being emitted; struct and function facts resolve against it.
+const CURRENT_SOURCE_MARKER: &str = "@current-source:";
 const DATA_UNION_UNIT_MARKER: &str = "@data-union-unit:";
 const DATA_UNION_VARIANT_MARKER: &str = "@data-union-variant:";
 const TAGGED_DATA_UNION_VARIANT_MARKER: &str = "@tagged-data-union-variant:";
@@ -25,13 +27,18 @@ const ENTITY_UNSUPPORTED_DEFAULT_FIELD_MARKER: &str = "@entity-unsupported-defau
 const FIXED_BUFFER_ARGUMENT_MARKER: &str = "@fixed-buffer-argument:";
 const FIXED_BUFFER_LOCAL_MARKER: &str = "@fixed-buffer-local:";
 const FROZEN_OBJECT_MARKER: &str = "@frozen-object:";
+// Free functions and structs by declaring module (`module SEP name SEP public|private`). A name used
+// in a source resolves to that source's own declaration, else to the single public declaration in
+// another source, else to nothing; private declarations are never visible across sources.
+const FUNCTION_OWNER_MARKER: &str = "@function-owner:";
 const IDENTITY_ALIAS_MARKER: &str = "@identity-alias:";
 const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
 const NULLABLE_OPTION_FIELD_MARKER: &str = "@nullable-option-field:";
 const NULLABLE_OPTIONS_MARKER: &str = "@nullable-options";
 const PROVENANCE_SEPARATOR: char = '\u{1f}';
-// Struct fields, locals and parameters, and function returns declared as Rust `Option<T>`, each with
-// the named payload type (empty when unnamed). They make Option `.and_then()` / `.map()` type-directed.
+// Struct fields (`struct identity SEP field SEP payload`), locals and parameters (`name:payload`), and
+// function returns (`module SEP function SEP payload`) declared as Rust `Option<T>`. The payload is the
+// resolved struct identity of `T`, or empty. They make Option `.and_then()` / `.map()` type-directed.
 const OPTION_FIELD_MARKER: &str = "@option-field:";
 const OPTION_LOCAL_MARKER: &str = "@option-local:";
 const OPTION_RETURN_MARKER: &str = "@option-return:";
@@ -46,16 +53,20 @@ const RECORD_CLONE_TYPE_MARKER: &str = "@record-clone-type:";
 const RECORD_VEC_FIELD_MARKER: &str = "@record-vec-field:";
 const RETURN_TYPE_MARKER: &str = "@return-type:";
 const RETURNS_U32_MARKER: &str = "@returns-u32";
-// Struct fields (`Struct:field`) and locals or parameters whose every binding is declared as a Rust
-// `Vec` or slice, the operand types `.extend()` and `.extend_from_slice()` lower over.
+// Struct fields (`struct identity SEP field`) and locals or parameters whose every binding is declared
+// as a Rust `Vec`, slice or fixed array, the operand types `.extend()` and `.extend_from_slice()` lower
+// over.
 const SEQUENCE_FIELD_MARKER: &str = "@sequence-field:";
 const SEQUENCE_LOCAL_MARKER: &str = "@sequence-local:";
+// Functions returning a Rust `Vec`, slice or fixed array (`module SEP function SEP`).
+const SEQUENCE_RETURN_MARKER: &str = "@sequence-return:";
 const STRING_EXPRESSION_MARKER: &str = "@string-expression:";
 const STRING_RETURN_MARKER: &str = "@string-return:";
 const STRING_UNION_MARKER: &str = "@string-union:";
-// Locals and parameters declared as a named, non-Option Rust type, for resolving Option field reads.
+// Locals and parameters holding a resolved struct (`name:identity`, identity `module SEP Struct`).
 const STRUCT_LOCAL_MARKER: &str = "@struct-local:";
-// Functions returning a struct declared in the same program (`function:Struct`).
+const STRUCT_OWNER_MARKER: &str = "@struct-owner:";
+// Functions returning a resolved struct (`module SEP function SEP struct identity`).
 const STRUCT_RETURN_MARKER: &str = "@struct-return:";
 const VITEST_FUNCTION_CANDIDATE_MARKER: &str = "@vitest-function-candidate:";
 const VITEST_FUNCTION_RETURN_CANDIDATE_MARKER: &str = "@vitest-function-return-candidate:";
@@ -340,6 +351,44 @@ fn expression_is_known_string(expression: &Expr, entities: &HashSet<String>) -> 
     };
 }
 
+// The module declaring `name` as seen from the source `from`: its own declaration, else the single
+// public declaration in another source. Private declarations of other sources are invisible, and two
+// public candidates are ambiguous, so both resolve to nothing.
+fn resolve_owner(
+    entities: &HashSet<String>,
+    marker: &str,
+    from: &str,
+    name: &str,
+) -> Option<String> {
+    if entities.contains(&owner_marker(marker, from, name, true))
+        || entities.contains(&owner_marker(marker, from, name, false))
+    {
+        return Some(from.to_string());
+    }
+    let suffix = format!("{PROVENANCE_SEPARATOR}{name}{PROVENANCE_SEPARATOR}public");
+    let mut owners = marker_suffixes(entities, marker)
+        .into_iter()
+        .filter_map(|declaration| declaration.strip_suffix(&suffix).map(str::to_string))
+        .filter(|owner| owner != from)
+        .collect::<BTreeSet<_>>();
+    return match (owners.pop_first(), owners.is_empty()) {
+        (Some(owner), true) => Some(owner),
+        _ => None,
+    };
+}
+
+// The canonical identity (`module SEP Struct`) of the struct `rust_type` names, resolved from the
+// source `from`.
+fn resolved_type_identity(
+    entities: &HashSet<String>,
+    from: &str,
+    rust_type: &Type,
+) -> Option<String> {
+    let name = named_type(rust_type)?;
+    let owner = resolve_owner(entities, STRUCT_OWNER_MARKER, from, &name)?;
+    return Some(format!("{owner}{PROVENANCE_SEPARATOR}{name}"));
+}
+
 fn rust_type_is_ordered_primitive(rust_type: &Type) -> bool {
     return matches!(
         named_type(rust_type).as_deref(),
@@ -364,7 +413,7 @@ fn rust_type_is_sequence(rust_type: &Type) -> bool {
         Type::Group(group) => rust_type_is_sequence(&group.elem),
         Type::Paren(paren) => rust_type_is_sequence(&paren.elem),
         Type::Reference(reference) => rust_type_is_sequence(&reference.elem),
-        Type::Slice(_) => true,
+        Type::Array(_) | Type::Slice(_) => true,
         Type::Path(path) => path
             .path
             .segments
@@ -717,6 +766,9 @@ fn insert_sequence_context(function: &ItemFn, context: &mut HashSet<String>) {
 
     impl BindingCollector<'_> {
         fn initializer_binding(&self, expression: &Expr) -> Binding {
+            if expression_is_vec_construction(expression) {
+                return Binding::Sequence;
+            }
             let Some(name) = (match expression {
                 Expr::Call(call) => single_path_identifier(&call.func),
                 expression => single_path_identifier(expression),
@@ -734,12 +786,12 @@ fn insert_sequence_context(function: &ItemFn, context: &mut HashSet<String>) {
                     Binding::Other
                 };
             }
-            let mut structures =
-                marker_suffixes(self.context, &format!("{STRUCT_RETURN_MARKER}{name}:"));
-            return match (structures.pop_first(), structures.is_empty()) {
-                (Some(structure), true) => Binding::Structure(structure),
-                _ => Binding::Other,
-            };
+            if function_fact(self.context, SEQUENCE_RETURN_MARKER, &name).is_some() {
+                return Binding::Sequence;
+            }
+            return function_fact(self.context, STRUCT_RETURN_MARKER, &name)
+                .filter(|identity| !identity.is_empty())
+                .map_or(Binding::Other, Binding::Structure);
         }
     }
 
@@ -753,7 +805,7 @@ fn insert_sequence_context(function: &ItemFn, context: &mut HashSet<String>) {
             }
             let binding = match &local.pat {
                 Pat::Type(typed) if matches!(typed.pat.as_ref(), Pat::Ident(_)) => {
-                    Some(typed_binding(&typed.ty))
+                    Some(typed_binding(&typed.ty, self.context))
                 }
                 Pat::Ident(identifier) if identifier.subpat.is_none() => {
                     Some(local.init.as_ref().map_or(Binding::Other, |initializer| {
@@ -789,11 +841,13 @@ fn insert_sequence_context(function: &ItemFn, context: &mut HashSet<String>) {
         return Some(path.path.segments[0].ident.to_string());
     }
 
-    fn typed_binding(rust_type: &Type) -> Binding {
+    fn typed_binding(rust_type: &Type, entities: &HashSet<String>) -> Binding {
         if rust_type_is_sequence(rust_type) {
             return Binding::Sequence;
         }
-        return named_type(rust_type).map_or(Binding::Other, Binding::Structure);
+        return current_source(entities)
+            .and_then(|module| resolved_type_identity(entities, &module, rust_type))
+            .map_or(Binding::Other, Binding::Structure);
     }
 
     let mut collector = BindingCollector {
@@ -809,7 +863,7 @@ fn insert_sequence_context(function: &ItemFn, context: &mut HashSet<String>) {
                 .bindings
                 .entry(pattern.ident.to_string())
                 .or_default()
-                .push(typed_binding(&argument.ty)),
+                .push(typed_binding(&argument.ty, collector.context)),
             pattern => syn::visit::Visit::visit_pat(&mut collector, pattern),
         }
     }
@@ -833,6 +887,22 @@ fn insert_sequence_context(function: &ItemFn, context: &mut HashSet<String>) {
     context.extend(markers);
 }
 
+// A name not used by `used` derived from `base` (`base`, `base1`, ...), recorded as used.
+fn fresh_identifier(base: &str, used: &mut HashSet<String>) -> String {
+    let name = (0..)
+        .map(|index| {
+            if index == 0 {
+                base.to_string()
+            } else {
+                format!("{base}{index}")
+            }
+        })
+        .find(|name| !used.contains(name))
+        .expect("an unbounded candidate sequence always yields an unused name");
+    used.insert(name.clone());
+    return name;
+}
+
 // flight-lint: allow(hashmap-iteration) frozen-object validation guarantees one target name per Rust constant
 pub(crate) fn frozen_object_name<'a>(
     context: &'a HashSet<String>,
@@ -842,6 +912,21 @@ pub(crate) fn frozen_object_name<'a>(
     return context
         .iter()
         .find_map(|marker| marker.strip_prefix(&prefix));
+}
+
+// The fact `marker` records for the free function `function_name` called from the current source,
+// resolved to its declaring module; `None` when the function or its fact is unknown or ambiguous.
+fn function_fact(entities: &HashSet<String>, marker: &str, function_name: &str) -> Option<String> {
+    let current = current_source(entities)?;
+    let owner = resolve_owner(entities, FUNCTION_OWNER_MARKER, &current, function_name)?;
+    let mut facts = marker_suffixes(
+        entities,
+        &format!("{marker}{owner}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}"),
+    );
+    return match (facts.pop_first(), facts.is_empty()) {
+        (Some(fact), true) => Some(fact),
+        _ => None,
+    };
 }
 
 fn frozen_object_expression_name<'a>(
@@ -1622,6 +1707,24 @@ fn generation_context_with_types(
         })
         .collect::<HashMap<_, _>>();
     for (module, program) in programs {
+        for structure in &program.structs {
+            context.insert(owner_marker(
+                STRUCT_OWNER_MARKER,
+                module,
+                &structure.ident.to_string(),
+                is_public(&structure.vis),
+            ));
+        }
+        for function in &program.functions {
+            context.insert(owner_marker(
+                FUNCTION_OWNER_MARKER,
+                module,
+                &function.sig.ident.to_string(),
+                is_public(&function.vis),
+            ));
+        }
+    }
+    for (module, program) in programs {
         let local_struct_bindings = program
             .structs
             .iter()
@@ -1649,27 +1752,47 @@ fn generation_context_with_types(
                 }),
         );
         insert_string_union_context(&mut context, program.string_unions.keys());
+        let mut owned_facts = Vec::new();
         for structure in &program.structs {
+            let identity = format!("{module}{PROVENANCE_SEPARATOR}{}", structure.ident);
             for field in &structure.fields {
-                if let Some(inner) = option_inner_type(&field.ty)
-                    && let Some(field_name) = &field.ident
-                {
-                    context.insert(format!(
-                        "{OPTION_FIELD_MARKER}{}:{field_name}:{}",
-                        structure.ident,
-                        named_type(inner).unwrap_or_default()
+                let Some(field_name) = &field.ident else {
+                    continue;
+                };
+                if let Some(inner) = option_inner_type(&field.ty) {
+                    owned_facts.push(format!(
+                        "{OPTION_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}{}",
+                        resolved_type_identity(&context, module, inner).unwrap_or_default()
                     ));
                 }
-                if rust_type_is_sequence(&field.ty)
-                    && let Some(field_name) = &field.ident
-                {
-                    context.insert(format!(
-                        "{SEQUENCE_FIELD_MARKER}{}:{field_name}",
-                        structure.ident
+                if rust_type_is_sequence(&field.ty) {
+                    owned_facts.push(format!(
+                        "{SEQUENCE_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
                     ));
                 }
             }
         }
+        for function in &program.functions {
+            let ReturnType::Type(_, rust_type) = &function.sig.output else {
+                continue;
+            };
+            let function_name = function.sig.ident.to_string();
+            if rust_type_is_sequence(rust_type) {
+                owned_facts.push(format!(
+                    "{SEQUENCE_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}"
+                ));
+            } else if let Some(inner) = option_inner_type(rust_type) {
+                owned_facts.push(format!(
+                    "{OPTION_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{}",
+                    resolved_type_identity(&context, module, inner).unwrap_or_default()
+                ));
+            } else if let Some(identity) = resolved_type_identity(&context, module, rust_type) {
+                owned_facts.push(format!(
+                    "{STRUCT_RETURN_MARKER}{module}{PROVENANCE_SEPARATOR}{function_name}{PROVENANCE_SEPARATOR}{identity}"
+                ));
+            }
+        }
+        context.extend(owned_facts);
         if program.nullable_options {
             for structure in program
                 .structs
@@ -1771,23 +1894,6 @@ fn generation_context_with_types(
             if matches!(&function.sig.output, ReturnType::Type(_, rust_type) if rust_type_is_string(rust_type))
             {
                 context.insert(format!("{STRING_RETURN_MARKER}{function_name}"));
-            }
-            if let ReturnType::Type(_, rust_type) = &function.sig.output
-                && let Some(structure) = named_type(rust_type)
-                && program
-                    .structs
-                    .iter()
-                    .any(|candidate| candidate.ident == structure.as_str())
-            {
-                context.insert(format!("{STRUCT_RETURN_MARKER}{function_name}:{structure}"));
-            }
-            if let ReturnType::Type(_, rust_type) = &function.sig.output
-                && let Some(inner) = option_inner_type(rust_type)
-            {
-                context.insert(format!(
-                    "{OPTION_RETURN_MARKER}{function_name}:{}",
-                    named_type(inner).unwrap_or_default()
-                ));
             }
             for (argument_index, argument) in function.sig.inputs.iter().enumerate() {
                 if argument_is_nullable_guard(function, argument)
@@ -1907,8 +2013,9 @@ pub(crate) fn function_expression_context(
                     self.context
                         .insert(format!("{ORDERED_PRIMITIVE_MARKER}{}", pattern.ident));
                 }
-                self.context
-                    .extend(declared_type_markers(&pattern.ident.to_string(), &typed.ty));
+                let markers =
+                    declared_type_markers(&pattern.ident.to_string(), &typed.ty, self.context);
+                self.context.extend(markers);
                 if let Some(record) = named_type(&typed.ty)
                     && self
                         .context
@@ -2019,10 +2126,8 @@ pub(crate) fn function_expression_context(
         if rust_type_is_ordered_primitive(&argument.ty) {
             context.insert(format!("{ORDERED_PRIMITIVE_MARKER}{}", pattern.ident));
         }
-        context.extend(declared_type_markers(
-            &pattern.ident.to_string(),
-            &argument.ty,
-        ));
+        let markers = declared_type_markers(&pattern.ident.to_string(), &argument.ty, &context);
+        context.extend(markers);
     }
     syn::visit::Visit::visit_block(
         &mut CallbackUseCollector {
@@ -2107,16 +2212,31 @@ pub(crate) fn update_vitest_local_function_context(
     }
 }
 
+// The module of the program being emitted, when exactly one is recorded.
+fn current_source(entities: &HashSet<String>) -> Option<String> {
+    let mut modules = marker_suffixes(entities, CURRENT_SOURCE_MARKER);
+    return match (modules.pop_first(), modules.is_empty()) {
+        (Some(module), true) => Some(module),
+        _ => None,
+    };
+}
+
 // The Option and named-type markers for a local or parameter declared with `rust_type`.
-fn declared_type_markers(name: &str, rust_type: &Type) -> Vec<String> {
+fn declared_type_markers(name: &str, rust_type: &Type, entities: &HashSet<String>) -> Vec<String> {
+    let current = current_source(entities);
+    let resolve = |rust_type: &Type| {
+        current
+            .as_deref()
+            .and_then(|module| resolved_type_identity(entities, module, rust_type))
+    };
     if let Some(inner) = option_inner_type(rust_type) {
         return vec![format!(
             "{OPTION_LOCAL_MARKER}{name}:{}",
-            named_type(inner).unwrap_or_default()
+            resolve(inner).unwrap_or_default()
         )];
     }
-    return named_type(rust_type)
-        .map(|structure| format!("{STRUCT_LOCAL_MARKER}{name}:{structure}"))
+    return resolve(rust_type)
+        .map(|identity| format!("{STRUCT_LOCAL_MARKER}{name}:{identity}"))
         .into_iter()
         .collect();
 }
@@ -5188,6 +5308,13 @@ fn emit_method_call(
                 "portable `.and_then()` requires a receiver declared as Rust `Option`",
             ));
         }
+        // A Rust field has no `.map()` unless it is an Option (or another non-sequence type), so a
+        // field whose owning struct does not resolve is rejected instead of lowered as an array map.
+        if matches!(peel_reference_and_paren(&call.receiver), Expr::Field(_)) {
+            return Err(compile_error(
+                "portable `.map()` on a field requires the field to be declared as Rust `Option`",
+            ));
+        }
     }
     let arguments = call
         .args
@@ -5592,16 +5719,37 @@ fn expression_is_reusable(expression: &Expr) -> bool {
     };
 }
 
-// Whether `expression` is declared as a Rust `Vec` or slice: a sequence local or parameter, a sequence
-// field of a struct-typed local, or a `.clone()` / `.to_vec()` of one.
+// Whether `expression` is declared as a Rust `Vec`, slice or fixed array: a sequence local or parameter,
+// a sequence field of a resolved struct, a call to a resolved function returning one, a `Vec`
+// construction or array literal, or a range slice, `.clone()` or `.to_vec()` of one.
 fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool {
+    if expression_is_vec_construction(expression) {
+        return true;
+    }
     return match expression {
+        Expr::Array(_) => true,
+        Expr::Call(call) => match call.func.as_ref() {
+            Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+                function_fact(
+                    entities,
+                    SEQUENCE_RETURN_MARKER,
+                    &path.path.segments[0].ident.to_string(),
+                )
+                .is_some()
+            }
+            _ => false,
+        },
+        Expr::Index(index) if matches!(index.index.as_ref(), Expr::Range(_)) => {
+            expression_is_sequence(&index.expr, entities)
+        }
         Expr::Field(field) => {
             let syn::Member::Named(field_name) = &field.member else {
                 return false;
             };
-            expression_struct_name(&field.base, entities).is_some_and(|structure| {
-                entities.contains(&format!("{SEQUENCE_FIELD_MARKER}{structure}:{field_name}"))
+            expression_struct_name(&field.base, entities).is_some_and(|identity| {
+                entities.contains(&format!(
+                    "{SEQUENCE_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
+                ))
             })
         }
         Expr::Group(group) => expression_is_sequence(&group.expr, entities),
@@ -5620,6 +5768,18 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
         Expr::Unary(unary) if matches!(unary.op, UnOp::Deref(_)) => {
             expression_is_sequence(&unary.expr, entities)
         }
+        _ => false,
+    };
+}
+
+// `Vec::new()`, `Vec::with_capacity(..)` or `vec![..]`, which are Rust `Vec`s whatever their element.
+fn expression_is_vec_construction(expression: &Expr) -> bool {
+    return match expression {
+        Expr::Call(call) => {
+            expression_is_associated_path(&call.func, "Vec", "new")
+                || expression_is_associated_path(&call.func, "Vec", "with_capacity")
+        }
+        Expr::Macro(invocation) => invocation.mac.path.is_ident("vec"),
         _ => false,
     };
 }
@@ -6405,8 +6565,9 @@ pub(crate) fn emit_program(
         .zip(&programs)
         .map(|(module, program)| (module.as_str(), *program))
         .collect::<Vec<_>>();
-    let expression_context =
+    let mut expression_context =
         generation_context_with_types(&program_sources, &identity_context, None, false)?;
+    expression_context.insert(format!("{CURRENT_SOURCE_MARKER}{}", program_modules[0]));
     let mut source_context = expression_context.clone();
     if program.nullable_options {
         source_context.insert(NULLABLE_OPTIONS_MARKER.to_string());
@@ -7209,9 +7370,11 @@ fn emit_unary_operator(operator: &UnOp) -> Result<&'static str, CompileError> {
     };
 }
 
-// `Vec::extend` as a statement: an element loop, so no argument count ceiling applies. The argument is
-// evaluated once by `for...of`, before the first push; the receiver is a declared local or field path,
-// which is side-effect free to repeat. The element binding avoids every identifier the operands use.
+// `Vec::extend` as a statement: an index loop over the argument's initial length, so no argument
+// count ceiling applies and a TypeScript caller passing the receiver as the argument still terminates
+// (Rust ownership forbids that aliasing, the emitted signature does not). A non-reusable argument is
+// evaluated once into a block-scoped temporary; the receiver is a declared local or field path, which
+// is side-effect free to repeat. Every binding avoids the identifiers the operands use.
 fn emit_vec_extend_statement(
     out: &mut String,
     call: &syn::ExprMethodCall,
@@ -7221,34 +7384,42 @@ fn emit_vec_extend_statement(
     validate_sequence_operands("extend", call, entities)?;
     let receiver = emit_expression(&call.receiver, entities)?;
     let argument = emit_expression(&call.args[0], entities)?;
-    if receiver == argument {
-        return Err(compile_error(
-            "portable `.extend()` cannot extend a `Vec` with itself",
-        ));
-    }
-    let used = format!("{receiver} {argument}")
+    let mut used = format!("{receiver} {argument}")
         .split(|character: char| {
             !(character.is_alphanumeric() || character == '_' || character == '$')
         })
         .map(str::to_string)
         .collect::<HashSet<_>>();
-    let element = (0..)
-        .map(|index| {
-            if index == 0 {
-                "element".to_string()
-            } else {
-                format!("element{index}")
-            }
-        })
-        .find(|name| !used.contains(name))
-        .expect("an unbounded candidate sequence always yields an unused name");
-    write_indent(out, indent);
-    writeln!(out, "for (const {element} of {argument}) {{")
-        .expect("writing to a String cannot fail");
-    write_indent(out, indent + 1);
-    writeln!(out, "{receiver}.push({element});").expect("writing to a String cannot fail");
-    write_indent(out, indent);
+    let bind_source = !expression_is_reusable(&call.args[0]);
+    let source = if bind_source {
+        fresh_identifier("source", &mut used)
+    } else {
+        argument.clone()
+    };
+    let index = fresh_identifier("index", &mut used);
+    let count = fresh_identifier("count", &mut used);
+    let mut loop_indent = indent;
+    if bind_source {
+        write_indent(out, indent);
+        out.push_str("{\n");
+        loop_indent += 1;
+        write_indent(out, loop_indent);
+        writeln!(out, "const {source} = {argument};").expect("writing to a String cannot fail");
+    }
+    write_indent(out, loop_indent);
+    writeln!(
+        out,
+        "for (let {index} = 0, {count} = {source}.length; {index} < {count}; {index}++) {{"
+    )
+    .expect("writing to a String cannot fail");
+    write_indent(out, loop_indent + 1);
+    writeln!(out, "{receiver}.push({source}[{index}]);").expect("writing to a String cannot fail");
+    write_indent(out, loop_indent);
     out.push_str("}\n");
+    if bind_source {
+        write_indent(out, indent);
+        out.push_str("}\n");
+    }
     return Ok(());
 }
 
@@ -7353,6 +7524,15 @@ fn pattern_binds_identifier(pattern: &Pat, expected: &str) -> bool {
     };
     syn::visit::Visit::visit_pat(&mut finder, pattern);
     return finder.found;
+}
+
+fn peel_reference_and_paren(expression: &Expr) -> &Expr {
+    return match expression {
+        Expr::Group(group) => peel_reference_and_paren(&group.expr),
+        Expr::Paren(paren) => peel_reference_and_paren(&paren.expr),
+        Expr::Reference(reference) => peel_reference_and_paren(&reference.expr),
+        _ => expression,
+    };
 }
 
 fn expression_contains_method(expression: &Expr, expected: &str) -> bool {
@@ -7694,17 +7874,20 @@ fn option_expression_payload(expression: &Expr, entities: &HashSet<String>) -> O
             if path.qself.is_some() || path.path.segments.len() != 1 {
                 return None;
             }
-            find(format!(
-                "{OPTION_RETURN_MARKER}{}:",
-                path.path.segments[0].ident
-            ))
+            function_fact(
+                entities,
+                OPTION_RETURN_MARKER,
+                &path.path.segments[0].ident.to_string(),
+            )
         }
         Expr::Field(field) => {
             let syn::Member::Named(field_name) = &field.member else {
                 return None;
             };
             let structure = expression_struct_name(&field.base, entities)?;
-            find(format!("{OPTION_FIELD_MARKER}{structure}:{field_name}:"))
+            find(format!(
+                "{OPTION_FIELD_MARKER}{structure}{PROVENANCE_SEPARATOR}{field_name}{PROVENANCE_SEPARATOR}"
+            ))
         }
         Expr::Group(group) => option_expression_payload(&group.expr, entities),
         Expr::MethodCall(call) if call.method == "and_then" || call.method == "map" => {
@@ -7774,6 +7957,13 @@ fn ordering_variant_value(path: &syn::Path) -> Option<&'static str> {
         "Greater" => Some("1"),
         _ => None,
     };
+}
+
+fn owner_marker(marker: &str, module: &str, name: &str, public: bool) -> String {
+    let visibility = if public { "public" } else { "private" };
+    return format!(
+        "{marker}{module}{PROVENANCE_SEPARATOR}{name}{PROVENANCE_SEPARATOR}{visibility}"
+    );
 }
 
 fn path_is_type_constant(path: &syn::Path, rust_type: &str, constant: &str) -> bool {

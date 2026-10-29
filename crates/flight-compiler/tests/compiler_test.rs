@@ -698,9 +698,10 @@ pub fn move_distance(a: &Segment, b: &Segment) -> f64 {
     }
 
     // A statement `.extend()` over a receiver declared as a Rust `Vec` and an argument declared as a
-    // `Vec` or slice lowers to an element loop, so no argument count ceiling applies. Sequence facts
-    // follow private struct fields, same-program struct returns and bare moves, and a name counts only
-    // when every binding of it agrees.
+    // `Vec`, slice or array lowers to an index loop over the argument's initial length, so no argument
+    // count ceiling applies and a TypeScript caller aliasing the operands still terminates. Sequence
+    // facts follow private struct fields, same-program struct returns, bare moves and `Vec`
+    // constructions, and a name counts only when every binding of it agrees.
     #[test]
     fn lowers_vec_extend_over_declared_sequences() {
         let source = r#"
@@ -718,6 +719,10 @@ fn make(extra: Vec<Id>) -> Attempt {
     return Attempt { unpacked: extra };
 }
 
+fn pair() -> Vec<i32> {
+    return vec![1, 2];
+}
+
 pub fn joined(mut a: Vec<i32>, b: Vec<i32>) -> Vec<i32> {
     a.extend(b);
     return a;
@@ -725,6 +730,16 @@ pub fn joined(mut a: Vec<i32>, b: Vec<i32>) -> Vec<i32> {
 
 pub fn appended(a: &mut Vec<i32>, b: &[i32]) {
     a.extend_from_slice(b);
+}
+
+pub fn literal(values: &mut Vec<i32>) {
+    values.extend_from_slice(&[1, 2]);
+    values.extend([3, 4]);
+}
+
+pub fn fixed(values: &mut Vec<i32>) {
+    let pair: [i32; 2] = [7, 8];
+    values.extend_from_slice(&pair);
 }
 
 pub fn combined(degenerate: Vec<Id>, extra: Vec<Id>) -> Vec<Id> {
@@ -739,26 +754,43 @@ pub fn doubled(mut a: Vec<i32>) -> Vec<i32> {
     return a;
 }
 
-pub fn filled(out: &mut Vec<i32>, element: &Vec<i32>) {
-    out.extend(element);
+pub fn constructed(source: &Vec<i32>, head: usize) -> usize {
+    let mut values = vec![0];
+    values.extend_from_slice(&source[head..]);
+    values.extend(pair());
+    return values.len();
+}
+
+pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
+    index.extend(count);
 }
 "#;
 
         let output = compile_typescript(source, None).unwrap();
 
         assert!(output.contains(
-            "export function joined(a: number[], b: number[]): number[] {\n  for (const element of b) {\n    a.push(element);\n  }\n  return a;\n}"
+            "export function joined(a: number[], b: number[]): number[] {\n  for (let index = 0, count = b.length; index < count; index++) {\n    a.push(b[index]);\n  }\n  return a;\n}"
         ));
         assert!(output.contains("  a.push(...b);\n"));
         assert!(output.contains(
-            "  let combinedUnpacked = degenerate;\n  const attempt = make(extra);\n  for (const element of attempt.unpacked) {\n    combinedUnpacked.push(element);\n  }\n"
+            "  values.push(...[1, 2]);\n  {\n    const source = [3, 4];\n    for (let index = 0, count = source.length; index < count; index++) {\n      values.push(source[index]);\n    }\n  }\n"
         ));
-        assert!(
-            output.contains("  for (const element of a.slice()) {\n    a.push(element);\n  }\n")
-        );
-        assert!(
-            output.contains("  for (const element1 of element) {\n    out.push(element1);\n  }\n")
-        );
+        assert!(output.contains("  values.push(...pair);\n"));
+        assert!(output.contains(
+            "  let combinedUnpacked = degenerate;\n  const attempt = make(extra);\n  for (let index = 0, count = attempt.unpacked.length; index < count; index++) {\n    combinedUnpacked.push(attempt.unpacked[index]);\n  }\n"
+        ));
+        assert!(output.contains(
+            "  {\n    const source = a.slice();\n    for (let index = 0, count = source.length; index < count; index++) {\n      a.push(source[index]);\n    }\n  }\n"
+        ));
+        assert!(output.contains("  values.push(...source.slice(head));\n"));
+        assert!(output.contains(
+            "  {\n    const source1 = pair();\n    for (let index = 0, count = source1.length; index < count; index++) {\n      values.push(source1[index]);\n    }\n  }\n"
+        ) || output.contains(
+            "  {\n    const source = pair();\n    for (let index = 0, count = source.length; index < count; index++) {\n      values.push(source[index]);\n    }\n  }\n"
+        ));
+        assert!(output.contains(
+            "  for (let index1 = 0, count1 = count.length; index1 < count1; index1++) {\n    index.push(count[index1]);\n  }\n"
+        ));
 
         for (source, expected) in [
             (
@@ -770,7 +802,7 @@ pub fn filled(out: &mut Vec<i32>, element: &Vec<i32>) {
                 "portable `.extend()` requires an argument declared as Rust `Vec` or slice; iterator and Option arguments are not supported",
             ),
             (
-                "fn other() -> Vec<i32> { return Vec::new(); }\npub fn f(b: Vec<i32>) -> Vec<i32> { let mut v = other(); v.extend(b); return v; }\n",
+                "pub fn f(b: Vec<i32>) -> Vec<i32> { let mut v = other(); v.extend(b); return v; }\n",
                 "portable `.extend()` requires a receiver declared as Rust `Vec`",
             ),
             (
@@ -780,6 +812,10 @@ pub fn filled(out: &mut Vec<i32>, element: &Vec<i32>) {
             (
                 "pub fn f(a: &mut i32, b: &[i32]) { a.extend_from_slice(b); }\n",
                 "portable `.extend_from_slice()` requires a receiver declared as Rust `Vec`",
+            ),
+            (
+                "const PAIR: [i32; 2] = [5, 6];\npub fn f(a: &mut Vec<i32>) { a.extend_from_slice(&PAIR); }\n",
+                "portable `.extend_from_slice()` requires an argument declared as Rust `Vec` or slice; iterator and Option arguments are not supported",
             ),
             (
                 "pub fn f(a: &mut Vec<i32>, b: Vec<i32>) -> usize { let n = { a.extend(b) }; return a.len(); }\n",
@@ -793,6 +829,68 @@ pub fn filled(out: &mut Vec<i32>, element: &Vec<i32>) {
             let error = compile_typescript(source, None).unwrap_err();
             assert_eq!(error.to_string(), expected);
         }
+    }
+
+    // Struct and function facts resolve from the selected source: its own declarations first, then a
+    // single public declaration in an alias source. Private alias declarations never leak in, and two
+    // public candidates are ambiguous, so the extend is rejected rather than guessed.
+    #[test]
+    fn lowers_vec_extend_with_source_owned_sequence_facts() {
+        let string_source = "struct SharedCollision { items: String }\nfn make_collision(items: String) -> SharedCollision { SharedCollision { items } }\npub fn extend_string(items: String, extra: Vec<&'static str>) -> String {\n    let mut shared = make_collision(items);\n    shared.items.extend(extra);\n    shared.items\n}\n";
+        let private_vec_alias = "struct SharedCollision { items: Vec<&'static str> }\nfn make_collision(items: Vec<&'static str>) -> SharedCollision { SharedCollision { items } }\n";
+        let vec_source = "struct SharedCollision { items: Vec<i32> }\nfn make_collision(items: Vec<i32>) -> SharedCollision { return SharedCollision { items: items }; }\npub fn extend_vec(items: Vec<i32>, extra: Vec<i32>) -> Vec<i32> {\n    let mut shared = make_collision(items);\n    shared.items.extend(extra);\n    return shared.items;\n}\n";
+        let public_string_alias = "pub struct SharedCollision { pub items: String }\npub fn make_collision(items: String) -> SharedCollision { return SharedCollision { items: items }; }\n";
+        let import_source = "pub fn extend_imported(items: Vec<i32>, extra: Vec<i32>) -> Vec<i32> {\n    let mut held = make_held(items);\n    held.items.extend(extra);\n    return held.items;\n}\n";
+        let public_held_alias = "pub struct Held { pub items: Vec<i32> }\npub fn make_held(items: Vec<i32>) -> Held { return Held { items: items }; }\n";
+        let private_held_alias = "struct Held { items: Vec<i32> }\nfn make_held(items: Vec<i32>) -> Held { return Held { items: items }; }\n";
+        let local_string_held_source = "struct Held { items: String }\npub fn extend_returned(items: Vec<i32>, extra: Vec<i32>, label: String) -> usize {\n    let local = Held { items: label };\n    let mut held = make_held(items);\n    held.items.extend(extra);\n    return held.items.len() + local.items.len();\n}\n";
+        let local_vec_held_source = "struct Held { items: Vec<i32> }\npub fn extend_returned(items: String, extra: Vec<&'static str>) -> String {\n    let mut held = make_held(items);\n    held.items.extend(extra);\n    return held.items;\n}\n";
+        let public_string_held_alias = "pub struct Held { pub items: String }\npub fn make_held(items: String) -> Held { return Held { items: items }; }\n";
+        let lowered = |field: &str| {
+            format!(
+                "  for (let index = 0, count = extra.length; index < count; index++) {{\n    {field}.items.push(extra[index]);\n  }}\n"
+            )
+        };
+        let rejected = "portable `.extend()` requires a receiver declared as Rust `Vec`";
+
+        for (source, aliases) in [
+            (string_source, vec![]),
+            (string_source, vec![private_vec_alias]),
+            (import_source, vec![private_held_alias]),
+            (import_source, vec![public_held_alias, public_held_alias]),
+            (local_vec_held_source, vec![public_string_held_alias]),
+        ] {
+            let error = compile_typescript_with_alias_sources(source, None, &aliases).unwrap_err();
+            assert_eq!(error.to_string(), rejected);
+        }
+        for (source, aliases, field) in [
+            (vec_source, vec![public_string_alias], "shared"),
+            (vec_source, vec![private_vec_alias], "shared"),
+            (import_source, vec![public_held_alias], "held"),
+            (local_string_held_source, vec![public_held_alias], "held"),
+        ] {
+            let output = compile_typescript_with_alias_sources(source, None, &aliases).unwrap();
+            assert!(output.contains(&lowered(field)), "{output}");
+        }
+
+        let option_source = "pub fn width_of(options: Option<&Shape>) -> f32 {\n    return options.and_then(|o| o.width.map(|w| w * 2.0)).unwrap_or(0.0);\n}\n";
+        let public_shape_alias = "pub struct Shape { pub width: Option<f32> }\n";
+        let output =
+            compile_typescript_with_alias_sources(option_source, None, &[public_shape_alias])
+                .unwrap();
+        assert!(output.contains(
+            "return (((o) => o === undefined ? undefined : ((w) => w === undefined ? undefined : w * 2.0)(o.width))(options) ?? 0.0);"
+        ));
+        let error = compile_typescript_with_alias_sources(
+            option_source,
+            None,
+            &[public_shape_alias, public_shape_alias],
+        )
+        .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "portable `.map()` on a field requires the field to be declared as Rust `Option`"
+        );
     }
 
     #[test]
