@@ -119,6 +119,9 @@ const PUBLIC_USE_BINDING_MARKER: &str = "@public-use-binding:";
 const PUBLIC_USE_GLOB_MARKER: &str = "@public-use-glob:";
 const IDENTITY_ALIAS_MARKER: &str = "@identity-alias:";
 const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
+// The BindingId of a Vitest local whose initializer is proven to retain a nullable Option return's
+// `null` representation. Binding identity, rather than the Rust identifier, keeps shadows separate.
+const NULLABLE_OPTION_BINDING_MARKER: &str = "@nullable-option-binding:";
 const NULLABLE_OPTION_FIELD_MARKER: &str = "@nullable-option-field:";
 const NULLABLE_OPTION_RETURN_MARKER: &str = "@nullable-option-return:";
 const NULLABLE_OPTIONS_MARKER: &str = "@nullable-options";
@@ -2933,6 +2936,7 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
         facts: Vec<(String, BindingFact)>,
         function: String,
         mutex_guards: HashSet<String>,
+        nullable_option_bindings: HashSet<String>,
         ordinal: usize,
         ref_aliases: Vec<(String, String)>,
         scopes: Vec<BTreeMap<String, String>>,
@@ -3247,6 +3251,33 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
             };
         }
 
+        fn initializer_retains_nullable_option(&self, expression: &Expr) -> bool {
+            if current_source(self.context).is_some() {
+                return false;
+            }
+            return match expression {
+                Expr::Call(call) => {
+                    let Expr::Path(path) = call.func.as_ref() else {
+                        return false;
+                    };
+                    path.qself.is_none()
+                        && single_path_identifier(&call.func)
+                            .is_none_or(|name| self.fact_of(&name).is_none())
+                        && call_fact(self.context, NULLABLE_OPTION_RETURN_MARKER, &path.path)
+                            .is_some()
+                }
+                Expr::Group(group) => self.initializer_retains_nullable_option(&group.expr),
+                Expr::Paren(paren) => self.initializer_retains_nullable_option(&paren.expr),
+                Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => self
+                    .binding_id(&path.path.segments[0].ident.to_string())
+                    .is_some_and(|id| self.nullable_option_bindings.contains(&id)),
+                Expr::Reference(reference) => {
+                    self.initializer_retains_nullable_option(&reference.expr)
+                }
+                _ => false,
+            };
+        }
+
         // A field of a lexically known structure declared as `HashSet` / `HashMap`.
         fn hash_collection_field_fact(&self, expression: &Expr) -> Option<BindingFact> {
             return match expression {
@@ -3467,6 +3498,7 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 .then(|| clone.receiver.to_token_stream().to_string())
             });
             let mut fact = BindingFact::Unknown;
+            let mut retains_nullable_option = false;
             if let Some(initializer) = &local.init {
                 self.visit_expr(&initializer.expr);
                 if let Some((_, diverge)) = &initializer.diverge {
@@ -3474,9 +3506,17 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
                 }
                 if initializer.diverge.is_none() {
                     fact = self.initializer_fact(&initializer.expr);
+                    retains_nullable_option = matches!(&fact, BindingFact::Option(_))
+                        && self.initializer_retains_nullable_option(&initializer.expr);
                 }
             }
             self.bind_pattern(&local.pat, fact);
+            if retains_nullable_option
+                && let Some(name) = local_pattern_name(&local.pat)
+                && let Some(id) = self.binding_id(&name)
+            {
+                self.nullable_option_bindings.insert(id);
+            }
             if let Some(target) = ref_alias_target
                 && let Some(name) = local_pattern_name(&local.pat)
                 && let Some(id) = self.binding_id(&name)
@@ -3512,6 +3552,7 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
             None => function_name,
         },
         mutex_guards: HashSet::new(),
+        nullable_option_bindings: HashSet::new(),
         ordinal: 0,
         ref_aliases: Vec::new(),
         scopes: vec![BTreeMap::new()],
@@ -3546,6 +3587,9 @@ fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<Strin
     }
     for id in resolver.mutex_guards.intersection(&resolver.dereferenced) {
         markers.push(format!("{MUTEX_GUARD_BINDING_MARKER}{id}"));
+    }
+    for id in resolver.nullable_option_bindings {
+        markers.push(format!("{NULLABLE_OPTION_BINDING_MARKER}{id}"));
     }
     context.extend(markers);
 }
@@ -13228,6 +13272,9 @@ pub(crate) fn option_absent_value(expression: &Expr, entities: &HashSet<String>)
     if entities.contains(NULLABLE_OPTIONS_MARKER)
         || !normalized && expression_is_nullable_option_field(expression, entities)
         || !normalized && expression_is_nullable_option_return(expression, entities)
+        || referenced_path_identifier(expression)
+            .and_then(|name| lexical_binding(entities, &name))
+            .is_some_and(|id| entities.contains(&format!("{NULLABLE_OPTION_BINDING_MARKER}{id}")))
         || referenced_path_identifier(expression)
             .is_some_and(|name| entities.contains(&format!("@nullable:{name}")))
     {

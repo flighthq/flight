@@ -9516,6 +9516,13 @@ use flight_example::*;
 fn follows_each_returns_source_mode() {
     assert!(find_nullable().is_none());
     assert!(find_optional().is_none());
+    let returned_value = find_nullable();
+    assert!(returned_value.is_none());
+    if true {
+        let returned_value = find_optional();
+        assert!(returned_value.is_none());
+    }
+    assert!(!returned_value.is_some());
 }
 "#;
 
@@ -9528,6 +9535,9 @@ fn follows_each_returns_source_mode() {
 
         assert!(output.contains("expect(findNullable() === null).toBe(true);"));
         assert!(output.contains("expect(findOptional() === undefined).toBe(true);"));
+        assert!(output.contains("expect(returnedValue === null).toBe(true);"));
+        assert!(output.contains("expect(returnedValue === undefined).toBe(true);"));
+        assert!(output.contains("expect(!(returnedValue !== null)).toBe(true);"));
     }
 
     #[test]
