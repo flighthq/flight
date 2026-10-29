@@ -36,6 +36,13 @@ mod source_modes {
         );
         assert_eq!(
             source_mode(
+                "//! flight-compiler: callable-field-parameters Hooks run value\npub struct Hooks { pub run: fn(f32) }\n"
+            )
+            .unwrap(),
+            SourceMode::Generate
+        );
+        assert_eq!(
+            source_mode(
                 "//! flight-compiler: data-union RectangleId\npub enum RectangleId { Number(i32), Text(String) }\n"
             )
             .unwrap(),
@@ -1304,6 +1311,75 @@ pub type ScalarRemap = Arc<dyn Fn(f32, f32) -> f32 + Send + Sync>;
     }
 
     #[test]
+    fn names_callable_fields_and_makes_only_trailing_options_optional() {
+        let source = r#"
+//! flight-compiler: callable-field-parameters Hooks impact style intensity
+//! flight-compiler: callable-field-parameters Hooks mixed value count
+//! flight-compiler: callable-field-parameters Hooks waveform timings repeat
+//! flight-compiler: callable-field-parameters Hooks bare count repeat
+//! flight-compiler: callable-parameters Callback value fallback
+
+use std::sync::Arc;
+
+pub enum Style {
+    Light,
+}
+
+pub type Callback = Arc<dyn Fn(i32, Option<i32>) -> bool + Send + Sync>;
+
+pub struct Hooks {
+    pub impact: Arc<dyn Fn(Style, Option<f32>) -> bool + Send + Sync>,
+    pub mixed: Arc<dyn Fn(Option<f32>, i32) -> bool + Send + Sync>,
+    pub waveform: Option<Arc<dyn Fn(&Vec<f32>, Option<i32>) -> bool + Send + Sync>>,
+    pub bare: fn(i32, Option<i32>) -> bool,
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output
+                .contains("export type Callback = (value: number, fallback?: number) => boolean;")
+        );
+        assert!(output.contains("impact: (style: Style, intensity?: number) => boolean;"));
+        assert!(output.contains("mixed: (value: number | undefined, count: number) => boolean;"));
+        assert!(
+            output
+                .contains("waveform?: (timings: Readonly<number[]>, repeat?: number) => boolean;")
+        );
+        assert!(output.contains("bare: (count: number, repeat?: number) => boolean;"));
+
+        let nullable_source = r#"
+//! flight-compiler: nullable-options
+//! flight-compiler: callable-parameters Callback value fallback
+
+pub type Callback = fn(i32, Option<i32>) -> bool;
+"#;
+        let nullable_output = compile_typescript(nullable_source, None).unwrap();
+        assert!(nullable_output.contains(
+            "export type Callback = (value: number, fallback: number | null) => boolean;"
+        ));
+        assert!(!nullable_output.contains("fallback?:"));
+    }
+
+    #[test]
+    fn emits_real_haptics_callable_field_signatures() {
+        let source = include_str!("../../flight-haptics/src/types.rs");
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(output.contains("capabilities: (out: HapticsCapabilities) => void;"));
+        assert!(
+            output.contains("impact: (style: HapticImpactStyle, intensity?: number) => boolean;")
+        );
+        assert!(output.contains("notification: (type: HapticNotificationType) => boolean;"));
+        assert!(output.contains("vibrate: (durationMs: number) => boolean;"));
+        assert!(output.contains("vibratePattern: (pattern: Readonly<number[]>) => boolean;"));
+        assert!(output.contains(
+            "vibrateWaveform?: (timings: Readonly<number[]>, amplitudes: Readonly<number[]>, repeat?: number) => boolean;"
+        ));
+    }
+
+    #[test]
     fn rejects_malformed_callable_parameter_directives() {
         let cases = [
             (
@@ -1333,6 +1409,55 @@ pub type ScalarRemap = Arc<dyn Fn(f32, f32) -> f32 + Send + Sync>;
             (
                 "//! flight-compiler: callable-parameters Remap x x\npub type Remap = fn(f32, f32) -> f32;\n",
                 "`flight-compiler: callable-parameters Remap` repeats parameter name `x`",
+            ),
+        ];
+
+        for (source, expected) in cases {
+            assert_eq!(
+                compile_typescript(source, None).unwrap_err().to_string(),
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_malformed_callable_field_parameter_directives() {
+        let cases = [
+            (
+                "//! flight-compiler: callable-field-parameters\npub struct Hooks { pub run: fn(f32) }\n",
+                "`flight-compiler: callable-field-parameters` requires an owner struct name",
+            ),
+            (
+                "//! flight-compiler: callable-field-parameters Hooks\npub struct Hooks { pub run: fn(f32) }\n",
+                "`flight-compiler: callable-field-parameters Hooks` requires a field name",
+            ),
+            (
+                "//! flight-compiler: callable-field-parameters Missing run value\npub struct Hooks { pub run: fn(f32) }\n",
+                "`flight-compiler: callable-field-parameters` owner `Missing` does not exist",
+            ),
+            (
+                "//! flight-compiler: callable-field-parameters Hooks missing value\npub struct Hooks { pub run: fn(f32) }\n",
+                "`flight-compiler: callable-field-parameters` field `Hooks.missing` does not exist",
+            ),
+            (
+                "//! flight-compiler: callable-field-parameters Hooks value value\npub struct Hooks { pub value: f32 }\n",
+                "`flight-compiler: callable-field-parameters` field `Hooks.value` is not callable",
+            ),
+            (
+                "//! flight-compiler: callable-field-parameters Hooks run value\npub struct Hooks { pub run: fn(f32, f32) }\n",
+                "`flight-compiler: callable-field-parameters` field `Hooks.run` expects 2 parameter names, got 1",
+            ),
+            (
+                "//! flight-compiler: callable-field-parameters Hooks run value\n//! flight-compiler: callable-field-parameters Hooks run next\npub struct Hooks { pub run: fn(f32) }\n",
+                "duplicate `flight-compiler: callable-field-parameters` directive for field `Hooks.run`",
+            ),
+            (
+                "//! flight-compiler: callable-field-parameters Hooks run x-y\npub struct Hooks { pub run: fn(f32) }\n",
+                "`flight-compiler: callable-field-parameters Hooks run` parameter name `x-y` is not a valid identifier",
+            ),
+            (
+                "//! flight-compiler: callable-field-parameters Hooks run value value\npub struct Hooks { pub run: fn(f32, f32) }\n",
+                "`flight-compiler: callable-field-parameters Hooks run` repeats parameter name `value`",
             ),
         ];
 

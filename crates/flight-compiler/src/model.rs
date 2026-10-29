@@ -1,5 +1,7 @@
 use std::collections::{BTreeMap, HashSet};
 
+use syn::ext::IdentExt;
+use syn::parse::Parser;
 use syn::{
     Attribute, Fields, GenericArgument, Item, ItemConst, ItemEnum, ItemFn, ItemStatic, ItemStruct,
     ItemType, ItemUse, PathArguments, Type, UseTree, Visibility,
@@ -8,6 +10,7 @@ use syn::{
 use crate::{CompileError, SourceMode, compile_error};
 
 pub(crate) struct Program {
+    pub(crate) callable_field_parameters: BTreeMap<(String, String), Vec<String>>,
     pub(crate) callable_parameters: BTreeMap<String, Vec<String>>,
     pub(crate) constants: Vec<ItemConst>,
     pub(crate) data_unions: HashSet<String>,
@@ -131,7 +134,8 @@ pub(crate) fn source_mode(source: &str) -> Result<SourceMode, CompileError> {
         match name {
             "rust-only" => rust_only = true,
             "target-native" => target_native = true,
-            "callable-parameters"
+            "callable-field-parameters"
+            | "callable-parameters"
             | "companion"
             | "contract"
             | "data-union"
@@ -200,6 +204,7 @@ fn is_public(visibility: &Visibility) -> bool {
 pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     let file = syn::parse_file(source)
         .map_err(|error| compile_error(format!("failed to parse Rust source: {error}")))?;
+    let callable_field_parameters = parse_callable_field_parameters(&file.attrs)?;
     let callable_parameters = parse_callable_parameters(&file.attrs)?;
     let data_unions = parse_data_unions(&file.attrs)?;
     let frozen_objects = parse_frozen_objects(&file.attrs)?;
@@ -273,12 +278,14 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
     }
 
     validate_callable_parameters(&callable_parameters, &type_aliases)?;
+    validate_callable_field_parameters(&callable_field_parameters, &structs)?;
     validate_data_union_directives(&data_unions, &enums, &string_unions)?;
     validate_string_union_directives(&string_unions, &string_union_values, &enums)?;
     validate_frozen_objects(&frozen_objects, &constants)?;
     validate_identity_aliases(&identity_alias_directives, &type_aliases)?;
 
     return Ok(Program {
+        callable_field_parameters,
         callable_parameters,
         constants,
         data_unions,
@@ -696,7 +703,10 @@ fn callable_arity(rust_type: &Type) -> Option<usize> {
         Type::Paren(paren) => callable_arity(&paren.elem),
         Type::Path(path) => {
             let segment = path.path.segments.last()?;
-            if !matches!(segment.ident.to_string().as_str(), "Arc" | "Ref") {
+            if !matches!(
+                segment.ident.to_string().as_str(),
+                "Arc" | "Box" | "Option" | "Ref"
+            ) {
                 return None;
             }
             let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
@@ -732,6 +742,69 @@ fn callable_arity(rust_type: &Type) -> Option<usize> {
     };
 }
 
+fn is_valid_callable_parameter_name(name: &str) -> bool {
+    return !name.starts_with("r#") && syn::Ident::parse_any.parse_str(name).is_ok();
+}
+
+fn parse_callable_field_parameters(
+    attributes: &[Attribute],
+) -> Result<BTreeMap<(String, String), Vec<String>>, CompileError> {
+    let mut directives = BTreeMap::new();
+    for attribute in attributes {
+        let Some(directive) = doc_directive(attribute) else {
+            continue;
+        };
+        let mut fields = directive.split_whitespace();
+        if fields.next() != Some("callable-field-parameters") {
+            continue;
+        }
+        let Some(owner) = fields.next() else {
+            return Err(compile_error(
+                "`flight-compiler: callable-field-parameters` requires an owner struct name",
+            ));
+        };
+        if syn::parse_str::<syn::Ident>(owner).is_err() || owner.starts_with("r#") {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-field-parameters` owner name `{owner}` is not a valid identifier"
+            )));
+        }
+        let Some(field) = fields.next() else {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-field-parameters {owner}` requires a field name"
+            )));
+        };
+        if syn::parse_str::<syn::Ident>(field).is_err() || field.starts_with("r#") {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-field-parameters {owner}` field name `{field}` is not a valid identifier"
+            )));
+        }
+        let mut names = Vec::new();
+        let mut seen = HashSet::new();
+        for name in fields {
+            if !is_valid_callable_parameter_name(name) {
+                return Err(compile_error(format!(
+                    "`flight-compiler: callable-field-parameters {owner} {field}` parameter name `{name}` is not a valid identifier"
+                )));
+            }
+            if !seen.insert(name) {
+                return Err(compile_error(format!(
+                    "`flight-compiler: callable-field-parameters {owner} {field}` repeats parameter name `{name}`"
+                )));
+            }
+            names.push(name.to_string());
+        }
+        if directives
+            .insert((owner.to_string(), field.to_string()), names)
+            .is_some()
+        {
+            return Err(compile_error(format!(
+                "duplicate `flight-compiler: callable-field-parameters` directive for field `{owner}.{field}`"
+            )));
+        }
+    }
+    return Ok(directives);
+}
+
 fn parse_callable_parameters(
     attributes: &[Attribute],
 ) -> Result<BTreeMap<String, Vec<String>>, CompileError> {
@@ -757,7 +830,7 @@ fn parse_callable_parameters(
         let mut names = Vec::new();
         let mut seen = HashSet::new();
         for name in fields {
-            if syn::parse_str::<syn::Ident>(name).is_err() || name.starts_with("r#") {
+            if !is_valid_callable_parameter_name(name) {
                 return Err(compile_error(format!(
                     "`flight-compiler: callable-parameters {alias}` parameter name `{name}` is not a valid identifier"
                 )));
@@ -776,6 +849,44 @@ fn parse_callable_parameters(
         }
     }
     return Ok(directives);
+}
+
+fn validate_callable_field_parameters(
+    directives: &BTreeMap<(String, String), Vec<String>>,
+    structs: &[ItemStruct],
+) -> Result<(), CompileError> {
+    for ((owner, field), names) in directives {
+        let Some(structure) = structs
+            .iter()
+            .find(|structure| structure.ident == owner.as_str())
+        else {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-field-parameters` owner `{owner}` does not exist"
+            )));
+        };
+        let Some(rust_field) = structure.fields.iter().find(|rust_field| {
+            rust_field
+                .ident
+                .as_ref()
+                .is_some_and(|ident| ident == field)
+        }) else {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-field-parameters` field `{owner}.{field}` does not exist"
+            )));
+        };
+        let Some(arity) = callable_arity(&rust_field.ty) else {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-field-parameters` field `{owner}.{field}` is not callable"
+            )));
+        };
+        if names.len() != arity {
+            return Err(compile_error(format!(
+                "`flight-compiler: callable-field-parameters` field `{owner}.{field}` expects {arity} parameter names, got {}",
+                names.len()
+            )));
+        }
+    }
+    return Ok(());
 }
 
 fn validate_callable_parameters(

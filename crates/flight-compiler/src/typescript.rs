@@ -2445,6 +2445,45 @@ fn emit_function_trait_type(
     return emit_function_trait_type_with_parameter_names(bounds, entities, None);
 }
 
+fn emit_callable_parameters(
+    parameter_types: &[&Type],
+    entities: &HashSet<String>,
+    parameter_names: Option<&[String]>,
+) -> Result<Vec<String>, CompileError> {
+    if let Some(parameter_names) = parameter_names
+        && parameter_names.len() != parameter_types.len()
+    {
+        return Err(compile_error(
+            "callable parameter name count changed after directive validation",
+        ));
+    }
+    let trailing_optional_start = if entities.contains(NULLABLE_OPTIONS_MARKER) {
+        parameter_types.len()
+    } else {
+        parameter_types
+            .iter()
+            .rposition(|rust_type| option_inner_type(rust_type).is_none())
+            .map_or(0, |index| index + 1)
+    };
+    return parameter_types
+        .iter()
+        .enumerate()
+        .map(|(index, rust_type)| {
+            let name = parameter_names
+                .and_then(|parameter_names| parameter_names.get(index))
+                .cloned()
+                .unwrap_or_else(|| format!("arg{index}"));
+            if index >= trailing_optional_start {
+                let inner = option_inner_type(rust_type).ok_or_else(|| {
+                    compile_error("only trailing Option callable parameters can be optional")
+                })?;
+                return Ok(format!("{name}?: {}", emit_type(inner, entities)?));
+            }
+            return Ok(format!("{name}: {}", emit_type(rust_type, entities)?));
+        })
+        .collect();
+}
+
 fn emit_function_trait_type_with_parameter_names(
     bounds: &syn::punctuated::Punctuated<syn::TypeParamBound, syn::token::Plus>,
     entities: &HashSet<String>,
@@ -2468,25 +2507,8 @@ fn emit_function_trait_type_with_parameter_names(
                 "Rust function trait needs parenthesized arguments",
             ));
         };
-        if let Some(parameter_names) = parameter_names
-            && parameter_names.len() != arguments.inputs.len()
-        {
-            return Err(compile_error(
-                "callable parameter name count changed after directive validation",
-            ));
-        }
-        let parameters = arguments
-            .inputs
-            .iter()
-            .enumerate()
-            .map(|(index, rust_type)| {
-                let name = parameter_names
-                    .and_then(|parameter_names| parameter_names.get(index))
-                    .cloned()
-                    .unwrap_or_else(|| format!("arg{index}"));
-                Ok(format!("{name}: {}", emit_type(rust_type, entities)?))
-            })
-            .collect::<Result<Vec<_>, CompileError>>()?;
+        let parameter_types = arguments.inputs.iter().collect::<Vec<_>>();
+        let parameters = emit_callable_parameters(&parameter_types, entities, parameter_names)?;
         let output = match &arguments.output {
             ReturnType::Default => "void".to_string(),
             ReturnType::Type(_, rust_type) => emit_type(rust_type, entities)?,
@@ -5092,6 +5114,7 @@ pub(crate) fn emit_program(
             structure,
             &source_context,
             &aliases,
+            &program.callable_field_parameters,
             program
                 .readonly_structs
                 .contains(&structure.ident.to_string()),
@@ -5394,6 +5417,7 @@ fn emit_struct(
     structure: &ItemStruct,
     entities: &HashSet<String>,
     aliases: &PreferredAliases,
+    callable_field_parameters: &BTreeMap<(String, String), Vec<String>>,
     readonly: bool,
 ) -> Result<(), CompileError> {
     emit_documentation(out, &structure.attrs, 0);
@@ -5433,12 +5457,16 @@ fn emit_struct(
         } else {
             ("", &field.ty)
         };
-        writeln!(
-            out,
-            "  {prefix}{name}{optional}: {};",
+        let parameter_names = callable_field_parameters
+            .get(&(structure.ident.to_string(), field_name.to_string()))
+            .map(Vec::as_slice);
+        let typescript_type = if let Some(parameter_names) = parameter_names {
+            emit_named_callable_type(rust_type, entities, parameter_names)?
+        } else {
             emit_preferred_type(rust_type, entities, aliases)?
-        )
-        .expect("writing to a String cannot fail");
+        };
+        writeln!(out, "  {prefix}{name}{optional}: {};", typescript_type)
+            .expect("writing to a String cannot fail");
     }
     out.push_str("}\n");
     return Ok(());
@@ -5646,25 +5674,12 @@ fn emit_bare_function_type(
     entities: &HashSet<String>,
     parameter_names: Option<&[String]>,
 ) -> Result<String, CompileError> {
-    if let Some(parameter_names) = parameter_names
-        && parameter_names.len() != function.inputs.len()
-    {
-        return Err(compile_error(
-            "callable parameter name count changed after directive validation",
-        ));
-    }
-    let parameters = function
+    let parameter_types = function
         .inputs
         .iter()
-        .enumerate()
-        .map(|(index, argument)| {
-            let name = parameter_names
-                .and_then(|parameter_names| parameter_names.get(index))
-                .cloned()
-                .unwrap_or_else(|| format!("arg{index}"));
-            Ok(format!("{name}: {}", emit_type(&argument.ty, entities)?))
-        })
-        .collect::<Result<Vec<_>, CompileError>>()?;
+        .map(|argument| &argument.ty)
+        .collect::<Vec<_>>();
+    let parameters = emit_callable_parameters(&parameter_types, entities, parameter_names)?;
     let output = match &function.output {
         ReturnType::Default => "void".to_string(),
         ReturnType::Type(_, rust_type) => emit_type(rust_type, entities)?,
@@ -5686,7 +5701,10 @@ fn emit_named_callable_type(
             let Some(segment) = path.path.segments.last() else {
                 return Err(compile_error("empty Rust type path"));
             };
-            if !matches!(segment.ident.to_string().as_str(), "Arc" | "Ref") {
+            if !matches!(
+                segment.ident.to_string().as_str(),
+                "Arc" | "Box" | "Option" | "Ref"
+            ) {
                 return Err(compile_error(
                     "callable alias shape changed after directive validation",
                 ));
@@ -5711,7 +5729,15 @@ fn emit_named_callable_type(
                     segment.ident
                 )));
             }
-            emit_named_callable_type(types[0], entities, parameter_names)
+            let inner = emit_named_callable_type(types[0], entities, parameter_names)?;
+            if segment.ident == "Option" {
+                return Ok(if entities.contains(NULLABLE_OPTIONS_MARKER) {
+                    nullable_type(inner)
+                } else {
+                    format!("({inner}) | undefined")
+                });
+            }
+            Ok(inner)
         }
         Type::TraitObject(object) => emit_function_trait_type_with_parameter_names(
             &object.bounds,

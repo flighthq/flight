@@ -1,5 +1,11 @@
 //! flight-compiler: string-union HapticImpactStyle HapticNotificationType HapticsOperation
 //! flight-compiler: readonly-fields HostHapticsCapabilities
+//! flight-compiler: callable-field-parameters HostHapticsCapability capabilities out
+//! flight-compiler: callable-field-parameters HostHapticsCapability impact style intensity
+//! flight-compiler: callable-field-parameters HostHapticsCapability notification type
+//! flight-compiler: callable-field-parameters HostHapticsCapability vibrate durationMs
+//! flight-compiler: callable-field-parameters HostHapticsCapability vibrate_pattern pattern
+//! flight-compiler: callable-field-parameters HostHapticsCapability vibrate_waveform timings amplitudes repeat
 
 use std::sync::Arc;
 

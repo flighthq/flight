@@ -42,15 +42,15 @@ export interface HapticsCapabilities {
  */
 export interface HostHapticsCapability {
   cancel: () => boolean;
-  capabilities: (arg0: HapticsCapabilities) => void;
-  impact: (arg0: HapticImpactStyle, arg1: number | undefined) => boolean;
+  capabilities: (out: HapticsCapabilities) => void;
+  impact: (style: HapticImpactStyle, intensity?: number) => boolean;
   isSupported: () => boolean;
-  notification: (arg0: HapticNotificationType) => boolean;
+  notification: (type: HapticNotificationType) => boolean;
   prepare?: () => void;
   selection: () => boolean;
-  vibrate: (arg0: number) => boolean;
-  vibratePattern: (arg0: Readonly<number[]>) => boolean;
-  vibrateWaveform?: (arg0: Readonly<number[]>, arg1: Readonly<number[]>, arg2: number | undefined) => boolean;
+  vibrate: (durationMs: number) => boolean;
+  vibratePattern: (pattern: Readonly<number[]>) => boolean;
+  vibrateWaveform?: (timings: Readonly<number[]>, amplitudes: Readonly<number[]>, repeat?: number) => boolean;
 }
 
 /**
