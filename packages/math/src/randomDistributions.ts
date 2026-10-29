@@ -14,7 +14,7 @@ export function pick<T>(random: RandomSource, items: Readonly<T[]>): T | undefin
   if (items.length === 0) {
     return undefined;
   }
-  const index = Math.floor(random() * items.length);
+  const index = Math.floor(random() * items.length) >>> 0;
   return items[index];
 }
 
@@ -228,7 +228,7 @@ export function shuffleInPlace<T>(random: RandomSource, items: T[]): void {
   }
   let i = len - 1;
   while (i > 0) {
-    const j = Math.floor(random() * (i + 1));
+    const j = Math.floor(random() * (i + 1)) >>> 0;
     [items[i], items[j]] = [items[j], items[i]];
     i -= 1;
   }

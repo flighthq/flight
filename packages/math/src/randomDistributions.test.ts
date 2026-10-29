@@ -423,7 +423,7 @@ describe('randomWeighted', () => {
     for (let _ = 0; _ < 100; _ += 1) {
       const idx = randomWeighted(random, weights);
       expect(idx >= 0).toBe(true);
-      expect(idx < weights.length).toBe(true);
+      expect(idx >>> 0 < weights.length).toBe(true);
     }
   });
   it('returns negative 1 for an empty slice', () => {
