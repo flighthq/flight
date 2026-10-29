@@ -182,10 +182,10 @@ export function updateSpritesheetPlayer(player: SpritesheetPlayer, deltaTime: nu
     const lastVi = resolveVirtualFrameCount(animation) - 1;
     player.frameIndex = resolveVirtualIndexToDisplayIndex(animation, lastVi);
     player.complete = true;
-    emitSignal(player.onComplete);
+    emitSignal(player.onComplete, undefined);
     return true;
   }
-  if (Math.floor(player.elapsed / totalTime) > prevLoopCount) emitSignal(player.onLoop);
+  if (Math.floor(player.elapsed / totalTime) > prevLoopCount) emitSignal(player.onLoop, undefined);
   const timeInLoop = player.elapsed % totalTime;
   const vi = resolveVirtualIndexFromTime(animation, timeInLoop);
   player.frameIndex = resolveVirtualIndexToDisplayIndex(animation, vi);

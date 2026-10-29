@@ -9,7 +9,7 @@ export interface SpritesheetPlayer extends Entity {
   paused: boolean;
   speed: number;
   frameIndex: number;
-  onComplete: Signal<() => void>;
-  onLoop: Signal<() => void>;
+  onComplete: Signal<void>;
+  onLoop: Signal<void>;
   queue: SpritesheetAnimation[];
 }

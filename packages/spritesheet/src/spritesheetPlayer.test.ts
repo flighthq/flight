@@ -133,7 +133,7 @@ describe('disposeSpritesheetPlayer', () => {
     connectSignal(player.onComplete, () => fired++);
     disposeSpritesheetPlayer(player);
     // Emitting after dispose should not fire previously connected slots.
-    player.onComplete.emit();
+    player.onComplete.emit(undefined);
     expect(fired).toBe(0);
   });
 });
@@ -347,7 +347,7 @@ describe('releaseSpritesheetPlayer', () => {
     let fired = 0;
     connectSignal(player.onComplete, () => fired++);
     releaseSpritesheetPlayer(player);
-    player.onComplete.emit();
+    player.onComplete.emit(undefined);
     expect(fired).toBe(0);
   });
 });
