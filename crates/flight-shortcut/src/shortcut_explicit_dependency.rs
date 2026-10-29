@@ -141,6 +141,7 @@ pub async fn attach_global_shortcut(
             state_data.pending_accelerators.remove(&accelerator);
             shortcut_data.pending_registration_id = None;
             shortcut_data.attachment = Some(GlobalShortcutAttachment {
+                accelerator: accelerator.clone(),
                 provider: host_shortcut_trigger.clone(),
                 registration_id,
                 state: Arc::downgrade(&state.data),
@@ -176,14 +177,14 @@ pub async fn detach_global_shortcut(
     host_shortcut_trigger: &HostShortcutTriggerCapability,
     shortcut: &Ref<GlobalShortcut>,
 ) -> GlobalShortcutDetachOutcome {
-    let (accelerator, attachment) = {
+    let attachment = {
         let shortcut = shortcut.read().unwrap();
         let Some(attachment) = shortcut.attachment.clone() else {
             return GlobalShortcutDetachOutcome {
                 reason: GlobalShortcutDetachReason::NotAttached,
             };
         };
-        (shortcut.accelerator.clone(), attachment)
+        attachment
     };
     let provider = select_trigger_provider(host_shortcut_trigger, &attachment.provider);
     let unsubscribe_outcome = match (provider.unsubscribe)(&attachment.subscription).await {
@@ -215,10 +216,12 @@ pub async fn detach_global_shortcut(
         let mut state_data = state.lock().unwrap();
         let points_to_shortcut = state_data
             .attached_by_accelerator
-            .get(&accelerator)
+            .get(&attachment.accelerator)
             .is_some_and(|current| Arc::ptr_eq(current, shortcut));
         if points_to_shortcut {
-            state_data.attached_by_accelerator.remove(&accelerator);
+            state_data
+                .attached_by_accelerator
+                .remove(&attachment.accelerator);
         }
     }
     return GlobalShortcutDetachOutcome {

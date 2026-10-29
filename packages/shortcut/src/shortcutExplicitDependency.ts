@@ -18,6 +18,7 @@ import type {
 import { makeParsedAccelerator, parseAcceleratorDetailed } from './shortcut.ts';
 
 interface GlobalShortcutAttachment {
+  readonly accelerator: Accelerator;
   readonly provider: HostShortcutTriggerCapability;
   readonly subscription: ShortcutTriggerSubscription;
 }
@@ -46,19 +47,20 @@ export async function attachGlobalShortcut(
   shortcut: GlobalShortcut,
 ): Promise<GlobalShortcutAttachOutcome> {
   if (_attachments.has(shortcut)) return ALREADY_ATTACHED;
-  if (_attachedByAccelerator.has(shortcut.accelerator)) return ALREADY_REGISTERED;
-  if (_pendingAccelerators.has(shortcut.accelerator)) return REGISTRATION_IN_PROGRESS;
+  const accelerator = shortcut.accelerator;
+  if (_attachedByAccelerator.has(accelerator)) return ALREADY_REGISTERED;
+  if (_pendingAccelerators.has(accelerator)) return REGISTRATION_IN_PROGRESS;
 
   const provider = hostShortcutTrigger;
-  _pendingAccelerators.add(shortcut.accelerator);
+  _pendingAccelerators.add(accelerator);
   try {
-    const outcome = await provider.subscribe(shortcut.accelerator, () => emitSignal(shortcut.onTrigger));
+    const outcome = await provider.subscribe(accelerator, () => emitSignal(shortcut.onTrigger));
     if (outcome.reason === 'refused') return NATIVE_REFUSED;
 
-    const attachment = { provider, subscription: outcome.subscription };
+    const attachment = { accelerator, provider, subscription: outcome.subscription };
     try {
       _attachments.set(shortcut, attachment);
-      _attachedByAccelerator.set(shortcut.accelerator, shortcut);
+      _attachedByAccelerator.set(accelerator, shortcut);
     } catch {
       try {
         await provider.unsubscribe(outcome.subscription);
@@ -71,7 +73,7 @@ export async function attachGlobalShortcut(
   } catch {
     return TRIGGER_ATTACH_FAILED;
   } finally {
-    _pendingAccelerators.delete(shortcut.accelerator);
+    _pendingAccelerators.delete(accelerator);
   }
 }
 
@@ -115,8 +117,8 @@ export async function detachGlobalShortcut(
     return TRIGGER_DETACH_FAILED;
   }
   _attachments.delete(shortcut);
-  if (_attachedByAccelerator.get(shortcut.accelerator) === shortcut) {
-    _attachedByAccelerator.delete(shortcut.accelerator);
+  if (_attachedByAccelerator.get(attachment.accelerator) === shortcut) {
+    _attachedByAccelerator.delete(attachment.accelerator);
   }
   return DETACHED;
 }

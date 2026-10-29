@@ -558,10 +558,11 @@ pub struct HostShortcutCapabilities {
     pub trigger: Option<HostShortcutTriggerCapability>,
 }
 
-/// One attached provider/token pair. The weak state reference prevents the state's strong
-/// accelerator index from forming a cycle through the shortcut.
+/// One attached accelerator/provider/token record. The weak state reference prevents the state's
+/// strong accelerator index from forming a cycle through the shortcut.
 #[derive(Clone)]
 pub(crate) struct GlobalShortcutAttachment {
+    pub(crate) accelerator: Accelerator,
     pub(crate) provider: HostShortcutTriggerCapability,
     pub(crate) registration_id: u64,
     pub(crate) state: Weak<Mutex<ShortcutStateData>>,

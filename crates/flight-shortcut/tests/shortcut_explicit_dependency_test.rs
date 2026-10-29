@@ -362,6 +362,51 @@ mod detach_global_shortcut {
     use super::*;
 
     #[test]
+    fn removes_the_registered_accelerator_without_disturbing_an_unrelated_accelerator() {
+        let provider = trigger_provider();
+        let state = create_shortcut_state();
+        let original = shortcut("Control+L");
+        let unrelated = shortcut("Control+M");
+        assert_eq!(
+            block_on(attach_global_shortcut(&state, &provider, &original)).reason,
+            GlobalShortcutAttachReason::Attached
+        );
+        assert_eq!(
+            block_on(attach_global_shortcut(&state, &provider, &unrelated)).reason,
+            GlobalShortcutAttachReason::Attached
+        );
+
+        original.write().unwrap().accelerator = "Control+M".into();
+        assert_eq!(
+            block_on(detach_global_shortcut(&provider, &original)).reason,
+            GlobalShortcutDetachReason::Detached
+        );
+
+        let replacement = shortcut("Control+L");
+        assert_eq!(
+            block_on(attach_global_shortcut(&state, &provider, &replacement)).reason,
+            GlobalShortcutAttachReason::Attached
+        );
+        assert_eq!(
+            block_on(attach_global_shortcut(
+                &state,
+                &provider,
+                &shortcut("Control+M")
+            ))
+            .reason,
+            GlobalShortcutAttachReason::AlreadyRegistered
+        );
+        assert_eq!(
+            block_on(detach_global_shortcut(&provider, &replacement)).reason,
+            GlobalShortcutDetachReason::Detached
+        );
+        assert_eq!(
+            block_on(detach_global_shortcut(&provider, &unrelated)).reason,
+            GlobalShortcutDetachReason::Detached
+        );
+    }
+
+    #[test]
     fn uses_the_origin_provider_after_host_replacement() {
         let origin_calls = Arc::new(AtomicUsize::new(0));
         let replacement_calls = Arc::new(AtomicUsize::new(0));
@@ -423,19 +468,30 @@ mod detach_global_shortcut {
             }
         });
         let state = create_shortcut_state();
-        let shortcut = shortcut("Control+R");
-        block_on(attach_global_shortcut(&state, &provider, &shortcut));
+        let original = shortcut("Control+R");
+        block_on(attach_global_shortcut(&state, &provider, &original));
+        original.write().unwrap().accelerator = "Control+I".into();
         assert_eq!(
-            block_on(detach_global_shortcut(&provider, &shortcut)).reason,
+            block_on(detach_global_shortcut(&provider, &original)).reason,
             GlobalShortcutDetachReason::TriggerProviderFailed
         );
+        let replacement = shortcut("Control+R");
         assert_eq!(
-            block_on(detach_global_shortcut(&provider, &shortcut)).reason,
+            block_on(attach_global_shortcut(&state, &provider, &replacement)).reason,
+            GlobalShortcutAttachReason::AlreadyRegistered
+        );
+        assert_eq!(
+            block_on(detach_global_shortcut(&provider, &original)).reason,
             GlobalShortcutDetachReason::Detached
         );
         let tokens = tokens.lock().unwrap();
         assert_eq!(tokens.len(), 2);
         assert!(Arc::ptr_eq(&tokens[0], &tokens[1]));
+        drop(tokens);
+        assert_eq!(
+            block_on(attach_global_shortcut(&state, &provider, &replacement)).reason,
+            GlobalShortcutAttachReason::Attached
+        );
     }
 
     #[test]

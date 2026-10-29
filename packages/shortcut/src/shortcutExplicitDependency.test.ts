@@ -169,6 +169,25 @@ describe('destroyShortcutTrigger', () => {
 });
 
 describe('detachGlobalShortcut', () => {
+  it('removes the registered accelerator after the shortcut field changes without disturbing an unrelated accelerator', async () => {
+    const hostShortcutTrigger = triggerProvider();
+    const original = createShortcut('Control+L');
+    const unrelated = createShortcut('Control+M');
+    await expect(api().attachGlobalShortcut(hostShortcutTrigger, original)).resolves.toEqual({ reason: 'attached' });
+    await expect(api().attachGlobalShortcut(hostShortcutTrigger, unrelated)).resolves.toEqual({ reason: 'attached' });
+
+    Object.assign(original, { accelerator: 'Control+M' });
+    await expect(api().detachGlobalShortcut(hostShortcutTrigger, original)).resolves.toEqual({ reason: 'detached' });
+
+    const replacement = createShortcut('Control+L');
+    await expect(api().attachGlobalShortcut(hostShortcutTrigger, replacement)).resolves.toEqual({ reason: 'attached' });
+    await expect(api().attachGlobalShortcut(hostShortcutTrigger, createShortcut('Control+M'))).resolves.toEqual({
+      reason: 'already-registered',
+    });
+    await expect(api().detachGlobalShortcut(hostShortcutTrigger, replacement)).resolves.toEqual({ reason: 'detached' });
+    await expect(api().detachGlobalShortcut(hostShortcutTrigger, unrelated)).resolves.toEqual({ reason: 'detached' });
+  });
+
   it('uses the creator-pinned provider after Host replacement', async () => {
     const originUnsubscribe = vi.fn(async () => ({ reason: 'unsubscribed' as const }));
     const replacementUnsubscribe = vi.fn(async () => ({ reason: 'unsubscribed' as const }));
@@ -183,19 +202,30 @@ describe('detachGlobalShortcut', () => {
   });
 
   it('retains a failed release for an exact retry', async () => {
+    const acquired = subscription();
+    const subscribe = vi.fn(async () => ({ reason: 'subscribed' as const, subscription: acquired }));
     const unsubscribe = vi
       .fn<TriggerProviderLike['unsubscribe']>()
       .mockRejectedValueOnce(new Error('first release failed'))
-      .mockResolvedValueOnce({ reason: 'unsubscribed' });
-    const hostShortcutTrigger = triggerProvider({ unsubscribe });
-    const shortcut = createShortcut('Control+R');
+      .mockResolvedValue({ reason: 'unsubscribed' });
+    const hostShortcutTrigger = triggerProvider({ subscribe, unsubscribe });
+    const shortcut = createShortcut('Control+U');
     await api().attachGlobalShortcut(hostShortcutTrigger, shortcut);
+    Object.assign(shortcut, { accelerator: 'Control+V' });
 
     await expect(api().detachGlobalShortcut(hostShortcutTrigger, shortcut)).resolves.toEqual({
       reason: 'trigger-provider-failed',
     });
+    const replacement = createShortcut('Control+U');
+    await expect(api().attachGlobalShortcut(hostShortcutTrigger, replacement)).resolves.toEqual({
+      reason: 'already-registered',
+    });
     await expect(api().detachGlobalShortcut(hostShortcutTrigger, shortcut)).resolves.toEqual({ reason: 'detached' });
     expect(unsubscribe).toHaveBeenCalledTimes(2);
+    expect(unsubscribe).toHaveBeenNthCalledWith(1, acquired);
+    expect(unsubscribe).toHaveBeenNthCalledWith(2, acquired);
+    await expect(api().attachGlobalShortcut(hostShortcutTrigger, replacement)).resolves.toEqual({ reason: 'attached' });
+    await expect(api().detachGlobalShortcut(hostShortcutTrigger, replacement)).resolves.toEqual({ reason: 'detached' });
   });
 });
 
