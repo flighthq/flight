@@ -2071,6 +2071,15 @@ mod retain {
     }
 
     #[test]
+    fn lowers_vec_drain_half_open_range_in_place() {
+        let source = "pub fn remove_range(values: &mut Vec<u32>, start: usize, end: usize) -> Vec<u32> { return values.drain(start..end).collect(); }\n";
+        assert_eq!(
+            compile_typescript(source, None).unwrap(),
+            "export function removeRange(values: number[], start: number, end: number): number[] {\n  return (<T>(items: T[], start: number, end: number): T[] => items.splice(start, end - start))(values, start, end);\n}\n"
+        );
+    }
+
+    #[test]
     fn lowers_vec_insert_with_rust_bounds() {
         let source = "pub fn add(values: &mut Vec<u32>, index: usize, value: u32) { values.insert(index, value); }\n";
         assert_eq!(
@@ -7631,6 +7640,39 @@ pub fn is_ready(widget: &Widget) -> bool {
     }
 
     #[test]
+    fn imports_generic_dependency_export_names_in_type_positions() {
+        let dependency = r#"
+//! flight-compiler: companion wrapper.ts
+
+use flight_entity::EntityRuntimeSlot;
+
+pub struct Wrapper<T> {
+    runtime: EntityRuntimeSlot,
+    pub value: T,
+}
+
+flight_entity::impl_entity!(Wrapper<T>);
+"#;
+        let externals = [ExternalAliasSource {
+            source: dependency,
+            module: "@flighthq/wrapper/contract",
+        }];
+        let consumer = r#"
+use flight_wrapper::Wrapper;
+
+pub struct Consumer {
+    pub wrapper: Wrapper<String>,
+}
+"#;
+
+        assert_eq!(
+            compile_typescript_with_external_alias_sources(consumer, None, &[], &externals)
+                .unwrap(),
+            "import type { WrapperRaw } from \"@flighthq/wrapper/contract\";\n\nexport interface Consumer {\n  wrapper: WrapperRaw<string>;\n}\n\n"
+        );
+    }
+
+    #[test]
     fn rejects_conflicting_dependency_string_union_owners_independent_of_argument_order() {
         let alpha = r#"
 //! flight-compiler: string-union Status=exact
@@ -8544,6 +8586,10 @@ pub fn lowercase_ascii(value: &str) -> String {
     return value.to_ascii_lowercase();
 }
 
+pub fn repeat_ascii(value: &str, count: usize) -> String {
+    return value.repeat(count);
+}
+
 pub fn count_ampersands(value: &str) -> usize {
     let mut count = 0;
     let mut rest = value;
@@ -8578,9 +8624,41 @@ pub fn find_semicolon_after_first_character(value: &str) -> Option<usize> {
         assert!(output.contains("return [...value];"));
         assert!(output.contains("return [...value][0];"));
         assert!(output.contains("return value.toLowerCase();"));
+        assert!(output.contains("return value.repeat(count);"));
         assert!(output.contains("const index = value.indexOf(pattern);"));
         assert!(output.contains("return index === -1 ? undefined : index;"));
         assert!(output.contains("if ($index === undefined)"));
+    }
+
+    #[test]
+    fn lowers_numeric_fraction_to_remainder() {
+        let source = "pub fn fraction(value: f32) -> f32 { return value.fract(); }\n";
+
+        assert_eq!(
+            compile_typescript(source, None).unwrap(),
+            "export function fraction(value: number): number {\n  return (value % 1);\n}\n"
+        );
+    }
+
+    #[test]
+    fn lowers_plain_struct_updates_to_object_spreads() {
+        let source = r#"
+pub struct Options {
+    pub count: i32,
+    pub label: String,
+}
+
+pub fn with_count(base: Options, count: i32) -> Options {
+    return Options { count, ..base };
+}
+"#;
+
+        let output = compile_typescript(source, None).unwrap();
+
+        assert!(
+            output.contains("return { ...base, count: count };"),
+            "{output}"
+        );
     }
 
     #[test]
@@ -8694,6 +8772,22 @@ pub fn lowercase(value: &[u8]) -> Vec<u8> {
         assert_eq!(
             error.to_string(),
             "portable `.to_ascii_lowercase()` requires a receiver known to be `String` or `str`"
+        );
+    }
+
+    #[test]
+    fn rejects_non_string_repeat_receivers() {
+        let source = r#"
+pub fn repeat(values: &[u8], count: usize) -> Vec<u8> {
+    return values.repeat(count);
+}
+"#;
+
+        let error = compile_typescript(source, None).unwrap_err();
+
+        assert_eq!(
+            error.to_string(),
+            "portable `.repeat()` requires a receiver known to be `String` or `str`"
         );
     }
 
@@ -13312,6 +13406,15 @@ fn mutates_samples_by_reference() {
         let source = r#"
 use std::sync::Arc;
 
+struct Options {
+    count: i32,
+    label: String,
+}
+
+fn default_options() -> Options {
+    return Options { count: 0, label: "default".to_string() };
+}
+
 struct Fixture {
     pairs: Vec<(String, String)>,
     record: Arc<dyn Fn(&mut Vec<(String, String)>, &Vec<f32>) + Send + Sync>,
@@ -13335,6 +13438,9 @@ mod fixture {
         let fixture = make_fixture();
         (fixture.record)(&mut fixture.pairs, &vec![1.0]);
         assert_eq!(fixture.pairs, vec![("left".to_string(), "1".to_string())]);
+        let options = Options { count: 2, ..default_options() };
+        assert_eq!(options.count, 2);
+        assert_eq!(options.label, "default");
     }
 }
 "#;
@@ -13349,6 +13455,7 @@ mod fixture {
             output.contains("const fixture: Fixture = { pairs: [], record: (pairs, values) => {")
         );
         assert!(output.contains("pairs.push([\"left\", String(values.slice().length)]);"));
+        assert!(output.contains("const options: Options = { ...defaultOptions(), count: 2 };"));
         assert!(!output.contains("[] as never[]"));
     }
 

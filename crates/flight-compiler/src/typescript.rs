@@ -8000,29 +8000,30 @@ fn emit_expression_value(
                     path: structure.path.clone(),
                 }),
             );
-            let fields = structure
-                .fields
-                .iter()
-                .map(|field| {
-                    let mut value = if expression_is_empty_vec(&field.expr) {
-                        "[]".to_string()
-                    } else {
-                        emit_expression(&field.expr, entities)?
-                    };
-                    if let syn::Member::Named(field_name) = &field.member
-                        && let Some(identity) = &structure_identity
-                        && is_nullable_literal_field(entities, identity, field_name)
-                    {
-                        value = nullable_option_value(&field.expr, value);
-                    }
-                    Ok(format!("{}: {value}", emit_member(&field.member)))
-                })
-                .collect::<Result<Vec<_>, CompileError>>()?;
-            if structure.rest.is_some() {
-                return Err(compile_error(
-                    "unsupported struct update expression; refusing a lossy object literal",
-                ));
+            let mut fields = Vec::new();
+            if let Some(rest) = &structure.rest {
+                fields.push(format!("...{}", emit_expression(rest, entities)?));
             }
+            fields.extend(
+                structure
+                    .fields
+                    .iter()
+                    .map(|field| {
+                        let mut value = if expression_is_empty_vec(&field.expr) {
+                            "[]".to_string()
+                        } else {
+                            emit_expression(&field.expr, entities)?
+                        };
+                        if let syn::Member::Named(field_name) = &field.member
+                            && let Some(identity) = &structure_identity
+                            && is_nullable_literal_field(entities, identity, field_name)
+                        {
+                            value = nullable_option_value(&field.expr, value);
+                        }
+                        Ok(format!("{}: {value}", emit_member(&field.member)))
+                    })
+                    .collect::<Result<Vec<_>, CompileError>>()?,
+            );
             Ok(format!("{{ {} }}", fields.join(", ")))
         }
         Expr::Tuple(tuple) if tuple.elems.is_empty() => Ok("undefined".to_string()),
@@ -10572,47 +10573,48 @@ fn emit_contextual_struct_literal_expression(
             else {
                 return emit_expression(expression, entities);
             };
-            if structure.rest.is_some() {
-                return Err(compile_error(
-                    "unsupported struct update expression; refusing a lossy object literal",
-                ));
-            }
             let structure_identity = vitest_struct_owner(entities, &structure_name);
-            let fields = structure
-                .fields
-                .iter()
-                .map(|field| {
-                    let value = if expression_is_empty_vec(&field.expr) {
-                        "[]".to_string()
-                    } else {
-                        let field_context = contextual_struct_field_context(
+            let mut fields = Vec::new();
+            if let Some(rest) = &structure.rest {
+                fields.push(format!("...{}", emit_expression(rest, entities)?));
+            }
+            fields.extend(
+                structure
+                    .fields
+                    .iter()
+                    .map(|field| {
+                        let value = if expression_is_empty_vec(&field.expr) {
+                            "[]".to_string()
+                        } else {
+                            let field_context = contextual_struct_field_context(
+                                entities,
+                                &structure_name,
+                                structure_identity.as_deref(),
+                                &field.member,
+                                &field.expr,
+                            );
+                            emit_expression(&field.expr, &field_context)?
+                        };
+                        // A `nullable-option` field of the literal's canonical struct stores `null`.
+                        let literal_identity = context_type_identity(
                             entities,
-                            &structure_name,
-                            structure_identity.as_deref(),
-                            &field.member,
-                            &field.expr,
+                            &Type::Path(syn::TypePath {
+                                qself: None,
+                                path: structure.path.clone(),
+                            }),
                         );
-                        emit_expression(&field.expr, &field_context)?
-                    };
-                    // A `nullable-option` field of the literal's canonical struct stores `null`.
-                    let literal_identity = context_type_identity(
-                        entities,
-                        &Type::Path(syn::TypePath {
-                            qself: None,
-                            path: structure.path.clone(),
-                        }),
-                    );
-                    let value = if let syn::Member::Named(field_name) = &field.member
-                        && let Some(identity) = literal_identity
-                        && is_nullable_literal_field(entities, &identity, field_name)
-                    {
-                        nullable_option_value(&field.expr, value)
-                    } else {
-                        value
-                    };
-                    Ok(format!("{}: {value}", emit_member(&field.member)))
-                })
-                .collect::<Result<Vec<_>, CompileError>>()?;
+                        let value = if let syn::Member::Named(field_name) = &field.member
+                            && let Some(identity) = literal_identity
+                            && is_nullable_literal_field(entities, &identity, field_name)
+                        {
+                            nullable_option_value(&field.expr, value)
+                        } else {
+                            value
+                        };
+                        Ok(format!("{}: {value}", emit_member(&field.member)))
+                    })
+                    .collect::<Result<Vec<_>, CompileError>>()?,
+            );
             return Ok(format!("{{ {} }}", fields.join(", ")));
         }
         _ => {}
@@ -13262,6 +13264,31 @@ fn emit_method_call(
             "portable `.count()` requires an iterator with proven sequence provenance",
         )),
         "contains" if arguments.len() == 1 => Ok(format!("{receiver}.includes({})", arguments[0])),
+        "drain" if arguments.len() == 1 && expression_is_sequence(&call.receiver, entities) => {
+            let Some(Expr::Range(range)) = call.args.first() else {
+                return Err(compile_error(
+                    "portable `.drain()` requires one half-open range with a start and end",
+                ));
+            };
+            let (Some(start), Some(end)) = (&range.start, &range.end) else {
+                return Err(compile_error(
+                    "portable `.drain()` requires one half-open range with a start and end",
+                ));
+            };
+            if !matches!(range.limits, syn::RangeLimits::HalfOpen(_)) {
+                return Err(compile_error(
+                    "portable `.drain()` requires one half-open range with a start and end",
+                ));
+            }
+            Ok(format!(
+                "(<T>(items: T[], start: number, end: number): T[] => items.splice(start, end - start))({receiver}, {}, {})",
+                emit_expression(start, entities)?,
+                emit_expression(end, entities)?
+            ))
+        }
+        "drain" if arguments.len() == 1 => Err(compile_error(
+            "portable `.drain()` requires a receiver declared as Rust `Vec`",
+        )),
         "encode_utf16" if arguments.is_empty() => Ok(format!(
             "Array.from({{ length: {receiver}.length }}, (_, index) => {receiver}.charCodeAt(index))"
         )),
@@ -13291,6 +13318,7 @@ fn emit_method_call(
             "portable `.find()` requires a receiver known to be `String`, `str`, or a sequence",
         )),
         "floor" if arguments.is_empty() => Ok(format!("Math.floor({receiver})")),
+        "fract" if arguments.is_empty() => Ok(format!("({receiver} % 1)")),
         "filter" if arguments.len() == 1 => Ok(format!("{receiver}.filter({})", arguments[0])),
         "fetch_add" if arguments.len() == 2 => Ok(format!(
             "(() => {{ const previous = {receiver}.value; {receiver}.value = ({receiver}.value + {}) >>> 0; return previous; }})()",
@@ -13384,6 +13412,14 @@ fn emit_method_call(
         "replace" if arguments.len() == 2 => Ok(format!(
             "{receiver}.replaceAll({}, {})",
             arguments[0], arguments[1]
+        )),
+        "repeat"
+            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!("{receiver}.repeat({})", arguments[0]))
+        }
+        "repeat" if arguments.len() == 1 => Err(compile_error(
+            "portable `.repeat()` requires a receiver known to be `String` or `str`",
         )),
         "rev" if arguments.is_empty() => Ok(format!("[...{receiver}].reverse()")),
         "round" if arguments.is_empty() => Ok(format!("Math.round({receiver})")),
@@ -15698,8 +15734,9 @@ pub(crate) fn emit_type(
                     }
                 }
                 _ => {
+                    let typescript_name = export_name(entities, &name).unwrap_or(&name);
                     if matches!(segment.arguments, PathArguments::None) {
-                        Ok(export_name(entities, &name).unwrap_or(&name).to_string())
+                        Ok(typescript_name.to_string())
                     } else {
                         let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
                             return Err(compile_error(format!(
@@ -15716,11 +15753,10 @@ pub(crate) fn emit_type(
                                 _ => None,
                             })
                             .collect::<Result<Vec<_>, _>>()?;
-                        let name = export_name(entities, &name).unwrap_or(&name);
                         if rendered.is_empty() {
-                            Ok(name.to_string())
+                            Ok(typescript_name.to_string())
                         } else {
-                            Ok(format!("{name}<{}>", rendered.join(", ")))
+                            Ok(format!("{typescript_name}<{}>", rendered.join(", ")))
                         }
                     }
                 }
