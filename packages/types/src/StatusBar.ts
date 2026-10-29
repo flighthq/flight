@@ -68,5 +68,5 @@ export interface HostStatusBarVisibilityCapability {
 
 // Status bar event entity. Enable delivery with attachStatusBar; the signals stay inert until then.
 export interface StatusBar extends Entity {
-  onChange: Signal<(info: Readonly<StatusBarInfo>) => void>;
+  onChange: Signal<Readonly<StatusBarInfo>>;
 }
