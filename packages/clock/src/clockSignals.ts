@@ -7,9 +7,9 @@ import type { Clock } from './clock.ts';
 // second call returns the same signal). onTick emits the clock's scaled deltaTime on every advance, so it
 // plugs straight into signals' rate helpers, e.g. connectSignalAtFrameRate(clock.onTick, 30, slot). Bare
 // clocks that never call this keep onTick null and pay no signal allocation or dispatch cost.
-export function enableClockSignals(clock: Clock): Signal<(deltaTime: number) => void> {
+export function enableClockSignals(clock: Clock): Signal<number> {
   if (clock.onTick === null) {
-    clock.onTick = createSignal<(deltaTime: number) => void>();
+    clock.onTick = createSignal<number>();
   }
   return clock.onTick;
 }

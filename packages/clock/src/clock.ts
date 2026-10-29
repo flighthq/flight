@@ -26,7 +26,7 @@ export interface Clock extends EntityRaw {
   // Opt-in per-advance signal carrying the scaled deltaTime; null until enableClockSignals allocates it,
   // so a bare clock pays no signal cost. Plugs directly into signals' connectSignalAtFrameRate /
   // connectSignalThrottled / connectSignalDebounced.
-  onTick: Signal<(deltaTime: number) => void> | null;
+  onTick: Signal<number> | null;
 }
 
 // Initial configuration for createClock / createChildClock. Both fields are optional; a clock defaults

@@ -1,4 +1,5 @@
-import { connectSignal, hasSignalSlots } from '@flighthq/signals/contract';
+import { connectSignal, disconnectSignal, hasSignalSlots } from '@flighthq/signals/contract';
+import type { Signal, SlotId } from '@flighthq/signals/contract';
 
 import { addClockChild, advanceClock, createChildClock, createClock, disposeClock } from './clock.ts';
 import { enableClockSignals } from './clockSignals.ts';
@@ -8,6 +9,18 @@ describe('advanceClock signals', () => {
     const clock = createClock();
     expect(() => advanceClock(clock, 1000)).not.toThrow();
     expect(clock.onTick).toBeNull();
+  });
+
+  it('types onTick by its payload and stops a slot disconnected by its SlotId', () => {
+    const clock = createClock();
+    const onTick: Signal<number> = enableClockSignals(clock);
+    expectTypeOf(clock.onTick).toEqualTypeOf<Signal<number> | null>();
+    const received: number[] = [];
+    const id: SlotId = connectSignal(onTick, (deltaTime: number) => received.push(deltaTime));
+    advanceClock(clock, 16);
+    disconnectSignal(onTick, id);
+    advanceClock(clock, 32);
+    expect(received).toEqual([16]);
   });
 
   it('emits onTick with the scaled delta when signals are enabled', () => {
