@@ -230,8 +230,8 @@ function contractExports(
   for (const module of modules) {
     const rustModule = module.rustSource.slice(0, -3);
     const moduleUses = contractUses.filter((rustUse) => rustUse.moduleName === rustModule);
-    if (moduleUses.length === 0) continue;
     const overrides = sourceDirective(crateRoot, module, 'contract');
+    if (moduleUses.length === 0 && overrides.length === 0) continue;
     const names =
       overrides.length > 0
         ? overrides
