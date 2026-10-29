@@ -12483,7 +12483,14 @@ fn emit_option_combinator(
     let absent = option_absent_value(&call.receiver, entities);
     let binding = snake_to_lower_camel(&parameter_name);
     let body = emit_closure(closure, &closure_context)?;
-    let Some(body) = body.strip_prefix(&format!("({binding}) => ")) else {
+    let body = body
+        .strip_prefix(&format!("({binding}) => "))
+        .or_else(|| {
+            let after_name = body.strip_prefix(&format!("({binding}: "))?;
+            let close = after_name.find(") => ")?;
+            Some(&after_name[close + ") => ".len()..])
+        });
+    let Some(body) = body else {
         return Err(compile_error(format!(
             "portable Option `.{method}()` closure cannot declare parameter or return types"
         )));
@@ -16016,6 +16023,8 @@ fn option_closure_parameter(pattern: &Pat) -> Option<&syn::Ident> {
     return match pattern {
         Pat::Ident(identifier) if identifier.subpat.is_none() => Some(&identifier.ident),
         Pat::Reference(reference) => option_closure_parameter(&reference.pat),
+        Pat::Type(typed) => option_closure_parameter(&typed.pat),
+        Pat::Paren(paren) => option_closure_parameter(&paren.pat),
         _ => None,
     };
 }

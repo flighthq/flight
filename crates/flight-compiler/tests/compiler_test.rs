@@ -1915,6 +1915,13 @@ pub fn widened(value: Option<f32>) -> f32 {
         let output = compile_typescript(source, None).unwrap();
         assert!(output.contains("(((v) => v === undefined ? undefined : v)(local) ?? 0.0)"));
 
+        let source = "pub fn typed_closure(value: Option<f32>) -> f32 { return value.map(|v: f32| v * 2.0).unwrap_or(0.0); }\n";
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("(((v) => v === undefined ? undefined : v * 2.0)(value) ?? 0.0)"),
+            "typed closure parameter should compile: {output}"
+        );
+
         for (source, expected) in [
             (
                 "pub fn first(values: &Vec<f32>) -> Option<f32> { return values.iter().and_then(|v| Some(*v)); }\n",
