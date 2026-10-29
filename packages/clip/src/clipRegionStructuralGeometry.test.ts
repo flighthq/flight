@@ -18,10 +18,10 @@ import type { ClipRegion } from './types.ts';
 describe('ClipRegion structural geometry compatibility', () => {
   it('preserves all nine established public signatures exactly', () => {
     expectTypeOf(clipRegionContainsRectangle).toEqualTypeOf<
-      (clip: Readonly<ClipRegion>, rectangle: Readonly<RectangleLike>) => boolean
+      (clip: ClipRegion, rectangle: Readonly<RectangleLike>) => boolean
     >();
     expectTypeOf(clipRegionIntersectsRectangle).toEqualTypeOf<
-      (clip: Readonly<ClipRegion>, rectangle: Readonly<RectangleLike>) => boolean
+      (clip: ClipRegion, rectangle: Readonly<RectangleLike>) => boolean
     >();
     expectTypeOf(createClipRegionFromEllipse).toEqualTypeOf<
       (rectangle: Readonly<RectangleLike>, tolerance?: number) => ClipRegion
@@ -33,12 +33,12 @@ describe('ClipRegion structural geometry compatibility', () => {
     expectTypeOf(initializeClipRegionFromRectangle).toEqualTypeOf<
       (out: ClipRegion, rectangle: Readonly<RectangleLike>) => void
     >();
-    expectTypeOf(getClipRegionBounds).toEqualTypeOf<(out: RectangleLike, clip: Readonly<ClipRegion>) => void>();
+    expectTypeOf(getClipRegionBounds).toEqualTypeOf<(out: RectangleLike, clip: ClipRegion) => void>();
     expectTypeOf(setClipRegionToRectangle).toEqualTypeOf<
-      (out: Readonly<ClipRegion>, rectangle: Readonly<RectangleLike>) => void
+      (out: ClipRegion, rectangle: Readonly<RectangleLike>) => void
     >();
     expectTypeOf(transformClipRegion).toEqualTypeOf<
-      (out: Readonly<ClipRegion>, clip: Readonly<ClipRegion>, matrix: Readonly<MatrixLike>) => void
+      (out: ClipRegion, clip: ClipRegion, matrix: Readonly<MatrixLike>) => void
     >();
   });
 
