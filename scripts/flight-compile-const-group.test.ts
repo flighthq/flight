@@ -71,6 +71,36 @@ pub fn is_a(value: Code) -> bool {
 }
 `;
 
+// Valid Rust whose group owner collides with a binding emission adds: the `PI` local the compiler injects
+// for `std::f32::consts::PI`, and the `allocateEntity` import it provides for `flight_entity::allocate_entity`.
+const INJECTED_PI_FIXTURE = `//! flight-compiler: const-group PI CODE_
+
+use std::f32::consts::PI;
+
+pub const CODE_A: i32 = 1;
+
+pub fn circle_area(radius: f32) -> f32 {
+    return PI * radius * radius;
+}
+`;
+
+const PROVIDED_IMPORT_FIXTURE = `//! flight-compiler: const-group allocateEntity CODE_
+
+use flight_entity::allocate_entity;
+
+pub const CODE_A: i32 = 1;
+
+#[derive(Default)]
+pub struct Record {
+    pub value: i32,
+}
+
+pub fn create_record() -> Record {
+    let record: Record = allocate_entity();
+    return record;
+}
+`;
+
 const LITERAL_FORMS_FIXTURE = `//! flight-compiler: const-group Code CODE_
 
 pub const CODE_A: i32 = -1;
@@ -84,7 +114,7 @@ pub struct Code {
 let workDirectory = '';
 
 beforeAll(() => {
-  execFileSync('cargo', ['build', '--quiet', '--package', 'flight-compiler'], {
+  execFileSync('cargo', ['build', '--quiet', '--package', 'flight-compiler', '--package', 'flight-entity'], {
     cwd: repositoryRoot,
     stdio: 'inherit',
   });
@@ -107,7 +137,7 @@ function compileRust(name: string, rust: string, extra: readonly string[] = []):
 }
 
 // Builds one crate with rustc, throwing if it is not valid Rust.
-function buildRustSource(name: string, rust: string): void {
+function buildRustSource(name: string, rust: string, extra: readonly string[] = []): void {
   const source = join(workDirectory, `${name}.rs`);
   writeFileSync(source, rust);
   execFileSync(
@@ -123,6 +153,7 @@ function buildRustSource(name: string, rust: string): void {
       workDirectory,
       '-A',
       'warnings',
+      ...extra,
       source,
     ],
     { stdio: 'pipe' },
@@ -214,6 +245,31 @@ describe('flight-compile const-group lowering', () => {
       buildRustSource(name, rust);
       expect(compileRust(name, rust).error).toBe(message);
     }
+  });
+
+  it('fails closed when the owner collides with an injected or provided binding', () => {
+    buildRustSource('injected_pi', INJECTED_PI_FIXTURE);
+    expect(compileRust('injected-pi', INJECTED_PI_FIXTURE).error).toBe(
+      'error: `const-group PI` collides with another emitted value binding named `PI`',
+    );
+    const debug = join(repositoryRoot, 'target', 'debug');
+    buildRustSource('provided_import', PROVIDED_IMPORT_FIXTURE, [
+      '-L',
+      `dependency=${join(debug, 'deps')}`,
+      '--extern',
+      `flight_entity=${join(debug, 'libflight_entity.rlib')}`,
+    ]);
+    const entity = join(repositoryRoot, 'crates', 'flight-entity', 'src', 'types.rs');
+    expect(
+      compileRust('provided-import', PROVIDED_IMPORT_FIXTURE, [
+        '--entity-module',
+        '@flighthq/entity/contract',
+        '--external-alias-source',
+        entity,
+        '--external-alias-module',
+        '@flighthq/entity/contract',
+      ]).error,
+    ).toBe('error: `const-group allocateEntity` collides with another emitted value binding named `allocateEntity`');
   });
 
   it('fails closed when a package imports a member by its Rust name', () => {

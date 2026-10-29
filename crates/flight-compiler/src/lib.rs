@@ -116,6 +116,7 @@ fn compile_typescript_sources(
         )?;
         output = lower_numeric_union_variants(output, &alias_program.numeric_unions)?;
     }
+    validate_const_group_bindings(&output, &program.const_groups)?;
     return Ok(output);
 }
 
@@ -375,6 +376,111 @@ fn dependency_export_names<'a>(
             ));
         })
         .collect();
+}
+
+// The value bindings the final emitted TypeScript introduces, in code only: every value import
+// specifier (named, renamed, default or namespace; `import type` and `type` specifiers bind no
+// value) and every `const` / `let` / `var` / `function` / `class` / `enum` declaration, including
+// destructured names. Compiler-injected locals and compiler-provided imports pass through here like
+// any other binding, so one inventory covers every emitter feature.
+fn emitted_value_bindings(output: &str) -> Vec<String> {
+    let mut code = vec![b' '; output.len()];
+    for range in typescript_code_ranges(output) {
+        code[range.clone()].copy_from_slice(&output.as_bytes()[range]);
+    }
+    let code = String::from_utf8(code).expect("code ranges split on ASCII delimiters");
+    let mut bindings = Vec::new();
+    let identifier = |text: &str| -> Option<String> {
+        let name = text
+            .trim()
+            .trim_start_matches("...")
+            .chars()
+            .take_while(|character| {
+                character.is_ascii_alphanumeric() || *character == '_' || *character == '$'
+            })
+            .collect::<String>();
+        return (!name.is_empty()).then_some(name);
+    };
+    let words = code
+        .char_indices()
+        .filter(|(index, character)| {
+            (character.is_ascii_alphabetic() || *character == '_')
+                && code[..*index].chars().last().is_none_or(|previous| {
+                    !(previous.is_ascii_alphanumeric()
+                        || previous == '_'
+                        || previous == '$'
+                        || previous == '.')
+                })
+        })
+        .map(|(index, _)| index)
+        .collect::<Vec<_>>();
+    for start in words {
+        let rest = &code[start..];
+        let keyword = rest
+            .split(|character: char| !(character.is_ascii_alphanumeric() || character == '_'))
+            .next()
+            .unwrap_or_default();
+        let after = rest[keyword.len()..].trim_start();
+        match keyword {
+            "import" => {
+                if after.starts_with("type ") || after.starts_with("type{") {
+                    continue;
+                }
+                let Some(clause_end) = after.find(" from ") else {
+                    continue;
+                };
+                let clause = &after[..clause_end];
+                let (head, braced) = match clause.find('{') {
+                    Some(open) => (
+                        &clause[..open],
+                        clause[open + 1..].split('}').next().unwrap_or_default(),
+                    ),
+                    None => (clause, ""),
+                };
+                for part in head.split(',') {
+                    let part = part.trim();
+                    if let Some(namespace) = part.strip_prefix("* as ") {
+                        bindings.extend(identifier(namespace));
+                    } else {
+                        bindings.extend(identifier(part));
+                    }
+                }
+                for specifier in braced.split(',') {
+                    let specifier = specifier.trim();
+                    if specifier.is_empty() || specifier.starts_with("type ") {
+                        continue;
+                    }
+                    let local = specifier.rsplit(" as ").next().unwrap_or(specifier);
+                    bindings.extend(identifier(local));
+                }
+            }
+            "class" | "const" | "enum" | "function" | "let" | "var" => {
+                let after = after.trim_start_matches('*').trim_start();
+                if let Some(pattern) = after.strip_prefix('[').or_else(|| after.strip_prefix('{')) {
+                    let mut depth = 1;
+                    let end = pattern
+                        .char_indices()
+                        .find(|(_, character)| {
+                            if *character == '[' || *character == '{' {
+                                depth += 1;
+                            } else if *character == ']' || *character == '}' {
+                                depth -= 1;
+                            }
+                            return depth == 0;
+                        })
+                        .map_or(pattern.len(), |(index, _)| index);
+                    for element in pattern[..end].split(',') {
+                        let local = element.rsplit(':').next().unwrap_or(element);
+                        bindings.extend(identifier(local.split('=').next().unwrap_or(local)));
+                    }
+                } else {
+                    bindings.extend(identifier(after));
+                }
+            }
+            _ => {}
+        }
+    }
+    return bindings;
 }
 
 // Replaces each emitted `Owner.Variant` reference to a numeric union with the variant's declared
@@ -706,6 +812,27 @@ fn typescript_code_ranges(source: &str) -> Vec<std::ops::Range<usize>> {
         ranges.push(code_start..bytes.len());
     }
     return ranges;
+}
+
+// A `const-group` owner is one exported value; any other value binding of that name anywhere in the
+// final output (a declaration, a compiler-injected local, or a provided or dependency import) would
+// redeclare or shadow it, so it fails closed before the TypeScript is written.
+fn validate_const_group_bindings(
+    output: &str,
+    groups: &std::collections::BTreeMap<String, String>,
+) -> Result<(), CompileError> {
+    if groups.is_empty() {
+        return Ok(());
+    }
+    let bindings = emitted_value_bindings(output);
+    for owner in groups.keys() {
+        if bindings.iter().filter(|binding| *binding == owner).count() > 1 {
+            return Err(compile_error(format!(
+                "`const-group {owner}` collides with another emitted value binding named `{owner}`"
+            )));
+        }
+    }
+    return Ok(());
 }
 
 impl fmt::Display for CompileError {

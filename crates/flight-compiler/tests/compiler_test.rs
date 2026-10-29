@@ -677,6 +677,74 @@ export function isA(code: KeyCode): boolean {
     }
 
     #[test]
+    fn rejects_const_group_owners_colliding_with_any_emitted_value_binding() {
+        let collision = |owner: &str| {
+            return format!(
+                "`const-group {owner}` collides with another emitted value binding named `{owner}`"
+            );
+        };
+        // A compiler-injected local.
+        let injected = "//! flight-compiler: const-group PI CODE_\n\nuse std::f32::consts::PI;\n\npub const CODE_A: i32 = 1;\n\npub fn circle_area(radius: f32) -> f32 {\n    return PI * radius * radius;\n}\n";
+        assert_eq!(
+            compile_typescript(injected, None).unwrap_err().to_string(),
+            collision("PI")
+        );
+        // A compiler-provided import.
+        let provided = "//! flight-compiler: const-group allocateEntity CODE_\n\nuse flight_entity::allocate_entity;\n\npub const CODE_A: i32 = 1;\n\n#[derive(Default)]\npub struct Record {\n    pub value: i32,\n}\n\npub fn create_record() -> Record {\n    let record: Record = allocate_entity();\n    return record;\n}\n";
+        assert_eq!(
+            compile_typescript(provided, Some("@flighthq/entity/contract"))
+                .unwrap_err()
+                .to_string(),
+            collision("allocateEntity")
+        );
+        // Dependency imports, by name and renamed.
+        let codec = [ExternalAliasSource {
+            source: "//! flight-compiler: export-name decode_utf8 decodeUTF8\npub fn decode_utf8(value: usize) -> usize {\n    return value;\n}\n",
+            module: "@flighthq/codec/contract",
+        }];
+        for (consumer, owner) in [
+            (
+                "//! flight-compiler: const-group decodeUTF8 CODE_\nuse flight_codec::decode_utf8;\npub const CODE_A: i32 = 1;\npub fn call(value: usize) -> usize {\n    return decode_utf8(value);\n}\n",
+                "decodeUTF8",
+            ),
+            (
+                "//! flight-compiler: const-group Decode CODE_\nuse flight_codec::decode_utf8 as Decode;\npub const CODE_A: i32 = 1;\npub fn call(value: usize) -> usize {\n    return Decode(value);\n}\n",
+                "Decode",
+            ),
+        ] {
+            assert_eq!(
+                compile_typescript_with_external_alias_sources(consumer, None, &[], &codec)
+                    .unwrap_err()
+                    .to_string(),
+                collision(owner),
+                "{consumer}"
+            );
+        }
+        // Local declarations, including a destructured tuple binding.
+        for (source, owner) in [
+            (
+                "//! flight-compiler: const-group Code CODE_\npub const CODE_A: i32 = 1;\n#[allow(non_snake_case)]\npub fn shadow(value: i32) -> i32 {\n    let Code = value;\n    return Code + CODE_A;\n}\n",
+                "Code",
+            ),
+            (
+                "//! flight-compiler: const-group Code CODE_\npub const CODE_A: i32 = 1;\n#[allow(non_snake_case)]\npub fn split(value: (i32, i32)) -> i32 {\n    let (Code, other) = value;\n    return Code + other;\n}\n",
+                "Code",
+            ),
+        ] {
+            assert_eq!(
+                compile_typescript(source, None).unwrap_err().to_string(),
+                collision(owner),
+                "{source}"
+            );
+        }
+        // The owner's name in literal text, comments, type positions and member access binds nothing.
+        let unbound = "//! flight-compiler: const-group Code CODE_\n\n/// Mentions `const Code` in documentation.\npub const CODE_A: i32 = 1;\n\npub type Code = i32;\n\npub fn label(value: Code) -> String {\n    if value == CODE_A {\n        return \"let Code = 1\".to_string();\n    }\n    return String::new();\n}\n";
+        let output = compile_typescript(unbound, None).unwrap();
+        assert!(output.contains("export const Code = {"), "{output}");
+        assert!(output.contains("value === Code.A"), "{output}");
+    }
+
+    #[test]
     fn lowers_const_groups_beside_types_with_negated_and_parenthesized_literals() {
         let source = "//! flight-compiler: const-group Code CODE_\npub const CODE_A: i32 = -1;\npub const CODE_B: i32 = (0x2);\npub struct Code {\n    pub x: i32,\n}\n";
         let output = compile_typescript(source, None).unwrap();
