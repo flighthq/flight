@@ -10,9 +10,9 @@
   },
   "references": [
     { "path": "../entity" },
-    { "path": "../geometry" },
+    { "path": "../geometry/tsconfig.runtime.json" },
     { "path": "../node" },
-    { "path": "../path" },
+    { "path": "../path/tsconfig.runtime.json" },
     { "path": "../signals" }
   ],
   "include": ["src"]
