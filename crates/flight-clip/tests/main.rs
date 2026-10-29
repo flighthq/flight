@@ -14,6 +14,8 @@ mod flight_clip_clip_region_shapes_test;
 mod flight_clip_clip_region_state_test;
 #[path = "clip_region_strings_test.rs"]
 mod flight_clip_clip_region_strings_test;
+#[path = "clip_region_structural_geometry_test.rs"]
+mod flight_clip_clip_region_structural_geometry_test;
 #[path = "clip_region_test.rs"]
 mod flight_clip_clip_region_test;
 #[path = "enable_clip_guards_messages_test.rs"]
