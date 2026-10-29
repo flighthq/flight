@@ -1,4 +1,11 @@
 {
   "files": [],
-  "references": [{ "path": "./tsconfig.contract.json" }, { "path": "./tsconfig.runtime.json" }]
+  "references": [
+    { "path": "../entity" },
+    { "path": "../geometry" },
+    { "path": "../node" },
+    { "path": "../scene2d" },
+    { "path": "./tsconfig.contract.json" },
+    { "path": "./tsconfig.runtime.json" }
+  ]
 }
