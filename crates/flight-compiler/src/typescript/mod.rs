@@ -152,6 +152,7 @@ const CRATE_USE_GLOB_MARKER: &str = "@crate-use-glob:";
 const PUBLIC_USE_BINDING_MARKER: &str = "@public-use-binding:";
 const PUBLIC_USE_GLOB_MARKER: &str = "@public-use-glob:";
 const IDENTITY_ALIAS_MARKER: &str = "@identity-alias:";
+const NULLABLE_BINDING_MARKER: &str = "@nullable:";
 pub(super) const NULLABLE_CALL_MARKER: &str = "@nullable-call:";
 // The BindingId of a Vitest local whose initializer is proven to retain a nullable Option return's
 // `null` representation. Binding identity, rather than the Rust identifier, keeps shadows separate.
@@ -7696,7 +7697,7 @@ fn emit_function(
             && let FnArg::Typed(argument) = argument
             && let Pat::Ident(pattern) = argument.pat.as_ref()
         {
-            function_context.insert(format!("@nullable:{}", pattern.ident));
+            function_context.insert(format!("{NULLABLE_BINDING_MARKER}{}", pattern.ident));
         }
     }
     struct NullableLocalCollector<'a> {
@@ -7725,7 +7726,7 @@ fn emit_function(
     };
     syn::visit::Visit::visit_block(&mut nullable_locals, &function.block);
     for name in nullable_locals.names {
-        function_context.insert(format!("@nullable:{name}"));
+        function_context.insert(format!("{NULLABLE_BINDING_MARKER}{name}"));
     }
     let mut function_context = function_expression_context(function, &function_context);
     function_context.insert(format!("{RETURN_TYPE_MARKER}{return_type}"));
@@ -10278,7 +10279,7 @@ fn emit_option_combinator(
         .filter(|marker| {
             **marker != format!("{ORDERED_PRIMITIVE_MARKER}{parameter_name}")
                 && **marker != format!("{STRING_EXPRESSION_MARKER}{parameter_name}")
-                && **marker != format!("@nullable:{parameter_name}")
+                && **marker != format!("{NULLABLE_BINDING_MARKER}{parameter_name}")
         })
         .cloned()
         .collect::<HashSet<_>>();
@@ -10529,7 +10530,7 @@ pub(crate) fn option_absent_value(expression: &Expr, entities: &HashSet<String>)
             .and_then(|name| lexical_binding(entities, &name))
             .is_some_and(|id| entities.contains(&format!("{NULLABLE_OPTION_BINDING_MARKER}{id}")))
         || referenced_path_identifier(expression)
-            .is_some_and(|name| entities.contains(&format!("@nullable:{name}")))
+            .is_some_and(|name| entities.contains(&format!("{NULLABLE_BINDING_MARKER}{name}")))
     {
         return "null";
     }
