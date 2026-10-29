@@ -833,7 +833,7 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
             ),
             (
                 "pub fn f(extra: Vec<i32>) -> Vec<i32> { let mut values = Vec::with_capacity(extra.len()); values.extend(extra); return values; }\n",
-                receiver_error,
+                "portable `Vec::with_capacity` is not supported; declare the `Vec` with `Vec::new()`",
             ),
             (
                 "pub fn f(extra: Vec<i32>) -> Vec<i32> { let mut values = vec![]; values.extend(extra); return values; }\n",
@@ -856,12 +856,191 @@ pub fn renamed(index: &mut Vec<i32>, count: &Vec<i32>) {
                 "portable `.extend_from_slice()` is supported only as a statement",
             ),
             (
-                "pub fn f(a: &mut Vec<i32>, b: Vec<i32>) { let g = |a: i32| a; a.extend(b); }\n",
+                "pub fn f(a: &mut Vec<i32>, b: Vec<i32>) { let g = |a: i32| { a.extend(b); a }; }\n",
                 receiver_error,
             ),
         ] {
             let error = compile_typescript(source, None).unwrap_err();
             assert_eq!(error.to_string(), expected);
+        }
+    }
+
+    // Value bindings resolve lexically: a binding takes effect after its declaration, shadows within its
+    // scope only, and the outer binding (or a same-named function's facts) applies again once the scope
+    // ends. A local value of a function's name always shadows that function, so its return facts never
+    // apply to the local.
+    #[test]
+    fn lowers_vec_extend_through_lexical_bindings() {
+        let lowered = |output: &str, name: &str| {
+            output.contains("for (let index = 0, count = extra.length; index < count; index++) {")
+                && output.contains(&format!("{name}.push(extra[index]);"))
+        };
+        let rejected = "portable `.extend()` requires a receiver declared as Rust `Vec`";
+        let bag = "pub struct Bag { pub items: Vec<i32> }\nimpl Extend<i32> for Bag {\n    fn extend<T: IntoIterator<Item = i32>>(&mut self, iter: T) {\n        self.items.extend(iter);\n    }\n}\n";
+        let make = "fn make_values() -> Vec<i32> {\n    return vec![1];\n}\n";
+        let shadowed = [
+            format!(
+                "{make}{bag}pub fn append(bag: Bag, extra: Vec<i32>) -> Vec<i32> {{\n    let make_values = move || bag;\n    let mut values = make_values();\n    values.extend(extra);\n    return values.items;\n}}\n"
+            ),
+            format!(
+                "{make}pub fn inner(extra: Vec<i32>, other: fn() -> Vec<i32>, flag: bool) {{\n    if flag {{\n        let make_values = other;\n        let mut values = make_values();\n        values.extend(extra);\n    }}\n}}\n"
+            ),
+            format!(
+                "{make}pub fn parameter(make_values: fn() -> Vec<i32>, extra: Vec<i32>) -> usize {{\n    let mut values = make_values();\n    values.extend(extra);\n    return values.len();\n}}\n"
+            ),
+            "pub fn relet(items: Vec<i32>, extra: Vec<i32>) -> usize {\n    let mut items = items.len();\n    items.extend(extra);\n    return items;\n}\n".to_string(),
+            "pub fn closure(items: Vec<i32>, extra: Vec<i32>) -> usize {\n    let f = |items: usize| {\n        items.extend(extra);\n        items\n    };\n    return f(items.len());\n}\n".to_string(),
+            "pub fn looped(items: Vec<i32>, extra: Vec<i32>, all: &Vec<Vec<i32>>) {\n    for items in all {\n        items.extend(extra);\n    }\n}\n".to_string(),
+            "//! flight-compiler: data-union Id\npub enum Id {\n    Number(i32),\n    Text(String),\n}\npub fn matched(items: Vec<i32>, extra: Vec<i32>, id: Id) {\n    match id {\n        Id::Number(items) => {\n            items.extend(extra);\n        }\n        Id::Text(_) => {}\n    }\n}\n".to_string(),
+            "pub fn guarded(items: Vec<i32>, extra: Vec<i32>, maybe: Option<usize>) {\n    if let Some(items) = maybe {\n        items.extend(extra);\n    }\n}\n".to_string(),
+            "pub fn tupled(items: Vec<i32>, extra: Vec<i32>, pair: (usize, usize)) {\n    let (items, other) = pair;\n    items.extend(extra);\n}\n".to_string(),
+            "pub fn let_else(items: Vec<i32>, extra: Vec<i32>, maybe: Option<usize>) {\n    let Some(items) = maybe else {\n        return;\n    };\n    items.extend(extra);\n}\n".to_string(),
+        ];
+        for source in &shadowed {
+            let error = compile_typescript(source, None).unwrap_err();
+            assert_eq!(error.to_string(), rejected, "{source}");
+        }
+        let restored = [
+            (
+                format!(
+                    "{make}pub fn before(extra: Vec<i32>) -> usize {{\n    let mut first = make_values();\n    first.extend(extra);\n    let make_values = 3;\n    return first.len() + make_values;\n}}\n"
+                ),
+                "first",
+            ),
+            (
+                format!(
+                    "{make}pub fn sibling(extra: Vec<i32>, flag: bool) -> usize {{\n    if flag {{\n        let make_values = 1;\n    }}\n    let mut values = make_values();\n    values.extend(extra);\n    return values.len();\n}}\n"
+                ),
+                "values",
+            ),
+            (
+                "pub fn closure(mut items: Vec<i32>, extra: Vec<i32>) -> usize {\n    let f = |items: usize| items + 1;\n    items.extend(extra);\n    return f(items.len());\n}\n".to_string(),
+                "items",
+            ),
+            (
+                "pub fn looped(mut items: Vec<i32>, extra: Vec<i32>, all: &Vec<usize>) {\n    for items in all {\n        let unused = items;\n    }\n    items.extend(extra);\n}\n".to_string(),
+                "items",
+            ),
+            (
+                "//! flight-compiler: data-union Id\npub enum Id {\n    Number(i32),\n    Text(String),\n}\npub fn matched(mut items: Vec<i32>, extra: Vec<i32>, id: Id) {\n    match id {\n        Id::Number(items) => {\n            let unused = items;\n        }\n        Id::Text(_) => {}\n    }\n    items.extend(extra);\n}\n".to_string(),
+                "items",
+            ),
+            (
+                "pub fn guarded(mut items: Vec<i32>, extra: Vec<i32>, maybe: Option<usize>) {\n    if let Some(items) = maybe {\n        let unused = items;\n    }\n    items.extend(extra);\n}\n".to_string(),
+                "items",
+            ),
+            (
+                "pub fn inner(mut items: Vec<i32>, extra: Vec<i32>, flag: bool) {\n    if flag {\n        let items = 3;\n        let unused = items;\n    }\n    items.extend(extra);\n}\n".to_string(),
+                "items",
+            ),
+            (
+                "pub fn let_else(mut items: Vec<i32>, extra: Vec<i32>, maybe: Option<usize>) {\n    let Some(count) = maybe else {\n        items.extend(extra);\n        return;\n    };\n}\n".to_string(),
+                "items",
+            ),
+            (
+                "pub fn moved(items: Vec<i32>, extra: Vec<i32>) -> usize {\n    let mut items = items;\n    items.extend(extra);\n    return items.len();\n}\n".to_string(),
+                "items",
+            ),
+            (
+                "pub fn captured(mut items: Vec<i32>, extra: Vec<i32>) {\n    let mut push = || {\n        items.extend(extra);\n    };\n    push();\n}\n".to_string(),
+                "items",
+            ),
+        ];
+        for (source, name) in &restored {
+            let output = compile_typescript(source, None).unwrap();
+            assert!(lowered(&output, name), "{output}");
+        }
+    }
+
+    // Qualified value and type paths and public re-exports resolve through the same canonical
+    // ModuleSource model as `use` bindings: `crate::` / `self::` / `super::` paths name the declaring
+    // module directly, and a public `use` re-export forwards to its declaration. Private, cyclic,
+    // ambiguous or missing chains fail closed.
+    #[test]
+    fn lowers_vec_extend_with_qualified_and_reexported_owners() {
+        let module = |path, source| ModuleSource { path, source };
+        let compile = |source: ModuleSource<'_>, aliases: &[ModuleSource<'_>]| {
+            compile_typescript_with_module_sources(source, None, aliases, &[])
+        };
+        let rejected = "portable `.extend()` requires a receiver declared as Rust `Vec`";
+        let bucket = "pub struct Bucket { pub items: Vec<i32> }\npub fn make_values() -> Vec<i32> { return vec![1]; }\n";
+        let text_bucket = "pub struct Bucket { pub items: String }\npub fn make_values() -> String { return String::new(); }\n";
+        let prelude = "pub use crate::bucket::Bucket;\n";
+        let private_prelude = "use crate::bucket::Bucket;\n";
+        let cycle_a = "pub use crate::cycle_b::Bucket;\n";
+        let cycle_b = "pub use crate::cycle_a::Bucket;\n";
+        let ambiguous = "pub use crate::bucket::*;\npub use crate::other::*;\n";
+        let qualified_function = "pub fn append(extra: Vec<i32>) -> Vec<i32> {\n    let mut values = crate::bucket::make_values();\n    values.extend(extra);\n    return values;\n}\n";
+        let qualified_type = "pub fn append(mut bucket: crate::bucket::Bucket, extra: Vec<i32>) -> crate::bucket::Bucket {\n    bucket.items.extend(extra);\n    return bucket;\n}\n";
+        let through = |path: &str| {
+            format!(
+                "use crate::{path}::Bucket;\npub fn append(mut bucket: Bucket, extra: Vec<i32>) -> Bucket {{\n    bucket.items.extend(extra);\n    return bucket;\n}}\n"
+            )
+        };
+        let reexport = through("prelude");
+        let private_reexport = through("private_prelude");
+        let cyclic = through("cycle_a");
+        let ambiguous_consumer = through("ambiguous");
+        let current = "crates/flight-demo/src/current.rs";
+        let bucket_path = "crates/flight-demo/src/bucket.rs";
+        let other_path = "crates/flight-demo/src/other.rs";
+
+        for (source, aliases, name) in [
+            (
+                qualified_function,
+                vec![module(bucket_path, bucket)],
+                "values",
+            ),
+            (
+                qualified_type,
+                vec![module(bucket_path, bucket)],
+                "bucket.items",
+            ),
+            (
+                &reexport,
+                vec![
+                    module(bucket_path, bucket),
+                    module("crates/flight-demo/src/prelude.rs", prelude),
+                ],
+                "bucket.items",
+            ),
+        ] {
+            let output = compile(module(current, source), &aliases).unwrap();
+            assert!(
+                output.contains(&format!(
+                    "  for (let index = 0, count = extra.length; index < count; index++) {{\n    {name}.push(extra[index]);\n  }}\n"
+                )),
+                "{output}"
+            );
+        }
+        for (source, aliases) in [
+            (qualified_function, vec![module(other_path, bucket)]),
+            (qualified_type, vec![module(bucket_path, text_bucket)]),
+            (
+                &private_reexport,
+                vec![
+                    module(bucket_path, bucket),
+                    module("crates/flight-demo/src/private_prelude.rs", private_prelude),
+                ],
+            ),
+            (
+                &cyclic,
+                vec![
+                    module("crates/flight-demo/src/cycle_a.rs", cycle_a),
+                    module("crates/flight-demo/src/cycle_b.rs", cycle_b),
+                ],
+            ),
+            (
+                &ambiguous_consumer,
+                vec![
+                    module(bucket_path, bucket),
+                    module(other_path, bucket),
+                    module("crates/flight-demo/src/ambiguous.rs", ambiguous),
+                ],
+            ),
+        ] {
+            let error = compile(module(current, source), &aliases).unwrap_err();
+            assert_eq!(error.to_string(), rejected, "{source}");
         }
     }
 

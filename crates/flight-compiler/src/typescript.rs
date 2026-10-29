@@ -16,6 +16,14 @@ use crate::{CompileError, compile_error};
 type PreferredAliases = HashMap<String, String>;
 
 const CALLBACK_ARGUMENT_MARKER: &str = "@callback-argument:";
+// Lexical value bindings. Every binding site of an emitted function gets a canonical BindingId
+// (`function#b<ordinal>`, ordinals in source order); `@binding-site:` maps a binding identifier node to
+// it, `@binding-fact:` records what the binding is proven to hold, and `@binding:` names the binding
+// currently in scope for an identifier. Emission installs `@binding:` in scope-local contexts, so a
+// shadow is distinct and scope exit restores the outer binding.
+const BINDING_MARKER: &str = "@binding:";
+const BINDING_FACT_MARKER: &str = "@binding-fact:";
+const BINDING_SITE_MARKER: &str = "@binding-site:";
 const CLOSURE_PARAMETER_MARKER: &str = "@closure-parameter:";
 // The module of the program being emitted; struct and function facts resolve against it.
 const CURRENT_SOURCE_MARKER: &str = "@current-source:";
@@ -51,7 +59,6 @@ const PROVENANCE_SEPARATOR: char = '\u{1f}';
 // function returns (`module SEP function SEP payload`) declared as Rust `Option<T>`. The payload is the
 // resolved struct identity of `T`, or empty. They make Option `.and_then()` / `.map()` type-directed.
 const OPTION_FIELD_MARKER: &str = "@option-field:";
-const OPTION_LOCAL_MARKER: &str = "@option-local:";
 const OPTION_RETURN_MARKER: &str = "@option-return:";
 // Locals and parameters known to hold a Rust integer or string, the operand types `.cmp()` lowers
 // to a JavaScript relational comparison.
@@ -68,14 +75,11 @@ const RETURNS_U32_MARKER: &str = "@returns-u32";
 // as a Rust `Vec`, slice or fixed array, the operand types `.extend()` and `.extend_from_slice()` lower
 // over.
 const SEQUENCE_FIELD_MARKER: &str = "@sequence-field:";
-const SEQUENCE_LOCAL_MARKER: &str = "@sequence-local:";
 // Functions returning a Rust `Vec`, slice or fixed array (`module SEP function SEP`).
 const SEQUENCE_RETURN_MARKER: &str = "@sequence-return:";
 const STRING_EXPRESSION_MARKER: &str = "@string-expression:";
 const STRING_RETURN_MARKER: &str = "@string-return:";
 const STRING_UNION_MARKER: &str = "@string-union:";
-// Locals and parameters holding a resolved struct (`name:identity`, identity `module SEP Struct`).
-const STRUCT_LOCAL_MARKER: &str = "@struct-local:";
 const STRUCT_OWNER_MARKER: &str = "@struct-owner:";
 // Functions returning a resolved struct (`module SEP function SEP struct identity`).
 const STRUCT_RETURN_MARKER: &str = "@struct-return:";
@@ -116,6 +120,15 @@ struct DataUnionPatternTest {
 struct UsePath {
     item: Option<(String, String)>,
     prefix: Vec<String>,
+}
+
+// A fact proven about a lexical binding's value.
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum BindingFact {
+    Option(String),
+    Sequence,
+    Structure(String),
+    Unknown,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -471,8 +484,6 @@ fn resolve_path_owner(
     return resolve_owner_inner(entities, marker, &target, &name, true, &mut BTreeSet::new());
 }
 
-// The canonical identity (`module SEP Struct`) of the struct `rust_type` names, resolved from the
-// source `from`.
 // The full module a `use` prefix names, written in the module `from`: `crate::` from the crate root,
 // `self::` and `super::` relative to `from`, and anything else as an external crate path.
 fn resolve_use_prefix(from: &[String], prefix: &[String]) -> Option<Vec<String>> {
@@ -496,6 +507,8 @@ fn resolve_use_prefix(from: &[String], prefix: &[String]) -> Option<Vec<String>>
     return Some(module);
 }
 
+// The canonical identity (`module SEP Struct`) of the struct `rust_type` names, resolved from the
+// source `from`.
 fn resolved_type_identity(
     entities: &HashSet<String>,
     from: &str,
@@ -872,87 +885,183 @@ fn insert_data_union_context(
     return Ok(());
 }
 
-// Records the locals and parameters that hold a Rust `Vec` or slice, and the untyped locals bound to a
-// struct returned by a same-program function. A name counts only when every binding of it in the
-// function agrees, so a closure parameter, loop or match binding, or differently typed `let` of the
-// same name leaves it unknown. An untyped `let x = y` moves `y`'s sequence fact to `x`.
-fn insert_sequence_context(function: &ItemFn, context: &mut HashSet<String>) {
-    #[derive(Clone, PartialEq)]
-    enum Binding {
-        Other,
-        Sequence,
-        Structure(String),
-    }
-
-    struct BindingCollector<'a> {
-        bindings: BTreeMap<String, Vec<Binding>>,
+// Resolves every value binding of `function` lexically, in source order: parameters, `let` (bound
+// after its initializer, so the initializer sees the outer binding; a let-else's else block too),
+// closure parameters, `for`, `if let` / `while let` (bound for the condition's remainder and the
+// body), and `match` arms (bound for the guard and body), each through nested and tuple patterns.
+// Each site gets a canonical BindingId and the fact its declared type or initializer proves: a typed
+// `Vec`/slice/array, `Option`, or resolved struct; a bare move inherits the moved binding's fact; a
+// call yields a function's return fact only when no lexical binding of the callee's name is in scope,
+// because a local value always shadows an imported or sibling function. Parameters are left bound in
+// the returned context; every other site is bound during emission by `lexical_pattern_context`.
+fn insert_lexical_binding_context(function: &ItemFn, context: &mut HashSet<String>) {
+    struct Resolver<'a> {
         context: &'a HashSet<String>,
+        facts: Vec<(String, BindingFact)>,
+        function: String,
+        ordinal: usize,
+        scopes: Vec<BTreeMap<String, String>>,
+        sites: Vec<(String, String)>,
     }
 
-    impl BindingCollector<'_> {
-        fn initializer_binding(&self, expression: &Expr) -> Binding {
+    impl Resolver<'_> {
+        fn bind(&mut self, identifier: &syn::Ident, fact: BindingFact) -> String {
+            let id = format!("{}#b{}", self.function, self.ordinal);
+            self.ordinal += 1;
+            if let Some(scope) = self.scopes.last_mut() {
+                scope.insert(identifier.to_string(), id.clone());
+            }
+            self.facts.push((id.clone(), fact));
+            self.sites.push((binding_site_key(identifier), id.clone()));
+            return id;
+        }
+
+        fn bind_pattern(&mut self, pattern: &Pat, fact: BindingFact) {
+            match pattern {
+                Pat::Ident(identifier) if identifier.subpat.is_none() => {
+                    self.bind(&identifier.ident, fact);
+                }
+                Pat::Type(typed) if matches!(typed.pat.as_ref(), Pat::Ident(_)) => {
+                    let fact = self.typed_fact(&typed.ty);
+                    self.bind_pattern(&typed.pat, fact);
+                }
+                _ => {
+                    for identifier in pattern_identifiers(pattern) {
+                        self.bind(identifier, BindingFact::Unknown);
+                    }
+                }
+            }
+        }
+
+        fn fact_of(&self, name: &str) -> Option<BindingFact> {
+            let id = self.scopes.iter().rev().find_map(|scope| scope.get(name))?;
+            return self
+                .facts
+                .iter()
+                .rev()
+                .find(|(fact_id, _)| fact_id == id)
+                .map(|(_, fact)| fact.clone());
+        }
+
+        fn initializer_fact(&self, expression: &Expr) -> BindingFact {
             if expression_is_vec_construction(expression) {
-                return Binding::Sequence;
+                return BindingFact::Sequence;
             }
-            let Some(name) = (match expression {
-                Expr::Call(call) => single_path_identifier(&call.func),
-                expression => single_path_identifier(expression),
-            }) else {
-                return Binding::Other;
+            return match expression {
+                Expr::Call(call) => {
+                    let Expr::Path(path) = call.func.as_ref() else {
+                        return BindingFact::Unknown;
+                    };
+                    if path.qself.is_some()
+                        || single_path_identifier(&call.func)
+                            .is_some_and(|name| self.fact_of(&name).is_some())
+                    {
+                        return BindingFact::Unknown;
+                    }
+                    if call_fact(self.context, SEQUENCE_RETURN_MARKER, &path.path).is_some() {
+                        return BindingFact::Sequence;
+                    }
+                    if let Some(identity) =
+                        call_fact(self.context, STRUCT_RETURN_MARKER, &path.path)
+                            .filter(|identity| !identity.is_empty())
+                    {
+                        return BindingFact::Structure(identity);
+                    }
+                    call_fact(self.context, OPTION_RETURN_MARKER, &path.path)
+                        .map_or(BindingFact::Unknown, BindingFact::Option)
+                }
+                Expr::Group(group) => self.initializer_fact(&group.expr),
+                Expr::Paren(paren) => self.initializer_fact(&paren.expr),
+                expression => single_path_identifier(expression)
+                    .and_then(|name| self.fact_of(&name))
+                    .unwrap_or(BindingFact::Unknown),
             };
-            if !matches!(expression, Expr::Call(_)) {
-                let is_sequence = self
-                    .bindings
-                    .get(&name)
-                    .is_some_and(|bindings| bindings.iter().all(|b| *b == Binding::Sequence));
-                return if is_sequence {
-                    Binding::Sequence
-                } else {
-                    Binding::Other
-                };
+        }
+
+        fn typed_fact(&self, rust_type: &Type) -> BindingFact {
+            if let Some(inner) = option_inner_type(rust_type) {
+                return BindingFact::Option(
+                    context_type_identity(self.context, inner).unwrap_or_default(),
+                );
             }
-            if function_fact(self.context, SEQUENCE_RETURN_MARKER, &name).is_some() {
-                return Binding::Sequence;
+            if rust_type_is_sequence(rust_type) {
+                return BindingFact::Sequence;
             }
-            return function_fact(self.context, STRUCT_RETURN_MARKER, &name)
-                .filter(|identity| !identity.is_empty())
-                .map_or(Binding::Other, Binding::Structure);
+            return context_type_identity(self.context, rust_type)
+                .map_or(BindingFact::Unknown, BindingFact::Structure);
         }
     }
 
-    impl<'ast> syn::visit::Visit<'ast> for BindingCollector<'_> {
+    impl<'ast> syn::visit::Visit<'ast> for Resolver<'_> {
+        fn visit_arm(&mut self, arm: &'ast syn::Arm) {
+            self.scopes.push(BTreeMap::new());
+            self.bind_pattern(&arm.pat, BindingFact::Unknown);
+            if let Some((_, guard)) = &arm.guard {
+                self.visit_expr(guard);
+            }
+            self.visit_expr(&arm.body);
+            self.scopes.pop();
+        }
+
+        fn visit_block(&mut self, block: &'ast syn::Block) {
+            self.scopes.push(BTreeMap::new());
+            syn::visit::visit_block(self, block);
+            self.scopes.pop();
+        }
+
+        fn visit_expr_closure(&mut self, closure: &'ast syn::ExprClosure) {
+            self.scopes.push(BTreeMap::new());
+            for input in &closure.inputs {
+                self.bind_pattern(input, BindingFact::Unknown);
+            }
+            self.visit_expr(&closure.body);
+            self.scopes.pop();
+        }
+
+        fn visit_expr_for_loop(&mut self, expression: &'ast syn::ExprForLoop) {
+            self.visit_expr(&expression.expr);
+            self.scopes.push(BTreeMap::new());
+            self.bind_pattern(&expression.pat, BindingFact::Unknown);
+            self.visit_block(&expression.body);
+            self.scopes.pop();
+        }
+
+        fn visit_expr_if(&mut self, expression: &'ast syn::ExprIf) {
+            self.scopes.push(BTreeMap::new());
+            self.visit_expr(&expression.cond);
+            self.visit_block(&expression.then_branch);
+            self.scopes.pop();
+            if let Some((_, otherwise)) = &expression.else_branch {
+                self.visit_expr(otherwise);
+            }
+        }
+
+        fn visit_expr_let(&mut self, expression: &'ast syn::ExprLet) {
+            self.visit_expr(&expression.expr);
+            self.bind_pattern(&expression.pat, BindingFact::Unknown);
+        }
+
+        fn visit_expr_while(&mut self, expression: &'ast syn::ExprWhile) {
+            self.scopes.push(BTreeMap::new());
+            self.visit_expr(&expression.cond);
+            self.visit_block(&expression.body);
+            self.scopes.pop();
+        }
+
+        fn visit_item_fn(&mut self, _function: &'ast ItemFn) {}
+
         fn visit_local(&mut self, local: &'ast syn::Local) {
+            let mut fact = BindingFact::Unknown;
             if let Some(initializer) = &local.init {
                 self.visit_expr(&initializer.expr);
                 if let Some((_, diverge)) = &initializer.diverge {
                     self.visit_expr(diverge);
                 }
+                if initializer.diverge.is_none() {
+                    fact = self.initializer_fact(&initializer.expr);
+                }
             }
-            let binding = match &local.pat {
-                Pat::Type(typed) if matches!(typed.pat.as_ref(), Pat::Ident(_)) => {
-                    Some(typed_binding(&typed.ty, self.context))
-                }
-                Pat::Ident(identifier) if identifier.subpat.is_none() => {
-                    Some(local.init.as_ref().map_or(Binding::Other, |initializer| {
-                        self.initializer_binding(&initializer.expr)
-                    }))
-                }
-                _ => None,
-            };
-            match (binding, local_pattern_name(&local.pat)) {
-                (Some(binding), Some(name)) => {
-                    self.bindings.entry(name).or_default().push(binding);
-                }
-                _ => self.visit_pat(&local.pat),
-            }
-        }
-
-        fn visit_pat_ident(&mut self, pattern: &'ast syn::PatIdent) {
-            self.bindings
-                .entry(pattern.ident.to_string())
-                .or_default()
-                .push(Binding::Other);
-            syn::visit::visit_pat_ident(self, pattern);
+            self.bind_pattern(&local.pat, fact);
         }
     }
 
@@ -966,47 +1075,39 @@ fn insert_sequence_context(function: &ItemFn, context: &mut HashSet<String>) {
         return Some(path.path.segments[0].ident.to_string());
     }
 
-    fn typed_binding(rust_type: &Type, entities: &HashSet<String>) -> Binding {
-        if rust_type_is_sequence(rust_type) {
-            return Binding::Sequence;
-        }
-        return context_type_identity(entities, rust_type)
-            .map_or(Binding::Other, Binding::Structure);
-    }
-
-    let mut collector = BindingCollector {
-        bindings: BTreeMap::new(),
+    let function_name = function.sig.ident.to_string();
+    let mut resolver = Resolver {
         context,
+        facts: Vec::new(),
+        function: match current_source(context) {
+            Some(module) => format!("{module}::{function_name}"),
+            None => function_name,
+        },
+        ordinal: 0,
+        scopes: vec![BTreeMap::new()],
+        sites: Vec::new(),
     };
     for argument in &function.sig.inputs {
         let FnArg::Typed(argument) = argument else {
             continue;
         };
-        match argument.pat.as_ref() {
-            Pat::Ident(pattern) if pattern.subpat.is_none() => collector
-                .bindings
-                .entry(pattern.ident.to_string())
-                .or_default()
-                .push(typed_binding(&argument.ty, collector.context)),
-            pattern => syn::visit::Visit::visit_pat(&mut collector, pattern),
-        }
+        let fact = resolver.typed_fact(&argument.ty);
+        resolver.bind_pattern(&argument.pat, fact);
     }
-    syn::visit::Visit::visit_block(&mut collector, &function.block);
+    let parameters = resolver.scopes[0].clone();
+    syn::visit::Visit::visit_block(&mut resolver, &function.block);
     let mut markers = Vec::new();
-    for (name, bindings) in collector.bindings {
-        let Some(first) = bindings.first() else {
-            continue;
-        };
-        if bindings.iter().any(|binding| binding != first) {
-            continue;
-        }
-        match first {
-            Binding::Sequence => markers.push(format!("{SEQUENCE_LOCAL_MARKER}{name}")),
-            Binding::Structure(structure) => {
-                markers.push(format!("{STRUCT_LOCAL_MARKER}{name}:{structure}"));
-            }
-            Binding::Other => {}
-        }
+    for (site, id) in resolver.sites {
+        markers.push(format!("{BINDING_SITE_MARKER}{site}={id}"));
+    }
+    for (id, fact) in resolver.facts {
+        markers.push(format!(
+            "{BINDING_FACT_MARKER}{id}={}",
+            binding_fact_marker(&fact)
+        ));
+    }
+    for (name, id) in parameters {
+        markers.push(format!("{BINDING_MARKER}{name}={id}"));
     }
     context.extend(markers);
 }
@@ -1041,6 +1142,9 @@ pub(crate) fn frozen_object_name<'a>(
 // The fact `marker` records for the free function `function_name` called from the current source,
 // resolved to its declaring module; `None` when the function or its fact is unknown or ambiguous.
 fn function_fact(entities: &HashSet<String>, marker: &str, function_name: &str) -> Option<String> {
+    if lexical_binding(entities, function_name).is_some() {
+        return None;
+    }
     let identity = match current_source(entities) {
         Some(current) => {
             let (owner, declaration) =
@@ -1717,6 +1821,15 @@ fn vitest_named_type(rust_type: &Type, context: &HashSet<String>) -> Option<Stri
     };
 }
 
+// The scope-local context of a pattern's bindings: Vitest provenance cleared for each bound name, and
+// each name bound to the BindingId its site resolved to (or to no fact at all, when the site was not
+// resolved), replacing any outer binding of that name within the scope.
+pub(crate) fn lexical_pattern_context(context: &HashSet<String>, pattern: &Pat) -> HashSet<String> {
+    let mut scoped = vitest_pattern_context(context, pattern);
+    bind_lexical_pattern(&mut scoped, pattern);
+    return scoped;
+}
+
 fn provenance_pattern_bindings(pattern: &Pat) -> BTreeSet<String> {
     struct PatternBindingCollector {
         bindings: BTreeSet<String>,
@@ -1822,7 +1935,7 @@ pub(crate) fn insert_vitest_import_alias_context<'a>(
                 exported,
                 imported,
                 module,
-            } if module.as_deref().is_none_or(&module_is_local) => {
+            } if module.as_deref().is_none_or(module_is_local) => {
                 Some((exported.clone(), imported.clone()))
             }
             ProvenanceImportRule::Explicit { .. } => None,
@@ -2624,9 +2737,6 @@ pub(crate) fn function_expression_context(
                     self.context
                         .insert(format!("{ORDERED_PRIMITIVE_MARKER}{}", pattern.ident));
                 }
-                let markers =
-                    declared_type_markers(&pattern.ident.to_string(), &typed.ty, self.context);
-                self.context.extend(markers);
                 if let Some(record) = named_type(&typed.ty)
                     && self
                         .context
@@ -2737,8 +2847,6 @@ pub(crate) fn function_expression_context(
         if rust_type_is_ordered_primitive(&argument.ty) {
             context.insert(format!("{ORDERED_PRIMITIVE_MARKER}{}", pattern.ident));
         }
-        let markers = declared_type_markers(&pattern.ident.to_string(), &argument.ty, &context);
-        context.extend(markers);
     }
     syn::visit::Visit::visit_block(
         &mut CallbackUseCollector {
@@ -2746,7 +2854,7 @@ pub(crate) fn function_expression_context(
         },
         &function.block,
     );
-    insert_sequence_context(function, &mut context);
+    insert_lexical_binding_context(function, &mut context);
     return context;
 }
 
@@ -2821,6 +2929,66 @@ pub(crate) fn update_vitest_local_function_context(
         clear_provenance_binding(context, VITEST_PUBLIC_FUNCTION_MARKER, &binding);
         clear_provenance_binding(context, VITEST_FUNCTION_CANDIDATE_MARKER, &binding);
     }
+    bind_lexical_pattern(context, &local.pat);
+}
+
+// Binds each identifier a pattern introduces to the BindingId its site resolved to (or to no fact at
+// all, when the site was not resolved), replacing any binding of that name in `context`.
+fn bind_lexical_pattern(context: &mut HashSet<String>, pattern: &Pat) {
+    for identifier in pattern_identifiers(pattern) {
+        let prefix = format!("{BINDING_MARKER}{identifier}=");
+        context.retain(|marker| !marker.starts_with(&prefix));
+        let id = unique_marker_suffix(
+            context,
+            &format!("{BINDING_SITE_MARKER}{}=", binding_site_key(identifier)),
+        )
+        .unwrap_or_default();
+        context.insert(format!("{prefix}{id}"));
+    }
+}
+
+fn binding_fact_from_marker(encoded: &str) -> BindingFact {
+    if encoded == "sequence" {
+        return BindingFact::Sequence;
+    }
+    if let Some(payload) = encoded
+        .strip_prefix("option")
+        .and_then(|rest| rest.strip_prefix(PROVENANCE_SEPARATOR))
+    {
+        return BindingFact::Option(payload.to_string());
+    }
+    if let Some(identity) = encoded
+        .strip_prefix("struct")
+        .and_then(|rest| rest.strip_prefix(PROVENANCE_SEPARATOR))
+    {
+        return BindingFact::Structure(identity.to_string());
+    }
+    return BindingFact::Unknown;
+}
+
+fn binding_fact_marker(fact: &BindingFact) -> String {
+    return match fact {
+        BindingFact::Option(payload) => format!("option{PROVENANCE_SEPARATOR}{payload}"),
+        BindingFact::Sequence => "sequence".to_string(),
+        BindingFact::Structure(identity) => format!("struct{PROVENANCE_SEPARATOR}{identity}"),
+        BindingFact::Unknown => "unknown".to_string(),
+    };
+}
+
+// The key of a binding identifier node: its address, stable while the parsed program is borrowed for
+// emission. It is a lookup key only and never reaches emitted output.
+fn binding_site_key(identifier: &syn::Ident) -> String {
+    return format!("{identifier:p}");
+}
+
+// The fact `marker` records for the function a call path names. A single-segment callee is subject to
+// lexical shadowing (`function_fact`); a qualified path names a module item directly and resolves
+// through the shared ModuleSource resolver (`function_path_fact`).
+fn call_fact(entities: &HashSet<String>, marker: &str, path: &syn::Path) -> Option<String> {
+    if path.segments.len() == 1 {
+        return function_fact(entities, marker, &path.segments[0].ident.to_string());
+    }
+    return function_path_fact(entities, marker, path);
 }
 
 // The canonical identity of the struct `rust_type` names in the code being emitted: resolved from the
@@ -2840,20 +3008,6 @@ fn current_source(entities: &HashSet<String>) -> Option<String> {
         (Some(module), true) => Some(module),
         _ => None,
     };
-}
-
-// The Option and named-type markers for a local or parameter declared with `rust_type`.
-fn declared_type_markers(name: &str, rust_type: &Type, entities: &HashSet<String>) -> Vec<String> {
-    if let Some(inner) = option_inner_type(rust_type) {
-        return vec![format!(
-            "{OPTION_LOCAL_MARKER}{name}:{}",
-            context_type_identity(entities, inner).unwrap_or_default()
-        )];
-    }
-    return context_type_identity(entities, rust_type)
-        .map(|identity| format!("{STRUCT_LOCAL_MARKER}{name}:{identity}"))
-        .into_iter()
-        .collect();
 }
 
 fn documentation(attributes: &[Attribute]) -> Vec<String> {
@@ -3032,6 +3186,9 @@ fn emit_closure_with_parameter_types(
         if type_is_named(rust_type, "u32") {
             closure_context.insert(RETURNS_U32_MARKER.to_string());
         }
+    }
+    for pattern in &closure.inputs {
+        closure_context = lexical_pattern_context(&closure_context, pattern);
     }
     let mut parameter_names = HashSet::new();
     for pattern in &closure.inputs {
@@ -3568,6 +3725,13 @@ pub(crate) fn emit_expression(
             if expression_is_associated_path(&call.func, "Vec", "new") && call.args.is_empty() {
                 return Ok("[] as never[]".to_string());
             }
+            // There is no runtime `Vec`; until the element type of a capacity construction can be
+            // proven, it is rejected rather than emitted as a call to a missing global.
+            if expression_is_associated_path(&call.func, "Vec", "with_capacity") {
+                return Err(compile_error(
+                    "portable `Vec::with_capacity` is not supported; declare the `Vec` with `Vec::new()`",
+                ));
+            }
             if expression_is_associated_path(&call.func, "Mutex", "new") && call.args.len() == 1 {
                 return Ok(format!(
                     "{{ value: {} }}",
@@ -3653,20 +3817,30 @@ pub(crate) fn emit_expression(
         Expr::Index(index) => {
             let receiver = emit_expression(&index.expr, entities)?;
             if let Expr::Range(range) = index.index.as_ref() {
+                // Rust bounds-checks range indexing while `.slice` clamps, and these two forms have no
+                // valid `.slice` emission yet, so they are rejected until range slices are lowered
+                // with Rust bounds.
+                if matches!(range.limits, syn::RangeLimits::Closed(_)) {
+                    return Err(compile_error(
+                        "portable inclusive range index `a..=b` is not supported",
+                    ));
+                }
+                if range.start.is_none() && range.end.is_some() {
+                    return Err(compile_error(
+                        "portable range index needs a start; write `0..end` instead of `..end`",
+                    ));
+                }
                 let start = range
                     .start
                     .as_deref()
                     .map(|start| emit_expression(start, entities))
                     .transpose()?
                     .unwrap_or_default();
-                let mut end = range
+                let end = range
                     .end
                     .as_deref()
                     .map(|end| emit_expression(end, entities))
                     .transpose()?;
-                if matches!(range.limits, syn::RangeLimits::Closed(_)) {
-                    end = end.map(|end| format!("{end} + 1"));
-                }
                 return Ok(match end {
                     Some(end) => format!("{receiver}.slice({start}, {end})"),
                     None if start.is_empty() => format!("{receiver}.slice()"),
@@ -5648,7 +5822,7 @@ fn emit_match_expression(
                 writeln!(out, "    const {binding} = {value};")
                     .expect("writing to a String cannot fail");
             }
-            let arm_context = vitest_pattern_context(entities, &arm.pat);
+            let arm_context = lexical_pattern_context(entities, &arm.pat);
             writeln!(
                 out,
                 "    return {};",
@@ -5688,7 +5862,7 @@ fn emit_match_expression(
                 writeln!(out, "    const {binding} = matchValue;")
                     .expect("writing to a String cannot fail");
             }
-            let arm_context = vitest_pattern_context(entities, &arm.pat);
+            let arm_context = lexical_pattern_context(entities, &arm.pat);
             writeln!(
                 out,
                 "    return {};",
@@ -5716,7 +5890,7 @@ fn emit_match_expression(
                 writeln!(out, "    case {pattern}:").expect("writing to a String cannot fail");
             }
         }
-        let arm_context = vitest_pattern_context(entities, &arm.pat);
+        let arm_context = lexical_pattern_context(entities, &arm.pat);
         writeln!(
             out,
             "      return {};",
@@ -5774,7 +5948,7 @@ fn emit_match_statement(
                 writeln!(out, "const {binding} = {value};")
                     .expect("writing to a String cannot fail");
             }
-            let arm_context = vitest_pattern_context(entities, &arm.pat);
+            let arm_context = lexical_pattern_context(entities, &arm.pat);
             match arm.body.as_ref() {
                 Expr::Block(block) => {
                     emit_block(out, &block.block.stmts, &arm_context, indent + 2)?
@@ -5828,7 +6002,7 @@ fn emit_match_statement(
                 writeln!(out, "const {binding} = matchValue;")
                     .expect("writing to a String cannot fail");
             }
-            let arm_context = vitest_pattern_context(entities, &arm.pat);
+            let arm_context = lexical_pattern_context(entities, &arm.pat);
             match arm.body.as_ref() {
                 Expr::Block(block) => {
                     emit_block(out, &block.block.stmts, &arm_context, indent + 2)?
@@ -5866,7 +6040,7 @@ fn emit_match_statement(
                 writeln!(out, "case {pattern}:").expect("writing to a String cannot fail");
             }
         }
-        let arm_context = vitest_pattern_context(entities, &arm.pat);
+        let arm_context = lexical_pattern_context(entities, &arm.pat);
         match arm.body.as_ref() {
             Expr::Block(block) => emit_block(out, &block.block.stmts, &arm_context, indent + 2)?,
             expression => emit_statement(
@@ -6229,22 +6403,29 @@ fn emit_option_combinator(
         )));
     };
     let parameter_name = parameter.to_string();
-    let shadowed = [
-        format!("{OPTION_LOCAL_MARKER}{parameter_name}:"),
-        format!("{STRUCT_LOCAL_MARKER}{parameter_name}:"),
-    ];
     let mut closure_context = entities
         .iter()
         .filter(|marker| {
-            !shadowed.iter().any(|prefix| marker.starts_with(prefix))
-                && **marker != format!("{ORDERED_PRIMITIVE_MARKER}{parameter_name}")
+            **marker != format!("{ORDERED_PRIMITIVE_MARKER}{parameter_name}")
                 && **marker != format!("{STRING_EXPRESSION_MARKER}{parameter_name}")
                 && **marker != format!("@nullable:{parameter_name}")
         })
         .cloned()
         .collect::<HashSet<_>>();
-    if !payload.is_empty() {
-        closure_context.insert(format!("{STRUCT_LOCAL_MARKER}{parameter_name}:{payload}"));
+    // The parameter binds the receiver's payload; its site's fact is replaced so the closure body
+    // resolves the parameter's fields through it.
+    if let Some(id) = unique_marker_suffix(
+        &closure_context,
+        &format!("{BINDING_SITE_MARKER}{}=", binding_site_key(parameter)),
+    ) {
+        let prefix = format!("{BINDING_FACT_MARKER}{id}=");
+        closure_context.retain(|marker| !marker.starts_with(&prefix));
+        let fact = if payload.is_empty() {
+            BindingFact::Unknown
+        } else {
+            BindingFact::Structure(payload.to_string())
+        };
+        closure_context.insert(format!("{prefix}{}", binding_fact_marker(&fact)));
     }
     let absent = option_absent_value(&call.receiver, entities);
     let binding = snake_to_lower_camel(&parameter_name);
@@ -6366,13 +6547,8 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
     return match expression {
         Expr::Array(_) => true,
         Expr::Call(call) => match call.func.as_ref() {
-            Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
-                function_fact(
-                    entities,
-                    SEQUENCE_RETURN_MARKER,
-                    &path.path.segments[0].ident.to_string(),
-                )
-                .is_some()
+            Expr::Path(path) if path.qself.is_none() => {
+                call_fact(entities, SEQUENCE_RETURN_MARKER, &path.path).is_some()
             }
             _ => false,
         },
@@ -6404,11 +6580,10 @@ fn expression_is_sequence(expression: &Expr, entities: &HashSet<String>) -> bool
             expression_is_sequence(&call.receiver, entities)
         }
         Expr::Paren(paren) => expression_is_sequence(&paren.expr, entities),
-        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => entities
-            .contains(&format!(
-                "{SEQUENCE_LOCAL_MARKER}{}",
-                path.path.segments[0].ident
-            )),
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            lexical_fact(entities, &path.path.segments[0].ident.to_string())
+                == Some(BindingFact::Sequence)
+        }
         Expr::Reference(reference) => expression_is_sequence(&reference.expr, entities),
         Expr::Unary(unary) if matches!(unary.op, UnOp::Deref(_)) => {
             expression_is_sequence(&unary.expr, entities)
@@ -6433,14 +6608,9 @@ fn expression_struct_name(expression: &Expr, entities: &HashSet<String>) -> Opti
         Expr::Group(group) => expression_struct_name(&group.expr, entities),
         Expr::Paren(paren) => expression_struct_name(&paren.expr, entities),
         Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
-            let mut structures = marker_suffixes(
-                entities,
-                &format!("{STRUCT_LOCAL_MARKER}{}:", path.path.segments[0].ident),
-            );
-            if structures.len() == 1 {
-                structures.pop_first()
-            } else {
-                None
+            match lexical_fact(entities, &path.path.segments[0].ident.to_string()) {
+                Some(BindingFact::Structure(identity)) => Some(identity),
+                _ => None,
             }
         }
         Expr::Reference(reference) => expression_struct_name(&reference.expr, entities),
@@ -7434,7 +7604,7 @@ fn emit_statement(
         }
         Stmt::Expr(Expr::If(if_expression), _) => {
             let then_context = if let Expr::Let(binding) = if_expression.cond.as_ref() {
-                vitest_pattern_context(entities, &binding.pat)
+                lexical_pattern_context(entities, &binding.pat)
             } else {
                 entities.clone()
             };
@@ -7518,7 +7688,7 @@ fn emit_statement(
             emit_vec_extend_statement(out, call, entities, indent)?;
         }
         Stmt::Expr(Expr::ForLoop(loop_expression), _) => {
-            let loop_context = vitest_pattern_context(entities, &loop_expression.pat);
+            let loop_context = lexical_pattern_context(entities, &loop_expression.pat);
             write_indent(out, indent);
             writeln!(
                 out,
@@ -7532,7 +7702,7 @@ fn emit_statement(
         }
         Stmt::Expr(Expr::While(loop_expression), _) => {
             let loop_context = if let Expr::Let(binding) = loop_expression.cond.as_ref() {
-                vitest_pattern_context(entities, &binding.pat)
+                lexical_pattern_context(entities, &binding.pat)
             } else {
                 entities.clone()
             };
@@ -8222,6 +8392,26 @@ fn pattern_binds_identifier(pattern: &Pat, expected: &str) -> bool {
     return finder.found;
 }
 
+// Every identifier a pattern binds, in source order.
+fn pattern_identifiers(pattern: &Pat) -> Vec<&syn::Ident> {
+    struct Collector<'ast> {
+        identifiers: Vec<&'ast syn::Ident>,
+    }
+
+    impl<'ast> Visit<'ast> for Collector<'ast> {
+        fn visit_pat_ident(&mut self, pattern: &'ast syn::PatIdent) {
+            self.identifiers.push(&pattern.ident);
+            syn::visit::visit_pat_ident(self, pattern);
+        }
+    }
+
+    let mut collector = Collector {
+        identifiers: Vec::new(),
+    };
+    collector.visit_pat(pattern);
+    return collector.identifiers;
+}
+
 fn peel_reference_and_paren(expression: &Expr) -> &Expr {
     return match expression {
         Expr::Group(group) => peel_reference_and_paren(&group.expr),
@@ -8479,6 +8669,19 @@ fn is_public(visibility: &Visibility) -> bool {
     return matches!(visibility, Visibility::Public(_));
 }
 
+// The BindingId of the lexical value binding of `name` in scope, `Some("")` for an in-scope binding
+// whose site was not resolved, or `None` when no value binding of `name` is in scope.
+fn lexical_binding(entities: &HashSet<String>, name: &str) -> Option<String> {
+    return unique_marker_suffix(entities, &format!("{BINDING_MARKER}{name}="));
+}
+
+// The fact proven for the lexical binding of `name` in scope.
+fn lexical_fact(entities: &HashSet<String>, name: &str) -> Option<BindingFact> {
+    let id = lexical_binding(entities, name).filter(|id| !id.is_empty())?;
+    return unique_marker_suffix(entities, &format!("{BINDING_FACT_MARKER}{id}="))
+        .map(|fact| binding_fact_from_marker(&fact));
+}
+
 fn local_pattern_name(pattern: &Pat) -> Option<String> {
     return match pattern {
         Pat::Ident(identifier) => Some(identifier.ident.to_string()),
@@ -8583,7 +8786,7 @@ fn option_expression_payload(expression: &Expr, entities: &HashSet<String>) -> O
             if path.qself.is_some() {
                 return None;
             }
-            function_path_fact(entities, OPTION_RETURN_MARKER, &path.path)
+            call_fact(entities, OPTION_RETURN_MARKER, &path.path)
         }
         Expr::Field(field) => {
             let syn::Member::Named(field_name) = &field.member else {
@@ -8608,10 +8811,12 @@ fn option_expression_payload(expression: &Expr, entities: &HashSet<String>) -> O
             option_expression_payload(&call.receiver, entities)
         }
         Expr::Paren(paren) => option_expression_payload(&paren.expr, entities),
-        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => find(format!(
-            "{OPTION_LOCAL_MARKER}{}:",
-            path.path.segments[0].ident
-        )),
+        Expr::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+            match lexical_fact(entities, &path.path.segments[0].ident.to_string()) {
+                Some(BindingFact::Option(payload)) => Some(payload),
+                _ => None,
+            }
+        }
         Expr::Reference(reference) => option_expression_payload(&reference.expr, entities),
         _ => None,
     };
