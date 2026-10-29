@@ -152,7 +152,7 @@ export function stopTween(tween: Tween<any>, options?: Readonly<StopTweenOptions
       if (tween.snapping) value = Math.round(value);
       t[detail.key] = value;
     }
-    if (doSendEvent) emitSignal(tween.onComplete);
+    if (doSendEvent) emitSignal(tween.onComplete, undefined);
   }
 
   tween.complete = true;

@@ -68,10 +68,10 @@ export function seekTween(tween: Tween<any>, timeSeconds: number): void {
   for (const { key, value } of writes) {
     target[key] = value;
   }
-  emitSignal(tween.onUpdate);
+  emitSignal(tween.onUpdate, undefined);
   if (t >= 1 && !tween.complete) {
     tween.complete = true;
-    emitSignal(tween.onComplete);
+    emitSignal(tween.onComplete, undefined);
   }
 }
 

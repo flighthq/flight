@@ -13,10 +13,10 @@ export interface Tween<T extends object> extends Entity {
   elapsed: number;
   initialized: boolean;
   /** Fires once when the tween finishes its final cycle (after all repeats). */
-  onComplete: Signal<() => void>;
-  onRepeat: Signal<() => void>;
-  onUpdate: Signal<() => void>;
-  onYoyo: Signal<() => void>;
+  onComplete: Signal<void>;
+  onRepeat: Signal<void>;
+  onUpdate: Signal<void>;
+  onYoyo: Signal<void>;
   paused: boolean;
   properties: TweenPropertyDetail[];
   propertyMap: Readonly<NumericProps<T>>;

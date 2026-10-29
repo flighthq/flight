@@ -15,7 +15,7 @@ export function completeTween<T extends object>(tween: Tween<T>): void {
     target[detail.key] = value;
   }
   tween.complete = true;
-  emitSignal(tween.onComplete);
+  emitSignal(tween.onComplete, undefined);
 }
 
 function updateTween<T extends object>(tween: Tween<T>, deltaTime: number): void {
@@ -39,20 +39,20 @@ function updateTween<T extends object>(tween: Tween<T>, deltaTime: number): void
     target[detail.key] = value;
   }
 
-  emitSignal(tween.onUpdate);
+  emitSignal(tween.onUpdate, undefined);
 
   if (t >= 1) {
     if (tween.repeat === 0) {
       tween.complete = true;
-      emitSignal(tween.onComplete);
+      emitSignal(tween.onComplete, undefined);
     } else {
       if (tween.reflect) {
         tween.reverse = !tween.reverse;
-        emitSignal(tween.onYoyo);
+        emitSignal(tween.onYoyo, undefined);
       }
       tween.elapsed = tween.delay;
       if (tween.repeat > 0) tween.repeat--;
-      emitSignal(tween.onRepeat);
+      emitSignal(tween.onRepeat, undefined);
     }
   }
 }
