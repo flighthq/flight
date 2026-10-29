@@ -1,14 +1,26 @@
-import { appendPathClose, appendPathLineTo, appendPathMoveTo, createPath, flattenPath } from '@flighthq/path/contract';
-import type { Path } from '@flighthq/types/contract';
+// Generated from crates/flight-path-boolean/tests/union_all_paths_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import {
+  appendPathClose,
+  appendPathLineTo,
+  appendPathMoveTo,
+  clonePath,
+  createPath,
+  flattenPath,
+} from '@flighthq/path/contract';
+import type { Path } from '@flighthq/path/contract';
 import { describe, expect, it } from 'vitest';
 
-import { martinezPathBooleanKernel } from './martinezKernel.ts';
-import { unionAllPaths } from './unionAllPaths.ts';
+import { createMartinezPathBooleanKernel, unionAllPaths } from './contract.ts';
 
-const kernel = martinezPathBooleanKernel;
+function flattenedPath(path: Readonly<Path>, tolerance: number | undefined): number[][] {
+  const out = flattenPath(path, tolerance);
+  return out;
+}
 
 function squarePath(x: number, y: number, s: number): Path {
-  const path = createPath('nonZero');
+  let path = createPath('nonZero');
   appendPathMoveTo(path, x, y);
   appendPathLineTo(path, x + s, y);
   appendPathLineTo(path, x + s, y + s);
@@ -18,78 +30,98 @@ function squarePath(x: number, y: number, s: number): Path {
 }
 
 function pathArea(path: Readonly<Path>): number {
-  let total = 0;
-  for (const ring of flattenPath(path)) {
-    let area = 0;
+  let total: number = 0.0;
+  for (const ring of flattenedPath(path, 0.25)) {
+    let area: number = 0.0;
     const n = ring.length >> 1;
-    for (let i = 0, j = n - 1; i < n; j = i++) area += ring[j * 2] * ring[i * 2 + 1] - ring[i * 2] * ring[j * 2 + 1];
-    total += area / 2;
+    let j = n - 1;
+    for (let i = 0; i < n; i += 1) {
+      area += ring[j * 2] * ring[i * 2 + 1] - ring[i * 2] * ring[j * 2 + 1];
+      j = i;
+    }
+    total += area / 2.0;
   }
   return Math.abs(total);
 }
 
 function ringCount(path: Readonly<Path>): number {
-  return flattenPath(path).length;
+  return flattenedPath(path, 0.25).length;
 }
 
 describe('unionAllPaths', () => {
+  it('supports geometry clone form for a later list input', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    const a = squarePath(0.0, 0.0, 10.0);
+    let b = squarePath(5.0, 5.0, 10.0);
+    const snapshot = clonePath(b);
+    unionAllPaths(b, kernel, [a, snapshot], undefined);
+    expect(Math.abs(pathArea(b) - 175.0) < 0.1).toBe(true);
+  });
   it('returns an empty path for an empty list', () => {
-    const result = createPath('nonZero');
-    unionAllPaths(result, kernel, []);
-    expect(result.commands).toHaveLength(0);
-    expect(result.data).toHaveLength(0);
+    const kernel = createMartinezPathBooleanKernel();
+    let out = createPath('nonZero');
+    unionAllPaths(out, kernel, [], undefined);
+    expect(out.commands.length).toEqual(0);
+    expect(out.data.length).toEqual(0);
   });
-
-  it('simplifies a single self-overlapping path', () => {
-    const overlap = createPath('nonZero');
-    appendPathMoveTo(overlap, 0, 0);
-    appendPathLineTo(overlap, 4, 0);
-    appendPathLineTo(overlap, 4, 4);
-    appendPathLineTo(overlap, 0, 4);
+  it('simplifies a single self overlapping path', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    let overlap = createPath('nonZero');
+    appendPathMoveTo(overlap, 0.0, 0.0);
+    appendPathLineTo(overlap, 4.0, 0.0);
+    appendPathLineTo(overlap, 4.0, 4.0);
+    appendPathLineTo(overlap, 0.0, 4.0);
     appendPathClose(overlap);
-    appendPathMoveTo(overlap, 2, 2);
-    appendPathLineTo(overlap, 6, 2);
-    appendPathLineTo(overlap, 6, 6);
-    appendPathLineTo(overlap, 2, 6);
+    appendPathMoveTo(overlap, 2.0, 2.0);
+    appendPathLineTo(overlap, 6.0, 2.0);
+    appendPathLineTo(overlap, 6.0, 6.0);
+    appendPathLineTo(overlap, 2.0, 6.0);
     appendPathClose(overlap);
-    const result = createPath('nonZero');
-    unionAllPaths(result, kernel, [overlap]);
-    expect(ringCount(result)).toBe(1);
-    expect(pathArea(result)).toBeCloseTo(28, 6);
+    let out = createPath('nonZero');
+    unionAllPaths(out, kernel, [overlap], undefined);
+    expect(ringCount(out)).toEqual(1);
+    expect(Math.abs(pathArea(out) - 28.0) < 5e-7).toBe(true);
   });
-
   it('merges a list of overlapping squares into one outline', () => {
-    const result = createPath('nonZero');
-    unionAllPaths(result, kernel, [squarePath(0, 0, 10), squarePath(5, 5, 10), squarePath(8, 8, 10)]);
-    expect(ringCount(result)).toBe(1);
-    expect(pathArea(result)).toBeGreaterThan(100);
-    expect(pathArea(result)).toBeLessThan(300);
+    const kernel = createMartinezPathBooleanKernel();
+    const a = squarePath(0.0, 0.0, 10.0);
+    const b = squarePath(5.0, 5.0, 10.0);
+    const c = squarePath(8.0, 8.0, 10.0);
+    let out = createPath('nonZero');
+    unionAllPaths(out, kernel, [a, b, c], undefined);
+    expect(ringCount(out)).toEqual(1);
+    expect(pathArea(out) > 100.0).toBe(true);
+    expect(pathArea(out) < 300.0).toBe(true);
   });
-
-  it('keeps disjoint squares as separate rings summing their areas', () => {
-    const result = createPath('nonZero');
-    unionAllPaths(result, kernel, [squarePath(0, 0, 10), squarePath(20, 20, 10), squarePath(40, 0, 10)]);
-    expect(ringCount(result)).toBe(3);
-    expect(pathArea(result)).toBeCloseTo(300, 6);
+  it('keeps disjoint squares as separate rings', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    const a = squarePath(0.0, 0.0, 10.0);
+    const b = squarePath(20.0, 20.0, 10.0);
+    const c = squarePath(40.0, 0.0, 10.0);
+    let out = createPath('nonZero');
+    unionAllPaths(out, kernel, [a, b, c], undefined);
+    expect(ringCount(out)).toEqual(3);
+    expect(Math.abs(pathArea(out) - 300.0) < 5e-7).toBe(true);
   });
-
-  it('folds order-independently (union is commutative across the list)', () => {
-    const a = squarePath(0, 0, 10);
-    const b = squarePath(5, 5, 10);
-    const c = squarePath(2, 8, 10);
-    const forward = createPath('nonZero');
-    const reversed = createPath('nonZero');
-    unionAllPaths(forward, kernel, [a, b, c]);
-    unionAllPaths(reversed, kernel, [c, b, a]);
-    expect(pathArea(forward)).toBeCloseTo(pathArea(reversed), 6);
-    expect(ringCount(forward)).toBe(ringCount(reversed));
+  it('folds order independently', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    const a = squarePath(0.0, 0.0, 10.0);
+    const b = squarePath(5.0, 5.0, 10.0);
+    const c = squarePath(2.0, 8.0, 10.0);
+    let forward = createPath('nonZero');
+    let reversed = createPath('nonZero');
+    unionAllPaths(forward, kernel, [a, b, c], undefined);
+    unionAllPaths(reversed, kernel, [c, b, a], undefined);
+    expect(Math.abs(pathArea(forward) - pathArea(reversed)) < 5e-7).toBe(true);
+    expect(ringCount(forward)).toEqual(ringCount(reversed));
   });
-
-  it('writes into a provided out path that aliases an input', () => {
-    const a = squarePath(0, 0, 10);
-    const b = squarePath(5, 5, 10);
-    unionAllPaths(a, kernel, [a, b]);
-    expect(ringCount(a)).toBe(1);
-    expect(pathArea(a)).toBeCloseTo(175, 6);
+  it('writes into an existing path using a distinct input snapshot', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    let a = squarePath(0.0, 0.0, 10.0);
+    const b = squarePath(5.0, 5.0, 10.0);
+    const aClone = a;
+    unionAllPaths(a, kernel, [aClone, b], undefined);
+    expect(ringCount(a)).toEqual(1);
+    expect(Math.abs(pathArea(a) - 175.0) < 5e-7).toBe(true);
   });
 });

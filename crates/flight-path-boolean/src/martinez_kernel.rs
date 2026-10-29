@@ -1,3 +1,4 @@
+//! flight-compiler: export-name MARTINEZ_PATH_BOOLEAN_KERNEL martinezPathBooleanKernel
 //! flight-compiler: string-union PathBooleanFillRule PathBooleanOperation
 
 use std::sync::LazyLock;
@@ -255,8 +256,8 @@ fn classify_segments(
     unique: &[UniqueSegment],
     operation: PathBooleanOperation,
     fill_rule: PathBooleanFillRule,
-) -> Vec<[f64; 4]> {
-    let mut kept: Vec<[f64; 4]> = Vec::new();
+) -> Vec<(f64, f64, f64, f64)> {
+    let mut kept: Vec<(f64, f64, f64, f64)> = Vec::new();
     for seg in unique {
         let mx = (seg.ax + seg.bx) / 2.0;
         let my = (seg.ay + seg.by) / 2.0;
@@ -279,9 +280,9 @@ fn classify_segments(
             continue;
         }
         if filled_left {
-            kept.push([seg.ax, seg.ay, seg.bx, seg.by]);
+            kept.push((seg.ax, seg.ay, seg.bx, seg.by));
         } else {
-            kept.push([seg.bx, seg.by, seg.ax, seg.ay]);
+            kept.push((seg.bx, seg.by, seg.ax, seg.ay));
         }
     }
     return kept;
@@ -406,16 +407,6 @@ fn compare_snapped_keys(keys: &[i64], stride: usize, a: usize, b: usize) -> std:
     return a.cmp(&b);
 }
 
-/// Placeholder strategy of a default-constructed (not yet initialized) kernel: computes nothing.
-fn compute_empty_path_boolean(
-    _subject: &[PathBooleanContour],
-    _clip: &[PathBooleanContour],
-    _operation: PathBooleanOperation,
-    _fill_rule: PathBooleanFillRule,
-) -> Vec<PathBooleanContour> {
-    return Vec::new();
-}
-
 // flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 fn compute_martinez_boolean(
     subject: &[Vec<f64>],
@@ -474,17 +465,22 @@ fn compute_vertex_snap(subject: &[Vec<f64>], clip: &[Vec<f64>]) -> f64 {
 
 // flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 /// `from` and `to` are snapped-vertex ids in first-occurrence order (see `first_occurrence_ids`).
-fn directed_graph_add_edge(graph: &mut DirectedGraph, from: usize, to: usize, edge: &[f64; 4]) {
-    let from = directed_graph_vertex(graph, from, edge[0], edge[1]);
-    let to = directed_graph_vertex(graph, to, edge[2], edge[3]);
+fn directed_graph_add_edge(
+    graph: &mut DirectedGraph,
+    from: usize,
+    to: usize,
+    edge: &(f64, f64, f64, f64),
+) {
+    let from = directed_graph_vertex(graph, from, edge.0, edge.1);
+    let to = directed_graph_vertex(graph, to, edge.2, edge.3);
     if from == to {
         return;
     }
-    let edge = graph.edge_from.len();
+    let edge_index = graph.edge_from.len();
     graph.edge_from.push(from);
     graph.edge_to.push(to);
     graph.used.push(false);
-    graph.outgoing[from].push(edge);
+    graph.outgoing[from].push(edge_index);
 }
 
 fn directed_graph_new() -> DirectedGraph {
@@ -1130,13 +1126,13 @@ fn snapped_keys_equal(keys: &[i64], stride: usize, a: usize, b: usize) -> bool {
 
 // flight-lint: allow(f64) Martinez sweep: intersection/orientation predicates and relative vertex snapping over f64 contour coordinates, with tolerances (1e-9 snap, 1e-12 intersection) tuned in double as in TS; f32 sufficiency not measured
 // Pipeline stage 2c: traces kept segments into closed rings.
-fn trace_rings(edges: &[[f64; 4]], vertex_snap: f64) -> Vec<Vec<f64>> {
+fn trace_rings(edges: &[(f64, f64, f64, f64)], vertex_snap: f64) -> Vec<Vec<f64>> {
     let mut keys: Vec<i64> = Vec::new();
     for e in edges {
-        keys.push(snap(e[0], vertex_snap));
-        keys.push(snap(e[1], vertex_snap));
-        keys.push(snap(e[2], vertex_snap));
-        keys.push(snap(e[3], vertex_snap));
+        keys.push(snap(e.0, vertex_snap));
+        keys.push(snap(e.1, vertex_snap));
+        keys.push(snap(e.2, vertex_snap));
+        keys.push(snap(e.3, vertex_snap));
     }
     let ids = first_occurrence_ids(&keys, 2);
     let mut graph = directed_graph_new();
@@ -1178,7 +1174,8 @@ impl Default for PathBooleanKernel {
     fn default() -> Self {
         return PathBooleanKernel {
             runtime: EntityRuntimeSlot::default(),
-            compute_path_boolean: compute_empty_path_boolean,
+            // A default-constructed (not yet initialized) kernel computes nothing.
+            compute_path_boolean: |_subject, _clip, _operation, _fill_rule| Vec::new(),
         };
     }
 }

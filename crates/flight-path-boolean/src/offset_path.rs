@@ -10,9 +10,10 @@ mod sugar_tests {
     use flight_path::{Path, append_path_rectangle, create_path};
 
     use crate::contract::*;
+    use flight_path::PathWinding;
 
     fn square(x: f64, y: f64, size: f64) -> Path {
-        let mut out = create_path(Some(flight_path::PathWinding::NonZero));
+        let mut out = create_path(Some(PathWinding::NonZero));
         append_path_rectangle(&mut out, x, y, size, size);
         return out;
     }
@@ -20,8 +21,8 @@ mod sugar_tests {
     #[test]
     fn kernel_offset_path_matches_free_function() {
         let k = create_martinez_path_boolean_kernel();
-        let mut oa = create_path(Some(flight_path::PathWinding::NonZero));
-        let mut ob = create_path(Some(flight_path::PathWinding::NonZero));
+        let mut oa = create_path(Some(PathWinding::NonZero));
+        let mut ob = create_path(Some(PathWinding::NonZero));
         k.offset_path(
             &mut oa,
             &square(0.0, 0.0, 10.0),
@@ -59,7 +60,7 @@ const DEFAULT_MITER_LIMIT: f64 = 2.0;
 // flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 const DEFAULT_FLATTEN_TOLERANCE: f64 = 0.25;
 // flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
-const HALF_PI: f64 = std::f64::consts::FRAC_PI_2;
+const HALF_PI: f64 = std::f64::consts::PI / 2.0;
 // flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
 const POINT_EPS: f64 = 1e-9;
 // flight-lint: allow(f64) offset construction (joins, caps, arcs, signed-area collapse tests) over f64 contour coordinates with relative 1e-9/1e-12 tolerances tuned in double as in TS; f32 sufficiency not measured
@@ -264,11 +265,11 @@ fn emit_offset_join(
                 }
             }
             PathOffsetJoin::Square => {
-                let radius = signed_delta.abs();
-                ring.push(previous_end_x + radius * previous_dir_x);
-                ring.push(previous_end_y + radius * previous_dir_y);
-                ring.push(this_start_x - radius * this_dir_x);
-                ring.push(this_start_y - radius * this_dir_y);
+                let square_extent = signed_delta.abs();
+                ring.push(previous_end_x + square_extent * previous_dir_x);
+                ring.push(previous_end_y + square_extent * previous_dir_y);
+                ring.push(this_start_x - square_extent * this_dir_x);
+                ring.push(this_start_y - square_extent * this_dir_y);
             }
             PathOffsetJoin::Round => {
                 let radius = signed_delta.abs();

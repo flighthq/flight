@@ -1,8 +1,46 @@
-export * from './booleanPaths.ts';
-export * from './explainPathBoolean.ts';
-export { createMartinezPathBooleanKernel, martinezPathBooleanKernel } from './martinezKernel.ts';
-export * from './offsetPath.ts';
-export * from './resolvePathRegions.ts';
-export * from './simplifyPath.ts';
-export * from './unionAllPaths.ts';
-export * from './writePathBooleanContours.ts';
+// Generated from crates/flight-path-boolean/src/lib.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+export {
+  booleanPaths,
+  createMartinezPathBooleanKernel,
+  differencePaths,
+  explainOffsetPath,
+  explainSimplifyPath,
+  getPathBooleanExplanationOperationString,
+  getPathBooleanExplanationReasonString,
+  getPathBooleanFillRuleString,
+  getPathBooleanOperationString,
+  getPathOffsetEndString,
+  getPathOffsetJoinString,
+  intersectPaths,
+  martinezPathBooleanKernel,
+  offsetPath,
+  parsePathBooleanExplanationOperation,
+  parsePathBooleanExplanationReason,
+  parsePathBooleanFillRule,
+  parsePathBooleanOperation,
+  parsePathOffsetEnd,
+  parsePathOffsetJoin,
+  resolvePathRegions,
+  simplifyPath,
+  unionAllPaths,
+  unionPaths,
+  writePathBooleanContours,
+  xorPaths,
+} from './contract.ts';
+
+export type {
+  ComputePathBooleanFunction,
+  PathBooleanContour,
+  PathBooleanExplanation,
+  PathBooleanExplanationOperation,
+  PathBooleanExplanationReason,
+  PathBooleanFillRule,
+  PathBooleanKernelRaw,
+  PathBooleanOperation,
+  PathBooleanOptions,
+  PathOffsetEnd,
+  PathOffsetJoin,
+  PathOffsetOptions,
+} from './contract.ts';

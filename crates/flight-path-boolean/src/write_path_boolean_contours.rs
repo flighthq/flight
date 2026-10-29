@@ -7,8 +7,8 @@ use flight_path::{Path, PathWinding, append_path_close, append_path_line_to, app
 /// vertices becomes one closed sub-path in the output. The output path's winding is
 /// always set to `NonZero`.
 pub fn write_path_boolean_contours(out: &mut Path, contours: &[Vec<f64>]) {
-    out.commands.clear();
-    out.data.clear();
+    out.commands = Vec::new();
+    out.data = Vec::new();
     out.winding = PathWinding::NonZero;
     for ring in contours {
         if ring.len() < 6 {

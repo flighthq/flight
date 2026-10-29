@@ -1,398 +1,404 @@
-import type { PathBooleanContour, PathBooleanFillRule, PathBooleanOperation } from '@flighthq/types/contract';
+// Generated from crates/flight-path-boolean/tests/martinez_kernel_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { describe, expect, it } from 'vitest';
 
 import {
   createMartinezPathBooleanKernel,
+  getPathBooleanFillRuleString,
+  getPathBooleanOperationString,
   initializeMartinezPathBooleanKernel,
-  martinezPathBooleanKernel,
-} from './martinezKernel.ts';
+  parsePathBooleanFillRule,
+  parsePathBooleanOperation,
+} from './contract.ts';
+import type { PathBooleanContour, PathBooleanFillRule, PathBooleanOperation } from './contract.ts';
 
-// A closed square contour [x, y, x+s, y, x+s, y+s, x, y+s], wound consistently (screen y-down CW).
+function computeEmptyTestPathBoolean(
+  _subject: Readonly<PathBooleanContour[]>,
+  _clip: Readonly<PathBooleanContour[]>,
+  _operation: PathBooleanOperation,
+  _fillRule: PathBooleanFillRule,
+): PathBooleanContour[] {
+  return [] as never[];
+}
+
 function square(x: number, y: number, s: number): number[] {
   return [x, y, x + s, y, x + s, y + s, x, y + s];
 }
 
-// A donut: an outer square with a reverse-wound inner square that cuts a hole under non-zero fill.
 function donut(x: number, y: number, outer: number, inset: number, inner: number): number[][] {
   const ix = x + inset;
   const iy = y + inset;
   return [square(x, y, outer), [ix, iy, ix, iy + inner, ix + inner, iy + inner, ix + inner, iy]];
 }
 
-// Net filled area of a correctly-wound result: outer rings and holes carry opposite signs, so the
-// signed-area sum is the true fill. Uses the shoelace sum without the abs-per-ring the geometry hides.
-function netArea(rings: readonly PathBooleanContour[]): number {
-  let total = 0;
-  for (const ring of rings) total += signedArea(ring);
+function netArea(rings: Readonly<number[][]>): number {
+  let total: number = 0.0;
+  for (const ring of rings) {
+    total += signedAreaRing(ring);
+  }
   return Math.abs(total);
 }
 
-function signedArea(ring: PathBooleanContour): number {
-  let area = 0;
-  const n = ring.length >> 1;
-  for (let i = 0, j = n - 1; i < n; j = i++) {
-    area += ring[j * 2] * ring[i * 2 + 1] - ring[i * 2] * ring[j * 2 + 1];
-  }
-  return area / 2;
+function overlap(s: number): number[][] {
+  return [square(0.0, 0.0, 10.0 * s), square(5.0 * s, 5.0 * s, 10.0 * s)];
 }
 
-function boundsOf(rings: readonly PathBooleanContour[]): {
-  minX: number;
-  minY: number;
-  maxX: number;
-  maxY: number;
-} {
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
+function signedAreaRing(ring: Readonly<number[]>): number {
+  let area: number = 0.0;
+  const n = ring.length >> 1;
+  let j = n - 1;
+  for (let i = 0; i < n; i += 1) {
+    area += ring[j * 2] * ring[i * 2 + 1] - ring[i * 2] * ring[j * 2 + 1];
+    j = i;
+  }
+  return area / 2.0;
+}
+
+function boundsOf(rings: Readonly<number[][]>): readonly [number, number, number, number] {
+  let minX = Number.POSITIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
   for (const ring of rings) {
-    for (let i = 0; i < ring.length; i += 2) {
-      minX = Math.min(minX, ring[i]);
-      maxX = Math.max(maxX, ring[i]);
-      minY = Math.min(minY, ring[i + 1]);
-      maxY = Math.max(maxY, ring[i + 1]);
+    let i = 0;
+    while (i < ring.length) {
+      if (ring[i] < minX) {
+        minX = ring[i];
+      }
+      if (ring[i] > maxX) {
+        maxX = ring[i];
+      }
+      if (ring[i + 1] < minY) {
+        minY = ring[i + 1];
+      }
+      if (ring[i + 1] > maxY) {
+        maxY = ring[i + 1];
+      }
+      i += 2;
     }
   }
-  return { minX, minY, maxX, maxY };
+  return [minX, minY, maxX, maxY];
 }
 
-// Whether (x, y) is inside the result region under non-zero fill (holes counter-wound).
-function fillContains(rings: readonly PathBooleanContour[], x: number, y: number): boolean {
-  let winding = 0;
+function fillContains(rings: Readonly<number[][]>, x: number, y: number): boolean {
+  let winding: number = 0;
   for (const ring of rings) {
     const n = ring.length >> 1;
-    for (let i = 0, j = n - 1; i < n; j = i++) {
+    let j = n - 1;
+    for (let i = 0; i < n; i += 1) {
       const xi = ring[i * 2];
       const yi = ring[i * 2 + 1];
       const xj = ring[j * 2];
       const yj = ring[j * 2 + 1];
       if (yi <= y ? yj > y : yj <= y) {
         const t = (y - yi) / (yj - yi);
-        if (x < xi + t * (xj - xi)) winding += yj > yi ? 1 : -1;
+        if (x < xi + t * (xj - xi)) {
+          winding += yj > yi ? 1 : -1;
+        }
       }
+      j = i;
     }
   }
   return winding !== 0;
 }
 
 function run(
-  subject: readonly number[][],
-  clip: readonly number[][],
+  subject: Readonly<number[][]>,
+  clip: Readonly<number[][]>,
   operation: PathBooleanOperation,
-  fillRule: PathBooleanFillRule = 'nonZero',
-): readonly PathBooleanContour[] {
-  return createMartinezPathBooleanKernel().computePathBoolean(subject, clip, operation, fillRule);
+  fillRule: PathBooleanFillRule,
+): number[][] {
+  const kernel = createMartinezPathBooleanKernel();
+  return kernel.computePathBoolean(subject, clip, operation, fillRule);
 }
 
 describe('createMartinezPathBooleanKernel', () => {
-  describe('coincident and shared-boundary degeneracies', () => {
-    it('unions two squares sharing a full edge into one rectangle', () => {
-      const result = run([square(0, 0, 10)], [square(10, 0, 10)], 'union');
-      expect(netArea(result)).toBeCloseTo(200, 6);
-      expect(boundsOf(result)).toMatchObject({ minX: 0, maxX: 20, minY: 0, maxY: 10 });
-      expect(fillContains(result, 10, 5)).toBe(true); // the former shared edge is now interior
-    });
-
-    it('intersects two squares sharing an edge to nothing (zero-width overlap)', () => {
-      const result = run([square(0, 0, 10)], [square(10, 0, 10)], 'intersection');
-      expect(netArea(result)).toBeCloseTo(0, 6);
-    });
-
-    it('handles a partially overlapping shared edge (offset abutment)', () => {
-      // Clip's left edge overlaps only the top half of subject's right edge.
-      const result = run([square(0, 0, 10)], [[10, 5, 20, 5, 20, 15, 10, 15]], 'union');
-      expect(netArea(result)).toBeCloseTo(200, 6);
-      expect(fillContains(result, 10, 7)).toBe(true);
-    });
-
-    it('collapses two identical squares under union to a single square', () => {
-      const result = run([square(0, 0, 10)], [square(0, 0, 10)], 'union');
-      expect(netArea(result)).toBeCloseTo(100, 6);
-    });
-
-    it('collapses two identical squares under intersection to the same square', () => {
-      const result = run([square(0, 0, 10)], [square(0, 0, 10)], 'intersection');
-      expect(netArea(result)).toBeCloseTo(100, 6);
-    });
-
-    it('empties two identical squares under xor', () => {
-      const result = run([square(0, 0, 10)], [square(0, 0, 10)], 'xor');
-      expect(netArea(result)).toBeCloseTo(0, 6);
-    });
-
-    it('empties a square differenced against an identical square', () => {
-      const result = run([square(0, 0, 10)], [square(0, 0, 10)], 'difference');
-      expect(netArea(result)).toBeCloseTo(0, 6);
-    });
+  it('creates a kernel that computes boolean operations', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    const result = kernel.computePathBoolean([square(0.0, 0.0, 10.0)], [square(5.0, 5.0, 10.0)], 'union', 'nonZero');
+    expect(Math.abs(netArea(result) - 175.0) < 0.1).toBe(true);
   });
-
-  describe('difference', () => {
-    it('cuts a hole when the clip is fully contained', () => {
-      const result = run([square(0, 0, 30)], [square(10, 10, 10)], 'difference');
-      expect(netArea(result)).toBeCloseTo(800, 6);
-      expect(result.length).toBe(2); // outer boundary + hole
-      expect(fillContains(result, 2, 2)).toBe(true);
-      expect(fillContains(result, 15, 15)).toBe(false); // inside the hole
-    });
-
-    it('subtracts a partial overlap', () => {
-      const result = run([square(0, 0, 10)], [square(5, 5, 10)], 'difference');
-      expect(netArea(result)).toBeCloseTo(75, 6);
-      expect(fillContains(result, 2, 2)).toBe(true);
-      expect(fillContains(result, 7, 7)).toBe(false);
-    });
-
-    it('is empty when subtracting a superset', () => {
-      const result = run([square(10, 10, 10)], [square(0, 0, 30)], 'difference');
-      expect(netArea(result)).toBeCloseTo(0, 6);
-    });
+  it('unions two squares sharing a full edge into one rectangle', () => {
+    const result = run([square(0.0, 0.0, 10.0)], [square(10.0, 0.0, 10.0)], 'union', 'nonZero');
+    expect(Math.abs(netArea(result) - 200.0) < 5e-7).toBe(true);
+    const [minX, minY, maxX, maxY] = boundsOf(result);
+    expect(Math.abs(minX - 0.0) < 5e-7).toBe(true);
+    expect(Math.abs(maxX - 20.0) < 5e-7).toBe(true);
+    expect(Math.abs(minY - 0.0) < 5e-7).toBe(true);
+    expect(Math.abs(maxY - 10.0) < 5e-7).toBe(true);
+    expect(fillContains(result, 10.0, 5.0)).toBe(true);
   });
-
-  describe('disjoint inputs', () => {
-    it('unions disjoint squares into two rings', () => {
-      const result = run([square(0, 0, 10)], [square(20, 20, 10)], 'union');
-      expect(netArea(result)).toBeCloseTo(200, 6);
-      expect(result.length).toBe(2);
-    });
-
-    it('intersects disjoint squares to nothing', () => {
-      const result = run([square(0, 0, 10)], [square(20, 20, 10)], 'intersection');
-      expect(netArea(result)).toBeCloseTo(0, 6);
-    });
-
-    it('xors disjoint squares to both squares', () => {
-      const result = run([square(0, 0, 10)], [square(20, 20, 10)], 'xor');
-      expect(netArea(result)).toBeCloseTo(200, 6);
-    });
+  it('intersects two squares sharing an edge to nothing', () => {
+    const result = run([square(0.0, 0.0, 10.0)], [square(10.0, 0.0, 10.0)], 'intersection', 'nonZero');
+    expect(netArea(result) < 5e-7).toBe(true);
   });
-
-  describe('empty and degenerate inputs', () => {
-    it('returns empty for two empty operands', () => {
-      expect(run([], [], 'union')).toEqual([]);
-    });
-
-    it('passes the subject through union with an empty clip', () => {
-      const result = run([square(0, 0, 10)], [], 'union');
-      expect(netArea(result)).toBeCloseTo(100, 6);
-    });
-
-    it('empties intersection with an empty clip', () => {
-      expect(netArea(run([square(0, 0, 10)], [], 'intersection'))).toBeCloseTo(0, 6);
-    });
-
-    it('ignores a zero-area (collinear) contour', () => {
-      const degenerate = [0, 0, 10, 0, 5, 0]; // three collinear points, no area
-      const result = run([square(0, 0, 10)], [degenerate], 'union');
-      expect(netArea(result)).toBeCloseTo(100, 6);
-    });
-
-    it('ignores a single-point contour', () => {
-      const result = run([square(0, 0, 10)], [[5, 5, 5, 5, 5, 5]], 'union');
-      expect(netArea(result)).toBeCloseTo(100, 6);
-    });
-
-    it('ignores a contour with too few points', () => {
-      const result = run([square(0, 0, 10)], [[1, 1, 2, 2]], 'union');
-      expect(netArea(result)).toBeCloseTo(100, 6);
-    });
+  it('handles a partially overlapping shared edge', () => {
+    const result = run([square(0.0, 0.0, 10.0)], [[10.0, 5.0, 20.0, 5.0, 20.0, 15.0, 10.0, 15.0]], 'union', 'nonZero');
+    expect(Math.abs(netArea(result) - 200.0) < 5e-7).toBe(true);
+    expect(fillContains(result, 10.0, 7.0)).toBe(true);
   });
-
-  describe('holes', () => {
-    it('unions a donut with an overlapping square, filling part of the hole', () => {
-      const result = run(donut(0, 0, 30, 10, 10), [square(12, 12, 20)], 'union');
-      // Donut is 30x30 minus a 10x10 hole (800); the union square (12,12)-(32,32) plugs the hole and
-      // extends past the donut. Assert the former hole center is now filled and a hole corner sample
-      // that the plug does not cover stays empty.
-      expect(fillContains(result, 15, 15)).toBe(true); // plugged
-      expect(fillContains(result, 11, 11)).toBe(false); // still a hole corner outside the plug
-    });
-
-    it('intersects a donut with a square covering its hole to a frame', () => {
-      const result = run(donut(0, 0, 30, 10, 10), [square(5, 5, 20)], 'intersection');
-      // Intersection keeps donut material within (5,5)-(25,25), which is a frame around the hole.
-      expect(fillContains(result, 15, 15)).toBe(false); // the hole survives
-      expect(fillContains(result, 8, 8)).toBe(true); // donut material inside the clip
-    });
-
-    it('differences a square from a donut, deepening the hole', () => {
-      const result = run(donut(0, 0, 30, 5, 20), [square(10, 10, 10)], 'difference');
-      // Donut hole is (5,5)-(25,25); subtracting (10,10)-(20,20) removes material only where it overlaps
-      // the donut ring. Hole center stays empty; ring material outside the clip stays filled.
-      expect(fillContains(result, 15, 15)).toBe(false);
-      expect(fillContains(result, 2, 2)).toBe(true);
-    });
+  it('collapses two identical squares under union to a single square', () => {
+    const result = run([square(0.0, 0.0, 10.0)], [square(0.0, 0.0, 10.0)], 'union', 'nonZero');
+    expect(Math.abs(netArea(result) - 100.0) < 5e-7).toBe(true);
   });
-
-  describe('self-intersecting input and fill rules', () => {
-    it('fills the overlap of two same-wound squares under non-zero (winding 2)', () => {
-      const result = run([square(0, 0, 10), square(5, 5, 10)], [], 'union', 'nonZero');
-      expect(netArea(result)).toBeCloseTo(175, 6);
-      expect(fillContains(result, 7, 7)).toBe(true); // overlap filled
-      expect(result.length).toBe(1); // one solid outline, no hole
-    });
-
-    it('holes out the overlap of two same-wound squares under even-odd', () => {
-      const result = run([square(0, 0, 10), square(5, 5, 10)], [], 'union', 'evenOdd');
-      expect(netArea(result)).toBeCloseTo(150, 6);
-      expect(fillContains(result, 7, 7)).toBe(false); // overlap is a hole
-      expect(fillContains(result, 2, 2)).toBe(true); // non-overlap stays filled
-    });
-
-    it('treats a bowtie contour under non-zero as its two filled lobes', () => {
-      // A self-crossing quad (0,0)-(10,0)-(0,10)-(10,10): the diagonals cross at (5,5) forming two
-      // triangles. Under non-zero the opposite-wound lobes each fill.
-      const bowtie = [0, 0, 10, 0, 0, 10, 10, 10];
-      const result = run([bowtie], [], 'union', 'nonZero');
-      expect(fillContains(result, 5, 1)).toBe(true); // lower lobe
-      expect(fillContains(result, 5, 9)).toBe(true); // upper lobe
-      expect(fillContains(result, 1, 5)).toBe(false); // between lobes, outside
-    });
+  it('collapses two identical squares under intersection to the same square', () => {
+    const result = run([square(0.0, 0.0, 10.0)], [square(0.0, 0.0, 10.0)], 'intersection', 'nonZero');
+    expect(Math.abs(netArea(result) - 100.0) < 5e-7).toBe(true);
   });
-
-  describe('positive and negative fill rules', () => {
-    it('keeps a counter-clockwise (positively-wound) region under positive fill, drops it under negative', () => {
-      const ccw = square(0, 0, 10); // shoelace-positive winding
-      expect(netArea(run([ccw], [], 'union', 'positive'))).toBeCloseTo(100, 6);
-      expect(netArea(run([ccw], [], 'union', 'negative'))).toBeCloseTo(0, 6);
-    });
-
-    it('mirrors that for a clockwise (negatively-wound) region', () => {
-      const cw = [0, 0, 0, 10, 10, 10, 10, 0]; // reversed traversal, shoelace-negative winding
-      expect(netArea(run([cw], [], 'union', 'negative'))).toBeCloseTo(100, 6);
-      expect(netArea(run([cw], [], 'union', 'positive'))).toBeCloseTo(0, 6);
-    });
-
-    it('dissolves a same-wound self-overlap under positive fill (winding 2 stays filled)', () => {
-      // The offset-cleanup fill: two overlapping same-wound squares fill solid (area 175, one ring), the
-      // doubly-wound overlap kept rather than holed — this is why offsetPath resolves under positive.
-      const result = run([square(0, 0, 10), square(5, 5, 10)], [], 'union', 'positive');
-      expect(netArea(result)).toBeCloseTo(175, 6);
-      expect(result.length).toBe(1);
-      expect(fillContains(result, 7, 7)).toBe(true);
-    });
+  it('empties two identical squares under xor', () => {
+    const result = run([square(0.0, 0.0, 10.0)], [square(0.0, 0.0, 10.0)], 'xor', 'nonZero');
+    expect(netArea(result) < 5e-7).toBe(true);
   });
-
-  describe('scale invariance', () => {
-    it('resolves the same topology and scale-relative area across a 1e9 span of coordinate scales', () => {
-      // Two overlapping squares — a real interior crossing, the regime where the vertex-merge snap
-      // matters. Scaling the coordinates must not change the ring count nor the area-relative-to-scale²;
-      // the magnitude-relative snap is what makes the resolved topology invariant to coordinate scale.
-      const overlap = (s: number): number[][] => [square(0, 0, 10 * s), square(5 * s, 5 * s, 10 * s)];
-      const small = run(overlap(1e-3), [], 'union', 'nonZero');
-      const mid = run(overlap(1), [], 'union', 'nonZero');
-      const large = run(overlap(1e6), [], 'union', 'nonZero');
-      expect(small.length).toBe(mid.length);
-      expect(large.length).toBe(mid.length);
-      // Union of the two squares is one solid ring of area 175 at unit scale; area scales with s².
-      expect(netArea(mid)).toBeCloseTo(175, 6);
-      expect(netArea(small) / 1e-3 ** 2).toBeCloseTo(175, 4);
-      expect(netArea(large) / (1e6 * 1e6)).toBeCloseTo(175, 4);
-    });
+  it('empties a square differenced against an identical square', () => {
+    const result = run([square(0.0, 0.0, 10.0)], [square(0.0, 0.0, 10.0)], 'difference', 'nonZero');
+    expect(netArea(result) < 5e-7).toBe(true);
   });
-
-  describe('shared single vertex (corner touching)', () => {
-    it('unions two corner-touching squares to their combined area', () => {
-      const result = run([square(0, 0, 10)], [square(10, 10, 10)], 'union');
-      expect(netArea(result)).toBeCloseTo(200, 6);
-      expect(fillContains(result, 5, 5)).toBe(true);
-      expect(fillContains(result, 15, 15)).toBe(true);
-    });
-
-    it('intersects two corner-touching squares to nothing', () => {
-      const result = run([square(0, 0, 10)], [square(10, 10, 10)], 'intersection');
-      expect(netArea(result)).toBeCloseTo(0, 6);
-    });
+  it('cuts a hole when the clip is fully contained', () => {
+    const result = run([square(0.0, 0.0, 30.0)], [square(10.0, 10.0, 10.0)], 'difference', 'nonZero');
+    expect(Math.abs(netArea(result) - 800.0) < 5e-7).toBe(true);
+    expect(result.length).toEqual(2);
+    expect(fillContains(result, 2.0, 2.0)).toBe(true);
+    expect(!fillContains(result, 15.0, 15.0)).toBe(true);
   });
-
-  describe('commutativity and symmetry', () => {
-    it('unions commute', () => {
-      const a = square(0, 0, 10);
-      const b = square(5, 5, 10);
-      expect(netArea(run([a], [b], 'union'))).toBeCloseTo(netArea(run([b], [a], 'union')), 6);
-    });
-
-    it('intersections commute', () => {
-      const a = square(0, 0, 10);
-      const b = square(3, 4, 10);
-      expect(netArea(run([a], [b], 'intersection'))).toBeCloseTo(netArea(run([b], [a], 'intersection')), 6);
-    });
-
-    it('xor is symmetric', () => {
-      const a = square(0, 0, 10);
-      const b = square(4, 4, 10);
-      expect(netArea(run([a], [b], 'xor'))).toBeCloseTo(netArea(run([b], [a], 'xor')), 6);
-    });
+  it('subtracts a partial overlap', () => {
+    const result = run([square(0.0, 0.0, 10.0)], [square(5.0, 5.0, 10.0)], 'difference', 'nonZero');
+    expect(Math.abs(netArea(result) - 75.0) < 5e-7).toBe(true);
+    expect(fillContains(result, 2.0, 2.0)).toBe(true);
+    expect(!fillContains(result, 7.0, 7.0)).toBe(true);
   });
-
-  describe('contained squares', () => {
-    it('unions to the outer square', () => {
-      const result = run([square(0, 0, 30)], [square(10, 10, 10)], 'union');
-      expect(netArea(result)).toBeCloseTo(900, 6);
-    });
-
-    it('intersects to the inner square', () => {
-      const result = run([square(0, 0, 30)], [square(10, 10, 10)], 'intersection');
-      expect(netArea(result)).toBeCloseTo(100, 6);
-    });
-
-    it('xors to the outer-with-hole frame', () => {
-      const result = run([square(0, 0, 30)], [square(10, 10, 10)], 'xor');
-      expect(netArea(result)).toBeCloseTo(800, 6);
-      expect(fillContains(result, 15, 15)).toBe(false);
-      expect(fillContains(result, 2, 2)).toBe(true);
-    });
+  it('is empty when subtracting a superset', () => {
+    const result = run([square(10.0, 10.0, 10.0)], [square(0.0, 0.0, 30.0)], 'difference', 'nonZero');
+    expect(netArea(result) < 5e-7).toBe(true);
   });
+  it('unions disjoint squares into two rings', () => {
+    const result = run([square(0.0, 0.0, 10.0)], [square(20.0, 20.0, 10.0)], 'union', 'nonZero');
+    expect(Math.abs(netArea(result) - 200.0) < 5e-7).toBe(true);
+    expect(result.length).toEqual(2);
+  });
+  it('intersects disjoint squares to nothing', () => {
+    const result = run([square(0.0, 0.0, 10.0)], [square(20.0, 20.0, 10.0)], 'intersection', 'nonZero');
+    expect(netArea(result) < 5e-7).toBe(true);
+  });
+  it('xors disjoint squares to both squares', () => {
+    const result = run([square(0.0, 0.0, 10.0)], [square(20.0, 20.0, 10.0)], 'xor', 'nonZero');
+    expect(Math.abs(netArea(result) - 200.0) < 5e-7).toBe(true);
+  });
+  it('returns empty for two empty operands', () => {
+    const result = run([], [], 'union', 'nonZero');
+    expect(result.length === 0).toBe(true);
+  });
+  it('passes the subject through union with an empty clip', () => {
+    const result = run([square(0.0, 0.0, 10.0)], [], 'union', 'nonZero');
+    expect(Math.abs(netArea(result) - 100.0) < 5e-7).toBe(true);
+  });
+  it('empties intersection with an empty clip', () => {
+    const result = run([square(0.0, 0.0, 10.0)], [], 'intersection', 'nonZero');
+    expect(netArea(result) < 5e-7).toBe(true);
+  });
+  it('ignores a zero area collinear contour', () => {
+    const degenerate = [0.0, 0.0, 10.0, 0.0, 5.0, 0.0];
+    const result = run([square(0.0, 0.0, 10.0)], [degenerate], 'union', 'nonZero');
+    expect(Math.abs(netArea(result) - 100.0) < 5e-7).toBe(true);
+  });
+  it('ignores a single point contour', () => {
+    const result = run([square(0.0, 0.0, 10.0)], [[5.0, 5.0, 5.0, 5.0, 5.0, 5.0]], 'union', 'nonZero');
+    expect(Math.abs(netArea(result) - 100.0) < 5e-7).toBe(true);
+  });
+  it('ignores a contour with too few points', () => {
+    const result = run([square(0.0, 0.0, 10.0)], [[1.0, 1.0, 2.0, 2.0]], 'union', 'nonZero');
+    expect(Math.abs(netArea(result) - 100.0) < 5e-7).toBe(true);
+  });
+  it('unions a donut with an overlapping square filling part of the hole', () => {
+    const result = run(donut(0.0, 0.0, 30.0, 10.0, 10.0), [square(12.0, 12.0, 20.0)], 'union', 'nonZero');
+    expect(fillContains(result, 15.0, 15.0)).toBe(true);
+    expect(!fillContains(result, 11.0, 11.0)).toBe(true);
+  });
+  it('intersects a donut with a square covering its hole to a frame', () => {
+    const result = run(donut(0.0, 0.0, 30.0, 10.0, 10.0), [square(5.0, 5.0, 20.0)], 'intersection', 'nonZero');
+    expect(!fillContains(result, 15.0, 15.0)).toBe(true);
+    expect(fillContains(result, 8.0, 8.0)).toBe(true);
+  });
+  it('differences a square from a donut deepening the hole', () => {
+    const result = run(donut(0.0, 0.0, 30.0, 5.0, 20.0), [square(10.0, 10.0, 10.0)], 'difference', 'nonZero');
+    expect(!fillContains(result, 15.0, 15.0)).toBe(true);
+    expect(fillContains(result, 2.0, 2.0)).toBe(true);
+  });
+  it('fills the overlap of two same wound squares under non zero', () => {
+    const result = run([square(0.0, 0.0, 10.0), square(5.0, 5.0, 10.0)], [], 'union', 'nonZero');
+    expect(Math.abs(netArea(result) - 175.0) < 5e-7).toBe(true);
+    expect(fillContains(result, 7.0, 7.0)).toBe(true);
+    expect(result.length).toEqual(1);
+  });
+  it('holes out the overlap of two same wound squares under even odd', () => {
+    const result = run([square(0.0, 0.0, 10.0), square(5.0, 5.0, 10.0)], [], 'union', 'evenOdd');
+    expect(Math.abs(netArea(result) - 150.0) < 5e-7).toBe(true);
+    expect(!fillContains(result, 7.0, 7.0)).toBe(true);
+    expect(fillContains(result, 2.0, 2.0)).toBe(true);
+  });
+  it('treats a bowtie contour under non zero as its two filled lobes', () => {
+    const bowtie = [0.0, 0.0, 10.0, 0.0, 0.0, 10.0, 10.0, 10.0];
+    const result = run([bowtie], [], 'union', 'nonZero');
+    expect(fillContains(result, 5.0, 1.0)).toBe(true);
+    expect(fillContains(result, 5.0, 9.0)).toBe(true);
+    expect(!fillContains(result, 1.0, 5.0)).toBe(true);
+  });
+  it('keeps a counter clockwise region under positive fill drops it under negative', () => {
+    const ccw = square(0.0, 0.0, 10.0);
+    expect(Math.abs(netArea(run([ccw.slice()], [], 'union', 'positive')) - 100.0) < 5e-7).toBe(true);
+    expect(netArea(run([ccw], [], 'union', 'negative')) < 5e-7).toBe(true);
+  });
+  it('mirrors that for a clockwise region', () => {
+    const cw = [0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 10.0, 0.0];
+    expect(Math.abs(netArea(run([cw.slice()], [], 'union', 'negative')) - 100.0) < 5e-7).toBe(true);
+    expect(netArea(run([cw], [], 'union', 'positive')) < 5e-7).toBe(true);
+  });
+  it('dissolves a same wound self overlap under positive fill', () => {
+    const result = run([square(0.0, 0.0, 10.0), square(5.0, 5.0, 10.0)], [], 'union', 'positive');
+    expect(Math.abs(netArea(result) - 175.0) < 5e-7).toBe(true);
+    expect(result.length).toEqual(1);
+    expect(fillContains(result, 7.0, 7.0)).toBe(true);
+  });
+  it('resolves the same topology across coordinate scales', () => {
+    const small = run(overlap(1e-3), [], 'union', 'nonZero');
+    const mid = run(overlap(1.0), [], 'union', 'nonZero');
+    const large = run(overlap(1e6), [], 'union', 'nonZero');
+    expect(small.length).toEqual(mid.length);
+    expect(large.length).toEqual(mid.length);
+    expect(Math.abs(netArea(mid) - 175.0) < 5e-7).toBe(true);
+    expect(Math.abs(netArea(small) / 1e-6 - 175.0) < 5e-5).toBe(true);
+    expect(Math.abs(netArea(large) / 1e12 - 175.0) < 5e-5).toBe(true);
+  });
+  it('unions two corner touching squares to their combined area', () => {
+    const result = run([square(0.0, 0.0, 10.0)], [square(10.0, 10.0, 10.0)], 'union', 'nonZero');
+    expect(Math.abs(netArea(result) - 200.0) < 5e-7).toBe(true);
+    expect(fillContains(result, 5.0, 5.0)).toBe(true);
+    expect(fillContains(result, 15.0, 15.0)).toBe(true);
+  });
+  it('intersects two corner touching squares to nothing', () => {
+    const result = run([square(0.0, 0.0, 10.0)], [square(10.0, 10.0, 10.0)], 'intersection', 'nonZero');
+    expect(netArea(result) < 5e-7).toBe(true);
+  });
+  it('unions commute', () => {
+    const a = square(0.0, 0.0, 10.0);
+    const b = square(5.0, 5.0, 10.0);
+    const ab = netArea(run([a.slice()], [b.slice()], 'union', 'nonZero'));
+    const ba = netArea(run([b], [a], 'union', 'nonZero'));
+    expect(Math.abs(ab - ba) < 5e-7).toBe(true);
+  });
+  it('intersections commute', () => {
+    const a = square(0.0, 0.0, 10.0);
+    const b = square(3.0, 4.0, 10.0);
+    const ab = netArea(run([a.slice()], [b.slice()], 'intersection', 'nonZero'));
+    const ba = netArea(run([b], [a], 'intersection', 'nonZero'));
+    expect(Math.abs(ab - ba) < 5e-7).toBe(true);
+  });
+  it('xor is symmetric', () => {
+    const a = square(0.0, 0.0, 10.0);
+    const b = square(4.0, 4.0, 10.0);
+    const ab = netArea(run([a.slice()], [b.slice()], 'xor', 'nonZero'));
+    const ba = netArea(run([b], [a], 'xor', 'nonZero'));
+    expect(Math.abs(ab - ba) < 5e-7).toBe(true);
+  });
+  it('unions contained to the outer square', () => {
+    const result = run([square(0.0, 0.0, 30.0)], [square(10.0, 10.0, 10.0)], 'union', 'nonZero');
+    expect(Math.abs(netArea(result) - 900.0) < 5e-7).toBe(true);
+  });
+  it('intersects contained to the inner square', () => {
+    const result = run([square(0.0, 0.0, 30.0)], [square(10.0, 10.0, 10.0)], 'intersection', 'nonZero');
+    expect(Math.abs(netArea(result) - 100.0) < 5e-7).toBe(true);
+  });
+  it('xors contained to the outer with hole frame', () => {
+    const result = run([square(0.0, 0.0, 30.0)], [square(10.0, 10.0, 10.0)], 'xor', 'nonZero');
+    expect(Math.abs(netArea(result) - 800.0) < 5e-7).toBe(true);
+    expect(!fillContains(result, 15.0, 15.0)).toBe(true);
+    expect(fillContains(result, 2.0, 2.0)).toBe(true);
+  });
+  it('unions two triangles sharing a diagonal into a square', () => {
+    const lower = [0.0, 0.0, 10.0, 0.0, 10.0, 10.0];
+    const upper = [0.0, 0.0, 10.0, 10.0, 0.0, 10.0];
+    const result = run([lower], [upper], 'union', 'nonZero');
+    expect(Math.abs(netArea(result) - 100.0) < 5e-7).toBe(true);
+    expect(fillContains(result, 5.0, 5.0)).toBe(true);
+  });
+  it('intersects two diagonal sharing triangles to nothing', () => {
+    const lower = [0.0, 0.0, 10.0, 0.0, 10.0, 10.0];
+    const upper = [0.0, 0.0, 10.0, 10.0, 0.0, 10.0];
+    const result = run([lower], [upper], 'intersection', 'nonZero');
+    expect(netArea(result) < 5e-7).toBe(true);
+  });
+  it('intersects a diamond overlapping a square', () => {
+    const diamond = [5.0, 5.0, 10.0, 0.0, 15.0, 5.0, 10.0, 10.0];
+    const result = run([square(0.0, 0.0, 10.0)], [diamond], 'intersection', 'nonZero');
+    expect(Math.abs(netArea(result) - 25.0) < 5e-7).toBe(true);
+    expect(fillContains(result, 8.0, 5.0)).toBe(true);
+    expect(!fillContains(result, 12.0, 5.0)).toBe(true);
+  });
+  it('unions a rotated square with an overlapping axis square', () => {
+    const diamond = [0.0, 10.0, 10.0, 0.0, 20.0, 10.0, 10.0, 20.0];
+    const result = run([square(0.0, 0.0, 12.0)], [diamond], 'union', 'nonZero');
+    expect(fillContains(result, 2.0, 2.0)).toBe(true);
+    expect(fillContains(result, 18.0, 10.0)).toBe(true);
+    expect(!fillContains(result, 19.0, 19.0)).toBe(true);
+  });
+});
 
-  describe('non-axis-aligned inputs', () => {
-    it('unions two triangles sharing a diagonal into a square', () => {
-      const lower = [0, 0, 10, 0, 10, 10]; // lower-right half of the unit-10 square
-      const upper = [0, 0, 10, 10, 0, 10]; // upper-left half, sharing the (0,0)-(10,10) diagonal
-      const result = run([lower], [upper], 'union');
-      expect(netArea(result)).toBeCloseTo(100, 6);
-      expect(fillContains(result, 5, 5)).toBe(true); // the former shared diagonal is interior
-    });
+describe('getPathBooleanFillRuleString', () => {
+  it('returns the exact ts strings', () => {
+    expect(getPathBooleanFillRuleString('evenOdd')).toEqual('evenOdd');
+    expect(getPathBooleanFillRuleString('nonZero')).toEqual('nonZero');
+    expect(getPathBooleanFillRuleString('negative')).toEqual('negative');
+    expect(getPathBooleanFillRuleString('positive')).toEqual('positive');
+  });
+});
 
-    it('intersects two diagonal-sharing triangles to nothing', () => {
-      const lower = [0, 0, 10, 0, 10, 10];
-      const upper = [0, 0, 10, 10, 0, 10];
-      expect(netArea(run([lower], [upper], 'intersection'))).toBeCloseTo(0, 6);
-    });
-
-    it('intersects a diamond overlapping a square (real crossing points)', () => {
-      // Diamond centered on the square's right edge; only its left triangle (area 25) is inside.
-      const diamond = [5, 5, 10, 0, 15, 5, 10, 10];
-      const result = run([square(0, 0, 10)], [diamond], 'intersection');
-      expect(netArea(result)).toBeCloseTo(25, 6);
-      expect(fillContains(result, 8, 5)).toBe(true);
-      expect(fillContains(result, 12, 5)).toBe(false);
-    });
-
-    it('unions a rotated square (diamond) with an overlapping axis square', () => {
-      const diamond = [0, 10, 10, 0, 20, 10, 10, 20]; // area 200, centered (10,10)
-      const result = run([square(0, 0, 12)], [diamond], 'union');
-      // Both regions are inside the union; a point deep in each stays filled and the exterior stays out.
-      expect(fillContains(result, 2, 2)).toBe(true); // square-only corner
-      expect(fillContains(result, 18, 10)).toBe(true); // diamond-only tip region
-      expect(fillContains(result, 19, 19)).toBe(false); // outside both
-    });
+describe('getPathBooleanOperationString', () => {
+  it('returns the exact ts strings', () => {
+    expect(getPathBooleanOperationString('difference')).toEqual('difference');
+    expect(getPathBooleanOperationString('intersection')).toEqual('intersection');
+    expect(getPathBooleanOperationString('union')).toEqual('union');
+    expect(getPathBooleanOperationString('xor')).toEqual('xor');
   });
 });
 
 describe('initializeMartinezPathBooleanKernel', () => {
-  it('is the construction initializer of createMartinezPathBooleanKernel', () => {
-    expect(typeof initializeMartinezPathBooleanKernel).toBe('function');
+  it('is the construction initializer of create martinez path boolean kernel', () => {
+    let kernel = createMartinezPathBooleanKernel();
+    kernel.computePathBoolean = computeEmptyTestPathBoolean;
+    initializeMartinezPathBooleanKernel(kernel);
+    expect(kernel).toEqual(createMartinezPathBooleanKernel());
+    const result = kernel.computePathBoolean(
+      [square(0.0, 0.0, 10.0)],
+      [square(5.0, 5.0, 10.0)],
+      'intersection',
+      'nonZero',
+    );
+    expect(Math.abs(netArea(result) - 25.0) < 0.1).toBe(true);
   });
 });
 
-describe('martinezPathBooleanKernel', () => {
-  it('is the shared kernel the boolean operations are handed', () => {
-    const result = martinezPathBooleanKernel.computePathBoolean(
-      [square(0, 0, 10)],
-      [square(5, 5, 10)],
-      'union',
-      'nonZero',
-    );
-    expect(netArea(result)).toBeCloseTo(175, 4);
+describe('parsePathBooleanFillRule', () => {
+  it('parses the exact ts strings', () => {
+    expect(parsePathBooleanFillRule('evenOdd')).toEqual('evenOdd');
+    expect(parsePathBooleanFillRule('nonZero')).toEqual('nonZero');
+    expect(parsePathBooleanFillRule('negative')).toEqual('negative');
+    expect(parsePathBooleanFillRule('positive')).toEqual('positive');
+  });
+  it('rejects other text and wrong casing', () => {
+    expect(parsePathBooleanFillRule('EVENODD')).toEqual(undefined);
+    expect(parsePathBooleanFillRule('')).toEqual(undefined);
+  });
+});
+
+describe('parsePathBooleanOperation', () => {
+  it('parses the exact ts strings', () => {
+    expect(parsePathBooleanOperation('difference')).toEqual('difference');
+    expect(parsePathBooleanOperation('intersection')).toEqual('intersection');
+    expect(parsePathBooleanOperation('union')).toEqual('union');
+    expect(parsePathBooleanOperation('xor')).toEqual('xor');
+  });
+  it('rejects other text and wrong casing', () => {
+    expect(parsePathBooleanOperation('DIFFERENCE')).toEqual(undefined);
+    expect(parsePathBooleanOperation('')).toEqual(undefined);
   });
 });

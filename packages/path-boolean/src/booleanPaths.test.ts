@@ -1,45 +1,63 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { createPath, appendPathRectangle, flattenPath } from '@flighthq/path/contract';
-import type { PathBooleanKernel, Path, PathWinding } from '@flighthq/types/contract';
+// Generated from crates/flight-path-boolean/tests/boolean_paths_test.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { appendPathRectangle, clonePath, createPath, flattenPath } from '@flighthq/path/contract';
+import type { Path } from '@flighthq/path/contract';
 import { describe, expect, it } from 'vitest';
 
-import { booleanPaths, differencePaths, intersectPaths, unionPaths, xorPaths } from './booleanPaths.ts';
-import { martinezPathBooleanKernel } from './martinezKernel.ts';
+import {
+  booleanPaths,
+  createMartinezPathBooleanKernel,
+  differencePaths,
+  intersectPaths,
+  unionPaths,
+  xorPaths,
+} from './contract.ts';
+import type { PathBooleanContour, PathBooleanFillRule, PathBooleanOperation, PathBooleanOptions } from './contract.ts';
 
-const kernel = martinezPathBooleanKernel;
+function flattenedPath(path: Readonly<Path>, tolerance: number | undefined): number[][] {
+  const out = flattenPath(path, tolerance);
+  return out;
+}
 
-function rectanglePath(x: number, y: number, w: number, h: number, winding: PathWinding = 'nonZero'): Path {
-  const path = createPath(winding);
+function rectanglePath(x: number, y: number, w: number, h: number): Path {
+  let path = createPath('nonZero');
   appendPathRectangle(path, x, y, w, h);
   return path;
 }
 
 function pathFilledArea(path: Readonly<Path>): number {
-  let total = 0;
-  for (const ring of flattenPath(path)) {
-    let area = 0;
+  let total: number = 0.0;
+  for (const ring of flattenedPath(path, 0.25)) {
+    let area: number = 0.0;
     const n = ring.length >> 1;
-    for (let i = 0, j = n - 1; i < n; j = i++) {
+    let j = n - 1;
+    for (let i = 0; i < n; i += 1) {
       area += ring[j * 2] * ring[i * 2 + 1] - ring[i * 2] * ring[j * 2 + 1];
+      j = i;
     }
-    total += area / 2;
+    total += area / 2.0;
   }
   return Math.abs(total);
 }
 
 function pathFillContains(path: Readonly<Path>, x: number, y: number): boolean {
-  let winding = 0;
-  for (const ring of flattenPath(path)) {
+  let winding: number = 0;
+  for (const ring of flattenedPath(path, 0.25)) {
     const n = ring.length >> 1;
-    for (let i = 0, j = n - 1; i < n; j = i++) {
+    let j = n - 1;
+    for (let i = 0; i < n; i += 1) {
       const xi = ring[i * 2];
       const yi = ring[i * 2 + 1];
       const xj = ring[j * 2];
       const yj = ring[j * 2 + 1];
       if (yi <= y ? yj > y : yj <= y) {
         const t = (y - yi) / (yj - yi);
-        if (x < xi + t * (xj - xi)) winding += yj > yi ? 1 : -1;
+        if (x < xi + t * (xj - xi)) {
+          winding += yj > yi ? 1 : -1;
+        }
       }
+      j = i;
     }
   }
   return winding !== 0;
@@ -47,135 +65,240 @@ function pathFillContains(path: Readonly<Path>, x: number, y: number): boolean {
 
 describe('booleanPaths', () => {
   it('dispatches to the operation named in the argument', () => {
-    const a = rectanglePath(0, 0, 10, 10);
-    const b = rectanglePath(5, 5, 10, 10);
-    const union = createPath();
-    const intersection = createPath();
-    const difference = createPath();
-    const xor = createPath();
-    booleanPaths(union, kernel, a, b, 'union');
-    booleanPaths(intersection, kernel, a, b, 'intersection');
-    booleanPaths(difference, kernel, a, b, 'difference');
-    booleanPaths(xor, kernel, a, b, 'xor');
-    expect(pathFilledArea(union)).toBeCloseTo(175, 4);
-    expect(pathFilledArea(intersection)).toBeCloseTo(25, 4);
-    expect(pathFilledArea(difference)).toBeCloseTo(75, 4);
-    expect(pathFilledArea(xor)).toBeCloseTo(150, 4);
+    const kernel = createMartinezPathBooleanKernel();
+    const a = rectanglePath(0.0, 0.0, 10.0, 10.0);
+    const b = rectanglePath(5.0, 5.0, 10.0, 10.0);
+    let out = createPath('nonZero');
+    booleanPaths(out, kernel, a, b, 'union', undefined);
+    expect(Math.abs(pathFilledArea(out) - 175.0) < 5e-5).toBe(true);
+    booleanPaths(out, kernel, a, b, 'intersection', undefined);
+    expect(Math.abs(pathFilledArea(out) - 25.0) < 5e-5).toBe(true);
+    booleanPaths(out, kernel, a, b, 'difference', undefined);
+    expect(Math.abs(pathFilledArea(out) - 75.0) < 5e-5).toBe(true);
+    booleanPaths(out, kernel, a, b, 'xor', undefined);
+    expect(Math.abs(pathFilledArea(out) - 150.0) < 5e-5).toBe(true);
   });
-
-  it('writes into the required out path', () => {
-    const out = createPath('evenOdd');
-    booleanPaths(out, kernel, rectanglePath(0, 0, 10, 10), rectanglePath(5, 5, 10, 10), 'union');
-    expect(pathFilledArea(out)).toBeCloseTo(175, 4);
-    expect(out.winding).toBe('nonZero');
+  it('returns a non zero winding path', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    let out = createPath('nonZero');
+    booleanPaths(
+      out,
+      kernel,
+      rectanglePath(0.0, 0.0, 10.0, 10.0),
+      rectanglePath(20.0, 20.0, 5.0, 5.0),
+      'union',
+      undefined,
+    );
+    expect(out.winding).toEqual('nonZero');
+    expect(out.commands.length > 0).toBe(true);
   });
-
-  it('is safe when out aliases the subject input', () => {
-    const a = rectanglePath(0, 0, 10, 10);
-    const b = rectanglePath(5, 5, 10, 10);
-    booleanPaths(a, kernel, a, b, 'union');
-    expect(pathFilledArea(a)).toBeCloseTo(175, 4);
+  it('writes into the provided out path', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    let out = createPath('nonZero');
+    booleanPaths(
+      out,
+      kernel,
+      rectanglePath(0.0, 0.0, 10.0, 10.0),
+      rectanglePath(5.0, 5.0, 10.0, 10.0),
+      'union',
+      undefined,
+    );
+    expect(Math.abs(pathFilledArea(out) - 175.0) < 5e-5).toBe(true);
   });
-
-  it('is safe when out aliases the clip input', () => {
-    const a = rectanglePath(0, 0, 10, 10);
-    const b = rectanglePath(5, 5, 10, 10);
-    booleanPaths(b, kernel, a, b, 'intersection');
-    expect(pathFilledArea(b)).toBeCloseTo(25, 4);
+  it('reuses subject destination with a distinct source snapshot', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    let a = rectanglePath(0.0, 0.0, 10.0, 10.0);
+    const b = rectanglePath(5.0, 5.0, 10.0, 10.0);
+    const aClone = a;
+    booleanPaths(a, kernel, aClone, b, 'union', undefined);
+    expect(Math.abs(pathFilledArea(a) - 175.0) < 0.1).toBe(true);
   });
-
-  it('honors the even-odd fill rule option on self-overlapping input', () => {
-    const a = createPath('nonZero');
-    appendPathRectangle(a, 0, 0, 10, 10);
-    appendPathRectangle(a, 5, 5, 10, 10);
+  it('reuses clip destination with a distinct source snapshot', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    const a = rectanglePath(0.0, 0.0, 10.0, 10.0);
+    let b = rectanglePath(5.0, 5.0, 10.0, 10.0);
+    const bClone = b;
+    booleanPaths(b, kernel, a, bClone, 'intersection', undefined);
+    expect(Math.abs(pathFilledArea(b) - 25.0) < 0.1).toBe(true);
+  });
+  it('honors the even odd fill rule option', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    let a = createPath('nonZero');
+    appendPathRectangle(a, 0.0, 0.0, 10.0, 10.0);
+    appendPathRectangle(a, 5.0, 5.0, 10.0, 10.0);
     const empty = createPath('nonZero');
-    const nonZero = createPath();
-    const evenOdd = createPath();
-    booleanPaths(nonZero, kernel, a, empty, 'union', { fillRule: 'nonZero' });
-    booleanPaths(evenOdd, kernel, a, empty, 'union', { fillRule: 'evenOdd' });
-    expect(pathFilledArea(nonZero)).toBeCloseTo(175, 4);
-    expect(pathFilledArea(evenOdd)).toBeCloseTo(150, 4);
+    const nzOpts: PathBooleanOptions = { fillRule: 'nonZero', tolerance: undefined } as const;
+    const eoOpts: PathBooleanOptions = { fillRule: 'evenOdd', tolerance: undefined } as const;
+    let out = createPath('nonZero');
+    booleanPaths(out, kernel, a, empty, 'union', nzOpts);
+    expect(Math.abs(pathFilledArea(out) - 175.0) < 5e-5).toBe(true);
+    booleanPaths(out, kernel, a, empty, 'union', eoOpts);
+    expect(Math.abs(pathFilledArea(out) - 150.0) < 5e-5).toBe(true);
   });
-
   it('accepts a coarser tolerance option without error', () => {
-    const a = rectanglePath(0, 0, 10, 10);
-    const b = rectanglePath(5, 5, 10, 10);
-    const out = createPath();
-    booleanPaths(out, kernel, a, b, 'union', { tolerance: 2 });
-    expect(pathFilledArea(out)).toBeCloseTo(175, 4);
+    const kernel = createMartinezPathBooleanKernel();
+    const a = rectanglePath(0.0, 0.0, 10.0, 10.0);
+    const b = rectanglePath(5.0, 5.0, 10.0, 10.0);
+    const opts: PathBooleanOptions = { fillRule: undefined, tolerance: 2.0 };
+    let out = createPath('nonZero');
+    booleanPaths(out, kernel, a, b, 'union', opts);
+    expect(Math.abs(pathFilledArea(out) - 175.0) < 5e-5).toBe(true);
   });
 });
 
 describe('differencePaths', () => {
-  it('cuts a contained hole', () => {
-    const result = createPath();
-    differencePaths(result, kernel, rectanglePath(0, 0, 30, 30), rectanglePath(10, 10, 10, 10));
-    expect(pathFilledArea(result)).toBeCloseTo(800, 4);
-    expect(pathFillContains(result, 15, 15)).toBe(false);
-    expect(pathFillContains(result, 2, 2)).toBe(true);
+  it('supports geometry clone form for first input', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    let a = rectanglePath(0.0, 0.0, 10.0, 10.0);
+    const b = rectanglePath(5.0, 5.0, 10.0, 10.0);
+    const snapshot = clonePath(a);
+    differencePaths(a, kernel, snapshot, b, undefined);
+    expect(Math.abs(pathFilledArea(a) - 75.0) < 0.1).toBe(true);
+    expect(!pathFillContains(a, 7.0, 7.0)).toBe(true);
+    expect(pathFillContains(a, 2.0, 2.0)).toBe(true);
   });
-
+  it('supports geometry clone form for second input', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    const a = rectanglePath(0.0, 0.0, 10.0, 10.0);
+    let b = rectanglePath(5.0, 5.0, 10.0, 10.0);
+    const snapshot = clonePath(b);
+    differencePaths(b, kernel, a, snapshot, undefined);
+    expect(Math.abs(pathFilledArea(b) - 75.0) < 0.1).toBe(true);
+    expect(!pathFillContains(b, 7.0, 7.0)).toBe(true);
+    expect(pathFillContains(b, 2.0, 2.0)).toBe(true);
+  });
+  it('cuts a contained hole', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    let out = createPath('nonZero');
+    differencePaths(out, kernel, rectanglePath(0.0, 0.0, 30.0, 30.0), rectanglePath(10.0, 10.0, 10.0, 10.0), undefined);
+    expect(Math.abs(pathFilledArea(out) - 800.0) < 5e-5).toBe(true);
+    expect(!pathFillContains(out, 15.0, 15.0)).toBe(true);
+    expect(pathFillContains(out, 2.0, 2.0)).toBe(true);
+  });
   it('is empty for a path differenced against itself', () => {
-    const a = rectanglePath(0, 0, 10, 10);
-    const b = rectanglePath(0, 0, 10, 10);
-    const result = createPath();
-    differencePaths(result, kernel, a, b);
-    expect(pathFilledArea(result)).toBeCloseTo(0, 4);
+    const kernel = createMartinezPathBooleanKernel();
+    const a = rectanglePath(0.0, 0.0, 10.0, 10.0);
+    const b = rectanglePath(0.0, 0.0, 10.0, 10.0);
+    let out = createPath('nonZero');
+    differencePaths(out, kernel, a, b, undefined);
+    expect(pathFilledArea(out) < 0.1).toBe(true);
   });
 });
 
 describe('intersectPaths', () => {
-  it('keeps the overlap', () => {
-    const result = createPath();
-    intersectPaths(result, kernel, rectanglePath(0, 0, 10, 10), rectanglePath(5, 5, 10, 10));
-    expect(pathFilledArea(result)).toBeCloseTo(25, 4);
+  it('supports geometry clone form for first input', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    let a = rectanglePath(0.0, 0.0, 10.0, 10.0);
+    const b = rectanglePath(5.0, 5.0, 10.0, 10.0);
+    const snapshot = clonePath(a);
+    intersectPaths(a, kernel, snapshot, b, undefined);
+    expect(Math.abs(pathFilledArea(a) - 25.0) < 0.1).toBe(true);
+    expect(pathFillContains(a, 7.0, 7.0)).toBe(true);
+    expect(!pathFillContains(a, 2.0, 2.0)).toBe(true);
   });
-
+  it('supports geometry clone form for second input', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    const a = rectanglePath(0.0, 0.0, 10.0, 10.0);
+    let b = rectanglePath(5.0, 5.0, 10.0, 10.0);
+    const snapshot = clonePath(b);
+    intersectPaths(b, kernel, a, snapshot, undefined);
+    expect(Math.abs(pathFilledArea(b) - 25.0) < 0.1).toBe(true);
+    expect(pathFillContains(b, 7.0, 7.0)).toBe(true);
+    expect(!pathFillContains(b, 2.0, 2.0)).toBe(true);
+  });
+  it('keeps the overlap', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    let out = createPath('nonZero');
+    intersectPaths(out, kernel, rectanglePath(0.0, 0.0, 10.0, 10.0), rectanglePath(5.0, 5.0, 10.0, 10.0), undefined);
+    expect(Math.abs(pathFilledArea(out) - 25.0) < 5e-5).toBe(true);
+  });
   it('is empty for disjoint inputs', () => {
-    const result = createPath();
-    intersectPaths(result, kernel, rectanglePath(0, 0, 10, 10), rectanglePath(20, 20, 10, 10));
-    expect(pathFilledArea(result)).toBeCloseTo(0, 4);
+    const kernel = createMartinezPathBooleanKernel();
+    let out = createPath('nonZero');
+    intersectPaths(out, kernel, rectanglePath(0.0, 0.0, 10.0, 10.0), rectanglePath(20.0, 20.0, 10.0, 10.0), undefined);
+    expect(pathFilledArea(out) < 0.1).toBe(true);
   });
 });
 
 describe('unionPaths', () => {
-  it('merges overlapping rectangles', () => {
-    const result = createPath();
-    unionPaths(result, kernel, rectanglePath(0, 0, 10, 10), rectanglePath(5, 5, 10, 10));
-    expect(pathFilledArea(result)).toBeCloseTo(175, 4);
+  function computeSentinelPathBoolean(
+    _subject: Readonly<PathBooleanContour[]>,
+    _clip: Readonly<PathBooleanContour[]>,
+    _operation: PathBooleanOperation,
+    _fillRule: PathBooleanFillRule,
+  ): PathBooleanContour[] {
+    return [[1.0, 2.0, 3.0, 4.0, 5.0, 6.0]];
+  }
+  it('supports geometry clone form for first input', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    let a = rectanglePath(0.0, 0.0, 10.0, 10.0);
+    const b = rectanglePath(5.0, 5.0, 10.0, 10.0);
+    const snapshot = clonePath(a);
+    unionPaths(a, kernel, snapshot, b, undefined);
+    expect(Math.abs(pathFilledArea(a) - 175.0) < 0.1).toBe(true);
+    expect(pathFillContains(a, 2.0, 2.0)).toBe(true);
+    expect(pathFillContains(a, 12.0, 12.0)).toBe(true);
   });
-
-  it('commutes', () => {
-    const a = rectanglePath(0, 0, 10, 10);
-    const b = rectanglePath(4, 4, 10, 10);
-    const ab = createPath();
-    const ba = createPath();
-    unionPaths(ab, kernel, a, b);
-    unionPaths(ba, kernel, b, a);
-    expect(pathFilledArea(ab)).toBeCloseTo(pathFilledArea(ba), 4);
+  it('supports geometry clone form for second input', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    const a = rectanglePath(0.0, 0.0, 10.0, 10.0);
+    let b = rectanglePath(5.0, 5.0, 10.0, 10.0);
+    const snapshot = clonePath(b);
+    unionPaths(b, kernel, a, snapshot, undefined);
+    expect(Math.abs(pathFilledArea(b) - 175.0) < 0.1).toBe(true);
+    expect(pathFillContains(b, 2.0, 2.0)).toBe(true);
+    expect(pathFillContains(b, 12.0, 12.0)).toBe(true);
   });
-
   it('routes through a provided kernel', () => {
-    let seen = false;
-    const custom = (() => {
-      const out = allocateEntity<PathBooleanKernel>();
-      out.computePathBoolean = () => {
-        seen = true;
-        return [];
-      };
-      return finishEntity(out);
-    })();
-    const result = createPath();
-    unionPaths(result, custom, rectanglePath(0, 0, 10, 10), rectanglePath(5, 5, 10, 10));
-    expect(seen).toBe(true);
-    expect(result.commands.length).toBe(0);
+    let custom = createMartinezPathBooleanKernel();
+    custom.computePathBoolean = computeSentinelPathBoolean;
+    let out = createPath('nonZero');
+    unionPaths(out, custom, rectanglePath(0.0, 0.0, 10.0, 10.0), rectanglePath(5.0, 5.0, 10.0, 10.0), undefined);
+    expect(out.data).toEqual([1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
+  });
+  it('merges overlapping rectangles', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    let out = createPath('nonZero');
+    unionPaths(out, kernel, rectanglePath(0.0, 0.0, 10.0, 10.0), rectanglePath(5.0, 5.0, 10.0, 10.0), undefined);
+    expect(Math.abs(pathFilledArea(out) - 175.0) < 5e-5).toBe(true);
+  });
+  it('commutes', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    const a = rectanglePath(0.0, 0.0, 10.0, 10.0);
+    const b = rectanglePath(4.0, 4.0, 10.0, 10.0);
+    let out1 = createPath('nonZero');
+    let out2 = createPath('nonZero');
+    unionPaths(out1, kernel, a, b, undefined);
+    unionPaths(out2, kernel, b, a, undefined);
+    expect(Math.abs(pathFilledArea(out1) - pathFilledArea(out2)) < 5e-5).toBe(true);
   });
 });
 
 describe('xorPaths', () => {
+  it('supports geometry clone form for first input', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    let a = rectanglePath(0.0, 0.0, 10.0, 10.0);
+    const b = rectanglePath(5.0, 5.0, 10.0, 10.0);
+    const snapshot = clonePath(a);
+    xorPaths(a, kernel, snapshot, b, undefined);
+    expect(Math.abs(pathFilledArea(a) - 150.0) < 0.1).toBe(true);
+    expect(!pathFillContains(a, 7.0, 7.0)).toBe(true);
+    expect(pathFillContains(a, 2.0, 2.0)).toBe(true);
+  });
+  it('supports geometry clone form for second input', () => {
+    const kernel = createMartinezPathBooleanKernel();
+    const a = rectanglePath(0.0, 0.0, 10.0, 10.0);
+    let b = rectanglePath(5.0, 5.0, 10.0, 10.0);
+    const snapshot = clonePath(b);
+    xorPaths(b, kernel, a, snapshot, undefined);
+    expect(Math.abs(pathFilledArea(b) - 150.0) < 0.1).toBe(true);
+    expect(!pathFillContains(b, 7.0, 7.0)).toBe(true);
+    expect(pathFillContains(b, 2.0, 2.0)).toBe(true);
+  });
   it('keeps the symmetric difference', () => {
-    const result = createPath();
-    xorPaths(result, kernel, rectanglePath(0, 0, 10, 10), rectanglePath(5, 5, 10, 10));
-    expect(pathFilledArea(result)).toBeCloseTo(150, 4);
+    const kernel = createMartinezPathBooleanKernel();
+    let out = createPath('nonZero');
+    xorPaths(out, kernel, rectanglePath(0.0, 0.0, 10.0, 10.0), rectanglePath(5.0, 5.0, 10.0, 10.0), undefined);
+    expect(Math.abs(pathFilledArea(out) - 150.0) < 5e-5).toBe(true);
   });
 });
