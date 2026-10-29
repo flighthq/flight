@@ -5714,6 +5714,73 @@ fn reject_entity_runtime_state_store_collisions(
     };
 }
 
+// Rejects a `LazyLock` static whose initializer, through the functions it calls in this crate's
+// sources, reaches the static itself or a static of this module declared after it. TypeScript
+// initializes statics eagerly in declaration order, so either would read an uninitialized binding.
+fn reject_lazy_lock_initialization_order(
+    program: &Program,
+    programs: &[&Program],
+) -> Result<(), CompileError> {
+    struct NameVisitor {
+        names: Vec<String>,
+    }
+    impl<'ast> Visit<'ast> for NameVisitor {
+        fn visit_expr_path(&mut self, path: &'ast syn::ExprPath) {
+            if let Some(segment) = path.path.segments.last() {
+                self.names.push(segment.ident.to_string());
+            }
+            syn::visit::visit_expr_path(self, path);
+        }
+    }
+    let functions = programs
+        .iter()
+        .flat_map(|program| &program.functions)
+        .collect::<Vec<_>>();
+    for (index, rust_static) in program.statics.iter().enumerate() {
+        let Some((_, initializer)) = crate::model::lazy_lock_static(rust_static) else {
+            continue;
+        };
+        let mut pending = {
+            let mut visitor = NameVisitor { names: Vec::new() };
+            visitor.visit_expr(initializer);
+            visitor.names
+        };
+        let mut visited = BTreeSet::new();
+        while let Some(name) = pending.pop() {
+            if !visited.insert(name.clone()) {
+                continue;
+            }
+            if let Some(position) = program
+                .statics
+                .iter()
+                .position(|candidate| candidate.ident == name.as_str())
+                && position >= index
+            {
+                return Err(compile_error(if position == index {
+                    format!(
+                        "`LazyLock` static `{}` has an initialization cycle through itself",
+                        rust_static.ident
+                    )
+                } else {
+                    format!(
+                        "`LazyLock` static `{}` is initialized from `{name}`, which is declared after it",
+                        rust_static.ident
+                    )
+                }));
+            }
+            for function in functions
+                .iter()
+                .filter(|function| function.sig.ident == name.as_str())
+            {
+                let mut visitor = NameVisitor { names: Vec::new() };
+                visitor.visit_item_fn(function);
+                pending.extend(visitor.names);
+            }
+        }
+    }
+    return Ok(());
+}
+
 fn reject_unresolved_pattern_field(
     expression: &Expr,
     entities: &HashSet<String>,
@@ -9499,6 +9566,7 @@ pub(crate) fn emit_program(
             .insert(name);
     }
     reject_entity_runtime_state_store_collisions(program, &programs)?;
+    reject_lazy_lock_initialization_order(program, &programs)?;
     // The body is emitted before the imports so the package-internal state stores it actually reads
     // or writes can be imported from their declaring sibling modules.
     let mut body = String::new();
@@ -9884,18 +9952,30 @@ fn emit_static(
     } else {
         ""
     };
+    let rust_name = rust_static.ident.to_string();
+    let name = export_name(entities, &rust_name).unwrap_or(&rust_name);
+    // A `LazyLock` static is initialized once, eagerly, when the module loads: `T` from `init()`.
+    if let Some((inner, initializer)) = crate::model::lazy_lock_static(rust_static) {
+        let typescript_type = emit_type_with_aliases(inner, entities, aliases, nullable_types)?;
+        let value = match initializer {
+            Expr::Path(_) => format!("{}()", emit_expression(initializer, entities)?),
+            Expr::Closure(closure) if !matches!(closure.body.as_ref(), Expr::Block(_)) => {
+                emit_expression(&closure.body, entities)?
+            }
+            _ => format!("({})()", emit_expression(initializer, entities)?),
+        };
+        writeln!(out, "{export}const {name}: {typescript_type} = {value};")
+            .expect("writing to a String cannot fail");
+        return Ok(());
+    }
     let typescript_type =
         emit_type_with_aliases(&rust_static.ty, entities, aliases, nullable_types)?;
     let mut value = emit_expression(&rust_static.expr, entities)?;
     if typescript_type.contains(" | null") {
         value = value.replace("undefined", "null");
     }
-    writeln!(
-        out,
-        "{export}const {}: {} = {};",
-        rust_static.ident, typescript_type, value
-    )
-    .expect("writing to a String cannot fail");
+    writeln!(out, "{export}const {name}: {typescript_type} = {value};")
+        .expect("writing to a String cannot fail");
     return Ok(());
 }
 

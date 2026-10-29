@@ -2843,6 +2843,180 @@ pub fn mode_label(mode: Mode) -> &'static str {
     }
 
     #[test]
+    fn lowers_lazy_lock_statics_to_eager_exported_constants() {
+        let source = r#"
+//! flight-compiler: export-name SHARED_KERNEL sharedKernel
+
+use std::sync::LazyLock;
+use std::sync::atomic::{AtomicU32, Ordering};
+
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
+
+pub struct Kernel {
+    runtime: EntityRuntimeSlot,
+    pub scale: f64,
+}
+
+pub type KernelScale = f64;
+
+flight_entity::impl_entity!(Kernel);
+
+pub static LIMIT: f64 = 2.0;
+
+static KERNELS_CREATED: AtomicU32 = AtomicU32::new(0);
+
+static DEFAULT_SCALE: LazyLock<KernelScale> = LazyLock::new(|| {
+    let base = LIMIT;
+    base * 0.5
+});
+
+/// The kernel every caller shares unless it passes its own.
+pub static SHARED_KERNEL: LazyLock<Kernel> = LazyLock::new(create_kernel);
+
+pub static DOUBLE_KERNEL: LazyLock<Kernel> = LazyLock::new(|| create_scaled_kernel(2.0));
+
+pub fn create_kernel() -> Kernel {
+    return create_scaled_kernel(*DEFAULT_SCALE);
+}
+
+pub fn create_scaled_kernel(scale: f64) -> Kernel {
+    KERNELS_CREATED.fetch_add(1, Ordering::SeqCst);
+    let mut out: Kernel = allocate_entity();
+    out.scale = scale;
+    return out;
+}
+
+pub fn get_kernel(kernel: Option<&Kernel>) -> &Kernel {
+    return kernel.unwrap_or(&*SHARED_KERNEL);
+}
+
+pub fn get_kernels_created() -> u32 {
+    return KERNELS_CREATED.fetch_add(0, Ordering::SeqCst);
+}
+"#;
+
+        let output = compile_typescript(source, Some("@flighthq/entity/contract")).unwrap();
+
+        assert!(output.contains("export const LIMIT: number = 2.0;\n"));
+        assert!(output.contains(
+            "/**\n * The kernel every caller shares unless it passes its own.\n */\nexport const sharedKernel: KernelRaw = createKernel();\n"
+        ));
+        assert!(
+            output.contains("export const DOUBLE_KERNEL: KernelRaw = createScaledKernel(2.0);\n")
+        );
+        assert!(output.contains("\nconst DEFAULT_SCALE: KernelScale = (() => {\n"));
+        assert!(output.contains("  return createScaledKernel(DEFAULT_SCALE);\n"));
+        assert!(output.contains("  return (kernel ?? sharedKernel);\n"));
+        assert!(!output.contains("LazyLock"));
+        assert!(!output.contains("SHARED_KERNEL"));
+        let statics = output.find("export const sharedKernel").unwrap();
+        assert!(output.find("export const LIMIT").unwrap() < statics);
+        assert!(statics < output.find("export function createKernel").unwrap());
+    }
+
+    #[test]
+    fn rejects_unsupported_lazy_lock_statics() {
+        let declarations = "use std::sync::LazyLock;\n\npub struct Kernel {\n    pub scale: f64,\n}\n\npub fn create_kernel() -> Kernel {\n    return Kernel { scale: 1.0 };\n}\n";
+        let unsupported_shape = |name: &str| {
+            format!(
+                "unsupported `LazyLock` static `{name}`; declare it as `static {name}: LazyLock<T> = LazyLock::new(init)`"
+            )
+        };
+        let unsupported_initializer = |name: &str| {
+            format!(
+                "unsupported `LazyLock` initializer for `{name}`; pass a zero-argument function path or a `|| value` closure"
+            )
+        };
+        let unresolved = |name: &str| {
+            format!(
+                "`LazyLock` static `{name}` must hold a struct or type alias declared in this source; dependency-owned or unresolved value types are not portable"
+            )
+        };
+        let non_static =
+            "`LazyLock` is portable only as the type of `static NAME: LazyLock<T> = LazyLock::new(init)`"
+                .to_string();
+        let cases = [
+            (
+                "pub static KERNEL: LazyLock<Kernel> = LazyLock::force(&OTHER);\n",
+                unsupported_shape("KERNEL"),
+            ),
+            (
+                "pub static KERNEL: LazyLock<Kernel, fn() -> Kernel> = LazyLock::new(create_kernel);\n",
+                unsupported_shape("KERNEL"),
+            ),
+            (
+                "pub static KERNEL: LazyLock<Kernel> = LazyLock::new(create_kernel());\n",
+                unsupported_initializer("KERNEL"),
+            ),
+            (
+                "pub static KERNEL: LazyLock<Kernel> = LazyLock::new(|scale| Kernel { scale });\n",
+                unsupported_initializer("KERNEL"),
+            ),
+            (
+                "pub static mut KERNEL: LazyLock<Kernel> = LazyLock::new(create_kernel);\n",
+                "`LazyLock` static `KERNEL` cannot be `mut`".to_string(),
+            ),
+            (
+                "pub static MATRIX: LazyLock<flight_geometry::Matrix> = LazyLock::new(create_kernel);\n",
+                unresolved("MATRIX"),
+            ),
+            (
+                "use flight_geometry::Matrix;\npub static MATRIX: LazyLock<Matrix> = LazyLock::new(create_kernel);\n",
+                unresolved("MATRIX"),
+            ),
+            (
+                "pub static SCALES: LazyLock<Vec<f64>> = LazyLock::new(|| vec![1.0]);\n",
+                unresolved("SCALES"),
+            ),
+            (
+                "pub fn make() -> f64 {\n    let local: LazyLock<Kernel> = LazyLock::new(create_kernel);\n    return local.scale;\n}\n",
+                non_static.clone(),
+            ),
+            (
+                "pub struct Holder {\n    pub kernel: LazyLock<Kernel>,\n}\n",
+                non_static.clone(),
+            ),
+            (
+                "pub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| {\n    let nested: LazyLock<Kernel> = LazyLock::new(create_kernel);\n    return Kernel { scale: nested.scale };\n});\n",
+                "`LazyLock` initializer for `KERNEL` cannot construct another `LazyLock`".to_string(),
+            ),
+            (
+                "pub static KERNEL: LazyLock<Kernel> = LazyLock::new(make_kernel);\n\npub fn make_kernel() -> Kernel {\n    return Kernel { scale: read_scale() };\n}\n\npub fn read_scale() -> f64 {\n    return KERNEL.scale;\n}\n",
+                "`LazyLock` static `KERNEL` has an initialization cycle through itself".to_string(),
+            ),
+            (
+                "pub static FIRST: LazyLock<Kernel> = LazyLock::new(|| Kernel { scale: SECOND.scale });\n\npub static SECOND: LazyLock<Kernel> = LazyLock::new(create_kernel);\n",
+                "`LazyLock` static `FIRST` is initialized from `SECOND`, which is declared after it".to_string(),
+            ),
+            (
+                "//! flight-compiler: export-name KERNEL sharedKernel\nstatic KERNEL: LazyLock<Kernel> = LazyLock::new(create_kernel);\n",
+                "`flight-compiler: export-name` item `KERNEL` must be public".to_string(),
+            ),
+        ];
+
+        for (items, expected) in cases {
+            let source = if let Some(directive) = items.strip_prefix("//! ") {
+                let (directive, rest) = directive.split_once('\n').unwrap();
+                format!("//! {directive}\n{declarations}\n{rest}")
+            } else {
+                format!("{declarations}\n{items}")
+            };
+            assert_eq!(
+                compile_typescript(&source, None).unwrap_err().to_string(),
+                expected,
+                "{source}"
+            );
+        }
+
+        let ordered = format!(
+            "{declarations}\npub static FIRST: LazyLock<Kernel> = LazyLock::new(create_kernel);\n\npub static SECOND: LazyLock<Kernel> = LazyLock::new(|| Kernel {{ scale: FIRST.scale }});\n"
+        );
+        let output = compile_typescript(&ordered, None).unwrap();
+        assert!(output.contains("export const FIRST: Kernel = createKernel();\n"));
+        assert!(output.contains("export const SECOND: Kernel = { scale: FIRST.scale };\n"));
+    }
+
+    #[test]
     fn emits_numeric_unions_as_type_only_integer_aliases() {
         let source = r#"
 //! flight-compiler: numeric-union Direction
@@ -3322,7 +3496,7 @@ mod call_decoder {
                     source: "//! flight-compiler: export-name decode_utf8 decodeUTF8\npub fn encode_utf8() {}\n",
                     module: "@flighthq/codec/contract",
                 }],
-                "`flight-compiler: export-name` item `decode_utf8` is not a function or constant of this source",
+                "`flight-compiler: export-name` item `decode_utf8` is not a function, constant or static of this source",
             ),
         ] {
             let error =
@@ -3737,7 +3911,7 @@ pub fn customized_spring_preset() -> SpringConfig {
             ),
             (
                 format!("//! flight-compiler: export-name decode_utf16 decodeUTF16\n{item}"),
-                "`flight-compiler: export-name` item `decode_utf16` is not a function or constant of this source",
+                "`flight-compiler: export-name` item `decode_utf16` is not a function, constant or static of this source",
             ),
             (
                 "//! flight-compiler: export-name decode_utf8 decodeUTF8\nfn decode_utf8() {}\n"
@@ -8612,6 +8786,81 @@ mod begin_lasso_selection {
         assert!(output.contains("    expect(!isLassoSelectionActive(other)).toBe(true);\n"));
         assert!(!output.contains("EntityRuntimeKey"));
         assert!(!output.contains(".state"));
+    }
+
+    #[test]
+    fn imports_lazy_lock_statics_by_their_exported_names() {
+        let production = r#"
+//! flight-compiler: export-name SHARED_KERNEL sharedKernel
+
+use std::sync::LazyLock;
+use std::sync::atomic::{AtomicU32, Ordering};
+
+use flight_entity::{EntityRuntimeSlot, allocate_entity};
+
+pub struct Kernel {
+    runtime: EntityRuntimeSlot,
+    pub scale: f64,
+}
+
+flight_entity::impl_entity!(Kernel);
+
+static KERNELS_CREATED: AtomicU32 = AtomicU32::new(0);
+
+pub static SHARED_KERNEL: LazyLock<Kernel> = LazyLock::new(create_kernel);
+
+pub static DOUBLE_KERNEL: LazyLock<Kernel> = LazyLock::new(|| create_scaled_kernel(2.0));
+
+pub fn create_kernel() -> Kernel {
+    return create_scaled_kernel(1.0);
+}
+
+pub fn create_scaled_kernel(scale: f64) -> Kernel {
+    KERNELS_CREATED.fetch_add(1, Ordering::SeqCst);
+    let mut out: Kernel = allocate_entity();
+    out.scale = scale;
+    return out;
+}
+
+pub fn get_kernels_created() -> u32 {
+    return KERNELS_CREATED.fetch_add(0, Ordering::SeqCst);
+}
+"#;
+        let contract = "pub use crate::kernel::DOUBLE_KERNEL;\npub use crate::kernel::SHARED_KERNEL;\npub use crate::kernel::create_kernel;\npub use crate::kernel::create_scaled_kernel;\npub use crate::kernel::get_kernels_created;\n";
+        let source = r#"
+use flight_kernel::contract::*;
+
+mod shared_kernel {
+    use super::*;
+
+    #[test]
+    fn initializes_each_static_once_when_the_module_loads() {
+        assert_eq!(SHARED_KERNEL.scale, 1.0);
+        assert_eq!(SHARED_KERNEL.scale, 1.0);
+        assert_eq!(DOUBLE_KERNEL.scale, 2.0);
+        assert_eq!(get_kernels_created(), 2);
+    }
+}
+"#;
+
+        let output = compile_vitest_with_contract_alias_sources(
+            source,
+            "@flighthq/kernel/contract",
+            contract,
+            &[VitestAliasSource {
+                source: production,
+                module: "crates/flight-kernel/src/kernel.rs",
+            }],
+        )
+        .unwrap();
+
+        assert!(output.contains("  DOUBLE_KERNEL,\n  getKernelsCreated,\n  sharedKernel,\n} from \"@flighthq/kernel/contract\";"));
+        assert!(output.contains("describe(\"sharedKernel\", () => {"));
+        assert!(output.contains("    expect(sharedKernel.scale).toEqual(1.0);\n"));
+        assert!(output.contains("    expect(DOUBLE_KERNEL.scale).toEqual(2.0);\n"));
+        assert!(output.contains("    expect(getKernelsCreated()).toEqual(2);\n"));
+        assert!(!output.contains("SHARED_KERNEL"));
+        assert!(!output.contains("LazyLock"));
     }
 
     #[test]

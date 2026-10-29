@@ -257,6 +257,43 @@ fn integer_discriminant_value(expression: &syn::Expr) -> Option<i64> {
     };
 }
 
+// The `T` and initializer of a `static NAME: LazyLock<T> = LazyLock::new(init)`, or `None` for an
+// ordinary static. TypeScript evaluates `init` once, eagerly, when the declaring module loads.
+pub(crate) fn lazy_lock_static(rust_static: &ItemStatic) -> Option<(&Type, &syn::Expr)> {
+    let Type::Path(path) = rust_static.ty.as_ref() else {
+        return None;
+    };
+    let segment = path.path.segments.last()?;
+    if segment.ident != "LazyLock" {
+        return None;
+    }
+    let PathArguments::AngleBracketed(arguments) = &segment.arguments else {
+        return None;
+    };
+    let [GenericArgument::Type(inner)] = arguments.args.iter().collect::<Vec<_>>().as_slice()
+    else {
+        return None;
+    };
+    let syn::Expr::Call(call) = rust_static.expr.as_ref() else {
+        return None;
+    };
+    let syn::Expr::Path(function) = call.func.as_ref() else {
+        return None;
+    };
+    let mut segments = function.path.segments.iter().rev();
+    if !(segments
+        .next()
+        .is_some_and(|segment| segment.ident == "new")
+        && segments
+            .next()
+            .is_some_and(|segment| segment.ident == "LazyLock")
+        && call.args.len() == 1)
+    {
+        return None;
+    }
+    return Some((inner, &call.args[0]));
+}
+
 fn next_directive_field(value: &str) -> Option<(&str, &str)> {
     let value = value.trim_start();
     if value.is_empty() {
@@ -373,6 +410,7 @@ pub(crate) fn parse_program(source: &str) -> Result<Program, CompileError> {
         &constants,
         &statics,
     )?;
+    validate_lazy_lock_statics(&statics, &functions, &constants, &structs, &type_aliases)?;
     validate_identity_aliases(&identity_alias_directives, &type_aliases)?;
 
     return Ok(Program {
@@ -754,10 +792,16 @@ fn validate_export_names(
                     .iter()
                     .find(|constant| constant.ident == item.as_str())
                     .map(|constant| &constant.vis)
+            })
+            .or_else(|| {
+                statics
+                    .iter()
+                    .find(|rust_static| rust_static.ident == item.as_str())
+                    .map(|rust_static| &rust_static.vis)
             });
         let Some(visibility) = visibility else {
             return Err(compile_error(format!(
-                "`flight-compiler: export-name` item `{item}` is not a function or constant of this source"
+                "`flight-compiler: export-name` item `{item}` is not a function, constant or static of this source"
             )));
         };
         if !is_public(visibility) {
@@ -1445,6 +1489,105 @@ fn validate_data_union_directives(
         if !enums.iter().any(|rust_enum| rust_enum.ident == name) {
             return Err(compile_error(format!(
                 "`flight-compiler: data-union` enum `{name}` does not exist"
+            )));
+        }
+    }
+    return Ok(());
+}
+
+// A `LazyLock` is portable only as `static NAME: LazyLock<T> = LazyLock::new(init)`, where `T` names a
+// struct or type alias declared in this source and `init` is a zero-argument function path or closure.
+// Every other mention of `LazyLock` fails closed rather than lowering to a missing runtime type.
+// flight-lint: allow(hashmap-iteration) every collection visited here is a source-ordered Vec
+fn validate_lazy_lock_statics(
+    statics: &[ItemStatic],
+    functions: &[ItemFn],
+    constants: &[ItemConst],
+    structs: &[ItemStruct],
+    type_aliases: &[ItemType],
+) -> Result<(), CompileError> {
+    struct LazyLockVisitor {
+        found: bool,
+    }
+    impl<'ast> syn::visit::Visit<'ast> for LazyLockVisitor {
+        fn visit_path_segment(&mut self, segment: &'ast syn::PathSegment) {
+            if segment.ident == "LazyLock" {
+                self.found = true;
+            }
+            syn::visit::visit_path_segment(self, segment);
+        }
+    }
+    let mut visitor = LazyLockVisitor { found: false };
+    for function in functions {
+        syn::visit::Visit::visit_item_fn(&mut visitor, function);
+    }
+    for constant in constants {
+        syn::visit::Visit::visit_item_const(&mut visitor, constant);
+    }
+    for structure in structs {
+        syn::visit::Visit::visit_item_struct(&mut visitor, structure);
+    }
+    for type_alias in type_aliases {
+        syn::visit::Visit::visit_item_type(&mut visitor, type_alias);
+    }
+    if visitor.found {
+        return Err(compile_error(
+            "`LazyLock` is portable only as the type of `static NAME: LazyLock<T> = LazyLock::new(init)`",
+        ));
+    }
+    for rust_static in statics {
+        let name = rust_static.ident.to_string();
+        let mentions_lazy_lock = {
+            let mut visitor = LazyLockVisitor { found: false };
+            syn::visit::Visit::visit_item_static(&mut visitor, rust_static);
+            visitor.found
+        };
+        if !mentions_lazy_lock {
+            continue;
+        }
+        let Some((inner, initializer)) = lazy_lock_static(rust_static) else {
+            return Err(compile_error(format!(
+                "unsupported `LazyLock` static `{name}`; declare it as `static {name}: LazyLock<T> = LazyLock::new(init)`"
+            )));
+        };
+        if !matches!(rust_static.mutability, syn::StaticMutability::None) {
+            return Err(compile_error(format!(
+                "`LazyLock` static `{name}` cannot be `mut`"
+            )));
+        }
+        let declared = match inner {
+            Type::Path(path) if path.qself.is_none() && path.path.segments.len() == 1 => {
+                let segment = &path.path.segments[0];
+                matches!(segment.arguments, PathArguments::None)
+                    && (structs
+                        .iter()
+                        .any(|structure| structure.ident == segment.ident)
+                        || type_aliases
+                            .iter()
+                            .any(|type_alias| type_alias.ident == segment.ident))
+            }
+            _ => false,
+        };
+        if !declared {
+            return Err(compile_error(format!(
+                "`LazyLock` static `{name}` must hold a struct or type alias declared in this source; dependency-owned or unresolved value types are not portable"
+            )));
+        }
+        let supported = match initializer {
+            syn::Expr::Path(path) => path.qself.is_none(),
+            syn::Expr::Closure(closure) => closure.inputs.is_empty(),
+            _ => false,
+        };
+        if !supported {
+            return Err(compile_error(format!(
+                "unsupported `LazyLock` initializer for `{name}`; pass a zero-argument function path or a `|| value` closure"
+            )));
+        }
+        let mut initializer_visitor = LazyLockVisitor { found: false };
+        syn::visit::Visit::visit_expr(&mut initializer_visitor, initializer);
+        if initializer_visitor.found {
+            return Err(compile_error(format!(
+                "`LazyLock` initializer for `{name}` cannot construct another `LazyLock`"
             )));
         }
     }
