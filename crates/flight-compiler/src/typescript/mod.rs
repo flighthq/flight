@@ -12445,6 +12445,13 @@ fn emit_option_combinator(
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
     let method = call.method.to_string();
+    if call.args.len() == 1 && !matches!(call.args.first(), Some(Expr::Closure(_))) {
+        let function_ref = emit_expression(&call.args[0], entities)?;
+        let absent = option_absent_value(&call.receiver, entities);
+        return Ok(format!(
+            "((value) => value === {absent} ? {absent} : {function_ref}(value))({receiver})"
+        ));
+    }
     let closure = match call.args.first() {
         Some(Expr::Closure(closure)) if call.args.len() == 1 && closure.inputs.len() == 1 => {
             closure

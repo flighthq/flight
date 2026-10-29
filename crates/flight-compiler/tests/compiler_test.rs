@@ -1963,6 +1963,13 @@ pub fn widened(value: Option<f32>) -> f32 {
             "unproven Option and_then should compile: {output}"
         );
 
+        let source = "pub fn apply(value: Option<f32>, f: fn(f32) -> Option<f32>) -> Option<f32> { return value.and_then(f); }\n";
+        let output = compile_typescript(source, None).unwrap();
+        assert!(
+            output.contains("((value) => value === undefined ? undefined : f(value))(value)"),
+            "function reference in Option combinator should compile: {output}"
+        );
+
         for (source, expected) in [
             (
                 "pub fn first(values: &Vec<f32>) -> Option<f32> { return values.iter().and_then(|v| Some(*v)); }\n",
@@ -1971,10 +1978,6 @@ pub fn widened(value: Option<f32>) -> f32 {
             (
                 "pub fn sum(value: Option<(f32, f32)>) -> f32 { return value.map(|(a, b)| a + b).unwrap_or(0.0); }\n",
                 "portable Option `.map()` closure parameter must be an identifier",
-            ),
-            (
-                "pub fn apply(value: Option<f32>, f: fn(f32) -> Option<f32>) -> Option<f32> { return value.and_then(f); }\n",
-                "portable Option `.and_then()` needs a single-parameter closure",
             ),
         ] {
             let error = compile_typescript(source, None).unwrap_err();
