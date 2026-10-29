@@ -2,6 +2,7 @@
 // Rust is authoritative; run `npm run generate` after changing it.
 
 import { allocateEntity } from '@flighthq/entity/contract';
+import type { EntityConstruction } from '@flighthq/entity/contract';
 
 import { forEachPathSegment } from './forEachPathSegment.ts';
 import type { PathMorphCreationReason, PathMorphRaw, PathRaw, PathSegment, PathWinding } from './path.ts';
@@ -220,7 +221,7 @@ function appendQuadraticAsCubic(contour: CubicContour, cx: number, cy: number, x
 }
 
 export function initializePathMorph(
-  out: PathMorphRaw,
+  out: EntityConstruction<PathMorphRaw>,
   commands: number[],
   endData: number[],
   startData: number[],
@@ -368,7 +369,7 @@ function getCubicContourSignedArea(contour: Readonly<CubicContour>): number {
 }
 
 function getCubicPowerCoefficients(p0: number, p1: number, p2: number, p3: number): Float64Array {
-  return [p0, 3.0 * (p1 - p0), 3.0 * (p0 - 2.0 * p1 + p2), -p0 + 3.0 * p1 - 3.0 * p2 + p3];
+  return new Float64Array([p0, 3.0 * (p1 - p0), 3.0 * (p0 - 2.0 * p1 + p2), -p0 + 3.0 * p1 - 3.0 * p2 + p3]);
 }
 
 function normalizeCubicContourOrientations(

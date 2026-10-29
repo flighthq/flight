@@ -352,7 +352,7 @@ export function buildStrokePathGeometry(
     if (matchValue !== undefined) {
       const pattern = matchValue;
       return pattern;
-    } else if (matchValue === undefined) {
+    } else {
       return [] as never[];
     }
   })();
@@ -369,7 +369,8 @@ export function buildStrokePathGeometry(
     }
   }
   const centerlineIntersection = findCenterlineIntersection(source);
-  let issue = centerlineIntersection === undefined ? 'ok' : 'self-intersecting-centerline';
+  let issue: StrokePathTessellationReason =
+    centerlineIntersection === undefined ? 'ok' : 'self-intersecting-centerline';
   let issueSubpath = centerlineIntersection;
   let pieces: StrokePathPieceGeometry[] = [] as never[];
   const halfWidth = width / 2.0;
