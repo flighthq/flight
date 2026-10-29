@@ -142,23 +142,23 @@ export type NotificationSubscriptionDisposeOutcome =
     };
 
 export interface NotificationActionSubscription extends Entity {
-  readonly onNotificationAction: Signal<(notification: Readonly<Notification>, actionId: string) => void>;
+  readonly onNotificationAction: Signal<readonly [notification: Readonly<Notification>, actionId: string]>;
 }
 
 export interface NotificationClickSubscription extends Entity {
-  readonly onNotificationClick: Signal<(notification: Readonly<Notification>) => void>;
+  readonly onNotificationClick: Signal<Readonly<Notification>>;
 }
 
 export interface NotificationDismissSubscription extends Entity {
-  readonly onNotificationDismiss: Signal<(notification: Readonly<Notification>) => void>;
+  readonly onNotificationDismiss: Signal<Readonly<Notification>>;
 }
 
 export interface NotificationReplySubscription extends Entity {
-  readonly onNotificationReply: Signal<(notification: Readonly<Notification>, actionId: string, text: string) => void>;
+  readonly onNotificationReply: Signal<readonly [notification: Readonly<Notification>, actionId: string, text: string]>;
 }
 
 export interface NotificationReceivedSubscription extends Entity {
-  readonly onNotificationReceived: Signal<(notification: Readonly<Notification>) => void>;
+  readonly onNotificationReceived: Signal<Readonly<Notification>>;
 }
 
 export interface HostNotificationPermissionCapability {

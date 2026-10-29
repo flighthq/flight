@@ -82,7 +82,7 @@ describe('attachNotificationActionSubscription', () => {
     const subscription = createNotificationActionSubscription();
     const notification = createNotificationResource('n1', 'Title');
     const seen: string[] = [];
-    connectSignal(subscription.onNotificationAction, (value, actionId) => seen.push(`${value.id}:${actionId}`));
+    connectSignal(subscription.onNotificationAction, ([value, actionId]) => seen.push(`${value.id}:${actionId}`));
     await expect(
       attachNotificationActionSubscription(
         host({

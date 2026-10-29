@@ -48,7 +48,7 @@ export async function attachNotificationActionSubscription(
     subscription,
     (listener) => hostNotificationAction.attach(listener),
     (notification: Readonly<Notification>, actionId: string) =>
-      emitSignal(subscription.onNotificationAction, notification, actionId),
+      emitSignal(subscription.onNotificationAction, [notification, actionId]),
   );
 }
 
@@ -93,7 +93,7 @@ export async function attachNotificationReplySubscription(
     subscription,
     (listener) => hostNotificationReply.attach(listener),
     (notification: Readonly<Notification>, actionId: string, text: string) =>
-      emitSignal(subscription.onNotificationReply, notification, actionId, text),
+      emitSignal(subscription.onNotificationReply, [notification, actionId, text]),
   );
 }
 
@@ -430,9 +430,9 @@ async function detachNotificationSubscription(subscription: Entity): Promise<Not
   return { reason: 'ok' };
 }
 
-async function disposeNotificationSubscription<TArgs extends unknown[]>(
+async function disposeNotificationSubscription<T>(
   subscription: Entity,
-  signal: Signal<(...args: TArgs) => void>,
+  signal: Signal<T>,
 ): Promise<NotificationSubscriptionDisposeOutcome> {
   const runtime = _notificationSubscriptions.get(subscription);
   if (runtime === undefined || runtime.disposeCompleted) return { reason: 'already-disposed' };
