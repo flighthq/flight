@@ -4282,6 +4282,147 @@ pub fn sample_count(mesh: &Mesh, extra: Box<Int16Array>) -> usize {
     }
 
     #[test]
+    fn converts_between_nullable_and_ordinary_options_at_every_boundary() {
+        let source = r#"
+//! flight-compiler: nullable-option find_scale nullable_from_ordinary Explanation.contour
+
+pub struct Explanation {
+    pub contour: Option<f64>,
+    pub detail: Option<f64>,
+}
+
+pub fn contour_present(values: &[f64]) -> bool {
+    let explanation = explain(values);
+    return explanation.contour.is_some();
+}
+
+pub fn count_present(value: Option<f64>) -> i32 {
+    if value.is_some() {
+        return 1;
+    }
+    return 0;
+}
+
+pub fn explain(values: &[f64]) -> Explanation {
+    let mut out = Explanation {
+        contour: lookup(values),
+        detail: find_scale(values),
+    };
+    if values.len() > 2 {
+        out.contour = find_scale(values);
+        out.detail = lookup(values);
+    }
+    return out;
+}
+
+pub fn find_scale(values: &[f64]) -> Option<f64> {
+    if values.is_empty() {
+        return None;
+    }
+    return Some(values[0]);
+}
+
+pub fn lookup(values: &[f64]) -> Option<f64> {
+    if values.len() > 1 {
+        return Some(values[1]);
+    }
+    return None;
+}
+
+pub fn nullable_from_ordinary(values: &[f64]) -> Option<f64> {
+    return lookup(values);
+}
+
+pub fn ordinary_from_nullable(values: &[f64]) -> Option<f64> {
+    return find_scale(values);
+}
+
+pub fn present_through_argument(values: &[f64]) -> i32 {
+    return count_present(find_scale(values));
+}
+"#;
+
+        let output = compile_typescript_with_module_sources(
+            ModuleSource {
+                path: "crates/flight-scales/src/scales.rs",
+                source,
+            },
+            None,
+            &[],
+            &[],
+        )
+        .unwrap();
+
+        assert!(output.contains("  return ((explanation.contour) ?? undefined) !== undefined;\n"));
+        assert!(output.contains(
+            "  let out: Explanation = { contour: (lookup(values)) ?? null, detail: ((findScale(values)) ?? undefined) };\n"
+        ));
+        assert!(output.contains("    out.contour = (findScale(values)) ?? null;\n"));
+        assert!(output.contains("    out.detail = lookup(values);\n"));
+        assert!(output.contains("  return (lookup(values)) ?? null;\n"));
+        assert!(output.contains("  return ((findScale(values)) ?? undefined);\n"));
+        assert!(output.contains("  return countPresent(((findScale(values)) ?? undefined));\n"));
+        assert!(output.contains("  return values[0];\n"));
+        assert!(!output.contains("!== null"));
+    }
+
+    #[test]
+    fn scopes_nullable_option_fields_and_defaults_by_source_identity() {
+        let module = |path, source| ModuleSource { path, source };
+        let compile = |source: ModuleSource<'_>, aliases: &[ModuleSource<'_>]| {
+            compile_typescript_with_module_sources(
+                source,
+                Some("@flighthq/entity/contract"),
+                aliases,
+                &[],
+            )
+        };
+        let sibling = "//! flight-compiler: nullable-option Collision.value\n\npub struct Collision {\n    pub value: Option<f64>,\n}\n";
+        let local = "pub struct Collision {\n    pub value: Option<f64>,\n}\n\npub fn make() -> Collision {\n    return Collision { value: None };\n}\n";
+        let output = compile(
+            module("crates/flight-probe/src/local.rs", local),
+            &[module("crates/flight-probe/src/sibling.rs", sibling)],
+        )
+        .unwrap();
+        assert!(output.contains("export interface Collision {\n  value?: number;\n}\n"));
+        assert!(output.contains("  return { value: undefined };\n"));
+
+        let imported = "use crate::sibling::Collision;\n\npub fn make() -> Collision {\n    return Collision { value: None };\n}\n\npub fn make_from(value: Option<f64>) -> Collision {\n    let out = Collision { value };\n    return out;\n}\n";
+        let output = compile(
+            module("crates/flight-probe/src/imported.rs", imported),
+            &[module("crates/flight-probe/src/sibling.rs", sibling)],
+        )
+        .unwrap();
+        assert!(output.contains("  return { value: null };\n"), "{output}");
+        assert!(
+            output.contains("  const out: Collision = { value: (value) ?? null };\n"),
+            "{output}"
+        );
+
+        let entities = "//! flight-compiler: nullable-option Marker.contour\n\nuse flight_entity::{EntityRuntimeSlot, allocate_entity};\n\n#[derive(Default)]\npub struct Marker {\n    runtime: EntityRuntimeSlot,\n    pub contour: Option<f64>,\n    pub detail: Option<f64>,\n    pub scale: f64,\n}\n\nflight_entity::impl_entity!(Marker);\n\npub fn create_marker() -> Marker {\n    let out: Marker = allocate_entity();\n    return out;\n}\n";
+        let output = compile(module("crates/flight-probe/src/marker.rs", entities), &[]).unwrap();
+        assert!(
+            output.contains("  contour: number | null;\n  detail?: number;\n"),
+            "{output}"
+        );
+        assert!(
+            output.contains("Object.assign(allocateEntity<MarkerRaw>(), { contour: null, detail: undefined, scale: 0 })"),
+            "{output}"
+        );
+
+        let module_wide = "//! flight-compiler: nullable-options\n\nuse flight_entity::{EntityRuntimeSlot, allocate_entity};\n\n#[derive(Default)]\npub struct Marker {\n    runtime: EntityRuntimeSlot,\n    pub contour: Option<f64>,\n}\n\nflight_entity::impl_entity!(Marker);\n\npub fn create_marker() -> Marker {\n    let out: Marker = allocate_entity();\n    return out;\n}\n";
+        let output = compile(
+            module("crates/flight-probe/src/marker.rs", module_wide),
+            &[],
+        )
+        .unwrap();
+        assert!(
+            output.contains("Object.assign(allocateEntity<MarkerRaw>(), { contour: null })"),
+            "{output}"
+        );
+    }
+
+    #[test]
     fn represents_designated_option_returns_and_fields_as_nullable() {
         let source = r#"
 //! flight-compiler: nullable-option find_scale Explanation.contour
@@ -4350,7 +4491,10 @@ pub fn contour_or_zero(values: &[f64]) -> f64 {
             )
         );
         assert!(output.contains("  return undefined;\n"));
-        assert!(output.contains("  if (scale !== null) {\n"));
+        assert!(
+            output.contains("  const scale = ((findScale(values, undefined)) ?? undefined);\n")
+        );
+        assert!(output.contains("  if (scale !== undefined) {\n"));
         assert!(output.contains(
             "return { supported: value > 0.0, contour: (found) ?? null, detail: undefined };"
         ));
@@ -4369,8 +4513,9 @@ pub fn contour_or_zero(values: &[f64]) -> f64 {
             &[],
         )
         .unwrap();
-        assert!(sibling.contains("  return scale !== null;\n"));
-        assert!(sibling.contains("  return (explanation.contour ?? 0.0);\n"));
+        assert!(sibling.contains("  const scale = ((findScale(values, 0.5)) ?? undefined);\n"));
+        assert!(sibling.contains("  return scale !== undefined;\n"));
+        assert!(sibling.contains("  return (((explanation.contour) ?? undefined) ?? 0.0);\n"));
     }
 
     #[test]

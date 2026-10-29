@@ -109,7 +109,8 @@ const ARRAY_LIKE_ARGUMENT_MARKER: &str = "@array-like-argument:";
 // `{source}␟{function}␟{parameter}` for each `array-like` slice parameter, typed `ArrayLike<T>`; the
 // source identity keeps a sibling's designation from applying to a same-named local function.
 const ARRAY_LIKE_PARAMETER_MARKER: &str = "@array-like-parameter:";
-// `{Struct}␟{field}` for a `nullable-option` struct field, read where that struct is built by literal.
+// `{source}␟{Struct}␟{field}` for a `nullable-option` struct field, read where that struct is declared or
+// built by literal.
 const NULLABLE_OPTION_LITERAL_FIELD_MARKER: &str = "@nullable-option-literal-field:";
 // A function whose `Option` return is designated `nullable-option`: its returns use `null`.
 const RETURNS_NULLABLE_MARKER: &str = "@returns-nullable";
@@ -5137,7 +5138,7 @@ fn generation_context_with_types(
                 }
                 if designated {
                     context.insert(format!(
-                        "{NULLABLE_OPTION_LITERAL_FIELD_MARKER}{}{PROVENANCE_SEPARATOR}{field_name}",
+                        "{NULLABLE_OPTION_LITERAL_FIELD_MARKER}{module}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{field_name}",
                         structure.ident,
                     ));
                 }
@@ -5171,7 +5172,18 @@ fn generation_context_with_types(
                     ));
                     continue;
                 };
-                if program.nullable_options && option_inner_type(&field.ty).is_some() {
+                let designated = program.nullable_option_items.contains(&format!(
+                    "{}.{}",
+                    structure.ident,
+                    field
+                        .ident
+                        .as_ref()
+                        .map(ToString::to_string)
+                        .unwrap_or_default()
+                ));
+                if (program.nullable_options || designated)
+                    && option_inner_type(&field.ty).is_some()
+                {
                     value = "null".to_string();
                 }
                 context.insert(format!(
@@ -6535,7 +6547,27 @@ fn data_union_unit(entities: &HashSet<String>, owner: &str, variant: &str) -> bo
     return entities.contains(&format!("{DATA_UNION_UNIT_MARKER}{owner}:{variant}"));
 }
 
+// Emits `expression`. In emitted production code a per-item nullable `Option` (`T | null`) exists
+// only at its declaration boundary: a call to a `nullable-option` function or a read of a nullable
+// field is normalized to the ordinary absent form here (`?? undefined`, which keeps `false`, `0` and
+// `""`), so every other flow (bindings, arguments, ordinary returns and fields, `Option` methods)
+// sees one representation; nullable returns, fields and defaults convert back with `?? null`.
 pub(crate) fn emit_expression(
+    expression: &Expr,
+    entities: &HashSet<String>,
+) -> Result<String, CompileError> {
+    let value = emit_expression_value(expression, entities)?;
+    if current_source(entities).is_some()
+        && !entities.contains(NULLABLE_OPTIONS_MARKER)
+        && (expression_is_nullable_option_return(expression, entities)
+            || expression_is_nullable_option_field(expression, entities))
+    {
+        return Ok(format!("(({value}) ?? undefined)"));
+    }
+    return Ok(value);
+}
+
+fn emit_expression_value(
     expression: &Expr,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
@@ -6556,6 +6588,20 @@ pub(crate) fn emit_expression(
                     "{store}.set({}, {})",
                     emit_expression(&field.base, entities)?,
                     emit_expression(&assign.right, entities)?
+                ));
+            }
+            if current_source(entities).is_some()
+                && !entities.contains(NULLABLE_OPTIONS_MARKER)
+                && expression_is_nullable_option_field(&assign.left, entities)
+            {
+                let right_context = contextual_assignment_field_context(assign, entities);
+                return Ok(format!(
+                    "{} = {}",
+                    emit_expression_value(&assign.left, entities)?,
+                    nullable_option_value(
+                        &assign.right,
+                        emit_expression(&assign.right, &right_context)?
+                    )
                 ));
             }
             let left = if let Expr::Unary(unary) = assign.left.as_ref()
@@ -7038,20 +7084,24 @@ pub(crate) fn emit_expression(
                 );
                 return Ok(format!("{{ {} }}", fields.join(", ")));
             }
-            let structure_name = structure
-                .path
-                .segments
-                .last()
-                .map(|segment| segment.ident.to_string())
-                .unwrap_or_default();
+            // The literal's struct by canonical identity, so a same-named struct of another source
+            // never lends its nullable designations.
+            let structure_identity = context_type_identity(
+                entities,
+                &Type::Path(syn::TypePath {
+                    qself: None,
+                    path: structure.path.clone(),
+                }),
+            );
             let fields = structure
                 .fields
                 .iter()
                 .map(|field| {
                     let mut value = emit_expression(&field.expr, entities)?;
                     if let syn::Member::Named(field_name) = &field.member
+                        && let Some(identity) = &structure_identity
                         && entities.contains(&format!(
-                            "{NULLABLE_OPTION_LITERAL_FIELD_MARKER}{structure_name}{PROVENANCE_SEPARATOR}{field_name}"
+                            "{NULLABLE_OPTION_LITERAL_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
                         ))
                     {
                         value = nullable_option_value(&field.expr, value);
@@ -9425,6 +9475,23 @@ fn emit_contextual_struct_literal_expression(
                         );
                         emit_expression(&field.expr, &field_context)?
                     };
+                    // A `nullable-option` field of the literal's canonical struct stores `null`.
+                    let literal_identity = context_type_identity(
+                        entities,
+                        &Type::Path(syn::TypePath {
+                            qself: None,
+                            path: structure.path.clone(),
+                        }),
+                    );
+                    let value = if let syn::Member::Named(field_name) = &field.member
+                        && let Some(identity) = literal_identity
+                        && entities.contains(&format!(
+                            "{NULLABLE_OPTION_LITERAL_FIELD_MARKER}{identity}{PROVENANCE_SEPARATOR}{field_name}"
+                        )) {
+                        nullable_option_value(&field.expr, value)
+                    } else {
+                        value
+                    };
                     Ok(format!("{}: {value}", emit_member(&field.member)))
                 })
                 .collect::<Result<Vec<_>, CompileError>>()?;
@@ -9817,7 +9884,6 @@ fn emit_function(
         }
     }
     struct NullableLocalCollector<'a> {
-        context: &'a HashSet<String>,
         names: HashSet<String>,
         nullable_static_names: &'a HashSet<String>,
     }
@@ -9828,8 +9894,7 @@ fn emit_function(
                 && (self
                     .nullable_static_names
                     .iter()
-                    .any(|name| expression_contains_identifier(&initializer.expr, name))
-                    || expression_is_nullable_option_return(&initializer.expr, self.context))
+                    .any(|name| expression_contains_identifier(&initializer.expr, name)))
                 && let Some(name) = local_pattern_name(&local.pat)
             {
                 self.names.insert(name);
@@ -9839,7 +9904,6 @@ fn emit_function(
     }
 
     let mut nullable_locals = NullableLocalCollector {
-        context: entities,
         names: HashSet::new(),
         nullable_static_names,
     };
@@ -12399,9 +12463,10 @@ fn expression_struct_name(expression: &Expr, entities: &HashSet<String>) -> Opti
 }
 
 pub(crate) fn option_absent_value(expression: &Expr, entities: &HashSet<String>) -> &'static str {
+    let normalized = current_source(entities).is_some();
     if entities.contains(NULLABLE_OPTIONS_MARKER)
-        || expression_is_nullable_option_field(expression, entities)
-        || expression_is_nullable_option_return(expression, entities)
+        || !normalized && expression_is_nullable_option_field(expression, entities)
+        || !normalized && expression_is_nullable_option_return(expression, entities)
         || referenced_path_identifier(expression)
             .is_some_and(|name| entities.contains(&format!("@nullable:{name}")))
     {
@@ -12420,6 +12485,9 @@ fn expression_is_nullable_option_return(expression: &Expr, entities: &HashSet<St
     return call_fact(entities, NULLABLE_OPTION_RETURN_MARKER, &path.path).is_some();
 }
 
+// Whether `expression` reads a nullable `Option` field: one designated `nullable-option` or declared
+// in a `nullable-options` source, identified by the canonical struct of its base (a typed binding or
+// a struct-returning call in emitted code, the inferred struct in a Vitest suite).
 fn expression_is_nullable_option_field(expression: &Expr, entities: &HashSet<String>) -> bool {
     let Expr::Field(field) = expression else {
         return false;
@@ -12427,7 +12495,24 @@ fn expression_is_nullable_option_field(expression: &Expr, entities: &HashSet<Str
     let syn::Member::Named(field_name) = &field.member else {
         return false;
     };
-    let Some(structure) = inferred_vitest_struct_literal_name(&field.base, entities) else {
+    let structure = if current_source(entities).is_some() {
+        let base = match field.base.as_ref() {
+            Expr::Paren(paren) => paren.expr.as_ref(),
+            base => base,
+        };
+        match base {
+            Expr::Call(call) => match call.func.as_ref() {
+                Expr::Path(path) if path.qself.is_none() => {
+                    call_fact(entities, STRUCT_RETURN_MARKER, &path.path)
+                }
+                _ => None,
+            },
+            base => expression_struct_name(base, entities),
+        }
+    } else {
+        inferred_vitest_struct_literal_name(&field.base, entities)
+    };
+    let Some(structure) = structure else {
         return false;
     };
     return entities.contains(&format!(
@@ -13925,8 +14010,9 @@ fn emit_struct(
         let name = snake_to_lower_camel(&field_name.to_string());
         let prefix = if readonly { "readonly " } else { "" };
         if let Some(inner) = option_inner_type(&field.ty)
+            && let Some(current) = current_source(entities)
             && entities.contains(&format!(
-                "{NULLABLE_OPTION_LITERAL_FIELD_MARKER}{}{PROVENANCE_SEPARATOR}{field_name}",
+                "{NULLABLE_OPTION_LITERAL_FIELD_MARKER}{current}{PROVENANCE_SEPARATOR}{}{PROVENANCE_SEPARATOR}{field_name}",
                 structure.ident
             ))
         {
