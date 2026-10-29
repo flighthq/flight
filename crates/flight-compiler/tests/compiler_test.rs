@@ -1215,6 +1215,76 @@ mod foreign_macro_arguments {
     }
 
     #[test]
+    fn rejects_function_exits_inside_value_blocks_and_match_values() {
+        for (source, expected) in [
+            (
+                r#"pub struct Gate {
+    pub enabled: bool,
+    pub value: i32,
+}
+
+pub fn read(gate: &Gate) -> i32 {
+    let value = {
+        if !gate.enabled {
+            return -1;
+        }
+        gate.value
+    };
+    return value * 2;
+}
+"#,
+                "portable value block cannot use `return` to leave the enclosing function; bind the value first and exit with a statement",
+            ),
+            (
+                r#"pub fn pick(flag: bool, value: i32) -> i32 {
+    let picked = match flag {
+        true => value,
+        false => return 0,
+    };
+    return picked + 1;
+}
+"#,
+                "portable `match` used as a value cannot use `return` to leave the enclosing function; bind the value first and exit with a statement",
+            ),
+            (
+                r#"pub fn parse(value: Option<i32>) -> Option<i32> {
+    let doubled = {
+        let inner = value?;
+        inner * 2
+    };
+    return Some(doubled);
+}
+"#,
+                "portable value block cannot use `?` to leave the enclosing function; bind the value first and exit with a statement",
+            ),
+        ] {
+            assert_eq!(
+                compile_typescript(source, None).unwrap_err().to_string(),
+                expected,
+                "{source}"
+            );
+        }
+        let output = compile_typescript(
+            r#"pub fn apply(values: Vec<i32>) -> Vec<i32> {
+    let mapped = {
+        let step = 2;
+        values
+            .iter()
+            .map(|value| {
+                return value * step;
+            })
+            .collect::<Vec<i32>>()
+    };
+    return mapped;
+}
+"#,
+            None,
+        )
+        .unwrap();
+        assert!(output.contains("return value * step;"), "{output}");
+    }
+
+    #[test]
     fn lowers_matches_over_data_union_variants() {
         let source = r#"
 //! flight-compiler: data-union Id Segment

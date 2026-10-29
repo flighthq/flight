@@ -7985,6 +7985,41 @@ fn reject_entity_runtime_state_store_collisions(
     };
 }
 
+// A value block or a `match` used as a value lowers to an immediately invoked arrow, where `return`
+// and `?` would leave only the arrow, not the enclosing function as in Rust, and the caller would carry
+// on with `undefined`. Such exits fail closed; closures inside keep their own `return`.
+fn reject_function_exits_in_value_position<'ast>(
+    visit: impl FnOnce(&mut dyn Visit<'ast>),
+    construct: &str,
+) -> Result<(), CompileError> {
+    struct FunctionExitFinder {
+        found: Option<&'static str>,
+    }
+    impl<'ast> Visit<'ast> for FunctionExitFinder {
+        fn visit_expr_closure(&mut self, _closure: &'ast syn::ExprClosure) {}
+
+        fn visit_expr_return(&mut self, expression: &'ast syn::ExprReturn) {
+            self.found.get_or_insert("return");
+            syn::visit::visit_expr_return(self, expression);
+        }
+
+        fn visit_expr_try(&mut self, expression: &'ast syn::ExprTry) {
+            self.found.get_or_insert("?");
+            syn::visit::visit_expr_try(self, expression);
+        }
+
+        fn visit_item(&mut self, _item: &'ast syn::Item) {}
+    }
+    let mut finder = FunctionExitFinder { found: None };
+    visit(&mut finder);
+    return match finder.found {
+        Some(exit) => Err(compile_error(format!(
+            "{construct} cannot use `{exit}` to leave the enclosing function; bind the value first and exit with a statement"
+        ))),
+        None => Ok(()),
+    };
+}
+
 fn reject_unresolved_pattern_field(
     expression: &Expr,
     entities: &HashSet<String>,
@@ -10301,6 +10336,10 @@ fn emit_block_expression(
     let Some((last, preceding)) = block.stmts.split_last() else {
         return Err(compile_error("portable value block cannot be empty"));
     };
+    reject_function_exits_in_value_position(
+        |visitor| visitor.visit_block(block),
+        "portable value block",
+    )?;
     let Stmt::Expr(value, None) = last else {
         return Err(compile_error(
             "portable value block must end with an expression",
@@ -12532,6 +12571,14 @@ fn emit_match_expression(
     expression: &syn::ExprMatch,
     entities: &HashSet<String>,
 ) -> Result<String, CompileError> {
+    reject_function_exits_in_value_position(
+        |visitor| {
+            for arm in &expression.arms {
+                visitor.visit_arm(arm);
+            }
+        },
+        "portable `match` used as a value",
+    )?;
     if let Some(arms) = analyze_option_match(&expression.arms) {
         let mut out = String::new();
         out.push_str("(() => {\n  const matchValue = ");
