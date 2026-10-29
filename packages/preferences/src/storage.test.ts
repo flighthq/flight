@@ -240,7 +240,7 @@ describe('disposeStorage', () => {
     const signals = createStorageSignals();
     connectSignal(signals.onChange, () => calls++);
     disposeStorage(signals);
-    expect(signals.onChange.data).toBeNull();
+    expect(signals.onChange.data).toBeUndefined();
     expect(calls).toBe(0);
   });
 });
