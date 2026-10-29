@@ -12177,6 +12177,17 @@ fn emit_method_call(
         "trim_start" if arguments.is_empty() => Err(compile_error(
             "portable `.trim_start()` requires a receiver known to be `String` or `str`",
         )),
+        "trim_end_matches"
+            if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
+        {
+            Ok(format!(
+                "((text: string, matches: (character: string) => boolean): string => {{ const chars = [...text]; let end = chars.length; while (end > 0 && matches(chars[end - 1])) {{ end -= 1; }} return chars.slice(0, end).join(\"\"); }})({receiver}, {})",
+                arguments[0]
+            ))
+        }
+        "trim_end_matches" if arguments.len() == 1 => Err(compile_error(
+            "portable `.trim_end_matches()` requires a receiver known to be `String` or `str`",
+        )),
         "trim_start_matches"
             if arguments.len() == 1 && expression_is_known_string(&call.receiver, entities) =>
         {
@@ -14337,6 +14348,13 @@ fn emit_statement(
             write_indent(out, indent);
             writeln!(out, "{};", emit_expression(expression, entities)?)
                 .expect("writing to a String cannot fail");
+        }
+        Stmt::Item(syn::Item::Use(_)) => {}
+        Stmt::Item(syn::Item::Const(item_const)) => {
+            let name = emit_path_segment(&item_const.ident.to_string());
+            let value = emit_expression(&item_const.expr, entities)?;
+            write_indent(out, indent);
+            writeln!(out, "const {name} = {value};").expect("writing to a String cannot fail");
         }
         Stmt::Item(_) => {
             return Err(compile_error(
