@@ -155,6 +155,14 @@ describe('compilerVisibilityArguments', () => {
     expect(compilerVisibilityArguments('generate-tests', crate, ['ease.rs'], 'ease.rs')).toEqual([]);
     expect(compilerVisibilityArguments('source-mode', crate, [], 'ease.rs')).toEqual([]);
   });
+
+  it('passes only target-native crate sources to test generation', () => {
+    const crate = ['lib.rs', 'pool.rs', 'ease.rs', 'ease_compat.rs'];
+    expect(
+      compilerVisibilityArguments('generate-tests', crate, ['ease.rs'], 'tests/ease_test.rs', ['ease_compat.rs']),
+    ).toEqual(['--visibility-source', 'ease_compat.rs']);
+    expect(compilerVisibilityArguments('source-mode', crate, [], 'ease.rs', ['ease_compat.rs'])).toEqual([]);
+  });
 });
 
 describe('dependencyAliasArguments', () => {

@@ -58,7 +58,16 @@ export function compilerVisibilityArguments(
   crateSources: readonly string[],
   aliasSources: readonly string[],
   source?: string,
+  targetNativeSources: readonly string[] = [],
 ): string[] {
+  // Test generation reads only the crate's target-native sources, and only for their declared nullable
+  // Option parameters; they never become full alias sources.
+  if (command === 'generate-tests') {
+    const targetNative = new Set(targetNativeSources);
+    return crateSources
+      .filter((crateSource) => targetNative.has(crateSource))
+      .flatMap((crateSource) => ['--visibility-source', crateSource]);
+  }
   if (command !== 'generate') return [];
   const emitted = new Set(aliasSources);
   return crateSources

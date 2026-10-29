@@ -85,15 +85,20 @@ mkdirSync(rawRoot, { recursive: true });
 
 try {
   const rustSources = sourceFiles(crateRoot);
-  const aliasSources = rustSources
-    .map((rustSource) => join(crateRoot, 'src', rustSource))
-    .filter((rustPath) => {
-      const mode = sourceMode(rustPath);
-      return (
+  const rustSourceModes = rustSources.map((rustSource) => {
+    const rustPath = join(crateRoot, 'src', rustSource);
+    return { mode: sourceMode(rustPath), rustPath };
+  });
+  const aliasSources = rustSourceModes
+    .filter(
+      ({ mode, rustPath }) =>
         mode === 'generate' ||
-        (mode === 'target-native' && hasRustSiblingGenerationSemantics(readFileSync(rustPath, 'utf8')))
-      );
-    });
+        (mode === 'target-native' && hasRustSiblingGenerationSemantics(readFileSync(rustPath, 'utf8'))),
+    )
+    .map(({ rustPath }) => rustPath);
+  const targetNativeSources = rustSourceModes
+    .filter(({ mode }) => mode === 'target-native')
+    .map(({ rustPath }) => rustPath);
   const modules = rustSources
     .map((rustSource) => loadModule(rustSource, aliasSources))
     .filter((module): module is PackageModule => module !== null);
@@ -147,6 +152,7 @@ try {
       join(rawRoot, fileName),
       ['./contract.ts', '--contract-source', join(crateRoot, 'src', 'contract.rs')],
       aliasSources,
+      targetNativeSources,
     );
     if (typescript.includes('crate.')) {
       typescript = addRustTestSupportImport(typescript);
@@ -201,6 +207,7 @@ function compile(
   out: string,
   trailing: string[] = [],
   aliasSources: string[] = [],
+  targetNativeSources: string[] = [],
 ): string {
   execFileSync(
     compilerPath,
@@ -212,7 +219,13 @@ function compile(
       out,
       ...entityArguments(command),
       ...compilerAliasArguments(command, aliasSources, source),
-      ...compilerVisibilityArguments(command, crateSourcePaths(join(crateRoot, 'src')), aliasSources, source),
+      ...compilerVisibilityArguments(
+        command,
+        crateSourcePaths(join(crateRoot, 'src')),
+        aliasSources,
+        source,
+        targetNativeSources,
+      ),
       ...dependencyAliasArguments(dependencySources(command)),
       ...contractArguments(command, trailing),
     ],
