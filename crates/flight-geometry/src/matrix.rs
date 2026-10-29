@@ -23,6 +23,10 @@ pub struct Matrix {
     pub ty: f32,
 }
 
+/// A structural `{ a, b, c, d, tx, ty }` value accepted where no entity identity is required (TS
+/// `MatrixLike`, `EntityWithoutRuntime<Matrix>`). In Rust it is the same type: the alias names the role.
+pub type MatrixLike = Matrix;
+
 pub fn create_gradient_transform_matrix(
     width: f32,
     height: f32,

@@ -12,6 +12,11 @@ pub struct Rectangle {
     pub height: f32,
 }
 
+/// A structural `{ x, y, width, height }` value accepted where no entity identity is required (TS
+/// `RectangleLike`, `EntityWithoutRuntime<Rectangle>`). In Rust it is the same type: the alias names
+/// the role.
+pub type RectangleLike = Rectangle;
+
 pub fn create_rectangle(x: f32, y: f32, width: f32, height: f32) -> Rectangle {
     let mut out: Rectangle = allocate_entity();
     initialize_rectangle(&mut out, x, y, width, height);
