@@ -679,9 +679,10 @@ for (const pkg of GOVERNED_PACKAGES) {
   const generatedDependencyContractNames = generatedLanes
     ? new Set(getModuleValueExports(contractPath).filter((name) => !classification.has(name)))
     : new Set<string>();
-  const generatedDependencyPublicNames = new Set(
-    [...generatedDependencyContractNames].filter((name) => derivedPublicNames.has(name)),
-  );
+  const generatedDependencyPublicNames =
+    derivedPublicNames instanceof Set
+      ? new Set([...generatedDependencyContractNames].filter((name) => derivedPublicNames.has(name)))
+      : new Set<string>();
 
   const counts = { public: 0, protected: 0, exclude: 0 };
   for (const { lane } of classification.values()) counts[lane]++;
