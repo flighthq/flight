@@ -1,5 +1,6 @@
 import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
-import { connectSignal } from '@flighthq/signals/contract';
+import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
+import type { Signal, SlotId } from '@flighthq/signals/contract';
 import type { EntityRuntimeKey } from '@flighthq/types/contract';
 import type {
   HostSensorsCapability,
@@ -212,6 +213,21 @@ describe('attachSensors', () => {
     backend.fireMotion(createMotionReading(), createRotationRateReading());
     expect(accel).toBe(1);
     expect(gyro).toBe(1);
+  });
+
+  it('types readings by payload and stops a slot disconnected by its SlotId', () => {
+    const backend = fakeBackend();
+    const host = hostOf(backend);
+    const sensors = createSensors();
+    expectTypeOf(sensors.onAccelerometer).toEqualTypeOf<Signal<Readonly<MotionReading>>>();
+    expectTypeOf(sensors.onGyroscope).toEqualTypeOf<Signal<Readonly<RotationRateReading>>>();
+    let accel = 0;
+    const id: SlotId = connectSignal(sensors.onAccelerometer, (_reading: Readonly<MotionReading>) => accel++);
+    attachSensors(host.system.sensors, sensors);
+    backend.fireMotion(createMotionReading(), createRotationRateReading());
+    disconnectSignal(sensors.onAccelerometer, id);
+    backend.fireMotion(createMotionReading(), createRotationRateReading());
+    expect(accel).toBe(1);
   });
 
   it('emits onOrientation from the orientation stream', () => {

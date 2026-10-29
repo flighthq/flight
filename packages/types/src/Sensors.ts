@@ -158,15 +158,15 @@ export interface HostSensorsCapability {
 
 // Device sensor event entity. Enable delivery with attachSensors; the signals stay inert until then.
 export interface Sensors extends Entity {
-  onAbsoluteOrientation: Signal<(reading: Readonly<OrientationReading>) => void>;
-  onAccelerometer: Signal<(reading: Readonly<MotionReading>) => void>;
-  onAmbientLight: Signal<(reading: Readonly<AmbientLightReading>) => void>;
-  onBarometer: Signal<(reading: Readonly<PressureReading>) => void>;
-  onGravity: Signal<(reading: Readonly<MotionReading>) => void>;
-  onGyroscope: Signal<(reading: Readonly<RotationRateReading>) => void>;
-  onLinearAcceleration: Signal<(reading: Readonly<MotionReading>) => void>;
-  onMagnetometer: Signal<(reading: Readonly<MotionReading>) => void>;
-  onOrientation: Signal<(reading: Readonly<OrientationReading>) => void>;
-  onProximity: Signal<(reading: Readonly<ProximityReading>) => void>;
-  onQuaternion: Signal<(reading: Readonly<QuaternionReading>) => void>;
+  onAbsoluteOrientation: Signal<Readonly<OrientationReading>>;
+  onAccelerometer: Signal<Readonly<MotionReading>>;
+  onAmbientLight: Signal<Readonly<AmbientLightReading>>;
+  onBarometer: Signal<Readonly<PressureReading>>;
+  onGravity: Signal<Readonly<MotionReading>>;
+  onGyroscope: Signal<Readonly<RotationRateReading>>;
+  onLinearAcceleration: Signal<Readonly<MotionReading>>;
+  onMagnetometer: Signal<Readonly<MotionReading>>;
+  onOrientation: Signal<Readonly<OrientationReading>>;
+  onProximity: Signal<Readonly<ProximityReading>>;
+  onQuaternion: Signal<Readonly<QuaternionReading>>;
 }
