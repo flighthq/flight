@@ -14,8 +14,8 @@ describe('directionValues', () => {
     expect(-1).toEqual(-1);
   });
   it('carries the source numeric values', () => {
-    expect(1).toEqual(1);
-    expect(-1).toEqual(-1);
+    expect((1 << 24) >> 24).toEqual(1);
+    expect((-1 << 24) >> 24).toEqual(-1);
   });
   it('is copyable and comparable', () => {
     const direction = -1;

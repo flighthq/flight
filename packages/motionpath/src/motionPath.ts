@@ -48,7 +48,7 @@ export function getMotionPathHeading(mp: MotionPathRaw): number {
 function applyMotionPathLoopMode(mp: MotionPathRaw, movement: number, length: number): void {
   const loopMode = mp.loopMode;
   const distance = mp.distance;
-  const direction = mp.direction;
+  const direction = (mp.direction << 24) >> 24;
   if (loopMode === 'loop') {
     let wrapped = (distance + direction * movement) % length;
     if (wrapped < 0.0) {
