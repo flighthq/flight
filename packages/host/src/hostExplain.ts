@@ -1,11 +1,12 @@
+import type { Host } from '@flighthq/types/contract';
+
 import type {
-  Host,
-  HostCapabilityGroupExplanation,
-  HostExplanation,
   HostCapabilityBackend,
   HostCapabilityCoverage,
   HostCapabilityExplanation,
-} from '@flighthq/types/contract';
+  HostCapabilityGroupExplanation,
+  HostExplanation,
+} from './types.ts';
 
 // Pull queries over a Host: what it provides, what it does not, and — for the slots whose absence is a
 // common and confusing failure — where to get the missing capability. Plain data, no logging; the active

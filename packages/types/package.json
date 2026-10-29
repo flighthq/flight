@@ -43,6 +43,7 @@
     "@flighthq/entity": "*",
     "@flighthq/geometry": "*",
     "@flighthq/haptics": "*",
+    "@flighthq/host": "*",
     "@flighthq/math": "*",
     "@flighthq/menu": "*",
     "@flighthq/resource": "*",

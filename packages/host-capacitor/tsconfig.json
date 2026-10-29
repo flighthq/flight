@@ -36,7 +36,7 @@
       "path": "../haptics"
     },
     {
-      "path": "../host"
+      "path": "../host/tsconfig.runtime.json"
     },
     {
       "path": "../host-web"

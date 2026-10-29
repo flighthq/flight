@@ -22,7 +22,7 @@
     { "path": "../geolocation" },
     { "path": "../glyphatlas" },
     { "path": "../haptics" },
-    { "path": "../host" },
+    { "path": "../host/tsconfig.runtime.json" },
     { "path": "../image" },
     { "path": "../image-codec" },
     { "path": "../input" },

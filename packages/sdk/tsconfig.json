@@ -91,7 +91,7 @@
       "path": "../dialog"
     },
     {
-      "path": "../host"
+      "path": "../host/tsconfig.runtime.json"
     },
     {
       "path": "../preferences"

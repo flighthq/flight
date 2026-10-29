@@ -1,6 +1,6 @@
 import type { LogState } from '@flighthq/log/contract';
 import { logOnce } from '@flighthq/log/contract';
-import type { Host, HostCapabilityExplanation } from '@flighthq/types/contract';
+import type { Host } from '@flighthq/types/contract';
 import { LogLevel } from '@flighthq/types/contract';
 
 import {
@@ -12,6 +12,7 @@ import {
   explainHostTextShaper,
   explainHostVideo,
 } from './hostExplain.ts';
+import type { HostCapabilityExplanation } from './types.ts';
 
 // Opt-in warnings for a host that is missing a capability Flight packages commonly need. Importing this
 // module is what costs; a build that never diagnoses a host carries neither the sentences nor the
