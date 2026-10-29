@@ -1,3 +1,5 @@
+use crate::common::*;
+
 use std::sync::{Arc, Mutex};
 
 use flight_entity::{Ref, allocate_entity};
@@ -24,13 +26,13 @@ mod blur_selectable_rich_text {
         let manager = create_selectable_rich_text_manager();
         let text = rich_text("hello");
         focus_selectable_rich_text(&manager, &text);
-        let runtime = runtime(&text);
-        runtime.write().unwrap().selection_begin_index = 1;
-        runtime.write().unwrap().selection_end_index = 4;
+        let rich_text_runtime = runtime(&text);
+        rich_text_runtime.write().unwrap().selection_begin_index = 1;
+        rich_text_runtime.write().unwrap().selection_end_index = 4;
         blur_selectable_rich_text(&manager);
         assert!(manager.read().unwrap().focused.is_none());
-        assert_eq!(runtime.read().unwrap().selection_begin_index, 0);
-        assert_eq!(runtime.read().unwrap().selection_end_index, 0);
+        assert_eq!(rich_text_runtime.read().unwrap().selection_begin_index, 0);
+        assert_eq!(rich_text_runtime.read().unwrap().selection_end_index, 0);
     }
 
     #[test]
@@ -82,9 +84,9 @@ mod dispatch_selectable_rich_text_key_down {
         let manager = create_selectable_rich_text_manager();
         let text = rich_text("hello world");
         focus_selectable_rich_text(&manager, &text);
-        let runtime = runtime(&text);
-        runtime.write().unwrap().selection_begin_index = 6;
-        runtime.write().unwrap().selection_end_index = 11;
+        let rich_text_runtime = runtime(&text);
+        rich_text_runtime.write().unwrap().selection_begin_index = 6;
+        rich_text_runtime.write().unwrap().selection_end_index = 11;
         let copied = Arc::new(Mutex::new(Vec::<String>::new()));
         let callback_values = copied.clone();
         let mut data = keyboard_data();
@@ -133,9 +135,9 @@ mod dispatch_selectable_rich_text_key_down {
         assert!(dispatch_selectable_rich_text_key_down(
             &manager, &data, None
         ));
-        let runtime = runtime(&text);
-        assert_eq!(runtime.read().unwrap().selection_begin_index, 0);
-        assert_eq!(runtime.read().unwrap().selection_end_index, 5);
+        let rich_text_runtime = runtime(&text);
+        assert_eq!(rich_text_runtime.read().unwrap().selection_begin_index, 0);
+        assert_eq!(rich_text_runtime.read().unwrap().selection_end_index, 5);
     }
 }
 
@@ -146,26 +148,26 @@ mod dispatch_selectable_rich_text_pointer_down {
     fn extends_the_selection_end_when_extend_is_true() {
         let manager = create_selectable_rich_text_manager();
         let text = rich_text("hello");
-        let runtime = runtime(&text);
-        runtime.write().unwrap().selection_begin_index = 1;
+        let rich_text_runtime = runtime(&text);
+        rich_text_runtime.write().unwrap().selection_begin_index = 1;
         dispatch_selectable_rich_text_pointer_down(&manager, &text, 0.0, 0.0, true);
-        assert_eq!(runtime.read().unwrap().selection_begin_index, 1);
+        assert_eq!(rich_text_runtime.read().unwrap().selection_begin_index, 1);
     }
 
     #[test]
     fn sets_focus_and_collapses_selection_when_layout_is_none() {
         let manager = create_selectable_rich_text_manager();
         let text = rich_text("hello");
-        let runtime = runtime(&text);
-        runtime.write().unwrap().selection_begin_index = 2;
-        runtime.write().unwrap().selection_end_index = 2;
+        let rich_text_runtime = runtime(&text);
+        rich_text_runtime.write().unwrap().selection_begin_index = 2;
+        rich_text_runtime.write().unwrap().selection_end_index = 2;
         dispatch_selectable_rich_text_pointer_down(&manager, &text, 0.0, 0.0, false);
         assert!(Arc::ptr_eq(
             manager.read().unwrap().focused.as_ref().unwrap(),
             &text
         ));
-        assert_eq!(runtime.read().unwrap().selection_begin_index, 0);
-        assert_eq!(runtime.read().unwrap().selection_end_index, 0);
+        assert_eq!(rich_text_runtime.read().unwrap().selection_begin_index, 0);
+        assert_eq!(rich_text_runtime.read().unwrap().selection_end_index, 0);
     }
 }
 
@@ -239,9 +241,9 @@ mod get_selectable_rich_text_selection_text {
         let manager = create_selectable_rich_text_manager();
         let text = rich_text("hello world");
         focus_selectable_rich_text(&manager, &text);
-        let runtime = runtime(&text);
-        runtime.write().unwrap().selection_begin_index = 6;
-        runtime.write().unwrap().selection_end_index = 11;
+        let rich_text_runtime = runtime(&text);
+        rich_text_runtime.write().unwrap().selection_begin_index = 6;
+        rich_text_runtime.write().unwrap().selection_end_index = 11;
         assert_eq!(get_selectable_rich_text_selection_text(&manager), "world");
     }
 }

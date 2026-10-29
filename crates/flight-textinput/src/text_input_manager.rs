@@ -1,3 +1,5 @@
+//! flight-compiler: root-only blurTextInput connectInputToTextInput createTextInputManager dispatchTextInput dispatchTextInputKeyDown dispatchTextInputPointerDown dispatchTextInputPointerMove dispatchTextInputWheel focusTextInput
+
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, allocate_entity};
@@ -80,7 +82,7 @@ pub fn dispatch_text_input_key_down(
         return false;
     };
     let options = HandleTextInputKeyboardOptions {
-        clipboard_text: clipboard_text.map(str::to_string),
+        clipboard_text: clipboard_text.map(|value| value.to_string()),
         layout: get_target_layout(&target),
         on_copy,
     };
@@ -141,13 +143,10 @@ pub fn dispatch_text_input_wheel(manager: &Ref<TextInputManager>, delta_lines: f
 
 pub fn focus_text_input(manager: &Ref<TextInputManager>, target: &Ref<RichText>) {
     let previous = manager.read().unwrap().focused.clone();
-    if previous
-        .as_ref()
-        .map(|previous| !Arc::ptr_eq(previous, target))
-        .unwrap_or(false)
-        && let Some(previous) = previous
-    {
-        set_text_input_focused(&previous, false);
+    if let Some(previous) = previous {
+        if !Arc::ptr_eq(&previous, target) {
+            set_text_input_focused(&previous, false);
+        }
     }
     manager.write().unwrap().focused = Some(target.clone());
     set_text_input_focused(target, true);
@@ -168,7 +167,9 @@ fn get_text_input_focus_target(manager: &Ref<TextInputManager>) -> Option<Ref<Ri
     if !manager.enabled {
         return None;
     }
-    let target = manager.focused.clone()?;
+    let Some(target) = manager.focused.clone() else {
+        return None;
+    };
     if !target.read().unwrap().enabled {
         return None;
     }

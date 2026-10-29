@@ -13,10 +13,14 @@ pub(crate) fn utf16_replace(value: &str, start: usize, end: usize, replacement: 
     let units: Vec<u16> = value.encode_utf16().collect();
     let start = start.min(units.len());
     let end = end.min(units.len()).max(start);
-    let mut out = Vec::with_capacity(units.len() - (end - start) + utf16_len(replacement));
-    out.extend_from_slice(&units[..start]);
+    let mut out: Vec<u16> = Vec::new();
+    for index in 0..start {
+        out.push(units[index]);
+    }
     out.extend(replacement.encode_utf16());
-    out.extend_from_slice(&units[end..]);
+    for index in end..units.len() {
+        out.push(units[index]);
+    }
     return String::from_utf16_lossy(&out);
 }
 

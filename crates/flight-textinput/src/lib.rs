@@ -12,15 +12,13 @@ pub mod contract;
 
 pub use contract::HandleTextInputKeyboardOptions;
 pub use contract::ReplaceTextInputOptions;
-pub use contract::RichTextInputMethods;
 pub use contract::SelectableRichTextManager;
-pub use contract::SelectableRichTextManagerMethods;
 pub use contract::TextInputCopyCallback;
 pub use contract::TextInputDisposer;
 pub use contract::TextInputEditRecord;
 pub use contract::TextInputManager;
-pub use contract::TextInputManagerMethods;
 pub use contract::TextInputSource;
+pub use sugar::{RichTextInputMethods, SelectableRichTextManagerMethods, TextInputManagerMethods};
 
 pub use contract::append_text_input;
 pub use contract::apply_text_input_restriction;

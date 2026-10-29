@@ -1,70 +1,107 @@
+// Generated from crates/flight-textinput/src/text_input.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 import { getRichTextRuntime } from '@flighthq/text/contract';
-import type { RichText, RichTextRuntime, TextInputOptions, TextInputState } from '@flighthq/text/contract';
+import type { RichText, TextInputOptions, TextInputState } from '@flighthq/text/contract';
 
-// The opt-in seam that turns a static RichText into an editable field. Importing it is what pulls
-// @flighthq/textinput into an app's bundle; a RichText that never calls enableTextInput stays free of
-// selection/caret/input code. The editing/manager functions in textInputEditing.ts and
-// textInputManager.ts read the input state through getTextInputState.
-
-// Detaches the editable-field slot, returning the node to a static RichText. The field's text and rich
-// content remain on the RichText itself; only the input mode (caret/focus/selection style) is released.
-export function disableTextInput(node: RichText): void {
-  (getRichTextRuntime(node) as RichTextRuntime).input = null;
-}
-
-// Allocates (or returns) the editable-field slot on a RichText, mirroring the enable* opt-in pattern.
-// Idempotent: a second call returns the existing state, applying any options passed.
-export function enableTextInput(node: RichText, options?: Readonly<TextInputOptions>): TextInputState {
-  const runtime = getRichTextRuntime(node) as RichTextRuntime;
-  let state = runtime.input;
-  if (state === null) {
-    state = createTextInputState(options);
-    runtime.input = state;
-  } else if (options !== undefined) {
+function createTextInputState(options?: Readonly<TextInputOptions>): TextInputState {
+  let state = {
+    alwaysShowSelection: false,
+    caretColor: 0x0000_00ff,
+    caretIndex: 0,
+    caretWidth: 1.0,
+    desiredCaretX: -1.0,
+    displayAsPassword: false,
+    focused: false,
+    history: [],
+    historyIndex: -1,
+    historyLimit: 100,
+    passwordCharacter: '•',
+    restrict: '',
+    selectionAlpha: 0.35,
+    selectionColor: 0x0078_d7ff,
+    selectionIndex: 0,
+  };
+  if (options !== undefined) {
     applyTextInputOptions(state, options);
   }
   return state;
 }
 
-export function getTextInputState(node: Readonly<RichText>): TextInputState | null {
-  return getRichTextRuntime(node).input;
-}
-
-export function hasTextInput(node: Readonly<RichText>): boolean {
-  return getRichTextRuntime(node).input !== null;
-}
-
 function applyTextInputOptions(state: TextInputState, options: Readonly<TextInputOptions>): void {
-  if (options.alwaysShowSelection !== undefined) state.alwaysShowSelection = options.alwaysShowSelection;
-  if (options.caretColor !== undefined) state.caretColor = options.caretColor;
-  if (options.caretWidth !== undefined) state.caretWidth = options.caretWidth;
-  if (options.displayAsPassword !== undefined) state.displayAsPassword = options.displayAsPassword;
-  if (options.historyLimit !== undefined) state.historyLimit = Math.max(0, options.historyLimit);
-  if (options.passwordCharacter !== undefined) state.passwordCharacter = options.passwordCharacter;
-  if (options.restrict !== undefined) state.restrict = options.restrict;
-  if (options.selectionAlpha !== undefined) state.selectionAlpha = options.selectionAlpha;
-  if (options.selectionColor !== undefined) state.selectionColor = options.selectionColor;
+  if (options.alwaysShowSelection !== undefined) {
+    const value = options.alwaysShowSelection;
+    state.alwaysShowSelection = value;
+  }
+  if (options.caretColor !== undefined) {
+    const value = options.caretColor;
+    state.caretColor = value;
+  }
+  if (options.caretWidth !== undefined) {
+    const value = options.caretWidth;
+    state.caretWidth = value;
+  }
+  if (options.displayAsPassword !== undefined) {
+    const value = options.displayAsPassword;
+    state.displayAsPassword = value;
+  }
+  if (options.historyLimit !== undefined) {
+    const value = options.historyLimit;
+    state.historyLimit = value;
+  }
+  if (options.passwordCharacter !== undefined) {
+    const value = options.passwordCharacter;
+    state.passwordCharacter = value;
+  }
+  if (options.restrict !== undefined) {
+    const value = options.restrict;
+    state.restrict = value;
+  }
+  if (options.selectionAlpha !== undefined) {
+    const value = options.selectionAlpha;
+    state.selectionAlpha = value;
+  }
+  if (options.selectionColor !== undefined) {
+    const value = options.selectionColor;
+    state.selectionColor = value;
+  }
 }
 
-// Defaults match OpenFL's TextField input conventions (bullet password char, light selection tint,
-// opaque black caret 1px wide). desiredCaretX starts unset (-1) so vertical navigation anchors to
-// the actual caret position on the first up/down keystroke. historyLimit defaults to 100 entries.
-function createTextInputState(options?: Readonly<TextInputOptions>): TextInputState {
-  return {
-    alwaysShowSelection: options?.alwaysShowSelection ?? false,
-    caretColor: options?.caretColor ?? 0x000000ff,
-    caretIndex: 0,
-    caretWidth: options?.caretWidth ?? 1,
-    desiredCaretX: -1,
-    displayAsPassword: options?.displayAsPassword ?? false,
-    focused: false,
-    history: [],
-    historyIndex: -1,
-    historyLimit: options?.historyLimit !== undefined ? Math.max(0, options.historyLimit) : 100,
-    passwordCharacter: options?.passwordCharacter ?? '•',
-    restrict: options?.restrict ?? '',
-    selectionAlpha: options?.selectionAlpha ?? 0.35,
-    selectionColor: options?.selectionColor ?? 0x0078d7ff,
-    selectionIndex: 0,
-  };
+export function disableTextInput(node: RichText): void {
+  const runtime = (() => {
+    node = node!;
+    return getRichTextRuntime(node);
+  })();
+  runtime!.input = undefined;
+}
+
+export function enableTextInput(node: RichText, options?: Readonly<TextInputOptions>): TextInputState {
+  const runtime = (() => {
+    node = node!;
+    return getRichTextRuntime(node);
+  })();
+  const existing = runtime!.input;
+  if (existing !== undefined) {
+    const state = existing;
+    if (options !== undefined) {
+      applyTextInputOptions(state!, options);
+    }
+    return state;
+  }
+  const state = createTextInputState(options);
+  runtime!.input = state;
+  return state;
+}
+
+export function getTextInputState(node: RichText): TextInputState | undefined {
+  const runtime = (() => {
+    node = node!;
+    return getRichTextRuntime(node);
+  })();
+  const input = runtime!.input;
+  return input;
+}
+
+export function hasTextInput(node: RichText): boolean {
+  return getTextInputState(node) !== undefined;
 }

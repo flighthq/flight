@@ -206,8 +206,8 @@ pub fn runtime(source: &Ref<RichText>) -> Ref<RichTextRuntime> {
 }
 
 pub fn set_layout(source: &Ref<RichText>, layout: TextLayoutResult) {
-    let runtime = runtime(source);
-    let text_label = runtime.read().unwrap().text_label.clone();
+    let rich_text_runtime = runtime(source);
+    let text_label = rich_text_runtime.read().unwrap().text_label.clone();
     text_label.write().unwrap().text_layout = Some(Arc::new(RwLock::new(layout)));
 }
 

@@ -9,13 +9,14 @@
     "sourceMap": true
   },
   "references": [
+    { "path": "../entity" },
+    { "path": "../input" },
     { "path": "../node" },
-    { "path": "../text" },
     { "path": "../signals" },
+    { "path": "../text" },
     { "path": "../textformat" },
     { "path": "../textlayout/tsconfig.runtime.json" },
-    { "path": "../entity" },
-    { "path": "../types" }
+    { "path": "../textsegment" }
   ],
   "include": ["src"]
 }

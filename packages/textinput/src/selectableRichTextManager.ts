@@ -1,67 +1,95 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+// Generated from crates/flight-textinput/src/selectable_rich_text_manager.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { allocateEntity } from '@flighthq/entity/contract';
+import { KEY_CODE_A, KEY_CODE_C } from '@flighthq/input/contract';
+import type { InputKeyboardData } from '@flighthq/input/contract';
 import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/text/contract';
 import type { RichText, RichTextRuntime } from '@flighthq/text/contract';
 import { computeRichTextCharIndexAtPoint } from '@flighthq/textlayout/contract';
-import type { EntityConstruction, InputKeyboardData, SelectableRichTextManager } from '@flighthq/types/contract';
-import { KeyCode } from '@flighthq/types/contract';
 
-export function blurSelectableRichText(manager: SelectableRichTextManager): void {
-  if (manager.focused !== null) {
-    const runtime = getMutableRuntime(manager.focused);
+import { jsRound, utf16Len, utf16Slice } from './textUnits.ts';
+import type { SelectableRichTextManagerRaw, TextInputCopyCallback } from './types.ts';
+
+export function blurSelectableRichText(manager: SelectableRichTextManagerRaw): void {
+  const target = manager!.focused;
+  if (target !== undefined) {
+    let runtime = getMutableRuntime(target);
+    runtime = runtime!;
     runtime.selectionBeginIndex = 0;
     runtime.selectionEndIndex = 0;
   }
-  manager.focused = null;
+  manager!.focused = undefined;
 }
 
-export function createSelectableRichTextManager(): SelectableRichTextManager {
-  const out = allocateEntity<SelectableRichTextManager>();
+export function createSelectableRichTextManager(): SelectableRichTextManagerRaw {
+  let out: SelectableRichTextManagerRaw = Object.assign(allocateEntity<SelectableRichTextManagerRaw>(), {
+    focused: undefined,
+  });
   initializeSelectableRichTextManager(out);
-  return finishEntity(out);
+  return out;
 }
 
 export function dispatchSelectableRichTextKeyDown(
-  manager: SelectableRichTextManager,
+  manager: SelectableRichTextManagerRaw,
   data: Readonly<InputKeyboardData>,
-  onCopy?: (text: string) => void,
+  onCopy?: TextInputCopyCallback,
 ): boolean {
-  const target = manager.focused;
-  if (target === null) return false;
-  if ((data.ctrlKey || data.metaKey) && (data.key.toLowerCase() === 'a' || data.keyCode === KeyCode.A)) {
+  const target = manager!.focused;
+  if (target === undefined) {
+    return false;
+  }
+  const command = data.ctrlKey || data.metaKey;
+  const key: string = data.key;
+  if (command && (key.toLowerCase() === 'a' || data.keyCode === KEY_CODE_A)) {
+    const textLength = utf16Len(target!.data.text);
     const runtime = getMutableRuntime(target);
-    runtime.selectionBeginIndex = 0;
-    runtime.selectionEndIndex = target.data.text.length;
+    let runtimeGuard = runtime!;
+    runtimeGuard.selectionBeginIndex = 0;
+    runtimeGuard.selectionEndIndex = textLength;
     return true;
   }
-  if ((data.ctrlKey || data.metaKey) && (data.key.toLowerCase() === 'c' || data.keyCode === KeyCode.C)) {
+  if (command && (key.toLowerCase() === 'c' || data.keyCode === KEY_CODE_C)) {
     const runtime = getMutableRuntime(target);
-    const start = Math.min(runtime.selectionBeginIndex, runtime.selectionEndIndex);
-    const end = Math.max(runtime.selectionBeginIndex, runtime.selectionEndIndex);
-    const selected = target.data.text.slice(start, end);
-    if (selected.length > 0) onCopy?.(selected);
+    const [start, end] = (() => {
+      const runtimeGuard = runtime!;
+      return [
+        Math.min(runtimeGuard.selectionBeginIndex, runtimeGuard.selectionEndIndex),
+        Math.max(runtimeGuard.selectionBeginIndex, runtimeGuard.selectionEndIndex),
+      ];
+    })();
+    const selected = utf16Slice(target!.data.text, start, end);
+    if (selected.length !== 0) {
+      if (onCopy !== undefined) {
+        onCopy(selected);
+      }
+    }
     return true;
   }
   return false;
 }
 
 export function dispatchSelectableRichTextPointerDown(
-  manager: SelectableRichTextManager,
+  manager: SelectableRichTextManagerRaw,
   target: RichText,
   x: number,
   y: number,
-  extend = false,
+  extend: boolean,
 ): void {
-  manager.focused = target;
-  const runtime = getMutableRuntime(target);
-  const layout = runtime.textLayout;
-  if (layout === null) {
+  manager!.focused = target;
+  let runtime = getMutableRuntime(target);
+  const textLabel = runtime!.textLabel;
+  let layout = textLabel!.textLayout;
+  if (layout === undefined) {
     if (!extend) {
+      runtime = runtime!;
       runtime.selectionBeginIndex = 0;
       runtime.selectionEndIndex = 0;
     }
     return;
   }
-  const index = computeRichTextCharIndexAtPoint(layout, x, y);
+  const index = computeRichTextCharIndexAtPoint(layout!, x, y);
+  runtime = runtime!;
   if (extend) {
     runtime.selectionEndIndex = index;
   } else {
@@ -70,38 +98,55 @@ export function dispatchSelectableRichTextPointerDown(
   }
 }
 
-export function dispatchSelectableRichTextPointerMove(manager: SelectableRichTextManager, x: number, y: number): void {
-  const target = manager.focused;
-  if (target === null) return;
+export function dispatchSelectableRichTextPointerMove(
+  manager: SelectableRichTextManagerRaw,
+  x: number,
+  y: number,
+): void {
+  const target = manager!.focused;
+  if (target === undefined) {
+    return;
+  }
   const runtime = getMutableRuntime(target);
-  const layout = runtime.textLayout;
-  if (layout === null) return;
-  runtime.selectionEndIndex = computeRichTextCharIndexAtPoint(layout, x, y);
+  const textLabel = runtime!.textLabel;
+  let layout = textLabel!.textLayout;
+  if (layout === undefined) {
+    return;
+  }
+  const index = computeRichTextCharIndexAtPoint(layout!, x, y);
+  runtime!.selectionEndIndex = index;
 }
 
-export function dispatchSelectableRichTextWheel(manager: SelectableRichTextManager, deltaLines: number): void {
-  const target = manager.focused;
-  if (target === null) return;
-  setRichTextScrollV(target, target.data.scrollV + Math.round(deltaLines));
+export function dispatchSelectableRichTextWheel(manager: SelectableRichTextManagerRaw, deltaLines: number): void {
+  const target = manager!.focused;
+  if (target === undefined) {
+    return;
+  }
+  const scrollV = target!.data.scrollV;
+  setRichTextScrollV(target, scrollV + jsRound(deltaLines), undefined);
 }
 
-export function focusSelectableRichText(manager: SelectableRichTextManager, target: RichText): void {
-  manager.focused = target;
+export function focusSelectableRichText(manager: SelectableRichTextManagerRaw, target: RichText): void {
+  manager!.focused = target;
 }
 
-export function getSelectableRichTextSelectionText(manager: SelectableRichTextManager): string {
-  const target = manager.focused;
-  if (target === null) return '';
-  const runtime = getMutableRuntime(target);
+export function getSelectableRichTextSelectionText(manager: SelectableRichTextManagerRaw): string {
+  const target = manager!.focused;
+  if (target === undefined) {
+    return '';
+  }
+  let runtime = getMutableRuntime(target);
+  runtime = runtime!;
   const start = Math.min(runtime.selectionBeginIndex, runtime.selectionEndIndex);
   const end = Math.max(runtime.selectionBeginIndex, runtime.selectionEndIndex);
-  return target.data.text.slice(start, end);
-}
-
-export function initializeSelectableRichTextManager(out: EntityConstruction<SelectableRichTextManager>): void {
-  out.focused = null;
+  return utf16Slice(target!.data.text, start, end);
 }
 
 function getMutableRuntime(source: RichText): RichTextRuntime {
-  return getRichTextRuntime(source) as RichTextRuntime;
+  source = source!;
+  return getRichTextRuntime(source);
+}
+
+export function initializeSelectableRichTextManager(out: SelectableRichTextManagerRaw): void {
+  out.focused = undefined;
 }

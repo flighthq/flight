@@ -1,3 +1,5 @@
+//! flight-compiler: root-only blurSelectableRichText createSelectableRichTextManager dispatchSelectableRichTextKeyDown dispatchSelectableRichTextPointerDown dispatchSelectableRichTextPointerMove dispatchSelectableRichTextWheel focusSelectableRichText getSelectableRichTextSelectionText
+
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, allocate_entity};
@@ -41,32 +43,33 @@ pub fn dispatch_selectable_rich_text_key_down(
         return false;
     };
     let command = data.ctrl_key || data.meta_key;
-    if command && (data.key.to_lowercase() == "a" || data.key_code == KEY_CODE_A) {
+    let key: String = data.key.clone();
+    if command && (key.to_ascii_lowercase() == "a" || data.key_code == KEY_CODE_A) {
         let text_length = utf16_len(&target.read().unwrap().data.text);
         let runtime = get_mutable_runtime(&target);
-        let mut runtime = runtime.write().unwrap();
-        runtime.selection_begin_index = 0;
-        runtime.selection_end_index = text_length;
+        let mut runtime_guard = runtime.write().unwrap();
+        runtime_guard.selection_begin_index = 0;
+        runtime_guard.selection_end_index = text_length;
         return true;
     }
-    if command && (data.key.to_lowercase() == "c" || data.key_code == KEY_CODE_C) {
+    if command && (key.to_ascii_lowercase() == "c" || data.key_code == KEY_CODE_C) {
         let runtime = get_mutable_runtime(&target);
         let (start, end) = {
-            let runtime = runtime.read().unwrap();
+            let runtime_guard = runtime.read().unwrap();
             (
-                runtime
+                runtime_guard
                     .selection_begin_index
-                    .min(runtime.selection_end_index),
-                runtime
+                    .min(runtime_guard.selection_end_index),
+                runtime_guard
                     .selection_begin_index
-                    .max(runtime.selection_end_index),
+                    .max(runtime_guard.selection_end_index),
             )
         };
         let selected = utf16_slice(&target.read().unwrap().data.text, start, end);
-        if !selected.is_empty()
-            && let Some(on_copy) = on_copy
-        {
-            on_copy(&selected);
+        if !selected.is_empty() {
+            if let Some(on_copy) = on_copy {
+                on_copy(&selected);
+            }
         }
         return true;
     }

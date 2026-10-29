@@ -1,3 +1,5 @@
+//! flight-compiler: root-only appendTextInput applyTextInputRestriction canRedoTextInput canUndoTextInput clearTextInputHistory deleteTextInputBackward deleteTextInputForward deleteTextInputWordBackward deleteTextInputWordForward getTextInputCaretIndex getTextInputCaretRectangle getTextInputCharacterIndexAtPoint getTextInputDisplayText getTextInputSelectionBeginIndex getTextInputSelectionEndIndex getTextInputSelectionRectangles getTextInputSelectionText handleTextInputKeyboard insertTextInput moveTextInputCaret moveTextInputCaretByWord moveTextInputCaretDown moveTextInputCaretToLineEnd moveTextInputCaretToLineStart moveTextInputCaretUp redoTextInput replaceSelectedTextInput replaceTextInput scrollTextInputCaretIntoView selectAllTextInput selectLineAtTextInputIndex selectWordAtTextInputIndex setTextInputSelection undoTextInput
+
 use std::sync::{Arc, RwLock};
 
 use flight_entity::{Ref, throw_error};
@@ -16,8 +18,8 @@ use flight_textlayout::{
     create_text_format_range, get_rich_text_selection_rectangles,
 };
 use flight_textsegment::{
-    WEB_TEXT_SEGMENTER_BACKEND, get_next_grapheme_boundary, get_previous_grapheme_boundary,
-    get_word_range_at, segment_words,
+    TextSegment, WEB_TEXT_SEGMENTER_BACKEND, get_next_grapheme_boundary,
+    get_previous_grapheme_boundary, get_word_range_at, segment_words,
 };
 
 use crate::text_input::get_text_input_state;
@@ -162,7 +164,7 @@ fn clamp_index(value: i32, length: usize) -> usize {
 pub fn clear_text_input_history(source: &Ref<RichText>) {
     let state = get_input_state(source);
     let mut state = state.write().unwrap();
-    state.history.clear();
+    state.history = Vec::new();
     state.history_index = -1;
 }
 
@@ -236,7 +238,7 @@ pub fn delete_text_input_word_forward(source: &Ref<RichText>) {
 fn find_word_end_after(text: &str, index: usize) -> usize {
     let length = utf16_len(text);
     let clamped = index.min(length);
-    let mut segments = Vec::new();
+    let mut segments: Vec<TextSegment> = Vec::new();
     segment_words(&mut segments, &WEB_TEXT_SEGMENTER_BACKEND, text, None);
     for segment in segments {
         if segment.is_word_like == Some(true) && segment.end > clamped {
@@ -248,7 +250,7 @@ fn find_word_end_after(text: &str, index: usize) -> usize {
 
 fn find_word_start_before(text: &str, index: usize) -> usize {
     let clamped = index.min(utf16_len(text));
-    let mut segments = Vec::new();
+    let mut segments: Vec<TextSegment> = Vec::new();
     segment_words(&mut segments, &WEB_TEXT_SEGMENTER_BACKEND, text, None);
     for segment in segments.iter().rev() {
         if segment.is_word_like == Some(true) && segment.start < clamped {
@@ -265,18 +267,21 @@ fn get_caret_line_index(source: &Ref<RichText>, layout: &TextLayoutResult) -> us
 }
 
 fn get_fallback_line_height(layout: &TextLayoutResult) -> f32 {
-    return layout.line_heights.first().copied().unwrap_or(12.0);
+    let line_heights: &Vec<f32> = &layout.line_heights;
+    return line_heights.first().copied().unwrap_or(12.0);
 }
 
 fn get_input_state(source: &Ref<RichText>) -> Ref<TextInputState> {
-    return get_text_input_state(source).unwrap_or_else(|| {
-        throw_error("text input is not enabled on this RichText; call enableTextInput first")
-    });
+    if let Some(state) = get_text_input_state(source) {
+        return state;
+    }
+    throw_error("text input is not enabled on this RichText; call enableTextInput first")
 }
 
 fn get_keyboard_command(data: &InputKeyboardData) -> KeyboardCommand {
     if data.ctrl_key || data.meta_key {
-        let key = data.key.to_lowercase();
+        let key: String = data.key.clone();
+        let key = key.to_ascii_lowercase();
         if key == "a" || data.key_code == KEY_CODE_A {
             return KeyboardCommand::SelectAll;
         }
@@ -370,19 +375,22 @@ fn get_line_offset_y(layout: &TextLayoutResult, line_index: usize) -> f32 {
         }
     }
     let mut y = TEXT_BOUNDS_GUTTER;
+    let line_heights: &Vec<f32> = &layout.line_heights;
     for index in 0..line_index {
-        y += layout.line_heights.get(index).copied().unwrap_or(0.0);
+        y += line_heights.get(index).copied().unwrap_or(0.0);
     }
     return y;
 }
 
 fn get_line_start_index(layout: &TextLayoutResult, line_index: usize) -> usize {
-    let mut start = None;
+    let mut start: Option<usize> = None;
     for group in &layout.groups {
         if group.line_index == line_index {
-            start = Some(start.map_or(group.start_index, |start: usize| {
-                start.min(group.start_index)
-            }));
+            if let Some(previous_start) = start {
+                start = Some(previous_start.min(group.start_index));
+            } else {
+                start = Some(group.start_index);
+            }
         }
     }
     return start.unwrap_or(0);
@@ -469,7 +477,7 @@ pub fn get_text_input_display_text(source: &Ref<RichText>) -> String {
     if !state.display_as_password {
         return text;
     }
-    let password_character = if state.password_character.is_empty() {
+    let password_character: String = if state.password_character.is_empty() {
         "•".to_string()
     } else {
         utf16_slice(&state.password_character, 0, 1)
@@ -523,19 +531,21 @@ fn get_text_layout_group_at_index(
     layout: &TextLayoutResult,
     index: usize,
 ) -> Option<&TextLayoutGroup> {
-    for group in &layout.groups {
+    let groups: &Vec<TextLayoutGroup> = &layout.groups;
+    for group in groups {
         if index >= group.start_index && index <= group.end_index {
             return Some(group);
         }
     }
-    return layout.groups.last();
+    return groups.last();
 }
 
 fn get_text_layout_group_caret_x(group: &TextLayoutGroup, index: usize) -> f32 {
     let mut x = group.offset_x;
     let limit = index.min(group.end_index).saturating_sub(group.start_index);
+    let positions: &Vec<f32> = &group.positions;
     for position_index in 0..limit {
-        x += group.positions.get(position_index).copied().unwrap_or(0.0);
+        x += positions.get(position_index).copied().unwrap_or(0.0);
     }
     return x;
 }
@@ -557,15 +567,18 @@ pub fn handle_text_input_keyboard(
     options: Option<&HandleTextInputKeyboardOptions>,
 ) -> bool {
     let command = get_keyboard_command(data);
+    if command == KeyboardCommand::None {
+        return false;
+    }
     match command {
-        KeyboardCommand::None => return false,
+        KeyboardCommand::None => {}
         KeyboardCommand::Backspace => delete_text_input_backward(source),
         KeyboardCommand::Copy => {
             let copy_text = get_text_input_selection_text(source);
-            if !copy_text.is_empty()
-                && let Some(on_copy) = options.and_then(|options| options.on_copy.as_ref())
-            {
-                on_copy(&copy_text);
+            if !copy_text.is_empty() {
+                if let Some(on_copy) = options.and_then(|options| options.on_copy.as_ref()) {
+                    on_copy(&copy_text);
+                }
             }
         }
         KeyboardCommand::Cut => {
@@ -586,19 +599,23 @@ pub fn handle_text_input_keyboard(
         }
         KeyboardCommand::DocumentStart => move_text_input_caret(source, 0, data.shift_key),
         KeyboardCommand::Down => {
-            let layout = options.and_then(|options| options.layout.as_ref());
-            if let Some(layout) = layout {
-                move_text_input_caret_down(source, Some(&layout.read().unwrap()), data.shift_key);
+            let down_layout = options.and_then(|options| options.layout.as_ref());
+            if let Some(down_layout) = down_layout {
+                move_text_input_caret_down(
+                    source,
+                    Some(&down_layout.read().unwrap()),
+                    data.shift_key,
+                );
             } else {
                 move_text_input_caret_down(source, None, data.shift_key);
             }
         }
         KeyboardCommand::End => {
-            let layout = options.and_then(|options| options.layout.as_ref());
-            if let Some(layout) = layout {
+            let end_layout = options.and_then(|options| options.layout.as_ref());
+            if let Some(end_layout) = end_layout {
                 move_text_input_caret_to_line_end(
                     source,
-                    Some(&layout.read().unwrap()),
+                    Some(&end_layout.read().unwrap()),
                     data.shift_key,
                 );
             } else {
@@ -606,11 +623,11 @@ pub fn handle_text_input_keyboard(
             }
         }
         KeyboardCommand::Home => {
-            let layout = options.and_then(|options| options.layout.as_ref());
-            if let Some(layout) = layout {
+            let home_layout = options.and_then(|options| options.layout.as_ref());
+            if let Some(home_layout) = home_layout {
                 move_text_input_caret_to_line_start(
                     source,
-                    Some(&layout.read().unwrap()),
+                    Some(&home_layout.read().unwrap()),
                     data.shift_key,
                 );
             } else {
@@ -618,12 +635,12 @@ pub fn handle_text_input_keyboard(
             }
         }
         KeyboardCommand::Left => {
-            let text = source.read().unwrap().data.text.clone();
-            let caret = get_text_input_caret_index(source);
+            let left_text = source.read().unwrap().data.text.clone();
+            let left_caret = get_text_input_caret_index(source);
             let previous = get_previous_grapheme_boundary(
                 &WEB_TEXT_SEGMENTER_BACKEND,
-                &text,
-                usize_to_i32(caret),
+                &left_text,
+                usize_to_i32(left_caret),
                 None,
             );
             move_text_input_caret(source, previous as i32, data.shift_key);
@@ -641,21 +658,21 @@ pub fn handle_text_input_keyboard(
             insert_text_input(source, "\n");
         }
         KeyboardCommand::Right => {
-            let text = source.read().unwrap().data.text.clone();
-            let caret = get_text_input_caret_index(source);
+            let right_text = source.read().unwrap().data.text.clone();
+            let right_caret = get_text_input_caret_index(source);
             let next = get_next_grapheme_boundary(
                 &WEB_TEXT_SEGMENTER_BACKEND,
-                &text,
-                usize_to_i32(caret),
+                &right_text,
+                usize_to_i32(right_caret),
                 None,
             );
             move_text_input_caret(source, next as i32, data.shift_key);
         }
         KeyboardCommand::SelectAll => select_all_text_input(source),
         KeyboardCommand::Up => {
-            let layout = options.and_then(|options| options.layout.as_ref());
-            if let Some(layout) = layout {
-                move_text_input_caret_up(source, Some(&layout.read().unwrap()), data.shift_key);
+            let up_layout = options.and_then(|options| options.layout.as_ref());
+            if let Some(up_layout) = up_layout {
+                move_text_input_caret_up(source, Some(&up_layout.read().unwrap()), data.shift_key);
             } else {
                 move_text_input_caret_up(source, None, data.shift_key);
             }
@@ -669,7 +686,8 @@ pub fn handle_text_input_keyboard(
 pub fn insert_text_input(source: &Ref<RichText>, text: &str) {
     let options = ReplaceTextInputOptions {
         apply_input_rules: Some(true),
-        ..ReplaceTextInputOptions::default()
+        merge_kind: None,
+        skip_history: None,
     };
     replace_selected_text_input(source, text, Some(&options));
 }
@@ -863,9 +881,9 @@ fn record_text_input_edit(
     merge_kind: Option<&str>,
 ) {
     if state.history_index < state.history.len() as i32 - 1 {
-        state
-            .history
-            .truncate((state.history_index + 1).max(0) as usize);
+        let history_index = (state.history_index + 1).max(0) as usize;
+        let history: &mut Vec<TextInputHistoryEntry> = &mut state.history;
+        history.truncate(history_index);
     }
     if state.history_index >= 0 {
         let previous = &mut state.history[state.history_index as usize];
@@ -879,7 +897,7 @@ fn record_text_input_edit(
     state.history.push(TextInputHistoryEntry {
         caret_index_after: state.caret_index,
         caret_index_before,
-        merge_kind: merge_kind.map(str::to_string),
+        merge_kind: merge_kind.map(|value| value.to_string()),
         selection_index_after: state.selection_index,
         selection_index_before,
         text_after: text_after.to_string(),
@@ -888,20 +906,21 @@ fn record_text_input_edit(
     state.history_index = state.history.len() as i32 - 1;
     if state.history.len() > state.history_limit {
         let overflow = state.history.len() - state.history_limit;
-        state.history.drain(0..overflow);
-        state.history_index = state.history.len() as i32 - 1;
+        let history: &mut Vec<TextInputHistoryEntry> = &mut state.history;
+        history.drain(0..overflow);
+        state.history_index = history.len() as i32 - 1;
     }
 }
 
 pub fn redo_text_input(source: &Ref<RichText>) {
     let state = get_input_state(source);
     let record = {
-        let mut state = state.write().unwrap();
-        if state.history_index >= state.history.len() as i32 - 1 {
+        let mut state_guard = state.write().unwrap();
+        if state_guard.history_index >= state_guard.history.len() as i32 - 1 {
             return;
         }
-        state.history_index += 1;
-        state.history[state.history_index as usize].clone()
+        state_guard.history_index += 1;
+        state_guard.history[state_guard.history_index as usize].clone()
     };
     apply_history_record(
         source,
@@ -938,7 +957,9 @@ pub fn replace_text_input(
     let mut start = clamp_index(begin_index, length);
     let mut end = clamp_index(end_index, length);
     if end < start {
-        std::mem::swap(&mut start, &mut end);
+        let previous_start = start;
+        start = end;
+        end = previous_start;
     }
     let value = if options
         .and_then(|options| options.apply_input_rules)
@@ -953,50 +974,47 @@ pub fn replace_text_input(
     }
     let state = get_input_state(source);
     let (caret_before, selection_before) = {
-        let state = state.read().unwrap();
+        let state_guard = state.read().unwrap();
         (
-            state.caret_index.min(length),
-            state.selection_index.min(length),
+            state_guard.caret_index.min(length),
+            state_guard.selection_index.min(length),
         )
     };
     let text_after = utf16_replace(&text_before, start, end, &value);
     let insert_length = utf16_len(&value);
+    let mut source_state = source.write().unwrap();
+    source_state.data.text = text_after.clone();
+    let default_format = source_state.data.default_text_format.clone();
+    adjust_text_format_ranges(
+        &mut source_state.data.text_format_ranges,
+        &default_format,
+        start,
+        end,
+        insert_length,
+    );
+    drop(source_state);
+    let mut input_state = state.write().unwrap();
+    input_state.desired_caret_x = DESIRED_CARET_X_UNSET;
+    input_state.selection_index = start + insert_length;
+    input_state.caret_index = start + insert_length;
+    drop(input_state);
+    invalidate_appearance(source);
+    let mut history_state = state.write().unwrap();
+    if !options
+        .and_then(|options| options.skip_history)
+        .unwrap_or(false)
+        && history_state.history_limit > 0
     {
-        let mut source = source.write().unwrap();
-        source.data.text = text_after.clone();
-        let default_format = source.data.default_text_format.clone();
-        adjust_text_format_ranges(
-            &mut source.data.text_format_ranges,
-            &default_format,
-            start,
-            end,
-            insert_length,
+        record_text_input_edit(
+            &mut history_state,
+            &text_before,
+            &text_after,
+            caret_before,
+            selection_before,
+            options.and_then(|options| options.merge_kind.as_deref()),
         );
     }
-    {
-        let mut state = state.write().unwrap();
-        state.desired_caret_x = DESIRED_CARET_X_UNSET;
-        state.selection_index = start + insert_length;
-        state.caret_index = start + insert_length;
-    }
-    invalidate_appearance(source);
-    {
-        let mut state = state.write().unwrap();
-        if !options
-            .and_then(|options| options.skip_history)
-            .unwrap_or(false)
-            && state.history_limit > 0
-        {
-            record_text_input_edit(
-                &mut state,
-                &text_before,
-                &text_after,
-                caret_before,
-                selection_before,
-                options.and_then(|options| options.merge_kind.as_deref()),
-            );
-        }
-    }
+    drop(history_state);
     invalidate_local_content(source);
 }
 
@@ -1032,8 +1050,9 @@ pub fn scroll_text_input_caret_into_view(
     };
     let scroll_v_line = (scroll_v as i32 - 1).max(0) as usize;
     let mut view_top = 0.0;
+    let line_heights: &Vec<f32> = &layout.line_heights;
     for index in 0..scroll_v_line {
-        view_top += layout.line_heights.get(index).copied().unwrap_or(0.0);
+        view_top += line_heights.get(index).copied().unwrap_or(0.0);
     }
     let view_bottom = view_top + viewport_height;
     if caret_top < view_top {
@@ -1087,15 +1106,16 @@ pub fn select_word_at_text_input_index(source: &Ref<RichText>, index: i32) {
     let text = source.read().unwrap().data.text.clone();
     let length = utf16_len(&text);
     let clamped = clamp_index(index, length);
-    let mut segments = Vec::new();
+    let mut segments: Vec<TextSegment> = Vec::new();
     segment_words(&mut segments, &WEB_TEXT_SEGMENTER_BACKEND, &text, None);
-    if clamped > 0
-        && let Some(segment) = segments
+    if clamped > 0 {
+        if let Some(segment) = segments
             .iter()
             .find(|segment| segment.end == clamped && segment.is_word_like == Some(true))
-    {
-        set_text_input_selection(source, segment.start as i32, segment.end as i32);
-        return;
+        {
+            set_text_input_selection(source, segment.start as i32, segment.end as i32);
+            return;
+        }
     }
     if let Some(range) = get_word_range_at(
         &WEB_TEXT_SEGMENTER_BACKEND,
@@ -1185,12 +1205,12 @@ fn split_restrict_ranges(restrict: &str) -> (String, String) {
 pub fn undo_text_input(source: &Ref<RichText>) {
     let state = get_input_state(source);
     let record = {
-        let mut state = state.write().unwrap();
-        if state.history_index < 0 {
+        let mut state_guard = state.write().unwrap();
+        if state_guard.history_index < 0 {
             return;
         }
-        let record = state.history[state.history_index as usize].clone();
-        state.history_index -= 1;
+        let record = state_guard.history[state_guard.history_index as usize].clone();
+        state_guard.history_index -= 1;
         record
     };
     apply_history_record(
@@ -1206,6 +1226,7 @@ fn usize_to_i32(value: usize) -> i32 {
     return value.min(i32::MAX as usize) as i32;
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
 enum KeyboardCommand {
     Backspace,
     Copy,

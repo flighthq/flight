@@ -1,3 +1,5 @@
+use crate::common::*;
+
 use std::sync::{Arc, Mutex, RwLock};
 
 use flight_input::{
@@ -1203,7 +1205,7 @@ mod undo_text_input {
     fn replace_options(merge_kind: Option<&str>) -> ReplaceTextInputOptions {
         return ReplaceTextInputOptions {
             apply_input_rules: None,
-            merge_kind: merge_kind.map(str::to_string),
+            merge_kind: merge_kind.map(|value| value.to_string()),
             skip_history: None,
         };
     }

@@ -32,6 +32,8 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
+    "generate": "tsx ../../scripts/generate-rust-package.ts --crate flight-textinput --package textinput",
+    "generate:check": "tsx ../../scripts/generate-rust-package.ts --crate flight-textinput --package textinput --check",
     "test": "vitest run --config vitest.config.ts",
     "test:watch": "vitest --watch --config vitest.config.ts",
     "prepack": "npm run clean && npm run clean:dist && npm run build",
@@ -39,12 +41,13 @@
   },
   "dependencies": {
     "@flighthq/entity": "*",
+    "@flighthq/input": "*",
     "@flighthq/node": "*",
     "@flighthq/signals": "*",
     "@flighthq/text": "*",
     "@flighthq/textformat": "*",
     "@flighthq/textlayout": "*",
-    "@flighthq/types": "*"
+    "@flighthq/textsegment": "*"
   },
   "devDependencies": {
     "typescript": "^5.3.0"

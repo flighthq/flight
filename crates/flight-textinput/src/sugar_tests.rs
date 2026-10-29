@@ -1,3 +1,5 @@
+//! flight-compiler: rust-only
+
 use flight_text::create_rich_text;
 
 use super::*;

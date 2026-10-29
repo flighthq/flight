@@ -1,3 +1,6 @@
+// Generated from crates/flight-textinput/src/lib.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
 export {
   blurSelectableRichText,
   createSelectableRichTextManager,
@@ -58,3 +61,13 @@ export {
   focusTextInput,
   initializeTextInputManager,
 } from './textInputManager.ts';
+export type {
+  HandleTextInputKeyboardOptions,
+  ReplaceTextInputOptions,
+  SelectableRichTextManagerRaw,
+  TextInputCopyCallback,
+  TextInputDisposer,
+  TextInputEditRecord,
+  TextInputManagerRaw,
+  TextInputSource,
+} from './types.ts';

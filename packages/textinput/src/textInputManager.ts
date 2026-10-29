@@ -1,14 +1,13 @@
-import { allocateEntity, finishEntity } from '@flighthq/entity/contract';
+// Generated from crates/flight-textinput/src/text_input_manager.rs by flight-compiler.
+// Rust is authoritative; run `npm run generate` after changing it.
+
+import { allocateEntity } from '@flighthq/entity/contract';
+import type { InputKeyboardData } from '@flighthq/input/contract';
 import { connectSignal, disconnectSignal } from '@flighthq/signals/contract';
+import type { SignalSlot } from '@flighthq/signals/contract';
 import { getRichTextRuntime, setRichTextScrollV } from '@flighthq/text/contract';
 import type { RichText } from '@flighthq/text/contract';
-import type {
-  EntityConstruction,
-  InputKeyboardData,
-  InputTextData,
-  TextInputManager,
-  TextInputSource,
-} from '@flighthq/types/contract';
+import type { TextLayoutResult } from '@flighthq/textlayout/contract';
 
 import { getTextInputState } from './textInput.ts';
 import {
@@ -19,111 +18,187 @@ import {
   selectLineAtTextInputIndex,
   selectWordAtTextInputIndex,
 } from './textInputEditing.ts';
+import { jsRound } from './textUnits.ts';
+import type {
+  HandleTextInputKeyboardOptions,
+  TextInputCopyCallback,
+  TextInputDisposer,
+  TextInputManagerRaw,
+  TextInputSource,
+} from './types.ts';
 
-export function blurTextInput(manager: TextInputManager): void {
-  const target = manager.focused;
-  if (target !== null) setTextInputFocused(target, false);
-  manager.focused = null;
+export function blurTextInput(manager: TextInputManagerRaw): void {
+  const target = manager!.focused;
+  if (target !== undefined) {
+    setTextInputFocused(target, false);
+  }
+  manager!.focused = undefined;
 }
 
-export function connectInputToTextInput(input: TextInputSource, manager: TextInputManager): () => void {
-  const onKeyDown = (data: Readonly<InputKeyboardData>) => dispatchTextInputKeyDown(manager, data);
-  const onTextInput = (data: Readonly<InputTextData>) => dispatchTextInput(manager, data.text);
-
-  connectSignal(input.onKeyDown, onKeyDown);
-  connectSignal(input.onTextInput, onTextInput);
-
+export function connectInputToTextInput(
+  input: Readonly<TextInputSource>,
+  manager: TextInputManagerRaw,
+): TextInputDisposer {
+  const keyManager = manager;
+  const onKeyDown: SignalSlot<InputKeyboardData> = (data) => {
+    dispatchTextInputKeyDown(keyManager, data, undefined, undefined);
+  };
+  const textManager = manager;
+  const onTextInput = (data: Readonly<flightInput.InputTextData>) => {
+    dispatchTextInput(textManager, data.text);
+  };
+  const keyId = connectSignal(input.onKeyDown, onKeyDown, undefined);
+  const textId = connectSignal(input.onTextInput, onTextInput, undefined);
+  const keySignal = input.onKeyDown;
+  const textSignal = input.onTextInput;
   return () => {
-    disconnectSignal(input.onKeyDown, onKeyDown);
-    disconnectSignal(input.onTextInput, onTextInput);
+    disconnectSignal(keySignal, keyId);
+    disconnectSignal(textSignal, textId);
   };
 }
 
-export function createTextInputManager(): TextInputManager {
-  const out = allocateEntity<TextInputManager>();
+export function createTextInputManager(): TextInputManagerRaw {
+  let out: TextInputManagerRaw = Object.assign(allocateEntity<TextInputManagerRaw>(), {
+    enabled: false,
+    focused: undefined,
+  });
   initializeTextInputManager(out);
-  return finishEntity(out);
+  return out;
 }
 
-export function dispatchTextInput(manager: TextInputManager, text: string): boolean {
+export function dispatchTextInput(manager: TextInputManagerRaw, text: string): boolean {
   const target = getTextInputFocusTarget(manager);
-  if (target === null || text.length === 0) return false;
+  if (target === undefined) {
+    return false;
+  }
+  if (text.length === 0) {
+    return false;
+  }
   insertTextInput(target, text);
   return true;
 }
 
 export function dispatchTextInputKeyDown(
-  manager: TextInputManager,
+  manager: TextInputManagerRaw,
   data: Readonly<InputKeyboardData>,
   clipboardText?: string,
-  onCopy?: (text: string) => void,
+  onCopy?: TextInputCopyCallback,
 ): boolean {
   const target = getTextInputFocusTarget(manager);
-  if (target === null) return false;
-  const layout = getRichTextRuntime(target).textLayout ?? undefined;
-  return handleTextInputKeyboard(target, data, { clipboardText, layout, onCopy });
+  if (target === undefined) {
+    return false;
+  }
+  const options: HandleTextInputKeyboardOptions = {
+    clipboardText: ((value) => (value === undefined ? undefined : String(value)))(clipboardText),
+    layout: getTargetLayout(target),
+    onCopy: onCopy,
+  };
+  return handleTextInputKeyboard(target, data, options);
 }
 
 export function dispatchTextInputPointerDown(
-  manager: TextInputManager,
+  manager: TextInputManagerRaw,
   target: RichText,
   x: number,
   y: number,
-  extend = false,
-  clickCount = 1,
+  extend: boolean,
+  clickCount: number,
 ): void {
   focusTextInput(manager, target);
-  const layout = getRichTextRuntime(target).textLayout;
-  if (layout === null) return;
-  const index = getTextInputCharacterIndexAtPoint(target, layout, x, y);
+  const layout = getTargetLayout(target);
+  if (layout === undefined) {
+    return;
+  }
+  const index = getTextInputCharacterIndexAtPoint(target, layout!, x, y);
   if (clickCount >= 3) {
-    selectLineAtTextInputIndex(target, index);
-  } else if (clickCount === 2) {
-    selectWordAtTextInputIndex(target, index);
+    selectLineAtTextInputIndex(target, index | 0);
   } else {
-    moveTextInputCaret(target, index, extend);
+    if (clickCount === 2) {
+      selectWordAtTextInputIndex(target, index | 0);
+    } else {
+      moveTextInputCaret(target, index | 0, extend);
+    }
   }
 }
 
-export function dispatchTextInputPointerMove(manager: TextInputManager, x: number, y: number): void {
-  const target = manager.focused;
-  if (target === null || !target.enabled) return;
-  const layout = getRichTextRuntime(target).textLayout;
-  if (layout === null) return;
-  const index = getTextInputCharacterIndexAtPoint(target, layout, x, y);
-  moveTextInputCaret(target, index, true);
-}
-
-export function dispatchTextInputWheel(manager: TextInputManager, deltaLines: number): void {
-  const target = manager.focused;
-  if (target === null || !target.enabled) return;
-  setRichTextScrollV(target, target.data.scrollV + Math.round(deltaLines));
-}
-
-export function focusTextInput(manager: TextInputManager, target: RichText): void {
-  if (manager.focused !== target) {
-    const previous = manager.focused;
-    if (previous !== null) setTextInputFocused(previous, false);
+export function dispatchTextInputPointerMove(manager: TextInputManagerRaw, x: number, y: number): void {
+  let target = manager!.focused;
+  if (target === undefined) {
+    return;
   }
-  manager.focused = target;
+  if (!target!.enabled) {
+    return;
+  }
+  const layout = getTargetLayout(target);
+  if (layout === undefined) {
+    return;
+  }
+  const index = getTextInputCharacterIndexAtPoint(target, layout!, x, y);
+  moveTextInputCaret(target, index | 0, true);
+}
+
+export function dispatchTextInputWheel(manager: TextInputManagerRaw, deltaLines: number): void {
+  let target = manager!.focused;
+  if (target === undefined) {
+    return;
+  }
+  const scrollV = (() => {
+    target = target!;
+    if (!target.enabled) {
+      return;
+    }
+    return target.data.scrollV;
+  })();
+  setRichTextScrollV(target, scrollV + jsRound(deltaLines), undefined);
+}
+
+export function focusTextInput(manager: TextInputManagerRaw, target: RichText): void {
+  const previous = manager!.focused;
+  if (previous !== undefined) {
+    if (!(previous === target)) {
+      setTextInputFocused(previous, false);
+    }
+  }
+  manager!.focused = target;
   setTextInputFocused(target, true);
 }
 
-export function initializeTextInputManager(out: EntityConstruction<TextInputManager>): void {
+export function initializeTextInputManager(out: TextInputManagerRaw): void {
   out.enabled = true;
-  out.focused = null;
+  out.focused = undefined;
 }
 
-function getTextInputFocusTarget(manager: TextInputManager): RichText | null {
-  if (!manager.enabled) return null;
+function getTargetLayout(target: RichText): TextLayoutResult | undefined {
+  const runtime = (() => {
+    target = target!;
+    return getRichTextRuntime(target);
+  })();
+  const textLabel = runtime!.textLabel;
+  const layout = textLabel!.textLayout;
+  return layout;
+}
+
+function getTextInputFocusTarget(manager: TextInputManagerRaw): RichText | undefined {
+  manager = manager!;
+  if (!manager.enabled) {
+    return undefined;
+  }
   const target = manager.focused;
-  if (target === null || !target.enabled) return null;
+  if (target === undefined) {
+    return undefined;
+  }
+  if (!target!.enabled) {
+    return undefined;
+  }
   return target;
 }
 
-// Writes the focused flag on the editable-input slot. A null slot means input was disabled on the node
-// since it was focused, so there is nothing to flag — silently skip.
 function setTextInputFocused(target: RichText, focused: boolean): void {
-  const state = getTextInputState(target);
-  if (state !== null) state.focused = focused;
+  {
+    const $state = getTextInputState(target);
+    if ($state !== undefined) {
+      const state = $state;
+      state!.focused = focused;
+    }
+  }
 }

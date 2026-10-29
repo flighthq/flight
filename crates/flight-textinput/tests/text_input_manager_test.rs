@@ -1,12 +1,16 @@
+use crate::common::*;
+
 use std::sync::{Arc, Mutex};
 
+use flight_entity::Ref;
 use flight_entity::allocate_entity;
 use flight_input::{InputTextData, KEY_CODE_BACKSPACE, KEY_CODE_C, KEY_CODE_END, KEY_CODE_HOME};
 use flight_signals::{create_signal, emit_signal};
+use flight_text::RichText;
 
 use super::*;
 
-fn is_focused(target: &flight_entity::Ref<flight_text::RichText>) -> bool {
+fn is_focused(target: &Ref<RichText>) -> bool {
     return get_text_input_state(target)
         .map(|state| state.read().unwrap().focused)
         .unwrap_or(false);

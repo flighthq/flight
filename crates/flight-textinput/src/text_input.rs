@@ -1,3 +1,5 @@
+//! flight-compiler: root-only disableTextInput enableTextInput getTextInputState hasTextInput
+
 use std::sync::{Arc, RwLock};
 
 use flight_entity::Ref;

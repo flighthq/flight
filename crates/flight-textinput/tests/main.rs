@@ -1,8 +1,6 @@
 use flight_textinput::contract::*;
 
-mod support;
-
-use support::*;
+mod common;
 
 #[path = "selectable_rich_text_manager_test.rs"]
 mod flight_textinput_selectable_rich_text_manager_test;
