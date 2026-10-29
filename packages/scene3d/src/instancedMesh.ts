@@ -48,7 +48,7 @@ export function clearInstancedMesh(target: InstancedMesh): void {
   target.instanceCount = 0;
   invalidateInstancedMesh(target);
   const signals = getInstancedMeshSignals(target);
-  if (signals !== null) signals.onCleared.emit();
+  if (signals !== null) signals.onCleared.emit(undefined);
 }
 
 /**
@@ -222,7 +222,7 @@ export function removeInstancedMeshInstance(target: InstancedMesh, index: number
   target.instanceCount = last;
   invalidateInstancedMesh(target);
   const signals = getInstancedMeshSignals(target);
-  if (signals !== null) signals.onInstanceRemoved.emit(index, swapSource);
+  if (signals !== null) signals.onInstanceRemoved.emit({ index, swapSource });
 }
 
 /**

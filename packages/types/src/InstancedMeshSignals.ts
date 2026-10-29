@@ -10,8 +10,14 @@ import type { Signal } from './Signal.ts';
 // say WHICH structural edit happened and WHERE, which is what a consumer maintaining an array
 // parallel to the instances needs: `onInstanceRemoved` carries the swap source precisely because a
 // removal is a swap with the last instance, so a parallel array must move the same element.
+export interface InstancedMeshInstanceRemoved {
+  index: number;
+  // The former last index moved into `index`, or -1 when the removed instance was the last one.
+  swapSource: number;
+}
+
 export interface InstancedMeshSignals extends Entity {
-  onCleared: Signal<() => void>;
-  onInstanceAppended: Signal<(index: number) => void>;
-  onInstanceRemoved: Signal<(index: number, swapSource: number) => void>;
+  onCleared: Signal<void>;
+  onInstanceAppended: Signal<number>;
+  onInstanceRemoved: Signal<Readonly<InstancedMeshInstanceRemoved>>;
 }

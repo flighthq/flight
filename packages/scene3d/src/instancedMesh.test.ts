@@ -392,7 +392,7 @@ describe('removeInstancedMeshInstance', () => {
   it('reports the swap source, and -1 when nothing moved', () => {
     const mesh = meshWith(1, 2, 3);
     const seen: number[][] = [];
-    connectSignal(enableInstancedMeshSignals(mesh).onInstanceRemoved, (index, swapSource) =>
+    connectSignal(enableInstancedMeshSignals(mesh).onInstanceRemoved, ({ index, swapSource }) =>
       seen.push([index, swapSource]),
     );
 
