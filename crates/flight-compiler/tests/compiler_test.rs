@@ -6145,6 +6145,52 @@ pub fn format(value: TextFormat) -> MarkupResult {
     }
 
     #[test]
+    fn derives_reserved_keys_against_an_external_record_declaration() {
+        let source = r#"
+//! flight-compiler: data-union MarkupResult=reserved-key
+
+pub struct MarkupEffect {
+    pub format: Option<TextFormat>,
+    pub text: Option<String>,
+}
+
+pub enum MarkupResult {
+    Effect(MarkupEffect),
+    Format(TextFormat),
+}
+
+pub fn kind(result: MarkupResult) -> &'static str {
+    return match result {
+        MarkupResult::Effect(_) => "effect",
+        MarkupResult::Format(_) => "format",
+    };
+}
+"#;
+        let external = r#"
+//! flight-compiler: target-native
+
+pub struct TextFormat {
+    pub bold: Option<bool>,
+    pub color: Option<u32>,
+}
+"#;
+
+        let output = compile_typescript_with_external_alias_sources(
+            source,
+            None,
+            &[],
+            &[ExternalAliasSource {
+                module: "@flighthq/textformat/contract",
+                source: external,
+            }],
+        )
+        .unwrap();
+
+        assert!(output.contains("if (\"format\" in matchValue || \"text\" in matchValue)"));
+        assert!(output.contains("else {\n    return \"format\";"));
+    }
+
+    #[test]
     fn rejects_unsupported_reserved_key_data_union_shapes() {
         let cases = [
             (

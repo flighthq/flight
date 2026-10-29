@@ -369,6 +369,12 @@ export function hasRustConstGroup(rust: string): boolean {
   return /^\/\/!\s*flight-compiler:\s*const-group\s+\S+\s+\S+\s*$/m.test(rust);
 }
 
+// Public record declarations are semantic inputs for declaration-derived compiler directives in a
+// consuming crate (for example a structural union whose fallback payload is dependency-owned).
+export function hasRustPublicRecordDeclaration(rust: string): boolean {
+  return /^\s*pub\s+struct\s+[A-Za-z_][A-Za-z0-9_]*/m.test(rust);
+}
+
 export function hasGeneratedProvenanceHeader(contents: string): boolean {
   return contents.startsWith('// Generated from crates/');
 }

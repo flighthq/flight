@@ -2478,7 +2478,13 @@ fn reserved_key_record_fields(
 fn insert_data_union_context(
     context: &mut HashSet<String>,
     programs: &[&Program],
+    external_record_programs: &[Program],
 ) -> Result<(), CompileError> {
+    let record_programs = programs
+        .iter()
+        .copied()
+        .chain(external_record_programs)
+        .collect::<Vec<_>>();
     for program in programs {
         for rust_enum in &program.enums {
             let owner = rust_enum.ident.to_string();
@@ -2510,10 +2516,16 @@ fn insert_data_union_context(
                         &fields.unnamed[0].ty
                     })
                     .collect::<Vec<_>>();
-                let reserved_fields =
-                    reserved_key_record_fields(payload_types[0], programs, &mut BTreeSet::new())?;
-                let fallback_fields =
-                    reserved_key_record_fields(payload_types[1], programs, &mut BTreeSet::new())?;
+                let reserved_fields = reserved_key_record_fields(
+                    payload_types[0],
+                    &record_programs,
+                    &mut BTreeSet::new(),
+                )?;
+                let fallback_fields = reserved_key_record_fields(
+                    payload_types[1],
+                    &record_programs,
+                    &mut BTreeSet::new(),
+                )?;
                 let keys = reserved_fields
                     .difference(&fallback_fields)
                     .cloned()
@@ -3599,9 +3611,16 @@ fn provenance_bindings(
 
 pub(crate) fn generation_context(
     programs: &[(&str, &Program)],
+    external_record_programs: &[Program],
     contract_source: Option<&str>,
 ) -> Result<HashSet<String>, CompileError> {
-    return generation_context_with_types(programs, &HashSet::new(), contract_source, true);
+    return generation_context_with_types(
+        programs,
+        external_record_programs,
+        &HashSet::new(),
+        contract_source,
+        true,
+    );
 }
 
 pub(crate) fn insert_vitest_local_crate_context<'a>(
@@ -4593,6 +4612,7 @@ pub(crate) fn is_string_union(context: &HashSet<String>, name: &str) -> bool {
 
 fn generation_context_with_types(
     programs: &[(&str, &Program)],
+    external_record_programs: &[Program],
     type_context: &HashSet<String>,
     contract_source: Option<&str>,
     strict_vitest_provenance: bool,
@@ -4603,7 +4623,7 @@ fn generation_context_with_types(
         .iter()
         .map(|(_, program)| *program)
         .collect::<Vec<_>>();
-    insert_data_union_context(&mut context, &program_refs)?;
+    insert_data_union_context(&mut context, &program_refs, external_record_programs)?;
     let entity_types = programs
         .iter()
         .flat_map(|(_, program)| &program.entities)
@@ -11908,6 +11928,7 @@ pub(crate) fn emit_program(
     entity_module: Option<&str>,
     alias_programs: &[Program],
     external_alias_programs: &[(BTreeMap<String, String>, &str)],
+    external_record_programs: &[Program],
     dependency_export_names: &[(BTreeMap<String, String>, &str)],
     module_identities: Option<&[String]>,
 ) -> Result<String, CompileError> {
@@ -11941,8 +11962,13 @@ pub(crate) fn emit_program(
         .zip(&programs)
         .map(|(module, program)| (module.as_str(), *program))
         .collect::<Vec<_>>();
-    let mut expression_context =
-        generation_context_with_types(&program_sources, &identity_context, None, false)?;
+    let mut expression_context = generation_context_with_types(
+        &program_sources,
+        external_record_programs,
+        &identity_context,
+        None,
+        false,
+    )?;
     expression_context.insert(format!("{CURRENT_SOURCE_MARKER}{}", program_modules[0]));
     reject_const_group_wildcard_imports(
         dependency_export_names,

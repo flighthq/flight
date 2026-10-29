@@ -15,6 +15,7 @@ import {
   dependencyAliasArguments,
   hasGeneratedProvenanceHeader,
   hasRustConstGroup,
+  hasRustPublicRecordDeclaration,
   mergeRustExportNames,
   renderCompanionContractExports,
   renderGeneratedImports,
@@ -84,6 +85,15 @@ describe('hasRustConstGroup', () => {
     ).toBe(true);
     expect(hasRustConstGroup('//! flight-compiler: export-name decode_utf8 decodeUTF8\n')).toBe(false);
     expect(hasRustConstGroup('// flight-compiler: const-group KeyCode KEY_CODE_\n')).toBe(false);
+  });
+});
+
+describe('hasRustPublicRecordDeclaration', () => {
+  it('selects public dependency records without treating private storage as semantic API', () => {
+    expect(hasRustPublicRecordDeclaration('pub struct TextFormat {\n    pub bold: Option<bool>,\n}\n')).toBe(true);
+    expect(hasRustPublicRecordDeclaration('pub struct Generic<T> { pub value: T }\n')).toBe(true);
+    expect(hasRustPublicRecordDeclaration('struct Private { value: i32 }\n')).toBe(false);
+    expect(hasRustPublicRecordDeclaration('pub(crate) struct Internal { value: i32 }\n')).toBe(false);
   });
 });
 

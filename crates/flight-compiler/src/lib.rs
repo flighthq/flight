@@ -96,12 +96,17 @@ fn compile_typescript_sources(
             ));
         })
         .collect::<Result<Vec<_>, _>>()?;
+    let external_record_programs = external_alias_sources
+        .iter()
+        .map(|external| model::parse_program(external.source))
+        .collect::<Result<Vec<_>, _>>()?;
     let dependency_export_names = dependency_export_names(external_alias_sources)?;
     let mut output = typescript::emit_program(
         &program,
         entity_module,
         &alias_programs,
         &external_alias_programs,
+        &external_record_programs,
         &dependency_export_names,
         module_identities.as_deref(),
     )?;
@@ -280,13 +285,21 @@ fn compile_vitest_with_contract_alias_sources_internal(
         .iter()
         .map(|alias_source| model::parse_program(alias_source.source))
         .collect::<Result<Vec<_>, _>>()?;
+    let external_record_programs = external_alias_sources
+        .iter()
+        .map(|external| model::parse_program(external.source))
+        .collect::<Result<Vec<_>, _>>()?;
     let alias_program_refs = alias_sources
         .iter()
         .zip(&alias_programs)
         .map(|(source, program)| (source.module, program))
         .collect::<Vec<_>>();
     let string_unions = model::parse_string_union_metadata(source)?;
-    let mut context = typescript::generation_context(&alias_program_refs, contract_source)?;
+    let mut context = typescript::generation_context(
+        &alias_program_refs,
+        &external_record_programs,
+        contract_source,
+    )?;
     if program.nullable_options {
         typescript::insert_nullable_options_context(&mut context);
         typescript::insert_vitest_nullable_call_context(

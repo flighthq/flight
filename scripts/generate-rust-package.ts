@@ -14,6 +14,7 @@ import {
   collectStaleGeneratedFileNames,
   hasGeneratedProvenanceHeader,
   hasRustConstGroup,
+  hasRustPublicRecordDeclaration,
   renderCompanionContractExports,
   renderGeneratedImports,
   dependencyAliasArguments,
@@ -76,7 +77,7 @@ try {
   const rustSources = sourceFiles(crateRoot);
   const aliasSources = rustSources
     .map((rustSource) => join(crateRoot, 'src', rustSource))
-    .filter((rustPath) => sourceMode(rustPath) === 'generate');
+    .filter((rustPath) => sourceMode(rustPath) !== 'rust-only');
   const modules = rustSources
     .map((rustSource) => loadModule(rustSource, aliasSources))
     .filter((module): module is PackageModule => module !== null);
@@ -261,7 +262,9 @@ function dependencySources(command: string): DependencySource[] {
   const manifest = readFileSync(join(crateRoot, 'Cargo.toml'), 'utf8');
   const sources: DependencySource[] = [];
   for (const crateName of collectFlightDependencyCrates(manifest, command === 'generate-tests')) {
-    if (crateName === options.crateName) continue;
+    // The entity type source is already supplied by `entityArguments`; avoid duplicating one
+    // external semantic owner under the same contract module.
+    if (crateName === options.crateName || crateName === 'flight-entity') continue;
     const sourceRoot = join(repositoryRoot, 'crates', crateName, 'src');
     if (!existsSync(sourceRoot)) continue;
     const module = `@flighthq/${crateName.slice('flight-'.length)}/contract`;
@@ -270,7 +273,9 @@ function dependencySources(command: string): DependencySource[] {
       .sort()) {
       const path = join(sourceRoot, fileName);
       const rust = readFileSync(path, 'utf8');
-      if (collectRustExportNames(rust).size > 0 || hasRustConstGroup(rust)) sources.push({ module, path });
+      if (collectRustExportNames(rust).size > 0 || hasRustConstGroup(rust) || hasRustPublicRecordDeclaration(rust)) {
+        sources.push({ module, path });
+      }
     }
   }
   return sources;
