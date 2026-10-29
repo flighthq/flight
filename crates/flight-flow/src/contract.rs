@@ -6,7 +6,6 @@ pub use crate::flow::{
     push_flow_state, replace_flow_state, update_flow_stack,
 };
 pub use crate::flow_guards::*;
-pub use crate::flow_stack_compat::FlowStack;
-pub use crate::flow_types::{FlowCallback, FlowState, FlowUpdateCallback};
+pub use crate::flow_types::{FlowCallback, FlowStack, FlowState, FlowUpdateCallback};
 pub use crate::sugar::*;
 pub use crate::types::*;

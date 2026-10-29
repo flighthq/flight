@@ -101,7 +101,7 @@ mod clear_flow_stack {
         push_flow_state(&stack, labeled_state("A", &log), &guards);
         push_flow_state(&stack, labeled_state("B", &log), &guards);
         push_flow_state(&stack, labeled_state("C", &log), &guards);
-        log.lock().unwrap().clear();
+        *log.lock().unwrap() = Vec::new();
         clear_flow_stack(&stack);
         assert_eq!(*log.lock().unwrap(), vec!["C.exit", "B.exit", "A.exit"]);
         assert_eq!(get_flow_stack_depth(&stack), 0);
@@ -337,7 +337,7 @@ mod pop_flow_state {
         push_flow_state(&stack, labeled_state("A", &log), &guards);
         let b = labeled_state("B", &log);
         push_flow_state(&stack, b.clone(), &guards);
-        log.lock().unwrap().clear();
+        *log.lock().unwrap() = Vec::new();
         let popped = pop_flow_state(&stack).unwrap();
         assert_eq!(*log.lock().unwrap(), vec!["B.exit", "A.resume"]);
         assert!(Arc::ptr_eq(&popped, &b));
@@ -358,7 +358,7 @@ mod pop_flow_state {
         let stack = create_flow_stack();
         let guards = guard_state();
         push_flow_state(&stack, labeled_state("A", &log), &guards);
-        log.lock().unwrap().clear();
+        *log.lock().unwrap() = Vec::new();
         pop_flow_state(&stack);
         assert_eq!(*log.lock().unwrap(), vec!["A.exit"]);
     }
@@ -389,7 +389,7 @@ mod push_flow_state {
         let stack = create_flow_stack();
         let guards = guard_state();
         push_flow_state(&stack, labeled_state("A", &log), &guards);
-        log.lock().unwrap().clear();
+        *log.lock().unwrap() = Vec::new();
         push_flow_state(&stack, labeled_state("B", &log), &guards);
         assert_eq!(*log.lock().unwrap(), vec!["A.pause", "B.enter"]);
         assert_eq!(get_flow_stack_depth(&stack), 2);
@@ -490,7 +490,7 @@ mod replace_flow_state {
         let a = labeled_state("A", &log);
         push_flow_state(&stack, a.clone(), &guards);
         push_flow_state(&stack, labeled_state("B", &log), &guards);
-        log.lock().unwrap().clear();
+        *log.lock().unwrap() = Vec::new();
         replace_flow_state(&stack, labeled_state("C", &log), &guards);
         assert_eq!(*log.lock().unwrap(), vec!["B.exit", "C.enter"]);
         assert_eq!(get_flow_stack_depth(&stack), 2);
@@ -527,7 +527,7 @@ mod update_flow_stack {
         let guards = guard_state();
         push_flow_state(&stack, labeled_state("A", &log), &guards);
         push_flow_state(&stack, labeled_state("B", &log), &guards);
-        log.lock().unwrap().clear();
+        *log.lock().unwrap() = Vec::new();
         update_flow_stack(&stack, 0.016);
         assert_eq!(*log.lock().unwrap(), vec!["B.update:0.016"]);
     }
@@ -541,7 +541,7 @@ mod update_flow_stack {
         let mut b = labeled_state("B", &log).read().unwrap().clone();
         b.update_below = Some(true);
         push_flow_state(&stack, state(b), &guards);
-        log.lock().unwrap().clear();
+        *log.lock().unwrap() = Vec::new();
         update_flow_stack(&stack, 0.02);
         assert_eq!(*log.lock().unwrap(), vec!["B.update:0.02", "A.update:0.02"]);
     }
@@ -553,7 +553,7 @@ mod update_flow_stack {
         let guards = guard_state();
         push_flow_state(&stack, labeled_state("A", &log), &guards);
         push_flow_state(&stack, labeled_state("B", &log), &guards);
-        log.lock().unwrap().clear();
+        *log.lock().unwrap() = Vec::new();
         update_flow_stack(&stack, 0.01);
         assert_eq!(*log.lock().unwrap(), vec!["B.update:0.01"]);
     }
@@ -571,7 +571,7 @@ mod update_flow_stack {
         let mut d = labeled_state("D", &log).read().unwrap().clone();
         d.update_below = Some(true);
         push_flow_state(&stack, state(d), &guards);
-        log.lock().unwrap().clear();
+        *log.lock().unwrap() = Vec::new();
         update_flow_stack(&stack, 0.5);
         assert_eq!(
             *log.lock().unwrap(),
