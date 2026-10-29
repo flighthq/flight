@@ -6,7 +6,7 @@
     "outDir": "dist",
     "declaration": true,
     "declarationMap": true,
-    "emitDeclarationOnly": true,
+    "sourceMap": true,
     "moduleSuffixes": [".geometry-types", ".path-types", ""],
     "tsBuildInfoFile": "dist/.tsbuildinfo.text-types"
   },
