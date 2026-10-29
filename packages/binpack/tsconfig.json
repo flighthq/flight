@@ -10,10 +10,7 @@
   },
   "references": [
     {
-      "path": "../geometry"
-    },
-    {
-      "path": "../types"
+      "path": "../geometry/tsconfig.contract.json"
     }
   ],
   "include": ["src"]

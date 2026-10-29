@@ -15,6 +15,9 @@
       "path": "../app/tsconfig.contract.json"
     },
     {
+      "path": "../binpack"
+    },
+    {
       "path": "../buffer"
     },
     {

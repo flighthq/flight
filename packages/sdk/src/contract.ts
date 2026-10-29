@@ -5,6 +5,16 @@ export * from '@flighthq/app';
 export * from '@flighthq/assets';
 export * from '@flighthq/audio';
 export * from '@flighthq/binpack';
+export type {
+  BinPackHeuristic,
+  BinPackOptions,
+  PackResult,
+  PackableRectangle,
+  PackedRectangle,
+  RectangleId,
+  UnpackedRectangleExplanation,
+  UnpackedRectangleReason,
+} from '@flighthq/binpack';
 export * from '@flighthq/buffer/contract';
 export * from '@flighthq/bitmapfont';
 export * from '@flighthq/bitmapfont-formats';
