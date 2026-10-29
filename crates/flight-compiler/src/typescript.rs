@@ -8137,25 +8137,8 @@ fn reject_unsafe_lazy_lock_initializers(
                 for attribute in &facts.attributes {
                     self.check_meta(index, &attribute.meta)?;
                 }
-                for module in &facts.path_modules {
-                    let target = scope
-                        .path
-                        .as_deref()
-                        .filter(|_| !facts.nested_path_module)
-                        .and_then(|source| {
-                            let directory = std::path::Path::new(source).parent()?;
-                            return Some(normalize_source_path(
-                                &directory.join(module).to_string_lossy(),
-                            ));
-                        });
-                    if !target
-                        .as_ref()
-                        .is_some_and(|target| self.inventory.contains(target))
-                    {
-                        return Err(format!(
-                            "the crate declares `#[path = \"{module}\"] mod`, whose source is not among the sources the proof sees"
-                        ));
-                    }
+                for module in &facts.external_modules {
+                    self.check_external_module(scope.path.as_deref(), module)?;
                 }
                 for path in &facts.macros {
                     if !self.is_standard_macro(index, path, &macro_definitions, macro_use) {
@@ -8208,6 +8191,80 @@ fn reject_unsafe_lazy_lock_initializers(
                 }
             }
             return Ok(defaults);
+        }
+
+        // Fails closed unless the file Rust loads for `mod name;` is a source the proof sees, by
+        // Rust's rules from the declaring file: `#[path]` relative to its directory, otherwise
+        // `name.rs` or `name/mod.rs` in its directory (a `mod.rs`, `lib.rs` or `main.rs`) or in the
+        // `<stem>/` directory beside it, below any enclosing inline modules. Every path a `cfg_attr`
+        // may apply instead is required too, with the default location when no `#[path]` is fixed.
+        fn check_external_module(
+            &self,
+            source: Option<&str>,
+            module: &crate::model::ExternalModule,
+        ) -> Result<(), String> {
+            let unseen = |shown: String| {
+                return Err(format!(
+                    "the crate declares `{shown}`, whose source is not among the sources the proof sees"
+                ));
+            };
+            let declared = match &module.path {
+                Some(path) => format!("#[path = \"{path}\"] mod"),
+                None => format!("mod {}", module.name),
+            };
+            let Some(source) = source else {
+                return unseen(declared);
+            };
+            let file = std::path::Path::new(source);
+            let directory = file.parent().unwrap_or_else(|| std::path::Path::new(""));
+            let relative = |path: &str| {
+                return normalize_source_path(&directory.join(path).to_string_lossy());
+            };
+            let seen = |candidate: &String| self.inventory.contains(candidate);
+            let Some(parents) = module
+                .inline_parents
+                .iter()
+                .cloned()
+                .collect::<Option<Vec<_>>>()
+            else {
+                return unseen(declared);
+            };
+            let explicit = module
+                .path
+                .iter()
+                .chain(&module.conditional_paths)
+                .cloned()
+                .collect::<Vec<_>>();
+            for path in &explicit {
+                if path.is_empty() || !parents.is_empty() || !seen(&relative(path)) {
+                    return unseen(declared);
+                }
+            }
+            if module.path.is_none() {
+                let stem = file
+                    .file_stem()
+                    .and_then(|stem| stem.to_str())
+                    .unwrap_or_default();
+                let mut base = if matches!(stem, "lib" | "main" | "mod") {
+                    directory.to_path_buf()
+                } else {
+                    directory.join(stem)
+                };
+                for parent in &parents {
+                    base = base.join(parent);
+                }
+                let candidates = [
+                    base.join(format!("{}.rs", module.name)),
+                    base.join(&module.name).join("mod.rs"),
+                ];
+                if !candidates
+                    .iter()
+                    .any(|candidate| seen(&normalize_source_path(&candidate.to_string_lossy())))
+                {
+                    return unseen(declared);
+                }
+            }
+            return Ok(());
         }
 
         // Fails closed on an attribute that is not built in (or a tool attribute), and on a derive

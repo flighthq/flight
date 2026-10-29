@@ -5046,6 +5046,158 @@ pub fn get_defaults() -> u32 {
     }
 
     #[test]
+    fn inventories_every_external_module_through_the_cli() {
+        let directory = std::env::temp_dir().join(format!(
+            "flight-compiler-lazy-lock-modules-cli-{}",
+            std::process::id()
+        ));
+        let source_root = directory.join("flight-kernel").join("src");
+        let outside = directory.join("outside");
+        for path in [
+            source_root.join("native"),
+            source_root.join("nested"),
+            source_root.join("outer"),
+            source_root.join("hidden_dir"),
+            outside.clone(),
+        ] {
+            std::fs::create_dir_all(path).unwrap();
+        }
+        let write = |path: std::path::PathBuf, source: &str| {
+            std::fs::write(&path, source).unwrap();
+            return path;
+        };
+        let kernel = write(
+            source_root.join("kernel.rs"),
+            "use std::sync::LazyLock;\n\npub struct Kernel {\n    pub scale: f64,\n}\n\npub static KERNEL: LazyLock<Kernel> = LazyLock::new(|| Kernel { scale: 1.0 });\n",
+        );
+        let drop_impl = "impl Drop for crate::kernel::Kernel {\n    fn drop(&mut self) {}\n}\n";
+        let hidden = write(source_root.join("hidden.rs"), drop_impl);
+        let hidden_dir = write(source_root.join("hidden_dir").join("mod.rs"), drop_impl);
+        let misplaced = write(source_root.join("inner.rs"), drop_impl);
+        write(outside.join("hidden.rs"), drop_impl);
+        let helper = write(source_root.join("helper.rs"), "pub fn help() {}\n");
+        let nested = write(
+            source_root.join("nested").join("mod.rs"),
+            "pub fn nest() {}\n",
+        );
+        let inner = write(
+            source_root.join("native").join("inner.rs"),
+            "pub fn inner() {}\n",
+        );
+        let deep = write(
+            source_root.join("outer").join("deep.rs"),
+            "pub fn deep() {}\n",
+        );
+        let run = |root: &str, visibility: &[&std::path::PathBuf]| {
+            let lib = write(source_root.join("lib.rs"), root);
+            let output = kernel.with_extension("ts");
+            let _ = std::fs::remove_file(&output);
+            let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_flight-compile"));
+            command
+                .arg("generate")
+                .arg("--source")
+                .arg(&kernel)
+                .arg("--out")
+                .arg(&output)
+                .arg("--visibility-source")
+                .arg(&lib);
+            for path in visibility {
+                command.arg("--visibility-source").arg(path);
+            }
+            let result = command.output().unwrap();
+            return (
+                result.status.code(),
+                String::from_utf8(result.stderr).unwrap(),
+                output.exists(),
+            );
+        };
+        let prefix = "`LazyLock` static `KERNEL` lowers to an eagerly initialized constant, so its initializer must be side-effect free and cannot panic; ";
+        let unseen = |declared: &str| {
+            format!(
+                "{prefix}the crate declares `{declared}`, whose source is not among the sources the proof sees"
+            )
+        };
+
+        let native_inner = write(
+            source_root.join("native.rs"),
+            "//! flight-compiler: target-native\n\nmod inner;\n",
+        );
+        let negatives = [
+            (
+                "pub mod kernel;\nmod hidden;\n",
+                vec![],
+                unseen("mod hidden"),
+            ),
+            (
+                "pub mod kernel;\nmod hidden_dir;\n",
+                vec![],
+                unseen("mod hidden_dir"),
+            ),
+            (
+                "pub mod kernel;\nmod native;\n",
+                vec![&native_inner, &misplaced],
+                unseen("mod inner"),
+            ),
+            (
+                "pub mod kernel;\n#[cfg_attr(feature = \"trace\", path = \"../../outside/hidden.rs\")]\nmod hidden;\n",
+                vec![&hidden],
+                unseen("mod hidden"),
+            ),
+            (
+                "pub mod kernel;\n#[path = \"elsewhere\"]\nmod outer {\n    mod deep;\n}\n",
+                vec![&deep],
+                unseen("mod deep"),
+            ),
+        ];
+        for (root, visibility, reason) in &negatives {
+            let (code, stderr, emitted) = run(root, visibility);
+            assert_eq!(code, Some(2), "{root}: {stderr}");
+            assert!(stderr.contains(reason.as_str()), "{root}: {stderr}");
+            assert!(!emitted, "{root} emitted TypeScript");
+        }
+
+        let positives = [
+            (
+                "pub mod kernel;\nmod helper;\nmod nested;\n",
+                vec![&helper, &nested],
+            ),
+            (
+                "pub mod kernel;\nmod native;\n",
+                vec![&native_inner, &inner],
+            ),
+            (
+                "pub mod kernel;\nmod outer {\n    mod deep;\n}\n",
+                vec![&deep],
+            ),
+            (
+                "pub mod kernel;\n#[cfg_attr(feature = \"trace\", path = \"nested/mod.rs\")]\nmod helper;\n",
+                vec![&helper, &nested],
+            ),
+            (
+                "pub mod kernel;\n#[cfg(test)]\nmod tests;\n#[cfg(test)]\n#[path = \"../../outside/hidden.rs\"]\nmod hidden_tests;\n",
+                vec![],
+            ),
+            ("pub mod kernel;\nmod hidden_dir;\n", vec![&hidden_dir]),
+        ];
+        let (code, stderr, _) = run(positives[5].0, &positives[5].1);
+        assert_eq!(
+            code,
+            Some(2),
+            "an inventoried module's Drop impl is still seen: {stderr}"
+        );
+        assert!(
+            stderr.contains("the crate implements `Drop` for `crate::kernel::Kernel`"),
+            "{stderr}"
+        );
+        for (root, visibility) in &positives[..5] {
+            let (code, stderr, emitted) = run(root, visibility);
+            assert_eq!(code, Some(0), "{root}: {stderr}");
+            assert!(emitted, "{root}");
+        }
+        std::fs::remove_dir_all(&directory).unwrap();
+    }
+
+    #[test]
     fn rejects_hidden_include_macro_and_path_module_sources_through_the_cli() {
         let directory = std::env::temp_dir().join(format!(
             "flight-compiler-lazy-lock-visibility-cli-{}",

@@ -90,10 +90,8 @@ pub(crate) struct SourceFacts {
     pub(crate) attributes: Vec<Attribute>,
     pub(crate) hidden_items: bool,
     pub(crate) nested_use_names: BTreeSet<String>,
-    // The `#[path = "…"]` values of `mod` declarations, and whether any sits inside an inline module
-    // (where the path is relative to a directory the proof does not model).
-    pub(crate) path_modules: Vec<String>,
-    pub(crate) nested_path_module: bool,
+    // Every `mod name;` declaration whose body lives in another file, outside `#[cfg(test)]` code.
+    pub(crate) external_modules: Vec<ExternalModule>,
     pub(crate) impls: Vec<syn::ItemImpl>,
     pub(crate) macro_definitions: BTreeSet<String>,
     pub(crate) macro_use_extern_crate: bool,
@@ -125,10 +123,52 @@ pub(crate) struct TestCase {
     pub(crate) should_panic: bool,
 }
 
+// A `mod name;` declaration, with what decides the file Rust loads for it.
+#[derive(Clone, Debug)]
+pub(crate) struct ExternalModule {
+    pub(crate) name: String,
+    // The inline modules enclosing it, outermost first; `None` for one with its own `#[path]`, which
+    // moves its children's directory where the proof does not model it.
+    pub(crate) inline_parents: Vec<Option<String>>,
+    // Its `#[path = "…"]` (empty when the value is not a string literal).
+    pub(crate) path: Option<String>,
+    // The paths a `#[cfg_attr(…, path = "…")]` may apply instead (empty for a non-string value).
+    pub(crate) conditional_paths: Vec<String>,
+}
+
 pub(crate) fn collect_source_facts(file: &syn::File) -> SourceFacts {
     struct Collector {
         depth: usize,
         facts: SourceFacts,
+        inline_parents: Vec<Option<String>>,
+    }
+    // The `path = "…"` values a `cfg_attr` may apply, through nested `cfg_attr`s.
+    fn conditional_paths(meta: &syn::Meta, out: &mut Vec<String>) {
+        let syn::Meta::List(list) = meta else {
+            return;
+        };
+        let Ok(metas) = list.parse_args_with(
+            syn::punctuated::Punctuated::<syn::Meta, syn::Token![,]>::parse_terminated,
+        ) else {
+            out.push(String::new());
+            return;
+        };
+        for applied in metas.iter().skip(1) {
+            if applied.path().is_ident("path") {
+                out.push(path_value(applied));
+            } else if applied.path().is_ident("cfg_attr") {
+                conditional_paths(applied, out);
+            }
+        }
+    }
+    fn path_value(meta: &syn::Meta) -> String {
+        if let syn::Meta::NameValue(value) = meta
+            && let syn::Expr::Lit(literal) = &value.value
+            && let syn::Lit::Str(path) = &literal.lit
+        {
+            return path.value();
+        }
+        return String::new();
     }
     impl Collector {
         fn scan_tokens(&mut self, tokens: proc_macro2::TokenStream) {
@@ -192,6 +232,20 @@ pub(crate) fn collect_source_facts(file: &syn::File) -> SourceFacts {
             }
         }
     }
+    impl Collector {
+        fn module_paths(attributes: &[Attribute]) -> (Option<String>, Vec<String>) {
+            let mut path = None;
+            let mut conditional = Vec::new();
+            for attribute in attributes {
+                if attribute.path().is_ident("path") {
+                    path = Some(path_value(&attribute.meta));
+                } else if attribute.path().is_ident("cfg_attr") {
+                    conditional_paths(&attribute.meta, &mut conditional);
+                }
+            }
+            return (path, conditional);
+        }
+    }
     impl<'ast> syn::visit::Visit<'ast> for Collector {
         fn visit_attribute(&mut self, attribute: &'ast Attribute) {
             self.facts.attributes.push(attribute.clone());
@@ -235,26 +289,29 @@ pub(crate) fn collect_source_facts(file: &syn::File) -> SourceFacts {
         }
 
         fn visit_item_mod(&mut self, module: &'ast syn::ItemMod) {
-            for attribute in &module.attrs {
-                if attribute.path().is_ident("path") {
-                    if let syn::Meta::NameValue(value) = &attribute.meta
-                        && let syn::Expr::Lit(literal) = &value.value
-                        && let syn::Lit::Str(path) = &literal.lit
-                    {
-                        self.facts.path_modules.push(path.value());
-                    } else {
-                        self.facts.path_modules.push(String::new());
-                    }
-                    if self.depth > 0 {
-                        self.facts.nested_path_module = true;
-                    }
+            if is_cfg_test(&module.attrs) {
+                return;
+            }
+            let (path, conditional_paths) = Self::module_paths(&module.attrs);
+            if module.content.is_none() {
+                self.facts.external_modules.push(ExternalModule {
+                    name: module.ident.to_string(),
+                    inline_parents: self.inline_parents.clone(),
+                    path,
+                    conditional_paths,
+                });
+                for attribute in &module.attrs {
+                    self.visit_attribute(attribute);
                 }
+                return;
             }
-            if !is_cfg_test(&module.attrs) {
-                self.depth += 1;
-                syn::visit::visit_item_mod(self, module);
-                self.depth -= 1;
-            }
+            let parent =
+                (path.is_none() && conditional_paths.is_empty()).then(|| module.ident.to_string());
+            self.inline_parents.push(parent);
+            self.depth += 1;
+            syn::visit::visit_item_mod(self, module);
+            self.depth -= 1;
+            self.inline_parents.pop();
         }
 
         fn visit_macro(&mut self, mac: &'ast syn::Macro) {
@@ -285,6 +342,7 @@ pub(crate) fn collect_source_facts(file: &syn::File) -> SourceFacts {
     let mut collector = Collector {
         depth: 0,
         facts: SourceFacts::default(),
+        inline_parents: Vec::new(),
     };
     syn::visit::Visit::visit_file(&mut collector, file);
     for item in &file.items {
